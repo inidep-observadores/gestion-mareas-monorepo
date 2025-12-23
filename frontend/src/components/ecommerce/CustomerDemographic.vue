@@ -77,6 +77,7 @@
 import { onMounted, ref } from 'vue'
 import jsVectorMap from 'jsvectormap'
 import 'jsvectormap/dist/maps/world'
+import { CHART_COLORS } from '@/config/chartColors'
 
 const mapOneRef = ref<HTMLElement | null>(null)
 const mapInstance = ref<any>(null)
@@ -90,11 +91,11 @@ const initMap = () => {
       regionStyle: {
         initial: {
           fontFamily: 'Outfit',
-          fill: '#D9D9D9',
+          fill: CHART_COLORS.neutral.light,
         },
         hover: {
           fillOpacity: 1,
-          fill: '#465fff',
+          fill: CHART_COLORS.brand.primary,
         },
       },
       markers: [
@@ -114,12 +115,12 @@ const initMap = () => {
       markerStyle: {
         initial: {
           strokeWidth: 1,
-          fill: '#465fff',
+          fill: CHART_COLORS.brand.primary,
           fillOpacity: 1,
           r: 4,
         },
         hover: {
-          fill: '#465fff',
+          fill: CHART_COLORS.brand.primary,
           fillOpacity: 1,
         },
         selected: {},

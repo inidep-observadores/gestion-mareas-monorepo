@@ -38,6 +38,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import DropdownMenu from '../common/DropdownMenu.vue'
+import { CHART_COLORS } from '@/config/chartColors'
 const menuItems = [
   { label: 'Ver más', onClick: () => console.log('View More clicked') },
   { label: 'Eliminar', onClick: () => console.log('Delete clicked') },
@@ -53,7 +54,7 @@ const series = ref([
 ])
 
 const chartOptions = ref({
-  colors: ['#465fff'],
+  colors: [CHART_COLORS.brand.primary],
   chart: {
     fontFamily: 'Outfit, sans-serif',
     type: 'bar',

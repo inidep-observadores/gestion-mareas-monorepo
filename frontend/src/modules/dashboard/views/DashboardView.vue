@@ -11,71 +11,47 @@
           </div>
         </div>
 
-        <!-- KPIs de Mareas -->
+        <!-- KPIs de Mareas con Stat Component -->
         <div class="col-span-12 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <div
-            class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-6 shadow-sm"
-          >
-            <div class="flex items-center justify-between mb-4">
-              <div class="w-12 h-12 rounded-xl bg-brand-500/10 flex items-center justify-center">
-                <WaveIcon class="w-6 h-6 text-brand-500" />
-              </div>
-              <span
-                class="text-xs font-medium text-green-600 bg-green-100 dark:bg-green-900/30 dark:text-green-400 px-2 py-1 rounded-full"
-                >+12%</span
-              >
-            </div>
-            <h3 class="text-2xl font-bold text-gray-800 dark:text-white mb-1">47</h3>
-            <p class="text-sm text-gray-500">Mareas Activas</p>
-          </div>
+          <Stat
+            title="Mareas Activas"
+            :value="47"
+            description="+12% vs mes anterior"
+            :icon="WaveIcon"
+            color="primary"
+            variant="bordered"
+            trend="up"
+          />
 
-          <div
-            class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-6 shadow-sm"
-          >
-            <div class="flex items-center justify-between mb-4">
-              <div class="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center">
-                <UserGroupIcon class="w-6 h-6 text-blue-500" />
-              </div>
-              <span
-                class="text-xs font-medium text-gray-500 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-full"
-                >Activos</span
-              >
-            </div>
-            <h3 class="text-2xl font-bold text-gray-800 dark:text-white mb-1">23</h3>
-            <p class="text-sm text-gray-500">Observadores en Mar</p>
-          </div>
+          <Stat
+            title="Observadores en Mar"
+            :value="23"
+            description="Activos actualmente"
+            :icon="UserGroupIcon"
+            color="info"
+            variant="bordered"
+            trend="neutral"
+          />
 
-          <div
-            class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-6 shadow-sm"
-          >
-            <div class="flex items-center justify-between mb-4">
-              <div class="w-12 h-12 rounded-xl bg-orange-500/10 flex items-center justify-center">
-                <WarningIcon class="w-6 h-6 text-orange-500" />
-              </div>
-              <span
-                class="text-xs font-medium text-orange-600 bg-orange-100 dark:bg-orange-900/30 dark:text-orange-400 px-2 py-1 rounded-full"
-                >Atención</span
-              >
-            </div>
-            <h3 class="text-2xl font-bold text-gray-800 dark:text-white mb-1">5</h3>
-            <p class="text-sm text-gray-500">Alertas Pendientes</p>
-          </div>
+          <Stat
+            title="Alertas Pendientes"
+            :value="5"
+            description="Requieren atención"
+            :icon="WarningIcon"
+            color="warning"
+            variant="bordered"
+            trend="neutral"
+          />
 
-          <div
-            class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-6 shadow-sm"
-          >
-            <div class="flex items-center justify-between mb-4">
-              <div class="w-12 h-12 rounded-xl bg-green-500/10 flex items-center justify-center">
-                <CheckIcon class="w-6 h-6 text-green-500" />
-              </div>
-              <span
-                class="text-xs font-medium text-green-600 bg-green-100 dark:bg-green-900/30 dark:text-green-400 px-2 py-1 rounded-full"
-                >Este mes</span
-              >
-            </div>
-            <h3 class="text-2xl font-bold text-gray-800 dark:text-white mb-1">142</h3>
-            <p class="text-sm text-gray-500">Mareas Finalizadas</p>
-          </div>
+          <Stat
+            title="Mareas Finalizadas"
+            :value="142"
+            description="Este mes"
+            :icon="CheckIcon"
+            color="success"
+            variant="bordered"
+            trend="up"
+          />
         </div>
 
         <!-- Mareas Recientes -->
@@ -146,6 +122,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
+import Stat from '@/components/common/Stat.vue'
 import { WaveIcon, UserGroupIcon, WarningIcon, CheckIcon, CalenderIcon, DocsIcon } from '@/icons'
 
 const recentActivity = ref([
