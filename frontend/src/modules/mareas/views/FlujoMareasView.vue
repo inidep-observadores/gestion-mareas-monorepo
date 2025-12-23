@@ -13,86 +13,56 @@
             </p>
           </div>
 
-          <!-- View Toggle Gear -->
-          <div class="flex items-center gap-1 p-1 bg-gray-100 dark:bg-gray-800 rounded-xl">
-            <button
-              @click="viewMode = 'kanban'"
-              :class="[
-                'px-4 py-2 text-sm font-medium rounded-lg transition-all',
-                viewMode === 'kanban'
-                  ? 'bg-white dark:bg-gray-700 text-brand-500 shadow-sm'
-                  : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300',
-              ]"
-            >
-              <div class="flex items-center gap-2">
-                <GridIcon class="w-4 h-4" />
-                <span class="hidden sm:inline">Tablero</span>
-              </div>
-            </button>
-            <button
-              @click="viewMode = 'list'"
-              :class="[
-                'px-4 py-2 text-sm font-medium rounded-lg transition-all',
-                viewMode === 'list'
-                  ? 'bg-white dark:bg-gray-700 text-brand-500 shadow-sm'
-                  : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300',
-              ]"
-            >
-              <div class="flex items-center gap-2">
-                <ListIcon class="w-4 h-4" />
-                <span class="hidden sm:inline">Lista</span>
-              </div>
-            </button>
-          </div>
+          <!-- View Toggle -->
+          <ViewToggle v-model="viewMode" :options="viewOptions" />
         </div>
 
         <!-- Advanced Filter Bar -->
-        <div
-          class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-4 shadow-sm"
-        >
+        <FilterBar>
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             <!-- Search -->
             <div class="relative lg:col-span-1">
               <input
+                v-model="searchQuery"
                 type="text"
                 placeholder="Buscar marea/buque..."
-                class="w-full px-4 py-2 border border-gray-100 dark:border-gray-800 rounded-xl bg-gray-50 dark:bg-gray-800/50 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+                class="w-full px-4 py-2.5 border rounded-xl text-sm font-medium transition-all duration-200 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 placeholder:text-gray-400 dark:placeholder:text-gray-500"
               />
             </div>
-            <!-- Selects (Mock) -->
-            <select
-              class="px-4 py-2 border border-gray-100 dark:border-gray-800 rounded-xl bg-gray-50 dark:bg-gray-800/50 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 text-gray-500"
-            >
-              <option value="">Pesquería (Todas)</option>
-              <option value="congeladores">Congeladores</option>
-              <option value="fresqueros">Fresqueros</option>
-            </select>
-            <select
-              class="px-4 py-2 border border-gray-100 dark:border-gray-800 rounded-xl bg-gray-50 dark:bg-gray-800/50 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 text-gray-500"
-            >
-              <option value="">Observador (Todos)</option>
-              <option value="jd">Juan Díaz</option>
-              <option value="am">Ana Martínez</option>
-            </select>
-            <select
-              class="px-4 py-2 border border-gray-100 dark:border-gray-800 rounded-xl bg-gray-50 dark:bg-gray-800/50 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 text-gray-500"
-            >
-              <option value="">Alertas (Todas)</option>
-              <option value="with">Con Alerta</option>
-              <option value="without">Sin Alerta</option>
-            </select>
+
+            <!-- Filters -->
+            <SelectInput
+              v-model="filters.fishery"
+              :options="fisheryOptions"
+              placeholder="Pesquería (Todas)"
+            />
+            <SelectInput
+              v-model="filters.observer"
+              :options="observerOptions"
+              placeholder="Observador (Todos)"
+            />
+            <SelectInput
+              v-model="filters.alert"
+              :options="alertOptions"
+              placeholder="Alertas (Todas)"
+            />
+
+            <!-- Actions -->
             <div class="flex items-center gap-2">
               <button
-                class="flex-1 px-4 py-2 bg-brand-500 text-white text-sm font-medium rounded-xl hover:bg-brand-600 transition-colors"
+                class="flex-1 px-4 py-2.5 bg-brand-500 text-white text-sm font-medium rounded-xl hover:bg-brand-600 active:bg-brand-700 transition-all duration-200 shadow-sm hover:shadow-md"
               >
                 Filtrar
               </button>
-              <button class="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+              <button
+                class="p-2.5 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-all duration-200"
+                title="Limpiar filtros"
+              >
                 <RefreshIcon class="w-5 h-5" />
               </button>
             </div>
           </div>
-        </div>
+        </FilterBar>
       </div>
 
       <!-- Main Content Area -->
@@ -260,6 +230,9 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { VueDraggableNext } from 'vue-draggable-next'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
+import ViewToggle from '@/components/common/ViewToggle.vue'
+import FilterBar from '@/components/common/FilterBar.vue'
+import SelectInput from '@/components/common/SelectInput.vue'
 import {
   ChevronDownIcon,
   DocsIcon,
@@ -272,6 +245,32 @@ import {
 } from '@/icons'
 
 const viewMode = ref<'kanban' | 'list'>('kanban')
+const searchQuery = ref('')
+const filters = ref({
+  fishery: '',
+  observer: '',
+  alert: '',
+})
+
+const viewOptions = [
+  { value: 'kanban', label: 'Tablero', icon: GridIcon, hideTextOnMobile: true },
+  { value: 'list', label: 'Lista', icon: ListIcon, hideTextOnMobile: true },
+]
+
+const fisheryOptions = [
+  { value: 'congeladores', label: 'Congeladores' },
+  { value: 'fresqueros', label: 'Fresqueros' },
+]
+
+const observerOptions = [
+  { value: 'jd', label: 'Juan Díaz' },
+  { value: 'am', label: 'Ana Martínez' },
+]
+
+const alertOptions = [
+  { value: 'with', label: 'Con Alerta' },
+  { value: 'without', label: 'Sin Alerta' },
+]
 
 interface Task {
   id: number
