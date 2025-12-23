@@ -4,7 +4,7 @@
       <!-- HEADER & FILTERS -->
       <div class="mb-8 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <h1 class="text-2xl font-black text-gray-800 dark:text-white/90 tracking-tight">
+          <h1 class="text-2xl text-gray-800 dark:text-white/90 tracking-tight">
             Panel de Estadísticas y KPIs
           </h1>
           <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
@@ -89,13 +89,13 @@
                 Eficiencia de Oficina
               </h3>
               <span
-                class="px-2 py-1 bg-success-50 dark:bg-success-500/10 text-success-600 dark:text-success-400 text-[10px] font-black rounded-lg"
+                class="px-2 py-1 bg-success-50 dark:bg-success-500/10 text-success-600 dark:text-success-400 text-[10px] rounded-lg"
               >
                 ↑ 12% vs 2024
               </span>
             </div>
             <div class="flex items-baseline gap-2">
-              <span class="text-3xl font-black text-gray-800 dark:text-white">28.5</span>
+              <span class="text-3xl text-gray-800 dark:text-white">28.5</span>
               <span class="text-xs text-gray-400 font-medium uppercase"
                 >días promedio de cierre</span
               >
@@ -122,7 +122,7 @@
         >
           <div>
             <span
-              class="text-[10px] font-black bg-brand-50 text-brand-600 px-2 py-0.5 rounded-full mb-1 inline-block"
+              class="text-[10px] bg-brand-50 text-brand-600 px-2 py-0.5 rounded-full mb-1 inline-block"
               >ID: MAR-2025-042</span
             >
             <h2 class="text-xl font-bold text-gray-800 dark:text-white">Detalle de Marea y Log</h2>

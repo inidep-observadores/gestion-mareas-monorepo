@@ -3,7 +3,7 @@
     <div class="relative min-h-[calc(100vh-100px)] z-1">
       <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 class="text-2xl font-bold text-gray-800 dark:text-white/90">
+          <h1 class="text-2xl text-gray-800 dark:text-white/90">
             Bandeja de Entrada Centralizada
           </h1>
           <p class="text-gray-500 dark:text-gray-400">

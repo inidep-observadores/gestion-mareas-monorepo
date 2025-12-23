@@ -294,11 +294,22 @@
           <div class="flex items-center justify-center z-1">
             <common-grid-shape />
             <div class="flex flex-col items-center max-w-xs">
-              <router-link :to="{ name: 'Dashboard' }" class="block mb-4">
-                <img width="231" height="48" src="/images/logo/auth-logo.svg" alt="Logo" />
+              <router-link
+                :to="{ name: 'Dashboard' }"
+                class="flex items-center gap-3 mb-4 text-white"
+              >
+                <div
+                  class="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center flex-shrink-0"
+                >
+                  <WaveIcon class="w-7 h-7 text-white" />
+                </div>
+                <div class="flex flex-col leading-tight">
+                  <span class="text-lg font-bold text-white">Gesti?n de</span>
+                  <span class="text-lg font-bold text-blue-200">Mareas</span>
+                </div>
               </router-link>
               <p class="text-center text-gray-400 dark:text-white/60">
-                Sistema Integral de Gestión de Modelos y Análisis - INIDEP
+                Sistema Integral de Gesti?n de Mareas - INIDEP
               </p>
             </div>
           </div>
@@ -311,6 +322,7 @@
 <script setup lang="ts">
 import FullScreenLayout from '@/components/layout/FullScreenLayout.vue'
 import CommonGridShape from '@/components/common/CommonGridShape.vue'
+import { WaveIcon } from '@/icons'
 import { ref } from 'vue'
 
 const firstName = ref('')
