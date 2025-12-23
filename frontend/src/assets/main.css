@@ -2,11 +2,13 @@
 layer(base);
 
 @import 'tailwindcss';
+@plugin "flyonui";
+@source "../../node_modules/flyonui/dist/js/*.js";
 
 @custom-variant dark (&:is(.dark *));
 
 @theme {
-  --font-*: initial;
+
   --font-outfit: Outfit, sans-serif;
 
   --breakpoint-*: initial;
@@ -189,7 +191,8 @@ layer(base);
 }
 
 @utility menu-item {
-  @apply relative flex items-center w-full gap-3 px-3 py-2 font-medium rounded-lg text-theme-sm;
+  @apply relative flex items-center w-full px-3 py-2 font-medium rounded-lg text-theme-sm;
+  gap: 0.75rem;
 }
 
 @utility menu-item-active {
@@ -225,7 +228,8 @@ layer(base);
 }
 
 @utility menu-dropdown-item {
-  @apply relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-theme-sm font-medium;
+  @apply relative flex items-center rounded-lg px-3 py-2.5 text-theme-sm font-medium;
+  gap: 0.75rem;
 }
 
 @utility menu-dropdown-item-active {
@@ -334,7 +338,8 @@ layer(base);
 }
 
 .apexcharts-tooltip.apexcharts-theme-light {
-  @apply gap-1 !rounded-lg !border-gray-200 p-3 !shadow-theme-sm dark:!border-gray-800 dark:!bg-gray-900;
+  @apply !rounded-lg !border-gray-200 p-3 !shadow-theme-sm dark:!border-gray-800 dark:!bg-gray-900;
+  gap: 0.25rem;
 }
 
 .apexcharts-legend-text {
@@ -404,7 +409,10 @@ layer(base);
   @apply w-full;
 }
 .flatpickr-calendar {
-  @apply mt-2  !rounded-xl bg-black !p-5 !border !border-transparent dark:!border-white/5 !text-gray-500 dark:!bg-gray-900 dark:!text-gray-400 dark:!shadow-theme-xl 2xsm:!w-auto;
+  @apply mt-2  !rounded-xl bg-black !p-5 !border !border-transparent dark:!border-white/5 !text-gray-500 dark:!bg-gray-900 dark:!text-gray-400 dark:!shadow-theme-xl;
+  @media (min-width: 375px) {
+    @apply !w-auto;
+  }
 }
 .flatpickr-time input {
   background-color: #f9fafb !important;
@@ -545,10 +553,14 @@ span.flatpickr-weekday,
   border-left-width: 0;
 }
 .fc .fc-toolbar.fc-header-toolbar {
-  @apply flex-col gap-4 px-6 pt-6 sm:flex-row;
+  @apply flex-col px-6 pt-6;
+  @media (min-width: 640px) {
+    @apply flex-row;
+  }
+  gap: 1rem;
 }
 .fc-button-group {
-  @apply gap-2;
+  gap: 0.5rem;
 }
 .fc-button-group .fc-button {
   @apply flex h-10 w-10 items-center justify-center !rounded-lg border border-gray-200 bg-transparent hover:border-gray-200 hover:bg-gray-50 focus:shadow-none active:!border-gray-200 active:!bg-transparent active:!shadow-none dark:border-gray-800 dark:hover:border-gray-800 dark:hover:bg-gray-900 dark:active:!border-gray-800;
@@ -705,7 +717,12 @@ span.flatpickr-weekday,
 
 .carouselThree .swiper-pagination,
 .carouselFour .swiper-pagination {
-  @apply !bottom-3 !left-1/2 inline-flex !w-auto -translate-x-1/2 items-center gap-1.5 rounded-[40px] border-[0.5px] border-white/10 bg-white/60 px-2 py-1.5 shadow-slider-navigation backdrop-blur-[10px] sm:!bottom-5;
+  @apply !bottom-3 !left-1/2 inline-flex !w-auto -translate-x-1/2 items-center rounded-[40px] border-[0.5px] border-white/10 bg-white/60 px-2 py-1.5 shadow-slider-navigation backdrop-blur-[10px];
+  gap: 0.375rem;
+  @media (min-width: 640px) {
+    @apply !bottom-5;
+  }
+  gap: 0.375rem;
 }
 
 .carouselThree .swiper-pagination-bullet,
@@ -752,9 +769,15 @@ span.flatpickr-weekday,
 }
 
 .social-button {
-  @apply flex h-11 w-11 items-center justify-center gap-2 rounded-full border border-gray-300 bg-white text-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200;
+  @apply flex h-11 w-11 items-center justify-center rounded-full border border-gray-300 bg-white text-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200;
+  gap: 0.5rem;
 }
 
 .edit-button {
-  @apply flex w-full items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200 lg:inline-flex lg:w-auto;
+  @apply flex w-full items-center justify-center rounded-full border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200;
+  gap: 0.5rem;
+  @media (min-width: 1024px) {
+    @apply inline-flex w-auto;
+  }
+  gap: 0.5rem;
 }

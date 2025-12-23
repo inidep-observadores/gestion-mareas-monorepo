@@ -66,6 +66,7 @@ import timeGridPlugin from '@fullcalendar/timegrid'
 import interactionPlugin from '@fullcalendar/interaction'
 import listPlugin from '@fullcalendar/list'
 import esLocale from '@fullcalendar/core/locales/es'
+import { CALENDAR_EVENT_COLORS } from '../config/calendarColors'
 
 // Event type filters
 const eventTypes = ref([
@@ -104,70 +105,125 @@ const allEvents = [
   {
     title: '📋 Designación - BP ARGENTINO I',
     start: '2025-12-20',
-    color: '#5e5adb',
+    color: CALENDAR_EVENT_COLORS.designacion,
     type: 'designacion',
   },
   {
     title: '📋 Designación - BP MAR DEL SUR',
     start: '2025-12-21',
-    color: '#5e5adb',
+    color: CALENDAR_EVENT_COLORS.designacion,
     type: 'designacion',
   },
   {
     title: '📋 Designación - BP ATLANTICO II',
     start: '2025-12-28',
-    color: '#5e5adb',
+    color: CALENDAR_EVENT_COLORS.designacion,
     type: 'designacion',
   },
   {
     title: '📋 Designación - BP ESTRELLA II',
     start: '2026-01-15',
-    color: '#5e5adb',
+    color: CALENDAR_EVENT_COLORS.designacion,
     type: 'designacion',
   },
   {
     title: '📋 Designación - BP VICTORIA II',
     start: '2026-01-28',
-    color: '#5e5adb',
+    color: CALENDAR_EVENT_COLORS.designacion,
     type: 'designacion',
   },
 
   // Zarpadas (Azul)
-  { title: '⛵ Zarpada - BP UNION', start: '2025-12-15', color: '#3b82f6', type: 'zarpada' },
-  { title: '⛵ Zarpada - BP ESTRELLA', start: '2025-12-18', color: '#3b82f6', type: 'zarpada' },
-  { title: '⛵ Zarpada - BP VICTORIA', start: '2025-12-19', color: '#3b82f6', type: 'zarpada' },
-  { title: '⛵ Zarpada - BP PACIFICO', start: '2025-12-22', color: '#3b82f6', type: 'zarpada' },
-  { title: '⛵ Zarpada - BP ATLANTICO', start: '2026-01-08', color: '#3b82f6', type: 'zarpada' },
+  {
+    title: '⛵ Zarpada - BP UNION',
+    start: '2025-12-15',
+    color: CALENDAR_EVENT_COLORS.zarpada,
+    type: 'zarpada',
+  },
+  {
+    title: '⛵ Zarpada - BP ESTRELLA',
+    start: '2025-12-18',
+    color: CALENDAR_EVENT_COLORS.zarpada,
+    type: 'zarpada',
+  },
+  {
+    title: '⛵ Zarpada - BP VICTORIA',
+    start: '2025-12-19',
+    color: CALENDAR_EVENT_COLORS.zarpada,
+    type: 'zarpada',
+  },
+  {
+    title: '⛵ Zarpada - BP PACIFICO',
+    start: '2025-12-22',
+    color: CALENDAR_EVENT_COLORS.zarpada,
+    type: 'zarpada',
+  },
+  {
+    title: '⛵ Zarpada - BP ATLANTICO',
+    start: '2026-01-08',
+    color: CALENDAR_EVENT_COLORS.zarpada,
+    type: 'zarpada',
+  },
   {
     title: '⛵ Zarpada - BP MAR DEL NORTE',
     start: '2026-01-16',
-    color: '#3b82f6',
+    color: CALENDAR_EVENT_COLORS.zarpada,
     type: 'zarpada',
   },
   {
     title: '⛵ Zarpada - BP PACIFICO',
     start: '2025-12-22T08:00:00',
-    color: '#3b82f6',
+    color: CALENDAR_EVENT_COLORS.zarpada,
     type: 'zarpada',
   },
 
   // Arribos (Verde)
-  { title: '🚢 Arribo - BP ESTRELLA', start: '2025-12-22', color: '#10b981', type: 'arribo' },
-  { title: '🚢 Arribo - BP VICTORIA', start: '2025-12-23', color: '#10b981', type: 'arribo' },
-  { title: '🚢 Arribo - BP UNION', start: '2025-12-25', color: '#10b981', type: 'arribo' },
-  { title: '🚢 Arribo - BP PACIFICO', start: '2025-12-30', color: '#10b981', type: 'arribo' },
-  { title: '🚢 Arribo - BP ATLANTICO', start: '2026-01-18', color: '#10b981', type: 'arribo' },
-  { title: '🚢 Arribo - BP MAR DEL NORTE', start: '2026-01-26', color: '#10b981', type: 'arribo' },
+  {
+    title: '🚢 Arribo - BP ESTRELLA',
+    start: '2025-12-22',
+    color: CALENDAR_EVENT_COLORS.arribo,
+    type: 'arribo',
+  },
+  {
+    title: '🚢 Arribo - BP VICTORIA',
+    start: '2025-12-23',
+    color: CALENDAR_EVENT_COLORS.arribo,
+    type: 'arribo',
+  },
+  {
+    title: '🚢 Arribo - BP UNION',
+    start: '2025-12-25',
+    color: CALENDAR_EVENT_COLORS.arribo,
+    type: 'arribo',
+  },
+  {
+    title: '🚢 Arribo - BP PACIFICO',
+    start: '2025-12-30',
+    color: CALENDAR_EVENT_COLORS.arribo,
+    type: 'arribo',
+  },
+  {
+    title: '🚢 Arribo - BP ATLANTICO',
+    start: '2026-01-18',
+    color: CALENDAR_EVENT_COLORS.arribo,
+    type: 'arribo',
+  },
+  {
+    title: '🚢 Arribo - BP MAR DEL NORTE',
+    start: '2026-01-26',
+    color: CALENDAR_EVENT_COLORS.arribo,
+    type: 'arribo',
+  },
   {
     title: '🚢 Arribo - BP ESTRELLA',
     start: '2025-12-22T14:00:00',
-    color: '#10b981',
+    color: CALENDAR_EVENT_COLORS.arribo,
     type: 'arribo',
   },
   {
     title: '🚢 Arribo - BP VICTORIA',
     start: '2025-12-23T10:00:00',
-    color: '#10b981',
+    color: CALENDAR_EVENT_COLORS.arribo,
     type: 'arribo',
   },
 
@@ -175,43 +231,43 @@ const allEvents = [
   {
     title: '📄 Informe Protocolizado - MA-006',
     start: '2025-12-18',
-    color: '#f59e0b',
+    color: CALENDAR_EVENT_COLORS.informe,
     type: 'informe',
   },
   {
     title: '📄 Informe Protocolizado - MA-004',
     start: '2025-12-23',
-    color: '#f59e0b',
+    color: CALENDAR_EVENT_COLORS.informe,
     type: 'informe',
   },
   {
     title: '📄 Informe Protocolizado - MA-005',
     start: '2025-12-26',
-    color: '#f59e0b',
+    color: CALENDAR_EVENT_COLORS.informe,
     type: 'informe',
   },
   {
     title: '📄 Informe Protocolizado - MA-008',
     start: '2026-01-10',
-    color: '#f59e0b',
+    color: CALENDAR_EVENT_COLORS.informe,
     type: 'informe',
   },
   {
     title: '📄 Informe Protocolizado - MA-009',
     start: '2026-01-20',
-    color: '#f59e0b',
+    color: CALENDAR_EVENT_COLORS.informe,
     type: 'informe',
   },
   {
     title: '📄 Informe Protocolizado - MA-004',
     start: '2025-12-23T16:00:00',
-    color: '#f59e0b',
+    color: CALENDAR_EVENT_COLORS.informe,
     type: 'informe',
   },
   {
     title: '📄 Informe Protocolizado - MA-008',
     start: '2026-01-10T09:00:00',
-    color: '#f59e0b',
+    color: CALENDAR_EVENT_COLORS.informe,
     type: 'informe',
   },
 
@@ -219,25 +275,25 @@ const allEvents = [
   {
     title: '✅ Validación de Datos - MA-003',
     start: '2025-12-17',
-    color: '#eab308',
+    color: CALENDAR_EVENT_COLORS.validacion,
     type: 'validacion',
   },
   {
     title: '✅ Validación de Datos - MA-007',
     start: '2025-12-24',
-    color: '#eab308',
+    color: CALENDAR_EVENT_COLORS.validacion,
     type: 'validacion',
   },
   {
     title: '✅ Validación de Datos - MA-010',
     start: '2026-01-12',
-    color: '#eab308',
+    color: CALENDAR_EVENT_COLORS.validacion,
     type: 'validacion',
   },
   {
     title: '✅ Validación de Datos - MA-011',
     start: '2026-01-25',
-    color: '#eab308',
+    color: CALENDAR_EVENT_COLORS.validacion,
     type: 'validacion',
   },
 
@@ -245,35 +301,60 @@ const allEvents = [
   {
     title: '⚠️ Alerta - Revisión Urgente MA-002',
     start: '2025-12-21',
-    color: '#ef4444',
+    color: CALENDAR_EVENT_COLORS.alerta,
     type: 'alerta',
   },
   {
     title: '⚠️ Alerta - Datos Incompletos MA-006',
     start: '2025-12-27',
-    color: '#ef4444',
+    color: CALENDAR_EVENT_COLORS.alerta,
     type: 'alerta',
   },
   {
     title: '⚠️ Alerta - Retraso en Informe MA-012',
     start: '2026-01-14',
-    color: '#ef4444',
+    color: CALENDAR_EVENT_COLORS.alerta,
     type: 'alerta',
   },
 
   // Reuniones y Coordinación (Índigo)
-  { title: '👥 Reunión de Coordinación', start: '2025-12-19', color: '#6366f1', type: 'reunion' },
-  { title: '👥 Capacitación Observadores', start: '2025-12-26', color: '#6366f1', type: 'reunion' },
-  { title: '👥 Reunión Técnica', start: '2026-01-09', color: '#6366f1', type: 'reunion' },
-  { title: '👥 Taller de Actualización', start: '2026-01-22', color: '#6366f1', type: 'reunion' },
-  { title: '👥 Reunión Técnica', start: '2026-01-10T15:00:00', color: '#6366f1', type: 'reunion' },
+  {
+    title: '👥 Reunión de Coordinación',
+    start: '2025-12-19',
+    color: CALENDAR_EVENT_COLORS.reunion,
+    type: 'reunion',
+  },
+  {
+    title: '👥 Capacitación Observadores',
+    start: '2025-12-26',
+    color: CALENDAR_EVENT_COLORS.reunion,
+    type: 'reunion',
+  },
+  {
+    title: '👥 Reunión Técnica',
+    start: '2026-01-09',
+    color: CALENDAR_EVENT_COLORS.reunion,
+    type: 'reunion',
+  },
+  {
+    title: '👥 Taller de Actualización',
+    start: '2026-01-22',
+    color: CALENDAR_EVENT_COLORS.reunion,
+    type: 'reunion',
+  },
+  {
+    title: '👥 Reunión Técnica',
+    start: '2026-01-10T15:00:00',
+    color: CALENDAR_EVENT_COLORS.reunion,
+    type: 'reunion',
+  },
 
   // Eventos de múltiples días (Navegación)
   {
     title: '🌊 Navegación - BP UNION',
     start: '2025-12-15',
     end: '2025-12-25',
-    color: '#06b6d4',
+    color: CALENDAR_EVENT_COLORS.navegacionCyan,
     display: 'background',
     type: 'navegacion',
   },
@@ -281,7 +362,7 @@ const allEvents = [
     title: '🌊 Navegación - BP PACIFICO',
     start: '2025-12-22',
     end: '2025-12-30',
-    color: '#8b5cf6',
+    color: CALENDAR_EVENT_COLORS.navegacionPurple,
     display: 'background',
     type: 'navegacion',
   },
@@ -289,7 +370,7 @@ const allEvents = [
     title: '🌊 Navegación - BP ATLANTICO',
     start: '2026-01-08',
     end: '2026-01-18',
-    color: '#06b6d4',
+    color: CALENDAR_EVENT_COLORS.navegacionCyan,
     display: 'background',
     type: 'navegacion',
   },
@@ -297,7 +378,7 @@ const allEvents = [
     title: '🌊 Navegación - BP MAR DEL NORTE',
     start: '2026-01-16',
     end: '2026-01-26',
-    color: '#8b5cf6',
+    color: CALENDAR_EVENT_COLORS.navegacionPurple,
     display: 'background',
     type: 'navegacion',
   },

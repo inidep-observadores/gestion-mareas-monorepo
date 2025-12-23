@@ -8,6 +8,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { CHART_PALETTES } from '@/config/chartColors'
 
 import VueApexCharts from 'vue3-apexcharts'
 
@@ -28,7 +29,7 @@ const chartOptions = ref({
     position: 'top',
     horizontalAlign: 'left',
   },
-  colors: ['#465FFF', '#9CB9FF'],
+  colors: CHART_PALETTES.primary,
   chart: {
     fontFamily: 'Outfit, sans-serif',
     type: 'area',

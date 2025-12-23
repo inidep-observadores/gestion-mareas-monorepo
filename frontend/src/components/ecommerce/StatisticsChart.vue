@@ -38,6 +38,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { CHART_PALETTES } from '@/config/chartColors'
 
 const options = [
   { value: 'optionOne', label: 'Mensual' },
@@ -65,7 +66,7 @@ const chartOptions = ref({
     position: 'top',
     horizontalAlign: 'left',
   },
-  colors: ['#465FFF', '#9CB9FF'],
+  colors: CHART_PALETTES.primary,
   chart: {
     fontFamily: 'Outfit, sans-serif',
     type: 'area',

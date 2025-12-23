@@ -135,6 +135,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import DropdownMenu from '../common/DropdownMenu.vue'
+import { CHART_COLORS } from '@/config/chartColors'
 const menuItems = [
   { label: 'Ver más', onClick: () => console.log('View More clicked') },
   { label: 'Eliminar', onClick: () => console.log('Delete clicked') },
@@ -151,7 +152,7 @@ const props = defineProps({
 const series = computed(() => [props.value])
 
 const chartOptions = {
-  colors: ['#465FFF'],
+  colors: [CHART_COLORS.brand.primary],
   chart: {
     fontFamily: 'Outfit, sans-serif',
     sparkline: {
@@ -188,7 +189,7 @@ const chartOptions = {
   },
   fill: {
     type: 'solid',
-    colors: ['#465FFF'],
+    colors: [CHART_COLORS.brand.primary],
   },
   stroke: {
     lineCap: 'round',
