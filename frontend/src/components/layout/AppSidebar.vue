@@ -13,25 +13,26 @@
     @mouseenter="!isExpanded && (isHovered = true)"
     @mouseleave="isHovered = false"
   >
-    <div :class="['py-8 flex', !isExpanded && !isHovered ? 'lg:justify-center' : 'justify-start']">
-      <router-link to="/">
-        <img
-          v-if="isExpanded || isHovered || isMobileOpen"
-          class="dark:hidden"
-          src="/images/logo/logo.svg"
-          alt="Logo"
-          width="150"
-          height="40"
-        />
-        <img
-          v-if="isExpanded || isHovered || isMobileOpen"
-          class="hidden dark:block"
-          src="/images/logo/logo-dark.svg"
-          alt="Logo"
-          width="150"
-          height="40"
-        />
-        <img v-else src="/images/logo/logo-icon.svg" alt="Logo" width="32" height="32" />
+    <div
+      :class="[
+        'py-8 flex items-center gap-3',
+        !isExpanded && !isHovered ? 'lg:justify-center' : 'justify-start',
+      ]"
+    >
+      <router-link to="/" class="flex items-center gap-3">
+        <div
+          class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center flex-shrink-0"
+        >
+          <WaveIcon class="w-6 h-6 text-white" />
+        </div>
+        <div v-if="isExpanded || isHovered || isMobileOpen" class="flex flex-col">
+          <span class="text-lg font-bold text-gray-800 dark:text-white leading-tight"
+            >Gestión de</span
+          >
+          <span class="text-lg font-bold text-blue-600 dark:text-blue-400 leading-tight"
+            >Mareas</span
+          >
+        </div>
       </router-link>
     </div>
     <div class="flex flex-col overflow-y-auto duration-300 ease-linear no-scrollbar">
@@ -93,6 +94,7 @@ import {
   BarChartIcon,
   CalenderIcon,
   GridIcon,
+  WaveIcon,
 } from '../../icons'
 import { useSidebar } from '@/composables/useSidebar'
 
