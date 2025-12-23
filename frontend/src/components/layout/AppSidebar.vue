@@ -83,7 +83,15 @@
 
 <script setup lang="ts">
 import { useRoute } from 'vue-router'
-import { HomeIcon, LogoutIcon, HorizontalDots } from '../../icons'
+import {
+  HomeIcon,
+  LogoutIcon,
+  HorizontalDots,
+  MailBox,
+  LayoutDashboardIcon,
+  TableIcon,
+  BarChartIcon,
+} from '../../icons'
 import { useSidebar } from '@/composables/useSidebar'
 
 const route = useRoute()
@@ -99,6 +107,36 @@ const menuGroups = [
         name: 'Inicio',
         path: '/',
       },
+    ],
+  },
+  {
+    title: 'Gestión de Mareas',
+    items: [
+      {
+        icon: MailBox,
+        name: 'Bandeja de Entrada',
+        path: '/mareas/inbox',
+      },
+      {
+        icon: LayoutDashboardIcon,
+        name: 'Panel Operativo',
+        path: '/mareas/dashboard',
+      },
+      {
+        icon: TableIcon,
+        name: 'Flujo Kanban',
+        path: '/mareas/kanban',
+      },
+      {
+        icon: BarChartIcon,
+        name: 'Estadísticas',
+        path: '/mareas/stats',
+      },
+    ],
+  },
+  {
+    title: 'Sistema',
+    items: [
       {
         icon: LogoutIcon,
         name: 'Cerrar Sesión',

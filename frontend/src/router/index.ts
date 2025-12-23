@@ -1,5 +1,10 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
+import BandejaView from '@/modules/mareas/views/BandejaView.vue'
+import PanelOperativoView from '@/modules/mareas/views/PanelOperativoView.vue'
+import FlujoKanbanView from '@/modules/mareas/views/FlujoKanbanView.vue'
+import EstadisticasView from '@/modules/mareas/views/EstadisticasView.vue'
+
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   scrollBehavior(to, from, savedPosition) {
@@ -28,6 +33,39 @@ const router = createRouter({
       component: () => import('@/modules/auth/views/RegisterView.vue'),
       meta: {
         title: 'Crear Cuenta',
+      },
+    },
+    // Mareas Module
+    {
+      path: '/mareas/inbox',
+      name: 'MareasInbox',
+      component: BandejaView,
+      meta: {
+        title: 'Bandeja de Entrada',
+      },
+    },
+    {
+      path: '/mareas/dashboard',
+      name: 'MareasDashboard',
+      component: PanelOperativoView,
+      meta: {
+        title: 'Panel Operativo',
+      },
+    },
+    {
+      path: '/mareas/kanban',
+      name: 'MareasKanban',
+      component: FlujoKanbanView,
+      meta: {
+        title: 'Flujo Kanban',
+      },
+    },
+    {
+      path: '/mareas/stats',
+      name: 'MareasStats',
+      component: EstadisticasView,
+      meta: {
+        title: 'Estadísticas Anuales',
       },
     },
     // Redirección por defecto
