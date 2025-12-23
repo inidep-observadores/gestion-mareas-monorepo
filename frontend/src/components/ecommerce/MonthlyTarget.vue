@@ -7,9 +7,9 @@
     >
       <div class="flex justify-between">
         <div>
-          <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">Monthly Target</h3>
+          <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">Objetivo Mensual</h3>
           <p class="mt-1 text-gray-500 text-theme-sm dark:text-gray-400">
-            Target you’ve set for each month
+            Objetivo establecido para cada mes
           </p>
         </div>
         <div>
@@ -45,14 +45,14 @@
         >
       </div>
       <p class="mx-auto mt-1.5 w-full max-w-[380px] text-center text-sm text-gray-500 sm:text-base">
-        You earn $3287 today, it's higher than last month. Keep up your good work!
+        Hoy ha ganado $3287, es más que el mes pasado. ¡Siga así!
       </p>
     </div>
 
     <div class="flex items-center justify-center gap-5 px-6 py-3.5 sm:gap-8 sm:py-5">
       <div>
         <p class="mb-1 text-center text-gray-500 text-theme-xs dark:text-gray-400 sm:text-sm">
-          Target
+          Objetivo
         </p>
         <p
           class="flex items-center justify-center gap-1 text-base font-semibold text-gray-800 dark:text-white/90 sm:text-lg"
@@ -79,7 +79,7 @@
 
       <div>
         <p class="mb-1 text-center text-gray-500 text-theme-xs dark:text-gray-400 sm:text-sm">
-          Revenue
+          Ingresos
         </p>
         <p
           class="flex items-center justify-center gap-1 text-base font-semibold text-gray-800 dark:text-white/90 sm:text-lg"
@@ -106,7 +106,7 @@
 
       <div>
         <p class="mb-1 text-center text-gray-500 text-theme-xs dark:text-gray-400 sm:text-sm">
-          Today
+          Hoy
         </p>
         <p
           class="flex items-center justify-center gap-1 text-base font-semibold text-gray-800 dark:text-white/90 sm:text-lg"
@@ -136,8 +136,8 @@
 import { ref, computed } from 'vue'
 import DropdownMenu from '../common/DropdownMenu.vue'
 const menuItems = [
-  { label: 'View More', onClick: () => console.log('View More clicked') },
-  { label: 'Delete', onClick: () => console.log('Delete clicked') },
+  { label: 'Ver más', onClick: () => console.log('View More clicked') },
+  { label: 'Eliminar', onClick: () => console.log('Delete clicked') },
 ]
 import VueApexCharts from 'vue3-apexcharts'
 
@@ -193,7 +193,7 @@ const chartOptions = {
   stroke: {
     lineCap: 'round',
   },
-  labels: ['Progress'],
+  labels: ['Progreso'],
 }
 </script>
 
