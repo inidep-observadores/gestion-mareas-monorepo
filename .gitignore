@@ -1,0 +1,91 @@
+# **\--- DEPENDENCIES \---**
+
+node\_modules/  
+\*\*/node\_modules/  
+package-lock.json  
+yarn.lock  
+pnpm-lock.yaml
+
+# **\--- ENVIRONMENT VARIABLES \---**
+
+.env  
+.env.\*  
+\!.env.example  
+backend/.env  
+frontend/.env  
+\*.local
+
+# **\--- LOGS \---**
+
+logs/  
+.log  
+npm-debug.log  
+yarn-debug.log\*  
+yarn-error.log\*  
+pnpm-debug.log\*  
+lerna-debug.log\*
+
+# **\=========================**
+
+# **BACKEND (NestJS)**
+
+# **\=========================**
+
+backend/dist/  
+backend/coverage/  
+backend/.nyc\_output/  
+backend/postgres/  
+backend/test-results/
+
+# **Prisma**
+
+backend/generated/prisma/  
+backend/prisma/.db  
+backend/prisma/.db-journal
+
+# **\=========================**
+
+# **FRONTEND (Vue/Vite)**
+
+# **\=========================**
+
+frontend/dist/  
+frontend/dist-ssr/  
+frontend/.output/  
+frontend/.nuxt/  
+frontend/storybook-static/  
+frontend/\*.tsbuildinfo
+
+# **Testing & Linting**
+
+frontend/.eslintcache  
+frontend/cypress/videos/  
+frontend/cypress/screenshots/  
+frontend/screenshots/  
+frontend/coverage/
+
+# **\=========================**
+
+# **IDE & OS**
+
+# **\=========================**
+
+.DS\_Store  
+Thumbs.db  
+.idea/  
+.vscode/  
+\*.swp  
+\*.swo
+
+# **Visual Studio / Windows specific**
+
+\*.suo  
+.ntvs  
+\*.njsproj  
+\*.sln
+
+# **\--- AGENTS \---**
+
+# **Opcional: Descomentar si prefieres no versionar las reglas**
+
+# **AGENTS.md**
