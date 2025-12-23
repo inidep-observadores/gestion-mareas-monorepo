@@ -21,7 +21,7 @@
     </div>
 
     <div class="mt-[-20px] pb-4">
-      <div class="flex items-center justify-center gap-1 text-2xl font-black" :class="colorClass">
+      <div class="flex items-center justify-center gap-1 text-2xl" :class="colorClass">
         {{ value }}%
       </div>
       <p class="text-xs text-gray-400 mt-1">{{ subtitle }}</p>

@@ -2,7 +2,7 @@
   <AdminLayout>
     <div class="relative min-h-[calc(100vh-100px)] z-1">
       <div class="mb-6">
-        <h1 class="text-2xl font-bold text-gray-800 dark:text-white/90">
+        <h1 class="text-2xl text-gray-800 dark:text-white/90">
           Panel Operativo de Mareas
         </h1>
         <p class="text-gray-500 dark:text-gray-400">
