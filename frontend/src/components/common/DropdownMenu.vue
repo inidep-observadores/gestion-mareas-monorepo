@@ -30,7 +30,7 @@
             v-if="item.to"
             :key="`router-${index}`"
             :to="item.to"
-            @click.native="handleMenuItemClick(item.onClick)"
+            @click="handleMenuItemClick(item.onClick)"
             :class="itemClass"
           >
             {{ item.label }}
@@ -52,7 +52,7 @@
 
 <script setup>
 import { ref } from 'vue'
-import vClickOutside from './v-click-outside.vue'
+import { vClickOutside } from '@/directives/clickOutside'
 
 const props = defineProps({
   menuItems: {
@@ -90,13 +90,5 @@ const handleMenuItemClick = (callback) => {
     callback() // Execute the provided callback function
   }
   closeDropdown() // Close the dropdown after the item is clicked
-}
-</script>
-
-<script>
-export default {
-  directives: {
-    clickOutside: vClickOutside,
-  },
 }
 </script>
