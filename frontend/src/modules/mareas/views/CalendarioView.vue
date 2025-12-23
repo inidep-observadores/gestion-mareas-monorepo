@@ -10,6 +10,42 @@
         </div>
       </div>
 
+      <!-- Event Type Filters -->
+      <FilterBar class="mb-4">
+        <div class="flex flex-col gap-4">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300">
+              Filtrar por Tipo de Evento
+            </h3>
+            <button
+              @click="toggleAllFilters"
+              class="text-xs font-medium text-brand-500 hover:text-brand-600 dark:text-brand-400 dark:hover:text-brand-300 transition-colors"
+            >
+              {{ allFiltersSelected ? 'Deseleccionar Todos' : 'Seleccionar Todos' }}
+            </button>
+          </div>
+          <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
+            <label
+              v-for="eventType in eventTypes"
+              :key="eventType.id"
+              class="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer transition-colors"
+            >
+              <input
+                type="checkbox"
+                v-model="eventType.enabled"
+                class="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-brand-500 focus:ring-2 focus:ring-brand-500/20 cursor-pointer"
+              />
+              <div class="flex items-center gap-1.5">
+                <span class="text-lg">{{ eventType.emoji }}</span>
+                <span class="text-xs font-medium text-gray-700 dark:text-gray-300">{{
+                  eventType.label
+                }}</span>
+              </div>
+            </label>
+          </div>
+        </div>
+      </FilterBar>
+
       <!-- Calendar Container -->
       <div
         class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-6 shadow-sm"
@@ -21,14 +57,257 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed, watch } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
+import FilterBar from '@/components/common/FilterBar.vue'
 import FullCalendar from '@fullcalendar/vue3'
 import dayGridPlugin from '@fullcalendar/daygrid'
 import timeGridPlugin from '@fullcalendar/timegrid'
 import interactionPlugin from '@fullcalendar/interaction'
 import listPlugin from '@fullcalendar/list'
 import esLocale from '@fullcalendar/core/locales/es'
+
+// Event type filters
+const eventTypes = ref([
+  {
+    id: 'designacion',
+    label: 'Designaciones',
+    emoji: '📋',
+    enabled: true,
+    keywords: ['Designación'],
+  },
+  { id: 'zarpada', label: 'Zarpadas', emoji: '⛵', enabled: true, keywords: ['Zarpada'] },
+  { id: 'arribo', label: 'Arribos', emoji: '🚢', enabled: true, keywords: ['Arribo'] },
+  { id: 'informe', label: 'Informes', emoji: '📄', enabled: true, keywords: ['Informe'] },
+  { id: 'validacion', label: 'Validaciones', emoji: '✅', enabled: true, keywords: ['Validación'] },
+  { id: 'alerta', label: 'Alertas', emoji: '⚠️', enabled: true, keywords: ['Alerta'] },
+  {
+    id: 'reunion',
+    label: 'Reuniones',
+    emoji: '👥',
+    enabled: true,
+    keywords: ['Reunión', 'Capacitación', 'Taller'],
+  },
+  { id: 'navegacion', label: 'Navegación', emoji: '🌊', enabled: true, keywords: ['Navegación'] },
+])
+
+const allFiltersSelected = computed(() => eventTypes.value.every((type) => type.enabled))
+
+const toggleAllFilters = () => {
+  const newState = !allFiltersSelected.value
+  eventTypes.value.forEach((type) => (type.enabled = newState))
+}
+
+// All events data
+const allEvents = [
+  // Designaciones (Púrpura/Brand)
+  {
+    title: '📋 Designación - BP ARGENTINO I',
+    start: '2025-12-20',
+    color: '#5e5adb',
+    type: 'designacion',
+  },
+  {
+    title: '📋 Designación - BP MAR DEL SUR',
+    start: '2025-12-21',
+    color: '#5e5adb',
+    type: 'designacion',
+  },
+  {
+    title: '📋 Designación - BP ATLANTICO II',
+    start: '2025-12-28',
+    color: '#5e5adb',
+    type: 'designacion',
+  },
+  {
+    title: '📋 Designación - BP ESTRELLA II',
+    start: '2026-01-15',
+    color: '#5e5adb',
+    type: 'designacion',
+  },
+  {
+    title: '📋 Designación - BP VICTORIA II',
+    start: '2026-01-28',
+    color: '#5e5adb',
+    type: 'designacion',
+  },
+
+  // Zarpadas (Azul)
+  { title: '⛵ Zarpada - BP UNION', start: '2025-12-15', color: '#3b82f6', type: 'zarpada' },
+  { title: '⛵ Zarpada - BP ESTRELLA', start: '2025-12-18', color: '#3b82f6', type: 'zarpada' },
+  { title: '⛵ Zarpada - BP VICTORIA', start: '2025-12-19', color: '#3b82f6', type: 'zarpada' },
+  { title: '⛵ Zarpada - BP PACIFICO', start: '2025-12-22', color: '#3b82f6', type: 'zarpada' },
+  { title: '⛵ Zarpada - BP ATLANTICO', start: '2026-01-08', color: '#3b82f6', type: 'zarpada' },
+  {
+    title: '⛵ Zarpada - BP MAR DEL NORTE',
+    start: '2026-01-16',
+    color: '#3b82f6',
+    type: 'zarpada',
+  },
+  {
+    title: '⛵ Zarpada - BP PACIFICO',
+    start: '2025-12-22T08:00:00',
+    color: '#3b82f6',
+    type: 'zarpada',
+  },
+
+  // Arribos (Verde)
+  { title: '🚢 Arribo - BP ESTRELLA', start: '2025-12-22', color: '#10b981', type: 'arribo' },
+  { title: '🚢 Arribo - BP VICTORIA', start: '2025-12-23', color: '#10b981', type: 'arribo' },
+  { title: '🚢 Arribo - BP UNION', start: '2025-12-25', color: '#10b981', type: 'arribo' },
+  { title: '🚢 Arribo - BP PACIFICO', start: '2025-12-30', color: '#10b981', type: 'arribo' },
+  { title: '🚢 Arribo - BP ATLANTICO', start: '2026-01-18', color: '#10b981', type: 'arribo' },
+  { title: '🚢 Arribo - BP MAR DEL NORTE', start: '2026-01-26', color: '#10b981', type: 'arribo' },
+  {
+    title: '🚢 Arribo - BP ESTRELLA',
+    start: '2025-12-22T14:00:00',
+    color: '#10b981',
+    type: 'arribo',
+  },
+  {
+    title: '🚢 Arribo - BP VICTORIA',
+    start: '2025-12-23T10:00:00',
+    color: '#10b981',
+    type: 'arribo',
+  },
+
+  // Protocolización de Informes (Naranja)
+  {
+    title: '📄 Informe Protocolizado - MA-006',
+    start: '2025-12-18',
+    color: '#f59e0b',
+    type: 'informe',
+  },
+  {
+    title: '📄 Informe Protocolizado - MA-004',
+    start: '2025-12-23',
+    color: '#f59e0b',
+    type: 'informe',
+  },
+  {
+    title: '📄 Informe Protocolizado - MA-005',
+    start: '2025-12-26',
+    color: '#f59e0b',
+    type: 'informe',
+  },
+  {
+    title: '📄 Informe Protocolizado - MA-008',
+    start: '2026-01-10',
+    color: '#f59e0b',
+    type: 'informe',
+  },
+  {
+    title: '📄 Informe Protocolizado - MA-009',
+    start: '2026-01-20',
+    color: '#f59e0b',
+    type: 'informe',
+  },
+  {
+    title: '📄 Informe Protocolizado - MA-004',
+    start: '2025-12-23T16:00:00',
+    color: '#f59e0b',
+    type: 'informe',
+  },
+  {
+    title: '📄 Informe Protocolizado - MA-008',
+    start: '2026-01-10T09:00:00',
+    color: '#f59e0b',
+    type: 'informe',
+  },
+
+  // Revisiones y Validaciones (Amarillo)
+  {
+    title: '✅ Validación de Datos - MA-003',
+    start: '2025-12-17',
+    color: '#eab308',
+    type: 'validacion',
+  },
+  {
+    title: '✅ Validación de Datos - MA-007',
+    start: '2025-12-24',
+    color: '#eab308',
+    type: 'validacion',
+  },
+  {
+    title: '✅ Validación de Datos - MA-010',
+    start: '2026-01-12',
+    color: '#eab308',
+    type: 'validacion',
+  },
+  {
+    title: '✅ Validación de Datos - MA-011',
+    start: '2026-01-25',
+    color: '#eab308',
+    type: 'validacion',
+  },
+
+  // Alertas y Eventos Críticos (Rojo)
+  {
+    title: '⚠️ Alerta - Revisión Urgente MA-002',
+    start: '2025-12-21',
+    color: '#ef4444',
+    type: 'alerta',
+  },
+  {
+    title: '⚠️ Alerta - Datos Incompletos MA-006',
+    start: '2025-12-27',
+    color: '#ef4444',
+    type: 'alerta',
+  },
+  {
+    title: '⚠️ Alerta - Retraso en Informe MA-012',
+    start: '2026-01-14',
+    color: '#ef4444',
+    type: 'alerta',
+  },
+
+  // Reuniones y Coordinación (Índigo)
+  { title: '👥 Reunión de Coordinación', start: '2025-12-19', color: '#6366f1', type: 'reunion' },
+  { title: '👥 Capacitación Observadores', start: '2025-12-26', color: '#6366f1', type: 'reunion' },
+  { title: '👥 Reunión Técnica', start: '2026-01-09', color: '#6366f1', type: 'reunion' },
+  { title: '👥 Taller de Actualización', start: '2026-01-22', color: '#6366f1', type: 'reunion' },
+  { title: '👥 Reunión Técnica', start: '2026-01-10T15:00:00', color: '#6366f1', type: 'reunion' },
+
+  // Eventos de múltiples días (Navegación)
+  {
+    title: '🌊 Navegación - BP UNION',
+    start: '2025-12-15',
+    end: '2025-12-25',
+    color: '#06b6d4',
+    display: 'background',
+    type: 'navegacion',
+  },
+  {
+    title: '🌊 Navegación - BP PACIFICO',
+    start: '2025-12-22',
+    end: '2025-12-30',
+    color: '#8b5cf6',
+    display: 'background',
+    type: 'navegacion',
+  },
+  {
+    title: '🌊 Navegación - BP ATLANTICO',
+    start: '2026-01-08',
+    end: '2026-01-18',
+    color: '#06b6d4',
+    display: 'background',
+    type: 'navegacion',
+  },
+  {
+    title: '🌊 Navegación - BP MAR DEL NORTE',
+    start: '2026-01-16',
+    end: '2026-01-26',
+    color: '#8b5cf6',
+    display: 'background',
+    type: 'navegacion',
+  },
+]
+
+// Filtered events based on selected types
+const filteredEvents = computed(() => {
+  const enabledTypes = eventTypes.value.filter((t) => t.enabled).map((t) => t.id)
+  return allEvents.filter((event) => enabledTypes.includes(event.type))
+})
 
 const calendarOptions = ref({
   plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin, listPlugin],
@@ -46,20 +325,7 @@ const calendarOptions = ref({
     day: 'Día',
     list: 'Agenda',
   },
-  events: [
-    { title: 'MA-001 (Designada) - BP ARGENTINO I', start: '2023-12-20', color: '#5e5adb' },
-    { title: 'MA-002 (Designada) - BP MAR DEL SUR', start: '2023-12-21', color: '#5e5adb' },
-    {
-      title: 'MA-003 (Navegando) - BP UNION',
-      start: '2023-12-15',
-      end: '2023-12-25',
-      color: '#3b82f6',
-    },
-    { title: 'MA-004 (Arribada) - BP ESTRELLA', start: '2023-12-22', color: '#10b981' },
-    { title: 'MA-005 (Arribada) - BP VICTORIA', start: '2023-12-23', color: '#10b981' },
-    { title: 'MA-006 (Revisión) - BP ATLANTICO', start: '2023-12-18', color: '#f59e0b' },
-    { title: 'MA-007 (Finalizada) - BP PACIFICO', start: '2023-12-10', color: '#6b7280' },
-  ],
+  events: filteredEvents.value,
   editable: true,
   selectable: true,
   selectMirror: true,
@@ -67,6 +333,15 @@ const calendarOptions = ref({
   height: 'auto',
   themeSystem: 'standard',
 })
+
+// Watch for filter changes and update calendar events
+watch(
+  filteredEvents,
+  (newEvents) => {
+    calendarOptions.value.events = newEvents
+  },
+  { deep: true },
+)
 </script>
 
 <style>
