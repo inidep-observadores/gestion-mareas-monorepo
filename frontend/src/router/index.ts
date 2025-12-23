@@ -88,6 +88,6 @@ const router = createRouter({
 export default router
 
 router.beforeEach((to, from, next) => {
-  document.title = `${to.meta.title} | SIGMA - INIDEP`
+  document.title = `${to.meta.title} | Gestión de Mareas - INIDEP`
   next()
 })
