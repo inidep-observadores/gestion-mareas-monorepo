@@ -91,6 +91,8 @@ import {
   LayoutDashboardIcon,
   TableIcon,
   BarChartIcon,
+  CalenderIcon,
+  GridIcon,
 } from '../../icons'
 import { useSidebar } from '@/composables/useSidebar'
 
@@ -123,9 +125,14 @@ const menuGroups = [
         path: '/mareas/dashboard',
       },
       {
-        icon: TableIcon,
-        name: 'Flujo Kanban',
-        path: '/mareas/kanban',
+        icon: GridIcon,
+        name: 'Flujo de Trabajo',
+        path: '/mareas/workflow',
+      },
+      {
+        icon: CalenderIcon,
+        name: 'Calendario',
+        path: '/mareas/calendar',
       },
       {
         icon: BarChartIcon,

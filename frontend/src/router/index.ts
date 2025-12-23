@@ -2,8 +2,9 @@ import { createRouter, createWebHistory } from 'vue-router'
 
 import BandejaView from '@/modules/mareas/views/BandejaView.vue'
 import PanelOperativoView from '@/modules/mareas/views/PanelOperativoView.vue'
-import FlujoKanbanView from '@/modules/mareas/views/FlujoKanbanView.vue'
+import FlujoMareasView from '@/modules/mareas/views/FlujoMareasView.vue'
 import EstadisticasView from '@/modules/mareas/views/EstadisticasView.vue'
+import CalendarioView from '@/modules/mareas/views/CalendarioView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -53,11 +54,19 @@ const router = createRouter({
       },
     },
     {
-      path: '/mareas/kanban',
-      name: 'MareasKanban',
-      component: FlujoKanbanView,
+      path: '/mareas/workflow',
+      name: 'MareasWorkflow',
+      component: FlujoMareasView,
       meta: {
-        title: 'Flujo Kanban',
+        title: 'Flujo de Trabajo',
+      },
+    },
+    {
+      path: '/mareas/calendar',
+      name: 'MareasCalendar',
+      component: CalendarioView,
+      meta: {
+        title: 'Calendario de Mareas',
       },
     },
     {
