@@ -37,7 +37,7 @@
       <div
         class="flex items-center justify-between pb-3 mb-3 border-b border-gray-100 dark:border-gray-800"
       >
-        <h5 class="text-lg font-semibold text-gray-800 dark:text-white/90">Notification</h5>
+        <h5 class="text-lg font-semibold text-gray-800 dark:text-white/90">Notificaciones</h5>
 
         <button @click="closeDropdown" class="text-gray-500 dark:text-gray-400">
           <svg
@@ -98,7 +98,7 @@
         class="mt-3 flex justify-center rounded-lg border border-gray-300 bg-white p-3 text-theme-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200"
         @click="handleViewAllClick"
       >
-        View All Notification
+        Ver todas las notificaciones
       </router-link>
     </div>
     <!-- Dropdown End -->
@@ -118,80 +118,80 @@ const notifications = ref([
     id: 1,
     userName: 'Terry Franci',
     userImage: '/images/user/user-02.jpg',
-    action: 'requests permission to change',
-    project: 'Project - Nganter App',
-    type: 'Project',
-    time: '5 min ago',
+    action: 'solicita permiso para cambiar',
+    project: 'Proyecto - App Nganter',
+    type: 'Proyecto',
+    time: 'hace 5 min',
     status: 'online',
   },
   {
     id: 2,
     userName: 'Terry Franci',
     userImage: '/images/user/user-03.jpg',
-    action: 'requests permission to change',
-    project: 'Project - Nganter App',
-    type: 'Project',
-    time: '5 min ago',
+    action: 'solicita permiso para cambiar',
+    project: 'Proyecto - App Nganter',
+    type: 'Proyecto',
+    time: 'hace 5 min',
     status: 'offline',
   },
   {
     id: 3,
     userName: 'Terry Franci',
     userImage: '/images/user/user-04.jpg',
-    action: 'requests permission to change',
-    project: 'Project - Nganter App',
-    type: 'Project',
-    time: '5 min ago',
+    action: 'solicita permiso para cambiar',
+    project: 'Proyecto - App Nganter',
+    type: 'Proyecto',
+    time: 'hace 5 min',
     status: 'online',
   },
   {
     id: 4,
     userName: 'Terry Franci',
     userImage: '/images/user/user-05.jpg',
-    action: 'requests permission to change',
-    project: 'Project - Nganter App',
-    type: 'Project',
-    time: '5 min ago',
+    action: 'solicita permiso para cambiar',
+    project: 'Proyecto - App Nganter',
+    type: 'Proyecto',
+    time: 'hace 5 min',
     status: 'online',
   },
   {
     id: 5,
     userName: 'Terry Franci',
     userImage: '/images/user/user-06.jpg',
-    action: 'requests permission to change',
-    project: 'Project - Nganter App',
-    type: 'Project',
-    time: '5 min ago',
+    action: 'solicita permiso para cambiar',
+    project: 'Proyecto - App Nganter',
+    type: 'Proyecto',
+    time: 'hace 5 min',
     status: 'offline',
   },
   {
     id: 6,
     userName: 'Terry Franci',
     userImage: '/images/user/user-07.jpg',
-    action: 'requests permission to change',
-    project: 'Project - Nganter App',
-    type: 'Project',
-    time: '5 min ago',
+    action: 'solicita permiso para cambiar',
+    project: 'Proyecto - App Nganter',
+    type: 'Proyecto',
+    time: 'hace 5 min',
     status: 'online',
   },
   {
     id: 7,
     userName: 'Terry Franci',
     userImage: '/images/user/user-08.jpg',
-    action: 'requests permission to change',
-    project: 'Project - Nganter App',
-    type: 'Project',
-    time: '5 min ago',
+    action: 'solicita permiso para cambiar',
+    project: 'Proyecto - App Nganter',
+    type: 'Proyecto',
+    time: 'hace 5 min',
     status: 'online',
   },
   {
     id: 7,
     userName: 'Terry Franci',
     userImage: '/images/user/user-09.jpg',
-    action: 'requests permission to change',
-    project: 'Project - Nganter App',
-    type: 'Project',
-    time: '5 min ago',
+    action: 'solicita permiso para cambiar',
+    project: 'Proyecto - App Nganter',
+    type: 'Proyecto',
+    time: 'hace 5 min',
     status: 'online',
   },
   // Add more notifications here...

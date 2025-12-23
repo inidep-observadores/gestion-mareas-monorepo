@@ -50,7 +50,7 @@
         <LogoutIcon
           class="text-gray-500 group-hover:text-gray-700 dark:group-hover:text-gray-300"
         />
-        Sign out
+        Cerrar sesión
       </router-link>
     </div>
     <!-- Dropdown End -->
@@ -66,9 +66,9 @@ const dropdownOpen = ref(false)
 const dropdownRef = ref(null)
 
 const menuItems = [
-  { href: '/profile', icon: UserCircleIcon, text: 'Edit profile' },
-  { href: '/chat', icon: SettingsIcon, text: 'Account settings' },
-  { href: '/profile', icon: InfoCircleIcon, text: 'Support' },
+  { href: '/profile', icon: UserCircleIcon, text: 'Editar perfil' },
+  { href: '/chat', icon: SettingsIcon, text: 'Ajustes de cuenta' },
+  { href: '/profile', icon: InfoCircleIcon, text: 'Soporte' },
 ]
 
 const toggleDropdown = () => {
