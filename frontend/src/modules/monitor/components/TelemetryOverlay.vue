@@ -2,7 +2,7 @@
   <div class="space-y-4">
     <!-- Telemetry Card -->
     <div
-      class="bg-white/95 dark:bg-gray-900/95 backdrop-blur-md border border-gray-100 dark:border-gray-800 rounded-2xl p-5 shadow-2xl"
+      class="bg-white/60 dark:bg-gray-900/60 backdrop-blur-xl border border-gray-200/50 dark:border-white/10 rounded-2xl p-5 shadow-2xl"
     >
       <div class="flex items-center justify-between mb-4">
         <h3 class="text-xs font-black uppercase tracking-widest text-brand-500">Telemetría</h3>
@@ -47,7 +47,9 @@
     </div>
 
     <!-- Stats Summary Card -->
-    <div class="bg-gray-900/90 border border-white/5 rounded-2xl p-5 shadow-2xl text-white">
+    <div
+      class="bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl border border-gray-200/50 dark:border-white/10 rounded-2xl p-5 shadow-2xl text-gray-900 dark:text-white"
+    >
       <h3 class="text-xs font-black uppercase tracking-widest text-gray-400 mb-4">
         Marea {{ tripId }}
       </h3>
@@ -65,7 +67,7 @@
           </div>
         </div>
 
-        <div class="grid grid-cols-2 gap-4 pt-4 border-t border-white/5">
+        <div class="grid grid-cols-2 gap-4 pt-4 border-t border-gray-200/50 dark:border-white/10">
           <div>
             <p class="text-[9px] font-bold text-gray-500 uppercase mb-1">Días de Mar</p>
             <p class="text-sm font-black">{{ stats.daysAtSea }} días</p>
