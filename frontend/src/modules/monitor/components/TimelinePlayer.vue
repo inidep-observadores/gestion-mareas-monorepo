@@ -1,6 +1,6 @@
 <template>
   <div
-    class="bg-white/95 dark:bg-gray-900/95 backdrop-blur-md border border-gray-100 dark:border-gray-800 rounded-2xl p-4 shadow-2xl"
+    class="bg-white/60 dark:bg-gray-900/60 backdrop-blur-xl border border-gray-200/50 dark:border-white/10 rounded-2xl p-4 shadow-2xl"
   >
     <div class="flex items-center gap-6">
       <!-- Play/Pause & Speed -->

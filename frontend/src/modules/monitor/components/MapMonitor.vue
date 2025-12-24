@@ -1,85 +1,6 @@
 <template>
   <div class="relative h-full w-full overflow-hidden bg-gray-100 dark:bg-gray-950">
     <div ref="mapContainer" class="h-full w-full"></div>
-
-    <!-- Controls Overlay (Floating) -->
-    <div class="absolute top-4 right-4 z-[999] flex flex-col gap-2">
-      <div
-        class="bg-white/90 dark:bg-gray-900/90 backdrop-blur-md p-2 rounded-xl border border-gray-200 dark:border-gray-800 shadow-xl"
-      >
-        <div class="flex flex-col gap-1">
-          <button
-            @click="toggleLayer('veda')"
-            class="flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase transition-all"
-            :class="
-              activeLayers.veda
-                ? 'bg-error-500 text-white'
-                : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800'
-            "
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="w-3 h-3"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-            >
-              <path
-                fill-rule="evenodd"
-                d="M13.477 14.89A6 6 0 015.11 6.524l8.367 8.368zm1.414-1.414L6.524 5.11a6 6 0 018.367 8.367zM18 10a8 8 0 11-16 0 8 8 0 0116 0z"
-                clip-rule="evenodd"
-              />
-            </svg>
-            Zonas de Veda
-          </button>
-          <button
-            @click="toggleLayer('isobatas')"
-            class="flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase transition-all"
-            :class="
-              activeLayers.isobatas
-                ? 'bg-blue-500 text-white'
-                : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800'
-            "
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="w-3 h-3"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-            >
-              <path
-                fill-rule="evenodd"
-                d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm6 5a1 1 0 011-1h6a1 1 0 110 2h-6a1 1 0 01-1-1z"
-                clip-rule="evenodd"
-              />
-            </svg>
-            Isobatas
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Map Legend -->
-    <div
-      class="absolute bottom-6 left-6 z-[999] bg-gray-900/80 backdrop-blur-md p-3 rounded-xl border border-white/10 text-white shadow-2xl"
-    >
-      <h4 class="text-[9px] font-black uppercase tracking-widest text-gray-400 mb-2">
-        Velocidad (Nudos)
-      </h4>
-      <div class="flex items-center gap-4">
-        <div class="flex items-center gap-2">
-          <div class="h-1 w-6 bg-error-500 rounded-full"></div>
-          <span class="text-[9px] font-bold">&lt; 4 (Pesca)</span>
-        </div>
-        <div class="flex items-center gap-2">
-          <div class="h-1 w-6 bg-warning-500 rounded-full"></div>
-          <span class="text-[9px] font-bold">4-8 (Maniobra)</span>
-        </div>
-        <div class="flex items-center gap-2">
-          <div class="h-1 w-6 bg-blue-500 rounded-full"></div>
-          <span class="text-[9px] font-bold">> 8 (Tránsito)</span>
-        </div>
-      </div>
-    </div>
   </div>
 </template>
 
@@ -92,10 +13,10 @@ import type { TrackingPoint } from '../data/mockTracking'
 const props = defineProps<{
   points: TrackingPoint[]
   currentIndex: number
+  activeLayers: { veda: boolean; isobatas: boolean }
 }>()
 
 const mapContainer = ref<HTMLElement | null>(null)
-const activeLayers = ref({ veda: false, isobatas: false })
 let map: L.Map | null = null
 let trackLayer: L.FeatureGroup | null = null
 let vesselMarker: L.Marker | null = null
@@ -197,10 +118,10 @@ const updateVesselPos = () => {
 watch(() => props.points, drawTrack)
 watch(() => props.currentIndex, updateVesselPos)
 
-const toggleLayer = (layer: 'veda' | 'isobatas') => {
-  activeLayers.value[layer] = !activeLayers.value[layer]
-  // In a real app we would add/remove GeoJSON layers here
-}
+// In a real app we would add/remove GeoJSON layers here based on props.activeLayers
+watch(() => props.activeLayers, (newLayers) => {
+  console.log('Layers updated:', newLayers)
+}, { deep: true })
 
 const updateBaseLayer = () => {
   if (!map) return

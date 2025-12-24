@@ -26,59 +26,155 @@
 
       <!-- MAIN AREA: Map & Overlays -->
       <div class="relative w-full h-full">
-        <!-- Top Overlay: Context Info & Toggle -->
-        <div class="absolute top-6 left-6 z-[1000] flex flex-col gap-4 pointer-events-none">
-          <div class="flex items-center gap-4 pointer-events-auto">
-            <button
-              @click="isSidebarOpen = true"
-              class="p-2.5 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 rounded-xl shadow-lg border border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all active:scale-95"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-            </button>
-            <div class="flex flex-col gap-1">
-              <h1 class="text-2xl uppercase tracking-tight text-gray-900 dark:text-white drop-shadow-md">
-                Centro de Operaciones Marítimas
-              </h1>
-              <div v-if="selectedVessel" class="flex items-center gap-2">
-                <span class="flex h-2 w-2 rounded-full bg-success-500"></span>
-                <span class="text-xs font-bold text-gray-700 dark:text-gray-300">{{ selectedVessel.name }}</span>
-                <span class="text-[10px] text-gray-500">|</span>
-                <span class="text-xs font-medium text-gray-500 dark:text-gray-400">{{ selectedTrip?.id }}</span>
+      <!-- MAIN AREA: Map & Overlays -->
+      <div class="relative w-full h-full flex flex-col md:flex-row">
+        <!-- THE MAP (Full width/height background) -->
+        <div class="absolute inset-0">
+          <MapMonitor
+            class="w-full h-full"
+            :points="trackPoints"
+            :currentIndex="playerIndex"
+            :activeLayers="mapLayers"
+          />
+        </div>
+
+        <!-- HUD Layer (Pointer events transparent to allow clicking map) -->
+        <div class="relative flex-1 p-6 flex flex-col pointer-events-none z-[1000] h-full">
+          <!-- TOP ROW: Header & Vessel Info -->
+          <div class="flex justify-between items-start w-full">
+            <div class="flex items-center gap-4 pointer-events-auto">
+              <button
+                @click="isSidebarOpen = true"
+                class="p-2.5 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 rounded-xl shadow-lg border border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all active:scale-95"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-6 w-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M4 6h16M4 12h16M4 18h16"
+                  />
+                </svg>
+              </button>
+              <div class="flex flex-col gap-0.5">
+                <h1
+                  class="text-xl md:text-2xl uppercase tracking-tight text-gray-900 dark:text-white drop-shadow-md"
+                >
+                  Monitoreo VMS
+                </h1>
+                <div v-if="selectedVessel" class="flex items-center gap-2">
+                  <span class="flex h-2 w-2 rounded-full bg-success-500 animate-pulse"></span>
+                  <span class="text-xs font-bold text-gray-700 dark:text-gray-300">{{
+                    selectedVessel.name
+                  }}</span>
+                  <span class="text-[10px] text-gray-400">|</span>
+                  <span class="text-xs font-medium text-gray-500 dark:text-gray-400">{{
+                    selectedTrip?.id
+                  }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- RIGHT HUD: Telemetry & Layer Controls (Hidden on small mobile) -->
+            <div class="hidden sm:flex flex-col gap-4 w-72 pointer-events-auto">
+              <TelemetryOverlay
+                v-if="currentPoint"
+                :point="currentPoint"
+                :tripId="selectedTrip?.id || ''"
+                :stats="tripStats"
+              />
+
+              <!-- Layer Selection (Moved from MapMonitor) -->
+              <div
+                class="bg-white/60 dark:bg-gray-900/60 backdrop-blur-xl p-4 rounded-2xl border border-gray-200/50 dark:border-white/10 shadow-xl"
+              >
+                <h4 class="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-3">
+                  Capas del Mapa
+                </h4>
+                <div class="flex flex-col gap-2">
+                  <button
+                    @click="mapLayers.veda = !mapLayers.veda"
+                    class="flex items-center justify-between px-3 py-2 rounded-xl text-[10px] font-bold uppercase transition-all"
+                    :class="
+                      mapLayers.veda
+                        ? 'bg-error-500 text-white shadow-lg shadow-error-500/20'
+                        : 'bg-gray-50 dark:bg-gray-800 text-gray-500 hover:bg-gray-100'
+                    "
+                  >
+                    <span>Zonas de Veda</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 20 20" fill="currentColor">
+                      <path fill-rule="evenodd" d="M13.477 14.89A6 6 0 015.11 6.524l8.367 8.368zm1.414-1.414L6.524 5.11a6 6 0 018.367 8.367zM18 10a8 8 0 11-16 0 8 8 0 0116 0z" clip-rule="evenodd" />
+                    </svg>
+                  </button>
+                  <button
+                    @click="mapLayers.isobatas = !mapLayers.isobatas"
+                    class="flex items-center justify-between px-3 py-2 rounded-xl text-[10px] font-bold uppercase transition-all"
+                    :class="
+                      mapLayers.isobatas
+                        ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/20'
+                        : 'bg-gray-50 dark:bg-gray-800 text-gray-500 hover:bg-gray-100'
+                    "
+                  >
+                    <span>Isobatas</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 20 20" fill="currentColor">
+                      <path fill-rule="evenodd" d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm6 5a1 1 0 011-1h6a1 1 0 110 2h-6a1 1 0 01-1-1z" clip-rule="evenodd" />
+                    </svg>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
+
+          <div class="flex-1"></div>
+
+          <!-- BOTTOM HUD -->
+          <div class="flex flex-col md:flex-row items-end justify-between gap-6 w-full">
+            <!-- Legend (Moved from MapMonitor) -->
+            <div
+              class="hidden md:block bg-white/60 dark:bg-gray-900/60 backdrop-blur-xl p-4 rounded-2xl border border-gray-200/50 dark:border-white/10 text-gray-900 dark:text-white shadow-2xl pointer-events-auto"
+            >
+              <h4 class="text-[9px] font-black uppercase tracking-widest text-gray-400 mb-3">
+                Velocidad (Nudos)
+              </h4>
+              <div class="flex items-center gap-6">
+                <div class="flex items-center gap-2">
+                  <div class="h-1 w-6 bg-error-500 rounded-full"></div>
+                  <span class="text-[9px] font-bold">&lt; 4 (Pesca)</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <div class="h-1 w-6 bg-warning-500 rounded-full"></div>
+                  <span class="text-[9px] font-bold">4-8 (Maniobra)</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <div class="h-1 w-6 bg-blue-500 rounded-full"></div>
+                  <span class="text-[9px] font-bold">> 8 (Tránsito)</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- PLAYER -->
+            <div class="w-full max-w-3xl pointer-events-auto">
+              <TimelinePlayer
+                :currentIndex="playerIndex"
+                :maxIndex="trackPoints.length - 1"
+                :currentTime="currentPoint?.timestamp || ''"
+                :isPlaying="isPlaying"
+                :speed="playbackSpeed"
+                :startDate="trackPoints[0]?.timestamp.split('T')[0] || '--'"
+                :endDate="trackPoints[trackPoints.length - 1]?.timestamp.split('T')[0] || '--'"
+                @update:index="playerIndex = $event"
+                @update:speed="handleSpeedChange"
+                @toggle-play="togglePlay"
+              />
+            </div>
+          </div>
         </div>
-
-      <!-- THE MAP -->
-      <MapMonitor class="w-full h-full" :points="trackPoints" :currentIndex="playerIndex" />
-
-      <!-- Right Overlay: Telemetry -->
-      <div v-if="currentPoint" class="absolute top-6 right-20 z-[1000] w-72 pointer-events-auto">
-        <TelemetryOverlay
-          :point="currentPoint"
-          :tripId="selectedTrip?.id || ''"
-          :stats="tripStats"
-        />
-      </div>
-
-      <!-- Bottom Overlay: Timeline Player -->
-      <div
-        class="absolute bottom-10 left-1/2 -translate-x-1/2 z-[1000] w-full max-w-4xl px-6 pointer-events-auto"
-      >
-        <TimelinePlayer
-          :currentIndex="playerIndex"
-          :maxIndex="trackPoints.length - 1"
-          :currentTime="currentPoint?.timestamp || ''"
-          :isPlaying="isPlaying"
-          :speed="playbackSpeed"
-          :startDate="trackPoints[0]?.timestamp.split('T')[0] || '--'"
-          :endDate="trackPoints[trackPoints.length - 1]?.timestamp.split('T')[0] || '--'"
-          @update:index="playerIndex = $event"
-          @update:speed="handleSpeedChange"
-          @toggle-play="togglePlay"
-        />
       </div>
     </div>
     </div>
@@ -115,6 +211,7 @@ const playerIndex = ref(0)
 const isPlaying = ref(false)
 const isSidebarOpen = ref(true)
 const playbackSpeed = ref(1)
+const mapLayers = ref({ veda: false, isobatas: false })
 let playbackInterval: ReturnType<typeof setInterval> | null = null
 
 const currentPoint = computed(() => trackPoints.value[playerIndex.value] || null)
