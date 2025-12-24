@@ -77,6 +77,14 @@ const router = createRouter({
         title: 'Estadísticas Anuales',
       },
     },
+    {
+      path: '/mareas/monitor',
+      name: 'MareasMonitor',
+      component: () => import('@/modules/monitor/views/MonitorVMSView.vue'),
+      meta: {
+        title: 'Centro de Operaciones Marítimas',
+      },
+    },
     // Redirección por defecto
     {
       path: '/:pathMatch(.*)*',
