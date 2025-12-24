@@ -12,15 +12,6 @@
           </p>
         </div>
         <div class="flex items-center gap-4">
-          <router-link
-            :to="{ name: 'MareasMonitor' }"
-            class="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold transition-colors shadow-lg shadow-blue-500/20"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-              <path fill-rule="evenodd" d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm6 5a1 1 0 011-1h6a1 1 0 110 2h-6a1 1 0 01-1-1z" clip-rule="evenodd" />
-            </svg>
-            Monitor VMS
-          </router-link>
 
           <div
             class="flex items-center gap-2 rounded-2xl bg-white p-2 shadow-sm dark:bg-gray-900 border border-gray-100 dark:border-gray-800"
