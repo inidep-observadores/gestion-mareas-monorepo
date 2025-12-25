@@ -24,6 +24,47 @@ let ghostPath: L.Polyline | null = null
 let baseLayer: L.TileLayer | null = null
 let themeObserver: MutationObserver | null = null
 
+const emit = defineEmits(['update:mouse-coords'])
+
+const graticuleLayer = ref<L.LayerGroup | null>(null)
+
+const updateGraticule = () => {
+  if (!map) return
+  if (!graticuleLayer.value) {
+    graticuleLayer.value = L.layerGroup().addTo(map)
+  }
+  
+  graticuleLayer.value.clearLayers()
+  
+  const bounds = map.getBounds()
+  const zoom = map.getZoom()
+  
+  // Adjust interval based on zoom
+  let interval = 1
+  if (zoom < 5) interval = 5
+  else if (zoom < 7) interval = 2
+  else if (zoom > 10) interval = 0.5
+  
+  const minLat = Math.floor(bounds.getSouth() / interval) * interval
+  const maxLat = Math.ceil(bounds.getNorth() / interval) * interval
+  const minLon = Math.floor(bounds.getWest() / interval) * interval
+  const maxLon = Math.ceil(bounds.getEast() / interval) * interval
+  
+  const style = {
+    color: 'rgba(156, 163, 175, 0.2)', // gray-400 with low opacity
+    weight: 1,
+    interactive: false
+  }
+
+  for (let lat = minLat; lat <= maxLat; lat += interval) {
+    L.polyline([[lat, minLon], [lat, maxLon]], style).addTo(graticuleLayer.value)
+  }
+  
+  for (let lon = minLon; lon <= maxLon; lon += interval) {
+    L.polyline([[minLat, lon], [maxLat, lon]], style).addTo(graticuleLayer.value)
+  }
+}
+
 const initMap = () => {
   if (!mapContainer.value) return
 
@@ -36,8 +77,16 @@ const initMap = () => {
   updateBaseLayer()
 
   L.control.zoom({ position: 'bottomright' }).addTo(map)
+  L.control.scale({ imperial: false, position: 'bottomright' }).addTo(map)
 
   trackLayer = L.featureGroup().addTo(map)
+
+  map.on('mousemove', (e: L.LeafletMouseEvent) => {
+    emit('update:mouse-coords', e.latlng)
+  })
+  
+  map.on('moveend zoomend', updateGraticule)
+  updateGraticule()
 }
 
 const drawTrack = () => {
