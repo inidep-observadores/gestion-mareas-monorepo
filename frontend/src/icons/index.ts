@@ -49,6 +49,12 @@ import WaveIcon from './WaveIcon.vue'
 import ArrowLeftIcon from './ArrowLeftIcon.vue'
 import ShipIcon from './ShipIcon.vue'
 import BeakerIcon from './BeakerIcon.vue'
+import HistoryIcon from './HistoryIcon.vue'
+import MapPinIcon from './MapPinIcon.vue'
+import FileTextIcon from './FileTextIcon.vue'
+import DownloadIcon from './DownloadIcon.vue'
+import CloudUploadIcon from './CloudUploadIcon.vue'
+import LockIcon from './LockIcon.vue'
 
 export {
   WaveIcon,
@@ -102,4 +108,10 @@ export {
   ArrowLeftIcon,
   ShipIcon,
   BeakerIcon,
+  HistoryIcon,
+  MapPinIcon,
+  FileTextIcon,
+  DownloadIcon,
+  CloudUploadIcon,
+  LockIcon,
 }
