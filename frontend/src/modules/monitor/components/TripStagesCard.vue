@@ -1,7 +1,5 @@
 <template>
-  <div
-    class="pointer-events-auto w-52 bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl rounded-xl border border-white/20 dark:border-white/10 shadow-xl overflow-hidden flex flex-col transition-all"
-  >
+  <HudCard customClass="w-52">
     <div class="p-3 border-b border-gray-200/30 dark:border-white/5 flex flex-col items-center gap-0.5">
       <h3 class="text-[10px] font-black uppercase tracking-widest text-gray-900 dark:text-white">
         {{ stages.length }} ETAPAS
@@ -60,10 +58,12 @@
         </div>
       </div>
     </div>
-  </div>
+  </HudCard>
 </template>
 
 <script setup lang="ts">
+import HudCard from './HudCard.vue'
+
 export interface TripStage {
   id: string
   startDate: string

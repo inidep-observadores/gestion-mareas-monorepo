@@ -1,7 +1,5 @@
 <template>
-  <div
-    class="pointer-events-auto bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl border border-white/20 dark:border-white/10 rounded-xl p-2.5 shadow-xl flex flex-col transition-all duration-300 ease-in-out"
-  >
+  <HudCard customClass="p-2.5 duration-300 ease-in-out">
     <!-- Accordion Controls Area -->
     <Transition name="accordion">
       <div v-if="isExpanded" class="overflow-hidden">
@@ -100,28 +98,25 @@
         />
       </div>
 
-      <!-- Toggle Button & Time -->
-      <div class="flex items-center gap-2 pr-1">
-        <span class="text-[8px] font-black text-gray-800 dark:text-gray-100 tabular-nums whitespace-nowrap">
-          {{ formatTime(currentTime) }}
+      <div class="flex items-center gap-1.5 min-w-[36px] justify-end">
+        <span class="text-[9px] font-black text-gray-900 dark:text-white tabular-nums tracking-tighter">
+          {{ Math.round((currentIndex / maxIndex) * 100) }}%
         </span>
-        <button 
-          @click="isExpanded = !isExpanded"
-          class="p-1.5 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-400 hover:text-brand-500 transition-all border border-gray-100 dark:border-white/5"
-        >
-          <svg 
-            xmlns="http://www.w3.org/2000/svg" 
-            class="w-3.5 h-3.5 transition-transform duration-300"
-            :class="isExpanded ? 'rotate-180' : ''" 
-            viewBox="0 0 24 24" 
-            fill="none" 
-            stroke="currentColor" 
-            stroke-width="3"
-          >
-            <polyline points="18 15 12 9 6 15"/>
-          </svg>
-        </button>
       </div>
+
+      <button 
+        @click="$emit('toggle-expand')"
+        class="p-1 text-gray-400 hover:text-brand-500 transition-colors"
+      >
+        <svg 
+          xmlns="http://www.w3.org/2000/svg" 
+          class="w-3.5 h-3.5 transition-transform duration-300" 
+          :class="{ 'rotate-180': isExpanded }"
+          viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"
+        >
+          <path d="M18 15l-6-6-6 6"/>
+        </svg>
+      </button>
     </div>
     
     <!-- Range dates shown only if expanded or maybe keep them compact? Let's hide them in compressed state -->
@@ -131,14 +126,15 @@
         <span class="text-[7px] text-gray-400 font-bold uppercase">{{ endDate }}</span>
       </div>
     </Transition>
-  </div>
+  </HudCard>
 </template>
 
 <script setup lang="ts">
 import { ref, watch } from 'vue'
+import HudCard from './HudCard.vue'
 import flatPickr from 'vue-flatpickr-component'
 import 'flatpickr/dist/flatpickr.css'
-import 'flatpickr/dist/themes/dark.css' 
+import 'flatpickr/dist/themes/material_blue.css' 
 
 const props = defineProps<{
   currentIndex: number

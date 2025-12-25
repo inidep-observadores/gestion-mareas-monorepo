@@ -1,7 +1,5 @@
 <template>
-  <div
-    class="pointer-events-auto w-52 bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl rounded-xl border border-white/20 dark:border-white/10 shadow-xl overflow-hidden flex flex-col transition-all"
-  >
+  <HudCard customClass="w-52">
     <!-- Vessel Header -->
     <div class="p-3 border-b border-gray-200/30 dark:border-white/5 flex items-start justify-between">
       <div class="flex flex-col gap-0.5">
@@ -81,11 +79,12 @@
         </div>
       </div>
     </div>
-  </div>
+  </HudCard>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import HudCard from './HudCard.vue'
 
 const props = defineProps<{
   vesselName: string
