@@ -106,7 +106,7 @@ const selectedVessel = ref<Vessel>({
 })
 
 const trackPoints = ref<TrackingPoint[]>(generateMockTrack(new Date('2025-11-02T21:11:00Z')))
-const playerIndex = ref(0)
+const playerIndex = ref(trackPoints.value.length - 1)
 const isPlaying = ref(false)
 const playbackSpeed = ref(1)
 const mapLayers = ref({ 
@@ -189,5 +189,7 @@ onUnmounted(stopPlayback)
 /* Override AdminLayout padding to allow full-screen map */
 :deep(.admin-layout-content) {
   padding: 0 !important;
+  max-width: none !important;
+  margin: 0 !important;
 }
 </style>
