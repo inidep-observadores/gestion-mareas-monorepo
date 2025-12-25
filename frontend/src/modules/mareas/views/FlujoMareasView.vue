@@ -163,66 +163,95 @@
             </button>
           </div>
 
+          <!-- Drop zone for collapsed groups -->
+          <VueDraggableNext
+            v-if="!group.expanded"
+            v-model="group.tasks"
+            group="mareas"
+            class="min-h-[60px] border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-xl m-4 flex items-center justify-center text-sm text-gray-400 hover:border-brand-300 dark:hover:border-brand-700 hover:bg-brand-50/30 dark:hover:bg-brand-500/5 transition-all"
+            ghost-class="opacity-50"
+            @change="onDragChange($event, group.id)"
+          >
+            <div class="pointer-events-none">Soltar marea aquí para mover a {{ group.title }}</div>
+          </VueDraggableNext>
+
           <div v-show="group.expanded" class="divide-y divide-gray-50 dark:divide-gray-800">
-            <div
-              v-if="group.tasks.length === 0"
-              class="p-8 text-center text-gray-400 text-sm italic"
+            <VueDraggableNext
+              v-model="group.tasks"
+              group="mareas"
+              class="min-h-[50px]"
+              handle=".drag-handle"
+              ghost-class="opacity-50"
+              @change="onDragChange($event, group.id)"
             >
-              No hay mareas registradas en este estado.
-            </div>
-            <div
-              v-for="task in group.tasks"
-              :key="task.id"
-              class="p-6 hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors cursor-pointer group/row"
-              @click="navigateToDetail(task.id)"
-            >
-              <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div class="flex items-start gap-4">
-                  <div
-                    class="w-12 h-12 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center flex-shrink-0"
-                  >
-                    <DocsIcon class="w-6 h-6 text-gray-400" />
-                  </div>
-                  <div>
-                    <div class="flex items-center gap-2 mb-1">
-                      <span class="text-xs font-mono font-bold text-brand-500">{{
-                        task.code
-                      }}</span>
-                      <span
-                        v-if="task.alert"
-                        class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400"
-                      >
-                        <WarningIcon class="w-3 h-3" /> Alerta
-                      </span>
+              <div
+                v-for="task in group.tasks"
+                :key="task.id"
+                class="p-6 hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors cursor-pointer group/row"
+                @click="navigateToDetail(task.id)"
+              >
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div class="flex items-start gap-4">
+                    <!-- Drag Handle -->
+                    <div
+                      class="drag-handle p-1 -ml-2 text-gray-300 hover:text-brand-500 cursor-grab active:cursor-grabbing transition-colors rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 shrink-0 self-center"
+                      @click.stop
+                    >
+                      <GripVerticalIcon class="w-5 h-5" />
                     </div>
-                    <h4 class="font-bold text-gray-800 dark:text-white text-lg">
-                      {{ task.vessel }}
-                    </h4>
-                    <div class="flex items-center gap-4 mt-1 text-sm text-gray-500">
-                      <span class="flex items-center gap-1"
-                        ><CalenderIcon class="w-4 h-4" /> {{ task.date }}</span
-                      >
-                      <span class="flex items-center gap-1"
-                        ><UserCircleIcon class="w-4 h-4" /> JD (Observador)</span
-                      >
+
+                    <div
+                      class="w-12 h-12 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center flex-shrink-0"
+                    >
+                      <DocsIcon class="w-6 h-6 text-gray-400" />
+                    </div>
+                    <div>
+                      <div class="flex items-center gap-2 mb-1">
+                        <span class="text-xs font-mono font-bold text-brand-500">{{
+                          task.code
+                        }}</span>
+                        <span
+                          v-if="task.alert"
+                          class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400"
+                        >
+                          <WarningIcon class="w-3 h-3" /> Alerta
+                        </span>
+                      </div>
+                      <h4 class="font-bold text-gray-800 dark:text-white text-lg">
+                        {{ task.vessel }}
+                      </h4>
+                      <div class="flex items-center gap-4 mt-1 text-sm text-gray-500">
+                        <span class="flex items-center gap-1"
+                          ><CalenderIcon class="w-4 h-4" /> {{ task.date }}</span
+                        >
+                        <span class="flex items-center gap-1"
+                          ><UserCircleIcon class="w-4 h-4" /> JD (Observador)</span
+                        >
+                      </div>
                     </div>
                   </div>
-                </div>
-                <div class="flex items-center gap-3">
-                  <button
-                    class="px-4 py-2 text-sm font-medium border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-                    @click.stop="navigateToDetail(task.id)"
-                  >
-                    Ver Detalles
-                  </button>
-                  <button
-                    class="px-4 py-2 text-sm font-medium bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-colors"
-                    @click.stop
-                  >
-                    Continuar Flujo
-                  </button>
+                  <div class="flex items-center gap-3">
+                    <button
+                      class="px-4 py-2 text-sm font-medium border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                      @click.stop="navigateToDetail(task.id)"
+                    >
+                      Ver Detalles
+                    </button>
+                    <button
+                      class="px-4 py-2 text-sm font-medium bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-colors"
+                      @click.stop
+                    >
+                      Continuar Flujo
+                    </button>
+                  </div>
                 </div>
               </div>
+            </VueDraggableNext>
+            <div
+              v-if="group.tasks.length === 0"
+              class="p-8 text-center text-gray-400 text-sm italic bg-gray-50/20 dark:bg-gray-800/5"
+            >
+              No hay mareas registradas en este estado.
             </div>
           </div>
         </div>
@@ -248,6 +277,7 @@ import {
   GridIcon,
   ListIcon,
   RefreshIcon,
+  GripVerticalIcon,
 } from '@/icons'
 
 const router = useRouter()
@@ -398,6 +428,11 @@ const columns = ref<Column[]>([
 const onDragChange = (event: any, columnId: string) => {
   if (event.added) {
     console.log(`Marea agregada a ${columnId}:`, event.added.element.vessel)
+    // Auto-expand the group when an item is added
+    const targetGroup = columns.value.find((col) => col.id === columnId)
+    if (targetGroup && !targetGroup.expanded) {
+      targetGroup.expanded = true
+    }
   }
 }
 
