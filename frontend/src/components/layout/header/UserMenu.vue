@@ -63,7 +63,7 @@ import { RouterLink } from 'vue-router'
 import { ref, onMounted, onUnmounted } from 'vue'
 
 const dropdownOpen = ref(false)
-const dropdownRef = ref(null)
+const dropdownRef = ref<HTMLDivElement | null>(null)
 
 const menuItems = [
   { href: '/profile', icon: UserCircleIcon, text: 'Editar perfil' },
@@ -85,8 +85,9 @@ const signOut = () => {
   closeDropdown()
 }
 
-const handleClickOutside = (event) => {
-  if (dropdownRef.value && !dropdownRef.value.contains(event.target)) {
+const handleClickOutside = (event: MouseEvent) => {
+  const targetNode = event.target as Node | null
+  if (dropdownRef.value && targetNode && !dropdownRef.value.contains(targetNode)) {
     closeDropdown()
   }
 }

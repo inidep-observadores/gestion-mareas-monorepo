@@ -114,42 +114,62 @@ const initMap = () => {
   L.control.zoom({ position: 'bottomright' }).addTo(map)
   
   // Custom Nautical Scale
-  const NauticalScale = L.Control.extend({
-    options: {
-      position: 'bottomright',
-      maxWidth: 100,
-    },
-    onAdd: function (map: L.Map) {
-      this._container = L.DomUtil.create('div', 'leaflet-control-scale')
-      this._line = L.DomUtil.create('div', 'leaflet-control-scale-line', this._container)
-      map.on('move', this._update, this)
-      map.whenReady(this._update, this)
-      return this._container
-    },
-    onRemove: function (map: L.Map) {
-      map.off('move', this._update, this)
-    },
-    _update: function () {
-      const map = this._map
-      const y = map.getSize().y / 2
-      const maxMeters = map.distance(map.containerPointToLatLng([0, y]), map.containerPointToLatLng([this.options.maxWidth, y]))
+  class NauticalScale extends L.Control {
+    override options: L.ControlOptions & { maxWidth: number }
+    private container?: HTMLDivElement
+    private line?: HTMLDivElement
+    private mapInstance: L.Map | null = null
+
+    constructor(options?: Partial<{ position: L.ControlPosition; maxWidth: number }>) {
+      const mergedOptions = {
+        position: 'bottomright' as L.ControlPosition,
+        maxWidth: 100,
+        ...options,
+      }
+      super(mergedOptions)
+      this.options = mergedOptions
+    }
+
+    onAdd(map: L.Map): HTMLElement {
+      this.mapInstance = map
+      this.container = L.DomUtil.create('div', 'leaflet-control-scale')
+      this.line = L.DomUtil.create('div', 'leaflet-control-scale-line', this.container)
+      map.on('move', this.updateScale, this)
+      map.whenReady(this.updateScale, this)
+      return this.container
+    }
+
+    onRemove(map: L.Map): void {
+      map.off('move', this.updateScale, this)
+      this.mapInstance = null
+    }
+
+    private updateScale = () => {
+      if (!this.mapInstance || !this.line) return
+      const mapSize = this.mapInstance.getSize()
+      const y = mapSize.y / 2
+      const maxMeters = this.mapInstance.distance(
+        this.mapInstance.containerPointToLatLng([0, y]),
+        this.mapInstance.containerPointToLatLng([this.options.maxWidth, y]),
+      )
       const maxNM = maxMeters / 1852
       
-      const nm = this._getRoundNum(maxNM)
+      const nm = this.getRoundNum(maxNM)
       const px = (nm * 1852 * this.options.maxWidth) / maxMeters
 
-      this._line.style.width = px + 'px'
-      this._line.innerHTML = nm + ' nm'
-    },
-    _getRoundNum: function (num: number) {
+      this.line.style.width = `${px}px`
+      this.line.innerHTML = `${nm} nm`
+    }
+
+    private getRoundNum(num: number) {
       const pow10 = Math.pow(10, Math.floor(Math.log10(num)))
       let d = num / pow10
       d = d >= 10 ? 10 : d >= 5 ? 5 : d >= 3 ? 3 : d >= 2 ? 2 : 1
       return pow10 * d
     }
-  })
+  }
   
-  new (NauticalScale as any)().addTo(map)
+  new NauticalScale().addTo(map)
 
   trackLayer = L.featureGroup().addTo(map)
 

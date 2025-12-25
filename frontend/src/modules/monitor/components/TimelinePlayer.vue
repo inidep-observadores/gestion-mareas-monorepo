@@ -146,7 +146,7 @@ const props = defineProps<{
   endDate: string
 }>()
 
-const emit = defineEmits(['update:index', 'toggle-play', 'update:speed', 'prev', 'next', 'skip-start', 'skip-end', 'select-date'])
+const emit = defineEmits(['update:index', 'toggle-play', 'update:speed', 'prev', 'next', 'skip-start', 'skip-end', 'select-date', 'toggle-expand'])
 
 const isExpanded = ref(false)
 const internalDate = ref('')
