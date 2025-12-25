@@ -95,7 +95,7 @@ import {
   CalenderIcon,
   GridIcon,
   WaveIcon,
-  BoxCubeIcon,
+  MapPinIcon,
 } from '../../icons'
 import { useSidebar } from '@/composables/useSidebar'
 
@@ -133,8 +133,8 @@ const menuGroups = [
         path: '/mareas/workflow',
       },
       {
-        icon: BoxCubeIcon,
-        name: 'Monitor VMS',
+        icon: MapPinIcon,
+        name: 'Mapa de Recorridos',
         path: '/mareas/monitor',
       },
       {
