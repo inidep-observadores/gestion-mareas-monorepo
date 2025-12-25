@@ -272,7 +272,7 @@
                 </div>
               </router-link>
               <p class="text-center text-gray-400 dark:text-white/60">
-                Sistema Integral de Gestión de Mareas - INIDEP
+                INIDEP
               </p>
             </div>
           </div>

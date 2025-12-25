@@ -309,7 +309,7 @@
                 </div>
               </router-link>
               <p class="text-center text-gray-400 dark:text-white/60">
-                Sistema Integral de Gesti?n de Mareas - INIDEP
+                INIDEP
               </p>
             </div>
           </div>
