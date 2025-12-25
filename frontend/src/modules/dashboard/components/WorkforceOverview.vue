@@ -34,7 +34,7 @@
       <!-- Section: Top Dry Time -->
       <div class="lg:col-span-4 border-l border-gray-50 dark:border-gray-800 pl-8">
         <h2 class="text-sm text-gray-400 uppercase tracking-widest mb-6">
-          Top 5 "Tiempo en Seco"
+          Top 5 "Días sin Navegar"
         </h2>
         <div class="space-y-4">
           <div v-for="(obs, index) in topDryTime" :key="obs.id" class="flex items-center gap-3">
@@ -65,9 +65,9 @@
 <script setup lang="ts">
 const distributions = [
   { label: 'Navegando', value: 45, colorClass: 'text-blue-600', bgClass: 'bg-blue-500' },
-  { label: 'Descanso Oblig.', value: 25, colorClass: 'text-indigo-600', bgClass: 'bg-indigo-500' },
+  { label: 'Descanso Obligatorio', value: 25, colorClass: 'text-indigo-600', bgClass: 'bg-indigo-500' },
   {
-    label: 'Disp. en Puerto',
+    label: 'Disponibles',
     value: 20,
     colorClass: 'text-success-600',
     bgClass: 'bg-success-500',
