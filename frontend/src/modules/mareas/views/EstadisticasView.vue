@@ -106,6 +106,105 @@
             <p class="text-[10px] text-gray-400 mt-2 font-medium">Meta institucional: 25 días</p>
           </div>
         </div>
+
+        <!-- MODULE D: Statistics by Fishery -->
+        <div class="col-span-12">
+          <div
+            class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-6 rounded-2xl shadow-sm"
+          >
+            <div class="mb-6">
+              <h3 class="text-sm font-bold text-gray-500 uppercase tracking-wider">
+                Estadísticas por Pesquería
+              </h3>
+              <p class="text-xs text-gray-400 mt-1">
+                Distribución de mareas y cobertura por tipo de pesquería
+              </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <!-- Langostino -->
+              <div
+                class="bg-gradient-to-br from-orange-50 to-orange-100/50 dark:from-orange-900/10 dark:to-orange-800/5 p-5 rounded-xl border border-orange-200 dark:border-orange-800/30"
+              >
+                <div class="flex items-center justify-between mb-3">
+                  <h4 class="text-sm font-bold text-orange-900 dark:text-orange-300">Langostino</h4>
+                  <div class="p-2 bg-orange-500/10 rounded-lg">
+                    <WaveIcon class="w-5 h-5 text-orange-600 dark:text-orange-400" />
+                  </div>
+                </div>
+                <div class="space-y-2">
+                  <div class="flex justify-between items-baseline">
+                    <span class="text-xs text-orange-700 dark:text-orange-400">Mareas totales</span>
+                    <span class="text-2xl font-bold text-orange-900 dark:text-orange-200">45</span>
+                  </div>
+                  <div class="flex justify-between items-baseline">
+                    <span class="text-xs text-orange-700 dark:text-orange-400">Cobertura</span>
+                    <span class="text-lg font-bold text-orange-900 dark:text-orange-200">89%</span>
+                  </div>
+                  <div
+                    class="mt-3 h-2 w-full bg-orange-200 dark:bg-orange-900/30 rounded-full overflow-hidden"
+                  >
+                    <div class="h-full bg-orange-500 w-[89%] rounded-full"></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Merluza -->
+              <div
+                class="bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-900/10 dark:to-blue-800/5 p-5 rounded-xl border border-blue-200 dark:border-blue-800/30"
+              >
+                <div class="flex items-center justify-between mb-3">
+                  <h4 class="text-sm font-bold text-blue-900 dark:text-blue-300">Merluza</h4>
+                  <div class="p-2 bg-blue-500/10 rounded-lg">
+                    <WaveIcon class="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                  </div>
+                </div>
+                <div class="space-y-2">
+                  <div class="flex justify-between items-baseline">
+                    <span class="text-xs text-blue-700 dark:text-blue-400">Mareas totales</span>
+                    <span class="text-2xl font-bold text-blue-900 dark:text-blue-200">67</span>
+                  </div>
+                  <div class="flex justify-between items-baseline">
+                    <span class="text-xs text-blue-700 dark:text-blue-400">Cobertura</span>
+                    <span class="text-lg font-bold text-blue-900 dark:text-blue-200">92%</span>
+                  </div>
+                  <div
+                    class="mt-3 h-2 w-full bg-blue-200 dark:bg-blue-900/30 rounded-full overflow-hidden"
+                  >
+                    <div class="h-full bg-blue-500 w-[92%] rounded-full"></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Calamar -->
+              <div
+                class="bg-gradient-to-br from-purple-50 to-purple-100/50 dark:from-purple-900/10 dark:to-purple-800/5 p-5 rounded-xl border border-purple-200 dark:border-purple-800/30"
+              >
+                <div class="flex items-center justify-between mb-3">
+                  <h4 class="text-sm font-bold text-purple-900 dark:text-purple-300">Calamar</h4>
+                  <div class="p-2 bg-purple-500/10 rounded-lg">
+                    <WaveIcon class="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                  </div>
+                </div>
+                <div class="space-y-2">
+                  <div class="flex justify-between items-baseline">
+                    <span class="text-xs text-purple-700 dark:text-purple-400">Mareas totales</span>
+                    <span class="text-2xl font-bold text-purple-900 dark:text-purple-200">38</span>
+                  </div>
+                  <div class="flex justify-between items-baseline">
+                    <span class="text-xs text-purple-700 dark:text-purple-400">Cobertura</span>
+                    <span class="text-lg font-bold text-purple-900 dark:text-purple-200">76%</span>
+                  </div>
+                  <div
+                    class="mt-3 h-2 w-full bg-purple-200 dark:bg-purple-900/30 rounded-full overflow-hidden"
+                  >
+                    <div class="h-full bg-purple-500 w-[76%] rounded-full"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -199,6 +298,7 @@ import WorkflowFunnel from '../components/WorkflowFunnel.vue'
 import ObserverLogisticsTable from '../components/ObserverLogisticsTable.vue'
 import GaugeChart from '../components/GaugeChart.vue'
 import AlertSection from '../components/AlertSection.vue'
+import { WaveIcon } from '@/icons'
 
 const showDetail = ref(false)
 

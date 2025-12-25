@@ -451,21 +451,26 @@
               ></div>
               <div class="space-y-2">
                 <div class="flex items-center justify-between">
-                  <span class="text-xs font-bold text-brand-500 uppercase">{{ mov.evento }}</span>
+                  <div class="flex items-center gap-2">
+                    <span class="text-xs font-bold text-brand-500 uppercase">{{ mov.evento }}</span>
+                    <span class="text-xs text-gray-400">•</span>
+                    <span
+                      class="text-xs font-semibold text-gray-600 dark:text-gray-400 flex items-center gap-1"
+                    >
+                      <UserCircleIcon class="w-3.5 h-3.5" />
+                      {{ mov.usuario }}
+                    </span>
+                  </div>
                   <span class="text-[11px] text-gray-400">{{ mov.fecha }}</span>
                 </div>
                 <div
                   class="bg-gray-50 dark:bg-gray-800/40 border border-gray-100 dark:border-gray-800 p-4 rounded-xl"
                 >
                   <p class="text-sm text-gray-700 dark:text-gray-300">{{ mov.detalle }}</p>
-                  <div class="mt-3 flex items-center justify-between">
+                  <div v-if="mov.estado_hasta" class="mt-3">
                     <span
-                      v-if="mov.estado_hasta"
                       class="text-[10px] px-2 py-0.5 bg-white dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700 text-gray-500"
                       >Estado: {{ mov.estado_hasta }}</span
-                    >
-                    <span class="text-[10px] text-gray-400 flex items-center gap-1"
-                      ><UserCircleIcon class="w-3 h-3" /> {{ mov.usuario }}</span
                     >
                   </div>
                 </div>

@@ -78,13 +78,13 @@ const kpis = [
     link: '/mareas/inbox?filter=limbo',
   },
   {
-    title: 'Protocolos / Mes',
-    value: '42/60',
-    subtext: '70% del objetivo',
+    title: 'Protocolizado / Mes',
+    value: '16/24',
+    subtext: '75% del objetivo',
     icon: CheckIcon,
     bgClass: 'bg-brand-500',
     trendClass: 'text-brand-500',
-    progress: 70,
+    progress: 75,
     link: '/mareas/stats',
   },
 ]

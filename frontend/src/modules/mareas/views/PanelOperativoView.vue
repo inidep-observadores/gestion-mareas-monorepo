@@ -2,16 +2,25 @@
   <AdminLayout>
     <div class="relative min-h-[calc(100vh-100px)] z-1">
       <div class="mb-6">
-        <h1 class="text-2xl text-gray-800 dark:text-white/90">
-          Panel Operativo de Mareas
-        </h1>
+        <h1 class="text-2xl text-gray-800 dark:text-white/90">Panel Operativo de Mareas</h1>
         <p class="text-gray-500 dark:text-gray-400">
           Monitoreo en tiempo real de las operaciones activas.
         </p>
       </div>
 
       <!-- Operational KPIs -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+        <div
+          class="bg-white dark:bg-gray-900 p-4 rounded-xl border border-gray-200 dark:border-gray-800"
+        >
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-sm text-gray-500 dark:text-gray-400">Esperando Zarpada</span>
+            <div class="p-1.5 bg-amber-50 dark:bg-amber-900/20 rounded-lg">
+              <CalenderIcon class="w-5 h-5 text-amber-500" />
+            </div>
+          </div>
+          <div class="text-2xl font-bold text-gray-800 dark:text-white">3</div>
+        </div>
         <div
           class="bg-white dark:bg-gray-900 p-4 rounded-xl border border-gray-200 dark:border-gray-800"
         >
@@ -105,14 +114,24 @@
                       <span
                         :class="[
                           'px-2 py-0.5 rounded text-xs font-medium',
-                          i % 3 === 0
-                            ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'
-                            : i % 4 === 0
-                              ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
-                              : 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
+                          i % 5 === 0
+                            ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400'
+                            : i % 3 === 0
+                              ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'
+                              : i % 4 === 0
+                                ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+                                : 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
                         ]"
                       >
-                        {{ i % 3 === 0 ? 'Navegando' : i % 4 === 0 ? 'Bloqueada' : 'Arribada' }}
+                        {{
+                          i % 5 === 0
+                            ? 'Esperando Zarpada'
+                            : i % 3 === 0
+                              ? 'Navegando'
+                              : i % 4 === 0
+                                ? 'Bloqueada'
+                                : 'Arribada'
+                        }}
                       </span>
                     </td>
                     <td class="px-6 py-4 text-sm text-gray-500">2023-12-{{ 10 + i }}</td>
@@ -153,5 +172,5 @@
 
 <script setup lang="ts">
 import AdminLayout from '@/components/layout/AdminLayout.vue'
-import { RefreshIcon, PlusIcon, DocsIcon, WarningIcon } from '@/icons'
+import { RefreshIcon, PlusIcon, DocsIcon, WarningIcon, CalenderIcon } from '@/icons'
 </script>

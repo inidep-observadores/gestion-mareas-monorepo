@@ -25,7 +25,7 @@
       <!-- Section: Delays in Revision -->
       <div v-if="revisionDelays.length" class="space-y-3">
         <h3 class="text-[10px] font-bold uppercase text-gray-400 tracking-widest">
-          Retrasos en Revisión (>10 días)
+          Retrasos en Entrega (>15 días)
         </h3>
         <div
           v-for="item in revisionDelays"
@@ -52,7 +52,7 @@
       <!-- Section: Delayed Reports -->
       <div v-if="reportDelays.length" class="space-y-3">
         <h3 class="text-[10px] font-bold uppercase text-gray-400 tracking-widest">
-          Informes Demorados (>48hs)
+          Informes Demorados (>7 días)
         </h3>
         <div
           v-for="item in reportDelays"
@@ -65,7 +65,7 @@
           </div>
           <div class="text-right">
             <div class="text-xs text-warning-600 dark:text-warning-400">
-              {{ item.hours }}H ATRASO
+              {{ item.days }} DÍAS DE ATRASO
             </div>
             <router-link
               :to="`/mareas/inbox?marea=${item.mareaId}`"
@@ -125,8 +125,8 @@ const revisionDelays = [
 ]
 
 const reportDelays = [
-  { id: 202, vessel: 'BP ARGENTINO I', obs: 'Pedro Gómez', hours: 72, mareaId: '2025-048' },
-  { id: 204, vessel: 'MAR DEL SUR', obs: 'Marta Ruiz', hours: 56, mareaId: '2025-049' },
+  { id: 202, vessel: 'BP ARGENTINO I', obs: 'Pedro Gómez', days: 18, mareaId: '2025-048' },
+  { id: 204, vessel: 'MAR DEL SUR', obs: 'Marta Ruiz', days: 25, mareaId: '2025-049' },
 ]
 
 const fatigueAlerts = [
