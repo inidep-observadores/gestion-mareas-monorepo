@@ -121,7 +121,7 @@
 <script setup lang="ts">
 const revisionDelays = [
   { id: 101, mareaId: '2025-042', obs: 'Juan Díaz', days: 15 },
-  { id: 105, mareaId: '2025-038', obs: 'Ana López', days: 12 },
+  { id: 105, mareaId: '2025-038', obs: 'Ana López', days: 22 },
 ]
 
 const reportDelays = [
@@ -131,7 +131,7 @@ const reportDelays = [
 
 const fatigueAlerts = [
   { id: 301, name: 'Carlos Rodríguez', reason: 'Acumulado anual', value: 205 },
-  { id: 305, name: 'Sofía Martínez', reason: 'Marea actual', value: 45 },
+  { id: 305, name: 'Sofía Martínez', reason: 'Marea actual', value: 183 },
 ]
 
 const totalAlerts = revisionDelays.length + reportDelays.length + fatigueAlerts.length
