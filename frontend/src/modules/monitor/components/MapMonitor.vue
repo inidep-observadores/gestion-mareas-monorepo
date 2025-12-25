@@ -127,31 +127,53 @@ const drawTrack = () => {
   map.fitBounds(bounds, { padding: [50, 50] })
 }
 
-const updateVesselPos = () => {
-  if (!map || !props.points[props.currentIndex]) return
+const checkAutoPan = (lat: number, lon: number) => {
+  if (!map) return
 
-  const current = props.points[props.currentIndex]
+  const point = map.latLngToContainerPoint([lat, lon])
+  const size = map.getSize()
+  
+  const thresholdX = size.x * 0.1
+  const thresholdY = size.y * 0.1
+
+  const isNearEdge = 
+    point.x < thresholdX || 
+    point.x > (size.x - thresholdX) || 
+    point.y < thresholdY || 
+    point.y > (size.y - thresholdY)
+
+  if (isNearEdge) {
+    map.panTo([lat, lon], { animate: true, duration: 0.5 })
+  }
+}
+
+watch(() => props.points, drawTrack)
+
+watch(() => props.currentIndex, (newIndex) => {
+  if (!map || !props.points[newIndex]) return
+
+  const current = props.points[newIndex]
+
+  const icon = L.divIcon({
+    className: 'vessel-marker-icon',
+    html: `
+      <div class="relative w-8 h-8 flex items-center justify-center transition-transform duration-500 ease-linear" style="transform: rotate(${current.course}deg)">
+        <div class="w-4 h-6 bg-brand-500 rounded-t-full shadow-lg border-2 border-white"></div>
+        <div class="absolute -top-1 w-1 h-1 bg-white rounded-full"></div>
+      </div>
+    `,
+    iconSize: [32, 32],
+    iconAnchor: [16, 16],
+  })
 
   if (!vesselMarker) {
-    const vesselIcon = L.divIcon({
-      html: `<div class="vessel-icon" style="transform: rotate(${current.course}deg)">
-               <svg viewBox="0 0 24 24" class="w-8 h-8 text-brand-500 drop-shadow-lg" fill="currentColor">
-                 <path d="M12 2L4.5 20.29L5.21 21L12 18L18.79 21L19.5 20.29L12 2Z" />
-               </svg>
-             </div>`,
-      className: '',
-      iconSize: [32, 32],
-      iconAnchor: [16, 16],
-    })
-    vesselMarker = L.marker([current.lat, current.lon], { icon: vesselIcon }).addTo(map)
+    vesselMarker = L.marker([current.lat, current.lon], { icon }).addTo(map)
   } else {
     vesselMarker.setLatLng([current.lat, current.lon])
-    const iconEl = vesselMarker.getElement()
-    if (iconEl) {
-      const svgContainer = iconEl.querySelector('.vessel-icon') as HTMLElement
-      if (svgContainer) svgContainer.style.transform = `rotate(${current.course}deg)`
-    }
+    vesselMarker.setIcon(icon)
   }
+
+  checkAutoPan(current.lat, current.lon)
 
   // Draw a path already traveled in a vibrant cian
   if (ghostPath) map.removeLayer(ghostPath)
@@ -162,10 +184,7 @@ const updateVesselPos = () => {
     opacity: 1,
     dashArray: '1, 5', // Style it a bit
   }).addTo(map)
-}
-
-watch(() => props.points, drawTrack)
-watch(() => props.currentIndex, updateVesselPos)
+})
 
 // In a real app we would add/remove GeoJSON layers here based on props.activeLayers
 watch(() => props.activeLayers, (newLayers) => {
