@@ -46,6 +46,9 @@ import UserGroupIcon from './UserGroupIcon.vue'
 import BellIcon from './BellIcon.vue'
 import BarChartIcon from './BarChartIcon.vue'
 import WaveIcon from './WaveIcon.vue'
+import ArrowLeftIcon from './ArrowLeftIcon.vue'
+import ShipIcon from './ShipIcon.vue'
+import BeakerIcon from './BeakerIcon.vue'
 
 export {
   WaveIcon,
@@ -96,4 +99,7 @@ export {
   MailBox,
   SendIcon,
   DraftIcon,
+  ArrowLeftIcon,
+  ShipIcon,
+  BeakerIcon,
 }

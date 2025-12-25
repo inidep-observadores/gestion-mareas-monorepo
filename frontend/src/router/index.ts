@@ -5,6 +5,7 @@ import PanelOperativoView from '@/modules/mareas/views/PanelOperativoView.vue'
 import FlujoMareasView from '@/modules/mareas/views/FlujoMareasView.vue'
 import EstadisticasView from '@/modules/mareas/views/EstadisticasView.vue'
 import CalendarioView from '@/modules/mareas/views/CalendarioView.vue'
+import MareaDetalleView from '@/modules/mareas/views/MareaDetalleView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -59,6 +60,14 @@ const router = createRouter({
       component: FlujoMareasView,
       meta: {
         title: 'Flujo de Trabajo',
+      },
+    },
+    {
+      path: '/mareas/detalle/:id',
+      name: 'MareaDetalle',
+      component: MareaDetalleView,
+      meta: {
+        title: 'Detalle de Marea',
       },
     },
     {
