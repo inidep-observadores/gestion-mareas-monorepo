@@ -274,7 +274,7 @@
                 v-model="marea.observaciones"
                 rows="4"
                 class="w-full bg-transparent border-none text-sm text-amber-800 dark:text-amber-300 focus:ring-0 placeholder:text-amber-300 resize-none"
-                placeholder="Añade notas que otros verán inmediatamente..."
+                placeholder="Añada notas que otros usuarios verán inmediatamente..."
               ></textarea>
             </div>
           </div>

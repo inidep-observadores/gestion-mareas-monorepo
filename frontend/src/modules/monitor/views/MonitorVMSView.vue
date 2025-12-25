@@ -1,6 +1,9 @@
 <template>
   <AdminLayout>
-    <div class="relative w-full overflow-hidden bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100" style="height: calc(100vh - 64px)">
+    <div
+      class="relative w-full overflow-hidden bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100"
+      style="height: calc(100vh - 64px)"
+    >
       <!-- THE MAP (Background) -->
       <div class="absolute inset-0">
         <MapMonitor
@@ -13,7 +16,9 @@
       </div>
 
       <!-- HUD LAYER (Floating Components) -->
-      <div class="relative w-full h-full pointer-events-none z-[1000] p-6 flex flex-col justify-between">
+      <div
+        class="relative w-full h-full pointer-events-none z-[1000] p-6 flex flex-col justify-between"
+      >
         <!-- Top Row -->
         <div class="flex justify-between items-start w-full">
           <!-- Left: Vessel Info -->
@@ -99,21 +104,21 @@ interface Vessel {
 
 const selectedVessel = ref<Vessel>({
   id: 1,
-  name: 'UR ERTZA',
+  name: 'BP VICTORIA',
   type: 'Pesquero',
   active: true,
-  trips: []
+  trips: [],
 })
 
 const trackPoints = ref<TrackingPoint[]>(generateMockTrack(new Date('2025-11-02T21:11:00Z')))
 const playerIndex = ref(trackPoints.value.length - 1)
 const isPlaying = ref(false)
 const playbackSpeed = ref(1)
-const mapLayers = ref({ 
-  totalPoints: true, 
-  totalTrack: true, 
-  veda: false, 
-  isobatas: false 
+const mapLayers = ref({
+  totalPoints: true,
+  totalTrack: true,
+  veda: false,
+  isobatas: false,
 })
 const mouseCoords = ref<LatLng | null>(null)
 let playbackInterval: ReturnType<typeof setInterval> | null = null
@@ -121,25 +126,49 @@ let playbackInterval: ReturnType<typeof setInterval> | null = null
 const currentPoint = computed(() => trackPoints.value[playerIndex.value] || null)
 
 const mockStages: TripStage[] = [
-  { id: '1', startDate: '2025-11-03T20:27:00Z', endDate: '2025-11-12T02:14:00Z', durationDays: 10, color: '#f59e0b' },
-  { id: '2', startDate: '2025-11-14T10:30:00Z', endDate: '2025-11-21T13:33:00Z', durationDays: 8, color: '#a855f7' },
-  { id: '3', startDate: '2025-11-23T12:33:00Z', endDate: '2025-12-01T16:21:00Z', durationDays: 9, color: '#10b981' },
-  { id: '4', startDate: '2025-12-03T19:07:00Z', endDate: '2025-12-11T15:39:00Z', durationDays: 9, color: '#ec4899' },
+  {
+    id: '1',
+    startDate: '2025-11-03T20:27:00Z',
+    endDate: '2025-11-12T02:14:00Z',
+    durationDays: 10,
+    color: '#f59e0b',
+  },
+  {
+    id: '2',
+    startDate: '2025-11-14T10:30:00Z',
+    endDate: '2025-11-21T13:33:00Z',
+    durationDays: 8,
+    color: '#a855f7',
+  },
+  {
+    id: '3',
+    startDate: '2025-11-23T12:33:00Z',
+    endDate: '2025-12-01T16:21:00Z',
+    durationDays: 9,
+    color: '#10b981',
+  },
+  {
+    id: '4',
+    startDate: '2025-12-03T19:07:00Z',
+    endDate: '2025-12-11T15:39:00Z',
+    durationDays: 9,
+    color: '#ec4899',
+  },
 ]
 
 const handleLayerToggle = (key: string, val: boolean) => {
-  (mapLayers.value as any)[key] = val
+  ;(mapLayers.value as any)[key] = val
 }
 
 const handleStageSelection = (stage: TripStage) => {
   // Logic to jump to stage start
-  const index = trackPoints.value.findIndex(p => p.timestamp >= stage.startDate)
+  const index = trackPoints.value.findIndex((p) => p.timestamp >= stage.startDate)
   if (index !== -1) playerIndex.value = index
 }
 
 const handleDateSelection = (date: Date) => {
   const dateStr = date.toISOString().split('T')[0]
-  const index = trackPoints.value.findIndex(p => p.timestamp.startsWith(dateStr))
+  const index = trackPoints.value.findIndex((p) => p.timestamp.startsWith(dateStr))
   if (index !== -1) playerIndex.value = index
 }
 
