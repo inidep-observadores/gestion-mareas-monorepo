@@ -32,7 +32,7 @@
             <SelectInput
               v-model="filters.fishery"
               :options="fisheryOptions"
-              placeholder="Pesquería (Todas)"
+              placeholder="Flota (Todas)"
             />
             <SelectInput
               v-model="filters.observer"
@@ -40,9 +40,9 @@
               placeholder="Observador (Todos)"
             />
             <SelectInput
-              v-model="filters.alert"
-              :options="alertOptions"
-              placeholder="Alertas (Todas)"
+              v-model="filters.fishery2"
+              :options="fishery2Options"
+              placeholder="Pesquería (Todas)"
             />
 
             <!-- Actions -->
@@ -286,7 +286,7 @@ const searchQuery = ref('')
 const filters = ref({
   fishery: '',
   observer: '',
-  alert: '',
+  fishery2: '',
 })
 
 const viewOptions = [
@@ -304,9 +304,10 @@ const observerOptions = [
   { value: 'am', label: 'Ana Martínez' },
 ]
 
-const alertOptions = [
-  { value: 'with', label: 'Con Alerta' },
-  { value: 'without', label: 'Sin Alerta' },
+const fishery2Options = [
+  { value: 'langostino', label: 'Langostino' },
+  { value: 'merluza', label: 'Merluza' },
+  { value: 'calamar', label: 'Calamar' },
 ]
 
 interface Task {
