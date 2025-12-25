@@ -26,15 +26,22 @@ let themeObserver: MutationObserver | null = null
 
 const emit = defineEmits(['update:mouse-coords'])
 
-const graticuleLayer = ref<L.LayerGroup | null>(null)
+let graticuleLayer: L.LayerGroup | null = null
+
+const formatGraticuleLabel = (val: number) => {
+  const absVal = Math.abs(val)
+  const deg = Math.floor(absVal)
+  const min = Math.round((absVal - deg) * 60)
+  return `${val < 0 ? '-' : ''}${deg}°${min > 0 ? min.toString().padStart(2, '0') + "'" : ''}`
+}
 
 const updateGraticule = () => {
   if (!map) return
-  if (!graticuleLayer.value) {
-    graticuleLayer.value = L.layerGroup().addTo(map)
+  if (!graticuleLayer) {
+    graticuleLayer = L.layerGroup().addTo(map)
   }
   
-  graticuleLayer.value.clearLayers()
+  graticuleLayer.clearLayers()
   
   const bounds = map.getBounds()
   const zoom = map.getZoom()
@@ -50,18 +57,46 @@ const updateGraticule = () => {
   const minLon = Math.floor(bounds.getWest() / interval) * interval
   const maxLon = Math.ceil(bounds.getEast() / interval) * interval
   
-  const style = {
-    color: 'rgba(156, 163, 175, 0.2)', // gray-400 with low opacity
+  const lineStyle = {
+    color: 'rgba(156, 163, 175, 0.2)',
     weight: 1,
-    interactive: false
+    interactive: false,
+    pane: 'overlayPane'
   }
 
+  const labelIcon = (text: string) => L.divIcon({
+    className: 'graticule-label',
+    html: `<div class="text-[8px] font-medium text-gray-600 dark:text-gray-400 [text-shadow:_0_0_2px_white] dark:[text-shadow:_0_0_2px_black] whitespace-nowrap">${text}</div>`,
+    iconSize: [0, 0],
+    iconAnchor: [0, 0]
+  })
+
+  // Latitude lines and labels
   for (let lat = minLat; lat <= maxLat; lat += interval) {
-    L.polyline([[lat, minLon], [lat, maxLon]], style).addTo(graticuleLayer.value)
+    L.polyline([[lat, minLon], [lat, maxLon]], lineStyle).addTo(graticuleLayer)
+    
+    const labelText = formatGraticuleLabel(lat)
+    const pLeft = map.latLngToContainerPoint([lat, bounds.getWest()])
+    const pRight = map.latLngToContainerPoint([lat, bounds.getEast()])
+    
+    // Left edge (5px inward)
+    L.marker(map.containerPointToLatLng([pLeft.x + 5, pLeft.y]), { icon: labelIcon(labelText), interactive: false, pane: 'tooltipPane' }).addTo(graticuleLayer)
+    // Right edge (5px inward - adjusted for text width)
+    L.marker(map.containerPointToLatLng([pRight.x - 25, pRight.y]), { icon: labelIcon(labelText), interactive: false, pane: 'tooltipPane' }).addTo(graticuleLayer)
   }
   
+  // Longitude lines and labels
   for (let lon = minLon; lon <= maxLon; lon += interval) {
-    L.polyline([[minLat, lon], [maxLat, lon]], style).addTo(graticuleLayer.value)
+    L.polyline([[minLat, lon], [maxLat, lon]], lineStyle).addTo(graticuleLayer)
+    
+    const labelText = formatGraticuleLabel(lon)
+    const pTop = map.latLngToContainerPoint([bounds.getNorth(), lon])
+    const pBottom = map.latLngToContainerPoint([bounds.getSouth(), lon])
+    
+    // Top edge (5px inward)
+    L.marker(map.containerPointToLatLng([pTop.x, pTop.y + 5]), { icon: labelIcon(labelText), interactive: false, pane: 'tooltipPane' }).addTo(graticuleLayer)
+    // Bottom edge (5px inward)
+    L.marker(map.containerPointToLatLng([pBottom.x, pBottom.y - 5]), { icon: labelIcon(labelText), interactive: false, pane: 'tooltipPane' }).addTo(graticuleLayer)
   }
 }
 
@@ -77,7 +112,44 @@ const initMap = () => {
   updateBaseLayer()
 
   L.control.zoom({ position: 'bottomright' }).addTo(map)
-  L.control.scale({ imperial: false, position: 'bottomright' }).addTo(map)
+  
+  // Custom Nautical Scale
+  const NauticalScale = L.Control.extend({
+    options: {
+      position: 'bottomright',
+      maxWidth: 100,
+    },
+    onAdd: function (map: L.Map) {
+      this._container = L.DomUtil.create('div', 'leaflet-control-scale')
+      this._line = L.DomUtil.create('div', 'leaflet-control-scale-line', this._container)
+      map.on('move', this._update, this)
+      map.whenReady(this._update, this)
+      return this._container
+    },
+    onRemove: function (map: L.Map) {
+      map.off('move', this._update, this)
+    },
+    _update: function () {
+      const map = this._map
+      const y = map.getSize().y / 2
+      const maxMeters = map.distance(map.containerPointToLatLng([0, y]), map.containerPointToLatLng([this.options.maxWidth, y]))
+      const maxNM = maxMeters / 1852
+      
+      const nm = this._getRoundNum(maxNM)
+      const px = (nm * 1852 * this.options.maxWidth) / maxMeters
+
+      this._line.style.width = px + 'px'
+      this._line.innerHTML = nm + ' nm'
+    },
+    _getRoundNum: function (num: number) {
+      const pow10 = Math.pow(10, Math.floor(Math.log10(num)))
+      let d = num / pow10
+      d = d >= 10 ? 10 : d >= 5 ? 5 : d >= 3 ? 3 : d >= 2 ? 2 : 1
+      return pow10 * d
+    }
+  })
+  
+  new (NauticalScale as any)().addTo(map)
 
   trackLayer = L.featureGroup().addTo(map)
 
@@ -147,12 +219,12 @@ const checkAutoPan = (lat: number, lon: number) => {
   }
 }
 
-watch(() => props.points, drawTrack)
+let isInitialLoad = true
 
-watch(() => props.currentIndex, (newIndex) => {
-  if (!map || !props.points[newIndex]) return
+const updateVesselMarker = (index: number) => {
+  if (!map || !props.points[index]) return
 
-  const current = props.points[newIndex]
+  const current = props.points[index]
 
   const icon = L.divIcon({
     className: 'vessel-marker-icon',
@@ -173,17 +245,26 @@ watch(() => props.currentIndex, (newIndex) => {
     vesselMarker.setIcon(icon)
   }
 
-  checkAutoPan(current.lat, current.lon)
-
   // Draw a path already traveled in a vibrant cian
   if (ghostPath) map.removeLayer(ghostPath)
-  const traveledPoints = props.points.slice(0, props.currentIndex + 1).map((p) => [p.lat, p.lon])
+  const traveledPoints = props.points.slice(0, index + 1).map((p) => [p.lat, p.lon])
   ghostPath = L.polyline(traveledPoints as L.LatLngExpression[], {
     color: '#00f2ff', // Cyan vibrante
     weight: 4,
     opacity: 1,
     dashArray: '1, 5', // Style it a bit
   }).addTo(map)
+
+  if (!isInitialLoad) {
+    checkAutoPan(current.lat, current.lon)
+  }
+}
+
+watch(() => props.points, drawTrack)
+
+watch(() => props.currentIndex, (newIndex) => {
+  isInitialLoad = false
+  updateVesselMarker(newIndex)
 })
 
 // In a real app we would add/remove GeoJSON layers here based on props.activeLayers
@@ -229,6 +310,8 @@ const updateBaseLayer = () => {
 
 onMounted(() => {
   initMap()
+  drawTrack()
+  updateVesselMarker(props.currentIndex)
 
   // Watch for theme changes (class="dark" on html)
   themeObserver = new MutationObserver(() => updateBaseLayer())
