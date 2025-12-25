@@ -5,9 +5,7 @@
       <div class="mb-6 space-y-4">
         <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 class="text-2xl text-gray-800 dark:text-white/90">
-              Flujo de Trabajo de Mareas
-            </h1>
+            <h1 class="text-2xl text-gray-800 dark:text-white/90">Flujo de Trabajo de Mareas</h1>
             <p class="text-gray-500 dark:text-gray-400">
               Gestión centralizada de estados y operativas.
             </p>
@@ -95,10 +93,14 @@
                 <div
                   v-for="task in column.tasks"
                   :key="task.id"
-                  class="bg-white dark:bg-gray-900 p-4 border border-gray-200 dark:border-gray-800 rounded-xl shadow-sm hover:shadow-md transition-shadow cursor-grab active:cursor-grabbing"
+                  class="bg-white dark:bg-gray-900 p-4 border border-gray-200 dark:border-gray-800 rounded-xl shadow-sm hover:shadow-md transition-shadow cursor-pointer active:cursor-grabbing group/card"
+                  @click="navigateToDetail(task.id)"
                 >
                   <div class="flex justify-between items-start mb-2">
-                    <span class="text-xs font-mono text-gray-500">{{ task.code }}</span>
+                    <span
+                      class="text-xs font-mono text-gray-500 group-hover/card:text-brand-500 transition-colors"
+                      >{{ task.code }}</span
+                    >
                     <span v-if="task.alert" class="text-red-500"
                       ><WarningIcon class="w-4 h-4"
                     /></span>
@@ -171,7 +173,8 @@
             <div
               v-for="task in group.tasks"
               :key="task.id"
-              class="p-6 hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors"
+              class="p-6 hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors cursor-pointer group/row"
+              @click="navigateToDetail(task.id)"
             >
               <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div class="flex items-start gap-4">
@@ -208,11 +211,13 @@
                 <div class="flex items-center gap-3">
                   <button
                     class="px-4 py-2 text-sm font-medium border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                    @click.stop="navigateToDetail(task.id)"
                   >
                     Ver Detalles
                   </button>
                   <button
                     class="px-4 py-2 text-sm font-medium bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-colors"
+                    @click.stop
                   >
                     Continuar Flujo
                   </button>
@@ -228,6 +233,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { VueDraggableNext } from 'vue-draggable-next'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import ViewToggle from '@/components/common/ViewToggle.vue'
@@ -244,6 +250,7 @@ import {
   RefreshIcon,
 } from '@/icons'
 
+const router = useRouter()
 const viewMode = ref<'kanban' | 'list'>('kanban')
 const searchQuery = ref('')
 const filters = ref({
@@ -392,6 +399,10 @@ const onDragChange = (event: any, columnId: string) => {
   if (event.added) {
     console.log(`Marea agregada a ${columnId}:`, event.added.element.vessel)
   }
+}
+
+const navigateToDetail = (id: number) => {
+  router.push({ name: 'MareaDetalle', params: { id } })
 }
 
 // Responsive Logic
