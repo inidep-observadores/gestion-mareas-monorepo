@@ -131,7 +131,7 @@ const reportDelays = [
 
 const fatigueAlerts = [
   { id: 301, name: 'Carlos Rodríguez', reason: 'Acumulado anual', value: 205 },
-  { id: 305, name: 'Sofía Martínez', reason: 'Marea actual', value: 183 },
+  { id: 305, name: 'Sofía Martínez', reason: 'Marea actual', value: 93 },
 ]
 
 const totalAlerts = revisionDelays.length + reportDelays.length + fatigueAlerts.length
