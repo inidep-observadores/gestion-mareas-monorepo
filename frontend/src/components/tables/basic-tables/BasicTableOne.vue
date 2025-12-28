@@ -7,19 +7,21 @@
         <thead>
           <tr class="border-b border-gray-200 dark:border-gray-700">
             <th class="px-5 py-3 text-left w-3/11 sm:px-6">
-              <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">User</p>
+              <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Usuario</p>
             </th>
             <th class="px-5 py-3 text-left w-2/11 sm:px-6">
-              <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Project Name</p>
+              <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">
+                Nombre del Proyecto
+              </p>
             </th>
             <th class="px-5 py-3 text-left w-2/11 sm:px-6">
-              <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Team</p>
+              <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Equipo</p>
             </th>
             <th class="px-5 py-3 text-left w-2/11 sm:px-6">
-              <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Status</p>
+              <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Estado</p>
             </th>
             <th class="px-5 py-3 text-left w-2/11 sm:px-6">
-              <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Budget</p>
+              <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Presupuesto</p>
             </th>
           </tr>
         </thead>
@@ -64,11 +66,11 @@
                   'rounded-full px-2 py-0.5 text-theme-xs font-medium',
                   {
                     'bg-success-50 text-success-700 dark:bg-success-500/15 dark:text-success-500':
-                      user.status === 'Active',
+                      user.status === 'Activo',
                     'bg-warning-50 text-warning-700 dark:bg-warning-500/15 dark:text-warning-400':
-                      user.status === 'Pending',
+                      user.status === 'Pendiente',
                     'bg-error-50 text-error-700 dark:bg-error-500/15 dark:text-error-500':
-                      user.status === 'Cancel',
+                      user.status === 'Cancelado',
                   },
                 ]"
               >
@@ -91,43 +93,43 @@ import { ref } from 'vue'
 const users = ref([
   {
     name: 'Lindsey Curtis',
-    role: 'Web Designer',
+    role: 'Diseñador Web',
     avatar: '/images/user/user-17.jpg',
     project: 'Agency Website',
     team: ['/images/user/user-22.jpg', '/images/user/user-23.jpg', '/images/user/user-24.jpg'],
-    status: 'Active',
+    status: 'Activo',
     budget: '3.9K',
   },
   {
     name: 'Kaiya George',
-    role: 'Project Manager',
+    role: 'Gerente de Proyecto',
     avatar: '/images/user/user-18.jpg',
     project: 'Technology',
     team: ['/images/user/user-25.jpg', '/images/user/user-26.jpg'],
-    status: 'Pending',
+    status: 'Pendiente',
     budget: '24.9K',
   },
   {
     name: 'Zain Geidt',
-    role: 'Content Writer',
+    role: 'Redactor de Contenidos',
     avatar: '/images/user/user-19.jpg',
     project: 'Blog Writing',
     team: ['/images/user/user-27.jpg'],
-    status: 'Active',
+    status: 'Activo',
     budget: '12.7K',
   },
   {
     name: 'Abram Schleifer',
-    role: 'Digital Marketer',
+    role: 'Comercializador Digital',
     avatar: '/images/user/user-20.jpg',
     project: 'Social Media',
     team: ['/images/user/user-28.jpg', '/images/user/user-29.jpg', '/images/user/user-30.jpg'],
-    status: 'Cancel',
+    status: 'Cancelado',
     budget: '2.8K',
   },
   {
     name: 'Carla George',
-    role: 'Front-end Developer',
+    role: 'Desarrollador Front-end',
     avatar: '/images/user/user-21.jpg',
     project: 'Website',
     team: ['/images/user/user-31.jpg', '/images/user/user-32.jpg', '/images/user/user-33.jpg'],

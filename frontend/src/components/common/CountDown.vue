@@ -45,7 +45,7 @@
             <span class="inline-block">{{ day.value }}</span>
           </span>
         </div>
-        <div>days left</div>
+        <div>días restantes</div>
       </div>
     </div>
   </div>
