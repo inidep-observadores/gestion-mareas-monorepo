@@ -1,0 +1,12 @@
+packages:
+  - backend
+  - frontend
+
+onlyBuiltDependencies:
+  - '@nestjs/core'
+  - '@parcel/watcher'
+  - '@prisma/engines'
+  - bcrypt
+  - esbuild
+  - prisma
+  - unrs-resolver
