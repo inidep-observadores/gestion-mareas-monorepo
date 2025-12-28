@@ -4,9 +4,9 @@
   >
     <div class="flex flex-col gap-5 mb-6 sm:flex-row sm:justify-between">
       <div class="w-full">
-        <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">Statistics</h3>
+        <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">Estadísticas</h3>
         <p class="mt-1 text-gray-500 text-theme-sm dark:text-gray-400">
-          Target you’ve set for each month
+          Objetivo establecido para cada mes
         </p>
       </div>
 
@@ -38,11 +38,12 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { CHART_PALETTES } from '@/config/chartColors'
 
 const options = [
-  { value: 'optionOne', label: 'Monthly' },
-  { value: 'optionTwo', label: 'Quarterly' },
-  { value: 'optionThree', label: 'Annually' },
+  { value: 'optionOne', label: 'Mensual' },
+  { value: 'optionTwo', label: 'Trimestral' },
+  { value: 'optionThree', label: 'Anual' },
 ]
 
 const selected = ref('optionOne')
@@ -50,11 +51,11 @@ import VueApexCharts from 'vue3-apexcharts'
 
 const series = ref([
   {
-    name: 'Sales',
+    name: 'Ventas',
     data: [180, 190, 170, 160, 175, 165, 170, 205, 230, 210, 240, 235],
   },
   {
-    name: 'Revenue',
+    name: 'Ingresos',
     data: [40, 30, 50, 40, 55, 40, 70, 100, 110, 120, 150, 140],
   },
 ])
@@ -65,7 +66,7 @@ const chartOptions = ref({
     position: 'top',
     horizontalAlign: 'left',
   },
-  colors: ['#465FFF', '#9CB9FF'],
+  colors: CHART_PALETTES.primary,
   chart: {
     fontFamily: 'Outfit, sans-serif',
     type: 'area',
@@ -114,18 +115,18 @@ const chartOptions = ref({
   xaxis: {
     type: 'category',
     categories: [
-      'Jan',
+      'Ene',
       'Feb',
       'Mar',
-      'Apr',
+      'Abr',
       'May',
       'Jun',
       'Jul',
-      'Aug',
+      'Ago',
       'Sep',
       'Oct',
       'Nov',
-      'Dec',
+      'Dic',
     ],
     axisBorder: {
       show: false,

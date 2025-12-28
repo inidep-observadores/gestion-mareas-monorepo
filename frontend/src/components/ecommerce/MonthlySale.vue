@@ -3,7 +3,7 @@
     class="overflow-hidden rounded-2xl border border-gray-200 bg-white px-5 pt-5 dark:border-gray-800 dark:bg-white/[0.03] sm:px-6 sm:pt-6"
   >
     <div class="flex items-center justify-between">
-      <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">Monthly Sales</h3>
+      <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">Ventas Mensuales</h3>
 
       <div class="relative h-fit">
         <DropdownMenu :menu-items="menuItems">
@@ -38,22 +38,23 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import DropdownMenu from '../common/DropdownMenu.vue'
+import { CHART_COLORS } from '@/config/chartColors'
 const menuItems = [
-  { label: 'View More', onClick: () => console.log('View More clicked') },
-  { label: 'Delete', onClick: () => console.log('Delete clicked') },
+  { label: 'Ver más', onClick: () => console.log('View More clicked') },
+  { label: 'Eliminar', onClick: () => console.log('Delete clicked') },
 ]
 
 import VueApexCharts from 'vue3-apexcharts'
 
 const series = ref([
   {
-    name: 'Sales',
+    name: 'Ventas',
     data: [168, 385, 201, 298, 187, 195, 291, 110, 215, 390, 280, 112],
   },
 ])
 
 const chartOptions = ref({
-  colors: ['#465fff'],
+  colors: [CHART_COLORS.brand.primary],
   chart: {
     fontFamily: 'Outfit, sans-serif',
     type: 'bar',
@@ -79,18 +80,18 @@ const chartOptions = ref({
   },
   xaxis: {
     categories: [
-      'Jan',
+      'Ene',
       'Feb',
       'Mar',
-      'Apr',
+      'Abr',
       'May',
       'Jun',
       'Jul',
-      'Aug',
+      'Ago',
       'Sep',
       'Oct',
       'Nov',
-      'Dec',
+      'Dic',
     ],
     axisBorder: {
       show: false,

@@ -40,7 +40,7 @@ interface AlertProps {
 const props = withDefaults(defineProps<AlertProps>(), {
   showLink: false,
   linkHref: '#',
-  linkText: 'Learn more',
+  linkText: 'Ver más',
 })
 
 const variantClasses = {

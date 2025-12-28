@@ -4,7 +4,7 @@
   >
     <div class="flex flex-col gap-2 mb-4 sm:flex-row sm:items-center sm:justify-between">
       <div>
-        <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">Recent Orders</h3>
+        <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">Pedidos Recientes</h3>
       </div>
 
       <div class="flex items-center gap-3">
@@ -47,13 +47,13 @@
             />
           </svg>
 
-          Filter
+          Filtrar
         </button>
 
         <button
           class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-theme-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200"
         >
-          See all
+          Ver todo
         </button>
       </div>
     </div>
@@ -63,16 +63,16 @@
         <thead>
           <tr class="border-t border-gray-100 dark:border-gray-800">
             <th class="py-3 text-left">
-              <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Products</p>
+              <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Productos</p>
             </th>
             <th class="py-3 text-left">
-              <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Category</p>
+              <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Categoría</p>
             </th>
             <th class="py-3 text-left">
-              <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Price</p>
+              <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Precio</p>
             </th>
             <th class="py-3 text-left">
-              <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Status</p>
+              <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Estado</p>
             </th>
           </tr>
         </thead>
@@ -92,7 +92,7 @@
                     {{ product.name }}
                   </p>
                   <span class="text-gray-500 text-theme-xs dark:text-gray-400"
-                    >{{ product.variants }} Variants</span
+                    >{{ product.variants }} Variantes</span
                   >
                 </div>
               </div>
@@ -108,11 +108,11 @@
                 :class="{
                   'rounded-full px-2 py-0.5 text-theme-xs font-medium': true,
                   'bg-success-50 text-success-600 dark:bg-success-500/15 dark:text-success-500':
-                    product.status === 'Delivered',
+                    product.status === 'Entregado',
                   'bg-warning-50 text-warning-600 dark:bg-warning-500/15 dark:text-orange-400':
-                    product.status === 'Pending',
+                    product.status === 'Pendiente',
                   'bg-error-50 text-error-600 dark:bg-error-500/15 dark:text-error-500':
-                    product.status === 'Canceled',
+                    product.status === 'Cancelado',
                 }"
               >
                 {{ product.status }}
@@ -135,7 +135,7 @@ const products = ref([
     image: '/images/product/product-01.jpg',
     category: 'Laptop',
     price: '$2399.00',
-    status: 'Delivered',
+    status: 'Entregado',
   },
   {
     name: 'Apple Watch Ultra',
@@ -143,7 +143,7 @@ const products = ref([
     image: '/images/product/product-02.jpg',
     category: 'Watch',
     price: '$879.00',
-    status: 'Pending',
+    status: 'Pendiente',
   },
   {
     name: 'iPhone 15 Pro Max',
@@ -151,7 +151,7 @@ const products = ref([
     image: '/images/product/product-03.jpg',
     category: 'SmartPhone',
     price: '$1869.00',
-    status: 'Delivered',
+    status: 'Entregado',
   },
   {
     name: 'iPad Pro 3rd Gen',
@@ -159,7 +159,7 @@ const products = ref([
     image: '/images/product/product-04.jpg',
     category: 'Electronics',
     price: '$1699.00',
-    status: 'Canceled',
+    status: 'Cancelado',
   },
   {
     name: 'Airpods Pro 2nd Gen',
@@ -167,7 +167,7 @@ const products = ref([
     image: '/images/product/product-05.jpg',
     category: 'Accessories',
     price: '$240.00',
-    status: 'Delivered',
+    status: 'Entregado',
   },
 ])
 </script>

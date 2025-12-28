@@ -5,10 +5,10 @@
     <div class="flex justify-between">
       <div>
         <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">
-          Customers Demographic
+          Demografía de Clientes
         </h3>
         <p class="mt-1 text-gray-500 text-theme-sm dark:text-gray-400">
-          Number of customer based on country
+          Número de clientes por país
         </p>
       </div>
     </div>
@@ -28,15 +28,17 @@
             <img src="/images/country/country-01.svg" alt="usa" />
           </div>
           <div>
-            <p class="font-semibold text-gray-800 text-theme-sm dark:text-white/90">USA</p>
+            <p class="font-semibold text-gray-800 text-theme-sm dark:text-white/90">EE. UU.</p>
             <span class="block text-gray-500 text-theme-xs dark:text-gray-400">
-              2,379 Customers
+              2,379 Clientes
             </span>
           </div>
         </div>
 
         <div class="flex w-full max-w-[140px] items-center gap-3">
-          <div class="relative block h-2 w-full max-w-[100px] rounded-sm bg-gray-200 dark:bg-gray-800">
+          <div
+            class="relative block h-2 w-full max-w-[100px] rounded-sm bg-gray-200 dark:bg-gray-800"
+          >
             <div
               class="absolute left-0 top-0 flex h-full w-[79%] items-center justify-center rounded-sm bg-brand-500 text-xs font-medium text-white"
             ></div>
@@ -51,15 +53,15 @@
             <img src="/images/country/country-02.svg" alt="france" />
           </div>
           <div>
-            <p class="font-semibold text-gray-800 text-theme-sm dark:text-white/90">France</p>
-            <span class="block text-gray-500 text-theme-xs dark:text-gray-400">
-              589 Customers
-            </span>
+            <p class="font-semibold text-gray-800 text-theme-sm dark:text-white/90">Francia</p>
+            <span class="block text-gray-500 text-theme-xs dark:text-gray-400"> 589 Clientes </span>
           </div>
         </div>
 
         <div class="flex w-full max-w-[140px] items-center gap-3">
-          <div class="relative block h-2 w-full max-w-[100px] rounded-sm bg-gray-200 dark:bg-gray-800">
+          <div
+            class="relative block h-2 w-full max-w-[100px] rounded-sm bg-gray-200 dark:bg-gray-800"
+          >
             <div
               class="absolute left-0 top-0 flex h-full w-[23%] items-center justify-center rounded-sm bg-brand-500 text-xs font-medium text-white"
             ></div>
@@ -75,6 +77,7 @@
 import { onMounted, ref } from 'vue'
 import jsVectorMap from 'jsvectormap'
 import 'jsvectormap/dist/maps/world'
+import { CHART_COLORS } from '@/config/chartColors'
 
 const mapOneRef = ref<HTMLElement | null>(null)
 const mapInstance = ref<any>(null)
@@ -88,36 +91,36 @@ const initMap = () => {
       regionStyle: {
         initial: {
           fontFamily: 'Outfit',
-          fill: '#D9D9D9',
+          fill: CHART_COLORS.neutral.light,
         },
         hover: {
           fillOpacity: 1,
-          fill: '#465fff',
+          fill: CHART_COLORS.brand.primary,
         },
       },
       markers: [
         {
-          name: 'Egypt',
+          name: 'Egipto',
           coords: [26.8206, 30.8025],
         },
         {
-          name: 'United States',
+          name: 'Estados Unidos',
           coords: [55.3781, 3.436],
         },
         {
-          name: 'United States',
+          name: 'Estados Unidos',
           coords: [37.0902, -95.7129],
         },
       ],
       markerStyle: {
         initial: {
           strokeWidth: 1,
-          fill: '#465fff',
+          fill: CHART_COLORS.brand.primary,
           fillOpacity: 1,
           r: 4,
         },
         hover: {
-          fill: '#465fff',
+          fill: CHART_COLORS.brand.primary,
           fillOpacity: 1,
         },
         selected: {},
@@ -126,7 +129,7 @@ const initMap = () => {
       onRegionTooltipShow: function (event: MouseEvent, tooltip: any) {
         const code = (event.target as HTMLElement).getAttribute('data-code')
         if (code === 'EG') {
-          tooltip.setContent(tooltip.text() + ' (Hello Egypt)')
+          tooltip.setContent(tooltip.text() + ' (Hola Egipto)')
         }
       },
     })
