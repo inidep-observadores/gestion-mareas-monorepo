@@ -275,7 +275,7 @@
                   <WaveIcon class="w-7 h-7 text-white" />
                 </div>
                 <div class="flex flex-col leading-tight">
-                  <span class="text-lg font-bold text-white">Gesti?n de</span>
+                  <span class="text-lg font-bold text-white">Gestión de</span>
                   <span class="text-lg font-bold text-blue-200">Mareas</span>
                 </div>
               </router-link>
