@@ -1,12 +1,9 @@
 <template>
-  <AdminLayout>
+  <AdminLayout 
+    title="Panel Operativo de Mareas" 
+    description="Monitoreo en tiempo real de las operaciones activas."
+  >
     <div class="relative min-h-[calc(100vh-100px)] z-1">
-      <div class="mb-6">
-        <h1 class="text-2xl text-gray-800 dark:text-white/90">Panel Operativo de Mareas</h1>
-        <p class="text-gray-500 dark:text-gray-400">
-          Monitoreo en tiempo real de las operaciones activas.
-        </p>
-      </div>
 
       <!-- Operational KPIs -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">

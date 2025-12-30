@@ -1,14 +1,9 @@
 <template>
-  <AdminLayout>
+  <AdminLayout 
+    title="Calendario de Mareas" 
+    description="Vista cronológica de designaciones, arribos y eventos clave."
+  >
     <div class="relative min-h-[calc(100vh-100px)] z-1">
-      <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 class="text-2xl text-gray-800 dark:text-white/90">Calendario de Mareas</h1>
-          <p class="text-gray-500 dark:text-gray-400">
-            Vista cronológica de designaciones, arribos y eventos clave.
-          </p>
-        </div>
-      </div>
 
       <!-- Event Type Filters -->
       <FilterBar class="mb-4">

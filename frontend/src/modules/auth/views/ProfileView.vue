@@ -1,10 +1,7 @@
 <template>
-  <AdminLayout>
+  <AdminLayout title="Mi Perfil">
     <div class="p-6 space-y-6">
-      <div class="flex items-center justify-between">
-        <h1 class="text-2xl font-semibold text-gray-800 dark:text-gray-200">
-          Mi Perfil
-        </h1>
+      <div class="flex justify-end">
         <div class="flex gap-3">
             <button 
                 @click="goBack"
@@ -19,7 +16,7 @@
                 :disabled="isUpdatingProfile"
             >
                 <span v-if="isUpdatingProfile" class="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>
-                Guardar
+                Guardar cambios
             </button>
         </div>
       </div>

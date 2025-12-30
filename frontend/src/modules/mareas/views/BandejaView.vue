@@ -1,15 +1,10 @@
 <template>
-  <AdminLayout>
+  <AdminLayout 
+    title="Bandeja de Entrada Centralizada" 
+    description="Punto único para gestionar eventos, movimientos y novedades de mareas."
+  >
     <div class="relative min-h-[calc(100vh-100px)] z-1">
-      <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 class="text-2xl text-gray-800 dark:text-white/90">
-            Bandeja de Entrada Centralizada
-          </h1>
-          <p class="text-gray-500 dark:text-gray-400">
-            Punto único para gestionar eventos, movimientos y novedades de mareas.
-          </p>
-        </div>
+      <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-end">
         <div class="flex gap-3">
           <button
             class="flex items-center gap-2 px-4 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-colors"

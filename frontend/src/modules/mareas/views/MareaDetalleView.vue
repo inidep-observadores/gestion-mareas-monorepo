@@ -1,34 +1,26 @@
 <template>
-  <AdminLayout>
+  <AdminLayout 
+    :title="`Marea ${marea.nro_marea}/${marea.anio_marea}`"
+    :description="marea.titulo || 'Detalles técnicos y operativos de la marea.'"
+  >
     <div class="max-w-6xl mx-auto pb-12 px-4 sm:px-6 lg:px-8">
-      <!-- Header Section -->
-      <div class="mb-8 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-        <div class="space-y-3">
+      <!-- Header Actions & Meta -->
+      <div class="mb-8 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+        <div class="flex flex-wrap items-center gap-4">
           <button
             @click="goBack"
-            class="group flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-brand-500 transition-all"
+            class="group flex items-center gap-2 text-sm font-semibold text-brand-500 hover:text-brand-600 transition-all bg-brand-50 dark:bg-brand-500/10 px-3 py-1.5 rounded-lg"
           >
             <ArrowLeftIcon class="w-4 h-4 transition-transform group-hover:-translate-x-1" />
-            Flujo de Trabajo
+            Volver
           </button>
-          <div class="flex flex-wrap items-center gap-4">
-            <h1 class="text-3xl font-extrabold text-gray-900 dark:text-white">
-              Marea
-              <span
-                class="bg-gradient-to-r from-brand-500 to-blue-600 bg-clip-text text-transparent"
-                >{{ marea.nro_marea }}/{{ marea.anio_marea }}</span
-              >
-            </h1>
-            <div
-              class="flex items-center gap-2 px-3 py-1 bg-brand-50 dark:bg-brand-500/10 text-brand-700 dark:text-brand-400 text-xs font-bold uppercase tracking-wider rounded-full border border-brand-100 dark:border-brand-500/20"
-            >
-              <div class="w-1.5 h-1.5 rounded-full bg-brand-500 animate-pulse"></div>
-              {{ marea.estado_nombre }}
-            </div>
+          
+          <div
+            class="flex items-center gap-2 px-3 py-1.5 bg-brand-50 dark:bg-brand-500/10 text-brand-700 dark:text-brand-400 text-xs font-bold uppercase tracking-wider rounded-full border border-brand-100 dark:border-brand-500/20"
+          >
+            <div class="w-1.5 h-1.5 rounded-full bg-brand-500 animate-pulse"></div>
+            {{ marea.estado_nombre }}
           </div>
-          <p class="text-gray-500 dark:text-gray-400 max-w-2xl">
-            {{ marea.titulo || 'Sin título definido para esta marea.' }}
-          </p>
         </div>
 
         <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
@@ -36,7 +28,7 @@
             class="px-5 py-2.5 text-sm font-semibold text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-all shadow-sm active:scale-95 text-center"
             @click="goBack"
           >
-            Cancelar
+            Descartar
           </button>
           <button
             class="px-5 py-2.5 text-sm font-semibold text-white bg-brand-500 border border-transparent rounded-xl hover:bg-brand-600 transition-all shadow-md shadow-brand-500/20 active:scale-95 flex items-center justify-center gap-2"

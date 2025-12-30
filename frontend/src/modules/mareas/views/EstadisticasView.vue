@@ -1,16 +1,11 @@
 <template>
-  <AdminLayout>
+  <AdminLayout 
+    title="Panel de Estadísticas y KPIs" 
+    description="Monitoreo en tiempo real del flujo de trabajo y desempeño institucional."
+  >
     <div class="relative min-h-[calc(100vh-100px)] z-1 pb-10">
-      <!-- HEADER & FILTERS -->
-      <div class="mb-8 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-        <div>
-          <h1 class="text-2xl text-gray-800 dark:text-white/90 tracking-tight">
-            Panel de Estadísticas y KPIs
-          </h1>
-          <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Monitoreo en tiempo real del flujo de trabajo y desempeño institucional.
-          </p>
-        </div>
+      <!-- FILTERS -->
+      <div class="mb-8 flex justify-end">
 
         <!-- Filter Bar -->
         <div
