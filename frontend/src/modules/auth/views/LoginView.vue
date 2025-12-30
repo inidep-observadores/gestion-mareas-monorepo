@@ -41,6 +41,9 @@
                   Ingrese su correo electrónico y contraseña para acceder.
                 </p>
               </div>
+              <div v-if="errorMessage" class="mb-4 p-4 text-sm text-red-700 bg-red-100 rounded-lg dark:bg-red-200 dark:text-red-800" role="alert">
+                <span class="font-medium">Error:</span> {{ errorMessage }}
+              </div>
               <div>
                 <form @submit.prevent="handleSubmit">
                   <div class="space-y-5">
@@ -170,9 +173,11 @@
                     <div>
                       <button
                         type="submit"
-                        class="flex items-center justify-center w-full px-4 py-3 text-sm font-medium text-white transition rounded-lg bg-brand-500 shadow-theme-xs hover:bg-brand-600"
+                        :disabled="isLoading"
+                        class="flex items-center justify-center w-full px-4 py-3 text-sm font-medium text-white transition rounded-lg bg-brand-500 shadow-theme-xs hover:bg-brand-600 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        Iniciar Sesión
+                        <span v-if="!isLoading">Iniciar Sesión</span>
+                        <span v-else>Cargando...</span>
                       </button>
                     </div>
                   </div>
@@ -224,25 +229,45 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useRouter } from 'vue-router' // Import router
 import CommonGridShape from '@/components/common/CommonGridShape.vue'
 import FullScreenLayout from '@/components/layout/FullScreenLayout.vue'
 import { WaveIcon } from '@/icons'
+import { useAuthStore } from '../stores/auth.store' // Import store
+
+const router = useRouter()
+const authStore = useAuthStore()
 
 const email = ref('')
 const password = ref('')
 const showPassword = ref(false)
 const keepLoggedIn = ref(false)
+const isLoading = ref(false) // Add loading state
+const errorMessage = ref('')   // Add error state
 
 const togglePasswordVisibility = () => {
   showPassword.value = !showPassword.value
 }
 
-const handleSubmit = () => {
-  // Implementación futura de login
-  console.log('Form submitted', {
-    email: email.value,
-    password: password.value,
-    keepLoggedIn: keepLoggedIn.value,
-  })
+const handleSubmit = async () => {
+  isLoading.value = true
+  errorMessage.value = ''
+  
+  try {
+    await authStore.login({
+      email: email.value,
+      password: password.value,
+      remember: keepLoggedIn.value
+    })
+
+    // Redirect is handled by the component or we can force it here
+    const redirect = router.currentRoute.value.query.redirect as string
+    router.push(redirect || { name: 'Dashboard' })
+  } catch (error: any) {
+    // Show error
+    errorMessage.value = error.message || 'Ocurrió un error al iniciar sesión'
+  } finally {
+    isLoading.value = false
+  }
 }
 </script>

@@ -19,6 +19,7 @@ const router = createRouter({
       component: () => import('@/modules/dashboard/views/DashboardView.vue'),
       meta: {
         title: 'Panel de Control',
+        requiresAuth: true,
       },
     },
     {
@@ -27,6 +28,7 @@ const router = createRouter({
       component: () => import('@/modules/auth/views/LoginView.vue'),
       meta: {
         title: 'Iniciar Sesión',
+        guestOnly: true,
       },
     },
     {
@@ -35,6 +37,7 @@ const router = createRouter({
       component: () => import('@/modules/auth/views/RegisterView.vue'),
       meta: {
         title: 'Crear Cuenta',
+        guestOnly: true,
       },
     },
     // Mareas Module
@@ -44,6 +47,7 @@ const router = createRouter({
       component: BandejaView,
       meta: {
         title: 'Bandeja de Entrada',
+        requiresAuth: true,
       },
     },
     {
@@ -52,6 +56,7 @@ const router = createRouter({
       component: PanelOperativoView,
       meta: {
         title: 'Panel Operativo',
+        requiresAuth: true,
       },
     },
     {
@@ -60,6 +65,7 @@ const router = createRouter({
       component: FlujoMareasView,
       meta: {
         title: 'Flujo de Trabajo',
+        requiresAuth: true,
       },
     },
     {
@@ -68,6 +74,7 @@ const router = createRouter({
       component: MareaDetalleView,
       meta: {
         title: 'Detalle de Marea',
+        requiresAuth: true,
       },
     },
     {
@@ -76,6 +83,7 @@ const router = createRouter({
       component: CalendarioView,
       meta: {
         title: 'Calendario de Mareas',
+        requiresAuth: true,
       },
     },
     {
@@ -84,6 +92,7 @@ const router = createRouter({
       component: EstadisticasView,
       meta: {
         title: 'Estadísticas Anuales',
+        requiresAuth: true,
       },
     },
     {
@@ -92,6 +101,7 @@ const router = createRouter({
       component: () => import('@/modules/monitor/views/MonitorVMSView.vue'),
       meta: {
         title: 'Centro de Operaciones Marítimas',
+        requiresAuth: true,
       },
     },
     // Redirección por defecto
@@ -102,9 +112,28 @@ const router = createRouter({
   ],
 })
 
-export default router
+import { useAuthStore } from '@/modules/auth/stores/auth.store'
 
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
   document.title = `${to.meta.title} | Gestión de Mareas - INIDEP`
+
+  const authStore = useAuthStore()
+  await authStore.whenReady() // Wait for bootstrap
+
+  const isAuthenticated = authStore.isAuthenticated
+
+  // 1. Check for Requires Auth
+  if (to.meta.requiresAuth && !isAuthenticated) {
+    return next({ name: 'Signin', query: { redirect: to.fullPath } })
+  }
+
+  // 2. Check for Guest Only (e.g. Login page)
+  if (to.meta.guestOnly && isAuthenticated) {
+    return next({ name: 'Dashboard' })
+  }
+
+  // 3. Default
   next()
 })
+
+export default router

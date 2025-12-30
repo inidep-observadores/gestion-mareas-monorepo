@@ -79,11 +79,20 @@ Primero, configura y ejecuta el servidor de la API.
     La API estará disponible en `http://localhost:3000`.
 
 7. **(Opcional) Ejecuta el SEED:**
-    Para poblar la base de datos con datos de prueba, realiza una petición GET a la siguiente URL:
+    Para poblar la base de datos con datos de prueba ejecuta el seed que se define en `backend/prisma/seed.ts` usando el binario de Prisma:
 
+    ```bash
+    cd backend
+    pnpm prisma db seed
     ```
-    http://localhost:3000/api/seed
+
+    También lo puedes correr desde la raíz del monorepo con el scope del workspace:
+
+    ```bash
+    pnpm --filter sigma-backend -- prisma db seed
     ```
+
+    El comando invoca `ts-node prisma/seed.ts`, limpia los datos existentes e inserta los registros base definidos en el seed.
 
 ---
 
