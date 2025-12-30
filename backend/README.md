@@ -2,25 +2,40 @@
   <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="200" alt="Nest Logo" /></a>
 </p>
 
-# Teslo API
+# SIGMA Backend
 
-1. Clonar proyecto
-2. ```yarn install```
-3. Clonar el archivo ```.env.template``` y renombrarlo a ```.env```
-4. Cambiar las variables de entorno
-5. Levantar la base de datos
+1. Clonar el repositorio
+2. Instalar dependencias del backend:
 
-```
-docker-compose up -d
-```
+   ```bash
+   cd backend
+   pnpm install
+   ```
 
-1. Levantar: ```yarn start:dev```
+3. Copiar `.env.template` a `.env` y ajustar las variables necesarias.
+4. Levantar la base de datos PostgreSQL con Docker:
 
-2. Ejecutar SEED
+   ```bash
+   docker-compose up -d
+   ```
 
-```
-http://localhost:3000/api/seed
-```
+5. Iniciar el servidor en modo desarrollo:
+
+   ```bash
+   pnpm start:dev
+   ```
+
+6. Ejecutar el seed oficial de Prisma para cargar datos de prueba:
+
+   ```bash
+   pnpm prisma db seed
+   ```
+
+   Desde la raíz del monorepo también se puede correr con el scope:
+
+   ```bash
+   pnpm --filter sigma-backend -- prisma db seed
+   ```
 
 # SMTP
 
