@@ -161,7 +161,7 @@ export class AuthService {
       throw new BadRequestException('Token expirado');
     }
 
-    return { valid: true };
+    return { valid: true, email: resetToken.user.email };
   }
 
   async resetPassword(resetPasswordDto: ResetPasswordDto) {

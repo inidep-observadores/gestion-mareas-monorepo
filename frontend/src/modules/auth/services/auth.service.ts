@@ -39,6 +39,19 @@ const authApi = {
     logout: async (): Promise<void> => {
         await httpClient.post('/auth/logout');
     },
+
+    forgotPassword: async (email: string): Promise<void> => {
+        await httpClient.post('/auth/forgot-password', { email });
+    },
+
+    validateResetToken: async (token: string): Promise<{ email: string }> => {
+        const { data } = await httpClient.get<{ email: string }>(`/auth/reset-password/${token}`);
+        return data;
+    },
+
+    resetPassword: async (resetData: any): Promise<void> => {
+        await httpClient.post('/auth/reset-password', resetData);
+    },
 };
 
 export default authApi;
