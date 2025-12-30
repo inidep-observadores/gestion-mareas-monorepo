@@ -146,6 +146,16 @@ const router = createRouter({
         roles: ['admin'],
       },
     },
+    {
+      path: '/admin/observadores',
+      name: 'AdminObservadores',
+      component: () => import('@/modules/admin/views/ObservadoresView.vue'),
+      meta: {
+        title: 'Gestión de Observadores',
+        requiresAuth: true,
+        roles: ['admin'],
+      },
+    },
     // 404 No encontrado
     {
       path: '/:pathMatch(.*)*',

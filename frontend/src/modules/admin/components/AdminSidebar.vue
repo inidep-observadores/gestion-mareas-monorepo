@@ -122,6 +122,7 @@ import {
   LogoutIcon,
   HorizontalDots,
   UserGroupIcon,
+  UserCircleIcon,
   ShieldIcon,
   ArrowLeftIcon
 } from '@/icons'
@@ -142,6 +143,11 @@ const menuGroups = [
         icon: UserGroupIcon,
         name: 'Usuarios',
         path: '/admin/users',
+      },
+      {
+        icon: UserCircleIcon,
+        name: 'Observadores',
+        path: '/admin/observadores',
       },
     ],
   },

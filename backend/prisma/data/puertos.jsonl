@@ -1,0 +1,21 @@
+{"nombre":"Buenos Aires","latitud":-34.58333,"longitud":-58.38334,"codigoInterno":"12","esLocal":false,"activo":true}
+{"nombre":"Rio Grande (brasil)","latitud":-32.13334,"longitud":-52.08333,"codigoInterno":"20","esLocal":false,"activo":true}
+{"nombre":"Montevideo","latitud":-34.9,"longitud":-56.2,"codigoInterno":"XX","esLocal":false,"activo":true}
+{"nombre":"Samborombon","latitud":-35.73333,"longitud":-57.31667,"codigoInterno":"21","esLocal":false,"activo":true}
+{"nombre":"San Clemente","latitud":-36.33333,"longitud":-56.78333,"codigoInterno":"14","esLocal":false,"activo":true}
+{"nombre":"Mar Del Plata","latitud":-38.06667,"longitud":-57.55,"codigoInterno":"1","esLocal":true,"activo":true}
+{"nombre":"Quequen","latitud":-38.58333,"longitud":-58.7,"codigoInterno":"2","esLocal":false,"activo":true}
+{"nombre":"Bahia Blanca","latitud":-38.75,"longitud":-62.16667,"codigoInterno":"3","esLocal":false,"activo":true}
+{"nombre":"Bahia San Blas","latitud":-40.55,"longitud":-62.23333,"codigoInterno":"15","esLocal":false,"activo":true}
+{"nombre":"San Antonio Oeste","latitud":-40.73333,"longitud":-64.96667,"codigoInterno":"9","esLocal":false,"activo":true}
+{"nombre":"Viedma","latitud":-40.9,"longitud":-62.86666,"codigoInterno":"22","esLocal":false,"activo":true}
+{"nombre":"Puerto Madryn","latitud":-42.76667,"longitud":-65.05,"codigoInterno":"4","esLocal":false,"activo":true}
+{"nombre":"Rawson","latitud":-43.33333,"longitud":-65.06667,"codigoInterno":"7","esLocal":false,"activo":true}
+{"nombre":"Bahia Camarones","latitud":-44.8,"longitud":-65.73333,"codigoInterno":"11","esLocal":false,"activo":true}
+{"nombre":"Comod, Rivad,","latitud":-45.88334,"longitud":-67.5,"codigoInterno":"6","esLocal":false,"activo":true}
+{"nombre":"Caleta Olivia","latitud":-46.43333,"longitud":-67.53333,"codigoInterno":"16","esLocal":false,"activo":true}
+{"nombre":"Deseado","latitud":-47.76667,"longitud":-65.91666,"codigoInterno":"5","esLocal":false,"activo":true}
+{"nombre":"San Julian","latitud":-49.31667,"longitud":-67.73333,"codigoInterno":"17","esLocal":false,"activo":true}
+{"nombre":"Punta Quilla","latitud":-50.11666,"longitud":-68.41666,"codigoInterno":"23","esLocal":false,"activo":true}
+{"nombre":"Rio Gallegos","latitud":-51.63334,"longitud":-69.2,"codigoInterno":"19","esLocal":false,"activo":true}
+{"nombre":"Ushuaia","latitud":-54.83333,"longitud":-68.3,"codigoInterno":"10","esLocal":false,"activo":true}

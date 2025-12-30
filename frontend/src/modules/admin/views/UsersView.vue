@@ -9,7 +9,7 @@
         <div class="flex gap-2">
           <button
             @click="openCreateModal"
-            class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            class="flex items-center justify-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white shadow-theme-xs hover:bg-brand-600 disabled:opacity-50 transition-colors"
           >
             Nuevo Usuario
           </button>
@@ -23,7 +23,12 @@
                  <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                     <SearchIcon class="w-5 h-5 text-gray-400" />
                 </div>
-                <input v-model="searchQuery" type="text" placeholder="Buscar usuarios..." class="block w-full py-2 pl-10 pr-3 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" />
+                <input 
+                    v-model="searchQuery" 
+                    type="text" 
+                    placeholder="Buscar usuarios..." 
+                    class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent py-2 pl-10 pr-3 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" 
+                />
             </div>
             <!-- <div class="flex gap-2">
                  <button class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700">Filtrar</button>
@@ -51,7 +56,7 @@
               <tr v-for="user in filteredUsers" :key="user.id" class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
                 <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
                     <div class="flex items-center gap-3">
-                         <img :src="user.avatarUrl || '/placeholder-avatar.png'" class="w-8 h-8 rounded-full object-cover" alt="Avatar">
+                         <img :src="getFullImageUrl(user.avatarUrl)" class="w-8 h-8 rounded-full object-cover" alt="Avatar">
                          <div>
                             <div class="font-semibold">{{ user.fullName }}</div>
                             <div class="text-xs text-gray-500">{{ user.email }}</div>
@@ -110,6 +115,7 @@ import { SearchIcon } from '@/icons';
 import UserDialog from '../components/UserDialog.vue'
 import { useUsers } from '../composables/useUsers'
 import { ROLE_LABELS } from '../constants/roles.constants'
+import { getFullImageUrl } from '@/helpers/image.helper';
 
 const {
     isLoading,

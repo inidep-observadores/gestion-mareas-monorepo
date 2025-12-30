@@ -30,28 +30,28 @@
         </div>
 
         <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Nombre Completo</label>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-400 mb-1.5">Nombre Completo</label>
             <input
                 v-model="form.fullName"
                 type="text"
                 required
-                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white px-3 py-2 border"
+                class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
             />
         </div>
 
         <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-400 mb-1.5">Email</label>
             <input
                 v-model="form.email"
                 type="email"
                 required
                 :disabled="isEditing"
-                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white disabled:opacity-50 px-3 py-2 border"
+                class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800 disabled:opacity-50"
             />
         </div>
 
         <div v-if="!isEditing || showPassword">
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-400 mb-1.5">
                 {{ isEditing ? 'Nueva Contraseña (Opcional)' : 'Contraseña' }}
             </label>
             <input
@@ -59,7 +59,7 @@
                 type="password"
                 :required="!isEditing"
                 minlength="6"
-                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white px-3 py-2 border"
+                class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
             />
         </div>
         <div v-if="isEditing" class="flex justify-end">
@@ -69,16 +69,32 @@
         </div>
 
         <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Roles</label>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-400 mb-2">Roles</label>
             <div class="flex gap-4 flex-wrap">
-                <label v-for="role in ROLES" :key="role.id" class="inline-flex items-center">
-                    <input 
-                        type="checkbox" 
-                        :value="role.id" 
-                        v-model="form.roles" 
-                        class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
-                    >
-                    <span class="ml-2 text-gray-700 dark:text-gray-300 text-sm">{{ role.name }}</span>
+                <label v-for="role in ROLES" :key="role.id" class="flex items-center text-sm font-normal text-gray-700 cursor-pointer select-none dark:text-gray-400 group">
+                    <div class="relative">
+                        <input 
+                            type="checkbox" 
+                            :value="role.id" 
+                            v-model="form.roles" 
+                            class="sr-only"
+                        >
+                        <div
+                            :class="
+                                form.roles.includes(role.id)
+                                ? 'border-brand-500 bg-brand-500'
+                                : 'bg-transparent border-gray-300 dark:border-gray-700 group-hover:border-brand-300'
+                            "
+                            class="mr-3 flex h-5 w-5 items-center justify-center rounded-md border-[1.25px] transition-colors"
+                        >
+                            <span :class="form.roles.includes(role.id) ? '' : 'opacity-0'">
+                                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M11.6666 3.5L5.24992 9.91667L2.33325 7" stroke="white" stroke-width="1.94437" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </span>
+                        </div>
+                    </div>
+                    <span class="transition-colors group-hover:text-gray-900 dark:group-hover:text-white">{{ role.name }}</span>
                 </label>
             </div>
         </div>
@@ -86,14 +102,14 @@
         <div class="mt-5 sm:mt-6 sm:grid sm:grid-flow-row-dense sm:grid-cols-2 sm:gap-3">
             <button
                 type="submit"
-                class="inline-flex w-full justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 sm:col-start-2 sm:text-sm"
+                class="flex items-center justify-center w-full px-4 py-3 text-sm font-medium text-white transition rounded-lg bg-brand-500 shadow-theme-xs hover:bg-brand-600 disabled:opacity-50 disabled:cursor-not-allowed sm:col-start-2"
                 :disabled="isSaving || isUploading"
             >
                 {{ isSaving ? 'Guardando...' : 'Guardar' }}
             </button>
             <button
                 type="button"
-                class="mt-3 inline-flex w-full justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-base font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 sm:col-start-1 sm:mt-0 sm:text-sm dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600"
+                class="mt-3 flex items-center justify-center w-full px-4 py-3 text-sm font-medium text-gray-700 transition bg-white border border-gray-300 rounded-lg shadow-theme-xs hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200 sm:col-start-1 sm:mt-0"
                 @click="closeModal"
             >
                 Cancelar
