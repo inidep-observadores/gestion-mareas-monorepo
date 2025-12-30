@@ -104,10 +104,16 @@ const router = createRouter({
         requiresAuth: true,
       },
     },
-    // Redirección por defecto
+    // 404 No encontrado
     {
       path: '/:pathMatch(.*)*',
-      redirect: { name: 'Dashboard' },
+      name: 'NotFound',
+      component: () => import('@/modules/common/views/NotFoundView.vue'),
+      meta: {
+        title: 'Página no encontrada',
+        guestOnly: false, // Accessible by everyone
+        requiresAuth: false
+      }
     },
   ],
 })
