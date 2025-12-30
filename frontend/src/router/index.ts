@@ -177,6 +177,15 @@ const router = createRouter({
         requiresAuth: false
       }
     },
+    {
+      path: '/unauthorized',
+      name: 'Unauthorized',
+      component: () => import('@/modules/auth/views/UnauthorizedView.vue'),
+      meta: {
+        title: 'Acceso Restringido',
+        requiresAuth: true
+      }
+    },
   ],
 })
 
@@ -200,7 +209,13 @@ router.beforeEach(async (to, from, next) => {
     return next({ name: 'Dashboard' })
   }
 
-  // 3. Check for Roles
+  // 3. User with 'invitado' role must be trapped in '/unauthorized'
+  const isGuest = authStore.user?.roles?.includes('invitado')
+  if (isAuthenticated && isGuest && to.name !== 'Unauthorized') {
+    return next({ name: 'Unauthorized' })
+  }
+
+  // 4. Check for Roles (Regular role authorization)
   if (to.meta.roles) {
     const roles = to.meta.roles as string[]
     const userRoles = authStore.user?.roles || []
@@ -212,7 +227,7 @@ router.beforeEach(async (to, from, next) => {
     }
   }
 
-  // 4. Default
+  // 5. Default
   next()
 })
 
