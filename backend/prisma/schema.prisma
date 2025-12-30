@@ -7,15 +7,15 @@ datasource db {
 }
 
 model User {
-  id          String   @id @default(uuid()) @db.Uuid
-  email       String   @unique
-  password    String
-  fullName    String
-  isActive    Boolean  @default(true)
-  roles       String[] @default(["asistente_administrativo"])
-  themePreference String @default("system")
+  id              String   @id @default(uuid()) @db.Uuid
+  email           String   @unique
+  password        String
+  fullName        String
+  isActive        Boolean  @default(true)
+  roles           String[] @default(["asistente_administrativo"])
+  themePreference String   @default("system")
   avatarUrl       String?
-  
+
   products    Product[]
   resetTokens PasswordResetToken[]
 
@@ -23,15 +23,15 @@ model User {
 }
 
 model PasswordResetToken {
-  id           String   @id @default(uuid()) @db.Uuid
-  token        String
-  expiresAt    DateTime @map("expires_at") @db.Timestamptz
-  used         Boolean  @default(false)
-  requestedIp  String?  @map("requested_ip")
-  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
-  
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId       String   @map("user_id") @db.Uuid
+  id          String   @id @default(uuid()) @db.Uuid
+  token       String
+  expiresAt   DateTime @map("expires_at") @db.Timestamptz
+  used        Boolean  @default(false)
+  requestedIp String?  @map("requested_ip")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String @map("user_id") @db.Uuid
 
   @@map("password_reset_tokens")
 }
@@ -46,20 +46,188 @@ model Product {
   sizes       String[]
   gender      String
   tags        String[] @default([])
-  
-  images      ProductImage[]
-  user        User     @relation(fields: [userId], references: [id])
-  userId      String   @db.Uuid
+
+  images ProductImage[]
+  user   User           @relation(fields: [userId], references: [id])
+  userId String         @db.Uuid
 
   @@map("products")
 }
 
 model ProductImage {
-  id        Int      @id @default(autoincrement())
-  url       String
-  
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  productId String   @db.Uuid
+  id  Int    @id @default(autoincrement())
+  url String
+
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId String  @db.Uuid
 
   @@map("product_images")
+}
+
+model TipoFlota {
+  id          String  @id @default(uuid()) @db.Uuid
+  codigo      String  @unique
+  nombre      String
+  descripcion String?
+  orden       Int?
+  activo      Boolean @default(true)
+
+  buques Buque[]
+
+  @@map("tipos_flota")
+}
+
+model Buque {
+  id            String @id @default(uuid()) @db.Uuid
+  nombreBuque   String @map("nombre_buque")
+  matricula     String @unique
+  codigoInterno Int?   @map("codigo_interno")
+
+  tipoFlota   TipoFlota? @relation(fields: [tipoFlotaId], references: [id])
+  tipoFlotaId String?    @map("id_tipo_flota") @db.Uuid
+
+  arteHabitual   ArtePesca? @relation(fields: [arteHabitualId], references: [id])
+  arteHabitualId String?    @map("id_arte_habitual") @db.Uuid
+
+  pesqueriaHabitual   Pesqueria? @relation(fields: [pesqueriaHabitualId], references: [id])
+  pesqueriaHabitualId String?    @map("id_pesqueria_habitual") @db.Uuid
+
+  diasMareaEstimada Int?     @map("dias_marea_estimada")
+  esloraM           Decimal? @map("eslora_m") @db.Decimal(6, 2)
+  potenciaHp        Int?     @map("potencia_hp")
+
+  puertoBase              Puerto? @relation(fields: [puertoBaseId], references: [id])
+  puertoBaseId            String? @map("id_puerto_base") @db.Uuid
+  empresaNombre           String? @map("empresa_nombre")
+  empresaLocalidad        String? @map("empresa_localidad")
+  empresaTelefono         String? @map("empresa_telefono")
+  empresaFax              String? @map("empresa_fax")
+  empresaCorreoPrincipal  String? @map("empresa_correo_principal")
+  empresaCorreoSecundario String? @map("empresa_correo_secundario")
+  armadorNombre           String? @map("armador_nombre")
+  armadorTelefono         String? @map("armador_telefono")
+  agenciaMaritimaNombre   String? @map("agencia_maritima_nombre")
+
+  activo        Boolean   @default(true)
+  fechaAlta     DateTime? @map("fecha_alta") @db.Date
+  fechaBaja     DateTime? @map("fecha_baja") @db.Date
+  observaciones String?
+
+  @@map("buques")
+}
+
+model ArtePesca {
+  id             String  @id @default(uuid()) @db.Uuid
+  codigoNumerico Int     @unique @map("codigo_numerico")
+  descripcion    String
+  activo         Boolean @default(true)
+
+  buquesHabituales Buque[]
+
+  @@map("artes_pesca")
+}
+
+model Pesqueria {
+  id          String  @id @default(uuid()) @db.Uuid
+  codigo      String  @unique
+  nombre      String
+  descripcion String?
+  grupo       String?
+  orden       Int?
+  activo      Boolean @default(true)
+
+  buquesHabituales       Buque[]
+  observadoresPesquerias ObservadorPesqueria[]
+
+  @@map("pesquerias")
+}
+
+model Puerto {
+  id            String  @id @default(uuid()) @db.Uuid
+  nombre        String
+  provincia     String?
+  pais          String?
+  codigoInterno String? @map("codigo_interno")
+  codigoExterno String? @map("codigo_externo")
+  esLocal       Boolean @default(false) @map("es_local")
+  activo        Boolean @default(true)
+  orden         Int?
+  observaciones String?
+
+  buquesBase Buque[]
+
+  @@map("puertos")
+}
+
+model Especie {
+  id               String  @id @default(uuid()) @db.Uuid
+  codigo           String  @unique
+  nombreCientifico String  @map("nombre_cientifico")
+  nombreVulgar     String  @map("nombre_vulgar")
+  activo           Boolean @default(true)
+  observaciones    String?
+
+  observadoresPesquerias ObservadorPesqueria[]
+
+  @@map("especies")
+}
+
+model Observador {
+  id                         String    @id @default(uuid()) @db.Uuid
+  codigoInterno              Int       @map("codigo_interno")
+  nombre                     String
+  apellido                   String
+  fotoUrl                    String?   @map("foto_url")
+  tipoObservador             String    @map("tipo_observador") // 'OBSERVADOR' | 'TECNICO'
+  tipoContrato               String    @map("tipo_contrato") // 'LEY MARCO' | 'MONOTRIBUTISTA' | 'PLANTA PERMANENTE'
+  activo                     Boolean   @default(true)
+  disponible                 Boolean   @default(true)
+  fechaProximaDisponibilidad DateTime? @map("fecha_proxima_disponibilidad") @db.Timestamptz
+  observaciones              String?
+
+  pesquerias ObservadorPesqueria[]
+
+  @@map("observadores")
+}
+
+model ObservadorPesqueria {
+  id           String     @id @default(uuid()) @db.Uuid
+  observador   Observador @relation(fields: [observadorId], references: [id])
+  observadorId String     @map("id_observador") @db.Uuid
+  pesqueria    Pesqueria  @relation(fields: [pesqueriaId], references: [id])
+  pesqueriaId  String     @map("id_pesqueria") @db.Uuid
+
+  // NOTE: In the pseudocode it says especie_id but it also relates to pesqueria.
+  // Looking at the table name and relations, it seems to be linking observers to fisheries.
+  // I will follow the pseudocode table structure primarily.
+
+  modo       String // 'WHITELIST' | 'BLACKLIST'
+  activo     Boolean   @default(true)
+  motivo     String?
+  fechaDesde DateTime? @map("fecha_desde") @db.Timestamptz
+  fechaHasta DateTime? @map("fecha_hasta") @db.Timestamptz
+  especie    Especie?  @relation(fields: [especieId], references: [id])
+  especieId  String?   @db.Uuid
+
+  @@unique([observadorId, pesqueriaId, modo])
+  @@index([observadorId])
+  @@index([pesqueriaId])
+  @@map("observador_pesquerias")
+}
+
+model EstadoMarea {
+  id                   String  @id @default(uuid()) @db.Uuid
+  codigo               String  @unique
+  nombre               String
+  descripcion          String?
+  categoria            String // 'PENDIENTE' | 'EN_CURSO' | 'COMPLETADO' | 'CANCELADO'
+  orden                Int
+  esInicial            Boolean @default(false) @map("es_inicial")
+  esFinal              Boolean @default(false) @map("es_final")
+  permiteCargaArchivos Boolean @default(false) @map("permite_carga_archivos")
+  permiteCorreccion    Boolean @default(false) @map("permite_correccion")
+  permiteInforme       Boolean @default(false) @map("permite_informe")
+  activo               Boolean @default(true)
+
+  @@map("estados_marea")
 }
