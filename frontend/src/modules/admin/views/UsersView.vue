@@ -61,7 +61,7 @@
                 <td class="px-6 py-4">
                     <div class="flex gap-1 flex-wrap">
                         <span v-for="role in user.roles" :key="role" class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded dark:bg-blue-900 dark:text-blue-300 border border-blue-400">
-                            {{ roleLabels[role] || role }}
+                            {{ ROLE_LABELS[role] || role }}
                         </span>
                     </div>
                 </td>
@@ -104,111 +104,29 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { onMounted } from 'vue'
 import AdminDashboardLayout from '../layouts/AdminDashboardLayout.vue'
 import { SearchIcon } from '@/icons';
 import UserDialog from '../components/UserDialog.vue'
-import usersAdminApi, { type CreateUserDto, type UpdateUserDto } from '../services/users.service'
-import type { User } from '@/modules/auth/types/auth.types'
-import { toast } from 'vue-sonner'
+import { useUsers } from '../composables/useUsers'
+import { ROLE_LABELS } from '../constants/roles.constants'
 
-const users = ref<User[]>([])
-const isLoading = ref(true)
-const searchQuery = ref('')
-const showModal = ref(false)
-const selectedUser = ref<User | null>(null)
-const isSaving = ref(false)
-
-const roleLabels: Record<string, string> = {
-    admin: 'Administrador',
-    asistente_administrativo: 'Asistente Adm.',
-    tecnico_datos: 'Técnico Datos',
-    coordinador: 'Coordinador',
-    // Fallback for old ones if any
-    user: 'Usuario',
-    observer: 'Observador'
-}
-
-const fetchUsers = async () => {
-    isLoading.value = true;
-    try {
-        users.value = await usersAdminApi.getUsers();
-    } catch (error) {
-        toast.error('Error al cargar usuarios');
-    } finally {
-        isLoading.value = false;
-    }
-}
-
-const filteredUsers = computed(() => {
-    if (!searchQuery.value) return users.value;
-    const lower = searchQuery.value.toLowerCase();
-    return users.value.filter(u =>
-        u.fullName.toLowerCase().includes(lower) ||
-        u.email.toLowerCase().includes(lower)
-    );
-})
-
-const openCreateModal = () => {
-    selectedUser.value = null;
-    showModal.value = true;
-}
-
-const openEditModal = (user: User) => {
-    selectedUser.value = { ...user }; // Clone to avoid direct mutation
-    showModal.value = true;
-}
-
-const closeModal = () => {
-    showModal.value = false;
-    selectedUser.value = null;
-}
-
-const handleSave = async (data: any) => {
-    isSaving.value = true;
-    try {
-        const { id, ...payload } = data;
-        
-        // Cleanup payload: remove empty password
-        if (!payload.password) delete payload.password;
-
-        if (id) {
-            // Update
-            await usersAdminApi.updateUser(id, payload);
-            toast.success('Usuario actualizado correctamente');
-        } else {
-            // Create
-            await usersAdminApi.createUser(payload as CreateUserDto);
-            toast.success('Usuario creado correctamente');
-        }
-        await fetchUsers();
-        closeModal();
-    } catch (error: any) {
-        console.error('Save error:', error);
-        const errorMessage = error.response?.data?.message || 'Error al guardar usuario';
-        
-        if (Array.isArray(errorMessage)) {
-            errorMessage.forEach(msg => toast.error(msg));
-        } else {
-            toast.error(errorMessage);
-        }
-    } finally {
-        isSaving.value = false;
-    }
-}
-
-const handleToggleStatus = async (user: User) => {
-    try {
-        await usersAdminApi.toggleStatus(user.id);
-        toast.success(`Usuario ${user.isActive ? 'desactivado' : 'activado'} correctamente`);
-        await fetchUsers();
-    } catch (error: any) {
-        const errorMessage = error.response?.data?.message || 'Error al cambiar estado';
-        toast.error(errorMessage);
-    }
-}
+const {
+    isLoading,
+    searchQuery,
+    showModal,
+    selectedUser,
+    isSaving,
+    filteredUsers,
+    fetchUsers,
+    openCreateModal,
+    openEditModal,
+    closeModal,
+    handleSave,
+    handleToggleStatus
+} = useUsers()
 
 onMounted(() => {
-    fetchUsers();
+    fetchUsers()
 })
 </script>

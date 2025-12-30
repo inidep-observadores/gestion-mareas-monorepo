@@ -2,13 +2,14 @@ import { BadRequestException, Injectable, InternalServerErrorException, NotFound
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdateUserDto, ChangePasswordDto, CreateUserDto, AdminUpdateUserDto } from './dto';
 import { ValidRoles } from '../auth/interfaces';
-import * as bcrypt from 'bcrypt';
 import { User } from '@prisma/client';
+import { HashService } from '../common/services/hash.service';
 
 @Injectable()
 export class UsersService {
     constructor(
         private readonly prisma: PrismaService,
+        private readonly hashService: HashService,
     ) { }
 
     async updateProfile(user: User, updateUserDto: UpdateUserDto) {
@@ -42,11 +43,11 @@ export class UsersService {
 
         if (!contextUser) throw new UnauthorizedException('Usuario no encontrado');
 
-        if (!bcrypt.compareSync(currentPassword, contextUser.password)) {
+        if (!this.hashService.compare(currentPassword, contextUser.password)) {
             throw new UnauthorizedException('La contraseña actual es incorrecta');
         }
 
-        const hashedPassword = bcrypt.hashSync(newPassword, 10);
+        const hashedPassword = this.hashService.hash(newPassword);
 
         await this.prisma.user.update({
             where: { id: user.id },
@@ -79,7 +80,7 @@ export class UsersService {
             const user = await this.prisma.user.create({
                 data: {
                     ...userData,
-                    password: bcrypt.hashSync(password, 10),
+                    password: this.hashService.hash(password),
                 }
             });
 
@@ -108,7 +109,7 @@ export class UsersService {
         try {
             const updateData: any = { ...data };
             if (password) {
-                updateData.password = bcrypt.hashSync(password, 10);
+                updateData.password = this.hashService.hash(password);
             }
 
             const user = await this.prisma.user.update({
