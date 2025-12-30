@@ -1,5 +1,8 @@
 <template>
-  <AdminLayout>
+  <AdminLayout 
+    title="Mapa de Recorridos (VMS)" 
+    description="Monitoreo satelital y tracking en tiempo real de la flota."
+  >
     <div
       class="relative w-full overflow-hidden bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100"
       style="height: calc(100vh - 64px)"

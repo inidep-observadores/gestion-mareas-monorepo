@@ -1,19 +1,14 @@
 <template>
-  <AdminLayout>
+  <AdminLayout 
+    title="Flujo de Trabajo de Mareas" 
+    description="Gestión centralizada de estados y operativas."
+  >
     <div class="relative min-h-[calc(100vh-100px)] z-1">
-      <!-- Header & Filters -->
-      <div class="mb-6 space-y-4">
-        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 class="text-2xl text-gray-800 dark:text-white/90">Flujo de Trabajo de Mareas</h1>
-            <p class="text-gray-500 dark:text-gray-400">
-              Gestión centralizada de estados y operativas.
-            </p>
-          </div>
-
+      <!-- Filters and Navigation Actions -->
+      <div class="mb-6 flex justify-end">
           <!-- View Toggle -->
           <ViewToggle v-model="viewMode" :options="viewOptions" />
-        </div>
+      </div>
 
         <!-- Advanced Filter Bar -->
         <FilterBar>
@@ -61,7 +56,6 @@
             </div>
           </div>
         </FilterBar>
-      </div>
 
       <!-- Main Content Area -->
       <div

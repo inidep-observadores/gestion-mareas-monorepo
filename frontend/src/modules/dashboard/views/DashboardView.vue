@@ -1,27 +1,19 @@
 <template>
-  <AdminLayout>
+  <AdminLayout 
+    title="Panel General" 
+    description="Resumen operativo: Gestión por excepción y prioridad inmediata."
+  >
     <div class="relative min-h-[calc(100vh-100px)] z-1 pb-10">
-      <!-- DASHBOARD HEADER -->
-      <div class="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 class="text-3xl text-gray-800 dark:text-white tracking-tight uppercase">
-            Panel general
-          </h1>
-          <p class="text-sm font-medium text-gray-500 dark:text-gray-400">
-            Resumen operativo: Gestión por excepción y prioridad inmediata.
-          </p>
-        </div>
-        <div class="flex items-center gap-4">
-
+      <!-- DASHBOARD EXTRA HEADER INFO -->
+      <div class="mb-6 flex justify-end">
           <div
-            class="flex items-center gap-2 rounded-2xl bg-white p-2 shadow-sm dark:bg-gray-900 border border-gray-100 dark:border-gray-800"
+            class="flex items-center gap-2 rounded-2xl bg-white p-2 px-3 shadow-sm dark:bg-gray-900 border border-gray-100 dark:border-gray-800"
           >
             <span class="flex h-2 w-2 rounded-full bg-success-500 animate-pulse"></span>
-            <span class="text-[10px] uppercase text-gray-500 dark:text-gray-400"
+            <span class="text-[10px] uppercase font-bold text-gray-500 dark:text-gray-400 tracking-wider"
               >Sistema en Tiempo Real</span
             >
           </div>
-        </div>
       </div>
 
       <!-- ROW 1: THE PULSE OF THE MOMENT (KPIs) -->
