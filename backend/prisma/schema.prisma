@@ -147,6 +147,8 @@ model Puerto {
   nombre        String
   provincia     String?
   pais          String?
+  latitud       Float?
+  longitud      Float?
   codigoInterno String? @map("codigo_interno")
   codigoExterno String? @map("codigo_externo")
   esLocal       Boolean @default(false) @map("es_local")
