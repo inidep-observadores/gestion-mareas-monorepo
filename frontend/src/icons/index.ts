@@ -56,6 +56,8 @@ import DownloadIcon from './DownloadIcon.vue'
 import CloudUploadIcon from './CloudUploadIcon.vue'
 import LockIcon from './LockIcon.vue'
 import GripVerticalIcon from './GripVerticalIcon.vue'
+import EyeIcon from './EyeIcon.vue'
+import EyeSlashIcon from './EyeSlashIcon.vue'
 
 export {
   WaveIcon,
@@ -116,4 +118,6 @@ export {
   CloudUploadIcon,
   LockIcon,
   GripVerticalIcon,
+  EyeIcon,
+  EyeSlashIcon,
 }

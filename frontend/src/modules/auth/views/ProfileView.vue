@@ -83,45 +83,88 @@
             <h3 class="mb-5 text-lg font-medium text-gray-800 dark:text-white">Seguridad</h3>
             <form @submit.prevent="changePassword">
               <div class="space-y-4">
+                <!-- Current Password -->
                 <div>
                   <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
                     Contraseña Actual
                   </label>
-                  <input
-                    v-model="passwordForm.currentPassword"
-                    type="password"
-                    class="w-full px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg focus:border-brand-500 focus:ring-brand-500 focus:outline-none dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700"
-                    placeholder="********"
-                  />
+                  <div class="relative">
+                    <input
+                      v-model="passwordForm.currentPassword"
+                      :type="showCurrentPassword ? 'text' : 'password'"
+                      class="w-full px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg focus:border-brand-500 focus:ring-brand-500 focus:outline-none dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700"
+                      placeholder="********"
+                    />
+                    <button type="button" @click="showCurrentPassword = !showCurrentPassword" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400">
+                        <EyeIcon v-if="!showCurrentPassword" class="w-5 h-5" />
+                        <EyeSlashIcon v-else class="w-5 h-5" />
+                    </button>
+                  </div>
                 </div>
+
+                <!-- New Password -->
                 <div>
                   <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
                     Nueva Contraseña
                   </label>
-                  <input
-                    v-model="passwordForm.newPassword"
-                    type="password"
-                    class="w-full px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg focus:border-brand-500 focus:ring-brand-500 focus:outline-none dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700"
-                    placeholder="Use al menos 6 caracteres"
-                  />
+                  <div class="relative">
+                    <input
+                      v-model="passwordForm.newPassword"
+                      :type="showNewPassword ? 'text' : 'password'"
+                      class="w-full px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg focus:border-brand-500 focus:ring-brand-500 focus:outline-none dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700"
+                      placeholder="Use al menos 6 caracteres"
+                    />
+                    <button type="button" @click="showNewPassword = !showNewPassword" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400">
+                        <EyeIcon v-if="!showNewPassword" class="w-5 h-5" />
+                        <EyeSlashIcon v-else class="w-5 h-5" />
+                    </button>
+                  </div>
+                  
+                  <!-- Password Requirements -->
+                  <div v-if="passwordForm.newPassword" class="mt-3 flex flex-wrap gap-2">
+                        <span
+                          v-for="(req, index) in passwordRequirements"
+                          :key="index"
+                          :class="[
+                            'px-2 py-1 text-[10px] rounded-md border transition-colors',
+                            req.met
+                              ? 'bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800'
+                              : 'bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800'
+                          ]"
+                        >
+                          {{ req.label }}
+                        </span>
+                  </div>
                 </div>
+
+                <!-- Confirm Password -->
                 <div>
                   <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
                     Confirmar Contraseña
                   </label>
-                  <input
-                    v-model="passwordForm.confirmPassword"
-                    type="password"
-                    class="w-full px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg focus:border-brand-500 focus:ring-brand-500 focus:outline-none dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700"
-                    placeholder="********"
-                  />
+                  <div class="relative">
+                    <input
+                      v-model="passwordForm.confirmPassword"
+                      :type="showConfirmPassword ? 'text' : 'password'"
+                      class="w-full px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg focus:border-brand-500 focus:ring-brand-500 focus:outline-none dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700"
+                      placeholder="********"
+                    />
+                    <button type="button" @click="showConfirmPassword = !showConfirmPassword" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400">
+                        <EyeIcon v-if="!showConfirmPassword" class="w-5 h-5" />
+                        <EyeSlashIcon v-else class="w-5 h-5" />
+                    </button>
+                  </div>
+                  <!-- Match Error -->
+                  <p v-if="showMatchError" class="mt-2 text-xs text-red-500 dark:text-red-400">
+                    Las contraseñas no coinciden
+                  </p>
                 </div>
               </div>
               <div class="mt-6 flex justify-end">
                 <button
                   type="submit"
-                  :disabled="isChangingPassword"
-                  class="px-6 py-2 text-white bg-gray-600 rounded-lg hover:bg-gray-700 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  :disabled="isChangingPassword || !isPasswordFormValid"
+                  class="px-6 py-2 text-white bg-brand-600 rounded-lg hover:bg-brand-700 focus:ring-4 focus:ring-brand-200 dark:focus:ring-brand-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 >
                    <span v-if="isChangingPassword" class="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>
                   Actualizar Contraseña
@@ -137,13 +180,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, onUnmounted } from 'vue';
+import { ref, reactive, onMounted, onUnmounted, computed } from 'vue';
 import { useAuthStore } from '@/modules/auth/stores/auth.store';
 import { storeToRefs } from 'pinia';
 import { toast } from 'vue-sonner';
 import { useRouter } from 'vue-router';
 import AdminLayout from '@/components/layout/AdminLayout.vue';
 import { getFullImageUrl } from '@/helpers/image.helper';
+import { EyeIcon, EyeSlashIcon } from '@/icons';
 
 const authStore = useAuthStore();
 const router = useRouter();
@@ -155,6 +199,10 @@ const isChangingPassword = ref(false);
 const previewUrl = ref('');
 const selectedFile = ref<File | null>(null);
 
+const showCurrentPassword = ref(false);
+const showNewPassword = ref(false);
+const showConfirmPassword = ref(false);
+
 const profileForm = reactive({
   fullName: '',
 });
@@ -163,6 +211,32 @@ const passwordForm = reactive({
   currentPassword: '',
   newPassword: '',
   confirmPassword: ''
+});
+
+// Password Validation
+const passwordRegex = /(?:(?=.*\d)|(?=.*\W+))(?![.\n])(?=.*[A-Z])(?=.*[a-z]).*$/;
+
+const passwordRequirements = computed(() => [
+  { label: 'Mínimo 6 caracteres', met: passwordForm.newPassword.length >= 6 },
+  { label: 'Una mayúscula', met: /[A-Z]/.test(passwordForm.newPassword) },
+  { label: 'Una minúscula', met: /[a-z]/.test(passwordForm.newPassword) },
+  { label: 'Un número o símbolo', met: /(?:\d|\W+)/.test(passwordForm.newPassword) }
+]);
+
+const isPasswordValid = computed(() => {
+  return passwordForm.newPassword.length >= 6 && passwordRegex.test(passwordForm.newPassword);
+});
+
+const doPasswordsMatch = computed(() => {
+    return passwordForm.newPassword === passwordForm.confirmPassword;
+});
+
+const showMatchError = computed(() => {
+    return passwordForm.newPassword && passwordForm.confirmPassword && !doPasswordsMatch.value;
+});
+
+const isPasswordFormValid = computed(() => {
+    return passwordForm.currentPassword && isPasswordValid.value && doPasswordsMatch.value;
 });
 
 onMounted(() => {
@@ -247,13 +321,13 @@ const changePassword = async () => {
         return;
     }
 
-    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+    if (!doPasswordsMatch.value) {
         toast.error('Las nuevas contraseñas no coinciden');
         return;
     }
 
-    if (passwordForm.newPassword.length < 6) {
-        toast.error('La nueva contraseña debe tener al menos 6 caracteres');
+    if (!isPasswordValid.value) {
+        toast.error('La nueva contraseña no cumple con los requisitos de seguridad');
         return;
     }
 
