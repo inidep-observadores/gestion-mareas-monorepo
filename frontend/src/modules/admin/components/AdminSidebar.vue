@@ -19,18 +19,18 @@
         !isExpanded && !isHovered ? 'lg:justify-center' : 'justify-start',
       ]"
     >
-      <router-link to="/" class="flex items-center gap-3">
+      <router-link to="/admin" class="flex items-center gap-3">
         <div
-          class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center flex-shrink-0"
+          class="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-600 to-indigo-600 flex items-center justify-center flex-shrink-0"
         >
-          <WaveIcon class="w-6 h-6 text-white" />
+          <ShieldIcon class="w-6 h-6 text-white" />
         </div>
         <div v-if="isExpanded || isHovered || isMobileOpen" class="flex flex-col">
           <span class="text-lg font-bold text-gray-800 dark:text-white leading-tight"
-            >Gestión de</span
+            >Panel de</span
           >
-          <span class="text-lg font-bold text-blue-600 dark:text-blue-400 leading-tight"
-            >Mareas</span
+          <span class="text-lg font-bold text-purple-600 dark:text-purple-400 leading-tight"
+            >Admin</span
           >
         </div>
       </router-link>
@@ -52,7 +52,20 @@
             </h2>
             <ul class="flex flex-col gap-4">
               <li v-for="item in menuGroup.items" :key="item.name">
-                <template v-if="item.name === 'Cerrar Sesión'">
+                <template v-if="item.name === 'Volver al Sitio'">
+                   <router-link
+                    :to="item.path"
+                    class="menu-item group menu-item-inactive"
+                  >
+                    <span class="menu-item-icon-inactive">
+                      <component :is="item.icon" />
+                    </span>
+                    <span v-if="isExpanded || isHovered || isMobileOpen" class="menu-item-text">{{
+                      item.name
+                    }}</span>
+                  </router-link>
+                </template>
+                <template v-else-if="item.name === 'Cerrar Sesión'">
                   <button
                     @click="handleItemClick(item, $event)"
                     :class="[
@@ -106,18 +119,12 @@
 <script setup lang="ts">
 import { useRoute, useRouter } from 'vue-router'
 import {
-  HomeIcon,
   LogoutIcon,
   HorizontalDots,
-  MailBox,
-  LayoutDashboardIcon,
-  BarChartIcon,
-  CalenderIcon,
-  GridIcon,
-  WaveIcon,
-  MapPinIcon,
+  UserGroupIcon,
   ShieldIcon,
-} from '../../icons'
+  ArrowLeftIcon
+} from '@/icons'
 import { useSidebar } from '@/composables/useSidebar'
 import { useAuthStore } from '@/modules/auth/stores/auth.store'
 
@@ -127,60 +134,14 @@ const authStore = useAuthStore()
 
 const { isExpanded, isMobileOpen, isHovered } = useSidebar()
 
-import { computed } from 'vue'
-
-const menuGroups = computed(() => [
+const menuGroups = [
   {
-    title: 'Menú Principal',
+    title: 'Gestión',
     items: [
       {
-        icon: HomeIcon,
-        name: 'Inicio',
-        path: '/',
-      },
-      ...(authStore.user?.roles.includes('admin')
-        ? [
-            {
-              icon: ShieldIcon,
-              name: 'Administración',
-              path: '/admin',
-            },
-          ]
-        : []),
-    ],
-  },
-  {
-    title: 'Gestión de Mareas',
-    items: [
-      {
-        icon: MailBox,
-        name: 'Bandeja de Entrada',
-        path: '/mareas/inbox',
-      },
-      {
-        icon: LayoutDashboardIcon,
-        name: 'Panel Operativo',
-        path: '/mareas/dashboard',
-      },
-      {
-        icon: GridIcon,
-        name: 'Flujo de Trabajo',
-        path: '/mareas/workflow',
-      },
-      {
-        icon: MapPinIcon,
-        name: 'Mapa de Recorridos',
-        path: '/mareas/monitor',
-      },
-      {
-        icon: CalenderIcon,
-        name: 'Calendario',
-        path: '/mareas/calendar',
-      },
-      {
-        icon: BarChartIcon,
-        name: 'Estadísticas',
-        path: '/mareas/stats',
+        icon: UserGroupIcon,
+        name: 'Usuarios',
+        path: '/admin/users',
       },
     ],
   },
@@ -188,13 +149,18 @@ const menuGroups = computed(() => [
     title: 'Sistema',
     items: [
       {
+        icon: ArrowLeftIcon,
+        name: 'Volver al Sitio',
+        path: '/',
+      },
+      {
         icon: LogoutIcon,
         name: 'Cerrar Sesión',
         path: '/signin',
       },
     ],
   },
-])
+]
 
 const isActive = (path: string) => route.path === path
 

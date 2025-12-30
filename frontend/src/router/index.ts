@@ -131,6 +131,21 @@ const router = createRouter({
         requiresAuth: true,
       },
     },
+    // Admin Module
+    {
+      path: '/admin',
+      redirect: '/admin/users',
+    },
+    {
+      path: '/admin/users',
+      name: 'AdminUsers',
+      component: () => import('@/modules/admin/views/UsersView.vue'),
+      meta: {
+        title: 'Gestión de Usuarios',
+        requiresAuth: true,
+        roles: ['admin'],
+      },
+    },
     // 404 No encontrado
     {
       path: '/:pathMatch(.*)*',
@@ -165,7 +180,19 @@ router.beforeEach(async (to, from, next) => {
     return next({ name: 'Dashboard' })
   }
 
-  // 3. Default
+  // 3. Check for Roles
+  if (to.meta.roles) {
+    const roles = to.meta.roles as string[]
+    const userRoles = authStore.user?.roles || []
+    const hasRole = roles.some(role => userRoles.includes(role))
+
+    if (!hasRole) {
+      // Redirect to home or not found if not authorized
+      return next({ name: 'Dashboard' })
+    }
+  }
+
+  // 4. Default
   next()
 })
 
