@@ -37,6 +37,7 @@
     "vue-draggable-next": "^2.3.0",
     "vue-flatpickr-component": "^11.0.5",
     "vue-router": "^4.5.0",
+    "vue-sonner": "^2.0.9",
     "vue3-apexcharts": "^1.8.0",
     "vuevectormap": "^2.0.1"
   },

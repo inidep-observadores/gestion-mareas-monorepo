@@ -4,6 +4,7 @@ export interface User {
     fullName: string;
     isActive: boolean;
     roles: string[];
+    avatarUrl?: string;
 }
 
 export interface AuthResponse {
