@@ -4,12 +4,13 @@ import { CreatePuertoDto, UpdatePuertoDto } from './dto';
 import { Auth } from '../../auth/decorators';
 import { ValidRoles } from '../../auth/interfaces';
 
-@Controller('admin/catalogos/puertos')
-@Auth(ValidRoles.admin)
+@Controller('catalogos/puertos')
+@Auth()
 export class PuertosController {
     constructor(private readonly puertosService: PuertosService) { }
 
     @Post()
+    @Auth(ValidRoles.admin)
     crear(@Body() createPuertoDto: CreatePuertoDto) {
         return this.puertosService.crear(createPuertoDto);
     }
@@ -25,6 +26,7 @@ export class PuertosController {
     }
 
     @Patch(':id')
+    @Auth(ValidRoles.admin)
     actualizar(
         @Param('id', ParseUUIDPipe) id: string,
         @Body() updatePuertoDto: UpdatePuertoDto,
@@ -33,6 +35,7 @@ export class PuertosController {
     }
 
     @Delete(':id')
+    @Auth(ValidRoles.admin)
     eliminar(@Param('id', ParseUUIDPipe) id: string) {
         return this.puertosService.eliminar(id);
     }

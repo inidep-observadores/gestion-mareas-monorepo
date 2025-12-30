@@ -74,18 +74,6 @@ export function useObservadores() {
         }
     }
 
-    const handleDelete = async (id: string) => {
-        if (!confirm('¿Está seguro de que desea eliminar este observador?')) return
-
-        try {
-            await observadoresApi.deleteObservador(id)
-            toast.success('Observador eliminado correctamente')
-            await fetchObservadores()
-        } catch (error: any) {
-            const errorMessage = error.response?.data?.message || 'Error al eliminar observador'
-            toast.error(errorMessage)
-        }
-    }
 
     return {
         // State
@@ -103,6 +91,5 @@ export function useObservadores() {
         openEditModal,
         closeModal,
         handleSave,
-        handleDelete
     }
 }

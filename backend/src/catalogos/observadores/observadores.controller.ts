@@ -4,12 +4,13 @@ import { CreateObservadorDto, UpdateObservadorDto } from './dto';
 import { Auth } from '../../auth/decorators';
 import { ValidRoles } from '../../auth/interfaces';
 
-@Controller('admin/catalogos/observadores')
-@Auth(ValidRoles.admin)
+@Controller('catalogos/observadores')
+@Auth()
 export class ObservadoresController {
     constructor(private readonly observadoresService: ObservadoresService) { }
 
     @Post()
+    @Auth(ValidRoles.admin)
     crear(@Body() createObservadorDto: CreateObservadorDto) {
         return this.observadoresService.crear(createObservadorDto);
     }
@@ -25,6 +26,7 @@ export class ObservadoresController {
     }
 
     @Patch(':id')
+    @Auth(ValidRoles.admin)
     actualizar(
         @Param('id', ParseUUIDPipe) id: string,
         @Body() updateObservadorDto: UpdateObservadorDto,
@@ -33,6 +35,7 @@ export class ObservadoresController {
     }
 
     @Delete(':id')
+    @Auth(ValidRoles.admin)
     eliminar(@Param('id', ParseUUIDPipe) id: string) {
         return this.observadoresService.eliminar(id);
     }

@@ -44,13 +44,13 @@ async function main() {
       email: 'tecnico@obs.com',
       fullName: 'Técnico de Datos',
       password: password,
-      roles: ['tecnico'],
+      roles: ['tecnico_datos'],
     },
     {
       email: 'asistente@obs.com',
       fullName: 'Asistente Administrativo',
       password: password,
-      roles: ['asistente'],
+      roles: ['asistente_administrativo'],
     },
   ];
 
