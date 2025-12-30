@@ -40,6 +40,24 @@ const router = createRouter({
         guestOnly: true,
       },
     },
+    {
+      path: '/forgot-password',
+      name: 'ForgotPassword',
+      component: () => import('@/modules/auth/views/ForgotPasswordView.vue'),
+      meta: {
+        title: 'Recuperar Contraseña',
+        guestOnly: true,
+      },
+    },
+    {
+      path: '/reset-password',
+      name: 'ResetPassword',
+      component: () => import('@/modules/auth/views/ResetPasswordView.vue'),
+      meta: {
+        title: 'Restablecer Contraseña',
+        guestOnly: true,
+      },
+    },
     // Mareas Module
     {
       path: '/mareas/inbox',
