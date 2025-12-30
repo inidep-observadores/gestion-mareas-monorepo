@@ -41,6 +41,11 @@
                 Ingrese sus datos para crear una cuenta.
               </p>
             </div>
+
+            <div v-if="errorMessage" class="mb-4 p-4 text-sm text-red-700 bg-red-100 rounded-lg dark:bg-red-200 dark:text-red-800" role="alert">
+                <span class="font-medium">Error:</span> {{ errorMessage }}
+            </div>
+
             <div>
               <form @submit.prevent="handleSubmit">
                 <div class="space-y-5">
@@ -58,6 +63,7 @@
                         type="text"
                         id="fname"
                         name="fname"
+                        required
                         placeholder="Ingrese su nombre"
                         class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
                       />
@@ -75,6 +81,7 @@
                         type="text"
                         id="lname"
                         name="lname"
+                        required
                         placeholder="Ingrese su apellido"
                         class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
                       />
@@ -93,6 +100,7 @@
                       type="email"
                       id="email"
                       name="email"
+                      required
                       placeholder="Ingrese su correo electrónico"
                       class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
                     />
@@ -110,6 +118,7 @@
                         v-model="password"
                         :type="showPassword ? 'text' : 'password'"
                         id="password"
+                        required
                         placeholder="Ingrese su contraseña"
                         class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent py-2.5 pl-4 pr-11 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
                       />
@@ -150,6 +159,22 @@
                           />
                         </svg>
                       </span>
+                    </div>
+
+                     <!-- Password Requirements -->
+                    <div v-if="password" class="mt-3 flex flex-wrap gap-2">
+                           <span
+                             v-for="(req, index) in passwordRequirements"
+                             :key="index"
+                             :class="[
+                               'px-2 py-1 text-xs rounded-md border transition-colors',
+                               req.met
+                                 ? 'bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800'
+                                 : 'bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800'
+                             ]"
+                           >
+                             {{ req.label }}
+                           </span>
                     </div>
                   </div>
                   <!-- Checkbox -->
@@ -210,9 +235,11 @@
                   <div>
                     <button
                       type="submit"
-                      class="flex items-center justify-center w-full px-4 py-3 text-sm font-medium text-white transition rounded-lg bg-brand-500 shadow-theme-xs hover:bg-brand-600"
+                      :disabled="isLoading"
+                      class="flex items-center justify-center w-full px-4 py-3 text-sm font-medium text-white transition rounded-lg bg-brand-500 shadow-theme-xs hover:bg-brand-600 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      Registrarse
+                      <span v-if="!isLoading">Registrarse</span>
+                      <span v-else>Cargando...</span>
                     </button>
                   </div>
                 </div>
@@ -262,10 +289,15 @@
 </template>
 
 <script setup lang="ts">
-import FullScreenLayout from '@/components/layout/FullScreenLayout.vue'
+import { ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import CommonGridShape from '@/components/common/CommonGridShape.vue'
+import FullScreenLayout from '@/components/layout/FullScreenLayout.vue'
 import { WaveIcon } from '@/icons'
-import { ref } from 'vue'
+import { useAuthStore } from '../stores/auth.store'
+
+const router = useRouter()
+const authStore = useAuthStore()
 
 const firstName = ref('')
 const lastName = ref('')
@@ -274,18 +306,57 @@ const password = ref('')
 const showPassword = ref(false)
 const agreeToTerms = ref(false)
 
+const isLoading = ref(false)
+const errorMessage = ref('')
+
+// Password Validation
+const passwordRegex = /(?:(?=.*\d)|(?=.*\W+))(?![.\n])(?=.*[A-Z])(?=.*[a-z]).*$/
+
+const passwordRequirements = computed(() => [
+  { label: 'Mínimo 6 caracteres', met: password.value.length >= 6 },
+  { label: 'Una mayúscula', met: /[A-Z]/.test(password.value) },
+  { label: 'Una minúscula', met: /[a-z]/.test(password.value) },
+  { label: 'Un número o símbolo', met: /(?:\d|\W+)/.test(password.value) }
+])
+
+const isPasswordValid = computed(() => {
+  return password.value.length >= 6 && passwordRegex.test(password.value)
+})
+
 const togglePasswordVisibility = () => {
   showPassword.value = !showPassword.value
 }
 
-const handleSubmit = () => {
-  // Implementación futura de registro
-  console.log('Form submitted', {
-    firstName: firstName.value,
-    lastName: lastName.value,
-    email: email.value,
-    password: password.value,
-    agreeToTerms: agreeToTerms.value,
-  })
+const handleSubmit = async () => {
+  if (!agreeToTerms.value) {
+    errorMessage.value = 'Debe aceptar los términos y condiciones'
+    return
+  }
+
+  if (!isPasswordValid.value) {
+    errorMessage.value = 'La contraseña no cumple con los requisitos'
+    return
+  }
+
+  isLoading.value = true
+  errorMessage.value = ''
+
+  try {
+    const result = await authStore.register({
+      email: email.value,
+      password: password.value,
+      fullName: `${firstName.value} ${lastName.value}`.trim()
+    })
+
+    if (result.ok) {
+      router.push({ name: 'Dashboard' })
+    } else {
+      errorMessage.value = result.error?.message || 'Error al registrarse'
+    }
+  } catch (error: any) {
+    errorMessage.value = error.message || 'Ocurrió un error inesperado'
+  } finally {
+    isLoading.value = false
+  }
 }
 </script>

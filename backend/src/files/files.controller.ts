@@ -13,7 +13,7 @@ export class FilesController {
   constructor(
     private readonly filesService: FilesService,
     private readonly configService: ConfigService,
-  ) {}
+  ) { }
 
   @Get('product/:imageName')
   findProductImage(
@@ -21,34 +21,62 @@ export class FilesController {
     @Param('imageName') imageName: string
   ) {
 
-    const path = this.filesService.getStaticProductImage( imageName );
+    const path = this.filesService.getStaticProductImage(imageName);
 
-    res.sendFile( path );
+    res.sendFile(path);
   }
 
+  @Get('users/:imageName')
+  findUserImage(
+    @Res() res: Response,
+    @Param('imageName') imageName: string
+  ) {
 
+    const path = this.filesService.getStaticUserImage(imageName);
+
+    res.sendFile(path);
+  }
 
   @Post('product')
-  @UseInterceptors( FileInterceptor('file', {
+  @UseInterceptors(FileInterceptor('file', {
     fileFilter: fileFilter,
-    // limits: { fileSize: 1000 }
     storage: diskStorage({
       destination: './static/products',
       filename: fileNamer
     })
-  }) )
-  uploadProductImage( 
+  }))
+  uploadProductImage(
     @UploadedFile() file: Express.Multer.File,
-  ){
+  ) {
 
-    if ( !file ) {
+    if (!file) {
       throw new BadRequestException('Make sure that the file is an image');
     }
 
-    // const secureUrl = `${ file.filename }`;
-    const secureUrl = `${ this.configService.get('HOST_API') }/files/product/${ file.filename }`;
+    const secureUrl = `${this.configService.get('HOST_API')}/files/product/${file.filename}`;
 
     return { secureUrl };
   }
 
+  @Post('user')
+  @UseInterceptors(FileInterceptor('file', {
+    fileFilter: fileFilter,
+    storage: diskStorage({
+      destination: './static/users',
+      filename: fileNamer
+    })
+  }))
+  uploadUserImage(
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+
+    if (!file) {
+      throw new BadRequestException('Make sure that the file is an image');
+    }
+
+    // Return relative path for database storage consistency
+    const secureUrl = `/api/files/users/${file.filename}`;
+
+    return { secureUrl };
+  }
 }
