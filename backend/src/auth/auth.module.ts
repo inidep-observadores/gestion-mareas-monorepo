@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { CommonModule } from '../common/common.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
@@ -50,6 +51,7 @@ import { MailerModule } from '@nestjs-modules/mailer';
       }),
     }),
 
+    CommonModule,
   ],
   exports: [JwtStrategy, PassportModule, JwtModule]
 })
