@@ -124,7 +124,8 @@ import {
   UserGroupIcon,
   UserCircleIcon,
   ShieldIcon,
-  ArrowLeftIcon
+  ArrowLeftIcon,
+  ShipIcon
 } from '@/icons'
 import { useSidebar } from '@/composables/useSidebar'
 import { useAuthStore } from '@/modules/auth/stores/auth.store'
@@ -148,6 +149,11 @@ const menuGroups = [
         icon: UserCircleIcon,
         name: 'Observadores',
         path: '/admin/observadores',
+      },
+      {
+        icon: ShipIcon,
+        name: 'Buques',
+        path: '/admin/buques',
       },
     ],
   },

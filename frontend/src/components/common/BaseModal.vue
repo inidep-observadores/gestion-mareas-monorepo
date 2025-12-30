@@ -10,7 +10,7 @@
       <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
         <div
           :class="[
-              'relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full dark:bg-gray-800',
+              'relative transform overflow-hidden rounded-xl bg-white text-left shadow-xl transition-all w-full sm:my-8 dark:bg-gray-800',
               maxWidthClass
           ]"
           @click.stop
@@ -47,7 +47,7 @@ import { computed } from 'vue';
 const props = defineProps<{
   show: boolean;
   title?: string;
-  maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl';
+  maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl' | '6xl' | '7xl' | 'full';
 }>();
 
 const emit = defineEmits(['close']);
@@ -59,6 +59,12 @@ const maxWidthClass = computed(() => {
         case 'lg': return 'sm:max-w-lg';
         case 'xl': return 'sm:max-w-xl';
         case '2xl': return 'sm:max-w-2xl';
+        case '3xl': return 'sm:max-w-3xl';
+        case '4xl': return 'sm:max-w-4xl';
+        case '5xl': return 'sm:max-w-5xl';
+        case '6xl': return 'sm:max-w-6xl';
+        case '7xl': return 'sm:max-w-7xl';
+        case 'full': return 'sm:max-w-full';
         default: return 'sm:max-w-lg';
     }
 });

@@ -3,6 +3,7 @@
     :show="show" 
     :title="isEditing ? 'Editar Observador' : 'Nuevo Observador'"
     @close="closeModal"
+    maxWidth="3xl"
   >
     <form @submit.prevent="handleSubmit" class="space-y-4">
         <!-- Foto Preview/Upload -->

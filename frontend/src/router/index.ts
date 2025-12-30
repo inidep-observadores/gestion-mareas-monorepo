@@ -156,6 +156,16 @@ const router = createRouter({
         roles: ['admin'],
       },
     },
+    {
+      path: '/admin/buques',
+      name: 'AdminBuques',
+      component: () => import('@/modules/admin/views/BuquesView.vue'),
+      meta: {
+        title: 'Gestión de Buques',
+        requiresAuth: true,
+        roles: ['admin'],
+      },
+    },
     // 404 No encontrado
     {
       path: '/:pathMatch(.*)*',

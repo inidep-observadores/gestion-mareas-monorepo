@@ -3,6 +3,7 @@
     :show="show" 
     :title="isEditing ? 'Editar Usuario' : 'Nuevo Usuario'"
     @close="closeModal"
+    maxWidth="2xl"
   >
     <form @submit.prevent="handleSubmit" class="space-y-4">
         <!-- Avatar Preview/Upload -->
