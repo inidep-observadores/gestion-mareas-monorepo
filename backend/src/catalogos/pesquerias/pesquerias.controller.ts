@@ -4,12 +4,13 @@ import { CreatePesqueriaDto, UpdatePesqueriaDto } from './dto';
 import { Auth } from '../../auth/decorators';
 import { ValidRoles } from '../../auth/interfaces';
 
-@Controller('admin/catalogos/pesquerias')
-@Auth(ValidRoles.admin)
+@Controller('catalogos/pesquerias')
+@Auth()
 export class PesqueriasController {
     constructor(private readonly pesqueriasService: PesqueriasService) { }
 
     @Post()
+    @Auth(ValidRoles.admin)
     crear(@Body() createPesqueriaDto: CreatePesqueriaDto) {
         return this.pesqueriasService.crear(createPesqueriaDto);
     }
@@ -25,6 +26,7 @@ export class PesqueriasController {
     }
 
     @Patch(':id')
+    @Auth(ValidRoles.admin)
     actualizar(
         @Param('id', ParseUUIDPipe) id: string,
         @Body() updatePesqueriaDto: UpdatePesqueriaDto,
@@ -33,6 +35,7 @@ export class PesqueriasController {
     }
 
     @Delete(':id')
+    @Auth(ValidRoles.admin)
     eliminar(@Param('id', ParseUUIDPipe) id: string) {
         return this.pesqueriasService.eliminar(id);
     }

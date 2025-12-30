@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateObservadorDto, UpdateObservadorDto } from './dto';
 
@@ -13,9 +13,14 @@ export class ObservadoresService {
     }
 
     async obtenerTodos() {
-        return await this.prisma.observador.findMany({
-            orderBy: [{ apellido: 'asc' }, { nombre: 'asc' }],
-        });
+        try {
+            return await this.prisma.observador.findMany({
+                orderBy: [{ apellido: 'asc' }, { nombre: 'asc' }],
+            });
+        } catch (error) {
+            console.error(error);
+            throw new InternalServerErrorException('Error al obtener observadores');
+        }
     }
 
     async obtenerUno(id: string) {

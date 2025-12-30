@@ -18,27 +18,27 @@ export interface UpdateObservadorDto extends Partial<CreateObservadorDto> { }
 
 const observadoresApi = {
     getObservadores: async (): Promise<Observador[]> => {
-        const { data } = await httpClient.get<Observador[]>('/admin/catalogos/observadores');
+        const { data } = await httpClient.get<Observador[]>('/catalogos/observadores');
         return data;
     },
 
     getObservador: async (id: string): Promise<Observador> => {
-        const { data } = await httpClient.get<Observador>(`/admin/catalogos/observadores/${id}`);
+        const { data } = await httpClient.get<Observador>(`/catalogos/observadores/${id}`);
         return data;
     },
 
     createObservador: async (observador: CreateObservadorDto): Promise<Observador> => {
-        const { data } = await httpClient.post<Observador>('/admin/catalogos/observadores', observador);
+        const { data } = await httpClient.post<Observador>('/catalogos/observadores', observador);
         return data;
     },
 
     updateObservador: async (id: string, observador: UpdateObservadorDto): Promise<Observador> => {
-        const { data } = await httpClient.patch<Observador>(`/admin/catalogos/observadores/${id}`, observador);
+        const { data } = await httpClient.patch<Observador>(`/catalogos/observadores/${id}`, observador);
         return data;
     },
 
     deleteObservador: async (id: string): Promise<void> => {
-        await httpClient.delete(`/admin/catalogos/observadores/${id}`);
+        await httpClient.delete(`/catalogos/observadores/${id}`);
     },
 
     uploadFoto: async (file: File): Promise<string> => {

@@ -4,12 +4,13 @@ import { CreateTipoFlotaDto, UpdateTipoFlotaDto } from './dto';
 import { Auth } from '../../auth/decorators';
 import { ValidRoles } from '../../auth/interfaces';
 
-@Controller('admin/catalogos/tipos-flota')
-@Auth(ValidRoles.admin)
+@Controller('catalogos/tipos-flota')
+@Auth()
 export class TiposFlotaController {
     constructor(private readonly tiposFlotaService: TiposFlotaService) { }
 
     @Post()
+    @Auth(ValidRoles.admin)
     crear(@Body() createTipoFlotaDto: CreateTipoFlotaDto) {
         return this.tiposFlotaService.crear(createTipoFlotaDto);
     }
@@ -25,6 +26,7 @@ export class TiposFlotaController {
     }
 
     @Patch(':id')
+    @Auth(ValidRoles.admin)
     actualizar(
         @Param('id', ParseUUIDPipe) id: string,
         @Body() updateTipoFlotaDto: UpdateTipoFlotaDto,
@@ -33,6 +35,7 @@ export class TiposFlotaController {
     }
 
     @Delete(':id')
+    @Auth(ValidRoles.admin)
     eliminar(@Param('id', ParseUUIDPipe) id: string) {
         return this.tiposFlotaService.eliminar(id);
     }

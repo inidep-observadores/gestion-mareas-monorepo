@@ -4,12 +4,13 @@ import { CreateEstadoMareaDto, UpdateEstadoMareaDto } from './dto';
 import { Auth } from '../../auth/decorators';
 import { ValidRoles } from '../../auth/interfaces';
 
-@Controller('admin/catalogos/estados-marea')
-@Auth(ValidRoles.admin)
+@Controller('catalogos/estados-marea')
+@Auth()
 export class EstadosMareaController {
     constructor(private readonly estadosMareaService: EstadosMareaService) { }
 
     @Post()
+    @Auth(ValidRoles.admin)
     crear(@Body() createEstadoMareaDto: CreateEstadoMareaDto) {
         return this.estadosMareaService.crear(createEstadoMareaDto);
     }
@@ -25,6 +26,7 @@ export class EstadosMareaController {
     }
 
     @Patch(':id')
+    @Auth(ValidRoles.admin)
     actualizar(
         @Param('id', ParseUUIDPipe) id: string,
         @Body() updateEstadoMareaDto: UpdateEstadoMareaDto,
@@ -33,6 +35,7 @@ export class EstadosMareaController {
     }
 
     @Delete(':id')
+    @Auth(ValidRoles.admin)
     eliminar(@Param('id', ParseUUIDPipe) id: string) {
         return this.estadosMareaService.eliminar(id);
     }
