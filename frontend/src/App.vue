@@ -8,6 +8,7 @@
   <ThemeProvider v-else>
     <SidebarProvider>
       <RouterView />
+      <Toaster position="top-right" richColors />
     </SidebarProvider>
   </ThemeProvider>
 </template>
@@ -17,6 +18,7 @@ import { storeToRefs } from 'pinia'
 import { useAuthStore } from '@/modules/auth/stores/auth.store'
 import ThemeProvider from './components/layout/ThemeProvider.vue'
 import SidebarProvider from './components/layout/SidebarProvider.vue'
+import { Toaster } from 'vue-sonner'
 
 const authStore = useAuthStore()
 const { isReady } = storeToRefs(authStore)

@@ -58,6 +58,15 @@ const router = createRouter({
         guestOnly: true,
       },
     },
+    {
+      path: '/profile',
+      name: 'Profile',
+      component: () => import('@/modules/auth/views/ProfileView.vue'),
+      meta: {
+        title: 'Mi Perfil',
+        requiresAuth: true,
+      },
+    },
     // Mareas Module
     {
       path: '/mareas/inbox',

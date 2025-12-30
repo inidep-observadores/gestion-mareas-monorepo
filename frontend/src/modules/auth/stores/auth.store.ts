@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import type { User, AuthStatus } from '../types/auth.types';
 import authApi, { type LoginDto, type RegisterDto } from '../services/auth.service';
+import usersApi, { type UpdateProfileDto, type ChangePasswordDto } from '../services/users.service';
 import { AppError } from '@/config/http/http.errors';
 
 export const useAuthStore = defineStore('auth', () => {
@@ -70,6 +71,35 @@ export const useAuthStore = defineStore('auth', () => {
         }
     };
 
+    const updateProfile = async (data: UpdateProfileDto) => {
+        try {
+            const updatedUser = await usersApi.updateProfile(data);
+            user.value = { ...user.value, ...updatedUser } as User;
+            return { ok: true };
+        } catch (error) {
+            return { ok: false, error: error as AppError };
+        }
+    };
+
+    const changePassword = async (data: ChangePasswordDto) => {
+        try {
+            await usersApi.changePassword(data);
+            return { ok: true };
+        } catch (error) {
+            return { ok: false, error: error as AppError };
+        }
+    };
+
+    const uploadAvatar = async (file: File) => {
+        try {
+            const updatedUser = await usersApi.uploadAvatar(file);
+            user.value = { ...user.value, ...updatedUser } as User;
+            return { ok: true };
+        } catch (error) {
+            return { ok: false, error: error as AppError };
+        }
+    };
+
     // Called by interceptor
     const refresh = async () => {
         try {
@@ -86,34 +116,7 @@ export const useAuthStore = defineStore('auth', () => {
     const bootstrap = async () => {
         if (isReady.value) return;
 
-        // Optimistic check: only try if we think we might be logged in?
-        // Actually for robust SPA, we always try checkStatus on reload 
-        // because refresh token might be in cookie.
-
         try {
-            // Check status checks validity of access token or gets 401
-            // If 401, interceptor tries refresh.
-            // If refresh fails, it throws 401 and we clear auth.
-            // But checkStatus endpoint is protected? Yes.
-            // So if we have no access token in memory (which is always true on F5),
-            // we need to rely on cookie.
-
-            // WAIT: checkStatus requires Bearer token? 
-            // If access token is in memory, it's gone on F5.
-            // So on F5, checkStatus request will satisfy 'unauthorized' initially?
-            // No, checkStatus endpoint @Auth() requires valid JWT.
-            // If we send request without Header, it fails immediately.
-
-            // Strategy: 
-            // On F5, we have NO access token.
-            // We should call 'refresh' endpoint first! 
-            // OR allow checkStatus to be public? No.
-
-            // CORRECT FLOW FOR F5:
-            // 1. Try /auth/refresh directly.
-            // 2. If success, we have user + new access token.
-            // 3. If fail, we are unauthenticated.
-
             await refresh(); // Calls /auth/refresh with cookie
         } catch (error) {
             // It's normal to fail if user is not logged in
@@ -141,6 +144,15 @@ export const useAuthStore = defineStore('auth', () => {
         });
     }
 
+    const uploadOnly = async (file: File) => {
+        try {
+            const secureUrl = await usersApi.uploadOnly(file);
+            return { ok: true, url: secureUrl };
+        } catch (error) {
+            return { ok: false, error: error as AppError };
+        }
+    };
+
     return {
         // State
         status,
@@ -157,6 +169,10 @@ export const useAuthStore = defineStore('auth', () => {
         checkAuthStatus,
         refresh,
         bootstrap,
-        whenReady
+        whenReady,
+        updateProfile,
+        changePassword,
+        uploadAvatar,
+        uploadOnly
     };
 });

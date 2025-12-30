@@ -5,7 +5,7 @@
       @click.prevent="toggleDropdown"
     >
       <span class="mr-3 overflow-hidden rounded-full h-11 w-11">
-        <img src="/images/user/owner.jpg" alt="User" />
+        <img :src="getFullImageUrl(user?.avatarUrl)" alt="User" class="object-cover w-full h-full"/>
       </span>
 
       <span class="block mr-1 font-medium text-theme-sm">{{ user?.fullName || 'Usuario' }}</span>
@@ -61,6 +61,7 @@ import { useRouter } from 'vue-router'
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useAuthStore } from '@/modules/auth/stores/auth.store'
 import { storeToRefs } from 'pinia'
+import { getFullImageUrl } from '@/helpers/image.helper'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -71,8 +72,6 @@ const dropdownRef = ref<HTMLDivElement | null>(null)
 
 const menuItems = [
   { href: '/profile', icon: UserCircleIcon, text: 'Editar perfil' },
-  { href: '/chat', icon: SettingsIcon, text: 'Ajustes de cuenta' },
-  { href: '/profile', icon: InfoCircleIcon, text: 'Soporte' },
 ]
 
 const toggleDropdown = () => {
