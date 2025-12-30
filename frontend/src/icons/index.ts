@@ -58,6 +58,7 @@ import LockIcon from './LockIcon.vue'
 import GripVerticalIcon from './GripVerticalIcon.vue'
 import EyeIcon from './EyeIcon.vue'
 import EyeSlashIcon from './EyeSlashIcon.vue'
+import EditIcon from './EditIcon.vue'
 import SearchIcon from './SearchIcon.vue'
 import ShieldIcon from './ShieldIcon.vue'
 
@@ -124,4 +125,5 @@ export {
   EyeSlashIcon,
   SearchIcon,
   ShieldIcon,
+  EditIcon,
 }
