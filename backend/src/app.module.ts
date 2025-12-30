@@ -11,6 +11,7 @@ import { SeedModule } from './seed/seed.module';
 import { FilesModule } from './files/files.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
+import { CatalogosModule } from './catalogos/catalogos.module';
 
 @Module({
   imports: [
@@ -35,6 +36,8 @@ import { UsersModule } from './users/users.module';
     AuthModule,
 
     UsersModule,
+
+    CatalogosModule,
 
   ],
 })
