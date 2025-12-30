@@ -1,99 +1,111 @@
 <template>
   <AdminDashboardLayout>
-    <div class="flex flex-col gap-6">
-      <div class="flex items-center justify-between">
-        <div>
-          <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Gestión de Observadores</h1>
-          <p class="text-gray-500 dark:text-gray-400">Administra el personal de observación y técnicos</p>
-        </div>
-        <div class="flex gap-2">
-          <button
-            @click="openCreateModal"
-            class="flex items-center justify-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white shadow-theme-xs hover:bg-brand-600 disabled:opacity-50 transition-colors"
-          >
-            Nuevo Observador
-          </button>
-        </div>
-      </div>
+      <BaseDataList
+        title="Gestión de Observadores"
+        description="Administra el personal de observación y técnicos"
+        button-text="Nuevo Observador"
+        :items="filteredObservadores"
+        :is-loading="isLoading"
+        v-model:search="searchQuery"
+        search-placeholder="Buscar observadores..."
+        @create="openCreateModal"
+      >
+        <template #table-header>
+          <th scope="col" class="px-6 py-3">Código</th>
+          <th scope="col" class="px-6 py-3">Nombre</th>
+          <th scope="col" class="px-6 py-3">Tipo</th>
+          <th scope="col" class="px-6 py-3">Estado</th>
+          <th scope="col" class="px-6 py-3">Acciones</th>
+        </template>
 
-      <!-- Filters & Search -->
-      <div class="p-6 bg-white border border-gray-200 rounded-xl dark:bg-gray-800 dark:border-gray-700">
-        <div class="flex sm:flex-row flex-col items-center justify-between gap-4 mb-6">
-            <div class="relative w-full max-w-sm">
-                 <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                    <SearchIcon class="w-5 h-5 text-gray-400" />
-                </div>
-                <input 
-                    v-model="searchQuery" 
-                    type="text" 
-                    placeholder="Buscar observadores..." 
-                    class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent py-2 pl-10 pr-3 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
-                />
+        <template #table-row="{ item: obs }">
+          <td class="px-6 py-4 font-mono font-bold text-blue-600 dark:text-blue-400">
+              {{ obs.codigoInterno }}
+          </td>
+          <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+              <div class="flex items-center gap-3">
+                   <img :src="getFullImageUrl(obs.fotoUrl)" class="w-8 h-8 rounded-full object-cover shadow-sm border border-gray-100 dark:border-gray-700" alt="Foto">
+                   <div>
+                      <div class="font-semibold">{{ obs.apellido }}, {{ obs.nombre }}</div>
+                      <div class="text-[11px] text-gray-500 font-medium">{{ TIPO_CONTRATO_LABELS[obs.tipoContrato] }}</div>
+                   </div>
+              </div>
+          </td>
+          <td class="px-6 py-4">
+              <span class="bg-blue-100 text-blue-800 text-[11px] font-bold px-2 py-0.5 rounded-full dark:bg-blue-900/30 dark:text-blue-300 border border-blue-200 dark:border-blue-800 uppercase tracking-tighter">
+                  {{ TIPO_OBSERVADOR_LABELS[obs.tipoObservador] }}
+              </span>
+          </td>
+          <td class="px-6 py-4">
+            <div class="flex flex-col gap-1">
+                <span :class="[
+                    'text-[10px] font-bold px-2 py-0.5 rounded-full w-fit uppercase tracking-wider',
+                    obs.activo ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+                ]">
+                  {{ obs.activo ? 'Activo' : 'Inactivo' }}
+                </span>
+                <span v-if="obs.activo" :class="[
+                    'text-[10px] font-bold px-2 py-0.5 rounded-full w-fit uppercase tracking-wider',
+                    obs.disponible ? 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400' : 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400'
+                ]">
+                  {{ obs.disponible ? 'Disponible' : 'En Marea' }}
+                </span>
             </div>
-        </div>
+          </td>
+          <td class="px-6 py-4">
+            <button @click="openEditModal(obs)" class="font-bold text-brand-600 dark:text-brand-400 hover:underline">Editar</button>
+          </td>
+        </template>
 
-        <!-- Table -->
-        <div class="relative overflow-x-auto shadow-md sm:rounded-lg">
-          <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-            <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
-              <tr>
-                <th scope="col" class="px-6 py-3">Código</th>
-                <th scope="col" class="px-6 py-3">Nombre</th>
-                <th scope="col" class="px-6 py-3">Tipo</th>
-                <th scope="col" class="px-6 py-3">Estado</th>
-                <th scope="col" class="px-6 py-3">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-if="isLoading">
-                  <td colspan="5" class="px-6 py-4 text-center">Cargando observadores...</td>
-              </tr>
-              <tr v-else-if="filteredObservadores.length === 0">
-                  <td colspan="5" class="px-6 py-4 text-center">No se encontraron observadores.</td>
-              </tr>
-              <tr v-for="obs in filteredObservadores" :key="obs.id" class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
-                <td class="px-6 py-4 font-mono font-bold text-blue-600 dark:text-blue-400">
-                    {{ obs.codigoInterno }}
-                </td>
-                <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
-                    <div class="flex items-center gap-3">
-                         <img :src="getFullImageUrl(obs.fotoUrl)" class="w-8 h-8 rounded-full object-cover" alt="Foto">
-                         <div>
-                            <div class="font-semibold">{{ obs.apellido }}, {{ obs.nombre }}</div>
-                            <div class="text-xs text-gray-500">{{ TIPO_CONTRATO_LABELS[obs.tipoContrato] }}</div>
-                         </div>
+        <template #card-item="{ item: obs }">
+            <div class="flex items-start gap-4 mb-4">
+                <img :src="getFullImageUrl(obs.fotoUrl)" class="w-16 h-16 rounded-xl object-cover shadow-sm border border-gray-100 dark:border-gray-700" alt="Foto">
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2 mb-1.5">
+                        <span class="text-[10px] font-black bg-blue-100 text-blue-700 px-2 py-0.5 rounded-md dark:bg-blue-900/40 dark:text-blue-300 uppercase">
+                            ID {{ obs.codigoInterno }}
+                        </span>
+                        <span :class="[
+                            'text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-widest',
+                            obs.activo ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+                        ]">
+                            {{ obs.activo ? 'Activo' : 'Inactivo' }}
+                        </span>
                     </div>
-                </td>
-                <td class="px-6 py-4">
-                    <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded dark:bg-blue-900 dark:text-blue-300 border border-blue-400">
-                        {{ TIPO_OBSERVADOR_LABELS[obs.tipoObservador] }}
-                    </span>
-                </td>
-                <td class="px-6 py-4">
-                  <div class="flex flex-col gap-1">
-                      <span :class="[
-                          'text-xs font-medium px-2.5 py-0.5 rounded w-fit',
-                          obs.activo ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
-                      ]">
-                        {{ obs.activo ? 'Activo' : 'Inactivo' }}
-                      </span>
-                      <span v-if="obs.activo" :class="[
-                          'text-[10px] font-medium px-2 py-0.2 rounded w-fit',
-                          obs.disponible ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300' : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300'
-                      ]">
-                        {{ obs.disponible ? 'Disponible' : 'No Disponible' }}
-                      </span>
-                  </div>
-                </td>
-                <td class="px-6 py-4 flex gap-3">
-                  <button @click="openEditModal(obs)" class="font-medium text-blue-600 dark:text-blue-500 hover:underline">Editar</button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
+                    <div class="font-extrabold text-gray-900 dark:text-white text-base truncate">{{ obs.apellido }}, {{ obs.nombre }}</div>
+                    <div class="text-xs text-gray-500 font-medium truncate">{{ TIPO_CONTRATO_LABELS[obs.tipoContrato] }}</div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 mb-4 p-3 bg-gray-50 dark:bg-gray-700/40 rounded-xl border border-gray-100 dark:border-gray-600">
+                <div>
+                    <div class="text-[10px] text-gray-400 uppercase font-black mb-1">Categoría</div>
+                    <div class="text-xs font-bold text-gray-700 dark:text-gray-200 uppercase tracking-tight">
+                         {{ TIPO_OBSERVADOR_LABELS[obs.tipoObservador] }}
+                    </div>
+                </div>
+                <div v-if="obs.activo">
+                    <div class="text-[10px] text-gray-400 uppercase font-black mb-1">Estado Actual</div>
+                    <div :class="[
+                        'text-xs font-bold uppercase tracking-tight',
+                        obs.disponible ? 'text-indigo-600 dark:text-indigo-400' : 'text-amber-600 dark:text-amber-500'
+                    ]">
+                        {{ obs.disponible ? 'Disponible' : 'En Marea' }}
+                    </div>
+                </div>
+            </div>
+
+            <div class="pt-3 border-t border-gray-100 dark:border-gray-700">
+                <button 
+                    @click="openEditModal(obs)" 
+                    class="w-full py-2.5 text-sm font-bold text-brand-700 dark:text-brand-400 bg-brand-50 dark:bg-brand-400/10 rounded-lg hover:bg-brand-100 transition-colors flex items-center justify-center gap-2"
+                >
+                    <EditIcon class="w-4 h-4" />
+                    Gestionar Registro
+                </button>
+            </div>
+        </template>
+      </BaseDataList>
 
     <ObservadorDialog
       :show="showModal"
@@ -108,8 +120,9 @@
 <script setup lang="ts">
 import { onMounted } from 'vue'
 import AdminDashboardLayout from '../layouts/AdminDashboardLayout.vue'
-import { SearchIcon } from '@/icons';
+import { EditIcon } from '@/icons';
 import ObservadorDialog from '../components/ObservadorDialog.vue'
+import BaseDataList from '@/components/common/BaseDataList.vue'
 import { useObservadores } from '../composables/useObservadores'
 import { TIPO_OBSERVADOR_LABELS, TIPO_CONTRATO_LABELS } from '../constants/observador.constants'
 import { getFullImageUrl } from '@/helpers/image.helper'
