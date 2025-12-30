@@ -19,7 +19,7 @@ export class AuthService {
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
     private readonly mailerService: MailerService,
-  ) {}
+  ) { }
 
   async create(createUserDto: CreateUserDto) {
     try {
@@ -38,6 +38,7 @@ export class AuthService {
       return {
         user: result,
         token: this.getJwtToken({ id: user.id }),
+        refreshToken: this.getRefreshJwtToken({ id: user.id }),
       };
     } catch (error) {
       this.handleDBErrors(error);
@@ -61,6 +62,7 @@ export class AuthService {
     return {
       user: result,
       token: this.getJwtToken({ id: user.id }),
+      refreshToken: this.getRefreshJwtToken({ id: user.id }),
     };
   }
 
@@ -159,7 +161,7 @@ export class AuthService {
       throw new BadRequestException('Token expirado');
     }
 
-    return { valid: true };
+    return { valid: true, email: resetToken.user.email };
   }
 
   async resetPassword(resetPasswordDto: ResetPasswordDto) {
@@ -198,4 +200,34 @@ export class AuthService {
 
     return { message: 'Contraseña actualizada correctamente' };
   }
+
+  getRefreshJwtToken(payload: JwtPayload) {
+    const token = this.jwtService.sign(payload, {
+      expiresIn: '7d', // Refresh token lives longer
+    });
+    return token;
+  }
+
+  async refreshAuth(refreshToken: string) {
+    try {
+      const payload = this.jwtService.verify(refreshToken);
+      const user = await this.prisma.user.findUnique({
+        where: { id: payload.id },
+      });
+
+      if (!user) throw new UnauthorizedException('Usuario no encontrado');
+      if (!user.isActive) throw new UnauthorizedException('Usuario no activo');
+
+      const { password: _, ...rest } = user;
+
+      return {
+        user: rest,
+        token: this.getJwtToken({ id: user.id }),
+        refreshToken: this.getRefreshJwtToken({ id: user.id }),
+      };
+    } catch (error) {
+      throw new UnauthorizedException('Token de refresco inválido o expirado');
+    }
+  }
+
 }

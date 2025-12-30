@@ -52,7 +52,28 @@
             </h2>
             <ul class="flex flex-col gap-4">
               <li v-for="item in menuGroup.items" :key="item.name">
+                <template v-if="item.name === 'Cerrar Sesión'">
+                  <button
+                    @click="handleItemClick(item, $event)"
+                    :class="[
+                      'menu-item group w-full text-left',
+                      isActive(item.path) ? 'menu-item-active' : 'menu-item-inactive',
+                    ]"
+                  >
+                    <span
+                      :class="[
+                        isActive(item.path) ? 'menu-item-icon-active' : 'menu-item-icon-inactive',
+                      ]"
+                    >
+                      <component :is="item.icon" />
+                    </span>
+                    <span v-if="isExpanded || isHovered || isMobileOpen" class="menu-item-text">{{
+                      item.name
+                    }}</span>
+                  </button>
+                </template>
                 <router-link
+                  v-else
                   :to="item.path"
                   :class="[
                     'menu-item group',
@@ -83,14 +104,13 @@
 </template>
 
 <script setup lang="ts">
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import {
   HomeIcon,
   LogoutIcon,
   HorizontalDots,
   MailBox,
   LayoutDashboardIcon,
-  TableIcon,
   BarChartIcon,
   CalenderIcon,
   GridIcon,
@@ -98,8 +118,11 @@ import {
   MapPinIcon,
 } from '../../icons'
 import { useSidebar } from '@/composables/useSidebar'
+import { useAuthStore } from '@/modules/auth/stores/auth.store'
 
 const route = useRoute()
+const router = useRouter()
+const authStore = useAuthStore()
 
 const { isExpanded, isMobileOpen, isHovered } = useSidebar()
 
@@ -162,4 +185,12 @@ const menuGroups = [
 ]
 
 const isActive = (path: string) => route.path === path
+
+const handleItemClick = async (item: any, event: Event) => {
+  if (item.name === 'Cerrar Sesión') {
+    event.preventDefault()
+    await authStore.logout()
+    router.push({ name: 'Signin' })
+  }
+}
 </script>

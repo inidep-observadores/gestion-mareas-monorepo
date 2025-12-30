@@ -5,10 +5,10 @@
       @click.prevent="toggleDropdown"
     >
       <span class="mr-3 overflow-hidden rounded-full h-11 w-11">
-        <img src="/images/user/owner.jpg" alt="User" />
+        <img :src="getFullImageUrl(user?.avatarUrl)" alt="User" class="object-cover w-full h-full"/>
       </span>
 
-      <span class="block mr-1 font-medium text-theme-sm">Juan Pérez</span>
+      <span class="block mr-1 font-medium text-theme-sm">{{ user?.fullName || 'Usuario' }}</span>
 
       <ChevronDownIcon :class="{ 'rotate-180': dropdownOpen }" />
     </button>
@@ -18,12 +18,12 @@
       v-if="dropdownOpen"
       class="absolute right-0 mt-[17px] flex w-[260px] flex-col rounded-2xl border border-gray-200 bg-white p-3 shadow-theme-lg dark:border-gray-800 dark:bg-gray-dark"
     >
-      <div>
+      <div class="px-3 py-2">
         <span class="block font-medium text-gray-700 text-theme-sm dark:text-gray-400">
-          Juan Pérez
+          {{ user?.fullName || 'Usuario' }}
         </span>
         <span class="mt-0.5 block text-theme-xs text-gray-500 dark:text-gray-400">
-          juan.perez@inidep.gob.ar
+          {{ user?.email || '' }}
         </span>
       </div>
 
@@ -33,7 +33,6 @@
             :to="item.href"
             class="flex items-center gap-3 px-3 py-2 font-medium text-gray-700 rounded-lg group text-theme-sm hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-300"
           >
-            <!-- SVG icon would go here -->
             <component
               :is="item.icon"
               class="text-gray-500 group-hover:text-gray-700 dark:group-hover:text-gray-300"
@@ -42,16 +41,15 @@
           </router-link>
         </li>
       </ul>
-      <router-link
-        to="/signin"
-        @click="signOut"
-        class="flex items-center gap-3 px-3 py-2 mt-3 font-medium text-gray-700 rounded-lg group text-theme-sm hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-300"
+      <button
+        @click="handleSignOut"
+        class="flex w-full items-center gap-3 px-3 py-2 mt-3 font-medium text-gray-700 rounded-lg group text-theme-sm hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-300 text-left"
       >
         <LogoutIcon
           class="text-gray-500 group-hover:text-gray-700 dark:group-hover:text-gray-300"
         />
         Cerrar sesión
-      </router-link>
+      </button>
     </div>
     <!-- Dropdown End -->
   </div>
@@ -59,16 +57,21 @@
 
 <script setup lang="ts">
 import { UserCircleIcon, ChevronDownIcon, LogoutIcon, SettingsIcon, InfoCircleIcon } from '@/icons'
-import { RouterLink } from 'vue-router'
+import { useRouter } from 'vue-router'
 import { ref, onMounted, onUnmounted } from 'vue'
+import { useAuthStore } from '@/modules/auth/stores/auth.store'
+import { storeToRefs } from 'pinia'
+import { getFullImageUrl } from '@/helpers/image.helper'
+
+const router = useRouter()
+const authStore = useAuthStore()
+const { user } = storeToRefs(authStore)
 
 const dropdownOpen = ref(false)
 const dropdownRef = ref<HTMLDivElement | null>(null)
 
 const menuItems = [
   { href: '/profile', icon: UserCircleIcon, text: 'Editar perfil' },
-  { href: '/chat', icon: SettingsIcon, text: 'Ajustes de cuenta' },
-  { href: '/profile', icon: InfoCircleIcon, text: 'Soporte' },
 ]
 
 const toggleDropdown = () => {
@@ -79,10 +82,10 @@ const closeDropdown = () => {
   dropdownOpen.value = false
 }
 
-const signOut = () => {
-  // Implement sign out logic here
-  console.log('Signing out...')
+const handleSignOut = async () => {
+  await authStore.logout()
   closeDropdown()
+  router.push({ name: 'Signin' })
 }
 
 const handleClickOutside = (event: MouseEvent) => {
