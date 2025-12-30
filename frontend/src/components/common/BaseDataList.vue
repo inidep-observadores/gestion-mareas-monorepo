@@ -1,27 +1,10 @@
 <template>
   <div class="flex flex-col gap-6">
-    <!-- Header -->
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-      <div>
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ title }}</h1>
-        <p v-if="description" class="text-gray-500 dark:text-gray-400">{{ description }}</p>
-      </div>
-      <div class="flex items-center gap-2">
-        <slot name="header-actions"></slot>
-        <button
-          v-if="buttonText"
-          @click="$emit('create')"
-          class="flex items-center justify-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white shadow-theme-xs hover:bg-brand-600 disabled:opacity-50 transition-colors w-full sm:w-auto"
-        >
-          <PlusIcon class="w-4 h-4" />
-          {{ buttonText }}
-        </button>
-      </div>
-    </div>
-
-    <!-- Filters & Search -->
+    <!-- Main Content Card (Contains Search, Filters, and List) -->
     <div class="p-4 sm:p-6 bg-white border border-gray-200 rounded-xl dark:bg-gray-800 dark:border-gray-700 shadow-sm">
+      <!-- Search & Actions Row -->
       <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+        <!-- Search -->
         <div class="relative w-full max-w-sm">
           <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
             <SearchIcon class="w-5 h-5 text-gray-400" />
@@ -34,7 +17,21 @@
             class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent py-2 pl-10 pr-3 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
           />
         </div>
-        <slot name="filters"></slot>
+
+        <!-- Filters & Actions -->
+        <div class="flex flex-wrap items-center gap-2 md:gap-3 w-full md:w-auto">
+          <slot name="filters"></slot>
+          <slot name="header-actions"></slot>
+          
+          <button
+            v-if="buttonText"
+            @click="$emit('create')"
+            class="flex-1 md:flex-none flex items-center justify-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white shadow-theme-xs hover:bg-brand-600 disabled:opacity-50 transition-colors"
+          >
+            <PlusIcon class="w-4 h-4 stroke-[3]" />
+            {{ buttonText }}
+          </button>
+        </div>
       </div>
 
       <!-- Desktop Table View -->
@@ -94,9 +91,11 @@
 </template>
 
 <script setup lang="ts">
+import { watchEffect, onUnmounted } from 'vue'
 import { SearchIcon, PlusIcon } from '@/icons'
+import { usePageHeader } from '@/composables/usePageHeader'
 
-defineProps<{
+const props = defineProps<{
   title: string
   description?: string
   items: any[]
@@ -107,4 +106,16 @@ defineProps<{
 }>()
 
 defineEmits(['update:search', 'create'])
+
+const { setHeader, clearHeader } = usePageHeader()
+
+// Sync with global header
+watchEffect(() => {
+  setHeader(props.title, props.description || '')
+})
+
+// Cleanup when component is destroyed
+onUnmounted(() => {
+  clearHeader(props.title)
+})
 </script>
