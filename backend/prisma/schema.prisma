@@ -12,7 +12,7 @@ model User {
   password    String
   fullName    String
   isActive    Boolean  @default(true)
-  roles       String[] @default(["user"])
+  roles       String[] @default(["asistente_administrativo"])
   themePreference String @default("system")
   avatarUrl       String?
   
