@@ -11,6 +11,9 @@
         <slot></slot>
       </div>
     </div>
+
+    <!-- Global Spotlight Search -->
+    <SpotlightSearch />
   </div>
 </template>
 
@@ -21,6 +24,7 @@ import AppHeader from './AppHeader.vue'
 import { useSidebar } from '@/composables/useSidebar'
 import { usePageHeader } from '@/composables/usePageHeader'
 import Backdrop from './Backdrop.vue'
+import SpotlightSearch from '../common/SpotlightSearch.vue'
 
 const props = defineProps<{
   title?: string
