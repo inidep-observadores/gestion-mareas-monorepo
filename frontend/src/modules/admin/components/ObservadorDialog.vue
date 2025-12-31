@@ -66,23 +66,19 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-400 mb-1.5">Tipo Observador</label>
-                <select
+                <SearchableSelect
                     v-model="form.tipoObservador"
-                    required
-                    class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
-                >
-                    <option v-for="tipo in TIPO_OBSERVADOR" :key="tipo.id" :value="tipo.id">{{ tipo.name }}</option>
-                </select>
+                    :options="tipoObservadorOptions"
+                    placeholder="Seleccione..."
+                />
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-400 mb-1.5">Tipo Contrato</label>
-                <select
+                <SearchableSelect
                     v-model="form.tipoContrato"
-                    required
-                    class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
-                >
-                    <option v-for="tipo in TIPO_CONTRATO" :key="tipo.id" :value="tipo.id">{{ tipo.name }}</option>
-                </select>
+                    :options="tipoContratoOptions"
+                    placeholder="Seleccione..."
+                />
             </div>
         </div>
 
@@ -174,6 +170,7 @@ import { getFullImageUrl } from '@/helpers/image.helper'
 import observadoresApi from '../services/observadores.service'
 import { toast } from 'vue-sonner'
 import BaseModal from '@/components/common/BaseModal.vue'
+import SearchableSelect from '@/components/common/SearchableSelect.vue'
 import { TIPO_OBSERVADOR, TIPO_CONTRATO } from '../constants/observador.constants'
 
 const props = defineProps<{
@@ -181,6 +178,9 @@ const props = defineProps<{
   observador?: Observador | null
   isSaving?: boolean
 }>()
+
+const tipoObservadorOptions = computed(() => TIPO_OBSERVADOR.map(t => ({ value: t.id, label: t.name })))
+const tipoContratoOptions = computed(() => TIPO_CONTRATO.map(t => ({ value: t.id, label: t.name })))
 
 const emit = defineEmits(['close', 'save'])
 

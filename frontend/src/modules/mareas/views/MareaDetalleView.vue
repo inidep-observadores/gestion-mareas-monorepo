@@ -179,30 +179,33 @@
                     class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400"
                     >Buque Seleccionado</label
                   >
-                  <select v-model="marea.id_buque" class="form-select-premium">
-                    <option value="1">BP ARGENTINO I</option>
-                    <option value="2">BP UNION</option>
-                  </select>
+                  <SearchableSelect
+                    v-model="marea.id_buque"
+                    :options="buqueOptions"
+                    placeholder="Seleccione buque..."
+                  />
                 </div>
                 <div class="space-y-1.5">
                   <label
                     class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400"
                     >Pesquería</label
                   >
-                  <select v-model="marea.id_pesqueria" class="form-select-premium">
-                    <option value="1">MERLUZA (Merluccius hubbsi)</option>
-                    <option value="2">LANGOSTINO</option>
-                  </select>
+                  <SearchableSelect
+                    v-model="marea.id_pesqueria"
+                    :options="pesqueriaOptions"
+                    placeholder="Seleccione pesquería..."
+                  />
                 </div>
                 <div class="space-y-1.5">
                   <label
                     class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400"
                     >Arte Principal</label
                   >
-                  <select v-model="marea.id_arte_principal" class="form-select-premium">
-                    <option value="1">Arrastre de fondo</option>
-                    <option value="2">Tangones</option>
-                  </select>
+                  <SearchableSelect
+                    v-model="marea.id_arte_principal"
+                    :options="arteOptions"
+                    placeholder="Seleccione arte..."
+                  />
                 </div>
                 <div class="space-y-1.5">
                   <label
@@ -623,9 +626,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
+import SearchableSelect from '@/components/common/SearchableSelect.vue'
 import {
   ArrowLeftIcon,
   ShipIcon,
@@ -667,6 +671,21 @@ const docCategories = [
   { id: 'INFORME_OFI', label: 'Informe de Oficina', shortLabel: 'Informe Oficina' },
   { id: 'PROTOCOLO', label: 'Informe Protocolizado', shortLabel: 'Protocolo' },
   { id: 'VARIOS', label: 'Otros Archivos', shortLabel: 'Archivo' },
+]
+
+const buqueOptions = [
+  { value: '1', label: 'BP ARGENTINO I' },
+  { value: '2', label: 'BP UNION' },
+]
+
+const pesqueriaOptions = [
+  { value: '1', label: 'MERLUZA (Merluccius hubbsi)' },
+  { value: '2', label: 'LANGOSTINO' },
+]
+
+const arteOptions = [
+  { value: '1', label: 'Arrastre de fondo' },
+  { value: '2', label: 'Tangones' },
 ]
 
 // Mock data structured as per DB schema

@@ -7,6 +7,7 @@
         v-model="searchQuery"
         @focus="openDropdown"
         @input="onSearchInput"
+        @keydown="onKeyDown"
         :placeholder="selectedLabel || placeholder"
         class="w-full px-6 py-4 bg-gray-50/50 dark:bg-gray-900 border-2 rounded-2xl font-bold text-gray-800 dark:text-white outline-none focus:border-brand-500 transition-all appearance-none"
         :class="[
@@ -30,21 +31,27 @@
         class="fixed z-[9999] bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200"
         :style="dropdownStyle"
       >
-        <div class="max-h-60 overflow-y-auto custom-scrollbar">
+        <div class="max-h-64 overflow-y-auto custom-scrollbar p-1" ref="listContainer">
           <div v-if="filteredOptions.length === 0" class="p-4 text-center text-gray-400 text-xs italic">
             No se encontraron resultados
           </div>
           <button
-            v-for="option in filteredOptions"
+            v-for="(option, index) in filteredOptions"
             :key="option.value"
+            :id="`option-${index}`"
             @click="selectOption(option)"
-            class="w-full px-5 py-3 text-left hover:bg-brand-50 dark:hover:bg-brand-500/10 transition-colors flex items-center justify-between group"
+            @mouseenter="highlightedIndex = index"
+            class="w-full px-5 py-3 text-left rounded-xl transition-all flex items-center justify-between group"
+            :class="[
+              modelValue === option.value ? 'bg-brand-50/50 dark:bg-brand-500/10' : '',
+              highlightedIndex === index ? 'bg-brand-50 dark:bg-brand-500/20 ring-1 ring-brand-200 dark:ring-brand-800' : ''
+            ]"
           >
             <span class="text-sm font-semibold" :class="modelValue === option.value ? 'text-brand-500' : 'text-gray-700 dark:text-gray-300'">
               {{ option.label }}
             </span>
             <CheckIcon v-if="modelValue === option.value" class="w-4 h-4 text-brand-500" />
-            <span v-else class="text-[10px] opacity-0 group-hover:opacity-100 text-brand-400 font-black uppercase tracking-widest transition-opacity">Seleccionar</span>
+            <span v-else-if="highlightedIndex === index" class="text-[9px] text-brand-400 font-black uppercase tracking-widest transition-opacity animate-in fade-in slide-in-from-right-1">Seleccionar</span>
           </button>
         </div>
       </div>
@@ -76,28 +83,36 @@ const emit = defineEmits<{
 
 const container = ref<HTMLElement | null>(null)
 const dropdown = ref<HTMLElement | null>(null)
+const listContainer = ref<HTMLElement | null>(null)
 const isOpen = ref(false)
 const searchQuery = ref('')
 const dropdownStyle = ref({})
+const highlightedIndex = ref(-1)
 
 const selectedLabel = computed(() => {
   return props.options.find(o => o.value === props.modelValue)?.label || ''
 })
 
+const normalizeText = (text: string) => {
+  return text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase()
+}
+
 const filteredOptions = computed(() => {
   if (!searchQuery.value) return props.options
-  const q = searchQuery.value.toLowerCase()
-  return props.options.filter(o => o.label.toLowerCase().includes(q))
+  const q = normalizeText(searchQuery.value)
+  return props.options.filter(o => normalizeText(o.label).includes(q))
 })
 
 const openDropdown = () => {
   isOpen.value = true
+  highlightedIndex.value = -1
   updateDropdownPosition()
 }
 
 const closeDropdown = () => {
   isOpen.value = false
   searchQuery.value = ''
+  highlightedIndex.value = -1
 }
 
 const updateDropdownPosition = () => {
@@ -118,6 +133,52 @@ const selectOption = (option: Option) => {
 
 const onSearchInput = () => {
   if (!isOpen.value) openDropdown()
+  highlightedIndex.value = filteredOptions.value.length > 0 ? 0 : -1
+}
+
+const onKeyDown = (e: KeyboardEvent) => {
+  if (!isOpen.value) {
+    if (e.key === 'ArrowDown' || e.key === 'Enter') {
+      openDropdown()
+      if (filteredOptions.value.length > 0) highlightedIndex.value = 0
+    }
+    return
+  }
+
+  switch (e.key) {
+    case 'ArrowDown':
+      e.preventDefault()
+      highlightedIndex.value = (highlightedIndex.value + 1) % filteredOptions.value.length
+      scrollToHighlighted()
+      break
+    case 'ArrowUp':
+      e.preventDefault()
+      highlightedIndex.value = (highlightedIndex.value - 1 + filteredOptions.value.length) % filteredOptions.value.length
+      scrollToHighlighted()
+      break
+    case 'Enter':
+      e.preventDefault()
+      if (highlightedIndex.value >= 0 && highlightedIndex.value < filteredOptions.value.length) {
+        selectOption(filteredOptions.value[highlightedIndex.value])
+      }
+      break
+    case 'Escape':
+      e.preventDefault()
+      closeDropdown()
+      break
+    case 'Tab':
+      closeDropdown()
+      break
+  }
+}
+
+const scrollToHighlighted = () => {
+  nextTick(() => {
+    const el = document.getElementById(`option-${highlightedIndex.value}`)
+    if (el) {
+      el.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+    }
+  })
 }
 
 // Window resize/scroll handling
