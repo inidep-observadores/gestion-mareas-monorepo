@@ -179,11 +179,11 @@
 
               <div class="space-y-1.5">
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-400">Fecha Zarpada Estimada</label>
-                <input 
+                <DatePicker 
                   v-model="form.fechaZarpadaEstimada"
-                  type="datetime-local"
-                  class="w-full px-4 py-2.5 bg-gray-50/50 dark:bg-gray-900 border rounded-lg text-sm text-gray-800 dark:text-white outline-none focus:border-brand-500 transition-all"
-                  :class="fieldErrors.fechaZarpadaEstimada ? 'border-red-500 bg-red-50/30' : 'border-gray-100 dark:border-gray-800'"
+                  :icon="CalenderIcon"
+                  :show-time="false"
+                  :error="fieldErrors.fechaZarpadaEstimada"
                 />
                 <p v-if="fieldErrors.fechaZarpadaEstimada" class="text-[10px] text-red-500 font-bold uppercase mt-1">{{ fieldErrors.fechaZarpadaEstimada }}</p>
               </div>
@@ -295,6 +295,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import SearchableSelect from '@/components/common/SearchableSelect.vue'
+import DatePicker from '@/components/common/DatePicker.vue'
 import { useMareas } from '../composables/useMareas'
 import catalogosService from '../services/catalogos.service'
 import { 
@@ -307,6 +308,7 @@ import {
   WaveIcon,
   SettingsIcon,
   BeakerIcon,
+  CalenderIcon,
 } from '@/icons'
 
 const router = useRouter()
