@@ -23,7 +23,7 @@
             </h3>
           </div>
           <p class="text-[10px] text-gray-400 font-mono tracking-wider uppercase ml-9">
-            Marea {{ marea.nro_marea || '---' }} / {{ marea.anio_marea || '----' }}
+             {{ marea.id_marea }}
           </p>
         </div>
         <button 
@@ -38,124 +38,130 @@
 
       <!-- Content -->
       <div class="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-8">
-        <!-- 1. Stats -->
-        <section class="space-y-4">
-          <div class="flex items-center justify-between">
-            <h4 class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Resumen Operativo</h4>
-            <span
-              class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter"
-              :class="getStatusClasses(marea.estado)"
-            >
-              {{ marea.estado }}
-            </span>
-          </div>
-          <div class="grid grid-cols-2 gap-3">
-            <div class="bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-800 p-4 rounded-2xl">
-              <p class="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">Días Marea</p>
-              <div class="flex items-baseline gap-1">
-                <span class="text-2xl font-black text-gray-800 dark:text-gray-100">{{ marea.dias_marea || '0' }}</span>
-                <span class="text-[10px] font-bold text-gray-400">días</span>
-              </div>
-            </div>
-            <div class="bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-800 p-4 rounded-2xl">
-              <p class="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">Días Nav.</p>
-              <div class="flex items-baseline gap-1">
-                <span class="text-2xl font-black text-gray-800 dark:text-gray-100">{{ marea.dias_navegados || '0' }}</span>
-                <span class="text-[10px] font-bold text-gray-400">días</span>
-              </div>
-            </div>
-          </div>
-        </section>
+        <!-- Loading State -->
+        <div v-if="!context" class="flex flex-col items-center py-20">
+          <div class="loading loading-spinner text-brand-500"></div>
+          <span class="text-xs text-gray-400 mt-4 font-bold uppercase tracking-widest">Cargando contexto...</span>
+        </div>
 
-        <!-- 2. Actions -->
-        <section class="space-y-4">
-          <div class="flex items-center justify-between">
-            <h4 class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 italic">Acciones sugeridas</h4>
-          </div>
-          <div class="flex flex-col gap-2.5">
-            <button
-              v-for="action in actions"
-              :key="action.key"
-              class="group relative flex items-center justify-between p-4 rounded-2xl border transition-all duration-300"
-              :class="action.enabled 
-                ? 'bg-white dark:bg-gray-950 border-gray-200 dark:border-gray-800 hover:border-brand-500/50 hover:shadow-lg hover:shadow-brand-500/5 text-gray-700 dark:text-gray-200' 
-                : 'bg-gray-50/50 dark:bg-gray-900/30 border-gray-100 dark:border-gray-800/50 text-gray-400 cursor-not-allowed'"
-              :disabled="!action.enabled"
-            >
-              <div class="flex items-center gap-4">
-                <div 
-                  class="p-2 rounded-xl transition-colors"
-                  :class="action.enabled ? 'bg-brand-50 dark:bg-brand-500/10 text-brand-500' : 'bg-gray-100 dark:bg-gray-800 text-gray-400'"
-                >
-                  <component :is="action.icon" class="w-4 h-4" />
-                </div>
-                <div class="text-left">
-                  <p class="text-sm font-bold">{{ action.label }}</p>
-                  <p v-if="!action.enabled" class="text-[10px] font-medium text-gray-400 mt-0.5">{{ action.blockedReason }}</p>
+        <template v-else>
+          <!-- 1. Stats -->
+          <section class="space-y-4">
+            <div class="flex items-center justify-between">
+              <h4 class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Resumen Operativo</h4>
+              <span
+                class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter"
+                :class="getStatusClasses(context.marea.estado_codigo)"
+              >
+                {{ context.marea.estado }}
+              </span>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div class="bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-800 p-4 rounded-2xl">
+                <p class="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">Días Marea</p>
+                <div class="flex items-baseline gap-1">
+                  <span class="text-2xl font-black text-gray-800 dark:text-gray-100">{{ context.marea.dias_marea }}</span>
+                  <span class="text-[10px] font-bold text-gray-400">días</span>
                 </div>
               </div>
-              <ChevronRightIcon v-if="action.enabled" class="w-4 h-4 transition-transform group-hover:translate-x-1 text-gray-300" />
-              <LockIcon v-else class="w-3.5 h-3.5 text-gray-300" />
-            </button>
-          </div>
-        </section>
-
-        <!-- 3. Active Alerts -->
-        <section v-if="marea.alertas?.length" class="space-y-4">
-          <h4 class="text-[10px] font-black uppercase tracking-[0.2em] text-error-500 flex items-center gap-2">
-            <span class="flex h-2 w-2 relative">
-              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-error-400 opacity-75"></span>
-              <span class="relative inline-flex rounded-full h-2 w-2 bg-error-500"></span>
-            </span>
-            Alertas Críticas
-          </h4>
-          <div class="space-y-3">
-            <div 
-              v-for="alerta in marea.alertas" 
-              :key="alerta.id"
-              class="p-4 bg-error-50 dark:bg-error-500/5 border border-error-100 dark:border-error-500/10 rounded-2xl relative overflow-hidden group"
-            >
-              <div class="absolute top-0 right-0 p-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                <WarningIcon class="w-12 h-12 text-error-500/10 -mr-4 -mt-4 rotate-12" />
-              </div>
-              <p class="text-xs font-black text-error-700 dark:text-error-400 uppercase tracking-tight">{{ alerta.titulo }}</p>
-              <p class="text-[11px] text-error-600/80 dark:text-error-500/80 mt-1 leading-relaxed">{{ alerta.descripcion }}</p>
-              <div class="flex gap-3 mt-4">
-                <button class="px-3 py-1.5 bg-error-500 text-white text-[10px] font-bold rounded-lg hover:bg-error-600 transition-all shadow-lg shadow-error-500/20 active:scale-95">
-                  Confirmar
-                </button>
-                <button class="px-3 py-1.5 text-[10px] font-bold text-error-500 hover:bg-error-100 dark:hover:bg-error-500/10 rounded-lg transition-all">
-                  Ignorar
-                </button>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <!-- 4. Quick Timeline -->
-        <section class="space-y-4">
-          <div class="flex items-center justify-between">
-            <h4 class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Actividad Reciente</h4>
-            <HistoryIcon class="w-4 h-4 text-gray-300" />
-          </div>
-          <div class="relative pl-6 space-y-6">
-            <div class="absolute left-[7px] top-2 bottom-2 w-[1px] bg-gray-100 dark:bg-gray-800"></div>
-            <div v-for="event in lastEvents" :key="event.id" class="relative group">
-              <div class="absolute -left-[23px] top-1.5 w-2 h-2 rounded-full border-2 border-white dark:border-gray-950 bg-brand-500 z-10 transition-transform group-hover:scale-125"></div>
-              <div>
-                <p class="text-[11px] font-bold text-gray-700 dark:text-gray-200">{{ event.titulo }}</p>
-                <div class="flex items-center gap-2 mt-0.5">
-                  <span class="text-[10px] text-gray-400">{{ event.fecha }}</span>
-                  <span class="w-1 h-1 rounded-full bg-gray-200 dark:bg-gray-700"></span>
-                  <span class="text-[10px] text-brand-500 font-bold">{{ event.usuario }}</span>
+              <div class="bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-800 p-4 rounded-2xl">
+                <p class="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">Días Nav.</p>
+                <div class="flex items-baseline gap-1">
+                  <span class="text-2xl font-black text-gray-800 dark:text-gray-100">{{ context.marea.dias_navegados }}</span>
+                  <span class="text-[10px] font-bold text-gray-400">días</span>
                 </div>
               </div>
             </div>
-          </div>
-          <button class="w-full py-2 text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-brand-500 transition-colors">
-            Ver Bitácora Completa
-          </button>
-        </section>
+          </section>
+
+          <!-- 2. Actions -->
+          <section class="space-y-4">
+            <div class="flex items-center justify-between">
+              <h4 class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 italic">Acciones sugeridas</h4>
+            </div>
+            <div class="flex flex-col gap-2.5">
+              <button
+                v-for="(action, key) in context.actions"
+                :key="key"
+                @click="onAction(key)"
+                class="group relative flex items-center justify-between p-4 rounded-2xl border transition-all duration-300"
+                :class="action.enabled 
+                  ? 'bg-white dark:bg-gray-950 border-gray-200 dark:border-gray-800 hover:border-brand-500/50 hover:shadow-lg hover:shadow-brand-500/5 text-gray-700 dark:text-gray-200' 
+                  : 'bg-gray-50/50 dark:bg-gray-900/30 border-gray-100 dark:border-gray-800/50 text-gray-400 cursor-not-allowed'"
+                :disabled="!action.enabled"
+              >
+                <div class="flex items-center gap-4">
+                  <div 
+                    class="p-2 rounded-xl transition-colors"
+                    :class="action.enabled ? 'bg-brand-50 dark:bg-brand-500/10 text-brand-500' : 'bg-gray-100 dark:bg-gray-800 text-gray-400'"
+                  >
+                    <component :is="getActionIcon(key)" class="w-4 h-4" />
+                  </div>
+                  <div class="text-left">
+                    <p class="text-sm font-bold">{{ action.label }}</p>
+                    <p v-if="!action.enabled" class="text-[10px] font-medium text-gray-400 mt-0.5">{{ action.blockedReason }}</p>
+                  </div>
+                </div>
+                <ChevronRightIcon v-if="action.enabled" class="w-4 h-4 transition-transform group-hover:translate-x-1 text-gray-300" />
+                <LockIcon v-else class="w-3.5 h-3.5 text-gray-300" />
+              </button>
+            </div>
+          </section>
+
+          <!-- 3. Active Alerts -->
+          <section v-if="marea.alertas?.length" class="space-y-4">
+            <h4 class="text-[10px] font-black uppercase tracking-[0.2em] text-error-500 flex items-center gap-2">
+              <span class="flex h-2 w-2 relative">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-error-400 opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-2 w-2 bg-error-500"></span>
+              </span>
+              Alertas Críticas
+            </h4>
+            <div class="space-y-3">
+              <div 
+                v-for="alerta in marea.alertas" 
+                :key="alerta.id"
+                class="p-4 bg-error-50 dark:bg-error-500/5 border border-error-100 dark:border-error-500/10 rounded-2xl relative overflow-hidden group"
+              >
+                <div class="absolute top-0 right-0 p-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <WarningIcon class="w-12 h-12 text-error-500/10 -mr-4 -mt-4 rotate-12" />
+                </div>
+                <p class="text-xs font-black text-error-700 dark:text-error-400 uppercase tracking-tight">{{ alerta.titulo }}</p>
+                <p class="text-[11px] text-error-600/80 dark:text-error-500/80 mt-1 leading-relaxed">{{ alerta.descripcion }}</p>
+                <div class="flex gap-3 mt-4">
+                  <button class="px-3 py-1.5 bg-error-500 text-white text-[10px] font-bold rounded-lg hover:bg-error-600 transition-all shadow-lg shadow-error-500/20 active:scale-95">
+                    Confirmar
+                  </button>
+                  <button class="px-3 py-1.5 text-[10px] font-bold text-error-500 hover:bg-error-100 dark:hover:bg-error-500/10 rounded-lg transition-all">
+                    Ignorar
+                  </button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- 4. Quick Timeline -->
+          <section class="space-y-4">
+            <div class="flex items-center justify-between">
+              <h4 class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Actividad Reciente</h4>
+              <HistoryIcon class="w-4 h-4 text-gray-300" />
+            </div>
+            <div class="relative pl-6 space-y-6">
+              <div class="absolute left-[7px] top-2 bottom-2 w-[1px] bg-gray-100 dark:bg-gray-800"></div>
+              <div v-for="event in context.lastEvents" :key="event.id" class="relative group">
+                <div class="absolute -left-[23px] top-1.5 w-2 h-2 rounded-full border-2 border-white dark:border-gray-950 bg-brand-500 z-10 transition-transform group-hover:scale-125"></div>
+                <div>
+                  <p class="text-[11px] font-bold text-gray-700 dark:text-gray-200">{{ event.titulo }}</p>
+                  <div class="flex items-center gap-2 mt-0.5">
+                    <span class="text-[10px] text-gray-400 font-mono">{{ formatDate(event.fecha) }}</span>
+                    <span class="w-1 h-1 rounded-full bg-gray-200 dark:bg-gray-700"></span>
+                    <span class="text-[10px] text-brand-500 font-bold uppercase tracking-tighter">{{ event.usuario }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </template>
       </div>
 
       <!-- Footer Actions -->
@@ -202,77 +208,58 @@ import {
   HistoryIcon, 
   WarningIcon, 
   DocsIcon,
-  RefreshIcon,
   MapPinIcon,
   CloudUploadIcon,
   PlusIcon
 } from '@/icons'
+import type { MareaContext } from '../services/mareas.service'
 
 interface Props {
   isOpen: boolean
   marea: any | null
+  context: MareaContext | null
 }
 
 const props = defineProps<Props>()
 
-defineEmits(['close', 'open-detalle'])
+const emit = defineEmits(['close', 'open-detalle', 'action'])
 
-const getStatusClasses = (status: string) => {
-  switch (status?.toUpperCase()) {
-    case 'NAVEGANDO':
-      return 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400'
-    case 'ESPERANDO ZARPADA':
-      return 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400'
-    case 'BLOQUEADA':
-      return 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400'
-    case 'ARRIBADA':
-      return 'bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400'
-    default:
-      return 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400'
-  }
+const getStatusClasses = (status?: string) => {
+  if (!status) return 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400'
+  
+  const s = status.toUpperCase()
+  if (s.includes('NAVEGANDO'))
+    return 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400'
+  if (s.includes('ESPERANDO') || s.includes('ZARPADA') || s.includes('DESIGNADA'))
+    return 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400'
+  if (s.includes('BLOQUEADA') || s.includes('ERROR'))
+    return 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400'
+  if (s.includes('ARRIBADA') || s.includes('FINAL'))
+    return 'bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400'
+  
+  return 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400'
 }
 
-// Mocked actions for the demo
-const actions = [
-  { 
-    key: 'zarpada', 
-    label: 'Registrar Zarpada', 
-    icon: MapPinIcon, 
-    enabled: props.marea?.estado === 'ESPERANDO ZARPADA' 
-  },
-  { 
-    key: 'arribo', 
-    label: 'Registrar Arribo', 
-    icon: MapPinIcon, 
-    enabled: props.marea?.estado === 'NAVEGANDO' 
-  },
-  { 
-    key: 'carga', 
-    label: 'Cargar Datos de a Bordo', 
-    icon: CloudUploadIcon, 
-    enabled: true 
-  },
-  { 
-    key: 'nota', 
-    label: 'Agregar Nota Administrativa', 
-    icon: PlusIcon, 
-    enabled: true 
-  },
-  { 
-    key: 'cerrar', 
-    label: 'Cerrar Marea', 
-    icon: LockIcon, 
-    enabled: false,
-    blockedReason: 'Requiere validación de datos'
-  },
-]
+const getActionIcon = (key: string | number) => {
+  const meta: Record<string, any> = {
+    zarpada: MapPinIcon,
+    arribo: MapPinIcon,
+    carga_datos: CloudUploadIcon,
+    nota: PlusIcon,
+    cerrar: LockIcon
+  }
+  return meta[key] || PlusIcon
+}
 
-// Mocked events
-const lastEvents = [
-  { id: 1, titulo: 'Zarpada confirmada desde MDP', fecha: 'Hoy, 08:30', usuario: 'D. Arismendi' },
-  { id: 2, titulo: 'Alerta de proximidad detectada', fecha: 'Ayer, 22:15', usuario: 'SISTEMA' },
-  { id: 3, titulo: 'Inicio de designación', fecha: '28 Dic, 14:00', usuario: 'Coordinación' },
-]
+const onAction = (key: string | number) => {
+  emit('action', key)
+}
+
+const formatDate = (date?: string) => {
+  if (!date) return '---'
+  const d = new Date(date)
+  return `${d.toLocaleDateString()} ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+}
 </script>
 
 <style scoped>

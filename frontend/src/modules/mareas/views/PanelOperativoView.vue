@@ -58,7 +58,13 @@
             </div>
             
             <div class="overflow-x-auto custom-scrollbar">
-              <table class="w-full text-left">
+              <!-- Loading State -->
+              <div v-if="loading && mareas.length === 0" class="p-20 flex flex-col items-center">
+                <div class="loading loading-spinner loading-lg text-brand-500"></div>
+                <span class="mt-4 text-gray-500 font-bold">Cargando operaciones...</span>
+              </div>
+
+              <table v-else class="w-full text-left">
                 <thead
                   class="bg-gray-50/50 dark:bg-gray-800/50 text-[10px] font-black uppercase tracking-widest text-gray-400 dark:text-gray-500 border-b border-gray-100 dark:border-gray-800"
                 >
@@ -86,14 +92,14 @@
                         </div>
                         <div class="flex flex-col">
                           <span class="font-bold text-gray-900 dark:text-gray-100 leading-tight">{{ marea.buque_nombre }}</span>
-                          <span class="text-[10px] font-mono text-gray-400 uppercase mt-0.5">{{ marea.id_marea }} • M{{ marea.nro_marea }}</span>
+                          <span class="text-[10px] font-mono text-gray-400 uppercase mt-0.5">{{ marea.id_marea }} </span>
                         </div>
                       </div>
                     </td>
                     <td class="px-6 py-4">
                       <span
                         class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter"
-                        :class="getStatusClasses(marea.estado)"
+                        :class="getStatusClasses(marea.estado_codigo)"
                       >
                         {{ marea.estado }}
                       </span>
@@ -101,7 +107,7 @@
                     <td class="px-6 py-4">
                       <div class="flex flex-col">
                         <span class="text-xs font-bold text-gray-700 dark:text-gray-300">{{ formatDate(marea.fecha_zarpada) }}</span>
-                        <span class="text-[10px] text-gray-400">{{ marea.puerto || 'M. del Plata' }}</span>
+                        <span class="text-[10px] text-gray-400">{{ marea.puerto }}</span>
                       </div>
                     </td>
                     <td class="px-6 py-4">
@@ -116,7 +122,7 @@
                       </div>
                     </td>
                     <td class="px-6 py-4">
-                      <div v-if="marea.alertas.length" class="flex items-center gap-1.5 px-2 py-1 bg-red-50 dark:bg-red-500/10 rounded-lg w-fit">
+                      <div v-if="marea.alertas?.length" class="flex items-center gap-1.5 px-2 py-1 bg-red-50 dark:bg-red-500/10 rounded-lg w-fit">
                         <div class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></div>
                         <span class="text-[10px] font-black text-red-600 dark:text-red-400">{{ marea.alertas.length }}</span>
                       </div>
@@ -137,7 +143,7 @@
               </table>
               
               <!-- Empty State -->
-              <div v-if="mareas.length === 0" class="p-20 flex flex-col items-center justify-center text-center">
+              <div v-if="!loading && mareas.length === 0" class="p-20 flex flex-col items-center justify-center text-center">
                 <div class="w-20 h-20 bg-gray-50 dark:bg-gray-800 rounded-full flex items-center justify-center mb-4">
                   <ShipIcon class="w-10 h-10 text-gray-300" />
                 </div>
@@ -150,21 +156,23 @@
       </div>
     </div>
 
-    <!-- Context Sidebar -->
     <MareaContextSidebar 
       :is-open="isSidebarOpen"
       :marea="selectedMarea"
+      :context="selectedMareaContext"
       @close="closeSidebar"
       @open-detalle="goToDetalle"
+      @action="executeActionFromSidebar"
     />
   </AdminLayout>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import MareaContextSidebar from '../components/MareaContextSidebar.vue'
+import { useMareas } from '../composables/useMareas'
 import { 
   RefreshIcon, 
   PlusIcon, 
@@ -178,14 +186,57 @@ import {
 } from '@/icons'
 
 const router = useRouter()
+const { 
+  loading, 
+  kpis: rawKpis, 
+  mareas, 
+  fetchDashboard,
+  fetchMareaContext,
+  executeAction,
+  selectedMareaContext
+} = useMareas()
 
 // UI State
 const isSidebarOpen = ref(false)
 const selectedMarea = ref<any>(null)
 
-const openSidebar = (marea: any) => {
+// Map icons/colors to backend kpis
+const getKpiMeta = (codigo: string) => {
+  const meta: Record<string, any> = {
+    'ESPERANDO_ZARPADA': { icon: CalenderIcon, color: 'text-amber-500', bg: 'bg-amber-50 dark:bg-amber-900/20' },
+    'NAVEGANDO': { icon: RefreshIcon, color: 'text-blue-500', bg: 'bg-blue-50 dark:bg-blue-900/20' },
+    'DESIGNADA': { icon: PlusIcon, color: 'text-brand-500', bg: 'bg-brand-50 dark:bg-brand-900/20' },
+    'EN_REVISION': { icon: DocsIcon, color: 'text-orange-500', bg: 'bg-orange-50 dark:bg-orange-900/20' },
+    'BLOQUEADA': { icon: WarningIcon, color: 'text-red-500', bg: 'bg-red-50 dark:bg-red-900/20' },
+  }
+  return meta[codigo] || { icon: ShipIcon, color: 'text-gray-500', bg: 'bg-gray-50 dark:bg-gray-900/20' }
+}
+
+const kpis = computed(() => {
+  return rawKpis.value.map(k => ({
+    ...k,
+    ...getKpiMeta(k.codigo)
+  }))
+})
+
+onMounted(() => {
+  fetchDashboard()
+})
+
+const openSidebar = async (marea: any) => {
   selectedMarea.value = marea
   isSidebarOpen.value = true
+  await fetchMareaContext(marea.id)
+}
+
+const executeActionFromSidebar = async (actionKey: string) => {
+  if (!selectedMarea.value) return
+  try {
+    await executeAction(selectedMarea.value.id, actionKey)
+    // Sidebar se actualiza solo si fetchMareaContext está en executeAction del composable
+  } catch (err) {
+    console.error('Action failed:', err)
+  }
 }
 
 const closeSidebar = () => {
@@ -201,46 +252,24 @@ const goToDetalle = () => {
   }
 }
 
-// Mock Data
-const kpis = [
-  { label: 'Esperando Zarpada', value: 3, icon: CalenderIcon, color: 'text-amber-500', bg: 'bg-amber-50 dark:bg-amber-900/20' },
-  { label: 'Navegando', value: 12, icon: RefreshIcon, color: 'text-blue-500', bg: 'bg-blue-50 dark:bg-blue-900/20' },
-  { label: 'Designadas', value: 5, icon: PlusIcon, color: 'text-brand-500', bg: 'bg-brand-50 dark:bg-brand-900/20' },
-  { label: 'En Revisión', value: 8, icon: DocsIcon, color: 'text-orange-500', bg: 'bg-orange-50 dark:bg-orange-900/20' },
-  { label: 'Bloqueadas', value: 2, icon: WarningIcon, color: 'text-red-500', bg: 'bg-red-50 dark:bg-red-900/20' },
-]
-
-const mareas = ref(Array.from({ length: 12 }, (_, i) => ({
-  id: i + 1,
-  buque_nombre: i % 4 === 0 ? 'BP MARLIN azul' : i % 3 === 0 ? 'BP PESCADOR I' : 'BP ARGENTINO II',
-  id_marea: `MA-24-0${10 + i}`,
-  nro_marea: 120 + i,
-  anio_marea: 2024,
-  estado: i % 5 === 0 ? 'ESPERANDO ZARPADA' : i % 3 === 0 ? 'NAVEGANDO' : i % 4 === 0 ? 'BLOQUEADA' : 'ARRIBADA',
-  fecha_zarpada: `2024-12-${10 + i}`,
-  progreso: Math.min(Math.floor(Math.random() * 105), 100),
-  alertas: i % 4 === 0 ? [{ id: 1, titulo: 'Inconsistencia detectada', descripcion: 'La zarpada real difiere de la estimada en más de 24hs.' }] : [],
-  dias_marea: 15,
-  dias_navegados: 10,
-  puerto: i % 2 === 0 ? 'Mar del Plata' : 'Puerto Madryn'
-})))
-
-const getStatusClasses = (status: string) => {
-  switch (status?.toUpperCase()) {
-    case 'NAVEGANDO':
-      return 'bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400'
-    case 'ESPERANDO ZARPADA':
-      return 'bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400'
-    case 'BLOQUEADA':
-      return 'bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-400'
-    case 'ARRIBADA':
-      return 'bg-green-50 text-green-700 dark:bg-green-500/10 dark:text-green-400'
-    default:
-      return 'bg-gray-50 text-gray-700 dark:bg-gray-800 dark:text-gray-400'
-  }
+const getStatusClasses = (status?: string) => {
+  if (!status) return 'bg-gray-50 text-gray-700 dark:bg-gray-800 dark:text-gray-400'
+  
+  const s = status.toUpperCase()
+  if (s.includes('NAVEGANDO'))
+    return 'bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400'
+  if (s.includes('ESPERANDO') || s.includes('ZARPADA') || s.includes('DESIGNADA'))
+    return 'bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400'
+  if (s.includes('BLOQUEADA') || s.includes('ERROR'))
+    return 'bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-400'
+  if (s.includes('ARRIBADA') || s.includes('FINAL'))
+    return 'bg-green-50 text-green-700 dark:bg-green-500/10 dark:text-green-400'
+  
+  return 'bg-gray-50 text-gray-700 dark:bg-gray-800 dark:text-gray-400'
 }
 
-const formatDate = (date: string) => {
+const formatDate = (date?: string) => {
+  if (!date) return 'N/D'
   return new Date(date).toLocaleDateString('es-AR', { day: '2-digit', month: 'short' })
 }
 </script>

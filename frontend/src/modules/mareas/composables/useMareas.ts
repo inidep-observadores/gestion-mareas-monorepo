@@ -1,0 +1,74 @@
+import { ref } from 'vue';
+import mareasService from '../services/mareas.service';
+import type { MareaListItem, MareaContext } from '../services/mareas.service';
+
+export function useMareas() {
+    const loading = ref(false);
+    const error = ref<string | null>(null);
+    const kpis = ref<any[]>([]);
+    const mareas = ref<MareaListItem[]>([]);
+    const selectedMareaContext = ref<MareaContext | null>(null);
+
+    const fetchDashboard = async () => {
+        loading.value = true;
+        error.value = null;
+        try {
+            const data = await mareasService.getDashboardOperativo();
+            kpis.value = data.kpis;
+            mareas.value = data.items;
+        } catch (err: any) {
+            error.value = err.message || 'Error al cargar el dashboard';
+        } finally {
+            loading.value = false;
+        }
+    };
+
+    const fetchMareaContext = async (id: string) => {
+        loading.value = true;
+        try {
+            selectedMareaContext.value = await mareasService.getMareaContext(id);
+        } catch (err: any) {
+            error.value = err.message || 'Error al cargar el contexto de la marea';
+        } finally {
+            loading.value = false;
+        }
+    };
+
+    const executeAction = async (id: string, actionKey: string) => {
+        try {
+            await mareasService.executeAction(id, actionKey);
+            // Refrescar contexto después de la acción
+            await fetchMareaContext(id);
+            // Opcionalmente refrescar dashboard también
+            await fetchDashboard();
+        } catch (err: any) {
+            error.value = err.message || 'Error al ejecutar la acción';
+            throw err;
+        }
+    };
+
+    const createMarea = async (mareaData: any) => {
+        loading.value = true;
+        try {
+            const result = await mareasService.create(mareaData);
+            return result;
+        } catch (err: any) {
+            error.value = err.message || 'Error al crear la marea';
+            throw err;
+        } finally {
+            loading.value = false;
+        }
+    };
+
+    return {
+        loading,
+        error,
+        kpis,
+        mareas,
+        selectedMareaContext,
+        fetchDashboard,
+        fetchMareaContext,
+        executeAction,
+        createMarea
+    };
+}
