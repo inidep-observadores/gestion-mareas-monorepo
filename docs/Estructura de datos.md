@@ -380,10 +380,6 @@ Table buque_trayectorias {
   id TEXT (PK) // UUID
   buque_id TEXT NOT NULL // FK -> buques.id
 
-  fecha_desde TIMESTAMPTZ? // Cobertura minima registrada para el buque
-  fecha_hasta TIMESTAMPTZ? // Cobertura maxima registrada para el buque
-  cantidad_puntos INT NOT NULL
-
   origen TEXT? // 'SEGUIMIENTO_SATELITAL'
   metadata JSONB?
 
@@ -394,20 +390,18 @@ Table buque_trayectorias {
 Table buque_trayectoria_puntos {
   id TEXT (PK) // UUID
   trayectoria_id TEXT NOT NULL // FK -> buque_trayectorias.id
-  buque_id TEXT NOT NULL // FK -> buques.id (optimiza queries y upsert)
+  buque_id TEXT NOT NULL // FK -> buques.id (optimiza queries y upsert, lo dejamos aunque sea redundante con la cabecera)
 
   timestamp TIMESTAMPTZ NOT NULL
   lat DOUBLE NOT NULL
   lon DOUBLE NOT NULL
   velocidad DOUBLE?
   rumbo INT?
-  geom GEOGRAPHY(Point, 4326)? // PostGIS; en Prisma usar Unsupported("geography")
 
   // Upsert incremental por buque, evita duplicar puntos al reimportar
   UNIQUE(buque_id, timestamp)
   INDEX(trayectoria_id, timestamp)
   INDEX(buque_id, timestamp)
-  INDEX(geom)
 }
 
 // Para obtener la ruta de una marea, filtrar por buque_id y el rango
