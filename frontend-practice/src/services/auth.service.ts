@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000/api';
+const API_URL = import.meta.env.BACKEND_URL ?? 'http://localhost:3000/api';
 // Auth service for handling login, registration and password recovery.
 
 interface ApiErrorResponse {

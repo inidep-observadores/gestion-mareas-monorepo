@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { CommonModule } from '../common/common.module';
 import { ConfigModule } from '@nestjs/config';
 import { UsersService } from './users.service';
 import { UsersController } from './users.controller';
@@ -11,9 +12,10 @@ import { FilesModule } from '../files/files.module'; // To reuse file upload log
     providers: [UsersService],
     imports: [
         PrismaModule,
-        AuthModule, // To access Auth guards and decorators
-        FilesModule, // If I want to reuse specific file logic, though I might just use the Service
-        ConfigModule
+        AuthModule,
+        FilesModule,
+        ConfigModule,
+        CommonModule
     ],
     exports: [UsersService]
 })

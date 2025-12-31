@@ -376,24 +376,25 @@ Table producciones {
 
 ## 5. Tablas de procesamiento geografico (GIS)
 
-Table marea_trayectorias {
+Table buque_trayectorias {
   id TEXT (PK) // UUID
-  marea_id TEXT NOT NULL // FK -> mareas.id
+  buque_id TEXT NOT NULL // FK -> buques.id
 
-  fecha_desde TIMESTAMPTZ NOT NULL
-  fecha_hasta TIMESTAMPTZ NOT NULL
+  fecha_desde TIMESTAMPTZ? // Cobertura minima registrada para el buque
+  fecha_hasta TIMESTAMPTZ? // Cobertura maxima registrada para el buque
   cantidad_puntos INT NOT NULL
 
   origen TEXT? // 'SEGUIMIENTO_SATELITAL'
   metadata JSONB?
 
-  UNIQUE(marea_id)
-  INDEX(marea_id)
+  UNIQUE(buque_id)
+  INDEX(buque_id)
 }
 
-Table marea_trayectoria_puntos {
+Table buque_trayectoria_puntos {
   id TEXT (PK) // UUID
-  trayectoria_id TEXT NOT NULL // FK -> marea_trayectorias.id
+  trayectoria_id TEXT NOT NULL // FK -> buque_trayectorias.id
+  buque_id TEXT NOT NULL // FK -> buques.id (optimiza queries y upsert)
 
   timestamp TIMESTAMPTZ NOT NULL
   lat DOUBLE NOT NULL
@@ -402,7 +403,12 @@ Table marea_trayectoria_puntos {
   rumbo INT?
   geom GEOGRAPHY(Point, 4326)? // PostGIS; en Prisma usar Unsupported("geography")
 
-  UNIQUE(trayectoria_id, timestamp)
+  // Upsert incremental por buque, evita duplicar puntos al reimportar
+  UNIQUE(buque_id, timestamp)
   INDEX(trayectoria_id, timestamp)
+  INDEX(buque_id, timestamp)
   INDEX(geom)
 }
+
+// Para obtener la ruta de una marea, filtrar por buque_id y el rango
+// fecha_zarpada_estimada/fecha_inicio_observador -> fecha_fin_observador.

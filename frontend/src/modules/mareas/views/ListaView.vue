@@ -1,15 +1,10 @@
 <template>
-  <AdminLayout>
+  <AdminLayout 
+    title="Lista de Mareas por Estado" 
+    description="Vista agrupada y detallada del flujo de trabajo de mareas."
+  >
     <div class="relative min-h-[calc(100vh-100px)] z-1">
-      <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 class="text-2xl font-bold text-gray-800 dark:text-white/90">
-            Lista de Mareas por Estado
-          </h1>
-          <p class="text-gray-500 dark:text-gray-400">
-            Vista agrupada y detallada del flujo de trabajo de mareas.
-          </p>
-        </div>
+      <div class="mb-6 flex justify-end">
         <div class="flex gap-3">
           <div class="relative">
             <input

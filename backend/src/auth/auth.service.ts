@@ -7,11 +7,11 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { MailerService } from '@nestjs-modules/mailer';
 import * as crypto from 'crypto';
-import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
 import { User } from '@prisma/client';
 import { LoginUserDto, CreateUserDto, ResetPasswordDto } from './dto';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
+import { HashService } from '../common/services/hash.service';
 
 @Injectable()
 export class AuthService {
@@ -19,6 +19,7 @@ export class AuthService {
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
     private readonly mailerService: MailerService,
+    private readonly hashService: HashService,
   ) { }
 
   async create(createUserDto: CreateUserDto) {
@@ -29,7 +30,7 @@ export class AuthService {
         data: {
           ...userData,
           email: userData.email.toLowerCase().trim(),
-          password: bcrypt.hashSync(password, 10),
+          password: this.hashService.hash(password),
         },
       });
 
@@ -54,7 +55,7 @@ export class AuthService {
 
     if (!user) throw new UnauthorizedException('Credenciales inválidas');
 
-    if (!bcrypt.compareSync(password, user.password))
+    if (!this.hashService.compare(password, user.password))
       throw new UnauthorizedException('Credenciales inválidas');
 
     const { password: _, ...result } = user;
@@ -184,7 +185,7 @@ export class AuthService {
       throw new BadRequestException('Token expirado');
     }
 
-    const newHash = bcrypt.hashSync(newPassword, 10);
+    const newHash = this.hashService.hash(newPassword);
 
     // Transaction? Ideally yes, but sequential is fine for now
     await this.prisma.$transaction([

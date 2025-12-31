@@ -164,6 +164,12 @@ layer(base);
   --z-index-999999: 999999;
 }
 
+/* Force Sonner Visibility */
+[data-sonner-toaster] {
+  z-index: 1000000 !important;
+  pointer-events: auto !important;
+}
+
 /*
   The default border color has changed to `currentColor` in Tailwind CSS v4,
   so we've added these compatibility styles to make sure everything still

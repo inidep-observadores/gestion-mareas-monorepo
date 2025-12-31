@@ -1,7 +1,6 @@
 export enum ValidRoles {
     admin = 'admin',
-    superUser = 'super-user',
+    asistente = 'asistente_administrativo',
+    tecnico = 'tecnico_datos',
     coordinador = 'coordinador',
-    tecnico = 'tecnico',
-    asistente = 'asistente',
 }
