@@ -3,9 +3,9 @@
     title="Registrar Nueva Marea" 
     description="Complete los pasos para dar de alta una nueva designación de marea."
   >
-    <div class="max-w-4xl mx-auto pb-12">
+    <div class="max-w-4xl mx-auto pb-6">
       <!-- Wizard Progress Stepper -->
-      <div class="mb-12">
+      <div class="mb-8">
         <div class="flex items-center justify-between relative">
           <!-- Connection Line -->
           <div class="absolute top-1/2 left-0 w-full h-0.5 bg-gray-100 dark:bg-gray-800 -z-10 -translate-y-1/2"></div>
@@ -18,10 +18,10 @@
           <div 
             v-for="step in steps" 
             :key="step.id"
-            class="flex flex-col items-center gap-3"
+            class="flex flex-col items-center gap-2"
           >
             <div 
-              class="w-10 h-10 rounded-full flex items-center justify-center border-4 transition-all duration-300"
+              class="w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all duration-300"
               :class="[
                 currentStep >= step.id 
                   ? 'bg-brand-500 border-brand-100 dark:border-brand-900/50 text-white shadow-lg shadow-brand-500/20 scale-110' 
@@ -42,7 +42,7 @@
       </div>
 
       <!-- Step Content -->
-      <div class="bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-3xl p-8 sm:p-12 shadow-xl shadow-gray-200/50 dark:shadow-none min-h-[400px] flex flex-col">
+      <div class="bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-3xl p-6 sm:p-8 shadow-xl shadow-gray-200/50 dark:shadow-none min-h-[380px] flex flex-col">
         
         <!-- Loading State for Catalogs -->
         <div v-if="loadingCatalogs" class="flex-1 flex flex-col items-center justify-center py-20">
@@ -52,10 +52,10 @@
 
         <template v-else>
           <!-- Step 1: Identificación -->
-          <div v-if="currentStep === 1" class="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div class="border-b border-gray-100 dark:border-gray-800 pb-6">
-              <h2 class="text-2xl font-black text-gray-800 dark:text-white">Identificación de la Marea</h2>
-              <p class="text-gray-500 text-sm mt-1">Seleccione el buque y defina la numeración oficial para el ciclo actual.</p>
+          <div v-if="currentStep === 1" class="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div class="border-b border-gray-100 dark:border-gray-800 pb-4">
+              <h2 class="text-xl font-black text-gray-800 dark:text-white">Identificación de la Marea</h2>
+              <p class="text-gray-500 text-xs mt-1">Seleccione el buque y defina la numeración oficial para el ciclo actual.</p>
             </div>
 
             <div class="space-y-10">
@@ -123,20 +123,20 @@
               </div>
 
               <!-- Real-time Code Preview Badge -->
-              <div class="flex justify-center pt-4">
-                <div class="px-8 py-4 bg-brand-50 dark:bg-brand-500/5 rounded-3xl border-2 border-dashed border-brand-200 dark:border-brand-500/20 flex flex-col items-center gap-1 group transition-all hover:bg-brand-100/50">
-                  <span class="text-[9px] font-bold text-brand-400 uppercase tracking-[0.2em]">Código Identificador Generado</span>
-                  <span class="text-3xl font-black text-brand-600 dark:text-brand-400 font-mono tracking-tighter transition-transform group-hover:scale-110">{{ generatedCode }}</span>
+              <div class="flex justify-center pt-2">
+                <div class="px-6 py-3 bg-brand-50 dark:bg-brand-500/5 rounded-2xl border-2 border-dashed border-brand-200 dark:border-brand-500/20 flex flex-col items-center gap-0.5 group transition-all hover:bg-brand-100/50">
+                  <span class="text-[8px] font-bold text-brand-400 uppercase tracking-[0.2em]">Código Identificador Generado</span>
+                  <span class="text-2xl font-black text-brand-600 dark:text-brand-400 font-mono tracking-tighter transition-transform group-hover:scale-105">{{ generatedCode }}</span>
                 </div>
               </div>
             </div>
           </div>
 
           <!-- Step 2: Operación -->
-          <div v-if="currentStep === 2" class="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div class="border-b border-gray-100 dark:border-gray-800 pb-6">
-              <h2 class="text-2xl font-black text-gray-800 dark:text-white">Configuración Operativa</h2>
-              <p class="text-gray-500 text-sm mt-1">Defina la pesquería y asigne el observador principal para el viaje.</p>
+          <div v-if="currentStep === 2" class="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div class="border-b border-gray-100 dark:border-gray-800 pb-4">
+              <h2 class="text-xl font-black text-gray-800 dark:text-white">Configuración Operativa</h2>
+              <p class="text-gray-500 text-xs mt-1">Defina la pesquería y asigne el observador principal para el viaje.</p>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -187,13 +187,13 @@
           </div>
 
           <!-- Step 3: Confirmación -->
-          <div v-if="currentStep === 3" class="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div class="border-b border-gray-100 dark:border-gray-800 pb-6 text-center">
-              <div class="w-16 h-16 bg-brand-50 dark:bg-brand-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <CheckIcon class="w-8 h-8 text-brand-500" />
+          <div v-if="currentStep === 3" class="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div class="border-b border-gray-100 dark:border-gray-800 pb-4 text-center">
+              <div class="w-12 h-12 bg-brand-50 dark:bg-brand-500/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                <CheckIcon class="w-6 h-6 text-brand-500" />
               </div>
-              <h2 class="text-2xl font-black text-gray-800 dark:text-white">Verificar y Registrar</h2>
-              <p class="text-gray-500 text-sm mt-1">Revise los datos antes de persistir la nueva marea en el sistema.</p>
+              <h2 class="text-xl font-black text-gray-800 dark:text-white">Verificar y Registrar</h2>
+              <p class="text-gray-500 text-xs mt-1">Revise los datos antes de persistir la nueva marea en el sistema.</p>
             </div>
 
             <div v-if="error" class="p-4 bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20 rounded-2xl text-red-600 text-sm font-bold text-center">
@@ -226,27 +226,27 @@
         </template>
 
         <!-- Actions -->
-        <div class="mt-auto pt-10 flex items-center justify-between border-t border-gray-100 dark:border-gray-800 mt-12">
+        <div class="mt-auto pt-6 flex items-center justify-between border-t border-gray-100 dark:border-gray-800">
           <button 
             @click="prevStep"
             v-if="currentStep > 1"
-            class="px-8 py-3.5 text-sm font-bold text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 transition-all flex items-center gap-2"
+            class="px-6 py-3 text-sm font-bold text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 transition-all flex items-center gap-2"
           >
             Anterior
           </button>
           <div v-else></div>
 
-          <div class="flex gap-4">
+          <div class="flex gap-3">
             <button 
               @click="cancel"
-              class="px-8 py-3.5 text-sm font-bold text-gray-400 hover:text-red-500 transition-all"
+              class="px-6 py-3 text-sm font-bold text-gray-400 hover:text-red-500 transition-all"
             >
               Cancelar
             </button>
             <button 
               @click="nextStep"
               :disabled="loading"
-              class="px-10 py-3.5 bg-brand-500 hover:bg-brand-600 text-white rounded-2xl text-sm font-bold shadow-xl shadow-brand-500/20 transition-all active:scale-[0.98] flex items-center gap-2 active:shadow-inner disabled:opacity-50"
+              class="px-8 py-3 bg-brand-500 hover:bg-brand-600 text-white rounded-2xl text-sm font-bold shadow-xl shadow-brand-500/20 transition-all active:scale-[0.98] flex items-center gap-2 active:shadow-inner disabled:opacity-50"
             >
               <div v-if="loading" class="loading loading-spinner loading-xs"></div>
               <template v-else>
