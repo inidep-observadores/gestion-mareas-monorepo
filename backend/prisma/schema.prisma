@@ -279,7 +279,7 @@ model Marea {
   archivos     MareaArchivo[]
   producciones Produccion[]
 
-  @@unique([anioMarea, nroMarea, buqueId, tipoMarea])
+  @@unique([anioMarea, nroMarea, buqueId, tipoMarea], name: "identificadorMarea")
   @@map("mareas")
 }
 
