@@ -120,6 +120,7 @@ const router = createRouter({
       meta: {
         title: 'Estadísticas Anuales',
         requiresAuth: true,
+        roles: ['admin', 'coordinador'],
       },
     },
     {

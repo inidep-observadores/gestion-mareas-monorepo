@@ -177,11 +177,15 @@ const menuGroups = computed(() => [
         name: 'Calendario',
         path: '/mareas/calendar',
       },
-      {
-        icon: BarChartIcon,
-        name: 'Estadísticas',
-        path: '/mareas/stats',
-      },
+      ...((authStore.user?.roles.includes('admin') || authStore.user?.roles.includes('coordinador'))
+        ? [
+            {
+              icon: BarChartIcon,
+              name: 'Estadísticas',
+              path: '/mareas/stats',
+            },
+          ]
+        : []),
     ],
   },
   {
