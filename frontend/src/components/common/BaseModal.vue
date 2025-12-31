@@ -6,7 +6,12 @@
         @click="emit('close')"
     ></div>
 
-    <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
+    <div 
+      class="fixed inset-0 z-10 w-screen overflow-y-auto transition-all duration-300 ease-in-out"
+      :class="[
+        isSidebarAware ? (isExpanded || isHovered ? 'lg:pl-[290px]' : 'lg:pl-[90px]') : ''
+      ]"
+    >
       <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
         <div
           :class="[
@@ -43,14 +48,21 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
+import { useSidebar } from '@/composables/useSidebar'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   show: boolean;
   title?: string;
   maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl' | '6xl' | '7xl' | 'full';
-}>();
+  isSidebarAware?: boolean;
+}>(), {
+  isSidebarAware: true,
+  maxWidth: 'lg'
+});
 
 const emit = defineEmits(['close']);
+
+const { isExpanded, isHovered } = useSidebar()
 
 const maxWidthClass = computed(() => {
     switch (props.maxWidth) {
