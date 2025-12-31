@@ -235,8 +235,10 @@ model Marea {
   id String @id @default(uuid()) @db.Uuid
 
   // Identificacion basica
-  anioMarea Int @map("anio_marea")
-  nroMarea  Int @map("nro_marea")
+  anioMarea   Int     @map("anio_marea")
+  nroMarea    Int     @map("nro_marea")
+  tipoMarea   String  @default("COMERCIAL") @map("tipo_marea") // 'COMERCIAL' | 'INSTITUCIONAL'
+  codigoMarea String? @unique @map("codigo_marea")
 
   // Relacion con buque, estado y pesqueria
   buque   Buque  @relation(fields: [buqueId], references: [id])
@@ -277,7 +279,7 @@ model Marea {
   archivos     MareaArchivo[]
   producciones Produccion[]
 
-  @@unique([anioMarea, nroMarea, buqueId])
+  @@unique([anioMarea, nroMarea, buqueId, tipoMarea])
   @@map("mareas")
 }
 
