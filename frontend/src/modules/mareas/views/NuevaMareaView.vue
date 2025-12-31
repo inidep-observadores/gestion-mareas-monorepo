@@ -60,10 +60,33 @@
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div class="space-y-2">
+                <label class="text-[10px] font-black uppercase tracking-widest text-gray-400">Tipo de Marea</label>
+                <div class="flex gap-4">
+                  <label 
+                    class="flex-1 cursor-pointer flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all"
+                    :class="form.tipoMarea === 'COMERCIAL' ? 'bg-brand-50 border-brand-500 dark:bg-brand-500/10' : 'bg-gray-50/50 border-gray-100 dark:bg-gray-900 dark:border-gray-800'"
+                  >
+                    <input type="radio" v-model="form.tipoMarea" value="COMERCIAL" class="hidden" />
+                    <DocsIcon class="w-6 h-6" :class="form.tipoMarea === 'COMERCIAL' ? 'text-brand-500' : 'text-gray-400'" />
+                    <span class="text-xs font-black uppercase tracking-wider" :class="form.tipoMarea === 'COMERCIAL' ? 'text-brand-600' : 'text-gray-500'">Comercial</span>
+                  </label>
+                  <label 
+                    class="flex-1 cursor-pointer flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all"
+                    :class="form.tipoMarea === 'INSTITUCIONAL' ? 'bg-blue-50 border-blue-500 dark:bg-blue-500/10' : 'bg-gray-50/50 border-gray-100 dark:bg-gray-900 dark:border-gray-800'"
+                  >
+                    <input type="radio" v-model="form.tipoMarea" value="INSTITUCIONAL" class="hidden" />
+                    <ShipIcon class="w-6 h-6" :class="form.tipoMarea === 'INSTITUCIONAL' ? 'text-blue-500' : 'text-gray-400'" />
+                    <span class="text-xs font-black uppercase tracking-wider" :class="form.tipoMarea === 'INSTITUCIONAL' ? 'text-blue-600' : 'text-gray-500'">Institucional</span>
+                  </label>
+                </div>
+              </div>
+
+              <div class="space-y-2">
                 <label class="text-[10px] font-black uppercase tracking-widest text-gray-400">Buque</label>
                 <div class="relative">
                   <select 
                     v-model="form.buqueId"
+                    @change="handleBuqueChange"
                     class="w-full pl-12 pr-4 py-4 bg-gray-50/50 dark:bg-gray-900 border-2 border-gray-100 dark:border-gray-800 rounded-2xl focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 outline-none transition-all appearance-none font-bold text-gray-800 dark:text-white group-hover:border-gray-200"
                   >
                     <option disabled value="">Seleccionar buque...</option>
@@ -167,7 +190,10 @@
               <div class="p-6 bg-gray-50/50 dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl">
                 <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-2">Identificación</p>
                 <p class="text-sm font-bold text-gray-800 dark:text-gray-200">{{ getBuqueName(form.buqueId) }}</p>
-                <p class="text-xs font-mono text-brand-500 uppercase mt-0.5">MA-{{ form.anioMarea }}-{{ form.nroMarea }}</p>
+                <div class="flex items-center gap-2 mt-1">
+                  <span class="text-xs font-mono text-brand-500 uppercase font-black tracking-tighter">{{ generatedCode }}</span>
+                  <span class="px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-[9px] font-black text-gray-500 uppercase">{{ form.tipoMarea }}</span>
+                </div>
               </div>
               <div class="p-6 bg-gray-50/50 dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl">
                 <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-2">Operación</p>
@@ -252,6 +278,7 @@ const form = ref({
   buqueId: '',
   anioMarea: new Date().getFullYear(),
   nroMarea: null as number | null,
+  tipoMarea: 'COMERCIAL' as 'COMERCIAL' | 'INSTITUCIONAL',
   pesqueriaId: '',
   observadorId: '',
   arteId: '',
@@ -283,6 +310,21 @@ onMounted(async () => {
     loadingCatalogs.value = false
   }
 })
+
+const generatedCode = computed(() => {
+  if (!form.value.nroMarea) return '---'
+  const prefix = form.value.tipoMarea === 'INSTITUCIONAL' ? 'CI' : 'MC'
+  const shortYear = form.value.anioMarea.toString().slice(-2)
+  return `${prefix}-${form.value.nroMarea}-${shortYear}`
+})
+
+const handleBuqueChange = () => {
+  const buque = buques.value.find(b => b.id === form.value.buqueId)
+  if (buque) {
+    if (buque.pesqueriaHabitualId) form.value.pesqueriaId = buque.pesqueriaHabitualId
+    if (buque.arteHabitualId) form.value.arteId = buque.arteHabitualId
+  }
+}
 
 const progressLineWidth = computed(() => {
   return `${((currentStep.value - 1) / (steps.length - 1)) * 100}%`
