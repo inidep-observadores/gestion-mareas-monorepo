@@ -8,15 +8,21 @@
         @focus="openDropdown"
         @input="onSearchInput"
         @keydown="onKeyDown"
-        :placeholder="selectedLabel || placeholder"
-        class="w-full px-6 py-4 bg-gray-50/50 dark:bg-gray-900 border-2 rounded-2xl font-bold text-gray-800 dark:text-white outline-none focus:border-brand-500 transition-all appearance-none"
+        :placeholder="selectedLabel ? '' : placeholder"
+        class="w-full px-4 py-2.5 bg-gray-50/50 dark:bg-gray-900 border rounded-lg text-sm text-gray-800 dark:text-white outline-none focus:border-brand-500 transition-all appearance-none"
         :class="[
           error ? 'border-red-500 bg-red-50/30' : 'border-gray-100 dark:border-gray-800',
-          { 'pl-12': icon }
+          { 'pl-10': icon }
         ]"
       />
-      <div v-if="icon" class="absolute inset-y-0 left-0 flex items-center pl-4" :class="error ? 'text-red-500' : 'text-gray-400'">
-        <component :is="icon" class="w-5 h-5" />
+      <!-- Display selected label when not searching and not focused -->
+      <div v-if="selectedLabel && !searchQuery && !isOpen" 
+           class="absolute inset-y-0 left-0 flex items-center px-4 pointer-events-none text-sm text-gray-800 dark:text-white"
+           :class="{ 'pl-10': icon }">
+        {{ selectedLabel }}
+      </div>
+      <div v-if="icon" class="absolute inset-y-0 left-0 flex items-center pl-3" :class="error ? 'text-red-500' : 'text-gray-400'">
+        <component :is="icon" class="w-4 h-4" />
       </div>
       <div class="absolute inset-y-0 right-0 flex items-center pr-4 text-gray-400 pointer-events-none transition-transform duration-300" :class="{ 'rotate-180': isOpen }">
         <ChevronDownIcon class="w-4 h-4" />
