@@ -116,6 +116,7 @@ import {
   GridIcon,
   WaveIcon,
   MapPinIcon,
+  ShieldIcon,
 } from '../../icons'
 import { useSidebar } from '@/composables/useSidebar'
 import { useAuthStore } from '@/modules/auth/stores/auth.store'
@@ -126,7 +127,9 @@ const authStore = useAuthStore()
 
 const { isExpanded, isMobileOpen, isHovered } = useSidebar()
 
-const menuGroups = [
+import { computed } from 'vue'
+
+const menuGroups = computed(() => [
   {
     title: 'Menú Principal',
     items: [
@@ -135,6 +138,15 @@ const menuGroups = [
         name: 'Inicio',
         path: '/',
       },
+      ...(authStore.user?.roles.includes('admin')
+        ? [
+            {
+              icon: ShieldIcon,
+              name: 'Administración',
+              path: '/admin',
+            },
+          ]
+        : []),
     ],
   },
   {
@@ -165,11 +177,15 @@ const menuGroups = [
         name: 'Calendario',
         path: '/mareas/calendar',
       },
-      {
-        icon: BarChartIcon,
-        name: 'Estadísticas',
-        path: '/mareas/stats',
-      },
+      ...((authStore.user?.roles.includes('admin') || authStore.user?.roles.includes('coordinador'))
+        ? [
+            {
+              icon: BarChartIcon,
+              name: 'Estadísticas',
+              path: '/mareas/stats',
+            },
+          ]
+        : []),
     ],
   },
   {
@@ -182,7 +198,7 @@ const menuGroups = [
       },
     ],
   },
-]
+])
 
 const isActive = (path: string) => route.path === path
 

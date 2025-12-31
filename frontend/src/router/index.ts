@@ -120,6 +120,7 @@ const router = createRouter({
       meta: {
         title: 'Estadísticas Anuales',
         requiresAuth: true,
+        roles: ['admin', 'coordinador'],
       },
     },
     {
@@ -131,6 +132,41 @@ const router = createRouter({
         requiresAuth: true,
       },
     },
+    // Admin Module
+    {
+      path: '/admin',
+      redirect: '/admin/users',
+    },
+    {
+      path: '/admin/users',
+      name: 'AdminUsers',
+      component: () => import('@/modules/admin/views/UsersView.vue'),
+      meta: {
+        title: 'Gestión de Usuarios',
+        requiresAuth: true,
+        roles: ['admin'],
+      },
+    },
+    {
+      path: '/admin/observadores',
+      name: 'AdminObservadores',
+      component: () => import('@/modules/admin/views/ObservadoresView.vue'),
+      meta: {
+        title: 'Gestión de Observadores',
+        requiresAuth: true,
+        roles: ['admin'],
+      },
+    },
+    {
+      path: '/admin/buques',
+      name: 'AdminBuques',
+      component: () => import('@/modules/admin/views/BuquesView.vue'),
+      meta: {
+        title: 'Gestión de Buques',
+        requiresAuth: true,
+        roles: ['admin'],
+      },
+    },
     // 404 No encontrado
     {
       path: '/:pathMatch(.*)*',
@@ -140,6 +176,15 @@ const router = createRouter({
         title: 'Página no encontrada',
         guestOnly: false, // Accessible by everyone
         requiresAuth: false
+      }
+    },
+    {
+      path: '/unauthorized',
+      name: 'Unauthorized',
+      component: () => import('@/modules/auth/views/UnauthorizedView.vue'),
+      meta: {
+        title: 'Acceso Restringido',
+        requiresAuth: true
       }
     },
   ],
@@ -165,7 +210,25 @@ router.beforeEach(async (to, from, next) => {
     return next({ name: 'Dashboard' })
   }
 
-  // 3. Default
+  // 3. User with 'invitado' role must be trapped in '/unauthorized'
+  const isGuest = authStore.user?.roles?.includes('invitado')
+  if (isAuthenticated && isGuest && to.name !== 'Unauthorized') {
+    return next({ name: 'Unauthorized' })
+  }
+
+  // 4. Check for Roles (Regular role authorization)
+  if (to.meta.roles) {
+    const roles = to.meta.roles as string[]
+    const userRoles = authStore.user?.roles || []
+    const hasRole = roles.some(role => userRoles.includes(role))
+
+    if (!hasRole) {
+      // Redirect to home or not found if not authorized
+      return next({ name: 'Dashboard' })
+    }
+  }
+
+  // 5. Default
   next()
 })
 

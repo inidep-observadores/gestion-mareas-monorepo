@@ -1,0 +1,10 @@
+{"codigo":"ABADEJO","nombre":"Abadejo","grupo":"Peces","activo":true}
+{"codigo":"ANCHOITA","nombre":"Anchoíta","grupo":"Peces","activo":true}
+{"codigo":"CABALLA","nombre":"Caballa","grupo":"Peces","activo":true}
+{"codigo":"CALAMAR","nombre":"Calamar","grupo":"Moluscos","activo":true}
+{"codigo":"CENTOLLA","nombre":"Centolla","grupo":"Crustáceos","activo":true}
+{"codigo":"AUSTRALES","nombre":"Especies australes","grupo":"Peces","activo":true}
+{"codigo":"LANGOSTINO","nombre":"Langostino","grupo":"Crustáceos","activo":true}
+{"codigo":"MERLUZA_COMUN","nombre":"Merluza común","grupo":"Peces","activo":true}
+{"codigo":"MERLUZA_NEGRA","nombre":"Merluza negra","grupo":"Peces","activo":true}
+{"codigo":"VIEIRA","nombre":"Vieira","grupo":"Moluscos","activo":true}

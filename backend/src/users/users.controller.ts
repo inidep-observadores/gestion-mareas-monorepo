@@ -1,14 +1,12 @@
-import { Controller, Get, Body, Patch, UseGuards, UseInterceptors, UploadedFile, BadRequestException, Post } from '@nestjs/common';
+import { Controller, Get, Body, Patch, UseGuards, Post, Delete, Param } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { FileInterceptor } from '@nestjs/platform-express';
 import { ConfigService } from '@nestjs/config';
-import { diskStorage } from 'multer';
 
 import { UsersService } from './users.service';
-import { GetUser } from '../auth/decorators';
+import { GetUser, Auth } from '../auth/decorators';
 import { User } from '@prisma/client';
-import { UpdateUserDto, ChangePasswordDto } from './dto';
-import { fileFilter, fileNamer } from '../files/helpers';
+import { UpdateUserDto, ChangePasswordDto, CreateUserDto, AdminUpdateUserDto } from './dto';
+import { ValidRoles } from '../auth/interfaces';
 
 @Controller('users')
 @UseGuards(AuthGuard())
@@ -39,5 +37,43 @@ export class UsersController {
         return this.usersService.changePassword(user, changePasswordDto);
     }
 
+    @Get()
+    @Auth(ValidRoles.admin)
+    findAll() {
+        return this.usersService.findAll();
+    }
 
+    @Post()
+    @Auth(ValidRoles.admin)
+    create(@Body() createUserDto: CreateUserDto) {
+        return this.usersService.create(createUserDto);
+    }
+
+    @Patch(':id')
+    @Auth(ValidRoles.admin)
+    update(
+        @Param('id') id: string,
+        @Body() adminUpdateUserDto: AdminUpdateUserDto,
+        @GetUser() user: User
+    ) {
+        return this.usersService.update(id, adminUpdateUserDto, user);
+    }
+
+    @Patch(':id/toggle-status')
+    @Auth(ValidRoles.admin)
+    toggleStatus(
+        @Param('id') id: string,
+        @GetUser() user: User
+    ) {
+        return this.usersService.toggleStatus(id, user);
+    }
+
+    @Delete(':id')
+    @Auth(ValidRoles.admin)
+    remove(
+        @Param('id') id: string,
+        @GetUser() user: User
+    ) {
+        return this.usersService.remove(id, user);
+    }
 }

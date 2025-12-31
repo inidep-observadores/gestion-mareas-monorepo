@@ -1,13 +1,15 @@
 import { BadRequestException, Injectable, InternalServerErrorException, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { UpdateUserDto, ChangePasswordDto } from './dto';
-import * as bcrypt from 'bcrypt';
+import { UpdateUserDto, ChangePasswordDto, CreateUserDto, AdminUpdateUserDto } from './dto';
+import { ValidRoles } from '../auth/interfaces';
 import { User } from '@prisma/client';
+import { HashService } from '../common/services/hash.service';
 
 @Injectable()
 export class UsersService {
     constructor(
         private readonly prisma: PrismaService,
+        private readonly hashService: HashService,
     ) { }
 
     async updateProfile(user: User, updateUserDto: UpdateUserDto) {
@@ -41,11 +43,11 @@ export class UsersService {
 
         if (!contextUser) throw new UnauthorizedException('Usuario no encontrado');
 
-        if (!bcrypt.compareSync(currentPassword, contextUser.password)) {
+        if (!this.hashService.compare(currentPassword, contextUser.password)) {
             throw new UnauthorizedException('La contraseña actual es incorrecta');
         }
 
-        const hashedPassword = bcrypt.hashSync(newPassword, 10);
+        const hashedPassword = this.hashService.hash(newPassword);
 
         await this.prisma.user.update({
             where: { id: user.id },
@@ -63,6 +65,90 @@ export class UsersService {
 
         const { password, ...rest } = updatedUser;
         return rest;
+    }
+
+    async findAll() {
+        return this.prisma.user.findMany({
+            orderBy: { fullName: 'asc' }
+        });
+    }
+
+    async create(createUserDto: CreateUserDto) {
+        try {
+            const { password, ...userData } = createUserDto;
+
+            const user = await this.prisma.user.create({
+                data: {
+                    ...userData,
+                    password: this.hashService.hash(password),
+                }
+            });
+
+            const { password: _, ...rest } = user;
+            return rest;
+        } catch (error) {
+            this.handleDBErrors(error);
+        }
+    }
+
+    async update(id: string, adminUpdateUserDto: AdminUpdateUserDto, currentUser: User) {
+        const { password, ...data } = adminUpdateUserDto;
+
+        // Protections
+        if (id === currentUser.id) {
+            // Admin cannot remove 'admin' role from themselves
+            if (data.roles && !data.roles.includes(ValidRoles.admin)) {
+                throw new BadRequestException('No puedes quitarte el rol de administrador a ti mismo');
+            }
+            // Admin cannot deactivate themselves (though this is usually handled in toggleStatus, checks here for safety)
+            if (data.isActive === false) {
+                throw new BadRequestException('No puedes desactivarte a ti mismo');
+            }
+        }
+
+        try {
+            const updateData: any = { ...data };
+            if (password) {
+                updateData.password = this.hashService.hash(password);
+            }
+
+            const user = await this.prisma.user.update({
+                where: { id },
+                data: updateData
+            });
+
+            const { password: _, ...rest } = user;
+            return rest;
+        } catch (error) {
+            this.handleDBErrors(error);
+        }
+    }
+
+    async toggleStatus(id: string, currentUser: User) {
+        if (id === currentUser.id) {
+            throw new BadRequestException('No puedes desactivarte a ti mismo');
+        }
+
+        const user = await this.prisma.user.findUnique({ where: { id } });
+        if (!user) throw new NotFoundException('Usuario no encontrado');
+
+        return this.prisma.user.update({
+            where: { id },
+            data: { isActive: !user.isActive }
+        });
+    }
+
+    async remove(id: string, currentUser: User) {
+        if (id === currentUser.id) {
+            throw new BadRequestException('No puedes eliminarte a ti mismo');
+        }
+
+        // Extra check: Check if user exists before deleting? Prisma throws if not found usually.
+        try {
+            return await this.prisma.user.delete({ where: { id } });
+        } catch (error) {
+            this.handleDBErrors(error);
+        }
     }
 
     private handleDBErrors(error: any): never {

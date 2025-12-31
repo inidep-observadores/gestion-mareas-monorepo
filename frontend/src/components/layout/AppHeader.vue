@@ -48,6 +48,17 @@
           </svg>
         </button>
         <HeaderLogo />
+        
+        <!-- Page Title & Description (Desktop) -->
+        <div class="hidden lg:flex flex-col ml-4 border-l border-gray-100 dark:border-gray-800 pl-4">
+          <h2 v-if="title" class="text-lg font-bold text-gray-900 dark:text-white leading-tight">
+            {{ title }}
+          </h2>
+          <p v-if="description" class="text-xs text-gray-500 dark:text-gray-400">
+            {{ description }}
+          </p>
+        </div>
+
         <button
           @click="toggleApplicationMenu"
           class="flex items-center justify-center w-10 h-10 text-gray-700 rounded-lg z-99999 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800 lg:hidden"
@@ -67,7 +78,6 @@
             />
           </svg>
         </button>
-        <SearchBar />
       </div>
 
       <div
@@ -87,13 +97,14 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useSidebar } from '@/composables/useSidebar'
+import { usePageHeader } from '@/composables/usePageHeader'
 import ThemeToggler from '../common/ThemeToggler.vue'
-import SearchBar from './header/SearchBar.vue'
 import HeaderLogo from './header/HeaderLogo.vue'
 import NotificationMenu from './header/NotificationMenu.vue'
 import UserMenu from './header/UserMenu.vue'
 
 const { toggleSidebar, toggleMobileSidebar, isMobileOpen } = useSidebar()
+const { title, description } = usePageHeader()
 
 const handleToggle = () => {
   if (window.innerWidth >= 1024) {

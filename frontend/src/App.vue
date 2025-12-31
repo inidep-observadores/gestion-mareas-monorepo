@@ -8,8 +8,8 @@
   <ThemeProvider v-else>
     <SidebarProvider>
       <RouterView />
-      <Toaster position="top-right" richColors />
     </SidebarProvider>
+    <Toaster position="bottom-right" richColors />
   </ThemeProvider>
 </template>
 
