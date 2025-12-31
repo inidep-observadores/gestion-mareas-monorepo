@@ -6,6 +6,7 @@ import FlujoMareasView from '@/modules/mareas/views/FlujoMareasView.vue'
 import EstadisticasView from '@/modules/mareas/views/EstadisticasView.vue'
 import CalendarioView from '@/modules/mareas/views/CalendarioView.vue'
 import MareaDetalleView from '@/modules/mareas/views/MareaDetalleView.vue'
+import NuevaMareaView from '@/modules/mareas/views/NuevaMareaView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -83,6 +84,15 @@ const router = createRouter({
       component: PanelOperativoView,
       meta: {
         title: 'Panel Operativo',
+        requiresAuth: true,
+      },
+    },
+    {
+      path: '/mareas/nueva',
+      name: 'NuevaMarea',
+      component: NuevaMareaView,
+      meta: {
+        title: 'Registrar Nueva Marea',
         requiresAuth: true,
       },
     },
