@@ -18,6 +18,7 @@ async function main() {
   await prisma.product.deleteMany();
   await prisma.observadorPesqueria.deleteMany();
   await prisma.buque.deleteMany();
+  await prisma.artePesca.deleteMany();
   await prisma.observador.deleteMany();
   await prisma.puerto.deleteMany();
   await prisma.pesqueria.deleteMany();
@@ -147,20 +148,57 @@ async function main() {
     console.log('Tipos de flota seeded successfully!');
   }
 
-  // Seeding Buques from CSV
-  const buquesCsvPath = path.join(__dirname, '../old_data/BuqueEmpresa.csv');
-  if (fs.existsSync(buquesCsvPath)) {
-    console.log('Seeding Buques from CSV...');
-    const csvContent = fs.readFileSync(buquesCsvPath, 'utf8');
-    const lines = csvContent.split('\n').filter(line => line.trim());
-    const headers = lines[0].split(';').map(h => h.trim());
+  // Seeding Artes de Pesca from JSONL
+  const artesJsonlPath = path.join(__dirname, 'data/artes_pesca.jsonl');
+  if (fs.existsSync(artesJsonlPath)) {
+    const artesData = fs.readFileSync(artesJsonlPath, 'utf8')
+      .split('\n')
+      .filter(line => line.trim())
+      .map(line => JSON.parse(line));
 
-    // Get all puertos and tipos_flota for linking
+    console.log(`Loading ${artesData.length} artes de pesca...`);
+    await prisma.artePesca.createMany({ data: artesData });
+    console.log('Artes de Pesca seeded successfully!');
+  }
+
+  // Seeding Buques from JSONL
+  const buquesJsonlPath = path.join(__dirname, 'data/buques.jsonl');
+  if (fs.existsSync(buquesJsonlPath)) {
+    console.log('Seeding Buques from JSONL...');
+    const buquesData = fs.readFileSync(buquesJsonlPath, 'utf8')
+      .split('\n')
+      .filter(line => line.trim())
+      .map(line => JSON.parse(line));
+
+    // Get all linked data for referencing
     const puertos = await prisma.puerto.findMany();
     const tiposFlota = await prisma.tipoFlota.findMany();
+    const artesPesca = await prisma.artePesca.findMany();
+    const pesquerias = await prisma.pesqueria.findMany();
+
+    const getPesqueriaId = (flotaCodigo: string | null) => {
+      if (!flotaCodigo) return null;
+      let pesqueriaCodigo = '';
+
+      switch (flotaCodigo) {
+        case 'POTERO': pesqueriaCodigo = 'CALAMAR'; break;
+        case 'TANGONERO': pesqueriaCodigo = 'LANGOSTINO'; break;
+        case 'CENTOLLERO': pesqueriaCodigo = 'CENTOLLA'; break;
+        case 'VIEIRERO': pesqueriaCodigo = 'VIEIRA'; break;
+        case 'CONGELADOR_MERLUCERO':
+        case 'SURIMERO':
+        case 'FRESQUERO':
+          pesqueriaCodigo = 'MERLUZA_COMUN'; break;
+        case 'CONGELADOR_AUSTRAL': pesqueriaCodigo = 'AUSTRALES'; break;
+        case 'PALANGRERO': pesqueriaCodigo = 'MERLUZA_NEGRA'; break;
+        default: return null;
+      }
+
+      return pesquerias.find(p => p.codigo === pesqueriaCodigo)?.id || null;
+    };
 
     const getPuertoId = (localidad: string) => {
-      const loc = localidad.toLowerCase().trim();
+      const loc = (localidad || '').toLowerCase().trim();
       if (!loc) return null;
       if (loc.includes('buenos aires')) return puertos.find(p => p.nombre.toLowerCase().includes('buenos aires'))?.id;
       if (loc.includes('madryn')) return puertos.find(p => p.nombre.toLowerCase().includes('madryn'))?.id;
@@ -174,90 +212,26 @@ async function main() {
       return found?.id || null;
     };
 
-    const getTipoFlotaId = (tipo: string) => {
-      const t = tipo.toLowerCase().trim();
-      if (!t) return null;
-      let code = '';
-      if (t === 'fresquero') code = 'FRESQUERO';
-      else if (t === 'tangonero') code = 'TANGONERO';
-      else if (t === 'cong_merlucero') code = 'CONGELADOR_MERLUCERO';
-      else if (t === 'potero') code = 'POTERO';
-      else if (t === 'palangrero') code = 'PALANGRERO';
-      else if (t === 'cong_austral') code = 'CONGELADOR_AUSTRAL';
-      else if (t === 'trampero') code = 'CENTOLLERO';
-      else if (t === 'vieira') code = 'VIEIRERO';
-      else if (t === 'costero') code = 'COSTERO';
-      else if (t === 'investigación' || t === 'investigacion') code = 'INVESTIGACION';
-      else if (t === 'congelador') code = 'CONGELADOR_GENERICO';
-      else if (t === 'surimero') code = 'SURIMERO';
-      else if (t === 'raya') code = 'RAYERO';
-      else if (t.includes('cong_merlucero')) code = 'CONGELADOR_MERLUCERO';
-
-      return tiposFlota.find(tf => tf.codigo === code)?.id || null;
-    };
-
-    const extractArmadorNombre = (telArmador: string) => {
-      if (!telArmador) return null;
-      // Regex to try to capture name before a number or " - "
-      // Example: "Emanuel 155597896" -> "Emanuel"
-      // Example: "Esteban Palestini 15530-6373" -> "Esteban Palestini"
-      const match = telArmador.match(/^([a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+)(?=[\d\s-]{4,}|$)/);
-      if (match && match[1]) {
-        const name = match[1].trim();
-        // Avoid cases like "Noelia -"
-        return name.replace(/\s-+$/, '').trim() || null;
-      }
-      return null;
-    };
-
-    let tempMatriculaCount = 1;
-    const buquesToCreate = [];
-
-    for (let i = 1; i < lines.length; i++) {
-      const values = lines[i].split(';');
-      const data: any = {};
-      headers.forEach((header, index) => {
-        data[header] = values[index]?.trim();
-      });
-
-      let matricula = data['Matricula'];
-      if (!matricula) {
-        matricula = `TEMP-${String(tempMatriculaCount++).padStart(4, '0')}`;
-      }
-
-      const armadorInfo = data['Telefono Armador '];
-      const armadorNombre = extractArmadorNombre(armadorInfo);
-
-      const diasMarea = parseInt(data['Dias marea Esti.']);
-
-      buquesToCreate.push({
-        nombreBuque: data['Buque'] || 'SIN NOMBRE',
-        matricula: matricula,
-        empresaNombre: data['EMPRESA'],
-        tipoFlotaId: getTipoFlotaId(data['Tipo Buque']),
-        diasMareaEstimada: isNaN(diasMarea) ? null : diasMarea,
-        empresaFax: data['Fax Empresa'],
-        empresaLocalidad: data['Localidad'],
-        puertoBaseId: getPuertoId(data['Localidad']),
-        empresaCorreoPrincipal: data['Correo Empresa '],
-        empresaCorreoSecundario: data['Mail'],
-        empresaTelefono: data['Telefono'],
-        agenciaMaritimaNombre: data['AGENCIA MARITIMA'],
-        armadorTelefono: armadorInfo,
-        armadorNombre: armadorNombre,
-        activo: true,
-      });
-    }
-
-    console.log(`Loading ${buquesToCreate.length} buques...`);
-    for (const buque of buquesToCreate) {
+    console.log(`Loading ${buquesData.length} buques...`);
+    for (const buqueRaw of buquesData) {
       try {
-        await prisma.buque.create({ data: buque });
+        const { tipoFlotaCodigo, arteHabitualCodigo, empresaLocalidad, ...rest } = buqueRaw;
+
+        const tpId = tiposFlota.find(tf => tf.codigo === tipoFlotaCodigo)?.id || null;
+
+        await prisma.buque.create({
+          data: {
+            ...rest,
+            empresaLocalidad,
+            tipoFlotaId: tpId,
+            arteHabitualId: artesPesca.find(ap => ap.codigoNumerico === arteHabitualCodigo)?.id || null,
+            pesqueriaHabitualId: getPesqueriaId(tipoFlotaCodigo),
+            puertoBaseId: getPuertoId(empresaLocalidad),
+          }
+        });
       } catch (error: any) {
-        console.error(`Error creating buque: ${buque.nombreBuque} (Mat: ${buque.matricula})`);
+        console.error(`Error creating buque: ${buqueRaw.nombreBuque} (Mat: ${buqueRaw.matricula})`);
         console.error(error.message || error);
-        // We continue with others if one fails, but maybe better to throw if it's a critical error
-        // For now let's just log and see.
       }
     }
     console.log('Buques seeding process completed!');
