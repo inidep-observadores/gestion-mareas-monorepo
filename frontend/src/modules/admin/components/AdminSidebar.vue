@@ -125,7 +125,8 @@ import {
   UserCircleIcon,
   ShieldIcon,
   ArrowLeftIcon,
-  ShipIcon
+  ShipIcon,
+  HistoryIcon
 } from '@/icons'
 import { useSidebar } from '@/composables/useSidebar'
 import { useAuthStore } from '@/modules/auth/stores/auth.store'
@@ -154,6 +155,16 @@ const menuGroups = [
         icon: ShipIcon,
         name: 'Buques',
         path: '/admin/buques',
+      },
+    ],
+  },
+  {
+    title: 'Auditoría',
+    items: [
+      {
+        icon: HistoryIcon,
+        name: 'Log de Errores',
+        path: '/admin/error-logs',
       },
     ],
   },

@@ -167,6 +167,16 @@ const router = createRouter({
         roles: ['admin'],
       },
     },
+    {
+      path: '/admin/error-logs',
+      name: 'AdminErrorLogs',
+      component: () => import('@/modules/admin/views/ErrorLogsView.vue'),
+      meta: {
+        title: 'Auditoría de Errores',
+        requiresAuth: true,
+        roles: ['admin'],
+      },
+    },
     // 404 No encontrado
     {
       path: '/:pathMatch(.*)*',

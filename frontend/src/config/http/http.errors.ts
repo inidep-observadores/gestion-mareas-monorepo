@@ -28,11 +28,8 @@ export function normalizeError(error: any): AppError {
             // If message is array (class-validator), map it
             if (Array.isArray(data.message)) {
                 const validationErrors: Record<string, string> = {};
-                data.message.forEach((msg: string) => {
-                    // Try to guess field from message or just use generic
-                    // Nest usually sends "property should not be empty"
-                    // This is basic, might need refinement for complex DTOs
-                    validationErrors['generic'] = msg;
+                data.message.forEach((msg: string, index: number) => {
+                    validationErrors[`error_${index}`] = msg;
                 });
                 // Better: If we can't parse field, join messages
                 return new AppError('Error de validación', 'VALIDATION_ERROR', validationErrors);

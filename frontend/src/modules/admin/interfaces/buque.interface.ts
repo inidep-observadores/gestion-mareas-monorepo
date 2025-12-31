@@ -47,5 +47,7 @@ export interface Buque {
     armadorTelefono?: string | null;
     agenciaMaritimaNombre?: string | null;
     activo: boolean;
+    fechaAlta?: string | null;
+    fechaBaja?: string | null;
     observaciones?: string | null;
 }
