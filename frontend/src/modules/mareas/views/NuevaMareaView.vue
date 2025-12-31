@@ -58,63 +58,75 @@
               <p class="text-gray-500 text-sm mt-1">Seleccione el buque y defina la numeración oficial para el ciclo actual.</p>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div class="space-y-2">
-                <label class="text-[10px] font-black uppercase tracking-widest text-gray-400">Tipo de Marea</label>
-                <div class="flex gap-4">
-                  <label 
-                    class="flex-1 cursor-pointer flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all"
-                    :class="form.tipoMarea === 'COMERCIAL' ? 'bg-brand-50 border-brand-500 dark:bg-brand-500/10' : 'bg-gray-50/50 border-gray-100 dark:bg-gray-900 dark:border-gray-800'"
+            <div class="space-y-10">
+              <!-- Compact & Balanced Tide Type Selector -->
+              <div class="flex flex-col items-center gap-4">
+                <label class="text-[10px] font-black uppercase tracking-widest text-gray-400">Tipo de Designación</label>
+                <div class="inline-flex p-1 bg-gray-100 dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800">
+                  <button 
+                    type="button"
+                    @click="form.tipoMarea = 'COMERCIAL'"
+                    class="px-6 py-2.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2"
+                    :class="form.tipoMarea === 'COMERCIAL' ? 'bg-white dark:bg-gray-800 text-brand-600 shadow-sm ring-1 ring-black/5' : 'text-gray-500 hover:text-gray-700'"
                   >
-                    <input type="radio" v-model="form.tipoMarea" value="COMERCIAL" class="hidden" />
-                    <DocsIcon class="w-6 h-6" :class="form.tipoMarea === 'COMERCIAL' ? 'text-brand-500' : 'text-gray-400'" />
-                    <span class="text-xs font-black uppercase tracking-wider" :class="form.tipoMarea === 'COMERCIAL' ? 'text-brand-600' : 'text-gray-500'">Comercial</span>
-                  </label>
-                  <label 
-                    class="flex-1 cursor-pointer flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all"
-                    :class="form.tipoMarea === 'INSTITUCIONAL' ? 'bg-blue-50 border-blue-500 dark:bg-blue-500/10' : 'bg-gray-50/50 border-gray-100 dark:bg-gray-900 dark:border-gray-800'"
+                    <div class="w-1.5 h-1.5 rounded-full" :class="form.tipoMarea === 'COMERCIAL' ? 'bg-brand-500' : 'bg-transparent border border-gray-300'"></div>
+                    Comercial (MC)
+                  </button>
+                  <button 
+                    type="button"
+                    @click="form.tipoMarea = 'INSTITUCIONAL'"
+                    class="px-6 py-2.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2"
+                    :class="form.tipoMarea === 'INSTITUCIONAL' ? 'bg-white dark:bg-gray-800 text-blue-600 shadow-sm ring-1 ring-black/5' : 'text-gray-500 hover:text-gray-700'"
                   >
-                    <input type="radio" v-model="form.tipoMarea" value="INSTITUCIONAL" class="hidden" />
-                    <ShipIcon class="w-6 h-6" :class="form.tipoMarea === 'INSTITUCIONAL' ? 'text-blue-500' : 'text-gray-400'" />
-                    <span class="text-xs font-black uppercase tracking-wider" :class="form.tipoMarea === 'INSTITUCIONAL' ? 'text-blue-600' : 'text-gray-500'">Institucional</span>
-                  </label>
+                    <div class="w-1.5 h-1.5 rounded-full" :class="form.tipoMarea === 'INSTITUCIONAL' ? 'bg-blue-500' : 'bg-transparent border border-gray-300'"></div>
+                    Institucional (CI)
+                  </button>
                 </div>
               </div>
 
-              <div class="space-y-2">
-                <label class="text-[10px] font-black uppercase tracking-widest text-gray-400">Buque</label>
-                <div class="relative">
-                  <select 
+              <!-- Symmetrical Grid -->
+              <div class="grid grid-cols-1 md:grid-cols-12 gap-6 items-end">
+                <div class="md:col-span-7 space-y-2">
+                  <label class="text-[10px] font-black uppercase tracking-widest text-gray-400">Buque</label>
+                  <SearchableSelect 
                     v-model="form.buqueId"
+                    :options="buqueOptions"
+                    placeholder="Buscar buque por nombre o matrícula..."
+                    :icon="ShipIcon"
+                    :error="fieldErrors.buqueId"
                     @change="handleBuqueChange"
-                    class="w-full pl-12 pr-4 py-4 bg-gray-50/50 dark:bg-gray-900 border-2 border-gray-100 dark:border-gray-800 rounded-2xl focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 outline-none transition-all appearance-none font-bold text-gray-800 dark:text-white group-hover:border-gray-200"
-                  >
-                    <option disabled value="">Seleccionar buque...</option>
-                    <option v-for="b in buques" :key="b.id" :value="b.id">{{ b.nombreBuque }} ({{ b.matricula }})</option>
-                  </select>
-                  <div class="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-400">
-                    <ShipIcon class="w-5 h-5" />
+                  />
+                  <p v-if="fieldErrors.buqueId" class="text-[10px] text-red-500 font-bold uppercase mt-1">{{ fieldErrors.buqueId }}</p>
+                </div>
+
+                <div class="md:col-span-5 grid grid-cols-2 gap-4">
+                  <div class="space-y-2">
+                    <label class="text-[10px] font-black uppercase tracking-widest text-gray-400">Año</label>
+                    <input 
+                      v-model="form.anioMarea"
+                      type="number"
+                      class="w-full px-4 py-4 bg-gray-50/50 dark:bg-gray-900 border-2 rounded-2xl font-black text-gray-800 dark:text-white text-center text-lg outline-none focus:border-brand-500 transition-all"
+                      :class="fieldErrors.anioMarea ? 'border-red-500 bg-red-50/30' : 'border-gray-100 dark:border-gray-800'"
+                    />
+                  </div>
+                  <div class="space-y-2">
+                    <label class="text-[10px] font-black uppercase tracking-widest text-gray-400">Nro. Marea</label>
+                    <input 
+                      v-model="form.nroMarea"
+                      type="number"
+                      placeholder="000"
+                      class="w-full px-4 py-4 bg-gray-50/50 dark:bg-gray-900 border-2 rounded-2xl font-black text-gray-800 dark:text-white text-center text-lg outline-none focus:border-brand-500 transition-all"
+                      :class="fieldErrors.nroMarea ? 'border-red-500 bg-red-50/30' : 'border-gray-100 dark:border-gray-800'"
+                    />
                   </div>
                 </div>
               </div>
 
-              <div class="grid grid-cols-2 gap-4">
-                <div class="space-y-2">
-                  <label class="text-[10px] font-black uppercase tracking-widest text-gray-400">Año</label>
-                  <input 
-                    v-model="form.anioMarea"
-                    type="number"
-                    class="w-full px-4 py-4 bg-gray-50/50 dark:bg-gray-900 border-2 border-gray-100 dark:border-gray-800 rounded-2xl font-black text-gray-800 dark:text-white text-center text-lg outline-none focus:border-brand-500 transition-all"
-                  />
-                </div>
-                <div class="space-y-2">
-                  <label class="text-[10px] font-black uppercase tracking-widest text-gray-400">Nro. Marea</label>
-                  <input 
-                    v-model="form.nroMarea"
-                    type="number"
-                    placeholder="000"
-                    class="w-full px-4 py-4 bg-gray-50/50 dark:bg-gray-900 border-2 border-gray-100 dark:border-gray-800 rounded-2xl font-black text-gray-800 dark:text-white text-center text-lg outline-none focus:border-brand-500 transition-all"
-                  />
+              <!-- Real-time Code Preview Badge -->
+              <div class="flex justify-center pt-4">
+                <div class="px-8 py-4 bg-brand-50 dark:bg-brand-500/5 rounded-3xl border-2 border-dashed border-brand-200 dark:border-brand-500/20 flex flex-col items-center gap-1 group transition-all hover:bg-brand-100/50">
+                  <span class="text-[9px] font-bold text-brand-400 uppercase tracking-[0.2em]">Código Identificador Generado</span>
+                  <span class="text-3xl font-black text-brand-600 dark:text-brand-400 font-mono tracking-tighter transition-transform group-hover:scale-110">{{ generatedCode }}</span>
                 </div>
               </div>
             </div>
@@ -130,35 +142,35 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div class="space-y-2">
                 <label class="text-[10px] font-black uppercase tracking-widest text-gray-400">Pesquería</label>
-                <select 
+                <SearchableSelect 
                   v-model="form.pesqueriaId"
-                  class="form-wizard-select"
-                >
-                  <option disabled value="">Seleccionar pesquería...</option>
-                  <option v-for="p in pesquerias" :key="p.id" :value="p.id">{{ p.nombre }}</option>
-                </select>
+                  :options="pesqueriaOptions"
+                  placeholder="Seleccionar pesquería..."
+                  :error="fieldErrors.pesqueriaId"
+                />
+                <p v-if="fieldErrors.pesqueriaId" class="text-[10px] text-red-500 font-bold uppercase mt-1">{{ fieldErrors.pesqueriaId }}</p>
               </div>
 
               <div class="space-y-2">
                 <label class="text-[10px] font-black uppercase tracking-widest text-gray-400">Observador Principal</label>
-                <select 
+                <SearchableSelect 
                   v-model="form.observadorId"
-                  class="form-wizard-select"
-                >
-                  <option disabled value="">Seleccionar observador...</option>
-                  <option v-for="o in observadores" :key="o.id" :value="o.id">{{ o.apellido }}, {{ o.nombre }}</option>
-                </select>
+                  :options="observadorOptions"
+                  placeholder="Seleccionar observador..."
+                  :error="fieldErrors.observadorId"
+                />
+                <p v-if="fieldErrors.observadorId" class="text-[10px] text-red-500 font-bold uppercase mt-1">{{ fieldErrors.observadorId }}</p>
               </div>
 
               <div class="space-y-2">
                 <label class="text-[10px] font-black uppercase tracking-widest text-gray-400">Arte Principal</label>
-                <select 
+                <SearchableSelect 
                   v-model="form.arteId"
-                  class="form-wizard-select"
-                >
-                  <option disabled value="">Seleccionar arte...</option>
-                  <option v-for="a in artes" :key="a.id" :value="a.id">{{ a.nombre }}</option>
-                </select>
+                  :options="arteOptions"
+                  placeholder="Seleccionar arte..."
+                  :error="fieldErrors.arteId"
+                />
+                <p v-if="fieldErrors.arteId" class="text-[10px] text-red-500 font-bold uppercase mt-1">{{ fieldErrors.arteId }}</p>
               </div>
 
               <div class="space-y-2">
@@ -166,8 +178,10 @@
                 <input 
                   v-model="form.fechaZarpadaEstimada"
                   type="datetime-local"
-                  class="w-full px-6 py-4 bg-gray-50/50 dark:bg-gray-900 border-2 border-gray-100 dark:border-gray-800 rounded-2xl font-bold text-gray-800 dark:text-white outline-none focus:border-brand-500 transition-all"
+                  class="w-full px-6 py-4 bg-gray-50/50 dark:bg-gray-900 border-2 rounded-2xl font-bold text-gray-800 dark:text-white outline-none focus:border-brand-500 transition-all"
+                  :class="fieldErrors.fechaZarpadaEstimada ? 'border-red-500 bg-red-50/30' : 'border-gray-100 dark:border-gray-800'"
                 />
+                <p v-if="fieldErrors.fechaZarpadaEstimada" class="text-[10px] text-red-500 font-bold uppercase mt-1">{{ fieldErrors.fechaZarpadaEstimada }}</p>
               </div>
             </div>
           </div>
@@ -244,6 +258,31 @@
         </div>
       </div>
     </div>
+
+    <!-- Cancel Confirmation Modal -->
+    <div v-if="showCancelConfirm" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
+      <div class="absolute inset-0 bg-gray-950/40 backdrop-blur-sm" @click="showCancelConfirm = false"></div>
+      <div class="bg-white dark:bg-gray-900 rounded-3xl p-8 max-w-md w-full shadow-2xl relative animate-in fade-in zoom-in-95 duration-300">
+        <h3 class="text-xl font-black text-gray-800 dark:text-white mb-2">¿Cancelar Registro?</h3>
+        <p class="text-gray-500 text-sm leading-relaxed mb-8">
+          Si cancela ahora, perderá todos los datos ingresados en el formulario. ¿Está seguro de que desea continuar?
+        </p>
+        <div class="grid grid-cols-2 gap-4">
+          <button 
+            @click="showCancelConfirm = false"
+            class="px-6 py-3.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-2xl text-sm font-black uppercase tracking-wider transition-all"
+          >
+            No, Volver
+          </button>
+          <button 
+            @click="confirmCancel"
+            class="px-6 py-3.5 bg-red-500 hover:bg-red-600 text-white rounded-2xl text-sm font-black uppercase tracking-wider shadow-lg shadow-red-500/20 transition-all"
+          >
+            Si, Cancelar
+          </button>
+        </div>
+      </div>
+    </div>
   </AdminLayout>
 </template>
 
@@ -251,6 +290,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
+import SearchableSelect from '@/components/common/SearchableSelect.vue'
 import { useMareas } from '../composables/useMareas'
 import catalogosService from '../services/catalogos.service'
 import { 
@@ -285,12 +325,43 @@ const form = ref({
   fechaZarpadaEstimada: '',
 })
 
+const fieldErrors = ref<Record<string, string>>({})
+const showCancelConfirm = ref(false)
+
 // Catalogs
 const loadingCatalogs = ref(true)
 const buques = ref<any[]>([])
 const pesquerias = ref<any[]>([])
 const observadores = ref<any[]>([])
 const artes = ref<any[]>([])
+
+const buqueOptions = computed(() => {
+  return buques.value.map(b => ({
+    value: b.id,
+    label: `${b.nombreBuque} (${b.matricula})`
+  }))
+})
+
+const pesqueriaOptions = computed(() => {
+  return pesquerias.value.map(p => ({
+    value: p.id,
+    label: p.nombre
+  }))
+})
+
+const observadorOptions = computed(() => {
+  return observadores.value.map(o => ({
+    value: o.id,
+    label: `${o.apellido}, ${o.nombre}`
+  }))
+})
+
+const arteOptions = computed(() => {
+  return artes.value.map(a => ({
+    value: a.id,
+    label: a.nombre
+  }))
+})
 
 onMounted(async () => {
   try {
@@ -330,12 +401,29 @@ const progressLineWidth = computed(() => {
   return `${((currentStep.value - 1) / (steps.length - 1)) * 100}%`
 })
 
+const validateStep = (step: number) => {
+  fieldErrors.value = {}
+  
+  if (step === 1) {
+    if (!form.value.buqueId) fieldErrors.value.buqueId = 'El buque es obligatorio'
+    if (!form.value.anioMarea) fieldErrors.value.anioMarea = 'El año es obligatorio'
+    if (!form.value.nroMarea) fieldErrors.value.nroMarea = 'El número de marea es obligatorio'
+    if (form.value.nroMarea && form.value.nroMarea <= 0) fieldErrors.value.nroMarea = 'Número inválido'
+  }
+  
+  if (step === 2) {
+    if (!form.value.pesqueriaId) fieldErrors.value.pesqueriaId = 'La pesquería es obligatoria'
+    if (!form.value.observadorId) fieldErrors.value.observadorId = 'Debe asignar un observador'
+    if (!form.value.arteId) fieldErrors.value.arteId = 'El arte de pesca es obligatorio'
+    if (!form.value.fechaZarpadaEstimada) fieldErrors.value.fechaZarpadaEstimada = 'La fecha de zarpada es obligatoria'
+  }
+  
+  return Object.keys(fieldErrors.value).length === 0
+}
+
 const nextStep = async () => {
   if (currentStep.value < 3) {
-    // Basic validation per step
-    if (currentStep.value === 1 && (!form.value.buqueId || !form.value.nroMarea)) return
-    if (currentStep.value === 2 && !form.value.pesqueriaId) return
-    
+    if (!validateStep(currentStep.value)) return
     currentStep.value++
   } else {
     try {
@@ -350,10 +438,15 @@ const nextStep = async () => {
 const prevStep = () => {
   if (currentStep.value > 1) {
     currentStep.value--
+    fieldErrors.value = {}
   }
 }
 
 const cancel = () => {
+  showCancelConfirm.value = true
+}
+
+const confirmCancel = () => {
   router.push('/mareas/dashboard')
 }
 
