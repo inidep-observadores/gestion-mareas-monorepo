@@ -559,3 +559,29 @@ model EstadoMarea {
 
   @@map("estados_marea")
 }
+
+model ErrorLog {
+  id        String   @id @default(uuid()) @db.Uuid
+  timestamp DateTime @default(now()) @db.Timestamptz
+  
+  // Nivel y Origen
+  level     String   // 'ERROR' | 'WARN' | 'CRITICAL'
+  source    String   // 'BACKEND' | 'DATABASE' | 'FRONTEND'
+  context   String?  // El controlador o servicio que originó el error
+  
+  // Información del Usuario
+  userId    String?  @db.Uuid
+  userEmail String?
+
+  // Detalle del Error
+  message   String
+  stack     String?
+  detail    Json?    // Respuesta completa de la DB o payload original
+  
+  // Contexto HTTP (opcional)
+  path      String?
+  method    String?
+  ip        String?
+
+  @@map("error_logs")
+}
