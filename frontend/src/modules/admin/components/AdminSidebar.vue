@@ -35,10 +35,10 @@
         </div>
       </router-link>
     </div>
-    <div class="flex flex-col overflow-y-auto duration-300 ease-linear no-scrollbar">
+    <div class="flex flex-col flex-1 overflow-y-auto duration-300 ease-linear no-scrollbar">
       <nav class="mb-6">
         <div class="flex flex-col gap-4">
-          <div v-for="(menuGroup, groupIndex) in menuGroups" :key="groupIndex">
+          <div v-for="(menuGroup, groupIndex) in navigationGroups" :key="groupIndex">
             <h2
               :class="[
                 'mb-4 text-xs uppercase flex leading-[20px] text-gray-400',
@@ -52,41 +52,7 @@
             </h2>
             <ul class="flex flex-col gap-4">
               <li v-for="item in menuGroup.items" :key="item.name">
-                <template v-if="item.name === 'Volver al Sitio'">
-                   <router-link
-                    :to="item.path"
-                    class="menu-item group menu-item-inactive"
-                  >
-                    <span class="menu-item-icon-inactive">
-                      <component :is="item.icon" />
-                    </span>
-                    <span v-if="isExpanded || isHovered || isMobileOpen" class="menu-item-text">{{
-                      item.name
-                    }}</span>
-                  </router-link>
-                </template>
-                <template v-else-if="item.name === 'Cerrar Sesión'">
-                  <button
-                    @click="handleItemClick(item, $event)"
-                    :class="[
-                      'menu-item group w-full text-left',
-                      isActive(item.path) ? 'menu-item-active' : 'menu-item-inactive',
-                    ]"
-                  >
-                    <span
-                      :class="[
-                        isActive(item.path) ? 'menu-item-icon-active' : 'menu-item-icon-inactive',
-                      ]"
-                    >
-                      <component :is="item.icon" />
-                    </span>
-                    <span v-if="isExpanded || isHovered || isMobileOpen" class="menu-item-text">{{
-                      item.name
-                    }}</span>
-                  </button>
-                </template>
                 <router-link
-                  v-else
                   :to="item.path"
                   :class="[
                     'menu-item group',
@@ -113,6 +79,49 @@
         </div>
       </nav>
     </div>
+
+    <!-- Sticky Footer -->
+    <div class="mt-auto py-6 border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900">
+      <nav>
+        <ul class="flex flex-col gap-4">
+          <li v-for="item in systemGroups.items" :key="item.name">
+            <template v-if="item.name === 'Volver al Sitio'">
+                <router-link
+                :to="item.path"
+                class="menu-item group menu-item-inactive"
+              >
+                <span class="menu-item-icon-inactive">
+                  <component :is="item.icon" />
+                </span>
+                <span v-if="isExpanded || isHovered || isMobileOpen" class="menu-item-text">{{
+                  item.name
+                }}</span>
+              </router-link>
+            </template>
+            <template v-else-if="item.name === 'Cerrar Sesión'">
+              <button
+                @click="handleItemClick(item, $event)"
+                :class="[
+                  'menu-item group w-full text-left',
+                  isActive(item.path) ? 'menu-item-active' : 'menu-item-inactive',
+                ]"
+              >
+                <span
+                  :class="[
+                    isActive(item.path) ? 'menu-item-icon-active' : 'menu-item-icon-inactive',
+                  ]"
+                >
+                  <component :is="item.icon" />
+                </span>
+                <span v-if="isExpanded || isHovered || isMobileOpen" class="menu-item-text">{{
+                  item.name
+                }}</span>
+              </button>
+            </template>
+          </li>
+        </ul>
+      </nav>
+    </div>
   </aside>
 </template>
 
@@ -137,7 +146,7 @@ const authStore = useAuthStore()
 
 const { isExpanded, isMobileOpen, isHovered } = useSidebar()
 
-const menuGroups = [
+const navigationGroups = [
   {
     title: 'Gestión',
     items: [
@@ -168,22 +177,23 @@ const menuGroups = [
       },
     ],
   },
-  {
-    title: 'Sistema',
-    items: [
-      {
-        icon: ArrowLeftIcon,
-        name: 'Volver al Sitio',
-        path: '/',
-      },
-      {
-        icon: LogoutIcon,
-        name: 'Cerrar Sesión',
-        path: '/signin',
-      },
-    ],
-  },
 ]
+
+const systemGroups = {
+  title: 'Sistema',
+  items: [
+    {
+      icon: ArrowLeftIcon,
+      name: 'Volver al Sitio',
+      path: '/',
+    },
+    {
+      icon: LogoutIcon,
+      name: 'Cerrar Sesión',
+      path: '/signin',
+    },
+  ],
+}
 
 const isActive = (path: string) => route.path === path
 
