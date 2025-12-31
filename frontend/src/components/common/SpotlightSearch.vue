@@ -35,6 +35,7 @@
             @keydown.up.prevent="moveUp"
             @keydown.enter="selectItem"
           />
+          <div v-if="loading" class="loading loading-spinner loading-xs text-brand-500"></div>
           <div class="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700 text-[10px] font-black text-gray-400">
             ESC
           </div>
@@ -42,16 +43,16 @@
 
         <!-- Results -->
         <div 
-          v-if="query || filteredItems.length" 
+          v-if="query || groupedItems.length" 
           class="max-h-[480px] overflow-y-auto custom-scrollbar p-2"
         >
-          <div v-for="(group, gIndex) in groupedItems" :key="group.name" class="mb-4 last:mb-0">
+          <div v-for="group in groupedItems" :key="group.name" class="mb-4 last:mb-0">
             <h3 class="px-4 py-2 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">
               {{ group.name }}
             </h3>
             <div class="space-y-1">
               <button
-                v-for="(item, iIndex) in group.items"
+                v-for="item in group.items"
                 :key="item.id"
                 :ref="el => setItemRef(el, item.globalIndex)"
                 class="w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-all text-left group"
@@ -81,7 +82,7 @@
                     class="text-[10px] mt-0.5"
                     :class="selectedIndex === item.globalIndex ? 'text-brand-100' : 'text-gray-400'"
                   >
-                    {{ item.description }}
+                    {{ item.subtitle || item.description }}
                   </p>
                 </div>
                 <div v-if="selectedIndex === item.globalIndex" class="text-[10px] font-black uppercase tracking-widest opacity-60">
@@ -93,7 +94,7 @@
         </div>
 
         <!-- Empty State -->
-        <div v-else-if="query" class="p-12 text-center">
+        <div v-else-if="query && !loading" class="p-12 text-center">
           <div class="w-16 h-16 bg-gray-50 dark:bg-gray-900 rounded-full flex items-center justify-center mx-auto mb-4">
             <SearchIcon class="w-8 h-8 text-gray-300" />
           </div>
@@ -124,6 +125,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
+import { useSpotlight } from '@/modules/mareas/composables/useSpotlight'
 import { 
   SearchIcon, 
   ShipIcon, 
@@ -137,66 +139,62 @@ import {
 
 const router = useRouter()
 const isOpen = ref(false)
-const query = ref('')
 const selectedIndex = ref(0)
 const searchInput = ref<HTMLInputElement | null>(null)
 const itemRefs = ref<any[]>([])
+
+const { query, results, loading } = useSpotlight()
 
 const setItemRef = (el: any, index: number) => {
   if (el) itemRefs.value[index] = el
 }
 
-// Mock Items Database
-const items = [
-  // Navigation
+// Static Items (always available)
+const staticItems = [
   { id: 'nav-dashboard', type: 'NAV', title: 'Panel de Control', description: 'Vista general del sistema', icon: LayoutDashboardIcon, path: '/' },
   { id: 'nav-operativo', type: 'NAV', title: 'Panel Operativo', description: 'Monitoreo de mareas activas', icon: ShipIcon, path: '/mareas/dashboard' },
   { id: 'nav-usuarios', type: 'NAV', title: 'Gestión de Usuarios', description: 'Administración de accesos y roles', icon: UserCircleIcon, path: '/admin/users' },
-  
-  // Tides (Mocked)
-  { id: 'marea-1', type: 'MAREA', title: 'BP ARGENTINO II (MA-24-011)', description: 'Navegando - Merluza Hubbsi', icon: ShipIcon, path: '/mareas/detalle/1' },
-  { id: 'marea-2', type: 'MAREA', title: 'BP PESCADOR I (MA-24-015)', description: 'Esperando Zarpada - Langostino', icon: ShipIcon, path: '/mareas/detalle/2' },
-  { id: 'marea-3', type: 'MAREA', title: 'BP MARLIN (MA-24-018)', description: 'Bloqueada - Calamar', icon: ShipIcon, path: '/mareas/detalle/3' },
-
-  // Actions
   { id: 'action-new', type: 'ACTION', title: 'Registrar Nueva Marea', description: 'Creación de designación y observador', icon: PlusIcon, action: () => router.push('/mareas/nueva') },
-  { id: 'action-arribo', type: 'ACTION', title: 'Registrar Arribo...', description: 'Cierre de etapa operativa', icon: MapPinIcon, action: () => router.push('/mareas/dashboard') },
-  { id: 'action-settings', type: 'ACTION', title: 'Ajustes del Sistema', description: 'Configuración global', icon: SettingsIcon, path: '/admin/settings' },
 ]
-
-const filteredItems = computed(() => {
-  if (!query.value) return items.slice(0, 5) // Show some defaults
-  const q = query.value.toLowerCase()
-  return items.filter(i => 
-    i.title.toLowerCase().includes(q) || 
-    i.description.toLowerCase().includes(q)
-  )
-})
 
 const groupedItems = computed(() => {
   const result: any[] = []
   let globalIndex = 0
   
-  const groups = [
-    { name: 'Navegación', type: 'NAV' },
-    { name: 'Mareas Recientes', type: 'MAREA' },
-    { name: 'Acciones Rápidas', type: 'ACTION' }
-  ]
+  // 1. Static items filtered by query locally
+  const qFixed = query.value.toLowerCase()
+  const filteredStatics = staticItems.filter(i => 
+    i.title.toLowerCase().includes(qFixed) || i.description.toLowerCase().includes(qFixed)
+  )
 
-  groups.forEach(group => {
-    const groupItems = filteredItems.value.filter(i => i.type === group.type)
-    if (groupItems.length > 0) {
-      result.push({
-        name: group.name,
-        items: groupItems.map(i => ({ ...i, globalIndex: globalIndex++ }))
-      })
-    }
-  })
+  if (filteredStatics.length > 0) {
+    result.push({
+      name: 'Navegación y Acciones',
+      items: filteredStatics.map(i => ({ ...i, globalIndex: globalIndex++ }))
+    })
+  }
+
+  // 2. Dynamic results from backend
+  if (results.value.length > 0) {
+    const dynamicItems = results.value.map(r => ({
+      ...r,
+      icon: r.type === 'marea' ? ShipIcon : SearchIcon,
+      globalIndex: globalIndex++,
+      path: r.type === 'marea' ? `/mareas/${r.id}` : r.path
+    }))
+
+    result.push({
+      name: 'Resultados de Búsqueda',
+      items: dynamicItems
+    })
+  }
 
   return result
 })
 
-const totalItems = computed(() => filteredItems.value.length)
+const totalItems = computed(() => {
+  return groupedItems.value.reduce((acc, group) => acc + group.items.length, 0)
+})
 
 const open = () => {
   isOpen.value = true
@@ -212,11 +210,13 @@ const close = () => {
 }
 
 const moveDown = () => {
+  if (totalItems.value === 0) return
   selectedIndex.value = (selectedIndex.value + 1) % totalItems.value
   scrollIntoView()
 }
 
 const moveUp = () => {
+  if (totalItems.value === 0) return
   selectedIndex.value = (selectedIndex.value - 1 + totalItems.value) % totalItems.value
   scrollIntoView()
 }
@@ -228,14 +228,20 @@ const scrollIntoView = () => {
 }
 
 const selectItem = () => {
-  const item = filteredItems.value[selectedIndex.value]
-  if (!item) return
+  // Find item by global index
+  let selectedItem: any = null
+  for (const group of groupedItems.value) {
+    selectedItem = group.items.find((i: any) => i.globalIndex === selectedIndex.value)
+    if (selectedItem) break
+  }
+
+  if (!selectedItem) return
 
   close()
-  if (item.action) {
-    item.action()
-  } else if (item.path) {
-    router.push(item.path)
+  if (selectedItem.action) {
+    selectedItem.action()
+  } else if (selectedItem.path) {
+    router.push(selectedItem.path)
   }
 }
 
@@ -254,7 +260,6 @@ onUnmounted(() => {
   window.removeEventListener('keydown', handleKeydown)
 })
 
-// Watch for query changes to reset selection
 watch(query, () => {
   selectedIndex.value = 0
 })
