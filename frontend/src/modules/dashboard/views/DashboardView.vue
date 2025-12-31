@@ -1,11 +1,12 @@
 <template>
-  <AdminLayout 
-    title="Panel General" 
+  <AdminLayout
+    title="Panel General"
     description="Resumen operativo: Gestión por excepción y prioridad inmediata."
   >
     <div class="relative min-h-[calc(100vh-100px)] z-1 pb-10">
       <!-- DASHBOARD EXTRA HEADER INFO -->
-      <div class="mb-6 flex justify-end">
+      <!-- Lo dejo comentado por ahora para ganar espacio -->
+      <!-- <div class="mb-6 flex justify-end">
           <div
             class="flex items-center gap-2 rounded-2xl bg-white p-2 px-3 shadow-sm dark:bg-gray-900 border border-gray-100 dark:border-gray-800"
           >
@@ -14,7 +15,7 @@
               >Sistema en Tiempo Real</span
             >
           </div>
-      </div>
+      </div> -->
 
       <!-- ROW 1: THE PULSE OF THE MOMENT (KPIs) -->
       <div class="mb-8">

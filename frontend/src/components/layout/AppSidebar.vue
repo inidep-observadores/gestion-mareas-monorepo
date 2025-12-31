@@ -35,10 +35,10 @@
         </div>
       </router-link>
     </div>
-    <div class="flex flex-col overflow-y-auto duration-300 ease-linear no-scrollbar">
+    <div class="flex flex-col flex-1 overflow-y-auto duration-300 ease-linear no-scrollbar">
       <nav class="mb-6">
         <div class="flex flex-col gap-4">
-          <div v-for="(menuGroup, groupIndex) in menuGroups" :key="groupIndex">
+          <div v-for="(menuGroup, groupIndex) in navigationGroups" :key="groupIndex">
             <h2
               :class="[
                 'mb-4 text-xs uppercase flex leading-[20px] text-gray-400',
@@ -52,28 +52,7 @@
             </h2>
             <ul class="flex flex-col gap-4">
               <li v-for="item in menuGroup.items" :key="item.name">
-                <template v-if="item.name === 'Cerrar Sesión'">
-                  <button
-                    @click="handleItemClick(item, $event)"
-                    :class="[
-                      'menu-item group w-full text-left',
-                      isActive(item.path) ? 'menu-item-active' : 'menu-item-inactive',
-                    ]"
-                  >
-                    <span
-                      :class="[
-                        isActive(item.path) ? 'menu-item-icon-active' : 'menu-item-icon-inactive',
-                      ]"
-                    >
-                      <component :is="item.icon" />
-                    </span>
-                    <span v-if="isExpanded || isHovered || isMobileOpen" class="menu-item-text">{{
-                      item.name
-                    }}</span>
-                  </button>
-                </template>
                 <router-link
-                  v-else
                   :to="item.path"
                   :class="[
                     'menu-item group',
@@ -98,6 +77,36 @@
             </ul>
           </div>
         </div>
+      </nav>
+    </div>
+
+    <!-- Sticky Footer -->
+    <div class="mt-auto py-6 border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900">
+      <nav>
+        <ul class="flex flex-col gap-4">
+          <li v-for="item in systemGroups.items" :key="item.name">
+            <template v-if="item.name === 'Cerrar Sesión'">
+              <button
+                @click="handleItemClick(item, $event)"
+                :class="[
+                  'menu-item group w-full text-left',
+                  isActive(item.path) ? 'menu-item-active' : 'menu-item-inactive',
+                ]"
+              >
+                <span
+                  :class="[
+                    isActive(item.path) ? 'menu-item-icon-active' : 'menu-item-icon-inactive',
+                  ]"
+                >
+                  <component :is="item.icon" />
+                </span>
+                <span v-if="isExpanded || isHovered || isMobileOpen" class="menu-item-text">{{
+                  item.name
+                }}</span>
+              </button>
+            </template>
+          </li>
+        </ul>
       </nav>
     </div>
   </aside>
@@ -129,7 +138,7 @@ const { isExpanded, isMobileOpen, isHovered } = useSidebar()
 
 import { computed } from 'vue'
 
-const menuGroups = computed(() => [
+const navigationGroups = computed(() => [
   {
     title: 'Menú Principal',
     items: [
@@ -188,17 +197,18 @@ const menuGroups = computed(() => [
         : []),
     ],
   },
-  {
-    title: 'Sistema',
-    items: [
-      {
-        icon: LogoutIcon,
-        name: 'Cerrar Sesión',
-        path: '/signin',
-      },
-    ],
-  },
 ])
+
+const systemGroups = computed(() => ({
+  title: 'Sistema',
+  items: [
+    {
+      icon: LogoutIcon,
+      name: 'Cerrar Sesión',
+      path: '/signin',
+    },
+  ],
+}))
 
 const isActive = (path: string) => route.path === path
 
