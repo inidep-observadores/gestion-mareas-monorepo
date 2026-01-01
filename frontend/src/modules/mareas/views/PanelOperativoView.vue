@@ -174,15 +174,14 @@ import AdminLayout from '@/components/layout/AdminLayout.vue'
 import MareaContextSidebar from '../components/MareaContextSidebar.vue'
 import { useMareas } from '../composables/useMareas'
 import { 
-  RefreshIcon, 
-  PlusIcon, 
-  DocsIcon, 
-  WarningIcon, 
-  CalenderIcon, 
   ShipIcon, 
   SearchIcon,
   HorizontalDots,
-  EditIcon
+  EditIcon,
+  TaskIcon,
+  HistoryIcon,
+  ArchiveIcon,
+  FileTextIcon
 } from '@/icons'
 
 const router = useRouter()
@@ -203,11 +202,13 @@ const selectedMarea = ref<any>(null)
 // Map icons/colors to backend kpis
 const getKpiMeta = (codigo: string) => {
   const meta: Record<string, any> = {
-    'ESPERANDO_ZARPADA': { icon: CalenderIcon, color: 'text-amber-500', bg: 'bg-amber-50 dark:bg-amber-900/20' },
-    'NAVEGANDO': { icon: RefreshIcon, color: 'text-blue-500', bg: 'bg-blue-50 dark:bg-blue-900/20' },
-    'DESIGNADA': { icon: PlusIcon, color: 'text-brand-500', bg: 'bg-brand-50 dark:bg-brand-900/20' },
-    'EN_REVISION': { icon: DocsIcon, color: 'text-orange-500', bg: 'bg-orange-50 dark:bg-orange-900/20' },
-    'BLOQUEADA': { icon: WarningIcon, color: 'text-red-500', bg: 'bg-red-50 dark:bg-red-900/20' },
+    'DESIGNADA': { icon: TaskIcon, color: 'text-blue-500', bg: 'bg-blue-50 dark:bg-blue-900/20' },
+    'EN_EJECUCION': { icon: ShipIcon, color: 'text-indigo-500', bg: 'bg-indigo-50 dark:bg-indigo-900/20' },
+    'ESPERANDO_ENTREGA': { icon: HistoryIcon, color: 'text-amber-500', bg: 'bg-amber-50 dark:bg-amber-900/20' },
+    'ENTREGADA_RECIBIDA': { icon: ArchiveIcon, color: 'text-emerald-500', bg: 'bg-emerald-50 dark:bg-emerald-900/20' },
+    'VERIFICACION_INICIAL': { icon: SearchIcon, color: 'text-cyan-500', bg: 'bg-cyan-50 dark:bg-cyan-900/20' },
+    'EN_CORRECCION': { icon: EditIcon, color: 'text-orange-500', bg: 'bg-orange-50 dark:bg-orange-900/20' },
+    'PENDIENTE_DE_INFORME': { icon: FileTextIcon, color: 'text-purple-500', bg: 'bg-purple-50 dark:bg-purple-900/20' },
   }
   return meta[codigo] || { icon: ShipIcon, color: 'text-gray-500', bg: 'bg-gray-50 dark:bg-gray-900/20' }
 }
@@ -256,14 +257,20 @@ const getStatusClasses = (status?: string) => {
   if (!status) return 'bg-gray-50 text-gray-700 dark:bg-gray-800 dark:text-gray-400'
   
   const s = status.toUpperCase()
-  if (s.includes('NAVEGANDO'))
+  if (s === 'DESIGNADA')
     return 'bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400'
-  if (s.includes('ESPERANDO') || s.includes('ZARPADA') || s.includes('DESIGNADA'))
+  if (s === 'EN_EJECUCION')
+    return 'bg-indigo-50 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-400'
+  if (s === 'ESPERANDO_ENTREGA')
     return 'bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400'
-  if (s.includes('BLOQUEADA') || s.includes('ERROR'))
-    return 'bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-400'
-  if (s.includes('ARRIBADA') || s.includes('FINAL'))
-    return 'bg-green-50 text-green-700 dark:bg-green-500/10 dark:text-green-400'
+  if (s === 'ENTREGADA_RECIBIDA')
+    return 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400'
+  if (s === 'VERIFICACION_INICIAL')
+    return 'bg-cyan-50 text-cyan-700 dark:bg-cyan-500/10 dark:text-cyan-400'
+  if (s === 'EN_CORRECCION')
+    return 'bg-orange-50 text-orange-700 dark:bg-orange-500/10 dark:text-orange-400'
+  if (s === 'PENDIENTE_DE_INFORME')
+    return 'bg-purple-50 text-purple-700 dark:bg-purple-500/10 dark:text-purple-400'
   
   return 'bg-gray-50 text-gray-700 dark:bg-gray-800 dark:text-gray-400'
 }

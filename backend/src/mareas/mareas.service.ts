@@ -9,11 +9,11 @@ export class MareasService {
 
     async getDashboardOperativo() {
         const estados = await this.prisma.estadoMarea.findMany({
-            where: { activo: true },
+            where: { activo: true, mostrarEnPanel: true },
             orderBy: { orden: 'asc' }
         });
 
-        const kpis = await Promise.all(
+        const kpisRaw = await Promise.all(
             estados.map(async (e) => ({
                 label: e.nombre,
                 value: await this.prisma.marea.count({ where: { estadoActualId: e.id, activo: true } }),
@@ -21,11 +21,13 @@ export class MareasService {
             }))
         );
 
+        const kpis = kpisRaw.filter(k => k.value > 0);
+
         const mareas = await this.prisma.marea.findMany({
             where: {
                 activo: true,
                 estadoActual: {
-                    esFinal: false
+                    mostrarEnPanel: true
                 }
             },
             include: {
