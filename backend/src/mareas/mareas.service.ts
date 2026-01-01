@@ -9,11 +9,11 @@ export class MareasService {
 
     async getDashboardOperativo() {
         const [estados, transiciones] = await Promise.all([
-            this.prisma.estadoMarea.findMany({
+            (this.prisma as any).estadoMarea.findMany({
                 where: { activo: true, mostrarEnPanel: true },
                 orderBy: { orden: 'asc' }
             }),
-            this.prisma.transicionEstado.findMany({
+            (this.prisma as any).transicionEstado.findMany({
                 where: { activo: true }
             })
         ]);
@@ -21,14 +21,14 @@ export class MareasService {
         const kpisRaw = await Promise.all(
             estados.map(async (e) => ({
                 label: e.nombre,
-                value: await this.prisma.marea.count({ where: { estadoActualId: e.id, activo: true } }),
+                value: await (this.prisma as any).marea.count({ where: { estadoActualId: e.id, activo: true } }),
                 codigo: e.codigo
             }))
         );
 
         const kpis = kpisRaw.filter(k => k.value > 0);
 
-        const mareas = await this.prisma.marea.findMany({
+        const mareas = await (this.prisma as any).marea.findMany({
             where: {
                 activo: true,
                 estadoActual: {
@@ -44,7 +44,12 @@ export class MareasService {
                     include: {
                         puertoZarpada: true,
                         puertoArribo: true,
-                        pesqueria: true
+                        pesqueria: true,
+                        observadores: {
+                            where: { rol: 'PRINCIPAL' },
+                            include: { observador: true },
+                            take: 1
+                        }
                     }
                 }
             },
@@ -54,8 +59,9 @@ export class MareasService {
             take: 50
         });
 
-        const items = mareas.map(m => {
+        const items = mareas.map((m: any) => {
             const etapaActual = m.etapas[0] || null;
+            const primaryObs = etapaActual?.observadores[0]?.observador || null;
             const allowedTransitions = transiciones.filter(t => t.estadoOrigenId === m.estadoActualId);
 
             const actionsAvailable: Record<string, any> = {};
@@ -75,6 +81,7 @@ export class MareasService {
                 estado_codigo: m.estadoActual.codigo,
                 fecha_zarpada: etapaActual?.fechaZarpada || m.fechaZarpadaEstimada,
                 puerto: etapaActual?.puertoZarpada?.nombre || 'N/D',
+                observador: primaryObs ? `${primaryObs.nombre} ${primaryObs.apellido}` : 'Sin asignar',
                 progreso: m.estadoActual.codigo === 'NAVEGANDO' ? 75 : 0,
                 alertas: [],
                 actionsAvailable
@@ -88,7 +95,7 @@ export class MareasService {
     }
 
     async getMareaContext(id: string) {
-        const [marea, transiciones] = await Promise.all([
+        const [marea, transiciones] = (await Promise.all([
             this.prisma.marea.findUnique({
                 where: { id },
                 include: {
@@ -99,9 +106,12 @@ export class MareasService {
                         include: {
                             puertoZarpada: true,
                             puertoArribo: true,
-                            pesqueria: true
+                            pesqueria: true,
+                            observadores: {
+                                include: { observador: true }
+                            }
                         }
-                    },
+                    } as any,
                     movimientos: {
                         orderBy: { fechaHora: 'desc' },
                         take: 5,
@@ -111,20 +121,35 @@ export class MareasService {
                     }
                 }
             }),
-            this.prisma.transicionEstado.findMany({ where: { activo: true } })
-        ]);
+            this.prisma.transicionEstado.findMany({
+                where: { activo: true }
+            })
+        ])) as [any, any[]];
 
-        if (!marea) throw new NotFoundException('Marea no encontrada');
+        if (!marea) return null;
+
+        const etapaActual = marea.etapas[0] || null;
+        const mainObs = etapaActual?.observadores.find((o: any) => o.rol === 'PRINCIPAL')?.observador || null;
 
         const allowedTransitions = transiciones.filter(t => t.estadoOrigenId === marea.estadoActualId);
         const actions: Record<string, any> = {};
+
         allowedTransitions.forEach(t => {
             actions[t.accion] = {
                 enabled: true,
                 label: t.etiqueta,
-                toState: t.estadoDestinoId
+                toState: t.estadoDestinoId,
+                claseBoton: t.claseBoton
             };
         });
+
+        const fechaZarpada = etapaActual?.fechaZarpada || marea.fechaZarpadaEstimada;
+
+        // Cálcuo de días
+        const now = new Date();
+        const start = fechaZarpada ? new Date(fechaZarpada) : null;
+        const diffTime = start ? Math.abs(now.getTime() - start.getTime()) : 0;
+        const days = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
         return {
             marea: {
@@ -133,11 +158,15 @@ export class MareasService {
                 buque_nombre: marea.buque.nombreBuque,
                 estado: marea.estadoActual.nombre,
                 estado_codigo: marea.estadoActual.codigo,
-                dias_marea: 15, // TODO: Implementar cálculo real
-                dias_navegados: 10, // TODO: Implementar cálculo real
+                observador: mainObs ? `${mainObs.nombre} ${mainObs.apellido}` : 'No asignado',
+                pesqueria: etapaActual?.pesqueria?.nombre || 'General',
+                fecha_zarpada: fechaZarpada,
+                dias_marea: days, // Días desde inicio/zarpada
+                dias_navegados: marea.estadoActual.codigo === 'NAVEGANDO' ? days : 0,
+                alertas: [] // Placeholder para futuras alertas
             },
             actions,
-            lastEvents: marea.movimientos.map(mov => ({
+            lastEvents: marea.movimientos.map((mov: any) => ({
                 id: mov.id,
                 titulo: mov.detalle || mov.tipoEvento,
                 fecha: mov.fechaHora,
@@ -265,7 +294,7 @@ export class MareasService {
                 }
             });
 
-            await tx.mareaEtapa.create({
+            const etapa = await tx.mareaEtapa.create({
                 data: {
                     mareaId: marea.id,
                     nroEtapa: 1,
@@ -274,6 +303,17 @@ export class MareasService {
                     fechaZarpada: fechaZarpadaEstimada ? new Date(fechaZarpadaEstimada) : null,
                 }
             });
+
+            if (observadorId) {
+                await (tx as any).mareaEtapaObservador.create({
+                    data: {
+                        etapaId: etapa.id,
+                        observadorId,
+                        rol: 'PRINCIPAL',
+                        esDesignado: true
+                    }
+                });
+            }
 
             return marea;
         });

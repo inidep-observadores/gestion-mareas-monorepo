@@ -230,6 +230,26 @@ Table mareas_etapas {
   INDEX(id_marea)
 }
 
+Table mareas_etapas_observadores {
+  id TEXT (PK)
+  id_etapa TEXT NOT NULL // FK -> mareas_etapas.id
+  id_observador TEXT NOT NULL // FK -> observadores.id
+  rol TEXT NOT NULL // 'PRINCIPAL' | 'ADICIONAL'
+  es_designado BOOLEAN NOT NULL // true si fue asignado desde administración
+  
+  UNIQUE(id_etapa, id_observador)
+  INDEX(id_etapa)
+}
+
+/* 
+  DECISIÓN DE DISEÑO: Vínculo Marea-Observador
+  - Al crear/designar una marea se genera automáticamente la 'Etapa 1'.
+  - Los observadores se vinculan a la Etapa, no directamente a la Marea.
+  - Esto permite manejar múltiples observadores por etapa y cambios de personal entre etapas.
+  - El Wizard de creación de marea sólo pide 1 observador, que se registra como 'PRINCIPAL' en la Etapa 1.
+*/
+
+
 Table mareas_movimientos {
   id TEXT (PK)
   id_marea TEXT NOT NULL // FK -> mareas.id
