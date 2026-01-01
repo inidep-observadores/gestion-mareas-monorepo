@@ -1,7 +1,5 @@
 <template>
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M12 21C13.1 21 14 20.1 14 19H10C10 20.1 10.9 21 12 21Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-    <path d="M19 16.5V10.5C19 7.12 17.16 4.25 14 3.42V3C14 1.9 13.1 1 12 1C10.9 1 10 1.9 10 3V3.42C6.84 4.25 5 7.12 5 10.5V16.5L3 18.5V19.5H21V18.5L19 16.5Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-    <path d="M10 8C10 8 11.5 7.5 12 7.5C12.5 7.5 14 8 14 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 -960 960 960" fill="currentColor">
+    <path d="M160-200q-17 0-28.5-11.5T120-240q0-17 11.5-28.5T160-280h40v-160q0-101 61.5-177.5T420-714v-26q0-25 17.5-42.5T480-800q25 0 42.5 17.5T540-740v26q97 20 158.5 96.5T760-440v160h40q17 0 28.5 11.5T840-240q0 17-11.5 28.5T800-200H160Zm320-300Zm0 420q-33 0-56.5-23.5T400-160h160q0 33-23.5 56.5T480-80ZM280-280h400v-160q0-83-58.5-141.5T480-640q-83 0-141.5 58.5T280-440v160Z"/>
   </svg>
 </template>
