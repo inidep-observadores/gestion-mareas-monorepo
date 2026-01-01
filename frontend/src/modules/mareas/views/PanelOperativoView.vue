@@ -131,9 +131,6 @@
                     <td class="px-6 py-4 text-right">
                       <div class="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-all">
                         <button class="p-2 hover:bg-white dark:hover:bg-gray-800 rounded-xl text-gray-400 hover:text-brand-500 transition-all shadow-sm">
-                          <EditIcon class="w-4 h-4" />
-                        </button>
-                        <button class="p-2 hover:bg-white dark:hover:bg-gray-800 rounded-xl text-gray-400 hover:text-brand-500 transition-all shadow-sm">
                           <HorizontalDots class="w-4 h-4" />
                         </button>
                       </div>

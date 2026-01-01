@@ -484,8 +484,27 @@ model EstadoMarea {
   mareas               Marea[]
   movimientosDesde     MareaMovimiento[] @relation("EstadoDesde")
   movimientosHasta     MareaMovimiento[] @relation("EstadoHasta")
+  transicionesDesde    TransicionEstado[] @relation("TransicionEstadoDesde")
+  transicionesHasta    TransicionEstado[] @relation("TransicionEstadoHasta")
 
   @@map("estados_marea")
+}
+
+model TransicionEstado {
+  id               String      @id @default(uuid()) @db.Uuid
+  estadoOrigenId   String      @map("id_estado_origen") @db.Uuid
+  estadoDestinoId  String      @map("id_estado_destino") @db.Uuid
+  accion           String      // ej: 'REGISTRAR_INICIO', 'SUBIR_ARCHIVOS'
+  etiqueta         String      // ej: 'Registrar Inicio'
+  claseBoton       String?     @map("clase_boton") // ej: 'primary', 'secondary'
+  requiereObs      Boolean     @default(false) @map("requiere_observaciones")
+  activo           Boolean     @default(true)
+
+  estadoOrigen     EstadoMarea @relation("TransicionEstadoDesde", fields: [estadoOrigenId], references: [id])
+  estadoDestino    EstadoMarea @relation("TransicionEstadoHasta", fields: [estadoDestinoId], references: [id])
+
+  @@unique([estadoOrigenId, estadoDestinoId, accion])
+  @@map("transiciones_estados")
 }
 
 model ErrorLog {

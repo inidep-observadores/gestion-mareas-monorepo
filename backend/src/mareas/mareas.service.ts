@@ -8,10 +8,15 @@ export class MareasService {
     constructor(private readonly prisma: PrismaService) { }
 
     async getDashboardOperativo() {
-        const estados = await this.prisma.estadoMarea.findMany({
-            where: { activo: true, mostrarEnPanel: true },
-            orderBy: { orden: 'asc' }
-        });
+        const [estados, transiciones] = await Promise.all([
+            this.prisma.estadoMarea.findMany({
+                where: { activo: true, mostrarEnPanel: true },
+                orderBy: { orden: 'asc' }
+            }),
+            this.prisma.transicionEstado.findMany({
+                where: { activo: true }
+            })
+        ]);
 
         const kpisRaw = await Promise.all(
             estados.map(async (e) => ({
@@ -51,6 +56,16 @@ export class MareasService {
 
         const items = mareas.map(m => {
             const etapaActual = m.etapas[0] || null;
+            const allowedTransitions = transiciones.filter(t => t.estadoOrigenId === m.estadoActualId);
+
+            const actionsAvailable: Record<string, any> = {};
+            allowedTransitions.forEach(t => {
+                actionsAvailable[t.accion] = {
+                    enabled: true,
+                    label: t.etiqueta,
+                    toState: t.estadoDestinoId
+                };
+            });
 
             return {
                 id: m.id,
@@ -62,7 +77,7 @@ export class MareasService {
                 puerto: etapaActual?.puertoZarpada?.nombre || 'N/D',
                 progreso: m.estadoActual.codigo === 'NAVEGANDO' ? 75 : 0,
                 alertas: [],
-                actionsAvailable: this.getActionsAvailable(m.estadoActual.codigo)
+                actionsAvailable
             };
         });
 
@@ -73,30 +88,43 @@ export class MareasService {
     }
 
     async getMareaContext(id: string) {
-        const marea = await this.prisma.marea.findUnique({
-            where: { id },
-            include: {
-                buque: true,
-                estadoActual: true,
-                etapas: {
-                    orderBy: { nroEtapa: 'desc' },
-                    include: {
-                        puertoZarpada: true,
-                        puertoArribo: true,
-                        pesqueria: true
-                    }
-                },
-                movimientos: {
-                    orderBy: { fechaHora: 'desc' },
-                    take: 5,
-                    include: {
-                        usuario: true
+        const [marea, transiciones] = await Promise.all([
+            this.prisma.marea.findUnique({
+                where: { id },
+                include: {
+                    buque: true,
+                    estadoActual: true,
+                    etapas: {
+                        orderBy: { nroEtapa: 'desc' },
+                        include: {
+                            puertoZarpada: true,
+                            puertoArribo: true,
+                            pesqueria: true
+                        }
+                    },
+                    movimientos: {
+                        orderBy: { fechaHora: 'desc' },
+                        take: 5,
+                        include: {
+                            usuario: true
+                        }
                     }
                 }
-            }
-        });
+            }),
+            this.prisma.transicionEstado.findMany({ where: { activo: true } })
+        ]);
 
         if (!marea) throw new NotFoundException('Marea no encontrada');
+
+        const allowedTransitions = transiciones.filter(t => t.estadoOrigenId === marea.estadoActualId);
+        const actions: Record<string, any> = {};
+        allowedTransitions.forEach(t => {
+            actions[t.accion] = {
+                enabled: true,
+                label: t.etiqueta,
+                toState: t.estadoDestinoId
+            };
+        });
 
         return {
             marea: {
@@ -105,10 +133,10 @@ export class MareasService {
                 buque_nombre: marea.buque.nombreBuque,
                 estado: marea.estadoActual.nombre,
                 estado_codigo: marea.estadoActual.codigo,
-                dias_marea: 15,
-                dias_navegados: 10,
+                dias_marea: 15, // TODO: Implementar cálculo real
+                dias_navegados: 10, // TODO: Implementar cálculo real
             },
-            actions: this.getActionsAvailable(marea.estadoActual.codigo),
+            actions,
             lastEvents: marea.movimientos.map(mov => ({
                 id: mov.id,
                 titulo: mov.detalle || mov.tipoEvento,
@@ -149,17 +177,44 @@ export class MareasService {
 
         if (!marea) throw new NotFoundException('Marea no encontrada');
 
-        await this.prisma.mareaMovimiento.create({
-            data: {
-                mareaId: marea.id,
-                fechaHora: new Date(),
-                usuarioId: user.id,
-                tipoEvento: `ACCION_REPETIDA_${actionKey.toUpperCase()}`,
-                detalle: `El usuario ${user.fullName} ejecutó la acción rápida: ${actionKey}`
+        // Buscar si existe la transición permitida
+        const transicion = await this.prisma.transicionEstado.findFirst({
+            where: {
+                estadoOrigenId: marea.estadoActualId,
+                accion: actionKey,
+                activo: true
             }
         });
 
-        return { success: true, message: 'Acción registrada con éxito' };
+        if (!transicion) {
+            throw new Error(`Acción ${actionKey} no permitida para el estado ${marea.estadoActual.nombre}`);
+        }
+
+        // Ejecutar cambio de estado
+        return await this.prisma.$transaction(async (tx) => {
+            const mareaUpdated = await tx.marea.update({
+                where: { id },
+                data: {
+                    estadoActualId: transicion.estadoDestinoId,
+                    fechaUltimaActualizacion: new Date()
+                },
+                include: { estadoActual: true }
+            });
+
+            await tx.mareaMovimiento.create({
+                data: {
+                    mareaId: id,
+                    fechaHora: new Date(),
+                    usuarioId: user.id,
+                    tipoEvento: 'CAMBIO_ESTADO',
+                    estadoDesdeId: marea.estadoActualId,
+                    estadoHastaId: transicion.estadoDestinoId,
+                    detalle: `Acción: ${transicion.etiqueta}`
+                }
+            });
+
+            return mareaUpdated;
+        });
     }
 
     async create(createMareaDto: CreateMareaDto, user: User) {
@@ -224,25 +279,4 @@ export class MareasService {
         });
     }
 
-    private getActionsAvailable(estadoCodigo: string) {
-        return {
-            zarpada: {
-                enabled: ['DESIGNADA', 'ESPERANDO_ZARPADA'].includes(estadoCodigo),
-                label: 'Registrar Zarpada'
-            },
-            arribo: {
-                enabled: estadoCodigo === 'NAVEGANDO',
-                label: 'Registrar Arribo'
-            },
-            carga_datos: {
-                enabled: true,
-                label: 'Cargar Datos de a Bordo'
-            },
-            cerrar: {
-                enabled: false,
-                label: 'Cerrar Marea',
-                blockedReason: 'Requiere validación de informe final'
-            }
-        };
-    }
 }

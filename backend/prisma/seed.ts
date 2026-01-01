@@ -36,6 +36,7 @@ async function main() {
   await prisma.especie.deleteMany();
   await prisma.tipoFlota.deleteMany();
   await prisma.errorLog.deleteMany();
+  await prisma.transicionEstado.deleteMany();
   await prisma.estadoMarea.deleteMany();
   await prisma.passwordResetToken.deleteMany();
   await prisma.user.deleteMany();
@@ -57,8 +58,52 @@ async function main() {
   ];
 
   console.log('Seeding EstadosMarea...');
-  await prisma.estadoMarea.createMany({ data: estadosMareaData });
+  // Usamos create en lugar de createMany para obtener los IDs si es necesario, 
+  // o simplemente los consultamos después.
+  for (const data of estadosMareaData) {
+    await prisma.estadoMarea.create({ data });
+  }
   console.log('EstadosMarea seeded successfully!');
+
+  // --- SEMILLAS PARA TRANSICIONES DE ESTADOS ---
+  console.log('Seeding Transiciones...');
+  const allEstados = await prisma.estadoMarea.findMany();
+  const getEstadoId = (codigo: string) => allEstados.find(e => e.codigo === codigo)?.id;
+
+  const transicionesData = [
+    { from: 'DESIGNADA', to: 'EN_EJECUCION', action: 'REGISTRAR_INICIO', label: 'Registrar Inicio', btn: 'primary' },
+    { from: 'EN_EJECUCION', to: 'ESPERANDO_ENTREGA', action: 'REGISTRAR_ARRIBO', label: 'Confirmar Arribo', btn: 'primary' },
+    { from: 'ESPERANDO_ENTREGA', to: 'ENTREGADA_RECIBIDA', action: 'RECIBIR_DATOS', label: 'Recibir Archivos', btn: 'primary' },
+    { from: 'ENTREGADA_RECIBIDA', to: 'VERIFICACION_INICIAL', action: 'INICIAR_VERIFICACION', label: 'Iniciar Verificación', btn: 'primary' },
+    { from: 'VERIFICACION_INICIAL', to: 'EN_CORRECCION', action: 'ABRIR_CORRECCION', label: 'Abrir Corrección', btn: 'secondary' },
+    { from: 'VERIFICACION_INICIAL', to: 'PENDIENTE_DE_INFORME', action: 'PASAR_A_INFORME', label: 'Pasar a Informe', btn: 'primary' },
+    { from: 'EN_CORRECCION', to: 'PENDIENTE_DE_INFORME', action: 'FINALIZAR_CORRECCION', label: 'Finalizar Corrección', btn: 'primary' },
+    { from: 'EN_CORRECCION', to: 'DELEGADA_EXTERNA', action: 'DELEGAR_EXTERNA', label: 'Derivar a Proyecto', btn: 'secondary' },
+    { from: 'DELEGADA_EXTERNA', to: 'EN_CORRECCION', action: 'RETORNAR_CORRECCION', label: 'Devolución Externa', btn: 'primary' },
+    { from: 'PENDIENTE_DE_INFORME', to: 'ESPERANDO_REVISION', action: 'ENVIAR_A_REVISION', label: 'Enviar a Revisión', btn: 'primary' },
+    { from: 'ESPERANDO_REVISION', to: 'PARA_PROTOCOLIZAR', action: 'APROBAR_INFORME', label: 'Aprobar Informe', btn: 'primary' },
+    { from: 'ESPERANDO_REVISION', to: 'PENDIENTE_DE_INFORME', action: 'RECHAZAR_INFORME', label: 'Observaciones en Informe', btn: 'secondary' },
+    { from: 'PARA_PROTOCOLIZAR', to: 'ESPERANDO_PROTOCOLIZACION', action: 'INICIAR_TRAMITE', label: 'Iniciar Protocolización', btn: 'primary' },
+    { from: 'ESPERANDO_PROTOCOLIZACION', to: 'PROTOCOLIZADA', action: 'FINALIZAR_PROTOCOLIZACION', label: 'Finalizar Protocolización', btn: 'primary' },
+  ];
+
+  for (const t of transicionesData) {
+    const fromId = getEstadoId(t.from);
+    const toId = getEstadoId(t.to);
+    if (fromId && toId) {
+      await prisma.transicionEstado.create({
+        data: {
+          estadoOrigenId: fromId,
+          estadoDestinoId: toId,
+          accion: t.action,
+          etiqueta: t.label,
+          claseBoton: t.btn,
+          activo: true
+        }
+      });
+    }
+  }
+  console.log('Transiciones seeded successfully!');
 
   const password = await bcrypt.hash('Obs123', 10);
 
