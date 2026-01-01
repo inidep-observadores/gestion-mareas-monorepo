@@ -1,8 +1,5 @@
 <template>
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M12 12C14.21 12 16 10.21 16 8C16 5.79 14.21 4 12 4C9.79 4 8 5.79 8 8C8 10.21 9.79 12 12 12Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-    <path d="M7 16C4.79 16 3 17.79 3 20V21H11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-    <path d="M17 16C19.21 16 21 17.79 21 20V21H13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-    <path d="M14 6H15M17 9H18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 -960 960 960" fill="currentColor">
+    <path d="M0-160v-60q0-36 21-65.5t54-44.5q38-16 80.5-23t84.5-7q42 0 84.5 7t80.5 23q33 15 54 44.5t21 65.5v60H0Zm720 0v-60q0-28-13-52t-36-39q27-8 54-12.5t55-4.5q42 0 84.5 7t80.5 23q33 15 54 44.5t21 65.5v60H720ZM240-440q-50 0-85-35t-35-85q0-50 35-85t85-35q50 0 85 35t35 85q0 50-35 85t-85 35Zm480 0q-50 0-85-35t-35-85q0-50 35-85t85-35q50 0 85 35t35 85q0 50-35 85t-85 35ZM240-520Zm480 0Z"/>
   </svg>
 </template>
