@@ -14,11 +14,24 @@
         >
           <div class="flex items-center justify-between mb-2">
             <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">{{ kpi.label }}</span>
-            <div :class="['p-2 rounded-xl', kpi.bg]">
-              <component :is="kpi.icon" :class="['w-5 h-5', kpi.color]" />
+            <div class="flex items-center gap-2">
+               <button 
+                 @click.stop="toggleStateVisibility(kpi.codigo)"
+                 class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                 :title="hiddenStates.has(kpi.codigo) ? 'Mostrar' : 'Ocultar'"
+               >
+                 <component 
+                   :is="hiddenStates.has(kpi.codigo) ? EyeSlashIcon : EyeIcon" 
+                   class="w-4 h-4" 
+                   :class="{ 'opacity-50': hiddenStates.has(kpi.codigo) }"
+                 />
+               </button>
+               <div :class="['p-2 rounded-xl', kpi.bg]">
+                 <component :is="kpi.icon" :class="['w-5 h-5', kpi.color]" />
+               </div>
             </div>
           </div>
-          <div class="text-2xl font-black text-gray-800 dark:text-white">{{ kpi.value }}</div>
+          <div class="text-2xl font-black text-gray-800 dark:text-white" :class="{ 'opacity-40': hiddenStates.has(kpi.codigo) }">{{ kpi.value }}</div>
         </div>
       </div>
 
@@ -79,7 +92,7 @@
                 </thead>
                 <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
                   <tr
-                    v-for="marea in mareas"
+                    v-for="marea in filteredMareas"
                     :key="marea.id"
                     @click="openSidebar(marea)"
                     class="group hover:bg-brand-50/30 dark:hover:bg-brand-900/10 transition-all cursor-pointer"
@@ -140,7 +153,7 @@
               </table>
               
               <!-- Empty State -->
-              <div v-if="!loading && mareas.length === 0" class="p-20 flex flex-col items-center justify-center text-center">
+              <div v-if="!loading && filteredMareas.length === 0" class="p-20 flex flex-col items-center justify-center text-center">
                 <div class="w-20 h-20 bg-gray-50 dark:bg-gray-800 rounded-full flex items-center justify-center mb-4">
                   <ShipIcon class="w-10 h-10 text-gray-300" />
                 </div>
@@ -178,7 +191,9 @@ import {
   TaskIcon,
   HistoryIcon,
   ArchiveIcon,
-  FileTextIcon
+  FileTextIcon,
+  EyeIcon,
+  EyeSlashIcon
 } from '@/icons'
 
 const router = useRouter()
@@ -189,7 +204,10 @@ const {
   fetchDashboard,
   fetchMareaContext,
   executeAction,
-  selectedMareaContext
+  selectedMareaContext,
+  hiddenStates,
+  filteredMareas,
+  toggleStateVisibility
 } = useMareas()
 
 // UI State
