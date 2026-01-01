@@ -1,10 +1,16 @@
-import 'dotenv/config';
+import * as dotenv from 'dotenv';
+import * as path from 'path';
+
+dotenv.config();
+if (!process.env.DATABASE_URL) {
+  console.log('Loading .env.develop...');
+  dotenv.config({ path: path.join(process.cwd(), '.env.develop') });
+}
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import * as bcrypt from 'bcrypt';
 import { Pool } from 'pg';
 import * as fs from 'fs';
-import * as path from 'path';
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);
@@ -19,6 +25,7 @@ async function main() {
   await prisma.muestra.deleteMany();
   await prisma.captura.deleteMany();
   await prisma.lance.deleteMany();
+  await prisma.mareaEtapaObservador.deleteMany();
   await prisma.mareaEtapa.deleteMany();
   await prisma.mareaArchivo.deleteMany();
   await prisma.mareaMovimiento.deleteMany();

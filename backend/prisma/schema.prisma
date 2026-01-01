@@ -185,6 +185,7 @@ model Observador {
   fechaProximaDisponibilidad DateTime?             @map("fecha_proxima_disponibilidad") @db.Timestamptz(6)
   observaciones              String?
   pesquerias                 ObservadorPesqueria[]
+  etapas                     MareaEtapaObservador[]
 
   @@map("observadores")
 }
@@ -244,25 +245,41 @@ model Marea {
 }
 
 model MareaEtapa {
-  id              String     @id @default(uuid()) @db.Uuid
-  mareaId         String     @map("id_marea") @db.Uuid
-  nroEtapa        Int        @map("nro_etapa")
-  pesqueriaId     String?    @map("id_pesqueria") @db.Uuid
-  puertoZarpadaId String?    @map("id_puerto_zarpada") @db.Uuid
-  puertoArriboId  String?    @map("id_puerto_arribo") @db.Uuid
-  fechaZarpada    DateTime?  @map("fecha_zarpada") @db.Timestamptz(6)
-  fechaArribo     DateTime?  @map("fecha_arribo") @db.Timestamptz(6)
-  tipoEtapa       String     @map("tipo_etapa")
+  id              String                @id @default(uuid()) @db.Uuid
+  mareaId         String                @map("id_marea") @db.Uuid
+  nroEtapa        Int                   @map("nro_etapa")
+  pesqueriaId     String?               @map("id_pesqueria") @db.Uuid
+  puertoZarpadaId String?               @map("id_puerto_zarpada") @db.Uuid
+  puertoArriboId  String?               @map("id_puerto_arribo") @db.Uuid
+  fechaZarpada    DateTime?             @map("fecha_zarpada") @db.Timestamptz(6)
+  fechaArribo     DateTime?             @map("fecha_arribo") @db.Timestamptz(6)
+  tipoEtapa       String                @map("tipo_etapa")
   observaciones   String?
   lances          Lance[]
-  marea           Marea      @relation(fields: [mareaId], references: [id])
-  pesqueria       Pesqueria? @relation(fields: [pesqueriaId], references: [id])
-  puertoArribo    Puerto?    @relation("PuertoArribo", fields: [puertoArriboId], references: [id])
-  puertoZarpada   Puerto?    @relation("PuertoZarpada", fields: [puertoZarpadaId], references: [id])
+  marea           Marea                 @relation(fields: [mareaId], references: [id])
+  pesqueria       Pesqueria?            @relation(fields: [pesqueriaId], references: [id])
+  puertoArribo    Puerto?               @relation("PuertoArribo", fields: [puertoArriboId], references: [id])
+  puertoZarpada   Puerto?               @relation("PuertoZarpada", fields: [puertoZarpadaId], references: [id])
+  observadores    MareaEtapaObservador[]
 
   @@unique([mareaId, nroEtapa])
   @@index([mareaId])
   @@map("mareas_etapas")
+}
+
+model MareaEtapaObservador {
+  id           String     @id @default(uuid()) @db.Uuid
+  etapaId      String     @map("id_etapa") @db.Uuid
+  observadorId String     @map("id_observador") @db.Uuid
+  rol          String     @default("PRINCIPAL") // 'PRINCIPAL' | 'ADICIONAL'
+  esDesignado  Boolean    @default(true) @map("es_designado")
+  etapa        MareaEtapa @relation(fields: [etapaId], references: [id])
+  observador   Observador @relation(fields: [observadorId], references: [id])
+
+  @@unique([etapaId, observadorId])
+  @@index([etapaId])
+  @@index([observadorId])
+  @@map("mareas_etapas_observadores")
 }
 
 model MareaMovimiento {
