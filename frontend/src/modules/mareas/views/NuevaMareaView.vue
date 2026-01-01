@@ -187,6 +187,22 @@
                 />
                 <p v-if="fieldErrors.fechaZarpadaEstimada" class="text-[10px] text-red-500 font-bold uppercase mt-1">{{ fieldErrors.fechaZarpadaEstimada }}</p>
               </div>
+
+              <div class="space-y-1.5">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-400">Días Estimados</label>
+                <div class="relative">
+                  <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <HistoryIcon class="h-5 w-5 text-gray-400" />
+                  </div>
+                  <input 
+                    v-model.number="form.diasEstimados"
+                    type="number"
+                    min="1"
+                    placeholder="Días"
+                    class="block w-full pl-10 pr-3 py-2.5 bg-gray-50/50 dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl font-bold text-gray-800 dark:text-white outline-none focus:border-brand-500 transition-all placeholder:text-gray-400/50 text-sm"
+                  />
+                </div>
+              </div>
             </div>
           </div>
 
@@ -217,6 +233,7 @@
                 <p class="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-2">Operación</p>
                 <p class="text-sm font-bold text-gray-800 dark:text-gray-200">{{ getPesqueriaName(form.pesqueriaId) }}</p>
                 <p class="text-xs text-gray-500 mt-0.5">Obs: {{ getObserverName(form.observadorId) }}</p>
+                <p v-if="form.diasEstimados" class="text-xs text-gray-400 mt-0.5">Est: {{ form.diasEstimados }} días</p>
               </div>
             </div>
 
@@ -309,6 +326,7 @@ import {
   SettingsIcon,
   BeakerIcon,
   CalenderIcon,
+  HistoryIcon,
 } from '@/icons'
 
 const router = useRouter()
@@ -332,6 +350,7 @@ const form = ref({
   observadorId: '',
   arteId: '',
   fechaZarpadaEstimada: '',
+  diasEstimados: null as number | null,
 })
 
 const fieldErrors = ref<Record<string, string>>({})
@@ -403,6 +422,7 @@ const handleBuqueChange = () => {
   if (buque) {
     if (buque.pesqueriaHabitualId) form.value.pesqueriaId = buque.pesqueriaHabitualId
     if (buque.arteHabitualId) form.value.arteId = buque.arteHabitualId
+    if (buque.diasMareaEstimada) form.value.diasEstimados = buque.diasMareaEstimada
   }
 }
 

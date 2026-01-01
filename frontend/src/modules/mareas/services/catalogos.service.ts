@@ -4,6 +4,9 @@ export interface Buque {
     id: string;
     nombreBuque: string;
     matricula?: string;
+    diasMareaEstimada?: number;
+    pesqueriaHabitualId?: string;
+    arteHabitualId?: string;
 }
 
 export interface Pesqueria {

@@ -189,6 +189,7 @@ Table mareas {
 
   // Fechas clave (administrativas / marco del observador)
   fecha_zarpada_estimada TIMESTAMP? // Tentativa (cargada al designar)
+  dias_estimados INTEGER? // Estimacion de duracion de la marea
   fecha_inicio_observador TIMESTAMP? // Inicio del trabajo del observador (incluye viaje si no es puerto local)
   fecha_fin_observador TIMESTAMP? // Fin del trabajo del observador (incluye regreso si no es puerto local)
 
