@@ -210,7 +210,17 @@ import {
   DocsIcon,
   MapPinIcon,
   CloudUploadIcon,
-  PlusIcon
+  PlusIcon,
+  TaskIcon,
+  SearchIcon,
+  EditIcon,
+  CheckIcon,
+  HorizontalDots,
+  ArrowLeftIcon,
+  SendIcon,
+  SuccessIcon,
+  ErrorIcon,
+  ShieldIcon
 } from '@/icons'
 import type { MareaContext } from '../services/mareas.service'
 
@@ -242,11 +252,20 @@ const getStatusClasses = (status?: string) => {
 
 const getActionIcon = (key: string | number) => {
   const meta: Record<string, any> = {
-    zarpada: MapPinIcon,
-    arribo: MapPinIcon,
-    carga_datos: CloudUploadIcon,
-    nota: PlusIcon,
-    cerrar: LockIcon
+    REGISTRAR_INICIO: TaskIcon,
+    REGISTRAR_ARRIBO: MapPinIcon,
+    RECIBIR_DATOS: CloudUploadIcon,
+    INICIAR_VERIFICACION: SearchIcon,
+    ABRIR_CORRECCION: EditIcon,
+    PASAR_A_INFORME: DocsIcon,
+    FINALIZAR_CORRECCION: CheckIcon,
+    DELEGAR_EXTERNA: HorizontalDots,
+    RETORNAR_CORRECCION: ArrowLeftIcon,
+    ENVIAR_A_REVISION: SendIcon,
+    APROBAR_INFORME: SuccessIcon,
+    RECHAZAR_INFORME: ErrorIcon,
+    INICIAR_TRAMITE: HistoryIcon,
+    FINALIZAR_PROTOCOLIZACION: ShieldIcon
   }
   return meta[key] || PlusIcon
 }
