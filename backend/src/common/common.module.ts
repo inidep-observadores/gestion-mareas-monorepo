@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { APP_FILTER } from '@nestjs/core';
+import { JwtModule } from '@nestjs/jwt';
 import { HashService } from './services/hash.service';
 import { ErrorLogsModule } from './error-logs/error-logs.module';
 import { AllExceptionsFilter } from './filters/all-exceptions.filter';
@@ -13,6 +14,6 @@ import { AllExceptionsFilter } from './filters/all-exceptions.filter';
         },
     ],
     exports: [HashService],
-    imports: [ErrorLogsModule],
+    imports: [ErrorLogsModule, JwtModule],
 })
 export class CommonModule { }

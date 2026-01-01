@@ -7,19 +7,18 @@ datasource db {
 }
 
 model User {
-  id              String   @id @default(uuid()) @db.Uuid
-  email           String   @unique
+  id              String               @id @default(uuid()) @db.Uuid
+  email           String               @unique
   password        String
   fullName        String
-  isActive        Boolean  @default(true)
-  roles           String[] @default(["invitado"])
-  themePreference String   @default("system")
+  isActive        Boolean              @default(true)
+  roles           String[]             @default(["invitado"])
+  themePreference String               @default("system")
   avatarUrl       String?
-
-  products    Product[]
-  resetTokens PasswordResetToken[]
-  movimientos MareaMovimiento[]
-  archivos    MareaArchivo[]
+  archivos        MareaArchivo[]
+  movimientos     MareaMovimiento[]
+  resetTokens     PasswordResetToken[]
+  products        Product[]
 
   @@map("users")
 }
@@ -27,41 +26,38 @@ model User {
 model PasswordResetToken {
   id          String   @id @default(uuid()) @db.Uuid
   token       String
-  expiresAt   DateTime @map("expires_at") @db.Timestamptz
+  expiresAt   DateTime @map("expires_at") @db.Timestamptz(6)
   used        Boolean  @default(false)
   requestedIp String?  @map("requested_ip")
-  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
-
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId String @map("user_id") @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  userId      String   @map("user_id") @db.Uuid
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("password_reset_tokens")
 }
 
 model Product {
-  id          String   @id @default(uuid()) @db.Uuid
-  title       String   @unique
-  price       Float    @default(0)
+  id          String         @id @default(uuid()) @db.Uuid
+  title       String         @unique
+  price       Float          @default(0)
   description String?
-  slug        String   @unique
-  stock       Int      @default(0)
+  slug        String         @unique
+  stock       Int            @default(0)
   sizes       String[]
   gender      String
-  tags        String[] @default([])
-
-  images ProductImage[]
-  user   User           @relation(fields: [userId], references: [id])
-  userId String         @db.Uuid
+  tags        String[]       @default([])
+  userId      String         @db.Uuid
+  images      ProductImage[]
+  user        User           @relation(fields: [userId], references: [id])
 
   @@map("products")
 }
 
 model ProductImage {
-  id  Int    @id @default(autoincrement())
-  url String
-
-  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  id        Int     @id @default(autoincrement())
+  url       String
   productId String  @db.Uuid
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@map("product_images")
 }
@@ -73,157 +69,139 @@ model TipoFlota {
   descripcion String?
   orden       Int?
   activo      Boolean @default(true)
-
-  buques Buque[]
+  buques      Buque[]
 
   @@map("tipos_flota")
 }
 
 model Buque {
-  id            String @id @default(uuid()) @db.Uuid
-  nombreBuque   String @map("nombre_buque")
-  matricula     String @unique
-  codigoInterno Int?   @map("codigo_interno")
-
-  tipoFlota   TipoFlota? @relation(fields: [tipoFlotaId], references: [id])
-  tipoFlotaId String?    @map("id_tipo_flota") @db.Uuid
-
-  arteHabitual   ArtePesca? @relation(fields: [arteHabitualId], references: [id])
-  arteHabitualId String?    @map("id_arte_habitual") @db.Uuid
-
-  pesqueriaHabitual   Pesqueria? @relation(fields: [pesqueriaHabitualId], references: [id])
-  pesqueriaHabitualId String?    @map("id_pesqueria_habitual") @db.Uuid
-
-  diasMareaEstimada Int?     @map("dias_marea_estimada")
-  esloraM           Decimal? @map("eslora_m") @db.Decimal(6, 2)
-  potenciaHp        Int?     @map("potencia_hp")
-
-  puertoBase              Puerto? @relation(fields: [puertoBaseId], references: [id])
-  puertoBaseId            String? @map("id_puerto_base") @db.Uuid
-  empresaNombre           String? @map("empresa_nombre")
-  empresaLocalidad        String? @map("empresa_localidad")
-  empresaTelefono         String? @map("empresa_telefono")
-  empresaFax              String? @map("empresa_fax")
-  empresaCorreoPrincipal  String? @map("empresa_correo_principal")
-  empresaCorreoSecundario String? @map("empresa_correo_secundario")
-  armadorNombre           String? @map("armador_nombre")
-  armadorTelefono         String? @map("armador_telefono")
-  agenciaMaritimaNombre   String? @map("agencia_maritima_nombre")
-
-  activo        Boolean   @default(true)
-  fechaAlta     DateTime? @map("fecha_alta") @db.Date
-  fechaBaja     DateTime? @map("fecha_baja") @db.Date
-  observaciones String?
-
-  mareas            Marea[]
-  trayectorias      BuqueTrayectoria[]
-  puntosTrayectoria BuqueTrayectoriaPunto[]
+  id                      String                  @id @default(uuid()) @db.Uuid
+  nombreBuque             String                  @map("nombre_buque")
+  matricula               String                  @unique
+  codigoInterno           Int?                    @map("codigo_interno")
+  tipoFlotaId             String?                 @map("id_tipo_flota") @db.Uuid
+  arteHabitualId          String?                 @map("id_arte_habitual") @db.Uuid
+  pesqueriaHabitualId     String?                 @map("id_pesqueria_habitual") @db.Uuid
+  diasMareaEstimada       Int?                    @map("dias_marea_estimada")
+  esloraM                 Decimal?                @map("eslora_m") @db.Decimal(6, 2)
+  potenciaHp              Int?                    @map("potencia_hp")
+  puertoBaseId            String?                 @map("id_puerto_base") @db.Uuid
+  empresaNombre           String?                 @map("empresa_nombre")
+  empresaLocalidad        String?                 @map("empresa_localidad")
+  empresaTelefono         String?                 @map("empresa_telefono")
+  empresaFax              String?                 @map("empresa_fax")
+  empresaCorreoPrincipal  String?                 @map("empresa_correo_principal")
+  empresaCorreoSecundario String?                 @map("empresa_correo_secundario")
+  armadorNombre           String?                 @map("armador_nombre")
+  armadorTelefono         String?                 @map("armador_telefono")
+  agenciaMaritimaNombre   String?                 @map("agencia_maritima_nombre")
+  activo                  Boolean                 @default(true)
+  fechaAlta               DateTime?               @map("fecha_alta") @db.Date
+  fechaBaja               DateTime?               @map("fecha_baja") @db.Date
+  observaciones           String?
+  puntosTrayectoria       BuqueTrayectoriaPunto[]
+  trayectorias            BuqueTrayectoria?
+  arteHabitual            ArtePesca?              @relation(fields: [arteHabitualId], references: [id])
+  pesqueriaHabitual       Pesqueria?              @relation(fields: [pesqueriaHabitualId], references: [id])
+  puertoBase              Puerto?                 @relation(fields: [puertoBaseId], references: [id])
+  tipoFlota               TipoFlota?              @relation(fields: [tipoFlotaId], references: [id])
+  mareas                  Marea[]
 
   @@map("buques")
 }
 
 model ArtePesca {
-  id             String  @id @default(uuid()) @db.Uuid
-  codigoNumerico Int     @unique @map("codigo_numerico")
-  nombre         String
-  activo         Boolean @default(true)
-
+  id               String  @id @default(uuid()) @db.Uuid
+  codigoNumerico   Int     @unique @map("codigo_numerico")
+  activo           Boolean @default(true)
+  nombre           String
   buquesHabituales Buque[]
-  mareas           Marea[]
   lances           Lance[]
+  mareas           Marea[]
 
   @@map("artes_pesca")
 }
 
 model Pesqueria {
-  id          String  @id @default(uuid()) @db.Uuid
-  codigo      String  @unique
-  nombre      String
-  descripcion String?
-  grupo       String?
-  orden       Int?
-  activo      Boolean @default(true)
-
+  id                     String                @id @default(uuid()) @db.Uuid
+  codigo                 String                @unique
+  nombre                 String
+  descripcion            String?
+  grupo                  String?
+  orden                  Int?
+  activo                 Boolean               @default(true)
   buquesHabituales       Buque[]
-  observadoresPesquerias ObservadorPesqueria[]
   etapasMarea            MareaEtapa[]
+  observadoresPesquerias ObservadorPesqueria[]
 
   @@map("pesquerias")
 }
 
 model Puerto {
-  id            String  @id @default(uuid()) @db.Uuid
+  id            String       @id @default(uuid()) @db.Uuid
   nombre        String
   provincia     String?
   pais          String?
-  latitud       Float?
-  longitud      Float?
-  codigoInterno String? @map("codigo_interno")
-  codigoExterno String? @map("codigo_externo")
-  esLocal       Boolean @default(false) @map("es_local")
-  activo        Boolean @default(true)
+  codigoInterno String?      @map("codigo_interno")
+  codigoExterno String?      @map("codigo_externo")
+  esLocal       Boolean      @default(false) @map("es_local")
+  activo        Boolean      @default(true)
   orden         Int?
   observaciones String?
-
+  latitud       Float?
+  longitud      Float?
   buquesBase    Buque[]
-  etapasZarpada MareaEtapa[] @relation("PuertoZarpada")
   etapasArribo  MareaEtapa[] @relation("PuertoArribo")
+  etapasZarpada MareaEtapa[] @relation("PuertoZarpada")
 
   @@map("puertos")
 }
 
 model Especie {
-  id               String  @id @default(uuid()) @db.Uuid
-  codigo           String  @unique
-  nombreCientifico String  @map("nombre_cientifico")
-  nombreVulgar     String  @map("nombre_vulgar")
-  activo           Boolean @default(true)
-  observaciones    String?
-
-  observadoresPesquerias ObservadorPesqueria[]
+  id                     String                @id @default(uuid()) @db.Uuid
+  codigo                 String                @unique
+  nombreCientifico       String                @map("nombre_cientifico")
+  nombreVulgar           String                @map("nombre_vulgar")
+  activo                 Boolean               @default(true)
+  observaciones          String?
   capturas               Captura[]
   muestras               Muestra[]
+  observadoresPesquerias ObservadorPesqueria[]
   producciones           Produccion[]
 
   @@map("especies")
 }
 
 model Observador {
-  id                         String    @id @default(uuid()) @db.Uuid
-  codigoInterno              Int       @map("codigo_interno")
+  id                         String                @id @default(uuid()) @db.Uuid
+  codigoInterno              Int                   @map("codigo_interno")
   nombre                     String
   apellido                   String
-  fotoUrl                    String?   @map("foto_url")
-  tipoObservador             String    @map("tipo_observador") // 'OBSERVADOR' | 'TECNICO'
-  tipoContrato               String    @map("tipo_contrato") // 'LEY MARCO' | 'MONOTRIBUTISTA' | 'PLANTA PERMANENTE'
-  activo                     Boolean   @default(true)
-  disponible                 Boolean   @default(true)
-  fechaProximaDisponibilidad DateTime? @map("fecha_proxima_disponibilidad") @db.Timestamptz
+  fotoUrl                    String?               @map("foto_url")
+  tipoObservador             String                @map("tipo_observador")
+  tipoContrato               String                @map("tipo_contrato")
+  activo                     Boolean               @default(true)
+  disponible                 Boolean               @default(true)
+  fechaProximaDisponibilidad DateTime?             @map("fecha_proxima_disponibilidad") @db.Timestamptz(6)
   observaciones              String?
-
-  pesquerias ObservadorPesqueria[]
+  pesquerias                 ObservadorPesqueria[]
 
   @@map("observadores")
 }
 
 model ObservadorPesqueria {
   id           String     @id @default(uuid()) @db.Uuid
-  observador   Observador @relation(fields: [observadorId], references: [id])
   observadorId String     @map("id_observador") @db.Uuid
-  pesqueria    Pesqueria  @relation(fields: [pesqueriaId], references: [id])
   pesqueriaId  String     @map("id_pesqueria") @db.Uuid
-
-  // NOTE: In the pseudocode it says especie_id but it also relates to pesqueria.
-  // Looking at the table name and relations, it seems to be linking observers to fisheries.
-  // I will follow the pseudocode table structure primarily.
-
-  modo       String // 'WHITELIST' | 'BLACKLIST'
-  activo     Boolean   @default(true)
-  motivo     String?
-  fechaDesde DateTime? @map("fecha_desde") @db.Timestamptz
-  fechaHasta DateTime? @map("fecha_hasta") @db.Timestamptz
-  especie    Especie   @relation(fields: [especieId], references: [id])
-  especieId  String    @map("id_especie") @db.Uuid
+  modo         String
+  activo       Boolean    @default(true)
+  motivo       String?
+  fechaDesde   DateTime?  @map("fecha_desde") @db.Timestamptz(6)
+  fechaHasta   DateTime?  @map("fecha_hasta") @db.Timestamptz(6)
+  especieId    String     @map("id_especie") @db.Uuid
+  especie      Especie    @relation(fields: [especieId], references: [id])
+  observador   Observador @relation(fields: [observadorId], references: [id])
+  pesqueria    Pesqueria  @relation(fields: [pesqueriaId], references: [id])
 
   @@unique([observadorId, pesqueriaId, modo])
   @@index([observadorId])
@@ -232,80 +210,55 @@ model ObservadorPesqueria {
 }
 
 model Marea {
-  id String @id @default(uuid()) @db.Uuid
-
-  // Identificacion basica
-  anioMarea   Int     @map("anio_marea")
-  nroMarea    Int     @map("nro_marea")
-  tipoMarea   String  @default("COMERCIAL") @map("tipo_marea") // 'COMERCIAL' | 'INSTITUCIONAL'
-  codigoMarea String? @unique @map("codigo_marea")
-
-  // Relacion con buque, estado y pesqueria
-  buque   Buque  @relation(fields: [buqueId], references: [id])
-  buqueId String @map("id_buque") @db.Uuid
-
-  artePrincipal   ArtePesca? @relation(fields: [artePrincipalId], references: [id])
-  artePrincipalId String?    @map("id_arte_principal") @db.Uuid
-
-  estadoActual   EstadoMarea @relation(fields: [estadoActualId], references: [id])
-  estadoActualId String      @map("id_estado_actual") @db.Uuid
-
-  // Fechas clave (administrativas / marco del observador)
-  fechaZarpadaEstimada  DateTime? @map("fecha_zarpada_estimada") @db.Timestamptz
-  fechaInicioObservador DateTime? @map("fecha_inicio_observador") @db.Timestamptz
-  fechaFinObservador    DateTime? @map("fecha_fin_observador") @db.Timestamptz
-
-  // Zona Austral
-  diasZonaAustral        Int?   @map("dias_zona_austral")
-  tipoCalculoZonaAustral String @default("AUTOMATICO") @map("tipo_calculo_zona_austral") // 'AUTOMATICO' | 'MANUAL'
-
-  // Descripcion
-  titulo      String?
-  descripcion String?
-
-  // Informacion administrativa
-  nroProtocolizacion   Int?      @map("nro_protocolizacion")
-  anioProtocolizacion  Int?      @map("anio_protocolizacion")
-  fechaProtocolizacion DateTime? @map("fecha_protocolizacion") @db.Timestamptz
-
-  // Gestion y auditoria
-  fechaCreacion            DateTime @default(now()) @map("fecha_creacion") @db.Timestamptz
-  fechaUltimaActualizacion DateTime @updatedAt @map("fecha_ultima_actualizacion") @db.Timestamptz
-  activo                   Boolean  @default(true)
+  id                       String            @id @default(uuid()) @db.Uuid
+  anioMarea                Int               @map("anio_marea")
+  nroMarea                 Int               @map("nro_marea")
+  buqueId                  String            @map("id_buque") @db.Uuid
+  artePrincipalId          String?           @map("id_arte_principal") @db.Uuid
+  estadoActualId           String            @map("id_estado_actual") @db.Uuid
+  fechaZarpadaEstimada     DateTime?         @map("fecha_zarpada_estimada") @db.Timestamptz(6)
+  fechaInicioObservador    DateTime?         @map("fecha_inicio_observador") @db.Timestamptz(6)
+  fechaFinObservador       DateTime?         @map("fecha_fin_observador") @db.Timestamptz(6)
+  diasZonaAustral          Int?              @map("dias_zona_austral")
+  tipoCalculoZonaAustral   String            @default("AUTOMATICO") @map("tipo_calculo_zona_austral")
+  titulo                   String?
+  descripcion              String?
+  nroProtocolizacion       Int?              @map("nro_protocolizacion")
+  anioProtocolizacion      Int?              @map("anio_protocolizacion")
+  fechaProtocolizacion     DateTime?         @map("fecha_protocolizacion") @db.Timestamptz(6)
+  fechaCreacion            DateTime          @default(now()) @map("fecha_creacion") @db.Timestamptz(6)
+  fechaUltimaActualizacion DateTime          @updatedAt @map("fecha_ultima_actualizacion") @db.Timestamptz(6)
+  activo                   Boolean           @default(true)
   observaciones            String?
-
-  etapas       MareaEtapa[]
-  movimientos  MareaMovimiento[]
-  archivos     MareaArchivo[]
-  producciones Produccion[]
+  tipoMarea                String            @default("MC") @map("tipo_marea")
+  artePrincipal            ArtePesca?        @relation(fields: [artePrincipalId], references: [id])
+  buque                    Buque             @relation(fields: [buqueId], references: [id])
+  estadoActual             EstadoMarea       @relation(fields: [estadoActualId], references: [id])
+  archivos                 MareaArchivo[]
+  etapas                   MareaEtapa[]
+  movimientos              MareaMovimiento[]
+  producciones             Produccion[]
 
   @@unique([anioMarea, nroMarea, buqueId, tipoMarea], name: "identificadorMarea")
   @@map("mareas")
 }
 
 model MareaEtapa {
-  id      String @id @default(uuid()) @db.Uuid
-  marea   Marea  @relation(fields: [mareaId], references: [id])
-  mareaId String @map("id_marea") @db.Uuid
-
-  nroEtapa Int @map("nro_etapa")
-
-  pesqueria   Pesqueria? @relation(fields: [pesqueriaId], references: [id])
-  pesqueriaId String?    @map("id_pesqueria") @db.Uuid
-
-  puertoZarpada   Puerto? @relation("PuertoZarpada", fields: [puertoZarpadaId], references: [id])
-  puertoZarpadaId String? @map("id_puerto_zarpada") @db.Uuid
-
-  puertoArribo   Puerto? @relation("PuertoArribo", fields: [puertoArriboId], references: [id])
-  puertoArriboId String? @map("id_puerto_arribo") @db.Uuid
-
-  fechaZarpada DateTime? @map("fecha_zarpada") @db.Timestamptz
-  fechaArribo  DateTime? @map("fecha_arribo") @db.Timestamptz
-
-  tipoEtapa     String  @map("tipo_etapa") // 'COMERCIAL' | 'INSTITUCIONAL'
-  observaciones String?
-
-  lances Lance[]
+  id              String     @id @default(uuid()) @db.Uuid
+  mareaId         String     @map("id_marea") @db.Uuid
+  nroEtapa        Int        @map("nro_etapa")
+  pesqueriaId     String?    @map("id_pesqueria") @db.Uuid
+  puertoZarpadaId String?    @map("id_puerto_zarpada") @db.Uuid
+  puertoArriboId  String?    @map("id_puerto_arribo") @db.Uuid
+  fechaZarpada    DateTime?  @map("fecha_zarpada") @db.Timestamptz(6)
+  fechaArribo     DateTime?  @map("fecha_arribo") @db.Timestamptz(6)
+  tipoEtapa       String     @map("tipo_etapa")
+  observaciones   String?
+  lances          Lance[]
+  marea           Marea      @relation(fields: [mareaId], references: [id])
+  pesqueria       Pesqueria? @relation(fields: [pesqueriaId], references: [id])
+  puertoArribo    Puerto?    @relation("PuertoArribo", fields: [puertoArriboId], references: [id])
+  puertoZarpada   Puerto?    @relation("PuertoZarpada", fields: [puertoZarpadaId], references: [id])
 
   @@unique([mareaId, nroEtapa])
   @@index([mareaId])
@@ -313,92 +266,78 @@ model MareaEtapa {
 }
 
 model MareaMovimiento {
-  id        String   @id @default(uuid()) @db.Uuid
-  marea     Marea    @relation(fields: [mareaId], references: [id])
-  mareaId   String   @map("id_marea") @db.Uuid
-  fechaHora DateTime @map("fecha_hora") @db.Timestamptz
-
-  usuario   User?   @relation(fields: [usuarioId], references: [id])
-  usuarioId String? @map("id_usuario") @db.Uuid
-
-  tipoEvento String @map("tipo_evento") // 'CAMBIO_ESTADO' | 'RECEPCION_DATOS' | 'ENTREGA_OTOLITOS', etc.
-
-  estadoDesde   EstadoMarea? @relation("EstadoDesde", fields: [estadoDesdeId], references: [id])
-  estadoDesdeId String?      @map("id_estado_desde") @db.Uuid
-
-  estadoHasta   EstadoMarea? @relation("EstadoHasta", fields: [estadoHastaId], references: [id])
-  estadoHastaId String?      @map("id_estado_hasta") @db.Uuid
-
-  cantidadMuestrasOtolitos Int?    @map("cantidad_muestras_otolitos")
+  id                       String         @id @default(uuid()) @db.Uuid
+  mareaId                  String         @map("id_marea") @db.Uuid
+  fechaHora                DateTime       @map("fecha_hora") @db.Timestamptz(6)
+  usuarioId                String?        @map("id_usuario") @db.Uuid
+  tipoEvento               String         @map("tipo_evento")
+  estadoDesdeId            String?        @map("id_estado_desde") @db.Uuid
+  estadoHastaId            String?        @map("id_estado_hasta") @db.Uuid
+  cantidadMuestrasOtolitos Int?           @map("cantidad_muestras_otolitos")
   detalle                  String?
-
-  archivos MareaArchivo[]
+  archivos                 MareaArchivo[]
+  estadoDesde              EstadoMarea?   @relation("EstadoDesde", fields: [estadoDesdeId], references: [id])
+  estadoHasta              EstadoMarea?   @relation("EstadoHasta", fields: [estadoHastaId], references: [id])
+  marea                    Marea          @relation(fields: [mareaId], references: [id])
+  usuario                  User?          @relation(fields: [usuarioId], references: [id])
 
   @@index([mareaId])
   @@map("mareas_movimientos")
 }
 
 model MareaArchivo {
-  id      String @id @default(uuid()) @db.Uuid
-  marea   Marea  @relation(fields: [mareaId], references: [id])
-  mareaId String @map("id_marea") @db.Uuid
-
-  movimientoOrigen   MareaMovimiento? @relation(fields: [movimientoOrigenId], references: [id])
+  id                 String           @id @default(uuid()) @db.Uuid
+  mareaId            String           @map("id_marea") @db.Uuid
   movimientoOrigenId String?          @map("id_movimiento_origen") @db.Uuid
-
-  tipoArchivo String   @map("tipo_archivo") // 'DATOS_OBSERVADOR' | 'INFORME_MAREA', etc.
-  formato     String?
-  version     String? // 'ORIGINAL' | 'CORREGIDO' | 'FINAL'
-  rutaArchivo String   @map("ruta_archivo")
-  fechaSubida DateTime @default(now()) @map("fecha_subida") @db.Timestamptz
-
-  usuarioSubio   User?   @relation(fields: [usuarioSubioId], references: [id])
-  usuarioSubioId String? @map("id_usuario_subio") @db.Uuid
-
-  descripcion String?
+  tipoArchivo        String           @map("tipo_archivo")
+  formato            String?
+  version            String?
+  rutaArchivo        String           @map("ruta_archivo")
+  fechaSubida        DateTime         @default(now()) @map("fecha_subida") @db.Timestamptz(6)
+  usuarioSubioId     String?          @map("id_usuario_subio") @db.Uuid
+  descripcion        String?
+  marea              Marea            @relation(fields: [mareaId], references: [id])
+  movimientoOrigen   MareaMovimiento? @relation(fields: [movimientoOrigenId], references: [id])
+  usuarioSubio       User?            @relation(fields: [usuarioSubioId], references: [id])
 
   @@index([mareaId])
   @@map("mareas_archivos")
 }
 
 model Lance {
-  id      String     @id @default(uuid()) @db.Uuid
-  etapa   MareaEtapa @relation(fields: [etapaId], references: [id])
-  etapaId String     @map("etapa_id") @db.Uuid
-
-  numeroLance Int      @map("numero_lance")
-  fecha       DateTime @db.Date
-
-  artePesca    ArtePesca @relation(fields: [codArtePesca], references: [codigoNumerico])
-  codArtePesca Int       @map("cod_arte_pesca")
-
-  tipoArtePesca      Int?    @map("tipo_arte_pesca")
-  horaInicio         Float?  @map("hora_inicio")
-  latInicio          Float?  @map("lat_inicio")
-  longInicio         Float?  @map("long_inicio")
-  profInicio         Int?    @map("prof_inicio")
-  horaFinal          Float?  @map("hora_final")
-  latFinal           Float?  @map("lat_final")
-  longFinal          Float?  @map("long_final")
-  profFinal          Int?    @map("prof_final")
+  id                 String     @id @default(uuid()) @db.Uuid
+  etapaId            String     @map("etapa_id") @db.Uuid
+  numeroLance        Int        @map("numero_lance")
+  fecha              DateTime   @db.Date
+  codArtePesca       Int        @map("cod_arte_pesca")
+  tipoArtePesca      Int?       @map("tipo_arte_pesca")
+  horaInicio         Float?     @map("hora_inicio")
+  latInicio          Float?     @map("lat_inicio")
+  longInicio         Float?     @map("long_inicio")
+  profInicio         Int?       @map("prof_inicio")
+  horaFinal          Float?     @map("hora_final")
+  latFinal           Float?     @map("lat_final")
+  longFinal          Float?     @map("long_final")
+  profFinal          Int?       @map("prof_final")
   rumbo              Int?
-  distanciaRed       Float?  @map("distancia_red")
-  velocidadArrastre  Float?  @map("velocidad_arrastre")
-  tiempoRed          Int?    @map("tiempo_red")
-  estacionGral       Int?    @map("estacion_gral")
+  distanciaRed       Float?     @map("distancia_red")
+  velocidadArrastre  Float?     @map("velocidad_arrastre")
+  tiempoRed          Int?       @map("tiempo_red")
+  estacionGral       Int?       @map("estacion_gral")
   calador            String?
-  fondoMin           Int?    @map("fondo_min")
-  fondoMax           Int?    @map("fondo_max")
+  fondoMin           Int?       @map("fondo_min")
+  fondoMax           Int?       @map("fondo_max")
   tamiz              String?
-  areaBarrida        Float?  @map("area_barrida")
-  capturaTotalKg     Float?  @map("captura_total_kg")
-  descarteTotalKg    Float?  @map("descarte_total_kg")
-  observacionesLance String? @map("observaciones_lance")
+  areaBarrida        Float?     @map("area_barrida")
+  capturaTotalKg     Float?     @map("captura_total_kg")
+  descarteTotalKg    Float?     @map("descarte_total_kg")
+  observacionesLance String?    @map("observaciones_lance")
   mus                Int?
-  fuenteDato         Int?    @map("fuente_dato")
-
-  capturas Captura[]
-  muestras Muestra[]
+  fuenteDato         Int?       @map("fuente_dato")
+  capturas           Captura[]
+  artePesca          ArtePesca  @relation(fields: [codArtePesca], references: [codigoNumerico])
+  etapa              MareaEtapa @relation(fields: [etapaId], references: [id])
+  muestras           Muestra[]
 
   @@unique([etapaId, numeroLance])
   @@index([etapaId])
@@ -406,17 +345,15 @@ model Lance {
 }
 
 model Captura {
-  id      String @id @default(uuid()) @db.Uuid
-  lance   Lance  @relation(fields: [lanceId], references: [id])
-  lanceId String @map("lance_id") @db.Uuid
-
-  especie   Especie @relation(fields: [especieId], references: [id])
-  especieId String  @map("especie_id") @db.Uuid
-
+  id                   String  @id @default(uuid()) @db.Uuid
+  lanceId              String  @map("lance_id") @db.Uuid
+  especieId            String  @map("especie_id") @db.Uuid
   kgCaptura            Float   @map("kg_captura")
   kgDescarte           Float   @map("kg_descarte")
   observacionesCaptura String? @map("observaciones_captura")
   indiceOriginal       Int     @map("indice_original")
+  especie              Especie @relation(fields: [especieId], references: [id])
+  lance                Lance   @relation(fields: [lanceId], references: [id])
 
   @@unique([lanceId, especieId])
   @@index([lanceId])
@@ -424,25 +361,22 @@ model Captura {
 }
 
 model Muestra {
-  id      String @id @default(uuid()) @db.Uuid
-  lance   Lance  @relation(fields: [lanceId], references: [id])
-  lanceId String @map("lance_id") @db.Uuid
-
-  especie   Especie @relation(fields: [especieId], references: [id])
-  especieId String  @map("especie_id") @db.Uuid
-
-  tipoMuestra     String  @map("tipo_muestra") // 'CAPTURA' | 'DESCARTE'
-  pesoMuestraKg   Float?  @map("peso_muestra_kg")
-  factPonderacion Float?  @map("fact_ponderacion")
-  unidadLargo     String  @map("unidad_largo") // 'mm' | 'cm'
-  primeraTalla    Int?    @map("primera_talla")
-  ultimaTalla     Int?    @map("ultima_talla")
-  intervaloMm     Int?    @map("intervalo_mm")
-  totalMediciones Int?    @map("total_mediciones")
+  id              String                @id @default(uuid()) @db.Uuid
+  lanceId         String                @map("lance_id") @db.Uuid
+  especieId       String                @map("especie_id") @db.Uuid
+  tipoMuestra     String                @map("tipo_muestra")
+  pesoMuestraKg   Float?                @map("peso_muestra_kg")
+  factPonderacion Float?                @map("fact_ponderacion")
+  unidadLargo     String                @map("unidad_largo")
+  primeraTalla    Int?                  @map("primera_talla")
+  ultimaTalla     Int?                  @map("ultima_talla")
+  intervaloMm     Int?                  @map("intervalo_mm")
+  totalMediciones Int?                  @map("total_mediciones")
   observaciones   String?
-
-  detallesTalla MuestraDetalleTalla[]
-  submuestras   Submuestra[]
+  especie         Especie               @relation(fields: [especieId], references: [id])
+  lance           Lance                 @relation(fields: [lanceId], references: [id])
+  detallesTalla   MuestraDetalleTalla[]
+  submuestras     Submuestra[]
 
   @@unique([lanceId, especieId, tipoMuestra])
   @@index([lanceId])
@@ -450,16 +384,15 @@ model Muestra {
 }
 
 model MuestraDetalleTalla {
-  id        String  @id @default(uuid()) @db.Uuid
-  muestra   Muestra @relation(fields: [muestraId], references: [id])
-  muestraId String  @map("muestra_id") @db.Uuid
-
-  tallaMm         Int @map("talla_mm")
-  cantidadMachos  Int @map("cantidad_machos")
-  cantidadHembras Int @map("cantidad_hembras")
-  cantidadIndet   Int @map("cantidad_indet")
-  cantidadTotal   Int @map("cantidad_total")
-  indiceOriginal  Int @map("indice_original")
+  id              String  @id @default(uuid()) @db.Uuid
+  muestraId       String  @map("muestra_id") @db.Uuid
+  tallaMm         Int     @map("talla_mm")
+  cantidadMachos  Int     @map("cantidad_machos")
+  cantidadHembras Int     @map("cantidad_hembras")
+  cantidadIndet   Int     @map("cantidad_indet")
+  cantidadTotal   Int     @map("cantidad_total")
+  indiceOriginal  Int     @map("indice_original")
+  muestra         Muestra @relation(fields: [muestraId], references: [id])
 
   @@unique([muestraId, tallaMm])
   @@index([muestraId])
@@ -467,10 +400,8 @@ model MuestraDetalleTalla {
 }
 
 model Submuestra {
-  id        String  @id @default(uuid()) @db.Uuid
-  muestra   Muestra @relation(fields: [muestraId], references: [id])
-  muestraId String  @map("muestra_id") @db.Uuid
-
+  id                    String  @id @default(uuid()) @db.Uuid
+  muestraId             String  @map("muestra_id") @db.Uuid
   numeroEjemplar        Int     @map("numero_ejemplar")
   largoTotal            Int?    @map("largo_total")
   largoEstandar         Int?    @map("largo_estandar")
@@ -481,6 +412,7 @@ model Submuestra {
   replecion             Int?
   contenidoEstomacal    String? @map("contenido_estomacal")
   observacionesEjemplar String? @map("observaciones_ejemplar")
+  muestra               Muestra @relation(fields: [muestraId], references: [id])
 
   @@unique([muestraId, numeroEjemplar])
   @@index([muestraId])
@@ -488,19 +420,17 @@ model Submuestra {
 }
 
 model Produccion {
-  id      String @id @default(uuid()) @db.Uuid
-  marea   Marea  @relation(fields: [mareaId], references: [id])
-  mareaId String @map("marea_id") @db.Uuid
-
-  especie   Especie @relation(fields: [especieId], references: [id])
-  especieId String  @map("especie_id") @db.Uuid
-
+  id               String   @id @default(uuid()) @db.Uuid
+  mareaId          String   @map("marea_id") @db.Uuid
+  especieId        String   @map("especie_id") @db.Uuid
   fecha            DateTime @db.Date
   producto         String?
   categoria        String?
   factorConversion Float?   @map("factor_conversion")
   kgProduccion     Float    @map("kg_produccion")
   operarios        Int?
+  especie          Especie  @relation(fields: [especieId], references: [id])
+  marea            Marea    @relation(fields: [mareaId], references: [id])
 
   @@unique([mareaId, especieId, fecha, producto, categoria])
   @@index([mareaId])
@@ -508,14 +438,12 @@ model Produccion {
 }
 
 model BuqueTrayectoria {
-  id      String @id @default(uuid()) @db.Uuid
-  buque   Buque  @relation(fields: [buqueId], references: [id])
-  buqueId String @unique @map("buque_id") @db.Uuid
-
-  origen   String? // 'SEGUIMIENTO_SATELITAL'
+  id       String                  @id @default(uuid()) @db.Uuid
+  buqueId  String                  @unique @map("buque_id") @db.Uuid
+  origen   String?
   metadata Json?
-
-  puntos BuqueTrayectoriaPunto[]
+  puntos   BuqueTrayectoriaPunto[]
+  buque    Buque                   @relation(fields: [buqueId], references: [id])
 
   @@index([buqueId])
   @@map("buque_trayectorias")
@@ -523,17 +451,15 @@ model BuqueTrayectoria {
 
 model BuqueTrayectoriaPunto {
   id            String           @id @default(uuid()) @db.Uuid
-  trayectoria   BuqueTrayectoria @relation(fields: [trayectoriaId], references: [id])
   trayectoriaId String           @map("trayectoria_id") @db.Uuid
-
-  buque   Buque  @relation(fields: [buqueId], references: [id])
-  buqueId String @map("buque_id") @db.Uuid
-
-  timestamp DateTime @db.Timestamptz
-  lat       Float
-  lon       Float
-  velocidad Float?
-  rumbo     Int?
+  buqueId       String           @map("buque_id") @db.Uuid
+  timestamp     DateTime         @db.Timestamptz(6)
+  lat           Float
+  lon           Float
+  velocidad     Float?
+  rumbo         Int?
+  buque         Buque            @relation(fields: [buqueId], references: [id])
+  trayectoria   BuqueTrayectoria @relation(fields: [trayectoriaId], references: [id])
 
   @@unique([buqueId, timestamp])
   @@index([trayectoriaId, timestamp])
@@ -542,45 +468,36 @@ model BuqueTrayectoriaPunto {
 }
 
 model EstadoMarea {
-  id                   String  @id @default(uuid()) @db.Uuid
-  codigo               String  @unique
+  id                   String            @id @default(uuid()) @db.Uuid
+  codigo               String            @unique
   nombre               String
   descripcion          String?
-  categoria            String // 'PENDIENTE' | 'EN_CURSO' | 'COMPLETADO' | 'CANCELADO'
+  categoria            String
   orden                Int
-  esInicial            Boolean @default(false) @map("es_inicial")
-  esFinal              Boolean @default(false) @map("es_final")
-  permiteCargaArchivos Boolean @default(false) @map("permite_carga_archivos")
-  permiteCorreccion    Boolean @default(false) @map("permite_correccion")
-  permiteInforme       Boolean @default(false) @map("permite_informe")
-  activo               Boolean @default(true)
-
-  mareas           Marea[]
-  movimientosDesde MareaMovimiento[] @relation("EstadoDesde")
-  movimientosHasta MareaMovimiento[] @relation("EstadoHasta")
+  esInicial            Boolean           @default(false) @map("es_inicial")
+  esFinal              Boolean           @default(false) @map("es_final")
+  permiteCargaArchivos Boolean           @default(false) @map("permite_carga_archivos")
+  permiteCorreccion    Boolean           @default(false) @map("permite_correccion")
+  permiteInforme       Boolean           @default(false) @map("permite_informe")
+  activo               Boolean           @default(true)
+  mareas               Marea[]
+  movimientosDesde     MareaMovimiento[] @relation("EstadoDesde")
+  movimientosHasta     MareaMovimiento[] @relation("EstadoHasta")
 
   @@map("estados_marea")
 }
 
 model ErrorLog {
   id        String   @id @default(uuid()) @db.Uuid
-  timestamp DateTime @default(now()) @db.Timestamptz
-  
-  // Nivel y Origen
-  level     String   // 'ERROR' | 'WARN' | 'CRITICAL'
-  source    String   // 'BACKEND' | 'DATABASE' | 'FRONTEND'
-  context   String?  // El controlador o servicio que originó el error
-  
-  // Información del Usuario
+  timestamp DateTime @default(now()) @db.Timestamptz(6)
+  level     String
+  source    String
+  context   String?
   userId    String?  @db.Uuid
   userEmail String?
-
-  // Detalle del Error
   message   String
   stack     String?
-  detail    Json?    // Respuesta completa de la DB o payload original
-  
-  // Contexto HTTP (opcional)
+  detail    Json?
   path      String?
   method    String?
   ip        String?

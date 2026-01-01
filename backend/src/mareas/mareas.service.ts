@@ -161,15 +161,16 @@ export class MareasService {
     }
 
     async create(createMareaDto: CreateMareaDto, user: User) {
-        const { buqueId, anioMarea, nroMarea, pesqueriaId, observadorId, arteId, fechaZarpadaEstimada, tipoMarea = 'COMERCIAL', titulo, descripcion } = createMareaDto;
+        const { buqueId, anioMarea, nroMarea, pesqueriaId, observadorId, arteId, fechaZarpadaEstimada, tipoMarea = 'MC', titulo, descripcion } = createMareaDto;
 
-        const existing = await this.prisma.marea.findUnique({
+        const existing = await this.prisma.marea.findMany({
             where: {
-                identificadorMarea: { anioMarea, nroMarea, buqueId, tipoMarea }
-            }
+                anioMarea, nroMarea, buqueId, tipoMarea
+            },
+            take: 1
         });
 
-        if (existing) {
+        if (existing.length > 0) {
             throw new Error(`La marea ${tipoMarea}-${nroMarea}-${anioMarea} para este buque ya existe.`);
         }
 

@@ -7,13 +7,17 @@ import {
     Logger,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
+import { JwtService } from '@nestjs/jwt';
 import { ErrorLogsService } from '../error-logs/error-logs.service';
 
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
     private readonly logger = new Logger('AllExceptionsFilter');
 
-    constructor(private readonly errorLogsService: ErrorLogsService) { }
+    constructor(
+        private readonly errorLogsService: ErrorLogsService,
+        private readonly jwtService: JwtService,
+    ) { }
 
     async catch(exception: any, host: ArgumentsHost) {
         const ctx = host.switchToHttp();
@@ -29,7 +33,25 @@ export class AllExceptionsFilter implements ExceptionFilter {
         const stack = exception.stack;
 
         // Extraer información del usuario si está autenticado
-        const user = (request as any).user;
+        let user = (request as any).user;
+
+        // Si no hay usuario (ej: 404), intentamos decodificar el token manualmente
+        if (!user) {
+            const authHeader = request.headers.authorization;
+            if (authHeader && authHeader.startsWith('Bearer ')) {
+                const token = authHeader.split(' ')[1];
+                try {
+                    // Usamos decode porque solo queremos la info para el log, 
+                    // no necesariamente validar el token aquí (eso lo hace el guard si llega)
+                    user = this.jwtService.decode(token);
+                } catch (e) {
+                    // Ignoramos errores de decodificación
+                }
+            }
+        }
+
+        // Mejorar detección de IP (considerando proxies/forwarding)
+        const ip = (request.headers['x-forwarded-for'] as string) || request.ip || request.connection.remoteAddress;
 
         // Registrar el error en la DB
         await this.errorLogsService.create({
@@ -48,7 +70,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
             },
             path: request.url,
             method: request.method,
-            ip: request.ip,
+            ip,
         });
 
         // Respuesta simplificada para el usuario
