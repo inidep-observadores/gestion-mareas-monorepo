@@ -41,4 +41,8 @@ export class CreateMareaDto {
     @IsString()
     @IsOptional()
     descripcion?: string;
+
+    @IsInt()
+    @IsOptional()
+    diasEstimados?: number;
 }

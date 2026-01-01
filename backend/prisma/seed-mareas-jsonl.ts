@@ -127,7 +127,7 @@ async function main() {
     console.log(`Procesando ${records.length} registros...`);
 
     for (const data of records) {
-        const { nroMarea, buqueName, obsName, especieStr, estadoStr, zarpadaEstimada, empresa, etapas } = data;
+        const { nroMarea, buqueName, obsName, especieStr, estadoStr, zarpadaEstimada, empresa, etapas, diasEstimados } = data;
 
         const buque = getBuque(buqueName);
         const observador = getObservador(obsName);
@@ -162,6 +162,7 @@ async function main() {
                         tipoMarea: 'MC',
                         observaciones: `Importada de JSONL. Empresa: ${empresa}. Especie: ${especieStr}`,
                         fechaZarpadaEstimada: safeDate(zarpadaEstimada),
+                        diasEstimados,
                     }
                 });
 

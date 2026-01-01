@@ -220,6 +220,7 @@ model Marea {
   fechaZarpadaEstimada     DateTime?         @map("fecha_zarpada_estimada") @db.Timestamptz(6)
   fechaInicioObservador    DateTime?         @map("fecha_inicio_observador") @db.Timestamptz(6)
   fechaFinObservador       DateTime?         @map("fecha_fin_observador") @db.Timestamptz(6)
+  diasEstimados            Int?              @map("dias_estimados")
   diasZonaAustral          Int?              @map("dias_zona_austral")
   tipoCalculoZonaAustral   String            @default("AUTOMATICO") @map("tipo_calculo_zona_austral")
   titulo                   String?

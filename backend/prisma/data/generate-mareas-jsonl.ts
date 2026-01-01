@@ -55,8 +55,11 @@ async function generateJsonl() {
         const buqueName = row[2]?.trim();
         const empresa = row[3]?.trim();
         const zarpadaEstimada = row[4]?.trim();
+        const diasEstimadosStr = row[5]?.trim(); // "días estimados" is at index 5
         const especieStr = row[7]?.trim();
         const estadoStr = row[9]?.trim();
+
+        const diasEstimados = diasEstimadosStr ? parseInt(diasEstimadosStr) : null;
 
         const etapas = [];
         for (let e = 1; e <= 7; e++) {
@@ -85,6 +88,7 @@ async function generateJsonl() {
             especieStr,
             estadoStr,
             zarpadaEstimada,
+            diasEstimados: isNaN(diasEstimados) ? null : diasEstimados,
             empresa,
             etapas
         });
