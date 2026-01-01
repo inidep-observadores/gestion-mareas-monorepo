@@ -14,6 +14,17 @@ async function main() {
   console.log('Seeding database...');
 
   // Limpiar datos existentes respetando restricciones de integridad
+  await prisma.muestraDetalleTalla.deleteMany();
+  await prisma.submuestra.deleteMany();
+  await prisma.muestra.deleteMany();
+  await prisma.captura.deleteMany();
+  await prisma.lance.deleteMany();
+  await prisma.mareaEtapa.deleteMany();
+  await prisma.mareaArchivo.deleteMany();
+  await prisma.mareaMovimiento.deleteMany();
+  await prisma.produccion.deleteMany();
+  await prisma.marea.deleteMany();
+
   await prisma.productImage.deleteMany();
   await prisma.product.deleteMany();
   await prisma.observadorPesqueria.deleteMany();
@@ -26,22 +37,23 @@ async function main() {
   await prisma.tipoFlota.deleteMany();
   await prisma.errorLog.deleteMany();
   await prisma.estadoMarea.deleteMany();
+  await prisma.passwordResetToken.deleteMany();
   await prisma.user.deleteMany();
 
   const estadosMareaData = [
-    { codigo: 'DESIGNADA', nombre: 'Designada', categoria: 'PENDIENTE', orden: 1, esInicial: true, esFinal: false, permiteCargaArchivos: false, permiteCorreccion: false, permiteInforme: false },
-    { codigo: 'EN_EJECUCION', nombre: 'En ejecución', categoria: 'PENDIENTE', orden: 2, esInicial: false, esFinal: false, permiteCargaArchivos: false, permiteCorreccion: false, permiteInforme: false },
-    { codigo: 'ESPERANDO_ENTREGA', nombre: 'Esperando entrega de datos', categoria: 'PENDIENTE', orden: 3, esInicial: false, esFinal: false, permiteCargaArchivos: false, permiteCorreccion: false, permiteInforme: false },
-    { codigo: 'ENTREGADA_RECIBIDA', nombre: 'Entregada / Recibida', categoria: 'PENDIENTE', orden: 4, esInicial: false, esFinal: false, permiteCargaArchivos: true, permiteCorreccion: false, permiteInforme: false },
-    { codigo: 'VERIFICACION_INICIAL', nombre: 'Verificación inicial', categoria: 'EN_CURSO', orden: 5, esInicial: false, esFinal: false, permiteCargaArchivos: true, permiteCorreccion: false, permiteInforme: false },
-    { codigo: 'EN_CORRECCION', nombre: 'En corrección interna', categoria: 'EN_CURSO', orden: 6, esInicial: false, esFinal: false, permiteCargaArchivos: true, permiteCorreccion: true, permiteInforme: false },
-    { codigo: 'DELEGADA_EXTERNA', nombre: 'Delegada / En espera externa', categoria: 'EN_CURSO', orden: 7, esInicial: false, esFinal: false, permiteCargaArchivos: true, permiteCorreccion: false, permiteInforme: false },
-    { codigo: 'PENDIENTE_DE_INFORME', nombre: 'Pendiente de informe', categoria: 'EN_CURSO', orden: 8, esInicial: false, esFinal: false, permiteCargaArchivos: false, permiteCorreccion: false, permiteInforme: true },
-    { codigo: 'ESPERANDO_REVISION', nombre: 'Esperando revisión de informe', categoria: 'EN_CURSO', orden: 9, esInicial: false, esFinal: false, permiteCargaArchivos: false, permiteCorreccion: false, permiteInforme: true },
-    { codigo: 'PARA_PROTOCOLIZAR', nombre: 'Para protocolizar', categoria: 'EN_CURSO', orden: 10, esInicial: false, esFinal: false, permiteCargaArchivos: false, permiteCorreccion: false, permiteInforme: true },
-    { codigo: 'ESPERANDO_PROTOCOLIZACION', nombre: 'Esperando protocolización', categoria: 'EN_CURSO', orden: 11, esInicial: false, esFinal: false, permiteCargaArchivos: false, permiteCorreccion: false, permiteInforme: true },
-    { codigo: 'PROTOCOLIZADA', nombre: 'Protocolizada / Finalizada', categoria: 'COMPLETADO', orden: 12, esInicial: false, esFinal: true, permiteCargaArchivos: false, permiteCorreccion: false, permiteInforme: true },
-    { codigo: 'CANCELADA', nombre: 'Cancelada / Desestimada', categoria: 'CANCELADO', orden: 13, esInicial: false, esFinal: true, permiteCargaArchivos: false, permiteCorreccion: false, permiteInforme: false }
+    { codigo: 'DESIGNADA', nombre: 'Designada', categoria: 'PENDIENTE', orden: 1, esInicial: true, esFinal: false, permiteCargaArchivos: false, permiteCorreccion: false, permiteInforme: false, mostrarEnPanel: true },
+    { codigo: 'EN_EJECUCION', nombre: 'En ejecución', categoria: 'PENDIENTE', orden: 2, esInicial: false, esFinal: false, permiteCargaArchivos: false, permiteCorreccion: false, permiteInforme: false, mostrarEnPanel: true },
+    { codigo: 'ESPERANDO_ENTREGA', nombre: 'Esperando entrega de datos', categoria: 'PENDIENTE', orden: 3, esInicial: false, esFinal: false, permiteCargaArchivos: false, permiteCorreccion: false, permiteInforme: false, mostrarEnPanel: true },
+    { codigo: 'ENTREGADA_RECIBIDA', nombre: 'Entregada / Recibida', categoria: 'PENDIENTE', orden: 4, esInicial: false, esFinal: false, permiteCargaArchivos: true, permiteCorreccion: false, permiteInforme: false, mostrarEnPanel: true },
+    { codigo: 'VERIFICACION_INICIAL', nombre: 'Verificación inicial', categoria: 'EN_CURSO', orden: 5, esInicial: false, esFinal: false, permiteCargaArchivos: true, permiteCorreccion: false, permiteInforme: false, mostrarEnPanel: true },
+    { codigo: 'EN_CORRECCION', nombre: 'En corrección interna', categoria: 'EN_CURSO', orden: 6, esInicial: false, esFinal: false, permiteCargaArchivos: true, permiteCorreccion: true, permiteInforme: false, mostrarEnPanel: true },
+    { codigo: 'DELEGADA_EXTERNA', nombre: 'Delegada / En espera externa', categoria: 'EN_CURSO', orden: 7, esInicial: false, esFinal: false, permiteCargaArchivos: true, permiteCorreccion: false, permiteInforme: false, mostrarEnPanel: false },
+    { codigo: 'PENDIENTE_DE_INFORME', nombre: 'Pendiente de informe', categoria: 'EN_CURSO', orden: 8, esInicial: false, esFinal: false, permiteCargaArchivos: false, permiteCorreccion: false, permiteInforme: true, mostrarEnPanel: true },
+    { codigo: 'ESPERANDO_REVISION', nombre: 'Esperando revisión de informe', categoria: 'EN_CURSO', orden: 9, esInicial: false, esFinal: false, permiteCargaArchivos: false, permiteCorreccion: false, permiteInforme: true, mostrarEnPanel: false },
+    { codigo: 'PARA_PROTOCOLIZAR', nombre: 'Para protocolizar', categoria: 'EN_CURSO', orden: 10, esInicial: false, esFinal: false, permiteCargaArchivos: false, permiteCorreccion: false, permiteInforme: true, mostrarEnPanel: false },
+    { codigo: 'ESPERANDO_PROTOCOLIZACION', nombre: 'Esperando protocolización', categoria: 'EN_CURSO', orden: 11, esInicial: false, esFinal: false, permiteCargaArchivos: false, permiteCorreccion: false, permiteInforme: true, mostrarEnPanel: false },
+    { codigo: 'PROTOCOLIZADA', nombre: 'Protocolizada / Finalizada', categoria: 'COMPLETADO', orden: 12, esInicial: false, esFinal: true, permiteCargaArchivos: false, permiteCorreccion: false, permiteInforme: true, mostrarEnPanel: false },
+    { codigo: 'CANCELADA', nombre: 'Cancelada / Desestimada', categoria: 'CANCELADO', orden: 13, esInicial: false, esFinal: true, permiteCargaArchivos: false, permiteCorreccion: false, permiteInforme: false, mostrarEnPanel: false }
   ];
 
   console.log('Seeding EstadosMarea...');

@@ -479,6 +479,7 @@ model EstadoMarea {
   permiteCargaArchivos Boolean           @default(false) @map("permite_carga_archivos")
   permiteCorreccion    Boolean           @default(false) @map("permite_correccion")
   permiteInforme       Boolean           @default(false) @map("permite_informe")
+  mostrarEnPanel       Boolean           @default(false) @map("mostrar_en_panel")
   activo               Boolean           @default(true)
   mareas               Marea[]
   movimientosDesde     MareaMovimiento[] @relation("EstadoDesde")
