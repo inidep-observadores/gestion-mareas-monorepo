@@ -1,4 +1,4 @@
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import mareasService from '../services/mareas.service';
 import type { MareaListItem, MareaContext } from '../services/mareas.service';
 
@@ -8,6 +8,7 @@ export function useMareas() {
     const kpis = ref<any[]>([]);
     const mareas = ref<MareaListItem[]>([]);
     const selectedMareaContext = ref<MareaContext | null>(null);
+    const hiddenStates = ref<Set<string>>(new Set());
 
     const fetchDashboard = async () => {
         loading.value = true;
@@ -60,6 +61,20 @@ export function useMareas() {
         }
     };
 
+    const toggleStateVisibility = (codigo: string) => {
+        const next = new Set(hiddenStates.value);
+        if (next.has(codigo)) {
+            next.delete(codigo);
+        } else {
+            next.add(codigo);
+        }
+        hiddenStates.value = next;
+    };
+
+    const filteredMareas = computed(() => {
+        return mareas.value.filter(m => !hiddenStates.value.has(m.estado_codigo));
+    });
+
     return {
         loading,
         error,
@@ -69,6 +84,9 @@ export function useMareas() {
         fetchDashboard,
         fetchMareaContext,
         executeAction,
-        createMarea
+        createMarea,
+        hiddenStates,
+        filteredMareas,
+        toggleStateVisibility
     };
 }
