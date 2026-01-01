@@ -12,6 +12,7 @@ import { FilesModule } from './files/files.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { CatalogosModule } from './catalogos/catalogos.module';
+import { MareasModule } from './mareas/mareas.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { CatalogosModule } from './catalogos/catalogos.module';
     UsersModule,
 
     CatalogosModule,
+    MareasModule,
 
   ],
 })

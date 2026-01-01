@@ -38,8 +38,8 @@ export class AuthService {
 
       return {
         user: result,
-        token: this.getJwtToken({ id: user.id }),
-        refreshToken: this.getRefreshJwtToken({ id: user.id }),
+        token: this.getJwtToken({ id: user.id, email: user.email }),
+        refreshToken: this.getRefreshJwtToken({ id: user.id, email: user.email }),
       };
     } catch (error) {
       this.handleDBErrors(error);
@@ -62,8 +62,8 @@ export class AuthService {
 
     return {
       user: result,
-      token: this.getJwtToken({ id: user.id }),
-      refreshToken: this.getRefreshJwtToken({ id: user.id }),
+      token: this.getJwtToken({ id: user.id, email: user.email }),
+      refreshToken: this.getRefreshJwtToken({ id: user.id, email: user.email }),
     };
   }
 
@@ -77,7 +77,7 @@ export class AuthService {
 
     return {
       user: rest,
-      token: this.getJwtToken({ id: user.id }),
+      token: this.getJwtToken({ id: user.id, email: user.email }),
     };
   }
 
@@ -223,8 +223,8 @@ export class AuthService {
 
       return {
         user: rest,
-        token: this.getJwtToken({ id: user.id }),
-        refreshToken: this.getRefreshJwtToken({ id: user.id }),
+        token: this.getJwtToken({ id: user.id, email: user.email }),
+        refreshToken: this.getRefreshJwtToken({ id: user.id, email: user.email }),
       };
     } catch (error) {
       throw new UnauthorizedException('Token de refresco inválido o expirado');

@@ -1,20 +1,20 @@
 <template>
-  <AdminDashboardLayout 
-    title="Auditoría de Errores" 
+  <AdminDashboardLayout
+    title="Auditoría de Errores"
     description="Seguimiento detallado de fallos del sistema y excepciones del backend"
   >
     <div class="flex flex-col md:flex-row gap-6 h-[calc(100vh-220px)]">
-      
+
       <!-- Lista de Logs -->
-      <div 
+      <div
         class="w-full md:w-[380px] flex flex-col bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden"
       >
         <div class="p-4 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center bg-gray-50/50 dark:bg-gray-800/50">
           <h2 class="text-lg font-bold text-gray-800 dark:text-white flex items-center gap-2">
             Historial de Errores
           </h2>
-          <button 
-            @click="fetchErrorLogs" 
+          <button
+            @click="fetchErrorLogs"
             class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
             :class="{ 'animate-spin': isLoading }"
           >
@@ -26,25 +26,25 @@
           <div v-if="errorLogs.length === 0 && !isLoading" class="p-8 text-center text-gray-400">
             No se han registrado errores
           </div>
-          
-          <div 
-            v-for="log in errorLogs" 
+
+          <div
+            v-for="log in errorLogs"
             :key="log.id"
             @click="selectLog(log)"
             class="p-4 border-b border-gray-100 dark:border-gray-800 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-all"
             :class="{ 'bg-blue-50/50 dark:bg-blue-900/10 border-l-4 border-l-blue-600': selectedLog?.id === log.id }"
           >
             <div class="flex justify-between items-start mb-2">
-              <span 
-                class="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider shadow-sm" 
+              <span
+                class="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider shadow-sm"
                 :class="getLevelClass(log.level)"
               >
                 {{ log.level }}
               </span>
               <span class="text-[10px] font-medium text-gray-400 font-mono">{{ formatDateShort(log.timestamp) }}</span>
             </div>
-            <div 
-              class="font-bold text-xs line-clamp-2 mb-2 leading-relaxed" 
+            <div
+              class="font-bold text-xs line-clamp-2 mb-2 leading-relaxed"
               :class="selectedLog?.id === log.id ? 'text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-gray-300'"
             >
               {{ log.message }}
@@ -58,7 +58,7 @@
       </div>
 
       <!-- Detalle del Log -->
-      <div 
+      <div
         class="flex-1 bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden flex flex-col"
       >
         <template v-if="selectedLog">
@@ -70,7 +70,7 @@
                     <span class="badge font-bold py-3 px-4 shadow-sm" :class="getLevelClass(selectedLog.level)">{{ selectedLog.level }}</span>
                     <span class="text-xs font-mono text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">ID: {{ selectedLog.id }}</span>
                 </div>
-                <h3 class="text-xl md:text-2xl font-black text-gray-900 dark:text-white leading-tight tracking-tight break-words">
+                <h3 class="text-base md:text-base text-gray-900 dark:text-white leading-tight tracking-tight">
                     {{ selectedLog.message }}
                 </h3>
               </div>
@@ -118,15 +118,15 @@
                   <h4 class="text-xs font-black uppercase tracking-widest text-gray-400 flex items-center gap-2">
                     <i class="pi pi-align-left text-blue-500"></i> Stack Trace
                   </h4>
-                  <button 
-                    @click="copyToClipboard(selectedLog.stack || '')" 
+                  <button
+                    @click="copyToClipboard(selectedLog.stack || '')"
                     class="btn btn-ghost btn-xs text-[10px] gap-2 hover:bg-blue-50 dark:hover:bg-blue-900/20"
                   >
                     <i class="pi pi-copy"></i> COPIAR STACK
                   </button>
                </div>
                <div class="relative group">
-                <pre 
+                <pre
                     class="bg-gray-900 text-gray-100 p-6 rounded-2xl text-[11px] overflow-x-auto whitespace-pre-wrap leading-relaxed max-h-[400px] border border-gray-800 shadow-2xl font-mono custom-scrollbar"
                 >{{ selectedLog.stack }}</pre>
               </div>
@@ -155,7 +155,7 @@
             </section>
           </div>
         </template>
-        
+
         <div v-else class="flex-1 flex flex-col items-center justify-center text-gray-300 p-12 bg-gray-50/10 dark:bg-gray-900/10">
           <div class="w-40 h-40 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mb-8 shadow-inner animate-pulse">
             <i class="pi pi-shield text-6xl opacity-20"></i>
@@ -185,8 +185,8 @@ const getLevelClass = (level: string) => {
 
 const formatDateShort = (dateStr: string) => {
   const date = new Date(dateStr);
-  return date.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }) + 
-         ' · ' + 
+  return date.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }) +
+         ' · ' +
          date.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' });
 }
 
@@ -224,7 +224,7 @@ const copyToClipboard = (text: string) => {
   display: -webkit-box;
   -webkit-line-clamp: 2;
   line-clamp: 2;
-  -webkit-box-orient: vertical;  
+  -webkit-box-orient: vertical;
   overflow: hidden;
 }
 
