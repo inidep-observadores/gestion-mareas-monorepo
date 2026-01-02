@@ -18,7 +18,7 @@ export class CreateObservadorDto {
     tipoObservador: string; // 'OBSERVADOR' | 'TECNICO'
 
     @IsString()
-    tipoContrato: string; // 'LEY MARCO' | 'MONOTRIBUTISTA' | 'PLANTA PERMANENTE'
+    tipoContrato: string; // 'LEY MARCO' | '1109' | 'MONOTRIBUTISTA' | 'PLANTA PERMANENTE'
 
     @IsBoolean()
     @IsOptional()

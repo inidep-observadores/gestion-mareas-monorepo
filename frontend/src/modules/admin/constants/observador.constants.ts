@@ -16,6 +16,7 @@ export const TIPO_OBSERVADOR_LABELS: Record<string, string> = {
 
 export const TIPO_CONTRATO_LABELS: Record<string, string> = {
     'LEY MARCO': 'Ley Marco',
+    '1109': 'Decreto 1109',
     'MONOTRIBUTISTA': 'Monotributista',
     'PLANTA PERMANENTE': 'Planta Permanente',
 };
