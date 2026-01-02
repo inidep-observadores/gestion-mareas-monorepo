@@ -4,6 +4,7 @@
     :title="isEditing ? 'Editar Buque' : 'Nuevo Buque'"
     @close="emit('close')"
     maxWidth="5xl"
+    variant="danger"
   >
     <form @submit.prevent="handleSubmit" class="space-y-6">
         <!-- Información Principal -->

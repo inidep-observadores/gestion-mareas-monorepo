@@ -25,7 +25,7 @@
    pnpm start:dev
    ```
 
-6. Ejecutar el seed oficial de Prisma para cargar datos de prueba:
+6. Ejecutar el seed oficial de Prisma para cargar datos de prueba (catálogos + mareas 2025):
 
    ```bash
    pnpm prisma db seed
@@ -35,6 +35,12 @@
 
    ```bash
    pnpm --filter sigma-backend -- prisma db seed
+   ```
+
+7. (Opcional) Si solo desea reimportar las mareas sin tocar los catálogos, puede ejecutar el seed específico:
+
+   ```bash
+   pnpm ts-node prisma/seed-mareas-jsonl.ts
    ```
 
 # SMTP

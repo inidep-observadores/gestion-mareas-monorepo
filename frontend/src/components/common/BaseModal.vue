@@ -2,7 +2,12 @@
   <div v-if="show" class="relative z-50" aria-labelledby="modal-title" role="dialog" aria-modal="true">
     <!-- Backdrop -->
     <div 
-        class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" 
+        :class="[
+          'fixed inset-0 transition-opacity',
+          variant === 'danger' 
+            ? 'bg-red-950/40 backdrop-blur-md' 
+            : 'bg-gray-500 bg-opacity-75'
+        ]" 
         @click="emit('close')"
     ></div>
 
@@ -16,11 +21,17 @@
         <div
           :class="[
               'relative transform overflow-hidden rounded-xl bg-white text-left shadow-xl transition-all w-full sm:my-8 dark:bg-gray-800',
+              variant === 'danger' ? 'border border-red-200/50 dark:border-red-900/50' : '',
               maxWidthClass
           ]"
           @click.stop
         >
-          <div class="bg-white px-4 pb-4 pt-5 sm:p-6 dark:bg-gray-800">
+          <div 
+            :class="[
+              'px-4 pb-4 pt-5 sm:p-6',
+              variant === 'danger' ? 'bg-red-50/30 dark:bg-red-950/20' : 'bg-white dark:bg-gray-800'
+            ]"
+          >
             <!-- Header -->
             <div class="flex items-center justify-between mb-4">
               <h3 class="text-lg font-medium leading-6 text-gray-900 dark:text-white" id="modal-title">
@@ -55,9 +66,11 @@ const props = withDefaults(defineProps<{
   title?: string;
   maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl' | '6xl' | '7xl' | 'full';
   isSidebarAware?: boolean;
+  variant?: 'default' | 'danger';
 }>(), {
   isSidebarAware: true,
-  maxWidth: 'lg'
+  maxWidth: 'lg',
+  variant: 'default'
 });
 
 const emit = defineEmits(['close']);

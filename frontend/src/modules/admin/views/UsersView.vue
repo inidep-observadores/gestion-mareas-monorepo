@@ -18,7 +18,7 @@
         </template>
 
         <template #table-row="{ item: user }">
-          <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+          <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-gray-400">
               <div class="flex items-center gap-3">
                    <img :src="getFullImageUrl(user.avatarUrl)" class="w-8 h-8 rounded-full object-cover" alt="Avatar">
                    <div>
@@ -63,7 +63,7 @@
             <div class="flex items-center gap-4 mb-4">
                 <img :src="getFullImageUrl(user.avatarUrl)" class="w-12 h-12 rounded-full object-cover shadow-sm" alt="Avatar">
                 <div class="flex-1 min-w-0">
-                    <div class="font-extrabold text-gray-900 dark:text-white truncate">{{ user.fullName }}</div>
+                    <div class="font-extrabold text-gray-900 dark:text-gray-400 truncate">{{ user.fullName }}</div>
                     <div class="text-sm text-gray-500 truncate">{{ user.email }}</div>
                 </div>
                 <span

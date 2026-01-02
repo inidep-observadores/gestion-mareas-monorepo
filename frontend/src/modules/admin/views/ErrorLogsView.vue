@@ -70,7 +70,7 @@
                     <span class="badge font-bold py-3 px-4 shadow-sm" :class="getLevelClass(selectedLog.level)">{{ selectedLog.level }}</span>
                     <span class="text-xs font-mono text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">ID: {{ selectedLog.id }}</span>
                 </div>
-                <h3 class="text-base md:text-base text-gray-900 dark:text-white leading-tight tracking-tight">
+                <h3 class="text-base md:text-base text-gray-900 dark:text-gray-400 leading-tight tracking-tight">
                     {{ selectedLog.message }}
                 </h3>
               </div>
