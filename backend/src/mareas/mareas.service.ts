@@ -296,10 +296,10 @@ export class MareasService {
         }));
     }
 
-    async executeAction(id: string, actionKey: string, user: User) {
+    async executeAction(id: string, actionKey: string, user: User, payload: any = {}) {
         const marea = await this.prisma.marea.findUnique({
             where: { id },
-            include: { estadoActual: true }
+            include: { estadoActual: true, etapas: { orderBy: { nroEtapa: 'asc' } } }
         });
 
         if (!marea) throw new NotFoundException('Marea no encontrada');
@@ -319,6 +319,31 @@ export class MareasService {
 
         // Ejecutar cambio de estado
         return await this.prisma.$transaction(async (tx) => {
+
+            // Logic for REGISTRAR_INICIO
+            if (actionKey === 'REGISTRAR_INICIO') {
+                if (!payload.fechaInicio) throw new Error('La fecha de inicio es requerida para iniciar la marea.');
+                const fechaInicio = new Date(payload.fechaInicio);
+
+                // Update Marea global start date
+                await tx.marea.update({
+                    where: { id },
+                    data: { fechaInicioObservador: fechaInicio }
+                });
+
+                // Update First Stage Departure
+                const etapa1 = marea.etapas[0];
+                if (etapa1) {
+                    const updateData: any = { fechaZarpada: fechaInicio };
+                    if (payload.puertoId) updateData.puertoZarpadaId = payload.puertoId;
+
+                    await tx.mareaEtapa.update({
+                        where: { id: etapa1.id },
+                        data: updateData
+                    });
+                }
+            }
+
             const mareaUpdated = await tx.marea.update({
                 where: { id },
                 data: {

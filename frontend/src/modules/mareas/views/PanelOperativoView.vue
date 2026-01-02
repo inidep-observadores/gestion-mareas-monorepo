@@ -174,6 +174,12 @@
       @open-detalle="goToDetalle"
       @action="executeActionFromSidebar"
     />
+
+    <IniciarMareaDialog
+       :show="showIniciarDialog"
+       @close="showIniciarDialog = false"
+       @confirm="handleInicioConfirm"
+    />
   </AdminLayout>
 </template>
 
@@ -182,6 +188,7 @@ import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import MareaContextSidebar from '../components/MareaContextSidebar.vue'
+import IniciarMareaDialog from '../components/IniciarMareaDialog.vue'
 import { useMareas } from '../composables/useMareas'
 import {
   ShipIcon,
@@ -213,6 +220,8 @@ const {
 // UI State
 const isSidebarOpen = ref(false)
 const selectedMarea = ref<any>(null)
+const showIniciarDialog = ref(false)
+const mareaToStart = ref<any>(null)
 
 // Map icons/colors to backend kpis
 const getKpiMeta = (codigo: string) => {
@@ -247,12 +256,29 @@ const openSidebar = async (marea: any) => {
 
 const executeActionFromSidebar = async (actionKey: string) => {
   if (!selectedMarea.value) return
+
+  if (actionKey === 'REGISTRAR_INICIO') {
+    mareaToStart.value = selectedMarea.value
+    showIniciarDialog.value = true
+    return
+  }
+
   try {
     await executeAction(selectedMarea.value.id, actionKey)
     // Sidebar se actualiza solo si fetchMareaContext está en executeAction del composable
   } catch (err) {
     console.error('Action failed:', err)
   }
+}
+
+const handleInicioConfirm = async (payload: any) => {
+    try {
+        await executeAction(mareaToStart.value.id, 'REGISTRAR_INICIO', payload)
+        showIniciarDialog.value = false
+        mareaToStart.value = null
+    } catch (err) {
+        console.error("Error iniciando marea", err)
+    }
 }
 
 const closeSidebar = () => {
