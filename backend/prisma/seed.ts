@@ -16,7 +16,7 @@ const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
-const normalize = (str: string, removeSpaces = false) => {
+const normalize = (str: string, sortWords = false) => {
   if (!str) return '';
   const normalized = str
     .toLowerCase()
@@ -25,7 +25,10 @@ const normalize = (str: string, removeSpaces = false) => {
     .replace(/[\u0300-\u036f]/g, '')
     .replace(/[^a-z0-9\s]/g, '');
 
-  return removeSpaces ? normalized.replace(/\s+/g, '') : normalized;
+  if (sortWords) {
+    return normalized.split(/\s+/).filter(w => w.length > 0).sort().join('');
+  }
+  return normalized;
 };
 
 const safeDate = (value: string | null | undefined) => {
@@ -33,6 +36,47 @@ const safeDate = (value: string | null | undefined) => {
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? null : date;
 };
+
+/**
+ * Extrae los contratos de los observadores del CSV de mareas corregido.
+ */
+function getObserverContractsFromCsv(): Record<string, string> {
+  const csvPath = path.join(__dirname, 'old_data/Mareas_2025_corregido.csv');
+  const rootCsvPath = path.join(process.cwd(), 'old_data/Mareas_2025_corregido.csv');
+  const actualPath = fs.existsSync(csvPath) ? csvPath : rootCsvPath;
+
+  if (!fs.existsSync(actualPath)) {
+    console.warn(`CSV not found at ${actualPath}, using defaults for contracts.`);
+    return {};
+  }
+
+  const content = fs.readFileSync(actualPath, 'utf8');
+  const lines = content.split('\n').filter((l) => l.trim());
+  const header = lines[0].split(';');
+  const obsIdx = header.indexOf('OBSERVADOR');
+  const contractIdx = header.indexOf('CONTRATO');
+
+  if (obsIdx === -1 || contractIdx === -1) {
+    console.warn('CSV columns for OBSERVADOR or CONTRATO not found.');
+    return {};
+  }
+
+  const contractMap: Record<string, string> = {};
+
+  for (let i = 1; i < lines.length; i++) {
+    const cols = lines[i].split(';');
+    const name = cols[obsIdx]?.trim();
+    const contract = cols[contractIdx]?.trim().toUpperCase();
+
+    if (name && contract) {
+      // Usamos el nombre normalizado como clave
+      const key = normalize(name, true);
+      contractMap[key] = contract;
+    }
+  }
+
+  return contractMap;
+}
 
 async function seedMareasFromJsonl() {
   const jsonlPath = path.join(__dirname, 'data/mareas_2025.jsonl');
@@ -365,12 +409,36 @@ async function main() {
 
     console.log(`Loading ${observadoresData.length} observadores...`);
 
-    // Using createMany for better performance
-    await prisma.observador.createMany({
-      data: observadoresData,
+    const csvContracts = getObserverContractsFromCsv();
+    console.log(`Matched ${Object.keys(csvContracts).length} unique observer names from CSV for contract refinement.`);
+
+    const refinedObservadores = observadoresData.map((obs: any) => {
+      const key = normalize(`${obs.nombre} ${obs.apellido}`, true);
+      const csvContract = csvContracts[key];
+
+      return {
+        ...obs,
+        tipoContrato: csvContract || obs.tipoContrato || 'LEY MARCO'
+      };
     });
 
-    console.log('Observadores seeded successfully!');
+    // Using createMany for better performance
+    await prisma.observador.createMany({
+      data: refinedObservadores,
+    });
+
+    // Sincronizar de vuelta al JSONL para que sea permanente
+    try {
+      const refinedJsonlContent = refinedObservadores
+        .map(obs => JSON.stringify(obs))
+        .join('\n');
+      fs.writeFileSync(jsonlPath, refinedJsonlContent);
+      console.log('observadores.jsonl updated with refined contract types.');
+    } catch (err) {
+      console.error('Failed to update observadores.jsonl:', err);
+    }
+
+    console.log('Observadores seeded successfully with CSV contract refinement!');
   } else {
     console.warn('observadores.jsonl not found, skipping observadores seeding.');
   }
