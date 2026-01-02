@@ -1,8 +1,9 @@
-import { Controller, Get, Param, Post, Query, Body } from '@nestjs/common';
+import { Controller, Get, Param, Post, Query, Body, Patch } from '@nestjs/common';
 import { MareasService } from './mareas.service';
 import { Auth, GetUser } from '../auth/decorators';
 import { User } from '@prisma/client';
 import { CreateMareaDto } from './dto/create-marea.dto';
+import { UpdateMareaDto } from './dto/update-marea.dto';
 
 @Controller('mareas')
 @Auth()
@@ -14,14 +15,24 @@ export class MareasController {
         return this.mareasService.getDashboardOperativo();
     }
 
-    @Get(':id/context')
-    getMareaContext(@Param('id') id: string) {
-        return this.mareasService.getMareaContext(id);
-    }
-
     @Get('search')
     search(@Query('q') q: string) {
         return this.mareasService.search(q);
+    }
+
+    @Get(':id')
+    findOne(@Param('id') id: string) {
+        return this.mareasService.findOne(id);
+    }
+
+    @Patch(':id')
+    update(@Param('id') id: string, @Body() updateMareaDto: UpdateMareaDto) {
+        return this.mareasService.update(id, updateMareaDto);
+    }
+
+    @Get(':id/context')
+    getMareaContext(@Param('id') id: string) {
+        return this.mareasService.getMareaContext(id);
     }
 
     @Post(':id/actions/:actionKey')
