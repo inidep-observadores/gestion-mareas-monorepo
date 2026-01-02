@@ -256,6 +256,11 @@ export class MareasService {
                 }
             },
             include: {
+                buque: {
+                    select: {
+                        nombreBuque: true
+                    }
+                },
                 etapas: {
                     orderBy: { nroEtapa: 'desc' },
                     take: 1,
@@ -266,15 +271,30 @@ export class MareasService {
             }
         });
 
-        const distributionMap = new Map<string, number>();
+        const distributionMap = new Map<string, { count: number; vessels: Map<string, string> }>();
 
         activeMareas.forEach((marea) => {
             const label = marea.etapas[0]?.pesqueria?.nombre ?? 'Sin pesquería';
-            distributionMap.set(label, (distributionMap.get(label) ?? 0) + 1);
+            const vesselName = marea.buque.nombreBuque;
+            const mareaCode = `${marea.tipoMarea}-${String(marea.nroMarea).padStart(3, '0')}-${String(marea.anioMarea).slice(-2)}`;
+
+            if (!distributionMap.has(label)) {
+                distributionMap.set(label, { count: 0, vessels: new Map() });
+            }
+
+            const item = distributionMap.get(label)!;
+            item.count++;
+            item.vessels.set(vesselName, mareaCode);
         });
 
         const distribution = Array.from(distributionMap.entries())
-            .map(([label, count]) => ({ label, count }))
+            .map(([label, data]) => ({
+                label,
+                count: data.count,
+                vessels: Array.from(data.vessels.entries())
+                    .map(([name, mareaCode]) => ({ name, mareaCode }))
+                    .sort((a, b) => a.name.localeCompare(b.name))
+            }))
             .sort((a, b) => b.count - a.count);
 
         return {
