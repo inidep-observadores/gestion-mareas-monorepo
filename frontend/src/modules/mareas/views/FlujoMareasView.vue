@@ -1,252 +1,240 @@
 <template>
   <AdminLayout 
-    title="Flujo de Trabajo de Mareas" 
-    description="Gestión centralizada de estados y operativas."
+    title="Workflow Manager" 
+    description="Gestión centralizada de misiones y estados operativos."
   >
-    <div class="relative min-h-[calc(100vh-100px)] z-1">
-      <!-- Filters and Navigation Actions -->
-      <div class="mb-6 flex justify-end">
-          <!-- View Toggle -->
-          <ViewToggle v-model="viewMode" :options="viewOptions" />
+    <div class="relative min-h-screen pb-20 animate-in fade-in duration-700">
+      
+      <!-- TOP ACTIONS & NAVIGATION -->
+      <div class="mb-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+        <div class="flex items-center gap-4">
+          <div class="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-900/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-800/50">
+            <GridIcon v-if="viewMode === 'kanban'" class="w-6 h-6" />
+            <ListIcon v-else class="w-6 h-6" />
+          </div>
+          <div>
+            <h2 class="text-lg font-black text-gray-900 dark:text-white uppercase tracking-tighter leading-none">Gestión de Flujo</h2>
+            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">Arrastre misiones para cambiar su estado</p>
+          </div>
+        </div>
+
+        <ViewToggle v-model="viewMode" :options="viewOptions" />
       </div>
 
-        <!-- Advanced Filter Bar -->
-        <FilterBar>
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-            <!-- Search -->
-            <div class="relative lg:col-span-1">
+      <!-- ADVANCED FILTERS -->
+      <FilterBar>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-6 items-end">
+          <!-- Main Search -->
+          <div class="lg:col-span-4">
+            <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block">Buscar Misión</label>
+            <div class="relative group">
               <input
                 v-model="searchQuery"
                 type="text"
-                placeholder="Buscar marea/buque..."
-                class="w-full px-4 py-2.5 border rounded-xl text-sm font-medium transition-all duration-200 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 placeholder:text-gray-400 dark:placeholder:text-gray-500"
+                placeholder="Buque u Observador..."
+                class="w-full px-5 py-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-2xl text-xs font-black placeholder:text-gray-400 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all outline-none"
               />
-            </div>
-
-            <!-- Filters -->
-            <SelectInput
-              v-model="filters.fishery"
-              :options="fisheryOptions"
-              placeholder="Flota (Todas)"
-            />
-            <SelectInput
-              v-model="filters.observer"
-              :options="observerOptions"
-              placeholder="Observador (Todos)"
-            />
-            <SelectInput
-              v-model="filters.fishery2"
-              :options="fishery2Options"
-              placeholder="Pesquería (Todas)"
-            />
-
-            <!-- Actions -->
-            <div class="flex items-center gap-2">
-              <button
-                class="flex-1 px-4 py-2.5 bg-brand-500 text-white text-sm font-medium rounded-xl hover:bg-brand-600 active:bg-brand-700 transition-all duration-200 shadow-sm hover:shadow-md"
-              >
-                Filtrar
-              </button>
-              <button
-                class="p-2.5 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-all duration-200"
-                title="Limpiar filtros"
-              >
-                <RefreshIcon class="w-5 h-5" />
-              </button>
+              <SearchIcon class="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-indigo-500 transition-colors" />
             </div>
           </div>
-        </FilterBar>
 
-      <!-- Main Content Area -->
-      <div
-        v-if="viewMode === 'kanban'"
-        class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl overflow-hidden shadow-sm"
-      >
-        <div class="flex gap-6 overflow-auto custom-scrollbar px-6 pb-8 pt-0 h-[calc(100vh-320px)]">
-          <div v-for="column in columns" :key="column.id" class="flex-shrink-0 w-80">
-            <div
-              class="sticky top-0 z-20 bg-white dark:bg-gray-900 pt-6 pb-4 mb-2 flex items-center justify-between"
-            >
-              <h3 class="font-bold text-gray-800 dark:text-gray-200 flex items-center gap-2">
+          <!-- Selectors -->
+          <div class="lg:col-span-2">
+            <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block">Flota</label>
+            <SelectInput v-model="filters.fishery" :options="fisheryOptions" placeholder="Todas" />
+          </div>
+          <div class="lg:col-span-2">
+            <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block">Pesquería</label>
+            <SelectInput v-model="filters.fishery2" :options="fishery2Options" placeholder="Todas" />
+          </div>
+          <div class="lg:col-span-2">
+            <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block">Observador</label>
+            <SelectInput v-model="filters.observer" :options="observerOptions" placeholder="Cualquiera" />
+          </div>
+
+          <!-- Quick Actions -->
+          <div class="lg:col-span-2 flex gap-2">
+            <button class="flex-1 bg-gray-900 dark:bg-white text-white dark:text-gray-900 px-4 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:scale-[1.02] transition-all active:scale-95 shadow-lg shadow-gray-500/10">
+              Aplicar
+            </button>
+            <button @click="resetFilters" class="p-3 bg-gray-50 dark:bg-gray-800 text-gray-400 hover:text-gray-600 rounded-2xl transition-colors border border-gray-100 dark:border-gray-700">
+              <RefreshIcon class="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+      </FilterBar>
+
+      <!-- KANBAN VIEW -->
+      <div v-if="viewMode === 'kanban'" class="flex gap-6 overflow-x-auto pb-10 custom-scrollbar-h h-[calc(100vh-350px)] min-h-[500px]">
+        <div v-for="(column, idx) in columns" :key="column.id" class="flex-shrink-0 w-[340px] flex flex-col group/col">
+          <!-- Column Header -->
+          <div class="mb-4 flex items-center justify-between px-2">
+            <div class="flex items-center gap-3">
+              <div class="w-2 h-2 rounded-full shadow-sm" :class="column.color"></div>
+              <h3 class="text-xs font-black text-gray-900 dark:text-white uppercase tracking-widest">
                 {{ column.title }}
-                <span
-                  class="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-xs text-gray-500"
-                  >{{ column.tasks.length }}</span
-                >
               </h3>
+              <span class="text-[10px] font-black tabular-nums bg-gray-100 dark:bg-gray-800 px-2.5 py-1 rounded-xl text-gray-500 border border-gray-100 dark:border-gray-700">
+                {{ column.tasks.length }}
+              </span>
             </div>
+            <button class="text-gray-300 hover:text-gray-600 dark:hover:text-gray-400 opacity-0 group-hover/col:opacity-100 transition-opacity">
+              <HorizontalDots class="w-4 h-4" />
+            </button>
+          </div>
 
-            <div class="relative group">
-              <VueDraggableNext
-                v-model="column.tasks"
-                group="mareas"
-                class="space-y-4 min-h-[150px] p-2 bg-gray-50/50 dark:bg-gray-800/20 rounded-xl transition-colors border border-transparent group-hover:border-gray-100 dark:group-hover:border-gray-800"
-                ghost-class="opacity-50"
-                @change="onDragChange($event, column.id)"
-              >
-                <div
-                  v-for="task in column.tasks"
-                  :key="task.id"
-                  class="bg-white dark:bg-gray-900 p-4 border border-gray-200 dark:border-gray-800 rounded-xl shadow-sm hover:shadow-md transition-shadow cursor-pointer active:cursor-grabbing group/card"
-                  @click="navigateToDetail(task.id)"
-                >
-                  <div class="flex justify-between items-start mb-2">
-                    <span
-                      class="text-xs font-mono text-gray-500 group-hover/card:text-brand-500 transition-colors"
-                      >{{ task.code }}</span
-                    >
-                    <span v-if="task.alert" class="text-red-500"
-                      ><WarningIcon class="w-4 h-4"
-                    /></span>
-                  </div>
-                  <h4 class="font-bold text-gray-800 dark:text-white mb-1">{{ task.vessel }}</h4>
-                  <p class="text-xs text-gray-500 mb-3">{{ task.date }}</p>
-                  <div class="flex items-center justify-between">
-                    <div class="flex -space-x-2">
-                      <div
-                        class="w-6 h-6 rounded-full bg-brand-500 border-2 border-white dark:border-gray-900 flex items-center justify-center text-[10px] text-white"
-                      >
-                        JD
-                      </div>
-                    </div>
-                    <div class="text-[10px] font-bold uppercase tracking-wider text-gray-400">
-                      {{ task.timeInState || '3 días' }}
-                    </div>
-                  </div>
-                </div>
-              </VueDraggableNext>
+          <!-- Draggable Container -->
+          <div class="flex-1 bg-gray-50/50 dark:bg-gray-900/40 rounded-[2.5rem] border border-gray-100 dark:border-gray-800/50 p-3 overflow-y-auto custom-scrollbar active:bg-gray-100/30 dark:active:bg-gray-800/20 transition-colors">
+            <VueDraggableNext
+              v-model="columns[idx].tasks"
+              group="mareas"
+              :tag="'div'"
+              class="space-y-4 min-h-[400px] pb-20"
+              ghost-class="opacity-10"
+              :animation="200"
+              @change="onDragChange($event, column.id)"
+            >
               <div
-                v-if="column.tasks.length === 0"
-                class="absolute inset-0 pointer-events-none flex items-center justify-center p-4"
+                v-for="task in column.tasks"
+                :key="task.id"
+                class="group bg-white dark:bg-gray-900 p-6 rounded-[2rem] border border-gray-50 dark:border-gray-800 shadow-sm hover:shadow-xl hover:border-indigo-100 dark:hover:border-indigo-900/30 transition-all duration-300 cursor-grab active:cursor-grabbing relative overflow-hidden"
+                @click="navigateToDetail(task.id)"
               >
-                <div
-                  class="w-full py-8 border-2 border-dashed border-gray-200 dark:border-gray-800 rounded-xl text-center text-sm text-gray-400"
-                >
-                  No hay mareas...
+                <!-- Card Glow Backdrop -->
+                <div class="absolute -right-10 -top-10 w-24 h-24 bg-indigo-500/5 blur-3xl rounded-full"></div>
+
+                <div class="flex justify-between items-start mb-4 relative z-10">
+                  <div class="flex flex-col">
+                    <span class="text-[9px] font-black text-indigo-500 uppercase tracking-widest mb-1">{{ task.code }}</span>
+                    <h4 class="text-xs font-black text-gray-900 dark:text-white uppercase group-hover:text-indigo-600 transition-colors">{{ task.vessel }}</h4>
+                  </div>
+                  <div v-if="task.alert" class="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)] animate-pulse"></div>
+                </div>
+
+                <div class="space-y-4 relative z-10">
+                   <div class="flex items-center gap-2 text-[10px] font-bold text-gray-400 uppercase">
+                      <CalenderIcon class="w-3.5 h-3.5" />
+                      {{ task.date }}
+                   </div>
+                   
+                   <div class="pt-4 border-t border-gray-50 dark:border-gray-800 flex items-center justify-between">
+                      <div class="flex -space-x-1.5 text-indigo-500">
+                        <div class="w-7 h-7 rounded-full bg-indigo-50 dark:bg-indigo-900/30 border-2 border-white dark:border-gray-900 flex items-center justify-center text-[8px] font-black uppercase">
+                          JD
+                        </div>
+                      </div>
+                      <span class="text-[9px] font-black text-gray-400 uppercase tracking-tighter bg-gray-50 dark:bg-gray-800 px-2 py-0.5 rounded-lg border border-gray-100 dark:border-gray-700/50">
+                        {{ task.timeInState || '3 días' }}
+                      </span>
+                   </div>
                 </div>
               </div>
-            </div>
+
+              <!-- Empty State Overlay inside Draggable -->
+              <div
+                v-if="column.tasks.length === 0"
+                class="absolute inset-0 flex items-center justify-center p-8 opacity-40 pointer-events-none"
+              >
+                <div class="text-center">
+                  <DocsIcon class="w-8 h-8 mx-auto mb-2 text-gray-300" />
+                  <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest italic">Vacío</span>
+                </div>
+              </div>
+            </VueDraggableNext>
           </div>
         </div>
       </div>
 
-      <!-- List Mode -->
-      <div v-else class="space-y-6">
-        <div
-          v-for="group in columns"
-          :key="group.id"
-          class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl overflow-hidden shadow-sm"
-        >
+      <!-- LIST VIEW -->
+      <div v-else class="space-y-6 max-w-6xl mx-auto">
+        <div v-for="(statusGroup, idx) in columns" :key="statusGroup.id" class="bg-white dark:bg-gray-900 border border-gray-50 dark:border-gray-800 rounded-[2.5rem] overflow-hidden shadow-sm hover:shadow-lg transition-all">
+          <!-- Group Header -->
           <div
-            class="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between cursor-pointer"
-            @click="group.expanded = !group.expanded"
+            class="px-8 py-5 flex items-center justify-between cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors border-b border-transparent"
+            :class="{ 'border-gray-50 dark:border-gray-800 bg-gray-50/30 dark:bg-gray-800/20': statusGroup.expanded }"
+            @click="statusGroup.expanded = !statusGroup.expanded"
           >
-            <div class="flex items-center gap-3">
-              <div :class="['w-2 h-2 rounded-full', group.color]"></div>
-              <h2 class="font-bold text-gray-800 dark:text-white">{{ group.title }}</h2>
-              <span
-                class="px-2 py-0.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded text-xs text-gray-500"
-                >{{ group.tasks.length }}</span
-              >
+            <div class="flex items-center gap-4">
+              <div class="w-2.5 h-2.5 rounded-full shadow-sm" :class="statusGroup.color"></div>
+              <h2 class="text-sm font-black text-gray-900 dark:text-white uppercase tracking-widest">{{ statusGroup.title }}</h2>
+              <span class="text-[10px] font-black bg-white dark:bg-gray-800 px-3 py-1 rounded-xl text-gray-400 border border-gray-100 dark:border-gray-700">
+                {{ statusGroup.tasks.length }}
+              </span>
             </div>
-            <button
-              class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-transform"
-              :class="{ 'rotate-180': !group.expanded }"
-            >
-              <ChevronDownIcon class="w-5 h-5" />
+            <button class="w-8 h-8 flex items-center justify-center rounded-full border border-gray-100 dark:border-gray-800 hover:bg-white dark:hover:bg-gray-700 transition-all shadow-sm" :class="{ 'rotate-180 bg-gray-100 dark:bg-gray-700': statusGroup.expanded }">
+              <ChevronDownIcon class="w-4 h-4 text-gray-400" />
             </button>
           </div>
 
-          <!-- Drop zone for collapsed groups -->
-          <VueDraggableNext
-            v-if="!group.expanded"
-            v-model="group.tasks"
-            group="mareas"
-            class="min-h-[60px] border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-xl m-4 flex items-center justify-center text-sm text-gray-400 hover:border-brand-300 dark:hover:border-brand-700 hover:bg-brand-50/30 dark:hover:bg-brand-500/5 transition-all"
-            ghost-class="opacity-50"
-            @change="onDragChange($event, group.id)"
-          >
-            <div class="pointer-events-none">Soltar marea aquí para mover a {{ group.title }}</div>
-          </VueDraggableNext>
-
-          <div v-show="group.expanded" class="divide-y divide-gray-50 dark:divide-gray-800">
+          <!-- Draggable Rows -->
+          <div v-show="statusGroup.expanded" class="p-4 space-y-2 relative">
             <VueDraggableNext
-              v-model="group.tasks"
+              v-model="columns[idx].tasks"
               group="mareas"
-              class="min-h-[50px]"
+              :tag="'div'"
               handle=".drag-handle"
-              ghost-class="opacity-50"
-              @change="onDragChange($event, group.id)"
+              class="min-h-[100px] space-y-2 pb-4"
+              ghost-class="opacity-5"
+              :animation="200"
+              @change="onDragChange($event, statusGroup.id)"
             >
               <div
-                v-for="task in group.tasks"
+                v-for="task in statusGroup.tasks"
                 :key="task.id"
-                class="p-6 hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors cursor-pointer group/row"
+                class="p-5 hover:bg-gray-50 dark:hover:bg-white/[0.02] border border-transparent hover:border-gray-100 dark:hover:border-gray-800 rounded-3xl transition-all cursor-pointer group/row relative overflow-hidden"
                 @click="navigateToDetail(task.id)"
               >
-                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                  <div class="flex items-start gap-4">
+                <!-- Row Glow -->
+                <div class="absolute left-0 top-0 bottom-0 w-1 bg-indigo-500 scale-y-0 group-hover/row:scale-y-100 transition-transform origin-top"></div>
+
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
+                  <div class="flex items-center gap-6">
                     <!-- Drag Handle -->
-                    <div
-                      class="drag-handle p-1 -ml-2 text-gray-300 hover:text-brand-500 cursor-grab active:cursor-grabbing transition-colors rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 shrink-0 self-center"
-                      @click.stop
-                    >
+                    <div class="drag-handle opacity-0 group-hover/row:opacity-100 transition-opacity p-2 -ml-2 text-gray-300 hover:text-indigo-500 cursor-grab active:cursor-grabbing">
                       <GripVerticalIcon class="w-5 h-5" />
                     </div>
 
-                    <div
-                      class="w-12 h-12 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center flex-shrink-0"
-                    >
-                      <DocsIcon class="w-6 h-6 text-gray-400" />
+                    <div class="w-14 h-14 rounded-2xl bg-indigo-50 dark:bg-indigo-900/20 flex items-center justify-center border border-indigo-100/50 dark:border-indigo-800/30 text-indigo-500">
+                       <DocsIcon class="w-7 h-7 opacity-60" />
                     </div>
+
                     <div>
-                      <div class="flex items-center gap-2 mb-1">
-                        <span class="text-xs font-mono font-bold text-brand-500">{{
-                          task.code
-                        }}</span>
-                        <span
-                          v-if="task.alert"
-                          class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400"
-                        >
-                          <WarningIcon class="w-3 h-3" /> Alerta
+                      <div class="flex items-center gap-3 mb-1.5">
+                        <span class="text-[10px] font-black text-indigo-500 uppercase tracking-widest">{{ task.code }}</span>
+                        <span v-if="task.alert" class="flex items-center gap-1 text-[8px] font-black uppercase bg-red-50 text-red-600 dark:bg-red-900/30 dark:text-red-400 px-2 py-1 rounded-lg border border-red-100 dark:border-red-800/30">
+                          <WarningIcon class="w-2.5 h-2.5" /> Alerta Crítica
                         </span>
                       </div>
-                      <h4 class="font-bold text-gray-800 dark:text-white text-lg">
-                        {{ task.vessel }}
-                      </h4>
-                      <div class="flex items-center gap-4 mt-1 text-sm text-gray-500">
-                        <span class="flex items-center gap-1"
-                          ><CalenderIcon class="w-4 h-4" /> {{ task.date }}</span
-                        >
-                        <span class="flex items-center gap-1"
-                          ><UserCircleIcon class="w-4 h-4" /> JD (Observador)</span
-                        >
+                      <h4 class="text-sm font-black text-gray-900 dark:text-white uppercase tracking-tight">{{ task.vessel }}</h4>
+                      <div class="flex items-center gap-6 mt-3">
+                         <div class="flex items-center gap-1.5 text-[10px] font-black text-gray-400 uppercase tracking-tighter">
+                            <CalenderIcon class="w-4 h-4 text-gray-300" /> {{ task.date }}
+                         </div>
+                         <div class="flex items-center gap-1.5 text-[10px] font-black text-gray-400 uppercase tracking-tighter">
+                            <UserCircleIcon class="w-4 h-4 text-gray-300" /> JD (Obs)
+                         </div>
                       </div>
                     </div>
                   </div>
-                  <div class="flex items-center gap-3">
-                    <button
-                      class="px-4 py-2 text-sm font-medium border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-                      @click.stop="navigateToDetail(task.id)"
-                    >
-                      Ver Detalles
+                  
+                  <div class="flex items-center gap-4">
+                    <button class="px-6 py-3 text-[10px] font-black uppercase tracking-widest border border-gray-100 dark:border-gray-800 text-gray-500 hover:bg-white dark:hover:bg-gray-800 rounded-2xl transition-all shadow-sm">
+                      Detalles
                     </button>
-                    <button
-                      class="px-4 py-2 text-sm font-medium bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-colors"
-                      @click.stop
-                    >
-                      Continuar Flujo
+                    <button class="px-6 py-3 bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest rounded-2xl hover:bg-indigo-700 shadow-xl shadow-indigo-500/20 active:scale-95 transition-all">
+                      Continuar
                     </button>
                   </div>
                 </div>
               </div>
+
+              <!-- Empty State inside Draggable -->
+              <div v-if="statusGroup.tasks.length === 0" class="absolute inset-0 flex items-center justify-center p-8 opacity-40 pointer-events-none">
+                <div class="text-center">
+                  <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest italic">Sin misiones activas</span>
+                </div>
+              </div>
             </VueDraggableNext>
-            <div
-              v-if="group.tasks.length === 0"
-              class="p-8 text-center text-gray-400 text-sm italic bg-gray-50/20 dark:bg-gray-800/5"
-            >
-              No hay mareas registradas en este estado.
-            </div>
           </div>
         </div>
       </div>
@@ -272,6 +260,8 @@ import {
   ListIcon,
   RefreshIcon,
   GripVerticalIcon,
+  SearchIcon,
+  HorizontalDots
 } from '@/icons'
 
 const router = useRouter()
@@ -325,7 +315,7 @@ const columns = ref<Column[]>([
   {
     id: 'designada',
     title: 'Designada',
-    color: 'bg-brand-500',
+    color: 'bg-indigo-500',
     expanded: true,
     tasks: [
       {
@@ -349,7 +339,7 @@ const columns = ref<Column[]>([
   {
     id: 'navegando',
     title: 'Navegando',
-    color: 'bg-blue-500',
+    color: 'bg-emerald-500',
     expanded: true,
     tasks: [
       {
@@ -365,7 +355,7 @@ const columns = ref<Column[]>([
   {
     id: 'arribada',
     title: 'Arribada',
-    color: 'bg-green-500',
+    color: 'bg-blue-500',
     expanded: false,
     tasks: [
       {
@@ -405,7 +395,7 @@ const columns = ref<Column[]>([
   {
     id: 'finalizada',
     title: 'Finalizada',
-    color: 'bg-gray-500',
+    color: 'bg-gray-400',
     expanded: false,
     tasks: [
       {
@@ -423,7 +413,6 @@ const columns = ref<Column[]>([
 const onDragChange = (event: any, columnId: string) => {
   if (event.added) {
     console.log(`Marea agregada a ${columnId}:`, event.added.element.vessel)
-    // Auto-expand the group when an item is added
     const targetGroup = columns.value.find((col) => col.id === columnId)
     if (targetGroup && !targetGroup.expanded) {
       targetGroup.expanded = true
@@ -435,7 +424,11 @@ const navigateToDetail = (id: number) => {
   router.push({ name: 'MareaDetalle', params: { id } })
 }
 
-// Responsive Logic
+const resetFilters = () => {
+  searchQuery.value = ''
+  filters.value = { fishery: '', observer: '', fishery2: '' }
+}
+
 const handleResize = () => {
   if (window.innerWidth < 1024) {
     viewMode.value = 'list'
@@ -454,23 +447,49 @@ onUnmounted(() => {
 
 <style scoped>
 .custom-scrollbar::-webkit-scrollbar {
-  height: 8px;
-  width: 8px;
+  width: 6px;
 }
 .custom-scrollbar::-webkit-scrollbar-track {
   background: transparent;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #e2e8f0;
+  background: #e5e7eb;
   border-radius: 20px;
 }
 .dark .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #334155;
+  background: #1f2937;
 }
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #cbd5e1;
+
+.custom-scrollbar-h::-webkit-scrollbar {
+  height: 6px;
 }
-.dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #475569;
+.custom-scrollbar-h::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar-h::-webkit-scrollbar-thumb {
+  background: #e5e7eb;
+  border-radius: 20px;
+}
+.dark .custom-scrollbar-h::-webkit-scrollbar-thumb {
+  background: #1f2937;
+}
+
+.animate-in {
+  animation-duration: 0.7s;
+  animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
+}
+.fade-in {
+  animation-name: fade-in;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Draggable ghost styling */
+.sortable-ghost {
+  opacity: 0.1;
+  background: #6366f1 !important;
 }
 </style>
