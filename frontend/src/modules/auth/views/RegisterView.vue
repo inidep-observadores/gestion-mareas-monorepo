@@ -220,13 +220,21 @@
                         </div>
                         <p class="inline-block font-normal text-gray-500 dark:text-gray-400">
                           Al crear una cuenta, acepta los
-                          <span class="text-gray-800 dark:text-white/90">
-                            Términos y Condiciones,
-                          </span>
+                          <router-link 
+                            :to="{ name: 'Terms' }" 
+                            target="_blank" 
+                            class="text-gray-800 dark:text-white/90 border-b border-gray-300 hover:text-brand-500 hover:border-brand-500 transition-colors"
+                          >
+                            Términos y Condiciones
+                          </router-link>
                           y nuestra
-                          <span class="text-gray-800 dark:text-white">
+                          <router-link 
+                            :to="{ name: 'Privacy' }" 
+                            target="_blank" 
+                            class="text-gray-800 dark:text-white border-b border-gray-300 hover:text-brand-500 hover:border-brand-500 transition-colors"
+                          >
                             Política de Privacidad
-                          </span>
+                          </router-link>
                         </p>
                       </label>
                     </div>
