@@ -35,7 +35,16 @@ export class MareasService {
                     mostrarEnPanel: true
                 }
             },
-            include: {
+            select: {
+                id: true,
+                nroMarea: true,
+                anioMarea: true,
+                tipoMarea: true,
+                estadoActualId: true,
+                diasEstimados: true,
+                fechaZarpadaEstimada: true,
+                fechaInicioObservador: true,
+                fechaFinObservador: true,
                 buque: true,
                 estadoActual: true,
                 etapas: {
@@ -73,6 +82,59 @@ export class MareasService {
                 };
             });
 
+            // Calculate progress based on state and dates
+            let progreso = 0;
+            const estadoCodigo = m.estadoActual.codigo;
+
+            if (estadoCodigo === 'DESIGNADA') {
+                progreso = 0;
+            } else if (estadoCodigo === 'EN_EJECUCION') {
+                // Days from estimated departure date to now
+                const fechaEstimada = m.fechaZarpadaEstimada;
+                if (fechaEstimada) {
+                    const now = new Date();
+                    const estimada = new Date(fechaEstimada);
+                    const diffTime = now.getTime() - estimada.getTime();
+                    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1; // +1 to include both initial and current day
+
+                    // Calculate percentage based on diasEstimados if available
+                    if (m.diasEstimados && m.diasEstimados > 0) {
+                        progreso = Math.min(Math.round((diffDays / m.diasEstimados) * 100), 100);
+                    } else {
+                        progreso = diffDays > 0 ? Math.min(diffDays * 10, 100) : 0; // Fallback: 10% per day
+                    }
+                }
+            } else {
+                // For other states: calculate actual days worked
+                let diasTrabajados = 0;
+
+                if (m.fechaInicioObservador && m.fechaFinObservador) {
+                    // Use observer dates if available
+                    const inicio = new Date(m.fechaInicioObservador);
+                    const fin = new Date(m.fechaFinObservador);
+                    const diffTime = fin.getTime() - inicio.getTime();
+                    diasTrabajados = Math.floor(diffTime / (1000 * 60 * 60 * 24)) - 1; // -1 as per requirements
+                } else {
+                    // Fallback: use first stage departure and last stage arrival
+                    const primeraEtapa = m.etapas[m.etapas.length - 1]; // etapas are ordered desc, so last is first
+                    const ultimaEtapa = m.etapas[0];
+
+                    if (primeraEtapa?.fechaZarpada && ultimaEtapa?.fechaArribo) {
+                        const zarpada = new Date(primeraEtapa.fechaZarpada);
+                        const arribo = new Date(ultimaEtapa.fechaArribo);
+                        const diffTime = arribo.getTime() - zarpada.getTime();
+                        diasTrabajados = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1; // +1 as per requirements
+                    }
+                }
+
+                // Calculate percentage based on diasEstimados
+                if (m.diasEstimados && m.diasEstimados > 0 && diasTrabajados > 0) {
+                    progreso = Math.min(Math.round((diasTrabajados / m.diasEstimados) * 100), 100);
+                } else if (diasTrabajados > 0) {
+                    progreso = 100; // If no estimate but has worked days, assume complete
+                }
+            }
+
             return {
                 id: m.id,
                 id_marea: `${m.tipoMarea}-${String(m.nroMarea).padStart(3, '0')}-${String(m.anioMarea).slice(-2)}`,
@@ -82,7 +144,7 @@ export class MareasService {
                 fecha_zarpada: etapaActual?.fechaZarpada || m.fechaZarpadaEstimada,
                 puerto: etapaActual?.puertoZarpada?.nombre || 'N/D',
                 observador: primaryObs ? `${primaryObs.nombre} ${primaryObs.apellido}` : 'Sin asignar',
-                progreso: m.estadoActual.codigo === 'NAVEGANDO' ? 75 : 0,
+                progreso,
                 alertas: [],
                 actionsAvailable
             };
@@ -145,7 +207,7 @@ export class MareasService {
 
         const fechaZarpada = etapaActual?.fechaZarpada || marea.fechaZarpadaEstimada;
 
-        // Cálcuo de días
+        // Cálculo de días
         const now = new Date();
         const start = fechaZarpada ? new Date(fechaZarpada) : null;
         const diffTime = start ? Math.abs(now.getTime() - start.getTime()) : 0;
