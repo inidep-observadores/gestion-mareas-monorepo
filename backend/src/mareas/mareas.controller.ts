@@ -25,6 +25,11 @@ export class MareasController {
         return this.mareasService.getFleetDistributionByFishery();
     }
 
+    @Get('alertas/personal-fatiga')
+    getFatigueAlerts() {
+        return this.mareasService.getFatigueAlerts();
+    }
+
     @Get('search')
     search(@Query('q') q: string) {
         return this.mareasService.search(q);

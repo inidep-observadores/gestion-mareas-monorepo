@@ -24,14 +24,14 @@
 
     <div class="space-y-6 flex-1 overflow-y-auto custom-scrollbar pr-2">
       <!-- Section: Delays in Revision -->
-      <section v-if="revisionDelays.length" class="space-y-3">
+      <section class="space-y-3">
         <div class="flex items-center gap-2">
           <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>
           <h3 class="text-[10px] font-black uppercase text-gray-500 dark:text-gray-400 tracking-widest">
             Retrasos Críticos (>15 días)
           </h3>
         </div>
-        <div class="grid gap-2">
+        <div v-if="revisionDelays.length" class="grid gap-2">
           <div
             v-for="item in revisionDelays"
             :key="item.id"
@@ -57,17 +57,22 @@
             </div>
           </div>
         </div>
+        <div class="bg-white dark:bg-gray-950 rounded-xl border border-gray-200 dark:border-gray-800 p-6 text-center">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10 text-gray-300 dark:text-gray-600 mx-auto mb-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
+          <h3 class="text-gray-900 dark:text-white font-semibold">Retrasos críticos</h3>
+          <p class="text-sm text-gray-500 dark:text-gray-400 mt-1 max-w-sm mx-auto">Esta sección estará disponible próximamente. Estamos calibrando las reglas de alerta.</p>
+        </div>
       </section>
 
       <!-- Section: Delayed Reports -->
-      <section v-if="reportDelays.length" class="space-y-3">
+      <section class="space-y-3">
         <div class="flex items-center gap-2">
           <span class="w-1.5 h-1.5 rounded-full bg-orange-500"></span>
           <h3 class="text-[10px] font-black uppercase text-gray-500 dark:text-gray-400 tracking-widest">
             Informes Demorados (>7 días)
           </h3>
         </div>
-        <div class="grid gap-2">
+        <div v-if="reportDelays.length" class="grid gap-2">
           <div
             v-for="item in reportDelays"
             :key="item.id"
@@ -92,6 +97,11 @@
             </div>
           </div>
         </div>
+        <div class="bg-white dark:bg-gray-950 rounded-xl border border-gray-200 dark:border-gray-800 p-6 text-center">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10 text-gray-300 dark:text-gray-600 mx-auto mb-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
+          <h3 class="text-gray-900 dark:text-white font-semibold">Informes demorados</h3>
+          <p class="text-sm text-gray-500 dark:text-gray-400 mt-1 max-w-sm mx-auto">Esta sección estará disponible próximamente. Mostraremos pendientes de revisión y entrega de informes.</p>
+        </div>
       </section>
 
       <!-- Section: Fatigue -->
@@ -110,7 +120,7 @@
           >
             <div class="flex items-center gap-3">
               <div class="w-8 h-8 rounded-full bg-brand-50 dark:bg-brand-900/20 flex items-center justify-center">
-                 <span class="text-[10px] font-black text-brand-500">{{ item.name.split(' ').map(n => n[0]).join('') }}</span>
+                <span class="text-[10px] font-black text-brand-500">{{ item.initials }}</span>
               </div>
               <div class="flex flex-col">
                 <span class="text-xs font-black text-gray-900 dark:text-white">{{ item.name }}</span>
@@ -118,8 +128,8 @@
               </div>
             </div>
             <div class="text-right">
-              <span class="text-xs font-black text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-lg">
-                {{ item.value }} d
+              <span class="text-xs font-black bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-lg" :class="item.isOver ? 'text-red-600 dark:text-red-400' : 'text-green-700 dark:text-green-300'">
+                {{ item.value }} d ({{ item.percent }}%)
               </span>
             </div>
           </div>
@@ -130,22 +140,45 @@
 </template>
 
 <script setup lang="ts">
-const revisionDelays = [
-  { id: 101, mareaId: '2025-042', obs: 'Juan Díaz', days: 15 },
-  { id: 105, mareaId: '2025-038', obs: 'Ana López', days: 22 },
-]
+import { computed, onMounted, ref } from 'vue'
+import dashboardService, { FatigueAlert } from '@/modules/dashboard/services/dashboard.service'
 
-const reportDelays = [
-  { id: 202, vessel: 'BP ARGENTINO I', obs: 'Pedro Gómez', days: 18, mareaId: '2025-048' },
-  { id: 204, vessel: 'MAR DEL SUR', obs: 'Marta Ruiz', days: 25, mareaId: '2025-049' },
-]
+const revisionDelays = ref<any[]>([])
+const reportDelays = ref<any[]>([])
+const fatigueAlerts = ref<{ id: string; name: string; initials: string; value: number; percent: number; reason: string; isOver: boolean }[]>([])
 
-const fatigueAlerts = [
-  { id: 301, name: 'Carlos Rodríguez', reason: 'Acumulado anual', value: 205 },
-  { id: 305, name: 'Sofía Martínez', reason: 'Marea actual', value: 93 },
-]
+const totalAlerts = computed(
+  () => revisionDelays.value.length + reportDelays.value.length + fatigueAlerts.value.length
+)
 
-const totalAlerts = revisionDelays.length + reportDelays.length + fatigueAlerts.length
+const buildInitials = (name: string) =>
+  name
+    .split(' ')
+    .filter(Boolean)
+    .map((n) => n[0])
+    .join('')
+    .slice(0, 2)
+
+const loadFatigueAlerts = async () => {
+  try {
+    const data: FatigueAlert[] = await dashboardService.getFatigueAlerts()
+    fatigueAlerts.value = data.map((item) => ({
+      id: item.id,
+      name: item.name,
+      initials: buildInitials(item.name),
+      value: item.days,
+      percent: Math.round((item.days / 180) * 100),
+      reason: 'Acumulado anual',
+      isOver: item.days > 180
+    }))
+  } catch (error) {
+    fatigueAlerts.value = []
+  }
+}
+
+onMounted(() => {
+  loadFatigueAlerts()
+})
 </script>
 
 <style scoped>

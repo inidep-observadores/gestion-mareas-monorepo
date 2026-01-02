@@ -4,20 +4,20 @@
     <header class="bg-white dark:bg-gray-950 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-30">
       <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
         <div class="flex items-center gap-4">
-          <button 
+          <button
             @click="handleCancel"
             class="p-2 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
             title="Volver"
           >
             <ArrowLeftIcon class="w-5 h-5" />
           </button>
-          
+
           <div>
             <div class="flex items-center gap-3">
               <h1 class="text-lg font-bold text-gray-900 dark:text-white">
                 Editar Marea {{ marea?.id_marea || '...' }}
               </h1>
-              <span 
+              <span
                 v-if="marea?.estadoActual"
                 class="px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
               >
@@ -31,14 +31,14 @@
         </div>
 
         <div class="flex items-center gap-3">
-          <button 
+          <button
             @click="handleCancel"
             class="px-4 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 border border-gray-300 dark:border-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors shadow-sm"
           >
             Cancelar
           </button>
 
-          <button  
+          <button
             @click="handleSave"
             :disabled="saving"
             class="flex items-center gap-2 px-4 py-2 bg-brand-500 hover:bg-brand-600 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
@@ -69,8 +69,8 @@
               @click="currentTab = tab.id"
               class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all duration-200 group"
               :class="[
-                currentTab === tab.id 
-                  ? 'bg-white dark:bg-gray-800 text-brand-600 dark:text-brand-400 shadow-sm ring-1 ring-gray-200 dark:ring-gray-700 font-medium' 
+                currentTab === tab.id
+                  ? 'bg-white dark:bg-gray-800 text-brand-600 dark:text-brand-400 shadow-sm ring-1 ring-gray-200 dark:ring-gray-700 font-medium'
                   : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200'
               ]"
             >
@@ -103,7 +103,7 @@
 
         <!-- Main Content Area -->
         <main class="col-span-12 lg:col-span-9 space-y-6">
-          
+
           <!-- TAB: GENERAL -->
           <div v-if="currentTab === 'general'" class="space-y-6">
             <!-- Card: Información Principal -->
@@ -118,18 +118,18 @@
                 <!-- Nro Marea -->
                 <div class="space-y-1.5">
                   <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Nro. Marea</label>
-                  <input 
-                    v-model.number="form.nroMarea" 
+                  <input
+                    v-model.number="form.nroMarea"
                     type="number"
                     class="w-full rounded-lg border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white py-2.5 px-3 focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-colors"
                   />
                 </div>
-                
+
                 <!-- Año -->
                 <div class="space-y-1.5">
                   <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Año</label>
-                  <input 
-                    v-model.number="form.anioMarea" 
+                  <input
+                    v-model.number="form.anioMarea"
                     type="number"
                     class="w-full rounded-lg border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white py-2.5 px-3 focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-colors"
                   />
@@ -138,8 +138,8 @@
                 <!-- Fecha Zarpada Estimada -->
                 <div class="space-y-1.5">
                   <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Fecha Zarpada (Estimada/Real)</label>
-                  <input 
-                    v-model="form.fechaZarpadaEstimada" 
+                  <input
+                    v-model="form.fechaZarpadaEstimada"
                     type="date"
                     class="w-full rounded-lg border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white py-2.5 px-3 focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-colors"
                   />
@@ -148,8 +148,8 @@
                 <!-- Días Estimados -->
                 <div class="space-y-1.5">
                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Días de Marea (Estimados)</label>
-                   <input 
-                    v-model.number="form.diasEstimados" 
+                   <input
+                    v-model.number="form.diasEstimados"
                     type="number"
                     class="w-full rounded-lg border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white py-2.5 px-3 focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-colors"
                   />
@@ -158,8 +158,8 @@
                  <!-- Días Zona Austral -->
                  <div class="space-y-1.5">
                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Días Zona Austral</label>
-                   <input 
-                    v-model.number="form.diasZonaAustral" 
+                   <input
+                    v-model.number="form.diasZonaAustral"
                     type="number"
                     class="w-full rounded-lg border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white py-2.5 px-3 focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-colors"
                   />
@@ -179,7 +179,7 @@
               <div class="p-6">
                  <div class="space-y-1.5">
                   <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Observaciones Generales</label>
-                  <textarea 
+                  <textarea
                     v-model="form.descripcion"
                     rows="4"
                     class="w-full rounded-lg border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white py-2.5 px-3 focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-colors resize-none"
@@ -198,22 +198,22 @@
                    + Agregar Etapa
                  </button>
              </div>
-             
+
              <div class="space-y-4">
-               <div 
-                 v-for="(etapa, index) in marea.etapas" 
+               <div
+                 v-for="(etapa, index) in marea.etapas"
                  :key="etapa.id"
                  class="group relative bg-white dark:bg-gray-950 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm p-6 transition-all hover:shadow-md hover:border-brand-200 dark:hover:border-brand-900"
                >
                  <!-- Connector Line overlay -->
-                 <div v-if="index < marea.etapas.length - 1" class="absolute left-9 top-16 bottom-0 w-0.5 bg-gray-200 dark:bg-gray-800 -z-10 group-hover:bg-brand-100 dark:group-hover:bg-brand-900/30 transition-colors"></div>
+                  <div v-if="index < etapasLength - 1" class="absolute left-9 top-16 bottom-0 w-0.5 bg-gray-200 dark:bg-gray-800 -z-10 group-hover:bg-brand-100 dark:group-hover:bg-brand-900/30 transition-colors"></div>
 
                  <div class="flex gap-4">
                     <div class="flex-shrink-0 w-8 h-8 rounded-full bg-brand-50 dark:bg-brand-900/30 flex items-center justify-center text-brand-600 dark:text-brand-400 font-bold text-sm border border-brand-100 dark:border-brand-800">
                       {{ etapa.nroEtapa }}
                     </div>
-                    
-                    <div class="flex-grow grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                    <div class="grow grid grid-cols-1 md:grid-cols-2 gap-4">
                        <div>
                          <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Etapa {{ etapa.nroEtapa }}</h3>
                          <div class="mt-2 space-y-2">
@@ -227,7 +227,7 @@
                            </div>
                          </div>
                        </div>
-                       
+
                         <div>
                          <h3 class="text-sm font-semibold text-transparent select-none">&nbsp;</h3>
                          <div class="mt-2 space-y-2">
@@ -257,11 +257,11 @@
                </div>
              </div>
           </div>
-          
+
            <!-- TAB: OBSERVADORES -->
           <div v-if="currentTab === 'observadores'" class="space-y-6">
             <h2 class="text-lg font-bold text-gray-900 dark:text-white">Tripulación Científica</h2>
-            
+
              <!-- Placeholder for now -->
              <div class="bg-white dark:bg-gray-950 rounded-xl border border-gray-200 dark:border-gray-800 p-8 text-center">
                 <UserGroupIcon class="w-12 h-12 text-gray-300 mx-auto mb-3" />
@@ -276,7 +276,7 @@
 
 
     <!-- Cancel Confirmation Modal -->
-    <ConfirmationDialog 
+    <ConfirmationDialog
       :show="showCancelConfirm"
       title="¿Descartar Cambios?"
       message="Si cancela ahora, perderá los cambios no guardados en esta marea. ¿Está seguro de que desea salir?"
@@ -312,6 +312,8 @@ const tabs = computed(() => [
   { id: 'etapas', label: 'Derrotero', icon: MapPinIcon, badge: marea.value?.etapas?.length || 0 },
   { id: 'observadores', label: 'Observadores', icon: UserGroupIcon }
 ]);
+
+const etapasLength = computed<number>(() => Number(marea.value?.etapas?.length ?? 0));
 
 const currentTab = ref('general');
 
@@ -349,7 +351,7 @@ onMounted(async () => {
         const id = route.params.id as string;
         const data = await mareasService.getById(id);
         marea.value = data;
-        
+
         // Init form
         form.value = {
             nroMarea: data.nroMarea,
@@ -371,25 +373,25 @@ onMounted(async () => {
 async function handleSave() {
     try {
         saving.value = true;
-        
+
         // Prepare payload
         const payload = {
             ...form.value,
             // Convertir fechas vacías a null si fuera necesario, o dejar string ISO
             fechaZarpadaEstimada: form.value.fechaZarpadaEstimada ? new Date(form.value.fechaZarpadaEstimada).toISOString() : null
         };
-        
+
         await mareasService.update(marea.value.id, payload);
         // Reload to refresh data
         const fresh = await mareasService.getById(marea.value.id);
         marea.value = fresh;
-        
+
         toast.success("Marea actualizada correctamente");
-        
+
         setTimeout(() => {
             router.back();
         }, 800);
-        
+
     } catch (e: any) {
         console.error("Error guardando marea", e);
         const msg = e.response?.data?.message || e.message || "Error al guardar cambios";
@@ -405,7 +407,7 @@ function calculateProgress() {
     // Frontend logic for visual feedback: (days elapsed / estimated)
     const start = marea.value.fechaZarpadaEstimada ? new Date(marea.value.fechaZarpadaEstimada) : null;
     if (!start) return 0;
-    
+
     // Only if en Ejecucion
     if (marea.value.estadoActual?.codigo === 'EN_EJECUCION' || marea.value.estadoActual?.codigo === 'NAVEGANDO') {
         const now = new Date();

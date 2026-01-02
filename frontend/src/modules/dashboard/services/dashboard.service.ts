@@ -10,9 +10,20 @@ export interface FleetDistributionResponse {
     distribution: FleetDistributionItem[]
 }
 
+export interface FatigueAlert {
+    id: string
+    name: string
+    days: number
+}
+
 const dashboardService = {
     async getFleetDistribution(): Promise<FleetDistributionResponse> {
         const { data } = await httpClient.get<FleetDistributionResponse>('/mareas/flota-por-pesqueria')
+        return data
+    },
+
+    async getFatigueAlerts(): Promise<FatigueAlert[]> {
+        const { data } = await httpClient.get<FatigueAlert[]>('/mareas/alertas/personal-fatiga')
         return data
     }
 }
