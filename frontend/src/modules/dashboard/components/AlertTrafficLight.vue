@@ -116,22 +116,93 @@
           <div
             v-for="item in fatigueAlerts"
             :key="item.id"
-            class="group flex items-center justify-between rounded-2xl border border-gray-50 bg-gray-50/30 p-4 transition-all hover:bg-white hover:shadow-md dark:border-gray-800 dark:bg-gray-800/20 dark:hover:bg-gray-800"
+            class="flex flex-col overflow-hidden"
           >
-            <div class="flex items-center gap-3">
-              <div class="w-8 h-8 rounded-full bg-brand-50 dark:bg-brand-900/20 flex items-center justify-center">
-                <span class="text-[10px] font-black text-brand-500">{{ item.initials }}</span>
+            <!-- Header/Toggle -->
+            <div
+              @click="toggleExpand(item.id)"
+              class="group flex items-center justify-between rounded-2xl border border-gray-50 bg-gray-50/30 p-4 transition-all hover:bg-white hover:shadow-md dark:border-gray-800 dark:bg-gray-800/20 dark:hover:bg-gray-800 cursor-pointer relative"
+              :class="{ 'border-brand-100 bg-white shadow-sm dark:border-brand-900/30': expandedId === item.id }"
+            >
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-full bg-brand-50 dark:bg-brand-900/20 flex items-center justify-center relative">
+                  <span class="text-[10px] font-black text-brand-500">{{ item.initials }}</span>
+                  <div v-if="expandedId === item.id" class="absolute -bottom-1 -right-1 bg-brand-500 text-white rounded-full p-0.5 shadow-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-2 h-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>
+                  </div>
+                </div>
+                <div class="flex flex-col">
+                  <span class="text-xs font-black text-gray-900 dark:text-white">{{ item.name }}</span>
+                  <span class="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">{{ item.reason }}</span>
+                </div>
               </div>
-              <div class="flex flex-col">
-                <span class="text-xs font-black text-gray-900 dark:text-white">{{ item.name }}</span>
-                <span class="text-[10px] font-bold text-gray-400 uppercase">{{ item.reason }}</span>
+              <div class="text-right flex flex-col items-end gap-1">
+                <span class="text-xs font-black bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-lg transition-colors" :class="[item.isOver ? 'text-red-600 dark:text-red-400' : 'text-green-700 dark:text-green-300', expandedId === item.id ? 'bg-brand-50 dark:bg-brand-900/30' : '']">
+                  {{ item.value }} d ({{ item.percent }}%)
+                </span>
+                <span v-if="item.daysSinceLast !== null" class="text-[9px] font-bold text-gray-400 uppercase tracking-tight">
+                  {{ item.daysSinceLast }} días de descanso
+                </span>
               </div>
             </div>
-            <div class="text-right">
-              <span class="text-xs font-black bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-lg" :class="item.isOver ? 'text-red-600 dark:text-red-400' : 'text-green-700 dark:text-green-300'">
-                {{ item.value }} d ({{ item.percent }}%)
-              </span>
-            </div>
+
+            <!-- Accordion Content -->
+            <Transition
+              enter-active-class="transition-all duration-300 ease-out"
+              enter-from-class="max-h-0 opacity-0"
+              enter-to-class="max-h-[500px] opacity-100"
+              leave-active-class="transition-all duration-200 ease-in"
+              leave-from-class="max-h-[500px] opacity-100"
+              leave-to-class="max-h-0 opacity-0"
+            >
+              <div v-if="expandedId === item.id" class="px-4 pb-4 pt-1">
+                <div class="rounded-xl bg-gray-50/50 dark:bg-gray-800/30 border border-gray-100 dark:border-gray-800/50 overflow-hidden">
+                  <div class="px-3 py-2 border-b border-gray-100 dark:border-gray-800/50 bg-white/50 dark:bg-gray-900/20 flex justify-between items-center">
+                    <span class="text-[9px] font-black uppercase text-gray-400 tracking-widest">Historial de Mareas</span>
+                    <span class="text-[9px] font-bold text-brand-500">{{ item.trips?.length || 0 }} viajes</span>
+                  </div>
+                  <div class="px-2 pb-2">
+                    <div class="space-y-1">
+                      <div v-for="(trip, idx) in item.trips" :key="idx" 
+                        class="p-2.5 rounded-xl bg-white dark:bg-gray-800/40 border border-gray-100 dark:border-gray-700/50 shadow-sm hover:border-brand-200 dark:hover:border-brand-900/50 transition-all group/trip"
+                      >
+                        <!-- Header: Code and Vessel -->
+                        <div class="flex justify-between items-center mb-2">
+                          <div class="flex flex-col">
+                            <span class="text-[11px] font-black text-gray-900 dark:text-white mb-0.5">{{ trip.mareaCode }}</span>
+                            <div v-if="trip.inExecution" class="flex items-center gap-1">
+                              <span class="w-1 h-1 rounded-full bg-brand-500 animate-pulse"></span>
+                              <span class="text-[8px] font-black text-brand-500 uppercase tracking-tighter">En ejecución</span>
+                            </div>
+                          </div>
+                          <span class="text-[9px] font-black px-2 py-0.5 rounded-full bg-gray-50 dark:bg-gray-700/50 border border-gray-100 dark:border-gray-600/50 text-gray-500 uppercase">{{ trip.vessel }}</span>
+                        </div>
+                        
+                        <!-- Footer: Dates and Days (Aligned) -->
+                        <div class="flex items-center justify-between pt-2 border-t border-gray-50 dark:border-gray-700/30">
+                          <div class="flex items-center gap-2">
+                            <div class="flex items-center gap-1.5 text-[10px] text-gray-500 dark:text-gray-400 font-bold">
+                              <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3 text-gray-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                              <span>{{ formatDateShort(trip.departure) }}</span>
+                            </div>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-2.5 h-2.5 text-gray-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+                            <div class="flex items-center gap-1.5 text-[10px] font-bold" :class="trip.inExecution ? 'text-brand-500' : 'text-gray-500 dark:text-gray-400'">
+                              <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3 opacity-50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22v-5"/><path d="M9 17H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-4"/><path d="M12 17l4-4"/><path d="M12 17l-4-4"/></svg>
+                              <span>{{ trip.inExecution ? 'ACTUAL' : formatDateShort(trip.arrival) }}</span>
+                            </div>
+                          </div>
+
+                          <div class="flex items-center gap-1.5 bg-brand-50 dark:bg-brand-900/20 px-2 py-0.5 rounded-lg border border-brand-100/50 dark:border-brand-500/10 shrink-0">
+                            <span class="text-[9px] font-black text-brand-600 dark:text-brand-400">{{ trip.navigatedDays }}</span>
+                            <span class="text-[8px] font-bold text-brand-400 dark:text-brand-500 uppercase tracking-tight">días navegados</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </Transition>
           </div>
         </div>
       </section>
@@ -141,11 +212,27 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import dashboardService, { FatigueAlert } from '@/modules/dashboard/services/dashboard.service'
+import dashboardService, { type FatigueAlert, type FatigueTrip } from '@/modules/dashboard/services/dashboard.service'
 
 const revisionDelays = ref<any[]>([])
 const reportDelays = ref<any[]>([])
-const fatigueAlerts = ref<{ id: string; name: string; initials: string; value: number; percent: number; reason: string; isOver: boolean }[]>([])
+const fatigueAlerts = ref<{
+  id: string;
+  name: string;
+  initials: string;
+  value: number;
+  percent: number;
+  reason: string;
+  isOver: boolean;
+  daysSinceLast: number | null;
+  trips: FatigueTrip[];
+}[]>([])
+
+const expandedId = ref<string | null>(null)
+
+const toggleExpand = (id: string) => {
+  expandedId.value = expandedId.value === id ? null : id
+}
 
 const totalAlerts = computed(
   () => revisionDelays.value.length + reportDelays.value.length + fatigueAlerts.value.length
@@ -159,18 +246,43 @@ const buildInitials = (name: string) =>
     .join('')
     .slice(0, 2)
 
+const calculateDaysSince = (dateStr: string | null) => {
+  if (!dateStr) return null
+  const arrival = new Date(dateStr)
+  const now = new Date()
+
+  arrival.setHours(0, 0, 0, 0)
+  now.setHours(0, 0, 0, 0)
+
+  const diffTime = now.getTime() - arrival.getTime()
+  return Math.max(0, Math.floor(diffTime / (1000 * 60 * 60 * 24)))
+}
+
+const formatDateShort = (dateStr: string | null) => {
+  if (!dateStr) return 'N/D'
+  return new Date(dateStr).toLocaleDateString('es-AR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: '2-digit'
+  })
+}
+
 const loadFatigueAlerts = async () => {
   try {
     const data: FatigueAlert[] = await dashboardService.getFatigueAlerts()
-    fatigueAlerts.value = data.map((item) => ({
-      id: item.id,
-      name: item.name,
-      initials: buildInitials(item.name),
-      value: item.days,
-      percent: Math.round((item.days / 180) * 100),
-      reason: 'Acumulado anual',
-      isOver: item.days > 180
-    }))
+    fatigueAlerts.value = data
+      .map((item) => ({
+        id: item.id,
+        name: item.name,
+        initials: buildInitials(item.name),
+        value: item.days,
+        percent: Math.round((item.days / 180) * 100),
+        reason: 'Acumulado anual',
+        isOver: item.days > 180,
+        daysSinceLast: calculateDaysSince(item.lastArrival),
+        trips: item.trips || []
+      }))
+      .sort((a, b) => b.value - a.value)
   } catch (error) {
     fatigueAlerts.value = []
   }
