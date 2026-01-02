@@ -60,6 +60,24 @@ const router = createRouter({
       },
     },
     {
+      path: '/terms',
+      name: 'Terms',
+      component: () => import('@/modules/auth/views/TermsView.vue'),
+      meta: {
+        title: 'Términos y Condiciones',
+        requiresAuth: false,
+      },
+    },
+    {
+      path: '/privacy',
+      name: 'Privacy',
+      component: () => import('@/modules/auth/views/PrivacyView.vue'),
+      meta: {
+        title: 'Política de Privacidad',
+        requiresAuth: false,
+      },
+    },
+    {
       path: '/profile',
       name: 'Profile',
       component: () => import('@/modules/auth/views/ProfileView.vue'),
