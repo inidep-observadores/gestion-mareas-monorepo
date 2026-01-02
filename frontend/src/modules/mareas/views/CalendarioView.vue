@@ -19,24 +19,42 @@
               {{ allFiltersSelected ? 'Deseleccionar Todos' : 'Seleccionar Todos' }}
             </button>
           </div>
-          <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
-            <label
+          <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-2">
+            <div
               v-for="eventType in eventTypes"
               :key="eventType.id"
-              class="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer transition-colors"
+              @click="eventType.enabled = !eventType.enabled"
+              class="group relative flex flex-col p-3 rounded-2xl border transition-all cursor-pointer select-none bg-white dark:bg-black/20 overflow-hidden"
+              :class="eventType.enabled 
+                ? 'border-indigo-500/20 shadow-md shadow-indigo-500/5 ring-1 ring-indigo-500/5' 
+                : 'border-gray-100 dark:border-white/5 opacity-50 grayscale-[0.8] hover:opacity-80'"
             >
-              <input
-                type="checkbox"
-                v-model="eventType.enabled"
-                class="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-brand-500 focus:ring-2 focus:ring-brand-500/20 cursor-pointer"
-              />
-              <div class="flex items-center gap-1.5">
-                <span class="text-lg">{{ eventType.emoji }}</span>
-                <span class="text-xs font-medium text-gray-700 dark:text-gray-300">{{
-                  eventType.label
-                }}</span>
+              <!-- Label + Visibility -->
+              <div class="flex items-center justify-between gap-2 mb-3">
+                <span class="text-[8px] font-black uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500 truncate">
+                  {{ eventType.label }}
+                </span>
+                <component 
+                  :is="eventType.enabled ? EyeIcon : EyeSlashIcon" 
+                  class="w-3.5 h-3.5 transition-colors" 
+                  :class="eventType.enabled ? 'text-indigo-500' : 'text-gray-400'"
+                />
               </div>
-            </label>
+              
+              <!-- Count + Icon Badge -->
+              <div class="flex items-end justify-between">
+                <span class="text-2xl font-black text-gray-900 dark:text-gray-100 leading-none tabular-nums tracking-tighter">
+                  {{ eventCounts[eventType.id] || 0 }}
+                </span>
+                
+                <div 
+                  class="w-8 h-8 flex items-center justify-center rounded-xl transition-all duration-300"
+                  :class="eventType.enabled ? 'bg-indigo-500/10 text-indigo-500 border border-indigo-500/10' : 'bg-gray-100 dark:bg-white/5 text-gray-400 border border-transparent'"
+                >
+                  <component :is="eventType.icon" class="w-4 h-4" />
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </FilterBar>
@@ -63,31 +81,52 @@ import listPlugin from '@fullcalendar/list'
 import esLocale from '@fullcalendar/core/locales/es'
 import { CALENDAR_EVENT_COLORS } from '../config/calendarColors'
 
+import { 
+  EyeIcon, 
+  EyeSlashIcon,
+  FileTextIcon,
+  ShipIcon,
+  CheckIcon,
+  WarningIcon,
+  UserGroupIcon,
+  WaveIcon,
+  DocsIcon
+} from '@/icons'
+
 // Event type filters
 const eventTypes = ref([
   {
     id: 'designacion',
-    label: 'Designaciones',
-    emoji: '📋',
+    label: 'Designadas',
+    icon: DocsIcon,
     enabled: true,
     keywords: ['Designación'],
   },
-  { id: 'zarpada', label: 'Zarpadas', emoji: '⛵', enabled: true, keywords: ['Zarpada'] },
-  { id: 'arribo', label: 'Arribos', emoji: '🚢', enabled: true, keywords: ['Arribo'] },
-  { id: 'informe', label: 'Informes', emoji: '📄', enabled: true, keywords: ['Informe'] },
-  { id: 'validacion', label: 'Validaciones', emoji: '✅', enabled: true, keywords: ['Validación'] },
-  { id: 'alerta', label: 'Alertas', emoji: '⚠️', enabled: true, keywords: ['Alerta'] },
+  { id: 'zarpada', label: 'Zarpadas', icon: ShipIcon, enabled: true, keywords: ['Zarpada'] },
+  { id: 'arribo', label: 'Arribos', icon: ShipIcon, enabled: true, keywords: ['Arribo'] },
+  { id: 'informe', label: 'Informes', icon: FileTextIcon, enabled: true, keywords: ['Informe'] },
+  { id: 'validacion', label: 'Validadas', icon: CheckIcon, enabled: true, keywords: ['Validación'] },
+  { id: 'alerta', label: 'Alertas', icon: WarningIcon, enabled: true, keywords: ['Alerta'] },
   {
     id: 'reunion',
     label: 'Reuniones',
-    emoji: '👥',
+    icon: UserGroupIcon,
     enabled: true,
     keywords: ['Reunión', 'Capacitación', 'Taller'],
   },
-  { id: 'navegacion', label: 'Navegación', emoji: '🌊', enabled: true, keywords: ['Navegación'] },
+  { id: 'navegacion', label: 'Navegación', icon: WaveIcon, enabled: true, keywords: ['Navegación'] },
 ])
 
 const allFiltersSelected = computed(() => eventTypes.value.every((type) => type.enabled))
+
+// Calculate counts by event type
+const eventCounts = computed(() => {
+  const counts: Record<string, number> = {}
+  allEvents.forEach((event) => {
+    counts[event.type] = (counts[event.type] || 0) + 1
+  })
+  return counts
+})
 
 const toggleAllFilters = () => {
   const newState = !allFiltersSelected.value
@@ -389,6 +428,7 @@ const calendarOptions = ref({
   plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin, listPlugin],
   initialView: 'dayGridMonth',
   locale: esLocale,
+  firstDay: 0, // 0 = Domingo
   headerToolbar: {
     left: 'prev,next today',
     center: 'title',
