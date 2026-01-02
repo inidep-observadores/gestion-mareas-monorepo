@@ -319,17 +319,15 @@ export class MareasService {
 
         // Ejecutar cambio de estado
         return await this.prisma.$transaction(async (tx) => {
+            let additionalMareaData = {};
 
             // Logic for REGISTRAR_INICIO
             if (actionKey === 'REGISTRAR_INICIO') {
                 if (!payload.fechaInicio) throw new Error('La fecha de inicio es requerida para iniciar la marea.');
                 const fechaInicio = new Date(payload.fechaInicio);
 
-                // Update Marea global start date
-                await tx.marea.update({
-                    where: { id },
-                    data: { fechaInicioObservador: fechaInicio }
-                });
+                // Prepare global marea update data
+                additionalMareaData = { fechaInicioObservador: fechaInicio };
 
                 // Update First Stage Departure
                 const etapa1 = marea.etapas[0];
@@ -348,7 +346,8 @@ export class MareasService {
                 where: { id },
                 data: {
                     estadoActualId: transicion.estadoDestinoId,
-                    fechaUltimaActualizacion: new Date()
+                    fechaUltimaActualizacion: new Date(),
+                    ...additionalMareaData
                 },
                 include: { estadoActual: true }
             });
