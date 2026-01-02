@@ -1,5 +1,5 @@
 ﻿<template>
-  <div class="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900 h-full flex flex-col">
+  <div class="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900 flex flex-col gap-4">
     <div class="mb-6 flex items-center justify-between">
       <div>
         <h2 class="text-sm font-black text-gray-900 dark:text-white uppercase tracking-widest flex items-center gap-2">
@@ -14,16 +14,16 @@
       </div>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-10 items-start">
-      <div class="flex flex-col items-center justify-center min-h-[260px]">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+      <div class="flex flex-col items-center justify-center">
         <h3 class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Proporción</h3>
         <div class="w-full flex justify-center">
-          <apexchart type="donut" height="280" :options="chartOptions" :series="series" />
+          <apexchart type="donut" height="240" :options="chartOptions" :series="series" />
         </div>
       </div>
 
-      <div class="flex flex-col h-full justify-center py-4">
-        <h3 class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-6 border-b border-gray-50 dark:border-gray-800/50 pb-2">Distribución Nominal</h3>
+      <div class="flex flex-col justify-center py-2">
+        <h3 class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4 border-b border-gray-50 dark:border-gray-800/50 pb-2">Distribución Nominal</h3>
         <div class="space-y-4" v-if="distribution.length">
           <div v-for="item in distribution" :key="item.label" class="group/item">
             <div 
