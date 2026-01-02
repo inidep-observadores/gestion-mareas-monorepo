@@ -115,6 +115,15 @@ const router = createRouter({
       },
     },
     {
+      path: '/mareas/editar/:id',
+      name: 'EditarMarea',
+      component: () => import('@/modules/mareas/views/EditarMareaView.vue'),
+      meta: {
+        title: 'Editar Marea',
+        requiresAuth: true,
+      },
+    },
+    {
       path: '/mareas/calendar',
       name: 'MareasCalendar',
       component: CalendarioView,

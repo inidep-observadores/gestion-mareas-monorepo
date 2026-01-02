@@ -56,6 +56,16 @@ const mareasService = {
     create: async (mareaData: any): Promise<any> => {
         const { data } = await httpClient.post('/mareas', mareaData);
         return data;
+    },
+
+    getById: async (id: string): Promise<any> => {
+        const { data } = await httpClient.get<any>(`/mareas/${id}`);
+        return data;
+    },
+
+    update: async (id: string, updateData: any): Promise<any> => {
+        const { data } = await httpClient.patch<any>(`/mareas/${id}`, updateData);
+        return data;
     }
 };
 

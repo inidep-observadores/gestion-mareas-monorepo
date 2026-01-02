@@ -1,6 +1,6 @@
 <template>
-  <AdminLayout 
-    title="Panel Operativo de Mareas" 
+  <AdminLayout
+    title="Panel Operativo de Mareas"
     description="Monitoreo en tiempo real de las operaciones activas."
   >
     <div class="relative min-h-[calc(100vh-100px)] z-1">
@@ -15,14 +15,14 @@
           <div class="flex items-center justify-between mb-2">
             <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">{{ kpi.label }}</span>
             <div class="flex items-center gap-2">
-               <button 
+               <button
                  @click.stop="toggleStateVisibility(kpi.codigo)"
                  class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
                  :title="hiddenStates.has(kpi.codigo) ? 'Mostrar' : 'Ocultar'"
                >
-                 <component 
-                   :is="hiddenStates.has(kpi.codigo) ? EyeSlashIcon : EyeIcon" 
-                   class="w-4 h-4" 
+                 <component
+                   :is="hiddenStates.has(kpi.codigo) ? EyeSlashIcon : EyeIcon"
+                   class="w-4 h-4"
                    :class="{ 'opacity-50': hiddenStates.has(kpi.codigo) }"
                  />
                </button>
@@ -60,7 +60,7 @@
                     class="text-sm pl-9 pr-4 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 focus:ring-2 focus:ring-brand-500/20 outline-none transition-all w-full sm:w-64"
                   />
                 </div>
-                <button 
+                <button
                   @click="router.push('/mareas/nueva')"
                   class="flex items-center justify-center gap-2 px-4 py-2.5 bg-brand-500 text-white rounded-xl text-sm font-bold hover:bg-brand-600 transition-all shadow-lg shadow-brand-500/10 active:scale-95"
                 >
@@ -69,7 +69,7 @@
                 </button>
               </div>
             </div>
-            
+
             <div class="overflow-x-auto custom-scrollbar">
               <!-- Loading State -->
               <div v-if="loading && mareas.length === 0" class="p-20 flex flex-col items-center">
@@ -151,7 +151,7 @@
                   </tr>
                 </tbody>
               </table>
-              
+
               <!-- Empty State -->
               <div v-if="!loading && filteredMareas.length === 0" class="p-20 flex flex-col items-center justify-center text-center">
                 <div class="w-20 h-20 bg-gray-50 dark:bg-gray-800 rounded-full flex items-center justify-center mb-4">
@@ -166,7 +166,7 @@
       </div>
     </div>
 
-    <MareaContextSidebar 
+    <MareaContextSidebar
       :is-open="isSidebarOpen"
       :marea="selectedMarea"
       :context="selectedMareaContext"
@@ -183,8 +183,8 @@ import { useRouter } from 'vue-router'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import MareaContextSidebar from '../components/MareaContextSidebar.vue'
 import { useMareas } from '../composables/useMareas'
-import { 
-  ShipIcon, 
+import {
+  ShipIcon,
   SearchIcon,
   HorizontalDots,
   EditIcon,
@@ -197,10 +197,10 @@ import {
 } from '@/icons'
 
 const router = useRouter()
-const { 
-  loading, 
-  kpis: rawKpis, 
-  mareas, 
+const {
+  loading,
+  kpis: rawKpis,
+  mareas,
   fetchDashboard,
   fetchMareaContext,
   executeAction,
@@ -264,13 +264,13 @@ const closeSidebar = () => {
 
 const goToDetalle = () => {
   if (selectedMarea.value) {
-    router.push(`/mareas/${selectedMarea.value.id}`)
+    router.push(`/mareas/editar/${selectedMarea.value.id}`)
   }
 }
 
 const getStatusClasses = (status?: string) => {
   if (!status) return 'bg-gray-50 text-gray-700 dark:bg-gray-800 dark:text-gray-400'
-  
+
   const s = status.toUpperCase()
   if (s === 'DESIGNADA')
     return 'bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400'
@@ -286,7 +286,7 @@ const getStatusClasses = (status?: string) => {
     return 'bg-orange-50 text-orange-700 dark:bg-orange-500/10 dark:text-orange-400'
   if (s === 'PENDIENTE_DE_INFORME')
     return 'bg-purple-50 text-purple-700 dark:bg-purple-500/10 dark:text-purple-400'
-  
+
   return 'bg-gray-50 text-gray-700 dark:bg-gray-800 dark:text-gray-400'
 }
 
