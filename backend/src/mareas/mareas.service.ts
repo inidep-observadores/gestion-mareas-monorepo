@@ -482,6 +482,106 @@ export class MareasService {
         return alerts;
     }
 
+    async getWorkforceStatus(year?: number) {
+        const operationalYear = this.resolveYear(year);
+        const periodStart = new Date(operationalYear, 0, 1, 0, 0, 0, 0);
+        const now = new Date();
+
+        // Observadores activos
+        const observadores = await this.prisma.observador.findMany({
+            where: { activo: true }
+        });
+
+        // Etapas del año operativo (incluye las que cruzan año)
+        const etapas = await this.prisma.mareaEtapa.findMany({
+            where: {
+                marea: { activo: true, anioMarea: operationalYear },
+                fechaZarpada: { not: null }
+            },
+            include: {
+                marea: {
+                    include: { estadoActual: true }
+                },
+                observadores: {
+                    include: { observador: true }
+                }
+            }
+        });
+
+        const activeNav = new Set<string>();
+        const lastArrivalByObs = new Map<string, Date>();
+        const obsConMareas = new Set<string>();
+
+        etapas.forEach((etapa) => {
+            const inicio = etapa.fechaZarpada ? new Date(etapa.fechaZarpada) : null;
+            if (!inicio) return;
+            const finRaw = etapa.fechaArribo ? new Date(etapa.fechaArribo) : null;
+            const fin = finRaw || now;
+            if (fin < periodStart) return;
+
+            etapa.observadores.forEach((o) => {
+                const obs = o.observador;
+                if (!obs?.activo) return;
+
+                obsConMareas.add(obs.id);
+
+                const isNavigating = !finRaw || fin > now || etapa.marea.estadoActual?.codigo === 'EN_EJECUCION';
+                if (isNavigating) {
+                    activeNav.add(obs.id);
+                }
+
+                if (finRaw) {
+                    const prev = lastArrivalByObs.get(obs.id);
+                    if (!prev || finRaw > prev) {
+                        lastArrivalByObs.set(obs.id, finRaw);
+                    }
+                }
+            });
+        });
+
+        const totalActivos = observadores.length;
+
+        const descansoIds = new Set<string>();
+        const topDryCandidates: Array<{ id: string; name: string; days: number }> = [];
+
+        observadores.forEach((obs) => {
+            if (!obs.activo) return;
+            if (!obsConMareas.has(obs.id)) return; // en stand-by sin embarques en el año
+            if (activeNav.has(obs.id)) return; // si está navegando no cuenta para descanso/top dry
+            const lastArrival = lastArrivalByObs.get(obs.id);
+            if (!lastArrival) return;
+            const daysSince = Math.floor((now.getTime() - lastArrival.getTime()) / (1000 * 60 * 60 * 24));
+            if (daysSince < 15) {
+                descansoIds.add(obs.id);
+            }
+            topDryCandidates.push({
+                id: obs.id,
+                name: `${obs.nombre} ${obs.apellido}`.trim(),
+                days: daysSince
+            });
+        });
+
+        topDryCandidates.sort((a, b) => b.days - a.days);
+        const topDry = topDryCandidates.slice(0, 5);
+
+        // Denominador: solo los que tuvieron embarques en el año
+        const totalActivos = Array.from(obsConMareas).length;
+
+        const navegando = activeNav.size;
+        const descanso = descansoIds.size;
+        const disponiblesRaw = observadores.filter(o => o.disponible && obsConMareas.has(o.id)).length;
+        const disponibles = Math.max(disponiblesRaw - descanso, 0);
+
+        return {
+            totalActivos,
+            navegando,
+            descanso,
+            disponibles,
+            licencia: '?',
+            topDry
+        };
+    }
+
     async getMareaContext(id: string) {
         const [marea, transiciones] = (await Promise.all([
             this.prisma.marea.findUnique({

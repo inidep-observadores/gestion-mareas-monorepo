@@ -25,6 +25,11 @@ export class MareasController {
         return this.mareasService.getFleetDistributionByFishery(year ? Number(year) : undefined);
     }
 
+    @Get('workforce/status')
+    getWorkforceStatus(@Query('year') year?: string) {
+        return this.mareasService.getWorkforceStatus(year ? Number(year) : undefined);
+    }
+
     @Get('alertas/personal-fatiga')
     getFatigueAlerts(@Query('year') year?: string) {
         return this.mareasService.getFatigueAlerts(year ? Number(year) : undefined);
