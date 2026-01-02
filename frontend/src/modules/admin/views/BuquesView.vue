@@ -20,7 +20,7 @@
         </template>
 
         <template #table-row="{ item: buque }">
-          <th scope="row" class="px-6 py-4 font-bold text-gray-900 whitespace-nowrap dark:text-white">
+          <th scope="row" class="px-6 py-4 font-bold text-gray-900 whitespace-nowrap dark:text-gray-400">
             {{ buque.nombreBuque }}
           </th>
           <td class="px-6 py-4 font-mono font-bold text-brand-600 dark:text-brand-400">
@@ -48,7 +48,7 @@
         <template #card-item="{ item: buque }">
             <div class="flex justify-between items-start mb-4">
                 <div class="flex-1 min-w-0">
-                    <div class="font-black text-gray-900 dark:text-white text-lg truncate leading-tight mb-1">{{ buque.nombreBuque }}</div>
+                    <div class="font-black text-gray-900 dark:text-gray-400 text-lg truncate leading-tight mb-1">{{ buque.nombreBuque }}</div>
                     <div class="text-xs text-brand-700 dark:text-brand-400 font-mono font-bold flex items-center gap-1">
                         <span class="text-gray-400 font-normal">Matrícula:</span>
                         {{ buque.matricula }}

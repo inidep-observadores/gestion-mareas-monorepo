@@ -4,6 +4,7 @@
     :title="isEditing ? 'Editar Observador' : 'Nuevo Observador'"
     @close="closeModal"
     maxWidth="3xl"
+    variant="danger"
   >
     <form @submit.prevent="handleSubmit" class="space-y-4">
         <!-- Foto Preview/Upload -->

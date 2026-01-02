@@ -1,7 +1,7 @@
 <template>
   <aside
     :class="[
-      'fixed mt-16 flex flex-col lg:mt-0 top-0 px-5 left-0 bg-white dark:bg-gray-900 dark:border-gray-800 text-gray-900 h-screen transition-all duration-300 ease-in-out z-99999 border-r border-gray-200',
+      'fixed mt-16 flex flex-col lg:mt-0 top-0 px-5 left-0 bg-red-100 dark:bg-red-950/60 dark:border-red-900/50 text-gray-900 h-screen transition-all duration-300 ease-in-out z-99999 border-r border-red-300',
       {
         'lg:w-[290px]': isExpanded || isMobileOpen || isHovered,
         'lg:w-[90px]': !isExpanded && !isHovered,
@@ -29,7 +29,7 @@
           <span class="text-lg font-bold text-gray-800 dark:text-white leading-tight"
             >Panel de</span
           >
-          <span class="text-lg font-bold text-purple-600 dark:text-purple-400 leading-tight"
+          <span class="text-lg font-bold text-red-600 dark:text-red-400 leading-tight"
             >Admin</span
           >
         </div>
@@ -81,7 +81,7 @@
     </div>
 
     <!-- Sticky Footer -->
-    <div class="mt-auto py-6 border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900">
+    <div class="mt-auto py-6 border-t border-red-200/50 dark:border-red-900/50 bg-red-100 dark:bg-red-950/60">
       <nav>
         <ul class="flex flex-col gap-4">
           <li v-for="item in systemGroups.items" :key="item.name">

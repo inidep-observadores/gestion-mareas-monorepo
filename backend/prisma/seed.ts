@@ -16,6 +16,213 @@ const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
+const normalize = (str: string, removeSpaces = false) => {
+  if (!str) return '';
+  const normalized = str
+    .toLowerCase()
+    .trim()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9\s]/g, '');
+
+  return removeSpaces ? normalized.replace(/\s+/g, '') : normalized;
+};
+
+const safeDate = (value: string | null | undefined) => {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+};
+
+async function seedMareasFromJsonl() {
+  const jsonlPath = path.join(__dirname, 'data/mareas_2025.jsonl');
+  if (!fs.existsSync(jsonlPath)) {
+    console.warn('mareas_2025.jsonl not found, skipping mareas seeding.');
+    return;
+  }
+
+  const content = fs.readFileSync(jsonlPath, 'utf8');
+  const records = content
+    .split('\n')
+    .filter((line) => line.trim())
+    .map((line) => JSON.parse(line));
+
+  const [buques, observadores, pesquerias, estados] = await Promise.all([
+    prisma.buque.findMany(),
+    prisma.observador.findMany(),
+    prisma.pesqueria.findMany(),
+    prisma.estadoMarea.findMany(),
+  ]);
+  const adminUser = await prisma.user.findFirst({ where: { roles: { has: 'admin' } } });
+
+  const stats = {
+    total: records.length,
+    success: 0,
+    failed: 0,
+    buqueNotFound: [] as string[],
+    obsNotFound: [] as string[],
+  };
+
+  const getBuque = (name: string) => {
+    const normName = normalize(name, true);
+    let found = buques.find((b) => normalize(b.nombreBuque, true) === normName);
+    if (found) return found;
+
+    found = buques.find((b) => {
+      const normBuque = normalize(b.nombreBuque, true);
+      return normName.startsWith(normBuque) || normBuque.startsWith(normName);
+    });
+
+    if (!found && normName.includes('atlanticexpres')) {
+      return buques.find((b) => normalize(b.nombreBuque, true).includes('atlanticexpress'));
+    }
+
+    return found;
+  };
+
+  const getObservador = (name: string) => {
+    if (!name) return null;
+    const inputParts = normalize(name).split(/\s+/).filter((p) => p.length > 2);
+
+    return observadores.find((o) => {
+      const nomParts = normalize(o.nombre).split(/\s+/).filter((p) => p.length > 2);
+      const apeParts = normalize(o.apellido).split(/\s+/).filter((p) => p.length > 2);
+
+      const hasApellido = apeParts.every((ap) => inputParts.some((ip) => ip.includes(ap) || ap.includes(ip)));
+      const hasNombre = nomParts.some((np) => inputParts.some((ip) => ip.includes(np) || np.includes(ip)));
+
+      return hasApellido && hasNombre;
+    });
+  };
+
+  const mapPesqueria = (especie: string) => {
+    const esp = normalize(especie);
+    if (esp.includes('austral')) return pesquerias.find((p) => p.codigo === 'AUSTRALES');
+    if (esp.includes('merluzanegra')) return pesquerias.find((p) => p.codigo === 'MERLUZA_NEGRA');
+    if (esp.includes('merluza')) return pesquerias.find((p) => p.codigo === 'MERLUZA_COMUN');
+    if (esp.includes('centolla')) return pesquerias.find((p) => p.codigo === 'CENTOLLA');
+    if (esp.includes('calamar')) return pesquerias.find((p) => p.codigo === 'CALAMAR');
+    if (esp.includes('vieira')) return pesquerias.find((p) => p.codigo === 'VIEIRA');
+    if (esp.includes('langostino')) return pesquerias.find((p) => p.codigo === 'LANGOSTINO');
+    return null;
+  };
+
+  const mapEstado = (estadoRaw: string) => {
+    const est = normalize(estadoRaw);
+    if (est.includes('realizada') || est.includes('terminada') || est.includes('protocolizada')) {
+      return estados.find((e) => e.codigo === 'PROTOCOLIZADA');
+    }
+    if (est.includes('navegando') || est.includes('ejecucion')) return estados.find((e) => e.codigo === 'EN_EJECUCION');
+    if (est.includes('espera') || est.includes('designada')) return estados.find((e) => e.codigo === 'DESIGNADA');
+    if (est.includes('cancelada') || est.includes('sinpesca')) return estados.find((e) => e.codigo === 'CANCELADA');
+    return estados.find((e) => e.codigo === 'DESIGNADA');
+  };
+
+  console.log(`Procesando ${records.length} mareas desde JSONL...`);
+
+  for (const data of records) {
+    const {
+      nroMarea,
+      buqueName,
+      obsName,
+      especieStr,
+      estadoStr,
+      zarpadaEstimada,
+      empresa,
+      etapas = [],
+      diasEstimados,
+      anioMarea = 2025,
+    } = data;
+
+    const buque = getBuque(buqueName);
+    const observador = getObservador(obsName);
+    const pesqueria = mapPesqueria(especieStr);
+    const estadoActual = mapEstado(estadoStr);
+
+    if (!buque) {
+      console.warn(`[Marea ${nroMarea}] Buque no encontrado: ${buqueName}`);
+      stats.buqueNotFound.push(buqueName);
+      stats.failed++;
+      continue;
+    }
+
+    if (!observador && obsName) {
+      stats.obsNotFound.push(obsName);
+    }
+
+    try {
+      await prisma.$transaction(async (tx) => {
+        const marea = await tx.marea.create({
+          data: {
+            anioMarea,
+            nroMarea,
+            buqueId: buque.id,
+            estadoActualId: estadoActual?.id || estados.find((e) => e.codigo === 'DESIGNADA')!.id,
+            tipoMarea: 'MC',
+            observaciones: `Importada de JSONL. Empresa: ${empresa}. Especie: ${especieStr}`,
+            fechaZarpadaEstimada: safeDate(zarpadaEstimada),
+            diasEstimados,
+          },
+        });
+
+        await tx.mareaMovimiento.create({
+          data: {
+            mareaId: marea.id,
+            fechaHora: new Date(),
+            usuarioId: adminUser?.id,
+            tipoEvento: 'CREACION',
+            estadoHastaId: marea.estadoActualId,
+            detalle: 'Marea importada de seguimiento 2025 (JSONL)',
+          },
+        });
+
+        for (const etap of etapas) {
+          const etapa = await tx.mareaEtapa.create({
+            data: {
+              mareaId: marea.id,
+              nroEtapa: etap.nroEtapa,
+              pesqueriaId: pesqueria?.id,
+              tipoEtapa: 'COMERCIAL',
+              fechaZarpada: safeDate(etap.fecha_zarpada),
+              fechaArribo: safeDate(etap.fecha_arribo),
+              observaciones: `Etapa ${etap.nroEtapa} importada`,
+            },
+          });
+
+          if (observador) {
+            await tx.mareaEtapaObservador.create({
+              data: {
+                etapaId: etapa.id,
+                observadorId: observador.id,
+                rol: 'PRINCIPAL',
+                esDesignado: true,
+              },
+            });
+          }
+        }
+      });
+      stats.success++;
+    } catch (error: any) {
+      console.error(`Error procesando marea ${nroMarea}: ${error.message}`);
+      stats.failed++;
+    }
+  }
+
+  console.log('\n--- Resumen mareas (JSONL) ---');
+  console.log(`Total registros: ${stats.total}`);
+  console.log(`Procesados con Ǹxito: ${stats.success}`);
+  console.log(`Fallidos: ${stats.failed}`);
+
+  if (stats.buqueNotFound.length > 0) {
+    console.log(`Buques no encontrados: ${[...new Set(stats.buqueNotFound)].join(', ')}`);
+  }
+
+  if (stats.obsNotFound.length > 0) {
+    const uniques = [...new Set(stats.obsNotFound)];
+    console.log(`Observadores no encontrados (${uniques.length}): ${uniques.slice(0, 10).join(', ')}${uniques.length > 10 ? '...' : ''}`);
+  }
+}
+
 async function main() {
   console.log('Seeding database...');
 
@@ -322,6 +529,8 @@ async function main() {
     }
     console.log('Buques seeding process completed!');
   }
+
+  await seedMareasFromJsonl();
 
   console.log('Seeding completed successfully!');
 }

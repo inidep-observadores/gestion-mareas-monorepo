@@ -22,7 +22,7 @@
           <td class="px-6 py-4 font-mono font-bold text-blue-600 dark:text-blue-400">
               {{ obs.codigoInterno }}
           </td>
-          <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+          <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-gray-400">
               <div class="flex items-center gap-3">
                    <img :src="getFullImageUrl(obs.fotoUrl)" class="w-8 h-8 rounded-full object-cover shadow-sm border border-gray-100 dark:border-gray-700" alt="Foto">
                    <div>
@@ -72,7 +72,7 @@
                             {{ obs.activo ? 'Activo' : 'Inactivo' }}
                         </span>
                     </div>
-                    <div class="font-extrabold text-gray-900 dark:text-white text-base truncate">{{ obs.apellido }}, {{ obs.nombre }}</div>
+                    <div class="font-extrabold text-gray-900 dark:text-gray-400 text-base truncate">{{ obs.apellido }}, {{ obs.nombre }}</div>
                     <div class="text-xs text-gray-500 font-medium truncate">{{ TIPO_CONTRATO_LABELS[obs.tipoContrato] }}</div>
                 </div>
             </div>
