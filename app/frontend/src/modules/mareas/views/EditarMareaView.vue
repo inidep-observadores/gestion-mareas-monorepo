@@ -70,8 +70,13 @@
               class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all duration-200 group"
               :class="[
                 currentTab === tab.id
+<<<<<<< HEAD:app/frontend/src/modules/mareas/views/EditarMareaView.vue
                   ? 'bg-surface text-primary shadow-sm ring-1 ring-border font-bold'
                   : 'text-text-muted hover:bg-surface-muted hover:text-text'
+=======
+                  ? 'bg-white dark:bg-gray-800 text-brand-600 dark:text-brand-400 shadow-sm ring-1 ring-gray-200 dark:ring-gray-700 font-medium'
+                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200'
+>>>>>>> 0d3abac (Calcular Alertas de Personal / Fatiga):frontend/src/modules/mareas/views/EditarMareaView.vue
               ]"
             >
               <component :is="tab.icon" class="w-5 h-5 flex-shrink-0" :class="currentTab === tab.id ? 'text-primary' : 'text-text-muted/60 group-hover:text-text-muted'" />
@@ -117,7 +122,11 @@
               <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
                 <!-- Nro Marea -->
                 <div class="space-y-1.5">
+<<<<<<< HEAD:app/frontend/src/modules/mareas/views/EditarMareaView.vue
                   <label class="block text-sm font-medium text-text-muted">Nro. Marea</label>
+=======
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Nro. Marea</label>
+>>>>>>> 0d3abac (Calcular Alertas de Personal / Fatiga):frontend/src/modules/mareas/views/EditarMareaView.vue
                   <input
                     v-model.number="form.nroMarea"
                     type="number"
@@ -127,7 +136,11 @@
 
                 <!-- Año -->
                 <div class="space-y-1.5">
+<<<<<<< HEAD:app/frontend/src/modules/mareas/views/EditarMareaView.vue
                   <label class="block text-sm font-medium text-text-muted">Año</label>
+=======
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Año</label>
+>>>>>>> 0d3abac (Calcular Alertas de Personal / Fatiga):frontend/src/modules/mareas/views/EditarMareaView.vue
                   <input
                     v-model.number="form.anioMarea"
                     type="number"
@@ -178,7 +191,26 @@
               </div>
             </section>
 
-
+            <!-- Configuración y Metadatos -->
+            <section class="bg-surface rounded-xl border border-border shadow-sm overflow-hidden">
+               <div class="px-6 py-4 border-b border-border flex justify-between items-center bg-surface-muted">
+                <h2 class="font-bold text-text flex items-center gap-2">
+                  <SettingsIcon class="w-4 h-4 text-primary" />
+                  Configuración y Metadatos
+                </h2>
+              </div>
+              <div class="p-6">
+                 <div class="space-y-1.5">
+                  <label class="block text-sm font-medium text-text-muted">Observaciones Generales</label>
+                  <textarea
+                    v-model="form.descripcion"
+                    rows="4"
+                    class="w-full rounded-lg border-border bg-surface-muted text-text py-2.5 px-3 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors resize-none outline-hidden"
+                    placeholder="Notas internas sobre esta marea..."
+                  ></textarea>
+                </div>
+              </div>
+             </section>
           </div>
 
           <!-- TAB: ETAPAS -->
@@ -251,7 +283,11 @@
 
            <!-- TAB: OBSERVADORES -->
           <div v-if="currentTab === 'observadores'" class="space-y-6">
+<<<<<<< HEAD:app/frontend/src/modules/mareas/views/EditarMareaView.vue
             <h2 class="text-lg font-bold text-text">Tripulación Científica</h2>
+=======
+            <h2 class="text-lg font-bold text-gray-900 dark:text-white">Tripulación Científica</h2>
+>>>>>>> 0d3abac (Calcular Alertas de Personal / Fatiga):frontend/src/modules/mareas/views/EditarMareaView.vue
 
              <!-- Placeholder for now -->
              <div class="bg-surface rounded-xl border border-border p-8 text-center">
@@ -358,6 +394,7 @@ onMounted(async () => {
             catalogosService.getObservadores()
         ]);
         marea.value = data;
+<<<<<<< HEAD:app/frontend/src/modules/mareas/views/EditarMareaView.vue
         observadores.value = obsList;
 
         const etapaPrincipal = data.etapas?.find((e: any) => e.nroEtapa === 1) || data.etapas?.[0];
@@ -374,6 +411,8 @@ onMounted(async () => {
             const day = String(d.getDate()).padStart(2, '0');
             return `${year}-${month}-${day}`;
         };
+=======
+>>>>>>> 0d3abac (Calcular Alertas de Personal / Fatiga):frontend/src/modules/mareas/views/EditarMareaView.vue
 
         // Init form
         form.value = {
