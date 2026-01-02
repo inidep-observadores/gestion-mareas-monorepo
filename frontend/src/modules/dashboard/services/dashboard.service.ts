@@ -34,8 +34,8 @@ export interface WorkforceStatus {
     navegando: number
     descanso: number
     disponibles: number
-    licencia: string | null
-    topDry: Array<{ id: string; name: string; days: number }>
+    licencia: number
+    topDry: Array<{ id: string; name: string; days: number; lastArrival: string }>
 }
 
 const dashboardService = {
