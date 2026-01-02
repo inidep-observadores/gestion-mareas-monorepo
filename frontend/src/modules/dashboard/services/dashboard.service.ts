@@ -1,4 +1,5 @@
 ﻿import httpClient from '@/config/http/http.client'
+import { useConfigStore } from '@/modules/shared/stores/config.store'
 
 export interface FleetDistributionItem {
     label: string
@@ -18,12 +19,14 @@ export interface FatigueAlert {
 
 const dashboardService = {
     async getFleetDistribution(): Promise<FleetDistributionResponse> {
-        const { data } = await httpClient.get<FleetDistributionResponse>('/mareas/flota-por-pesqueria')
+        const { selectedYear } = useConfigStore()
+        const { data } = await httpClient.get<FleetDistributionResponse>(`/mareas/flota-por-pesqueria?year=${selectedYear}`)
         return data
     },
 
     async getFatigueAlerts(): Promise<FatigueAlert[]> {
-        const { data } = await httpClient.get<FatigueAlert[]>('/mareas/alertas/personal-fatiga')
+        const { selectedYear } = useConfigStore()
+        const { data } = await httpClient.get<FatigueAlert[]>(`/mareas/alertas/personal-fatiga?year=${selectedYear}`)
         return data
     }
 }

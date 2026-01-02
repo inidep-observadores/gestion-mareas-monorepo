@@ -43,7 +43,12 @@ export class MareasService {
         return this.findOne(id);
     }
 
-    async getDashboardOperativo() {
+    private resolveYear(year?: number): number {
+        return year && !Number.isNaN(year) ? year : new Date().getFullYear();
+    }
+
+    async getDashboardOperativo(year?: number) {
+        const operationalYear = this.resolveYear(year);
         const [estados, transiciones] = await Promise.all([
             (this.prisma as any).estadoMarea.findMany({
                 where: { activo: true, mostrarEnPanel: true },
@@ -57,7 +62,9 @@ export class MareasService {
         const kpisRaw = await Promise.all(
             estados.map(async (e) => ({
                 label: e.nombre,
-                value: await (this.prisma as any).marea.count({ where: { estadoActualId: e.id, activo: true } }),
+                value: await (this.prisma as any).marea.count({
+                    where: { estadoActualId: e.id, activo: true, anioMarea: operationalYear }
+                }),
                 codigo: e.codigo
             }))
         );
@@ -67,6 +74,7 @@ export class MareasService {
         const mareas = await (this.prisma as any).marea.findMany({
             where: {
                 activo: true,
+                anioMarea: operationalYear,
                 estadoActual: {
                     mostrarEnPanel: true
                 }
@@ -192,12 +200,14 @@ export class MareasService {
         };
     }
 
-    async getDashboardKpis() {
+    async getDashboardKpis(year?: number) {
+        const operationalYear = this.resolveYear(year);
         const [buquesActivos, observadoresDisponibles, mareasDesignadas, listasParaProtocolizar] = await Promise.all([
             this.prisma.marea.groupBy({
                 by: ['buqueId'],
                 where: {
                     activo: true,
+                    anioMarea: operationalYear,
                     buque: {
                         activo: true
                     },
@@ -218,6 +228,7 @@ export class MareasService {
             this.prisma.marea.count({
                 where: {
                     activo: true,
+                    anioMarea: operationalYear,
                     estadoActual: {
                         codigo: 'DESIGNADA'
                     }
@@ -226,6 +237,7 @@ export class MareasService {
             this.prisma.marea.count({
                 where: {
                     activo: true,
+                    anioMarea: operationalYear,
                     estadoActual: {
                         codigo: 'ESPERANDO_PROTOCOLIZACION'
                     }
@@ -241,10 +253,12 @@ export class MareasService {
         };
     }
 
-    async getFleetDistributionByFishery() {
+    async getFleetDistributionByFishery(year?: number) {
+        const operationalYear = this.resolveYear(year);
         const activeMareas = await this.prisma.marea.findMany({
             where: {
                 activo: true,
+                anioMarea: operationalYear,
                 estadoActual: {
                     mostrarEnPanel: true
                 }
@@ -277,19 +291,21 @@ export class MareasService {
         };
     }
 
-    async getFatigueAlerts() {
-        const oneYearAgo = new Date();
-        oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+    async getFatigueAlerts(year?: number) {
+        const operationalYear = this.resolveYear(year);
+        const periodStart = new Date(operationalYear, 0, 1, 0, 0, 0, 0);
+        const periodEnd = new Date(operationalYear, 11, 31, 23, 59, 59, 999);
 
         const etapas = await this.prisma.mareaEtapa.findMany({
             where: {
                 marea: {
-                    activo: true
+                    activo: true,
+                    anioMarea: operationalYear
                 },
                 fechaArribo: { not: null },
                 OR: [
-                    { fechaZarpada: { not: null, gte: oneYearAgo } },
-                    { fechaArribo: { gte: oneYearAgo } }
+                    { fechaZarpada: { not: null, lte: periodEnd } },
+                    { fechaArribo: { gte: periodStart } }
                 ]
             },
             include: {
@@ -306,13 +322,18 @@ export class MareasService {
             const fin = etapa.fechaArribo ? new Date(etapa.fechaArribo) : null;
             if (!inicio || !fin) return;
 
+            // Recortar al rango del año operativo
+            const clampedInicio = inicio < periodStart ? periodStart : inicio;
+            const clampedFin = fin > periodEnd ? periodEnd : fin;
+            if (clampedFin < periodStart || clampedInicio > periodEnd) return;
+
             etapa.observadores.forEach((o) => {
                 if (!o.observador?.activo) return;
                 const data = observerIntervals.get(o.observadorId) ?? {
                     nombre: `${o.observador.nombre} ${o.observador.apellido}`,
                     tramos: []
                 };
-                data.tramos.push({ inicio: inicio < oneYearAgo ? oneYearAgo : inicio, fin });
+                data.tramos.push({ inicio: clampedInicio, fin: clampedFin });
                 observerIntervals.set(o.observadorId, data);
             });
         });

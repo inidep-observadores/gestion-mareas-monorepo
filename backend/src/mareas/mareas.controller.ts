@@ -11,23 +11,23 @@ export class MareasController {
     constructor(private readonly mareasService: MareasService) { }
 
     @Get('operativo')
-    getDashboardOperativo() {
-        return this.mareasService.getDashboardOperativo();
+    getDashboardOperativo(@Query('year') year?: string) {
+        return this.mareasService.getDashboardOperativo(year ? Number(year) : undefined);
     }
 
     @Get('kpis')
-    getDashboardKpis() {
-        return this.mareasService.getDashboardKpis();
+    getDashboardKpis(@Query('year') year?: string) {
+        return this.mareasService.getDashboardKpis(year ? Number(year) : undefined);
     }
 
     @Get('flota-por-pesqueria')
-    getFleetDistribution() {
-        return this.mareasService.getFleetDistributionByFishery();
+    getFleetDistribution(@Query('year') year?: string) {
+        return this.mareasService.getFleetDistributionByFishery(year ? Number(year) : undefined);
     }
 
     @Get('alertas/personal-fatiga')
-    getFatigueAlerts() {
-        return this.mareasService.getFatigueAlerts();
+    getFatigueAlerts(@Query('year') year?: string) {
+        return this.mareasService.getFatigueAlerts(year ? Number(year) : undefined);
     }
 
     @Get('search')
