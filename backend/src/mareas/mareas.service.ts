@@ -204,7 +204,7 @@ export class MareasService {
                         activo: true
                     },
                     estadoActual: {
-                        mostrarEnPanel: true
+                        codigo: 'EN_EJECUCION'
                     }
                 },
                 _count: {
