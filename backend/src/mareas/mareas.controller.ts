@@ -15,6 +15,11 @@ export class MareasController {
         return this.mareasService.getDashboardOperativo();
     }
 
+    @Get('kpis')
+    getDashboardKpis() {
+        return this.mareasService.getDashboardKpis();
+    }
+
     @Get('search')
     search(@Query('q') q: string) {
         return this.mareasService.search(q);

@@ -63,24 +63,39 @@
 </template>
 
 <script setup lang="ts">
+import { computed, onMounted, ref } from 'vue'
+import { toast } from 'vue-sonner'
 import { ShipIcon, UserGroupIcon, TaskIcon, CheckIcon } from '@/icons'
+import mareasService, { DashboardKpis } from '@/modules/mareas/services/mareas.service'
 
-const kpis = [
+type DashboardKpiKey = keyof DashboardKpis
+
+const stats = ref<DashboardKpis | null>(null)
+const kpiDefinitions: Array<
   {
+    key: DashboardKpiKey
+    title: string
+    subtext: string
+    icon: typeof ShipIcon
+    bgClass: string
+    iconContainerClass: string
+    iconClass: string
+    link: string
+  }
+> = [
+  {
+    key: 'flotaActiva',
     title: 'Flota Activa',
-    value: '34',
-    subtext: 'Observadores navegando',
+    subtext: 'Observadores en operación',
     icon: ShipIcon,
     bgClass: 'bg-blue-500',
     iconContainerClass: 'bg-blue-50 dark:bg-blue-900/20',
     iconClass: 'text-blue-500',
-    trend: '+2',
-    trendClass: 'bg-blue-50 text-blue-600 dark:bg-blue-900/30',
     link: '/mareas/dashboard?status=sailing',
   },
   {
+    key: 'observadoresDisponibles',
     title: 'Disponibles',
-    value: '12',
     subtext: 'Listos para asignar',
     icon: UserGroupIcon,
     bgClass: 'bg-emerald-500',
@@ -89,8 +104,8 @@ const kpis = [
     link: '/mareas/workflow?status=available',
   },
   {
+    key: 'mareasDesignadas',
     title: 'Mareas Designadas',
-    value: '08',
     subtext: 'Pendientes de inicio',
     icon: TaskIcon,
     bgClass: 'bg-gray-500',
@@ -99,15 +114,31 @@ const kpis = [
     link: '/mareas/operativo?estado=designada',
   },
   {
-    title: 'Protocolizado',
-    value: '16/24',
-    subtext: 'Rendimiento mensual',
+    key: 'listasParaProtocolizar',
+    title: 'Listas para protocolizar',
+    subtext: 'Informes aprobados',
     icon: CheckIcon,
     bgClass: 'bg-brand-500',
     iconContainerClass: 'bg-brand-50 dark:bg-brand-900/20',
     iconClass: 'text-brand-500',
-    progress: 75,
     link: '/mareas/stats',
   },
 ]
+
+const kpis = computed(() =>
+  kpiDefinitions.map((definition) => ({
+    ...definition,
+    value: stats.value ? stats.value[definition.key] : '—',
+  }))
+)
+
+const fetchKpis = async () => {
+  try {
+    stats.value = await mareasService.getDashboardKpis()
+  } catch (error) {
+    toast.error('No se pudieron cargar los indicadores. Por favor, intente nuevamente.')
+  }
+}
+
+onMounted(() => void fetchKpis())
 </script>
