@@ -539,10 +539,8 @@ export class MareasService {
             });
         });
 
-        const totalActivos = observadores.length;
-
         const descansoIds = new Set<string>();
-        const topDryCandidates: Array<{ id: string; name: string; days: number }> = [];
+        const topDryCandidates: Array<{ id: string; name: string; days: number; lastArrival: string }> = [];
 
         observadores.forEach((obs) => {
             if (!obs.activo) return;
@@ -557,7 +555,8 @@ export class MareasService {
             topDryCandidates.push({
                 id: obs.id,
                 name: `${obs.nombre} ${obs.apellido}`.trim(),
-                days: daysSince
+                days: daysSince,
+                lastArrival: lastArrival.toISOString()
             });
         });
 
@@ -565,7 +564,7 @@ export class MareasService {
         const topDry = topDryCandidates.slice(0, 5);
 
         // Denominador: solo los que tuvieron embarques en el año
-        const totalActivos = Array.from(obsConMareas).length;
+        const totalActivosFinal = Array.from(obsConMareas).length;
 
         const navegando = activeNav.size;
         const descanso = descansoIds.size;
@@ -573,11 +572,11 @@ export class MareasService {
         const disponibles = Math.max(disponiblesRaw - descanso, 0);
 
         return {
-            totalActivos,
+            totalActivos: totalActivosFinal,
             navegando,
             descanso,
             disponibles,
-            licencia: '?',
+            licencia: 0,
             topDry
         };
     }

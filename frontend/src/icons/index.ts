@@ -59,6 +59,7 @@ import GripVerticalIcon from './GripVerticalIcon.vue'
 import EyeIcon from './EyeIcon.vue'
 import EyeSlashIcon from './EyeSlashIcon.vue'
 import EditIcon from './EditIcon.vue'
+import HotelIcon from './HotelIcon.vue'
 import SearchIcon from './SearchIcon.vue'
 import ShieldIcon from './ShieldIcon.vue'
 
@@ -126,4 +127,5 @@ export {
   SearchIcon,
   ShieldIcon,
   EditIcon,
+  HotelIcon,
 }
