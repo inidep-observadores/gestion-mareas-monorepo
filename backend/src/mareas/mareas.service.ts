@@ -361,11 +361,13 @@ export class MareasService {
             if (!inicio) return;
 
             const finRaw = etapa.fechaArribo ? new Date(etapa.fechaArribo) : null;
-            const fin = finRaw || now;
+            // Si sigue navegando o el arribo es posterior, contamos hasta ahora (sin cortar al 31/12)
+            const finCandidate = finRaw || now;
+            const fin = finCandidate > now ? now : finCandidate;
 
             const clampedInicio = inicio < periodStart ? periodStart : inicio;
-            const clampedFin = fin > periodEnd ? periodEnd : fin;
-            if (clampedFin < periodStart || clampedInicio > periodEnd) return;
+            const clampedFin = fin;
+            if (clampedFin < periodStart || clampedInicio > clampedFin) return;
 
             const m = etapa.marea;
             const mareaCode = `${m.tipoMarea}-${String(m.nroMarea).padStart(3, '0')}-${String(m.anioMarea).slice(-2)}`;

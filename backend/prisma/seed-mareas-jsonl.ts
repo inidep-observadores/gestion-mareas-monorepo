@@ -42,8 +42,46 @@ async function main() {
     if (!DRY_RUN) {
         console.log('Cleaning up existing 2025 mareas...');
         try {
-            // Delete mareas (Cascade should handle related records if configured, otherwise this might fail)
-            // We'll trust the schema has Cascade delete for now as per previous interactions
+            const mareas2025 = await prisma.marea.findMany({
+                where: { anioMarea: 2025 },
+                select: { id: true }
+            });
+            const mareaIds = mareas2025.map((m) => m.id);
+
+            if (mareaIds.length > 0) {
+                await prisma.muestraDetalleTalla.deleteMany({
+                    where: { muestra: { lance: { etapa: { mareaId: { in: mareaIds } } } } }
+                });
+                await prisma.submuestra.deleteMany({
+                    where: { muestra: { lance: { etapa: { mareaId: { in: mareaIds } } } } }
+                });
+                await prisma.muestra.deleteMany({
+                    where: { lance: { etapa: { mareaId: { in: mareaIds } } } }
+                });
+                await prisma.captura.deleteMany({
+                    where: { lance: { etapa: { mareaId: { in: mareaIds } } } }
+                });
+                await prisma.lance.deleteMany({
+                    where: { etapa: { mareaId: { in: mareaIds } } }
+                });
+                await prisma.mareaEtapaObservador.deleteMany({
+                    where: { etapa: { mareaId: { in: mareaIds } } }
+                });
+                await prisma.mareaArchivo.deleteMany({
+                    where: { mareaId: { in: mareaIds } }
+                });
+                await prisma.mareaMovimiento.deleteMany({
+                    where: { mareaId: { in: mareaIds } }
+                });
+                await prisma.produccion.deleteMany({
+                    where: { mareaId: { in: mareaIds } }
+                });
+                await prisma.mareaEtapa.deleteMany({
+                    where: { mareaId: { in: mareaIds } }
+                });
+            }
+
+            // El esquema no tiene cascade; borramos en orden de dependencias
             await prisma.marea.deleteMany({ where: { anioMarea: 2025 } });
             console.log('Cleanup successful.');
         } catch (e) {
@@ -71,10 +109,17 @@ async function main() {
         return removeSpaces ? n.replace(/\s+/g, "") : n;
     };
 
-    const safeDate = (d: string | null | undefined) => {
+    const safeDate = (d: string | Date | null | undefined) => {
         if (!d) return null;
+        if (d instanceof Date) return isNaN(d.getTime()) ? null : d;
 
-        // Try parsing DD/MM/YYYY manually first
+        // ISO strings (ya parseadas en JSONL)
+        if (/^\d{4}-\d{2}-\d{2}T/.test(d)) {
+            const isoDate = new Date(d);
+            return isNaN(isoDate.getTime()) ? null : isoDate;
+        }
+
+        // Try parsing DD/MM/YYYY manual (formato original CSV)
         if (d.includes('/')) {
             const parts = d.split('/');
             if (parts.length === 3) {
@@ -82,8 +127,7 @@ async function main() {
                 const month = parseInt(parts[1], 10) - 1; // JS months are 0-indexed
                 let year = parseInt(parts[2], 10);
                 if (year < 100) year += 2000; // Handle 2-digit years
-
-                const date = new Date(year, month, day);
+                const date = new Date(Date.UTC(year, month, day, 3, 0, 0)); // UTC-3 -> +3h
                 return isNaN(date.getTime()) ? null : date;
             }
         }
@@ -155,7 +199,19 @@ async function main() {
     console.log(`Procesando ${records.length} registros...`);
 
     for (const data of records) {
-        const { nroMarea, buqueName, obsName, especieStr, estadoStr, zarpadaEstimada, empresa, etapas, diasEstimados, diasZonaAustral } = data;
+        const {
+            nroMarea,
+            buqueName,
+            obsName,
+            especieStr,
+            estadoStr,
+            zarpadaEstimada,
+            fechaZarpadaEstimada,
+            empresa,
+            etapas,
+            diasEstimados,
+            diasZonaAustral
+        } = data;
 
         const buque = getBuque(buqueName);
         const observador = getObservador(obsName);
@@ -189,7 +245,7 @@ async function main() {
                         estadoActualId: estadoActual?.id || estados.find(e => e.codigo === 'DESIGNADA')!.id,
                         tipoMarea: 'MC',
                         observaciones: `Importada de JSONL. Empresa: ${empresa}. Especie: ${especieStr}`,
-                        fechaZarpadaEstimada: safeDate(zarpadaEstimada),
+                        fechaZarpadaEstimada: safeDate(fechaZarpadaEstimada) ?? safeDate(zarpadaEstimada),
                         diasEstimados,
                         diasZonaAustral,
                     }

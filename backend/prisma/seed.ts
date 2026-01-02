@@ -31,10 +31,35 @@ const normalize = (str: string, sortWords = false) => {
   return normalized;
 };
 
-const safeDate = (value: string | null | undefined) => {
+const safeDate = (value: string | Date | null | undefined) => {
   if (!value) return null;
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? null : date;
+
+  // Ya es Date
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime()) ? null : value;
+  }
+
+  // ISO string
+  if (/^\d{4}-\d{2}-\d{2}T/.test(value)) {
+    const iso = new Date(value);
+    return Number.isNaN(iso.getTime()) ? null : iso;
+  }
+
+  // Formato DD/MM/YYYY o DD/MM/YY en horario local UTC-3
+  if (value.includes('/')) {
+    const parts = value.split('/');
+    if (parts.length === 3) {
+      const day = parseInt(parts[0], 10);
+      const month = parseInt(parts[1], 10) - 1;
+      let year = parseInt(parts[2], 10);
+      if (year < 100) year += 2000;
+      const date = new Date(Date.UTC(year, month, day, 3, 0, 0)); // 03:00Z = 00:00 UTC-3
+      return Number.isNaN(date.getTime()) ? null : date;
+    }
+  }
+
+  const fallback = new Date(value);
+  return Number.isNaN(fallback.getTime()) ? null : fallback;
 };
 
 /**
@@ -172,6 +197,7 @@ async function seedMareasFromJsonl() {
       especieStr,
       estadoStr,
       zarpadaEstimada,
+      fechaZarpadaEstimada,
       empresa,
       etapas = [],
       diasEstimados,
@@ -204,7 +230,7 @@ async function seedMareasFromJsonl() {
             estadoActualId: estadoActual?.id || estados.find((e) => e.codigo === 'DESIGNADA')!.id,
             tipoMarea: 'MC',
             observaciones: `Importada de JSONL. Empresa: ${empresa}. Especie: ${especieStr}`,
-            fechaZarpadaEstimada: safeDate(zarpadaEstimada),
+            fechaZarpadaEstimada: safeDate(fechaZarpadaEstimada) ?? safeDate(zarpadaEstimada),
             diasEstimados,
           },
         });
