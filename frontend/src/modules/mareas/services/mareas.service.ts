@@ -38,6 +38,7 @@ export interface DashboardKpis {
     observadoresDisponibles: number;
     mareasDesignadas: number;
     listasParaProtocolizar: number;
+    enRevision: number;
 }
 
 const mareasService = {
