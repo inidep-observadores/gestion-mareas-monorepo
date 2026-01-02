@@ -11,10 +11,21 @@ export interface FleetDistributionResponse {
     distribution: FleetDistributionItem[]
 }
 
+export interface FatigueTrip {
+    mareaCode: string
+    vessel: string
+    departure: string | null
+    arrival: string | null
+    inExecution: boolean
+    navigatedDays: number
+}
+
 export interface FatigueAlert {
     id: string
     name: string
     days: number
+    lastArrival: string | null
+    trips: FatigueTrip[]
 }
 
 const dashboardService = {

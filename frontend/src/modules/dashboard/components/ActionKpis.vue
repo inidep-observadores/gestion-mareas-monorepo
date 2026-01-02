@@ -66,7 +66,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { toast } from 'vue-sonner'
 import { ShipIcon, UserGroupIcon, TaskIcon, CheckIcon } from '@/icons'
-import mareasService, { DashboardKpis } from '@/modules/mareas/services/mareas.service'
+import mareasService, { type DashboardKpis } from '@/modules/mareas/services/mareas.service'
 
 type DashboardKpiKey = keyof DashboardKpis
 
@@ -76,22 +76,25 @@ const kpiDefinitions: Array<
     key: DashboardKpiKey
     title: string
     subtext: string
-    icon: typeof ShipIcon
+    icon: any
     bgClass: string
     iconContainerClass: string
     iconClass: string
-    link: string
+    link: string | { name: string; query?: Record<string, string> }
+    trend?: string
+    trendClass?: string
+    progress?: number
   }
 > = [
   {
     key: 'flotaActiva',
-    title: 'Flota Activa',
+    title: 'Navegando',
     subtext: 'Observadores en operación',
     icon: ShipIcon,
     bgClass: 'bg-blue-500',
     iconContainerClass: 'bg-blue-50 dark:bg-blue-900/20',
     iconClass: 'text-blue-500',
-    link: '/mareas/dashboard?status=sailing',
+    link: { name: 'MareasDashboard', query: { estado: 'EN_EJECUCION' } },
   },
   {
     key: 'observadoresDisponibles',
@@ -111,7 +114,7 @@ const kpiDefinitions: Array<
     bgClass: 'bg-gray-500',
     iconContainerClass: 'bg-gray-100 dark:bg-gray-800',
     iconClass: 'text-gray-500',
-    link: '/mareas/operativo?estado=designada',
+    link: { name: 'MareasDashboard', query: { estado: 'DESIGNADA' } },
   },
   {
     key: 'listasParaProtocolizar',
