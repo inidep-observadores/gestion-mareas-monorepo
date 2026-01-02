@@ -38,6 +38,19 @@ async function main() {
         prisma.estadoMarea.findMany()
     ]);
 
+    // Cleanup existing 2025 mareas to avoid duplicates
+    if (!DRY_RUN) {
+        console.log('Cleaning up existing 2025 mareas...');
+        try {
+            // Delete mareas (Cascade should handle related records if configured, otherwise this might fail)
+            // We'll trust the schema has Cascade delete for now as per previous interactions
+            await prisma.marea.deleteMany({ where: { anioMarea: 2025 } });
+            console.log('Cleanup successful.');
+        } catch (e) {
+            console.error('Error cleaning up mareas (check cascade settings):', e);
+        }
+    }
+
     // Stats
     const stats = {
         total: records.length,
@@ -60,6 +73,21 @@ async function main() {
 
     const safeDate = (d: string | null | undefined) => {
         if (!d) return null;
+
+        // Try parsing DD/MM/YYYY manually first
+        if (d.includes('/')) {
+            const parts = d.split('/');
+            if (parts.length === 3) {
+                const day = parseInt(parts[0], 10);
+                const month = parseInt(parts[1], 10) - 1; // JS months are 0-indexed
+                let year = parseInt(parts[2], 10);
+                if (year < 100) year += 2000; // Handle 2-digit years
+
+                const date = new Date(year, month, day);
+                return isNaN(date.getTime()) ? null : date;
+            }
+        }
+
         const date = new Date(d);
         return isNaN(date.getTime()) ? null : date;
     };
@@ -127,7 +155,7 @@ async function main() {
     console.log(`Procesando ${records.length} registros...`);
 
     for (const data of records) {
-        const { nroMarea, buqueName, obsName, especieStr, estadoStr, zarpadaEstimada, empresa, etapas, diasEstimados } = data;
+        const { nroMarea, buqueName, obsName, especieStr, estadoStr, zarpadaEstimada, empresa, etapas, diasEstimados, diasZonaAustral } = data;
 
         const buque = getBuque(buqueName);
         const observador = getObservador(obsName);
@@ -163,6 +191,7 @@ async function main() {
                         observaciones: `Importada de JSONL. Empresa: ${empresa}. Especie: ${especieStr}`,
                         fechaZarpadaEstimada: safeDate(zarpadaEstimada),
                         diasEstimados,
+                        diasZonaAustral,
                     }
                 });
 
@@ -180,6 +209,12 @@ async function main() {
 
                 // Etapas
                 for (const etap of etapas) {
+                    // Si la marea está en ejecución/navegando, la última etapa no debería tener fecha de arribo
+                    let fechaArribo = safeDate(etap.fecha_arribo);
+                    if (estadoActual?.codigo === 'EN_EJECUCION' && etap.nroEtapa === etapas.length) {
+                        fechaArribo = null;
+                    }
+
                     const etapa = await tx.mareaEtapa.create({
                         data: {
                             mareaId: marea.id,
@@ -187,7 +222,7 @@ async function main() {
                             pesqueriaId: pesqueria?.id,
                             tipoEtapa: 'COMERCIAL',
                             fechaZarpada: safeDate(etap.fecha_zarpada),
-                            fechaArribo: safeDate(etap.fecha_arribo),
+                            fechaArribo: fechaArribo,
                             observaciones: `Etapa ${etap.nroEtapa} importada`
                         }
                     });
