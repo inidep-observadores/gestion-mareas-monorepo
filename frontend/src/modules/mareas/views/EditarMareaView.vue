@@ -206,7 +206,7 @@
                  class="group relative bg-white dark:bg-gray-950 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm p-6 transition-all hover:shadow-md hover:border-brand-200 dark:hover:border-brand-900"
                >
                  <!-- Connector Line overlay -->
-                  <div v-if="index < etapasLength - 1" class="absolute left-9 top-16 bottom-0 w-0.5 bg-gray-200 dark:bg-gray-800 -z-10 group-hover:bg-brand-100 dark:group-hover:bg-brand-900/30 transition-colors"></div>
+                  <div v-if="Number(index) < etapasLength - 1" class="absolute left-9 top-16 bottom-0 w-0.5 bg-gray-200 dark:bg-gray-800 -z-10 group-hover:bg-brand-100 dark:group-hover:bg-brand-900/30 transition-colors"></div>
 
                  <div class="flex gap-4">
                     <div class="flex-shrink-0 w-8 h-8 rounded-full bg-brand-50 dark:bg-brand-900/30 flex items-center justify-center text-brand-600 dark:text-brand-400 font-bold text-sm border border-brand-100 dark:border-brand-800">
