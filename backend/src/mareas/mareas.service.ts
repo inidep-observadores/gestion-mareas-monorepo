@@ -2,10 +2,46 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { User } from '@prisma/client';
 import { CreateMareaDto } from './dto/create-marea.dto';
+import { UpdateMareaDto } from './dto/update-marea.dto';
 
 @Injectable()
 export class MareasService {
     constructor(private readonly prisma: PrismaService) { }
+
+    async findOne(id: string) {
+        const marea = await this.prisma.marea.findUnique({
+            where: { id },
+            include: {
+                buque: true,
+                estadoActual: true,
+                etapas: {
+                    orderBy: { nroEtapa: 'asc' },
+                    include: {
+                        puertoZarpada: true,
+                        puertoArribo: true,
+                        pesqueria: true,
+                        observadores: {
+                            include: { observador: true }
+                        }
+                    }
+                }
+            }
+        });
+
+        if (!marea) throw new NotFoundException('Marea no encontrada');
+        return marea;
+    }
+
+    async update(id: string, updateMareaDto: UpdateMareaDto) {
+        const { etapas, ...data } = updateMareaDto;
+
+        await this.prisma.marea.update({
+            where: { id },
+            data: data
+        });
+
+        return this.findOne(id);
+    }
 
     async getDashboardOperativo() {
         const [estados, transiciones] = await Promise.all([
