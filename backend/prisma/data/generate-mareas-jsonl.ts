@@ -2,8 +2,10 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 function parseEtapaDates(etapaStr: string) {
-    if (!etapaStr || !etapaStr.includes('al')) return null;
-    const [start, end] = etapaStr.split('al').map(s => s.trim());
+    if (!etapaStr) return null;
+    const parts = etapaStr.split(/al/i).map(s => s.trim());
+    if (parts.length !== 2) return null;
+    const [start, end] = parts;
 
     const parseDate = (d: string) => {
         const p = d.split('/');
@@ -104,7 +106,7 @@ async function generateJsonl() {
     console.log(`Archivo guardado en: ${outputPath}`);
 
     if (errorsFound > 0) {
-        console.warn(`\nATENCION: Se encontraron ${errorsFound} errores en las fechas. Revisa el log arriba.`);
+        console.warn(`\nATENCIÓN: Se encontraron ${errorsFound} errores en las fechas. Revisa el log arriba.`);
     }
 }
 
