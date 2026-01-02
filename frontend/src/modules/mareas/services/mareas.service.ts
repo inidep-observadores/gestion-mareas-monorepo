@@ -32,9 +32,21 @@ export interface MareaContext {
     lastEvents: { id: string; titulo: string; fecha: string; usuario: string }[];
 }
 
+export interface DashboardKpis {
+    flotaActiva: number;
+    observadoresDisponibles: number;
+    mareasDesignadas: number;
+    listasParaProtocolizar: number;
+}
+
 const mareasService = {
     getDashboardOperativo: async (): Promise<MareaDashboard> => {
         const { data } = await httpClient.get<MareaDashboard>('/mareas/operativo');
+        return data;
+    },
+
+    getDashboardKpis: async (): Promise<DashboardKpis> => {
+        const { data } = await httpClient.get<DashboardKpis>('/mareas/kpis');
         return data;
     },
 

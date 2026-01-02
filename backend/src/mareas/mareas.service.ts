@@ -192,6 +192,52 @@ export class MareasService {
         };
     }
 
+    async getDashboardKpis() {
+        const [buquesActivos, observadoresDisponibles, mareasDesignadas, listasParaProtocolizar] = await Promise.all([
+            this.prisma.marea.groupBy({
+                by: ['buqueId'],
+                where: {
+                    activo: true,
+                    estadoActual: {
+                        mostrarEnPanel: true
+                    }
+                },
+                _count: {
+                    _all: true
+                }
+            }),
+            this.prisma.observador.count({
+                where: {
+                    activo: true,
+                    disponible: true
+                }
+            }),
+            this.prisma.marea.count({
+                where: {
+                    activo: true,
+                    estadoActual: {
+                        codigo: 'DESIGNADA'
+                    }
+                }
+            }),
+            this.prisma.marea.count({
+                where: {
+                    activo: true,
+                    estadoActual: {
+                        codigo: 'ESPERANDO_PROTOCOLIZACION'
+                    }
+                }
+            })
+        ]);
+
+        return {
+            flotaActiva: buquesActivos.length,
+            observadoresDisponibles,
+            mareasDesignadas,
+            listasParaProtocolizar
+        };
+    }
+
     async getMareaContext(id: string) {
         const [marea, transiciones] = (await Promise.all([
             this.prisma.marea.findUnique({
