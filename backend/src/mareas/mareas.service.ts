@@ -277,6 +277,90 @@ export class MareasService {
         };
     }
 
+    async getFatigueAlerts() {
+        const oneYearAgo = new Date();
+        oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+
+        const etapas = await this.prisma.mareaEtapa.findMany({
+            where: {
+                marea: {
+                    activo: true
+                },
+                fechaArribo: { not: null },
+                OR: [
+                    { fechaZarpada: { not: null, gte: oneYearAgo } },
+                    { fechaArribo: { gte: oneYearAgo } }
+                ]
+            },
+            include: {
+                observadores: {
+                    include: { observador: true }
+                }
+            }
+        });
+
+        const observerIntervals = new Map<string, { nombre: string; tramos: Array<{ inicio: Date; fin: Date }> }>();
+
+        etapas.forEach((etapa) => {
+            const inicio = etapa.fechaZarpada ? new Date(etapa.fechaZarpada) : null;
+            const fin = etapa.fechaArribo ? new Date(etapa.fechaArribo) : null;
+            if (!inicio || !fin) return;
+
+            etapa.observadores.forEach((o) => {
+                if (!o.observador?.activo) return;
+                const data = observerIntervals.get(o.observadorId) ?? {
+                    nombre: `${o.observador.nombre} ${o.observador.apellido}`,
+                    tramos: []
+                };
+                data.tramos.push({ inicio: inicio < oneYearAgo ? oneYearAgo : inicio, fin });
+                observerIntervals.set(o.observadorId, data);
+            });
+        });
+
+        const alerts: Array<{ id: string; name: string; days: number }> = [];
+        const ANNUAL_STANDARD = 180;
+        const THRESHOLD = Math.floor(ANNUAL_STANDARD * 0.9);
+
+        const mergeIntervals = (tramos: Array<{ inicio: Date; fin: Date }>) => {
+            const sorted = tramos.sort((a, b) => a.inicio.getTime() - b.inicio.getTime());
+            const merged: Array<{ inicio: Date; fin: Date }> = [];
+
+            for (const interval of sorted) {
+                if (!merged.length) {
+                    merged.push({ ...interval });
+                    continue;
+                }
+                const last = merged[merged.length - 1];
+                if (interval.inicio.getTime() <= last.fin.getTime()) {
+                    if (interval.fin.getTime() > last.fin.getTime()) {
+                        last.fin = interval.fin;
+                    }
+                } else {
+                    merged.push({ ...interval });
+                }
+            }
+            return merged;
+        };
+
+        observerIntervals.forEach((info, id) => {
+            const merged = mergeIntervals(info.tramos);
+            let days = 0;
+            merged.forEach((i) => {
+                const diff = Math.floor((i.fin.getTime() - i.inicio.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+                days += diff;
+            });
+            if (days > THRESHOLD) {
+                alerts.push({
+                    id,
+                    name: info.nombre,
+                    days
+                });
+            }
+        });
+
+        return alerts;
+    }
+
     async getMareaContext(id: string) {
         const [marea, transiciones] = (await Promise.all([
             this.prisma.marea.findUnique({
