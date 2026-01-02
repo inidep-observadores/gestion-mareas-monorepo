@@ -149,33 +149,25 @@ export class MareasService {
                     }
                 }
             } else {
-                // For other states: calculate actual days worked
+                const stageIntervals = m.etapas
+                    .filter((e: any) => e.fechaZarpada && e.fechaArribo)
+                    .map((e: any) => ({ inicio: new Date(e.fechaZarpada), fin: new Date(e.fechaArribo) }));
+
                 let diasTrabajados = 0;
 
                 if (m.fechaInicioObservador && m.fechaFinObservador) {
-                    // Use observer dates if available
-                    const inicio = new Date(m.fechaInicioObservador);
-                    const fin = new Date(m.fechaFinObservador);
-                    const diffTime = fin.getTime() - inicio.getTime();
-                    diasTrabajados = Math.floor(diffTime / (1000 * 60 * 60 * 24)) - 1; // -1 as per requirements
-                } else {
-                    // Fallback: use first stage departure and last stage arrival
-                    const primeraEtapa = m.etapas[m.etapas.length - 1]; // etapas are ordered desc, so last is first
-                    const ultimaEtapa = m.etapas[0];
-
-                    if (primeraEtapa?.fechaZarpada && ultimaEtapa?.fechaArribo) {
-                        const zarpada = new Date(primeraEtapa.fechaZarpada);
-                        const arribo = new Date(ultimaEtapa.fechaArribo);
-                        const diffTime = arribo.getTime() - zarpada.getTime();
-                        diasTrabajados = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1; // +1 as per requirements
-                    }
+                    diasTrabajados = this.calculateUniqueDays([{
+                        inicio: new Date(m.fechaInicioObservador),
+                        fin: new Date(m.fechaFinObservador)
+                    }]);
+                } else if (stageIntervals.length > 0) {
+                    diasTrabajados = this.calculateUniqueDays(stageIntervals);
                 }
 
-                // Calculate percentage based on diasEstimados
                 if (m.diasEstimados && m.diasEstimados > 0 && diasTrabajados > 0) {
                     progreso = Math.min(Math.round((diasTrabajados / m.diasEstimados) * 100), 100);
                 } else if (diasTrabajados > 0) {
-                    progreso = 100; // If no estimate but has worked days, assume complete
+                    progreso = 100;
                 }
             }
 
@@ -291,6 +283,36 @@ export class MareasService {
         };
     }
 
+    private calculateUniqueDays(intervals: Array<{ inicio: Date; fin: Date }>): number {
+        if (!intervals.length) return 0;
+
+        const sorted = [...intervals].sort((a, b) => a.inicio.getTime() - b.inicio.getTime());
+        const merged: Array<{ inicio: Date; fin: Date }> = [];
+
+        for (const interval of sorted) {
+            if (!merged.length) {
+                merged.push({ ...interval });
+                continue;
+            }
+            const last = merged[merged.length - 1];
+            if (interval.inicio.getTime() <= last.fin.getTime()) {
+                if (interval.fin.getTime() > last.fin.getTime()) {
+                    last.fin = interval.fin;
+                }
+            } else {
+                merged.push({ ...interval });
+            }
+        }
+
+        let totalDays = 0;
+        merged.forEach((i) => {
+            const diff = Math.floor((i.fin.getTime() - i.inicio.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+            totalDays += diff;
+        });
+
+        return totalDays;
+    }
+
     async getFatigueAlerts(year?: number) {
         const operationalYear = this.resolveYear(year);
         const periodStart = new Date(operationalYear, 0, 1, 0, 0, 0, 0);
@@ -302,90 +324,135 @@ export class MareasService {
                     activo: true,
                     anioMarea: operationalYear
                 },
-                fechaArribo: { not: null },
                 OR: [
                     { fechaZarpada: { not: null, lte: periodEnd } },
-                    { fechaArribo: { gte: periodStart } }
+                    { fechaArribo: { gte: periodStart } },
+                    {
+                        AND: [
+                            { fechaZarpada: { not: null } },
+                            { fechaArribo: null }
+                        ]
+                    }
                 ]
             },
             include: {
+                marea: {
+                    include: { buque: true }
+                },
                 observadores: {
                     include: { observador: true }
                 }
             }
         });
 
-        const observerIntervals = new Map<string, { nombre: string; tramos: Array<{ inicio: Date; fin: Date }> }>();
+        const now = new Date();
+        const observerDataMap = new Map<string, {
+            nombre: string;
+            mareaGroups: Map<string, {
+                mareaCode: string;
+                nroMarea: number;
+                vessel: string;
+                stages: Array<{ inicio: Date; fin: Date }>
+            }>
+        }>();
 
-        etapas.forEach((etapa) => {
+        etapas.forEach((etapa: any) => {
             const inicio = etapa.fechaZarpada ? new Date(etapa.fechaZarpada) : null;
-            const fin = etapa.fechaArribo ? new Date(etapa.fechaArribo) : null;
-            if (!inicio || !fin) return;
+            if (!inicio) return;
 
-            // Recortar al rango del año operativo
+            const finRaw = etapa.fechaArribo ? new Date(etapa.fechaArribo) : null;
+            const fin = finRaw || now;
+
             const clampedInicio = inicio < periodStart ? periodStart : inicio;
             const clampedFin = fin > periodEnd ? periodEnd : fin;
             if (clampedFin < periodStart || clampedInicio > periodEnd) return;
 
-            etapa.observadores.forEach((o) => {
+            const m = etapa.marea;
+            const mareaCode = `${m.tipoMarea}-${String(m.nroMarea).padStart(3, '0')}-${String(m.anioMarea).slice(-2)}`;
+            const vessel = m.buque.nombreBuque;
+
+            etapa.observadores.forEach((o: any) => {
                 if (!o.observador?.activo) return;
-                const data = observerIntervals.get(o.observadorId) ?? {
-                    nombre: `${o.observador.nombre} ${o.observador.apellido}`,
-                    tramos: []
-                };
-                data.tramos.push({ inicio: clampedInicio, fin: clampedFin });
-                observerIntervals.set(o.observadorId, data);
+
+                if (!observerDataMap.has(o.observadorId)) {
+                    observerDataMap.set(o.observadorId, {
+                        nombre: `${o.observador.nombre} ${o.observador.apellido}`,
+                        mareaGroups: new Map()
+                    });
+                }
+
+                const obsData = observerDataMap.get(o.observadorId)!;
+                if (!obsData.mareaGroups.has(m.id)) {
+                    obsData.mareaGroups.set(m.id, {
+                        mareaCode,
+                        nroMarea: m.nroMarea,
+                        vessel,
+                        stages: []
+                    });
+                }
+
+                const group = obsData.mareaGroups.get(m.id)!;
+                group.stages.push({ inicio: clampedInicio, fin: clampedFin });
             });
         });
 
-        const alerts: Array<{ id: string; name: string; days: number; lastArrival: Date | null }> = [];
+        const alerts: Array<{
+            id: string;
+            name: string;
+            days: number;
+            lastArrival: Date | null;
+            trips: Array<{
+                mareaCode: string;
+                vessel: string;
+                departure: Date;
+                arrival: Date;
+                inExecution: boolean;
+                navigatedDays: number
+            }>
+        }> = [];
+
         const ANNUAL_STANDARD = 180;
         const THRESHOLD = Math.floor(ANNUAL_STANDARD * 0.9);
 
-        const mergeIntervals = (tramos: Array<{ inicio: Date; fin: Date }>) => {
-            const sorted = tramos.sort((a, b) => a.inicio.getTime() - b.inicio.getTime());
-            const merged: Array<{ inicio: Date; fin: Date }> = [];
+        observerDataMap.forEach((data, id) => {
+            const allTripsIntervals: Array<{ inicio: Date; fin: Date }> = [];
+            data.mareaGroups.forEach(g => allTripsIntervals.push(...g.stages));
 
-            for (const interval of sorted) {
-                if (!merged.length) {
-                    merged.push({ ...interval });
-                    continue;
-                }
-                const last = merged[merged.length - 1];
-                if (interval.inicio.getTime() <= last.fin.getTime()) {
-                    if (interval.fin.getTime() > last.fin.getTime()) {
-                        last.fin = interval.fin;
+            const alertDays = this.calculateUniqueDays(allTripsIntervals);
+
+            if (alertDays > THRESHOLD) {
+                const trips: any[] = [];
+                let lastArrival: Date | null = null;
+
+                data.mareaGroups.forEach((group) => {
+                    const sortedStages = [...group.stages].sort((a, b) => a.inicio.getTime() - b.inicio.getTime());
+                    const firstDep = sortedStages[0].inicio;
+                    const lastArr = sortedStages[sortedStages.length - 1].fin;
+                    const inExecution = lastArr >= now;
+
+                    if (!lastArrival || lastArr > lastArrival) {
+                        lastArrival = lastArr;
                     }
-                } else {
-                    merged.push({ ...interval });
-                }
-            }
-            return merged;
-        };
 
-        const now = new Date();
+                    trips.push({
+                        mareaCode: group.mareaCode,
+                        nroMarea: group.nroMarea,
+                        vessel: group.vessel,
+                        departure: firstDep,
+                        arrival: lastArr,
+                        inExecution,
+                        navigatedDays: this.calculateUniqueDays(group.stages)
+                    });
+                });
 
-        observerIntervals.forEach((info, id) => {
-            const merged = mergeIntervals(info.tramos);
-            let days = 0;
-            let lastArrival: Date | null = null;
+                trips.sort((a, b) => a.nroMarea - b.nroMarea);
 
-            merged.forEach((i) => {
-                const diff = Math.floor((i.fin.getTime() - i.inicio.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-                days += diff;
-
-                // Track most recent arrival
-                if (!lastArrival || i.fin > lastArrival) {
-                    lastArrival = i.fin;
-                }
-            });
-
-            if (days > THRESHOLD) {
                 alerts.push({
                     id,
-                    name: info.nombre,
-                    days,
-                    lastArrival
+                    name: data.nombre,
+                    days: alertDays,
+                    lastArrival,
+                    trips
                 });
             }
         });
@@ -444,11 +511,17 @@ export class MareasService {
 
         const fechaZarpada = etapaActual?.fechaZarpada || marea.fechaZarpadaEstimada;
 
-        // Cálculo de días
+        // Cálculo de días consistentes
         const now = new Date();
-        const start = fechaZarpada ? new Date(fechaZarpada) : null;
-        const diffTime = start ? Math.abs(now.getTime() - start.getTime()) : 0;
-        const days = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        const stageIntervals = marea.etapas
+            .filter((e: any) => e.fechaZarpada)
+            .map((e: any) => ({
+                inicio: new Date(e.fechaZarpada),
+                fin: e.fechaArribo ? new Date(e.fechaArribo) : now
+            }));
+
+        const uniqueNavigatedDays = this.calculateUniqueDays(stageIntervals);
+        const days = uniqueNavigatedDays;
 
         return {
             marea: {
