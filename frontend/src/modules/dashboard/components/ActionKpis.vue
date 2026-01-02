@@ -87,6 +87,16 @@ const kpiDefinitions: Array<
   }
 > = [
   {
+    key: 'mareasDesignadas',
+    title: 'Mareas Designadas',
+    subtext: 'Pendientes de inicio',
+    icon: TaskIcon,
+    bgClass: 'bg-gray-500',
+    iconContainerClass: 'bg-gray-100 dark:bg-gray-800',
+    iconClass: 'text-gray-500',
+    link: { name: 'MareasDashboard', query: { estado: 'DESIGNADA' } },
+  },
+  {
     key: 'flotaActiva',
     title: 'Navegando',
     subtext: 'Observadores en operación',
@@ -97,24 +107,14 @@ const kpiDefinitions: Array<
     link: { name: 'MareasDashboard', query: { estado: 'EN_EJECUCION' } },
   },
   {
-    key: 'observadoresDisponibles',
-    title: 'Disponibles',
-    subtext: 'Listos para asignar',
+    key: 'enRevision',
+    title: 'En revisión',
+    subtext: 'Procesos de informe',
     icon: UserGroupIcon,
-    bgClass: 'bg-emerald-500',
-    iconContainerClass: 'bg-emerald-50 dark:bg-emerald-900/20',
-    iconClass: 'text-emerald-500',
-    link: '/mareas/workflow?status=available',
-  },
-  {
-    key: 'mareasDesignadas',
-    title: 'Mareas Designadas',
-    subtext: 'Pendientes de inicio',
-    icon: TaskIcon,
-    bgClass: 'bg-gray-500',
-    iconContainerClass: 'bg-gray-100 dark:bg-gray-800',
-    iconClass: 'text-gray-500',
-    link: { name: 'MareasDashboard', query: { estado: 'DESIGNADA' } },
+    bgClass: 'bg-amber-500',
+    iconContainerClass: 'bg-amber-50 dark:bg-amber-900/20',
+    iconClass: 'text-amber-600',
+    link: '/mareas/workflow?estado=ENTREGADA_RECIBIDA,VERIFICACION_INICIAL,EN_CORRECCION,PENDIENTE_DE_INFORME,ESPERANDO_REVISION',
   },
   {
     key: 'listasParaProtocolizar',

@@ -194,7 +194,15 @@ export class MareasService {
 
     async getDashboardKpis(year?: number) {
         const operationalYear = this.resolveYear(year);
-        const [buquesActivos, observadoresDisponibles, mareasDesignadas, listasParaProtocolizar] = await Promise.all([
+        const estadosRevision = [
+            'ENTREGADA_RECIBIDA',
+            'VERIFICACION_INICIAL',
+            'EN_CORRECCION',
+            'PENDIENTE_DE_INFORME',
+            'ESPERANDO_REVISION'
+        ];
+
+        const [buquesActivos, observadoresDisponibles, mareasDesignadas, listasParaProtocolizar, mareasEnRevision] = await Promise.all([
             this.prisma.marea.groupBy({
                 by: ['buqueId'],
                 where: {
@@ -234,6 +242,15 @@ export class MareasService {
                         codigo: 'ESPERANDO_PROTOCOLIZACION'
                     }
                 }
+            }),
+            this.prisma.marea.count({
+                where: {
+                    activo: true,
+                    anioMarea: operationalYear,
+                    estadoActual: {
+                        codigo: { in: estadosRevision }
+                    }
+                }
             })
         ]);
 
@@ -241,7 +258,8 @@ export class MareasService {
             flotaActiva: buquesActivos.length,
             observadoresDisponibles,
             mareasDesignadas,
-            listasParaProtocolizar
+            listasParaProtocolizar,
+            enRevision: mareasEnRevision
         };
     }
 
