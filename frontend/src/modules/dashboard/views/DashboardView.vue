@@ -21,16 +21,12 @@
           <AlertTrafficLight class="h-full" />
         </div>
 
-        <!-- NEW SECTIONS (Right) -->
+        <!-- PANELS DERECHA (Right) -->
         <div class="col-span-12 lg:col-span-6 xl:col-span-7 flex flex-col gap-8">
-          <ExpiringMareas />
           <FleetDistributionByFishery />
+          <WorkforceOverview />
+          <ExpiringMareas />
         </div>
-      </div>
-
-      <!-- ROW 3: WORKFORCE STATE -->
-      <div class="col-span-12">
-        <WorkforceOverview />
       </div>
     </div>
   </AdminLayout>
