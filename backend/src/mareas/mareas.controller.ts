@@ -39,9 +39,10 @@ export class MareasController {
     executeAction(
         @Param('id') id: string,
         @Param('actionKey') actionKey: string,
-        @GetUser() user: User
+        @GetUser() user: User,
+        @Body() payload: any
     ) {
-        return this.mareasService.executeAction(id, actionKey, user);
+        return this.mareasService.executeAction(id, actionKey, user, payload);
     }
 
     @Post()

@@ -35,9 +35,9 @@ export function useMareas() {
         }
     };
 
-    const executeAction = async (id: string, actionKey: string) => {
+    const executeAction = async (id: string, actionKey: string, payload: any = {}) => {
         try {
-            await mareasService.executeAction(id, actionKey);
+            await mareasService.executeAction(id, actionKey, payload);
             // Refrescar contexto después de la acción
             await fetchMareaContext(id);
             // Opcionalmente refrescar dashboard también

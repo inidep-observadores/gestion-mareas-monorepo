@@ -9,7 +9,8 @@
         @input="onSearchInput"
         @keydown="onKeyDown"
         :placeholder="selectedLabel ? '' : placeholder"
-        class="w-full px-4 py-2.5 bg-gray-50/50 dark:bg-gray-900 border rounded-lg text-sm text-gray-800 dark:text-white outline-none focus:border-brand-500 transition-all appearance-none"
+        class="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-900 border rounded-lg text-sm text-gray-800 dark:text-white outline-none focus:border-brand-500 transition-all appearance-none caret-brand-500"
+        style="color-scheme: light dark;"
         :class="[
           error ? 'border-red-500 bg-red-50/30' : 'border-gray-100 dark:border-gray-800',
           { 'pl-10': icon }
@@ -211,4 +212,17 @@ watch(() => props.modelValue, () => {
   // Reset search when value changes externally if needed
 })
 </script>
+
+<style scoped>
+input {
+  color-scheme: light !important;
+  caret-color: #465fff !important;
+}
+
+:global(.dark) input {
+  color-scheme: dark !important;
+  caret-color: #7592ff !important;
+}
+</style>
+
 

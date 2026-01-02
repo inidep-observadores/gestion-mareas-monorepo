@@ -43,6 +43,11 @@ const catalogosService = {
     getArtesPesca: async (): Promise<ArtePesca[]> => {
         const { data } = await httpClient.get<ArtePesca[]>('/catalogos/artes-pesca');
         return data;
+    },
+
+    getPuertos: async (): Promise<any[]> => {
+        const { data } = await httpClient.get<any[]>('/catalogos/puertos');
+        return data;
     }
 };
 

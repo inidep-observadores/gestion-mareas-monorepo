@@ -207,35 +207,67 @@ async function main() {
                     }
                 });
 
-                // Etapas
-                for (const etap of etapas) {
-                    // Si la marea está en ejecución/navegando, la última etapa no debería tener fecha de arribo
-                    let fechaArribo = safeDate(etap.fecha_arribo);
-                    if (estadoActual?.codigo === 'EN_EJECUCION' && etap.nroEtapa === etapas.length) {
-                        fechaArribo = null;
-                    }
+                // Etapas Logic
+                // 1. Si está CANCELADA, no procesar etapas
+                if (estadoActual?.codigo !== 'CANCELADA') {
+                    if (etapas && etapas.length > 0) {
+                        // Caso A: Etapas explícitas
+                        for (const etap of etapas) {
+                            let fechaArribo = safeDate(etap.fecha_arribo);
+                            // Si está en ejecución y es la última, quizás no tenga arribo real.
+                            // Pero respetamos lo que venga en el JSONL si existe.
+                            if (estadoActual?.codigo === 'EN_EJECUCION' && etap.nroEtapa === etapas.length && !fechaArribo) {
+                                fechaArribo = null;
+                            }
 
-                    const etapa = await tx.mareaEtapa.create({
-                        data: {
-                            mareaId: marea.id,
-                            nroEtapa: etap.nroEtapa,
-                            pesqueriaId: pesqueria?.id,
-                            tipoEtapa: 'COMERCIAL',
-                            fechaZarpada: safeDate(etap.fecha_zarpada),
-                            fechaArribo: fechaArribo,
-                            observaciones: `Etapa ${etap.nroEtapa} importada`
+                            const etapa = await tx.mareaEtapa.create({
+                                data: {
+                                    mareaId: marea.id,
+                                    nroEtapa: etap.nroEtapa,
+                                    pesqueriaId: pesqueria?.id,
+                                    tipoEtapa: 'COMERCIAL',
+                                    fechaZarpada: safeDate(etap.fecha_zarpada),
+                                    fechaArribo: fechaArribo,
+                                    observaciones: `Etapa ${etap.nroEtapa} importada`
+                                }
+                            });
+
+                            if (observador) {
+                                await (tx as any).mareaEtapaObservador.create({
+                                    data: {
+                                        etapaId: etapa.id,
+                                        observadorId: observador.id,
+                                        rol: 'PRINCIPAL',
+                                        esDesignado: true
+                                    }
+                                });
+                            }
                         }
-                    });
-
-                    if (observador) {
-                        await (tx as any).mareaEtapaObservador.create({
+                    } else if (safeDate(zarpadaEstimada)) {
+                        // Caso B: No hay etapas explícitas pero hay fecha de zarpada y NO está cancelada
+                        // Creamos una etapa por defecto
+                        const etapa = await tx.mareaEtapa.create({
                             data: {
-                                etapaId: etapa.id,
-                                observadorId: observador.id,
-                                rol: 'PRINCIPAL',
-                                esDesignado: true
+                                mareaId: marea.id,
+                                nroEtapa: 1,
+                                pesqueriaId: pesqueria?.id,
+                                tipoEtapa: 'COMERCIAL',
+                                fechaZarpada: safeDate(zarpadaEstimada),
+                                fechaArribo: null, // Asumimos abierta si no hay datos
+                                observaciones: 'Etapa generada automáticamente (sin desglose)'
                             }
                         });
+
+                        if (observador) {
+                            await (tx as any).mareaEtapaObservador.create({
+                                data: {
+                                    etapaId: etapa.id,
+                                    observadorId: observador.id,
+                                    rol: 'PRINCIPAL',
+                                    esDesignado: true
+                                }
+                            });
+                        }
                     }
                 }
             });

@@ -83,6 +83,11 @@ Componente custom que permite entrada manual con máscara `DD/MM/YYYY` y selecto
 - **Estructura**: `form` con `space-y-4` para separación uniforme de campos.
 - **Validación**: Feedback inmediato mediante estilos de borde rojo y notificaciones (Vue Sonner).
 
+### Protección de Datos (Navegación)
+En formularios de edición o creación (vistas o modales), si existen cambios sin guardar, se **debe** interceptar el intento de salida o cancelación ("Volver", cierre de modal, navegación atrás).
+- **Diálogo de Confirmación**: Mostrar un diálogo de confirmación (`ConfirmationDialog`) antes de abandonar la vista para evitar la pérdida accidental de datos.
+
+
 ## 8. Espaciado y Layout
 - **Gaps**: Utilizar preferentemente `gap-4` o `gap-6` para separación de controles en formularios.
 - **Páginas**: Padding uniforme de `p-6` en el contenedor principal del dashboard.

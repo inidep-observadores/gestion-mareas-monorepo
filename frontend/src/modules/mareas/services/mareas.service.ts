@@ -48,8 +48,8 @@ const mareasService = {
         return data;
     },
 
-    executeAction: async (id: string, actionKey: string): Promise<any> => {
-        const { data } = await httpClient.post(`/mareas/${id}/actions/${actionKey}`);
+    executeAction: async (id: string, actionKey: string, payload: any = {}): Promise<any> => {
+        const { data } = await httpClient.post(`/mareas/${id}/actions/${actionKey}`, payload);
         return data;
     },
 
