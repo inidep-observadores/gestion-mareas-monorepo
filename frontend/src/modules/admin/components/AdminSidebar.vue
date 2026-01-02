@@ -177,6 +177,16 @@ const navigationGroups = [
       },
     ],
   },
+  {
+    title: 'Sistema',
+    items: [
+      {
+        icon: ShieldIcon,
+        name: 'Copias de seguridad',
+        path: '/admin/backup',
+      },
+    ],
+  },
 ]
 
 const systemGroups = {

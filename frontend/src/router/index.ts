@@ -214,6 +214,16 @@ const router = createRouter({
         roles: ['admin'],
       },
     },
+    {
+      path: '/admin/backup',
+      name: 'AdminBackup',
+      component: () => import('@/modules/admin/views/BackupView.vue'),
+      meta: {
+        title: 'Copia de Seguridad',
+        requiresAuth: true,
+        roles: ['admin'],
+      },
+    },
     // 404 No encontrado
     {
       path: '/:pathMatch(.*)*',

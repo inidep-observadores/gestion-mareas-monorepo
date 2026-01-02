@@ -75,14 +75,20 @@ El usuario envía el token y la nueva contraseña.
 
 - **Endpoint:** `POST /api/auth/reset-password`
 - **Body:**
-
   ```json
   {
     "token": "TOKEN_RECIBIDO",
     "newPassword": "NuevaPassword123!"
   }
   ```
-
 - **Respuesta:** `{ "message": "Contraseña actualizada correctamente" }`
 
 > **Nota:** El enlace enviado por correo se genera a partir de la variable de entorno `FRONTEND_URL`. En desarrollo se ha configurado en `.env.template` como `FRONTEND_URL=http://mi.frontend.com/reset-password`. El token se pasa como parámetro de consulta (`?token=...`). Ajusta `FRONTEND_URL` en tu archivo `.env` para que apunte a la URL del frontend que manejará la recuperación de contraseña.
+
+# Copias de Seguridad (Backup)
+
+Para habilitar el sistema de backups en el panel de administración, es necesario configurar la ruta de almacenamiento:
+
+- **Variable:** `BACKUP_PATH`
+- **Valor recomendado:** `"./backups"` (creará una carpeta en la raíz del backend).
+- **Dependencia:** El sistema utiliza `docker exec mareasdb pg_dump` por lo que el contenedor de la base de datos debe estar corriendo y tener el nombre `mareasdb`.

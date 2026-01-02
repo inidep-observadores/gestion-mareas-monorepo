@@ -13,6 +13,7 @@ import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { CatalogosModule } from './catalogos/catalogos.module';
 import { MareasModule } from './mareas/mareas.module';
+import { BackupModule } from './admin/backup/backup.module';
 
 @Module({
   imports: [
@@ -40,7 +41,7 @@ import { MareasModule } from './mareas/mareas.module';
 
     CatalogosModule,
     MareasModule,
-
+    BackupModule,
   ],
 })
 export class AppModule { }
