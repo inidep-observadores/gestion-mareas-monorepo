@@ -20,6 +20,11 @@ export class MareasController {
         return this.mareasService.getDashboardKpis();
     }
 
+    @Get('flota-por-pesqueria')
+    getFleetDistribution() {
+        return this.mareasService.getFleetDistributionByFishery();
+    }
+
     @Get('search')
     search(@Query('q') q: string) {
         return this.mareasService.search(q);

@@ -198,6 +198,9 @@ export class MareasService {
                 by: ['buqueId'],
                 where: {
                     activo: true,
+                    buque: {
+                        activo: true
+                    },
                     estadoActual: {
                         mostrarEnPanel: true
                     }
@@ -235,6 +238,42 @@ export class MareasService {
             observadoresDisponibles,
             mareasDesignadas,
             listasParaProtocolizar
+        };
+    }
+
+    async getFleetDistributionByFishery() {
+        const activeMareas = await this.prisma.marea.findMany({
+            where: {
+                activo: true,
+                estadoActual: {
+                    mostrarEnPanel: true
+                }
+            },
+            include: {
+                etapas: {
+                    orderBy: { nroEtapa: 'desc' },
+                    take: 1,
+                    include: {
+                        pesqueria: true
+                    }
+                }
+            }
+        });
+
+        const distributionMap = new Map<string, number>();
+
+        activeMareas.forEach((marea) => {
+            const label = marea.etapas[0]?.pesqueria?.nombre ?? 'Sin pesquería';
+            distributionMap.set(label, (distributionMap.get(label) ?? 0) + 1);
+        });
+
+        const distribution = Array.from(distributionMap.entries())
+            .map(([label, count]) => ({ label, count }))
+            .sort((a, b) => b.count - a.count);
+
+        return {
+            total: activeMareas.length,
+            distribution
         };
     }
 
