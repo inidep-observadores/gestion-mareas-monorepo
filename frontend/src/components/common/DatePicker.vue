@@ -398,8 +398,8 @@ const updateDropdownPosition = () => {
   if (!containerRef.value) return
   const rect = containerRef.value.getBoundingClientRect()
   dropdownStyle.value = {
-    top: `${rect.bottom + window.scrollY}px`,
-    left: `${rect.left + window.scrollX}px`,
+    top: `${rect.bottom}px`,
+    left: `${rect.left}px`,
   }
 }
 
