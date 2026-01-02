@@ -1,4 +1,5 @@
 import httpClient from '@/config/http/http.client';
+import { useConfigStore } from '@/modules/shared/stores/config.store';
 
 export interface MareaDashboard {
     kpis: { label: string; value: number; codigo: string }[];
@@ -41,12 +42,14 @@ export interface DashboardKpis {
 
 const mareasService = {
     getDashboardOperativo: async (): Promise<MareaDashboard> => {
-        const { data } = await httpClient.get<MareaDashboard>('/mareas/operativo');
+        const { selectedYear } = useConfigStore();
+        const { data } = await httpClient.get<MareaDashboard>(`/mareas/operativo?year=${selectedYear}`);
         return data;
     },
 
     getDashboardKpis: async (): Promise<DashboardKpis> => {
-        const { data } = await httpClient.get<DashboardKpis>('/mareas/kpis');
+        const { selectedYear } = useConfigStore();
+        const { data } = await httpClient.get<DashboardKpis>(`/mareas/kpis?year=${selectedYear}`);
         return data;
     },
 

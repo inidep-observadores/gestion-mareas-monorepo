@@ -173,7 +173,7 @@ const availableYears = Array.from({ length: 5 }, (_, i) => currentYear - 2 + i)
 
 const { isExpanded, isMobileOpen, isHovered } = useSidebar()
 
-import { computed } from 'vue'
+import { computed, watch } from 'vue'
 
 const navigationGroups = computed(() => [
   {
@@ -256,4 +256,12 @@ const handleItemClick = async (item: any, event: Event) => {
     router.push({ name: 'Signin' })
   }
 }
+
+// Refresh current view when operating year changes so dashboards y consultas se recalculen
+watch(
+  () => configStore.selectedYear,
+  () => {
+    router.go(0)
+  }
+)
 </script>
