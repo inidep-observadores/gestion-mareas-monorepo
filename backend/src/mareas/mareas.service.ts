@@ -338,7 +338,7 @@ export class MareasService {
             });
         });
 
-        const alerts: Array<{ id: string; name: string; days: number }> = [];
+        const alerts: Array<{ id: string; name: string; days: number; lastArrival: Date | null }> = [];
         const ANNUAL_STANDARD = 180;
         const THRESHOLD = Math.floor(ANNUAL_STANDARD * 0.9);
 
@@ -363,18 +363,29 @@ export class MareasService {
             return merged;
         };
 
+        const now = new Date();
+
         observerIntervals.forEach((info, id) => {
             const merged = mergeIntervals(info.tramos);
             let days = 0;
+            let lastArrival: Date | null = null;
+
             merged.forEach((i) => {
                 const diff = Math.floor((i.fin.getTime() - i.inicio.getTime()) / (1000 * 60 * 60 * 24)) + 1;
                 days += diff;
+
+                // Track most recent arrival
+                if (!lastArrival || i.fin > lastArrival) {
+                    lastArrival = i.fin;
+                }
             });
+
             if (days > THRESHOLD) {
                 alerts.push({
                     id,
                     name: info.nombre,
-                    days
+                    days,
+                    lastArrival
                 });
             }
         });
