@@ -1,119 +1,130 @@
 <template>
   <div
-    class="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900 h-full"
+    class="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900 h-full flex flex-col"
   >
     <div class="mb-6 flex items-center justify-between">
-      <h2
-        class="text-lg text-gray-800 dark:text-white uppercase tracking-tight flex items-center gap-2"
-      >
-        <span class="flex h-3 w-3">
-          <span
-            class="animate-ping absolute inline-flex h-3 w-3 rounded-full bg-error-400 opacity-75"
-          ></span>
-          <span class="relative inline-flex rounded-full h-3 w-3 bg-error-500"></span>
+      <div class="flex items-center gap-3">
+        <div class="p-2 bg-red-50 dark:bg-red-500/10 rounded-xl relative">
+          <div class="w-2 h-2 rounded-full bg-red-500 animate-ping absolute top-0 right-0"></div>
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-red-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        </div>
+        <div>
+          <h2 class="text-sm font-black text-gray-900 dark:text-white uppercase tracking-widest leading-tight">
+            Central de alertas
+          </h2>
+          <p class="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">Gestión por excepción</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-[10px] font-black px-2 py-1 rounded-lg bg-red-500 text-white shadow-lg shadow-red-500/20">
+          {{ totalAlerts }} ACTIVAS
         </span>
-        Semáforo de Alertas
-      </h2>
-      <span
-        class="rounded-full bg-error-50 px-2 py-0.5 text-[10px] font-bold text-error-700 dark:bg-error-500/10 dark:text-error-400"
-      >
-        {{ totalAlerts }} CRÍTICAS
-      </span>
+      </div>
     </div>
 
-    <div class="space-y-4">
+    <div class="space-y-6 flex-1 overflow-y-auto custom-scrollbar pr-2">
       <!-- Section: Delays in Revision -->
-      <div v-if="revisionDelays.length" class="space-y-3">
-        <h3 class="text-[10px] font-bold uppercase text-gray-400 tracking-widest">
-          Retrasos en Entrega (>15 días)
-        </h3>
-        <div
-          v-for="item in revisionDelays"
-          :key="item.id"
-          class="group flex items-center justify-between rounded-xl border border-error-100 bg-error-50/30 p-3 transition-colors hover:bg-error-50 dark:border-error-500/20 dark:bg-error-500/5 dark:hover:bg-error-500/10"
-        >
-          <div class="flex items-center gap-3">
-            <div class="text-sm font-bold text-gray-800 dark:text-gray-100">{{ item.mareaId }}</div>
-            <div class="text-xs text-gray-500">{{ item.obs }}</div>
-          </div>
-          <div class="text-right">
-            <div class="text-xs text-error-600 dark:text-error-400">
-              {{ item.days }} DÍAS
+      <section v-if="revisionDelays.length" class="space-y-3">
+        <div class="flex items-center gap-2">
+          <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+          <h3 class="text-[10px] font-black uppercase text-gray-500 dark:text-gray-400 tracking-widest">
+            Retrasos Críticos (>15 días)
+          </h3>
+        </div>
+        <div class="grid gap-2">
+          <div
+            v-for="item in revisionDelays"
+            :key="item.id"
+            class="group flex items-center justify-between rounded-2xl border border-gray-50 bg-gray-50/30 p-4 transition-all hover:bg-white hover:shadow-md hover:border-red-100 dark:border-gray-800 dark:bg-gray-800/20 dark:hover:bg-gray-800"
+          >
+            <div class="flex items-center gap-4">
+              <div class="flex flex-col">
+                <span class="text-xs font-black text-gray-900 dark:text-white">{{ item.mareaId }}</span>
+                <span class="text-[10px] font-bold text-gray-400 uppercase">{{ item.obs }}</span>
+              </div>
             </div>
-            <router-link
-              :to="`/mareas/workflow/${item.id}`"
-              class="text-[10px] font-bold text-brand-500 opacity-0 group-hover:opacity-100 transition-opacity uppercase"
-              >Atender</router-link
-            >
+            <div class="text-right flex items-center gap-4">
+              <div class="flex flex-col text-right">
+                <span class="text-xs font-black text-red-600 dark:text-red-400">{{ item.days }} DÍAS</span>
+                <span class="text-[9px] font-bold text-gray-400 uppercase tracking-tighter">SIN ENTREGA</span>
+              </div>
+              <router-link
+                :to="`/mareas/workflow/${item.id}`"
+                class="p-2 rounded-xl bg-white dark:bg-gray-700 shadow-sm border border-gray-100 dark:border-gray-600 text-gray-400 hover:text-red-500 hover:border-red-500 transition-all opacity-0 group-hover:opacity-100"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+              </router-link>
+            </div>
           </div>
         </div>
-      </div>
+      </section>
 
       <!-- Section: Delayed Reports -->
-      <div v-if="reportDelays.length" class="space-y-3">
-        <h3 class="text-[10px] font-bold uppercase text-gray-400 tracking-widest">
-          Informes Demorados (>7 días)
-        </h3>
-        <div
-          v-for="item in reportDelays"
-          :key="item.id"
-          class="group flex items-center justify-between rounded-xl border border-warning-100 bg-warning-50/30 p-3 transition-colors hover:bg-warning-50 dark:border-warning-500/20 dark:bg-warning-500/5 dark:hover:bg-warning-500/10"
-        >
-          <div class="flex items-center gap-3">
-            <div class="text-sm font-bold text-gray-800 dark:text-gray-100">{{ item.vessel }}</div>
-            <div class="text-[10px] font-bold text-gray-500">{{ item.obs }}</div>
-          </div>
-          <div class="text-right">
-            <div class="text-xs text-warning-600 dark:text-warning-400">
-              {{ item.days }} DÍAS DE ATRASO
+      <section v-if="reportDelays.length" class="space-y-3">
+        <div class="flex items-center gap-2">
+          <span class="w-1.5 h-1.5 rounded-full bg-orange-500"></span>
+          <h3 class="text-[10px] font-black uppercase text-gray-500 dark:text-gray-400 tracking-widest">
+            Informes Demorados (>7 días)
+          </h3>
+        </div>
+        <div class="grid gap-2">
+          <div
+            v-for="item in reportDelays"
+            :key="item.id"
+            class="group flex items-center justify-between rounded-2xl border border-gray-50 bg-gray-50/30 p-4 transition-all hover:bg-white hover:shadow-md hover:border-orange-100 dark:border-gray-800 dark:bg-gray-800/20 dark:hover:bg-gray-800"
+          >
+            <div class="flex items-center gap-4">
+              <div class="flex flex-col">
+                <span class="text-xs font-black text-gray-900 dark:text-white">{{ item.vessel }}</span>
+                <span class="text-[10px] font-bold text-gray-400 uppercase">{{ item.obs }}</span>
+              </div>
             </div>
-            <router-link
-              :to="`/mareas/inbox?marea=${item.mareaId}`"
-              class="text-[10px] font-bold text-brand-500 opacity-0 group-hover:opacity-100 transition-opacity uppercase"
-              >Reclamar</router-link
-            >
+            <div class="text-right flex items-center gap-4">
+              <div class="flex flex-col text-right">
+                <span class="text-xs font-black text-orange-600 dark:text-orange-400">{{ item.days }} DÍAS</span>
+                <span class="text-[9px] font-bold text-gray-400 uppercase tracking-tighter">PENDIENTE</span>
+              </div>
+              <button
+                class="p-2 rounded-xl bg-white dark:bg-gray-700 shadow-sm border border-gray-100 dark:border-gray-600 text-gray-400 hover:text-orange-500 hover:border-orange-500 transition-all opacity-0 group-hover:opacity-100"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a3 3 0 0 0-3-3H5a2 2 0 0 0-2 2v14c0 .6.4 1 1 1h12a2 2 0 0 0 2-2V8Z"/><path d="M22 6a3 3 0 0 0-3-3h-1a3 3 0 0 0-3 3v2h7V6Z"/></svg>
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+      </section>
 
-      <!-- Section: Fatigue Alerts -->
-      <div v-if="fatigueAlerts.length" class="space-y-3">
-        <h3 class="text-[10px] font-bold uppercase text-gray-400 tracking-widest">
-          Alertas de Fatiga / Límites
-        </h3>
-        <div
-          v-for="item in fatigueAlerts"
-          :key="item.id"
-          class="group flex items-center justify-between rounded-xl border border-gray-100 bg-gray-50 p-3 transition-colors hover:bg-gray-100 dark:border-gray-800 dark:bg-white/5"
-        >
-          <div class="flex items-center gap-3">
-            <div
-              class="h-8 w-8 rounded-full bg-error-100 flex items-center justify-center text-error-600 text-xs font-bold dark:bg-error-500/20"
-            >
-              {{
-                item.name
-                  .split(' ')
-                  .map((n) => n[0])
-                  .join('')
-              }}
+      <!-- Section: Fatigue -->
+      <section v-if="fatigueAlerts.length" class="space-y-3">
+        <div class="flex items-center gap-2">
+          <span class="w-1.5 h-1.5 rounded-full bg-brand-500"></span>
+          <h3 class="text-[10px] font-black uppercase text-gray-500 dark:text-gray-400 tracking-widest">
+            Alertas de Personal / Fatiga
+          </h3>
+        </div>
+        <div class="grid gap-2">
+          <div
+            v-for="item in fatigueAlerts"
+            :key="item.id"
+            class="group flex items-center justify-between rounded-2xl border border-gray-50 bg-gray-50/30 p-4 transition-all hover:bg-white hover:shadow-md dark:border-gray-800 dark:bg-gray-800/20 dark:hover:bg-gray-800"
+          >
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-full bg-brand-50 dark:bg-brand-900/20 flex items-center justify-center">
+                 <span class="text-[10px] font-black text-brand-500">{{ item.name.split(' ').map(n => n[0]).join('') }}</span>
+              </div>
+              <div class="flex flex-col">
+                <span class="text-xs font-black text-gray-900 dark:text-white">{{ item.name }}</span>
+                <span class="text-[10px] font-bold text-gray-400 uppercase">{{ item.reason }}</span>
+              </div>
             </div>
-            <div>
-              <div class="text-sm font-bold text-gray-800 dark:text-gray-100">{{ item.name }}</div>
-              <div class="text-[10px] text-gray-500">{{ item.reason }}</div>
+            <div class="text-right">
+              <span class="text-xs font-black text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-lg">
+                {{ item.value }} d
+              </span>
             </div>
-          </div>
-          <div class="text-right">
-            <div class="text-xs text-gray-700 dark:text-gray-300">
-              {{ item.value }} d
-            </div>
-            <button
-              class="text-[10px] font-bold text-brand-500 opacity-0 group-hover:opacity-100 transition-opacity uppercase"
-            >
-              Ver Historial
-            </button>
           </div>
         </div>
-      </div>
+      </section>
     </div>
   </div>
 </template>
@@ -136,3 +147,19 @@ const fatigueAlerts = [
 
 const totalAlerts = revisionDelays.length + reportDelays.length + fatigueAlerts.length
 </script>
+
+<style scoped>
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #f1f5f9;
+  border-radius: 10px;
+}
+.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #1e293b;
+}
+</style>
