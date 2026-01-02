@@ -29,6 +29,15 @@ export interface FatigueAlert {
     trips: FatigueTrip[]
 }
 
+export interface WorkforceStatus {
+    totalActivos: number
+    navegando: number
+    descanso: number
+    disponibles: number
+    licencia: string | null
+    topDry: Array<{ id: string; name: string; days: number }>
+}
+
 const dashboardService = {
     async getFleetDistribution(): Promise<FleetDistributionResponse> {
         const { selectedYear } = useConfigStore()
@@ -39,6 +48,12 @@ const dashboardService = {
     async getFatigueAlerts(): Promise<FatigueAlert[]> {
         const { selectedYear } = useConfigStore()
         const { data } = await httpClient.get<FatigueAlert[]>(`/mareas/alertas/personal-fatiga?year=${selectedYear}`)
+        return data
+    },
+
+    async getWorkforceStatus(): Promise<WorkforceStatus> {
+        const { selectedYear } = useConfigStore()
+        const { data } = await httpClient.get<WorkforceStatus>(`/mareas/workforce/status?year=${selectedYear}`)
         return data
     }
 }

@@ -23,11 +23,11 @@
             :key="status.label"
             class="group flex flex-col items-center justify-center p-6 rounded-2xl bg-gray-50/50 dark:bg-gray-800/30 border border-transparent hover:border-indigo-100 dark:hover:border-indigo-900/30 transition-all"
           >
-            <div class="text-3xl font-black mb-1 transition-transform group-hover:scale-110" :class="status.colorClass">
-              {{ status.value }}%
-            </div>
-            <div class="text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest text-center">
+            <div class="text-sm font-black text-gray-400 uppercase tracking-widest mb-1 text-center">
               {{ status.label }}
+            </div>
+            <div class="text-3xl font-black mb-1 transition-transform group-hover:scale-110" :class="status.colorClass">
+              {{ status.count }} <span class="text-xs font-black text-gray-400">({{ status.value }}%)</span>
             </div>
             <div class="mt-4 h-1.5 w-full bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
               <div
@@ -72,23 +72,66 @@
 </template>
 
 <script setup lang="ts">
-const distributions = [
-  { label: 'Navegando', value: 45, colorClass: 'text-blue-500', bgClass: 'bg-blue-500' },
-  { label: 'Descanso', value: 25, colorClass: 'text-indigo-500', bgClass: 'bg-indigo-500' },
-  {
-    label: 'Disponibles',
-    value: 20,
-    colorClass: 'text-emerald-500',
-    bgClass: 'bg-emerald-500',
-  },
-  { label: 'Licencia', value: 10, colorClass: 'text-gray-400', bgClass: 'bg-gray-400' },
-]
+import { onMounted, ref } from 'vue'
+import { toast } from 'vue-sonner'
+import dashboardService, { WorkforceStatus } from '../services/dashboard.service'
 
-const topDryTime = [
-  { id: 1, name: 'Marcos Herrera', days: 42 },
-  { id: 2, name: 'Esteban Quito', days: 38 },
-  { id: 3, name: 'Valentina Rossi', days: 35 },
-  { id: 4, name: 'Diego Torres', days: 31 },
-  { id: 5, name: 'Mónica Geller', days: 28 },
-]
+type DistributionItem = {
+  label: string
+  count: number | string
+  value: number
+  colorClass: string
+  bgClass: string
+}
+
+const distributions = ref<DistributionItem[]>([])
+const topDryTime = ref<Array<{ id: string; name: string; days: number }>>([])
+
+const loadWorkforce = async () => {
+  try {
+    const data: WorkforceStatus = await dashboardService.getWorkforceStatus()
+    const base = data.totalActivos || 1
+
+    distributions.value = [
+      {
+        label: 'Navegando',
+        count: data.navegando,
+        value: Math.round((data.navegando / base) * 100),
+        colorClass: 'text-blue-500',
+        bgClass: 'bg-blue-500'
+      },
+      {
+        label: 'Descanso',
+        count: data.descanso,
+        value: Math.round((data.descanso / base) * 100),
+        colorClass: 'text-indigo-500',
+        bgClass: 'bg-indigo-500'
+      },
+      {
+        label: 'Disponibles',
+        count: data.disponibles,
+        value: Math.round((data.disponibles / base) * 100),
+        colorClass: 'text-emerald-500',
+        bgClass: 'bg-emerald-500'
+      },
+      {
+        label: 'Licencia',
+        count: data.licencia ?? '?',
+        value: data.licencia === '?' ? 0 : Math.round(((data.licencia as number) / base) * 100),
+        colorClass: 'text-gray-400',
+        bgClass: 'bg-gray-400'
+      }
+    ]
+
+    topDryTime.value = data.topDry || []
+  } catch (error) {
+    toast.error('No se pudo cargar el estado del personal.')
+    distributions.value = []
+    topDryTime.value = []
+  }
+}
+
+onMounted(() => {
+  loadWorkforce()
+})
 </script>
