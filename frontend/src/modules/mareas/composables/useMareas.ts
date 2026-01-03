@@ -71,6 +71,17 @@ export function useMareas() {
         hiddenStates.value = next;
     };
 
+    const setVisibleStates = (allowedCodes: string[]) => {
+        const allowed = new Set(allowedCodes);
+        const nextHidden = new Set<string>();
+        kpis.value.forEach(k => {
+            if (!allowed.has(k.codigo)) {
+                nextHidden.add(k.codigo);
+            }
+        });
+        hiddenStates.value = nextHidden;
+    };
+
     const filteredMareas = computed(() => {
         return mareas.value.filter(m => !hiddenStates.value.has(m.estado_codigo));
     });
@@ -87,6 +98,7 @@ export function useMareas() {
         createMarea,
         hiddenStates,
         filteredMareas,
-        toggleStateVisibility
+        toggleStateVisibility,
+        setVisibleStates
     };
 }

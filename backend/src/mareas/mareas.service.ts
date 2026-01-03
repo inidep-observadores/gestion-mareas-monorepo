@@ -274,6 +274,7 @@ export class MareasService {
                 }
             },
             include: {
+                estadoActual: true,
                 buque: {
                     select: {
                         nombreBuque: true
@@ -289,12 +290,13 @@ export class MareasService {
             }
         });
 
-        const distributionMap = new Map<string, { count: number; vessels: Map<string, string> }>();
+        const distributionMap = new Map<string, { count: number; vessels: Map<string, { mareaCode: string; status: string }> }>();
 
         activeMareas.forEach((marea) => {
             const label = marea.etapas[0]?.pesqueria?.nombre ?? 'Sin pesquería';
             const vesselName = marea.buque.nombreBuque;
             const mareaCode = `${marea.tipoMarea}-${String(marea.nroMarea).padStart(3, '0')}-${String(marea.anioMarea).slice(-2)}`;
+            const status = marea.estadoActual?.codigo ?? 'EN_EJECUCION';
 
             if (!distributionMap.has(label)) {
                 distributionMap.set(label, { count: 0, vessels: new Map() });
@@ -302,7 +304,7 @@ export class MareasService {
 
             const item = distributionMap.get(label)!;
             item.count++;
-            item.vessels.set(vesselName, mareaCode);
+            item.vessels.set(vesselName, { mareaCode, status });
         });
 
         const distribution = Array.from(distributionMap.entries())
@@ -310,7 +312,7 @@ export class MareasService {
                 label,
                 count: data.count,
                 vessels: Array.from(data.vessels.entries())
-                    .map(([name, mareaCode]) => ({ name, mareaCode }))
+                    .map(([name, vesselData]) => ({ name, ...vesselData }))
                     .sort((a, b) => a.name.localeCompare(b.name))
             }))
             .sort((a, b) => b.count - a.count);

@@ -3,8 +3,8 @@
     <div
       v-for="kpi in kpis"
       :key="kpi.title"
-      class="group relative overflow-hidden rounded-2xl border border-gray-100 bg-white p-5 shadow-sm transition-all hover:shadow-xl hover:-translate-y-1 dark:border-gray-800 dark:bg-gray-900"
-    >
+            class="group relative overflow-hidden rounded-2xl border border-gray-100 bg-white p-5 shadow-sm transition-all hover:shadow-xl hover:-translate-y-1 dark:border-gray-800 dark:bg-gray-900"
+      >
       <!-- Background Decorative Gradient -->
       <div
         class="absolute -right-4 -top-4 h-24 w-24 rounded-full opacity-5 blur-3xl transition-opacity group-hover:opacity-10"
@@ -114,7 +114,7 @@ const kpiDefinitions: Array<
     bgClass: 'bg-amber-500',
     iconContainerClass: 'bg-amber-50 dark:bg-amber-900/20',
     iconClass: 'text-amber-600',
-    link: '/mareas/workflow?estado=ENTREGADA_RECIBIDA,VERIFICACION_INICIAL,EN_CORRECCION,PENDIENTE_DE_INFORME,ESPERANDO_REVISION',
+    link: { name: 'MareasDashboard', query: { estado: 'ENTREGADA_RECIBIDA,VERIFICACION_INICIAL,EN_CORRECCION,PENDIENTE_DE_INFORME,ESPERANDO_REVISION' } },
   },
   {
     key: 'listasParaProtocolizar',
