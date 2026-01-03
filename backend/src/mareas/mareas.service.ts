@@ -276,12 +276,15 @@ export class MareasService {
 
     async getFleetDistributionByFishery(year?: number) {
         const operationalYear = this.resolveYear(year);
+        // Use strictly Active states (Designated + Navigating) to match Command Center KPIs
+        const activeStates = ['DESIGNADA', ...this.ESTADOS_NAVEGANDO];
+
         const activeMareas = await this.prisma.marea.findMany({
             where: {
                 activo: true,
                 anioMarea: operationalYear,
                 estadoActual: {
-                    mostrarEnPanel: true
+                    codigo: { in: activeStates }
                 }
             },
             include: {
@@ -819,7 +822,7 @@ export class MareasService {
         const listDescanso: Array<{ id: string; name: string; days: number; lastArrival: string }> = [];
         const listImpedidos: Array<{ id: string; name: string; motivo: string }> = [];
         const listDisponibles: Array<{ id: string; name: string; days: number; lastArrival: string }> = [];
-        const listNavegando: Array<{ id: string; name: string; days: number; vessel: string }> = [];
+        const listNavegando: Array<{ id: string; name: string; days: number; vessel: string; startDate: string }> = [];
         const topDryCandidates: Array<{ id: string; name: string; days: number; lastArrival: string }> = [];
 
         observadores.forEach((obs) => {
@@ -849,7 +852,8 @@ export class MareasService {
                         id: obs.id,
                         name,
                         vessel: navData?.vessel || 'Desconocido',
-                        days: daysNav
+                        days: daysNav,
+                        startDate: navData?.start?.toISOString() || ''
                     });
                     break;
                 case 'IMPEDIDO':

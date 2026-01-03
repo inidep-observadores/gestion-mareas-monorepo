@@ -1,5 +1,5 @@
 ﻿<template>
-  <div class="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900 flex flex-col">
+  <div class="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900 flex flex-col border-l-4 border-l-emerald-500">
     <div class="mb-6 flex items-center justify-between">
       <h2 class="text-sm font-black text-gray-900 dark:text-white uppercase tracking-widest flex items-center gap-2">
         <div class="w-1.5 h-4 bg-emerald-500 rounded-full"></div>

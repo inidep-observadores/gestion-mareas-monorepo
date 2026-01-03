@@ -1,6 +1,6 @@
 <template>
   <div
-    class="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900"
+    class="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900 border-l-4 border-l-indigo-500"
   >
     <div class="flex items-center gap-3 mb-8">
        <UserGroupIcon class="w-6 h-6 text-indigo-500" />
@@ -18,7 +18,7 @@
         :key="status.label"
         @click="selectStatus(status.label)"
         class="group relative flex flex-col items-center p-6 rounded-2xl bg-gray-50/50 dark:bg-gray-800/40 border border-gray-100 dark:border-gray-700 hover:bg-white dark:hover:bg-gray-800 hover:shadow-xl hover:border-indigo-100 dark:hover:border-indigo-800/50 transition-all duration-300 cursor-pointer"
-        :class="{'ring-2 ring-indigo-500 bg-white dark:bg-gray-800': selectedStatus === status.label}"
+        :class="[selectedStatus === status.label ? `ring-2 ${status.ringClass} bg-white dark:bg-gray-800` : '']"
       >
         <!-- Naked Icon (Better Symmetry) -->
         <div class="mb-5 transition-transform duration-300 group-hover:scale-110 group-hover:-translate-y-1">
@@ -49,7 +49,7 @@
           </div>
         </div>
         <!-- Active Indicator Arrow -->
-         <div v-if="selectedStatus === status.label" class="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-white dark:bg-gray-900 border-r border-b border-gray-100 dark:border-gray-800 rotate-45 z-10"></div>
+         <div v-if="selectedStatus === status.label" class="absolute -bottom-[10px] left-1/2 -translate-x-1/2 w-4 h-4 bg-white dark:bg-gray-800 border-r-2 border-b-2 rotate-45 z-10" :class="status.borderColorClass"></div>
       </div>
     </div>
 
@@ -88,7 +88,7 @@
                       <!-- Days Column (Shared) -->
                       <td v-else class="px-6 py-3 text-xs font-bold text-gray-500 text-right tabular-nums">
                          {{ (item as any).days }} días
-                         <span v-if="selectedStatus !== 'Navegando'" class="block text-[9px] font-normal text-gray-400">Desde: {{ formatDate((item as any).lastArrival) }}</span>
+                         <span class="block text-[9px] font-normal text-gray-400">Desde: {{ formatDate((item as any).lastArrival || (item as any).startDate) }}</span>
                       </td>
                    </tr>
                    <tr v-if="currentList.length === 0">
@@ -119,6 +119,8 @@ type DistributionItem = {
   value: number
   colorClass: string
   bgClass: string
+  borderColorClass: string
+  ringClass: string
   icon: any
 }
 
@@ -144,6 +146,8 @@ const distributions = computed<DistributionItem[]>(() => {
       value: Math.round((data.navegando / base) * 100),
       colorClass: 'text-blue-500',
       bgClass: 'bg-blue-500',
+      borderColorClass: 'border-blue-500',
+      ringClass: 'ring-blue-500',
       icon: markRaw(ShipIcon)
     },
     {
@@ -152,6 +156,8 @@ const distributions = computed<DistributionItem[]>(() => {
       value: Math.round((data.descanso / base) * 100),
       colorClass: 'text-indigo-500',
       bgClass: 'bg-indigo-500',
+      borderColorClass: 'border-indigo-500',
+      ringClass: 'ring-indigo-500',
       icon: markRaw(HotelIcon)
     },
     {
@@ -160,6 +166,8 @@ const distributions = computed<DistributionItem[]>(() => {
       value: Math.round((data.disponibles / base) * 100),
       colorClass: 'text-emerald-500',
       bgClass: 'bg-emerald-500',
+      borderColorClass: 'border-emerald-500',
+      ringClass: 'ring-emerald-500',
       icon: markRaw(UserGroupIcon)
     },
     {
@@ -168,6 +176,8 @@ const distributions = computed<DistributionItem[]>(() => {
       value: Math.round((data.impedidos / base) * 100),
       colorClass: 'text-rose-500',
       bgClass: 'bg-rose-500',
+      borderColorClass: 'border-rose-500',
+      ringClass: 'ring-rose-500',
       icon: markRaw(DocsIcon)
     }
   ]
