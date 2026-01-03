@@ -185,13 +185,47 @@ async function main() {
         return null;
     };
 
-    const mapEstado = (estadoRaw: string) => {
-        const est = normalize(estadoRaw);
-        if (est.includes('realizada') || est.includes('terminada') || est.includes('protocolizada')) return estados.find(e => e.codigo === 'PROTOCOLIZADA');
-        if (est.includes('navegando') || est.includes('ejecucion')) return estados.find(e => e.codigo === 'EN_EJECUCION');
-        if (est.includes('espera') || est.includes('designada')) return estados.find(e => e.codigo === 'DESIGNADA');
-        if (est.includes('cancelada') || est.includes('sinpesca')) return estados.find(e => e.codigo === 'CANCELADA');
-        return estados.find(e => e.codigo === 'DESIGNADA');
+    const fechaCorteProtocolizada = new Date(Date.UTC(2025, 9, 31, 0, 0, 0));
+    const fechaCorteParaProtocolizar = new Date(Date.UTC(2025, 10, 30, 0, 0, 0));
+
+    const obtenerFechaFinalizacion = (etapasData: any[]) => {
+        if (!etapasData || etapasData.length === 0) return null;
+
+        const fechasArribo = etapasData
+            .map((et) => safeDate(et.fecha_arribo))
+            .filter((f): f is Date => Boolean(f));
+
+        if (fechasArribo.length === 0) return null;
+
+        const maxTimestamp = Math.max(...fechasArribo.map(f => f.getTime()));
+        return new Date(maxTimestamp);
+    };
+
+    const resolverEstado = (estadoRaw: string, fechaFinalizacion: Date | null) => {
+        const estadoNormalizado = normalize(estadoRaw);
+        const estadoSinEspacios = normalize(estadoRaw, true);
+
+        if (estadoSinEspacios.includes('alaespera')) {
+            return estados.find(e => e.codigo === 'DESIGNADA');
+        }
+
+        if (estadoNormalizado.includes('cancelada') || estadoSinEspacios.includes('sinpesca')) {
+            return estados.find(e => e.codigo === 'CANCELADA');
+        }
+
+        if (fechaFinalizacion) {
+            if (fechaFinalizacion.getTime() < fechaCorteProtocolizada.getTime()) {
+                return estados.find(e => e.codigo === 'PROTOCOLIZADA');
+            }
+
+            if (fechaFinalizacion.getTime() < fechaCorteParaProtocolizar.getTime()) {
+                return estados.find(e => e.codigo === 'PARA_PROTOCOLIZAR');
+            }
+
+            return estados.find(e => e.codigo === 'ESPERANDO_ENTREGA');
+        }
+
+        return estados.find(e => e.codigo === 'EN_EJECUCION');
     };
 
     const adminUser = await prisma.user.findFirst({ where: { roles: { has: 'admin' } } });
@@ -216,7 +250,8 @@ async function main() {
         const buque = getBuque(buqueName);
         const observador = getObservador(obsName);
         const pesqueria = mapPesqueria(especieStr);
-        const estadoActual = mapEstado(estadoStr);
+        const fechaFinalizacion = obtenerFechaFinalizacion(etapas || []);
+        const estadoActual = resolverEstado(estadoStr, fechaFinalizacion);
 
         if (!buque) {
             console.warn(`[Marea ${nroMarea}] Buque no encontrado: ${buqueName}`);
