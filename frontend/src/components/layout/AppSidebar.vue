@@ -19,7 +19,7 @@
         !isExpanded && !isHovered ? 'lg:justify-center' : 'justify-start',
       ]"
     >
-      <router-link to="/" class="flex items-center gap-3">
+      <router-link :to="{ name: 'Dashboard' }" class="flex items-center gap-3">
         <div
           class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center flex-shrink-0"
         >
@@ -85,18 +85,18 @@
             <ul class="flex flex-col gap-4">
               <li v-for="item in menuGroup.items" :key="item.name">
                 <router-link
-                  :to="item.path"
+                  :to="item.to"
                   :class="[
                     'menu-item group',
                     {
-                      'menu-item-active': isActive(item.path),
-                      'menu-item-inactive': !isActive(item.path),
+                      'menu-item-active': isActive(item),
+                      'menu-item-inactive': !isActive(item),
                     },
                   ]"
                 >
                   <span
                     :class="[
-                      isActive(item.path) ? 'menu-item-icon-active' : 'menu-item-icon-inactive',
+                      isActive(item) ? 'menu-item-icon-active' : 'menu-item-icon-inactive',
                     ]"
                   >
                     <component :is="item.icon" />
@@ -122,12 +122,12 @@
                 @click="handleItemClick(item, $event)"
                 :class="[
                   'menu-item group w-full text-left',
-                  isActive(item.path) ? 'menu-item-active' : 'menu-item-inactive',
+                  isActive(item) ? 'menu-item-active' : 'menu-item-inactive',
                 ]"
               >
                 <span
                   :class="[
-                    isActive(item.path) ? 'menu-item-icon-active' : 'menu-item-icon-inactive',
+                    isActive(item) ? 'menu-item-icon-active' : 'menu-item-icon-inactive',
                   ]"
                 >
                   <component :is="item.icon" />
@@ -145,6 +145,7 @@
 </template>
 
 <script setup lang="ts">
+import { computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
   HomeIcon,
@@ -173,68 +174,77 @@ const availableYears = Array.from({ length: 5 }, (_, i) => currentYear - 2 + i)
 
 const { isExpanded, isMobileOpen, isHovered } = useSidebar()
 
-import { computed, watch } from 'vue'
+const isAdmin = computed(() => authStore.user?.roles.includes('admin'))
+const isCoordinator = computed(() => authStore.user?.roles.includes('coordinador'))
 
-const navigationGroups = computed(() => [
-  {
-    title: 'Menú Principal',
-    items: [
-      {
-        icon: HomeIcon,
-        name: 'Inicio',
-        path: '/',
-      },
-      ...(authStore.user?.roles.includes('admin')
-        ? [
-            {
-              icon: ShieldIcon,
-              name: 'Administración',
-              path: '/admin',
-            },
-          ]
-        : []),
-    ],
-  },
-  {
-    title: 'Gestión de Mareas',
-    items: [
-      {
-        icon: MailBox,
-        name: 'Bandeja de Entrada',
-        path: '/mareas/inbox',
-      },
-      {
-        icon: LayoutDashboardIcon,
-        name: 'Panel Operativo',
-        path: '/mareas/dashboard',
-      },
-      {
-        icon: GridIcon,
-        name: 'Flujo de Trabajo',
-        path: '/mareas/workflow',
-      },
-      {
-        icon: MapPinIcon,
-        name: 'Mapa de Recorridos',
-        path: '/mareas/monitor',
-      },
-      {
-        icon: CalenderIcon,
-        name: 'Calendario',
-        path: '/mareas/calendar',
-      },
-      ...((authStore.user?.roles.includes('admin') || authStore.user?.roles.includes('coordinador'))
-        ? [
-            {
-              icon: BarChartIcon,
-              name: 'Estadísticas',
-              path: '/mareas/stats',
-            },
-          ]
-        : []),
-    ],
-  },
-])
+const navigationGroups = computed(() => {
+  const groups = [
+    {
+      title: 'Menú Principal',
+      items: [
+        {
+          icon: HomeIcon,
+          name: 'Inicio',
+          to: { name: 'Dashboard' },
+        },
+      ],
+    },
+    {
+      title: 'Gestión de Mareas',
+      items: [
+        {
+          icon: MailBox,
+          name: 'Bandeja de Entrada',
+          to: { name: 'MareasInbox' },
+        },
+        {
+          icon: LayoutDashboardIcon,
+          name: 'Panel Operativo',
+          to: { name: 'MareasDashboard' },
+        },
+        {
+          icon: GridIcon,
+          name: 'Flujo de Trabajo',
+          to: { name: 'MareasWorkflow' },
+        },
+        {
+          icon: MapPinIcon,
+          name: 'Mapa de Recorridos',
+          to: { name: 'MareasMonitor' },
+        },
+        {
+          icon: CalenderIcon,
+          name: 'Calendario',
+          to: { name: 'MareasCalendar' },
+        },
+        ...((isAdmin.value || isCoordinator.value)
+          ? [
+              {
+                icon: BarChartIcon,
+                name: 'Estadísticas',
+                to: { name: 'MareasStats' },
+              },
+            ]
+          : []),
+      ],
+    },
+  ]
+
+  if (isAdmin.value) {
+    groups.push({
+      title: 'Sistema',
+      items: [
+        {
+          icon: ShieldIcon,
+          name: 'Administración',
+          to: { name: 'AdminUsers' },
+        },
+      ],
+    })
+  }
+
+  return groups
+})
 
 const systemGroups = computed(() => ({
   title: 'Sistema',
@@ -242,12 +252,22 @@ const systemGroups = computed(() => ({
     {
       icon: LogoutIcon,
       name: 'Cerrar Sesión',
-      path: '/signin',
+      to: { name: 'Signin' },
     },
   ],
 }))
 
-const isActive = (path: string) => route.path === path
+const isActive = (item: { to?: { name?: string }; path?: string }) => {
+  if (item.to && 'name' in item.to) {
+    return route.name === item.to.name
+  }
+
+  if (item.path) {
+    return route.path === item.path
+  }
+
+  return false
+}
 
 const handleItemClick = async (item: any, event: Event) => {
   if (item.name === 'Cerrar Sesión') {
