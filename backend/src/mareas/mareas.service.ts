@@ -334,6 +334,61 @@ export class MareasService {
         };
     }
 
+    async getCriticalDelays(year?: number) {
+        const operationalYear = this.resolveYear(year);
+        const now = new Date();
+        const limit = this.PLAZO_ENTREGA_DATOS;
+
+        const mareas = await (this.prisma as any).marea.findMany({
+            where: {
+                activo: true,
+                anioMarea: operationalYear,
+                estadoActual: {
+                    codigo: 'ESPERANDO_ENTREGA'
+                }
+            },
+            include: {
+                buque: true,
+                etapas: {
+                    orderBy: { nroEtapa: 'desc' },
+                    take: 1,
+                    include: {
+                        observadores: {
+                            where: { rol: 'PRINCIPAL' },
+                            include: { observador: true }
+                        }
+                    }
+                }
+            }
+        });
+
+        const delays: any[] = [];
+
+        mareas.forEach((m: any) => {
+            const lastStage = m.etapas[0];
+            const arrivalDate = lastStage?.fechaArribo ? new Date(lastStage.fechaArribo) : null;
+
+            if (arrivalDate) {
+                const diffTime = now.getTime() - arrivalDate.getTime();
+                const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+                if (diffDays > limit) {
+                    const primaryObs = lastStage.observadores[0]?.observador;
+                    delays.push({
+                        id: m.id,
+                        mareaId: `${m.tipoMarea}-${String(m.nroMarea).padStart(3, '0')}-${String(m.anioMarea).slice(-2)}`,
+                        vesselName: m.buque.nombreBuque,
+                        obs: primaryObs ? `${primaryObs.nombre} ${primaryObs.apellido}` : 'Sin Asignar',
+                        arrivalDate: arrivalDate,
+                        days: diffDays
+                    });
+                }
+            }
+        });
+
+        return delays.sort((a, b) => b.days - a.days);
+    }
+
     private calculateUniqueDays(intervals: Array<{ inicio: Date; fin: Date }>): number {
         if (!intervals.length) return 0;
 

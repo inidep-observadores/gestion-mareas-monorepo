@@ -29,6 +29,15 @@ export interface FatigueAlert {
     trips: FatigueTrip[]
 }
 
+export interface CriticalDelay {
+    id: string
+    mareaId: string
+    vesselName: string
+    obs: string
+    arrivalDate: string
+    days: number
+}
+
 export interface WorkforceStatus {
     totalActivos: number
     navegando: number
@@ -42,6 +51,12 @@ const dashboardService = {
     async getFleetDistribution(): Promise<FleetDistributionResponse> {
         const { selectedYear } = useConfigStore()
         const { data } = await httpClient.get<FleetDistributionResponse>(`/mareas/flota-por-pesqueria?year=${selectedYear}`)
+        return data
+    },
+
+    async getCriticalDelays(): Promise<CriticalDelay[]> {
+        const { selectedYear } = useConfigStore()
+        const { data } = await httpClient.get<CriticalDelay[]>(`/mareas/alertas/retrasos-criticos?year=${selectedYear}`)
         return data
     },
 

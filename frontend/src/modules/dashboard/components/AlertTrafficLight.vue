@@ -39,7 +39,10 @@
           >
             <div class="flex items-center gap-4">
               <div class="flex flex-col">
-                <span class="text-xs font-black text-gray-900 dark:text-white">{{ item.mareaId }}</span>
+                <div class="flex items-center gap-2 mb-0.5">
+                    <span class="text-xs font-black text-gray-900 dark:text-white">{{ item.mareaId }}</span>
+                    <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 uppercase tracking-tight">{{ item.vesselName }}</span>
+                </div>
                 <span class="text-[10px] font-bold text-gray-400 uppercase">{{ item.obs }}</span>
               </div>
             </div>
@@ -57,10 +60,12 @@
             </div>
           </div>
         </div>
-        <div class="bg-white dark:bg-gray-950 rounded-xl border border-gray-200 dark:border-gray-800 p-6 text-center">
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10 text-gray-300 dark:text-gray-600 mx-auto mb-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
-          <h3 class="text-gray-900 dark:text-white font-semibold">Retrasos críticos</h3>
-          <p class="text-sm text-gray-500 dark:text-gray-400 mt-1 max-w-sm mx-auto">Esta sección estará disponible próximamente. Estamos calibrando las reglas de alerta.</p>
+        <div v-else class="bg-white dark:bg-gray-950 rounded-xl border border-gray-200 dark:border-gray-800 p-6 text-center">
+          <div class="w-10 h-10 rounded-full bg-green-50 dark:bg-green-900/20 flex items-center justify-center mx-auto mb-3">
+             <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-green-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          </div>
+          <h3 class="text-gray-900 dark:text-white font-semibold text-xs">Sin retrasos críticos</h3>
+          <p class="text-[10px] text-gray-500 dark:text-gray-400 mt-1 max-w-sm mx-auto">Todas las mareas pendientes están dentro del plazo de entrega de 15 días.</p>
         </div>
       </section>
 
@@ -267,6 +272,15 @@ const formatDateShort = (dateStr: string | null) => {
   })
 }
 
+const loadCriticalDelays = async () => {
+    try {
+        const data = await dashboardService.getCriticalDelays()
+        revisionDelays.value = data
+    } catch {
+        revisionDelays.value = []
+    }
+}
+
 const loadFatigueAlerts = async () => {
   try {
     const data: FatigueAlert[] = await dashboardService.getFatigueAlerts()
@@ -290,6 +304,7 @@ const loadFatigueAlerts = async () => {
 
 onMounted(() => {
   loadFatigueAlerts()
+  loadCriticalDelays()
 })
 </script>
 
