@@ -125,6 +125,7 @@ Table especies {
 Table observadores {
   id TEXT (PK) // UUID interno
   codigo_interno INTEGER NOT NULL // Codigo interno del INIDEP
+  email TEXT? // Correo de contacto institucional
   nombre TEXT NOT NULL
   apellido TEXT NOT NULL
   foto_url TEXT? // Ruta/URL de foto del observador
@@ -134,6 +135,8 @@ Table observadores {
 
   activo BOOLEAN NOT NULL // true = no esta dado de baja
   disponible BOOLEAN NOT NULL // true = puede ser llamado a embarcar (no licencia/impedimento)
+  con_impedimento BOOLEAN NOT NULL // true = tiene un impedimento vigente
+  motivo_impedimento TEXT? // descripcion formal del impedimento
 
   fecha_proxima_disponibilidad TIMESTAMP? // Declarada por el observador (administrativa)
 
