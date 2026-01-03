@@ -389,6 +389,86 @@ export class MareasService {
         return delays.sort((a, b) => b.days - a.days);
     }
 
+    async getReportDelays(year?: number) {
+        const operationalYear = this.resolveYear(year);
+        const now = new Date();
+        const limit = this.PLAZO_CONFECCION_INFORME;
+        const TARGET_STATES = [
+            'ENTREGADA_RECIBIDA',
+            'VERIFICACION_INICIAL',
+            'EN_CORRECCION',
+            'DELEGADA_EXTERNA',
+            'PENDIENTE_DE_INFORME'
+        ];
+        const RECEPCION_EVENT = 'RECEPCION_DATOS_ORIGINALES';
+
+        const mareas = await (this.prisma as any).marea.findMany({
+            where: {
+                activo: true,
+                anioMarea: operationalYear,
+                estadoActual: {
+                    codigo: { in: TARGET_STATES }
+                }
+            },
+            include: {
+                buque: true,
+                etapas: {
+                    orderBy: { nroEtapa: 'desc' },
+                    take: 1,
+                    include: {
+                        observadores: {
+                            where: { rol: 'PRINCIPAL' },
+                            include: { observador: true }
+                        }
+                    }
+                },
+                movimientos: {
+                    where: {
+                        tipoEvento: RECEPCION_EVENT
+                    },
+                    orderBy: { fechaHora: 'asc' }, // Primer recepción
+                    take: 1
+                }
+            }
+        });
+
+        const delays: any[] = [];
+
+        mareas.forEach((m: any) => {
+            let baseDate: Date | null = null;
+
+            // 1. Try reception event
+            if (m.movimientos.length > 0) {
+                baseDate = new Date(m.movimientos[0].fechaHora);
+            }
+            // 2. Fallback to arrival date
+            else if (m.etapas[0]?.fechaArribo) {
+                baseDate = new Date(m.etapas[0].fechaArribo);
+            }
+
+            if (baseDate) {
+                const diffTime = now.getTime() - baseDate.getTime();
+                const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+                if (diffDays > limit) {
+                    const lastStage = m.etapas[0];
+                    const primaryObs = lastStage?.observadores[0]?.observador;
+
+                    delays.push({
+                        id: m.id,
+                        mareaId: `${m.tipoMarea}-${String(m.nroMarea).padStart(3, '0')}-${String(m.anioMarea).slice(-2)}`,
+                        vesselName: m.buque.nombreBuque,
+                        obs: primaryObs ? `${primaryObs.nombre} ${primaryObs.apellido}` : 'Sin Asignar',
+                        baseDate: baseDate,
+                        days: diffDays
+                    });
+                }
+            }
+        });
+
+        return delays.sort((a, b) => b.days - a.days);
+    }
+
     private calculateUniqueDays(intervals: Array<{ inicio: Date; fin: Date }>): number {
         if (!intervals.length) return 0;
 

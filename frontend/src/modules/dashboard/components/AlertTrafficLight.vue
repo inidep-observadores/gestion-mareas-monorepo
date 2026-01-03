@@ -28,7 +28,7 @@
         <div class="flex items-center gap-2">
           <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>
           <h3 class="text-[10px] font-black uppercase text-gray-500 dark:text-gray-400 tracking-widest">
-            Retrasos Críticos (>15 días)
+            Entregas retrasadas (>15 días)
           </h3>
         </div>
         <div v-if="revisionDelays.length" class="grid gap-2">
@@ -85,7 +85,10 @@
           >
             <div class="flex items-center gap-4">
               <div class="flex flex-col">
-                <span class="text-xs font-black text-gray-900 dark:text-white">{{ item.vessel }}</span>
+                <div class="flex items-center gap-2 mb-0.5">
+                    <span class="text-xs font-black text-gray-900 dark:text-white">{{ item.mareaId }}</span>
+                    <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 uppercase tracking-tight">{{ item.vesselName }}</span>
+                </div>
                 <span class="text-[10px] font-bold text-gray-400 uppercase">{{ item.obs }}</span>
               </div>
             </div>
@@ -94,18 +97,21 @@
                 <span class="text-xs font-black text-orange-600 dark:text-orange-400">{{ item.days }} DÍAS</span>
                 <span class="text-[9px] font-bold text-gray-400 uppercase tracking-tighter">PENDIENTE</span>
               </div>
-              <button
+              <router-link
+                :to="`/mareas/workflow/${item.id}`"
                 class="p-2 rounded-xl bg-white dark:bg-gray-700 shadow-sm border border-gray-100 dark:border-gray-600 text-gray-400 hover:text-orange-500 hover:border-orange-500 transition-all opacity-0 group-hover:opacity-100"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a3 3 0 0 0-3-3H5a2 2 0 0 0-2 2v14c0 .6.4 1 1 1h12a2 2 0 0 0 2-2V8Z"/><path d="M22 6a3 3 0 0 0-3-3h-1a3 3 0 0 0-3 3v2h7V6Z"/></svg>
-              </button>
+              </router-link>
             </div>
           </div>
         </div>
-        <div class="bg-white dark:bg-gray-950 rounded-xl border border-gray-200 dark:border-gray-800 p-6 text-center">
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10 text-gray-300 dark:text-gray-600 mx-auto mb-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
-          <h3 class="text-gray-900 dark:text-white font-semibold">Informes demorados</h3>
-          <p class="text-sm text-gray-500 dark:text-gray-400 mt-1 max-w-sm mx-auto">Esta sección estará disponible próximamente. Mostraremos pendientes de revisión y entrega de informes.</p>
+        <div v-else class="bg-white dark:bg-gray-950 rounded-xl border border-gray-200 dark:border-gray-800 p-6 text-center">
+            <div class="w-10 h-10 rounded-full bg-green-50 dark:bg-green-900/20 flex items-center justify-center mx-auto mb-3">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-green-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            </div>
+          <h3 class="text-gray-900 dark:text-white font-semibold text-xs">Sin informes demorados</h3>
+          <p class="text-[10px] text-gray-500 dark:text-gray-400 mt-1 max-w-sm mx-auto">Todos los informes están dentro de los plazos establecidos.</p>
         </div>
       </section>
 
@@ -168,7 +174,7 @@
                   </div>
                   <div class="px-2 pb-2">
                     <div class="space-y-1">
-                      <div v-for="(trip, idx) in item.trips" :key="idx" 
+                      <div v-for="(trip, idx) in item.trips" :key="idx"
                         class="p-2.5 rounded-xl bg-white dark:bg-gray-800/40 border border-gray-100 dark:border-gray-700/50 shadow-sm hover:border-brand-200 dark:hover:border-brand-900/50 transition-all group/trip"
                       >
                         <!-- Header: Code and Vessel -->
@@ -182,7 +188,7 @@
                           </div>
                           <span class="text-[9px] font-black px-2 py-0.5 rounded-full bg-gray-50 dark:bg-gray-700/50 border border-gray-100 dark:border-gray-600/50 text-gray-500 uppercase">{{ trip.vessel }}</span>
                         </div>
-                        
+
                         <!-- Footer: Dates and Days (Aligned) -->
                         <div class="flex items-center justify-between pt-2 border-t border-gray-50 dark:border-gray-700/30">
                           <div class="flex items-center gap-2">
@@ -302,9 +308,19 @@ const loadFatigueAlerts = async () => {
   }
 }
 
+const loadReportDelays = async () => {
+    try {
+        const data = await dashboardService.getReportDelays()
+        reportDelays.value = data
+    } catch {
+        reportDelays.value = []
+    }
+}
+
 onMounted(() => {
   loadFatigueAlerts()
   loadCriticalDelays()
+  loadReportDelays()
 })
 </script>
 
