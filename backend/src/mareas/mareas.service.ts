@@ -196,7 +196,7 @@ export class MareasService {
                 estado: m.estadoActual.nombre,
                 estado_codigo: m.estadoActual.codigo,
                 fecha_zarpada: etapaActual?.fechaZarpada || m.fechaZarpadaEstimada,
-                puerto: etapaActual?.puertoZarpada?.nombre || 'N/D',
+                puerto: etapaActual?.puertoArribo?.nombre || etapaActual?.puertoZarpada?.nombre || 'N/D',
                 observador: primaryObs ? `${primaryObs.nombre} ${primaryObs.apellido}` : 'Sin asignar',
                 progreso,
                 alertas: [],

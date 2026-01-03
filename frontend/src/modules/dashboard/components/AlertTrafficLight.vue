@@ -192,9 +192,12 @@
                         <span class="text-[9px] font-bold text-brand-500">{{ item.trips?.length || 0 }} viajes</span>
                     </div>
                     <div class="px-2 pb-2 pt-2 space-y-1">
-                        <div v-for="(trip, idx) in item.trips" :key="idx" class="p-2 rounded-lg bg-white dark:bg-gray-800/40 border border-gray-100 dark:border-gray-700/50 flex justify-between items-center">
-                            <span class="text-[10px] font-bold">{{ trip.mareaCode }}</span>
-                            <span class="text-[10px] text-gray-400">{{ trip.navigatedDays }}d</span>
+                        <div v-for="(trip, idx) in item.trips" :key="idx" class="p-2 rounded-lg bg-white dark:bg-gray-800/40 border border-gray-100 dark:border-gray-700/50 flex justify-between items-center group/trip">
+                            <div class="flex flex-col min-w-0 pr-2">
+                                <span class="text-[10px] font-bold text-gray-700 dark:text-gray-300">{{ trip.mareaCode }}</span>
+                                <span class="text-[9px] text-gray-400 font-medium truncate">{{ trip.vessel }}</span>
+                            </div>
+                            <span class="text-[10px] font-bold text-brand-500 whitespace-nowrap">{{ trip.navigatedDays }}d</span>
                         </div>
                     </div>
                  </div>

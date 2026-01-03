@@ -247,6 +247,8 @@ async function seedMareasFromJsonl() {
         });
 
         for (const etap of etapas) {
+          const puertoBaseId = buque.puertoBaseId || null;
+
           const etapa = await tx.mareaEtapa.create({
             data: {
               mareaId: marea.id,
@@ -255,6 +257,8 @@ async function seedMareasFromJsonl() {
               tipoEtapa: 'COMERCIAL',
               fechaZarpada: safeDate(etap.fecha_zarpada),
               fechaArribo: safeDate(etap.fecha_arribo),
+              puertoZarpadaId: puertoBaseId,
+              puertoArriboId: puertoBaseId,
               observaciones: `Etapa ${etap.nroEtapa} importada`,
             },
           });
