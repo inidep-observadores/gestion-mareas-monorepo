@@ -881,6 +881,15 @@ export class MareasService {
         topDryCandidates.sort((a, b) => b.days - a.days);
         const topDry = topDryCandidates.slice(0, 5);
 
+        // Sorting Lists
+        // 1-3: Ordenar por días descendente
+        listNavegando.sort((a, b) => b.days - a.days);
+        listDescanso.sort((a, b) => b.days - a.days);
+        listDisponibles.sort((a, b) => b.days - a.days);
+
+        // 4: Ordenar por apellido y nombre
+        listImpedidos.sort((a, b) => a.name.localeCompare(b.name));
+
         return {
             totalActivos: observadores.length,
             navegando: listNavegando.length,
