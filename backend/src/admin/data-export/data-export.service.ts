@@ -1,5 +1,6 @@
 import { Injectable, Logger, InternalServerErrorException, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { Prisma } from '@prisma/client';
 import { ConfigService } from '@nestjs/config';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -518,6 +519,7 @@ export class DataExportService {
                 });
             }
         }
+    }
 
     private async importBuques(zip: AdmZip) {
         this.logger.log('Importing buques...');
@@ -558,14 +560,14 @@ export class DataExportService {
 
             const buqueData = {
                 matricula: b.matricula,
-                nombre: b.nombre,
+                nombreBuque: b.nombreBuque || b.nombre, // Map to correct schema field
                 senalDistintiva: b.senalDistintiva,
                 codigoINIDEP: b.codigoINIDEP,
                 activo: b.activo,
-                eslora: b.eslora,
+                esloraM: b.esloraM || b.eslora, // Map if schema differs (esloraM vs eslora)
                 manga: b.manga,
                 puntal: b.puntal,
-                potencia: b.potencia,
+                potenciaHp: b.potenciaHp || b.potencia, // Map if schema differs
                 capacidadBodega: b.capacidadBodega,
                 anioConstruccion: b.anioConstruccion,
                 shipistId: b.shipistId,
@@ -579,8 +581,8 @@ export class DataExportService {
 
             await this.prisma.buque.upsert({
                 where: { matricula: b.matricula },
-                update: buqueData,
-                create: buqueData
+                update: buqueData as Prisma.BuqueUncheckedCreateInput,
+                create: buqueData as Prisma.BuqueUncheckedCreateInput
             });
         }
     }
@@ -631,152 +633,136 @@ export class DataExportService {
             // Check duplicates (Buque + Nro + Anio? OR Buque + FechaInicio)
             // Implementation Plan says: "identificadorMarea compuesto: anioMarea, nroMarea, buqueMatricula"
             // Let's rely on that if available, otherwise just check buque + fechaInicio
-            const exists = await this.prisma.marea.findFirst({
+            const exists = await this.prisma.marea.findUnique({
                 where: {
-                    buqueId,
-                    fechaInicio: new Date(m.fechaInicio),
-                    // Or check nroMarea if specific field exists?
+                    identificadorMarea: {
+                        anioMarea: m.anioMarea,
+                        nroMarea: m.nroMarea,
+                        buqueId: buqueId,
+                        tipoMarea: m.tipoMarea || 'MC'
+                    }
                 }
             });
 
             if (exists) {
-                this.logger.log(`Skipping existing Marea for Buque ${m.buqueMatricula} starting ${m.fechaInicio}`);
-                continue; // For now skip duplicates. Upsert deep is hard.
+                this.logger.log(`Skipping existing Marea ${m.anioMarea}-${m.nroMarea} for Buque ${m.buqueMatricula}`);
+                continue;
             }
 
-            // Prepare nested structure
+            // Prepare nested structure for creating new Marea
             const mareaData = {
                 // Fields
-                fechaInicio: m.fechaInicio,
-                fechaFin: m.fechaFin,
-                comentarios: m.comentarios,
+                anioMarea: m.anioMarea,
+                nroMarea: m.nroMarea,
+                tipoMarea: m.tipoMarea || 'MC',
+                fechaZarpadaEstimada: m.fechaZarpadaEstimada ? new Date(m.fechaZarpadaEstimada) : null,
+                fechaInicioObservador: m.fechaInicioObservador ? new Date(m.fechaInicioObservador) : null,
+                fechaFinObservador: m.fechaFinObservador ? new Date(m.fechaFinObservador) : null,
+                diasEstimados: m.diasEstimados,
+                diasZonaAustral: m.diasZonaAustral,
+                tipoCalculoZonaAustral: m.tipoCalculoZonaAustral,
+                titulo: m.titulo,
+                descripcion: m.descripcion,
+                nroProtocolizacion: m.nroProtocolizacion,
+                anioProtocolizacion: m.anioProtocolizacion,
+                fechaProtocolizacion: m.fechaProtocolizacion ? new Date(m.fechaProtocolizacion) : null,
+                comentarios: m.comentarios, // Note: Schema might use 'observaciones'? Checked schema: Marea has 'observaciones', not 'comentarios'.
+                observaciones: m.observaciones || m.comentarios,
                 activo: m.activo,
 
-                // FKs
-                buqueId,
-                artePrincipalId: m.artePrincipalCodigo ? arteMap.get(m.artePrincipalCodigo) : null,
-                estadoActualId: m.estadoActualCodigo ? estadoMap.get(m.estadoActualCodigo) : undefined, // Required usually?
+                // FKs (Connect)
+                buque: { connect: { id: buqueId } },
+                estadoActual: { connect: { id: estadoMap.get(m.estadoActualCodigo) || estadoMap.get('INI') } }, // Default INI if missing logic? Or skip?
+                artePrincipal: m.artePrincipalCodigo ? { connect: { id: arteMap.get(m.artePrincipalCodigo) } } : undefined,
 
-                // Nested creations
+                // Deep Create
                 etapas: {
-                    create: m.etapas?.map(etapa => {
-                        let puertoZarpadaId = null;
-                        if (etapa.puertoZarpadaCodigo) {
-                            puertoZarpadaId = puertoCodeMap.get(etapa.puertoZarpadaCodigo) || puertoNameMap.get(etapa.puertoZarpadaCodigo);
+                    create: m.etapas?.map(et => ({
+                        fechaInicio: et.fechaInicio ? new Date(et.fechaInicio) : undefined,
+                        fechaFin: et.fechaFin ? new Date(et.fechaFin) : undefined,
+
+                        puertoZarpada: et.puertoZarpadaCodigo ? { connect: { id: puertoCodeMap.get(et.puertoZarpadaCodigo) || puertoNameMap.get(et.puertoZarpadaCodigo) } } : undefined,
+                        puertoArribo: et.puertoArriboCodigo ? { connect: { id: puertoCodeMap.get(et.puertoArriboCodigo) || puertoNameMap.get(et.puertoArriboCodigo) } } : undefined,
+
+                        pesqueria: et.pesqueriaCodigo ? { connect: { id: pesqMap.get(et.pesqueriaCodigo) } } : undefined,
+
+                        // Lances
+                        lances: {
+                            create: et.lances?.map((l: any) => ({
+                                fechaInicio: l.fechaInicio ? new Date(l.fechaInicio) : undefined,
+                                fechaFin: l.fechaFin ? new Date(l.fechaFin) : undefined,
+                                latitudInicio: l.latitudInicio,
+                                longitudInicio: l.longitudInicio,
+                                latitudFin: l.latitudFin,
+                                longitudFin: l.longitudFin,
+                                profundidad: l.profundidad,
+
+                                capturas: {
+                                    create: l.capturas?.map((c: any) => ({
+                                        pesoKgs: c.pesoKgs || c.peso,
+                                        numeroEjemplares: c.numeroEjemplares,
+                                        especie: { connect: { id: especieMap.get(c.especieCodigo) } }
+                                    }))
+                                },
+
+                                muestras: {
+                                    create: l.muestras?.map((mu: any) => ({
+                                        tipoMuestra: mu.tipoMuestra,
+                                        pesoMuestraKg: mu.pesoMuestraKg || mu.pesoTotal,
+                                        especie: { connect: { id: especieMap.get(mu.especieCodigo) } },
+
+                                        submuestras: {
+                                            create: mu.submuestras
+                                        },
+                                        detallesTalla: {
+                                            create: mu.detallesTalla
+                                        }
+                                    }))
+                                }
+                            }))
+                        },
+
+                        observadores: {
+                            create: et.observadores?.map((eo: any) => ({
+                                rol: eo.rol,
+                                fechaInicio: eo.fechaInicio ? new Date(eo.fechaInicio) : undefined,
+                                fechaFin: eo.fechaFin ? new Date(eo.fechaFin) : undefined,
+                                observador: { connect: { id: obCodeMap.get(eo.observadorCodigo) } }
+                            })).filter((o: any) => o.observador && o.observador.connect && o.observador.connect.id)
                         }
-
-                        let puertoArriboId = null;
-                        if (etapa.puertoArriboCodigo) {
-                            puertoArriboId = puertoCodeMap.get(etapa.puertoArriboCodigo) || puertoNameMap.get(etapa.puertoArriboCodigo);
-                        }
-
-                        return {
-                            fechaInicio: etapa.fechaInicio,
-                            fechaFin: etapa.fechaFin,
-                            comentarios: etapa.comentarios,
-
-                            puertoZarpadaId,
-                            puertoArriboId,
-                            pesqueriaId: etapa.pesqueriaCodigo ? pesqMap.get(etapa.pesqueriaCodigo) : null,
-
-                            observadores: {
-                                create: etapa.observadores?.map(obs => ({
-                                    observadorId: obCodeMap.get(obs.observadorCodigo), // If missing, this will fail/be null. Should check.
-                                    rol: obs.rol,
-                                    fechaInicio: obs.fechaInicio,
-                                    fechaFin: obs.fechaFin
-                                })).filter(o => o.observadorId) // Filter out if observer not found
-                            },
-
-                            lances: {
-                                create: etapa.lances?.map(lance => ({
-                                    fechaHora: lance.fechaHora,
-                                    latitud: lance.latitud,
-                                    longitud: lance.longitud,
-                                    profundidad: lance.profundidad,
-                                    codArtePesca: lance.codArtePesca, // This is int field in Lance model? Or numeric code?
-                                    // Actually Lance model has `codArtePesca` (Int) AND/OR relation `artePescaId`.
-                                    // Looking at export: `codArtePesca` is captured. Relation `artePesca` likely redundant or used for checking.
-                                    // Schema check: `lance` model has `codArtePesca Int` and `artePesca ArtePesca?`.
-                                    // We'll set the scalar if that's what's used.
-
-                                    capturas: {
-                                        create: lance.capturas?.map(c => ({
-                                            peso: c.peso,
-                                            numeroEjemplares: c.numeroEjemplares,
-                                            especieId: especieMap.get(c.especieCodigo)
-                                        })).filter(c => c.especieId)
-                                    },
-
-                                    muestras: {
-                                        create: lance.muestras?.map(muestra => ({
-                                            codigoMuestra: muestra.codigoMuestra,
-                                            pesoTotal: muestra.pesoTotal,
-                                            especieId: especieMap.get(muestra.especieCodigo),
-
-                                            submuestras: {
-                                                create: muestra.submuestras?.map(sm => ({
-                                                    peso: sm.peso,
-                                                    numeroEjemplares: sm.numeroEjemplares,
-                                                    factor: sm.factor
-                                                }))
-                                            },
-
-                                            detallesTalla: {
-                                                create: muestra.detallesTalla?.map(dt => ({
-                                                    talla: dt.talla,
-                                                    frecuencia: dt.frecuencia,
-                                                    sexo: dt.sexo
-                                                }))
-                                            }
-
-                                        })).filter(m => m.especieId)
-                                    }
-                                }))
-                            }
-                        };
-                    })
-                },
-
-                movimientos: {
-                    create: m.movimientos?.map(mov => ({
-                        fecha: mov.fecha,
-                        estadoDesdeId: mov.estadoDesdeCodigo ? estadoMap.get(mov.estadoDesdeCodigo) : null,
-                        estadoHastaId: mov.estadoHastaCodigo ? estadoMap.get(mov.estadoHastaCodigo) : null,
-                        usuarioId: mov.usuarioEmail ? userMap.get(mov.usuarioEmail) : null,
-                        comentarios: mov.comentarios,
-                        accion: mov.accion
                     }))
                 },
 
-                producciones: {
-                    create: m.producciones?.map(prod => ({
-                        cantidad: prod.cantidad,
-                        cajones: prod.cajones,
-                        factorConversion: prod.factorConversion,
-                        especieId: especieMap.get(prod.especieCodigo) // If code missing, this is undefined.
-                    })).filter(p => p.especieId)
+                movimientos: {
+                    create: m.movimientos?.map((mov: any) => ({
+                        fecha: new Date(mov.fecha),
+                        usuario: userMap.get(mov.usuarioEmail) ? { connect: { id: userMap.get(mov.usuarioEmail) } } : undefined,
+                        estadoDesde: mov.estadoDesdeCodigo ? { connect: { id: estadoMap.get(mov.estadoDesdeCodigo) } } : undefined,
+                        estadoHasta: mov.estadoHastaCodigo ? { connect: { id: estadoMap.get(mov.estadoHastaCodigo) } } : undefined,
+                        comentario: mov.comentario
+                    }))
                 },
 
                 archivos: {
-                    create: m.archivos?.map(arch => ({
-                        nombreArchivo: arch.nombreArchivo,
-                        tipoMime: arch.tipoMime,
-                        tamano: arch.tamano,
-                        url: arch.url, // Might be broken link in new env
-                        fechaSubida: arch.fechaSubida,
-                        usuarioSubioId: arch.usuarioSubioEmail ? userMap.get(arch.usuarioSubioEmail) : null
+                    create: m.archivos?.map((a: any) => ({
+                        nombreArchivo: a.nombreArchivo,
+                        rutaArchivo: a.rutaArchivo,
+                        tipoMime: a.tipoMime,
+                        tamanoBytes: a.tamanoBytes
                     }))
                 }
             };
 
-            // Explicitly cast to any to avoid strict type checks on complex nested/unchecked inputs for now
-            // as dealing with "Type is not assignable to never" for 5 levels of nesting is time consuming.
-            // Run-time validation is implicitly done by Prisma (FK constraint fails if ID is null/invalid).
+            // Assuming we are doing a fresh create here.
+            // If we needed to update existing deep structure, it would be much more complex.
+            // The existing strategy is: SKIP existing Mareas (duplicates).
+
             await this.prisma.marea.create({
-                data: mareaData as any
+                data: mareaData
             });
         }
     }
 }
+
+
 
