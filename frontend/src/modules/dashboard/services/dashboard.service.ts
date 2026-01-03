@@ -44,6 +44,7 @@ export interface WorkforceStatus {
     descanso: number
     disponibles: number
     licencia: number
+    impedidos: number
     topDry: Array<{ id: string; name: string; days: number; lastArrival: string }>
 }
 
