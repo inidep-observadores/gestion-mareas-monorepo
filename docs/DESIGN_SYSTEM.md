@@ -92,3 +92,23 @@ En formularios de edición o creación (vistas o modales), si existen cambios si
 - **Gaps**: Utilizar preferentemente `gap-4` o `gap-6` para separación de controles en formularios.
 - **Páginas**: Padding uniforme de `p-6` en el contenedor principal del dashboard.
 - **Card/Modales**: `rounded-xl` o `rounded-2xl` con `shadow-xl`.
+
+## 9. Estilos de Fichas (Cards)
+
+Para las fichas principales del dashboard (KPIs, estadísticas), utilizamos un estilo distintivo con borde izquierdo coloreado para reforzar el contexto visual de cada sección.
+
+### Patrón de Borde Izquierdo
+- **Clase Base**: `border-l-4` + `border-l-{color}`.
+- **Colores de Contexto**:
+    - **Azul (`blue-500`)**: Flota y Distribución.
+    - **Índigo (`indigo-500`)**: Personal y Recursos Humanos.
+    - **Esmeralda (`emerald-500`)**: Vencimientos y Próximos Arribos.
+    - **Rosa (`rose-500`)**: Alertas Críticas.
+    - **Naranja (`orange-500`)**: Métricas de Inactividad (Top Dry) o Advertencias.
+
+Ejemplo en Vue:
+```html
+<div class="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm border-l-4 border-l-orange-500">
+  <!-- Contenido -->
+</div>
+```

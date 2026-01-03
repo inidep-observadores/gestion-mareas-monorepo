@@ -26,8 +26,8 @@
     <div class="flex flex-col gap-6 flex-1 overflow-y-auto custom-scrollbar pr-2 pb-4">
         
       <!-- CARD 1: Retrasos Críticos (Red) -->
-      <div class="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900 relative overflow-hidden group hover:shadow-md transition-all">
-        <div class="absolute left-0 top-0 bottom-0 w-1.5 bg-red-500 rounded-l-3xl"></div>
+      <div class="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900 relative overflow-hidden group hover:shadow-md transition-all border-l-4 border-l-red-500">
+
         
         <div class="flex items-center gap-2 mb-4">
            <span class="w-8 h-8 rounded-full bg-red-50 dark:bg-red-900/10 flex items-center justify-center text-red-500">
@@ -77,8 +77,8 @@
       </div>
 
       <!-- CARD 2: Informes Demorados (Orange) -->
-      <div class="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900 relative overflow-hidden group hover:shadow-md transition-all">
-        <div class="absolute left-0 top-0 bottom-0 w-1.5 bg-orange-500 rounded-l-3xl"></div>
+      <div class="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900 relative overflow-hidden group hover:shadow-md transition-all border-l-4 border-l-orange-500">
+
         
         <div class="flex items-center gap-2 mb-4">
            <span class="w-8 h-8 rounded-full bg-orange-50 dark:bg-orange-900/10 flex items-center justify-center text-orange-500">
@@ -128,8 +128,8 @@
       </div>
 
       <!-- CARD 3: Fatigue (Blue/Brand) -->
-      <div v-if="fatigueAlerts.length" class="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900 relative overflow-hidden group hover:shadow-md transition-all">
-        <div class="absolute left-0 top-0 bottom-0 w-1.5 bg-brand-500 rounded-l-3xl"></div>
+      <div v-if="fatigueAlerts.length" class="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900 relative overflow-hidden group hover:shadow-md transition-all border-l-4 border-l-brand-500">
+
         
         <div class="flex items-center gap-2 mb-4">
            <span class="w-8 h-8 rounded-full bg-brand-50 dark:bg-brand-900/10 flex items-center justify-center text-brand-500">
