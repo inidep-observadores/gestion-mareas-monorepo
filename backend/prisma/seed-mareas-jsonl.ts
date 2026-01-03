@@ -319,6 +319,8 @@ async function main() {
                                     tipoEtapa: 'COMERCIAL',
                                     fechaZarpada: safeDate(etap.fecha_zarpada),
                                     fechaArribo: fechaArribo,
+                                    puertoZarpadaId: buque.puertoBaseId || null,
+                                    puertoArriboId: buque.puertoBaseId || null,
                                     observaciones: `Etapa ${etap.nroEtapa} importada`
                                 }
                             });
@@ -345,6 +347,8 @@ async function main() {
                                 tipoEtapa: 'COMERCIAL',
                                 fechaZarpada: safeDate(zarpadaEstimada),
                                 fechaArribo: null, // Asumimos abierta si no hay datos
+                                puertoZarpadaId: buque.puertoBaseId || null,
+                                puertoArriboId: buque.puertoBaseId || null,
                                 observaciones: 'Etapa generada automáticamente (sin desglose)'
                             }
                         });

@@ -86,7 +86,7 @@ const loadExpiringMareas = async () => {
     const { items } = await mareasService.getDashboardOperativo()
 
     expiringMareas.value = items
-      .filter((item) => item.progreso > 80)
+      .filter((item: any) => item.progreso > 80 && item.estado_codigo === 'EN_EJECUCION')
       .sort((a, b) => b.progreso - a.progreso)
       .slice(0, 4)
       .map((item) => ({
