@@ -5,10 +5,17 @@ import { User } from '@prisma/client';
 import { CreateMareaDto } from './dto/create-marea.dto';
 import { UpdateMareaDto } from './dto/update-marea.dto';
 
+import { ClaimMareaDto } from './dto/claim-marea.dto';
+
 @Controller('mareas')
 @Auth()
 export class MareasController {
     constructor(private readonly mareasService: MareasService) { }
+
+    @Post('claim')
+    sendClaim(@Body() dto: ClaimMareaDto) {
+        return this.mareasService.sendClaim(dto);
+    }
 
     @Get('operativo')
     getDashboardOperativo(@Query('year') year?: string) {

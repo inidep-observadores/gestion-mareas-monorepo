@@ -4,6 +4,9 @@ import { User } from '@prisma/client';
 import { CreateMareaDto } from './dto/create-marea.dto';
 import { UpdateMareaDto } from './dto/update-marea.dto';
 
+import { MailService } from '../mail/mail.service';
+import { ClaimMareaDto } from './dto/claim-marea.dto';
+
 @Injectable()
 export class MareasService {
     // Fuentes únicas de verdad para estados operativos
@@ -24,7 +27,10 @@ export class MareasService {
     private readonly UMBRAL_FATIGA_ANUAL_PORCENTAJE = 0.9;
     private readonly ALERTA_DIAS_CORRIDOS = 60;
 
-    constructor(private readonly prisma: PrismaService) { }
+    constructor(
+        private readonly prisma: PrismaService,
+        private readonly mailService: MailService
+    ) { }
 
     async findOne(id: string) {
         const marea = await this.prisma.marea.findUnique({
@@ -1194,6 +1200,19 @@ export class MareasService {
 
             return marea;
         });
+    }
+
+    async sendClaim(dto: ClaimMareaDto) {
+        const { to, body, mareaId } = dto;
+        const html = body.replace(/\n/g, '<br>');
+
+        await this.mailService.sendMail(
+            to,
+            `Reclamo de Documentación - Marea ${mareaId}`,
+            html
+        );
+
+        return { success: true };
     }
 
 }
