@@ -469,6 +469,112 @@ export class MareasService {
         return delays.sort((a, b) => b.days - a.days);
     }
 
+    async getCalendarEvents(year?: number) {
+        const operationalYear = this.resolveYear(year);
+        const mareas = await (this.prisma as any).marea.findMany({
+            where: {
+                activo: true,
+                anioMarea: operationalYear
+            },
+            include: {
+                buque: true,
+                etapas: {
+                    orderBy: { nroEtapa: 'asc' },
+                    include: {
+                        puertoZarpada: true,
+                        puertoArribo: true,
+                        observadores: {
+                            where: { rol: 'PRINCIPAL' },
+                            include: { observador: true }
+                        }
+                    }
+                },
+                movimientos: {
+                    where: {
+                        tipoEvento: {
+                            in: ['INFORME_PROTOCOLIZADO', 'INFORME_APROBADO']
+                        }
+                    }
+                }
+            }
+        });
+
+        const events: any[] = [];
+
+        mareas.forEach((m: any) => {
+            const mareaId = `${m.tipoMarea}-${String(m.nroMarea).padStart(3, '0')}`;
+            const buque = m.buque.nombreBuque;
+            const obs = m.etapas[0]?.observadores[0]?.observador?.apellido || 'Sin Asignar';
+
+            // 1. Designación (Fecha Inicio Observador)
+            if (m.fechaInicioObservador) {
+                events.push({
+                    id: `des-${m.id}`,
+                    title: `📋 Designación ${mareaId} - ${buque} (${obs})`,
+                    start: m.fechaInicioObservador,
+                    type: 'designacion'
+                });
+            }
+
+            m.etapas.forEach((e: any) => {
+                // 2. Zarpada
+                if (e.fechaZarpada) {
+                    events.push({
+                        id: `zar-${e.id}`,
+                        title: `⛵ Zarpada ${mareaId} - ${buque}`,
+                        start: e.fechaZarpada,
+                        type: 'zarpada'
+                    });
+                }
+
+                // 3. Arribo
+                if (e.fechaArribo) {
+                    events.push({
+                        id: `arr-${e.id}`,
+                        title: `🚢 Arribo ${mareaId} - ${buque}`,
+                        start: e.fechaArribo,
+                        type: 'arribo'
+                    });
+
+                    // 4.6 Alerta (Plazo Entrega Datos: Arribo + 15 dias)
+                    // Solo si no está entregada (Esto requeriría chequear estado o movimiento, asumo alerta informativa por ahora)
+                    const deadline = new Date(e.fechaArribo);
+                    deadline.setDate(deadline.getDate() + this.PLAZO_ENTREGA_DATOS);
+
+                    // Solo agregar alerta si fecha actual > deadline y no está entregada? 
+                    // El calendario muestra eventos fijos. Mejor mostrar el "Vencimiento Plazo" como un evento de alerta.
+                    events.push({
+                        id: `ven-${e.id}`,
+                        title: `⚠️ Vencimiento Datos ${mareaId}`,
+                        start: deadline,
+                        type: 'alerta'
+                    });
+                }
+            });
+
+            // 4. Movimientos (Informes y Validaciones)
+            m.movimientos.forEach((mov: any) => {
+                if (mov.tipoEvento === 'INFORME_PROTOCOLIZADO') {
+                    events.push({
+                        id: `inf-${mov.id}`,
+                        title: `📄 Informe Protocolizado ${mareaId}`,
+                        start: mov.fechaHora,
+                        type: 'informe'
+                    });
+                } else if (mov.tipoEvento === 'INFORME_APROBADO') {
+                    events.push({
+                        id: `val-${mov.id}`,
+                        title: `✅ Validación ${mareaId}`,
+                        start: mov.fechaHora,
+                        type: 'validacion'
+                    });
+                }
+            });
+        });
+
+        return events;
+    }
+
     private calculateUniqueDays(intervals: Array<{ inicio: Date; fin: Date }>): number {
         if (!intervals.length) return 0;
 

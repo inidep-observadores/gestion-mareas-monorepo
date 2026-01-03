@@ -45,6 +45,11 @@ export class MareasController {
         return this.mareasService.getReportDelays(year ? Number(year) : undefined);
     }
 
+    @Get('calendar/events')
+    getCalendarEvents(@Query('year') year?: string) {
+        return this.mareasService.getCalendarEvents(year ? Number(year) : undefined);
+    }
+
     @Get('search')
     search(@Query('q') q: string) {
         return this.mareasService.search(q);
