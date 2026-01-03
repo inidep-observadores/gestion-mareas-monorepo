@@ -136,7 +136,8 @@ import {
   ArrowLeftIcon,
   ShipIcon,
   HistoryIcon,
-  ArchiveIcon
+  ArchiveIcon,
+  BackupIcon
 } from '@/icons'
 import { useSidebar } from '@/composables/useSidebar'
 import { useAuthStore } from '@/modules/auth/stores/auth.store'
@@ -187,7 +188,7 @@ const navigationGroups = [
         path: '/admin/data-export',
       },
       {
-        icon: ShieldIcon,
+        icon: BackupIcon,
         name: 'Copias de seguridad',
         path: '/admin/backup',
       },

@@ -95,64 +95,20 @@
     </div>
 
     <!-- Modal de Restauración (Crítico) -->
-    <BaseModal 
-      :show="showRestoreModal" 
+    <SecurityConfirmationDialog
+      :show="showRestoreModal"
       title="Restauración Crítica de Datos"
-      variant="danger"
+      confirm-button-text="RESTAURAR AHORA"
+      :phrases="restorePhrases"
+      :loading="isRestoring"
       @close="closeRestoreModal"
+      @confirm="handleRestore"
     >
-      <div class="p-6">
-        <div class="bg-red-50 dark:bg-red-950/30 p-4 rounded-xl border border-red-100 dark:border-red-900/50 mb-6">
-            <div class="flex gap-3 text-red-800 dark:text-red-400">
-                <WarningIcon class="w-6 h-6 flex-shrink-0" />
-                <div>
-                    <h4 class="font-bold underline">¡ADVERTENCIA DE SEGURIDAD!</h4>
-                    <p class="text-xs mt-1 leading-relaxed">
-                        Este proceso es **IRREVERSIBLE**. Al confirmar, la base de datos actual será borrada por completo y reemplazada por el archivo seleccionado: 
-                        <span class="font-mono font-bold">{{ selectedBackup?.filename }}</span>.
-                    </p>
-                </div>
-            </div>
-        </div>
-
-        <div class="space-y-4">
-            <p class="text-sm text-gray-600 dark:text-gray-400">
-                Para proceder, escriba la siguiente frase exactamente como aparece:
-            </p>
-            <div class="p-4 bg-gray-50 dark:bg-gray-950/40 border border-gray-200 dark:border-gray-800 rounded-xl text-center font-black tracking-widest text-gray-800 dark:text-brand-400 select-none shadow-inner">
-                {{ currentPhrase }}
-            </div>
-            
-            <div>
-                <input 
-                    type="text" 
-                    v-model="confirmationPhrase"
-                    placeholder="Escriba la frase de confirmación aquí..."
-                    class="w-full px-4 py-3 rounded-xl border-2 border-gray-100 dark:border-gray-900 bg-white dark:bg-gray-950/20 focus:border-red-500 focus:ring-0 transition-all text-center font-bold text-gray-900 dark:text-white"
-                    @paste.prevent
-                >
-                <p class="text-[10px] text-gray-500 mt-2 text-center italic">
-                    Sin avisos visuales de corrección. Asegúrese de escribir cada letra correctamente.
-                </p>
-            </div>
-
-            <div class="flex gap-4 pt-4">
-                <button @click="closeRestoreModal" class="flex-1 h-12 rounded-xl border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 font-bold transition-all active:scale-95">
-                    Cancelar
-                </button>
-                <button 
-                    @click="handleRestore" 
-                    :disabled="isProcessing"
-                    class="flex-[1.5] h-12 rounded-xl bg-gradient-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 active:scale-95 disabled:opacity-50 text-white font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-red-500/25"
-                >
-                    <RefreshIcon v-if="isRestoring" class="w-5 h-5 animate-spin" />
-                    <HistoryIcon v-else class="w-5 h-5" />
-                    RESTAURAR AHORA
-                </button>
-            </div>
-        </div>
-      </div>
-    </BaseModal>
+      <template #warning>
+          Este proceso es **IRREVERSIBLE**. Al confirmar, la base de datos actual será borrada por completo y reemplazada por el archivo seleccionado: 
+          <span class="font-mono font-bold">{{ selectedBackup?.filename }}</span>.
+      </template>
+    </SecurityConfirmationDialog>
 
     <!-- Modal de Confirmación de Borrado -->
     <ConfirmationDialog
@@ -192,6 +148,7 @@ import AdminDashboardLayout from '../layouts/AdminDashboardLayout.vue';
 import BaseModal from '@/components/common/BaseModal.vue';
 import ConfirmationDialog from '@/components/common/ConfirmationDialog.vue';
 import ProcessingOverlay from '@/components/common/ProcessingOverlay.vue';
+import SecurityConfirmationDialog from '@/components/common/SecurityConfirmationDialog.vue';
 import { toast } from 'vue-sonner';
 import httpClient from '@/config/http/http.client';
 import { 
@@ -221,8 +178,6 @@ const showRestoreModal = ref(false);
 const showDeleteModal = ref(false);
 const showCreateConfirmModal = ref(false);
 const selectedBackup = ref<BackupFile | null>(null);
-const confirmationPhrase = ref('');
-const currentPhrase = ref('');
 const backendStatus = ref({ isConfigured: true, backupPath: '' });
 
 const restorePhrases = [
@@ -281,21 +236,17 @@ const handleCreateBackup = async () => {
 
 const confirmRestore = (bkp: BackupFile) => {
     selectedBackup.value = bkp;
-    confirmationPhrase.value = '';
-    // Seleccionar frase aleatoria
-    const randomIndex = Math.floor(Math.random() * restorePhrases.length);
-    currentPhrase.value = restorePhrases[randomIndex];
     showRestoreModal.value = true;
 };
 
-const handleRestore = async () => {
+const handleRestore = async (phrase: string) => {
     if (!selectedBackup.value) return;
     
     isRestoring.value = true;
     isProcessing.value = true;
     try {
         await httpClient.post(`/admin/backup/restore/${selectedBackup.value.filename}`, {
-            confirmationPhrase: confirmationPhrase.value
+            confirmationPhrase: phrase
         });
         toast.success('Base de datos restaurada con éxito');
         showRestoreModal.value = false;
