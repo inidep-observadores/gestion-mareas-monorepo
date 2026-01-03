@@ -6,7 +6,9 @@
           'fixed inset-0 transition-opacity',
           variant === 'danger' 
             ? 'bg-red-950/40 backdrop-blur-md' 
-            : 'bg-gray-500 bg-opacity-75'
+            : variant === 'glass'
+              ? 'bg-gray-950/40 backdrop-blur-sm'
+              : 'bg-gray-500 bg-opacity-75'
         ]" 
         @click="emit('close')"
     ></div>
@@ -66,7 +68,7 @@ const props = withDefaults(defineProps<{
   title?: string;
   maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl' | '6xl' | '7xl' | 'full';
   isSidebarAware?: boolean;
-  variant?: 'default' | 'danger';
+  variant?: 'default' | 'danger' | 'glass';
 }>(), {
   isSidebarAware: true,
   maxWidth: 'lg',
