@@ -14,6 +14,7 @@ import { UsersModule } from './users/users.module';
 import { CatalogosModule } from './catalogos/catalogos.module';
 import { MareasModule } from './mareas/mareas.module';
 import { BackupModule } from './admin/backup/backup.module';
+import { DataExportModule } from './admin/data-export/data-export.module';
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { BackupModule } from './admin/backup/backup.module';
     CatalogosModule,
     MareasModule,
     BackupModule,
+    DataExportModule,
   ],
 })
 export class AppModule { }
