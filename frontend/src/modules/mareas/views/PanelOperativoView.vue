@@ -127,7 +127,8 @@
                       <div class="flex items-center gap-3">
                         <div class="w-20 h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
                           <div
-                            class="h-full bg-brand-500 transition-all duration-1000"
+                            class="h-full transition-all duration-1000"
+                            :class="marea.progreso > 100 ? 'bg-red-500' : 'bg-emerald-500'"
                             :style="{ width: marea.progreso + '%' }"
                           ></div>
                         </div>
