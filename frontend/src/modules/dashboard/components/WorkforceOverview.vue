@@ -15,7 +15,7 @@
            </div>
         </div>
         
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="grid grid-cols-2 gap-4">
           <div
             v-for="status in distributions"
             :key="status.label"
@@ -154,11 +154,11 @@ const loadWorkforce = async () => {
         icon: markRaw(UserGroupIcon)
       },
       {
-        label: 'Licencia',
-        count: data.licencia,
-        value: Math.round((data.licencia / base) * 100),
-        colorClass: 'text-gray-400',
-        bgClass: 'bg-gray-400',
+        label: 'Impedidos',
+        count: data.impedidos,
+        value: Math.round((data.impedidos / base) * 100),
+        colorClass: 'text-rose-500',
+        bgClass: 'bg-rose-500',
         icon: markRaw(DocsIcon)
       }
     ]

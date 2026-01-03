@@ -812,45 +812,87 @@ export class MareasService {
         });
 
         const descansoIds = new Set<string>();
+        const impedidosIds = new Set<string>();
+        const disponiblesIds = new Set<string>();
         const topDryCandidates: Array<{ id: string; name: string; days: number; lastArrival: string }> = [];
 
         observadores.forEach((obs) => {
             if (!obs.activo) return;
-            if (!obsConMareas.has(obs.id)) return; // en stand-by sin embarques en el año
-            if (activeNav.has(obs.id)) return; // si está navegando no cuenta para descanso/top dry
+
             const lastArrival = lastArrivalByObs.get(obs.id);
-            if (!lastArrival) return;
-            const daysSince = Math.floor((now.getTime() - lastArrival.getTime()) / (1000 * 60 * 60 * 24));
-            if (daysSince < this.DIAS_DESCANSO_POST_MAREA) {
-                descansoIds.add(obs.id);
+            const daysSince = lastArrival ? Math.floor((now.getTime() - lastArrival.getTime()) / (1000 * 60 * 60 * 24)) : null;
+
+            // Top Dry Check (Business Rule: Active + History + Not Navigating)
+            if (obsConMareas.has(obs.id) && !activeNav.has(obs.id) && lastArrival && daysSince !== null) {
+                topDryCandidates.push({
+                    id: obs.id,
+                    name: `${obs.nombre} ${obs.apellido}`.trim(),
+                    days: daysSince,
+                    lastArrival: lastArrival.toISOString()
+                });
             }
-            topDryCandidates.push({
-                id: obs.id,
-                name: `${obs.nombre} ${obs.apellido}`.trim(),
-                days: daysSince,
-                lastArrival: lastArrival.toISOString()
-            });
+
+            // Centralized Status Classification
+            const status = this.getObserverStatus(obs, activeNav.has(obs.id), lastArrival, now);
+
+            switch (status) {
+                case 'NAVEGANDO':
+                    // Already counted in activeNav.size, using set there.
+                    // But activeNav is a Set built during iteration of stages.
+                    // Ideally we should use the same source of truth.
+                    // Here activeNav is passed as boolean "isNavigating".
+                    break;
+                case 'IMPEDIDO':
+                    impedidosIds.add(obs.id);
+                    break;
+                case 'DESCANSO':
+                    descansoIds.add(obs.id);
+                    break;
+                case 'DISPONIBLE':
+                    disponiblesIds.add(obs.id);
+                    break;
+            }
         });
 
         topDryCandidates.sort((a, b) => b.days - a.days);
         const topDry = topDryCandidates.slice(0, 5);
 
-        // Denominador: solo los que tuvieron embarques en el año
-        const totalActivosFinal = Array.from(obsConMareas).length;
-
-        const navegando = activeNav.size;
-        const descanso = descansoIds.size;
-        const disponiblesRaw = observadores.filter(o => o.disponible && obsConMareas.has(o.id)).length;
-        const disponibles = Math.max(disponiblesRaw - descanso, 0);
-
         return {
-            totalActivos: totalActivosFinal,
-            navegando,
-            descanso,
-            disponibles,
+            totalActivos: observadores.length,
+            navegando: activeNav.size,
+            descanso: descansoIds.size,
+            disponibles: disponiblesIds.size,
+            impedidos: impedidosIds.size,
             licencia: 0,
             topDry
         };
+    }
+
+    /**
+     * Determines the operational status of an observer based on business rules.
+     * Priority: NAVIGATING > IMPEDED > RESTING > AVAILABLE
+     */
+    private getObserverStatus(
+        obs: any,
+        isNavigating: boolean,
+        lastArrival: Date | undefined,
+        now: Date
+    ): 'NAVEGANDO' | 'IMPEDIDO' | 'DESCANSO' | 'DISPONIBLE' | 'OTRO' {
+
+        if (isNavigating) return 'NAVEGANDO';
+
+        if (obs.conImpedimento) return 'IMPEDIDO';
+
+        if (lastArrival) {
+            const daysSince = Math.floor((now.getTime() - lastArrival.getTime()) / (1000 * 60 * 60 * 24));
+            if (daysSince < this.DIAS_DESCANSO_POST_MAREA) {
+                return 'DESCANSO';
+            }
+        }
+
+        if (obs.disponible) return 'DISPONIBLE';
+
+        return 'OTRO';
     }
 
     async getMareaContext(id: string) {
