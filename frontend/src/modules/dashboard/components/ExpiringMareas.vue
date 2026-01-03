@@ -1,5 +1,5 @@
 ﻿<template>
-  <div class="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900 h-full flex flex-col">
+  <div class="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900 flex flex-col">
     <div class="mb-6 flex items-center justify-between">
       <h2 class="text-sm font-black text-gray-900 dark:text-white uppercase tracking-widest flex items-center gap-2">
         <div class="w-1.5 h-4 bg-emerald-500 rounded-full"></div>
@@ -8,7 +8,7 @@
       <span class="text-[10px] font-black px-2 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400">Progreso > 80%</span>
     </div>
 
-    <div class="space-y-4 flex-1 overflow-y-auto custom-scrollbar pr-2">
+    <div class="space-y-4 overflow-y-auto custom-scrollbar pr-2">
       <div
         v-for="marea in expiringMareas"
         :key="marea.id"
@@ -44,50 +44,10 @@
         </div>
       </div>
 
-      <div v-if="expiringMareas.length === 0" class="flex flex-col items-center justify-center h-full opacity-40 py-10">
+      <div v-if="expiringMareas.length === 0" class="flex flex-col items-center justify-center opacity-40 py-10">
         <ShipIcon class="w-12 h-12 mb-2 text-gray-300" />
         <p class="text-xs font-bold text-gray-400">No hay arribos inminentes</p>
       </div>
-    </div>
-
-    <div class="mt-6 pt-4 border-t border-gray-50 dark:border-gray-800/50">
-      <router-link
-        to="/mareas/calendar"
-        class="flex items-center justify-between px-4 py-3 bg-gray-50/50 dark:bg-gray-800/30 rounded-2xl hover:bg-brand-50 dark:hover:bg-brand-900/10 transition-all group"
-      >
-        <div class="flex items-center gap-3">
-          <div class="p-2 bg-white dark:bg-gray-800 rounded-xl shadow-sm">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="w-4 h-4 text-brand-500"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <rect width="18" height="18" x="3" y="4" rx="2" ry="2" />
-              <line x1="16" y1="2" x2="16" y2="6" />
-              <line x1="8" y1="2" x2="8" y2="6" />
-              <line x1="3" y1="10" x2="21" y2="10" />
-            </svg>
-          </div>
-          <span class="text-xs font-bold text-gray-600 dark:text-gray-400">Calendario Logístico</span>
-        </div>
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          class="w-4 h-4 text-gray-400 group-hover:text-brand-500 transform group-hover:translate-x-1 transition-all"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        >
-          <path d="m9 18 6-6-6-6" />
-        </svg>
-      </router-link>
     </div>
   </div>
 </template>

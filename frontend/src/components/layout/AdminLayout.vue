@@ -6,7 +6,11 @@
       class="flex-1 transition-all duration-300 ease-in-out"
       :class="[isExpanded || isHovered ? 'lg:ml-[290px]' : 'lg:ml-[90px]']"
     >
-      <app-header />
+      <app-header>
+        <template #extra-content>
+          <slot name="extra-header"></slot>
+        </template>
+      </app-header>
       <div class="admin-layout-content p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6">
         <slot></slot>
       </div>
