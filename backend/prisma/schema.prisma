@@ -142,7 +142,7 @@ model Puerto {
   nombre        String
   provincia     String?
   pais          String?
-  codigoInterno String?      @map("codigo_interno")
+  codigoInterno String?      @unique @map("codigo_interno")
   codigoExterno String?      @map("codigo_externo")
   esLocal       Boolean      @default(false) @map("es_local")
   activo        Boolean      @default(true)
@@ -174,7 +174,7 @@ model Especie {
 
 model Observador {
   id                         String                @id @default(uuid()) @db.Uuid
-  codigoInterno              Int                   @map("codigo_interno")
+  codigoInterno              Int                   @unique @map("codigo_interno")
   nombre                     String
   apellido                   String
   fotoUrl                    String?               @map("foto_url")

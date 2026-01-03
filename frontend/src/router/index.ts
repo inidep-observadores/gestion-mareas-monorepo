@@ -224,6 +224,16 @@ const router = createRouter({
         roles: ['admin'],
       },
     },
+    {
+      path: '/admin/data-export',
+      name: 'AdminDataExport',
+      component: () => import('@/modules/admin/views/DataExportView.vue'),
+      meta: {
+        title: 'Portabilidad de Datos',
+        requiresAuth: true,
+        roles: ['admin'],
+      },
+    },
     // 404 No encontrado
     {
       path: '/:pathMatch(.*)*',
