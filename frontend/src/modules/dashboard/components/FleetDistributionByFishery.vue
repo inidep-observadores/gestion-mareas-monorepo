@@ -18,7 +18,7 @@
       <div class="flex flex-col items-center justify-center">
         <h3 class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Proporción</h3>
         <div class="w-full flex justify-center">
-          <apexchart type="donut" height="240" :options="chartOptions" :series="series" />
+          <apexchart type="donut" height="320" :options="chartOptions" :series="series" />
         </div>
       </div>
 
@@ -140,6 +140,9 @@ const chartOptions = computed(() => ({
     events: {
       dataPointSelection: onDataPointSelection
     }
+  },
+  grid: {
+    padding: { top: 0, bottom: 0, left: 0, right: 0 }
   },
   theme: {
     mode: isDarkMode.value ? 'dark' : 'light'
