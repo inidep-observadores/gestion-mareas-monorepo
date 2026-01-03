@@ -1,10 +1,10 @@
 <template>
-  <AdminLayout 
-    title="Analytics Center" 
+  <AdminLayout
+    title="Centro de Análisis"
     description="Inteligencia institucional y monitoreo de desempeño estratégico."
   >
     <div class="relative min-h-screen pb-20 animate-in fade-in duration-700">
-      
+
       <!-- TOP ANALYTICS FILTERS -->
       <div class="mb-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6 bg-white dark:bg-gray-900 p-6 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm">
         <div class="flex items-center gap-4">

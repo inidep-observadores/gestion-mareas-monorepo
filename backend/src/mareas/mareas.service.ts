@@ -6,6 +6,24 @@ import { UpdateMareaDto } from './dto/update-marea.dto';
 
 @Injectable()
 export class MareasService {
+    // Fuentes únicas de verdad para estados operativos
+    private readonly ESTADOS_NAVEGANDO = ['EN_EJECUCION'];
+    private readonly ESTADOS_REVISION = [
+        'ENTREGADA_RECIBIDA',
+        'VERIFICACION_INICIAL',
+        'EN_CORRECCION',
+        'PENDIENTE_DE_INFORME',
+        'ESPERANDO_REVISION'
+    ];
+
+    // Constantes de Reglas de Negocio (SLE)
+    private readonly DIAS_NAVEGADOS_ANUALES = 180;
+    private readonly DIAS_DESCANSO_POST_MAREA = 15;
+    private readonly PLAZO_ENTREGA_DATOS = 15;
+    private readonly PLAZO_CONFECCION_INFORME = 7;
+    private readonly UMBRAL_FATIGA_ANUAL_PORCENTAJE = 0.9;
+    private readonly ALERTA_DIAS_CORRIDOS = 60;
+
     constructor(private readonly prisma: PrismaService) { }
 
     async findOne(id: string) {
@@ -194,13 +212,6 @@ export class MareasService {
 
     async getDashboardKpis(year?: number) {
         const operationalYear = this.resolveYear(year);
-        const estadosRevision = [
-            'ENTREGADA_RECIBIDA',
-            'VERIFICACION_INICIAL',
-            'EN_CORRECCION',
-            'PENDIENTE_DE_INFORME',
-            'ESPERANDO_REVISION'
-        ];
 
         const [buquesActivos, observadoresDisponibles, mareasDesignadas, listasParaProtocolizar, mareasEnRevision] = await Promise.all([
             this.prisma.marea.groupBy({
@@ -212,7 +223,7 @@ export class MareasService {
                         activo: true
                     },
                     estadoActual: {
-                        codigo: 'EN_EJECUCION'
+                        codigo: { in: this.ESTADOS_NAVEGANDO }
                     }
                 },
                 _count: {
@@ -248,7 +259,7 @@ export class MareasService {
                     activo: true,
                     anioMarea: operationalYear,
                     estadoActual: {
-                        codigo: { in: estadosRevision }
+                        codigo: { in: this.ESTADOS_REVISION }
                     }
                 }
             })
@@ -377,7 +388,7 @@ export class MareasService {
             },
             include: {
                 marea: {
-                    include: { buque: true }
+                    include: { buque: true, estadoActual: true }
                 },
                 observadores: {
                     include: { observador: true }
@@ -392,6 +403,7 @@ export class MareasService {
                 mareaCode: string;
                 nroMarea: number;
                 vessel: string;
+                inExecution: boolean;
                 stages: Array<{ inicio: Date; fin: Date }>
             }>
         }>();
@@ -429,6 +441,7 @@ export class MareasService {
                         mareaCode,
                         nroMarea: m.nroMarea,
                         vessel,
+                        inExecution: this.ESTADOS_NAVEGANDO.includes(m.estadoActual?.codigo || ''),
                         stages: []
                     });
                 }
@@ -453,8 +466,7 @@ export class MareasService {
             }>
         }> = [];
 
-        const ANNUAL_STANDARD = 180;
-        const THRESHOLD = Math.floor(ANNUAL_STANDARD * 0.9);
+        const THRESHOLD = Math.floor(this.DIAS_NAVEGADOS_ANUALES * this.UMBRAL_FATIGA_ANUAL_PORCENTAJE);
 
         observerDataMap.forEach((data, id) => {
             const allTripsIntervals: Array<{ inicio: Date; fin: Date }> = [];
@@ -470,7 +482,6 @@ export class MareasService {
                     const sortedStages = [...group.stages].sort((a, b) => a.inicio.getTime() - b.inicio.getTime());
                     const firstDep = sortedStages[0].inicio;
                     const lastArr = sortedStages[sortedStages.length - 1].fin;
-                    const inExecution = lastArr >= now;
 
                     if (!lastArrival || lastArr > lastArrival) {
                         lastArrival = lastArr;
@@ -482,7 +493,7 @@ export class MareasService {
                         vessel: group.vessel,
                         departure: firstDep,
                         arrival: lastArr,
-                        inExecution,
+                        inExecution: group.inExecution,
                         navigatedDays: this.calculateUniqueDays(group.stages)
                     });
                 });
@@ -545,7 +556,7 @@ export class MareasService {
 
                 obsConMareas.add(obs.id);
 
-                const isNavigating = !finRaw || fin > now || etapa.marea.estadoActual?.codigo === 'EN_EJECUCION';
+                const isNavigating = this.ESTADOS_NAVEGANDO.includes(etapa.marea.estadoActual?.codigo || '');
                 if (isNavigating) {
                     activeNav.add(obs.id);
                 }
@@ -569,7 +580,7 @@ export class MareasService {
             const lastArrival = lastArrivalByObs.get(obs.id);
             if (!lastArrival) return;
             const daysSince = Math.floor((now.getTime() - lastArrival.getTime()) / (1000 * 60 * 60 * 24));
-            if (daysSince < 15) {
+            if (daysSince < this.DIAS_DESCANSO_POST_MAREA) {
                 descansoIds.add(obs.id);
             }
             topDryCandidates.push({
