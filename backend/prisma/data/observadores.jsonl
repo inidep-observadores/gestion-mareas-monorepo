@@ -37,7 +37,7 @@
 {"codigoInterno":7836,"nombre":"Marcos Nicolas","apellido":"Ferrero","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":false,"disponible":true}
 {"codigoInterno":5534,"nombre":"Carla Alejandrina","apellido":"Firpo","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":false,"disponible":true}
 {"codigoInterno":7727,"nombre":"Nicolás Alberto","apellido":"Flores","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":false,"disponible":true}
-{"codigoInterno":7798,"nombre":"Marcelo Simon","apellido":"Freyre","tipoObservador":"OBSERVADOR","tipoContrato":"LEY MARCO","activo":false,"disponible":true}
+{"codigoInterno":7798,"nombre":"Marcelo Simon","apellido":"Freyre","tipoObservador":"OBSERVADOR","tipoContrato":"LEY MARCO","activo":true,"disponible":true}
 {"codigoInterno":7798,"nombre":"Marcelo Simón","apellido":"Freyre","tipoObservador":"OBSERVADOR","tipoContrato":"LEY MARCO","activo":false,"disponible":true}
 {"codigoInterno":7377,"nombre":"Esteban Nicolás","apellido":"Gaitan","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":false,"disponible":true}
 {"codigoInterno":7728,"nombre":"Adrian Pascual","apellido":"Galluzzo","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":false,"disponible":true}
