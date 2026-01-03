@@ -383,6 +383,8 @@ export class MareasService {
                         mareaId: `${m.tipoMarea}-${String(m.nroMarea).padStart(3, '0')}-${String(m.anioMarea).slice(-2)}`,
                         vesselName: m.buque.nombreBuque,
                         obs: primaryObs ? `${primaryObs.nombre} ${primaryObs.apellido}` : 'Sin Asignar',
+                        email: primaryObs?.email || null,
+                        observerId: primaryObs?.id,
                         arrivalDate: arrivalDate,
                         days: diffDays
                     });

@@ -62,12 +62,14 @@
                 <span class="block text-sm font-black text-red-600 dark:text-red-400 leading-none">{{ item.days }}</span>
                 <span class="text-[8px] font-bold text-red-400 dark:text-red-500 uppercase tracking-tighter">Días</span>
               </div>
-              <router-link
-                :to="`/mareas/workflow/${item.id}`"
+              <button
+                @click="openReclamo(item)"
                 class="w-8 h-8 rounded-lg bg-white dark:bg-gray-800 shadow-sm border border-gray-100 dark:border-gray-700 flex items-center justify-center text-gray-400 hover:text-red-500 hover:border-red-200 transition-all"
+                title="Reclamar documentación"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-              </router-link>
+                <MailIcon v-if="item.email" class="w-4 h-4" />
+                <PhoneIcon v-else class="w-4 h-4" />
+              </button>
             </div>
           </div>
         </div>
@@ -207,12 +209,41 @@
         </div>
       </div>
     </div>
+    <ReclamoEntregaDialog
+      :show="showReclamoDialog"
+      :marea-id="selectedReclamoItem?.mareaId || ''"
+      :vessel-name="selectedReclamoItem?.vesselName || ''"
+      :obs-name="selectedReclamoItem?.obs || ''"
+      :email="selectedReclamoItem?.email"
+      :delay-days="selectedReclamoItem?.days || 0"
+      :arrival-date="selectedReclamoItem?.arrivalDate ? new Date(selectedReclamoItem.arrivalDate).toLocaleDateString() : ''"
+      @close="showReclamoDialog = false"
+      @confirm="handleReclamoConfirm"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import { toast } from 'vue-sonner'
+import { MailIcon, PhoneIcon } from '@/icons'
 import dashboardService, { type FatigueAlert, type FatigueTrip } from '@/modules/dashboard/services/dashboard.service'
+import ReclamoEntregaDialog from './ReclamoEntregaDialog.vue'
+
+const showReclamoDialog = ref(false)
+const selectedReclamoItem = ref<any>(null)
+
+const openReclamo = (item: any) => {
+  selectedReclamoItem.value = item
+  showReclamoDialog.value = true
+}
+
+const handleReclamoConfirm = (payload: any) => {
+  console.log('Enviando reclamo:', payload)
+  toast.success(`Reclamo enviado a ${payload.to}`)
+  showReclamoDialog.value = false
+  selectedReclamoItem.value = null
+}
 
 const revisionDelays = ref<any[]>([])
 const reportDelays = ref<any[]>([])
