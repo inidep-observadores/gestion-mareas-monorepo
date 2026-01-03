@@ -190,6 +190,8 @@ import AdminLayout from '@/components/layout/AdminLayout.vue'
 import MareaContextSidebar from '../components/MareaContextSidebar.vue'
 import IniciarMareaDialog from '../components/IniciarMareaDialog.vue'
 import { useMareas } from '../composables/useMareas'
+import { useRoute } from 'vue-router'
+import { watch } from 'vue'
 import {
   ShipIcon,
   SearchIcon,
@@ -204,6 +206,7 @@ import {
 } from '@/icons'
 
 const router = useRouter()
+const route = useRoute()
 const {
   loading,
   kpis: rawKpis,
@@ -214,7 +217,8 @@ const {
   selectedMareaContext,
   hiddenStates,
   filteredMareas,
-  toggleStateVisibility
+  toggleStateVisibility,
+  setVisibleStates
 } = useMareas()
 
 // UI State
@@ -244,9 +248,30 @@ const kpis = computed(() => {
   }))
 })
 
+const applyFilter = async () => {
+  await fetchDashboard()
+  const estadoParam = route.query.estado as string | undefined
+  if (estadoParam) {
+    const allowed = estadoParam.split(',').map(s => s.trim()).filter(Boolean)
+    if (allowed.length) {
+      setVisibleStates(allowed)
+      return
+    }
+  }
+  // Si no hay filtro, mostramos todo
+  setVisibleStates(rawKpis.value.map(k => k.codigo))
+}
+
 onMounted(() => {
-  fetchDashboard()
+  applyFilter()
 })
+
+watch(
+  () => route.query.estado,
+  () => {
+    applyFilter()
+  }
+)
 
 const openSidebar = async (marea: any) => {
   selectedMarea.value = marea

@@ -67,13 +67,22 @@
               >
                 <div v-if="expandedId === item.label" class="pt-3 overflow-hidden">
                   <div class="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto custom-scrollbar-mini pr-1">
-                    <span 
+                    <div 
                       v-for="vessel in item.vessels" 
                       :key="vessel.name"
-                      class="px-2 py-0.5 rounded-lg bg-white dark:bg-gray-700 border border-gray-100 dark:border-gray-600 shadow-sm text-[10px] font-bold text-gray-600 dark:text-gray-300 uppercase tracking-tighter hover:border-emerald-500/50 hover:text-emerald-500 transition-colors"
+                      class="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-white dark:bg-gray-700 border border-gray-100 dark:border-gray-600 shadow-sm transition-all hover:border-emerald-500/50 group/chip"
+                      v-tooltip="vessel.status === 'EN_EJECUCION' ? 'En ejecución' : 'Designada'"
                     >
-                      {{ vessel.name }} <span class="text-[9px] opacity-60 ml-0.5">({{ vessel.mareaCode }})</span>
-                    </span>
+                      <component 
+                        :is="vessel.status === 'EN_EJECUCION' ? ShipIcon : TaskIcon" 
+                        class="w-3 h-3" 
+                        :class="vessel.status === 'EN_EJECUCION' ? 'text-blue-500' : 'text-gray-400'"
+                      />
+                      <span class="text-[10px] font-bold text-gray-600 dark:text-gray-300 uppercase tracking-tighter group-hover/chip:text-emerald-500 transition-colors">
+                        {{ vessel.name }}
+                        <span class="text-[9px] opacity-60 ml-0.5">({{ vessel.mareaCode }})</span>
+                      </span>
+                    </div>
                   </div>
                 </div>
               </Transition>
@@ -90,6 +99,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { toast } from 'vue-sonner'
 import { useTheme } from '@/components/layout/ThemeProvider.vue'
+import { ShipIcon, TaskIcon } from '@/icons'
 import dashboardService from '@/modules/dashboard/services/dashboard.service'
 
 type FleetDisplayItem = {
@@ -97,7 +107,7 @@ type FleetDisplayItem = {
   count: number
   color: string
   percentage: number
-  vessels: Array<{ name: string; mareaCode: string }>
+  vessels: Array<{ name: string; mareaCode: string; status: string }>
 }
 
 const distribution = ref<FleetDisplayItem[]>([])
@@ -108,6 +118,11 @@ const { isDarkMode } = useTheme() as { isDarkMode: { value: boolean } }
 
 const toggleExpand = (label: string) => {
   expandedId.value = expandedId.value === label ? null : label
+}
+
+const onDataPointSelection = (_event: any, _chartContext: any, config: any) => {
+  const label = distribution.value[config.dataPointIndex]?.label
+  if (label) toggleExpand(label)
 }
 
 const totalActive = computed(() => distribution.value.reduce((sum, item) => sum + item.count, 0))
@@ -121,7 +136,10 @@ const chartOptions = computed(() => ({
     fontFamily: 'inherit',
     toolbar: { show: false },
     animations: { enabled: true, easing: 'easeinout', speed: 800 },
-    background: 'transparent'
+    background: 'transparent',
+    events: {
+      dataPointSelection: onDataPointSelection
+    }
   },
   theme: {
     mode: isDarkMode.value ? 'dark' : 'light'
