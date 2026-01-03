@@ -448,14 +448,42 @@ async function main() {
       };
     });
 
+    // Consolidamos duplicados por codigoInterno privilegiando registros activos/disponibles
+    const observadorMap = new Map<number, any>();
+    const duplicatedCodes = new Set<number>();
+
+    for (const obs of refinedObservadores) {
+      const existing = observadorMap.get(obs.codigoInterno);
+      if (!existing) {
+        observadorMap.set(obs.codigoInterno, obs);
+        continue;
+      }
+
+      duplicatedCodes.add(obs.codigoInterno);
+      const preferNew =
+        (!existing.activo && obs.activo) ||
+        (existing.activo === obs.activo && !existing.disponible && obs.disponible);
+
+      observadorMap.set(obs.codigoInterno, preferNew ? obs : existing);
+    }
+
+    const uniqueObservadores = Array.from(observadorMap.values());
+    if (duplicatedCodes.size > 0) {
+      console.warn(
+        `Se detectaron codigos internos duplicados (${[...duplicatedCodes].join(', ')}). ` +
+        'Se conservaron los registros activos/disponibles.'
+      );
+    }
+
     // Using createMany for better performance
     await prisma.observador.createMany({
-      data: refinedObservadores,
+      data: uniqueObservadores,
+      skipDuplicates: true,
     });
 
     // Sincronizar de vuelta al JSONL para que sea permanente
     try {
-      const refinedJsonlContent = refinedObservadores
+      const refinedJsonlContent = uniqueObservadores
         .map(obs => JSON.stringify(obs))
         .join('\n');
       fs.writeFileSync(jsonlPath, refinedJsonlContent);

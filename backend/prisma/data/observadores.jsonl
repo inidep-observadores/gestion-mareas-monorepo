@@ -1,151 +1,78 @@
-{"codigoInterno":7845,"nombre":"Alexia","apellido":"Aguilar","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":true,"disponible":true}
-{"codigoInterno":7724,"nombre":"Eduardo Esteban","apellido":"Aguilar","tipoObservador":"OBSERVADOR","tipoContrato":"LEY MARCO","activo":true,"disponible":true}
-{"codigoInterno":5501,"nombre":"Gustavo Luis","apellido":"Alvarez Colombo","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":false,"disponible":true}
-{"codigoInterno":7847,"nombre":"Gianfranco","apellido":"Alvarez","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":true,"disponible":true}
-{"codigoInterno":7655,"nombre":"Claudio Daniel","apellido":"Arroyo","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":false,"disponible":true}
-{"codigoInterno":7610,"nombre":"Raul Bernardo","apellido":"Bargas Peña","tipoObservador":"OBSERVADOR","tipoContrato":"LEY MARCO","activo":true,"disponible":true}
-{"codigoInterno":7761,"nombre":"Julian","apellido":"Bastida","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":false,"disponible":true}
-{"codigoInterno":7851,"nombre":"Alvaro","apellido":"Benitez","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":false,"disponible":true}
-{"codigoInterno":7799,"nombre":"Matias","apellido":"Biondini","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":false,"disponible":true}
-{"codigoInterno":5513,"nombre":"Hugo Daniel","apellido":"Brachetta","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":false,"disponible":true}
-{"codigoInterno":7709,"nombre":"Ignacio Matías","apellido":"Bruno","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":false,"disponible":true}
-{"codigoInterno":7841,"nombre":"Nicolas Agustin","apellido":"Caballero","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":true,"disponible":true}
-{"codigoInterno":5516,"nombre":"Ariel Gustavo","apellido":"Cabreira","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":false,"disponible":true}
-{"codigoInterno":5517,"nombre":"Gustavo Andrés","apellido":"Cadaveira","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":false,"disponible":true}
-{"codigoInterno":5520,"nombre":"Maria Silvana","apellido":"Campodonico","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":false,"disponible":true}
-{"codigoInterno":7149,"nombre":"Gustavo","apellido":"Cano","tipoObservador":"OBSERVADOR","tipoContrato":"LEY MARCO","activo":true,"disponible":true}
-{"codigoInterno":7830,"nombre":"Agustin","apellido":"Carrizo","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":false,"disponible":true}
-{"codigoInterno":4206,"nombre":"Federico José","apellido":"Castro Machado","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":false,"disponible":true}
-{"codigoInterno":7725,"nombre":"José María","apellido":"Catuogno","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":false,"disponible":true}
-{"codigoInterno":9464,"nombre":"Omar Ernesto","apellido":"Cauteruccio","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":false,"disponible":true}
-{"codigoInterno":7611,"nombre":"Cristian Emmanuel","apellido":"Cerrina","tipoObservador":"OBSERVADOR","tipoContrato":"LEY MARCO","activo":true,"disponible":true}
-{"codigoInterno":7843,"nombre":"Johnatan","apellido":"Challier","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":true,"disponible":true}
-{"codigoInterno":9448,"nombre":"Lia Soledad","apellido":"Chavarria","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":false,"disponible":true}
-{"codigoInterno":9457,"nombre":"Alejandro Diego","apellido":"Clemente","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":false,"disponible":true}
-{"codigoInterno":7726,"nombre":"Juan José","apellido":"Coppa","tipoObservador":"OBSERVADOR","tipoContrato":"LEY MARCO","activo":true,"disponible":true}
-{"codigoInterno":7852,"nombre":"Camila","apellido":"Corti","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":true,"disponible":true}
-{"codigoInterno":8022,"nombre":"Juan","apellido":"De La Garza Gonzalez","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":false,"disponible":true}
-{"codigoInterno":7833,"nombre":"Santiago","apellido":"Delage","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":false,"disponible":true}
-{"codigoInterno":7828,"nombre":"Fabian Eduardo","apellido":"Desojo","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":true,"disponible":true}
-{"codigoInterno":7150,"nombre":"Angel Salvador","apellido":"Di Leva","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":false,"disponible":true}
-{"codigoInterno":9465,"nombre":"Daniel Alejandro","apellido":"Di Tullio","tipoObservador":"OBSERVADOR","tipoContrato":"LEY MARCO","activo":true,"disponible":true}
-{"codigoInterno":9430,"nombre":"Ronaldo Jordán","apellido":"Diaz","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":false,"disponible":true}
-{"codigoInterno":7743,"nombre":"Carlos Ireneo","apellido":"Escalante","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":false,"disponible":true}
-{"codigoInterno":9450,"nombre":"Mariana","apellido":"Escolar","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":false,"disponible":true}
-{"codigoInterno":7612,"nombre":"Richard Javier","apellido":"Espinola Gysin","tipoObservador":"OBSERVADOR","tipoContrato":"1109","activo":true,"disponible":true}
-{"codigoInterno":171,"nombre":"Mateo Andrés","apellido":"Fernandez","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":false,"disponible":true}
-{"codigoInterno":7836,"nombre":"Marcos Nicolas","apellido":"Ferrero","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":false,"disponible":true}
-{"codigoInterno":5534,"nombre":"Carla Alejandrina","apellido":"Firpo","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":false,"disponible":true}
-{"codigoInterno":7727,"nombre":"Nicolás Alberto","apellido":"Flores","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":false,"disponible":true}
-{"codigoInterno":7798,"nombre":"Marcelo Simon","apellido":"Freyre","tipoObservador":"OBSERVADOR","tipoContrato":"LEY MARCO","activo":true,"disponible":true}
-{"codigoInterno":7798,"nombre":"Marcelo Simón","apellido":"Freyre","tipoObservador":"OBSERVADOR","tipoContrato":"LEY MARCO","activo":false,"disponible":true}
-{"codigoInterno":7377,"nombre":"Esteban Nicolás","apellido":"Gaitan","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":false,"disponible":true}
-{"codigoInterno":7728,"nombre":"Adrian Pascual","apellido":"Galluzzo","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":false,"disponible":true}
-{"codigoInterno":7314,"nombre":"Lautaro","apellido":"Garcia Salvi","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":false,"disponible":true}
-{"codigoInterno":7613,"nombre":"Federico Nicolás","apellido":"Garcia","tipoObservador":"OBSERVADOR","tipoContrato":"1109","activo":true,"disponible":true}
-{"codigoInterno":7854,"nombre":"Gisele","apellido":"Garcia","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":true,"disponible":true}
-{"codigoInterno":4195,"nombre":"Julio Cesar","apellido":"Garcia","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":false,"disponible":true}
-{"codigoInterno":7859,"nombre":"Melisa","apellido":"Garcia","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":true,"disponible":true}
-{"codigoInterno":9442,"nombre":"Sebastian","apellido":"Garcia","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":true,"disponible":true}
-{"codigoInterno":7844,"nombre":"Sebastían Roque","apellido":"Garcia","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":false,"disponible":true}
-{"codigoInterno":5537,"nombre":"David Alejandro","apellido":"Garciarena","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":false,"disponible":true}
-{"codigoInterno":7842,"nombre":"Gabriel Osvaldo Catriel","apellido":"Gimenez Salinas","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":true,"disponible":true}
-{"codigoInterno":7831,"nombre":"Leandro Federico","apellido":"Giumelli","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":false,"disponible":true}
-{"codigoInterno":7729,"nombre":"Walter Alejandro","apellido":"Glavina","tipoObservador":"OBSERVADOR","tipoContrato":"LEY MARCO","activo":true,"disponible":true}
-{"codigoInterno":7832,"nombre":"Maximiliano Adrian","apellido":"Godoy","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":true,"disponible":true}
-{"codigoInterno":7848,"nombre":"Diego","apellido":"Gorosito","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":true,"disponible":true}
-{"codigoInterno":7615,"nombre":"Mauricio Romualdo","apellido":"Guevara","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":false,"disponible":true}
-{"codigoInterno":7730,"nombre":"Carlos Daniel","apellido":"Herrera","tipoObservador":"OBSERVADOR","tipoContrato":"LEY MARCO","activo":true,"disponible":true}
-{"codigoInterno":7616,"nombre":"Jorge Guillermo","apellido":"Herrera","tipoObservador":"OBSERVADOR","tipoContrato":"LEY MARCO","activo":true,"disponible":true}
-{"codigoInterno":5543,"nombre":"Susana Noem¡","apellido":"Herrera","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":false,"disponible":true}
-{"codigoInterno":7731,"nombre":"Daniel Domingo","apellido":"Incaurgarat","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":false,"disponible":true}
-{"codigoInterno":5549,"nombre":"Pablo Salvador","apellido":"Izzo","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":false,"disponible":true}
-{"codigoInterno":7617,"nombre":"Leonardo Marcos","apellido":"Kren","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":false,"disponible":true}
-{"codigoInterno":9462,"nombre":"Hugo Pablo","apellido":"Lertora","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":false,"disponible":true}
-{"codigoInterno":7834,"nombre":"Vanesa Karina","apellido":"Llancafield","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":false,"disponible":true}
-{"codigoInterno":187,"nombre":"Juan Pablo","apellido":"Luna","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":false,"disponible":true}
-{"codigoInterno":7732,"nombre":"Valeria Gertrudis","apellido":"Mango","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":false,"disponible":true}
-{"codigoInterno":7839,"nombre":"Vanesa Cintia","apellido":"Manlla","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":false,"disponible":true}
-{"codigoInterno":7829,"nombre":"Marcelo Javier","apellido":"Marcell Prado","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":false,"disponible":true}
-{"codigoInterno":7620,"nombre":"Diego Sebastian","apellido":"Marchiori","tipoObservador":"OBSERVADOR","tipoContrato":"LEY MARCO","activo":true,"disponible":true}
-{"codigoInterno":7621,"nombre":"Luis Gabriel","apellido":"Martinez Tecco","tipoObservador":"OBSERVADOR","tipoContrato":"LEY MARCO","activo":true,"disponible":true}
-{"codigoInterno":7853,"nombre":"Luciano","apellido":"Matte Casietto","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":true,"disponible":true}
-{"codigoInterno":7393,"nombre":"Andrea Cecilia","apellido":"Mauna","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":false,"disponible":true}
-{"codigoInterno":7733,"nombre":"Maria Lucila","apellido":"Maydana","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":false,"disponible":true}
-{"codigoInterno":9461,"nombre":"Alejandro José","apellido":"Mazzei","tipoObservador":"OBSERVADOR","tipoContrato":"LEY MARCO","activo":true,"disponible":true}
-{"codigoInterno":7753,"nombre":"Leonardo Marcos","apellido":"Merlo","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":false,"disponible":true}
-{"codigoInterno":7807,"nombre":"Juan Maximiliano","apellido":"Migliaccio","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":false,"disponible":true}
-{"codigoInterno":188,"nombre":"Juan Manuel","apellido":"Minaglia","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":false,"disponible":true}
-{"codigoInterno":9467,"nombre":"Pablo Julian","apellido":"Miranda","tipoObservador":"OBSERVADOR","tipoContrato":"LEY MARCO","activo":true,"disponible":true}
-{"codigoInterno":9468,"nombre":"Guillermo Pablo","apellido":"Monjeau","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":false,"disponible":true}
-{"codigoInterno":7734,"nombre":"Nicolás","apellido":"Montanelli","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":false,"disponible":true}
-{"codigoInterno":7850,"nombre":"María Laura","apellido":"Monterisi","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":true,"disponible":true}
-{"codigoInterno":7627,"nombre":"Jorge Luis","apellido":"Morales","tipoObservador":"OBSERVADOR","tipoContrato":"PLANTA PERMANENTE","activo":true,"disponible":true}
-{"codigoInterno":9469,"nombre":"Pablo Martin","apellido":"Moreno","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":false,"disponible":true}
-{"codigoInterno":7767,"nombre":"Claudio Alberto","apellido":"Nadal","tipoObservador":"OBSERVADOR","tipoContrato":"LEY MARCO","activo":true,"disponible":true}
-{"codigoInterno":7735,"nombre":"Sergio Fabian","apellido":"Najle","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":false,"disponible":true}
-{"codigoInterno":2021,"nombre":"Claudio","apellido":"Noale","tipoObservador":"OBSERVADOR","tipoContrato":"LEY MARCO","activo":true,"disponible":true}
-{"codigoInterno":7737,"nombre":"Alejandro Andrés","apellido":"Pappi","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":false,"disponible":true}
-{"codigoInterno":7855,"nombre":"Nicolas","apellido":"Pereyra","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":true,"disponible":true}
-{"codigoInterno":9470,"nombre":"Germán Eduardo","apellido":"Pi Dote","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":false,"disponible":true}
-{"codigoInterno":42,"nombre":"Roberto Martin Eusebio","apellido":"Piñero","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":false,"disponible":true}
-{"codigoInterno":4234,"nombre":"Rubén Alcides","apellido":"Piñero","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":false,"disponible":true}
-{"codigoInterno":9480,"nombre":"Cristian Oscar","apellido":"Piriz","tipoObservador":"OBSERVADOR","tipoContrato":"LEY MARCO","activo":true,"disponible":true}
-{"codigoInterno":7711,"nombre":"Sebastian","apellido":"Pisano","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":false,"disponible":true}
-{"codigoInterno":7849,"nombre":"Leonardo","apellido":"Prado Escobar","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":true,"disponible":true}
-{"codigoInterno":9459,"nombre":"Raúl Antonio Ceferino","apellido":"Puliafito","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":false,"disponible":true}
-{"codigoInterno":9452,"nombre":"Cesar Andrés","apellido":"Ramirez Mitchell","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":false,"disponible":true}
-{"codigoInterno":7860,"nombre":"Nahuel","apellido":"Ramirez","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":true,"disponible":true}
-{"codigoInterno":9460,"nombre":"Pablo Alejandro","apellido":"Ramos","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":false,"disponible":true}
-{"codigoInterno":7624,"nombre":"Teresa Beatriz","apellido":"Reinaga","tipoObservador":"OBSERVADOR","tipoContrato":"LEY MARCO","activo":true,"disponible":true}
-{"codigoInterno":4196,"nombre":"Amilcar Claudio","apellido":"Remaggi","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":false,"disponible":true}
-{"codigoInterno":9451,"nombre":"Jorge Fernando","apellido":"Repetto","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":false,"disponible":true}
-{"codigoInterno":7846,"nombre":"Oriana","apellido":"Retamar Mendez","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":true,"disponible":true}
-{"codigoInterno":9436,"nombre":"Cecilia Micaela","apellido":"Riestra","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":false,"disponible":true}
-{"codigoInterno":9471,"nombre":"Estanislao","apellido":"Rodriguez Fulco","tipoObservador":"OBSERVADOR","tipoContrato":"LEY MARCO","activo":true,"disponible":true}
-{"codigoInterno":7835,"nombre":"Francisco Tomas","apellido":"Rodriguez","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":false,"disponible":true}
-{"codigoInterno":4177,"nombre":"Ricardo Roberto","apellido":"Roth","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":false,"disponible":true}
-{"codigoInterno":5574,"nombre":"Norberto Alfonso","apellido":"Scarlato","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":false,"disponible":true}
-{"codigoInterno":7796,"nombre":"Fernando Alberto","apellido":"Schwartz","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":true,"disponible":true}
-{"codigoInterno":9437,"nombre":"Juan Matias","apellido":"Schwartz","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":false,"disponible":true}
-{"codigoInterno":7762,"nombre":"Andrés Martín","apellido":"Shoobridge","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":false,"disponible":true}
-{"codigoInterno":7625,"nombre":"Eduardo","apellido":"Silvester","tipoObservador":"OBSERVADOR","tipoContrato":"LEY MARCO","activo":true,"disponible":true}
-{"codigoInterno":7364,"nombre":"Juan Pablo","apellido":"Simonazzi","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":false,"disponible":true}
-{"codigoInterno":8002,"nombre":"Julio Roberto","apellido":"Sinconegui","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":false,"disponible":true}
-{"codigoInterno":9473,"nombre":"Norma Beatriz","apellido":"Sorache","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":false,"disponible":true}
-{"codigoInterno":7740,"nombre":"Leonardo Luis","apellido":"Spagnuolo Rey","tipoObservador":"OBSERVADOR","tipoContrato":"LEY MARCO","activo":true,"disponible":true}
-{"codigoInterno":7838,"nombre":"Nicolas Facundo","apellido":"Staneff Rotela","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":true,"disponible":true}
-{"codigoInterno":9474,"nombre":"Juan Manuel","apellido":"Staneff","tipoObservador":"OBSERVADOR","tipoContrato":"LEY MARCO","activo":true,"disponible":true}
-{"codigoInterno":9475,"nombre":"Darío Nicolás","apellido":"Terren","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":false,"disponible":true}
-{"codigoInterno":7742,"nombre":"Héctor Luis","apellido":"Teves","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":false,"disponible":true}
-{"codigoInterno":7776,"nombre":"Gonzalo","apellido":"Troccoli","tipoObservador":"OBSERVADOR","tipoContrato":"LEY MARCO","activo":true,"disponible":true}
-{"codigoInterno":4236,"nombre":"Federico Mauro","apellido":"Vazquez","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":false,"disponible":true}
-{"codigoInterno":4202,"nombre":"Adrian","apellido":"Vega","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":false,"disponible":true}
-{"codigoInterno":4208,"nombre":"Pedro Pablo","apellido":"Ventura","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":false,"disponible":true}
-{"codigoInterno":9476,"nombre":"Héctor Eduardo","apellido":"Vera","tipoObservador":"OBSERVADOR","tipoContrato":"LEY MARCO","activo":true,"disponible":true}
-{"codigoInterno":7837,"nombre":"Axel Uriel","apellido":"Villabona Del Valle","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":false,"disponible":true}
-{"codigoInterno":181,"nombre":"Rubén Dario","apellido":"Villabona","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":false,"disponible":true}
-{"codigoInterno":9453,"nombre":"Juan Martin","apellido":"Villafañe","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":false,"disponible":true}
-{"codigoInterno":7840,"nombre":"Durbal","apellido":"Villalba","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":true,"disponible":true}
-{"codigoInterno":7744,"nombre":"Javier","apellido":"Villalba","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":false,"disponible":true}
-{"codigoInterno":193,"nombre":"Julian","apellido":"Webb","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":false,"disponible":true}
-{"codigoInterno":9477,"nombre":"Veronica Fabiana","apellido":"Zanti","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":false,"disponible":true}
-{"codigoInterno":7875,"nombre":"Leonardo Ezequiel","apellido":"Andrade","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":true,"disponible":true}
-{"codigoInterno":7873,"nombre":"Lucas David","apellido":"Carabeta","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":true,"disponible":true}
-{"codigoInterno":7865,"nombre":"Gabriel Alejandro","apellido":"Dumrauf","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":true,"disponible":true}
-{"codigoInterno":7862,"nombre":"Christian Enderson","apellido":"Fenco Chavesta","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":true,"disponible":true}
-{"codigoInterno":7869,"nombre":"Sergio Gastón","apellido":"Frontera","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":true,"disponible":true}
-{"codigoInterno":7868,"nombre":"Lucas Oscar","apellido":"Gaona","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":true,"disponible":true}
-{"codigoInterno":7871,"nombre":"Sergio Javier","apellido":"Gomez Mapiz","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":true,"disponible":true}
-{"codigoInterno":7874,"nombre":"Morena Aylen","apellido":"Ledesma","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":true,"disponible":true}
-{"codigoInterno":7876,"nombre":"Walter Alejandro","apellido":"Leon","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":true,"disponible":true}
-{"codigoInterno":7867,"nombre":"Cintia Daiana","apellido":"Magrini Quiroga","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":true,"disponible":true}
-{"codigoInterno":7877,"nombre":"Catalina","apellido":"Mariño Turdera","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":true,"disponible":true}
-{"codigoInterno":7879,"nombre":"Lucía","apellido":"Martinez Ta","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":true,"disponible":true}
-{"codigoInterno":7861,"nombre":"Daiana Anabella","apellido":"Molina Riquelme","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":true,"disponible":true}
-{"codigoInterno":7900,"nombre":"Paola Alejandra","apellido":"Navarro Grassi","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":true,"disponible":true}
-{"codigoInterno":7870,"nombre":"Joaquín Jorge Hernán","apellido":"Ojeda","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":true,"disponible":true}
-{"codigoInterno":7864,"nombre":"Manuel Agustín","apellido":"Palos","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":true,"disponible":true}
-{"codigoInterno":7863,"nombre":"Daniel Enrique","apellido":"Ramunno","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":true,"disponible":true}
-{"codigoInterno":7872,"nombre":"Juan Francisco","apellido":"Rodriguez Fulco","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":true,"disponible":true}
-{"codigoInterno":7866,"nombre":"Francisco German","apellido":"Sette","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":true,"disponible":true}
+{"codigoInterno":73,"nombre":"Leonardo","apellido":"Spagnuolo","email":"leospagnuolorey@yahoo.com.ar","tipoObservador":"OBSERVADOR","tipoContrato":"1109","activo":true,"disponible":true,"conImpedimento":false,"motivoImpedimento":null}
+{"codigoInterno":166,"nombre":"Raul","apellido":"Bargas","email":"rbbargas@gmail.com","tipoObservador":"OBSERVADOR","tipoContrato":"1109","activo":true,"disponible":true,"conImpedimento":false,"motivoImpedimento":null}
+{"codigoInterno":172,"nombre":"Federico","apellido":"Garcia","email":"fede.gaarciaa@gmail.com","tipoObservador":"OBSERVADOR","tipoContrato":"1109","activo":true,"disponible":false,"conImpedimento":true,"motivoImpedimento":"Accidente en motocicleta"}
+{"codigoInterno":174,"nombre":"Diego","apellido":"Marchiori","email":"brugmasia@hotmail.com","tipoObservador":"OBSERVADOR","tipoContrato":"1109","activo":true,"disponible":true,"conImpedimento":false,"motivoImpedimento":null}
+{"codigoInterno":179,"nombre":"Tere","apellido":"Reinaga","email":"tere2361@hotmail.com","tipoObservador":"OBSERVADOR","tipoContrato":"1109","activo":true,"disponible":true,"conImpedimento":false,"motivoImpedimento":null}
+{"codigoInterno":183,"nombre":"Jorge","apellido":"Herrera","email":"herrerajorgeguillermo@gmail.com","tipoObservador":"OBSERVADOR","tipoContrato":"1109","activo":true,"disponible":true,"conImpedimento":false,"motivoImpedimento":null}
+{"codigoInterno":186,"nombre":"Cristian","apellido":"Cerrina","email":"manucerrina2@gmail.com","tipoObservador":"OBSERVADOR","tipoContrato":"1109","activo":true,"disponible":true,"conImpedimento":false,"motivoImpedimento":null}
+{"codigoInterno":190,"nombre":"Eduardo","apellido":"Silvester","email":"eduwolfsilvester@hotmail.com","tipoObservador":"OBSERVADOR","tipoContrato":"LEY MARCO","activo":true,"disponible":true,"conImpedimento":false,"motivoImpedimento":null}
+{"conImpedimento":true,"codigoInterno":2021,"nombre":"Claudio","email":"claudionoale@hotmail.com","tipoObservador":"OBSERVADOR","apellido":"Noale","disponible":true,"tipoContrato":"LEY MARCO","motivoImpedimento":"Cambio de trabajo","activo":true}
+{"codigoInterno":4840,"nombre":"Durbal","apellido":"Villalba","email":"villalbadurbal@gmail.com","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":true,"disponible":true,"conImpedimento":false,"motivoImpedimento":null}
+{"conImpedimento":false,"codigoInterno":7149,"nombre":"Gustavo","email":null,"tipoObservador":"OBSERVADOR","apellido":"Cano","disponible":true,"tipoContrato":"LEY MARCO","motivoImpedimento":null,"activo":true}
+{"codigoInterno":7562,"nombre":"Lucas","apellido":"Bentos","email":null,"tipoObservador":"TECNICO","tipoContrato":"LEY MARCO","activo":true,"disponible":true,"conImpedimento":false,"motivoImpedimento":null}
+{"conImpedimento":false,"codigoInterno":7612,"nombre":"Richard Javier","email":"richardjesp@gmail.com","tipoObservador":"OBSERVADOR","apellido":"Espinola Gysin","disponible":true,"tipoContrato":"1109","motivoImpedimento":null,"activo":true}
+{"conImpedimento":true,"codigoInterno":7617,"nombre":"Leonardo Marcos","email":"lmlemark@gmail.com","tipoObservador":"OBSERVADOR","apellido":"Kren","disponible":true,"tipoContrato":"MONOTRIBUTISTA","motivoImpedimento":"Licencia mÃ©dica","activo":false}
+{"conImpedimento":false,"codigoInterno":7621,"nombre":"Luis Gabriel","email":"lgmt666@hotmail.com","tipoObservador":"OBSERVADOR","apellido":"Martinez Tecco","disponible":true,"tipoContrato":"LEY MARCO","motivoImpedimento":null,"activo":true}
+{"conImpedimento":false,"codigoInterno":7627,"nombre":"Jorge Luis","email":"didiinidep1980@gmail.com","tipoObservador":"OBSERVADOR","apellido":"Morales","disponible":true,"tipoContrato":"PLANTA PERMANENTE","motivoImpedimento":null,"activo":true}
+{"conImpedimento":false,"codigoInterno":7724,"nombre":"Eduardo Esteban","email":"edu81aguilar@gmail.com","tipoObservador":"OBSERVADOR","apellido":"Aguilar","disponible":true,"tipoContrato":"LEY MARCO","motivoImpedimento":null,"activo":true}
+{"conImpedimento":false,"codigoInterno":7726,"nombre":"Juan JosÃƒÂ©","email":"juancoppa@hotmail.com","tipoObservador":"OBSERVADOR","apellido":"Coppa","disponible":true,"tipoContrato":"LEY MARCO","motivoImpedimento":null,"activo":true}
+{"conImpedimento":true,"codigoInterno":7728,"nombre":"Adrian Pascual","email":"apgalluzzo@hotmail.com","tipoObservador":"OBSERVADOR","apellido":"Galluzzo","disponible":true,"tipoContrato":"MONOTRIBUTISTA","motivoImpedimento":"JubilaciÃ³n","activo":false}
+{"conImpedimento":false,"codigoInterno":7729,"nombre":"Walter Alejandro","email":"glavinawalter@hotmail.com","tipoObservador":"OBSERVADOR","apellido":"Glavina","disponible":true,"tipoContrato":"LEY MARCO","motivoImpedimento":null,"activo":true}
+{"conImpedimento":false,"codigoInterno":7730,"nombre":"Carlos Daniel","email":"aquimardel@gmail.com","tipoObservador":"OBSERVADOR","apellido":"Herrera","disponible":true,"tipoContrato":"LEY MARCO","motivoImpedimento":null,"activo":true}
+{"conImpedimento":false,"codigoInterno":7733,"nombre":"Maria Lucila","email":null,"tipoObservador":"OBSERVADOR","apellido":"Maydana","disponible":true,"tipoContrato":"MONOTRIBUTISTA","motivoImpedimento":null,"activo":false}
+{"conImpedimento":true,"codigoInterno":7735,"nombre":"Sergio Fabian","email":"najlesergio@yahoo.com.ar","tipoObservador":"OBSERVADOR","apellido":"Najle","disponible":true,"tipoContrato":"MONOTRIBUTISTA","motivoImpedimento":"Licencia mÃ©dica","activo":false}
+{"conImpedimento":true,"codigoInterno":7742,"nombre":"HÃƒÂ©ctor Luis","email":"hecluteves@hotmail.com","tipoObservador":"OBSERVADOR","apellido":"Teves","disponible":true,"tipoContrato":"MONOTRIBUTISTA","motivoImpedimento":"JubilaciÃ³n","activo":false}
+{"conImpedimento":false,"codigoInterno":7767,"nombre":"Claudio Alberto","email":"nadal-claudio@hotmail.com","tipoObservador":"OBSERVADOR","apellido":"Nadal","disponible":true,"tipoContrato":"LEY MARCO","motivoImpedimento":null,"activo":true}
+{"conImpedimento":false,"codigoInterno":7776,"nombre":"Gonzalo","email":"gtroccoli@inidep.edu.ar","tipoObservador":"OBSERVADOR","apellido":"Troccoli","disponible":true,"tipoContrato":"LEY MARCO","motivoImpedimento":null,"activo":true}
+{"conImpedimento":false,"codigoInterno":7796,"nombre":"Fernando Alberto","email":"gallococo@hotmail.com","tipoObservador":"OBSERVADOR","apellido":"Schwartz","disponible":true,"tipoContrato":"MONOTRIBUTISTA","motivoImpedimento":null,"activo":true}
+{"conImpedimento":false,"codigoInterno":7798,"nombre":"Marcelo Simon","email":"freyre.ms@gmail.com","tipoObservador":"OBSERVADOR","apellido":"Freyre","disponible":true,"tipoContrato":"LEY MARCO","motivoImpedimento":null,"activo":true}
+{"conImpedimento":true,"codigoInterno":7828,"nombre":"Fabian Eduardo","email":"pachappppp@gmail.com","tipoObservador":"OBSERVADOR","apellido":"Desojo","disponible":true,"tipoContrato":"MONOTRIBUTISTA","motivoImpedimento":"Cambio de empleo a engrasador","activo":true}
+{"conImpedimento":false,"codigoInterno":7832,"nombre":"Maximiliano Adrian","email":"maxigodox@gmail.com","tipoObservador":"OBSERVADOR","apellido":"Godoy","disponible":true,"tipoContrato":"MONOTRIBUTISTA","motivoImpedimento":null,"activo":true}
+{"conImpedimento":false,"codigoInterno":7838,"nombre":"Nicolas Facundo","email":"nicolas.staneff@gmail.com","tipoObservador":"OBSERVADOR","apellido":"Staneff Rotela","disponible":true,"tipoContrato":"MONOTRIBUTISTA","motivoImpedimento":null,"activo":true}
+{"conImpedimento":false,"codigoInterno":7841,"nombre":"Nicolas Agustin","email":"Nicck934@gmail.com","tipoObservador":"OBSERVADOR","apellido":"Caballero","disponible":true,"tipoContrato":"MONOTRIBUTISTA","motivoImpedimento":null,"activo":true}
+{"conImpedimento":false,"codigoInterno":7842,"nombre":"Gabriel Osvaldo Catriel","email":"pikyred123@gmail.com","tipoObservador":"OBSERVADOR","apellido":"Gimenez Salinas","disponible":true,"tipoContrato":"MONOTRIBUTISTA","motivoImpedimento":null,"activo":true}
+{"conImpedimento":false,"codigoInterno":7843,"nombre":"Johnatan","email":"jonhychallier@gmail.com","tipoObservador":"OBSERVADOR","apellido":"Challier","disponible":true,"tipoContrato":"MONOTRIBUTISTA","motivoImpedimento":null,"activo":true}
+{"conImpedimento":false,"codigoInterno":7844,"nombre":"SebastÃƒÂ­an Roque","email":"sebastianroquegarcia4@gmail.com","tipoObservador":"OBSERVADOR","apellido":"Garcia","disponible":true,"tipoContrato":"MONOTRIBUTISTA","motivoImpedimento":null,"activo":false}
+{"conImpedimento":false,"codigoInterno":7845,"nombre":"Alexia","email":"aguilaralexia00@gmail.com","tipoObservador":"OBSERVADOR","apellido":"Aguilar","disponible":true,"tipoContrato":"MONOTRIBUTISTA","motivoImpedimento":null,"activo":true}
+{"conImpedimento":true,"codigoInterno":7846,"nombre":"Oriana","email":"orianaretamarm@gmail.com","tipoObservador":"OBSERVADOR","apellido":"Retamar Mendez","disponible":true,"tipoContrato":"MONOTRIBUTISTA","motivoImpedimento":"RestricciÃ³n operativa para embarque de mujeres","activo":true}
+{"conImpedimento":false,"codigoInterno":7847,"nombre":"Gianfranco","email":"gianalvarezobs@gmail.com","tipoObservador":"OBSERVADOR","apellido":"Alvarez","disponible":true,"tipoContrato":"MONOTRIBUTISTA","motivoImpedimento":null,"activo":true}
+{"conImpedimento":false,"codigoInterno":7848,"nombre":"Diego","email":"diegojavierg158@gmail.com","tipoObservador":"OBSERVADOR","apellido":"Gorosito","disponible":true,"tipoContrato":"MONOTRIBUTISTA","motivoImpedimento":null,"activo":true}
+{"conImpedimento":true,"codigoInterno":7849,"nombre":"Leonardo","email":"estudioprado02@gmail.com","tipoObservador":"OBSERVADOR","apellido":"Prado Escobar","disponible":true,"tipoContrato":"MONOTRIBUTISTA","motivoImpedimento":"Inactivo segÃºn reporte","activo":true}
+{"conImpedimento":false,"codigoInterno":7850,"nombre":"MarÃƒÂ­a Laura","email":"mlm.vlady@gmail.com","tipoObservador":"OBSERVADOR","apellido":"Monterisi","disponible":true,"tipoContrato":"MONOTRIBUTISTA","motivoImpedimento":null,"activo":true}
+{"conImpedimento":true,"codigoInterno":7851,"nombre":"Alvaro","email":"alvarobeni89@gmail.com","tipoObservador":"OBSERVADOR","apellido":"Benitez","disponible":true,"tipoContrato":"MONOTRIBUTISTA","motivoImpedimento":"En otro trabajo","activo":false}
+{"conImpedimento":false,"codigoInterno":7852,"nombre":"Camila","email":"camilacorti95@gmail.com","tipoObservador":"OBSERVADOR","apellido":"Corti","disponible":true,"tipoContrato":"MONOTRIBUTISTA","motivoImpedimento":null,"activo":true}
+{"conImpedimento":false,"codigoInterno":7853,"nombre":"Luciano","email":"lucianomcassietto@hotmail.com.ar","tipoObservador":"OBSERVADOR","apellido":"Matte Casietto","disponible":true,"tipoContrato":"MONOTRIBUTISTA","motivoImpedimento":null,"activo":true}
+{"conImpedimento":true,"codigoInterno":7854,"nombre":"Gisele","email":"garciagiselealejandra@gmail.com","tipoObservador":"OBSERVADOR","apellido":"Garcia","disponible":true,"tipoContrato":"MONOTRIBUTISTA","motivoImpedimento":"DesempeÃ±o insuficiente reportado","activo":true}
+{"conImpedimento":false,"codigoInterno":7855,"nombre":"Nicolas","email":"nicolasagustinpereyra777@gmail.com","tipoObservador":"OBSERVADOR","apellido":"Pereyra","disponible":true,"tipoContrato":"MONOTRIBUTISTA","motivoImpedimento":null,"activo":true}
+{"codigoInterno":7858,"nombre":"Franco","apellido":"Ibarra","email":"francoadrianibarra@gmail.com","tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":true,"disponible":false,"conImpedimento":true,"motivoImpedimento":"En otro empleo"}
+{"conImpedimento":true,"codigoInterno":7859,"nombre":"Melisa","email":"melipg7@gmail.com","tipoObservador":"OBSERVADOR","apellido":"Garcia","disponible":true,"tipoContrato":"MONOTRIBUTISTA","motivoImpedimento":"RestricciÃ³n operativa para embarque de mujeres","activo":true}
+{"conImpedimento":false,"codigoInterno":7860,"nombre":"Nahuel","email":"nahuelramirezm@gmail.com","tipoObservador":"OBSERVADOR","apellido":"Ramirez","disponible":true,"tipoContrato":"MONOTRIBUTISTA","motivoImpedimento":null,"activo":true}
+{"conImpedimento":false,"codigoInterno":7861,"nombre":"Daiana Anabella","email":null,"tipoObservador":"OBSERVADOR","apellido":"Molina Riquelme","disponible":true,"tipoContrato":"MONOTRIBUTISTA","motivoImpedimento":null,"activo":true}
+{"conImpedimento":false,"codigoInterno":7862,"nombre":"Christian Enderson","email":null,"tipoObservador":"OBSERVADOR","apellido":"Fenco Chavesta","disponible":true,"tipoContrato":"MONOTRIBUTISTA","motivoImpedimento":null,"activo":true}
+{"conImpedimento":false,"codigoInterno":7863,"nombre":"Daniel Enrique","email":null,"tipoObservador":"OBSERVADOR","apellido":"Ramunno","disponible":true,"tipoContrato":"MONOTRIBUTISTA","motivoImpedimento":null,"activo":true}
+{"conImpedimento":false,"codigoInterno":7864,"nombre":"Manuel AgustÃƒÂ­n","email":null,"tipoObservador":"OBSERVADOR","apellido":"Palos","disponible":true,"tipoContrato":"MONOTRIBUTISTA","motivoImpedimento":null,"activo":true}
+{"conImpedimento":false,"codigoInterno":7865,"nombre":"Gabriel Alejandro","email":null,"tipoObservador":"OBSERVADOR","apellido":"Dumrauf","disponible":true,"tipoContrato":"MONOTRIBUTISTA","motivoImpedimento":null,"activo":true}
+{"conImpedimento":false,"codigoInterno":7866,"nombre":"Francisco German","email":null,"tipoObservador":"OBSERVADOR","apellido":"Sette","disponible":true,"tipoContrato":"MONOTRIBUTISTA","motivoImpedimento":null,"activo":true}
+{"conImpedimento":false,"codigoInterno":7867,"nombre":"Cintia Daiana","email":null,"tipoObservador":"OBSERVADOR","apellido":"Magrini Quiroga","disponible":true,"tipoContrato":"MONOTRIBUTISTA","motivoImpedimento":null,"activo":true}
+{"conImpedimento":false,"codigoInterno":7868,"nombre":"Lucas Oscar","email":null,"tipoObservador":"OBSERVADOR","apellido":"Gaona","disponible":true,"tipoContrato":"MONOTRIBUTISTA","motivoImpedimento":null,"activo":true}
+{"conImpedimento":false,"codigoInterno":7869,"nombre":"Sergio GastÃƒÂ³n","email":null,"tipoObservador":"OBSERVADOR","apellido":"Frontera","disponible":true,"tipoContrato":"MONOTRIBUTISTA","motivoImpedimento":null,"activo":true}
+{"conImpedimento":false,"codigoInterno":7871,"nombre":"Sergio Javier","email":null,"tipoObservador":"OBSERVADOR","apellido":"Gomez Mapiz","disponible":true,"tipoContrato":"MONOTRIBUTISTA","motivoImpedimento":null,"activo":true}
+{"conImpedimento":false,"codigoInterno":7872,"nombre":"Juan Francisco","email":null,"tipoObservador":"OBSERVADOR","apellido":"Rodriguez Fulco","disponible":true,"tipoContrato":"MONOTRIBUTISTA","motivoImpedimento":null,"activo":true}
+{"conImpedimento":false,"codigoInterno":7873,"nombre":"Lucas David","email":null,"tipoObservador":"OBSERVADOR","apellido":"Carabeta","disponible":true,"tipoContrato":"MONOTRIBUTISTA","motivoImpedimento":null,"activo":true}
+{"conImpedimento":false,"codigoInterno":7874,"nombre":"Morena Aylen","email":null,"tipoObservador":"OBSERVADOR","apellido":"Ledesma","disponible":true,"tipoContrato":"MONOTRIBUTISTA","motivoImpedimento":null,"activo":true}
+{"conImpedimento":false,"codigoInterno":7875,"nombre":"Leonardo Ezequiel","email":null,"tipoObservador":"OBSERVADOR","apellido":"Andrade","disponible":true,"tipoContrato":"MONOTRIBUTISTA","motivoImpedimento":null,"activo":true}
+{"conImpedimento":false,"codigoInterno":7876,"nombre":"Walter Alejandro","email":null,"tipoObservador":"OBSERVADOR","apellido":"Leon","disponible":true,"tipoContrato":"MONOTRIBUTISTA","motivoImpedimento":null,"activo":true}
+{"conImpedimento":false,"codigoInterno":7879,"nombre":"LucÃƒÂ­a","email":null,"tipoObservador":"OBSERVADOR","apellido":"Martinez Ta","disponible":true,"tipoContrato":"MONOTRIBUTISTA","motivoImpedimento":null,"activo":true}
+{"conImpedimento":false,"codigoInterno":7900,"nombre":"Paola Alejandra","email":null,"tipoObservador":"OBSERVADOR","apellido":"Navarro Grassi","disponible":true,"tipoContrato":"MONOTRIBUTISTA","motivoImpedimento":null,"activo":true}
+{"conImpedimento":false,"codigoInterno":8002,"nombre":"Julio Roberto","email":"jrsinconegui@inidep.edu.ar","tipoObservador":"OBSERVADOR","apellido":"Sinconegui","disponible":true,"tipoContrato":"MONOTRIBUTISTA","motivoImpedimento":null,"activo":false}
+{"codigoInterno":9442,"nombre":"Sebastian","apellido":"Garcia","email":null,"tipoObservador":"OBSERVADOR","tipoContrato":"MONOTRIBUTISTA","activo":true,"disponible":true,"conImpedimento":false,"motivoImpedimento":null}
+{"conImpedimento":true,"codigoInterno":9451,"nombre":"Jorge Fernando","email":"cotoperca23@hotmail.com","tipoObservador":"OBSERVADOR","apellido":"Repetto","disponible":true,"tipoContrato":"MONOTRIBUTISTA","motivoImpedimento":"JubilaciÃ³n","activo":false}
+{"conImpedimento":true,"codigoInterno":9459,"nombre":"RaÃƒÂºl Antonio Ceferino","email":"raul.puliafito@gmail.com","tipoObservador":"OBSERVADOR","apellido":"Puliafito","disponible":true,"tipoContrato":"MONOTRIBUTISTA","motivoImpedimento":"Traslado a otro programa","activo":false}
+{"conImpedimento":true,"codigoInterno":9460,"nombre":"Pablo Alejandro","email":"pabloramos64@yahoo.com.ar","tipoObservador":"OBSERVADOR","apellido":"Ramos","disponible":true,"tipoContrato":"MONOTRIBUTISTA","motivoImpedimento":"Licencia mÃ©dica","activo":false}
+{"conImpedimento":false,"codigoInterno":9461,"nombre":"Alejandro JosÃƒÂ©","email":"alejandromazzei525@gmail.com","tipoObservador":"OBSERVADOR","apellido":"Mazzei","disponible":true,"tipoContrato":"LEY MARCO","motivoImpedimento":null,"activo":true}
+{"conImpedimento":false,"codigoInterno":9465,"nombre":"Daniel Alejandro","email":"ddi@inidep.edu.ar","tipoObservador":"OBSERVADOR","apellido":"Di Tullio","disponible":true,"tipoContrato":"LEY MARCO","motivoImpedimento":null,"activo":true}
+{"conImpedimento":false,"codigoInterno":9467,"nombre":"Pablo Julian","email":"pablojmiranda65@gmail.com","tipoObservador":"OBSERVADOR","apellido":"Miranda","disponible":true,"tipoContrato":"LEY MARCO","motivoImpedimento":null,"activo":true}
+{"conImpedimento":false,"codigoInterno":9471,"nombre":"Estanislao","email":"rfestanislao@gmail.com","tipoObservador":"OBSERVADOR","apellido":"Rodriguez Fulco","disponible":true,"tipoContrato":"LEY MARCO","motivoImpedimento":null,"activo":true}
+{"conImpedimento":false,"codigoInterno":9474,"nombre":"Juan Manuel","email":"juanmanuel_jotis@hotmail.com","tipoObservador":"OBSERVADOR","apellido":"Staneff","disponible":true,"tipoContrato":"LEY MARCO","motivoImpedimento":null,"activo":true}
+{"conImpedimento":true,"codigoInterno":9476,"nombre":"HÃƒÂ©ctor Eduardo","email":"veraeduardo1971@gmail.com","tipoObservador":"OBSERVADOR","apellido":"Vera","disponible":true,"tipoContrato":"LEY MARCO","motivoImpedimento":"Licencia mÃ©dica","activo":true}
+{"conImpedimento":true,"codigoInterno":9480,"nombre":"Cristian Oscar","email":"cristianpiriz36@gmail.com","tipoObservador":"OBSERVADOR","apellido":"Piriz","disponible":true,"tipoContrato":"LEY MARCO","motivoImpedimento":"Licencia mÃ©dica","activo":true}

@@ -175,6 +175,7 @@ model Especie {
 model Observador {
   id                         String                @id @default(uuid()) @db.Uuid
   codigoInterno              Int                   @unique @map("codigo_interno")
+  email                      String?               @unique
   nombre                     String
   apellido                   String
   fotoUrl                    String?               @map("foto_url")
@@ -182,6 +183,8 @@ model Observador {
   tipoContrato               String                @map("tipo_contrato")
   activo                     Boolean               @default(true)
   disponible                 Boolean               @default(true)
+  conImpedimento             Boolean               @default(false) @map("con_impedimento")
+  motivoImpedimento          String?               @map("motivo_impedimento")
   fechaProximaDisponibilidad DateTime?             @map("fecha_proxima_disponibilidad") @db.Timestamptz(6)
   observaciones              String?
   pesquerias                 ObservadorPesqueria[]
