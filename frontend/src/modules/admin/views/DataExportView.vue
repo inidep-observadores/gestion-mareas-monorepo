@@ -109,6 +109,23 @@
       </div>
     </div>
 
+    <SecurityConfirmationDialog
+      :show="showImportModal"
+      title="Confirmar Importación Masiva"
+      confirm-button-text="IMPORTAR DATOS"
+      :phrases="importPhrases"
+      :loading="isRestoring"
+      @close="showImportModal = false"
+      @confirm="handleImportConfirm"
+    >
+        <template #warning>
+            Estás a punto de importar datos desde el archivo <span class="font-mono font-bold">{{ selectedFile?.name }}</span>.
+            <br/><br/>
+            Este proceso <strong>sobrescribirá o fusionará</strong> información existente (Buques, Mareas, etc.).
+            Asegúrese de que el archivo proviene de una fuente confiable. Los cambios son irreversibles.
+        </template>
+    </SecurityConfirmationDialog>
+
     <!-- Overlay de Procesamiento -->
     <ProcessingOverlay 
         :show="isCreating || isRestoring"
@@ -123,6 +140,7 @@
 import { ref, onMounted } from 'vue';
 import AdminDashboardLayout from '../layouts/AdminDashboardLayout.vue';
 import ProcessingOverlay from '@/components/common/ProcessingOverlay.vue';
+import SecurityConfirmationDialog from '@/components/common/SecurityConfirmationDialog.vue';
 import { toast } from 'vue-sonner';
 import httpClient from '@/config/http/http.client';
 import { 
@@ -174,27 +192,41 @@ const handleCreateExport = async () => {
     }
 };
 
+const showImportModal = ref(false);
+const selectedFile = ref<File | null>(null);
+
+const importPhrases = [
+    'IMPORTAR DATOS AHORA',
+    'SOBREESCRIBIR BASE DE DATOS',
+    'CONFIRMO IMPORTACION MASIVA',
+    'REEMPLAZAR DATOS EXISTENTES',
+    'CARGAR RESPALDO EXTERNO'
+];
+
 const triggerFileInput = () => {
     fileInput.value?.click();
 };
 
-const handleFileUpload = async (event: Event) => {
+const handleFileUpload = (event: Event) => {
     const target = event.target as HTMLInputElement;
     if (!target.files || target.files.length === 0) return;
     
-    const file = target.files[0];
+    selectedFile.value = target.files[0];
+    showImportModal.value = true;
     
-    // Confirm logic? Ideally yes, but sticking to simple flow first.
-    if (!confirm(`¿Está seguro de importar ${file.name}? Esto podría modificar los datos actuales.`)) {
-        target.value = ''; // Reset
-        return;
-    }
+    // Reset input to allow re-selecting same file if cancelled
+    target.value = ''; 
+};
 
+const handleImportConfirm = async () => {
+    if (!selectedFile.value) return;
+
+    showImportModal.value = false;
     isRestoring.value = true;
     isProcessing.value = true;
     
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append('file', selectedFile.value);
     
     try {
         await httpClient.post('/admin/data-export/import', formData, {
@@ -208,7 +240,7 @@ const handleFileUpload = async (event: Event) => {
     } finally {
         isRestoring.value = false;
         isProcessing.value = false;
-        target.value = ''; // Reset input
+        selectedFile.value = null;
     }
 };
 

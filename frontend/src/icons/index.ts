@@ -62,6 +62,7 @@ import EditIcon from './EditIcon.vue'
 import HotelIcon from './HotelIcon.vue'
 import SearchIcon from './SearchIcon.vue'
 import ShieldIcon from './ShieldIcon.vue'
+import BackupIcon from './BackupIcon.vue'
 
 export {
   WaveIcon,
@@ -128,4 +129,5 @@ export {
   ShieldIcon,
   EditIcon,
   HotelIcon,
+  BackupIcon,
 }
