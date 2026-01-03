@@ -151,20 +151,19 @@ export class MareasService {
             if (estadoCodigo === 'DESIGNADA') {
                 progreso = 0;
             } else if (estadoCodigo === 'EN_EJECUCION') {
-                // Days from estimated departure date to now
-                const fechaEstimada = m.fechaZarpadaEstimada;
-                if (fechaEstimada) {
+                // Days from departure date to now. Use actual date if available, else estimated.
+                const fechaInicio = etapaActual?.fechaZarpada || m.fechaZarpadaEstimada;
+
+                if (fechaInicio) {
                     const now = new Date();
-                    const estimada = new Date(fechaEstimada);
-                    const diffTime = now.getTime() - estimada.getTime();
+                    const inicio = new Date(fechaInicio);
+                    const diffTime = now.getTime() - inicio.getTime();
                     const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1; // +1 to include both initial and current day
 
-                    // Calculate percentage based on diasEstimados if available
-                    if (m.diasEstimados && m.diasEstimados > 0) {
-                        progreso = Math.min(Math.round((diffDays / m.diasEstimados) * 100), 100);
-                    } else {
-                        progreso = diffDays > 0 ? Math.min(diffDays * 10, 100) : 0; // Fallback: 10% per day
-                    }
+                    // Calculate percentage based on diasEstimados or default SLE (30 days)
+                    // Allow > 100% to visualize underestimated mareas
+                    const estimatedDuration = (m.diasEstimados && m.diasEstimados > 0) ? m.diasEstimados : 30;
+                    progreso = Math.round((diffDays / estimatedDuration) * 100);
                 }
             } else {
                 const stageIntervals = m.etapas
@@ -182,10 +181,12 @@ export class MareasService {
                     diasTrabajados = this.calculateUniqueDays(stageIntervals);
                 }
 
-                if (m.diasEstimados && m.diasEstimados > 0 && diasTrabajados > 0) {
-                    progreso = Math.min(Math.round((diasTrabajados / m.diasEstimados) * 100), 100);
-                } else if (diasTrabajados > 0) {
-                    progreso = 100;
+                const estimatedDuration = (m.diasEstimados && m.diasEstimados > 0) ? m.diasEstimados : 30;
+
+                if (diasTrabajados > 0) {
+                    progreso = Math.round((diasTrabajados / estimatedDuration) * 100);
+                    // For finished mareas, ensure at least 100% if it finished early
+                    if (progreso < 100) progreso = 100;
                 }
             }
 

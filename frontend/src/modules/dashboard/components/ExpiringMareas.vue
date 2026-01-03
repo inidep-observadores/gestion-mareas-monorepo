@@ -27,15 +27,35 @@
             </div>
           </div>
           <div class="text-right">
-            <span class="text-xs font-black text-emerald-600 dark:text-emerald-400">{{ marea.progreso }}%</span>
+            <span class="text-xs font-black" :class="marea.isOverdue ? 'text-rose-500' : 'text-emerald-600 dark:text-emerald-400'">{{ marea.progreso }}%</span>
           </div>
         </div>
 
-        <div class="h-1.5 w-full bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
-          <div
-            class="h-full bg-emerald-500 rounded-full transition-all duration-1000 ease-out"
-            :style="{ width: marea.progreso + '%' }"
-          ></div>
+        <div class="relative w-full mt-2">
+           <!-- Sports Score Flag Marker -->
+           <div
+              class="absolute -top-4 z-20 transition-all duration-1000 -ml-0.5 cursor-help group/tooltip"
+              :class="marea.isOverdue ? 'text-rose-500' : 'text-gray-300 dark:text-gray-600'"
+              :style="{ left: marea.isOverdue ? marea.splitPoint + '%' : '100%' }"
+           >
+              <SportsScoreIcon class="w-4 h-4" />
+              <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2 py-1 text-[9px] font-bold text-white bg-gray-900 rounded-lg opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all whitespace-nowrap dark:bg-white dark:text-gray-900 shadow-xl pointer-events-none">
+                Finalización estimada
+              </div>
+           </div>
+
+           <div class="h-1.5 w-full bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden relative">
+              <div
+                class="h-full rounded-full transition-all duration-1000 ease-out relative"
+                 :class="!marea.isOverdue ? 'bg-emerald-500' : ''"
+                 :style="{
+                    width: marea.isOverdue ? '100%' : marea.progreso + '%',
+                    background: marea.isOverdue ? `linear-gradient(90deg, #10b981 ${marea.splitPoint}%, #f43f5e ${marea.splitPoint}%)` : ''
+                 }"
+              >
+                 <div v-if="marea.isOverdue" class="absolute top-0 bottom-0 w-[2px] bg-white shadow-[0_0_2px_rgba(0,0,0,0.2)]" :style="{ left: marea.splitPoint + '%' }"></div>
+              </div>
+           </div>
         </div>
 
         <div class="mt-3 flex items-center justify-between text-[10px] font-bold text-gray-400 uppercase tracking-tighter">
@@ -55,7 +75,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { toast } from 'vue-sonner'
-import { ShipIcon } from '@/icons'
+import { ShipIcon, SportsScoreIcon } from '@/icons'
 import mareasService from '@/modules/mareas/services/mareas.service'
 
 type ExpiringMarea = {
@@ -65,6 +85,8 @@ type ExpiringMarea = {
   progreso: number
   puerto: string
   eta: string
+  isOverdue: boolean
+  splitPoint: number
 }
 
 const expiringMareas = ref<ExpiringMarea[]>([])
@@ -89,14 +111,21 @@ const loadExpiringMareas = async () => {
       .filter((item: any) => item.progreso > 80 && item.estado_codigo === 'EN_EJECUCION')
       .sort((a, b) => b.progreso - a.progreso)
       .slice(0, 4)
-      .map((item) => ({
-        id: item.id,
-        buque: item.buque_nombre,
-        obs: (item as any).observador || 'Sin asignar',
-        progreso: item.progreso,
-        puerto: item.puerto,
-        eta: formatEta(item.fecha_zarpada)
-      }))
+      .map((item) => {
+        const isOverdue = item.progreso > 100
+        const splitPoint = isOverdue ? (100 / item.progreso) * 100 : 0
+
+        return {
+          id: item.id,
+          buque: item.buque_nombre,
+          obs: (item as any).observador || 'Sin asignar',
+          progreso: item.progreso,
+          puerto: item.puerto,
+          eta: formatEta(item.fecha_zarpada),
+          isOverdue,
+          splitPoint
+        }
+      })
   } catch (error) {
     toast.error('No se pudieron cargar las mareas próximas a finalizar.')
   }

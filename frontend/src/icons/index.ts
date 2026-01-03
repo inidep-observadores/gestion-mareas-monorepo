@@ -63,6 +63,7 @@ import HotelIcon from './HotelIcon.vue'
 import SearchIcon from './SearchIcon.vue'
 import ShieldIcon from './ShieldIcon.vue'
 import BackupIcon from './BackupIcon.vue'
+import SportsScoreIcon from './SportsScoreIcon.vue'
 
 export {
   WaveIcon,
@@ -130,4 +131,5 @@ export {
   EditIcon,
   HotelIcon,
   BackupIcon,
+  SportsScoreIcon,
 }
