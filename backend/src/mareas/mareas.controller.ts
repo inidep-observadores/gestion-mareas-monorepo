@@ -40,6 +40,11 @@ export class MareasController {
         return this.mareasService.getCriticalDelays(year ? Number(year) : undefined);
     }
 
+    @Get('alertas/informes-demorados')
+    getReportDelays(@Query('year') year?: string) {
+        return this.mareasService.getReportDelays(year ? Number(year) : undefined);
+    }
+
     @Get('search')
     search(@Query('q') q: string) {
         return this.mareasService.search(q);

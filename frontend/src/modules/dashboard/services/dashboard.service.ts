@@ -60,6 +60,12 @@ const dashboardService = {
         return data
     },
 
+    async getReportDelays(): Promise<CriticalDelay[]> {
+        const { selectedYear } = useConfigStore()
+        const { data } = await httpClient.get<CriticalDelay[]>(`/mareas/alertas/informes-demorados?year=${selectedYear}`)
+        return data
+    },
+
     async getFatigueAlerts(): Promise<FatigueAlert[]> {
         const { selectedYear } = useConfigStore()
         const { data } = await httpClient.get<FatigueAlert[]>(`/mareas/alertas/personal-fatiga?year=${selectedYear}`)
