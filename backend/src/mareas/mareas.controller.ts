@@ -35,6 +35,11 @@ export class MareasController {
         return this.mareasService.getFatigueAlerts(year ? Number(year) : undefined);
     }
 
+    @Get('alertas/retrasos-criticos')
+    getCriticalDelays(@Query('year') year?: string) {
+        return this.mareasService.getCriticalDelays(year ? Number(year) : undefined);
+    }
+
     @Get('search')
     search(@Query('q') q: string) {
         return this.mareasService.search(q);
