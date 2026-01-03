@@ -2,104 +2,116 @@
   <div
     class="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900"
   >
-    <div class="grid grid-cols-1 gap-12 lg:grid-cols-12">
-      <!-- Section: Distribution Chart -->
-      <div class="lg:col-span-7">
-        <div class="flex items-center gap-3 mb-10">
-           <UserGroupIcon class="w-6 h-6 text-indigo-500" />
-           <div>
-              <h2 class="text-sm font-black text-gray-900 dark:text-white uppercase tracking-widest leading-tight">
-                Estado del Personal
-              </h2>
-              <p class="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">Distribución operativa de observadores</p>
-           </div>
-        </div>
-        
-        <div class="grid grid-cols-2 gap-4">
-          <div
-            v-for="status in distributions"
-            :key="status.label"
-            class="group relative flex flex-col items-center p-6 rounded-2xl bg-gray-50/50 dark:bg-gray-800/40 border border-gray-100 dark:border-gray-700 hover:bg-white dark:hover:bg-gray-800 hover:shadow-xl hover:border-indigo-100 dark:hover:border-indigo-800/50 transition-all duration-300"
-          >
-            <!-- Naked Icon (Better Symmetry) -->
-            <div class="mb-5 transition-transform duration-300 group-hover:scale-110 group-hover:-translate-y-1">
-              <component :is="status.icon" class="w-8 h-8" :class="status.colorClass" />
-            </div>
-
-            <div class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4 text-center transition-colors group-hover:text-gray-500">
-              {{ status.label }}
-            </div>
-
-            <div class="flex flex-col items-center gap-0.5 mb-5">
-              <span class="text-3xl font-black tabular-nums transition-colors" :class="status.colorClass">
-                {{ status.count }}
-              </span>
-              <span class="text-[11px] font-bold text-gray-400 tabular-nums">
-                ({{ status.value }}%)
-              </span>
-            </div>
-
-            <!-- Progress Indicator -->
-            <div class="w-full mt-auto">
-              <div class="h-1.5 w-full bg-gray-100 dark:bg-gray-700/50 rounded-full overflow-hidden">
-                <div
-                  class="h-full rounded-full transition-all duration-1000 ease-out"
-                  :class="status.bgClass"
-                  :style="{ width: status.value + '%' }"
-                ></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Section: Top Dry Time -->
-      <div class="lg:col-span-5 border-l border-gray-50 dark:border-gray-800 lg:pl-8">
-        <div class="flex items-center gap-2 mb-8">
-          <HistoryIcon class="w-3.5 h-3.5 text-gray-400" />
-          <h2 class="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-             Días sin Navegar (Top 5)
+    <div class="flex items-center gap-3 mb-8">
+       <UserGroupIcon class="w-6 h-6 text-indigo-500" />
+       <div>
+          <h2 class="text-sm font-black text-gray-900 dark:text-white uppercase tracking-widest leading-tight">
+            Estado del Personal
           </h2>
+          <p class="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">Distribución operativa de observadores</p>
+       </div>
+    </div>
+    
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div
+        v-for="status in distributions"
+        :key="status.label"
+        @click="selectStatus(status.label)"
+        class="group relative flex flex-col items-center p-6 rounded-2xl bg-gray-50/50 dark:bg-gray-800/40 border border-gray-100 dark:border-gray-700 hover:bg-white dark:hover:bg-gray-800 hover:shadow-xl hover:border-indigo-100 dark:hover:border-indigo-800/50 transition-all duration-300 cursor-pointer"
+        :class="{'ring-2 ring-indigo-500 bg-white dark:bg-gray-800': selectedStatus === status.label}"
+      >
+        <!-- Naked Icon (Better Symmetry) -->
+        <div class="mb-5 transition-transform duration-300 group-hover:scale-110 group-hover:-translate-y-1">
+          <component :is="status.icon" class="w-8 h-8" :class="status.colorClass" />
         </div>
 
-        <div class="space-y-4">
-          <div v-for="(obs, index) in topDryTime" :key="obs.id" class="group/list flex items-center gap-4">
-            <div class="w-6 text-[10px] font-black text-gray-300 group-hover/list:text-brand-500 transition-colors">0{{ index + 1 }}</div>
-            <div class="flex-1 min-w-0">
-              <div class="flex items-center justify-between gap-3 mb-1.5">
-                <div class="flex flex-col">
-                  <span class="text-[12px] font-bold text-gray-800 dark:text-gray-200 truncate group-hover/list:text-brand-500 transition-colors">
-                    {{ obs.name }}
-                  </span>
-                  <span class="text-[9px] font-bold text-gray-400 uppercase tracking-tighter">
-                    Últ. Arribo: {{ formatDate(obs.lastArrival) }}
-                  </span>
-                </div>
-                <div class="flex flex-col items-end">
-                  <span class="text-[11px] font-black text-orange-600 dark:text-orange-400 whitespace-nowrap">
-                    {{ obs.days }} días
-                  </span>
-                </div>
-              </div>
-              <div class="h-1.5 w-full bg-gray-50 dark:bg-gray-800/50 rounded-full overflow-hidden">
-                <div
-                  class="h-full bg-gradient-to-r from-orange-300 to-orange-500 rounded-full transition-all duration-700"
-                  :style="{ width: Math.min(obs.days * 2, 100) + '%' }"
-                ></div>
-              </div>
-            </div>
+        <div class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4 text-center transition-colors group-hover:text-gray-500">
+          {{ status.label }}
+        </div>
+
+        <div class="flex flex-col items-center gap-0.5 mb-5">
+          <span class="text-3xl font-black tabular-nums transition-colors" :class="status.colorClass">
+            {{ status.count }}
+          </span>
+          <span class="text-[11px] font-bold text-gray-400 tabular-nums">
+            ({{ status.value }}%)
+          </span>
+        </div>
+
+        <!-- Progress Indicator -->
+        <div class="w-full mt-auto">
+          <div class="h-1.5 w-full bg-gray-100 dark:bg-gray-700/50 rounded-full overflow-hidden">
+            <div
+              class="h-full rounded-full transition-all duration-1000 ease-out"
+              :class="status.bgClass"
+              :style="{ width: status.value + '%' }"
+            ></div>
           </div>
         </div>
+        <!-- Active Indicator Arrow -->
+         <div v-if="selectedStatus === status.label" class="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-white dark:bg-gray-900 border-r border-b border-gray-100 dark:border-gray-800 rotate-45 z-10"></div>
       </div>
+    </div>
+
+    <!-- Detailed List Section -->
+    <div v-if="selectedStatus" class="animate-fadeIn">
+       <div class="rounded-2xl border border-gray-100 dark:border-gray-800 overflow-hidden">
+          <div class="bg-gray-50 dark:bg-gray-800/50 px-6 py-3 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center">
+             <h3 class="text-xs font-black text-gray-500 uppercase tracking-widest">Detalle: {{ selectedStatus }}</h3>
+             <button @click="selectedStatus = null" class="text-gray-400 hover:text-gray-600">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+             </button>
+          </div>
+          
+          <div class="max-h-[300px] overflow-y-auto">
+             <table class="w-full text-left border-collapse">
+                <thead class="bg-white dark:bg-gray-900 sticky top-0 z-10 shadow-sm">
+                   <tr>
+                      <th class="px-6 py-3 text-[10px] font-black uppercase text-gray-400 tracking-wider">Observador</th>
+                      <th v-if="selectedStatus === 'Navegando'" class="px-6 py-3 text-[10px] font-black uppercase text-gray-400 tracking-wider">Buque</th>
+                      <th v-if="selectedStatus === 'Impedidos'" class="px-6 py-3 text-[10px] font-black uppercase text-gray-400 tracking-wider">Motivo</th>
+                      <th v-else class="px-6 py-3 text-[10px] font-black uppercase text-gray-400 tracking-wider text-right">
+                         {{ selectedStatus === 'Navegando' ? 'Días Navegados' : 'Días Inactivo' }}
+                      </th>
+                   </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-50 dark:divide-gray-800 bg-white dark:bg-gray-900">
+                   <tr v-for="item in currentList" :key="item.id" class="hover:bg-gray-50/50 dark:hover:bg-gray-800/30 transition-colors">
+                      <td class="px-6 py-3 text-xs font-bold text-gray-700 dark:text-gray-300">{{ item.name }}</td>
+                      
+                      <!-- Navegando Columns -->
+                      <td v-if="selectedStatus === 'Navegando'" class="px-6 py-3 text-xs text-gray-500">{{ (item as any).vessel }}</td>
+                      
+                      <!-- Impedidos Columns -->
+                      <td v-if="selectedStatus === 'Impedidos'" class="px-6 py-3 text-xs text-gray-500">{{ (item as any).motivo }}</td>
+                      
+                      <!-- Days Column (Shared) -->
+                      <td v-else class="px-6 py-3 text-xs font-bold text-gray-500 text-right tabular-nums">
+                         {{ (item as any).days }} días
+                         <span v-if="selectedStatus !== 'Navegando'" class="block text-[9px] font-normal text-gray-400">Desde: {{ formatDate((item as any).lastArrival) }}</span>
+                      </td>
+                   </tr>
+                   <tr v-if="currentList.length === 0">
+                      <td colspan="3" class="px-6 py-8 text-center text-xs text-gray-400">No hay observadores en este estado</td>
+                   </tr>
+                </tbody>
+             </table>
+          </div>
+       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, markRaw } from 'vue'
-import { toast } from 'vue-sonner'
-import { ShipIcon, HistoryIcon, UserGroupIcon, DocsIcon, HotelIcon } from '@/icons'
-import dashboardService, { type WorkforceStatus } from '../services/dashboard.service'
+import { ref, markRaw, computed } from 'vue'
+import { ShipIcon, UserGroupIcon, DocsIcon, HotelIcon } from '@/icons'
+import type { WorkforceStatus } from '../services/dashboard.service'
+
+const props = defineProps<{
+  data: WorkforceStatus | null
+}>()
+
+const selectedStatus = ref<string | null>(null)
 
 type DistributionItem = {
   label: string
@@ -109,9 +121,6 @@ type DistributionItem = {
   bgClass: string
   icon: any
 }
-
-const distributions = ref<DistributionItem[]>([])
-const topDryTime = ref<WorkforceStatus['topDry']>([])
 
 const formatDate = (dateString: string) => {
   if (!dateString) return '-'
@@ -123,55 +132,73 @@ const formatDate = (dateString: string) => {
   })
 }
 
-const loadWorkforce = async () => {
-  try {
-    const data = await dashboardService.getWorkforceStatus()
-    const base = data.totalActivos || 1
+const distributions = computed<DistributionItem[]>(() => {
+  if (!props.data) return []
+  const data = props.data
+  const base = data.totalActivos || 1
 
-    distributions.value = [
-      {
-        label: 'Navegando',
-        count: data.navegando,
-        value: Math.round((data.navegando / base) * 100),
-        colorClass: 'text-blue-500',
-        bgClass: 'bg-blue-500',
-        icon: markRaw(ShipIcon)
-      },
-      {
-        label: 'Descanso',
-        count: data.descanso,
-        value: Math.round((data.descanso / base) * 100),
-        colorClass: 'text-indigo-500',
-        bgClass: 'bg-indigo-500',
-        icon: markRaw(HotelIcon)
-      },
-      {
-        label: 'Disponibles',
-        count: data.disponibles,
-        value: Math.round((data.disponibles / base) * 100),
-        colorClass: 'text-emerald-500',
-        bgClass: 'bg-emerald-500',
-        icon: markRaw(UserGroupIcon)
-      },
-      {
-        label: 'Impedidos',
-        count: data.impedidos,
-        value: Math.round((data.impedidos / base) * 100),
-        colorClass: 'text-rose-500',
-        bgClass: 'bg-rose-500',
-        icon: markRaw(DocsIcon)
-      }
-    ]
+  return [
+    {
+      label: 'Navegando',
+      count: data.navegando,
+      value: Math.round((data.navegando / base) * 100),
+      colorClass: 'text-blue-500',
+      bgClass: 'bg-blue-500',
+      icon: markRaw(ShipIcon)
+    },
+    {
+      label: 'Descanso',
+      count: data.descanso,
+      value: Math.round((data.descanso / base) * 100),
+      colorClass: 'text-indigo-500',
+      bgClass: 'bg-indigo-500',
+      icon: markRaw(HotelIcon)
+    },
+    {
+      label: 'Disponibles',
+      count: data.disponibles,
+      value: Math.round((data.disponibles / base) * 100),
+      colorClass: 'text-emerald-500',
+      bgClass: 'bg-emerald-500',
+      icon: markRaw(UserGroupIcon)
+    },
+    {
+      label: 'Impedidos',
+      count: data.impedidos,
+      value: Math.round((data.impedidos / base) * 100),
+      colorClass: 'text-rose-500',
+      bgClass: 'bg-rose-500',
+      icon: markRaw(DocsIcon)
+    }
+  ]
+})
 
-    topDryTime.value = data.topDry || []
-  } catch (error) {
-    toast.error('No se pudo cargar el estado del personal.')
-    distributions.value = []
-    topDryTime.value = []
-  }
+const selectStatus = (label: string) => {
+   if (selectedStatus.value === label) {
+      selectedStatus.value = null
+   } else {
+      selectedStatus.value = label
+   }
 }
 
-onMounted(() => {
-  loadWorkforce()
+const currentList = computed(() => {
+   if (!props.data || !selectedStatus.value) return []
+   switch (selectedStatus.value) {
+      case 'Navegando': return props.data.listNavegando
+      case 'Descanso': return props.data.listDescanso
+      case 'Disponibles': return props.data.listDisponibles
+      case 'Impedidos': return props.data.listImpedidos
+      default: return []
+   }
 })
 </script>
+
+<style scoped>
+.animate-fadeIn {
+   animation: fadeIn 0.3s ease-out forwards;
+}
+@keyframes fadeIn {
+   from { opacity: 0; transform: translateY(-10px); }
+   to { opacity: 1; transform: translateY(0); }
+}
+</style>
