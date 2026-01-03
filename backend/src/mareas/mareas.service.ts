@@ -772,7 +772,7 @@ export class MareasService {
             },
             include: {
                 marea: {
-                    include: { estadoActual: true }
+                    include: { estadoActual: true, buque: true }
                 },
                 observadores: {
                     include: { observador: true }
@@ -780,7 +780,7 @@ export class MareasService {
             }
         });
 
-        const activeNav = new Set<string>();
+        const activeNav = new Map<string, { start: Date; vessel: string }>();
         const lastArrivalByObs = new Map<string, Date>();
         const obsConMareas = new Set<string>();
 
@@ -799,7 +799,12 @@ export class MareasService {
 
                 const isNavigating = this.ESTADOS_NAVEGANDO.includes(etapa.marea.estadoActual?.codigo || '');
                 if (isNavigating) {
-                    activeNav.add(obs.id);
+                    // Si ya existe (ej: múltiples etapas activas?? poco probable), nos quedamos con la mas antigua o la actual?
+                    // Asumimos 1 marea activa por obs.
+                    activeNav.set(obs.id, {
+                        start: inicio,
+                        vessel: etapa.marea.buque.nombreBuque
+                    });
                 }
 
                 if (finRaw) {
@@ -811,45 +816,64 @@ export class MareasService {
             });
         });
 
-        const descansoIds = new Set<string>();
-        const impedidosIds = new Set<string>();
-        const disponiblesIds = new Set<string>();
+        const listDescanso: Array<{ id: string; name: string; days: number; lastArrival: string }> = [];
+        const listImpedidos: Array<{ id: string; name: string; motivo: string }> = [];
+        const listDisponibles: Array<{ id: string; name: string; days: number; lastArrival: string }> = [];
+        const listNavegando: Array<{ id: string; name: string; days: number; vessel: string }> = [];
         const topDryCandidates: Array<{ id: string; name: string; days: number; lastArrival: string }> = [];
 
         observadores.forEach((obs) => {
             if (!obs.activo) return;
 
+            const name = `${obs.apellido}, ${obs.nombre}`;
             const lastArrival = lastArrivalByObs.get(obs.id);
             const daysSince = lastArrival ? Math.floor((now.getTime() - lastArrival.getTime()) / (1000 * 60 * 60 * 24)) : null;
 
-            // Top Dry Check (Business Rule: Active + History + Not Navigating)
+            // Top Dry Check
             if (obsConMareas.has(obs.id) && !activeNav.has(obs.id) && lastArrival && daysSince !== null) {
                 topDryCandidates.push({
                     id: obs.id,
-                    name: `${obs.nombre} ${obs.apellido}`.trim(),
+                    name,
                     days: daysSince,
                     lastArrival: lastArrival.toISOString()
                 });
             }
 
-            // Centralized Status Classification
             const status = this.getObserverStatus(obs, activeNav.has(obs.id), lastArrival, now);
 
             switch (status) {
                 case 'NAVEGANDO':
-                    // Already counted in activeNav.size, using set there.
-                    // But activeNav is a Set built during iteration of stages.
-                    // Ideally we should use the same source of truth.
-                    // Here activeNav is passed as boolean "isNavigating".
+                    const navData = activeNav.get(obs.id);
+                    const daysNav = navData ? Math.floor((now.getTime() - navData.start.getTime()) / (1000 * 60 * 60 * 24)) : 0;
+                    listNavegando.push({
+                        id: obs.id,
+                        name,
+                        vessel: navData?.vessel || 'Desconocido',
+                        days: daysNav
+                    });
                     break;
                 case 'IMPEDIDO':
-                    impedidosIds.add(obs.id);
+                    listImpedidos.push({
+                        id: obs.id,
+                        name,
+                        motivo: obs.motivoImpedimento || 'Sin motivo especificado'
+                    });
                     break;
                 case 'DESCANSO':
-                    descansoIds.add(obs.id);
+                    listDescanso.push({
+                        id: obs.id,
+                        name,
+                        days: daysSince || 0,
+                        lastArrival: lastArrival?.toISOString() || ''
+                    });
                     break;
                 case 'DISPONIBLE':
-                    disponiblesIds.add(obs.id);
+                    listDisponibles.push({
+                        id: obs.id,
+                        name,
+                        days: daysSince || 0, // 0 if never arrived (new observer?)
+                        lastArrival: lastArrival?.toISOString() || ''
+                    });
                     break;
             }
         });
@@ -859,12 +883,17 @@ export class MareasService {
 
         return {
             totalActivos: observadores.length,
-            navegando: activeNav.size,
-            descanso: descansoIds.size,
-            disponibles: disponiblesIds.size,
-            impedidos: impedidosIds.size,
+            navegando: listNavegando.length,
+            descanso: listDescanso.length,
+            disponibles: listDisponibles.length,
+            impedidos: listImpedidos.length,
             licencia: 0,
-            topDry
+            topDry,
+            // Detailed Lists
+            listNavegando,
+            listDescanso,
+            listDisponibles,
+            listImpedidos
         };
     }
 

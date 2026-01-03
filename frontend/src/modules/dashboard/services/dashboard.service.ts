@@ -46,6 +46,10 @@ export interface WorkforceStatus {
     licencia: number
     impedidos: number
     topDry: Array<{ id: string; name: string; days: number; lastArrival: string }>
+    listNavegando: Array<{ id: string; name: string; days: number; vessel: string }>
+    listDescanso: Array<{ id: string; name: string; days: number; lastArrival: string }>
+    listDisponibles: Array<{ id: string; name: string; days: number; lastArrival: string }>
+    listImpedidos: Array<{ id: string; name: string; motivo: string }>
 }
 
 const dashboardService = {

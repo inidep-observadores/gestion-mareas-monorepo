@@ -32,8 +32,9 @@
         <!-- PANELS DERECHA (Right) -->
         <div class="col-span-12 lg:col-span-6 xl:col-span-7 flex flex-col gap-8">
           <FleetDistributionByFishery />
-          <WorkforceOverview />
+          <WorkforceOverview :data="workforceData" />
           <ExpiringMareas />
+          <TopDryTime :topDry="workforceData?.topDry || []" />
         </div>
       </div>
     </div>
@@ -41,12 +42,30 @@
 </template>
 
 <script setup lang="ts">
+import { ref, onMounted } from 'vue'
+import { toast } from 'vue-sonner'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import ActionKpis from '../components/ActionKpis.vue'
 import AlertTrafficLight from '../components/AlertTrafficLight.vue'
 import ExpiringMareas from '../components/ExpiringMareas.vue'
 import FleetDistributionByFishery from '../components/FleetDistributionByFishery.vue'
 import WorkforceOverview from '../components/WorkforceOverview.vue'
+import TopDryTime from '../components/TopDryTime.vue'
+import dashboardService, { type WorkforceStatus } from '../services/dashboard.service'
+
+const workforceData = ref<WorkforceStatus | null>(null)
+
+const loadWorkforce = async () => {
+  try {
+    workforceData.value = await dashboardService.getWorkforceStatus()
+  } catch (error) {
+    toast.error('Error al cargar datos del personal')
+  }
+}
+
+onMounted(() => {
+  loadWorkforce()
+})
 </script>
 
 <style scoped>
