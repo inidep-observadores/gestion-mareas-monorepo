@@ -41,6 +41,14 @@ export interface DashboardKpis {
     enRevision: number;
 }
 
+export interface CalendarEvent {
+    id: string
+    title: string
+    start: string
+    end?: string
+    type: string
+}
+
 const mareasService = {
     getDashboardOperativo: async (): Promise<MareaDashboard> => {
         const { selectedYear } = useConfigStore();
@@ -81,6 +89,12 @@ const mareasService = {
 
     update: async (id: string, updateData: any): Promise<any> => {
         const { data } = await httpClient.patch<any>(`/mareas/${id}`, updateData);
+        return data;
+    },
+
+    getCalendarEvents: async (): Promise<CalendarEvent[]> => {
+        const { selectedYear } = useConfigStore();
+        const { data } = await httpClient.get<CalendarEvent[]>(`/mareas/calendar/events?year=${selectedYear}`);
         return data;
     }
 };
