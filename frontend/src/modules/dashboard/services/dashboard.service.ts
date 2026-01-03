@@ -81,6 +81,10 @@ const dashboardService = {
         const { selectedYear } = useConfigStore()
         const { data } = await httpClient.get<WorkforceStatus>(`/mareas/workforce/status?year=${selectedYear}`)
         return data
+    },
+
+    async sendClaim(payload: { to: string; body: string; mareaId: string }): Promise<void> {
+        await httpClient.post('/mareas/claim', payload)
     }
 }
 

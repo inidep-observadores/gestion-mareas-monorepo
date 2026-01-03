@@ -238,11 +238,17 @@ const openReclamo = (item: any) => {
   showReclamoDialog.value = true
 }
 
-const handleReclamoConfirm = (payload: any) => {
-  console.log('Enviando reclamo:', payload)
-  toast.success(`Reclamo enviado a ${payload.to}`)
-  showReclamoDialog.value = false
-  selectedReclamoItem.value = null
+const handleReclamoConfirm = async (payload: any) => {
+  try {
+    await dashboardService.sendClaim(payload)
+    toast.success(`Reclamo enviado correctamente a ${payload.to}`)
+  } catch (error) {
+    console.error('Error enviando reclamo:', error)
+    toast.error('Error al enviar el correo de reclamo')
+  } finally {
+    showReclamoDialog.value = false
+    selectedReclamoItem.value = null
+  }
 }
 
 const revisionDelays = ref<any[]>([])
