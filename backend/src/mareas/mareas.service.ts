@@ -38,6 +38,11 @@ export class MareasService {
             include: {
                 buque: true,
                 estadoActual: true,
+                movimientos: {
+                    orderBy: { fechaHora: 'desc' },
+                    include: { usuario: true, estadoDesde: true, estadoHasta: true }
+                },
+                archivos: true,
                 etapas: {
                     orderBy: { nroEtapa: 'asc' },
                     include: {
