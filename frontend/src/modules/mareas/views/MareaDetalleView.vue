@@ -19,7 +19,7 @@
             class="flex items-center gap-2 px-3 py-1.5 bg-brand-50 dark:bg-brand-500/10 text-brand-700 dark:text-brand-400 text-xs font-bold uppercase tracking-wider rounded-full border border-brand-100 dark:border-brand-500/20"
           >
             <div class="w-1.5 h-1.5 rounded-full bg-brand-500 animate-pulse"></div>
-            {{ marea.estado_nombre }}
+            {{ marea.estadoActual?.nombre }}
           </div>
         </div>
 
@@ -42,7 +42,7 @@
 
       <!-- Correction/Locked Banner -->
       <div
-        v-if="marea.estado_id === 'CORRECCION'"
+        v-if="marea.estadoActual?.codigo === 'CORRECCION'"
         class="mb-8 p-4 bg-error-50 dark:bg-error-500/10 border border-error-100 dark:border-error-500/20 rounded-2xl flex flex-col sm:flex-row items-center gap-4 animate-in fade-in slide-in-from-top-4 duration-500"
       >
         <div
@@ -57,8 +57,8 @@
             Marea Bloqueada para Extracción
           </h3>
           <p class="text-xs text-error-600 dark:text-error-500 mt-0.5">
-            En proceso de corrección por:
-            <span class="font-bold underline">{{ marea.responsable_correccion }}</span
+            En proceso de corrección.
+            <span class="font-bold underline" v-if="marea.responsable_correccion">{{ marea.responsable_correccion }}</span
             >. Los datos finales no estarán disponibles hasta la nueva carga.
           </p>
         </div>
@@ -119,7 +119,7 @@
                     >Año Marea</label
                   >
                   <input
-                    v-model="marea.anio_marea"
+                    v-model="marea.anioMarea"
                     type="number"
                     class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border-none rounded-2xl focus:ring-2 focus:ring-brand-500/20 text-gray-800 dark:text-gray-200 transition-all font-medium outline-none"
                     placeholder="2023"
@@ -131,7 +131,7 @@
                     >Nro. Marea</label
                   >
                   <input
-                    v-model="marea.nro_marea"
+                    v-model="marea.nroMarea"
                     type="number"
                     class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border-none rounded-2xl focus:ring-2 focus:ring-brand-500/20 text-gray-800 dark:text-gray-200 transition-all font-medium outline-none"
                     placeholder="000"
@@ -180,7 +180,7 @@
                     >Buque Seleccionado</label
                   >
                   <SearchableSelect
-                    v-model="marea.id_buque"
+                    v-model="marea.buqueId"
                     :options="buqueOptions"
                     placeholder="Seleccione buque..."
                   />
@@ -191,7 +191,7 @@
                     >Pesquería</label
                   >
                   <SearchableSelect
-                    v-model="marea.id_pesqueria"
+                    v-model="marea.pesqueriaId"
                     :options="pesqueriaOptions"
                     placeholder="Seleccione pesquería..."
                   />
@@ -202,7 +202,7 @@
                     >Arte Principal</label
                   >
                   <SearchableSelect
-                    v-model="marea.id_arte_principal"
+                    v-model="marea.artePrincipalId"
                     :options="arteOptions"
                     placeholder="Seleccione arte..."
                   />
@@ -213,7 +213,7 @@
                     >Fecha Zarpada Est.</label
                   >
                   <input
-                    v-model="marea.fecha_zarpada_estimada"
+                    v-model="marea.fechaZarpadaEstimada"
                     type="datetime-local"
                     class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border-none rounded-2xl focus:ring-2 focus:ring-brand-500/20 text-gray-800 dark:text-gray-200 transition-all font-medium outline-none"
                   />
@@ -492,7 +492,7 @@
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               <!-- Extraction Blocked Warning for DATOS Category -->
               <div
-                v-if="cat.id === 'DATOS' && marea.estado_id === 'CORRECCION'"
+                v-if="cat.id === 'DATOS' && marea.estadoActual?.codigo === 'CORRECCION'"
                 class="md:col-span-2 lg:col-span-3 bg-amber-50 dark:bg-amber-500/5 border border-dashed border-amber-200 dark:border-amber-500/20 rounded-2xl p-4 flex items-center gap-4"
               >
                 <div
@@ -580,7 +580,7 @@
                   >Nro. Protocolización</label
                 >
                 <input
-                  v-model="marea.nro_protocolización"
+                  v-model="marea.nroProtocolizacion"
                   type="number"
                   class="form-input-premium text-lg font-black"
                   placeholder="0000"
@@ -591,7 +591,7 @@
                   >Año Protocolización</label
                 >
                 <input
-                  v-model="marea.anio_protocolización"
+                  v-model="marea.anioProtocolizacion"
                   type="number"
                   class="form-input-premium text-lg font-black"
                   placeholder="2024"
@@ -602,7 +602,7 @@
                   >Fecha de Protocolización</label
                 >
                 <input
-                  v-model="marea.fecha_protocolización"
+                  v-model="marea.fechaProtocolizacion"
                   type="date"
                   class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border-none rounded-2xl focus:ring-2 focus:ring-brand-500/20 text-gray-800 dark:text-gray-200 transition-all font-medium outline-none"
                 />
@@ -630,6 +630,7 @@ import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import SearchableSelect from '@/components/common/SearchableSelect.vue'
+import mareasService from '@/modules/mareas/services/mareas.service'
 import {
   ArrowLeftIcon,
   ShipIcon,
@@ -651,9 +652,12 @@ import {
   LockIcon,
 } from '@/icons'
 
+// --- SETUP & STATE ---
 const route = useRoute()
 const router = useRouter()
 const activeTab = ref('general')
+const loading = ref(true)
+const marea = ref<any>({})
 
 const tabs = [
   { id: 'general', label: 'Datos Generales', icon: DocsIcon },
@@ -673,6 +677,7 @@ const docCategories = [
   { id: 'VARIOS', label: 'Otros Archivos', shortLabel: 'Archivo' },
 ]
 
+// TODO: Fetch from backend dictionaries
 const buqueOptions = [
   { value: '1', label: 'BP ARGENTINO I' },
   { value: '2', label: 'BP UNION' },
@@ -688,127 +693,98 @@ const arteOptions = [
   { value: '2', label: 'Tangones' },
 ]
 
-// Mock data structured as per DB schema
-const marea = ref({
-  id: route.params.id,
-  anio_marea: 2023,
-  nro_marea: 45,
-  id_buque: '1',
-  id_pesqueria: '1',
-  id_arte_principal: '1',
-  id_estado_actual: 'CORRECCION',
-  estado_id: 'CORRECCION',
-  estado_nombre: 'En Corrección', // Join with estados_marea
-  responsable_correccion: 'Lic. María González (Control de Calidad)',
-  fecha_zarpada_estimada: '2023-12-25T10:00',
-  titulo: 'Prospección de Merluza Hubbsi - Sector Norte',
-  descripcion: 'Evaluación de rendimientos y estructuras de talla en precuarentena.',
-  nro_protocolización: null,
-  anio_protocolización: 2024,
-  fecha_protocolización: null,
-  activo: true,
-  observaciones:
-    'Requiere reporte diario de captura incidental. Buque tiene problemas menores en guinche de babor.',
+// --- COMPUTED PROPERTIES ---
+
+const etapas = computed(() => {
+  return marea.value?.etapas?.map((e: any) => ({
+    ...e,
+    puerto_zarpada: e.puertoZarpada?.nombre || 'N/D',
+    puerto_arribo: e.puertoArribo?.nombre || 'N/D',
+    fecha_zarpada: e.fechaZarpada ? new Date(e.fechaZarpada).toLocaleString() : '-',
+    fecha_arribo: e.fechaArribo ? new Date(e.fechaArribo).toLocaleString() : '-',
+    nro_etapa: e.nroEtapa,
+    tipo: e.tipoEtapa
+  })) || []
 })
 
-const etapas = ref([
-  {
-    id: 1,
-    nro_etapa: 1,
-    puerto_zarpada: 'Mar del Plata',
-    puerto_arribo: 'Puerto Madryn',
-    fecha_zarpada: '15/12/2023 08:30',
-    fecha_arribo: '20/12/2023 22:00',
-    tipo: 'COMERCIAL',
-  },
-  {
-    id: 2,
-    nro_etapa: 2,
-    puerto_zarpada: 'Puerto Madryn',
-    puerto_arribo: 'Mar del Plata',
-    fecha_zarpada: '22/12/2023 06:15',
-    fecha_arribo: '--/--/----',
-    tipo: 'INSTITUCIONAL',
-  },
-])
+const observadores = computed(() => {
+  if (!marea.value?.etapas) return []
+  const uniqueObs = new Map()
+  
+  marea.value.etapas.forEach((e: any) => {
+    if (e.observadores) {
+      e.observadores.forEach((rel: any) => {
+        const obs = rel.observador
+        if (obs && !uniqueObs.has(obs.id)) {
+            uniqueObs.set(obs.id, {
+                id: obs.id,
+                nombre: obs.nombre,
+                apellido: obs.apellido,
+                iniciales: `${obs.nombre?.[0] || ''}${obs.apellido?.[0] || ''}`, // Safe access
+                rol: rel.rol,
+                codigo: obs.codigoInterno,
+                inicio: '15/12/2023', // TODO: derive from stage or marea
+                fin: null
+            })
+        }
+      })
+    }
+  })
+  return Array.from(uniqueObs.values())
+})
 
-const observadores = ref([
-  {
-    id: 1,
-    nombre: 'Juan',
-    apellido: 'Díaz',
-    iniciales: 'JD',
-    rol: 'PRINCIPAL',
-    codigo: '4521',
-    inicio: '15/12/2023',
-    fin: null,
-  },
-  {
-    id: 2,
-    nombre: 'Ana',
-    apellido: 'Martínez',
-    iniciales: 'AM',
-    rol: 'ACOMPAÑANTE',
-    codigo: '8832',
-    inicio: '15/12/2023',
-    fin: '20/12/2023',
-  },
-])
+const movimientos = computed(() => {
+  return marea.value?.movimientos?.map((mov: any) => ({
+    id: mov.id,
+    fecha: new Date(mov.fechaHora).toLocaleString(),
+    evento: mov.tipoEvento,
+    detalle: mov.detalle,
+    estado_hasta: mov.estadoHasta?.nombre,
+    usuario: mov.usuario?.fullName || 'Sistema'
+  })) || []
+})
 
-const movimientos = ref([
-  {
-    id: 1,
-    fecha: '12/12/2023 14:20',
-    evento: 'CAMBIO_ESTADO',
-    detalle: 'La marea ha sido creada y designada al BP ARGENTINO I.',
-    estado_hasta: 'Designada',
-    usuario: 'Daniel (Admin)',
-  },
-  {
-    id: 2,
-    fecha: '15/12/2023 09:00',
-    evento: 'ZARPADA_REAL',
-    detalle: 'Zarpada confirmada desde Mar del Plata por el observador.',
-    estado_hasta: 'Navegando',
-    usuario: 'Juan Díaz',
-  },
-  {
-    id: 3,
-    fecha: '20/12/2023 18:45',
-    evento: 'ALERTA_OPERATIVA',
-    detalle: 'Se reporta falla en sensor de temperatura de red.',
-    estado_hasta: null,
-    usuario: 'Juan Díaz',
-  },
-])
+const archivos = computed(() => {
+    return marea.value?.archivos?.map((a: any) => ({
+        id: a.id,
+        nombre: a.rutaArchivo, // Or extract filename
+        categoria: a.tipoArchivo,
+        formato: a.formato || 'FILE',
+        fecha: new Date(a.fechaSubida).toLocaleDateString()
+    })) || []
+})
 
-const archivos = ref([
-  { id: 1, nombre: 'Muestra_Cal_2023.zip', categoria: 'DATOS', formato: 'ZIP', fecha: '20/12/23' },
-  {
-    id: 2,
-    nombre: 'Informe_Final_OBS.docx',
-    categoria: 'INFORME_OBS',
-    formato: 'DOCX',
-    fecha: '22/12/23',
-  },
-  {
-    id: 3,
-    nombre: 'Planillas_Escaneadas_M45.pdf',
-    categoria: 'PLANILLAS',
-    formato: 'PDF',
-    fecha: '23/12/23',
-  },
-  {
-    id: 4,
-    nombre: 'Analisis_Cientifico_Ofi.docx',
-    categoria: 'INFORME_OFI',
-    formato: 'DOCX',
-    fecha: '24/12/23',
-  },
-])
+// --- ACTIONS ---
+
+const loadMarea = async () => {
+  loading.value = true
+  try {
+    const id = route.params.id as string
+    const data = await mareasService.getById(id)
+
+    // Enrich with flattened properties for editing
+    if (data.etapas && data.etapas.length > 0) {
+        // Assume first stage defines fishery for the trip context
+        data.pesqueriaId = data.etapas[0].pesqueriaId
+    }
+    
+    // Map Responsible for Correction from last movement
+    if (data.estadoActual?.codigo === 'CORRECCION') {
+        // Find last movement to CORRECCION
+        const lastMov = data.movimientos?.find((m: any) => m.estadoHasta?.codigo === 'CORRECCION')
+        data.responsable_correccion = lastMov?.usuario?.fullName
+    }
+
+    marea.value = data
+  } catch (err) {
+    console.error('Error loading marea:', err)
+  } finally {
+    loading.value = false
+  }
+}
 
 const getFilesByCategory = (catId: string) => {
-  return archivos.value.filter((f) => f.categoria === catId)
+  return archivos.value.filter((f: any) => f.categoria === catId)
 }
 
 const getFormatColor = (formato: string) => {
@@ -825,11 +801,35 @@ const getFormatColor = (formato: string) => {
   }
 }
 
-const goBack = () => router.push({ name: 'MareasWorkflow' })
-const saveChanges = () => {
-  alert('Se han guardado los cambios correctamente (Mockup)')
-  goBack()
+const goBack = () => router.back() // Intelligent back
+
+const saveChanges = async () => {
+    try {
+        await mareasService.update(marea.value.id, {
+            titulo: marea.value.titulo,
+            descripcion: marea.value.descripcion,
+            anioMarea: Number(marea.value.anioMarea),
+            nroMarea: Number(marea.value.nroMarea),
+            buqueId: marea.value.buqueId,
+            pesqueriaId: marea.value.pesqueriaId,
+            arteId: marea.value.artePrincipalId, // Map model field to DTO field
+            fechaZarpadaEstimada: marea.value.fechaZarpadaEstimada,
+            diasEstimados: marea.value.diasEstimados ? Number(marea.value.diasEstimados) : undefined,
+            tipoMarea: marea.value.tipoMarea,
+            observaciones: marea.value.observaciones
+        })
+        loadMarea() // Check if we need to show success message
+        // alert('Cambios guardados correctamente')
+    } catch (err) {
+        console.error('Error updating marea:', err)
+        alert('Error al guardar cambios')
+    }
 }
+
+// --- LIFECYCLE ---
+onMounted(() => {
+  loadMarea()
+})
 </script>
 
 <style scoped>

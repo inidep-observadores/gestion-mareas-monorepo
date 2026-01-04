@@ -48,6 +48,20 @@ export class MareasService {
                             include: { observador: true }
                         }
                     }
+                },
+                movimientos: {
+                    orderBy: { fechaHora: 'desc' },
+                    include: {
+                        usuario: true,
+                        estadoDesde: true,
+                        estadoHasta: true
+                    }
+                },
+                archivos: {
+                    include: {
+                        usuarioSubio: true
+                    },
+                    orderBy: { fechaSubida: 'desc' }
                 }
             }
         });
@@ -57,12 +71,27 @@ export class MareasService {
     }
 
     async update(id: string, updateMareaDto: UpdateMareaDto) {
-        const { etapas, ...data } = updateMareaDto;
+        const { etapas, pesqueriaId, observadorId, arteId, ...data } = updateMareaDto;
+
+        const updateData: any = { ...data };
+        if (arteId) updateData.artePrincipalId = arteId;
 
         await this.prisma.marea.update({
             where: { id },
-            data: data
+            data: updateData
         });
+
+        if (pesqueriaId) {
+            const firstStage = await this.prisma.mareaEtapa.findFirst({
+                where: { mareaId: id, nroEtapa: 1 }
+            });
+            if (firstStage) {
+                await this.prisma.mareaEtapa.update({
+                    where: { id: firstStage.id },
+                    data: { pesqueriaId }
+                });
+            }
+        }
 
         return this.findOne(id);
     }
