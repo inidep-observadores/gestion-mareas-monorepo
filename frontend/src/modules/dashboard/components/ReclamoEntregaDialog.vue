@@ -87,6 +87,7 @@ import { useAuthStore } from '@/modules/auth/stores/auth.store'
 
 const props = defineProps<{
   show: boolean
+  id: string
   mareaId: string
   vesselName: string
   obsName: string
@@ -132,7 +133,8 @@ const send = async () => {
   emit('confirm', {
     to: props.email,
     body: messageBody.value,
-    mareaId: props.mareaId
+    mareaId: props.mareaId,
+    id: props.id
   })
 }
 </script>

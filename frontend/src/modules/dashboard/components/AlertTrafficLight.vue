@@ -211,6 +211,7 @@
     </div>
     <ReclamoEntregaDialog
       :show="showReclamoDialog"
+      :id="selectedReclamoItem?.id || ''"
       :marea-id="selectedReclamoItem?.mareaId || ''"
       :vessel-name="selectedReclamoItem?.vesselName || ''"
       :obs-name="selectedReclamoItem?.obs || ''"

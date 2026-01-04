@@ -1202,8 +1202,8 @@ export class MareasService {
         });
     }
 
-    async sendClaim(dto: ClaimMareaDto) {
-        const { to, body, mareaId } = dto;
+    async sendClaim(dto: ClaimMareaDto, user: User) {
+        const { to, body, mareaId, id } = dto;
         const html = body.replace(/\n/g, '<br>');
 
         await this.mailService.sendMail(
@@ -1211,6 +1211,16 @@ export class MareasService {
             `Reclamo de Documentación - Marea ${mareaId}`,
             html
         );
+
+        await this.prisma.mareaMovimiento.create({
+            data: {
+                mareaId: id,
+                fechaHora: new Date(),
+                usuarioId: user.id,
+                tipoEvento: 'RECLAMO_ENVIADO',
+                detalle: `Reclamo de documentación enviado a ${to}`
+            }
+        });
 
         return { success: true };
     }
