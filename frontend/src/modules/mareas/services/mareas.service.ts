@@ -50,6 +50,53 @@ export interface CalendarEvent {
     type: string
 }
 
+export interface MareaEtapaDetalle {
+    id: string;
+    nroEtapa: number;
+    fechaZarpada?: string | null;
+    fechaArribo?: string | null;
+    tipoEtapa: string;
+    puertoZarpada?: { nombre: string } | null;
+    puertoArribo?: { nombre: string } | null;
+    pesqueria?: { nombre: string } | null;
+    observadores: Array<{
+        rol: string;
+        esDesignado: boolean;
+        observador: {
+            id: string;
+            nombre: string;
+            apellido: string;
+            codigoInterno?: number | null;
+        };
+    }>;
+}
+
+export interface MareaDetalle {
+    id: string;
+    anioMarea: number;
+    nroMarea: number;
+    tipoMarea?: string | null;
+    titulo?: string | null;
+    descripcion?: string | null;
+    activo: boolean;
+    fechaCreacion: string;
+    fechaUltimaActualizacion: string;
+    fechaZarpadaEstimada?: string | null;
+    fechaInicioObservador?: string | null;
+    fechaFinObservador?: string | null;
+    buque: {
+        id: string;
+        nombreBuque: string;
+        matricula?: string | null;
+    };
+    estadoActual: {
+        id: string;
+        nombre: string;
+        codigo: string;
+    };
+    etapas: MareaEtapaDetalle[];
+}
+
 const mareasService = {
     getDashboardOperativo: async (): Promise<MareaDashboard> => {
         const { selectedYear } = useConfigStore();
@@ -83,8 +130,8 @@ const mareasService = {
         return data;
     },
 
-    getById: async (id: string): Promise<any> => {
-        const { data } = await httpClient.get<any>(`/mareas/${id}`);
+    getById: async (id: string): Promise<MareaDetalle> => {
+        const { data } = await httpClient.get<MareaDetalle>(`/mareas/${id}`);
         return data;
     },
 
