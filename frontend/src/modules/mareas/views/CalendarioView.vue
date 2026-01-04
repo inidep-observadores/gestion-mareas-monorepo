@@ -61,9 +61,9 @@
 
       <!-- Calendar + Sidebar Container -->
       <div class="flex flex-col lg:flex-row gap-6 relative items-start">
-        
+
         <!-- Calendar Container -->
-        <div 
+        <div
           class="flex-1 min-w-0 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-6 shadow-sm transition-all duration-300"
         >
           <FullCalendar :options="calendarOptions" class="mareas-calendar" />
@@ -71,16 +71,16 @@
 
         <!-- Event Details Sidebar -->
         <Transition name="slide-in-right">
-          <div 
-            v-if="selectedEvent" 
+          <div
+            v-if="selectedEvent"
             class="w-full lg:w-96 shrink-0 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl shadow-lg sticky top-6"
           >
             <!-- Sidebar Header -->
             <div class="p-6 border-b border-gray-100 dark:border-gray-800 flex items-start justify-between">
               <div>
-                <span 
+                <span
                   class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium uppercase tracking-wide mb-3"
-                  :style="{ 
+                  :style="{
                     backgroundColor: `color-mix(in srgb, ${(CALENDAR_EVENT_COLORS as any)[selectedEvent.extendedProps?.type] || '#808080'} 10%, transparent)`,
                     color: (CALENDAR_EVENT_COLORS as any)[selectedEvent.extendedProps?.type] || '#808080'
                   }"
@@ -92,7 +92,7 @@
                   {{ selectedEvent.title }}
                 </h3>
               </div>
-              <button 
+              <button
                 @click="selectedEvent = null"
                 class="text-gray-400 hover:text-gray-500 dark:text-gray-500 dark:hover:text-gray-400 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
               >
@@ -223,7 +223,7 @@ const selectedEvent = ref<any>(null)
 
 const handleEventClick = (clickInfo: any) => {
   clickInfo.jsEvent.preventDefault()
-  
+
   // Extract event data
   const event = clickInfo.event
   const clickedEventId = event.id
@@ -247,9 +247,9 @@ const handleEventClick = (clickInfo: any) => {
 
 const navigateToMarea = () => {
   if (selectedEvent.value?.extendedProps?.mareaId) {
-    router.push({ 
-      name: 'marea-detalle', 
-      params: { id: selectedEvent.value.extendedProps.mareaId } 
+    router.push({
+      name: 'marea-detalle',
+      params: { id: selectedEvent.value.extendedProps.mareaId }
     })
   }
 }
@@ -397,6 +397,7 @@ onMounted(() => {
 .mareas-calendar .fc-list-event-time {
   color: var(--color-gray-700);
   font-weight: 600;
+  font-size: x-small;
 }
 
 .dark .mareas-calendar .fc-event-title,

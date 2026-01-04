@@ -514,17 +514,23 @@ export class MareasService {
         const events: any[] = [];
 
         mareas.forEach((m: any) => {
-            const mareaId = `${m.tipoMarea}-${String(m.nroMarea).padStart(3, '0')}`;
+            const mareaCode = `${m.tipoMarea}-${String(m.nroMarea).padStart(3, '0')}`;
             const buque = m.buque.nombreBuque;
             const obs = m.etapas[0]?.observadores[0]?.observador?.apellido || 'Sin Asignar';
+            const commonProps = {
+                mareaId: m.id,
+                vesselName: buque,
+                description: `Marea ${mareaCode} - Buque ${buque} - Observador ${obs}`
+            };
 
             // 1. Designación (Fecha Inicio Observador)
             if (m.fechaInicioObservador) {
                 events.push({
                     id: `des-${m.id}`,
-                    title: `📋 Designación ${mareaId} - ${buque} (${obs})`,
+                    title: `📋 Designación ${mareaCode} - ${buque} (${obs})`,
                     start: m.fechaInicioObservador,
-                    type: 'designacion'
+                    type: 'designacion',
+                    ...commonProps
                 });
             }
 
@@ -533,9 +539,10 @@ export class MareasService {
                 if (e.fechaZarpada) {
                     events.push({
                         id: `zar-${e.id}`,
-                        title: `⛵ Zarpada ${mareaId} - ${buque}`,
+                        title: `⛵ Zarpada ${mareaCode} - ${buque}`,
                         start: e.fechaZarpada,
-                        type: 'zarpada'
+                        type: 'zarpada',
+                        ...commonProps
                     });
                 }
 
@@ -543,23 +550,23 @@ export class MareasService {
                 if (e.fechaArribo) {
                     events.push({
                         id: `arr-${e.id}`,
-                        title: `🚢 Arribo ${mareaId} - ${buque}`,
+                        title: `🚢 Arribo ${mareaCode} - ${buque}`,
                         start: e.fechaArribo,
-                        type: 'arribo'
+                        type: 'arribo',
+                        ...commonProps
                     });
 
                     // 4.6 Alerta (Plazo Entrega Datos: Arribo + 15 dias)
-                    // Solo si no está entregada (Esto requeriría chequear estado o movimiento, asumo alerta informativa por ahora)
                     const deadline = new Date(e.fechaArribo);
                     deadline.setDate(deadline.getDate() + this.PLAZO_ENTREGA_DATOS);
 
-                    // Solo agregar alerta si fecha actual > deadline y no está entregada? 
-                    // El calendario muestra eventos fijos. Mejor mostrar el "Vencimiento Plazo" como un evento de alerta.
                     events.push({
                         id: `ven-${e.id}`,
-                        title: `⚠️ Vencimiento Datos ${mareaId}`,
+                        title: `⚠️ Vencimiento Datos ${mareaCode}`,
                         start: deadline,
-                        type: 'alerta'
+                        type: 'alerta',
+                        ...commonProps,
+                        description: `Vencimiento de plazo para entrega de datos. Marea ${mareaCode}.`
                     });
                 }
             });
@@ -569,16 +576,18 @@ export class MareasService {
                 if (mov.tipoEvento === 'INFORME_PROTOCOLIZADO') {
                     events.push({
                         id: `inf-${mov.id}`,
-                        title: `📄 Informe Protocolizado ${mareaId}`,
+                        title: `📄 Informe Protocolizado ${mareaCode}`,
                         start: mov.fechaHora,
-                        type: 'informe'
+                        type: 'informe',
+                        ...commonProps
                     });
                 } else if (mov.tipoEvento === 'INFORME_APROBADO') {
                     events.push({
                         id: `val-${mov.id}`,
-                        title: `✅ Validación ${mareaId}`,
+                        title: `✅ Validación ${mareaCode}`,
                         start: mov.fechaHora,
-                        type: 'validacion'
+                        type: 'validacion',
+                        ...commonProps
                     });
                 }
             });
@@ -1036,24 +1045,61 @@ export class MareasService {
     async search(query: string) {
         if (!query || query.length < 2) return [];
 
+        const isNumeric = !isNaN(Number(query));
+        const orConditions: any[] = [
+            { buque: { nombreBuque: { contains: query, mode: 'insensitive' } } },
+            {
+                etapas: {
+                    some: {
+                        observadores: {
+                            some: {
+                                observador: {
+                                    OR: [
+                                        { apellido: { contains: query, mode: 'insensitive' } },
+                                        { nombre: { contains: query, mode: 'insensitive' } }
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        ];
+
+        if (isNumeric) {
+            orConditions.push({ nroMarea: parseInt(query) });
+        }
+
         const mareas = await this.prisma.marea.findMany({
             where: {
-                OR: [
-                    { buque: { nombreBuque: { contains: query, mode: 'insensitive' } } },
-                    // { id: { contains: query, mode: 'insensitive' } }, // El UUID no soporta contains
-                ],
+                OR: orConditions,
                 activo: true
             },
-            include: { buque: true, estadoActual: true },
+            include: {
+                buque: true,
+                estadoActual: true,
+                etapas: {
+                    include: {
+                        observadores: {
+                            include: { observador: true }
+                        }
+                    }
+                }
+            },
             take: 10
         });
 
-        return mareas.map(m => ({
-            id: m.id,
-            title: `${m.buque.nombreBuque} (${m.tipoMarea}-${m.nroMarea}-${String(m.anioMarea).slice(-2)})`,
-            subtitle: m.estadoActual.nombre,
-            type: 'marea'
-        }));
+        return mareas.map(m => {
+            const principalObs = m.etapas[0]?.observadores.find((o: any) => o.rol === 'PRINCIPAL')?.observador;
+            const obsText = principalObs ? ` • ${principalObs.apellido}` : '';
+
+            return {
+                id: m.id,
+                title: `${m.buque.nombreBuque} (${m.tipoMarea}-${m.nroMarea}-${String(m.anioMarea).slice(-2)})`,
+                subtitle: `${m.estadoActual.nombre}${obsText}`,
+                type: 'marea'
+            };
+        });
     }
 
     async executeAction(id: string, actionKey: string, user: User, payload: any = {}) {
