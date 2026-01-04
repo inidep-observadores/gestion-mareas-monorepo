@@ -15,6 +15,7 @@ export interface MareaListItem {
     fecha_zarpada?: string;
     puerto: string;
     progreso: number;
+    observador?: string;
     alertas: any[];
     actionsAvailable: Record<string, { enabled: boolean; label: string; blockedReason?: string }>;
 }
