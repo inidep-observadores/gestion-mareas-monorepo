@@ -6,6 +6,10 @@ export class ClaimMareaDto {
 
     @IsString()
     @IsNotEmpty()
+    id: string;
+
+    @IsString()
+    @IsNotEmpty()
     body: string;
 
     @IsString()

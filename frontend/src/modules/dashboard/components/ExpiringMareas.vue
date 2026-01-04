@@ -39,7 +39,7 @@
               :style="{ left: marea.isOverdue ? marea.splitPoint + '%' : '100%' }"
            >
               <SportsScoreIcon class="w-4 h-4" />
-              <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2 py-1 text-[9px] font-bold text-white bg-gray-900 rounded-lg opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all whitespace-nowrap dark:bg-white dark:text-gray-900 shadow-xl pointer-events-none">
+              <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2 py-1 text-[11px] text-white bg-gray-900 rounded-lg opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all whitespace-nowrap dark:bg-white dark:text-gray-900 shadow-xl pointer-events-none">
                 Finalización estimada
               </div>
            </div>

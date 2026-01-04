@@ -13,8 +13,11 @@ export class MareasController {
     constructor(private readonly mareasService: MareasService) { }
 
     @Post('claim')
-    sendClaim(@Body() dto: ClaimMareaDto) {
-        return this.mareasService.sendClaim(dto);
+    sendClaim(
+        @Body() dto: ClaimMareaDto,
+        @GetUser() user: User
+    ) {
+        return this.mareasService.sendClaim(dto, user);
     }
 
     @Get('operativo')
