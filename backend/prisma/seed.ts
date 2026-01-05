@@ -602,24 +602,9 @@ async function main() {
     const pesquerias = await prisma.pesqueria.findMany();
 
     const getPesqueriaId = (flotaCodigo: string | null) => {
-      if (!flotaCodigo) return null;
-      let pesqueriaCodigo = '';
-
-      switch (flotaCodigo) {
-        case 'POTERO': pesqueriaCodigo = 'CALAMAR'; break;
-        case 'TANGONERO': pesqueriaCodigo = 'LANGOSTINO'; break;
-        case 'CENTOLLERO': pesqueriaCodigo = 'CENTOLLA'; break;
-        case 'VIEIRERO': pesqueriaCodigo = 'VIEIRA'; break;
-        case 'CONGELADOR_MERLUCERO':
-        case 'SURIMERO':
-        case 'FRESQUERO':
-          pesqueriaCodigo = 'MERLUZA_COMUN'; break;
-        case 'CONGELADOR_AUSTRAL': pesqueriaCodigo = 'AUSTRALES'; break;
-        case 'PALANGRERO': pesqueriaCodigo = 'MERLUZA_NEGRA'; break;
-        default: return null;
-      }
-
-      return pesquerias.find(p => p.codigo === pesqueriaCodigo)?.id || null;
+      // Nota: Con la nueva estructura de flotas mas general, 
+      // no es posible determinar la pesqueria habitual unicamente por la flota.
+      return null;
     };
 
     const getPuertoId = (localidad: string) => {

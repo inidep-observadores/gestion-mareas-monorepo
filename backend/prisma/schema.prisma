@@ -63,13 +63,14 @@ model ProductImage {
 }
 
 model TipoFlota {
-  id          String  @id @default(uuid()) @db.Uuid
-  codigo      String  @unique
-  nombre      String
-  descripcion String?
-  orden       Int?
-  activo      Boolean @default(true)
-  buques      Buque[]
+  id              String  @id @default(uuid()) @db.Uuid
+  codigo_numerico Int     @unique @map("codigo_numerico")
+  codigo          String  @unique
+  nombre          String
+  descripcion     String?
+  orden           Int?
+  activo          Boolean @default(true)
+  buques          Buque[]
 
   @@map("tipos_flota")
 }

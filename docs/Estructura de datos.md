@@ -29,7 +29,8 @@ Table password_reset_tokens {
 
 Table tipos_flota {
   id TEXT (PK) // UUID interno
-  codigo TEXT NOT NULL // Codigo corto
+  codigo_numerico INTEGER NOT NULL // Codigo numerico oficial
+  codigo TEXT NOT NULL // Codigo alfanumerico
   nombre TEXT NOT NULL
   descripcion TEXT?
   orden INTEGER?
