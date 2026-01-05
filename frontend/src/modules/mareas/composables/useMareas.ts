@@ -9,6 +9,7 @@ export function useMareas() {
     const mareas = ref<MareaListItem[]>([]);
     const selectedMareaContext = ref<MareaContext | null>(null);
     const hiddenStates = ref<Set<string>>(new Set());
+    const searchQuery = ref('');
 
     const fetchDashboard = async () => {
         loading.value = true;
@@ -83,7 +84,17 @@ export function useMareas() {
     };
 
     const filteredMareas = computed(() => {
-        return mareas.value.filter(m => !hiddenStates.value.has(m.estado_codigo));
+        return mareas.value.filter(m => {
+            const matchesState = !hiddenStates.value.has(m.estado_codigo);
+            const query = searchQuery.value.toLowerCase().trim();
+            if (!query) return matchesState;
+
+            const matchesText = 
+                m.buque_nombre.toLowerCase().includes(query) || 
+                m.id_marea.toLowerCase().includes(query);
+            
+            return matchesState && matchesText;
+        });
     });
 
     return {
@@ -97,6 +108,7 @@ export function useMareas() {
         executeAction,
         createMarea,
         hiddenStates,
+        searchQuery,
         filteredMareas,
         toggleStateVisibility,
         setVisibleStates
