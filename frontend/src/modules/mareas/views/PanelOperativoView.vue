@@ -55,8 +55,9 @@
                     <SearchIcon class="w-4 h-4" />
                   </span>
                   <input
+                    v-model="searchQuery"
                     type="text"
-                    placeholder="Filtrar por buque o ID..."
+                    placeholder="Filtrar por buque o marea..."
                     class="text-sm pl-9 pr-4 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 focus:ring-2 focus:ring-brand-500/20 outline-none transition-all w-full sm:w-64"
                   />
                 </div>
@@ -228,6 +229,7 @@ const {
   executeAction,
   selectedMareaContext,
   hiddenStates,
+  searchQuery,
   filteredMareas,
   toggleStateVisibility,
   setVisibleStates
@@ -307,7 +309,7 @@ const executeActionFromSidebar = async (actionKey: string) => {
 
   // Handle REGISTRAR_ARRIBO (previously known as Finalizar Marea logic)
   if (actionKey === 'REGISTRAR_ARRIBO') {
-     mareaToFinalize.value = selectedMareaContext.value?.marea; 
+     mareaToFinalize.value = selectedMareaContext.value?.marea;
      // We need actual Stage objects with IDs for editing, not just display data.
      // selectedMareaContext.marea might not have full stage details structured for editing?
      // Let's check selectedMareaContext structure or use selectedMarea.value if it has included data?
@@ -320,37 +322,37 @@ const executeActionFromSidebar = async (actionKey: string) => {
      // I need to fetch the full marea details or ensure context has them.
      // Or I can fetch them inside 'executeActionFromSidebar' before opening dialog.
      // Let's use 'fetchMareaContext' which we already called? No, generic context lacks stages array.
-     // I will use 'mareasService.executeAction' or rather 'mareasService.getMarea(id)'? 
+     // I will use 'mareasService.executeAction' or rather 'mareasService.getMarea(id)'?
      // PanelOperativoView uses 'useMareas'. Can I use 'fetchMareaContext' again? No.
      // I will assume I need to fetch full marea detail.
      // But wait, 'selectedMarea' in the list (from fetchDashboard?) might have them? 'include: etapas' was in 'search' but logic for dashboard list 'getDashboardOperativo' (in useMareas) might not have deep nested stages?
      // Let's try to fetch the marea specifically for finalization.
-     
+
      // I will simply open the dialog and let the dialog load data? No, valid props required.
      // I will fetch the marea data here. I need mareasService imported.
      // Actually, I can use 'selectedMarea.value' if it has them.
      // Let's optimistically assume I need to fetch it. I will import mareasService.
      // Wait, mareasService is not imported. I should import it.
-     
+
      // Quick fix: allow the dialog to load its own data if props are missing? No, that's a refactor.
      // I will fetch the data.
      try {
         // I need to allow import of service. I'll do that in another step or assume it works if I add logic.
         // For now, I'll use a placeholder and fix imports.
         // Actually, I can't import easily in this replace block without messing up top of file.
-        // I will implement a fetch inside `executeActionFromSidebar` using standard fetch or axios if service not available? 
+        // I will implement a fetch inside `executeActionFromSidebar` using standard fetch or axios if service not available?
         // No, 'useMareas' might expose 'getMarea'? No.
         // 'executeAction' is from useMareas.
-        
+
         // I'll add `import mareasService` in a separate step if needed, but for now I will try to use `selectedMareaContext` and see if `etapas` are there.
         // Looking at backend `getMareaContext` (lines 1022+), `marea` object returned indeed lacks `etapas`.
         // BUT `selectedMareaContext` has `marea`.
-        
+
         // I must fetch the marea stages.
         // I'll add `mareasService.getMarea` logic here. I will just use `fetch` for now or assume I can add the import.
         // I will add the import in the next step.
         // Here I will write the code assuming `mareasService` is available.
-        
+
         const fullMarea = await mareasService.getMareaContext(selectedMarea.value.id); // Context might not be enough?
         // Wait, I need specifically the stages for editing.
         // 'getMareaContext' gave me 'marea' without stages array.
@@ -378,7 +380,7 @@ const executeActionFromSidebar = async (actionKey: string) => {
         // OR `getMarea` exists and I should use it.
         // I'll assume I need to fix `getMareaContext` in backend to include `etapas` in the root or inside `marea`.
         // For now, I will proceed with frontend logic assuming `mareasService.getMareaContext` will return `etapas` (after I fix backend).
-        
+
         const context = await mareasService.getMareaContext(selectedMarea.value.id) as any;
         mareaToFinalize.value = context.marea;
         mareaToFinalizeStages.value = context.etapas?.map((e: any) => ({
@@ -393,7 +395,7 @@ const executeActionFromSidebar = async (actionKey: string) => {
              puertoArriboId: e.puertoArriboId,
              pesqueriaId: e.pesqueriaId
         })) || []; // If backend logic is fixed, this works.
-        
+
         showFinalizarDialog.value = true;
      } catch (e) {
         console.error("Error fetching marea for finalize:", e);

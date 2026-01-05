@@ -420,6 +420,12 @@ async function main() {
       password: password,
       roles: ['asistente_administrativo'],
     },
+    {
+      email: 'danieldt2000@hotmail.com',
+      fullName: 'Daniel Di Tullio',
+      password: password,
+      roles: ['tecnico_datos'],
+    },
   ];
 
   for (const userData of usersData) {
