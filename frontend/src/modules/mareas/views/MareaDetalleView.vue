@@ -31,6 +31,19 @@
             Descartar
           </button>
           <button
+            class="px-5 py-2.5 text-sm font-semibold text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-all shadow-sm active:scale-95 text-center"
+            @click="goBack"
+          >
+            Descartar
+          </button>
+          <button
+            class="px-5 py-2.5 text-sm font-semibold text-white bg-brand-500 border border-transparent rounded-xl hover:bg-brand-600 transition-all shadow-md shadow-brand-500/20 active:scale-95 flex items-center justify-center gap-2"
+            @click="saveChanges"
+          >
+            <CheckIcon class="w-4 h-4" />
+            Guardar Cambios
+          </button>
+          <button
             class="px-5 py-2.5 text-sm font-semibold text-white bg-brand-500 border border-transparent rounded-xl hover:bg-brand-600 transition-all shadow-md shadow-brand-500/20 active:scale-95 flex items-center justify-center gap-2"
             @click="saveChanges"
           >
@@ -622,6 +635,15 @@
         </div>
       </div>
     </div>
+    <!-- Finalize Dialog -->
+    <FinalizarMareaDialog
+        :show="showFinalizarDialog"
+        :initialObserverEndDate="marea.fecha_fin_observador"
+        :currentStages="etapas"
+        @close="showFinalizarDialog = false"
+        @confirm="handleFinalizeMarea"
+    />
+
   </AdminLayout>
 </template>
 
@@ -630,6 +652,7 @@ import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import SearchableSelect from '@/components/common/SearchableSelect.vue'
+import mareasService from '../services/mareas.service';
 import {
   ArrowLeftIcon,
   ShipIcon,
@@ -650,10 +673,10 @@ import {
   CloudUploadIcon,
   LockIcon,
 } from '@/icons'
-
-const route = useRoute()
 const router = useRouter()
 const activeTab = ref('general')
+
+const route = useRoute()
 
 const tabs = [
   { id: 'general', label: 'Datos Generales', icon: DocsIcon },
@@ -664,14 +687,16 @@ const tabs = [
   { id: 'admin', label: 'Administrativo', icon: SettingsIcon },
 ]
 
-const docCategories = [
-  { id: 'DATOS', label: 'Datos de a Bordo', shortLabel: 'Datos (DBF/ZIP)' },
-  { id: 'INFORME_OBS', label: 'Informe del Observador', shortLabel: 'Informe OBS' },
-  { id: 'PLANILLAS', label: 'Planillas Escaneadas', shortLabel: 'Planillas' },
-  { id: 'INFORME_OFI', label: 'Informe de Oficina', shortLabel: 'Informe Oficina' },
-  { id: 'PROTOCOLO', label: 'Informe Protocolizado', shortLabel: 'Protocolo' },
-  { id: 'VARIOS', label: 'Otros Archivos', shortLabel: 'Archivo' },
-]
+// Data Refs
+// Data Refs
+const marea = ref<any>({
+    etapas: [],
+    observadores: []
+});
+const etapas = ref<any[]>([]);
+const observadores = ref<any[]>([]);
+const movimientos = ref<any[]>([]);
+const archivos = ref<any[]>([]);
 
 const buqueOptions = [
   { value: '1', label: 'BP ARGENTINO I' },
@@ -688,127 +713,86 @@ const arteOptions = [
   { value: '2', label: 'Tangones' },
 ]
 
-// Mock data structured as per DB schema
-const marea = ref({
-  id: route.params.id,
-  anio_marea: 2023,
-  nro_marea: 45,
-  id_buque: '1',
-  id_pesqueria: '1',
-  id_arte_principal: '1',
-  id_estado_actual: 'CORRECCION',
-  estado_id: 'CORRECCION',
-  estado_nombre: 'En Corrección', // Join with estados_marea
-  responsable_correccion: 'Lic. María González (Control de Calidad)',
-  fecha_zarpada_estimada: '2023-12-25T10:00',
-  titulo: 'Prospección de Merluza Hubbsi - Sector Norte',
-  descripcion: 'Evaluación de rendimientos y estructuras de talla en precuarentena.',
-  nro_protocolización: null,
-  anio_protocolización: 2024,
-  fecha_protocolización: null,
-  activo: true,
-  observaciones:
-    'Requiere reporte diario de captura incidental. Buque tiene problemas menores en guinche de babor.',
-})
+const docCategories = [
+  { id: 'DATOS', label: 'Datos de a Bordo', shortLabel: 'Datos (DBF/ZIP)' },
+  { id: 'INFORME_OBS', label: 'Informe del Observador', shortLabel: 'Informe OBS' },
+  { id: 'PLANILLAS', label: 'Planillas Escaneadas', shortLabel: 'Planillas' },
+  { id: 'INFORME_OFI', label: 'Informe de Oficina', shortLabel: 'Informe Oficina' },
+  { id: 'PROTOCOLO', label: 'Informe Protocolizado', shortLabel: 'Protocolo' },
+  { id: 'VARIOS', label: 'Otros Archivos', shortLabel: 'Archivo' },
+]
 
-const etapas = ref([
-  {
-    id: 1,
-    nro_etapa: 1,
-    puerto_zarpada: 'Mar del Plata',
-    puerto_arribo: 'Puerto Madryn',
-    fecha_zarpada: '15/12/2023 08:30',
-    fecha_arribo: '20/12/2023 22:00',
-    tipo: 'COMERCIAL',
-  },
-  {
-    id: 2,
-    nro_etapa: 2,
-    puerto_zarpada: 'Puerto Madryn',
-    puerto_arribo: 'Mar del Plata',
-    fecha_zarpada: '22/12/2023 06:15',
-    fecha_arribo: '--/--/----',
-    tipo: 'INSTITUCIONAL',
-  },
-])
+async function loadMarea() {
+    try {
+        const id = route.params.id as string;
+        const data = await mareasService.getMareaContext(id) as any;
+        
+        // Map backend response to local structure if needed
+        // Assuming backend returns a structure similar to what we need or we map it here
+        // For now, let's assume we use the data directly or map basic fields
+        marea.value = {
+            ...data,
+            // Add derived fields if necessary
+             id_buque: data.buque?.id,
+             estado_nombre: data.estadoActual?.nombre,
+             responsable_correccion: 'N/A', // Placeholder
+        };
+        
+        etapas.value = data.etapas?.map((e: any) => ({
+             id: e.id,
+             nro_etapa: e.nroEtapa,
+             puerto_zarpada: e.puertoZarpada?.nombre,
+             puerto_arribo: e.puertoArribo?.nombre,
+             fecha_zarpada: e.fechaZarpada,
+             fecha_arribo: e.fechaArribo,
+             tipo: e.tipoEtapa,
+             // Keep IDs for editing
+             puertoZarpadaId: e.puertoZarpadaId,
+             puertoArriboId: e.puertoArriboId,
+             pesqueriaId: e.pesqueriaId
+        })) || [];
 
-const observadores = ref([
-  {
-    id: 1,
-    nombre: 'Juan',
-    apellido: 'Díaz',
-    iniciales: 'JD',
-    rol: 'PRINCIPAL',
-    codigo: '4521',
-    inicio: '15/12/2023',
-    fin: null,
-  },
-  {
-    id: 2,
-    nombre: 'Ana',
-    apellido: 'Martínez',
-    iniciales: 'AM',
-    rol: 'ACOMPAÑANTE',
-    codigo: '8832',
-    inicio: '15/12/2023',
-    fin: '20/12/2023',
-  },
-])
+        // Map observers, movements etc.
+        observadores.value = data.etapas[0]?.observadores?.map((o:any) => ({
+             id: o.observador.id,
+             nombre: o.observador.nombre,
+             apellido: o.observador.apellido,
+             iniciales: o.observador.nombre[0] + o.observador.apellido[0],
+             rol: o.rol,
+             codigo: o.observador.codigoInterno,
+             inicio: marea.value.fechaInicioObservador,
+             fin: marea.value.fechaFinObservador
+        })) || [];
 
-const movimientos = ref([
-  {
-    id: 1,
-    fecha: '12/12/2023 14:20',
-    evento: 'CAMBIO_ESTADO',
-    detalle: 'La marea ha sido creada y designada al BP ARGENTINO I.',
-    estado_hasta: 'Designada',
-    usuario: 'Daniel (Admin)',
-  },
-  {
-    id: 2,
-    fecha: '15/12/2023 09:00',
-    evento: 'ZARPADA_REAL',
-    detalle: 'Zarpada confirmada desde Mar del Plata por el observador.',
-    estado_hasta: 'Navegando',
-    usuario: 'Juan Díaz',
-  },
-  {
-    id: 3,
-    fecha: '20/12/2023 18:45',
-    evento: 'ALERTA_OPERATIVA',
-    detalle: 'Se reporta falla en sensor de temperatura de red.',
-    estado_hasta: null,
-    usuario: 'Juan Díaz',
-  },
-])
+    } catch (e) {
+        console.error('Error loading Marea', e);
+    }
+}
 
-const archivos = ref([
-  { id: 1, nombre: 'Muestra_Cal_2023.zip', categoria: 'DATOS', formato: 'ZIP', fecha: '20/12/23' },
-  {
-    id: 2,
-    nombre: 'Informe_Final_OBS.docx',
-    categoria: 'INFORME_OBS',
-    formato: 'DOCX',
-    fecha: '22/12/23',
-  },
-  {
-    id: 3,
-    nombre: 'Planillas_Escaneadas_M45.pdf',
-    categoria: 'PLANILLAS',
-    formato: 'PDF',
-    fecha: '23/12/23',
-  },
-  {
-    id: 4,
-    nombre: 'Analisis_Cientifico_Ofi.docx',
-    categoria: 'INFORME_OFI',
-    formato: 'DOCX',
-    fecha: '24/12/23',
-  },
-])
+onMounted(() => {
+    loadMarea();
+});
 
 const getFilesByCategory = (catId: string) => {
   return archivos.value.filter((f) => f.categoria === catId)
+}
+
+const showFinalizarDialog = ref(false);
+
+function openFinalizeDialog() {
+  showFinalizarDialog.value = true;
+}
+
+async function handleFinalizeMarea(payload: any) {
+  try {
+     await mareasService.executeAction(marea.value.id, 'REGISTRAR_FIN', payload);
+     showFinalizarDialog.value = false;
+     // Refresh marea context
+     await loadMarea();
+  } catch (e) {
+     console.error(e);
+     // Handle error notification
+  }
 }
 
 const getFormatColor = (formato: string) => {

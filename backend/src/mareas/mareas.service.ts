@@ -1023,6 +1023,7 @@ export class MareasService {
                 id: marea.id,
                 id_marea: `${marea.tipoMarea}-${String(marea.nroMarea).padStart(3, '0')}-${String(marea.anioMarea).slice(-2)}`,
                 buque_nombre: marea.buque.nombreBuque,
+                puertoBaseId: marea.buque.puertoBaseId, // Include base port for start dialog default
                 estado: marea.estadoActual.nombre,
                 estado_codigo: marea.estadoActual.codigo,
                 observador: mainObs ? `${mainObs.nombre} ${mainObs.apellido}` : 'No asignado',
@@ -1038,7 +1039,8 @@ export class MareasService {
                 titulo: mov.detalle || mov.tipoEvento,
                 fecha: mov.fechaHora,
                 usuario: mov.usuario?.fullName || 'Sistema'
-            }))
+            })),
+            etapas: marea.etapas // Include stages for editing
         };
     }
 
@@ -1129,22 +1131,101 @@ export class MareasService {
 
             // Logic for REGISTRAR_INICIO
             if (actionKey === 'REGISTRAR_INICIO') {
-                if (!payload.fechaInicio) throw new Error('La fecha de inicio es requerida para iniciar la marea.');
-                const fechaInicio = new Date(payload.fechaInicio);
+                if (!payload.fechaInicio) throw new Error('La fecha de inicio del observador es requerida.');
+                if (!payload.fechaZarpada) throw new Error('La fecha de zarpada es requerida.');
+
+                const fechaInicioObs = new Date(payload.fechaInicio);
+                const fechaZarpadaBuque = new Date(payload.fechaZarpada);
 
                 // Prepare global marea update data
-                additionalMareaData = { fechaInicioObservador: fechaInicio };
+                additionalMareaData = { fechaInicioObservador: fechaInicioObs };
 
                 // Update First Stage Departure
                 const etapa1 = marea.etapas[0];
                 if (etapa1) {
-                    const updateData: any = { fechaZarpada: fechaInicio };
+                    const updateData: any = { fechaZarpada: fechaZarpadaBuque };
                     if (payload.puertoId) updateData.puertoZarpadaId = payload.puertoId;
 
                     await tx.mareaEtapa.update({
                         where: { id: etapa1.id },
                         data: updateData
                     });
+                }
+            }
+
+            // Logic for REGISTRAR_ARRIBO
+            if (actionKey === 'REGISTRAR_ARRIBO') {
+                if (!payload.fechaFinObservador) throw new Error('La fecha de fin del observador es requerida.');
+                if (!payload.etapas || !Array.isArray(payload.etapas) || payload.etapas.length === 0) {
+                    throw new Error('Debe registrar al menos una etapa de navegación.');
+                }
+
+                const fechaFinObs = new Date(payload.fechaFinObservador);
+                additionalMareaData = { fechaFinObservador: fechaFinObs };
+
+                // Stage Synchronization
+                const incomingStages = payload.etapas;
+                const incomingIds = incomingStages.filter((s: any) => s.id).map((s: any) => s.id);
+
+                // 1. Delete removed stages (that belong to this marea)
+                await tx.mareaEtapa.deleteMany({
+                    where: {
+                        mareaId: id,
+                        id: { notIn: incomingIds }
+                    }
+                });
+
+                // 2. Upsert stages
+                for (let i = 0; i < incomingStages.length; i++) {
+                    const stg = incomingStages[i];
+                    const stageData = {
+                        nroEtapa: i + 1,
+                        puertoZarpadaId: stg.puertoZarpadaId,
+                        fechaZarpada: stg.fechaZarpada ? new Date(stg.fechaZarpada) : null,
+                        puertoArriboId: stg.puertoArriboId,
+                        fechaArribo: stg.fechaArribo ? new Date(stg.fechaArribo) : null,
+                        pesqueriaId: stg.pesqueriaId
+                    };
+
+                    if (stg.id) {
+                        // Update
+                        await tx.mareaEtapa.update({
+                            where: { id: stg.id },
+                            data: stageData
+                        });
+                    } else {
+                        // Create
+                        const newStage = await tx.mareaEtapa.create({
+                            data: {
+                                mareaId: id,
+                                ...stageData,
+                                tipoEtapa: 'COMERCIAL' // Default or derived?
+                            }
+                        });
+
+                        // Copy observers from first stage to new ones if needed? 
+                        // For now we assume observers logic is handled separately or they persist on the marea context.
+                        // Ideally we should replicate the observers from the previous stage or general assignment.
+                        // Getting generic main observers from marea?
+                        // Let's copy observers from the first existing stage to ensure continuity
+                        const firstStage = marea.etapas[0];
+                        if (firstStage) {
+                            const observersToCopy = await tx.mareaEtapaObservador.findMany({
+                                where: { etapaId: firstStage.id }
+                            });
+
+                            for (const obsRel of observersToCopy) {
+                                await tx.mareaEtapaObservador.create({
+                                    data: {
+                                        etapaId: newStage.id,
+                                        observadorId: obsRel.observadorId,
+                                        rol: obsRel.rol,
+                                        esDesignado: obsRel.esDesignado
+                                    }
+                                });
+                            }
+                        }
+                    }
                 }
             }
 
@@ -1166,7 +1247,11 @@ export class MareasService {
                     tipoEvento: 'CAMBIO_ESTADO',
                     estadoDesdeId: marea.estadoActualId,
                     estadoHastaId: transicion.estadoDestinoId,
-                    detalle: `Acción: ${transicion.etiqueta}`
+                    detalle: actionKey === 'REGISTRAR_INICIO'
+                        ? `Inicio Marea. Obs: ${new Date(payload.fechaInicio).toLocaleDateString('es-AR')} - Zarpada: ${new Date(payload.fechaZarpada).toLocaleDateString('es-AR')}`
+                        : actionKey === 'REGISTRAR_ARRIBO'
+                            ? `Fin Marea. Obs: ${new Date(payload.fechaFinObservador).toLocaleDateString('es-AR')}. Etapas: ${payload.etapas?.length}`
+                            : `Acción: ${transicion.etiqueta}`
                 }
             });
 
