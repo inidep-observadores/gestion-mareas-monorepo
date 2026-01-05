@@ -1,7 +1,11 @@
 export interface TipoFlota {
     id: string;
+    codigo_numerico: number;
     nombre: string;
     codigo: string;
+    descripcion?: string | null;
+    orden?: number | null;
+    activo: boolean;
 }
 
 export interface Puerto {
