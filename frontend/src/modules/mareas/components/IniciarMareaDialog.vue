@@ -10,9 +10,16 @@
 
       <div class="space-y-6">
           <div class="space-y-1.5">
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-400">Fecha de Inicio Real</label>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-400">Fecha de Inicio del Observador</label>
             <DatePicker 
               v-model="form.fechaInicio"
+            />
+          </div>
+
+          <div class="space-y-1.5">
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-400">Fecha de Zarpada (Buque)</label>
+            <DatePicker 
+              v-model="form.fechaZarpada"
             />
           </div>
 
@@ -62,6 +69,7 @@ const emit = defineEmits(['close', 'confirm']);
 
 const form = ref({
     fechaInicio: '',
+    fechaZarpada: '',
     puertoId: ''
 });
 
@@ -77,19 +85,22 @@ onMounted(async () => {
 // Watch show to reset/init form
 watch(() => props.show, (val) => {
     if (val) {
-        form.value.fechaInicio = props.initialDate || new Date().toISOString();
+        const now = new Date().toISOString();
+        form.value.fechaInicio = props.initialDate || now;
+        form.value.fechaZarpada = props.initialDate || now;
         form.value.puertoId = props.initialPortId || '';
         
         // If not explicit initial date, default to NOW
         if (!props.initialDate) {
-             form.value.fechaInicio = new Date().toISOString();
+             form.value.fechaInicio = now;
+             form.value.fechaZarpada = now;
         }
     }
 });
 
 const puertoOptions = computed(() => puertos.value.map(p => ({ value: p.id, label: p.nombre })));
 
-const isValid = computed(() => !!form.value.fechaInicio && !!form.value.puertoId);
+const isValid = computed(() => !!form.value.fechaInicio && !!form.value.fechaZarpada && !!form.value.puertoId);
 
 function handleConfirm() {
     emit('confirm', { ...form.value });
