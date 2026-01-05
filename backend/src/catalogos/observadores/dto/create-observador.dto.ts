@@ -1,4 +1,4 @@
-import { IsBoolean, IsDateString, IsInt, IsOptional, IsString } from 'class-validator';
+import { IsBoolean, IsDateString, IsInt, IsNotEmpty, IsOptional, IsString, ValidateIf } from 'class-validator';
 
 export class CreateObservadorDto {
     @IsInt()
@@ -27,6 +27,16 @@ export class CreateObservadorDto {
     @IsBoolean()
     @IsOptional()
     disponible?: boolean;
+    
+    @IsBoolean()
+    @IsOptional()
+    conImpedimento?: boolean;
+
+    @ValidateIf(o => o.conImpedimento === true)
+    @IsNotEmpty({ message: 'El motivo de impedimento es obligatorio cuando existe un impedimento' })
+    @IsString()
+    @IsOptional()
+    motivoImpedimento?: string;
 
     @IsDateString()
     @IsOptional()

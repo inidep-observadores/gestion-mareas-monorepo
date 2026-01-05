@@ -142,6 +142,42 @@
                 </div>
                 <span class="transition-colors group-hover:text-gray-900 dark:group-hover:text-white">Disponible</span>
             </label>
+
+            <label class="flex items-center text-sm font-normal text-gray-700 cursor-pointer select-none dark:text-gray-400 group">
+                <div class="relative">
+                    <input 
+                        type="checkbox" 
+                        v-model="form.conImpedimento" 
+                        class="sr-only"
+                    >
+                    <div
+                        :class="
+                            form.conImpedimento
+                            ? 'border-brand-500 bg-brand-500'
+                            : 'border-gray-300 bg-transparent dark:border-gray-700 group-hover:border-brand-300'
+                        "
+                        class="mr-3 flex h-5 w-5 items-center justify-center rounded-md border-[1.25px] transition-colors"
+                    >
+                        <span :class="form.conImpedimento ? '' : 'opacity-0'">
+                            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M11.6666 3.5L5.24992 9.91667L2.33325 7" stroke="white" stroke-width="1.94437" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </span>
+                    </div>
+                </div>
+                <span class="transition-colors group-hover:text-gray-900 dark:group-hover:text-white">Con Impedimento</span>
+            </label>
+        </div>
+
+        <div v-if="form.conImpedimento">
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-400 mb-1.5">Motivo Impedimento</label>
+            <input
+                v-model="form.motivoImpedimento"
+                type="text"
+                :required="form.conImpedimento"
+                placeholder="Describa el motivo (licencia, etc.)..."
+                class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+            />
         </div>
 
         <div class="mt-5 sm:mt-6 sm:grid sm:grid-flow-row-dense sm:grid-cols-2 sm:gap-3">
@@ -197,6 +233,8 @@ const initialForm = {
     tipoContrato: 'LEY MARCO',
     activo: true,
     disponible: true,
+    conImpedimento: false,
+    motivoImpedimento: '',
     fotoUrl: undefined as string | undefined,
     observaciones: ''
 }
@@ -216,6 +254,8 @@ watch(
         tipoContrato: newObservador.tipoContrato,
         activo: newObservador.activo,
         disponible: newObservador.disponible,
+        conImpedimento: newObservador.conImpedimento ?? false,
+        motivoImpedimento: newObservador.motivoImpedimento || '',
         fotoUrl: newObservador.fotoUrl,
         observaciones: newObservador.observaciones || ''
       }

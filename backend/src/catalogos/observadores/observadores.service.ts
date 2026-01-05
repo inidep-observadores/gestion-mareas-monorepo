@@ -7,8 +7,11 @@ export class ObservadoresService {
     constructor(private readonly prisma: PrismaService) { }
 
     async crear(createObservadorDto: CreateObservadorDto) {
+        if (createObservadorDto.conImpedimento === false) {
+            createObservadorDto.motivoImpedimento = null;
+        }
         return await this.prisma.observador.create({
-            data: createObservadorDto,
+            data: createObservadorDto as any,
         });
     }
 
@@ -38,9 +41,14 @@ export class ObservadoresService {
 
     async actualizar(id: string, updateObservadorDto: UpdateObservadorDto) {
         const observador = await this.obtenerUno(id);
+
+        if (updateObservadorDto.conImpedimento === false) {
+            updateObservadorDto.motivoImpedimento = null;
+        }
+
         return await this.prisma.observador.update({
             where: { id: observador.id },
-            data: updateObservadorDto,
+            data: updateObservadorDto as any,
         });
     }
 
