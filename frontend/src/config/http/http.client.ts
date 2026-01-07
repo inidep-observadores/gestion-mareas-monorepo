@@ -4,7 +4,7 @@ import { normalizeError } from './http.errors';
 
 // Create Axios Instance
 const httpClient: AxiosInstance = axios.create({
-    baseURL: import.meta.env.BACKEND_URL || 'http://localhost:3000/api',
+    baseURL: import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api',
     withCredentials: true, // Critical for httpOnly cookies
     timeout: 10000,
     headers: {
@@ -95,3 +95,4 @@ httpClient.interceptors.request.use(
 );
 
 export default httpClient;
+
