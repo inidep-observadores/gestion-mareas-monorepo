@@ -1,0 +1,52 @@
+services:
+  db:
+    image: postgres:15-alpine
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    container_name: mareasdb
+    volumes:
+      - ./postgres:/var/lib/postgresql/data
+
+  mailhog:
+    image: mailhog/mailhog
+    restart: always
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+    container_name: mailhog
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    env_file:
+      - .env
+    environment:
+      DB_HOST: db
+      SMTP_HOST: mailhog
+    depends_on:
+      - db
+      - mailhog
+    volumes:
+      - ./backups:/app/backups
+      - ./static:/app/static
+    expose:
+      - "3000"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.sigma-backend.rule=Host(`api.su-dominio.com`)"
+      - "traefik.http.routers.sigma-backend.entrypoints=websecure"
+      - "traefik.http.routers.sigma-backend.tls=true"
+      - "traefik.http.services.sigma-backend.loadbalancer.server.port=3000"
+    networks:
+      - default
+      - traefik
+
+networks:
+  traefik:
+    external: true
