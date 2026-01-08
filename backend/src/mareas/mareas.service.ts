@@ -6,6 +6,7 @@ import { UpdateMareaDto } from './dto/update-marea.dto';
 
 import { MailService } from '../mail/mail.service';
 import { ClaimMareaDto } from './dto/claim-marea.dto';
+import { AlertsService } from '../alerts/alerts.service';
 
 @Injectable()
 export class MareasService {
@@ -29,7 +30,8 @@ export class MareasService {
 
     constructor(
         private readonly prisma: PrismaService,
-        private readonly mailService: MailService
+        private readonly mailService: MailService,
+        private readonly alertsService: AlertsService
     ) { }
 
     async findOne(id: string) {
@@ -1356,43 +1358,69 @@ export class MareasService {
         return { success: true };
     }
 
+    private async checkAlertRules(year: number) {
+        const [fatigue, criticalDelays, reportDelays] = await Promise.all([
+            this.getFatigueAlerts(year),
+            this.getCriticalDelays(year),
+            this.getReportDelays(year)
+        ]);
+
+        for (const f of fatigue) {
+            await this.alertsService.create({
+                codigoUnico: `FATIGA-${f.id}-${year}`,
+                referenciaId: f.id,
+                tipo: 'FATIGA',
+                titulo: 'Fatiga Crítica Detectada',
+                descripcion: `El observador ${f.name} ha navegado ${f.days} días en el año.`,
+                estado: 'PENDIENTE',
+                prioridad: 'ALTA'
+            });
+        }
+
+        for (const d of criticalDelays) {
+            await this.alertsService.create({
+                codigoUnico: `RETRASO_DATOS-${d.id}`, // d.id is probably internal ID or specific delay ID? In getCriticalDelays it's likely Marea ID + type? Just Marea ID might duplicate if multiple issues. Use explicit code.
+                referenciaId: d.mareaId, // Assuming d has mareaId
+                tipo: 'RETRASO_DATOS',
+                titulo: 'Retraso en Entrega de Datos',
+                descripcion: `Marea ${d.mareaId} (${d.vesselName}) - ${d.days} días de demora.`,
+                estado: 'PENDIENTE',
+                prioridad: 'ALTA'
+            });
+        }
+
+        for (const d of reportDelays) {
+            await this.alertsService.create({
+                codigoUnico: `RETRASO_INFORME-${d.id}`,
+                referenciaId: d.mareaId,
+                tipo: 'RETRASO_INFORME',
+                titulo: 'Informe Demorado',
+                descripcion: `Marea ${d.mareaId} (${d.vesselName}) - ${d.days} días desde recepción.`,
+                estado: 'PENDIENTE',
+                prioridad: 'MEDIA'
+            });
+        }
+    }
+
     async getInbox(year?: number) {
         const operationalYear = this.resolveYear(year);
 
-        // 1. Obtener Alertas Críticas (Fatiga y Retrasos)
-        const [fatigue, criticalDelays, reportDelays] = await Promise.all([
-            this.getFatigueAlerts(operationalYear),
-            this.getCriticalDelays(operationalYear),
-            this.getReportDelays(operationalYear)
-        ]);
+        // Ejecutar motor de reglas (con unicidad garantizada por el servicio)
+        await this.checkAlertRules(operationalYear);
 
-        const alerts: any[] = [];
-
-        fatigue.forEach(f => {
-            alerts.push({
-                id: `fatiga-${f.id}`,
-                titulo: 'Fatiga Crítica Detectada',
-                descripcion: `El observador ${f.name} ha navegado ${f.days} días en el año.`,
-                fecha: f.lastArrival ? `Arribo: ${new Date(f.lastArrival).toLocaleDateString()}` : 'En navegación'
-            });
-        });
-
-        criticalDelays.forEach(d => {
-            alerts.push({
-                id: `retraso-datos-${d.id}`,
-                titulo: 'Retraso en Entrega de Datos',
-                descripcion: `Marea ${d.mareaId} (${d.vesselName}) - ${d.days} días de demora.`,
-                fecha: `Arribó: ${new Date(d.arrivalDate).toLocaleDateString()}`
-            });
-        });
-
-        reportDelays.forEach(d => {
-            alerts.push({
-                id: `retraso-informe-${d.id}`,
-                titulo: 'Informe Demorado',
-                descripcion: `Marea ${d.mareaId} (${d.vesselName}) - ${d.days} días desde recepción.`,
-                fecha: `Recibido: ${new Date(d.baseDate).toLocaleDateString()}`
-            });
+        // 1. Obtener Alertas Persistentes
+        // Filtrar las que NO están resueltas ni descartadas (solo activas)
+        // O incluir las 'EN_SEGUIMIENTO' también.
+        // Prisma 'NOT' filter or explicitly IN ['PENDIENTE', 'SEGUIMIENTO', 'VENCIDA']
+        const persistentAlerts = await this.prisma.alerta.findMany({
+            where: {
+                estado: { in: ['PENDIENTE', 'SEGUIMIENTO', 'VENCIDA'] }
+            },
+            orderBy: {
+                prioridad: 'asc', // ALTA < MEDIA ?? No, string sort might be tricky. 'ALTA' < 'BAJA'? 'A' < 'B'. So 'ALTA' comes first.
+                // Better order by fechaDetectada desc? Or priority.
+                // ALTA comes before MEDIA alphabetically? Yes. A < M.
+            }
         });
 
         // 2. Obtener Mareas para las Pestañas
@@ -1431,7 +1459,10 @@ export class MareasService {
             // Lógica de clasificación por pestañas y prioridad
             const cod = m.estadoActual.codigo;
 
-            if (cod === 'EN_CORRECCION' || alerts.some(a => a.descripcion.includes(mareaIdFormatted))) {
+            // Check if there are active alerts for this marea
+            const hasAlerts = persistentAlerts.some(a => a.referenciaId === m.id || a.descripcion.includes(mareaIdFormatted));
+
+            if (cod === 'EN_CORRECCION' || hasAlerts) {
                 tab = 'urgentes';
                 prioridad = 'alta';
             } else if (['FINALIZADA', 'CERRADA_ADMINISTRATIVAMENTE', 'INFORME_PROTOCOLIZADO'].includes(cod)) {
@@ -1453,7 +1484,7 @@ export class MareasService {
         });
 
         return {
-            alerts: alerts.slice(0, 5), // Limitar a las 5 más recientes/relevantes
+            alerts: persistentAlerts,
             tasks
         };
     }
