@@ -10,6 +10,8 @@ export function useMareas() {
     const selectedMareaContext = ref<MareaContext | null>(null);
     const hiddenStates = ref<Set<string>>(new Set());
     const searchQuery = ref('');
+    const sortBy = ref<string | null>(null);
+    const sortOrder = ref<'asc' | 'desc'>('asc');
 
     const fetchDashboard = async () => {
         loading.value = true;
@@ -83,8 +85,17 @@ export function useMareas() {
         hiddenStates.value = nextHidden;
     };
 
+    const toggleSort = (key: string) => {
+        if (sortBy.value === key) {
+            sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc';
+        } else {
+            sortBy.value = key;
+            sortOrder.value = 'asc';
+        }
+    };
+
     const filteredMareas = computed(() => {
-        return mareas.value.filter(m => {
+        let result = mareas.value.filter(m => {
             const matchesState = !hiddenStates.value.has(m.estado_codigo);
             const query = searchQuery.value.toLowerCase().trim();
             if (!query) return matchesState;
@@ -95,6 +106,26 @@ export function useMareas() {
             
             return matchesState && matchesText;
         });
+
+        if (sortBy.value) {
+            result = [...result].sort((a, b) => {
+                const key = sortBy.value as keyof MareaListItem;
+                let valA: any = a[key];
+                let valB: any = b[key];
+
+                // Manejo especial para alertas (ordenar por cantidad)
+                if (key === 'alertas') {
+                    valA = a.alertas?.length || 0;
+                    valB = b.alertas?.length || 0;
+                }
+
+                if (valA < valB) return sortOrder.value === 'asc' ? -1 : 1;
+                if (valA > valB) return sortOrder.value === 'asc' ? 1 : -1;
+                return 0;
+            });
+        }
+
+        return result;
     });
 
     return {
@@ -109,8 +140,11 @@ export function useMareas() {
         createMarea,
         hiddenStates,
         searchQuery,
+        sortBy,
+        sortOrder,
         filteredMareas,
         toggleStateVisibility,
-        setVisibleStates
+        setVisibleStates,
+        toggleSort
     };
 }
