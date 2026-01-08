@@ -75,7 +75,12 @@
       </div>
 
       <!-- 3. TASK GRID -->
+      <div v-if="loading" class="flex items-center justify-center py-20">
+        <span class="loading loading-spinner loading-lg text-brand-500"></span>
+      </div>
+
       <transition-group 
+        v-else
         name="list" 
         tag="div" 
         class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6"
@@ -120,149 +125,62 @@ import AdminLayout from '@/components/layout/AdminLayout.vue'
 import TaskCard from '../components/TaskCard.vue'
 import InboxAlertCard from '../components/InboxAlertCard.vue'
 import MareaContextSidebar from '../components/MareaContextSidebar.vue'
+import mareasService from '../services/mareas.service'
 import { SearchIcon, EditIcon, CheckIcon, DocsIcon, SuccessIcon } from '@/icons'
 import { useMareas } from '../composables/useMareas'
 
 const router = useRouter()
 const { fetchMareaContext, selectedMareaContext, executeAction } = useMareas()
 
-// Tabs Configuration
+// Data State
+const loading = ref(true)
+const alertas = ref<any[]>([])
+const tasks = ref<any[]>([])
 const activeTab = ref('urgentes')
+
+const loadInbox = async () => {
+  try {
+    loading.value = true
+    const data = await mareasService.getInbox()
+    alertas.value = data.alerts
+    tasks.value = data.tasks.map(t => ({
+      ...t,
+      actions: resolveActions(t)
+    }))
+  } catch (error) {
+    console.error('Error loading inbox:', error)
+  } finally {
+    loading.value = false
+  }
+}
+
+const resolveActions = (task: any) => {
+  if (task.tab === 'urgentes') {
+    return [
+      { label: 'Corregir', key: 'edit', icon: EditIcon, primary: true },
+      { label: 'Revisar', key: 'review', icon: DocsIcon }
+    ]
+  }
+  if (task.tab === 'proceso') {
+     return [
+      { label: 'Gestionar', key: 'manage', icon: CheckIcon, primary: true }
+    ]
+  }
+  return [
+    { label: 'Ver Detalle', key: 'view', icon: DocsIcon }
+  ]
+}
+
+onMounted(loadInbox)
+
+// Tabs Configuration
 const tabs = computed(() => [
-  { id: 'urgentes', label: 'Acciones Urgentes', count: tasks.value.filter(t => t.prioridad === 'alta').length },
+  { id: 'urgentes', label: 'Acciones Urgentes', count: tasks.value.filter(t => t.tab === 'urgentes').length },
   { id: 'proceso', label: 'En Proceso', count: tasks.value.filter(t => t.tab === 'proceso').length },
   { id: 'historial', label: 'Historial', count: tasks.value.filter(t => t.tab === 'historial').length },
 ])
 
 const activeTabLabel = computed(() => tabs.value.find(t => t.id === activeTab.value)?.label)
-
-// Mock Data (To be replaced by service later)
-const alertas = ref([
-  { id: 'a1', titulo: 'Fatiga Crítica Detectada', descripcion: 'El observador Juan Pérez ha superado las 18hs de labor continuas en la marea #2024-045.', fecha: 'Hace 5 min' },
-  { id: 'a2', titulo: 'Discrepancia de Peso', descripcion: 'Se detectó una diferencia mayor al 15% entre lo reportado y el lance en la marea #2024-048.', fecha: 'Hace 1h' },
-  { id: 'a3', titulo: 'Puerto de Arribo No Coincide', descripcion: 'El buque "Mar del Plata" reportó arribo en puerto no autorizado para esta pesquería.', fecha: 'Hace 2h' }
-])
-
-const tasks = ref([
-  { 
-    id: '1', 
-    buque: 'ARA Bahía Aguirre', 
-    idMarea: 'M-2024-012', 
-    hito: 'Pendiente Corrección', 
-    descripcion: 'Se requiere corregir los lances del día 12/05 debido a error en coordenadas.', 
-    fecha: '12/05 14:30', 
-    prioridad: 'alta' as const, 
-    tab: 'urgentes',
-    actions: [
-      { label: 'Editar', key: 'edit', icon: EditIcon, primary: true },
-      { label: 'Revisar', key: 'review', icon: DocsIcon }
-    ]
-  },
-  { 
-    id: '4', 
-    buque: 'PESCADOR I', 
-    idMarea: 'M-2024-018', 
-    hito: 'Error de Validación', 
-    descripcion: 'Datos biológicos incompletos en el formulario de captura incidental.', 
-    fecha: 'Hoy 10:45', 
-    prioridad: 'alta' as const, 
-    tab: 'urgentes',
-    actions: [
-      { label: 'Completar', key: 'edit', icon: EditIcon, primary: true }
-    ]
-  },
-  { 
-    id: '5', 
-    buque: 'ATLANTIC V', 
-    idMarea: 'M-2024-022', 
-    hito: 'Alerta de Fatiga', 
-    descripcion: 'Validación manual requerida por superación de horas de descanso.', 
-    fecha: 'Hoy 08:20', 
-    prioridad: 'alta' as const, 
-    tab: 'urgentes',
-    actions: [
-      { label: 'Gestionar', key: 'manage', icon: CheckIcon, primary: true }
-    ]
-  },
-  { 
-    id: '2', 
-    buque: 'VICTOR ANGELESCU', 
-    idMarea: 'M-2024-015', 
-    hito: 'Para Protocolizar', 
-    descripcion: 'Marea finalizada con éxito. Lista para generar protocolo oficial.', 
-    fecha: 'Ayer 09:15', 
-    prioridad: 'media' as const, 
-    tab: 'proceso',
-    actions: [
-      { label: 'Protocolizar', key: 'protocol', icon: SuccessIcon, primary: true }
-    ]
-  },
-  { 
-    id: '6', 
-    buque: 'NARWAL', 
-    idMarea: 'M-2024-025', 
-    hito: 'En Informe', 
-    descripcion: 'Informe final en revisión técnica por el departamento de biología.', 
-    fecha: 'Ayer 16:40', 
-    prioridad: 'media' as const, 
-    tab: 'proceso',
-    actions: [
-      { label: 'Verificar', key: 'review', icon: DocsIcon }
-    ]
-  },
-  { 
-    id: '7', 
-    buque: 'PUENTE CHICO', 
-    idMarea: 'M-2024-028', 
-    hito: 'Enviada a Protocolo', 
-    descripcion: 'Proceso de firma digital iniciado por el responsable de área.', 
-    fecha: 'Ayer 11:20', 
-    prioridad: 'media' as const, 
-    tab: 'proceso',
-    actions: [
-      { label: 'Seguimiento', key: 'track', icon: SearchIcon }
-    ]
-  },
-  { 
-    id: '3', 
-    buque: 'MARIA RITTA', 
-    idMarea: 'M-2024-008', 
-    hito: 'Finalizada', 
-    descripcion: 'Marea cerrada y protocolizada correctamente.', 
-    fecha: '01/05 18:00', 
-    prioridad: 'baja' as const, 
-    tab: 'historial',
-    actions: [
-      { label: 'Ver PDF', key: 'pdf', icon: DocsIcon }
-    ]
-  },
-  { 
-    id: '8', 
-    buque: 'SIRIUS', 
-    idMarea: 'M-2024-005', 
-    hito: 'Protocolizada', 
-    descripcion: 'Documentación guardada en el archivo digital central.', 
-    fecha: '28/04 10:00', 
-    prioridad: 'baja' as const, 
-    tab: 'historial',
-    actions: [
-      { label: 'Descargar', key: 'pdf', icon: DocsIcon }
-    ]
-  },
-  { 
-    id: '9', 
-    buque: 'CAPITAN GIARDINO', 
-    idMarea: 'M-2024-002', 
-    hito: 'Cerrada', 
-    descripcion: 'Marea auditada sin observaciones. Período 2024-Q1.', 
-    fecha: '15/04 09:00', 
-    prioridad: 'baja' as const, 
-    tab: 'historial',
-    actions: [
-      { label: 'Auditoría', key: 'review', icon: SuccessIcon }
-    ]
-  }
-])
 
 const filteredTasks = computed(() => {
   return tasks.value.filter(t => t.tab === activeTab.value)
@@ -279,7 +197,9 @@ const openDetails = async (task: any) => {
 }
 
 const handleTaskAction = (taskId: string, actionKey: string) => {
-  console.log('Action for task', taskId, actionKey)
+  if (actionKey === 'edit' || actionKey === 'manage' || actionKey === 'view') {
+    router.push({ name: 'MareaDetalle', params: { id: taskId } })
+  }
 }
 
 const handleAlertAction = (alertId: string, type: string) => {

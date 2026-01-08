@@ -30,6 +30,11 @@ export class MareasController {
         return this.mareasService.getDashboardKpis(year ? Number(year) : undefined);
     }
 
+    @Get('inbox')
+    getInbox(@Query('year') year?: string) {
+        return this.mareasService.getInbox(year ? Number(year) : undefined);
+    }
+
     @Get('flota-por-pesqueria')
     getFleetDistribution(@Query('year') year?: string) {
         return this.mareasService.getFleetDistributionByFishery(year ? Number(year) : undefined);
