@@ -633,6 +633,19 @@
             </div>
           </div>
         </div>
+          </div>
+        </div>
+
+        <!-- 7. Historial Alertas Tab -->
+        <div v-if="activeTab === 'historial_alertas'" class="max-w-4xl mx-auto">
+            <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-6 shadow-sm">
+                <h3 class="text-lg font-bold text-gray-800 dark:text-white mb-6 flex items-center gap-2">
+                    <BellIcon class="w-5 h-5 text-brand-500" />
+                    Registro de Incidentes y Alertas
+                </h3>
+                <AlertHistoryTab :referenceId="marea.id" />
+            </div>
+        </div>
       </div>
     </div>
     <!-- Finalize Dialog -->
@@ -652,6 +665,7 @@ import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import SearchableSelect from '@/components/common/SearchableSelect.vue'
+import AlertHistoryTab from '../../alerts/components/AlertHistoryTab.vue'
 import mareasService from '../services/mareas.service';
 import {
   ArrowLeftIcon,
@@ -672,6 +686,7 @@ import {
   DownloadIcon,
   CloudUploadIcon,
   LockIcon,
+  BellIcon
 } from '@/icons'
 const router = useRouter()
 const activeTab = ref('general')
@@ -685,6 +700,7 @@ const tabs = [
   { id: 'workflow', label: 'Movimientos', icon: HistoryIcon },
   { id: 'docs', label: 'Documentación', icon: FileTextIcon },
   { id: 'admin', label: 'Administrativo', icon: SettingsIcon },
+  { id: 'historial_alertas', label: 'Historial Alertas', icon: BellIcon },
 ]
 
 // Data Refs
