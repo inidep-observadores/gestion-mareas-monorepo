@@ -431,3 +431,45 @@ Table buque_trayectoria_puntos {
 
 // Para obtener la ruta de una marea, filtrar por buque_id y el rango
 // fecha_zarpada_estimada/fecha_inicio_observador -> fecha_fin_observador.
+
+## 6. Sistema de Alertas (Notificaciones Operativas)
+
+Table alertas {
+  id TEXT (PK) // UUID
+  codigo_unico TEXT NOT NULL // HASH para unicidad (ej: 'FATIGA_OBS_123_YEAR_2024')
+  referencia_id TEXT // ID de la entidad relacionada (Marea, Buque, etc.)
+  tipo TEXT NOT NULL // 'FATIGA', 'RETRASO_DATOS', 'RETRASO_INFORME', 'GENERICO'
+  
+  titulo TEXT NOT NULL
+  descripcion TEXT NOT NULL
+  
+  estado TEXT NOT NULL // 'PENDIENTE', 'SEGUIMIENTO', 'RESUELTA', 'DESCARTADA', 'VENCIDA'
+  prioridad TEXT NOT NULL // 'ALTA', 'MEDIA', 'BAJA'
+  
+  fecha_detectada TIMESTAMP NOT NULL // Cuando el sistema detectó la condición
+  fecha_vencimiento TIMESTAMP? // Fecha límite para el seguimiento
+  fecha_cierre TIMESTAMP? // Cuando se resolvió o descartó
+  
+  asignado_id TEXT? // FK -> users.id (Responsable de la gestión)
+  creado_por_id TEXT? // FK -> users.id (Si fue manual) o NULL (Sistema)
+
+  // Auditoría
+  ultima_actualizacion TIMESTAMP
+  
+  UNIQUE(codigo_unico)
+  INDEX(referencia_id)
+  INDEX(estado)
+  INDEX(asignado_id)
+}
+
+Table alertas_eventos {
+  id TEXT (PK) // UUID
+  alerta_id TEXT NOT NULL // FK -> alertas.id
+  fecha_hora TIMESTAMP NOT NULL
+  usuario_id TEXT? // FK -> users.id (NULL si es evento del sistema)
+  
+  tipo_evento TEXT NOT NULL // 'CREACION', 'CAMBIO_ESTADO', 'ASIGNACION', 'COMENTARIO', 'AUTO_RESOLUCION', 'ESCALADO'
+  detalle TEXT? // JSON o texto plano con diferencias o comentarios
+  
+  INDEX(alerta_id)
+}
