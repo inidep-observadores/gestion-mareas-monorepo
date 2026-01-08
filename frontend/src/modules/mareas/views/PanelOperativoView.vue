@@ -5,34 +5,23 @@
   >
     <div class="relative min-h-[calc(100vh-100px)] z-1">
 
-      <!-- Operational KPIs -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
-        <div
+      <!-- Filtros Compactos ( Airport Board Style ) -->
+      <div class="flex flex-wrap items-center gap-3 mb-8">
+        <span class="text-[10px] font-black uppercase tracking-widest text-gray-400 dark:text-gray-500 mr-2">
+          Filtrar por estado:
+        </span>
+        <StatusFilterChip
           v-for="kpi in kpis"
           :key="kpi.label"
-          class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-4 rounded-2xl shadow-sm"
-        >
-          <div class="flex items-center justify-between mb-2">
-            <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">{{ kpi.label }}</span>
-            <div class="flex items-center gap-2">
-               <button
-                 @click.stop="toggleStateVisibility(kpi.codigo)"
-                 class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
-                 :title="hiddenStates.has(kpi.codigo) ? 'Mostrar' : 'Ocultar'"
-               >
-                 <component
-                   :is="hiddenStates.has(kpi.codigo) ? EyeSlashIcon : EyeIcon"
-                   class="w-4 h-4"
-                   :class="{ 'opacity-50': hiddenStates.has(kpi.codigo) }"
-                 />
-               </button>
-               <div :class="['p-2 rounded-xl', kpi.bg]">
-                 <component :is="kpi.icon" :class="['w-5 h-5', kpi.color]" />
-               </div>
-            </div>
-          </div>
-          <div class="text-2xl font-black text-gray-800 dark:text-white" :class="{ 'opacity-40': hiddenStates.has(kpi.codigo) }">{{ kpi.value }}</div>
-        </div>
+          :label="kpi.label"
+          :value="kpi.value"
+          :icon="kpi.icon"
+          :active="!hiddenStates.has(kpi.codigo)"
+          :color-class="kpi.color"
+          :bg-class="kpi.bg"
+          :border-class="kpi.border"
+          @click="toggleStateVisibility(kpi.codigo)"
+        />
       </div>
 
       <div class="grid grid-cols-12 gap-6">
@@ -201,6 +190,7 @@ import AdminLayout from '@/components/layout/AdminLayout.vue'
 import MareaContextSidebar from '../components/MareaContextSidebar.vue'
 import IniciarMareaDialog from '../components/IniciarMareaDialog.vue'
 import FinalizarMareaDialog from '../components/FinalizarMareaDialog.vue'
+import StatusFilterChip from '../components/StatusFilterChip.vue'
 import { useMareas } from '../composables/useMareas'
 import { useRoute } from 'vue-router'
 import { watch } from 'vue'
@@ -244,15 +234,50 @@ const mareaToStart = ref<any>(null)
 // Map icons/colors to backend kpis
 const getKpiMeta = (codigo: string) => {
   const meta: Record<string, any> = {
-    'DESIGNADA': { icon: TaskIcon, color: 'text-blue-500', bg: 'bg-blue-50 dark:bg-blue-900/20' },
-    'EN_EJECUCION': { icon: ShipIcon, color: 'text-indigo-500', bg: 'bg-indigo-50 dark:bg-indigo-900/20' },
-    'ESPERANDO_ENTREGA': { icon: HistoryIcon, color: 'text-amber-500', bg: 'bg-amber-50 dark:bg-amber-900/20' },
-    'ENTREGADA_RECIBIDA': { icon: ArchiveIcon, color: 'text-emerald-500', bg: 'bg-emerald-50 dark:bg-emerald-900/20' },
-    'VERIFICACION_INICIAL': { icon: SearchIcon, color: 'text-cyan-500', bg: 'bg-cyan-50 dark:bg-cyan-900/20' },
-    'EN_CORRECCION': { icon: EditIcon, color: 'text-orange-500', bg: 'bg-orange-50 dark:bg-orange-900/20' },
-    'PENDIENTE_DE_INFORME': { icon: FileTextIcon, color: 'text-purple-500', bg: 'bg-purple-50 dark:bg-purple-900/20' },
+    'DESIGNADA': { 
+      icon: TaskIcon, 
+      color: 'text-blue-500', 
+      border: 'border-blue-500/50 dark:border-blue-400/30',
+      bg: 'bg-blue-50 dark:bg-blue-900/20' 
+    },
+    'EN_EJECUCION': { 
+      icon: ShipIcon, 
+      color: 'text-indigo-500', 
+      border: 'border-indigo-500/50 dark:border-indigo-400/30',
+      bg: 'bg-indigo-50 dark:bg-indigo-900/20' 
+    },
+    'ESPERANDO_ENTREGA': { 
+      icon: HistoryIcon, 
+      color: 'text-amber-500', 
+      border: 'border-amber-500/50 dark:border-amber-400/30',
+      bg: 'bg-amber-50 dark:bg-amber-900/20' 
+    },
+    'ENTREGADA_RECIBIDA': { 
+      icon: ArchiveIcon, 
+      color: 'text-emerald-500', 
+      border: 'border-emerald-500/50 dark:border-emerald-400/30',
+      bg: 'bg-emerald-50 dark:bg-emerald-900/20' 
+    },
+    'VERIFICACION_INICIAL': { 
+      icon: SearchIcon, 
+      color: 'text-cyan-500', 
+      border: 'border-cyan-500/50 dark:border-cyan-400/30',
+      bg: 'bg-cyan-50 dark:bg-cyan-900/20' 
+    },
+    'EN_CORRECCION': { 
+      icon: EditIcon, 
+      color: 'text-orange-500', 
+      border: 'border-orange-500/50 dark:border-orange-400/30',
+      bg: 'bg-orange-50 dark:bg-orange-900/20' 
+    },
+    'PENDIENTE_DE_INFORME': { 
+      icon: FileTextIcon, 
+      color: 'text-purple-500', 
+      border: 'border-purple-500/50 dark:border-purple-400/30',
+      bg: 'bg-purple-50 dark:bg-purple-900/20' 
+    },
   }
-  return meta[codigo] || { icon: ShipIcon, color: 'text-gray-500', bg: 'bg-gray-50 dark:bg-gray-900/20' }
+  return meta[codigo] || { icon: ShipIcon, color: 'text-gray-500', border: 'border-gray-200 dark:border-gray-800', bg: 'bg-gray-50 dark:bg-gray-900/20' }
 }
 
 const kpis = computed(() => {
