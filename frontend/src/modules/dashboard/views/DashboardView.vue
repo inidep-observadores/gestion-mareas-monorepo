@@ -23,17 +23,17 @@
       </div>
 
       <!-- ROW 2: CRITICAL PANELS -->
-      <div class="grid grid-cols-12 gap-8 mb-8 items-stretch">
+      <div class="grid grid-cols-12 gap-8 mb-8 items-start">
         <!-- ALERT CENTER (Left) -->
-        <div class="col-span-12 lg:col-span-6 xl:col-span-5 h-full">
-          <AlertTrafficLight :show-actions="false" class="h-full" />
+        <div class="col-span-12 lg:col-span-6 xl:col-span-5 flex flex-col gap-8">
+          <AlertTrafficLight :show-actions="false" />
+          <WorkforceOverview :data="workforceData" />
         </div>
 
         <!-- PANELS DERECHA (Right) -->
         <div class="col-span-12 lg:col-span-6 xl:col-span-7 flex flex-col gap-8">
-          <FleetDistributionByFishery />
-          <WorkforceOverview :data="workforceData" />
           <ExpiringMareas />
+          <FleetDistributionByFishery />
           <TopDryTime :topDry="workforceData?.topDry || []" />
         </div>
       </div>
