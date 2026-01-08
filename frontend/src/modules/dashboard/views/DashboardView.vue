@@ -26,7 +26,7 @@
       <div class="grid grid-cols-12 gap-8 mb-8 items-stretch">
         <!-- ALERT CENTER (Left) -->
         <div class="col-span-12 lg:col-span-6 xl:col-span-5 h-full">
-          <AlertTrafficLight class="h-full" />
+          <AlertTrafficLight :show-actions="false" class="h-full" />
         </div>
 
         <!-- PANELS DERECHA (Right) -->
