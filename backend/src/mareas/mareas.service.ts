@@ -1356,4 +1356,106 @@ export class MareasService {
         return { success: true };
     }
 
+    async getInbox(year?: number) {
+        const operationalYear = this.resolveYear(year);
+
+        // 1. Obtener Alertas Críticas (Fatiga y Retrasos)
+        const [fatigue, criticalDelays, reportDelays] = await Promise.all([
+            this.getFatigueAlerts(operationalYear),
+            this.getCriticalDelays(operationalYear),
+            this.getReportDelays(operationalYear)
+        ]);
+
+        const alerts: any[] = [];
+
+        fatigue.forEach(f => {
+            alerts.push({
+                id: `fatiga-${f.id}`,
+                titulo: 'Fatiga Crítica Detectada',
+                descripcion: `El observador ${f.name} ha navegado ${f.days} días en el año.`,
+                fecha: f.lastArrival ? `Arribo: ${new Date(f.lastArrival).toLocaleDateString()}` : 'En navegación'
+            });
+        });
+
+        criticalDelays.forEach(d => {
+            alerts.push({
+                id: `retraso-datos-${d.id}`,
+                titulo: 'Retraso en Entrega de Datos',
+                descripcion: `Marea ${d.mareaId} (${d.vesselName}) - ${d.days} días de demora.`,
+                fecha: `Arribó: ${new Date(d.arrivalDate).toLocaleDateString()}`
+            });
+        });
+
+        reportDelays.forEach(d => {
+            alerts.push({
+                id: `retraso-informe-${d.id}`,
+                titulo: 'Informe Demorado',
+                descripcion: `Marea ${d.mareaId} (${d.vesselName}) - ${d.days} días desde recepción.`,
+                fecha: `Recibido: ${new Date(d.baseDate).toLocaleDateString()}`
+            });
+        });
+
+        // 2. Obtener Mareas para las Pestañas
+        const allMareas = await this.prisma.marea.findMany({
+            where: {
+                activo: true,
+                anioMarea: operationalYear,
+            },
+            include: {
+                buque: true,
+                estadoActual: true,
+                etapas: {
+                    orderBy: { nroEtapa: 'desc' },
+                    take: 1,
+                    include: {
+                        observadores: {
+                            where: { rol: 'PRINCIPAL' },
+                            include: { observador: true }
+                        }
+                    }
+                }
+            },
+            orderBy: {
+                fechaUltimaActualizacion: 'desc'
+            }
+        });
+
+        const tasks: any[] = allMareas.map(m => {
+            const etapaActual = m.etapas[0];
+            const primaryObs = etapaActual?.observadores[0]?.observador;
+            const mareaIdFormatted = `${m.tipoMarea}-${String(m.nroMarea).padStart(3, '0')}-${String(m.anioMarea).slice(-2)}`;
+
+            let tab = 'proceso';
+            let prioridad = 'media';
+
+            // Lógica de clasificación por pestañas y prioridad
+            const cod = m.estadoActual.codigo;
+
+            if (cod === 'EN_CORRECCION' || alerts.some(a => a.descripcion.includes(mareaIdFormatted))) {
+                tab = 'urgentes';
+                prioridad = 'alta';
+            } else if (['FINALIZADA', 'CERRADA_ADMINISTRATIVAMENTE', 'INFORME_PROTOCOLIZADO'].includes(cod)) {
+                tab = 'historial';
+                prioridad = 'baja';
+            }
+
+            return {
+                id: m.id,
+                buque: m.buque.nombreBuque,
+                idMarea: mareaIdFormatted,
+                hito: m.estadoActual.nombre,
+                descripcion: m.descripcion || `Gestión de marea en estado ${m.estadoActual.nombre}`,
+                fecha: m.fechaUltimaActualizacion.toLocaleString('es-AR'),
+                prioridad,
+                tab,
+                actions: [] // Las acciones se resuelven en el frontend según el estado
+            };
+        });
+
+        return {
+            alerts: alerts.slice(0, 5), // Limitar a las 5 más recientes/relevantes
+            tasks
+        };
+    }
+
 }

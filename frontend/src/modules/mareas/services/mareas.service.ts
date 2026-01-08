@@ -63,6 +63,12 @@ const mareasService = {
         return data;
     },
 
+    getInbox: async (): Promise<{ alerts: any[], tasks: any[] }> => {
+        const { selectedYear } = useConfigStore();
+        const { data } = await httpClient.get<{ alerts: any[], tasks: any[] }>(`/mareas/inbox?year=${selectedYear}`);
+        return data;
+    },
+
     getMareaContext: async (id: string): Promise<MareaContext> => {
         const { data } = await httpClient.get<MareaContext>(`/mareas/${id}/context`);
         return data;
