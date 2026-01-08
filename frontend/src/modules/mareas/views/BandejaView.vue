@@ -106,6 +106,9 @@
       </div>
     </div>
 
+</transition-group>
+    </div>
+
     <!-- SIDEBAR CONTEXTUAL -->
     <MareaContextSidebar 
       :is-open="isSidebarOpen"
@@ -114,6 +117,14 @@
       @close="isSidebarOpen = false"
       @open-detalle="goToDetalle"
       @action="executeSidebarAction"
+    />
+
+    <!-- ALERT MANAGEMENT DIALOG -->
+    <AlertManagementDialog 
+      :is-open="isAlertDialogOpen"
+      :alert="selectedAlert"
+      @close="isAlertDialogOpen = false"
+      @refresh="loadInbox"
     />
   </AdminLayout>
 </template>
@@ -125,8 +136,10 @@ import AdminLayout from '@/components/layout/AdminLayout.vue'
 import TaskCard from '../components/TaskCard.vue'
 import InboxAlertCard from '../components/InboxAlertCard.vue'
 import MareaContextSidebar from '../components/MareaContextSidebar.vue'
+// @ts-ignore
+import AlertManagementDialog from '../../alerts/components/AlertManagementDialog.vue'
 import mareasService from '../services/mareas.service'
-import { SearchIcon, EditIcon, CheckIcon, DocsIcon, SuccessIcon } from '@/icons'
+import { SearchIcon, EditIcon, CheckIcon, DocsIcon } from '@/icons'
 import { useMareas } from '../composables/useMareas'
 
 const router = useRouter()
@@ -190,6 +203,10 @@ const filteredTasks = computed(() => {
 const isSidebarOpen = ref(false)
 const selectedMarea = ref<any>(null)
 
+// Alerts UI State
+const isAlertDialogOpen = ref(false)
+const selectedAlert = ref(null)
+
 const openDetails = async (task: any) => {
   selectedMarea.value = { id: task.id, id_marea: task.idMarea, buque_nombre: task.buque }
   isSidebarOpen.value = true
@@ -203,9 +220,12 @@ const handleTaskAction = (taskId: string, actionKey: string) => {
 }
 
 const handleAlertAction = (alertId: string, type: string) => {
-  if (type === 'dismiss') {
-    alertas.value = alertas.value.filter(a => a.id !== alertId)
-  }
+    // Instead of local dismiss, open the dialog to manage it properly
+    const alert = alertas.value.find(a => a.id === alertId)
+    if (alert) {
+        selectedAlert.value = alert
+        isAlertDialogOpen.value = true
+    }
 }
 
 const executeSidebarAction = async (key: string) => {
