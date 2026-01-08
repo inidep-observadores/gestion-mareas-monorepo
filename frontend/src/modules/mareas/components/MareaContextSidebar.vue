@@ -75,7 +75,7 @@
           </section>
 
           <!-- 2. Actions -->
-          <section class="space-y-4">
+          <section v-if="!readOnly" class="space-y-4">
             <div class="flex items-center justify-between">
               <h4 class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 italic">Acciones sugeridas</h4>
             </div>
@@ -167,6 +167,7 @@
       <!-- Footer Actions -->
       <div class="p-6 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/50 space-y-3">
         <button 
+          v-if="!readOnly"
           @click="$emit('open-detalle')"
           class="w-full py-3.5 bg-brand-500 hover:bg-brand-600 text-white rounded-2xl text-sm font-bold shadow-xl shadow-brand-500/20 transition-all hover:-translate-y-0.5 active:scale-[0.98] flex items-center justify-center gap-2"
         >
@@ -228,9 +229,12 @@ interface Props {
   isOpen: boolean
   marea: any | null
   context: MareaContext | null
+  readOnly?: boolean
 }
 
-const props = defineProps<Props>()
+const props = withDefaults(defineProps<Props>(), {
+  readOnly: false
+})
 
 const emit = defineEmits(['close', 'open-detalle', 'action'])
 

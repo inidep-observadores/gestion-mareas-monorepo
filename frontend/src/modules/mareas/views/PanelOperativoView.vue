@@ -51,6 +51,7 @@
                   />
                 </div>
                 <button
+                  v-if="!isReadOnly"
                   @click="router.push('/mareas/nueva')"
                   class="flex items-center justify-center gap-2 px-4 py-2 bg-brand-500 text-white rounded-xl text-sm font-bold hover:bg-brand-600 transition-all shadow-lg shadow-brand-500/10 active:scale-95"
                 >
@@ -206,6 +207,7 @@
       :is-open="isSidebarOpen"
       :marea="selectedMarea"
       :context="selectedMareaContext"
+      :read-only="isReadOnly"
       @close="closeSidebar"
       @open-detalle="goToDetalle"
       @action="executeActionFromSidebar"
@@ -236,6 +238,7 @@ import MareaContextSidebar from '../components/MareaContextSidebar.vue'
 import IniciarMareaDialog from '../components/IniciarMareaDialog.vue'
 import FinalizarMareaDialog from '../components/FinalizarMareaDialog.vue'
 import StatusFilterChip from '../components/StatusFilterChip.vue'
+import { useAuthStore } from '@/modules/auth/stores/auth.store'
 import { useMareas } from '../composables/useMareas'
 import { useRoute } from 'vue-router'
 import { watch } from 'vue'
@@ -273,6 +276,13 @@ const {
   setVisibleStates,
   toggleSort
 } = useMareas()
+
+const authStore = useAuthStore()
+const isReadOnly = computed(() => {
+  // Solo admin y coordinador pueden realizar acciones operativas
+  const roles = authStore.user?.roles || []
+  return !roles.includes('admin') && !roles.includes('coordinador')
+})
 
 // UI State
 const isSidebarOpen = ref(false)
