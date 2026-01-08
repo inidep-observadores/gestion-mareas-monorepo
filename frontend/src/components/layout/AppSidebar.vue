@@ -184,7 +184,7 @@ const navigationGroups = computed(() => {
       items: [
         {
           icon: HomeIcon,
-          name: 'Inicio',
+          name: 'Centro de Comando',
           to: { name: 'Dashboard' },
         },
       ],
