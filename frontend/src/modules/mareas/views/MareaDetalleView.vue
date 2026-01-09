@@ -633,8 +633,6 @@
             </div>
           </div>
         </div>
-          </div>
-        </div>
 
         <!-- 7. Historial Alertas Tab -->
         <div v-if="activeTab === 'historial_alertas'" class="max-w-4xl mx-auto">

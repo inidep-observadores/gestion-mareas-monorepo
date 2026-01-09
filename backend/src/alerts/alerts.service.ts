@@ -18,18 +18,15 @@ export class AlertsService {
         });
 
         if (existing) {
-            if (existing.estado === 'DESCARTADA') {
-                this.logger.log(`Alerta ${codigoUnico} ignorada (está DESCARTADA)`);
+            if (['DESCARTADA', 'RESUELTA'].includes(existing.estado)) {
+                this.logger.log(`Alerta ${codigoUnico} ignorada (está ${existing.estado})`);
                 return existing;
             }
             if (['PENDIENTE', 'SEGUIMIENTO'].includes(existing.estado)) {
                 // Update last seen?
                 return existing;
             }
-            // If RESUELTA, we might reopen or create new (logic varies).
-            // For now, if RESUELTA, we assume issue re-occurred, so we reactivate it or create new?
-            // Given schema UNIQUE constraint on codigoUnico, we CANNOT create new identical one.
-            // We must REACTIVATE
+            // If any other state, maybe reactivate
             return this.prisma.alerta.update({
                 where: { id: existing.id },
                 data: {
@@ -70,7 +67,8 @@ export class AlertsService {
             ];
         }
 
-        return this.prisma.alerta.findMany({
+        this.logger.log(`findAll query: ${JSON.stringify(where)}`);
+        const results = await this.prisma.alerta.findMany({
             where,
             orderBy: { fechaDetectada: 'desc' },
             include: {
@@ -78,6 +76,9 @@ export class AlertsService {
                 creadoPor: { select: { fullName: true } }
             }
         });
+
+        this.logger.log(`findAll results count: ${results.length}`);
+        return results;
     }
 
     async findOne(id: string) {
