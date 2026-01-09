@@ -16,8 +16,12 @@
 
     <!-- Content -->
     <div class="flex-1 min-w-0">
-      <div class="flex items-center gap-2 mb-0.5">
+      <div class="flex items-center gap-2 mb-0.5 flex-wrap">
         <span :class="['text-[10px] font-black uppercase tracking-widest', labelClass]">{{ statusLabel }}</span>
+        <span v-if="referenciaTipo" :class="['badge badge-xs border-none font-bold uppercase tracking-wider', originBadgeClass]">
+            {{ referenciaTipo }}
+            <span v-if="metadata && metadata.mareaCode" class="ml-1 opacity-75 font-mono">{{ metadata.mareaCode }}</span>
+        </span>
         <span class="text-[10px] text-base-content/40 font-mono">• {{ fecha }}</span>
       </div>
       <h4 class="text-sm font-black text-base-content truncate uppercase tracking-tight">
@@ -56,6 +60,8 @@ interface Props {
   descripcion: string
   fecha: string
   estado?: 'PENDIENTE' | 'SEGUIMIENTO' | 'RESUELTA' | 'DESCARTADA' | 'VENCIDA'
+  referenciaTipo?: string
+  metadata?: Record<string, any>
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -109,6 +115,15 @@ const labelClass = computed(() => {
         case 'SEGUIMIENTO': return 'text-warning'
         case 'DESCARTADA': return 'text-base-content/40'
         default: return 'text-error'
+    }
+})
+
+const originBadgeClass = computed(() => {
+    switch (props.referenciaTipo) {
+        case 'MAREA': return 'badge-info bg-info/20 text-info'
+        case 'OBSERVADOR': return 'badge-secondary bg-secondary/20 text-secondary'
+        case 'BUQUE': return 'badge-accent bg-accent/20 text-accent'
+        default: return 'badge-neutral bg-base-content/10 text-base-content/60'
     }
 })
 
