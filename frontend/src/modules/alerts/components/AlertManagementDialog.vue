@@ -36,6 +36,11 @@
               <div class="p-4 bg-base-200/50 border border-base-content/10 rounded-2xl">
                 <h4 class="font-black text-[10px] uppercase tracking-widest text-base-content/40 mb-2">Detalles del Incidente</h4>
                 <p class="text-sm text-base-content/80 leading-relaxed">{{ localAlert.descripcion }}</p>
+                <div v-if="isMarea" class="pt-4 border-base-content/10 space-y-2">
+                    <div class="text-[10px] font-bold text-base-content/40 uppercase tracking-tight">
+                        Observadores: <span class="text-base-content/70">{{ mareaObserversLabel }}</span>
+                    </div>
+                </div>
                 <div class="mt-4 pt-4 border-t border-base-content/10 flex items-center gap-4">
                     <div class="text-[10px] font-bold text-base-content/40 uppercase tracking-tight">ID: <span class="font-mono text-base-content/60">{{ localAlert.codigoUnico }}</span></div>
                     <div class="text-[10px] font-bold text-base-content/40 uppercase tracking-tight">Detectado: <span class="text-base-content/60">{{ formatDate(localAlert.fechaDetectada) }}</span></div>
@@ -44,6 +49,19 @@
 
               <!-- Action Area -->
               <div v-if="!isClosed" class="space-y-4">
+                    <div v-if="isClaimableAlert" class="flex items-center justify-between p-4 bg-base-200/50 border border-base-content/10 rounded-2xl">
+                        <div>
+                            <p class="text-xs font-black uppercase tracking-widest text-base-content/60">Reclamo de Documentación</p>
+                            <p class="text-[11px] text-base-content/50 mt-1">Disponible para alertas por retraso en entrega de datos.</p>
+                        </div>
+                        <button
+                            class="btn btn-sm btn-soft btn-info"
+                            @click="openReclamo"
+                            :disabled="processing || reclamoLoading"
+                        >
+                            {{ reclamoLoading ? 'Cargando...' : 'Enviar Reclamo' }}
+                        </button>
+                    </div>
                     <h4 class="font-black text-[10px] uppercase tracking-widest text-base-content/60">Notas de Gestión</h4>
                     <textarea
                         v-model="comment"
@@ -51,8 +69,8 @@
                         placeholder="Agregar notas de seguimiento, causas o detalles de la resolución..."
                     ></textarea>
 
-                    <!-- Follow Up Date Picker (Moved here to stay contextual) -->
-                    <div v-if="showDatePicker || localAlert.estado === 'SEGUIMIENTO'" class="p-4 bg-base-200/50 rounded-2xl border border-base-content/10 animate-in fade-in slide-in-from-top-2">
+                    <!-- Follow Up Date Picker -->
+                    <div class="p-4 bg-base-200/50 rounded-2xl border border-base-content/10 animate-in fade-in slide-in-from-top-2">
                         <label class="block text-[10px] font-black uppercase tracking-widest text-base-content/60 mb-3">
                             Fecha de Re-Check
                         </label>
@@ -83,9 +101,8 @@
         <!-- Unified Actions Row (Bottom) -->
         <div v-if="!isClosed" class="pt-6 border-t border-base-content/10 flex items-center gap-3 w-full">
             <button
-                v-if="localAlert.estado !== 'SEGUIMIENTO'"
                 class="btn btn-sm btn-soft flex-1"
-                @click="startFollowUp"
+                @click="requestConfirmation('SEGUIMIENTO')"
                 :disabled="processing"
             >
                 Seguimiento
@@ -93,29 +110,48 @@
 
             <button
                  class="btn btn-sm btn-soft btn-error flex-1"
-                 @click="updateStatus('DESCARTADA')"
+                 @click="requestConfirmation('DESCARTADA')"
                  :disabled="processing"
             >
                 Descartar
             </button>
 
             <button
-                v-if="localAlert.estado === 'SEGUIMIENTO'"
-                class="btn btn-sm btn-soft btn-info flex-1"
-                @click="updateStatus('SEGUIMIENTO')"
-                :disabled="processing"
-            >
-                Actualizar
-            </button>
-
-            <button
                 class="btn btn-sm btn-success text-white flex-1"
-                @click="updateStatus('RESUELTA')"
+                @click="requestConfirmation('RESUELTA')"
                 :disabled="processing"
             >
                 Resolver
             </button>
         </div>
+    </div>
+  </BaseModal>
+
+  <ReclamoEntregaDialog
+    :show="showReclamoDialog"
+    :id="reclamoData?.id || ''"
+    :marea-id="reclamoData?.mareaId || ''"
+    :vessel-name="reclamoData?.vesselName || ''"
+    :obs-name="reclamoData?.obsName || ''"
+    :email="reclamoData?.email || null"
+    :delay-days="reclamoData?.delayDays || 0"
+    :arrival-date="reclamoData?.arrivalDate || ''"
+    @close="showReclamoDialog = false"
+    @confirm="handleReclamoConfirm"
+  />
+
+  <BaseModal
+    :show="isConfirmationOpen"
+    @close="closeConfirmation"
+    maxWidth="xl"
+    title="Confirmar acción"
+  >
+    <div class="space-y-5">
+      <p class="text-sm text-base-content/80 leading-relaxed">{{ confirmationMessage }}</p>
+      <div class="flex items-center gap-3 justify-end">
+        <button class="btn btn-sm btn-soft btn-neutral" @click="closeConfirmation">Cancelar</button>
+        <button class="btn btn-sm btn-primary" @click="confirmAction" :disabled="processing">Confirmar</button>
+      </div>
     </div>
   </BaseModal>
 </template>
@@ -128,6 +164,9 @@ import AlertTimeline from './AlertTimeline.vue'
 import BaseModal from '@/components/common/BaseModal.vue'
 import { toast } from 'vue-sonner'
 import { CheckIcon } from '@/icons'
+import dashboardService from '@/modules/dashboard/services/dashboard.service'
+import ReclamoEntregaDialog from '@/modules/dashboard/components/ReclamoEntregaDialog.vue'
+import mareasService from '@/modules/mareas/services/mareas.service'
 
 const props = defineProps<{
   isOpen: boolean
@@ -140,24 +179,52 @@ const router = useRouter()
 const localAlert = ref<Alerta | any>({})
 const comment = ref('')
 const processing = ref(false)
-const targetState = ref('')
 const customFollowUpDate = ref('')
-const showDatePicker = ref(false)
+const showReclamoDialog = ref(false)
+const reclamoLoading = ref(false)
+const reclamoData = ref<{
+  id: string
+  mareaId: string
+  vesselName: string
+  obsName: string
+  email?: string | null
+  delayDays: number
+  arrivalDate?: string
+} | null>(null)
+const isConfirmationOpen = ref(false)
+const pendingAction = ref<'SEGUIMIENTO' | 'DESCARTADA' | 'RESUELTA' | ''>('')
+const confirmationMessage = ref('')
+const mareaObservers = ref<string[]>([])
 
 watch(() => props.alert, (newVal) => {
     if (newVal) {
         localAlert.value = { ...newVal } // Sync immediately
+        comment.value = ''
         loadFullAlert(newVal.id)
         if (newVal.fechaVencimiento) {
              customFollowUpDate.value = new Date(newVal.fechaVencimiento).toISOString().split('T')[0]
+        } else {
+             const defaultDate = new Date()
+             defaultDate.setDate(defaultDate.getDate() + 7)
+             customFollowUpDate.value = defaultDate.toISOString().split('T')[0]
+        }
+        if (newVal.referenciaTipo === 'MAREA' && newVal.referenciaId) {
+            loadMareaObservers(newVal.referenciaId)
+        } else {
+            mareaObservers.value = []
         }
     }
 }, { immediate: true })
 
-const startFollowUp = () => {
-    localAlert.value.estado = 'SEGUIMIENTO'
-    showDatePicker.value = true
-}
+watch(() => props.isOpen, (isOpen) => {
+    if (!isOpen) {
+        comment.value = ''
+        customFollowUpDate.value = ''
+        isConfirmationOpen.value = false
+        pendingAction.value = ''
+        confirmationMessage.value = ''
+    }
+})
 
 const loadFullAlert = async (id: string) => {
     try {
@@ -169,6 +236,9 @@ const loadFullAlert = async (id: string) => {
 }
 
 const isClosed = computed(() => ['RESUELTA', 'DESCARTADA'].includes(localAlert.value.estado))
+const isClaimableAlert = computed(() => localAlert.value?.tipo === 'RETRASO_DATOS' && localAlert.value?.referenciaId)
+const mareaLabel = computed(() => localAlert.value?.metadata?.mareaCode || localAlert.value?.referenciaId || 'N/D')
+const mareaObserversLabel = computed(() => mareaObservers.value.length ? mareaObservers.value.join(', ') : 'Sin asignar')
 
 const getBadgeClass = (prio: string) => {
     switch (prio) {
@@ -206,14 +276,148 @@ const goToFullHistory = () => {
     }
 }
 
-const updateStatus = async (newState: string) => {
+const buildMareaCode = (marea: any) => {
+    if (!marea) return ''
+    const yearSuffix = String(marea.anioMarea || '').slice(-2)
+    return `${marea.tipoMarea}-${String(marea.nroMarea).padStart(3, '0')}-${yearSuffix}`
+}
+
+const getPrimaryObserver = (etapa: any) => {
+    if (!etapa?.observadores?.length) return null
+    return etapa.observadores.find((o: any) => o.rol === 'PRINCIPAL') || etapa.observadores[0]
+}
+
+const formatShortDate = (dateStr?: string | Date | null) => {
+    if (!dateStr) return ''
+    return new Date(dateStr).toLocaleDateString('es-AR', {
+        day: '2-digit', month: '2-digit', year: 'numeric'
+    })
+}
+
+const resolveDelayDays = (arrivalDate?: string | null, fallback?: number) => {
+    if (typeof fallback === 'number') return fallback
+    if (!arrivalDate) return 0
+    const arrival = new Date(arrivalDate)
+    const now = new Date()
+    arrival.setHours(0, 0, 0, 0)
+    now.setHours(0, 0, 0, 0)
+    return Math.max(0, Math.floor((now.getTime() - arrival.getTime()) / (1000 * 60 * 60 * 24)))
+}
+
+const loadReclamoData = async () => {
+    if (!localAlert.value?.referenciaId) return
+    reclamoLoading.value = true
+    try {
+        const marea = await mareasService.getById(localAlert.value.referenciaId)
+        const etapas = marea?.etapas || []
+        const etapaActual = etapas[etapas.length - 1]
+        const primaryObs = getPrimaryObserver(etapaActual)
+        const obs = primaryObs?.observador || {}
+        const metadata = localAlert.value?.metadata || {}
+        const arrivalDateRaw = etapaActual?.fechaArribo || null
+
+        reclamoData.value = {
+            id: marea?.id || localAlert.value.referenciaId,
+            mareaId: metadata.mareaCode || buildMareaCode(marea),
+            vesselName: metadata.vessel || marea?.buque?.nombreBuque || 'Sin asignar',
+            obsName: obs?.nombre ? `${obs.nombre} ${obs.apellido}` : 'Sin asignar',
+            email: obs?.email || null,
+            delayDays: resolveDelayDays(arrivalDateRaw, metadata.busDays),
+            arrivalDate: formatShortDate(arrivalDateRaw)
+        }
+    } catch (e) {
+        console.error('Error cargando datos para reclamo:', e)
+        toast.error('No se pudo cargar la información para el reclamo.')
+    } finally {
+        reclamoLoading.value = false
+    }
+}
+
+const loadMareaObservers = async (mareaId: string) => {
+    try {
+        const marea = await mareasService.getById(mareaId)
+        const etapas = marea?.etapas || []
+        const names = new Set<string>()
+
+        etapas.forEach((etapa: any) => {
+            const observadores = etapa?.observadores || []
+            observadores.forEach((o: any) => {
+                const obs = o?.observador
+                if (obs?.nombre && obs?.apellido) {
+                    names.add(`${obs.nombre} ${obs.apellido}`)
+                }
+            })
+        })
+
+        mareaObservers.value = Array.from(names)
+    } catch (e) {
+        console.error('Error cargando observadores de la marea:', e)
+        mareaObservers.value = []
+    }
+}
+
+const openReclamo = async () => {
+    if (!reclamoData.value) {
+        await loadReclamoData()
+    }
+    if (reclamoData.value) {
+        showReclamoDialog.value = true
+    }
+}
+
+const handleReclamoConfirm = async (payload: { to: string; body: string; mareaId: string; id: string }) => {
+    try {
+        await dashboardService.sendClaim(payload)
+        toast.success('Se envió el reclamo correctamente.')
+
+        if (localAlert.value?.id) {
+            const note = `Se envió un reclamo de documentación por correo electrónico el ${formatShortDate(new Date())}.`
+            await alertsService.update(localAlert.value.id, { comment: note })
+            await loadFullAlert(localAlert.value.id)
+            emit('refresh')
+        }
+    } catch (error) {
+        console.error('Error enviando reclamo:', error)
+        toast.error('No se pudo enviar el reclamo.')
+    } finally {
+        showReclamoDialog.value = false
+        reclamoData.value = null
+    }
+}
+
+const requestConfirmation = (newState: 'SEGUIMIENTO' | 'DESCARTADA' | 'RESUELTA') => {
     if (!comment.value.trim() && ['SEGUIMIENTO', 'DESCARTADA', 'RESUELTA'].includes(newState)) {
-        toast.error('Debe ingresar una nota de gestion para continuar.')
+        toast.error('Debe ingresar una nota de gestión para continuar.')
         return
     }
 
-    targetState.value = newState
-    await submitUpdate(newState)
+    pendingAction.value = newState
+    confirmationMessage.value = buildConfirmationMessage(newState)
+    isConfirmationOpen.value = true
+}
+
+const buildConfirmationMessage = (state: 'SEGUIMIENTO' | 'DESCARTADA' | 'RESUELTA') => {
+    if (state === 'SEGUIMIENTO') {
+        return 'Si confirma, la alerta quedará en seguimiento y continuará visible en la lista de alertas de atención inmediata. Seleccione esta opción si la situación aún no está resuelta.'
+    }
+
+    if (state === 'DESCARTADA') {
+        return 'Si confirma, la alerta se descartará y se dará por concluida. Dejará de aparecer en la lista de alertas de atención inmediata. Si la situación aún no está resuelta, seleccione la opción de seguimiento para mantenerla vigente.'
+    }
+
+    return 'Si confirma, la alerta se marcará como resuelta y se dará por concluida. Dejará de aparecer en la lista de alertas de atención inmediata. Si la situación aún no está resuelta, seleccione la opción de seguimiento para mantenerla vigente.'
+}
+
+const closeConfirmation = () => {
+    isConfirmationOpen.value = false
+    pendingAction.value = ''
+}
+
+const confirmAction = async () => {
+    if (!pendingAction.value) return
+    const action = pendingAction.value
+    closeConfirmation()
+    await submitUpdate(action)
 }
 
 const submitUpdate = async (status: string) => {
@@ -241,7 +445,6 @@ const submitUpdate = async (status: string) => {
     } finally {
         processing.value = false
         comment.value = ''
-        targetState.value = ''
     }
 }
 
@@ -252,6 +455,11 @@ const setFollowUp = (days: number) => {
 }
 
 const close = () => {
+    comment.value = ''
+    customFollowUpDate.value = ''
+    isConfirmationOpen.value = false
+    pendingAction.value = ''
+    confirmationMessage.value = ''
     emit('close')
 }
 
