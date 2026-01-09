@@ -104,21 +104,49 @@
 
       <div 
         v-else-if="activeTab === 'historial'"
-        class="space-y-10"
+        class="space-y-6"
       >
-        <!-- Historic Alerts Section -->
-        <div v-if="alertasHistoricas.length > 0">
-            <div class="flex items-center gap-3 mb-6">
-                <div class="p-2 bg-success/10 rounded-xl">
-                    <BellIcon class="w-5 h-5 text-success/80" />
-                </div>
-                <div>
-                    <h4 class="text-sm font-black text-base-content/90 uppercase tracking-tight">Alertas e Incidentes Resueltos</h4>
-                    <p class="text-[10px] font-bold text-base-content/30 uppercase tracking-[0.1em]">Registro histórico de acciones correctivas</p>
-                </div>
+        <!-- Collapsible: Historic Alerts -->
+        <div class="rounded-3xl border border-base-content/10 bg-base-100 shadow-sm overflow-hidden">
+          <button
+            @click="toggleHistorialSection('alertas')"
+            class="w-full flex items-center justify-between p-5 text-left border-b border-transparent transition-colors"
+            :class="{ 'border-base-content/10 bg-base-200/30': expandedHistorialSection === 'alertas' }"
+          >
+            <div class="flex items-center gap-3">
+              <div class="p-2 bg-success/10 rounded-xl">
+                <BellIcon class="w-5 h-5 text-success/80" />
+              </div>
+              <div>
+                <h4 class="text-sm font-black text-base-content/90 uppercase tracking-tight flex items-center gap-2">
+                  Alertas Cerradas
+                  <span class="text-[10px] px-1.5 py-0.5 rounded-lg font-black bg-base-content/10 text-base-content/60">
+                    {{ alertasHistoricas.length }}
+                  </span>
+                </h4>
+                <p class="text-[10px] font-bold text-base-content/30 uppercase tracking-[0.1em]">Finalizadas o canceladas</p>
+              </div>
             </div>
+            <svg 
+              xmlns="http://www.w3.org/2000/svg" 
+              class="w-5 h-5 text-base-content/40 transition-transform duration-300" 
+              :class="{ 'rotate-180': expandedHistorialSection === 'alertas' }"
+              viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+            >
+              <polyline points="6 9 12 15 18 9"/>
+            </svg>
+          </button>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <Transition
+            enter-active-class="transition-all duration-300 ease-out"
+            enter-from-class="max-h-0 opacity-0"
+            enter-to-class="max-h-[1000px] opacity-100"
+            leave-active-class="transition-all duration-200 ease-in"
+            leave-from-class="max-h-[1000px] opacity-100"
+            leave-to-class="max-h-0 opacity-0"
+          >
+            <div v-if="expandedHistorialSection === 'alertas'" class="p-5 pt-2">
+              <div v-if="alertasHistoricas.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <InboxAlertCard 
                   v-for="alert in alertasHistoricas" 
                   :key="alert.id"
@@ -128,42 +156,80 @@
                   :estado="alert.estado"
                   @action="(type) => handleAlertAction(alert.id, type)"
                 />
+              </div>
+              <div v-else class="text-center py-6 bg-base-200/30 rounded-2xl border border-dashed border-base-content/10">
+                <p class="text-xs font-medium text-base-content/40">Sin alertas cerradas en el historial.</p>
+              </div>
             </div>
+          </Transition>
+        </div>
+
+        <!-- Collapsible: Historic Tasks -->
+        <div class="rounded-3xl border border-base-content/10 bg-base-100 shadow-sm overflow-hidden">
+          <button
+            @click="toggleHistorialSection('mareas')"
+            class="w-full flex items-center justify-between p-5 text-left border-b border-transparent transition-colors"
+            :class="{ 'border-base-content/10 bg-base-200/30': expandedHistorialSection === 'mareas' }"
+          >
+            <div class="flex items-center gap-3">
+              <div class="p-2.5 bg-base-300/30 rounded-2xl border border-base-content/5">
+                <DocsIcon class="w-5 h-5 text-base-content/40" />
+              </div>
+              <div>
+                <h4 class="text-sm font-black text-base-content/80 uppercase tracking-tight flex items-center gap-2">
+                  Historial de Mareas
+                  <span class="text-[10px] px-1.5 py-0.5 rounded-lg font-black bg-base-content/10 text-base-content/60">
+                    {{ filteredTasks.length }}
+                  </span>
+                </h4>
+                <p class="text-[10px] font-bold text-base-content/30 uppercase tracking-[0.1em]">Operaciones concluidas</p>
+              </div>
+            </div>
+            <svg 
+              xmlns="http://www.w3.org/2000/svg" 
+              class="w-5 h-5 text-base-content/40 transition-transform duration-300" 
+              :class="{ 'rotate-180': expandedHistorialSection === 'mareas' }"
+              viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+            >
+              <polyline points="6 9 12 15 18 9"/>
+            </svg>
+          </button>
+
+          <Transition
+            enter-active-class="transition-all duration-300 ease-out"
+            enter-from-class="max-h-0 opacity-0"
+            enter-to-class="max-h-[1000px] opacity-100"
+            leave-active-class="transition-all duration-200 ease-in"
+            leave-from-class="max-h-[1000px] opacity-100"
+            leave-to-class="max-h-0 opacity-0"
+          >
+            <div v-if="expandedHistorialSection === 'mareas'" class="p-5 pt-2">
+              <div v-if="filteredTasks.length > 0" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                <TaskCard 
+                  v-for="task in filteredTasks" 
+                  :key="task.id"
+                  v-bind="task"
+                  @click="openDetails(task)"
+                  @action="(key) => handleTaskAction(task.id, key)"
+                />
+              </div>
+              <div v-else class="text-center py-6 bg-base-200/30 rounded-2xl border border-dashed border-base-content/10">
+                <p class="text-xs font-medium text-base-content/40">Sin mareas en el historial.</p>
+              </div>
+            </div>
+          </Transition>
         </div>
 
         <!-- Empty State -->
-        <div v-if="alertasHistoricas.length === 0 && filteredTasks.length === 0" class="flex flex-col items-center justify-center py-24 bg-base-200/30 rounded-[2.5rem] border border-dashed border-base-content/10">
-            <div class="p-8 bg-base-100/50 rounded-full mb-6 shadow-sm border border-base-content/5">
-                <DocsIcon class="w-12 h-12 text-base-content/10" />
-            </div>
-            <h3 class="text-xs font-black text-base-content/30 uppercase tracking-[0.2em] px-4 text-center">No hay registros históricos</h3>
-            <p class="text-[11px] text-base-content/20 mt-3 text-center max-w-xs px-6 uppercase tracking-wider font-bold">Las tareas y alertas resueltas aparecerán aquí una vez gestionadas.</p>
-        </div>
-
-        <!-- Historic Tasks Section -->
-        <div v-if="filteredTasks.length > 0">
-             <div class="flex items-center gap-4 mb-8">
-                <div class="p-2.5 bg-base-300/30 rounded-2xl border border-base-content/5">
-                    <DocsIcon class="w-5 h-5 text-base-content/40" />
-                </div>
-                <div>
-                    <h4 class="text-sm font-black text-base-content/80 uppercase tracking-tight">Mareas Finalizadas</h4>
-                    <p class="text-[10px] font-bold text-base-content/30 uppercase tracking-[0.1em]">Operaciones concluidas con éxito</p>
-                </div>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                <TaskCard 
-                    v-for="task in filteredTasks" 
-                    :key="task.id"
-                    v-bind="task"
-                    @click="openDetails(task)"
-                    @action="(key) => handleTaskAction(task.id, key)"
-                />
-            </div>
+        <div v-if="alertasHistoricas.length === 0 && filteredTasks.length === 0" class="flex flex-col items-center justify-center py-20 bg-base-200/30 rounded-[2.5rem] border border-dashed border-base-content/10">
+          <div class="p-8 bg-base-100/50 rounded-full mb-6 shadow-sm border border-base-content/5">
+            <DocsIcon class="w-12 h-12 text-base-content/10" />
+          </div>
+          <h3 class="text-xs font-black text-base-content/30 uppercase tracking-[0.2em] px-4 text-center">No hay registros historicos</h3>
+          <p class="text-[11px] text-base-content/20 mt-3 text-center max-w-xs px-6 uppercase tracking-wider font-bold">Las tareas y alertas resueltas apareceran aqui una vez gestionadas.</p>
         </div>
       </div>
-
-      <transition-group 
+<transition-group 
         v-else
         name="list" 
         tag="div" 
@@ -236,15 +302,16 @@ const activeTab = ref('urgentes')
 
 // 1. Computed properties
 const tareasUrgentes = computed(() => tasks.value.filter(t => t.tab === 'urgentes'))
-const alertasUrgentes = computed(() => alertas.value)
+const tareasPendientes = computed(() => tasks.value.filter(t => t.tab === 'pendientes'))
 
 // Nuevas subdivisiones de alertas activas
 const alertasPendientes = computed(() => alertas.value.filter(a => ['PENDIENTE', 'VENCIDA'].includes(a.estado)))
 const alertasSeguimiento = computed(() => alertas.value.filter(a => a.estado === 'SEGUIMIENTO'))
 
 const tabs = computed(() => [
-  { id: 'urgentes', label: 'Acciones Urgentes', count: (tareasUrgentes.value?.length || 0) + (alertasUrgentes.value?.length || 0) },
-  { id: 'proceso', label: 'En Proceso', count: tasks.value.filter(t => t.tab === 'proceso')?.length || 0 },
+  { id: 'urgentes', label: 'Acciones Urgentes', count: tareasUrgentes.value?.length || 0 },
+  { id: 'pendientes', label: 'Pendientes', count: tareasPendientes.value?.length || 0 },
+  { id: 'proceso', label: 'En Proceso', count: 0 },
   { id: 'historial', label: 'Historial', count: (tasks.value.filter(t => t.tab === 'historial')?.length || 0) + (alertasHistoricas.value?.length || 0) },
 ])
 
@@ -268,9 +335,10 @@ const resolveActions = (task: any) => {
       { label: 'Revisar', key: 'review', icon: markRaw(DocsIcon) }
     ]
   }
-  if (task.tab === 'proceso') {
-     return [
-      { label: 'Gestionar', key: 'manage', icon: markRaw(CheckIcon), primary: true }
+  if (task.tab === 'pendientes') {
+    return [
+      { label: 'Gestionar', key: 'manage', icon: markRaw(CheckIcon), primary: true },
+      { label: 'Ver Detalle', key: 'view', icon: markRaw(DocsIcon) }
     ]
   }
   return [
@@ -313,6 +381,8 @@ onMounted(loadInbox)
 const isSidebarOpen = ref(false)
 const selectedMarea = ref<any>(null)
 
+const expandedHistorialSection = ref<'alertas' | 'mareas' | null>(null)
+
 // Alerts UI State
 const isAlertDialogOpen = ref(false)
 const selectedAlert = ref(null)
@@ -346,6 +416,10 @@ const goToDetalle = () => {
   if (selectedMarea.value) {
     router.push({ name: 'MareaDetalle', params: { id: selectedMarea.value.id } })
   }
+}
+
+const toggleHistorialSection = (section: 'alertas' | 'mareas') => {
+  expandedHistorialSection.value = expandedHistorialSection.value === section ? null : section
 }
 </script>
 
