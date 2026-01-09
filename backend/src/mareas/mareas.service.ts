@@ -48,6 +48,21 @@ export class MareasService {
                             include: { observador: true }
                         }
                     }
+                },
+                movimientos: {
+                    orderBy: { fechaHora: 'desc' },
+                    include: {
+                        usuario: true,
+                        estadoDesde: true,
+                        estadoHasta: true
+                    }
+                },
+                archivos: {
+                    orderBy: { fechaSubida: 'desc' },
+                    include: {
+                        usuarioSubio: true,
+                        movimientoOrigen: true
+                    }
                 }
             }
         });
@@ -57,11 +72,70 @@ export class MareasService {
     }
 
     async update(id: string, updateMareaDto: UpdateMareaDto) {
-        const { etapas, ...data } = updateMareaDto;
+        const { etapas, artePrincipalId, arteId, pesqueriaId, observadorId, ...data } = updateMareaDto;
 
-        await this.prisma.marea.update({
-            where: { id },
-            data: data
+        await this.prisma.$transaction(async (tx) => {
+            const updateData: any = { ...data };
+            if (artePrincipalId) updateData.artePrincipalId = artePrincipalId;
+            if (!artePrincipalId && arteId) updateData.artePrincipalId = arteId;
+            if (updateData.fechaZarpadaEstimada) updateData.fechaZarpadaEstimada = new Date(updateData.fechaZarpadaEstimada);
+            if (updateData.fechaInicioObservador) updateData.fechaInicioObservador = new Date(updateData.fechaInicioObservador);
+            if (updateData.fechaFinObservador) updateData.fechaFinObservador = new Date(updateData.fechaFinObservador);
+            if (updateData.fechaProtocolizacion) updateData.fechaProtocolizacion = new Date(updateData.fechaProtocolizacion);
+
+            if (Object.keys(updateData).length > 0) {
+                await tx.marea.update({
+                    where: { id },
+                    data: updateData
+                });
+            }
+
+            if (etapas && etapas.length > 0) {
+                for (const etapa of etapas) {
+                    const { observadores, id: etapaId, ...etapaData } = etapa;
+                    let currentEtapaId = etapaId;
+                    if (etapaData.fechaZarpada) etapaData.fechaZarpada = new Date(etapaData.fechaZarpada);
+                    if (etapaData.fechaArribo) etapaData.fechaArribo = new Date(etapaData.fechaArribo);
+
+                    if (currentEtapaId) {
+                        const existing = await tx.mareaEtapa.findFirst({
+                            where: { id: currentEtapaId, mareaId: id }
+                        });
+                        if (!existing) {
+                            throw new NotFoundException('Etapa no encontrada para la marea.');
+                        }
+                        await tx.mareaEtapa.update({
+                            where: { id: currentEtapaId },
+                            data: etapaData
+                        });
+                    } else {
+                        const created = await tx.mareaEtapa.create({
+                            data: {
+                                mareaId: id,
+                                ...etapaData
+                            }
+                        });
+                        currentEtapaId = created.id;
+                    }
+
+                    if (observadores) {
+                        await tx.mareaEtapaObservador.deleteMany({
+                            where: { etapaId: currentEtapaId }
+                        });
+
+                        for (const obs of observadores) {
+                            await tx.mareaEtapaObservador.create({
+                                data: {
+                                    etapaId: currentEtapaId,
+                                    observadorId: obs.observadorId,
+                                    rol: obs.rol,
+                                    esDesignado: obs.esDesignado ?? true
+                                }
+                            });
+                        }
+                    }
+                }
+            }
         });
 
         return this.findOne(id);
@@ -1535,6 +1609,7 @@ export class MareasService {
             const etapaActual = m.etapas[0];
             const primaryObs = etapaActual?.observadores[0]?.observador;
             const mareaIdFormatted = `${m.tipoMarea}-${String(m.nroMarea).padStart(3, '0')}-${String(m.anioMarea).slice(-2)}`;
+            const observadorNombre = primaryObs ? `${primaryObs.nombre} ${primaryObs.apellido}` : null;
 
             let tab: string | null = null;
             let prioridad = 'media';
@@ -1573,7 +1648,9 @@ export class MareasService {
                 id: m.id,
                 buque: m.buque.nombreBuque,
                 idMarea: mareaIdFormatted,
+                observador: observadorNombre,
                 hito: m.estadoActual.nombre,
+                estadoDescripcion: m.estadoActual.descripcion,
                 descripcion: m.descripcion || `Gestión de marea en estado ${m.estadoActual.nombre}`,
                 fecha: m.fechaUltimaActualizacion.toLocaleString('es-AR'),
                 prioridad,

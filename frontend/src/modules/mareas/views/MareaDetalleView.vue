@@ -1,5 +1,5 @@
 <template>
-  <AdminLayout 
+  <AdminLayout
     :title="`Marea ${marea.nro_marea}/${marea.anio_marea}`"
     :description="marea.titulo || 'Detalles técnicos y operativos de la marea.'"
   >
@@ -14,7 +14,7 @@
             <ArrowLeftIcon class="w-4 h-4 transition-transform group-hover:-translate-x-1" />
             Volver
           </button>
-          
+
           <div
             class="flex items-center gap-2 px-3 py-1.5 bg-brand-50 dark:bg-brand-500/10 text-brand-700 dark:text-brand-400 text-xs font-bold uppercase tracking-wider rounded-full border border-brand-100 dark:border-brand-500/20"
           >
@@ -31,19 +31,6 @@
             Descartar
           </button>
           <button
-            class="px-5 py-2.5 text-sm font-semibold text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-all shadow-sm active:scale-95 text-center"
-            @click="goBack"
-          >
-            Descartar
-          </button>
-          <button
-            class="px-5 py-2.5 text-sm font-semibold text-white bg-brand-500 border border-transparent rounded-xl hover:bg-brand-600 transition-all shadow-md shadow-brand-500/20 active:scale-95 flex items-center justify-center gap-2"
-            @click="saveChanges"
-          >
-            <CheckIcon class="w-4 h-4" />
-            Guardar Cambios
-          </button>
-          <button
             class="px-5 py-2.5 text-sm font-semibold text-white bg-brand-500 border border-transparent rounded-xl hover:bg-brand-600 transition-all shadow-md shadow-brand-500/20 active:scale-95 flex items-center justify-center gap-2"
             @click="saveChanges"
           >
@@ -55,7 +42,7 @@
 
       <!-- Correction/Locked Banner -->
       <div
-        v-if="marea.estado_id === 'CORRECCION'"
+        v-if="marea.estado_codigo === 'EN_CORRECCION'"
         class="mb-8 p-4 bg-error-50 dark:bg-error-500/10 border border-error-100 dark:border-error-500/20 rounded-2xl flex flex-col sm:flex-row items-center gap-4 animate-in fade-in slide-in-from-top-4 duration-500"
       >
         <div
@@ -150,29 +137,6 @@
                     placeholder="000"
                   />
                 </div>
-                <div class="md:col-span-2 space-y-1.5">
-                  <label
-                    class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400"
-                    >Título de la Marea</label
-                  >
-                  <input
-                    v-model="marea.titulo"
-                    type="text"
-                    class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border-none rounded-2xl focus:ring-2 focus:ring-brand-500/20 text-gray-800 dark:text-gray-200 transition-all font-medium outline-none"
-                    placeholder="Ej. Campaña Global de Calamar 2024"
-                  />
-                </div>
-                <div class="md:col-span-2 space-y-1.5">
-                  <label
-                    class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400"
-                    >Descripción / Objetivo</label
-                  >
-                  <textarea
-                    v-model="marea.descripcion"
-                    rows="3"
-                    class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border-none rounded-2xl focus:ring-2 focus:ring-brand-500/20 text-gray-800 dark:text-gray-200 transition-all font-medium appearance-none outline-none"
-                  ></textarea>
-                </div>
               </div>
             </div>
 
@@ -231,6 +195,124 @@
                     class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border-none rounded-2xl focus:ring-2 focus:ring-brand-500/20 text-gray-800 dark:text-gray-200 transition-all font-medium outline-none"
                   />
                 </div>
+                <div class="space-y-1.5">
+                  <label
+                    class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400"
+                    >Tipo de Marea</label
+                  >
+                  <select
+                    v-model="marea.tipo_marea"
+                    class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border-none rounded-2xl focus:ring-2 focus:ring-brand-500/20 text-gray-800 dark:text-gray-200 transition-all font-medium outline-none"
+                  >
+                    <option value="MC">Comercial (MC)</option>
+                    <option value="CI">Institucional (CI)</option>
+                  </select>
+                </div>
+                <div class="space-y-1.5">
+                  <label
+                    class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400"
+                    >Días Estimados</label
+                  >
+                  <input
+                    v-model="marea.dias_estimados"
+                    type="number"
+                    class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border-none rounded-2xl focus:ring-2 focus:ring-brand-500/20 text-gray-800 dark:text-gray-200 transition-all font-medium outline-none"
+                    placeholder="0"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <!-- Summary Card -->
+            <div
+              class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-8 shadow-sm"
+            >
+              <h3
+                class="text-lg font-bold text-gray-800 dark:text-white mb-6 flex items-center gap-2"
+              >
+                <InfoIcon class="w-5 h-5 text-brand-500" />
+                Resumen de la Marea
+              </h3>
+              <div class="space-y-5">
+                <div class="space-y-1.5">
+                  <label class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400"
+                    >Título</label
+                  >
+                  <input
+                    v-model="marea.titulo"
+                    type="text"
+                    class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border-none rounded-2xl focus:ring-2 focus:ring-brand-500/20 text-gray-800 dark:text-gray-200 transition-all font-medium outline-none"
+                    placeholder="Título descriptivo"
+                  />
+                </div>
+                <div class="space-y-1.5">
+                  <label class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400"
+                    >Descripción</label
+                  >
+                  <textarea
+                    v-model="marea.descripcion"
+                    rows="4"
+                    class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border-none rounded-2xl focus:ring-2 focus:ring-brand-500/20 text-gray-800 dark:text-gray-200 transition-all font-medium outline-none resize-none"
+                    placeholder="Descripción general de la marea"
+                  ></textarea>
+                </div>
+              </div>
+            </div>
+
+            <!-- Observer Dates & Zona Austral -->
+            <div
+              class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-8 shadow-sm"
+            >
+              <h3
+                class="text-lg font-bold text-gray-800 dark:text-white mb-6 flex items-center gap-2"
+              >
+                <CalenderIcon class="w-5 h-5 text-brand-500" />
+                Fechas del Observador y Zona Austral
+              </h3>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="space-y-1.5">
+                  <label class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400"
+                    >Inicio Observador</label
+                  >
+                  <input
+                    v-model="marea.fecha_inicio_observador"
+                    type="datetime-local"
+                    class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border-none rounded-2xl focus:ring-2 focus:ring-brand-500/20 text-gray-800 dark:text-gray-200 transition-all font-medium outline-none"
+                  />
+                </div>
+                <div class="space-y-1.5">
+                  <label class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400"
+                    >Fin Observador</label
+                  >
+                  <input
+                    v-model="marea.fecha_fin_observador"
+                    type="datetime-local"
+                    class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border-none rounded-2xl focus:ring-2 focus:ring-brand-500/20 text-gray-800 dark:text-gray-200 transition-all font-medium outline-none"
+                  />
+                </div>
+                <div class="space-y-1.5">
+                  <label class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400"
+                    >Días Zona Austral</label
+                  >
+                  <input
+                    v-model="marea.dias_zona_austral"
+                    type="number"
+                    class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border-none rounded-2xl focus:ring-2 focus:ring-brand-500/20 text-gray-800 dark:text-gray-200 transition-all font-medium outline-none"
+                    placeholder="0"
+                  />
+                </div>
+                <div class="space-y-1.5">
+                  <label class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400"
+                    >Cálculo Zona Austral</label
+                  >
+                  <select
+                    v-model="marea.tipo_calculo_zona_austral"
+                    class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border-none rounded-2xl focus:ring-2 focus:ring-brand-500/20 text-gray-800 dark:text-gray-200 transition-all font-medium outline-none"
+                  >
+                    <option value="AUTOMATICO">Automático</option>
+                    <option value="MANUAL">Manual</option>
+                  </select>
+                </div>
               </div>
             </div>
           </div>
@@ -247,11 +329,11 @@
               <div class="space-y-4">
                 <div class="flex justify-between text-sm">
                   <span class="text-gray-500">Fecha Creación</span>
-                  <span class="font-medium dark:text-gray-300">10/12/2023</span>
+                  <span class="font-medium dark:text-gray-300">{{ formatDate(marea.fecha_creacion) }}</span>
                 </div>
                 <div class="flex justify-between text-sm">
                   <span class="text-gray-500">Últ. Actualización</span>
-                  <span class="font-medium dark:text-gray-300">22/12/2023</span>
+                  <span class="font-medium dark:text-gray-300">{{ formatDate(marea.fecha_ultima_actualizacion) }}</span>
                 </div>
                 <div class="pt-4 border-t border-gray-200 dark:border-gray-700">
                   <div class="flex items-center gap-2">
@@ -340,6 +422,16 @@
                     <p class="text-gray-600 dark:text-gray-400">{{ etapa.fecha_arribo }}</p>
                   </div>
                 </div>
+                <div class="text-[11px] text-gray-500 space-y-1">
+                  <div>
+                    <span class="font-bold uppercase tracking-tighter text-gray-400">Pesquería:</span>
+                    {{ etapa.pesqueria || 'N/D' }}
+                  </div>
+                  <div>
+                    <span class="font-bold uppercase tracking-tighter text-gray-400">Observaciones:</span>
+                    {{ etapa.observaciones || 'Sin observaciones' }}
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -353,9 +445,11 @@
                     <th class="px-8 py-4">Nro</th>
                     <th class="px-4 py-4">Puerto Zarpada</th>
                     <th class="px-4 py-4">Puerto Arribo</th>
+                    <th class="px-4 py-4">Pesquería</th>
                     <th class="px-4 py-4">Zarpada Real</th>
                     <th class="px-4 py-4">Arribo Real</th>
                     <th class="px-4 py-4">Tipo</th>
+                    <th class="px-4 py-4">Observaciones</th>
                     <th class="px-8 py-4 text-right">Acciones</th>
                   </tr>
                 </thead>
@@ -372,6 +466,7 @@
                     <td class="px-4 py-5 font-medium text-gray-700 dark:text-gray-300">
                       {{ etapa.puerto_arribo }}
                     </td>
+                    <td class="px-4 py-5 text-gray-500">{{ etapa.pesqueria || 'N/D' }}</td>
                     <td class="px-4 py-5 text-gray-500">{{ etapa.fecha_zarpada }}</td>
                     <td class="px-4 py-5 text-gray-500">{{ etapa.fecha_arribo }}</td>
                     <td class="px-4 py-5">
@@ -385,6 +480,9 @@
                       >
                         {{ etapa.tipo }}
                       </span>
+                    </td>
+                    <td class="px-4 py-5 text-gray-500">
+                      {{ etapa.observaciones || 'Sin observaciones' }}
                     </td>
                     <td class="px-8 py-5 text-right">
                       <button class="text-gray-400 hover:text-brand-500 transition-colors p-1">
@@ -432,6 +530,10 @@
                 <div class="flex items-center gap-2">
                   <CalenderIcon class="w-3 h-3" /> Fin: {{ obs.fin || 'Activo' }}
                 </div>
+                <div class="flex items-center gap-2">
+                  <CheckIcon class="w-3 h-3" />
+                  Designado: {{ obs.es_designado ? 'Sí' : 'No' }}
+                </div>
               </div>
             </div>
           </div>
@@ -475,10 +577,21 @@
                   class="bg-gray-50 dark:bg-gray-800/40 border border-gray-100 dark:border-gray-800 p-4 rounded-xl"
                 >
                   <p class="text-sm text-gray-700 dark:text-gray-300">{{ mov.detalle }}</p>
-                  <div v-if="mov.estado_hasta" class="mt-3">
+                  <div v-if="mov.estado_desde || mov.estado_hasta || mov.cantidad_muestras_otolitos" class="mt-3 flex flex-wrap gap-2">
                     <span
+                      v-if="mov.estado_desde"
                       class="text-[10px] px-2 py-0.5 bg-white dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700 text-gray-500"
-                      >Estado: {{ mov.estado_hasta }}</span
+                      >Estado desde: {{ mov.estado_desde }}</span
+                    >
+                    <span
+                      v-if="mov.estado_hasta"
+                      class="text-[10px] px-2 py-0.5 bg-white dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700 text-gray-500"
+                      >Estado hasta: {{ mov.estado_hasta }}</span
+                    >
+                    <span
+                      v-if="mov.cantidad_muestras_otolitos"
+                      class="text-[10px] px-2 py-0.5 bg-white dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700 text-gray-500"
+                      >Muestras: {{ mov.cantidad_muestras_otolitos }}</span
                     >
                   </div>
                 </div>
@@ -505,7 +618,7 @@
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               <!-- Extraction Blocked Warning for DATOS Category -->
               <div
-                v-if="cat.id === 'DATOS' && marea.estado_id === 'CORRECCION'"
+                v-if="cat.id === 'DATOS' && marea.estado_codigo === 'EN_CORRECCION'"
                 class="md:col-span-2 lg:col-span-3 bg-amber-50 dark:bg-amber-500/5 border border-dashed border-amber-200 dark:border-amber-500/20 rounded-2xl p-4 flex items-center gap-4"
               >
                 <div
@@ -546,10 +659,14 @@
                   <h4 class="text-sm font-bold text-gray-800 dark:text-gray-200 truncate">
                     {{ file.nombre }}
                   </h4>
-                  <div class="flex items-center gap-2 mt-1">
+                  <div class="flex items-center flex-wrap gap-2 mt-1">
                     <span class="text-[10px] font-black text-gray-400">{{ file.formato }}</span>
                     <span class="w-1 h-1 rounded-full bg-gray-300"></span>
                     <span class="text-[10px] text-gray-400">{{ file.fecha }}</span>
+                    <span v-if="file.tipo_archivo" class="w-1 h-1 rounded-full bg-gray-300"></span>
+                    <span v-if="file.tipo_archivo" class="text-[10px] text-gray-400">{{ file.tipo_archivo }}</span>
+                    <span v-if="file.version" class="w-1 h-1 rounded-full bg-gray-300"></span>
+                    <span v-if="file.version" class="text-[10px] text-gray-400">{{ file.version }}</span>
                   </div>
                 </div>
 
@@ -593,7 +710,7 @@
                   >Nro. Protocolización</label
                 >
                 <input
-                  v-model="marea.nro_protocolización"
+                  v-model="marea.nro_protocolizacion"
                   type="number"
                   class="form-input-premium text-lg font-black"
                   placeholder="0000"
@@ -604,7 +721,7 @@
                   >Año Protocolización</label
                 >
                 <input
-                  v-model="marea.anio_protocolización"
+                  v-model="marea.anio_protocolizacion"
                   type="number"
                   class="form-input-premium text-lg font-black"
                   placeholder="2024"
@@ -615,7 +732,7 @@
                   >Fecha de Protocolización</label
                 >
                 <input
-                  v-model="marea.fecha_protocolización"
+                  v-model="marea.fecha_protocolizacion"
                   type="date"
                   class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border-none rounded-2xl focus:ring-2 focus:ring-brand-500/20 text-gray-800 dark:text-gray-200 transition-all font-medium outline-none"
                 />
@@ -659,12 +776,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import SearchableSelect from '@/components/common/SearchableSelect.vue'
 import AlertHistoryTab from '../../alerts/components/AlertHistoryTab.vue'
 import mareasService from '../services/mareas.service';
+import catalogosService from '../services/catalogos.service'
+import { toast } from 'vue-sonner'
 import {
   ArrowLeftIcon,
   ShipIcon,
@@ -712,20 +831,9 @@ const observadores = ref<any[]>([]);
 const movimientos = ref<any[]>([]);
 const archivos = ref<any[]>([]);
 
-const buqueOptions = [
-  { value: '1', label: 'BP ARGENTINO I' },
-  { value: '2', label: 'BP UNION' },
-]
-
-const pesqueriaOptions = [
-  { value: '1', label: 'MERLUZA (Merluccius hubbsi)' },
-  { value: '2', label: 'LANGOSTINO' },
-]
-
-const arteOptions = [
-  { value: '1', label: 'Arrastre de fondo' },
-  { value: '2', label: 'Tangones' },
-]
+const buqueOptions = ref<{ value: string; label: string }[]>([])
+const pesqueriaOptions = ref<{ value: string; label: string }[]>([])
+const arteOptions = ref<{ value: string; label: string }[]>([])
 
 const docCategories = [
   { id: 'DATOS', label: 'Datos de a Bordo', shortLabel: 'Datos (DBF/ZIP)' },
@@ -736,50 +844,172 @@ const docCategories = [
   { id: 'VARIOS', label: 'Otros Archivos', shortLabel: 'Archivo' },
 ]
 
+const formatDate = (value?: string | Date | null) => {
+  if (!value) return 'N/D'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return 'N/D'
+  return date.toLocaleDateString('es-AR')
+}
+
+const formatDateTime = (value?: string | Date | null) => {
+  if (!value) return 'N/D'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return 'N/D'
+  return date.toLocaleString('es-AR')
+}
+
+const formatDateTimeLocal = (value?: string | Date | null) => {
+  if (!value) return ''
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return ''
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`
+}
+
+const formatDateOnly = (value?: string | Date | null) => {
+  if (!value) return ''
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return ''
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
+}
+
+const getFileName = (ruta?: string) => {
+  if (!ruta) return 'Archivo'
+  const parts = ruta.split(/[\\/]/)
+  return parts[parts.length - 1] || 'Archivo'
+}
+
+const getFileExtension = (ruta?: string) => {
+  if (!ruta) return 'N/D'
+  const name = getFileName(ruta)
+  const parts = name.split('.')
+  return parts.length > 1 ? parts[parts.length - 1].toUpperCase() : 'N/D'
+}
+
+const resolveArchivoCategoria = (tipoArchivo?: string) => {
+  if (!tipoArchivo) return 'VARIOS'
+  if (tipoArchivo.startsWith('DATOS_')) return 'DATOS'
+  if (tipoArchivo === 'INFORME_PROTOCOLIZADO') return 'PROTOCOLO'
+  if (tipoArchivo === 'CARPETA_ESCANEADA' || tipoArchivo === 'DOCUMENTACION_ADICIONAL') return 'PLANILLAS'
+  if (tipoArchivo.startsWith('INFORME_TECNICO')) return 'INFORME_OFI'
+  return 'VARIOS'
+}
+
 async function loadMarea() {
     try {
-        const id = route.params.id as string;
-        const data = await mareasService.getMareaContext(id) as any;
-        
-        // Map backend response to local structure if needed
-        // Assuming backend returns a structure similar to what we need or we map it here
-        // For now, let's assume we use the data directly or map basic fields
+        const id = route.params.id as string
+        const [data, buques, pesquerias, artes] = await Promise.all([
+            mareasService.getById(id),
+            catalogosService.getBuques(),
+            catalogosService.getPesquerias(),
+            catalogosService.getArtesPesca()
+        ])
+
+        buqueOptions.value = buques.map(b => ({ value: b.id, label: b.nombreBuque }))
+        pesqueriaOptions.value = pesquerias.map(p => ({ value: p.id, label: p.nombre }))
+        arteOptions.value = artes.map(a => ({ value: a.id, label: a.nombre }))
+
+        const etapaPrincipal = data.etapas?.find((e: any) => e.nroEtapa === 1) || data.etapas?.[0]
+
         marea.value = {
-            ...data,
-            // Add derived fields if necessary
-             id_buque: data.buque?.id,
-             estado_nombre: data.estadoActual?.nombre,
-             responsable_correccion: 'N/A', // Placeholder
-        };
-        
+            id: data.id,
+            anio_marea: data.anioMarea,
+            nro_marea: data.nroMarea,
+            id_buque: data.buqueId,
+            id_pesqueria: etapaPrincipal?.pesqueriaId || '',
+            id_arte_principal: data.artePrincipalId || '',
+            fecha_zarpada_estimada: formatDateTimeLocal(data.fechaZarpadaEstimada),
+            titulo: data.titulo || '',
+            descripcion: data.descripcion || '',
+            observaciones: data.observaciones || '',
+            activo: data.activo ?? true,
+            tipo_marea: data.tipoMarea || 'MC',
+            dias_estimados: data.diasEstimados ?? null,
+            dias_zona_austral: data.diasZonaAustral ?? null,
+            tipo_calculo_zona_austral: data.tipoCalculoZonaAustral || 'AUTOMATICO',
+            estado_nombre: data.estadoActual?.nombre || '',
+            estado_codigo: data.estadoActual?.codigo || '',
+            estado_id: data.estadoActual?.codigo || '',
+            fecha_creacion: data.fechaCreacion,
+            fecha_ultima_actualizacion: data.fechaUltimaActualizacion,
+            fecha_inicio_observador: formatDateTimeLocal(data.fechaInicioObservador),
+            fecha_fin_observador: formatDateTimeLocal(data.fechaFinObservador),
+            nro_protocolizacion: data.nroProtocolizacion ?? null,
+            anio_protocolizacion: data.anioProtocolizacion ?? null,
+            fecha_protocolizacion: formatDateOnly(data.fechaProtocolizacion),
+            responsable_correccion: 'N/D'
+        }
+
         etapas.value = data.etapas?.map((e: any) => ({
              id: e.id,
              nro_etapa: e.nroEtapa,
-             puerto_zarpada: e.puertoZarpada?.nombre,
-             puerto_arribo: e.puertoArribo?.nombre,
-             fecha_zarpada: e.fechaZarpada,
-             fecha_arribo: e.fechaArribo,
+             puerto_zarpada: e.puertoZarpada?.nombre || 'N/D',
+             puerto_arribo: e.puertoArribo?.nombre || 'N/D',
+             fecha_zarpada: formatDateTime(e.fechaZarpada),
+             fecha_arribo: formatDateTime(e.fechaArribo),
+             fecha_zarpada_raw: e.fechaZarpada,
+             fecha_arribo_raw: e.fechaArribo,
              tipo: e.tipoEtapa,
-             // Keep IDs for editing
+             observaciones: e.observaciones || '',
+             pesqueria: e.pesqueria?.nombre || '',
              puertoZarpadaId: e.puertoZarpadaId,
              puertoArriboId: e.puertoArriboId,
-             pesqueriaId: e.pesqueriaId
-        })) || [];
+             pesqueriaId: e.pesqueriaId,
+             observadores: e.observadores?.map((rel: any) => ({
+                observadorId: rel.observadorId || rel.observador?.id,
+                rol: rel.rol,
+                esDesignado: rel.esDesignado
+             })) || []
+        })) || []
 
-        // Map observers, movements etc.
-        observadores.value = data.etapas[0]?.observadores?.map((o:any) => ({
-             id: o.observador.id,
-             nombre: o.observador.nombre,
-             apellido: o.observador.apellido,
-             iniciales: o.observador.nombre[0] + o.observador.apellido[0],
-             rol: o.rol,
-             codigo: o.observador.codigoInterno,
-             inicio: marea.value.fechaInicioObservador,
-             fin: marea.value.fechaFinObservador
-        })) || [];
+        const observadoresMap = new Map<string, any>()
+        data.etapas?.forEach((etapa: any) => {
+            etapa.observadores?.forEach((rel: any) => {
+                const observador = rel.observador
+                if (!observador) return
+                const key = `${observador.id}-${rel.rol}`
+                if (observadoresMap.has(key)) return
+                const nombre = observador.nombre || ''
+                const apellido = observador.apellido || ''
+                observadoresMap.set(key, {
+                    id: observador.id,
+                    nombre,
+                    apellido,
+                    iniciales: `${nombre[0] || ''}${apellido[0] || ''}`.toUpperCase(),
+                    rol: rel.rol,
+                    codigo: observador.codigoInterno,
+                    inicio: formatDate(marea.value.fecha_inicio_observador),
+                    fin: formatDate(marea.value.fecha_fin_observador),
+                    es_designado: rel.esDesignado ?? true
+                })
+            })
+        })
+        observadores.value = Array.from(observadoresMap.values())
+
+        movimientos.value = data.movimientos?.map((mov: any) => ({
+            id: mov.id,
+            evento: mov.tipoEvento,
+            usuario: mov.usuario?.fullName || 'Sistema',
+            fecha: formatDateTime(mov.fechaHora),
+            detalle: mov.detalle || 'Sin detalle registrado.',
+            estado_desde: mov.estadoDesde?.nombre || null,
+            estado_hasta: mov.estadoHasta?.nombre || null,
+            cantidad_muestras_otolitos: mov.cantidadMuestrasOtolitos || null
+        })) || []
+
+        archivos.value = data.archivos?.map((file: any) => ({
+            id: file.id,
+            categoria: resolveArchivoCategoria(file.tipoArchivo),
+            nombre: file.descripcion || getFileName(file.rutaArchivo),
+            formato: file.formato || getFileExtension(file.rutaArchivo),
+            fecha: formatDate(file.fechaSubida),
+            tipo_archivo: file.tipoArchivo,
+            version: file.version
+        })) || []
 
     } catch (e) {
-        console.error('Error loading Marea', e);
+        console.error('Error loading Marea', e)
     }
 }
 
@@ -799,7 +1029,7 @@ function openFinalizeDialog() {
 
 async function handleFinalizeMarea(payload: any) {
   try {
-     await mareasService.executeAction(marea.value.id, 'REGISTRAR_FIN', payload);
+     await mareasService.executeAction(marea.value.id, 'REGISTRAR_ARRIBO', payload);
      showFinalizarDialog.value = false;
      // Refresh marea context
      await loadMarea();
@@ -824,9 +1054,67 @@ const getFormatColor = (formato: string) => {
 }
 
 const goBack = () => router.push({ name: 'MareasWorkflow' })
-const saveChanges = () => {
-  alert('Se han guardado los cambios correctamente (Mockup)')
-  goBack()
+const toNumberOrUndefined = (value: any) => {
+  if (value === null || value === undefined || value === '') return undefined
+  const parsed = Number(value)
+  return Number.isNaN(parsed) ? undefined : parsed
+}
+
+const toIsoStringOrUndefined = (value: any) => {
+  if (!value) return undefined
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return undefined
+  return date.toISOString()
+}
+
+const saveChanges = async () => {
+  try {
+    const etapasPayload = etapas.value.map((etapa, index) => ({
+        id: etapa.id,
+        nroEtapa: etapa.nro_etapa,
+        pesqueriaId: (index === 0 && marea.value.id_pesqueria) ? marea.value.id_pesqueria : (etapa.pesqueriaId || undefined),
+        puertoZarpadaId: etapa.puertoZarpadaId || undefined,
+        puertoArriboId: etapa.puertoArriboId || undefined,
+        fechaZarpada: toIsoStringOrUndefined(etapa.fecha_zarpada_raw),
+        fechaArribo: toIsoStringOrUndefined(etapa.fecha_arribo_raw),
+        tipoEtapa: etapa.tipo || 'COMERCIAL',
+        observaciones: etapa.observaciones || undefined,
+        observadores: etapa.observadores?.map((obs: any) => ({
+          observadorId: obs.observadorId,
+          rol: obs.rol,
+          esDesignado: obs.esDesignado
+        })) || []
+      }))
+
+    const payload = {
+      anioMarea: toNumberOrUndefined(marea.value.anio_marea),
+      nroMarea: toNumberOrUndefined(marea.value.nro_marea),
+      buqueId: marea.value.id_buque || undefined,
+      artePrincipalId: marea.value.id_arte_principal || undefined,
+      fechaZarpadaEstimada: toIsoStringOrUndefined(marea.value.fecha_zarpada_estimada),
+      fechaInicioObservador: toIsoStringOrUndefined(marea.value.fecha_inicio_observador),
+      fechaFinObservador: toIsoStringOrUndefined(marea.value.fecha_fin_observador),
+      diasZonaAustral: toNumberOrUndefined(marea.value.dias_zona_austral),
+      tipoCalculoZonaAustral: marea.value.tipo_calculo_zona_austral || undefined,
+      titulo: marea.value.titulo || undefined,
+      descripcion: marea.value.descripcion || undefined,
+      nroProtocolizacion: toNumberOrUndefined(marea.value.nro_protocolizacion),
+      anioProtocolizacion: toNumberOrUndefined(marea.value.anio_protocolizacion),
+      fechaProtocolizacion: toIsoStringOrUndefined(marea.value.fecha_protocolizacion),
+      observaciones: marea.value.observaciones || undefined,
+      tipoMarea: marea.value.tipo_marea || undefined,
+      diasEstimados: toNumberOrUndefined(marea.value.dias_estimados),
+      activo: marea.value.activo,
+      etapas: etapasPayload
+    }
+
+    await mareasService.update(marea.value.id, payload)
+    toast.success('Los cambios se guardaron correctamente.')
+    await loadMarea()
+  } catch (error) {
+    console.error(error)
+    toast.error('No se pudieron guardar los cambios de la marea.')
+  }
 }
 </script>
 

@@ -87,7 +87,8 @@
                 <SearchIcon class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-base-content/30" />
                 <input 
                   type="text" 
-                  placeholder="Buscar por buque o marea..."
+                  placeholder="Buscar por buque, marea, observador o estado..."
+                  v-model="searchQuery"
                    class="pl-10 pr-4 py-2 bg-base-100 border border-base-content/10 rounded-2xl text-xs outline-none focus:ring-2 focus:ring-primary/20 w-full md:w-64 transition-all"
                 />
              </div>
@@ -211,6 +212,7 @@
                   v-for="task in filteredTasks" 
                   :key="task.id"
                   v-bind="task"
+                  :show-observer="true"
                   @click="openDetails(task)"
                   @action="(key) => handleTaskAction(task.id, key)"
                 />
@@ -301,6 +303,7 @@ const alertas = ref<any[]>([])
 const alertasHistoricas = ref<any[]>([])
 const tasks = ref<any[]>([])
 const activeTab = ref('urgentes')
+const searchQuery = ref('')
 
 // 1. Computed properties
 const tareasUrgentes = computed(() => tasks.value.filter(t => t.tab === 'urgentes'))
@@ -320,7 +323,24 @@ const tabs = computed(() => [
 const activeTabLabel = computed(() => tabs.value.find(t => t.id === activeTab.value)?.label)
 
 const filteredTasks = computed(() => {
-  return tasks.value.filter(t => t.tab === activeTab.value)
+  const query = searchQuery.value.trim().toLowerCase()
+  const filteredByTab = tasks.value.filter(t => t.tab === activeTab.value)
+
+  if (!query) return filteredByTab
+
+  return filteredByTab.filter(task => {
+    const values = [
+      task.buque,
+      task.idMarea,
+      task.observador,
+      task.hito,
+      task.estadoDescripcion
+    ]
+      .filter(Boolean)
+      .map((value: string) => value.toLowerCase())
+
+    return values.some(value => value.includes(query))
+  })
 })
 
 const formatDate = (dateStr?: string) => {
