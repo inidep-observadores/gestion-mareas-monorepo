@@ -53,16 +53,16 @@
       </section>
 
       <!-- 2. TABS & FILTERS -->
-      <div class="sticky top-0 z-20 bg-base-200/60 backdrop-blur-md py-4 mb-6 -mx-2 px-2 border-b border-base-content/10">
+      <div class="sticky top-0 z-20 bg-gray-50/80 dark:bg-gray-950/80 backdrop-blur-md py-4 mb-6 -mx-2 px-2 border-b border-gray-200/50 dark:border-gray-800/50">
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <!-- Premium Tabs -->
-          <div class="flex p-1 bg-base-100 border border-base-content/10 rounded-2xl w-fit shadow-sm">
+          <div class="flex p-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl w-fit shadow-sm">
             <button 
               v-for="tab in tabs" 
               :key="tab.id"
               @click="activeTab = tab.id"
               class="relative px-6 py-2 text-xs font-black uppercase tracking-tight transition-all duration-300 rounded-xl overflow-hidden"
-              :class="activeTab === tab.id ? 'text-white' : 'text-base-content/40 hover:text-base-content/70'"
+              :class="activeTab === tab.id ? 'text-white' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200'"
             >
               <div 
                 v-if="activeTab === tab.id"
@@ -72,7 +72,7 @@
                  {{ tab.label }}
                  <span 
                    class="px-1.5 py-0.5 rounded-md text-[9px]"
-                   :class="activeTab === tab.id ? 'bg-white/20' : 'bg-base-200 text-base-content/30'"
+                   :class="activeTab === tab.id ? 'bg-white/20' : 'bg-gray-100 dark:bg-gray-800 text-gray-400'"
                  >
                    {{ tab.count }}
                  </span>
@@ -83,14 +83,14 @@
           <!-- Search & Sort -->
           <div class="flex items-center gap-3">
              <div class="relative flex-1 md:flex-none">
-                <SearchIcon class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-base-content/30" />
+                <SearchIcon class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input 
                   type="text" 
                   placeholder="Buscar por buque o marea..."
-                   class="pl-10 pr-4 py-2 bg-base-100 border border-base-content/10 rounded-2xl text-xs outline-none focus:ring-2 focus:ring-primary/20 w-full md:w-64 transition-all"
+                   class="pl-10 pr-4 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl text-xs outline-none focus:ring-2 focus:ring-brand-500/20 w-full md:w-64 transition-all"
                 />
              </div>
-             <button class="p-2.5 bg-base-100 border border-base-content/10 rounded-xl text-base-content/40 hover:text-base-content/70 transition-all shadow-sm">
+             <button class="p-2.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-all shadow-sm">
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 16 4 4 4-4"/><path d="M7 20V4"/><path d="m21 8-4-4-4 4"/><path d="M17 4v16"/></svg>
              </button>
           </div>
@@ -109,12 +109,12 @@
         <!-- Historic Alerts Section -->
         <div v-if="alertasHistoricas.length > 0">
             <div class="flex items-center gap-3 mb-6">
-                <div class="p-2.5 bg-success/10 rounded-2xl border border-success/10">
-                    <BellIcon class="w-5 h-5 text-success/80" />
+                <div class="p-2 bg-green-500/10 rounded-xl">
+                    <BellIcon class="w-5 h-5 text-green-500" />
                 </div>
                 <div>
-                    <h4 class="text-sm font-black text-base-content/90 uppercase tracking-tight">Alertas e Incidentes Resueltos</h4>
-                    <p class="text-[10px] font-bold text-base-content/30 uppercase tracking-[0.1em]">Registro histórico de acciones correctivas</p>
+                    <h4 class="text-sm font-black text-gray-900 dark:text-white uppercase tracking-tight">Alertas e Incidentes Resueltos</h4>
+                    <p class="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Registro histórico de acciones correctivas</p>
                 </div>
             </div>
 
@@ -132,23 +132,23 @@
         </div>
 
         <!-- Empty State -->
-        <div v-if="alertasHistoricas.length === 0 && filteredTasks.length === 0" class="flex flex-col items-center justify-center py-24 bg-base-200/30 rounded-[2.5rem] border border-dashed border-base-content/10">
-            <div class="p-8 bg-base-100/50 rounded-full mb-6 shadow-sm border border-base-content/5">
-                <DocsIcon class="w-12 h-12 text-base-content/10" />
+        <div v-if="alertasHistoricas.length === 0 && filteredTasks.length === 0" class="flex flex-col items-center justify-center py-20 bg-gray-50 dark:bg-gray-900 rounded-3xl border border-dashed border-gray-200 dark:border-gray-800">
+            <div class="p-6 bg-gray-100 dark:bg-gray-800 rounded-full mb-4">
+                <DocsIcon class="w-10 h-10 text-gray-300 dark:text-gray-600" />
             </div>
-            <h3 class="text-xs font-black text-base-content/30 uppercase tracking-[0.2em] px-4 text-center">No hay registros históricos</h3>
-            <p class="text-[11px] text-base-content/20 mt-3 text-center max-w-xs px-6 uppercase tracking-wider font-bold">Las tareas y alertas resueltas aparecerán aquí una vez gestionadas.</p>
+            <h3 class="text-sm font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest">No hay registros históricos</h3>
+            <p class="text-xs text-gray-300 dark:text-gray-600 mt-2 text-center">Las tareas y alertas resueltas aparecerán aquí una vez gestionadas.</p>
         </div>
 
         <!-- Historic Tasks Section -->
         <div v-if="filteredTasks.length > 0">
-             <div class="flex items-center gap-4 mb-8">
-                <div class="p-2.5 bg-base-300/30 rounded-2xl border border-base-content/5">
-                    <DocsIcon class="w-5 h-5 text-base-content/40" />
+             <div class="flex items-center gap-3 mb-6">
+                <div class="p-2 bg-gray-100 dark:bg-gray-800 rounded-xl">
+                    <DocsIcon class="w-5 h-5 text-gray-500" />
                 </div>
                 <div>
-                    <h4 class="text-sm font-black text-base-content/80 uppercase tracking-tight">Mareas Finalizadas</h4>
-                    <p class="text-[10px] font-bold text-base-content/30 uppercase tracking-[0.1em]">Operaciones concluidas con éxito</p>
+                    <h4 class="text-sm font-black text-gray-900 dark:text-white uppercase tracking-tight">Mareas Finalizadas</h4>
+                    <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Operaciones concluidas con éxito</p>
                 </div>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
@@ -179,11 +179,11 @@
       </transition-group>
 
       <div v-if="!loading && activeTab !== 'historial' && filteredTasks.length === 0" class="flex flex-col items-center justify-center py-20 px-4 text-center">
-        <div class="w-24 h-24 bg-base-200/40 rounded-full flex items-center justify-center mb-6 border border-base-content/5">
-           <CheckIcon class="w-10 h-10 text-primary/20" />
+        <div class="w-24 h-24 bg-gray-50 dark:bg-gray-900 rounded-full flex items-center justify-center mb-6">
+           <CheckIcon class="w-10 h-10 text-brand-500/20" />
         </div>
-        <h3 class="text-xl font-black text-base-content/90 uppercase tracking-tight">Todo al día</h3>
-        <p class="text-base-content/40 mt-2 max-w-sm">
+        <h3 class="text-xl font-black text-gray-900 dark:text-white uppercase tracking-tight">Todo al día</h3>
+        <p class="text-gray-500 dark:text-gray-400 mt-2 max-w-sm">
           No tienes tareas pendientes en la sección de <b>{{ activeTabLabel }}</b>.
         </p>
       </div>
