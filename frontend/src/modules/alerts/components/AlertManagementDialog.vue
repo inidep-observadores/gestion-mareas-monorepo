@@ -20,9 +20,9 @@
                 v-if="localAlert.referenciaId"
                 @click="goToFullHistory"
                 class="btn btn-sm btn-soft btn-neutral gap-2 ml-4"
-                title="Ver historial completo en la marea"
+                title="Ver detalle del origen"
             >
-                {{ isMarea ? 'Ir a Marea' : 'Ver Entidad' }}
+                {{ isMarea ? 'Ir a Marea' : 'Ver' }}
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
             </button>
         </div>
@@ -64,7 +64,7 @@
                         </div>
                     </div>
               </div>
-              
+
                <div v-else class="flex items-center gap-3 p-4 bg-success/5 text-success rounded-2xl border border-success/10">
                  <CheckIcon class="w-5 h-5" />
                  <span class="text-xs font-bold uppercase tracking-tight">Incidente Cerrado el {{ localAlert.fechaCierre ? formatDate(localAlert.fechaCierre) : 'N/A' }}</span>
