@@ -43,7 +43,7 @@
 
             <!-- Sea Days Progress (Target 180) -->
             <td class="py-4">
-               <div class="w-full max-w-[140px]">
+               <div class="w-full max-w-35">
                  <div class="flex justify-between text-[10px] font-black uppercase mb-1.5">
                     <span class="text-gray-900 dark:text-white">{{ obs.diasMar }}d</span>
                     <span class="text-gray-400">/ {{ DIAS_NAVEGADOS_ANUALES }} IDEAL</span>

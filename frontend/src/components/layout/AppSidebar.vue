@@ -3,9 +3,9 @@
     :class="[
       'fixed mt-16 flex flex-col lg:mt-0 top-0 px-5 left-0 bg-white dark:bg-gray-900 dark:border-gray-800 text-gray-900 h-screen transition-all duration-300 ease-in-out z-99999 border-r border-gray-200',
       {
-        'lg:w-[290px]': isExpanded || isMobileOpen || isHovered,
-        'lg:w-[90px]': !isExpanded && !isHovered,
-        'translate-x-0 w-[290px]': isMobileOpen,
+        'lg:w-72.5': isExpanded || isMobileOpen || isHovered,
+        'lg:w-22.5': !isExpanded && !isHovered,
+        'translate-x-0 w-72.5': isMobileOpen,
         '-translate-x-full': !isMobileOpen,
         'lg:translate-x-0': true,
       },
@@ -21,7 +21,7 @@
     >
       <router-link :to="{ name: 'Dashboard' }" class="flex items-center gap-3">
         <div
-          class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center flex-shrink-0"
+          class="w-10 h-10 rounded-xl bg-linear-to-br from-blue-500 to-cyan-500 flex items-center justify-center flex-shrink-0"
         >
           <WaveIcon class="w-6 h-6 text-white" />
         </div>
@@ -73,7 +73,7 @@
           <div v-for="(menuGroup, groupIndex) in navigationGroups" :key="groupIndex">
             <h2
               :class="[
-                'mb-4 text-xs uppercase flex leading-[20px] text-gray-400',
+                'mb-4 text-xs uppercase flex leading-5 text-gray-400',
                 !isExpanded && !isHovered ? 'lg:justify-center' : 'justify-start',
               ]"
             >
@@ -257,7 +257,9 @@ const systemGroups = computed(() => ({
   ],
 }))
 
-const isActive = (item: { to?: { name?: string }; path?: string }) => {
+type MenuItem = { name: string; to?: { name?: string }; path?: string }
+
+const isActive = (item: MenuItem) => {
   if (item.to && 'name' in item.to) {
     return route.name === item.to.name
   }
@@ -269,7 +271,7 @@ const isActive = (item: { to?: { name?: string }; path?: string }) => {
   return false
 }
 
-const handleItemClick = async (item: any, event: Event) => {
+const handleItemClick = async (item: MenuItem, event: Event) => {
   if (item.name === 'Cerrar Sesión') {
     event.preventDefault()
     await authStore.logout()

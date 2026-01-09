@@ -3,17 +3,17 @@
     :show="isOpen"
     @close="close"
     maxWidth="4xl"
-    :title="localAlert.titulo"
+    :title="localAlert.titulo || ''"
   >
     <template #title>
         <div class="flex items-center justify-between w-full pr-8 py-1">
             <div class="flex items-center gap-4">
                 <span :class="['badge badge-sm rounded-lg py-3 px-3 border-none font-black text-[10px] uppercase tracking-widest', getBadgeClass(localAlert.prioridad)]">
-                    {{ localAlert.prioridad }}
+                    {{ localAlert.prioridad || 'N/D' }}
                 </span>
-                <span class="text-base-content font-black uppercase tracking-tight">{{ localAlert.titulo }}</span>
+                <span class="text-base-content font-black uppercase tracking-tight">{{ localAlert.titulo || 'Alerta' }}</span>
                 <span v-if="localAlert.referenciaTipo" :class="['badge badge-sm border-none font-bold text-[10px] uppercase tracking-wider', getOriginBadgeClass(localAlert.referenciaTipo)]">
-                    {{ localAlert.referenciaTipo }}
+                    {{ localAlert.referenciaTipo || 'N/D' }}
                 </span>
             </div>
             <button
@@ -36,14 +36,17 @@
               <div class="p-4 bg-base-200/50 border border-base-content/10 rounded-2xl">
                 <h4 class="font-black text-[10px] uppercase tracking-widest text-base-content/40 mb-2">Detalles del Incidente</h4>
                 <p class="text-sm text-base-content/80 leading-relaxed">{{ localAlert.descripcion }}</p>
-                <div v-if="isMarea" class="pt-4 border-base-content/10 space-y-2">
-                    <div class="text-[10px] font-bold text-base-content/40 uppercase tracking-tight">
-                        Observadores: <span class="text-base-content/70">{{ mareaObserversLabel }}</span>
-                    </div>
-                </div>
                 <div class="mt-4 pt-4 border-t border-base-content/10 flex items-center gap-4">
                     <div class="text-[10px] font-bold text-base-content/40 uppercase tracking-tight">ID: <span class="font-mono text-base-content/60">{{ localAlert.codigoUnico }}</span></div>
                     <div class="text-[10px] font-bold text-base-content/40 uppercase tracking-tight">Detectado: <span class="text-base-content/60">{{ formatDate(localAlert.fechaDetectada) }}</span></div>
+                </div>
+                <div v-if="isMarea" class="mt-4 pt-4 border-t border-base-content/10 space-y-2">
+                    <div class="text-[10px] font-bold text-base-content/40 uppercase tracking-tight">
+                        Marea: <span class="text-base-content/70">{{ mareaLabel }}</span>
+                    </div>
+                    <div class="text-[10px] font-bold text-base-content/40 uppercase tracking-tight">
+                        Observadores: <span class="text-base-content/70">{{ mareaObserversLabel }}</span>
+                    </div>
                 </div>
               </div>
 
@@ -97,7 +100,7 @@
             <!-- Sidebar / Timeline (Right) -->
             <div class="w-full md:w-80 border-l border-base-content/10 pl-8">
                 <h4 class="font-black text-[10px] uppercase tracking-widest text-base-content/60 mb-6">Historial de Auditoría</h4>
-                <div class="max-h-[450px] overflow-y-auto pr-4 custom-scrollbar">
+                <div class="max-h-112.5 overflow-y-auto pr-4 custom-scrollbar">
                     <AlertTimeline :eventos="localAlert.eventos || []" />
                 </div>
             </div>
@@ -182,7 +185,42 @@ const props = defineProps<{
 const emit = defineEmits(['close', 'refresh'])
 const router = useRouter()
 
-const localAlert = ref<Alerta | any>({})
+type AlertMetadata = {
+  mareaCode?: string
+  vessel?: string
+  busDays?: number
+  observerName?: string
+  days?: number
+}
+
+type LocalAlert = Partial<Alerta> & { metadata?: AlertMetadata }
+
+type Observador = {
+  nombre?: string
+  apellido?: string
+  email?: string
+}
+
+type MareaEtapaObservador = {
+  rol?: string
+  observador?: Observador
+}
+
+type MareaEtapa = {
+  fechaArribo?: string | null
+  observadores?: MareaEtapaObservador[]
+}
+
+type MareaData = {
+  id?: string
+  anioMarea?: number
+  nroMarea?: number
+  tipoMarea?: string
+  buque?: { nombreBuque?: string }
+  etapas?: MareaEtapa[]
+}
+
+const localAlert = ref<LocalAlert>({})
 const comment = ref('')
 const processing = ref(false)
 const customFollowUpDate = ref('')
@@ -261,13 +299,13 @@ const loadFullAlert = async (id: string) => {
     }
 }
 
-const isClosed = computed(() => ['RESUELTA', 'DESCARTADA'].includes(localAlert.value.estado))
+const isClosed = computed(() => ['RESUELTA', 'DESCARTADA'].includes(localAlert.value.estado ?? ''))
 const isClaimableAlert = computed(() => localAlert.value?.tipo === 'RETRASO_DATOS' && localAlert.value?.referenciaId)
 const mareaLabel = computed(() => localAlert.value?.metadata?.mareaCode || localAlert.value?.referenciaId || 'N/D')
 const mareaObserversLabel = computed(() => mareaObservers.value.length ? mareaObservers.value.join(', ') : 'Sin asignar')
 
-const getBadgeClass = (prio: string) => {
-    switch (prio) {
+const getBadgeClass = (prio?: string) => {
+    switch (prio || '') {
         case 'ALTA': return 'badge-error text-white'
         case 'MEDIA': return 'badge-warning text-white'
         case 'BAJA': return 'badge-info text-white'
@@ -275,8 +313,8 @@ const getBadgeClass = (prio: string) => {
     }
 }
 
-const getOriginBadgeClass = (type: string) => {
-    switch (type) {
+const getOriginBadgeClass = (type?: string) => {
+    switch (type || '') {
         case 'MAREA': return 'badge-info bg-info/20 text-info'
         case 'OBSERVADOR': return 'badge-secondary bg-secondary/20 text-secondary'
         case 'BUQUE': return 'badge-accent bg-accent/20 text-accent'
@@ -302,15 +340,15 @@ const goToFullHistory = () => {
     }
 }
 
-const buildMareaCode = (marea: any) => {
+const buildMareaCode = (marea?: MareaData | null) => {
     if (!marea) return ''
     const yearSuffix = String(marea.anioMarea || '').slice(-2)
     return `${marea.tipoMarea}-${String(marea.nroMarea).padStart(3, '0')}-${yearSuffix}`
 }
 
-const getPrimaryObserver = (etapa: any) => {
+const getPrimaryObserver = (etapa?: MareaEtapa | null) => {
     if (!etapa?.observadores?.length) return null
-    return etapa.observadores.find((o: any) => o.rol === 'PRINCIPAL') || etapa.observadores[0]
+    return etapa.observadores.find((o) => o.rol === 'PRINCIPAL') || etapa.observadores[0]
 }
 
 const formatShortDate = (dateStr?: string | Date | null) => {
@@ -334,7 +372,7 @@ const loadReclamoData = async () => {
     if (!localAlert.value?.referenciaId) return
     reclamoLoading.value = true
     try {
-        const marea = await mareasService.getById(localAlert.value.referenciaId)
+        const marea = await mareasService.getById(localAlert.value.referenciaId) as MareaData
         const etapas = marea?.etapas || []
         const etapaActual = etapas[etapas.length - 1]
         const primaryObs = getPrimaryObserver(etapaActual)
@@ -348,7 +386,7 @@ const loadReclamoData = async () => {
             vesselName: metadata.vessel || marea?.buque?.nombreBuque || 'Sin asignar',
             obsName: obs?.nombre ? `${obs.nombre} ${obs.apellido}` : 'Sin asignar',
             email: obs?.email || null,
-            delayDays: resolveDelayDays(arrivalDateRaw, metadata.busDays),
+            delayDays: resolveDelayDays(arrivalDateRaw, typeof metadata.busDays === 'number' ? metadata.busDays : undefined),
             arrivalDate: formatShortDate(arrivalDateRaw)
         }
     } catch (e) {
@@ -361,13 +399,13 @@ const loadReclamoData = async () => {
 
 const loadMareaObservers = async (mareaId: string) => {
     try {
-        const marea = await mareasService.getById(mareaId)
+        const marea = await mareasService.getById(mareaId) as MareaData
         const etapas = marea?.etapas || []
         const names = new Set<string>()
 
-        etapas.forEach((etapa: any) => {
+        etapas.forEach((etapa: MareaEtapa) => {
             const observadores = etapa?.observadores || []
-            observadores.forEach((o: any) => {
+            observadores.forEach((o: MareaEtapaObservador) => {
                 const obs = o?.observador
                 if (obs?.nombre && obs?.apellido) {
                     names.add(`${obs.nombre} ${obs.apellido}`)
@@ -467,6 +505,11 @@ const submitUpdate = async (status: string) => {
             followUp = date.toISOString()
         }
 
+        if (!localAlert.value.id) {
+            toast.error('No se pudo actualizar la alerta seleccionada.')
+            return
+        }
+
         await alertsService.update(localAlert.value.id, {
             estado: status,
             comment: comment.value,
@@ -500,7 +543,7 @@ const close = () => {
     emit('close')
 }
 
-const formatDate = (dateStr: string) => {
+const formatDate = (dateStr?: string) => {
     if (!dateStr) return 'N/A'
     return new Date(dateStr).toLocaleDateString('es-AR', {
         day: '2-digit', month: '2-digit', year: 'numeric'
