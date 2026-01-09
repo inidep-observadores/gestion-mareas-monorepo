@@ -355,14 +355,17 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { toast } from 'vue-sonner'
+import { storeToRefs } from 'pinia'
 import { MailIcon, PhoneIcon } from '@/icons'
-import { BUSINESS_RULES } from '@/modules/shared/config/business-rules'
+import { useBusinessRulesStore } from '@/modules/shared/stores/business-rules.store'
 import dashboardService, { type FatigueAlert, type FatigueTrip } from '@/modules/dashboard/services/dashboard.service'
 import ReclamoEntregaDialog from './ReclamoEntregaDialog.vue'
 
 const showReclamoDialog = ref(false)
 const selectedReclamoItem = ref<any>(null)
-const { DIAS_NAVEGADOS_ANUALES } = BUSINESS_RULES
+const businessRulesStore = useBusinessRulesStore()
+const { rules } = storeToRefs(businessRulesStore)
+const diasNavegadosAnuales = computed(() => rules.value.DIAS_NAVEGADOS_ANUALES || 0)
 
 const openReclamo = (item: any) => {
   selectedReclamoItem.value = item
@@ -461,9 +464,9 @@ const loadFatigueAlerts = async () => {
         name: item.name,
         initials: buildInitials(item.name),
         value: item.days,
-        percent: Math.round((item.days / DIAS_NAVEGADOS_ANUALES) * 100),
+        percent: Math.round((item.days / (diasNavegadosAnuales.value || 1)) * 100),
         reason: 'Acumulado anual',
-        isOver: item.days > DIAS_NAVEGADOS_ANUALES,
+        isOver: item.days > diasNavegadosAnuales.value,
         daysSinceLast: calculateDaysSince(item.lastArrival),
         trips: item.trips || []
       }))

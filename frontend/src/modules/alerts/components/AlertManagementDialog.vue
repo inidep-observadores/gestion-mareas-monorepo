@@ -78,9 +78,9 @@
                             Fecha de Re-Check
                         </label>
                         <div class="flex flex-wrap gap-2 items-center">
-                            <button class="btn btn-xs btn-soft btn-neutral" @click="setFollowUp(3)">3 d.</button>
-                            <button class="btn btn-xs btn-soft btn-neutral" @click="setFollowUp(PLAZO_RECHECK_ALERTAS)">1 sem.</button>
-                            <button class="btn btn-xs btn-soft btn-neutral" @click="setFollowUp(15)">15 d.</button>
+                            <button class="btn btn-xs btn-soft btn-neutral" @click="setFollowUp(recheckCorto)">3 d.</button>
+                            <button class="btn btn-xs btn-soft btn-neutral" @click="setFollowUp(recheckMedio)">1 sem.</button>
+                            <button class="btn btn-xs btn-soft btn-neutral" @click="setFollowUp(recheckLargo)">15 d.</button>
                             <input
                                 type="date"
                                 class="input input-xs input-bordered ml-auto font-bold bg-base-200/50 border-base-content/10 text-base-content/80"
@@ -175,7 +175,8 @@ import { CheckIcon } from '@/icons'
 import dashboardService from '@/modules/dashboard/services/dashboard.service'
 import ReclamoEntregaDialog from '@/modules/dashboard/components/ReclamoEntregaDialog.vue'
 import mareasService from '@/modules/mareas/services/mareas.service'
-import { BUSINESS_RULES } from '@/modules/shared/config/business-rules'
+import { storeToRefs } from 'pinia'
+import { useBusinessRulesStore } from '@/modules/shared/stores/business-rules.store'
 
 const props = defineProps<{
   isOpen: boolean
@@ -239,7 +240,11 @@ const isConfirmationOpen = ref(false)
 const pendingAction = ref<'SEGUIMIENTO' | 'DESCARTADA' | 'RESUELTA' | ''>('')
 const confirmationMessage = ref('')
 const mareaObservers = ref<string[]>([])
-const { PLAZO_RECHECK_ALERTAS } = BUSINESS_RULES
+const businessRulesStore = useBusinessRulesStore()
+const { rules } = storeToRefs(businessRulesStore)
+const recheckCorto = computed(() => rules.value.PLAZO_RECHECK_CORTO || 0)
+const recheckMedio = computed(() => rules.value.PLAZO_RECHECK_MEDIO || 0)
+const recheckLargo = computed(() => rules.value.PLAZO_RECHECK_LARGO || 0)
 
 const getTomorrow = () => {
     const tomorrow = new Date()
@@ -261,7 +266,7 @@ const setDefaultFollowUpDate = (dateStr?: string | null) => {
     }
 
     const fallback = new Date()
-    fallback.setDate(fallback.getDate() + PLAZO_RECHECK_ALERTAS)
+    fallback.setDate(fallback.getDate() + (recheckMedio.value || 0))
     customFollowUpDate.value = fallback.toISOString().split('T')[0]
 }
 
@@ -501,7 +506,7 @@ const submitUpdate = async (status: string) => {
         if (status === 'SEGUIMIENTO') {
             const date = customFollowUpDate.value
                 ? new Date(customFollowUpDate.value)
-                : new Date(Date.now() + PLAZO_RECHECK_ALERTAS * 24 * 60 * 60 * 1000)
+                : new Date(Date.now() + (recheckMedio.value || 0) * 24 * 60 * 60 * 1000)
             followUp = date.toISOString()
         }
 

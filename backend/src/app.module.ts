@@ -17,6 +17,7 @@ import { BackupModule } from './admin/backup/backup.module';
 import { DataExportModule } from './admin/data-export/data-export.module';
 import { MailModule } from './mail/mail.module';
 import { AlertsModule } from './alerts/alerts.module';
+import { BusinessRulesModule } from './common/business-rules/business-rules.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { AlertsModule } from './alerts/alerts.module';
     ProductsModule,
 
     CommonModule,
+    BusinessRulesModule,
 
     SeedModule,
 

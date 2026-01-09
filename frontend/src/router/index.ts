@@ -236,6 +236,16 @@ const router = createRouter({
     },
     // 404 No encontrado
     {
+      path: '/error-servidor',
+      name: 'ServerError',
+      component: () => import('@/modules/common/views/ServerErrorView.vue'),
+      meta: {
+        title: 'Error del Servidor',
+        guestOnly: false,
+        requiresAuth: false
+      }
+    },
+    {
       path: '/:pathMatch(.*)*',
       name: 'NotFound',
       component: () => import('@/modules/common/views/NotFoundView.vue'),
@@ -258,11 +268,17 @@ const router = createRouter({
 })
 
 import { useAuthStore } from '@/modules/auth/stores/auth.store'
+import { useBusinessRulesStore } from '@/modules/shared/stores/business-rules.store'
 
 router.beforeEach(async (to, from, next) => {
   document.title = `${to.meta.title} | Gestión de Mareas - INIDEP`
 
   const authStore = useAuthStore()
+  const businessRulesStore = useBusinessRulesStore()
+
+  if (businessRulesStore.failed && to.name !== 'ServerError') {
+    return next({ name: 'ServerError' })
+  }
   await authStore.whenReady() // Wait for bootstrap
 
   const isAuthenticated = authStore.isAuthenticated

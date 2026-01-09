@@ -46,13 +46,13 @@
                <div class="w-full max-w-35">
                  <div class="flex justify-between text-[10px] font-black uppercase mb-1.5">
                     <span class="text-gray-900 dark:text-white">{{ obs.diasMar }}d</span>
-                    <span class="text-gray-400">/ {{ DIAS_NAVEGADOS_ANUALES }} IDEAL</span>
+                    <span class="text-gray-400">/ {{ diasNavegadosAnuales }} IDEAL</span>
                  </div>
                  <div class="h-2 w-full bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden border border-gray-100/50 dark:border-gray-700/30 relative">
                     <div
                       class="h-full transition-all duration-1000 ease-out rounded-full shadow-sm"
-                      :class="[obs.diasMar >= DIAS_NAVEGADOS_ANUALES ? 'bg-orange-500' : 'bg-indigo-500']"
-                      :style="{ width: Math.min((obs.diasMar / DIAS_NAVEGADOS_ANUALES) * 100, 100) + '%' }"
+                      :class="[obs.diasMar >= diasNavegadosAnuales ? 'bg-orange-500' : 'bg-indigo-500']"
+                      :style="{ width: Math.min((obs.diasMar / diasNavegadosAnualesSafe) * 100, 100) + '%' }"
                     ></div>
                     <!-- Target Marker -->
                     <div class="absolute top-0 right-0 h-full w-px bg-white/30"></div>
@@ -76,11 +76,11 @@
                <div class="flex flex-col items-end">
                   <span 
                     class="text-xs font-black tabular-nums"
-                    :class="obs.diasTierra > 30 ? 'text-orange-500' : 'text-gray-900 dark:text-white'"
+                    :class="obs.diasTierra > diasExcesoTierra ? 'text-orange-500' : 'text-gray-900 dark:text-white'"
                   >
                     {{ obs.diasTierra }} <span class="text-[9px] text-gray-400 uppercase font-black">Días</span>
                   </span>
-                  <span v-if="obs.diasTierra > 30" class="text-[8px] font-black text-orange-400 uppercase tracking-tighter">Exceso detectado</span>
+                  <span v-if="obs.diasTierra > diasExcesoTierra" class="text-[8px] font-black text-orange-400 uppercase tracking-tighter">Exceso detectado</span>
                </div>
             </td>
           </tr>
@@ -101,9 +101,16 @@
 </template>
 
 <script setup lang="ts">
-import { BUSINESS_RULES } from '@/modules/shared/config/business-rules'
+import { computed } from 'vue'
+import { storeToRefs } from 'pinia'
+import { useBusinessRulesStore } from '@/modules/shared/stores/business-rules.store'
 
-const { DIAS_NAVEGADOS_ANUALES } = BUSINESS_RULES
+const businessRulesStore = useBusinessRulesStore()
+const { rules } = storeToRefs(businessRulesStore)
+
+const diasNavegadosAnuales = computed(() => rules.value.DIAS_NAVEGADOS_ANUALES || 0)
+const diasNavegadosAnualesSafe = computed(() => rules.value.DIAS_NAVEGADOS_ANUALES || 1)
+const diasExcesoTierra = computed(() => rules.value.DIAS_EXCESO_TIERRA || 0)
 
 interface Observer {
   id: number

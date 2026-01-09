@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { BusinessRulesService } from '../common/business-rules/business-rules.service';
 import { User } from '@prisma/client';
 import { CreateMareaDto } from './dto/create-marea.dto';
 import { UpdateMareaDto } from './dto/update-marea.dto';
@@ -20,21 +21,16 @@ export class MareasService {
         'ESPERANDO_REVISION'
     ];
 
-    // Constantes de Reglas de Negocio (SLE)
-    private readonly DIAS_NAVEGADOS_ANUALES = 180;
-    private readonly DIAS_DESCANSO_POST_MAREA = 15;
-    private readonly PLAZO_ENTREGA_DATOS = 15;
-    private readonly PLAZO_CONFECCION_INFORME = 7;
-    private readonly PLAZO_PROTOCOLIZACION = 15;
-    private readonly PLAZO_RECHECK_ALERTAS = 7;
-    private readonly UMBRAL_FATIGA_ANUAL_PORCENTAJE = 0.9;
-    private readonly ALERTA_DIAS_CORRIDOS = 60;
-
     constructor(
         private readonly prisma: PrismaService,
         private readonly mailService: MailService,
-        private readonly alertsService: AlertsService
+        private readonly alertsService: AlertsService,
+        private readonly businessRulesService: BusinessRulesService
     ) { }
+
+    private get rules() {
+        return this.businessRulesService.getRules();
+    }
 
     async findOne(id: string) {
         const marea = await this.prisma.marea.findUnique({
@@ -77,14 +73,26 @@ export class MareasService {
 
     private buildMareaYearFilter(year?: number) {
         const operationalYear = this.resolveYear(year);
+        const startOfYear = new Date(operationalYear, 0, 1);
+        const startOfNextYear = new Date(operationalYear + 1, 0, 1);
 
-        // Regla unificada: incluir todas las no protocolizadas y solo protocolizadas del anio seleccionado.
+        // Regla unificada:
+        // - incluir todas las no protocolizadas, excepto las canceladas
+        // - incluir protocolizadas solo del anio seleccionado
+        // - incluir canceladas solo si la fecha de fin del observador cae en el anio seleccionado
         const mareaYearFilter = {
             OR: [
-                { estadoActual: { codigo: { not: 'PROTOCOLIZADA' } } },
+                { estadoActual: { codigo: { notIn: ['PROTOCOLIZADA', 'CANCELADA'] } } },
                 {
                     estadoActual: { codigo: 'PROTOCOLIZADA' },
                     anioProtocolizacion: operationalYear
+                },
+                {
+                    estadoActual: { codigo: 'CANCELADA' },
+                    fechaFinObservador: {
+                        gte: startOfYear,
+                        lt: startOfNextYear
+                    }
                 }
             ]
         };
@@ -368,7 +376,7 @@ export class MareasService {
     async getCriticalDelays(year?: number) {
         const { mareaYearFilter } = this.buildMareaYearFilter(year);
         const now = new Date();
-        const limit = this.PLAZO_ENTREGA_DATOS;
+        const limit = this.rules.PLAZO_ENTREGA_DATOS;
 
         const mareas = await (this.prisma as any).marea.findMany({
             where: {
@@ -425,7 +433,7 @@ export class MareasService {
     async getReportDelays(year?: number) {
         const { mareaYearFilter } = this.buildMareaYearFilter(year);
         const now = new Date();
-        const limit = this.PLAZO_CONFECCION_INFORME;
+        const limit = this.rules.PLAZO_CONFECCION_INFORME;
         const TARGET_STATES = [
             'ENTREGADA_RECIBIDA',
             'VERIFICACION_INICIAL',
@@ -579,7 +587,7 @@ export class MareasService {
 
                     // 4.6 Alerta (Plazo Entrega Datos: Arribo + 15 dias)
                     const deadline = new Date(e.fechaArribo);
-                    deadline.setDate(deadline.getDate() + this.PLAZO_ENTREGA_DATOS);
+                    deadline.setDate(deadline.getDate() + this.rules.PLAZO_ENTREGA_DATOS);
 
                     events.push({
                         id: `ven-${e.id}`,
@@ -748,7 +756,7 @@ export class MareasService {
             }>
         }> = [];
 
-        const THRESHOLD = Math.floor(this.DIAS_NAVEGADOS_ANUALES * this.UMBRAL_FATIGA_ANUAL_PORCENTAJE);
+        const THRESHOLD = Math.floor(this.rules.DIAS_NAVEGADOS_ANUALES * this.rules.UMBRAL_FATIGA_ANUAL_PORCENTAJE);
 
         observerDataMap.forEach((data, id) => {
             const allTripsIntervals: Array<{ inicio: Date; fin: Date }> = [];
@@ -965,7 +973,7 @@ export class MareasService {
 
         if (lastArrival) {
             const daysSince = Math.floor((now.getTime() - lastArrival.getTime()) / (1000 * 60 * 60 * 24));
-            if (daysSince < this.DIAS_DESCANSO_POST_MAREA) {
+            if (daysSince < this.rules.DIAS_DESCANSO_POST_MAREA) {
                 return 'DESCANSO';
             }
         }
@@ -1521,12 +1529,6 @@ export class MareasService {
             'PARA_PROTOCOLIZAR',
             'ESPERANDO_PROTOCOLIZACION'
         ]);
-        const estadosHistorial = new Set([
-            'FINALIZADA',
-            'CERRADA_ADMINISTRATIVAMENTE',
-            'INFORME_PROTOCOLIZADO',
-            'PROTOCOLIZADA'
-        ]);
         const now = new Date();
 
         const tasks: any[] = allMareas.map(m => {
@@ -1548,11 +1550,13 @@ export class MareasService {
             const lastStateChange = m.movimientos[0]?.fechaHora || m.fechaUltimaActualizacion;
             const daysInState = Math.floor((now.getTime() - new Date(lastStateChange).getTime()) / (1000 * 60 * 60 * 24));
 
-            const isReviewOverdue = cod === 'ESPERANDO_REVISION' && daysInState > this.PLAZO_CONFECCION_INFORME;
-            const isProtocolOverdue = (cod === 'PARA_PROTOCOLIZAR' || cod === 'ESPERANDO_PROTOCOLIZACION') && daysInState > this.PLAZO_PROTOCOLIZACION;
+            const isReviewOverdue = cod === 'ESPERANDO_REVISION' && daysInState > this.rules.PLAZO_CONFECCION_INFORME;
+            const isProtocolOverdue = (cod === 'PARA_PROTOCOLIZAR' || cod === 'ESPERANDO_PROTOCOLIZACION') && daysInState > this.rules.PLAZO_PROTOCOLIZACION;
             const isUrgente = hasReportDelay || isReviewOverdue || isProtocolOverdue;
 
-            if (estadosHistorial.has(cod)) {
+            const esFinal = Boolean(m.estadoActual?.esFinal);
+
+            if (esFinal) {
                 tab = 'historial';
                 prioridad = 'baja';
             } else if (isUrgente) {
