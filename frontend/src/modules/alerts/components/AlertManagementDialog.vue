@@ -76,9 +76,14 @@
                         </label>
                         <div class="flex flex-wrap gap-2 items-center">
                             <button class="btn btn-xs btn-soft btn-neutral" @click="setFollowUp(3)">3 d.</button>
-                            <button class="btn btn-xs btn-soft btn-neutral" @click="setFollowUp(7)">1 sem.</button>
+                            <button class="btn btn-xs btn-soft btn-neutral" @click="setFollowUp(PLAZO_RECHECK_ALERTAS)">1 sem.</button>
                             <button class="btn btn-xs btn-soft btn-neutral" @click="setFollowUp(15)">15 d.</button>
-                            <input type="date" class="input input-xs input-bordered ml-auto font-bold bg-base-200/50 border-base-content/10 text-base-content/80" v-model="customFollowUpDate" />
+                            <input
+                                type="date"
+                                class="input input-xs input-bordered ml-auto font-bold bg-base-200/50 border-base-content/10 text-base-content/80"
+                                v-model="customFollowUpDate"
+                                :min="minFollowUpDate"
+                            />
                         </div>
                     </div>
               </div>
@@ -167,6 +172,7 @@ import { CheckIcon } from '@/icons'
 import dashboardService from '@/modules/dashboard/services/dashboard.service'
 import ReclamoEntregaDialog from '@/modules/dashboard/components/ReclamoEntregaDialog.vue'
 import mareasService from '@/modules/mareas/services/mareas.service'
+import { BUSINESS_RULES } from '@/modules/shared/config/business-rules'
 
 const props = defineProps<{
   isOpen: boolean
@@ -195,19 +201,38 @@ const isConfirmationOpen = ref(false)
 const pendingAction = ref<'SEGUIMIENTO' | 'DESCARTADA' | 'RESUELTA' | ''>('')
 const confirmationMessage = ref('')
 const mareaObservers = ref<string[]>([])
+const { PLAZO_RECHECK_ALERTAS } = BUSINESS_RULES
+
+const getTomorrow = () => {
+    const tomorrow = new Date()
+    tomorrow.setDate(tomorrow.getDate() + 1)
+    tomorrow.setHours(0, 0, 0, 0)
+    return tomorrow
+}
+
+const minFollowUpDate = computed(() => getTomorrow().toISOString().split('T')[0])
+
+const setDefaultFollowUpDate = (dateStr?: string | null) => {
+    const minDate = getTomorrow()
+    if (dateStr) {
+        const parsed = new Date(dateStr)
+        if (!Number.isNaN(parsed.getTime()) && parsed >= minDate) {
+            customFollowUpDate.value = parsed.toISOString().split('T')[0]
+            return
+        }
+    }
+
+    const fallback = new Date()
+    fallback.setDate(fallback.getDate() + PLAZO_RECHECK_ALERTAS)
+    customFollowUpDate.value = fallback.toISOString().split('T')[0]
+}
 
 watch(() => props.alert, (newVal) => {
     if (newVal) {
         localAlert.value = { ...newVal } // Sync immediately
         comment.value = ''
         loadFullAlert(newVal.id)
-        if (newVal.fechaVencimiento) {
-             customFollowUpDate.value = new Date(newVal.fechaVencimiento).toISOString().split('T')[0]
-        } else {
-             const defaultDate = new Date()
-             defaultDate.setDate(defaultDate.getDate() + 7)
-             customFollowUpDate.value = defaultDate.toISOString().split('T')[0]
-        }
+        setDefaultFollowUpDate(newVal.fechaVencimiento || null)
         if (newVal.referenciaTipo === 'MAREA' && newVal.referenciaId) {
             loadMareaObservers(newVal.referenciaId)
         } else {
@@ -230,6 +255,7 @@ const loadFullAlert = async (id: string) => {
     try {
         const full = await alertsService.getOne(id)
         localAlert.value = full
+        setDefaultFollowUpDate(full?.fechaVencimiento || null)
     } catch (e) {
         console.error('Error cargando detalle de alerta:', e)
     }
@@ -416,6 +442,15 @@ const closeConfirmation = () => {
 const confirmAction = async () => {
     if (!pendingAction.value) return
     const action = pendingAction.value
+    if (action === 'SEGUIMIENTO') {
+        const minDate = getTomorrow()
+        const selected = customFollowUpDate.value ? new Date(customFollowUpDate.value) : null
+        if (!selected || Number.isNaN(selected.getTime()) || selected < minDate) {
+            toast.error('La fecha de re-check debe ser desde mañana en adelante.')
+            setDefaultFollowUpDate(null)
+            return
+        }
+    }
     closeConfirmation()
     await submitUpdate(action)
 }
@@ -426,7 +461,9 @@ const submitUpdate = async (status: string) => {
         let followUp = undefined
 
         if (status === 'SEGUIMIENTO') {
-            const date = customFollowUpDate.value ? new Date(customFollowUpDate.value) : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+            const date = customFollowUpDate.value
+                ? new Date(customFollowUpDate.value)
+                : new Date(Date.now() + PLAZO_RECHECK_ALERTAS * 24 * 60 * 60 * 1000)
             followUp = date.toISOString()
         }
 

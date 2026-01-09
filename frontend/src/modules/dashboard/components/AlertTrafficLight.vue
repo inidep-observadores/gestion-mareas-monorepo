@@ -356,11 +356,13 @@
 import { computed, onMounted, ref } from 'vue'
 import { toast } from 'vue-sonner'
 import { MailIcon, PhoneIcon } from '@/icons'
+import { BUSINESS_RULES } from '@/modules/shared/config/business-rules'
 import dashboardService, { type FatigueAlert, type FatigueTrip } from '@/modules/dashboard/services/dashboard.service'
 import ReclamoEntregaDialog from './ReclamoEntregaDialog.vue'
 
 const showReclamoDialog = ref(false)
 const selectedReclamoItem = ref<any>(null)
+const { DIAS_NAVEGADOS_ANUALES } = BUSINESS_RULES
 
 const openReclamo = (item: any) => {
   selectedReclamoItem.value = item
@@ -459,9 +461,9 @@ const loadFatigueAlerts = async () => {
         name: item.name,
         initials: buildInitials(item.name),
         value: item.days,
-        percent: Math.round((item.days / 180) * 100),
+        percent: Math.round((item.days / DIAS_NAVEGADOS_ANUALES) * 100),
         reason: 'Acumulado anual',
-        isOver: item.days > 180,
+        isOver: item.days > DIAS_NAVEGADOS_ANUALES,
         daysSinceLast: calculateDaysSince(item.lastArrival),
         trips: item.trips || []
       }))

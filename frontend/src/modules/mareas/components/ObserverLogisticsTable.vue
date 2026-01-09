@@ -46,13 +46,13 @@
                <div class="w-full max-w-[140px]">
                  <div class="flex justify-between text-[10px] font-black uppercase mb-1.5">
                     <span class="text-gray-900 dark:text-white">{{ obs.diasMar }}d</span>
-                    <span class="text-gray-400">/ 180 IDEAL</span>
+                    <span class="text-gray-400">/ {{ DIAS_NAVEGADOS_ANUALES }} IDEAL</span>
                  </div>
                  <div class="h-2 w-full bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden border border-gray-100/50 dark:border-gray-700/30 relative">
                     <div
                       class="h-full transition-all duration-1000 ease-out rounded-full shadow-sm"
-                      :class="[obs.diasMar >= 180 ? 'bg-orange-500' : 'bg-indigo-500']"
-                      :style="{ width: Math.min((obs.diasMar / 180) * 100, 100) + '%' }"
+                      :class="[obs.diasMar >= DIAS_NAVEGADOS_ANUALES ? 'bg-orange-500' : 'bg-indigo-500']"
+                      :style="{ width: Math.min((obs.diasMar / DIAS_NAVEGADOS_ANUALES) * 100, 100) + '%' }"
                     ></div>
                     <!-- Target Marker -->
                     <div class="absolute top-0 right-0 h-full w-px bg-white/30"></div>
@@ -101,6 +101,10 @@
 </template>
 
 <script setup lang="ts">
+import { BUSINESS_RULES } from '@/modules/shared/config/business-rules'
+
+const { DIAS_NAVEGADOS_ANUALES } = BUSINESS_RULES
+
 interface Observer {
   id: number
   nombre: string
