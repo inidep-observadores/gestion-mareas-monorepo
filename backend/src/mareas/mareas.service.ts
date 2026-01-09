@@ -74,8 +74,25 @@ export class MareasService {
         return year && !Number.isNaN(year) ? year : new Date().getFullYear();
     }
 
-    async getDashboardOperativo(year?: number) {
+    private buildMareaYearFilter(year?: number) {
         const operationalYear = this.resolveYear(year);
+
+        // Regla unificada: incluir todas las no protocolizadas y solo protocolizadas del anio seleccionado.
+        const mareaYearFilter = {
+            OR: [
+                { estadoActual: { codigo: { not: 'PROTOCOLIZADA' } } },
+                {
+                    estadoActual: { codigo: 'PROTOCOLIZADA' },
+                    anioProtocolizacion: operationalYear
+                }
+            ]
+        };
+
+        return { operationalYear, mareaYearFilter };
+    }
+
+    async getDashboardOperativo(year?: number) {
+        const { mareaYearFilter } = this.buildMareaYearFilter(year);
         const [estados, transiciones] = await Promise.all([
             (this.prisma as any).estadoMarea.findMany({
                 where: { activo: true, mostrarEnPanel: true },
@@ -90,7 +107,7 @@ export class MareasService {
             estados.map(async (e) => ({
                 label: e.nombre,
                 value: await (this.prisma as any).marea.count({
-                    where: { estadoActualId: e.id, activo: true, anioMarea: operationalYear }
+                    where: { estadoActualId: e.id, activo: true, ...mareaYearFilter }
                 }),
                 codigo: e.codigo
             }))
@@ -101,7 +118,7 @@ export class MareasService {
         const mareas = await (this.prisma as any).marea.findMany({
             where: {
                 activo: true,
-                anioMarea: operationalYear,
+                ...mareaYearFilter,
                 estadoActual: {
                     mostrarEnPanel: true
                 }
@@ -221,14 +238,14 @@ export class MareasService {
     }
 
     async getDashboardKpis(year?: number) {
-        const operationalYear = this.resolveYear(year);
+        const { mareaYearFilter } = this.buildMareaYearFilter(year);
 
         const [buquesActivos, observadoresDisponibles, mareasDesignadas, listasParaProtocolizar, mareasEnRevision] = await Promise.all([
             this.prisma.marea.groupBy({
                 by: ['buqueId'],
                 where: {
                     activo: true,
-                    anioMarea: operationalYear,
+                    ...mareaYearFilter,
                     buque: {
                         activo: true
                     },
@@ -249,7 +266,7 @@ export class MareasService {
             this.prisma.marea.count({
                 where: {
                     activo: true,
-                    anioMarea: operationalYear,
+                    ...mareaYearFilter,
                     estadoActual: {
                         codigo: 'DESIGNADA'
                     }
@@ -258,7 +275,7 @@ export class MareasService {
             this.prisma.marea.count({
                 where: {
                     activo: true,
-                    anioMarea: operationalYear,
+                    ...mareaYearFilter,
                     estadoActual: {
                         codigo: 'ESPERANDO_PROTOCOLIZACION'
                     }
@@ -267,7 +284,7 @@ export class MareasService {
             this.prisma.marea.count({
                 where: {
                     activo: true,
-                    anioMarea: operationalYear,
+                    ...mareaYearFilter,
                     estadoActual: {
                         codigo: { in: this.ESTADOS_REVISION }
                     }
@@ -285,14 +302,14 @@ export class MareasService {
     }
 
     async getFleetDistributionByFishery(year?: number) {
-        const operationalYear = this.resolveYear(year);
+        const { mareaYearFilter } = this.buildMareaYearFilter(year);
         // Use strictly Active states (Designated + Navigating) to match Command Center KPIs
         const activeStates = ['DESIGNADA', ...this.ESTADOS_NAVEGANDO];
 
         const activeMareas = await this.prisma.marea.findMany({
             where: {
                 activo: true,
-                anioMarea: operationalYear,
+                ...mareaYearFilter,
                 estadoActual: {
                     codigo: { in: activeStates }
                 }
@@ -348,14 +365,14 @@ export class MareasService {
     }
 
     async getCriticalDelays(year?: number) {
-        const operationalYear = this.resolveYear(year);
+        const { mareaYearFilter } = this.buildMareaYearFilter(year);
         const now = new Date();
         const limit = this.PLAZO_ENTREGA_DATOS;
 
         const mareas = await (this.prisma as any).marea.findMany({
             where: {
                 activo: true,
-                anioMarea: operationalYear,
+                ...mareaYearFilter,
                 estadoActual: {
                     codigo: 'ESPERANDO_ENTREGA'
                 }
@@ -405,7 +422,7 @@ export class MareasService {
     }
 
     async getReportDelays(year?: number) {
-        const operationalYear = this.resolveYear(year);
+        const { mareaYearFilter } = this.buildMareaYearFilter(year);
         const now = new Date();
         const limit = this.PLAZO_CONFECCION_INFORME;
         const TARGET_STATES = [
@@ -420,7 +437,7 @@ export class MareasService {
         const mareas = await (this.prisma as any).marea.findMany({
             where: {
                 activo: true,
-                anioMarea: operationalYear,
+                ...mareaYearFilter,
                 estadoActual: {
                     codigo: { in: TARGET_STATES }
                 }
@@ -485,11 +502,11 @@ export class MareasService {
     }
 
     async getCalendarEvents(year?: number) {
-        const operationalYear = this.resolveYear(year);
+        const { mareaYearFilter } = this.buildMareaYearFilter(year);
         const mareas = await (this.prisma as any).marea.findMany({
             where: {
                 activo: true,
-                anioMarea: operationalYear
+                ...mareaYearFilter
             },
             include: {
                 buque: true,
@@ -630,7 +647,7 @@ export class MareasService {
     }
 
     async getFatigueAlerts(year?: number) {
-        const operationalYear = this.resolveYear(year);
+        const { operationalYear, mareaYearFilter } = this.buildMareaYearFilter(year);
         const periodStart = new Date(operationalYear, 0, 1, 0, 0, 0, 0);
         const periodEnd = new Date(operationalYear, 11, 31, 23, 59, 59, 999);
 
@@ -638,7 +655,7 @@ export class MareasService {
             where: {
                 marea: {
                     activo: true,
-                    anioMarea: operationalYear
+                    ...mareaYearFilter
                 },
                 OR: [
                     { fechaZarpada: { not: null, lte: periodEnd } },
@@ -779,7 +796,7 @@ export class MareasService {
     }
 
     async getWorkforceStatus(year?: number) {
-        const operationalYear = this.resolveYear(year);
+        const { operationalYear, mareaYearFilter } = this.buildMareaYearFilter(year);
         const periodStart = new Date(operationalYear, 0, 1, 0, 0, 0, 0);
         const now = new Date();
 
@@ -791,7 +808,7 @@ export class MareasService {
         // Etapas del año operativo (incluye las que cruzan año)
         const etapas = await this.prisma.mareaEtapa.findMany({
             where: {
-                marea: { activo: true, anioMarea: operationalYear },
+                marea: { activo: true, ...mareaYearFilter },
                 fechaZarpada: { not: null }
             },
             include: {
@@ -1410,7 +1427,7 @@ export class MareasService {
     }
 
     async getInbox(year?: number) {
-        const operationalYear = this.resolveYear(year);
+        const { operationalYear, mareaYearFilter } = this.buildMareaYearFilter(year);
 
         // Ejecutar motor de reglas (con unicidad garantizada por el servicio)
         await this.checkAlertRules(operationalYear);
@@ -1445,7 +1462,7 @@ export class MareasService {
         const allMareas = await this.prisma.marea.findMany({
             where: {
                 activo: true,
-                anioMarea: operationalYear,
+                ...mareaYearFilter,
             },
             include: {
                 buque: true,
