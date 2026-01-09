@@ -1419,7 +1419,7 @@ export class MareasService {
         // Filtrar las que NO están resueltas ni descartadas (solo activas)
         // O incluir las 'EN_SEGUIMIENTO' también.
         // Prisma 'NOT' filter or explicitly IN ['PENDIENTE', 'SEGUIMIENTO', 'VENCIDA']
-        const persistentAlerts = await this.prisma.alerta.findMany({
+        const persistentAlertsRaw = await this.prisma.alerta.findMany({
             where: {
                 estado: { in: ['PENDIENTE', 'SEGUIMIENTO', 'VENCIDA'] }
             },
@@ -1427,8 +1427,19 @@ export class MareasService {
                 prioridad: 'asc', // ALTA < MEDIA ?? No, string sort might be tricky. 'ALTA' < 'BAJA'? 'A' < 'B'. So 'ALTA' comes first.
                 // Better order by fechaDetectada desc? Or priority.
                 // ALTA comes before MEDIA alphabetically? Yes. A < M.
+            },
+            include: {
+                eventos: {
+                    select: { detalle: true },
+                    orderBy: { fechaHora: 'desc' },
+                    take: 1
+                }
             }
         });
+        const persistentAlerts = persistentAlertsRaw.map((alerta: any) => ({
+            ...alerta,
+            notaGestion: this.extractNotaGestion(alerta.eventos?.[0]?.detalle || '')
+        }));
 
         // 2. Obtener Mareas para las Pestañas
         const allMareas = await this.prisma.marea.findMany({
@@ -1527,6 +1538,16 @@ export class MareasService {
             alerts: persistentAlerts,
             tasks
         };
+    }
+
+    private extractNotaGestion(detalle: string): string | null {
+        if (!detalle) return null;
+        const marker = 'Notas:';
+        if (detalle.includes(marker)) {
+            const parts = detalle.split(marker);
+            return parts[parts.length - 1].trim() || null;
+        }
+        return detalle.trim() || null;
     }
 
 }

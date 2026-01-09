@@ -23,6 +23,7 @@ export interface Alerta {
     referenciaTipo?: string
     metadata?: Record<string, any>
     eventos?: AlertEvent[]
+    notaGestion?: string
     asignadoA?: { fullName: string; avatarUrl?: string }
 }
 

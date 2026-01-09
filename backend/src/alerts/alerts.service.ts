@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateAlertDto } from './dto/create-alert.dto';
 import { UpdateAlertDto } from './dto/update-alert.dto';
@@ -73,12 +73,20 @@ export class AlertsService {
             orderBy: { fechaDetectada: 'desc' },
             include: {
                 asignadoA: { select: { fullName: true, avatarUrl: true } },
-                creadoPor: { select: { fullName: true } }
+                creadoPor: { select: { fullName: true } },
+                eventos: {
+                    select: { detalle: true },
+                    orderBy: { fechaHora: 'desc' },
+                    take: 1
+                }
             }
         });
 
         this.logger.log(`findAll results count: ${results.length}`);
-        return results;
+        return results.map((alerta: any) => ({
+            ...alerta,
+            notaGestion: this.extractNotaGestion(alerta.eventos?.[0]?.detalle || '')
+        }));
     }
 
     async findOne(id: string) {
@@ -99,6 +107,9 @@ export class AlertsService {
 
         const current = await this.prisma.alerta.findUnique({ where: { id } });
         if (!current) throw new Error('Alerta no encontrada');
+        if (data.estado && ['SEGUIMIENTO', 'DESCARTADA', 'RESUELTA'].includes(data.estado) && !comment?.trim()) {
+            throw new BadRequestException('Debe ingresar una nota de gestión para actualizar la alerta.');
+        }
 
         // Detect changes for event logging
         const changes = [];
@@ -128,6 +139,16 @@ export class AlertsService {
         }
 
         return updated;
+    }
+
+    private extractNotaGestion(detalle: string): string | null {
+        if (!detalle) return null;
+        const marker = 'Notas:';
+        if (detalle.includes(marker)) {
+            const parts = detalle.split(marker);
+            return parts[parts.length - 1].trim() || null;
+        }
+        return detalle.trim() || null;
     }
 
     async logEvent(alertaId: string, tipo: string, detalle: string, userId?: string) {

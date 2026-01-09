@@ -30,6 +30,9 @@
       <p class="text-[11px] text-base-content/60 line-clamp-1 mt-0.5 leading-relaxed font-medium">
         {{ descripcion }}
       </p>
+      <p v-if="notaGestionCorta" class="text-[10px] text-base-content/40 mt-1 leading-relaxed font-semibold">
+        Nota de gestion: {{ notaGestionCorta }}
+      </p>
     </div>
 
     <!-- Actions -->
@@ -62,6 +65,7 @@ interface Props {
   estado?: 'PENDIENTE' | 'SEGUIMIENTO' | 'RESUELTA' | 'DESCARTADA' | 'VENCIDA'
   referenciaTipo?: string
   metadata?: Record<string, any>
+  notaGestion?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -133,5 +137,11 @@ const actionButtonClass = computed(() => {
         case 'SEGUIMIENTO': return 'btn-warning text-white'
         default: return 'btn-error text-white'
     }
+})
+
+const notaGestionCorta = computed(() => {
+    const text = props.notaGestion?.trim()
+    if (!text) return ''
+    return text.length > 50 ? `${text.slice(0, 47)}...` : text
 })
 </script>
