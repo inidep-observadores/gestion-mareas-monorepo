@@ -114,12 +114,17 @@ export class AlertsService {
             }
         });
 
-        if (changes.length > 0) {
-            await this.logEvent(id, 'CAMBIO_ESTADO', changes.join(', '), user.id);
+        let finalDetail = changes.join(', ');
+        if (comment) {
+            finalDetail = finalDetail
+                ? `${finalDetail}. Notas: ${comment}`
+                : comment;
         }
 
-        if (comment) {
-            await this.logEvent(id, 'COMENTARIO', comment, user.id);
+        if (changes.length > 0) {
+            await this.logEvent(id, 'CAMBIO_ESTADO', finalDetail, user.id);
+        } else if (comment) {
+            await this.logEvent(id, 'COMENTARIO', finalDetail, user.id);
         }
 
         return updated;

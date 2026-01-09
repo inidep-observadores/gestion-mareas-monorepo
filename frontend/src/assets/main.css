@@ -1,15 +1,17 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap')
-layer(base);
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap') layer(base);
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap') layer(base);
 
 @import 'tailwindcss';
-@plugin "flyonui";
+@plugin "flyonui" {
+  themes: soft --default, dark --prefersdark;
+}
 @source "../../node_modules/flyonui/dist/js/*.js";
 
 @custom-variant dark (&:is(.dark *));
 
 @theme {
-
   --font-outfit: Outfit, sans-serif;
+  --font-montserrat: Montserrat, sans-serif;
 
   --breakpoint-*: initial;
   --breakpoint-2xsm: 375px;
@@ -192,7 +194,7 @@ layer(base);
     cursor: pointer;
   }
   body {
-    @apply relative font-normal font-outfit z-1 bg-gray-50;
+    @apply relative font-normal font-montserrat z-1 bg-base-100 text-base-content;
   }
 }
 
