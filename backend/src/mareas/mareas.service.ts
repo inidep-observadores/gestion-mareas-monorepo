@@ -26,6 +26,7 @@ export class MareasService {
     private readonly PLAZO_ENTREGA_DATOS = 15;
     private readonly PLAZO_CONFECCION_INFORME = 7;
     private readonly PLAZO_PROTOCOLIZACION = 15;
+    private readonly PLAZO_RECHECK_ALERTAS = 7;
     private readonly UMBRAL_FATIGA_ANUAL_PORCENTAJE = 0.9;
     private readonly ALERTA_DIAS_CORRIDOS = 60;
 
@@ -647,22 +648,20 @@ export class MareasService {
     }
 
     async getFatigueAlerts(year?: number) {
-        const { operationalYear, mareaYearFilter } = this.buildMareaYearFilter(year);
+        const operationalYear = this.resolveYear(year);
         const periodStart = new Date(operationalYear, 0, 1, 0, 0, 0, 0);
         const periodEnd = new Date(operationalYear, 11, 31, 23, 59, 59, 999);
 
         const etapas = await this.prisma.mareaEtapa.findMany({
             where: {
                 marea: {
-                    activo: true,
-                    ...mareaYearFilter
+                    activo: true
                 },
-                OR: [
+                AND: [
                     { fechaZarpada: { not: null, lte: periodEnd } },
-                    { fechaArribo: { gte: periodStart } },
                     {
-                        AND: [
-                            { fechaZarpada: { not: null } },
+                        OR: [
+                            { fechaArribo: { gte: periodStart } },
                             { fechaArribo: null }
                         ]
                     }
@@ -695,9 +694,10 @@ export class MareasService {
             if (!inicio) return;
 
             const finRaw = etapa.fechaArribo ? new Date(etapa.fechaArribo) : null;
-            // Si sigue navegando o el arribo es posterior, contamos hasta ahora (sin cortar al 31/12)
+            // Si sigue navegando o el arribo es posterior, contamos hasta ahora y recortamos al fin de anio
             const finCandidate = finRaw || now;
-            const fin = finCandidate > now ? now : finCandidate;
+            const finNoFuture = finCandidate > now ? now : finCandidate;
+            const fin = finNoFuture > periodEnd ? periodEnd : finNoFuture;
 
             const clampedInicio = inicio < periodStart ? periodStart : inicio;
             const clampedFin = fin;
@@ -1426,11 +1426,38 @@ export class MareasService {
         }
     }
 
+    private async expireFollowUps() {
+        const now = new Date();
+        const vencidas = await this.prisma.alerta.findMany({
+            where: {
+                estado: 'SEGUIMIENTO',
+                fechaVencimiento: {
+                    not: null,
+                    lte: now
+                }
+            },
+            select: { id: true, fechaVencimiento: true }
+        });
+
+        for (const alerta of vencidas) {
+            await this.prisma.alerta.update({
+                where: { id: alerta.id },
+                data: { estado: 'VENCIDA' }
+            });
+            await this.alertsService.logEvent(
+                alerta.id,
+                'CAMBIO_ESTADO',
+                `Estado: SEGUIMIENTO -> VENCIDA. Notas: Re-check vencido el ${alerta.fechaVencimiento?.toLocaleDateString('es-AR') || 'N/D'}.`
+            );
+        }
+    }
+
     async getInbox(year?: number) {
         const { operationalYear, mareaYearFilter } = this.buildMareaYearFilter(year);
 
         // Ejecutar motor de reglas (con unicidad garantizada por el servicio)
         await this.checkAlertRules(operationalYear);
+        await this.expireFollowUps();
 
         // 1. Obtener Alertas Persistentes
         // Filtrar las que NO están resueltas ni descartadas (solo activas)

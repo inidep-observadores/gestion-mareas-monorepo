@@ -20,7 +20,7 @@
       <div class="space-y-6">
         <div class="flex items-center justify-between">
            <h3 class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Entrega de Datos</h3>
-           <span class="text-[10px] font-bold text-gray-400 uppercase italic">Meta: < 15 días</span>
+           <span class="text-[10px] font-bold text-gray-400 uppercase italic">Meta: < {{ PLAZO_ENTREGA_DATOS }} días</span>
         </div>
         
         <div class="space-y-4">
@@ -31,16 +31,16 @@
                     <span class="text-xs font-black text-gray-900 dark:text-white tabular-nums">{{ item.days }}d</span>
                     <span 
                       class="text-[10px] font-black px-1.5 py-0.5 rounded text-white"
-                      :class="item.days <= 15 ? 'bg-emerald-500' : 'bg-red-500'"
+                      :class="item.days <= PLAZO_ENTREGA_DATOS ? 'bg-emerald-500' : 'bg-red-500'"
                     >
-                      {{ item.days <= 15 ? 'OK' : 'FAIL' }}
+                      {{ item.days <= PLAZO_ENTREGA_DATOS ? 'OK' : 'FAIL' }}
                     </span>
                  </div>
               </div>
               <div class="h-1.5 w-full bg-gray-50 dark:bg-gray-800 rounded-full overflow-hidden border border-gray-100 dark:border-gray-700/30">
                  <div 
                    class="h-full transition-all duration-1000"
-                   :style="{ width: (item.days / 20 * 100) + '%', backgroundColor: item.days <= 15 ? '#10b981' : '#ef4444' }"
+                   :style="{ width: (item.days / 20 * 100) + '%', backgroundColor: item.days <= PLAZO_ENTREGA_DATOS ? '#10b981' : '#ef4444' }"
                  ></div>
               </div>
            </div>
@@ -51,7 +51,7 @@
       <div class="space-y-6">
         <div class="flex items-center justify-between">
            <h3 class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Procesamiento Informe</h3>
-           <span class="text-[10px] font-bold text-gray-400 uppercase italic">Meta: < 7 días</span>
+           <span class="text-[10px] font-bold text-gray-400 uppercase italic">Meta: < {{ PLAZO_CONFECCION_INFORME }} días</span>
         </div>
 
         <div class="space-y-4">
@@ -62,16 +62,16 @@
                     <span class="text-xs font-black text-gray-900 dark:text-white tabular-nums">{{ item.days }}d</span>
                     <span 
                       class="text-[10px] font-black px-1.5 py-0.5 rounded text-white"
-                      :class="item.days <= 7 ? 'bg-indigo-500' : 'bg-orange-500'"
+                      :class="item.days <= PLAZO_CONFECCION_INFORME ? 'bg-indigo-500' : 'bg-orange-500'"
                     >
-                      {{ item.days <= 7 ? 'OK' : 'LIMIT' }}
+                      {{ item.days <= PLAZO_CONFECCION_INFORME ? 'OK' : 'LIMIT' }}
                     </span>
                  </div>
               </div>
               <div class="h-1.5 w-full bg-gray-50 dark:bg-gray-800 rounded-full overflow-hidden border border-gray-100 dark:border-gray-700/30">
                  <div 
                    class="h-full transition-all duration-1000"
-                   :style="{ width: (item.days / 10 * 100) + '%', backgroundColor: item.days <= 7 ? '#6366f1' : '#f97316' }"
+                   :style="{ width: (item.days / 10 * 100) + '%', backgroundColor: item.days <= PLAZO_CONFECCION_INFORME ? '#6366f1' : '#f97316' }"
                  ></div>
               </div>
            </div>
@@ -91,6 +91,10 @@
 </template>
 
 <script setup lang="ts">
+import { BUSINESS_RULES } from '@/modules/shared/config/business-rules'
+
+const { PLAZO_ENTREGA_DATOS, PLAZO_CONFECCION_INFORME } = BUSINESS_RULES
+
 const deliveryStats = [
   { month: 'Mayo', days: 12.4 },
   { month: 'Abril', days: 18.2 },
