@@ -25,6 +25,7 @@ export class MareasService {
     private readonly DIAS_DESCANSO_POST_MAREA = 15;
     private readonly PLAZO_ENTREGA_DATOS = 15;
     private readonly PLAZO_CONFECCION_INFORME = 7;
+    private readonly PLAZO_PROTOCOLIZACION = 15;
     private readonly UMBRAL_FATIGA_ANUAL_PORCENTAJE = 0.9;
     private readonly ALERTA_DIAS_CORRIDOS = 60;
 
@@ -1447,6 +1448,11 @@ export class MareasService {
                             include: { observador: true }
                         }
                     }
+                },
+                movimientos: {
+                    where: { tipoEvento: 'CAMBIO_ESTADO' },
+                    orderBy: { fechaHora: 'desc' },
+                    take: 1
                 }
             },
             orderBy: {
@@ -1454,27 +1460,55 @@ export class MareasService {
             }
         });
 
+        const estadosPendientes = new Set([
+            'PENDIENTE_DE_INFORME',
+            'ESPERANDO_REVISION',
+            'PARA_PROTOCOLIZAR',
+            'ESPERANDO_PROTOCOLIZACION'
+        ]);
+        const estadosHistorial = new Set([
+            'FINALIZADA',
+            'CERRADA_ADMINISTRATIVAMENTE',
+            'INFORME_PROTOCOLIZADO',
+            'PROTOCOLIZADA'
+        ]);
+        const now = new Date();
+
         const tasks: any[] = allMareas.map(m => {
             const etapaActual = m.etapas[0];
             const primaryObs = etapaActual?.observadores[0]?.observador;
             const mareaIdFormatted = `${m.tipoMarea}-${String(m.nroMarea).padStart(3, '0')}-${String(m.anioMarea).slice(-2)}`;
 
-            let tab = 'proceso';
+            let tab: string | null = null;
             let prioridad = 'media';
 
             // Lógica de clasificación por pestañas y prioridad
             const cod = m.estadoActual.codigo;
 
-            // Check if there are active alerts for this marea
-            const hasAlerts = persistentAlerts.some(a => a.referenciaId === m.id || a.descripcion.includes(mareaIdFormatted));
+            const hasReportDelay = persistentAlerts.some(a =>
+                a.tipo === 'RETRASO_INFORME' &&
+                (a.referenciaId === m.id || a.descripcion?.includes(mareaIdFormatted))
+            );
 
-            if (cod === 'EN_CORRECCION' || hasAlerts) {
-                tab = 'urgentes';
-                prioridad = 'alta';
-            } else if (['FINALIZADA', 'CERRADA_ADMINISTRATIVAMENTE', 'INFORME_PROTOCOLIZADO'].includes(cod)) {
+            const lastStateChange = m.movimientos[0]?.fechaHora || m.fechaUltimaActualizacion;
+            const daysInState = Math.floor((now.getTime() - new Date(lastStateChange).getTime()) / (1000 * 60 * 60 * 24));
+
+            const isReviewOverdue = cod === 'ESPERANDO_REVISION' && daysInState > this.PLAZO_CONFECCION_INFORME;
+            const isProtocolOverdue = (cod === 'PARA_PROTOCOLIZAR' || cod === 'ESPERANDO_PROTOCOLIZACION') && daysInState > this.PLAZO_PROTOCOLIZACION;
+            const isUrgente = hasReportDelay || isReviewOverdue || isProtocolOverdue;
+
+            if (estadosHistorial.has(cod)) {
                 tab = 'historial';
                 prioridad = 'baja';
+            } else if (isUrgente) {
+                tab = 'urgentes';
+                prioridad = 'alta';
+            } else if (estadosPendientes.has(cod)) {
+                tab = 'pendientes';
+                prioridad = 'media';
             }
+
+            if (!tab) return null;
 
             return {
                 id: m.id,
@@ -1487,7 +1521,7 @@ export class MareasService {
                 tab,
                 actions: [] // Las acciones se resuelven en el frontend según el estado
             };
-        });
+        }).filter(Boolean);
 
         return {
             alerts: persistentAlerts,
