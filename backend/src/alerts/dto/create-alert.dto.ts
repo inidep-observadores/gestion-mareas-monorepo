@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsEnum, IsUUID, IsNotEmpty } from 'class-validator';
+import { IsString, IsOptional, IsUUID, IsNotEmpty, IsObject } from 'class-validator';
 
 export class CreateAlertDto {
     @IsString()
@@ -8,6 +8,14 @@ export class CreateAlertDto {
     @IsUUID()
     @IsOptional()
     referenciaId?: string;
+
+    @IsOptional()
+    @IsString()
+    referenciaTipo?: string; // e.g., 'MAREA', 'BUQUE', 'OBSERVADOR', 'OTRO'
+
+    @IsOptional()
+    @IsObject()
+    metadata?: Record<string, any>;
 
     @IsString()
     @IsNotEmpty()

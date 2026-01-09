@@ -1369,6 +1369,8 @@ export class MareasService {
             await this.alertsService.create({
                 codigoUnico: `FATIGA-${f.id}-${year}`,
                 referenciaId: f.id,
+                referenciaTipo: 'OBSERVADOR',
+                metadata: { observerName: f.name, days: f.days },
                 tipo: 'FATIGA',
                 titulo: 'Fatiga Crítica Detectada',
                 descripcion: `El observador ${f.name} ha navegado ${f.days} días en el año.`,
@@ -1379,8 +1381,10 @@ export class MareasService {
 
         for (const d of criticalDelays) {
             await this.alertsService.create({
-                codigoUnico: `RETRASO_DATOS-${d.id}`, // d.id is probably internal ID or specific delay ID? In getCriticalDelays it's likely Marea ID + type? Just Marea ID might duplicate if multiple issues. Use explicit code.
-                referenciaId: d.mareaId, // Assuming d has mareaId
+                codigoUnico: `RETRASO_DATOS-${d.id}`,
+                referenciaId: d.id,
+                referenciaTipo: 'MAREA',
+                metadata: { mareaCode: d.mareaId, vessel: d.vesselName, busDays: d.days },
                 tipo: 'RETRASO_DATOS',
                 titulo: 'Retraso en Entrega de Datos',
                 descripcion: `Marea ${d.mareaId} (${d.vesselName}) - ${d.days} días de demora.`,
@@ -1392,7 +1396,9 @@ export class MareasService {
         for (const d of reportDelays) {
             await this.alertsService.create({
                 codigoUnico: `RETRASO_INFORME-${d.id}`,
-                referenciaId: d.mareaId,
+                referenciaId: d.id,
+                referenciaTipo: 'MAREA',
+                metadata: { mareaCode: d.mareaId, vessel: d.vesselName, busDays: d.days },
                 tipo: 'RETRASO_INFORME',
                 titulo: 'Informe Demorado',
                 descripcion: `Marea ${d.mareaId} (${d.vesselName}) - ${d.days} días desde recepción.`,

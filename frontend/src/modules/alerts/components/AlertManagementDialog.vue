@@ -12,6 +12,9 @@
                     {{ localAlert.prioridad }}
                 </span>
                 <span class="text-base-content font-black uppercase tracking-tight">{{ localAlert.titulo }}</span>
+                <span v-if="localAlert.referenciaTipo" :class="['badge badge-sm border-none font-bold text-[10px] uppercase tracking-wider', getOriginBadgeClass(localAlert.referenciaTipo)]">
+                    {{ localAlert.referenciaTipo }}
+                </span>
             </div>
             <button
                 v-if="localAlert.referenciaId"
@@ -19,7 +22,7 @@
                 class="btn btn-sm btn-soft btn-neutral gap-2 ml-4"
                 title="Ver historial completo en la marea"
             >
-                Ir a Marea
+                {{ isMarea ? 'Ir a Marea' : 'Ver Entidad' }}
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
             </button>
         </div>
@@ -175,15 +178,30 @@ const getBadgeClass = (prio: string) => {
     }
 }
 
+const getOriginBadgeClass = (type: string) => {
+    switch (type) {
+        case 'MAREA': return 'badge-info bg-info/20 text-info'
+        case 'OBSERVADOR': return 'badge-secondary bg-secondary/20 text-secondary'
+        case 'BUQUE': return 'badge-accent bg-accent/20 text-accent'
+        default: return 'badge-neutral bg-base-content/10 text-base-content/60'
+    }
+}
+
+const isMarea = computed(() => !localAlert.value.referenciaTipo || localAlert.value.referenciaTipo === 'MAREA')
+
 const goToFullHistory = () => {
     if (localAlert.value.referenciaId) {
-        emit('close')
-        router.push({
-            path: `/mareas/${localAlert.value.referenciaId}`,
-            query: { tab: 'historial_alertas' }
-        })
+        if (isMarea.value) {
+            emit('close')
+            router.push({
+                path: `/mareas/${localAlert.value.referenciaId}`,
+                query: { tab: 'historial_alertas' }
+            })
+        } else {
+             toast.info(`Navegación para ${localAlert.value.referenciaTipo} en desarrollo`)
+        }
     } else {
-        toast.error('No hay una marea asociada a esta alerta')
+        toast.error('No hay una entidad asociada a esta alerta')
     }
 }
 

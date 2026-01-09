@@ -553,6 +553,8 @@ model Alerta {
   id                  String         @id @default(uuid()) @db.Uuid
   codigoUnico         String         @unique @map("codigo_unico")
   referenciaId        String?        @map("referencia_id")
+  referenciaTipo      String?        @map("referencia_tipo")
+  metadata            Json?          @map("metadata")
   tipo                String
   titulo              String
   descripcion         String

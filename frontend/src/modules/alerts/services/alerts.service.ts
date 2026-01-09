@@ -20,6 +20,8 @@ export interface Alerta {
     fechaVencimiento?: string
     fechaCierre?: string
     referenciaId?: string
+    referenciaTipo?: string
+    metadata?: Record<string, any>
     eventos?: AlertEvent[]
     asignadoA?: { fullName: string; avatarUrl?: string }
 }
