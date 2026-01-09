@@ -8,7 +8,7 @@
           Flujo de Trabajo (Hitos de Marea)
         </h3>
         <p class="text-xs text-gray-500 dark:text-gray-400">
-          Seguimiento de tiempos de proceso (SLA: 10 días)
+          Seguimiento de tiempos de proceso (SLA por etapa)
         </p>
       </div>
       <div class="flex gap-2">
@@ -21,7 +21,7 @@
       </div>
     </div>
 
-    <div class="relative min-h-[300px]">
+    <div class="relative min-h-75">
       <VueApexCharts type="bar" height="320" :options="chartOptions" :series="series" />
     </div>
 
@@ -66,48 +66,62 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { storeToRefs } from 'pinia'
 import VueApexCharts from 'vue3-apexcharts'
-import { CHART_COLORS, CHART_DEFAULTS } from '@/config/chartColors'
+import type { ApexOptions } from 'apexcharts'
+import { CHART_DEFAULTS } from '@/config/chartColors'
+import { useBusinessRulesStore } from '@/modules/shared/stores/business-rules.store'
 
-const props = defineProps({
-  data: {
-    type: Object,
-    default: () => ({
-      entrega: 12,
-      informe: 8,
-      protocolo: 15,
-    }),
-  },
-})
+type WorkflowData = {
+  entrega: number
+  informe: number
+  protocolo: number
+}
 
-const slaLimit = 10
+const businessRulesStore = useBusinessRulesStore()
+const { rules } = storeToRefs(businessRulesStore)
+const plazoEntregaDatos = computed(() => rules.value.PLAZO_ENTREGA_DATOS || 0)
+const plazoConfeccionInforme = computed(() => rules.value.PLAZO_CONFECCION_INFORME || 0)
+const plazoProtocolizacion = computed(() => rules.value.PLAZO_PROTOCOLIZACION || 0)
+
+const props = defineProps<{ data?: WorkflowData }>()
+
+const effectiveData = computed<WorkflowData>(() => ({
+  entrega: props.data?.entrega ?? plazoEntregaDatos.value,
+  informe: props.data?.informe ?? plazoConfeccionInforme.value,
+  protocolo: props.data?.protocolo ?? plazoProtocolizacion.value,
+}))
 
 const slaMetrics = computed(() => [
   {
     label: 'Fin -> Entrega Material',
-    value: props.data.entrega,
-    exceeds: props.data.entrega > slaLimit,
+    value: effectiveData.value.entrega,
+    exceeds: effectiveData.value.entrega > plazoEntregaDatos.value,
   },
   {
     label: 'Entrega -> Informe Final',
-    value: props.data.informe,
-    exceeds: props.data.informe > slaLimit,
+    value: effectiveData.value.informe,
+    exceeds: effectiveData.value.informe > plazoConfeccionInforme.value,
   },
   {
     label: 'Informe -> Protocolización',
-    value: props.data.protocolo,
-    exceeds: props.data.protocolo > slaLimit,
+    value: effectiveData.value.protocolo,
+    exceeds: effectiveData.value.protocolo > plazoProtocolizacion.value,
   },
 ])
 
-const series = [
+const series = computed(() => [
   {
     name: 'Días promedio',
-    data: [props.data.entrega, props.data.informe, props.data.protocolo],
+    data: [
+      effectiveData.value.entrega,
+      effectiveData.value.informe,
+      effectiveData.value.protocolo,
+    ],
   },
-]
+])
 
-const chartOptions = {
+const chartOptions = computed<ApexOptions>(() => ({
   chart: {
     type: 'bar',
     toolbar: { show: false },
@@ -125,15 +139,13 @@ const chartOptions = {
     },
   },
   colors: [
-    props.data.entrega > slaLimit ? 'var(--color-error-500)' : 'var(--color-brand-500)',
-    props.data.informe > slaLimit ? 'var(--color-error-500)' : 'var(--color-brand-500)',
-    props.data.protocolo > slaLimit ? 'var(--color-error-500)' : 'var(--color-brand-500)',
+    effectiveData.value.entrega > plazoEntregaDatos.value ? 'var(--color-error-500)' : 'var(--color-brand-500)',
+    effectiveData.value.informe > plazoConfeccionInforme.value ? 'var(--color-error-500)' : 'var(--color-brand-500)',
+    effectiveData.value.protocolo > plazoProtocolizacion.value ? 'var(--color-error-500)' : 'var(--color-brand-500)',
   ],
   dataLabels: {
     enabled: true,
-    formatter: function (val: number) {
-      return val + ' d'
-    },
+    formatter: (val: number) => `${val} d`,
     offsetX: -20,
     style: {
       fontSize: '11px',
@@ -178,9 +190,9 @@ const chartOptions = {
   tooltip: {
     theme: 'light',
     y: {
-      formatter: (val: number) => val + ' días',
+      formatter: (val: number) => `${val} días`,
     },
   },
   legend: { show: false },
-}
+}))
 </script>
