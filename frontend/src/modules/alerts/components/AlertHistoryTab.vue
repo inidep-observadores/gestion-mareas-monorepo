@@ -31,6 +31,7 @@
 import { ref, onMounted, watch } from 'vue'
 import { type Alerta, alertsService } from '../services/alerts.service'
 import AlertTimeline from './AlertTimeline.vue'
+import { toast } from 'vue-sonner'
 
 const props = defineProps<{
   referenceId: string
@@ -45,21 +46,12 @@ const loadAlerts = async () => {
         loading.value = true
         alerts.value = await alertsService.getAll({ refId: props.referenceId }) || []
         
-        // Fetch full details for each alert to get events? 
-        // alertsService.getAll usually returns summaries. 
-        // If getAll doesn't include events, we might need to fetch them.
-        // Assuming backend getAll includes lightweight events or we fetch details on expand?
-        // Let's assume getAll includes basic info and we might need to fetch details for timeline if not present.
-        // For efficiency, let's fetch details for all (parallel) or trust getAll includes needed data.
-        // Based on AlertsService.findAll implementation, it includes asignadoA y creadoPor but NOT events by default to save bandwidth?
-        // Let's check backend... findAll INCLUDES asignadoA, creadoPor. DOES NOT include events. 
-        // We need to fetch individual alert details.
-        
         const detailsPromises = alerts.value.map(a => alertsService.getOne(a.id))
         alerts.value = await Promise.all(detailsPromises)
 
     } catch (e) {
         console.error(e)
+        toast.error('Error al cargar el historial de alertas')
     } finally {
         loading.value = false
     }
