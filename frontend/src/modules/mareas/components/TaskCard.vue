@@ -19,6 +19,9 @@
             </h3>
             <p class="text-[10px] font-mono text-gray-400 dark:text-gray-500 uppercase tracking-widest mt-0.5">
               {{ idMarea }}
+              <span v-if="showObserver && observador" class="font-sans font-semibold normal-case tracking-normal">
+                · {{ observador }}
+              </span>
             </p>
           </div>
         </div>
@@ -84,11 +87,13 @@ interface Action {
 interface Props {
   buque: string
   idMarea: string
+  observador?: string
   hito: string
   descripcion: string
   fecha: string
   prioridad: 'baja' | 'media' | 'alta'
   actions: Action[]
+  showObserver?: boolean
 }
 
 const props = defineProps<Props>()
