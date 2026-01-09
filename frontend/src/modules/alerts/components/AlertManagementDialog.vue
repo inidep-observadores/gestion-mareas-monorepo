@@ -155,6 +155,7 @@ watch(() => props.alert, (newVal) => {
 }, { immediate: true })
 
 const startFollowUp = () => {
+    localAlert.value.estado = 'SEGUIMIENTO'
     showDatePicker.value = true
 }
 
@@ -206,8 +207,8 @@ const goToFullHistory = () => {
 }
 
 const updateStatus = async (newState: string) => {
-    if (!comment.value && newState === 'DESCARTADA') {
-        toast.error('Por favor ingrese un motivo para descartar.')
+    if (!comment.value.trim() && ['SEGUIMIENTO', 'DESCARTADA', 'RESUELTA'].includes(newState)) {
+        toast.error('Debe ingresar una nota de gestion para continuar.')
         return
     }
 

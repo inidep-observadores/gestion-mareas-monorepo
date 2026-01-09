@@ -47,6 +47,7 @@
             :descripcion="alerta.descripcion"
             :fecha="formatDate(alerta.fechaDetectada)"
             :estado="'SEGUIMIENTO'"
+            :notaGestion="alerta.notaGestion"
             @action="(type) => handleAlertAction(alerta.id, type)"
           />
         </div>
@@ -154,6 +155,7 @@
                   :descripcion="alert.descripcion"
                   :fecha="formatDate(alert.fechaCierre || alert.fechaDetectada)"
                   :estado="alert.estado"
+                  :notaGestion="alert.notaGestion"
                   @action="(type) => handleAlertAction(alert.id, type)"
                 />
               </div>
