@@ -1,25 +1,25 @@
 <template>
   <div class="alert-timeline py-2">
-    <ol class="relative border-l-2 border-base-content/10 ml-3">
+    <ol class="relative border-l-2 border-gray-200 dark:border-gray-800 ml-3">
       <li v-for="evento in eventosOrdenados" :key="evento.id" class="mb-8 ml-6">
-        <span class="absolute flex items-center justify-center w-6 h-6 bg-base-100 rounded-full -left-[13px] ring-4 ring-base-100 shadow-sm border border-base-content/10">
-          <component :is="getIcon(evento.tipoEvento)" class="w-3.5 h-3.5 text-primary" />
+        <span class="absolute flex items-center justify-center w-6 h-6 bg-white dark:bg-gray-900 rounded-full -left-[13px] ring-4 ring-white dark:ring-gray-900 shadow-sm border border-gray-200 dark:border-gray-800">
+          <component :is="getIcon(evento.tipoEvento)" class="w-3.5 h-3.5 text-brand-500" />
         </span>
-        <div class="p-4 bg-base-200/50 rounded-2xl border border-base-content/10 hover:bg-base-200/80 transition-all group">
+        <div class="p-4 bg-gray-50 dark:bg-gray-900/50 rounded-2xl border border-gray-200 dark:border-gray-800 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all group">
             <div class="flex justify-between items-start mb-2">
-                <span class="text-xs font-black uppercase tracking-tight text-base-content">{{ getTitle(evento.tipoEvento) }}</span>
-                <time class="text-[10px] font-bold text-base-content/40 bg-base-300/40 px-2 py-0.5 rounded-md">{{ formatDate(evento.fechaHora) }}</time>
+                <span class="text-xs font-black uppercase tracking-tight text-gray-900 dark:text-white">{{ getTitle(evento.tipoEvento) }}</span>
+                <time class="text-[10px] font-bold text-gray-400 dark:text-gray-500 bg-gray-200/50 dark:bg-gray-800 px-2 py-0.5 rounded-md">{{ formatDate(evento.fechaHora) }}</time>
             </div>
-            <p v-if="evento.detalle" class="text-[11px] text-base-content/80 leading-relaxed font-medium italic">
+            <p v-if="evento.detalle" class="text-[11px] text-gray-600 dark:text-gray-400 leading-relaxed font-medium italic">
                 {{ evento.detalle }}
             </p>
-            <div v-if="evento.usuario" class="mt-3 pt-3 border-t border-base-content/10 flex items-center gap-2">
+            <div v-if="evento.usuario" class="mt-3 pt-3 border-t border-gray-200 dark:border-gray-800 flex items-center gap-2">
                  <div class="avatar placeholder">
-                    <div class="bg-primary/10 text-primary/80 rounded-full w-5">
+                    <div class="bg-brand-50 text-brand-600 dark:bg-brand-900/20 dark:text-brand-400 rounded-full w-5">
                         <span class="text-[10px] font-black uppercase">{{ getInitials(evento.usuario.fullName) }}</span>
                     </div>
                  </div> 
-                 <span class="text-[10px] font-black uppercase tracking-[0.05em] text-base-content/40">{{ evento.usuario.fullName }}</span>
+                 <span class="text-[10px] font-black uppercase tracking-[0.05em] text-gray-400 dark:text-gray-500">{{ evento.usuario.fullName }}</span>
             </div>
         </div>
       </li>

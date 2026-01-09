@@ -1,6 +1,6 @@
 <template>
   <div 
-    class="flex items-center gap-4 p-4 rounded-2xl group transition-all duration-300 border border-base-content/5 shadow-sm"
+    class="flex items-center gap-4 p-4 rounded-2xl group transition-all duration-300 border border-gray-200 dark:border-gray-800 shadow-sm"
     :class="cardClasses"
   >
     <!-- Icon / Status -->
@@ -18,12 +18,12 @@
     <div class="flex-1 min-w-0">
       <div class="flex items-center gap-2 mb-0.5">
         <span :class="['text-[10px] font-black uppercase tracking-widest', labelClass]">{{ statusLabel }}</span>
-        <span class="text-[10px] text-base-content/40 font-mono">• {{ fecha }}</span>
+        <span class="text-[10px] text-gray-400 dark:text-gray-500 font-mono">• {{ fecha }}</span>
       </div>
-      <h4 class="text-sm font-black text-base-content/90 truncate uppercase tracking-tight">
+      <h4 class="text-sm font-black text-gray-900 dark:text-white truncate uppercase tracking-tight">
         {{ titulo }}
       </h4>
-      <p class="text-[11px] text-base-content/60 line-clamp-1 mt-0.5 leading-relaxed font-medium">
+      <p class="text-[11px] text-gray-500 dark:text-gray-400 line-clamp-1 mt-0.5 leading-relaxed font-medium">
         {{ descripcion }}
       </p>
     </div>
@@ -69,19 +69,19 @@ const isHistoric = computed(() => ['RESUELTA', 'DESCARTADA'].includes(props.esta
 
 const cardClasses = computed(() => {
     switch (props.estado) {
-        case 'RESUELTA': return 'bg-success/5 border-success/10 hover:bg-success/10'
-        case 'SEGUIMIENTO': return 'bg-warning/5 border-warning/10 hover:bg-warning/10'
-        case 'DESCARTADA': return 'bg-base-100 border-base-content/10 hover:bg-base-200/40 opacity-80'
-        default: return 'bg-error/5 border-error/10 hover:bg-error/10'
+        case 'RESUELTA': return 'bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800'
+        case 'SEGUIMIENTO': return 'bg-amber-50/60 dark:bg-amber-900/10 hover:bg-amber-50 dark:hover:bg-amber-900/20'
+        case 'DESCARTADA': return 'bg-gray-50 dark:bg-gray-900/50 opacity-75 hover:opacity-100 hover:bg-gray-100 dark:hover:bg-gray-800'
+        default: return 'bg-red-50/60 dark:bg-red-900/10 hover:bg-red-50 dark:hover:bg-red-900/20'
     }
 })
 
 const iconBgClass = computed(() => {
     switch (props.estado) {
-        case 'RESUELTA': return 'bg-success shadow-success/20'
-        case 'SEGUIMIENTO': return 'bg-warning shadow-warning/20'
-        case 'DESCARTADA': return 'bg-base-300 text-base-content/60 shadow-none border border-base-content/5'
-        default: return 'bg-error shadow-error/20'
+        case 'RESUELTA': return 'bg-green-500 shadow-green-500/20'
+        case 'SEGUIMIENTO': return 'bg-amber-500 shadow-amber-500/20'
+        case 'DESCARTADA': return 'bg-gray-200 dark:bg-gray-800 text-gray-500 dark:text-gray-400 shadow-none'
+        default: return 'bg-red-500 shadow-red-500/20'
     }
 })
 
@@ -106,18 +106,18 @@ const statusLabel = computed(() => {
 
 const labelClass = computed(() => {
     switch (props.estado) {
-        case 'RESUELTA': return 'text-success'
-        case 'SEGUIMIENTO': return 'text-warning'
-        case 'DESCARTADA': return 'text-base-content/40'
-        default: return 'text-error'
+        case 'RESUELTA': return 'text-green-600 dark:text-green-400'
+        case 'SEGUIMIENTO': return 'text-amber-600 dark:text-amber-400'
+        case 'DESCARTADA': return 'text-gray-400 dark:text-gray-500'
+        default: return 'text-red-600 dark:text-red-400'
     }
 })
 
 const actionButtonClass = computed(() => {
-    if (isHistoric.value) return 'bg-base-100 text-base-content/60 border-base-content/10 hover:bg-base-200'
+    if (isHistoric.value) return 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'
     switch (props.estado) {
-        case 'SEGUIMIENTO': return 'bg-warning text-white border-warning/20 hover:bg-warning/80'
-        default: return 'bg-error text-white border-error/20 hover:bg-error/80'
+        case 'SEGUIMIENTO': return 'bg-amber-500 text-white border-amber-500/20 hover:bg-amber-600'
+        default: return 'bg-red-500 text-white border-red-500/20 hover:bg-red-600'
     }
 })
 </script>
