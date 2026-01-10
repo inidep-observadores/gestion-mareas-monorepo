@@ -92,7 +92,8 @@ export class MareasService {
 
             if (etapas && etapas.length > 0) {
                 for (const etapa of etapas) {
-                    const { observadores, id: etapaId, ...etapaData } = etapa;
+                    const { observadores, id: etapaId, ...rest } = etapa;
+                    const etapaData: any = { ...rest };
                     let currentEtapaId = etapaId;
                     if (etapaData.fechaZarpada) etapaData.fechaZarpada = new Date(etapaData.fechaZarpada);
                     if (etapaData.fechaArribo) etapaData.fechaArribo = new Date(etapaData.fechaArribo);
@@ -1362,7 +1363,7 @@ export class MareasService {
     }
 
     async create(createMareaDto: CreateMareaDto, user: User) {
-        const { buqueId, anioMarea, nroMarea, pesqueriaId, observadorId, arteId, fechaZarpadaEstimada, tipoMarea = 'MC', titulo, descripcion, diasEstimados } = createMareaDto;
+        const { buqueId, anioMarea, nroMarea, pesqueriaId, observadorId, arteId, fechaZarpadaEstimada, tipoMarea = 'MC', diasEstimados } = createMareaDto;
 
         const existing = await this.prisma.marea.findMany({
             where: {
@@ -1393,8 +1394,6 @@ export class MareasService {
                     tipoMarea,
                     artePrincipalId: arteId,
                     fechaZarpadaEstimada: fechaZarpadaEstimada ? new Date(fechaZarpadaEstimada) : null,
-                    titulo,
-                    descripcion,
                     diasEstimados,
                 }
             });
@@ -1651,7 +1650,7 @@ export class MareasService {
                 observador: observadorNombre,
                 hito: m.estadoActual.nombre,
                 estadoDescripcion: m.estadoActual.descripcion,
-                descripcion: m.descripcion || `Gestión de marea en estado ${m.estadoActual.nombre}`,
+                descripcion: m.observaciones || `Gestión de marea en estado ${m.estadoActual.nombre}`,
                 fecha: m.fechaUltimaActualizacion.toLocaleString('es-AR'),
                 prioridad,
                 tab,
