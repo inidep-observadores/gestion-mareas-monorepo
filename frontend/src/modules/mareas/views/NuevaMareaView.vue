@@ -475,10 +475,4 @@ const getObserverName = (id: string) => {
 }
 </script>
 
-<style scoped>
-@reference "../../../assets/main.css";
 
-.form-wizard-select {
-  @apply w-full px-6 py-4 bg-gray-50/50 dark:bg-gray-900 border-2 border-gray-100 dark:border-gray-800 rounded-2xl font-bold text-gray-800 dark:text-white outline-none focus:border-brand-500 transition-all appearance-none;
-}
-</style>

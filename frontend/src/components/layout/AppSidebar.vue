@@ -3,9 +3,9 @@
     :class="[
       'fixed mt-16 flex flex-col lg:mt-0 top-0 px-5 left-0 bg-white dark:bg-gray-900 dark:border-gray-800 text-gray-900 h-screen transition-all duration-300 ease-in-out z-99999 border-r border-gray-200',
       {
-        'lg:w-72.5': isExpanded || isMobileOpen || isHovered,
-        'lg:w-22.5': !isExpanded && !isHovered,
-        'translate-x-0 w-72.5': isMobileOpen,
+        'lg:w-[18.125rem]': isExpanded || isMobileOpen || isHovered,
+        'lg:w-[5.625rem]': !isExpanded && !isHovered,
+        'translate-x-0 w-[18.125rem]': isMobileOpen,
         '-translate-x-full': !isMobileOpen,
         'lg:translate-x-0': true,
       },

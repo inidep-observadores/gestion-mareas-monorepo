@@ -16,7 +16,7 @@
     <div 
       class="fixed inset-0 z-10 w-screen overflow-y-auto transition-all duration-300 ease-in-out"
       :class="[
-        isSidebarAware ? (isExpanded || isHovered ? 'lg:pl-[290px]' : 'lg:pl-[90px]') : ''
+        isSidebarAware ? (isExpanded || isHovered ? 'lg:pl-[18.125rem]' : 'lg:pl-[5.625rem]') : ''
       ]"
     >
       <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">

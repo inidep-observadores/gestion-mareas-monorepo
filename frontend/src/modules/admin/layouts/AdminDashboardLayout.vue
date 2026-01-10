@@ -16,7 +16,7 @@
     <Backdrop />
     <div
       class="flex-1 transition-all duration-300 ease-in-out relative z-10"
-      :class="[isExpanded || isHovered ? 'lg:ml-[290px]' : 'lg:ml-[90px]']"
+      :class="[isExpanded || isHovered ? 'lg:ml-[18.125rem]' : 'lg:ml-[5.625rem]']"
     >
       <app-header />
       <div class="admin-layout-content p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6">
