@@ -335,126 +335,151 @@
 
         <!-- 2. Etapas Tab -->
         <div v-if="activeTab === 'etapas'" class="space-y-6">
-          <div
-            class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl overflow-hidden shadow-sm"
-          >
-            <div
-              class="px-6 py-4 md:px-8 md:py-6 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between bg-gray-50/50 dark:bg-gray-800/30"
-            >
-              <h3 class="text-base md:text-lg font-bold text-gray-800 dark:text-white">
-                Etapas de Navegación
-              </h3>
-              <button
-                class="px-3 py-1.5 text-xs font-bold text-brand-500 bg-brand-50 dark:bg-brand-500/10 rounded-lg border border-brand-100 dark:border-brand-500/20 hover:bg-brand-100 transition-colors"
-              >
-                + <span class="hidden sm:inline">Añadir Etapa</span
-                ><span class="sm:hidden">Etapa</span>
-              </button>
+          <div class="flex items-center justify-between mb-2">
+            <div>
+                <h3 class="text-lg font-bold text-gray-800 dark:text-white">Etapas de Navegación</h3>
+                <p class="text-xs text-gray-500 mt-1">Gestione los tramos del viaje, puertos y fechas reales.</p>
             </div>
+            <button
+              @click="addStage"
+              class="px-4 py-2 bg-brand-500 hover:bg-brand-600 text-white rounded-xl text-xs font-bold uppercase tracking-wider shadow-lg shadow-brand-500/20 transition-all flex items-center gap-2"
+            >
+              <PlusIcon class="w-4 h-4" />
+              Añadir Etapa
+            </button>
+          </div>
 
-            <!-- Mobile Stages View (Cards) -->
-            <div class="block md:hidden divide-y divide-gray-50 dark:divide-gray-800">
-              <div v-for="etapa in etapas" :key="etapa.id" class="p-6 space-y-4">
-                <div class="flex justify-between items-start">
-                  <div>
-                    <span class="text-xs font-black text-brand-500 uppercase tracking-widest"
-                      >Etapa #{{ etapa.nro_etapa }}</span
-                    >
-                    <h4 class="text-sm font-bold text-gray-800 dark:text-gray-200">
-                      {{ etapa.puerto_zarpada }} → {{ etapa.puerto_arribo }}
-                    </h4>
-                  </div>
-                  <span
-                    class="px-2 py-0.5 rounded text-[9px] font-black"
-                    :class="
-                      etapa.tipo === 'COMERCIAL'
-                        ? 'bg-blue-100 text-blue-600'
-                        : 'bg-green-100 text-green-600'
-                    "
-                  >
-                    {{ etapa.tipo }}
-                  </span>
+          <div v-if="etapas.length === 0" class="text-center py-12 bg-gray-50 dark:bg-gray-800/50 rounded-3xl border-2 border-dashed border-gray-200 dark:border-gray-800">
+             <MapPinIcon class="w-12 h-12 text-gray-300 mx-auto mb-4" />
+             <p class="text-gray-500 font-medium">No hay etapas registradas para esta marea.</p>
+          </div>
+
+          <div v-else class="grid grid-cols-1 gap-8">
+            <div v-for="(etapa, index) in etapas" :key="index"
+                 class="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-[2rem] p-1 md:p-1.5 shadow-xl shadow-gray-200/40 dark:shadow-none relative group animate-in fade-in zoom-in-95 duration-500">
+
+              <!-- Glass-like inner container -->
+              <div class="bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50 rounded-[1.8rem] p-6 md:p-8">
+
+                <!-- Header: Badge & Actions -->
+                <div class="flex items-center justify-between mb-8">
+                   <div class="flex items-center gap-3">
+                      <div class="w-10 h-10 rounded-2xl bg-brand-500/10 flex items-center justify-center text-brand-600">
+                         <MapPinIcon class="w-5 h-5" />
+                      </div>
+                      <div>
+                         <span class="text-[10px] font-black uppercase tracking-widest text-gray-400 block mb-0.5">Segmento de Viaje</span>
+                         <h4 class="text-sm font-bold text-gray-800 dark:text-white">Etapa #{{ etapa.nro_etapa }}</h4>
+                      </div>
+                   </div>
+
+                   <div class="flex items-center gap-2">
+                      <button
+                        v-if="index === etapas.length - 1 && etapas.length > 1"
+                        @click="removeStage(index)"
+                        class="p-2.5 text-red-400 hover:text-white hover:bg-red-500 rounded-2xl transition-all duration-300 opacity-0 group-hover:opacity-100 shadow-lg shadow-red-500/20"
+                        title="Eliminar esta etapa"
+                      >
+                        <TrashIcon class="w-5 h-5" />
+                      </button>
+                   </div>
                 </div>
-                <div class="grid grid-cols-2 gap-4 text-[11px]">
-                  <div>
-                    <p class="text-gray-400 font-bold uppercase tracking-tighter">Zarpada</p>
-                    <p class="text-gray-600 dark:text-gray-400">{{ etapa.fecha_zarpada }}</p>
+
+                <div class="grid grid-cols-1 xl:grid-cols-11 gap-8 items-center">
+                  <!-- Zarpada Section -->
+                  <div class="xl:col-span-5 relative">
+                    <div class="absolute -top-6 -left-2 text-[9px] font-black uppercase tracking-[0.3em] text-brand-500/50 pointer-events-none">Departure</div>
+                    <div class="bg-white dark:bg-gray-800/40 p-5 rounded-3xl border border-gray-100 dark:border-gray-700/50 shadow-sm space-y-5">
+                      <div class="flex items-center gap-3">
+                        <div class="w-2 h-2 rounded-full bg-brand-500 animate-pulse"></div>
+                        <h5 class="text-xs font-black uppercase tracking-wider text-gray-700 dark:text-gray-300">Zarpada</h5>
+                      </div>
+                      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div class="space-y-2">
+                          <label class="text-[9px] font-black uppercase text-gray-400 tracking-tighter ml-1">Fecha de Salida</label>
+                          <DatePicker v-model="etapa.fecha_zarpada" :show-time="false" />
+                        </div>
+                        <div class="space-y-2">
+                          <label class="text-[9px] font-black uppercase text-gray-400 tracking-tighter ml-1">Puerto de Origen</label>
+                          <SearchableSelect
+                            v-model="etapa.puertoZarpadaId"
+                            :options="puertoOptions"
+                            placeholder="Seleccione puerto..."
+                          />
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <p class="text-gray-400 font-bold uppercase tracking-tighter">Arribo</p>
-                    <p class="text-gray-600 dark:text-gray-400">{{ etapa.fecha_arribo }}</p>
+
+                  <!-- Visual Connector -->
+                  <div class="hidden xl:flex xl:col-span-1 flex-col items-center justify-center gap-2">
+                     <div class="w-px h-8 bg-gradient-to-b from-transparent via-gray-200 to-transparent dark:via-gray-700"></div>
+                     <div class="w-8 h-8 rounded-full bg-gray-50 dark:bg-gray-800 flex items-center justify-center border border-gray-100 dark:border-gray-700 text-gray-300">
+                        <ChevronRightIcon class="w-5 h-5" />
+                     </div>
+                     <div class="w-px h-8 bg-gradient-to-b from-transparent via-gray-200 to-transparent dark:via-gray-700"></div>
                   </div>
-                </div>
-                <div class="text-[11px] text-gray-500 space-y-1">
-                  <div>
-                    <span class="font-bold uppercase tracking-tighter text-gray-400">Pesquería:</span>
-                    {{ etapa.pesqueria || 'N/D' }}
+
+                  <!-- Arribo Section -->
+                  <div class="xl:col-span-5 relative">
+                    <div class="absolute -top-6 -left-2 text-[9px] font-black uppercase tracking-[0.3em] text-amber-500/50 pointer-events-none">Arrival</div>
+                    <div class="bg-white dark:bg-gray-800/40 p-5 rounded-3xl border border-gray-100 dark:border-gray-700/50 shadow-sm space-y-5">
+                      <div class="flex items-center gap-3">
+                        <div class="w-2 h-2 rounded-full bg-amber-500"></div>
+                        <h5 class="text-xs font-black uppercase tracking-wider text-gray-700 dark:text-gray-300">Arribo</h5>
+                      </div>
+                      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div class="space-y-2">
+                          <label class="text-[9px] font-black uppercase text-gray-400 tracking-tighter ml-1">Fecha de Llegada</label>
+                          <DatePicker v-model="etapa.fecha_arribo" :show-time="false" />
+                        </div>
+                        <div class="space-y-2">
+                          <label class="text-[9px] font-black uppercase text-gray-400 tracking-tighter ml-1">Puerto de Destino</label>
+                          <SearchableSelect
+                            v-model="etapa.puertoArriboId"
+                            :options="puertoOptions"
+                            placeholder="Seleccione puerto..."
+                          />
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <span class="font-bold uppercase tracking-tighter text-gray-400">Observaciones:</span>
-                    {{ etapa.observaciones || 'Sin observaciones' }}
+
+                  <!-- Tertiary Info Bar -->
+                  <div class="xl:col-span-12 mt-4 grid grid-cols-1 sm:grid-cols-12 gap-6 items-end bg-gray-50/50 dark:bg-gray-800/30 p-6 rounded-[2rem] border border-gray-100 dark:border-gray-700/30">
+                    <div class="sm:col-span-4 space-y-2">
+                      <label class="text-[9px] font-black uppercase text-gray-400 tracking-widest ml-1 flex items-center gap-2">
+                        <FlagIcon class="w-3 h-3" /> Pesquería Objetivo
+                      </label>
+                      <SearchableSelect
+                        v-model="etapa.pesqueriaId"
+                        :options="pesqueriaOptions"
+                        placeholder="Pesquería..."
+                      />
+                    </div>
+                    <div class="sm:col-span-3 space-y-2">
+                      <label class="text-[9px] font-black uppercase text-gray-400 tracking-widest ml-1 flex items-center gap-2">
+                        <SettingsIcon class="w-3 h-3" /> Propósito
+                      </label>
+                      <select v-model="etapa.tipo" class="form-input-premium py-2.5 font-bold text-xs">
+                        <option value="COMERCIAL">MAREA COMERCIAL</option>
+                        <option value="INSTITUCIONAL">CAMPAÑA INSTITUCIONAL</option>
+                      </select>
+                    </div>
+                    <div class="sm:col-span-5 space-y-2">
+                      <label class="text-[9px] font-black uppercase text-gray-400 tracking-widest ml-1 flex items-center gap-2">
+                        <EditIcon class="w-3 h-3" /> Comentarios Adicionales
+                      </label>
+                      <input
+                        v-model="etapa.observaciones"
+                        type="text"
+                        class="form-input-premium py-2.5 text-xs placeholder:text-gray-300"
+                        placeholder="Notas internas del tramo..."
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-
-            <!-- Desktop Stages View (Table) -->
-            <div class="hidden md:block overflow-x-auto">
-              <table class="w-full text-left">
-                <thead>
-                  <tr
-                    class="text-[10px] font-bold uppercase tracking-wider text-gray-400 border-b border-gray-50 dark:border-gray-800"
-                  >
-                    <th class="px-8 py-4">Nro</th>
-                    <th class="px-4 py-4">Puerto Zarpada</th>
-                    <th class="px-4 py-4">Puerto Arribo</th>
-                    <th class="px-4 py-4">Pesquería</th>
-                    <th class="px-4 py-4">Zarpada Real</th>
-                    <th class="px-4 py-4">Arribo Real</th>
-                    <th class="px-4 py-4">Tipo</th>
-                    <th class="px-4 py-4">Observaciones</th>
-                    <th class="px-8 py-4 text-right">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-50 dark:divide-gray-800">
-                  <tr
-                    v-for="etapa in etapas"
-                    :key="etapa.id"
-                    class="text-sm hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors"
-                  >
-                    <td class="px-8 py-5 font-bold text-brand-500">#{{ etapa.nro_etapa }}</td>
-                    <td class="px-4 py-5 font-medium text-gray-700 dark:text-gray-300">
-                      {{ etapa.puerto_zarpada }}
-                    </td>
-                    <td class="px-4 py-5 font-medium text-gray-700 dark:text-gray-300">
-                      {{ etapa.puerto_arribo }}
-                    </td>
-                    <td class="px-4 py-5 text-gray-500">{{ etapa.pesqueria || 'N/D' }}</td>
-                    <td class="px-4 py-5 text-gray-500">{{ etapa.fecha_zarpada }}</td>
-                    <td class="px-4 py-5 text-gray-500">{{ etapa.fecha_arribo }}</td>
-                    <td class="px-4 py-5">
-                      <span
-                        class="px-2 py-1 rounded text-[10px] font-bold"
-                        :class="
-                          etapa.tipo === 'COMERCIAL'
-                            ? 'bg-blue-100 text-blue-600'
-                            : 'bg-green-100 text-green-600'
-                        "
-                      >
-                        {{ etapa.tipo }}
-                      </span>
-                    </td>
-                    <td class="px-4 py-5 text-gray-500">
-                      {{ etapa.observaciones || 'Sin observaciones' }}
-                    </td>
-                    <td class="px-8 py-5 text-right">
-                      <button class="text-gray-400 hover:text-brand-500 transition-colors p-1">
-                        <SettingsIcon class="w-4 h-4" />
-                      </button>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
             </div>
           </div>
         </div>
@@ -734,15 +759,25 @@
         @confirm="handleFinalizeMarea"
     />
 
+    <ConfirmationDialog
+      :show="showDeleteStageConfirm"
+      title="Eliminar Etapa"
+      message="¿Está seguro de que desea eliminar la última etapa? Esta acción no se puede deshacer hasta que guarde los cambios."
+      confirm-text="Eliminar"
+      @close="showDeleteStageConfirm = false"
+      @confirm="confirmRemoveStage"
+    />
+
   </AdminLayout>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import SearchableSelect from '@/components/common/SearchableSelect.vue'
 import DatePicker from '@/components/common/DatePicker.vue'
+import ConfirmationDialog from '@/components/common/ConfirmationDialog.vue'
 import AlertHistoryTab from '../../alerts/components/AlertHistoryTab.vue'
 import mareasService from '../services/mareas.service';
 import catalogosService from '../services/catalogos.service'
@@ -766,10 +801,17 @@ import {
   DownloadIcon,
   CloudUploadIcon,
   LockIcon,
-  BellIcon
+  BellIcon,
+  TrashIcon,
+  WarningIcon,
+  ChevronRightIcon,
+  FlagIcon,
+  EditIcon
 } from '@/icons'
 const router = useRouter()
 const activeTab = ref('general')
+const showDeleteStageConfirm = ref(false)
+const stageIndexToDelete = ref<number | null>(null)
 
 const route = useRoute()
 
@@ -784,7 +826,6 @@ const tabs = [
 ]
 
 // Data Refs
-// Data Refs
 const marea = ref<any>({
     etapas: [],
     observadores: []
@@ -797,6 +838,10 @@ const archivos = ref<any[]>([]);
 const buqueOptions = ref<{ value: string; label: string }[]>([])
 const pesqueriaOptions = ref<{ value: string; label: string }[]>([])
 const arteOptions = ref<{ value: string; label: string }[]>([])
+const puertos = ref<any[]>([])
+
+const puertoOptions = computed(() => puertos.value.map(p => ({ value: p.id, label: p.nombre })))
+const pesqueriaOptionsList = computed(() => pesqueriaOptions.value) // Alias for consistency if needed, but pesqueriaOptions is already used.
 
 const docCategories = [
   { id: 'DATOS', label: 'Datos de a Bordo', shortLabel: 'Datos (DBF/ZIP)' },
@@ -887,13 +932,16 @@ async function loadMarea() {
             responsable_correccion: 'N/D'
         }
 
+        const p = await catalogosService.getPuertos()
+        puertos.value = p
+
         etapas.value = data.etapas?.map((e: any) => ({
              id: e.id,
              nro_etapa: e.nroEtapa,
              puerto_zarpada: e.puertoZarpada?.nombre || 'N/D',
              puerto_arribo: e.puertoArribo?.nombre || 'N/D',
-             fecha_zarpada: formatDateTime(e.fechaZarpada),
-             fecha_arribo: formatDateTime(e.fechaArribo),
+             fecha_zarpada: e.fechaZarpada,
+             fecha_arribo: e.fechaArribo,
              fecha_zarpada_raw: e.fechaZarpada,
              fecha_arribo_raw: e.fechaArribo,
              tipo: e.tipoEtapa,
@@ -985,6 +1033,47 @@ async function handleFinalizeMarea(payload: any) {
   }
 }
 
+function addStage() {
+    const lastStage = etapas.value[etapas.value.length - 1];
+    let defaultPesqueria = marea.value.id_pesqueria || '';
+    let defaultPuertoZarpada = '';
+
+    if (lastStage) {
+        if (lastStage.pesqueriaId) defaultPesqueria = lastStage.pesqueriaId;
+        if (lastStage.puertoArriboId) defaultPuertoZarpada = lastStage.puertoArriboId;
+    }
+
+    etapas.value.push({
+        id: null,
+        nro_etapa: etapas.value.length + 1,
+        puertoZarpadaId: defaultPuertoZarpada,
+        fecha_zarpada: '',
+        puertoArriboId: '',
+        fecha_arribo: '',
+        pesqueriaId: defaultPesqueria,
+        tipo: 'COMERCIAL',
+        observaciones: ''
+    });
+}
+
+function removeStage(index: number) {
+    if (index === etapas.value.length - 1 && etapas.value.length > 0) {
+        stageIndexToDelete.value = index;
+        showDeleteStageConfirm.value = true;
+    } else {
+        toast.error('Solo se puede eliminar la última etapa de la lista');
+    }
+}
+
+function confirmRemoveStage() {
+    if (stageIndexToDelete.value !== null) {
+        etapas.value.splice(stageIndexToDelete.value, 1);
+        stageIndexToDelete.value = null;
+        showDeleteStageConfirm.value = false;
+        toast.success('Etapa eliminada correctamente');
+    }
+}
+
 const getFormatColor = (formato: string) => {
   switch (formato) {
     case 'PDF':
@@ -1021,8 +1110,8 @@ const saveChanges = async () => {
         pesqueriaId: (index === 0 && marea.value.id_pesqueria) ? marea.value.id_pesqueria : (etapa.pesqueriaId || undefined),
         puertoZarpadaId: etapa.puertoZarpadaId || undefined,
         puertoArriboId: etapa.puertoArriboId || undefined,
-        fechaZarpada: toIsoStringOrUndefined(etapa.fecha_zarpada_raw),
-        fechaArribo: toIsoStringOrUndefined(etapa.fecha_arribo_raw),
+        fechaZarpada: toIsoStringOrUndefined(etapa.fecha_zarpada),
+        fechaArribo: toIsoStringOrUndefined(etapa.fecha_arribo),
         tipoEtapa: etapa.tipo || 'COMERCIAL',
         observaciones: etapa.observaciones || undefined,
         observadores: etapa.observadores?.map((obs: any) => ({
