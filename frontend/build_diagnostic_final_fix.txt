@@ -1,0 +1,342 @@
+﻿
+> gestion-mareas-0-0-1@2.0.1 build-only
+> vite build
+
+[36mvite v6.4.1 [32mbuilding for production...[36m[39m
+transforming...
+/*! ­ƒÜÇ flyonui 2.4.1 */
+node.exe : Error: 
+Cannot apply unknown 
+utility class `dark:`
+En línea: 1 
+Carácter: 1
++ & "C:\Program Files
+\nodejs/node.exe" 
+"C:\Program 
+Files\nodejs/node_mo 
+...
++ ~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~
+    + CategoryInfo   
+           : NotSpe  
+  cified: (Error:    
+ Cannot a...y cla    
+ss `dark:`:Strin    
+g) [], RemoteExc    
+eption
+    + FullyQualified 
+   ErrorId : Native  
+  CommandError
+ 
+    at 
+onInvalidCandidate (D
+:\Desarrollo\_INIDEP\
+OBS\Mareas\gestion-ma
+reas-monorepo\node_mo
+dules\.pnpm\tailwindc
+ss@4.1.18\node_module
+s\tailwindcss\dist\li
+b.js:21:1511)
+    at Te (D:\Desarro
+llo\_INIDEP\OBS\Marea
+s\gestion-mareas-mono
+repo\node_modules\.pn
+pm\tailwindcss@4.1.18
+\node_modules\tailwin
+dcss\dist\lib.js:16:3
+6326)
+    at D:\Desarrollo\
+_INIDEP\OBS\Mareas\ge
+stion-mareas-monorepo
+\node_modules\.pnpm\t
+ailwindcss@4.1.18\nod
+e_modules\tailwindcss
+\dist\lib.js:21:355
+    at Rr (D:\Desarro
+llo\_INIDEP\OBS\Marea
+s\gestion-mareas-mono
+repo\node_modules\.pn
+pm\tailwindcss@4.1.18
+\node_modules\tailwin
+dcss\dist\lib.js:3:17
+18)
+    at _ (D:\Desarrol
+lo\_INIDEP\OBS\Mareas
+\gestion-mareas-monor
+epo\node_modules\.pnp
+m\tailwindcss@4.1.18\
+node_modules\tailwind
+css\dist\lib.js:3:137
+7)
+    at $e (D:\Desarro
+llo\_INIDEP\OBS\Marea
+s\gestion-mareas-mono
+repo\node_modules\.pn
+pm\tailwindcss@4.1.18
+\node_modules\tailwin
+dcss\dist\lib.js:21:1
+72)
+    at un (D:\Desarro
+llo\_INIDEP\OBS\Marea
+s\gestion-mareas-mono
+repo\node_modules\.pn
+pm\tailwindcss@4.1.18
+\node_modules\tailwin
+dcss\dist\lib.js:38:2
+94)
+    at async cn (D:\D
+esarrollo\_INIDEP\OBS
+\Mareas\gestion-marea
+s-monorepo\node_modul
+es\.pnpm\tailwindcss@
+4.1.18\node_modules\t
+ailwindcss\dist\lib.j
+s:38:631)
+    at async Xr (D:\D
+esarrollo\_INIDEP\OBS
+\Mareas\gestion-marea
+s-monorepo\node_modul
+es\.pnpm\@tailwindcss
++node@4.1.18\node_mod
+ules\@tailwindcss\nod
+e\dist\index.js:10:34
+17)
+    at async I (D:\De
+sarrollo\_INIDEP\OBS\
+Mareas\gestion-mareas
+-monorepo\node_module
+s\.pnpm\@tailwindcss+
+postcss@4.1.18\node_m
+odules\@tailwindcss\p
+ostcss\dist\index.js:
+10:3977)
+    at async 
+Object.Once (D:\Desar
+rollo\_INIDEP\OBS\Mar
+eas\gestion-mareas-mo
+norepo\node_modules\.
+pnpm\@tailwindcss+pos
+tcss@4.1.18\node_modu
+les\@tailwindcss\post
+css\dist\index.js:10:
+4249)
+    at async 
+LazyResult.runAsync (
+D:\Desarrollo\_INIDEP
+\OBS\Mareas\gestion-m
+areas-monorepo\node_m
+odules\.pnpm\postcss@
+8.5.6\node_modules\po
+stcss\lib\lazy-result
+.js:293:11)
+    at async 
+runPostCSS (file:///D
+:/Desarrollo/_INIDEP/
+OBS/Mareas/gestion-ma
+reas-monorepo/node_mo
+dules/.pnpm/vite@6.4.
+1_@types+node@22.1_13
+27edd732043885f62cb7a
+5094a0b7b/node_module
+s/vite/dist/node/chun
+ks/dep-D4NMHUTW.js:43
+853:21)
+    at async 
+compilePostCSS (file:
+///D:/Desarrollo/_INI
+DEP/OBS/Mareas/gestio
+n-mareas-monorepo/nod
+e_modules/.pnpm/vite@
+6.4.1_@types+node@22.
+1_1327edd732043885f62
+cb7a5094a0b7b/node_mo
+dules/vite/dist/node/
+chunks/dep-D4NMHUTW.j
+s:43823:18)
+    at async 
+compileCSS (file:///D
+:/Desarrollo/_INIDEP/
+OBS/Mareas/gestion-ma
+reas-monorepo/node_mo
+dules/.pnpm/vite@6.4.
+1_@types+node@22.1_13
+27edd732043885f62cb7a
+5094a0b7b/node_module
+s/vite/dist/node/chun
+ks/dep-D4NMHUTW.js:43
+678:27)
+    at async 
+Object.handler (file:
+///D:/Desarrollo/_INI
+DEP/OBS/Mareas/gestio
+n-mareas-monorepo/nod
+e_modules/.pnpm/vite@
+6.4.1_@types+node@22.
+1_1327edd732043885f62
+cb7a5094a0b7b/node_mo
+dules/vite/dist/node/
+chunks/dep-D4NMHUTW.j
+s:42994:11)
+    at async 
+transform (file:///D:
+/Desarrollo/_INIDEP/O
+BS/Mareas/gestion-mar
+eas-monorepo/node_mod
+ules/.pnpm/rollup@4.5
+4.0/node_modules/roll
+up/dist/es/shared/nod
+e-entry.js:21234:16)
+    at async ModuleLo
+ader.addModuleSource 
+(file:///D:/Desarroll
+o/_INIDEP/OBS/Mareas/
+gestion-mareas-monore
+po/node_modules/.pnpm
+/rollup@4.54.0/node_m
+odules/rollup/dist/es
+/shared/node-entry.js
+:21448:36)
+[32mÔ£ô[39m 11 modules transformed.
+[31mÔ£ù[39m Build 
+failed in 444ms
+[31merror during 
+build:
+[31m[vite:css] 
+[postcss] 
+tailwindcss: D:/Desar
+rollo/_INIDEP/OBS/Mar
+eas/gestion-mareas-mo
+norepo/frontend/src/a
+ssets/main.css:1:1: 
+Cannot apply unknown 
+utility class 
+`dark:`[31m
+file: [36mD:/Desarro
+llo/_INIDEP/OBS/Marea
+s/gestion-mareas-mono
+repo/frontend/src/ass
+ets/main.css:1:0[31m
+    at Input.error (D
+:\Desarrollo\_INIDEP\
+OBS\Mareas\gestion-ma
+reas-monorepo\node_mo
+dules\.pnpm\postcss@8
+.5.6\node_modules\pos
+tcss\lib\input.js:135
+:16)
+    at Root.error (D:
+\Desarrollo\_INIDEP\O
+BS\Mareas\gestion-mar
+eas-monorepo\node_mod
+ules\.pnpm\postcss@8.
+5.6\node_modules\post
+css\lib\node.js:146:3
+2)
+    at Object.Once (D
+:\Desarrollo\_INIDEP\
+OBS\Mareas\gestion-ma
+reas-monorepo\node_mo
+dules\.pnpm\@tailwind
+css+postcss@4.1.18\no
+de_modules\@tailwindc
+ss\postcss\dist\index
+.js:10:6911)
+    at async 
+LazyResult.runAsync (
+D:\Desarrollo\_INIDEP
+\OBS\Mareas\gestion-m
+areas-monorepo\node_m
+odules\.pnpm\postcss@
+8.5.6\node_modules\po
+stcss\lib\lazy-result
+.js:293:11)
+    at async 
+runPostCSS (file:///D
+:/Desarrollo/_INIDEP/
+OBS/Mareas/gestion-ma
+reas-monorepo/node_mo
+dules/.pnpm/vite@6.4.
+1_@types+node@22.1_13
+27edd732043885f62cb7a
+5094a0b7b/node_module
+s/vite/dist/node/chun
+ks/dep-D4NMHUTW.js:43
+853:21)
+    at async 
+compilePostCSS (file:
+///D:/Desarrollo/_INI
+DEP/OBS/Mareas/gestio
+n-mareas-monorepo/nod
+e_modules/.pnpm/vite@
+6.4.1_@types+node@22.
+1_1327edd732043885f62
+cb7a5094a0b7b/node_mo
+dules/vite/dist/node/
+chunks/dep-D4NMHUTW.j
+s:43823:18)
+    at async 
+compileCSS (file:///D
+:/Desarrollo/_INIDEP/
+OBS/Mareas/gestion-ma
+reas-monorepo/node_mo
+dules/.pnpm/vite@6.4.
+1_@types+node@22.1_13
+27edd732043885f62cb7a
+5094a0b7b/node_module
+s/vite/dist/node/chun
+ks/dep-D4NMHUTW.js:43
+678:27)
+    at async 
+Object.handler (file:
+///D:/Desarrollo/_INI
+DEP/OBS/Mareas/gestio
+n-mareas-monorepo/nod
+e_modules/.pnpm/vite@
+6.4.1_@types+node@22.
+1_1327edd732043885f62
+cb7a5094a0b7b/node_mo
+dules/vite/dist/node/
+chunks/dep-D4NMHUTW.j
+s:42994:11)
+    at async 
+transform (file:///D:
+/Desarrollo/_INIDEP/O
+BS/Mareas/gestion-mar
+eas-monorepo/node_mod
+ules/.pnpm/rollup@4.5
+4.0/node_modules/roll
+up/dist/es/shared/nod
+e-entry.js:21234:16)
+    at async ModuleLo
+ader.addModuleSource 
+(file:///D:/Desarroll
+o/_INIDEP/OBS/Mareas/
+gestion-mareas-monore
+po/node_modules/.pnpm
+/rollup@4.54.0/node_m
+odules/rollup/dist/es
+/shared/node-entry.js
+:21448:36)[39m
+npm error Lifecycle 
+script `build-only` 
+failed with error:
+npm error code 1
+npm error path D:\Des
+arrollo\_INIDEP\OBS\M
+areas\gestion-mareas-
+monorepo\frontend
+npm error workspace g
+estion-mareas-0-0-1@2
+.0.1
+npm error location D:
+\Desarrollo\_INIDEP\O
+BS\Mareas\gestion-mar
+eas-monorepo\frontend
+npm error command 
+failed
+npm error command C:\
+WINDOWS\system32\cmd.
+exe /d /s /c vite 
+build

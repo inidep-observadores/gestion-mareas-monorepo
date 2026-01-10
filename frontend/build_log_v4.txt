@@ -1,0 +1,48 @@
+
+> gestion-mareas-0-0-1@2.0.1 build-only
+> vite build
+
+[36mvite v6.4.1 [32mbuilding for production...[36m[39m
+transforming...
+/*! 🚀 flyonui 2.4.1 */
+Error: Cannot apply unknown utility class `active:`
+    at onInvalidCandidate (D:\Desarrollo\_INIDEP\OBS\Mareas\gestion-mareas-monorepo\node_modules\.pnpm\tailwindcss@4.1.18\node_modules\tailwindcss\dist\lib.js:21:1511)
+    at Te (D:\Desarrollo\_INIDEP\OBS\Mareas\gestion-mareas-monorepo\node_modules\.pnpm\tailwindcss@4.1.18\node_modules\tailwindcss\dist\lib.js:16:36326)
+    at D:\Desarrollo\_INIDEP\OBS\Mareas\gestion-mareas-monorepo\node_modules\.pnpm\tailwindcss@4.1.18\node_modules\tailwindcss\dist\lib.js:21:355
+    at Rr (D:\Desarrollo\_INIDEP\OBS\Mareas\gestion-mareas-monorepo\node_modules\.pnpm\tailwindcss@4.1.18\node_modules\tailwindcss\dist\lib.js:3:1718)
+    at _ (D:\Desarrollo\_INIDEP\OBS\Mareas\gestion-mareas-monorepo\node_modules\.pnpm\tailwindcss@4.1.18\node_modules\tailwindcss\dist\lib.js:3:1377)
+    at $e (D:\Desarrollo\_INIDEP\OBS\Mareas\gestion-mareas-monorepo\node_modules\.pnpm\tailwindcss@4.1.18\node_modules\tailwindcss\dist\lib.js:21:172)
+    at un (D:\Desarrollo\_INIDEP\OBS\Mareas\gestion-mareas-monorepo\node_modules\.pnpm\tailwindcss@4.1.18\node_modules\tailwindcss\dist\lib.js:38:294)
+    at async cn (D:\Desarrollo\_INIDEP\OBS\Mareas\gestion-mareas-monorepo\node_modules\.pnpm\tailwindcss@4.1.18\node_modules\tailwindcss\dist\lib.js:38:631)
+    at async Xr (D:\Desarrollo\_INIDEP\OBS\Mareas\gestion-mareas-monorepo\node_modules\.pnpm\@tailwindcss+node@4.1.18\node_modules\@tailwindcss\node\dist\index.js:10:3417)
+    at async I (D:\Desarrollo\_INIDEP\OBS\Mareas\gestion-mareas-monorepo\node_modules\.pnpm\@tailwindcss+postcss@4.1.18\node_modules\@tailwindcss\postcss\dist\index.js:10:3977)
+    at async Object.Once (D:\Desarrollo\_INIDEP\OBS\Mareas\gestion-mareas-monorepo\node_modules\.pnpm\@tailwindcss+postcss@4.1.18\node_modules\@tailwindcss\postcss\dist\index.js:10:4249)
+    at async LazyResult.runAsync (D:\Desarrollo\_INIDEP\OBS\Mareas\gestion-mareas-monorepo\node_modules\.pnpm\postcss@8.5.6\node_modules\postcss\lib\lazy-result.js:293:11)
+    at async runPostCSS (file:///D:/Desarrollo/_INIDEP/OBS/Mareas/gestion-mareas-monorepo/node_modules/.pnpm/vite@6.4.1_@types+node@22.1_1327edd732043885f62cb7a5094a0b7b/node_modules/vite/dist/node/chunks/dep-D4NMHUTW.js:43853:21)
+    at async compilePostCSS (file:///D:/Desarrollo/_INIDEP/OBS/Mareas/gestion-mareas-monorepo/node_modules/.pnpm/vite@6.4.1_@types+node@22.1_1327edd732043885f62cb7a5094a0b7b/node_modules/vite/dist/node/chunks/dep-D4NMHUTW.js:43823:18)
+    at async compileCSS (file:///D:/Desarrollo/_INIDEP/OBS/Mareas/gestion-mareas-monorepo/node_modules/.pnpm/vite@6.4.1_@types+node@22.1_1327edd732043885f62cb7a5094a0b7b/node_modules/vite/dist/node/chunks/dep-D4NMHUTW.js:43678:27)
+    at async Object.handler (file:///D:/Desarrollo/_INIDEP/OBS/Mareas/gestion-mareas-monorepo/node_modules/.pnpm/vite@6.4.1_@types+node@22.1_1327edd732043885f62cb7a5094a0b7b/node_modules/vite/dist/node/chunks/dep-D4NMHUTW.js:42994:11)
+    at async transform (file:///D:/Desarrollo/_INIDEP/OBS/Mareas/gestion-mareas-monorepo/node_modules/.pnpm/rollup@4.54.0/node_modules/rollup/dist/es/shared/node-entry.js:21234:16)
+    at async ModuleLoader.addModuleSource (file:///D:/Desarrollo/_INIDEP/OBS/Mareas/gestion-mareas-monorepo/node_modules/.pnpm/rollup@4.54.0/node_modules/rollup/dist/es/shared/node-entry.js:21448:36)
+[32m✓[39m 12 modules transformed.
+[31m✗[39m Build failed in 501ms
+[31merror during build:
+[31m[vite:css] [postcss] tailwindcss: D:/Desarrollo/_INIDEP/OBS/Mareas/gestion-mareas-monorepo/frontend/src/assets/main.css:1:1: Cannot apply unknown utility class `active:`[31m
+file: [36mD:/Desarrollo/_INIDEP/OBS/Mareas/gestion-mareas-monorepo/frontend/src/assets/main.css:1:0[31m
+    at Input.error (D:\Desarrollo\_INIDEP\OBS\Mareas\gestion-mareas-monorepo\node_modules\.pnpm\postcss@8.5.6\node_modules\postcss\lib\input.js:135:16)
+    at Root.error (D:\Desarrollo\_INIDEP\OBS\Mareas\gestion-mareas-monorepo\node_modules\.pnpm\postcss@8.5.6\node_modules\postcss\lib\node.js:146:32)
+    at Object.Once (D:\Desarrollo\_INIDEP\OBS\Mareas\gestion-mareas-monorepo\node_modules\.pnpm\@tailwindcss+postcss@4.1.18\node_modules\@tailwindcss\postcss\dist\index.js:10:6911)
+    at async LazyResult.runAsync (D:\Desarrollo\_INIDEP\OBS\Mareas\gestion-mareas-monorepo\node_modules\.pnpm\postcss@8.5.6\node_modules\postcss\lib\lazy-result.js:293:11)
+    at async runPostCSS (file:///D:/Desarrollo/_INIDEP/OBS/Mareas/gestion-mareas-monorepo/node_modules/.pnpm/vite@6.4.1_@types+node@22.1_1327edd732043885f62cb7a5094a0b7b/node_modules/vite/dist/node/chunks/dep-D4NMHUTW.js:43853:21)
+    at async compilePostCSS (file:///D:/Desarrollo/_INIDEP/OBS/Mareas/gestion-mareas-monorepo/node_modules/.pnpm/vite@6.4.1_@types+node@22.1_1327edd732043885f62cb7a5094a0b7b/node_modules/vite/dist/node/chunks/dep-D4NMHUTW.js:43823:18)
+    at async compileCSS (file:///D:/Desarrollo/_INIDEP/OBS/Mareas/gestion-mareas-monorepo/node_modules/.pnpm/vite@6.4.1_@types+node@22.1_1327edd732043885f62cb7a5094a0b7b/node_modules/vite/dist/node/chunks/dep-D4NMHUTW.js:43678:27)
+    at async Object.handler (file:///D:/Desarrollo/_INIDEP/OBS/Mareas/gestion-mareas-monorepo/node_modules/.pnpm/vite@6.4.1_@types+node@22.1_1327edd732043885f62cb7a5094a0b7b/node_modules/vite/dist/node/chunks/dep-D4NMHUTW.js:42994:11)
+    at async transform (file:///D:/Desarrollo/_INIDEP/OBS/Mareas/gestion-mareas-monorepo/node_modules/.pnpm/rollup@4.54.0/node_modules/rollup/dist/es/shared/node-entry.js:21234:16)
+    at async ModuleLoader.addModuleSource (file:///D:/Desarrollo/_INIDEP/OBS/Mareas/gestion-mareas-monorepo/node_modules/.pnpm/rollup@4.54.0/node_modules/rollup/dist/es/shared/node-entry.js:21448:36)[39m
+npm error Lifecycle script `build-only` failed with error:
+npm error code 1
+npm error path D:\Desarrollo\_INIDEP\OBS\Mareas\gestion-mareas-monorepo\frontend
+npm error workspace gestion-mareas-0-0-1@2.0.1
+npm error location D:\Desarrollo\_INIDEP\OBS\Mareas\gestion-mareas-monorepo\frontend
+npm error command failed
+npm error command C:\WINDOWS\system32\cmd.exe /d /s /c vite build

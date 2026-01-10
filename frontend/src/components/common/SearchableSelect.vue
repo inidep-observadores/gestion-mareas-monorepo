@@ -215,13 +215,13 @@ watch(() => props.modelValue, () => {
 
 <style scoped>
 input {
-  color-scheme: light !important;
-  caret-color: #465fff !important;
+  color-scheme: light;
+  caret-color: #465fff;
 }
 
 :global(.dark) input {
-  color-scheme: dark !important;
-  caret-color: #7592ff !important;
+  color-scheme: dark;
+  caret-color: #7592ff;
 }
 </style>
 

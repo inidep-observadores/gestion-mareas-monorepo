@@ -16,7 +16,7 @@
             Atención Inmediata (Pendientes)
           </h2>
         </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-4">
           <InboxAlertCard 
             v-for="alerta in alertasPendientes" 
             :key="alerta.id"
@@ -39,7 +39,7 @@
             Alertas en Seguimiento
           </h2>
         </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-4">
           <InboxAlertCard 
             v-for="alerta in alertasSeguimiento" 
             :key="alerta.id"
@@ -148,7 +148,7 @@
             leave-to-class="max-h-0 opacity-0"
           >
             <div v-if="expandedHistorialSection === 'alertas'" class="p-5 pt-2">
-              <div v-if="alertasHistoricas.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div v-if="alertasHistoricas.length > 0" class="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-6">
                 <InboxAlertCard 
                   v-for="alert in alertasHistoricas" 
                   :key="alert.id"
@@ -207,7 +207,7 @@
             leave-to-class="max-h-0 opacity-0"
           >
             <div v-if="expandedHistorialSection === 'mareas'" class="p-5 pt-2">
-              <div v-if="filteredTasks.length > 0" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+              <div v-if="filteredTasks.length > 0" class="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-6">
                 <TaskCard 
                   v-for="task in filteredTasks" 
                   :key="task.id"
@@ -237,7 +237,7 @@
         v-else
         name="list" 
         tag="div" 
-        class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6"
+        class="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-6"
       >
         <TaskCard 
           v-for="task in filteredTasks" 

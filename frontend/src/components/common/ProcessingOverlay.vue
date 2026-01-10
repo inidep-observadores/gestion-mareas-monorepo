@@ -2,7 +2,7 @@
     <div v-if="show" 
         class="fixed inset-0 z-[110] flex items-center justify-center p-4 transition-all duration-300 ease-in-out"
         :class="[
-            isSidebarAware ? (isExpanded || isHovered ? 'lg:pl-[290px]' : 'lg:pl-[90px]') : ''
+            isSidebarAware ? (isExpanded || isHovered ? 'lg:pl-[18.125rem]' : 'lg:pl-[5.625rem]') : ''
         ]"
     >
         <!-- Backdrop -->

@@ -1,7 +1,7 @@
-<template>
+﻿<template>
   <AdminLayout
     :title="`Marea ${marea.nro_marea}/${marea.anio_marea}`"
-    description="Detalles técnicos y operativos de la marea."
+    description="Detalles tÃ©cnicos y operativos de la marea."
   >
     <div class="max-w-6xl mx-auto pb-12 px-4 sm:px-6 lg:px-8">
       <!-- Header Actions & Meta -->
@@ -54,18 +54,18 @@
           <h3
             class="text-sm font-black text-error-700 dark:text-error-400 uppercase tracking-wider"
           >
-            Marea Bloqueada para Extracción
+            Marea Bloqueada para ExtracciÃ³n
           </h3>
           <p class="text-xs text-error-600 dark:text-error-500 mt-0.5">
-            En proceso de corrección por:
+            En proceso de correcciÃ³n por:
             <span class="font-bold underline">{{ marea.responsable_correccion }}</span
-            >. Los datos finales no estarán disponibles hasta la nueva carga.
+            >. Los datos finales no estarÃ¡n disponibles hasta la nueva carga.
           </p>
         </div>
         <div
           class="px-4 py-2 bg-white dark:bg-gray-900 rounded-lg border border-error-100 dark:border-error-800 text-[10px] font-bold text-error-600 dark:text-error-400 uppercase tracking-widest whitespace-nowrap"
         >
-          Estado: En Revisión
+          Estado: En RevisiÃ³n
         </div>
       </div>
 
@@ -110,13 +110,13 @@
                 class="text-lg font-bold text-gray-800 dark:text-white mb-6 flex items-center gap-2"
               >
                 <DocsIcon class="w-5 h-5 text-brand-500" />
-                Identificación de la Marea
+                IdentificaciÃ³n de la Marea
               </h3>
               <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="space-y-1.5">
                   <label
                     class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400"
-                    >Año Marea</label
+                    >AÃ±o Marea</label
                   >
                   <input
                     v-model="marea.anio_marea"
@@ -148,7 +148,7 @@
                 class="text-lg font-bold text-gray-800 dark:text-white mb-6 flex items-center gap-2"
               >
                 <ShipIcon class="w-5 h-5 text-blue-500" />
-                Buque y Pesquería
+                Buque y PesquerÃ­a
               </h3>
               <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="space-y-1.5">
@@ -165,12 +165,12 @@
                 <div class="space-y-1.5">
                   <label
                     class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400"
-                    >Pesquería</label
+                    >PesquerÃ­a</label
                   >
                   <SearchableSelect
                     v-model="marea.id_pesqueria"
                     :options="pesqueriaOptions"
-                    placeholder="Seleccione pesquería..."
+                    placeholder="Seleccione pesquerÃ­a..."
                   />
                 </div>
                 <div class="space-y-1.5">
@@ -210,7 +210,7 @@
                 <div class="space-y-1.5">
                   <label
                     class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400"
-                    >Días Estimados</label
+                    >DÃ­as Estimados</label
                   >
                   <input
                     v-model="marea.dias_estimados"
@@ -255,7 +255,7 @@
                 </div>
                 <div class="space-y-1.5">
                   <label class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400"
-                    >Días Zona Austral</label
+                    >DÃ­as Zona Austral</label
                   >
                   <input
                     v-model="marea.dias_zona_austral"
@@ -266,13 +266,13 @@
                 </div>
                 <div class="space-y-1.5">
                   <label class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400"
-                    >Cálculo Zona Austral</label
+                    >CÃ¡lculo Zona Austral</label
                   >
                   <select
                     v-model="marea.tipo_calculo_zona_austral"
                     class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border-none rounded-2xl focus:ring-2 focus:ring-brand-500/20 text-gray-800 dark:text-gray-200 transition-all font-medium outline-none"
                   >
-                    <option value="AUTOMATICO">Automático</option>
+                    <option value="AUTOMATICO">AutomÃ¡tico</option>
                     <option value="MANUAL">Manual</option>
                   </select>
                 </div>
@@ -291,11 +291,11 @@
               </h4>
               <div class="space-y-4">
                 <div class="flex justify-between text-sm">
-                  <span class="text-gray-500">Fecha Creación</span>
+                  <span class="text-gray-500">Fecha CreaciÃ³n</span>
                   <span class="font-medium dark:text-gray-300">{{ formatDate(marea.fecha_creacion) }}</span>
                 </div>
                 <div class="flex justify-between text-sm">
-                  <span class="text-gray-500">Últ. Actualización</span>
+                  <span class="text-gray-500">Ãšlt. ActualizaciÃ³n</span>
                   <span class="font-medium dark:text-gray-300">{{ formatDate(marea.fecha_ultima_actualizacion) }}</span>
                 </div>
                 <div class="pt-4 border-t border-gray-200 dark:border-gray-700">
@@ -327,7 +327,7 @@
                 v-model="marea.observaciones"
                 rows="4"
                 class="w-full bg-transparent border-none text-sm text-amber-800 dark:text-amber-300 focus:ring-0 placeholder:text-amber-300 resize-none"
-                placeholder="Añada notas que otros usuarios verán inmediatamente..."
+                placeholder="AÃ±ada notas que otros usuarios verÃ¡n inmediatamente..."
               ></textarea>
             </div>
           </div>
@@ -337,7 +337,7 @@
         <div v-if="activeTab === 'etapas'" class="space-y-6">
           <div class="flex items-center justify-between mb-2">
             <div>
-                <h3 class="text-lg font-bold text-gray-800 dark:text-white">Etapas de Navegación</h3>
+                <h3 class="text-lg font-bold text-gray-800 dark:text-white">Etapas de NavegaciÃ³n</h3>
                 <p class="text-xs text-gray-500 mt-1">Gestione los tramos del viaje, puertos y fechas reales.</p>
             </div>
             <button
@@ -345,7 +345,7 @@
               class="px-4 py-2 bg-brand-500 hover:bg-brand-600 text-white rounded-xl text-xs font-bold uppercase tracking-wider shadow-lg shadow-brand-500/20 transition-all flex items-center gap-2"
             >
               <PlusIcon class="w-4 h-4" />
-              Añadir Etapa
+              AÃ±adir Etapa
             </button>
           </div>
 
@@ -449,21 +449,21 @@
                   <div class="xl:col-span-12 mt-4 grid grid-cols-1 sm:grid-cols-12 gap-6 items-end bg-gray-50/50 dark:bg-gray-800/30 p-6 rounded-[2rem] border border-gray-100 dark:border-gray-700/30">
                     <div class="sm:col-span-4 space-y-2">
                       <label class="text-[9px] font-black uppercase text-gray-400 tracking-widest ml-1 flex items-center gap-2">
-                        <FlagIcon class="w-3 h-3" /> Pesquería Objetivo
+                        <FlagIcon class="w-3 h-3" /> PesquerÃ­a Objetivo
                       </label>
                       <SearchableSelect
                         v-model="etapa.pesqueriaId"
                         :options="pesqueriaOptions"
-                        placeholder="Pesquería..."
+                        placeholder="PesquerÃ­a..."
                       />
                     </div>
                     <div class="sm:col-span-3 space-y-2">
                       <label class="text-[9px] font-black uppercase text-gray-400 tracking-widest ml-1 flex items-center gap-2">
-                        <SettingsIcon class="w-3 h-3" /> Propósito
+                        <SettingsIcon class="w-3 h-3" /> PropÃ³sito
                       </label>
                       <select v-model="etapa.tipo" class="form-input-premium py-2.5 font-bold text-xs">
                         <option value="COMERCIAL">MAREA COMERCIAL</option>
-                        <option value="INSTITUCIONAL">CAMPAÑA INSTITUCIONAL</option>
+                        <option value="INSTITUCIONAL">CAMPAÃ‘A INSTITUCIONAL</option>
                       </select>
                     </div>
                     <div class="sm:col-span-5 space-y-2">
@@ -520,7 +520,7 @@
                 </div>
                 <div class="flex items-center gap-2">
                   <CheckIcon class="w-3 h-3" />
-                  Designado: {{ obs.es_designado ? 'Sí' : 'No' }}
+                  Designado: {{ obs.es_designado ? 'SÃ­' : 'No' }}
                 </div>
               </div>
             </div>
@@ -551,7 +551,7 @@
                 <div class="flex items-center justify-between">
                   <div class="flex items-center gap-2">
                     <span class="text-xs font-bold text-brand-500 uppercase">{{ mov.evento }}</span>
-                    <span class="text-xs text-gray-400">•</span>
+                    <span class="text-xs text-gray-400">â€¢</span>
                     <span
                       class="text-xs font-semibold text-gray-600 dark:text-gray-400 flex items-center gap-1"
                     >
@@ -588,7 +588,7 @@
           </div>
         </div>
 
-        <!-- 5. Documentación Tab -->
+        <!-- 5. DocumentaciÃ³n Tab -->
         <div v-if="activeTab === 'docs'" class="space-y-12">
           <div v-for="cat in docCategories" :key="cat.id" class="space-y-4">
             <div class="flex items-center justify-between">
@@ -618,10 +618,10 @@
                   <h4
                     class="text-xs font-bold text-amber-800 dark:text-amber-400 uppercase tracking-wider"
                   >
-                    Extracción de datos bloqueada temporalmente
+                    ExtracciÃ³n de datos bloqueada temporalmente
                   </h4>
                   <p class="text-[11px] text-amber-700 dark:text-amber-500 mt-0.5">
-                    La descarga de archivos de datos está restringida mientras se procesan las
+                    La descarga de archivos de datos estÃ¡ restringida mientras se procesan las
                     correcciones enviadas.
                   </p>
                 </div>
@@ -690,12 +690,12 @@
               class="absolute -top-10 -right-10 w-40 h-40 bg-brand-500/5 rounded-full blur-3xl"
             ></div>
             <h3 class="text-xl font-black text-gray-900 dark:text-white mb-8">
-              Protocolización Oficial
+              ProtocolizaciÃ³n Oficial
             </h3>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-8">
               <div class="space-y-1.5">
                 <label class="text-xs font-bold uppercase tracking-wider text-gray-400"
-                  >Nro. Protocolización</label
+                  >Nro. ProtocolizaciÃ³n</label
                 >
                 <input
                   v-model="marea.nro_protocolizacion"
@@ -706,7 +706,7 @@
               </div>
               <div class="space-y-1.5">
                 <label class="text-xs font-bold uppercase tracking-wider text-gray-400"
-                  >Año Protocolización</label
+                  >AÃ±o ProtocolizaciÃ³n</label
                 >
                 <input
                   v-model="marea.anio_protocolizacion"
@@ -717,7 +717,7 @@
               </div>
               <div class="sm:col-span-2 space-y-1.5">
                 <label class="text-xs font-bold uppercase tracking-wider text-gray-400"
-                  >Fecha de Protocolización</label
+                  >Fecha de ProtocolizaciÃ³n</label
                 >
                 <DatePicker
                   v-model="marea.fecha_protocolizacion"
@@ -730,9 +730,9 @@
             >
               <InfoCircleIcon class="w-5 h-5 text-blue-500 shrink-0" />
               <p class="text-xs text-blue-700 dark:text-blue-300 leading-relaxed">
-                Al asignar un número de protocolización, la marea pasará automáticamente al estado
-                <strong>PROTOCOLIZADA</strong> y los datos de captura quedarán bloqueados para
-                edición.
+                Al asignar un nÃºmero de protocolizaciÃ³n, la marea pasarÃ¡ automÃ¡ticamente al estado
+                <strong>PROTOCOLIZADA</strong> y los datos de captura quedarÃ¡n bloqueados para
+                ediciÃ³n.
               </p>
             </div>
           </div>
@@ -762,7 +762,7 @@
     <ConfirmationDialog
       :show="showDeleteStageConfirm"
       title="Eliminar Etapa"
-      message="¿Está seguro de que desea eliminar la última etapa? Esta acción no se puede deshacer hasta que guarde los cambios."
+      message="Â¿EstÃ¡ seguro de que desea eliminar la Ãºltima etapa? Esta acciÃ³n no se puede deshacer hasta que guarde los cambios."
       confirm-text="Eliminar"
       @close="showDeleteStageConfirm = false"
       @confirm="confirmRemoveStage"
@@ -820,7 +820,7 @@ const tabs = [
   { id: 'etapas', label: 'Etapas y Puertos', icon: MapPinIcon },
   { id: 'observadores', label: 'Observadores', icon: BeakerIcon },
   { id: 'workflow', label: 'Movimientos', icon: HistoryIcon },
-  { id: 'docs', label: 'Documentación', icon: FileTextIcon },
+  { id: 'docs', label: 'DocumentaciÃ³n', icon: FileTextIcon },
   { id: 'admin', label: 'Administrativo', icon: SettingsIcon },
   { id: 'historial_alertas', label: 'Historial Alertas', icon: BellIcon },
 ]
@@ -1061,7 +1061,7 @@ function removeStage(index: number) {
         stageIndexToDelete.value = index;
         showDeleteStageConfirm.value = true;
     } else {
-        toast.error('Solo se puede eliminar la última etapa de la lista');
+        toast.error('Solo se puede eliminar la Ãºltima etapa de la lista');
     }
 }
 
