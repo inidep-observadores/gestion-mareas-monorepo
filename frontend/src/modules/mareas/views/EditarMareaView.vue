@@ -168,26 +168,7 @@
               </div>
             </section>
 
-                 <!-- Configuración y Metadatos -->
-             <section class="bg-white dark:bg-gray-950 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden">
-               <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-gray-50/50 dark:bg-gray-900/50">
-                <h2 class="font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                  <SettingsIcon class="w-4 h-4 text-gray-500" />
-                  Configuración y Metadatos
-                </h2>
-              </div>
-              <div class="p-6">
-                 <div class="space-y-1.5">
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Observaciones Generales</label>
-                  <textarea
-                    v-model="form.descripcion"
-                    rows="4"
-                    class="w-full rounded-lg border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white py-2.5 px-3 focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-colors resize-none"
-                    placeholder="Notas internas sobre esta marea..."
-                  ></textarea>
-                </div>
-              </div>
-             </section>
+
           </div>
 
           <!-- TAB: ETAPAS -->
@@ -322,8 +303,7 @@ const form = ref({
   anioMarea: null,
   diasEstimados: null,
   diasZonaAustral: null,
-  fechaZarpadaEstimada: '',
-  descripcion: ''
+  fechaZarpadaEstimada: ''
 });
 
 const initialForm = ref<any>(null);
@@ -358,8 +338,7 @@ onMounted(async () => {
             anioMarea: data.anioMarea,
             diasEstimados: data.diasEstimados,
             diasZonaAustral: data.diasZonaAustral,
-            fechaZarpadaEstimada: data.fechaZarpadaEstimada ? data.fechaZarpadaEstimada.split('T')[0] : '',
-            descripcion: data.descripcion || ''
+            fechaZarpadaEstimada: data.fechaZarpadaEstimada ? data.fechaZarpadaEstimada.split('T')[0] : ''
         };
         initialForm.value = JSON.parse(JSON.stringify(form.value));
     } catch (e) {

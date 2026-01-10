@@ -229,8 +229,6 @@ model Marea {
   fechaFinObservador       DateTime?         @map("fecha_fin_observador") @db.Timestamptz(6)
   diasZonaAustral          Int?              @map("dias_zona_austral")
   tipoCalculoZonaAustral   String            @default("AUTOMATICO") @map("tipo_calculo_zona_austral")
-  titulo                   String?
-  descripcion              String?
   nroProtocolizacion       Int?              @map("nro_protocolizacion")
   anioProtocolizacion      Int?              @map("anio_protocolizacion")
   fechaProtocolizacion     DateTime?         @map("fecha_protocolizacion") @db.Timestamptz(6)

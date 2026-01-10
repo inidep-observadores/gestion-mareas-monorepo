@@ -1,7 +1,7 @@
 <template>
   <AdminLayout
     :title="`Marea ${marea.nro_marea}/${marea.anio_marea}`"
-    :description="marea.titulo || 'Detalles técnicos y operativos de la marea.'"
+    description="Detalles técnicos y operativos de la marea."
   >
     <div class="max-w-6xl mx-auto pb-12 px-4 sm:px-6 lg:px-8">
       <!-- Header Actions & Meta -->
@@ -189,10 +189,9 @@
                     class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400"
                     >Fecha Zarpada Est.</label
                   >
-                  <input
+                  <DatePicker
                     v-model="marea.fecha_zarpada_estimada"
-                    type="datetime-local"
-                    class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border-none rounded-2xl focus:ring-2 focus:ring-brand-500/20 text-gray-800 dark:text-gray-200 transition-all font-medium outline-none"
+                    :show-time="false"
                   />
                 </div>
                 <div class="space-y-1.5">
@@ -223,41 +222,7 @@
               </div>
             </div>
 
-            <!-- Summary Card -->
-            <div
-              class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-8 shadow-sm"
-            >
-              <h3
-                class="text-lg font-bold text-gray-800 dark:text-white mb-6 flex items-center gap-2"
-              >
-                <InfoIcon class="w-5 h-5 text-brand-500" />
-                Resumen de la Marea
-              </h3>
-              <div class="space-y-5">
-                <div class="space-y-1.5">
-                  <label class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400"
-                    >Título</label
-                  >
-                  <input
-                    v-model="marea.titulo"
-                    type="text"
-                    class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border-none rounded-2xl focus:ring-2 focus:ring-brand-500/20 text-gray-800 dark:text-gray-200 transition-all font-medium outline-none"
-                    placeholder="Título descriptivo"
-                  />
-                </div>
-                <div class="space-y-1.5">
-                  <label class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400"
-                    >Descripción</label
-                  >
-                  <textarea
-                    v-model="marea.descripcion"
-                    rows="4"
-                    class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border-none rounded-2xl focus:ring-2 focus:ring-brand-500/20 text-gray-800 dark:text-gray-200 transition-all font-medium outline-none resize-none"
-                    placeholder="Descripción general de la marea"
-                  ></textarea>
-                </div>
-              </div>
-            </div>
+
 
             <!-- Observer Dates & Zona Austral -->
             <div
@@ -274,20 +239,18 @@
                   <label class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400"
                     >Inicio Observador</label
                   >
-                  <input
+                  <DatePicker
                     v-model="marea.fecha_inicio_observador"
-                    type="datetime-local"
-                    class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border-none rounded-2xl focus:ring-2 focus:ring-brand-500/20 text-gray-800 dark:text-gray-200 transition-all font-medium outline-none"
+                    :show-time="false"
                   />
                 </div>
                 <div class="space-y-1.5">
                   <label class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400"
                     >Fin Observador</label
                   >
-                  <input
+                  <DatePicker
                     v-model="marea.fecha_fin_observador"
-                    type="datetime-local"
-                    class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border-none rounded-2xl focus:ring-2 focus:ring-brand-500/20 text-gray-800 dark:text-gray-200 transition-all font-medium outline-none"
+                    :show-time="false"
                   />
                 </div>
                 <div class="space-y-1.5">
@@ -731,10 +694,9 @@
                 <label class="text-xs font-bold uppercase tracking-wider text-gray-400"
                   >Fecha de Protocolización</label
                 >
-                <input
+                <DatePicker
                   v-model="marea.fecha_protocolizacion"
-                  type="date"
-                  class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border-none rounded-2xl focus:ring-2 focus:ring-brand-500/20 text-gray-800 dark:text-gray-200 transition-all font-medium outline-none"
+                  :show-time="false"
                 />
               </div>
             </div>
@@ -780,6 +742,7 @@ import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import SearchableSelect from '@/components/common/SearchableSelect.vue'
+import DatePicker from '@/components/common/DatePicker.vue'
 import AlertHistoryTab from '../../alerts/components/AlertHistoryTab.vue'
 import mareasService from '../services/mareas.service';
 import catalogosService from '../services/catalogos.service'
@@ -858,21 +821,6 @@ const formatDateTime = (value?: string | Date | null) => {
   return date.toLocaleString('es-AR')
 }
 
-const formatDateTimeLocal = (value?: string | Date | null) => {
-  if (!value) return ''
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return ''
-  const pad = (n: number) => String(n).padStart(2, '0')
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`
-}
-
-const formatDateOnly = (value?: string | Date | null) => {
-  if (!value) return ''
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return ''
-  const pad = (n: number) => String(n).padStart(2, '0')
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
-}
 
 const getFileName = (ruta?: string) => {
   if (!ruta) return 'Archivo'
@@ -919,9 +867,7 @@ async function loadMarea() {
             id_buque: data.buqueId,
             id_pesqueria: etapaPrincipal?.pesqueriaId || '',
             id_arte_principal: data.artePrincipalId || '',
-            fecha_zarpada_estimada: formatDateTimeLocal(data.fechaZarpadaEstimada),
-            titulo: data.titulo || '',
-            descripcion: data.descripcion || '',
+            fecha_zarpada_estimada: data.fechaZarpadaEstimada,
             observaciones: data.observaciones || '',
             activo: data.activo ?? true,
             tipo_marea: data.tipoMarea || 'MC',
@@ -933,11 +879,11 @@ async function loadMarea() {
             estado_id: data.estadoActual?.codigo || '',
             fecha_creacion: data.fechaCreacion,
             fecha_ultima_actualizacion: data.fechaUltimaActualizacion,
-            fecha_inicio_observador: formatDateTimeLocal(data.fechaInicioObservador),
-            fecha_fin_observador: formatDateTimeLocal(data.fechaFinObservador),
+            fecha_inicio_observador: data.fechaInicioObservador,
+            fecha_fin_observador: data.fechaFinObservador,
             nro_protocolizacion: data.nroProtocolizacion ?? null,
             anio_protocolizacion: data.anioProtocolizacion ?? null,
-            fecha_protocolizacion: formatDateOnly(data.fechaProtocolizacion),
+            fecha_protocolizacion: data.fechaProtocolizacion,
             responsable_correccion: 'N/D'
         }
 
@@ -1096,8 +1042,6 @@ const saveChanges = async () => {
       fechaFinObservador: toIsoStringOrUndefined(marea.value.fecha_fin_observador),
       diasZonaAustral: toNumberOrUndefined(marea.value.dias_zona_austral),
       tipoCalculoZonaAustral: marea.value.tipo_calculo_zona_austral || undefined,
-      titulo: marea.value.titulo || undefined,
-      descripcion: marea.value.descripcion || undefined,
       nroProtocolizacion: toNumberOrUndefined(marea.value.nro_protocolizacion),
       anioProtocolizacion: toNumberOrUndefined(marea.value.anio_protocolizacion),
       fechaProtocolizacion: toIsoStringOrUndefined(marea.value.fecha_protocolizacion),
