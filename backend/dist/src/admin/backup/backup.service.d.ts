@@ -12,6 +12,7 @@ export declare class BackupService {
     createBackup(): Promise<{
         message: string;
         filename: string;
+        size: number;
         path: string;
     }>;
     listBackups(): Promise<{

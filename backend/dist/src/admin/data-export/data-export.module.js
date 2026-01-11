@@ -10,16 +10,17 @@ exports.DataExportModule = void 0;
 const common_1 = require("@nestjs/common");
 const data_export_service_1 = require("./data-export.service");
 const data_export_controller_1 = require("./data-export.controller");
-const prisma_service_1 = require("../../prisma/prisma.service");
 const config_1 = require("@nestjs/config");
+const auth_module_1 = require("../../auth/auth.module");
+const prisma_module_1 = require("../../prisma/prisma.module");
 let DataExportModule = class DataExportModule {
 };
 exports.DataExportModule = DataExportModule;
 exports.DataExportModule = DataExportModule = __decorate([
     (0, common_1.Module)({
-        imports: [config_1.ConfigModule],
+        imports: [config_1.ConfigModule, auth_module_1.AuthModule, prisma_module_1.PrismaModule],
         controllers: [data_export_controller_1.DataExportController],
-        providers: [data_export_service_1.DataExportService, prisma_service_1.PrismaService],
+        providers: [data_export_service_1.DataExportService],
     })
 ], DataExportModule);
 //# sourceMappingURL=data-export.module.js.map

@@ -31,7 +31,9 @@ exports.AppModule = AppModule;
 exports.AppModule = AppModule = __decorate([
     (0, common_1.Module)({
         imports: [
-            config_1.ConfigModule.forRoot(),
+            config_1.ConfigModule.forRoot({
+                expandVariables: true,
+            }),
             serve_static_1.ServeStaticModule.forRoot({
                 rootPath: (0, path_1.join)(__dirname, '..', 'public'),
             }),
@@ -46,7 +48,6 @@ exports.AppModule = AppModule = __decorate([
             catalogos_module_1.CatalogosModule,
             mareas_module_1.MareasModule,
             backup_module_1.BackupModule,
-            data_export_module_1.DataExportModule,
             data_export_module_1.DataExportModule,
             mail_module_1.MailModule,
             alerts_module_1.AlertsModule,

@@ -5,6 +5,7 @@ export declare class EstadosMareaController {
     constructor(estadosMareaService: EstadosMareaService);
     crear(createEstadoMareaDto: CreateEstadoMareaDto): Promise<{
         id: string;
+        activo: boolean;
         descripcion: string | null;
         codigo: string;
         nombre: string;
@@ -15,11 +16,11 @@ export declare class EstadosMareaController {
         permiteCargaArchivos: boolean;
         permiteCorreccion: boolean;
         permiteInforme: boolean;
-        activo: boolean;
         mostrarEnPanel: boolean;
     }>;
     obtenerTodos(): Promise<{
         id: string;
+        activo: boolean;
         descripcion: string | null;
         codigo: string;
         nombre: string;
@@ -30,11 +31,11 @@ export declare class EstadosMareaController {
         permiteCargaArchivos: boolean;
         permiteCorreccion: boolean;
         permiteInforme: boolean;
-        activo: boolean;
         mostrarEnPanel: boolean;
     }[]>;
     obtenerUno(id: string): Promise<{
         id: string;
+        activo: boolean;
         descripcion: string | null;
         codigo: string;
         nombre: string;
@@ -45,11 +46,11 @@ export declare class EstadosMareaController {
         permiteCargaArchivos: boolean;
         permiteCorreccion: boolean;
         permiteInforme: boolean;
-        activo: boolean;
         mostrarEnPanel: boolean;
     }>;
     actualizar(id: string, updateEstadoMareaDto: UpdateEstadoMareaDto): Promise<{
         id: string;
+        activo: boolean;
         descripcion: string | null;
         codigo: string;
         nombre: string;
@@ -60,7 +61,6 @@ export declare class EstadosMareaController {
         permiteCargaArchivos: boolean;
         permiteCorreccion: boolean;
         permiteInforme: boolean;
-        activo: boolean;
         mostrarEnPanel: boolean;
     }>;
     eliminar(id: string): Promise<{

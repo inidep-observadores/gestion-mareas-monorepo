@@ -17,7 +17,14 @@ const adapter_pg_1 = require("@prisma/adapter-pg");
 const pg_1 = require("pg");
 let PrismaService = class PrismaService extends client_1.PrismaClient {
     constructor(config) {
-        const pool = new pg_1.Pool({ connectionString: config.get('DATABASE_URL') });
+        const dbUrl = config.get('DATABASE_URL');
+        if (!dbUrl) {
+            console.log('PrismaService: DATABASE_URL is MISSING');
+            throw new Error('DATABASE_URL is not defined. Please check your .env file.');
+        }
+        const maskedUrl = dbUrl.replace(/:([^:@]+)@/, ':****@');
+        console.log('PrismaService: DATABASE_URL ->', maskedUrl);
+        const pool = new pg_1.Pool({ connectionString: dbUrl });
         const adapter = new adapter_pg_1.PrismaPg(pool);
         super({ adapter });
         this.config = config;

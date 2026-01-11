@@ -16,6 +16,8 @@ exports.DataExportController = void 0;
 const common_1 = require("@nestjs/common");
 const data_export_service_1 = require("./data-export.service");
 const platform_express_1 = require("@nestjs/platform-express");
+const decorators_1 = require("../../auth/decorators");
+const interfaces_1 = require("../../auth/interfaces");
 let DataExportController = class DataExportController {
     constructor(dataExportService) {
         this.dataExportService = dataExportService;
@@ -67,6 +69,7 @@ __decorate([
 ], DataExportController.prototype, "importData", null);
 exports.DataExportController = DataExportController = __decorate([
     (0, common_1.Controller)('admin/data-export'),
+    (0, decorators_1.Auth)(interfaces_1.ValidRoles.admin),
     __metadata("design:paramtypes", [data_export_service_1.DataExportService])
 ], DataExportController);
 //# sourceMappingURL=data-export.controller.js.map

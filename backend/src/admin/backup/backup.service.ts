@@ -40,21 +40,54 @@ export class BackupService {
         const dbPort = this.configService.get('DB_PORT') || '5432';
 
         try {
-            // Usamos pg_dump directamente (postgresql-client instalado en Dockerfile)
-            // Usamos PGPASSWORD para evitar el prompt interactivo de contraseña
-            const command = `PGPASSWORD="${dbPass}" pg_dump -h ${dbHost} -p ${dbPort} -U ${dbUser} -d ${dbName} > "${filePath}"`;
+            const startMark = new Date().toLocaleTimeString();
+            console.log(`[${startMark}] [BackupService] === INICIO DE BACKUP ===`);
+            console.log(`[${startMark}] [BackupService] Archivo: ${filename}`);
 
-            this.logger.log(`Executing backup: ${filename} on host ${dbHost}`);
-            execSync(command);
+            try {
+                // Intento local
+                execSync('pg_dump --version', { stdio: 'ignore' });
+                console.log(`[BackupService] pg_dump encontrado en host Windows.`);
+
+                const command = `pg_dump -h "${dbHost}" -p "${dbPort}" -U "${dbUser}" -d "${dbName}" -f "${filePath}"`;
+                execSync(command, {
+                    env: { ...process.env, PGPASSWORD: dbPass },
+                    stdio: 'pipe'
+                });
+            } catch (localError) {
+                // Fallback Docker
+                console.warn(`[BackupService] pg_dump NO encontrado en host. Usando Docker fallback 'mareasdb'...`);
+
+                // IMPORTANTE: Dentro del contenedor el puerto es 5432, NO el 5435 externo
+                const dockerCommand = `docker exec -e PGPASSWORD="${dbPass}" mareasdb pg_dump -h localhost -p 5432 -U "${dbUser}" -d "${dbName}"`;
+
+                console.log(`[BackupService] Ejecutando en Docker: ${dockerCommand}`);
+
+                const output = execSync(dockerCommand, {
+                    maxBuffer: 1024 * 1024 * 100, // 100MB
+                    stdio: ['ignore', 'pipe', 'pipe']
+                });
+
+                console.log(`[BackupService] Datos recibidos: ${output.length} bytes.`);
+                fs.writeFileSync(filePath, output);
+            }
+
+            const stats = fs.statSync(filePath);
+            console.log(`[BackupService] === BACKUP FINALIZADO === Tamaño: ${stats.size} bytes`);
 
             return {
                 message: 'Backup created successfully',
                 filename,
+                size: stats.size,
                 path: filePath,
             };
-        } catch (error) {
-            this.logger.error(`Backup failed: ${error.message}`);
-            throw new InternalServerErrorException('Backup creation failed');
+        } catch (error: any) {
+            const stderr = error.stderr?.toString() || '';
+            console.error(`[BackupService] !!! ERROR CRÍTICO !!!`, {
+                message: error.message,
+                stderr: stderr
+            });
+            throw new InternalServerErrorException(`Fallo al generar backup: ${stderr.slice(0, 100) || error.message}`);
         }
     }
 
@@ -109,21 +142,49 @@ export class BackupService {
 
         try {
             // Para restaurar, usamos psql directamente
-            this.logger.warn(`Restoring database from: ${filename} on host ${dbHost}`);
+            this.logger.warn(`Restoring database from: ${filename}`);
 
-            const catCmd = process.platform === 'win32' ? 'type' : 'cat';
-            const command = `${catCmd} "${filePath}" | PGPASSWORD="${dbPass}" psql -h ${dbHost} -p ${dbPort} -U ${dbUser} -d ${dbName}`;
+            try {
+                // Verificar si psql está disponible localmente
+                execSync('psql --version', { stdio: 'ignore' });
 
-            this.logger.log(`Executing restore for: ${filename}`);
-            execSync(command);
+                const catCmd = process.platform === 'win32' ? 'type' : 'cat';
+                const command = `${catCmd} "${filePath}" | psql -h "${dbHost}" -p "${dbPort}" -U "${dbUser}" -d "${dbName}"`;
+
+                execSync(command, {
+                    env: { ...process.env, PGPASSWORD: dbPass },
+                    stdio: 'pipe',
+                    shell: true
+                } as any);
+            } catch (localError) {
+                // Fallback vía Docker
+                this.logger.warn(`psql not found on host, trying via Docker 'mareasdb'...`);
+
+                // Usamos el flag -i para enviar el contenido del SQL por stdin al contenedor
+                const catCmd = process.platform === 'win32' ? 'type' : 'cat';
+                const dockerCommand = `${catCmd} "${filePath}" | docker exec -i -e PGPASSWORD="${dbPass}" mareasdb psql -U ${dbUser} -d ${dbName}`;
+
+                execSync(dockerCommand, { stdio: 'pipe', shell: true } as any);
+            }
 
             return {
                 message: 'Database restored successfully',
                 filename,
             };
-        } catch (error) {
-            this.logger.error(`Restore failed: ${error.message}`);
-            throw new InternalServerErrorException('Database restoration failed');
+        } catch (error: any) {
+            const stderr = error.stderr?.toString() || '';
+            this.logger.error(`Restore failed. Stderr: ${stderr} - Error: ${error.message}`);
+
+            let userFriendlyMsg = 'La restauración de la base de datos falló.';
+            if (error.message.includes('mareasdb') || error.message.includes('No such container')) {
+                userFriendlyMsg += ' El contenedor "mareasdb" no está corriendo.';
+            } else if (stderr.includes('connection failed')) {
+                userFriendlyMsg += ' No se pudo conectar a la base de datos dentro del contenedor.';
+            } else {
+                userFriendlyMsg += ` ${stderr.slice(0, 100)}`;
+            }
+
+            throw new InternalServerErrorException(userFriendlyMsg);
         }
     }
 
