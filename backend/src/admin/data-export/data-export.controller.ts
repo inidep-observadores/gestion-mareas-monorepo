@@ -3,8 +3,11 @@ import { DataExportService } from './data-export.service';
 import { Response } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Express } from 'express';
+import { Auth } from '../../auth/decorators';
+import { ValidRoles } from '../../auth/interfaces';
 
 @Controller('admin/data-export')
+@Auth(ValidRoles.admin)
 export class DataExportController {
     constructor(private readonly dataExportService: DataExportService) { }
 

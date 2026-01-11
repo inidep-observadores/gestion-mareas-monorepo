@@ -94,14 +94,13 @@
               <td class="px-6 py-4 text-sm text-gray-500">{{ formatDate(file.createdAt) }}</td>
               <td class="px-6 py-4 text-sm text-gray-500 text-right">{{ formatSize(file.size) }}</td>
               <td class="px-6 py-4 text-center">
-                 <a 
-                    :href="`/api/admin/data-export/${file.filename}`" 
-                    target="_blank"
+                 <button 
+                    @click="handleDownload(file.filename)"
                     class="inline-flex items-center justify-center p-2 text-green-600 bg-green-50 dark:bg-green-900/10 rounded-lg hover:bg-green-100 dark:hover:bg-green-900/20 transition-colors"
                     title="Descargar ZIP"
                 >
                     <DownloadIcon class="w-5 h-5" />
-                </a>
+                </button>
               </td>
             </tr>
           </tbody>
@@ -164,6 +163,28 @@ const isCreating = ref(false);
 const isRestoring = ref(false);
 const isProcessing = ref(false);
 const fileInput = ref<HTMLInputElement | null>(null);
+
+const handleDownload = async (filename: string) => {
+    try {
+        const response = await httpClient.get(`/admin/data-export/${filename}`, {
+            responseType: 'blob'
+        });
+        
+        // Crear un link temporal para disparar la descarga
+        const url = window.URL.createObjectURL(new Blob([response.data]));
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', filename);
+        document.body.appendChild(link);
+        link.click();
+        
+        // Limpieza
+        link.remove();
+        window.URL.revokeObjectURL(url);
+    } catch (error) {
+        toast.error('Error al intentar descargar el archivo');
+    }
+};
 
 const fetchExports = async () => {
     isLoading.value = true;

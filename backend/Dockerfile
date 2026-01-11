@@ -13,6 +13,7 @@ FROM node:20-alpine
 WORKDIR /app
 ENV NODE_ENV=production
 RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN apk add --no-cache postgresql-client
 COPY package.json pnpm-lock.yaml* ./
 RUN pnpm install --prod --no-frozen-lockfile
 COPY --from=builder /app/dist ./dist

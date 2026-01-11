@@ -35,11 +35,16 @@ export class BackupService {
 
         const dbName = this.configService.get('DB_NAME');
         const dbUser = this.configService.get('DB_USERNAME');
+        const dbPass = this.configService.get('DB_PASSWORD');
+        const dbHost = this.configService.get('DB_HOST') || 'localhost';
+        const dbPort = this.configService.get('DB_PORT') || '5432';
 
         try {
-            // Usamos docker exec ya que la DB está en un contenedor alpine
-            const command = `docker exec mareasdb pg_dump -U ${dbUser} ${dbName} > "${filePath}"`;
-            this.logger.log(`Executing backup: ${command}`);
+            // Usamos pg_dump directamente (postgresql-client instalado en Dockerfile)
+            // Usamos PGPASSWORD para evitar el prompt interactivo de contraseña
+            const command = `PGPASSWORD="${dbPass}" pg_dump -h ${dbHost} -p ${dbPort} -U ${dbUser} -d ${dbName} > "${filePath}"`;
+
+            this.logger.log(`Executing backup: ${filename} on host ${dbHost}`);
             execSync(command);
 
             return {
@@ -98,18 +103,18 @@ export class BackupService {
 
         const dbName = this.configService.get('DB_NAME');
         const dbUser = this.configService.get('DB_USERNAME');
+        const dbPass = this.configService.get('DB_PASSWORD');
+        const dbHost = this.configService.get('DB_HOST') || 'localhost';
+        const dbPort = this.configService.get('DB_PORT') || '5432';
 
         try {
-            // Para restaurar, primero necesitamos dejar caer la conexión y recrear o simplemente usar pg_restore
-            // Dado que es alpine y el dump es .sql (texto), usamos psql para restaurar
-            this.logger.warn(`Restoring database from: ${filename}`);
+            // Para restaurar, usamos psql directamente
+            this.logger.warn(`Restoring database from: ${filename} on host ${dbHost}`);
 
-            // Comando para restaurar sobreescribiendo
-            // En Linux usaremos cat, en Windows usaríamos type, pero en Docker (VPS) es cat
             const catCmd = process.platform === 'win32' ? 'type' : 'cat';
-            const command = `${catCmd} "${filePath}" | docker exec -i mareasdb psql -U ${dbUser} -d ${dbName}`;
+            const command = `${catCmd} "${filePath}" | PGPASSWORD="${dbPass}" psql -h ${dbHost} -p ${dbPort} -U ${dbUser} -d ${dbName}`;
 
-            this.logger.log(`Executing restore: ${command}`);
+            this.logger.log(`Executing restore for: ${filename}`);
             execSync(command);
 
             return {
