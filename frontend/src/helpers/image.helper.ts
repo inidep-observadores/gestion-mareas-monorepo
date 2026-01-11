@@ -4,7 +4,7 @@ export const getFullImageUrl = (path: string | undefined): string => {
     if (path.startsWith('http') || path.startsWith('blob:')) return path;
 
     // Get API Origin (e.g., http://localhost:3000)
-    const apiUrl = import.meta.env.BACKEND_URL || 'http://localhost:3000/api';
+    const apiUrl = import.meta.env.VITE_BACKEND_URL;
 
     // If apiUrl has /api at the end, remove it to get the host, OR just use URL object
     try {

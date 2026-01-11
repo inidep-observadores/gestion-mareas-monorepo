@@ -6,6 +6,8 @@ RUN pnpm install --no-frozen-lockfile
 COPY . .
 RUN pnpm prisma generate
 RUN pnpm build
+# Transpilar semillas para producción
+RUN npx tsc prisma/*.ts --lib es2021,dom --skipLibCheck --module commonjs --target es2021 --esModuleInterop --moduleResolution node --outDir prisma
 
 FROM node:20-alpine
 WORKDIR /app

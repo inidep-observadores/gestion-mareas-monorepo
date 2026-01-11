@@ -160,8 +160,17 @@ docker compose -f docker-compose-prod.yaml up -d --build
 Si es la primera vez o necesita resetear datos base (catálogos):
 
 ```bash
-docker compose -f docker-compose-prod.yaml exec backend pnpm prisma db seed
+docker compose -f docker-compose-prod.yaml exec backend node prisma/seed.js
 ```
+
+Para cargar los datos históricos de mareas (JSONL):
+
+```bash
+docker compose -f docker-compose-prod.yaml exec backend node prisma/seed-mareas-jsonl.js
+```
+
+> [!TIP]
+> Ahora los archivos se compilan a `.js` durante el build de Docker, por lo que se ejecutan con `node` plano, lo que es más rápido y no requiere dependencias de desarrollo en producción.
 
 ## 9. Validaciones básicas
 
