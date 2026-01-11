@@ -21,7 +21,9 @@ import { BusinessRulesModule } from './common/business-rules/business-rules.modu
 
 @Module({
   imports: [
-    ConfigModule.forRoot(),
+    ConfigModule.forRoot({
+      expandVariables: true,
+    }),
 
 
 
@@ -47,7 +49,6 @@ import { BusinessRulesModule } from './common/business-rules/business-rules.modu
     CatalogosModule,
     MareasModule,
     BackupModule,
-    DataExportModule,
     DataExportModule,
     MailModule,
     AlertsModule,

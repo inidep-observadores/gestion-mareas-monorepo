@@ -5,26 +5,26 @@ export declare class ArtesPescaController {
     constructor(artesPescaService: ArtesPescaService);
     crear(createArtePescaDto: CreateArtePescaDto): Promise<{
         id: string;
-        nombre: string;
         activo: boolean;
+        nombre: string;
         codigoNumerico: number;
     }>;
     obtenerTodos(): Promise<{
         id: string;
-        nombre: string;
         activo: boolean;
+        nombre: string;
         codigoNumerico: number;
     }[]>;
     obtenerUno(id: string): Promise<{
         id: string;
-        nombre: string;
         activo: boolean;
+        nombre: string;
         codigoNumerico: number;
     }>;
     actualizar(id: string, updateArtePescaDto: UpdateArtePescaDto): Promise<{
         id: string;
-        nombre: string;
         activo: boolean;
+        nombre: string;
         codigoNumerico: number;
     }>;
     eliminar(id: string): Promise<{

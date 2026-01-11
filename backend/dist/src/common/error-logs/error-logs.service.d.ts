@@ -17,10 +17,10 @@ export declare class ErrorLogsService {
     }): Promise<{
         level: string;
         id: string;
+        userId: string | null;
         timestamp: Date;
         source: string;
         context: string | null;
-        userId: string | null;
         userEmail: string | null;
         message: string;
         stack: string | null;
@@ -32,10 +32,10 @@ export declare class ErrorLogsService {
     findAll(): Promise<{
         level: string;
         id: string;
+        userId: string | null;
         timestamp: Date;
         source: string;
         context: string | null;
-        userId: string | null;
         userEmail: string | null;
         message: string;
         stack: string | null;
@@ -47,10 +47,10 @@ export declare class ErrorLogsService {
     findOne(id: string): Promise<{
         level: string;
         id: string;
+        userId: string | null;
         timestamp: Date;
         source: string;
         context: string | null;
-        userId: string | null;
         userEmail: string | null;
         message: string;
         stack: string | null;
