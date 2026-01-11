@@ -105,7 +105,9 @@ export class BackupService {
             this.logger.warn(`Restoring database from: ${filename}`);
 
             // Comando para restaurar sobreescribiendo
-            const command = `type "${filePath}" | docker exec -i mareasdb psql -U ${dbUser} -d ${dbName}`;
+            // En Linux usaremos cat, en Windows usaríamos type, pero en Docker (VPS) es cat
+            const catCmd = process.platform === 'win32' ? 'type' : 'cat';
+            const command = `${catCmd} "${filePath}" | docker exec -i mareasdb psql -U ${dbUser} -d ${dbName}`;
 
             this.logger.log(`Executing restore: ${command}`);
             execSync(command);

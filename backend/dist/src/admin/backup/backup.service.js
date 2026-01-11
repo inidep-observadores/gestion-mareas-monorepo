@@ -98,7 +98,8 @@ let BackupService = BackupService_1 = class BackupService {
         const dbUser = this.configService.get('DB_USERNAME');
         try {
             this.logger.warn(`Restoring database from: ${filename}`);
-            const command = `type "${filePath}" | docker exec -i mareasdb psql -U ${dbUser} -d ${dbName}`;
+            const catCmd = process.platform === 'win32' ? 'type' : 'cat';
+            const command = `${catCmd} "${filePath}" | docker exec -i mareasdb psql -U ${dbUser} -d ${dbName}`;
             this.logger.log(`Executing restore: ${command}`);
             (0, child_process_1.execSync)(command);
             return {

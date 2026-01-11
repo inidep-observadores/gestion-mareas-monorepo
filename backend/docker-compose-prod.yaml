@@ -6,6 +6,8 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${DB_NAME}
     container_name: mareasdb
+    ports:
+      - "5435:5432"
     volumes:
       - mareas_db_data:/var/lib/postgresql/data
     networks:
@@ -41,6 +43,15 @@ services:
     networks:
       - sigma-network
       - traefik
+
+  mailhog:
+    image: mailhog/mailhog
+    restart: always
+    container_name: mailhog
+    ports:
+      - "8025:8025"
+    networks:
+      - sigma-network
 
 networks:
   sigma-network:
