@@ -127,7 +127,7 @@ services:
       - "traefik.http.routers.sigma-backend.rule=Host(`${API_DOMAIN}`)"
       - "traefik.http.routers.sigma-backend.entrypoints=websecure"
       - "traefik.http.routers.sigma-backend.tls=true"
-      - "traefik.http.routers.sigma-backend.tls.certresolver=myresolver"
+      - "traefik.http.routers.sigma-backend.tls.certresolver=mytlschallenge"
       - "traefik.http.services.sigma-backend.loadbalancer.server.port=3000"
     networks:
       - sigma-network
@@ -177,14 +177,25 @@ docker compose -f docker-compose-prod.yaml exec backend pnpm prisma db seed
 ## 10. Reverse proxy y TLS
 
 - Asegure que la variable `API_DOMAIN` en el `.env` sea exactamente el dominio configurado en el DNS (ej: `mareas-api.innovamdp.com`).
-- Verifique que el `certresolver` en las etiquetas de Traefik coincida con el nombre configurado en su `traefik.yaml` global (usualmente `myresolver`, `letsencrypt` o similar).
+- Verifique que el `certresolver` en las etiquetas de Traefik coincida con el nombre configurado en su `traefik.yaml` global (en tu caso es `mytlschallenge`).
 
 ---
 
-## 11. Frontend en Netlify / Vercel
+---
 
-Configure la variable de entorno en el panel del hosting:
-```bash
-VITE_BACKEND_URL=https://mareas-api.innovamdp.com/api
-```
+## Consideraciones para evitar errores de CORS y HTTPS
+
+### 1. Ajuste de CORS
+En NestJS, el origen debe coincidir exactamente. En tu `.env` de producción:
+- ✅ **BIEN**: `FRONTEND_URL=https://mareas.innovamdp.com`
+- ❌ **MAL**: `FRONTEND_URL=https://mareas.innovamdp.com/` (la barra final rompe el match)
+- ❌ **MAL**: `FRONTEND_URL=http://mareas.innovamdp.com` (si el frontend usa HTTPS)
+
+### 2. Protocolo HTTPS
+- Traefik se encarga de "terminar" la conexión SSL. El backend recibe tráfico HTTP internamente, pero el navegador web cree que todo es HTTPS.
+- Si usas un dominio con HTTPS, **todas** las llamadas del frontend deben ser a `https://`.
+
+### 3. Certificados de confianza
+- Si usas `myresolver` (Let's Encrypt), Traefik generará los certificados automáticamente.
+- Si ves errores de "Certificate Not Trusted", revisa los logs de Traefik para ver si falló el desafío HTTP o DNS de Let's Encrypt.
 

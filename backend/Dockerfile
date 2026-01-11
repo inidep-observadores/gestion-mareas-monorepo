@@ -15,6 +15,7 @@ COPY package.json pnpm-lock.yaml* ./
 RUN pnpm install --prod --no-frozen-lockfile
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/prisma ./prisma
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/static ./static
+# Generamos el cliente de Prisma en la imagen final para evitar problemas de rutas con pnpm
+RUN npx prisma generate
 CMD ["node", "dist/main"]
