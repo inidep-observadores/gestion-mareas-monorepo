@@ -5,11 +5,11 @@ export declare class PuertosController {
     constructor(puertosService: PuertosService);
     crear(createPuertoDto: CreatePuertoDto): Promise<{
         id: string;
-        activo: boolean;
-        observaciones: string | null;
-        codigoInterno: string | null;
         nombre: string;
         orden: number | null;
+        activo: boolean;
+        codigoInterno: string | null;
+        observaciones: string | null;
         provincia: string | null;
         pais: string | null;
         codigoExterno: string | null;
@@ -19,11 +19,11 @@ export declare class PuertosController {
     }>;
     obtenerTodos(): Promise<{
         id: string;
-        activo: boolean;
-        observaciones: string | null;
-        codigoInterno: string | null;
         nombre: string;
         orden: number | null;
+        activo: boolean;
+        codigoInterno: string | null;
+        observaciones: string | null;
         provincia: string | null;
         pais: string | null;
         codigoExterno: string | null;
@@ -33,11 +33,11 @@ export declare class PuertosController {
     }[]>;
     obtenerUno(id: string): Promise<{
         id: string;
-        activo: boolean;
-        observaciones: string | null;
-        codigoInterno: string | null;
         nombre: string;
         orden: number | null;
+        activo: boolean;
+        codigoInterno: string | null;
+        observaciones: string | null;
         provincia: string | null;
         pais: string | null;
         codigoExterno: string | null;
@@ -47,11 +47,11 @@ export declare class PuertosController {
     }>;
     actualizar(id: string, updatePuertoDto: UpdatePuertoDto): Promise<{
         id: string;
-        activo: boolean;
-        observaciones: string | null;
-        codigoInterno: string | null;
         nombre: string;
         orden: number | null;
+        activo: boolean;
+        codigoInterno: string | null;
+        observaciones: string | null;
         provincia: string | null;
         pais: string | null;
         codigoExterno: string | null;

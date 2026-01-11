@@ -9,6 +9,7 @@ export declare class ProductsController {
     create(createProductDto: CreateProductDto, user: User): Promise<{
         images: string[];
         id: string;
+        userId: string;
         title: string;
         price: number;
         description: string | null;
@@ -17,11 +18,11 @@ export declare class ProductsController {
         sizes: string[];
         gender: string;
         tags: string[];
-        userId: string;
     }>;
     findAll(paginationDto: PaginationDto): Promise<{
         images: string[];
         id: string;
+        userId: string;
         title: string;
         price: number;
         description: string | null;
@@ -30,7 +31,6 @@ export declare class ProductsController {
         sizes: string[];
         gender: string;
         tags: string[];
-        userId: string;
     }[]>;
     findOne(term: string): Promise<any>;
     update(id: string, updateProductDto: UpdateProductDto, user: User): Promise<any>;

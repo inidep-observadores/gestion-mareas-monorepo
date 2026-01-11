@@ -7,13 +7,13 @@ export declare class AlertsController {
     constructor(alertsService: AlertsService);
     create(createAlertDto: CreateAlertDto, user: User): Promise<{
         id: string;
-        descripcion: string;
-        metadata: import("@prisma/client/runtime/client").JsonValue | null;
         codigoUnico: string;
         referenciaId: string | null;
         referenciaTipo: string | null;
+        metadata: import("@prisma/client/runtime/client").JsonValue | null;
         tipo: string;
         titulo: string;
+        descripcion: string;
         estado: string;
         prioridad: string;
         fechaDetectada: Date;
@@ -41,21 +41,21 @@ export declare class AlertsController {
             };
         } & {
             id: string;
+            alertaId: string;
             fechaHora: Date;
             usuarioId: string | null;
             tipoEvento: string;
             detalle: string | null;
-            alertaId: string;
         })[];
     } & {
         id: string;
-        descripcion: string;
-        metadata: import("@prisma/client/runtime/client").JsonValue | null;
         codigoUnico: string;
         referenciaId: string | null;
         referenciaTipo: string | null;
+        metadata: import("@prisma/client/runtime/client").JsonValue | null;
         tipo: string;
         titulo: string;
+        descripcion: string;
         estado: string;
         prioridad: string;
         fechaDetectada: Date;
@@ -67,13 +67,13 @@ export declare class AlertsController {
     }>;
     update(id: string, updateAlertDto: UpdateAlertDto, user: User): Promise<{
         id: string;
-        descripcion: string;
-        metadata: import("@prisma/client/runtime/client").JsonValue | null;
         codigoUnico: string;
         referenciaId: string | null;
         referenciaTipo: string | null;
+        metadata: import("@prisma/client/runtime/client").JsonValue | null;
         tipo: string;
         titulo: string;
+        descripcion: string;
         estado: string;
         prioridad: string;
         fechaDetectada: Date;

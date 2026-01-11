@@ -5,11 +5,11 @@ export declare class PuertosService {
     constructor(prisma: PrismaService);
     crear(createPuertoDto: CreatePuertoDto): Promise<{
         id: string;
-        activo: boolean;
-        observaciones: string | null;
-        codigoInterno: string | null;
         nombre: string;
         orden: number | null;
+        activo: boolean;
+        codigoInterno: string | null;
+        observaciones: string | null;
         provincia: string | null;
         pais: string | null;
         codigoExterno: string | null;
@@ -19,11 +19,11 @@ export declare class PuertosService {
     }>;
     obtenerTodos(): Promise<{
         id: string;
-        activo: boolean;
-        observaciones: string | null;
-        codigoInterno: string | null;
         nombre: string;
         orden: number | null;
+        activo: boolean;
+        codigoInterno: string | null;
+        observaciones: string | null;
         provincia: string | null;
         pais: string | null;
         codigoExterno: string | null;
@@ -33,11 +33,11 @@ export declare class PuertosService {
     }[]>;
     obtenerUno(id: string): Promise<{
         id: string;
-        activo: boolean;
-        observaciones: string | null;
-        codigoInterno: string | null;
         nombre: string;
         orden: number | null;
+        activo: boolean;
+        codigoInterno: string | null;
+        observaciones: string | null;
         provincia: string | null;
         pais: string | null;
         codigoExterno: string | null;
@@ -47,11 +47,11 @@ export declare class PuertosService {
     }>;
     actualizar(id: string, updatePuertoDto: UpdatePuertoDto): Promise<{
         id: string;
-        activo: boolean;
-        observaciones: string | null;
-        codigoInterno: string | null;
         nombre: string;
         orden: number | null;
+        activo: boolean;
+        codigoInterno: string | null;
+        observaciones: string | null;
         provincia: string | null;
         pais: string | null;
         codigoExterno: string | null;

@@ -7,13 +7,13 @@ export declare class AlertsService {
     constructor(prisma: PrismaService);
     create(createAlertDto: CreateAlertDto, user?: any): Promise<{
         id: string;
-        descripcion: string;
-        metadata: import("@prisma/client/runtime/client").JsonValue | null;
         codigoUnico: string;
         referenciaId: string | null;
         referenciaTipo: string | null;
+        metadata: import("@prisma/client/runtime/client").JsonValue | null;
         tipo: string;
         titulo: string;
+        descripcion: string;
         estado: string;
         prioridad: string;
         fechaDetectada: Date;
@@ -41,21 +41,21 @@ export declare class AlertsService {
             };
         } & {
             id: string;
+            alertaId: string;
             fechaHora: Date;
             usuarioId: string | null;
             tipoEvento: string;
             detalle: string | null;
-            alertaId: string;
         })[];
     } & {
         id: string;
-        descripcion: string;
-        metadata: import("@prisma/client/runtime/client").JsonValue | null;
         codigoUnico: string;
         referenciaId: string | null;
         referenciaTipo: string | null;
+        metadata: import("@prisma/client/runtime/client").JsonValue | null;
         tipo: string;
         titulo: string;
+        descripcion: string;
         estado: string;
         prioridad: string;
         fechaDetectada: Date;
@@ -67,13 +67,13 @@ export declare class AlertsService {
     }>;
     update(id: string, updateAlertDto: UpdateAlertDto, user: any): Promise<{
         id: string;
-        descripcion: string;
-        metadata: import("@prisma/client/runtime/client").JsonValue | null;
         codigoUnico: string;
         referenciaId: string | null;
         referenciaTipo: string | null;
+        metadata: import("@prisma/client/runtime/client").JsonValue | null;
         tipo: string;
         titulo: string;
+        descripcion: string;
         estado: string;
         prioridad: string;
         fechaDetectada: Date;
@@ -86,10 +86,10 @@ export declare class AlertsService {
     private extractNotaGestion;
     logEvent(alertaId: string, tipo: string, detalle: string, userId?: string): Promise<{
         id: string;
+        alertaId: string;
         fechaHora: Date;
         usuarioId: string | null;
         tipoEvento: string;
         detalle: string | null;
-        alertaId: string;
     }>;
 }
