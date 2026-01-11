@@ -39,12 +39,12 @@ services:
       - "traefik.http.services.sigma-backend.loadbalancer.server.port=3000"
     networks:
       - sigma-network
-      - traefik-public
+      - traefik
 
 networks:
   sigma-network:
     driver: bridge
-  traefik-public:
+  traefik:
     external: true
 
 volumes:
