@@ -29,10 +29,10 @@ services:
       - ./static:/app/static
       - ./uploads:/app/uploads
     command: >
-      sh -c "npx prisma migrate deploy && node dist/main"
+      sh -c "npx prisma migrate deploy && node dist/src/main"
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.sigma-backend.rule=Host(`${API_DOMAIN}`)"
+      - 'traefik.http.routers.sigma-backend.rule=Host(`${API_DOMAIN}`)'
       - "traefik.http.routers.sigma-backend.entrypoints=websecure"
       - "traefik.http.routers.sigma-backend.tls=true"
       - "traefik.http.routers.sigma-backend.tls.certresolver=mytlschallenge"
