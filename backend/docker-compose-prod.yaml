@@ -2,27 +2,20 @@ services:
   db:
     image: postgres:15-alpine
     restart: always
-    ports:
-      - "5432:5432"
     environment:
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${DB_NAME}
     container_name: mareasdb
     volumes:
-      - ./postgres:/var/lib/postgresql/data
-
-  mailhog:
-    image: mailhog/mailhog
-    restart: always
-    ports:
-      - "1025:1025"
-      - "8025:8025"
-    container_name: mailhog
+      - mareas_db_data:/var/lib/postgresql/data
+    networks:
+      - sigma-network
 
   backend:
     build:
       context: .
       dockerfile: Dockerfile
+    container_name: sigma-backend
     restart: always
     env_file:
       - .env
@@ -31,22 +24,28 @@ services:
       SMTP_HOST: mailhog
     depends_on:
       - db
-      - mailhog
     volumes:
       - ./backups:/app/backups
       - ./static:/app/static
-    expose:
-      - "3000"
+      - ./uploads:/app/uploads
+    command: >
+      sh -c "npx prisma migrate deploy && node dist/main"
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.sigma-backend.rule=Host(`api.su-dominio.com`)"
+      - "traefik.http.routers.sigma-backend.rule=Host(`${API_DOMAIN}`)"
       - "traefik.http.routers.sigma-backend.entrypoints=websecure"
       - "traefik.http.routers.sigma-backend.tls=true"
+      - "traefik.http.routers.sigma-backend.tls.certresolver=myresolver"
       - "traefik.http.services.sigma-backend.loadbalancer.server.port=3000"
     networks:
-      - default
-      - traefik
+      - sigma-network
+      - traefik-public
 
 networks:
-  traefik:
+  sigma-network:
+    driver: bridge
+  traefik-public:
     external: true
+
+volumes:
+  mareas_db_data:

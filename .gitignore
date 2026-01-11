@@ -31,10 +31,10 @@ lerna-debug.log\*
 
 # **\=========================**
 
-backend/dist/  
-backend/coverage/  
-backend/.nyc\_output/  
-backend/postgres/  
+backend/postgres/
+backend/backups/
+backend/data-exports/
+backend/uploads/
 backend/test-results/
 
 # **Prisma**
