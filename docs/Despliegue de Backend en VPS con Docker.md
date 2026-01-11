@@ -56,16 +56,17 @@ cd gestion-mareas-monorepo
 
 > Nota: si utiliza un SMTP real, actualice `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` y `SMTP_SECURE`.
 
-## 5. Crear Dockerfile del backend
+## 5. Dockerfile del backend
 
-Cree `backend/Dockerfile` con un flujo multi-stage (produccion):
+Utilizamos un flujo multi-stage para optimizar el tamaño de la imagen y la seguridad:
 
 ```dockerfile
 # backend/Dockerfile
 FROM node:20-alpine AS builder
 WORKDIR /app
-COPY package.json ./
-RUN corepack enable && pnpm install --no-frozen-lockfile
+RUN corepack enable && corepack prepare pnpm@latest --activate
+COPY package.json pnpm-lock.yaml* ./
+RUN pnpm install --no-frozen-lockfile
 COPY . .
 RUN pnpm prisma generate
 RUN pnpm build
@@ -73,8 +74,9 @@ RUN pnpm build
 FROM node:20-alpine
 WORKDIR /app
 ENV NODE_ENV=production
-COPY package.json ./
-RUN corepack enable && pnpm install --no-frozen-lockfile --prod
+RUN corepack enable && corepack prepare pnpm@latest --activate
+COPY package.json pnpm-lock.yaml* ./
+RUN pnpm install --prod --no-frozen-lockfile
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
@@ -82,36 +84,30 @@ COPY --from=builder /app/static ./static
 CMD ["node", "dist/main"]
 ```
 
-## 6. Crear docker-compose de produccion
+## 6. Docker Compose de producción
 
-Cree `backend/docker-compose-prod.yaml` con el siguiente contenido (Traefik):
+Configuración optimizada para Traefik con persistencia de datos y migraciones automáticas:
 
 ```yaml
+# backend/docker-compose-prod.yaml
 services:
   db:
     image: postgres:15-alpine
     restart: always
-    ports:
-      - "5432:5432"
     environment:
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${DB_NAME}
     container_name: mareasdb
     volumes:
-      - ./postgres:/var/lib/postgresql/data
-
-  mailhog:
-    image: mailhog/mailhog
-    restart: always
-    ports:
-      - "1025:1025"
-      - "8025:8025"
-    container_name: mailhog
+      - mareas_db_data:/var/lib/postgresql/data
+    networks:
+      - sigma-network
 
   backend:
     build:
       context: .
       dockerfile: Dockerfile
+    container_name: sigma-backend
     restart: always
     env_file:
       - .env
@@ -120,27 +116,32 @@ services:
       SMTP_HOST: mailhog
     depends_on:
       - db
-      - mailhog
     volumes:
       - ./backups:/app/backups
-    expose:
-      - "3000"
+      - ./static:/app/static
+      - ./uploads:/app/uploads
+    command: >
+      sh -c "npx prisma migrate deploy && node dist/main"
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.sigma-backend.rule=Host(`api.su-dominio.com`)"
+      - "traefik.http.routers.sigma-backend.rule=Host(`${API_DOMAIN}`)"
       - "traefik.http.routers.sigma-backend.entrypoints=websecure"
       - "traefik.http.routers.sigma-backend.tls=true"
+      - "traefik.http.routers.sigma-backend.tls.certresolver=myresolver"
       - "traefik.http.services.sigma-backend.loadbalancer.server.port=3000"
     networks:
-      - default
+      - sigma-network
       - traefik
 
 networks:
+  sigma-network:
+    driver: bridge
   traefik:
     external: true
-```
 
-> Nota: Si necesita acceso directo por IP para pruebas, reemplace `expose` por `ports` y abra el puerto 3000 en el firewall.
+volumes:
+  mareas_db_data:
+```
 
 ## 7. Levantar servicios
 
@@ -150,53 +151,40 @@ Desde la carpeta `backend/`:
 docker compose -f docker-compose-prod.yaml up -d --build
 ```
 
-## 8. Migraciones y seed (una sola vez)
+> [!IMPORTANT]
+> El comando `command` en el `docker-compose` ya incluye la ejecución de `prisma migrate deploy`, por lo que la base de datos se actualizará automáticamente en cada inicio.
 
-Ejecute las migraciones en el contenedor:
+## 8. Carga inicial de datos (Seed)
 
-```bash
-docker compose -f docker-compose-prod.yaml exec backend pnpm prisma migrate deploy
-```
-
-Para cargar datos de prueba:
+Si es la primera vez o necesita resetear datos base (catálogos):
 
 ```bash
 docker compose -f docker-compose-prod.yaml exec backend pnpm prisma db seed
 ```
 
-> Nota: El seed carga catalogos y mareas 2025. No lo ejecute en un entorno productivo real.
-
-## 9. Validaciones basicas
+## 9. Validaciones básicas
 
 - Verifique estado de contenedores:
-
   ```bash
   docker compose -f docker-compose-prod.yaml ps
   ```
 
-- Revise logs del backend:
-
+- Revise logs para asegurar que las migraciones corrieron bien:
   ```bash
   docker compose -f docker-compose-prod.yaml logs -f backend
   ```
 
 ## 10. Reverse proxy y TLS
 
-- Actualice el dominio en la regla Traefik:
-  - `traefik.http.routers.sigma-backend.rule=Host(`api.su-dominio.com`)`
-- Asegure que Traefik tenga entrypoints `web` y `websecure` configurados.
-- Configure el certificado TLS en Traefik (ACME o manual).
-- Ajuste `HOST_API` y `FRONTEND_URL` en `backend/.env` si cambia el dominio.
+- Asegure que la variable `API_DOMAIN` en el `.env` sea exactamente el dominio configurado en el DNS (ej: `mareas-api.innovamdp.com`).
+- Verifique que el `certresolver` en las etiquetas de Traefik coincida con el nombre configurado en su `traefik.yaml` global (usualmente `myresolver`, `letsencrypt` o similar).
 
 ---
 
-Si necesita incluir el frontend en el mismo VPS, cree un despliegue separado en `/frontend` y configure CORS, `HOST_API` y `FRONTEND_URL` de forma consistente.
+## 11. Frontend en Netlify / Vercel
 
-## 11. Frontend en Netlify (recordatorio)
-
-Si despliega el frontend en Netlify, configure la variable de entorno:
-
+Configure la variable de entorno en el panel del hosting:
 ```bash
-VITE_BACKEND_URL=https://api.su-dominio.com/api
+VITE_BACKEND_URL=https://mareas-api.innovamdp.com/api
 ```
 
