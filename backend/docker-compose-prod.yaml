@@ -35,7 +35,7 @@ services:
       - "traefik.http.routers.sigma-backend.rule=Host(`${API_DOMAIN}`)"
       - "traefik.http.routers.sigma-backend.entrypoints=websecure"
       - "traefik.http.routers.sigma-backend.tls=true"
-      - "traefik.http.routers.sigma-backend.tls.certresolver=myresolver"
+      - "traefik.http.routers.sigma-backend.tls.certresolver=mytlschallenge"
       - "traefik.http.services.sigma-backend.loadbalancer.server.port=3000"
     networks:
       - sigma-network
