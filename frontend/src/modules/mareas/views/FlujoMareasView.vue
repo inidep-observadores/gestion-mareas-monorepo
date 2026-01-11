@@ -343,7 +343,7 @@ const fisheryOptions = [
 ]
 
 const observerOptions = computed(() => {
-  const unique = Array.from(new Set(mareas.value.map((m) => m.observador).filter(Boolean)))
+  const unique = Array.from(new Set(mareas.value.map((m) => m.observador).filter((obs): obs is string => !!obs)))
   return unique.map((obs) => ({ value: obs, label: obs }))
 })
 
