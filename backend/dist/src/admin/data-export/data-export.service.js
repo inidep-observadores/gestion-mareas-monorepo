@@ -121,6 +121,7 @@ let DataExportService = DataExportService_1 = class DataExportService {
                 ...t,
                 estadoOrigenCodigo: t.estadoOrigen.codigo,
                 estadoDestinoCodigo: t.estadoDestino.codigo,
+                id: undefined,
                 estadoOrigenId: undefined,
                 estadoDestinoId: undefined,
                 estadoOrigen: undefined,
@@ -226,6 +227,7 @@ let DataExportService = DataExportService_1 = class DataExportService {
                     observadores: etapa.observadores.map(obs => ({
                         ...obs,
                         observadorCodigo: obs.observador.codigoInterno,
+                        id: undefined,
                         observadorId: undefined,
                         observador: undefined,
                         etapaId: undefined
@@ -235,6 +237,7 @@ let DataExportService = DataExportService_1 = class DataExportService {
                         capturas: lance.capturas.map(captura => ({
                             ...captura,
                             especieCodigo: captura.especie.codigo,
+                            id: undefined,
                             especieId: undefined,
                             especie: undefined,
                             lanceId: undefined
@@ -244,18 +247,23 @@ let DataExportService = DataExportService_1 = class DataExportService {
                             especieCodigo: muestra.especie.codigo,
                             submuestras: muestra.submuestras.map(sm => ({
                                 ...sm,
+                                id: undefined,
                                 muestraId: undefined
                             })),
                             detallesTalla: muestra.detallesTalla.map(dt => ({
                                 ...dt,
+                                id: undefined,
                                 muestraId: undefined
                             })),
+                            id: undefined,
                             especieId: undefined,
                             especie: undefined,
                             lanceId: undefined
                         })),
+                        id: undefined,
                         etapaId: undefined
                     })),
+                    id: undefined,
                     puertoZarpadaId: undefined,
                     puertoArriboId: undefined,
                     pesqueriaId: undefined,
@@ -269,6 +277,7 @@ let DataExportService = DataExportService_1 = class DataExportService {
                     usuarioEmail: mov.usuarioId ? userMap.get(mov.usuarioId) : null,
                     estadoDesdeCodigo: mov.estadoDesdeId ? estadoMap.get(mov.estadoDesdeId) : null,
                     estadoHastaCodigo: mov.estadoHastaId ? estadoMap.get(mov.estadoHastaId) : null,
+                    id: undefined,
                     usuarioId: undefined,
                     estadoDesdeId: undefined,
                     estadoHastaId: undefined,
@@ -279,6 +288,7 @@ let DataExportService = DataExportService_1 = class DataExportService {
                 producciones: m.producciones.map(prod => ({
                     ...prod,
                     especieCodigo: prod.especie.codigo,
+                    id: undefined,
                     especieId: undefined,
                     mareaId: undefined,
                     especie: undefined
@@ -286,10 +296,12 @@ let DataExportService = DataExportService_1 = class DataExportService {
                 archivos: m.archivos.map(arch => ({
                     ...arch,
                     usuarioSubioEmail: arch.usuarioSubioId ? userMap.get(arch.usuarioSubioId) : null,
+                    id: undefined,
                     mareaId: undefined,
                     movimientoOrigenId: undefined,
                     usuarioSubioId: undefined
                 })),
+                id: undefined,
                 buqueId: undefined,
                 artePrincipalId: undefined,
                 estadoActualId: undefined,
@@ -526,53 +538,90 @@ let DataExportService = DataExportService_1 = class DataExportService {
                 fechaZarpadaEstimada: m.fechaZarpadaEstimada ? new Date(m.fechaZarpadaEstimada) : null,
                 fechaInicioObservador: m.fechaInicioObservador ? new Date(m.fechaInicioObservador) : null,
                 fechaFinObservador: m.fechaFinObservador ? new Date(m.fechaFinObservador) : null,
-                diasEstimados: m.diasEstimados,
                 diasZonaAustral: m.diasZonaAustral,
                 tipoCalculoZonaAustral: m.tipoCalculoZonaAustral,
-                titulo: m.titulo,
-                descripcion: m.descripcion,
                 nroProtocolizacion: m.nroProtocolizacion,
                 anioProtocolizacion: m.anioProtocolizacion,
                 fechaProtocolizacion: m.fechaProtocolizacion ? new Date(m.fechaProtocolizacion) : null,
-                comentarios: m.comentarios,
-                observaciones: m.observaciones || m.comentarios,
+                observaciones: m.observaciones,
                 activo: m.activo,
+                diasEstimados: m.diasEstimados,
                 buque: { connect: { id: buqueId } },
                 estadoActual: { connect: { id: estadoMap.get(m.estadoActualCodigo) || estadoMap.get('INI') } },
                 artePrincipal: m.artePrincipalCodigo ? { connect: { id: arteMap.get(m.artePrincipalCodigo) } } : undefined,
                 etapas: {
-                    create: m.etapas?.map(et => ({
-                        fechaInicio: et.fechaInicio ? new Date(et.fechaInicio) : undefined,
-                        fechaFin: et.fechaFin ? new Date(et.fechaFin) : undefined,
+                    create: m.etapas?.map((et) => ({
+                        nroEtapa: et.nroEtapa || 1,
+                        tipoEtapa: et.tipoEtapa || 'PESCA',
+                        fechaZarpada: et.fechaZarpada ? new Date(et.fechaZarpada) : undefined,
+                        fechaArribo: et.fechaArribo ? new Date(et.fechaArribo) : undefined,
+                        observaciones: et.observaciones,
                         puertoZarpada: et.puertoZarpadaCodigo ? { connect: { id: puertoCodeMap.get(et.puertoZarpadaCodigo) || puertoNameMap.get(et.puertoZarpadaCodigo) } } : undefined,
                         puertoArribo: et.puertoArriboCodigo ? { connect: { id: puertoCodeMap.get(et.puertoArriboCodigo) || puertoNameMap.get(et.puertoArriboCodigo) } } : undefined,
                         pesqueria: et.pesqueriaCodigo ? { connect: { id: pesqMap.get(et.pesqueriaCodigo) } } : undefined,
                         lances: {
                             create: et.lances?.map((l) => ({
-                                fechaInicio: l.fechaInicio ? new Date(l.fechaInicio) : undefined,
-                                fechaFin: l.fechaFin ? new Date(l.fechaFin) : undefined,
-                                latitudInicio: l.latitudInicio,
-                                longitudInicio: l.longitudInicio,
-                                latitudFin: l.latitudFin,
-                                longitudFin: l.longitudFin,
-                                profundidad: l.profundidad,
+                                numeroLance: l.numeroLance,
+                                fecha: l.fecha ? new Date(l.fecha) : new Date(),
+                                codArtePesca: l.codArtePesca || m.artePrincipalCodigo || 1,
+                                tipoArtePesca: l.tipoArtePesca,
+                                horaInicio: l.horaInicio,
+                                latInicio: l.latInicio,
+                                longInicio: l.longInicio,
+                                profInicio: l.profInicio,
+                                horaFinal: l.horaFinal,
+                                latFinal: l.latFinal,
+                                longFinal: l.longFinal,
+                                profFinal: l.profFinal,
+                                rumbo: l.rumbo,
+                                distanciaRed: l.distanciaRed,
+                                velocidadArrastre: l.velocidadArrastre,
+                                tiempoRed: l.tiempoRed,
+                                estacionGral: l.estacionGral,
+                                calador: l.calador,
+                                fondoMin: l.fondoMin,
+                                fondoMax: l.fondoMax,
+                                tamiz: l.tamiz,
+                                areaBarrida: l.areaBarrida,
+                                capturaTotalKg: l.capturaTotalKg,
+                                descarteTotalKg: l.descarteTotalKg,
+                                observacionesLance: l.observacionesLance,
+                                mus: l.mus,
+                                fuenteDato: l.fuenteDato,
                                 capturas: {
                                     create: l.capturas?.map((c) => ({
-                                        pesoKgs: c.pesoKgs || c.peso,
-                                        numeroEjemplares: c.numeroEjemplares,
+                                        kgCaptura: c.kgCaptura || c.pesoKgs || 0,
+                                        kgDescarte: c.kgDescarte || 0,
+                                        observacionesCaptura: c.observacionesCaptura,
+                                        indiceOriginal: c.indiceOriginal || 0,
                                         especie: { connect: { id: especieMap.get(c.especieCodigo) } }
                                     }))
                                 },
                                 muestras: {
                                     create: l.muestras?.map((mu) => ({
                                         tipoMuestra: mu.tipoMuestra,
-                                        pesoMuestraKg: mu.pesoMuestraKg || mu.pesoTotal,
+                                        pesoMuestraKg: mu.pesoMuestraKg,
+                                        factPonderacion: mu.factPonderacion,
+                                        unidadLargo: mu.unidadLargo || 'MM',
+                                        primeraTalla: mu.primeraTalla,
+                                        ultimaTalla: mu.ultimaTalla,
+                                        intervaloMm: mu.intervaloMm,
+                                        totalMediciones: mu.totalMediciones,
+                                        observaciones: mu.observaciones,
                                         especie: { connect: { id: especieMap.get(mu.especieCodigo) } },
                                         submuestras: {
-                                            create: mu.submuestras
+                                            create: mu.submuestras?.map((sm) => ({
+                                                ...sm,
+                                                id: undefined,
+                                                muestraId: undefined
+                                            }))
                                         },
                                         detallesTalla: {
-                                            create: mu.detallesTalla
+                                            create: mu.detallesTalla?.map((dt) => ({
+                                                ...dt,
+                                                id: undefined,
+                                                muestraId: undefined
+                                            }))
                                         }
                                     }))
                                 }
@@ -581,28 +630,43 @@ let DataExportService = DataExportService_1 = class DataExportService {
                         observadores: {
                             create: et.observadores?.map((eo) => ({
                                 rol: eo.rol,
-                                fechaInicio: eo.fechaInicio ? new Date(eo.fechaInicio) : undefined,
-                                fechaFin: eo.fechaFin ? new Date(eo.fechaFin) : undefined,
+                                esDesignado: eo.esDesignado !== undefined ? eo.esDesignado : true,
                                 observador: { connect: { id: obCodeMap.get(eo.observadorCodigo) } }
-                            })).filter((o) => o.observador && o.observador.connect && o.observador.connect.id)
+                            })).filter((o) => o.observador?.connect?.id)
                         }
                     }))
                 },
                 movimientos: {
                     create: m.movimientos?.map((mov) => ({
-                        fecha: new Date(mov.fecha),
+                        fechaHora: new Date(mov.fechaHora || mov.fecha),
+                        tipoEvento: mov.tipoEvento || 'CAMBIO_ESTADO',
                         usuario: userMap.get(mov.usuarioEmail) ? { connect: { id: userMap.get(mov.usuarioEmail) } } : undefined,
                         estadoDesde: mov.estadoDesdeCodigo ? { connect: { id: estadoMap.get(mov.estadoDesdeCodigo) } } : undefined,
                         estadoHasta: mov.estadoHastaCodigo ? { connect: { id: estadoMap.get(mov.estadoHastaCodigo) } } : undefined,
-                        comentario: mov.comentario
+                        detalle: mov.detalle || mov.comentario,
+                        cantidadMuestrasOtolitos: mov.cantidadMuestrasOtolitos
+                    }))
+                },
+                producciones: {
+                    create: m.producciones?.map((p) => ({
+                        fecha: new Date(p.fecha),
+                        producto: p.producto,
+                        categoria: p.categoria,
+                        factorConversion: p.factorConversion,
+                        kgProduccion: p.kgProduccion || 0,
+                        operarios: p.operarios,
+                        especie: { connect: { id: especieMap.get(p.especieCodigo) } }
                     }))
                 },
                 archivos: {
                     create: m.archivos?.map((a) => ({
-                        nombreArchivo: a.nombreArchivo,
+                        tipoArchivo: a.tipoArchivo || 'GENERAL',
+                        formato: a.formato,
+                        version: a.version,
                         rutaArchivo: a.rutaArchivo,
-                        tipoMime: a.tipoMime,
-                        tamanoBytes: a.tamanoBytes
+                        tamanoBytes: a.tamanoBytes,
+                        descripcion: a.descripcion,
+                        usuarioSubio: a.usuarioSubioEmail ? { connect: { id: userMap.get(a.usuarioSubioEmail) } } : undefined
                     }))
                 }
             };
