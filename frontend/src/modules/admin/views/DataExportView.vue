@@ -9,7 +9,7 @@
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
             <h2 class="text-xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-              <ArchiveIcon class="w-6 h-6 text-green-500" />
+              <ArchiveIcon class="w-6 h-6 text-brand-500" />
               Exportar Datos (JSONL)
             </h2>
             <p class="text-sm text-gray-500 mt-1">Genera un archivo ZIP con todos los datos del sistema en formato portable (JSON Lines).</p>
@@ -17,7 +17,7 @@
           <button
             @click="handleCreateExport"
             :disabled="isProcessing"
-            class="flex items-center justify-center gap-2 rounded-xl bg-green-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-green-500/20 hover:bg-green-700 active:scale-95 disabled:opacity-50 transition-all"
+            class="flex items-center justify-center gap-2 rounded-xl bg-brand-500 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-brand-500/20 hover:bg-brand-600 active:scale-95 disabled:opacity-50 transition-all"
           >
             <DownloadIcon v-if="!isCreating" class="w-5 h-5" />
             <RefreshIcon v-else class="w-5 h-5 animate-spin" />
@@ -125,6 +125,17 @@
         </template>
     </SecurityConfirmationDialog>
 
+    <!-- Diálogo de Confirmación para Exportación -->
+    <ConfirmationDialog
+      :show="showExportModal"
+      title="Generar Nueva Exportación"
+      message="¿Está seguro de que desea generar una nueva exportación oficial? Este proceso incluirá todos los Buques, Mareas y transiciones registradas hasta el momento."
+      confirm-text="GENERAR AHORA"
+      confirm-button-class="bg-brand-500 hover:bg-brand-600 shadow-brand-500/20"
+      @close="showExportModal = false"
+      @confirm="confirmCreateExport"
+    />
+
     <!-- Overlay de Procesamiento -->
     <ProcessingOverlay 
         :show="isCreating || isRestoring"
@@ -140,6 +151,7 @@ import { ref, onMounted } from 'vue';
 import AdminDashboardLayout from '../layouts/AdminDashboardLayout.vue';
 import ProcessingOverlay from '@/components/common/ProcessingOverlay.vue';
 import SecurityConfirmationDialog from '@/components/common/SecurityConfirmationDialog.vue';
+import ConfirmationDialog from '@/components/common/ConfirmationDialog.vue';
 import { toast } from 'vue-sonner';
 import httpClient from '@/config/http/http.client';
 import { 
@@ -162,6 +174,7 @@ const isLoading = ref(false);
 const isCreating = ref(false);
 const isRestoring = ref(false);
 const isProcessing = ref(false);
+const showExportModal = ref(false);
 const fileInput = ref<HTMLInputElement | null>(null);
 
 const handleDownload = async (filename: string) => {
@@ -198,7 +211,12 @@ const fetchExports = async () => {
     }
 };
 
-const handleCreateExport = async () => {
+const handleCreateExport = () => {
+    showExportModal.value = true;
+};
+
+const confirmCreateExport = async () => {
+    showExportModal.value = false;
     isCreating.value = true;
     isProcessing.value = true;
     try {

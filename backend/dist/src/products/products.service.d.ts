@@ -10,6 +10,7 @@ export declare class ProductsService {
     create(createProductDto: CreateProductDto, user: User): Promise<{
         images: string[];
         id: string;
+        userId: string;
         title: string;
         price: number;
         description: string | null;
@@ -18,11 +19,11 @@ export declare class ProductsService {
         sizes: string[];
         gender: string;
         tags: string[];
-        userId: string;
     }>;
     findAll(paginationDto: PaginationDto): Promise<{
         images: string[];
         id: string;
+        userId: string;
         title: string;
         price: number;
         description: string | null;
@@ -31,7 +32,6 @@ export declare class ProductsService {
         sizes: string[];
         gender: string;
         tags: string[];
-        userId: string;
     }[]>;
     findOne(term: string): Promise<any>;
     findOnePlain(term: string): Promise<any>;

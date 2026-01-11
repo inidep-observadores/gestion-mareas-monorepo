@@ -6,7 +6,6 @@ export declare class BuquesService {
     crear(createBuqueDto: CreateBuqueDto): Promise<{
         id: string;
         activo: boolean;
-        observaciones: string | null;
         nombreBuque: string;
         matricula: string;
         codigoInterno: number | null;
@@ -28,30 +27,31 @@ export declare class BuquesService {
         agenciaMaritimaNombre: string | null;
         fechaAlta: Date | null;
         fechaBaja: Date | null;
+        observaciones: string | null;
     }>;
     obtenerTodos(): Promise<({
         arteHabitual: {
             id: string;
-            activo: boolean;
             nombre: string;
+            activo: boolean;
             codigoNumerico: number;
         };
         pesqueriaHabitual: {
             id: string;
-            activo: boolean;
             descripcion: string | null;
             codigo: string;
             nombre: string;
             orden: number | null;
+            activo: boolean;
             grupo: string | null;
         };
         puertoBase: {
             id: string;
-            activo: boolean;
-            observaciones: string | null;
-            codigoInterno: string | null;
             nombre: string;
             orden: number | null;
+            activo: boolean;
+            codigoInterno: string | null;
+            observaciones: string | null;
             provincia: string | null;
             pais: string | null;
             codigoExterno: string | null;
@@ -61,17 +61,16 @@ export declare class BuquesService {
         };
         tipoFlota: {
             id: string;
-            activo: boolean;
             descripcion: string | null;
             codigo: string;
             nombre: string;
             orden: number | null;
+            activo: boolean;
             codigo_numerico: number;
         };
     } & {
         id: string;
         activo: boolean;
-        observaciones: string | null;
         nombreBuque: string;
         matricula: string;
         codigoInterno: number | null;
@@ -93,30 +92,31 @@ export declare class BuquesService {
         agenciaMaritimaNombre: string | null;
         fechaAlta: Date | null;
         fechaBaja: Date | null;
+        observaciones: string | null;
     })[]>;
     obtenerUno(id: string): Promise<{
         arteHabitual: {
             id: string;
-            activo: boolean;
             nombre: string;
+            activo: boolean;
             codigoNumerico: number;
         };
         pesqueriaHabitual: {
             id: string;
-            activo: boolean;
             descripcion: string | null;
             codigo: string;
             nombre: string;
             orden: number | null;
+            activo: boolean;
             grupo: string | null;
         };
         puertoBase: {
             id: string;
-            activo: boolean;
-            observaciones: string | null;
-            codigoInterno: string | null;
             nombre: string;
             orden: number | null;
+            activo: boolean;
+            codigoInterno: string | null;
+            observaciones: string | null;
             provincia: string | null;
             pais: string | null;
             codigoExterno: string | null;
@@ -126,17 +126,16 @@ export declare class BuquesService {
         };
         tipoFlota: {
             id: string;
-            activo: boolean;
             descripcion: string | null;
             codigo: string;
             nombre: string;
             orden: number | null;
+            activo: boolean;
             codigo_numerico: number;
         };
     } & {
         id: string;
         activo: boolean;
-        observaciones: string | null;
         nombreBuque: string;
         matricula: string;
         codigoInterno: number | null;
@@ -158,11 +157,11 @@ export declare class BuquesService {
         agenciaMaritimaNombre: string | null;
         fechaAlta: Date | null;
         fechaBaja: Date | null;
+        observaciones: string | null;
     }>;
     actualizar(id: string, updateBuqueDto: UpdateBuqueDto): Promise<{
         id: string;
         activo: boolean;
-        observaciones: string | null;
         nombreBuque: string;
         matricula: string;
         codigoInterno: number | null;
@@ -184,6 +183,7 @@ export declare class BuquesService {
         agenciaMaritimaNombre: string | null;
         fechaAlta: Date | null;
         fechaBaja: Date | null;
+        observaciones: string | null;
     }>;
     eliminar(id: string): Promise<{
         mensaje: string;
