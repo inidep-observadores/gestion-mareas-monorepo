@@ -19,6 +19,15 @@ Este documento describe los pasos para levantar el backend de SIGMA en un VPS us
    sudo apt -y install git ca-certificates curl
    ```
 
+2. **Configurar el Firewall (UFW)**:
+   Abra los puertos necesarios para el acceso externo durente las pruebas:
+   ```bash
+   sudo ufw allow 5435/tcp  # Acceso a Postgres (DBeaver)
+   sudo ufw allow 8025/tcp  # Interfaz Web de Mailhog
+   sudo ufw allow 80/tcp    # HTTP (Traefik)
+   sudo ufw allow 443/tcp   # HTTPS (Traefik)
+   ```
+
 2. Instale Docker y Docker Compose (documentacion oficial de Docker recomendada).
 3. Verifique la red externa de Traefik (ejemplo `traefik`):
 
@@ -175,6 +184,18 @@ docker compose -f docker-compose-prod.yaml exec backend node prisma/seed-mareas-
 ## 9. Validaciones básicas
 
 - Verifique estado de contenedores:
+### Acceso a Base de Datos (DBeaver)
+Para conectarse desde su máquina local a la base de datos del VPS:
+- **Host**: IP de su VPS
+- **Puerto**: `5435` (mapeado al 5432 interno)
+- **Usuario**: Valor de `DB_USERNAME`
+- **Password**: Valor de `DB_PASSWORD`
+
+### Pruebas de Correo (Mailhog)
+El stack incluye Mailhog para capturar correos salientes sin enviarlos realmente:
+- **Interfaz Web**: `http://IP-VPS:8025`
+- **Puerto SMTP (interno)**: `1025`
+
   ```bash
   docker compose -f docker-compose-prod.yaml ps
   ```
@@ -191,14 +212,86 @@ docker compose -f docker-compose-prod.yaml exec backend node prisma/seed-mareas-
 
 ---
 
+## 11. Recuperación ante Desastres (Disaster Recovery)
+
+En caso de pérdida total de la base de datos o necesidad de migrar a un servidor nuevo, siga estos protocolos:
+
+### Método A: Restauración Directa (Consola VPS)
+Es el método más rápido y seguro. No requiere que la aplicación esté funcional.
+
+1.  Asegúrese de que el archivo `.sql` esté en la carpeta `backups/` del VPS.
+2.  Ejecute el siguiente comando (reemplace el nombre del archivo):
+    ```bash
+    cat backups/BKP-archivo.sql | docker exec -i mareasdb psql -U ${DB_USERNAME} -d ${DB_NAME}
+    ```
+    *(Nota: Las variables `${DB_...}` se cargarán de tu archivo `.env` si las tienes exportadas, sino escríbelas manualmente).*
+
+### Método B: Restauración vía UI (Rescate amigable)
+Si prefiere usar la interfaz web pero no tiene acceso (porque se borraron los usuarios):
+
+1.  Ejecute un **Seed** para crear el usuario admin básico:
+    ```bash
+    docker compose -f docker-compose-prod.yaml exec backend node prisma/seed.js
+    ```
+2.  Inicie sesión en la web y vaya a **Sistema > Backups**.
+3.  Seleccione el backup de la lista (o súbalo) y use la **Frase de Confirmación** que le solicite el sistema.
+
+---
+
+## 12. Limpieza de Espacio (Docker Cleanup)
+
+Es normal que tras varios builds fallidos o actualizaciones se acumulen imágenes y capas "huérfanas" que consumen gigas de espacio. Para liberar espacio:
+
+### Comandos de emergencia
+
+1.  **Limpiar todo lo que no se esté usando**:
+    Elimina imágenes sin nombre, contenedores parados y redes no usadas.
+    ```bash
+    docker system prune -f
+    ```
+
+2.  **Limpiar imágenes antiguas o sin usar (Más profundo)**:
+    Si quieres borrar todas las imágenes que no tienen un contenedor activo (cuidado, esto borrará la cache de build):
+    ```bash
+    docker image prune -a -f
+    ```
+
+3.  **Ver qué está consumiendo espacio en Docker**:
+    ```bash
+    docker system df
+    ```
+
+### Comandos de Linux para monitorear el disco
+
+Si quieres ver el estado general del VPS fuera de Docker:
+
+*   **Ver espacio total y disponible (Legible)**:
+    ```bash
+    df -h
+    ```
+    *(Busca la línea que dice `/` en la columna "Mounted on", ahí verás el % de uso).*
+
+*   **Ver cuánto pesa cada carpeta en el directorio actual**:
+    ```bash
+    du -sh *
+    ```
+    *(Ideal para saber si es la carpeta de la app, de logs o de Docker la que está creciendo).*
+
+> [!TIP]
+> Ejecutar `docker system prune -f` una vez al mes es una buena práctica de mantenimiento para tu VPS.
+
 ---
 
 ## Consideraciones para evitar errores de CORS y HTTPS
 
 ### 1. Ajuste de CORS
-En NestJS, el origen debe coincidir exactamente. En tu `.env` de producción:
-- ✅ **BIEN**: `FRONTEND_URL=https://mareas.innovamdp.com`
-- ❌ **MAL**: `FRONTEND_URL=https://mareas.innovamdp.com/` (la barra final rompe el match)
+En NestJS, el origen debe coincidir exactamente carácter por carácter.
+
+> [!CAUTION]
+> **NO incluyas una barra final `/`** en la variable `FRONTEND_URL`. Si lo haces, las peticiones serán rechazadas por CORS.
+
+- ✅ **CORRECTO**: `FRONTEND_URL=https://mareas.innovamdp.com`
+- ❌ **INCORRECTO**: `FRONTEND_URL=https://mareas.innovamdp.com/` (la barra final provoca Error de CORS)
 - ❌ **MAL**: `FRONTEND_URL=http://mareas.innovamdp.com` (si el frontend usa HTTPS)
 
 ### 2. Protocolo HTTPS
@@ -208,4 +301,31 @@ En NestJS, el origen debe coincidir exactamente. En tu `.env` de producción:
 ### 3. Certificados de confianza
 - Si usas `myresolver` (Let's Encrypt), Traefik generará los certificados automáticamente.
 - Si ves errores de "Certificate Not Trusted", revisa los logs de Traefik para ver si falló el desafío HTTP o DNS de Let's Encrypt.
+
+---
+
+## 13. Seguridad de Datos y Actualizaciones
+
+Es una preocupación común temer por los datos al actualizar. Aquí explicamos por qué su configuración es segura:
+
+### 1. Persistencia vía Volúmenes
+En el archivo `docker-compose-prod.yaml`, la base de datos está configurada con un **volumen nombrado**:
+```yaml
+volumes:
+  - mareas_db_data:/var/lib/postgresql/data
+```
+Esto significa que los datos **NO viven dentro del contenedor**, sino en una carpeta protegida del VPS. Aunque borre el contenedor, lo reconstruya o actualice la imagen de Docker, los datos permanecen intactos.
+
+### 2. Actualizaciones con Prisma
+El comando `npx prisma migrate deploy` que usamos al iniciar el backend es **no destructivo**:
+- Solo aplica cambios nuevos (como añadir una tabla o columna).
+- Nunca borra datos existentes a menos que usted haya creado explícitamente una migración de borrado.
+
+### 3. Procedimiento Seguro de Actualización
+Para actualizar la app sin riesgo, el flujo siempre debe ser:
+1.  **Pull de código**: `git pull origin main`
+2.  **Rebuild**: `docker compose -f docker-compose-prod.yaml up -d --build`
+
+> [!IMPORTANT]
+> El comando `up -d --build` es inteligente: solo detiene los contenedores unos segundos, los crea de nuevo y **vuelve a conectar los volúmenes con todos sus datos originales**.
 

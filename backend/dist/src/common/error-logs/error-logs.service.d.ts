@@ -17,7 +17,6 @@ export declare class ErrorLogsService {
     }): Promise<{
         level: string;
         id: string;
-        path: string | null;
         timestamp: Date;
         source: string;
         context: string | null;
@@ -26,13 +25,13 @@ export declare class ErrorLogsService {
         message: string;
         stack: string | null;
         detail: import("@prisma/client/runtime/client").JsonValue | null;
+        path: string | null;
         method: string | null;
         ip: string | null;
     }>;
     findAll(): Promise<{
         level: string;
         id: string;
-        path: string | null;
         timestamp: Date;
         source: string;
         context: string | null;
@@ -41,13 +40,13 @@ export declare class ErrorLogsService {
         message: string;
         stack: string | null;
         detail: import("@prisma/client/runtime/client").JsonValue | null;
+        path: string | null;
         method: string | null;
         ip: string | null;
     }[]>;
     findOne(id: string): Promise<{
         level: string;
         id: string;
-        path: string | null;
         timestamp: Date;
         source: string;
         context: string | null;
@@ -56,6 +55,7 @@ export declare class ErrorLogsService {
         message: string;
         stack: string | null;
         detail: import("@prisma/client/runtime/client").JsonValue | null;
+        path: string | null;
         method: string | null;
         ip: string | null;
     }>;
