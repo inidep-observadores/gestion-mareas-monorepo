@@ -10,7 +10,7 @@ export function useMareas() {
     const selectedMareaContext = ref<MareaContext | null>(null);
     const hiddenStates = ref<Set<string>>(new Set());
     const searchQuery = ref('');
-    const sortBy = ref<string | null>(null);
+    const sortBy = ref<string | null>('id_marea');
     const sortOrder = ref<'asc' | 'desc'>('asc');
 
     const fetchDashboard = async () => {

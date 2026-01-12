@@ -340,148 +340,15 @@
                 <h3 class="text-lg font-bold text-gray-800 dark:text-white">Etapas de Navegación</h3>
                 <p class="text-xs text-gray-500 mt-1">Gestione los tramos del viaje, puertos y fechas reales.</p>
             </div>
-            <button
-              @click="addStage"
-              class="px-4 py-2 bg-brand-500 hover:bg-brand-600 text-white rounded-xl text-xs font-bold uppercase tracking-wider shadow-lg shadow-brand-500/20 transition-all flex items-center gap-2"
-            >
-              <PlusIcon class="w-4 h-4" />
-              Añadir Etapa
-            </button>
           </div>
 
-          <div v-if="etapas.length === 0" class="text-center py-12 bg-gray-50 dark:bg-gray-800/50 rounded-3xl border-2 border-dashed border-gray-200 dark:border-gray-800">
-             <MapPinIcon class="w-12 h-12 text-gray-300 mx-auto mb-4" />
-             <p class="text-gray-500 font-medium">No hay etapas registradas para esta marea.</p>
-          </div>
-
-          <div v-else class="grid grid-cols-1 gap-8">
-            <div v-for="(etapa, index) in etapas" :key="index"
-                 class="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-[2rem] p-1 md:p-1.5 shadow-xl shadow-gray-200/40 dark:shadow-none relative group animate-in fade-in zoom-in-95 duration-500">
-
-              <!-- Glass-like inner container -->
-              <div class="bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50 rounded-[1.8rem] p-6 md:p-8">
-
-                <!-- Header: Badge & Actions -->
-                <div class="flex items-center justify-between mb-8">
-                   <div class="flex items-center gap-3">
-                      <div class="w-10 h-10 rounded-2xl bg-brand-500/10 flex items-center justify-center text-brand-600">
-                         <MapPinIcon class="w-5 h-5" />
-                      </div>
-                      <div>
-                         <span class="text-[10px] font-black uppercase tracking-widest text-gray-400 block mb-0.5">Segmento de Viaje</span>
-                         <h4 class="text-sm font-bold text-gray-800 dark:text-white">Etapa #{{ etapa.nro_etapa }}</h4>
-                      </div>
-                   </div>
-
-                   <div class="flex items-center gap-2">
-                      <button
-                        v-if="index === etapas.length - 1 && etapas.length > 1"
-                        @click="removeStage(index)"
-                        class="p-2.5 text-red-400 hover:text-white hover:bg-red-500 rounded-2xl transition-all duration-300 opacity-0 group-hover:opacity-100 shadow-lg shadow-red-500/20"
-                        title="Eliminar esta etapa"
-                      >
-                        <TrashIcon class="w-5 h-5" />
-                      </button>
-                   </div>
-                </div>
-
-                <div class="grid grid-cols-1 xl:grid-cols-11 gap-8 items-center">
-                  <!-- Zarpada Section -->
-                  <div class="xl:col-span-5 relative">
-                    <div class="absolute -top-6 -left-2 text-[9px] font-black uppercase tracking-[0.3em] text-brand-500/50 pointer-events-none">Departure</div>
-                    <div class="bg-white dark:bg-gray-800/40 p-5 rounded-3xl border border-gray-100 dark:border-gray-700/50 shadow-sm space-y-5">
-                      <div class="flex items-center gap-3">
-                        <div class="w-2 h-2 rounded-full bg-brand-500 animate-pulse"></div>
-                        <h5 class="text-xs font-black uppercase tracking-wider text-gray-700 dark:text-gray-300">Zarpada</h5>
-                      </div>
-                      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div class="space-y-2">
-                          <label class="text-[9px] font-black uppercase text-gray-400 tracking-tighter ml-1">Fecha de Salida</label>
-                          <DatePicker v-model="etapa.fecha_zarpada" :show-time="false" />
-                        </div>
-                        <div class="space-y-2">
-                          <label class="text-[9px] font-black uppercase text-gray-400 tracking-tighter ml-1">Puerto de Origen</label>
-                          <SearchableSelect
-                            v-model="etapa.puertoZarpadaId"
-                            :options="puertoOptions"
-                            placeholder="Seleccione puerto..."
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- Visual Connector -->
-                  <div class="hidden xl:flex xl:col-span-1 flex-col items-center justify-center gap-2">
-                     <div class="w-px h-8 bg-gradient-to-b from-transparent via-gray-200 to-transparent dark:via-gray-700"></div>
-                     <div class="w-8 h-8 rounded-full bg-gray-50 dark:bg-gray-800 flex items-center justify-center border border-gray-100 dark:border-gray-700 text-gray-300">
-                        <ChevronRightIcon class="w-5 h-5" />
-                     </div>
-                     <div class="w-px h-8 bg-gradient-to-b from-transparent via-gray-200 to-transparent dark:via-gray-700"></div>
-                  </div>
-
-                  <!-- Arribo Section -->
-                  <div class="xl:col-span-5 relative">
-                    <div class="absolute -top-6 -left-2 text-[9px] font-black uppercase tracking-[0.3em] text-amber-500/50 pointer-events-none">Arrival</div>
-                    <div class="bg-white dark:bg-gray-800/40 p-5 rounded-3xl border border-gray-100 dark:border-gray-700/50 shadow-sm space-y-5">
-                      <div class="flex items-center gap-3">
-                        <div class="w-2 h-2 rounded-full bg-amber-500"></div>
-                        <h5 class="text-xs font-black uppercase tracking-wider text-gray-700 dark:text-gray-300">Arribo</h5>
-                      </div>
-                      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div class="space-y-2">
-                          <label class="text-[9px] font-black uppercase text-gray-400 tracking-tighter ml-1">Fecha de Llegada</label>
-                          <DatePicker v-model="etapa.fecha_arribo" :show-time="false" />
-                        </div>
-                        <div class="space-y-2">
-                          <label class="text-[9px] font-black uppercase text-gray-400 tracking-tighter ml-1">Puerto de Destino</label>
-                          <SearchableSelect
-                            v-model="etapa.puertoArriboId"
-                            :options="puertoOptions"
-                            placeholder="Seleccione puerto..."
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- Tertiary Info Bar -->
-                  <div class="xl:col-span-12 mt-4 grid grid-cols-1 sm:grid-cols-12 gap-6 items-end bg-gray-50/50 dark:bg-gray-800/30 p-6 rounded-[2rem] border border-gray-100 dark:border-gray-700/30">
-                    <div class="sm:col-span-4 space-y-2">
-                      <label class="text-[9px] font-black uppercase text-gray-400 tracking-widest ml-1 flex items-center gap-2">
-                        <FlagIcon class="w-3 h-3" /> Pesquería Objetivo
-                      </label>
-                      <SearchableSelect
-                        v-model="etapa.pesqueriaId"
-                        :options="pesqueriaOptions"
-                        placeholder="Pesquería..."
-                      />
-                    </div>
-                    <div class="sm:col-span-3 space-y-2">
-                      <label class="text-[9px] font-black uppercase text-gray-400 tracking-widest ml-1 flex items-center gap-2">
-                        <SettingsIcon class="w-3 h-3" /> Propósito
-                      </label>
-                      <select v-model="etapa.tipo" class="form-input-premium py-2.5 font-bold text-xs">
-                        <option value="COMERCIAL">MAREA COMERCIAL</option>
-                        <option value="INSTITUCIONAL">CAMPAÑA INSTITUCIONAL</option>
-                      </select>
-                    </div>
-                    <div class="sm:col-span-5 space-y-2">
-                      <label class="text-[9px] font-black uppercase text-gray-400 tracking-widest ml-1 flex items-center gap-2">
-                        <EditIcon class="w-3 h-3" /> Comentarios Adicionales
-                      </label>
-                      <input
-                        v-model="etapa.observaciones"
-                        type="text"
-                        class="form-input-premium py-2.5 text-xs placeholder:text-gray-300"
-                        placeholder="Notas internas del tramo..."
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+          <NavigationStagesEditor
+            v-model="etapas"
+            :puertoOptions="puertoOptions"
+            :pesqueriaOptions="pesqueriaOptions"
+            :puertoBaseId="marea.puertoBaseId"
+            :defaultPesqueriaId="marea.id_pesqueria"
+          />
         </div>
 
         <!-- 3. Observadores Tab -->
@@ -756,18 +623,11 @@
         :mode="'FINALIZAR'"
         :marea="marea"
         :currentStages="etapas"
+        :initialPortId="marea.puertoBaseId"
         @close="showFinalizarDialog = false"
         @confirm="handleFinalizeMarea"
     />
 
-    <ConfirmationDialog
-      :show="showDeleteStageConfirm"
-      title="Eliminar Etapa"
-      message="¿Está seguro de que desea eliminar la última etapa? Esta acción no se puede deshacer hasta que guarde los cambios."
-      confirm-text="Eliminar"
-      @close="showDeleteStageConfirm = false"
-      @confirm="confirmRemoveStage"
-    />
 
   </AdminLayout>
 </template>
@@ -782,6 +642,7 @@ import ConfirmationDialog from '@/components/common/ConfirmationDialog.vue'
 import AlertHistoryTab from '../../alerts/components/AlertHistoryTab.vue'
 import GestionEtapasMareaDialog from '../components/GestionEtapasMareaDialog.vue'
 import mareasService from '../services/mareas.service';
+import NavigationStagesEditor from '../components/NavigationStagesEditor.vue'
 import catalogosService from '../services/catalogos.service'
 import { toast } from 'vue-sonner'
 import {
@@ -812,8 +673,6 @@ import {
 } from '@/icons'
 const router = useRouter()
 const activeTab = ref('general')
-const showDeleteStageConfirm = ref(false)
-const stageIndexToDelete = ref<number | null>(null)
 
 const route = useRoute()
 
@@ -913,6 +772,7 @@ async function loadMarea() {
             nro_marea: data.nroMarea,
             id_buque: data.buqueId,
             id_pesqueria: etapaPrincipal?.pesqueriaId || '',
+            puertoBaseId: data.buque?.puertoBaseId,
             id_arte_principal: data.artePrincipalId || '',
             fecha_zarpada_estimada: data.fechaZarpadaEstimada,
             observaciones: data.observaciones || '',
@@ -939,18 +799,13 @@ async function loadMarea() {
 
         etapas.value = data.etapas?.map((e: any) => ({
              id: e.id,
-             nro_etapa: e.nroEtapa,
-             puerto_zarpada: e.puertoZarpada?.nombre || 'N/D',
-             puerto_arribo: e.puertoArribo?.nombre || 'N/D',
-             fecha_zarpada: e.fechaZarpada,
-             fecha_arribo: e.fechaArribo,
-             fecha_zarpada_raw: e.fechaZarpada,
-             fecha_arribo_raw: e.fechaArribo,
-             tipo: e.tipoEtapa,
-             observaciones: e.observaciones || '',
-             pesqueria: e.pesqueria?.nombre || '',
+             nroEtapa: e.nroEtapa,
              puertoZarpadaId: e.puertoZarpadaId,
              puertoArriboId: e.puertoArriboId,
+             fechaZarpada: e.fechaZarpada,
+             fechaArribo: e.fechaArribo,
+             tipoEtapa: e.tipoEtapa,
+             observaciones: e.observaciones || '',
              pesqueriaId: e.pesqueriaId,
              observadores: e.observadores?.map((rel: any) => ({
                 observadorId: rel.observadorId || rel.observador?.id,
@@ -1035,46 +890,6 @@ async function handleFinalizeMarea(payload: any) {
   }
 }
 
-function addStage() {
-    const lastStage = etapas.value[etapas.value.length - 1];
-    let defaultPesqueria = marea.value.id_pesqueria || '';
-    let defaultPuertoZarpada = '';
-
-    if (lastStage) {
-        if (lastStage.pesqueriaId) defaultPesqueria = lastStage.pesqueriaId;
-        if (lastStage.puertoArriboId) defaultPuertoZarpada = lastStage.puertoArriboId;
-    }
-
-    etapas.value.push({
-        id: null,
-        nro_etapa: etapas.value.length + 1,
-        puertoZarpadaId: defaultPuertoZarpada,
-        fecha_zarpada: '',
-        puertoArriboId: '',
-        fecha_arribo: '',
-        pesqueriaId: defaultPesqueria,
-        tipo: 'COMERCIAL',
-        observaciones: ''
-    });
-}
-
-function removeStage(index: number) {
-    if (index === etapas.value.length - 1 && etapas.value.length > 0) {
-        stageIndexToDelete.value = index;
-        showDeleteStageConfirm.value = true;
-    } else {
-        toast.error('Solo se puede eliminar la última etapa de la lista');
-    }
-}
-
-function confirmRemoveStage() {
-    if (stageIndexToDelete.value !== null) {
-        etapas.value.splice(stageIndexToDelete.value, 1);
-        stageIndexToDelete.value = null;
-        showDeleteStageConfirm.value = false;
-        toast.success('Etapa eliminada correctamente');
-    }
-}
 
 const getFormatColor = (formato: string) => {
   switch (formato) {
@@ -1108,13 +923,13 @@ const saveChanges = async () => {
   try {
     const etapasPayload = etapas.value.map((etapa, index) => ({
         id: etapa.id,
-        nroEtapa: etapa.nro_etapa,
+        nroEtapa: etapa.nroEtapa,
         pesqueriaId: (index === 0 && marea.value.id_pesqueria) ? marea.value.id_pesqueria : (etapa.pesqueriaId || undefined),
         puertoZarpadaId: etapa.puertoZarpadaId || undefined,
         puertoArriboId: etapa.puertoArriboId || undefined,
-        fechaZarpada: toIsoStringOrUndefined(etapa.fecha_zarpada),
-        fechaArribo: toIsoStringOrUndefined(etapa.fecha_arribo),
-        tipoEtapa: etapa.tipo || 'COMERCIAL',
+        fechaZarpada: toIsoStringOrUndefined(etapa.fechaZarpada),
+        fechaArribo: toIsoStringOrUndefined(etapa.fechaArribo),
+        tipoEtapa: etapa.tipoEtapa || 'COMERCIAL',
         observaciones: etapa.observaciones || undefined,
         observadores: etapa.observadores?.map((obs: any) => ({
           observadorId: obs.observadorId,

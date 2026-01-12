@@ -29,90 +29,14 @@
       </div>
 
       <!-- Stages List -->
-      <div class="space-y-4">
-        <div class="flex items-center justify-between">
-          <h4 class="text-lg font-bold text-gray-800 dark:text-white">Etapas del Viaje</h4>
-          <button @click="addStage"
-            :disabled="!canAddStage"
-            class="px-3 py-1.5 bg-brand-100 text-brand-700 rounded-lg text-xs font-bold uppercase tracking-wider hover:bg-brand-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-            + Agregar Etapa
-          </button>
-        </div>
-
-        <div v-if="form.stages.length === 0" class="text-center py-8 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-dashed border-gray-300 dark:border-gray-700">
-           <p class="text-gray-500 text-sm">No hay etapas registradas.</p>
-        </div>
-
-        <div v-else class="space-y-4">
-          <div v-for="(stage, index) in form.stages" :key="index"
-            class="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4 border border-gray-200 dark:border-gray-700 relative group transition-all"
-            :class="{'border-red-500 bg-red-50 dark:bg-red-900/10': hasOverlap(index) || stageErrors(index)}">
-            
-            <div class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity" v-if="form.stages.length > 1">
-                <button @click="removeStage(index)" class="p-1.5 text-red-500 hover:bg-red-100 rounded-lg transition-colors">
-                    <TrashIcon class="w-5 h-5" />
-                </button>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <!-- Departure -->
-                <div class="space-y-3">
-                    <h5 class="text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200 pb-1">Zarpada (Etapa {{ index + 1 }})</h5>
-                    <div class="grid grid-cols-2 gap-2">
-                         <div class="space-y-1">
-                            <label class="text-[10px] uppercase text-gray-400 font-bold">Fecha</label>
-                            <DatePicker v-model="stage.fechaZarpada" />
-                         </div>
-                         <div class="space-y-1">
-                            <label class="text-[10px] uppercase text-gray-400 font-bold">Puerto</label>
-                            <SearchableSelect 
-                                v-model="stage.puertoZarpadaId"
-                                :options="puertoOptions"
-                                placeholder="Seleccione..."
-                                class="text-sm"
-                            />
-                         </div>
-                    </div>
-                </div>
-
-                <!-- Arrival -->
-                <div class="space-y-3">
-                    <h5 class="text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200 pb-1">Arribo</h5>
-                    <div class="grid grid-cols-2 gap-2">
-                         <div class="space-y-1">
-                            <label class="text-[10px] uppercase text-gray-400 font-bold">Fecha</label>
-                            <DatePicker v-model="stage.fechaArribo" />
-                         </div>
-                         <div class="space-y-1">
-                            <label class="text-[10px] uppercase text-gray-400 font-bold">Puerto</label>
-                            <SearchableSelect 
-                                v-model="stage.puertoArriboId"
-                                :options="puertoOptions"
-                                placeholder="Seleccione..."
-                                class="text-sm"
-                            />
-                         </div>
-                    </div>
-                </div>
-
-                <!-- Fishery -->
-                <div class="md:col-span-2 space-y-1">
-                     <label class="text-[10px] uppercase text-gray-400 font-bold">Pesquería Objetivo</label>
-                     <SearchableSelect 
-                        v-model="stage.pesqueriaId"
-                        :options="pesqueriaOptions"
-                        placeholder="Seleccione pesquería..."
-                     />
-                </div>
-            </div>
-
-             <div v-if="hasOverlap(index)" class="mt-3 text-xs text-red-600 font-medium flex items-center gap-1">
-                <WarningIcon class="w-4 h-4" />
-                La fecha de zarpada no puede ser anterior al arribo de la etapa previa.
-            </div>
-          </div>
-        </div>
-      </div>
+      <NavigationStagesEditor
+        v-model="form.stages"
+        :puertoOptions="puertoOptions"
+        :pesqueriaOptions="pesqueriaOptions"
+        :puertoBaseId="initialPortId || marea?.puertoBaseId"
+        :defaultPesqueriaId="marea?.id_pesqueria"
+        :minStages="mode === 'INICIAR' ? 1 : 0"
+      />
 
       <!-- Footer Actions -->
       <div class="mt-8 grid grid-cols-2 gap-4">
@@ -133,6 +57,7 @@
         :show="showConfirmation"
         :title="confirmationTitle"
         :message="confirmationMessage"
+        :confirmText="confirmationConfirmText"
         @close="showConfirmation = false"
         @confirm="executeConfirmation"
         :isSidebarAware="false"
@@ -145,6 +70,7 @@ import { ref, computed, onMounted, watch, nextTick } from 'vue';
 import DatePicker from '@/components/common/DatePicker.vue';
 import SearchableSelect from '@/components/common/SearchableSelect.vue';
 import ConfirmationDialog from '@/components/common/ConfirmationDialog.vue';
+import NavigationStagesEditor from './NavigationStagesEditor.vue';
 import catalogosService from '../services/catalogos.service';
 import { TrashIcon, WarningIcon } from '@/icons';
 
@@ -175,6 +101,7 @@ const showConfirmation = ref(false);
 const confirmationAction = ref<'SAVE' | 'CANCEL' | null>(null);
 const confirmationTitle = ref('');
 const confirmationMessage = ref('');
+const confirmationConfirmText = ref('Confirmar');
 
 // Config based on mode
 const config = computed(() => {
@@ -219,24 +146,44 @@ onMounted(async () => {
 const puertoOptions = computed(() => puertos.value.map(p => ({ value: p.id, label: p.nombre })));
 const pesqueriaOptions = computed(() => pesquerias.value.map(p => ({ value: p.id, label: p.nombre })));
 
-// Watch show to init form
+// Initial stage creation logic
+const addInitialStage = () => {
+  if (form.value.stages.length > 0) return;
+  
+  form.value.stages.push({
+    id: null,
+    nroEtapa: 1,
+    puertoZarpadaId: props.initialPortId || props.marea?.puertoBaseId || '',
+    fechaZarpada: form.value.fechaInicio,
+    puertoArriboId: '',
+    fechaArribo: '',
+    pesqueriaId: props.marea?.id_pesqueria || '',
+    tipoEtapa: 'COMERCIAL',
+    observaciones: ''
+  });
+};
+
 watch(() => props.show, (val) => {
   if (val) {
     // 1. Initial Dates
     form.value.fechaInicio = props.marea?.fechaInicioObservador || props.marea?.fecha_zarpada_estimada || new Date().toISOString();
     form.value.fechaFin = props.marea?.fechaFinObservador || '';
 
-    // 2. Clone Stages
-    form.value.stages = (props.currentStages || []).map(s => ({ ...s }));
+    // 2. Clone and Sort Stages
+    const clonedStages = (props.currentStages || []).map(s => ({ 
+        ...s,
+        fechaZarpada: s.fechaZarpada || '',
+        fechaArribo: s.fechaArribo || '',
+        tipoEtapa: s.tipoEtapa || 'COMERCIAL',
+        nroEtapa: s.nroEtapa || s.nro_etapa // Fallback for safety
+    }));
+    
+    // Sort by nroEtapa
+    form.value.stages = clonedStages.sort((a, b) => (a.nroEtapa || 0) - (b.nroEtapa || 0));
 
     // 3. Logic for INICIAR: Ensure at least one stage
     if (props.mode === 'INICIAR' && form.value.stages.length === 0) {
-      addStage();
-      // Set initial stage departure to match observer start
-      if (form.value.stages[0]) {
-        form.value.stages[0].fechaZarpada = form.value.fechaInicio;
-        if (props.initialPortId) form.value.stages[0].puertoZarpadaId = props.initialPortId;
-      }
+      addInitialStage();
     }
 
     nextTick(() => {
@@ -245,37 +192,15 @@ watch(() => props.show, (val) => {
   }
 });
 
-const canAddStage = computed(() => {
-  if (form.value.stages.length === 0) return true;
-  const last = form.value.stages[form.value.stages.length - 1];
-  return !!last.fechaArribo; // Only allow adding if last stage finished
+// Watch initialPortId to update first stage if it arrives late
+watch(() => props.initialPortId, (newPortId) => {
+  if (props.show && props.mode === 'INICIAR' && form.value.stages.length > 0 && newPortId) {
+    if (!form.value.stages[0].puertoZarpadaId) {
+      form.value.stages[0].puertoZarpadaId = newPortId;
+    }
+  }
 });
 
-function addStage() {
-  if (!canAddStage.value) return;
-
-  let defaultPesqueria = props.marea?.id_pesqueria || '';
-  let defaultPuertoZarpada = '';
-
-  if (form.value.stages.length > 0) {
-    const last = form.value.stages[form.value.stages.length - 1];
-    defaultPesqueria = last.pesqueriaId || defaultPesqueria;
-    defaultPuertoZarpada = last.puertoArriboId || '';
-  }
-
-  form.value.stages.push({
-    id: null,
-    puertoZarpadaId: defaultPuertoZarpada,
-    fechaZarpada: '',
-    puertoArriboId: '',
-    fechaArribo: '',
-    pesqueriaId: defaultPesqueria
-  });
-}
-
-function removeStage(index: number) {
-  form.value.stages.splice(index, 1);
-}
 
 // Validations
 function hasOverlap(index: number): boolean {
@@ -343,6 +268,7 @@ function handleCancel() {
   confirmationAction.value = 'CANCEL';
   confirmationTitle.value = '¿Descartar cambios?';
   confirmationMessage.value = 'Se perderá el progreso realizado en este formulario.';
+  confirmationConfirmText.value = 'Sí, descartar';
   showConfirmation.value = true;
 }
 
@@ -352,6 +278,7 @@ function handleConfirm() {
   confirmationMessage.value = props.mode === 'FINALIZAR' 
     ? '¿Está seguro que desea finalizar la marea? Esta acción es irreversible.'
     : '¿Desea guardar los cambios en las etapas y fechas del observador?';
+  confirmationConfirmText.value = 'Confirmar';
   showConfirmation.value = true;
 }
 

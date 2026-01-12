@@ -99,6 +99,9 @@ let MareasService = class MareasService {
                     const { observadores, id: etapaId, ...rest } = etapa;
                     const etapaData = { ...rest };
                     let currentEtapaId = etapaId;
+                    etapaData.puertoZarpadaId = this.sanitizeUuid(etapaData.puertoZarpadaId);
+                    etapaData.puertoArriboId = this.sanitizeUuid(etapaData.puertoArriboId);
+                    etapaData.pesqueriaId = this.sanitizeUuid(etapaData.pesqueriaId);
                     if (etapaData.fechaZarpada)
                         etapaData.fechaZarpada = new Date(etapaData.fechaZarpada);
                     if (etapaData.fechaArribo)
@@ -288,6 +291,7 @@ let MareasService = class MareasService {
                 anio_marea: m.anioMarea,
                 nro_marea: m.nroMarea,
                 buque_nombre: m.buque.nombreBuque,
+                puertoBaseId: m.buque.puertoBaseId,
                 estado: m.estadoActual.nombre,
                 estado_codigo: m.estadoActual.codigo,
                 fecha_zarpada: etapaActual?.fechaZarpada || m.fechaZarpadaEstimada,
@@ -1095,11 +1099,13 @@ let MareasService = class MareasService {
             const stg = incomingStages[i];
             const stageData = {
                 nroEtapa: i + 1,
-                puertoZarpadaId: stg.puertoZarpadaId,
+                puertoZarpadaId: this.sanitizeUuid(stg.puertoZarpadaId),
                 fechaZarpada: stg.fechaZarpada ? new Date(stg.fechaZarpada) : null,
-                puertoArriboId: stg.puertoArriboId,
+                puertoArriboId: this.sanitizeUuid(stg.puertoArriboId),
                 fechaArribo: stg.fechaArribo ? new Date(stg.fechaArribo) : null,
-                pesqueriaId: stg.pesqueriaId
+                pesqueriaId: this.sanitizeUuid(stg.pesqueriaId),
+                tipoEtapa: stg.tipoEtapa || 'COMERCIAL',
+                observaciones: stg.observaciones || ''
             };
             if (stg.id) {
                 await tx.mareaEtapa.update({
@@ -1136,6 +1142,12 @@ let MareasService = class MareasService {
                 }
             }
         }
+    }
+    sanitizeUuid(val) {
+        if (typeof val !== 'string')
+            return null;
+        const trimmed = val.trim();
+        return trimmed === '' ? null : trimmed;
     }
     async executeAction(id, actionKey, user, payload = {}) {
         const marea = await this.prisma.marea.findUnique({
@@ -1264,11 +1276,16 @@ let MareasService = class MareasService {
                     detalle: `Marea creada por ${user.fullName}`
                 }
             });
+            const buque = await tx.buque.findUnique({
+                where: { id: buqueId },
+                select: { puertoBaseId: true }
+            });
             const etapa = await tx.mareaEtapa.create({
                 data: {
                     mareaId: marea.id,
                     nroEtapa: 1,
                     pesqueriaId,
+                    puertoZarpadaId: buque?.puertoBaseId || null,
                     tipoEtapa: tipoMarea === 'CI' ? 'INSTITUCIONAL' : 'COMERCIAL',
                     fechaZarpada: fechaZarpadaEstimada ? new Date(fechaZarpadaEstimada) : null,
                 }
