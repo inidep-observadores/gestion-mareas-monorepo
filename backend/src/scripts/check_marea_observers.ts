@@ -1,4 +1,5 @@
-const { PrismaClient } = require('@prisma/client');
+import { PrismaClient } from '@prisma/client';
+import { MareaEstado } from '../mareas/mareas.constants';
 
 const prisma = new PrismaClient();
 
@@ -11,7 +12,7 @@ async function main() {
             activo: true,
             anioMarea: currentYear,
             estadoActual: {
-                codigo: 'EN_EJECUCION'
+                codigo: MareaEstado.EN_EJECUCION
             }
         },
         include: {
