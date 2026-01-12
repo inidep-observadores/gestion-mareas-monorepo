@@ -32,6 +32,8 @@ lerna-debug.log\*
 
 # **\=========================**
 
+backend/dist/
+
 backend/postgres/
 backend/backups/
 backend/data-exports/

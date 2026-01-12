@@ -15,19 +15,20 @@ const prisma_service_1 = require("../prisma/prisma.service");
 const business_rules_service_1 = require("../common/business-rules/business-rules.service");
 const mail_service_1 = require("../mail/mail.service");
 const alerts_service_1 = require("../alerts/alerts.service");
+const mareas_constants_1 = require("./mareas.constants");
 let MareasService = class MareasService {
     constructor(prisma, mailService, alertsService, businessRulesService) {
         this.prisma = prisma;
         this.mailService = mailService;
         this.alertsService = alertsService;
         this.businessRulesService = businessRulesService;
-        this.ESTADOS_NAVEGANDO = ['EN_EJECUCION'];
+        this.ESTADOS_NAVEGANDO = [mareas_constants_1.MareaEstado.EN_EJECUCION];
         this.ESTADOS_REVISION = [
-            'ENTREGADA_RECIBIDA',
-            'VERIFICACION_INICIAL',
-            'EN_CORRECCION',
-            'PENDIENTE_DE_INFORME',
-            'ESPERANDO_REVISION'
+            mareas_constants_1.MareaEstado.ENTREGADA_RECIBIDA,
+            mareas_constants_1.MareaEstado.VERIFICACION_INICIAL,
+            mareas_constants_1.MareaEstado.EN_CORRECCION,
+            mareas_constants_1.MareaEstado.PENDIENTE_DE_INFORME,
+            mareas_constants_1.MareaEstado.ESPERANDO_REVISION
         ];
     }
     get rules() {
@@ -157,13 +158,13 @@ let MareasService = class MareasService {
         const startOfNextYear = new Date(operationalYear + 1, 0, 1);
         const mareaYearFilter = {
             OR: [
-                { estadoActual: { codigo: { notIn: ['PROTOCOLIZADA', 'CANCELADA'] } } },
+                { estadoActual: { codigo: { notIn: [mareas_constants_1.MareaEstado.PROTOCOLIZADA, mareas_constants_1.MareaEstado.CANCELADA] } } },
                 {
-                    estadoActual: { codigo: 'PROTOCOLIZADA' },
+                    estadoActual: { codigo: mareas_constants_1.MareaEstado.PROTOCOLIZADA },
                     anioProtocolizacion: operationalYear
                 },
                 {
-                    estadoActual: { codigo: 'CANCELADA' },
+                    estadoActual: { codigo: mareas_constants_1.MareaEstado.CANCELADA },
                     fechaFinObservador: {
                         gte: startOfYear,
                         lt: startOfNextYear
@@ -246,10 +247,10 @@ let MareasService = class MareasService {
             });
             let progreso = 0;
             const estadoCodigo = m.estadoActual.codigo;
-            if (estadoCodigo === 'DESIGNADA') {
+            if (estadoCodigo === mareas_constants_1.MareaEstado.DESIGNADA) {
                 progreso = 0;
             }
-            else if (estadoCodigo === 'EN_EJECUCION') {
+            else if (estadoCodigo === mareas_constants_1.MareaEstado.EN_EJECUCION) {
                 const fechaInicio = etapaActual?.fechaZarpada || m.fechaZarpadaEstimada;
                 if (fechaInicio) {
                     const now = new Date();
@@ -332,7 +333,7 @@ let MareasService = class MareasService {
                     activo: true,
                     ...mareaYearFilter,
                     estadoActual: {
-                        codigo: 'DESIGNADA'
+                        codigo: mareas_constants_1.MareaEstado.DESIGNADA
                     }
                 }
             }),
@@ -341,7 +342,7 @@ let MareasService = class MareasService {
                     activo: true,
                     ...mareaYearFilter,
                     estadoActual: {
-                        codigo: 'ESPERANDO_PROTOCOLIZACION'
+                        codigo: mareas_constants_1.MareaEstado.ESPERANDO_PROTOCOLIZACION
                     }
                 }
             }),
@@ -365,7 +366,7 @@ let MareasService = class MareasService {
     }
     async getFleetDistributionByFishery(year) {
         const { mareaYearFilter } = this.buildMareaYearFilter(year);
-        const activeStates = ['DESIGNADA', ...this.ESTADOS_NAVEGANDO];
+        const activeStates = [mareas_constants_1.MareaEstado.DESIGNADA, ...this.ESTADOS_NAVEGANDO];
         const activeMareas = await this.prisma.marea.findMany({
             where: {
                 activo: true,
@@ -395,7 +396,7 @@ let MareasService = class MareasService {
             const label = marea.etapas[0]?.pesqueria?.nombre ?? 'Sin pesquería';
             const vesselName = marea.buque.nombreBuque;
             const mareaCode = `${marea.tipoMarea}-${String(marea.nroMarea).padStart(3, '0')}-${String(marea.anioMarea).slice(-2)}`;
-            const status = marea.estadoActual?.codigo ?? 'EN_EJECUCION';
+            const status = marea.estadoActual?.codigo ?? mareas_constants_1.MareaEstado.EN_EJECUCION;
             if (!distributionMap.has(label)) {
                 distributionMap.set(label, { count: 0, vessels: new Map() });
             }
@@ -426,7 +427,7 @@ let MareasService = class MareasService {
                 activo: true,
                 ...mareaYearFilter,
                 estadoActual: {
-                    codigo: 'ESPERANDO_ENTREGA'
+                    codigo: mareas_constants_1.MareaEstado.ESPERANDO_ENTREGA
                 }
             },
             include: {
@@ -472,11 +473,11 @@ let MareasService = class MareasService {
         const now = new Date();
         const limit = this.rules.PLAZO_CONFECCION_INFORME;
         const TARGET_STATES = [
-            'ENTREGADA_RECIBIDA',
-            'VERIFICACION_INICIAL',
-            'EN_CORRECCION',
-            'DELEGADA_EXTERNA',
-            'PENDIENTE_DE_INFORME'
+            mareas_constants_1.MareaEstado.ENTREGADA_RECIBIDA,
+            mareas_constants_1.MareaEstado.VERIFICACION_INICIAL,
+            mareas_constants_1.MareaEstado.EN_CORRECCION,
+            mareas_constants_1.MareaEstado.DELEGADA_EXTERNA,
+            mareas_constants_1.MareaEstado.PENDIENTE_DE_INFORME
         ];
         const RECEPCION_EVENT = 'RECEPCION_DATOS_ORIGINALES';
         const mareas = await this.prisma.marea.findMany({
@@ -807,7 +808,7 @@ let MareasService = class MareasService {
                 if (!obs?.activo)
                     return;
                 obsConMareas.add(obs.id);
-                const isNavigating = this.ESTADOS_NAVEGANDO.includes(etapa.marea.estadoActual?.codigo || '');
+                const isNavigating = this.ESTADOS_NAVEGANDO.includes(etapa.marea.estadoActual?.codigo);
                 if (isNavigating) {
                     activeNav.set(obs.id, {
                         start: inicio,
@@ -959,7 +960,7 @@ let MareasService = class MareasService {
                 claseBoton: t.claseBoton
             };
         });
-        if (marea.estadoActual.codigo === 'EN_EJECUCION' || marea.estadoActual.codigo === 'NAVEGANDO') {
+        if (marea.estadoActual.codigo === mareas_constants_1.MareaEstado.EN_EJECUCION) {
             actions['EDITAR_ETAPAS'] = {
                 enabled: true,
                 label: 'Editar Etapas',
@@ -968,14 +969,26 @@ let MareasService = class MareasService {
         }
         const fechaZarpada = etapaActual?.fechaZarpada || marea.fechaZarpadaEstimada;
         const now = new Date();
-        const stageIntervals = marea.etapas
-            .filter((e) => e.fechaZarpada)
-            .map((e) => ({
-            inicio: new Date(e.fechaZarpada),
-            fin: e.fechaArribo ? new Date(e.fechaArribo) : now
-        }));
-        const uniqueNavigatedDays = this.calculateUniqueDays(stageIntervals);
-        const days = uniqueNavigatedDays;
+        const codigoEstado = marea.estadoActual.codigo;
+        let diasMarea = 0;
+        let diasNavegados = 0;
+        if (codigoEstado !== mareas_constants_1.MareaEstado.DESIGNADA && codigoEstado !== mareas_constants_1.MareaEstado.CANCELADA) {
+            const startObs = marea.fechaInicioObservador ? new Date(marea.fechaInicioObservador) : null;
+            const endObs = marea.fechaFinObservador ? new Date(marea.fechaFinObservador) : now;
+            if (startObs) {
+                const diffMs = endObs.getTime() - startObs.getTime();
+                diasMarea = Math.floor(diffMs / (1000 * 60 * 60 * 24)) + 1;
+                if (diasMarea < 0)
+                    diasMarea = 0;
+            }
+            const stageIntervals = marea.etapas
+                .filter((e) => e.fechaZarpada)
+                .map((e) => ({
+                inicio: new Date(e.fechaZarpada),
+                fin: e.fechaArribo ? new Date(e.fechaArribo) : now
+            }));
+            diasNavegados = this.calculateUniqueDays(stageIntervals);
+        }
         return {
             marea: {
                 id: marea.id,
@@ -990,8 +1003,8 @@ let MareasService = class MareasService {
                 fecha_zarpada_estimada: marea.fechaZarpadaEstimada,
                 fechaInicioObservador: marea.fechaInicioObservador,
                 fechaFinObservador: marea.fechaFinObservador,
-                dias_marea: days,
-                dias_navegados: marea.estadoActual.codigo === 'NAVEGANDO' ? days : 0,
+                dias_marea: diasMarea,
+                dias_navegados: diasNavegados,
                 alertas: [],
                 etapas: marea.etapas.map((e) => ({
                     id: e.id,
@@ -1406,10 +1419,10 @@ let MareasService = class MareasService {
             }
         });
         const estadosPendientes = new Set([
-            'PENDIENTE_DE_INFORME',
-            'ESPERANDO_REVISION',
-            'PARA_PROTOCOLIZAR',
-            'ESPERANDO_PROTOCOLIZACION'
+            mareas_constants_1.MareaEstado.PENDIENTE_DE_INFORME,
+            mareas_constants_1.MareaEstado.ESPERANDO_REVISION,
+            mareas_constants_1.MareaEstado.PARA_PROTOCOLIZAR,
+            mareas_constants_1.MareaEstado.ESPERANDO_PROTOCOLIZACION
         ]);
         const now = new Date();
         const tasks = allMareas.map(m => {
@@ -1424,8 +1437,8 @@ let MareasService = class MareasService {
                 (a.referenciaId === m.id || a.descripcion?.includes(mareaIdFormatted)));
             const lastStateChange = m.movimientos[0]?.fechaHora || m.fechaUltimaActualizacion;
             const daysInState = Math.floor((now.getTime() - new Date(lastStateChange).getTime()) / (1000 * 60 * 60 * 24));
-            const isReviewOverdue = cod === 'ESPERANDO_REVISION' && daysInState > this.rules.PLAZO_CONFECCION_INFORME;
-            const isProtocolOverdue = (cod === 'PARA_PROTOCOLIZAR' || cod === 'ESPERANDO_PROTOCOLIZACION') && daysInState > this.rules.PLAZO_PROTOCOLIZACION;
+            const isReviewOverdue = cod === mareas_constants_1.MareaEstado.ESPERANDO_REVISION && daysInState > this.rules.PLAZO_CONFECCION_INFORME;
+            const isProtocolOverdue = (cod === mareas_constants_1.MareaEstado.PARA_PROTOCOLIZAR || cod === mareas_constants_1.MareaEstado.ESPERANDO_PROTOCOLIZACION) && daysInState > this.rules.PLAZO_PROTOCOLIZACION;
             const isUrgente = hasReportDelay || isReviewOverdue || isProtocolOverdue;
             const esFinal = Boolean(m.estadoActual?.esFinal);
             if (esFinal) {

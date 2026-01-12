@@ -1,5 +1,8 @@
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const client_1 = require("@prisma/client");
+const mareas_constants_1 = require("../mareas/mareas.constants");
+const prisma = new client_1.PrismaClient();
 async function main() {
     const currentYear = new Date().getFullYear();
     const activeMareas = await prisma.marea.findMany({
@@ -7,7 +10,7 @@ async function main() {
             activo: true,
             anioMarea: currentYear,
             estadoActual: {
-                codigo: 'EN_EJECUCION'
+                codigo: mareas_constants_1.MareaEstado.EN_EJECUCION
             }
         },
         include: {
