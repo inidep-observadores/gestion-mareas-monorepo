@@ -80,8 +80,15 @@ Componente custom que permite entrada manual con máscara `DD/MM/YYYY` y selecto
 
 ### Formularios
 - **Label**: `block text-sm font-medium text-gray-700 dark:text-gray-400 mb-1.5`.
-- **Estructura**: `form` con `space-y-4` para separación uniforme de campos.
-- **Validación**: Feedback inmediato mediante estilos de borde rojo y notificaciones (Vue Sonner).
+- **Estructura**: `form` con `space-y-4` para separación uniforme de campos. Se debe usar el atributo `novalidate` para permitir que la lógica de validación personalizada controle la visualización de errores sin interferencia de los tooltips nativos del navegador.
+### Validaciones y Errores
+Para mantener una experiencia coherente, las validaciones de formulario deben seguir este patrón:
+- **Clases CSS**: 
+    - Inputs estándar: `:class="fieldErrors.name ? 'border-red-500 bg-red-50/30' : 'border-gray-100 dark:border-gray-800'"`
+    - Componentes Custom (`SearchableSelect`, `DatePicker`): Pasar prop `:error="fieldErrors.name"`.
+- **Mensaje de Error**: Mostrar un `<p>` inmediatamente debajo del control con:
+    - Clase: `text-[10px] text-red-500 font-bold uppercase mt-1`.
+- **Lógica**: Utilizar un objeto reactivo `fieldErrors` para mapear los mensajes de error por campo.
 
 ### Protección de Datos (Navegación)
 En formularios de edición o creación (vistas o modales), si existen cambios sin guardar, se **debe** interceptar el intento de salida o cancelación ("Volver", cierre de modal, navegación atrás).

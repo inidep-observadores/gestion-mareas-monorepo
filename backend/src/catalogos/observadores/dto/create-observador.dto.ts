@@ -1,4 +1,4 @@
-import { IsBoolean, IsDateString, IsInt, IsNotEmpty, IsOptional, IsString, ValidateIf } from 'class-validator';
+import { IsBoolean, IsDateString, IsEmail, IsInt, IsNotEmpty, IsOptional, IsString, ValidateIf } from 'class-validator';
 
 export class CreateObservadorDto {
     @IsInt()
@@ -27,7 +27,7 @@ export class CreateObservadorDto {
     @IsBoolean()
     @IsOptional()
     disponible?: boolean;
-    
+
     @IsBoolean()
     @IsOptional()
     conImpedimento?: boolean;
@@ -38,7 +38,13 @@ export class CreateObservadorDto {
     @IsOptional()
     motivoImpedimento?: string;
 
-    @IsDateString()
+    @IsEmail({}, { message: 'El formato del email no es válido' })
+    @IsString()
+    @IsOptional()
+    email?: string;
+
+    @ValidateIf(o => o.fechaProximaDisponibilidad !== '' && o.fechaProximaDisponibilidad !== null && o.fechaProximaDisponibilidad !== undefined)
+    @IsDateString({}, { message: 'La fecha de próxima disponibilidad debe ser una fecha válida' })
     @IsOptional()
     fechaProximaDisponibilidad?: string;
 

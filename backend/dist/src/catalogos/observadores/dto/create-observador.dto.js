@@ -62,7 +62,14 @@ __decorate([
     __metadata("design:type", String)
 ], CreateObservadorDto.prototype, "motivoImpedimento", void 0);
 __decorate([
-    (0, class_validator_1.IsDateString)(),
+    (0, class_validator_1.IsEmail)({}, { message: 'El formato del email no es válido' }),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], CreateObservadorDto.prototype, "email", void 0);
+__decorate([
+    (0, class_validator_1.ValidateIf)(o => o.fechaProximaDisponibilidad !== '' && o.fechaProximaDisponibilidad !== null && o.fechaProximaDisponibilidad !== undefined),
+    (0, class_validator_1.IsDateString)({}, { message: 'La fecha de próxima disponibilidad debe ser una fecha válida' }),
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", String)
 ], CreateObservadorDto.prototype, "fechaProximaDisponibilidad", void 0);
