@@ -143,6 +143,11 @@ let MareasService = class MareasService {
         });
         return this.findOne(id);
     }
+    formatMareaId(m) {
+        const prefix = m.tipoMarea === 'INSTITUCIONAL' || m.tipoMarea === 'CI' ? 'CI' : 'MC';
+        const shortYear = String(m.anioMarea).slice(-2);
+        return `${prefix}-${m.nroMarea}-${shortYear}`;
+    }
     resolveYear(year) {
         return year && !Number.isNaN(year) ? year : new Date().getFullYear();
     }
@@ -278,7 +283,9 @@ let MareasService = class MareasService {
             }
             return {
                 id: m.id,
-                id_marea: `${m.tipoMarea}-${String(m.nroMarea).padStart(3, '0')}-${String(m.anioMarea).slice(-2)}`,
+                id_marea: this.formatMareaId(m),
+                anio_marea: m.anioMarea,
+                nro_marea: m.nroMarea,
                 buque_nombre: m.buque.nombreBuque,
                 estado: m.estadoActual.nombre,
                 estado_codigo: m.estadoActual.codigo,
@@ -447,7 +454,7 @@ let MareasService = class MareasService {
                     const primaryObs = lastStage.observadores[0]?.observador;
                     delays.push({
                         id: m.id,
-                        mareaId: `${m.tipoMarea}-${String(m.nroMarea).padStart(3, '0')}-${String(m.anioMarea).slice(-2)}`,
+                        mareaId: this.formatMareaId(m),
                         vesselName: m.buque.nombreBuque,
                         obs: primaryObs ? `${primaryObs.nombre} ${primaryObs.apellido}` : 'Sin Asignar',
                         email: primaryObs?.email || null,
@@ -518,7 +525,7 @@ let MareasService = class MareasService {
                     const primaryObs = lastStage?.observadores[0]?.observador;
                     delays.push({
                         id: m.id,
-                        mareaId: `${m.tipoMarea}-${String(m.nroMarea).padStart(3, '0')}-${String(m.anioMarea).slice(-2)}`,
+                        mareaId: this.formatMareaId(m),
                         vesselName: m.buque.nombreBuque,
                         obs: primaryObs ? `${primaryObs.nombre} ${primaryObs.apellido}` : 'Sin Asignar',
                         baseDate: baseDate,
@@ -700,7 +707,7 @@ let MareasService = class MareasService {
             if (clampedFin < periodStart || clampedInicio > clampedFin)
                 return;
             const m = etapa.marea;
-            const mareaCode = `${m.tipoMarea}-${String(m.nroMarea).padStart(3, '0')}-${String(m.anioMarea).slice(-2)}`;
+            const mareaCode = this.formatMareaId(m);
             const vessel = m.buque.nombreBuque;
             etapa.observadores.forEach((o) => {
                 if (!o.observador?.activo)
@@ -952,6 +959,13 @@ let MareasService = class MareasService {
                 claseBoton: t.claseBoton
             };
         });
+        if (marea.estadoActual.codigo === 'EN_EJECUCION' || marea.estadoActual.codigo === 'NAVEGANDO') {
+            actions['EDITAR_ETAPAS'] = {
+                enabled: true,
+                label: 'Editar Etapas',
+                claseBoton: 'btn-ghost'
+            };
+        }
         const fechaZarpada = etapaActual?.fechaZarpada || marea.fechaZarpadaEstimada;
         const now = new Date();
         const stageIntervals = marea.etapas
@@ -965,7 +979,7 @@ let MareasService = class MareasService {
         return {
             marea: {
                 id: marea.id,
-                id_marea: `${marea.tipoMarea}-${String(marea.nroMarea).padStart(3, '0')}-${String(marea.anioMarea).slice(-2)}`,
+                id_marea: this.formatMareaId(marea),
                 buque_nombre: marea.buque.nombreBuque,
                 puertoBaseId: marea.buque.puertoBaseId,
                 estado: marea.estadoActual.nombre,
@@ -973,9 +987,21 @@ let MareasService = class MareasService {
                 observador: mainObs ? `${mainObs.nombre} ${mainObs.apellido}` : 'No asignado',
                 pesqueria: etapaActual?.pesqueria?.nombre || 'General',
                 fecha_zarpada: fechaZarpada,
+                fecha_zarpada_estimada: marea.fechaZarpadaEstimada,
+                fechaInicioObservador: marea.fechaInicioObservador,
+                fechaFinObservador: marea.fechaFinObservador,
                 dias_marea: days,
                 dias_navegados: marea.estadoActual.codigo === 'NAVEGANDO' ? days : 0,
-                alertas: []
+                alertas: [],
+                etapas: marea.etapas.map((e) => ({
+                    id: e.id,
+                    nroEtapa: e.nroEtapa,
+                    pesqueriaId: e.pesqueriaId,
+                    puertoZarpadaId: e.puertoZarpadaId,
+                    puertoArriboId: e.puertoArriboId,
+                    fechaZarpada: e.fechaZarpada,
+                    fechaArribo: e.fechaArribo
+                }))
             },
             actions,
             lastEvents: marea.movimientos.map((mov) => ({
@@ -1042,6 +1068,62 @@ let MareasService = class MareasService {
             };
         });
     }
+    async syncStages(tx, mareaId, incomingStages) {
+        if (!incomingStages || !Array.isArray(incomingStages))
+            return;
+        const incomingIds = incomingStages.filter((s) => s.id).map((s) => s.id);
+        await tx.mareaEtapa.deleteMany({
+            where: {
+                mareaId: mareaId,
+                id: { notIn: incomingIds }
+            }
+        });
+        for (let i = 0; i < incomingStages.length; i++) {
+            const stg = incomingStages[i];
+            const stageData = {
+                nroEtapa: i + 1,
+                puertoZarpadaId: stg.puertoZarpadaId,
+                fechaZarpada: stg.fechaZarpada ? new Date(stg.fechaZarpada) : null,
+                puertoArriboId: stg.puertoArriboId,
+                fechaArribo: stg.fechaArribo ? new Date(stg.fechaArribo) : null,
+                pesqueriaId: stg.pesqueriaId
+            };
+            if (stg.id) {
+                await tx.mareaEtapa.update({
+                    where: { id: stg.id },
+                    data: stageData
+                });
+            }
+            else {
+                const newStage = await tx.mareaEtapa.create({
+                    data: {
+                        mareaId: mareaId,
+                        ...stageData,
+                        tipoEtapa: 'COMERCIAL'
+                    }
+                });
+                const firstStage = await tx.mareaEtapa.findFirst({
+                    where: { mareaId: mareaId },
+                    orderBy: { nroEtapa: 'asc' }
+                });
+                if (firstStage && firstStage.id !== newStage.id) {
+                    const observersToCopy = await tx.mareaEtapaObservador.findMany({
+                        where: { etapaId: firstStage.id }
+                    });
+                    for (const obsRel of observersToCopy) {
+                        await tx.mareaEtapaObservador.create({
+                            data: {
+                                etapaId: newStage.id,
+                                observadorId: obsRel.observadorId,
+                                rol: obsRel.rol,
+                                esDesignado: obsRel.esDesignado
+                            }
+                        });
+                    }
+                }
+            }
+        }
+    }
     async executeAction(id, actionKey, user, payload = {}) {
         const marea = await this.prisma.marea.findUnique({
             where: { id },
@@ -1049,6 +1131,29 @@ let MareasService = class MareasService {
         });
         if (!marea)
             throw new common_1.NotFoundException('Marea no encontrada');
+        if (actionKey === 'EDITAR_ETAPAS') {
+            return await this.prisma.$transaction(async (tx) => {
+                const fechaInicioObs = payload.fechaInicioObservador ? new Date(payload.fechaInicioObservador) : marea.fechaInicioObservador;
+                await tx.marea.update({
+                    where: { id },
+                    data: {
+                        fechaInicioObservador: fechaInicioObs,
+                        fechaUltimaActualizacion: new Date()
+                    }
+                });
+                await this.syncStages(tx, id, payload.etapas);
+                await tx.mareaMovimiento.create({
+                    data: {
+                        mareaId: id,
+                        fechaHora: new Date(),
+                        usuarioId: user.id,
+                        tipoEvento: 'EDICION_ESTRUCTURA',
+                        detalle: `Edición manual de etapas y fechas de observador.`
+                    }
+                });
+                return this.getMareaContext(id);
+            });
+        }
         const transicion = await this.prisma.transicionEstado.findFirst({
             where: {
                 estadoOrigenId: marea.estadoActualId,
@@ -1062,81 +1167,21 @@ let MareasService = class MareasService {
         return await this.prisma.$transaction(async (tx) => {
             let additionalMareaData = {};
             if (actionKey === 'REGISTRAR_INICIO') {
-                if (!payload.fechaInicio)
+                const fechaIn = payload.fechaInicioObservador || payload.fechaInicio;
+                if (!fechaIn)
                     throw new Error('La fecha de inicio del observador es requerida.');
-                if (!payload.fechaZarpada)
-                    throw new Error('La fecha de zarpada es requerida.');
-                const fechaInicioObs = new Date(payload.fechaInicio);
-                const fechaZarpadaBuque = new Date(payload.fechaZarpada);
-                additionalMareaData = { fechaInicioObservador: fechaInicioObs };
-                const etapa1 = marea.etapas[0];
-                if (etapa1) {
-                    const updateData = { fechaZarpada: fechaZarpadaBuque };
-                    if (payload.puertoId)
-                        updateData.puertoZarpadaId = payload.puertoId;
-                    await tx.mareaEtapa.update({
-                        where: { id: etapa1.id },
-                        data: updateData
-                    });
+                additionalMareaData.fechaInicioObservador = new Date(fechaIn);
+                if (payload.etapas) {
+                    await this.syncStages(tx, id, payload.etapas);
                 }
             }
             if (actionKey === 'REGISTRAR_ARRIBO') {
-                if (!payload.fechaFinObservador)
+                const fechaFin = payload.fechaFinObservador;
+                if (!fechaFin)
                     throw new Error('La fecha de fin del observador es requerida.');
-                if (!payload.etapas || !Array.isArray(payload.etapas) || payload.etapas.length === 0) {
-                    throw new Error('Debe registrar al menos una etapa de navegación.');
-                }
-                const fechaFinObs = new Date(payload.fechaFinObservador);
-                additionalMareaData = { fechaFinObservador: fechaFinObs };
-                const incomingStages = payload.etapas;
-                const incomingIds = incomingStages.filter((s) => s.id).map((s) => s.id);
-                await tx.mareaEtapa.deleteMany({
-                    where: {
-                        mareaId: id,
-                        id: { notIn: incomingIds }
-                    }
-                });
-                for (let i = 0; i < incomingStages.length; i++) {
-                    const stg = incomingStages[i];
-                    const stageData = {
-                        nroEtapa: i + 1,
-                        puertoZarpadaId: stg.puertoZarpadaId,
-                        fechaZarpada: stg.fechaZarpada ? new Date(stg.fechaZarpada) : null,
-                        puertoArriboId: stg.puertoArriboId,
-                        fechaArribo: stg.fechaArribo ? new Date(stg.fechaArribo) : null,
-                        pesqueriaId: stg.pesqueriaId
-                    };
-                    if (stg.id) {
-                        await tx.mareaEtapa.update({
-                            where: { id: stg.id },
-                            data: stageData
-                        });
-                    }
-                    else {
-                        const newStage = await tx.mareaEtapa.create({
-                            data: {
-                                mareaId: id,
-                                ...stageData,
-                                tipoEtapa: 'COMERCIAL'
-                            }
-                        });
-                        const firstStage = marea.etapas[0];
-                        if (firstStage) {
-                            const observersToCopy = await tx.mareaEtapaObservador.findMany({
-                                where: { etapaId: firstStage.id }
-                            });
-                            for (const obsRel of observersToCopy) {
-                                await tx.mareaEtapaObservador.create({
-                                    data: {
-                                        etapaId: newStage.id,
-                                        observadorId: obsRel.observadorId,
-                                        rol: obsRel.rol,
-                                        esDesignado: obsRel.esDesignado
-                                    }
-                                });
-                            }
-                        }
-                    }
+                additionalMareaData.fechaFinObservador = new Date(fechaFin);
+                if (payload.etapas) {
+                    await this.syncStages(tx, id, payload.etapas);
                 }
             }
             const mareaUpdated = await tx.marea.update({
@@ -1157,9 +1202,9 @@ let MareasService = class MareasService {
                     estadoDesdeId: marea.estadoActualId,
                     estadoHastaId: transicion.estadoDestinoId,
                     detalle: actionKey === 'REGISTRAR_INICIO'
-                        ? `Inicio Marea. Obs: ${new Date(payload.fechaInicio).toLocaleDateString('es-AR')} - Zarpada: ${new Date(payload.fechaZarpada).toLocaleDateString('es-AR')}`
+                        ? `Inicio Marea. Obs: ${new Date(additionalMareaData.fechaInicioObservador).toLocaleDateString('es-AR')}`
                         : actionKey === 'REGISTRAR_ARRIBO'
-                            ? `Fin Marea. Obs: ${new Date(payload.fechaFinObservador).toLocaleDateString('es-AR')}. Etapas: ${payload.etapas?.length}`
+                            ? `Fin Marea. Obs: ${new Date(additionalMareaData.fechaFinObservador).toLocaleDateString('es-AR')}`
                             : `Acción: ${transicion.etiqueta}`
                 }
             });
@@ -1370,7 +1415,7 @@ let MareasService = class MareasService {
         const tasks = allMareas.map(m => {
             const etapaActual = m.etapas[0];
             const primaryObs = etapaActual?.observadores[0]?.observador;
-            const mareaIdFormatted = `${m.tipoMarea}-${String(m.nroMarea).padStart(3, '0')}-${String(m.anioMarea).slice(-2)}`;
+            const mareaIdFormatted = this.formatMareaId(m);
             const observadorNombre = primaryObs ? `${primaryObs.nombre} ${primaryObs.apellido}` : null;
             let tab = null;
             let prioridad = 'media';

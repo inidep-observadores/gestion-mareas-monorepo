@@ -3,6 +3,7 @@
     <!-- Input Field -->
     <div class="relative group">
       <input
+        ref="inputRef"
         type="text"
         v-model="displayValue"
         @input="handleManualInput"
@@ -147,6 +148,16 @@ const dropdownRef = ref<HTMLElement | null>(null)
 const viewDate = ref(new Date())
 const selectedDate = ref<Date | null>(null)
 const displayValue = ref('')
+const inputRef = ref<HTMLInputElement | null>(null)
+
+const focus = () => {
+  if (inputRef.value) {
+    inputRef.value.focus()
+    inputRef.value.select()
+  }
+}
+
+defineExpose({ focus })
 
 // Dropdown positioning
 const dropdownStyle = ref<any>({})

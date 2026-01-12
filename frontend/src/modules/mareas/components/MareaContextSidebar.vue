@@ -258,6 +258,7 @@ const getActionIcon = (key: string | number) => {
   const meta: Record<string, any> = {
     REGISTRAR_INICIO: TaskIcon,
     REGISTRAR_ARRIBO: MapPinIcon,
+    EDITAR_ETAPAS: EditIcon,
     RECIBIR_DATOS: CloudUploadIcon,
     INICIAR_VERIFICACION: SearchIcon,
     ABRIR_CORRECCION: EditIcon,

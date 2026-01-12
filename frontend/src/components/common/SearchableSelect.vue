@@ -3,6 +3,7 @@
     <!-- Trigger Input -->
     <div class="relative group">
       <input 
+        ref="inputRef"
         type="text"
         v-model="searchQuery"
         @focus="openDropdown"
@@ -95,6 +96,16 @@ const isOpen = ref(false)
 const searchQuery = ref('')
 const dropdownStyle = ref({})
 const highlightedIndex = ref(-1)
+const inputRef = ref<HTMLInputElement | null>(null)
+
+const focus = () => {
+  if (inputRef.value) {
+    inputRef.value.focus()
+    inputRef.value.select()
+  }
+}
+
+defineExpose({ focus })
 
 const selectedLabel = computed(() => {
   return props.options.find(o => o.value === props.modelValue)?.label || ''
