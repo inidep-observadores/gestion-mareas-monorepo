@@ -1,12 +1,23 @@
 <template>
-  <div v-if="show" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
+  <div v-if="show" class="fixed inset-0 z-[100000] flex items-center justify-center p-4">
     <div class="absolute inset-0 bg-gray-950/40 backdrop-blur-sm" @click="handleCancel"></div>
     <div
       class="bg-white dark:bg-gray-900 rounded-2xl p-8 max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl relative animate-in fade-in zoom-in-95 duration-300">
 
-      <div class="border-b border-gray-100 dark:border-gray-800 pb-4 mb-6">
-        <h3 class="text-xl font-bold text-gray-800 dark:text-white">{{ config.title }}</h3>
-        <p class="text-gray-500 text-xs mt-1">{{ config.description }}</p>
+      <div class="border-b border-gray-100 dark:border-gray-800 pb-5 mb-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <h3 class="text-xl font-black text-gray-800 dark:text-white">{{ config.title }}</h3>
+          <div v-if="marea" class="flex items-center gap-2 px-3 py-1.5 bg-brand-500/5 dark:bg-brand-500/10 rounded-xl border border-brand-500/10">
+            <span class="text-[10px] font-mono font-black text-brand-600 dark:text-brand-400 uppercase tracking-widest">
+              {{ marea.id_marea }}
+            </span>
+            <span class="w-1 h-1 rounded-full bg-brand-200 dark:bg-brand-800"></span>
+            <span class="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase truncate max-w-[200px]">
+              {{ marea.buque_nombre || marea.buque?.nombre }}
+            </span>
+          </div>
+        </div>
+        <p class="text-gray-500 text-xs mt-2 font-medium">{{ config.description }}</p>
       </div>
 
       <!-- Observer Dates -->

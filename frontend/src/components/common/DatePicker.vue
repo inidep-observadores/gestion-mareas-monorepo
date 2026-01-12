@@ -39,7 +39,7 @@
       <div 
         v-if="isOpen"
         ref="dropdownRef"
-        class="fixed z-[9999] mt-2 bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-xl shadow-2xl p-4 w-[320px] animate-in fade-in zoom-in-95 duration-200"
+        class="fixed z-[200000] mt-2 bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-xl shadow-2xl p-4 w-[320px] animate-in fade-in zoom-in-95 duration-200"
         :style="dropdownStyle"
       >
         <!-- Header: Month & Year Picker -->

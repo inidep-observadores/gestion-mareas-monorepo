@@ -9,22 +9,22 @@
   >
     <div
       v-if="isOpen && marea"
-      class="fixed inset-y-0 right-0 w-[400px] bg-white dark:bg-gray-950 shadow-2xl z-[60] border-l border-gray-200 dark:border-gray-800 flex flex-col"
+      class="fixed inset-y-0 right-0 w-[400px] bg-white dark:bg-gray-950 shadow-2xl z-[100000] border-l border-gray-200 dark:border-gray-800 flex flex-col"
     >
       <!-- Header -->
       <div class="p-6 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between bg-gray-50/50 dark:bg-gray-900/50">
-        <div>
-          <div class="flex items-center gap-2 mb-1">
-            <div class="p-1.5 bg-brand-50 dark:bg-brand-900/30 rounded-lg">
-              <ShipIcon class="w-5 h-5 text-brand-500" />
-            </div>
-            <h3 class="text-lg font-bold text-gray-800 dark:text-white leading-tight">
-              {{ marea.buque_nombre || 'Sin Buque' }}
-            </h3>
+        <div class="flex-1 min-w-0">
+          <h3 class="text-lg font-black text-gray-900 dark:text-white truncate leading-tight">
+            {{ mareaTitle }}
+          </h3>
+          <div class="flex items-center gap-2 mt-0.5">
+             <div class="px-1.5 py-0.5 bg-brand-500/10 rounded text-[10px] font-mono font-bold text-brand-600 dark:text-brand-400 uppercase tracking-wider">
+               {{ mareaCode }}
+             </div>
+             <span class="text-[10px] font-bold text-gray-400 dark:text-gray-500 truncate">
+               {{ mareaSubtitle }}
+             </span>
           </div>
-          <p class="text-[10px] text-gray-400 font-mono tracking-wider uppercase ml-9">
-             {{ marea.id_marea }}
-          </p>
         </div>
         <button 
           @click="$emit('close')"
@@ -196,12 +196,13 @@
     <div 
       v-if="isOpen" 
       @click="$emit('close')"
-      class="fixed inset-0 bg-gray-900/40 dark:bg-black/60 backdrop-blur-sm z-[50]"
+      class="fixed inset-0 bg-gray-900/40 dark:bg-black/60 backdrop-blur-sm z-[99999]"
     ></div>
   </Transition>
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { 
   ShipIcon, 
   ChevronRightIcon, 
@@ -234,6 +235,21 @@ interface Props {
 
 const props = withDefaults(defineProps<Props>(), {
   readOnly: false
+})
+
+const mareaTitle = computed(() => {
+  const m = props.context?.marea || props.marea
+  return m?.buque_nombre || m?.buque?.nombre || 'Marea sin nombre'
+})
+
+const mareaCode = computed(() => {
+  const m = props.context?.marea || props.marea
+  return m?.id_marea || '0000-000'
+})
+
+const mareaSubtitle = computed(() => {
+  const m = props.context?.marea || props.marea
+  return m?.observador || m?.pesqueria || 'Sin datos adicionales'
 })
 
 const emit = defineEmits(['close', 'open-detalle', 'action'])
