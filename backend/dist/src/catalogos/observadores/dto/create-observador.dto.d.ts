@@ -9,6 +9,7 @@ export declare class CreateObservadorDto {
     disponible?: boolean;
     conImpedimento?: boolean;
     motivoImpedimento?: string;
+    email?: string;
     fechaProximaDisponibilidad?: string;
     observaciones?: string;
 }

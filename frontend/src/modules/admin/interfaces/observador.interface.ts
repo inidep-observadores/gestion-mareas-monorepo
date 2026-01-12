@@ -8,6 +8,7 @@ export interface Observador {
     tipoContrato: string; // 'LEY MARCO' | '1109' | 'MONOTRIBUTISTA' | 'PLANTA PERMANENTE'
     activo: boolean;
     disponible: boolean;
+    email?: string;
     conImpedimento: boolean;
     motivoImpedimento?: string;
     fechaProximaDisponibilidad?: string;
