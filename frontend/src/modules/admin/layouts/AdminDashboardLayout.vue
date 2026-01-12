@@ -15,11 +15,11 @@
     <admin-sidebar />
     <Backdrop />
     <div
-      class="flex-1 transition-all duration-300 ease-in-out relative z-10"
+      class="flex-1 transition-all duration-300 ease-in-out relative z-10 min-w-0"
       :class="[isExpanded || isHovered ? 'lg:ml-[18.125rem]' : 'lg:ml-[5.625rem]']"
     >
       <app-header />
-      <div class="admin-layout-content p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6">
+      <div class="admin-layout-content p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6 min-w-0 overflow-hidden">
         <slot></slot>
       </div>
     </div>
