@@ -229,7 +229,7 @@
        :marea="mareaToManage"
        :currentStages="mareaToManage?.etapas || []"
        :initialPortId="mareaToManage?.puertoBaseId"
-       @close="showGestionDialog = false"
+       @close="handleGestionCancel"
        @confirm="handleGestionConfirm"
     />
   </AdminLayout>
@@ -404,9 +404,15 @@ const executeActionFromSidebar = async (actionKey: string) => {
 
   try {
     await executeAction(selectedMarea.value.id, actionKey)
+    closeSidebar()
   } catch (err) {
     console.error('Action failed:', err)
   }
+}
+
+const handleGestionCancel = () => {
+    showGestionDialog.value = false
+    closeSidebar()
 }
 
 const handleGestionConfirm = async (payload: any) => {
@@ -420,6 +426,7 @@ const handleGestionConfirm = async (payload: any) => {
         await executeAction(mareaToManage.value.id, actionKey, payload)
         showGestionDialog.value = false
         mareaToManage.value = null
+        closeSidebar()
         await fetchDashboard()
     } catch (err) {
         console.error("Error en gestión de marea:", err)

@@ -12,6 +12,7 @@ export interface MareaListItem {
     anio_marea: number;
     nro_marea: number;
     buque_nombre: string;
+    puertoBaseId?: string;
     estado: string;
     estado_codigo: string;
     fecha_zarpada?: string;
@@ -27,6 +28,7 @@ export interface MareaContext {
         id: string;
         id_marea: string;
         buque_nombre: string;
+        puertoBaseId?: string;
         estado: string;
         estado_codigo: string;
         fecha_zarpada_estimada?: string;

@@ -576,6 +576,7 @@ export declare class MareasService {
         type: string;
     }[]>;
     syncStages(tx: any, mareaId: string, incomingStages: any[]): Promise<void>;
+    private sanitizeUuid;
     executeAction(id: string, actionKey: string, user: User, payload?: any): Promise<{
         marea: {
             id: any;
