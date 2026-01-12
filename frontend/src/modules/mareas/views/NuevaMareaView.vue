@@ -90,6 +90,7 @@
                   <div>
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-400 mb-1.5">Buque Seleccionado</label>
                     <SearchableSelect 
+                      ref="buqueSelect"
                       v-model="form.buqueId"
                       :options="buqueOptions"
                       :icon="ShipIcon"
@@ -168,6 +169,7 @@
               <div class="space-y-1.5">
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-400">Observador Asignado</label>
                 <SearchableSelect 
+                  ref="observadorSelect"
                   v-model="form.observadorId"
                   :options="observadorOptions"
                   :icon="BeakerIcon"
@@ -294,7 +296,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import SearchableSelect from '@/components/common/SearchableSelect.vue'
@@ -342,6 +344,10 @@ const form = ref({
 
 const fieldErrors = ref<Record<string, string>>({})
 const showCancelConfirm = ref(false)
+
+// Refs for focus
+const buqueSelect = ref<any>(null)
+const observadorSelect = ref<any>(null)
 
 // Catalogs
 const loadingCatalogs = ref(true)
@@ -394,7 +400,22 @@ onMounted(async () => {
     console.error('Error loading catalogs:', err)
   } finally {
     loadingCatalogs.value = false
+    // Focus first field once catalogs are loaded
+    nextTick(() => {
+      buqueSelect.value?.focus()
+    })
   }
+})
+
+// Auto-focus logic when step changes
+watch(currentStep, (newStep) => {
+  nextTick(() => {
+    if (newStep === 1) {
+      buqueSelect.value?.focus()
+    } else if (newStep === 2) {
+      observadorSelect.value?.focus()
+    }
+  })
 })
 
 const generatedCode = computed(() => {

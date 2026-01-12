@@ -9,6 +9,8 @@ export interface MareaDashboard {
 export interface MareaListItem {
     id: string;
     id_marea: string;
+    anio_marea: number;
+    nro_marea: number;
     buque_nombre: string;
     estado: string;
     estado_codigo: string;
@@ -27,6 +29,7 @@ export interface MareaContext {
         buque_nombre: string;
         estado: string;
         estado_codigo: string;
+        fecha_zarpada_estimada?: string;
         dias_marea: number;
         dias_navegados: number;
     };

@@ -100,10 +100,10 @@ export function useMareas() {
             const query = searchQuery.value.toLowerCase().trim();
             if (!query) return matchesState;
 
-            const matchesText = 
-                m.buque_nombre.toLowerCase().includes(query) || 
+            const matchesText =
+                m.buque_nombre.toLowerCase().includes(query) ||
                 m.id_marea.toLowerCase().includes(query);
-            
+
             return matchesState && matchesText;
         });
 
@@ -117,6 +117,18 @@ export function useMareas() {
                 if (key === 'alertas') {
                     valA = a.alertas?.length || 0;
                     valB = b.alertas?.length || 0;
+                }
+
+                // Manejo especial para ID Marea (ordenar por año desc/asc y luego nro)
+                if (key === 'id_marea') {
+                    if (a.anio_marea !== b.anio_marea) {
+                        return sortOrder.value === 'asc'
+                            ? a.anio_marea - b.anio_marea
+                            : b.anio_marea - a.anio_marea;
+                    }
+                    return sortOrder.value === 'asc'
+                        ? a.nro_marea - b.nro_marea
+                        : b.nro_marea - a.nro_marea;
                 }
 
                 if (valA < valB) return sortOrder.value === 'asc' ? -1 : 1;

@@ -73,9 +73,19 @@
                   class="bg-gray-50/50 dark:bg-gray-800/50 text-[10px] font-black uppercase tracking-widest text-gray-400 dark:text-gray-500 border-b border-gray-100 dark:border-gray-800"
                 >
                   <tr>
+                    <th @click="toggleSort('id_marea')" class="px-4 py-2 w-28 cursor-pointer hover:text-brand-500 transition-colors group">
+                      <div class="flex items-center gap-1">
+                        Marea
+                        <ChevronDownIcon 
+                          v-if="sortBy === 'id_marea'"
+                          class="w-3 h-3 text-brand-500 transition-transform duration-300" 
+                          :class="{ 'rotate-180': sortOrder === 'asc' }"
+                        />
+                      </div>
+                    </th>
                     <th @click="toggleSort('buque_nombre')" class="px-5 py-2 cursor-pointer hover:text-brand-500 transition-colors group">
                       <div class="flex items-center gap-1">
-                        Buque / Referencia
+                        Buque
                         <ChevronDownIcon 
                           v-if="sortBy === 'buque_nombre'"
                           class="w-3 h-3 text-brand-500 transition-transform duration-300" 
@@ -134,15 +144,15 @@
                     class="group odd:bg-gray-100/60 dark:odd:bg-gray-800/40 hover:bg-brand-50/30 dark:hover:bg-brand-900/10 transition-all cursor-pointer border-l-4 border-l-transparent"
                     :class="{ 'bg-brand-50/50 dark:bg-brand-900/20 !border-l-brand-500': selectedMarea?.id === marea.id }"
                   >
+                    <td class="px-4 py-1.5 w-28 focus-within:ring-0">
+                      <span class="text-[11px] font-mono font-bold text-gray-500 dark:text-gray-400 uppercase leading-none">{{ marea.id_marea }}</span>
+                    </td>
                     <td class="px-5 py-1.5">
                       <div class="flex items-center gap-2.5">
                         <div class="w-7 h-7 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-500 group-hover:bg-brand-100 dark:group-hover:bg-brand-900/30 group-hover:text-brand-500 transition-colors">
                           <ShipIcon class="w-3.5 h-3.5" />
                         </div>
-                        <div class="flex flex-col">
-                          <span class="text-sm font-bold text-gray-900 dark:text-gray-100 leading-none">{{ marea.buque_nombre }}</span>
-                          <span class="text-[10px] font-mono text-gray-400 dark:text-gray-500 uppercase leading-none mt-1">{{ marea.id_marea }} </span>
-                        </div>
+                        <span class="text-sm font-bold text-gray-900 dark:text-gray-100 leading-none">{{ marea.buque_nombre }}</span>
                       </div>
                     </td>
                     <td class="px-5 py-1.5">
@@ -213,35 +223,27 @@
       @action="executeActionFromSidebar"
     />
 
-    <IniciarMareaDialog
-       :show="showIniciarDialog"
-       :initialPortId="mareaToStart?.puertoBaseId"
-       @close="showIniciarDialog = false"
-       @confirm="handleInicioConfirm"
-    />
-
-    <FinalizarMareaDialog
-       :show="showFinalizarDialog"
-       :initialObserverEndDate="mareaToFinalize?.fechaFinObservador || ''"
-       :currentStages="mareaToFinalizeStages"
-       @close="showFinalizarDialog = false"
-       @confirm="handleFinalizeConfirm"
+    <GestionEtapasMareaDialog
+       :show="showGestionDialog"
+       :mode="gestionMode"
+       :marea="mareaToManage"
+       :currentStages="mareaToManage?.etapas || []"
+       :initialPortId="mareaToManage?.puertoBaseId"
+       @close="showGestionDialog = false"
+       @confirm="handleGestionConfirm"
     />
   </AdminLayout>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, onMounted, computed, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import MareaContextSidebar from '../components/MareaContextSidebar.vue'
-import IniciarMareaDialog from '../components/IniciarMareaDialog.vue'
-import FinalizarMareaDialog from '../components/FinalizarMareaDialog.vue'
+import GestionEtapasMareaDialog from '../components/GestionEtapasMareaDialog.vue'
 import StatusFilterChip from '../components/StatusFilterChip.vue'
 import { useAuthStore } from '@/modules/auth/stores/auth.store'
 import { useMareas } from '../composables/useMareas'
-import { useRoute } from 'vue-router'
-import { watch } from 'vue'
 import {
   ShipIcon,
   SearchIcon,
@@ -251,11 +253,9 @@ import {
   HistoryIcon,
   ArchiveIcon,
   FileTextIcon,
-  EyeIcon,
-  EyeSlashIcon,
+  PlusIcon,
   ChevronDownIcon
 } from '@/icons'
-import mareasService from '../services/mareas.service'
 
 const router = useRouter()
 const route = useRoute()
@@ -279,7 +279,6 @@ const {
 
 const authStore = useAuthStore()
 const isReadOnly = computed(() => {
-  // Solo admin y coordinador pueden realizar acciones operativas
   const roles = authStore.user?.roles || []
   return !roles.includes('admin') && !roles.includes('coordinador')
 })
@@ -287,8 +286,9 @@ const isReadOnly = computed(() => {
 // UI State
 const isSidebarOpen = ref(false)
 const selectedMarea = ref<any>(null)
-const showIniciarDialog = ref(false)
-const mareaToStart = ref<any>(null)
+const showGestionDialog = ref(false)
+const gestionMode = ref<'INICIAR' | 'EDITAR' | 'FINALIZAR'>('INICIAR')
+const mareaToManage = ref<any>(null)
 
 // Map icons/colors to backend kpis
 const getKpiMeta = (codigo: string) => {
@@ -356,7 +356,6 @@ const applyFilter = async () => {
       return
     }
   }
-  // Si no hay filtro, mostramos todo
   setVisibleStates(rawKpis.value.map(k => k.codigo))
 }
 
@@ -377,143 +376,53 @@ const openSidebar = async (marea: any) => {
   await fetchMareaContext(marea.id)
 }
 
-const showFinalizarDialog = ref(false)
-const mareaToFinalize = ref<any>(null)
-const mareaToFinalizeStages = ref<any[]>([])
-
 const executeActionFromSidebar = async (actionKey: string) => {
   if (!selectedMarea.value) return
 
+  const mareaContext = selectedMareaContext.value?.marea || selectedMarea.value
+
   if (actionKey === 'REGISTRAR_INICIO') {
-    // Prefer marea from context as it has more details (like puertoBaseId)
-    mareaToStart.value = selectedMareaContext.value?.marea || selectedMarea.value
-    showIniciarDialog.value = true
+    mareaToManage.value = mareaContext
+    gestionMode.value = 'INICIAR'
+    showGestionDialog.value = true
     return
   }
 
-  // Handle REGISTRAR_ARRIBO (previously known as Finalizar Marea logic)
+  if (actionKey === 'EDITAR_ETAPAS') {
+    mareaToManage.value = mareaContext
+    gestionMode.value = 'EDITAR'
+    showGestionDialog.value = true
+    return
+  }
+
   if (actionKey === 'REGISTRAR_ARRIBO') {
-     mareaToFinalize.value = selectedMareaContext.value?.marea;
-     // We need actual Stage objects with IDs for editing, not just display data.
-     // selectedMareaContext.marea might not have full stage details structured for editing?
-     // Let's check selectedMareaContext structure or use selectedMarea.value if it has included data?
-     // Actually MareaContext is built in backend details action, it has some stage info but maybe not all IDs?
-     // In mareas.service.ts backend, getMareaContext returns 'marea' with 'etapas' inside logic but the DTO only includes 'dias_marea' etc?
-     // Wait, getMareaContext returns: marea: { ..., fechaZarpada, ... }. It does NOT seem to return the full list of stages for editing in the 'marea' object of the context response.
-     // It DOES return 'etapas' implicitly? No, in the code I viewed (lines 1022-1034), marea object constructed does NOT have 'etapas' array.
-     // It only has 'dias_marea', 'dias_navegados'.
-     // THIS IS A PROBLEM. The modal needs the stages to edit.
-     // I need to fetch the full marea details or ensure context has them.
-     // Or I can fetch them inside 'executeActionFromSidebar' before opening dialog.
-     // Let's use 'fetchMareaContext' which we already called? No, generic context lacks stages array.
-     // I will use 'mareasService.executeAction' or rather 'mareasService.getMarea(id)'?
-     // PanelOperativoView uses 'useMareas'. Can I use 'fetchMareaContext' again? No.
-     // I will assume I need to fetch full marea detail.
-     // But wait, 'selectedMarea' in the list (from fetchDashboard?) might have them? 'include: etapas' was in 'search' but logic for dashboard list 'getDashboardOperativo' (in useMareas) might not have deep nested stages?
-     // Let's try to fetch the marea specifically for finalization.
-
-     // I will simply open the dialog and let the dialog load data? No, valid props required.
-     // I will fetch the marea data here. I need mareasService imported.
-     // Actually, I can use 'selectedMarea.value' if it has them.
-     // Let's optimistically assume I need to fetch it. I will import mareasService.
-     // Wait, mareasService is not imported. I should import it.
-
-     // Quick fix: allow the dialog to load its own data if props are missing? No, that's a refactor.
-     // I will fetch the data.
-     try {
-        // I need to allow import of service. I'll do that in another step or assume it works if I add logic.
-        // For now, I'll use a placeholder and fix imports.
-        // Actually, I can't import easily in this replace block without messing up top of file.
-        // I will implement a fetch inside `executeActionFromSidebar` using standard fetch or axios if service not available?
-        // No, 'useMareas' might expose 'getMarea'? No.
-        // 'executeAction' is from useMareas.
-
-        // I'll add `import mareasService` in a separate step if needed, but for now I will try to use `selectedMareaContext` and see if `etapas` are there.
-        // Looking at backend `getMareaContext` (lines 1022+), `marea` object returned indeed lacks `etapas`.
-        // BUT `selectedMareaContext` has `marea`.
-
-        // I must fetch the marea stages.
-        // I'll add `mareasService.getMarea` logic here. I will just use `fetch` for now or assume I can add the import.
-        // I will add the import in the next step.
-        // Here I will write the code assuming `mareasService` is available.
-
-        const fullMarea = await mareasService.getMareaContext(selectedMarea.value.id); // Context might not be enough?
-        // Wait, I need specifically the stages for editing.
-        // 'getMareaContext' gave me 'marea' without stages array.
-        // The previous 'MareaDetalleView' used 'getMareaContext' and I had to map stages.
-        // Where did it get stages?
-        // Ah, in MareaDetalleView: `const data = await mareasService.getMareaContext(id);`
-        // Then: `etapas.value = data.etapas?.map...`
-        // So `getMareaContext` DOES return `etapas` at the root level?
-        // Let's check backend return (line 1021): returns { marea: {...}, actions, lastEvents }.
-        // Does it return `etapas` at root?
-        // I don't see `etapas` in the return object in lines 1021-1042.
-        // I see `marea` object, `actions`, `lastEvents`.
-        // This means `MareaDetalleView` was relying on `data.etapas` which might NOT EXIST in `getMareaContext` response?
-        // If so, `MareaDetalleView` is broken too?
-        // Let's check backend `getMareaContext` again.
-        // It returns `{ marea: {...}, actions, lastEvents }`.
-        // It does NOT return `etapas`.
-        // UNLESS `marea` object inside it has it?
-        // Line 1034 closes `marea` object. It has `alertas`. No `etapas`.
-        // So `MareaDetalleView` logic `data.etapas` would be undefined.
-        // I need to fix backend `getMareaContext` to include `etapas` OR use `getMarea` (if it exists).
-        // `getMarea` method wasn't visible in the snippet.
-        // BUT `MareaDetalleView` seemed to use `getMareaContext`.
-        // I MUST fix `getMareaContext` to return `etapas` so `FinalizarMareaDialog` can populate properly.
-        // OR `getMarea` exists and I should use it.
-        // I'll assume I need to fix `getMareaContext` in backend to include `etapas` in the root or inside `marea`.
-        // For now, I will proceed with frontend logic assuming `mareasService.getMareaContext` will return `etapas` (after I fix backend).
-
-        const context = await mareasService.getMareaContext(selectedMarea.value.id) as any;
-        mareaToFinalize.value = context.marea;
-        mareaToFinalizeStages.value = context.etapas?.map((e: any) => ({
-             id: e.id,
-             nro_etapa: e.nroEtapa,
-             puerto_zarpada: e.puertoZarpada?.nombre,
-             puerto_arribo: e.puertoArribo?.nombre,
-             fechaZarpada: e.fechaZarpada,
-             fechaArribo: e.fechaArribo,
-             // ... map necessary fields
-             puertoZarpadaId: e.puertoZarpadaId,
-             puertoArriboId: e.puertoArriboId,
-             pesqueriaId: e.pesqueriaId
-        })) || []; // If backend logic is fixed, this works.
-
-        showFinalizarDialog.value = true;
-     } catch (e) {
-        console.error("Error fetching marea for finalize:", e);
-     }
-     return;
+    mareaToManage.value = mareaContext
+    gestionMode.value = 'FINALIZAR'
+    showGestionDialog.value = true
+    return
   }
 
   try {
     await executeAction(selectedMarea.value.id, actionKey)
-    // Sidebar se actualiza solo si fetchMareaContext está en executeAction del composable
   } catch (err) {
     console.error('Action failed:', err)
   }
 }
 
-const handleInicioConfirm = async (payload: any) => {
+const handleGestionConfirm = async (payload: any) => {
     try {
-        await executeAction(mareaToStart.value.id, 'REGISTRAR_INICIO', payload)
-        showIniciarDialog.value = false
-        mareaToStart.value = null
-    } catch (err) {
-        console.error("Error iniciando marea", err)
-    }
-}
+        const actionKey = gestionMode.value === 'INICIAR' 
+            ? 'REGISTRAR_INICIO' 
+            : gestionMode.value === 'FINALIZAR' 
+                ? 'REGISTRAR_ARRIBO' 
+                : 'EDITAR_ETAPAS';
 
-const handleFinalizeConfirm = async (payload: any) => {
-    try {
-        await executeAction(mareaToFinalize.value.id, 'REGISTRAR_ARRIBO', payload)
-        showFinalizarDialog.value = false
-        mareaToFinalize.value = null
-        // refresh dashboard?
-        await fetchDashboard();
+        await executeAction(mareaToManage.value.id, actionKey, payload)
+        showGestionDialog.value = false
+        mareaToManage.value = null
+        await fetchDashboard()
     } catch (err) {
-        console.error("Error finalizando marea", err)
+        console.error("Error en gestión de marea:", err)
     }
 }
 
@@ -536,7 +445,7 @@ const getStatusClasses = (status?: string) => {
   const s = status.toUpperCase()
   if (s === 'DESIGNADA')
     return 'bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400'
-  if (s === 'EN_EJECUCION')
+  if (s === 'EN_EJECUCION' || s === 'NAVEGANDO')
     return 'bg-indigo-50 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-400'
   if (s === 'ESPERANDO_ENTREGA')
     return 'bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400'
