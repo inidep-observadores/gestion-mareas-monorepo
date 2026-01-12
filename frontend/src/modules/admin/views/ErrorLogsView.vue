@@ -38,7 +38,7 @@
             :key="log.id"
             @click="selectLog(log)"
             class="p-5 border-b border-gray-50 dark:border-gray-800/50 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 transition-all relative group"
-            :class="{ 
+            :class="{
                 'bg-brand-50/30 dark:bg-brand-500/5 border-l-4': selectedLog?.id === log.id,
                 'border-l-red-500': selectedLog?.id === log.id && log.level === 'CRITICAL',
                 'border-l-amber-500': selectedLog?.id === log.id && log.level === 'WARN',
@@ -70,14 +70,15 @@
 
       <!-- Detalle del Log -->
       <div
-        class="flex-1 bg-white dark:bg-gray-900 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden flex flex-col transition-all duration-300 min-w-0 h-full"
+        class="flex-1 bg-white dark:bg-gray-900 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden flex flex-col transition-all duration-300 min-w-0 lg:h-full"
         :class="{ 'hidden lg:flex': !selectedLog, 'flex': selectedLog }"
       >
         <template v-if="selectedLog">
-          <!-- Header del Detalle -->
-          <div class="p-6 md:p-8 border-b border-gray-100 dark:border-gray-800 bg-linear-to-b from-gray-50/50 to-transparent dark:from-gray-800/20 shrink-0 min-w-0 overflow-hidden">
+          <div class="flex-1 overflow-y-auto custom-scrollbar flex flex-col h-full min-w-0">
+            <!-- Header del Detalle (Ahora parte del scroll) -->
+            <div class="p-6 md:p-8 border-b border-gray-100 dark:border-gray-800 bg-linear-to-b from-gray-50/50 to-transparent dark:from-gray-800/20 shrink-0 min-w-0">
             <div class="flex items-center gap-4 mb-6 lg:hidden">
-                <button 
+                <button
                     @click="selectedLog = null"
                     class="p-2 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-500 hover:text-brand-500 transition-all"
                 >
@@ -103,7 +104,7 @@
                     </h3>
                 </div>
               </div>
-              
+
               <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm flex flex-col items-center justify-center w-full xl:w-56 shrink-0">
                 <div class="flex items-center gap-2 text-[10px] uppercase font-black text-gray-400 mb-2 tracking-widest">
                     <CalenderIcon class="w-3.5 h-3.5" />
@@ -145,24 +146,24 @@
             </div>
           </div>
 
-          <!-- Contenido Detallado -->
-          <div class="flex-1 overflow-y-auto p-6 md:p-8 space-y-10 bg-gray-50/20 dark:bg-gray-950/20 custom-scrollbar min-w-0">
+            <!-- Contenido Detallado -->
+            <div class="p-6 md:p-8 space-y-10 bg-gray-50/20 dark:bg-gray-950/20 min-w-0">
             <!-- Stack Trace -->
             <section v-if="selectedLog.stack" class="animate-in fade-in slide-in-from-bottom-4 duration-500">
                <div class="flex justify-between items-center mb-5">
                   <h4 class="text-[10px] font-black uppercase tracking-widest text-gray-400 flex items-center gap-2">
-                    <ListIcon class="w-4 h-4 text-brand-500" /> Stack Trace
+                    <ListIcon class="w-4 h-4 text-brand-500" /> Trazabilidad del Error
                   </h4>
                   <button
                     @click="copyToClipboard(selectedLog.stack || '')"
                     class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-800 text-[10px] font-black uppercase tracking-widest text-gray-500 hover:bg-brand-500 hover:text-white transition-all shadow-xs"
                   >
-                    <DocsIcon class="w-3.5 h-3.5" /> Copiar Stack
+                    <DocsIcon class="w-3.5 h-3.5" /> Copiar Traza
                   </button>
                </div>
-               <div class="relative group shadow-2xl rounded-3xl overflow-hidden border border-gray-800">
+               <div class="relative group shadow-sm rounded-3xl overflow-hidden border border-gray-100 dark:border-gray-800">
                 <pre
-                    class="bg-gray-950 text-blue-100/80 p-6 md:p-8 text-[11px] overflow-x-auto whitespace-pre-wrap leading-relaxed max-h-[500px] font-mono custom-scrollbar selection:bg-brand-500/30"
+                    class="bg-gray-50/50 dark:bg-gray-950/40 text-gray-700 dark:text-gray-300 p-6 md:p-8 text-[11px] overflow-x-auto whitespace-pre-wrap leading-relaxed max-h-[500px] font-mono custom-scrollbar selection:bg-brand-500/30"
                 >{{ selectedLog.stack }}</pre>
               </div>
             </section>
@@ -180,15 +181,12 @@
                     <DocsIcon class="w-3.5 h-3.5" /> Copiar JSON
                   </button>
               </div>
-              <div class="bg-gray-950 rounded-3xl border border-gray-800 shadow-2xl overflow-hidden">
-                <div class="flex items-center gap-1.5 px-6 py-3 bg-gray-900/50 border-b border-gray-800">
-                    <span class="w-2.5 h-2.5 rounded-full bg-red-500/50 shadow-[0_0_8px_rgba(239,68,68,0.4)]"></span>
-                    <span class="w-2.5 h-2.5 rounded-full bg-amber-500/50 shadow-[0_0_8px_rgba(245,158,11,0.4)]"></span>
-                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500/50 shadow-[0_0_8px_rgba(16,185,129,0.4)]"></span>
-                    <span class="text-[10px] ml-3 text-gray-500 font-bold uppercase tracking-widest font-mono">execution_payload.json</span>
+              <div class="bg-gray-50/50 dark:bg-gray-950/40 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
+                <div class="flex items-center gap-1.5 px-6 py-3 bg-gray-100/50 dark:bg-gray-800/30 border-b border-gray-100 dark:border-gray-800">
+                    <span class="text-[10px] text-gray-500 font-bold uppercase tracking-widest font-mono">datos_ejecucion.json</span>
                 </div>
                 <div class="p-6 md:p-8 overflow-x-auto custom-scrollbar">
-                    <code class="text-[11px] font-mono leading-relaxed text-blue-200/70 whitespace-pre">{{ JSON.stringify(selectedLog.detail, null, 2) }}</code>
+                    <code class="text-[11px] font-mono leading-relaxed text-gray-700 dark:text-gray-300 whitespace-pre">{{ JSON.stringify(selectedLog.detail, null, 2) }}</code>
                 </div>
               </div>
             </section>
@@ -203,6 +201,7 @@
               </div>
             </section>
           </div>
+        </div>
         </template>
 
         <!-- Empty State -->
@@ -225,21 +224,21 @@ import { ref, onMounted, onUnmounted } from 'vue';
 import AdminDashboardLayout from '../layouts/AdminDashboardLayout.vue';
 import { useErrorLogs } from '../composables/useErrorLogs';
 import { toast } from 'vue-sonner';
-import { 
-    HistoryIcon, 
-    RefreshIcon, 
-    CheckIcon, 
-    ArrowLeftIcon, 
-    CalenderIcon, 
-    BoxCubeIcon, 
-    PlugInIcon, 
-    UserCircleIcon, 
-    MapPinIcon, 
-    ListIcon, 
-    DocsIcon, 
-    BoxIcon, 
-    ChatIcon, 
-    ShieldIcon 
+import {
+    HistoryIcon,
+    RefreshIcon,
+    CheckIcon,
+    ArrowLeftIcon,
+    CalenderIcon,
+    BoxCubeIcon,
+    PlugInIcon,
+    UserCircleIcon,
+    MapPinIcon,
+    ListIcon,
+    DocsIcon,
+    BoxIcon,
+    ChatIcon,
+    ShieldIcon
 } from '@/icons';
 
 const { errorLogs, selectedLog, isLoading, fetchErrorLogs, selectLog } = useErrorLogs();
