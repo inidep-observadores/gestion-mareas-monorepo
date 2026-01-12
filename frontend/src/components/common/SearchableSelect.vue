@@ -36,7 +36,7 @@
       <div 
         v-if="isOpen" 
         ref="dropdown"
-        class="fixed z-[9999] bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200"
+        class="fixed z-[200000] bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200"
         :style="dropdownStyle"
       >
         <div class="max-h-64 overflow-y-auto custom-scrollbar p-1" ref="listContainer">
