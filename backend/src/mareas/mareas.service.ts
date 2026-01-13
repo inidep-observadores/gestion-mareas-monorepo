@@ -637,7 +637,7 @@ export class MareasService {
         const events: any[] = [];
 
         mareas.forEach((m: any) => {
-            const mareaCode = `${m.tipoMarea}-${String(m.nroMarea).padStart(3, '0')}`;
+            const mareaCode = this.formatMareaId(m);
             const buque = m.buque.nombreBuque;
             const obs = m.etapas[0]?.observadores[0]?.observador?.apellido || 'Sin Asignar';
             const commonProps = {
