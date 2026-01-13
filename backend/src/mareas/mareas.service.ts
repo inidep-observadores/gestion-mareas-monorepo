@@ -93,6 +93,7 @@ export class MareasService {
             }
 
             if (etapas && etapas.length > 0) {
+                this.validateStagesChronology(etapas);
                 for (const etapa of etapas) {
                     const { observadores, id: etapaId, ...rest } = etapa;
                     const etapaData: any = { ...rest };
@@ -1264,6 +1265,9 @@ export class MareasService {
     async syncStages(tx: any, mareaId: string, incomingStages: any[]) {
         if (!incomingStages || !Array.isArray(incomingStages)) return;
 
+        // Validar cronología antes de sincronizar
+        this.validateStagesChronology(incomingStages);
+
         const incomingIds = incomingStages.filter((s: any) => s.id).map((s: any) => s.id);
 
         // 1. Delete removed stages (that belong to this marea)
@@ -1322,6 +1326,33 @@ export class MareasService {
                                 esDesignado: obsRel.esDesignado
                             }
                         });
+                    }
+                }
+            }
+        }
+    }
+
+    private validateStagesChronology(stages: any[]) {
+        for (let i = 0; i < stages.length; i++) {
+            const current = stages[i];
+
+            // 1. Internal Chronology: Arrival >= Departure
+            if (current.fechaZarpada && current.fechaArribo) {
+                const zarpada = new Date(current.fechaZarpada);
+                const arribo = new Date(current.fechaArribo);
+                if (arribo < zarpada) {
+                    throw new Error(`Error en Etapa #${i + 1}: La fecha de arribo no puede ser anterior a la de zarpada.`);
+                }
+            }
+
+            // 2. Inter-stage Chronology: Departure[i] >= Arrival[i-1]
+            if (i > 0) {
+                const previous = stages[i - 1];
+                if (current.fechaZarpada && previous.fechaArribo) {
+                    const currentZarpada = new Date(current.fechaZarpada);
+                    const prevArribo = new Date(previous.fechaArribo);
+                    if (currentZarpada < prevArribo) {
+                        throw new Error(`Error en Etapa #${i + 1}: La fecha de zarpada no puede ser anterior al arribo de la etapa anterior (#${i}).`);
                     }
                 }
             }
@@ -1445,7 +1476,7 @@ export class MareasService {
 
         const existing = await this.prisma.marea.findMany({
             where: {
-                anioMarea, nroMarea, buqueId, tipoMarea
+                anioMarea, nroMarea, tipoMarea
             },
             take: 1
         });
