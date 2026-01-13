@@ -62,11 +62,32 @@
       <!-- Calendar + Sidebar Container -->
       <div class="flex flex-col lg:flex-row gap-6 relative items-start">
 
-        <!-- Calendar Container -->
         <div
           class="flex-1 min-w-0 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-6 shadow-sm transition-all duration-300"
         >
-          <FullCalendar :options="calendarOptions" class="mareas-calendar" />
+          <FullCalendar :options="calendarOptions" class="mareas-calendar">
+            <template #eventContent="arg">
+              <div class="group relative w-full h-full p-1 cursor-pointer overflow-visible">
+                <!-- Event Title -->
+                <div class="truncate fc-event-title-container">
+                  <span class="fc-event-time">{{ arg.timeText }}</span>
+                  <span class="fc-event-title">{{ arg.event.title }}</span>
+                </div>
+
+                <!-- Custom Tooltip -->
+                <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2.5 py-1.5 text-[11px] text-white bg-gray-900 dark:bg-white dark:text-gray-900 rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-normal min-w-[180px] max-w-[240px] z-[9999] shadow-xl pointer-events-none backdrop-blur-sm bg-opacity-95 dark:bg-opacity-95">
+                  <div class="font-bold border-b border-white/10 dark:border-gray-200 mb-1 pb-1">
+                    {{ arg.event.title }}
+                  </div>
+                  <div class="leading-relaxed opacity-90">
+                    {{ arg.event.extendedProps.description }}
+                  </div>
+                  <!-- Arrow -->
+                  <div class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900 dark:border-t-white"></div>
+                </div>
+              </div>
+            </template>
+          </FullCalendar>
         </div>
 
         <!-- Event Details Sidebar -->
@@ -417,5 +438,48 @@ onMounted(() => {
 .slide-in-right-leave-to {
   transform: translateX(20px);
   opacity: 0;
+}
+
+/* Asegurar que el tooltip sea visible fuera del contenedor del evento */
+/* Asegurar que el tooltip sea visible fuera del contenedor del evento */
+.fc .fc-scroller-harness {
+  overflow: visible !important;
+}
+
+.fc .fc-scroller {
+  overflow: visible !important;
+}
+
+/* En vista semanal, el encabezado tiene z-index: 2 por defecto. 
+   Elevamos los eventos al pasar el mouse para que superen el encabezado. */
+.fc-timegrid-event-harness {
+  z-index: 5 !important;
+}
+
+.fc-timegrid-event-harness:hover {
+  z-index: 9999 !important;
+}
+
+/* Evitar que el encabezado tape el tooltip */
+.fc .fc-col-header {
+  position: relative;
+  z-index: 1; 
+}
+
+.fc-event {
+  overflow: visible !important;
+}
+
+.fc-daygrid-event-harness {
+  overflow: visible !important;
+  z-index: 10 !important;
+}
+
+.fc-daygrid-event-harness:hover {
+  z-index: 9999 !important;
+}
+
+.mareas-calendar .fc-event-main {
+  overflow: visible !important;
 }
 </style>
