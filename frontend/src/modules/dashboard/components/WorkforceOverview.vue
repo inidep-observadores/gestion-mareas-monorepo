@@ -1,8 +1,8 @@
 <template>
   <div
-    class="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900 border-l-4 border-l-indigo-500 h-full flex flex-col"
+    class="rounded-3xl border border-gray-100 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900 border-l-4 border-l-indigo-500 flex flex-col"
   >
-    <div class="flex items-center gap-3 mb-8">
+    <div class="flex items-center gap-3 mb-6">
        <UserGroupIcon class="w-6 h-6 text-indigo-500" />
        <div>
           <h2 class="text-sm font-black text-gray-900 dark:text-white uppercase tracking-widest leading-tight">
@@ -12,25 +12,25 @@
        </div>
     </div>
     
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4" :class="[selectedStatus ? 'mb-8' : '']">
       <div
         v-for="status in distributions"
         :key="status.label"
         @click="selectStatus(status.label)"
-        class="group relative flex flex-col items-center p-6 rounded-2xl bg-gray-50/50 dark:bg-gray-800/40 border border-gray-100 dark:border-gray-700 hover:bg-white dark:hover:bg-gray-800 hover:shadow-xl hover:border-indigo-100 dark:hover:border-indigo-800/50 transition-all duration-300 cursor-pointer"
+        class="group relative flex flex-col items-center p-4 rounded-2xl bg-gray-50/50 dark:bg-gray-800/40 border border-gray-100 dark:border-gray-700 hover:bg-white dark:hover:bg-gray-800 hover:shadow-xl hover:border-indigo-100 dark:hover:border-indigo-800/50 transition-all duration-300 cursor-pointer"
         :class="[selectedStatus === status.label ? `ring-2 ${status.ringClass} bg-white dark:bg-gray-800` : '']"
       >
         <!-- Naked Icon (Better Symmetry) -->
-        <div class="mb-5 transition-transform duration-300 group-hover:scale-110 group-hover:-translate-y-1">
-          <component :is="status.icon" class="w-8 h-8" :class="status.colorClass" />
+        <div class="mb-3 transition-transform duration-300 group-hover:scale-110 group-hover:-translate-y-1">
+          <component :is="status.icon" class="w-6 h-6" :class="status.colorClass" />
         </div>
 
-        <div class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4 text-center transition-colors group-hover:text-gray-500">
+        <div class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 text-center transition-colors group-hover:text-gray-500">
           {{ status.label }}
         </div>
 
-        <div class="flex flex-col items-center gap-0.5 mb-5">
-          <span class="text-3xl font-black tabular-nums transition-colors" :class="status.colorClass">
+        <div class="flex flex-col items-center gap-0.5 mb-3">
+          <span class="text-2xl font-black tabular-nums transition-colors" :class="status.colorClass">
             {{ status.count }}
           </span>
           <span class="text-[11px] font-bold text-gray-400 tabular-nums">
@@ -98,10 +98,6 @@
              </table>
           </div>
        </div>
-    </div>
-    <!-- Placeholder to maintain symmetry when not selected -->
-    <div v-else class="flex-grow flex items-center justify-center p-8 border-2 border-dashed border-gray-50 dark:border-gray-800/50 rounded-2xl">
-        <p class="text-[10px] font-black text-gray-300 dark:text-gray-700 uppercase tracking-[0.2em]">Seleccione un estado para ver el detalle</p>
     </div>
   </div>
 </template>

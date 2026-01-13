@@ -14,11 +14,11 @@
       </div>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+    <div class="grid grid-cols-1 xl:grid-cols-2 gap-8 items-start">
       <div class="flex flex-col items-center justify-center">
         <h3 class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Proporción</h3>
         <div class="w-full flex justify-center">
-          <apexchart type="donut" height="320" :options="chartOptions" :series="series" />
+          <apexchart type="donut" height="300" :options="chartOptions" :series="series" />
         </div>
       </div>
 
@@ -187,6 +187,24 @@ const chartOptions = computed(() => ({
       }
     }
   },
+  responsive: [
+    {
+      breakpoint: 1366,
+      options: {
+        plotOptions: {
+          pie: {
+            donut: {
+              size: '65%',
+              labels: {
+                value: { fontSize: '18px' },
+                total: { fontSize: '8px' }
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
   dataLabels: { enabled: false },
   legend: {
     show: distribution.value.length > 0,
