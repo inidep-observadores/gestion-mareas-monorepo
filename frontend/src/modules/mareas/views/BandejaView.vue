@@ -276,6 +276,14 @@
       @close="isAlertDialogOpen = false"
       @refresh="loadInbox"
     />
+
+    <!-- RECIBIR ARCHIVOS DIALOG -->
+    <RecibirArchivosDialog
+       :show="showRecibirDialog"
+       :marea="mareaToManage"
+       @close="handleRecibirCancel"
+       @confirm="handleRecibirConfirm"
+    />
   </AdminLayout>
 </template>
 
@@ -286,6 +294,7 @@ import AdminLayout from '@/components/layout/AdminLayout.vue'
 import TaskCard from '../components/TaskCard.vue'
 import InboxAlertCard from '../components/InboxAlertCard.vue'
 import MareaContextSidebar from '../components/MareaContextSidebar.vue'
+import RecibirArchivosDialog from '../components/RecibirArchivosDialog.vue'
 // @ts-ignore
 import AlertManagementDialog from '../../alerts/components/AlertManagementDialog.vue'
 import mareasService from '../services/mareas.service'
@@ -402,6 +411,8 @@ onMounted(loadInbox)
 // UI Actions
 const isSidebarOpen = ref(false)
 const selectedMarea = ref<any>(null)
+const showRecibirDialog = ref(false)
+const mareaToManage = ref<any>(null)
 
 const expandedHistorialSection = ref<'alertas' | 'mareas' | null>(null)
 
@@ -431,6 +442,13 @@ const handleAlertAction = (alertId: string, type: string) => {
 
 const executeSidebarAction = async (key: string) => {
   if (!selectedMarea.value) return
+  
+  if (key === 'RECIBIR_DATOS') {
+    mareaToManage.value = selectedMareaContext.value?.marea || selectedMarea.value
+    showRecibirDialog.value = true
+    return
+  }
+
   await executeAction(selectedMarea.value.id, key)
 }
 
@@ -438,6 +456,23 @@ const goToDetalle = () => {
   if (selectedMarea.value) {
     router.push({ name: 'MareaDetalle', params: { id: selectedMarea.value.id } })
   }
+}
+
+const handleRecibirCancel = () => {
+    showRecibirDialog.value = false
+    isSidebarOpen.value = false
+}
+
+const handleRecibirConfirm = async (payload: any) => {
+    try {
+        await executeAction(mareaToManage.value.id, 'RECIBIR_DATOS', payload)
+        showRecibirDialog.value = false
+        mareaToManage.value = null
+        isSidebarOpen.value = false
+        await loadInbox()
+    } catch (err) {
+        console.error("Error en recepción de archivos:", err)
+    }
 }
 
 const toggleHistorialSection = (section: 'alertas' | 'mareas') => {

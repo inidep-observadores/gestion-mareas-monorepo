@@ -116,6 +116,9 @@
         </div>
       </div>
     </Teleport>
+    <p v-if="error" class="text-[10px] text-red-500 font-bold uppercase mt-1 animate-in fade-in slide-in-from-top-1 duration-200">
+      {{ error }}
+    </p>
   </div>
 </template>
 

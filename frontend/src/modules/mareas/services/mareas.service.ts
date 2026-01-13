@@ -19,6 +19,7 @@ export interface MareaListItem {
     puerto: string;
     progreso: number;
     observador?: string;
+    fecha_fin_observador?: string;
     alertas: any[];
     actionsAvailable: Record<string, { enabled: boolean; label: string; blockedReason?: string }>;
 }
@@ -32,6 +33,7 @@ export interface MareaContext {
         estado: string;
         estado_codigo: string;
         fecha_zarpada_estimada?: string;
+        fecha_fin_observador?: string;
         dias_marea: number;
         dias_navegados: number;
     };
