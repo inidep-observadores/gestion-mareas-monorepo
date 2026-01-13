@@ -130,7 +130,7 @@ services:
       - ./static:/app/static
       - ./uploads:/app/uploads
     command: >
-      sh -c "npx prisma migrate deploy && node dist/src/main"
+      sh -c "npx prisma generate && npx prisma migrate deploy && node dist/src/main"
     labels:
       - "traefik.enable=true"
       - 'traefik.http.routers.sigma-backend.rule=Host(`${API_DOMAIN}`)'
@@ -169,7 +169,7 @@ docker compose -f docker-compose-prod.yaml up -d --build
 Si es la primera vez o necesita resetear datos base (catálogos):
 
 ```bash
-docker compose -f docker-compose-prod.yaml exec backend node prisma/seed.js
+docker compose -f docker-compose-prod.yaml exec backend npm run seed:prod
 ```
 
 Para cargar los datos históricos de mareas (JSONL):
