@@ -7,10 +7,18 @@ import * as fs from 'fs';
 
 // Cargar .env por defecto
 dotenv.config();
-// Si no hay DATABASE_URL, intentar cargar .env.develop
-if (!process.env.DATABASE_URL) {
+
+function expandEnv(str: string | undefined): string | undefined {
+    if (!str) return str;
+    return str.replace(/\${(\w+)}/g, (_, v) => process.env[v] || '');
+}
+
+// Si no hay DATABASE_URL o contiene variables sin expandir, intentar cargar .env.develop
+if (!process.env.DATABASE_URL || process.env.DATABASE_URL.includes('${')) {
     dotenv.config({ path: path.join(process.cwd(), '.env.develop') });
 }
+
+process.env.DATABASE_URL = expandEnv(process.env.DATABASE_URL);
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);
