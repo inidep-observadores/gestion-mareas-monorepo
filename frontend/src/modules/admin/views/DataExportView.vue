@@ -261,6 +261,8 @@ const confirmCreateExport = async () => {
     try {
         await httpClient.post('/admin/data-export', {
             comment: newExportComment.value
+        }, {
+            timeout: 300000 // 5 minutos
         });
         toast.success('Exportación generada correctamente');
         newExportComment.value = '';
@@ -311,7 +313,8 @@ const handleImportConfirm = async () => {
     
     try {
         await httpClient.post('/admin/data-export/import', formData, {
-            headers: { 'Content-Type': 'multipart/form-data' }
+            headers: { 'Content-Type': 'multipart/form-data' },
+            timeout: 600000 // 10 minutos para importaciones masivas
         });
         toast.success('Datos importados correctamente');
         // Reload to show changes? Or just finish.
