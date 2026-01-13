@@ -49,7 +49,7 @@ export class BackupService {
                 execSync('pg_dump --version', { stdio: 'ignore' });
                 console.log(`[BackupService] pg_dump encontrado en host Windows.`);
 
-                const command = `pg_dump -h "${dbHost}" -p "${dbPort}" -U "${dbUser}" -d "${dbName}" -f "${filePath}"`;
+                const command = `pg_dump -h "${dbHost}" -p "${dbPort}" -U "${dbUser}" -d "${dbName}" --clean --if-exists -f "${filePath}"`;
                 execSync(command, {
                     env: { ...process.env, PGPASSWORD: dbPass },
                     stdio: 'pipe'
@@ -59,7 +59,7 @@ export class BackupService {
                 console.warn(`[BackupService] pg_dump NO encontrado en host. Usando Docker fallback 'mareasdb'...`);
 
                 // IMPORTANTE: Dentro del contenedor el puerto es 5432, NO el 5435 externo
-                const dockerCommand = `docker exec -e PGPASSWORD="${dbPass}" mareasdb pg_dump -h localhost -p 5432 -U "${dbUser}" -d "${dbName}"`;
+                const dockerCommand = `docker exec -e PGPASSWORD="${dbPass}" mareasdb pg_dump -h localhost -p 5432 -U "${dbUser}" -d "${dbName}" --clean --if-exists`;
 
                 console.log(`[BackupService] Ejecutando en Docker: ${dockerCommand}`);
 
@@ -149,7 +149,13 @@ export class BackupService {
                 execSync('psql --version', { stdio: 'ignore' });
 
                 const catCmd = process.platform === 'win32' ? 'type' : 'cat';
-                const command = `${catCmd} "${filePath}" | psql -h "${dbHost}" -p "${dbPort}" -U "${dbUser}" -d "${dbName}"`;
+                
+                // Fase 1: Limpieza total (Borrar esquema public y recrearlo)
+                const dropSchemaCmd = `psql -h "${dbHost}" -p "${dbPort}" -U "${dbUser}" -d "${dbName}" -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"`;
+                execSync(dropSchemaCmd, { env: { ...process.env, PGPASSWORD: dbPass }, stdio: 'ignore' });
+
+                // Fase 2: Restauración
+                const command = `${catCmd} "${filePath}" | psql -h "${dbHost}" -p "${dbPort}" -U "${dbUser}" -d "${dbName}" --set ON_ERROR_STOP=on`;
 
                 execSync(command, {
                     env: { ...process.env, PGPASSWORD: dbPass },
@@ -158,11 +164,16 @@ export class BackupService {
                 } as any);
             } catch (localError) {
                 // Fallback vía Docker
-                this.logger.warn(`psql not found on host, trying via Docker 'mareasdb'...`);
+                this.logger.warn(`psql error or not found on host, trying via Docker 'mareasdb'...`);
 
-                // Usamos el flag -i para enviar el contenido del SQL por stdin al contenedor
                 const catCmd = process.platform === 'win32' ? 'type' : 'cat';
-                const dockerCommand = `${catCmd} "${filePath}" | docker exec -i -e PGPASSWORD="${dbPass}" mareasdb psql -U ${dbUser} -d ${dbName}`;
+
+                // Fase 1 Docker: Limpieza total
+                const dropSchemaDocker = `docker exec -e PGPASSWORD="${dbPass}" mareasdb psql -U ${dbUser} -d ${dbName} -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"`;
+                execSync(dropSchemaDocker, { stdio: 'ignore' });
+
+                // Fase 2 Docker: Restauración
+                const dockerCommand = `${catCmd} "${filePath}" | docker exec -i -e PGPASSWORD="${dbPass}" mareasdb psql -U ${dbUser} -d ${dbName} --set ON_ERROR_STOP=on`;
 
                 execSync(dockerCommand, { stdio: 'pipe', shell: true } as any);
             }
@@ -177,11 +188,11 @@ export class BackupService {
 
             let userFriendlyMsg = 'La restauración de la base de datos falló.';
             if (error.message.includes('mareasdb') || error.message.includes('No such container')) {
-                userFriendlyMsg += ' El contenedor "mareasdb" no está corriendo.';
+                userFriendlyMsg += ` Detalle técnico: ${error.message}`;
             } else if (stderr.includes('connection failed')) {
                 userFriendlyMsg += ' No se pudo conectar a la base de datos dentro del contenedor.';
             } else {
-                userFriendlyMsg += ` ${stderr.slice(0, 100)}`;
+                userFriendlyMsg += ` ${stderr.slice(0, 200) || error.message}`;
             }
 
             throw new InternalServerErrorException(userFriendlyMsg);
