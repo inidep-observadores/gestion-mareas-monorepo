@@ -262,7 +262,6 @@
       title="¿Descartar Cambios?"
       message="Si cancela ahora, perderá los cambios no guardados en esta marea. ¿Está seguro de que desea salir?"
       confirm-text="Si, Salir"
-      cancel-text="Volver"
       @close="showCancelConfirm = false"
       @confirm="confirmCancel"
     />

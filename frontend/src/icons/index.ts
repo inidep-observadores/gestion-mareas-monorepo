@@ -64,6 +64,7 @@ import SearchIcon from './SearchIcon.vue'
 import ShieldIcon from './ShieldIcon.vue'
 import BackupIcon from './BackupIcon.vue'
 import SportsScoreIcon from './SportsScoreIcon.vue'
+import XIcon from './XIcon.vue'
 
 import PhoneIcon from './PhoneIcon.vue'
 
@@ -135,4 +136,5 @@ export {
   BackupIcon,
   SportsScoreIcon,
   PhoneIcon,
+  XIcon,
 }

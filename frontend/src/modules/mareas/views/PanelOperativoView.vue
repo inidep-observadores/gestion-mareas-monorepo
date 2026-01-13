@@ -76,9 +76,9 @@
                     <th @click="toggleSort('id_marea')" class="px-4 py-2 w-28 cursor-pointer hover:text-brand-500 transition-colors group">
                       <div class="flex items-center gap-1">
                         Marea
-                        <ChevronDownIcon 
+                        <ChevronDownIcon
                           v-if="sortBy === 'id_marea'"
-                          class="w-3 h-3 text-brand-500 transition-transform duration-300" 
+                          class="w-3 h-3 text-brand-500 transition-transform duration-300"
                           :class="{ 'rotate-180': sortOrder === 'asc' }"
                         />
                       </div>
@@ -86,9 +86,9 @@
                     <th @click="toggleSort('buque_nombre')" class="px-5 py-2 cursor-pointer hover:text-brand-500 transition-colors group">
                       <div class="flex items-center gap-1">
                         Buque
-                        <ChevronDownIcon 
+                        <ChevronDownIcon
                           v-if="sortBy === 'buque_nombre'"
-                          class="w-3 h-3 text-brand-500 transition-transform duration-300" 
+                          class="w-3 h-3 text-brand-500 transition-transform duration-300"
                           :class="{ 'rotate-180': sortOrder === 'asc' }"
                         />
                       </div>
@@ -96,9 +96,9 @@
                     <th @click="toggleSort('estado')" class="px-5 py-2 cursor-pointer hover:text-brand-500 transition-colors group">
                       <div class="flex items-center gap-1">
                         Estado Operativo
-                        <ChevronDownIcon 
+                        <ChevronDownIcon
                           v-if="sortBy === 'estado'"
-                          class="w-3 h-3 text-brand-500 transition-transform duration-300" 
+                          class="w-3 h-3 text-brand-500 transition-transform duration-300"
                           :class="{ 'rotate-180': sortOrder === 'asc' }"
                         />
                       </div>
@@ -106,9 +106,9 @@
                     <th @click="toggleSort('fecha_zarpada')" class="px-5 py-2 cursor-pointer hover:text-brand-500 transition-colors group">
                       <div class="flex items-center gap-1">
                         Zarpada
-                        <ChevronDownIcon 
+                        <ChevronDownIcon
                           v-if="sortBy === 'fecha_zarpada'"
-                          class="w-3 h-3 text-brand-500 transition-transform duration-300" 
+                          class="w-3 h-3 text-brand-500 transition-transform duration-300"
                           :class="{ 'rotate-180': sortOrder === 'asc' }"
                         />
                       </div>
@@ -116,9 +116,9 @@
                     <th @click="toggleSort('progreso')" class="px-5 py-2 cursor-pointer hover:text-brand-500 transition-colors group">
                       <div class="flex items-center gap-1">
                         Progreso
-                        <ChevronDownIcon 
+                        <ChevronDownIcon
                           v-if="sortBy === 'progreso'"
-                          class="w-3 h-3 text-brand-500 transition-transform duration-300" 
+                          class="w-3 h-3 text-brand-500 transition-transform duration-300"
                           :class="{ 'rotate-180': sortOrder === 'asc' }"
                         />
                       </div>
@@ -126,9 +126,9 @@
                     <th @click="toggleSort('alertas')" class="px-5 py-2 cursor-pointer hover:text-brand-500 transition-colors group">
                       <div class="flex items-center gap-1">
                         Alertas
-                        <ChevronDownIcon 
+                        <ChevronDownIcon
                           v-if="sortBy === 'alertas'"
-                          class="w-3 h-3 text-brand-500 transition-transform duration-300" 
+                          class="w-3 h-3 text-brand-500 transition-transform duration-300"
                           :class="{ 'rotate-180': sortOrder === 'asc' }"
                         />
                       </div>
@@ -265,6 +265,8 @@ import {
   ChevronDownIcon
 } from '@/icons'
 
+import { ValidRoles } from '@/modules/auth/interfaces/roles.enum'
+
 const router = useRouter()
 const route = useRoute()
 const {
@@ -288,7 +290,7 @@ const {
 const authStore = useAuthStore()
 const isReadOnly = computed(() => {
   const roles = authStore.user?.roles || []
-  return !roles.includes('admin') && !roles.includes('coordinador')
+  return !roles.includes(ValidRoles.admin) && !roles.includes(ValidRoles.tecnico)
 })
 
 // UI State
@@ -302,47 +304,47 @@ const mareaToManage = ref<any>(null)
 // Map icons/colors to backend kpis
 const getKpiMeta = (codigo: string) => {
   const meta: Record<string, any> = {
-    'DESIGNADA': { 
-      icon: TaskIcon, 
-      color: 'text-blue-500', 
+    'DESIGNADA': {
+      icon: TaskIcon,
+      color: 'text-blue-500',
       border: 'border-blue-500/50 dark:border-blue-400/30',
-      bg: 'bg-blue-50 dark:bg-blue-900/20' 
+      bg: 'bg-blue-50 dark:bg-blue-900/20'
     },
-    'EN_EJECUCION': { 
-      icon: ShipIcon, 
-      color: 'text-indigo-500', 
+    'EN_EJECUCION': {
+      icon: ShipIcon,
+      color: 'text-indigo-500',
       border: 'border-indigo-500/50 dark:border-indigo-400/30',
-      bg: 'bg-indigo-50 dark:bg-indigo-900/20' 
+      bg: 'bg-indigo-50 dark:bg-indigo-900/20'
     },
-    'ESPERANDO_ENTREGA': { 
-      icon: HistoryIcon, 
-      color: 'text-amber-500', 
+    'ESPERANDO_ENTREGA': {
+      icon: HistoryIcon,
+      color: 'text-amber-500',
       border: 'border-amber-500/50 dark:border-amber-400/30',
-      bg: 'bg-amber-50 dark:bg-amber-900/20' 
+      bg: 'bg-amber-50 dark:bg-amber-900/20'
     },
-    'ENTREGADA_RECIBIDA': { 
-      icon: ArchiveIcon, 
-      color: 'text-emerald-500', 
+    'ENTREGADA_RECIBIDA': {
+      icon: ArchiveIcon,
+      color: 'text-emerald-500',
       border: 'border-emerald-500/50 dark:border-emerald-400/30',
-      bg: 'bg-emerald-50 dark:bg-emerald-900/20' 
+      bg: 'bg-emerald-50 dark:bg-emerald-900/20'
     },
-    'VERIFICACION_INICIAL': { 
-      icon: SearchIcon, 
-      color: 'text-cyan-500', 
+    'VERIFICACION_INICIAL': {
+      icon: SearchIcon,
+      color: 'text-cyan-500',
       border: 'border-cyan-500/50 dark:border-cyan-400/30',
-      bg: 'bg-cyan-50 dark:bg-cyan-900/20' 
+      bg: 'bg-cyan-50 dark:bg-cyan-900/20'
     },
-    'EN_CORRECCION': { 
-      icon: EditIcon, 
-      color: 'text-orange-500', 
+    'EN_CORRECCION': {
+      icon: EditIcon,
+      color: 'text-orange-500',
       border: 'border-orange-500/50 dark:border-orange-400/30',
-      bg: 'bg-orange-50 dark:bg-orange-900/20' 
+      bg: 'bg-orange-50 dark:bg-orange-900/20'
     },
-    'PENDIENTE_DE_INFORME': { 
-      icon: FileTextIcon, 
-      color: 'text-purple-500', 
+    'PENDIENTE_DE_INFORME': {
+      icon: FileTextIcon,
+      color: 'text-purple-500',
       border: 'border-purple-500/50 dark:border-purple-400/30',
-      bg: 'bg-purple-50 dark:bg-purple-900/20' 
+      bg: 'bg-purple-50 dark:bg-purple-900/20'
     },
   }
   return meta[codigo] || { icon: ShipIcon, color: 'text-gray-500', border: 'border-gray-200 dark:border-gray-800', bg: 'bg-gray-50 dark:bg-gray-900/20' }
@@ -432,10 +434,10 @@ const handleGestionCancel = () => {
 
 const handleGestionConfirm = async (payload: any) => {
     try {
-        const actionKey = gestionMode.value === 'INICIAR' 
-            ? 'REGISTRAR_INICIO' 
-            : gestionMode.value === 'FINALIZAR' 
-                ? 'REGISTRAR_ARRIBO' 
+        const actionKey = gestionMode.value === 'INICIAR'
+            ? 'REGISTRAR_INICIO'
+            : gestionMode.value === 'FINALIZAR'
+                ? 'REGISTRAR_ARRIBO'
                 : 'EDITAR_ETAPAS';
 
         await executeAction(mareaToManage.value.id, actionKey, payload)

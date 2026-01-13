@@ -39,7 +39,7 @@ defineProps({
     title: { type: String, default: 'Confirmación' },
     message: { type: String, default: '¿Está seguro de continuar?' },
     confirmText: { type: String, default: 'Confirmar' },
-    cancelText: { type: String, default: 'Cancelar' },
+    cancelText: { type: String, default: 'Volver' },
     confirmButtonClass: { type: String, default: 'bg-red-500 hover:bg-red-600 shadow-red-500/20' },
     isSidebarAware: { type: Boolean, default: true }
 })

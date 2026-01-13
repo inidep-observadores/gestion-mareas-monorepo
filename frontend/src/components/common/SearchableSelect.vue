@@ -26,8 +26,19 @@
       <div v-if="icon" class="absolute inset-y-0 left-0 flex items-center pl-3" :class="error ? 'text-red-500' : 'text-gray-400'">
         <component :is="icon" class="w-4 h-4" />
       </div>
-      <div class="absolute inset-y-0 right-0 flex items-center pr-4 text-gray-400 pointer-events-none transition-transform duration-300" :class="{ 'rotate-180': isOpen }">
-        <ChevronDownIcon class="w-4 h-4" />
+      <div class="absolute inset-y-0 right-0 flex items-center pr-3 gap-1">
+        <button 
+          v-if="modelValue !== null"
+          @click.stop="clearValue"
+          type="button"
+          class="p-1 text-gray-300 hover:text-red-500 hover:bg-red-50 dark:text-gray-600 dark:hover:bg-red-500/10 rounded-full transition-all group/clear"
+          title="Limpiar selección"
+        >
+          <XIcon class="w-3 h-3" />
+        </button>
+        <div class="text-gray-400 pointer-events-none transition-transform duration-300" :class="{ 'rotate-180': isOpen }">
+          <ChevronDownIcon class="w-4 h-4" />
+        </div>
       </div>
     </div>
 
@@ -72,7 +83,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
-import { ChevronDownIcon, CheckIcon } from '@/icons'
+import { ChevronDownIcon, CheckIcon, XIcon } from '@/icons'
 
 interface Option {
   value: string | number
@@ -150,6 +161,12 @@ const selectOption = (option: Option) => {
   emit('update:modelValue', option.value)
   emit('change', option.value)
   closeDropdown()
+}
+
+const clearValue = () => {
+  emit('update:modelValue', null)
+  emit('change', null)
+  searchQuery.value = ''
 }
 
 const onSearchInput = () => {
