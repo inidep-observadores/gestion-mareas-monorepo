@@ -185,7 +185,16 @@ const canAddStage = computed(() => {
   if (props.readOnly) return false;
   if (props.modelValue.length === 0) return true;
   const last = props.modelValue[props.modelValue.length - 1];
-  return !!last.fechaArribo; // Only allow adding if last stage finished
+  
+  // Requiere todos los campos obligatorios para permitir una nueva etapa
+  return !!(
+    last.fechaZarpada &&
+    last.puertoZarpadaId &&
+    last.fechaArribo &&
+    last.puertoArriboId &&
+    last.pesqueriaId &&
+    last.tipoEtapa
+  );
 });
 
 async function addStage() {
