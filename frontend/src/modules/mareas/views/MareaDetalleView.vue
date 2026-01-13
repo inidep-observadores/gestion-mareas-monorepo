@@ -21,6 +21,13 @@
             <div class="w-1.5 h-1.5 rounded-full bg-brand-500 animate-pulse"></div>
             {{ marea.estado_nombre }}
           </div>
+
+          <div
+            v-if="marea.estado_codigo === 'EN_EJECUCION' && (!etapas[etapas.length - 1] || etapas[etapas.length - 1].fechaArribo)"
+            class="flex items-center gap-2 px-3 py-1.5 bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 text-xs font-bold uppercase tracking-wider rounded-full border border-blue-100 dark:border-blue-500/20"
+          >
+            En Tierra
+          </div>
         </div>
 
         <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">

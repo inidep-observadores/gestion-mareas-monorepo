@@ -328,6 +328,7 @@ export class MareasService {
                 puerto: etapaActual?.puertoArribo?.nombre || etapaActual?.puertoZarpada?.nombre || 'N/D',
                 observador: primaryObs ? `${primaryObs.nombre} ${primaryObs.apellido}` : 'Sin asignar',
                 progreso,
+                en_tierra: estadoCodigo === MareaEstado.EN_EJECUCION && (!etapaActual || etapaActual.fechaArribo !== null),
                 alertas: [],
                 actionsAvailable
             };

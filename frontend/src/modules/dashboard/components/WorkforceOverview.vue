@@ -1,6 +1,6 @@
 <template>
   <div
-    class="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900 border-l-4 border-l-indigo-500"
+    class="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900 border-l-4 border-l-indigo-500 h-full flex flex-col"
   >
     <div class="flex items-center gap-3 mb-8">
        <UserGroupIcon class="w-6 h-6 text-indigo-500" />
@@ -54,16 +54,16 @@
     </div>
 
     <!-- Detailed List Section -->
-    <div v-if="selectedStatus" class="animate-fadeIn">
-       <div class="rounded-2xl border border-gray-100 dark:border-gray-800 overflow-hidden">
-          <div class="bg-gray-50 dark:bg-gray-800/50 px-6 py-3 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center">
+    <div v-if="selectedStatus" class="animate-fadeIn flex-grow flex flex-col min-h-0">
+       <div class="rounded-2xl border border-gray-100 dark:border-gray-800 overflow-hidden flex flex-col flex-grow">
+          <div class="bg-gray-50 dark:bg-gray-800/50 px-6 py-3 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center shrink-0">
              <h3 class="text-xs font-black text-gray-500 uppercase tracking-widest">Detalle: {{ selectedStatus }}</h3>
              <button @click="selectedStatus = null" class="text-gray-400 hover:text-gray-600">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
              </button>
           </div>
           
-          <div class="max-h-[300px] overflow-y-auto">
+          <div class="flex-grow overflow-y-auto no-scrollbar min-h-0">
              <table class="w-full text-left border-collapse">
                 <thead class="bg-white dark:bg-gray-900 sticky top-0 z-10 shadow-sm">
                    <tr>
@@ -98,6 +98,10 @@
              </table>
           </div>
        </div>
+    </div>
+    <!-- Placeholder to maintain symmetry when not selected -->
+    <div v-else class="flex-grow flex items-center justify-center p-8 border-2 border-dashed border-gray-50 dark:border-gray-800/50 rounded-2xl">
+        <p class="text-[10px] font-black text-gray-300 dark:text-gray-700 uppercase tracking-[0.2em]">Seleccione un estado para ver el detalle</p>
     </div>
   </div>
 </template>

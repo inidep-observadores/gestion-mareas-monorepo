@@ -20,6 +20,7 @@ export interface MareaListItem {
     progreso: number;
     observador?: string;
     fecha_fin_observador?: string;
+    en_tierra?: boolean;
     alertas: any[];
     actionsAvailable: Record<string, { enabled: boolean; label: string; blockedReason?: string }>;
 }

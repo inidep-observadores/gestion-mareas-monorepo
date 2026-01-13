@@ -155,13 +155,21 @@
                         <span class="text-sm font-bold text-gray-900 dark:text-gray-100 leading-none">{{ marea.buque_nombre }}</span>
                       </div>
                     </td>
-                    <td class="px-5 py-1.5">
-                      <span
-                        class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-tighter"
-                        :class="getStatusClasses(marea.estado_codigo)"
-                      >
-                        {{ marea.estado }}
-                      </span>
+                    <td class="px-5 py-1.5 text-center">
+                      <div class="flex flex-col items-center gap-1">
+                        <span
+                          class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-tighter whitespace-nowrap"
+                          :class="getStatusClasses(marea.estado_codigo)"
+                        >
+                          {{ marea.estado }}
+                        </span>
+                        <span
+                          v-if="marea.en_tierra"
+                          class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-tighter bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400 border border-blue-100 dark:border-blue-500/20"
+                        >
+                          En Tierra
+                        </span>
+                      </div>
                     </td>
                     <td class="px-5 py-1.5">
                       <div class="flex flex-col">
