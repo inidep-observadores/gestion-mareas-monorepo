@@ -25,9 +25,9 @@
       <!-- ROW 2: CRITICAL PANELS -->
       <div class="grid grid-cols-12 gap-8 mb-8 items-start">
         <!-- ALERT CENTER (Left) -->
-        <div class="col-span-12 lg:col-span-6 xl:col-span-5 flex flex-col gap-8">
+        <div class="col-span-12 lg:col-span-6 xl:col-span-5 flex flex-col gap-8 h-full">
           <AlertTrafficLight :show-actions="false" />
-          <WorkforceOverview :data="workforceData" />
+          <WorkforceOverview :data="workforceData" class="flex-grow" />
         </div>
 
         <!-- PANELS DERECHA (Right) -->
