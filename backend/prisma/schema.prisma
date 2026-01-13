@@ -499,7 +499,7 @@ model EstadoMarea {
   descripcion          String?
   categoria            String
   orden                Int
-  esInicial            Boolean            @default(false) @map("es_inicial")
+  esInicial            Boolean            @default(false) @map("es_initial")
   esFinal              Boolean            @default(false) @map("es_final")
   permiteCargaArchivos Boolean            @default(false) @map("permite_carga_archivos")
   permiteCorreccion    Boolean            @default(false) @map("permite_correccion")

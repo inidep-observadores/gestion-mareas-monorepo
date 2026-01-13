@@ -2,10 +2,18 @@ import * as dotenv from 'dotenv';
 import * as path from 'path';
 
 dotenv.config();
-if (!process.env.DATABASE_URL) {
-  console.log('Loading .env.develop...');
+
+function expandEnv(str: string | undefined): string | undefined {
+  if (!str) return str;
+  return str.replace(/\${(\w+)}/g, (_, v) => process.env[v] || '');
+}
+
+// Si no hay DATABASE_URL o contiene variables sin expandir, intentar cargar .env.develop
+if (!process.env.DATABASE_URL || process.env.DATABASE_URL.includes('${')) {
   dotenv.config({ path: path.join(process.cwd(), '.env.develop') });
 }
+
+process.env.DATABASE_URL = expandEnv(process.env.DATABASE_URL);
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import * as bcrypt from 'bcrypt';
