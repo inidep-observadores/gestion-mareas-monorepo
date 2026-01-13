@@ -247,7 +247,7 @@ model Marea {
   movimientos              MareaMovimiento[]
   producciones             Produccion[]
 
-  @@unique([anioMarea, nroMarea, tipoMarea], name: "identificadorMarea")
+  @@unique([anioMarea, nroMarea, buqueId, tipoMarea], name: "identificadorMarea")
   @@map("mareas")
 }
 
@@ -299,6 +299,7 @@ model MareaMovimiento {
   estadoHastaId            String?        @map("id_estado_hasta") @db.Uuid
   cantidadMuestrasOtolitos Int?           @map("cantidad_muestras_otolitos")
   detalle                  String?
+  comentarios              String?
   archivos                 MareaArchivo[]
   estadoDesde              EstadoMarea?   @relation("EstadoDesde", fields: [estadoDesdeId], references: [id])
   estadoHasta              EstadoMarea?   @relation("EstadoHasta", fields: [estadoHastaId], references: [id])

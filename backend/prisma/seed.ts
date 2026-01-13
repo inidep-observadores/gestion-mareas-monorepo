@@ -361,7 +361,7 @@ async function main() {
   const transicionesData = [
     { from: 'DESIGNADA', to: 'EN_EJECUCION', action: 'REGISTRAR_INICIO', label: 'Registrar Inicio', btn: 'primary' },
     { from: 'EN_EJECUCION', to: 'ESPERANDO_ENTREGA', action: 'REGISTRAR_ARRIBO', label: 'Confirmar Arribo', btn: 'primary' },
-    { from: 'ESPERANDO_ENTREGA', to: 'ENTREGADA_RECIBIDA', action: 'RECIBIR_DATOS', label: 'Recibir Archivos', btn: 'primary' },
+    { from: 'ESPERANDO_ENTREGA', to: 'ENTREGADA_RECIBIDA', action: 'RECIBIR_DATOS', label: 'Recibir Archivos de Marea', btn: 'primary' },
     { from: 'ENTREGADA_RECIBIDA', to: 'VERIFICACION_INICIAL', action: 'INICIAR_VERIFICACION', label: 'Iniciar Verificación', btn: 'primary' },
     { from: 'VERIFICACION_INICIAL', to: 'EN_CORRECCION', action: 'ABRIR_CORRECCION', label: 'Abrir Corrección', btn: 'secondary' },
     { from: 'VERIFICACION_INICIAL', to: 'PENDIENTE_DE_INFORME', action: 'PASAR_A_INFORME', label: 'Pasar a Informe', btn: 'primary' },

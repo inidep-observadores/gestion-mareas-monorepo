@@ -1177,7 +1177,7 @@ export class MareasService {
                 fecha_zarpada: fechaZarpada,
                 fecha_zarpada_estimada: marea.fechaZarpadaEstimada,
                 fechaInicioObservador: marea.fechaInicioObservador,
-                fechaFinObservador: marea.fechaFinObservador,
+                fecha_fin_observador: marea.fechaFinObservador,
                 dias_marea: diasMarea,
                 dias_navegados: diasNavegados,
                 alertas: [],
@@ -1441,6 +1441,16 @@ export class MareasService {
                 }
             }
 
+            if (actionKey === 'RECIBIR_DATOS') {
+                const fechaRecepcion = payload.fechaRecepcion;
+                if (!fechaRecepcion) throw new Error('La fecha de recepción es requerida.');
+
+                const dateRecepcion = new Date(fechaRecepcion);
+                if (marea.fechaFinObservador && dateRecepcion < new Date(marea.fechaFinObservador)) {
+                    throw new Error('La fecha de recepción no puede ser anterior a la finalización del observador.');
+                }
+            }
+
             const mareaUpdated = await tx.marea.update({
                 where: { id },
                 data: {
@@ -1463,7 +1473,8 @@ export class MareasService {
                         ? `Inicio Marea. Obs: ${new Date(additionalMareaData.fechaInicioObservador).toLocaleDateString('es-AR')}`
                         : actionKey === 'REGISTRAR_ARRIBO'
                             ? `Fin Marea. Obs: ${new Date(additionalMareaData.fechaFinObservador).toLocaleDateString('es-AR')}`
-                            : `Acción: ${transicion.etiqueta}`
+                            : `Acción: ${transicion.etiqueta}`,
+                    comentarios: payload.comentarios
                 }
             });
 
