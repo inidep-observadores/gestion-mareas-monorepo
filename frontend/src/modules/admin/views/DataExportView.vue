@@ -84,6 +84,7 @@
             <tr class="bg-gray-50/50 dark:bg-gray-800/50 text-[11px] uppercase tracking-widest text-gray-400 font-black">
               <th class="px-6 py-4">Archivo</th>
               <th class="px-6 py-4">Fecha</th>
+              <th class="px-6 py-4">Comentario</th>
               <th class="px-6 py-4 text-right">Tamaño</th>
               <th class="px-6 py-4 text-center">Acciones</th>
             </tr>
@@ -92,6 +93,7 @@
             <tr v-for="file in files" :key="file.filename" class="hover:bg-gray-50/30 dark:hover:bg-gray-800/20 transition-colors">
               <td class="px-6 py-4 font-mono text-sm text-gray-700 dark:text-gray-300">{{ file.filename }}</td>
               <td class="px-6 py-4 text-sm text-gray-500">{{ formatDate(file.createdAt) }}</td>
+              <td class="px-6 py-4 text-sm text-gray-500 italic max-w-xs truncate" :title="file.comment">{{ file.comment || '-' }}</td>
               <td class="px-6 py-4 text-sm text-gray-500 text-right">{{ formatSize(file.size) }}</td>
               <td class="px-6 py-4 text-center">
                  <button 
@@ -99,7 +101,14 @@
                     class="inline-flex items-center justify-center p-2 text-green-600 bg-green-50 dark:bg-green-900/10 rounded-lg hover:bg-green-100 dark:hover:bg-green-900/20 transition-colors"
                     title="Descargar ZIP"
                 >
-                    <DownloadIcon class="w-5 h-5" />
+                     <DownloadIcon class="w-5 h-5" />
+                 </button>
+                 <button 
+                    @click="confirmDelete(file)"
+                    class="inline-flex items-center justify-center p-2 text-red-600 bg-red-50 dark:bg-red-900/10 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/20 transition-colors"
+                    title="Eliminar Archivo"
+                >
+                    <TrashIcon class="w-5 h-5" />
                 </button>
               </td>
             </tr>
@@ -134,6 +143,30 @@
       confirm-button-class="bg-brand-500 hover:bg-brand-600 shadow-brand-500/20"
       @close="showExportModal = false"
       @confirm="confirmCreateExport"
+    >
+      <div class="mt-6 space-y-2">
+        <label class="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-gray-400 dark:text-gray-500 ml-1">
+          <ChatIcon class="w-3.5 h-3.5" />
+          Comentario descriptivo
+        </label>
+        <textarea 
+          v-model="newExportComment" 
+          rows="3" 
+          class="w-full px-4 py-3 rounded-2xl border-2 border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/50 focus:bg-white dark:focus:bg-gray-900 focus:border-brand-500/50 focus:ring-4 focus:ring-brand-500/10 transition-all duration-300 outline-none text-sm placeholder:text-gray-400 dark:placeholder:text-gray-600 resize-none"
+          placeholder="Ej: Exportación final temporada Centolla 2024..."
+        ></textarea>
+      </div>
+    </ConfirmationDialog>
+
+    <!-- Modal de Confirmación de Borrado -->
+    <ConfirmationDialog
+        :show="showDeleteModal"
+        title="Eliminar Archivo de Exportación"
+        :message="`¿Está seguro que desea eliminar el archivo ${selectedExport?.filename}? Esta acción no se puede deshacer.`"
+        confirm-text="Eliminar"
+        confirm-button-class="bg-red-500 hover:bg-red-600 shadow-red-500/20"
+        @close="showDeleteModal = false"
+        @confirm="handleDelete"
     />
 
     <!-- Overlay de Procesamiento -->
@@ -160,13 +193,16 @@ import {
     DownloadIcon,
     ArchiveIcon,
     ListIcon,
-    InfoCircleIcon
+    InfoCircleIcon,
+    TrashIcon,
+    ChatIcon
 } from '@/icons';
 
 interface ExportFile {
   filename: string;
   size: number;
   createdAt: string;
+  comment?: string;
 }
 
 const files = ref<ExportFile[]>([]);
@@ -175,6 +211,9 @@ const isCreating = ref(false);
 const isRestoring = ref(false);
 const isProcessing = ref(false);
 const showExportModal = ref(false);
+const showDeleteModal = ref(false);
+const selectedExport = ref<ExportFile | null>(null);
+const newExportComment = ref('');
 const fileInput = ref<HTMLInputElement | null>(null);
 
 const handleDownload = async (filename: string) => {
@@ -220,8 +259,11 @@ const confirmCreateExport = async () => {
     isCreating.value = true;
     isProcessing.value = true;
     try {
-        await httpClient.post('/admin/data-export');
+        await httpClient.post('/admin/data-export', {
+            comment: newExportComment.value
+        });
         toast.success('Exportación generada correctamente');
+        newExportComment.value = '';
         fetchExports();
     } catch (error) {
         toast.error('Error al generar la exportación');
@@ -280,6 +322,25 @@ const handleImportConfirm = async () => {
         isRestoring.value = false;
         isProcessing.value = false;
         selectedFile.value = null;
+    }
+};
+
+const confirmDelete = (file: ExportFile) => {
+    selectedExport.value = file;
+    showDeleteModal.value = true;
+};
+
+const handleDelete = async () => {
+    if (!selectedExport.value) return;
+    showDeleteModal.value = false;
+    try {
+        await httpClient.delete(`/admin/data-export/${selectedExport.value.filename}`);
+        toast.success('Archivo de exportación eliminado');
+        fetchExports();
+    } catch (error) {
+        toast.error('No se pudo eliminar el archivo');
+    } finally {
+        selectedExport.value = null;
     }
 };
 

@@ -28,10 +28,12 @@ export class BackupService {
         };
     }
 
-    async createBackup() {
+    async createBackup(comment?: string) {
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
         const filename = `BKP-${timestamp}.sql`;
+        const metaFilename = `BKP-${timestamp}.json`;
         const filePath = path.join(this.backupPath, filename);
+        const metaPath = path.join(this.backupPath, metaFilename);
 
         const dbName = this.configService.get('DB_NAME');
         const dbUser = this.configService.get('DB_USERNAME');
@@ -72,6 +74,18 @@ export class BackupService {
                 fs.writeFileSync(filePath, output);
             }
 
+            // Guardar metadatos
+            const metadata = {
+                filename,
+                comment: comment || '',
+                createdAt: new Date().toISOString(),
+                systemInfo: {
+                    dbName: dbName,
+                    backupPath: this.backupPath
+                }
+            };
+            fs.writeFileSync(metaPath, JSON.stringify(metadata, null, 2));
+
             const stats = fs.statSync(filePath);
             console.log(`[BackupService] === BACKUP FINALIZADO === Tamaño: ${stats.size} bytes`);
 
@@ -97,11 +111,28 @@ export class BackupService {
             return files
                 .filter(f => f.startsWith('BKP-') && f.endsWith('.sql'))
                 .map(f => {
-                    const stats = fs.statSync(path.join(this.backupPath, f));
+                    const fullPath = path.join(this.backupPath, f);
+                    const stats = fs.statSync(fullPath);
+                    
+                    const metaPath = fullPath.replace('.sql', '.json');
+                    let comment = '';
+                    let createdAt = stats.birthtime;
+
+                    if (fs.existsSync(metaPath)) {
+                        try {
+                            const meta = JSON.parse(fs.readFileSync(metaPath, 'utf8'));
+                            comment = meta.comment || '';
+                            if (meta.createdAt) createdAt = new Date(meta.createdAt);
+                        } catch (e) {
+                            this.logger.error(`Error reading metadata for ${f}: ${e.message}`);
+                        }
+                    }
+
                     return {
                         filename: f,
                         size: stats.size,
-                        createdAt: stats.birthtime,
+                        createdAt,
+                        comment
                     };
                 })
                 .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
@@ -207,6 +238,10 @@ export class BackupService {
 
         try {
             fs.unlinkSync(filePath);
+            const metaPath = filePath.replace('.sql', '.json');
+            if (fs.existsSync(metaPath)) {
+                fs.unlinkSync(metaPath);
+            }
             return { message: 'Backup deleted successfully' };
         } catch (error) {
             this.logger.error(`Deletion failed: ${error.message}`);

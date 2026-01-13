@@ -7,9 +7,15 @@
       <div class="absolute inset-0 bg-gray-950/40 backdrop-blur-sm" @click="$emit('close')"></div>
       <div class="bg-white dark:bg-gray-900 rounded-2xl p-8 max-w-md w-full shadow-2xl relative animate-in fade-in zoom-in-95 duration-300">
         <h3 class="text-xl font-bold text-gray-800 dark:text-white mb-2">{{ title }}</h3>
-        <p class="text-gray-500 text-sm leading-relaxed mb-8">
+        <p class="text-gray-500 text-sm leading-relaxed" :class="{ 'mb-8': !$slots.default, 'mb-4': $slots.default }">
           {{ message }}
         </p>
+        
+        <!-- Slot para contenido adicional (como comentarios) -->
+        <div v-if="$slots.default" class="mb-8">
+          <slot />
+        </div>
+
         <div class="grid grid-cols-2 gap-4">
           <button 
             @click="$emit('close')"

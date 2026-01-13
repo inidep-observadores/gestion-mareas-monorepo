@@ -25,10 +25,12 @@ export class DataExportService {
         }
     }
 
-    async generateExport() {
+    async generateExport(comment?: string) {
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
         const zipFilename = `EXPORT-${timestamp}.zip`;
+        const manifestFilename = `EXPORT-${timestamp}.json`;
         const zipPath = path.join(this.exportPath, zipFilename);
+        const manifestPath = path.join(this.exportPath, manifestFilename);
         const output = fs.createWriteStream(zipPath);
         const archive = archiver('zip', { zlib: { level: 9 } });
 
@@ -37,10 +39,21 @@ export class DataExportService {
         return new Promise((resolve, reject) => {
             output.on('close', () => {
                 this.logger.log(`Export completed: ${archive.pointer()} total bytes`);
+                
+                // Guardar manifiesto externo
+                const manifest = {
+                    filename: zipFilename,
+                    comment: comment || '',
+                    createdAt: new Date().toISOString(),
+                    size: archive.pointer()
+                };
+                fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
+
                 resolve({
                     filename: zipFilename,
                     size: archive.pointer(),
-                    path: zipPath
+                    path: zipPath,
+                    comment: manifest.comment
                 });
             });
 
@@ -51,7 +64,7 @@ export class DataExportService {
 
             archive.pipe(output);
 
-            this.appendDataToArchive(archive).catch(reject);
+            this.appendDataToArchive(archive, comment).catch(reject);
         });
     }
 
@@ -63,11 +76,28 @@ export class DataExportService {
             return files
                 .filter(f => f.startsWith('EXPORT-') && f.endsWith('.zip'))
                 .map(f => {
-                    const stats = fs.statSync(path.join(this.exportPath, f));
+                    const fullPath = path.join(this.exportPath, f);
+                    const stats = fs.statSync(fullPath);
+                    
+                    const manifestPath = fullPath.replace('.zip', '.json');
+                    let comment = '';
+                    let createdAt = stats.birthtime;
+
+                    if (fs.existsSync(manifestPath)) {
+                        try {
+                            const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+                            comment = manifest.comment || '';
+                            if (manifest.createdAt) createdAt = new Date(manifest.createdAt);
+                        } catch (e) {
+                            this.logger.error(`Error reading manifest for ${f}: ${e.message}`);
+                        }
+                    }
+
                     return {
                         filename: f,
                         size: stats.size,
-                        createdAt: stats.birthtime,
+                        createdAt,
+                        comment
                     };
                 })
                 .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
@@ -88,8 +118,13 @@ export class DataExportService {
         return filePath;
     }
 
-    private async appendDataToArchive(archive: archiver.Archiver) {
-        archive.append(JSON.stringify({ info: "Export started", date: new Date(), version: "1.0" }), { name: 'metadata.json' });
+    private async appendDataToArchive(archive: archiver.Archiver, comment?: string) {
+        archive.append(JSON.stringify({ 
+            info: "Export started", 
+            comment: comment || '',
+            date: new Date(), 
+            version: "1.0" 
+        }), { name: 'metadata.json' });
 
         await this.exportCatalogs(archive);
         await this.exportBuques(archive);
@@ -816,6 +851,27 @@ export class DataExportService {
             await this.prisma.marea.create({
                 data: mareaData as any
             });
+        }
+    }
+
+    async deleteExport(filename: string) {
+        const safeFilename = path.basename(filename);
+        const filePath = path.join(this.exportPath, safeFilename);
+
+        if (!fs.existsSync(filePath)) {
+            throw new NotFoundException('Export file not found');
+        }
+
+        try {
+            fs.unlinkSync(filePath);
+            const manifestPath = filePath.replace('.zip', '.json');
+            if (fs.existsSync(manifestPath)) {
+                fs.unlinkSync(manifestPath);
+            }
+            return { message: 'Export deleted successfully' };
+        } catch (error) {
+            this.logger.error(`Deletion failed: ${error.message}`);
+            throw new InternalServerErrorException('Failed to delete export');
         }
     }
 }

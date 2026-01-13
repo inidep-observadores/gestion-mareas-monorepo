@@ -61,6 +61,7 @@
             <tr class="bg-gray-50/50 dark:bg-gray-800/50 text-[11px] uppercase tracking-widest text-gray-400 font-black">
               <th class="px-6 py-4">Archivo</th>
               <th class="px-6 py-4">Fecha</th>
+              <th class="px-6 py-4">Comentario</th>
               <th class="px-6 py-4 text-right">Tamaño</th>
               <th class="px-6 py-4 text-center">Acciones</th>
             </tr>
@@ -69,6 +70,7 @@
             <tr v-for="bkp in backups" :key="bkp.filename" class="hover:bg-gray-50/30 dark:hover:bg-gray-800/20 transition-colors">
               <td class="px-6 py-4 font-mono text-sm text-gray-700 dark:text-gray-300">{{ bkp.filename }}</td>
               <td class="px-6 py-4 text-sm text-gray-500">{{ formatDate(bkp.createdAt) }}</td>
+              <td class="px-6 py-4 text-sm text-gray-500 italic max-w-xs truncate" :title="bkp.comment">{{ bkp.comment || '-' }}</td>
               <td class="px-6 py-4 text-sm text-gray-500 text-right">{{ formatSize(bkp.size) }}</td>
               <td class="px-6 py-4">
                 <div class="flex justify-center gap-3">
@@ -130,7 +132,20 @@
         confirm-button-class="bg-brand-500 hover:bg-brand-600 shadow-brand-500/20"
         @close="showCreateConfirmModal = false"
         @confirm="handleCreateBackup"
-    />
+    >
+      <div class="mt-6 space-y-2">
+        <label class="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-gray-400 dark:text-gray-500 ml-1">
+          <ChatIcon class="w-3.5 h-3.5" />
+          Comentario opcional
+        </label>
+        <textarea 
+          v-model="newBackupComment" 
+          rows="3" 
+          class="w-full px-4 py-3 rounded-2xl border-2 border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/50 focus:bg-white dark:focus:bg-gray-900 focus:border-brand-500/50 focus:ring-4 focus:ring-brand-500/10 transition-all duration-300 outline-none text-sm placeholder:text-gray-400 dark:placeholder:text-gray-600 resize-none"
+          placeholder="Ej: Antes de grandes cambios en la base de datos..."
+        ></textarea>
+      </div>
+    </ConfirmationDialog>
 
     <!-- Overlay de Procesamiento (Backup o Restauración en curso) -->
     <ProcessingOverlay 
@@ -159,13 +174,15 @@ import {
     WarningIcon, 
     InfoCircleIcon,
     BoxCubeIcon,
-    ListIcon
+    ListIcon,
+    ChatIcon
 } from '@/icons';
 
 interface BackupFile {
   filename: string;
   size: number;
   createdAt: string;
+  comment?: string;
 }
 
 const backups = ref<BackupFile[]>([]);
@@ -177,6 +194,7 @@ const isProcessing = ref(false);
 const showRestoreModal = ref(false);
 const showDeleteModal = ref(false);
 const showCreateConfirmModal = ref(false);
+const newBackupComment = ref('');
 const selectedBackup = ref<BackupFile | null>(null);
 const backendStatus = ref({ isConfigured: true, backupPath: '' });
 
@@ -223,8 +241,11 @@ const handleCreateBackup = async () => {
     isCreating.value = true;
     isProcessing.value = true;
     try {
-        await httpClient.post('/admin/backup');
+        await httpClient.post('/admin/backup', {
+            comment: newBackupComment.value
+        });
         toast.success('Copia de seguridad creada correctamente');
+        newBackupComment.value = '';
         fetchBackups();
     } catch (error) {
         toast.error('Falló la creación de la copia de seguridad');

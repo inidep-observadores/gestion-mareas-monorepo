@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Res, UploadedFile, UseInterceptors, Param, BadRequestException } from '@nestjs/common';
+import { Controller, Post, Get, Res, UploadedFile, UseInterceptors, Param, BadRequestException, Body, Delete } from '@nestjs/common';
 import { DataExportService } from './data-export.service';
 import { Response } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -12,8 +12,8 @@ export class DataExportController {
     constructor(private readonly dataExportService: DataExportService) { }
 
     @Post()
-    async generateExport() {
-        return this.dataExportService.generateExport();
+    async generateExport(@Body('comment') comment?: string) {
+        return this.dataExportService.generateExport(comment);
     }
 
     @Get()
@@ -32,5 +32,10 @@ export class DataExportController {
     async importData(@UploadedFile() file: Express.Multer.File) {
         if (!file) throw new BadRequestException('File is required');
         return this.dataExportService.importData(file.path);
+    }
+
+    @Delete(':filename')
+    async deleteExport(@Param('filename') filename: string) {
+        return this.dataExportService.deleteExport(filename);
     }
 }
