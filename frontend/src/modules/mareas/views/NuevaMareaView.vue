@@ -288,7 +288,7 @@
       title="¿Cancelar Registro?"
       message="Si cancela ahora, perderá todos los datos ingresados en el formulario. ¿Está seguro de que desea continuar?"
       confirm-text="Si, Cancelar"
-      cancel-text="No, Volver"
+      cancel-text="Volver"
       @close="showCancelConfirm = false"
       @confirm="confirmCancel"
     />

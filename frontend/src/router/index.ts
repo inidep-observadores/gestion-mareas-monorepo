@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { ValidRoles } from '@/modules/auth/interfaces/roles.enum'
 
 import BandejaView from '@/modules/mareas/views/BandejaView.vue'
 import PanelOperativoView from '@/modules/mareas/views/PanelOperativoView.vue'
@@ -157,7 +158,7 @@ const router = createRouter({
       meta: {
         title: 'Estadísticas Anuales',
         requiresAuth: true,
-        roles: ['admin', 'coordinador'],
+        roles: [ValidRoles.admin, ValidRoles.coordinador],
       },
     },
     {
@@ -181,7 +182,7 @@ const router = createRouter({
       meta: {
         title: 'Gestión de Usuarios',
         requiresAuth: true,
-        roles: ['admin'],
+        roles: [ValidRoles.admin],
       },
     },
     {
@@ -191,7 +192,7 @@ const router = createRouter({
       meta: {
         title: 'Gestión de Observadores',
         requiresAuth: true,
-        roles: ['admin'],
+        roles: [ValidRoles.admin],
       },
     },
     {
@@ -201,7 +202,7 @@ const router = createRouter({
       meta: {
         title: 'Gestión de Buques',
         requiresAuth: true,
-        roles: ['admin'],
+        roles: [ValidRoles.admin],
       },
     },
     {
@@ -211,7 +212,7 @@ const router = createRouter({
       meta: {
         title: 'Auditoría de Errores',
         requiresAuth: true,
-        roles: ['admin'],
+        roles: [ValidRoles.admin],
       },
     },
     {
@@ -221,7 +222,7 @@ const router = createRouter({
       meta: {
         title: 'Copia de Seguridad',
         requiresAuth: true,
-        roles: ['admin'],
+        roles: [ValidRoles.admin],
       },
     },
     {
@@ -231,7 +232,7 @@ const router = createRouter({
       meta: {
         title: 'Portabilidad de Datos',
         requiresAuth: true,
-        roles: ['admin'],
+        roles: [ValidRoles.admin],
       },
     },
     // 404 No encontrado
@@ -294,14 +295,14 @@ router.beforeEach(async (to, from, next) => {
   }
 
   // 3. User with 'invitado' role must be trapped in '/unauthorized'
-  const isGuest = authStore.user?.roles?.includes('invitado')
+  const isGuest = authStore.user?.roles?.includes(ValidRoles.invitado)
   if (isAuthenticated && isGuest && to.name !== 'Unauthorized') {
     return next({ name: 'Unauthorized' })
   }
 
   // 4. Check for Roles (Regular role authorization)
   if (to.meta.roles) {
-    const roles = to.meta.roles as string[]
+    const roles = to.meta.roles as ValidRoles[]
     const userRoles = authStore.user?.roles || []
     const hasRole = roles.some(role => userRoles.includes(role))
 

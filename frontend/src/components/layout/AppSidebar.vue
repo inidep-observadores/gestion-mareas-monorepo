@@ -164,6 +164,8 @@ import { useSidebar } from '@/composables/useSidebar'
 import { useAuthStore } from '@/modules/auth/stores/auth.store'
 import { useConfigStore } from '@/modules/shared/stores/config.store'
 
+import { ValidRoles } from '@/modules/auth/interfaces/roles.enum'
+
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
@@ -174,8 +176,8 @@ const availableYears = Array.from({ length: 5 }, (_, i) => currentYear - 2 + i)
 
 const { isExpanded, isMobileOpen, isHovered } = useSidebar()
 
-const isAdmin = computed(() => authStore.user?.roles.includes('admin'))
-const isCoordinator = computed(() => authStore.user?.roles.includes('coordinador'))
+const isAdmin = computed(() => authStore.user?.roles.includes(ValidRoles.admin))
+const isCoordinator = computed(() => authStore.user?.roles.includes(ValidRoles.coordinador))
 
 const navigationGroups = computed(() => {
   const groups = [
