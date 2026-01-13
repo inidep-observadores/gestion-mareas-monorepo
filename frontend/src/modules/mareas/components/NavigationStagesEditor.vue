@@ -23,7 +23,10 @@
       <div v-for="(stage, index) in modelValue" :key="index"
            :id="`stage-card-${index}`"
            class="bg-white dark:bg-gray-950 border border-gray-100 dark:border-gray-800 rounded-2xl p-4 relative group transition-all shadow-sm hover:shadow-md"
-           :class="{'border-red-200 bg-red-50/10': hasOverlap(index)}">
+           :class="{
+             'border-red-200 bg-red-50/10': hasOverlap(index),
+             'border-amber-200 bg-amber-50/10': isInternalInconsistent(index)
+           }">
 
         <!-- Header: Simple & Clean -->
         <div class="flex items-center justify-between mb-4">
@@ -133,10 +136,16 @@
           </div>
         </div>
 
-        <!-- Overlap Warning -->
+        <!-- Overlap Warning (Inter-stage) -->
         <div v-if="hasOverlap(index)" class="mt-3 p-1.5 bg-red-50 dark:bg-red-500/10 rounded-lg text-[9px] text-red-600 font-black flex items-center gap-1.5 animate-in slide-in-from-top-1">
            <WarningIcon class="w-3 h-3" />
            LA FECHA DE ZARPADA ES ANTERIOR AL ARRIBO PREVIO
+        </div>
+
+        <!-- Inconsistency Warning (Internal) -->
+        <div v-if="isInternalInconsistent(index)" class="mt-3 p-1.5 bg-amber-50 dark:bg-amber-500/10 rounded-lg text-[9px] text-amber-600 font-black flex items-center gap-1.5 animate-in slide-in-from-top-1">
+           <WarningIcon class="w-3 h-3" />
+           LA FECHA DE ARRIBO ES ANTERIOR A LA ZARPADA
         </div>
       </div>
     </div>
@@ -239,5 +248,15 @@ function hasOverlap(index: number) {
   const previousEnd = new Date(previous.fechaArribo).getTime();
   
   return currentStart < previousEnd; 
+}
+
+function isInternalInconsistent(index: number) {
+  const stage = props.modelValue[index];
+  if (!stage.fechaZarpada || !stage.fechaArribo) return false;
+  
+  const zarpada = new Date(stage.fechaZarpada).getTime();
+  const arribo = new Date(stage.fechaArribo).getTime();
+  
+  return arribo < zarpada;
 }
 </script>

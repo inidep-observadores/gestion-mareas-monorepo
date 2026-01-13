@@ -225,6 +225,12 @@ function hasOverlap(index: number): boolean {
 function stageErrors(index: number): boolean {
   const s = form.value.stages[index];
   const basic = !s.fechaZarpada || !s.puertoZarpadaId || !s.pesqueriaId;
+  
+  // Internal Chronology: Arrival >= Departure
+  if (s.fechaZarpada && s.fechaArribo) {
+    if (new Date(s.fechaArribo) < new Date(s.fechaZarpada)) return true;
+  }
+
   // If not last stage, or if FINALIZAR, arrival is required
   const arrivalRequired = props.mode === 'FINALIZAR' || index < form.value.stages.length - 1;
   if (arrivalRequired && (!s.fechaArribo || !s.puertoArriboId)) return true;

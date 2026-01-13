@@ -95,6 +95,7 @@ let MareasService = class MareasService {
                 });
             }
             if (etapas && etapas.length > 0) {
+                this.validateStagesChronology(etapas);
                 for (const etapa of etapas) {
                     const { observadores, id: etapaId, ...rest } = etapa;
                     const etapaData = { ...rest };
@@ -1088,6 +1089,7 @@ let MareasService = class MareasService {
     async syncStages(tx, mareaId, incomingStages) {
         if (!incomingStages || !Array.isArray(incomingStages))
             return;
+        this.validateStagesChronology(incomingStages);
         const incomingIds = incomingStages.filter((s) => s.id).map((s) => s.id);
         await tx.mareaEtapa.deleteMany({
             where: {
@@ -1138,6 +1140,28 @@ let MareasService = class MareasService {
                                 esDesignado: obsRel.esDesignado
                             }
                         });
+                    }
+                }
+            }
+        }
+    }
+    validateStagesChronology(stages) {
+        for (let i = 0; i < stages.length; i++) {
+            const current = stages[i];
+            if (current.fechaZarpada && current.fechaArribo) {
+                const zarpada = new Date(current.fechaZarpada);
+                const arribo = new Date(current.fechaArribo);
+                if (arribo < zarpada) {
+                    throw new Error(`Error en Etapa #${i + 1}: La fecha de arribo no puede ser anterior a la de zarpada.`);
+                }
+            }
+            if (i > 0) {
+                const previous = stages[i - 1];
+                if (current.fechaZarpada && previous.fechaArribo) {
+                    const currentZarpada = new Date(current.fechaZarpada);
+                    const prevArribo = new Date(previous.fechaArribo);
+                    if (currentZarpada < prevArribo) {
+                        throw new Error(`Error en Etapa #${i + 1}: La fecha de zarpada no puede ser anterior al arribo de la etapa anterior (#${i}).`);
                     }
                 }
             }
@@ -1240,7 +1264,7 @@ let MareasService = class MareasService {
         const { buqueId, anioMarea, nroMarea, pesqueriaId, observadorId, arteId, fechaZarpadaEstimada, tipoMarea = 'MC', diasEstimados } = createMareaDto;
         const existing = await this.prisma.marea.findMany({
             where: {
-                anioMarea, nroMarea, buqueId, tipoMarea
+                anioMarea, nroMarea, tipoMarea
             },
             take: 1
         });
