@@ -429,10 +429,21 @@
                   <span class="text-[11px] text-gray-400">{{ mov.fecha }}</span>
                 </div>
                 <div
+                  v-if="mov.detalle || mov.comentarios || mov.estado_desde || mov.estado_hasta || mov.cantidad_muestras_otolitos"
                   class="bg-gray-50 dark:bg-gray-800/40 border border-gray-100 dark:border-gray-800 p-4 rounded-xl"
                 >
-                  <p class="text-sm text-gray-700 dark:text-gray-300">{{ mov.detalle }}</p>
-                  <div v-if="mov.estado_desde || mov.estado_hasta || mov.cantidad_muestras_otolitos" class="mt-3 flex flex-wrap gap-2">
+                  <p v-if="mov.detalle" class="text-sm text-gray-700 dark:text-gray-300 font-medium mb-3">{{ mov.detalle }}</p>
+                  
+                  <!-- User Comments -->
+                  <div v-if="mov.comentarios" class="mb-4 p-3 bg-brand-500/5 dark:bg-brand-500/10 border-l-2 border-l-brand-500 rounded-r-lg">
+                    <p class="text-xs text-brand-600 dark:text-brand-400 font-bold uppercase tracking-wider mb-1 flex items-center gap-1">
+                      <ChatIcon class="w-3 h-3" />
+                      Comentario del usuario
+                    </p>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap italic">"{{ mov.comentarios }}"</p>
+                  </div>
+
+                  <div v-if="mov.estado_desde || mov.estado_hasta || mov.cantidad_muestras_otolitos" class="flex flex-wrap gap-2 pt-2 border-t border-gray-100 dark:border-gray-800">
                     <span
                       v-if="mov.estado_desde"
                       class="text-[10px] px-2 py-0.5 bg-white dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700 text-gray-500"
@@ -843,7 +854,8 @@ async function loadMarea() {
             evento: mov.tipoEvento,
             usuario: mov.usuario?.fullName || 'Sistema',
             fecha: formatDateTime(mov.fechaHora),
-            detalle: mov.detalle || 'Sin detalle registrado.',
+            detalle: mov.detalle,
+            comentarios: mov.comentarios,
             estado_desde: mov.estadoDesde?.nombre || null,
             estado_hasta: mov.estadoHasta?.nombre || null,
             cantidad_muestras_otolitos: mov.cantidadMuestrasOtolitos || null
@@ -905,7 +917,7 @@ const getFormatColor = (formato: string) => {
   }
 }
 
-const goBack = () => router.push({ name: 'MareasWorkflow' })
+const goBack = () => router.back()
 const toNumberOrUndefined = (value: any) => {
   if (value === null || value === undefined || value === '') return undefined
   const parsed = Number(value)

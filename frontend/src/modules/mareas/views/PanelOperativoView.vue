@@ -232,6 +232,13 @@
        @close="handleGestionCancel"
        @confirm="handleGestionConfirm"
     />
+
+    <RecibirArchivosDialog
+       :show="showRecibirDialog"
+       :marea="mareaToManage"
+       @close="handleRecibirCancel"
+       @confirm="handleRecibirConfirm"
+    />
   </AdminLayout>
 </template>
 
@@ -241,6 +248,7 @@ import { useRouter, useRoute } from 'vue-router'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import MareaContextSidebar from '../components/MareaContextSidebar.vue'
 import GestionEtapasMareaDialog from '../components/GestionEtapasMareaDialog.vue'
+import RecibirArchivosDialog from '../components/RecibirArchivosDialog.vue'
 import StatusFilterChip from '../components/StatusFilterChip.vue'
 import { useAuthStore } from '@/modules/auth/stores/auth.store'
 import { useMareas } from '../composables/useMareas'
@@ -287,6 +295,7 @@ const isReadOnly = computed(() => {
 const isSidebarOpen = ref(false)
 const selectedMarea = ref<any>(null)
 const showGestionDialog = ref(false)
+const showRecibirDialog = ref(false)
 const gestionMode = ref<'INICIAR' | 'EDITAR' | 'FINALIZAR'>('INICIAR')
 const mareaToManage = ref<any>(null)
 
@@ -402,6 +411,12 @@ const executeActionFromSidebar = async (actionKey: string) => {
     return
   }
 
+  if (actionKey === 'RECIBIR_DATOS') {
+    mareaToManage.value = mareaContext
+    showRecibirDialog.value = true
+    return
+  }
+
   try {
     await executeAction(selectedMarea.value.id, actionKey)
     closeSidebar()
@@ -430,6 +445,23 @@ const handleGestionConfirm = async (payload: any) => {
         await fetchDashboard()
     } catch (err) {
         console.error("Error en gestión de marea:", err)
+    }
+}
+
+const handleRecibirCancel = () => {
+    showRecibirDialog.value = false
+    closeSidebar()
+}
+
+const handleRecibirConfirm = async (payload: any) => {
+    try {
+        await executeAction(mareaToManage.value.id, 'RECIBIR_DATOS', payload)
+        showRecibirDialog.value = false
+        mareaToManage.value = null
+        closeSidebar()
+        await fetchDashboard()
+    } catch (err) {
+        console.error("Error en recepción de archivos:", err)
     }
 }
 

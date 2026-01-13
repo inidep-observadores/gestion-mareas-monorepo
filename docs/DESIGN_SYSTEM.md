@@ -86,9 +86,9 @@ Para mantener una experiencia coherente, las validaciones de formulario deben se
 - **Clases CSS**: 
     - Inputs estándar: `:class="fieldErrors.name ? 'border-red-500 bg-red-50/30' : 'border-gray-100 dark:border-gray-800'"`
     - Componentes Custom (`SearchableSelect`, `DatePicker`): Pasar prop `:error="fieldErrors.name"`.
-- **Mensaje de Error**: Mostrar un `<p>` inmediatamente debajo del control con:
-    - Clase: `text-[10px] text-red-500 font-bold uppercase mt-1`.
-- **Lógica**: Utilizar un objeto reactivo `fieldErrors` para mapear los mensajes de error por campo.
+- **Mensaje de Error**: Se debe mostrar obligatoriamente un `<p>` inmediatamente debajo del control (ya sea internamente en el componente o manualmente en el formulario):
+    - Clase: `text-[10px] text-red-500 font-bold uppercase mt-1 animate-in fade-in slide-in-from-top-1 duration-200`.
+- **Lógica**: Utilizar un objeto reactivo `fieldErrors` o `validationErrors` para mapear los mensajes de error por campo. Los componentes `DatePicker` y `SearchableSelect` ya gestionan esta visualización internamente al recibir la prop `error`.
 
 ### Protección de Datos (Navegación)
 En formularios de edición o creación (vistas o modales), si existen cambios sin guardar, se **debe** interceptar el intento de salida o cancelación ("Volver", cierre de modal, navegación atrás).
