@@ -474,16 +474,16 @@
         </div>
 
         <!-- 5. Documentación Tab -->
-        <div v-if="activeTab === 'docs'" class="space-y-12">
-          <div v-for="cat in docCategories" :key="cat.id" class="space-y-4">
-            <div class="flex items-center justify-between">
+        <div v-if="activeTab === 'docs'" class="space-y-16">
+          <div v-for="cat in docCategories" :key="cat.id" class="space-y-6">
+            <div class="flex items-center justify-between px-2">
               <h3
-                class="text-sm font-black uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500 flex items-center gap-3"
+                class="text-xs font-black uppercase tracking-[0.25em] text-gray-400 dark:text-gray-500 flex items-center gap-4"
               >
-                <span class="w-8 h-[1px] bg-gray-200 dark:bg-gray-800"></span>
+                <div class="w-10 h-[2px] bg-gradient-to-r from-brand-500 to-transparent rounded-full"></div>
                 {{ cat.label }}
               </h3>
-              <span class="text-[10px] font-bold text-gray-400"
+              <span class="text-[10px] font-bold bg-gray-100 dark:bg-gray-800 text-gray-500 px-2 py-0.5 rounded-full"
                 >{{ getFilesByCategory(cat.id).length }} archivos</span
               >
             </div>
@@ -492,22 +492,22 @@
               <!-- Extraction Blocked Warning for DATOS Category -->
               <div
                 v-if="cat.id === 'DATOS' && marea.estado_codigo === 'EN_CORRECCION'"
-                class="md:col-span-2 lg:col-span-3 bg-amber-50 dark:bg-amber-500/5 border border-dashed border-amber-200 dark:border-amber-500/20 rounded-2xl p-4 flex items-center gap-4"
+                class="md:col-span-2 lg:col-span-3 bg-amber-50 dark:bg-amber-500/5 border border-dashed border-amber-200 dark:border-amber-500/20 rounded-3xl p-6 flex items-center gap-5"
               >
                 <div
-                  class="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-500/10 flex items-center justify-center text-amber-600 dark:text-amber-400 shrink-0"
+                  class="w-12 h-12 rounded-2xl bg-amber-100 dark:bg-amber-500/10 flex items-center justify-center text-amber-600 dark:text-amber-400 shrink-0 shadow-sm"
                 >
-                  <LockIcon class="w-5 h-5" />
+                  <LockIcon class="w-6 h-6" />
                 </div>
                 <div>
                   <h4
-                    class="text-xs font-bold text-amber-800 dark:text-amber-400 uppercase tracking-wider"
+                    class="text-sm font-black text-amber-800 dark:text-amber-400 uppercase tracking-wider"
                   >
                     Extracción de datos bloqueada temporalmente
                   </h4>
-                  <p class="text-[11px] text-amber-700 dark:text-amber-500 mt-0.5">
+                  <p class="text-xs text-amber-700 dark:text-amber-500 mt-1 opacity-80">
                     La descarga de archivos de datos está restringida mientras se procesan las
-                    correcciones enviadas.
+                    correcciones enviadas. Los archivos volverán a estar disponibles tras la validación final.
                   </p>
                 </div>
               </div>
@@ -516,49 +516,54 @@
               <div
                 v-for="file in getFilesByCategory(cat.id)"
                 :key="file.id"
-                class="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all group flex items-center gap-4 relative overflow-hidden"
+                class="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-3xl p-6 shadow-sm hover:shadow-xl hover:scale-[1.02] hover:border-brand-200/50 dark:hover:border-brand-500/30 transition-all duration-300 group flex items-center gap-5 relative overflow-hidden"
               >
                 <!-- Format Icon -->
                 <div
-                  class="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
+                  class="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 shadow-inner group-hover:scale-110 transition-transform duration-300"
                   :class="getFormatColor(file.formato)"
                 >
-                  <FileTextIcon v-if="['PDF', 'DOCX'].includes(file.formato)" class="w-6 h-6" />
-                  <RefreshIcon v-else class="w-6 h-6 rotate-45" />
-                  <!-- Generic for data -->
+                  <FileTextIcon v-if="['PDF', 'DOCX'].includes(file.formato)" class="w-7 h-7" />
+                  <RefreshIcon v-else class="w-7 h-7 rotate-45" />
                 </div>
 
                 <div class="flex-1 min-w-0">
-                  <h4 class="text-sm font-bold text-gray-800 dark:text-gray-200 truncate">
+                  <h4 class="text-sm font-bold text-gray-800 dark:text-gray-100 truncate group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">
                     {{ file.nombre }}
                   </h4>
-                  <div class="flex items-center flex-wrap gap-2 mt-1">
-                    <span class="text-[10px] font-black text-gray-400">{{ file.formato }}</span>
-                    <span class="w-1 h-1 rounded-full bg-gray-300"></span>
-                    <span class="text-[10px] text-gray-400">{{ file.fecha }}</span>
-                    <span v-if="file.tipo_archivo" class="w-1 h-1 rounded-full bg-gray-300"></span>
-                    <span v-if="file.tipo_archivo" class="text-[10px] text-gray-400">{{ file.tipo_archivo }}</span>
-                    <span v-if="file.version" class="w-1 h-1 rounded-full bg-gray-300"></span>
-                    <span v-if="file.version" class="text-[10px] text-gray-400">{{ file.version }}</span>
+                  <div class="flex items-center flex-wrap gap-2 mt-1.5 opacity-70">
+                    <span class="text-[10px] font-black uppercase tracking-tight">{{ file.formato }}</span>
+                    <span class="w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-600"></span>
+                    <span class="text-[10px] font-medium">{{ file.fecha }}</span>
+                    <template v-if="file.tipo_archivo">
+                      <span class="w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-600"></span>
+                      <span class="text-[10px] font-medium">{{ file.tipo_archivo }}</span>
+                    </template>
+                    <template v-if="file.version">
+                      <span class="w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-600"></span>
+                      <span class="text-[10px] font-bold text-brand-500">v{{ file.version }}</span>
+                    </template>
                   </div>
                 </div>
 
                 <div class="flex items-center gap-1">
                   <button
-                    class="p-2 text-gray-400 hover:text-brand-500 hover:bg-brand-50 dark:hover:bg-brand-500/10 rounded-lg transition-colors"
-                    title="Descargar"
+                    class="p-2.5 text-gray-400 hover:text-brand-500 hover:bg-brand-50 dark:hover:bg-brand-500/10 rounded-xl transition-all active:scale-95"
+                    title="Descargar Archivo"
                   >
-                    <DownloadIcon class="w-4 h-4" />
+                    <DownloadIcon class="w-5 h-5" />
                   </button>
                 </div>
               </div>
 
               <!-- Upload Placeholder for Category -->
               <button
-                class="border-2 border-dashed border-gray-100 dark:border-gray-800/50 rounded-2xl p-5 flex items-center justify-center gap-3 text-gray-400 hover:border-brand-200 hover:text-brand-500 transition-all group"
+                class="border-2 border-dashed border-gray-100 dark:border-gray-800/50 rounded-3xl p-6 flex items-center justify-center gap-4 text-gray-400 hover:border-brand-300 hover:text-brand-600 dark:hover:text-brand-400 hover:bg-brand-50/30 dark:hover:bg-brand-500/5 transition-all duration-300 group shadow-sm active:scale-95"
               >
-                <CloudUploadIcon class="w-5 h-5 group-hover:scale-110 transition-transform" />
-                <span class="text-xs font-bold uppercase tracking-wider"
+                <div class="w-10 h-10 rounded-full bg-gray-50 dark:bg-gray-800 flex items-center justify-center group-hover:bg-brand-100 dark:group-hover:bg-brand-500/20 transition-colors">
+                  <CloudUploadIcon class="w-5 h-5 group-hover:scale-110 transition-transform" />
+                </div>
+                <span class="text-xs font-black uppercase tracking-widest"
                   >Adjuntar {{ cat.shortLabel }}</span
                 >
               </button>
@@ -567,58 +572,79 @@
         </div>
 
         <!-- 6. Administrativo Tab -->
-        <div v-if="activeTab === 'admin'" class="max-w-2xl">
+        <div v-if="activeTab === 'admin'" class="max-w-3xl">
           <div
-            class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl p-10 shadow-sm relative overflow-hidden"
+            class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-[2.5rem] p-12 shadow-2xl relative overflow-hidden"
           >
+            <!-- Decorative Elements -->
             <div
-              class="absolute -top-10 -right-10 w-40 h-40 bg-brand-500/5 rounded-full blur-3xl"
+              class="absolute -top-16 -right-16 w-64 h-64 bg-brand-500/10 rounded-full blur-3xl animate-pulse"
             ></div>
-            <h3 class="text-xl font-black text-gray-900 dark:text-white mb-8">
-              Protocolización Oficial
-            </h3>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-8">
-              <div class="space-y-1.5">
-                <label class="text-xs font-bold uppercase tracking-wider text-gray-400"
-                  >Nro. Protocolización</label
-                >
-                <input
-                  v-model="marea.nro_protocolizacion"
-                  type="number"
-                  class="form-input-premium text-lg font-black"
-                  placeholder="0000"
-                />
-              </div>
-              <div class="space-y-1.5">
-                <label class="text-xs font-bold uppercase tracking-wider text-gray-400"
-                  >Año Protocolización</label
-                >
-                <input
-                  v-model="marea.anio_protocolizacion"
-                  type="number"
-                  class="form-input-premium text-lg font-black"
-                  placeholder="2024"
-                />
-              </div>
-              <div class="sm:col-span-2 space-y-1.5">
-                <label class="text-xs font-bold uppercase tracking-wider text-gray-400"
-                  >Fecha de Protocolización</label
-                >
-                <DatePicker
-                  v-model="marea.fecha_protocolizacion"
-                  :show-time="false"
-                />
-              </div>
-            </div>
             <div
-              class="mt-10 p-4 bg-blue-50 dark:bg-blue-500/10 rounded-2xl border border-blue-100 dark:border-blue-500/20 flex gap-4"
-            >
-              <InfoCircleIcon class="w-5 h-5 text-blue-500 shrink-0" />
-              <p class="text-xs text-blue-700 dark:text-blue-300 leading-relaxed">
-                Al asignar un número de protocolización, la marea pasará automáticamente al estado
-                <strong>PROTOCOLIZADA</strong> y los datos de captura quedarán bloqueados para
-                edición.
-              </p>
+              class="absolute -bottom-16 -left-16 w-48 h-48 bg-blue-500/5 rounded-full blur-3xl"
+            ></div>
+
+            <div class="relative">
+              <div class="flex items-center gap-4 mb-10">
+                <div class="w-12 h-12 rounded-2xl bg-brand-500 flex items-center justify-center text-white shadow-lg shadow-brand-500/30">
+                  <ShieldIcon class="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 class="text-2xl font-black text-gray-900 dark:text-white leading-tight font-outfit">
+                    Protocolización Oficial
+                  </h3>
+                  <p class="text-sm text-gray-500 dark:text-gray-400 font-medium opacity-80 mt-0.5 font-outfit">
+                    Gestione el registro legal y el cierre administrativo de la marea.
+                  </p>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-8">
+                <div class="space-y-2">
+                  <label class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 ml-1"
+                    >Nro. Protocolización</label
+                  >
+                  <input
+                    v-model="marea.nro_protocolizacion"
+                    type="number"
+                    class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border-none rounded-2xl focus:ring-2 focus:ring-brand-500/20 text-gray-800 dark:text-gray-200 transition-all font-medium outline-none"
+                    placeholder="0000"
+                  />
+                </div>
+                <div class="space-y-2">
+                  <label class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 ml-1"
+                    >Año Protocolización</label
+                  >
+                  <input
+                    v-model="marea.anio_protocolizacion"
+                    type="number"
+                    class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border-none rounded-2xl focus:ring-2 focus:ring-brand-500/20 text-gray-800 dark:text-gray-200 transition-all font-medium outline-none"
+                    placeholder="2024"
+                  />
+                </div>
+                <div class="sm:col-span-2 space-y-2">
+                  <label class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 ml-1"
+                    >Fecha de Registro</label
+                  >
+                  <DatePicker
+                    v-model="marea.fecha_protocolizacion"
+                    :show-time="false"
+                  />
+                </div>
+              </div>
+
+              <div
+                class="mt-12 p-6 bg-blue-50/50 dark:bg-blue-500/5 rounded-3xl border border-blue-100/50 dark:border-blue-500/10 flex gap-5 items-start"
+              >
+                <div class="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-500/20 flex items-center justify-center text-blue-600 dark:text-blue-400 shrink-0">
+                  <InfoCircleIcon class="w-6 h-6" />
+                </div>
+                <p class="text-xs text-blue-800 dark:text-blue-300 leading-relaxed font-medium">
+                  <span class="font-black uppercase tracking-tighter block mb-1">Aviso Importante</span>
+                  Al asignar un número de protocolización, la marea pasará automáticamente al estado
+                  <strong class="text-blue-900 dark:text-blue-100">PROTOCOLIZADA</strong>. Esto bloqueará permanentemente la edición de los datos operativos y de captura para asegurar la integridad legal.
+                </p>
+              </div>
             </div>
           </div>
         </div>
@@ -682,6 +708,7 @@ import {
   DownloadIcon,
   CloudUploadIcon,
   LockIcon,
+  ShieldIcon,
   BellIcon,
   TrashIcon,
   WarningIcon,

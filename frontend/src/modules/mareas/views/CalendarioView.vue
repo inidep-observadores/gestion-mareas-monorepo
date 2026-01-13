@@ -441,7 +441,6 @@ onMounted(() => {
 }
 
 /* Asegurar que el tooltip sea visible fuera del contenedor del evento */
-/* Asegurar que el tooltip sea visible fuera del contenedor del evento */
 .fc .fc-scroller-harness {
   overflow: visible !important;
 }
@@ -450,20 +449,24 @@ onMounted(() => {
   overflow: visible !important;
 }
 
-/* En vista semanal, el encabezado tiene z-index: 2 por defecto. 
-   Elevamos los eventos al pasar el mouse para que superen el encabezado. */
-.fc-timegrid-event-harness {
-  z-index: 5 !important;
-}
-
-.fc-timegrid-event-harness:hover {
-  z-index: 9999 !important;
-}
-
-/* Evitar que el encabezado tape el tooltip */
-.fc .fc-col-header {
+/* En vista semanal y mensual, elevamos los eventos al pasar el mouse */
+.fc-timegrid-event-harness:hover,
+.fc-daygrid-event-harness:hover {
+  z-index: 99999 !important;
   position: relative;
-  z-index: 1; 
+}
+
+/* El encabezado debe tener una prioridad controlada para no tapar los tooltips elevados */
+.fc-scrollgrid-section-header,
+.fc .fc-col-header {
+  z-index: 10 !important;
+  position: relative;
+}
+
+/* Pero el cuerpo del calendario (donde están los eventos) debe poder estar por encima en hover */
+.fc-scrollgrid-section-body {
+  z-index: 20 !important;
+  position: relative;
 }
 
 .fc-event {
@@ -472,11 +475,6 @@ onMounted(() => {
 
 .fc-daygrid-event-harness {
   overflow: visible !important;
-  z-index: 10 !important;
-}
-
-.fc-daygrid-event-harness:hover {
-  z-index: 9999 !important;
 }
 
 .mareas-calendar .fc-event-main {

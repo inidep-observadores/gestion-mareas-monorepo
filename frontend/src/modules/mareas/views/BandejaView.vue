@@ -254,7 +254,7 @@
         </div>
         <h3 class="text-xl font-black text-base-content/90 uppercase tracking-tight">Todo al día</h3>
         <p class="text-base-content/40 mt-2 max-w-sm">
-          No tienes tareas pendientes en la sección de <b>{{ activeTabLabel }}</b>.
+          No tiene tareas pendientes en la sección de <b>{{ activeTabLabel }}</b>.
         </p>
       </div>
     </div>
