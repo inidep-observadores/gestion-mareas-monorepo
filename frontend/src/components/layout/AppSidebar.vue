@@ -83,15 +83,49 @@
               <HorizontalDots v-else />
             </h2>
             <ul class="flex flex-col gap-4">
-              <li v-for="item in menuGroup.items" :key="item.name">
-                <router-link
-                  :to="item.to"
+              <template v-for="item in menuGroup.items" :key="item.name">
+                <li v-if="item.show !== false">
+                  <router-link
+                    :to="item.to"
+                    :class="[
+                      'menu-item group',
+                      {
+                        'menu-item-active': isActive(item),
+                        'menu-item-inactive': !isActive(item),
+                      },
+                    ]"
+                  >
+                    <span
+                      :class="[
+                        isActive(item) ? 'menu-item-icon-active' : 'menu-item-icon-inactive',
+                      ]"
+                    >
+                      <component :is="item.icon" />
+                    </span>
+                    <span v-if="isExpanded || isHovered || isMobileOpen" class="menu-item-text">{{
+                      item.name
+                    }}</span>
+                  </router-link>
+                </li>
+              </template>
+            </ul>
+          </div>
+        </div>
+      </nav>
+    </div>
+
+    <!-- Sticky Footer -->
+    <div class="mt-auto py-6 border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900">
+      <nav>
+        <ul class="flex flex-col gap-4">
+          <template v-for="item in systemGroups.items" :key="item.name">
+            <li v-if="item.show !== false">
+              <template v-if="item.name === 'Cerrar Sesión'">
+                <button
+                  @click="handleItemClick(item, $event)"
                   :class="[
-                    'menu-item group',
-                    {
-                      'menu-item-active': isActive(item),
-                      'menu-item-inactive': !isActive(item),
-                    },
+                    'menu-item group w-full text-left',
+                    isActive(item) ? 'menu-item-active' : 'menu-item-inactive',
                   ]"
                 >
                   <span
@@ -104,40 +138,10 @@
                   <span v-if="isExpanded || isHovered || isMobileOpen" class="menu-item-text">{{
                     item.name
                   }}</span>
-                </router-link>
-              </li>
-            </ul>
-          </div>
-        </div>
-      </nav>
-    </div>
-
-    <!-- Sticky Footer -->
-    <div class="mt-auto py-6 border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900">
-      <nav>
-        <ul class="flex flex-col gap-4">
-          <li v-for="item in systemGroups.items" :key="item.name">
-            <template v-if="item.name === 'Cerrar Sesión'">
-              <button
-                @click="handleItemClick(item, $event)"
-                :class="[
-                  'menu-item group w-full text-left',
-                  isActive(item) ? 'menu-item-active' : 'menu-item-inactive',
-                ]"
-              >
-                <span
-                  :class="[
-                    isActive(item) ? 'menu-item-icon-active' : 'menu-item-icon-inactive',
-                  ]"
-                >
-                  <component :is="item.icon" />
-                </span>
-                <span v-if="isExpanded || isHovered || isMobileOpen" class="menu-item-text">{{
-                  item.name
-                }}</span>
-              </button>
-            </template>
-          </li>
+                </button>
+              </template>
+            </li>
+          </template>
         </ul>
       </nav>
     </div>
@@ -188,6 +192,7 @@ const navigationGroups = computed(() => {
           icon: HomeIcon,
           name: 'Centro de Comando',
           to: { name: 'Dashboard' },
+          show: true,
         },
       ],
     },
@@ -198,36 +203,38 @@ const navigationGroups = computed(() => {
           icon: MailBox,
           name: 'Bandeja de Entrada',
           to: { name: 'MareasInbox' },
+          show: true,
         },
         {
           icon: LayoutDashboardIcon,
           name: 'Panel Operativo',
           to: { name: 'MareasDashboard' },
+          show: true,
         },
         {
           icon: GridIcon,
           name: 'Flujo de Trabajo',
           to: { name: 'MareasWorkflow' },
+          show: isAdmin.value,
         },
         {
           icon: MapPinIcon,
           name: 'Mapa de Recorridos',
           to: { name: 'MareasMonitor' },
+          show: isAdmin.value,
         },
         {
           icon: CalenderIcon,
           name: 'Calendario',
           to: { name: 'MareasCalendar' },
+          show: true,
         },
-        ...((isAdmin.value || isCoordinator.value)
-          ? [
-              {
-                icon: BarChartIcon,
-                name: 'Estadísticas',
-                to: { name: 'MareasStats' },
-              },
-            ]
-          : []),
+        {
+          icon: BarChartIcon,
+          name: 'Estadísticas',
+          to: { name: 'MareasStats' },
+          show: isAdmin.value || isCoordinator.value,
+        },
       ],
     },
   ]
@@ -240,6 +247,7 @@ const navigationGroups = computed(() => {
           icon: ShieldIcon,
           name: 'Administración',
           to: { name: 'AdminUsers' },
+          show: true,
         },
       ],
     })
@@ -255,9 +263,11 @@ const systemGroups = computed(() => ({
       icon: LogoutIcon,
       name: 'Cerrar Sesión',
       to: { name: 'Signin' },
+      show: true,
     },
   ],
 }))
+
 
 type MenuItem = { name: string; to?: { name?: string }; path?: string }
 

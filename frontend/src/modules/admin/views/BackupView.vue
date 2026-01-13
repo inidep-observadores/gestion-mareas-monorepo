@@ -268,6 +268,8 @@ const handleRestore = async (phrase: string) => {
     try {
         await httpClient.post(`/admin/backup/restore/${selectedBackup.value.filename}`, {
             confirmationPhrase: phrase
+        }, {
+            timeout: 300000 // 5 minutos para restauraciones grandes
         });
         toast.success('Base de datos restaurada con éxito');
         showRestoreModal.value = false;
