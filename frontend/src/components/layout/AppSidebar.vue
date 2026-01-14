@@ -293,6 +293,15 @@ const handleItemClick = async (item: MenuItem, event: Event) => {
 
 // Refresh current view when operating year changes so dashboards y consultas se recalculen
 watch(
+  () => route.fullPath,
+  () => {
+    if (isMobileOpen.value) {
+      isMobileOpen.value = false
+    }
+  }
+)
+
+watch(
   () => configStore.selectedYear,
   () => {
     router.go(0)

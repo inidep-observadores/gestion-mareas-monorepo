@@ -127,6 +127,7 @@
 
 <script setup lang="ts">
 import { useRoute, useRouter } from 'vue-router'
+import { ref, watch } from 'vue'
 import {
   LogoutIcon,
   HorizontalDots,
@@ -221,4 +222,13 @@ const handleItemClick = async (item: any, event: Event) => {
     router.push({ name: 'Signin' })
   }
 }
+
+watch(
+  () => route.fullPath,
+  () => {
+    if (isMobileOpen.value) {
+      isMobileOpen.value = false
+    }
+  }
+)
 </script>
