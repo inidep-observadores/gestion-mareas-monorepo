@@ -249,11 +249,16 @@ export class MareasService {
                     }
                 }
             },
-            distinct: ['id'],
-            orderBy: {
-                fechaUltimaActualizacion: 'desc'
-            },
             take: 50
+        });
+
+        // Fetch active alerts for these mareas
+        const mareaIds = mareas.map(m => m.id);
+        const activeAlerts = await this.prisma.alerta.findMany({
+            where: {
+                referenciaId: { in: mareaIds },
+                estado: { in: ['PENDIENTE', 'SEGUIMIENTO', 'VENCIDA'] }
+            }
         });
 
         const items = mareas.map((m: any) => {
@@ -330,7 +335,7 @@ export class MareasService {
                 observador: primaryObs ? `${primaryObs.nombre} ${primaryObs.apellido}` : 'Sin asignar',
                 progreso,
                 en_tierra: estadoCodigo === MareaEstado.EN_EJECUCION && (!etapaActual || etapaActual.fechaArribo !== null),
-                alertas: [],
+                alertas: activeAlerts.filter((a: any) => a.referenciaId === m.id),
                 actionsAvailable
             };
         });
@@ -1079,7 +1084,7 @@ export class MareasService {
     }
 
     async getMareaContext(id: string) {
-        const [marea, transiciones] = (await Promise.all([
+        const [marea, transiciones, activeAlerts] = (await Promise.all([
             this.prisma.marea.findUnique({
                 where: { id },
                 include: {
@@ -1107,8 +1112,14 @@ export class MareasService {
             }),
             this.prisma.transicionEstado.findMany({
                 where: { activo: true }
+            }),
+            this.prisma.alerta.findMany({
+                where: {
+                    referenciaId: id,
+                    estado: { in: ['PENDIENTE', 'SEGUIMIENTO', 'VENCIDA'] }
+                }
             })
-        ])) as [any, any[]];
+        ])) as [any, any[], any[]];
 
         if (!marea) return null;
 
@@ -1182,7 +1193,7 @@ export class MareasService {
                 fecha_fin_observador: marea.fechaFinObservador,
                 dias_marea: diasMarea,
                 dias_navegados: diasNavegados,
-                alertas: [],
+                alertas: activeAlerts,
                 etapas: marea.etapas.map((e: any) => ({
                     id: e.id,
                     nroEtapa: e.nroEtapa,
