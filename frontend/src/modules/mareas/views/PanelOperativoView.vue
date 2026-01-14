@@ -38,17 +38,10 @@
                 Mareas Activas
               </h2>
               <div class="flex flex-wrap items-center gap-3 w-full sm:w-auto">
-                <div class="relative flex-1 sm:flex-none">
-                  <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
-                    <SearchIcon class="w-4 h-4" />
-                  </span>
-                  <input
-                    v-model="searchQuery"
-                    type="text"
-                    placeholder="Filtrar por buque o marea..."
-                    class="text-sm pl-9 pr-4 py-2 border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 focus:ring-2 focus:ring-brand-500/20 outline-none transition-all w-full sm:w-64"
-                  />
-                </div>
+                <SearchInput
+                  v-model="searchQuery"
+                  placeholder="Filtrar por buque o marea..."
+                />
                 <button
                   v-if="!isReadOnly"
                   @click="router.push('/mareas/nueva')"
@@ -81,12 +74,18 @@
                       <span class="text-[10px] font-mono font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest bg-gray-50 dark:bg-gray-800 px-2 py-0.5 rounded">
                         {{ marea.id_marea }}
                       </span>
-                      <span
-                        class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-tighter"
-                        :class="getStatusClasses(marea.estado_codigo)"
-                      >
-                        {{ marea.estado }}
-                      </span>
+                      <div class="flex flex-col items-end gap-1">
+                        <span
+                          class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-tighter"
+                          :class="getStatusClasses(marea.estado_codigo)"
+                        >
+                          {{ marea.estado }}
+                        </span>
+                        <span v-if="marea.en_tierra" class="px-2 py-0.5 bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 rounded-full text-[8px] font-black uppercase tracking-tighter whitespace-nowrap flex items-center gap-1 border border-emerald-100 dark:border-emerald-500/20">
+                          <div class="w-1 h-1 rounded-full bg-emerald-500 animate-pulse"></div>
+                          En Tierra
+                        </span>
+                      </div>
                     </div>
 
                     <!-- Datos Principales -->
@@ -191,10 +190,14 @@
                             <span class="text-sm font-bold text-gray-900 dark:text-gray-100 leading-none">{{ marea.buque_nombre }}</span>
                           </div>
                         </td>
-                        <td v-if="!selectedMarea" class="px-5 py-1.5 text-center">
-                          <div class="flex flex-col items-center gap-1">
+                        <td v-if="!selectedMarea" class="px-5 py-1.5">
+                          <div class="flex items-center gap-2">
                             <span class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-tighter whitespace-nowrap" :class="getStatusClasses(marea.estado_codigo)">
                               {{ marea.estado }}
+                            </span>
+                            <span v-if="marea.en_tierra" class="px-2 py-0.5 bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 rounded-full text-[10px] font-black uppercase tracking-tighter whitespace-nowrap flex items-center gap-1 border border-emerald-100 dark:border-emerald-500/20">
+                              <div class="w-1 h-1 rounded-full bg-emerald-500 animate-pulse"></div>
+                              En Tierra
                             </span>
                           </div>
                         </td>
@@ -304,6 +307,7 @@
 import { ref, onMounted, computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
+import SearchInput from '@/components/ui/SearchInput.vue'
 import MareaContextDetailContent from '../components/MareaContextDetailContent.vue'
 import GestionEtapasMareaDialog from '../components/GestionEtapasMareaDialog.vue'
 import RecibirArchivosDialog from '../components/RecibirArchivosDialog.vue'

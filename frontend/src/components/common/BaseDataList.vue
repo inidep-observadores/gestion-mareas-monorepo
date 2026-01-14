@@ -5,18 +5,12 @@
       <!-- Search & Actions Row -->
       <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
         <!-- Search -->
-        <div class="relative w-full max-w-sm">
-          <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-            <SearchIcon class="w-5 h-5 text-gray-400" />
-          </div>
-          <input
-            :value="search"
-            @input="$emit('update:search', ($event.target as HTMLInputElement).value)"
-            type="text"
-            :placeholder="searchPlaceholder"
-            class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent py-2 pl-10 pr-3 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
-          />
-        </div>
+        <SearchInput
+          :model-value="search"
+          @update:model-value="$emit('update:search', $event)"
+          :placeholder="searchPlaceholder"
+          class="max-w-sm"
+        />
 
         <!-- Filters & Actions -->
         <div class="flex flex-wrap items-center gap-2 md:gap-3 w-full md:w-auto">
@@ -93,6 +87,7 @@
 <script setup lang="ts">
 import { watchEffect, onUnmounted } from 'vue'
 import { SearchIcon, PlusIcon } from '@/icons'
+import SearchInput from '@/components/ui/SearchInput.vue'
 import { usePageHeader } from '@/composables/usePageHeader'
 
 const props = defineProps<{

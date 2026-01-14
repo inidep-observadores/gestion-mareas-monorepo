@@ -84,15 +84,10 @@
 
           <!-- Search & Sort -->
           <div class="flex items-center gap-3">
-             <div class="relative flex-1 md:flex-none">
-                <SearchIcon class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-base-content/30" />
-                <input 
-                  type="text" 
-                  placeholder="Buscar por buque, marea, observador o estado..."
-                  v-model="searchQuery"
-                   class="pl-10 pr-4 py-2 bg-base-100 border border-base-content/10 rounded-2xl text-xs outline-none focus:ring-2 focus:ring-primary/20 w-full md:w-64 transition-all"
-                />
-             </div>
+             <SearchInput 
+               v-model="searchQuery"
+               placeholder="Buscar por buque, marea, observador..."
+             />
              <button 
                @click="sortBy = sortBy === 'buque' ? 'observador' : 'buque'"
                class="p-2.5 bg-base-100 border border-base-content/10 rounded-xl text-base-content/40 hover:text-base-content/70 transition-all shadow-sm flex items-center gap-2"
@@ -309,11 +304,12 @@ import TaskCard from '../components/TaskCard.vue'
 import InboxAlertCard from '../components/InboxAlertCard.vue'
 import MareaContextDetailContent from '../components/MareaContextDetailContent.vue'
 import RecibirArchivosDialog from '../components/RecibirArchivosDialog.vue'
+import SearchInput from '@/components/ui/SearchInput.vue'
 // @ts-ignore
 import AlertManagementDialog from '../../alerts/components/AlertManagementDialog.vue'
 import mareasService from '../services/mareas.service'
 import { alertsService } from '@/modules/alerts/services/alerts.service'
-import { SearchIcon, EditIcon, CheckIcon, DocsIcon, BellIcon } from '@/icons'
+import { EditIcon, CheckIcon, DocsIcon, BellIcon } from '@/icons'
 import { useMareas } from '../composables/useMareas'
 import { toast } from 'vue-sonner'
 
