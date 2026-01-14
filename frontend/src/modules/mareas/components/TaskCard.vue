@@ -35,9 +35,9 @@
       </div>
 
       <!-- Content: Current Status & Progress -->
-      <div class="flex-1 space-y-3">
+      <div v-if="!compact" class="flex-1 space-y-3">
         <div class="flex items-center justify-between">
-          <span class="text-[10px] uppercase font-bold text-gray-400 dark:text-gray-500 tracking-wider">Hito Actual</span>
+          <span class="text-[10px] uppercase font-bold text-gray-400 dark:text-gray-500 tracking-wider">Estado Actual</span>
           <span class="text-xs font-bold text-gray-700 dark:text-gray-300">{{ hito }}</span>
         </div>
         
@@ -49,7 +49,7 @@
 
       <!-- Footer: Actions & Date -->
       <div class="pt-4 border-t border-gray-50 dark:border-gray-800 flex items-center justify-between">
-        <div class="flex items-center gap-2">
+        <div v-if="!compact" class="flex items-center gap-2">
           <div class="w-1.5 h-1.5 rounded-full bg-brand-500"></div>
           <span class="text-[10px] font-bold text-gray-400 dark:text-gray-500">Actualizado {{ fecha }}</span>
         </div>
@@ -94,9 +94,13 @@ interface Props {
   prioridad: 'baja' | 'media' | 'alta'
   actions: Action[]
   showObserver?: boolean
+  compact?: boolean
 }
 
-const props = defineProps<Props>()
+const props = withDefaults(defineProps<Props>(), {
+  showObserver: false,
+  compact: false
+})
 defineEmits(['click', 'action'])
 
 const priorityLabel = computed(() => {

@@ -24,12 +24,11 @@
         />
       </div>
 
-      <div class="grid grid-cols-12 gap-6">
+      <div class="flex flex-col xl:flex-row gap-6 items-start overflow-hidden">
         <!-- Main Board -->
-        <div class="col-span-12">
+        <div class="flex-1 min-w-0 transition-all duration-300">
           <div
-            class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl overflow-hidden shadow-sm transition-all"
-            :class="{ 'mr-[400px]': isSidebarOpen }"
+            class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl overflow-hidden shadow-sm"
           >
             <div
               class="py-3 px-5 border-b border-gray-100 dark:border-gray-800 flex flex-col sm:flex-row items-center justify-between gap-4 bg-gray-50/30 dark:bg-gray-900/30"
@@ -93,7 +92,7 @@
                         />
                       </div>
                     </th>
-                    <th @click="toggleSort('estado')" class="px-5 py-2 cursor-pointer hover:text-brand-500 transition-colors group">
+                    <th v-if="!selectedMarea" @click="toggleSort('estado')" class="px-5 py-2 cursor-pointer hover:text-brand-500 transition-colors group">
                       <div class="flex items-center gap-1">
                         Estado Operativo
                         <ChevronDownIcon
@@ -103,7 +102,7 @@
                         />
                       </div>
                     </th>
-                    <th @click="toggleSort('fecha_zarpada')" class="px-5 py-2 cursor-pointer hover:text-brand-500 transition-colors group">
+                    <th v-if="!selectedMarea" @click="toggleSort('fecha_zarpada')" class="px-5 py-2 cursor-pointer hover:text-brand-500 transition-colors group">
                       <div class="flex items-center gap-1">
                         Zarpada
                         <ChevronDownIcon
@@ -113,7 +112,7 @@
                         />
                       </div>
                     </th>
-                    <th @click="toggleSort('progreso')" class="px-5 py-2 cursor-pointer hover:text-brand-500 transition-colors group">
+                    <th v-if="!selectedMarea" @click="toggleSort('progreso')" class="px-5 py-2 cursor-pointer hover:text-brand-500 transition-colors group">
                       <div class="flex items-center gap-1">
                         Progreso
                         <ChevronDownIcon
@@ -123,11 +122,21 @@
                         />
                       </div>
                     </th>
-                    <th @click="toggleSort('alertas')" class="px-5 py-2 cursor-pointer hover:text-brand-500 transition-colors group">
+                    <th v-if="!selectedMarea" @click="toggleSort('alertas')" class="px-5 py-2 cursor-pointer hover:text-brand-500 transition-colors group">
                       <div class="flex items-center gap-1">
                         Alertas
                         <ChevronDownIcon
                           v-if="sortBy === 'alertas'"
+                          class="w-3 h-3 text-brand-500 transition-transform duration-300"
+                          :class="{ 'rotate-180': sortOrder === 'asc' }"
+                        />
+                      </div>
+                    </th>
+                    <th v-if="selectedMarea" @click="toggleSort('observador')" class="px-5 py-2 cursor-pointer hover:text-brand-500 transition-colors group">
+                      <div class="flex items-center gap-1">
+                        Observador
+                        <ChevronDownIcon
+                          v-if="sortBy === 'observador'"
                           class="w-3 h-3 text-brand-500 transition-transform duration-300"
                           :class="{ 'rotate-180': sortOrder === 'asc' }"
                         />
@@ -155,7 +164,7 @@
                         <span class="text-sm font-bold text-gray-900 dark:text-gray-100 leading-none">{{ marea.buque_nombre }}</span>
                       </div>
                     </td>
-                    <td class="px-5 py-1.5 text-center">
+                    <td v-if="!selectedMarea" class="px-5 py-1.5 text-center">
                       <div class="flex flex-col items-center gap-1">
                         <span
                           class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-tighter whitespace-nowrap"
@@ -171,13 +180,13 @@
                         </span>
                       </div>
                     </td>
-                    <td class="px-5 py-1.5">
+                    <td v-if="!selectedMarea" class="px-5 py-1.5">
                       <div class="flex flex-col">
                         <span class="text-xs font-bold text-gray-700 dark:text-gray-300 leading-none">{{ formatDate(marea.fecha_zarpada) }}</span>
                         <span class="text-[10px] text-gray-400 leading-none mt-1">{{ marea.puerto }}</span>
                       </div>
                     </td>
-                    <td class="px-5 py-1.5">
+                    <td v-if="!selectedMarea" class="px-5 py-1.5">
                       <div class="flex items-center gap-2">
                         <div class="w-16 h-1 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
                           <div
@@ -189,12 +198,15 @@
                         <span class="text-[10px] font-black text-gray-500">{{ marea.progreso }}%</span>
                       </div>
                     </td>
-                    <td class="px-5 py-1.5">
+                    <td v-if="!selectedMarea" class="px-5 py-1.5">
                       <div v-if="marea.alertas?.length" class="flex items-center gap-1.5 px-2 py-0.5 bg-red-50 dark:bg-red-500/10 rounded-lg w-fit">
                         <div class="w-1 h-1 rounded-full bg-red-500 animate-pulse"></div>
                         <span class="text-[10px] font-black text-red-600 dark:text-red-400">{{ marea.alertas.length }}</span>
                       </div>
                       <span v-else class="text-[10px] font-bold text-gray-300 dark:text-gray-700">Ninguna</span>
+                    </td>
+                    <td v-if="selectedMarea" class="px-5 py-1.5">
+                      <span class="text-sm font-bold text-gray-600 dark:text-gray-400">{{ marea.observador || 'No asignado' }}</span>
                     </td>
                     <td class="px-5 py-1.5 text-right">
                       <div class="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-all">
@@ -218,10 +230,36 @@
             </div>
           </div>
         </div>
+
+        <!-- PANEL DE DETALLE LATERAL PERSISTENTE -->
+        <Transition
+          enter-active-class="transition duration-300 ease-out"
+          enter-from-class="translate-x-4 opacity-0"
+          enter-to-class="translate-x-0 opacity-100"
+          leave-active-class="transition duration-200 ease-in"
+          leave-from-class="translate-x-0 opacity-100"
+          leave-to-class="translate-x-4 opacity-0"
+        >
+          <div 
+            v-if="selectedMarea"
+            class="w-full xl:w-[400px] shrink-0 sticky top-0 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl shadow-sm overflow-hidden self-start hidden xl:block z-10"
+          >
+            <MareaContextDetailContent 
+              :marea="selectedMarea"
+              :context="selectedMareaContext"
+              @close="closeSidebar"
+              @open-detalle="goToDetalle"
+              @action="executeActionFromSidebar"
+            />
+          </div>
+        </Transition>
       </div>
     </div>
 
+    <!-- SIDEBAR SOLO PARA MÓVILES/TABLETS -->
     <MareaContextSidebar
+      v-if="isSidebarOpen"
+      class="xl:hidden"
       :is-open="isSidebarOpen"
       :marea="selectedMarea"
       :context="selectedMareaContext"
@@ -255,6 +293,7 @@ import { ref, onMounted, computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import MareaContextSidebar from '../components/MareaContextSidebar.vue'
+import MareaContextDetailContent from '../components/MareaContextDetailContent.vue'
 import GestionEtapasMareaDialog from '../components/GestionEtapasMareaDialog.vue'
 import RecibirArchivosDialog from '../components/RecibirArchivosDialog.vue'
 import StatusFilterChip from '../components/StatusFilterChip.vue'
@@ -391,7 +430,9 @@ watch(
 
 const openSidebar = async (marea: any) => {
   selectedMarea.value = marea
-  isSidebarOpen.value = true
+  if (window.innerWidth < 1280) {
+    isSidebarOpen.value = true
+  }
   await fetchMareaContext(marea.id)
 }
 

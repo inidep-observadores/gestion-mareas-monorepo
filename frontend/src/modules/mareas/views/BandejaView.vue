@@ -1,9 +1,10 @@
 <template>
   <AdminLayout 
-    title="Bandeja de Entrada" 
-    description="Gestión centralizada de tareas, alertas críticas y flujos administrativos."
+    title="Panel Operativo" 
+    description="Gestión centralizada de mareas, alertas críticas y monitoreo de flota."
   >
-    <div class="relative min-h-[calc(100vh-120px)] z-1 pb-10">
+    <div class="relative min-h-[calc(100vh-120px)] z-1 pb-10 flex flex-col xl:flex-row gap-8 items-start">
+      <div class="flex-1 min-w-0 w-full">
       
       <!-- 1. HEADER: ALERTAS CRÍTICAS (Pendientes) -->
       <section v-if="alertasPendientes.length > 0" class="mb-8 space-y-4">
@@ -92,8 +93,13 @@
                    class="pl-10 pr-4 py-2 bg-base-100 border border-base-content/10 rounded-2xl text-xs outline-none focus:ring-2 focus:ring-primary/20 w-full md:w-64 transition-all"
                 />
              </div>
-             <button class="p-2.5 bg-base-100 border border-base-content/10 rounded-xl text-base-content/40 hover:text-base-content/70 transition-all shadow-sm">
+             <button 
+               @click="sortBy = sortBy === 'buque' ? 'observador' : 'buque'"
+               class="p-2.5 bg-base-100 border border-base-content/10 rounded-xl text-base-content/40 hover:text-base-content/70 transition-all shadow-sm flex items-center gap-2"
+               :title="`Ordenar por: ${sortBy === 'buque' ? 'Buque' : 'Observador'}`"
+             >
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 16 4 4 4-4"/><path d="M7 20V4"/><path d="m21 8-4-4-4 4"/><path d="M17 4v16"/></svg>
+                <span class="text-[10px] font-black uppercase tracking-tighter">{{ sortBy }}</span>
              </button>
           </div>
         </div>
@@ -213,6 +219,7 @@
                   :key="task.id"
                   v-bind="task"
                   :show-observer="true"
+                  :compact="!!selectedMarea"
                   @click="openDetails(task)"
                   @action="(key) => handleTaskAction(task.id, key)"
                 />
@@ -243,24 +250,43 @@
           v-for="task in filteredTasks" 
           :key="task.id"
           v-bind="task"
+          :show-observer="true"
+          :compact="!!selectedMarea"
           @click="openDetails(task)"
           @action="(key) => handleTaskAction(task.id, key)"
         />
       </transition-group>
 
-      <div v-if="!loading && activeTab !== 'historial' && filteredTasks.length === 0" class="flex flex-col items-center justify-center py-20 px-4 text-center">
-        <div class="w-24 h-24 bg-base-200/40 rounded-full flex items-center justify-center mb-6 border border-base-content/5">
-           <CheckIcon class="w-10 h-10 text-primary/20" />
-        </div>
-        <h3 class="text-xl font-black text-base-content/90 uppercase tracking-tight">Todo al día</h3>
-        <p class="text-base-content/40 mt-2 max-w-sm">
-          No tiene tareas pendientes en la sección de <b>{{ activeTabLabel }}</b>.
-        </p>
       </div>
+
+      <!-- PANEL DE DETALLE LATERAL (Sustituye al sidebar en esta vista) -->
+      <Transition
+        enter-active-class="transition duration-300 ease-out"
+        enter-from-class="translate-x-4 opacity-0"
+        enter-to-class="translate-x-0 opacity-100"
+        leave-active-class="transition duration-200 ease-in"
+        leave-from-class="translate-x-0 opacity-100"
+        leave-to-class="translate-x-4 opacity-0"
+      >
+        <div 
+          v-if="selectedMarea"
+          class="w-full xl:w-[400px] shrink-0 sticky top-6 bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-[2.5rem] shadow-xl overflow-hidden self-start hidden xl:block"
+        >
+          <MareaContextDetailContent 
+            :marea="selectedMarea"
+            :context="selectedMareaContext"
+            @close="selectedMarea = null"
+            @open-detalle="goToDetalle"
+            @action="executeSidebarAction"
+          />
+        </div>
+      </Transition>
     </div>
 
-    <!-- SIDEBAR CONTEXTUAL -->
+    <!-- MANTENEMOS EL SIDEBAR SOLO PARA MÓVILES/TABLETS -->
     <MareaContextSidebar 
+      v-if="isSidebarOpen"
+      class="xl:hidden"
       :is-open="isSidebarOpen"
       :marea="selectedMarea"
       :context="selectedMareaContext"
@@ -294,6 +320,7 @@ import AdminLayout from '@/components/layout/AdminLayout.vue'
 import TaskCard from '../components/TaskCard.vue'
 import InboxAlertCard from '../components/InboxAlertCard.vue'
 import MareaContextSidebar from '../components/MareaContextSidebar.vue'
+import MareaContextDetailContent from '../components/MareaContextDetailContent.vue'
 import RecibirArchivosDialog from '../components/RecibirArchivosDialog.vue'
 // @ts-ignore
 import AlertManagementDialog from '../../alerts/components/AlertManagementDialog.vue'
@@ -313,6 +340,7 @@ const alertasHistoricas = ref<any[]>([])
 const tasks = ref<any[]>([])
 const activeTab = ref('urgentes')
 const searchQuery = ref('')
+const sortBy = ref<'buque' | 'observador'>('buque')
 
 // 1. Computed properties
 const tareasUrgentes = computed(() => tasks.value.filter(t => t.tab === 'urgentes'))
@@ -333,22 +361,31 @@ const activeTabLabel = computed(() => tabs.value.find(t => t.id === activeTab.va
 
 const filteredTasks = computed(() => {
   const query = searchQuery.value.trim().toLowerCase()
-  const filteredByTab = tasks.value.filter(t => t.tab === activeTab.value)
+  let result = tasks.value.filter(t => t.tab === activeTab.value)
 
-  if (!query) return filteredByTab
+  if (query) {
+    result = result.filter(task => {
+      const values = [
+        task.buque,
+        task.idMarea,
+        task.observador,
+        task.hito,
+        task.estadoDescripcion
+      ]
+        .filter(Boolean)
+        .map((value: string) => value.toLowerCase())
 
-  return filteredByTab.filter(task => {
-    const values = [
-      task.buque,
-      task.idMarea,
-      task.observador,
-      task.hito,
-      task.estadoDescripcion
-    ]
-      .filter(Boolean)
-      .map((value: string) => value.toLowerCase())
+      return values.some(value => value.includes(query))
+    })
+  }
 
-    return values.some(value => value.includes(query))
+  // Sort
+  return result.sort((a, b) => {
+    if (sortBy.value === 'buque') {
+      return a.buque.localeCompare(b.buque)
+    } else {
+      return (a.observador || '').localeCompare(b.observador || '')
+    }
   })
 })
 
@@ -422,7 +459,10 @@ const selectedAlert = ref(null)
 
 const openDetails = async (task: any) => {
   selectedMarea.value = { id: task.id, id_marea: task.idMarea, buque_nombre: task.buque }
-  isSidebarOpen.value = true
+  // En desktop mostramos el panel lateral, en mobile el sidebar
+  if (window.innerWidth < 1280) {
+    isSidebarOpen.value = true
+  }
   await fetchMareaContext(task.id)
 }
 
