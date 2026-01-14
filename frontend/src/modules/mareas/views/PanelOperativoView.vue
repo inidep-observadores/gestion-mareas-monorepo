@@ -247,6 +247,7 @@
             <MareaContextDetailContent 
               :marea="selectedMarea"
               :context="selectedMareaContext"
+              :read-only="isReadOnly"
               @close="closeSidebar"
               @open-detalle="goToDetalle"
               @action="executeActionFromSidebar"
