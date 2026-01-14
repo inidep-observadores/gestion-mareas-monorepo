@@ -1188,7 +1188,9 @@ export class MareasService {
                     nroEtapa: e.nroEtapa,
                     pesqueriaId: e.pesqueriaId,
                     puertoZarpadaId: e.puertoZarpadaId,
+                    puertoZarpadaNombre: e.puertoZarpada?.nombre,
                     puertoArriboId: e.puertoArriboId,
+                    puertoArriboNombre: e.puertoArribo?.nombre,
                     fechaZarpada: e.fechaZarpada,
                     fechaArribo: e.fechaArribo
                 }))

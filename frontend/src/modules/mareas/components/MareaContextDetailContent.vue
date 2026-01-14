@@ -81,27 +81,44 @@
 
         <!-- 2. Logistics Section -->
         <section class="space-y-4">
-          <h4 class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Logística de Operación</h4>
-          <div class="bg-indigo-50/30 dark:bg-indigo-500/5 border border-indigo-100/50 dark:border-indigo-500/10 rounded-2xl p-5 space-y-4">
+          <div class="flex items-center justify-between">
+            <h4 class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Logística de Operación</h4>
+            <span class="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-[9px] font-bold text-gray-500 uppercase tracking-tighter">
+              {{ countEtapas }} {{ countEtapas === 1 ? 'Etapa' : 'Etapas' }}
+            </span>
+          </div>
+          
+          <div class="bg-indigo-50/30 dark:bg-indigo-500/5 border border-indigo-100/50 dark:border-indigo-500/10 rounded-2xl p-5 space-y-4 relative overflow-hidden">
+            <!-- Indicador En Tierra -->
+            <div v-if="isEnTierra" class="absolute top-0 right-0 px-3 py-1 bg-emerald-500 text-white text-[9px] font-black uppercase tracking-tighter rounded-bl-xl shadow-lg shadow-emerald-500/20 z-10 flex items-center gap-1.5">
+              <span class="flex h-1.5 w-1.5 relative">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-white"></span>
+              </span>
+              En Tierra
+            </div>
+
             <div class="flex items-center gap-4">
-              <div class="p-2.5 bg-white dark:bg-gray-900 rounded-xl shadow-sm text-indigo-500">
+              <div class="p-2.5 bg-white dark:bg-gray-900 rounded-xl shadow-sm text-indigo-500 shrink-0">
                 <ShipIcon class="w-4 h-4" />
               </div>
-              <div class="flex-1">
+              <div class="flex-1 min-w-0">
                 <p class="text-[9px] font-bold text-indigo-400 uppercase tracking-widest mb-0.5">Zarpada Confirmada</p>
-                <p class="text-sm font-black text-gray-700 dark:text-gray-300">
-                  {{ formatDate(marea.fecha_zarpada) }}
+                <p class="text-sm font-black text-gray-700 dark:text-gray-300 truncate">
+                  {{ formatDate(marea.fecha_zarpada) }} <span class="mx-1 text-indigo-300 dark:text-indigo-500/50">en</span> {{ puertoZarpada }}
                 </p>
               </div>
             </div>
-            <div class="flex items-center gap-4">
-              <div class="p-2.5 bg-white dark:bg-gray-900 rounded-xl shadow-sm text-indigo-500">
+
+            <!-- Arribo Final (Condicional) -->
+            <div v-if="finalArribo" class="flex items-center gap-4 pt-4 border-t border-indigo-100/30 dark:border-indigo-500/10">
+              <div class="p-2.5 bg-white dark:bg-gray-900 rounded-xl shadow-sm text-indigo-500 shrink-0">
                 <MapPinIcon class="w-4 h-4" />
               </div>
-              <div class="flex-1">
-                <p class="text-[9px] font-bold text-indigo-400 uppercase tracking-widest mb-0.5">Puerto Base / Operación</p>
-                <p class="text-sm font-black text-gray-700 dark:text-gray-300">
-                  {{ marea.puerto }}
+              <div class="flex-1 min-w-0">
+                <p class="text-[9px] font-bold text-indigo-400 uppercase tracking-widest mb-0.5">Arribo Final</p>
+                <p class="text-sm font-black text-gray-700 dark:text-gray-300 truncate">
+                  {{ formatDate(finalArribo.fechaArribo) }} <span class="mx-1 text-indigo-300 dark:text-indigo-500/50">en</span> {{ finalArribo.puertoArriboNombre }}
                 </p>
               </div>
             </div>
@@ -264,6 +281,45 @@ const mareaCode = computed(() => {
 })
 
 const emit = defineEmits(['close', 'open-detalle', 'action'])
+
+const countEtapas = computed(() => {
+  return props.context?.marea?.etapas?.length || 0
+})
+
+const isEnTierra = computed(() => {
+  if (!props.context?.marea) return false
+  const m = props.context.marea
+  if (m.estado_codigo !== 'EN_EJECUCION') return false
+  const etapas = m.etapas
+  if (!etapas || etapas.length === 0) return false
+  return etapas.every((e: any) => e.fechaArribo && e.puertoArriboId)
+})
+
+const finalArribo = computed(() => {
+  if (!props.context?.marea) return null
+  const etapas = props.context.marea.etapas
+  if (!etapas || etapas.length === 0) return null
+  
+  const allComplete = etapas.every((e: any) => e.fechaArribo && e.puertoArriboId)
+  if (!allComplete) return null
+  
+  // Stages are ordered by nroEtapa desc
+  return etapas[0]
+})
+
+const puertoZarpada = computed(() => {
+  const m = props.context?.marea || props.marea
+  // If we have stages, get the zarpada of the first stage (ordered by desc)
+  if (props.context?.marea?.etapas?.length) {
+    // This is a bit tricky since etapas are desc, but maybe we want the first stage's zarpada?
+    // User wants "Fecha de zarpada y puerto" in one line.
+    // Usually means the "Initial zarpada" or the current one.
+    // Let's assume the first stage ever (last in desc array).
+    const stages = props.context.marea.etapas
+    return stages[stages.length - 1].puertoZarpadaNombre || m?.puerto || 'N/D'
+  }
+  return m?.puerto || 'N/D'
+})
 
 const getStatusClasses = (status?: string) => {
   if (!status) return 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400'
