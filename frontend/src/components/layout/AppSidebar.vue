@@ -68,7 +68,7 @@
       </div>
     </div>
     <div class="flex flex-col flex-1 overflow-y-auto duration-300 ease-linear no-scrollbar">
-      <nav class="mb-6">
+      <nav class="mb-6" @click="closeMobileSidebar">
         <div class="flex flex-col gap-4">
           <div v-for="(menuGroup, groupIndex) in navigationGroups" :key="groupIndex">
             <h2
@@ -114,9 +114,8 @@
       </nav>
     </div>
 
-    <!-- Sticky Footer -->
     <div class="mt-auto py-6 border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900">
-      <nav>
+      <nav @click="closeMobileSidebar">
         <ul class="flex flex-col gap-4">
           <template v-for="item in systemGroups.items" :key="item.name">
             <li v-if="item.show !== false">
@@ -179,6 +178,12 @@ const currentYear = new Date().getFullYear()
 const availableYears = Array.from({ length: 5 }, (_, i) => currentYear - 2 + i)
 
 const { isExpanded, isMobileOpen, isHovered } = useSidebar()
+
+const closeMobileSidebar = () => {
+  if (isMobileOpen.value) {
+    isMobileOpen.value = false
+  }
+}
 
 const isAdmin = computed(() => authStore.user?.roles.includes(ValidRoles.admin))
 const isCoordinator = computed(() => authStore.user?.roles.includes(ValidRoles.coordinador))

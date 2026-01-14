@@ -36,7 +36,7 @@
       </router-link>
     </div>
     <div class="flex flex-col flex-1 overflow-y-auto duration-300 ease-linear no-scrollbar">
-      <nav class="mb-6">
+      <nav class="mb-6" @click="closeMobileSidebar">
         <div class="flex flex-col gap-4">
           <div v-for="(menuGroup, groupIndex) in navigationGroups" :key="groupIndex">
             <h2
@@ -82,7 +82,7 @@
 
     <!-- Sticky Footer -->
     <div class="mt-auto py-6 border-t border-red-200/50 dark:border-red-900/50 bg-red-100 dark:bg-red-950/60">
-      <nav>
+      <nav @click="closeMobileSidebar">
         <ul class="flex flex-col gap-4">
           <li v-for="item in systemGroups.items" :key="item.name">
             <template v-if="item.name === 'Volver al Sitio'">
@@ -148,6 +148,12 @@ const router = useRouter()
 const authStore = useAuthStore()
 
 const { isExpanded, isMobileOpen, isHovered } = useSidebar()
+
+const closeMobileSidebar = () => {
+  if (isMobileOpen.value) {
+    isMobileOpen.value = false
+  }
+}
 
 const navigationGroups = [
   {

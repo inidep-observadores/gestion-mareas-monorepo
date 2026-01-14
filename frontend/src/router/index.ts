@@ -7,6 +7,7 @@ import FlujoMareasView from '@/modules/mareas/views/FlujoMareasView.vue'
 import EstadisticasView from '@/modules/mareas/views/EstadisticasView.vue'
 import CalendarioView from '@/modules/mareas/views/CalendarioView.vue'
 import MareaDetalleView from '@/modules/mareas/views/MareaDetalleView.vue'
+import MareaOperativaDetalleView from '@/modules/mareas/views/MareaOperativaDetalleView.vue'
 import NuevaMareaView from '@/modules/mareas/views/NuevaMareaView.vue'
 
 const router = createRouter({
@@ -129,7 +130,16 @@ const router = createRouter({
       name: 'MareaDetalle',
       component: MareaDetalleView,
       meta: {
-        title: 'Detalle de Marea',
+        title: 'Detalle Técnico de Marea',
+        requiresAuth: true,
+      },
+    },
+    {
+      path: '/mareas/operativa/:id',
+      name: 'MareaOperativaDetalle',
+      component: MareaOperativaDetalleView,
+      meta: {
+        title: 'Resumen Operativo',
         requiresAuth: true,
       },
     },
