@@ -18,6 +18,7 @@
         @close="$emit('close')"
         @open-detalle="$emit('open-detalle')"
         @action="(key) => $emit('action', key)"
+        @manage-alert="(alert) => $emit('manage-alert', alert)"
       />
     </div>
   </Transition>
@@ -54,7 +55,7 @@ withDefaults(defineProps<Props>(), {
   readOnly: false
 })
 
-defineEmits(['close', 'open-detalle', 'action'])
+defineEmits(['close', 'open-detalle', 'action', 'manage-alert'])
 </script>
 
 <style scoped>

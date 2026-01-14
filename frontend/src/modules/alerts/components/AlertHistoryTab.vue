@@ -10,7 +10,6 @@
 
     <div v-else class="space-y-6">
         <div v-for="alert in alerts" :key="alert.id" class="collapse collapse-arrow bg-base-100 border border-base-content/10 rounded-box">
-            <input type="checkbox" /> 
             <div class="collapse-title flex items-center gap-4">
                 <span :class="['badge badge-sm', getBadgeClass(alert.estado)]">{{ alert.estado }}</span>
                 <span class="font-medium">{{ alert.titulo }}</span>
@@ -45,7 +44,7 @@ const loadAlerts = async () => {
     try {
         loading.value = true
         alerts.value = await alertsService.getAll({ refId: props.referenceId }) || []
-        
+
         const detailsPromises = alerts.value.map(a => alertsService.getOne(a.id))
         alerts.value = await Promise.all(detailsPromises)
 
@@ -67,7 +66,7 @@ const getBadgeClass = (status: string) => {
         case 'SEGUIMIENTO': return 'badge-warning' // Yellow
         case 'RESUELTA': return 'badge-success text-white' // Green
         case 'DESCARTADA': return 'badge-ghost' // Gray
-        case 'VENCIDA': return 'badge-error badge-outline' 
+        case 'VENCIDA': return 'badge-error badge-outline'
         default: return 'badge-ghost'
     }
 }

@@ -78,6 +78,7 @@
                             Fecha de Re-Check
                         </label>
                         <div class="flex flex-wrap gap-2 items-center">
+                            <button class="btn btn-xs btn-soft btn-neutral" @click="setFollowUp(1)">1 d.</button>
                             <button class="btn btn-xs btn-soft btn-neutral" @click="setFollowUp(recheckCorto)">3 d.</button>
                             <button class="btn btn-xs btn-soft btn-neutral" @click="setFollowUp(recheckMedio)">1 sem.</button>
                             <button class="btn btn-xs btn-soft btn-neutral" @click="setFollowUp(recheckLargo)">15 d.</button>
@@ -246,6 +247,13 @@ const recheckCorto = computed(() => rules.value.PLAZO_RECHECK_CORTO || 0)
 const recheckMedio = computed(() => rules.value.PLAZO_RECHECK_MEDIO || 0)
 const recheckLargo = computed(() => rules.value.PLAZO_RECHECK_LARGO || 0)
 
+const formatToLocalISODate = (date: Date) => {
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+}
+
 const getTomorrow = () => {
     const tomorrow = new Date()
     tomorrow.setDate(tomorrow.getDate() + 1)
@@ -253,21 +261,21 @@ const getTomorrow = () => {
     return tomorrow
 }
 
-const minFollowUpDate = computed(() => getTomorrow().toISOString().split('T')[0])
+const minFollowUpDate = computed(() => formatToLocalISODate(getTomorrow()))
 
 const setDefaultFollowUpDate = (dateStr?: string | null) => {
     const minDate = getTomorrow()
     if (dateStr) {
         const parsed = new Date(dateStr)
         if (!Number.isNaN(parsed.getTime()) && parsed >= minDate) {
-            customFollowUpDate.value = parsed.toISOString().split('T')[0]
+            customFollowUpDate.value = formatToLocalISODate(parsed)
             return
         }
     }
 
     const fallback = new Date()
     fallback.setDate(fallback.getDate() + (recheckMedio.value || 0))
-    customFollowUpDate.value = fallback.toISOString().split('T')[0]
+    customFollowUpDate.value = formatToLocalISODate(fallback)
 }
 
 watch(() => props.alert, (newVal) => {
@@ -486,9 +494,10 @@ const confirmAction = async () => {
     if (!pendingAction.value) return
     const action = pendingAction.value
     if (action === 'SEGUIMIENTO') {
-        const minDate = getTomorrow()
-        const selected = customFollowUpDate.value ? new Date(customFollowUpDate.value) : null
-        if (!selected || Number.isNaN(selected.getTime()) || selected < minDate) {
+        const minDateStr = formatToLocalISODate(getTomorrow())
+        const selectedStr = customFollowUpDate.value
+        
+        if (!selectedStr || selectedStr < minDateStr) {
             toast.error('La fecha de re-check debe ser desde mañana en adelante.')
             setDefaultFollowUpDate(null)
             return
@@ -504,9 +513,13 @@ const submitUpdate = async (status: string) => {
         let followUp = undefined
 
         if (status === 'SEGUIMIENTO') {
-            const date = customFollowUpDate.value
-                ? new Date(customFollowUpDate.value)
-                : new Date(Date.now() + (recheckMedio.value || 0) * 24 * 60 * 60 * 1000)
+            let date: Date
+            if (customFollowUpDate.value) {
+                const [y, m, d] = customFollowUpDate.value.split('-').map(Number)
+                date = new Date(y, m - 1, d, 0, 0, 0, 0)
+            } else {
+                date = new Date(Date.now() + (recheckMedio.value || 0) * 24 * 60 * 60 * 1000)
+            }
             followUp = date.toISOString()
         }
 
@@ -536,7 +549,7 @@ const submitUpdate = async (status: string) => {
 const setFollowUp = (days: number) => {
     const d = new Date()
     d.setDate(d.getDate() + days)
-    customFollowUpDate.value = d.toISOString().split('T')[0]
+    customFollowUpDate.value = formatToLocalISODate(d)
 }
 
 const close = () => {

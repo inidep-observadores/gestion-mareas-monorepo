@@ -441,12 +441,17 @@ onMounted(() => {
 }
 
 /* Asegurar que el tooltip sea visible fuera del contenedor del evento */
-.fc .fc-scroller-harness {
+.fc .fc-scroller-harness,
+.fc .fc-scroller,
+.fc .fc-daygrid-body,
+.fc .fc-daygrid-day-frame,
+.fc .fc-daygrid-day-events,
+.fc .fc-view-harness {
   overflow: visible !important;
 }
 
-.fc .fc-scroller {
-  overflow: visible !important;
+.fc-daygrid-body {
+  z-index: 1 !important;
 }
 
 /* En vista semanal y mensual, elevamos los eventos al pasar el mouse */
@@ -478,6 +483,17 @@ onMounted(() => {
 }
 
 .mareas-calendar .fc-event-main {
+  overflow: visible !important;
+}
+
+/* Fix específico para que el tooltip no se esconda bajo la toolbar superior */
+.fc .fc-toolbar {
+  position: relative;
+  z-index: 5; /* Por debajo de los eventos elevados (20+) */
+}
+
+/* Asegurar que el scrollgrid no recorte nada */
+.fc-theme-standard .fc-scrollgrid {
   overflow: visible !important;
 }
 </style>

@@ -331,13 +331,24 @@ onMounted(async () => {
         const data = await mareasService.getById(id);
         marea.value = data;
 
+        // Helper to get local YYYY-MM-DD
+        const toLocalISO = (isoStr: string) => {
+            if (!isoStr) return '';
+            const d = new Date(isoStr);
+            if (isNaN(d.getTime())) return '';
+            const year = d.getFullYear();
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        };
+
         // Init form
         form.value = {
             nroMarea: data.nroMarea,
             anioMarea: data.anioMarea,
             diasEstimados: data.diasEstimados,
             diasZonaAustral: data.diasZonaAustral,
-            fechaZarpadaEstimada: data.fechaZarpadaEstimada ? data.fechaZarpadaEstimada.split('T')[0] : ''
+            fechaZarpadaEstimada: toLocalISO(data.fechaZarpadaEstimada)
         };
         initialForm.value = JSON.parse(JSON.stringify(form.value));
     } catch (e) {
