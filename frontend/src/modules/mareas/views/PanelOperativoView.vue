@@ -258,20 +258,6 @@
       </div>
     </div>
 
-    <!-- SIDEBAR SOLO PARA MÓVILES/TABLETS -->
-    <MareaContextSidebar
-      v-if="isSidebarOpen"
-      class="xl:hidden"
-      :is-open="isSidebarOpen"
-      :marea="selectedMarea"
-      :context="selectedMareaContext"
-      :read-only="isReadOnly"
-      @close="closeSidebar"
-      @open-detalle="goToDetalle"
-      @action="executeActionFromSidebar"
-      @manage-alert="handleManageAlert"
-    />
-
     <GestionEtapasMareaDialog
        :show="showGestionDialog"
        :mode="gestionMode"
@@ -282,6 +268,9 @@
        @confirm="handleGestionConfirm"
     />
 
+    <RecibirArchivosDialog
+       :show="showRecibirDialog"
+       :marea="mareaToManage"
        @close="handleRecibirCancel"
        @confirm="handleRecibirConfirm"
     />
@@ -299,7 +288,6 @@
 import { ref, onMounted, computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
-import MareaContextSidebar from '../components/MareaContextSidebar.vue'
 import MareaContextDetailContent from '../components/MareaContextDetailContent.vue'
 import GestionEtapasMareaDialog from '../components/GestionEtapasMareaDialog.vue'
 import RecibirArchivosDialog from '../components/RecibirArchivosDialog.vue'
@@ -447,10 +435,11 @@ watch(
 )
 
 const openSidebar = async (marea: any) => {
-  selectedMarea.value = marea
   if (window.innerWidth < 1280) {
-    isSidebarOpen.value = true
+    router.push({ name: 'MareaOperativaDetalle', params: { id: marea.id } })
+    return
   }
+  selectedMarea.value = marea
   await fetchMareaContext(marea.id)
 }
 

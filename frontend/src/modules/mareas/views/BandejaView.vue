@@ -283,18 +283,6 @@
       </Transition>
     </div>
 
-    <!-- MANTENEMOS EL SIDEBAR SOLO PARA MÓVILES/TABLETS -->
-    <MareaContextSidebar 
-      v-if="isSidebarOpen"
-      class="xl:hidden"
-      :is-open="isSidebarOpen"
-      :marea="selectedMarea"
-      :context="selectedMareaContext"
-      @close="isSidebarOpen = false"
-      @open-detalle="goToDetalle"
-      @action="executeSidebarAction"
-    />
-
     <!-- ALERT MANAGEMENT DIALOG -->
     <AlertManagementDialog 
       :is-open="isAlertDialogOpen"
@@ -319,7 +307,6 @@ import { useRouter } from 'vue-router'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import TaskCard from '../components/TaskCard.vue'
 import InboxAlertCard from '../components/InboxAlertCard.vue'
-import MareaContextSidebar from '../components/MareaContextSidebar.vue'
 import MareaContextDetailContent from '../components/MareaContextDetailContent.vue'
 import RecibirArchivosDialog from '../components/RecibirArchivosDialog.vue'
 // @ts-ignore
@@ -458,11 +445,11 @@ const isAlertDialogOpen = ref(false)
 const selectedAlert = ref(null)
 
 const openDetails = async (task: any) => {
-  selectedMarea.value = { id: task.id, id_marea: task.idMarea, buque_nombre: task.buque }
-  // En desktop mostramos el panel lateral, en mobile el sidebar
   if (window.innerWidth < 1280) {
-    isSidebarOpen.value = true
+    router.push({ name: 'MareaOperativaDetalle', params: { id: task.id } })
+    return
   }
+  selectedMarea.value = { id: task.id, id_marea: task.idMarea, buque_nombre: task.buque }
   await fetchMareaContext(task.id)
 }
 
