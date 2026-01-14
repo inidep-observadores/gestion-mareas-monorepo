@@ -90,10 +90,10 @@
           
           <div class="bg-indigo-50/30 dark:bg-indigo-500/5 border border-indigo-100/50 dark:border-indigo-500/10 rounded-2xl p-5 space-y-4 relative overflow-hidden">
             <!-- Indicador En Tierra -->
-            <div v-if="isEnTierra" class="absolute top-0 right-0 px-3 py-1 bg-emerald-500 text-white text-[9px] font-black uppercase tracking-tighter rounded-bl-xl shadow-lg shadow-emerald-500/20 z-10 flex items-center gap-1.5">
+            <div v-if="isEnTierra" class="absolute top-0 right-0 px-3 py-1 bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 text-[10px] font-black uppercase tracking-tighter rounded-bl-xl border-l border-b border-emerald-100 dark:border-emerald-500/20 z-10 flex items-center gap-1.5">
               <span class="flex h-1.5 w-1.5 relative">
-                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
-                <span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-white"></span>
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
               </span>
               En Tierra
             </div>
