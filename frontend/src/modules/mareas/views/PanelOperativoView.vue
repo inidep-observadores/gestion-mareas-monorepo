@@ -251,6 +251,7 @@
               @close="closeSidebar"
               @open-detalle="goToDetalle"
               @action="executeActionFromSidebar"
+              @manage-alert="handleManageAlert"
             />
           </div>
         </Transition>
@@ -268,6 +269,7 @@
       @close="closeSidebar"
       @open-detalle="goToDetalle"
       @action="executeActionFromSidebar"
+      @manage-alert="handleManageAlert"
     />
 
     <GestionEtapasMareaDialog
@@ -280,11 +282,15 @@
        @confirm="handleGestionConfirm"
     />
 
-    <RecibirArchivosDialog
-       :show="showRecibirDialog"
-       :marea="mareaToManage"
        @close="handleRecibirCancel"
        @confirm="handleRecibirConfirm"
+    />
+
+    <AlertManagementDialog
+      :is-open="isAlertDialogOpen"
+      :alert="selectedAlert"
+      @close="isAlertDialogOpen = false"
+      @refresh="fetchDashboard"
     />
   </AdminLayout>
 </template>
@@ -297,6 +303,8 @@ import MareaContextSidebar from '../components/MareaContextSidebar.vue'
 import MareaContextDetailContent from '../components/MareaContextDetailContent.vue'
 import GestionEtapasMareaDialog from '../components/GestionEtapasMareaDialog.vue'
 import RecibirArchivosDialog from '../components/RecibirArchivosDialog.vue'
+// @ts-ignore
+import AlertManagementDialog from '../../alerts/components/AlertManagementDialog.vue'
 import StatusFilterChip from '../components/StatusFilterChip.vue'
 import { useAuthStore } from '@/modules/auth/stores/auth.store'
 import { useMareas } from '../composables/useMareas'
@@ -348,6 +356,15 @@ const showGestionDialog = ref(false)
 const showRecibirDialog = ref(false)
 const gestionMode = ref<'INICIAR' | 'EDITAR' | 'FINALIZAR'>('INICIAR')
 const mareaToManage = ref<any>(null)
+
+// Alerts UI State
+const isAlertDialogOpen = ref(false)
+const selectedAlert = ref(null)
+
+const handleManageAlert = (alert: any) => {
+    selectedAlert.value = alert
+    isAlertDialogOpen.value = true
+}
 
 // Map icons/colors to backend kpis
 const getKpiMeta = (codigo: string) => {

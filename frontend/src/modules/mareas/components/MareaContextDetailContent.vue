@@ -179,12 +179,13 @@
               </div>
               <p class="text-xs font-black text-error-700 dark:text-error-400 uppercase tracking-tight">{{ alerta.titulo }}</p>
               <p class="text-[11px] text-error-600/80 dark:text-error-500/80 mt-1 leading-relaxed">{{ alerta.descripcion }}</p>
-              <div class="flex gap-3 mt-4">
-                <button class="px-3 py-1.5 bg-error-500 text-white text-[10px] font-bold rounded-lg hover:bg-error-600 transition-all shadow-lg shadow-error-500/20 active:scale-95">
-                  Confirmar
-                </button>
-                <button class="px-3 py-1.5 text-[10px] font-bold text-error-500 hover:bg-error-100 dark:hover:bg-error-500/10 rounded-lg transition-all">
-                  Ignorar
+              <div v-if="!readOnly" class="flex justify-end mt-4">
+                <button 
+                  @click="$emit('manage-alert', alerta)"
+                  class="px-4 py-2 bg-error-500 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-error-600 transition-all shadow-lg shadow-error-500/20 active:scale-95 flex items-center gap-2"
+                >
+                  Gestionar
+                  <ChevronRightIcon class="w-3 h-3" />
                 </button>
               </div>
             </div>
@@ -280,7 +281,7 @@ const mareaCode = computed(() => {
   return m?.id_marea || '0000-000'
 })
 
-const emit = defineEmits(['close', 'open-detalle', 'action'])
+const emit = defineEmits(['close', 'open-detalle', 'action', 'manage-alert'])
 
 const countEtapas = computed(() => {
   return props.context?.marea?.etapas?.length || 0
