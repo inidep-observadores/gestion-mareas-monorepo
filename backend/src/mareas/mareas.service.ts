@@ -249,6 +249,7 @@ export class MareasService {
                     }
                 }
             },
+            distinct: ['id'],
             orderBy: {
                 fechaUltimaActualizacion: 'desc'
             },
