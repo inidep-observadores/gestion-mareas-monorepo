@@ -59,7 +59,11 @@ const chartOptions = computed(() => ({
   chart: {
     fontFamily: 'inherit',
     toolbar: { show: false },
-    animations: { enabled: true }
+    animations: { enabled: true },
+    background: 'transparent'
+  },
+  theme: {
+    mode: isDarkMode.value ? 'dark' : 'light'
   },
   colors: ['var(--color-primary)', 'var(--color-info)'],
   stroke: { curve: 'smooth', width: 3 },
@@ -98,7 +102,7 @@ const chartOptions = computed(() => ({
     strokeDashArray: 4
   },
   tooltip: {
-    theme: 'dark',
+    theme: isDarkMode.value ? 'dark' : 'light',
     style: { fontSize: '10px' }
   },
   legend: { show: false },

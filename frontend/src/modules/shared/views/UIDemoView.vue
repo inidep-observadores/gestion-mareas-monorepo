@@ -316,9 +316,14 @@ import { SunIcon, MoonIcon } from 'lucide-vue-next'
 const themeStore = useThemeStore()
 
 const colors: { id: ColorTheme; name: string }[] = [
-    { id: 'blue', name: 'Azul (Base)' },
-    { id: 'green', name: 'Verde (Formal)' },
-    { id: 'orange', name: 'Naranja (Fun)' }
+    { id: 'blue', name: 'Oceanic' },
+    { id: 'green', name: 'Forest' },
+    { id: 'orange', name: 'Solar' },
+    { id: 'red', name: 'Crimson' },
+    { id: 'purple', name: 'Royal' },
+    { id: 'cyan', name: 'Arctic' },
+    { id: 'slate', name: 'Executive' },
+    { id: 'gold', name: 'Prestige' },
 ]
 
 // Estado para componentes demo

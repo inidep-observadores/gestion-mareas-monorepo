@@ -75,7 +75,7 @@
           </div>
 
           <div class="space-y-6">
-            <p class="text-text-muted text-sm px-1">Selecciona el color de realce principal para la interfaz.</p>
+            <p class="text-text-muted text-sm px-1">Seleccione el color de realce principal para la interfaz.</p>
 
             <div class="flex flex-col gap-4">
               <button
@@ -155,9 +155,14 @@ import { CheckIcon } from '@/icons'
 const themeStore = useThemeStore()
 
 const colors = [
-  { id: 'blue', label: 'Azul Industrial', bgClass: 'bg-brand-600' },
-  { id: 'green', label: 'Ecosistema Marino', bgClass: 'bg-success' },
-  { id: 'orange', label: 'Alerta Operativa', bgClass: 'bg-warning' },
+  { id: 'blue', label: 'Oceanic Industrial', bgClass: 'bg-blue-600' },
+  { id: 'green', label: 'Forest Marine', bgClass: 'bg-emerald-600' },
+  { id: 'orange', label: 'Solar Amber', bgClass: 'bg-amber-500' },
+  { id: 'red', label: 'Crimson Status', bgClass: 'bg-rose-600' },
+  { id: 'purple', label: 'Royal Amethyst', bgClass: 'bg-violet-600' },
+  { id: 'cyan', label: 'Arctic Sky', bgClass: 'bg-cyan-500' },
+  { id: 'slate', label: 'Slate Executive', bgClass: 'bg-slate-600' },
+  { id: 'gold', label: 'Prestige Gold', bgClass: 'bg-yellow-700' },
 ] as const
 
 const resetDefaults = () => {
