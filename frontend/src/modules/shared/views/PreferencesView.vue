@@ -5,7 +5,7 @@
       <div class="mb-12 text-center">
         <h1 class="text-4xl font-black text-text mb-4 tracking-tight">Personalización</h1>
         <p class="text-text-muted text-lg max-w-xl mx-auto">
-          Ajusta la apariencia de tu espacio de trabajo para que se adapte mejor a tu estilo y necesidades.
+          Ajuste la apariencia de su espacio de trabajo para que se adapte mejor a su estilo y necesidades.
         </p>
       </div>
 
@@ -25,8 +25,8 @@
               @click="themeStore.darkMode = false"
               :class="[
                 'group relative flex flex-col items-center gap-4 p-6 rounded-2xl border-2 transition-all duration-300',
-                !themeStore.darkMode 
-                  ? 'border-primary bg-primary/5 shadow-primary/10 shadow-lg' 
+                !themeStore.darkMode
+                  ? 'border-primary bg-primary/5 shadow-primary/10 shadow-lg'
                   : 'border-border bg-surface-muted hover:border-text-muted'
               ]"
             >
@@ -46,8 +46,8 @@
               @click="themeStore.darkMode = true"
               :class="[
                 'group relative flex flex-col items-center gap-4 p-6 rounded-2xl border-2 transition-all duration-300',
-                themeStore.darkMode 
-                  ? 'border-primary bg-primary/5 shadow-primary/10 shadow-lg' 
+                themeStore.darkMode
+                  ? 'border-primary bg-primary/5 shadow-primary/10 shadow-lg'
                   : 'border-border bg-surface-muted hover:border-text-muted'
               ]"
             >
@@ -75,8 +75,8 @@
           </div>
 
           <div class="space-y-6">
-            <p class="text-text-muted text-sm px-1">Selecciona el color de realce principal para tu interfaz.</p>
-            
+            <p class="text-text-muted text-sm px-1">Selecciona el color de realce principal para la interfaz.</p>
+
             <div class="flex flex-col gap-4">
               <button
                 v-for="color in colors"
@@ -84,8 +84,8 @@
                 @click="themeStore.setPrimaryColor(color.id)"
                 :class="[
                   'group flex items-center justify-between p-4 rounded-2xl border-2 transition-all duration-300',
-                  themeStore.primaryColor === color.id 
-                    ? 'border-primary bg-primary/5' 
+                  themeStore.primaryColor === color.id
+                    ? 'border-primary bg-primary/5'
                     : 'border-border bg-surface-muted hover:border-text-muted'
                 ]"
               >
@@ -104,11 +104,11 @@
 
       <!-- Reset Option -->
       <div class="mt-12 text-center">
-        <button 
+        <button
           @click="resetDefaults"
           class="text-text-muted hover:text-text text-sm font-medium transition-colors border-b border-dashed border-text-muted/30 pb-0.5"
         >
-          Restablecer a valores de fábrica
+          Restablecer los valores predeterminados
         </button>
       </div>
     </div>

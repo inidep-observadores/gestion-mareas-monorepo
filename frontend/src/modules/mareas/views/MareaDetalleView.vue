@@ -9,22 +9,22 @@
         <div class="flex flex-wrap items-center gap-4">
           <button
             @click="goBack"
-            class="group flex items-center gap-2 text-sm font-semibold text-brand-500 hover:text-brand-600 transition-all bg-brand-50 dark:bg-brand-500/10 px-3 py-1.5 rounded-lg"
+            class="group flex items-center gap-2 text-sm font-semibold text-primary hover:opacity-80 transition-all bg-primary/10 px-3 py-1.5 rounded-lg"
           >
             <ArrowLeftIcon class="w-4 h-4 transition-transform group-hover:-translate-x-1" />
             Volver
           </button>
 
           <div
-            class="flex items-center gap-2 px-3 py-1.5 bg-brand-50 dark:bg-brand-500/10 text-brand-700 dark:text-brand-400 text-xs font-bold uppercase tracking-wider rounded-full border border-brand-100 dark:border-brand-500/20"
+            class="flex items-center gap-2 px-3 py-1.5 bg-primary/10 text-primary text-xs font-bold uppercase tracking-wider rounded-full border border-primary/20"
           >
-            <div class="w-1.5 h-1.5 rounded-full bg-brand-500 animate-pulse"></div>
+            <div class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></div>
             {{ marea.estado_nombre }}
           </div>
 
           <div
             v-if="marea.estado_codigo === 'EN_EJECUCION' && (!etapas[etapas.length - 1] || etapas[etapas.length - 1].fechaArribo)"
-            class="flex items-center gap-2 px-3 py-1.5 bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 text-xs font-bold uppercase tracking-wider rounded-full border border-blue-100 dark:border-blue-500/20"
+            class="flex items-center gap-2 px-3 py-1.5 bg-info/10 text-info text-xs font-bold uppercase tracking-wider rounded-full border border-info/20"
           >
             En Tierra
           </div>
@@ -32,13 +32,13 @@
 
         <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
           <button
-            class="px-5 py-2.5 text-sm font-semibold text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-all shadow-sm active:scale-95 text-center"
+            class="px-5 py-2.5 text-sm font-semibold text-text-muted bg-surface border border-border rounded-xl hover:bg-surface-muted transition-all shadow-sm active:scale-95 text-center"
             @click="goBack"
           >
             Descartar
           </button>
           <button
-            class="px-5 py-2.5 text-sm font-semibold text-white bg-brand-500 border border-transparent rounded-xl hover:bg-brand-600 transition-all shadow-md shadow-brand-500/20 active:scale-95 flex items-center justify-center gap-2"
+            class="px-5 py-2.5 text-sm font-semibold text-primary-fg bg-primary border border-transparent rounded-xl hover:opacity-90 transition-all shadow-md shadow-primary/20 active:scale-95 flex items-center justify-center gap-2"
             @click="saveChanges"
           >
             <CheckIcon class="w-4 h-4" />
@@ -50,27 +50,27 @@
       <!-- Correction/Locked Banner -->
       <div
         v-if="marea.estado_codigo === 'EN_CORRECCION'"
-        class="mb-8 p-4 bg-error-50 dark:bg-error-500/10 border border-error-100 dark:border-error-500/20 rounded-2xl flex flex-col sm:flex-row items-center gap-4 animate-in fade-in slide-in-from-top-4 duration-500"
+        class="mb-8 p-4 bg-error/5 border border-error/20 rounded-2xl flex flex-col sm:flex-row items-center gap-4 animate-in fade-in slide-in-from-top-4 duration-500"
       >
         <div
-          class="w-12 h-12 rounded-xl bg-error-500 flex items-center justify-center text-white shrink-0 shadow-lg shadow-error-500/20"
+          class="w-12 h-12 rounded-xl bg-error flex items-center justify-center text-error-fg shrink-0 shadow-lg shadow-error/20"
         >
           <LockIcon class="w-6 h-6" />
         </div>
         <div class="flex-1 text-center sm:text-left">
           <h3
-            class="text-sm font-black text-error-700 dark:text-error-400 uppercase tracking-wider"
+            class="text-sm font-black text-error uppercase tracking-wider"
           >
             Marea Bloqueada para Extracción
           </h3>
-          <p class="text-xs text-error-600 dark:text-error-500 mt-0.5">
+          <p class="text-xs text-error/80 mt-0.5 font-medium">
             En proceso de corrección por:
             <span class="font-bold underline">{{ marea.responsable_correccion }}</span
             >. Los datos finales no estarán disponibles hasta la nueva carga.
           </p>
         </div>
         <div
-          class="px-4 py-2 bg-white dark:bg-gray-900 rounded-lg border border-error-100 dark:border-error-800 text-[10px] font-bold text-error-600 dark:text-error-400 uppercase tracking-widest whitespace-nowrap"
+          class="px-4 py-2 bg-surface rounded-lg border border-border text-[10px] font-bold text-error uppercase tracking-widest whitespace-nowrap"
         >
           Estado: En Revisión
         </div>
@@ -78,7 +78,7 @@
 
       <!-- Main Navigation Tabs -->
       <div
-        class="mb-8 border-b border-gray-200 dark:border-gray-800 overflow-x-auto custom-scrollbar"
+        class="mb-8 border-b border-border overflow-x-auto custom-scrollbar"
       >
         <div class="flex gap-8 min-w-max">
           <button
@@ -88,8 +88,8 @@
             class="pb-4 text-sm font-bold transition-all relative"
             :class="
               activeTab === tab.id
-                ? 'text-brand-500'
-                : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200'
+                ? 'text-primary'
+                : 'text-text-muted hover:text-text'
             "
           >
             <div class="flex items-center gap-2">
@@ -98,7 +98,7 @@
             </div>
             <div
               v-if="activeTab === tab.id"
-              class="absolute bottom-0 left-0 right-0 h-0.5 bg-brand-500 rounded-full"
+              class="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full"
             ></div>
           </button>
         </div>
@@ -111,36 +111,36 @@
           <div class="lg:col-span-2 space-y-8">
             <!-- Identification Card -->
             <div
-              class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-8 shadow-sm"
+              class="bg-surface border border-border rounded-2xl p-8 shadow-sm"
             >
               <h3
-                class="text-lg font-bold text-gray-800 dark:text-white mb-6 flex items-center gap-2"
+                class="text-lg font-bold text-text mb-6 flex items-center gap-2"
               >
-                <DocsIcon class="w-5 h-5 text-brand-500" />
+                <DocsIcon class="w-5 h-5 text-primary" />
                 Identificación de la Marea
               </h3>
               <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="space-y-1.5">
                   <label
-                    class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400"
+                    class="text-xs font-bold uppercase tracking-wider text-text-muted"
                     >Año Marea</label
                   >
                   <input
                     v-model="marea.anio_marea"
                     type="number"
-                    class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border-none rounded-2xl focus:ring-2 focus:ring-brand-500/20 text-gray-800 dark:text-gray-200 transition-all font-medium outline-none"
+                    class="w-full px-4 py-3 bg-surface-muted border-none rounded-2xl focus:ring-2 focus:ring-primary/20 text-text transition-all font-medium outline-none"
                     placeholder="2023"
                   />
                 </div>
                 <div class="space-y-1.5">
                   <label
-                    class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400"
+                    class="text-xs font-bold uppercase tracking-wider text-text-muted"
                     >Nro. Marea</label
                   >
                   <input
                     v-model="marea.nro_marea"
                     type="number"
-                    class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border-none rounded-2xl focus:ring-2 focus:ring-brand-500/20 text-gray-800 dark:text-gray-200 transition-all font-medium outline-none"
+                    class="w-full px-4 py-3 bg-surface-muted border-none rounded-2xl focus:ring-2 focus:ring-primary/20 text-text transition-all font-medium outline-none"
                     placeholder="000"
                   />
                 </div>
@@ -149,18 +149,18 @@
 
             <!-- Ship & Fishery Card -->
             <div
-              class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-8 shadow-sm"
+              class="bg-surface border border-border rounded-2xl p-8 shadow-sm"
             >
               <h3
-                class="text-lg font-bold text-gray-800 dark:text-white mb-6 flex items-center gap-2"
+                class="text-lg font-bold text-text mb-6 flex items-center gap-2"
               >
-                <ShipIcon class="w-5 h-5 text-blue-500" />
+                <ShipIcon class="w-5 h-5 text-info" />
                 Buque y Pesquería
               </h3>
               <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="space-y-1.5">
                   <label
-                    class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400"
+                    class="text-xs font-bold uppercase tracking-wider text-text-muted"
                     >Buque Seleccionado</label
                   >
                   <SearchableSelect
@@ -171,7 +171,7 @@
                 </div>
                 <div class="space-y-1.5">
                   <label
-                    class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400"
+                    class="text-xs font-bold uppercase tracking-wider text-text-muted"
                     >Pesquería</label
                   >
                   <SearchableSelect
@@ -182,7 +182,7 @@
                 </div>
                 <div class="space-y-1.5">
                   <label
-                    class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400"
+                    class="text-xs font-bold uppercase tracking-wider text-text-muted"
                     >Arte Principal</label
                   >
                   <SearchableSelect
@@ -193,7 +193,7 @@
                 </div>
                 <div class="space-y-1.5">
                   <label
-                    class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400"
+                    class="text-xs font-bold uppercase tracking-wider text-text-muted"
                     >Fecha Zarpada Est.</label
                   >
                   <DatePicker
@@ -203,12 +203,12 @@
                 </div>
                 <div class="space-y-1.5">
                   <label
-                    class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400"
+                    class="text-xs font-bold uppercase tracking-wider text-text-muted"
                     >Tipo de Marea</label
                   >
                   <select
                     v-model="marea.tipo_marea"
-                    class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border-none rounded-2xl focus:ring-2 focus:ring-brand-500/20 text-gray-800 dark:text-gray-200 transition-all font-medium outline-none"
+                    class="w-full px-4 py-3 bg-surface-muted border-none rounded-2xl focus:ring-2 focus:ring-primary/20 text-text transition-all font-medium outline-none"
                   >
                     <option value="MC">Comercial (MC)</option>
                     <option value="CI">Institucional (CI)</option>
@@ -216,13 +216,13 @@
                 </div>
                 <div class="space-y-1.5">
                   <label
-                    class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400"
+                    class="text-xs font-bold uppercase tracking-wider text-text-muted"
                     >Días Estimados</label
                   >
                   <input
                     v-model="marea.dias_estimados"
                     type="number"
-                    class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border-none rounded-2xl focus:ring-2 focus:ring-brand-500/20 text-gray-800 dark:text-gray-200 transition-all font-medium outline-none"
+                    class="w-full px-4 py-3 bg-surface-muted border-none rounded-2xl focus:ring-2 focus:ring-primary/20 text-text transition-all font-medium outline-none"
                     placeholder="0"
                   />
                 </div>
@@ -233,17 +233,17 @@
 
             <!-- Observer Dates & Zona Austral -->
             <div
-              class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-8 shadow-sm"
+              class="bg-surface border border-border rounded-2xl p-8 shadow-sm"
             >
               <h3
-                class="text-lg font-bold text-gray-800 dark:text-white mb-6 flex items-center gap-2"
+                class="text-lg font-bold text-text mb-6 flex items-center gap-2"
               >
-                <CalenderIcon class="w-5 h-5 text-brand-500" />
+                <CalenderIcon class="w-5 h-5 text-primary" />
                 Fechas del Observador y Zona Austral
               </h3>
               <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="space-y-1.5">
-                  <label class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400"
+                  <label class="text-xs font-bold uppercase tracking-wider text-text-muted"
                     >Inicio Observador</label
                   >
                   <DatePicker
@@ -252,7 +252,7 @@
                   />
                 </div>
                 <div class="space-y-1.5">
-                  <label class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400"
+                  <label class="text-xs font-bold uppercase tracking-wider text-text-muted"
                     >Fin Observador</label
                   >
                   <DatePicker
@@ -261,23 +261,23 @@
                   />
                 </div>
                 <div class="space-y-1.5">
-                  <label class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400"
+                  <label class="text-xs font-bold uppercase tracking-wider text-text-muted"
                     >Días Zona Austral</label
                   >
                   <input
                     v-model="marea.dias_zona_austral"
                     type="number"
-                    class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border-none rounded-2xl focus:ring-2 focus:ring-brand-500/20 text-gray-800 dark:text-gray-200 transition-all font-medium outline-none"
+                    class="w-full px-4 py-3 bg-surface-muted border-none rounded-2xl focus:ring-2 focus:ring-primary/20 text-text transition-all font-medium outline-none"
                     placeholder="0"
                   />
                 </div>
                 <div class="space-y-1.5">
-                  <label class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400"
+                  <label class="text-xs font-bold uppercase tracking-wider text-text-muted"
                     >Cálculo Zona Austral</label
                   >
                   <select
                     v-model="marea.tipo_calculo_zona_austral"
-                    class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border-none rounded-2xl focus:ring-2 focus:ring-brand-500/20 text-gray-800 dark:text-gray-200 transition-all font-medium outline-none"
+                    class="w-full px-4 py-3 bg-surface-muted border-none rounded-2xl focus:ring-2 focus:ring-primary/20 text-text transition-all font-medium outline-none"
                   >
                     <option value="AUTOMATICO">Automático</option>
                     <option value="MANUAL">Manual</option>
@@ -291,28 +291,28 @@
           <div class="space-y-8">
             <!-- Metadata Card -->
             <div
-              class="bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-800 rounded-2xl p-6"
+              class="bg-surface-muted border border-border rounded-2xl p-6"
             >
-              <h4 class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-4">
+              <h4 class="text-xs font-bold uppercase tracking-wider text-text-muted/60 mb-4">
                 Metadatos de Seguimiento
               </h4>
-              <div class="space-y-4">
+              <div class="space-y-3">
                 <div class="flex justify-between text-sm">
-                  <span class="text-gray-500">Fecha Creación</span>
-                  <span class="font-medium dark:text-gray-300">{{ formatDate(marea.fecha_creacion) }}</span>
+                  <span class="text-text-muted">Fecha Creación</span>
+                  <span class="font-medium text-text">{{ formatDate(marea.fecha_creacion) }}</span>
                 </div>
                 <div class="flex justify-between text-sm">
-                  <span class="text-gray-500">Últ. Actualización</span>
-                  <span class="font-medium dark:text-gray-300">{{ formatDate(marea.fecha_ultima_actualizacion) }}</span>
+                  <span class="text-text-muted">Últ. Actualización</span>
+                  <span class="font-medium text-text">{{ formatDate(marea.fecha_ultima_actualizacion) }}</span>
                 </div>
-                <div class="pt-4 border-t border-gray-200 dark:border-gray-700">
+                <div class="pt-4 border-t border-border">
                   <div class="flex items-center gap-2">
                     <input
                       type="checkbox"
                       v-model="marea.activo"
-                      class="rounded border-gray-300 text-brand-500"
+                      class="rounded border-border text-primary focus:ring-primary/20"
                     />
-                    <span class="text-sm font-medium text-gray-700 dark:text-gray-300"
+                    <span class="text-sm font-medium text-text"
                       >Marea Activa</span
                     >
                   </div>
@@ -322,10 +322,10 @@
 
             <!-- Notes Quick Access -->
             <div
-              class="bg-amber-50 dark:bg-amber-500/10 border border-amber-100 dark:border-amber-500/20 rounded-2xl p-6"
+              class="bg-warning/10 border border-warning/20 rounded-2xl p-6"
             >
               <h4
-                class="text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 mb-3 flex items-center gap-2"
+                class="text-xs font-bold uppercase tracking-wider text-warning mb-3 flex items-center gap-2"
               >
                 <InfoIcon class="w-4 h-4" />
                 Observaciones Importantes
@@ -333,7 +333,7 @@
               <textarea
                 v-model="marea.observaciones"
                 rows="4"
-                class="w-full bg-transparent border-none text-sm text-amber-800 dark:text-amber-300 focus:ring-0 placeholder:text-amber-300 resize-none"
+                class="w-full bg-transparent border-none text-sm text-warning focus:ring-0 placeholder:text-warning/40 resize-none font-medium"
                 placeholder="Añada notas que otros usuarios verán inmediatamente..."
               ></textarea>
             </div>
@@ -344,8 +344,8 @@
         <div v-if="activeTab === 'etapas'" class="space-y-6">
           <div class="flex items-center justify-between mb-2">
             <div>
-                <h3 class="text-lg font-bold text-gray-800 dark:text-white">Etapas de Navegación</h3>
-                <p class="text-xs text-gray-500 mt-1">Gestione los tramos del viaje, puertos y fechas reales.</p>
+                <h3 class="text-lg font-bold text-text">Etapas de Navegación</h3>
+                <p class="text-xs text-text-muted mt-1">Gestione los tramos del viaje, puertos y fechas reales.</p>
             </div>
           </div>
 
@@ -366,26 +366,26 @@
           <div
             v-for="obs in observadores"
             :key="obs.id"
-            class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-6 shadow-sm flex items-start gap-4"
+            class="bg-surface border border-border rounded-2xl p-6 shadow-sm flex items-start gap-4"
           >
             <div
-              class="w-16 h-16 rounded-full bg-gradient-to-br from-brand-100 to-blue-200 dark:from-brand-500/20 dark:to-blue-500/20 flex items-center justify-center text-brand-600 dark:text-brand-400 font-extrabold text-xl border-2 border-brand-50 dark:border-brand-500/20"
+              class="w-16 h-16 rounded-full bg-gradient-to-br from-primary/10 to-info/10 flex items-center justify-center text-primary font-extrabold text-xl border-2 border-primary/5"
             >
               {{ obs.iniciales }}
             </div>
             <div class="flex-1">
               <div class="flex justify-between items-start mb-1">
-                <h4 class="font-bold text-gray-800 dark:text-white">
+                <h4 class="font-bold text-text">
                   {{ obs.nombre }} {{ obs.apellido }}
                 </h4>
                 <div
-                  class="text-[10px] font-black tracking-tighter px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-gray-500"
+                  class="text-[10px] font-black tracking-tighter px-1.5 py-0.5 bg-surface-muted rounded text-text-muted"
                 >
                   ID {{ obs.codigo }}
                 </div>
               </div>
-              <p class="text-xs text-brand-500 font-bold mb-3">{{ obs.rol }}</p>
-              <div class="space-y-1 text-[11px] text-gray-500">
+              <p class="text-xs text-primary font-bold mb-3">{{ obs.rol }}</p>
+              <div class="space-y-1 text-[11px] text-text-muted">
                 <div class="flex items-center gap-2">
                   <CalenderIcon class="w-3 h-3" /> Inicio: {{ obs.inicio }}
                 </div>
@@ -400,10 +400,10 @@
             </div>
           </div>
           <button
-            class="border-2 border-dashed border-gray-200 dark:border-gray-800 rounded-2xl p-6 flex flex-col items-center justify-center text-gray-400 hover:text-brand-500 hover:border-brand-200 transition-all gap-2 group"
+            class="border-2 border-dashed border-border rounded-2xl p-6 flex flex-col items-center justify-center text-text-muted/40 hover:text-primary hover:border-primary/40 transition-all gap-2 group"
           >
             <div
-              class="p-2 rounded-full group-hover:bg-brand-50 dark:group-hover:bg-brand-500/10 transition-colors"
+              class="p-2 rounded-full group-hover:bg-primary/10 transition-colors"
             >
               <PlusIcon class="w-6 h-6" />
             </div>
@@ -414,56 +414,56 @@
         <!-- 4. Flujo Tab -->
         <div v-if="activeTab === 'workflow'" class="max-w-3xl mx-auto w-full">
           <div
-            class="relative pl-8 space-y-10 border-l-2 border-gray-100 dark:border-gray-800 ml-4"
+            class="relative pl-8 space-y-10 border-l-2 border-border ml-4"
           >
             <div v-for="mov in movimientos" :key="mov.id" class="relative">
               <div
-                class="absolute -left-[41px] top-0 w-5 h-5 rounded-full bg-white dark:bg-gray-900 border-4"
-                :class="mov.evento === 'CAMBIO_ESTADO' ? 'border-brand-500' : 'border-gray-300'"
+                class="absolute -left-[41px] top-0 w-5 h-5 rounded-full bg-surface border-4"
+                :class="mov.evento === 'CAMBIO_ESTADO' ? 'border-primary' : 'border-border'"
               ></div>
               <div class="space-y-2">
                 <div class="flex items-center justify-between">
                   <div class="flex items-center gap-2">
-                    <span class="text-xs font-bold text-brand-500 uppercase">{{ mov.evento }}</span>
-                    <span class="text-xs text-gray-400">•</span>
+                    <span class="text-xs font-bold text-primary uppercase">{{ mov.evento }}</span>
+                    <span class="text-xs text-text-muted/40">•</span>
                     <span
-                      class="text-xs font-semibold text-gray-600 dark:text-gray-400 flex items-center gap-1"
+                      class="text-xs font-semibold text-text-muted flex items-center gap-1"
                     >
                       <UserCircleIcon class="w-3.5 h-3.5" />
                       {{ mov.usuario }}
                     </span>
                   </div>
-                  <span class="text-[11px] text-gray-400">{{ mov.fecha }}</span>
+                  <span class="text-[11px] text-text-muted/60">{{ mov.fecha }}</span>
                 </div>
                 <div
                   v-if="mov.detalle || mov.comentarios || mov.estado_desde || mov.estado_hasta || mov.cantidad_muestras_otolitos"
-                  class="bg-gray-50 dark:bg-gray-800/40 border border-gray-100 dark:border-gray-800 p-4 rounded-xl"
+                  class="bg-surface-muted border border-border p-4 rounded-xl"
                 >
-                  <p v-if="mov.detalle" class="text-sm text-gray-700 dark:text-gray-300 font-medium mb-3">{{ mov.detalle }}</p>
+                  <p v-if="mov.detalle" class="text-sm text-text font-medium mb-3">{{ mov.detalle }}</p>
                   
                   <!-- User Comments -->
-                  <div v-if="mov.comentarios" class="mb-4 p-3 bg-brand-500/5 dark:bg-brand-500/10 border-l-2 border-l-brand-500 rounded-r-lg">
-                    <p class="text-xs text-brand-600 dark:text-brand-400 font-bold uppercase tracking-wider mb-1 flex items-center gap-1">
+                  <div v-if="mov.comentarios" class="mb-4 p-3 bg-primary/5 border-l-2 border-l-primary rounded-r-lg">
+                    <p class="text-xs text-primary font-bold uppercase tracking-wider mb-1 flex items-center gap-1">
                       <ChatIcon class="w-3 h-3" />
                       Comentario del usuario
                     </p>
-                    <p class="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap italic">"{{ mov.comentarios }}"</p>
+                    <p class="text-sm text-text-muted whitespace-pre-wrap italic">"{{ mov.comentarios }}"</p>
                   </div>
 
-                  <div v-if="mov.estado_desde || mov.estado_hasta || mov.cantidad_muestras_otolitos" class="flex flex-wrap gap-2 pt-2 border-t border-gray-100 dark:border-gray-800">
+                  <div v-if="mov.estado_desde || mov.estado_hasta || mov.cantidad_muestras_otolitos" class="flex flex-wrap gap-2 pt-2 border-t border-border">
                     <span
                       v-if="mov.estado_desde"
-                      class="text-[10px] px-2 py-0.5 bg-white dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700 text-gray-500"
+                      class="text-[10px] px-2 py-0.5 bg-surface rounded border border-border text-text-muted"
                       >Estado desde: {{ mov.estado_desde }}</span
                     >
                     <span
                       v-if="mov.estado_hasta"
-                      class="text-[10px] px-2 py-0.5 bg-white dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700 text-gray-500"
+                      class="text-[10px] px-2 py-0.5 bg-surface rounded border border-border text-text-muted"
                       >Estado hasta: {{ mov.estado_hasta }}</span
                     >
                     <span
                       v-if="mov.cantidad_muestras_otolitos"
-                      class="text-[10px] px-2 py-0.5 bg-white dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700 text-gray-500"
+                      class="text-[10px] px-2 py-0.5 bg-surface rounded border border-border text-text-muted"
                       >Muestras: {{ mov.cantidad_muestras_otolitos }}</span
                     >
                   </div>
@@ -478,12 +478,12 @@
           <div v-for="cat in docCategories" :key="cat.id" class="space-y-6">
             <div class="flex items-center justify-between px-2">
               <h3
-                class="text-xs font-black uppercase tracking-[0.25em] text-gray-400 dark:text-gray-500 flex items-center gap-4"
+                class="text-xs font-black uppercase tracking-[0.25em] text-text-muted/60 flex items-center gap-4"
               >
-                <div class="w-10 h-[2px] bg-gradient-to-r from-brand-500 to-transparent rounded-full"></div>
+                <div class="w-10 h-[2px] bg-gradient-to-r from-primary to-transparent rounded-full"></div>
                 {{ cat.label }}
               </h3>
-              <span class="text-[10px] font-bold bg-gray-100 dark:bg-gray-800 text-gray-500 px-2 py-0.5 rounded-full"
+              <span class="text-[10px] font-bold bg-surface-muted text-text-muted px-2 py-0.5 rounded-full"
                 >{{ getFilesByCategory(cat.id).length }} archivos</span
               >
             </div>
@@ -492,20 +492,20 @@
               <!-- Extraction Blocked Warning for DATOS Category -->
               <div
                 v-if="cat.id === 'DATOS' && marea.estado_codigo === 'EN_CORRECCION'"
-                class="md:col-span-2 lg:col-span-3 bg-amber-50 dark:bg-amber-500/5 border border-dashed border-amber-200 dark:border-amber-500/20 rounded-3xl p-6 flex items-center gap-5"
+                class="md:col-span-2 lg:col-span-3 bg-warning/5 border border-dashed border-warning/20 rounded-3xl p-6 flex items-center gap-5"
               >
                 <div
-                  class="w-12 h-12 rounded-2xl bg-amber-100 dark:bg-amber-500/10 flex items-center justify-center text-amber-600 dark:text-amber-400 shrink-0 shadow-sm"
+                  class="w-12 h-12 rounded-2xl bg-warning/10 flex items-center justify-center text-warning shrink-0 shadow-sm"
                 >
                   <LockIcon class="w-6 h-6" />
                 </div>
                 <div>
                   <h4
-                    class="text-sm font-black text-amber-800 dark:text-amber-400 uppercase tracking-wider"
+                    class="text-sm font-black text-warning uppercase tracking-wider"
                   >
                     Extracción de datos bloqueada temporalmente
                   </h4>
-                  <p class="text-xs text-amber-700 dark:text-amber-500 mt-1 opacity-80">
+                  <p class="text-xs text-warning/80 mt-1 font-medium italic">
                     La descarga de archivos de datos está restringida mientras se procesan las
                     correcciones enviadas. Los archivos volverán a estar disponibles tras la validación final.
                   </p>
@@ -516,7 +516,7 @@
               <div
                 v-for="file in getFilesByCategory(cat.id)"
                 :key="file.id"
-                class="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-3xl p-6 shadow-sm hover:shadow-xl hover:scale-[1.02] hover:border-brand-200/50 dark:hover:border-brand-500/30 transition-all duration-300 group flex items-center gap-5 relative overflow-hidden"
+                class="bg-surface border border-border rounded-3xl p-6 shadow-sm hover:shadow-xl hover:scale-[1.02] hover:border-primary/30 transition-all duration-300 group flex items-center gap-5 relative overflow-hidden"
               >
                 <!-- Format Icon -->
                 <div
@@ -528,27 +528,27 @@
                 </div>
 
                 <div class="flex-1 min-w-0">
-                  <h4 class="text-sm font-bold text-gray-800 dark:text-gray-100 truncate group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">
+                  <h4 class="text-sm font-bold text-text truncate group-hover:text-primary transition-colors">
                     {{ file.nombre }}
                   </h4>
-                  <div class="flex items-center flex-wrap gap-2 mt-1.5 opacity-70">
+                  <div class="flex items-center flex-wrap gap-2 mt-1.5 text-text-muted/60">
                     <span class="text-[10px] font-black uppercase tracking-tight">{{ file.formato }}</span>
-                    <span class="w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-600"></span>
+                    <span class="w-1 h-1 rounded-full bg-border"></span>
                     <span class="text-[10px] font-medium">{{ file.fecha }}</span>
                     <template v-if="file.tipo_archivo">
-                      <span class="w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-600"></span>
+                      <span class="w-1 h-1 rounded-full bg-border"></span>
                       <span class="text-[10px] font-medium">{{ file.tipo_archivo }}</span>
                     </template>
                     <template v-if="file.version">
-                      <span class="w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-600"></span>
-                      <span class="text-[10px] font-bold text-brand-500">v{{ file.version }}</span>
+                      <span class="w-1 h-1 rounded-full bg-border"></span>
+                      <span class="text-[10px] font-bold text-primary">v{{ file.version }}</span>
                     </template>
                   </div>
                 </div>
 
                 <div class="flex items-center gap-1">
                   <button
-                    class="p-2.5 text-gray-400 hover:text-brand-500 hover:bg-brand-50 dark:hover:bg-brand-500/10 rounded-xl transition-all active:scale-95"
+                    class="p-2.5 text-text-muted hover:text-primary hover:bg-primary/10 rounded-xl transition-all active:scale-95"
                     title="Descargar Archivo"
                   >
                     <DownloadIcon class="w-5 h-5" />
@@ -558,9 +558,9 @@
 
               <!-- Upload Placeholder for Category -->
               <button
-                class="border-2 border-dashed border-gray-100 dark:border-gray-800/50 rounded-3xl p-6 flex items-center justify-center gap-4 text-gray-400 hover:border-brand-300 hover:text-brand-600 dark:hover:text-brand-400 hover:bg-brand-50/30 dark:hover:bg-brand-500/5 transition-all duration-300 group shadow-sm active:scale-95"
+                class="border-2 border-dashed border-border rounded-3xl p-6 flex items-center justify-center gap-4 text-text-muted/40 hover:border-primary/40 hover:text-primary hover:bg-primary/5 transition-all duration-300 group shadow-sm active:scale-95"
               >
-                <div class="w-10 h-10 rounded-full bg-gray-50 dark:bg-gray-800 flex items-center justify-center group-hover:bg-brand-100 dark:group-hover:bg-brand-500/20 transition-colors">
+                <div class="w-10 h-10 rounded-full bg-surface-muted flex items-center justify-center group-hover:bg-primary/10 transition-colors">
                   <CloudUploadIcon class="w-5 h-5 group-hover:scale-110 transition-transform" />
                 </div>
                 <span class="text-xs font-black uppercase tracking-widest"
@@ -574,26 +574,26 @@
         <!-- 6. Administrativo Tab -->
         <div v-if="activeTab === 'admin'" class="max-w-3xl">
           <div
-            class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-[2.5rem] p-12 shadow-2xl relative overflow-hidden"
+            class="bg-surface border border-border rounded-[2.5rem] p-12 shadow-2xl relative overflow-hidden"
           >
             <!-- Decorative Elements -->
             <div
-              class="absolute -top-16 -right-16 w-64 h-64 bg-brand-500/10 rounded-full blur-3xl animate-pulse"
+              class="absolute -top-16 -right-16 w-64 h-64 bg-primary/10 rounded-full blur-3xl animate-pulse"
             ></div>
             <div
-              class="absolute -bottom-16 -left-16 w-48 h-48 bg-blue-500/5 rounded-full blur-3xl"
+              class="absolute -bottom-16 -left-16 w-48 h-48 bg-info/5 rounded-full blur-3xl"
             ></div>
 
             <div class="relative">
               <div class="flex items-center gap-4 mb-10">
-                <div class="w-12 h-12 rounded-2xl bg-brand-500 flex items-center justify-center text-white shadow-lg shadow-brand-500/30">
+                <div class="w-12 h-12 rounded-2xl bg-primary flex items-center justify-center text-primary-fg shadow-lg shadow-primary/30">
                   <ShieldIcon class="w-6 h-6" />
                 </div>
                 <div>
-                  <h3 class="text-2xl font-black text-gray-900 dark:text-white leading-tight font-outfit">
+                  <h3 class="text-2xl font-black text-text leading-tight font-outfit">
                     Protocolización Oficial
                   </h3>
-                  <p class="text-sm text-gray-500 dark:text-gray-400 font-medium opacity-80 mt-0.5 font-outfit">
+                  <p class="text-sm text-text-muted font-medium opacity-80 mt-0.5 font-outfit">
                     Gestione el registro legal y el cierre administrativo de la marea.
                   </p>
                 </div>
@@ -601,29 +601,29 @@
 
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-8">
                 <div class="space-y-2">
-                  <label class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 ml-1"
+                  <label class="text-xs font-bold uppercase tracking-wider text-text-muted ml-1"
                     >Nro. Protocolización</label
                   >
                   <input
                     v-model="marea.nro_protocolizacion"
                     type="number"
-                    class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border-none rounded-2xl focus:ring-2 focus:ring-brand-500/20 text-gray-800 dark:text-gray-200 transition-all font-medium outline-none"
+                    class="w-full px-4 py-3 bg-surface-muted border-none rounded-2xl focus:ring-2 focus:ring-primary/20 text-text transition-all font-medium outline-none"
                     placeholder="0000"
                   />
                 </div>
                 <div class="space-y-2">
-                  <label class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 ml-1"
+                  <label class="text-xs font-bold uppercase tracking-wider text-text-muted ml-1"
                     >Año Protocolización</label
                   >
                   <input
                     v-model="marea.anio_protocolizacion"
                     type="number"
-                    class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border-none rounded-2xl focus:ring-2 focus:ring-brand-500/20 text-gray-800 dark:text-gray-200 transition-all font-medium outline-none"
+                    class="w-full px-4 py-3 bg-surface-muted border-none rounded-2xl focus:ring-2 focus:ring-primary/20 text-text transition-all font-medium outline-none"
                     placeholder="2024"
                   />
                 </div>
                 <div class="sm:col-span-2 space-y-2">
-                  <label class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 ml-1"
+                  <label class="text-xs font-bold uppercase tracking-wider text-text-muted ml-1"
                     >Fecha de Registro</label
                   >
                   <DatePicker
@@ -634,15 +634,15 @@
               </div>
 
               <div
-                class="mt-12 p-6 bg-blue-50/50 dark:bg-blue-500/5 rounded-3xl border border-blue-100/50 dark:border-blue-500/10 flex gap-5 items-start"
+                class="mt-12 p-6 bg-info/5 rounded-3xl border border-info/10 flex gap-5 items-start"
               >
-                <div class="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-500/20 flex items-center justify-center text-blue-600 dark:text-blue-400 shrink-0">
+                <div class="w-10 h-10 rounded-xl bg-info/10 flex items-center justify-center text-info shrink-0">
                   <InfoCircleIcon class="w-6 h-6" />
                 </div>
-                <p class="text-xs text-blue-800 dark:text-blue-300 leading-relaxed font-medium">
+                <p class="text-xs text-info leading-relaxed font-medium">
                   <span class="font-black uppercase tracking-tighter block mb-1">Aviso Importante</span>
                   Al asignar un número de protocolización, la marea pasará automáticamente al estado
-                  <strong class="text-blue-900 dark:text-blue-100">PROTOCOLIZADA</strong>. Esto bloqueará permanentemente la edición de los datos operativos y de captura para asegurar la integridad legal.
+                  <strong class="font-bold">PROTOCOLIZADA</strong>. Esto bloqueará permanentemente la edición de los datos operativos y de captura para asegurar la integridad legal.
                 </p>
               </div>
             </div>
@@ -651,9 +651,9 @@
 
         <!-- 7. Historial Alertas Tab -->
         <div v-if="activeTab === 'historial_alertas'" class="max-w-4xl mx-auto">
-            <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-6 shadow-sm">
-                <h3 class="text-lg font-bold text-gray-800 dark:text-white mb-6 flex items-center gap-2">
-                    <BellIcon class="w-5 h-5 text-brand-500" />
+            <div class="bg-surface border border-border rounded-2xl p-6 shadow-sm">
+                <h3 class="text-lg font-bold text-text mb-6 flex items-center gap-2">
+                    <BellIcon class="w-5 h-5 text-primary" />
                     Registro de Incidentes y Alertas
                 </h3>
                 <AlertHistoryTab :referenceId="marea.id" />
