@@ -5,19 +5,19 @@
   >
     <div class="space-y-6">
       <!-- Card: Generar Backup -->
-      <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 p-6">
+      <div class="bg-surface rounded-2xl shadow-sm border border-border p-6">
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <h2 class="text-xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-              <BoxCubeIcon class="w-6 h-6 text-blue-500" />
+            <h2 class="text-xl font-bold text-text flex items-center gap-2">
+              <BoxCubeIcon class="w-6 h-6 text-primary" />
               Nueva Copia de Seguridad
             </h2>
-            <p class="text-sm text-gray-500 mt-1">Crea un punto de restauración actual de toda la base de datos.</p>
+            <p class="text-sm text-text-muted mt-1">Crea un punto de restauración actual de toda la base de datos.</p>
           </div>
           <button
             @click="showCreateConfirmModal = true"
             :disabled="isProcessing || !backendStatus.isConfigured"
-            class="flex items-center justify-center gap-2 rounded-xl bg-brand-500 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-brand-500/20 hover:bg-brand-600 active:scale-95 disabled:opacity-50 transition-all"
+            class="flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-bold text-primary-fg shadow-lg shadow-primary/20 hover:bg-primary/90 active:scale-95 disabled:opacity-50 transition-all"
           >
             <RefreshIcon v-if="isCreating" class="w-5 h-5 animate-spin" />
             <PlusIcon v-else class="w-5 h-5" />
@@ -27,13 +27,13 @@
       </div>
 
       <!-- Lista de Backups -->
-      <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden">
-        <div class="p-6 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center">
-            <h3 class="font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-                <ListIcon class="w-5 h-5 text-blue-500" />
+      <div class="bg-surface rounded-2xl shadow-sm border border-border overflow-hidden">
+        <div class="p-6 border-b border-border flex justify-between items-center">
+            <h3 class="font-bold text-text flex items-center gap-2">
+                <ListIcon class="w-5 h-5 text-primary" />
                 Copias Disponibles
             </h3>
-            <button @click="fetchBackups" title="Actualizar lista" class="p-2 text-gray-400 hover:text-blue-500 hover:rotate-180 transition-all duration-500 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800">
+            <button @click="fetchBackups" title="Actualizar lista" class="p-2 text-text-muted hover:text-primary hover:rotate-180 transition-all duration-500 rounded-lg hover:bg-surface-muted">
                 <RefreshIcon class="w-5 h-5" />
             </button>
         </div>
@@ -58,7 +58,7 @@
 
         <table v-else class="w-full text-left border-collapse">
           <thead>
-            <tr class="bg-gray-50/50 dark:bg-gray-800/50 text-[11px] uppercase tracking-widest text-gray-400 font-black">
+            <tr class="bg-surface-muted text-[11px] uppercase tracking-widest text-text-muted font-black">
               <th class="px-6 py-4">Archivo</th>
               <th class="px-6 py-4">Fecha</th>
               <th class="px-6 py-4">Comentario</th>
@@ -66,24 +66,24 @@
               <th class="px-6 py-4 text-center">Acciones</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
-            <tr v-for="bkp in backups" :key="bkp.filename" class="hover:bg-gray-50/30 dark:hover:bg-gray-800/20 transition-colors">
-              <td class="px-6 py-4 font-mono text-sm text-gray-700 dark:text-gray-300">{{ bkp.filename }}</td>
-              <td class="px-6 py-4 text-sm text-gray-500">{{ formatDate(bkp.createdAt) }}</td>
-              <td class="px-6 py-4 text-sm text-gray-500 italic max-w-xs truncate" :title="bkp.comment">{{ bkp.comment || '-' }}</td>
-              <td class="px-6 py-4 text-sm text-gray-500 text-right">{{ formatSize(bkp.size) }}</td>
+          <tbody class="divide-y divide-border">
+            <tr v-for="bkp in backups" :key="bkp.filename" class="hover:bg-surface-muted transition-colors">
+              <td class="px-6 py-4 font-mono text-sm text-text">{{ bkp.filename }}</td>
+              <td class="px-6 py-4 text-sm text-text-muted">{{ formatDate(bkp.createdAt) }}</td>
+              <td class="px-6 py-4 text-sm text-text-muted italic max-w-xs truncate" :title="bkp.comment">{{ bkp.comment || '-' }}</td>
+              <td class="px-6 py-4 text-sm text-text-muted text-right">{{ formatSize(bkp.size) }}</td>
               <td class="px-6 py-4">
                 <div class="flex justify-center gap-3">
                     <button 
                         @click="confirmRestore(bkp)"
-                        class="p-2 text-amber-600 bg-amber-50 dark:bg-amber-900/10 rounded-lg hover:bg-amber-100 dark:hover:bg-amber-900/20 transition-colors"
+                        class="p-2 text-warning bg-warning/10 rounded-lg hover:bg-warning/20 transition-colors"
                         title="Restaurar"
                     >
                         <HistoryIcon class="w-5 h-5" />
                     </button>
                     <button 
                         @click="confirmDelete(bkp)"
-                        class="p-2 text-red-600 bg-red-50 dark:bg-red-900/10 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/20 transition-colors"
+                        class="p-2 text-error bg-error/10 rounded-lg hover:bg-error/20 transition-colors"
                         title="Eliminar"
                     >
                         <TrashIcon class="w-5 h-5" />
@@ -129,19 +129,19 @@
         title="Crear Nueva Copia"
         message="¿Desea iniciar un proceso de respaldo de la base de datos ahora? El proceso puede demorar unos segundos dependiendo del volumen de datos."
         confirm-text="Iniciar Respaldo"
-        confirm-button-class="bg-brand-500 hover:bg-brand-600 shadow-brand-500/20"
+        confirm-button-class="bg-primary hover:bg-primary/90 shadow-primary/20"
         @close="showCreateConfirmModal = false"
         @confirm="handleCreateBackup"
     >
       <div class="mt-6 space-y-2">
-        <label class="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-gray-400 dark:text-gray-500 ml-1">
+        <label class="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-text-muted ml-1">
           <ChatIcon class="w-3.5 h-3.5" />
           Comentario opcional
         </label>
         <textarea 
           v-model="newBackupComment" 
           rows="3" 
-          class="w-full px-4 py-3 rounded-2xl border-2 border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/50 focus:bg-white dark:focus:bg-gray-900 focus:border-brand-500/50 focus:ring-4 focus:ring-brand-500/10 transition-all duration-300 outline-none text-sm placeholder:text-gray-400 dark:placeholder:text-gray-600 resize-none"
+          class="w-full px-4 py-3 rounded-2xl border-2 border-border bg-surface-muted focus:bg-surface focus:border-primary/50 focus:ring-4 focus:ring-primary/10 transition-all duration-300 outline-none text-sm placeholder:text-text-muted/40 resize-none"
           placeholder="Ej: Antes de grandes cambios en la base de datos..."
         ></textarea>
       </div>

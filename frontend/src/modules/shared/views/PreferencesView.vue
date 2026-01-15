@@ -30,10 +30,10 @@
                   : 'border-border bg-surface-muted hover:border-text-muted'
               ]"
             >
-              <div class="w-full aspect-video rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center overflow-hidden">
-                <div class="w-3/4 h-3/4 bg-white rounded-md shadow-sm border border-slate-200 p-2">
-                   <div class="w-1/2 h-2 bg-slate-200 rounded-full mb-1"></div>
-                   <div class="w-full h-1 bg-slate-100 rounded-full"></div>
+              <div class="w-full aspect-video rounded-lg bg-background border border-border flex items-center justify-center overflow-hidden">
+                <div class="w-3/4 h-3/4 bg-surface rounded-md shadow-sm border border-border p-2">
+                   <div class="w-1/2 h-2 bg-surface-muted rounded-full mb-1"></div>
+                   <div class="w-full h-1 bg-background rounded-full"></div>
                 </div>
               </div>
               <span class="font-bold text-text group-hover:scale-110 transition-transform">Claro</span>
@@ -51,10 +51,10 @@
                   : 'border-border bg-surface-muted hover:border-text-muted'
               ]"
             >
-              <div class="w-full aspect-video rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-center overflow-hidden">
-                <div class="w-3/4 h-3/4 bg-slate-800 rounded-md shadow-sm border border-slate-700 p-2">
-                   <div class="w-1/2 h-2 bg-slate-700 rounded-full mb-1"></div>
-                   <div class="w-full h-1 bg-slate-900 rounded-full"></div>
+              <div class="w-full aspect-video rounded-lg bg-background border border-border flex items-center justify-center overflow-hidden">
+                <div class="w-3/4 h-3/4 bg-surface rounded-md shadow-sm border border-border p-2">
+                   <div class="w-1/2 h-2 bg-surface-muted rounded-full mb-1"></div>
+                   <div class="w-full h-1 bg-background rounded-full"></div>
                 </div>
               </div>
               <span class="font-bold text-text group-hover:scale-110 transition-transform">Oscuro</span>

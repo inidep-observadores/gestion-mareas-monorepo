@@ -5,14 +5,14 @@
         <div class="flex gap-3">
             <button 
                 @click="goBack"
-                class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700 dark:hover:bg-gray-700 transition-colors"
+                class="px-4 py-2 text-sm font-bold text-text-muted bg-surface border border-border rounded-lg hover:bg-surface-muted transition-all uppercase tracking-wider"
                 :disabled="isUpdatingProfile"
             >
                 Descartar cambios
             </button>
             <button 
                 @click="saveAll"
-                class="px-4 py-2 text-sm font-medium text-white bg-brand-600 rounded-lg hover:bg-brand-700 focus:ring-4 focus:ring-brand-200 dark:focus:ring-brand-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                class="px-4 py-2 text-sm font-bold text-primary-fg bg-primary rounded-lg hover:bg-primary-hover shadow-lg shadow-primary/20 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 uppercase tracking-wider"
                 :disabled="isUpdatingProfile"
             >
                 <span v-if="isUpdatingProfile" class="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>
@@ -24,10 +24,10 @@
       <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <!-- Left Column: Personal Info & Avatar -->
         <div class="space-y-6 lg:col-span-1">
-          <div class="p-6 bg-white border border-gray-200 rounded-xl dark:bg-gray-900 dark:border-gray-800">
+          <div class="p-6 bg-surface border border-border rounded-xl shadow-sm">
             <div class="flex flex-col items-center text-center">
               <div class="relative group">
-                <div class="w-32 h-32 mb-4 overflow-hidden rounded-full ring-4 ring-gray-100 dark:ring-gray-800">
+                <div class="w-32 h-32 mb-4 overflow-hidden rounded-full ring-4 ring-border/50">
                   <img
                     :src="getFullImageUrl(previewUrl || user?.avatarUrl)"
                     alt="Avatar"
@@ -35,19 +35,19 @@
                   />
                 </div>
                 <label
-                  class="absolute bottom-4 right-0 p-2 bg-brand-500 rounded-full cursor-pointer hover:bg-brand-600 transition-colors shadow-lg"
+                  class="absolute bottom-4 right-0 p-2 bg-primary rounded-full cursor-pointer hover:bg-primary-hover transition-all shadow-lg shadow-primary/20 active:scale-90"
                   title="Cambiar foto de perfil"
                 >
                   <input type="file" class="hidden" accept="image/*" @change="handleFileChange" />
-                  <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-primary-fg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
                 </label>
               </div>
               
-              <h2 class="text-xl font-bold text-gray-800 dark:text-white">{{ user?.fullName || 'Usuario' }}</h2>
-              <p class="text-gray-500 dark:text-gray-400">{{ user?.email }}</p>
+              <h2 class="text-xl font-bold text-text">{{ user?.fullName || 'Usuario' }}</h2>
+              <p class="text-text-muted text-sm">{{ user?.email }}</p>
             </div>
           </div>
         </div>
@@ -56,18 +56,18 @@
         <div class="space-y-6 lg:col-span-2">
           
           <!-- Personal Information -->
-          <div class="p-6 bg-white border border-gray-200 rounded-xl dark:bg-gray-900 dark:border-gray-800">
-            <h3 class="mb-5 text-lg font-medium text-gray-800 dark:text-white">Información Personal</h3>
+          <div class="p-6 bg-surface border border-border rounded-xl shadow-sm">
+            <h3 class="mb-5 text-lg font-bold text-text uppercase tracking-tight">Información Personal</h3>
             <form @submit.prevent="saveAll">
               <div class="grid grid-cols-1 gap-6">
                 <div>
-                  <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <label class="block mb-2 text-sm font-medium text-text-muted">
                     Nombre Completo
                   </label>
                   <input
                     v-model="profileForm.fullName"
                     type="text"
-                    class="w-full px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg focus:border-brand-500 focus:ring-brand-500 focus:outline-none dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700"
+                    class="w-full px-4 py-2 text-text bg-surface border border-border rounded-lg transition-all focus:border-primary focus:ring-2 focus:ring-primary/10 outline-none shadow-sm"
                     placeholder="Ingrese su nombre completo"
                   />
                 </div>
@@ -76,23 +76,23 @@
           </div>
 
           <!-- Security -->
-          <div class="p-6 bg-white border border-gray-200 rounded-xl dark:bg-gray-900 dark:border-gray-800">
-            <h3 class="mb-5 text-lg font-medium text-gray-800 dark:text-white">Seguridad</h3>
+          <div class="p-6 bg-surface border border-border rounded-xl shadow-sm">
+            <h3 class="mb-5 text-lg font-bold text-text uppercase tracking-tight">Seguridad</h3>
             <form @submit.prevent="changePassword">
               <div class="space-y-4">
                 <!-- Current Password -->
                 <div>
-                  <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <label class="block mb-2 text-sm font-medium text-text-muted">
                     Contraseña Actual
                   </label>
                   <div class="relative">
                     <input
                       v-model="passwordForm.currentPassword"
                       :type="showCurrentPassword ? 'text' : 'password'"
-                      class="w-full px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg focus:border-brand-500 focus:ring-brand-500 focus:outline-none dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700"
+                      class="w-full px-4 py-2 text-text bg-surface border border-border rounded-lg transition-all focus:border-primary focus:ring-2 focus:ring-primary/10 outline-none shadow-sm"
                       placeholder="********"
                     />
-                    <button type="button" @click="showCurrentPassword = !showCurrentPassword" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400">
+                    <button type="button" @click="showCurrentPassword = !showCurrentPassword" class="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text transition-colors">
                         <EyeIcon v-if="!showCurrentPassword" class="w-5 h-5" />
                         <EyeSlashIcon v-else class="w-5 h-5" />
                     </button>
@@ -101,17 +101,17 @@
 
                 <!-- New Password -->
                 <div>
-                  <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <label class="block mb-2 text-sm font-medium text-text-muted">
                     Nueva Contraseña
                   </label>
                   <div class="relative">
                     <input
                       v-model="passwordForm.newPassword"
                       :type="showNewPassword ? 'text' : 'password'"
-                      class="w-full px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg focus:border-brand-500 focus:ring-brand-500 focus:outline-none dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700"
+                      class="w-full px-4 py-2 text-text bg-surface border border-border rounded-lg transition-all focus:border-primary focus:ring-2 focus:ring-primary/10 outline-none shadow-sm"
                       placeholder="Use al menos 6 caracteres"
                     />
-                    <button type="button" @click="showNewPassword = !showNewPassword" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400">
+                    <button type="button" @click="showNewPassword = !showNewPassword" class="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text transition-colors">
                         <EyeIcon v-if="!showNewPassword" class="w-5 h-5" />
                         <EyeSlashIcon v-else class="w-5 h-5" />
                     </button>
@@ -123,10 +123,10 @@
                           v-for="(req, index) in passwordRequirements"
                           :key="index"
                           :class="[
-                            'px-2 py-1 text-[10px] rounded-md border transition-colors',
+                            'px-2 py-1 text-[10px] font-bold rounded-md border transition-all uppercase tracking-tighter',
                             req.met
-                              ? 'bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800'
-                              : 'bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800'
+                              ? 'bg-success/10 text-success border-success/20'
+                              : 'bg-error/10 text-error border-error/20'
                           ]"
                         >
                           {{ req.label }}
@@ -136,38 +136,38 @@
 
                 <!-- Confirm Password -->
                 <div>
-                  <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <label class="block mb-2 text-sm font-medium text-text-muted">
                     Confirmar Contraseña
                   </label>
                   <div class="relative">
                     <input
                       v-model="passwordForm.confirmPassword"
                       :type="showConfirmPassword ? 'text' : 'password'"
-                      class="w-full px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg focus:border-brand-500 focus:ring-brand-500 focus:outline-none dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700"
+                      class="w-full px-4 py-2 text-text bg-surface border border-border rounded-lg transition-all focus:border-primary focus:ring-2 focus:ring-primary/10 outline-none shadow-sm"
                       placeholder="********"
                     />
-                    <button type="button" @click="showConfirmPassword = !showConfirmPassword" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400">
+                    <button type="button" @click="showConfirmPassword = !showConfirmPassword" class="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text transition-colors">
                         <EyeIcon v-if="!showConfirmPassword" class="w-5 h-5" />
                         <EyeSlashIcon v-else class="w-5 h-5" />
                     </button>
                   </div>
                   <!-- Match Error -->
-                  <p v-if="showMatchError" class="mt-2 text-xs text-red-500 dark:text-red-400">
+                  <p v-if="showMatchError" class="mt-2 text-xs font-bold text-error uppercase tracking-tight">
                     Las contraseñas no coinciden
                   </p>
-                </div>
-              </div>
-              <div class="mt-6 flex justify-end">
-                <button
-                  type="submit"
-                  :disabled="isChangingPassword || !isPasswordFormValid"
-                  class="px-6 py-2 text-white bg-brand-600 rounded-lg hover:bg-brand-700 focus:ring-4 focus:ring-brand-200 dark:focus:ring-brand-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                >
-                   <span v-if="isChangingPassword" class="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>
-                  Actualizar Contraseña
-                </button>
-              </div>
-            </form>
+                 </div>
+               </div>
+               <div class="mt-6 flex justify-end">
+                 <button
+                   type="submit"
+                   :disabled="isChangingPassword || !isPasswordFormValid"
+                   class="px-6 py-2 text-sm font-bold text-primary-fg bg-primary rounded-lg hover:bg-primary-hover shadow-lg shadow-primary/20 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 uppercase tracking-wider"
+                 >
+                    <span v-if="isChangingPassword" class="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>
+                   Actualizar Contraseña
+                 </button>
+               </div>
+             </form>
           </div>
 
         </div>

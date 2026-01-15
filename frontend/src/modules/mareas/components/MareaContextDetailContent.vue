@@ -128,7 +128,7 @@
         <!-- 3. Actions -->
         <section v-if="!readOnly" class="space-y-4">
           <div class="flex items-center justify-between">
-            <h4 class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 italic">Acciones sugeridas</h4>
+            <h4 class="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted italic">Acciones sugeridas</h4>
           </div>
           <div class="flex flex-col gap-2.5">
             <button
@@ -137,8 +137,8 @@
               @click="onAction(key)"
               class="group relative flex items-center justify-between p-4 rounded-2xl border transition-all duration-300"
               :class="action.enabled 
-                ? 'bg-white dark:bg-gray-950 border-gray-200 dark:border-gray-800 hover:border-brand-500/50 hover:shadow-lg hover:shadow-brand-500/5 text-gray-700 dark:text-gray-200' 
-                : 'bg-gray-50/50 dark:bg-gray-900/30 border-gray-100 dark:border-gray-800/50 text-gray-400 cursor-not-allowed'"
+                ? 'bg-surface border-border hover:border-primary/50 hover:shadow-lg hover:shadow-primary/5 text-text' 
+                : 'bg-surface-muted/30 border-border/50 text-text-muted cursor-not-allowed'"
               :disabled="!action.enabled"
             >
               <div class="flex items-center gap-4">
@@ -379,10 +379,10 @@ const formatDate = (date?: string) => {
   background: transparent;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #e2e8f0;
+  background: var(--color-border);
   border-radius: 10px;
 }
 .dark .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #1e293b;
+  background: var(--color-border);
 }
 </style>

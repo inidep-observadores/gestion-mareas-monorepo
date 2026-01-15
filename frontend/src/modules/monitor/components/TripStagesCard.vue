@@ -1,10 +1,10 @@
 <template>
   <HudCard customClass="w-44">
-    <div class="p-2 border-b border-gray-200/20 dark:border-white/5 flex flex-col items-center gap-0 bg-white/5 dark:bg-black/10">
-      <h3 class="font-black uppercase tracking-[0.2em] text-gray-900 dark:text-gray-300" :style="{ fontSize: 'calc(8px + var(--hud-font-offset))' }">
+    <div class="p-2 border-b border-border/20 flex flex-col items-center gap-0 bg-surface/5">
+      <h3 class="font-black uppercase tracking-[0.2em] text-text" :style="{ fontSize: 'calc(8px + var(--hud-font-offset))' }">
         {{ stages.length }} ETAPAS
       </h3>
-      <p class="font-bold text-gray-500  dark:text-gray-400 uppercase tracking-tighter" :style="{ fontSize: 'calc(6px + var(--hud-font-offset))' }">
+      <p class="font-bold text-text-muted uppercase tracking-tighter" :style="{ fontSize: 'calc(6px + var(--hud-font-offset))' }">
         {{ totalDays }} días navegados
       </p>
     </div>
@@ -15,7 +15,7 @@
         v-for="(stage, index) in stages"
         :key="index"
         @click="$emit('select-stage', stage)"
-        class="group relative flex flex-col gap-1 p-2 rounded-xl bg-white/5 dark:bg-black/20 border border-white/5 hover:border-indigo-500/30 transition-all cursor-pointer"
+        class="group relative flex flex-col gap-1 p-2 rounded-xl bg-surface/5 border border-border/10 hover:border-primary/30 transition-all cursor-pointer"
       >
         <!-- Color left border indicator -->
         <div
@@ -24,33 +24,33 @@
         ></div>
 
         <div class="flex items-center justify-between ml-1">
-          <span class="font-black text-gray-900 dark:text-gray-300 uppercase tracking-tighter" :style="{ color: stage.color, fontSize: 'calc(8px + var(--hud-font-offset))' }">
+          <span class="font-black text-text uppercase tracking-tighter" :style="{ color: stage.color, fontSize: 'calc(8px + var(--hud-font-offset))' }">
             Etapa {{ index + 1 }}
           </span>
-          <span class="font-black px-1.5 py-0.5 rounded-lg bg-indigo-500/10 text-indigo-500 border border-indigo-500/10" :style="{ fontSize: 'calc(7px + var(--hud-font-offset))' }">
+          <span class="font-black px-1.5 py-0.5 rounded-lg bg-primary/10 text-primary border border-primary/10" :style="{ fontSize: 'calc(7px + var(--hud-font-offset))' }">
             {{ stage.durationDays }}d
           </span>
         </div>
 
         <div class="ml-1 flex flex-col gap-0 opacity-80" :style="{ fontSize: 'calc(7px + var(--hud-font-offset))' }">
           <div class="flex items-center gap-1">
-            <span class="text-gray-400 font-black uppercase w-6">Zar:</span>
-            <span class="text-gray-700 dark:text-gray-300 tabular-nums">{{ formatDate(stage.startDate) }} {{ formatTime(stage.startDate) }}</span>
+            <span class="text-text-muted font-black uppercase w-6">Zar:</span>
+            <span class="text-text tabular-nums">{{ formatDate(stage.startDate) }} {{ formatTime(stage.startDate) }}</span>
           </div>
           <div class="flex items-center gap-1">
-            <span class="text-gray-400 font-black uppercase w-6">Arr:</span>
-            <span class="text-gray-700 dark:text-gray-300 tabular-nums">{{ formatDate(stage.endDate) }} {{ formatTime(stage.endDate) }}</span>
+            <span class="text-text-muted font-black uppercase w-6">Arr:</span>
+            <span class="text-text tabular-nums">{{ formatDate(stage.endDate) }} {{ formatTime(stage.endDate) }}</span>
           </div>
         </div>
 
         <!-- Action Icons -->
-        <div class="flex items-center gap-2 ml-1 mt-0.5 pt-1 border-t border-white/5">
-          <button class="text-gray-400 hover:text-indigo-500 transition-colors">
+        <div class="flex items-center gap-2 ml-1 mt-0.5 pt-1 border-t border-border/10">
+          <button class="text-text-muted hover:text-primary transition-colors">
             <svg xmlns="http://www.w3.org/2000/svg" class="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
               <path d="M12 20v-6M9 20v-10M15 20v-4M18 20v-8M21 20v-12M6 20v-12M3 20v-14"/>
             </svg>
           </button>
-          <button class="text-gray-400 hover:text-indigo-500 transition-colors">
+          <button class="text-text-muted hover:text-primary transition-colors">
             <svg xmlns="http://www.w3.org/2000/svg" class="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
               <circle cx="12" cy="12" r="10"/><path d="M12 8l4 4-4 4M8 12h7"/>
             </svg>

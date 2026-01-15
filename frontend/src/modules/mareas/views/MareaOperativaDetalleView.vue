@@ -22,7 +22,7 @@
 
       <div 
         v-else-if="selectedMarea"
-        class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl shadow-sm overflow-hidden"
+        class="bg-surface border border-border rounded-2xl shadow-sm overflow-hidden"
       >
         <MareaContextDetailContent 
           :marea="selectedMarea"
@@ -36,10 +36,10 @@
       </div>
 
       <div v-else class="text-center py-20">
-        <p class="text-gray-500">No se pudo cargar la información de la marea.</p>
+        <p class="text-text-muted">No se pudo cargar la información de la marea.</p>
         <button 
           @click="router.back()"
-          class="mt-4 text-brand-500 font-bold hover:underline"
+          class="mt-4 text-primary font-bold hover:underline"
         >
           Regresar al panel
         </button>

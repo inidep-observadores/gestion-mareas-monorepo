@@ -1,22 +1,22 @@
 <template>
   <div
-    class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-6 rounded-2xl shadow-sm"
+    class="bg-surface border border-border p-6 rounded-2xl shadow-sm"
   >
     <div class="flex items-center justify-between mb-6">
       <div>
-        <h3 class="text-lg font-bold text-gray-800 dark:text-white/90">
+        <h3 class="text-lg font-bold text-text uppercase tracking-tight">
           Flujo de Trabajo (Hitos de Marea)
         </h3>
-        <p class="text-xs text-gray-500 dark:text-gray-400">
+        <p class="text-xs text-text-muted font-medium">
           Seguimiento de tiempos de proceso (SLA por etapa)
         </p>
       </div>
       <div class="flex gap-2">
-        <span class="flex items-center gap-1 text-[10px] font-medium text-gray-500">
-          <span class="w-2 h-2 rounded-full border border-gray-300"></span> Normal
+        <span class="flex items-center gap-1 text-[10px] font-bold text-text-muted uppercase tracking-wider">
+          <span class="w-2 h-2 rounded-full border border-border"></span> Normal
         </span>
-        <span class="flex items-center gap-1 text-[10px] font-medium text-error-500">
-          <span class="w-2 h-2 rounded-full bg-error-500"></span> Fuera de SLA
+        <span class="flex items-center gap-1 text-[10px] font-bold text-error uppercase tracking-wider">
+          <span class="w-2 h-2 rounded-full bg-error"></span> Fuera de SLA
         </span>
       </div>
     </div>
@@ -32,29 +32,29 @@
         :class="[
           'p-3 rounded-xl border transition-all duration-200',
           metric.exceeds
-            ? 'bg-error-50 border-error-100 dark:bg-error-500/5 dark:border-error-500/20'
-            : 'bg-gray-50 border-gray-100 dark:bg-white/5 dark:border-white/10',
+            ? 'bg-error/10 border-error/20 shadow-sm shadow-error/5'
+            : 'bg-surface-muted border-border',
         ]"
       >
         <div
-          class="text-[10px] uppercase font-bold text-gray-400 dark:text-gray-500 mb-1 leading-tight"
+          class="text-[10px] uppercase font-black text-text-muted/60 mb-1 leading-tight tracking-widest"
         >
           {{ metric.label }}
         </div>
         <div class="flex items-baseline gap-2">
           <span
             :class="[
-              'text-xl font-bold',
+              'text-xl font-bold tracking-tight',
               metric.exceeds
-                ? 'text-error-600 dark:text-error-400'
-                : 'text-gray-800 dark:text-white',
+                ? 'text-error'
+                : 'text-text',
             ]"
           >
-            {{ metric.value }} <span class="text-xs font-normal">días</span>
+            {{ metric.value }} <span class="text-xs font-normal opacity-60">días</span>
           </span>
           <span
             v-if="metric.exceeds"
-            class="text-[10px] font-medium bg-error-100 text-error-700 px-1.5 py-0.5 rounded-full dark:bg-error-500/20 dark:text-error-400"
+            class="text-[10px] font-black bg-error/10 text-error px-1.5 py-0.5 rounded-md uppercase tracking-tighter"
           >
             ! RETRASO
           </span>
@@ -139,9 +139,9 @@ const chartOptions = computed<ApexOptions>(() => ({
     },
   },
   colors: [
-    effectiveData.value.entrega > plazoEntregaDatos.value ? 'var(--color-error-500)' : 'var(--color-brand-500)',
-    effectiveData.value.informe > plazoConfeccionInforme.value ? 'var(--color-error-500)' : 'var(--color-brand-500)',
-    effectiveData.value.protocolo > plazoProtocolizacion.value ? 'var(--color-error-500)' : 'var(--color-brand-500)',
+    effectiveData.value.entrega > plazoEntregaDatos.value ? 'var(--color-error)' : 'var(--color-primary)',
+    effectiveData.value.informe > plazoConfeccionInforme.value ? 'var(--color-error)' : 'var(--color-primary)',
+    effectiveData.value.protocolo > plazoProtocolizacion.value ? 'var(--color-error)' : 'var(--color-primary)',
   ],
   dataLabels: {
     enabled: true,
@@ -149,8 +149,8 @@ const chartOptions = computed<ApexOptions>(() => ({
     offsetX: -20,
     style: {
       fontSize: '11px',
-      fontWeight: 700,
-      colors: ['#fff'],
+      fontWeight: 900,
+      colors: ['var(--color-primary-fg)'],
     },
   },
   xaxis: {
@@ -159,9 +159,9 @@ const chartOptions = computed<ApexOptions>(() => ({
     axisTicks: { show: false },
     labels: {
       style: {
-        colors: 'var(--color-gray-500)',
-        fontSize: '12px',
-        fontWeight: 400,
+        colors: 'var(--color-text-muted)',
+        fontSize: '11px',
+        fontWeight: 700,
       },
     },
   },
@@ -170,14 +170,14 @@ const chartOptions = computed<ApexOptions>(() => ({
       align: 'left',
       minWidth: 0,
       style: {
-        colors: 'var(--color-gray-700)',
-        fontSize: '12px',
-        fontWeight: 600,
+        colors: 'var(--color-text)',
+        fontSize: '11px',
+        fontWeight: 800,
       },
     },
   },
   grid: {
-    borderColor: 'color-mix(in oklab, var(--color-gray-200) 40%, transparent)',
+    borderColor: 'var(--color-border)',
     strokeDashArray: 4,
     xaxis: { lines: { show: true } },
     padding: { top: 0, bottom: 0, right: 30 },

@@ -67,18 +67,18 @@
                     type="button"
                     @click="form.tipoMarea = 'COMERCIAL'"
                     class="px-6 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2"
-                    :class="form.tipoMarea === 'COMERCIAL' ? 'bg-white dark:bg-gray-800 text-primary shadow-sm ring-1 ring-black/5' : 'text-text-muted hover:text-gray-700'"
+                    :class="form.tipoMarea === 'COMERCIAL' ? 'bg-surface dark:bg-surface-muted text-primary shadow-sm ring-1 ring-border' : 'text-text-muted hover:text-text'"
                   >
-                    <div class="w-1.5 h-1.5 rounded-full" :class="form.tipoMarea === 'COMERCIAL' ? 'bg-primary' : 'bg-transparent border border-gray-300'"></div>
+                    <div class="w-1.5 h-1.5 rounded-full" :class="form.tipoMarea === 'COMERCIAL' ? 'bg-primary' : 'bg-transparent border border-border'"></div>
                     Comercial (MC)
                   </button>
                   <button 
                     type="button"
                     @click="form.tipoMarea = 'INSTITUCIONAL'"
                     class="px-6 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2"
-                    :class="form.tipoMarea === 'INSTITUCIONAL' ? 'bg-white dark:bg-gray-800 text-primary shadow-sm ring-1 ring-black/5' : 'text-text-muted hover:text-gray-700'"
+                    :class="form.tipoMarea === 'INSTITUCIONAL' ? 'bg-surface dark:bg-surface-muted text-primary shadow-sm ring-1 ring-border' : 'text-text-muted hover:text-text'"
                   >
-                    <div class="w-1.5 h-1.5 rounded-full" :class="form.tipoMarea === 'INSTITUCIONAL' ? 'bg-primary' : 'bg-transparent border border-gray-300'"></div>
+                    <div class="w-1.5 h-1.5 rounded-full" :class="form.tipoMarea === 'INSTITUCIONAL' ? 'bg-primary' : 'bg-transparent border border-border'"></div>
                     Institucional (CI)
                   </button>
                 </div>
@@ -98,7 +98,7 @@
                       placeholder="Seleccione el buque..."
                       @change="handleBuqueChange"
                     />
-                    <p v-if="fieldErrors.buqueId" class="text-[10px] text-red-500 font-bold uppercase mt-1">{{ fieldErrors.buqueId }}</p>
+                    <p v-if="fieldErrors.buqueId" class="text-[10px] text-error font-bold uppercase mt-1">{{ fieldErrors.buqueId }}</p>
                   </div>
                 </div>
 
@@ -108,8 +108,8 @@
                     <input 
                       v-model="form.anioMarea"
                       type="number"
-                      class="w-full px-4 py-2.5 bg-gray-50/50 dark:bg-gray-900 border rounded-lg text-sm text-text outline-none focus:border-brand-500 transition-all"
-                      :class="fieldErrors.anioMarea ? 'border-red-500 bg-red-50/30' : 'bg-surface-muted border-border'"
+                      class="w-full px-4 py-2.5 bg-surface-muted dark:bg-surface border rounded-lg text-sm text-text outline-none focus:border-primary transition-all"
+                      :class="fieldErrors.anioMarea ? 'border-error bg-error/10' : 'border-border'"
                     />
                   </div>
                   <div class="space-y-1.5">
@@ -118,8 +118,8 @@
                       v-model="form.nroMarea"
                       type="number"
                       placeholder="000"
-                      class="w-full px-4 py-2.5 bg-gray-50/50 dark:bg-gray-900 border rounded-lg text-sm text-text outline-none focus:border-brand-500 transition-all"
-                      :class="fieldErrors.nroMarea ? 'border-red-500 bg-red-50/30' : 'bg-surface-muted border-border'"
+                      class="w-full px-4 py-2.5 bg-surface-muted dark:bg-surface border rounded-lg text-sm text-text outline-none focus:border-primary transition-all"
+                      :class="fieldErrors.nroMarea ? 'border-error bg-error/10' : 'border-border'"
                     />
                   </div>
                 </div>
@@ -129,7 +129,7 @@
               <div class="flex justify-center pt-2">
                 <div class="px-6 py-3 bg-primary/5 dark:bg-primary/5 rounded-xl border border-dashed border-primary/20 dark:border-primary/20 flex flex-col items-center gap-0.5 group transition-all hover:bg-primary/10">
                   <span class="text-[8px] font-bold text-primary/40 uppercase tracking-[0.2em]">Código Identificador Generado</span>
-                  <span class="text-2xl font-bold text-brand-600 dark:text-primary/40 font-mono tracking-tighter transition-transform group-hover:scale-105">{{ generatedCode }}</span>
+                  <span class="text-2xl font-bold text-primary font-mono tracking-tighter transition-transform group-hover:scale-105">{{ generatedCode }}</span>
                 </div>
               </div>
             </div>
@@ -152,7 +152,7 @@
                   :error="fieldErrors.pesqueriaId"
                   placeholder="Seleccione la pesquería..."
                 />
-                <p v-if="fieldErrors.pesqueriaId" class="text-[10px] text-red-500 font-bold uppercase mt-1">{{ fieldErrors.pesqueriaId }}</p>
+                <p v-if="fieldErrors.pesqueriaId" class="text-[10px] text-error font-bold uppercase mt-1">{{ fieldErrors.pesqueriaId }}</p>
               </div>
 
               <div class="space-y-1.5">
@@ -163,7 +163,7 @@
                   :icon="SettingsIcon"
                   placeholder="Seleccione el arte..."
                 />
-                <p v-if="fieldErrors.arteId" class="text-[10px] text-red-500 font-bold uppercase mt-1">{{ fieldErrors.arteId }}</p>
+                <p v-if="fieldErrors.arteId" class="text-[10px] text-error font-bold uppercase mt-1">{{ fieldErrors.arteId }}</p>
               </div>
 
               <div class="space-y-1.5">
@@ -176,7 +176,7 @@
                   :error="fieldErrors.observadorId"
                   placeholder="Seleccione el observador..."
                 />
-                <p v-if="fieldErrors.observadorId" class="text-[10px] text-red-500 font-bold uppercase mt-1">{{ fieldErrors.observadorId }}</p>
+                <p v-if="fieldErrors.observadorId" class="text-[10px] text-error font-bold uppercase mt-1">{{ fieldErrors.observadorId }}</p>
               </div>
 
               <div class="space-y-1.5">
@@ -187,7 +187,7 @@
                   :show-time="false"
                   :error="fieldErrors.fechaZarpadaEstimada"
                 />
-                <p v-if="fieldErrors.fechaZarpadaEstimada" class="text-[10px] text-red-500 font-bold uppercase mt-1">{{ fieldErrors.fechaZarpadaEstimada }}</p>
+                <p v-if="fieldErrors.fechaZarpadaEstimada" class="text-[10px] text-error font-bold uppercase mt-1">{{ fieldErrors.fechaZarpadaEstimada }}</p>
               </div>
 
               <div class="space-y-1.5">
@@ -201,7 +201,7 @@
                     type="number"
                     min="1"
                     placeholder="Días"
-                    class="block w-full pl-10 pr-3 py-2.5 bg-gray-50/50 dark:bg-gray-900 border border-border rounded-2xl font-bold text-gray-800 dark:text-white outline-none focus:border-brand-500 transition-all placeholder:text-gray-400/50 text-sm"
+                    class="block w-full pl-10 pr-3 py-2.5 bg-surface-muted dark:bg-surface border border-border rounded-2xl font-bold text-text outline-none focus:border-primary transition-all placeholder:text-text-muted/50 text-sm"
                   />
                 </div>
               </div>
@@ -211,37 +211,37 @@
           <!-- Step 3: Confirmación -->
           <div v-if="currentStep === 3" class="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div class="border-b border-border pb-4 text-center">
-              <div class="w-12 h-12 bg-brand-50 dark:bg-brand-500/10 rounded-full flex items-center justify-center mx-auto mb-3">
-                <CheckIcon class="w-6 h-6 text-brand-500" />
+              <div class="w-12 h-12 bg-success/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                <CheckIcon class="w-6 h-6 text-success" />
               </div>
               <h2 class="text-xl font-bold text-text">Verificar y Registrar</h2>
               <p class="text-text-muted text-xs mt-1">Revise los datos antes de persistir la nueva marea en el sistema.</p>
             </div>
 
-            <div v-if="error" class="p-4 bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20 rounded-2xl text-red-600 text-sm font-bold text-center">
+            <div v-if="error" class="p-4 bg-error/10 border border-error/20 rounded-2xl text-error text-sm font-bold text-center">
               {{ error }}
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div class="p-6 bg-surface-muted border-border">
-                <p class="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-2">Identificación</p>
-                <p class="text-sm font-bold text-gray-800 dark:text-gray-200">{{ getBuqueName(form.buqueId) }}</p>
+                <p class="text-[9px] font-bold text-text-muted uppercase tracking-widest mb-2">Identificación</p>
+                <p class="text-sm font-bold text-text">{{ getBuqueName(form.buqueId) }}</p>
                 <div class="flex items-center gap-2 mt-1">
                   <span class="text-xs font-mono text-primary uppercase font-bold tracking-tighter">{{ generatedCode }}</span>
-                  <span class="px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-[9px] font-bold text-text-muted uppercase">{{ form.tipoMarea }}</span>
+                  <span class="px-1.5 py-0.5 rounded bg-surface-muted text-[9px] font-bold text-text-muted uppercase">{{ form.tipoMarea }}</span>
                 </div>
               </div>
               <div class="p-6 bg-surface-muted border-border">
-                <p class="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-2">Operación</p>
-                <p class="text-sm font-bold text-gray-800 dark:text-gray-200">{{ getPesqueriaName(form.pesqueriaId) }}</p>
+                <p class="text-[9px] font-bold text-text-muted uppercase tracking-widest mb-2">Operación</p>
+                <p class="text-sm font-bold text-text">{{ getPesqueriaName(form.pesqueriaId) }}</p>
                 <p class="text-xs text-text-muted mt-0.5">Obs: {{ getObserverName(form.observadorId) }}</p>
                 <p v-if="form.diasEstimados" class="text-xs text-text-muted mt-0.5">Est: {{ form.diasEstimados }} días</p>
               </div>
             </div>
 
-            <div class="p-4 bg-amber-50 dark:bg-amber-500/5 border border-amber-100 dark:border-amber-500/20 rounded-2xl flex gap-4">
-              <InfoIcon class="w-5 h-5 text-amber-500 shrink-0" />
-              <p class="text-[11px] text-amber-800/80 dark:text-amber-300/80 leading-relaxed italic">
+            <div class="p-4 bg-warning/10 border border-warning/20 rounded-2xl flex gap-4">
+              <InfoIcon class="w-5 h-5 text-warning shrink-0" />
+              <p class="text-[11px] text-warning/80 leading-relaxed italic">
                 Al confirmar, se enviará una notificación al observador y la marea quedará en estado **DESIGNADA** disponible en el Panel Operativo.
               </p>
             </div>
@@ -262,7 +262,7 @@
           <div class="flex gap-3">
             <button 
               @click="cancel"
-              class="px-6 py-3 text-sm font-bold text-gray-400 hover:text-red-500 transition-all"
+              class="px-6 py-3 text-sm font-bold text-text-muted hover:text-error transition-all"
             >
               Cancelar
             </button>
