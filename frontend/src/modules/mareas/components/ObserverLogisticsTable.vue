@@ -1,20 +1,20 @@
 <template>
-  <div class="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900 h-full flex flex-col">
+  <div class="rounded-3xl border border-border bg-surface p-6 shadow-sm h-full flex flex-col">
     <div class="mb-8 flex items-center justify-between">
       <div>
-        <h2 class="text-sm font-black text-gray-900 dark:text-white uppercase tracking-widest flex items-center gap-2">
-          <div class="w-1.5 h-4 bg-blue-500 rounded-full"></div>
+        <h2 class="text-sm font-black text-text uppercase tracking-widest flex items-center gap-2">
+          <div class="w-1.5 h-4 bg-primary rounded-full"></div>
           Logística y Talento (Observadores)
         </h2>
-        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-tighter mt-1">Monitoreo de disponibilidad y esfuerzo</p>
+        <p class="text-[10px] font-bold text-text-muted uppercase tracking-tighter mt-1">Monitoreo de disponibilidad y esfuerzo</p>
       </div>
-      <div class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Últimos 12 meses</div>
+      <div class="text-[10px] font-black text-text-muted uppercase tracking-widest">Últimos 12 meses</div>
     </div>
 
     <div class="flex-1 overflow-x-auto custom-scrollbar">
       <table class="w-full text-left border-separate border-spacing-y-2">
         <thead>
-          <tr class="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+          <tr class="text-[10px] font-black text-text-muted uppercase tracking-widest">
             <th class="pb-2 pl-4">Observador</th>
             <th class="pb-2">Días Mar Año</th>
             <th class="pb-2">Estado</th>
@@ -25,17 +25,17 @@
           <tr 
             v-for="obs in observers" 
             :key="obs.id"
-            class="group bg-gray-50/50 dark:bg-gray-800/30 hover:bg-white dark:hover:bg-gray-800 transition-all rounded-2xl shadow-sm border border-transparent hover:border-gray-100 dark:hover:border-gray-700"
+            class="group bg-surface-muted hover:bg-surface transition-all rounded-2xl shadow-sm border border-transparent hover:border-border"
           >
             <!-- Observer Info -->
             <td class="py-4 pl-4 rounded-l-2xl">
               <div class="flex items-center gap-3">
                  <div
-                   class="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-black text-xs shadow-sm border border-indigo-100 dark:border-indigo-800/50"
+                   class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary font-black text-xs shadow-sm border border-primary/20"
                  >
                    {{ obs.nombre.split(' ').map((n) => n[0]).join('') }}
                  </div>
-                 <div class="text-xs font-black text-gray-900 dark:text-white uppercase tracking-wide">
+                 <div class="text-xs font-black text-text uppercase tracking-wide">
                    {{ obs.nombre }}
                  </div>
               </div>
@@ -45,13 +45,13 @@
             <td class="py-4">
                <div class="w-full max-w-35">
                  <div class="flex justify-between text-[10px] font-black uppercase mb-1.5">
-                    <span class="text-gray-900 dark:text-white">{{ obs.diasMar }}d</span>
-                    <span class="text-gray-400">/ {{ diasNavegadosAnuales }} IDEAL</span>
+                    <span class="text-text">{{ obs.diasMar }}d</span>
+                    <span class="text-text-muted">/ {{ diasNavegadosAnuales }} IDEAL</span>
                  </div>
-                 <div class="h-2 w-full bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden border border-gray-100/50 dark:border-gray-700/30 relative">
+                 <div class="h-2 w-full bg-surface rounded-full overflow-hidden border border-border relative">
                     <div
                       class="h-full transition-all duration-1000 ease-out rounded-full shadow-sm"
-                      :class="[obs.diasMar >= diasNavegadosAnuales ? 'bg-orange-500' : 'bg-indigo-500']"
+                      :class="[obs.diasMar >= diasNavegadosAnuales ? 'bg-warning' : 'bg-primary']"
                       :style="{ width: Math.min((obs.diasMar / diasNavegadosAnualesSafe) * 100, 100) + '%' }"
                     ></div>
                     <!-- Target Marker -->
@@ -76,11 +76,11 @@
                <div class="flex flex-col items-end">
                   <span 
                     class="text-xs font-black tabular-nums"
-                    :class="obs.diasTierra > diasExcesoTierra ? 'text-orange-500' : 'text-gray-900 dark:text-white'"
+                    :class="obs.diasTierra > diasExcesoTierra ? 'text-warning' : 'text-text'"
                   >
-                    {{ obs.diasTierra }} <span class="text-[9px] text-gray-400 uppercase font-black">Días</span>
+                    {{ obs.diasTierra }} <span class="text-[9px] text-text-muted uppercase font-black">Días</span>
                   </span>
-                  <span v-if="obs.diasTierra > diasExcesoTierra" class="text-[8px] font-black text-orange-400 uppercase tracking-tighter">Exceso detectado</span>
+                  <span v-if="obs.diasTierra > diasExcesoTierra" class="text-[8px] font-black text-warning uppercase tracking-tighter">Exceso detectado</span>
                </div>
             </td>
           </tr>
@@ -89,8 +89,8 @@
     </div>
 
     <!-- View All Action -->
-    <div class="mt-6 pt-4 border-t border-gray-50 dark:border-gray-800/50 flex justify-center">
-       <button class="flex items-center gap-2 text-[10px] font-black text-indigo-500 hover:text-indigo-600 dark:text-indigo-400 uppercase tracking-widest transition-colors group">
+    <div class="mt-6 pt-4 border-t border-border flex justify-center">
+       <button class="flex items-center gap-2 text-[10px] font-black text-primary hover:text-primary/80 uppercase tracking-widest transition-colors group">
           Ver plantilla completa
           <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3 transition-transform group-hover:translate-x-1" viewBox="0 0 20 20" fill="currentColor">
             <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
@@ -129,15 +129,15 @@ const observers: Observer[] = [
 ]
 
 const statusStyles = {
-  Navegando: 'bg-indigo-50 text-indigo-700 border-indigo-100 dark:bg-indigo-500/10 dark:text-indigo-400 dark:border-indigo-800/50',
-  Disponible: 'bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-800/50',
-  Licencia: 'bg-gray-100 text-gray-600 border-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700',
+  Navegando: 'bg-primary/10 text-primary border-primary/20',
+  Disponible: 'bg-success/10 text-success border-success/20',
+  Licencia: 'bg-surface-muted text-text-muted border-border',
 }
 
 const statusDotStyles = {
-  Navegando: 'bg-indigo-500 animate-pulse',
-  Disponible: 'bg-emerald-500',
-  Licencia: 'bg-gray-400',
+  Navegando: 'bg-primary animate-pulse',
+  Disponible: 'bg-success',
+  Licencia: 'bg-text-muted',
 }
 </script>
 
@@ -149,10 +149,7 @@ const statusDotStyles = {
   background: transparent;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #e5e7eb;
+  background: var(--color-border);
   border-radius: 10px;
-}
-.dark .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #374151;
 }
 </style>

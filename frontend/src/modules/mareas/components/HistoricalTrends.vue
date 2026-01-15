@@ -1,15 +1,15 @@
 <template>
-  <div class="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900 h-full flex flex-col">
+  <div class="rounded-3xl border border-border bg-surface p-6 shadow-sm h-full flex flex-col">
     <div class="mb-8 flex items-center justify-between">
       <div>
-        <h2 class="text-sm font-black text-gray-900 dark:text-white uppercase tracking-widest flex items-center gap-2">
-          <div class="w-1.5 h-4 bg-blue-500 rounded-full"></div>
+        <h2 class="text-sm font-black text-text uppercase tracking-widest flex items-center gap-2">
+          <div class="w-1.5 h-4 bg-info rounded-full"></div>
           Tendencias Históricas
         </h2>
-        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-tighter mt-1">Evolución temporal del esfuerzo de observación</p>
+        <p class="text-[10px] font-bold text-text-muted uppercase tracking-tighter mt-1">Evolución temporal del esfuerzo de observación</p>
       </div>
       <div class="flex gap-2">
-         <select class="text-[10px] font-black uppercase tracking-widest bg-gray-50 dark:bg-gray-800 border-none rounded-lg px-3 py-1 text-gray-500 dark:text-gray-400 focus:ring-1 ring-indigo-500/50">
+         <select class="text-[10px] font-black uppercase tracking-widest bg-surface-muted border-none rounded-lg px-3 py-1 text-text-muted focus:ring-1 ring-primary/50">
            <option>Mareas vs Informes</option>
            <option>Volumen de Datos</option>
          </select>
@@ -27,12 +27,12 @@
 
     <div class="mt-6 flex items-center gap-6">
        <div class="flex items-center gap-2">
-          <div class="w-3 h-3 rounded bg-blue-500"></div>
-          <span class="text-[10px] font-black text-gray-500 uppercase tracking-widest">Mareas Iniciadas</span>
+          <div class="w-3 h-3 rounded bg-info"></div>
+          <span class="text-[10px] font-black text-text-muted uppercase tracking-widest">Mareas Iniciadas</span>
        </div>
        <div class="flex items-center gap-2">
-          <div class="w-3 h-3 rounded bg-indigo-500"></div>
-          <span class="text-[10px] font-black text-gray-500 uppercase tracking-widest">Informes Protocolizados</span>
+          <div class="w-3 h-3 rounded bg-primary"></div>
+          <span class="text-[10px] font-black text-text-muted uppercase tracking-widest">Informes Protocolizados</span>
        </div>
     </div>
   </div>
@@ -42,7 +42,7 @@
 import { computed } from 'vue'
 import { useTheme } from '@/components/layout/ThemeProvider.vue'
 
-const { isDarkMode } = useTheme() as { isDarkMode: { value: boolean } }
+const { isDarkMode } = useTheme() as any
 
 const series = [
   {

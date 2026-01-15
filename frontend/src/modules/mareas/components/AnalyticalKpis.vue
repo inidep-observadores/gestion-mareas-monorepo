@@ -3,14 +3,14 @@
     <div
       v-for="kpi in kpis"
       :key="kpi.title"
-      class="group relative overflow-hidden rounded-3xl border border-gray-100 bg-white p-6 shadow-sm transition-all hover:shadow-xl dark:border-gray-800 dark:bg-gray-900"
+      class="group relative overflow-hidden rounded-3xl border border-border bg-surface p-6 shadow-sm transition-all hover:shadow-xl"
     >
       <div class="flex items-start justify-between mb-4">
         <div>
-          <p class="text-[10px] font-black uppercase tracking-widest text-gray-500 dark:text-gray-400">
+          <p class="text-[10px] font-black uppercase tracking-widest text-text-muted">
             {{ kpi.title }}
           </p>
-          <h3 class="mt-1 text-3xl font-black text-gray-900 dark:text-white leading-none">
+          <h3 class="mt-1 text-3xl font-black text-text leading-none">
             {{ kpi.value }}
           </h3>
         </div>
@@ -31,14 +31,14 @@
         />
       </div>
 
-      <div class="mt-4 flex items-center justify-between border-t border-gray-50 dark:border-gray-800 pt-4">
+      <div class="mt-4 flex items-center justify-between border-t border-border pt-4">
         <span 
           class="text-[10px] font-black px-2 py-0.5 rounded-lg"
           :class="kpi.trendClass"
         >
           {{ kpi.trendLabel }}
         </span>
-        <span class="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">vs mes anterior</span>
+        <span class="text-[10px] font-bold text-text-muted uppercase tracking-tighter">vs mes anterior</span>
       </div>
     </div>
   </div>
@@ -49,52 +49,52 @@ import { computed } from 'vue'
 import { useTheme } from '@/components/layout/ThemeProvider.vue'
 import { ShipIcon, UserGroupIcon, TaskIcon, CheckIcon } from '@/icons'
 
-const { isDarkMode } = useTheme() as { isDarkMode: { value: boolean } }
+const { isDarkMode } = useTheme() as any
 
 const kpis = [
   {
     title: 'Cobertura Global',
     value: '84.2%',
     icon: ShipIcon,
-    iconWrapperClass: 'bg-blue-50 dark:bg-blue-900/20',
-    iconClass: 'text-blue-500',
-    color: '#3b82f6',
+    iconWrapperClass: 'bg-info/10',
+    iconClass: 'text-info',
+    color: '#0ea5e9', // info
     trendData: [45, 52, 48, 62, 58, 75, 84],
     trendLabel: '↑ 5.2%',
-    trendClass: 'bg-blue-50 text-blue-600 dark:bg-blue-900/30',
+    trendClass: 'bg-info/10 text-info',
   },
   {
     title: 'Mareas Cerradas',
     value: '142',
     icon: CheckIcon,
-    iconWrapperClass: 'bg-emerald-50 dark:bg-emerald-900/20',
-    iconClass: 'text-emerald-500',
-    color: '#10b981',
+    iconWrapperClass: 'bg-success/10',
+    iconClass: 'text-success',
+    color: '#10b981', // success
     trendData: [30, 40, 35, 50, 49, 60, 70],
     trendLabel: '↑ 12%',
-    trendClass: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30',
+    trendClass: 'bg-success/10 text-success',
   },
   {
     title: 'Eficiencia SLA',
     value: '91.5%',
     icon: TaskIcon,
-    iconWrapperClass: 'bg-indigo-50 dark:bg-indigo-900/20',
-    iconClass: 'text-indigo-500',
-    color: '#6366f1',
+    iconWrapperClass: 'bg-warning/10',
+    iconClass: 'text-warning',
+    color: '#f59e0b', // warning
     trendData: [80, 85, 82, 88, 87, 90, 91],
     trendLabel: '↑ 2.1%',
-    trendClass: 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30',
+    trendClass: 'bg-warning/10 text-warning',
   },
   {
     title: 'Volumen Datos',
     value: '4.8 GB',
     icon: UserGroupIcon,
-    iconWrapperClass: 'bg-brand-50 dark:bg-brand-900/20',
-    iconClass: 'text-brand-500',
-    color: '#A5182C', // Using brand color
+    iconWrapperClass: 'bg-primary/10',
+    iconClass: 'text-primary',
+    color: '#2563eb', // primary
     trendData: [2.1, 2.5, 3.0, 3.8, 4.2, 4.5, 4.8],
     trendLabel: '↑ 8.4%',
-    trendClass: 'bg-brand-50 text-brand-600 dark:bg-brand-900/30',
+    trendClass: 'bg-primary/10 text-primary',
   }
 ]
 

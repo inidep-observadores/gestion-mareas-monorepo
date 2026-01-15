@@ -24,10 +24,10 @@
               v-for="eventType in eventTypes"
               :key="eventType.id"
               @click="eventType.enabled = !eventType.enabled"
-              class="group relative flex flex-col p-3 rounded-2xl border transition-all cursor-pointer select-none bg-white dark:bg-black/20 overflow-hidden"
+              class="group relative flex flex-col p-3 rounded-2xl border transition-all cursor-pointer select-none bg-surface-muted overflow-hidden"
               :class="eventType.enabled
-                ? 'border-indigo-500/20 shadow-md shadow-indigo-500/5 ring-1 ring-indigo-500/5'
-                : 'border-gray-100 dark:border-white/5 opacity-50 grayscale-[0.8] hover:opacity-80'"
+                ? 'border-primary/20 shadow-md shadow-primary/5 ring-1 ring-primary/5'
+                : 'border-border opacity-50 grayscale-[0.8] hover:opacity-80'"
             >
               <!-- Label + Visibility -->
               <div class="flex items-center justify-between gap-2 mb-3">
@@ -37,7 +37,7 @@
                 <component
                   :is="eventType.enabled ? EyeIcon : EyeSlashIcon"
                   class="w-3.5 h-3.5 transition-colors"
-                  :class="eventType.enabled ? 'text-indigo-500' : 'text-gray-400'"
+                  :class="eventType.enabled ? 'text-primary' : 'text-text-muted'"
                 />
               </div>
 
@@ -49,7 +49,7 @@
 
                 <div
                   class="w-8 h-8 flex items-center justify-center rounded-xl transition-all duration-300"
-                  :class="eventType.enabled ? 'bg-indigo-500/10 text-indigo-500 border border-indigo-500/10' : 'bg-gray-100 dark:bg-white/5 text-gray-400 border border-transparent'"
+                  :class="eventType.enabled ? 'bg-primary/10 text-primary border border-primary/10' : 'bg-surface text-text-muted border border-transparent'"
                 >
                   <component :is="eventType.icon" class="w-4 h-4" />
                 </div>
@@ -63,9 +63,9 @@
       <div class="flex flex-col lg:flex-row gap-6 relative items-start">
 
         <div
-          class="flex-1 min-w-0 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-6 shadow-sm transition-all duration-300"
+          class="flex-1 min-w-0 bg-surface border border-border rounded-2xl p-6 shadow-sm transition-all duration-300 relative z-0 overflow-hidden"
         >
-          <FullCalendar :options="calendarOptions" class="mareas-calendar">
+          <FullCalendar ref="calendarRef" :options="calendarOptions" class="mareas-calendar">
             <template #eventContent="arg">
               <div class="group relative w-full h-full p-1 cursor-pointer overflow-visible">
                 <!-- Event Title -->
@@ -94,10 +94,10 @@
         <Transition name="slide-in-right">
           <div
             v-if="selectedEvent"
-            class="w-full lg:w-96 shrink-0 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl shadow-lg sticky top-6"
+            class="w-full lg:w-96 shrink-0 bg-surface border border-border rounded-2xl shadow-2xl sticky top-6 z-30"
           >
             <!-- Sidebar Header -->
-            <div class="p-6 border-b border-gray-100 dark:border-gray-800 flex items-start justify-between">
+            <div class="p-6 border-b border-border flex items-start justify-between">
               <div>
                 <span
                   class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium uppercase tracking-wide mb-3"
@@ -158,7 +158,7 @@
                <button
                   v-if="selectedEvent.extendedProps?.mareaId"
                   @click="navigateToMarea"
-                  class="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-brand-600 hover:bg-brand-700 border border-transparent rounded-xl transition-all shadow-sm shadow-brand-600/20"
+                  class="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium text-primary-fg bg-primary hover:bg-primary/90 border border-transparent rounded-xl transition-all shadow-sm shadow-primary/20"
                 >
                   <EyeIcon class="w-4 h-4" />
                   Ver Marea
@@ -241,6 +241,14 @@ const router = useRouter()
 
 // Sidebar State (replaced Modal)
 const selectedEvent = ref<any>(null)
+const calendarRef = ref<any>(null)
+
+// Update calendar size when sidebar opens/closes
+watch(selectedEvent, () => {
+  setTimeout(() => {
+    calendarRef.value?.getApi().updateSize()
+  }, 350) // Wait for sidebar transition to finish
+})
 
 const handleEventClick = (clickInfo: any) => {
   clickInfo.jsEvent.preventDefault()
@@ -339,22 +347,22 @@ onMounted(() => {
 <style>
 /* Estilos personalizados para integrar con el tema */
 .mareas-calendar {
-  --fc-border-color: var(--color-gray-200);
-  --fc-button-bg-color: var(--color-brand-500);
-  --fc-button-border-color: var(--color-brand-500);
-  --fc-button-hover-bg-color: var(--color-brand-600);
-  --fc-button-active-bg-color: var(--color-brand-600);
-  --fc-today-bg-color: rgba(70, 95, 255, 0.05);
+  --fc-border-color: var(--color-border);
+  --fc-button-bg-color: var(--color-primary);
+  --fc-button-border-color: var(--color-primary);
+  --fc-button-hover-bg-color: var(--color-primary);
+  --fc-button-active-bg-color: var(--color-primary);
+  --fc-today-bg-color: var(--color-primary-muted, rgba(37, 99, 235, 0.05));
   --fc-page-bg-color: transparent;
-  font-family: 'Outfit', sans-serif;
-  --fc-text-color: var(--color-gray-700);
+  font-family: var(--font-outfit);
+  --fc-text-color: var(--color-text);
 }
 
 .dark .mareas-calendar {
-  --fc-border-color: var(--color-gray-800);
-  --fc-text-color: var(--color-gray-300);
-  --fc-neutral-bg-color: var(--color-gray-900);
-  --fc-list-event-hover-bg-color: var(--color-gray-800);
+  --fc-border-color: var(--color-border);
+  --fc-text-color: var(--color-text);
+  --fc-neutral-bg-color: var(--color-surface);
+  --fc-list-event-hover-bg-color: var(--color-surface-muted);
 }
 
 .fc .fc-toolbar-title {
@@ -440,14 +448,9 @@ onMounted(() => {
   opacity: 0;
 }
 
-/* Asegurar que el tooltip sea visible fuera del contenedor del evento */
-.fc .fc-scroller-harness,
-.fc .fc-scroller,
-.fc .fc-daygrid-body,
-.fc .fc-daygrid-day-frame,
-.fc .fc-daygrid-day-events,
+/* Asegurar que el tooltip sea visible pero sin romper la contención del calendario */
 .fc .fc-view-harness {
-  overflow: visible !important;
+  z-index: 1;
 }
 
 .fc-daygrid-body {
@@ -457,7 +460,7 @@ onMounted(() => {
 /* En vista semanal y mensual, elevamos los eventos al pasar el mouse */
 .fc-timegrid-event-harness:hover,
 .fc-daygrid-event-harness:hover {
-  z-index: 99999 !important;
+  z-index: 99 !important;
   position: relative;
 }
 
@@ -490,10 +493,5 @@ onMounted(() => {
 .fc .fc-toolbar {
   position: relative;
   z-index: 5; /* Por debajo de los eventos elevados (20+) */
-}
-
-/* Asegurar que el scrollgrid no recorte nada */
-.fc-theme-standard .fc-scrollgrid {
-  overflow: visible !important;
 }
 </style>
