@@ -6,9 +6,9 @@
     <div class="relative min-h-screen pb-20 animate-in fade-in duration-700">
 
       <!-- TOP ANALYTICS FILTERS -->
-      <div class="mb-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6 bg-white dark:bg-gray-900 p-6 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm">
+      <div class="mb-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6 bg-surface p-6 rounded-3xl border border-border shadow-sm">
         <div class="flex items-center gap-4">
-          <div class="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-900/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+          <div class="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
             <BarChartIcon class="w-6 h-6" />
           </div>
           <div>
@@ -19,18 +19,18 @@
 
         <div class="flex flex-wrap items-center gap-3">
           <!-- Period Filter -->
-          <div class="flex items-center gap-2 bg-gray-50 dark:bg-gray-800/50 px-4 py-2 rounded-2xl border border-gray-100 dark:border-gray-800">
-            <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Año</span>
-            <select class="text-xs font-black bg-transparent border-none focus:ring-0 text-gray-700 dark:text-gray-300 cursor-pointer p-0 pr-6">
+          <div class="flex items-center gap-2 bg-surface-muted px-4 py-2 rounded-2xl border border-border">
+            <span class="text-[10px] font-black text-text-muted uppercase tracking-widest">Año</span>
+            <select class="text-xs font-black bg-transparent border-none focus:ring-0 text-text cursor-pointer p-0 pr-6">
               <option>2025</option>
               <option>2024</option>
             </select>
           </div>
 
           <!-- Fishery Filter -->
-          <div class="flex items-center gap-2 bg-gray-50 dark:bg-gray-800/50 px-4 py-2 rounded-2xl border border-gray-100 dark:border-gray-800">
-            <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Pesquería</span>
-            <select class="text-xs font-black bg-transparent border-none focus:ring-0 text-gray-700 dark:text-gray-300 cursor-pointer p-0 pr-6">
+          <div class="flex items-center gap-2 bg-surface-muted px-4 py-2 rounded-2xl border border-border">
+            <span class="text-[10px] font-black text-text-muted uppercase tracking-widest">Pesquería</span>
+            <select class="text-xs font-black bg-transparent border-none focus:ring-0 text-text cursor-pointer p-0 pr-6">
               <option>Todas las especies</option>
               <option>Langostino</option>
               <option>Merluza</option>
@@ -38,7 +38,7 @@
             </select>
           </div>
 
-          <button class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-indigo-500/20 active:scale-95">
+          <button class="bg-primary hover:bg-primary/90 text-primary-fg px-6 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-primary/20 active:scale-95">
             Actualizar Reporte
           </button>
         </div>
