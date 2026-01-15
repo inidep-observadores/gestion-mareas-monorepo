@@ -102,7 +102,8 @@ const sparklineOptions = (color: string) => ({
   chart: {
     sparkline: { enabled: true },
     fontFamily: 'inherit',
-    animations: { enabled: true }
+    animations: { enabled: true },
+    background: 'transparent'
   },
   stroke: { curve: 'smooth', width: 2 },
   fill: {
@@ -115,6 +116,14 @@ const sparklineOptions = (color: string) => ({
     }
   },
   colors: [color],
+  xaxis: {
+    labels: { show: false },
+    axisBorder: { show: false },
+    axisTicks: { show: false }
+  },
+  yaxis: {
+    labels: { show: false }
+  },
   tooltip: { enabled: false },
   theme: {
     mode: isDarkMode.value ? 'dark' : 'light'
