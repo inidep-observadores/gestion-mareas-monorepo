@@ -8,13 +8,13 @@
       <!-- TOP ACTIONS & NAVIGATION -->
       <div class="mb-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
         <div class="flex items-center gap-4">
-          <div class="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-900/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-800/50">
+          <div class="w-12 h-12 rounded-2xl bg-surface-muted border border-border flex items-center justify-center text-primary">
             <GridIcon v-if="viewMode === 'kanban'" class="w-6 h-6" />
             <ListIcon v-else class="w-6 h-6" />
           </div>
           <div>
-            <h2 class="text-lg font-black text-gray-900 dark:text-white uppercase tracking-tighter leading-none">Gestión de Flujo</h2>
-            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">Arrastre las mareas para cambiar su estado</p>
+            <h2 class="text-lg font-black text-text uppercase tracking-tighter leading-none">Gestión de Flujo</h2>
+            <p class="text-[10px] font-bold text-text-muted uppercase tracking-widest mt-1">Arrastre las mareas para cambiar su estado</p>
           </div>
         </div>
 
@@ -26,38 +26,38 @@
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-6 items-end">
           <!-- Main Search -->
           <div class="lg:col-span-4">
-            <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block">Buscar Marea</label>
+            <label class="text-[10px] font-black text-text-muted uppercase tracking-widest mb-2 block">Buscar Marea</label>
             <div class="relative group">
               <input
                 v-model="searchQuery"
                 type="text"
                 placeholder="Buque, código u observador..."
-                class="w-full px-5 py-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-2xl text-xs font-black placeholder:text-gray-400 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all outline-none"
+                class="w-full px-5 py-3 bg-surface-muted border border-border rounded-2xl text-xs font-black placeholder:text-text-muted/50 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
               />
-              <SearchIcon class="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-indigo-500 transition-colors" />
+              <SearchIcon class="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted group-focus-within:text-primary transition-colors" />
             </div>
           </div>
 
           <!-- Selectors -->
           <div class="lg:col-span-2">
-            <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block">Flota</label>
+            <label class="text-[10px] font-black text-text-muted uppercase tracking-widest mb-2 block">Flota</label>
             <SelectInput v-model="filters.fishery" :options="fisheryOptions" placeholder="Todas" />
           </div>
           <div class="lg:col-span-2">
-            <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block">Pesquería</label>
+            <label class="text-[10px] font-black text-text-muted uppercase tracking-widest mb-2 block">Pesquería</label>
             <SelectInput v-model="filters.fishery2" :options="fishery2Options" placeholder="Todas" />
           </div>
           <div class="lg:col-span-2">
-            <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block">Observador</label>
+            <label class="text-[10px] font-black text-text-muted uppercase tracking-widest mb-2 block">Observador</label>
             <SelectInput v-model="filters.observer" :options="observerOptions" placeholder="Cualquiera" />
           </div>
 
           <!-- Quick Actions -->
           <div class="lg:col-span-2 flex gap-2">
-            <button class="flex-1 bg-gray-900 dark:bg-white text-white dark:text-gray-900 px-4 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:scale-[1.02] transition-all active:scale-95 shadow-lg shadow-gray-500/10">
+            <button class="flex-1 bg-text text-surface px-4 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:scale-[1.02] transition-all active:scale-95 shadow-lg shadow-text/10">
               Aplicar
             </button>
-            <button @click="resetFilters" class="p-3 bg-gray-50 dark:bg-gray-800 text-gray-400 hover:text-gray-600 rounded-2xl transition-colors border border-gray-100 dark:border-gray-700">
+            <button @click="resetFilters" class="p-3 bg-surface-muted text-text-muted hover:text-text rounded-2xl transition-colors border border-border">
               <RefreshIcon class="w-5 h-5" />
             </button>
           </div>
@@ -78,12 +78,12 @@
 
         <div
           v-else-if="columns.length === 0"
-          class="flex items-center justify-center h-[420px] bg-white dark:bg-gray-900 border border-dashed border-gray-200 dark:border-gray-800 rounded-3xl text-center text-gray-500"
+          class="flex items-center justify-center h-[420px] bg-surface border border-dashed border-border rounded-3xl text-center text-text-muted"
         >
           <div>
-            <DocsIcon class="w-10 h-10 mx-auto mb-3 text-gray-300" />
-            <p class="text-sm font-bold text-gray-600 dark:text-gray-300">No hay mareas para mostrar.</p>
-            <p class="text-xs text-gray-400 mt-1">Ajuste filtros o registre una nueva marea.</p>
+            <DocsIcon class="w-10 h-10 mx-auto mb-3 text-text-muted/20" />
+            <p class="text-sm font-bold text-text">No hay mareas para mostrar.</p>
+            <p class="text-xs text-text-muted mt-1">Ajuste filtros o registre una nueva marea.</p>
           </div>
         </div>
 
@@ -93,20 +93,20 @@
             <div class="mb-4 flex items-center justify-between px-2">
               <div class="flex items-center gap-3">
                 <div class="w-2 h-2 rounded-full shadow-sm" :class="column.color"></div>
-                <h3 class="text-xs font-black text-gray-900 dark:text-white uppercase tracking-widest">
+                <h3 class="text-xs font-black text-text uppercase tracking-widest">
                   {{ column.title }}
                 </h3>
-                <span class="text-[10px] font-black tabular-nums bg-gray-100 dark:bg-gray-800 px-2.5 py-1 rounded-xl text-gray-500 border border-gray-100 dark:border-gray-700">
+                <span class="text-[10px] font-black tabular-nums bg-surface-muted px-2.5 py-1 rounded-xl text-text-muted border border-border">
                   {{ column.tasks.length }}
                 </span>
               </div>
-              <button class="text-gray-300 hover:text-gray-600 dark:hover:text-gray-400 opacity-0 group-hover/col:opacity-100 transition-opacity">
+              <button class="text-text-muted/40 hover:text-text opacity-0 group-hover/col:opacity-100 transition-opacity">
                 <HorizontalDots class="w-4 h-4" />
               </button>
             </div>
 
             <!-- Draggable Container -->
-            <div class="flex-1 bg-gray-50/50 dark:bg-gray-900/40 rounded-[2.5rem] border border-gray-100 dark:border-gray-800/50 p-3 overflow-y-auto custom-scrollbar active:bg-gray-100/30 dark:active:bg-gray-800/20 transition-colors">
+            <div class="flex-1 bg-surface-muted/30 rounded-[2.5rem] border border-border p-3 overflow-y-auto custom-scrollbar active:bg-surface-muted/50 transition-colors">
               <VueDraggableNext
                 v-model="columns[idx].tasks"
                 group="mareas"
@@ -119,35 +119,35 @@
                 <div
                   v-for="task in column.tasks"
                   :key="task.id"
-                  class="group bg-white dark:bg-gray-900 p-6 rounded-[2rem] border border-gray-50 dark:border-gray-800 shadow-sm hover:shadow-xl hover:border-indigo-100 dark:hover:border-indigo-900/30 transition-all duration-300 cursor-grab active:cursor-grabbing relative overflow-hidden"
+                  class="group bg-surface p-6 rounded-[2rem] border border-border shadow-sm hover:shadow-xl hover:border-primary/30 transition-all duration-300 cursor-grab active:cursor-grabbing relative overflow-hidden"
                   @click="navigateToDetail(task.id)"
                 >
                   <!-- Card Glow Backdrop -->
-                  <div class="absolute -right-10 -top-10 w-24 h-24 bg-indigo-500/5 blur-3xl rounded-full"></div>
+                  <div class="absolute -right-10 -top-10 w-24 h-24 bg-primary/5 blur-3xl rounded-full"></div>
 
                   <div class="flex justify-between items-start mb-4 relative z-10">
                     <div class="flex flex-col">
-                      <span class="text-[9px] font-black text-indigo-500 uppercase tracking-widest mb-1">{{ task.code }}</span>
-                      <h4 class="text-xs font-black text-gray-900 dark:text-white uppercase group-hover:text-indigo-600 transition-colors">{{ task.vessel }}</h4>
+                      <span class="text-[9px] font-black text-primary uppercase tracking-widest mb-1">{{ task.code }}</span>
+                      <h4 class="text-xs font-black text-text uppercase group-hover:text-primary transition-colors">{{ task.vessel }}</h4>
                     </div>
-                    <div v-if="task.alert" class="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)] animate-pulse"></div>
+                    <div v-if="task.alert" class="w-2 h-2 rounded-full bg-error shadow-[0_0_10px_rgba(var(--error),0.5)] animate-pulse"></div>
                   </div>
 
                   <div class="space-y-4 relative z-10">
-                    <div class="flex items-center gap-2 text-[10px] font-bold text-gray-400 uppercase">
+                    <div class="flex items-center gap-2 text-[10px] font-bold text-text-muted uppercase">
                       <CalenderIcon class="w-3.5 h-3.5" />
                       {{ task.date }}
                     </div>
-                    <div class="flex items-center gap-2 text-[10px] font-bold text-gray-400 uppercase">
+                    <div class="flex items-center gap-2 text-[10px] font-bold text-text-muted uppercase">
                       <UserCircleIcon class="w-3.5 h-3.5" />
                       {{ task.observer || 'Sin observador' }}
                     </div>
                     
-                    <div class="pt-4 border-t border-gray-50 dark:border-gray-800 flex items-center justify-between">
-                      <span class="text-[9px] font-black text-gray-500 uppercase tracking-tighter bg-gray-50 dark:bg-gray-800 px-2 py-0.5 rounded-lg border border-gray-100 dark:border-gray-700/50">
+                    <div class="pt-4 border-t border-border flex items-center justify-between">
+                      <span class="text-[9px] font-black text-text-muted uppercase tracking-tighter bg-surface-muted px-2 py-0.5 rounded-lg border border-border">
                         {{ task.port }}
                       </span>
-                      <span class="text-[9px] font-black text-gray-400 uppercase tracking-tighter bg-gray-50 dark:bg-gray-800 px-2 py-0.5 rounded-lg border border-gray-100 dark:border-gray-700/50">
+                      <span class="text-[9px] font-black text-text-muted uppercase tracking-tighter bg-surface-muted px-2 py-0.5 rounded-lg border border-border">
                         {{ task.progress }}%
                       </span>
                     </div>
@@ -160,8 +160,8 @@
                   class="absolute inset-0 flex items-center justify-center p-8 opacity-40 pointer-events-none"
                 >
                   <div class="text-center">
-                    <DocsIcon class="w-8 h-8 mx-auto mb-2 text-gray-300" />
-                    <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest italic">Vacío</span>
+                    <DocsIcon class="w-8 h-8 mx-auto mb-2 text-text-muted/20" />
+                    <span class="text-[10px] font-black text-text-muted uppercase tracking-widest italic">Vacío</span>
                   </div>
                 </div>
               </VueDraggableNext>
@@ -184,33 +184,33 @@
 
         <div
           v-else-if="columns.length === 0"
-          class="p-12 text-center bg-white dark:bg-gray-900 border border-dashed border-gray-200 dark:border-gray-800 rounded-3xl"
+          class="p-12 text-center bg-surface border border-dashed border-border rounded-3xl"
         >
-          <p class="text-sm font-bold text-gray-700 dark:text-gray-200">No hay mareas coincidentes.</p>
-          <p class="text-xs text-gray-400 mt-1">Revise los filtros o espere a nuevas asignaciones.</p>
+          <p class="text-sm font-bold text-text">No hay mareas coincidentes.</p>
+          <p class="text-xs text-text-muted mt-1">Revise los filtros o espere a nuevas asignaciones.</p>
         </div>
 
         <div
           v-else
           v-for="(statusGroup, idx) in columns"
           :key="statusGroup.id"
-          class="bg-white dark:bg-gray-900 border border-gray-50 dark:border-gray-800 rounded-[2.5rem] overflow-hidden shadow-sm hover:shadow-lg transition-all"
+          class="bg-surface border border-border rounded-[2.5rem] overflow-hidden shadow-sm hover:shadow-lg transition-all"
         >
           <!-- Group Header -->
           <div
-            class="px-8 py-5 flex items-center justify-between cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors border-b border-transparent"
-            :class="{ 'border-gray-50 dark:border-gray-800 bg-gray-50/30 dark:bg-gray-800/20': statusGroup.expanded }"
+            class="px-8 py-5 flex items-center justify-between cursor-pointer hover:bg-surface-muted transition-colors border-b border-transparent"
+            :class="{ 'border-border bg-surface-muted/30': statusGroup.expanded }"
             @click="statusGroup.expanded = !statusGroup.expanded"
           >
             <div class="flex items-center gap-4">
               <div class="w-2.5 h-2.5 rounded-full shadow-sm" :class="statusGroup.color"></div>
-              <h2 class="text-sm font-black text-gray-900 dark:text-white uppercase tracking-widest">{{ statusGroup.title }}</h2>
-              <span class="text-[10px] font-black bg-white dark:bg-gray-800 px-3 py-1 rounded-xl text-gray-400 border border-gray-100 dark:border-gray-700">
+              <h2 class="text-sm font-black text-text uppercase tracking-widest">{{ statusGroup.title }}</h2>
+              <span class="text-[10px] font-black bg-surface px-3 py-1 rounded-xl text-text-muted border border-border">
                 {{ statusGroup.tasks.length }}
               </span>
             </div>
-            <button class="w-8 h-8 flex items-center justify-center rounded-full border border-gray-100 dark:border-gray-800 hover:bg-white dark:hover:bg-gray-700 transition-all shadow-sm" :class="{ 'rotate-180 bg-gray-100 dark:bg-gray-700': statusGroup.expanded }">
-              <ChevronDownIcon class="w-4 h-4 text-gray-400" />
+            <button class="w-8 h-8 flex items-center justify-center rounded-full border border-border hover:bg-surface transition-all shadow-sm" :class="{ 'rotate-180 bg-surface-muted': statusGroup.expanded }">
+              <ChevronDownIcon class="w-4 h-4 text-text-muted" />
             </button>
           </div>
 
@@ -229,52 +229,52 @@
               <div
                 v-for="task in statusGroup.tasks"
                 :key="task.id"
-                class="p-5 hover:bg-gray-50 dark:hover:bg-white/[0.02] border border-transparent hover:border-gray-100 dark:hover:border-gray-800 rounded-3xl transition-all cursor-pointer group/row relative overflow-hidden"
+                class="p-5 hover:bg-surface-muted border border-transparent hover:border-border rounded-3xl transition-all cursor-pointer group/row relative overflow-hidden"
                 @click="navigateToDetail(task.id)"
               >
                 <!-- Row Glow -->
-                <div class="absolute left-0 top-0 bottom-0 w-1 bg-indigo-500 scale-y-0 group-hover/row:scale-y-100 transition-transform origin-top"></div>
+                <div class="absolute left-0 top-0 bottom-0 w-1 bg-primary scale-y-0 group-hover/row:scale-y-100 transition-transform origin-top"></div>
 
                 <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
                   <div class="flex items-center gap-6">
                     <!-- Drag Handle -->
-                    <div class="drag-handle opacity-0 group-hover/row:opacity-100 transition-opacity p-2 -ml-2 text-gray-300 hover:text-indigo-500 cursor-grab active:cursor-grabbing">
+                    <div class="drag-handle opacity-0 group-hover/row:opacity-100 transition-opacity p-2 -ml-2 text-text-muted/40 hover:text-primary cursor-grab active:cursor-grabbing">
                       <GripVerticalIcon class="w-5 h-5" />
                     </div>
 
-                    <div class="w-14 h-14 rounded-2xl bg-indigo-50 dark:bg-indigo-900/20 flex items-center justify-center border border-indigo-100/50 dark:border-indigo-800/30 text-indigo-500">
+                    <div class="w-14 h-14 rounded-2xl bg-surface-muted border border-border text-primary">
                       <DocsIcon class="w-7 h-7 opacity-60" />
                     </div>
 
                     <div>
                       <div class="flex items-center gap-3 mb-1.5">
-                        <span class="text-[10px] font-black text-indigo-500 uppercase tracking-widest">{{ task.code }}</span>
-                        <span v-if="task.alert" class="flex items-center gap-1 text-[8px] font-black uppercase bg-red-50 text-red-600 dark:bg-red-900/30 dark:text-red-400 px-2 py-1 rounded-lg border border-red-100 dark:border-red-800/30">
+                        <span class="text-[10px] font-black text-primary uppercase tracking-widest">{{ task.code }}</span>
+                        <span v-if="task.alert" class="flex items-center gap-1 text-[8px] font-black uppercase bg-error/10 text-error px-2 py-1 rounded-lg border border-error/20">
                           <WarningIcon class="w-2.5 h-2.5" /> Alerta crítica
                         </span>
                       </div>
-                      <h4 class="text-sm font-black text-gray-900 dark:text-white uppercase tracking-tight">{{ task.vessel }}</h4>
-                      <div class="flex flex-wrap items-center gap-4 mt-3 text-[10px] font-black text-gray-400 uppercase tracking-tighter">
+                      <h4 class="text-sm font-black text-text uppercase tracking-tight">{{ task.vessel }}</h4>
+                      <div class="flex flex-wrap items-center gap-4 mt-3 text-[10px] font-black text-text-muted uppercase tracking-tighter">
                         <span class="flex items-center gap-1.5">
-                          <CalenderIcon class="w-4 h-4 text-gray-300" /> {{ task.date }}
+                          <CalenderIcon class="w-4 h-4 text-text-muted/40" /> {{ task.date }}
                         </span>
                         <span class="flex items-center gap-1.5">
-                          <UserCircleIcon class="w-4 h-4 text-gray-300" /> {{ task.observer || 'Sin observador' }}
+                          <UserCircleIcon class="w-4 h-4 text-text-muted/40" /> {{ task.observer || 'Sin observador' }}
                         </span>
                         <span class="flex items-center gap-1.5">
-                          <DocsIcon class="w-3 h-3 text-gray-300" /> {{ task.port }}
+                          <DocsIcon class="w-3 h-3 text-text-muted/40" /> {{ task.port }}
                         </span>
                       </div>
                     </div>
                   </div>
                   
                   <div class="flex items-center gap-4">
-                    <span class="px-4 py-2 text-[10px] font-black uppercase tracking-widest border border-gray-100 dark:border-gray-800 text-gray-500 rounded-2xl">
+                    <span class="px-4 py-2 text-[10px] font-black uppercase tracking-widest border border-border text-text-muted rounded-2xl">
                       {{ task.progress }}%
                     </span>
                     <button
                       @click.stop="navigateToDetail(task.id)"
-                      class="px-6 py-3 bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest rounded-2xl hover:bg-indigo-700 shadow-xl shadow-indigo-500/20 active:scale-95 transition-all"
+                      class="px-6 py-3 bg-primary text-primary-fg text-[10px] font-black uppercase tracking-widest rounded-2xl hover:bg-primary/90 shadow-xl shadow-primary/20 active:scale-95 transition-all"
                     >
                       Ver detalle
                     </button>
@@ -285,7 +285,7 @@
               <!-- Empty State inside Draggable -->
               <div v-if="statusGroup.tasks.length === 0" class="absolute inset-0 flex items-center justify-center p-8 opacity-40 pointer-events-none">
                 <div class="text-center">
-                  <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest italic">Sin mareas activas</span>
+                  <span class="text-[10px] font-black text-text-muted uppercase tracking-widest italic">Sin mareas activas</span>
                 </div>
               </div>
             </VueDraggableNext>
@@ -376,16 +376,16 @@ interface Column {
 }
 
 const statusColors: Record<string, string> = {
-  DESIGNADA: 'bg-blue-500',
-  EN_EJECUCION: 'bg-indigo-500',
-  ESPERANDO_ENTREGA: 'bg-amber-500',
-  ENTREGADA_RECIBIDA: 'bg-emerald-500',
-  VERIFICACION_INICIAL: 'bg-cyan-500',
-  EN_CORRECCION: 'bg-orange-500',
-  PENDIENTE_DE_INFORME: 'bg-purple-500',
-  ESPERANDO_REVISION: 'bg-fuchsia-500',
-  ESPERANDO_PROTOCOLIZACION: 'bg-sky-500',
-  PROTOCOLIZADA: 'bg-gray-500'
+  DESIGNADA: 'bg-primary',
+  EN_EJECUCION: 'bg-primary',
+  ESPERANDO_ENTREGA: 'bg-warning',
+  ENTREGADA_RECIBIDA: 'bg-success',
+  VERIFICACION_INICIAL: 'bg-info',
+  EN_CORRECCION: 'bg-warning',
+  PENDIENTE_DE_INFORME: 'bg-info',
+  ESPERANDO_REVISION: 'bg-info',
+  ESPERANDO_PROTOCOLIZACION: 'bg-primary',
+  PROTOCOLIZADA: 'bg-text-muted'
 }
 
 const columns = ref<Column[]>([])
@@ -511,11 +511,8 @@ onUnmounted(() => {
   background: transparent;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #e5e7eb;
+  background: var(--color-border);
   border-radius: 20px;
-}
-.dark .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #1f2937;
 }
 
 .custom-scrollbar-h::-webkit-scrollbar {
@@ -525,11 +522,8 @@ onUnmounted(() => {
   background: transparent;
 }
 .custom-scrollbar-h::-webkit-scrollbar-thumb {
-  background: #e5e7eb;
+  background: var(--color-border);
   border-radius: 20px;
-}
-.dark .custom-scrollbar-h::-webkit-scrollbar-thumb {
-  background: #1f2937;
 }
 
 .animate-in {
@@ -548,6 +542,6 @@ onUnmounted(() => {
 /* Draggable ghost styling */
 .sortable-ghost {
   opacity: 0.1;
-  background: #6366f1 !important;
+  background: var(--color-primary) !important;
 }
 </style>
