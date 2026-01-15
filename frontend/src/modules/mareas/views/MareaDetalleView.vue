@@ -1,7 +1,7 @@
-<template>
-  <AdminLayout 
+﻿<template>
+  <AdminLayout
     :title="`Marea ${marea.nro_marea}/${marea.anio_marea}`"
-    :description="marea.titulo || 'Detalles técnicos y operativos de la marea.'"
+    description="Detalles técnicos y operativos de la marea."
   >
     <div class="max-w-6xl mx-auto pb-12 px-4 sm:px-6 lg:px-8">
       <!-- Header Actions & Meta -->
@@ -14,12 +14,19 @@
             <ArrowLeftIcon class="w-4 h-4 transition-transform group-hover:-translate-x-1" />
             Volver
           </button>
-          
+
           <div
             class="flex items-center gap-2 px-3 py-1.5 bg-brand-50 dark:bg-brand-500/10 text-brand-700 dark:text-brand-400 text-xs font-bold uppercase tracking-wider rounded-full border border-brand-100 dark:border-brand-500/20"
           >
             <div class="w-1.5 h-1.5 rounded-full bg-brand-500 animate-pulse"></div>
             {{ marea.estado_nombre }}
+          </div>
+
+          <div
+            v-if="marea.estado_codigo === 'EN_EJECUCION' && (!etapas[etapas.length - 1] || etapas[etapas.length - 1].fechaArribo)"
+            class="flex items-center gap-2 px-3 py-1.5 bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 text-xs font-bold uppercase tracking-wider rounded-full border border-blue-100 dark:border-blue-500/20"
+          >
+            En Tierra
           </div>
         </div>
 
@@ -42,7 +49,7 @@
 
       <!-- Correction/Locked Banner -->
       <div
-        v-if="marea.estado_id === 'CORRECCION'"
+        v-if="marea.estado_codigo === 'EN_CORRECCION'"
         class="mb-8 p-4 bg-error-50 dark:bg-error-500/10 border border-error-100 dark:border-error-500/20 rounded-2xl flex flex-col sm:flex-row items-center gap-4 animate-in fade-in slide-in-from-top-4 duration-500"
       >
         <div
@@ -137,29 +144,6 @@
                     placeholder="000"
                   />
                 </div>
-                <div class="md:col-span-2 space-y-1.5">
-                  <label
-                    class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400"
-                    >Título de la Marea</label
-                  >
-                  <input
-                    v-model="marea.titulo"
-                    type="text"
-                    class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border-none rounded-2xl focus:ring-2 focus:ring-brand-500/20 text-gray-800 dark:text-gray-200 transition-all font-medium outline-none"
-                    placeholder="Ej. Campaña Global de Calamar 2024"
-                  />
-                </div>
-                <div class="md:col-span-2 space-y-1.5">
-                  <label
-                    class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400"
-                    >Descripción / Objetivo</label
-                  >
-                  <textarea
-                    v-model="marea.descripcion"
-                    rows="3"
-                    class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border-none rounded-2xl focus:ring-2 focus:ring-brand-500/20 text-gray-800 dark:text-gray-200 transition-all font-medium appearance-none outline-none"
-                  ></textarea>
-                </div>
               </div>
             </div>
 
@@ -179,41 +163,125 @@
                     class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400"
                     >Buque Seleccionado</label
                   >
-                  <select v-model="marea.id_buque" class="form-select-premium">
-                    <option value="1">BP ARGENTINO I</option>
-                    <option value="2">BP UNION</option>
-                  </select>
+                  <SearchableSelect
+                    v-model="marea.id_buque"
+                    :options="buqueOptions"
+                    placeholder="Seleccione buque..."
+                  />
                 </div>
                 <div class="space-y-1.5">
                   <label
                     class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400"
                     >Pesquería</label
                   >
-                  <select v-model="marea.id_pesqueria" class="form-select-premium">
-                    <option value="1">MERLUZA (Merluccius hubbsi)</option>
-                    <option value="2">LANGOSTINO</option>
-                  </select>
+                  <SearchableSelect
+                    v-model="marea.id_pesqueria"
+                    :options="pesqueriaOptions"
+                    placeholder="Seleccione pesquería..."
+                  />
                 </div>
                 <div class="space-y-1.5">
                   <label
                     class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400"
                     >Arte Principal</label
                   >
-                  <select v-model="marea.id_arte_principal" class="form-select-premium">
-                    <option value="1">Arrastre de fondo</option>
-                    <option value="2">Tangones</option>
-                  </select>
+                  <SearchableSelect
+                    v-model="marea.id_arte_principal"
+                    :options="arteOptions"
+                    placeholder="Seleccione arte..."
+                  />
                 </div>
                 <div class="space-y-1.5">
                   <label
                     class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400"
                     >Fecha Zarpada Est.</label
                   >
-                  <input
+                  <DatePicker
                     v-model="marea.fecha_zarpada_estimada"
-                    type="datetime-local"
-                    class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border-none rounded-2xl focus:ring-2 focus:ring-brand-500/20 text-gray-800 dark:text-gray-200 transition-all font-medium outline-none"
+                    :show-time="false"
                   />
+                </div>
+                <div class="space-y-1.5">
+                  <label
+                    class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400"
+                    >Tipo de Marea</label
+                  >
+                  <select
+                    v-model="marea.tipo_marea"
+                    class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border-none rounded-2xl focus:ring-2 focus:ring-brand-500/20 text-gray-800 dark:text-gray-200 transition-all font-medium outline-none"
+                  >
+                    <option value="MC">Comercial (MC)</option>
+                    <option value="CI">Institucional (CI)</option>
+                  </select>
+                </div>
+                <div class="space-y-1.5">
+                  <label
+                    class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400"
+                    >Días Estimados</label
+                  >
+                  <input
+                    v-model="marea.dias_estimados"
+                    type="number"
+                    class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border-none rounded-2xl focus:ring-2 focus:ring-brand-500/20 text-gray-800 dark:text-gray-200 transition-all font-medium outline-none"
+                    placeholder="0"
+                  />
+                </div>
+              </div>
+            </div>
+
+
+
+            <!-- Observer Dates & Zona Austral -->
+            <div
+              class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-8 shadow-sm"
+            >
+              <h3
+                class="text-lg font-bold text-gray-800 dark:text-white mb-6 flex items-center gap-2"
+              >
+                <CalenderIcon class="w-5 h-5 text-brand-500" />
+                Fechas del Observador y Zona Austral
+              </h3>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="space-y-1.5">
+                  <label class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400"
+                    >Inicio Observador</label
+                  >
+                  <DatePicker
+                    v-model="marea.fecha_inicio_observador"
+                    :show-time="false"
+                  />
+                </div>
+                <div class="space-y-1.5">
+                  <label class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400"
+                    >Fin Observador</label
+                  >
+                  <DatePicker
+                    v-model="marea.fecha_fin_observador"
+                    :show-time="false"
+                  />
+                </div>
+                <div class="space-y-1.5">
+                  <label class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400"
+                    >Días Zona Austral</label
+                  >
+                  <input
+                    v-model="marea.dias_zona_austral"
+                    type="number"
+                    class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border-none rounded-2xl focus:ring-2 focus:ring-brand-500/20 text-gray-800 dark:text-gray-200 transition-all font-medium outline-none"
+                    placeholder="0"
+                  />
+                </div>
+                <div class="space-y-1.5">
+                  <label class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400"
+                    >Cálculo Zona Austral</label
+                  >
+                  <select
+                    v-model="marea.tipo_calculo_zona_austral"
+                    class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border-none rounded-2xl focus:ring-2 focus:ring-brand-500/20 text-gray-800 dark:text-gray-200 transition-all font-medium outline-none"
+                  >
+                    <option value="AUTOMATICO">Automático</option>
+                    <option value="MANUAL">Manual</option>
+                  </select>
                 </div>
               </div>
             </div>
@@ -231,11 +299,11 @@
               <div class="space-y-4">
                 <div class="flex justify-between text-sm">
                   <span class="text-gray-500">Fecha Creación</span>
-                  <span class="font-medium dark:text-gray-300">10/12/2023</span>
+                  <span class="font-medium dark:text-gray-300">{{ formatDate(marea.fecha_creacion) }}</span>
                 </div>
                 <div class="flex justify-between text-sm">
                   <span class="text-gray-500">Últ. Actualización</span>
-                  <span class="font-medium dark:text-gray-300">22/12/2023</span>
+                  <span class="font-medium dark:text-gray-300">{{ formatDate(marea.fecha_ultima_actualizacion) }}</span>
                 </div>
                 <div class="pt-4 border-t border-gray-200 dark:border-gray-700">
                   <div class="flex items-center gap-2">
@@ -274,112 +342,20 @@
 
         <!-- 2. Etapas Tab -->
         <div v-if="activeTab === 'etapas'" class="space-y-6">
-          <div
-            class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl overflow-hidden shadow-sm"
-          >
-            <div
-              class="px-6 py-4 md:px-8 md:py-6 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between bg-gray-50/50 dark:bg-gray-800/30"
-            >
-              <h3 class="text-base md:text-lg font-bold text-gray-800 dark:text-white">
-                Etapas de Navegación
-              </h3>
-              <button
-                class="px-3 py-1.5 text-xs font-bold text-brand-500 bg-brand-50 dark:bg-brand-500/10 rounded-lg border border-brand-100 dark:border-brand-500/20 hover:bg-brand-100 transition-colors"
-              >
-                + <span class="hidden sm:inline">Añadir Etapa</span
-                ><span class="sm:hidden">Etapa</span>
-              </button>
-            </div>
-
-            <!-- Mobile Stages View (Cards) -->
-            <div class="block md:hidden divide-y divide-gray-50 dark:divide-gray-800">
-              <div v-for="etapa in etapas" :key="etapa.id" class="p-6 space-y-4">
-                <div class="flex justify-between items-start">
-                  <div>
-                    <span class="text-xs font-black text-brand-500 uppercase tracking-widest"
-                      >Etapa #{{ etapa.nro_etapa }}</span
-                    >
-                    <h4 class="text-sm font-bold text-gray-800 dark:text-gray-200">
-                      {{ etapa.puerto_zarpada }} → {{ etapa.puerto_arribo }}
-                    </h4>
-                  </div>
-                  <span
-                    class="px-2 py-0.5 rounded text-[9px] font-black"
-                    :class="
-                      etapa.tipo === 'COMERCIAL'
-                        ? 'bg-blue-100 text-blue-600'
-                        : 'bg-green-100 text-green-600'
-                    "
-                  >
-                    {{ etapa.tipo }}
-                  </span>
-                </div>
-                <div class="grid grid-cols-2 gap-4 text-[11px]">
-                  <div>
-                    <p class="text-gray-400 font-bold uppercase tracking-tighter">Zarpada</p>
-                    <p class="text-gray-600 dark:text-gray-400">{{ etapa.fecha_zarpada }}</p>
-                  </div>
-                  <div>
-                    <p class="text-gray-400 font-bold uppercase tracking-tighter">Arribo</p>
-                    <p class="text-gray-600 dark:text-gray-400">{{ etapa.fecha_arribo }}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Desktop Stages View (Table) -->
-            <div class="hidden md:block overflow-x-auto">
-              <table class="w-full text-left">
-                <thead>
-                  <tr
-                    class="text-[10px] font-bold uppercase tracking-wider text-gray-400 border-b border-gray-50 dark:border-gray-800"
-                  >
-                    <th class="px-8 py-4">Nro</th>
-                    <th class="px-4 py-4">Puerto Zarpada</th>
-                    <th class="px-4 py-4">Puerto Arribo</th>
-                    <th class="px-4 py-4">Zarpada Real</th>
-                    <th class="px-4 py-4">Arribo Real</th>
-                    <th class="px-4 py-4">Tipo</th>
-                    <th class="px-8 py-4 text-right">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-50 dark:divide-gray-800">
-                  <tr
-                    v-for="etapa in etapas"
-                    :key="etapa.id"
-                    class="text-sm hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors"
-                  >
-                    <td class="px-8 py-5 font-bold text-brand-500">#{{ etapa.nro_etapa }}</td>
-                    <td class="px-4 py-5 font-medium text-gray-700 dark:text-gray-300">
-                      {{ etapa.puerto_zarpada }}
-                    </td>
-                    <td class="px-4 py-5 font-medium text-gray-700 dark:text-gray-300">
-                      {{ etapa.puerto_arribo }}
-                    </td>
-                    <td class="px-4 py-5 text-gray-500">{{ etapa.fecha_zarpada }}</td>
-                    <td class="px-4 py-5 text-gray-500">{{ etapa.fecha_arribo }}</td>
-                    <td class="px-4 py-5">
-                      <span
-                        class="px-2 py-1 rounded text-[10px] font-bold"
-                        :class="
-                          etapa.tipo === 'COMERCIAL'
-                            ? 'bg-blue-100 text-blue-600'
-                            : 'bg-green-100 text-green-600'
-                        "
-                      >
-                        {{ etapa.tipo }}
-                      </span>
-                    </td>
-                    <td class="px-8 py-5 text-right">
-                      <button class="text-gray-400 hover:text-brand-500 transition-colors p-1">
-                        <SettingsIcon class="w-4 h-4" />
-                      </button>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+          <div class="flex items-center justify-between mb-2">
+            <div>
+                <h3 class="text-lg font-bold text-gray-800 dark:text-white">Etapas de Navegación</h3>
+                <p class="text-xs text-gray-500 mt-1">Gestione los tramos del viaje, puertos y fechas reales.</p>
             </div>
           </div>
+
+          <NavigationStagesEditor
+            v-model="etapas"
+            :puertoOptions="puertoOptions"
+            :pesqueriaOptions="pesqueriaOptions"
+            :puertoBaseId="marea.puertoBaseId"
+            :defaultPesqueriaId="marea.id_pesqueria"
+          />
         </div>
 
         <!-- 3. Observadores Tab -->
@@ -415,6 +391,10 @@
                 </div>
                 <div class="flex items-center gap-2">
                   <CalenderIcon class="w-3 h-3" /> Fin: {{ obs.fin || 'Activo' }}
+                </div>
+                <div class="flex items-center gap-2">
+                  <CheckIcon class="w-3 h-3" />
+                  Designado: {{ obs.es_designado ? 'Sí' : 'No' }}
                 </div>
               </div>
             </div>
@@ -456,13 +436,35 @@
                   <span class="text-[11px] text-gray-400">{{ mov.fecha }}</span>
                 </div>
                 <div
+                  v-if="mov.detalle || mov.comentarios || mov.estado_desde || mov.estado_hasta || mov.cantidad_muestras_otolitos"
                   class="bg-gray-50 dark:bg-gray-800/40 border border-gray-100 dark:border-gray-800 p-4 rounded-xl"
                 >
-                  <p class="text-sm text-gray-700 dark:text-gray-300">{{ mov.detalle }}</p>
-                  <div v-if="mov.estado_hasta" class="mt-3">
+                  <p v-if="mov.detalle" class="text-sm text-gray-700 dark:text-gray-300 font-medium mb-3">{{ mov.detalle }}</p>
+                  
+                  <!-- User Comments -->
+                  <div v-if="mov.comentarios" class="mb-4 p-3 bg-brand-500/5 dark:bg-brand-500/10 border-l-2 border-l-brand-500 rounded-r-lg">
+                    <p class="text-xs text-brand-600 dark:text-brand-400 font-bold uppercase tracking-wider mb-1 flex items-center gap-1">
+                      <ChatIcon class="w-3 h-3" />
+                      Comentario del usuario
+                    </p>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap italic">"{{ mov.comentarios }}"</p>
+                  </div>
+
+                  <div v-if="mov.estado_desde || mov.estado_hasta || mov.cantidad_muestras_otolitos" class="flex flex-wrap gap-2 pt-2 border-t border-gray-100 dark:border-gray-800">
                     <span
+                      v-if="mov.estado_desde"
                       class="text-[10px] px-2 py-0.5 bg-white dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700 text-gray-500"
-                      >Estado: {{ mov.estado_hasta }}</span
+                      >Estado desde: {{ mov.estado_desde }}</span
+                    >
+                    <span
+                      v-if="mov.estado_hasta"
+                      class="text-[10px] px-2 py-0.5 bg-white dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700 text-gray-500"
+                      >Estado hasta: {{ mov.estado_hasta }}</span
+                    >
+                    <span
+                      v-if="mov.cantidad_muestras_otolitos"
+                      class="text-[10px] px-2 py-0.5 bg-white dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700 text-gray-500"
+                      >Muestras: {{ mov.cantidad_muestras_otolitos }}</span
                     >
                   </div>
                 </div>
@@ -472,16 +474,16 @@
         </div>
 
         <!-- 5. Documentación Tab -->
-        <div v-if="activeTab === 'docs'" class="space-y-12">
-          <div v-for="cat in docCategories" :key="cat.id" class="space-y-4">
-            <div class="flex items-center justify-between">
+        <div v-if="activeTab === 'docs'" class="space-y-16">
+          <div v-for="cat in docCategories" :key="cat.id" class="space-y-6">
+            <div class="flex items-center justify-between px-2">
               <h3
-                class="text-sm font-black uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500 flex items-center gap-3"
+                class="text-xs font-black uppercase tracking-[0.25em] text-gray-400 dark:text-gray-500 flex items-center gap-4"
               >
-                <span class="w-8 h-[1px] bg-gray-200 dark:bg-gray-800"></span>
+                <div class="w-10 h-[2px] bg-gradient-to-r from-brand-500 to-transparent rounded-full"></div>
                 {{ cat.label }}
               </h3>
-              <span class="text-[10px] font-bold text-gray-400"
+              <span class="text-[10px] font-bold bg-gray-100 dark:bg-gray-800 text-gray-500 px-2 py-0.5 rounded-full"
                 >{{ getFilesByCategory(cat.id).length }} archivos</span
               >
             </div>
@@ -489,23 +491,23 @@
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               <!-- Extraction Blocked Warning for DATOS Category -->
               <div
-                v-if="cat.id === 'DATOS' && marea.estado_id === 'CORRECCION'"
-                class="md:col-span-2 lg:col-span-3 bg-amber-50 dark:bg-amber-500/5 border border-dashed border-amber-200 dark:border-amber-500/20 rounded-2xl p-4 flex items-center gap-4"
+                v-if="cat.id === 'DATOS' && marea.estado_codigo === 'EN_CORRECCION'"
+                class="md:col-span-2 lg:col-span-3 bg-amber-50 dark:bg-amber-500/5 border border-dashed border-amber-200 dark:border-amber-500/20 rounded-3xl p-6 flex items-center gap-5"
               >
                 <div
-                  class="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-500/10 flex items-center justify-center text-amber-600 dark:text-amber-400 shrink-0"
+                  class="w-12 h-12 rounded-2xl bg-amber-100 dark:bg-amber-500/10 flex items-center justify-center text-amber-600 dark:text-amber-400 shrink-0 shadow-sm"
                 >
-                  <LockIcon class="w-5 h-5" />
+                  <LockIcon class="w-6 h-6" />
                 </div>
                 <div>
                   <h4
-                    class="text-xs font-bold text-amber-800 dark:text-amber-400 uppercase tracking-wider"
+                    class="text-sm font-black text-amber-800 dark:text-amber-400 uppercase tracking-wider"
                   >
                     Extracción de datos bloqueada temporalmente
                   </h4>
-                  <p class="text-[11px] text-amber-700 dark:text-amber-500 mt-0.5">
+                  <p class="text-xs text-amber-700 dark:text-amber-500 mt-1 opacity-80">
                     La descarga de archivos de datos está restringida mientras se procesan las
-                    correcciones enviadas.
+                    correcciones enviadas. Los archivos volverán a estar disponibles tras la validación final.
                   </p>
                 </div>
               </div>
@@ -514,45 +516,54 @@
               <div
                 v-for="file in getFilesByCategory(cat.id)"
                 :key="file.id"
-                class="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all group flex items-center gap-4 relative overflow-hidden"
+                class="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-3xl p-6 shadow-sm hover:shadow-xl hover:scale-[1.02] hover:border-brand-200/50 dark:hover:border-brand-500/30 transition-all duration-300 group flex items-center gap-5 relative overflow-hidden"
               >
                 <!-- Format Icon -->
                 <div
-                  class="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
+                  class="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 shadow-inner group-hover:scale-110 transition-transform duration-300"
                   :class="getFormatColor(file.formato)"
                 >
-                  <FileTextIcon v-if="['PDF', 'DOCX'].includes(file.formato)" class="w-6 h-6" />
-                  <RefreshIcon v-else class="w-6 h-6 rotate-45" />
-                  <!-- Generic for data -->
+                  <FileTextIcon v-if="['PDF', 'DOCX'].includes(file.formato)" class="w-7 h-7" />
+                  <RefreshIcon v-else class="w-7 h-7 rotate-45" />
                 </div>
 
                 <div class="flex-1 min-w-0">
-                  <h4 class="text-sm font-bold text-gray-800 dark:text-gray-200 truncate">
+                  <h4 class="text-sm font-bold text-gray-800 dark:text-gray-100 truncate group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">
                     {{ file.nombre }}
                   </h4>
-                  <div class="flex items-center gap-2 mt-1">
-                    <span class="text-[10px] font-black text-gray-400">{{ file.formato }}</span>
-                    <span class="w-1 h-1 rounded-full bg-gray-300"></span>
-                    <span class="text-[10px] text-gray-400">{{ file.fecha }}</span>
+                  <div class="flex items-center flex-wrap gap-2 mt-1.5 opacity-70">
+                    <span class="text-[10px] font-black uppercase tracking-tight">{{ file.formato }}</span>
+                    <span class="w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-600"></span>
+                    <span class="text-[10px] font-medium">{{ file.fecha }}</span>
+                    <template v-if="file.tipo_archivo">
+                      <span class="w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-600"></span>
+                      <span class="text-[10px] font-medium">{{ file.tipo_archivo }}</span>
+                    </template>
+                    <template v-if="file.version">
+                      <span class="w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-600"></span>
+                      <span class="text-[10px] font-bold text-brand-500">v{{ file.version }}</span>
+                    </template>
                   </div>
                 </div>
 
                 <div class="flex items-center gap-1">
                   <button
-                    class="p-2 text-gray-400 hover:text-brand-500 hover:bg-brand-50 dark:hover:bg-brand-500/10 rounded-lg transition-colors"
-                    title="Descargar"
+                    class="p-2.5 text-gray-400 hover:text-brand-500 hover:bg-brand-50 dark:hover:bg-brand-500/10 rounded-xl transition-all active:scale-95"
+                    title="Descargar Archivo"
                   >
-                    <DownloadIcon class="w-4 h-4" />
+                    <DownloadIcon class="w-5 h-5" />
                   </button>
                 </div>
               </div>
 
               <!-- Upload Placeholder for Category -->
               <button
-                class="border-2 border-dashed border-gray-100 dark:border-gray-800/50 rounded-2xl p-5 flex items-center justify-center gap-3 text-gray-400 hover:border-brand-200 hover:text-brand-500 transition-all group"
+                class="border-2 border-dashed border-gray-100 dark:border-gray-800/50 rounded-3xl p-6 flex items-center justify-center gap-4 text-gray-400 hover:border-brand-300 hover:text-brand-600 dark:hover:text-brand-400 hover:bg-brand-50/30 dark:hover:bg-brand-500/5 transition-all duration-300 group shadow-sm active:scale-95"
               >
-                <CloudUploadIcon class="w-5 h-5 group-hover:scale-110 transition-transform" />
-                <span class="text-xs font-bold uppercase tracking-wider"
+                <div class="w-10 h-10 rounded-full bg-gray-50 dark:bg-gray-800 flex items-center justify-center group-hover:bg-brand-100 dark:group-hover:bg-brand-500/20 transition-colors">
+                  <CloudUploadIcon class="w-5 h-5 group-hover:scale-110 transition-transform" />
+                </div>
+                <span class="text-xs font-black uppercase tracking-widest"
                   >Adjuntar {{ cat.shortLabel }}</span
                 >
               </button>
@@ -561,71 +572,123 @@
         </div>
 
         <!-- 6. Administrativo Tab -->
-        <div v-if="activeTab === 'admin'" class="max-w-2xl">
+        <div v-if="activeTab === 'admin'" class="max-w-3xl">
           <div
-            class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl p-10 shadow-sm relative overflow-hidden"
+            class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-[2.5rem] p-12 shadow-2xl relative overflow-hidden"
           >
+            <!-- Decorative Elements -->
             <div
-              class="absolute -top-10 -right-10 w-40 h-40 bg-brand-500/5 rounded-full blur-3xl"
+              class="absolute -top-16 -right-16 w-64 h-64 bg-brand-500/10 rounded-full blur-3xl animate-pulse"
             ></div>
-            <h3 class="text-xl font-black text-gray-900 dark:text-white mb-8">
-              Protocolización Oficial
-            </h3>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-8">
-              <div class="space-y-1.5">
-                <label class="text-xs font-bold uppercase tracking-wider text-gray-400"
-                  >Nro. Protocolización</label
-                >
-                <input
-                  v-model="marea.nro_protocolización"
-                  type="number"
-                  class="form-input-premium text-lg font-black"
-                  placeholder="0000"
-                />
-              </div>
-              <div class="space-y-1.5">
-                <label class="text-xs font-bold uppercase tracking-wider text-gray-400"
-                  >Año Protocolización</label
-                >
-                <input
-                  v-model="marea.anio_protocolización"
-                  type="number"
-                  class="form-input-premium text-lg font-black"
-                  placeholder="2024"
-                />
-              </div>
-              <div class="sm:col-span-2 space-y-1.5">
-                <label class="text-xs font-bold uppercase tracking-wider text-gray-400"
-                  >Fecha de Protocolización</label
-                >
-                <input
-                  v-model="marea.fecha_protocolización"
-                  type="date"
-                  class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border-none rounded-2xl focus:ring-2 focus:ring-brand-500/20 text-gray-800 dark:text-gray-200 transition-all font-medium outline-none"
-                />
-              </div>
-            </div>
             <div
-              class="mt-10 p-4 bg-blue-50 dark:bg-blue-500/10 rounded-2xl border border-blue-100 dark:border-blue-500/20 flex gap-4"
-            >
-              <InfoCircleIcon class="w-5 h-5 text-blue-500 shrink-0" />
-              <p class="text-xs text-blue-700 dark:text-blue-300 leading-relaxed">
-                Al asignar un número de protocolización, la marea pasará automáticamente al estado
-                <strong>PROTOCOLIZADA</strong> y los datos de captura quedarán bloqueados para
-                edición.
-              </p>
+              class="absolute -bottom-16 -left-16 w-48 h-48 bg-blue-500/5 rounded-full blur-3xl"
+            ></div>
+
+            <div class="relative">
+              <div class="flex items-center gap-4 mb-10">
+                <div class="w-12 h-12 rounded-2xl bg-brand-500 flex items-center justify-center text-white shadow-lg shadow-brand-500/30">
+                  <ShieldIcon class="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 class="text-2xl font-black text-gray-900 dark:text-white leading-tight font-outfit">
+                    Protocolización Oficial
+                  </h3>
+                  <p class="text-sm text-gray-500 dark:text-gray-400 font-medium opacity-80 mt-0.5 font-outfit">
+                    Gestione el registro legal y el cierre administrativo de la marea.
+                  </p>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-8">
+                <div class="space-y-2">
+                  <label class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 ml-1"
+                    >Nro. Protocolización</label
+                  >
+                  <input
+                    v-model="marea.nro_protocolizacion"
+                    type="number"
+                    class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border-none rounded-2xl focus:ring-2 focus:ring-brand-500/20 text-gray-800 dark:text-gray-200 transition-all font-medium outline-none"
+                    placeholder="0000"
+                  />
+                </div>
+                <div class="space-y-2">
+                  <label class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 ml-1"
+                    >Año Protocolización</label
+                  >
+                  <input
+                    v-model="marea.anio_protocolizacion"
+                    type="number"
+                    class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border-none rounded-2xl focus:ring-2 focus:ring-brand-500/20 text-gray-800 dark:text-gray-200 transition-all font-medium outline-none"
+                    placeholder="2024"
+                  />
+                </div>
+                <div class="sm:col-span-2 space-y-2">
+                  <label class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 ml-1"
+                    >Fecha de Registro</label
+                  >
+                  <DatePicker
+                    v-model="marea.fecha_protocolizacion"
+                    :show-time="false"
+                  />
+                </div>
+              </div>
+
+              <div
+                class="mt-12 p-6 bg-blue-50/50 dark:bg-blue-500/5 rounded-3xl border border-blue-100/50 dark:border-blue-500/10 flex gap-5 items-start"
+              >
+                <div class="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-500/20 flex items-center justify-center text-blue-600 dark:text-blue-400 shrink-0">
+                  <InfoCircleIcon class="w-6 h-6" />
+                </div>
+                <p class="text-xs text-blue-800 dark:text-blue-300 leading-relaxed font-medium">
+                  <span class="font-black uppercase tracking-tighter block mb-1">Aviso Importante</span>
+                  Al asignar un número de protocolización, la marea pasará automáticamente al estado
+                  <strong class="text-blue-900 dark:text-blue-100">PROTOCOLIZADA</strong>. Esto bloqueará permanentemente la edición de los datos operativos y de captura para asegurar la integridad legal.
+                </p>
+              </div>
             </div>
           </div>
         </div>
+
+        <!-- 7. Historial Alertas Tab -->
+        <div v-if="activeTab === 'historial_alertas'" class="max-w-4xl mx-auto">
+            <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-6 shadow-sm">
+                <h3 class="text-lg font-bold text-gray-800 dark:text-white mb-6 flex items-center gap-2">
+                    <BellIcon class="w-5 h-5 text-brand-500" />
+                    Registro de Incidentes y Alertas
+                </h3>
+                <AlertHistoryTab :referenceId="marea.id" />
+            </div>
+        </div>
       </div>
     </div>
+    <!-- Finalize Dialog -->
+    <GestionEtapasMareaDialog
+        :show="showFinalizarDialog"
+        :mode="'FINALIZAR'"
+        :marea="marea"
+        :currentStages="etapas"
+        :initialPortId="marea.puertoBaseId"
+        @close="showFinalizarDialog = false"
+        @confirm="handleFinalizeMarea"
+    />
+
+
   </AdminLayout>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
+import SearchableSelect from '@/components/common/SearchableSelect.vue'
+import DatePicker from '@/components/common/DatePicker.vue'
+import ConfirmationDialog from '@/components/common/ConfirmationDialog.vue'
+import AlertHistoryTab from '../../alerts/components/AlertHistoryTab.vue'
+import GestionEtapasMareaDialog from '../components/GestionEtapasMareaDialog.vue'
+import mareasService from '../services/mareas.service';
+import NavigationStagesEditor from '../components/NavigationStagesEditor.vue'
+import catalogosService from '../services/catalogos.service'
+import { toast } from 'vue-sonner'
 import {
   ArrowLeftIcon,
   ShipIcon,
@@ -645,11 +708,18 @@ import {
   DownloadIcon,
   CloudUploadIcon,
   LockIcon,
+  ShieldIcon,
+  BellIcon,
+  TrashIcon,
+  WarningIcon,
+  ChevronRightIcon,
+  FlagIcon,
+  EditIcon
 } from '@/icons'
-
-const route = useRoute()
 const router = useRouter()
 const activeTab = ref('general')
+
+const route = useRoute()
 
 const tabs = [
   { id: 'general', label: 'Datos Generales', icon: DocsIcon },
@@ -658,7 +728,26 @@ const tabs = [
   { id: 'workflow', label: 'Movimientos', icon: HistoryIcon },
   { id: 'docs', label: 'Documentación', icon: FileTextIcon },
   { id: 'admin', label: 'Administrativo', icon: SettingsIcon },
+  { id: 'historial_alertas', label: 'Historial Alertas', icon: BellIcon },
 ]
+
+// Data Refs
+const marea = ref<any>({
+    etapas: [],
+    observadores: []
+});
+const etapas = ref<any[]>([]);
+const observadores = ref<any[]>([]);
+const movimientos = ref<any[]>([]);
+const archivos = ref<any[]>([]);
+
+const buqueOptions = ref<{ value: string; label: string }[]>([])
+const pesqueriaOptions = ref<{ value: string; label: string }[]>([])
+const arteOptions = ref<{ value: string; label: string }[]>([])
+const puertos = ref<any[]>([])
+
+const puertoOptions = computed(() => puertos.value.map(p => ({ value: p.id, label: p.nombre })))
+const pesqueriaOptionsList = computed(() => pesqueriaOptions.value) // Alias for consistency if needed, but pesqueriaOptions is already used.
 
 const docCategories = [
   { id: 'DATOS', label: 'Datos de a Bordo', shortLabel: 'Datos (DBF/ZIP)' },
@@ -669,128 +758,184 @@ const docCategories = [
   { id: 'VARIOS', label: 'Otros Archivos', shortLabel: 'Archivo' },
 ]
 
-// Mock data structured as per DB schema
-const marea = ref({
-  id: route.params.id,
-  anio_marea: 2023,
-  nro_marea: 45,
-  id_buque: '1',
-  id_pesqueria: '1',
-  id_arte_principal: '1',
-  id_estado_actual: 'CORRECCION',
-  estado_id: 'CORRECCION',
-  estado_nombre: 'En Corrección', // Join with estados_marea
-  responsable_correccion: 'Lic. María González (Control de Calidad)',
-  fecha_zarpada_estimada: '2023-12-25T10:00',
-  titulo: 'Prospección de Merluza Hubbsi - Sector Norte',
-  descripcion: 'Evaluación de rendimientos y estructuras de talla en precuarentena.',
-  nro_protocolización: null,
-  anio_protocolización: 2024,
-  fecha_protocolización: null,
-  activo: true,
-  observaciones:
-    'Requiere reporte diario de captura incidental. Buque tiene problemas menores en guinche de babor.',
-})
+const formatDate = (value?: string | Date | null) => {
+  if (!value) return 'N/D'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return 'N/D'
+  return date.toLocaleDateString('es-AR')
+}
 
-const etapas = ref([
-  {
-    id: 1,
-    nro_etapa: 1,
-    puerto_zarpada: 'Mar del Plata',
-    puerto_arribo: 'Puerto Madryn',
-    fecha_zarpada: '15/12/2023 08:30',
-    fecha_arribo: '20/12/2023 22:00',
-    tipo: 'COMERCIAL',
-  },
-  {
-    id: 2,
-    nro_etapa: 2,
-    puerto_zarpada: 'Puerto Madryn',
-    puerto_arribo: 'Mar del Plata',
-    fecha_zarpada: '22/12/2023 06:15',
-    fecha_arribo: '--/--/----',
-    tipo: 'INSTITUCIONAL',
-  },
-])
+const formatDateTime = (value?: string | Date | null) => {
+  if (!value) return 'N/D'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return 'N/D'
+  return date.toLocaleString('es-AR')
+}
 
-const observadores = ref([
-  {
-    id: 1,
-    nombre: 'Juan',
-    apellido: 'Díaz',
-    iniciales: 'JD',
-    rol: 'PRINCIPAL',
-    codigo: '4521',
-    inicio: '15/12/2023',
-    fin: null,
-  },
-  {
-    id: 2,
-    nombre: 'Ana',
-    apellido: 'Martínez',
-    iniciales: 'AM',
-    rol: 'ACOMPAÑANTE',
-    codigo: '8832',
-    inicio: '15/12/2023',
-    fin: '20/12/2023',
-  },
-])
 
-const movimientos = ref([
-  {
-    id: 1,
-    fecha: '12/12/2023 14:20',
-    evento: 'CAMBIO_ESTADO',
-    detalle: 'La marea ha sido creada y designada al BP ARGENTINO I.',
-    estado_hasta: 'Designada',
-    usuario: 'Daniel (Admin)',
-  },
-  {
-    id: 2,
-    fecha: '15/12/2023 09:00',
-    evento: 'ZARPADA_REAL',
-    detalle: 'Zarpada confirmada desde Mar del Plata por el observador.',
-    estado_hasta: 'Navegando',
-    usuario: 'Juan Díaz',
-  },
-  {
-    id: 3,
-    fecha: '20/12/2023 18:45',
-    evento: 'ALERTA_OPERATIVA',
-    detalle: 'Se reporta falla en sensor de temperatura de red.',
-    estado_hasta: null,
-    usuario: 'Juan Díaz',
-  },
-])
+const getFileName = (ruta?: string) => {
+  if (!ruta) return 'Archivo'
+  const parts = ruta.split(/[\\/]/)
+  return parts[parts.length - 1] || 'Archivo'
+}
 
-const archivos = ref([
-  { id: 1, nombre: 'Muestra_Cal_2023.zip', categoria: 'DATOS', formato: 'ZIP', fecha: '20/12/23' },
-  {
-    id: 2,
-    nombre: 'Informe_Final_OBS.docx',
-    categoria: 'INFORME_OBS',
-    formato: 'DOCX',
-    fecha: '22/12/23',
-  },
-  {
-    id: 3,
-    nombre: 'Planillas_Escaneadas_M45.pdf',
-    categoria: 'PLANILLAS',
-    formato: 'PDF',
-    fecha: '23/12/23',
-  },
-  {
-    id: 4,
-    nombre: 'Analisis_Cientifico_Ofi.docx',
-    categoria: 'INFORME_OFI',
-    formato: 'DOCX',
-    fecha: '24/12/23',
-  },
-])
+const getFileExtension = (ruta?: string) => {
+  if (!ruta) return 'N/D'
+  const name = getFileName(ruta)
+  const parts = name.split('.')
+  return parts.length > 1 ? parts[parts.length - 1].toUpperCase() : 'N/D'
+}
+
+const resolveArchivoCategoria = (tipoArchivo?: string) => {
+  if (!tipoArchivo) return 'VARIOS'
+  if (tipoArchivo.startsWith('DATOS_')) return 'DATOS'
+  if (tipoArchivo === 'INFORME_PROTOCOLIZADO') return 'PROTOCOLO'
+  if (tipoArchivo === 'CARPETA_ESCANEADA' || tipoArchivo === 'DOCUMENTACION_ADICIONAL') return 'PLANILLAS'
+  if (tipoArchivo.startsWith('INFORME_TECNICO')) return 'INFORME_OFI'
+  return 'VARIOS'
+}
+
+async function loadMarea() {
+    try {
+        const id = route.params.id as string
+        const [data, buques, pesquerias, artes] = await Promise.all([
+            mareasService.getById(id),
+            catalogosService.getBuques(),
+            catalogosService.getPesquerias(),
+            catalogosService.getArtesPesca()
+        ])
+
+        buqueOptions.value = buques.map(b => ({ value: b.id, label: b.nombreBuque }))
+        pesqueriaOptions.value = pesquerias.map(p => ({ value: p.id, label: p.nombre }))
+        arteOptions.value = artes.map(a => ({ value: a.id, label: a.nombre }))
+
+        const etapaPrincipal = data.etapas?.find((e: any) => e.nroEtapa === 1) || data.etapas?.[0]
+
+        marea.value = {
+            id: data.id,
+            anio_marea: data.anioMarea,
+            nro_marea: data.nroMarea,
+            id_buque: data.buqueId,
+            id_pesqueria: etapaPrincipal?.pesqueriaId || '',
+            puertoBaseId: data.buque?.puertoBaseId,
+            id_arte_principal: data.artePrincipalId || '',
+            fecha_zarpada_estimada: data.fechaZarpadaEstimada,
+            observaciones: data.observaciones || '',
+            activo: data.activo ?? true,
+            tipo_marea: data.tipoMarea || 'MC',
+            dias_estimados: data.diasEstimados ?? null,
+            dias_zona_austral: data.diasZonaAustral ?? null,
+            tipo_calculo_zona_austral: data.tipoCalculoZonaAustral || 'AUTOMATICO',
+            estado_nombre: data.estadoActual?.nombre || '',
+            estado_codigo: data.estadoActual?.codigo || '',
+            estado_id: data.estadoActual?.codigo || '',
+            fecha_creacion: data.fechaCreacion,
+            fecha_ultima_actualizacion: data.fechaUltimaActualizacion,
+            fecha_inicio_observador: data.fechaInicioObservador,
+            fecha_fin_observador: data.fechaFinObservador,
+            nro_protocolizacion: data.nroProtocolizacion ?? null,
+            anio_protocolizacion: data.anioProtocolizacion ?? null,
+            fecha_protocolizacion: data.fechaProtocolizacion,
+            responsable_correccion: 'N/D'
+        }
+
+        const p = await catalogosService.getPuertos()
+        puertos.value = p
+
+        etapas.value = data.etapas?.map((e: any) => ({
+             id: e.id,
+             nroEtapa: e.nroEtapa,
+             puertoZarpadaId: e.puertoZarpadaId,
+             puertoArriboId: e.puertoArriboId,
+             fechaZarpada: e.fechaZarpada,
+             fechaArribo: e.fechaArribo,
+             tipoEtapa: e.tipoEtapa,
+             observaciones: e.observaciones || '',
+             pesqueriaId: e.pesqueriaId,
+             observadores: e.observadores?.map((rel: any) => ({
+                observadorId: rel.observadorId || rel.observador?.id,
+                rol: rel.rol,
+                esDesignado: rel.esDesignado
+             })) || []
+        })) || []
+
+        const observadoresMap = new Map<string, any>()
+        data.etapas?.forEach((etapa: any) => {
+            etapa.observadores?.forEach((rel: any) => {
+                const observador = rel.observador
+                if (!observador) return
+                const key = `${observador.id}-${rel.rol}`
+                if (observadoresMap.has(key)) return
+                const nombre = observador.nombre || ''
+                const apellido = observador.apellido || ''
+                observadoresMap.set(key, {
+                    id: observador.id,
+                    nombre,
+                    apellido,
+                    iniciales: `${nombre[0] || ''}${apellido[0] || ''}`.toUpperCase(),
+                    rol: rel.rol,
+                    codigo: observador.codigoInterno,
+                    inicio: formatDate(marea.value.fecha_inicio_observador),
+                    fin: formatDate(marea.value.fecha_fin_observador),
+                    es_designado: rel.esDesignado ?? true
+                })
+            })
+        })
+        observadores.value = Array.from(observadoresMap.values())
+
+        movimientos.value = data.movimientos?.map((mov: any) => ({
+            id: mov.id,
+            evento: mov.tipoEvento,
+            usuario: mov.usuario?.fullName || 'Sistema',
+            fecha: formatDateTime(mov.fechaHora),
+            detalle: mov.detalle,
+            comentarios: mov.comentarios,
+            estado_desde: mov.estadoDesde?.nombre || null,
+            estado_hasta: mov.estadoHasta?.nombre || null,
+            cantidad_muestras_otolitos: mov.cantidadMuestrasOtolitos || null
+        })) || []
+
+        archivos.value = data.archivos?.map((file: any) => ({
+            id: file.id,
+            categoria: resolveArchivoCategoria(file.tipoArchivo),
+            nombre: file.descripcion || getFileName(file.rutaArchivo),
+            formato: file.formato || getFileExtension(file.rutaArchivo),
+            fecha: formatDate(file.fechaSubida),
+            tipo_archivo: file.tipoArchivo,
+            version: file.version
+        })) || []
+
+    } catch (e) {
+        console.error('Error loading Marea', e)
+    }
+}
+
+onMounted(() => {
+    loadMarea();
+});
 
 const getFilesByCategory = (catId: string) => {
   return archivos.value.filter((f) => f.categoria === catId)
 }
+
+const showFinalizarDialog = ref(false);
+
+function openFinalizeDialog() {
+  showFinalizarDialog.value = true;
+}
+
+async function handleFinalizeMarea(payload: any) {
+  try {
+     await mareasService.executeAction(marea.value.id, 'REGISTRAR_ARRIBO', payload);
+     showFinalizarDialog.value = false;
+     // Refresh marea context
+     await loadMarea();
+  } catch (e) {
+     console.error(e);
+     // Handle error notification
+  }
+}
+
 
 const getFormatColor = (formato: string) => {
   switch (formato) {
@@ -806,10 +951,66 @@ const getFormatColor = (formato: string) => {
   }
 }
 
-const goBack = () => router.push({ name: 'MareasWorkflow' })
-const saveChanges = () => {
-  alert('Se han guardado los cambios correctamente (Mockup)')
-  goBack()
+const goBack = () => router.back()
+const toNumberOrUndefined = (value: any) => {
+  if (value === null || value === undefined || value === '') return undefined
+  const parsed = Number(value)
+  return Number.isNaN(parsed) ? undefined : parsed
+}
+
+const toIsoStringOrUndefined = (value: any) => {
+  if (!value) return undefined
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return undefined
+  return date.toISOString()
+}
+
+const saveChanges = async () => {
+  try {
+    const etapasPayload = etapas.value.map((etapa, index) => ({
+        id: etapa.id,
+        nroEtapa: etapa.nroEtapa,
+        pesqueriaId: (index === 0 && marea.value.id_pesqueria) ? marea.value.id_pesqueria : (etapa.pesqueriaId || undefined),
+        puertoZarpadaId: etapa.puertoZarpadaId || undefined,
+        puertoArriboId: etapa.puertoArriboId || undefined,
+        fechaZarpada: toIsoStringOrUndefined(etapa.fechaZarpada),
+        fechaArribo: toIsoStringOrUndefined(etapa.fechaArribo),
+        tipoEtapa: etapa.tipoEtapa || 'COMERCIAL',
+        observaciones: etapa.observaciones || undefined,
+        observadores: etapa.observadores?.map((obs: any) => ({
+          observadorId: obs.observadorId,
+          rol: obs.rol,
+          esDesignado: obs.esDesignado
+        })) || []
+      }))
+
+    const payload = {
+      anioMarea: toNumberOrUndefined(marea.value.anio_marea),
+      nroMarea: toNumberOrUndefined(marea.value.nro_marea),
+      buqueId: marea.value.id_buque || undefined,
+      artePrincipalId: marea.value.id_arte_principal || undefined,
+      fechaZarpadaEstimada: toIsoStringOrUndefined(marea.value.fecha_zarpada_estimada),
+      fechaInicioObservador: toIsoStringOrUndefined(marea.value.fecha_inicio_observador),
+      fechaFinObservador: toIsoStringOrUndefined(marea.value.fecha_fin_observador),
+      diasZonaAustral: toNumberOrUndefined(marea.value.dias_zona_austral),
+      tipoCalculoZonaAustral: marea.value.tipo_calculo_zona_austral || undefined,
+      nroProtocolizacion: toNumberOrUndefined(marea.value.nro_protocolizacion),
+      anioProtocolizacion: toNumberOrUndefined(marea.value.anio_protocolizacion),
+      fechaProtocolizacion: toIsoStringOrUndefined(marea.value.fecha_protocolizacion),
+      observaciones: marea.value.observaciones || undefined,
+      tipoMarea: marea.value.tipo_marea || undefined,
+      diasEstimados: toNumberOrUndefined(marea.value.dias_estimados),
+      activo: marea.value.activo,
+      etapas: etapasPayload
+    }
+
+    await mareasService.update(marea.value.id, payload)
+    toast.success('Los cambios se guardaron correctamente.')
+    await loadMarea()
+  } catch (error) {
+    console.error(error)
+    toast.error('No se pudieron guardar los cambios de la marea.')
+  }
 }
 </script>
 

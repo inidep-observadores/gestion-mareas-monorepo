@@ -5,7 +5,7 @@ export class CreateArtePescaDto {
     codigoNumerico: number;
 
     @IsString()
-    descripcion: string;
+    nombre: string;
 
     @IsBoolean()
     activo: boolean;

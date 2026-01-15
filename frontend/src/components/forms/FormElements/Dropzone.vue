@@ -33,7 +33,7 @@
           Drag & Drop File Here
         </h4>
         <span
-          class="mx-auto mb-5 block w-full max-w-[290px] text-sm text-gray-700 dark:text-gray-400"
+          class="mx-auto mb-5 block w-full max-w-[18.125rem] text-sm text-gray-700 dark:text-gray-400"
         >
           Drag and drop your PNG, JPG, WebP, SVG images here or browse
         </span>

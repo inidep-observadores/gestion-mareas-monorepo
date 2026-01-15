@@ -1,32 +1,5 @@
 <template>
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path
-      d="M12 8V12L15 15"
-      stroke="currentColor"
-      stroke-width="2"
-      stroke-linecap="round"
-      stroke-linejoin="round"
-    />
-    <path
-      d="M3.05021 11C3.5009 7.05039 6.84577 4 10.8804 4C14.195 4 17.0652 5.99269 18.2882 8.79052"
-      stroke="currentColor"
-      stroke-width="2"
-      stroke-linecap="round"
-      stroke-linejoin="round"
-    />
-    <path
-      d="M18 5V8.5H21.5"
-      stroke="currentColor"
-      stroke-width="2"
-      stroke-linecap="round"
-      stroke-linejoin="round"
-    />
-    <path
-      d="M20.1196 13C19.6689 16.9496 16.324 20 12.2894 20C9.64571 20 7.32049 18.7291 5.88037 16.7629"
-      stroke="currentColor"
-      stroke-width="2"
-      stroke-linecap="round"
-      stroke-linejoin="round"
-    />
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 -960 960 960" fill="currentColor">
+    <path d="M480-120q-134 0-234.5-86.5T123-432q-33-15 5.5-27.5T152-475q14-3 27 5t16 23q18 97 94.5 157T480-200q117 0 198.5-81.5T760-480q0-117-81.5-198.5T480-760q-69 0-129 32t-101 88h70q17 0 28.5 11.5T360-600q0 17-11.5 28.5T320-560H160q-17 0-28.5-11.5T120-600v-160q0-17 11.5-28.5T160-800q17 0 28.5 11.5T200-760v68q50-66 123-107t157-41q75 0 140.5 28.5T735-735q49 49 77 114.5T840-480q0 75-28.5 140.5T735-225q-49 49-114.5 77T480-120Zm40-231-112-112v-157q0-17 11.5-28.5T448-660q17 0 28.5 11.5T488-620v133l99 99q12 12 12 28.5T587-331q-12 12-28.5 12t-28.5-12Z"/>
   </svg>
 </template>

@@ -1,0 +1,18 @@
+﻿eslint.config.ts(10,1): error TS2742: The inferred type of 'default' cannot be named without a reference to '.pnpm/@typescript-eslint+utils@8._257b6f7bf85e55172261aab6608b1159/node_modules/@typescript-eslint/utils/ts-eslint'. This is likely not portable. A type annotation is necessary.
+src/components/charts/LineChart/LineChartOne.vue(4,48): error TS2322: Type '{ legend: { show: boolean; position: string; horizontalAlign: string; }; colors: readonly ["rgb(70, 95, 255)", "rgb(156, 185, 255)"]; chart: { fontFamily: string; type: string; toolbar: { show: boolean; }; }; ... 8 more ...; yaxis: { ...; }; }' is not assignable to type 'ApexOptions'.
+  The types of 'chart.type' are incompatible between these types.
+    Type 'string' is not assignable to type '"area" | "line" | "donut" | "bar" | "pie" | "radialBar" | "rangeBar" | "scatter" | "bubble" | "heatmap" | "candlestick" | "radar" | "polarArea" | "boxPlot" | "rangeArea" | "treemap" | undefined'.
+src/components/ecommerce/MonthlyTarget.vue(39,59): error TS2322: Type '{ colors: "rgb(70, 95, 255)"[]; chart: { fontFamily: string; sparkline: { enabled: boolean; }; }; plotOptions: { radialBar: { startAngle: number; endAngle: number; hollow: { size: string; }; track: { background: string; strokeWidth: string; margin: number; }; dataLabels: { ...; }; }; }; fill: { ...; }; stroke: { ......' is not assignable to type 'ApexOptions'.
+  The types of 'stroke.lineCap' are incompatible between these types.
+    Type 'string' is not assignable to type '"round" | "butt" | "square" | undefined'.
+src/components/ecommerce/StatisticsChart.vue(33,50): error TS2322: Type '{ legend: { show: boolean; position: string; horizontalAlign: string; }; colors: readonly ["rgb(70, 95, 255)", "rgb(156, 185, 255)"]; chart: { fontFamily: string; type: string; toolbar: { show: boolean; }; }; ... 8 more ...; yaxis: { ...; }; }' is not assignable to type 'ApexOptions'.
+  The types of 'chart.type' are incompatible between these types.
+    Type 'string' is not assignable to type '"area" | "line" | "donut" | "bar" | "pie" | "radialBar" | "rangeBar" | "scatter" | "bubble" | "heatmap" | "candlestick" | "radar" | "polarArea" | "boxPlot" | "rangeArea" | "treemap" | undefined'.
+src/modules/mareas/components/GaugeChart.vue(12,53): error TS2322: Type '{ chart: { type: string; offsetY: number; fontFamily: "Outfit, sans-serif"; }; plotOptions: { radialBar: { startAngle: number; endAngle: number; hollow: { margin: number; size: string; background: string; }; track: { ...; }; dataLabels: { ...; }; }; }; ... 5 more ...; labels: (string | undefined)[]; }' is not assignable to type 'ApexOptions'.
+  The types of 'chart.type' are incompatible between these types.
+    Type 'string' is not assignable to type '"area" | "line" | "donut" | "bar" | "pie" | "radialBar" | "rangeBar" | "scatter" | "bubble" | "heatmap" | "candlestick" | "radar" | "polarArea" | "boxPlot" | "rangeArea" | "treemap" | undefined'.
+src/modules/mareas/views/FlujoMareasView.vue(52,54): error TS2322: Type '{ value: string | undefined; label: string | undefined; }[]' is not assignable to type 'SelectOption[]'.
+  Type '{ value: string | undefined; label: string | undefined; }' is not assignable to type 'SelectOption'.
+    Types of property 'value' are incompatible.
+      Type 'string | undefined' is not assignable to type 'string | number'.
+        Type 'undefined' is not assignable to type 'string | number'.

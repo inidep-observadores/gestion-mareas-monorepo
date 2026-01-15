@@ -17,16 +17,18 @@ const toggleTheme = () => {
 }
 
 onMounted(() => {
-  const savedTheme = localStorage.getItem('theme') as Theme | null
-  const initialTheme = savedTheme || 'light' // Default to light theme
-
-  theme.value = initialTheme
+  const savedTheme = (localStorage.getItem('theme') as Theme | null) || 'light'
+  theme.value = savedTheme
+  document.documentElement.setAttribute('data-theme', savedTheme === 'dark' ? 'dark' : 'soft')
   isInitialized.value = true
 })
 
 watch([theme, isInitialized], ([newTheme, newIsInitialized]) => {
   if (newIsInitialized) {
     localStorage.setItem('theme', newTheme)
+    const flyonTheme = newTheme === 'dark' ? 'dark' : 'soft'
+    document.documentElement.setAttribute('data-theme', flyonTheme)
+    
     if (newTheme === 'dark') {
       document.documentElement.classList.add('dark')
     } else {

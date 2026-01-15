@@ -1,4 +1,4 @@
-import { IsBoolean, IsDateString, IsInt, IsOptional, IsString } from 'class-validator';
+import { IsBoolean, IsDateString, IsEmail, IsInt, IsNotEmpty, IsOptional, IsString, ValidateIf } from 'class-validator';
 
 export class CreateObservadorDto {
     @IsInt()
@@ -18,7 +18,7 @@ export class CreateObservadorDto {
     tipoObservador: string; // 'OBSERVADOR' | 'TECNICO'
 
     @IsString()
-    tipoContrato: string; // 'LEY MARCO' | 'MONOTRIBUTISTA' | 'PLANTA PERMANENTE'
+    tipoContrato: string; // 'LEY MARCO' | '1109' | 'MONOTRIBUTISTA' | 'PLANTA PERMANENTE'
 
     @IsBoolean()
     @IsOptional()
@@ -28,7 +28,23 @@ export class CreateObservadorDto {
     @IsOptional()
     disponible?: boolean;
 
-    @IsDateString()
+    @IsBoolean()
+    @IsOptional()
+    conImpedimento?: boolean;
+
+    @ValidateIf(o => o.conImpedimento === true)
+    @IsNotEmpty({ message: 'El motivo de impedimento es obligatorio cuando existe un impedimento' })
+    @IsString()
+    @IsOptional()
+    motivoImpedimento?: string;
+
+    @IsEmail({}, { message: 'El formato del email no es válido' })
+    @IsString()
+    @IsOptional()
+    email?: string;
+
+    @ValidateIf(o => o.fechaProximaDisponibilidad !== '' && o.fechaProximaDisponibilidad !== null && o.fechaProximaDisponibilidad !== undefined)
+    @IsDateString({}, { message: 'La fecha de próxima disponibilidad debe ser una fecha válida' })
     @IsOptional()
     fechaProximaDisponibilidad?: string;
 

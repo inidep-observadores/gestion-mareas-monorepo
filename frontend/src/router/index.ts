@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { ValidRoles } from '@/modules/auth/interfaces/roles.enum'
 
 import BandejaView from '@/modules/mareas/views/BandejaView.vue'
 import PanelOperativoView from '@/modules/mareas/views/PanelOperativoView.vue'
@@ -6,6 +7,8 @@ import FlujoMareasView from '@/modules/mareas/views/FlujoMareasView.vue'
 import EstadisticasView from '@/modules/mareas/views/EstadisticasView.vue'
 import CalendarioView from '@/modules/mareas/views/CalendarioView.vue'
 import MareaDetalleView from '@/modules/mareas/views/MareaDetalleView.vue'
+import MareaOperativaDetalleView from '@/modules/mareas/views/MareaOperativaDetalleView.vue'
+import NuevaMareaView from '@/modules/mareas/views/NuevaMareaView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -59,6 +62,24 @@ const router = createRouter({
       },
     },
     {
+      path: '/terms',
+      name: 'Terms',
+      component: () => import('@/modules/auth/views/TermsView.vue'),
+      meta: {
+        title: 'Términos y Condiciones',
+        requiresAuth: false,
+      },
+    },
+    {
+      path: '/privacy',
+      name: 'Privacy',
+      component: () => import('@/modules/auth/views/PrivacyView.vue'),
+      meta: {
+        title: 'Política de Privacidad',
+        requiresAuth: false,
+      },
+    },
+    {
       path: '/profile',
       name: 'Profile',
       component: () => import('@/modules/auth/views/ProfileView.vue'),
@@ -87,6 +108,15 @@ const router = createRouter({
       },
     },
     {
+      path: '/mareas/nueva',
+      name: 'NuevaMarea',
+      component: NuevaMareaView,
+      meta: {
+        title: 'Registrar Nueva Marea',
+        requiresAuth: true,
+      },
+    },
+    {
       path: '/mareas/workflow',
       name: 'MareasWorkflow',
       component: FlujoMareasView,
@@ -100,7 +130,25 @@ const router = createRouter({
       name: 'MareaDetalle',
       component: MareaDetalleView,
       meta: {
-        title: 'Detalle de Marea',
+        title: 'Detalle Técnico de Marea',
+        requiresAuth: true,
+      },
+    },
+    {
+      path: '/mareas/operativa/:id',
+      name: 'MareaOperativaDetalle',
+      component: MareaOperativaDetalleView,
+      meta: {
+        title: 'Resumen Operativo',
+        requiresAuth: true,
+      },
+    },
+    {
+      path: '/mareas/editar/:id',
+      name: 'EditarMarea',
+      component: () => import('@/modules/mareas/views/EditarMareaView.vue'),
+      meta: {
+        title: 'Editar Marea',
         requiresAuth: true,
       },
     },
@@ -120,7 +168,7 @@ const router = createRouter({
       meta: {
         title: 'Estadísticas Anuales',
         requiresAuth: true,
-        roles: ['admin', 'coordinador'],
+        roles: [ValidRoles.admin, ValidRoles.coordinador],
       },
     },
     {
@@ -144,7 +192,7 @@ const router = createRouter({
       meta: {
         title: 'Gestión de Usuarios',
         requiresAuth: true,
-        roles: ['admin'],
+        roles: [ValidRoles.admin],
       },
     },
     {
@@ -154,7 +202,7 @@ const router = createRouter({
       meta: {
         title: 'Gestión de Observadores',
         requiresAuth: true,
-        roles: ['admin'],
+        roles: [ValidRoles.admin],
       },
     },
     {
@@ -164,10 +212,50 @@ const router = createRouter({
       meta: {
         title: 'Gestión de Buques',
         requiresAuth: true,
-        roles: ['admin'],
+        roles: [ValidRoles.admin],
+      },
+    },
+    {
+      path: '/admin/error-logs',
+      name: 'AdminErrorLogs',
+      component: () => import('@/modules/admin/views/ErrorLogsView.vue'),
+      meta: {
+        title: 'Auditoría de Errores',
+        requiresAuth: true,
+        roles: [ValidRoles.admin],
+      },
+    },
+    {
+      path: '/admin/backup',
+      name: 'AdminBackup',
+      component: () => import('@/modules/admin/views/BackupView.vue'),
+      meta: {
+        title: 'Copia de Seguridad',
+        requiresAuth: true,
+        roles: [ValidRoles.admin],
+      },
+    },
+    {
+      path: '/admin/data-export',
+      name: 'AdminDataExport',
+      component: () => import('@/modules/admin/views/DataExportView.vue'),
+      meta: {
+        title: 'Portabilidad de Datos',
+        requiresAuth: true,
+        roles: [ValidRoles.admin],
       },
     },
     // 404 No encontrado
+    {
+      path: '/error-servidor',
+      name: 'ServerError',
+      component: () => import('@/modules/common/views/ServerErrorView.vue'),
+      meta: {
+        title: 'Error del Servidor',
+        guestOnly: false,
+        requiresAuth: false
+      }
+    },
     {
       path: '/:pathMatch(.*)*',
       name: 'NotFound',
@@ -191,11 +279,17 @@ const router = createRouter({
 })
 
 import { useAuthStore } from '@/modules/auth/stores/auth.store'
+import { useBusinessRulesStore } from '@/modules/shared/stores/business-rules.store'
 
 router.beforeEach(async (to, from, next) => {
   document.title = `${to.meta.title} | Gestión de Mareas - INIDEP`
 
   const authStore = useAuthStore()
+  const businessRulesStore = useBusinessRulesStore()
+
+  if (businessRulesStore.failed && to.name !== 'ServerError') {
+    return next({ name: 'ServerError' })
+  }
   await authStore.whenReady() // Wait for bootstrap
 
   const isAuthenticated = authStore.isAuthenticated
@@ -211,14 +305,14 @@ router.beforeEach(async (to, from, next) => {
   }
 
   // 3. User with 'invitado' role must be trapped in '/unauthorized'
-  const isGuest = authStore.user?.roles?.includes('invitado')
+  const isGuest = authStore.user?.roles?.includes(ValidRoles.invitado)
   if (isAuthenticated && isGuest && to.name !== 'Unauthorized') {
     return next({ name: 'Unauthorized' })
   }
 
   // 4. Check for Roles (Regular role authorization)
   if (to.meta.roles) {
-    const roles = to.meta.roles as string[]
+    const roles = to.meta.roles as ValidRoles[]
     const userRoles = authStore.user?.roles || []
     const hasRole = roles.some(role => userRoles.includes(role))
 

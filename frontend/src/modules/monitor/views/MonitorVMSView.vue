@@ -4,7 +4,7 @@
     description="Monitoreo satelital y tracking en tiempo real de la flota."
   >
     <div
-      class="relative w-full overflow-hidden bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100"
+      class="relative w-full overflow-hidden bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-300"
       style="height: calc(100vh - 64px)"
     >
       <!-- THE MAP (Background) -->
@@ -21,6 +21,7 @@
       <!-- HUD LAYER (Floating Components) -->
       <div
         class="relative w-full h-full pointer-events-none z-[1000] p-6 flex flex-col justify-between"
+        :style="{ '--hud-font-offset': `${fontScale}px` }"
       >
         <!-- Top Row -->
         <div class="flex justify-between items-start w-full">
@@ -37,12 +38,39 @@
             @update:layer="handleLayerToggle"
           />
 
-          <!-- Right: Trip Stages -->
-          <TripStagesCard
-            :stages="mockStages"
-            :totalDays="36"
-            @select-stage="handleStageSelection"
-          />
+          <!-- Right: Control Panel (Layers & Font Size) -->
+          <div class="flex flex-col gap-3 items-end">
+            <TripStagesCard
+              :stages="mockStages"
+              :totalDays="36"
+              @select-stage="handleStageSelection"
+            />
+            
+            <!-- Font Size Context Menu -->
+            <div class="pointer-events-auto flex items-center gap-1.5 p-1.5 bg-white/10 dark:bg-gray-900/40 backdrop-blur-xl rounded-2xl border border-white/20 dark:border-white/5 shadow-2xl">
+              <button 
+                @click="fontScale = Math.max(0, fontScale - 1)"
+                class="w-7 h-7 flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 text-gray-400 hover:text-indigo-500 transition-all active:scale-90"
+                title="Reducir fuente"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                  <path d="M5 12h14"/>
+                </svg>
+              </button>
+              <div class="px-2 text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest select-none">
+                A<span class="text-indigo-500">±</span>
+              </div>
+              <button 
+                @click="fontScale = Math.min(4, fontScale + 1)"
+                class="w-7 h-7 flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 text-gray-400 hover:text-indigo-500 transition-all active:scale-90"
+                title="Aumentar fuente"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                  <path d="M12 5v14M5 12h14"/>
+                </svg>
+              </button>
+            </div>
+          </div>
         </div>
 
         <!-- Bottom Row -->
@@ -113,6 +141,7 @@ const selectedVessel = ref<Vessel>({
   trips: [],
 })
 
+const fontScale = ref(0)
 const trackPoints = ref<TrackingPoint[]>(generateMockTrack(new Date('2025-11-02T21:11:00Z')))
 const playerIndex = ref(trackPoints.value.length - 1)
 const isPlaying = ref(false)

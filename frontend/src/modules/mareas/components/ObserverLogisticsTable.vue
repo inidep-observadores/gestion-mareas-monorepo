@@ -1,116 +1,117 @@
 <template>
-  <div
-    class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl overflow-hidden shadow-sm"
-  >
-    <div
-      class="px-6 py-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between"
-    >
-      <h3 class="font-bold text-gray-800 dark:text-white/90">Logística y Talento (Observadores)</h3>
-      <div class="text-xs text-gray-500">Últimos 12 meses</div>
+  <div class="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900 h-full flex flex-col">
+    <div class="mb-8 flex items-center justify-between">
+      <div>
+        <h2 class="text-sm font-black text-gray-900 dark:text-white uppercase tracking-widest flex items-center gap-2">
+          <div class="w-1.5 h-4 bg-blue-500 rounded-full"></div>
+          Logística y Talento (Observadores)
+        </h2>
+        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-tighter mt-1">Monitoreo de disponibilidad y esfuerzo</p>
+      </div>
+      <div class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Últimos 12 meses</div>
     </div>
-    <div class="overflow-x-auto">
-      <table class="w-full text-left border-collapse">
-        <thead class="bg-gray-50 dark:bg-gray-800/50">
-          <tr>
-            <th class="px-6 py-3 text-[10px] font-bold uppercase text-gray-400">Observador</th>
-            <th class="px-6 py-3 text-[10px] font-bold uppercase text-gray-400">Días Mar Año</th>
-            <th class="px-6 py-3 text-[10px] font-bold uppercase text-gray-400">Estado</th>
-            <th class="px-6 py-3 text-[10px] font-bold uppercase text-gray-400">En Tierra</th>
+
+    <div class="flex-1 overflow-x-auto custom-scrollbar">
+      <table class="w-full text-left border-separate border-spacing-y-2">
+        <thead>
+          <tr class="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+            <th class="pb-2 pl-4">Observador</th>
+            <th class="pb-2">Días Mar Año</th>
+            <th class="pb-2">Estado</th>
+            <th class="pb-2 pr-4 text-right">En Tierra</th>
           </tr>
         </thead>
-        <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
-          <tr
-            v-for="obs in observers"
+        <tbody>
+          <tr 
+            v-for="obs in observers" 
             :key="obs.id"
-            class="hover:bg-gray-50/50 dark:hover:bg-white/[0.02] transition-colors"
+            class="group bg-gray-50/50 dark:bg-gray-800/30 hover:bg-white dark:hover:bg-gray-800 transition-all rounded-2xl shadow-sm border border-transparent hover:border-gray-100 dark:hover:border-gray-700"
           >
-            <td class="px-6 py-4">
+            <!-- Observer Info -->
+            <td class="py-4 pl-4 rounded-l-2xl">
               <div class="flex items-center gap-3">
-                <div
-                  class="w-8 h-8 rounded-full bg-brand-50 dark:bg-brand-500/10 flex items-center justify-center text-brand-600 dark:text-brand-400 font-bold text-xs"
-                >
-                  {{
-                    obs.nombre
-                      .split(' ')
-                      .map((n) => n[0])
-                      .join('')
-                  }}
-                </div>
-                <div class="text-sm font-medium text-gray-800 dark:text-gray-200">
-                  {{ obs.nombre }}
-                </div>
+                 <div
+                   class="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-black text-xs shadow-sm border border-indigo-100 dark:border-indigo-800/50"
+                 >
+                   {{ obs.nombre.split(' ').map((n) => n[0]).join('') }}
+                 </div>
+                 <div class="text-xs font-black text-gray-900 dark:text-white uppercase tracking-wide">
+                   {{ obs.nombre }}
+                 </div>
               </div>
             </td>
-            <td class="px-6 py-4">
-              <div class="w-full max-w-[120px]">
-                <div class="flex justify-between text-[10px] mb-1">
-                  <span class="font-bold text-gray-700 dark:text-gray-300"
-                    >{{ obs.diasMar }} d</span
-                  >
-                  <span class="text-gray-400">/ 200</span>
-                </div>
-                <div class="h-1.5 w-full bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-                  <div
-                    class="h-full transition-all duration-500 rounded-full"
-                    :class="[obs.diasMar > 180 ? 'bg-error-500' : 'bg-brand-500']"
-                    :style="{ width: Math.min((obs.diasMar / 200) * 100, 100) + '%' }"
-                  ></div>
-                </div>
-              </div>
+
+            <!-- Sea Days Progress (Target 180) -->
+            <td class="py-4">
+               <div class="w-full max-w-35">
+                 <div class="flex justify-between text-[10px] font-black uppercase mb-1.5">
+                    <span class="text-gray-900 dark:text-white">{{ obs.diasMar }}d</span>
+                    <span class="text-gray-400">/ {{ diasNavegadosAnuales }} IDEAL</span>
+                 </div>
+                 <div class="h-2 w-full bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden border border-gray-100/50 dark:border-gray-700/30 relative">
+                    <div
+                      class="h-full transition-all duration-1000 ease-out rounded-full shadow-sm"
+                      :class="[obs.diasMar >= diasNavegadosAnuales ? 'bg-orange-500' : 'bg-indigo-500']"
+                      :style="{ width: Math.min((obs.diasMar / diasNavegadosAnualesSafe) * 100, 100) + '%' }"
+                    ></div>
+                    <!-- Target Marker -->
+                    <div class="absolute top-0 right-0 h-full w-px bg-white/30"></div>
+                 </div>
+               </div>
             </td>
-            <td class="px-6 py-4">
+
+            <!-- Status Tag -->
+            <td class="py-4">
               <span
-                :class="[
-                  'inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider',
-                  statusStyles[obs.estado],
-                ]"
+                class="inline-flex items-center px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border"
+                :class="statusStyles[obs.estado]"
               >
-                <span
-                  class="w-1 h-1 rounded-full mr-1.5"
-                  :class="statusDotStyles[obs.estado]"
-                ></span>
+                <span class="w-1.5 h-1.5 rounded-full mr-2" :class="statusDotStyles[obs.estado]"></span>
                 {{ obs.estado }}
               </span>
             </td>
-            <td class="px-6 py-4">
-              <div
-                class="text-sm font-bold"
-                :class="
-                  obs.diasTierra > 30 ? 'text-warning-600' : 'text-gray-600 dark:text-gray-400'
-                "
-              >
-                {{ obs.diasTierra }} <span class="text-[10px] font-normal uppercase">días</span>
-              </div>
+
+            <!-- Land Days -->
+            <td class="py-4 pr-4 text-right rounded-r-2xl">
+               <div class="flex flex-col items-end">
+                  <span 
+                    class="text-xs font-black tabular-nums"
+                    :class="obs.diasTierra > diasExcesoTierra ? 'text-orange-500' : 'text-gray-900 dark:text-white'"
+                  >
+                    {{ obs.diasTierra }} <span class="text-[9px] text-gray-400 uppercase font-black">Días</span>
+                  </span>
+                  <span v-if="obs.diasTierra > diasExcesoTierra" class="text-[8px] font-black text-orange-400 uppercase tracking-tighter">Exceso detectado</span>
+               </div>
             </td>
           </tr>
         </tbody>
       </table>
     </div>
-    <div
-      class="px-6 py-3 border-t border-gray-100 dark:border-gray-800 bg-gray-50/30 dark:bg-transparent"
-    >
-      <button
-        class="text-xs font-bold text-brand-600 hover:text-brand-700 dark:text-brand-400 flex items-center gap-1"
-      >
-        Ver plantilla completa
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          class="w-3 h-3"
-          viewBox="0 0 20 20"
-          fill="currentColor"
-        >
-          <path
-            fill-rule="evenodd"
-            d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
-            clip-rule="evenodd"
-          />
-        </svg>
-      </button>
+
+    <!-- View All Action -->
+    <div class="mt-6 pt-4 border-t border-gray-50 dark:border-gray-800/50 flex justify-center">
+       <button class="flex items-center gap-2 text-[10px] font-black text-indigo-500 hover:text-indigo-600 dark:text-indigo-400 uppercase tracking-widest transition-colors group">
+          Ver plantilla completa
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3 transition-transform group-hover:translate-x-1" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+          </svg>
+       </button>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
+import { storeToRefs } from 'pinia'
+import { useBusinessRulesStore } from '@/modules/shared/stores/business-rules.store'
+
+const businessRulesStore = useBusinessRulesStore()
+const { rules } = storeToRefs(businessRulesStore)
+
+const diasNavegadosAnuales = computed(() => rules.value.DIAS_NAVEGADOS_ANUALES || 0)
+const diasNavegadosAnualesSafe = computed(() => rules.value.DIAS_NAVEGADOS_ANUALES || 1)
+const diasExcesoTierra = computed(() => rules.value.DIAS_EXCESO_TIERRA || 0)
+
 interface Observer {
   id: number
   nombre: string
@@ -122,20 +123,36 @@ interface Observer {
 const observers: Observer[] = [
   { id: 1, nombre: 'Juan Pérez', diasMar: 185, estado: 'Navegando', diasTierra: 0 },
   { id: 2, nombre: 'María García', diasMar: 142, estado: 'Disponible', diasTierra: 15 },
-  { id: 3, nombre: 'Carlos Rodríguez', diasMar: 195, estado: 'Disponible', diasTierra: 42 },
+  { id: 3, nombre: 'Carlos Rodríguez', diasMar: 175, estado: 'Disponible', diasTierra: 42 },
   { id: 4, nombre: 'Ana López', diasMar: 88, estado: 'Navegando', diasTierra: 0 },
   { id: 5, nombre: 'Roberto Gómez', diasMar: 120, estado: 'Licencia', diasTierra: 10 },
 ]
 
 const statusStyles = {
-  Navegando: 'bg-brand-50 text-brand-700 dark:bg-brand-500/10 dark:text-brand-400',
-  Disponible: 'bg-success-50 text-success-700 dark:bg-success-500/10 dark:text-success-400',
-  Licencia: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400',
+  Navegando: 'bg-indigo-50 text-indigo-700 border-indigo-100 dark:bg-indigo-500/10 dark:text-indigo-400 dark:border-indigo-800/50',
+  Disponible: 'bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-800/50',
+  Licencia: 'bg-gray-100 text-gray-600 border-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700',
 }
 
 const statusDotStyles = {
-  Navegando: 'bg-brand-500 animate-pulse',
-  Disponible: 'bg-success-500',
+  Navegando: 'bg-indigo-500 animate-pulse',
+  Disponible: 'bg-emerald-500',
   Licencia: 'bg-gray-400',
 }
 </script>
+
+<style scoped>
+.custom-scrollbar::-webkit-scrollbar {
+  height: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #e5e7eb;
+  border-radius: 10px;
+}
+.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #374151;
+}
+</style>

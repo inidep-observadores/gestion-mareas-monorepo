@@ -1,81 +1,76 @@
 <template>
-  <HudCard customClass="w-52">
+  <HudCard customClass="w-44">
     <!-- Vessel Header -->
-    <div class="p-3 border-b border-gray-200/30 dark:border-white/5 flex items-start justify-between">
-      <div class="flex flex-col gap-0.5">
-        <h4 class="text-[7px] font-black uppercase tracking-widest text-secondary-500/80 mb-0.5">Buque</h4>
-        <h2 class="text-sm font-black text-gray-900 dark:text-white leading-tight">
+    <div class="p-2 border-b border-gray-200/20 dark:border-white/5 flex items-start justify-between bg-white/5 dark:bg-black/10">
+      <div class="flex flex-col gap-0">
+        <h4 class="font-black uppercase tracking-[0.2em] text-indigo-500/80 mb-0.5" :style="{ fontSize: 'calc(6px + var(--hud-font-offset))' }">Marea Activa</h4>
+        <h2 class="font-black text-gray-900 dark:text-gray-300 leading-none tracking-tighter" :style="{ fontSize: 'calc(12px + var(--hud-font-offset))' }">
           {{ vesselName }}
         </h2>
-        <p class="text-[7px] font-bold text-gray-400 uppercase tracking-tighter">Mat. {{ vesselMat }}</p>
+        <p class="font-bold text-gray-400 uppercase mt-0.5 opacity-60" :style="{ fontSize: 'calc(6px + var(--hud-font-offset))' }">Mat. {{ vesselMat }}</p>
       </div>
-      <div class="p-1.5 bg-brand-500/10 rounded-lg">
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-brand-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+      <div class="p-1 bg-indigo-500/10 rounded-lg border border-indigo-500/20">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3 text-indigo-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
           <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
           <path d="M6 12v5c0 2 2 3 6 3s6-1 6-3v-5"/>
         </svg>
       </div>
     </div>
 
-    <div class="p-3 flex flex-col gap-3">
+    <div class="p-2 flex flex-col gap-2.5">
       <!-- Current Position -->
-      <div class="flex flex-col gap-2">
-        <h4 class="text-[7px] font-black uppercase tracking-widest text-gray-400 text-center">Posición Actual</h4>
-        <div class="grid grid-cols-2 gap-2">
-          <div class="flex flex-col items-center bg-gray-50/50 dark:bg-black/20 p-2 rounded-xl border border-gray-100 dark:border-white/5">
-            <span class="text-[7px] font-black uppercase text-brand-500 mb-0.5">Latitud</span>
-            <span class="text-[10px] font-bold tracking-tight text-gray-800 dark:text-gray-100">{{ formatCoordinate(position.lat, 'lat') }}</span>
+      <div class="flex flex-col gap-1.5">
+        <h4 class="font-black uppercase tracking-[0.2em] text-gray-400/80 text-center" :style="{ fontSize: 'calc(6px + var(--hud-font-offset))' }">Posición Satelital</h4>
+        <div class="grid grid-cols-2 gap-1.5">
+          <div class="flex flex-col items-center bg-white/5 dark:bg-black/20 py-1.5 px-1 rounded-xl border border-white/5">
+            <span class="font-black uppercase text-indigo-400 mb-0.5" :style="{ fontSize: 'calc(5px + var(--hud-font-offset))' }">Latitud</span>
+            <span class="font-black tabular-nums text-gray-800 dark:text-gray-300 tracking-tighter" :style="{ fontSize: 'calc(9px + var(--hud-font-offset))' }">{{ formatCoordinate(position.lat, 'lat') }}</span>
           </div>
-          <div class="flex flex-col items-center bg-gray-50/50 dark:bg-black/20 p-2 rounded-xl border border-gray-100 dark:border-white/5">
-            <span class="text-[7px] font-black uppercase text-brand-500 mb-0.5">Longitud</span>
-            <span class="text-[10px] font-bold tracking-tight text-gray-800 dark:text-gray-100">{{ formatCoordinate(position.lon, 'lon') }}</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Date & Time -->
-      <div class="flex flex-col gap-1.5 px-1">
-        <div class="flex items-center justify-between whitespace-nowrap">
-          <div class="flex items-center gap-1.5">
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
-            </svg>
-            <span class="text-[9px] font-medium text-gray-600 dark:text-gray-300">Fecha: <span class="font-bold text-gray-900 dark:text-white">{{ formatDate(timestamp) }}</span></span>
-          </div>
-        </div>
-        <div class="flex items-center justify-between whitespace-nowrap">
-          <div class="flex items-center gap-1.5">
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-            </svg>
-            <span class="text-[9px] font-medium text-gray-600 dark:text-gray-300">Hora: <span class="font-bold text-gray-900 dark:text-white">{{ formatTime(timestamp) }}</span></span>
+          <div class="flex flex-col items-center bg-white/5 dark:bg-black/20 py-1.5 px-1 rounded-xl border border-white/5">
+            <span class="font-black uppercase text-indigo-400 mb-0.5" :style="{ fontSize: 'calc(5px + var(--hud-font-offset))' }">Longitud</span>
+            <span class="font-black tabular-nums text-gray-800 dark:text-gray-300 tracking-tighter" :style="{ fontSize: 'calc(9px + var(--hud-font-offset))' }">{{ formatCoordinate(position.lon, 'lon') }}</span>
           </div>
         </div>
       </div>
 
-      <!-- Speed & Course -->
-      <div class="flex items-center justify-between text-[8px] font-bold uppercase tracking-tight text-gray-500 px-1">
-        <span>Vel: <span class="text-gray-900 dark:text-white">{{ speed.toFixed(1) }} kn</span></span>
-        <span>Rumbo: <span class="text-gray-900 dark:text-white">{{ course }}°</span></span>
+      <!-- Date & Time & Telemetry -->
+      <div class="flex flex-col gap-1.5 px-0.5">
+        <div class="flex items-center justify-between font-black uppercase tracking-tighter" :style="{ fontSize: 'calc(8px + var(--hud-font-offset))' }">
+          <div class="flex items-center gap-1.5 text-gray-500">
+             <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_5px_rgba(16,185,129,0.5)]"></span>
+             <span>{{ formatDate(timestamp) }}</span>
+          </div>
+          <div class="text-gray-900 dark:text-gray-300 font-black">{{ formatTime(timestamp) }}</div>
+        </div>
+
+        <!-- Speed & Course - Combined in a pill -->
+        <div class="flex items-center justify-between bg-indigo-500/5 dark:bg-white/5 px-2 py-1 rounded-lg border border-indigo-500/10">
+          <div class="flex flex-col">
+            <span class="font-black text-gray-400 uppercase" :style="{ fontSize: 'calc(5px + var(--hud-font-offset))' }">Velocidad</span>
+            <span class="font-black text-indigo-500" :style="{ fontSize: 'calc(8px + var(--hud-font-offset))' }">{{ speed.toFixed(1) }} kn</span>
+          </div>
+          <div class="w-px h-4 bg-gray-200/20"></div>
+          <div class="flex flex-col items-end">
+            <span class="font-black text-gray-400 uppercase" :style="{ fontSize: 'calc(5px + var(--hud-font-offset))' }">Rumbo</span>
+            <span class="font-black text-gray-900 dark:text-gray-300" :style="{ fontSize: 'calc(8px + var(--hud-font-offset))' }">{{ course }}°</span>
+          </div>
+        </div>
       </div>
 
       <!-- Visibility Layers -->
-      <div class="flex flex-col gap-2 pt-1 border-t border-gray-200/30 dark:border-white/5">
-        <h4 class="text-[7px] font-black uppercase tracking-widest text-gray-400">Capas Visibles</h4>
-        <div class="flex flex-col gap-1.5">
-          <div v-for="(val, key) in layers" :key="key" class="flex items-center justify-between">
-            <span class="text-[9px] font-bold text-gray-600 dark:text-gray-300 capitalize">{{ layerLabels[key] || key }}</span>
-            <button 
-              @click="$emit('update:layer', key, !val)"
-              class="relative inline-flex h-3.5 w-7 flex-shrink-0 cursor-pointer rounded-full border border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
-              :class="val ? 'bg-brand-500' : 'bg-gray-200 dark:bg-gray-700'"
-            >
-              <span 
-                class="pointer-events-none inline-block h-2.5 w-2.5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
-                :class="val ? 'translate-x-3.5' : 'translate-x-0'"
-              />
-            </button>
-          </div>
+      <div class="flex flex-col gap-1.5 pt-2 border-t border-gray-200/10 dark:border-white/5">
+        <div v-for="(val, key) in layers" :key="key" class="flex items-center justify-between group/layer">
+          <span class="font-bold text-gray-400 group-hover/layer:text-gray-600 dark:group-hover/layer:text-gray-200 transition-colors capitalize tracking-tighter" :style="{ fontSize: 'calc(7px + var(--hud-font-offset))' }">{{ layerLabels[key] || key }}</span>
+          <button
+            @click="$emit('update:layer', key, !val)"
+            class="relative inline-flex h-2.5 w-6 flex-shrink-0 cursor-pointer rounded-full border border-transparent transition-all duration-300"
+            :class="val ? 'bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.4)]' : 'bg-gray-200 dark:bg-gray-800'"
+          >
+            <span
+              class="pointer-events-none inline-block h-2 w-2 transform rounded-full bg-white shadow-sm ring-0 transition duration-300 ease-in-out"
+              :class="val ? 'translate-x-3.5' : 'translate-x-0.5'"
+            />
+          </button>
         </div>
       </div>
     </div>

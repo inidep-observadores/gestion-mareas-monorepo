@@ -1,11 +1,11 @@
 <template>
   <aside
     :class="[
-      'fixed mt-16 flex flex-col lg:mt-0 top-0 px-5 left-0 bg-white dark:bg-gray-900 dark:border-gray-800 text-gray-900 h-screen transition-all duration-300 ease-in-out z-99999 border-r border-gray-200',
+      'fixed mt-16 flex flex-col lg:mt-0 top-0 px-5 left-0 bg-red-100 dark:bg-red-950/60 dark:border-red-900/50 text-gray-900 h-screen transition-all duration-300 ease-in-out z-99999 border-r border-red-300',
       {
-        'lg:w-[290px]': isExpanded || isMobileOpen || isHovered,
-        'lg:w-[90px]': !isExpanded && !isHovered,
-        'translate-x-0 w-[290px]': isMobileOpen,
+        'lg:w-[18.125rem]': isExpanded || isMobileOpen || isHovered,
+        'lg:w-[5.625rem]': !isExpanded && !isHovered,
+        'translate-x-0 w-[18.125rem]': isMobileOpen,
         '-translate-x-full': !isMobileOpen,
         'lg:translate-x-0': true,
       },
@@ -29,16 +29,16 @@
           <span class="text-lg font-bold text-gray-800 dark:text-white leading-tight"
             >Panel de</span
           >
-          <span class="text-lg font-bold text-purple-600 dark:text-purple-400 leading-tight"
+          <span class="text-lg font-bold text-red-600 dark:text-red-400 leading-tight"
             >Admin</span
           >
         </div>
       </router-link>
     </div>
-    <div class="flex flex-col overflow-y-auto duration-300 ease-linear no-scrollbar">
-      <nav class="mb-6">
+    <div class="flex flex-col flex-1 overflow-y-auto duration-300 ease-linear no-scrollbar">
+      <nav class="mb-6" @click="closeMobileSidebar">
         <div class="flex flex-col gap-4">
-          <div v-for="(menuGroup, groupIndex) in menuGroups" :key="groupIndex">
+          <div v-for="(menuGroup, groupIndex) in navigationGroups" :key="groupIndex">
             <h2
               :class="[
                 'mb-4 text-xs uppercase flex leading-[20px] text-gray-400',
@@ -52,41 +52,7 @@
             </h2>
             <ul class="flex flex-col gap-4">
               <li v-for="item in menuGroup.items" :key="item.name">
-                <template v-if="item.name === 'Volver al Sitio'">
-                   <router-link
-                    :to="item.path"
-                    class="menu-item group menu-item-inactive"
-                  >
-                    <span class="menu-item-icon-inactive">
-                      <component :is="item.icon" />
-                    </span>
-                    <span v-if="isExpanded || isHovered || isMobileOpen" class="menu-item-text">{{
-                      item.name
-                    }}</span>
-                  </router-link>
-                </template>
-                <template v-else-if="item.name === 'Cerrar Sesión'">
-                  <button
-                    @click="handleItemClick(item, $event)"
-                    :class="[
-                      'menu-item group w-full text-left',
-                      isActive(item.path) ? 'menu-item-active' : 'menu-item-inactive',
-                    ]"
-                  >
-                    <span
-                      :class="[
-                        isActive(item.path) ? 'menu-item-icon-active' : 'menu-item-icon-inactive',
-                      ]"
-                    >
-                      <component :is="item.icon" />
-                    </span>
-                    <span v-if="isExpanded || isHovered || isMobileOpen" class="menu-item-text">{{
-                      item.name
-                    }}</span>
-                  </button>
-                </template>
                 <router-link
-                  v-else
                   :to="item.path"
                   :class="[
                     'menu-item group',
@@ -113,11 +79,55 @@
         </div>
       </nav>
     </div>
+
+    <!-- Sticky Footer -->
+    <div class="mt-auto py-6 border-t border-red-200/50 dark:border-red-900/50 bg-red-100 dark:bg-red-950/60">
+      <nav @click="closeMobileSidebar">
+        <ul class="flex flex-col gap-4">
+          <li v-for="item in systemGroups.items" :key="item.name">
+            <template v-if="item.name === 'Volver al Sitio'">
+                <router-link
+                :to="item.path"
+                class="menu-item group menu-item-inactive"
+              >
+                <span class="menu-item-icon-inactive">
+                  <component :is="item.icon" />
+                </span>
+                <span v-if="isExpanded || isHovered || isMobileOpen" class="menu-item-text">{{
+                  item.name
+                }}</span>
+              </router-link>
+            </template>
+            <template v-else-if="item.name === 'Cerrar Sesión'">
+              <button
+                @click="handleItemClick(item, $event)"
+                :class="[
+                  'menu-item group w-full text-left',
+                  isActive(item.path) ? 'menu-item-active' : 'menu-item-inactive',
+                ]"
+              >
+                <span
+                  :class="[
+                    isActive(item.path) ? 'menu-item-icon-active' : 'menu-item-icon-inactive',
+                  ]"
+                >
+                  <component :is="item.icon" />
+                </span>
+                <span v-if="isExpanded || isHovered || isMobileOpen" class="menu-item-text">{{
+                  item.name
+                }}</span>
+              </button>
+            </template>
+          </li>
+        </ul>
+      </nav>
+    </div>
   </aside>
 </template>
 
 <script setup lang="ts">
 import { useRoute, useRouter } from 'vue-router'
+import { ref, watch } from 'vue'
 import {
   LogoutIcon,
   HorizontalDots,
@@ -125,7 +135,10 @@ import {
   UserCircleIcon,
   ShieldIcon,
   ArrowLeftIcon,
-  ShipIcon
+  ShipIcon,
+  HistoryIcon,
+  ArchiveIcon,
+  BackupIcon
 } from '@/icons'
 import { useSidebar } from '@/composables/useSidebar'
 import { useAuthStore } from '@/modules/auth/stores/auth.store'
@@ -136,7 +149,13 @@ const authStore = useAuthStore()
 
 const { isExpanded, isMobileOpen, isHovered } = useSidebar()
 
-const menuGroups = [
+const closeMobileSidebar = () => {
+  if (isMobileOpen.value) {
+    isMobileOpen.value = false
+  }
+}
+
+const navigationGroups = [
   {
     title: 'Gestión',
     items: [
@@ -158,21 +177,47 @@ const menuGroups = [
     ],
   },
   {
+    title: 'Auditoría',
+    items: [
+      {
+        icon: HistoryIcon,
+        name: 'Log de Errores',
+        path: '/admin/error-logs',
+      },
+    ],
+  },
+  {
     title: 'Sistema',
     items: [
       {
-        icon: ArrowLeftIcon,
-        name: 'Volver al Sitio',
-        path: '/',
+        icon: ArchiveIcon,
+        name: 'Portabilidad de Datos',
+        path: '/admin/data-export',
       },
       {
-        icon: LogoutIcon,
-        name: 'Cerrar Sesión',
-        path: '/signin',
+        icon: BackupIcon,
+        name: 'Copias de seguridad',
+        path: '/admin/backup',
       },
     ],
   },
 ]
+
+const systemGroups = {
+  title: 'Sistema',
+  items: [
+    {
+      icon: ArrowLeftIcon,
+      name: 'Volver al Sitio',
+      path: '/',
+    },
+    {
+      icon: LogoutIcon,
+      name: 'Cerrar Sesión',
+      path: '/signin',
+    },
+  ],
+}
 
 const isActive = (path: string) => route.path === path
 
@@ -183,4 +228,13 @@ const handleItemClick = async (item: any, event: Event) => {
     router.push({ name: 'Signin' })
   }
 }
+
+watch(
+  () => route.fullPath,
+  () => {
+    if (isMobileOpen.value) {
+      isMobileOpen.value = false
+    }
+  }
+)
 </script>

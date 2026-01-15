@@ -4,6 +4,7 @@
     :title="isEditing ? 'Editar Buque' : 'Nuevo Buque'"
     @close="emit('close')"
     maxWidth="5xl"
+    variant="danger"
   >
     <form @submit.prevent="handleSubmit" class="space-y-6">
         <!-- Información Principal -->
@@ -34,23 +35,19 @@
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-400 mb-1.5">Tipo de Flota</label>
-                    <select
-                        v-model="form.tipoFlotaId"
-                        class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
-                    >
-                        <option :value="null">Seleccione...</option>
-                        <option v-for="tipo in tiposFlota" :key="tipo.id" :value="tipo.id">{{ tipo.nombre }}</option>
-                    </select>
+                    <SearchableSelect
+                        v-model="form.tipoFlotaId as any"
+                        :options="tipoFlotaOptions"
+                        placeholder="Seleccione..."
+                    />
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-400 mb-1.5">Puerto Base</label>
-                    <select
-                        v-model="form.puertoBaseId"
-                        class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
-                    >
-                        <option :value="null">Seleccione...</option>
-                        <option v-for="puerto in puertos" :key="puerto.id" :value="puerto.id">{{ puerto.nombre }}</option>
-                    </select>
+                    <SearchableSelect
+                        v-model="form.puertoBaseId as any"
+                        :options="puertoOptions"
+                        placeholder="Seleccione..."
+                    />
                 </div>
                 <div>
                   <label class="block text-sm font-medium text-gray-700 dark:text-gray-400 mb-1.5">Código Interno</label>
@@ -101,23 +98,19 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-400 mb-1.5">Pesquería Habitual</label>
-                    <select
-                        v-model="form.pesqueriaHabitualId"
-                        class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
-                    >
-                        <option :value="null">Seleccione...</option>
-                        <option v-for="p in pesquerias" :key="p.id" :value="p.id">{{ p.nombre }}</option>
-                    </select>
+                    <SearchableSelect
+                        v-model="form.pesqueriaHabitualId as any"
+                        :options="pesqueriaOptions"
+                        placeholder="Seleccione..."
+                    />
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-400 mb-1.5">Arte de Pesca Habitual</label>
-                    <select
-                        v-model="form.arteHabitualId"
-                        class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
-                    >
-                        <option :value="null">Seleccione...</option>
-                        <option v-for="a in artesPesca" :key="a.id" :value="a.id">{{ a.nombre }}</option>
-                    </select>
+                    <SearchableSelect
+                        v-model="form.arteHabitualId as any"
+                        :options="arteOptions"
+                        placeholder="Seleccione..."
+                    />
                 </div>
             </div>
         </div>
@@ -225,6 +218,7 @@
 import { ref, watch, computed } from 'vue'
 import type { Buque, TipoFlota, Puerto, Pesqueria, ArtePesca } from '../interfaces/buque.interface'
 import BaseModal from '@/components/common/BaseModal.vue'
+import SearchableSelect from '@/components/common/SearchableSelect.vue'
 
 const props = defineProps<{
   show: boolean
@@ -235,6 +229,11 @@ const props = defineProps<{
   pesquerias: Pesqueria[]
   artesPesca: ArtePesca[]
 }>()
+
+const tipoFlotaOptions = computed(() => props.tiposFlota.map(t => ({ value: t.id, label: t.nombre })))
+const puertoOptions = computed(() => props.puertos.map(p => ({ value: p.id, label: p.nombre })))
+const pesqueriaOptions = computed(() => props.pesquerias.map(p => ({ value: p.id, label: p.nombre })))
+const arteOptions = computed(() => props.artesPesca.map(a => ({ value: a.id, label: a.nombre })))
 
 const emit = defineEmits(['close', 'save'])
 

@@ -63,7 +63,7 @@ const colorClass = computed(() => {
 
 const chartOptions = computed(() => ({
   chart: {
-    type: 'radialBar',
+    type: 'radialBar' as const,
     offsetY: -10,
     fontFamily: CHART_DEFAULTS.fontFamily,
   },
@@ -95,10 +95,10 @@ const chartOptions = computed(() => ({
   },
   colors: [colorMap[props.colorType as keyof typeof colorMap]],
   fill: {
-    type: 'solid',
+    type: 'solid' as const,
   },
   stroke: {
-    lineCap: 'round',
+    lineCap: 'round' as const,
   },
   grid: {
     borderColor: 'color-mix(in oklab, var(--color-gray-200) 40%, transparent)',
@@ -107,6 +107,6 @@ const chartOptions = computed(() => ({
   tooltip: {
     theme: 'light',
   },
-  labels: [props.title],
+  labels: [props.title || ''],
 }))
 </script>

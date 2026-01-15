@@ -35,7 +35,7 @@ describe('TiposFlotaService', () => {
 
     describe('crear', () => {
         it('debe crear un tipo de flota', async () => {
-            const dto = { codigo: 'COD1', nombre: 'Test' };
+            const dto = { codigo_numerico: 100, codigo: 'COD1', nombre: 'Test' };
             mockPrismaService.tipoFlota.create.mockResolvedValue({ id: 'uuid', ...dto });
 
             const result = await service.crear(dto);
@@ -45,7 +45,7 @@ describe('TiposFlotaService', () => {
 
         it('debe lanzar BadRequestException si el código ya existe', async () => {
             mockPrismaService.tipoFlota.create.mockRejectedValue({ code: 'P2002' });
-            await expect(service.crear({ codigo: 'EXISTS', nombre: 'Test' }))
+            await expect(service.crear({ codigo_numerico: 200, codigo: 'EXISTS', nombre: 'Test' }))
                 .rejects.toThrow(BadRequestException);
         });
     });

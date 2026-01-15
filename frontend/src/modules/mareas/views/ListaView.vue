@@ -6,20 +6,17 @@
     <div class="relative min-h-[calc(100vh-100px)] z-1">
       <div class="mb-6 flex justify-end">
         <div class="flex gap-3">
-          <div class="relative">
-            <input
-              type="text"
-              placeholder="Filtrar por buque..."
-              class="px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20"
-            />
-          </div>
+          <SearchInput
+            v-model="searchQuery"
+            placeholder="Filtrar por buque..."
+          />
         </div>
       </div>
 
       <!-- Grouped List -->
       <div class="space-y-6">
         <div
-          v-for="group in groups"
+          v-for="group in filteredGroups"
           :key="group.id"
           class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl overflow-hidden shadow-sm"
         >
@@ -113,8 +110,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
+import SearchInput from '@/components/ui/SearchInput.vue'
 import { ChevronDownIcon, DocsIcon, CalenderIcon, UserCircleIcon, WarningIcon } from '@/icons'
 
 interface Task {
@@ -176,4 +174,24 @@ const groups = ref<Group[]>([
     tasks: [{ id: 7, code: 'MA-007', vessel: 'BP PACIFICO', date: '10 Dic 2023', alert: false }],
   },
 ])
+const searchQuery = ref('')
+
+const filteredGroups = computed(() => {
+  if (!searchQuery.value) return groups.value
+
+  const query = searchQuery.value.toLowerCase().trim()
+  
+  return groups.value.map(group => ({
+    ...group,
+    tasks: group.tasks.filter(task => 
+      task.vessel.toLowerCase().includes(query) || 
+      task.code.toLowerCase().includes(query)
+    ),
+    // Expand groups that have matches
+    expanded: group.tasks.some(task => 
+      task.vessel.toLowerCase().includes(query) || 
+      task.code.toLowerCase().includes(query)
+    ) ? true : group.expanded
+  })).filter(group => group.tasks.length > 0)
+})
 </script>

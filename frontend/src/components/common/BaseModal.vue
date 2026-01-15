@@ -2,20 +2,38 @@
   <div v-if="show" class="relative z-50" aria-labelledby="modal-title" role="dialog" aria-modal="true">
     <!-- Backdrop -->
     <div 
-        class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" 
+        :class="[
+          'fixed inset-0 transition-opacity',
+          variant === 'danger' 
+            ? 'bg-red-950/40 backdrop-blur-md' 
+            : variant === 'glass'
+              ? 'bg-gray-950/40 backdrop-blur-sm'
+              : 'bg-gray-500 bg-opacity-75'
+        ]" 
         @click="emit('close')"
     ></div>
 
-    <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
+    <div 
+      class="fixed inset-0 z-10 w-screen overflow-y-auto transition-all duration-300 ease-in-out"
+      :class="[
+        isSidebarAware ? (isExpanded || isHovered ? 'lg:pl-[18.125rem]' : 'lg:pl-[5.625rem]') : ''
+      ]"
+    >
       <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
         <div
           :class="[
               'relative transform overflow-hidden rounded-xl bg-white text-left shadow-xl transition-all w-full sm:my-8 dark:bg-gray-800',
+              variant === 'danger' ? 'border border-red-200/50 dark:border-red-900/50' : '',
               maxWidthClass
           ]"
           @click.stop
         >
-          <div class="bg-white px-4 pb-4 pt-5 sm:p-6 dark:bg-gray-800">
+          <div 
+            :class="[
+              'px-4 pb-4 pt-5 sm:p-6',
+              variant === 'danger' ? 'bg-red-50/30 dark:bg-red-950/20' : 'bg-white dark:bg-gray-800'
+            ]"
+          >
             <!-- Header -->
             <div class="flex items-center justify-between mb-4">
               <h3 class="text-lg font-medium leading-6 text-gray-900 dark:text-white" id="modal-title">
@@ -43,14 +61,23 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
+import { useSidebar } from '@/composables/useSidebar'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   show: boolean;
   title?: string;
   maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl' | '6xl' | '7xl' | 'full';
-}>();
+  isSidebarAware?: boolean;
+  variant?: 'default' | 'danger' | 'glass';
+}>(), {
+  isSidebarAware: true,
+  maxWidth: 'lg',
+  variant: 'default'
+});
 
 const emit = defineEmits(['close']);
+
+const { isExpanded, isHovered } = useSidebar()
 
 const maxWidthClass = computed(() => {
     switch (props.maxWidth) {

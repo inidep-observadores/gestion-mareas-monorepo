@@ -4,6 +4,7 @@
     :title="isEditing ? 'Editar Usuario' : 'Nuevo Usuario'"
     @close="closeModal"
     maxWidth="2xl"
+    variant="danger"
   >
     <form @submit.prevent="handleSubmit" class="space-y-4">
         <!-- Avatar Preview/Upload -->
@@ -128,6 +129,7 @@ import usersAdminApi from '../services/users.service'
 import { toast } from 'vue-sonner'
 import BaseModal from '@/components/common/BaseModal.vue'
 import { ROLES } from '../constants/roles.constants'
+import { ValidRoles } from '@/modules/auth/interfaces/roles.enum'
 
 const props = defineProps<{
   show: boolean
@@ -146,7 +148,7 @@ const initialForm = {
     fullName: '',
     email: '',
     password: '',
-    roles: ['asistente_administrativo'] as string[],
+    roles: [ValidRoles.asistente] as ValidRoles[],
     avatarUrl: undefined as string | undefined
 }
 
@@ -166,7 +168,7 @@ watch(
       }
       showPassword.value = false
     } else {
-      form.value = { ...initialForm, roles: ['asistente_administrativo'] }
+      form.value = { ...initialForm, roles: [ValidRoles.asistente] }
       showPassword.value = false
     }
   },

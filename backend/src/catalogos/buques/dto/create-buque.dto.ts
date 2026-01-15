@@ -1,4 +1,5 @@
-import { IsBoolean, IsDateString, IsInt, IsNumber, IsOptional, IsString, IsUUID } from 'class-validator';
+import { IsBoolean, IsDateString, IsInt, IsNumber, IsOptional, IsString, IsUUID, ValidateIf } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class CreateBuqueDto {
     @IsString()
@@ -9,71 +10,79 @@ export class CreateBuqueDto {
 
     @IsInt()
     @IsOptional()
-    codigoInterno?: number;
+    @ValidateIf((o, v) => v !== null)
+    @Type(() => Number)
+    codigoInterno?: number | null;
 
     @IsUUID()
     @IsOptional()
-    tipoFlotaId?: string;
+    tipoFlotaId?: string | null;
 
     @IsUUID()
     @IsOptional()
-    arteHabitualId?: string;
+    arteHabitualId?: string | null;
 
     @IsUUID()
     @IsOptional()
-    pesqueriaHabitualId?: string;
+    pesqueriaHabitualId?: string | null;
 
     @IsInt()
     @IsOptional()
-    diasMareaEstimada?: number;
+    @ValidateIf((o, v) => v !== null)
+    @Type(() => Number)
+    diasMareaEstimada?: number | null;
 
     @IsNumber()
     @IsOptional()
-    esloraM?: number;
+    @ValidateIf((o, v) => v !== null)
+    @Type(() => Number)
+    esloraM?: number | null;
 
     @IsInt()
     @IsOptional()
-    potenciaHp?: number;
+    @ValidateIf((o, v) => v !== null)
+    @Type(() => Number)
+    potenciaHp?: number | null;
 
     @IsUUID()
     @IsOptional()
-    puertoBaseId?: string;
+    puertoBaseId?: string | null;
 
     @IsString()
     @IsOptional()
-    empresaNombre?: string;
+    empresaNombre?: string | null;
 
     @IsString()
     @IsOptional()
-    empresaLocalidad?: string;
+    empresaLocalidad?: string | null;
 
     @IsString()
     @IsOptional()
-    empresaTelefono?: string;
+    empresaTelefono?: string | null;
 
     @IsString()
     @IsOptional()
-    empresaFax?: string;
+    empresaFax?: string | null;
 
     @IsString()
     @IsOptional()
-    empresaCorreoPrincipal?: string;
+    empresaCorreoPrincipal?: string | null;
 
     @IsString()
     @IsOptional()
-    empresaCorreoSecundario?: string;
+    empresaCorreoSecundario?: string | null;
 
     @IsString()
     @IsOptional()
-    armadorNombre?: string;
+    armadorNombre?: string | null;
 
     @IsString()
     @IsOptional()
-    armadorTelefono?: string;
+    armadorTelefono?: string | null;
 
     @IsString()
     @IsOptional()
-    agenciaMaritimaNombre?: string;
+    agenciaMaritimaNombre?: string | null;
 
     @IsBoolean()
     @IsOptional()
@@ -81,13 +90,13 @@ export class CreateBuqueDto {
 
     @IsDateString()
     @IsOptional()
-    fechaAlta?: string;
+    fechaAlta?: string | null;
 
     @IsDateString()
     @IsOptional()
-    fechaBaja?: string;
+    fechaBaja?: string | null;
 
     @IsString()
     @IsOptional()
-    observaciones?: string;
+    observaciones?: string | null;
 }
