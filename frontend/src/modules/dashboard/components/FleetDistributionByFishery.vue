@@ -1,16 +1,16 @@
 ﻿<template>
-  <div class="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900 flex flex-col gap-4 border-l-4 border-l-blue-500">
+  <div class="rounded-3xl border border-border bg-surface p-6 shadow-sm flex flex-col gap-4 border-l-4 border-l-primary">
     <div class="mb-6 flex items-center justify-between">
       <div>
-        <h2 class="text-sm font-black text-gray-900 dark:text-white uppercase tracking-widest flex items-center gap-2">
-          <div class="w-1.5 h-4 bg-emerald-500 rounded-full"></div>
+        <h2 class="text-sm font-black text-text uppercase tracking-widest flex items-center gap-2">
+          <div class="w-1.5 h-4 bg-success rounded-full"></div>
           Flota por Pesquería
         </h2>
-        <span class="text-[10px] font-bold text-gray-500 dark:text-gray-400">Distribución de buques activos</span>
+        <span class="text-[10px] font-bold text-text-muted">Distribución de buques activos</span>
       </div>
       <div class="text-right">
-        <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Total Activo</span>
-        <p class="text-sm font-black text-gray-900 dark:text-white">{{ totalActive }} buques</p>
+        <span class="text-[10px] font-black text-text-muted uppercase tracking-widest">Total Activo</span>
+        <p class="text-sm font-black text-text">{{ totalActive }} buques</p>
       </div>
     </div>
 
@@ -23,30 +23,30 @@
       </div>
 
       <div class="flex flex-col justify-center py-2">
-        <h3 class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4 border-b border-gray-50 dark:border-gray-800/50 pb-2">Distribución Nominal</h3>
+        <h3 class="text-[10px] font-black text-text-muted uppercase tracking-widest mb-4 border-b border-border pb-2">Distribución Nominal</h3>
         <div class="space-y-4" v-if="distribution.length">
           <div v-for="item in distribution" :key="item.label" class="group/item">
             <div 
               @click="toggleExpand(item.label)"
-              class="space-y-2 p-2 rounded-2xl transition-all cursor-pointer hover:bg-gray-50/80 dark:hover:bg-gray-800/40"
-              :class="{ 'bg-gray-50 dark:bg-gray-800/60 shadow-sm ring-1 ring-gray-100 dark:ring-gray-700/50': expandedId === item.label }"
+              class="space-y-2 p-2 rounded-2xl transition-all cursor-pointer hover:bg-surface-muted/80"
+              :class="{ 'bg-surface-muted shadow-sm ring-1 ring-border': expandedId === item.label }"
             >
               <div class="flex items-center justify-between text-[10px] font-black uppercase tracking-widest">
                 <div class="flex items-center gap-2">
-                  <span class="text-gray-500 dark:text-gray-400 transition-colors" :class="{ 'text-emerald-500': expandedId === item.label }">{{ item.label }}</span>
+                  <span class="text-text-muted transition-colors" :class="{ 'text-primary': expandedId === item.label }">{{ item.label }}</span>
                   <div 
                     class="w-4 h-4 rounded-full flex items-center justify-center transition-transform duration-300"
-                    :class="{ 'rotate-180 bg-emerald-500 text-white': expandedId === item.label, 'bg-gray-100 dark:bg-gray-700 text-gray-400': expandedId !== item.label }"
+                    :class="{ 'rotate-180 bg-primary text-white': expandedId === item.label, 'bg-surface-muted text-text-muted': expandedId !== item.label }"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
                   </div>
                 </div>
-                <span class="text-gray-900 dark:text-white tabular-nums">
+                <span class="text-text tabular-nums">
                   {{ item.count }}
-                  <span class="text-gray-400 font-bold ml-1">({{ item.percentage }}%)</span>
+                  <span class="text-text-muted font-bold ml-1">({{ item.percentage }}%)</span>
                 </span>
               </div>
-              <div class="relative h-1.5 w-full bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden border border-gray-100/50 dark:border-gray-700/30">
+              <div class="relative h-1.5 w-full bg-surface-muted rounded-full overflow-hidden border border-border/30">
                 <div
                   class="h-full transition-all duration-1000 ease-out shadow-sm"
                   :style="{
@@ -70,15 +70,15 @@
                     <div 
                       v-for="vessel in item.vessels" 
                       :key="vessel.name"
-                      class="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-white dark:bg-gray-700 border border-gray-100 dark:border-gray-600 shadow-sm transition-all hover:border-emerald-500/50 group/chip"
+                      class="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-surface border border-border shadow-sm transition-all hover:border-primary/50 group/chip"
                       v-tooltip="vessel.status === 'EN_EJECUCION' ? 'En ejecución' : 'Designada'"
                     >
                       <component 
                         :is="vessel.status === 'EN_EJECUCION' ? ShipIcon : TaskIcon" 
                         class="w-3 h-3" 
-                        :class="vessel.status === 'EN_EJECUCION' ? 'text-blue-500' : 'text-gray-400'"
+                        :class="vessel.status === 'EN_EJECUCION' ? 'text-primary' : 'text-text-muted'"
                       />
-                      <span class="text-[10px] font-bold text-gray-600 dark:text-gray-300 uppercase tracking-tighter group-hover/chip:text-emerald-500 transition-colors">
+                      <span class="text-[10px] font-bold text-text uppercase tracking-tighter group-hover/chip:text-primary transition-colors">
                         {{ vessel.name }}
                         <span class="text-[9px] opacity-60 ml-0.5">({{ vessel.mareaCode }})</span>
                       </span>
@@ -112,9 +112,9 @@ type FleetDisplayItem = {
 
 const distribution = ref<FleetDisplayItem[]>([])
 const expandedId = ref<string | null>(null)
-const palette = ['#6366f1', '#3b82f6', '#10b981', '#f97316', '#facc15', '#a855f7']
+const palette = ['var(--color-primary)', 'var(--color-info)', 'var(--color-success)', 'var(--color-warning)', 'var(--color-error)', 'var(--color-secondary)']
 
-const { isDarkMode } = useTheme() as { isDarkMode: { value: boolean } }
+const { isDarkMode } = useTheme() as any
 
 const toggleExpand = (label: string) => {
   expandedId.value = expandedId.value === label ? null : label
@@ -152,7 +152,7 @@ const chartOptions = computed(() => ({
   stroke: {
     show: true,
     width: 3,
-    colors: [isDarkMode.value ? '#111827' : '#ffffff']
+    colors: ['var(--color-surface)']
   },
   plotOptions: {
     pie: {
@@ -164,14 +164,14 @@ const chartOptions = computed(() => ({
             show: true,
             fontSize: '11px',
             fontWeight: 900,
-            color: isDarkMode.value ? '#94a3b8' : '#64748b',
+            color: 'var(--color-text-muted)',
             offsetY: -8
           },
           value: {
             show: true,
             fontSize: '22px',
             fontWeight: 900,
-            color: isDarkMode.value ? '#f3f4f6' : '#1e293b',
+            color: 'var(--color-text)',
             offsetY: 10,
             formatter: (val: string) => val
           },
@@ -180,7 +180,7 @@ const chartOptions = computed(() => ({
             label: 'BUQUES',
             fontSize: '9px',
             fontWeight: 900,
-            color: '#94a3b8',
+            color: 'var(--color-text-muted)',
             formatter: () => totalActive.value
           }
         }
@@ -214,7 +214,7 @@ const chartOptions = computed(() => ({
     itemMargin: { horizontal: 5, vertical: 8 },
     markers: { radius: 12, size: 5, offsetX: -2 },
     labels: {
-      colors: isDarkMode.value ? '#94a3b8' : '#64748b'
+      colors: 'var(--color-text-muted)'
     }
   },
   tooltip: {
@@ -222,13 +222,12 @@ const chartOptions = computed(() => ({
     custom: ({ series, seriesIndex, w }: any) => {
       const val = series[seriesIndex]
       const label = w.globals.labels[seriesIndex]
-      const bg = isDarkMode.value ? 'bg-gray-900 text-gray-100 border border-gray-700/80' : 'bg-white text-gray-900 border border-gray-200/80'
-      const accent = chartColors.value[seriesIndex] || '#6366f1'
+      const accent = chartColors.value[seriesIndex] || 'var(--color-primary)'
       return `
-        <div class="px-3 py-2 ${bg} rounded-xl flex items-center gap-2 text-[11px] font-bold shadow-none">
+        <div class="px-3 py-2 bg-surface text-text border border-border rounded-xl flex items-center gap-2 text-[11px] font-bold shadow-xl">
           <span class="w-2 h-2 rounded-full" style="background:${accent}"></span>
-          <span class="text-gray-500 dark:text-gray-400 uppercase tracking-widest">${label}</span>
-          <span class="text-gray-900 dark:text-gray-50 font-black">${val} buques</span>
+          <span class="text-text-muted uppercase tracking-widest">${label}</span>
+          <span class="text-text font-black">${val} buques</span>
         </div>
       `
     }
@@ -263,11 +262,8 @@ onMounted(() => void loadDistribution())
   background: transparent;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #f1f5f9;
+  background: var(--color-surface-muted);
   border-radius: 10px;
-}
-.dark .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #1e293b;
 }
 
 .custom-scrollbar-mini::-webkit-scrollbar {
@@ -277,11 +273,8 @@ onMounted(() => void loadDistribution())
   background: transparent;
 }
 .custom-scrollbar-mini::-webkit-scrollbar-thumb {
-  background: #e2e8f0;
+  background: var(--color-border);
   border-radius: 10px;
-}
-.dark .custom-scrollbar-mini::-webkit-scrollbar-thumb {
-  background: #334155;
 }
 
 :deep(.apexcharts-tooltip) {
