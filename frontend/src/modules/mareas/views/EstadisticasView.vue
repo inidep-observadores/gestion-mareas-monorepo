@@ -6,20 +6,20 @@
     <div class="relative min-h-screen pb-20 animate-in fade-in duration-700">
 
       <!-- TOP ANALYTICS FILTERS -->
-      <div class="mb-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6 bg-surface p-6 rounded-3xl border border-border shadow-sm">
+      <div class="mb-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6 bg-surface p-6 rounded-2xl border border-border shadow-theme-xs">
         <div class="flex items-center gap-4">
           <div class="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
             <BarChartIcon class="w-6 h-6" />
           </div>
           <div>
-            <h2 class="text-lg font-black text-gray-900 dark:text-white uppercase tracking-tighter leading-none">Análisis de Gestión</h2>
-            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">Filtros dinámicos de periodo</p>
+            <h2 class="text-base font-black text-text uppercase tracking-tight leading-none">Análisis de Gestión</h2>
+            <p class="text-[10px] font-black text-text-muted uppercase tracking-widest mt-1">Filtros dinámicos de periodo</p>
           </div>
         </div>
 
         <div class="flex flex-wrap items-center gap-3">
           <!-- Period Filter -->
-          <div class="flex items-center gap-2 bg-surface-muted px-4 py-2 rounded-2xl border border-border">
+          <div class="flex items-center gap-2 bg-surface-muted px-4 py-2 rounded-xl border border-border">
             <span class="text-[10px] font-black text-text-muted uppercase tracking-widest">Año</span>
             <select class="text-xs font-black bg-transparent border-none focus:ring-0 text-text cursor-pointer p-0 pr-6">
               <option>2025</option>
@@ -28,7 +28,7 @@
           </div>
 
           <!-- Fishery Filter -->
-          <div class="flex items-center gap-2 bg-surface-muted px-4 py-2 rounded-2xl border border-border">
+          <div class="flex items-center gap-2 bg-surface-muted px-4 py-2 rounded-xl border border-border">
             <span class="text-[10px] font-black text-text-muted uppercase tracking-widest">Pesquería</span>
             <select class="text-xs font-black bg-transparent border-none focus:ring-0 text-text cursor-pointer p-0 pr-6">
               <option>Todas las especies</option>
@@ -38,7 +38,7 @@
             </select>
           </div>
 
-          <button class="bg-primary hover:bg-primary/90 text-primary-fg px-6 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-primary/20 active:scale-95">
+          <button class="bg-primary hover:bg-primary-hover text-primary-fg px-6 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all shadow-theme-xs shadow-primary/20 active:scale-95">
             Actualizar Reporte
           </button>
         </div>

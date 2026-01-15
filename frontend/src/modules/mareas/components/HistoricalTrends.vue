@@ -1,5 +1,5 @@
 <template>
-  <div class="rounded-3xl border border-border bg-surface p-6 shadow-sm h-full flex flex-col">
+  <div class="rounded-2xl border border-border bg-surface p-6 shadow-theme-xs h-full flex flex-col">
     <div class="mb-8 flex items-center justify-between">
       <div>
         <h2 class="text-sm font-black text-text uppercase tracking-widest flex items-center gap-2">
@@ -61,7 +61,7 @@ const chartOptions = computed(() => ({
     toolbar: { show: false },
     animations: { enabled: true }
   },
-  colors: ['#3b82f6', '#6366f1'],
+  colors: ['var(--color-primary)', 'var(--color-info)'],
   stroke: { curve: 'smooth', width: 3 },
   fill: {
     type: 'gradient',
@@ -78,28 +78,28 @@ const chartOptions = computed(() => ({
     axisTicks: { show: false },
     labels: {
       style: {
-        colors: isDarkMode.value ? '#94a3b8' : '#64748b',
-        fontSize: '10px',
-        fontWeight: 700
+        colors: 'var(--color-text-muted)',
+        fontSize: '9px',
+        fontWeight: 900
       }
     }
   },
   yaxis: {
     labels: {
       style: {
-        colors: isDarkMode.value ? '#94a3b8' : '#64748b',
-        fontSize: '10px',
-        fontWeight: 700
+        colors: 'var(--color-text-muted)',
+        fontSize: '9px',
+        fontWeight: 900
       }
     }
   },
   grid: {
-    borderColor: isDarkMode.value ? '#1f2937' : '#f3f4f6',
+    borderColor: 'var(--color-border)',
     strokeDashArray: 4
   },
   tooltip: {
-    theme: isDarkMode.value ? 'dark' : 'light',
-    style: { fontSize: '12px' }
+    theme: 'dark',
+    style: { fontSize: '10px' }
   },
   legend: { show: false },
   dataLabels: { enabled: false }

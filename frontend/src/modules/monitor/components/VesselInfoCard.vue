@@ -37,7 +37,7 @@
       <div class="flex flex-col gap-1.5 px-0.5">
         <div class="flex items-center justify-between font-black uppercase tracking-tighter" :style="{ fontSize: 'calc(8px + var(--hud-font-offset))' }">
           <div class="flex items-center gap-1.5 text-text-muted">
-             <span class="w-1.5 h-1.5 rounded-full bg-success shadow-[0_0_5px_rgba(var(--color-success-rgb),0.5)]"></span>
+             <span class="w-1.5 h-1.5 rounded-full bg-success shadow-[0_0_8px_rgba(var(--color-success-rgb),0.6)]"></span>
              <span>{{ formatDate(timestamp) }}</span>
           </div>
           <div class="text-text font-black">{{ formatTime(timestamp) }}</div>
@@ -64,7 +64,7 @@
           <button
             @click="$emit('update:layer', key, !val)"
             class="relative inline-flex h-2.5 w-6 flex-shrink-0 cursor-pointer rounded-full border border-transparent transition-all duration-300"
-            :class="val ? 'bg-primary shadow-[0_0_8px_rgba(var(--color-primary-rgb),0.4)]' : 'bg-surface-muted border border-border'"
+            :class="val ? 'bg-primary shadow-[0_0_10px_rgba(var(--color-primary-rgb),0.5)]' : 'bg-surface-muted border border-border'"
           >
             <span
               class="pointer-events-none inline-block h-2 w-2 transform rounded-full bg-surface shadow-sm ring-0 transition duration-300 ease-in-out"

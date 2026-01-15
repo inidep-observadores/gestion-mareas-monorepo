@@ -77,9 +77,9 @@ const statClasses = computed(() => {
     const colorMap = {
       primary: 'bg-primary/10 text-primary border border-primary/20',
       secondary: 'bg-surface text-text border border-border',
-      success: 'bg-green-500/10 text-green-700 border border-green-500/20',
-      error: 'bg-red-500/10 text-red-700 border border-red-500/20',
-      warning: 'bg-orange-500/10 text-orange-700 border border-orange-500/20',
+      success: 'bg-success/10 text-success border border-success/20',
+      error: 'bg-error/10 text-error border border-error/20',
+      warning: 'bg-warning/10 text-warning border border-warning/20',
       info: 'bg-primary/10 text-primary border border-primary/20',
     }
     classes.push(colorMap[props.color], 'rounded-2xl p-6')
@@ -92,9 +92,9 @@ const figureClasses = computed(() => {
   const colorMap = {
     primary: 'text-primary',
     secondary: 'text-text-muted',
-    success: 'text-green-500',
-    error: 'text-red-500',
-    warning: 'text-orange-500',
+    success: 'text-success',
+    error: 'text-error',
+    warning: 'text-warning',
     info: 'text-primary',
   }
   return colorMap[props.color]
@@ -120,8 +120,8 @@ const valueClasses = computed(() => {
     lg: 'text-4xl',
   }
   const trendMap = {
-    up: 'text-green-600 dark:text-green-400',
-    down: 'text-red-600 dark:text-red-400',
+    up: 'text-success dark:text-success',
+    down: 'text-error dark:text-error',
     neutral: 'text-text',
   }
   return `${sizeMap[props.size]} font-bold ${trendMap[props.trend]}`
@@ -129,8 +129,8 @@ const valueClasses = computed(() => {
 
 const descClasses = computed(() => {
   const trendMap = {
-    up: 'text-green-600 dark:text-green-400',
-    down: 'text-red-600 dark:text-red-400',
+    up: 'text-success dark:text-success',
+    down: 'text-error dark:text-error',
     neutral: 'text-text-muted',
   }
   return `text-sm ${trendMap[props.trend]}`
@@ -144,9 +144,9 @@ const progressBarClasses = computed(() => {
   const colorMap = {
     primary: 'bg-primary',
     secondary: 'bg-text-muted',
-    success: 'bg-green-500',
-    error: 'bg-red-500',
-    warning: 'bg-orange-500',
+    success: 'bg-success',
+    error: 'bg-error',
+    warning: 'bg-warning',
     info: 'bg-primary',
   }
   return `${colorMap[props.progressColor]} transition-all duration-300`

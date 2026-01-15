@@ -1,5 +1,5 @@
 <template>
-  <div class="rounded-3xl border border-border bg-surface p-6 shadow-sm h-full flex flex-col">
+  <div class="rounded-2xl border border-border bg-surface p-6 shadow-theme-xs h-full flex flex-col">
     <div class="mb-8 flex items-center justify-between">
       <div>
         <h2 class="text-sm font-black text-text uppercase tracking-widest flex items-center gap-2">
@@ -25,10 +25,10 @@
           <tr 
             v-for="obs in observers" 
             :key="obs.id"
-            class="group bg-surface-muted hover:bg-surface transition-all rounded-2xl shadow-sm border border-transparent hover:border-border"
+            class="group bg-surface-muted hover:bg-surface transition-duration-400 rounded-xl shadow-theme-xs border border-transparent hover:border-border"
           >
             <!-- Observer Info -->
-            <td class="py-4 pl-4 rounded-l-2xl">
+            <td class="py-4 pl-4 rounded-l-xl">
               <div class="flex items-center gap-3">
                  <div
                    class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary font-black text-xs shadow-sm border border-primary/20"
@@ -72,7 +72,7 @@
             </td>
 
             <!-- Land Days -->
-            <td class="py-4 pr-4 text-right rounded-r-2xl">
+            <td class="py-4 pr-4 text-right rounded-r-xl">
                <div class="flex flex-col items-end">
                   <span 
                     class="text-xs font-black tabular-nums"
@@ -129,15 +129,15 @@ const observers: Observer[] = [
 ]
 
 const statusStyles = {
-  Navegando: 'bg-primary/10 text-primary border-primary/20',
-  Disponible: 'bg-success/10 text-success border-success/20',
-  Licencia: 'bg-surface-muted text-text-muted border-border',
+  Navegando: 'bg-primary/5 text-primary border-primary/20',
+  Disponible: 'bg-success/5 text-success border-success/20',
+  Licencia: 'bg-surface text-text-muted border-border',
 }
 
 const statusDotStyles = {
-  Navegando: 'bg-primary animate-pulse',
-  Disponible: 'bg-success',
-  Licencia: 'bg-text-muted',
+  Navegando: 'bg-primary shadow-[0_0_8px_rgba(var(--color-primary-rgb),0.5)] animate-pulse',
+  Disponible: 'bg-success shadow-[0_0_8px_rgba(var(--color-success-rgb),0.5)]',
+  Licencia: 'bg-text-muted opacity-40',
 }
 </script>
 

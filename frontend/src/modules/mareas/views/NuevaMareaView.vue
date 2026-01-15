@@ -24,8 +24,8 @@
               class="w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all duration-300"
               :class="[
                 currentStep >= step.id 
-                  ? 'bg-primary border-primary/50 text-white shadow-lg shadow-primary/20 scale-110' 
-                  : 'bg-surface dark:bg-surface-muted border-border text-text-muted'
+                  ? 'bg-primary border-primary/50 text-primary-fg shadow-theme-xs shadow-primary/20 scale-110' 
+                  : 'bg-surface border-border text-text-muted'
               ]"
             >
               <CheckIcon v-if="currentStep > step.id" class="w-5 h-5" />
@@ -42,32 +42,32 @@
       </div>
 
       <!-- Step Content -->
-      <div class="bg-surface border-border shadow-gray-200/50 dark:shadow-none min-h-[380px] flex flex-col">
+      <div class="bg-surface border border-border shadow-theme-xs min-h-[380px] flex flex-col rounded-2xl overflow-hidden p-6">
         
         <!-- Loading State for Catalogs -->
         <div v-if="loadingCatalogs" class="flex-1 flex flex-col items-center justify-center py-20">
           <LoadingSpinner size="xl" class="text-primary" />
-          <p class="mt-4 text-text-muted font-bold uppercase tracking-widest text-[10px]">Cargando catálogos oficiales...</p>
+          <p class="mt-4 text-text-muted font-black uppercase tracking-widest text-[10px]">Cargando catálogos oficiales...</p>
         </div>
 
         <template v-else>
           <!-- Step 1: Identificación -->
           <div v-if="currentStep === 1" class="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div class="border-b border-border pb-4">
-              <h2 class="text-xl font-bold text-text">Identificación de la Marea</h2>
-              <p class="text-text-muted text-xs mt-1">Seleccione el buque y defina la numeración oficial para el ciclo actual.</p>
+              <h2 class="text-xl font-black uppercase tracking-tight text-text">Identificación de la Marea</h2>
+              <p class="text-text-muted text-xs font-medium mt-1">Seleccione el buque y defina la numeración oficial para el ciclo actual.</p>
             </div>
 
             <div class="space-y-10">
               <!-- Compact & Balanced Tide Type Selector -->
               <div class="flex flex-col items-center gap-4">
-                <label class="block text-sm font-medium text-text-muted">Tipo de Designación</label>
+                <label class="block text-xs font-black uppercase tracking-widest text-text-muted">Tipo de Designación</label>
                 <div class="inline-flex p-1 bg-surface-muted border-border">
                   <button 
                     type="button"
                     @click="form.tipoMarea = 'COMERCIAL'"
                     class="px-6 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2"
-                    :class="form.tipoMarea === 'COMERCIAL' ? 'bg-surface dark:bg-surface-muted text-primary shadow-sm ring-1 ring-border' : 'text-text-muted hover:text-text'"
+                    :class="form.tipoMarea === 'COMERCIAL' ? 'bg-surface text-primary shadow-theme-xs ring-1 ring-border' : 'text-text-muted hover:text-text'"
                   >
                     <div class="w-1.5 h-1.5 rounded-full" :class="form.tipoMarea === 'COMERCIAL' ? 'bg-primary' : 'bg-transparent border border-border'"></div>
                     Comercial (MC)
@@ -76,7 +76,7 @@
                     type="button"
                     @click="form.tipoMarea = 'INSTITUCIONAL'"
                     class="px-6 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2"
-                    :class="form.tipoMarea === 'INSTITUCIONAL' ? 'bg-surface dark:bg-surface-muted text-primary shadow-sm ring-1 ring-border' : 'text-text-muted hover:text-text'"
+                    :class="form.tipoMarea === 'INSTITUCIONAL' ? 'bg-surface text-primary shadow-theme-xs ring-1 ring-border' : 'text-text-muted hover:text-text'"
                   >
                     <div class="w-1.5 h-1.5 rounded-full" :class="form.tipoMarea === 'INSTITUCIONAL' ? 'bg-primary' : 'bg-transparent border border-border'"></div>
                     Institucional (CI)
@@ -108,8 +108,8 @@
                     <input 
                       v-model="form.anioMarea"
                       type="number"
-                      class="w-full px-4 py-2.5 bg-surface-muted dark:bg-surface border rounded-lg text-sm text-text outline-none focus:border-primary transition-all"
-                      :class="fieldErrors.anioMarea ? 'border-error bg-error/10' : 'border-border'"
+                      class="w-full px-4 py-2.5 bg-surface border rounded-lg text-sm text-text outline-none focus:border-primary transition-all shadow-theme-xs"
+                      :class="fieldErrors.anioMarea ? 'border-error bg-error/5' : 'border-border focus:ring-3 focus:ring-primary/10'"
                     />
                   </div>
                   <div class="space-y-1.5">
@@ -118,8 +118,8 @@
                       v-model="form.nroMarea"
                       type="number"
                       placeholder="000"
-                      class="w-full px-4 py-2.5 bg-surface-muted dark:bg-surface border rounded-lg text-sm text-text outline-none focus:border-primary transition-all"
-                      :class="fieldErrors.nroMarea ? 'border-error bg-error/10' : 'border-border'"
+                      class="w-full px-4 py-2.5 bg-surface border rounded-lg text-sm text-text outline-none focus:border-primary transition-all shadow-theme-xs"
+                      :class="fieldErrors.nroMarea ? 'border-error bg-error/5' : 'border-border focus:ring-3 focus:ring-primary/10'"
                     />
                   </div>
                 </div>
@@ -127,7 +127,7 @@
 
               <!-- Real-time Code Preview Badge -->
               <div class="flex justify-center pt-2">
-                <div class="px-6 py-3 bg-primary/5 dark:bg-primary/5 rounded-xl border border-dashed border-primary/20 dark:border-primary/20 flex flex-col items-center gap-0.5 group transition-all hover:bg-primary/10">
+                <div class="px-6 py-3 bg-primary/5 rounded-xl border border-dashed border-primary/20 flex flex-col items-center gap-0.5 group transition-all hover:bg-primary/10">
                   <span class="text-[8px] font-bold text-primary/40 uppercase tracking-[0.2em]">Código Identificador Generado</span>
                   <span class="text-2xl font-bold text-primary font-mono tracking-tighter transition-transform group-hover:scale-105">{{ generatedCode }}</span>
                 </div>
@@ -137,9 +137,9 @@
 
           <!-- Step 2: Operación -->
           <div v-if="currentStep === 2" class="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div class="border-b bg-surface-muted border-border pb-4">
-              <h2 class="text-xl font-bold text-text">Configuración Operativa</h2>
-              <p class="text-text-muted text-xs mt-1">Defina la pesquería y asigne el observador principal para el viaje.</p>
+            <div class="border-b border-border pb-4">
+              <h2 class="text-xl font-black uppercase tracking-tight text-text">Configuración Operativa</h2>
+              <p class="text-text-muted text-xs font-medium mt-1">Defina la pesquería y asigne el observador principal para el viaje.</p>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -194,14 +194,14 @@
                 <label class="block text-sm font-medium text-text-muted">Días Estimados</label>
                 <div class="relative">
                   <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <HistoryIcon class="h-5 w-5 text-gray-400" />
+                    <HistoryIcon class="h-5 w-5 text-text-muted" />
                   </div>
                   <input 
                     v-model.number="form.diasEstimados"
                     type="number"
                     min="1"
                     placeholder="Días"
-                    class="block w-full pl-10 pr-3 py-2.5 bg-surface-muted dark:bg-surface border border-border rounded-2xl font-bold text-text outline-none focus:border-primary transition-all placeholder:text-text-muted/50 text-sm"
+                    class="block w-full pl-10 pr-3 py-2.5 bg-surface border border-border rounded-lg font-bold text-text outline-none focus:border-primary focus:ring-3 focus:ring-primary/10 transition-all placeholder:text-text-muted/40 text-sm shadow-theme-xs"
                   />
                 </div>
               </div>
@@ -214,34 +214,34 @@
               <div class="w-12 h-12 bg-success/10 rounded-full flex items-center justify-center mx-auto mb-3">
                 <CheckIcon class="w-6 h-6 text-success" />
               </div>
-              <h2 class="text-xl font-bold text-text">Verificar y Registrar</h2>
-              <p class="text-text-muted text-xs mt-1">Revise los datos antes de persistir la nueva marea en el sistema.</p>
+              <h2 class="text-xl font-black uppercase tracking-tight text-text">Verificar y Registrar</h2>
+              <p class="text-text-muted text-xs font-medium mt-1">Revise los datos antes de persistir la nueva marea en el sistema.</p>
             </div>
 
-            <div v-if="error" class="p-4 bg-error/10 border border-error/20 rounded-2xl text-error text-sm font-bold text-center">
+            <div v-if="error" class="p-4 bg-error/5 border border-error/20 rounded-xl text-error text-[10px] font-black uppercase tracking-widest text-center">
               {{ error }}
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div class="p-6 bg-surface-muted border-border">
-                <p class="text-[9px] font-bold text-text-muted uppercase tracking-widest mb-2">Identificación</p>
-                <p class="text-sm font-bold text-text">{{ getBuqueName(form.buqueId) }}</p>
+              <div class="p-6 bg-surface-muted rounded-xl border border-border/50">
+                <p class="text-[9px] font-black text-text-muted uppercase tracking-widest mb-2">Identificación</p>
+                <p class="text-sm font-black uppercase text-text">{{ getBuqueName(form.buqueId) }}</p>
                 <div class="flex items-center gap-2 mt-1">
                   <span class="text-xs font-mono text-primary uppercase font-bold tracking-tighter">{{ generatedCode }}</span>
-                  <span class="px-1.5 py-0.5 rounded bg-surface-muted text-[9px] font-bold text-text-muted uppercase">{{ form.tipoMarea }}</span>
+                  <span class="px-1.5 py-0.5 rounded bg-surface text-[9px] font-black text-text-muted uppercase border border-border">{{ form.tipoMarea }}</span>
                 </div>
               </div>
-              <div class="p-6 bg-surface-muted border-border">
-                <p class="text-[9px] font-bold text-text-muted uppercase tracking-widest mb-2">Operación</p>
-                <p class="text-sm font-bold text-text">{{ getPesqueriaName(form.pesqueriaId) }}</p>
-                <p class="text-xs text-text-muted mt-0.5">Obs: {{ getObserverName(form.observadorId) }}</p>
-                <p v-if="form.diasEstimados" class="text-xs text-text-muted mt-0.5">Est: {{ form.diasEstimados }} días</p>
+              <div class="p-6 bg-surface-muted rounded-xl border border-border/50">
+                <p class="text-[9px] font-black text-text-muted uppercase tracking-widest mb-2">Operación</p>
+                <p class="text-sm font-black uppercase text-text">{{ getPesqueriaName(form.pesqueriaId) }}</p>
+                <p class="text-xs text-text-muted font-medium mt-0.5">Obs: {{ getObserverName(form.observadorId) }}</p>
+                <p v-if="form.diasEstimados" class="text-xs text-text-muted font-medium mt-0.5">Est: {{ form.diasEstimados }} días</p>
               </div>
             </div>
 
-            <div class="p-4 bg-warning/10 border border-warning/20 rounded-2xl flex gap-4">
+            <div class="p-4 bg-warning/5 border border-warning/20 rounded-xl flex gap-4">
               <InfoIcon class="w-5 h-5 text-warning shrink-0" />
-              <p class="text-[11px] text-warning/80 leading-relaxed italic">
+              <p class="text-[11px] text-warning/80 leading-relaxed font-medium italic">
                 Al confirmar, se enviará una notificación al observador y la marea quedará en estado **DESIGNADA** disponible en el Panel Operativo.
               </p>
             </div>
@@ -249,7 +249,7 @@
         </template>
 
         <!-- Actions -->
-        <div class="mt-auto pt-6 flex items-center justify-between border-t border-gray-100 dark:border-gray-800">
+        <div class="mt-auto pt-6 flex items-center justify-between border-t border-border">
           <button 
             @click="prevStep"
             v-if="currentStep > 1"
@@ -262,14 +262,14 @@
           <div class="flex gap-3">
             <button 
               @click="cancel"
-              class="px-6 py-3 text-sm font-bold text-text-muted hover:text-error transition-all"
+              class="px-6 py-3 text-xs font-black uppercase tracking-widest text-text-muted hover:text-error transition-all"
             >
               Cancelar
             </button>
             <button 
               @click="nextStep"
               :disabled="loading"
-              class="px-8 py-3 bg-primary hover:bg-primary-hover text-primary-fg rounded-2xl text-sm font-bold shadow-xl shadow-primary/20 transition-all active:scale-[0.98] flex items-center gap-2 active:shadow-inner disabled:opacity-50"
+              class="px-8 py-3 bg-primary hover:bg-primary-hover text-primary-fg rounded-lg text-xs font-black uppercase tracking-widest shadow-theme-xs shadow-primary/20 transition-all active:scale-95 flex items-center gap-2 disabled:opacity-50"
             >
               <div v-if="loading" class="flex items-center justify-center">
                 <LoadingSpinner size="xs" class="text-primary-fg" />

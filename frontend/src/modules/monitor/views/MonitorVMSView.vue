@@ -163,28 +163,28 @@ const mockStages: TripStage[] = [
     startDate: '2025-11-03T20:27:00Z',
     endDate: '2025-11-12T02:14:00Z',
     durationDays: 10,
-    color: '#f59e0b',
+    color: 'var(--color-warning)',
   },
   {
     id: '2',
     startDate: '2025-11-14T10:30:00Z',
     endDate: '2025-11-21T13:33:00Z',
     durationDays: 8,
-    color: '#a855f7',
+    color: 'var(--color-info)',
   },
   {
     id: '3',
     startDate: '2025-11-23T12:33:00Z',
     endDate: '2025-12-01T16:21:00Z',
     durationDays: 9,
-    color: '#10b981',
+    color: 'var(--color-success)',
   },
   {
     id: '4',
     startDate: '2025-12-03T19:07:00Z',
     endDate: '2025-12-11T15:39:00Z',
     durationDays: 9,
-    color: '#ec4899',
+    color: 'var(--color-error)',
   },
 ]
 

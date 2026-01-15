@@ -12,14 +12,14 @@
         class="w-full px-4 py-2.5 bg-background border rounded-lg text-sm text-text outline-none focus:border-primary transition-all cursor-text placeholder:text-text-muted caret-primary"
         style="color-scheme: light dark;"
         :class="[
-          error ? 'border-red-500 bg-red-50/30' : 'border-border',
+          error ? 'border-error bg-error/5' : 'border-border',
           { 'pl-10': icon }
         ]"
       />
       <div 
         v-if="icon" 
         class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none" 
-        :class="error ? 'text-red-500' : 'text-text-muted'"
+        :class="error ? 'text-error' : 'text-text-muted'"
       >
         <component :is="icon" class="w-4 h-4" />
       </div>
@@ -116,7 +116,7 @@
         </div>
       </div>
     </Teleport>
-    <p v-if="error" class="text-[10px] text-red-500 font-bold uppercase mt-1 animate-in fade-in slide-in-from-top-1 duration-200">
+    <p v-if="error" class="text-[10px] text-error font-bold uppercase mt-1 animate-in fade-in slide-in-from-top-1 duration-200">
       {{ error }}
     </p>
   </div>

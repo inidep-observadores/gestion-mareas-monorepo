@@ -3,7 +3,7 @@
     <div
       v-for="kpi in kpis"
       :key="kpi.title"
-      class="group relative overflow-hidden rounded-3xl border border-border bg-surface p-6 shadow-sm transition-all hover:shadow-xl"
+      class="group relative overflow-hidden rounded-2xl border border-border bg-surface p-6 shadow-theme-xs transition-all hover:shadow-theme-md"
     >
       <div class="flex items-start justify-between mb-4">
         <div>
@@ -58,43 +58,43 @@ const kpis = [
     icon: ShipIcon,
     iconWrapperClass: 'bg-info/10',
     iconClass: 'text-info',
-    color: '#0ea5e9', // info
+    color: 'var(--color-info)', // info
     trendData: [45, 52, 48, 62, 58, 75, 84],
     trendLabel: '↑ 5.2%',
-    trendClass: 'bg-info/10 text-info',
+    trendClass: 'bg-info/5 text-info border border-info/10',
   },
   {
     title: 'Mareas Cerradas',
     value: '142',
     icon: CheckIcon,
-    iconWrapperClass: 'bg-success/10',
+    iconWrapperClass: 'bg-success/5 border border-success/10',
     iconClass: 'text-success',
-    color: '#10b981', // success
+    color: 'var(--color-success)', // success
     trendData: [30, 40, 35, 50, 49, 60, 70],
     trendLabel: '↑ 12%',
-    trendClass: 'bg-success/10 text-success',
+    trendClass: 'bg-success/5 text-success border border-success/10',
   },
   {
     title: 'Eficiencia SLA',
     value: '91.5%',
     icon: TaskIcon,
-    iconWrapperClass: 'bg-warning/10',
+    iconWrapperClass: 'bg-warning/5 border border-warning/10',
     iconClass: 'text-warning',
-    color: '#f59e0b', // warning
+    color: 'var(--color-warning)', // warning
     trendData: [80, 85, 82, 88, 87, 90, 91],
     trendLabel: '↑ 2.1%',
-    trendClass: 'bg-warning/10 text-warning',
+    trendClass: 'bg-warning/5 text-warning border border-warning/10',
   },
   {
     title: 'Volumen Datos',
     value: '4.8 GB',
     icon: UserGroupIcon,
-    iconWrapperClass: 'bg-primary/10',
+    iconWrapperClass: 'bg-primary/5 border border-primary/10',
     iconClass: 'text-primary',
-    color: '#2563eb', // primary
+    color: 'var(--color-primary)', // primary
     trendData: [2.1, 2.5, 3.0, 3.8, 4.2, 4.5, 4.8],
     trendLabel: '↑ 8.4%',
-    trendClass: 'bg-primary/10 text-primary',
+    trendClass: 'bg-primary/5 text-primary border border-primary/10',
   }
 ]
 

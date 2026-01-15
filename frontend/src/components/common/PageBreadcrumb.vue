@@ -76,14 +76,18 @@ withDefaults(defineProps<BreadcrumbProps>(), {
 }
 
 .breadcrumbs a {
-  @apply text-gray-500 hover:text-brand-600 dark:text-gray-400 dark:hover:text-brand-400 transition-colors;
+  @apply text-text-muted transition-colors;
+
+  &:hover {
+    @apply text-primary;
+  }
 }
 
 .breadcrumbs span[aria-current='page'] {
-  @apply text-gray-800 dark:text-white/90 font-medium;
+  @apply text-text font-medium;
 }
 
 .breadcrumbs-separator {
-  @apply text-gray-400 dark:text-gray-600;
+  @apply text-text-muted/40;
 }
 </style>

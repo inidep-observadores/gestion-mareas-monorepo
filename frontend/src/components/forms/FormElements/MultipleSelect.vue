@@ -15,7 +15,7 @@
           <span>{{ item.label }}</span>
           <button
             @click.stop="removeItem(item)"
-            class="pl-2 text-text-muted hover:text-red-500 transition-colors cursor-pointer"
+            class="pl-2 text-text-muted hover:text-error transition-colors cursor-pointer"
             aria-label="Remove item"
           >
             <svg

@@ -52,7 +52,7 @@
               >
                 {{ log.level }}
               </span>
-              <span class="text-[9px] font-bold text-gray-400 font-mono tracking-tighter">{{ formatDateShort(log.timestamp) }}</span>
+              <span class="text-[9px] font-bold text-text-muted font-mono tracking-tighter">{{ formatDateShort(log.timestamp) }}</span>
             </div>
             <div
               class="font-semibold text-xs line-clamp-2 mb-3 leading-relaxed"
@@ -147,7 +147,7 @@
           </div>
 
             <!-- Contenido Detallado -->
-            <div class="p-6 md:p-8 space-y-10 bg-gray-50/20 dark:bg-gray-950/20 min-w-0">
+            <div class="p-6 md:p-8 space-y-10 bg-surface-muted/20 min-w-0">
             <!-- Stack Trace -->
             <section v-if="selectedLog.stack" class="animate-in fade-in slide-in-from-bottom-4 duration-500">
                <div class="flex justify-between items-center mb-5">

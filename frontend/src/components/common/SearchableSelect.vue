@@ -13,7 +13,7 @@
         class="w-full px-4 py-2.5 bg-background border rounded-lg text-sm text-text outline-none focus:border-primary transition-all appearance-none caret-primary"
         style="color-scheme: light dark;"
         :class="[
-          error ? 'border-red-500 bg-red-50/30' : 'border-border',
+          error ? 'border-error bg-error/5' : 'border-border',
           { 'pl-10': icon }
         ]"
       />
@@ -23,7 +23,7 @@
            :class="{ 'pl-10': icon }">
         {{ selectedLabel }}
       </div>
-      <div v-if="icon" class="absolute inset-y-0 left-0 flex items-center pl-3" :class="error ? 'text-red-500' : 'text-text-muted'">
+      <div v-if="icon" class="absolute inset-y-0 left-0 flex items-center pl-3" :class="error ? 'text-error' : 'text-text-muted'">
         <component :is="icon" class="w-4 h-4" />
       </div>
       <div class="absolute inset-y-0 right-0 flex items-center pr-3 gap-1">
@@ -31,7 +31,7 @@
           v-if="modelValue !== null"
           @click.stop="clearValue"
           type="button"
-          class="p-1 text-text-muted/60 hover:text-red-500 hover:bg-red-50 rounded-full transition-all group/clear"
+          class="p-1 text-text-muted/60 hover:text-error hover:bg-error/5 rounded-full transition-all group/clear"
           title="Limpiar selección"
         >
           <XIcon class="w-3 h-3" />
@@ -75,7 +75,7 @@
         </div>
       </div>
     </Teleport>
-    <p v-if="error" class="text-[10px] text-red-500 font-bold uppercase mt-1 animate-in fade-in slide-in-from-top-1 duration-200">
+    <p v-if="error" class="text-[10px] text-error font-bold uppercase mt-1 animate-in fade-in slide-in-from-top-1 duration-200">
       {{ error }}
     </p>
   </div>
