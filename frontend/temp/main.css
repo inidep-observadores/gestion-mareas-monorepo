@@ -1,0 +1,68 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Merriweather:wght@300;400;700;900&family=Quicksand:wght@300;400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  /* Mapeo de tokens semánticos a variables CSS usando el nuevo paradigma de v4 */
+  --color-background: #f8fafc;
+  --color-surface: #ffffff;
+  --color-primary: #2563eb;
+  --color-primary-fg: #ffffff;
+  --color-text: #0f172a;
+  --color-text-muted: #64748b;
+  --color-border: #e2e8f0;
+
+  /* Fuentes custom */
+  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+  --font-serif: "Merriweather", serif;
+  --font-fun: "Quicksand", sans-serif;
+
+  /* Variables de layout */
+  --sidebar-width: 260px;
+  --topbar-height: 64px;
+}
+
+/* Dark mode manual override si se desea persistir con clase .dark */
+.dark {
+  --color-background: #020617;
+  --color-surface: #0f172a;
+  --color-primary: #3b82f6;
+  --color-primary-fg: #ffffff;
+  --color-text: #f1f5f9;
+  --color-text-muted: #94a3b8;
+  --color-border: #1e293b;
+}
+
+/* Temas Cromáticos y Personalidad */
+
+/* TEMA VERDE: Formal, Serio, Elegante */
+.theme-green {
+  --color-primary: #10b981;
+  --font-sans: var(--font-serif);
+}
+
+.dark .theme-green,
+.theme-green.dark {
+  --color-primary: #34d399;
+}
+
+/* TEMA NARANJA: Informal, Fresco, Divertido */
+.theme-orange {
+  --color-primary: #f97316;
+  --font-sans: var(--font-fun);
+  /* Hacer que los bordes sean más redondeados para un look más "playful" */
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+  --radius-2xl: 2rem;
+}
+
+.dark .theme-orange,
+.theme-orange.dark {
+  --color-primary: #fb923c;
+}
+
+@layer base {
+  body {
+    @apply bg-background text-text transition-colors duration-300;
+  }
+}
