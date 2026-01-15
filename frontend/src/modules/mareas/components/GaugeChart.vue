@@ -77,7 +77,7 @@ const chartOptions = computed(() => ({
         background: 'transparent',
       },
       track: {
-        background: 'var(--color-gray-100)',
+        background: 'var(--color-surface-muted)',
         strokeWidth: '100%',
         margin: 5,
       },
@@ -87,7 +87,7 @@ const chartOptions = computed(() => ({
           offsetY: 70,
           fontSize: '18px',
           fontWeight: '900',
-          color: 'var(--color-gray-800)',
+          color: 'var(--color-text)',
           show: false,
         },
       },
@@ -101,7 +101,7 @@ const chartOptions = computed(() => ({
     lineCap: 'round' as const,
   },
   grid: {
-    borderColor: 'color-mix(in oklab, var(--color-gray-200) 40%, transparent)',
+    borderColor: 'var(--color-border)',
     padding: { top: 0, bottom: 0 },
   },
   tooltip: {

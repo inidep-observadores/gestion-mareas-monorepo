@@ -1,7 +1,7 @@
 <template>
   <aside
     :class="[
-      'fixed mt-16 flex flex-col lg:mt-0 top-0 px-5 left-0 bg-red-100 dark:bg-red-950/60 dark:border-red-900/50 text-gray-900 h-screen transition-all duration-300 ease-in-out z-99999 border-r border-red-300',
+      'fixed mt-16 flex flex-col lg:mt-0 top-0 px-5 left-0 bg-surface text-text h-screen transition-all duration-300 ease-in-out z-99999 border-r border-border',
       {
         'lg:w-[18.125rem]': isExpanded || isMobileOpen || isHovered,
         'lg:w-[5.625rem]': !isExpanded && !isHovered,
@@ -21,15 +21,15 @@
     >
       <router-link to="/admin" class="flex items-center gap-3">
         <div
-          class="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-600 to-indigo-600 flex items-center justify-center flex-shrink-0"
+          class="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-info flex items-center justify-center flex-shrink-0"
         >
-          <ShieldIcon class="w-6 h-6 text-white" />
+          <ShieldIcon class="w-6 h-6 text-primary-fg" />
         </div>
         <div v-if="isExpanded || isHovered || isMobileOpen" class="flex flex-col">
-          <span class="text-lg font-bold text-gray-800 dark:text-white leading-tight"
+          <span class="text-lg font-bold text-text leading-tight"
             >Panel de</span
           >
-          <span class="text-lg font-bold text-red-600 dark:text-red-400 leading-tight"
+          <span class="text-lg font-bold text-primary leading-tight"
             >Admin</span
           >
         </div>
@@ -41,7 +41,7 @@
           <div v-for="(menuGroup, groupIndex) in navigationGroups" :key="groupIndex">
             <h2
               :class="[
-                'mb-4 text-xs uppercase flex leading-[20px] text-gray-400',
+                'mb-4 text-xs uppercase flex leading-[20px] text-text-muted',
                 !isExpanded && !isHovered ? 'lg:justify-center' : 'justify-start',
               ]"
             >
@@ -81,7 +81,7 @@
     </div>
 
     <!-- Sticky Footer -->
-    <div class="mt-auto py-6 border-t border-red-200/50 dark:border-red-900/50 bg-red-100 dark:bg-red-950/60">
+    <div class="mt-auto py-6 border-t border-border bg-surface">
       <nav @click="closeMobileSidebar">
         <ul class="flex flex-col gap-4">
           <li v-for="item in systemGroups.items" :key="item.name">

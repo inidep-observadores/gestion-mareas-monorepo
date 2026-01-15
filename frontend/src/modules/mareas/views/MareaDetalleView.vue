@@ -940,14 +940,14 @@ async function handleFinalizeMarea(payload: any) {
 const getFormatColor = (formato: string) => {
   switch (formato) {
     case 'PDF':
-      return 'bg-red-50 text-red-500 dark:bg-red-500/10'
+      return 'bg-error/10 text-error'
     case 'DOCX':
-      return 'bg-blue-50 text-blue-500 dark:bg-blue-500/10'
+      return 'bg-info/10 text-info'
     case 'ZIP':
     case 'DBF':
-      return 'bg-amber-50 text-amber-600 dark:bg-amber-500/10'
+      return 'bg-warning/10 text-warning'
     default:
-      return 'bg-gray-50 text-gray-500 dark:bg-gray-500/10'
+      return 'bg-surface-muted text-text-muted'
   }
 }
 

@@ -43,7 +43,7 @@
         <h3 class="text-lg font-bold mb-4 text-primary border-b border-border pb-2">Botones (Semánticos)</h3>
         <div class="space-y-6">
           <div>
-            <p class="text-xs font-medium text-text-muted uppercase mb-3 text-text">Variante Primary</p>
+            <p class="text-xs font-medium text-text-muted uppercase mb-3">Variante Primary</p>
             <div class="flex flex-wrap gap-3">
               <Button variant="primary" size="sm">Pequeño</Button>
               <Button variant="primary">Mediano (Base)</Button>
@@ -51,7 +51,7 @@
             </div>
           </div>
           <div>
-            <p class="text-xs font-medium text-text-muted uppercase mb-3 text-text">Variante Outline</p>
+            <p class="text-xs font-medium text-text-muted uppercase mb-3">Variante Outline</p>
             <div class="flex flex-wrap gap-3">
               <Button variant="outline" size="sm">Pequeño</Button>
               <Button variant="outline">Mediano (Base)</Button>
@@ -65,14 +65,14 @@
         <h3 class="text-lg font-bold mb-4 text-primary border-b border-border pb-2">Badges (Semánticos)</h3>
         <div class="space-y-6">
            <div>
-            <p class="text-xs font-medium text-text-muted uppercase mb-3 text-text">Identidad (Primary)</p>
+            <p class="text-xs font-medium text-text-muted uppercase mb-3">Identidad (Primary)</p>
             <div class="flex flex-wrap gap-3">
               <Badge color="primary" variant="solid">Solid Primary</Badge>
               <Badge color="primary" variant="light">Light Primary</Badge>
             </div>
           </div>
           <div>
-            <p class="text-xs font-medium text-text-muted uppercase mb-3 text-text">Otros Estados (FlyonUI compatible)</p>
+            <p class="text-xs font-medium text-text-muted uppercase mb-3">Otros Estados (FlyonUI compatible)</p>
             <div class="flex flex-wrap gap-3">
               <Badge color="success" variant="light">Completado</Badge>
               <Badge color="warning" variant="light">Pendiente</Badge>
@@ -93,10 +93,10 @@
                 <p class="text-base text-text">Este es un párrafo de ejemplo para visualizar cómo cambia la fuente sans-serif según el tema seleccionado. El texto debe ser legible y estallar con la nueva personalidad.</p>
             </div>
             <div class="bg-background p-6 rounded-xl border border-border">
-                <p class="text-sm font-semibold uppercase text-text-muted mb-4 text-text">Vista en un Contenedor Gris</p>
+                <p class="text-sm font-semibold uppercase text-text-muted mb-4">Vista en un Contenedor Gris</p>
                 <div class="bg-surface p-4 rounded-lg border border-border shadow-sm">
-                    <p class="text-text font-medium text-text">Card Interno</p>
-                    <p class="text-sm text-text-muted text-text">Los bordes se redondean más en el tema naranja.</p>
+                    <p class="text-text font-medium">Card Interno</p>
+                    <p class="text-sm text-text-muted">Los bordes se redondean más en el tema naranja.</p>
                 </div>
             </div>
          </div>
@@ -290,7 +290,7 @@
         <Alert variant="error" title="Cuidado" message="Esta acción no se puede deshacer en un entorno real." />
         <div class="flex justify-end gap-2 mt-6">
            <Button variant="outline" size="sm" @click="showModalDanger = false">Cerrar</Button>
-           <Button variant="primary" size="sm" class="bg-red-600 hover:bg-red-700 border-none">Proceder</Button>
+           <Button variant="primary" size="sm" class="bg-error border-none text-error-fg hover:opacity-90">Proceder</Button>
         </div>
       </div>
     </BaseModal>

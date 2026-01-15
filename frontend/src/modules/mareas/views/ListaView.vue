@@ -18,65 +18,65 @@
         <div
           v-for="group in filteredGroups"
           :key="group.id"
-          class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl overflow-hidden shadow-sm"
+          class="bg-surface border border-border rounded-2xl overflow-hidden shadow-sm"
         >
           <div
-            class="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between cursor-pointer"
+            class="px-6 py-4 bg-surface-muted border-b border-border flex items-center justify-between cursor-pointer"
             @click="group.expanded = !group.expanded"
           >
             <div class="flex items-center gap-3">
               <div :class="['w-2 h-2 rounded-full', group.color]"></div>
-              <h2 class="font-bold text-gray-800 dark:text-white">{{ group.title }}</h2>
+              <h2 class="font-bold text-text">{{ group.title }}</h2>
               <span
-                class="px-2 py-0.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded text-xs text-gray-500"
+                class="px-2 py-0.5 bg-surface border border-border rounded text-xs text-text-muted"
               >
                 {{ group.tasks.length }}
               </span>
             </div>
             <button
-              class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-transform"
+              class="text-text-muted hover:text-text transition-transform"
               :class="{ 'rotate-180': !group.expanded }"
             >
               <ChevronDownIcon class="w-5 h-5" />
             </button>
           </div>
 
-          <div v-show="group.expanded" class="divide-y divide-gray-50 dark:divide-gray-800">
+          <div v-show="group.expanded" class="divide-y divide-border">
             <div
               v-if="group.tasks.length === 0"
-              class="p-8 text-center text-gray-400 text-sm italic"
+              class="p-8 text-center text-text-muted text-sm italic"
             >
               No hay mareas registradas en este estado.
             </div>
             <div
               v-for="task in group.tasks"
               :key="task.id"
-              class="p-6 hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors"
+              class="p-6 hover:bg-surface-muted transition-colors px-4 sm:px-6"
             >
               <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div class="flex items-start gap-4">
                   <div
-                    class="w-12 h-12 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center flex-shrink-0"
+                    class="w-12 h-12 rounded-xl bg-surface-muted flex items-center justify-center flex-shrink-0"
                   >
-                    <DocsIcon class="w-6 h-6 text-gray-400" />
+                    <DocsIcon class="w-6 h-6 text-text-muted" />
                   </div>
                   <div>
                     <div class="flex items-center gap-2 mb-1">
-                      <span class="text-xs font-mono font-bold text-brand-500">{{
+                      <span class="text-xs font-mono font-bold text-primary">{{
                         task.code
                       }}</span>
                       <span
                         v-if="task.alert"
-                        class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400"
+                        class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] bg-error/10 text-error"
                       >
                         <WarningIcon class="w-3 h-3" />
                         Alerta
                       </span>
                     </div>
-                    <h4 class="font-bold text-gray-800 dark:text-white text-lg">
+                    <h4 class="font-bold text-text text-lg">
                       {{ task.vessel }}
                     </h4>
-                    <div class="flex items-center gap-4 mt-1 text-sm text-gray-500">
+                    <div class="flex items-center gap-4 mt-1 text-sm text-text-muted">
                       <span class="flex items-center gap-1">
                         <CalenderIcon class="w-4 h-4" />
                         {{ task.date }}
@@ -90,12 +90,12 @@
                 </div>
                 <div class="flex items-center gap-3">
                   <button
-                    class="px-4 py-2 text-sm font-medium border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                    class="px-4 py-2 text-sm font-medium border border-border text-text rounded-lg hover:bg-surface-muted transition-colors shadow-sm"
                   >
                     Ver Detalles
                   </button>
                   <button
-                    class="px-4 py-2 text-sm font-medium bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-colors"
+                    class="px-4 py-2 text-sm font-medium bg-primary text-primary-fg rounded-lg hover:bg-primary/90 transition-all shadow-lg shadow-primary/20 active:scale-[0.98]"
                   >
                     Continuar Flujo
                   </button>
@@ -135,7 +135,7 @@ const groups = ref<Group[]>([
   {
     id: 'designada',
     title: 'Designada',
-    color: 'bg-brand-500',
+    color: 'bg-primary',
     expanded: true,
     tasks: [
       { id: 1, code: 'MA-001', vessel: 'BP ARGENTINO I', date: '20 Dic 2023', alert: false },
@@ -145,14 +145,14 @@ const groups = ref<Group[]>([
   {
     id: 'navegando',
     title: 'Navegando',
-    color: 'bg-blue-500',
+    color: 'bg-info',
     expanded: true,
     tasks: [{ id: 3, code: 'MA-003', vessel: 'BP UNION', date: '15 Dic 2023', alert: false }],
   },
   {
     id: 'arribada',
     title: 'Arribada',
-    color: 'bg-green-500',
+    color: 'bg-success',
     expanded: false,
     tasks: [
       { id: 4, code: 'MA-004', vessel: 'BP ESTRELLA', date: '22 Dic 2023', alert: false },
@@ -162,14 +162,14 @@ const groups = ref<Group[]>([
   {
     id: 'revision',
     title: 'En Revisión',
-    color: 'bg-orange-500',
+    color: 'bg-warning',
     expanded: false,
     tasks: [{ id: 6, code: 'MA-006', vessel: 'BP ATLANTICO', date: '18 Dic 2023', alert: true }],
   },
   {
     id: 'finalizada',
     title: 'Finalizada',
-    color: 'bg-gray-500',
+    color: 'bg-surface-muted border border-border',
     expanded: false,
     tasks: [{ id: 7, code: 'MA-007', vessel: 'BP PACIFICO', date: '10 Dic 2023', alert: false }],
   },

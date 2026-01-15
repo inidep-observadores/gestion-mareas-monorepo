@@ -9,32 +9,32 @@
     <form @submit.prevent="handleSubmit" class="space-y-6">
         <!-- Información Principal -->
         <div class="space-y-4">
-            <h3 class="text-lg font-semibold text-gray-900 dark:text-white border-b border-gray-100 dark:border-gray-800 pb-2">Información del Buque</h3>
+            <h3 class="text-lg font-semibold text-text border-b border-border pb-2">Información del Buque</h3>
             
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div class="sm:col-span-2">
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-400 mb-1.5">Nombre del Buque</label>
+                    <label class="block text-sm font-medium text-text-muted mb-1.5">Nombre del Buque</label>
                     <input
                         v-model="form.nombreBuque"
                         type="text"
                         required
-                        class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                        class="h-11 w-full rounded-lg border border-border bg-transparent px-4 py-2.5 text-sm text-text shadow-theme-xs placeholder:text-text-muted/40 focus:border-primary focus:outline-hidden focus:ring-3 focus:ring-primary/10"
                     />
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-400 mb-1.5">Matrícula</label>
+                    <label class="block text-sm font-medium text-text-muted mb-1.5">Matrícula</label>
                     <input
                         v-model="form.matricula"
                         type="text"
                         required
-                        class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                        class="h-11 w-full rounded-lg border border-border bg-transparent px-4 py-2.5 text-sm text-text shadow-theme-xs placeholder:text-text-muted/40 focus:border-primary focus:outline-hidden focus:ring-3 focus:ring-primary/10"
                     />
                 </div>
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-400 mb-1.5">Tipo de Flota</label>
+                    <label class="block text-sm font-medium text-text-muted mb-1.5">Tipo de Flota</label>
                     <SearchableSelect
                         v-model="form.tipoFlotaId as any"
                         :options="tipoFlotaOptions"
@@ -42,7 +42,7 @@
                     />
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-400 mb-1.5">Puerto Base</label>
+                    <label class="block text-sm font-medium text-text-muted mb-1.5">Puerto Base</label>
                     <SearchableSelect
                         v-model="form.puertoBaseId as any"
                         :options="puertoOptions"
@@ -50,11 +50,11 @@
                     />
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-400 mb-1.5">Código Interno</label>
+                  <label class="block text-sm font-medium text-text-muted mb-1.5">Código Interno</label>
                   <input
                     v-model.number="form.codigoInterno"
                     type="number"
-                    class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                    class="h-11 w-full rounded-lg border border-border bg-transparent px-4 py-2.5 text-sm text-text shadow-theme-xs placeholder:text-text-muted/40 focus:border-primary focus:outline-hidden focus:ring-3 focus:ring-primary/10"
                   />
                 </div>
             </div>
@@ -62,32 +62,32 @@
 
         <!-- Especificaciones Técnicas -->
         <div class="space-y-4 pt-4">
-            <h3 class="text-lg font-semibold text-gray-900 dark:text-white border-b border-gray-100 dark:border-gray-800 pb-2">Especificaciones Técnicas</h3>
+            <h3 class="text-lg font-semibold text-text border-b border-border pb-2">Especificaciones Técnicas</h3>
             
             <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-400 mb-1.5">Eslora (m)</label>
+                    <label class="block text-sm font-medium text-text-muted mb-1.5">Eslora (m)</label>
                     <input
                         v-model.number="form.esloraM"
                         type="number"
                         step="0.01"
-                        class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                        class="h-11 w-full rounded-lg border border-border bg-transparent px-4 py-2.5 text-sm text-text shadow-theme-xs placeholder:text-text-muted/40 focus:border-primary focus:outline-hidden focus:ring-3 focus:ring-primary/10"
                     />
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-400 mb-1.5">Potencia (HP)</label>
+                    <label class="block text-sm font-medium text-text-muted mb-1.5">Potencia (HP)</label>
                     <input
                         v-model.number="form.potenciaHp"
                         type="number"
-                        class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                        class="h-11 w-full rounded-lg border border-border bg-transparent px-4 py-2.5 text-sm text-text shadow-theme-xs placeholder:text-text-muted/40 focus:border-primary focus:outline-hidden focus:ring-3 focus:ring-primary/10"
                     />
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-400 mb-1.5">Días Marea Est.</label>
+                    <label class="block text-sm font-medium text-text-muted mb-1.5">Días Marea Est.</label>
                     <input
                         v-model.number="form.diasMareaEstimada"
                         type="number"
-                        class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                        class="h-11 w-full rounded-lg border border-border bg-transparent px-4 py-2.5 text-sm text-text shadow-theme-xs placeholder:text-text-muted/40 focus:border-primary focus:outline-hidden focus:ring-3 focus:ring-primary/10"
                     />
                 </div>
                 <div>
@@ -97,7 +97,7 @@
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-400 mb-1.5">Pesquería Habitual</label>
+                    <label class="block text-sm font-medium text-text-muted mb-1.5">Pesquería Habitual</label>
                     <SearchableSelect
                         v-model="form.pesqueriaHabitualId as any"
                         :options="pesqueriaOptions"
@@ -105,7 +105,7 @@
                     />
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-400 mb-1.5">Arte de Pesca Habitual</label>
+                    <label class="block text-sm font-medium text-text-muted mb-1.5">Arte de Pesca Habitual</label>
                     <SearchableSelect
                         v-model="form.arteHabitualId as any"
                         :options="arteOptions"
@@ -117,58 +117,58 @@
 
         <!-- Contacto / Empresa -->
         <div class="space-y-4 pt-4">
-            <h3 class="text-lg font-semibold text-gray-900 dark:text-white border-b border-gray-100 dark:border-gray-800 pb-2">Empresa y Armador</h3>
+            <h3 class="text-lg font-semibold text-text border-b border-border pb-2">Empresa y Armador</h3>
             
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-400 mb-1.5">Nombre Empresa</label>
+                    <label class="block text-sm font-medium text-text-muted mb-1.5">Nombre Empresa</label>
                     <input
                         v-model="form.empresaNombre"
                         type="text"
-                        class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                        class="h-11 w-full rounded-lg border border-border bg-transparent px-4 py-2.5 text-sm text-text shadow-theme-xs placeholder:text-text-muted/40 focus:border-primary focus:outline-hidden focus:ring-3 focus:ring-primary/10"
                     />
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-400 mb-1.5">Localidad Empresa</label>
+                    <label class="block text-sm font-medium text-text-muted mb-1.5">Localidad Empresa</label>
                     <input
                         v-model="form.empresaLocalidad"
                         type="text"
-                        class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                        class="h-11 w-full rounded-lg border border-border bg-transparent px-4 py-2.5 text-sm text-text shadow-theme-xs placeholder:text-text-muted/40 focus:border-primary focus:outline-hidden focus:ring-3 focus:ring-primary/10"
                     />
                 </div>
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-400 mb-1.5">Nombre Armador</label>
+                    <label class="block text-sm font-medium text-text-muted mb-1.5">Nombre Armador</label>
                     <input
                         v-model="form.armadorNombre"
                         type="text"
-                        class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                        class="h-11 w-full rounded-lg border border-border bg-transparent px-4 py-2.5 text-sm text-text shadow-theme-xs placeholder:text-text-muted/40 focus:border-primary focus:outline-hidden focus:ring-3 focus:ring-primary/10"
                     />
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-400 mb-1.5">Teléfono Armador</label>
+                    <label class="block text-sm font-medium text-text-muted mb-1.5">Teléfono Armador</label>
                     <input
                         v-model="form.armadorTelefono"
                         type="text"
-                        class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                        class="h-11 w-full rounded-lg border border-border bg-transparent px-4 py-2.5 text-sm text-text shadow-theme-xs placeholder:text-text-muted/40 focus:border-primary focus:outline-hidden focus:ring-3 focus:ring-primary/10"
                     />
                 </div>
             </div>
         </div>
 
         <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-400 mb-1.5">Observaciones</label>
+            <label class="block text-sm font-medium text-text-muted mb-1.5">Observaciones</label>
             <textarea
                 v-model="form.observaciones"
                 rows="3"
-                class="dark:bg-dark-900 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                class="w-full rounded-lg border border-border bg-transparent px-4 py-2.5 text-sm text-text shadow-theme-xs placeholder:text-text-muted/40 focus:border-primary focus:outline-hidden focus:ring-3 focus:ring-primary/10"
             ></textarea>
         </div>
 
         <div class="flex gap-6">
-            <label class="flex items-center text-sm font-normal text-gray-700 cursor-pointer select-none dark:text-gray-400 group">
+            <label class="flex items-center text-sm font-normal text-text-muted cursor-pointer select-none group">
                 <div class="relative">
                     <input 
                         type="checkbox" 
@@ -178,8 +178,8 @@
                     <div
                         :class="
                             form.activo
-                            ? 'border-brand-500 bg-brand-500'
-                            : 'bg-transparent border-gray-300 dark:border-gray-700 group-hover:border-brand-300'
+                            ? 'border-primary bg-primary'
+                            : 'bg-transparent border-border group-hover:border-primary/50'
                         "
                         class="mr-3 flex h-5 w-5 items-center justify-center rounded-md border-[1.25px] transition-colors"
                     >
@@ -190,21 +190,21 @@
                         </span>
                     </div>
                 </div>
-                <span class="transition-colors group-hover:text-gray-900 dark:group-hover:text-white">Activo</span>
+                <span class="transition-colors group-hover:text-text">Activo</span>
             </label>
         </div>
 
         <div class="mt-5 sm:mt-8 sm:grid sm:grid-flow-row-dense sm:grid-cols-2 sm:gap-3">
             <button
                 type="submit"
-                class="flex items-center justify-center w-full px-4 py-3 text-sm font-medium text-white transition rounded-lg bg-brand-500 shadow-theme-xs hover:bg-brand-600 disabled:opacity-50 disabled:cursor-not-allowed sm:col-start-2"
+                class="flex items-center justify-center w-full px-4 py-3 text-sm font-medium text-primary-fg transition rounded-lg bg-primary shadow-theme-xs hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed sm:col-start-2"
                 :disabled="isSaving"
             >
                 {{ isSaving ? 'Guardando...' : 'Guardar' }}
             </button>
             <button
                 type="button"
-                class="mt-3 flex items-center justify-center w-full px-4 py-3 text-sm font-medium text-gray-700 transition bg-white border border-gray-300 rounded-lg shadow-theme-xs hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200 sm:col-start-1 sm:mt-0"
+                class="mt-3 flex items-center justify-center w-full px-4 py-3 text-sm font-medium text-text-muted transition bg-surface border border-border rounded-lg shadow-theme-xs hover:bg-surface-muted hover:text-text sm:col-start-1 sm:mt-0"
                 @click="emit('close')"
             >
                 Cancelar

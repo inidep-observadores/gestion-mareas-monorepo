@@ -1,14 +1,14 @@
 <template>
   <FullScreenLayout>
-    <div class="relative p-6 bg-white z-1 dark:bg-gray-900 sm:p-0">
+    <div class="relative p-6 bg-surface z-1 sm:p-0">
       <div
-        class="relative flex flex-col justify-center w-full h-screen lg:flex-row dark:bg-gray-900"
+        class="relative flex flex-col justify-center w-full h-screen lg:flex-row bg-surface"
       >
         <div class="flex flex-col flex-1 w-full lg:w-1/2">
           <div class="w-full max-w-md pt-10 mx-auto">
             <router-link
               :to="{ name: 'Dashboard' }"
-              class="inline-flex items-center text-sm text-gray-500 transition-colors hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+              class="inline-flex items-center text-sm text-text-muted transition-colors hover:text-text"
             >
               <svg
                 class="stroke-current"
@@ -33,16 +33,16 @@
           <div class="flex flex-col justify-center flex-1 w-full max-w-md mx-auto">
             <div class="mb-5 sm:mb-8">
               <h1
-                class="mb-2 font-semibold text-gray-800 text-title-sm dark:text-white/90 sm:text-title-md"
+                class="mb-2 font-semibold text-text text-title-sm sm:text-title-md"
               >
                 Registrarse
               </h1>
-              <p class="text-sm text-gray-500 dark:text-gray-400">
+              <p class="text-sm text-text-muted">
                 Ingrese sus datos para crear una cuenta.
               </p>
             </div>
 
-            <div v-if="errorMessage" class="mb-4 p-4 text-sm text-red-700 bg-red-100 rounded-lg dark:bg-red-200 dark:text-red-800" role="alert">
+            <div v-if="errorMessage" class="mb-4 p-4 text-sm text-error bg-error/10 border border-error/20 rounded-lg" role="alert">
                 <span class="font-medium">Error:</span> {{ errorMessage }}
             </div>
 
@@ -54,9 +54,9 @@
                     <div class="sm:col-span-1">
                       <label
                         for="fname"
-                        class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400"
+                        class="mb-1.5 block text-sm font-medium text-text-muted"
                       >
-                        Nombre<span class="text-error-500">*</span>
+                        Nombre<span class="text-error">*</span>
                       </label>
                       <input
                         v-model="firstName"
@@ -65,16 +65,16 @@
                         name="fname"
                         required
                         placeholder="Ingrese su nombre"
-                        class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                        class="h-11 w-full rounded-lg border border-border bg-surface px-4 py-2.5 text-sm text-text transition-all placeholder:text-text-muted/50 focus:border-primary focus:ring-2 focus:ring-primary/10 outline-none shadow-sm"
                       />
                     </div>
                     <!-- Last Name -->
                     <div class="sm:col-span-1">
                       <label
                         for="lname"
-                        class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400"
+                        class="mb-1.5 block text-sm font-medium text-text-muted"
                       >
-                        Apellido<span class="text-error-500">*</span>
+                        Apellido<span class="text-error">*</span>
                       </label>
                       <input
                         v-model="lastName"
@@ -83,7 +83,7 @@
                         name="lname"
                         required
                         placeholder="Ingrese su apellido"
-                        class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                        class="h-11 w-full rounded-lg border border-border bg-surface px-4 py-2.5 text-sm text-text transition-all placeholder:text-text-muted/50 focus:border-primary focus:ring-2 focus:ring-primary/10 outline-none shadow-sm"
                       />
                     </div>
                   </div>
@@ -91,9 +91,9 @@
                   <div>
                     <label
                       for="email"
-                      class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400"
+                      class="mb-1.5 block text-sm font-medium text-text-muted"
                     >
-                      Correo electrónico<span class="text-error-500">*</span>
+                      Correo electrónico<span class="text-error">*</span>
                     </label>
                     <input
                       v-model="email"
@@ -102,16 +102,16 @@
                       name="email"
                       required
                       placeholder="Ingrese su correo electrónico"
-                      class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                      class="h-11 w-full rounded-lg border border-border bg-surface px-4 py-2.5 text-sm text-text transition-all placeholder:text-text-muted/50 focus:border-primary focus:ring-2 focus:ring-primary/10 outline-none shadow-sm"
                     />
                   </div>
                   <!-- Password -->
                   <div>
                     <label
                       for="password"
-                      class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400"
+                      class="mb-1.5 block text-sm font-medium text-text-muted"
                     >
-                      Contraseña<span class="text-error-500">*</span>
+                      Contraseña<span class="text-error">*</span>
                     </label>
                     <div class="relative">
                       <input
@@ -120,11 +120,11 @@
                         id="password"
                         required
                         placeholder="Ingrese su contraseña"
-                        class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent py-2.5 pl-4 pr-11 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                        class="h-11 w-full rounded-lg border border-border bg-surface py-2.5 pl-4 pr-11 text-sm text-text transition-all placeholder:text-text-muted/50 focus:border-primary focus:ring-2 focus:ring-primary/10 outline-none shadow-sm"
                       />
                       <span
                         @click="togglePasswordVisibility"
-                        class="absolute z-30 text-gray-500 -translate-y-1/2 cursor-pointer right-4 top-1/2 dark:text-gray-400"
+                        class="absolute z-30 text-text-muted -translate-y-1/2 cursor-pointer right-4 top-1/2"
                       >
                         <svg
                           v-if="!showPassword"
@@ -167,10 +167,10 @@
                              v-for="(req, index) in passwordRequirements"
                              :key="index"
                              :class="[
-                               'px-2 py-1 text-xs rounded-md border transition-colors',
+                               'px-2 py-1 text-[10px] font-bold rounded-md border transition-all uppercase tracking-tighter',
                                req.met
-                                 ? 'bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800'
-                                 : 'bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800'
+                                 ? 'bg-success/10 text-success border-success/20'
+                                 : 'bg-error/10 text-error border-error/20'
                              ]"
                            >
                              {{ req.label }}
@@ -182,7 +182,7 @@
                     <div>
                       <label
                         for="checkboxLabelOne"
-                        class="flex items-start text-sm font-normal text-gray-700 cursor-pointer select-none dark:text-gray-400"
+                        class="flex items-start text-sm font-normal text-text-muted cursor-pointer select-none"
                       >
                         <div class="relative">
                           <input
@@ -194,10 +194,10 @@
                           <div
                             :class="
                               agreeToTerms
-                                ? 'border-brand-500 bg-brand-500'
-                                : 'bg-transparent border-gray-300 dark:border-gray-700'
+                                ? 'border-primary bg-primary'
+                                : 'bg-surface border-border'
                             "
-                            class="mr-3 flex h-5 w-5 items-center justify-center rounded-md border-[1.25px]"
+                            class="mr-3 flex h-5 w-5 items-center justify-center rounded-md border"
                           >
                             <span :class="agreeToTerms ? '' : 'opacity-0'">
                               <svg
@@ -218,12 +218,12 @@
                             </span>
                           </div>
                         </div>
-                        <p class="inline-block font-normal text-gray-500 dark:text-gray-400">
+                        <p class="inline-block font-normal text-text-muted">
                           Al crear una cuenta, acepta los
                           <router-link 
                             :to="{ name: 'Terms' }" 
                             target="_blank" 
-                            class="text-gray-800 dark:text-white/90 border-b border-gray-300 hover:text-brand-500 hover:border-brand-500 transition-colors"
+                            class="text-text font-medium border-b border-border hover:text-primary hover:border-primary transition-colors"
                           >
                             Términos y Condiciones
                           </router-link>
@@ -231,7 +231,7 @@
                           <router-link 
                             :to="{ name: 'Privacy' }" 
                             target="_blank" 
-                            class="text-gray-800 dark:text-white border-b border-gray-300 hover:text-brand-500 hover:border-brand-500 transition-colors"
+                            class="text-text font-medium border-b border-border hover:text-primary hover:border-primary transition-colors"
                           >
                             Política de Privacidad
                           </router-link>
@@ -244,50 +244,56 @@
                     <button
                       type="submit"
                       :disabled="isLoading"
-                      class="flex items-center justify-center w-full px-4 py-3 text-sm font-medium text-white transition rounded-lg bg-brand-500 shadow-theme-xs hover:bg-brand-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                      class="flex items-center justify-center w-full px-4 py-3 text-sm font-bold text-primary-fg transition-all rounded-lg bg-primary shadow-lg shadow-primary/20 hover:bg-primary-hover hover:shadow-xl hover:shadow-primary/30 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-wider"
                     >
                       <span v-if="!isLoading">Registrarse</span>
-                      <span v-else>Cargando...</span>
+                      <span v-else class="flex items-center gap-2">
+                        <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Cargando...
+                      </span>
                     </button>
                   </div>
                 </div>
               </form>
               <div class="mt-5">
                 <p
-                  class="text-sm font-normal text-center text-gray-700 dark:text-gray-400 sm:text-start"
+                  class="text-sm font-normal text-center text-text-muted sm:text-start"
                 >
-                  ¿Ya tiene una cuenta?
-                  <router-link
-                    :to="{ name: 'Signin' }"
-                    class="text-brand-500 hover:text-brand-600 dark:text-brand-400"
-                    >Inicie sesión</router-link
-                  >
+                   ¿Ya tiene una cuenta?
+                   <router-link
+                     :to="{ name: 'Signin' }"
+                     class="text-primary font-bold hover:text-primary-hover transition-colors"
+                     >Inicie sesión</router-link
+                   >
                 </p>
               </div>
             </div>
           </div>
         </div>
         <div
-          class="relative items-center hidden w-full h-full lg:w-1/2 bg-brand-950 dark:bg-white/5 lg:grid"
+          class="relative items-center hidden w-full h-full lg:w-1/2 bg-surface-muted border-l border-border lg:grid"
         >
           <div class="flex items-center justify-center z-1">
             <common-grid-shape />
             <div class="flex flex-col items-center max-w-xs">
               <router-link
                 :to="{ name: 'Dashboard' }"
-                class="flex items-center gap-3 mb-4 text-white"
+                class="flex items-center gap-3 mb-4"
               >
                 <div
-                  class="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center flex-shrink-0"
+                  class="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center flex-shrink-0 shadow-lg shadow-primary/20"
                 >
-                  <WaveIcon class="w-7 h-7 text-white" />
+                  <WaveIcon class="w-7 h-7 text-primary-fg" />
                 </div>
                 <div class="flex flex-col leading-tight">
-                  <span class="text-lg font-bold text-white">Gestión de</span>
-                  <span class="text-lg font-bold text-blue-200">Mareas</span>
+                  <span class="text-lg font-black text-text uppercase tracking-tight">Gestión de</span>
+                  <span class="text-lg font-black text-primary uppercase tracking-tight">Mareas</span>
                 </div>
               </router-link>
-              <p class="text-center text-gray-400 dark:text-white/60">INIDEP</p>
+              <p class="text-center text-text-muted font-bold tracking-widest uppercase text-[10px]">INIDEP</p>
             </div>
           </div>
         </div>

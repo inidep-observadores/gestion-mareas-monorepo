@@ -1,22 +1,22 @@
 <template>
   <div
-    class="flex h-full flex-col border-r border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900 overflow-hidden"
+    class="flex h-full flex-col border-r border-border bg-surface overflow-hidden"
   >
     <!-- Search Header -->
-    <div class="p-4 border-b border-gray-100 dark:border-gray-800">
-      <h2 class="text-xs font-black uppercase tracking-widest text-gray-400 mb-4">
+    <div class="p-4 border-b border-border">
+      <h2 class="text-xs font-black uppercase tracking-widest text-text-muted mb-4">
         Monitor de Flota
       </h2>
       <div class="relative">
         <input
           type="text"
           placeholder="Buscar buque o marea..."
-          class="w-full rounded-xl border-gray-200 bg-gray-50 px-4 py-2.5 text-sm focus:border-brand-500 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
+          class="w-full rounded-xl border-border bg-surface-muted px-4 py-2.5 text-sm focus:border-primary focus:ring-primary text-text"
           v-model="searchQuery"
         />
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          class="absolute right-3 top-3 h-4 w-4 text-gray-400"
+          class="absolute right-3 top-3 h-4 w-4 text-text-muted"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -36,32 +36,32 @@
       <div
         v-for="vessel in filteredVessels"
         :key="vessel.id"
-        class="border-b border-gray-50 dark:border-gray-800/50"
+        class="border-b border-border"
       >
         <button
           @click="toggleVessel(vessel.id)"
-          class="flex w-full items-center justify-between p-4 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/50"
-          :class="{ 'bg-brand-50/50 dark:bg-brand-500/5': expandedVessel === vessel.id }"
+          class="flex w-full items-center justify-between p-4 transition-colors hover:bg-surface-muted"
+          :class="{ 'bg-primary/10': expandedVessel === vessel.id }"
         >
           <div class="flex items-center gap-3">
             <div
               :class="[
                 'h-2 w-2 rounded-full',
-                vessel.active ? 'bg-success-500 animate-pulse' : 'bg-gray-300',
+                vessel.active ? 'bg-success animate-pulse' : 'bg-border',
               ]"
             ></div>
             <div class="text-left">
-              <div class="text-sm font-bold text-gray-800 dark:text-gray-100">
+              <div class="text-sm font-bold text-text">
                 {{ vessel.name }}
               </div>
-              <div class="text-[10px] font-medium text-gray-400 uppercase tracking-tighter">
+              <div class="text-[10px] font-medium text-text-muted uppercase tracking-tighter">
                 {{ vessel.type }}
               </div>
             </div>
           </div>
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            class="h-4 w-4 text-gray-400 transition-transform"
+            class="h-4 w-4 text-text-muted transition-transform"
             :class="{ 'rotate-180': expandedVessel === vessel.id }"
             viewBox="0 0 20 20"
             fill="currentColor"
@@ -77,25 +77,25 @@
         <!-- Trips List -->
         <div
           v-if="expandedVessel === vessel.id"
-          class="bg-gray-50/50 dark:bg-gray-900 flex flex-col"
+          class="bg-surface-muted flex flex-col"
         >
           <button
             v-for="trip in vessel.trips"
             :key="trip.id"
             @click="$emit('select-trip', { vessel, trip })"
-            class="flex items-center justify-between px-6 py-3 border-l-2 border-transparent hover:border-brand-500 hover:bg-white dark:hover:bg-gray-800 transition-all text-left"
+            class="flex items-center justify-between px-6 py-3 border-l-2 border-transparent hover:border-primary hover:bg-surface transition-all text-left"
           >
             <div>
               <div
-                class="text-[11px] font-black text-gray-700 dark:text-gray-300 uppercase tracking-tight"
+                class="text-[11px] font-black text-text uppercase tracking-tight"
               >
                 {{ trip.id }}
               </div>
-              <div class="text-[10px] text-gray-500">{{ trip.date }}</div>
+              <div class="text-[10px] text-text-muted">{{ trip.date }}</div>
             </div>
             <span
               v-if="trip.status === 'active'"
-              class="text-[8px] font-black bg-blue-500 text-white px-1.5 py-0.5 rounded uppercase"
+              class="text-[8px] font-black bg-info text-info-fg px-1.5 py-0.5 rounded uppercase"
               >En curso</span
             >
           </button>
