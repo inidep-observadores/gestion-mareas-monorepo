@@ -1,41 +1,41 @@
 <template>
-  <div class="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900 border-l-4 border-l-orange-500">
+  <div class="rounded-3xl border border-border bg-surface p-6 shadow-sm border-l-4 border-l-warning">
     <div class="flex items-center gap-2 mb-6">
-      <HistoryIcon class="w-4 h-4 text-orange-500" />
-      <h2 class="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+      <HistoryIcon class="w-4 h-4 text-warning" />
+      <h2 class="text-[10px] font-black text-text-muted uppercase tracking-widest">
          Días sin Navegar (Top 5)
       </h2>
     </div>
 
     <div class="space-y-4">
       <div v-for="(obs, index) in topDry" :key="obs.id" class="group/list flex items-center gap-4">
-        <div class="w-6 text-[10px] font-black text-gray-300 group-hover/list:text-orange-500 transition-colors">0{{ index + 1 }}</div>
+        <div class="w-6 text-[10px] font-black text-text-muted/30 group-hover/list:text-warning transition-colors">0{{ index + 1 }}</div>
         <div class="flex-1 min-w-0">
           <div class="flex items-center justify-between gap-3 mb-1.5">
             <div class="flex flex-col">
-              <span class="text-[12px] font-bold text-gray-800 dark:text-gray-200 truncate group-hover/list:text-orange-500 transition-colors">
+              <span class="text-[12px] font-bold text-text truncate group-hover/list:text-warning transition-colors">
                 {{ obs.name }}
               </span>
-              <span class="text-[9px] font-bold text-gray-400 uppercase tracking-tighter">
+              <span class="text-[9px] font-bold text-text-muted uppercase tracking-tighter">
                 Últ. Arribo: {{ formatDate(obs.lastArrival) }}
               </span>
             </div>
             <div class="flex flex-col items-end">
-              <span class="text-[11px] font-black text-orange-600 dark:text-orange-400 whitespace-nowrap">
+              <span class="text-[11px] font-black text-warning whitespace-nowrap">
                 {{ obs.days }} días
               </span>
             </div>
           </div>
-          <div class="h-1.5 w-full bg-gray-50 dark:bg-gray-800/50 rounded-full overflow-hidden">
+          <div class="h-1.5 w-full bg-surface-muted rounded-full overflow-hidden">
             <div
-              class="h-full bg-gradient-to-r from-orange-300 to-orange-500 rounded-full transition-all duration-700"
+              class="h-full bg-warning rounded-full transition-all duration-700"
               :style="{ width: Math.min(obs.days * 2, 100) + '%' }"
             ></div>
           </div>
         </div>
       </div>
       
-      <div v-if="topDry.length === 0" class="text-center py-4 text-xs text-gray-400">
+      <div v-if="topDry.length === 0" class="text-center py-4 text-xs text-text-muted">
         No hay datos disponibles
       </div>
     </div>
