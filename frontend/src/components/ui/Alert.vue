@@ -45,16 +45,16 @@ const props = withDefaults(defineProps<AlertProps>(), {
 
 const variantClasses = {
   success: {
-    container: 'border-green-500 bg-green-500/10 dark:border-green-500/30 dark:bg-green-500/15',
-    icon: 'text-green-600',
+    container: 'border-success bg-success/10 dark:border-success/30 dark:bg-success/15',
+    icon: 'text-success',
   },
   error: {
-    container: 'border-red-500 bg-red-500/10 dark:border-red-500/30 dark:bg-red-500/15',
-    icon: 'text-red-600',
+    container: 'border-error bg-error/10 dark:border-error/30 dark:bg-error/15',
+    icon: 'text-error',
   },
   warning: {
-    container: 'border-orange-500 bg-orange-500/10 dark:border-orange-500/30 dark:bg-orange-500/15',
-    icon: 'text-orange-600',
+    container: 'border-warning bg-warning/10 dark:border-warning/30 dark:bg-warning/15',
+    icon: 'text-warning',
   },
   info: {
     container: 'border-primary bg-primary/10 dark:border-primary/30 dark:bg-primary/15',

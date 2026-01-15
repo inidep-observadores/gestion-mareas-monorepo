@@ -12,20 +12,20 @@
       </div>
 
       <div class="grid grid-cols-2 gap-4">
-        <div class="bg-surface-muted p-2.5 rounded-xl">
-          <p class="text-[9px] font-bold text-gray-400 uppercase mb-1">Velocidad</p>
+        <div class="bg-surface-muted p-2.5 rounded-xl border border-border/5">
+          <p class="text-[9px] font-black text-text-muted uppercase mb-1">Velocidad</p>
           <div class="flex items-baseline gap-1">
-            <span class="text-xl font-black text-gray-800 dark:text-white">{{ point.speed }}</span>
-            <span class="text-[10px] font-bold text-gray-400">knts</span>
+            <span class="text-xl font-black text-text">{{ point.speed }}</span>
+            <span class="text-[10px] font-bold text-text-muted">knts</span>
           </div>
         </div>
-        <div class="bg-surface-muted p-2.5 rounded-xl">
-          <p class="text-[9px] font-bold text-gray-400 uppercase mb-1">Rumbo</p>
+        <div class="bg-surface-muted p-2.5 rounded-xl border border-border/5">
+          <p class="text-[9px] font-black text-text-muted uppercase mb-1">Rumbo</p>
           <div class="flex items-baseline gap-1">
-            <span class="text-xl font-black text-gray-800 dark:text-white"
+            <span class="text-xl font-black text-text"
               >{{ point.course }}°</span
             >
-            <span class="text-[10px] font-bold text-gray-400">{{ courseName }}</span>
+            <span class="text-[10px] font-bold text-text-muted">{{ courseName }}</span>
           </div>
         </div>
       </div>
@@ -55,7 +55,7 @@
       </h3>
       <div class="space-y-4">
         <div>
-          <div class="flex justify-between text-[10px] font-bold text-gray-500 uppercase mb-1">
+          <div class="flex justify-between text-[10px] font-black text-text-muted uppercase mb-1">
             <span>Distancia Recorrida</span>
             <span>Est. Total</span>
           </div>

@@ -595,10 +595,10 @@ const formatDate = (date?: string) => {
   background: transparent;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #e2e8f0;
+  background: var(--color-border);
   border-radius: 10px;
 }
 .dark .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #1e293b;
+  background: var(--color-border);
 }
 </style>

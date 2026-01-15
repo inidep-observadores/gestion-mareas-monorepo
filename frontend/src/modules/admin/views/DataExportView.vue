@@ -27,7 +27,7 @@
       </div>
 
      <!-- Card: Importar Datos -->
-      <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 p-6">
+      <div class="bg-surface rounded-2xl shadow-theme-xs border border-border p-6">
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
             <h2 class="text-xl font-bold text-text flex items-center gap-2">
@@ -71,17 +71,17 @@
         </div>
 
         <div v-if="isLoading" class="p-12 flex justify-center">
-            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
+            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-success"></div>
         </div>
 
-        <div v-else-if="files.length === 0" class="p-12 text-center text-gray-400">
+        <div v-else-if="files.length === 0" class="p-12 text-center text-text-muted">
             <InfoCircleIcon class="mx-auto w-12 h-12 mb-4 opacity-20" />
             <p>No se encontraron exportaciones guardadas.</p>
         </div>
 
         <table v-else class="w-full text-left border-collapse">
           <thead>
-            <tr class="bg-surface-muted text-[11px] uppercase tracking-widest text-text-muted font-black">
+            <tr class="bg-surface-muted/50 text-text-muted font-black text-[10px] uppercase tracking-widest">
               <th class="px-6 py-4">Archivo</th>
               <th class="px-6 py-4">Fecha</th>
               <th class="px-6 py-4">Comentario</th>
@@ -98,14 +98,14 @@
               <td class="px-6 py-4 text-center">
                  <button 
                     @click="handleDownload(file.filename)"
-                    class="inline-flex items-center justify-center p-2 text-green-600 bg-green-50 dark:bg-green-900/10 rounded-lg hover:bg-green-100 dark:hover:bg-green-900/20 transition-colors"
+                    class="inline-flex items-center justify-center p-2 text-success bg-success/5 border border-success/10 hover:bg-success/10 transition-colors"
                     title="Descargar ZIP"
                 >
                      <DownloadIcon class="w-5 h-5" />
                  </button>
                  <button 
                     @click="confirmDelete(file)"
-                    class="inline-flex items-center justify-center p-2 text-red-600 bg-red-50 dark:bg-red-900/10 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/20 transition-colors"
+                    class="inline-flex items-center justify-center p-2 text-error bg-error/5 border border-error/10 hover:bg-error/10 transition-colors"
                     title="Eliminar Archivo"
                 >
                     <TrashIcon class="w-5 h-5" />

@@ -155,9 +155,9 @@ import { CheckIcon } from '@/icons'
 const themeStore = useThemeStore()
 
 const colors = [
-  { id: 'blue', label: 'Azul Industrial', bgClass: 'bg-blue-600' },
-  { id: 'green', label: 'Ecosistema Marino', bgClass: 'bg-emerald-600' },
-  { id: 'orange', label: 'Alerta Operativa', bgClass: 'bg-orange-500' },
+  { id: 'blue', label: 'Azul Industrial', bgClass: 'bg-brand-600' },
+  { id: 'green', label: 'Ecosistema Marino', bgClass: 'bg-success' },
+  { id: 'orange', label: 'Alerta Operativa', bgClass: 'bg-warning' },
 ] as const
 
 const resetDefaults = () => {

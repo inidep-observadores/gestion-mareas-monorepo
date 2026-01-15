@@ -152,6 +152,10 @@ const statusClasses = computed(() => {
 }
 
 .avatar-status {
-  @apply absolute w-3 h-3 rounded-full border-2 border-white dark:border-gray-900;
+  @apply absolute w-3 h-3 rounded-full border-2 border-surface;
+
+  @variant dark {
+    @apply border-background;
+  }
 }
 </style>

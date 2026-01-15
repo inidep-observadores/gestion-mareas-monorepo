@@ -66,7 +66,7 @@ const updateGraticule = () => {
 
   const labelIcon = (text: string) => L.divIcon({
     className: 'graticule-label',
-    html: `<div class="text-[8px] font-medium text-text-muted [text-shadow:_0_0_2px_white] dark:[text-shadow:_0_0_2px_black] whitespace-nowrap">${text}</div>`,
+    html: `<div class="text-[8px] font-black text-text-muted/40 uppercase tracking-widest whitespace-nowrap">${text}</div>`,
     iconSize: [0, 0],
     iconAnchor: [0, 0]
   })

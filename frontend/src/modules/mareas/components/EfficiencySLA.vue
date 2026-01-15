@@ -1,5 +1,5 @@
 <template>
-  <div class="rounded-3xl border border-border bg-surface p-6 shadow-sm h-full flex flex-col">
+  <div class="rounded-2xl border border-border bg-surface p-6 shadow-theme-xs h-full flex flex-col">
     <div class="mb-8 flex items-center justify-between">
       <div>
         <h2 class="text-sm font-black text-text uppercase tracking-widest flex items-center gap-2">
@@ -9,8 +9,8 @@
         <p class="text-[10px] font-bold text-text-muted uppercase tracking-tighter mt-1">Cumplimiento de objetivos institucionales</p>
       </div>
       <div class="flex gap-2">
-         <div class="px-3 py-1 bg-success/10 dark:bg-emerald-900/20 rounded-full border border-success/20 dark:border-emerald-800/50">
-            <span class="text-[10px] font-black text-success dark:text-emerald-400 uppercase">92% Global</span>
+         <div class="px-3 py-1 bg-success/5 border border-success/10 rounded-full">
+            <span class="text-[10px] font-black text-success uppercase">92% Global</span>
          </div>
       </div>
     </div>
@@ -30,7 +30,7 @@
                   <div class="flex items-center gap-2">
                      <span class="text-xs font-black text-text tabular-nums">{{ item.days }}d</span>
                      <span 
-                       class="text-[10px] font-black px-1.5 py-0.5 rounded text-white"
+                       class="text-[8px] font-black px-1.5 py-0.5 rounded border border-white/20 text-white"
                        :class="item.days <= plazoEntregaDatos ? 'bg-success' : 'bg-error'"
                      >
                        {{ item.days <= plazoEntregaDatos ? 'OK' : 'FAIL' }}
@@ -61,7 +61,7 @@
                   <div class="flex items-center gap-2">
                      <span class="text-xs font-black text-text tabular-nums">{{ item.days }}d</span>
                      <span 
-                       class="text-[10px] font-black px-1.5 py-0.5 rounded text-white"
+                       class="text-[8px] font-black px-1.5 py-0.5 rounded border border-white/20 text-white"
                        :class="item.days <= plazoConfeccionInforme ? 'bg-primary' : 'bg-warning'"
                      >
                        {{ item.days <= plazoConfeccionInforme ? 'OK' : 'LIMIT' }}

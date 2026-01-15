@@ -20,14 +20,14 @@
         <!-- Color left border indicator -->
         <div
           class="absolute left-0 top-1 bottom-1 w-0.5 rounded-r-full opacity-60"
-          :style="{ backgroundColor: stage.color || '#6366f1' }"
+          :style="{ backgroundColor: stage.color || 'var(--color-primary)' }"
         ></div>
 
         <div class="flex items-center justify-between ml-1">
           <span class="font-black text-text uppercase tracking-tighter" :style="{ color: stage.color, fontSize: 'calc(8px + var(--hud-font-offset))' }">
             Etapa {{ index + 1 }}
           </span>
-          <span class="font-black px-1.5 py-0.5 rounded-lg bg-primary/10 text-primary border border-primary/10" :style="{ fontSize: 'calc(7px + var(--hud-font-offset))' }">
+          <span class="font-black px-1.5 py-0.5 rounded-lg bg-primary/10 text-primary border border-primary/20 shadow-[0_0_8px_rgba(var(--color-primary-rgb),0.2)]" :style="{ fontSize: 'calc(7px + var(--hud-font-offset))' }">
             {{ stage.durationDays }}d
           </span>
         </div>

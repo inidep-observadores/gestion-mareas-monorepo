@@ -10,7 +10,7 @@
         <!-- Avatar Preview/Upload -->
         <div class="flex flex-col items-center mb-6">
             <div class="relative group">
-                <div class="w-24 h-24 overflow-hidden rounded-full ring-4 ring-gray-100 dark:ring-gray-700 bg-gray-100">
+                <div class="w-24 h-24 overflow-hidden rounded-full ring-4 ring-surface-muted bg-surface-muted">
                     <img
                         :src="getFullImageUrl(previewUrl || form.avatarUrl)"
                         alt="Avatar"
@@ -19,7 +19,7 @@
                     />
                 </div>
                 <label
-                    class="absolute bottom-0 right-0 p-1.5 bg-blue-500 rounded-full cursor-pointer hover:bg-blue-600 transition-colors shadow-lg text-white"
+                    class="absolute bottom-0 right-0 p-1.5 bg-primary rounded-full cursor-pointer hover:bg-primary-hover transition-all active:scale-95 shadow-lg text-primary-fg"
                     title="Cambiar foto"
                 >
                     <input type="file" class="hidden" accept="image/*" @change="handleFileChange" />
@@ -28,32 +28,32 @@
                     </svg>
                 </label>
             </div>
-                <p v-if="isUploading" class="text-center text-xs text-blue-500 mt-2">Subiendo imagen...</p>
+                <p v-if="isUploading" class="text-center text-[10px] font-bold uppercase tracking-wider text-primary mt-2">Subiendo imagen...</p>
         </div>
 
         <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-400 mb-1.5">Nombre Completo</label>
+            <label class="block text-xs font-black uppercase tracking-widest text-text-muted mb-1.5">Nombre Completo</label>
             <input
                 v-model="form.fullName"
                 type="text"
                 required
-                class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                class="h-11 w-full rounded-lg border border-border bg-surface px-4 py-2.5 text-sm text-text shadow-theme-xs placeholder:text-text-muted/50 focus:border-primary focus:outline-hidden focus:ring-3 focus:ring-primary/10 transition-all"
             />
         </div>
 
         <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-400 mb-1.5">Email</label>
+            <label class="block text-xs font-black uppercase tracking-widest text-text-muted mb-1.5">Email</label>
             <input
                 v-model="form.email"
                 type="email"
                 required
                 :disabled="isEditing"
-                class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800 disabled:opacity-50"
+                class="h-11 w-full rounded-lg border border-border bg-surface px-4 py-2.5 text-sm text-text shadow-theme-xs placeholder:text-text-muted/50 focus:border-primary focus:outline-hidden focus:ring-3 focus:ring-primary/10 transition-all disabled:opacity-50"
             />
         </div>
 
         <div v-if="!isEditing || showPassword">
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-400 mb-1.5">
+            <label class="block text-xs font-black uppercase tracking-widest text-text-muted mb-1.5">
                 {{ isEditing ? 'Nueva Contraseña (Opcional)' : 'Contraseña' }}
             </label>
             <input
@@ -61,19 +61,19 @@
                 type="password"
                 :required="!isEditing"
                 minlength="6"
-                class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                class="h-11 w-full rounded-lg border border-border bg-surface px-4 py-2.5 text-sm text-text shadow-theme-xs placeholder:text-text-muted/50 focus:border-primary focus:outline-hidden focus:ring-3 focus:ring-primary/10 transition-all font-mono"
             />
         </div>
         <div v-if="isEditing" class="flex justify-end">
-            <button type="button" @click="showPassword = !showPassword" class="text-xs text-blue-600 hover:text-blue-500">
+            <button type="button" @click="showPassword = !showPassword" class="text-xs font-bold uppercase tracking-wider text-primary hover:text-primary-hover transition-colors">
                     {{ showPassword ? 'Cancelar cambio de contraseña' : 'Cambiar contraseña' }}
             </button>
         </div>
 
         <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-400 mb-2">Roles</label>
+            <label class="block text-xs font-black uppercase tracking-widest text-text-muted mb-2">Roles</label>
             <div class="flex gap-4 flex-wrap">
-                <label v-for="role in ROLES" :key="role.id" class="flex items-center text-sm font-normal text-gray-700 cursor-pointer select-none dark:text-gray-400 group">
+                <label v-for="role in ROLES" :key="role.id" class="flex items-center text-sm font-medium text-text-muted cursor-pointer select-none group">
                     <div class="relative">
                         <input 
                             type="checkbox" 
@@ -84,8 +84,8 @@
                         <div
                             :class="
                                 form.roles.includes(role.id)
-                                ? 'border-brand-500 bg-brand-500'
-                                : 'bg-transparent border-gray-300 dark:border-gray-700 group-hover:border-brand-300'
+                                ? 'border-primary bg-primary'
+                                : 'bg-transparent border-border group-hover:border-primary/50'
                             "
                             class="mr-3 flex h-5 w-5 items-center justify-center rounded-md border-[1.25px] transition-colors"
                         >
@@ -96,7 +96,7 @@
                             </span>
                         </div>
                     </div>
-                    <span class="transition-colors group-hover:text-gray-900 dark:group-hover:text-white">{{ role.name }}</span>
+                    <span class="transition-colors group-hover:text-text">{{ role.name }}</span>
                 </label>
             </div>
         </div>
@@ -104,14 +104,14 @@
         <div class="mt-5 sm:mt-6 sm:grid sm:grid-flow-row-dense sm:grid-cols-2 sm:gap-3">
             <button
                 type="submit"
-                class="flex items-center justify-center w-full px-4 py-3 text-sm font-medium text-white transition rounded-lg bg-brand-500 shadow-theme-xs hover:bg-brand-600 disabled:opacity-50 disabled:cursor-not-allowed sm:col-start-2"
+                class="flex items-center justify-center w-full px-4 py-3 text-xs font-black uppercase tracking-widest text-primary-fg transition-all rounded-lg bg-primary shadow-theme-xs hover:bg-primary-hover active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed sm:col-start-2"
                 :disabled="isSaving || isUploading"
             >
                 {{ isSaving ? 'Guardando...' : 'Guardar' }}
             </button>
             <button
                 type="button"
-                class="mt-3 flex items-center justify-center w-full px-4 py-3 text-sm font-medium text-gray-700 transition bg-white border border-gray-300 rounded-lg shadow-theme-xs hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200 sm:col-start-1 sm:mt-0"
+                class="mt-3 flex items-center justify-center w-full px-4 py-3 text-xs font-black uppercase tracking-widest text-text-muted transition-all bg-surface border border-border rounded-lg shadow-theme-xs hover:bg-surface-muted hover:text-text active:scale-95 sm:col-start-1 sm:mt-0"
                 @click="closeModal"
             >
                 Cancelar

@@ -39,10 +39,10 @@
         </div>
 
         <div v-if="isLoading || isCheckingStatus" class="p-12 flex justify-center">
-            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
         </div>
 
-        <div v-else-if="!backendStatus.isConfigured" class="p-12 text-center text-amber-600 bg-amber-50/50 dark:bg-amber-950/20">
+        <div v-else-if="!backendStatus.isConfigured" class="p-12 text-center text-warning bg-warning/5 dark:bg-warning/10">
             <WarningIcon class="mx-auto w-12 h-12 mb-4 opacity-50" />
             <h4 class="font-bold text-lg mb-2">Sistema no Inicializado</h4>
             <p class="max-w-md mx-auto text-sm opacity-80">
@@ -51,7 +51,7 @@
             </p>
         </div>
 
-        <div v-else-if="backups.length === 0" class="p-12 text-center text-gray-400">
+        <div v-else-if="backups.length === 0" class="p-12 text-center text-text-muted">
             <InfoCircleIcon class="mx-auto w-12 h-12 mb-4 opacity-20" />
             <p>No se encontraron copias de seguridad guardadas.</p>
         </div>
@@ -76,14 +76,14 @@
                 <div class="flex justify-center gap-3">
                     <button 
                         @click="confirmRestore(bkp)"
-                        class="p-2 text-warning bg-warning/10 rounded-lg hover:bg-warning/20 transition-colors"
+                        class="p-2 text-warning bg-warning/5 border border-warning/10 hover:bg-warning/10 transition-colors"
                         title="Restaurar"
                     >
                         <HistoryIcon class="w-5 h-5" />
                     </button>
                     <button 
                         @click="confirmDelete(bkp)"
-                        class="p-2 text-error bg-error/10 rounded-lg hover:bg-error/20 transition-colors"
+                        class="p-2 text-error bg-error/5 border border-error/10 hover:bg-error/10 transition-colors"
                         title="Eliminar"
                     >
                         <TrashIcon class="w-5 h-5" />
