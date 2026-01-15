@@ -68,11 +68,11 @@
       <div v-if="viewMode === 'kanban'">
         <div
           v-if="loading"
-          class="flex items-center justify-center h-[420px] bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-3xl"
+          class="flex items-center justify-center h-[420px] bg-surface border border-border rounded-3xl"
         >
           <div class="flex flex-col items-center gap-3">
-            <div class="loading loading-spinner loading-lg text-brand-500"></div>
-            <span class="text-xs font-bold text-gray-500 uppercase tracking-[0.2em]">Cargando flujo...</span>
+            <LoadingSpinner size="xl" class="text-primary" />
+            <span class="text-xs font-bold text-text-muted uppercase tracking-[0.2em]">Cargando flujo...</span>
           </div>
         </div>
 
@@ -174,11 +174,11 @@
       <div v-else class="space-y-6 max-w-6xl mx-auto">
         <div
           v-if="loading"
-          class="flex items-center justify-center h-48 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-3xl"
+          class="flex items-center justify-center h-48 bg-surface border border-border rounded-3xl"
         >
           <div class="flex flex-col items-center gap-3">
-            <div class="loading loading-spinner loading-md text-brand-500"></div>
-            <span class="text-xs font-bold text-gray-500 uppercase tracking-[0.2em]">Cargando listado...</span>
+            <LoadingSpinner size="lg" class="text-primary" />
+            <span class="text-xs font-bold text-text-muted uppercase tracking-[0.2em]">Cargando listado...</span>
           </div>
         </div>
 
@@ -301,6 +301,7 @@ import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { VueDraggableNext } from 'vue-draggable-next'
 import { toast } from 'vue-sonner'
+import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import ViewToggle from '@/components/common/ViewToggle.vue'
 import FilterBar from '@/components/common/FilterBar.vue'

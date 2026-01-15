@@ -4,19 +4,20 @@
     :description="selectedMarea ? `Marea ${selectedMarea.id_marea}` : 'Cargando información...'"
   >
     <template #header-actions>
-      <button 
+      <Button 
+        variant="soft"
+        size="sm"
         @click="router.back()"
-        class="flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 rounded-xl text-sm font-bold hover:bg-gray-200 dark:hover:bg-gray-700 transition-all active:scale-95"
       >
-        <ArrowLeftIcon class="w-4 h-4" />
+        <ArrowLeftIcon class="w-4 h-4 mr-2" />
         Volver
-      </button>
+      </Button>
     </template>
 
     <div class="max-w-2xl mx-auto py-6 px-4">
       <div v-if="loading" class="flex flex-col items-center justify-center py-20">
-        <div class="loading loading-spinner loading-lg text-brand-500"></div>
-        <span class="mt-4 text-gray-500 font-bold">Cargando contexto operativo...</span>
+        <LoadingSpinner size="xl" class="text-primary" />
+        <span class="mt-4 text-text-muted font-bold">Cargando contexto operativo...</span>
       </div>
 
       <div 
@@ -85,6 +86,8 @@ import { useMareas } from '../composables/useMareas'
 import { useAuthStore } from '@/modules/auth/stores/auth.store'
 import { ValidRoles } from '@/modules/auth/interfaces/roles.enum'
 import { ArrowLeftIcon } from '@/icons'
+import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
+import Button from '@/components/ui/Button.vue'
 
 const route = useRoute()
 const router = useRouter()

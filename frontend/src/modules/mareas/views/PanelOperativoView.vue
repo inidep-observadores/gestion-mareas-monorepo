@@ -55,8 +55,8 @@
 
             <div class="flex-1 overflow-y-auto custom-scrollbar">
               <!-- Loading State -->
-              <div v-if="loading && mareas.length === 0" class="p-20 flex flex-col items-center">
-                <div class="loading loading-spinner loading-lg text-brand-500"></div>
+              <div v-if="loading" class="flex items-center justify-center h-full py-20 flex-col">
+                <LoadingSpinner size="xl" class="text-primary" />
                 <span class="mt-4 text-gray-500 font-bold">Cargando operaciones...</span>
               </div>
 
@@ -316,18 +316,19 @@ import AlertManagementDialog from '../../alerts/components/AlertManagementDialog
 import StatusFilterChip from '../components/StatusFilterChip.vue'
 import { useAuthStore } from '@/modules/auth/stores/auth.store'
 import { useMareas } from '../composables/useMareas'
+import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 import {
   ShipIcon,
   SearchIcon,
   HorizontalDots,
-  EditIcon,
   TaskIcon,
   HistoryIcon,
   ArchiveIcon,
   FileTextIcon,
   PlusIcon,
   ChevronDownIcon,
-  WarningIcon
+  WarningIcon,
+  EditIcon
 } from '@/icons'
 
 import { ValidRoles } from '@/modules/auth/interfaces/roles.enum'

@@ -14,18 +14,18 @@
       </button>
     </div>
 
-    <div v-if="modelValue.length === 0" class="text-center py-12 bg-gray-50 dark:bg-gray-800/50 rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-800">
-      <MapPinIcon class="w-12 h-12 text-gray-300 mx-auto mb-4" />
-      <p class="text-gray-500 font-medium">No hay etapas registradas.</p>
+    <div v-if="modelValue.length === 0" class="text-center py-12 bg-surface-muted/50 rounded-2xl border-2 border-dashed border-border">
+      <MapPinIcon class="w-12 h-12 text-text-muted mx-auto mb-4" />
+      <p class="text-text-muted font-medium">No hay etapas registradas.</p>
     </div>
 
     <div v-else class="space-y-4">
       <div v-for="(stage, index) in modelValue" :key="index"
            :id="`stage-card-${index}`"
-           class="bg-white dark:bg-gray-950 border border-gray-100 dark:border-gray-800 rounded-2xl p-4 relative group transition-all shadow-sm hover:shadow-md"
+           class="bg-surface border border-border rounded-2xl p-4 relative group transition-all shadow-sm hover:shadow-md"
            :class="{
-             'border-red-200 bg-red-50/10': hasOverlap(index),
-             'border-amber-200 bg-amber-50/10': isInternalInconsistent(index)
+             'border-error/30 bg-error/5': hasOverlap(index),
+             'border-warning/30 bg-warning/5': isInternalInconsistent(index)
            }">
 
         <!-- Header: Simple & Clean -->
@@ -113,23 +113,23 @@
               />
             </div>
             <div class="sm:col-span-3 space-y-1">
-              <label class="text-[8px] font-black uppercase text-gray-400 tracking-widest flex items-center gap-1.5">
+              <label class="text-[8px] font-black uppercase text-text-muted tracking-widest flex items-center gap-1.5">
                 <SettingsIcon class="w-2.5 h-2.5" /> Propósito
               </label>
-              <select v-model="stage.tipoEtapa" :disabled="readOnly" class="form-input-premium py-2 font-bold text-xs h-[38px] w-full">
+              <select v-model="stage.tipoEtapa" :disabled="readOnly" class="w-full bg-surface border border-border rounded-lg py-2 font-bold text-xs h-[38px] focus:ring-1 focus:ring-primary outline-none">
                 <option value="COMERCIAL">COMERCIAL</option>
                 <option value="INSTITUCIONAL">INSTITUCIONAL</option>
               </select>
             </div>
             <div class="sm:col-span-5 space-y-1">
-              <label class="text-[8px] font-black uppercase text-gray-400 tracking-widest flex items-center gap-1.5">
+              <label class="text-[8px] font-black uppercase text-text-muted tracking-widest flex items-center gap-1.5">
                 <EditIcon class="w-2.5 h-2.5" /> Notas
               </label>
               <input
                 v-model="stage.observaciones"
                 type="text"
                 :disabled="readOnly"
-                class="form-input-premium py-2 text-xs h-[38px] w-full"
+                class="w-full bg-surface border border-border rounded-lg py-2 text-xs h-[38px] focus:ring-1 focus:ring-primary outline-none px-3"
                 placeholder="Obs. adicionales..."
               />
             </div>

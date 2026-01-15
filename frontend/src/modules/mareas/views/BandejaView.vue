@@ -55,29 +55,32 @@
       </section>
 
       <!-- 2. TABS & FILTERS -->
-      <div class="sticky top-0 z-20 bg-base-100/80 backdrop-blur-md py-4 mb-6 -mx-2 px-2 border-b border-base-content/10">
+      <div class="sticky top-0 z-20 bg-background/80 backdrop-blur-md py-4 mb-6 -mx-2 px-2 border-b border-border">
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <!-- Premium Tabs -->
-          <div class="flex p-1 bg-base-200 border border-base-content/10 rounded-2xl w-fit shadow-sm">
+          <div class="flex p-1 bg-surface-muted border border-border rounded-2xl w-fit shadow-sm">
             <button 
               v-for="tab in tabs" 
               :key="tab.id"
               @click="activeTab = tab.id"
               class="relative px-6 py-2 text-xs font-black uppercase tracking-tight transition-all duration-300 rounded-xl overflow-hidden"
-              :class="activeTab === tab.id ? 'text-white' : 'text-base-content/40 hover:text-base-content/70'"
+              :class="activeTab === tab.id ? 'text-primary-fg' : 'text-text-muted hover:text-text'"
             >
               <div 
                 v-if="activeTab === tab.id"
-                class="absolute inset-0 bg-brand-500 transition-all duration-300"
+                class="absolute inset-0 bg-primary transition-all duration-300"
               ></div>
               <span class="relative z-10 flex items-center gap-2">
                  {{ tab.label }}
-                 <span 
-                   class="badge badge-xs border-none font-bold"
-                   :class="activeTab === tab.id ? 'bg-white/20 text-white' : 'bg-base-content/10 text-base-content/70'"
+                 <Badge 
+                   variant="solid" 
+                   size="sm"
+                   class="font-extrabold h-4 px-1.5"
+                   :color="activeTab === tab.id ? 'light' : 'primary'"
+                   :style="activeTab === tab.id ? 'background-color: rgba(255,255,255,0.2)' : ''"
                  >
                    {{ tab.count }}
-                 </span>
+                 </Badge>
               </span>
             </button>
           </div>
@@ -90,7 +93,7 @@
              />
              <button 
                @click="sortBy = sortBy === 'buque' ? 'observador' : 'buque'"
-               class="p-2.5 bg-base-100 border border-base-content/10 rounded-xl text-base-content/40 hover:text-base-content/70 transition-all shadow-sm flex items-center gap-2"
+               class="p-2.5 bg-background border border-border rounded-xl text-text-muted hover:text-text transition-all shadow-sm flex items-center gap-2"
                :title="`Ordenar por: ${sortBy === 'buque' ? 'Buque' : 'Observador'}`"
              >
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 16 4 4 4-4"/><path d="M7 20V4"/><path d="m21 8-4-4-4 4"/><path d="M17 4v16"/></svg>
@@ -102,37 +105,38 @@
 
       <!-- 3. TASK GRID -->
       <div v-if="loading" class="flex items-center justify-center py-20">
-        <span class="loading loading-spinner loading-lg text-brand-500"></span>
+        <div class="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
       </div>
 
-      <div 
-        v-else-if="activeTab === 'historial'"
-        class="space-y-6"
-      >
+      <div v-else-if="activeTab === 'historial'" class="space-y-6">
         <!-- Collapsible: Historic Alerts -->
-        <div class="rounded-3xl border border-base-content/10 bg-base-100 shadow-sm overflow-hidden">
+        <div class="rounded-3xl border border-border bg-background shadow-sm overflow-hidden">
           <button
             @click="toggleHistorialSection('alertas')"
             class="w-full flex items-center justify-between p-5 text-left border-b border-transparent transition-colors"
-            :class="{ 'border-base-content/10 bg-base-200/30': expandedHistorialSection === 'alertas' }"
+            :class="{ 'border-border bg-surface-muted/30': expandedHistorialSection === 'alertas' }"
           >
             <div class="flex items-center gap-3">
               <div class="p-2 bg-success/10 rounded-xl">
-                <BellIcon class="w-5 h-5 text-success/80" />
+                <BellIcon class="w-5 h-5 text-success" />
               </div>
               <div>
-                <h4 class="text-sm font-black text-base-content/90 uppercase tracking-tight flex items-center gap-2">
+                <h4 class="text-sm font-black text-text/90 uppercase tracking-tight flex items-center gap-2">
                   Alertas Cerradas
-                  <span class="text-[10px] px-1.5 py-0.5 rounded-lg font-black bg-base-content/10 text-base-content/60">
+                  <Badge 
+                    variant="light" 
+                    size="sm"
+                    class="font-black px-1.5 h-4"
+                  >
                     {{ alertasHistoricas.length }}
-                  </span>
+                  </Badge>
                 </h4>
-                <p class="text-[10px] font-bold text-base-content/30 uppercase tracking-[0.1em]">Finalizadas o canceladas</p>
+                <p class="text-[10px] font-bold text-text-muted uppercase tracking-[0.1em]">Finalizadas o canceladas</p>
               </div>
             </div>
             <svg 
               xmlns="http://www.w3.org/2000/svg" 
-              class="w-5 h-5 text-base-content/40 transition-transform duration-300" 
+              class="w-5 h-5 text-text-muted transition-transform duration-300" 
               :class="{ 'rotate-180': expandedHistorialSection === 'alertas' }"
               viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
             >
@@ -161,37 +165,37 @@
                   @action="(type) => handleAlertAction(alert.id, type)"
                 />
               </div>
-              <div v-else class="text-center py-6 bg-base-200/30 rounded-2xl border border-dashed border-base-content/10">
-                <p class="text-xs font-medium text-base-content/40">Sin alertas cerradas en el historial.</p>
+              <div v-else class="text-center py-6 bg-surface-muted/30 rounded-2xl border border-dashed border-border">
+                <p class="text-xs font-medium text-text-muted">Sin alertas cerradas en el historial.</p>
               </div>
             </div>
           </Transition>
         </div>
 
         <!-- Collapsible: Historic Tasks -->
-        <div class="rounded-3xl border border-base-content/10 bg-base-100 shadow-sm overflow-hidden">
+        <div class="rounded-3xl border border-border bg-background shadow-sm overflow-hidden">
           <button
             @click="toggleHistorialSection('mareas')"
             class="w-full flex items-center justify-between p-5 text-left border-b border-transparent transition-colors"
-            :class="{ 'border-base-content/10 bg-base-200/30': expandedHistorialSection === 'mareas' }"
+            :class="{ 'border-border bg-surface-muted/30': expandedHistorialSection === 'mareas' }"
           >
             <div class="flex items-center gap-3">
-              <div class="p-2.5 bg-base-300/30 rounded-2xl border border-base-content/5">
-                <DocsIcon class="w-5 h-5 text-base-content/40" />
+              <div class="p-2.5 bg-surface-muted rounded-2xl border border-border">
+                <DocsIcon class="w-5 h-5 text-text-muted" />
               </div>
               <div>
-                <h4 class="text-sm font-black text-base-content/80 uppercase tracking-tight flex items-center gap-2">
+                <h4 class="text-sm font-black text-text/80 uppercase tracking-tight flex items-center gap-2">
                   Historial de Mareas
-                  <span class="text-[10px] px-1.5 py-0.5 rounded-lg font-black bg-base-content/10 text-base-content/60">
+                  <Badge variant="light" size="sm" class="font-black px-1.5 h-4">
                     {{ filteredTasks.length }}
-                  </span>
+                  </Badge>
                 </h4>
-                <p class="text-[10px] font-bold text-base-content/30 uppercase tracking-[0.1em]">Operaciones concluidas</p>
+                <p class="text-[10px] font-bold text-text-muted uppercase tracking-[0.1em]">Operaciones concluidas</p>
               </div>
             </div>
             <svg 
               xmlns="http://www.w3.org/2000/svg" 
-              class="w-5 h-5 text-base-content/40 transition-transform duration-300" 
+              class="w-5 h-5 text-text-muted transition-transform duration-300" 
               :class="{ 'rotate-180': expandedHistorialSection === 'mareas' }"
               viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
             >
@@ -219,23 +223,24 @@
                   @action="(key) => handleTaskAction(task.id, key)"
                 />
               </div>
-              <div v-else class="text-center py-6 bg-base-200/30 rounded-2xl border border-dashed border-base-content/10">
-                <p class="text-xs font-medium text-base-content/40">Sin mareas en el historial.</p>
+              <div v-else class="text-center py-6 bg-surface-muted/30 rounded-2xl border border-dashed border-border">
+                <p class="text-xs font-medium text-text-muted">Sin mareas en el historial.</p>
               </div>
             </div>
           </Transition>
         </div>
 
         <!-- Empty State -->
-        <div v-if="alertasHistoricas.length === 0 && filteredTasks.length === 0" class="flex flex-col items-center justify-center py-20 bg-base-200/30 rounded-[2.5rem] border border-dashed border-base-content/10">
-          <div class="p-8 bg-base-100/50 rounded-full mb-6 shadow-sm border border-base-content/5">
-            <DocsIcon class="w-12 h-12 text-base-content/10" />
+        <div v-if="alertasHistoricas.length === 0 && filteredTasks.length === 0" class="flex flex-col items-center justify-center py-20 bg-surface-muted/30 rounded-[2.5rem] border border-dashed border-border">
+          <div class="p-8 bg-background/50 rounded-full mb-6 shadow-sm border border-border">
+            <DocsIcon class="w-12 h-12 text-text/10" />
           </div>
-          <h3 class="text-xs font-black text-base-content/30 uppercase tracking-[0.2em] px-4 text-center">No hay registros historicos</h3>
-          <p class="text-[11px] text-base-content/20 mt-3 text-center max-w-xs px-6 uppercase tracking-wider font-bold">Las tareas y alertas resueltas apareceran aqui una vez gestionadas.</p>
+          <h3 class="text-xs font-black text-text-muted uppercase tracking-[0.2em] px-4 text-center">No hay registros historicos</h3>
+          <p class="text-[11px] text-text-muted/60 mt-3 text-center max-w-xs px-6 uppercase tracking-wider font-bold">Las tareas y alertas resueltas apareceran aqui una vez gestionadas.</p>
         </div>
       </div>
-<transition-group 
+
+      <transition-group 
         v-else
         name="list" 
         tag="div" 
@@ -265,7 +270,7 @@
       >
         <div 
           v-if="selectedMarea"
-          class="w-full xl:w-[400px] shrink-0 sticky top-6 bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-[2.5rem] shadow-xl overflow-hidden self-start hidden xl:block"
+          class="w-full xl:w-[400px] shrink-0 sticky top-6 bg-surface border border-border rounded-[2.5rem] shadow-xl overflow-hidden self-start hidden xl:block"
         >
           <MareaContextDetailContent 
             :marea="selectedMarea"
@@ -305,6 +310,8 @@ import InboxAlertCard from '../components/InboxAlertCard.vue'
 import MareaContextDetailContent from '../components/MareaContextDetailContent.vue'
 import RecibirArchivosDialog from '../components/RecibirArchivosDialog.vue'
 import SearchInput from '@/components/ui/SearchInput.vue'
+import Button from '@/components/ui/Button.vue'
+import Badge from '@/components/ui/Badge.vue'
 // @ts-ignore
 import AlertManagementDialog from '../../alerts/components/AlertManagementDialog.vue'
 import mareasService from '../services/mareas.service'

@@ -55,24 +55,23 @@
 
         <!-- Actions -->
         <div class="mt-6 flex flex-col sm:flex-row-reverse gap-3">
-          <button 
+          <Button 
             v-if="email"
-            type="button" 
-            class="inline-flex w-full justify-center rounded-xl bg-brand-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-500 sm:w-auto items-center gap-2"
             @click="send"
             :disabled="sending"
+            class="w-full sm:w-auto"
           >
-            <span v-if="sending" class="loading loading-spinner loading-xs"></span>
+            <LoadingSpinner v-if="sending" size="xs" class="text-white" />
             <SendIcon v-else class="w-4 h-4" />
-            Enviar Reclamo
-          </button>
-          <button 
-            type="button" 
-            class="inline-flex w-full justify-center rounded-xl bg-white dark:bg-gray-800 px-3 py-2 text-sm font-semibold text-gray-900 dark:text-gray-300 shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 sm:w-auto"
+            {{ sending ? 'Enviando...' : 'Enviar Reclamo' }}
+          </Button>
+          <Button 
+            variant="outline"
             @click="close"
+            class="w-full sm:w-auto"
           >
             {{ email ? 'Cancelar' : 'Cerrar' }}
-          </button>
+          </Button>
         </div>
       </div>
     </BaseModal>
@@ -83,6 +82,8 @@
 import { ref, watch } from 'vue'
 import BaseModal from '@/components/common/BaseModal.vue'
 import { MailIcon, WarningIcon, SendIcon } from '@/icons'
+import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
+import Button from '@/components/ui/Button.vue'
 import { useAuthStore } from '@/modules/auth/stores/auth.store'
 
 const props = defineProps<{

@@ -1,23 +1,23 @@
 <template>
-  <div class="flex flex-col h-full overflow-hidden bg-white dark:bg-gray-950">
+  <div class="flex flex-col h-full overflow-hidden bg-background">
     <!-- Header -->
-    <div class="p-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between bg-gray-50/50 dark:bg-gray-900/50 shrink-0">
+    <div class="p-4 border-b border-border flex items-center justify-between bg-surface-muted/50 shrink-0">
       <div class="flex-1 min-w-0">
-        <h3 class="text-lg font-black text-gray-900 dark:text-white truncate leading-tight">
+        <h3 class="text-lg font-black text-text truncate leading-tight">
           {{ mareaTitle }}
         </h3>
         <div class="flex items-center gap-2 mt-0.5">
            <div class="px-1.5 py-0.5 bg-brand-500/10 rounded text-[10px] font-mono font-bold text-brand-600 dark:text-brand-400 uppercase tracking-wider">
              {{ mareaCode }}
            </div>
-           <span class="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest truncate">
+           <span class="text-[10px] font-black text-text-muted uppercase tracking-widest truncate">
              {{ marea.observador }}
            </span>
         </div>
       </div>
       <button 
         @click="$emit('close')"
-        class="p-2 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-xl transition-all text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+        class="p-2 hover:bg-surface-muted rounded-xl transition-all text-text-muted hover:text-text"
       >
         <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -29,15 +29,15 @@
     <div class="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-8">
       <!-- Loading State -->
       <div v-if="!context" class="flex flex-col items-center py-20">
-        <div class="loading loading-spinner text-brand-500"></div>
-        <span class="text-xs text-gray-400 mt-4 font-bold uppercase tracking-widest">Cargando contexto...</span>
+        <LoadingSpinner size="lg" class="text-primary" />
+        <span class="text-xs text-text-muted mt-4 font-bold uppercase tracking-widest">Cargando contexto...</span>
       </div>
 
       <template v-else>
         <!-- 1. Stats & Progress -->
         <section class="space-y-6">
           <div class="flex items-center justify-between">
-            <h4 class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Estado & Progreso</h4>
+            <h4 class="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted">Estado & Progreso</h4>
             <span
               class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter shadow-sm"
               :class="getStatusClasses(context.marea.estado_codigo)"
@@ -49,31 +49,31 @@
           <!-- Progress Bar -->
           <div class="space-y-2">
             <div class="flex justify-between items-end">
-              <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Avance Estimado</span>
-              <span class="text-xs font-black text-brand-500">{{ marea.progreso }}%</span>
+              <span class="text-[10px] font-bold text-text-muted uppercase tracking-widest">Avance Estimado</span>
+              <span class="text-xs font-black text-primary">{{ marea.progreso }}%</span>
             </div>
-            <div class="h-2 w-full bg-gray-100 dark:bg-gray-900 rounded-full overflow-hidden border border-gray-50 dark:border-gray-800">
+            <div class="h-2 w-full bg-surface-muted rounded-full overflow-hidden border border-border">
               <div 
-                class="h-full transition-all duration-1000 ease-out shadow-[0_0_12px_rgba(59,130,246,0.3)]"
-                :class="marea.progreso > 100 ? 'bg-error-500' : 'bg-brand-500'"
+                class="h-full transition-all duration-1000 ease-out"
+                :class="marea.progreso > 100 ? 'bg-error' : 'bg-primary'"
                 :style="{ width: marea.progreso + '%' }"
               ></div>
             </div>
           </div>
 
           <div class="grid grid-cols-2 gap-3">
-            <div class="bg-gray-50/50 dark:bg-gray-900/50 border border-gray-100 dark:border-gray-800/60 p-4 rounded-2xl hover:bg-white dark:hover:bg-gray-900 transition-colors group">
-              <p class="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1 group-hover:text-brand-500 transition-colors">Días Marea</p>
+            <div class="bg-surface-muted/50 border border-border p-4 rounded-2xl hover:bg-surface transition-colors group">
+              <p class="text-[9px] font-bold text-text-muted uppercase tracking-widest mb-1 group-hover:text-primary transition-colors">Días Marea</p>
               <div class="flex items-baseline gap-1">
-                <span class="text-2xl font-black text-gray-800 dark:text-gray-100">{{ context.marea.dias_marea }}</span>
-                <span class="text-[10px] font-bold text-gray-400">días</span>
+                <span class="text-2xl font-black text-text">{{ context.marea.dias_marea }}</span>
+                <span class="text-[10px] font-bold text-text-muted">días</span>
               </div>
             </div>
-            <div class="bg-gray-50/50 dark:bg-gray-900/50 border border-gray-100 dark:border-gray-800/60 p-4 rounded-2xl hover:bg-white dark:hover:bg-gray-900 transition-colors group">
-              <p class="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1 group-hover:text-brand-500 transition-colors">Días Nav.</p>
+            <div class="bg-surface-muted/50 border border-border p-4 rounded-2xl hover:bg-surface transition-colors group">
+              <p class="text-[9px] font-bold text-text-muted uppercase tracking-widest mb-1 group-hover:text-primary transition-colors">Días Nav.</p>
               <div class="flex items-baseline gap-1">
-                <span class="text-2xl font-black text-gray-800 dark:text-gray-100">{{ context.marea.dias_navegados }}</span>
-                <span class="text-[10px] font-bold text-gray-400">días</span>
+                <span class="text-2xl font-black text-text">{{ context.marea.dias_navegados }}</span>
+                <span class="text-[10px] font-bold text-text-muted">días</span>
               </div>
             </div>
           </div>
@@ -217,18 +217,18 @@
     </div>
 
     <!-- Footer Actions -->
-    <div class="p-6 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/50 space-y-3 shrink-0">
+    <div class="p-6 border-t border-border bg-surface-muted/50 space-y-3 shrink-0">
       <button 
         v-if="!readOnly"
         @click="$emit('open-detalle')"
-        class="w-full py-3.5 bg-brand-500 hover:bg-brand-600 text-white rounded-2xl text-sm font-bold shadow-xl shadow-brand-500/20 transition-all hover:-translate-y-0.5 active:scale-[0.98] flex items-center justify-center gap-2"
+        class="w-full py-3.5 bg-primary hover:bg-primary-hover text-primary-fg rounded-2xl text-sm font-bold shadow-xl shadow-primary/20 transition-all hover:-translate-y-0.5 active:scale-[0.98] flex items-center justify-center gap-2"
       >
         <DocsIcon class="w-4 h-4" />
         Editar Detalles Completos
       </button>
       <button 
         @click="$emit('close')"
-        class="w-full py-3 text-gray-500 dark:text-gray-400 text-xs font-bold hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+        class="w-full py-3 text-text-muted text-xs font-bold hover:text-text transition-colors"
       >
         Cerrar Panel
       </button>
@@ -238,6 +238,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 import { 
   ChevronRightIcon, 
   LockIcon, 
