@@ -72,15 +72,15 @@ const statClasses = computed(() => {
   const classes: string[] = []
 
   if (props.variant === 'bordered') {
-    classes.push('border border-gray-200 dark:border-gray-800 rounded-2xl p-6')
+    classes.push('border border-border rounded-2xl p-6 transition-all')
   } else if (props.variant === 'filled') {
     const colorMap = {
-      primary: 'bg-brand-50 dark:bg-brand-900/20',
-      secondary: 'bg-gray-50 dark:bg-gray-900/20',
-      success: 'bg-success-50 dark:bg-success-900/20',
-      error: 'bg-error-50 dark:bg-error-900/20',
-      warning: 'bg-warning-50 dark:bg-warning-900/20',
-      info: 'bg-info-50 dark:bg-info-900/20',
+      primary: 'bg-primary/10 text-primary border border-primary/20',
+      secondary: 'bg-surface text-text border border-border',
+      success: 'bg-green-500/10 text-green-700 border border-green-500/20',
+      error: 'bg-red-500/10 text-red-700 border border-red-500/20',
+      warning: 'bg-orange-500/10 text-orange-700 border border-orange-500/20',
+      info: 'bg-primary/10 text-primary border border-primary/20',
     }
     classes.push(colorMap[props.color], 'rounded-2xl p-6')
   }
@@ -90,12 +90,12 @@ const statClasses = computed(() => {
 
 const figureClasses = computed(() => {
   const colorMap = {
-    primary: 'text-brand-500',
-    secondary: 'text-gray-500',
-    success: 'text-success-500',
-    error: 'text-error-500',
-    warning: 'text-warning-500',
-    info: 'text-info-500',
+    primary: 'text-primary',
+    secondary: 'text-text-muted',
+    success: 'text-green-500',
+    error: 'text-red-500',
+    warning: 'text-orange-500',
+    info: 'text-primary',
   }
   return colorMap[props.color]
 })
@@ -110,7 +110,7 @@ const iconClasses = computed(() => {
 })
 
 const titleClasses = computed(() => {
-  return 'text-gray-500 dark:text-gray-400'
+  return 'text-text-muted'
 })
 
 const valueClasses = computed(() => {
@@ -120,34 +120,34 @@ const valueClasses = computed(() => {
     lg: 'text-4xl',
   }
   const trendMap = {
-    up: 'text-success-600 dark:text-success-400',
-    down: 'text-error-600 dark:text-error-400',
-    neutral: 'text-gray-800 dark:text-white',
+    up: 'text-green-600 dark:text-green-400',
+    down: 'text-red-600 dark:text-red-400',
+    neutral: 'text-text',
   }
   return `${sizeMap[props.size]} font-bold ${trendMap[props.trend]}`
 })
 
 const descClasses = computed(() => {
   const trendMap = {
-    up: 'text-success-600 dark:text-success-400',
-    down: 'text-error-600 dark:text-error-400',
-    neutral: 'text-gray-500 dark:text-gray-400',
+    up: 'text-green-600 dark:text-green-400',
+    down: 'text-red-600 dark:text-red-400',
+    neutral: 'text-text-muted',
   }
   return `text-sm ${trendMap[props.trend]}`
 })
 
 const progressContainerClasses = computed(() => {
-  return 'h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden'
+  return 'h-2 bg-border/40 rounded-full overflow-hidden'
 })
 
 const progressBarClasses = computed(() => {
   const colorMap = {
-    primary: 'bg-brand-500',
-    secondary: 'bg-gray-500',
-    success: 'bg-success-500',
-    error: 'bg-error-500',
-    warning: 'bg-warning-500',
-    info: 'bg-info-500',
+    primary: 'bg-primary',
+    secondary: 'bg-text-muted',
+    success: 'bg-green-500',
+    error: 'bg-red-500',
+    warning: 'bg-orange-500',
+    info: 'bg-primary',
   }
   return `${colorMap[props.progressColor]} transition-all duration-300`
 })
