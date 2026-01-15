@@ -275,6 +275,15 @@ const router = createRouter({
         requiresAuth: true
       }
     },
+    {
+      path: '/ui-demo',
+      name: 'UIDemo',
+      component: () => import('@/modules/shared/views/UIDemoView.vue'),
+      meta: {
+        title: 'Guía de Estilos',
+        requiresAuth: true,
+      },
+    },
   ],
 })
 
