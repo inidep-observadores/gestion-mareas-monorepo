@@ -101,14 +101,51 @@
             </div>
          </div>
       </section>
+
+      <!-- Sección Componentes Avanzados -->
+      <section class="bg-surface border border-border p-6 rounded-2xl shadow-sm md:col-span-2">
+        <h3 class="text-lg font-bold mb-4 text-primary border-b border-border pb-2">Componentes Personalizados (Semánticos)</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <!-- Search Input -->
+          <div class="space-y-3">
+            <p class="text-xs font-bold text-text-muted uppercase tracking-wider">Búsqueda Dinámica</p>
+            <SearchInput v-model="searchText" placeholder="Buscar algo..." />
+            <p class="text-[10px] text-text-muted italic">Escribe para probar el botón de limpiar.</p>
+          </div>
+          
+          <!-- Searchable Select -->
+          <div class="space-y-3">
+            <p class="text-xs font-bold text-text-muted uppercase tracking-wider">Selector Buscable</p>
+            <SearchableSelect 
+              v-model="selectValue" 
+              :options="demoOptions" 
+              placeholder="Seleccionar categoría..."
+              :icon="BoxIcon"
+            />
+            <p class="text-[10px] text-text-muted italic">Prueba el dropdown con scroll y hover semántico.</p>
+          </div>
+
+          <!-- Date Picker -->
+          <div class="space-y-3">
+            <p class="text-xs font-bold text-text-muted uppercase tracking-wider">Selector de Fecha</p>
+            <DatePicker v-model="dateValue" placeholder="Elegir fecha" :icon="CalenderIcon" />
+            <p class="text-[10px] text-text-muted italic">Verifica el calendario y colores de selección.</p>
+          </div>
+        </div>
+      </section>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue'
 import { useThemeStore, type ColorTheme } from '@/modules/shared/stores/theme.store'
 import Button from '@/components/ui/Button.vue'
 import Badge from '@/components/ui/Badge.vue'
+import SearchInput from '@/components/ui/SearchInput.vue'
+import SearchableSelect from '@/components/common/SearchableSelect.vue'
+import DatePicker from '@/components/common/DatePicker.vue'
+import { BoxIcon, CalenderIcon } from '@/icons'
 import { SunIcon, MoonIcon } from 'lucide-vue-next'
 
 const themeStore = useThemeStore()
@@ -117,5 +154,17 @@ const colors: { id: ColorTheme; name: string }[] = [
     { id: 'blue', name: 'Azul (Base)' },
     { id: 'green', name: 'Verde (Formal)' },
     { id: 'orange', name: 'Naranja (Fun)' }
+]
+
+// Estado para componentes demo
+const searchText = ref('')
+const selectValue = ref(null)
+const dateValue = ref(new Date().toISOString())
+
+const demoOptions = [
+    { value: 1, label: 'Panel Operativo' },
+    { value: 2, label: 'Lista de Mareas' },
+    { value: 3, label: 'Exportación de Datos' },
+    { value: 4, label: 'Configuración de Sistema' },
 ]
 </script>
