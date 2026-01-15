@@ -7,7 +7,7 @@
           {{ mareaTitle }}
         </h3>
         <div class="flex items-center gap-2 mt-0.5">
-           <div class="px-1.5 py-0.5 bg-brand-500/10 rounded text-[10px] font-mono font-bold text-brand-600 dark:text-brand-400 uppercase tracking-wider">
+           <div class="px-1.5 py-0.5 bg-primary/10 rounded text-[10px] font-mono font-bold text-primary uppercase tracking-wider">
              {{ mareaCode }}
            </div>
            <span class="text-[10px] font-black text-text-muted uppercase tracking-widest truncate">
@@ -82,43 +82,43 @@
         <!-- 2. Logistics Section -->
         <section class="space-y-4">
           <div class="flex items-center justify-between">
-            <h4 class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Logística de Operación</h4>
-            <span class="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-[9px] font-bold text-gray-500 uppercase tracking-tighter">
+            <h4 class="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted">Logística de Operación</h4>
+            <span class="px-2 py-0.5 bg-surface-muted rounded text-[9px] font-bold text-text-muted uppercase tracking-tighter">
               {{ countEtapas }} {{ countEtapas === 1 ? 'Etapa' : 'Etapas' }}
             </span>
           </div>
           
-          <div class="bg-indigo-50/30 dark:bg-indigo-500/5 border border-indigo-100/50 dark:border-indigo-500/10 rounded-2xl p-5 space-y-4 relative overflow-hidden">
+          <div class="bg-primary/5 border border-primary/20 rounded-2xl p-5 space-y-4 relative overflow-hidden">
             <!-- Indicador En Tierra -->
-            <div v-if="isEnTierra" class="absolute top-0 right-0 px-3 py-1 bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 text-[10px] font-black uppercase tracking-tighter rounded-bl-xl border-l border-b border-emerald-100 dark:border-emerald-500/20 z-10 flex items-center gap-1.5">
+            <div v-if="isEnTierra" class="absolute top-0 right-0 px-3 py-1 bg-success/10 text-success text-[10px] font-black uppercase tracking-tighter rounded-bl-xl border-l border-b border-success/20 z-10 flex items-center gap-1.5">
               <span class="flex h-1.5 w-1.5 relative">
-                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-success"></span>
               </span>
               En Tierra
             </div>
 
             <div class="flex items-center gap-4">
-              <div class="p-2.5 bg-white dark:bg-gray-900 rounded-xl shadow-sm text-indigo-500 shrink-0">
+              <div class="p-2.5 bg-surface rounded-xl shadow-sm text-primary shrink-0">
                 <ShipIcon class="w-4 h-4" />
               </div>
               <div class="flex-1 min-w-0">
-                <p class="text-[9px] font-bold text-indigo-400 uppercase tracking-widest mb-0.5">Zarpada Confirmada</p>
-                <p class="text-sm font-black text-gray-700 dark:text-gray-300 truncate">
-                  {{ formatDate(marea.fecha_zarpada) }} <span class="mx-1 text-indigo-300 dark:text-indigo-500/50">en</span> {{ puertoZarpada }}
+                <p class="text-[9px] font-bold text-primary uppercase tracking-widest mb-0.5">Zarpada Confirmada</p>
+                <p class="text-sm font-black text-text truncate">
+                  {{ formatDate(marea.fecha_zarpada) }} <span class="mx-1 text-primary/60">en</span> {{ puertoZarpada }}
                 </p>
               </div>
             </div>
 
             <!-- Arribo Final (Condicional) -->
-            <div v-if="finalArribo" class="flex items-center gap-4 pt-4 border-t border-indigo-100/30 dark:border-indigo-500/10">
-              <div class="p-2.5 bg-white dark:bg-gray-900 rounded-xl shadow-sm text-indigo-500 shrink-0">
+            <div v-if="finalArribo" class="flex items-center gap-4 pt-4 border-t border-primary/10">
+              <div class="p-2.5 bg-surface rounded-xl shadow-sm text-primary shrink-0">
                 <MapPinIcon class="w-4 h-4" />
               </div>
               <div class="flex-1 min-w-0">
-                <p class="text-[9px] font-bold text-indigo-400 uppercase tracking-widest mb-0.5">Arribo Final</p>
-                <p class="text-sm font-black text-gray-700 dark:text-gray-300 truncate">
-                  {{ formatDate(finalArribo.fechaArribo) }} <span class="mx-1 text-indigo-300 dark:text-indigo-500/50">en</span> {{ finalArribo.puertoArriboNombre }}
+                <p class="text-[9px] font-bold text-primary uppercase tracking-widest mb-0.5">Arribo Final</p>
+                <p class="text-sm font-black text-text truncate">
+                  {{ formatDate(finalArribo.fechaArribo) }} <span class="mx-1 text-primary/60">en</span> {{ finalArribo.puertoArriboNombre }}
                 </p>
               </div>
             </div>
@@ -144,27 +144,27 @@
               <div class="flex items-center gap-4">
                 <div 
                   class="p-2 rounded-xl transition-colors"
-                  :class="action.enabled ? 'bg-brand-50 dark:bg-brand-500/10 text-brand-500' : 'bg-gray-100 dark:bg-gray-800 text-gray-400'"
+                  :class="action.enabled ? 'bg-primary/10 text-primary' : 'bg-surface-muted text-text-muted'"
                 >
                   <component :is="getActionIcon(key)" class="w-4 h-4" />
                 </div>
                 <div class="text-left">
                   <p class="text-sm font-bold">{{ action.label }}</p>
-                  <p v-if="!action.enabled" class="text-[10px] font-medium text-gray-400 mt-0.5">{{ action.blockedReason }}</p>
+                  <p v-if="!action.enabled" class="text-[10px] font-medium text-text-muted mt-0.5">{{ action.blockedReason }}</p>
                 </div>
               </div>
-              <ChevronRightIcon v-if="action.enabled" class="w-4 h-4 transition-transform group-hover:translate-x-1 text-gray-300" />
-              <LockIcon v-else class="w-3.5 h-3.5 text-gray-300" />
+              <ChevronRightIcon v-if="action.enabled" class="w-4 h-4 transition-transform group-hover:translate-x-1 text-text-muted/40" />
+              <LockIcon v-else class="w-3.5 h-3.5 text-text-muted/40" />
             </button>
           </div>
         </section>
 
         <!-- 4. Active Alerts -->
         <section v-if="marea?.alertas?.length" class="space-y-4">
-          <h4 class="text-[10px] font-black uppercase tracking-[0.2em] text-error-500 flex items-center gap-2">
+          <h4 class="text-[10px] font-black uppercase tracking-[0.2em] text-error flex items-center gap-2">
             <span class="flex h-2 w-2 relative">
-              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-error-400 opacity-75"></span>
-              <span class="relative inline-flex rounded-full h-2 w-2 bg-error-500"></span>
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-error/40 opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-2 w-2 bg-error"></span>
             </span>
             Alertas Críticas
           </h4>
@@ -172,17 +172,17 @@
             <div 
               v-for="alerta in marea.alertas" 
               :key="alerta.id"
-              class="p-4 bg-error-50 dark:bg-error-500/5 border border-error-100 dark:border-error-500/10 rounded-2xl relative overflow-hidden group"
+              class="p-4 bg-error/5 border border-error/20 rounded-2xl relative overflow-hidden group"
             >
               <div class="absolute top-0 right-0 p-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                <WarningIcon class="w-12 h-12 text-error-500/10 -mr-4 -mt-4 rotate-12" />
+                <WarningIcon class="w-12 h-12 text-error/10 -mr-4 -mt-4 rotate-12" />
               </div>
-              <p class="text-xs font-black text-error-700 dark:text-error-400 uppercase tracking-tight">{{ alerta.titulo }}</p>
-              <p class="text-[11px] text-error-600/80 dark:text-error-500/80 mt-1 leading-relaxed">{{ alerta.descripcion }}</p>
+              <p class="text-xs font-black text-error uppercase tracking-tight">{{ alerta.titulo }}</p>
+              <p class="text-[11px] text-error/80 mt-1 leading-relaxed">{{ alerta.descripcion }}</p>
               <div v-if="!readOnly" class="flex justify-end mt-4">
                 <button 
                   @click="$emit('manage-alert', alerta)"
-                  class="px-4 py-2 bg-error-500 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-error-600 transition-all shadow-lg shadow-error-500/20 active:scale-95 flex items-center gap-2"
+                  class="px-4 py-2 bg-error text-error-fg text-[10px] font-black uppercase tracking-widest rounded-xl hover:opacity-90 transition-all shadow-lg shadow-error/20 active:scale-95 flex items-center gap-2"
                 >
                   Gestionar
                   <ChevronRightIcon class="w-3 h-3" />
@@ -195,19 +195,19 @@
         <!-- 5. Quick Timeline -->
         <section class="space-y-4 pb-4">
           <div class="flex items-center justify-between">
-            <h4 class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Actividad Reciente</h4>
-            <HistoryIcon class="w-4 h-4 text-gray-300" />
+            <h4 class="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted">Actividad Reciente</h4>
+            <HistoryIcon class="w-4 h-4 text-text-muted/40" />
           </div>
           <div class="relative pl-6 space-y-6">
-            <div class="absolute left-[7px] top-2 bottom-2 w-[1px] bg-gray-100 dark:bg-gray-800"></div>
+            <div class="absolute left-[7px] top-2 bottom-2 w-[1px] bg-border"></div>
             <div v-for="event in context.lastEvents" :key="event.id" class="relative group">
-              <div class="absolute -left-[23px] top-1.5 w-2 h-2 rounded-full border-2 border-white dark:border-gray-950 bg-brand-500 z-10 transition-transform group-hover:scale-125"></div>
+              <div class="absolute -left-[23px] top-1.5 w-2 h-2 rounded-full border-2 border-surface bg-primary z-10 transition-transform group-hover:scale-125"></div>
               <div>
-                <p class="text-[11px] font-bold text-gray-700 dark:text-gray-200">{{ event.titulo }}</p>
+                <p class="text-[11px] font-bold text-text">{{ event.titulo }}</p>
                 <div class="flex items-center gap-2 mt-0.5">
-                  <span class="text-[10px] text-gray-400 font-mono">{{ formatDate(event.fecha) }}</span>
-                  <span class="w-1 h-1 rounded-full bg-gray-200 dark:bg-gray-700"></span>
-                  <span class="text-[10px] text-brand-500 font-bold uppercase tracking-tighter">{{ event.usuario }}</span>
+                  <span class="text-[10px] text-text-muted font-mono">{{ formatDate(event.fecha) }}</span>
+                  <span class="w-1 h-1 rounded-full bg-border"></span>
+                  <span class="text-[10px] text-primary font-bold uppercase tracking-tighter">{{ event.usuario }}</span>
                 </div>
               </div>
             </div>
@@ -324,19 +324,19 @@ const puertoZarpada = computed(() => {
 })
 
 const getStatusClasses = (status?: string) => {
-  if (!status) return 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400'
+  if (!status) return 'bg-surface-muted text-text-muted'
   
   const s = status.toUpperCase()
   if (s.includes('NAVEGANDO'))
-    return 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400'
+    return 'bg-info/10 text-info'
   if (s.includes('ESPERANDO') || s.includes('ZARPADA') || s.includes('DESIGNADA'))
-    return 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400'
+    return 'bg-warning/10 text-warning'
   if (s.includes('BLOQUEADA') || s.includes('ERROR'))
-    return 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400'
+    return 'bg-error/10 text-error'
   if (s.includes('ARRIBADA') || s.includes('FINAL'))
-    return 'bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400'
+    return 'bg-success/10 text-success'
   
-  return 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400'
+  return 'bg-surface-muted text-text-muted'
 }
 
 const getActionIcon = (key: string | number) => {

@@ -7,7 +7,7 @@
 
       <!-- Filtros Compactos ( Airport Board Style ) -->
       <div class="flex flex-wrap items-center gap-3 mb-6">
-        <span class="text-[10px] font-black uppercase tracking-widest text-gray-400 dark:text-gray-500 mr-2">
+        <span class="text-[10px] font-black uppercase tracking-widest text-text-muted mr-2">
           Filtrar por estado:
         </span>
         <StatusFilterChip
@@ -28,13 +28,13 @@
         <!-- Main Board -->
         <div class="flex-1 w-full min-w-0 transition-all duration-300">
           <div
-            class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl overflow-hidden shadow-sm"
+            class="bg-surface border border-border rounded-2xl overflow-hidden shadow-sm"
           >
             <div
-              class="py-3 px-5 border-b border-gray-100 dark:border-gray-800 flex flex-col sm:flex-row items-center justify-between gap-4 bg-gray-50/30 dark:bg-gray-900/30"
+              class="py-3 px-5 border-b border-border flex flex-col sm:flex-row items-center justify-between gap-4 bg-surface-muted/30"
             >
-              <h2 class="font-black text-gray-800 dark:text-white flex items-center gap-2">
-                <div class="w-2 h-2 rounded-full bg-brand-500 animate-pulse"></div>
+              <h2 class="font-black text-text flex items-center gap-2">
+                <div class="w-2 h-2 rounded-full bg-primary animate-pulse"></div>
                 Mareas Activas
               </h2>
               <div class="flex flex-wrap items-center gap-3 w-full sm:w-auto">
@@ -45,7 +45,7 @@
                 <button
                   v-if="!isReadOnly"
                   @click="router.push('/mareas/nueva')"
-                  class="flex items-center justify-center gap-2 px-4 py-2 bg-brand-500 text-white rounded-xl text-sm font-bold hover:bg-brand-600 transition-all shadow-lg shadow-brand-500/10 active:scale-95"
+                  class="flex items-center justify-center gap-2 px-4 py-2 bg-primary text-primary-fg rounded-xl text-sm font-bold hover:bg-primary-hover transition-all shadow-lg shadow-primary/20 active:scale-95"
                 >
                   <PlusIcon class="w-4 h-4" />
                   Nueva Marea
@@ -57,7 +57,7 @@
               <!-- Loading State -->
               <div v-if="loading" class="flex items-center justify-center h-full py-20 flex-col">
                 <LoadingSpinner size="xl" class="text-primary" />
-                <span class="mt-4 text-gray-500 font-bold">Cargando operaciones...</span>
+                <span class="mt-4 text-text-muted font-bold">Cargando operaciones...</span>
               </div>
 
               <template v-else-if="filteredMareas.length > 0">
@@ -67,11 +67,11 @@
                     v-for="marea in filteredMareas"
                     :key="marea.id"
                     @click="openSidebar(marea)"
-                    class="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-4 shadow-sm active:scale-[0.98] transition-all hover:border-brand-500/50"
+                    class="bg-surface border border-border rounded-2xl p-4 shadow-sm active:scale-[0.98] transition-all hover:border-primary/50"
                   >
                     <!-- Header Tarjeta -->
                     <div class="flex justify-between items-start mb-3">
-                      <span class="text-[10px] font-mono font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest bg-gray-50 dark:bg-gray-800 px-2 py-0.5 rounded">
+                      <span class="text-[10px] font-mono font-black text-text-muted/60 uppercase tracking-widest bg-surface-muted px-2 py-0.5 rounded">
                         {{ marea.id_marea }}
                       </span>
                       <div class="flex flex-col items-end gap-1">
@@ -81,8 +81,8 @@
                         >
                           {{ marea.estado }}
                         </span>
-                        <span v-if="marea.en_tierra" class="px-2 py-0.5 bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 rounded-full text-[8px] font-black uppercase tracking-tighter whitespace-nowrap flex items-center gap-1 border border-emerald-100 dark:border-emerald-500/20">
-                          <div class="w-1 h-1 rounded-full bg-emerald-500 animate-pulse"></div>
+                        <span v-if="marea.en_tierra" class="px-2 py-0.5 bg-success/10 text-success rounded-full text-[8px] font-black uppercase tracking-tighter whitespace-nowrap flex items-center gap-1 border border-success/20">
+                          <div class="w-1 h-1 rounded-full bg-success animate-pulse"></div>
                           En Tierra
                         </span>
                       </div>
@@ -91,31 +91,31 @@
                     <!-- Datos Principales -->
                     <div class="mb-3">
                       <div class="flex items-center gap-2 mb-1">
-                        <ShipIcon class="w-3.5 h-3.5 text-brand-500" />
-                        <h4 class="text-sm font-black text-gray-900 dark:text-gray-100">{{ marea.buque_nombre }}</h4>
+                        <ShipIcon class="w-3.5 h-3.5 text-primary" />
+                        <h4 class="text-sm font-black text-text">{{ marea.buque_nombre }}</h4>
                       </div>
-                      <p class="text-xs font-bold text-gray-500 truncate">{{ marea.observador || 'No asignado' }}</p>
+                      <p class="text-xs font-bold text-text-muted truncate">{{ marea.observador || 'No asignado' }}</p>
                     </div>
 
                     <!-- Info Operativa -->
-                    <div class="flex items-center justify-between gap-4 pt-3 border-t border-gray-50 dark:border-gray-800/50">
+                    <div class="flex items-center justify-between gap-4 pt-3 border-t border-border">
                       <div class="flex-1">
                         <div class="flex justify-between items-center mb-1">
-                          <span class="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Progreso</span>
-                          <span class="text-[10px] font-black" :class="marea.progreso > 100 ? 'text-error-500' : 'text-brand-500'">{{ marea.progreso }}%</span>
+                          <span class="text-[9px] font-bold text-text-muted uppercase tracking-widest">Progreso</span>
+                          <span class="text-[10px] font-black" :class="marea.progreso > 100 ? 'text-error' : 'text-primary'">{{ marea.progreso }}%</span>
                         </div>
-                        <div class="h-1.5 w-full bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                        <div class="h-1.5 w-full bg-surface-muted rounded-full overflow-hidden">
                           <div 
                             class="h-full transition-all duration-1000"
-                            :class="marea.progreso > 100 ? 'bg-error-500' : 'bg-brand-500'"
+                            :class="marea.progreso > 100 ? 'bg-error' : 'bg-primary'"
                             :style="{ width: marea.progreso + '%' }"
                           ></div>
                         </div>
                       </div>
                       
-                      <div v-if="marea.alertas?.length" class="flex items-center gap-1.5 px-2 py-1 bg-error-50 dark:bg-error-500/10 rounded-lg shrink-0">
-                        <WarningIcon class="w-3 h-3 text-error-500" />
-                        <span class="text-[10px] font-black text-error-600 dark:text-error-400">{{ marea.alertas.length }}</span>
+                      <div v-if="marea.alertas?.length" class="flex items-center gap-1.5 px-2 py-1 bg-error/10 rounded-lg shrink-0">
+                        <WarningIcon class="w-3 h-3 text-error" />
+                        <span class="text-[10px] font-black text-error">{{ marea.alertas.length }}</span>
                       </div>
                     </div>
                   </div>
@@ -124,70 +124,70 @@
                 <!-- VISTA ESCRITORIO: TABLA (Oculta en móviles) -->
                 <div class="hidden xl:block overflow-x-auto">
                   <table class="w-full text-left">
-                    <thead class="bg-gray-50/50 dark:bg-gray-800/50 text-[10px] font-black uppercase tracking-widest text-gray-400 dark:text-gray-500 border-b border-gray-100 dark:border-gray-800">
+                    <thead class="bg-surface-muted/50 text-[10px] font-black uppercase tracking-widest text-text-muted border-b border-border">
                       <tr>
-                        <th @click="toggleSort('id_marea')" class="px-4 py-2 w-28 cursor-pointer hover:text-brand-500 transition-colors group">
+                        <th @click="toggleSort('id_marea')" class="px-4 py-2 w-28 cursor-pointer hover:text-primary transition-colors group">
                           <div class="flex items-center gap-1">
                             Marea
-                            <ChevronDownIcon v-if="sortBy === 'id_marea'" class="w-3 h-3 text-brand-500 transition-transform duration-300" :class="{ 'rotate-180': sortOrder === 'asc' }" />
+                            <ChevronDownIcon v-if="sortBy === 'id_marea'" class="w-3 h-3 text-primary transition-transform duration-300" :class="{ 'rotate-180': sortOrder === 'asc' }" />
                           </div>
                         </th>
-                        <th @click="toggleSort('buque_nombre')" class="px-5 py-2 cursor-pointer hover:text-brand-500 transition-colors group">
+                        <th @click="toggleSort('buque_nombre')" class="px-5 py-2 cursor-pointer hover:text-primary transition-colors group">
                           <div class="flex items-center gap-1">
                             Buque
-                            <ChevronDownIcon v-if="sortBy === 'buque_nombre'" class="w-3 h-3 text-brand-500 transition-transform duration-300" :class="{ 'rotate-180': sortOrder === 'asc' }" />
+                            <ChevronDownIcon v-if="sortBy === 'buque_nombre'" class="w-3 h-3 text-primary transition-transform duration-300" :class="{ 'rotate-180': sortOrder === 'asc' }" />
                           </div>
                         </th>
-                        <th v-if="!selectedMarea" @click="toggleSort('estado')" class="px-5 py-2 cursor-pointer hover:text-brand-500 transition-colors group">
+                        <th v-if="!selectedMarea" @click="toggleSort('estado')" class="px-5 py-2 cursor-pointer hover:text-primary transition-colors group">
                           <div class="flex items-center gap-1">
                             Estado Operativo
-                            <ChevronDownIcon v-if="sortBy === 'estado'" class="w-3 h-3 text-brand-500 transition-transform duration-300" :class="{ 'rotate-180': sortOrder === 'asc' }" />
+                            <ChevronDownIcon v-if="sortBy === 'estado'" class="w-3 h-3 text-primary transition-transform duration-300" :class="{ 'rotate-180': sortOrder === 'asc' }" />
                           </div>
                         </th>
-                        <th v-if="!selectedMarea" @click="toggleSort('fecha_zarpada')" class="px-5 py-2 cursor-pointer hover:text-brand-500 transition-colors group">
+                        <th v-if="!selectedMarea" @click="toggleSort('fecha_zarpada')" class="px-5 py-2 cursor-pointer hover:text-primary transition-colors group">
                           <div class="flex items-center gap-1">
                             Zarpada
-                            <ChevronDownIcon v-if="sortBy === 'fecha_zarpada'" class="w-3 h-3 text-brand-500 transition-transform duration-300" :class="{ 'rotate-180': sortOrder === 'asc' }" />
+                            <ChevronDownIcon v-if="sortBy === 'fecha_zarpada'" class="w-3 h-3 text-primary transition-transform duration-300" :class="{ 'rotate-180': sortOrder === 'asc' }" />
                           </div>
                         </th>
-                        <th v-if="!selectedMarea" @click="toggleSort('progreso')" class="px-5 py-2 cursor-pointer hover:text-brand-500 transition-colors group">
+                        <th v-if="!selectedMarea" @click="toggleSort('progreso')" class="px-5 py-2 cursor-pointer hover:text-primary transition-colors group">
                           <div class="flex items-center gap-1">
                             Progreso
-                            <ChevronDownIcon v-if="sortBy === 'progreso'" class="w-3 h-3 text-brand-500 transition-transform duration-300" :class="{ 'rotate-180': sortOrder === 'asc' }" />
+                            <ChevronDownIcon v-if="sortBy === 'progreso'" class="w-3 h-3 text-primary transition-transform duration-300" :class="{ 'rotate-180': sortOrder === 'asc' }" />
                           </div>
                         </th>
-                        <th v-if="!selectedMarea" @click="toggleSort('alertas')" class="px-5 py-2 cursor-pointer hover:text-brand-500 transition-colors group">
+                        <th v-if="!selectedMarea" @click="toggleSort('alertas')" class="px-5 py-2 cursor-pointer hover:text-primary transition-colors group">
                           <div class="flex items-center gap-1">
                             Alertas
-                            <ChevronDownIcon v-if="sortBy === 'alertas'" class="w-3 h-3 text-brand-500 transition-transform duration-300" :class="{ 'rotate-180': sortOrder === 'asc' }" />
+                            <ChevronDownIcon v-if="sortBy === 'alertas'" class="w-3 h-3 text-primary transition-transform duration-300" :class="{ 'rotate-180': sortOrder === 'asc' }" />
                           </div>
                         </th>
-                        <th v-if="selectedMarea" @click="toggleSort('observador')" class="px-5 py-2 cursor-pointer hover:text-brand-500 transition-colors group">
+                        <th v-if="selectedMarea" @click="toggleSort('observador')" class="px-5 py-2 cursor-pointer hover:text-primary transition-colors group">
                           <div class="flex items-center gap-1">
                             Observador
-                            <ChevronDownIcon v-if="sortBy === 'observador'" class="w-3 h-3 text-brand-500 transition-transform duration-300" :class="{ 'rotate-180': sortOrder === 'asc' }" />
+                            <ChevronDownIcon v-if="sortBy === 'observador'" class="w-3 h-3 text-primary transition-transform duration-300" :class="{ 'rotate-180': sortOrder === 'asc' }" />
                           </div>
                         </th>
                         <th class="px-5 py-2 text-right">Acciones</th>
                       </tr>
                     </thead>
-                    <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+                    <tbody class="divide-y divide-border">
                       <tr
                         v-for="marea in filteredMareas"
                         :key="marea.id"
                         @click="openSidebar(marea)"
-                        class="group odd:bg-gray-100/60 dark:odd:bg-gray-800/40 hover:bg-brand-50/30 dark:hover:bg-brand-900/10 transition-all cursor-pointer border-l-4 border-l-transparent"
-                        :class="{ 'bg-brand-50/50 dark:bg-brand-900/20 !border-l-brand-500': selectedMarea?.id === marea.id }"
+                        class="group odd:bg-surface-muted/30 hover:bg-primary/5 transition-all cursor-pointer border-l-4 border-l-transparent"
+                        :class="{ 'bg-primary/10 !border-l-primary': selectedMarea?.id === marea.id }"
                       >
                         <td class="px-4 py-1.5 w-28 focus-within:ring-0">
-                          <span class="text-[11px] font-mono font-bold text-gray-500 dark:text-gray-400 uppercase leading-none">{{ marea.id_marea }}</span>
+                          <span class="text-[11px] font-mono font-bold text-text-muted uppercase leading-none">{{ marea.id_marea }}</span>
                         </td>
                         <td class="px-5 py-1.5">
                           <div class="flex items-center gap-2.5">
-                            <div class="w-7 h-7 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-500 group-hover:bg-brand-100 dark:group-hover:bg-brand-900/30 group-hover:text-brand-500 transition-colors">
+                            <div class="w-7 h-7 rounded-lg bg-surface-muted flex items-center justify-center text-text-muted group-hover:bg-primary/10 group-hover:text-primary transition-colors">
                               <ShipIcon class="w-3.5 h-3.5" />
                             </div>
-                            <span class="text-sm font-bold text-gray-900 dark:text-gray-100 leading-none">{{ marea.buque_nombre }}</span>
+                            <span class="text-sm font-bold text-text leading-none">{{ marea.buque_nombre }}</span>
                           </div>
                         </td>
                         <td v-if="!selectedMarea" class="px-5 py-1.5">
@@ -195,39 +195,39 @@
                             <span class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-tighter whitespace-nowrap" :class="getStatusClasses(marea.estado_codigo)">
                               {{ marea.estado }}
                             </span>
-                            <span v-if="marea.en_tierra" class="px-2 py-0.5 bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 rounded-full text-[10px] font-black uppercase tracking-tighter whitespace-nowrap flex items-center gap-1 border border-emerald-100 dark:border-emerald-500/20">
-                              <div class="w-1 h-1 rounded-full bg-emerald-500 animate-pulse"></div>
+                            <span v-if="marea.en_tierra" class="px-2 py-0.5 bg-success/10 text-success rounded-full text-[10px] font-black uppercase tracking-tighter whitespace-nowrap flex items-center gap-1 border border-success/20">
+                              <div class="w-1 h-1 rounded-full bg-success animate-pulse"></div>
                               En Tierra
                             </span>
                           </div>
                         </td>
                         <td v-if="!selectedMarea" class="px-5 py-1.5">
                           <div class="flex flex-col">
-                            <span class="text-xs font-bold text-gray-700 dark:text-gray-300 leading-none">{{ formatDate(marea.fecha_zarpada) }}</span>
-                            <span class="text-[10px] text-gray-400 leading-none mt-1">{{ marea.puerto }}</span>
+                            <span class="text-xs font-bold text-text leading-none">{{ formatDate(marea.fecha_zarpada) }}</span>
+                            <span class="text-[10px] text-text-muted leading-none mt-1">{{ marea.puerto }}</span>
                           </div>
                         </td>
                         <td v-if="!selectedMarea" class="px-5 py-1.5">
                           <div class="flex items-center gap-2">
-                            <div class="w-16 h-1 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-                              <div class="h-full transition-all duration-1000" :class="marea.progreso > 100 ? 'bg-red-500' : 'bg-emerald-500'" :style="{ width: marea.progreso + '%' }"></div>
+                            <div class="w-16 h-1 bg-surface-muted rounded-full overflow-hidden">
+                              <div class="h-full transition-all duration-1000" :class="marea.progreso > 100 ? 'bg-error' : 'bg-success'" :style="{ width: marea.progreso + '%' }"></div>
                             </div>
-                            <span class="text-[10px] font-black text-gray-500">{{ marea.progreso }}%</span>
+                            <span class="text-[10px] font-black text-text-muted">{{ marea.progreso }}%</span>
                           </div>
                         </td>
                         <td v-if="!selectedMarea" class="px-5 py-1.5">
-                          <div v-if="marea.alertas?.length" class="flex items-center gap-1.5 px-2 py-0.5 bg-red-50 dark:bg-red-500/10 rounded-lg w-fit">
-                            <div class="w-1 h-1 rounded-full bg-red-500 animate-pulse"></div>
-                            <span class="text-[10px] font-black text-red-600 dark:text-red-400">{{ marea.alertas.length }}</span>
+                          <div v-if="marea.alertas?.length" class="flex items-center gap-1.5 px-2 py-0.5 bg-error/10 rounded-lg w-fit">
+                            <div class="w-1 h-1 rounded-full bg-error animate-pulse"></div>
+                            <span class="text-[10px] font-black text-error">{{ marea.alertas.length }}</span>
                           </div>
-                          <span v-else class="text-[10px] font-bold text-gray-300 dark:text-gray-700">Ninguna</span>
+                          <span v-else class="text-[10px] font-bold text-text-muted/40">Ninguna</span>
                         </td>
                         <td v-if="selectedMarea" class="px-5 py-1.5">
-                          <span class="text-sm font-bold text-gray-600 dark:text-gray-400">{{ marea.observador || 'No asignado' }}</span>
+                          <span class="text-sm font-bold text-text-muted">{{ marea.observador || 'No asignado' }}</span>
                         </td>
                         <td class="px-5 py-1.5 text-right">
                           <div class="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-all">
-                            <button class="p-1.5 hover:bg-white dark:hover:bg-gray-800 rounded-lg text-gray-400 hover:text-brand-500 transition-all shadow-sm">
+                            <button class="p-1.5 hover:bg-surface rounded-lg text-text-muted hover:text-primary transition-all shadow-sm">
                               <HorizontalDots class="w-3.5 h-3.5" />
                             </button>
                           </div>
@@ -240,11 +240,11 @@
 
               <!-- Empty State -->
               <div v-else class="p-20 flex flex-col items-center justify-center text-center">
-                <div class="w-20 h-20 bg-gray-50 dark:bg-gray-800 rounded-full flex items-center justify-center mb-4">
-                  <ShipIcon class="w-10 h-10 text-gray-300" />
+                <div class="w-20 h-20 bg-surface-muted rounded-full flex items-center justify-center mb-4">
+                  <ShipIcon class="w-10 h-10 text-text-muted/40" />
                 </div>
-                <h3 class="text-lg font-bold text-gray-800 dark:text-white">No hay mareas activas</h3>
-                <p class="text-gray-500 text-sm mt-1 max-w-xs">No se encontraron operaciones en curso que coincidan con los filtros aplicados.</p>
+                <h3 class="text-lg font-bold text-text">No hay mareas activas</h3>
+                <p class="text-text-muted text-sm mt-1 max-w-xs">No se encontraron operaciones en curso que coincidan con los filtros aplicados.</p>
               </div>
             </div>
           </div>
@@ -261,7 +261,7 @@
         >
           <div 
             v-if="selectedMarea"
-            class="w-full xl:w-[400px] shrink-0 sticky top-0 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl shadow-sm overflow-hidden self-start hidden xl:block z-10"
+            class="w-full xl:w-[400px] shrink-0 sticky top-0 bg-surface border border-border rounded-2xl shadow-sm overflow-hidden self-start hidden xl:block z-10"
           >
             <MareaContextDetailContent 
               :marea="selectedMarea"
@@ -381,48 +381,48 @@ const getKpiMeta = (codigo: string) => {
   const meta: Record<string, any> = {
     'DESIGNADA': {
       icon: TaskIcon,
-      color: 'text-blue-500',
-      border: 'border-blue-500/50 dark:border-blue-400/30',
-      bg: 'bg-blue-50 dark:bg-blue-900/20'
+      color: 'text-info',
+      border: 'border-info/30',
+      bg: 'bg-info/10'
     },
     'EN_EJECUCION': {
       icon: ShipIcon,
-      color: 'text-indigo-500',
-      border: 'border-indigo-500/50 dark:border-indigo-400/30',
-      bg: 'bg-indigo-50 dark:bg-indigo-900/20'
+      color: 'text-primary',
+      border: 'border-primary/30',
+      bg: 'bg-primary/10'
     },
     'ESPERANDO_ENTREGA': {
       icon: HistoryIcon,
-      color: 'text-amber-500',
-      border: 'border-amber-500/50 dark:border-amber-400/30',
-      bg: 'bg-amber-50 dark:bg-amber-900/20'
+      color: 'text-warning',
+      border: 'border-warning/30',
+      bg: 'bg-warning/10'
     },
     'ENTREGADA_RECIBIDA': {
       icon: ArchiveIcon,
-      color: 'text-emerald-500',
-      border: 'border-emerald-500/50 dark:border-emerald-400/30',
-      bg: 'bg-emerald-50 dark:bg-emerald-900/20'
+      color: 'text-success',
+      border: 'border-success/30',
+      bg: 'bg-success/10'
     },
     'VERIFICACION_INICIAL': {
       icon: SearchIcon,
-      color: 'text-cyan-500',
-      border: 'border-cyan-500/50 dark:border-cyan-400/30',
-      bg: 'bg-cyan-50 dark:bg-cyan-900/20'
+      color: 'text-info',
+      border: 'border-info/30',
+      bg: 'bg-info/10'
     },
     'EN_CORRECCION': {
       icon: EditIcon,
-      color: 'text-orange-500',
-      border: 'border-orange-500/50 dark:border-orange-400/30',
-      bg: 'bg-orange-50 dark:bg-orange-900/20'
+      color: 'text-warning',
+      border: 'border-warning/30',
+      bg: 'bg-warning/10'
     },
     'PENDIENTE_DE_INFORME': {
       icon: FileTextIcon,
-      color: 'text-purple-500',
-      border: 'border-purple-500/50 dark:border-purple-400/30',
-      bg: 'bg-purple-50 dark:bg-purple-900/20'
+      color: 'text-primary',
+      border: 'border-primary/30',
+      bg: 'bg-primary/10'
     },
   }
-  return meta[codigo] || { icon: ShipIcon, color: 'text-gray-500', border: 'border-gray-200 dark:border-gray-800', bg: 'bg-gray-50 dark:bg-gray-900/20' }
+  return meta[codigo] || { icon: ShipIcon, color: 'text-text-muted', border: 'border-border', bg: 'bg-surface-muted/30' }
 }
 
 const kpis = computed(() => {
@@ -559,25 +559,25 @@ const goToDetalle = () => {
 }
 
 const getStatusClasses = (status?: string) => {
-  if (!status) return 'bg-gray-50 text-gray-700 dark:bg-gray-800 dark:text-gray-400'
+  if (!status) return 'bg-surface-muted text-text-muted'
 
   const s = status.toUpperCase()
   if (s === 'DESIGNADA')
-    return 'bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400'
+    return 'bg-info/10 text-info'
   if (s === 'EN_EJECUCION' || s === 'NAVEGANDO')
-    return 'bg-indigo-50 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-400'
+    return 'bg-primary/10 text-primary'
   if (s === 'ESPERANDO_ENTREGA')
-    return 'bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400'
+    return 'bg-warning/10 text-warning'
   if (s === 'ENTREGADA_RECIBIDA')
-    return 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400'
+    return 'bg-success/10 text-success'
   if (s === 'VERIFICACION_INICIAL')
-    return 'bg-cyan-50 text-cyan-700 dark:bg-cyan-500/10 dark:text-cyan-400'
+    return 'bg-info/10 text-info'
   if (s === 'EN_CORRECCION')
-    return 'bg-orange-50 text-orange-700 dark:bg-orange-500/10 dark:text-orange-400'
+    return 'bg-warning/10 text-warning'
   if (s === 'PENDIENTE_DE_INFORME')
-    return 'bg-purple-50 text-purple-700 dark:bg-purple-500/10 dark:text-purple-400'
+    return 'bg-primary/10 text-primary'
 
-  return 'bg-gray-50 text-gray-700 dark:bg-gray-800 dark:text-gray-400'
+  return 'bg-surface-muted text-text-muted'
 }
 
 const formatDate = (date?: string) => {

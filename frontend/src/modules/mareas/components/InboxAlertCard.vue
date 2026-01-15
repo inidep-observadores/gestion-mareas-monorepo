@@ -9,8 +9,8 @@
         <component :is="statusIcon" class="w-5 h-5" />
       </div>
       <span v-if="estado === 'PENDIENTE' || estado === 'VENCIDA'" class="absolute -top-1 -right-1 flex h-3 w-3">
-        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-        <span class="relative inline-flex rounded-full h-3 w-3 bg-red-500 border-2 border-background"></span>
+        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-error opacity-75"></span>
+        <span class="relative inline-flex rounded-full h-3 w-3 bg-error border-2 border-background"></span>
       </span>
     </div>
 
