@@ -46,8 +46,8 @@
         
         <!-- Loading State for Catalogs -->
         <div v-if="loadingCatalogs" class="flex-1 flex flex-col items-center justify-center py-20">
-          <div class="loading loading-spinner loading-lg text-brand-500"></div>
-          <p class="mt-4 text-gray-500 font-bold uppercase tracking-widest text-[10px]">Cargando catálogos oficiales...</p>
+          <LoadingSpinner size="xl" class="text-primary" />
+          <p class="mt-4 text-text-muted font-bold uppercase tracking-widest text-[10px]">Cargando catálogos oficiales...</p>
         </div>
 
         <template v-else>
@@ -269,9 +269,11 @@
             <button 
               @click="nextStep"
               :disabled="loading"
-              class="px-8 py-3 bg-brand-500 hover:bg-brand-600 text-white rounded-2xl text-sm font-bold shadow-xl shadow-brand-500/20 transition-all active:scale-[0.98] flex items-center gap-2 active:shadow-inner disabled:opacity-50"
+              class="px-8 py-3 bg-primary hover:bg-primary-hover text-primary-fg rounded-2xl text-sm font-bold shadow-xl shadow-primary/20 transition-all active:scale-[0.98] flex items-center gap-2 active:shadow-inner disabled:opacity-50"
             >
-              <div v-if="loading" class="loading loading-spinner loading-xs"></div>
+              <div v-if="loading" class="flex items-center justify-center">
+                <LoadingSpinner size="xs" class="text-primary-fg" />
+              </div>
               <template v-else>
                 {{ currentStep === 3 ? 'Finalizar Registro' : 'Siguiente Paso' }}
                 <ChevronRightIcon v-if="currentStep < 3" class="w-4 h-4" />
@@ -301,6 +303,7 @@ import { useRouter } from 'vue-router'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import SearchableSelect from '@/components/common/SearchableSelect.vue'
 import DatePicker from '@/components/common/DatePicker.vue'
+import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 import ConfirmationDialog from '@/components/common/ConfirmationDialog.vue'
 import { useMareas } from '../composables/useMareas'
 import catalogosService from '../services/catalogos.service'

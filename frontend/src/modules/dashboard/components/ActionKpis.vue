@@ -3,7 +3,7 @@
     <div
       v-for="kpi in kpis"
       :key="kpi.title"
-            class="group relative overflow-hidden rounded-2xl border border-gray-100 bg-white p-5 shadow-sm transition-all hover:shadow-xl hover:-translate-y-1 dark:border-gray-800 dark:bg-gray-900"
+            class="group relative overflow-hidden rounded-2xl border border-border bg-surface p-5 shadow-sm transition-all hover:shadow-xl hover:-translate-y-1"
       >
       <!-- Background Decorative Gradient -->
       <div
@@ -13,18 +13,18 @@
 
       <div class="flex items-center justify-between gap-4">
         <div class="z-10">
-          <p class="text-[10px] font-black uppercase tracking-widest text-gray-400 dark:text-gray-500">
+          <p class="text-[10px] font-black uppercase tracking-widest text-text-muted">
             {{ kpi.title }}
           </p>
           <div class="flex items-baseline gap-2">
-            <h3 class="mt-1 text-3xl font-black text-gray-900 dark:text-white leading-none">
+            <h3 class="mt-1 text-3xl font-black text-text leading-none">
               {{ kpi.value }}
             </h3>
             <span v-if="kpi.trend" class="text-[10px] font-bold px-1.5 py-0.5 rounded-md" :class="kpi.trendClass">
               {{ kpi.trend }}
             </span>
           </div>
-          <p v-if="kpi.subtext" class="mt-2 text-[11px] font-bold text-gray-500 dark:text-gray-400">
+          <p v-if="kpi.subtext" class="mt-2 text-[11px] font-bold text-text-muted">
             {{ kpi.subtext }}
           </p>
         </div>
@@ -41,12 +41,12 @@
       <!-- Progress Bar for Monthly Target -->
       <div v-if="kpi.progress !== undefined" class="mt-4">
         <div class="flex justify-between items-center mb-1.5">
-           <span class="text-[9px] font-black text-gray-400 uppercase tracking-tighter">Progreso Objetivo</span>
-           <span class="text-[9px] font-black text-brand-500">{{ kpi.progress }}%</span>
+           <span class="text-[9px] font-black text-text-muted uppercase tracking-tighter">Progreso Objetivo</span>
+           <span class="text-[9px] font-black text-primary">{{ kpi.progress }}%</span>
         </div>
-        <div class="h-1.5 w-full rounded-full bg-gray-50 dark:bg-gray-800 overflow-hidden">
+        <div class="h-1.5 w-full rounded-full bg-surface-muted overflow-hidden">
           <div
-            class="h-full rounded-full bg-brand-500 transition-all duration-1000 ease-out"
+            class="h-full rounded-full bg-primary transition-all duration-1000 ease-out"
             :style="{ width: kpi.progress + '%' }"
           ></div>
         </div>
@@ -121,9 +121,9 @@ const kpiDefinitions: Array<
     title: 'Listas para protocolizar',
     subtext: 'Informes aprobados',
     icon: CheckIcon,
-    bgClass: 'bg-brand-500',
-    iconContainerClass: 'bg-brand-50 dark:bg-brand-900/20',
-    iconClass: 'text-brand-500',
+    bgClass: 'bg-primary',
+    iconContainerClass: 'bg-primary/10',
+    iconClass: 'text-primary',
     link: '/mareas/stats',
   },
 ]

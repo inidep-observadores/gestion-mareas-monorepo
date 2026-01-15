@@ -3,11 +3,6 @@
 
 @import 'tailwindcss';
 
-@plugin "flyonui" {
-  themes: soft --default, dark --prefersdark;
-}
-
-@source "../../node_modules/flyonui/dist/js/*.js";
 
 @variant dark (&:where(.dark, .dark *));
 
@@ -23,8 +18,17 @@
   /* Tokens Semánticos para Temas Dinámicos */
   --color-background: #f8fafc;
   --color-surface: #ffffff;
+  --color-surface-muted: #f1f5f9;
   --color-primary: #2563eb;
   --color-primary-fg: #ffffff;
+  --color-success: #10b981;
+  --color-success-fg: #ffffff;
+  --color-error: #f43f5e;
+  --color-error-fg: #ffffff;
+  --color-warning: #f59e0b;
+  --color-warning-fg: #ffffff;
+  --color-info: #0ea5e9;
+  --color-info-fg: #ffffff;
   --color-text: #0f172a;
   --color-text-muted: #64748b;
   --color-border: #e2e8f0;
@@ -190,8 +194,13 @@
 .dark {
   --color-background: #020617;
   --color-surface: #0f172a;
+  --color-surface-muted: #1e293b;
   --color-primary: #3b82f6;
   --color-primary-fg: #ffffff;
+  --color-success: #10b981;
+  --color-error: #f43f5e;
+  --color-warning: #f59e0b;
+  --color-info: #0ea5e9;
   --color-text: #f1f5f9;
   --color-text-muted: #94a3b8;
   --color-border: #1e293b;

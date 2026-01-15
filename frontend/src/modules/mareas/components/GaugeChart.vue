@@ -1,9 +1,9 @@
 <template>
   <div
-    class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-5 rounded-2xl shadow-sm h-full flex flex-col items-center justify-center text-center"
+    class="bg-surface border border-border p-5 rounded-2xl shadow-sm h-full flex flex-col items-center justify-center text-center"
   >
     <div class="mb-2">
-      <h3 class="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+      <h3 class="text-sm font-bold text-text-muted uppercase tracking-wider">
         {{ title }}
       </h3>
     </div>
@@ -14,7 +14,7 @@
       <!-- Over-target badge -->
       <div
         v-if="value >= 100"
-        class="absolute top-[65%] left-1/2 -translate-x-1/2 bg-success-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-lg"
+        class="absolute top-[65%] left-1/2 -translate-x-1/2 bg-success text-success-fg text-[10px] font-bold px-2 py-0.5 rounded-full shadow-lg"
       >
         META ALCANZADA
       </div>
@@ -24,7 +24,7 @@
       <div class="flex items-center justify-center gap-1 text-2xl" :class="colorClass">
         {{ value }}%
       </div>
-      <p class="text-xs text-gray-400 mt-1">{{ subtitle }}</p>
+      <p class="text-xs text-text-muted mt-1">{{ subtitle }}</p>
     </div>
   </div>
 </template>
@@ -48,17 +48,17 @@ const props = defineProps({
 })
 
 const colorMap = {
-  brand: 'var(--color-brand-500)',
-  success: 'var(--color-success-500)',
-  warning: 'var(--color-warning-500)',
-  error: 'var(--color-error-500)',
+  brand: 'var(--color-primary)',
+  success: 'var(--color-success)',
+  warning: 'var(--color-warning)',
+  error: 'var(--color-error)',
 }
 
 const colorClass = computed(() => {
-  if (props.colorType === 'success') return 'text-success-600 dark:text-success-400'
-  if (props.colorType === 'warning') return 'text-warning-600 dark:text-warning-400'
-  if (props.colorType === 'error') return 'text-error-600 dark:text-error-400'
-  return 'text-brand-600 dark:text-brand-400'
+  if (props.colorType === 'success') return 'text-success'
+  if (props.colorType === 'warning') return 'text-warning'
+  if (props.colorType === 'error') return 'text-error'
+  return 'text-primary'
 })
 
 const chartOptions = computed(() => ({

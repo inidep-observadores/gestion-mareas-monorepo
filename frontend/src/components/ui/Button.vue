@@ -24,8 +24,8 @@
 import { computed } from 'vue'
 
 interface ButtonProps {
-  size?: 'sm' | 'md'
-  variant?: 'primary' | 'outline'
+  size?: 'xs' | 'sm' | 'md' | 'lg'
+  variant?: 'primary' | 'outline' | 'soft' | 'ghost' | 'link' | 'success' | 'error' | 'warning'
   startIcon?: object
   endIcon?: object
   onClick?: () => void
@@ -41,14 +41,21 @@ const props = withDefaults(defineProps<ButtonProps>(), {
 })
 
 const sizeClasses = {
-  sm: 'px-4 py-3 text-sm',
-  md: 'px-5 py-3.5 text-sm',
+  xs: 'px-2 py-1 text-xs',
+  sm: 'px-3 py-2 text-sm',
+  md: 'px-4 py-2.5 text-sm',
+  lg: 'px-6 py-4 text-base',
 }
 
 const variantClasses = {
-  primary: 'bg-primary text-primary-fg shadow-theme-xs hover:opacity-90 disabled:opacity-50',
-  outline:
-    'bg-surface text-text border border-border hover:bg-background transition-colors',
+  primary: 'bg-primary text-primary-fg shadow-theme-sm hover:opacity-90 active:scale-[0.98]',
+  outline: 'bg-transparent text-text border border-border hover:bg-surface-muted transition-colors',
+  soft: 'bg-primary/10 text-primary hover:bg-primary/20 transition-colors',
+  ghost: 'bg-transparent text-text hover:bg-surface-muted transition-colors',
+  link: 'bg-transparent text-primary hover:underline px-0 py-0 h-auto',
+  success: 'bg-success text-success-fg hover:opacity-90 shadow-theme-sm',
+  error: 'bg-error text-error-fg hover:opacity-90 shadow-theme-sm',
+  warning: 'bg-warning text-warning-fg hover:opacity-90 shadow-theme-sm',
 }
 
 const onClick = () => {
