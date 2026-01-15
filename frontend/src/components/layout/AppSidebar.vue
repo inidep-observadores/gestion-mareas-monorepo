@@ -1,7 +1,7 @@
 <template>
   <aside
     :class="[
-      'fixed mt-16 flex flex-col lg:mt-0 top-0 px-5 left-0 bg-white dark:bg-gray-900 dark:border-gray-800 text-gray-900 h-screen transition-all duration-300 ease-in-out z-99999 border-r border-gray-200',
+      'fixed mt-16 flex flex-col lg:mt-0 top-0 px-5 left-0 bg-surface text-text h-screen transition-all duration-300 ease-in-out z-99999 border-r border-border',
       {
         'lg:w-[18.125rem]': isExpanded || isMobileOpen || isHovered,
         'lg:w-[5.625rem]': !isExpanded && !isHovered,
@@ -21,15 +21,15 @@
     >
       <router-link :to="{ name: 'Dashboard' }" class="flex items-center gap-3">
         <div
-          class="w-10 h-10 rounded-xl bg-linear-to-br from-blue-500 to-cyan-500 flex items-center justify-center flex-shrink-0"
+          class="w-10 h-10 rounded-xl bg-linear-to-br from-primary to-info flex items-center justify-center flex-shrink-0"
         >
           <WaveIcon class="w-6 h-6 text-white" />
         </div>
         <div v-if="isExpanded || isHovered || isMobileOpen" class="flex flex-col">
-          <span class="text-lg font-bold text-gray-800 dark:text-white leading-tight"
+          <span class="text-lg font-bold text-text leading-tight"
             >Gestión de</span
           >
-          <span class="text-lg font-bold text-blue-600 dark:text-blue-400 leading-tight"
+          <span class="text-lg font-bold text-primary leading-tight"
             >Mareas</span
           >
         </div>
@@ -44,22 +44,22 @@
       ]"
     >
       <div
-        class="flex flex-col gap-1.5 p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700/50"
+        class="flex flex-col gap-1.5 p-3 rounded-xl bg-surface-muted/50 border border-border"
       >
-        <label class="text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+        <label class="text-[10px] font-bold uppercase tracking-wider text-text-muted">
           Año Operativo
         </label>
         <div class="relative flex items-center group">
-          <CalenderIcon class="absolute left-0 w-4 h-4 text-gray-400 group-hover:text-blue-500 transition-colors" />
+          <CalenderIcon class="absolute left-0 w-4 h-4 text-text-muted group-hover:text-primary transition-colors" />
           <select
             v-model="configStore.selectedYear"
-            class="w-full bg-transparent border-none text-sm font-semibold text-gray-700 dark:text-gray-200 focus:ring-0 pl-6 pr-2 appearance-none cursor-pointer"
+            class="w-full bg-transparent border-none text-sm font-semibold text-text focus:ring-0 pl-6 pr-2 appearance-none cursor-pointer"
           >
-            <option v-for="year in availableYears" :key="year" :value="year" class="dark:bg-gray-800">
+            <option v-for="year in availableYears" :key="year" :value="year" class="bg-surface">
               {{ year }}
             </option>
           </select>
-          <span class="absolute right-0 pointer-events-none text-gray-400">
+          <span class="absolute right-0 pointer-events-none text-text-muted">
             <svg class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
               <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
             </svg>
@@ -73,7 +73,7 @@
           <div v-for="(menuGroup, groupIndex) in navigationGroups" :key="groupIndex">
             <h2
               :class="[
-                'mb-4 text-xs uppercase flex leading-5 text-gray-400',
+                'mb-4 text-xs uppercase flex leading-5 text-text-muted',
                 !isExpanded && !isHovered ? 'lg:justify-center' : 'justify-start',
               ]"
             >
@@ -114,7 +114,7 @@
       </nav>
     </div>
 
-    <div class="mt-auto py-6 border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900">
+    <div class="mt-auto py-6 border-t border-border bg-surface">
       <nav @click="closeMobileSidebar">
         <ul class="flex flex-col gap-4">
           <template v-for="item in systemGroups.items" :key="item.name">

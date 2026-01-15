@@ -276,6 +276,15 @@ const router = createRouter({
       }
     },
     {
+      path: '/preferences',
+      name: 'Preferences',
+      component: () => import('@/modules/shared/views/PreferencesView.vue'),
+      meta: {
+        title: 'Preferencias de Diseño',
+        requiresAuth: true,
+      },
+    },
+    {
       path: '/ui-demo',
       name: 'UIDemo',
       component: () => import('@/modules/shared/views/UIDemoView.vue'),
