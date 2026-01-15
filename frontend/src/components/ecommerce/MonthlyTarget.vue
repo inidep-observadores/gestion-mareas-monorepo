@@ -155,6 +155,7 @@ const chartOptions = {
   colors: [CHART_COLORS.brand.primary],
   chart: {
     fontFamily: 'Outfit, sans-serif',
+    type: 'radialBar' as const,
     sparkline: {
       enabled: true,
     },
@@ -188,11 +189,11 @@ const chartOptions = {
     },
   },
   fill: {
-    type: 'solid',
+    type: 'solid' as const,
     colors: [CHART_COLORS.brand.primary],
   },
   stroke: {
-    lineCap: 'round',
+    lineCap: 'round' as const,
   },
   labels: ['Progreso'],
 }

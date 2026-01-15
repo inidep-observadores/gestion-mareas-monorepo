@@ -1,6 +1,6 @@
 <template>
   <div
-    class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-4 shadow-sm"
+    class="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-3xl p-6 shadow-sm mb-6 transition-all duration-300"
   >
     <slot />
   </div>

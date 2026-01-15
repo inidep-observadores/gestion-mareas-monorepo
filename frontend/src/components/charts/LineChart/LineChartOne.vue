@@ -26,13 +26,13 @@ const series = ref([
 const chartOptions = ref({
   legend: {
     show: false,
-    position: 'top',
-    horizontalAlign: 'left',
+    position: 'top' as const,
+    horizontalAlign: 'left' as const,
   },
-  colors: CHART_PALETTES.primary,
+  colors: CHART_PALETTES.primary as any,
   chart: {
     fontFamily: 'Outfit, sans-serif',
-    type: 'area',
+    type: 'area' as const,
     toolbar: {
       show: false,
     },
@@ -45,15 +45,11 @@ const chartOptions = ref({
     },
   },
   stroke: {
-    curve: 'straight',
+    curve: 'straight' as const,
     width: [2, 2],
   },
   markers: {
     size: 0,
-  },
-  labels: {
-    show: false,
-    position: 'top',
   },
   grid: {
     xaxis: {
@@ -76,7 +72,7 @@ const chartOptions = ref({
     },
   },
   xaxis: {
-    type: 'category',
+    type: 'category' as const,
     categories: [
       'Jan',
       'Feb',

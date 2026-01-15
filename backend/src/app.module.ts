@@ -12,10 +12,18 @@ import { FilesModule } from './files/files.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { CatalogosModule } from './catalogos/catalogos.module';
+import { MareasModule } from './mareas/mareas.module';
+import { BackupModule } from './admin/backup/backup.module';
+import { DataExportModule } from './admin/data-export/data-export.module';
+import { MailModule } from './mail/mail.module';
+import { AlertsModule } from './alerts/alerts.module';
+import { BusinessRulesModule } from './common/business-rules/business-rules.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot(),
+    ConfigModule.forRoot({
+      expandVariables: true,
+    }),
 
 
 
@@ -28,6 +36,7 @@ import { CatalogosModule } from './catalogos/catalogos.module';
     ProductsModule,
 
     CommonModule,
+    BusinessRulesModule,
 
     SeedModule,
 
@@ -38,7 +47,11 @@ import { CatalogosModule } from './catalogos/catalogos.module';
     UsersModule,
 
     CatalogosModule,
-
+    MareasModule,
+    BackupModule,
+    DataExportModule,
+    MailModule,
+    AlertsModule,
   ],
 })
 export class AppModule { }

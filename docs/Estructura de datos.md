@@ -29,7 +29,8 @@ Table password_reset_tokens {
 
 Table tipos_flota {
   id TEXT (PK) // UUID interno
-  codigo TEXT NOT NULL // Codigo corto
+  codigo_numerico INTEGER NOT NULL // Codigo numerico oficial
+  codigo TEXT NOT NULL // Codigo alfanumerico
   nombre TEXT NOT NULL
   descripcion TEXT?
   orden INTEGER?
@@ -125,6 +126,7 @@ Table especies {
 Table observadores {
   id TEXT (PK) // UUID interno
   codigo_interno INTEGER NOT NULL // Codigo interno del INIDEP
+  email TEXT? // Correo de contacto institucional
   nombre TEXT NOT NULL
   apellido TEXT NOT NULL
   foto_url TEXT? // Ruta/URL de foto del observador
@@ -134,6 +136,8 @@ Table observadores {
 
   activo BOOLEAN NOT NULL // true = no esta dado de baja
   disponible BOOLEAN NOT NULL // true = puede ser llamado a embarcar (no licencia/impedimento)
+  con_impedimento BOOLEAN NOT NULL // true = tiene un impedimento vigente
+  motivo_impedimento TEXT? // descripcion formal del impedimento
 
   fecha_proxima_disponibilidad TIMESTAMP? // Declarada por el observador (administrativa)
 
@@ -189,6 +193,7 @@ Table mareas {
 
   // Fechas clave (administrativas / marco del observador)
   fecha_zarpada_estimada TIMESTAMP? // Tentativa (cargada al designar)
+  dias_estimados INTEGER? // Estimacion de duracion de la marea
   fecha_inicio_observador TIMESTAMP? // Inicio del trabajo del observador (incluye viaje si no es puerto local)
   fecha_fin_observador TIMESTAMP? // Fin del trabajo del observador (incluye regreso si no es puerto local)
 
@@ -229,6 +234,26 @@ Table mareas_etapas {
   UNIQUE(id_marea, nro_etapa)
   INDEX(id_marea)
 }
+
+Table mareas_etapas_observadores {
+  id TEXT (PK)
+  id_etapa TEXT NOT NULL // FK -> mareas_etapas.id
+  id_observador TEXT NOT NULL // FK -> observadores.id
+  rol TEXT NOT NULL // 'PRINCIPAL' | 'ADICIONAL'
+  es_designado BOOLEAN NOT NULL // true si fue asignado desde administración
+  
+  UNIQUE(id_etapa, id_observador)
+  INDEX(id_etapa)
+}
+
+/* 
+  DECISIÓN DE DISEÑO: Vínculo Marea-Observador
+  - Al crear/designar una marea se genera automáticamente la 'Etapa 1'.
+  - Los observadores se vinculan a la Etapa, no directamente a la Marea.
+  - Esto permite manejar múltiples observadores por etapa y cambios de personal entre etapas.
+  - El Wizard de creación de marea sólo pide 1 observador, que se registra como 'PRINCIPAL' en la Etapa 1.
+*/
+
 
 Table mareas_movimientos {
   id TEXT (PK)
@@ -406,3 +431,45 @@ Table buque_trayectoria_puntos {
 
 // Para obtener la ruta de una marea, filtrar por buque_id y el rango
 // fecha_zarpada_estimada/fecha_inicio_observador -> fecha_fin_observador.
+
+## 6. Sistema de Alertas (Notificaciones Operativas)
+
+Table alertas {
+  id TEXT (PK) // UUID
+  codigo_unico TEXT NOT NULL // HASH para unicidad (ej: 'FATIGA_OBS_123_YEAR_2024')
+  referencia_id TEXT // ID de la entidad relacionada (Marea, Buque, etc.)
+  tipo TEXT NOT NULL // 'FATIGA', 'RETRASO_DATOS', 'RETRASO_INFORME', 'GENERICO'
+  
+  titulo TEXT NOT NULL
+  descripcion TEXT NOT NULL
+  
+  estado TEXT NOT NULL // 'PENDIENTE', 'SEGUIMIENTO', 'RESUELTA', 'DESCARTADA', 'VENCIDA'
+  prioridad TEXT NOT NULL // 'ALTA', 'MEDIA', 'BAJA'
+  
+  fecha_detectada TIMESTAMP NOT NULL // Cuando el sistema detectó la condición
+  fecha_vencimiento TIMESTAMP? // Fecha límite para el seguimiento
+  fecha_cierre TIMESTAMP? // Cuando se resolvió o descartó
+  
+  asignado_id TEXT? // FK -> users.id (Responsable de la gestión)
+  creado_por_id TEXT? // FK -> users.id (Si fue manual) o NULL (Sistema)
+
+  // Auditoría
+  ultima_actualizacion TIMESTAMP
+  
+  UNIQUE(codigo_unico)
+  INDEX(referencia_id)
+  INDEX(estado)
+  INDEX(asignado_id)
+}
+
+Table alertas_eventos {
+  id TEXT (PK) // UUID
+  alerta_id TEXT NOT NULL // FK -> alertas.id
+  fecha_hora TIMESTAMP NOT NULL
+  usuario_id TEXT? // FK -> users.id (NULL si es evento del sistema)
+  
+  tipo_evento TEXT NOT NULL // 'CREACION', 'CAMBIO_ESTADO', 'ASIGNACION', 'COMENTARIO', 'AUTO_RESOLUCION', 'ESCALADO'
+  detalle TEXT? // JSON o texto plano con diferencias o comentarios
+  
+  INDEX(alerta_id)
+}

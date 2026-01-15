@@ -1,6 +1,6 @@
 <template>
-  <AdminLayout 
-    title="Calendario de Mareas" 
+  <AdminLayout
+    title="Calendario de Mareas"
     description="Vista cronológica de designaciones, arribos y eventos clave."
   >
     <div class="relative min-h-[calc(100vh-100px)] z-1">
@@ -19,40 +19,166 @@
               {{ allFiltersSelected ? 'Deseleccionar Todos' : 'Seleccionar Todos' }}
             </button>
           </div>
-          <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
-            <label
+          <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-2">
+            <div
               v-for="eventType in eventTypes"
               :key="eventType.id"
-              class="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer transition-colors"
+              @click="eventType.enabled = !eventType.enabled"
+              class="group relative flex flex-col p-3 rounded-2xl border transition-all cursor-pointer select-none bg-white dark:bg-black/20 overflow-hidden"
+              :class="eventType.enabled
+                ? 'border-indigo-500/20 shadow-md shadow-indigo-500/5 ring-1 ring-indigo-500/5'
+                : 'border-gray-100 dark:border-white/5 opacity-50 grayscale-[0.8] hover:opacity-80'"
             >
-              <input
-                type="checkbox"
-                v-model="eventType.enabled"
-                class="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-brand-500 focus:ring-2 focus:ring-brand-500/20 cursor-pointer"
-              />
-              <div class="flex items-center gap-1.5">
-                <span class="text-lg">{{ eventType.emoji }}</span>
-                <span class="text-xs font-medium text-gray-700 dark:text-gray-300">{{
-                  eventType.label
-                }}</span>
+              <!-- Label + Visibility -->
+              <div class="flex items-center justify-between gap-2 mb-3">
+                <span class="text-[8px] font-black uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500 truncate">
+                  {{ eventType.label }}
+                </span>
+                <component
+                  :is="eventType.enabled ? EyeIcon : EyeSlashIcon"
+                  class="w-3.5 h-3.5 transition-colors"
+                  :class="eventType.enabled ? 'text-indigo-500' : 'text-gray-400'"
+                />
               </div>
-            </label>
+
+              <!-- Count + Icon Badge -->
+              <div class="flex items-end justify-between">
+                <span class="text-2xl font-black text-gray-900 dark:text-gray-100 leading-none tabular-nums tracking-tighter">
+                  {{ eventCounts[eventType.id] || 0 }}
+                </span>
+
+                <div
+                  class="w-8 h-8 flex items-center justify-center rounded-xl transition-all duration-300"
+                  :class="eventType.enabled ? 'bg-indigo-500/10 text-indigo-500 border border-indigo-500/10' : 'bg-gray-100 dark:bg-white/5 text-gray-400 border border-transparent'"
+                >
+                  <component :is="eventType.icon" class="w-4 h-4" />
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </FilterBar>
 
-      <!-- Calendar Container -->
-      <div
-        class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-6 shadow-sm"
-      >
-        <FullCalendar :options="calendarOptions" class="mareas-calendar" />
+      <!-- Calendar + Sidebar Container -->
+      <div class="flex flex-col lg:flex-row gap-6 relative items-start">
+
+        <div
+          class="flex-1 min-w-0 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-6 shadow-sm transition-all duration-300"
+        >
+          <FullCalendar :options="calendarOptions" class="mareas-calendar">
+            <template #eventContent="arg">
+              <div class="group relative w-full h-full p-1 cursor-pointer overflow-visible">
+                <!-- Event Title -->
+                <div class="truncate fc-event-title-container">
+                  <span class="fc-event-time">{{ arg.timeText }}</span>
+                  <span class="fc-event-title">{{ arg.event.title }}</span>
+                </div>
+
+                <!-- Custom Tooltip -->
+                <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2.5 py-1.5 text-[11px] text-white bg-gray-900 dark:bg-white dark:text-gray-900 rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-normal min-w-[180px] max-w-[240px] z-[9999] shadow-xl pointer-events-none backdrop-blur-sm bg-opacity-95 dark:bg-opacity-95">
+                  <div class="font-bold border-b border-white/10 dark:border-gray-200 mb-1 pb-1">
+                    {{ arg.event.title }}
+                  </div>
+                  <div class="leading-relaxed opacity-90">
+                    {{ arg.event.extendedProps.description }}
+                  </div>
+                  <!-- Arrow -->
+                  <div class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900 dark:border-t-white"></div>
+                </div>
+              </div>
+            </template>
+          </FullCalendar>
+        </div>
+
+        <!-- Event Details Sidebar -->
+        <Transition name="slide-in-right">
+          <div
+            v-if="selectedEvent"
+            class="w-full lg:w-96 shrink-0 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl shadow-lg sticky top-6"
+          >
+            <!-- Sidebar Header -->
+            <div class="p-6 border-b border-gray-100 dark:border-gray-800 flex items-start justify-between">
+              <div>
+                <span
+                  class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium uppercase tracking-wide mb-3"
+                  :style="{
+                    backgroundColor: `color-mix(in srgb, ${(CALENDAR_EVENT_COLORS as any)[selectedEvent.extendedProps?.type] || '#808080'} 10%, transparent)`,
+                    color: (CALENDAR_EVENT_COLORS as any)[selectedEvent.extendedProps?.type] || '#808080'
+                  }"
+                >
+                  <component :is="eventTypes.find(t => t.id === selectedEvent.extendedProps?.type)?.icon || FileTextIcon" class="w-3.5 h-3.5" />
+                  {{ eventTypes.find(t => t.id === selectedEvent.extendedProps?.type)?.label || 'Evento' }}
+                </span>
+                <h3 class="text-lg font-bold text-gray-900 dark:text-white leading-snug">
+                  {{ selectedEvent.title }}
+                </h3>
+              </div>
+              <button
+                @click="selectedEvent = null"
+                class="text-gray-400 hover:text-gray-500 dark:text-gray-500 dark:hover:text-gray-400 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              >
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+              </button>
+            </div>
+
+            <!-- Sidebar Content -->
+            <div class="p-6 space-y-6">
+              <!-- Date -->
+              <div>
+                <p class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Fecha y Hora</p>
+                <div class="flex items-center gap-2 text-gray-900 dark:text-gray-100 font-medium">
+                  <CalenderIcon class="w-4 h-4 text-gray-400" />
+                  <span>
+                    {{ selectedEvent.start?.toLocaleDateString('es-AR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) }}
+                  </span>
+                </div>
+                <!-- Time is omitted as full day usually, but can assume it's relevant if provided -->
+              </div>
+
+              <!-- Vessel (if applicable) -->
+              <div v-if="selectedEvent.extendedProps?.vesselName">
+                <p class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Buque</p>
+                <div class="flex items-center gap-2 text-gray-900 dark:text-gray-100 font-medium">
+                  <ShipIcon class="w-4 h-4 text-gray-400" />
+                  <span>{{ selectedEvent.extendedProps?.vesselName }}</span>
+                </div>
+              </div>
+
+              <!-- Description -->
+               <div>
+                <p class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Detalle</p>
+                <p class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
+                   {{ selectedEvent.extendedProps?.description || 'Sin descripción adicional disponible.' }}
+                </p>
+              </div>
+            </div>
+
+            <!-- Sidebar Footer -->
+            <div class="p-6 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-100 dark:border-gray-800 rounded-b-2xl">
+               <button
+                  v-if="selectedEvent.extendedProps?.mareaId"
+                  @click="navigateToMarea"
+                  class="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-brand-600 hover:bg-brand-700 border border-transparent rounded-xl transition-all shadow-sm shadow-brand-600/20"
+                >
+                  <EyeIcon class="w-4 h-4" />
+                  Ver Marea
+                </button>
+                <p v-else class="text-center text-xs text-gray-400 italic">
+                  Este evento no está vinculado a una marea específica.
+                </p>
+            </div>
+          </div>
+        </Transition>
       </div>
     </div>
+
+    <!-- Event Detail Modal (Removed) -->
   </AdminLayout>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import FilterBar from '@/components/common/FilterBar.vue'
 import FullCalendar from '@fullcalendar/vue3'
@@ -62,333 +188,105 @@ import interactionPlugin from '@fullcalendar/interaction'
 import listPlugin from '@fullcalendar/list'
 import esLocale from '@fullcalendar/core/locales/es'
 import { CALENDAR_EVENT_COLORS } from '../config/calendarColors'
+import mareasService, { type CalendarEvent } from '../services/mareas.service'
 
-// Event type filters
+import {
+  EyeIcon,
+  EyeSlashIcon,
+  FileTextIcon,
+  ShipIcon,
+  CheckIcon,
+  WarningIcon,
+  UserGroupIcon,
+  WaveIcon,
+  DocsIcon,
+  CalenderIcon
+} from '@/icons'
+
+// Event type filters (Removed 'navegacion' and 'reunion')
 const eventTypes = ref([
   {
     id: 'designacion',
-    label: 'Designaciones',
-    emoji: '📋',
+    label: 'Designadas',
+    icon: DocsIcon,
     enabled: true,
     keywords: ['Designación'],
   },
-  { id: 'zarpada', label: 'Zarpadas', emoji: '⛵', enabled: true, keywords: ['Zarpada'] },
-  { id: 'arribo', label: 'Arribos', emoji: '🚢', enabled: true, keywords: ['Arribo'] },
-  { id: 'informe', label: 'Informes', emoji: '📄', enabled: true, keywords: ['Informe'] },
-  { id: 'validacion', label: 'Validaciones', emoji: '✅', enabled: true, keywords: ['Validación'] },
-  { id: 'alerta', label: 'Alertas', emoji: '⚠️', enabled: true, keywords: ['Alerta'] },
-  {
-    id: 'reunion',
-    label: 'Reuniones',
-    emoji: '👥',
-    enabled: true,
-    keywords: ['Reunión', 'Capacitación', 'Taller'],
-  },
-  { id: 'navegacion', label: 'Navegación', emoji: '🌊', enabled: true, keywords: ['Navegación'] },
+  { id: 'zarpada', label: 'Zarpadas', icon: ShipIcon, enabled: true, keywords: ['Zarpada'] },
+  { id: 'arribo', label: 'Arribos', icon: ShipIcon, enabled: true, keywords: ['Arribo'] },
+  { id: 'informe', label: 'Informes', icon: FileTextIcon, enabled: true, keywords: ['Informe'] },
+  { id: 'validacion', label: 'Validadas', icon: CheckIcon, enabled: true, keywords: ['Validación'] },
+  { id: 'alerta', label: 'Alertas', icon: WarningIcon, enabled: true, keywords: ['Alerta'] },
 ])
 
 const allFiltersSelected = computed(() => eventTypes.value.every((type) => type.enabled))
+
+// Calculate counts by event type
+const eventCounts = computed(() => {
+  const counts: Record<string, number> = {}
+  allEvents.value.forEach((event) => {
+    counts[event.type] = (counts[event.type] || 0) + 1
+  })
+  return counts
+})
 
 const toggleAllFilters = () => {
   const newState = !allFiltersSelected.value
   eventTypes.value.forEach((type) => (type.enabled = newState))
 }
 
-// All events data
-const allEvents = [
-  // Designaciones (Púrpura/Brand)
-  {
-    title: '📋 Designación - BP ARGENTINO I',
-    start: '2025-12-20',
-    color: CALENDAR_EVENT_COLORS.designacion,
-    type: 'designacion',
-  },
-  {
-    title: '📋 Designación - BP MAR DEL SUR',
-    start: '2025-12-21',
-    color: CALENDAR_EVENT_COLORS.designacion,
-    type: 'designacion',
-  },
-  {
-    title: '📋 Designación - BP ATLANTICO II',
-    start: '2025-12-28',
-    color: CALENDAR_EVENT_COLORS.designacion,
-    type: 'designacion',
-  },
-  {
-    title: '📋 Designación - BP ESTRELLA II',
-    start: '2026-01-15',
-    color: CALENDAR_EVENT_COLORS.designacion,
-    type: 'designacion',
-  },
-  {
-    title: '📋 Designación - BP VICTORIA II',
-    start: '2026-01-28',
-    color: CALENDAR_EVENT_COLORS.designacion,
-    type: 'designacion',
-  },
+// All events data (Reactive)
+const allEvents = ref<any[]>([])
+const router = useRouter()
 
-  // Zarpadas (Azul)
-  {
-    title: '⛵ Zarpada - BP UNION',
-    start: '2025-12-15',
-    color: CALENDAR_EVENT_COLORS.zarpada,
-    type: 'zarpada',
-  },
-  {
-    title: '⛵ Zarpada - BP ESTRELLA',
-    start: '2025-12-18',
-    color: CALENDAR_EVENT_COLORS.zarpada,
-    type: 'zarpada',
-  },
-  {
-    title: '⛵ Zarpada - BP VICTORIA',
-    start: '2025-12-19',
-    color: CALENDAR_EVENT_COLORS.zarpada,
-    type: 'zarpada',
-  },
-  {
-    title: '⛵ Zarpada - BP PACIFICO',
-    start: '2025-12-22',
-    color: CALENDAR_EVENT_COLORS.zarpada,
-    type: 'zarpada',
-  },
-  {
-    title: '⛵ Zarpada - BP ATLANTICO',
-    start: '2026-01-08',
-    color: CALENDAR_EVENT_COLORS.zarpada,
-    type: 'zarpada',
-  },
-  {
-    title: '⛵ Zarpada - BP MAR DEL NORTE',
-    start: '2026-01-16',
-    color: CALENDAR_EVENT_COLORS.zarpada,
-    type: 'zarpada',
-  },
-  {
-    title: '⛵ Zarpada - BP PACIFICO',
-    start: '2025-12-22T08:00:00',
-    color: CALENDAR_EVENT_COLORS.zarpada,
-    type: 'zarpada',
-  },
+// Sidebar State (replaced Modal)
+const selectedEvent = ref<any>(null)
 
-  // Arribos (Verde)
-  {
-    title: '🚢 Arribo - BP ESTRELLA',
-    start: '2025-12-22',
-    color: CALENDAR_EVENT_COLORS.arribo,
-    type: 'arribo',
-  },
-  {
-    title: '🚢 Arribo - BP VICTORIA',
-    start: '2025-12-23',
-    color: CALENDAR_EVENT_COLORS.arribo,
-    type: 'arribo',
-  },
-  {
-    title: '🚢 Arribo - BP UNION',
-    start: '2025-12-25',
-    color: CALENDAR_EVENT_COLORS.arribo,
-    type: 'arribo',
-  },
-  {
-    title: '🚢 Arribo - BP PACIFICO',
-    start: '2025-12-30',
-    color: CALENDAR_EVENT_COLORS.arribo,
-    type: 'arribo',
-  },
-  {
-    title: '🚢 Arribo - BP ATLANTICO',
-    start: '2026-01-18',
-    color: CALENDAR_EVENT_COLORS.arribo,
-    type: 'arribo',
-  },
-  {
-    title: '🚢 Arribo - BP MAR DEL NORTE',
-    start: '2026-01-26',
-    color: CALENDAR_EVENT_COLORS.arribo,
-    type: 'arribo',
-  },
-  {
-    title: '🚢 Arribo - BP ESTRELLA',
-    start: '2025-12-22T14:00:00',
-    color: CALENDAR_EVENT_COLORS.arribo,
-    type: 'arribo',
-  },
-  {
-    title: '🚢 Arribo - BP VICTORIA',
-    start: '2025-12-23T10:00:00',
-    color: CALENDAR_EVENT_COLORS.arribo,
-    type: 'arribo',
-  },
+const handleEventClick = (clickInfo: any) => {
+  clickInfo.jsEvent.preventDefault()
 
-  // Protocolización de Informes (Naranja)
-  {
-    title: '📄 Informe Protocolizado - MA-006',
-    start: '2025-12-18',
-    color: CALENDAR_EVENT_COLORS.informe,
-    type: 'informe',
-  },
-  {
-    title: '📄 Informe Protocolizado - MA-004',
-    start: '2025-12-23',
-    color: CALENDAR_EVENT_COLORS.informe,
-    type: 'informe',
-  },
-  {
-    title: '📄 Informe Protocolizado - MA-005',
-    start: '2025-12-26',
-    color: CALENDAR_EVENT_COLORS.informe,
-    type: 'informe',
-  },
-  {
-    title: '📄 Informe Protocolizado - MA-008',
-    start: '2026-01-10',
-    color: CALENDAR_EVENT_COLORS.informe,
-    type: 'informe',
-  },
-  {
-    title: '📄 Informe Protocolizado - MA-009',
-    start: '2026-01-20',
-    color: CALENDAR_EVENT_COLORS.informe,
-    type: 'informe',
-  },
-  {
-    title: '📄 Informe Protocolizado - MA-004',
-    start: '2025-12-23T16:00:00',
-    color: CALENDAR_EVENT_COLORS.informe,
-    type: 'informe',
-  },
-  {
-    title: '📄 Informe Protocolizado - MA-008',
-    start: '2026-01-10T09:00:00',
-    color: CALENDAR_EVENT_COLORS.informe,
-    type: 'informe',
-  },
+  // Extract event data
+  const event = clickInfo.event
+  const clickedEventId = event.id
 
-  // Revisiones y Validaciones (Amarillo)
-  {
-    title: '✅ Validación de Datos - MA-003',
-    start: '2025-12-17',
-    color: CALENDAR_EVENT_COLORS.validacion,
-    type: 'validacion',
-  },
-  {
-    title: '✅ Validación de Datos - MA-007',
-    start: '2025-12-24',
-    color: CALENDAR_EVENT_COLORS.validacion,
-    type: 'validacion',
-  },
-  {
-    title: '✅ Validación de Datos - MA-010',
-    start: '2026-01-12',
-    color: CALENDAR_EVENT_COLORS.validacion,
-    type: 'validacion',
-  },
-  {
-    title: '✅ Validación de Datos - MA-011',
-    start: '2026-01-25',
-    color: CALENDAR_EVENT_COLORS.validacion,
-    type: 'validacion',
-  },
+  // Toggle Logic
+  if (selectedEvent.value?.id === clickedEventId) {
+    selectedEvent.value = null // Close sidebar
+  } else {
+    // Open sidebar with new event
+    selectedEvent.value = {
+      id: event.id,
+      title: event.title,
+      start: event.start,
+      end: event.end,
+      extendedProps: event.extendedProps,
+      allDay: event.allDay // Ensure this is captured
+    }
+  }
+}
 
-  // Alertas y Eventos Críticos (Rojo)
-  {
-    title: '⚠️ Alerta - Revisión Urgente MA-002',
-    start: '2025-12-21',
-    color: CALENDAR_EVENT_COLORS.alerta,
-    type: 'alerta',
-  },
-  {
-    title: '⚠️ Alerta - Datos Incompletos MA-006',
-    start: '2025-12-27',
-    color: CALENDAR_EVENT_COLORS.alerta,
-    type: 'alerta',
-  },
-  {
-    title: '⚠️ Alerta - Retraso en Informe MA-012',
-    start: '2026-01-14',
-    color: CALENDAR_EVENT_COLORS.alerta,
-    type: 'alerta',
-  },
 
-  // Reuniones y Coordinación (Índigo)
-  {
-    title: '👥 Reunión de Coordinación',
-    start: '2025-12-19',
-    color: CALENDAR_EVENT_COLORS.reunion,
-    type: 'reunion',
-  },
-  {
-    title: '👥 Capacitación Observadores',
-    start: '2025-12-26',
-    color: CALENDAR_EVENT_COLORS.reunion,
-    type: 'reunion',
-  },
-  {
-    title: '👥 Reunión Técnica',
-    start: '2026-01-09',
-    color: CALENDAR_EVENT_COLORS.reunion,
-    type: 'reunion',
-  },
-  {
-    title: '👥 Taller de Actualización',
-    start: '2026-01-22',
-    color: CALENDAR_EVENT_COLORS.reunion,
-    type: 'reunion',
-  },
-  {
-    title: '👥 Reunión Técnica',
-    start: '2026-01-10T15:00:00',
-    color: CALENDAR_EVENT_COLORS.reunion,
-    type: 'reunion',
-  },
+const navigateToMarea = () => {
+  if (selectedEvent.value?.extendedProps?.mareaId) {
+    router.push({
+      name: 'marea-detalle',
+      params: { id: selectedEvent.value.extendedProps.mareaId }
+    })
+  }
+}
 
-  // Eventos de múltiples días (Navegación)
-  {
-    title: '🌊 Navegación - BP UNION',
-    start: '2025-12-15',
-    end: '2025-12-25',
-    color: CALENDAR_EVENT_COLORS.navegacionCyan,
-    display: 'background',
-    type: 'navegacion',
-  },
-  {
-    title: '🌊 Navegación - BP PACIFICO',
-    start: '2025-12-22',
-    end: '2025-12-30',
-    color: CALENDAR_EVENT_COLORS.navegacionPurple,
-    display: 'background',
-    type: 'navegacion',
-  },
-  {
-    title: '🌊 Navegación - BP ATLANTICO',
-    start: '2026-01-08',
-    end: '2026-01-18',
-    color: CALENDAR_EVENT_COLORS.navegacionCyan,
-    display: 'background',
-    type: 'navegacion',
-  },
-  {
-    title: '🌊 Navegación - BP MAR DEL NORTE',
-    start: '2026-01-16',
-    end: '2026-01-26',
-    color: CALENDAR_EVENT_COLORS.navegacionPurple,
-    display: 'background',
-    type: 'navegacion',
-  },
-]
 
 // Filtered events based on selected types
 const filteredEvents = computed(() => {
   const enabledTypes = eventTypes.value.filter((t) => t.enabled).map((t) => t.id)
-  return allEvents.filter((event) => enabledTypes.includes(event.type))
+  return allEvents.value.filter((event) => enabledTypes.includes(event.type))
 })
 
 const calendarOptions = ref({
   plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin, listPlugin],
   initialView: 'dayGridMonth',
   locale: esLocale,
+  firstDay: 0, // 0 = Domingo
   headerToolbar: {
     left: 'prev,next today',
     center: 'title',
@@ -401,14 +299,28 @@ const calendarOptions = ref({
     day: 'Día',
     list: 'Agenda',
   },
-  events: filteredEvents.value,
-  editable: true,
+  events: filteredEvents.value, // Initial bind
+  editable: false, // Read only for now
   selectable: true,
   selectMirror: true,
   dayMaxEvents: true,
   height: 'auto',
   themeSystem: 'standard',
+  eventClick: handleEventClick,
 })
+
+const fetchEvents = async () => {
+    try {
+        const events = await mareasService.getCalendarEvents()
+        allEvents.value = events.map((e: CalendarEvent) => ({
+            ...e,
+            color: (CALENDAR_EVENT_COLORS as any)[e.type] || '#808080',
+            textColor: '#111827'
+        }))
+    } catch (error) {
+        console.error('Error fetching calendar events:', error)
+    }
+}
 
 // Watch for filter changes and update calendar events
 watch(
@@ -418,45 +330,51 @@ watch(
   },
   { deep: true },
 )
+
+onMounted(() => {
+    fetchEvents()
+})
 </script>
 
 <style>
 /* Estilos personalizados para integrar con el tema */
 .mareas-calendar {
-  --fc-border-color: #e2e8f0;
-  --fc-button-bg-color: #5e5adb;
-  --fc-button-border-color: #5e5adb;
-  --fc-button-hover-bg-color: #4a46b1;
-  --fc-button-active-bg-color: #4a46b1;
-  --fc-today-bg-color: rgba(94, 90, 219, 0.05);
+  --fc-border-color: var(--color-gray-200);
+  --fc-button-bg-color: var(--color-brand-500);
+  --fc-button-border-color: var(--color-brand-500);
+  --fc-button-hover-bg-color: var(--color-brand-600);
+  --fc-button-active-bg-color: var(--color-brand-600);
+  --fc-today-bg-color: rgba(70, 95, 255, 0.05);
   --fc-page-bg-color: transparent;
+  font-family: 'Outfit', sans-serif;
+  --fc-text-color: var(--color-gray-700);
 }
 
 .dark .mareas-calendar {
-  --fc-border-color: #1e293b;
-  --fc-text-color: #f1f5f9;
-  --fc-neutral-bg-color: #0f172a;
-  --fc-list-event-hover-bg-color: #1e293b;
+  --fc-border-color: var(--color-gray-800);
+  --fc-text-color: var(--color-gray-300);
+  --fc-neutral-bg-color: var(--color-gray-900);
+  --fc-list-event-hover-bg-color: var(--color-gray-800);
 }
 
 .fc .fc-toolbar-title {
   font-size: 1.125rem;
   line-height: 1.75rem;
   font-weight: 700;
-  color: #1f2937;
+  color: var(--color-gray-900);
 }
 
 .dark .fc .fc-toolbar-title {
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--color-white);
 }
 
 .fc .fc-col-header-cell-cushion {
   padding-top: 0.75rem;
   padding-bottom: 0.75rem;
-  font-size: 0.875rem;
-  line-height: 1.25rem;
-  font-weight: 600;
-  color: #6b7280;
+  font-size: 0.75rem;
+  line-height: 1rem;
+  font-weight: 700;
+  color: var(--color-gray-500);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
@@ -465,28 +383,117 @@ watch(
   padding: 0.5rem;
   font-size: 0.875rem;
   line-height: 1.25rem;
-  color: #6b7280;
+  color: var(--color-gray-500);
 }
 
 .dark .fc .fc-daygrid-day-number {
-  color: #94a3b8;
+  color: var(--color-gray-400);
 }
 
 .fc-theme-standard .fc-scrollgrid {
-  border-color: #e2e8f0;
+  border-color: var(--color-gray-200);
 }
 
 .dark .fc-theme-standard .fc-scrollgrid {
-  border-color: #1e293b;
+  border-color: var(--color-gray-800);
 }
 
 .fc-theme-standard td,
 .fc-theme-standard th {
-  border-color: #f1f5f9;
+  border-color: var(--color-gray-200);
 }
 
 .dark .fc-theme-standard td,
 .dark .fc-theme-standard th {
-  border-color: #1e293b;
+  border-color: var(--color-gray-800);
+}
+
+.mareas-calendar .fc-event {
+  cursor: pointer;
+}
+
+.mareas-calendar .fc-event-title,
+.mareas-calendar .fc-event-time,
+.mareas-calendar .fc-list-event-title,
+.mareas-calendar .fc-list-event-time {
+  color: var(--color-gray-700);
+  font-weight: 600;
+  font-size: x-small;
+}
+
+.dark .mareas-calendar .fc-event-title,
+.dark .mareas-calendar .fc-event-time,
+.dark .mareas-calendar .fc-list-event-title,
+.dark .mareas-calendar .fc-list-event-time {
+  color: #f3f4f6 !important; /* gray-100 */
+}
+
+/* Sidebar Transition */
+.slide-in-right-enter-active,
+.slide-in-right-leave-active {
+  transition: all 0.3s ease-out;
+}
+
+.slide-in-right-enter-from,
+.slide-in-right-leave-to {
+  transform: translateX(20px);
+  opacity: 0;
+}
+
+/* Asegurar que el tooltip sea visible fuera del contenedor del evento */
+.fc .fc-scroller-harness,
+.fc .fc-scroller,
+.fc .fc-daygrid-body,
+.fc .fc-daygrid-day-frame,
+.fc .fc-daygrid-day-events,
+.fc .fc-view-harness {
+  overflow: visible !important;
+}
+
+.fc-daygrid-body {
+  z-index: 1 !important;
+}
+
+/* En vista semanal y mensual, elevamos los eventos al pasar el mouse */
+.fc-timegrid-event-harness:hover,
+.fc-daygrid-event-harness:hover {
+  z-index: 99999 !important;
+  position: relative;
+}
+
+/* El encabezado debe tener una prioridad controlada para no tapar los tooltips elevados */
+.fc-scrollgrid-section-header,
+.fc .fc-col-header {
+  z-index: 10 !important;
+  position: relative;
+}
+
+/* Pero el cuerpo del calendario (donde están los eventos) debe poder estar por encima en hover */
+.fc-scrollgrid-section-body {
+  z-index: 20 !important;
+  position: relative;
+}
+
+.fc-event {
+  overflow: visible !important;
+}
+
+.fc-daygrid-event-harness {
+  overflow: visible !important;
+}
+
+.mareas-calendar .fc-event-main {
+  overflow: visible !important;
+}
+
+/* Fix específico para que el tooltip no se esconda bajo la toolbar superior */
+.fc .fc-toolbar {
+  position: relative;
+  z-index: 5; /* Por debajo de los eventos elevados (20+) */
+}
+
+/* Asegurar que el scrollgrid no recorte nada */
+.fc-theme-standard .fc-scrollgrid {
+  overflow: visible !important;
 }
 </style>

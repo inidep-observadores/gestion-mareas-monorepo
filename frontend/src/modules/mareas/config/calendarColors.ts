@@ -6,7 +6,8 @@ export const CALENDAR_EVENT_COLORS = {
   designacion: 'rgb(70, 95, 255)', // brand-500
 
   // Zarpadas - Blue
-  zarpada: 'rgb(59, 130, 246)', // blue-500
+  // zarpada: 'rgb(59, 130, 246)', // blue-500
+  zarpada: 'rgb(150, 130, 246)', // blue-500
 
   // Arribos - Success green
   arribo: 'rgb(16, 185, 129)', // success-500 / green-500

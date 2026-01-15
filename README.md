@@ -130,6 +130,42 @@ Ahora, configura y ejecuta la aplicación cliente.
 
 ---
 
+## Despliegue en Producción
+
+A diferencia del entorno de desarrollo, en producción **nunca** se debe usar `prisma migrate dev`, ya que este comando puede intentar resetear la base de datos si detecta cambios manuales.
+
+### Aplicar migraciones en Producción
+Para aplicar las migraciones (incluyendo nuestras vistas SQL personalizadas) de forma segura:
+
+```bash
+npx prisma migrate deploy
+```
+
+Este comando:
+1. Lee las migraciones en `prisma/migrations`.
+2. Aplica solo las que faltan.
+3. **Nunca** borra datos ni resetea la base de datos.
+4. Es el comando ideal para usar en tuberías de CI/CD.
+
+---
+
+## Vistas SQL y Personalizaciones de Base de Datos
+
+Para que la base de datos incluya vistas "aplanadas" u otras personalizaciones que no se pueden definir directamente en el esquema de Prisma, se utilizan migraciones personalizadas.
+
+### Cómo agregar o modificar vistas SQL
+1. **Generar migración vacía**:
+   ```bash
+   npx prisma migrate dev --create-only --name nombre_de_tu_vista
+   ```
+2. **Agregar el SQL**: Edita el archivo `migration.sql` creado en la nueva carpeta de `prisma/migrations` y pega tu código SQL (ej: `CREATE VIEW...`).
+3. **Aplicar**: Ejecuta `npx prisma migrate dev`.
+
+### Vistas Disponibles
+- **`vw_mareas_completas`**: Una vista que aplane los IDs de buques, estados y puertos de las primeras 10 etapas de una marea, formateando las fechas a `DD/MM/YYYY` en hora local (UTC-3). Ideal para consultas externas o reportes rápidos.
+
+---
+
 ## Flujo de Recuperación de Contraseña
 
 El backend proporciona endpoints para un flujo de recuperación de contraseña. El frontend debe integrarse con los siguientes endpoints:

@@ -76,20 +76,57 @@ export function useBuques() {
     const handleSave = async (data: Partial<Buque>) => {
         isSaving.value = true
         try {
+            // Limpiar datos para el backend usando una lista blanca (whitelist)
+            // Esto evita enviar objetos de relación o campos no permitidos (forbidNonWhitelisted)
+            const allowedFields: (keyof Buque)[] = [
+                'nombreBuque', 'matricula', 'codigoInterno', 'tipoFlotaId',
+                'arteHabitualId', 'pesqueriaHabitualId', 'diasMareaEstimada',
+                'esloraM', 'potenciaHp', 'puertoBaseId', 'empresaNombre',
+                'empresaLocalidad', 'empresaTelefono', 'empresaFax',
+                'empresaCorreoPrincipal', 'empresaCorreoSecundario',
+                'armadorNombre', 'armadorTelefono', 'agenciaMaritimaNombre',
+                'activo', 'fechaAlta', 'fechaBaja', 'observaciones'
+            ]
+
+            const payload: any = {}
+            const numericFields: (keyof Buque)[] = ['codigoInterno', 'diasMareaEstimada', 'esloraM', 'potenciaHp']
+
+            allowedFields.forEach(field => {
+                let value = data[field]
+
+                // Si es un campo numérico, intentar convertir a número si es un string
+                if (numericFields.includes(field)) {
+                    if (typeof value === 'string' && value.trim() !== '') {
+                        const num = Number(value.replace(',', '.'))
+                        value = isNaN(num) ? null : num
+                    } else if (value === '' || value === undefined) {
+                        value = null
+                    }
+                }
+
+                // Solo incluir si NO es undefined
+                if (value !== undefined) {
+                    payload[field] = value
+                }
+            })
+
             if (currentBuque.value?.id) {
-                await buquesApi.updateBuque(currentBuque.value.id, data)
+                await buquesApi.updateBuque(currentBuque.value.id, payload)
                 toast.success('Buque actualizado correctamente')
             } else {
-                await buquesApi.createBuque(data)
+                await buquesApi.createBuque(payload)
                 toast.success('Buque creado correctamente')
             }
             await fetchBuques()
             closeModal()
         } catch (error: any) {
-            const errorMessage = error.response?.data?.message || 'Error al guardar buque'
-            if (Array.isArray(errorMessage)) {
-                errorMessage.forEach(msg => toast.error(msg))
+            console.error('Error al guardar buque:', error)
+
+            // Si es un AppError (ya normalizado por el interceptor)
+            if (error.validationErrors) {
+                Object.values(error.validationErrors).forEach(msg => toast.error(msg as string))
             } else {
+                const errorMessage = error.message || 'Error al guardar buque'
                 toast.error(errorMessage)
             }
         } finally {

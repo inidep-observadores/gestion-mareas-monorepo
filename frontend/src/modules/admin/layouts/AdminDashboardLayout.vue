@@ -1,13 +1,25 @@
 <template>
-  <div class="min-h-screen xl:flex">
+  <div class="min-h-screen xl:flex bg-red-100/40 dark:bg-red-950/20 relative overflow-hidden">
+    <!-- Distinctive Background Pattern for Admin (Hazard Zone) -->
+    <div class="absolute inset-0 z-0 pointer-events-none opacity-[0.15] dark:opacity-[0.25]">
+      <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <pattern id="admin-grid" width="60" height="60" patternUnits="userSpaceOnUse">
+            <path d="M 60 0 L 0 0 0 60" fill="none" stroke="#ef4444" stroke-width="1.5"/>
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#admin-grid)" />
+      </svg>
+    </div>
+
     <admin-sidebar />
     <Backdrop />
     <div
-      class="flex-1 transition-all duration-300 ease-in-out"
-      :class="[isExpanded || isHovered ? 'lg:ml-[290px]' : 'lg:ml-[90px]']"
+      class="flex-1 transition-all duration-300 ease-in-out relative z-10 min-w-0"
+      :class="[isExpanded || isHovered ? 'lg:ml-[18.125rem]' : 'lg:ml-[5.625rem]']"
     >
       <app-header />
-      <div class="admin-layout-content p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6">
+      <div class="admin-layout-content p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6 min-w-0 overflow-hidden">
         <slot></slot>
       </div>
     </div>

@@ -1,16 +1,5 @@
 <template>
-  <svg 
-    xmlns="http://www.w3.org/2000/svg" 
-    width="24" 
-    height="24" 
-    viewBox="0 0 24 24" 
-    fill="none" 
-    stroke="currentColor" 
-    stroke-width="2" 
-    stroke-linecap="round" 
-    stroke-linejoin="round"
-  >
-    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 -960 960 960" fill="currentColor">
+    <path d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h360q17 0 28.5 11.5T600-800q0 17-11.5 28.5T560-760H200v560h560v-360q0-17 11.5-28.5T800-600q17 0 28.5 11.5T840-560v360q0 33-23.5 56.5T760-120H200Zm160-240v-112l330-330q11-11 26-11t26 11l112 112q11 11 11 26t-11 26L472-360H360Zm400-353-59-59 59 59ZM440-440h32l242-242-16-16-16-16-242 242v32Zm242-242-16-16 16 16 16 16-16-16Z"/>
   </svg>
 </template>

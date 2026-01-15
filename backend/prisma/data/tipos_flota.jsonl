@@ -1,14 +1,6 @@
-{"codigo":"FRESQUERO","nombre":"Fresquero","activo":true}
-{"codigo":"TANGONERO","nombre":"Tangonero","activo":true}
-{"codigo":"CONGELADOR_MERLUCERO","nombre":"Congelador Merlucero","activo":true}
-{"codigo":"POTERO","nombre":"Potero","activo":true}
-{"codigo":"PALANGRERO","nombre":"Palangrero","activo":true}
-{"codigo":"CONGELADOR_ARRASTRERO","nombre":"Congelador Arrastrero","activo":true}
-{"codigo":"CENTOLLERO","nombre":"Centollero","activo":true}
-{"codigo":"VIEIRERO","nombre":"Vieirero","activo":true}
-{"codigo":"COSTERO","nombre":"Costero","activo":true}
-{"codigo":"INVESTIGACION","nombre":"Investigación","activo":true}
-{"codigo":"SURIMERO","nombre":"Surimero","activo":true}
-{"codigo":"RAYERO","nombre":"Rayero","activo":true}
-{"codigo":"CONGELADOR_AUSTRAL","nombre":"Congelador Austral","activo":true}
-{"codigo":"CONGELADOR_GENERICO","nombre":"Congelador Genérico","activo":true}
+{"codigo_numerico": 21, "codigo": "COSTERO", "nombre": "Costero", "activo": true}
+{"codigo_numerico": 11, "codigo": "RADA_RIA", "nombre": "Rada o Ría", "activo": true}
+{"codigo_numerico": 31, "codigo": "ALTURA_FRESQUERO", "nombre": "Altura (Fresquero)", "activo": true}
+{"codigo_numerico": 32, "codigo": "ALTURA_CONGELADOR", "nombre": "Altura (Congelador)", "activo": true}
+{"codigo_numerico": 90, "codigo": "INVESTIGACION", "nombre": "Investigación", "activo": true}
+{"codigo_numerico": 99, "codigo": "INDETERMINADO", "nombre": "Indeterminado", "activo": true}

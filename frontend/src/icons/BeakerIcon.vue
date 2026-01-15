@@ -1,32 +1,5 @@
 <template>
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path
-      d="M4.5 3H19.5V6H4.5V3Z"
-      stroke="currentColor"
-      stroke-width="2"
-      stroke-linecap="round"
-      stroke-linejoin="round"
-    />
-    <path
-      d="M6 6V16C6 18.2091 7.79086 20 10 20H14C16.2091 20 18 18.2091 18 16V6"
-      stroke="currentColor"
-      stroke-width="2"
-      stroke-linecap="round"
-      stroke-linejoin="round"
-    />
-    <path
-      d="M10 10H14"
-      stroke="currentColor"
-      stroke-width="2"
-      stroke-linecap="round"
-      stroke-linejoin="round"
-    />
-    <path
-      d="M10 14H14"
-      stroke="currentColor"
-      stroke-width="2"
-      stroke-linecap="round"
-      stroke-linejoin="round"
-    />
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 -960 960 960" fill="currentColor">
+    <path d="M282-120q-33 0-57.5-23.5T200-200q0-8 2-15.5t6-14.5l212-330v-160h-40q-17 0-28.5-11.5T340-760q0-17 11.5-28.5T380-800h200q17 0 28.5 11.5T620-760q0-17-11.5-28.5T580-800h-40v160l212 330q4 7 6 14.5t2 15.5q0 33-24.5 56.5T678-120H282Zm48-360h300l-102-160h-96l-102 160Zm-48 280h396l-77-120H359l-77 120Z"/>
   </svg>
 </template>
