@@ -10,20 +10,20 @@
         @input="onSearchInput"
         @keydown="onKeyDown"
         :placeholder="selectedLabel ? '' : placeholder"
-        class="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-900 border rounded-lg text-sm text-gray-800 dark:text-white outline-none focus:border-brand-500 transition-all appearance-none caret-brand-500"
+        class="w-full px-4 py-2.5 bg-background border rounded-lg text-sm text-text outline-none focus:border-primary transition-all appearance-none caret-primary"
         style="color-scheme: light dark;"
         :class="[
-          error ? 'border-red-500 bg-red-50/30' : 'border-gray-100 dark:border-gray-800',
+          error ? 'border-red-500 bg-red-50/30' : 'border-border',
           { 'pl-10': icon }
         ]"
       />
       <!-- Display selected label when not searching and not focused -->
       <div v-if="selectedLabel && !searchQuery && !isOpen" 
-           class="absolute inset-y-0 left-0 flex items-center px-4 pointer-events-none text-sm text-gray-800 dark:text-white"
+           class="absolute inset-y-0 left-0 flex items-center px-4 pointer-events-none text-sm text-text"
            :class="{ 'pl-10': icon }">
         {{ selectedLabel }}
       </div>
-      <div v-if="icon" class="absolute inset-y-0 left-0 flex items-center pl-3" :class="error ? 'text-red-500' : 'text-gray-400'">
+      <div v-if="icon" class="absolute inset-y-0 left-0 flex items-center pl-3" :class="error ? 'text-red-500' : 'text-text-muted'">
         <component :is="icon" class="w-4 h-4" />
       </div>
       <div class="absolute inset-y-0 right-0 flex items-center pr-3 gap-1">
@@ -31,12 +31,12 @@
           v-if="modelValue !== null"
           @click.stop="clearValue"
           type="button"
-          class="p-1 text-gray-300 hover:text-red-500 hover:bg-red-50 dark:text-gray-600 dark:hover:bg-red-500/10 rounded-full transition-all group/clear"
+          class="p-1 text-text-muted/60 hover:text-red-500 hover:bg-red-50 rounded-full transition-all group/clear"
           title="Limpiar selección"
         >
           <XIcon class="w-3 h-3" />
         </button>
-        <div class="text-gray-400 pointer-events-none transition-transform duration-300" :class="{ 'rotate-180': isOpen }">
+        <div class="text-text-muted pointer-events-none transition-transform duration-300" :class="{ 'rotate-180': isOpen }">
           <ChevronDownIcon class="w-4 h-4" />
         </div>
       </div>
@@ -47,11 +47,11 @@
       <div 
         v-if="isOpen" 
         ref="dropdown"
-        class="fixed z-[200000] bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200"
+        class="fixed z-[200000] bg-surface border border-border rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200"
         :style="dropdownStyle"
       >
         <div class="max-h-64 overflow-y-auto custom-scrollbar p-1" ref="listContainer">
-          <div v-if="filteredOptions.length === 0" class="p-4 text-center text-gray-400 text-xs italic">
+          <div v-if="filteredOptions.length === 0" class="p-4 text-center text-text-muted text-xs italic">
             No se encontraron resultados
           </div>
           <button
@@ -62,15 +62,15 @@
             @mouseenter="highlightedIndex = index"
             class="w-full px-5 py-3 text-left rounded-xl transition-all flex items-center justify-between group"
             :class="[
-              modelValue === option.value ? 'bg-brand-50/50 dark:bg-brand-500/10' : '',
-              highlightedIndex === index ? 'bg-brand-50 dark:bg-brand-500/20 ring-1 ring-brand-200 dark:ring-brand-800' : ''
+              modelValue === option.value ? 'bg-primary/10' : '',
+              highlightedIndex === index ? 'bg-primary/20 ring-1 ring-primary/30' : ''
             ]"
           >
-            <span class="text-sm font-semibold" :class="modelValue === option.value ? 'text-brand-500' : 'text-gray-700 dark:text-gray-300'">
+            <span class="text-sm font-semibold" :class="modelValue === option.value ? 'text-primary' : 'text-text'">
               {{ option.label }}
             </span>
-            <CheckIcon v-if="modelValue === option.value" class="w-4 h-4 text-brand-500" />
-            <span v-else-if="highlightedIndex === index" class="text-[9px] text-brand-400 font-black uppercase tracking-widest transition-opacity animate-in fade-in slide-in-from-right-1">Seleccionar</span>
+            <CheckIcon v-if="modelValue === option.value" class="w-4 h-4 text-primary" />
+            <span v-else-if="highlightedIndex === index" class="text-[9px] text-primary/60 font-black uppercase tracking-widest transition-opacity animate-in fade-in slide-in-from-right-1">Seleccionar</span>
           </button>
         </div>
       </div>
@@ -246,13 +246,8 @@ watch(() => props.modelValue, () => {
 
 <style scoped>
 input {
-  color-scheme: light;
-  caret-color: #465fff;
-}
-
-:global(.dark) input {
-  color-scheme: dark;
-  caret-color: #7592ff;
+  color-scheme: light dark;
+  caret-color: var(--color-primary);
 }
 </style>
 
