@@ -335,6 +335,7 @@ import ConfirmationDialog from '@/components/common/ConfirmationDialog.vue'
 import NavigationStagesEditor from '../components/NavigationStagesEditor.vue'
 import { useMareas } from '../composables/useMareas'
 import { useWorkflowStore } from '../../shared/stores/workflow.store'
+import { alertsService } from '@/modules/alerts/services/alerts.service'
 import catalogosService from '../services/catalogos.service'
 import { 
   ShipIcon, 
@@ -653,7 +654,22 @@ const nextStep = async () => {
           })
       }
 
-      await createMarea(payload)
+      const newMarea = await createMarea(payload)
+      
+      // Auto-resolve alert if exists in workflow context
+      if (workflowStore.activeAlertData?.id) {
+          try {
+              await alertsService.update(workflowStore.activeAlertData.id, {
+                  estado: 'RESUELTA',
+                  comment: `Marea ${newMarea.id_marea || 'creada'} registrada exitosamente. Resolución automática.`
+              })
+              toast.success('Alerta resuelta automáticamente')
+          } catch (e) {
+              console.error('Error auto-resolving alert:', e)
+              // Don't block flow if this fails, just log
+          }
+      }
+
       toast.success('Marea creada exitosamente')
       router.back()
     } catch (err: any) {

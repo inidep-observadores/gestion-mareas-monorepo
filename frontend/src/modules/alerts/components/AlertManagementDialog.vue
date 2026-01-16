@@ -538,6 +538,13 @@ const handleStagesConfirm = async (data: any) => {
                 etapas: data.etapas
             })
             toast.success('Cambios guardados con éxito')
+
+            // Auto-comment for resolution if user didn't type one
+            if (!comment.value) {
+                const actionType = stagesDialogMode.value === 'INICIAR' ? 'Registro de Nueva Etapa' : 'Conciliación de Datos/Etapas'
+                comment.value = `${actionType} realizada exitosamente. Resolución automática.`
+            }
+
             await submitUpdate('RESUELTA')
         }
     } catch (e) {
