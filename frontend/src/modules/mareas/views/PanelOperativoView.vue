@@ -76,14 +76,14 @@
                       </span>
                       <div class="flex flex-col items-end gap-1">
                         <div class="flex items-center gap-1">
-                          <span v-if="marea.total_etapas > 1 && marea.estado_codigo === 'EN_EJECUCION'" class="px-2 py-0.5 bg-surface-muted text-text-muted rounded-full text-[9px] font-black uppercase tracking-tighter border border-border">
-                            Etapa {{ marea.total_etapas }}
-                          </span>
                           <span
                             class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-tighter"
                             :class="getStatusClasses(marea.estado_codigo)"
                           >
                             {{ marea.estado }}
+                          </span>
+                          <span v-if="marea.total_etapas > 1 && marea.estado_codigo === 'EN_EJECUCION'" class="px-2 py-0.5 bg-surface-muted text-text-muted rounded-full text-[9px] font-black uppercase tracking-tighter border border-border">
+                            Etapa {{ marea.total_etapas }}
                           </span>
                         </div>
                         <span v-if="marea.en_tierra" class="px-2 py-0.5 bg-success/10 text-success rounded-full text-[8px] font-black uppercase tracking-tighter whitespace-nowrap flex items-center gap-1 border border-success/20">
@@ -197,11 +197,11 @@
                         </td>
                         <td v-if="!selectedMarea" class="px-5 py-1.5">
                           <div class="flex items-center gap-2">
-                            <span v-if="marea.total_etapas > 1 && marea.estado_codigo === 'EN_EJECUCION'" class="px-2 py-0.5 bg-surface-muted text-text-muted rounded-full text-[10px] font-black uppercase tracking-tighter border border-border">
-                              Etapa {{ marea.total_etapas }}
-                            </span>
                             <span class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-tighter whitespace-nowrap" :class="getStatusClasses(marea.estado_codigo)">
                               {{ marea.estado }}
+                            </span>
+                            <span v-if="marea.total_etapas > 1 && marea.estado_codigo === 'EN_EJECUCION'" class="px-2 py-0.5 bg-surface-muted text-text-muted rounded-full text-[10px] font-black uppercase tracking-tighter border border-border">
+                              Etapa {{ marea.total_etapas }}
                             </span>
                             <span v-if="marea.en_tierra" class="px-2 py-0.5 bg-success/10 text-success rounded-full text-[10px] font-black uppercase tracking-tighter whitespace-nowrap flex items-center gap-1 border border-success/20">
                               <div class="w-1 h-1 rounded-full bg-success animate-pulse"></div>

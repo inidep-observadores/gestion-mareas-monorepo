@@ -73,7 +73,7 @@
                   <span class="fc-event-time font-bold mr-1">{{ arg.timeText }}</span>
                   <span class="fc-event-title font-medium uppercase">{{ arg.event.title }}</span>
                 </div>
- 
+
                 <!-- Custom Tooltip -->
                 <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-4 px-3 py-2 text-[11px] text-text bg-surface rounded-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible whitespace-normal min-w-[220px] max-w-[300px] z-[99999] shadow-2xl pointer-events-none backdrop-blur-xl bg-opacity-95 border border-primary/30 ring-1 ring-white/10 flex flex-col">
                   <div class="font-black uppercase tracking-tight text-primary border-b border-primary/20 mb-2 pb-1.5 flex items-center gap-2">
@@ -126,7 +126,7 @@
             <div class="p-6 space-y-6">
               <!-- Date -->
               <div>
-                <p class="text-[10px] font-black text-text-muted uppercase tracking-widest mb-1">Fecha y Hora</p>
+                <p class="text-[10px] font-black text-text-muted uppercase tracking-widest mb-1">Fecha</p>
                 <div class="flex items-center gap-2 text-text font-black uppercase">
                   <CalenderIcon class="w-4 h-4 text-primary" />
                   <span>
@@ -482,7 +482,7 @@ onMounted(() => {
 }
 
 /* Solo los elementos de eventos permiten desbordamiento para el tooltip */
-.fc-event, 
+.fc-event,
 .fc-daygrid-event-harness,
 .fc-list-event,
 .fc-list-event-td,
