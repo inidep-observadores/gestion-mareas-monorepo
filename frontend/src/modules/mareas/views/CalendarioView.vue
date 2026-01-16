@@ -277,7 +277,7 @@ const handleEventClick = (clickInfo: any) => {
 const navigateToMarea = () => {
   if (selectedEvent.value?.extendedProps?.mareaId) {
     router.push({
-      name: 'marea-detalle',
+      name: 'MareaDetalle',
       params: { id: selectedEvent.value.extendedProps.mareaId }
     })
   }
