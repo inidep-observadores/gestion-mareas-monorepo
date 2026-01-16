@@ -36,7 +36,11 @@
         >
           <XIcon class="w-3 h-3" />
         </button>
-        <div class="text-text-muted pointer-events-none transition-transform duration-300" :class="{ 'rotate-180': isOpen }">
+        <div 
+          class="text-text-muted cursor-pointer transition-transform duration-300 hover:text-primary" 
+          :class="{ 'rotate-180': isOpen }"
+          @click.stop="toggleDropdown"
+        >
           <ChevronDownIcon class="w-4 h-4" />
         </div>
       </div>
@@ -134,6 +138,17 @@ const filteredOptions = computed(() => {
   const q = normalizeText(searchQuery.value)
   return props.options.filter(o => normalizeText(o.label).includes(q))
 })
+
+const toggleDropdown = () => {
+  if (isOpen.value) {
+    closeDropdown()
+  } else {
+    openDropdown()
+    nextTick(() => {
+      inputRef.value?.focus()
+    })
+  }
+}
 
 const openDropdown = () => {
   isOpen.value = true
