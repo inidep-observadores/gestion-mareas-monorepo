@@ -1,46 +1,46 @@
 <template>
   <div class="space-y-4">
     <div class="flex items-center justify-between">
-      <h4 class="text-xs font-black uppercase tracking-widest text-gray-400 flex items-center gap-2">
+      <h4 class="text-xs font-black uppercase tracking-widest text-text-muted flex items-center gap-2">
         <MapPinIcon class="w-3 h-3" /> Etapas del Viaje
       </h4>
       <button 
         v-if="!readOnly"
         @click="addStage"
         :disabled="!canAddStage"
-        class="px-3 py-1.5 bg-brand-100 text-brand-700 dark:bg-brand-500/10 dark:text-brand-400 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-brand-200 dark:hover:bg-brand-500/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+        class="px-3 py-1.5 bg-primary/10 text-primary rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-primary/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
       >
         <span>+ Agregar Etapa</span>
       </button>
     </div>
 
-    <div v-if="modelValue.length === 0" class="text-center py-12 bg-gray-50 dark:bg-gray-800/50 rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-800">
-      <MapPinIcon class="w-12 h-12 text-gray-300 mx-auto mb-4" />
-      <p class="text-gray-500 font-medium">No hay etapas registradas.</p>
+    <div v-if="modelValue.length === 0" class="text-center py-12 bg-surface-muted/50 rounded-2xl border-2 border-dashed border-border">
+      <MapPinIcon class="w-12 h-12 text-text-muted mx-auto mb-4" />
+      <p class="text-text-muted font-medium">No hay etapas registradas.</p>
     </div>
 
     <div v-else class="space-y-4">
       <div v-for="(stage, index) in modelValue" :key="index"
            :id="`stage-card-${index}`"
-           class="bg-white dark:bg-gray-950 border border-gray-100 dark:border-gray-800 rounded-2xl p-4 relative group transition-all shadow-sm hover:shadow-md"
+           class="bg-surface border border-border rounded-2xl p-4 relative group transition-all shadow-sm hover:shadow-md"
            :class="{
-             'border-red-200 bg-red-50/10': hasOverlap(index),
-             'border-amber-200 bg-amber-50/10': isInternalInconsistent(index)
+             'border-error/30 bg-error/5': hasOverlap(index),
+             'border-warning/30 bg-warning/5': isInternalInconsistent(index)
            }">
 
         <!-- Header: Simple & Clean -->
         <div class="flex items-center justify-between mb-4">
           <div class="flex items-center gap-2">
-             <div class="w-6 h-6 rounded-lg bg-brand-500/10 flex items-center justify-center text-brand-600">
+             <div class="w-6 h-6 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
                 <span class="text-[10px] font-black">#{{ index + 1 }}</span>
              </div>
-             <h4 class="text-xs font-bold text-gray-800 dark:text-white">Etapa de Navegación</h4>
+             <h4 class="text-xs font-bold text-text uppercase tracking-tight">Etapa de Navegación</h4>
           </div>
 
           <button
             v-if="!readOnly && index === modelValue.length - 1 && modelValue.length > (minStages || 0)"
             @click="removeStage(index)"
-            class="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-all opacity-0 group-hover:opacity-100"
+            class="p-1.5 text-text-muted/40 hover:text-error hover:bg-error/10 rounded-lg transition-all opacity-0 group-hover:opacity-100"
             title="Eliminar etapa"
           >
             <TrashIcon class="w-3.5 h-3.5" />
@@ -51,12 +51,12 @@
           <!-- Departure Details -->
           <div class="space-y-3">
             <div class="flex items-center gap-2">
-              <div class="w-1.5 h-1.5 rounded-full bg-brand-500"></div>
-              <h5 class="text-[9px] font-black uppercase tracking-widest text-gray-400">Zarpada</h5>
+              <div class="w-1.5 h-1.5 rounded-full bg-primary"></div>
+              <h5 class="text-[9px] font-black uppercase tracking-widest text-text-muted">Zarpada</h5>
             </div>
             <div class="grid grid-cols-2 gap-3">
               <div class="space-y-1">
-                <label class="text-[8px] font-black uppercase text-gray-400 tracking-tighter">Fecha</label>
+                <label class="text-[8px] font-black uppercase text-text-muted tracking-tighter">Fecha</label>
                 <DatePicker 
                   ref="zarpadaDates"
                   v-model="stage.fechaZarpada" 
@@ -65,7 +65,7 @@
                 />
               </div>
               <div class="space-y-1">
-                <label class="text-[8px] font-black uppercase text-gray-400 tracking-tighter">Puerto</label>
+                <label class="text-[8px] font-black uppercase text-text-muted tracking-tighter">Puerto</label>
                 <SearchableSelect
                   v-model="stage.puertoZarpadaId"
                   :options="puertoOptions"
@@ -79,16 +79,16 @@
           <!-- Arrival Details -->
           <div class="space-y-3">
             <div class="flex items-center gap-2">
-              <div class="w-1.5 h-1.5 rounded-full bg-amber-500"></div>
-              <h5 class="text-[9px] font-black uppercase tracking-widest text-gray-400">Arribo</h5>
+              <div class="w-1.5 h-1.5 rounded-full bg-warning"></div>
+              <h5 class="text-[9px] font-black uppercase tracking-widest text-text-muted">Arribo</h5>
             </div>
             <div class="grid grid-cols-2 gap-3">
               <div class="space-y-1">
-                <label class="text-[8px] font-black uppercase text-gray-400 tracking-tighter">Fecha</label>
+                <label class="text-[8px] font-black uppercase text-text-muted tracking-tighter">Fecha</label>
                 <DatePicker v-model="stage.fechaArribo" :show-time="false" :disabled="readOnly" />
               </div>
               <div class="space-y-1">
-                <label class="text-[8px] font-black uppercase text-gray-400 tracking-tighter">Puerto</label>
+                <label class="text-[8px] font-black uppercase text-text-muted tracking-tighter">Puerto</label>
                 <SearchableSelect
                   v-model="stage.puertoArriboId"
                   :options="puertoOptions"
@@ -100,9 +100,9 @@
           </div>
 
           <!-- Meta Info: Compact Row -->
-          <div class="md:col-span-2 grid grid-cols-1 sm:grid-cols-12 gap-4 pt-3 border-t border-gray-50 dark:border-gray-800/50">
+          <div class="md:col-span-2 grid grid-cols-1 sm:grid-cols-12 gap-4 pt-3 border-t border-border">
             <div class="sm:col-span-4 space-y-1">
-              <label class="text-[8px] font-black uppercase text-gray-400 tracking-widest flex items-center gap-1.5">
+              <label class="text-[8px] font-black uppercase text-text-muted tracking-widest flex items-center gap-1.5">
                 <FlagIcon class="w-2.5 h-2.5" /> Pesquería
               </label>
               <SearchableSelect
@@ -113,23 +113,23 @@
               />
             </div>
             <div class="sm:col-span-3 space-y-1">
-              <label class="text-[8px] font-black uppercase text-gray-400 tracking-widest flex items-center gap-1.5">
+              <label class="text-[8px] font-black uppercase text-text-muted tracking-widest flex items-center gap-1.5">
                 <SettingsIcon class="w-2.5 h-2.5" /> Propósito
               </label>
-              <select v-model="stage.tipoEtapa" :disabled="readOnly" class="form-input-premium py-2 font-bold text-xs h-[38px] w-full">
+              <select v-model="stage.tipoEtapa" :disabled="readOnly" class="w-full bg-surface border border-border rounded-lg py-2 font-bold text-xs h-[38px] focus:ring-1 focus:ring-primary outline-none">
                 <option value="COMERCIAL">COMERCIAL</option>
                 <option value="INSTITUCIONAL">INSTITUCIONAL</option>
               </select>
             </div>
             <div class="sm:col-span-5 space-y-1">
-              <label class="text-[8px] font-black uppercase text-gray-400 tracking-widest flex items-center gap-1.5">
+              <label class="text-[8px] font-black uppercase text-text-muted tracking-widest flex items-center gap-1.5">
                 <EditIcon class="w-2.5 h-2.5" /> Notas
               </label>
               <input
                 v-model="stage.observaciones"
                 type="text"
                 :disabled="readOnly"
-                class="form-input-premium py-2 text-xs h-[38px] w-full"
+                class="w-full bg-surface border border-border rounded-lg py-2 text-xs h-[38px] focus:ring-1 focus:ring-primary outline-none px-3"
                 placeholder="Obs. adicionales..."
               />
             </div>
@@ -137,13 +137,13 @@
         </div>
 
         <!-- Overlap Warning (Inter-stage) -->
-        <div v-if="hasOverlap(index)" class="mt-3 p-1.5 bg-red-50 dark:bg-red-500/10 rounded-lg text-[9px] text-red-600 font-black flex items-center gap-1.5 animate-in slide-in-from-top-1">
+        <div v-if="hasOverlap(index)" class="mt-3 p-1.5 bg-error/10 border border-error/20 rounded-lg text-[9px] text-error font-black flex items-center gap-1.5 animate-in slide-in-from-top-1">
            <WarningIcon class="w-3 h-3" />
            LA FECHA DE ZARPADA ES ANTERIOR AL ARRIBO PREVIO
         </div>
 
         <!-- Inconsistency Warning (Internal) -->
-        <div v-if="isInternalInconsistent(index)" class="mt-3 p-1.5 bg-amber-50 dark:bg-amber-500/10 rounded-lg text-[9px] text-amber-600 font-black flex items-center gap-1.5 animate-in slide-in-from-top-1">
+        <div v-if="isInternalInconsistent(index)" class="mt-3 p-1.5 bg-warning/10 border border-warning/20 rounded-lg text-[9px] text-warning font-black flex items-center gap-1.5 animate-in slide-in-from-top-1">
            <WarningIcon class="w-3 h-3" />
            LA FECHA DE ARRIBO ES ANTERIOR A LA ZARPADA
         </div>

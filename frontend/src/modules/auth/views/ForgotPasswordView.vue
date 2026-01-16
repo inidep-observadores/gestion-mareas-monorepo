@@ -1,14 +1,14 @@
 <template>
   <FullScreenLayout>
-    <div class="relative p-6 bg-white z-1 dark:bg-gray-900 sm:p-0">
+    <div class="relative p-6 bg-surface z-1 sm:p-0">
       <div
-        class="relative flex flex-col justify-center w-full h-screen lg:flex-row dark:bg-gray-900"
+        class="relative flex flex-col justify-center w-full h-screen lg:flex-row bg-surface"
       >
         <div class="flex flex-col flex-1 w-full lg:w-1/2">
           <div class="w-full max-w-md pt-10 mx-auto">
             <router-link
               :to="{ name: 'Signin' }"
-              class="inline-flex items-center text-sm text-gray-500 transition-colors hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+              class="inline-flex items-center text-sm text-text-muted transition-colors hover:text-text"
             >
               <svg
                 class="stroke-current mr-2"
@@ -33,16 +33,16 @@
             <div v-if="!isSent">
               <div class="mb-5 sm:mb-8">
                 <h1
-                  class="mb-2 font-semibold text-gray-800 text-title-sm dark:text-white/90 sm:text-title-md"
+                  class="mb-2 font-black text-text text-title-sm sm:text-title-md uppercase tracking-tight"
                 >
                   Recuperar Contraseña
                 </h1>
-                <p class="text-sm text-gray-500 dark:text-gray-400">
+                <p class="text-sm text-text-muted">
                   Ingrese su correo electrónico para recibir un enlace de recuperación.
                 </p>
               </div>
-              <div v-if="errorMessage" class="mb-4 p-4 text-sm text-red-700 bg-red-100 rounded-lg dark:bg-red-200 dark:text-red-800" role="alert">
-                <span class="font-medium">Error:</span> {{ errorMessage }}
+              <div v-if="errorMessage" class="mb-4 p-4 text-sm text-error bg-error/10 border border-error/20 rounded-xl" role="alert">
+                <span class="font-bold uppercase tracking-tight mr-1">Error:</span> {{ errorMessage }}
               </div>
               <div>
                 <form @submit.prevent="handleSubmit">
@@ -51,18 +51,18 @@
                     <div>
                       <label
                         for="email"
-                        class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400"
+                        class="mb-1.5 block text-sm font-bold text-text-muted uppercase tracking-widest text-[10px]"
                       >
-                        Correo electrónico<span class="text-error-500">*</span>
+                        Correo electrónico<span class="text-error">*</span>
                       </label>
                       <input
                         v-model="email"
                         type="email"
                         id="email"
                         name="email"
-                        placeholder="info@gmail.com"
+                        placeholder="ejemplo@inidep.edu.ar"
                         required
-                        class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                        class="h-11 w-full rounded-xl border border-border bg-surface-muted px-4 py-2.5 text-sm text-text shadow-theme-xs placeholder:text-text-muted/40 focus:border-primary focus:outline-hidden focus:ring-4 focus:ring-primary/10 transition-all font-medium"
                       />
                     </div>
                     
@@ -71,10 +71,13 @@
                       <button
                         type="submit"
                         :disabled="isLoading"
-                        class="flex items-center justify-center w-full px-4 py-3 text-sm font-medium text-white transition rounded-lg bg-brand-500 shadow-theme-xs hover:bg-brand-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                        class="flex items-center justify-center w-full px-4 py-3 text-sm font-bold text-primary-fg transition rounded-xl bg-primary shadow-lg shadow-primary/20 hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-widest"
                       >
-                        <span v-if="!isLoading">Enviar Enlace</span>
-                        <span v-else>Enviando...</span>
+                        <span v-if="!isLoading">Enviar Enlace de Recuperación</span>
+                        <span v-else class="flex items-center gap-2">
+                           <div class="w-4 h-4 border-2 border-primary-fg/30 border-t-primary-fg rounded-full animate-spin"></div>
+                           Enviando...
+                        </span>
                       </button>
                     </div>
                   </div>
@@ -84,18 +87,18 @@
 
             <!-- Success State -->
             <div v-else class="text-center">
-                <div class="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
-                    <svg class="h-10 w-10 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <div class="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-success/10 border border-success/20">
+                    <svg class="h-10 w-10 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                     </svg>
                 </div>
-                <h2 class="mt-4 text-xl font-bold text-gray-800 dark:text-white">¡Correo Enviado!</h2>
-                <p class="mt-2 text-gray-500 dark:text-gray-400">
+                <h2 class="mt-4 text-xl font-black text-text uppercase tracking-tight">¡Correo Enviado!</h2>
+                <p class="mt-2 text-text-muted">
                     Si el correo <strong>{{ email }}</strong> está registrado, recibirá el enlace en unos minutos.
                 </p>
                 <button 
                   @click="isSent = false" 
-                  class="mt-6 text-brand-500 hover:text-brand-600 font-medium text-sm"
+                  class="mt-6 text-primary hover:text-primary/80 font-bold text-sm uppercase tracking-widest"
                 >
                     Probar con otro correo
                 </button>
@@ -104,7 +107,7 @@
           </div>
         </div>
         <div
-          class="relative items-center hidden w-full h-full lg:w-1/2 bg-brand-950 dark:bg-white/5 lg:grid"
+          class="relative items-center hidden w-full h-full lg:w-1/2 bg-surface-muted lg:grid border-l border-border"
         >
           <div class="flex items-center justify-center z-1">
             <common-grid-shape />
@@ -114,16 +117,16 @@
                 class="flex items-center gap-3 mb-4 text-white"
               >
                 <div
-                  class="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center flex-shrink-0"
+                  class="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center flex-shrink-0 shadow-lg shadow-primary/20"
                 >
-                  <WaveIcon class="w-7 h-7 text-white" />
+                  <WaveIcon class="w-7 h-7 text-primary-fg" />
                 </div>
                 <div class="flex flex-col leading-tight">
-                  <span class="text-lg font-bold text-white">Gestión de</span>
-                  <span class="text-lg font-bold text-blue-200">Mareas</span>
+                  <span class="text-lg font-black text-text uppercase tracking-tight">Gestión de</span>
+                  <span class="text-lg font-black text-primary uppercase tracking-tight">Mareas</span>
                 </div>
               </router-link>
-              <p class="text-center text-gray-400 dark:text-white/60">INIDEP</p>
+              <p class="text-center text-text-muted font-bold tracking-widest uppercase text-[10px]">INIDEP</p>
             </div>
           </div>
         </div>

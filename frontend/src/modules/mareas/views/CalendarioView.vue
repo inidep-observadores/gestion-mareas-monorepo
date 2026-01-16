@@ -9,12 +9,12 @@
       <FilterBar class="mb-4">
         <div class="flex flex-col gap-4">
           <div class="flex items-center justify-between">
-            <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300">
+            <h3 class="text-xs font-black uppercase tracking-widest text-text">
               Filtrar por Tipo de Evento
             </h3>
             <button
               @click="toggleAllFilters"
-              class="text-xs font-medium text-brand-500 hover:text-brand-600 dark:text-brand-400 dark:hover:text-brand-300 transition-colors"
+              class="text-xs font-black uppercase tracking-widest text-primary hover:text-primary-hover transition-all active:scale-95"
             >
               {{ allFiltersSelected ? 'Deseleccionar Todos' : 'Seleccionar Todos' }}
             </button>
@@ -24,32 +24,32 @@
               v-for="eventType in eventTypes"
               :key="eventType.id"
               @click="eventType.enabled = !eventType.enabled"
-              class="group relative flex flex-col p-3 rounded-2xl border transition-all cursor-pointer select-none bg-white dark:bg-black/20 overflow-hidden"
+              class="group relative flex flex-col p-3 rounded-2xl border transition-all cursor-pointer select-none bg-surface-muted overflow-hidden"
               :class="eventType.enabled
-                ? 'border-indigo-500/20 shadow-md shadow-indigo-500/5 ring-1 ring-indigo-500/5'
-                : 'border-gray-100 dark:border-white/5 opacity-50 grayscale-[0.8] hover:opacity-80'"
+                ? 'border-primary/20 shadow-md shadow-primary/5 ring-1 ring-primary/5'
+                : 'border-border opacity-50 grayscale-[0.8] hover:opacity-80'"
             >
               <!-- Label + Visibility -->
               <div class="flex items-center justify-between gap-2 mb-3">
-                <span class="text-[8px] font-black uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500 truncate">
+                <span class="text-[8px] font-black uppercase tracking-[0.2em] text-text-muted opacity-60 truncate">
                   {{ eventType.label }}
                 </span>
                 <component
                   :is="eventType.enabled ? EyeIcon : EyeSlashIcon"
                   class="w-3.5 h-3.5 transition-colors"
-                  :class="eventType.enabled ? 'text-indigo-500' : 'text-gray-400'"
+                  :class="eventType.enabled ? 'text-primary' : 'text-text-muted'"
                 />
               </div>
 
               <!-- Count + Icon Badge -->
               <div class="flex items-end justify-between">
-                <span class="text-2xl font-black text-gray-900 dark:text-gray-100 leading-none tabular-nums tracking-tighter">
+                <span class="text-2xl font-black text-text leading-none tabular-nums tracking-tighter">
                   {{ eventCounts[eventType.id] || 0 }}
                 </span>
 
                 <div
                   class="w-8 h-8 flex items-center justify-center rounded-xl transition-all duration-300"
-                  :class="eventType.enabled ? 'bg-indigo-500/10 text-indigo-500 border border-indigo-500/10' : 'bg-gray-100 dark:bg-white/5 text-gray-400 border border-transparent'"
+                  :class="eventType.enabled ? 'bg-primary/10 text-primary border border-primary/20 shadow-theme-xs shadow-primary/10' : 'bg-surface text-text-muted border border-border'"
                 >
                   <component :is="eventType.icon" class="w-4 h-4" />
                 </div>
@@ -63,27 +63,28 @@
       <div class="flex flex-col lg:flex-row gap-6 relative items-start">
 
         <div
-          class="flex-1 min-w-0 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-6 shadow-sm transition-all duration-300"
+          class="flex-1 min-w-0 bg-surface border border-border rounded-2xl p-6 shadow-sm transition-all duration-300 relative z-0 overflow-visible"
         >
-          <FullCalendar :options="calendarOptions" class="mareas-calendar">
+          <FullCalendar ref="calendarRef" :options="calendarOptions" class="mareas-calendar">
             <template #eventContent="arg">
-              <div class="group relative w-full h-full p-1 cursor-pointer overflow-visible">
+              <div class="group relative w-full h-full p-1 cursor-pointer flex items-center">
                 <!-- Event Title -->
-                <div class="truncate fc-event-title-container">
-                  <span class="fc-event-time">{{ arg.timeText }}</span>
-                  <span class="fc-event-title">{{ arg.event.title }}</span>
+                <div class="truncate fc-event-title-container w-full">
+                  <span class="fc-event-time font-bold mr-1">{{ arg.timeText }}</span>
+                  <span class="fc-event-title font-medium uppercase">{{ arg.event.title }}</span>
                 </div>
 
                 <!-- Custom Tooltip -->
-                <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2.5 py-1.5 text-[11px] text-white bg-gray-900 dark:bg-white dark:text-gray-900 rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-normal min-w-[180px] max-w-[240px] z-[9999] shadow-xl pointer-events-none backdrop-blur-sm bg-opacity-95 dark:bg-opacity-95">
-                  <div class="font-bold border-b border-white/10 dark:border-gray-200 mb-1 pb-1">
+                <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-4 px-3 py-2 text-[11px] text-text bg-surface rounded-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible whitespace-normal min-w-[220px] max-w-[300px] z-[99999] shadow-2xl pointer-events-none backdrop-blur-xl bg-opacity-95 border border-primary/30 ring-1 ring-white/10 flex flex-col">
+                  <div class="font-black uppercase tracking-tight text-primary border-b border-primary/20 mb-2 pb-1.5 flex items-center gap-2">
+                    <div class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse shadow-[0_0_8px_rgba(var(--color-primary-rgb),0.5)]"></div>
                     {{ arg.event.title }}
                   </div>
-                  <div class="leading-relaxed opacity-90">
-                    {{ arg.event.extendedProps.description }}
+                  <div class="leading-relaxed font-semibold text-text/90 text-[10px]">
+                    {{ arg.event.extendedProps.description || 'Sin descripción adicional' }}
                   </div>
                   <!-- Arrow -->
-                  <div class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900 dark:border-t-white"></div>
+                  <div class="absolute top-full left-1/2 -translate-x-1/2 border-[6px] border-transparent border-t-surface"></div>
                 </div>
               </div>
             </template>
@@ -94,28 +95,28 @@
         <Transition name="slide-in-right">
           <div
             v-if="selectedEvent"
-            class="w-full lg:w-96 shrink-0 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl shadow-lg sticky top-6"
+            class="w-full lg:w-96 shrink-0 bg-surface border border-border rounded-2xl shadow-2xl sticky top-6 z-30"
           >
             <!-- Sidebar Header -->
-            <div class="p-6 border-b border-gray-100 dark:border-gray-800 flex items-start justify-between">
+            <div class="p-6 border-b border-border flex items-start justify-between">
               <div>
                 <span
                   class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium uppercase tracking-wide mb-3"
                   :style="{
-                    backgroundColor: `color-mix(in srgb, ${(CALENDAR_EVENT_COLORS as any)[selectedEvent.extendedProps?.type] || '#808080'} 10%, transparent)`,
-                    color: (CALENDAR_EVENT_COLORS as any)[selectedEvent.extendedProps?.type] || '#808080'
+                    backgroundColor: `color-mix(in srgb, ${(CALENDAR_EVENT_COLORS as any)[selectedEvent.extendedProps?.type] || 'var(--color-text-muted)'} 10%, transparent)`,
+                    color: (CALENDAR_EVENT_COLORS as any)[selectedEvent.extendedProps?.type] || 'var(--color-text-muted)'
                   }"
                 >
                   <component :is="eventTypes.find(t => t.id === selectedEvent.extendedProps?.type)?.icon || FileTextIcon" class="w-3.5 h-3.5" />
                   {{ eventTypes.find(t => t.id === selectedEvent.extendedProps?.type)?.label || 'Evento' }}
                 </span>
-                <h3 class="text-lg font-bold text-gray-900 dark:text-white leading-snug">
+                <h3 class="text-lg font-black text-text leading-tight uppercase tracking-tight">
                   {{ selectedEvent.title }}
                 </h3>
               </div>
               <button
                 @click="selectedEvent = null"
-                class="text-gray-400 hover:text-gray-500 dark:text-gray-500 dark:hover:text-gray-400 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                class="text-text-muted hover:text-text p-1 rounded-lg hover:bg-surface-muted transition-colors transition-all"
               >
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
               </button>
@@ -125,9 +126,9 @@
             <div class="p-6 space-y-6">
               <!-- Date -->
               <div>
-                <p class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Fecha y Hora</p>
-                <div class="flex items-center gap-2 text-gray-900 dark:text-gray-100 font-medium">
-                  <CalenderIcon class="w-4 h-4 text-gray-400" />
+                <p class="text-[10px] font-black text-text-muted uppercase tracking-widest mb-1">Fecha</p>
+                <div class="flex items-center gap-2 text-text font-black uppercase">
+                  <CalenderIcon class="w-4 h-4 text-primary" />
                   <span>
                     {{ selectedEvent.start?.toLocaleDateString('es-AR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) }}
                   </span>
@@ -137,34 +138,34 @@
 
               <!-- Vessel (if applicable) -->
               <div v-if="selectedEvent.extendedProps?.vesselName">
-                <p class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Buque</p>
-                <div class="flex items-center gap-2 text-gray-900 dark:text-gray-100 font-medium">
-                  <ShipIcon class="w-4 h-4 text-gray-400" />
+                <p class="text-xs font-black uppercase tracking-widest text-text-muted mb-1">Buque</p>
+                <div class="flex items-center gap-2 text-text font-black uppercase">
+                  <ShipIcon class="w-4 h-4 text-primary" />
                   <span>{{ selectedEvent.extendedProps?.vesselName }}</span>
                 </div>
               </div>
 
               <!-- Description -->
                <div>
-                <p class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Detalle</p>
-                <p class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
+                <p class="text-[10px] font-black text-text-muted uppercase tracking-widest mb-1">Detalle</p>
+                <p class="text-xs text-text leading-relaxed font-medium">
                    {{ selectedEvent.extendedProps?.description || 'Sin descripción adicional disponible.' }}
                 </p>
               </div>
             </div>
 
             <!-- Sidebar Footer -->
-            <div class="p-6 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-100 dark:border-gray-800 rounded-b-2xl">
+            <div class="p-6 bg-surface-muted border-t border-border rounded-b-2xl">
                <button
                   v-if="selectedEvent.extendedProps?.mareaId"
                   @click="navigateToMarea"
-                  class="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-brand-600 hover:bg-brand-700 border border-transparent rounded-xl transition-all shadow-sm shadow-brand-600/20"
+                  class="w-full flex items-center justify-center gap-2 px-4 py-3 text-xs font-black uppercase tracking-widest text-primary-fg bg-primary hover:bg-primary-hover rounded-lg transition-all shadow-theme-xs shadow-primary/20 active:scale-95"
                 >
                   <EyeIcon class="w-4 h-4" />
                   Ver Marea
                 </button>
-                <p v-else class="text-center text-xs text-gray-400 italic">
-                  Este evento no está vinculado a una marea específica.
+                <p v-else class="text-center text-xs text-text-muted font-bold uppercase tracking-widest opacity-60">
+                  Sin enlace a marea
                 </p>
             </div>
           </div>
@@ -241,6 +242,14 @@ const router = useRouter()
 
 // Sidebar State (replaced Modal)
 const selectedEvent = ref<any>(null)
+const calendarRef = ref<any>(null)
+
+// Update calendar size when sidebar opens/closes
+watch(selectedEvent, () => {
+  setTimeout(() => {
+    calendarRef.value?.getApi().updateSize()
+  }, 350) // Wait for sidebar transition to finish
+})
 
 const handleEventClick = (clickInfo: any) => {
   clickInfo.jsEvent.preventDefault()
@@ -269,7 +278,7 @@ const handleEventClick = (clickInfo: any) => {
 const navigateToMarea = () => {
   if (selectedEvent.value?.extendedProps?.mareaId) {
     router.push({
-      name: 'marea-detalle',
+      name: 'MareaDetalle',
       params: { id: selectedEvent.value.extendedProps.mareaId }
     })
   }
@@ -314,8 +323,8 @@ const fetchEvents = async () => {
         const events = await mareasService.getCalendarEvents()
         allEvents.value = events.map((e: CalendarEvent) => ({
             ...e,
-            color: (CALENDAR_EVENT_COLORS as any)[e.type] || '#808080',
-            textColor: '#111827'
+            color: (CALENDAR_EVENT_COLORS as any)[e.type] || '#94a3b8',
+            textColor: 'var(--color-background)'
         }))
     } catch (error) {
         console.error('Error fetching calendar events:', error)
@@ -339,29 +348,31 @@ onMounted(() => {
 <style>
 /* Estilos personalizados para integrar con el tema */
 .mareas-calendar {
-  --fc-border-color: var(--color-gray-200);
-  --fc-button-bg-color: var(--color-brand-500);
-  --fc-button-border-color: var(--color-brand-500);
-  --fc-button-hover-bg-color: var(--color-brand-600);
-  --fc-button-active-bg-color: var(--color-brand-600);
-  --fc-today-bg-color: rgba(70, 95, 255, 0.05);
+  --fc-border-color: var(--color-border);
+  --fc-button-bg-color: var(--color-primary);
+  --fc-button-border-color: var(--color-primary);
+  --fc-button-hover-bg-color: var(--color-primary);
+  --fc-button-active-bg-color: var(--color-primary);
+  --fc-today-bg-color: var(--color-primary-muted, rgba(37, 99, 235, 0.05));
   --fc-page-bg-color: transparent;
-  font-family: 'Outfit', sans-serif;
-  --fc-text-color: var(--color-gray-700);
+  font-family: var(--font-outfit);
+  --fc-text-color: var(--color-text);
 }
 
 .dark .mareas-calendar {
-  --fc-border-color: var(--color-gray-800);
-  --fc-text-color: var(--color-gray-300);
-  --fc-neutral-bg-color: var(--color-gray-900);
-  --fc-list-event-hover-bg-color: var(--color-gray-800);
+  --fc-border-color: var(--color-border);
+  --fc-text-color: var(--color-text);
+  --fc-neutral-bg-color: var(--color-surface);
+  --fc-list-event-hover-bg-color: var(--color-surface-muted);
 }
 
 .fc .fc-toolbar-title {
   font-size: 1.125rem;
   line-height: 1.75rem;
-  font-weight: 700;
-  color: var(--color-gray-900);
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: -0.025em;
+  color: var(--color-text);
 }
 
 .dark .fc .fc-toolbar-title {
@@ -416,16 +427,11 @@ onMounted(() => {
 .mareas-calendar .fc-event-time,
 .mareas-calendar .fc-list-event-title,
 .mareas-calendar .fc-list-event-time {
-  color: var(--color-gray-700);
-  font-weight: 600;
-  font-size: x-small;
-}
-
-.dark .mareas-calendar .fc-event-title,
-.dark .mareas-calendar .fc-event-time,
-.dark .mareas-calendar .fc-list-event-title,
-.dark .mareas-calendar .fc-list-event-time {
-  color: #f3f4f6 !important; /* gray-100 */
+  color: var(--color-text);
+  font-weight: 800;
+  text-transform: uppercase;
+  font-size: 9px;
+  letter-spacing: -0.01em;
 }
 
 /* Sidebar Transition */
@@ -440,60 +446,63 @@ onMounted(() => {
   opacity: 0;
 }
 
-/* Asegurar que el tooltip sea visible fuera del contenedor del evento */
-.fc .fc-scroller-harness,
-.fc .fc-scroller,
-.fc .fc-daygrid-body,
-.fc .fc-daygrid-day-frame,
-.fc .fc-daygrid-day-events,
-.fc .fc-view-harness {
+/* Asegurar que el tooltip sea visible pero sin romper la contención del calendario */
+.fc .fc-view-harness,
+.fc .fc-view-harness-active {
+  z-index: 1 !important;
   overflow: visible !important;
 }
+
+/* NO TOCAR overflow de fc-scroller, rompe el renderizado en vistas horarias */
 
 .fc-daygrid-body {
   z-index: 1 !important;
 }
 
-/* En vista semanal y mensual, elevamos los eventos al pasar el mouse */
+/* Elevamos los eventos al pasar el mouse */
 .fc-timegrid-event-harness:hover,
-.fc-daygrid-event-harness:hover {
-  z-index: 99999 !important;
+.fc-daygrid-event-harness:hover,
+.fc-list-event:hover,
+.fc-event:hover {
+  z-index: 900 !important;
   position: relative;
 }
 
-/* El encabezado debe tener una prioridad controlada para no tapar los tooltips elevados */
+/* El encabezado (LUN, MAR...) debe estar por debajo de los eventos elevados al hacer hover */
 .fc-scrollgrid-section-header,
-.fc .fc-col-header {
+.fc .fc-col-header,
+.fc .fc-col-header-cell {
   z-index: 10 !important;
   position: relative;
 }
 
-/* Pero el cuerpo del calendario (donde están los eventos) debe poder estar por encima en hover */
 .fc-scrollgrid-section-body {
-  z-index: 20 !important;
   position: relative;
+  z-index: 20 !important;
 }
 
-.fc-event {
+/* Solo los elementos de eventos permiten desbordamiento para el tooltip */
+.fc-event,
+.fc-daygrid-event-harness,
+.fc-list-event,
+.fc-list-event-td,
+.fc-event-main {
   overflow: visible !important;
 }
 
-.fc-daygrid-event-harness {
-  overflow: visible !important;
-}
-
-.mareas-calendar .fc-event-main {
-  overflow: visible !important;
-}
-
-/* Fix específico para que el tooltip no se esconda bajo la toolbar superior */
+/* El toolbar del calendario debe estar por debajo del contenido elevado */
 .fc .fc-toolbar {
   position: relative;
-  z-index: 5; /* Por debajo de los eventos elevados (20+) */
+  z-index: 1;
 }
 
-/* Asegurar que el scrollgrid no recorte nada */
-.fc-theme-standard .fc-scrollgrid {
+/* Estabilizar tooltip interno */
+.fc-event-main div[class*="absolute"] {
+  z-index: 1000 !important;
+}
+
+/* Asegurar que la vista de lista también permita ver el tooltip */
+.fc-list-event-title {
   overflow: visible !important;
 }
 </style>

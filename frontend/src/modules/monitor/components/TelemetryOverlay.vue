@@ -2,44 +2,44 @@
   <div class="space-y-4">
     <!-- Telemetry Card -->
     <div
-      class="bg-white/60 dark:bg-gray-900/60 backdrop-blur-xl border border-gray-200/50 dark:border-white/10 rounded-2xl p-5 shadow-2xl"
+      class="bg-surface/60 backdrop-blur-xl border border-border/50 rounded-2xl p-5 shadow-2xl"
     >
       <div class="flex items-center justify-between mb-4">
-        <h3 class="text-xs font-black uppercase tracking-widest text-brand-500">Telemetría</h3>
+        <h3 class="text-xs font-black uppercase tracking-widest text-primary">Telemetría</h3>
         <span class="px-2 py-0.5 rounded-lg text-[10px] font-black uppercase" :class="statusClass">
           {{ point.status }}
         </span>
       </div>
 
       <div class="grid grid-cols-2 gap-4">
-        <div class="bg-gray-50 dark:bg-gray-800/50 p-2.5 rounded-xl">
-          <p class="text-[9px] font-bold text-gray-400 uppercase mb-1">Velocidad</p>
+        <div class="bg-surface-muted p-2.5 rounded-xl border border-border/5">
+          <p class="text-[9px] font-black text-text-muted uppercase mb-1">Velocidad</p>
           <div class="flex items-baseline gap-1">
-            <span class="text-xl font-black text-gray-800 dark:text-white">{{ point.speed }}</span>
-            <span class="text-[10px] font-bold text-gray-400">knts</span>
+            <span class="text-xl font-black text-text">{{ point.speed }}</span>
+            <span class="text-[10px] font-bold text-text-muted">knts</span>
           </div>
         </div>
-        <div class="bg-gray-50 dark:bg-gray-800/50 p-2.5 rounded-xl">
-          <p class="text-[9px] font-bold text-gray-400 uppercase mb-1">Rumbo</p>
+        <div class="bg-surface-muted p-2.5 rounded-xl border border-border/5">
+          <p class="text-[9px] font-black text-text-muted uppercase mb-1">Rumbo</p>
           <div class="flex items-baseline gap-1">
-            <span class="text-xl font-black text-gray-800 dark:text-white"
+            <span class="text-xl font-black text-text"
               >{{ point.course }}°</span
             >
-            <span class="text-[10px] font-bold text-gray-400">{{ courseName }}</span>
+            <span class="text-[10px] font-bold text-text-muted">{{ courseName }}</span>
           </div>
         </div>
       </div>
 
       <div class="mt-4 space-y-2">
         <div class="flex items-center justify-between text-[11px] font-medium">
-          <span class="text-gray-400">Latitud</span>
-          <span class="text-gray-800 dark:text-gray-200 tabular-nums">{{
+          <span class="text-text-muted">Latitud</span>
+          <span class="text-text tabular-nums">{{
             formatCoord(point.lat, true)
           }}</span>
         </div>
         <div class="flex items-center justify-between text-[11px] font-medium">
-          <span class="text-gray-400">Longitud</span>
-          <span class="text-gray-800 dark:text-gray-200 tabular-nums">{{
+          <span class="text-text-muted">Longitud</span>
+          <span class="text-text tabular-nums">{{
             formatCoord(point.lon, false)
           }}</span>
         </div>
@@ -48,14 +48,14 @@
 
     <!-- Stats Summary Card -->
     <div
-      class="bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl border border-gray-200/50 dark:border-white/10 rounded-2xl p-5 shadow-2xl text-gray-900 dark:text-white"
+      class="bg-surface/70 backdrop-blur-xl border border-border/50 rounded-2xl p-5 shadow-2xl text-text"
     >
-      <h3 class="text-xs font-black uppercase tracking-widest text-gray-400 mb-4">
+      <h3 class="text-xs font-black uppercase tracking-widest text-text-muted mb-4">
         Marea {{ tripId }}
       </h3>
       <div class="space-y-4">
         <div>
-          <div class="flex justify-between text-[10px] font-bold text-gray-500 uppercase mb-1">
+          <div class="flex justify-between text-[10px] font-black text-text-muted uppercase mb-1">
             <span>Distancia Recorrida</span>
             <span>Est. Total</span>
           </div>
@@ -67,13 +67,13 @@
           </div>
         </div>
 
-        <div class="grid grid-cols-2 gap-4 pt-4 border-t border-gray-200/50 dark:border-white/10">
+        <div class="grid grid-cols-2 gap-4 pt-4 border-t border-border/50">
           <div>
-            <p class="text-[9px] font-bold text-gray-500 uppercase mb-1">Días de Mar</p>
+            <p class="text-[9px] font-bold text-text-muted uppercase mb-1">Días de Mar</p>
             <p class="text-sm font-black">{{ stats.daysAtSea }} días</p>
           </div>
           <div>
-            <p class="text-[9px] font-bold text-gray-500 uppercase mb-1">Posible Pesca</p>
+            <p class="text-[9px] font-bold text-text-muted uppercase mb-1">Posible Pesca</p>
             <p class="text-sm font-black">{{ stats.fishingHours }} hs</p>
           </div>
         </div>
@@ -98,9 +98,9 @@ const props = defineProps<{
 }>()
 
 const statusClass = computed(() => {
-  if (props.point.status === 'fishing') return 'bg-error-500 text-white'
-  if (props.point.status === 'maneuvering') return 'bg-warning-500 text-gray-900'
-  return 'bg-blue-500 text-white'
+  if (props.point.status === 'fishing') return 'bg-error text-error-fg'
+  if (props.point.status === 'maneuvering') return 'bg-warning text-warning-fg'
+  return 'bg-info text-info-fg'
 })
 
 const courseName = computed(() => {

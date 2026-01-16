@@ -335,6 +335,7 @@ export class MareasService {
                 observador: primaryObs ? `${primaryObs.nombre} ${primaryObs.apellido}` : 'Sin asignar',
                 progreso,
                 en_tierra: estadoCodigo === MareaEstado.EN_EJECUCION && (!etapaActual || etapaActual.fechaArribo !== null),
+                total_etapas: etapaActual?.nroEtapa || 1,
                 alertas: activeAlerts.filter((a: any) => a.referenciaId === m.id),
                 actionsAvailable
             };
@@ -619,6 +620,7 @@ export class MareasService {
             },
             include: {
                 buque: true,
+                estadoActual: true,
                 etapas: {
                     orderBy: { nroEtapa: 'asc' },
                     include: {
@@ -686,17 +688,20 @@ export class MareasService {
                     });
 
                     // 4.6 Alerta (Plazo Entrega Datos: Arribo + 15 dias)
-                    const deadline = new Date(e.fechaArribo);
-                    deadline.setDate(deadline.getDate() + this.rules.PLAZO_ENTREGA_DATOS);
+                    // Solo mostrar si la marea está en estado ESPERANDO_ENTREGA
+                    if (m.estadoActual?.codigo === MareaEstado.ESPERANDO_ENTREGA) {
+                        const deadline = new Date(e.fechaArribo);
+                        deadline.setDate(deadline.getDate() + this.rules.PLAZO_ENTREGA_DATOS);
 
-                    events.push({
-                        id: `ven-${e.id}`,
-                        title: `⚠️ Vencimiento Datos ${mareaCode}`,
-                        start: deadline,
-                        type: 'alerta',
-                        ...commonProps,
-                        description: `Vencimiento de plazo para entrega de datos. Marea ${mareaCode}.`
-                    });
+                        events.push({
+                            id: `ven-${e.id}`,
+                            title: `⚠️ Vencimiento Datos ${mareaCode}`,
+                            start: deadline,
+                            type: 'alerta',
+                            ...commonProps,
+                            description: `Vencimiento de plazo para entrega de datos. Marea ${mareaCode}.`
+                        });
+                    }
                 }
             });
 
@@ -1221,6 +1226,8 @@ export class MareasService {
         if (!query || query.length < 2) return [];
 
         const isNumeric = !isNaN(Number(query));
+        const queryParts = query.split(' ').filter(p => p.length > 0);
+
         const orConditions: any[] = [
             { buque: { nombreBuque: { contains: query, mode: 'insensitive' } } },
             {
@@ -1229,10 +1236,12 @@ export class MareasService {
                         observadores: {
                             some: {
                                 observador: {
-                                    OR: [
-                                        { apellido: { contains: query, mode: 'insensitive' } },
-                                        { nombre: { contains: query, mode: 'insensitive' } }
-                                    ]
+                                    AND: queryParts.map(part => ({
+                                        OR: [
+                                            { nombre: { contains: part, mode: 'insensitive' } },
+                                            { apellido: { contains: part, mode: 'insensitive' } }
+                                        ]
+                                    }))
                                 }
                             }
                         }
@@ -1266,7 +1275,7 @@ export class MareasService {
 
         return mareas.map(m => {
             const principalObs = m.etapas[0]?.observadores.find((o: any) => o.rol === 'PRINCIPAL')?.observador;
-            const obsText = principalObs ? ` • ${principalObs.apellido}` : '';
+            const obsText = principalObs ? ` • ${principalObs.nombre} ${principalObs.apellido}` : '';
 
             return {
                 id: m.id,

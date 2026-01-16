@@ -20,37 +20,37 @@
         </template>
 
         <template #table-row="{ item: buque }">
-          <th scope="row" class="px-6 py-4 font-bold text-gray-900 whitespace-nowrap dark:text-gray-400">
+          <th scope="row" class="px-6 py-4 font-bold text-text whitespace-nowrap">
             {{ buque.nombreBuque }}
           </th>
-          <td class="px-6 py-4 font-mono font-bold text-brand-600 dark:text-brand-400">
+          <td class="px-6 py-4 font-mono font-bold text-primary">
             {{ buque.matricula }}
           </td>
           <td class="px-6 py-4 font-medium">
             {{ buque.tipoFlota?.nombre || '-' }}
           </td>
-          <td class="px-6 py-4 text-gray-500">
+          <td class="px-6 py-4 text-text-muted">
             {{ buque.puertoBase?.nombre || '-' }}
           </td>
           <td class="px-6 py-4">
               <span :class="[
                   'px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-tight',
-                  buque.activo ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+                  buque.activo ? 'bg-success/10 text-success' : 'bg-error/10 text-error'
               ]">
                   {{ buque.activo ? 'Activo' : 'Inactivo' }}
               </span>
           </td>
           <td class="px-6 py-4 text-right">
-            <button @click="openEditModal(buque)" class="font-bold text-brand-600 dark:text-brand-400 hover:underline">Editar</button>
+            <button @click="openEditModal(buque)" class="font-bold text-primary hover:underline">Editar</button>
           </td>
         </template>
 
         <template #card-item="{ item: buque }">
             <div class="flex justify-between items-start mb-4">
                 <div class="flex-1 min-w-0">
-                    <div class="font-black text-gray-900 dark:text-gray-400 text-lg truncate leading-tight mb-1">{{ buque.nombreBuque }}</div>
-                    <div class="text-xs text-brand-700 dark:text-brand-400 font-mono font-bold flex items-center gap-1">
-                        <span class="text-gray-400 font-normal">Matrícula:</span>
+                    <div class="font-black text-text text-lg truncate leading-tight mb-1">{{ buque.nombreBuque }}</div>
+                    <div class="text-xs text-primary font-mono font-bold flex items-center gap-1">
+                        <span class="text-text-muted font-normal">Matrícula:</span>
                         {{ buque.matricula }}
                     </div>
                 </div>
@@ -58,33 +58,33 @@
                     :class="[
                         'text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-widest',
                         buque.activo
-                            ? 'bg-green-100 text-green-800 dark:bg-green-800/30 dark:text-green-400'
-                            : 'bg-red-100 text-red-800 dark:bg-red-800/30 dark:text-red-400'
+                            ? 'bg-success/10 text-success'
+                            : 'bg-error/10 text-error'
                     ]"
                 >
                     {{ buque.activo ? 'Activo' : 'Inactivo' }}
                 </span>
             </div>
 
-            <div class="grid grid-cols-2 gap-4 mb-4 p-3 bg-gray-50/50 dark:bg-gray-700/30 rounded-xl border border-gray-100 dark:border-gray-700/50">
+            <div class="grid grid-cols-2 gap-4 mb-4 p-3 bg-surface-muted rounded-xl border border-border">
                 <div>
-                    <div class="text-[10px] text-gray-400 uppercase font-black mb-1">Tipo de Flota</div>
-                    <div class="text-xs text-gray-800 dark:text-gray-200 font-bold truncate">
+                    <div class="text-[10px] text-text-muted uppercase font-black mb-1">Tipo de Flota</div>
+                    <div class="text-xs text-text font-bold truncate">
                          {{ buque.tipoFlota?.nombre || '-' }}
                     </div>
                 </div>
                 <div>
-                    <div class="text-[10px] text-gray-400 uppercase font-black mb-1">Puerto Base</div>
-                    <div class="text-xs text-gray-800 dark:text-gray-200 font-bold truncate">
+                    <div class="text-[10px] text-text-muted uppercase font-black mb-1">Puerto Base</div>
+                    <div class="text-xs text-text font-bold truncate">
                          {{ buque.puertoBase?.nombre || '-' }}
                     </div>
                 </div>
             </div>
 
-            <div class="pt-3 border-t border-gray-100 dark:border-gray-700">
+            <div class="pt-3 border-t border-border">
                 <button 
                     @click="openEditModal(buque)" 
-                    class="w-full py-2.5 text-sm font-bold text-brand-700 dark:text-brand-400 bg-brand-50 dark:bg-brand-400/10 rounded-lg hover:bg-brand-100 transition-colors flex items-center justify-center gap-2"
+                    class="w-full py-2.5 text-sm font-bold text-primary bg-primary/10 rounded-lg hover:bg-primary/20 transition-colors flex items-center justify-center gap-2"
                 >
                     <EditIcon class="w-4 h-4" />
                     Editar Especificaciones

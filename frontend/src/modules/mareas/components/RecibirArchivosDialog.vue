@@ -1,29 +1,29 @@
 <template>
   <div v-if="show" class="fixed inset-0 z-[100000] flex items-center justify-center p-4">
-    <div class="absolute inset-0 bg-gray-950/40 backdrop-blur-sm" @click="handleCancel"></div>
+    <div class="absolute inset-0 bg-background/40 backdrop-blur-sm" @click="handleCancel"></div>
     <div
-      class="bg-white dark:bg-gray-900 rounded-3xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl relative animate-in fade-in zoom-in-95 duration-300">
+      class="bg-surface rounded-3xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl relative animate-in fade-in zoom-in-95 duration-300">
 
       <!-- Header -->
-      <div class="border-b border-gray-100 dark:border-gray-800 pb-5 mb-6">
+      <div class="border-b border-border pb-5 mb-6">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <h3 class="text-xl font-black text-gray-800 dark:text-white flex items-center gap-2">
-            <div class="p-2 bg-brand-500/10 rounded-xl">
-              <CloudUploadIcon class="w-5 h-5 text-brand-500" />
+          <h3 class="text-xl font-black text-text flex items-center gap-2">
+            <div class="p-2 bg-primary/10 rounded-xl">
+              <CloudUploadIcon class="w-5 h-5 text-primary" />
             </div>
             Recibir Archivos de Marea
           </h3>
-          <div v-if="marea" class="flex items-center gap-2 px-3 py-1.5 bg-brand-500/5 dark:bg-brand-500/10 rounded-xl border border-brand-500/10">
-            <span class="text-[10px] font-mono font-black text-brand-600 dark:text-brand-400 uppercase tracking-widest">
+          <div v-if="marea" class="flex items-center gap-2 px-3 py-1.5 bg-primary/5 rounded-xl border border-primary/20">
+            <span class="text-[10px] font-mono font-black text-primary uppercase tracking-widest">
               {{ marea.id_marea }}
             </span>
-            <span class="w-1 h-1 rounded-full bg-brand-200 dark:bg-brand-800"></span>
-            <span class="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase truncate max-w-[150px]">
+            <span class="w-1 h-1 rounded-full bg-primary/20"></span>
+            <span class="text-[10px] font-bold text-text-muted uppercase truncate max-w-[150px]">
               {{ marea.buque_nombre }}
             </span>
           </div>
         </div>
-        <p class="text-gray-500 text-xs mt-3 font-medium leading-relaxed">
+        <p class="text-text-muted text-xs mt-3 font-medium leading-relaxed">
           Registre la fecha de recepción, adjunte los archivos digitales y verifique la cantidad de muestras de otolitos entregadas por el observador.
         </p>
       </div>
@@ -32,7 +32,7 @@
       <form novalidate @submit.prevent class="space-y-8">
         <!-- 1. Fecha de Recepción -->
         <div class="space-y-2">
-          <label class="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-gray-400 dark:text-gray-500">
+          <label class="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-text-muted/60">
             <HistoryIcon class="w-3.5 h-3.5" />
             Fecha de Recepción
           </label>
@@ -42,14 +42,14 @@
             :error="validationErrors.fechaRecepcion"
             class="max-w-xs"
           />
-          <p v-if="!validationErrors.fechaRecepcion && marea?.fecha_fin_observador" class="text-[10px] font-bold text-gray-400 dark:text-gray-600 uppercase tracking-tight">
+          <p v-if="!validationErrors.fechaRecepcion && marea?.fecha_fin_observador" class="text-[10px] font-bold text-text-muted/40 uppercase tracking-tight">
             No puede ser anterior a la llegada ({{ formatDate(marea.fecha_fin_observador) }})
           </p>
         </div>
 
         <!-- 2. Archivos Digitales -->
         <div class="space-y-3">
-          <label class="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-gray-400 dark:text-gray-500">
+          <label class="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-text-muted/60">
             <DocsIcon class="w-3.5 h-3.5" />
             Archivos Digitales
           </label>
@@ -62,8 +62,8 @@
             class="group relative border-2 border-dashed rounded-2xl p-8 transition-all duration-300 text-center cursor-pointer"
             :class="[
               isDragging
-                ? 'border-brand-500 bg-brand-500/5'
-                : 'border-gray-100 dark:border-gray-800 hover:border-brand-500/30 hover:bg-gray-50/50 dark:hover:bg-gray-800/20'
+                ? 'border-primary bg-primary/5'
+                : 'border-border hover:border-primary/30 hover:bg-surface-muted/50'
             ]"
           >
             <input
@@ -75,11 +75,11 @@
             />
 
             <div class="flex flex-col items-center">
-              <div class="w-12 h-12 mb-4 bg-gray-50 dark:bg-gray-800 rounded-full flex items-center justify-center text-gray-400 group-hover:text-brand-500 transition-colors">
+              <div class="w-12 h-12 mb-4 bg-surface-muted rounded-full flex items-center justify-center text-text-muted group-hover:text-primary transition-colors">
                 <PlusIcon class="w-6 h-6" />
               </div>
-              <p class="text-sm font-bold text-gray-700 dark:text-gray-300">Haga clic o arrastre archivos aquí</p>
-              <p class="text-[10px] text-gray-400 mt-1 font-medium italic">Formatos permitidos: {{ ALLOWED_EXT_STRING }}</p>
+              <p class="text-sm font-bold text-text">Haga clic o arrastre archivos aquí</p>
+              <p class="text-[10px] text-text-muted mt-1 font-medium italic">Formatos permitidos: {{ ALLOWED_EXT_STRING }}</p>
             </div>
           </div>
 
@@ -93,41 +93,41 @@
             <div
               v-for="(file, index) in form.files"
               :key="file.name + index"
-              class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800/40 rounded-xl border border-gray-100 dark:border-gray-800 group"
+              class="flex items-center justify-between p-3 bg-surface-muted/40 rounded-xl border border-border group"
             >
               <div class="flex items-center gap-3 overflow-hidden">
-                <div class="p-2 bg-white dark:bg-gray-950 rounded-lg shadow-sm">
-                   <DocsIcon class="w-3.5 h-3.5 text-gray-400" />
+                <div class="p-2 bg-surface rounded-lg shadow-sm">
+                   <DocsIcon class="w-3.5 h-3.5 text-text-muted" />
                 </div>
                 <div class="overflow-hidden">
-                  <p class="text-[11px] font-bold text-gray-700 dark:text-gray-200 truncate">{{ file.name }}</p>
-                  <p class="text-[9px] text-gray-400 font-mono">{{ formatFileSize(file.size) }}</p>
+                   <p class="text-[11px] font-bold text-text truncate">{{ file.name }}</p>
+                   <p class="text-[9px] text-text-muted font-mono">{{ formatFileSize(file.size) }}</p>
                 </div>
               </div>
               <button
                 @click="removeFile(index)"
-                class="p-1.5 text-gray-300 hover:text-error-500 hover:bg-error-50 dark:hover:bg-error-500/10 rounded-lg transition-all"
+                class="p-1.5 text-text-muted/40 hover:text-error hover:bg-error/10 rounded-lg transition-all"
               >
                 <TrashIcon class="w-3.5 h-3.5" />
               </button>
             </div>
           </TransitionGroup>
-          <p v-if="validationErrors.files" class="text-[10px] text-red-500 font-bold uppercase mt-1 animate-in fade-in slide-in-from-top-1 duration-200">
+          <p v-if="validationErrors.files" class="text-[10px] text-error font-bold uppercase mt-1 animate-in fade-in slide-in-from-top-1 duration-200">
             {{ validationErrors.files }}
           </p>
         </div>
 
         <!-- 3. Muestras de Otolitos -->
-        <div class="p-6 bg-gray-50/50 dark:bg-gray-900/40 rounded-2xl border border-gray-100 dark:border-gray-800 border-l-4 border-l-brand-500 space-y-4">
+        <div class="p-6 bg-surface-muted/30 rounded-2xl border border-border border-l-4 border-l-primary space-y-4">
           <div class="flex items-center justify-between">
-            <label class="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-gray-500 dark:text-gray-400">
+            <label class="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-text-muted">
               <SearchIcon class="w-3.5 h-3.5" />
               Cantidad de Otolitos
             </label>
             <button
               v-if="form.otolitos !== null"
               @click="form.otolitos = null"
-              class="text-[10px] font-black text-brand-500 hover:text-brand-600 uppercase tracking-widest px-2 py-1 hover:bg-brand-50 dark:hover:bg-brand-500/10 rounded-lg transition-all"
+              class="text-[10px] font-black text-primary hover:text-primary-hover uppercase tracking-widest px-2 py-1 hover:bg-primary/10 rounded-lg transition-all"
             >
               Limpiar campo
             </button>
@@ -140,21 +140,21 @@
               min="1"
               max="30"
               placeholder="Ej: 12"
-              class="w-full px-4 py-3 bg-white dark:bg-gray-950 border border-gray-100 dark:border-gray-800 rounded-xl text-sm font-bold text-gray-800 dark:text-gray-100 outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 transition-all placeholder:text-gray-300"
-              :class="{ 'border-error-500 ring-4 ring-error-500/10': validationErrors.otolitos }"
+              class="w-full px-4 py-3 bg-surface border border-border rounded-xl text-sm font-bold text-text outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-text-muted/40"
+              :class="{ 'border-error ring-4 ring-error/10': validationErrors.otolitos }"
             />
           </div>
-          <p v-if="validationErrors.otolitos" class="text-[10px] text-red-500 font-bold uppercase mt-1 animate-in fade-in slide-in-from-top-1 duration-200">
+          <p v-if="validationErrors.otolitos" class="text-[10px] text-error font-bold uppercase mt-1 animate-in fade-in slide-in-from-top-1 duration-200">
              {{ validationErrors.otolitos }}
           </p>
-          <p v-else class="text-[10px] text-gray-500 dark:text-gray-500 font-medium italic">
+          <p v-else class="text-[10px] text-text-muted font-medium italic">
             Ingrese un valor entre 1 y 30 según las muestras físicas recibidas. Deje vacío si no se entregaron.
           </p>
         </div>
 
         <!-- 4. Comentarios Adicionales -->
         <div class="space-y-3">
-          <label class="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-gray-400 dark:text-gray-500">
+          <label class="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-text-muted/60">
             <ChatIcon class="w-3.5 h-3.5" />
             Comentarios sobre la recepción
           </label>
@@ -162,7 +162,7 @@
             v-model="form.comentarios"
             rows="3"
             placeholder="Ingrese observaciones adicionales si es necesario..."
-            class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl text-sm text-gray-800 dark:text-white outline-none focus:border-brand-500 transition-all resize-none placeholder:text-gray-400"
+            class="w-full px-4 py-3 bg-surface-muted/50 border border-border rounded-2xl text-sm text-text outline-none focus:border-primary transition-all resize-none placeholder:text-text-muted/40"
           ></textarea>
         </div>
       </form>
@@ -171,14 +171,14 @@
       <div class="mt-10 grid grid-cols-2 gap-4">
         <button
           @click="handleCancel"
-          class="px-6 py-4 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-2xl text-xs font-black uppercase tracking-[0.1em] transition-all active:scale-[0.98]"
+          class="px-6 py-4 bg-surface-muted hover:opacity-80 text-text-muted rounded-2xl text-xs font-black uppercase tracking-[0.1em] transition-all active:scale-[0.98]"
         >
           Cancelar
         </button>
         <button
           @click="handleConfirm"
           :disabled="!isValid"
-          class="px-6 py-4 bg-brand-500 hover:bg-brand-600 text-white rounded-2xl text-xs font-black uppercase tracking-[0.1em] shadow-xl shadow-brand-500/20 transition-all disabled:opacity-30 disabled:cursor-not-allowed active:scale-[0.98] flex items-center justify-center gap-2"
+          class="px-6 py-4 bg-primary hover:bg-primary-hover text-primary-fg rounded-2xl text-xs font-black uppercase tracking-[0.1em] shadow-xl shadow-primary/20 transition-all disabled:opacity-30 disabled:cursor-not-allowed active:scale-[0.98] flex items-center justify-center gap-2"
         >
           <CheckIcon class="w-4 h-4" />
           Confirmar Recepción

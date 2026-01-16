@@ -4,12 +4,12 @@
       ref="dropzoneForm"
       :id="dropzoneId"
       :action="uploadUrl"
-      class="border-gray-300 border-dashed dropzone rounded-xl bg-gray-50 p-7 hover:border-brand-500 dark:border-gray-700 dark:bg-gray-900 dark:hover:border-brand-500 lg:p-10"
+      class="border-border border-dashed dropzone rounded-xl bg-background p-7 hover:border-primary transition-all lg:p-10"
     >
       <div class="dz-message m-0!">
         <div class="mb-[22px] flex justify-center">
           <div
-            class="flex h-[68px] w-[68px] items-center justify-center rounded-full bg-gray-200 text-gray-700 dark:bg-gray-800 dark:text-gray-400"
+            class="flex h-[68px] w-[68px] items-center justify-center rounded-full bg-surface text-text-muted"
           >
             <svg
               class="fill-current"
@@ -29,17 +29,17 @@
           </div>
         </div>
 
-        <h4 class="mb-3 font-semibold text-gray-800 text-theme-xl dark:text-white/90">
-          Drag & Drop File Here
+        <h4 class="mb-3 font-semibold text-text text-theme-xl">
+          Arrastra y suelta tus archivos aquí
         </h4>
         <span
-          class="mx-auto mb-5 block w-full max-w-[18.125rem] text-sm text-gray-700 dark:text-gray-400"
+          class="mx-auto mb-5 block w-full max-w-[18.125rem] text-sm text-text-muted"
         >
-          Drag and drop your PNG, JPG, WebP, SVG images here or browse
+          Soporta imágenes PNG, JPG, WebP o SVG, o haz clic para buscar
         </span>
 
-        <span class="font-medium underline cursor-pointer text-theme-sm text-brand-500">
-          Browse File
+        <span class="font-medium underline cursor-pointer text-theme-sm text-primary">
+          Explorar Archivos
         </span>
       </div>
     </form>
@@ -95,12 +95,16 @@ onBeforeUnmount(() => {
 
 <style>
 .dropzone {
-  border: 1px dashed #d0d5dd;
+  border: 1px dashed var(--color-border);
   transition: all 0.3s ease;
 }
 
 .dropzone:hover {
-  border-color: #465fff;
+  border-color: var(--color-primary);
+}
+
+.dropzone .dz-message {
+  cursor: pointer;
 }
 
 .dropzone .dz-preview {
@@ -117,18 +121,17 @@ onBeforeUnmount(() => {
 
 .dropzone .dz-preview .dz-progress {
   height: 10px;
+  border-radius: 5px;
+  overflow: hidden;
 }
 
 .dropzone .dz-preview .dz-progress .dz-upload {
-  background: #4f46e5;
+  background: var(--color-primary);
 }
 
-.dark .dropzone {
-  background-color: #111827;
-  border-color: #374151;
-}
-
-.dark .dropzone:hover {
-  border-color: #6366f1;
+.dropzone.dz-drag-hover {
+  border-style: solid;
+  border-color: var(--color-primary);
+  background-color: color-mix(in srgb, var(--color-primary) 5%, transparent);
 }
 </style>

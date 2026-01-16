@@ -1,5 +1,5 @@
 <template>
-  <div class="relative h-full w-full overflow-hidden bg-gray-100 dark:bg-gray-950">
+  <div class="relative h-full w-full overflow-hidden bg-surface-muted">
     <div ref="mapContainer" class="h-full w-full"></div>
   </div>
 </template>
@@ -58,7 +58,7 @@ const updateGraticule = () => {
   const maxLon = Math.ceil(bounds.getEast() / interval) * interval
   
   const lineStyle = {
-    color: 'rgba(156, 163, 175, 0.2)',
+    color: 'var(--color-border)',
     weight: 1,
     interactive: false,
     pane: 'overlayPane'
@@ -66,7 +66,7 @@ const updateGraticule = () => {
 
   const labelIcon = (text: string) => L.divIcon({
     className: 'graticule-label',
-    html: `<div class="text-[8px] font-medium text-gray-600 dark:text-gray-400 [text-shadow:_0_0_2px_white] dark:[text-shadow:_0_0_2px_black] whitespace-nowrap">${text}</div>`,
+    html: `<div class="text-[8px] font-black text-text-muted/40 uppercase tracking-widest whitespace-nowrap">${text}</div>`,
     iconSize: [0, 0],
     iconAnchor: [0, 0]
   })
@@ -191,9 +191,9 @@ const drawTrack = () => {
     const p1 = props.points[i]
     const p2 = props.points[i + 1]
 
-    let color = 'var(--color-blue-500)'
-    if (p1.speed < 4.5) color = 'var(--color-error-500)'
-    else if (p1.speed < 7) color = 'var(--color-warning-500)'
+    let color = 'var(--color-info)'
+    if (p1.speed < 4.5) color = 'var(--color-error)'
+    else if (p1.speed < 7) color = 'var(--color-warning)'
 
     L.polyline(
       [
@@ -250,8 +250,8 @@ const updateVesselMarker = (index: number) => {
     className: 'vessel-marker-icon',
     html: `
       <div class="relative w-8 h-8 flex items-center justify-center transition-transform duration-500 ease-linear" style="transform: rotate(${current.course}deg)">
-        <div class="w-4 h-6 bg-brand-500 rounded-t-full shadow-lg border-2 border-white"></div>
-        <div class="absolute -top-1 w-1 h-1 bg-white rounded-full"></div>
+        <div class="w-4 h-6 bg-primary rounded-t-full shadow-lg border-2 border-surface"></div>
+        <div class="absolute -top-1 w-1 h-1 bg-surface rounded-full"></div>
       </div>
     `,
     iconSize: [32, 32],
@@ -269,7 +269,7 @@ const updateVesselMarker = (index: number) => {
   if (ghostPath) map.removeLayer(ghostPath)
   const traveledPoints = props.points.slice(0, index + 1).map((p) => [p.lat, p.lon])
   ghostPath = L.polyline(traveledPoints as L.LatLngExpression[], {
-    color: '#00f2ff', // Cyan vibrante
+    color: 'var(--color-info)', // Cyan vibrante -> Info
     weight: 4,
     opacity: 1,
     dashArray: '1, 5', // Style it a bit

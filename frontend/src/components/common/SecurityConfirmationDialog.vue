@@ -6,8 +6,8 @@
     @close="$emit('close')"
   >
     <div class="p-6">
-      <div class="bg-red-50 dark:bg-red-950/30 p-4 rounded-xl border border-red-100 dark:border-red-900/50 mb-6">
-          <div class="flex gap-3 text-red-800 dark:text-red-400">
+      <div class="bg-error/5 dark:bg-error/10 p-4 rounded-xl border border-error/20 dark:border-error/50 mb-6">
+          <div class="flex gap-3 text-error dark:text-error">
               <WarningIcon class="w-6 h-6 flex-shrink-0" />
               <div>
                   <h4 class="font-bold underline">¡ADVERTENCIA DE SEGURIDAD!</h4>
@@ -33,7 +33,7 @@
                   type="text" 
                   v-model="confirmationPhrase"
                   placeholder="Escriba la frase de confirmación aquí..."
-                  class="w-full px-4 py-3 rounded-xl border-2 border-gray-100 dark:border-gray-900 bg-white dark:bg-gray-950/20 focus:border-red-500 focus:ring-0 transition-all text-center font-bold text-gray-900 dark:text-white"
+                  class="w-full px-4 py-3 rounded-xl border-2 border-gray-100 dark:border-gray-900 bg-white dark:bg-gray-950/20 focus:border-error focus:ring-0 transition-all text-center font-bold text-gray-900 dark:text-white"
                   @paste.prevent
               />
               <p class="text-[10px] text-gray-500 mt-2 text-center italic">

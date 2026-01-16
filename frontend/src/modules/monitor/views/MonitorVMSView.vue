@@ -4,7 +4,7 @@
     description="Monitoreo satelital y tracking en tiempo real de la flota."
   >
     <div
-      class="relative w-full overflow-hidden bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-300"
+      class="relative w-full overflow-hidden bg-background text-text"
       style="height: calc(100vh - 64px)"
     >
       <!-- THE MAP (Background) -->
@@ -47,22 +47,22 @@
             />
             
             <!-- Font Size Context Menu -->
-            <div class="pointer-events-auto flex items-center gap-1.5 p-1.5 bg-white/10 dark:bg-gray-900/40 backdrop-blur-xl rounded-2xl border border-white/20 dark:border-white/5 shadow-2xl">
+            <div class="pointer-events-auto flex items-center gap-1.5 p-1.5 bg-surface/20 backdrop-blur-xl rounded-2xl border border-border/20 shadow-2xl">
               <button 
                 @click="fontScale = Math.max(0, fontScale - 1)"
-                class="w-7 h-7 flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 text-gray-400 hover:text-indigo-500 transition-all active:scale-90"
+                class="w-7 h-7 flex items-center justify-center rounded-xl bg-surface/10 hover:bg-surface/20 text-text-muted hover:text-primary transition-all active:scale-90"
                 title="Reducir fuente"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
                   <path d="M5 12h14"/>
                 </svg>
               </button>
-              <div class="px-2 text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest select-none">
-                A<span class="text-indigo-500">±</span>
+              <div class="px-2 text-[10px] font-black text-text-muted uppercase tracking-widest select-none">
+                A<span class="text-primary">±</span>
               </div>
               <button 
                 @click="fontScale = Math.min(4, fontScale + 1)"
-                class="w-7 h-7 flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 text-gray-400 hover:text-indigo-500 transition-all active:scale-90"
+                class="w-7 h-7 flex items-center justify-center rounded-xl bg-surface/10 hover:bg-surface/20 text-text-muted hover:text-primary transition-all active:scale-90"
                 title="Aumentar fuente"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
@@ -163,28 +163,28 @@ const mockStages: TripStage[] = [
     startDate: '2025-11-03T20:27:00Z',
     endDate: '2025-11-12T02:14:00Z',
     durationDays: 10,
-    color: '#f59e0b',
+    color: 'var(--color-warning)',
   },
   {
     id: '2',
     startDate: '2025-11-14T10:30:00Z',
     endDate: '2025-11-21T13:33:00Z',
     durationDays: 8,
-    color: '#a855f7',
+    color: 'var(--color-info)',
   },
   {
     id: '3',
     startDate: '2025-11-23T12:33:00Z',
     endDate: '2025-12-01T16:21:00Z',
     durationDays: 9,
-    color: '#10b981',
+    color: 'var(--color-success)',
   },
   {
     id: '4',
     startDate: '2025-12-03T19:07:00Z',
     endDate: '2025-12-11T15:39:00Z',
     durationDays: 9,
-    color: '#ec4899',
+    color: 'var(--color-error)',
   },
 ]
 
