@@ -1,6 +1,6 @@
 <template>
   <header
-    class="sticky top-0 flex w-full bg-surface border-border z-99999 lg:border-b"
+    class="sticky top-0 flex w-full bg-surface border-border z-40 lg:border-b"
   >
     <div class="flex flex-col items-center justify-between grow lg:flex-row lg:px-6">
       <div
@@ -8,7 +8,7 @@
       >
         <button
           @click="handleToggle"
-          class="flex items-center justify-center w-10 h-10 text-text-muted border-border rounded-lg z-99999 lg:h-11 lg:w-11 lg:border"
+          class="flex items-center justify-center w-10 h-10 text-text-muted border-border rounded-lg z-40 lg:h-11 lg:w-11 lg:border"
           :class="[
             isMobileOpen
               ? 'lg:bg-transparent bg-surface-muted'
@@ -61,7 +61,7 @@
 
         <button
           @click="toggleApplicationMenu"
-          class="flex items-center justify-center w-10 h-10 text-text rounded-lg z-99999 hover:bg-surface-muted lg:hidden"
+          class="flex items-center justify-center w-10 h-10 text-text rounded-lg z-40 hover:bg-surface-muted lg:hidden"
         >
           <svg
             width="24"
