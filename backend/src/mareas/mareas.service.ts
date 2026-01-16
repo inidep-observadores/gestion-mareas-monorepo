@@ -620,6 +620,7 @@ export class MareasService {
             },
             include: {
                 buque: true,
+                estadoActual: true,
                 etapas: {
                     orderBy: { nroEtapa: 'asc' },
                     include: {
@@ -687,17 +688,20 @@ export class MareasService {
                     });
 
                     // 4.6 Alerta (Plazo Entrega Datos: Arribo + 15 dias)
-                    const deadline = new Date(e.fechaArribo);
-                    deadline.setDate(deadline.getDate() + this.rules.PLAZO_ENTREGA_DATOS);
+                    // Solo mostrar si la marea está en estado ESPERANDO_ENTREGA
+                    if (m.estadoActual?.codigo === MareaEstado.ESPERANDO_ENTREGA) {
+                        const deadline = new Date(e.fechaArribo);
+                        deadline.setDate(deadline.getDate() + this.rules.PLAZO_ENTREGA_DATOS);
 
-                    events.push({
-                        id: `ven-${e.id}`,
-                        title: `⚠️ Vencimiento Datos ${mareaCode}`,
-                        start: deadline,
-                        type: 'alerta',
-                        ...commonProps,
-                        description: `Vencimiento de plazo para entrega de datos. Marea ${mareaCode}.`
-                    });
+                        events.push({
+                            id: `ven-${e.id}`,
+                            title: `⚠️ Vencimiento Datos ${mareaCode}`,
+                            start: deadline,
+                            type: 'alerta',
+                            ...commonProps,
+                            description: `Vencimiento de plazo para entrega de datos. Marea ${mareaCode}.`
+                        });
+                    }
                 }
             });
 
