@@ -31,9 +31,9 @@
       <!-- 2. ALERTAS CRÍTICAS (Alta) -->
       <section v-if="alertasAlta.length > 0" class="mb-8 space-y-4">
         <div class="flex items-center justify-between px-2">
-          <h2 class="text-[10px] font-black uppercase tracking-[0.2em] text-error flex items-center gap-2">
+          <h2 class="text-[10px] font-black uppercase tracking-[0.2em] text-warning flex items-center gap-2">
             <span class="flex h-2 w-2 relative">
-              <span class="relative inline-flex rounded-full h-2 w-2 bg-error"></span>
+              <span class="relative inline-flex rounded-full h-2 w-2 bg-warning"></span>
             </span>
             Gestión Prioritaria (Prioridad Alta)
           </h2>
@@ -52,9 +52,9 @@
       <!-- 3. ALERTAS RECOMENDADAS (Media) -->
       <section v-if="alertasMedia.length > 0" class="mb-8 space-y-4">
         <div class="flex items-center justify-between px-2">
-          <h2 class="text-[10px] font-black uppercase tracking-[0.2em] text-warning flex items-center gap-2">
+          <h2 class="text-[10px] font-black uppercase tracking-[0.2em] text-info flex items-center gap-2">
             <span class="flex h-2 w-2 relative">
-              <span class="relative inline-flex rounded-full h-2 w-2 bg-warning"></span>
+              <span class="relative inline-flex rounded-full h-2 w-2 bg-info"></span>
             </span>
             Atención Recomendada (Prioridad Media)
           </h2>
@@ -73,9 +73,9 @@
       <!-- 4. ALERTAS INFORMATIVAS (Baja) -->
       <section v-if="alertasBaja.length > 0" class="mb-8 space-y-4">
         <div class="flex items-center justify-between px-2">
-          <h2 class="text-[10px] font-black uppercase tracking-[0.2em] text-info flex items-center gap-2">
+          <h2 class="text-[10px] font-black uppercase tracking-[0.2em] text-purple flex items-center gap-2">
             <span class="flex h-2 w-2 relative">
-              <span class="relative inline-flex rounded-full h-2 w-2 bg-info"></span>
+              <span class="relative inline-flex rounded-full h-2 w-2 bg-purple"></span>
             </span>
             Notificaciones (Prioridad Baja)
           </h2>
