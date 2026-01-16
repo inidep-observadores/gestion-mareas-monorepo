@@ -63,27 +63,28 @@
       <div class="flex flex-col lg:flex-row gap-6 relative items-start">
 
         <div
-          class="flex-1 min-w-0 bg-surface border border-border rounded-2xl p-6 shadow-sm transition-all duration-300 relative z-0 overflow-hidden"
+          class="flex-1 min-w-0 bg-surface border border-border rounded-2xl p-6 shadow-sm transition-all duration-300 relative z-0 overflow-visible"
         >
           <FullCalendar ref="calendarRef" :options="calendarOptions" class="mareas-calendar">
             <template #eventContent="arg">
-              <div class="group relative w-full h-full p-1 cursor-pointer overflow-visible">
+              <div class="group relative w-full h-full p-1 cursor-pointer flex items-center">
                 <!-- Event Title -->
-                <div class="truncate fc-event-title-container">
-                  <span class="fc-event-time">{{ arg.timeText }}</span>
-                  <span class="fc-event-title">{{ arg.event.title }}</span>
+                <div class="truncate fc-event-title-container w-full">
+                  <span class="fc-event-time font-bold mr-1">{{ arg.timeText }}</span>
+                  <span class="fc-event-title font-medium uppercase">{{ arg.event.title }}</span>
                 </div>
-
+ 
                 <!-- Custom Tooltip -->
-                <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2.5 py-1.5 text-[11px] text-white bg-gray-950 rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-normal min-w-[180px] max-w-[240px] z-[9999] shadow-theme-lg pointer-events-none backdrop-blur-md bg-opacity-90 border border-primary/20">
-                  <div class="font-black uppercase tracking-tight text-primary border-b border-primary/10 mb-1 pb-1">
+                <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-4 px-3 py-2 text-[11px] text-text bg-surface rounded-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible whitespace-normal min-w-[220px] max-w-[300px] z-[99999] shadow-2xl pointer-events-none backdrop-blur-xl bg-opacity-95 border border-primary/30 ring-1 ring-white/10 flex flex-col">
+                  <div class="font-black uppercase tracking-tight text-primary border-b border-primary/20 mb-2 pb-1.5 flex items-center gap-2">
+                    <div class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse shadow-[0_0_8px_rgba(var(--color-primary-rgb),0.5)]"></div>
                     {{ arg.event.title }}
                   </div>
-                  <div class="leading-relaxed opacity-90 font-medium text-gray-100">
-                    {{ arg.event.extendedProps.description }}
+                  <div class="leading-relaxed font-semibold text-text/90 text-[10px]">
+                    {{ arg.event.extendedProps.description || 'Sin descripción adicional' }}
                   </div>
                   <!-- Arrow -->
-                  <div class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-950"></div>
+                  <div class="absolute top-full left-1/2 -translate-x-1/2 border-[6px] border-transparent border-t-surface"></div>
                 </div>
               </div>
             </template>
@@ -446,49 +447,62 @@ onMounted(() => {
 }
 
 /* Asegurar que el tooltip sea visible pero sin romper la contención del calendario */
-.fc .fc-view-harness {
-  z-index: 1;
+.fc .fc-view-harness,
+.fc .fc-view-harness-active {
+  z-index: 1 !important;
+  overflow: visible !important;
 }
+
+/* NO TOCAR overflow de fc-scroller, rompe el renderizado en vistas horarias */
 
 .fc-daygrid-body {
   z-index: 1 !important;
 }
 
-/* En vista semanal y mensual, elevamos los eventos al pasar el mouse */
+/* Elevamos los eventos al pasar el mouse */
 .fc-timegrid-event-harness:hover,
-.fc-daygrid-event-harness:hover {
-  z-index: 99 !important;
+.fc-daygrid-event-harness:hover,
+.fc-list-event:hover,
+.fc-event:hover {
+  z-index: 900 !important;
   position: relative;
 }
 
-/* El encabezado debe tener una prioridad controlada para no tapar los tooltips elevados */
+/* El encabezado (LUN, MAR...) debe estar por debajo de los eventos elevados al hacer hover */
 .fc-scrollgrid-section-header,
-.fc .fc-col-header {
+.fc .fc-col-header,
+.fc .fc-col-header-cell {
   z-index: 10 !important;
   position: relative;
 }
 
-/* Pero el cuerpo del calendario (donde están los eventos) debe poder estar por encima en hover */
 .fc-scrollgrid-section-body {
-  z-index: 20 !important;
   position: relative;
+  z-index: 20 !important;
 }
 
-.fc-event {
+/* Solo los elementos de eventos permiten desbordamiento para el tooltip */
+.fc-event, 
+.fc-daygrid-event-harness,
+.fc-list-event,
+.fc-list-event-td,
+.fc-event-main {
   overflow: visible !important;
 }
 
-.fc-daygrid-event-harness {
-  overflow: visible !important;
-}
-
-.mareas-calendar .fc-event-main {
-  overflow: visible !important;
-}
-
-/* Fix específico para que el tooltip no se esconda bajo la toolbar superior */
+/* El toolbar del calendario debe estar por debajo del contenido elevado */
 .fc .fc-toolbar {
   position: relative;
-  z-index: 5; /* Por debajo de los eventos elevados (20+) */
+  z-index: 1;
+}
+
+/* Estabilizar tooltip interno */
+.fc-event-main div[class*="absolute"] {
+  z-index: 1000 !important;
+}
+
+/* Asegurar que la vista de lista también permita ver el tooltip */
+.fc-list-event-title {
+  overflow: visible !important;
 }
 </style>
