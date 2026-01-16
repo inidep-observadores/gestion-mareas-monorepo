@@ -246,6 +246,21 @@
               </p>
             </div>
           </div>
+
+          <!-- Step 4: Etapas Iniciales -->
+          <div v-if="currentStep === 4" class="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div class="border-b border-border pb-4">
+              <h2 class="text-xl font-black uppercase tracking-tight text-text">Etapas del Viaje</h2>
+              <p class="text-text-muted text-xs font-medium mt-1">Defina las etapas de navegación iniciales si ya son conocidas.</p>
+            </div>
+
+            <NavigationStagesEditor 
+              v-model="form.etapas"
+              :puerto-options="puertoOptions"
+              :pesqueria-options="pesqueriaOptions"
+              :default-pesqueria-id="form.pesqueriaId"
+            />
+          </div>
         </template>
 
         <!-- Actions -->
@@ -275,8 +290,8 @@
                 <LoadingSpinner size="xs" class="text-primary-fg" />
               </div>
               <template v-else>
-                {{ currentStep === 3 ? 'Finalizar Registro' : 'Siguiente Paso' }}
-                <ChevronRightIcon v-if="currentStep < 3" class="w-4 h-4" />
+                {{ currentStep === 4 ? 'Finalizar Registro' : 'Siguiente Paso' }}
+                <ChevronRightIcon v-if="currentStep < 4" class="w-4 h-4" />
               </template>
             </button>
           </div>
@@ -298,14 +313,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch, nextTick } from 'vue'
+import { ref, computed, onMounted, watch, nextTick, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import SearchableSelect from '@/components/common/SearchableSelect.vue'
 import DatePicker from '@/components/common/DatePicker.vue'
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 import ConfirmationDialog from '@/components/common/ConfirmationDialog.vue'
+import NavigationStagesEditor from '../components/NavigationStagesEditor.vue'
 import { useMareas } from '../composables/useMareas'
+import { useWorkflowStore } from '../../shared/stores/workflow.store'
 import catalogosService from '../services/catalogos.service'
 import { 
   ShipIcon, 
@@ -319,16 +336,19 @@ import {
   BeakerIcon,
   CalenderIcon,
   HistoryIcon,
+  MapPinIcon
 } from '@/icons'
 
 const router = useRouter()
+const workflowStore = useWorkflowStore()
 const { createMarea, loading, error } = useMareas()
 
 // Steps
 const steps = [
   { id: 1, name: 'Identificación', icon: DocsIcon },
   { id: 2, name: 'Operación', icon: RefreshIcon },
-  { id: 3, name: 'Confirmación', icon: CheckIcon },
+  { id: 3, name: 'Iniciación', icon: MapPinIcon },
+  { id: 4, name: 'Confirmación', icon: CheckIcon },
 ]
 const currentStep = ref(1)
 
@@ -343,6 +363,7 @@ const form = ref({
   arteId: '',
   fechaZarpadaEstimada: '',
   diasEstimados: null as number | null,
+  etapas: [] as any[]
 })
 
 const fieldErrors = ref<Record<string, string>>({})
@@ -358,6 +379,7 @@ const buques = ref<any[]>([])
 const pesquerias = ref<any[]>([])
 const observadores = ref<any[]>([])
 const artes = ref<any[]>([])
+const puertos = ref<any[]>([])
 
 const buqueOptions = computed(() => {
   return buques.value.map(b => ({
@@ -387,18 +409,33 @@ const arteOptions = computed(() => {
   }))
 })
 
+const puertoOptions = computed(() => {
+  return puertos.value.map(p => ({
+    value: p.id,
+    label: p.nombre
+  }))
+})
+
 onMounted(async () => {
   try {
-    const [b, p, o, a] = await Promise.all([
+    const [b, p, o, a, pu] = await Promise.all([
       catalogosService.getBuques(),
       catalogosService.getPesquerias(),
       catalogosService.getObservadores(),
-      catalogosService.getArtesPesca()
+      catalogosService.getArtesPesca(),
+      catalogosService.getPuertos()
     ])
     buques.value = b
     pesquerias.value = p
     observadores.value = o
     artes.value = a
+    puertos.value = pu
+
+    // Check for workflow data (pre-fill from alert)
+    if (workflowStore.activeAlertData) {
+      prefillFromAlert(workflowStore.activeAlertData)
+    }
+
   } catch (err) {
     console.error('Error loading catalogs:', err)
   } finally {
@@ -409,6 +446,44 @@ onMounted(async () => {
     })
   }
 })
+
+onUnmounted(() => {
+  workflowStore.clearAlertData()
+})
+
+const prefillFromAlert = (data: any) => {
+  const meta = data.metadata || {}
+  const ext = meta.externalData || {}
+  
+  if (meta.anioMarea) form.value.anioMarea = meta.anioMarea
+  if (meta.nroMarea) form.value.nroMarea = meta.nroMarea
+  if (meta.tipoMarea) form.value.tipoMarea = meta.tipoMarea
+  
+  // Try to find Buque by name
+  if (ext.buque) {
+    const match = buques.value.find(b => b.nombreBuque.toLowerCase() === ext.buque.toLowerCase())
+    if (match) {
+      form.value.buqueId = match.id
+      handleBuqueChange()
+    }
+  }
+
+  // Pre-fill initial stage (Step 4)
+  if (ext.fechaZarpada) {
+    form.value.fechaZarpadaEstimada = ext.fechaZarpada
+    form.value.etapas = [{
+      id: null,
+      nroEtapa: meta.nroEtapa || 1,
+      puertoZarpadaId: '',
+      fechaZarpada: ext.fechaZarpada,
+      puertoArriboId: '',
+      fechaArribo: ext.fechaArribo || '',
+      pesqueriaId: '',
+      tipoEtapa: 'COMERCIAL',
+      observaciones: 'Importado desde sistema externo'
+    }]
+  }
+}
 
 // Auto-focus logic when step changes
 watch(currentStep, (newStep) => {
@@ -462,7 +537,7 @@ const validateStep = (step: number) => {
 }
 
 const nextStep = async () => {
-  if (currentStep.value < 3) {
+  if (currentStep.value < 4) {
     if (!validateStep(currentStep.value)) return
     currentStep.value++
   } else {
