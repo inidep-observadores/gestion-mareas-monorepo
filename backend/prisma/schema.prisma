@@ -589,3 +589,36 @@ model AlertaEvento {
   @@index([alertaId])
   @@map("alertas_eventos")
 }
+
+model ImportacionAccessSnapshot {
+  id                   String   @id @default(uuid()) @db.Uuid
+  idExterno            Int      @unique @map("id_externo")
+  
+  // Datos parseados del registro
+  nroMarea             Int?     @map("nro_marea")
+  anioMarea            Int      @map("anio_marea")
+  tipoMarea            String   @map("tipo_marea") // 'MC' o 'CI'
+  nroEtapa             Int      @map("nro_etapa")
+  
+  // Fechas del registro
+  fechaZarpada         DateTime? @map("fecha_zarpada") @db.Date
+  fechaArribo          DateTime? @map("fecha_arribo") @db.Date
+  
+  // Datos adicionales para matching
+  buqueNombre          String?  @map("buque_nombre")
+  observadorCodigo     Int?     @map("observador_codigo")
+  
+  // Hash del contenido para detección rápida de cambios
+  hashContenido        String   @map("hash_contenido")
+  
+  // Tracking de procesamiento
+  fechaPrimeraLectura  DateTime @default(now()) @map("fecha_primera_lectura") @db.Timestamptz(6)
+  fechaUltimaLectura   DateTime @updatedAt @map("fecha_ultima_lectura") @db.Timestamptz(6)
+  
+  // Vinculación opcional con entidades locales
+  mareaId              String?  @map("marea_id") @db.Uuid
+  etapaId              String?  @map("etapa_id") @db.Uuid
+
+  @@index([nroMarea, anioMarea, tipoMarea])
+  @@map("importacion_access_snapshots")
+}
