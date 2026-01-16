@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import { AlertaEstado, AlertaPrioridad } from './alerts.enums';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateAlertDto } from './dto/create-alert.dto';
 import { UpdateAlertDto } from './dto/update-alert.dto';
@@ -18,11 +19,11 @@ export class AlertsService {
         });
 
         if (existing) {
-            if (['DESCARTADA', 'RESUELTA'].includes(existing.estado)) {
+            if ([AlertaEstado.DESCARTADA, AlertaEstado.RESUELTA].includes(existing.estado as any)) {
                 this.logger.log(`Alerta ${codigoUnico} ignorada (está ${existing.estado})`);
                 return existing;
             }
-            if (['PENDIENTE', 'SEGUIMIENTO'].includes(existing.estado)) {
+            if ([AlertaEstado.PENDIENTE, AlertaEstado.SEGUIMIENTO].includes(existing.estado as any)) {
                 // Update last seen?
                 return existing;
             }
@@ -30,7 +31,7 @@ export class AlertsService {
             return this.prisma.alerta.update({
                 where: { id: existing.id },
                 data: {
-                    estado: 'PENDIENTE',
+                    estado: AlertaEstado.PENDIENTE,
                     fechaDetectada: new Date(), // Refresh detection date
                     fechaCierre: null,
                     prioridad: createAlertDto.prioridad // Update priority if changed
@@ -107,7 +108,7 @@ export class AlertsService {
 
         const current = await this.prisma.alerta.findUnique({ where: { id } });
         if (!current) throw new Error('Alerta no encontrada');
-        if (data.estado && ['SEGUIMIENTO', 'DESCARTADA', 'RESUELTA'].includes(data.estado) && !comment?.trim()) {
+        if (data.estado && [AlertaEstado.SEGUIMIENTO, AlertaEstado.DESCARTADA, AlertaEstado.RESUELTA].includes(data.estado as any) && !comment?.trim()) {
             throw new BadRequestException('Debe ingresar una nota de gestión para actualizar la alerta.');
         }
 
@@ -121,7 +122,7 @@ export class AlertsService {
             where: { id },
             data: {
                 ...data,
-                fechaCierre: data.estado === 'RESUELTA' || data.estado === 'DESCARTADA' ? new Date() : undefined
+                fechaCierre: data.estado === AlertaEstado.RESUELTA || data.estado === AlertaEstado.DESCARTADA ? new Date() : undefined
             }
         });
 

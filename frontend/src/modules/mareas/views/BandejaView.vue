@@ -6,25 +6,86 @@
     <div class="relative min-h-[calc(100vh-120px)] z-1 pb-10 flex flex-col xl:flex-row gap-8 items-start">
       <div class="flex-1 min-w-0 w-full">
       
-      <!-- 1. HEADER: ALERTAS CRÍTICAS (Pendientes) -->
-      <section v-if="alertasPendientes.length > 0" class="mb-8 space-y-4">
+      <!-- 1. ALERTAS URGENTES (Urgente) -->
+      <section v-if="alertasUrgente.length > 0" class="mb-8 space-y-4">
         <div class="flex items-center justify-between px-2">
           <h2 class="text-[10px] font-black uppercase tracking-[0.2em] text-error flex items-center gap-2">
-            <span class="flex h-2 w-2 relative">
-              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-error/40 opacity-75"></span>
-              <span class="relative inline-flex rounded-full h-2 w-2 bg-error"></span>
+            <span class="flex h-3 w-3 relative">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-error/60 opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-3 w-3 bg-error shadow-[0_0_10px_rgba(244,63,94,0.5)]"></span>
             </span>
-            Atención Inmediata (Pendientes)
+            Atención Inmediata (Prioridad Urgente)
           </h2>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-4">
           <InboxAlertCard 
-            v-for="alerta in alertasPendientes" 
+            v-for="alerta in alertasUrgente" 
             :key="alerta.id"
-            :titulo="alerta.titulo"
-            :descripcion="alerta.descripcion"
+            v-bind="alerta"
             :fecha="formatDate(alerta.fechaDetectada)"
-            :estado="alerta.estado"
+            @action="(type) => handleAlertAction(alerta.id, type)"
+          />
+        </div>
+      </section>
+
+      <!-- 2. ALERTAS CRÍTICAS (Alta) -->
+      <section v-if="alertasAlta.length > 0" class="mb-8 space-y-4">
+        <div class="flex items-center justify-between px-2">
+          <h2 class="text-[10px] font-black uppercase tracking-[0.2em] text-error flex items-center gap-2">
+            <span class="flex h-2 w-2 relative">
+              <span class="relative inline-flex rounded-full h-2 w-2 bg-error"></span>
+            </span>
+            Gestión Prioritaria (Prioridad Alta)
+          </h2>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-4">
+          <InboxAlertCard 
+            v-for="alerta in alertasAlta" 
+            :key="alerta.id"
+            v-bind="alerta"
+            :fecha="formatDate(alerta.fechaDetectada)"
+            @action="(type) => handleAlertAction(alerta.id, type)"
+          />
+        </div>
+      </section>
+
+      <!-- 3. ALERTAS RECOMENDADAS (Media) -->
+      <section v-if="alertasMedia.length > 0" class="mb-8 space-y-4">
+        <div class="flex items-center justify-between px-2">
+          <h2 class="text-[10px] font-black uppercase tracking-[0.2em] text-warning flex items-center gap-2">
+            <span class="flex h-2 w-2 relative">
+              <span class="relative inline-flex rounded-full h-2 w-2 bg-warning"></span>
+            </span>
+            Atención Recomendada (Prioridad Media)
+          </h2>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-4">
+          <InboxAlertCard 
+            v-for="alerta in alertasMedia" 
+            :key="alerta.id"
+            v-bind="alerta"
+            :fecha="formatDate(alerta.fechaDetectada)"
+            @action="(type) => handleAlertAction(alerta.id, type)"
+          />
+        </div>
+      </section>
+
+      <!-- 4. ALERTAS INFORMATIVAS (Baja) -->
+      <section v-if="alertasBaja.length > 0" class="mb-8 space-y-4">
+        <div class="flex items-center justify-between px-2">
+          <h2 class="text-[10px] font-black uppercase tracking-[0.2em] text-info flex items-center gap-2">
+            <span class="flex h-2 w-2 relative">
+              <span class="relative inline-flex rounded-full h-2 w-2 bg-info"></span>
+            </span>
+            Notificaciones (Prioridad Baja)
+          </h2>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-4">
+          <InboxAlertCard 
+            v-for="alerta in alertasBaja" 
+            :key="alerta.id"
+            v-bind="alerta"
+            :fecha="formatDate(alerta.fechaDetectada)"
             @action="(type) => handleAlertAction(alerta.id, type)"
           />
         </div>
@@ -44,11 +105,9 @@
           <InboxAlertCard 
             v-for="alerta in alertasSeguimiento" 
             :key="alerta.id"
-            :titulo="alerta.titulo"
-            :descripcion="alerta.descripcion"
+            v-bind="alerta"
             :fecha="formatDate(alerta.fechaDetectada)"
-            :estado="'SEGUIMIENTO'"
-            :notaGestion="alerta.notaGestion"
+            :estado="AlertaEstado.SEGUIMIENTO"
             @action="(type) => handleAlertAction(alerta.id, type)"
           />
         </div>
@@ -319,6 +378,7 @@ import { alertsService } from '@/modules/alerts/services/alerts.service'
 import { EditIcon, CheckIcon, DocsIcon, BellIcon } from '@/icons'
 import { useMareas } from '../composables/useMareas'
 import { toast } from 'vue-sonner'
+import { AlertaEstado, AlertaPrioridad } from '../../alerts/services/alerts.service'
 
 const router = useRouter()
 const { fetchMareaContext, selectedMareaContext, executeAction } = useMareas()
@@ -337,8 +397,13 @@ const tareasUrgentes = computed(() => tasks.value.filter(t => t.tab === 'urgente
 const tareasPendientes = computed(() => tasks.value.filter(t => t.tab === 'pendientes'))
 
 // Nuevas subdivisiones de alertas activas
-const alertasPendientes = computed(() => alertas.value.filter(a => ['PENDIENTE', 'VENCIDA'].includes(a.estado)))
-const alertasSeguimiento = computed(() => alertas.value.filter(a => a.estado === 'SEGUIMIENTO'))
+// Nuevas subdivisiones de alertas activas por prioridad
+const alertasPendientesTotal = computed(() => alertas.value.filter(a => [AlertaEstado.PENDIENTE, AlertaEstado.VENCIDA].includes(a.estado)))
+const alertasUrgente = computed(() => alertasPendientesTotal.value.filter(a => a.prioridad === AlertaPrioridad.URGENTE))
+const alertasAlta = computed(() => alertasPendientesTotal.value.filter(a => a.prioridad === AlertaPrioridad.ALTA))
+const alertasMedia = computed(() => alertasPendientesTotal.value.filter(a => a.prioridad === AlertaPrioridad.MEDIA))
+const alertasBaja = computed(() => alertasPendientesTotal.value.filter(a => a.prioridad === AlertaPrioridad.BAJA))
+const alertasSeguimiento = computed(() => alertas.value.filter(a => a.estado === AlertaEstado.SEGUIMIENTO))
 
 const tabs = computed(() => [
   { id: 'urgentes', label: 'Acciones Urgentes', count: tareasUrgentes.value?.length || 0 },
@@ -418,7 +483,7 @@ const loadInbox = async () => {
     const allAlerts = await alertsService.getAll({}) || []
     
     alertasHistoricas.value = allAlerts
-        .filter(a => a.estado === 'RESUELTA' || a.estado === 'DESCARTADA')
+        .filter(a => a.estado === AlertaEstado.RESUELTA || a.estado === AlertaEstado.DESCARTADA)
         .sort((a, b) => {
             const dateA = new Date(a.fechaCierre || a.fechaDetectada || 0).getTime()
             const dateB = new Date(b.fechaCierre || b.fechaDetectada || 0).getTime()

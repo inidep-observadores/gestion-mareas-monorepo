@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AlertsService } from '../alerts/alerts.service';
+import { AlertaEstado, AlertaPrioridad } from '../alerts/alerts.enums';
 import { AccessReaderService, ExternalRecord } from './access-reader.service';
 import { ErrorLogsService } from '../common/error-logs/error-logs.service';
 import * as crypto from 'crypto';
@@ -223,8 +224,8 @@ export class AccessImportService {
             tipo: tipo,
             titulo: `${tipo}: ${record.Buque} - ${mareaLabel}`,
             descripcion: descripcion,
-            estado: 'PENDIENTE',
-            prioridad: 'MEDIA',
+            estado: AlertaEstado.PENDIENTE,
+            prioridad: AlertaPrioridad.MEDIA,
             metadata: {
                 idExterno: record.Id,
                 source: 'ACCESS_IMPORT',
