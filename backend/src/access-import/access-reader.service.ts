@@ -7,20 +7,20 @@ export interface ExternalRecord {
     Buque: string;
     Especie: string;
     Flota: string;
-    Fecha_Zarpada: string; // dd/mm/yyyy
-    Fecha_Arribo: string;  // dd/mm/yyyy
+    Fecha_Zarpada: Date | string;
+    Fecha_Arribo: Date | string;
     DiasNavegados: number;
     NroMarea: string;      // nnn/yyyy o CI
-    Validada: string;      // VERDADERO/FALSO
-    SinEtapas: string;     // VERDADERO/FALSO
+    Validada: boolean;
+    SinEtapas: boolean;
     NroInformeDni?: string;
     Comentarios?: string;
-    Prospeccion: string;   // FALSO/VERDADERO
-    InicioProspeccion?: string;
-    FinProspeccion?: string;
+    Prospeccion: boolean;
+    InicioProspeccion?: Date | string;
+    FinProspeccion?: Date | string;
     NroEtapa: number;
-    FechaInicioCI?: string;
-    FechaFinCI?: string;
+    FechaInicioCI?: Date | string;
+    FechaFinCI?: Date | string;
 }
 
 @Injectable()
@@ -34,21 +34,19 @@ export class AccessReaderService {
         try {
             const reader = new MDBReader(buffer);
 
-            // Intentamos obtener la tabla. El usuario no especificó el nombre, 
-            // pero usualmente hay una tabla principal o podemos listar las tablas.
             const tables = reader.getTableNames();
             this.logger.log(`Tablas encontradas en el archivo Access: ${tables.join(', ')}`);
 
-            // Asumimos que la tabla se llama 'Mareas' o similar. 
-            // Si hay varias, intentamos encontrar la que tenga más registros o una sugerida.
-            // Por ahora usamos la primera tabla que no sea del sistema.
-            const targetTable = tables.find(t => !t.startsWith('MSys')) || tables[0];
+            // Priorizamos la tabla 'Mareas' si existe, sino buscamos la primera no-sistema
+            const targetTable = tables.find(t => t === 'Mareas') ||
+                tables.find(t => !t.startsWith('MSys')) ||
+                tables[0];
 
             if (!targetTable) {
                 throw new Error('No se encontraron tablas procesables en el archivo Access.');
             }
 
-            this.logger.log(`Leyendo tabla: ${targetTable}`);
+            this.logger.log(`Leyendo tabla de novedades: ${targetTable}`);
             const table = reader.getTable(targetTable);
             const data = table.getData();
 
@@ -60,22 +58,34 @@ export class AccessReaderService {
     }
 
     /**
-     * Helper para parsear fechas en formato dd/mm/yyyy a objeto Date
+     * Helper para parsear fechas que pueden venir como Date o string
      */
-    parseDate(dateStr: string): Date | null {
-        if (!dateStr || dateStr.trim() === '') return null;
+    parseDate(value: Date | string | null | undefined): Date | null {
+        if (!value) return null;
 
-        // El formato es dd/mm/yyyy según el CSV de referencia
-        const parts = dateStr.split('/');
-        if (parts.length !== 3) return null;
+        // Si ya es un objeto Date (lo que suele entregar mdb-reader)
+        if (value instanceof Date) {
+            return isNaN(value.getTime()) ? null : value;
+        }
 
-        const day = parseInt(parts[0], 10);
-        const month = parseInt(parts[1], 10) - 1; // 0-indexed
-        const year = parseInt(parts[2], 10);
+        // Si es un string con formato ISO (ej: devuelto por JSON.stringify)
+        if (typeof value === 'string' && value.includes('T')) {
+            const date = new Date(value);
+            return isNaN(date.getTime()) ? null : date;
+        }
 
-        const date = new Date(year, month, day);
+        // Si es un string con formato dd/mm/yyyy
+        if (typeof value === 'string' && value.includes('/')) {
+            const parts = value.split('/');
+            if (parts.length === 3) {
+                const day = parseInt(parts[0], 10);
+                const month = parseInt(parts[1], 10) - 1;
+                const year = parseInt(parts[2], 10);
+                const date = new Date(year, month, day);
+                return isNaN(date.getTime()) ? null : date;
+            }
+        }
 
-        // Validar si es una fecha válida
-        return isNaN(date.getTime()) ? null : date;
+        return null;
     }
 }

@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AlertsService } from '../alerts/alerts.service';
 import { AccessReaderService, ExternalRecord } from './access-reader.service';
+import { ErrorLogsService } from '../common/error-logs/error-logs.service';
 import * as crypto from 'crypto';
 
 export interface ProcessingSummary {
@@ -20,14 +21,27 @@ export class AccessImportService {
         private prisma: PrismaService,
         private alertsService: AlertsService,
         private readerService: AccessReaderService,
+        private errorLogsService: ErrorLogsService,
     ) { }
 
     /**
      * Procesa el archivo subido
      */
     async processFile(buffer: Buffer): Promise<ProcessingSummary> {
-        const rawRecords = await this.readerService.readAccessFile(buffer);
-        return this.processRecords(rawRecords);
+        try {
+            const rawRecords = await this.readerService.readAccessFile(buffer);
+            return await this.processRecords(rawRecords);
+        } catch (error) {
+            await this.errorLogsService.create({
+                level: 'CRITICAL',
+                source: 'BACKEND',
+                context: 'AccessImportService.processFile',
+                message: error.message,
+                stack: error.stack,
+                detail: { error }
+            });
+            throw error; // Re-lanzar para que el controlador también responda con error
+        }
     }
 
     /**
@@ -42,16 +56,17 @@ export class AccessImportService {
             alertasGeneradas: 0,
         };
 
+        let count = 0;
         for (const record of records) {
-            try {
-                const result = await this.processSingleRecord(record);
-                if (result.type === 'NEW') summary.nuevos++;
-                if (result.type === 'UPDATED') summary.actualizados++;
-                if (result.type === 'UNCHANGED') summary.sinCambios++;
-                if (result.alertGenerated) summary.alertasGeneradas++;
-            } catch (error) {
-                this.logger.error(`Error procesando registro externo ID ${record.Id}: ${error.message}`);
+            count++;
+            if (count % 100 === 0) {
+                this.logger.log(`Procesados ${count} de ${records.length} registros...`);
             }
+            const result = await this.processSingleRecord(record);
+            if (result.type === 'NEW') summary.nuevos++;
+            if (result.type === 'UPDATED') summary.actualizados++;
+            if (result.type === 'UNCHANGED') summary.sinCambios++;
+            if (result.alertGenerated) summary.alertasGeneradas++;
         }
 
         return summary;
@@ -126,8 +141,8 @@ export class AccessImportService {
         return { type: 'UPDATED', alertGenerated: false };
     }
 
-    private parseMareaIdentifier(nroMareaStr: string, fechaZarpadaStr: string) {
-        const fechaZarpada = this.readerService.parseDate(fechaZarpadaStr) || new Date();
+    private parseMareaIdentifier(nroMareaStr: string, fechaZarpadaRaw: Date | string) {
+        const fechaZarpada = this.readerService.parseDate(fechaZarpadaRaw) || new Date();
 
         if (nroMareaStr === 'CI') {
             return { nroMarea: null, anioMarea: fechaZarpada.getFullYear(), tipoMarea: 'CI' };

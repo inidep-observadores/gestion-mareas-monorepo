@@ -53,6 +53,7 @@ import { AccessImportModule } from './access-import/access-import.module';
     DataExportModule,
     MailModule,
     AlertsModule,
+    AccessImportModule,
   ],
 })
 export class AppModule { }
