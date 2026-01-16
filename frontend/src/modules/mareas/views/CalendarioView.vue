@@ -75,15 +75,15 @@
                 </div>
 
                 <!-- Custom Tooltip -->
-                <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2.5 py-1.5 text-[11px] text-primary-fg bg-text rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-normal min-w-[180px] max-w-[240px] z-[9999] shadow-theme-lg pointer-events-none backdrop-blur-sm bg-opacity-95">
-                  <div class="font-black uppercase tracking-tight border-b border-primary-fg/10 mb-1 pb-1">
+                <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2.5 py-1.5 text-[11px] text-white bg-gray-950 rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-normal min-w-[180px] max-w-[240px] z-[9999] shadow-theme-lg pointer-events-none backdrop-blur-md bg-opacity-90 border border-primary/20">
+                  <div class="font-black uppercase tracking-tight text-primary border-b border-primary/10 mb-1 pb-1">
                     {{ arg.event.title }}
                   </div>
-                  <div class="leading-relaxed opacity-90 font-medium">
+                  <div class="leading-relaxed opacity-90 font-medium text-gray-100">
                     {{ arg.event.extendedProps.description }}
                   </div>
                   <!-- Arrow -->
-                  <div class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-text"></div>
+                  <div class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-950"></div>
                 </div>
               </div>
             </template>

@@ -1,6 +1,7 @@
 <template>
   <div class="relative" ref="dropdownRef">
-    <button
+    <!-- TODO: Botón de notificaciónes - se deja oculto hasta qye tenga funcionalidad -->
+    <button v-if="false"
       class="relative flex items-center justify-center text-text-muted transition-colors bg-surface border border-border rounded-full h-11 w-11 hover:bg-surface-muted hover:text-text"
       @click="toggleDropdown"
     >
