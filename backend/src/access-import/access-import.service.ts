@@ -275,6 +275,9 @@ export class AccessImportService {
                 source: 'ACCESS_IMPORT',
                 subTipo: tipoHallazgo,
                 nroEtapa: nroEtapa,
+                anioMarea: parsedMarea.anioMarea || undefined,
+                nroMarea: parsedMarea.nroMarea || undefined,
+                observerCode: observador?.codigoInterno || undefined, // ADDED
                 externalData: {
                     fechaZarpada: record.Fecha_Zarpada,
                     fechaArribo: record.Fecha_Arribo,

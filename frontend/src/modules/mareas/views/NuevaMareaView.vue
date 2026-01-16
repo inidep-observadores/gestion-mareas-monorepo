@@ -115,6 +115,7 @@
                   <div class="space-y-1.5">
                     <label class="block text-sm font-medium text-text-muted">Nro. Marea</label>
                     <input 
+                      ref="nroMareaInput"
                       v-model="form.nroMarea"
                       type="number"
                       placeholder="000"
@@ -208,8 +209,23 @@
             </div>
           </div>
 
-          <!-- Step 3: Confirmación -->
+          <!-- Step 3: Etapas Iniciales -->
           <div v-if="currentStep === 3" class="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div class="border-b border-border pb-4">
+              <h2 class="text-xl font-black uppercase tracking-tight text-text">Etapas del Viaje</h2>
+              <p class="text-text-muted text-xs font-medium mt-1">Defina las etapas de navegación iniciales si ya son conocidas.</p>
+            </div>
+
+            <NavigationStagesEditor 
+              v-model="form.etapas"
+              :puerto-options="puertoOptions"
+              :pesqueria-options="pesqueriaOptions"
+              :default-pesqueria-id="form.pesqueriaId"
+            />
+          </div>
+
+          <!-- Step 4: Confirmación -->
+          <div v-if="currentStep === 4" class="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div class="border-b border-border pb-4 text-center">
               <div class="w-12 h-12 bg-success/10 rounded-full flex items-center justify-center mx-auto mb-3">
                 <CheckIcon class="w-6 h-6 text-success" />
@@ -238,6 +254,16 @@
                 <p v-if="form.diasEstimados" class="text-xs text-text-muted font-medium mt-0.5">Est: {{ form.diasEstimados }} días</p>
               </div>
             </div>
+            
+            <div v-if="form.etapas.length > 0" class="p-6 bg-surface-muted rounded-xl border border-border/50">
+                <p class="text-[9px] font-black text-text-muted uppercase tracking-widest mb-2">Etapas Definidas</p>
+                <ul class="space-y-2">
+                    <li v-for="(etapa, idx) in form.etapas" :key="idx" class="text-xs text-text-muted flex items-center gap-2">
+                         <div class="w-1.5 h-1.5 rounded-full bg-primary/40"></div>
+                         Etapa {{ etapa.nroEtapa || (idx + 1) }}: Zarpada {{ formatDate(etapa.fechaZarpada) }}
+                    </li>
+                </ul>
+            </div>
 
             <div class="p-4 bg-warning/5 border border-warning/20 rounded-xl flex gap-4">
               <InfoIcon class="w-5 h-5 text-warning shrink-0" />
@@ -245,21 +271,6 @@
                 Al confirmar, se enviará una notificación al observador y la marea quedará en estado **DESIGNADA** disponible en el Panel Operativo.
               </p>
             </div>
-          </div>
-
-          <!-- Step 4: Etapas Iniciales -->
-          <div v-if="currentStep === 4" class="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div class="border-b border-border pb-4">
-              <h2 class="text-xl font-black uppercase tracking-tight text-text">Etapas del Viaje</h2>
-              <p class="text-text-muted text-xs font-medium mt-1">Defina las etapas de navegación iniciales si ya son conocidas.</p>
-            </div>
-
-            <NavigationStagesEditor 
-              v-model="form.etapas"
-              :puerto-options="puertoOptions"
-              :pesqueria-options="pesqueriaOptions"
-              :default-pesqueria-id="form.pesqueriaId"
-            />
           </div>
         </template>
 
@@ -315,6 +326,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch, nextTick, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { toast } from 'vue-sonner'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import SearchableSelect from '@/components/common/SearchableSelect.vue'
 import DatePicker from '@/components/common/DatePicker.vue'
@@ -336,7 +348,8 @@ import {
   BeakerIcon,
   CalenderIcon,
   HistoryIcon,
-  MapPinIcon
+  MapPinIcon,
+  ListIcon
 } from '@/icons'
 
 const router = useRouter()
@@ -347,7 +360,7 @@ const { createMarea, loading, error } = useMareas()
 const steps = [
   { id: 1, name: 'Identificación', icon: DocsIcon },
   { id: 2, name: 'Operación', icon: RefreshIcon },
-  { id: 3, name: 'Iniciación', icon: MapPinIcon },
+  { id: 3, name: 'Etapas del Viaje', icon: MapPinIcon },
   { id: 4, name: 'Confirmación', icon: CheckIcon },
 ]
 const currentStep = ref(1)
@@ -371,6 +384,7 @@ const showCancelConfirm = ref(false)
 
 // Refs for focus
 const buqueSelect = ref<any>(null)
+const nroMareaInput = ref<HTMLInputElement | null>(null) // ADDED
 const observadorSelect = ref<any>(null)
 
 // Catalogs
@@ -440,9 +454,19 @@ onMounted(async () => {
     console.error('Error loading catalogs:', err)
   } finally {
     loadingCatalogs.value = false
-    // Focus first field once catalogs are loaded
+    // Focus logic: if Buque is already selected (e.g. from alert), focus Nro Marea
     nextTick(() => {
-      buqueSelect.value?.focus()
+      if (form.value.buqueId) {
+        // Find input for Nro Marea to focus, assumed it's simple input ref logic or just querySelector if ref not avail
+        // Since nroMarea input doesn't have a ref, let's add one or use a more specific selector if needed.
+        // Or simpler: just focus observing the data. 
+        // Actually, let's modify the template to add a ref to nroMarea input.
+        // For now, I'll rely on a template ref change in next step or use document.querySelector if needed but best practice is refs.
+        // Let's assume I will add `ref="nroMareaInput"` in template.
+        nroMareaInput.value?.focus()
+      } else {
+        buqueSelect.value?.focus()
+      }
     })
   }
 })
@@ -459,16 +483,44 @@ const prefillFromAlert = (data: any) => {
   if (meta.nroMarea) form.value.nroMarea = meta.nroMarea
   if (meta.tipoMarea) form.value.tipoMarea = meta.tipoMarea
   
+  // Pre-fill fields from metadata
+  if (meta.anioMarea) form.value.anioMarea = meta.anioMarea
+  if (meta.nroMarea) form.value.nroMarea = meta.nroMarea
+  if (meta.tipoMarea) form.value.tipoMarea = meta.tipoMarea
+  
   // Try to find Buque by name
   if (ext.buque) {
     const match = buques.value.find(b => b.nombreBuque.toLowerCase() === ext.buque.toLowerCase())
     if (match) {
       form.value.buqueId = match.id
-      handleBuqueChange()
+      handleBuqueChange() // This sets fishery default
     }
   }
 
-  // Pre-fill initial stage (Step 4)
+  // Try to find Observer by code (from alert metadata) or name
+  let obsFound = null;
+
+  if (meta.observerCode) {
+    // Try matching by internal code (assuming catalog objects have it)
+    obsFound = observadores.value.find((o: any) => o.codigoInterno == meta.observerCode || o.codigo == meta.observerCode);
+   
+    if (obsFound) {
+      form.value.observadorId = obsFound.id
+    }
+  } 
+  
+  if (!obsFound && meta.observerName) {
+      // Fallback: search by name
+      obsFound = observadores.value.find(o => 
+          `${o.apellido} ${o.nombre}`.toLowerCase().includes(meta.observerName.toLowerCase()) ||
+          `${o.nombre} ${o.apellido}`.toLowerCase().includes(meta.observerName.toLowerCase())
+      )
+      if (obsFound) {
+          form.value.observadorId = obsFound.id
+      }
+  }
+
+  // Pre-fill initial stage (Step 3 now)
   if (ext.fechaZarpada) {
     form.value.fechaZarpadaEstimada = ext.fechaZarpada
     form.value.etapas = [{
@@ -478,7 +530,7 @@ const prefillFromAlert = (data: any) => {
       fechaZarpada: ext.fechaZarpada,
       puertoArriboId: '',
       fechaArribo: ext.fechaArribo || '',
-      pesqueriaId: '',
+      pesqueriaId: form.value.pesqueriaId || '', // Default to vessel fishery if available
       tipoEtapa: 'COMERCIAL',
       observaciones: 'Importado desde sistema externo'
     }]
@@ -506,7 +558,18 @@ const generatedCode = computed(() => {
 const handleBuqueChange = () => {
   const buque = buques.value.find(b => b.id === form.value.buqueId)
   if (buque) {
-    if (buque.pesqueriaHabitualId) form.value.pesqueriaId = buque.pesqueriaHabitualId
+    if (buque.pesqueriaHabitualId) {
+        form.value.pesqueriaId = buque.pesqueriaHabitualId
+        
+        // Propagate to existing stages if they don't have one set or to sync default
+        if (form.value.etapas.length > 0) {
+            form.value.etapas.forEach((etapa: any) => {
+                if (!etapa.pesqueriaId) {
+                    etapa.pesqueriaId = buque.pesqueriaHabitualId
+                }
+            })
+        }
+    }
     if (buque.arteHabitualId) form.value.arteId = buque.arteHabitualId
     if (buque.diasMareaEstimada) form.value.diasEstimados = buque.diasMareaEstimada
   }
@@ -532,6 +595,29 @@ const validateStep = (step: number) => {
     if (!form.value.arteId) fieldErrors.value.arteId = 'El arte de pesca es obligatorio'
     if (!form.value.fechaZarpadaEstimada) fieldErrors.value.fechaZarpadaEstimada = 'La fecha de zarpada es obligatoria'
   }
+
+  if (step === 3) {
+      if (form.value.etapas.length > 0) {
+          form.value.etapas.forEach((etapa: any, idx: number) => {
+              if (!etapa.fechaZarpada) {
+                  fieldErrors.value[`etapa_${idx}_fechaZarpada`] = 'Falta fecha de zarpada'
+                  toast.error(`Etapa ${idx + 1}: La fecha de zarpada es obligatoria`, { position: 'top-center' })
+              }
+              if (!etapa.puertoZarpadaId) {
+                   fieldErrors.value[`etapa_${idx}_puertoZarpadaId`] = 'Falta puerto de zarpada'
+                   toast.error(`Etapa ${idx + 1}: El puerto de zarpada es obligatorio`, { position: 'top-center' })
+              }
+              if (!etapa.pesqueriaId) {
+                   fieldErrors.value[`etapa_${idx}_pesqueriaId`] = 'Falta pesquería'
+                   toast.error(`Etapa ${idx + 1}: La pesquería es obligatoria`, { position: 'top-center' })
+              }
+              if (etapa.fechaArribo && !etapa.puertoArriboId) {
+                   fieldErrors.value[`etapa_${idx}_puertoArriboId`] = 'Falta puerto de arribo'
+                   toast.error(`Etapa ${idx + 1}: Si define fecha de arribo, el puerto es obligatorio`, { position: 'top-center' })
+              }
+          })
+      }
+  }
   
   return Object.keys(fieldErrors.value).length === 0
 }
@@ -542,10 +628,47 @@ const nextStep = async () => {
     currentStep.value++
   } else {
     try {
-      await createMarea(form.value)
-      router.push('/mareas/dashboard')
-    } catch (err) {
+      // Sanitize payload before sending
+      const payload = { ...form.value }
+      
+      // Clean dates
+      if (!payload.fechaZarpadaEstimada) delete payload.fechaZarpadaEstimada
+      
+      // Clean stages
+      if (payload.etapas && payload.etapas.length > 0) {
+          payload.etapas = payload.etapas.map((e: any) => {
+              const cleanStage = { ...e }
+              // Remove empty strings for dates to avoid validation errors if backend expects valid date string
+              if (!cleanStage.fechaZarpada) delete cleanStage.fechaZarpada
+              if (!cleanStage.fechaArribo) delete cleanStage.fechaArribo
+              // Clean IDs to avoid UUID validation error on empty strings
+              if (!cleanStage.puertoZarpadaId) delete cleanStage.puertoZarpadaId
+              if (!cleanStage.puertoArriboId) delete cleanStage.puertoArriboId
+              if (!cleanStage.pesqueriaId) delete cleanStage.pesqueriaId
+              
+              // If ID is null (new stage), remove it or keep as null depending on backend logic. 
+              // Usually backend ignores null ID on create, but let's be safe.
+              if (!cleanStage.id) delete cleanStage.id
+              return cleanStage
+          })
+      }
+
+      await createMarea(payload)
+      toast.success('Marea creada exitosamente')
+      router.back()
+    } catch (err: any) {
       console.error('Error creating marea:', err)
+      // Extract detailed error message from backend response if available
+      const backendMsg = err.response?.data?.message
+      if (backendMsg) {
+         const msg = Array.isArray(backendMsg) ? backendMsg.join(', ') : backendMsg
+         error.value = msg
+         toast.error('Error de validación', { description: msg })
+      } else {
+         const msg = err.message || 'Error desconocido al crear la marea.'
+         error.value = msg
+         toast.error('Error al crear marea', { description: msg })
+      }
     }
   }
 }
@@ -562,7 +685,7 @@ const cancel = () => {
 }
 
 const confirmCancel = () => {
-  router.push('/mareas/dashboard')
+  router.back()
 }
 
 // Helpers for summary
@@ -571,6 +694,10 @@ const getPesqueriaName = (id: string) => pesquerias.value.find(p => p.id === id)
 const getObserverName = (id: string) => {
   const o = observadores.value.find(obs => obs.id === id)
   return o ? `${o.apellido}, ${o.nombre}` : '---'
+}
+const formatDate = (dateStr?: string) => {
+  if (!dateStr) return 'N/D'
+  return new Date(dateStr).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' })
 }
 </script>
 
