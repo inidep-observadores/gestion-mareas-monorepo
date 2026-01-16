@@ -335,6 +335,7 @@ export class MareasService {
                 observador: primaryObs ? `${primaryObs.nombre} ${primaryObs.apellido}` : 'Sin asignar',
                 progreso,
                 en_tierra: estadoCodigo === MareaEstado.EN_EJECUCION && (!etapaActual || etapaActual.fechaArribo !== null),
+                total_etapas: etapaActual?.nroEtapa || 1,
                 alertas: activeAlerts.filter((a: any) => a.referenciaId === m.id),
                 actionsAvailable
             };

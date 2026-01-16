@@ -21,6 +21,7 @@ export interface MareaListItem {
     observador?: string;
     fecha_fin_observador?: string;
     en_tierra?: boolean;
+    total_etapas: number;
     alertas: any[];
     actionsAvailable: Record<string, { enabled: boolean; label: string; blockedReason?: string }>;
 }
