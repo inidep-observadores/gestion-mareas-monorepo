@@ -18,6 +18,7 @@ import { DataExportModule } from './admin/data-export/data-export.module';
 import { MailModule } from './mail/mail.module';
 import { AlertsModule } from './alerts/alerts.module';
 import { BusinessRulesModule } from './common/business-rules/business-rules.module';
+import { AccessImportModule } from './access-import/access-import.module';
 
 @Module({
   imports: [
