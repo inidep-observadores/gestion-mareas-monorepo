@@ -80,6 +80,29 @@
                             {{ reclamoLoading ? 'Cargando...' : 'Enviar Reclamo' }}
                         </Button>
                     </div>
+
+                    <!-- Smart Actions Area -->
+                    <div v-if="hasSmartAction" class="p-4 bg-primary/5 border border-primary/20 rounded-2xl flex items-center justify-between animate-in zoom-in-95 duration-300">
+                        <div class="flex items-center gap-4">
+                            <div class="p-2.5 bg-primary/10 rounded-xl text-primary">
+                                <component :is="smartActionConfig.icon" class="w-5 h-5" />
+                            </div>
+                            <div>
+                                <p class="text-xs font-black uppercase tracking-widest text-primary/60">Acción Recomendada</p>
+                                <p class="text-[11px] text-text-muted mt-0.5">{{ smartActionConfig.description }}</p>
+                            </div>
+                        </div>
+                        <Button
+                            variant="primary"
+                            size="sm"
+                            @click="executeSmartAction"
+                            class="font-black text-[10px] uppercase tracking-widest"
+                            :disabled="processing"
+                        >
+                            {{ smartActionConfig.label }}
+                        </Button>
+                    </div>
+
                     <h4 class="font-black text-[10px] uppercase tracking-widest text-text-muted">Notas de Gestión</h4>
                     <textarea
                         v-model="comment"
@@ -135,9 +158,9 @@
             </Button>
 
             <Button
-                 variant="error"
+                 variant="outline"
                  size="sm"
-                 class="flex-1 font-bold h-10 bg-error/10 text-error hover:bg-error/20 border-none"
+                 class="flex-1 font-bold h-10 border-error/30 text-error hover:bg-error/10"
                  @click="requestConfirmation('DESCARTADA')"
                  :disabled="processing"
             >
@@ -184,6 +207,16 @@
       </div>
     </div>
   </BaseModal>
+
+  <!-- Smart Action: Gestion de Etapas -->
+  <GestionEtapasMareaDialog
+    :show="showStagesDialog"
+    :mode="stagesDialogMode"
+    :marea="mareaDataForStages"
+    :current-stages="mareaStagesForStages"
+    @close="showStagesDialog = false"
+    @confirm="handleStagesConfirm"
+  />
 </template>
 
 <script setup lang="ts">
@@ -195,12 +228,23 @@ import BaseModal from '@/components/common/BaseModal.vue'
 import Button from '@/components/ui/Button.vue'
 import Badge from '@/components/ui/Badge.vue'
 import { toast } from 'vue-sonner'
-import { CheckIcon } from '@/icons'
+import { 
+    CheckIcon, 
+    ShipIcon, 
+    MapPinIcon, 
+    RefreshIcon, 
+    ChevronRightIcon, 
+    InfoIcon 
+} from '@/icons'
 import dashboardService from '@/modules/dashboard/services/dashboard.service'
 import ReclamoEntregaDialog from '@/modules/dashboard/components/ReclamoEntregaDialog.vue'
 import mareasService from '@/modules/mareas/services/mareas.service'
+import GestionEtapasMareaDialog from '@/modules/mareas/components/GestionEtapasMareaDialog.vue'
 import { storeToRefs } from 'pinia'
 import { useBusinessRulesStore } from '@/modules/shared/stores/business-rules.store'
+import { useWorkflowStore } from '@/modules/shared/stores/workflow.store'
+
+const workflowStore = useWorkflowStore()
 
 const props = defineProps<{
   isOpen: boolean
@@ -216,6 +260,8 @@ type AlertMetadata = {
   busDays?: number
   observerName?: string
   days?: number
+  subTipo?: string
+  nroEtapa?: number
 }
 
 type LocalAlert = Partial<Alerta> & { metadata?: AlertMetadata }
@@ -339,6 +385,105 @@ const isClosed = computed(() => ['RESUELTA', 'DESCARTADA'].includes(localAlert.v
 const isClaimableAlert = computed(() => localAlert.value?.tipo === 'RETRASO_DATOS' && localAlert.value?.referenciaId)
 const mareaLabel = computed(() => localAlert.value?.metadata?.mareaCode || localAlert.value?.referenciaId || 'N/D')
 const mareaObserversLabel = computed(() => mareaObservers.value.length ? mareaObservers.value.join(', ') : 'Sin asignar')
+
+// --- Smart Actions Logic ---
+const showStagesDialog = ref(false)
+const stagesDialogMode = ref<'INICIAR' | 'EDITAR' | 'FINALIZAR'>('EDITAR')
+const mareaDataForStages = ref<any>(null)
+const mareaStagesForStages = ref<any[]>([])
+
+const smartActionConfig = computed(() => {
+    const subTipo = localAlert.value?.metadata?.subTipo || localAlert.value?.tipo
+    switch (subTipo) {
+        case 'NUEVA_MAREA':
+            return {
+                label: 'Registrar Marea',
+                description: 'La marea detectada externamente no existe en nuestro sistema. Inicie el alta oficial.',
+                icon: ShipIcon,
+                handler: () => {
+                    workflowStore.setAlertData(localAlert.value)
+                    emit('close')
+                    router.push('/mareas/nueva')
+                }
+            }
+        case 'NUEVA_ETAPA':
+            return {
+                label: 'Registrar Etapa',
+                description: 'Se detectó una nueva etapa (# '+ (localAlert.value?.metadata?.nroEtapa || '') +'). Inicie el registro local.',
+                icon: MapPinIcon,
+                handler: async () => {
+                    await prepareStagesData()
+                    stagesDialogMode.value = 'INICIAR'
+                    showStagesDialog.value = true
+                }
+            }
+        case 'INCONGRUENCIA':
+            return {
+                label: 'Conciliar Datos',
+                description: 'Existen diferencias entre las fechas locales y las informadas por Access.',
+                icon: RefreshIcon,
+                handler: async () => {
+                    await prepareStagesData()
+                    stagesDialogMode.value = 'EDITAR'
+                    showStagesDialog.value = true
+                }
+            }
+        case 'ARRIBO':
+            return {
+                label: 'Gestionar Etapas',
+                description: 'Se detectó el arribo de una etapa. Actualice el cronograma de la marea.',
+                icon: MapPinIcon,
+                handler: async () => {
+                    await prepareStagesData()
+                    stagesDialogMode.value = 'EDITAR'
+                    showStagesDialog.value = true
+                }
+            }
+        default:
+            return null
+    }
+})
+
+const hasSmartAction = computed(() => !!smartActionConfig.value && !isClosed.value)
+
+const executeSmartAction = () => {
+    smartActionConfig.value?.handler()
+}
+
+const prepareStagesData = async () => {
+    if (!localAlert.value.referenciaId) return
+    processing.value = true
+    try {
+        const marea = await mareasService.getById(localAlert.value.referenciaId)
+        mareaDataForStages.value = marea
+        mareaStagesForStages.value = marea.etapas || []
+    } catch (e) {
+        toast.error('Error al cargar datos de marea.')
+    } finally {
+        processing.value = false
+    }
+}
+
+const handleStagesConfirm = async (data: any) => {
+    try {
+        processing.value = true
+        if (localAlert.value.referenciaId) {
+            await mareasService.update(localAlert.value.referenciaId, {
+                fechaInicioObservador: data.fechaInicioObservador,
+                fechaFinObservador: data.fechaFinObservador,
+                etapas: data.etapas
+            })
+            toast.success('Cambios guardados con éxito')
+            await submitUpdate('RESUELTA')
+        }
+    } catch (e) {
+        toast.error('Error al guardar cambios.')
+    } finally {
+        showStagesDialog.value = false
+        processing.value = false
+    }
+}
+// ----------------------------
 
 const getBadgeColor = (prio?: string) => {
     switch (prio || '') {
