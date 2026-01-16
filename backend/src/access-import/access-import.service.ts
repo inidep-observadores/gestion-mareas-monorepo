@@ -87,8 +87,9 @@ export class AccessImportService {
         const localMatch = await this.findLocalEntities(parsedMarea, record.Buque, record.CodObs);
 
         if (!existing) {
-            // Registro nuevo -> Alerta ZARPADA (si tiene fecha)
+            // Registro nuevo -> Evaluar ZARPADA y ARRIBO secuencialmente
             const hasZarpada = !!record.Fecha_Zarpada;
+            const hasArribo = !!record.Fecha_Arribo;
 
             await this.prisma.importacionAccessSnapshot.create({
                 data: {
@@ -107,18 +108,27 @@ export class AccessImportService {
                 },
             });
 
+            let alertGenerated = false;
+
             if (hasZarpada) {
                 await this.createAlert('ZARPADA', record, localMatch, parsedMarea);
-                return { type: 'NEW', alertGenerated: true };
+                alertGenerated = true;
             }
-            return { type: 'NEW', alertGenerated: false };
+
+            // Si es nuevo y ya tiene arribo, también generamos la alerta de arribo
+            if (hasArribo) {
+                await this.createAlert('ARRIBO', record, localMatch, parsedMarea);
+                alertGenerated = true;
+            }
+
+            return { type: 'NEW', alertGenerated };
         }
 
         if (existing.hashContenido === hash) {
             return { type: 'UNCHANGED', alertGenerated: false };
         }
 
-        // El hash cambió -> ¿Es un arribo nuevo?
+        // El hash cambió -> ¿Es un arribo nuevo? (Pasó de NULL a tener fecha)
         const previousArribo = existing.fechaArribo;
         const currentArribo = this.readerService.parseDate(record.Fecha_Arribo);
         const isNewArribo = !previousArribo && !!currentArribo;
