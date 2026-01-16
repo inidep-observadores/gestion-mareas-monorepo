@@ -36,34 +36,10 @@
               </button>
             </div>
             
-            <div v-else class="space-y-6 w-full max-w-md">
-              <div class="space-y-2 text-center">
-                 <h3 class="text-lg font-semibold text-primary animate-pulse">
-                    {{ uploadProgress < 100 ? 'Subiendo archivo...' : 'Procesando en el servidor...' }}
-                 </h3>
-                 <p class="text-sm text-text-muted">
-                    {{ uploadProgress < 100 ? `Transfiriendo datos al servidor (${uploadProgress}%)` : 'Analizando registros y detectando novedades. Por favor espere.' }}
-                 </p>
-              </div>
-
-              <!-- Progress Bar Container -->
-              <div class="h-4 w-full bg-surface-muted border border-border rounded-full overflow-hidden relative">
-                  <!-- Upload Progress -->
-                  <div 
-                    class="h-full bg-primary transition-all duration-300 ease-out flex items-center justify-end pr-1"
-                    :style="{ width: `${uploadProgress}%` }"
-                  >
-                    <span v-if="uploadProgress > 10" class="text-[9px] font-black text-white mr-1">{{ uploadProgress }}%</span>
-                  </div>
-                  
-                  <!-- Indeterminate Processing Overlay -->
-                  <div 
-                    v-if="uploadProgress === 100" 
-                    class="absolute inset-0 bg-primary/20"
-                  >
-                        <div class="absolute inset-0 bg-gradient-to-r from-transparent via-primary/40 to-transparent w-1/2 animate-[shimmer_1.5s_infinite] -translate-x-full"></div>
-                  </div>
-              </div>
+            <div v-else class="space-y-2">
+              <LoadingSpinner class="w-8 h-8 text-primary mx-auto mb-2" />
+              <h3 class="text-lg font-semibold animate-pulse">Procesando archivo...</h3>
+              <p class="text-text-muted italic">Analizando registros y comparando con el historial...</p>
             </div>
           </div>
 
@@ -171,7 +147,6 @@ import { toast } from 'vue-sonner';
 
 const isDragging = ref(false);
 const isUploading = ref(false);
-const uploadProgress = ref(0);
 const showConfirmModal = ref(false);
 const pendingFile = ref<File | null>(null);
 const results = ref<any>(null);
@@ -220,7 +195,6 @@ const uploadFile = async (file: File) => {
   if (isUploading.value) return;
   
   isUploading.value = true;
-  uploadProgress.value = 0;
   results.value = null;
 
   const formData = new FormData();
@@ -231,13 +205,7 @@ const uploadFile = async (file: File) => {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
-      timeout: 300000, // 5 minutos para archivos con cientos de registros
-      onUploadProgress: (progressEvent) => {
-        if (progressEvent.total) {
-            const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-            uploadProgress.value = percentCompleted;
-        }
-      }
+      timeout: 300000 // 5 minutos para archivos con cientos de registros
     });
     
     results.value = response.data.summary;
