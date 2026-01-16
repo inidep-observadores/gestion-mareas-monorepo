@@ -183,7 +183,7 @@ const groupedItems = computed(() => {
       ...r,
       icon: r.type === 'marea' ? ShipIcon : SearchIcon,
       globalIndex: globalIndex++,
-      path: r.type === 'marea' ? `/mareas/${r.id}` : r.path
+      path: r.type === 'marea' ? `/mareas/detalle/${r.id}` : r.path
     }))
 
     result.push({
