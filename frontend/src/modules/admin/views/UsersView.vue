@@ -18,18 +18,18 @@
         </template>
 
         <template #table-row="{ item: user }">
-          <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-gray-400">
+          <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap text-text-muted">
               <div class="flex items-center gap-3">
                    <img :src="getFullImageUrl(user.avatarUrl)" class="w-8 h-8 rounded-full object-cover" alt="Avatar">
                    <div>
                       <div class="font-semibold">{{ user.fullName }}</div>
-                      <div class="text-xs text-gray-500">{{ user.email }}</div>
+                      <div class="text-xs text-text-muted">{{ user.email }}</div>
                    </div>
               </div>
           </td>
           <td class="px-6 py-4">
               <div class="flex gap-1 flex-wrap">
-                  <span v-for="role in user.roles" :key="role" class="bg-blue-100 text-blue-800 text-[11px] font-medium px-2 py-0.5 rounded dark:bg-blue-900/30 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                  <span v-for="role in user.roles" :key="role" class="bg-primary/10 text-primary border-primary/20">
                       {{ ROLE_LABELS[role] || role }}
                   </span>
               </div>
@@ -39,8 +39,8 @@
               :class="[
                   'text-xs font-bold px-2.5 py-1 rounded-full uppercase tracking-tight',
                   user.isActive
-                      ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
-                      : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+                      ? 'bg-success/10 text-success border border-success/20'
+                      : 'bg-error/10 text-error border border-error/20'
               ]"
             >
               {{ user.isActive ? 'Activo' : 'Inactivo' }}
@@ -48,10 +48,10 @@
           </td>
           <td class="px-6 py-4">
             <div class="flex gap-3">
-                <button @click="openEditModal(user)" class="font-bold text-blue-600 dark:text-blue-400 hover:underline">Editar</button>
+                <button @click="openEditModal(user)" class="font-bold text-primary hover:text-primary-hover hover:underline">Editar</button>
                 <button
                     @click="handleToggleStatus(user)"
-                    :class="['font-bold hover:underline', user.isActive ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400']"
+                    :class="['font-bold hover:underline', user.isActive ? 'text-error hover:text-error-hover' : 'text-success hover:text-success-hover']"
                 >
                     {{ user.isActive ? 'Desactivar' : 'Activar' }}
                 </button>
@@ -63,15 +63,15 @@
             <div class="flex items-center gap-4 mb-4">
                 <img :src="getFullImageUrl(user.avatarUrl)" class="w-12 h-12 rounded-full object-cover shadow-sm" alt="Avatar">
                 <div class="flex-1 min-w-0">
-                    <div class="font-extrabold text-gray-900 dark:text-gray-400 truncate">{{ user.fullName }}</div>
-                    <div class="text-sm text-gray-500 truncate">{{ user.email }}</div>
+                    <div class="font-extrabold text-gray-900 text-text-muted truncate">{{ user.fullName }}</div>
+                    <div class="text-sm text-text-muted truncate">{{ user.email }}</div>
                 </div>
                 <span
                     :class="[
                         'text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider',
                         user.isActive
-                            ? 'bg-green-100 text-green-800 dark:bg-green-800/30 dark:text-green-400'
-                            : 'bg-red-100 text-red-800 dark:bg-red-800/30 dark:text-red-400'
+                            ? 'bg-success/10 text-success dark:bg-success/30 dark:text-success'
+                            : 'bg-error/10 text-error dark:bg-error/30 dark:text-error'
                     ]"
                 >
                     {{ user.isActive ? 'Activo' : 'Inactivo' }}
@@ -81,16 +81,16 @@
             <div class="mb-4">
                 <div class="text-[10px] text-gray-400 uppercase font-bold mb-1.5 tracking-tight">Roles Asignados</div>
                 <div class="flex gap-1.5 flex-wrap">
-                    <span v-for="role in user.roles" :key="role" class="bg-gray-100 text-gray-700 text-[11px] font-semibold px-2 py-0.5 rounded dark:bg-gray-700 dark:text-gray-300 border border-transparent dark:border-gray-600">
+                    <span v-for="role in user.roles" :key="role" class="bg-surface-muted text-text-muted border-border">
                         {{ ROLE_LABELS[role] || role }}
                     </span>
                 </div>
             </div>
 
-            <div class="flex gap-2 pt-3 border-t border-gray-100 dark:border-gray-700">
+            <div class="flex gap-2 pt-3 border-t border-border">
                 <button 
                     @click="openEditModal(user)" 
-                    class="flex-1 py-2 text-sm font-bold text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-400/10 rounded-lg hover:bg-blue-100 transition-colors flex items-center justify-center gap-2"
+                    class="flex-1 py-2 text-sm font-bold text-primary bg-primary/5 border border-primary/10 hover:bg-primary/10 flex items-center justify-center gap-2"
                 >
                     <EditIcon class="w-4 h-4" />
                     Editar
@@ -100,8 +100,8 @@
                     :class="[
                         'flex-1 py-2 text-sm font-bold rounded-lg transition-colors',
                         user.isActive 
-                            ? 'text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-400/10 hover:bg-red-100' 
-                            : 'text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-400/10 hover:bg-green-100'
+                            ? 'text-error bg-error/5 border border-error/10 hover:bg-error/10' 
+                            : 'text-success bg-success/5 border border-success/10 hover:bg-success/10'
                     ]"
                 >
                     {{ user.isActive ? 'Desactivar' : 'Activar' }}

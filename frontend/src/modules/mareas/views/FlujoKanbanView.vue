@@ -7,17 +7,17 @@
 
       <!-- Kanban Board Container -->
       <div
-        class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl overflow-hidden shadow-sm"
+        class="bg-surface border border-border rounded-2xl overflow-hidden shadow-sm"
       >
         <div class="flex gap-6 overflow-auto custom-scrollbar px-6 pb-8 pt-0 h-[calc(100vh-250px)]">
           <div v-for="column in columns" :key="column.id" class="flex-shrink-0 w-80">
             <div
-              class="sticky top-0 z-20 bg-white dark:bg-gray-900 pt-6 pb-4 mb-2 flex items-center justify-between"
+              class="sticky top-0 z-20 bg-surface pt-6 pb-4 mb-2 flex items-center justify-between"
             >
-              <h3 class="font-bold text-gray-800 dark:text-gray-200 flex items-center gap-2">
+              <h3 class="font-bold text-text flex items-center gap-2">
                 {{ column.title }}
                 <span
-                  class="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-xs text-gray-500"
+                  class="px-2 py-0.5 bg-surface-muted rounded text-xs text-text-muted"
                   >{{ column.tasks.length }}</span
                 >
               </h3>
@@ -27,33 +27,33 @@
               <VueDraggableNext
                 v-model="column.tasks"
                 group="mareas"
-                class="space-y-4 min-h-[150px] p-2 bg-gray-50/50 dark:bg-gray-800/20 rounded-xl transition-colors border border-transparent group-hover:border-gray-100 dark:group-hover:border-gray-800"
+                class="space-y-4 min-h-[150px] p-2 bg-surface-muted/30 rounded-xl transition-colors border border-transparent group-hover:border-border"
                 ghost-class="opacity-50"
                 @change="onDragChange($event, column.id)"
               >
                 <div
                   v-for="task in column.tasks"
                   :key="task.id"
-                  class="bg-white dark:bg-gray-900 p-4 border border-gray-200 dark:border-gray-800 rounded-xl shadow-sm hover:shadow-md transition-shadow cursor-grab active:cursor-grabbing"
+                  class="bg-surface p-4 border border-border rounded-xl shadow-sm hover:shadow-md transition-shadow cursor-grab active:cursor-grabbing"
                 >
                   <div class="flex justify-between items-start mb-2">
-                    <span class="text-xs font-mono text-gray-500">{{ task.code }}</span>
-                    <span v-if="task.alert" class="text-red-500">
+                    <span class="text-xs font-mono text-text-muted/60">{{ task.code }}</span>
+                    <span v-if="task.alert" class="text-error">
                       <WarningIcon class="w-4 h-4" />
                     </span>
                   </div>
-                  <h4 class="font-bold text-gray-800 dark:text-white mb-1">{{ task.vessel }}</h4>
-                  <p class="text-xs text-gray-500 mb-3">{{ task.date }}</p>
+                  <h4 class="font-bold text-text mb-1">{{ task.vessel }}</h4>
+                  <p class="text-xs text-text-muted mb-3">{{ task.date }}</p>
 
                   <div class="flex items-center justify-between">
                     <div class="flex -space-x-2">
                       <div
-                        class="w-6 h-6 rounded-full bg-brand-500 border-2 border-white dark:border-gray-900 flex items-center justify-center text-[10px] text-white"
+                        class="w-6 h-6 rounded-full bg-primary border-2 border-surface flex items-center justify-center text-[10px] text-primary-fg font-black"
                       >
                         JD
                       </div>
                     </div>
-                    <div class="text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                    <div class="text-[10px] font-bold uppercase tracking-wider text-text-muted">
                       {{ task.timeInState || '3 días' }}
                     </div>
                   </div>
@@ -65,7 +65,7 @@
                 class="absolute inset-0 pointer-events-none flex items-center justify-center p-4"
               >
                 <div
-                  class="w-full py-8 border-2 border-dashed border-gray-200 dark:border-gray-800 rounded-xl text-center text-sm text-gray-400"
+                  class="w-full py-8 border-2 border-dashed border-border rounded-xl text-center text-sm text-text-muted/40"
                 >
                   No hay mareas...
                 </div>
@@ -150,16 +150,11 @@ const onDragChange = (event: any, columnId: string) => {
   background: transparent;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #e2e8f0;
+  background: var(--color-border);
   border-radius: 20px;
 }
-.dark .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #334155;
-}
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #cbd5e1;
-}
-.dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #475569;
+  background: var(--color-border);
+  opacity: 0.8;
 }
 </style>

@@ -19,24 +19,26 @@
 
       <!-- Spotlight Panel -->
       <div
-        class="relative w-full max-w-2xl bg-white dark:bg-gray-950 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 overflow-hidden"
+        class="relative w-full max-w-2xl bg-surface rounded-2xl shadow-2xl border border-border overflow-hidden"
       >
         <!-- Search Input -->
-        <div class="relative p-5 border-b border-gray-100 dark:border-gray-800 flex items-center gap-4">
-          <SearchIcon class="w-6 h-6 text-gray-400" />
+        <div class="relative p-5 border-b border-border flex items-center gap-4">
+          <SearchIcon class="w-6 h-6 text-text-muted" />
           <input
             ref="searchInput"
             v-model="query"
             type="text"
             placeholder="Buscar mareas, buques, observadores o acciones..."
-            class="flex-1 bg-transparent border-none focus:ring-0 text-lg text-gray-800 dark:text-white placeholder:text-gray-400 outline-none"
+            class="flex-1 bg-transparent border-none focus:ring-0 text-lg text-text placeholder:text-text-muted outline-none"
             @keydown.esc="close"
             @keydown.down.prevent="moveDown"
             @keydown.up.prevent="moveUp"
             @keydown.enter="selectItem"
           />
-          <div v-if="loading" class="loading loading-spinner loading-xs text-brand-500"></div>
-          <div class="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700 text-[10px] font-black text-gray-400">
+          <div v-if="loading" class="flex items-center">
+            <LoadingSpinner size="xs" class="text-primary" />
+          </div>
+          <div class="px-2 py-1 bg-surface-muted rounded border border-border text-[10px] font-black text-text-muted">
             ESC
           </div>
         </div>
@@ -126,6 +128,7 @@
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { useSpotlight } from '@/modules/mareas/composables/useSpotlight'
+import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 import { 
   SearchIcon, 
   ShipIcon, 
@@ -180,7 +183,7 @@ const groupedItems = computed(() => {
       ...r,
       icon: r.type === 'marea' ? ShipIcon : SearchIcon,
       globalIndex: globalIndex++,
-      path: r.type === 'marea' ? `/mareas/${r.id}` : r.path
+      path: r.type === 'marea' ? `/mareas/detalle/${r.id}` : r.path
     }))
 
     result.push({
@@ -273,10 +276,10 @@ watch(query, () => {
   background: transparent;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #e2e8f0;
+  background: var(--color-border);
   border-radius: 10px;
 }
 .dark .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #1e293b;
+  background: var(--color-border);
 }
 </style>

@@ -6,16 +6,16 @@
       </div>
 
       <div>
-        <h4 class="mb-1 text-sm font-semibold text-gray-800 dark:text-white/90">
+        <h4 class="mb-1 text-sm font-semibold text-text">
           {{ title }}
         </h4>
 
-        <p class="text-sm text-gray-500 dark:text-gray-400">{{ message }}</p>
+        <p class="text-sm text-text-muted">{{ message }}</p>
 
         <router-link
           v-if="showLink"
           :to="linkHref"
-          class="inline-block mt-3 text-sm font-medium text-gray-500 underline dark:text-gray-400"
+          class="inline-block mt-3 text-sm font-medium text-primary hover:underline transition-all"
         >
           {{ linkText }}
         </router-link>
@@ -45,21 +45,20 @@ const props = withDefaults(defineProps<AlertProps>(), {
 
 const variantClasses = {
   success: {
-    container: 'border-success-500 bg-success-50 dark:border-success-500/30 dark:bg-success-500/15',
-    icon: 'text-success-500',
+    container: 'border-success bg-success/10 dark:border-success/30 dark:bg-success/15',
+    icon: 'text-success',
   },
   error: {
-    container: 'border-error-500 bg-error-50 dark:border-error-500/30 dark:bg-error-500/15',
-    icon: 'text-error-500',
+    container: 'border-error bg-error/10 dark:border-error/30 dark:bg-error/15',
+    icon: 'text-error',
   },
   warning: {
-    container: 'border-warning-500 bg-warning-50 dark:border-warning-500/30 dark:bg-warning-500/15',
-    icon: 'text-warning-500',
+    container: 'border-warning bg-warning/10 dark:border-warning/30 dark:bg-warning/15',
+    icon: 'text-warning',
   },
   info: {
-    container:
-      'border-blue-light-500 bg-blue-light-50 dark:border-blue-light-500/30 dark:bg-blue-light-500/15',
-    icon: 'text-blue-light-500',
+    container: 'border-primary bg-primary/10 dark:border-primary/30 dark:bg-primary/15',
+    icon: 'text-primary',
   },
 }
 

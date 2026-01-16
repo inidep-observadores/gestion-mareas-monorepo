@@ -9,17 +9,17 @@
         @input="handleManualInput"
         @keydown="handleKeyDown"
         :placeholder="showTime ? 'DD/MM/YYYY HH:MM' : 'DD/MM/YYYY'"
-        class="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-900 border rounded-lg text-sm text-gray-800 dark:text-white outline-none focus:border-brand-500 transition-all cursor-text placeholder:text-gray-400 caret-brand-500"
+        class="w-full px-4 py-2.5 bg-background border rounded-lg text-sm text-text outline-none focus:border-primary transition-all cursor-text placeholder:text-text-muted caret-primary"
         style="color-scheme: light dark;"
         :class="[
-          error ? 'border-red-500 bg-red-50/30' : 'border-gray-100 dark:border-gray-800',
+          error ? 'border-error bg-error/5' : 'border-border',
           { 'pl-10': icon }
         ]"
       />
       <div 
         v-if="icon" 
         class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none" 
-        :class="error ? 'text-red-500' : 'text-gray-400'"
+        :class="error ? 'text-error' : 'text-text-muted'"
       >
         <component :is="icon" class="w-4 h-4" />
       </div>
@@ -27,7 +27,7 @@
       <button 
         type="button" 
         @click="toggleCalendar"
-        class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-brand-500 transition-colors"
+        class="absolute inset-y-0 right-0 flex items-center pr-3 text-text-muted hover:text-primary transition-colors"
       >
         <CalenderIcon class="w-4 h-4" v-if="!isOpen" />
         <ChevronDownIcon class="w-4 h-4 transition-transform rotate-180" v-else />
@@ -39,26 +39,26 @@
       <div 
         v-if="isOpen"
         ref="dropdownRef"
-        class="fixed z-[200000] mt-2 bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-xl shadow-2xl p-4 w-[320px] animate-in fade-in zoom-in-95 duration-200"
+        class="fixed z-[200000] mt-2 bg-surface border border-border rounded-xl shadow-theme-xl p-4 w-[320px] animate-in fade-in zoom-in-95 duration-200"
         :style="dropdownStyle"
       >
         <!-- Header: Month & Year Picker -->
         <div class="flex items-center justify-between mb-4">
-          <button @click="changeMonth(-1)" class="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors">
-            <ArrowLeftIcon class="w-4 h-4 text-gray-500" />
+          <button @click="changeMonth(-1)" class="p-1.5 hover:bg-primary/10 rounded-lg transition-colors">
+            <ArrowLeftIcon class="w-4 h-4 text-text-muted" />
           </button>
-          <div class="flex items-center gap-1 font-bold text-sm text-gray-800 dark:text-white">
+          <div class="flex items-center gap-1 font-bold text-sm text-text">
             <span>{{ monthNames[viewDate.getMonth()] }}</span>
             <span>{{ viewDate.getFullYear() }}</span>
           </div>
-          <button @click="changeMonth(1)" class="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors">
-            <ChevronRightIcon class="w-4 h-4 text-gray-500" />
+          <button @click="changeMonth(1)" class="p-1.5 hover:bg-primary/10 rounded-lg transition-colors">
+            <ChevronRightIcon class="w-4 h-4 text-text-muted" />
           </button>
         </div>
 
         <!-- Weekdays Header -->
         <div class="grid grid-cols-7 mb-2">
-          <div v-for="day in dayNames" :key="day" class="text-center text-[10px] font-black uppercase tracking-widest text-gray-400 py-1">
+          <div v-for="day in dayNames" :key="day" class="text-center text-[10px] font-black uppercase tracking-widest text-text-muted py-1">
             {{ day }}
           </div>
         </div>
@@ -71,9 +71,9 @@
             @click="selectDate(date.date)"
             class="aspect-square flex items-center justify-center text-xs rounded-lg transition-all"
             :class="[
-              date.isCurrentMonth ? 'text-gray-800 dark:text-gray-200' : 'text-gray-300 dark:text-gray-600',
-              date.isSelected ? 'bg-brand-500 text-white font-bold shadow-lg shadow-brand-500/20' : 'hover:bg-gray-100 dark:hover:bg-gray-800',
-              date.isToday && !date.isSelected ? 'border border-brand-200 dark:border-brand-800 text-brand-500' : ''
+              date.isCurrentMonth ? 'text-text' : 'text-text-muted/40',
+              date.isSelected ? 'bg-primary text-primary-fg font-bold shadow-theme-md' : 'hover:bg-primary/10',
+              date.isToday && !date.isSelected ? 'border border-primary/30 text-primary' : ''
             ]"
           >
             {{ date.day }}
@@ -81,42 +81,42 @@
         </div>
 
         <!-- Time Picker (Optional) -->
-        <div v-if="showTime" class="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800">
+        <div v-if="showTime" class="mt-4 pt-4 border-t border-border">
           <div class="flex items-center justify-center gap-4">
             <div class="flex flex-col items-center">
               <input 
                 type="number" 
                 v-model="hours" 
                 min="0" max="23"
-                class="w-12 h-10 text-center bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg text-sm font-bold focus:border-brand-500 outline-none"
+                class="w-12 h-10 text-center bg-background border border-border rounded-lg text-sm font-bold focus:border-primary outline-none"
               />
-              <span class="text-[8px] font-black uppercase text-gray-400 mt-1">Horas</span>
+              <span class="text-[8px] font-black uppercase text-text-muted mt-1">Horas</span>
             </div>
-            <span class="text-gray-400 font-bold">:</span>
+            <span class="text-text-muted font-bold">:</span>
             <div class="flex flex-col items-center">
               <input 
                 type="number" 
                 v-model="minutes" 
                 min="0" max="59"
-                class="w-12 h-10 text-center bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg text-sm font-bold focus:border-brand-500 outline-none"
+                class="w-12 h-10 text-center bg-background border border-border rounded-lg text-sm font-bold focus:border-primary outline-none"
               />
-              <span class="text-[8px] font-black uppercase text-gray-400 mt-1">Minutos</span>
+              <span class="text-[8px] font-black uppercase text-text-muted mt-1">Minutos</span>
             </div>
           </div>
         </div>
 
         <!-- Footer -->
         <div class="mt-4 flex justify-between gap-2">
-          <button @click="setToday" class="flex-1 py-2 text-[10px] font-black uppercase tracking-widest text-brand-500 hover:bg-brand-50 dark:hover:bg-brand-500/10 rounded-lg transition-colors">
+          <button @click="setToday" class="flex-1 py-2 text-[10px] font-black uppercase tracking-widest text-primary hover:bg-primary/10 rounded-lg transition-colors">
             Hoy
           </button>
-          <button @click="closeCalendar" class="flex-1 py-2 text-[10px] font-black uppercase tracking-widest text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors">
+          <button @click="closeCalendar" class="flex-1 py-2 text-[10px] font-black uppercase tracking-widest text-text-muted hover:bg-primary/10 rounded-lg transition-colors">
             Cerrar
           </button>
         </div>
       </div>
     </Teleport>
-    <p v-if="error" class="text-[10px] text-red-500 font-bold uppercase mt-1 animate-in fade-in slide-in-from-top-1 duration-200">
+    <p v-if="error" class="text-[10px] text-error font-bold uppercase mt-1 animate-in fade-in slide-in-from-top-1 duration-200">
       {{ error }}
     </p>
   </div>
@@ -440,13 +440,8 @@ onUnmounted(() => {
 
 <style scoped>
 input {
-  color-scheme: light;
-  caret-color: #465fff;
-}
-
-:global(.dark) input {
-  color-scheme: dark;
-  caret-color: #7592ff;
+  color-scheme: light dark;
+  caret-color: var(--color-primary);
 }
 </style>
 

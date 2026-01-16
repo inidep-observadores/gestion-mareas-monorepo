@@ -1,29 +1,29 @@
 <template>
   <div v-if="show" class="fixed inset-0 z-[100000] flex items-center justify-center p-4">
-    <div class="absolute inset-0 bg-gray-950/40 backdrop-blur-sm" @click="handleCancel"></div>
+    <div class="absolute inset-x-0 inset-y-0 bg-black/40 backdrop-blur-sm" @click="handleCancel"></div>
     <div
-      class="bg-white dark:bg-gray-900 rounded-2xl p-8 max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl relative animate-in fade-in zoom-in-95 duration-300">
+      class="bg-surface rounded-2xl p-8 max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl relative animate-in fade-in zoom-in-95 duration-300 border border-border">
 
-      <div class="border-b border-gray-100 dark:border-gray-800 pb-5 mb-6">
+      <div class="border-b border-border pb-5 mb-6">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <h3 class="text-xl font-black text-gray-800 dark:text-white">{{ config.title }}</h3>
-          <div v-if="marea" class="flex items-center gap-2 px-3 py-1.5 bg-brand-500/5 dark:bg-brand-500/10 rounded-xl border border-brand-500/10">
-            <span class="text-[10px] font-mono font-black text-brand-600 dark:text-brand-400 uppercase tracking-widest">
+          <h3 class="text-xl font-black text-text uppercase tracking-tight">{{ config.title }}</h3>
+          <div v-if="marea" class="flex items-center gap-2 px-3 py-1.5 bg-primary/5 rounded-xl border border-primary/10">
+            <span class="text-[10px] font-mono font-black text-primary uppercase tracking-widest">
               {{ marea.id_marea }}
             </span>
-            <span class="w-1 h-1 rounded-full bg-brand-200 dark:bg-brand-800"></span>
-            <span class="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase truncate max-w-[200px]">
+            <span class="w-1 h-1 rounded-full bg-primary/20"></span>
+            <span class="text-[10px] font-bold text-text-muted uppercase truncate max-w-[200px]">
               {{ marea.buque_nombre || marea.buque?.nombre }}
             </span>
           </div>
         </div>
-        <p class="text-gray-500 text-xs mt-2 font-medium">{{ config.description }}</p>
+        <p class="text-text-muted text-xs mt-2 font-medium">{{ config.description }}</p>
       </div>
 
       <!-- Observer Dates -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
         <div class="space-y-1.5">
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-400">Fecha Inicio Observador</label>
+          <label class="block text-[10px] font-black uppercase text-text-muted tracking-widest">Fecha Inicio Observador</label>
           <DatePicker 
             ref="firstInput"
             v-model="form.fechaInicio" 
@@ -31,7 +31,7 @@
           />
         </div>
         <div v-if="mode === 'FINALIZAR'" class="space-y-1.5 animate-in fade-in duration-300">
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-400">Fecha Fin Observador</label>
+          <label class="block text-[10px] font-black uppercase text-text-muted tracking-widest">Fecha Fin Observador</label>
           <DatePicker 
             v-model="form.fechaFin" 
             :error="validationErrors.fechaFin"
@@ -52,11 +52,11 @@
       <!-- Footer Actions -->
       <div class="mt-8 grid grid-cols-2 gap-4">
         <button @click="handleCancel"
-          class="px-6 py-3.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-xl text-sm font-bold uppercase tracking-wider transition-all">
+          class="px-6 py-3.5 bg-surface-muted hover:bg-surface border border-border text-text rounded-xl text-sm font-bold uppercase tracking-wider transition-all">
           Cancelar
         </button>
         <button @click="handleConfirm" :disabled="!isValid"
-          class="px-6 py-3.5 bg-brand-500 hover:bg-brand-600 text-white rounded-xl text-sm font-bold uppercase tracking-wider shadow-lg shadow-brand-500/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+          class="px-6 py-3.5 bg-primary hover:bg-primary/90 text-primary-fg rounded-xl text-sm font-bold uppercase tracking-wider shadow-lg shadow-primary/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
           {{ config.buttonText }}
         </button>
       </div>

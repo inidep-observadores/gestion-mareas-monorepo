@@ -9,11 +9,11 @@
     >
       <div class="mt-2">
         <div class="flex items-center gap-4 mb-6">
-          <div class="flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-brand-100 dark:bg-brand-900/30">
-            <MailIcon class="h-6 w-6 text-brand-600 dark:text-brand-400" aria-hidden="true" />
+          <div class="flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-primary/10">
+            <MailIcon class="h-6 w-6 text-primary" aria-hidden="true" />
           </div>
           <div>
-            <p class="text-sm text-gray-500 dark:text-gray-400">
+            <p class="text-sm text-text-muted">
               Gestión de reclamo por demoras en la entrega de documentación de marea.
             </p>
           </div>
@@ -21,58 +21,57 @@
 
         <!-- SCENARIO A: HAS EMAIL -->
         <div v-if="email" class="space-y-4">
-          <div class="p-3 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-100 dark:border-gray-800">
+          <div class="p-3 bg-surface-muted rounded-xl border border-border">
               <div class="flex flex-col gap-1 text-sm">
-                <span class="text-gray-500">Para: <span class="font-bold text-gray-900 dark:text-white">{{ obsName }} &lt;{{ email }}&gt;</span></span>
-                <span class="text-gray-500">Asunto: <span class="font-bold text-gray-900 dark:text-white">Reclamo entrega marea {{ mareaId }} ({{ vesselName }})</span></span>
+                <span class="text-text-muted">Para: <span class="font-bold text-text">{{ obsName }} &lt;{{ email }}&gt;</span></span>
+                <span class="text-text-muted">Asunto: <span class="font-bold text-text">Reclamo entrega marea {{ mareaId }} ({{ vesselName }})</span></span>
               </div>
           </div>
 
           <div>
-            <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-2 uppercase tracking-wide">Mensaje</label>
+            <label class="block text-xs font-bold text-text-muted mb-2 uppercase tracking-wide">Mensaje</label>
             <textarea
               v-model="messageBody"
               rows="6"
-              class="w-full rounded-xl border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm p-3 resize-none"
+              class="w-full rounded-xl border-border bg-surface text-text shadow-sm focus:border-primary focus:ring-primary sm:text-sm p-3 resize-none"
             ></textarea>
-            <p class="mt-2 text-xs text-gray-500">Puede editar el mensaje antes de enviarlo.</p>
+            <p class="mt-2 text-xs text-text-muted">Puede editar el mensaje antes de enviarlo.</p>
           </div>
         </div>
 
         <!-- SCENARIO B: NO EMAIL -->
         <div v-else class="space-y-4">
-          <div class="p-4 bg-orange-50 dark:bg-orange-900/20 rounded-xl border border-orange-100 dark:border-orange-800/30 flex gap-3 text-orange-700 dark:text-orange-400">
+          <div class="p-4 bg-warning/10 rounded-xl border border-warning/30 flex gap-3 text-warning">
               <WarningIcon class="w-5 h-5 flex-shrink-0" />
               <div class="text-sm">
                 <p class="font-black uppercase mb-1">Email no configurado</p>
                 <p>El observador <strong>{{ obsName }}</strong> no tiene una dirección de email registrada en el sistema.</p>
               </div>
           </div>
-          <p class="text-sm text-gray-600 dark:text-gray-400">
+          <p class="text-sm text-text-muted">
             Deberá comunicarse por otros medios para reclamar la entrega de la marea <strong>{{ mareaId }}</strong> del buque <strong>{{ vesselName }}</strong>, que lleva <strong>{{ delayDays }} días</strong> de retraso.
           </p>
         </div>
 
         <!-- Actions -->
         <div class="mt-6 flex flex-col sm:flex-row-reverse gap-3">
-          <button 
+          <Button 
             v-if="email"
-            type="button" 
-            class="inline-flex w-full justify-center rounded-xl bg-brand-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-500 sm:w-auto items-center gap-2"
             @click="send"
             :disabled="sending"
+            class="w-full sm:w-auto"
           >
-            <span v-if="sending" class="loading loading-spinner loading-xs"></span>
+            <LoadingSpinner v-if="sending" size="xs" class="text-white" />
             <SendIcon v-else class="w-4 h-4" />
-            Enviar Reclamo
-          </button>
-          <button 
-            type="button" 
-            class="inline-flex w-full justify-center rounded-xl bg-white dark:bg-gray-800 px-3 py-2 text-sm font-semibold text-gray-900 dark:text-gray-300 shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 sm:w-auto"
+            {{ sending ? 'Enviando...' : 'Enviar Reclamo' }}
+          </Button>
+          <Button 
+            variant="outline"
             @click="close"
+            class="w-full sm:w-auto"
           >
             {{ email ? 'Cancelar' : 'Cerrar' }}
-          </button>
+          </Button>
         </div>
       </div>
     </BaseModal>
@@ -83,6 +82,8 @@
 import { ref, watch } from 'vue'
 import BaseModal from '@/components/common/BaseModal.vue'
 import { MailIcon, WarningIcon, SendIcon } from '@/icons'
+import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
+import Button from '@/components/ui/Button.vue'
 import { useAuthStore } from '@/modules/auth/stores/auth.store'
 
 const props = defineProps<{

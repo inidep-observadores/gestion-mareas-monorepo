@@ -9,7 +9,7 @@
       :class="[
         'px-5 py-2 text-[11px] font-black uppercase tracking-widest rounded-xl transition-all duration-300',
         modelValue === option.value
-          ? 'bg-white dark:bg-gray-700 text-indigo-600 dark:text-indigo-400 shadow-md translate-y-[-1px]'
+          ? 'bg-white dark:bg-gray-700 text-primary dark:text-primary shadow-md translate-y-[-1px]'
           : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-white/50 dark:hover:bg-gray-800',
       ]"
     >

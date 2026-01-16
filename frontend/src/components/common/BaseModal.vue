@@ -5,7 +5,7 @@
         :class="[
           'fixed inset-0 transition-opacity',
           variant === 'danger' 
-            ? 'bg-red-950/40 backdrop-blur-md' 
+            ? 'bg-error/40 backdrop-blur-md' 
             : variant === 'glass'
               ? 'bg-gray-950/40 backdrop-blur-sm'
               : 'bg-gray-500 bg-opacity-75'
@@ -23,7 +23,7 @@
         <div
           :class="[
               'relative transform overflow-hidden rounded-xl bg-white text-left shadow-xl transition-all w-full sm:my-8 dark:bg-gray-800',
-              variant === 'danger' ? 'border border-red-200/50 dark:border-red-900/50' : '',
+              variant === 'danger' ? 'border border-error/20 dark:border-error/50' : '',
               maxWidthClass
           ]"
           @click.stop
@@ -31,7 +31,7 @@
           <div 
             :class="[
               'px-4 pb-4 pt-5 sm:p-6',
-              variant === 'danger' ? 'bg-red-50/30 dark:bg-red-950/20' : 'bg-white dark:bg-gray-800'
+              variant === 'danger' ? 'bg-error/5 dark:bg-error/10' : 'bg-white dark:bg-gray-800'
             ]"
           >
             <!-- Header -->
