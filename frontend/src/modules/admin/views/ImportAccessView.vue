@@ -116,12 +116,23 @@
         </div>
       </div>
     </div>
+
+    <!-- Diálogo de Confirmación -->
+    <ConfirmationDialog
+      :show="showConfirmModal"
+      title="Iniciar Importación de Access"
+      :message="`¿Desea procesar el archivo '${pendingFile?.name}'? Este proceso analizará todos los registros y generará alertas de zarpada y arribo detectadas. El proceso puede demorar unos segundos.`"
+      confirm-text="Iniciar Procesamiento"
+      confirm-button-class="bg-primary hover:bg-primary/90 shadow-primary/20"
+      @close="cancelImport"
+      @confirm="confirmImport"
+    />
   </AdminDashboardLayout>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import axios from 'axios';
+import httpClient from '@/config/http/http.client';
 import AdminDashboardLayout from '../layouts/AdminDashboardLayout.vue';
 import { 
   CloudUploadIcon, 
@@ -130,9 +141,13 @@ import {
   ChevronRightIcon 
 } from '@/icons';
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue';
+import ConfirmationDialog from '@/components/common/ConfirmationDialog.vue';
+import { toast } from 'vue-sonner';
 
 const isDragging = ref(false);
 const isUploading = ref(false);
+const showConfirmModal = ref(false);
+const pendingFile = ref<File | null>(null);
 const results = ref<any>(null);
 const fileInputRef = ref<HTMLInputElement | null>(null);
 
@@ -140,7 +155,7 @@ const handleDrop = (e: DragEvent) => {
   isDragging.value = false;
   const files = e.dataTransfer?.files;
   if (files && files.length > 0) {
-    uploadFile(files[0]);
+    prepareUpload(files[0]);
   }
 };
 
@@ -148,19 +163,36 @@ const handleFileSelect = (e: Event) => {
   const target = e.target as HTMLInputElement;
   const files = target.files;
   if (files && files.length > 0) {
-    uploadFile(files[0]);
+    prepareUpload(files[0]);
   }
+};
+
+const prepareUpload = (file: File) => {
+  const ext = file.name.split('.').pop()?.toLowerCase();
+  if (ext !== 'accdb' && ext !== 'mdb') {
+    toast.error('Formato no soportado. Use .accdb o .mdb');
+    return;
+  }
+  pendingFile.value = file;
+  showConfirmModal.value = true;
+};
+
+const cancelImport = () => {
+  showConfirmModal.value = false;
+  pendingFile.value = null;
+  if (fileInputRef.value) fileInputRef.value.value = '';
+};
+
+const confirmImport = () => {
+  if (pendingFile.value) {
+    uploadFile(pendingFile.value);
+  }
+  showConfirmModal.value = false;
 };
 
 const uploadFile = async (file: File) => {
   if (isUploading.value) return;
   
-  const ext = file.name.split('.').pop()?.toLowerCase();
-  if (ext !== 'accdb' && ext !== 'mdb') {
-    alert('Formato no soportado. Use .accdb o .mdb');
-    return;
-  }
-
   isUploading.value = true;
   results.value = null;
 
@@ -168,18 +200,22 @@ const uploadFile = async (file: File) => {
   formData.append('file', file);
 
   try {
-    const response = await axios.post('/access-import/upload', formData, {
+    const response = await httpClient.post('/access-import/upload', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
+      timeout: 300000 // 5 minutos para archivos con cientos de registros
     });
     
     results.value = response.data.summary;
+    toast.success('Archivo procesado exitosamente');
   } catch (error: any) {
     console.error('Error:', error);
-    alert('Error al procesar: ' + (error.response?.data?.message || error.message));
+    const msg = error.response?.data?.message || error.message;
+    toast.error('Error al procesar: ' + msg);
   } finally {
     isUploading.value = false;
+    pendingFile.value = null;
     if (fileInputRef.value) fileInputRef.value.value = '';
   }
 };
