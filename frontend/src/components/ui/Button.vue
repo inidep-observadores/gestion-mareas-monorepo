@@ -25,7 +25,7 @@ import { computed } from 'vue'
 
 interface ButtonProps {
   size?: 'xs' | 'sm' | 'md' | 'lg'
-  variant?: 'primary' | 'outline' | 'soft' | 'ghost' | 'link' | 'success' | 'error' | 'warning'
+  variant?: 'primary' | 'outline' | 'soft' | 'ghost' | 'link' | 'success' | 'error' | 'warning' | 'info' | 'purple'
   startIcon?: object
   endIcon?: object
   onClick?: () => void
@@ -56,6 +56,8 @@ const variantClasses = {
   success: 'bg-success text-success-fg hover:opacity-90 shadow-theme-sm',
   error: 'bg-error text-error-fg hover:opacity-90 shadow-theme-sm',
   warning: 'bg-warning text-warning-fg hover:opacity-90 shadow-theme-sm',
+  info: 'bg-info text-info-fg hover:opacity-90 shadow-theme-sm',
+  purple: 'bg-purple text-purple-fg hover:opacity-90 shadow-theme-sm',
 }
 
 const onClick = () => {

@@ -8,17 +8,17 @@
     <template #title>
         <div class="flex items-center justify-between w-full pr-8 py-1">
             <div class="flex items-center gap-4">
-                <Badge 
-                  :color="getBadgeColor(localAlert.prioridad)" 
-                  variant="solid" 
+                <Badge
+                  :color="getBadgeColor(localAlert.prioridad)"
+                  variant="solid"
                   size="sm"
                   class="font-black text-[10px] uppercase tracking-widest px-3 py-2.5 rounded-lg"
                 >
                     {{ localAlert.prioridad || 'N/D' }}
                 </Badge>
                 <span class="text-text font-black uppercase tracking-tight">{{ localAlert.titulo || 'Alerta' }}</span>
-                <Badge 
-                  v-if="localAlert.referenciaTipo" 
+                <Badge
+                  v-if="localAlert.referenciaTipo"
                   :color="getOriginBadgeColor(localAlert.referenciaTipo)"
                   variant="light"
                   size="sm"
@@ -49,6 +49,32 @@
               <div class="p-4 bg-surface-muted/50 border border-border rounded-2xl">
                 <h4 class="font-black text-[10px] uppercase tracking-widest text-text-muted mb-2">Detalles del Incidente</h4>
                 <p class="text-sm text-text/80 leading-relaxed">{{ localAlert.descripcion }}</p>
+
+                <!-- Incongruency Diff Table -->
+                <div v-if="isIncongruency && incongruencyData" class="mt-4 bg-surface border border-border rounded-xl overflow-hidden">
+                    <table class="w-full text-xs">
+                        <thead>
+                            <tr class="bg-surface-muted/50 border-b border-border">
+                                <th class="px-3 py-2 text-left font-black text-text-muted uppercase tracking-wider text-[10px]">Dato</th>
+                                <th class="px-3 py-2 text-left font-black text-text-muted uppercase tracking-wider text-[10px]">Sistema Local</th>
+                                <th class="px-3 py-2 text-left font-black text-text-muted uppercase tracking-wider text-[10px]">Access (Externo)</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-border">
+                            <tr v-for="field in incongruencyFields" :key="field.key" :class="{ 'bg-error/5': field.hasDiff }">
+                                <td class="px-3 py-2 font-bold text-text-muted">{{ field.label }}</td>
+                                <td class="px-3 py-2 font-mono text-text">
+                                    {{ field.localVal || 'N/D' }}
+                                </td>
+                                <td class="px-3 py-2 font-mono" :class="field.hasDiff ? 'text-error font-bold' : 'text-text'">
+                                    {{ field.externalVal || 'N/D' }}
+                                    <span v-if="field.hasDiff" class="ml-1 text-[9px] text-error bg-error/10 px-1 rounded">DIFERENTE</span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
                 <div class="mt-4 pt-4 border-t border-border flex items-center gap-4">
                     <div class="text-[10px] font-bold text-text-muted uppercase tracking-tight">ID: <span class="font-mono text-text/60">{{ localAlert.codigoUnico }}</span></div>
                     <div class="text-[10px] font-bold text-text-muted uppercase tracking-tight">Detectado: <span class="text-text/60">{{ formatDate(localAlert.fechaDetectada) }}</span></div>
@@ -106,7 +132,7 @@
                     <h4 class="font-black text-[10px] uppercase tracking-widest text-text-muted">Notas de Gestión</h4>
                     <textarea
                         v-model="comment"
-                        class="w-full bg-surface-muted/30 border border-border rounded-2xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all p-4 text-sm h-32 text-text placeholder:text-text-muted/40"
+                        class="w-full bg-surface-muted/30 border border-border rounded-2xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all p-4 text-sm h-16 text-text placeholder:text-text-muted/40"
                         placeholder="Agregar notas de seguimiento, causas o detalles de la resolución..."
                     ></textarea>
 
@@ -228,13 +254,13 @@ import BaseModal from '@/components/common/BaseModal.vue'
 import Button from '@/components/ui/Button.vue'
 import Badge from '@/components/ui/Badge.vue'
 import { toast } from 'vue-sonner'
-import { 
-    CheckIcon, 
-    ShipIcon, 
-    MapPinIcon, 
-    RefreshIcon, 
-    ChevronRightIcon, 
-    InfoIcon 
+import {
+    CheckIcon,
+    ShipIcon,
+    MapPinIcon,
+    RefreshIcon,
+    ChevronRightIcon,
+    InfoIcon
 } from '@/icons'
 import dashboardService from '@/modules/dashboard/services/dashboard.service'
 import ReclamoEntregaDialog from '@/modules/dashboard/components/ReclamoEntregaDialog.vue'
@@ -262,6 +288,8 @@ type AlertMetadata = {
   days?: number
   subTipo?: string
   nroEtapa?: number
+  externalData?: any
+  localData?: any
 }
 
 type LocalAlert = Partial<Alerta> & { metadata?: AlertMetadata }
@@ -386,6 +414,42 @@ const isClaimableAlert = computed(() => localAlert.value?.tipo === 'RETRASO_DATO
 const mareaLabel = computed(() => localAlert.value?.metadata?.mareaCode || localAlert.value?.referenciaId || 'N/D')
 const mareaObserversLabel = computed(() => mareaObservers.value.length ? mareaObservers.value.join(', ') : 'Sin asignar')
 
+const isIncongruency = computed(() => localAlert.value?.metadata?.subTipo === 'INCONGRUENCIA')
+const incongruencyData = computed(() => localAlert.value?.metadata)
+
+const incongruencyFields = computed(() => {
+    if (!incongruencyData.value) return []
+    const ext = incongruencyData.value.externalData || {}
+    const loc = incongruencyData.value.localData || {}
+
+    const fields = [
+        { key: 'fechaZarpada', label: 'Fecha Zarpada' },
+        { key: 'fechaArribo', label: 'Fecha Arribo' }
+    ]
+
+    return fields.map(f => {
+        const valLoc = formatToLocalISODate(new Date(loc[f.key] || ''))
+        const valExt = formatToLocalISODate(new Date(ext[f.key] || ''))
+        // Comparación simple de fechas YYYY-MM-DD
+        const niceLoc = isActiveDate(loc[f.key]) ? formatDate(loc[f.key]) : 'N/D'
+        const niceExt = isActiveDate(ext[f.key]) ? formatDate(ext[f.key]) : 'N/D'
+
+        return {
+            key: f.key,
+            label: f.label,
+            localVal: niceLoc,
+            externalVal: niceExt,
+            hasDiff: niceLoc !== niceExt && (niceLoc !== 'N/D' || niceExt !== 'N/D')
+        }
+    })
+})
+
+const isActiveDate = (d: any) => {
+    if (!d) return false
+    const date = new Date(d)
+    return !isNaN(date.getTime()) && date.getFullYear() > 1900
+}
+
 // --- Smart Actions Logic ---
 const showStagesDialog = ref(false)
 const stagesDialogMode = ref<'INICIAR' | 'EDITAR' | 'FINALIZAR'>('EDITAR')
@@ -487,9 +551,10 @@ const handleStagesConfirm = async (data: any) => {
 
 const getBadgeColor = (prio?: string) => {
     switch (prio || '') {
-        case 'ALTA': return 'error'
-        case 'MEDIA': return 'warning'
-        case 'BAJA': return 'info'
+        case 'URGENTE': return 'error'
+        case 'ALTA': return 'warning'
+        case 'MEDIA': return 'info'
+        case 'BAJA': return 'purple'
         default: return 'light'
     }
 }
@@ -664,7 +729,7 @@ const confirmAction = async () => {
     if (action === 'SEGUIMIENTO') {
         const minDateStr = formatToLocalISODate(getTomorrow())
         const selectedStr = customFollowUpDate.value
-        
+
         if (!selectedStr || selectedStr < minDateStr) {
             toast.error('La fecha de re-check debe ser desde mañana en adelante.')
             setDefaultFollowUpDate(null)

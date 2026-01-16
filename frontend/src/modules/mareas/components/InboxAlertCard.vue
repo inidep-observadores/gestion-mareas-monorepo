@@ -97,9 +97,9 @@ const cardClasses = computed(() => {
     // Para PENDIENTE y VENCIDA usamos la prioridad
     switch (props.prioridad) {
         case AlertaPrioridad.URGENTE: return 'bg-error/10 hover:bg-error/15 border-error/40 shadow-lg shadow-error/5 ring-1 ring-error/20'
-        case AlertaPrioridad.ALTA: return 'bg-error/5 hover:bg-error/10 border-error/20'
-        case AlertaPrioridad.MEDIA: return 'bg-warning/5 hover:bg-warning/10 border-warning/20'
-        case AlertaPrioridad.BAJA: return 'bg-info/5 hover:bg-info/10 border-info/20'
+        case AlertaPrioridad.ALTA: return 'bg-warning/5 hover:bg-warning/10 border-warning/20'
+        case AlertaPrioridad.MEDIA: return 'bg-info/5 hover:bg-info/10 border-info/20'
+        case AlertaPrioridad.BAJA: return 'bg-purple/5 hover:bg-purple/10 border-purple/20'
         default: return 'bg-error/5 hover:bg-error/10 border-error/20'
     }
 })
@@ -115,9 +115,9 @@ const iconBgClass = computed(() => {
 
     switch (props.prioridad) {
         case AlertaPrioridad.URGENTE: return 'bg-error shadow-error/40'
-        case AlertaPrioridad.ALTA: return 'bg-error shadow-error/20'
-        case AlertaPrioridad.MEDIA: return 'bg-warning shadow-warning/20'
-        case AlertaPrioridad.BAJA: return 'bg-info shadow-info/10'
+        case AlertaPrioridad.ALTA: return 'bg-warning shadow-warning/20'
+        case AlertaPrioridad.MEDIA: return 'bg-info shadow-info/20'
+        case AlertaPrioridad.BAJA: return 'bg-purple shadow-purple/10'
         default: return 'bg-error shadow-error/20'
     }
 })
@@ -161,9 +161,9 @@ const labelClass = computed(() => {
 
     switch (props.prioridad) {
         case AlertaPrioridad.URGENTE: return 'text-error font-black'
-        case AlertaPrioridad.ALTA: return 'text-error'
-        case AlertaPrioridad.MEDIA: return 'text-warning'
-        case AlertaPrioridad.BAJA: return 'text-info'
+        case AlertaPrioridad.ALTA: return 'text-warning'
+        case AlertaPrioridad.MEDIA: return 'text-info'
+        case AlertaPrioridad.BAJA: return 'text-purple'
         default: return 'text-error'
     }
 })
@@ -184,9 +184,9 @@ const actionButtonVariant = computed(() => {
 
     switch (props.prioridad) {
         case AlertaPrioridad.URGENTE: return 'error'
-        case AlertaPrioridad.ALTA: return 'error'
-        case AlertaPrioridad.MEDIA: return 'warning'
-        case AlertaPrioridad.BAJA: return 'primary'
+        case AlertaPrioridad.ALTA: return 'warning'
+        case AlertaPrioridad.MEDIA: return 'info'
+        case AlertaPrioridad.BAJA: return 'purple'
         default: return 'error'
     }
 })
