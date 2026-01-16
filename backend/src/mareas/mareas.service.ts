@@ -1221,6 +1221,8 @@ export class MareasService {
         if (!query || query.length < 2) return [];
 
         const isNumeric = !isNaN(Number(query));
+        const queryParts = query.split(' ').filter(p => p.length > 0);
+
         const orConditions: any[] = [
             { buque: { nombreBuque: { contains: query, mode: 'insensitive' } } },
             {
@@ -1229,10 +1231,12 @@ export class MareasService {
                         observadores: {
                             some: {
                                 observador: {
-                                    OR: [
-                                        { apellido: { contains: query, mode: 'insensitive' } },
-                                        { nombre: { contains: query, mode: 'insensitive' } }
-                                    ]
+                                    AND: queryParts.map(part => ({
+                                        OR: [
+                                            { nombre: { contains: part, mode: 'insensitive' } },
+                                            { apellido: { contains: part, mode: 'insensitive' } }
+                                        ]
+                                    }))
                                 }
                             }
                         }
@@ -1266,7 +1270,7 @@ export class MareasService {
 
         return mareas.map(m => {
             const principalObs = m.etapas[0]?.observadores.find((o: any) => o.rol === 'PRINCIPAL')?.observador;
-            const obsText = principalObs ? ` • ${principalObs.apellido}` : '';
+            const obsText = principalObs ? ` • ${principalObs.nombre} ${principalObs.apellido}` : '';
 
             return {
                 id: m.id,
