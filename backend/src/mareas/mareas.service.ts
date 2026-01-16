@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { BusinessRulesService } from '../common/business-rules/business-rules.service';
 import { User } from '@prisma/client';
+import { AlertaEstado, AlertaPrioridad } from '../alerts/alerts.enums';
 import { CreateMareaDto } from './dto/create-marea.dto';
 import { UpdateMareaDto } from './dto/update-marea.dto';
 
@@ -1623,8 +1624,8 @@ export class MareasService {
                 tipo: 'FATIGA',
                 titulo: 'Fatiga Crítica Detectada',
                 descripcion: `El observador ${f.name} ha navegado ${f.days} días en el año.`,
-                estado: 'PENDIENTE',
-                prioridad: 'ALTA'
+                estado: AlertaEstado.PENDIENTE,
+                prioridad: AlertaPrioridad.ALTA
             });
         }
 
@@ -1637,8 +1638,8 @@ export class MareasService {
                 tipo: 'RETRASO_DATOS',
                 titulo: 'Retraso en Entrega de Datos',
                 descripcion: `Marea ${d.mareaId} (${d.vesselName}) - ${d.days} días de demora.`,
-                estado: 'PENDIENTE',
-                prioridad: 'ALTA'
+                estado: AlertaEstado.PENDIENTE,
+                prioridad: AlertaPrioridad.URGENTE
             });
         }
 
@@ -1651,8 +1652,8 @@ export class MareasService {
                 tipo: 'RETRASO_INFORME',
                 titulo: 'Informe Demorado',
                 descripcion: `Marea ${d.mareaId} (${d.vesselName}) - ${d.days} días desde recepción.`,
-                estado: 'PENDIENTE',
-                prioridad: 'MEDIA'
+                estado: AlertaEstado.PENDIENTE,
+                prioridad: AlertaPrioridad.MEDIA
             });
         }
     }
@@ -1673,7 +1674,7 @@ export class MareasService {
         for (const alerta of vencidas) {
             await this.prisma.alerta.update({
                 where: { id: alerta.id },
-                data: { estado: 'VENCIDA' }
+                data: { estado: AlertaEstado.VENCIDA }
             });
             await this.alertsService.logEvent(
                 alerta.id,
