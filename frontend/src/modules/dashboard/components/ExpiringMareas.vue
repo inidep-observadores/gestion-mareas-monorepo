@@ -22,7 +22,7 @@
               <ShipIcon class="w-5 h-5" />
             </div>
             <div class="flex flex-col">
-              <span class="text-xs font-black text-text">{{ marea.buque }}</span>
+              <span class="text-xs font-black text-text">{{ marea.code }} - {{ marea.buque }}</span>
               <span class="text-[10px] font-bold text-text-muted uppercase tracking-tighter">{{ marea.obs }}</span>
             </div>
           </div>
@@ -59,7 +59,7 @@
         </div>
 
         <div class="mt-3 flex items-center justify-between text-[10px] font-bold text-text-muted uppercase tracking-tighter">
-          <span>{{ marea.puerto }}</span>
+          <span>Arribo previsto: {{ marea.puerto }}</span>
           <span>ETA: {{ marea.eta }}</span>
         </div>
       </div>
@@ -80,6 +80,7 @@ import mareasService from '@/modules/mareas/services/mareas.service'
 
 type ExpiringMarea = {
   id: string
+  code: string
   buque: string
   obs: string
   progreso: number
@@ -91,16 +92,18 @@ type ExpiringMarea = {
 
 const expiringMareas = ref<ExpiringMarea[]>([])
 
-const formatEta = (fecha?: string): string => {
+const formatEta = (fecha?: string, diasEstimados: number = 30): string => {
   if (!fecha) return 'Pendiente'
   const parsed = new Date(fecha)
   if (Number.isNaN(parsed.getTime())) return 'Pendiente'
+  
+  const estimatedEnd = new Date(parsed.getTime() + diasEstimados * 24 * 60 * 60 * 1000)
+  
   return new Intl.DateTimeFormat('es-AR', {
     day: '2-digit',
-    month: 'short',
-    hour: '2-digit',
-    minute: '2-digit'
-  }).format(parsed)
+    month: '2-digit',
+    year: 'numeric'
+  }).format(estimatedEnd)
 }
 
 const loadExpiringMareas = async () => {
@@ -117,11 +120,12 @@ const loadExpiringMareas = async () => {
 
         return {
           id: item.id,
+          code: item.id_marea,
           buque: item.buque_nombre,
           obs: (item as any).observador || 'Sin asignar',
           progreso: item.progreso,
           puerto: item.puerto,
-          eta: formatEta(item.fecha_zarpada),
+          eta: formatEta(item.fecha_zarpada, item.dias_estimados),
           isOverdue,
           splitPoint
         }
