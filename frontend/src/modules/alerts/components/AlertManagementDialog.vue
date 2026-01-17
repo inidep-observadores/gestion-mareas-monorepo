@@ -485,8 +485,8 @@ const smartActionConfig = computed(() => {
                 description: 'Se detectó una nueva etapa (# '+ (localAlert.value?.metadata?.nroEtapa || '') +'). Inicie el registro local.',
                 icon: MapPinIcon,
                 handler: async () => {
-                    await prepareStagesData()
-                    stagesDialogMode.value = 'INICIAR'
+                    await prepareStagesData(true) // Pass true to indicate creating a new stage
+                    stagesDialogMode.value = 'EDITAR' // Must be EDITAR to show full list and new item
                     showStagesDialog.value = true
                 }
             }
@@ -523,13 +523,38 @@ const executeSmartAction = () => {
     smartActionConfig.value?.handler()
 }
 
-const prepareStagesData = async () => {
+const prepareStagesData = async (isNewStageConfig = false) => {
     if (!localAlert.value.referenciaId) return
     processing.value = true
     try {
         const marea = await mareasService.getById(localAlert.value.referenciaId)
         mareaDataForStages.value = marea
-        mareaStagesForStages.value = marea.etapas || []
+        // Ensure strictly editable copy
+        let currentStages = marea.etapas ? JSON.parse(JSON.stringify(marea.etapas)) : []
+        
+        if (isNewStageConfig) {
+            const lastStage = currentStages.length > 0 ? currentStages[currentStages.length - 1] : null
+            const ext = localAlert.value.metadata?.externalData || {}
+            
+            const newStage = {
+                id: null, // New stage
+                nroEtapa: (lastStage?.nroEtapa || 0) + 1,
+                // Inherit from last stage or use default
+                puertoZarpadaId: lastStage?.puertoArriboId || marea.puertoBaseId || '',
+                // Use alert data for dates
+                fechaZarpada: ext.fechaZarpada || '',
+                puertoArriboId: '', // User must select
+                fechaArribo: ext.fechaArribo || '',
+                // Inherit config
+                pesqueriaId: lastStage?.pesqueriaId || marea.id_pesqueria,
+                tipoEtapa: lastStage?.tipoEtapa || 'COMERCIAL',
+                observaciones: 'Etapa detectada automáticamente desde Access',
+                observadores: []
+            }
+            currentStages.push(newStage)
+        }
+        
+        mareaStagesForStages.value = currentStages
     } catch (e) {
         toast.error('Error al cargar datos de marea.')
     } finally {
@@ -548,13 +573,8 @@ const handleStagesConfirm = async (data: any) => {
             })
             toast.success('Cambios guardados con éxito')
 
-            // Auto-comment for resolution if user didn't type one
-            if (!comment.value) {
-                const actionType = stagesDialogMode.value === 'INICIAR' ? 'Registro de Nueva Etapa' : 'Conciliación de Datos/Etapas'
-                comment.value = `${actionType} realizada exitosamente. Resolución automática.`
-            }
-
-            await submitUpdate('RESUELTA')
+            // Reload alert to verify diffs if needed (optional)
+            await loadFullAlert(localAlert.value.id!)
         }
     } catch (e) {
         toast.error('Error al guardar cambios.')

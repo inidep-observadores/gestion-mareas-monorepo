@@ -14,8 +14,7 @@
             @drop.prevent="handleDrop"
           >
             <div class="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center text-primary mb-2">
-              <CloudUploadIcon v-if="!isUploading" class="w-8 h-8" />
-              <LoadingSpinner v-else class="w-8 h-8" />
+              <CloudUploadIcon class="w-8 h-8" />
             </div>
             
             <div v-if="!isUploading">
