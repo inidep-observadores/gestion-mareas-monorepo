@@ -96,11 +96,14 @@ export class AccessImportService {
             } else if (!localMatch.etapa) {
                 tipoHallazgo = 'NUEVA_ETAPA';
             } else {
-                // Existe marea y etapa -> ¿Coinciden las fechas?
+                // Existe marea y etapa -> ¿Coinciden las fechas y el observador?
                 const zarpadaMatches = this.datesMatch(record.Fecha_Zarpada, localMatch.etapa.fechaZarpada);
                 const arriboMatches = this.datesMatch(record.Fecha_Arribo, localMatch.etapa.fechaArribo);
 
-                tipoHallazgo = (zarpadaMatches && arriboMatches) ? 'SINCRONIZADO' : 'INCONGRUENCIA';
+                // Ahora el observador se compara a nivel de Marea
+                const observerMatches = localMatch.marea.observadorPrincipalId === localMatch.observador?.id;
+
+                tipoHallazgo = (zarpadaMatches && arriboMatches && observerMatches) ? 'SINCRONIZADO' : 'INCONGRUENCIA';
             }
 
             await this.prisma.importacionAccessSnapshot.create({
@@ -181,7 +184,10 @@ export class AccessImportService {
                     tipoMarea: parsedMarea.tipoMarea,
                     activo: true
                 },
-                include: { etapas: true }
+                include: {
+                    etapas: true,
+                    observadorPrincipal: true
+                }
             } as any),
             // Matching de buque
             this.prisma.buque.findFirst({

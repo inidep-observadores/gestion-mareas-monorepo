@@ -1,6 +1,0 @@
-{"codigo_numerico": 21, "codigo": "COSTERO", "nombre": "Costero", "activo": true}
-{"codigo_numerico": 11, "codigo": "RADA_RIA", "nombre": "Rada o Ría", "activo": true}
-{"codigo_numerico": 31, "codigo": "ALTURA_FRESQUERO", "nombre": "Altura (Fresquero)", "activo": true}
-{"codigo_numerico": 32, "codigo": "ALTURA_CONGELADOR", "nombre": "Altura (Congelador)", "activo": true}
-{"codigo_numerico": 90, "codigo": "INVESTIGACION", "nombre": "Investigación", "activo": true}
-{"codigo_numerico": 99, "codigo": "INDETERMINADO", "nombre": "Indeterminado", "activo": true}
