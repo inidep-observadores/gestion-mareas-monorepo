@@ -1,0 +1,10 @@
+{"id":"e16a6ea7-08d9-4891-b3ab-3ac866d647c2","codigo":"ABADEJO","nombre":"Abadejo","descripcion":null,"grupo":"Peces","orden":null,"activo":true}
+{"id":"822d18e6-569a-40fc-a58f-429b6bef4613","codigo":"ANCHOITA","nombre":"Anchoíta","descripcion":null,"grupo":"Peces","orden":null,"activo":true}
+{"id":"a67a623b-9bd3-45ae-8512-9c6b22645469","codigo":"CABALLA","nombre":"Caballa","descripcion":null,"grupo":"Peces","orden":null,"activo":true}
+{"id":"543aa4a7-f29e-4c08-b04f-62377d3cc0e6","codigo":"CALAMAR","nombre":"Calamar","descripcion":null,"grupo":"Moluscos","orden":null,"activo":true}
+{"id":"7f47bb40-1035-438a-ba95-a0ac1b2cf3ad","codigo":"CENTOLLA","nombre":"Centolla","descripcion":null,"grupo":"Crustáceos","orden":null,"activo":true}
+{"id":"92d9acc2-3590-474f-a773-73e8af728e83","codigo":"AUSTRALES","nombre":"Especies australes","descripcion":null,"grupo":"Peces","orden":null,"activo":true}
+{"id":"4167beb8-ce39-4fd3-8314-8b3487879d92","codigo":"LANGOSTINO","nombre":"Langostino","descripcion":null,"grupo":"Crustáceos","orden":null,"activo":true}
+{"id":"c1692b3c-2c33-4957-8bcb-208f45e4534b","codigo":"MERLUZA_COMUN","nombre":"Merluza común","descripcion":null,"grupo":"Peces","orden":null,"activo":true}
+{"id":"d47be3ca-6602-4648-a74f-74faa2029965","codigo":"MERLUZA_NEGRA","nombre":"Merluza negra","descripcion":null,"grupo":"Peces","orden":null,"activo":true}
+{"id":"6af901f6-bd7d-4bc7-8c9d-f441e526e65c","codigo":"VIEIRA","nombre":"Vieira","descripcion":null,"grupo":"Moluscos","orden":null,"activo":true}
