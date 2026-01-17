@@ -23,6 +23,7 @@ export interface MareaListItem {
     en_tierra?: boolean;
     total_etapas: number;
     alertas: any[];
+    dias_estimados?: number;
     actionsAvailable: Record<string, { enabled: boolean; label: string; blockedReason?: string }>;
 }
 
