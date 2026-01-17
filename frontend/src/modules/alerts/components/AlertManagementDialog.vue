@@ -108,7 +108,7 @@
                     </div>
 
                     <!-- Smart Actions Area -->
-                    <div v-if="hasSmartAction" class="p-4 bg-primary/5 border border-primary/20 rounded-2xl flex items-center justify-between animate-in zoom-in-95 duration-300">
+                    <div v-if="smartActionConfig && !isClosed" class="p-4 bg-primary/5 border border-primary/20 rounded-2xl flex items-center justify-between animate-in zoom-in-95 duration-300">
                         <div class="flex items-center gap-4">
                             <div class="p-2.5 bg-primary/10 rounded-xl text-primary">
                                 <component :is="smartActionConfig.icon" class="w-5 h-5" />
@@ -243,6 +243,13 @@
     @close="showStagesDialog = false"
     @confirm="handleStagesConfirm"
   />
+
+  <!-- Smart Action: Registro de Nueva Marea -->
+  <NuevaMareaDialog
+    :show="showNuevaMareaDialog"
+    @close="showNuevaMareaDialog = false"
+    @success="handleMareaSuccess"
+  />
 </template>
 
 <script setup lang="ts">
@@ -266,6 +273,7 @@ import dashboardService from '@/modules/dashboard/services/dashboard.service'
 import ReclamoEntregaDialog from '@/modules/dashboard/components/ReclamoEntregaDialog.vue'
 import mareasService from '@/modules/mareas/services/mareas.service'
 import GestionEtapasMareaDialog from '@/modules/mareas/components/GestionEtapasMareaDialog.vue'
+import NuevaMareaDialog from '@/modules/mareas/components/NuevaMareaDialog.vue'
 import { storeToRefs } from 'pinia'
 import { useBusinessRulesStore } from '@/modules/shared/stores/business-rules.store'
 import { useWorkflowStore } from '@/modules/shared/stores/workflow.store'
@@ -338,6 +346,7 @@ const isConfirmationOpen = ref(false)
 const pendingAction = ref<'SEGUIMIENTO' | 'DESCARTADA' | 'RESUELTA' | ''>('')
 const confirmationMessage = ref('')
 const mareaObservers = ref<string[]>([])
+const showNuevaMareaDialog = ref(false)
 const businessRulesStore = useBusinessRulesStore()
 const { rules } = storeToRefs(businessRulesStore)
 const recheckCorto = computed(() => rules.value.PLAZO_RECHECK_CORTO || 0)
@@ -466,8 +475,7 @@ const smartActionConfig = computed(() => {
                 icon: ShipIcon,
                 handler: () => {
                     workflowStore.setAlertData(localAlert.value)
-                    emit('close')
-                    router.push('/mareas/nueva')
+                    showNuevaMareaDialog.value = true
                 }
             }
         case 'NUEVA_ETAPA':
@@ -553,6 +561,12 @@ const handleStagesConfirm = async (data: any) => {
         showStagesDialog.value = false
         processing.value = false
     }
+}
+
+const handleMareaSuccess = () => {
+  showNuevaMareaDialog.value = false
+  emit('refresh')
+  emit('close')
 }
 // ----------------------------
 
