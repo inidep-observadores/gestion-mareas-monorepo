@@ -245,6 +245,16 @@ const router = createRouter({
         roles: [ValidRoles.admin],
       },
     },
+    {
+      path: '/admin/import-access',
+      name: 'AdminImportAccess',
+      component: () => import('@/modules/admin/views/ImportAccessView.vue'),
+      meta: {
+        title: 'Importación Access',
+        requiresAuth: true,
+        roles: [ValidRoles.admin],
+      },
+    },
     // 404 No encontrado
     {
       path: '/error-servidor',

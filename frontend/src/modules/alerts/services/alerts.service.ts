@@ -8,14 +8,29 @@ export interface AlertEvent {
     usuario?: { fullName: string }
 }
 
+export enum AlertaEstado {
+    PENDIENTE = 'PENDIENTE',
+    SEGUIMIENTO = 'SEGUIMIENTO',
+    RESUELTA = 'RESUELTA',
+    DESCARTADA = 'DESCARTADA',
+    VENCIDA = 'VENCIDA'
+}
+
+export enum AlertaPrioridad {
+    URGENTE = 'URGENTE',
+    ALTA = 'ALTA',
+    MEDIA = 'MEDIA',
+    BAJA = 'BAJA'
+}
+
 export interface Alerta {
     id: string
     codigoUnico: string
     titulo: string
     descripcion: string
     tipo: 'FATIGA' | 'RETRASO_DATOS' | 'RETRASO_INFORME' | 'GENERICO'
-    estado: 'PENDIENTE' | 'SEGUIMIENTO' | 'RESUELTA' | 'DESCARTADA' | 'VENCIDA'
-    prioridad: 'ALTA' | 'MEDIA' | 'BAJA'
+    estado: AlertaEstado
+    prioridad: AlertaPrioridad
     fechaDetectada: string
     fechaVencimiento?: string
     fechaCierre?: string
@@ -25,10 +40,11 @@ export interface Alerta {
     eventos?: AlertEvent[]
     notaGestion?: string
     asignadoA?: { fullName: string; avatarUrl?: string }
+    visible: boolean
 }
 
 export const alertsService = {
-    getAll: async (params: { refId?: string; status?: string; userId?: string }): Promise<Alerta[]> => {
+    getAll: async (params: { refId?: string; status?: string; userId?: string; showHidden?: boolean }): Promise<Alerta[]> => {
         const { data } = await httpClient.get<Alerta[]>('/alerts', { params })
         return data
     },

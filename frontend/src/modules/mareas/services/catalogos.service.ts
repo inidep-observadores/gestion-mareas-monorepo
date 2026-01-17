@@ -16,7 +16,11 @@ export interface Pesqueria {
 
 export interface Observador {
     id: string;
-    fullName: string;
+    nombre: string;
+    apellido: string;
+    fullName?: string;
+    conImpedimento?: boolean;
+    codigoInterno?: string;
 }
 
 export interface ArtePesca {

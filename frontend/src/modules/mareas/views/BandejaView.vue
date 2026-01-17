@@ -6,25 +6,86 @@
     <div class="relative min-h-[calc(100vh-120px)] z-1 pb-10 flex flex-col xl:flex-row gap-8 items-start">
       <div class="flex-1 min-w-0 w-full">
       
-      <!-- 1. HEADER: ALERTAS CRÍTICAS (Pendientes) -->
-      <section v-if="alertasPendientes.length > 0" class="mb-8 space-y-4">
+      <!-- 1. ALERTAS URGENTES (Urgente) -->
+      <section v-if="alertasUrgente.length > 0" class="mb-8 space-y-4">
         <div class="flex items-center justify-between px-2">
           <h2 class="text-[10px] font-black uppercase tracking-[0.2em] text-error flex items-center gap-2">
-            <span class="flex h-2 w-2 relative">
-              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-error/40 opacity-75"></span>
-              <span class="relative inline-flex rounded-full h-2 w-2 bg-error"></span>
+            <span class="flex h-3 w-3 relative">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-error/60 opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-3 w-3 bg-error shadow-[0_0_10px_rgba(244,63,94,0.5)]"></span>
             </span>
-            Atención Inmediata (Pendientes)
+            Atención Inmediata (Prioridad Urgente)
           </h2>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-4">
           <InboxAlertCard 
-            v-for="alerta in alertasPendientes" 
+            v-for="alerta in alertasUrgente" 
             :key="alerta.id"
-            :titulo="alerta.titulo"
-            :descripcion="alerta.descripcion"
+            v-bind="alerta"
             :fecha="formatDate(alerta.fechaDetectada)"
-            :estado="alerta.estado"
+            @action="(type) => handleAlertAction(alerta.id, type)"
+          />
+        </div>
+      </section>
+
+      <!-- 2. ALERTAS CRÍTICAS (Alta) -->
+      <section v-if="alertasAlta.length > 0" class="mb-8 space-y-4">
+        <div class="flex items-center justify-between px-2">
+          <h2 class="text-[10px] font-black uppercase tracking-[0.2em] text-warning flex items-center gap-2">
+            <span class="flex h-2 w-2 relative">
+              <span class="relative inline-flex rounded-full h-2 w-2 bg-warning"></span>
+            </span>
+            Gestión Prioritaria (Prioridad Alta)
+          </h2>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-4">
+          <InboxAlertCard 
+            v-for="alerta in alertasAlta" 
+            :key="alerta.id"
+            v-bind="alerta"
+            :fecha="formatDate(alerta.fechaDetectada)"
+            @action="(type) => handleAlertAction(alerta.id, type)"
+          />
+        </div>
+      </section>
+
+      <!-- 3. ALERTAS RECOMENDADAS (Media) -->
+      <section v-if="alertasMedia.length > 0" class="mb-8 space-y-4">
+        <div class="flex items-center justify-between px-2">
+          <h2 class="text-[10px] font-black uppercase tracking-[0.2em] text-info flex items-center gap-2">
+            <span class="flex h-2 w-2 relative">
+              <span class="relative inline-flex rounded-full h-2 w-2 bg-info"></span>
+            </span>
+            Atención Recomendada (Prioridad Media)
+          </h2>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-4">
+          <InboxAlertCard 
+            v-for="alerta in alertasMedia" 
+            :key="alerta.id"
+            v-bind="alerta"
+            :fecha="formatDate(alerta.fechaDetectada)"
+            @action="(type) => handleAlertAction(alerta.id, type)"
+          />
+        </div>
+      </section>
+
+      <!-- 4. ALERTAS INFORMATIVAS (Baja) -->
+      <section v-if="alertasBaja.length > 0" class="mb-8 space-y-4">
+        <div class="flex items-center justify-between px-2">
+          <h2 class="text-[10px] font-black uppercase tracking-[0.2em] text-purple flex items-center gap-2">
+            <span class="flex h-2 w-2 relative">
+              <span class="relative inline-flex rounded-full h-2 w-2 bg-purple"></span>
+            </span>
+            Notificaciones (Prioridad Baja)
+          </h2>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-4">
+          <InboxAlertCard 
+            v-for="alerta in alertasBaja" 
+            :key="alerta.id"
+            v-bind="alerta"
+            :fecha="formatDate(alerta.fechaDetectada)"
             @action="(type) => handleAlertAction(alerta.id, type)"
           />
         </div>
@@ -44,11 +105,9 @@
           <InboxAlertCard 
             v-for="alerta in alertasSeguimiento" 
             :key="alerta.id"
-            :titulo="alerta.titulo"
-            :descripcion="alerta.descripcion"
+            v-bind="alerta"
             :fecha="formatDate(alerta.fechaDetectada)"
-            :estado="'SEGUIMIENTO'"
-            :notaGestion="alerta.notaGestion"
+            :estado="AlertaEstado.SEGUIMIENTO"
             @action="(type) => handleAlertAction(alerta.id, type)"
           />
         </div>
@@ -108,138 +167,6 @@
         <div class="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
       </div>
 
-      <div v-else-if="activeTab === 'historial'" class="space-y-6">
-        <!-- Collapsible: Historic Alerts -->
-        <div class="rounded-3xl border border-border bg-background shadow-sm overflow-hidden">
-          <button
-            @click="toggleHistorialSection('alertas')"
-            class="w-full flex items-center justify-between p-5 text-left border-b border-transparent transition-colors"
-            :class="{ 'border-border bg-surface-muted/30': expandedHistorialSection === 'alertas' }"
-          >
-            <div class="flex items-center gap-3">
-              <div class="p-2 bg-success/10 rounded-xl">
-                <BellIcon class="w-5 h-5 text-success" />
-              </div>
-              <div>
-                <h4 class="text-sm font-black text-text/90 uppercase tracking-tight flex items-center gap-2">
-                  Alertas Cerradas
-                  <Badge 
-                    variant="light" 
-                    size="sm"
-                    class="font-black px-1.5 h-4"
-                  >
-                    {{ alertasHistoricas.length }}
-                  </Badge>
-                </h4>
-                <p class="text-[10px] font-bold text-text-muted uppercase tracking-[0.1em]">Finalizadas o canceladas</p>
-              </div>
-            </div>
-            <svg 
-              xmlns="http://www.w3.org/2000/svg" 
-              class="w-5 h-5 text-text-muted transition-transform duration-300" 
-              :class="{ 'rotate-180': expandedHistorialSection === 'alertas' }"
-              viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-            >
-              <polyline points="6 9 12 15 18 9"/>
-            </svg>
-          </button>
-
-          <Transition
-            enter-active-class="transition-all duration-300 ease-out"
-            enter-from-class="max-h-0 opacity-0"
-            enter-to-class="max-h-[1000px] opacity-100"
-            leave-active-class="transition-all duration-200 ease-in"
-            leave-from-class="max-h-[1000px] opacity-100"
-            leave-to-class="max-h-0 opacity-0"
-          >
-            <div v-if="expandedHistorialSection === 'alertas'" class="p-5 pt-2">
-              <div v-if="alertasHistoricas.length > 0" class="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-6">
-                <InboxAlertCard 
-                  v-for="alert in alertasHistoricas" 
-                  :key="alert.id"
-                  :titulo="alert.titulo"
-                  :descripcion="alert.descripcion"
-                  :fecha="formatDate(alert.fechaCierre || alert.fechaDetectada)"
-                  :estado="alert.estado"
-                  :notaGestion="alert.notaGestion"
-                  @action="(type) => handleAlertAction(alert.id, type)"
-                />
-              </div>
-              <div v-else class="text-center py-6 bg-surface-muted/30 rounded-2xl border border-dashed border-border">
-                <p class="text-xs font-medium text-text-muted">Sin alertas cerradas en el historial.</p>
-              </div>
-            </div>
-          </Transition>
-        </div>
-
-        <!-- Collapsible: Historic Tasks -->
-        <div class="rounded-3xl border border-border bg-background shadow-sm overflow-hidden">
-          <button
-            @click="toggleHistorialSection('mareas')"
-            class="w-full flex items-center justify-between p-5 text-left border-b border-transparent transition-colors"
-            :class="{ 'border-border bg-surface-muted/30': expandedHistorialSection === 'mareas' }"
-          >
-            <div class="flex items-center gap-3">
-              <div class="p-2.5 bg-surface-muted rounded-2xl border border-border">
-                <DocsIcon class="w-5 h-5 text-text-muted" />
-              </div>
-              <div>
-                <h4 class="text-sm font-black text-text/80 uppercase tracking-tight flex items-center gap-2">
-                  Historial de Mareas
-                  <Badge variant="light" size="sm" class="font-black px-1.5 h-4">
-                    {{ filteredTasks.length }}
-                  </Badge>
-                </h4>
-                <p class="text-[10px] font-bold text-text-muted uppercase tracking-[0.1em]">Operaciones concluidas</p>
-              </div>
-            </div>
-            <svg 
-              xmlns="http://www.w3.org/2000/svg" 
-              class="w-5 h-5 text-text-muted transition-transform duration-300" 
-              :class="{ 'rotate-180': expandedHistorialSection === 'mareas' }"
-              viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-            >
-              <polyline points="6 9 12 15 18 9"/>
-            </svg>
-          </button>
-
-          <Transition
-            enter-active-class="transition-all duration-300 ease-out"
-            enter-from-class="max-h-0 opacity-0"
-            enter-to-class="max-h-[1000px] opacity-100"
-            leave-active-class="transition-all duration-200 ease-in"
-            leave-from-class="max-h-[1000px] opacity-100"
-            leave-to-class="max-h-0 opacity-0"
-          >
-            <div v-if="expandedHistorialSection === 'mareas'" class="p-5 pt-2">
-              <div v-if="filteredTasks.length > 0" class="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-6">
-                <TaskCard 
-                  v-for="task in filteredTasks" 
-                  :key="task.id"
-                  v-bind="task"
-                  :show-observer="true"
-                  :compact="!!selectedMarea"
-                  @click="openDetails(task)"
-                  @action="(key) => handleTaskAction(task.id, key)"
-                />
-              </div>
-              <div v-else class="text-center py-6 bg-surface-muted/30 rounded-2xl border border-dashed border-border">
-                <p class="text-xs font-medium text-text-muted">Sin mareas en el historial.</p>
-              </div>
-            </div>
-          </Transition>
-        </div>
-
-        <!-- Empty State -->
-        <div v-if="alertasHistoricas.length === 0 && filteredTasks.length === 0" class="flex flex-col items-center justify-center py-20 bg-surface-muted/30 rounded-[2.5rem] border border-dashed border-border">
-          <div class="p-8 bg-background/50 rounded-full mb-6 shadow-sm border border-border">
-            <DocsIcon class="w-12 h-12 text-text/10" />
-          </div>
-          <h3 class="text-xs font-black text-text-muted uppercase tracking-[0.2em] px-4 text-center">No hay registros historicos</h3>
-          <p class="text-[11px] text-text-muted/60 mt-3 text-center max-w-xs px-6 uppercase tracking-wider font-bold">Las tareas y alertas resueltas apareceran aqui una vez gestionadas.</p>
-        </div>
-      </div>
-
       <transition-group 
         v-else
         name="list" 
@@ -256,6 +183,143 @@
           @action="(key) => handleTaskAction(task.id, key)"
         />
       </transition-group>
+
+      <!-- 4. HISTORIAL DE GESTIÓN (Nueva Sección Inferior) -->
+      <section class="mt-16 pt-12 border-t border-border/50 space-y-8">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 px-2">
+          <div>
+            <h2 class="text-sm font-black uppercase tracking-widest text-text-muted flex items-center gap-2">
+              <DocsIcon class="w-4 h-4" />
+              Historial de Gestión
+            </h2>
+            <p class="text-[10px] font-bold text-text-muted/60 uppercase tracking-tighter mt-1">Registros de mareas concluidas y alertas resueltas</p>
+          </div>
+          
+          <div class="w-full md:w-96">
+            <SearchInput 
+              v-model="historySearchQuery"
+              placeholder="Buscar en el historial..."
+            />
+          </div>
+        </div>
+
+        <div class="space-y-6">
+          <!-- Collapsible: Alertas Cerradas -->
+          <div class="rounded-3xl border border-border bg-background shadow-sm overflow-hidden">
+            <button
+              @click="toggleHistorialSection('alertas')"
+              class="w-full flex items-center justify-between p-5 text-left border-b border-transparent transition-colors"
+              :class="{ 'border-border bg-surface-muted/30': expandedHistorialSection === 'alertas' }"
+            >
+              <div class="flex items-center gap-3">
+                <div class="p-2 bg-success/10 rounded-xl">
+                  <BellIcon class="w-5 h-5 text-success" />
+                </div>
+                <div>
+                  <h4 class="text-sm font-black text-text/90 uppercase tracking-tight flex items-center gap-2">
+                    Alertas Cerradas
+                    <Badge variant="light" size="sm" class="font-black px-1.5 h-4">
+                      {{ filteredHistoryAlerts.length }}
+                    </Badge>
+                  </h4>
+                </div>
+              </div>
+              <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                class="w-5 h-5 text-text-muted transition-transform duration-300" 
+                :class="{ 'rotate-180': expandedHistorialSection === 'alertas' }"
+                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+              >
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+            </button>
+
+            <Transition
+              enter-active-class="transition-all duration-300 ease-out"
+              enter-from-class="max-h-0 opacity-0"
+              enter-to-class="max-h-[2000px] opacity-100"
+              leave-active-class="transition-all duration-200 ease-in"
+              leave-from-class="max-h-[2000px] opacity-100"
+              leave-to-class="max-h-0 opacity-0"
+            >
+              <div v-if="expandedHistorialSection === 'alertas'" class="p-5 pt-2">
+                <div v-if="filteredHistoryAlerts.length > 0" class="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-6">
+                  <InboxAlertCard 
+                    v-for="alert in filteredHistoryAlerts" 
+                    :key="alert.id"
+                    :titulo="alert.titulo"
+                    :descripcion="alert.descripcion"
+                    :fecha="formatDate(alert.fechaCierre || alert.fechaDetectada)"
+                    :estado="alert.estado"
+                    :notaGestion="alert.notaGestion"
+                    @action="(type) => handleAlertAction(alert.id, type)"
+                  />
+                </div>
+                <div v-else class="text-center py-6 bg-surface-muted/30 rounded-2xl border border-dashed border-border text-xs text-text-muted">
+                  Sin registros que coincidan con la búsqueda.
+                </div>
+              </div>
+            </Transition>
+          </div>
+
+          <!-- Collapsible: Historial de Mareas -->
+          <div class="rounded-3xl border border-border bg-background shadow-sm overflow-hidden">
+            <button
+              @click="toggleHistorialSection('mareas')"
+              class="w-full flex items-center justify-between p-5 text-left border-b border-transparent transition-colors"
+              :class="{ 'border-border bg-surface-muted/30': expandedHistorialSection === 'mareas' }"
+            >
+              <div class="flex items-center gap-3">
+                <div class="p-2.5 bg-surface-muted rounded-2xl border border-border">
+                  <DocsIcon class="w-5 h-5 text-text-muted" />
+                </div>
+                <div>
+                  <h4 class="text-sm font-black text-text/80 uppercase tracking-tight flex items-center gap-2">
+                    Historial de Mareas
+                    <Badge variant="light" size="sm" class="font-black px-1.5 h-4">
+                      {{ filteredHistoryTasks.length }}
+                    </Badge>
+                  </h4>
+                </div>
+              </div>
+              <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                class="w-5 h-5 text-text-muted transition-transform duration-300" 
+                :class="{ 'rotate-180': expandedHistorialSection === 'mareas' }"
+                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+              >
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+            </button>
+
+            <Transition
+              enter-active-class="transition-all duration-300 ease-out"
+              enter-from-class="max-h-0 opacity-0"
+              enter-to-class="max-h-[2000px] opacity-100"
+              leave-active-class="transition-all duration-200 ease-in"
+              leave-from-class="max-h-[2000px] opacity-100"
+              leave-to-class="max-h-0 opacity-0"
+            >
+              <div v-if="expandedHistorialSection === 'mareas'" class="p-5 pt-2">
+                <div v-if="filteredHistoryTasks.length > 0" class="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-6">
+                  <TaskCard 
+                    v-for="task in filteredHistoryTasks" 
+                    :key="task.id"
+                    v-bind="task"
+                    :show-observer="true"
+                    :compact="!!selectedMarea"
+                    @click="openDetails(task)"
+                    @action="(key) => handleTaskAction(task.id, key)"
+                  />
+                </div>
+                <div v-else class="text-center py-6 bg-surface-muted/30 rounded-2xl border border-dashed border-border text-xs text-text-muted">
+                  Sin registros que coincidan con la búsqueda.
+                </div>
+              </div>
+            </Transition>
+          </div>
+        </div>
+      </section>
 
       </div>
 
@@ -319,6 +383,7 @@ import { alertsService } from '@/modules/alerts/services/alerts.service'
 import { EditIcon, CheckIcon, DocsIcon, BellIcon } from '@/icons'
 import { useMareas } from '../composables/useMareas'
 import { toast } from 'vue-sonner'
+import { AlertaEstado, AlertaPrioridad } from '../../alerts/services/alerts.service'
 
 const router = useRouter()
 const { fetchMareaContext, selectedMareaContext, executeAction } = useMareas()
@@ -330,6 +395,7 @@ const alertasHistoricas = ref<any[]>([])
 const tasks = ref<any[]>([])
 const activeTab = ref('urgentes')
 const searchQuery = ref('')
+const historySearchQuery = ref('')
 const sortBy = ref<'buque' | 'observador'>('buque')
 
 // 1. Computed properties
@@ -337,14 +403,18 @@ const tareasUrgentes = computed(() => tasks.value.filter(t => t.tab === 'urgente
 const tareasPendientes = computed(() => tasks.value.filter(t => t.tab === 'pendientes'))
 
 // Nuevas subdivisiones de alertas activas
-const alertasPendientes = computed(() => alertas.value.filter(a => ['PENDIENTE', 'VENCIDA'].includes(a.estado)))
-const alertasSeguimiento = computed(() => alertas.value.filter(a => a.estado === 'SEGUIMIENTO'))
+// Nuevas subdivisiones de alertas activas por prioridad
+const alertasPendientesTotal = computed(() => alertas.value.filter(a => [AlertaEstado.PENDIENTE, AlertaEstado.VENCIDA].includes(a.estado)))
+const alertasUrgente = computed(() => alertasPendientesTotal.value.filter(a => a.prioridad === AlertaPrioridad.URGENTE))
+const alertasAlta = computed(() => alertasPendientesTotal.value.filter(a => a.prioridad === AlertaPrioridad.ALTA))
+const alertasMedia = computed(() => alertasPendientesTotal.value.filter(a => a.prioridad === AlertaPrioridad.MEDIA))
+const alertasBaja = computed(() => alertasPendientesTotal.value.filter(a => a.prioridad === AlertaPrioridad.BAJA))
+const alertasSeguimiento = computed(() => alertas.value.filter(a => a.estado === AlertaEstado.SEGUIMIENTO))
 
 const tabs = computed(() => [
   { id: 'urgentes', label: 'Acciones Urgentes', count: tareasUrgentes.value?.length || 0 },
   { id: 'pendientes', label: 'Pendientes', count: tareasPendientes.value?.length || 0 },
   { id: 'proceso', label: 'En Proceso', count: 0 },
-  { id: 'historial', label: 'Historial', count: (tasks.value.filter(t => t.tab === 'historial')?.length || 0) + (alertasHistoricas.value?.length || 0) },
 ])
 
 const activeTabLabel = computed(() => tabs.value.find(t => t.id === activeTab.value)?.label)
@@ -377,6 +447,50 @@ const filteredTasks = computed(() => {
       return (a.observador || '').localeCompare(b.observador || '')
     }
   })
+})
+
+const filteredHistoryTasks = computed(() => {
+  const query = historySearchQuery.value.trim().toLowerCase()
+  let result = tasks.value.filter(t => t.tab === 'historial')
+
+  if (query) {
+    result = result.filter(task => {
+      const values = [
+        task.buque,
+        task.idMarea,
+        task.observador,
+        task.hito,
+        task.estadoDescripcion
+      ]
+        .filter(Boolean)
+        .map((value: string) => value.toLowerCase())
+
+      return values.some(value => value.includes(query))
+    })
+  }
+
+  return result.sort((a, b) => a.buque.localeCompare(b.buque))
+})
+
+const filteredHistoryAlerts = computed(() => {
+  const query = historySearchQuery.value.trim().toLowerCase()
+  let result = alertasHistoricas.value
+
+  if (query) {
+    result = result.filter(alert => {
+      const values = [
+        alert.titulo,
+        alert.descripcion,
+        alert.notaGestion
+      ]
+        .filter(Boolean)
+        .map((value: string) => value.toLowerCase())
+
+      return values.some(value => value.includes(query))
+    })
+  }
+
+  return result
 })
 
 const formatDate = (dateStr?: string) => {
@@ -418,7 +532,7 @@ const loadInbox = async () => {
     const allAlerts = await alertsService.getAll({}) || []
     
     alertasHistoricas.value = allAlerts
-        .filter(a => a.estado === 'RESUELTA' || a.estado === 'DESCARTADA')
+        .filter(a => a.estado === AlertaEstado.RESUELTA || a.estado === AlertaEstado.DESCARTADA)
         .sort((a, b) => {
             const dateA = new Date(a.fechaCierre || a.fechaDetectada || 0).getTime()
             const dateB = new Date(b.fechaCierre || b.fechaDetectada || 0).getTime()

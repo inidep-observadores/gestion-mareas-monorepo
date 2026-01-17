@@ -1,7 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { BusinessRulesService } from '../common/business-rules/business-rules.service';
 import { User } from '@prisma/client';
+import { AlertaEstado, AlertaPrioridad } from '../alerts/alerts.enums';
 import { CreateMareaDto } from './dto/create-marea.dto';
 import { UpdateMareaDto } from './dto/update-marea.dto';
 
@@ -75,6 +76,25 @@ export class MareasService {
 
     async update(id: string, updateMareaDto: UpdateMareaDto) {
         const { etapas, artePrincipalId, arteId, pesqueriaId, observadorId, ...data } = updateMareaDto;
+
+        // Validate observer impairment on update if it's a NEW observer
+        if (observadorId) {
+            const currentMarea = await this.prisma.marea.findUnique({
+                where: { id },
+                include: { etapas: { orderBy: { nroEtapa: 'desc' }, take: 1, include: { observadores: true } } }
+            });
+            const currentObsId = currentMarea?.etapas[0]?.observadores.find(o => o.rol === 'PRINCIPAL')?.observadorId;
+
+            if (observadorId !== currentObsId) {
+                const obs = await this.prisma.observador.findUnique({
+                    where: { id: observadorId },
+                    select: { conImpedimento: true, motivoImpedimento: true }
+                });
+                if (obs?.conImpedimento) {
+                    throw new BadRequestException(`No se puede asignar el observador seleccionado porque posee un impedimento activo: ${obs.motivoImpedimento || 'Sin motivo especificado'}.`);
+                }
+            }
+        }
 
         await this.prisma.$transaction(async (tx) => {
             const updateData: any = { ...data };
@@ -332,12 +352,16 @@ export class MareasService {
                 estado_codigo: m.estadoActual.codigo,
                 fecha_zarpada: etapaActual?.fechaZarpada || m.fechaZarpadaEstimada,
                 puerto: etapaActual?.puertoArribo?.nombre || etapaActual?.puertoZarpada?.nombre || 'N/D',
+                puerto_zarpada: etapaActual?.puertoZarpada?.nombre || 'N/D',
+                puerto_arribo: etapaActual?.puertoArribo?.nombre,
+                fecha_arribo: etapaActual?.fechaArribo,
                 observador: primaryObs ? `${primaryObs.nombre} ${primaryObs.apellido}` : 'Sin asignar',
                 progreso,
-                en_tierra: estadoCodigo === MareaEstado.EN_EJECUCION && (!etapaActual || etapaActual.fechaArribo !== null),
+                en_tierra: estadoCodigo === MareaEstado.EN_EJECUCION && etapaActual?.fechaArribo !== null,
                 total_etapas: etapaActual?.nroEtapa || 1,
                 alertas: activeAlerts.filter((a: any) => a.referenciaId === m.id),
-                actionsAvailable
+                actionsAvailable,
+                dias_estimados: m.diasEstimados
             };
         });
 
@@ -1528,6 +1552,17 @@ export class MareasService {
             throw new Error('No se encontró un estado inicial configurado para las mareas.');
         }
 
+        // Validate observer impairment
+        if (observadorId) {
+            const obs = await this.prisma.observador.findUnique({
+                where: { id: observadorId },
+                select: { conImpedimento: true, motivoImpedimento: true }
+            });
+            if (obs?.conImpedimento) {
+                throw new BadRequestException(`El observador seleccionado posee un impedimento activo: ${obs.motivoImpedimento || 'Sin motivo especificado'}.`);
+            }
+        }
+
         return this.prisma.$transaction(async (tx) => {
             const marea = await tx.marea.create({
                 data: {
@@ -1623,8 +1658,8 @@ export class MareasService {
                 tipo: 'FATIGA',
                 titulo: 'Fatiga Crítica Detectada',
                 descripcion: `El observador ${f.name} ha navegado ${f.days} días en el año.`,
-                estado: 'PENDIENTE',
-                prioridad: 'ALTA'
+                estado: AlertaEstado.PENDIENTE,
+                prioridad: AlertaPrioridad.ALTA
             });
         }
 
@@ -1637,8 +1672,8 @@ export class MareasService {
                 tipo: 'RETRASO_DATOS',
                 titulo: 'Retraso en Entrega de Datos',
                 descripcion: `Marea ${d.mareaId} (${d.vesselName}) - ${d.days} días de demora.`,
-                estado: 'PENDIENTE',
-                prioridad: 'ALTA'
+                estado: AlertaEstado.PENDIENTE,
+                prioridad: AlertaPrioridad.URGENTE
             });
         }
 
@@ -1651,8 +1686,8 @@ export class MareasService {
                 tipo: 'RETRASO_INFORME',
                 titulo: 'Informe Demorado',
                 descripcion: `Marea ${d.mareaId} (${d.vesselName}) - ${d.days} días desde recepción.`,
-                estado: 'PENDIENTE',
-                prioridad: 'MEDIA'
+                estado: AlertaEstado.PENDIENTE,
+                prioridad: AlertaPrioridad.MEDIA
             });
         }
     }
@@ -1673,7 +1708,7 @@ export class MareasService {
         for (const alerta of vencidas) {
             await this.prisma.alerta.update({
                 where: { id: alerta.id },
-                data: { estado: 'VENCIDA' }
+                data: { estado: AlertaEstado.VENCIDA }
             });
             await this.alertsService.logEvent(
                 alerta.id,
