@@ -194,6 +194,7 @@ model Observador {
   motivoImpedimento          String?                @map("motivo_impedimento")
   etapas                     MareaEtapaObservador[]
   pesquerias                 ObservadorPesqueria[]
+  mareasAsignadas            Marea[]                @relation("ObservadorPrincipal")
 
   @@map("observadores")
 }
@@ -224,6 +225,7 @@ model Marea {
   nroMarea                 Int               @map("nro_marea")
   buqueId                  String            @map("id_buque") @db.Uuid
   artePrincipalId          String?           @map("id_arte_principal") @db.Uuid
+  observadorPrincipalId    String?           @map("id_observador_principal") @db.Uuid
   estadoActualId           String            @map("id_estado_actual") @db.Uuid
   fechaZarpadaEstimada     DateTime?         @map("fecha_zarpada_estimada") @db.Timestamptz(6)
   fechaInicioObservador    DateTime?         @map("fecha_inicio_observador") @db.Timestamptz(6)
@@ -240,6 +242,7 @@ model Marea {
   tipoMarea                String            @default("MC") @map("tipo_marea")
   diasEstimados            Int?              @map("dias_estimados")
   artePrincipal            ArtePesca?        @relation(fields: [artePrincipalId], references: [id])
+  observadorPrincipal      Observador?       @relation("ObservadorPrincipal", fields: [observadorPrincipalId], references: [id])
   buque                    Buque             @relation(fields: [buqueId], references: [id])
   estadoActual             EstadoMarea       @relation(fields: [estadoActualId], references: [id])
   archivos                 MareaArchivo[]

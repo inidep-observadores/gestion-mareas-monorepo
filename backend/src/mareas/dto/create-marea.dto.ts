@@ -21,8 +21,8 @@ export class CreateMareaDto {
     pesqueriaId: string;
 
     @IsUUID()
-    @IsOptional()
-    observadorId?: string;
+    @IsNotEmpty()
+    observadorId: string;
 
     @IsUUID()
     @IsOptional()
