@@ -42,6 +42,7 @@ async function main() {
     const prisma = new PrismaClient({ adapter });
 
     try {
+        // Obtenemos las mareas que tengan etapa 1 y observador principal
         const mareas = await prisma.marea.findMany({
             include: {
                 etapas: {
@@ -79,7 +80,8 @@ async function main() {
                     continue;
                 }
 
-                await prisma.marea.update({
+                // Usamos cast a 'any' para evitar errores de tipos en el IDE si el cliente Prisma no está actualizado localmente
+                await (prisma.marea.update as any)({
                     where: { id: marea.id },
                     data: {
                         observadorPrincipalId: observadorPrincipal.observadorId

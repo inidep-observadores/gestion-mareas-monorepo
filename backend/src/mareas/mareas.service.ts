@@ -80,12 +80,12 @@ export class MareasService {
         // Validar impedimentos si cambia el observador principal
         const targetObsId = observadorPrincipalId || observadorId;
         if (targetObsId) {
-            const currentMarea = await this.prisma.marea.findUnique({
+            const currentMarea = await (this.prisma as any).marea.findUnique({
                 where: { id },
                 select: { observadorPrincipalId: true }
             });
 
-            if (currentMarea && targetObsId !== currentMarea.observadorPrincipalId) {
+            if (currentMarea && targetObsId !== (currentMarea as any).observadorPrincipalId) {
                 const obs = await this.prisma.observador.findUnique({
                     where: { id: targetObsId },
                     select: { conImpedimento: true, motivoImpedimento: true }
@@ -189,12 +189,15 @@ export class MareasService {
         const startOfNextYear = new Date(operationalYear + 1, 0, 1);
 
         // Regla unificada:
-        // - incluir todas las no protocolizadas, excepto las canceladas
+        // - incluir no terminadas (no protocolizadas ni canceladas) solo si el anio_marea es igual o 1 anterior al operativo
         // - incluir protocolizadas solo del anio seleccionado
         // - incluir canceladas solo si la fecha de fin del observador cae en el anio seleccionado
         const mareaYearFilter = {
             OR: [
-                { estadoActual: { codigo: { notIn: [MareaEstado.PROTOCOLIZADA, MareaEstado.CANCELADA] } } },
+                {
+                    estadoActual: { codigo: { notIn: [MareaEstado.PROTOCOLIZADA, MareaEstado.CANCELADA] } },
+                    anioMarea: { in: [operationalYear, operationalYear - 1] }
+                },
                 {
                     estadoActual: { codigo: MareaEstado.PROTOCOLIZADA },
                     anioProtocolizacion: operationalYear
@@ -215,11 +218,11 @@ export class MareasService {
     async getDashboardOperativo(year?: number) {
         const { mareaYearFilter } = this.buildMareaYearFilter(year);
         const [estados, transiciones] = await Promise.all([
-            (this.prisma as any).estadoMarea.findMany({
+            this.prisma.estadoMarea.findMany({
                 where: { activo: true, mostrarEnPanel: true },
                 orderBy: { orden: 'asc' }
             }),
-            (this.prisma as any).transicionEstado.findMany({
+            this.prisma.transicionEstado.findMany({
                 where: { activo: true }
             })
         ]);
@@ -227,7 +230,7 @@ export class MareasService {
         const kpisRaw = await Promise.all(
             estados.map(async (e) => ({
                 label: e.nombre,
-                value: await (this.prisma as any).marea.count({
+                value: await this.prisma.marea.count({
                     where: { estadoActualId: e.id, activo: true, ...mareaYearFilter }
                 }),
                 codigo: e.codigo
@@ -269,7 +272,7 @@ export class MareasService {
                         }
                     }
                 }
-            },
+            } as any,
             take: 50
         });
 
@@ -441,7 +444,7 @@ export class MareasService {
         // Use strictly Active states (Designated + Navigating) to match Command Center KPIs
         const activeStates = [MareaEstado.DESIGNADA, ...this.ESTADOS_NAVEGANDO];
 
-        const activeMareas = await this.prisma.marea.findMany({
+        const activeMareas = await (this.prisma as any).marea.findMany({
             where: {
                 activo: true,
                 ...mareaYearFilter,
@@ -464,12 +467,12 @@ export class MareasService {
                         pesqueria: true
                     }
                 }
-            }
+            } as any
         });
 
         const distributionMap = new Map<string, { count: number; vessels: Map<string, { mareaCode: string; status: string }> }>();
 
-        activeMareas.forEach((marea) => {
+        activeMareas.forEach((marea: any) => {
             const label = marea.etapas[0]?.pesqueria?.nombre ?? 'Sin pesquería';
             const vesselName = marea.buque.nombreBuque;
             const mareaCode = `${marea.tipoMarea}-${String(marea.nroMarea).padStart(3, '0')}-${String(marea.anioMarea).slice(-2)}`;
@@ -505,7 +508,7 @@ export class MareasService {
         const now = new Date();
         const limit = this.rules.PLAZO_ENTREGA_DATOS;
 
-        const mareas = await (this.prisma as any).marea.findMany({
+        const mareas = await this.prisma.marea.findMany({
             where: {
                 activo: true,
                 ...mareaYearFilter,
@@ -597,7 +600,7 @@ export class MareasService {
                     orderBy: { fechaHora: 'asc' }, // Primer recepción
                     take: 1
                 }
-            }
+            } as any
         });
 
         const delays: any[] = [];
@@ -665,7 +668,7 @@ export class MareasService {
                         }
                     }
                 }
-            }
+            } as any
         });
 
         const events: any[] = [];
@@ -792,7 +795,7 @@ export class MareasService {
         const periodStart = new Date(operationalYear, 0, 1, 0, 0, 0, 0);
         const periodEnd = new Date(operationalYear, 11, 31, 23, 59, 59, 999);
 
-        const etapas = await this.prisma.mareaEtapa.findMany({
+        const etapas = await (this.prisma as any).mareaEtapa.findMany({
             where: {
                 marea: {
                     activo: true
@@ -814,7 +817,7 @@ export class MareasService {
                 observadores: {
                     include: { observador: true }
                 }
-            }
+            } as any
         });
 
         const now = new Date();
@@ -931,7 +934,7 @@ export class MareasService {
         });
 
         // Etapas del año operativo (incluye las que cruzan año)
-        const etapas = await this.prisma.mareaEtapa.findMany({
+        const etapas = await (this.prisma as any).mareaEtapa.findMany({
             where: {
                 marea: { activo: true, ...mareaYearFilter },
                 fechaZarpada: { not: null }
@@ -943,14 +946,14 @@ export class MareasService {
                 observadores: {
                     include: { observador: true }
                 }
-            }
+            } as any
         });
 
         const activeNav = new Map<string, { start: Date; vessel: string }>();
         const lastArrivalByObs = new Map<string, Date>();
         const obsConMareas = new Set<string>();
 
-        etapas.forEach((etapa) => {
+        etapas.forEach((etapa: any) => {
             const inicio = etapa.fechaZarpada ? new Date(etapa.fechaZarpada) : null;
             if (!inicio) return;
             const finRaw = etapa.fechaArribo ? new Date(etapa.fechaArribo) : null;
@@ -979,7 +982,7 @@ export class MareasService {
                 }
             };
 
-            etapa.observadores.forEach((o) => processObs(o.observador));
+            etapa.observadores.forEach((o: any) => processObs(o.observador));
             if (etapa.marea.observadorPrincipal) processObs(etapa.marea.observadorPrincipal);
         });
 
@@ -1103,7 +1106,7 @@ export class MareasService {
 
     async getMareaContext(id: string) {
         const [marea, transiciones, activeAlerts] = (await Promise.all([
-            this.prisma.marea.findUnique({
+            (this.prisma as any).marea.findUnique({
                 where: { id },
                 include: {
                     buque: true,
@@ -1127,7 +1130,7 @@ export class MareasService {
                             usuario: true
                         }
                     }
-                }
+                } as any
             }),
             this.prisma.transicionEstado.findMany({
                 where: { activo: true }
@@ -1278,7 +1281,7 @@ export class MareasService {
             orConditions.push({ nroMarea: parseInt(query) });
         }
 
-        const mareas = await this.prisma.marea.findMany({
+        const mareas = await (this.prisma as any).marea.findMany({
             where: {
                 OR: orConditions,
                 activo: true
@@ -1294,11 +1297,11 @@ export class MareasService {
                         }
                     }
                 }
-            },
+            } as any,
             take: 10
         });
 
-        return mareas.map(m => {
+        return mareas.map((m: any) => {
             const principalObs = m.observadorPrincipal;
             const obsText = principalObs ? ` • ${principalObs.nombre} ${principalObs.apellido}` : '';
 
@@ -1565,7 +1568,7 @@ export class MareasService {
         }
 
         return this.prisma.$transaction(async (tx) => {
-            const marea = await tx.marea.create({
+            const marea = await (tx as any).marea.create({
                 data: {
                     anioMarea,
                     nroMarea,
@@ -1730,7 +1733,7 @@ export class MareasService {
         }));
 
         // 2. Obtener Mareas para las Pestañas
-        const allMareas = await this.prisma.marea.findMany({
+        const allMareas = await (this.prisma as any).marea.findMany({
             where: {
                 activo: true,
                 ...mareaYearFilter,
@@ -1753,7 +1756,7 @@ export class MareasService {
                     orderBy: { fechaHora: 'desc' },
                     take: 1
                 }
-            },
+            } as any,
             orderBy: {
                 fechaUltimaActualizacion: 'desc'
             }
@@ -1767,7 +1770,7 @@ export class MareasService {
         ]);
         const now = new Date();
 
-        const tasks: any[] = allMareas.map(m => {
+        const tasks: any[] = allMareas.map((m: any) => {
             const etapaActual = m.etapas[0];
             const primaryObs = m.observadorPrincipal || etapaActual?.observadores[0]?.observador;
             const mareaIdFormatted = this.formatMareaId(m);
@@ -1779,7 +1782,7 @@ export class MareasService {
             // Lógica de clasificación por pestañas y prioridad
             const cod = m.estadoActual.codigo;
 
-            const hasReportDelay = persistentAlerts.some(a =>
+            const hasReportDelay = persistentAlerts.some((a: any) =>
                 a.tipo === 'RETRASO_INFORME' &&
                 (a.referenciaId === m.id || a.descripcion?.includes(mareaIdFormatted))
             );
