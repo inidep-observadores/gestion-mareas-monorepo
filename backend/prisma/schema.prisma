@@ -580,6 +580,7 @@ model Alerta {
   fechaCierre         DateTime?      @map("fecha_cierre") @db.Timestamptz(6)
   asignadoId          String?        @map("asignado_id") @db.Uuid
   creadoPorId         String?        @map("creado_por_id") @db.Uuid
+  visible             Boolean        @default(true)
   ultimaActualizacion DateTime       @updatedAt @map("ultima_actualizacion") @db.Timestamptz(6)
   asignadoA           User?          @relation("AlertaAsignado", fields: [asignadoId], references: [id])
   creadoPor           User?          @relation("AlertaCreadoPor", fields: [creadoPorId], references: [id])

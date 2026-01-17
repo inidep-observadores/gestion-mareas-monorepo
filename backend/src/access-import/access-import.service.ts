@@ -270,6 +270,7 @@ export class AccessImportService {
             descripcion: descripcion,
             estado: estado,
             prioridad: AlertaPrioridad.MEDIA,
+            visible: tipoHallazgo !== 'SINCRONIZADO',
             metadata: {
                 idExterno: record.Id,
                 source: 'ACCESS_IMPORT',

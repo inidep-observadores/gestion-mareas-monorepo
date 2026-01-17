@@ -356,6 +356,7 @@ import {
 
 const props = defineProps<{
   show: boolean
+  initFromAlert?: boolean
 }>()
 
 const emit = defineEmits(['close', 'success'])
@@ -419,10 +420,12 @@ const pesqueriaOptions = computed(() => {
 })
 
 const observadorOptions = computed(() => {
-  return observadores.value.map(o => ({
-    value: o.id,
-    label: `${o.apellido}, ${o.nombre}`
-  }))
+  return observadores.value
+    .filter(o => !o.conImpedimento)
+    .map(o => ({
+      value: o.id,
+      label: `${o.apellido}, ${o.nombre}`
+    }))
 })
 
 const arteOptions = computed(() => {
@@ -455,7 +458,7 @@ onMounted(async () => {
     puertos.value = pu
 
     // Check for workflow data (pre-fill from alert)
-    if (workflowStore.activeAlertData) {
+    if (props.initFromAlert && workflowStore.activeAlertData) {
       prefillFromAlert(workflowStore.activeAlertData)
     }
 
@@ -475,7 +478,7 @@ watch(() => props.show, (newVal) => {
         form.value = getInitialForm()
         currentStep.value = 1
         fieldErrors.value = {}
-        if (workflowStore.activeAlertData) {
+        if (props.initFromAlert && workflowStore.activeAlertData) {
             prefillFromAlert(workflowStore.activeAlertData)
         }
         nextTick(() => {

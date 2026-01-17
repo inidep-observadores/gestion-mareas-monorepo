@@ -40,10 +40,11 @@ export interface Alerta {
     eventos?: AlertEvent[]
     notaGestion?: string
     asignadoA?: { fullName: string; avatarUrl?: string }
+    visible: boolean
 }
 
 export const alertsService = {
-    getAll: async (params: { refId?: string; status?: string; userId?: string }): Promise<Alerta[]> => {
+    getAll: async (params: { refId?: string; status?: string; userId?: string; showHidden?: boolean }): Promise<Alerta[]> => {
         const { data } = await httpClient.get<Alerta[]>('/alerts', { params })
         return data
     },

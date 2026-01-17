@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { BusinessRulesService } from '../common/business-rules/business-rules.service';
 import { User } from '@prisma/client';
@@ -76,6 +76,25 @@ export class MareasService {
 
     async update(id: string, updateMareaDto: UpdateMareaDto) {
         const { etapas, artePrincipalId, arteId, pesqueriaId, observadorId, ...data } = updateMareaDto;
+
+        // Validate observer impairment on update if it's a NEW observer
+        if (observadorId) {
+            const currentMarea = await this.prisma.marea.findUnique({
+                where: { id },
+                include: { etapas: { orderBy: { nroEtapa: 'desc' }, take: 1, include: { observadores: true } } }
+            });
+            const currentObsId = currentMarea?.etapas[0]?.observadores.find(o => o.rol === 'PRINCIPAL')?.observadorId;
+
+            if (observadorId !== currentObsId) {
+                const obs = await this.prisma.observador.findUnique({
+                    where: { id: observadorId },
+                    select: { conImpedimento: true, motivoImpedimento: true }
+                });
+                if (obs?.conImpedimento) {
+                    throw new BadRequestException(`No se puede asignar el observador seleccionado porque posee un impedimento activo: ${obs.motivoImpedimento || 'Sin motivo especificado'}.`);
+                }
+            }
+        }
 
         await this.prisma.$transaction(async (tx) => {
             const updateData: any = { ...data };
@@ -1527,6 +1546,17 @@ export class MareasService {
 
         if (!estadoInicial) {
             throw new Error('No se encontró un estado inicial configurado para las mareas.');
+        }
+
+        // Validate observer impairment
+        if (observadorId) {
+            const obs = await this.prisma.observador.findUnique({
+                where: { id: observadorId },
+                select: { conImpedimento: true, motivoImpedimento: true }
+            });
+            if (obs?.conImpedimento) {
+                throw new BadRequestException(`El observador seleccionado posee un impedimento activo: ${obs.motivoImpedimento || 'Sin motivo especificado'}.`);
+            }
         }
 
         return this.prisma.$transaction(async (tx) => {

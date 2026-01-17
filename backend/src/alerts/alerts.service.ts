@@ -55,8 +55,13 @@ export class AlertsService {
     }
 
     async findAll(query: any) {
-        const { refId, status, userId } = query;
+        const { refId, status, userId, showHidden } = query;
         const where: any = {};
+
+        // Filter by visibility by default
+        if (showHidden !== 'true') {
+            where.visible = true;
+        }
 
         if (refId) where.referenciaId = refId;
         if (status) where.estado = status;

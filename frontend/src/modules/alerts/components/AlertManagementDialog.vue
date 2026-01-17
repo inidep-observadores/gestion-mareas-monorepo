@@ -247,6 +247,7 @@
   <!-- Smart Action: Registro de Nueva Marea -->
   <NuevaMareaDialog
     :show="showNuevaMareaDialog"
+    :init-from-alert="true"
     @close="showNuevaMareaDialog = false"
     @success="handleMareaSuccess"
   />

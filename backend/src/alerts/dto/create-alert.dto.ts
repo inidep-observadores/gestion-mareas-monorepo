@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsUUID, IsNotEmpty, IsObject, IsEnum } from 'class-validator';
+import { IsString, IsOptional, IsUUID, IsNotEmpty, IsObject, IsEnum, IsBoolean } from 'class-validator';
 import { AlertaEstado, AlertaPrioridad } from '../alerts.enums';
 
 export class CreateAlertDto {
@@ -44,4 +44,8 @@ export class CreateAlertDto {
     @IsUUID()
     @IsOptional()
     asignadoId?: string;
+
+    @IsOptional()
+    @IsBoolean()
+    visible?: boolean;
 }
