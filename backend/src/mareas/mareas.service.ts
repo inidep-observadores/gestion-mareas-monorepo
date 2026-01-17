@@ -75,23 +75,23 @@ export class MareasService {
     }
 
     async update(id: string, updateMareaDto: UpdateMareaDto) {
-        const { etapas, artePrincipalId, arteId, pesqueriaId, observadorId, ...data } = updateMareaDto;
+        const { etapas, artePrincipalId, arteId, pesqueriaId, observadorId, observadorPrincipalId, ...data } = updateMareaDto;
 
-        // Validate observer impairment on update if it's a NEW observer
-        if (observadorId) {
+        // Validar impedimentos si cambia el observador principal
+        const targetObsId = observadorPrincipalId || observadorId;
+        if (targetObsId) {
             const currentMarea = await this.prisma.marea.findUnique({
                 where: { id },
-                include: { etapas: { orderBy: { nroEtapa: 'desc' }, take: 1, include: { observadores: true } } }
+                select: { observadorPrincipalId: true }
             });
-            const currentObsId = currentMarea?.etapas[0]?.observadores.find(o => o.rol === 'PRINCIPAL')?.observadorId;
 
-            if (observadorId !== currentObsId) {
+            if (currentMarea && targetObsId !== currentMarea.observadorPrincipalId) {
                 const obs = await this.prisma.observador.findUnique({
-                    where: { id: observadorId },
+                    where: { id: targetObsId },
                     select: { conImpedimento: true, motivoImpedimento: true }
                 });
                 if (obs?.conImpedimento) {
-                    throw new BadRequestException(`No se puede asignar el observador seleccionado porque posee un impedimento activo: ${obs.motivoImpedimento || 'Sin motivo especificado'}.`);
+                    throw new BadRequestException(`No se puede asignar el observador porque posee un impedimento: ${obs.motivoImpedimento || 'Sin motivo'}.`);
                 }
             }
         }
@@ -104,6 +104,8 @@ export class MareasService {
             if (updateData.fechaInicioObservador) updateData.fechaInicioObservador = new Date(updateData.fechaInicioObservador);
             if (updateData.fechaFinObservador) updateData.fechaFinObservador = new Date(updateData.fechaFinObservador);
             if (updateData.fechaProtocolizacion) updateData.fechaProtocolizacion = new Date(updateData.fechaProtocolizacion);
+
+            if (observadorPrincipalId) updateData.observadorPrincipalId = observadorPrincipalId;
 
             if (Object.keys(updateData).length > 0) {
                 await tx.marea.update({
@@ -253,6 +255,7 @@ export class MareasService {
                 fechaInicioObservador: true,
                 fechaFinObservador: true,
                 buque: true,
+                observadorPrincipal: true,
                 estadoActual: true,
                 etapas: {
                     orderBy: { nroEtapa: 'desc' },
@@ -262,9 +265,7 @@ export class MareasService {
                         puertoArribo: true,
                         pesqueria: true,
                         observadores: {
-                            where: { rol: 'PRINCIPAL' },
                             include: { observador: true },
-                            take: 1
                         }
                     }
                 }
@@ -283,7 +284,7 @@ export class MareasService {
 
         const items = mareas.map((m: any) => {
             const etapaActual = m.etapas[0] || null;
-            const primaryObs = etapaActual?.observadores[0]?.observador || null;
+            const primaryObs = m.observadorPrincipal || etapaActual?.observadores[0]?.observador || null;
             const allowedTransitions = transiciones.filter(t => t.estadoOrigenId === m.estadoActualId);
 
             const actionsAvailable: Record<string, any> = {};
@@ -455,6 +456,7 @@ export class MareasService {
                         nombreBuque: true
                     }
                 },
+                observadorPrincipal: true,
                 etapas: {
                     orderBy: { nroEtapa: 'desc' },
                     take: 1,
@@ -537,7 +539,7 @@ export class MareasService {
                 const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
 
                 if (diffDays > limit) {
-                    const primaryObs = lastStage.observadores[0]?.observador;
+                    const primaryObs = m.observadorPrincipal || lastStage.observadores[0]?.observador;
                     delays.push({
                         id: m.id,
                         mareaId: this.formatMareaId(m),
@@ -578,12 +580,12 @@ export class MareasService {
             },
             include: {
                 buque: true,
+                observadorPrincipal: true,
                 etapas: {
                     orderBy: { nroEtapa: 'desc' },
                     take: 1,
                     include: {
                         observadores: {
-                            where: { rol: 'PRINCIPAL' },
                             include: { observador: true }
                         }
                     }
@@ -618,7 +620,7 @@ export class MareasService {
 
                 if (diffDays > limit) {
                     const lastStage = m.etapas[0];
-                    const primaryObs = lastStage?.observadores[0]?.observador;
+                    const primaryObs = m.observadorPrincipal || lastStage?.observadores[0]?.observador;
 
                     delays.push({
                         id: m.id,
@@ -644,6 +646,7 @@ export class MareasService {
             },
             include: {
                 buque: true,
+                observadorPrincipal: true,
                 estadoActual: true,
                 etapas: {
                     orderBy: { nroEtapa: 'asc' },
@@ -651,7 +654,6 @@ export class MareasService {
                         puertoZarpada: true,
                         puertoArribo: true,
                         observadores: {
-                            where: { rol: 'PRINCIPAL' },
                             include: { observador: true }
                         }
                     }
@@ -671,7 +673,8 @@ export class MareasService {
         mareas.forEach((m: any) => {
             const mareaCode = this.formatMareaId(m);
             const buque = m.buque.nombreBuque;
-            const obs = m.etapas[0]?.observadores[0]?.observador?.apellido || 'Sin Asignar';
+            const primaryObs = m.observadorPrincipal || m.etapas[0]?.observadores[0]?.observador;
+            const obs = primaryObs?.apellido || 'Sin Asignar';
             const commonProps = {
                 mareaId: m.id,
                 vesselName: buque,
@@ -806,7 +809,7 @@ export class MareasService {
             },
             include: {
                 marea: {
-                    include: { buque: true, estadoActual: true }
+                    include: { buque: true, estadoActual: true, observadorPrincipal: true }
                 },
                 observadores: {
                     include: { observador: true }
@@ -846,28 +849,13 @@ export class MareasService {
 
             etapa.observadores.forEach((o: any) => {
                 if (!o.observador?.activo) return;
-
-                if (!observerDataMap.has(o.observadorId)) {
-                    observerDataMap.set(o.observadorId, {
-                        nombre: `${o.observador.nombre} ${o.observador.apellido}`,
-                        mareaGroups: new Map()
-                    });
-                }
-
-                const obsData = observerDataMap.get(o.observadorId)!;
-                if (!obsData.mareaGroups.has(m.id)) {
-                    obsData.mareaGroups.set(m.id, {
-                        mareaCode,
-                        nroMarea: m.nroMarea,
-                        vessel,
-                        inExecution: this.ESTADOS_NAVEGANDO.includes(m.estadoActual?.codigo || ''),
-                        stages: []
-                    });
-                }
-
-                const group = obsData.mareaGroups.get(m.id)!;
-                group.stages.push({ inicio: clampedInicio, fin: clampedFin });
+                this.addObserverToMap(observerDataMap, o.observador, m, mareaCode, vessel, clampedInicio, clampedFin);
             });
+
+            // Also check Marea.observadorPrincipal
+            if (m.observadorPrincipal && m.observadorPrincipal.activo) {
+                this.addObserverToMap(observerDataMap, m.observadorPrincipal, m, mareaCode, vessel, clampedInicio, clampedFin);
+            }
         });
 
         const alerts: Array<{
@@ -950,7 +938,7 @@ export class MareasService {
             },
             include: {
                 marea: {
-                    include: { estadoActual: true, buque: true }
+                    include: { estadoActual: true, buque: true, observadorPrincipal: true }
                 },
                 observadores: {
                     include: { observador: true }
@@ -969,16 +957,14 @@ export class MareasService {
             const fin = finRaw || now;
             if (fin < periodStart) return;
 
-            etapa.observadores.forEach((o) => {
-                const obs = o.observador;
+            // Helper to process observer logic
+            const processObs = (obs: any) => {
                 if (!obs?.activo) return;
 
                 obsConMareas.add(obs.id);
 
                 const isNavigating = this.ESTADOS_NAVEGANDO.includes(etapa.marea.estadoActual?.codigo as MareaEstado);
                 if (isNavigating) {
-                    // Si ya existe (ej: múltiples etapas activas?? poco probable), nos quedamos con la mas antigua o la actual?
-                    // Asumimos 1 marea activa por obs.
                     activeNav.set(obs.id, {
                         start: inicio,
                         vessel: etapa.marea.buque.nombreBuque
@@ -991,7 +977,10 @@ export class MareasService {
                         lastArrivalByObs.set(obs.id, finRaw);
                     }
                 }
-            });
+            };
+
+            etapa.observadores.forEach((o) => processObs(o.observador));
+            if (etapa.marea.observadorPrincipal) processObs(etapa.marea.observadorPrincipal);
         });
 
         const listDescanso: Array<{ id: string; name: string; days: number; lastArrival: string }> = [];
@@ -1118,6 +1107,7 @@ export class MareasService {
                 where: { id },
                 include: {
                     buque: true,
+                    observadorPrincipal: true,
                     estadoActual: true,
                     etapas: {
                         orderBy: { nroEtapa: 'desc' },
@@ -1153,7 +1143,7 @@ export class MareasService {
         if (!marea) return null;
 
         const etapaActual = marea.etapas[0] || null;
-        const mainObs = etapaActual?.observadores.find((o: any) => o.rol === 'PRINCIPAL')?.observador || null;
+        const mainObs = marea.observadorPrincipal || null;
 
         const allowedTransitions = transiciones.filter(t => t.estadoOrigenId === marea.estadoActualId);
         const actions: Record<string, any> = {};
@@ -1255,6 +1245,16 @@ export class MareasService {
         const orConditions: any[] = [
             { buque: { nombreBuque: { contains: query, mode: 'insensitive' } } },
             {
+                observadorPrincipal: {
+                    AND: queryParts.map(part => ({
+                        OR: [
+                            { nombre: { contains: part, mode: 'insensitive' } },
+                            { apellido: { contains: part, mode: 'insensitive' } }
+                        ]
+                    }))
+                }
+            },
+            {
                 etapas: {
                     some: {
                         observadores: {
@@ -1286,6 +1286,7 @@ export class MareasService {
             include: {
                 buque: true,
                 estadoActual: true,
+                observadorPrincipal: true,
                 etapas: {
                     include: {
                         observadores: {
@@ -1298,7 +1299,7 @@ export class MareasService {
         });
 
         return mareas.map(m => {
-            const principalObs = m.etapas[0]?.observadores.find((o: any) => o.rol === 'PRINCIPAL')?.observador;
+            const principalObs = m.observadorPrincipal;
             const obsText = principalObs ? ` • ${principalObs.nombre} ${principalObs.apellido}` : '';
 
             return {
@@ -1354,28 +1355,7 @@ export class MareasService {
                     }
                 });
 
-                // Copy observers from first stage to new ones
-                const firstStage = await tx.mareaEtapa.findFirst({
-                    where: { mareaId: mareaId },
-                    orderBy: { nroEtapa: 'asc' }
-                });
-
-                if (firstStage && firstStage.id !== newStage.id) {
-                    const observersToCopy = await tx.mareaEtapaObservador.findMany({
-                        where: { etapaId: firstStage.id }
-                    });
-
-                    for (const obsRel of observersToCopy) {
-                        await tx.mareaEtapaObservador.create({
-                            data: {
-                                etapaId: newStage.id,
-                                observadorId: obsRel.observadorId,
-                                rol: obsRel.rol,
-                                esDesignado: obsRel.esDesignado
-                            }
-                        });
-                    }
-                }
+                // Do not copy observers automatically. Principal is at Marea level.
             }
         }
     }
@@ -1472,6 +1452,27 @@ export class MareasService {
                 if (!fechaIn) throw new Error('La fecha de inicio del observador es requerida.');
 
                 additionalMareaData.fechaInicioObservador = new Date(fechaIn);
+
+                // Check and create Stage 1 if it doesn't exist
+                const existingStages = await tx.mareaEtapa.count({ where: { mareaId: id } });
+                if (existingStages === 0) {
+                    const buque = await tx.buque.findUnique({
+                        where: { id: marea.buqueId },
+                        select: { puertoBaseId: true }
+                    });
+
+                    await tx.mareaEtapa.create({
+                        data: {
+                            mareaId: id,
+                            nroEtapa: 1,
+                            pesqueriaId: marea.artePrincipalId ? undefined : payload.pesqueriaId, // Try to infer or use default? Payload might not have it.
+                            puertoZarpadaId: payload.puertoId || buque?.puertoBaseId, // Use payload puerto if available (Zarpada)
+                            tipoEtapa: marea.tipoMarea === 'CI' ? 'INSTITUCIONAL' : 'COMERCIAL',
+                            fechaZarpada: new Date(fechaIn),
+                            // No observer assignment here (implicit in Marea)
+                        }
+                    });
+                }
 
                 if (payload.etapas) {
                     await this.syncStages(tx, id, payload.etapas);
@@ -1572,6 +1573,7 @@ export class MareasService {
                     estadoActualId: estadoInicial.id,
                     tipoMarea,
                     artePrincipalId: arteId,
+                    observadorPrincipalId: observadorId,
                     fechaZarpadaEstimada: fechaZarpadaEstimada ? new Date(fechaZarpadaEstimada) : null,
                     diasEstimados,
                 }
@@ -1588,32 +1590,8 @@ export class MareasService {
                 }
             });
 
-            const buque = await tx.buque.findUnique({
-                where: { id: buqueId },
-                select: { puertoBaseId: true }
-            });
-
-            const etapa = await tx.mareaEtapa.create({
-                data: {
-                    mareaId: marea.id,
-                    nroEtapa: 1,
-                    pesqueriaId,
-                    puertoZarpadaId: buque?.puertoBaseId || null,
-                    tipoEtapa: tipoMarea === 'CI' ? 'INSTITUCIONAL' : 'COMERCIAL',
-                    fechaZarpada: fechaZarpadaEstimada ? new Date(fechaZarpadaEstimada) : null,
-                }
-            });
-
-            if (observadorId) {
-                await (tx as any).mareaEtapaObservador.create({
-                    data: {
-                        etapaId: etapa.id,
-                        observadorId,
-                        rol: 'PRINCIPAL',
-                        esDesignado: true
-                    }
-                });
-            }
+            // NO creamos etapa ficticia. El observador está asignado a la marea.
+            // La etapa 1 se creará al Registrar Inicio (Zarpar).
 
             return marea;
         });
@@ -1759,13 +1737,13 @@ export class MareasService {
             },
             include: {
                 buque: true,
+                observadorPrincipal: true,
                 estadoActual: true,
                 etapas: {
                     orderBy: { nroEtapa: 'desc' },
                     take: 1,
                     include: {
                         observadores: {
-                            where: { rol: 'PRINCIPAL' },
                             include: { observador: true }
                         }
                     }
@@ -1791,7 +1769,7 @@ export class MareasService {
 
         const tasks: any[] = allMareas.map(m => {
             const etapaActual = m.etapas[0];
-            const primaryObs = etapaActual?.observadores[0]?.observador;
+            const primaryObs = m.observadorPrincipal || etapaActual?.observadores[0]?.observador;
             const mareaIdFormatted = this.formatMareaId(m);
             const observadorNombre = primaryObs ? `${primaryObs.nombre} ${primaryObs.apellido}` : null;
 
@@ -1857,6 +1835,29 @@ export class MareasService {
             return parts[parts.length - 1].trim() || null;
         }
         return detalle.trim() || null;
+    }
+
+    private addObserverToMap(map: Map<any, any>, obs: any, m: any, mareaCode: string, vessel: string, inicio: Date, fin: Date) {
+        if (!map.has(obs.id)) {
+            map.set(obs.id, {
+                nombre: `${obs.nombre} ${obs.apellido}`,
+                mareaGroups: new Map()
+            });
+        }
+
+        const obsData = map.get(obs.id)!;
+        if (!obsData.mareaGroups.has(m.id)) {
+            obsData.mareaGroups.set(m.id, {
+                mareaCode,
+                nroMarea: m.nroMarea,
+                vessel,
+                inExecution: this.ESTADOS_NAVEGANDO.includes(m.estadoActual?.codigo || ''),
+                stages: []
+            });
+        }
+
+        const group = obsData.mareaGroups.get(m.id)!;
+        group.stages.push({ inicio, fin });
     }
 
 }

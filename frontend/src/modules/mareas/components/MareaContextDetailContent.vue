@@ -15,7 +15,7 @@
            </span>
         </div>
       </div>
-      <button 
+      <button
         @click="$emit('close')"
         class="p-2 hover:bg-surface-muted rounded-xl transition-all text-text-muted hover:text-text"
       >
@@ -53,7 +53,7 @@
               <span class="text-xs font-black text-primary">{{ currentMarea.progreso }}%</span>
             </div>
             <div class="h-2 w-full bg-surface-muted rounded-full overflow-hidden border border-border">
-              <div 
+              <div
                 class="h-full transition-all duration-1000 ease-out"
                 :class="currentMarea.progreso > 100 ? 'bg-error' : 'bg-primary'"
                 :style="{ width: currentMarea.progreso + '%' }"
@@ -87,7 +87,7 @@
               {{ countEtapas }} {{ countEtapas === 1 ? 'Etapa' : 'Etapas' }}
             </span>
           </div>
-          
+
           <div class="bg-primary/5 border border-primary/20 rounded-2xl p-5 space-y-4 relative overflow-hidden">
             <!-- Indicador En Tierra -->
             <div v-if="isEnTierra" class="absolute top-0 right-0 px-3 py-1 bg-success/10 text-success text-[10px] font-black uppercase tracking-tighter rounded-bl-xl border-l border-b border-success/20 z-10 flex items-center gap-1.5">
@@ -116,7 +116,7 @@
                 <MapPinIcon class="w-4 h-4" />
               </div>
               <div class="flex-1 min-w-0">
-                <p class="text-[9px] font-bold text-primary uppercase tracking-widest mb-0.5">Arribo Final</p>
+                <p class="text-[9px] font-bold text-primary uppercase tracking-widest mb-0.5">Arribo</p>
                 <p class="text-sm font-black text-text truncate">
                   {{ formatDate(finalArribo.fechaArribo) }} <span class="mx-1 text-primary/60">en</span> {{ finalArribo.puertoArriboNombre }}
                 </p>
@@ -136,13 +136,13 @@
               :key="key"
               @click="onAction(key)"
               class="group relative flex items-center justify-between p-4 rounded-2xl border transition-all duration-300"
-              :class="action.enabled 
-                ? 'bg-surface border-border hover:border-primary/50 hover:shadow-lg hover:shadow-primary/5 text-text' 
+              :class="action.enabled
+                ? 'bg-surface border-border hover:border-primary/50 hover:shadow-lg hover:shadow-primary/5 text-text'
                 : 'bg-surface-muted/30 border-border/50 text-text-muted cursor-not-allowed'"
               :disabled="!action.enabled"
             >
               <div class="flex items-center gap-4">
-                <div 
+                <div
                   class="p-2 rounded-xl transition-colors"
                   :class="action.enabled ? 'bg-primary/10 text-primary' : 'bg-surface-muted text-text-muted'"
                 >
@@ -169,8 +169,8 @@
             Alertas Críticas
           </h4>
           <div class="space-y-3">
-            <div 
-              v-for="alerta in currentMarea.alertas" 
+            <div
+              v-for="alerta in currentMarea.alertas"
               :key="alerta.id"
               class="p-4 bg-error/5 border border-error/20 rounded-2xl relative overflow-hidden group"
             >
@@ -180,7 +180,7 @@
               <p class="text-xs font-black text-error uppercase tracking-tight">{{ alerta.titulo }}</p>
               <p class="text-[11px] text-error/80 mt-1 leading-relaxed">{{ alerta.descripcion }}</p>
               <div v-if="!readOnly" class="flex justify-end mt-4">
-                <button 
+                <button
                   @click="$emit('manage-alert', alerta)"
                   class="px-4 py-2 bg-error text-error-fg text-[10px] font-black uppercase tracking-widest rounded-xl hover:opacity-90 transition-all shadow-lg shadow-error/20 active:scale-95 flex items-center gap-2"
                 >
@@ -218,7 +218,7 @@
 
     <!-- Footer Actions -->
     <div class="p-6 border-t border-border bg-surface-muted/50 space-y-3 shrink-0">
-      <button 
+      <button
         v-if="!readOnly"
         @click="$emit('open-detalle')"
         class="w-full py-3.5 bg-primary hover:bg-primary-hover text-primary-fg rounded-2xl text-sm font-bold shadow-xl shadow-primary/20 transition-all hover:-translate-y-0.5 active:scale-[0.98] flex items-center justify-center gap-2"
@@ -226,7 +226,7 @@
         <DocsIcon class="w-4 h-4" />
         Editar Detalles Completos
       </button>
-      <button 
+      <button
         @click="$emit('close')"
         class="w-full py-3 text-text-muted text-xs font-bold hover:text-text transition-colors"
       >
@@ -239,11 +239,11 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
-import { 
-  ChevronRightIcon, 
-  LockIcon, 
-  HistoryIcon, 
-  WarningIcon, 
+import {
+  ChevronRightIcon,
+  LockIcon,
+  HistoryIcon,
+  WarningIcon,
   DocsIcon,
   MapPinIcon,
   CloudUploadIcon,
@@ -303,10 +303,10 @@ const finalArribo = computed(() => {
   if (!props.context?.marea) return null
   const etapas = props.context.marea.etapas
   if (!etapas || etapas.length === 0) return null
-  
+
   const allComplete = etapas.every((e: any) => e.fechaArribo && e.puertoArriboId)
   if (!allComplete) return null
-  
+
   // Stages are ordered by nroEtapa desc
   return etapas[0]
 })
@@ -327,7 +327,7 @@ const puertoZarpada = computed(() => {
 
 const getStatusClasses = (status?: string) => {
   if (!status) return 'bg-surface-muted text-text-muted'
-  
+
   const s = status.toUpperCase()
   if (s.includes('NAVEGANDO'))
     return 'bg-info/10 text-info'
@@ -337,7 +337,7 @@ const getStatusClasses = (status?: string) => {
     return 'bg-error/10 text-error'
   if (s.includes('ARRIBADA') || s.includes('FINAL'))
     return 'bg-success/10 text-success'
-  
+
   return 'bg-surface-muted text-text-muted'
 }
 

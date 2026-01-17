@@ -45,6 +45,10 @@ export class UpdateMareaDto extends PartialType(CreateMareaDto) {
     @IsOptional()
     artePrincipalId?: string;
 
+    @IsUUID()
+    @IsOptional()
+    observadorPrincipalId?: string;
+
     @IsArray()
     @IsOptional()
     @ValidateNested({ each: true })
