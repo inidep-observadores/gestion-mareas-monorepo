@@ -3,12 +3,10 @@
     <!-- Backdrop -->
     <div 
         :class="[
-          'fixed inset-0 transition-opacity',
+          'fixed inset-0 transition-all duration-500',
           variant === 'danger' 
             ? 'bg-error/40 backdrop-blur-md' 
-            : variant === 'glass'
-              ? 'bg-gray-950/40 backdrop-blur-sm'
-              : 'bg-gray-500 bg-opacity-75'
+            : 'bg-slate-950/60 backdrop-blur-sm'
         ]" 
         @click="emit('close')"
     ></div>
@@ -22,8 +20,8 @@
       <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
         <div
           :class="[
-              'relative transform overflow-hidden rounded-xl bg-white text-left shadow-xl transition-all w-full sm:my-8 dark:bg-gray-800',
-              variant === 'danger' ? 'border border-error/20 dark:border-error/50' : '',
+              'relative transform overflow-hidden rounded-2xl bg-white text-left shadow-2xl transition-all w-full sm:my-8 dark:bg-gray-900',
+              variant === 'danger' ? 'border border-error/20 dark:border-error/50' : 'border border-border/50',
               maxWidthClass
           ]"
           @click.stop
@@ -31,7 +29,7 @@
           <div 
             :class="[
               'px-4 pb-4 pt-5 sm:p-6',
-              variant === 'danger' ? 'bg-error/5 dark:bg-error/10' : 'bg-white dark:bg-gray-800'
+              variant === 'danger' ? 'bg-error/5 dark:bg-error/10' : 'bg-white dark:bg-gray-900'
             ]"
           >
             <!-- Header -->
