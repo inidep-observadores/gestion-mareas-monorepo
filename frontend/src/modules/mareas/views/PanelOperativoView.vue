@@ -306,7 +306,7 @@
       :is-open="isAlertDialogOpen"
       :alert="selectedAlert"
       @close="isAlertDialogOpen = false"
-      @refresh="fetchDashboard"
+      @refresh="handleAlertRefresh"
     />
   </AdminLayout>
 </template>
@@ -382,6 +382,13 @@ const selectedAlert = ref(null)
 const handleManageAlert = (alert: any) => {
     selectedAlert.value = alert
     isAlertDialogOpen.value = true
+}
+
+const handleAlertRefresh = async () => {
+    await fetchDashboard()
+    if (selectedMarea.value) {
+        await fetchMareaContext(selectedMarea.value.id)
+    }
 }
 
 // Map icons/colors to backend kpis

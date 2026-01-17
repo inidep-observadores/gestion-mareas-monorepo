@@ -97,6 +97,8 @@
   --color-warning-fg: #ffffff;
   --color-info: #0ea5e9;
   --color-info-fg: #ffffff;
+  --color-purple: #8b5cf6;
+  --color-purple-fg: #ffffff;
   --color-text: #0f172a;
   --color-text-muted: #64748b;
   --color-border: #e2e8f0;
@@ -279,6 +281,7 @@
   --color-error: #f43f5e;
   --color-warning: #f59e0b;
   --color-info: #0ea5e9;
+  --color-purple: #a78bfa;
   --color-text: #f1f5f9;
   --color-text-muted: #94a3b8;
   --color-border: #1e293b;

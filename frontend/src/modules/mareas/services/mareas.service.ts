@@ -17,12 +17,16 @@ export interface MareaListItem {
     estado_codigo: string;
     fecha_zarpada?: string;
     puerto: string;
+    puerto_zarpada?: string;
+    puerto_arribo?: string;
+    fecha_arribo?: string;
     progreso: number;
     observador?: string;
     fecha_fin_observador?: string;
     en_tierra?: boolean;
     total_etapas: number;
     alertas: any[];
+    dias_estimados?: number;
     actionsAvailable: Record<string, { enabled: boolean; label: string; blockedReason?: string }>;
 }
 

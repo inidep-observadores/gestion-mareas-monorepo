@@ -22,8 +22,14 @@
               <ShipIcon class="w-5 h-5" />
             </div>
             <div class="flex flex-col">
-              <span class="text-xs font-black text-text">{{ marea.buque }}</span>
+              <span class="text-xs font-black text-text">{{ marea.code }} - {{ marea.buque }}</span>
+            <div class="flex items-center gap-2">
               <span class="text-[10px] font-bold text-text-muted uppercase tracking-tighter">{{ marea.obs }}</span>
+              <span v-if="marea.en_tierra" class="px-2 py-0.5 bg-success/10 text-success rounded-full text-[8px] font-black uppercase tracking-tighter whitespace-nowrap flex items-center gap-1 border border-success/20">
+                <div class="w-1 h-1 rounded-full bg-success animate-pulse"></div>
+                En Tierra
+              </span>
+            </div>
             </div>
           </div>
           <div class="text-right">
@@ -58,9 +64,11 @@
            </div>
         </div>
 
-        <div class="mt-3 flex items-center justify-between text-[10px] font-bold text-text-muted uppercase tracking-tighter">
-          <span>{{ marea.puerto }}</span>
-          <span>ETA: {{ marea.eta }}</span>
+        <div class="mt-3 flex items-center justify-between text-[10px] font-bold uppercase tracking-tighter">
+          <div class="flex items-center gap-2">
+            <span class="text-text-muted">{{ marea.en_tierra ? 'Arribo confirmado' : 'Arribo previsto' }}: {{ marea.puerto }}</span>
+          </div>
+          <span class="text-text-muted">ETA: {{ marea.eta }}</span>
         </div>
       </div>
 
@@ -80,10 +88,12 @@ import mareasService from '@/modules/mareas/services/mareas.service'
 
 type ExpiringMarea = {
   id: string
+  code: string
   buque: string
   obs: string
   progreso: number
   puerto: string
+  en_tierra: boolean
   eta: string
   isOverdue: boolean
   splitPoint: number
@@ -91,16 +101,18 @@ type ExpiringMarea = {
 
 const expiringMareas = ref<ExpiringMarea[]>([])
 
-const formatEta = (fecha?: string): string => {
+const formatEta = (fecha?: string, diasEstimados: number = 30): string => {
   if (!fecha) return 'Pendiente'
   const parsed = new Date(fecha)
   if (Number.isNaN(parsed.getTime())) return 'Pendiente'
+  
+  const estimatedEnd = new Date(parsed.getTime() + diasEstimados * 24 * 60 * 60 * 1000)
+  
   return new Intl.DateTimeFormat('es-AR', {
     day: '2-digit',
-    month: 'short',
-    hour: '2-digit',
-    minute: '2-digit'
-  }).format(parsed)
+    month: '2-digit',
+    year: 'numeric'
+  }).format(estimatedEnd)
 }
 
 const loadExpiringMareas = async () => {
@@ -117,11 +129,13 @@ const loadExpiringMareas = async () => {
 
         return {
           id: item.id,
+          code: item.id_marea,
           buque: item.buque_nombre,
           obs: (item as any).observador || 'Sin asignar',
           progreso: item.progreso,
-          puerto: item.puerto,
-          eta: formatEta(item.fecha_zarpada),
+          puerto: item.en_tierra ? (item.puerto_arribo || item.puerto) : (item.puerto_zarpada || item.puerto),
+          en_tierra: !!item.en_tierra,
+          eta: formatEta(item.fecha_zarpada, item.dias_estimados),
           isOverdue,
           splitPoint
         }

@@ -11,7 +11,7 @@
              {{ mareaCode }}
            </div>
            <span class="text-[10px] font-black text-text-muted uppercase tracking-widest truncate">
-             {{ marea.observador }}
+             {{ currentMarea.observador }}
            </span>
         </div>
       </div>
@@ -50,13 +50,13 @@
           <div class="space-y-2">
             <div class="flex justify-between items-end">
               <span class="text-[10px] font-bold text-text-muted uppercase tracking-widest">Avance Estimado</span>
-              <span class="text-xs font-black text-primary">{{ marea.progreso }}%</span>
+              <span class="text-xs font-black text-primary">{{ currentMarea.progreso }}%</span>
             </div>
             <div class="h-2 w-full bg-surface-muted rounded-full overflow-hidden border border-border">
               <div 
                 class="h-full transition-all duration-1000 ease-out"
-                :class="marea.progreso > 100 ? 'bg-error' : 'bg-primary'"
-                :style="{ width: marea.progreso + '%' }"
+                :class="currentMarea.progreso > 100 ? 'bg-error' : 'bg-primary'"
+                :style="{ width: currentMarea.progreso + '%' }"
               ></div>
             </div>
           </div>
@@ -105,7 +105,7 @@
               <div class="flex-1 min-w-0">
                 <p class="text-[9px] font-bold text-primary uppercase tracking-widest mb-0.5">Zarpada Confirmada</p>
                 <p class="text-sm font-black text-text truncate">
-                  {{ formatDate(marea.fecha_zarpada) }} <span class="mx-1 text-primary/60">en</span> {{ puertoZarpada }}
+                  {{ formatDate(currentMarea.fecha_zarpada) }} <span class="mx-1 text-primary/60">en</span> {{ puertoZarpada }}
                 </p>
               </div>
             </div>
@@ -160,7 +160,7 @@
         </section>
 
         <!-- 4. Active Alerts -->
-        <section v-if="marea?.alertas?.length" class="space-y-4">
+        <section v-if="currentMarea?.alertas?.length" class="space-y-4">
           <h4 class="text-[10px] font-black uppercase tracking-[0.2em] text-error flex items-center gap-2">
             <span class="flex h-2 w-2 relative">
               <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-error/40 opacity-75"></span>
@@ -170,7 +170,7 @@
           </h4>
           <div class="space-y-3">
             <div 
-              v-for="alerta in marea.alertas" 
+              v-for="alerta in currentMarea.alertas" 
               :key="alerta.id"
               class="p-4 bg-error/5 border border-error/20 rounded-2xl relative overflow-hidden group"
             >
@@ -272,14 +272,16 @@ const props = withDefaults(defineProps<Props>(), {
   readOnly: false
 })
 
+const currentMarea = computed(() => {
+  return props.context?.marea || props.marea
+})
+
 const mareaTitle = computed(() => {
-  const m = props.context?.marea || props.marea
-  return m?.buque_nombre || m?.buque?.nombre || 'Marea sin nombre'
+  return currentMarea.value?.buque_nombre || currentMarea.value?.buque?.nombre || 'Marea sin nombre'
 })
 
 const mareaCode = computed(() => {
-  const m = props.context?.marea || props.marea
-  return m?.id_marea || '0000-000'
+  return currentMarea.value?.id_marea || '0000-000'
 })
 
 const emit = defineEmits(['close', 'open-detalle', 'action', 'manage-alert'])

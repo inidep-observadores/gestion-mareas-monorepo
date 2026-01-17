@@ -84,6 +84,7 @@ import ConfirmationDialog from '@/components/common/ConfirmationDialog.vue';
 import NavigationStagesEditor from './NavigationStagesEditor.vue';
 import catalogosService from '../services/catalogos.service';
 import { TrashIcon, WarningIcon } from '@/icons';
+import { isDateBefore, isDateAfter, isDateSameOrBefore, isDateSameOrAfter } from '@/utils/date.utils';
 
 const props = defineProps<{
   show: boolean;
@@ -219,7 +220,8 @@ function hasOverlap(index: number): boolean {
   const current = form.value.stages[index];
   const prev = form.value.stages[index - 1];
   if (!current.fechaZarpada || !prev.fechaArribo) return false;
-  return new Date(current.fechaZarpada) < new Date(prev.fechaArribo);
+  // current.fechaZarpada < prev.fechaArribo
+  return isDateBefore(current.fechaZarpada, prev.fechaArribo);
 }
 
 function stageErrors(index: number): boolean {
@@ -228,7 +230,7 @@ function stageErrors(index: number): boolean {
   
   // Internal Chronology: Arrival >= Departure
   if (s.fechaZarpada && s.fechaArribo) {
-    if (new Date(s.fechaArribo) < new Date(s.fechaZarpada)) return true;
+     if (isDateBefore(s.fechaArribo, s.fechaZarpada)) return true;
   }
 
   // If not last stage, or if FINALIZAR, arrival is required
@@ -251,27 +253,29 @@ const isValid = computed(() => {
   }
 
   // Cross-date validations
-  const startObs = new Date(form.value.fechaInicio);
-  const firstZarpada = new Date(form.value.stages[0].fechaZarpada);
+  const startObs = form.value.fechaInicio;
+  const firstZarpada = form.value.stages[0].fechaZarpada;
   
-  // 1. Start Obs <= First Stage Departure
-  if (startObs > firstZarpada) {
+  // 1. Start Obs > First Stage Departure
+  // "No puede ser posterior a la primera zarpada"
+  // CORRECCIÓN: Si es el MISMO día, es válido. Solo falla si startObs > firstZarpada
+  if (isDateAfter(startObs, firstZarpada)) {
     validationErrors.value.fechaInicio = 'No puede ser posterior a la primera zarpada';
     return false;
   }
 
   if (props.mode === 'FINALIZAR') {
-    const endObs = new Date(form.value.fechaFin);
-    const lastArribo = new Date(form.value.stages[form.value.stages.length - 1].fechaArribo);
+    const endObs = form.value.fechaFin;
+    const lastArribo = form.value.stages[form.value.stages.length - 1].fechaArribo;
 
-    // 2. End Obs >= Last Stage Arrival
-    if (endObs < lastArribo) {
+    // 2. End Obs < Last Stage Arrival
+    if (isDateBefore(endObs, lastArribo)) {
         validationErrors.value.fechaFin = 'No puede ser anterior al último arribo';
         return false;
     }
 
-    // 3. End Obs > Start Obs
-    if (endObs <= startObs) {
+    // 3. End Obs <= Start Obs
+    if (isDateSameOrBefore(endObs, startObs)) {
         validationErrors.value.fechaFin = 'Debe ser posterior al inicio';
         return false;
     }
@@ -302,10 +306,29 @@ function handleConfirm() {
 function executeConfirmation() {
   showConfirmation.value = false;
   if (confirmationAction.value === 'SAVE') {
+    // Clean payload to match DTO
+    const cleanStages = form.value.stages.map((s: any) => ({
+      id: s.id, // Keep ID for updates
+      nroEtapa: s.nroEtapa,
+      puertoZarpadaId: s.puertoZarpadaId,
+      fechaZarpada: s.fechaZarpada,
+      puertoArriboId: s.puertoArriboId || null, // Handle empty string
+      fechaArribo: s.fechaArribo || null, // Handle empty string
+      pesqueriaId: s.pesqueriaId,
+      tipoEtapa: s.tipoEtapa,
+      observaciones: s.observaciones,
+      // Clean observers list if present
+      observadores: s.observadores?.map((o: any) => ({
+        observadorId: o.observadorId,
+        rol: o.rol,
+        esDesignado: o.esDesignado
+      }))
+    }));
+
     emit('confirm', {
-      fechaInicioObservador: form.value.fechaInicio,
-      fechaFinObservador: form.value.fechaFin,
-      etapas: form.value.stages
+      fechaInicioObservador: form.value.fechaInicio || null,
+      fechaFinObservador: form.value.fechaFin || null, // Ensure null if empty string
+      etapas: cleanStages
     });
   } else if (confirmationAction.value === 'CANCEL') {
     emit('close');

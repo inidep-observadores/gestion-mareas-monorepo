@@ -8,17 +8,17 @@
     <template #title>
         <div class="flex items-center justify-between w-full pr-8 py-1">
             <div class="flex items-center gap-4">
-                <Badge 
-                  :color="getBadgeColor(localAlert.prioridad)" 
-                  variant="solid" 
+                <Badge
+                  :color="getBadgeColor(localAlert.prioridad)"
+                  variant="solid"
                   size="sm"
                   class="font-black text-[10px] uppercase tracking-widest px-3 py-2.5 rounded-lg"
                 >
                     {{ localAlert.prioridad || 'N/D' }}
                 </Badge>
                 <span class="text-text font-black uppercase tracking-tight">{{ localAlert.titulo || 'Alerta' }}</span>
-                <Badge 
-                  v-if="localAlert.referenciaTipo" 
+                <Badge
+                  v-if="localAlert.referenciaTipo"
                   :color="getOriginBadgeColor(localAlert.referenciaTipo)"
                   variant="light"
                   size="sm"
@@ -49,6 +49,32 @@
               <div class="p-4 bg-surface-muted/50 border border-border rounded-2xl">
                 <h4 class="font-black text-[10px] uppercase tracking-widest text-text-muted mb-2">Detalles del Incidente</h4>
                 <p class="text-sm text-text/80 leading-relaxed">{{ localAlert.descripcion }}</p>
+
+                <!-- Incongruency Diff Table -->
+                <div v-if="isIncongruency && incongruencyData" class="mt-4 bg-surface border border-border rounded-xl overflow-hidden">
+                    <table class="w-full text-xs">
+                        <thead>
+                            <tr class="bg-surface-muted/50 border-b border-border">
+                                <th class="px-3 py-2 text-left font-black text-text-muted uppercase tracking-wider text-[10px]">Dato</th>
+                                <th class="px-3 py-2 text-left font-black text-text-muted uppercase tracking-wider text-[10px]">Sistema Local</th>
+                                <th class="px-3 py-2 text-left font-black text-text-muted uppercase tracking-wider text-[10px]">Access (Externo)</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-border">
+                            <tr v-for="field in incongruencyFields" :key="field.key" :class="{ 'bg-error/5': field.hasDiff }">
+                                <td class="px-3 py-2 font-bold text-text-muted">{{ field.label }}</td>
+                                <td class="px-3 py-2 font-mono text-text">
+                                    {{ field.localVal || 'N/D' }}
+                                </td>
+                                <td class="px-3 py-2 font-mono" :class="field.hasDiff ? 'text-error font-bold' : 'text-text'">
+                                    {{ field.externalVal || 'N/D' }}
+                                    <span v-if="field.hasDiff" class="ml-1 text-[9px] text-error bg-error/10 px-1 rounded">DIFERENTE</span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
                 <div class="mt-4 pt-4 border-t border-border flex items-center gap-4">
                     <div class="text-[10px] font-bold text-text-muted uppercase tracking-tight">ID: <span class="font-mono text-text/60">{{ localAlert.codigoUnico }}</span></div>
                     <div class="text-[10px] font-bold text-text-muted uppercase tracking-tight">Detectado: <span class="text-text/60">{{ formatDate(localAlert.fechaDetectada) }}</span></div>
@@ -80,10 +106,33 @@
                             {{ reclamoLoading ? 'Cargando...' : 'Enviar Reclamo' }}
                         </Button>
                     </div>
+
+                    <!-- Smart Actions Area -->
+                    <div v-if="smartActionConfig && !isClosed" class="p-4 bg-primary/5 border border-primary/20 rounded-2xl flex items-center justify-between animate-in zoom-in-95 duration-300">
+                        <div class="flex items-center gap-4">
+                            <div class="p-2.5 bg-primary/10 rounded-xl text-primary">
+                                <component :is="smartActionConfig.icon" class="w-5 h-5" />
+                            </div>
+                            <div>
+                                <p class="text-xs font-black uppercase tracking-widest text-primary/60">Acción Recomendada</p>
+                                <p class="text-[11px] text-text-muted mt-0.5">{{ smartActionConfig.description }}</p>
+                            </div>
+                        </div>
+                        <Button
+                            variant="primary"
+                            size="sm"
+                            @click="executeSmartAction"
+                            class="font-black text-[10px] uppercase tracking-widest"
+                            :disabled="processing"
+                        >
+                            {{ smartActionConfig.label }}
+                        </Button>
+                    </div>
+
                     <h4 class="font-black text-[10px] uppercase tracking-widest text-text-muted">Notas de Gestión</h4>
                     <textarea
                         v-model="comment"
-                        class="w-full bg-surface-muted/30 border border-border rounded-2xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all p-4 text-sm h-32 text-text placeholder:text-text-muted/40"
+                        class="w-full bg-surface-muted/30 border border-border rounded-2xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all p-4 text-sm h-16 text-text placeholder:text-text-muted/40"
                         placeholder="Agregar notas de seguimiento, causas o detalles de la resolución..."
                     ></textarea>
 
@@ -135,9 +184,9 @@
             </Button>
 
             <Button
-                 variant="error"
+                 variant="outline"
                  size="sm"
-                 class="flex-1 font-bold h-10 bg-error/10 text-error hover:bg-error/20 border-none"
+                 class="flex-1 font-bold h-10 border-error/30 text-error hover:bg-error/10"
                  @click="requestConfirmation('DESCARTADA')"
                  :disabled="processing"
             >
@@ -184,6 +233,24 @@
       </div>
     </div>
   </BaseModal>
+
+  <!-- Smart Action: Gestion de Etapas -->
+  <GestionEtapasMareaDialog
+    :show="showStagesDialog"
+    :mode="stagesDialogMode"
+    :marea="mareaDataForStages"
+    :current-stages="mareaStagesForStages"
+    @close="showStagesDialog = false"
+    @confirm="handleStagesConfirm"
+  />
+
+  <!-- Smart Action: Registro de Nueva Marea -->
+  <NuevaMareaDialog
+    :show="showNuevaMareaDialog"
+    :init-from-alert="true"
+    @close="showNuevaMareaDialog = false"
+    @success="handleMareaSuccess"
+  />
 </template>
 
 <script setup lang="ts">
@@ -195,12 +262,24 @@ import BaseModal from '@/components/common/BaseModal.vue'
 import Button from '@/components/ui/Button.vue'
 import Badge from '@/components/ui/Badge.vue'
 import { toast } from 'vue-sonner'
-import { CheckIcon } from '@/icons'
+import {
+    CheckIcon,
+    ShipIcon,
+    MapPinIcon,
+    RefreshIcon,
+    ChevronRightIcon,
+    InfoIcon
+} from '@/icons'
 import dashboardService from '@/modules/dashboard/services/dashboard.service'
 import ReclamoEntregaDialog from '@/modules/dashboard/components/ReclamoEntregaDialog.vue'
 import mareasService from '@/modules/mareas/services/mareas.service'
+import GestionEtapasMareaDialog from '@/modules/mareas/components/GestionEtapasMareaDialog.vue'
+import NuevaMareaDialog from '@/modules/mareas/components/NuevaMareaDialog.vue'
 import { storeToRefs } from 'pinia'
 import { useBusinessRulesStore } from '@/modules/shared/stores/business-rules.store'
+import { useWorkflowStore } from '@/modules/shared/stores/workflow.store'
+
+const workflowStore = useWorkflowStore()
 
 const props = defineProps<{
   isOpen: boolean
@@ -216,6 +295,10 @@ type AlertMetadata = {
   busDays?: number
   observerName?: string
   days?: number
+  subTipo?: string
+  nroEtapa?: number
+  externalData?: any
+  localData?: any
 }
 
 type LocalAlert = Partial<Alerta> & { metadata?: AlertMetadata }
@@ -264,6 +347,7 @@ const isConfirmationOpen = ref(false)
 const pendingAction = ref<'SEGUIMIENTO' | 'DESCARTADA' | 'RESUELTA' | ''>('')
 const confirmationMessage = ref('')
 const mareaObservers = ref<string[]>([])
+const showNuevaMareaDialog = ref(false)
 const businessRulesStore = useBusinessRulesStore()
 const { rules } = storeToRefs(businessRulesStore)
 const recheckCorto = computed(() => rules.value.PLAZO_RECHECK_CORTO || 0)
@@ -340,11 +424,179 @@ const isClaimableAlert = computed(() => localAlert.value?.tipo === 'RETRASO_DATO
 const mareaLabel = computed(() => localAlert.value?.metadata?.mareaCode || localAlert.value?.referenciaId || 'N/D')
 const mareaObserversLabel = computed(() => mareaObservers.value.length ? mareaObservers.value.join(', ') : 'Sin asignar')
 
+const isIncongruency = computed(() => localAlert.value?.metadata?.subTipo === 'INCONGRUENCIA')
+const incongruencyData = computed(() => localAlert.value?.metadata)
+
+const incongruencyFields = computed(() => {
+    if (!incongruencyData.value) return []
+    const ext = incongruencyData.value.externalData || {}
+    const loc = incongruencyData.value.localData || {}
+
+    const fields = [
+        { key: 'fechaZarpada', label: 'Fecha Zarpada' },
+        { key: 'fechaArribo', label: 'Fecha Arribo' }
+    ]
+
+    return fields.map(f => {
+        const valLoc = formatToLocalISODate(new Date(loc[f.key] || ''))
+        const valExt = formatToLocalISODate(new Date(ext[f.key] || ''))
+        // Comparación simple de fechas YYYY-MM-DD
+        const niceLoc = isActiveDate(loc[f.key]) ? formatDate(loc[f.key]) : 'N/D'
+        const niceExt = isActiveDate(ext[f.key]) ? formatDate(ext[f.key]) : 'N/D'
+
+        return {
+            key: f.key,
+            label: f.label,
+            localVal: niceLoc,
+            externalVal: niceExt,
+            hasDiff: niceLoc !== niceExt && (niceLoc !== 'N/D' || niceExt !== 'N/D')
+        }
+    })
+})
+
+const isActiveDate = (d: any) => {
+    if (!d) return false
+    const date = new Date(d)
+    return !isNaN(date.getTime()) && date.getFullYear() > 1900
+}
+
+// --- Smart Actions Logic ---
+const showStagesDialog = ref(false)
+const stagesDialogMode = ref<'INICIAR' | 'EDITAR' | 'FINALIZAR'>('EDITAR')
+const mareaDataForStages = ref<any>(null)
+const mareaStagesForStages = ref<any[]>([])
+
+const smartActionConfig = computed(() => {
+    const subTipo = localAlert.value?.metadata?.subTipo || localAlert.value?.tipo
+    switch (subTipo) {
+        case 'NUEVA_MAREA':
+            return {
+                label: 'Registrar Marea',
+                description: 'La marea detectada externamente no existe en nuestro sistema. Inicie el alta oficial.',
+                icon: ShipIcon,
+                handler: () => {
+                    workflowStore.setAlertData(localAlert.value)
+                    showNuevaMareaDialog.value = true
+                }
+            }
+        case 'NUEVA_ETAPA':
+            return {
+                label: 'Registrar Etapa',
+                description: 'Se detectó una nueva etapa (# '+ (localAlert.value?.metadata?.nroEtapa || '') +'). Inicie el registro local.',
+                icon: MapPinIcon,
+                handler: async () => {
+                    await prepareStagesData(true) // Pass true to indicate creating a new stage
+                    stagesDialogMode.value = 'EDITAR' // Must be EDITAR to show full list and new item
+                    showStagesDialog.value = true
+                }
+            }
+        case 'INCONGRUENCIA':
+            return {
+                label: 'Conciliar Datos',
+                description: 'Existen diferencias entre las fechas locales y las informadas por Access.',
+                icon: RefreshIcon,
+                handler: async () => {
+                    await prepareStagesData()
+                    stagesDialogMode.value = 'EDITAR'
+                    showStagesDialog.value = true
+                }
+            }
+        case 'ARRIBO':
+            return {
+                label: 'Gestionar Etapas',
+                description: 'Se detectó el arribo de una etapa. Actualice el cronograma de la marea.',
+                icon: MapPinIcon,
+                handler: async () => {
+                    await prepareStagesData()
+                    stagesDialogMode.value = 'EDITAR'
+                    showStagesDialog.value = true
+                }
+            }
+        default:
+            return null
+    }
+})
+
+const hasSmartAction = computed(() => !!smartActionConfig.value && !isClosed.value)
+
+const executeSmartAction = () => {
+    smartActionConfig.value?.handler()
+}
+
+const prepareStagesData = async (isNewStageConfig = false) => {
+    if (!localAlert.value.referenciaId) return
+    processing.value = true
+    try {
+        const marea = await mareasService.getById(localAlert.value.referenciaId)
+        mareaDataForStages.value = marea
+        // Ensure strictly editable copy
+        let currentStages = marea.etapas ? JSON.parse(JSON.stringify(marea.etapas)) : []
+        
+        if (isNewStageConfig) {
+            const lastStage = currentStages.length > 0 ? currentStages[currentStages.length - 1] : null
+            const ext = localAlert.value.metadata?.externalData || {}
+            
+            const newStage = {
+                id: null, // New stage
+                nroEtapa: (lastStage?.nroEtapa || 0) + 1,
+                // Inherit from last stage or use default
+                puertoZarpadaId: lastStage?.puertoArriboId || marea.puertoBaseId || '',
+                // Use alert data for dates
+                fechaZarpada: ext.fechaZarpada || '',
+                puertoArriboId: '', // User must select
+                fechaArribo: ext.fechaArribo || '',
+                // Inherit config
+                pesqueriaId: lastStage?.pesqueriaId || marea.id_pesqueria,
+                tipoEtapa: lastStage?.tipoEtapa || 'COMERCIAL',
+                observaciones: 'Etapa detectada automáticamente desde Access',
+                observadores: []
+            }
+            currentStages.push(newStage)
+        }
+        
+        mareaStagesForStages.value = currentStages
+    } catch (e) {
+        toast.error('Error al cargar datos de marea.')
+    } finally {
+        processing.value = false
+    }
+}
+
+const handleStagesConfirm = async (data: any) => {
+    try {
+        processing.value = true
+        if (localAlert.value.referenciaId) {
+            await mareasService.update(localAlert.value.referenciaId, {
+                fechaInicioObservador: data.fechaInicioObservador,
+                fechaFinObservador: data.fechaFinObservador,
+                etapas: data.etapas
+            })
+            toast.success('Cambios guardados con éxito')
+
+            // Reload alert to verify diffs if needed (optional)
+            await loadFullAlert(localAlert.value.id!)
+        }
+    } catch (e) {
+        toast.error('Error al guardar cambios.')
+    } finally {
+        showStagesDialog.value = false
+        processing.value = false
+    }
+}
+
+const handleMareaSuccess = () => {
+  showNuevaMareaDialog.value = false
+  emit('refresh')
+  emit('close')
+}
+// ----------------------------
+
 const getBadgeColor = (prio?: string) => {
     switch (prio || '') {
-        case 'ALTA': return 'error'
-        case 'MEDIA': return 'warning'
-        case 'BAJA': return 'info'
+        case 'URGENTE': return 'error'
+        case 'ALTA': return 'warning'
+        case 'MEDIA': return 'info'
+        case 'BAJA': return 'purple'
         default: return 'light'
     }
 }
@@ -519,7 +771,7 @@ const confirmAction = async () => {
     if (action === 'SEGUIMIENTO') {
         const minDateStr = formatToLocalISODate(getTomorrow())
         const selectedStr = customFollowUpDate.value
-        
+
         if (!selectedStr || selectedStr < minDateStr) {
             toast.error('La fecha de re-check debe ser desde mañana en adelante.')
             setDefaultFollowUpDate(null)

@@ -155,8 +155,8 @@
                   />
                 </div>
 
-                 <!-- Días Zona Austral -->
-                 <div class="space-y-1.5">
+                <!-- Días Zona Austral -->
+                <div class="space-y-1.5">
                    <label class="block text-sm font-medium text-text-muted">Días Zona Austral</label>
                    <input
                     v-model.number="form.diasZonaAustral"
@@ -164,6 +164,16 @@
                     class="w-full rounded-lg border-border bg-surface-muted text-text py-2.5 px-3 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors outline-hidden"
                   />
                    <p class="text-xs text-text-muted">Días computados para zona austral.</p>
+                </div>
+
+                <!-- Observador -->
+                <div class="space-y-1.5">
+                   <label class="block text-sm font-medium text-text-muted">Observador Principal</label>
+                   <SearchableSelect
+                     v-model="form.observadorId"
+                     :options="observadorOptions"
+                     placeholder="Seleccione observador..."
+                   />
                 </div>
               </div>
             </section>
@@ -273,7 +283,9 @@ import { ref, onMounted, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { toast } from 'vue-sonner';
 import mareasService from '../services/mareas.service';
+import catalogosService, { type Observador } from '../services/catalogos.service';
 import ConfirmationDialog from '@/components/common/ConfirmationDialog.vue';
+import SearchableSelect from '@/components/common/SearchableSelect.vue';
 import ArrowLeftIcon from '@/icons/ArrowLeftIcon.vue';
 import EditIcon from '@/icons/EditIcon.vue';
 import SettingsIcon from '@/icons/SettingsIcon.vue';
@@ -302,7 +314,20 @@ const form = ref({
   anioMarea: null,
   diasEstimados: null,
   diasZonaAustral: null,
-  fechaZarpadaEstimada: ''
+  fechaZarpadaEstimada: '',
+  observadorId: ''
+});
+
+const observadores = ref<Observador[]>([]);
+const originalObservadorId = ref<string | null>(null);
+
+const observadorOptions = computed(() => {
+  return observadores.value
+    .filter(o => !o.conImpedimento || o.id === originalObservadorId.value)
+    .map(o => ({
+      value: o.id,
+      label: `${o.apellido}, ${o.nombre}`
+    }));
 });
 
 const initialForm = ref<any>(null);
@@ -328,8 +353,16 @@ function confirmCancel() {
 onMounted(async () => {
     try {
         const id = route.params.id as string;
-        const data = await mareasService.getById(id);
+        const [data, obsList] = await Promise.all([
+            mareasService.getById(id),
+            catalogosService.getObservadores()
+        ]);
         marea.value = data;
+        observadores.value = obsList;
+
+        const etapaPrincipal = data.etapas?.find((e: any) => e.nroEtapa === 1) || data.etapas?.[0];
+        const currentObsId = etapaPrincipal?.observadores?.find((o: any) => o.rol === 'PRINCIPAL')?.observadorId || '';
+        originalObservadorId.value = currentObsId;
 
         // Helper to get local YYYY-MM-DD
         const toLocalISO = (isoStr: string) => {
@@ -348,7 +381,8 @@ onMounted(async () => {
             anioMarea: data.anioMarea,
             diasEstimados: data.diasEstimados,
             diasZonaAustral: data.diasZonaAustral,
-            fechaZarpadaEstimada: toLocalISO(data.fechaZarpadaEstimada)
+            fechaZarpadaEstimada: toLocalISO(data.fechaZarpadaEstimada),
+            observadorId: currentObsId
         };
         initialForm.value = JSON.parse(JSON.stringify(form.value));
     } catch (e) {
