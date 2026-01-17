@@ -17,6 +17,9 @@ export interface MareaListItem {
     estado_codigo: string;
     fecha_zarpada?: string;
     puerto: string;
+    puerto_zarpada?: string;
+    puerto_arribo?: string;
+    fecha_arribo?: string;
     progreso: number;
     observador?: string;
     fecha_fin_observador?: string;
