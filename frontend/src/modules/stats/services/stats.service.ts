@@ -17,6 +17,7 @@ export interface DashboardStats {
 
 export interface StatsDetailItem {
     id: string;
+    id_marea: string;
     anioMarea: number;
     nroMarea: number;
     buque: string;

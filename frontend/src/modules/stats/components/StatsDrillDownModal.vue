@@ -20,7 +20,16 @@
       </div>
     </template>
 
-    <div class="space-y-4 py-1">
+    <div class="space-y-4 py-1 flex flex-col min-h-0">
+      <!-- Search and Filters (Local) -->
+      <div v-if="!loading && items.length > 0" class="px-1">
+        <SearchInput
+          v-model="searchQuery"
+          placeholder="Filtrar por marea, buque, observador o pesquería..."
+          class="w-full"
+        />
+      </div>
+
       <!-- Loading State -->
       <div v-if="loading" class="flex flex-col items-center justify-center py-16 gap-3">
         <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -28,12 +37,12 @@
       </div>
 
       <!-- Content -->
-      <div v-else-if="sortedItems.length > 0" class="overflow-x-auto rounded-xl border border-border shadow-sm">
+      <div v-else-if="sortedItems.length > 0" class="overflow-auto rounded-xl border border-border shadow-sm max-h-[65vh] relative">
         <table class="w-full text-left border-collapse table-fixed lg:table-auto">
-          <thead>
+          <thead class="sticky top-0 z-10 bg-surface shadow-[0_1px_0_0_rgba(0,0,0,0.05)]">
             <tr class="bg-surface-muted/30 border-b border-border">
-              <th 
-                v-for="col in columns" 
+              <th
+                v-for="col in columns"
                 :key="col.key"
                 @click="handleSort(col.key)"
                 class="px-3 py-2 text-[9px] font-black text-text-muted uppercase tracking-widest cursor-pointer hover:bg-surface-muted transition-colors group"
@@ -42,13 +51,13 @@
                 <div class="flex items-center gap-1.5" :class="{ 'justify-center': col.align === 'center', 'justify-end': col.align === 'right' }">
                   {{ col.label }}
                   <div class="flex flex-col -space-y-1 opacity-20 group-hover:opacity-100 transition-opacity" :class="{ 'opacity-100': sortKey === col.key }">
-                     <ChevronUpIcon 
-                        class="w-2.5 h-2.5" 
-                        :class="{ 'text-primary': sortKey === col.key && sortOrder === 'asc' }" 
+                     <ChevronUpIcon
+                        class="w-2.5 h-2.5"
+                        :class="{ 'text-primary': sortKey === col.key && sortOrder === 'asc' }"
                      />
-                     <ChevronDownIcon 
-                        class="w-2.5 h-2.5" 
-                        :class="{ 'text-primary': sortKey === col.key && sortOrder === 'desc' }" 
+                     <ChevronDownIcon
+                        class="w-2.5 h-2.5"
+                        :class="{ 'text-primary': sortKey === col.key && sortOrder === 'desc' }"
                      />
                   </div>
                 </div>
@@ -56,16 +65,14 @@
             </tr>
           </thead>
           <tbody class="divide-y divide-border">
-            <tr 
-              v-for="marea in sortedItems" 
+            <tr
+              v-for="marea in sortedItems"
               :key="marea.id"
-              class="hover:bg-primary/5 transition-colors group"
+              class="hover:bg-primary/5 transition-colors group cursor-pointer"
+              @click="goToMarea(marea.id)"
             >
               <td class="px-3 py-1.5">
-                <div class="flex flex-col leading-tight">
-                  <span class="text-xs font-black text-text">#{{ marea.nroMarea }}</span>
-                  <span class="text-[8px] font-bold text-text-muted uppercase">{{ marea.anioMarea }}</span>
-                </div>
+                <span class="text-[11px] font-mono font-bold text-text-muted uppercase leading-none">{{ marea.id_marea }}</span>
               </td>
               <td class="px-3 py-1.5">
                 <span class="text-xs font-bold text-text truncate max-w-[140px] block">{{ marea.buque }}</span>
@@ -84,26 +91,15 @@
               <td class="px-3 py-1.5 text-[10px] font-bold text-text/70 truncate max-w-[120px]">
                 {{ marea.observador }}
               </td>
-               <td class="px-3 py-1.5">
-                <Badge 
-                  :color="getStatusColor(marea.estado)" 
-                  variant="light" 
-                  size="sm" 
+               <td class="px-3 py-1.5 text-right">
+                <Badge
+                  :color="getStatusColor(marea.estado)"
+                  variant="light"
+                  size="sm"
                   class="font-black text-[8px] uppercase tracking-tighter h-5"
                 >
                   {{ marea.estado }}
                 </Badge>
-              </td>
-              <td class="px-3 py-1.5 text-right">
-                <Button 
-                  size="xs" 
-                  variant="soft" 
-                  class="p-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                  title="Ver Detalle"
-                  @click="goToMarea(marea.id)"
-                >
-                   <ExternalLinkIcon class="w-3 h-3" />
-                </Button>
               </td>
             </tr>
           </tbody>
@@ -140,13 +136,14 @@ import { useRouter } from 'vue-router'
 import BaseModal from '@/components/common/BaseModal.vue'
 import Button from '@/components/ui/Button.vue'
 import Badge from '@/components/ui/Badge.vue'
+import SearchInput from '@/components/ui/SearchInput.vue'
 import MareaQuickDetailModal from './MareaQuickDetailModal.vue'
-import { 
-  ShipIcon, 
-  ExternalLinkIcon, 
-  SearchIcon, 
-  ChevronUpIcon, 
-  ChevronDownIcon 
+import {
+  ShipIcon,
+  ExternalLinkIcon,
+  SearchIcon,
+  ChevronUpIcon,
+  ChevronDownIcon
 } from 'lucide-vue-next'
 import { statsService, type StatsDetailItem } from '../services/stats.service'
 import { toast } from 'vue-sonner'
@@ -182,9 +179,9 @@ const openQuickDetail = (id: string) => {
   }
 }
 
-// Sorting State
-const sortKey = ref<string>('diasContabilizados')
-const sortOrder = ref<'asc' | 'desc'>('desc')
+// Sorting State (Year and Number ascending)
+const sortKey = ref<string>('nroMarea')
+const sortOrder = ref<'asc' | 'desc'>('asc')
 
 const columns = [
   { key: 'nroMarea', label: 'Marea', align: 'left' },
@@ -206,40 +203,64 @@ const handleSort = (key: string) => {
   }
 }
 
-const sortedItems = computed(() => {
+// Search State
+const searchQuery = ref('')
+
+const filteredItems = computed(() => {
   if (!items.value.length) return []
-  
-  return [...items.value].sort((a: any, b: any) => {
+  if (!searchQuery.value.trim()) return items.value
+
+  const query = searchQuery.value.toLowerCase().trim()
+
+  return items.value.filter(item => {
+    const code = item.id_marea.toLowerCase()
+    return (
+      code.includes(query) ||
+      item.buque.toLowerCase().includes(query) ||
+      item.observador.toLowerCase().includes(query) ||
+      item.pesqueria.toLowerCase().includes(query) ||
+      item.flota.toLowerCase().includes(query)
+    )
+  })
+})
+
+const sortedItems = computed(() => {
+  const sourceItems = filteredItems.value
+  if (!sourceItems.length) return []
+
+  return [...sourceItems].sort((a: any, b: any) => {
+    const modifier = sortOrder.value === 'asc' ? 1 : -1
+
+    // Special case for Marea (Year + Number)
+    if (sortKey.value === 'nroMarea') {
+      if (a.anioMarea !== b.anioMarea) {
+        return (a.anioMarea - b.anioMarea) * modifier
+      }
+      return (a.nroMarea - b.nroMarea) * modifier
+    }
+
     let valA = a[sortKey.value]
     let valB = b[sortKey.value]
-    
-    // Especial case for Nro Marea (numeric)
-    if (sortKey.value === 'nroMarea') {
-      valA = a.nroMarea
-      valB = b.nroMarea
-    }
-    
+
     if (valA === valB) return 0
-    
-    const modifier = sortOrder.value === 'asc' ? 1 : -1
-    
+
     if (valA === null || valA === undefined) return 1
     if (valB === null || valB === undefined) return -1
-    
+
     if (typeof valA === 'string') {
       return valA.localeCompare(valB) * modifier
     }
-    
+
     return (valA < valB ? -1 : 1) * modifier
   })
 })
 
 const fetchDetail = async () => {
   if (!props.isOpen || !props.filterType || !props.filterValue) return
-  
+
   loading.value = true
   filterValueDisplay.value = props.filterValue
-  
+
   try {
     items.value = await statsService.getDashboardStatsDetail(
       props.year,
@@ -260,9 +281,11 @@ const fetchDetail = async () => {
 
 watch(() => props.isOpen, (newVal) => {
   if (newVal) {
+    searchQuery.value = ''
     fetchDetail()
   } else {
     items.value = []
+    searchQuery.value = ''
     quickDetail.value.isOpen = false
   }
 })

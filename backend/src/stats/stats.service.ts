@@ -1,6 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { DateUtils } from '../common/utils/date.utils';
 import { Prisma } from '@prisma/client';
+import { StatsDetailItem, DashboardStats } from './interfaces/dashboard.interface';
+import { MareaUtils } from '../common/utils/marea.utils';
 
 @Injectable()
 export class StatsService {
@@ -107,23 +110,9 @@ export class StatsService {
             let days = 0;
 
             if (mode === 'CALENDAR') {
-                // Intersection of [Start, End] and [Jan 1, Dec 31]
-                const effectiveStart = start < yearStart ? yearStart : start;
-                const effectiveEnd = endDateOrNow > yearEnd ? yearEnd : endDateOrNow;
-
-                if (effectiveStart <= effectiveEnd) {
-                    const diffTime = Math.abs(effectiveEnd.getTime() - effectiveStart.getTime());
-                    days = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                    // Math.ceil ensuring at least 1 day if partial, or use round? 
-                    // Usually navigation days are counted as dates touched.
-                    // Diff in millis / day_millis gives pure 24h chunks.
-                    // Let's stick to standard diff + something or just ceil.
-                }
+                days = DateUtils.calculateDaysInYear(start, endDateOrNow, year);
             } else {
-                // TOTAL Mode
-                // Full duration if marea is in the set
-                const diffTime = Math.abs(endDateOrNow.getTime() - start.getTime());
-                days = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                days = DateUtils.calculateInclusiveDays(start, endDateOrNow);
             }
 
             // Add to Totals
@@ -228,10 +217,10 @@ export class StatsService {
         year: number,
         mode: 'CALENDAR' | 'TOTAL',
         includeNonProtocolized: boolean,
-        includeProtocolizedOutOfPeriod: boolean,
+        includeProtocolizedOutOfPeriod = false,
         filterType: 'FISHERY' | 'FLEET' | 'OBSERVER',
-        filterValue: string,
-    ) {
+        filterValue: string
+    ): Promise<StatsDetailItem[]> {
         const yearStart = new Date(Date.UTC(year, 0, 1, 0, 0, 0, 0));
         const yearEnd = new Date(Date.UTC(year, 11, 31, 23, 59, 59, 999));
 
@@ -275,20 +264,18 @@ export class StatsService {
             let days = 0;
             if (start) {
                 if (mode === 'CALENDAR') {
-                    const effectiveStart = start < yearStart ? yearStart : start;
-                    const effectiveEnd = endDateOrNow > yearEnd ? yearEnd : endDateOrNow;
-                    if (effectiveStart <= effectiveEnd) {
-                        days = Math.ceil(Math.abs(effectiveEnd.getTime() - effectiveStart.getTime()) / (1000 * 60 * 60 * 24));
-                    }
+                    days = DateUtils.calculateDaysInYear(start, endDateOrNow, year);
                 } else {
-                    days = Math.ceil(Math.abs(endDateOrNow.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+                    days = DateUtils.calculateInclusiveDays(start, endDateOrNow);
                 }
             }
 
             return {
                 id: m.id,
+                id_marea: MareaUtils.formatCodigo(m),
                 anioMarea: m.anioMarea,
                 nroMarea: m.nroMarea,
+                tipoMarea: m.tipoMarea,
                 buque: m.buque?.nombreBuque || 'Desconocido',
                 flota: m.buque?.tipoFlota?.nombre || '-',
                 pesqueria: m.buque?.pesqueriaHabitual?.nombre || '-',
