@@ -25,6 +25,8 @@ export interface StatsDetailItem {
     observador: string;
     estado: string;
     diasContabilizados: number;
+    diasCalendario: number;
+    diasTotales: number;
     fechaInicio: Date | string;
     fechaFin: Date | string | null;
 }

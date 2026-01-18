@@ -1,60 +1,62 @@
 <template>
-  <div v-if="show" class="relative z-50" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-    <!-- Backdrop -->
-    <div 
-        :class="[
-          'fixed inset-0 transition-all duration-500',
-          variant === 'danger' 
-            ? 'bg-error/40 backdrop-blur-md' 
-            : 'bg-slate-950/60 backdrop-blur-sm'
-        ]" 
-        @click="emit('close')"
-    ></div>
-
-    <div 
-      class="fixed inset-0 z-10 w-screen overflow-y-auto transition-all duration-300 ease-in-out"
-      :class="[
-        isSidebarAware ? (isExpanded || isHovered ? 'lg:pl-[18.125rem]' : 'lg:pl-[5.625rem]') : ''
-      ]"
-    >
-      <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
-        <div
+  <Teleport to="body">
+    <div v-if="show" class="relative z-[100]" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+      <!-- Backdrop -->
+      <div 
           :class="[
-              'relative transform overflow-hidden rounded-2xl bg-white text-left shadow-2xl transition-all w-full sm:my-8 dark:bg-gray-900',
-              variant === 'danger' ? 'border border-error/20 dark:border-error/50' : 'border border-border/50',
-              maxWidthClass
-          ]"
-          @click.stop
-        >
-          <div 
-            :class="[
-              'px-4 pb-4 pt-5 sm:p-6',
-              variant === 'danger' ? 'bg-error/5 dark:bg-error/10' : 'bg-white dark:bg-gray-900'
-            ]"
-          >
-            <!-- Header -->
-            <div class="flex items-center justify-between mb-4">
-              <h3 class="text-lg font-medium leading-6 text-gray-900 dark:text-white" id="modal-title">
-                <slot name="title">{{ title }}</slot>
-              </h3>
-              <button
-                @click="emit('close')"
-                class="text-gray-400 hover:text-gray-500 focus:outline-none"
-              >
-                <span class="sr-only">Cerrar</span>
-                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
+            'fixed inset-0 transition-all duration-500',
+            variant === 'danger' 
+              ? 'bg-error/40 backdrop-blur-md' 
+              : 'bg-slate-950/60 backdrop-blur-sm'
+          ]" 
+          @click="emit('close')"
+      ></div>
 
-            <!-- Content -->
-            <slot></slot>
+      <div 
+        class="fixed inset-0 z-10 w-screen overflow-y-auto transition-all duration-300 ease-in-out"
+        :class="[
+          isSidebarAware ? (isExpanded || isHovered ? 'lg:pl-[18.125rem]' : 'lg:pl-[5.625rem]') : ''
+        ]"
+      >
+        <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+          <div
+            :class="[
+                'relative transform overflow-hidden rounded-2xl bg-white text-left shadow-2xl transition-all w-full sm:my-8 dark:bg-gray-900',
+                variant === 'danger' ? 'border border-error/20 dark:border-error/50' : 'border border-border/50',
+                maxWidthClass
+            ]"
+            @click.stop
+          >
+            <div 
+              :class="[
+                'px-4 pb-4 pt-5 sm:p-6',
+                variant === 'danger' ? 'bg-error/5 dark:bg-error/10' : 'bg-white dark:bg-gray-900'
+              ]"
+            >
+              <!-- Header -->
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-medium leading-6 text-gray-900 dark:text-white" id="modal-title">
+                  <slot name="title">{{ title }}</slot>
+                </h3>
+                <button
+                  @click="emit('close')"
+                  class="text-gray-400 hover:text-gray-500 focus:outline-none"
+                >
+                  <span class="sr-only">Cerrar</span>
+                  <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              <!-- Content -->
+              <slot></slot>
+            </div>
           </div>
         </div>
       </div>
     </div>
-  </div>
+  </Teleport>
 </template>
 
 <script setup lang="ts">
