@@ -157,6 +157,8 @@ const props = defineProps<{
   mode: 'CALENDAR' | 'TOTAL'
   includeNonProtocolized: boolean
   includeProtocolizedOutOfPeriod: boolean
+  daysCalculationMode: 'SHIP' | 'OBSERVER'
+  includeCampaigns: boolean
 }>()
 
 const emit = defineEmits(['close'])
@@ -268,7 +270,9 @@ const fetchDetail = async () => {
       props.includeNonProtocolized,
       props.includeProtocolizedOutOfPeriod,
       props.filterType,
-      props.filterValue
+      props.filterValue,
+      props.daysCalculationMode,
+      props.includeCampaigns
     )
   } catch (error) {
     console.error('Error fetching stats detail:', error)
