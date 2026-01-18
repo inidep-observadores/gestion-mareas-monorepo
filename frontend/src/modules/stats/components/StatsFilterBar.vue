@@ -38,6 +38,31 @@
         </div>
       </div>
 
+      <!-- Métrica Toggle -->
+      <div class="flex items-center gap-2 bg-surface-muted px-4 py-2 rounded-xl border border-border" title="Días Buque: Días únicos navegados por embarcación. Días Observador: Suma de días de cada observador a bordo.">
+         <span class="text-[10px] font-black text-text-muted uppercase tracking-widest mr-1">Métrica:</span>
+         <div class="flex gap-1 bg-surface rounded-lg p-1 border border-border/50">
+          <button 
+            @click="$emit('update:daysCalculationMode', 'SHIP')"
+            :class="[
+              'px-3 py-1 rounded text-[10px] font-black uppercase tracking-wider transition-all',
+              daysCalculationMode === 'SHIP' ? 'bg-primary text-primary-fg shadow-sm' : 'text-text-muted hover:text-text'
+            ]"
+          >
+            Buque
+          </button>
+          <button 
+             @click="$emit('update:daysCalculationMode', 'OBSERVER')"
+             :class="[
+              'px-3 py-1 rounded text-[10px] font-black uppercase tracking-wider transition-all',
+              daysCalculationMode === 'OBSERVER' ? 'bg-primary text-primary-fg shadow-sm' : 'text-text-muted hover:text-text'
+            ]"
+          >
+            Observador
+          </button>
+        </div>
+      </div>
+
       <!-- Protocolizadas Toggle -->
       <div class="flex items-center gap-2 bg-surface-muted px-4 py-2 rounded-xl border border-border">
         <label class="flex items-center gap-2 cursor-pointer">
@@ -47,7 +72,7 @@
              @change="$emit('update:protocolizedOnly', ($event.target as HTMLInputElement).checked)"
              class="w-4 h-4 rounded border-border text-primary focus:ring-primary/20"
            />
-           <span class="text-[10px] font-black text-text-muted uppercase tracking-widest">Solo Protocolizadas</span>
+           <span class="text-[10px] font-black text-text-muted uppercase tracking-widest">Protocolizadas</span>
         </label>
       </div>
 
@@ -58,43 +83,57 @@
              type="checkbox" 
              :checked="includeOutOfPeriod"
              @change="$emit('update:includeOutOfPeriod', ($event.target as HTMLInputElement).checked)"
-             class="w-4 h-4 rounded border-border text-secondary focus:ring-secondary/20"
+              class="w-4 h-4 rounded border-border text-primary focus:ring-primary/20"
            />
-           <span class="text-[10px] font-black text-text-muted uppercase tracking-widest">Incluir Fuera Período</span>
-        </label>
+           <span class="text-[10px] font-black text-text-muted uppercase tracking-widest">+ Fuera Periodo</span>
+         </label>
       </div>
 
-      <!-- Refresh Action -->
-      <button 
-        @click="$emit('refresh')"
-        class="bg-primary hover:bg-primary-hover text-primary-fg p-2 rounded-lg transition-all shadow-theme-xs shadow-primary/20 active:scale-95 flex items-center justify-center"
-        title="Actualizar Datos"
-      >
-        <RefreshCwIcon :class="['w-4 h-4', loading ? 'animate-spin' : '']" />
-      </button>
+      <!-- Campaigns Toggle -->
+      <div class="flex items-center gap-2 bg-surface-muted px-4 py-2 rounded-xl border border-border">
+        <label class="flex items-center gap-2 cursor-pointer">
+           <input 
+             type="checkbox" 
+             :checked="includeCampaigns"
+             @change="$emit('update:includeCampaigns', ($event.target as HTMLInputElement).checked)"
+             class="w-4 h-4 rounded border-border text-primary focus:ring-primary/20"
+           />
+           <span class="text-[10px] font-black text-text-muted uppercase tracking-widest">Incluir Campañas</span>
+        </label>
+      </div>
 
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { RefreshCwIcon } from 'lucide-vue-next'
-import { type Component } from 'vue'
+import { 
+  ActivityIcon
+} from 'lucide-vue-next';
+import type { Component } from 'vue';
 
-defineProps<{
-  title: string
-  subtitle: string
-  icon: Component
-  mode: 'CALENDAR' | 'TOTAL'
-  protocolizedOnly: boolean
-  includeOutOfPeriod: boolean
-  loading?: boolean
-}>()
+interface Props {
+  title: string;
+  subtitle: string;
+  mode: 'CALENDAR' | 'TOTAL';
+  protocolizedOnly: boolean;
+  includeOutOfPeriod: boolean;
+  daysCalculationMode: 'SHIP' | 'OBSERVER';
+  includeCampaigns: boolean;
+  icon?: Component;
+}
+
+withDefaults(defineProps<Props>(), {
+  icon: () => ActivityIcon,
+  daysCalculationMode: 'SHIP',
+  includeCampaigns: true
+});
 
 defineEmits<{
-  (e: 'update:mode', val: 'CALENDAR' | 'TOTAL'): void
-  (e: 'update:protocolizedOnly', val: boolean): void
-  (e: 'update:includeOutOfPeriod', val: boolean): void
-  (e: 'refresh'): void
-}>()
+  (e: 'update:mode', value: 'CALENDAR' | 'TOTAL'): void;
+  (e: 'update:protocolizedOnly', value: boolean): void;
+  (e: 'update:includeOutOfPeriod', value: boolean): void;
+  (e: 'update:daysCalculationMode', value: 'SHIP' | 'OBSERVER'): void;
+  (e: 'update:includeCampaigns', value: boolean): void;
+}>();
 </script>

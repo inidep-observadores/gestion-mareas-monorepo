@@ -64,11 +64,18 @@ export class StatsService {
         mode: 'CALENDAR' | 'TOTAL',
         includeNonProtocolized: boolean,
         includeProtocolizedOutOfPeriod: boolean,
+        daysCalculationMode: 'SHIP' | 'OBSERVER' = 'SHIP',
+        includeCampaigns: boolean = true,
     ) {
         const yearStart = new Date(Date.UTC(year, 0, 1, 0, 0, 0, 0));
         const yearEnd = new Date(Date.UTC(year, 11, 31, 23, 59, 59, 999));
 
         const where = this.getSharedWhereClause(yearStart, yearEnd, includeNonProtocolized, includeProtocolizedOutOfPeriod);
+
+        // Filter Campaigns
+        if (!includeCampaigns) {
+            where.tipoMarea = { not: 'CI' };
+        }
 
         const mareas = await this.prisma.marea.findMany({
             where,
@@ -82,13 +89,18 @@ export class StatsService {
                 observadorPrincipal: true,
                 etapas: {
                     orderBy: { nroEtapa: 'asc' },
+                    include: {
+                        observadores: {
+                            include: { observador: true }
+                        }
+                    }
                 }
             },
         });
 
         // 3. Process & Aggregate
         let totalMareas = 0;
-        let totalDaysNavigated = 0;
+        let totalDaysCalculated = 0;
 
         // Monthly aggregations
         const mareasByMonth = new Array(12).fill(0);
@@ -103,18 +115,52 @@ export class StatsService {
             const overallStart = marea.fechaInicioObservador || marea.fechaZarpadaEstimada;
             if (!overallStart) continue;
 
-            // Extract stage intervals
             const intervals = marea.etapas.map(e => ({
                 start: e.fechaZarpada,
                 end: e.fechaArribo || (marea.estadoActualId === 'EN_EJECUCION' ? new Date() : null)
             })).filter(i => i.start);
 
-            // Calculate Unique Days
-            const days = DateUtils.calculateUniqueDays(intervals, mode === 'CALENDAR' ? year : undefined);
+            let days = 0;
+
+            if (daysCalculationMode === 'SHIP') {
+                // SHIP metric: Unique days of the vessel at sea
+                days = DateUtils.calculateUniqueDays(intervals, mode === 'CALENDAR' ? year : undefined);
+            } else {
+                // OBSERVER metric: Sum of days of ALL observers in ALL stages
+                let totalObsDays = 0;
+                // We need to iterate stages to get observers per stage
+                marea.etapas.forEach(etapa => {
+                    if (!etapa.fechaZarpada) return;
+                    const stageStart = etapa.fechaZarpada;
+                    const stageEnd = etapa.fechaArribo || (marea.estadoActualId === 'EN_EJECUCION' ? new Date() : null);
+
+                    // Calculate days for this stage
+                    // If CALENDAR mode, we clamp to year
+                    let stageDays = 0;
+                    if (mode === 'CALENDAR') {
+                        stageDays = DateUtils.calculateDaysInYear(stageStart, stageEnd || new Date(), year);
+                    } else {
+                        stageDays = DateUtils.calculateInclusiveDays(stageStart, stageEnd);
+                    }
+
+                    // Multiply by number of observers in this stage
+                    const obsCount = etapa.observadores.length || (marea.observadorPrincipal ? 1 : 0);
+                    // Use actual observers count from relation if available, otherwise fallback to 1 (main) if relation empty but marea has main? 
+                    // Actually, if marea_etapas_observadores is populated, we use that. 
+                    // If strictly empty, we might fallback to marea.observadorPrincipal if logic dictates, but generally stages should have observers.
+                    // Let's assume consistent data: if we want precise observer days, we trust the join table.
+                    // Just in case, if count is 0 and we have a main observer, assume he was there?
+                    // To be safe: if etapa.observadores is empty, assume Main Observer was there.
+                    const finalObsCount = obsCount > 0 ? obsCount : (marea.observadorPrincipal ? 1 : 0);
+
+                    totalObsDays += (stageDays * finalObsCount);
+                });
+                days = totalObsDays;
+            }
 
             // Add to Totals
             totalMareas++;
-            totalDaysNavigated += days;
+            totalDaysCalculated += days;
 
             // Aggregations
             // Fishery
@@ -129,21 +175,85 @@ export class StatsService {
             byFleet[fleetName].mareas++;
             byFleet[fleetName].days += days;
 
-            // Observer
-            if (marea.observadorPrincipal) {
-                const obsName = `${marea.observadorPrincipal.nombre} ${marea.observadorPrincipal.apellido}`;
-                const obsId = marea.observadorPrincipal.id;
-                if (!byObserver[obsId]) {
-                    byObserver[obsId] = {
-                        id: obsId,
-                        name: obsName,
-                        mareas: 0,
-                        days: 0,
-                        active: marea.observadorPrincipal.activo
-                    };
+            // Observer Aggregation
+            // Logic: Who gets the credit?
+            // If SHIP mode: Credit goes to Main Observer (traditional)
+            // If OBSERVER mode: Credit should technically go to EACH observer involved.
+            // For simplicity in this View (which lists "Mareas" per observer), we usually list Main Observer.
+            // If we want to split credit, we would need to iterate all observers found.
+            // Let's stick to: Main Observer gets the credit for the Marea, and the "Days" value = the calculated metric.
+            // If Metric is "Observer Days", and Main Observer was alone, he gets X days.
+            // If there were 2 observers, Main Observer gets "Total Observer Days" (X*2)? That seems misleading for a ranking.
+            // Requirement says: "In the second case [Observer Days] we consider the sum of days of observers assigned to the marea".
+            // AND "In the case of observer ranking, we should take them from a DIFFERENT ENDPOINT/QUERY... each sums separately".
+            // So for THIS dashboard endpoint (General Summary), we can just aggregate under Main Observer for trends, 
+            // OR we accept that "Observer Ranking" chart might need a different source if we want it perfect.
+            // However, the user said "Observer ranking ... different endpoint". 
+            // But this function `getDashboardStats` RETURNS the `observers` list used for that ranking chart.
+            // So I SHOULD update this logic to properly attribute days for the Ranking.
+
+            if (daysCalculationMode === 'SHIP') {
+                if (marea.observadorPrincipal) {
+                    const obsId = marea.observadorPrincipal.id;
+                    if (!byObserver[obsId]) byObserver[obsId] = { id: obsId, name: `${marea.observadorPrincipal.nombre} ${marea.observadorPrincipal.apellido}`, mareas: 0, days: 0, active: marea.observadorPrincipal.activo };
+                    byObserver[obsId].mareas++;
+                    byObserver[obsId].days += days;
                 }
-                byObserver[obsId].mareas++;
-                byObserver[obsId].days += days;
+            } else {
+                // OBSERVER MODE: Iterate ALL unique observers involved in this marea and attribute THEIR specific days.
+                // This is complex because days are per stage.
+                const observerMap: Record<string, number> = {}; // ObsID -> Days
+
+                marea.etapas.forEach(etapa => {
+                    if (!etapa.fechaZarpada) return;
+                    // Days for this stage
+                    let sDays = 0;
+                    if (mode === 'CALENDAR') {
+                        sDays = DateUtils.calculateDaysInYear(etapa.fechaZarpada, etapa.fechaArribo || (marea.estadoActualId === 'EN_EJECUCION' ? new Date() : null) || new Date(), year);
+                    } else {
+                        sDays = DateUtils.calculateInclusiveDays(etapa.fechaZarpada, etapa.fechaArribo);
+                    }
+
+                    if (etapa.observadores && etapa.observadores.length > 0) {
+                        etapa.observadores.forEach(obsRel => {
+                            if (obsRel.observador) {
+                                observerMap[obsRel.observador.id] = (observerMap[obsRel.observador.id] || 0) + sDays;
+                                // Add to global list if needed to ensure name availability
+                                if (!byObserver[obsRel.observador.id]) {
+                                    byObserver[obsRel.observador.id] = {
+                                        id: obsRel.observador.id,
+                                        name: `${obsRel.observador.nombre} ${obsRel.observador.apellido}`,
+                                        mareas: 0,
+                                        days: 0,
+                                        active: obsRel.observador.activo
+                                    };
+                                }
+                            }
+                        });
+                    } else if (marea.observadorPrincipal) {
+                        // Fallback to main
+                        const mainId = marea.observadorPrincipal.id;
+                        observerMap[mainId] = (observerMap[mainId] || 0) + sDays;
+                        if (!byObserver[mainId]) {
+                            byObserver[mainId] = {
+                                id: mainId,
+                                name: `${marea.observadorPrincipal.nombre} ${marea.observadorPrincipal.apellido}`,
+                                mareas: 0,
+                                days: 0,
+                                active: marea.observadorPrincipal.activo
+                            };
+                        }
+                    }
+                });
+
+                // Apply to aggregated map
+                Object.entries(observerMap).forEach(([oId, d]) => {
+                    byObserver[oId].days += d;
+                    // Marea count? They participated in this marea.
+                    // But if we count 1 marea for each observer, total mareas in "Observer Ranking" sum > Total Mareas.
+                    // That is expected for "Observer Ranking".
+                    byObserver[oId].mareas++;
+                });
             }
 
             // Monthly Trend (Starts)
@@ -152,50 +262,84 @@ export class StatsService {
                 mareasByMonth[startMonth]++;
             }
 
-            // Distribute Days across months using merged intervals
-            if (days > 0) {
-                // We normalize/merge intervals for this marea to distribute accurately
-                const normalized = intervals
-                    .map(i => {
-                        const s = new Date(i.start);
-                        const e = i.end ? new Date(i.end) : new Date();
-                        s.setHours(0, 0, 0, 0);
-                        e.setHours(0, 0, 0, 0);
-                        return { start: s, end: e };
-                    })
-                    .filter(i => !isNaN(i.start.getTime()) && !isNaN(i.end.getTime()) && i.end >= i.start)
-                    .sort((a, b) => a.start.getTime() - b.start.getTime());
+            // Distribute Days in Month
+            if (daysCalculationMode === 'SHIP') {
+                if (days > 0) {
+                    // Existing logic for SHIP days distribution
+                    // ... (merged logic) ...
+                    const normalized = intervals
+                        .map(i => {
+                            const s = new Date(i.start);
+                            // If end is null, we treat as open end (today?) or single day?
+                            // For 'active' mareas, end is today. For historic missing, it's start.
+                            // In this loop we already handled "intervals" construction correctly above with `marea.estadoActualId`.
+                            const e = i.end ? new Date(i.end) : new Date(s);
+                            s.setHours(0, 0, 0, 0);
+                            e.setHours(0, 0, 0, 0);
+                            return { start: s, end: e };
+                        })
+                        .filter(i => !isNaN(i.start.getTime()) && !isNaN(i.end.getTime()) && i.end >= i.start)
+                        .sort((a, b) => a.start.getTime() - b.start.getTime());
 
-                const merged: Array<{ start: Date; end: Date }> = [];
-                if (normalized.length > 0) {
-                    let curr = normalized[0];
-                    for (let i = 1; i < normalized.length; i++) {
-                        if (normalized[i].start.getTime() <= curr.end.getTime()) {
-                            if (normalized[i].end.getTime() > curr.end.getTime()) curr.end = normalized[i].end;
-                        } else {
-                            merged.push(curr);
-                            curr = normalized[i];
+                    const merged: Array<{ start: Date; end: Date }> = [];
+                    if (normalized.length > 0) {
+                        let curr = normalized[0];
+                        for (let i = 1; i < normalized.length; i++) {
+                            if (normalized[i].start.getTime() <= curr.end.getTime()) {
+                                if (normalized[i].end.getTime() > curr.end.getTime()) curr.end = normalized[i].end;
+                            } else {
+                                merged.push(curr);
+                                curr = normalized[i];
+                            }
+                        }
+                        merged.push(curr);
+                    }
+
+                    for (const interval of merged) {
+                        let cursor = new Date(interval.start);
+                        if (mode === 'CALENDAR') {
+                            if (cursor < yearStart) cursor = new Date(yearStart);
+                        }
+                        const limitEnd = (mode === 'CALENDAR' && interval.end > yearEnd) ? yearEnd : interval.end;
+
+                        while (cursor <= limitEnd) {
+                            if (cursor.getFullYear() === year) {
+                                daysByMonth[cursor.getMonth()]++;
+                            }
+                            cursor.setDate(cursor.getDate() + 1);
                         }
                     }
-                    merged.push(curr);
                 }
+            } else {
+                // OBSERVER MODE: Distribute DAYS * OBSERVERS
+                // Iterate stages again?
+                marea.etapas.forEach(etapa => {
+                    if (!etapa.fechaZarpada) return;
+                    const count = (etapa.observadores && etapa.observadores.length > 0)
+                        ? etapa.observadores.length
+                        : (marea.observadorPrincipal ? 1 : 0);
 
-                // Distribute each merged interval by month (within the target year if CALENDAR mode)
-                for (const interval of merged) {
-                    let cursor = new Date(interval.start);
+                    if (count === 0) return;
+
+                    const s = new Date(etapa.fechaZarpada);
+                    const e = etapa.fechaArribo || (marea.estadoActualId === 'EN_EJECUCION' ? new Date() : null) || new Date(s); // Fallback to start if historical missing
+
+                    s.setHours(0, 0, 0, 0);
+                    e.setHours(0, 0, 0, 0);
+
+                    let cursor = new Date(s);
                     if (mode === 'CALENDAR') {
                         if (cursor < yearStart) cursor = new Date(yearStart);
                     }
-
-                    const limitEnd = (mode === 'CALENDAR' && interval.end > yearEnd) ? yearEnd : interval.end;
+                    const limitEnd = (mode === 'CALENDAR' && e > yearEnd) ? yearEnd : e;
 
                     while (cursor <= limitEnd) {
                         if (cursor.getFullYear() === year) {
-                            daysByMonth[cursor.getMonth()]++;
+                            daysByMonth[cursor.getMonth()] += count; // Add N days for this day
                         }
                         cursor.setDate(cursor.getDate() + 1);
                     }
-                }
+                });
             }
         }
 
@@ -203,8 +347,8 @@ export class StatsService {
             year,
             mode,
             totalMareas,
-            totalDaysNavigated,
-            avgDaysPerMarea: totalMareas ? Math.round(totalDaysNavigated / totalMareas) : 0,
+            totalDaysNavigated: totalDaysCalculated,
+            avgDaysPerMarea: totalMareas ? Math.round(totalDaysCalculated / totalMareas) : 0,
             monthly: {
                 mareas: mareasByMonth,
                 days: daysByMonth,
@@ -221,12 +365,18 @@ export class StatsService {
         includeNonProtocolized: boolean,
         includeProtocolizedOutOfPeriod = false,
         filterType: 'FISHERY' | 'FLEET' | 'OBSERVER',
-        filterValue: string
+        filterValue: string,
+        daysCalculationMode: 'SHIP' | 'OBSERVER' = 'SHIP',
+        includeCampaigns: boolean = true,
     ): Promise<StatsDetailItem[]> {
         const yearStart = new Date(Date.UTC(year, 0, 1, 0, 0, 0, 0));
         const yearEnd = new Date(Date.UTC(year, 11, 31, 23, 59, 59, 999));
 
         const where = this.getSharedWhereClause(yearStart, yearEnd, includeNonProtocolized, includeProtocolizedOutOfPeriod);
+
+        if (!includeCampaigns) {
+            where.tipoMarea = { not: 'CI' };
+        }
 
         // Apply dynamic filter
         if (filterType === 'FISHERY') {
@@ -238,7 +388,8 @@ export class StatsService {
                 tipoFlota: { nombre: filterValue }
             };
         } else if (filterType === 'OBSERVER') {
-            const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(filterValue);
+            // Robust UUID check: Length 36 and hex chars + dashes
+            const isUUID = filterValue.length === 36 && /^[0-9a-f-]{36}$/i.test(filterValue);
             if (isUUID) {
                 where.observadorPrincipalId = filterValue;
             } else {
@@ -264,6 +415,9 @@ export class StatsService {
                 estadoActual: true,
                 etapas: {
                     orderBy: { nroEtapa: 'asc' },
+                    include: {
+                        observadores: { include: { observador: true } }
+                    }
                 }
             },
             orderBy: [
@@ -276,14 +430,35 @@ export class StatsService {
         return mareas.map(m => {
             const overallStart = m.fechaInicioObservador || m.fechaZarpadaEstimada;
 
-            // Extract stage intervals
-            const intervals = m.etapas.map(e => ({
-                start: e.fechaZarpada,
-                end: e.fechaArribo || (m.estadoActualId === 'EN_EJECUCION' ? new Date() : null)
-            })).filter(i => i.start);
+            let days = 0;
 
-            // Calculate Unique Days
-            const days = DateUtils.calculateUniqueDays(intervals, mode === 'CALENDAR' ? year : undefined);
+            if (daysCalculationMode === 'SHIP') {
+                const intervals = m.etapas.map(e => ({
+                    start: e.fechaZarpada,
+                    end: e.fechaArribo || (m.estadoActualId === 'EN_EJECUCION' ? new Date() : null)
+                })).filter(i => i.start);
+                days = DateUtils.calculateUniqueDays(intervals, mode === 'CALENDAR' ? year : undefined);
+            } else {
+                // OBSERVER Days
+                let totalObsDays = 0;
+                m.etapas.forEach(etapa => {
+                    if (!etapa.fechaZarpada) return;
+                    let stageDays = 0;
+                    const end = etapa.fechaArribo || (m.estadoActualId === 'EN_EJECUCION' ? new Date() : null);
+                    if (mode === 'CALENDAR') {
+                        stageDays = DateUtils.calculateDaysInYear(etapa.fechaZarpada, end || new Date(), year);
+                    } else {
+                        stageDays = DateUtils.calculateInclusiveDays(etapa.fechaZarpada, end);
+                    }
+
+                    const count = (etapa.observadores && etapa.observadores.length > 0)
+                        ? etapa.observadores.length
+                        : (m.observadorPrincipal ? 1 : 0);
+
+                    totalObsDays += (stageDays * count);
+                });
+                days = totalObsDays;
+            }
 
             return {
                 id: m.id,
@@ -307,7 +482,9 @@ export class StatsService {
         year: number,
         mode: 'CALENDAR' | 'TOTAL',
         includeNonProtocolized: boolean,
-        includeProtocolizedOutOfPeriod = false,
+        includeProtocolizedOutOfPeriod: boolean,
+        daysCalculationMode: 'SHIP' | 'OBSERVER' = 'SHIP',
+        includeCampaigns: boolean = true,
         filterType?: 'FISHERY' | 'FLEET' | 'OBSERVER',
         filterValue?: string
     ): Promise<ExcelJS.Workbook> {
@@ -316,13 +493,17 @@ export class StatsService {
 
         const where = this.getSharedWhereClause(yearStart, yearEnd, includeNonProtocolized, includeProtocolizedOutOfPeriod);
 
+        if (!includeCampaigns) {
+            where.tipoMarea = { not: 'CI' };
+        }
+
         if (filterType && filterValue) {
             if (filterType === 'FISHERY') {
                 where.buque = { pesqueriaHabitual: { nombre: filterValue } };
             } else if (filterType === 'FLEET') {
                 where.buque = { tipoFlota: { nombre: filterValue } };
             } else if (filterType === 'OBSERVER') {
-                const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(filterValue);
+                const isUUID = filterValue.length === 36 && /^[0-9a-f-]{36}$/i.test(filterValue);
                 if (isUUID) {
                     where.observadorPrincipalId = filterValue;
                 } else {
@@ -352,6 +533,7 @@ export class StatsService {
                     include: {
                         puertoZarpada: true,
                         puertoArribo: true,
+                        observadores: { include: { observador: true } }
                     }
                 }
             },
@@ -365,7 +547,28 @@ export class StatsService {
         const sheet = workbook.addWorksheet('Mareas');
 
         // Determinar max etapas para las columnas
-        const maxEtapas = mareas.reduce((max, m) => Math.max(max, m.etapas.length), 0);
+        // Determinar max etapas y observadores adicionales
+        let maxEtapas = 0;
+        let maxExtraObservers = 0;
+
+        mareas.forEach(m => {
+            if (m.etapas.length > maxEtapas) maxEtapas = m.etapas.length;
+
+            // Find extra observers in this marea
+            const uniqueObserversInMarea = new Set<string>();
+            if (m.observadorPrincipal) uniqueObserversInMarea.add(m.observadorPrincipal.id);
+
+            const extras = new Set<string>();
+            m.etapas.forEach(e => {
+                e.observadores.forEach(obsRel => {
+                    const oid = obsRel.observadorId;
+                    if (oid && (!m.observadorPrincipal || oid !== m.observadorPrincipal.id)) {
+                        extras.add(oid);
+                    }
+                });
+            });
+            if (extras.size > maxExtraObservers) maxExtraObservers = extras.size;
+        });
 
         // Definir columnas base
         const columns = [
@@ -373,12 +576,20 @@ export class StatsService {
             { header: 'Buque', key: 'buque', width: 25 },
             { header: 'Flota', key: 'flota', width: 20 },
             { header: 'Pesquería', key: 'pesqueria', width: 20 },
-            { header: 'Observador', key: 'observador', width: 25 },
+            { header: 'Observador Principal', key: 'observador', width: 25 },
+        ];
+
+        // Dynamic Extra Observers Columns
+        for (let i = 1; i <= maxExtraObservers; i++) {
+            columns.push({ header: `Observador Adic. ${i}`, key: `obs_adic_${i}`, width: 25 });
+        }
+
+        columns.push(
             { header: 'Estado', key: 'estado', width: 20 },
             { header: 'Días Nav.', key: 'dias', width: 10 },
             { header: 'Inicio', key: 'inicio', width: 15 },
             { header: 'Fin', key: 'fin', width: 15 },
-        ];
+        );
 
         // Columnas dinámicas de etapas
         for (let i = 1; i <= maxEtapas; i++) {
@@ -404,14 +615,32 @@ export class StatsService {
         mareas.forEach(m => {
             const overallStart = m.fechaInicioObservador || m.fechaZarpadaEstimada;
 
-            // Extract stage intervals
-            const intervals = m.etapas.map(e => ({
-                start: e.fechaZarpada,
-                end: e.fechaArribo || (m.estadoActualId === 'EN_EJECUCION' ? new Date() : null)
-            })).filter(i => i.start);
-
-            // Calculate Unique Days
-            const days = DateUtils.calculateUniqueDays(intervals, mode === 'CALENDAR' ? year : undefined);
+            let days = 0;
+            if (daysCalculationMode === 'SHIP') {
+                const intervals = m.etapas.map(e => ({
+                    start: e.fechaZarpada,
+                    end: e.fechaArribo || (m.estadoActualId === 'EN_EJECUCION' ? new Date() : null)
+                })).filter(i => i.start);
+                days = DateUtils.calculateUniqueDays(intervals, mode === 'CALENDAR' ? year : undefined);
+            } else {
+                // OBSERVER Days Logic
+                let totalObsDays = 0;
+                m.etapas.forEach(etapa => {
+                    if (!etapa.fechaZarpada) return;
+                    let stageDays = 0;
+                    const end = etapa.fechaArribo || (m.estadoActualId === 'EN_EJECUCION' ? new Date() : null);
+                    if (mode === 'CALENDAR') {
+                        stageDays = DateUtils.calculateDaysInYear(etapa.fechaZarpada, end || new Date(), year);
+                    } else {
+                        stageDays = DateUtils.calculateInclusiveDays(etapa.fechaZarpada, end);
+                    }
+                    const count = (etapa.observadores && etapa.observadores.length > 0)
+                        ? etapa.observadores.length
+                        : (m.observadorPrincipal ? 1 : 0);
+                    totalObsDays += (stageDays * count);
+                });
+                days = totalObsDays;
+            }
 
             const rowData: any = {
                 id_marea: MareaUtils.formatCodigo(m),
@@ -424,6 +653,25 @@ export class StatsService {
                 inicio: overallStart ? overallStart.toLocaleDateString() : '-',
                 fin: m.fechaFinObservador ? m.fechaFinObservador.toLocaleDateString() : (m.estadoActualId === 'EN_EJECUCION' ? 'En curso' : '-')
             };
+
+            // Extra Observers
+            const extraObservers = new Set<string>();
+            m.etapas.forEach(e => {
+                e.observadores.forEach(obsRel => {
+                    const oid = obsRel.observadorId;
+                    // Logic: If main observer is defined, exclude him from "Adicionales".
+                    if (m.observadorPrincipal && oid === m.observadorPrincipal.id) return;
+                    if (obsRel.observador) {
+                        // Store Name
+                        extraObservers.add(`${obsRel.observador.nombre} ${obsRel.observador.apellido}`);
+                    }
+                });
+            });
+            const extrasArray = Array.from(extraObservers);
+            extrasArray.forEach((name, idx) => {
+                rowData[`obs_adic_${idx + 1}`] = name;
+            });
+
 
             // Etapas
             m.etapas.forEach((e, idx) => {
