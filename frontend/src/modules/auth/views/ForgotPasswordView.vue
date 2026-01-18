@@ -1,165 +1,138 @@
 <template>
-  <FullScreenLayout>
-    <div class="relative p-6 bg-surface z-1 sm:p-0">
-      <div
-        class="relative flex flex-col justify-center w-full h-screen lg:flex-row bg-surface"
-      >
-        <div class="flex flex-col flex-1 w-full lg:w-1/2">
-          <div class="w-full max-w-md pt-10 mx-auto">
-            <router-link
-              :to="{ name: 'Signin' }"
-              class="inline-flex items-center text-sm text-text-muted transition-colors hover:text-text"
-            >
-              <svg
-                class="stroke-current mr-2"
-                xmlns="http://www.w3.org/2000/svg"
-                width="20"
-                height="20"
-                viewBox="0 0 20 20"
-                fill="none"
-              >
-                <path
-                  d="M12.7083 5L7.5 10.2083L12.7083 15.4167"
-                  stroke=""
-                  stroke-width="1.5"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
+  <AuthGlassLayout>
+    <div class="glass-card w-full max-w-[440px] p-8 sm:p-10 rounded-3xl relative animate-fade-in-up">
+      <!-- Header -->
+      <header class="flex items-center gap-6 mb-8">
+        <SigmaBranding variant="auth" title="Recuperar Cuenta" subtitle="Le enviaremos un código de acceso." theme="dark" />
+      </header>
+      
+      <!-- Content -->
+      <div v-if="!emailSent">
+         <div class="mb-6 text-sm text-gray-300">
+             Ingrese la dirección de correo electrónico asociada a su cuenta y le enviaremos un enlace para restablecer su contraseña.
+         </div>
+
+         <!-- Error Message -->
+         <div v-if="errorMessage" class="mb-6 p-3 bg-red-500/20 border border-red-500/30 rounded-xl flex items-start gap-3 text-sm text-red-200">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 001 1h2a1 1 0 001-1V6a1 1 0 00-1-1h-2z" clip-rule="evenodd" />
+            </svg>
+            <span>{{ errorMessage }}</span>
+         </div>
+
+         <!-- Form -->
+         <form @submit.prevent="handleSubmit" class="flex flex-col gap-6">
+            <div class="space-y-2">
+              <label for="email" class="text-sm font-medium text-gray-300 ml-1">Correo Electrónico</label>
+              <div class="relative flex items-center">
+                <Mail class="absolute left-4 text-gray-400 pointer-events-none" :size="20" />
+                <input 
+                  id="email"
+                  v-model="email"
+                  type="email" 
+                  placeholder="admin@obs.com"
+                  required
+                  :disabled="isLoading"
+                  class="w-full pl-12 pr-4 py-3 rounded-xl bg-black/20 border border-white/10 text-white placeholder:text-gray-500 focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all duration-300 backdrop-blur-sm hover:border-white/20"
                 />
-              </svg>
-              Volver al inicio de sesión
-            </router-link>
-          </div>
-          <div class="flex flex-col justify-center flex-1 w-full max-w-md mx-auto">
-            <div v-if="!isSent">
-              <div class="mb-5 sm:mb-8">
-                <h1
-                  class="mb-2 font-black text-text text-title-sm sm:text-title-md uppercase tracking-tight"
-                >
-                  Recuperar Contraseña
-                </h1>
-                <p class="text-sm text-text-muted">
-                  Ingrese su correo electrónico para recibir un enlace de recuperación.
-                </p>
-              </div>
-              <div v-if="errorMessage" class="mb-4 p-4 text-sm text-error bg-error/10 border border-error/20 rounded-xl" role="alert">
-                <span class="font-bold uppercase tracking-tight mr-1">Error:</span> {{ errorMessage }}
-              </div>
-              <div>
-                <form @submit.prevent="handleSubmit">
-                  <div class="space-y-5">
-                    <!-- Email -->
-                    <div>
-                      <label
-                        for="email"
-                        class="mb-1.5 block text-sm font-bold text-text-muted uppercase tracking-widest text-[10px]"
-                      >
-                        Correo electrónico<span class="text-error">*</span>
-                      </label>
-                      <input
-                        v-model="email"
-                        type="email"
-                        id="email"
-                        name="email"
-                        placeholder="ejemplo@inidep.edu.ar"
-                        required
-                        class="h-11 w-full rounded-xl border border-border bg-surface-muted px-4 py-2.5 text-sm text-text shadow-theme-xs placeholder:text-text-muted/40 focus:border-primary focus:outline-hidden focus:ring-4 focus:ring-primary/10 transition-all font-medium"
-                      />
-                    </div>
-                    
-                    <!-- Button -->
-                    <div>
-                      <button
-                        type="submit"
-                        :disabled="isLoading"
-                        class="flex items-center justify-center w-full px-4 py-3 text-sm font-bold text-primary-fg transition rounded-xl bg-primary shadow-lg shadow-primary/20 hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-widest"
-                      >
-                        <span v-if="!isLoading">Enviar Enlace de Recuperación</span>
-                        <span v-else class="flex items-center gap-2">
-                           <div class="w-4 h-4 border-2 border-primary-fg/30 border-t-primary-fg rounded-full animate-spin"></div>
-                           Enviando...
-                        </span>
-                      </button>
-                    </div>
-                  </div>
-                </form>
               </div>
             </div>
 
-            <!-- Success State -->
-            <div v-else class="text-center">
-                <div class="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-success/10 border border-success/20">
-                    <svg class="h-10 w-10 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                    </svg>
-                </div>
-                <h2 class="mt-4 text-xl font-black text-text uppercase tracking-tight">¡Correo Enviado!</h2>
-                <p class="mt-2 text-text-muted">
-                    Si el correo <strong>{{ email }}</strong> está registrado, recibirá el enlace en unos minutos.
-                </p>
-                <button 
-                  @click="isSent = false" 
-                  class="mt-6 text-primary hover:text-primary/80 font-bold text-sm uppercase tracking-widest"
-                >
-                    Probar con otro correo
-                </button>
-            </div>
-
-          </div>
-        </div>
-        <div
-          class="relative items-center hidden w-full h-full lg:w-1/2 bg-surface-muted lg:grid border-l border-border"
-        >
-          <div class="flex items-center justify-center z-1">
-            <common-grid-shape />
-            <div class="flex flex-col items-center max-w-xs">
-              <router-link
-                :to="{ name: 'Dashboard' }"
-                class="flex items-center gap-3 mb-4 text-white"
-              >
-                <div
-                  class="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center flex-shrink-0 shadow-lg shadow-primary/20"
-                >
-                  <WaveIcon class="w-7 h-7 text-primary-fg" />
-                </div>
-                <div class="flex flex-col leading-tight">
-                  <span class="text-lg font-black text-text uppercase tracking-tight">Gestión de</span>
-                  <span class="text-lg font-black text-primary uppercase tracking-tight">Mareas</span>
-                </div>
-              </router-link>
-              <p class="text-center text-text-muted font-bold tracking-widest uppercase text-[10px]">INIDEP</p>
-            </div>
-          </div>
-        </div>
+            <button 
+              type="submit"
+              :disabled="isLoading"
+              class="relative w-full py-3.5 rounded-xl bg-gradient-to-r from-primary to-blue-600 text-white font-bold tracking-wide shadow-lg shadow-primary/25 hover:shadow-primary/40 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none overflow-hidden"
+            >
+              <div v-if="isLoading" class="flex items-center justify-center gap-2">
+                <Loader2 class="animate-spin" :size="20" />
+                <span>ENVIANDO...</span>
+              </div>
+              <span v-else>ENVIAR ENLACE</span>
+              <div class="absolute inset-0 -translate-x-full group-hover:animate-shine bg-gradient-to-r from-transparent via-white/20 to-transparent z-10"></div>
+            </button>
+         </form>
       </div>
+
+      <!-- Success State -->
+      <div v-else class="text-center animate-fade-in-up">
+        <div class="w-16 h-16 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-4 text-green-400 border-2 border-green-500/20">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+          </svg>
+        </div>
+        <h3 class="text-xl font-bold text-white mb-2">¡Correo enviado!</h3>
+        <p class="text-gray-300 mb-6">
+          Si existe una cuenta asociada a <strong>{{ email }}</strong>, recibirá un correo con instrucciones para restablecer su contraseña.
+        </p>
+        <button 
+          @click="emailSent = false"
+          class="text-primary font-bold hover:text-primary-hover hover:underline transition-colors"
+        >
+          Intentar con otro correo
+        </button>
+      </div>
+
+      <!-- Footer -->
+      <div class="text-center mt-8 text-sm">
+        <router-link :to="{ name: 'Signin' }" class="flex items-center justify-center gap-2 text-gray-400 hover:text-white transition-colors font-medium">
+          <ArrowLeft :size="16" />
+          Volver al inicio de sesión
+        </router-link>
+      </div>
+
     </div>
-  </FullScreenLayout>
+  </AuthGlassLayout>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import CommonGridShape from '@/components/common/CommonGridShape.vue'
-import FullScreenLayout from '@/components/layout/FullScreenLayout.vue'
-import { WaveIcon } from '@/icons'
-import authApi  from '../services/auth.service'
+import { ref } from 'vue';
+import AuthGlassLayout from '@/components/layout/AuthGlassLayout.vue';
+import SigmaBranding from '@/components/brand/SigmaBranding.vue';
+import { useAuthStore } from '../stores/auth.store';
+import { Mail, Loader2, ArrowLeft } from 'lucide-vue-next';
 
-const email = ref('')
-const isLoading = ref(false)
-const isSent = ref(false)
-const errorMessage = ref('')
+const authStore = useAuthStore();
+const email = ref('');
+const isLoading = ref(false);
+const errorMessage = ref('');
+const emailSent = ref(false);
 
 const handleSubmit = async () => {
-  isLoading.value = true
-  errorMessage.value = ''
-  
+  isLoading.value = true;
+  errorMessage.value = '';
+
   try {
-    await authApi.forgotPassword(email.value)
-    isSent.value = true
+     const result = await authStore.forgotPassword(email.value);
+     if (result.ok) {
+        emailSent.value = true;
+     } else {
+        errorMessage.value = result.error?.message || 'Ocurrió un error al procesar su solicitud.';
+     }
   } catch (error: any) {
-    errorMessage.value = error.message || 'Error al enviar el enlace'
-    // Usually for security we might not want to show if email exists or not, but depends on requirement.
-    // The previous implementation showed error toast.
+    errorMessage.value = 'Ocurrió un error inesperado al procesar su solicitud.';
   } finally {
-    isLoading.value = false
+    isLoading.value = false;
   }
-}
+};
 </script>
+
+<style scoped>
+.glass-card {
+  /* Fondo traslúcido oscuro ONLY */
+  background: rgba(15, 23, 42, 0.6); 
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+</style>
+
