@@ -1,6 +1,6 @@
 <template>
   <div class="auth-layout dark min-h-screen w-full relative overflow-hidden flex items-center justify-center p-4 bg-slate-950 text-white animate-fade-in">
-    
+
     <!-- Atmósfera Global (Original Premium) -->
     <Atmosphere />
 
@@ -12,7 +12,7 @@
     <!-- Footer -->
     <div class="absolute bottom-4 text-center w-full z-10 opacity-30">
       <p class="text-[10px] tracking-widest uppercase font-mono">
-        &copy; 2025 INIDEP. Todos los derechos reservados.
+        &copy; 2025 Daniel Di Tullio - INIDEP. Todos los derechos reservados.
       </p>
     </div>
 
@@ -30,7 +30,7 @@ import Atmosphere from '@/components/ui/Atmosphere.vue';
 }
 
 .animate-fade-in {
-  animation: fadeIn 0.8s ease-out forwards;
+  animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
 @keyframes fadeIn {

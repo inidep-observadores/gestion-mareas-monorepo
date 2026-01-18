@@ -143,13 +143,13 @@
                             <ChevronDownIcon v-if="sortBy === 'buque_nombre'" class="w-3 h-3 text-primary transition-transform duration-300" :class="{ 'rotate-180': sortOrder === 'asc' }" />
                           </div>
                         </th>
-                        <th v-if="!selectedMarea" @click="toggleSort('estado')" class="px-5 py-2 cursor-pointer hover:text-primary transition-colors group">
+                        <th @click="toggleSort('estado')" class="px-5 py-2 cursor-pointer hover:text-primary transition-colors group">
                           <div class="flex items-center gap-1">
                             Estado Operativo
                             <ChevronDownIcon v-if="sortBy === 'estado'" class="w-3 h-3 text-primary transition-transform duration-300" :class="{ 'rotate-180': sortOrder === 'asc' }" />
                           </div>
                         </th>
-                        <th v-if="!selectedMarea" @click="toggleSort('fecha_zarpada')" class="px-5 py-2 cursor-pointer hover:text-primary transition-colors group">
+                        <th @click="toggleSort('fecha_zarpada')" class="px-5 py-2 cursor-pointer hover:text-primary transition-colors group">
                           <div class="flex items-center gap-1">
                             Zarpada
                             <ChevronDownIcon v-if="sortBy === 'fecha_zarpada'" class="w-3 h-3 text-primary transition-transform duration-300" :class="{ 'rotate-180': sortOrder === 'asc' }" />
@@ -165,12 +165,6 @@
                           <div class="flex items-center gap-1">
                             Alertas
                             <ChevronDownIcon v-if="sortBy === 'alertas'" class="w-3 h-3 text-primary transition-transform duration-300" :class="{ 'rotate-180': sortOrder === 'asc' }" />
-                          </div>
-                        </th>
-                        <th v-if="selectedMarea" @click="toggleSort('observador')" class="px-5 py-2 cursor-pointer hover:text-primary transition-colors group">
-                          <div class="flex items-center gap-1">
-                            Observador
-                            <ChevronDownIcon v-if="sortBy === 'observador'" class="w-3 h-3 text-primary transition-transform duration-300" :class="{ 'rotate-180': sortOrder === 'asc' }" />
                           </div>
                         </th>
                         <th class="px-5 py-2 text-right">Acciones</th>
@@ -189,13 +183,16 @@
                         </td>
                         <td class="px-5 py-1.5">
                           <div class="flex items-center gap-2.5">
-                            <div class="w-7 h-7 rounded-lg bg-surface-muted flex items-center justify-center text-text-muted group-hover:bg-primary/10 group-hover:text-primary transition-colors">
+                            <div class="w-7 h-7 rounded-lg bg-surface-muted flex items-center justify-center text-text-muted group-hover:bg-primary/10 group-hover:text-primary transition-colors shrink-0">
                               <ShipIcon class="w-3.5 h-3.5" />
                             </div>
-                            <span class="text-sm font-bold text-text leading-none">{{ marea.buque_nombre }}</span>
+                            <div class="flex flex-col min-w-0">
+                              <span class="text-sm font-bold text-text leading-tight truncate">{{ marea.buque_nombre }}</span>
+                              <span class="text-[10px] font-bold text-text-muted leading-tight truncate mt-0.5">{{ marea.observador || 'Sin asignar' }}</span>
+                            </div>
                           </div>
                         </td>
-                        <td v-if="!selectedMarea" class="px-5 py-1.5">
+                        <td class="px-5 py-1.5">
                           <div class="flex items-center gap-2">
                             <span class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-tighter whitespace-nowrap" :class="getStatusClasses(marea.estado_codigo)">
                               {{ marea.estado }}
@@ -209,7 +206,7 @@
                             </span>
                           </div>
                         </td>
-                        <td v-if="!selectedMarea" class="px-5 py-1.5">
+                        <td class="px-5 py-1.5">
                           <div class="flex flex-col">
                             <span class="text-xs font-bold text-text leading-none">{{ formatDate(marea.fecha_zarpada) }}</span>
                             <span class="text-[10px] text-text-muted leading-none mt-1">{{ marea.puerto }}</span>
@@ -229,9 +226,6 @@
                             <span class="text-[10px] font-black text-error">{{ marea.alertas.length }}</span>
                           </div>
                           <span v-else class="text-[10px] font-bold text-text-muted/40">Ninguna</span>
-                        </td>
-                        <td v-if="selectedMarea" class="px-5 py-1.5">
-                          <span class="text-sm font-bold text-text-muted">{{ marea.observador || 'No asignado' }}</span>
                         </td>
                         <td class="px-5 py-1.5 text-right">
                           <div class="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-all">

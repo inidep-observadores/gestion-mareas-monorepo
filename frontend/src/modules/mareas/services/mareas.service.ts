@@ -42,6 +42,8 @@ export interface MareaContext {
         fecha_fin_observador?: string;
         dias_marea: number;
         dias_navegados: number;
+        progreso: number;
+        observador: string;
         etapas?: any[];
     };
     actions: Record<string, { enabled: boolean; label: string; blockedReason?: string }>;

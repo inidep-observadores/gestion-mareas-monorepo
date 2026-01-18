@@ -53,7 +53,7 @@ onUnmounted(() => {
 
 <style scoped>
 .animate-page-fade {
-  animation: pageFadeIn 0.8s ease-out forwards;
+  animation: pageFadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
 @keyframes pageFadeIn {
