@@ -47,6 +47,8 @@ const props = defineProps<{
 
 const themeStore = useThemeStore()
 
+const emit = defineEmits(['dataPointClick'])
+
 // Merit: Default chart options for premium look
 const chartOptions = computed(() => {
   const isDark = themeStore.darkMode
@@ -57,7 +59,15 @@ const chartOptions = computed(() => {
       background: 'transparent',
       toolbar: { show: false },
       zoom: { enabled: false },
-      animations: { enabled: true }
+      animations: { enabled: true },
+      events: {
+        dataPointSelection: (event: any, chartContext: any, config: any) => {
+          const { seriesIndex, dataPointIndex, w } = config
+          const label = w.globals.labels[dataPointIndex]
+          const value = w.globals.series[seriesIndex][dataPointIndex] || w.globals.series[seriesIndex]
+          emit('dataPointClick', { label, value, seriesIndex, dataPointIndex })
+        }
+      }
     },
     dataLabels: { enabled: false },
     stroke: { 

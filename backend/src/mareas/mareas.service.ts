@@ -201,14 +201,22 @@ export class MareasService {
                 },
                 {
                     estadoActual: { codigo: MareaEstado.PROTOCOLIZADA },
-                    anioProtocolizacion: operationalYear
+                    OR: [
+                        { anioProtocolizacion: operationalYear },
+                        { anioMarea: operationalYear }
+                    ]
                 },
                 {
                     estadoActual: { codigo: MareaEstado.CANCELADA },
-                    fechaFinObservador: {
-                        gte: startOfYear,
-                        lt: startOfNextYear
-                    }
+                    OR: [
+                        {
+                            fechaFinObservador: {
+                                gte: startOfYear,
+                                lt: startOfNextYear
+                            }
+                        },
+                        { anioMarea: operationalYear }
+                    ]
                 }
             ]
         };
@@ -216,11 +224,17 @@ export class MareasService {
         return { operationalYear, mareaYearFilter };
     }
 
-    async getDashboardOperativo(year?: number) {
+    async getDashboardOperativo(year?: number, showAll?: boolean) {
         const { mareaYearFilter } = this.buildMareaYearFilter(year);
+
+        const estadosWhere: any = { activo: true };
+        if (!showAll) {
+            estadosWhere.mostrarEnPanel = true;
+        }
+
         const [estados, transiciones] = await Promise.all([
             this.prisma.estadoMarea.findMany({
-                where: { activo: true, mostrarEnPanel: true },
+                where: estadosWhere,
                 orderBy: { orden: 'asc' }
             }),
             this.prisma.transicionEstado.findMany({
@@ -238,16 +252,21 @@ export class MareasService {
             }))
         );
 
-        const kpis = kpisRaw.filter(k => k.value > 0);
+        const kpis = kpisRaw.filter(k => showAll || k.value > 0);
+
+        const mareasWhere: any = {
+            activo: true,
+            ...mareaYearFilter
+        };
+
+        if (!showAll) {
+            mareasWhere.estadoActual = {
+                mostrarEnPanel: true
+            };
+        }
 
         const mareas = await (this.prisma as any).marea.findMany({
-            where: {
-                activo: true,
-                ...mareaYearFilter,
-                estadoActual: {
-                    mostrarEnPanel: true
-                }
-            },
+            where: mareasWhere,
             select: {
                 id: true,
                 nroMarea: true,
@@ -273,8 +292,11 @@ export class MareasService {
                         }
                     }
                 }
-            } as any,
-            take: 50
+            },
+            orderBy: [
+                { anioMarea: 'desc' },
+                { nroMarea: 'desc' }
+            ]
         });
 
         // Fetch active alerts for these mareas

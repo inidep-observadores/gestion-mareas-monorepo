@@ -64,6 +64,7 @@
               type="pie"
               :series="fleetSeries"
               :options="fleetChartOptions"
+              @dataPointClick="handleFleetClick"
             />
           </div>
         </section>
@@ -77,6 +78,7 @@
               type="donut"
               :series="fisherySeries"
               :options="fisheryChartOptions"
+              @dataPointClick="handleFisheryClick"
             />
           </div>
           <div class="col-span-12 lg:col-span-7">
@@ -86,6 +88,7 @@
               type="bar"
               :series="observerSeries"
               :options="observerChartOptions"
+              @dataPointClick="handleObserverClick"
             />
           </div>
         </section>
@@ -102,6 +105,18 @@
          No hay datos disponibles para la configuración seleccionada.
       </div>
 
+      <!-- Drill Down Modal -->
+      <StatsDrillDownModal
+        :is-open="drillDown.isOpen"
+        :title="drillDown.title"
+        :filter-type="drillDown.filterType"
+        :filter-value="drillDown.filterValue"
+        :year="configStore.selectedYear"
+        :mode="mode"
+        :include-non-protocolized="!protocolizedOnly"
+        :include-protocolized-out-of-period="includeOutOfPeriod"
+        @close="drillDown.isOpen = false"
+      />
     </div>
   </AdminLayout>
 </template>
@@ -112,9 +127,9 @@ import AdminLayout from '@/components/layout/AdminLayout.vue'
 import StatsFilterBar from '../../stats/components/StatsFilterBar.vue'
 import StatKpiCard from '../../stats/components/StatKpiCard.vue'
 import ChartWidget from '../../stats/components/ChartWidget.vue'
-import { BarChartIcon, ShipIcon, CalendarClockIcon, TimerIcon } from 'lucide-vue-next'
+import StatsDrillDownModal from '../../stats/components/StatsDrillDownModal.vue'
+import { BarChartIcon, ShipIcon, CalendarClockIcon, TimerIcon, MapIcon } from 'lucide-vue-next'
 import { statsService, type DashboardStats } from '../../stats/services/stats.service'
-
 import { useConfigStore } from '@/modules/shared/stores/config.store'
 
 const loading = ref(false)
@@ -125,6 +140,42 @@ const configStore = useConfigStore()
 const mode = ref<'CALENDAR' | 'TOTAL'>('CALENDAR')
 const protocolizedOnly = ref(false)
 const includeOutOfPeriod = ref(false)
+
+const drillDown = ref({
+  isOpen: false,
+  title: '',
+  filterType: null as 'FISHERY' | 'FLEET' | 'OBSERVER' | null,
+  filterValue: null as string | null
+})
+
+// Drill Down Handlers
+const handleFisheryClick = (data: any) => {
+  drillDown.value = {
+    isOpen: true,
+    title: 'Pesquería',
+    filterType: 'FISHERY',
+    filterValue: data.label
+  }
+}
+
+const handleFleetClick = (data: any) => {
+  drillDown.value = {
+    isOpen: true,
+    title: 'Tipo de Flota',
+    filterType: 'FLEET',
+    filterValue: data.label
+  }
+}
+
+const handleObserverClick = (data: any) => {
+  const obs = stats.value?.observers.find(o => o.name === data.label)
+  drillDown.value = {
+    isOpen: true,
+    title: 'Observador',
+    filterType: 'OBSERVER',
+    filterValue: obs?.id || data.label
+  }
+}
 
 // Fetch Data
 const fetchData = async () => {

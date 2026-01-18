@@ -67,9 +67,9 @@ export interface CalendarEvent {
 }
 
 const mareasService = {
-    getDashboardOperativo: async (): Promise<MareaDashboard> => {
+    getDashboardOperativo: async (showAll: boolean = false): Promise<MareaDashboard> => {
         const { selectedYear } = useConfigStore();
-        const { data } = await httpClient.get<MareaDashboard>(`/mareas/operativo?year=${selectedYear}`);
+        const { data } = await httpClient.get<MareaDashboard>(`/mareas/operativo?year=${selectedYear}&showAll=${showAll}`);
         return data;
     },
 
