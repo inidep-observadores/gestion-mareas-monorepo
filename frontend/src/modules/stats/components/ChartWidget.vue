@@ -5,14 +5,17 @@
         <h3 class="text-sm font-black text-text uppercase tracking-tight">{{ title }}</h3>
         <p v-if="subtitle" class="text-[10px] font-bold text-text-muted uppercase tracking-widest mt-1">{{ subtitle }}</p>
       </div>
-      <button 
-        v-if="allowDownload" 
-        class="text-text-muted hover:text-primary transition-colors p-1"
-        title="Descargar Datos"
-        @click="$emit('download')"
-      >
-        <DownloadIcon class="w-4 h-4" />
-      </button>
+      <div class="flex items-center gap-1">
+        <slot name="header-action"></slot>
+        <button 
+          v-if="allowDownload" 
+          class="text-text-muted hover:text-primary transition-colors p-1"
+          title="Descargar Datos"
+          @click="$emit('download')"
+        >
+          <DownloadIcon class="w-4 h-4" />
+        </button>
+      </div>
     </div>
 
     <!-- Chart Container -->

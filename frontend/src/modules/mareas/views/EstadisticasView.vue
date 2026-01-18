@@ -123,7 +123,17 @@
               allow-download
               @dataPointClick="handleObserverClick"
               @download="handleDownload('Ranking_Observadores', 'OBSERVER')"
-            />
+            >
+                <template #header-action>
+                   <button 
+                     @click="rankingModalOpen = true"
+                     class="text-primary hover:text-primary-hover transition-colors p-1"
+                     title="Ver ranking completo"
+                   >
+                     <Maximize2Icon class="w-4 h-4" />
+                   </button>
+                </template>
+             </ChartWidget>
           </div>
         </section>
 
@@ -236,7 +246,7 @@
                                  <span class="font-black opacity-40 uppercase tracking-tighter text-[9px] mb-0.5">Pesquería</span>
                                  <span class="font-bold text-text truncate">{{ marea.pesqueria }}</span>
                               </div>
-                              <div class="flex flex-col">
+                              <div v-if="filterType !== 'OBSERVER'" class="flex flex-col">
                                  <span class="font-black opacity-40 uppercase tracking-tighter text-[9px] mb-0.5">Observador</span>
                                  <span class="font-bold text-text truncate">{{ marea.observador }}</span>
                               </div>
@@ -301,6 +311,7 @@
                                  </div>
                               </th>
                               <th 
+                                 v-if="filterType !== 'OBSERVER'"
                                  class="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-text-muted cursor-pointer hover:bg-surface-muted transition-colors group"
                                  @click="handleSort('observador')"
                               >
@@ -345,7 +356,7 @@
                               </td>
                               <td class="px-4 py-2 text-xs font-bold text-text border-r border-border/50">{{ marea.buque }}</td>
                               <td class="px-4 py-2 text-xs font-bold text-text border-r border-border/50">{{ marea.pesqueria }}</td>
-                              <td class="px-4 py-2 text-xs font-bold text-text border-r border-border/50">{{ marea.observador }}</td>
+                              <td v-if="filterType !== 'OBSERVER'" class="px-4 py-2 text-xs font-bold text-text border-r border-border/50">{{ marea.observador }}</td>
                               <td class="px-4 py-2 text-right border-r border-border/50">
                                  <span :class="['font-black text-sm tabular-nums', mode === 'CALENDAR' ? 'text-primary' : 'text-text']">
                                     {{ mode === 'CALENDAR' ? marea.diasCalendario : marea.diasTotales }}
@@ -372,7 +383,7 @@
          <div class="flex justify-end gap-3 p-4 border-t border-border bg-surface-muted/20 flex-none bg-surface/50 backdrop-blur-md">
             <button 
                class="flex items-center gap-2 px-4 py-2 rounded-lg border border-border text-xs font-black uppercase tracking-widest hover:bg-surface-muted transition-colors bg-surface shadow-sm active:scale-95 duration-200"
-               @click="handleDownload(dialogTitle.replace(/\s+/g, '_'), filterType || undefined)"
+               @click="handleDownload('Detalle', filterType || undefined)"
             >
                <DownloadIcon class="w-4 h-4" />
                Exportar Detalle
@@ -393,6 +404,110 @@
       :marea-id="selectedMareaId"
       @close="quickDetailOpen = false"
     />
+
+    <!-- FULL OBSERVER RANKING DIALOG -->
+    <BaseModal
+      :show="rankingModalOpen"
+      maxWidth="4xl"
+      @close="rankingModalOpen = false"
+    >
+      <template #title>
+         <div class="flex items-center gap-3">
+            <div class="p-2 bg-primary/10 rounded-lg text-primary">
+               <TrendingUpIcon class="w-5 h-5" />
+            </div>
+            <div>
+               <span class="text-sm font-black text-text uppercase tracking-tight leading-none block mb-0.5">Ranking Completo de Observadores</span>
+               <p class="text-[10px] font-bold text-text-muted uppercase tracking-widest mt-0.5">{{ year }} • {{ mode === 'CALENDAR' ? 'Periodo' : 'Total' }}</p>
+            </div>
+         </div>
+      </template>
+
+      <div class="flex flex-col min-h-0 -mx-6 -mb-6 -mt-6 h-[80vh] max-h-[85vh]">
+         <!-- Search bar -->
+         <div class="px-6 py-4 border-b border-border bg-surface-muted/20 flex items-center gap-4 flex-none">
+            <div class="relative flex-1 group">
+               <SearchIcon class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted group-focus-within:text-primary transition-colors" />
+               <input 
+                  v-model="rankingSearch"
+                  type="text" 
+                  placeholder="Buscar observador..." 
+                  class="w-full pl-9 pr-10 py-2 bg-surface border border-border rounded-xl text-sm focus:bg-surface focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200 shadow-sm"
+               />
+               <button 
+                  v-if="rankingSearch"
+                  @click="rankingSearch = ''"
+                  class="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full text-text-muted hover:text-error hover:bg-error/10 transition-all duration-200"
+               >
+                  <XIcon class="w-3.5 h-3.5" />
+               </button>
+            </div>
+            <div class="text-[10px] font-black text-text-muted uppercase tracking-widest whitespace-nowrap bg-surface px-3 py-1.5 rounded-lg border border-border shadow-theme-xs">
+               {{ fullObserverRanking.length }} Registros
+            </div>
+         </div>
+
+         <!-- Ranking List -->
+         <div class="flex-1 overflow-y-auto custom-scrollbar bg-surface/30">
+            <div class="bg-surface border-b border-border shadow-theme-xs">
+               <table class="w-full text-left border-collapse">
+                  <thead>
+                     <tr class="bg-surface-muted/50 border-b border-border">
+                        <th class="sticky top-0 z-20 bg-surface/95 backdrop-blur-md shadow-sm px-4 py-3 text-[10px] font-black uppercase tracking-widest text-text-muted w-16">Pos</th>
+                        <th class="sticky top-0 z-20 bg-surface/95 backdrop-blur-md shadow-sm px-4 py-3 text-[10px] font-black uppercase tracking-widest text-text-muted">Observador</th>
+                        <th class="sticky top-0 z-20 bg-surface/95 backdrop-blur-md shadow-sm px-4 py-3 text-[10px] font-black uppercase tracking-widest text-text-muted text-center w-24">Mareas</th>
+                        <th class="sticky top-0 z-20 bg-surface/95 backdrop-blur-md shadow-sm px-4 py-3 text-[10px] font-black uppercase tracking-widest text-text-muted text-right">Días Navegados</th>
+                     </tr>
+                  </thead>
+                  <tbody class="divide-y divide-border">
+                     <tr 
+                        v-for="(obs, index) in fullObserverRanking" 
+                        :key="obs.id"
+                        @click="openObserverDetail(obs)"
+                        class="hover:bg-primary/5 transition-colors group cursor-pointer"
+                     >
+                        <td class="px-4 py-3 border-r border-border/50">
+                           <span class="font-black text-xs text-text-muted tabular-nums">#{{ index + 1 }}</span>
+                        </td>
+                        <td class="px-4 py-3 border-r border-border/50">
+                           <div class="flex flex-col">
+                              <span class="font-bold text-sm text-text group-hover:text-primary transition-colors">{{ obs.name }}</span>
+                              <span v-if="!obs.active" class="text-[9px] font-bold text-error uppercase tracking-tighter">Inactivo</span>
+                           </div>
+                        </td>
+                        <td class="px-4 py-3 text-center border-r border-border/50 font-bold text-xs text-text">{{ obs.mareas }}</td>
+                        <td class="px-4 py-3 text-right">
+                           <div class="flex items-center justify-end gap-3">
+                              <div class="flex-1 max-w-[100px] h-1.5 bg-surface-muted rounded-full overflow-hidden hidden sm:block">
+                                 <div 
+                                    class="h-full bg-primary" 
+                                    :style="{ width: `${(obs.days / (fullObserverRanking[0]?.days || 1)) * 100}%` }"
+                                 ></div>
+                              </div>
+                              <span class="font-black text-sm text-primary tabular-nums">{{ obs.days }}</span>
+                           </div>
+                        </td>
+                     </tr>
+                  </tbody>
+               </table>
+            </div>
+
+            <div v-if="fullObserverRanking.length === 0" class="flex flex-col items-center justify-center py-20 text-center">
+               <SearchIcon class="w-12 h-12 text-text-muted/20 mb-4" />
+               <p class="text-xs font-black text-text-muted uppercase tracking-widest">No hay resultados</p>
+            </div>
+         </div>
+
+         <div class="flex justify-end p-4 border-t border-border bg-surface-muted/20 flex-none bg-surface/50 backdrop-blur-md">
+            <button 
+               class="px-6 py-2 rounded-lg bg-primary text-primary-fg text-xs font-black uppercase tracking-widest hover:bg-primary-hover transition-colors shadow-theme-sm"
+               @click="rankingModalOpen = false"
+            >
+               Cerrar
+            </button>
+         </div>
+      </div>
+    </BaseModal>
   </div>
   </AdminLayout>
 </template>
@@ -424,7 +539,9 @@ import {
   SearchIcon,
   LayoutListIcon,
   LayoutGridIcon,
-  XIcon
+  XIcon,
+  Maximize2Icon,
+  TrendingUpIcon
 } from 'lucide-vue-next'
 import { statsService, type DashboardStats, type StatsDetailItem } from '@/modules/stats/services/stats.service'
 import { toast } from 'vue-sonner'
@@ -505,6 +622,24 @@ const filteredDialogItems = computed(() => {
     return items;
 });
 const dialogTitle = ref('');
+
+// Ranking Full View State
+const rankingModalOpen = ref(false);
+const rankingSearch = ref('');
+const fullObserverRanking = computed(() => {
+    if (!stats.value) return [];
+    let items = [...stats.value.observers];
+    if (rankingSearch.value) {
+        const s = rankingSearch.value.toLowerCase();
+        items = items.filter(o => o.name.toLowerCase().includes(s));
+    }
+    return items;
+});
+
+const openObserverDetail = (obs: any) => {
+    rankingModalOpen.value = false;
+    openDialog('OBSERVER', obs.id, obs.name);
+};
 
 // --- Criteria Logic ---
 // ... (previous criteria logic) ...
@@ -635,16 +770,15 @@ const handleDownload = async (titlePrefix: string, fType?: 'FISHERY' | 'FLEET' |
     const fTypeParam = fType || filterType.value || undefined; 
    
     let finalTitle = titlePrefix;
-    if (fValue) {
-        // If searching by observer ID, we typically want the name in the filename if possible. 
-        // But getting the name here is tricky without passing it. 
-        // For FilterBar downloads (general), fValue is null.
-        // For Dialog downloads (filtered), fValue is set.
-        // Let's use dialog title if available for cleaner filenames? 
-        // Or just let it use the ID if that's what we have. 
-        // Better yet: remove ID from filename if ugliness is concern, or accept it.
-        // Ideally, we'd sanitize.
-        finalTitle += `_${fValue.substring(0, 15)}`; 
+    if (dialogOpen.value && dialogTitle.value) {
+        // Sanitize dialog title for filename: remove special characters and replace spaces with underscores
+        const sanitizedDataName = dialogTitle.value
+            .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // remove accents
+            .replace(/\s+/g, '_')
+            .replace(/[^a-zA-Z0-9_]/g, '');
+        finalTitle = sanitizedDataName;
+    } else if (fValue) {
+        finalTitle = `${titlePrefix}_${fValue.substring(0, 8)}`; 
     }
 
     try {
@@ -659,7 +793,8 @@ const handleDownload = async (titlePrefix: string, fType?: 'FISHERY' | 'FLEET' |
             fValue, // PASSING UNDEFINED IF NULL
             `${finalTitle}_${mode.value === 'CALENDAR' ? year.value : 'TOTAL'}`
         );
-        toast.success(`Exportación iniciada: ${finalTitle}`);
+        const prettyTitle = (dialogOpen.value && dialogTitle.value) ? dialogTitle.value : 'Estadísticas Generales';
+        toast.success(`Exportación iniciada: ${prettyTitle}`);
     } catch (error) {
         console.error('Download error:', error);
         toast.error('Error al exportar archivo');
