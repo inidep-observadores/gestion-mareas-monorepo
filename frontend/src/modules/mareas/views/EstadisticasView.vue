@@ -12,7 +12,6 @@
           subtitle="Filtros dinámicos de periodo"
           :icon="BarChartIcon"
           :loading="loading"
-          v-model:year="year"
           v-model:mode="mode"
           :protocolizedOnly="protocolizedOnly"
           @update:protocolizedOnly="protocolizedOnly = $event"
@@ -62,7 +61,7 @@
           <div class="col-span-12 lg:col-span-4 space-y-8">
              <ChartWidget 
               title="Distribución por Flota"
-              type="donut"
+              type="pie"
               :series="fleetSeries"
               :options="fleetChartOptions"
             />
@@ -75,7 +74,7 @@
              <ChartWidget 
               title="Participación por Pesquería"
               subtitle="Días navegados por especie objetivo"
-              type="pie"
+              type="donut"
               :series="fisherySeries"
               :options="fisheryChartOptions"
             />
@@ -116,11 +115,13 @@ import ChartWidget from '../../stats/components/ChartWidget.vue'
 import { BarChartIcon, ShipIcon, CalendarClockIcon, TimerIcon } from 'lucide-vue-next'
 import { statsService, type DashboardStats } from '../../stats/services/stats.service'
 
+import { useConfigStore } from '@/modules/shared/stores/config.store'
+
 const loading = ref(false)
 const stats = ref<DashboardStats | null>(null)
+const configStore = useConfigStore()
 
 // Filters State
-const year = ref(new Date().getFullYear())
 const mode = ref<'CALENDAR' | 'TOTAL'>('CALENDAR')
 const protocolizedOnly = ref(false)
 const includeOutOfPeriod = ref(false)
@@ -131,7 +132,7 @@ const fetchData = async () => {
   try {
     // Note: protocolizedOnly = true -> includeNonProtocolized = false
     stats.value = await statsService.getDashboardStats(
-      year.value, 
+      configStore.selectedYear, 
       mode.value, 
       !protocolizedOnly.value, 
       includeOutOfPeriod.value
@@ -144,7 +145,7 @@ const fetchData = async () => {
 }
 
 // Watch filters
-watch([year, mode, protocolizedOnly, includeOutOfPeriod], () => {
+watch([() => configStore.selectedYear, mode, protocolizedOnly, includeOutOfPeriod], () => {
   fetchData()
 }, { deep: true })
 
@@ -178,7 +179,7 @@ const fleetSort = computed(() => stats.value?.fleets.slice(0, 5) || []) // Top 5
 const fleetSeries = computed(() => fleetSort.value.map(f => f.days))
 const fleetChartOptions = computed(() => ({
   labels: fleetSort.value.map(f => f.name),
-  dataLabels: { enabled: true },
+  dataLabels: { enabled: false },
   plotOptions: { pie: { donut: { size: '65%' } } }
 }))
 

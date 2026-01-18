@@ -14,21 +14,6 @@
     <!-- Filtros -->
     <div class="flex flex-wrap items-center gap-3">
       
-      <!-- Año -->
-      <div class="flex items-center gap-2 bg-surface-muted px-4 py-2 rounded-xl border border-border">
-        <span class="text-[10px] font-black text-text-muted uppercase tracking-widest">Año</span>
-        <select 
-          :value="year" 
-          @input="$emit('update:year', parseInt(($event.target as HTMLSelectElement).value))"
-          class="text-xs font-black bg-transparent border-none focus:ring-0 text-text cursor-pointer p-0 pr-6"
-        >
-          <option :value="2026">2026</option>
-          <option :value="2025">2025</option>
-          <option :value="2024">2024</option>
-          <option :value="2023">2023</option>
-        </select>
-      </div>
-
       <!-- Modo de Cálculo -->
       <div class="flex items-center gap-2 bg-surface-muted px-4 py-2 rounded-xl border border-border" title="Calendario: Solo días dentro del año. Total: Mareas completas con actividad en el año.">
         <div class="flex gap-1 bg-surface rounded-lg p-1 border border-border/50">
@@ -100,7 +85,6 @@ defineProps<{
   title: string
   subtitle: string
   icon: Component
-  year: number
   mode: 'CALENDAR' | 'TOTAL'
   protocolizedOnly: boolean
   includeOutOfPeriod: boolean
@@ -108,7 +92,6 @@ defineProps<{
 }>()
 
 defineEmits<{
-  (e: 'update:year', val: number): void
   (e: 'update:mode', val: 'CALENDAR' | 'TOTAL'): void
   (e: 'update:protocolizedOnly', val: boolean): void
   (e: 'update:includeOutOfPeriod', val: boolean): void
