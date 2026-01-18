@@ -1,26 +1,31 @@
 <script setup lang="ts">
 /**
  * Componente: AtmosphericBackground (antiguo Atmosphere.vue)
- * Descripción: Encapsula los efectos de fondo (Blobs, Ondas, Estrellas/Nubes si se desea)
- * para el layout de autenticación.
+ * Descripción: Encapsula los efectos de fondo HARDCODED para máximo impacto.
  */
 import Waves from './Waves.vue';
+import Constellations from '@/modules/shared/components/Constellations.vue';
 </script>
 
 <template>
   <div class="atmosphere-container">
-    <!-- Blobs de fondo (Gradientes difusos) -->
+    <!-- Capa 1: Blobs de fondo (Gradientes originales) -->
     <div class="background-blobs">
       <div class="blob blob-1"></div>
       <div class="blob blob-2"></div>
       <div class="blob blob-3"></div>
     </div>
 
-    <!-- Ondas en la parte inferior -->
-    <Waves />
+    <!-- Capa 2: Constelaciones -->
+    <Constellations />
+
+    <!-- Capa 3: Ondas -->
+    <div class="waves-layer">
+      <Waves />
+    </div>
     
-    <!-- Pattern de ruido opcional o grid para textura -->
-    <!-- <div class="noise-overlay"></div> -->
+    <!-- Capa 4: Glow Central (Añadido para profundidad) -->
+    <div class="background-glow px-4"></div>
   </div>
 </template>
 
@@ -34,53 +39,59 @@ import Waves from './Waves.vue';
   pointer-events: none;
   overflow: hidden;
   z-index: 0;
+  background-color: #020617; /* Slate 950 real */
 }
 
 .background-blobs {
   position: absolute;
   top: 0; left: 0; right: 0; bottom: 0;
-  /* z-index: -1; Implícito al estar en el contenedor */
 }
 
-/* Blobs semánticos usando el color primario y secundario (Info) */
 .blob {
   position: absolute;
-  filter: blur(80px); /* Desenfoque fuerte para suavidad */
-  opacity: 0.4; /* Opacidad base para modo oscuro */
+  filter: blur(80px);
+  opacity: 0.4;
   border-radius: 50%;
   animation: move 20s infinite alternate;
 }
 
-/* Ajuste de opacidad para modo claro (light mode) automático vía dark: prefix si se usara tailwind,
-   pero aquí usamos CSS variables */
-:root:not(.dark) .blob {
-  opacity: 0.25; /* Un poco más sutil en claro */
-}
-
 .blob-1 {
   width: 500px; height: 500px;
-  /* Gradiente usando variables CSS rgb para transparencia */
-  background: linear-gradient(135deg, rgba(var(--color-info-rgb), 0.8) 0%, rgba(var(--color-primary-rgb), 0.8) 100%);
+  background: linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%);
   top: -150px; left: -150px;
 }
 
 .blob-2 {
   width: 400px; height: 400px;
-  background: linear-gradient(135deg, rgba(var(--color-primary-rgb), 0.8) 0%, rgba(var(--color-purple-rgb), 0.5) 100%); /* Purple if defined, else generic fallback */
+  background: linear-gradient(135deg, #3b82f6 0%, #4338ca 100%);
   bottom: -100px; right: -100px;
   animation-delay: -5s;
 }
 
-/* Fallback si purple-rgb no existe */
-.blob-2 {
-   background: linear-gradient(135deg, rgba(var(--color-primary-rgb), 0.8) 0%, rgba(var(--color-primary-rgb), 0.4) 100%);
-}
-
 .blob-3 {
   width: 300px; height: 300px;
-  background: radial-gradient(circle, rgba(var(--color-success-rgb), 0.4) 0%, rgba(var(--color-info-rgb), 0.4) 100%); 
+  background: radial-gradient(circle, #2dd4bf 0%, #0ea5e9 100%); 
   top: 40%; left: 60%;
   animation-delay: -10s;
+}
+
+.waves-layer {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  z-index: 2;
+}
+
+.background-glow {
+  position: absolute;
+  width: 60vw;
+  height: 60vw;
+  background: radial-gradient(circle, rgba(0, 242, 255, 0.08) 0%, transparent 70%);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1;
 }
 
 @keyframes move {

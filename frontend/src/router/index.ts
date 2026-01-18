@@ -18,10 +18,20 @@ const router = createRouter({
   routes: [
     {
       path: '/',
+      name: 'Landing',
+      component: () => import('@/modules/landing/views/LandingView.vue'),
+      meta: {
+        title: 'Bienvenido',
+        requiresAuth: false,
+        guestOnly: true,
+      },
+    },
+    {
+      path: '/dashboard',
       name: 'Dashboard',
       component: () => import('@/modules/dashboard/views/DashboardView.vue'),
       meta: {
-        title: 'Panel de Control',
+        title: 'Centro de Comando',
         requiresAuth: true,
       },
     },
@@ -322,14 +332,14 @@ router.beforeEach(async (to, from, next) => {
 
   const isAuthenticated = authStore.isAuthenticated
 
-  // 1. Check for Requires Auth
-  if (to.meta.requiresAuth && !isAuthenticated) {
-    return next({ name: 'Signin', query: { redirect: to.fullPath } })
-  }
-
-  // 2. Check for Guest Only (e.g. Login page)
+  // 1. Check for Guest Only (e.g. Login page, Landing page)
   if (to.meta.guestOnly && isAuthenticated) {
     return next({ name: 'Dashboard' })
+  }
+
+  // 2. Check for Requires Auth
+  if (to.meta.requiresAuth && !isAuthenticated) {
+    return next({ name: 'Signin', query: { redirect: to.fullPath } })
   }
 
   // 3. User with 'invitado' role must be trapped in '/unauthorized'
@@ -345,7 +355,7 @@ router.beforeEach(async (to, from, next) => {
     const hasRole = roles.some(role => userRoles.includes(role))
 
     if (!hasRole) {
-      // Redirect to home or not found if not authorized
+      // Redirect to home if not authorized
       return next({ name: 'Dashboard' })
     }
   }

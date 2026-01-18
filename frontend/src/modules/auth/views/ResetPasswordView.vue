@@ -20,9 +20,9 @@
          </div>
          <h3 class="text-lg font-bold">Enlace Invalido o Expirado</h3>
          <p class="mt-2 text-sm opacity-80 mb-6">{{ tokenError }}</p>
-         <router-link :to="{ name: 'ForgotPassword' }" class="text-primary font-bold hover:underline">
-            Solicitar nuevo enlace
-         </router-link>
+            <router-link :to="{ name: 'Signin' }" class="text-[#00f2ff] font-bold hover:text-white transition-all">
+                Iniciar sesión ahora
+            </router-link>
       </div>
 
       <div v-else-if="success" class="py-8 text-center">
@@ -33,9 +33,9 @@
           </div>
           <h3 class="text-xl font-bold text-white mb-2">¡Contraseña Restablecida!</h3>
           <p class="text-gray-300 mb-6">Ya puede acceder a su cuenta con sus nuevas credenciales.</p>
-          <router-link :to="{ name: 'Signin' }" class="block w-full py-3 rounded-xl bg-primary text-white font-bold text-center hover:bg-primary/90 transition-all">
-             Ir al Inicio de Sesión
-          </router-link>
+            <router-link :to="{ name: 'Signin' }" class="text-[#00f2ff] font-bold hover:text-white transition-all">
+                Ir al inicio de sesión
+            </router-link>
       </div>
 
       <!-- Form -->
@@ -106,7 +106,7 @@
         <button 
           type="submit"
           :disabled="isLoading"
-          class="relative w-full py-3.5 rounded-xl bg-gradient-to-r from-primary to-blue-600 text-white font-bold tracking-wide shadow-lg shadow-primary/25 hover:shadow-primary/40 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none overflow-hidden"
+          class="relative w-full py-3.5 rounded-xl bg-gradient-to-r from-[#00f2ff] to-[#0078ff] text-white font-bold tracking-wide shadow-lg shadow-cyan-500/25 hover:shadow-cyan-500/40 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none overflow-hidden"
         >
           <div v-if="isLoading" class="flex items-center justify-center gap-2">
             <Loader2 class="animate-spin" :size="20" />
