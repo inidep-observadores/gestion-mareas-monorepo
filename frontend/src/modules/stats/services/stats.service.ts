@@ -25,59 +25,103 @@ export interface StatsDetailItem {
     pesqueria: string;
     observador: string;
     estado: string;
+    tipoMarea: string;
     diasContabilizados: number;
     fechaInicio: string;
     fechaFin: string | null;
 }
 
 export const statsService = {
-    getDashboardStats: async (
+    async getDashboardStats(
         year: number,
-        mode: 'CALENDAR' | 'TOTAL' = 'CALENDAR',
-        includeNonProtocolized = true,
-        includeProtocolizedOutOfPeriod = false
-    ): Promise<DashboardStats> => {
-        const { data } = await httpClient.get<DashboardStats>(`/stats/dashboard`, {
-            params: { year, mode, includeNonProtocolized, includeProtocolizedOutOfPeriod }
+        mode: 'CALENDAR' | 'TOTAL',
+        includeNonProtocolized: boolean,
+        includeProtocolizedOutOfPeriod: boolean,
+        daysCalculationMode: 'SHIP' | 'OBSERVER',
+        includeCampaigns: boolean
+    ): Promise<DashboardStats> {
+        const params = new URLSearchParams({
+            year: year.toString(),
+            mode,
+            includeNonProtocolized: String(includeNonProtocolized),
+            includeProtocolizedOutOfPeriod: String(includeProtocolizedOutOfPeriod),
+            daysCalculationMode,
+            includeCampaigns: String(includeCampaigns)
         });
-        return data;
+        const response = await httpClient.get<DashboardStats>(`/stats/dashboard?${params.toString()}`);
+        return response.data;
     },
 
-    getDashboardStatsDetail: async (
+    async getDashboardStatsDetail(
         year: number,
-        mode: 'CALENDAR' | 'TOTAL' = 'CALENDAR',
-        includeNonProtocolized = true,
-        includeProtocolizedOutOfPeriod = false,
+        mode: 'CALENDAR' | 'TOTAL',
+        includeNonProtocolized: boolean,
+        includeProtocolizedOutOfPeriod: boolean,
         filterType: 'FISHERY' | 'FLEET' | 'OBSERVER',
-        filterValue: string
-    ): Promise<StatsDetailItem[]> => {
-        const { data } = await httpClient.get<StatsDetailItem[]>(`/stats/detail`, {
-            params: { year, mode, includeNonProtocolized, includeProtocolizedOutOfPeriod, filterType, filterValue }
+        filterValue: string,
+        daysCalculationMode: 'SHIP' | 'OBSERVER',
+        includeCampaigns: boolean
+    ): Promise<StatsDetailItem[]> {
+        const params = new URLSearchParams({
+            year: year.toString(),
+            mode,
+            filterType,
+            filterValue,
+            includeNonProtocolized: String(includeNonProtocolized),
+            includeProtocolizedOutOfPeriod: String(includeProtocolizedOutOfPeriod),
+            daysCalculationMode,
+            includeCampaigns: String(includeCampaigns)
         });
-        return data;
+        const response = await httpClient.get<StatsDetailItem[]>(`/stats/detail?${params.toString()}`);
+        return response.data;
     },
 
-    downloadExport: async (
+    async downloadExport(
         year: number,
-        mode: 'CALENDAR' | 'TOTAL' = 'CALENDAR',
-        includeNonProtocolized = true,
-        includeProtocolizedOutOfPeriod = false,
+        mode: 'CALENDAR' | 'TOTAL',
+        includeNonProtocolized: boolean,
+        includeProtocolizedOutOfPeriod: boolean,
+        daysCalculationMode: 'SHIP' | 'OBSERVER',
+        includeCampaigns: boolean,
         filterType?: 'FISHERY' | 'FLEET' | 'OBSERVER',
         filterValue?: string,
-        filename?: string
-    ): Promise<void> => {
-        const response = await httpClient.get(`/stats/export`, {
-            params: { year, mode, includeNonProtocolized, includeProtocolizedOutOfPeriod, filterType, filterValue, filename },
-            responseType: 'blob'
+        filename?: string,
+    ): Promise<void> {
+        const params = new URLSearchParams({
+            year: year.toString(),
+            mode,
+            includeNonProtocolized: String(includeNonProtocolized),
+            includeProtocolizedOutOfPeriod: String(includeProtocolizedOutOfPeriod),
+            daysCalculationMode,
+            includeCampaigns: String(includeCampaigns)
         });
 
+        if (filterType && filterValue) {
+            params.append('filterType', filterType);
+            params.append('filterValue', filterValue);
+        }
+
+        if (filename) {
+            params.append('customFilename', filename);
+        }
+
+        const response = await httpClient.get(`/stats/export?${params.toString()}`, {
+            responseType: 'blob',
+        });
+
+        // Create a URL for the blob
         const url = window.URL.createObjectURL(new Blob([response.data]));
         const link = document.createElement('a');
         link.href = url;
-        const downloadName = filename ? `${filename}.xlsx` : `Estadisticas_Mareas_${year}.xlsx`;
-        link.setAttribute('download', downloadName);
+
+        // Use provided filename or default
+        const downloadFilename = filename ? `${filename}.xlsx` : `Estadisticas_${year}.xlsx`;
+        link.setAttribute('download', downloadFilename);
+
         document.body.appendChild(link);
         link.click();
+
+        // Clean up
         link.remove();
         window.URL.revokeObjectURL(url);
     }
