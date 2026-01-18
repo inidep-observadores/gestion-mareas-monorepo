@@ -9,16 +9,13 @@
       <div class="mb-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
         <div class="flex items-center gap-4">
           <div class="w-12 h-12 rounded-2xl bg-surface-muted border border-border flex items-center justify-center text-primary">
-            <GridIcon v-if="viewMode === 'kanban'" class="w-6 h-6" />
-            <ListIcon v-else class="w-6 h-6" />
+            <ListIcon class="w-6 h-6" />
           </div>
           <div>
-            <h2 class="text-lg font-black text-text uppercase tracking-tighter leading-none">Gestión de Flujo</h2>
-            <p class="text-[10px] font-bold text-text-muted uppercase tracking-widest mt-1">Arrastre las mareas para cambiar su estado</p>
+            <h2 class="text-lg font-black text-text uppercase tracking-tighter leading-none">Flujo de Trabajo</h2>
+            <p class="text-[10px] font-bold text-text-muted uppercase tracking-widest mt-1">Gestión por estados operativos</p>
           </div>
         </div>
-
-        <ViewToggle v-model="viewMode" :options="viewOptions" />
       </div>
 
       <!-- ADVANCED FILTERS -->
@@ -64,114 +61,8 @@
         </div>
       </FilterBar>
 
-      <!-- KANBAN VIEW -->
-      <div v-if="viewMode === 'kanban'">
-        <div
-          v-if="loading"
-          class="flex items-center justify-center h-[420px] bg-surface border border-border rounded-3xl"
-        >
-          <div class="flex flex-col items-center gap-3">
-            <LoadingSpinner size="xl" class="text-primary" />
-            <span class="text-xs font-bold text-text-muted uppercase tracking-[0.2em]">Cargando flujo...</span>
-          </div>
-        </div>
-
-        <div
-          v-else-if="columns.length === 0"
-          class="flex items-center justify-center h-[420px] bg-surface border border-dashed border-border rounded-3xl text-center text-text-muted"
-        >
-          <div>
-            <DocsIcon class="w-10 h-10 mx-auto mb-3 text-text-muted/20" />
-            <p class="text-sm font-bold text-text">No hay mareas para mostrar.</p>
-            <p class="text-xs text-text-muted mt-1">Ajuste filtros o registre una nueva marea.</p>
-          </div>
-        </div>
-
-        <div v-else class="flex gap-6 overflow-x-auto pb-10 custom-scrollbar-h h-[calc(100vh-350px)] min-h-[500px]">
-          <div v-for="(column, idx) in columns" :key="column.id" class="flex-shrink-0 w-[340px] flex flex-col group/col">
-            <!-- Column Header -->
-            <div class="mb-4 flex items-center justify-between px-2">
-              <div class="flex items-center gap-3">
-                <div class="w-2 h-2 rounded-full shadow-sm" :class="column.color"></div>
-                <h3 class="text-xs font-black text-text uppercase tracking-widest">
-                  {{ column.title }}
-                </h3>
-                <span class="text-[10px] font-black tabular-nums bg-surface-muted px-2.5 py-1 rounded-xl text-text-muted border border-border">
-                  {{ column.tasks.length }}
-                </span>
-              </div>
-              <button class="text-text-muted/40 hover:text-text opacity-0 group-hover/col:opacity-100 transition-opacity">
-                <HorizontalDots class="w-4 h-4" />
-              </button>
-            </div>
-
-            <!-- Draggable Container -->
-            <div class="flex-1 bg-surface-muted/30 rounded-[2.5rem] border border-border p-3 overflow-y-auto custom-scrollbar active:bg-surface-muted/50 transition-colors">
-              <VueDraggableNext
-                v-model="columns[idx].tasks"
-                group="mareas"
-                :tag="'div'"
-                class="space-y-4 min-h-[400px] pb-20"
-                ghost-class="opacity-10"
-                :animation="200"
-                @change="onDragChange($event, column.id)"
-              >
-                <div
-                  v-for="task in column.tasks"
-                  :key="task.id"
-                  class="group bg-surface p-6 rounded-[2rem] border border-border shadow-sm hover:shadow-xl hover:border-primary/30 transition-all duration-300 cursor-grab active:cursor-grabbing relative overflow-hidden"
-                  @click="navigateToDetail(task.id)"
-                >
-                  <!-- Card Glow Backdrop -->
-                  <div class="absolute -right-10 -top-10 w-24 h-24 bg-primary/5 blur-3xl rounded-full"></div>
-
-                  <div class="flex justify-between items-start mb-4 relative z-10">
-                    <div class="flex flex-col">
-                      <span class="text-[9px] font-black text-primary uppercase tracking-widest mb-1">{{ task.code }}</span>
-                      <h4 class="text-xs font-black text-text uppercase group-hover:text-primary transition-colors">{{ task.vessel }}</h4>
-                    </div>
-                    <div v-if="task.alert" class="w-2 h-2 rounded-full bg-error shadow-[0_0_10px_rgba(var(--error),0.5)] animate-pulse"></div>
-                  </div>
-
-                  <div class="space-y-4 relative z-10">
-                    <div class="flex items-center gap-2 text-[10px] font-bold text-text-muted uppercase">
-                      <CalenderIcon class="w-3.5 h-3.5" />
-                      {{ task.date }}
-                    </div>
-                    <div class="flex items-center gap-2 text-[10px] font-bold text-text-muted uppercase">
-                      <UserCircleIcon class="w-3.5 h-3.5" />
-                      {{ task.observer || 'Sin observador' }}
-                    </div>
-                    
-                    <div class="pt-4 border-t border-border flex items-center justify-between">
-                      <span class="text-[9px] font-black text-text-muted uppercase tracking-tighter bg-surface-muted px-2 py-0.5 rounded-lg border border-border">
-                        {{ task.port }}
-                      </span>
-                      <span class="text-[9px] font-black text-text-muted uppercase tracking-tighter bg-surface-muted px-2 py-0.5 rounded-lg border border-border">
-                        {{ task.progress }}%
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Empty State Overlay inside Draggable -->
-                <div
-                  v-if="column.tasks.length === 0"
-                  class="absolute inset-0 flex items-center justify-center p-8 opacity-40 pointer-events-none"
-                >
-                  <div class="text-center">
-                    <DocsIcon class="w-8 h-8 mx-auto mb-2 text-text-muted/20" />
-                    <span class="text-[10px] font-black text-text-muted uppercase tracking-widest italic">Vacío</span>
-                  </div>
-                </div>
-              </VueDraggableNext>
-            </div>
-          </div>
-        </div>
-      </div>
-
       <!-- LIST VIEW -->
-      <div v-else class="space-y-6 max-w-6xl mx-auto">
+      <div class="space-y-6 max-w-6xl mx-auto">
         <div
           v-if="loading"
           class="flex items-center justify-center h-48 bg-surface border border-border rounded-3xl"
@@ -194,6 +85,7 @@
           v-else
           v-for="(statusGroup, idx) in columns"
           :key="statusGroup.id"
+          v-show="statusGroup.tasks.length > 0"
           class="bg-surface border border-border rounded-[2.5rem] overflow-hidden shadow-sm hover:shadow-lg transition-all"
         >
           <!-- Group Header -->
@@ -325,18 +217,13 @@ import type { MareaListItem } from '../services/mareas.service'
 const router = useRouter()
 const { loading, mareas, kpis, fetchDashboard, error } = useMareas()
 
-const viewMode = ref<'kanban' | 'list'>('kanban')
+const viewMode = ref<'list'>('list')
 const searchQuery = ref('')
 const filters = ref({
   fishery: '',
   observer: '',
   fishery2: '',
 })
-
-const viewOptions = [
-  { value: 'kanban', label: 'Tablero', icon: GridIcon, hideTextOnMobile: true },
-  { value: 'list', label: 'Lista', icon: ListIcon, hideTextOnMobile: true },
-]
 
 const fisheryOptions = [
   { value: 'congeladores', label: 'Congeladores' },
@@ -428,11 +315,12 @@ const buildColumns = (items: MareaListItem[]) => {
 
   const ensureColumn = (id: string, title: string) => {
     if (map.has(id)) return
+    const hasTasks = kpis.value.find(k => k.codigo === id)?.value || 0
     map.set(id, {
       id,
       title,
       color: statusColors[id] || 'bg-gray-400',
-      expanded: previousExpanded.get(id) ?? true,
+      expanded: previousExpanded.get(id) ?? (hasTasks > 0),
       tasks: []
     })
   }
@@ -462,7 +350,7 @@ const buildColumns = (items: MareaListItem[]) => {
 watch(filteredMareas, (items) => buildColumns(items), { immediate: true })
 
 const loadDashboard = async () => {
-  await fetchDashboard()
+  await fetchDashboard(true)
   if (error.value) {
     toast.error('No pudimos cargar las mareas. Por favor, intente nuevamente.')
   }

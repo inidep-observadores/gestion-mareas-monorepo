@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen xl:flex">
+  <div class="min-h-screen animate-page-fade bg-background">
     <app-sidebar />
     <Backdrop />
     <div
@@ -50,3 +50,14 @@ onUnmounted(() => {
   }
 })
 </script>
+
+<style scoped>
+.animate-page-fade {
+  animation: pageFadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes pageFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+</style>

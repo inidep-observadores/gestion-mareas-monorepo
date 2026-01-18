@@ -117,7 +117,7 @@
                 class="text-lg font-bold text-text mb-6 flex items-center gap-2"
               >
                 <DocsIcon class="w-5 h-5 text-primary" />
-                Identificación de la Marea
+                Designación
               </h3>
               <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="space-y-1.5">
@@ -142,6 +142,19 @@
                     type="number"
                     class="w-full px-4 py-3 bg-surface-muted border-none rounded-2xl focus:ring-2 focus:ring-primary/20 text-text transition-all font-medium outline-none"
                     placeholder="000"
+                  />
+                </div>
+                <!-- Observador Principal -->
+                <div class="md:col-span-2 space-y-1.5">
+                  <label
+                    class="text-xs font-bold uppercase tracking-wider text-text-muted"
+                    >Observador Designado</label
+                  >
+                  <SearchableSelect
+                    v-model="marea.observador_principal_id"
+                    :options="observadorCatalogOptions"
+                    placeholder="Seleccione observador principal..."
+                    :icon="BeakerIcon"
                   />
                 </div>
               </div>
@@ -440,7 +453,7 @@
                   class="bg-surface-muted border border-border p-4 rounded-xl"
                 >
                   <p v-if="mov.detalle" class="text-sm text-text font-medium mb-3">{{ mov.detalle }}</p>
-                  
+
                   <!-- User Comments -->
                   <div v-if="mov.comentarios" class="mb-4 p-3 bg-primary/5 border-l-2 border-l-primary rounded-r-lg">
                     <p class="text-xs text-primary font-bold uppercase tracking-wider mb-1 flex items-center gap-1">
@@ -740,6 +753,8 @@ const etapas = ref<any[]>([]);
 const observadores = ref<any[]>([]);
 const movimientos = ref<any[]>([]);
 const archivos = ref<any[]>([]);
+const observadorCatalog = ref<any[]>([]);
+const originalObservadorPrincipalId = ref<string | null>(null);
 
 const buqueOptions = ref<{ value: string; label: string }[]>([])
 const pesqueriaOptions = ref<{ value: string; label: string }[]>([])
@@ -747,7 +762,16 @@ const arteOptions = ref<{ value: string; label: string }[]>([])
 const puertos = ref<any[]>([])
 
 const puertoOptions = computed(() => puertos.value.map(p => ({ value: p.id, label: p.nombre })))
-const pesqueriaOptionsList = computed(() => pesqueriaOptions.value) // Alias for consistency if needed, but pesqueriaOptions is already used.
+
+const observadorCatalogOptions = computed(() => {
+  return observadorCatalog.value
+    .filter(o => (o.activo && o.disponible && !o.conImpedimento) || o.id === originalObservadorPrincipalId.value)
+    .sort((a, b) => a.apellido.localeCompare(b.apellido))
+    .map(o => ({
+      value: o.id,
+      label: `${o.apellido}, ${o.nombre}`
+    }))
+})
 
 const docCategories = [
   { id: 'DATOS', label: 'Datos de a Bordo', shortLabel: 'Datos (DBF/ZIP)' },
@@ -798,16 +822,19 @@ const resolveArchivoCategoria = (tipoArchivo?: string) => {
 async function loadMarea() {
     try {
         const id = route.params.id as string
-        const [data, buques, pesquerias, artes] = await Promise.all([
+        const [data, buques, pesquerias, artes, obsCatalog] = await Promise.all([
             mareasService.getById(id),
             catalogosService.getBuques(),
             catalogosService.getPesquerias(),
-            catalogosService.getArtesPesca()
+            catalogosService.getArtesPesca(),
+            catalogosService.getObservadores()
         ])
 
         buqueOptions.value = buques.map(b => ({ value: b.id, label: b.nombreBuque }))
         pesqueriaOptions.value = pesquerias.map(p => ({ value: p.id, label: p.nombre }))
         arteOptions.value = artes.map(a => ({ value: a.id, label: a.nombre }))
+        observadorCatalog.value = obsCatalog
+        originalObservadorPrincipalId.value = data.observadorPrincipalId
 
         const etapaPrincipal = data.etapas?.find((e: any) => e.nroEtapa === 1) || data.etapas?.[0]
 
@@ -836,6 +863,7 @@ async function loadMarea() {
             nro_protocolizacion: data.nroProtocolizacion ?? null,
             anio_protocolizacion: data.anioProtocolizacion ?? null,
             fecha_protocolizacion: data.fechaProtocolizacion,
+            observador_principal_id: data.observadorPrincipalId,
             responsable_correccion: 'N/D'
         }
 
@@ -1000,6 +1028,7 @@ const saveChanges = async () => {
       observaciones: marea.value.observaciones || undefined,
       tipoMarea: marea.value.tipo_marea || undefined,
       diasEstimados: toNumberOrUndefined(marea.value.dias_estimados),
+      observadorPrincipalId: marea.value.observador_principal_id || undefined,
       activo: marea.value.activo,
       etapas: etapasPayload
     }
