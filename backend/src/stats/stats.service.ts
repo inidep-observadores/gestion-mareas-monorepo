@@ -90,6 +90,7 @@ export class StatsService {
                     }
                 },
                 observadorPrincipal: true,
+                estadoActual: true,
                 etapas: {
                     orderBy: { nroEtapa: 'asc' },
                     include: {
@@ -121,7 +122,7 @@ export class StatsService {
 
             const intervals = marea.etapas.map(e => ({
                 start: e.fechaZarpada,
-                end: e.fechaArribo || (marea.estadoActualId === 'EN_EJECUCION' ? new Date() : null)
+                end: e.fechaArribo || (marea.estadoActual?.codigo === 'EN_EJECUCION' ? new Date() : null)
             })).filter(i => i.start);
 
             let days = 0;
@@ -136,13 +137,13 @@ export class StatsService {
                 marea.etapas.forEach(etapa => {
                     if (!etapa.fechaZarpada) return;
                     const stageStart = etapa.fechaZarpada;
-                    const stageEnd = etapa.fechaArribo || (marea.estadoActualId === 'EN_EJECUCION' ? new Date() : null);
+                    const stageEnd = etapa.fechaArribo || (marea.estadoActual?.codigo === 'EN_EJECUCION' ? new Date() : null);
 
                     // Calculate days for this stage
                     // If CALENDAR mode, we clamp to year
                     let stageDays = 0;
                     if (mode === 'CALENDAR') {
-                        stageDays = DateUtils.calculateDaysInYear(stageStart, stageEnd || new Date(), year);
+                        stageDays = DateUtils.calculateDaysInYear(stageStart, stageEnd, year);
                     } else {
                         stageDays = DateUtils.calculateInclusiveDays(stageStart, stageEnd);
                     }
@@ -433,7 +434,7 @@ export class StatsService {
         // Format for list display
         return mareas.map(m => {
             const overallStart = m.etapas[0]?.fechaZarpada;
-            const overallEnd = m.etapas[m.etapas.length - 1]?.fechaArribo || (m.estadoActualId === 'EN_EJECUCION' ? new Date() : null);
+            const overallEnd = m.etapas[m.etapas.length - 1]?.fechaArribo || (m.estadoActual?.codigo === 'EN_EJECUCION' ? new Date() : null);
 
             let days = 0;
             let calendarDays = 0;
@@ -441,7 +442,7 @@ export class StatsService {
 
             const intervals = m.etapas.map(e => ({
                 start: e.fechaZarpada,
-                end: e.fechaArribo || (m.estadoActualId === 'EN_EJECUCION' ? new Date() : null)
+                end: e.fechaArribo || (m.estadoActual?.codigo === 'EN_EJECUCION' ? new Date() : null)
             })).filter(i => i.start);
 
             if (daysCalculationMode === 'SHIP') {
@@ -455,7 +456,7 @@ export class StatsService {
 
                 m.etapas.forEach(etapa => {
                     if (!etapa.fechaZarpada) return;
-                    const end = etapa.fechaArribo || (m.estadoActualId === 'EN_EJECUCION' ? new Date() : null);
+                    const end = etapa.fechaArribo || (m.estadoActual?.codigo === 'EN_EJECUCION' ? new Date() : null);
 
                     const calStageDays = DateUtils.calculateDaysInYear(etapa.fechaZarpada, end, year);
                     const totalStageDays = DateUtils.calculateInclusiveDays(etapa.fechaZarpada, end);
@@ -630,14 +631,14 @@ export class StatsService {
         // Cargar Datos
         mareas.forEach(m => {
             const overallStart = m.etapas[0]?.fechaZarpada;
-            const overallEnd = m.etapas[m.etapas.length - 1]?.fechaArribo || (m.estadoActualId === 'EN_EJECUCION' ? new Date() : null);
+            const overallEnd = m.etapas[m.etapas.length - 1]?.fechaArribo || (m.estadoActual?.codigo === 'EN_EJECUCION' ? new Date() : null);
 
             let calendarDays = 0;
             let totalMareaDays = 0;
 
             const intervals = m.etapas.map(e => ({
                 start: e.fechaZarpada,
-                end: e.fechaArribo || (m.estadoActualId === 'EN_EJECUCION' ? new Date() : null)
+                end: e.fechaArribo || (m.estadoActual?.codigo === 'EN_EJECUCION' ? new Date() : null)
             })).filter(i => i.start);
 
             if (daysCalculationMode === 'SHIP') {
@@ -649,7 +650,7 @@ export class StatsService {
                 let totalObsDays = 0;
                 m.etapas.forEach(etapa => {
                     if (!etapa.fechaZarpada) return;
-                    const end = etapa.fechaArribo || (m.estadoActualId === 'EN_EJECUCION' ? new Date() : null);
+                    const end = etapa.fechaArribo || (m.estadoActual?.codigo === 'EN_EJECUCION' ? new Date() : null);
                     const count = (etapa.observadores && etapa.observadores.length > 0)
                         ? etapa.observadores.length
                         : (m.observadorPrincipal ? 1 : 0);
@@ -671,7 +672,7 @@ export class StatsService {
                 dias_calendario: calendarDays,
                 dias_total: totalMareaDays,
                 inicio: overallStart ? overallStart.toLocaleDateString() : '-',
-                fin: overallEnd ? overallEnd.toLocaleDateString() : (m.estadoActualId === 'EN_EJECUCION' ? 'En curso' : '-')
+                fin: overallEnd ? overallEnd.toLocaleDateString() : (m.estadoActual?.codigo === 'EN_EJECUCION' ? 'En curso' : '-')
             };
 
             // Extra Observers

@@ -10,7 +10,7 @@ export class DateUtils {
         if (!start) return 0;
 
         const startDate = new Date(start);
-        const endDate = end ? new Date(end) : new Date();
+        const endDate = end ? new Date(end) : startDate;
 
         // Normalizar a medianoche para evitar problemas de horas
         startDate.setHours(0, 0, 0, 0);
@@ -39,7 +39,7 @@ export class DateUtils {
         const startDate = new Date(start);
         startDate.setHours(0, 0, 0, 0);
 
-        const endDate = end ? new Date(end) : new Date();
+        const endDate = end ? new Date(end) : startDate;
         endDate.setHours(0, 0, 0, 0);
 
         const yearStart = new Date(year, 0, 1, 0, 0, 0, 0); // Enero 1

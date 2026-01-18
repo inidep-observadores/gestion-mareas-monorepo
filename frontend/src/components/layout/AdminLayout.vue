@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen xl:flex animate-page-fade bg-background">
+  <div class="min-h-screen animate-page-fade bg-background">
     <app-sidebar />
     <Backdrop />
     <div
