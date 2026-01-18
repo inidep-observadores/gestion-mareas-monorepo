@@ -26,11 +26,11 @@ const handleEnter = () => {
     <!-- Contenido Principal -->
     <main class="content-wrapper relative z-10 flex flex-col items-center text-center px-6"
           :class="{ 'visible': isLoaded }">
-      
+
       <div class="branding-section">
         <SigmaBranding variant="landing" theme="dark" />
       </div>
-      
+
       <div class="action-section">
         <button @click="handleEnter" class="cta-button">
           INGRESAR
@@ -40,7 +40,7 @@ const handleEnter = () => {
 
     <!-- Versión sutil en el pie -->
     <div class="version-tag absolute bottom-8 z-10">
-        SIGMA V2.0.1 | INIDEP
+        SIGMA V0.0.1 | INIDEP
     </div>
   </div>
 </template>

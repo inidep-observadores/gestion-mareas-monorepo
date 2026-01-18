@@ -40,6 +40,7 @@ export class MareasService {
             where: { id },
             include: {
                 buque: true,
+                observadorPrincipal: true,
                 estadoActual: true,
                 etapas: {
                     orderBy: { nroEtapa: 'asc' },
@@ -299,51 +300,7 @@ export class MareasService {
                 };
             });
 
-            // Calculate progress based on state and dates
-            let progreso = 0;
-            const estadoCodigo = m.estadoActual.codigo;
-
-            if (estadoCodigo === MareaEstado.DESIGNADA) {
-                progreso = 0;
-            } else if (estadoCodigo === MareaEstado.EN_EJECUCION) {
-                // Days from departure date to now. Use actual date if available, else estimated.
-                const fechaInicio = etapaActual?.fechaZarpada || m.fechaZarpadaEstimada;
-
-                if (fechaInicio) {
-                    const now = new Date();
-                    const inicio = new Date(fechaInicio);
-                    const diffTime = now.getTime() - inicio.getTime();
-                    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1; // +1 to include both initial and current day
-
-                    // Calculate percentage based on diasEstimados or default SLE (30 days)
-                    // Allow > 100% to visualize underestimated mareas
-                    const estimatedDuration = (m.diasEstimados && m.diasEstimados > 0) ? m.diasEstimados : 30;
-                    progreso = Math.round((diffDays / estimatedDuration) * 100);
-                }
-            } else {
-                const stageIntervals = m.etapas
-                    .filter((e: any) => e.fechaZarpada && e.fechaArribo)
-                    .map((e: any) => ({ inicio: new Date(e.fechaZarpada), fin: new Date(e.fechaArribo) }));
-
-                let diasTrabajados = 0;
-
-                if (m.fechaInicioObservador && m.fechaFinObservador) {
-                    diasTrabajados = this.calculateUniqueDays([{
-                        inicio: new Date(m.fechaInicioObservador),
-                        fin: new Date(m.fechaFinObservador)
-                    }]);
-                } else if (stageIntervals.length > 0) {
-                    diasTrabajados = this.calculateUniqueDays(stageIntervals);
-                }
-
-                const estimatedDuration = (m.diasEstimados && m.diasEstimados > 0) ? m.diasEstimados : 30;
-
-                if (diasTrabajados > 0) {
-                    progreso = Math.round((diasTrabajados / estimatedDuration) * 100);
-                    // For finished mareas, ensure at least 100% if it finished early
-                    if (progreso < 100) progreso = 100;
-                }
-            }
+            const progreso = this.calculateProgress(m);
 
             return {
                 id: m.id,
@@ -361,7 +318,7 @@ export class MareasService {
                 fecha_arribo: etapaActual?.fechaArribo,
                 observador: primaryObs ? `${primaryObs.nombre} ${primaryObs.apellido}` : 'Sin asignar',
                 progreso,
-                en_tierra: estadoCodigo === MareaEstado.EN_EJECUCION && etapaActual?.fechaArribo !== null,
+                en_tierra: m.estadoActual.codigo === MareaEstado.EN_EJECUCION && etapaActual?.fechaArribo !== null,
                 total_etapas: etapaActual?.nroEtapa || 1,
                 alertas: activeAlerts.filter((a: any) => a.referenciaId === m.id),
                 actionsAvailable,
@@ -518,6 +475,7 @@ export class MareasService {
             },
             include: {
                 buque: true,
+                observadorPrincipal: true,
                 etapas: {
                     orderBy: { nroEtapa: 'desc' },
                     take: 1,
@@ -758,6 +716,47 @@ export class MareasService {
         });
 
         return events;
+    }
+
+    private calculateProgress(m: any): number {
+        const etapaActual = m.etapas?.[0] || null;
+        let progreso = 0;
+        const estadoCodigo = m.estadoActual?.codigo;
+
+        if (estadoCodigo === MareaEstado.DESIGNADA) {
+            progreso = 0;
+        } else if (estadoCodigo === MareaEstado.EN_EJECUCION) {
+            const fechaInicio = etapaActual?.fechaZarpada || m.fechaZarpadaEstimada;
+            if (fechaInicio) {
+                const now = new Date();
+                const inicio = new Date(fechaInicio);
+                const diffTime = now.getTime() - inicio.getTime();
+                const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1;
+                const estimatedDuration = (m.diasEstimados && m.diasEstimados > 0) ? m.diasEstimados : 30;
+                progreso = Math.round((diffDays / estimatedDuration) * 100);
+            }
+        } else {
+            const stageIntervals = (m.etapas || [])
+                .filter((e: any) => e.fechaZarpada && e.fechaArribo)
+                .map((e: any) => ({ inicio: new Date(e.fechaZarpada), fin: new Date(e.fechaArribo) }));
+
+            let diasTrabajados = 0;
+            if (m.fechaInicioObservador && m.fechaFinObservador) {
+                diasTrabajados = this.calculateUniqueDays([{
+                    inicio: new Date(m.fechaInicioObservador),
+                    fin: new Date(m.fechaFinObservador)
+                }]);
+            } else if (stageIntervals.length > 0) {
+                diasTrabajados = this.calculateUniqueDays(stageIntervals);
+            }
+
+            const estimatedDuration = (m.diasEstimados && m.diasEstimados > 0) ? m.diasEstimados : 30;
+            if (diasTrabajados > 0) {
+                progreso = Math.round((diasTrabajados / estimatedDuration) * 100);
+                if (progreso < 100) progreso = 100;
+            }
+        }
+        return progreso;
     }
 
     private calculateUniqueDays(intervals: Array<{ inicio: Date; fin: Date }>): number {
@@ -1199,6 +1198,23 @@ export class MareasService {
             diasNavegados = this.calculateUniqueDays(stageIntervals);
         }
 
+        // Cálculo de progreso consistente con los días calculados arriba
+        const estimatedDuration = (marea.diasEstimados && marea.diasEstimados > 0) ? marea.diasEstimados : 30;
+        let progreso = 0;
+
+        if (codigoEstado === MareaEstado.DESIGNADA) {
+            progreso = 0;
+        } else if (codigoEstado === MareaEstado.EN_EJECUCION) {
+            progreso = Math.round((diasMarea / estimatedDuration) * 100);
+        } else {
+            // Para estados de revisión o finalizados, usamos los días navegados
+            const totalDias = diasNavegados > 0 ? diasNavegados : diasMarea;
+            progreso = Math.round((totalDias / estimatedDuration) * 100);
+            if (progreso < 100 && (codigoEstado !== MareaEstado.EN_EJECUCION)) {
+                progreso = 100; // Si ya terminó, al menos 100%
+            }
+        }
+
         return {
             marea: {
                 id: marea.id,
@@ -1215,6 +1231,7 @@ export class MareasService {
                 fecha_fin_observador: marea.fechaFinObservador,
                 dias_marea: diasMarea,
                 dias_navegados: diasNavegados,
+                progreso: progreso,
                 alertas: activeAlerts,
                 etapas: marea.etapas.map((e: any) => ({
                     id: e.id,
@@ -1649,7 +1666,7 @@ export class MareasService {
                 codigoUnico: `RETRASO_DATOS-${d.id}`,
                 referenciaId: d.id,
                 referenciaTipo: 'MAREA',
-                metadata: { mareaCode: d.mareaId, vessel: d.vesselName, busDays: d.days },
+                metadata: { mareaCode: d.mareaId, vessel: d.vesselName, busDays: d.days, observerName: d.obs },
                 tipo: 'RETRASO_DATOS',
                 titulo: 'Retraso en Entrega de Datos',
                 descripcion: `Marea ${d.mareaId} (${d.vesselName}) - ${d.days} días de demora.`,
@@ -1663,7 +1680,7 @@ export class MareasService {
                 codigoUnico: `RETRASO_INFORME-${d.id}`,
                 referenciaId: d.id,
                 referenciaTipo: 'MAREA',
-                metadata: { mareaCode: d.mareaId, vessel: d.vesselName, busDays: d.days },
+                metadata: { mareaCode: d.mareaId, vessel: d.vesselName, busDays: d.days, observerName: d.obs },
                 tipo: 'RETRASO_INFORME',
                 titulo: 'Informe Demorado',
                 descripcion: `Marea ${d.mareaId} (${d.vesselName}) - ${d.days} días desde recepción.`,

@@ -50,13 +50,13 @@
           <div class="space-y-2">
             <div class="flex justify-between items-end">
               <span class="text-[10px] font-bold text-text-muted uppercase tracking-widest">Avance Estimado</span>
-              <span class="text-xs font-black text-primary">{{ currentMarea.progreso }}%</span>
+              <span v-if="currentMarea?.progreso !== undefined" class="text-xs font-black text-primary">{{ currentMarea.progreso }}%</span>
             </div>
             <div class="h-2 w-full bg-surface-muted rounded-full overflow-hidden border border-border">
               <div
                 class="h-full transition-all duration-1000 ease-out"
-                :class="currentMarea.progreso > 100 ? 'bg-error' : 'bg-primary'"
-                :style="{ width: currentMarea.progreso + '%' }"
+                :class="(currentMarea?.progreso || 0) > 100 ? 'bg-error' : 'bg-primary'"
+                :style="{ width: (currentMarea?.progreso || 0) + '%' }"
               ></div>
             </div>
           </div>
@@ -273,7 +273,12 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const currentMarea = computed(() => {
-  return props.context?.marea || props.marea
+  const m = props.context?.marea || props.marea
+  // Fallback de seguridad: si el contexto no trajo progreso, usar el de la lista original
+  if (m && m.progreso === undefined && props.marea?.progreso !== undefined) {
+    return { ...m, progreso: props.marea.progreso }
+  }
+  return m
 })
 
 const mareaTitle = computed(() => {
