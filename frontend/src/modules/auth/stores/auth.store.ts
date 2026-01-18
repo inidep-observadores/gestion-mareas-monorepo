@@ -153,6 +153,33 @@ export const useAuthStore = defineStore('auth', () => {
         }
     };
 
+    const forgotPassword = async (email: string) => {
+        try {
+            await authApi.forgotPassword(email);
+            return { ok: true };
+        } catch (error) {
+            return { ok: false, error: error as AppError };
+        }
+    };
+
+    const validateResetToken = async (token: string) => {
+        try {
+            const data = await authApi.validateResetToken(token);
+            return { ok: true, data };
+        } catch (error) {
+            return { ok: false, error: error as AppError };
+        }
+    };
+
+    const resetPassword = async (token: string, password: string) => {
+        try {
+            await authApi.resetPassword({ token, password });
+            return { ok: true };
+        } catch (error) {
+            return { ok: false, error: error as AppError };
+        }
+    };
+
     return {
         // State
         status,
@@ -173,6 +200,9 @@ export const useAuthStore = defineStore('auth', () => {
         updateProfile,
         changePassword,
         uploadAvatar,
-        uploadOnly
+        uploadOnly,
+        forgotPassword,
+        validateResetToken,
+        resetPassword
     };
 });
