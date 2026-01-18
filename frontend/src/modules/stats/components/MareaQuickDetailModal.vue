@@ -11,7 +11,7 @@
         </div>
         <div v-if="marea">
           <h3 class="text-sm font-black text-text uppercase tracking-widest">
-            {{ mareaCode }}
+            {{ marea.id_marea }}
           </h3>
           <p class="text-[10px] font-bold text-text-muted uppercase tracking-wider">
             Detalle Operativo Rápido
@@ -37,7 +37,7 @@
             <p class="text-xs font-bold text-text truncate">{{ marea.buque?.nombreBuque }}</p>
             <p class="text-[9px] font-bold text-primary uppercase">{{ marea.buque?.tipoFlota?.nombre || 'N/D' }}</p>
           </div>
-          
+
           <div class="p-3 bg-surface-muted/30 rounded-2xl border border-border/50">
             <p class="text-[9px] font-black text-text-muted uppercase tracking-widest mb-1">Observador Principal</p>
             <p class="text-xs font-bold text-text">
@@ -47,13 +47,14 @@
 
           <div class="p-3 bg-surface-muted/30 rounded-2xl border border-border/50">
             <p class="text-[9px] font-black text-text-muted uppercase tracking-widest mb-1">Periodo Total</p>
-            <div class="flex flex-col leading-tight">
-               <span class="text-xs font-bold text-text">
-                 {{ formatDate(marea.fechaInicioObservador || marea.fechaZarpadaEstimada) }}
-               </span>
-               <span class="text-[9px] font-bold text-text-muted">
-                 al {{ marea.fechaFinObservador ? formatDate(marea.fechaFinObservador) : 'En ejecución' }}
-               </span>
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <span class="text-[10px] font-bold text-text-muted">
+                {{ formatDate(marea.fechaInicioObservador || marea.fechaZarpadaEstimada) }}
+              </span>
+              <span class="text-[9px] text-text-muted/40 font-black">→</span>
+              <span class="text-[10px] font-bold text-text-muted">
+                {{ marea.fechaFinObservador ? formatDate(marea.fechaFinObservador) : 'En ejecución' }}
+              </span>
             </div>
           </div>
 
@@ -86,8 +87,8 @@
                 </tr>
               </thead>
               <tbody class="divide-y divide-border">
-                <tr 
-                  v-for="etapa in marea.etapas" 
+                <tr
+                  v-for="etapa in marea.etapas"
                   :key="etapa.id"
                   class="hover:bg-primary/5 transition-colors"
                 >
@@ -157,21 +158,18 @@ const router = useRouter()
 const loading = ref(false)
 const marea = ref<any>(null)
 
-const mareaCode = computed(() => {
-  if (!marea.value) return ''
-  const prefix = marea.value.tipoMarea === 'CI' ? 'CI' : 'MC'
-  const shortYear = String(marea.value.anioMarea).slice(-2)
-  return `${prefix}-${marea.value.nroMarea}-${shortYear}`
-})
-
 const totalDays = computed(() => {
   if (!marea.value?.etapas) return 0
-  return marea.value.etapas.reduce((acc: number, e: any) => acc + calculateStageDays(e), 0)
+  const intervals = marea.value.etapas.map((e: any) => ({
+    start: e.fechaZarpada,
+    end: e.fechaArribo
+  }))
+  return DateUtils.calculateUniqueDays(intervals)
 })
 
 const fetchDetail = async () => {
   if (!props.isOpen || !props.mareaId) return
-  
+
   loading.value = true
   try {
     marea.value = await mareasService.getById(props.mareaId)
@@ -193,27 +191,24 @@ const formatDate = (date: string | Date | null, withTime = false) => {
   if (!date) return '-'
   const d = new Date(date)
   if (isNaN(d.getTime())) return '-'
-  
+
   const day = String(d.getDate()).padStart(2, '0')
   const month = String(d.getMonth() + 1).padStart(2, '0')
   const year = d.getFullYear()
-  
+
   if (withTime) {
     const hours = String(d.getHours()).padStart(2, '0')
     const minutes = String(d.getMinutes()).padStart(2, '0')
     return `${day}/${month}/${year} ${hours}:${minutes}`
   }
-  
+
   return `${day}/${month}/${year}`
 }
 
+import { DateUtils } from '@/modules/shared/utils/date.utils'
+
 const calculateStageDays = (etapa: any) => {
-  if (!etapa.fechaZarpada) return 0
-  const start = new Date(etapa.fechaZarpada)
-  const end = etapa.fechaArribo ? new Date(etapa.fechaArribo) : new Date()
-  
-  const diffTime = Math.abs(end.getTime() - start.getTime())
-  return Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+  return DateUtils.calculateInclusiveDays(etapa.fechaZarpada, etapa.fechaArribo)
 }
 
 const getStatusColor = (status: string) => {
@@ -228,6 +223,6 @@ const getStatusColor = (status: string) => {
 const goToFullMarea = () => {
   if (!props.mareaId) return
   emit('close')
-  router.push(`/mareas/${props.mareaId}`)
+  router.push(`/mareas/detalle/${props.mareaId}`)
 }
 </script>

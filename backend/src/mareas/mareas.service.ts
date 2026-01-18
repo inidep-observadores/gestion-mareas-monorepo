@@ -10,6 +10,8 @@ import { MailService } from '../mail/mail.service';
 import { ClaimMareaDto } from './dto/claim-marea.dto';
 import { AlertsService } from '../alerts/alerts.service';
 import { MareaEstado } from './mareas.constants';
+import { DateUtils } from '../common/utils/date.utils';
+import { MareaUtils } from '../common/utils/marea.utils';
 
 @Injectable()
 export class MareasService {
@@ -39,7 +41,11 @@ export class MareasService {
         const marea = await this.prisma.marea.findUnique({
             where: { id },
             include: {
-                buque: true,
+                buque: {
+                    include: {
+                        tipoFlota: true
+                    }
+                },
                 observadorPrincipal: true,
                 estadoActual: true,
                 etapas: {
@@ -72,7 +78,10 @@ export class MareasService {
         });
 
         if (!marea) throw new NotFoundException('Marea no encontrada');
-        return marea;
+        return {
+            ...marea,
+            id_marea: MareaUtils.formatCodigo(marea as any)
+        };
     }
 
     async update(id: string, updateMareaDto: UpdateMareaDto) {
@@ -175,9 +184,7 @@ export class MareasService {
     }
 
     private formatMareaId(m: { tipoMarea: string; nroMarea: number; anioMarea: number }): string {
-        const prefix = m.tipoMarea === 'INSTITUCIONAL' || m.tipoMarea === 'CI' ? 'CI' : 'MC';
-        const shortYear = String(m.anioMarea).slice(-2);
-        return `${prefix}-${m.nroMarea}-${shortYear}`;
+        return MareaUtils.formatCodigo(m);
     }
 
     private resolveYear(year?: number): number {
@@ -750,26 +757,20 @@ export class MareasService {
         } else if (estadoCodigo === MareaEstado.EN_EJECUCION) {
             const fechaInicio = etapaActual?.fechaZarpada || m.fechaZarpadaEstimada;
             if (fechaInicio) {
-                const now = new Date();
-                const inicio = new Date(fechaInicio);
-                const diffTime = now.getTime() - inicio.getTime();
-                const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1;
+                const diffDays = DateUtils.calculateInclusiveDays(fechaInicio, new Date());
                 const estimatedDuration = (m.diasEstimados && m.diasEstimados > 0) ? m.diasEstimados : 30;
                 progreso = Math.round((diffDays / estimatedDuration) * 100);
             }
         } else {
             const stageIntervals = (m.etapas || [])
                 .filter((e: any) => e.fechaZarpada && e.fechaArribo)
-                .map((e: any) => ({ inicio: new Date(e.fechaZarpada), fin: new Date(e.fechaArribo) }));
+                .map((e: any) => ({ start: e.fechaZarpada, end: e.fechaArribo }));
 
             let diasTrabajados = 0;
             if (m.fechaInicioObservador && m.fechaFinObservador) {
-                diasTrabajados = this.calculateUniqueDays([{
-                    inicio: new Date(m.fechaInicioObservador),
-                    fin: new Date(m.fechaFinObservador)
-                }]);
+                diasTrabajados = DateUtils.calculateInclusiveDays(m.fechaInicioObservador, m.fechaFinObservador);
             } else if (stageIntervals.length > 0) {
-                diasTrabajados = this.calculateUniqueDays(stageIntervals);
+                diasTrabajados = DateUtils.calculateUniqueDays(stageIntervals);
             }
 
             const estimatedDuration = (m.diasEstimados && m.diasEstimados > 0) ? m.diasEstimados : 30;
@@ -779,36 +780,6 @@ export class MareasService {
             }
         }
         return progreso;
-    }
-
-    private calculateUniqueDays(intervals: Array<{ inicio: Date; fin: Date }>): number {
-        if (!intervals.length) return 0;
-
-        const sorted = [...intervals].sort((a, b) => a.inicio.getTime() - b.inicio.getTime());
-        const merged: Array<{ inicio: Date; fin: Date }> = [];
-
-        for (const interval of sorted) {
-            if (!merged.length) {
-                merged.push({ ...interval });
-                continue;
-            }
-            const last = merged[merged.length - 1];
-            if (interval.inicio.getTime() <= last.fin.getTime()) {
-                if (interval.fin.getTime() > last.fin.getTime()) {
-                    last.fin = interval.fin;
-                }
-            } else {
-                merged.push({ ...interval });
-            }
-        }
-
-        let totalDays = 0;
-        merged.forEach((i) => {
-            const diff = Math.floor((i.fin.getTime() - i.inicio.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-            totalDays += diff;
-        });
-
-        return totalDays;
     }
 
     async getFatigueAlerts(year?: number) {
@@ -903,7 +874,9 @@ export class MareasService {
             const allTripsIntervals: Array<{ inicio: Date; fin: Date }> = [];
             data.mareaGroups.forEach(g => allTripsIntervals.push(...g.stages));
 
-            const alertDays = this.calculateUniqueDays(allTripsIntervals);
+            const alertDays = DateUtils.calculateUniqueDays(
+                allTripsIntervals.map(i => ({ start: i.inicio, end: i.fin }))
+            );
 
             if (alertDays > THRESHOLD) {
                 const trips: any[] = [];
@@ -925,7 +898,9 @@ export class MareasService {
                         departure: firstDep,
                         arrival: lastArr,
                         inExecution: group.inExecution,
-                        navigatedDays: this.calculateUniqueDays(group.stages)
+                        navigatedDays: DateUtils.calculateUniqueDays(
+                            group.stages.map((s: any) => ({ start: s.inicio, end: s.fin }))
+                        )
                     });
                 });
 
@@ -1213,11 +1188,11 @@ export class MareasService {
             const stageIntervals = marea.etapas
                 .filter((e: any) => e.fechaZarpada)
                 .map((e: any) => ({
-                    inicio: new Date(e.fechaZarpada),
-                    fin: e.fechaArribo ? new Date(e.fechaArribo) : now
+                    start: new Date(e.fechaZarpada),
+                    end: e.fechaArribo ? new Date(e.fechaArribo) : now
                 }));
 
-            diasNavegados = this.calculateUniqueDays(stageIntervals);
+            diasNavegados = DateUtils.calculateUniqueDays(stageIntervals);
         }
 
         // Cálculo de progreso consistente con los días calculados arriba
