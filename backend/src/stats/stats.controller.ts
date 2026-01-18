@@ -1,7 +1,8 @@
-import { Controller, Get, Query, ParseIntPipe, ParseBoolPipe, DefaultValuePipe, Res } from '@nestjs/common';
+import { Controller, Get, Query, Res } from '@nestjs/common';
 import { Response } from 'express';
 import { StatsService } from './stats.service';
 import { Auth } from '../auth/decorators';
+import { GetStatsDto } from './dto/get-stats.dto';
 
 @Controller('stats')
 @Auth()
@@ -9,56 +10,48 @@ export class StatsController {
     constructor(private readonly statsService: StatsService) { }
 
     @Get('dashboard')
-    getDashboardStats(
-        @Query('year', ParseIntPipe) year: number,
-        @Query('mode') mode: 'CALENDAR' | 'TOTAL' = 'CALENDAR',
-        @Query('includeNonProtocolized', new DefaultValuePipe(false), ParseBoolPipe) includeNonProtocolized: boolean,
-        @Query('includeProtocolizedOutOfPeriod', new DefaultValuePipe(false), ParseBoolPipe) includeProtocolizedOutOfPeriod: boolean,
-        @Query('daysCalculationMode') daysCalculationMode: 'SHIP' | 'OBSERVER' = 'SHIP',
-        @Query('includeCampaigns', new DefaultValuePipe(true), ParseBoolPipe) includeCampaigns: boolean,
-    ) {
-        return this.statsService.getDashboardStats(year, mode, includeNonProtocolized, includeProtocolizedOutOfPeriod, daysCalculationMode, includeCampaigns);
+    getDashboardStats(@Query() query: GetStatsDto) {
+        return this.statsService.getDashboardStats(
+            query.year,
+            query.mode,
+            query.includeNonProtocolized,
+            query.includeProtocolizedOutOfPeriod,
+            query.daysCalculationMode,
+            query.includeCampaigns
+        );
     }
 
     @Get('detail')
-    getDashboardStatsDetail(
-        @Query('year', ParseIntPipe) year: number,
-        @Query('mode') mode: 'CALENDAR' | 'TOTAL' = 'CALENDAR',
-        @Query('includeNonProtocolized', new DefaultValuePipe(false), ParseBoolPipe) includeNonProtocolized: boolean,
-        @Query('includeProtocolizedOutOfPeriod', new DefaultValuePipe(false), ParseBoolPipe) includeProtocolizedOutOfPeriod: boolean,
-        @Query('filterType') filterType: 'FISHERY' | 'FLEET' | 'OBSERVER',
-        @Query('filterValue') filterValue: string,
-        @Query('daysCalculationMode') daysCalculationMode: 'SHIP' | 'OBSERVER' = 'SHIP',
-        @Query('includeCampaigns', new DefaultValuePipe(true), ParseBoolPipe) includeCampaigns: boolean,
-    ) {
-        return this.statsService.getDashboardStatsDetail(year, mode, includeNonProtocolized, includeProtocolizedOutOfPeriod, filterType, filterValue, daysCalculationMode, includeCampaigns);
+    getDashboardStatsDetail(@Query() query: GetStatsDto) {
+        return this.statsService.getDashboardStatsDetail(
+            query.year,
+            query.mode,
+            query.includeNonProtocolized,
+            query.includeProtocolizedOutOfPeriod,
+            query.filterType,
+            query.filterValue,
+            query.daysCalculationMode,
+            query.includeCampaigns
+        );
     }
 
     @Get('export')
     async exportStats(
         @Res() res: Response,
-        @Query('year', ParseIntPipe) year: number,
-        @Query('mode') mode: 'CALENDAR' | 'TOTAL' = 'CALENDAR',
-        @Query('includeNonProtocolized', new DefaultValuePipe(false), ParseBoolPipe) includeNonProtocolized: boolean,
-        @Query('includeProtocolizedOutOfPeriod', new DefaultValuePipe(false), ParseBoolPipe) includeProtocolizedOutOfPeriod: boolean,
-        @Query('daysCalculationMode') daysCalculationMode: 'SHIP' | 'OBSERVER' = 'SHIP',
-        @Query('includeCampaigns', new DefaultValuePipe(true), ParseBoolPipe) includeCampaigns: boolean,
-        @Query('filterType') filterType?: 'FISHERY' | 'FLEET' | 'OBSERVER',
-        @Query('filterValue') filterValue?: string,
-        @Query('customFilename') customFilename?: string,
+        @Query() query: GetStatsDto
     ) {
         const workbook = await this.statsService.getExportWorkbook(
-            year,
-            mode,
-            includeNonProtocolized,
-            includeProtocolizedOutOfPeriod,
-            daysCalculationMode,
-            includeCampaigns,
-            filterType,
-            filterValue
+            query.year,
+            query.mode,
+            query.includeNonProtocolized,
+            query.includeProtocolizedOutOfPeriod,
+            query.daysCalculationMode,
+            query.includeCampaigns,
+            query.filterType,
+            query.filterValue
         );
 
-        const filename = customFilename ? `${customFilename}.xlsx` : `Estadisticas_Mareas_${year}.xlsx`;
+        const filename = query.customFilename ? `${query.customFilename}.xlsx` : `Estadisticas_Mareas_${query.year}.xlsx`;
 
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         res.setHeader('Content-Disposition', `attachment; filename=${filename}`);
