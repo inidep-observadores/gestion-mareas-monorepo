@@ -20,11 +20,7 @@
       ]"
     >
       <router-link :to="{ name: 'Dashboard' }" class="flex items-center gap-3">
-        <div
-          class="w-10 h-10 rounded-xl bg-linear-to-br from-primary to-info flex items-center justify-center flex-shrink-0"
-        >
-          <WaveIcon class="w-6 h-6 text-white" />
-        </div>
+        <SigmaLogo width="40px" :animated="true" theme="auto" />
         <div v-if="isExpanded || isHovered || isMobileOpen" class="flex flex-col">
           <span class="text-lg font-bold text-text leading-tight"
             >Gestión de</span
@@ -159,10 +155,10 @@ import {
   BarChartIcon,
   CalenderIcon,
   GridIcon,
-  WaveIcon,
   MapPinIcon,
   ShieldIcon,
 } from '../../icons'
+import SigmaLogo from '../brand/SigmaLogo.vue'
 import { useSidebar } from '@/composables/useSidebar'
 import { useAuthStore } from '@/modules/auth/stores/auth.store'
 import { useConfigStore } from '@/modules/shared/stores/config.store'

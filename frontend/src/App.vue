@@ -1,16 +1,18 @@
 <template>
-  <div v-if="!isReady" class="flex items-center justify-center min-h-screen bg-background">
-    <div class="flex flex-col items-center gap-4">
-      <LoadingSpinner size="xl" class="text-primary" />
-      <p class="text-sm font-medium text-text-muted">Cargando sistema...</p>
+  <div :class="darkMode ? 'bg-slate-950' : 'bg-slate-50'" class="min-h-screen transition-colors duration-700">
+    <div v-if="!isReady" class="flex items-center justify-center min-h-screen">
+      <div class="flex flex-col items-center gap-4">
+        <LoadingSpinner size="xl" class="text-primary" />
+        <p class="text-sm font-medium text-text-muted">Iniciando Sigma...</p>
+      </div>
     </div>
+    <ThemeProvider v-else>
+      <SidebarProvider>
+        <RouterView />
+      </SidebarProvider>
+      <Toaster position="bottom-right" richColors :theme="darkMode ? 'dark' : 'light'" />
+    </ThemeProvider>
   </div>
-  <ThemeProvider v-else>
-    <SidebarProvider>
-      <RouterView />
-    </SidebarProvider>
-    <Toaster position="bottom-right" richColors :theme="darkMode ? 'dark' : 'light'" />
-  </ThemeProvider>
 </template>
 
 <script setup lang="ts">

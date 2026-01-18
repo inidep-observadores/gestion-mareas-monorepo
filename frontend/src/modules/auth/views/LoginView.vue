@@ -59,7 +59,7 @@
             </button>
           </div>
           <div class="flex justify-end p-1">
-            <router-link :to="{ name: 'ForgotPassword' }" class="text-xs font-semibold text-primary hover:text-primary-hover hover:underline transition-all">
+            <router-link :to="{ name: 'ForgotPassword' }" class="text-xs font-semibold text-[#00f2ff] hover:text-white transition-all">
               ¿Olvidó su contraseña?
             </router-link>
           </div>
@@ -81,7 +81,7 @@
         <button
           type="submit"
           :disabled="isLoading"
-          class="relative w-full py-3.5 rounded-xl bg-gradient-to-r from-primary to-blue-600 text-white font-bold tracking-wide shadow-lg shadow-primary/25 hover:shadow-primary/40 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none overflow-hidden"
+          class="relative w-full py-3.5 rounded-xl bg-gradient-to-r from-[#00f2ff] to-[#0078ff] text-white font-bold tracking-wide shadow-lg shadow-cyan-500/25 hover:shadow-cyan-500/40 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none overflow-hidden"
         >
           <div v-if="isLoading" class="flex items-center justify-center gap-2">
             <Loader2 class="animate-spin" :size="20" />
@@ -97,7 +97,7 @@
         <div class="text-center mt-2 text-sm text-gray-400">
           <p>
             ¿No tiene una cuenta?
-            <router-link :to="{ name: 'Signup' }" class="text-primary font-bold hover:text-primary-hover hover:underline transition-all">
+            <router-link :to="{ name: 'Signup' }" class="text-[#00f2ff] font-bold hover:text-white transition-all">
               Regístrese aquí
             </router-link>
           </p>

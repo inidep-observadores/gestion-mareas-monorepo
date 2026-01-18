@@ -1,12 +1,8 @@
 <script setup lang="ts">
-import { ref } from 'vue';
-/**
- * Componente: SigmaLogo
- * Ubicación: src/components/brand/SigmaLogo.vue
- * Descripción: Isotipo animado de SIGMA adaptado a tokens semánticos.
- */
+import { ref, computed } from 'vue';
+import { useThemeStore } from '@/modules/shared/stores/theme.store';
 
-defineProps({
+const props = defineProps({
   width: {
     type: String,
     default: '140px'
@@ -14,7 +10,17 @@ defineProps({
   animated: {
     type: Boolean,
     default: true
+  },
+  theme: {
+    type: String, // 'light' | 'dark' | 'auto'
+    default: 'auto',
   }
+});
+
+const themeStore = useThemeStore();
+const activeTheme = computed(() => {
+  if (props.theme !== 'auto') return props.theme;
+  return themeStore.darkMode ? 'dark' : 'light';
 });
 
 const logoEl = ref(null);
@@ -22,17 +28,15 @@ defineExpose({ logoEl });
 </script>
 
 <template>
-  <div ref="logoEl" class="logo-wrapper" :style="{ width: width, height: width }">
-    <svg viewBox="0 0 160 160" class="sigma-svg">
+  <div ref="logoEl" class="logo-wrapper" :style="{ '--logo-size': width }">
+    <svg viewBox="0 0 160 160" class="sigma-svg" :class="[`is-${activeTheme}`]">
       <defs>
-        <!-- Gradiante Principal (Primary -> Info) -->
-        <!-- Usamos variables CSS para que reaccione al tema (Verde, Naranja, Azul, etc.) -->
+        <!-- Los gradientes ahora usan variables CSS que inyectamos en el componente o globales -->
         <linearGradient id="sigmaGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" style="stop-color: var(--color-info); stop-opacity: 1" />
-          <stop offset="100%" style="stop-color: var(--color-primary); stop-opacity: 1" />
+          <stop offset="0%" stop-color="var(--sigma-primary)" />
+          <stop offset="100%" stop-color="var(--sigma-secondary)" />
         </linearGradient>
         
-        <!-- Glow adaptativo usando el color primario -->
         <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
           <feGaussianBlur stdDeviation="4" result="coloredBlur" />
           <feMerge>
@@ -42,9 +46,6 @@ defineExpose({ logoEl });
         </filter>
       </defs>
       
-      <!-- 
-         ELEMENTO 1: El Brazo (Outer Shell)
-      -->
       <path
         d="M 140 25 L 80 25 A 55 55 0 0 0 80 135 L 90 135"
         class="sigma-path-arm"
@@ -52,9 +53,6 @@ defineExpose({ logoEl });
         stroke="url(#sigmaGradient)"
       />
 
-      <!-- 
-         ELEMENTO 2: El Núcleo (Inner Core)
-      -->
       <circle 
         cx="80" 
         cy="80" 
@@ -64,11 +62,11 @@ defineExpose({ logoEl });
         stroke="url(#sigmaGradient)"
       />
       
-      <!-- Punto central -->
       <circle 
         cx="80" 
         cy="80" 
         r="6" 
+        fill="var(--sigma-primary)" 
         class="sigma-dot" 
         :class="{ 'animate': animated }" 
       />
@@ -81,6 +79,21 @@ defineExpose({ logoEl });
   display: flex;
   align-items: center;
   justify-content: center;
+  width: var(--logo-size);
+  height: var(--logo-size);
+  
+  /* Definición de colores premium vía variables CSS */
+  /* El modo default/oscuro (Sigma Identity) */
+  --sigma-primary: #00f2ff;
+  --sigma-secondary: #0078ff;
+  --sigma-glow: rgba(0, 242, 255, 0.4);
+}
+
+/* Ajuste para modo claro (se activa mediante clase .is-light o .dark:is-light) */
+.is-light {
+  --sigma-primary: #2563eb;
+  --sigma-secondary: #4f46e5;
+  --sigma-glow: rgba(37, 99, 235, 0.2);
 }
 
 .sigma-svg {
@@ -88,9 +101,13 @@ defineExpose({ logoEl });
   height: 100%;
   filter: url(#glow);
   overflow: visible;
+  transition: all 0.5s ease;
 }
 
-/* --- ESTILOS COMUNES --- */
+.is-light.sigma-svg {
+  filter: drop-shadow(0 0 8px var(--sigma-glow));
+}
+
 .sigma-path-arm,
 .sigma-circle-core {
   fill: none;
@@ -98,7 +115,6 @@ defineExpose({ logoEl });
   stroke-linejoin: round;
 }
 
-/* --- BRAZO EXTERIOR --- */
 .sigma-path-arm {
   stroke-width: 9;
   stroke-dasharray: 380;
@@ -110,7 +126,6 @@ defineExpose({ logoEl });
   animation: drawArm 2.2s cubic-bezier(0.22, 1, 0.36, 1) forwards 0.2s, float 6s ease-in-out infinite 3s;
 }
 
-/* --- NÚCLEO INTERIOR --- */
 .sigma-circle-core {
   stroke-width: 6;
   stroke-dasharray: 130 50;
@@ -124,17 +139,14 @@ defineExpose({ logoEl });
   animation: drawCore 2s cubic-bezier(0.22, 1, 0.36, 1) forwards 0.5s, spinSlow 15s linear infinite 3s;
 }
 
-/* --- PUNTO CENTRAL --- */
 .sigma-dot {
   opacity: 0.8;
-  fill: var(--color-info); /* Use theme secondary/info color */
 }
 .sigma-dot.animate {
   opacity: 0;
   animation: fadeIn 1s ease-out forwards 1.5s, pulse 3s infinite 3s;
 }
 
-/* --- KEYFRAMES --- */
 @keyframes drawArm {
   to { stroke-dashoffset: 0; }
 }

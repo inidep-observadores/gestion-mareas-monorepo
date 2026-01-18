@@ -15,33 +15,30 @@
         />
       </defs>
       <g class="parallax">
-        <!-- Onda 1: Info (Cyan/Sky) con alta opacidad -->
+        <!-- Colores HARDCODED de la propuesta original Sigma -->
         <use
           xlink:href="#gentle-wave"
           x="48"
           y="0"
-          class="wave-layer-1"
+          fill="rgba(0, 242, 255, 0.7)"
         />
-        <!-- Onda 2: Primary con media opacidad -->
         <use
           xlink:href="#gentle-wave"
           x="48"
           y="3"
-          class="wave-layer-2"
+          fill="rgba(0, 120, 255, 0.5)"
         />
-        <!-- Onda 3: Primary más oscuro/transparente -->
         <use
           xlink:href="#gentle-wave"
           x="48"
           y="5"
-          class="wave-layer-3"
+          fill="rgba(0, 80, 200, 0.3)"
         />
-        <!-- Onda 4: Fondo sólido (Surface o Primary dark) -->
         <use
           xlink:href="#gentle-wave"
           x="48"
           y="7"
-          class="wave-layer-4"
+          fill="rgba(0, 30, 100, 0.9)"
         />
       </g>
     </svg>
@@ -64,26 +61,6 @@
   height: 100%;
 }
 
-/* Colores Semánticos */
-.wave-layer-1 {
-  fill: rgba(var(--color-info-rgb), 0.7);
-}
-
-.wave-layer-2 {
-  fill: rgba(var(--color-primary-rgb), 0.5);
-}
-
-.wave-layer-3 {
-  fill: rgba(var(--color-primary-rgb), 0.3);
-}
-
-.wave-layer-4 {
-  /* La base de la ola. En modo oscuro debería ser oscura, en claro... */
-   fill: rgba(var(--color-primary-rgb), 0.9);
-}
-
-
-/* Animación */
 .parallax > use {
   animation: move-forever 25s cubic-bezier(0.55, 0.5, 0.45, 0.5) infinite;
 }
