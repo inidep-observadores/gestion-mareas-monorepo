@@ -127,40 +127,40 @@ export class StatsService {
 
             let days = 0;
 
-            if (daysCalculationMode === 'SHIP') {
-                // SHIP metric: Unique days of the vessel at sea
-                days = DateUtils.calculateUniqueDays(intervals, mode === 'CALENDAR' ? year : undefined);
-            } else {
-                // OBSERVER metric: Sum of days of ALL observers in ALL stages
-                let totalObsDays = 0;
-                // We need to iterate stages to get observers per stage
-                marea.etapas.forEach(etapa => {
-                    if (!etapa.fechaZarpada) return;
-                    const stageStart = etapa.fechaZarpada;
-                    const stageEnd = etapa.fechaArribo || (marea.estadoActual?.codigo === 'EN_EJECUCION' ? new Date() : null);
+            // 1. Calculate uniquely navigated days for the Principal Observer (the whole marea)
+            const totalMareaDays = DateUtils.calculateUniqueDays(intervals, mode === 'CALENDAR' ? year : undefined);
 
-                    // Calculate days for this stage
-                    // If CALENDAR mode, we clamp to year
-                    let stageDays = 0;
-                    if (mode === 'CALENDAR') {
-                        stageDays = DateUtils.calculateDaysInYear(stageStart, stageEnd, year);
-                    } else {
-                        stageDays = DateUtils.calculateInclusiveDays(stageStart, stageEnd);
+            const mareaObserverMap: Record<string, number> = {}; // ObsID -> Days attributed in this marea
+
+            if (marea.observadorPrincipal) {
+                mareaObserverMap[marea.observadorPrincipal.id] = totalMareaDays;
+            }
+
+            // 2. Calculate unique days for EACH additional observer involved in stages
+            const additionalsMap: Record<string, Array<{ start: Date, end: Date }>> = {};
+            marea.etapas.forEach(etapa => {
+                if (!etapa.fechaZarpada) return;
+                const start = etapa.fechaZarpada;
+                const end = etapa.fechaArribo || (marea.estadoActual?.codigo === 'EN_EJECUCION' ? new Date() : null);
+
+                etapa.observadores.forEach(obsRel => {
+                    if (obsRel.observador && obsRel.observador.id !== marea.observadorPrincipalId) {
+                        if (!additionalsMap[obsRel.observador.id]) additionalsMap[obsRel.observador.id] = [];
+                        additionalsMap[obsRel.observador.id].push({ start, end });
                     }
-
-                    // Multiply by number of observers in this stage
-                    const obsCount = etapa.observadores.length || (marea.observadorPrincipal ? 1 : 0);
-                    // Use actual observers count from relation if available, otherwise fallback to 1 (main) if relation empty but marea has main? 
-                    // Actually, if marea_etapas_observadores is populated, we use that. 
-                    // If strictly empty, we might fallback to marea.observadorPrincipal if logic dictates, but generally stages should have observers.
-                    // Let's assume consistent data: if we want precise observer days, we trust the join table.
-                    // Just in case, if count is 0 and we have a main observer, assume he was there?
-                    // To be safe: if etapa.observadores is empty, assume Main Observer was there.
-                    const finalObsCount = obsCount > 0 ? obsCount : (marea.observadorPrincipal ? 1 : 0);
-
-                    totalObsDays += (stageDays * finalObsCount);
                 });
-                days = totalObsDays;
+            });
+
+            // Sum additional efforts
+            Object.entries(additionalsMap).forEach(([obsId, obsIntervals]) => {
+                mareaObserverMap[obsId] = DateUtils.calculateUniqueDays(obsIntervals, mode === 'CALENDAR' ? year : undefined);
+            });
+
+            if (daysCalculationMode === 'SHIP') {
+                days = totalMareaDays;
+            } else {
+                // OBSERVER Mode Effort = Sum of all individual unique contributions
+                days = Object.values(mareaObserverMap).reduce((sum, d) => sum + d, 0);
             }
 
             // Add to Totals
@@ -180,86 +180,38 @@ export class StatsService {
             byFleet[fleetName].mareas++;
             byFleet[fleetName].days += days;
 
-            // Observer Aggregation
-            // Logic: Who gets the credit?
-            // If SHIP mode: Credit goes to Main Observer (traditional)
-            // If OBSERVER mode: Credit should technically go to EACH observer involved.
-            // For simplicity in this View (which lists "Mareas" per observer), we usually list Main Observer.
-            // If we want to split credit, we would need to iterate all observers found.
-            // Let's stick to: Main Observer gets the credit for the Marea, and the "Days" value = the calculated metric.
-            // If Metric is "Observer Days", and Main Observer was alone, he gets X days.
-            // If there were 2 observers, Main Observer gets "Total Observer Days" (X*2)? That seems misleading for a ranking.
-            // Requirement says: "In the second case [Observer Days] we consider the sum of days of observers assigned to the marea".
-            // AND "In the case of observer ranking, we should take them from a DIFFERENT ENDPOINT/QUERY... each sums separately".
-            // So for THIS dashboard endpoint (General Summary), we can just aggregate under Main Observer for trends, 
-            // OR we accept that "Observer Ranking" chart might need a different source if we want it perfect.
-            // However, the user said "Observer ranking ... different endpoint". 
-            // But this function `getDashboardStats` RETURNS the `observers` list used for that ranking chart.
-            // So I SHOULD update this logic to properly attribute days for the Ranking.
-
-            if (daysCalculationMode === 'SHIP') {
-                if (marea.observadorPrincipal) {
-                    const obsId = marea.observadorPrincipal.id;
-                    if (!byObserver[obsId]) byObserver[obsId] = { id: obsId, name: `${marea.observadorPrincipal.nombre} ${marea.observadorPrincipal.apellido}`, mareas: 0, days: 0, active: marea.observadorPrincipal.activo };
-                    byObserver[obsId].mareas++;
-                    byObserver[obsId].days += days;
-                }
-            } else {
-                // OBSERVER MODE: Iterate ALL unique observers involved in this marea and attribute THEIR specific days.
-                // This is complex because days are per stage.
-                const observerMap: Record<string, number> = {}; // ObsID -> Days
-
-                marea.etapas.forEach(etapa => {
-                    if (!etapa.fechaZarpada) return;
-                    // Days for this stage
-                    let sDays = 0;
-                    if (mode === 'CALENDAR') {
-                        sDays = DateUtils.calculateDaysInYear(etapa.fechaZarpada, etapa.fechaArribo || (marea.estadoActualId === 'EN_EJECUCION' ? new Date() : null) || new Date(), year);
+            // Observer Ranking
+            Object.entries(mareaObserverMap).forEach(([oId, d]) => {
+                // Ensure observer exists in byObserver (names/active status)
+                if (!byObserver[oId]) {
+                    let obsObj = null;
+                    if (marea.observadorPrincipalId === oId) {
+                        obsObj = marea.observadorPrincipal;
                     } else {
-                        sDays = DateUtils.calculateInclusiveDays(etapa.fechaZarpada, etapa.fechaArribo);
-                    }
-
-                    if (etapa.observadores && etapa.observadores.length > 0) {
-                        etapa.observadores.forEach(obsRel => {
-                            if (obsRel.observador) {
-                                observerMap[obsRel.observador.id] = (observerMap[obsRel.observador.id] || 0) + sDays;
-                                // Add to global list if needed to ensure name availability
-                                if (!byObserver[obsRel.observador.id]) {
-                                    byObserver[obsRel.observador.id] = {
-                                        id: obsRel.observador.id,
-                                        name: `${obsRel.observador.nombre} ${obsRel.observador.apellido}`,
-                                        mareas: 0,
-                                        days: 0,
-                                        active: obsRel.observador.activo
-                                    };
-                                }
+                        for (const etapa of marea.etapas) {
+                            const found = etapa.observadores.find(rel => rel.observador?.id === oId);
+                            if (found) {
+                                obsObj = found.observador;
+                                break;
                             }
-                        });
-                    } else if (marea.observadorPrincipal) {
-                        // Fallback to main
-                        const mainId = marea.observadorPrincipal.id;
-                        observerMap[mainId] = (observerMap[mainId] || 0) + sDays;
-                        if (!byObserver[mainId]) {
-                            byObserver[mainId] = {
-                                id: mainId,
-                                name: `${marea.observadorPrincipal.nombre} ${marea.observadorPrincipal.apellido}`,
-                                mareas: 0,
-                                days: 0,
-                                active: marea.observadorPrincipal.activo
-                            };
                         }
                     }
-                });
+                    if (obsObj) {
+                        byObserver[oId] = {
+                            id: oId,
+                            name: `${obsObj.nombre} ${obsObj.apellido}`,
+                            mareas: 0,
+                            days: 0,
+                            active: obsObj.activo
+                        };
+                    }
+                }
 
-                // Apply to aggregated map
-                Object.entries(observerMap).forEach(([oId, d]) => {
+                if (byObserver[oId]) {
                     byObserver[oId].days += d;
-                    // Marea count? They participated in this marea.
-                    // But if we count 1 marea for each observer, total mareas in "Observer Ranking" sum > Total Mareas.
-                    // That is expected for "Observer Ranking".
                     byObserver[oId].mareas++;
-                });
-            }
+                }
+            });
 
             // Monthly Trend (Starts)
             const startMonth = overallStart.getMonth();
@@ -450,27 +402,56 @@ export class StatsService {
                 totalMareaDays = DateUtils.calculateUniqueDays(intervals);
                 days = mode === 'CALENDAR' ? calendarDays : totalMareaDays;
             } else {
-                // OBSERVER Days
-                let calObsDays = 0;
-                let totalObsDays = 0;
+                // OBSERVER Mode
+                // Case A: Filtered by a specific observer -> Show ONLY their individual contribution
+                if (filterType === 'OBSERVER' && filterValue) {
+                    let obsIntervals: Array<{ start: Date, end: Date }> = [];
+                    const isPrincipal = (m.observadorPrincipalId === filterValue);
 
-                m.etapas.forEach(etapa => {
-                    if (!etapa.fechaZarpada) return;
-                    const end = etapa.fechaArribo || (m.estadoActual?.codigo === 'EN_EJECUCION' ? new Date() : null);
+                    if (isPrincipal) {
+                        obsIntervals = intervals; // Principal gets full marea
+                    } else {
+                        // Find stages where they are additional
+                        m.etapas.forEach(etapa => {
+                            const isAdditional = etapa.observadores.some(rel => rel.observadorId === filterValue);
+                            if (isAdditional) {
+                                obsIntervals.push({
+                                    start: etapa.fechaZarpada,
+                                    end: etapa.fechaArribo || (m.estadoActual?.codigo === 'EN_EJECUCION' ? new Date() : null)
+                                });
+                            }
+                        });
+                    }
 
-                    const calStageDays = DateUtils.calculateDaysInYear(etapa.fechaZarpada, end, year);
-                    const totalStageDays = DateUtils.calculateInclusiveDays(etapa.fechaZarpada, end);
+                    calendarDays = DateUtils.calculateUniqueDays(obsIntervals, year);
+                    totalMareaDays = DateUtils.calculateUniqueDays(obsIntervals);
+                } else {
+                    // Case B: General Detail (by Fishery/Fleet/All) -> Show total EFFORT (sum of all unique contributions)
+                    let effortCal = DateUtils.calculateUniqueDays(intervals, year);
+                    let effortTotal = DateUtils.calculateUniqueDays(intervals);
 
-                    const count = (etapa.observadores && etapa.observadores.length > 0)
-                        ? etapa.observadores.length
-                        : (m.observadorPrincipal ? 1 : 0);
+                    const additionalsMap: Record<string, Array<{ start: Date, end: Date }>> = {};
+                    m.etapas.forEach(etapa => {
+                        if (!etapa.fechaZarpada) return;
+                        const start = etapa.fechaZarpada;
+                        const end = etapa.fechaArribo || (m.estadoActual?.codigo === 'EN_EJECUCION' ? new Date() : null);
 
-                    calObsDays += (calStageDays * count);
-                    totalObsDays += (totalStageDays * count);
-                });
+                        etapa.observadores.forEach(obsRel => {
+                            if (obsRel.observador && obsRel.observador.id !== m.observadorPrincipalId) {
+                                if (!additionalsMap[obsRel.observador.id]) additionalsMap[obsRel.observador.id] = [];
+                                additionalsMap[obsRel.observador.id].push({ start, end });
+                            }
+                        });
+                    });
 
-                calendarDays = calObsDays;
-                totalMareaDays = totalObsDays;
+                    Object.values(additionalsMap).forEach(obsIntervals => {
+                        effortCal += DateUtils.calculateUniqueDays(obsIntervals, year);
+                        effortTotal += DateUtils.calculateUniqueDays(obsIntervals);
+                    });
+
+                    calendarDays = effortCal;
+                    totalMareaDays = effortTotal;
+                }
                 days = mode === 'CALENDAR' ? calendarDays : totalMareaDays;
             }
 
@@ -645,21 +626,56 @@ export class StatsService {
                 calendarDays = DateUtils.calculateUniqueDays(intervals, year);
                 totalMareaDays = DateUtils.calculateUniqueDays(intervals);
             } else {
-                // OBSERVER Days Logic
-                let calObsDays = 0;
-                let totalObsDays = 0;
-                m.etapas.forEach(etapa => {
-                    if (!etapa.fechaZarpada) return;
-                    const end = etapa.fechaArribo || (m.estadoActual?.codigo === 'EN_EJECUCION' ? new Date() : null);
-                    const count = (etapa.observadores && etapa.observadores.length > 0)
-                        ? etapa.observadores.length
-                        : (m.observadorPrincipal ? 1 : 0);
+                // OBSERVER Mode
+                // Case A: Filtered by a specific observer -> Show ONLY their individual contribution
+                if (filterType === 'OBSERVER' && filterValue) {
+                    let obsIntervals: Array<{ start: Date, end: Date }> = [];
+                    const isPrincipal = (m.observadorPrincipalId === filterValue);
 
-                    calObsDays += (DateUtils.calculateDaysInYear(etapa.fechaZarpada, end, year) * count);
-                    totalObsDays += (DateUtils.calculateInclusiveDays(etapa.fechaZarpada, end) * count);
-                });
-                calendarDays = calObsDays;
-                totalMareaDays = totalObsDays;
+                    if (isPrincipal) {
+                        obsIntervals = intervals; // Principal gets full marea
+                    } else {
+                        // Find stages where they are additional
+                        m.etapas.forEach(etapa => {
+                            const isAdditional = etapa.observadores.some(rel => rel.observadorId === filterValue);
+                            if (isAdditional) {
+                                obsIntervals.push({
+                                    start: etapa.fechaZarpada,
+                                    end: etapa.fechaArribo || (m.estadoActual?.codigo === 'EN_EJECUCION' ? new Date() : null)
+                                });
+                            }
+                        });
+                    }
+
+                    calendarDays = DateUtils.calculateUniqueDays(obsIntervals, year);
+                    totalMareaDays = DateUtils.calculateUniqueDays(obsIntervals);
+                } else {
+                    // Case B: General Detail (by Fishery/Fleet/All) -> Show total EFFORT (sum of all unique contributions)
+                    let effortCal = DateUtils.calculateUniqueDays(intervals, year);
+                    let effortTotal = DateUtils.calculateUniqueDays(intervals);
+
+                    const additionalsMap: Record<string, Array<{ start: Date, end: Date }>> = {};
+                    m.etapas.forEach(etapa => {
+                        if (!etapa.fechaZarpada) return;
+                        const start = etapa.fechaZarpada;
+                        const end = etapa.fechaArribo || (m.estadoActual?.codigo === 'EN_EJECUCION' ? new Date() : null);
+
+                        etapa.observadores.forEach(obsRel => {
+                            if (obsRel.observador && obsRel.observador.id !== m.observadorPrincipalId) {
+                                if (!additionalsMap[obsRel.observador.id]) additionalsMap[obsRel.observador.id] = [];
+                                additionalsMap[obsRel.observador.id].push({ start, end });
+                            }
+                        });
+                    });
+
+                    Object.values(additionalsMap).forEach(obsIntervals => {
+                        effortCal += DateUtils.calculateUniqueDays(obsIntervals, year);
+                        effortTotal += DateUtils.calculateUniqueDays(obsIntervals);
+                    });
+
+                    calendarDays = effortCal;
+                    totalMareaDays = effortTotal;
+                }
             }
 
             const rowData: any = {
