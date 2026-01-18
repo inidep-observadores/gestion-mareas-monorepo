@@ -86,6 +86,14 @@
       >
         <slot name="extra-content"></slot>
         <div class="flex items-center gap-2 2xsm:gap-3">
+          <!-- Botón de Recarga Discreto -->
+          <button 
+            @click="handleRefresh" 
+            class="flex items-center justify-center w-10 h-10 text-text-muted rounded-xl hover:bg-surface-muted transition-all duration-200 group"
+            title="Recargar página"
+          >
+            <RefreshIcon class="w-5 h-5 group-hover:rotate-180 transition-transform duration-500" />
+          </button>
           <ThemeToggler />
           <NotificationMenu />
         </div>
@@ -99,6 +107,7 @@
 import { ref } from 'vue'
 import { useSidebar } from '@/composables/useSidebar'
 import { usePageHeader } from '@/composables/usePageHeader'
+import { RefreshIcon } from '../../icons'
 import ThemeToggler from '../common/ThemeToggler.vue'
 import HeaderLogo from './header/HeaderLogo.vue'
 import NotificationMenu from './header/NotificationMenu.vue'
@@ -106,6 +115,10 @@ import UserMenu from './header/UserMenu.vue'
 
 const { toggleSidebar, toggleMobileSidebar, isMobileOpen } = useSidebar()
 const { title, description } = usePageHeader()
+
+const handleRefresh = () => {
+  window.location.reload()
+}
 
 const handleToggle = () => {
   if (window.innerWidth >= 1024) {

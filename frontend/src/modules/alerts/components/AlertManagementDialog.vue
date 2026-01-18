@@ -325,6 +325,7 @@ type MareaData = {
   nroMarea?: number
   tipoMarea?: string
   buque?: { nombreBuque?: string }
+  observadorPrincipal?: Observador
   etapas?: MareaEtapa[]
 }
 
@@ -406,8 +407,13 @@ watch(() => props.isOpen, (isOpen) => {
         isConfirmationOpen.value = false
         pendingAction.value = ''
         confirmationMessage.value = ''
+        // No limpiar observers inmediatamente para evitar parpadeo si se reabre la misma
     }
 })
+
+const getMetadataObserver = () => {
+    return localAlert.value?.metadata?.observerName || (localAlert.value as any)?.metadata?.obs || null
+}
 
 const loadFullAlert = async (id: string) => {
     try {
@@ -422,7 +428,16 @@ const loadFullAlert = async (id: string) => {
 const isClosed = computed(() => ['RESUELTA', 'DESCARTADA'].includes(localAlert.value.estado ?? ''))
 const isClaimableAlert = computed(() => localAlert.value?.tipo === 'RETRASO_DATOS' && localAlert.value?.referenciaId)
 const mareaLabel = computed(() => localAlert.value?.metadata?.mareaCode || localAlert.value?.referenciaId || 'N/D')
-const mareaObserversLabel = computed(() => mareaObservers.value.length ? mareaObservers.value.join(', ') : 'Sin asignar')
+
+const mareaObserversLabel = computed(() => {
+    if (mareaObservers.value.length) return mareaObservers.value.join(', ')
+    
+    // Fallback: Metadata de la propia alerta
+    const metaObs = getMetadataObserver()
+    if (metaObs && metaObs !== 'Sin Asignar' && metaObs !== 'Sin asignar') return metaObs
+    
+    return 'Sin asignar'
+})
 
 const isIncongruency = computed(() => localAlert.value?.metadata?.subTipo === 'INCONGRUENCIA')
 const incongruencyData = computed(() => localAlert.value?.metadata)
@@ -663,8 +678,12 @@ const loadReclamoData = async () => {
         const marea = await mareasService.getById(localAlert.value.referenciaId) as MareaData
         const etapas = marea?.etapas || []
         const etapaActual = etapas[etapas.length - 1]
-        const primaryObs = getPrimaryObserver(etapaActual)
-        const obs = primaryObs?.observador || {}
+        
+        // Prioridad 1: Observador Principal de la marea (Cabecera)
+        // Prioridad 2: Observador Principal de la etapa actual
+        const primaryObsFromEtapa = getPrimaryObserver(etapaActual)
+        const obs = marea.observadorPrincipal || primaryObsFromEtapa?.observador || {}
+        
         const metadata = localAlert.value?.metadata || {}
         const arrivalDateRaw = etapaActual?.fechaArribo || null
 
@@ -687,21 +706,14 @@ const loadReclamoData = async () => {
 
 const loadMareaObservers = async (mareaId: string) => {
     try {
-        const marea = await mareasService.getById(mareaId) as MareaData
-        const etapas = marea?.etapas || []
-        const names = new Set<string>()
-
-        etapas.forEach((etapa: MareaEtapa) => {
-            const observadores = etapa?.observadores || []
-            observadores.forEach((o: MareaEtapaObservador) => {
-                const obs = o?.observador
-                if (obs?.nombre && obs?.apellido) {
-                    names.add(`${obs.nombre} ${obs.apellido}`)
-                }
-            })
-        })
-
-        mareaObservers.value = Array.from(names)
+        // Usar getMareaContext en lugar de getById ya que el contexto
+        // ya trae el campo "observador" aplanado y formateado desde el back
+        const context = await mareasService.getMareaContext(mareaId)
+        if (context?.marea?.observador && context.marea.observador !== 'No asignado') {
+            mareaObservers.value = [context.marea.observador]
+        } else {
+            mareaObservers.value = []
+        }
     } catch (e) {
         console.error('Error cargando observadores de la marea:', e)
         mareaObservers.value = []

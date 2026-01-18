@@ -21,8 +21,14 @@ export class MareasController {
     }
 
     @Get('operativo')
-    getDashboardOperativo(@Query('year') year?: string) {
-        return this.mareasService.getDashboardOperativo(year ? Number(year) : undefined);
+    getDashboardOperativo(
+        @Query('year') year?: string,
+        @Query('showAll') showAll?: string
+    ) {
+        return this.mareasService.getDashboardOperativo(
+            year ? Number(year) : undefined,
+            showAll === 'true'
+        );
     }
 
     @Get('kpis')

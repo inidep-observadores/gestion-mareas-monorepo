@@ -27,7 +27,7 @@ export interface MareaListItem {
     total_etapas: number;
     alertas: any[];
     dias_estimados?: number;
-    actionsAvailable: Record<string, { enabled: boolean; label: string; blockedReason?: string }>;
+    actionsAvailable: Record<string, { enabled: boolean; label: string; blockedReason?: string; claseBoton?: string }>;
 }
 
 export interface MareaContext {
@@ -42,9 +42,11 @@ export interface MareaContext {
         fecha_fin_observador?: string;
         dias_marea: number;
         dias_navegados: number;
+        progreso: number;
+        observador: string;
         etapas?: any[];
     };
-    actions: Record<string, { enabled: boolean; label: string; blockedReason?: string }>;
+    actions: Record<string, { enabled: boolean; label: string; blockedReason?: string; claseBoton?: string }>;
     lastEvents: { id: string; titulo: string; fecha: string; usuario: string }[];
 }
 
@@ -65,9 +67,9 @@ export interface CalendarEvent {
 }
 
 const mareasService = {
-    getDashboardOperativo: async (): Promise<MareaDashboard> => {
+    getDashboardOperativo: async (showAll: boolean = false): Promise<MareaDashboard> => {
         const { selectedYear } = useConfigStore();
-        const { data } = await httpClient.get<MareaDashboard>(`/mareas/operativo?year=${selectedYear}`);
+        const { data } = await httpClient.get<MareaDashboard>(`/mareas/operativo?year=${selectedYear}&showAll=${showAll}`);
         return data;
     },
 
