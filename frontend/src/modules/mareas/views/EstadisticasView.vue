@@ -656,7 +656,7 @@ const criteriaList = computed(() => {
     if (daysCalculationMode.value === 'SHIP') {
         list.push(`Métrica: <strong>Días de Buque</strong>. Días únicos que la embarcación estuvo operando, sin multiplicar por observadores embarcados.`);
     } else {
-        list.push(`Métrica: <strong>Días de Observador</strong>. Suma del esfuerzo individual de todos los observadores a bordo (ej: 10 días x 2 obs = 20 días).`);
+        list.push(`Métrica: <strong>Días de Observador</strong>. Suma del esfuerzo individual (Observador Principal recibe el total de la marea; adicionales reciben los días de sus etapas).`);
     }
     if (protocolizedOnly.value) {
         let text = `Estado: <strong>Solo Protocolizadas</strong>.`;
