@@ -55,5 +55,30 @@ export const statsService = {
             params: { year, mode, includeNonProtocolized, includeProtocolizedOutOfPeriod, filterType, filterValue }
         });
         return data;
+    },
+
+    downloadExport: async (
+        year: number,
+        mode: 'CALENDAR' | 'TOTAL' = 'CALENDAR',
+        includeNonProtocolized = true,
+        includeProtocolizedOutOfPeriod = false,
+        filterType?: 'FISHERY' | 'FLEET' | 'OBSERVER',
+        filterValue?: string,
+        filename?: string
+    ): Promise<void> => {
+        const response = await httpClient.get(`/stats/export`, {
+            params: { year, mode, includeNonProtocolized, includeProtocolizedOutOfPeriod, filterType, filterValue, filename },
+            responseType: 'blob'
+        });
+
+        const url = window.URL.createObjectURL(new Blob([response.data]));
+        const link = document.createElement('a');
+        link.href = url;
+        const downloadName = filename ? `${filename}.xlsx` : `Estadisticas_Mareas_${year}.xlsx`;
+        link.setAttribute('download', downloadName);
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(url);
     }
 };

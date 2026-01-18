@@ -56,6 +56,8 @@
               type="bar"
               :series="monthlySeries"
               :options="monthlyChartOptions"
+              allow-download
+              @download="handleDownload('Tendencia_Mensual')"
             />
           </div>
           <div class="col-span-12 lg:col-span-4 space-y-8">
@@ -64,7 +66,9 @@
               type="pie"
               :series="fleetSeries"
               :options="fleetChartOptions"
+              allow-download
               @dataPointClick="handleFleetClick"
+              @download="handleDownload('Distribucion_Flota', 'FLEET')"
             />
           </div>
         </section>
@@ -78,7 +82,9 @@
               type="donut"
               :series="fisherySeries"
               :options="fisheryChartOptions"
+              allow-download
               @dataPointClick="handleFisheryClick"
+              @download="handleDownload('Participacion_Pesqueria', 'FISHERY')"
             />
           </div>
           <div class="col-span-12 lg:col-span-7">
@@ -88,7 +94,9 @@
               type="bar"
               :series="observerSeries"
               :options="observerChartOptions"
+              allow-download
               @dataPointClick="handleObserverClick"
+              @download="handleDownload('Ranking_Observadores', 'OBSERVER')"
             />
           </div>
         </section>
@@ -131,6 +139,7 @@ import StatsDrillDownModal from '../../stats/components/StatsDrillDownModal.vue'
 import { BarChartIcon, ShipIcon, CalendarClockIcon, TimerIcon, MapIcon } from 'lucide-vue-next'
 import { statsService, type DashboardStats } from '../../stats/services/stats.service'
 import { useConfigStore } from '@/modules/shared/stores/config.store'
+import { toast } from 'vue-sonner'
 
 const loading = ref(false)
 const stats = ref<DashboardStats | null>(null)
@@ -174,6 +183,32 @@ const handleObserverClick = (data: any) => {
     title: 'Observador',
     filterType: 'OBSERVER',
     filterValue: obs?.id || data.label
+  }
+}
+
+// Download Handler
+const handleDownload = async (titlePrefix: string, filterType?: 'FISHERY' | 'FLEET' | 'OBSERVER', filterValue?: string) => {
+  const fileName = `Estadisticas_Mareas_${titlePrefix}_${configStore.selectedYear}`.replace(/\s+/g, '_')
+  
+  try {
+    toast.promise(
+      statsService.downloadExport(
+        configStore.selectedYear,
+        mode.value,
+        !protocolizedOnly.value,
+        includeOutOfPeriod.value,
+        filterType,
+        filterValue,
+        fileName
+      ),
+      {
+        loading: 'Preparando archivo Excel...',
+        success: 'Archivo descargado con éxito',
+        error: 'Error al generar la exportación'
+      }
+    )
+  } catch (error) {
+    console.error('Download failed', error)
   }
 }
 
