@@ -4,6 +4,7 @@ import { DateUtils } from '../common/utils/date.utils';
 import { Prisma } from '@prisma/client';
 import { StatsDetailItem, DashboardStats } from './interfaces/dashboard.interface';
 import { MareaUtils } from '../common/utils/marea.utils';
+import * as ExcelJS from 'exceljs';
 
 @Injectable()
 export class StatsService {
@@ -79,7 +80,9 @@ export class StatsService {
                     }
                 },
                 observadorPrincipal: true,
-                // We might need Etapas later for more granular location data, but for now Marea level is enough
+                etapas: {
+                    orderBy: { nroEtapa: 'asc' },
+                }
             },
         });
 
@@ -94,26 +97,20 @@ export class StatsService {
         // Groupings
         const byFishery: Record<string, { name: string; mareas: number; days: number }> = {};
         const byFleet: Record<string, { name: string; mareas: number; days: number }> = {};
-        const byObserver: Record<string, { name: string; mareas: number; days: number; active: boolean }> = {};
+        const byObserver: Record<string, { id: string; name: string; mareas: number; days: number; active: boolean }> = {};
 
         for (const marea of mareas) {
-            // Determine Start/End for calculation
-            const start = marea.fechaInicioObservador || marea.fechaZarpadaEstimada;
-            const end = marea.fechaFinObservador || (marea.estadoActualId === 'EN_EJECUCION' ? new Date() : marea.fechaFinObservador);
-            // Note: need to handle open ended mareas using Today if active
+            const overallStart = marea.fechaInicioObservador || marea.fechaZarpadaEstimada;
+            if (!overallStart) continue;
 
-            if (!start) continue; // Skip bad data
+            // Extract stage intervals
+            const intervals = marea.etapas.map(e => ({
+                start: e.fechaZarpada,
+                end: e.fechaArribo || (marea.estadoActualId === 'EN_EJECUCION' ? new Date() : null)
+            })).filter(i => i.start);
 
-            const endDateOrNow = end || new Date();
-
-            // Calculate Days
-            let days = 0;
-
-            if (mode === 'CALENDAR') {
-                days = DateUtils.calculateDaysInYear(start, endDateOrNow, year);
-            } else {
-                days = DateUtils.calculateInclusiveDays(start, endDateOrNow);
-            }
+            // Calculate Unique Days
+            const days = DateUtils.calculateUniqueDays(intervals, mode === 'CALENDAR' ? year : undefined);
 
             // Add to Totals
             totalMareas++;
@@ -138,6 +135,7 @@ export class StatsService {
                 const obsId = marea.observadorPrincipal.id;
                 if (!byObserver[obsId]) {
                     byObserver[obsId] = {
+                        id: obsId,
                         name: obsName,
                         mareas: 0,
                         days: 0,
@@ -148,52 +146,56 @@ export class StatsService {
                 byObserver[obsId].days += days;
             }
 
-            // Monthly Trend (Based on Start Date for "Mareas Started" or distributed?)
-            // User requirements: "cantidad de mareas realizadas por mes del año"
-            // Often simple count of Starts.
-            // If we want "Days per month", we distribute.
-            // Let's do: Start Month for Marea Count, and Distributed Days for Days Count.
-
-            const startMonth = start.getMonth(); // 0-11
-            if (start.getFullYear() === year) {
+            // Monthly Trend (Starts)
+            const startMonth = overallStart.getMonth();
+            if (overallStart.getFullYear() === year) {
                 mareasByMonth[startMonth]++;
-            } else if (mode === 'CALENDAR') {
-                // If started previous year but active now, simple Marea count might be confusing if assigned to Jan?
-                // Let's stick to "Started in this month of this year". 
-                // If marea started in Dec 2024, it won't show in "Mareas by Month 2025" chart, but will contribute to "Days".
             }
 
-            // Distribute Days across months (Complex for Calendar mode, simple for Total?)
-            // For simplicity in this first pass, let's just log the 'Days' to the Start Month
-            // OR better: if Mode=Calendar, distribute properly.
+            // Distribute Days across months using merged intervals
+            if (days > 0) {
+                // We normalize/merge intervals for this marea to distribute accurately
+                const normalized = intervals
+                    .map(i => {
+                        const s = new Date(i.start);
+                        const e = i.end ? new Date(i.end) : new Date();
+                        s.setHours(0, 0, 0, 0);
+                        e.setHours(0, 0, 0, 0);
+                        return { start: s, end: e };
+                    })
+                    .filter(i => !isNaN(i.start.getTime()) && !isNaN(i.end.getTime()) && i.end >= i.start)
+                    .sort((a, b) => a.start.getTime() - b.start.getTime());
 
-            if (mode === 'CALENDAR' && days > 0) {
-                // We iterate days? No, too slow.
-                // Simple heuristic: if full within one month, add.
-                // If spans months, we need to split.
-                // Let's do a loop over months of the year
-                let currentCursor = new Date(start < yearStart ? yearStart : start);
-                const endCursor = endDateOrNow > yearEnd ? yearEnd : endDateOrNow;
-
-                while (currentCursor < endCursor) {
-                    const m = currentCursor.getMonth();
-                    // End of this month
-                    const nextMonthStart = new Date(currentCursor.getFullYear(), m + 1, 1);
-                    const limit = nextMonthStart < endCursor ? nextMonthStart : endCursor;
-
-                    if (currentCursor.getFullYear() === year) {
-                        const diff = Math.abs(limit.getTime() - currentCursor.getTime());
-                        const daysInMonth = Math.ceil(diff / (1000 * 60 * 60 * 24));
-                        daysByMonth[m] += daysInMonth;
+                const merged: Array<{ start: Date; end: Date }> = [];
+                if (normalized.length > 0) {
+                    let curr = normalized[0];
+                    for (let i = 1; i < normalized.length; i++) {
+                        if (normalized[i].start.getTime() <= curr.end.getTime()) {
+                            if (normalized[i].end.getTime() > curr.end.getTime()) curr.end = normalized[i].end;
+                        } else {
+                            merged.push(curr);
+                            curr = normalized[i];
+                        }
                     }
-                    currentCursor = nextMonthStart;
+                    merged.push(curr);
                 }
-            } else {
-                // Total Mode: Assign all days to start month? Or distribute?
-                // Generally dashboard charts for "Days / Month" expect distribution.
-                // If "Total Marea" mode, it's weird to show "Days per Month" because days might be outside the year.
-                // Let's keep Days distribution consistently calculated for the visible year.
-                // And "Total Days" KPI shows the boosted value.
+
+                // Distribute each merged interval by month (within the target year if CALENDAR mode)
+                for (const interval of merged) {
+                    let cursor = new Date(interval.start);
+                    if (mode === 'CALENDAR') {
+                        if (cursor < yearStart) cursor = new Date(yearStart);
+                    }
+
+                    const limitEnd = (mode === 'CALENDAR' && interval.end > yearEnd) ? yearEnd : interval.end;
+
+                    while (cursor <= limitEnd) {
+                        if (cursor.getFullYear() === year) {
+                            daysByMonth[cursor.getMonth()]++;
+                        }
+                        cursor.setDate(cursor.getDate() + 1);
+                    }
+                }
             }
         }
 
@@ -205,7 +207,7 @@ export class StatsService {
             avgDaysPerMarea: totalMareas ? Math.round(totalDaysNavigated / totalMareas) : 0,
             monthly: {
                 mareas: mareasByMonth,
-                days: daysByMonth, // Note: Populated only in Calendar Loop above, might be 0 if logic skipped
+                days: daysByMonth,
             },
             fisheries: Object.values(byFishery).sort((a, b) => b.days - a.days),
             fleets: Object.values(byFleet).sort((a, b) => b.days - a.days),
@@ -236,8 +238,17 @@ export class StatsService {
                 tipoFlota: { nombre: filterValue }
             };
         } else if (filterType === 'OBSERVER') {
-            // filterValue can be ID or Name. Since dashboard groups by ID, let's assume it's ID.
-            where.observadorPrincipalId = filterValue;
+            const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(filterValue);
+            if (isUUID) {
+                where.observadorPrincipalId = filterValue;
+            } else {
+                where.observadorPrincipal = {
+                    OR: [
+                        { nombre: { contains: filterValue, mode: 'insensitive' } },
+                        { apellido: { contains: filterValue, mode: 'insensitive' } }
+                    ]
+                };
+            }
         }
 
         const mareas = await this.prisma.marea.findMany({
@@ -251,24 +262,28 @@ export class StatsService {
                 },
                 observadorPrincipal: true,
                 estadoActual: true,
+                etapas: {
+                    orderBy: { nroEtapa: 'asc' },
+                }
             },
-            orderBy: { fechaInicioObservador: 'desc' }
+            orderBy: [
+                { anioMarea: 'asc' },
+                { nroMarea: 'asc' }
+            ]
         });
 
         // Format for list display
         return mareas.map(m => {
-            const start = m.fechaInicioObservador || m.fechaZarpadaEstimada;
-            const end = m.fechaFinObservador || (m.estadoActualId === 'EN_EJECUCION' ? new Date() : m.fechaFinObservador);
-            const endDateOrNow = end || new Date();
+            const overallStart = m.fechaInicioObservador || m.fechaZarpadaEstimada;
 
-            let days = 0;
-            if (start) {
-                if (mode === 'CALENDAR') {
-                    days = DateUtils.calculateDaysInYear(start, endDateOrNow, year);
-                } else {
-                    days = DateUtils.calculateInclusiveDays(start, endDateOrNow);
-                }
-            }
+            // Extract stage intervals
+            const intervals = m.etapas.map(e => ({
+                start: e.fechaZarpada,
+                end: e.fechaArribo || (m.estadoActualId === 'EN_EJECUCION' ? new Date() : null)
+            })).filter(i => i.start);
+
+            // Calculate Unique Days
+            const days = DateUtils.calculateUniqueDays(intervals, mode === 'CALENDAR' ? year : undefined);
 
             return {
                 id: m.id,
@@ -282,9 +297,146 @@ export class StatsService {
                 observador: m.observadorPrincipal ? `${m.observadorPrincipal.nombre} ${m.observadorPrincipal.apellido}` : 'Sin asignar',
                 estado: m.estadoActual?.nombre || 'Desconocido',
                 diasContabilizados: days,
-                fechaInicio: start,
+                fechaInicio: overallStart,
                 fechaFin: m.fechaFinObservador
             };
         });
+    }
+
+    async getExportWorkbook(
+        year: number,
+        mode: 'CALENDAR' | 'TOTAL',
+        includeNonProtocolized: boolean,
+        includeProtocolizedOutOfPeriod = false,
+        filterType?: 'FISHERY' | 'FLEET' | 'OBSERVER',
+        filterValue?: string
+    ): Promise<ExcelJS.Workbook> {
+        const yearStart = new Date(Date.UTC(year, 0, 1, 0, 0, 0, 0));
+        const yearEnd = new Date(Date.UTC(year, 11, 31, 23, 59, 59, 999));
+
+        const where = this.getSharedWhereClause(yearStart, yearEnd, includeNonProtocolized, includeProtocolizedOutOfPeriod);
+
+        if (filterType && filterValue) {
+            if (filterType === 'FISHERY') {
+                where.buque = { pesqueriaHabitual: { nombre: filterValue } };
+            } else if (filterType === 'FLEET') {
+                where.buque = { tipoFlota: { nombre: filterValue } };
+            } else if (filterType === 'OBSERVER') {
+                const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(filterValue);
+                if (isUUID) {
+                    where.observadorPrincipalId = filterValue;
+                } else {
+                    where.observadorPrincipal = {
+                        OR: [
+                            { nombre: { contains: filterValue, mode: 'insensitive' } },
+                            { apellido: { contains: filterValue, mode: 'insensitive' } }
+                        ]
+                    };
+                }
+            }
+        }
+
+        const mareas = await this.prisma.marea.findMany({
+            where,
+            include: {
+                buque: {
+                    include: {
+                        tipoFlota: true,
+                        pesqueriaHabitual: true,
+                    }
+                },
+                observadorPrincipal: true,
+                estadoActual: true,
+                etapas: {
+                    orderBy: { nroEtapa: 'asc' },
+                    include: {
+                        puertoZarpada: true,
+                        puertoArribo: true,
+                    }
+                }
+            },
+            orderBy: [
+                { anioMarea: 'asc' },
+                { nroMarea: 'asc' }
+            ]
+        });
+
+        const workbook = new ExcelJS.Workbook();
+        const sheet = workbook.addWorksheet('Mareas');
+
+        // Determinar max etapas para las columnas
+        const maxEtapas = mareas.reduce((max, m) => Math.max(max, m.etapas.length), 0);
+
+        // Definir columnas base
+        const columns = [
+            { header: 'ID Marea', key: 'id_marea', width: 15 },
+            { header: 'Buque', key: 'buque', width: 25 },
+            { header: 'Flota', key: 'flota', width: 20 },
+            { header: 'Pesquería', key: 'pesqueria', width: 20 },
+            { header: 'Observador', key: 'observador', width: 25 },
+            { header: 'Estado', key: 'estado', width: 20 },
+            { header: 'Días Nav.', key: 'dias', width: 10 },
+            { header: 'Inicio', key: 'inicio', width: 15 },
+            { header: 'Fin', key: 'fin', width: 15 },
+        ];
+
+        // Columnas dinámicas de etapas
+        for (let i = 1; i <= maxEtapas; i++) {
+            columns.push(
+                { header: `Etapa ${i}: #`, key: `etapa_${i}_nro`, width: 10 },
+                { header: `Etapa ${i}: Zarpada`, key: `etapa_${i}_zarpada`, width: 15 },
+                { header: `Etapa ${i}: Arribo`, key: `etapa_${i}_arribo`, width: 15 },
+                { header: `Etapa ${i}: Días`, key: `etapa_${i}_dias`, width: 10 }
+            );
+        }
+
+        sheet.columns = columns;
+
+        // Estilo cabecera
+        sheet.getRow(1).font = { bold: true };
+        sheet.getRow(1).fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FFE0E0E0' }
+        };
+
+        // Cargar Datos
+        mareas.forEach(m => {
+            const overallStart = m.fechaInicioObservador || m.fechaZarpadaEstimada;
+
+            // Extract stage intervals
+            const intervals = m.etapas.map(e => ({
+                start: e.fechaZarpada,
+                end: e.fechaArribo || (m.estadoActualId === 'EN_EJECUCION' ? new Date() : null)
+            })).filter(i => i.start);
+
+            // Calculate Unique Days
+            const days = DateUtils.calculateUniqueDays(intervals, mode === 'CALENDAR' ? year : undefined);
+
+            const rowData: any = {
+                id_marea: MareaUtils.formatCodigo(m),
+                buque: m.buque?.nombreBuque || 'Desconocido',
+                flota: m.buque?.tipoFlota?.nombre || '-',
+                pesqueria: m.buque?.pesqueriaHabitual?.nombre || '-',
+                observador: m.observadorPrincipal ? `${m.observadorPrincipal.nombre} ${m.observadorPrincipal.apellido}` : 'Sin asignar',
+                estado: m.estadoActual?.nombre || 'Desconocido',
+                dias: days,
+                inicio: overallStart ? overallStart.toLocaleDateString() : '-',
+                fin: m.fechaFinObservador ? m.fechaFinObservador.toLocaleDateString() : (m.estadoActualId === 'EN_EJECUCION' ? 'En curso' : '-')
+            };
+
+            // Etapas
+            m.etapas.forEach((e, idx) => {
+                const i = idx + 1;
+                rowData[`etapa_${i}_nro`] = e.nroEtapa;
+                rowData[`etapa_${i}_zarpada`] = e.fechaZarpada ? e.fechaZarpada.toLocaleDateString() : '-';
+                rowData[`etapa_${i}_arribo`] = e.fechaArribo ? e.fechaArribo.toLocaleDateString() : '-';
+                rowData[`etapa_${i}_dias`] = DateUtils.calculateInclusiveDays(e.fechaZarpada, e.fechaArribo);
+            });
+
+            sheet.addRow(rowData);
+        });
+
+        return workbook;
     }
 }

@@ -9,6 +9,7 @@
         v-if="allowDownload" 
         class="text-text-muted hover:text-primary transition-colors p-1"
         title="Descargar Datos"
+        @click="$emit('download')"
       >
         <DownloadIcon class="w-4 h-4" />
       </button>
@@ -47,7 +48,7 @@ const props = defineProps<{
 
 const themeStore = useThemeStore()
 
-const emit = defineEmits(['dataPointClick'])
+const emit = defineEmits(['dataPointClick', 'download'])
 
 // Merit: Default chart options for premium look
 const chartOptions = computed(() => {

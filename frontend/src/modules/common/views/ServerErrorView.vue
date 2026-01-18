@@ -17,12 +17,12 @@
       <button
         type="button"
         class="w-full flex items-center justify-center gap-2 px-8 py-4 bg-brand-600 hover:bg-brand-700 text-white rounded-2xl font-bold shadow-lg shadow-brand-500/25 transition-all active:scale-95"
-        @click="reload"
+        @click="goBack"
       >
         <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v6h6M20 20v-6h-6M20 10a8 8 0 00-14.9-3M4 14a8 8 0 0014.9 3" />
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
         </svg>
-        Reintentar
+        Volver
       </button>
     </template>
   </ErrorLayout>
@@ -30,8 +30,11 @@
 
 <script setup lang="ts">
 import ErrorLayout from '@/components/layout/ErrorLayout.vue'
+import { useRouter } from 'vue-router'
 
-const reload = () => {
-  window.location.reload()
+const router = useRouter()
+
+const goBack = () => {
+  router.back()
 }
 </script>

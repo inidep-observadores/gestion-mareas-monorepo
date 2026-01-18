@@ -44,6 +44,7 @@
     "class-validator": "^0.14.3",
     "cookie-parser": "^1.4.7",
     "dotenv": "^17.2.3",
+    "exceljs": "^4.4.0",
     "handlebars": "^4.7.8",
     "libphonenumber-js": "^1.12.33",
     "mdb-reader": "^3.1.0",

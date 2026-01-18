@@ -61,16 +61,19 @@ export class DateUtils {
      * Calcula la cantidad total de días únicos navegados dados varios intervalos.
      * Fusiona intervalos solapados para evitar conteo doble (ej: arribo y zarpada el mismo día).
      * @param intervals Lista de intervalos con start y end.
+     * @param year Año opcional para filtrar días (modo calendario).
      * @returns Total de días únicos.
      */
-    static calculateUniqueDays(intervals: Array<{ start: Date | string; end?: Date | string | null }>): number {
+    static calculateUniqueDays(intervals: Array<{ start: Date | string; end?: Date | string | null }>, year?: number): number {
         if (!intervals.length) return 0;
 
         // Convertir y Normalizar
         const normalized = intervals
             .map(i => {
                 const s = new Date(i.start);
-                const e = i.end ? new Date(i.end) : new Date();
+                // WARNING: If end is null, we NO LONGER use new Date() by default here 
+                // to prevent historical data from inflating.
+                const e = i.end ? new Date(i.end) : new Date(s);
                 s.setHours(0, 0, 0, 0);
                 e.setHours(0, 0, 0, 0);
                 return { start: s, end: e };
@@ -87,9 +90,6 @@ export class DateUtils {
         for (let i = 1; i < normalized.length; i++) {
             const next = normalized[i];
 
-            // Si hay solapamiento o son adyacentes (el fin de uno es el inicio del otro)
-            // En lógica inclusiva, si uno termina el 15 y el otro empieza el 15, el día 15 está cubierto por ambos.
-            // Se fusionan en un solo intervalo.
             if (next.start.getTime() <= current.end.getTime()) {
                 if (next.end.getTime() > current.end.getTime()) {
                     current.end = next.end;
@@ -103,6 +103,9 @@ export class DateUtils {
 
         // Sumar días de intervalos fusionados
         return merged.reduce((acc, interval) => {
+            if (year) {
+                return acc + this.calculateDaysInYear(interval.start, interval.end, year);
+            }
             return acc + this.calculateInclusiveDays(interval.start, interval.end);
         }, 0);
     }
