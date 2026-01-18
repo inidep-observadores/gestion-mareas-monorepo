@@ -13,11 +13,11 @@ export function useMareas() {
     const sortBy = ref<string | null>('id_marea');
     const sortOrder = ref<'asc' | 'desc'>('asc');
 
-    const fetchDashboard = async () => {
+    const fetchDashboard = async (showAll: boolean = false) => {
         loading.value = true;
         error.value = null;
         try {
-            const data = await mareasService.getDashboardOperativo();
+            const data = await mareasService.getDashboardOperativo(showAll);
             kpis.value = data.kpis;
             mareas.value = data.items;
         } catch (err: any) {

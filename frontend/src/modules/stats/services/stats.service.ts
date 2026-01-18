@@ -12,26 +12,47 @@ export interface DashboardStats {
     };
     fisheries: { name: string; mareas: number; days: number }[];
     fleets: { name: string; mareas: number; days: number }[];
-    observers: { name: string; mareas: number; days: number; active: boolean }[];
+    observers: { name: string; id: string; mareas: number; days: number; active: boolean }[];
+}
+
+export interface StatsDetailItem {
+    id: string;
+    anioMarea: number;
+    nroMarea: number;
+    buque: string;
+    flota: string;
+    pesqueria: string;
+    observador: string;
+    estado: string;
+    diasContabilizados: number;
+    fechaInicio: string;
+    fechaFin: string | null;
 }
 
 export const statsService = {
     getDashboardStats: async (
         year: number,
-        mode: 'CALENDAR' | 'TOTAL',
-        includeNonProtocolized: boolean,
-        includeProtocolizedOutOfPeriod: boolean
+        mode: 'CALENDAR' | 'TOTAL' = 'CALENDAR',
+        includeNonProtocolized = true,
+        includeProtocolizedOutOfPeriod = false
     ): Promise<DashboardStats> => {
-        // Note: Backend expects 'includeNonProtocolized', but UI toggle is "Protocolized Only".
-        // So if protocolizedOnly is true -> includeNonProtocolized = false.
-        const query = new URLSearchParams({
-            year: year.toString(),
-            mode,
-            includeNonProtocolized: includeNonProtocolized.toString(),
-            includeProtocolizedOutOfPeriod: includeProtocolizedOutOfPeriod.toString(),
+        const { data } = await httpClient.get<DashboardStats>(`/stats/dashboard`, {
+            params: { year, mode, includeNonProtocolized, includeProtocolizedOutOfPeriod }
         });
+        return data;
+    },
 
-        const { data } = await httpClient.get<DashboardStats>(`/stats/dashboard?${query.toString()}`);
+    getDashboardStatsDetail: async (
+        year: number,
+        mode: 'CALENDAR' | 'TOTAL' = 'CALENDAR',
+        includeNonProtocolized = true,
+        includeProtocolizedOutOfPeriod = false,
+        filterType: 'FISHERY' | 'FLEET' | 'OBSERVER',
+        filterValue: string
+    ): Promise<StatsDetailItem[]> => {
+        const { data } = await httpClient.get<StatsDetailItem[]>(`/stats/detail`, {
+            params: { year, mode, includeNonProtocolized, includeProtocolizedOutOfPeriod, filterType, filterValue }
+        });
         return data;
     }
 };

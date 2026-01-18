@@ -6,28 +6,15 @@ import { Prisma } from '@prisma/client';
 export class StatsService {
     constructor(private readonly prisma: PrismaService) { }
 
-    async getDashboardStats(
-        year: number,
-        mode: 'CALENDAR' | 'TOTAL',
+    private getSharedWhereClause(
+        yearStart: Date,
+        yearEnd: Date,
         includeNonProtocolized: boolean,
-        includeProtocolizedOutOfPeriod: boolean,
-    ) {
-        const yearStart = new Date(Date.UTC(year, 0, 1, 0, 0, 0, 0));
-        const yearEnd = new Date(Date.UTC(year, 11, 31, 23, 59, 59, 999));
-
-        // 1. Build Where Clause
+        includeProtocolizedOutOfPeriod: boolean
+    ): Prisma.MareaWhereInput {
         const where: Prisma.MareaWhereInput = {
-            activo: true, // Always active mareas
+            activo: true,
         };
-
-        // Date Logic Filters
-        // Activity overlap: Start <= YearEnd AND (End >= YearStart OR End is NULL)
-        // We use fechaInicioObservador as the primary start date for "Observer Days", 
-        // but for "Marea" generic stats we might look at fechaZarpadaEstimada if observer is null? 
-        // Let's assume operationally we care about fechaInicioObservador for calculations involving observers, 
-        // but the marea itself exists if fechaZarpadaEstimada or fechaInicioObservador is present.
-        // Let's use fechaInicioObservador for consistency with "Days Navigated by Observer"
-        // fallback to fechaZarpadaEstimada if needed.
 
         const activityOverlapCondition: Prisma.MareaWhereInput = {
             OR: [
@@ -42,9 +29,6 @@ export class StatsService {
                         },
                     ],
                 },
-                // Fallback for mareas without observer start date yet but existing?
-                // Usually filtered out or treated as 0 days. 
-                // Let's keep strict check on activity existence.
             ],
         };
 
@@ -55,28 +39,33 @@ export class StatsService {
             },
         };
 
-        // Protocolized Logic
-        // If includeNonProtocolized is FALSE (meaning we ONLY want Protocolized):
         if (!includeNonProtocolized) {
-            // Only Protocolized mareas
             if (includeProtocolizedOutOfPeriod) {
-                // Scenario C: Strictly Protocolized in Year (regardless of activity)
                 where.AND = protocolizedInYearCondition;
             } else {
-                // Scenario B: Protocolized in Year AND Activity Overlap in Year
                 where.AND = [
                     activityOverlapCondition,
                     protocolizedInYearCondition
                 ];
             }
         } else {
-            // Scenario A: Any marea active in year (Protocolized or not)
-            // "includeNonProtocolized" = true implies we don't care about protocolization status filter.
-            // So simply Activity Overlap.
             where.AND = activityOverlapCondition;
         }
 
-        // 2. Fetch Data with Relations
+        return where;
+    }
+
+    async getDashboardStats(
+        year: number,
+        mode: 'CALENDAR' | 'TOTAL',
+        includeNonProtocolized: boolean,
+        includeProtocolizedOutOfPeriod: boolean,
+    ) {
+        const yearStart = new Date(Date.UTC(year, 0, 1, 0, 0, 0, 0));
+        const yearEnd = new Date(Date.UTC(year, 11, 31, 23, 59, 59, 999));
+
+        const where = this.getSharedWhereClause(yearStart, yearEnd, includeNonProtocolized, includeProtocolizedOutOfPeriod);
+
         const mareas = await this.prisma.marea.findMany({
             where,
             include: {
@@ -172,8 +161,7 @@ export class StatsService {
 
             // Monthly Trend (Based on Start Date for "Mareas Started" or distributed?)
             // User requirements: "cantidad de mareas realizadas por mes del año"
-            // Usually means "Started in Month" or "Active in Month"?
-            // "Mareas realizadas por mes": Often simple count of Starts.
+            // Often simple count of Starts.
             // If we want "Days per month", we distribute.
             // Let's do: Start Month for Marea Count, and Distributed Days for Days Count.
 
@@ -234,5 +222,82 @@ export class StatsService {
             fleets: Object.values(byFleet).sort((a, b) => b.days - a.days),
             observers: Object.values(byObserver).sort((a, b) => b.days - a.days),
         };
+    }
+
+    async getDashboardStatsDetail(
+        year: number,
+        mode: 'CALENDAR' | 'TOTAL',
+        includeNonProtocolized: boolean,
+        includeProtocolizedOutOfPeriod: boolean,
+        filterType: 'FISHERY' | 'FLEET' | 'OBSERVER',
+        filterValue: string,
+    ) {
+        const yearStart = new Date(Date.UTC(year, 0, 1, 0, 0, 0, 0));
+        const yearEnd = new Date(Date.UTC(year, 11, 31, 23, 59, 59, 999));
+
+        const where = this.getSharedWhereClause(yearStart, yearEnd, includeNonProtocolized, includeProtocolizedOutOfPeriod);
+
+        // Apply dynamic filter
+        if (filterType === 'FISHERY') {
+            where.buque = {
+                pesqueriaHabitual: { nombre: filterValue }
+            };
+        } else if (filterType === 'FLEET') {
+            where.buque = {
+                tipoFlota: { nombre: filterValue }
+            };
+        } else if (filterType === 'OBSERVER') {
+            // filterValue can be ID or Name. Since dashboard groups by ID, let's assume it's ID.
+            where.observadorPrincipalId = filterValue;
+        }
+
+        const mareas = await this.prisma.marea.findMany({
+            where,
+            include: {
+                buque: {
+                    include: {
+                        tipoFlota: true,
+                        pesqueriaHabitual: true,
+                    }
+                },
+                observadorPrincipal: true,
+                estadoActual: true,
+            },
+            orderBy: { fechaInicioObservador: 'desc' }
+        });
+
+        // Format for list display
+        return mareas.map(m => {
+            const start = m.fechaInicioObservador || m.fechaZarpadaEstimada;
+            const end = m.fechaFinObservador || (m.estadoActualId === 'EN_EJECUCION' ? new Date() : m.fechaFinObservador);
+            const endDateOrNow = end || new Date();
+
+            let days = 0;
+            if (start) {
+                if (mode === 'CALENDAR') {
+                    const effectiveStart = start < yearStart ? yearStart : start;
+                    const effectiveEnd = endDateOrNow > yearEnd ? yearEnd : endDateOrNow;
+                    if (effectiveStart <= effectiveEnd) {
+                        days = Math.ceil(Math.abs(effectiveEnd.getTime() - effectiveStart.getTime()) / (1000 * 60 * 60 * 24));
+                    }
+                } else {
+                    days = Math.ceil(Math.abs(endDateOrNow.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+                }
+            }
+
+            return {
+                id: m.id,
+                anioMarea: m.anioMarea,
+                nroMarea: m.nroMarea,
+                buque: m.buque?.nombreBuque || 'Desconocido',
+                flota: m.buque?.tipoFlota?.nombre || '-',
+                pesqueria: m.buque?.pesqueriaHabitual?.nombre || '-',
+                observador: m.observadorPrincipal ? `${m.observadorPrincipal.nombre} ${m.observadorPrincipal.apellido}` : 'Sin asignar',
+                estado: m.estadoActual?.nombre || 'Desconocido',
+                diasContabilizados: days,
+                fechaInicio: start,
+                fechaFin: m.fechaFinObservador
+            };
+        });
     }
 }
