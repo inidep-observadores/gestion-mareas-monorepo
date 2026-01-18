@@ -140,80 +140,80 @@
       </div>
 
       <!-- DRILL DOWN DIALOG -->
-    <Modal
-      v-if="dialogOpen"
-      :is-open="dialogOpen"
-      :title="dialogTitle"
+    <BaseModal
+      :show="dialogOpen"
+      maxWidth="6xl"
       @close="closeDialog"
     >
-      <template #body>
-         <div class="bg-surface border border-border rounded-xl shadow-theme-xl w-full max-w-4xl mx-4 flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200">
-            <!-- Header -->
-            <div class="flex items-center justify-between p-4 border-b border-border bg-surface-muted/10">
-               <div class="flex items-center gap-4">
-                  <div>
-                     <h3 class="text-lg font-black text-text uppercase tracking-tight">{{ dialogTitle }}</h3>
-                     <p class="text-[10px] font-bold text-text-muted uppercase tracking-widest mt-0.5">Detalle de mareas asociadas</p>
-                  </div>
-                  
-                  <!-- Layout Toggle -->
-                  <div class="flex items-center bg-surface border border-border rounded-lg p-0.5 ml-4 shadow-sm">
-                     <button 
-                        @click="detailViewMode = 'cards'"
-                        :class="[
-                           'p-1.5 rounded-md transition-all duration-200',
-                           detailViewMode === 'cards' ? 'bg-primary text-primary-fg shadow-sm' : 'text-text-muted hover:text-text hover:bg-surface-muted'
-                        ]"
-                        title="Vista de Tarjetas"
-                     >
-                        <LayoutGridIcon class="w-4 h-4" />
-                     </button>
-                     <button 
-                        @click="detailViewMode = 'table'"
-                        :class="[
-                           'p-1.5 rounded-md transition-all duration-200',
-                           detailViewMode === 'table' ? 'bg-primary text-primary-fg shadow-sm' : 'text-text-muted hover:text-text hover:bg-surface-muted'
-                        ]"
-                        title="Vista de Tabla"
-                     >
-                        <LayoutListIcon class="w-4 h-4" />
-                     </button>
-                  </div>
-               </div>
-
-               <button @click="closeDialog" class="p-2 rounded-full hover:bg-error/10 text-text-muted hover:text-error transition-all duration-200">
-                  <span class="sr-only">Cerrar</span>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+      <template #title>
+         <div class="flex items-center gap-4">
+            <div>
+               <span class="text-sm font-black text-text uppercase tracking-tight leading-none block mb-0.5">{{ dialogTitle }}</span>
+               <p class="text-[10px] font-bold text-text-muted uppercase tracking-widest mt-0.5">Detalle de mareas asociadas</p>
+            </div>
+            
+            <!-- Layout Toggle -->
+            <div class="flex items-center bg-surface border border-border rounded-lg p-0.5 ml-4 shadow-sm">
+               <button 
+                  @click="detailViewMode = 'cards'"
+                  :class="[
+                     'p-1.5 rounded-md transition-all duration-200',
+                     detailViewMode === 'cards' ? 'bg-primary text-primary-fg shadow-sm' : 'text-text-muted hover:text-text hover:bg-surface-muted'
+                  ]"
+                  title="Vista de Tarjetas"
+               >
+                  <LayoutGridIcon class="w-4 h-4" />
+               </button>
+               <button 
+                  @click="detailViewMode = 'table'"
+                  :class="[
+                     'p-1.5 rounded-md transition-all duration-200',
+                     detailViewMode === 'table' ? 'bg-primary text-primary-fg shadow-sm' : 'text-text-muted hover:text-text hover:bg-surface-muted'
+                  ]"
+                  title="Vista de Tabla"
+               >
+                  <LayoutListIcon class="w-4 h-4" />
                </button>
             </div>
+         </div>
+      </template>
 
-            <!-- Body -->
-            <div class="p-0 overflow-hidden flex-1 flex flex-col min-h-0">
-               <!-- Local Filter Bar -->
-               <div class="px-4 py-3 border-b border-border bg-surface flex items-center gap-4">
-                  <div class="relative flex-1 group">
-                     <SearchIcon class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted group-focus-within:text-primary transition-colors" />
-                     <input 
-                        v-model="searchTerm"
-                        type="text" 
-                        placeholder="Filtrar por marea, buque, observador..." 
-                        class="w-full pl-9 pr-4 py-2 bg-surface-muted/50 border border-border rounded-xl text-sm focus:bg-surface focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200"
-                     />
-                  </div>
-                  <div class="text-xs font-bold text-text-muted uppercase tracking-widest whitespace-nowrap">
-                     {{ filteredDialogItems.length }} Resultados
-                  </div>
-               </div>
+      <div class="flex flex-col min-h-0 -mx-6 -mb-6 -mt-6 h-[80vh] max-h-[85vh]">
+         <!-- Search bar (Fixed) -->
+         <div class="px-6 py-4 border-b border-border bg-surface-muted/20 flex items-center gap-4 flex-none">
+            <div class="relative flex-1 group">
+               <SearchIcon class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted group-focus-within:text-primary transition-colors" />
+               <input 
+                  v-model="searchTerm"
+                  type="text" 
+                  placeholder="Filtrar por marea, buque, observador..." 
+                  class="w-full pl-9 pr-10 py-2 bg-surface border border-border rounded-xl text-sm focus:bg-surface focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200 shadow-sm"
+               />
+               <button 
+                  v-if="searchTerm"
+                  @click="searchTerm = ''"
+                  class="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full text-text-muted hover:text-error hover:bg-error/10 transition-all duration-200"
+                  title="Limpiar filtro"
+               >
+                  <XIcon class="w-3.5 h-3.5" />
+               </button>
+            </div>
+            <div class="text-[10px] font-black text-text-muted uppercase tracking-widest whitespace-nowrap bg-surface px-3 py-1.5 rounded-lg border border-border shadow-theme-xs">
+               {{ filteredDialogItems.length }} Resultados
+            </div>
+         </div>
 
-               <div v-if="dialogLoading" class="flex justify-center items-center h-60">
-                  <div class="flex flex-col items-center gap-4">
-                     <Loader2Icon class="w-10 h-10 animate-spin text-primary" />
-                     <span class="text-xs font-bold text-text-muted uppercase tracking-widest">Cargando datos...</span>
-                  </div>
+         <!-- Scrollable content -->
+         <div class="flex-1 overflow-y-auto custom-scrollbar bg-surface/30">
+            <div v-if="dialogLoading" class="flex justify-center items-center h-full">
+               <div class="flex flex-col items-center gap-4">
+                  <Loader2Icon class="w-10 h-10 animate-spin text-primary" />
+                  <span class="text-xs font-bold text-text-muted uppercase tracking-widest">Cargando datos...</span>
                </div>
-               
-               <div v-else class="flex-1 overflow-y-auto custom-scrollbar p-4 bg-surface-muted/10">
-                  <!-- CARD VIEW -->
+            </div>
+            
+            <div v-else class="p-6">
+               <!-- CARD VIEW -->
                   <div v-if="detailViewMode === 'cards'" class="space-y-3">
                      <div 
                         v-for="marea in filteredDialogItems" 
@@ -273,12 +273,61 @@
                      <table class="w-full text-left border-collapse">
                         <thead>
                            <tr class="bg-surface-muted/50 border-b border-border">
-                              <th class="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-text-muted">Marea</th>
-                              <th class="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-text-muted">Buque</th>
-                              <th class="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-text-muted">Pesquería</th>
-                              <th class="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-text-muted">Observador</th>
-                              <th class="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-text-muted text-right">Días {{ mode === 'CALENDAR' ? year : 'Tot.' }}</th>
-                              <th v-if="mode === 'CALENDAR'" class="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-text-muted text-right">Total Marea</th>
+                              <th 
+                                 class="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-text-muted cursor-pointer hover:bg-surface-muted transition-colors group"
+                                 @click="handleSort('id_marea')"
+                              >
+                                 <div class="flex items-center gap-2">
+                                    Marea
+                                    <component :is="getSortIcon('id_marea')" class="w-3 h-3 text-primary opacity-0 group-hover:opacity-100" :class="{ 'opacity-100': sortKey === 'id_marea' }" />
+                                 </div>
+                              </th>
+                              <th 
+                                 class="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-text-muted cursor-pointer hover:bg-surface-muted transition-colors group"
+                                 @click="handleSort('buque')"
+                              >
+                                 <div class="flex items-center gap-2">
+                                    Buque
+                                    <component :is="getSortIcon('buque')" class="w-3 h-3 text-primary opacity-0 group-hover:opacity-100" :class="{ 'opacity-100': sortKey === 'buque' }" />
+                                 </div>
+                              </th>
+                              <th 
+                                 class="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-text-muted cursor-pointer hover:bg-surface-muted transition-colors group"
+                                 @click="handleSort('pesqueria')"
+                              >
+                                 <div class="flex items-center gap-2">
+                                    Pesquería
+                                    <component :is="getSortIcon('pesqueria')" class="w-3 h-3 text-primary opacity-0 group-hover:opacity-100" :class="{ 'opacity-100': sortKey === 'pesqueria' }" />
+                                 </div>
+                              </th>
+                              <th 
+                                 class="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-text-muted cursor-pointer hover:bg-surface-muted transition-colors group"
+                                 @click="handleSort('observador')"
+                              >
+                                 <div class="flex items-center gap-2">
+                                    Observador
+                                    <component :is="getSortIcon('observador')" class="w-3 h-3 text-primary opacity-0 group-hover:opacity-100" :class="{ 'opacity-100': sortKey === 'observador' }" />
+                                 </div>
+                              </th>
+                              <th 
+                                 class="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-text-muted cursor-pointer hover:bg-surface-muted transition-colors group text-right"
+                                 @click="handleSort(mode === 'CALENDAR' ? 'diasCalendario' : 'diasTotales')"
+                              >
+                                 <div class="flex items-center justify-end gap-2">
+                                    Días {{ mode === 'CALENDAR' ? year : 'Tot.' }}
+                                    <component :is="getSortIcon(mode === 'CALENDAR' ? 'diasCalendario' : 'diasTotales')" class="w-3 h-3 text-primary opacity-0 group-hover:opacity-100" :class="{ 'opacity-100': sortKey === (mode === 'CALENDAR' ? 'diasCalendario' : 'diasTotales') }" />
+                                 </div>
+                              </th>
+                              <th 
+                                 v-if="mode === 'CALENDAR'" 
+                                 class="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-text-muted cursor-pointer hover:bg-surface-muted transition-colors group text-right"
+                                 @click="handleSort('diasTotales')"
+                              >
+                                 <div class="flex items-center justify-end gap-2">
+                                    Total Marea
+                                    <component :is="getSortIcon('diasTotales')" class="w-3 h-3 text-primary opacity-0 group-hover:opacity-100" :class="{ 'opacity-100': sortKey === 'diasTotales' }" />
+                                 </div>
+                              </th>
                            </tr>
                         </thead>
                         <tbody class="divide-y divide-border">
@@ -309,35 +358,34 @@
                         </tbody>
                      </table>
                   </div>
-
+                  
                   <!-- Empty Filter Result -->
                   <div v-if="filteredDialogItems.length === 0" class="flex flex-col items-center justify-center py-20 px-4 text-center">
                      <SearchIcon class="w-12 h-12 text-text-muted/20 mb-4" />
-                     <p class="text-sm font-bold text-text-muted uppercase tracking-widest">No hay resultados para "{{ searchTerm }}"</p>
-                     <p class="text-[10px] text-text-muted/60 mt-2">Intenta ajustar los criterios de búsqueda</p>
+                     <p class="text-xs font-black text-text-muted uppercase tracking-widest">No hay resultados para "{{ searchTerm }}"</p>
+                     <p class="text-[10px] text-text-muted/60 mt-2 font-bold uppercase">Intenta ajustar los criterios de búsqueda</p>
                   </div>
                </div>
             </div>
 
-            <!-- Footer -->
-            <div class="flex justify-end gap-3 p-4 border-t border-border bg-surface-muted/20">
-               <button 
-                  class="flex items-center gap-2 px-4 py-2 rounded-lg border border-border text-sm font-medium hover:bg-surface-muted transition-colors bg-surface"
-                  @click="handleDownload(dialogTitle.replace(/\s+/g, '_'), filterType || undefined)"
-               >
-                  <DownloadIcon class="w-4 h-4" />
-                  Exportar Detalle
-               </button>
-               <button 
-                  class="px-4 py-2 rounded-lg bg-primary text-primary-fg text-sm font-medium hover:bg-primary-hover transition-colors shadow-sm"
-                  @click="closeDialog"
-               >
-                  Cerrar
-               </button>
-            </div>
+         <!-- Footer (Redesigned) -->
+         <div class="flex justify-end gap-3 p-4 border-t border-border bg-surface-muted/20 flex-none bg-surface/50 backdrop-blur-md">
+            <button 
+               class="flex items-center gap-2 px-4 py-2 rounded-lg border border-border text-xs font-black uppercase tracking-widest hover:bg-surface-muted transition-colors bg-surface shadow-sm active:scale-95 duration-200"
+               @click="handleDownload(dialogTitle.replace(/\s+/g, '_'), filterType || undefined)"
+            >
+               <DownloadIcon class="w-4 h-4" />
+               Exportar Detalle
+            </button>
+            <button 
+               class="px-6 py-2 rounded-lg bg-primary text-primary-fg text-xs font-black uppercase tracking-widest hover:bg-primary-hover transition-colors shadow-theme-sm active:scale-95 duration-200"
+               @click="closeDialog"
+            >
+               Cerrar
+            </button>
          </div>
-      </template>
-    </Modal>
+      </div>
+    </BaseModal>
 
     <!-- Individual Marea Quick Detail -->
     <MareaQuickDetailModal 
@@ -356,7 +404,7 @@ import AdminLayout from '@/components/layout/AdminLayout.vue'
 import StatsFilterBar from '@/modules/stats/components/StatsFilterBar.vue'
 import StatKpiCard from '@/modules/stats/components/StatKpiCard.vue'
 import ChartWidget from '@/modules/stats/components/ChartWidget.vue'
-import Modal from '@/components/ui/Modal.vue'
+import BaseModal from '@/components/common/BaseModal.vue'
 import SearchInput from '@/components/ui/SearchInput.vue'
 import MareaQuickDetailModal from '@/modules/stats/components/MareaQuickDetailModal.vue'
 import { useConfigStore } from '@/modules/shared/stores/config.store'
@@ -375,7 +423,8 @@ import {
   CheckIcon,
   SearchIcon,
   LayoutListIcon,
-  LayoutGridIcon
+  LayoutGridIcon,
+  XIcon
 } from 'lucide-vue-next'
 import { statsService, type DashboardStats, type StatsDetailItem } from '@/modules/stats/services/stats.service'
 import { toast } from 'vue-sonner'
@@ -408,15 +457,52 @@ const searchTerm = ref('');
 const quickDetailOpen = ref(false);
 const selectedMareaId = ref<string | null>(null);
 
+const sortKey = ref<string>('id_marea');
+const sortOrder = ref<'asc' | 'desc'>('asc');
+
+const handleSort = (key: string) => {
+    if (sortKey.value === key) {
+        sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc';
+    } else {
+        sortKey.value = key;
+        sortOrder.value = 'asc';
+    }
+};
+
+const getSortIcon = (key: string) => {
+    if (sortKey.value !== key) return ChevronDownIcon;
+    return sortOrder.value === 'asc' ? ChevronUpIcon : ChevronDownIcon;
+};
+
 const filteredDialogItems = computed(() => {
-    if (!searchTerm.value) return dialogItems.value;
-    const s = searchTerm.value.toLowerCase();
-    return dialogItems.value.filter(m => 
-        m.id_marea.toLowerCase().includes(s) ||
-        m.buque.toLowerCase().includes(s) ||
-        m.observador.toLowerCase().includes(s) ||
-        m.pesqueria.toLowerCase().includes(s)
-    );
+    let items = [...dialogItems.value];
+    
+    // Filtering
+    if (searchTerm.value) {
+        const s = searchTerm.value.toLowerCase();
+        items = items.filter(m => 
+            m.id_marea.toLowerCase().includes(s) ||
+            m.buque.toLowerCase().includes(s) ||
+            m.observador.toLowerCase().includes(s) ||
+            m.pesqueria.toLowerCase().includes(s)
+        );
+    }
+    
+    // Sorting
+    items.sort((a: any, b: any) => {
+        const valA = a[sortKey.value];
+        const valB = b[sortKey.value];
+        
+        if (typeof valA === 'string') {
+            return sortOrder.value === 'asc' 
+                ? valA.localeCompare(valB) 
+                : valB.localeCompare(valA);
+        }
+        
+        return sortOrder.value === 'asc' ? valA - valB : valB - valA;
+    });
+    
+    return items;
 });
 const dialogTitle = ref('');
 

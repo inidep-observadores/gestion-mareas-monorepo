@@ -26,7 +26,7 @@
 
       <div class="flex flex-col xl:flex-row gap-6 overflow-hidden">
         <!-- Main Board -->
-        <div class="flex-1 w-full min-w-0 transition-all duration-300">
+        <div class="flex-1 min-w-0 transition-all duration-300">
           <div
             class="bg-surface border border-border rounded-2xl overflow-hidden shadow-sm"
           >
@@ -167,7 +167,6 @@
                             <ChevronDownIcon v-if="sortBy === 'alertas'" class="w-3 h-3 text-primary transition-transform duration-300" :class="{ 'rotate-180': sortOrder === 'asc' }" />
                           </div>
                         </th>
-                        <th class="px-5 py-2 text-right">Acciones</th>
                       </tr>
                     </thead>
                     <tbody class="divide-y divide-border">
@@ -227,13 +226,6 @@
                           </div>
                           <span v-else class="text-[10px] font-bold text-text-muted/40">Ninguna</span>
                         </td>
-                        <td class="px-5 py-1.5 text-right">
-                          <div class="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-all">
-                            <button class="p-1.5 hover:bg-surface rounded-lg text-text-muted hover:text-primary transition-all shadow-sm">
-                              <HorizontalDots class="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </td>
                       </tr>
                     </tbody>
                   </table>
@@ -263,7 +255,7 @@
         >
           <div 
             v-if="selectedMarea"
-            class="w-full xl:w-[400px] shrink-0 sticky top-0 bg-surface border border-border rounded-2xl shadow-sm overflow-hidden self-start hidden xl:block z-10"
+            class="w-full xl:w-[320px] 2xl:w-[400px] shrink-0 sticky top-0 bg-surface border border-border rounded-2xl shadow-sm overflow-hidden self-start hidden xl:block z-10"
           >
             <MareaContextDetailContent 
               :marea="selectedMarea"
