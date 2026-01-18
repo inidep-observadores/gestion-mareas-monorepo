@@ -13,19 +13,10 @@
 
     <!-- Filtros -->
     <div class="flex flex-wrap items-center gap-3">
-      
+
       <!-- Modo de Cálculo -->
       <div class="flex items-center gap-2 bg-surface-muted px-4 py-2 rounded-xl border border-border" title="Calendario: Solo días dentro del año. Total: Mareas completas con actividad en el año.">
         <div class="flex gap-1 bg-surface rounded-lg p-1 border border-border/50">
-          <button 
-            @click="$emit('update:mode', 'CALENDAR')"
-            :class="[
-              'px-3 py-1 rounded text-[10px] font-black uppercase tracking-wider transition-all',
-              mode === 'CALENDAR' ? 'bg-primary text-primary-fg shadow-sm' : 'text-text-muted hover:text-text'
-            ]"
-          >
-            Calendario
-          </button>
           <button 
              @click="$emit('update:mode', 'TOTAL')"
              :class="[
@@ -35,6 +26,15 @@
           >
             Total Marea
           </button>
+          <button 
+            @click="$emit('update:mode', 'CALENDAR')"
+            :class="[
+              'px-3 py-1 rounded text-[10px] font-black uppercase tracking-wider transition-all',
+              mode === 'CALENDAR' ? 'bg-primary text-primary-fg shadow-sm' : 'text-text-muted hover:text-text'
+            ]"
+          >
+            Calendario
+          </button>
         </div>
       </div>
 
@@ -42,7 +42,7 @@
       <div class="flex items-center gap-2 bg-surface-muted px-4 py-2 rounded-xl border border-border" title="Días Buque: Días únicos navegados por embarcación. Días Observador: Suma de días de cada observador a bordo.">
          <span class="text-[10px] font-black text-text-muted uppercase tracking-widest mr-1">Métrica:</span>
          <div class="flex gap-1 bg-surface rounded-lg p-1 border border-border/50">
-          <button 
+          <button
             @click="$emit('update:daysCalculationMode', 'SHIP')"
             :class="[
               'px-3 py-1 rounded text-[10px] font-black uppercase tracking-wider transition-all',
@@ -51,7 +51,7 @@
           >
             Buque
           </button>
-          <button 
+          <button
              @click="$emit('update:daysCalculationMode', 'OBSERVER')"
              :class="[
               'px-3 py-1 rounded text-[10px] font-black uppercase tracking-wider transition-all',
@@ -66,8 +66,8 @@
       <!-- Protocolizadas Toggle -->
       <div class="flex items-center gap-2 bg-surface-muted px-4 py-2 rounded-xl border border-border">
         <label class="flex items-center gap-2 cursor-pointer">
-           <input 
-             type="checkbox" 
+           <input
+             type="checkbox"
              :checked="protocolizedOnly"
              @change="$emit('update:protocolizedOnly', ($event.target as HTMLInputElement).checked)"
              class="w-4 h-4 rounded border-border text-primary focus:ring-primary/20"
@@ -79,8 +79,8 @@
       <!-- Out of Period (Conditional) -->
       <div v-if="protocolizedOnly" class="flex items-center gap-2 bg-surface-muted px-4 py-2 rounded-xl border border-border animate-in fade-in zoom-in duration-300">
          <label class="flex items-center gap-2 cursor-pointer" title="Incluir mareas fuera del rango de actividad si se protocolizaron este año">
-           <input 
-             type="checkbox" 
+           <input
+             type="checkbox"
              :checked="includeOutOfPeriod"
              @change="$emit('update:includeOutOfPeriod', ($event.target as HTMLInputElement).checked)"
               class="w-4 h-4 rounded border-border text-primary focus:ring-primary/20"
@@ -92,13 +92,13 @@
       <!-- Campaigns Toggle -->
       <div class="flex items-center gap-2 bg-surface-muted px-4 py-2 rounded-xl border border-border">
         <label class="flex items-center gap-2 cursor-pointer">
-           <input 
-             type="checkbox" 
+           <input
+             type="checkbox"
              :checked="includeCampaigns"
              @change="$emit('update:includeCampaigns', ($event.target as HTMLInputElement).checked)"
              class="w-4 h-4 rounded border-border text-primary focus:ring-primary/20"
            />
-           <span class="text-[10px] font-black text-text-muted uppercase tracking-widest">Incluir Campañas</span>
+           <span class="text-[10px] font-black text-text-muted uppercase tracking-widest">Incluir Campañas Institucionales</span>
         </label>
       </div>
 
@@ -107,7 +107,7 @@
 </template>
 
 <script setup lang="ts">
-import { 
+import {
   ActivityIcon
 } from 'lucide-vue-next';
 import type { Component } from 'vue';

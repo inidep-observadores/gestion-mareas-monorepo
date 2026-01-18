@@ -149,44 +149,172 @@
       <template #body>
          <div class="bg-surface border border-border rounded-xl shadow-theme-xl w-full max-w-4xl mx-4 flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200">
             <!-- Header -->
-            <div class="flex items-center justify-between p-4 border-b border-border">
-               <div>
-                  <h3 class="text-lg font-bold text-text">{{ dialogTitle }}</h3>
-                  <p class="text-xs text-text-muted">Detalle de mareas asociadas al registro seleccionado.</p>
+            <div class="flex items-center justify-between p-4 border-b border-border bg-surface-muted/10">
+               <div class="flex items-center gap-4">
+                  <div>
+                     <h3 class="text-lg font-black text-text uppercase tracking-tight">{{ dialogTitle }}</h3>
+                     <p class="text-[10px] font-bold text-text-muted uppercase tracking-widest mt-0.5">Detalle de mareas asociadas</p>
+                  </div>
+                  
+                  <!-- Layout Toggle -->
+                  <div class="flex items-center bg-surface border border-border rounded-lg p-0.5 ml-4 shadow-sm">
+                     <button 
+                        @click="detailViewMode = 'cards'"
+                        :class="[
+                           'p-1.5 rounded-md transition-all duration-200',
+                           detailViewMode === 'cards' ? 'bg-primary text-primary-fg shadow-sm' : 'text-text-muted hover:text-text hover:bg-surface-muted'
+                        ]"
+                        title="Vista de Tarjetas"
+                     >
+                        <LayoutGridIcon class="w-4 h-4" />
+                     </button>
+                     <button 
+                        @click="detailViewMode = 'table'"
+                        :class="[
+                           'p-1.5 rounded-md transition-all duration-200',
+                           detailViewMode === 'table' ? 'bg-primary text-primary-fg shadow-sm' : 'text-text-muted hover:text-text hover:bg-surface-muted'
+                        ]"
+                        title="Vista de Tabla"
+                     >
+                        <LayoutListIcon class="w-4 h-4" />
+                     </button>
+                  </div>
                </div>
-               <button @click="closeDialog" class="p-1 rounded hover:bg-surface-muted text-text-muted hover:text-text transition-colors">
+
+               <button @click="closeDialog" class="p-2 rounded-full hover:bg-error/10 text-text-muted hover:text-error transition-all duration-200">
                   <span class="sr-only">Cerrar</span>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
                </button>
             </div>
 
             <!-- Body -->
-            <div class="p-4 overflow-hidden flex-1 flex flex-col min-h-0">
-               <div v-if="dialogLoading" class="flex justify-center items-center h-40">
-                  <Loader2Icon class="w-8 h-8 animate-spin text-primary" />
+            <div class="p-0 overflow-hidden flex-1 flex flex-col min-h-0">
+               <!-- Local Filter Bar -->
+               <div class="px-4 py-3 border-b border-border bg-surface flex items-center gap-4">
+                  <div class="relative flex-1 group">
+                     <SearchIcon class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted group-focus-within:text-primary transition-colors" />
+                     <input 
+                        v-model="searchTerm"
+                        type="text" 
+                        placeholder="Filtrar por marea, buque, observador..." 
+                        class="w-full pl-9 pr-4 py-2 bg-surface-muted/50 border border-border rounded-xl text-sm focus:bg-surface focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200"
+                     />
+                  </div>
+                  <div class="text-xs font-bold text-text-muted uppercase tracking-widest whitespace-nowrap">
+                     {{ filteredDialogItems.length }} Resultados
+                  </div>
+               </div>
+
+               <div v-if="dialogLoading" class="flex justify-center items-center h-60">
+                  <div class="flex flex-col items-center gap-4">
+                     <Loader2Icon class="w-10 h-10 animate-spin text-primary" />
+                     <span class="text-xs font-bold text-text-muted uppercase tracking-widest">Cargando datos...</span>
+                  </div>
                </div>
                
-               <div v-else class="flex-1 overflow-y-auto pr-2 custom-scrollbar">
-                  <div class="space-y-3">
-                     <div v-for="marea in dialogItems" :key="marea.id" class="flex items-center justify-between p-4 rounded-lg border border-border bg-surface-muted/30 hover:bg-surface-muted/60 transition-colors">
-                        <div>
-                           <div class="flex items-center gap-2 mb-1">
-                              <span class="font-bold text-sm text-text">{{ marea.id_marea }}</span>
-                              <span class="px-2 py-0.5 rounded text-[10px] bg-secondary/10 text-secondary border border-secondary/20">{{ marea.estado }}</span>
-                              <span v-if="marea.tipoMarea === 'CI'" class="px-2 py-0.5 rounded text-[10px] bg-accent/10 text-accent border border-accent/20">Campaña</span>
+               <div v-else class="flex-1 overflow-y-auto custom-scrollbar p-4 bg-surface-muted/10">
+                  <!-- CARD VIEW -->
+                  <div v-if="detailViewMode === 'cards'" class="space-y-3">
+                     <div 
+                        v-for="marea in filteredDialogItems" 
+                        :key="marea.id" 
+                        @click="openQuickDetail(marea.id)"
+                        class="flex items-center justify-between p-4 rounded-xl border border-border bg-surface shadow-theme-xs hover:shadow-theme-md hover:border-primary/40 transition-all duration-200 group cursor-pointer"
+                     >
+                        <div class="flex-1 min-w-0">
+                           <div class="flex items-center gap-2 mb-2">
+                              <span class="font-black text-sm text-text tabular-nums tracking-tighter">{{ marea.id_marea }}</span>
+                              <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest bg-secondary/10 text-secondary border border-secondary/20">{{ marea.estado }}</span>
+                              <span v-if="marea.tipoMarea === 'CI'" class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest bg-accent/10 text-accent border border-accent/20">Campaña</span>
                            </div>
-                           <div class="text-xs text-text-muted grid grid-cols-2 gap-x-8 gap-y-1 mt-2">
-                              <span><span class="font-semibold text-text-muted/70">Buque:</span> {{ marea.buque }}</span>
-                              <span><span class="font-semibold text-text-muted/70">Pesquería:</span> {{ marea.pesqueria }}</span>
-                              <span><span class="font-semibold text-text-muted/70">Observador:</span> {{ marea.observador }}</span>
-                              <span><span class="font-semibold text-text-muted/70">Inicio:</span> {{ marea.fechaInicio ? new Date(marea.fechaInicio).toLocaleDateString() : '-' }}</span>
+                           <div class="text-[11px] text-text-muted grid grid-cols-2 lg:grid-cols-4 gap-4">
+                              <div class="flex flex-col">
+                                 <span class="font-black opacity-40 uppercase tracking-tighter text-[9px] mb-0.5">Buque</span>
+                                 <span class="font-bold text-text truncate">{{ marea.buque }}</span>
+                              </div>
+                              <div class="flex flex-col">
+                                 <span class="font-black opacity-40 uppercase tracking-tighter text-[9px] mb-0.5">Pesquería</span>
+                                 <span class="font-bold text-text truncate">{{ marea.pesqueria }}</span>
+                              </div>
+                              <div class="flex flex-col">
+                                 <span class="font-black opacity-40 uppercase tracking-tighter text-[9px] mb-0.5">Observador</span>
+                                 <span class="font-bold text-text truncate">{{ marea.observador }}</span>
+                              </div>
+                              <div class="flex flex-col">
+                                 <span class="font-black opacity-40 uppercase tracking-tighter text-[9px] mb-0.5">Inicio</span>
+                                 <span class="font-bold text-text">{{ marea.fechaInicio ? new Date(marea.fechaInicio).toLocaleDateString() : '-' }}</span>
+                              </div>
                            </div>
                         </div>
-                        <div class="text-right pl-4">
-                           <span class="block text-2xl font-bold text-primary tabular-nums">{{ marea.diasContabilizados }}</span>
-                           <span class="text-[10px] uppercase font-bold text-text-muted tracking-wider">Días</span>
+                        
+                        <!-- Dual Metrics (Redesigned) -->
+                        <div class="flex items-center gap-4 pl-4 min-w-[140px] justify-end border-l border-border/40 ml-4">
+                           <div v-if="mode === 'CALENDAR'" class="flex items-center gap-3">
+                              <div class="text-right">
+                                 <span class="block text-xl font-black text-primary leading-tight tabular-nums">{{ marea.diasCalendario }}</span>
+                                 <span class="text-[9px] font-bold text-text-muted uppercase tracking-tighter">Días {{ year }}</span>
+                              </div>
+                              <div class="w-px h-8 bg-border"></div>
+                              <div class="text-right">
+                                 <span class="block text-xl font-bold text-text-muted/80 leading-tight tabular-nums">{{ marea.diasTotales }}</span>
+                                 <span class="text-[9px] font-bold text-text-muted uppercase tracking-tighter">Totales</span>
+                              </div>
+                           </div>
+                           <div v-else class="text-right">
+                              <span class="block text-2xl font-black text-primary leading-tight tabular-nums">{{ marea.diasTotales }}</span>
+                              <span class="text-[10px] font-bold text-text-muted uppercase tracking-widest mt-1">Días Totales</span>
+                           </div>
                         </div>
                      </div>
+                  </div>
+
+                  <!-- TABLE VIEW -->
+                  <div v-else class="bg-surface rounded-xl border border-border shadow-theme-xs overflow-hidden">
+                     <table class="w-full text-left border-collapse">
+                        <thead>
+                           <tr class="bg-surface-muted/50 border-b border-border">
+                              <th class="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-text-muted">Marea</th>
+                              <th class="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-text-muted">Buque</th>
+                              <th class="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-text-muted">Pesquería</th>
+                              <th class="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-text-muted">Observador</th>
+                              <th class="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-text-muted text-right">Días {{ mode === 'CALENDAR' ? year : 'Tot.' }}</th>
+                              <th v-if="mode === 'CALENDAR'" class="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-text-muted text-right">Total Marea</th>
+                           </tr>
+                        </thead>
+                        <tbody class="divide-y divide-border">
+                           <tr 
+                              v-for="marea in filteredDialogItems" 
+                              :key="marea.id" 
+                              @click="openQuickDetail(marea.id)"
+                              class="hover:bg-primary/5 transition-colors group cursor-pointer"
+                           >
+                              <td class="px-4 py-2 border-r border-border/50">
+                                 <div class="flex flex-col">
+                                    <span class="font-black text-xs text-text tabular-nums">{{ marea.id_marea }}</span>
+                                    <span class="text-[9px] font-bold text-text-muted uppercase tracking-tighter">{{ marea.estado }}</span>
+                                 </div>
+                              </td>
+                              <td class="px-4 py-2 text-xs font-bold text-text border-r border-border/50">{{ marea.buque }}</td>
+                              <td class="px-4 py-2 text-xs font-bold text-text border-r border-border/50">{{ marea.pesqueria }}</td>
+                              <td class="px-4 py-2 text-xs font-bold text-text border-r border-border/50">{{ marea.observador }}</td>
+                              <td class="px-4 py-2 text-right border-r border-border/50">
+                                 <span :class="['font-black text-sm tabular-nums', mode === 'CALENDAR' ? 'text-primary' : 'text-text']">
+                                    {{ mode === 'CALENDAR' ? marea.diasCalendario : marea.diasTotales }}
+                                 </span>
+                              </td>
+                              <td v-if="mode === 'CALENDAR'" class="px-4 py-2 text-right">
+                                 <span class="font-bold text-xs text-text-muted tabular-nums opacity-80">{{ marea.diasTotales }}</span>
+                              </td>
+                           </tr>
+                        </tbody>
+                     </table>
+                  </div>
+
+                  <!-- Empty Filter Result -->
+                  <div v-if="filteredDialogItems.length === 0" class="flex flex-col items-center justify-center py-20 px-4 text-center">
+                     <SearchIcon class="w-12 h-12 text-text-muted/20 mb-4" />
+                     <p class="text-sm font-bold text-text-muted uppercase tracking-widest">No hay resultados para "{{ searchTerm }}"</p>
+                     <p class="text-[10px] text-text-muted/60 mt-2">Intenta ajustar los criterios de búsqueda</p>
                   </div>
                </div>
             </div>
@@ -210,17 +338,28 @@
          </div>
       </template>
     </Modal>
+
+    <!-- Individual Marea Quick Detail -->
+    <MareaQuickDetailModal 
+      :is-open="quickDetailOpen"
+      :marea-id="selectedMareaId"
+      @close="quickDetailOpen = false"
+    />
   </div>
   </AdminLayout>
 </template>
 
 <script setup lang="ts">
 import { ref, watch, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import StatsFilterBar from '@/modules/stats/components/StatsFilterBar.vue'
 import StatKpiCard from '@/modules/stats/components/StatKpiCard.vue'
 import ChartWidget from '@/modules/stats/components/ChartWidget.vue'
 import Modal from '@/components/ui/Modal.vue'
+import SearchInput from '@/components/ui/SearchInput.vue'
+import MareaQuickDetailModal from '@/modules/stats/components/MareaQuickDetailModal.vue'
+import { useConfigStore } from '@/modules/shared/stores/config.store'
 import { 
   BarChartIcon, 
   ShipIcon, 
@@ -233,16 +372,23 @@ import {
   ChevronUpIcon,
   TerminalIcon,
   CopyIcon,
-  CheckIcon
+  CheckIcon,
+  SearchIcon,
+  LayoutListIcon,
+  LayoutGridIcon
 } from 'lucide-vue-next'
 import { statsService, type DashboardStats, type StatsDetailItem } from '@/modules/stats/services/stats.service'
-import { useConfigStore } from '@/modules/shared/stores/config.store'
 import { toast } from 'vue-sonner'
 
 const configStore = useConfigStore();
+const router = useRouter();
 const year = computed(() => configStore.selectedYear);
+const detailViewMode = computed({
+    get: () => configStore.statsDetailViewMode,
+    set: (val) => configStore.setStatsDetailViewMode(val)
+});
 
-const mode = ref<'CALENDAR' | 'TOTAL'>('CALENDAR');
+const mode = ref<'CALENDAR' | 'TOTAL'>('TOTAL');
 const protocolizedOnly = ref(false);
 const includeOutOfPeriod = ref(false);
 const daysCalculationMode = ref<'SHIP' | 'OBSERVER'>('SHIP');
@@ -256,6 +402,22 @@ const loading = ref(false);
 const dialogOpen = ref(false);
 const dialogLoading = ref(false);
 const dialogItems = ref<StatsDetailItem[]>([]);
+const searchTerm = ref('');
+
+// Quick Detail State
+const quickDetailOpen = ref(false);
+const selectedMareaId = ref<string | null>(null);
+
+const filteredDialogItems = computed(() => {
+    if (!searchTerm.value) return dialogItems.value;
+    const s = searchTerm.value.toLowerCase();
+    return dialogItems.value.filter(m => 
+        m.id_marea.toLowerCase().includes(s) ||
+        m.buque.toLowerCase().includes(s) ||
+        m.observador.toLowerCase().includes(s) ||
+        m.pesqueria.toLowerCase().includes(s)
+    );
+});
 const dialogTitle = ref('');
 
 // --- Criteria Logic ---
@@ -356,24 +518,27 @@ const closeDialog = () => {
     dialogOpen.value = false;
     filterType.value = null;
     filterValue.value = null;
+    searchTerm.value = '';
+};
+
+const openQuickDetail = (mareaId: string) => {
+    selectedMareaId.value = mareaId;
+    quickDetailOpen.value = true;
 };
 
 // --- Click Handlers ---
-const handleFisheryClick = (event: any, chartContext: any, config: any) => {
-    const idx = config.dataPointIndex;
-    const item = stats.value?.fisheries[idx];
+const handleFisheryClick = ({ dataPointIndex }: any) => {
+    const item = stats.value?.fisheries[dataPointIndex];
     if (item) openDialog('FISHERY', item.name, item.name);
 };
 
-const handleFleetClick = (event: any, chartContext: any, config: any) => {
-    const idx = config.dataPointIndex;
-    const item = stats.value?.fleets[idx];
+const handleFleetClick = ({ dataPointIndex }: any) => {
+    const item = stats.value?.fleets[dataPointIndex];
     if (item) openDialog('FLEET', item.name, item.name);
 };
 
-const handleObserverClick = (event: any, chartContext: any, config: any) => {
-    const idx = config.dataPointIndex;
-    const item = stats.value?.observers[idx];
+const handleObserverClick = ({ dataPointIndex }: any) => {
+    const item = stats.value?.observers[dataPointIndex];
     // Now we pass the ID to the API filter logic, but Name to the Dialog Title
     if (item) openDialog('OBSERVER', item.id, item.name); 
 }

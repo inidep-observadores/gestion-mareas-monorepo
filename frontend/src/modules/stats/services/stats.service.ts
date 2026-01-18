@@ -27,6 +27,8 @@ export interface StatsDetailItem {
     estado: string;
     tipoMarea: string;
     diasContabilizados: number;
+    diasCalendario: number;
+    diasTotales: number;
     fechaInicio: string;
     fechaFin: string | null;
 }
