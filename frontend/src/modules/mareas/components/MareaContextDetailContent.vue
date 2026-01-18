@@ -103,7 +103,7 @@
                 <ShipIcon class="w-4 h-4" />
               </div>
               <div class="flex-1 min-w-0">
-                <p class="text-[9px] font-bold text-primary uppercase tracking-widest mb-0.5">Zarpada Confirmada</p>
+                <p class="text-[9px] font-bold text-primary uppercase tracking-widest mb-0.5">Zarpada Prevista</p>
                 <p class="text-sm font-black text-text truncate">
                   {{ formatDate(currentMarea.fecha_zarpada) }} <span class="mx-1 text-primary/60">en</span> {{ puertoZarpada }}
                 </p>
@@ -136,24 +136,30 @@
               :key="key"
               @click="onAction(key)"
               class="group relative flex items-center justify-between p-4 rounded-2xl border transition-all duration-300"
-              :class="action.enabled
-                ? 'bg-surface border-border hover:border-primary/50 hover:shadow-lg hover:shadow-primary/5 text-text'
-                : 'bg-surface-muted/30 border-border/50 text-text-muted cursor-not-allowed'"
+              :class="[
+                action.enabled
+                  ? 'bg-surface border-border hover:shadow-lg transition-all'
+                  : 'bg-surface-muted/30 border-border/50 text-text-muted cursor-not-allowed',
+                action.enabled && action.claseBoton === 'error' ? 'hover:border-error/50 hover:shadow-error/5' : 'hover:border-primary/50 hover:shadow-primary/5'
+              ]"
               :disabled="!action.enabled"
             >
               <div class="flex items-center gap-4">
                 <div
                   class="p-2 rounded-xl transition-colors"
-                  :class="action.enabled ? 'bg-primary/10 text-primary' : 'bg-surface-muted text-text-muted'"
+                  :class="[
+                    !action.enabled ? 'bg-surface-muted text-text-muted' :
+                    action.claseBoton === 'error' ? 'bg-error/10 text-error' : 'bg-primary/10 text-primary'
+                  ]"
                 >
                   <component :is="getActionIcon(key)" class="w-4 h-4" />
                 </div>
                 <div class="text-left">
-                  <p class="text-sm font-bold">{{ action.label }}</p>
+                  <p class="text-sm font-bold" :class="action.enabled && action.claseBoton === 'error' ? 'text-error' : 'text-text'">{{ action.label }}</p>
                   <p v-if="!action.enabled" class="text-[10px] font-medium text-text-muted mt-0.5">{{ action.blockedReason }}</p>
                 </div>
               </div>
-              <ChevronRightIcon v-if="action.enabled" class="w-4 h-4 transition-transform group-hover:translate-x-1 text-text-muted/40" />
+              <ChevronRightIcon v-if="action.enabled" class="w-4 h-4 transition-transform group-hover:translate-x-1" :class="action.claseBoton === 'error' ? 'text-error/40' : 'text-text-muted/40'" />
               <LockIcon v-else class="w-3.5 h-3.5 text-text-muted/40" />
             </button>
           </div>
@@ -362,7 +368,8 @@ const getActionIcon = (key: string | number) => {
     APROBAR_INFORME: SuccessIcon,
     RECHAZAR_INFORME: ErrorIcon,
     INICIAR_TRAMITE: HistoryIcon,
-    FINALIZAR_PROTOCOLIZACION: ShieldIcon
+    FINALIZAR_PROTOCOLIZACION: ShieldIcon,
+    CANCELAR: ErrorIcon
   }
   return meta[key] || PlusIcon
 }

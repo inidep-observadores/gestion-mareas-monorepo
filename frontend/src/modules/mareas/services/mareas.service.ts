@@ -27,7 +27,7 @@ export interface MareaListItem {
     total_etapas: number;
     alertas: any[];
     dias_estimados?: number;
-    actionsAvailable: Record<string, { enabled: boolean; label: string; blockedReason?: string }>;
+    actionsAvailable: Record<string, { enabled: boolean; label: string; blockedReason?: string; claseBoton?: string }>;
 }
 
 export interface MareaContext {
@@ -46,7 +46,7 @@ export interface MareaContext {
         observador: string;
         etapas?: any[];
     };
-    actions: Record<string, { enabled: boolean; label: string; blockedReason?: string }>;
+    actions: Record<string, { enabled: boolean; label: string; blockedReason?: string; claseBoton?: string }>;
     lastEvents: { id: string; titulo: string; fecha: string; usuario: string }[];
 }
 
