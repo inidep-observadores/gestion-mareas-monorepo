@@ -100,6 +100,7 @@ async function main() {
 
   const transicionesData = [
     { from: 'DESIGNADA', to: 'EN_EJECUCION', action: 'REGISTRAR_INICIO', label: 'Registrar Inicio', btn: 'primary' },
+    { from: 'DESIGNADA', to: 'CANCELADA', action: 'CANCELAR', label: 'Cancelar', btn: 'error' },
     { from: 'EN_EJECUCION', to: 'ESPERANDO_ENTREGA', action: 'REGISTRAR_ARRIBO', label: 'Confirmar Arribo', btn: 'primary' },
     { from: 'ESPERANDO_ENTREGA', to: 'ENTREGADA_RECIBIDA', action: 'RECIBIR_DATOS', label: 'Recibir Archivos de Marea', btn: 'primary' },
     { from: 'ENTREGADA_RECIBIDA', to: 'VERIFICACION_INICIAL', action: 'INICIAR_VERIFICACION', label: 'Iniciar Verificación', btn: 'primary' },
@@ -149,7 +150,7 @@ async function main() {
         .split('\n')
         .filter(line => line.trim())
         .map(line => JSON.parse(line));
-      
+
       if ('createMany' in catalog.model) {
         await (catalog.model as any).createMany({ data });
       } else {

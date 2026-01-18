@@ -288,6 +288,14 @@
        @confirm="handleRecibirConfirm"
     />
 
+    <CancelarMareaDialog
+       :show="showCancelarDialog"
+       :marea="mareaToManage"
+       :loading="executingAction"
+       @close="showCancelarDialog = false"
+       @confirm="handleCancelarConfirm"
+    />
+
     <AlertManagementDialog
       :is-open="isAlertDialogOpen"
       :alert="selectedAlert"
@@ -305,6 +313,7 @@ import SearchInput from '@/components/ui/SearchInput.vue'
 import MareaContextDetailContent from '../components/MareaContextDetailContent.vue'
 import GestionEtapasMareaDialog from '../components/GestionEtapasMareaDialog.vue'
 import RecibirArchivosDialog from '../components/RecibirArchivosDialog.vue'
+import CancelarMareaDialog from '../components/CancelarMareaDialog.vue'
 // @ts-ignore
 import AlertManagementDialog from '../../alerts/components/AlertManagementDialog.vue'
 import StatusFilterChip from '../components/StatusFilterChip.vue'
@@ -358,6 +367,8 @@ const isSidebarOpen = ref(false)
 const selectedMarea = ref<any>(null)
 const showGestionDialog = ref(false)
 const showRecibirDialog = ref(false)
+const showCancelarDialog = ref(false)
+const executingAction = ref(false)
 const gestionMode = ref<'INICIAR' | 'EDITAR' | 'FINALIZAR'>('INICIAR')
 const mareaToManage = ref<any>(null)
 
@@ -498,6 +509,12 @@ const executeActionFromSidebar = async (actionKey: string) => {
     return
   }
 
+  if (actionKey === 'CANCELAR') {
+    mareaToManage.value = mareaContext
+    showCancelarDialog.value = true
+    return
+  }
+
   try {
     await executeAction(selectedMarea.value.id, actionKey)
     closeSidebar()
@@ -543,6 +560,21 @@ const handleRecibirConfirm = async (payload: any) => {
         await fetchDashboard()
     } catch (err) {
         console.error("Error en recepción de archivos:", err)
+    }
+}
+
+const handleCancelarConfirm = async (payload: any) => {
+    try {
+        executingAction.value = true
+        await executeAction(mareaToManage.value.id, 'CANCELAR', payload)
+        showCancelarDialog.value = false
+        mareaToManage.value = null
+        closeSidebar()
+        await fetchDashboard()
+    } catch (err) {
+        console.error("Error al cancelar marea:", err)
+    } finally {
+        executingAction.value = false
     }
 }
 
