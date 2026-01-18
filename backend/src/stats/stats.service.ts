@@ -20,20 +20,23 @@ export class StatsService {
             activo: true,
         };
 
+        // Source of Truth: Stages (Etapas)
+        // A marea is ACTIVE in the period if it has at least one stage overlapping the period.
+        // Overlap Logic: Stage Start <= Period End AND (Stage End >= Period Start OR Stage End is NULL)
         const activityOverlapCondition: Prisma.MareaWhereInput = {
-            OR: [
-                {
-                    fechaInicioObservador: { lte: yearEnd },
+            etapas: {
+                some: {
                     AND: [
+                        { fechaZarpada: { lte: yearEnd } },
                         {
                             OR: [
-                                { fechaFinObservador: { gte: yearStart } },
-                                { fechaFinObservador: null },
-                            ],
-                        },
-                    ],
-                },
-            ],
+                                { fechaArribo: { gte: yearStart } },
+                                { fechaArribo: null }
+                            ]
+                        }
+                    ]
+                }
+            }
         };
 
         const protocolizedInYearCondition: Prisma.MareaWhereInput = {
@@ -112,7 +115,8 @@ export class StatsService {
         const byObserver: Record<string, { id: string; name: string; mareas: number; days: number; active: boolean }> = {};
 
         for (const marea of mareas) {
-            const overallStart = marea.fechaInicioObservador || marea.fechaZarpadaEstimada;
+            // Source of Truth: Start with the first stage's departure
+            const overallStart = marea.etapas[0]?.fechaZarpada;
             if (!overallStart) continue;
 
             const intervals = marea.etapas.map(e => ({
@@ -428,7 +432,8 @@ export class StatsService {
 
         // Format for list display
         return mareas.map(m => {
-            const overallStart = m.fechaInicioObservador || m.fechaZarpadaEstimada;
+            const overallStart = m.etapas[0]?.fechaZarpada;
+            const overallEnd = m.etapas[m.etapas.length - 1]?.fechaArribo || (m.estadoActualId === 'EN_EJECUCION' ? new Date() : null);
 
             let days = 0;
 
@@ -473,7 +478,7 @@ export class StatsService {
                 estado: m.estadoActual?.nombre || 'Desconocido',
                 diasContabilizados: days,
                 fechaInicio: overallStart,
-                fechaFin: m.fechaFinObservador
+                fechaFin: overallEnd
             };
         });
     }
@@ -613,7 +618,8 @@ export class StatsService {
 
         // Cargar Datos
         mareas.forEach(m => {
-            const overallStart = m.fechaInicioObservador || m.fechaZarpadaEstimada;
+            const overallStart = m.etapas[0]?.fechaZarpada;
+            const overallEnd = m.etapas[m.etapas.length - 1]?.fechaArribo || (m.estadoActualId === 'EN_EJECUCION' ? new Date() : null);
 
             let days = 0;
             if (daysCalculationMode === 'SHIP') {
@@ -651,7 +657,7 @@ export class StatsService {
                 estado: m.estadoActual?.nombre || 'Desconocido',
                 dias: days,
                 inicio: overallStart ? overallStart.toLocaleDateString() : '-',
-                fin: m.fechaFinObservador ? m.fechaFinObservador.toLocaleDateString() : (m.estadoActualId === 'EN_EJECUCION' ? 'En curso' : '-')
+                fin: overallEnd ? overallEnd.toLocaleDateString() : (m.estadoActualId === 'EN_EJECUCION' ? 'En curso' : '-')
             };
 
             // Extra Observers

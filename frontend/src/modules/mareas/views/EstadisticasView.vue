@@ -44,6 +44,7 @@
               </ul>
            </div>
         </div>
+
       </section>
 
       <div v-if="stats" class="space-y-8">
@@ -229,7 +230,10 @@ import {
   DownloadIcon,
   InfoIcon,
   ChevronDownIcon,
-  ChevronUpIcon
+  ChevronUpIcon,
+  TerminalIcon,
+  CopyIcon,
+  CheckIcon
 } from 'lucide-vue-next'
 import { statsService, type DashboardStats, type StatsDetailItem } from '@/modules/stats/services/stats.service'
 import { useConfigStore } from '@/modules/shared/stores/config.store'
@@ -255,27 +259,22 @@ const dialogItems = ref<StatsDetailItem[]>([]);
 const dialogTitle = ref('');
 
 // --- Criteria Logic ---
+// ... (previous criteria logic) ...
 const isCriteriaOpen = ref(false);
-
 const criteriaList = computed(() => {
+    // ... (existing computed body) ...
     const list: string[] = [];
-
-    // 1. Year & Mode
     const yearText = `<span class="font-bold text-text">${year.value}</span>`;
     if (mode.value === 'CALENDAR') {
         list.push(`Periodo Analizado: <strong>Calendario ${yearText}</strong> (01/Ene - 31/Dic). Solo se contabilizan los días de navegación ocurridos estrictamente dentro de este rango.`);
     } else {
         list.push(`Periodo Analizado: <strong>Total Marea ${yearText}</strong>. Se incluyen mareas completas que hayan tenido actividad durante el año, sumando la totalidad de sus días.`);
     }
-
-    // 2. Metric
     if (daysCalculationMode.value === 'SHIP') {
         list.push(`Métrica: <strong>Días de Buque</strong>. Días únicos que la embarcación estuvo operando, sin multiplicar por observadores embarcados.`);
     } else {
         list.push(`Métrica: <strong>Días de Observador</strong>. Suma del esfuerzo individual de todos los observadores a bordo (ej: 10 días x 2 obs = 20 días).`);
     }
-
-    // 3. Status Filters
     if (protocolizedOnly.value) {
         let text = `Estado: <strong>Solo Protocolizadas</strong>.`;
         if (includeOutOfPeriod.value) {
@@ -285,15 +284,11 @@ const criteriaList = computed(() => {
     } else {
         list.push(`Estado: <strong>Todas las mareas</strong> (Protocolizadas y En Proceso).`);
     }
-
-    // 4. Campaigns
     if (includeCampaigns.value) {
         list.push(`Tipo: Incluye mareas comerciales y <strong>Campañas Institucionales</strong>.`);
     } else {
         list.push(`Tipo: <strong>Excluye</strong> Campañas Institucionales.`);
     }
-
-    // 5. Active Drilldown
     if (filterType.value && filterValue.value) {
         let typeLabel = '';
         if (filterType.value === 'FISHERY') typeLabel = 'Pesquería';
@@ -301,7 +296,6 @@ const criteriaList = computed(() => {
         if (filterType.value === 'OBSERVER') typeLabel = 'Observador';
         list.push(`Filtro Activo: <strong>${typeLabel}</strong> ${dialogTitle.value ? `(${dialogTitle.value.replace('Detalle: ', '')})` : ''}.`);
     }
-
     return list;
 });
 
@@ -312,7 +306,7 @@ const fetchData = async () => {
         stats.value = await statsService.getDashboardStats(
             year.value, 
             mode.value, 
-            protocolizedOnly.value, 
+            !protocolizedOnly.value, 
             includeOutOfPeriod.value,
             daysCalculationMode.value,
             includeCampaigns.value
@@ -343,7 +337,7 @@ const openDialog = async (type: 'FISHERY' | 'FLEET' | 'OBSERVER', value: string,
         dialogItems.value = await statsService.getDashboardStatsDetail(
             year.value,
             mode.value,
-            protocolizedOnly.value,
+            !protocolizedOnly.value,
             includeOutOfPeriod.value,
             type,
             value,
@@ -406,7 +400,7 @@ const handleDownload = async (titlePrefix: string, fType?: 'FISHERY' | 'FLEET' |
         await statsService.downloadExport(
             year.value,
             mode.value,
-            protocolizedOnly.value,
+            !protocolizedOnly.value,
             includeOutOfPeriod.value,
             daysCalculationMode.value,
             includeCampaigns.value,
