@@ -687,8 +687,8 @@ export class StatsService {
                 estado: m.estadoActual?.nombre || 'Desconocido',
                 dias_calendario: calendarDays,
                 dias_total: totalMareaDays,
-                inicio: overallStart ? overallStart.toLocaleDateString() : '-',
-                fin: overallEnd ? overallEnd.toLocaleDateString() : (m.estadoActual?.codigo === 'EN_EJECUCION' ? 'En curso' : '-')
+                inicio: DateUtils.formatDate(overallStart),
+                fin: overallEnd ? DateUtils.formatDate(overallEnd) : (m.estadoActual?.codigo === 'EN_EJECUCION' ? 'En curso' : '-')
             };
 
             // Extra Observers
@@ -714,8 +714,8 @@ export class StatsService {
             m.etapas.forEach((e, idx) => {
                 const i = idx + 1;
                 rowData[`etapa_${i}_nro`] = e.nroEtapa;
-                rowData[`etapa_${i}_zarpada`] = e.fechaZarpada ? e.fechaZarpada.toLocaleDateString() : '-';
-                rowData[`etapa_${i}_arribo`] = e.fechaArribo ? e.fechaArribo.toLocaleDateString() : '-';
+                rowData[`etapa_${i}_zarpada`] = DateUtils.formatDate(e.fechaZarpada);
+                rowData[`etapa_${i}_arribo`] = DateUtils.formatDate(e.fechaArribo);
                 rowData[`etapa_${i}_dias`] = DateUtils.calculateInclusiveDays(e.fechaZarpada, e.fechaArribo);
             });
 

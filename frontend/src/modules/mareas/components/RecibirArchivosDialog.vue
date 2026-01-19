@@ -202,6 +202,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, nextTick } from 'vue';
+import { toast } from 'vue-sonner';
 import DatePicker from '@/components/common/DatePicker.vue';
 import ConfirmationDialog from '@/components/common/ConfirmationDialog.vue';
 import {
@@ -265,7 +266,8 @@ watch(() => props.show, (val) => {
 
 // File Handlers
 function triggerFileInput() {
-  fileInput.value?.click();
+  toast.info('La carga de archivos digitales estará disponible en una próxima versión.');
+  // fileInput.value?.click(); // Por ahora deshabilitamos la acción real
 }
 
 function handleFileChange(event: Event) {
@@ -277,9 +279,12 @@ function handleFileChange(event: Event) {
 
 function handleDrop(event: DragEvent) {
   isDragging.value = false;
+  toast.info('La carga de archivos digitales estará disponible en una próxima versión.');
+  /*
   if (event.dataTransfer?.files) {
     addFiles(Array.from(event.dataTransfer.files));
   }
+  */
 }
 
 function addFiles(newFiles: File[]) {

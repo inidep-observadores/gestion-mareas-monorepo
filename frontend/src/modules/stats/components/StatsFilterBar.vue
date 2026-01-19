@@ -18,15 +18,6 @@
       <div class="flex items-center gap-2 bg-surface-muted px-4 py-2 rounded-xl border border-border" title="Calendario: Solo días dentro del año. Total: Mareas completas con actividad en el año.">
         <div class="flex gap-1 bg-surface rounded-lg p-1 border border-border/50">
           <button 
-             @click="$emit('update:mode', 'TOTAL')"
-             :class="[
-              'px-3 py-1 rounded text-[10px] font-black uppercase tracking-wider transition-all',
-              mode === 'TOTAL' ? 'bg-primary text-primary-fg shadow-sm' : 'text-text-muted hover:text-text'
-            ]"
-          >
-            Total Marea
-          </button>
-          <button 
             @click="$emit('update:mode', 'CALENDAR')"
             :class="[
               'px-3 py-1 rounded text-[10px] font-black uppercase tracking-wider transition-all',
@@ -34,6 +25,15 @@
             ]"
           >
             Calendario
+          </button>
+          <button 
+             @click="$emit('update:mode', 'TOTAL')"
+             :class="[
+              'px-3 py-1 rounded text-[10px] font-black uppercase tracking-wider transition-all',
+              mode === 'TOTAL' ? 'bg-primary text-primary-fg shadow-sm' : 'text-text-muted hover:text-text'
+            ]"
+          >
+            Total Marea
           </button>
         </div>
       </div>

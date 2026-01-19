@@ -102,7 +102,8 @@ export function useMareas() {
 
             const matchesText =
                 m.buque_nombre.toLowerCase().includes(query) ||
-                m.id_marea.toLowerCase().includes(query);
+                m.id_marea.toLowerCase().includes(query) ||
+                (m.observador && m.observador.toLowerCase().includes(query));
 
             return matchesState && matchesText;
         });

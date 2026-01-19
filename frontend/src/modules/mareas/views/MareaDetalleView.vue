@@ -1035,7 +1035,7 @@ const saveChanges = async () => {
 
     await mareasService.update(marea.value.id, payload)
     toast.success('Los cambios se guardaron correctamente.')
-    await loadMarea()
+    router.back()
   } catch (error) {
     console.error(error)
     toast.error('No se pudieron guardar los cambios de la marea.')

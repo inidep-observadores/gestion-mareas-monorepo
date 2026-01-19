@@ -125,6 +125,15 @@ export class MareasService {
             }
 
             if (etapas && etapas.length > 0) {
+                // Eliminar etapas que no vienen en el payload (etapas borradas en el frontend)
+                const payloadEtapaIds = etapas.map(e => e.id).filter(id => !!id);
+                await tx.mareaEtapa.deleteMany({
+                    where: {
+                        mareaId: id,
+                        id: { notIn: payloadEtapaIds as string[] }
+                    }
+                });
+
                 this.validateStagesChronology(etapas);
                 for (const etapa of etapas) {
                     const { observadores, id: etapaId, ...rest } = etapa;
@@ -288,8 +297,7 @@ export class MareasService {
                 observadorPrincipal: true,
                 estadoActual: true,
                 etapas: {
-                    orderBy: { nroEtapa: 'desc' },
-                    take: 1,
+                    orderBy: { nroEtapa: 'asc' },
                     include: {
                         puertoZarpada: true,
                         puertoArribo: true,
@@ -316,8 +324,9 @@ export class MareasService {
         });
 
         const items = mareas.map((m: any) => {
-            const etapaActual = m.etapas[0] || null;
-            const primaryObs = m.observadorPrincipal || etapaActual?.observadores[0]?.observador || null;
+            const etapaInicial = m.etapas[0] || null;
+            const etapaFinal = m.etapas[m.etapas.length - 1] || null;
+            const primaryObs = m.observadorPrincipal || etapaFinal?.observadores[0]?.observador || null;
             const allowedTransitions = transiciones.filter(t => t.estadoOrigenId === m.estadoActualId);
 
             const actionsAvailable: Record<string, any> = {};
@@ -340,15 +349,15 @@ export class MareasService {
                 puertoBaseId: m.buque.puertoBaseId,
                 estado: m.estadoActual.nombre,
                 estado_codigo: m.estadoActual.codigo,
-                fecha_zarpada: etapaActual?.fechaZarpada || m.fechaZarpadaEstimada,
-                puerto: etapaActual?.puertoArribo?.nombre || etapaActual?.puertoZarpada?.nombre || 'N/D',
-                puerto_zarpada: etapaActual?.puertoZarpada?.nombre || 'N/D',
-                puerto_arribo: etapaActual?.puertoArribo?.nombre,
-                fecha_arribo: etapaActual?.fechaArribo,
+                fecha_zarpada: etapaInicial?.fechaZarpada || m.fechaZarpadaEstimada,
+                puerto: etapaFinal?.puertoArribo?.nombre || etapaFinal?.puertoZarpada?.nombre || 'N/D',
+                puerto_zarpada: etapaInicial?.puertoZarpada?.nombre || 'N/D',
+                puerto_arribo: etapaFinal?.puertoArribo?.nombre,
+                fecha_arribo: etapaFinal?.fechaArribo,
                 observador: primaryObs ? `${primaryObs.nombre} ${primaryObs.apellido}` : 'Sin asignar',
                 progreso,
-                en_tierra: m.estadoActual.codigo === MareaEstado.EN_EJECUCION && etapaActual?.fechaArribo !== null,
-                total_etapas: etapaActual?.nroEtapa || 1,
+                en_tierra: m.estadoActual.codigo === MareaEstado.EN_EJECUCION && etapaFinal?.fechaArribo !== null,
+                total_etapas: etapaFinal?.nroEtapa || 1,
                 alertas: activeAlerts.filter((a: any) => a.referenciaId === m.id),
                 actionsAvailable,
                 dias_estimados: m.diasEstimados
@@ -1120,7 +1129,7 @@ export class MareasService {
                     observadorPrincipal: true,
                     estadoActual: true,
                     etapas: {
-                        orderBy: { nroEtapa: 'desc' },
+                        orderBy: { nroEtapa: 'asc' },
                         include: {
                             puertoZarpada: true,
                             puertoArribo: true,
@@ -1152,7 +1161,8 @@ export class MareasService {
 
         if (!marea) return null;
 
-        const etapaActual = marea.etapas[0] || null;
+        const etapaInicial = marea.etapas[0] || null;
+        const etapaFinal = marea.etapas[marea.etapas.length - 1] || null;
         const mainObs = marea.observadorPrincipal || null;
 
         const allowedTransitions = transiciones.filter(t => t.estadoOrigenId === marea.estadoActualId);
@@ -1176,7 +1186,7 @@ export class MareasService {
             };
         }
 
-        const fechaZarpada = etapaActual?.fechaZarpada || marea.fechaZarpadaEstimada;
+        const fechaZarpada = etapaInicial?.fechaZarpada || marea.fechaZarpadaEstimada;
 
         // Cálculo de días consistentes
         const now = new Date();
@@ -1232,7 +1242,7 @@ export class MareasService {
                 estado: marea.estadoActual.nombre,
                 estado_codigo: marea.estadoActual.codigo,
                 observador: mainObs ? `${mainObs.nombre} ${mainObs.apellido}` : 'No asignado',
-                pesqueria: etapaActual?.pesqueria?.nombre || 'General',
+                pesqueria: etapaFinal?.pesqueria?.nombre || 'General',
                 fecha_zarpada: fechaZarpada,
                 fecha_zarpada_estimada: marea.fechaZarpadaEstimada,
                 fechaInicioObservador: marea.fechaInicioObservador,

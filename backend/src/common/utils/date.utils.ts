@@ -1,4 +1,26 @@
+import { APP_CONFIG } from '../constants';
+
 export class DateUtils {
+    /**
+     * Formatea una fecha según el formato global configurado en APP_CONFIG.
+     * @param date Fecha a formatear
+     * @returns String formateado o '-' si es inválida
+     */
+    static formatDate(date: Date | string | null | undefined): string {
+        if (!date) return '-';
+        const d = new Date(date);
+        if (isNaN(d.getTime())) return '-';
+
+        const day = d.getDate().toString().padStart(2, '0');
+        const month = (d.getMonth() + 1).toString().padStart(2, '0');
+        const year = d.getFullYear();
+
+        return APP_CONFIG.DATE_FORMAT
+            .replace('DD', day)
+            .replace('MM', month)
+            .replace('YYYY', year.toString());
+    }
+
     /**
      * Calcula la cantidad de días navegados entre dos fechas, considerando ambos extremos inclusivos.
      * Ejemplo: 16/01 al 17/01 = 2 días.

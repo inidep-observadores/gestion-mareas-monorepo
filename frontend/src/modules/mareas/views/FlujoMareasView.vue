@@ -585,7 +585,8 @@ const groupedMareas = computed(() => {
         const query = searchQuery.value.toLowerCase().trim();
         if (!query) return true;
         return m.buque_nombre.toLowerCase().includes(query) ||
-               m.id_marea.toLowerCase().includes(query);
+               m.id_marea.toLowerCase().includes(query) ||
+               (m.observador && m.observador.toLowerCase().includes(query));
     });
 
     // 2. Iterate over KPIs to guarantee order

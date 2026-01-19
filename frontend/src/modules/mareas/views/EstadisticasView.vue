@@ -554,7 +554,7 @@ const detailViewMode = computed({
     set: (val) => configStore.setStatsDetailViewMode(val)
 });
 
-const mode = ref<'CALENDAR' | 'TOTAL'>('TOTAL');
+const mode = ref<'CALENDAR' | 'TOTAL'>('CALENDAR');
 const protocolizedOnly = ref(false);
 const includeOutOfPeriod = ref(false);
 const daysCalculationMode = ref<'SHIP' | 'OBSERVER'>('SHIP');
