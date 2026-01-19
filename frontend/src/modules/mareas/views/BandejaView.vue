@@ -1,14 +1,17 @@
 <template>
   <AdminLayout 
-    title="Panel Operativo" 
-    description="Gestión centralizada de mareas, alertas críticas y monitoreo de flota."
+    title="Bandeja de Entrada" 
+    description="Gestión de tareas pendientes, alertas de sistema y seguimiento de procesos."
   >
     <div class="relative min-h-[calc(100vh-120px)] z-1 pb-10 flex flex-col xl:flex-row gap-8 items-start">
       <div class="flex-1 min-w-0 w-full">
       
       <!-- 1. ALERTAS URGENTES (Urgente) -->
       <section v-if="alertasUrgente.length > 0" class="mb-8 space-y-4">
-        <div class="flex items-center justify-between px-2">
+        <button 
+          @click="toggleAlertSection('urgente')"
+          class="flex items-center justify-between w-full px-2 group cursor-pointer"
+        >
           <h2 class="text-[10px] font-black uppercase tracking-[0.2em] text-error flex items-center gap-2">
             <span class="flex h-3 w-3 relative">
               <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-error/60 opacity-75"></span>
@@ -16,101 +19,178 @@
             </span>
             Atención Inmediata (Prioridad Urgente)
           </h2>
-        </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-4">
-          <InboxAlertCard 
-            v-for="alerta in alertasUrgente" 
-            :key="alerta.id"
-            v-bind="alerta"
-            :fecha="formatDate(alerta.fechaDetectada)"
-            @action="(type) => handleAlertAction(alerta.id, type)"
+          <ChevronDownIcon 
+            class="w-4 h-4 text-error transition-transform duration-300"
+            :class="{ 'rotate-180': !expandedAlerts.urgente }"
           />
-        </div>
+        </button>
+        <Transition
+          enter-active-class="transition-all duration-300 ease-out"
+          enter-from-class="max-h-0 opacity-0"
+          enter-to-class="max-h-[1000px] opacity-100"
+          leave-active-class="transition-all duration-200 ease-in"
+          leave-from-class="max-h-[1000px] opacity-100"
+          leave-to-class="max-h-0 opacity-0"
+        >
+          <div v-if="expandedAlerts.urgente" class="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-4 overflow-hidden">
+            <InboxAlertCard 
+              v-for="alerta in alertasUrgente" 
+              :key="alerta.id"
+              v-bind="alerta"
+              :fecha="formatDate(alerta.fechaDetectada)"
+              @action="(type) => handleAlertAction(alerta.id, type)"
+            />
+          </div>
+        </Transition>
       </section>
 
       <!-- 2. ALERTAS CRÍTICAS (Alta) -->
       <section v-if="alertasAlta.length > 0" class="mb-8 space-y-4">
-        <div class="flex items-center justify-between px-2">
+        <button 
+          @click="toggleAlertSection('alta')"
+          class="flex items-center justify-between w-full px-2 group cursor-pointer"
+        >
           <h2 class="text-[10px] font-black uppercase tracking-[0.2em] text-warning flex items-center gap-2">
             <span class="flex h-2 w-2 relative">
               <span class="relative inline-flex rounded-full h-2 w-2 bg-warning"></span>
             </span>
             Gestión Prioritaria (Prioridad Alta)
           </h2>
-        </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-4">
-          <InboxAlertCard 
-            v-for="alerta in alertasAlta" 
-            :key="alerta.id"
-            v-bind="alerta"
-            :fecha="formatDate(alerta.fechaDetectada)"
-            @action="(type) => handleAlertAction(alerta.id, type)"
+          <ChevronDownIcon 
+            class="w-4 h-4 text-warning transition-transform duration-300"
+            :class="{ 'rotate-180': !expandedAlerts.alta }"
           />
-        </div>
+        </button>
+        <Transition
+          enter-active-class="transition-all duration-300 ease-out"
+          enter-from-class="max-h-0 opacity-0"
+          enter-to-class="max-h-[1000px] opacity-100"
+          leave-active-class="transition-all duration-200 ease-in"
+          leave-from-class="max-h-[1000px] opacity-100"
+          leave-to-class="max-h-0 opacity-0"
+        >
+          <div v-if="expandedAlerts.alta" class="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-4 overflow-hidden">
+            <InboxAlertCard 
+              v-for="alerta in alertasAlta" 
+              :key="alerta.id"
+              v-bind="alerta"
+              :fecha="formatDate(alerta.fechaDetectada)"
+              @action="(type) => handleAlertAction(alerta.id, type)"
+            />
+          </div>
+        </Transition>
       </section>
 
       <!-- 3. ALERTAS RECOMENDADAS (Media) -->
       <section v-if="alertasMedia.length > 0" class="mb-8 space-y-4">
-        <div class="flex items-center justify-between px-2">
+        <button 
+          @click="toggleAlertSection('media')"
+          class="flex items-center justify-between w-full px-2 group cursor-pointer"
+        >
           <h2 class="text-[10px] font-black uppercase tracking-[0.2em] text-info flex items-center gap-2">
             <span class="flex h-2 w-2 relative">
               <span class="relative inline-flex rounded-full h-2 w-2 bg-info"></span>
             </span>
             Atención Recomendada (Prioridad Media)
           </h2>
-        </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-4">
-          <InboxAlertCard 
-            v-for="alerta in alertasMedia" 
-            :key="alerta.id"
-            v-bind="alerta"
-            :fecha="formatDate(alerta.fechaDetectada)"
-            @action="(type) => handleAlertAction(alerta.id, type)"
+          <ChevronDownIcon 
+            class="w-4 h-4 text-info transition-transform duration-300"
+            :class="{ 'rotate-180': !expandedAlerts.media }"
           />
-        </div>
+        </button>
+        <Transition
+          enter-active-class="transition-all duration-300 ease-out"
+          enter-from-class="max-h-0 opacity-0"
+          enter-to-class="max-h-[1000px] opacity-100"
+          leave-active-class="transition-all duration-200 ease-in"
+          leave-from-class="max-h-[1000px] opacity-100"
+          leave-to-class="max-h-0 opacity-0"
+        >
+          <div v-if="expandedAlerts.media" class="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-4 overflow-hidden">
+            <InboxAlertCard 
+              v-for="alerta in alertasMedia" 
+              :key="alerta.id"
+              v-bind="alerta"
+              :fecha="formatDate(alerta.fechaDetectada)"
+              @action="(type) => handleAlertAction(alerta.id, type)"
+            />
+          </div>
+        </Transition>
       </section>
 
       <!-- 4. ALERTAS INFORMATIVAS (Baja) -->
       <section v-if="alertasBaja.length > 0" class="mb-8 space-y-4">
-        <div class="flex items-center justify-between px-2">
+        <button 
+          @click="toggleAlertSection('baja')"
+          class="flex items-center justify-between w-full px-2 group cursor-pointer"
+        >
           <h2 class="text-[10px] font-black uppercase tracking-[0.2em] text-purple flex items-center gap-2">
             <span class="flex h-2 w-2 relative">
               <span class="relative inline-flex rounded-full h-2 w-2 bg-purple"></span>
             </span>
             Notificaciones (Prioridad Baja)
           </h2>
-        </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-4">
-          <InboxAlertCard 
-            v-for="alerta in alertasBaja" 
-            :key="alerta.id"
-            v-bind="alerta"
-            :fecha="formatDate(alerta.fechaDetectada)"
-            @action="(type) => handleAlertAction(alerta.id, type)"
+          <ChevronDownIcon 
+            class="w-4 h-4 text-purple transition-transform duration-300"
+            :class="{ 'rotate-180': !expandedAlerts.baja }"
           />
-        </div>
+        </button>
+        <Transition
+          enter-active-class="transition-all duration-300 ease-out"
+          enter-from-class="max-h-0 opacity-0"
+          enter-to-class="max-h-[1000px] opacity-100"
+          leave-active-class="transition-all duration-200 ease-in"
+          leave-from-class="max-h-[1000px] opacity-100"
+          leave-to-class="max-h-0 opacity-0"
+        >
+          <div v-if="expandedAlerts.baja" class="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-4 overflow-hidden">
+            <InboxAlertCard 
+              v-for="alerta in alertasBaja" 
+              :key="alerta.id"
+              v-bind="alerta"
+              :fecha="formatDate(alerta.fechaDetectada)"
+              @action="(type) => handleAlertAction(alerta.id, type)"
+            />
+          </div>
+        </Transition>
       </section>
 
       <!-- 1b. HEADER: ALERTAS EN SEGUIMIENTO -->
       <section v-if="alertasSeguimiento.length > 0" class="mb-8 space-y-4">
-        <div class="flex items-center justify-between px-2">
+        <button 
+          @click="toggleAlertSection('seguimiento')"
+          class="flex items-center justify-between w-full px-2 group cursor-pointer"
+        >
           <h2 class="text-[10px] font-black uppercase tracking-[0.2em] text-warning flex items-center gap-2">
             <div class="p-1 bg-warning/10 rounded">
                 <BellIcon class="w-3 h-3" />
             </div>
             Alertas en Seguimiento
           </h2>
-        </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-4">
-          <InboxAlertCard 
-            v-for="alerta in alertasSeguimiento" 
-            :key="alerta.id"
-            v-bind="alerta"
-            :fecha="formatDate(alerta.fechaDetectada)"
-            :estado="AlertaEstado.SEGUIMIENTO"
-            @action="(type) => handleAlertAction(alerta.id, type)"
+          <ChevronDownIcon 
+            class="w-4 h-4 text-warning transition-transform duration-300"
+            :class="{ 'rotate-180': !expandedAlerts.seguimiento }"
           />
-        </div>
+        </button>
+        <Transition
+          enter-active-class="transition-all duration-300 ease-out"
+          enter-from-class="max-h-0 opacity-0"
+          enter-to-class="max-h-[1000px] opacity-100"
+          leave-active-class="transition-all duration-200 ease-in"
+          leave-from-class="max-h-[1000px] opacity-100"
+          leave-to-class="max-h-0 opacity-0"
+        >
+          <div v-if="expandedAlerts.seguimiento" class="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-4 overflow-hidden">
+            <InboxAlertCard 
+              v-for="alerta in alertasSeguimiento" 
+              :key="alerta.id"
+              v-bind="alerta"
+              :fecha="formatDate(alerta.fechaDetectada)"
+              :estado="AlertaEstado.SEGUIMIENTO"
+              @action="(type) => handleAlertAction(alerta.id, type)"
+            />
+          </div>
+        </Transition>
       </section>
 
       <!-- 2. TABS & FILTERS -->
@@ -380,7 +460,7 @@ import Badge from '@/components/ui/Badge.vue'
 import AlertManagementDialog from '../../alerts/components/AlertManagementDialog.vue'
 import mareasService from '../services/mareas.service'
 import { alertsService } from '@/modules/alerts/services/alerts.service'
-import { EditIcon, CheckIcon, DocsIcon, BellIcon } from '@/icons'
+import { EditIcon, CheckIcon, DocsIcon, BellIcon, ChevronDownIcon } from '@/icons'
 import { useMareas } from '../composables/useMareas'
 import { toast } from 'vue-sonner'
 import { AlertaEstado, AlertaPrioridad } from '../../alerts/services/alerts.service'
@@ -397,6 +477,18 @@ const activeTab = ref('urgentes')
 const searchQuery = ref('')
 const historySearchQuery = ref('')
 const sortBy = ref<'buque' | 'observador'>('buque')
+
+const expandedAlerts = ref({
+  urgente: true,
+  alta: true,
+  media: true,
+  baja: true,
+  seguimiento: true
+})
+
+const toggleAlertSection = (section: keyof typeof expandedAlerts.value) => {
+  expandedAlerts.value[section] = !expandedAlerts.value[section]
+}
 
 // 1. Computed properties
 const tareasUrgentes = computed(() => tasks.value.filter(t => t.tab === 'urgentes'))

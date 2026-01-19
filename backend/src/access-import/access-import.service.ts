@@ -159,7 +159,7 @@ export class AccessImportService {
         const fechaZarpada = this.readerService.parseDate(fechaZarpadaRaw) || new Date();
 
         if (nroMareaStr === 'CI') {
-            return { nroMarea: null, anioMarea: fechaZarpada.getFullYear(), tipoMarea: 'CI' };
+            return { nroMarea: null, anioMarea: fechaZarpada.getFullYear(), tipoMarea: 'INSTITUCIONAL' };
         }
 
         const parts = nroMareaStr.split('/');
@@ -167,7 +167,7 @@ export class AccessImportService {
             return {
                 nroMarea: parseInt(parts[0], 10),
                 anioMarea: parseInt(parts[1], 10),
-                tipoMarea: 'MC'
+                tipoMarea: 'COMERCIAL'
             };
         }
 
@@ -227,9 +227,9 @@ export class AccessImportService {
     ) {
         const { marea, buque, observador, etapa } = localMatch;
 
-        const mareaLabel = parsedMarea.tipoMarea === 'CI'
+        const mareaLabel = parsedMarea.tipoMarea === 'INSTITUCIONAL'
             ? `CI (${parsedMarea.anioMarea})`
-            : `${parsedMarea.tipoMarea} ${parsedMarea.nroMarea}/${parsedMarea.anioMarea}`;
+            : `MC ${parsedMarea.nroMarea}/${parsedMarea.anioMarea}`;
 
         const nroEtapa = record.NroEtapa || 1;
         let titulo = '';
