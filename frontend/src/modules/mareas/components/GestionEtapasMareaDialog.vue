@@ -1,79 +1,81 @@
 <template>
-  <div v-if="show" class="fixed inset-0 z-[100000] flex items-center justify-center p-4">
-    <div class="absolute inset-x-0 inset-y-0 bg-black/40 backdrop-blur-sm" @click="handleCancel"></div>
-    <div
-      class="bg-surface rounded-2xl p-8 max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl relative animate-in fade-in zoom-in-95 duration-300 border border-border">
+  <Teleport to="body">
+    <div v-if="show" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
+      <div class="absolute inset-x-0 inset-y-0 bg-black/40 backdrop-blur-sm" @click="handleCancel"></div>
+      <div
+        class="bg-surface rounded-2xl p-8 max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl relative animate-in fade-in zoom-in-95 duration-300 border border-border">
 
-      <div class="border-b border-border pb-5 mb-6">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <h3 class="text-xl font-black text-text uppercase tracking-tight">{{ config.title }}</h3>
-          <div v-if="marea" class="flex items-center gap-2 px-3 py-1.5 bg-primary/5 rounded-xl border border-primary/10">
-            <span class="text-[10px] font-mono font-black text-primary uppercase tracking-widest">
-              {{ marea.id_marea }}
-            </span>
-            <span class="w-1 h-1 rounded-full bg-primary/20"></span>
-            <span class="text-[10px] font-bold text-text-muted uppercase truncate max-w-[200px]">
-              {{ marea.buque_nombre || marea.buque?.nombre }}
-            </span>
+        <div class="border-b border-border pb-5 mb-6">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <h3 class="text-xl font-black text-text uppercase tracking-tight">{{ config.title }}</h3>
+            <div v-if="marea" class="flex items-center gap-2 px-3 py-1.5 bg-primary/5 rounded-xl border border-primary/10">
+              <span class="text-[10px] font-mono font-black text-primary uppercase tracking-widest">
+                {{ marea.id_marea }}
+              </span>
+              <span class="w-1 h-1 rounded-full bg-primary/20"></span>
+              <span class="text-[10px] font-bold text-text-muted uppercase truncate max-w-[200px]">
+                {{ marea.buque_nombre || marea.buque?.nombre }}
+              </span>
+            </div>
+          </div>
+          <p class="text-text-muted text-xs mt-2 font-medium">{{ config.description }}</p>
+        </div>
+
+        <!-- Observer Dates -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          <div class="space-y-1.5">
+            <label class="block text-[10px] font-black uppercase text-text-muted tracking-widest">Fecha Inicio Observador</label>
+            <DatePicker 
+              ref="firstInput"
+              v-model="form.fechaInicio" 
+              :error="validationErrors.fechaInicio"
+            />
+          </div>
+          <div v-if="mode === 'FINALIZAR'" class="space-y-1.5 animate-in fade-in duration-300">
+            <label class="block text-[10px] font-black uppercase text-text-muted tracking-widest">Fecha Fin Observador</label>
+            <DatePicker 
+              v-model="form.fechaFin" 
+              :error="validationErrors.fechaFin"
+            />
           </div>
         </div>
-        <p class="text-text-muted text-xs mt-2 font-medium">{{ config.description }}</p>
+
+        <!-- Stages List -->
+        <NavigationStagesEditor
+          v-model="form.stages"
+          :puertoOptions="puertoOptions"
+          :pesqueriaOptions="pesqueriaOptions"
+          :puertoBaseId="initialPortId || marea?.puertoBaseId"
+          :defaultPesqueriaId="marea?.id_pesqueria"
+          :minStages="mode === 'INICIAR' ? 1 : 0"
+        />
+
+        <!-- Footer Actions -->
+        <div class="mt-8 grid grid-cols-2 gap-4">
+          <button @click="handleCancel"
+            class="px-6 py-3.5 bg-surface-muted hover:bg-surface border border-border text-text rounded-xl text-sm font-bold uppercase tracking-wider transition-all">
+            Cancelar
+          </button>
+          <button @click="handleConfirm" :disabled="!isValid"
+            class="px-6 py-3.5 bg-primary hover:bg-primary/90 text-primary-fg rounded-xl text-sm font-bold uppercase tracking-wider shadow-lg shadow-primary/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+            {{ config.buttonText }}
+          </button>
+        </div>
+
       </div>
 
-      <!-- Observer Dates -->
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-        <div class="space-y-1.5">
-          <label class="block text-[10px] font-black uppercase text-text-muted tracking-widest">Fecha Inicio Observador</label>
-          <DatePicker 
-            ref="firstInput"
-            v-model="form.fechaInicio" 
-            :error="validationErrors.fechaInicio"
-          />
-        </div>
-        <div v-if="mode === 'FINALIZAR'" class="space-y-1.5 animate-in fade-in duration-300">
-          <label class="block text-[10px] font-black uppercase text-text-muted tracking-widest">Fecha Fin Observador</label>
-          <DatePicker 
-            v-model="form.fechaFin" 
-            :error="validationErrors.fechaFin"
-          />
-        </div>
-      </div>
-
-      <!-- Stages List -->
-      <NavigationStagesEditor
-        v-model="form.stages"
-        :puertoOptions="puertoOptions"
-        :pesqueriaOptions="pesqueriaOptions"
-        :puertoBaseId="initialPortId || marea?.puertoBaseId"
-        :defaultPesqueriaId="marea?.id_pesqueria"
-        :minStages="mode === 'INICIAR' ? 1 : 0"
+      <!-- Confirmation Overlay -->
+      <ConfirmationDialog
+          :show="showConfirmation"
+          :title="confirmationTitle"
+          :message="confirmationMessage"
+          :confirmText="confirmationConfirmText"
+          @close="showConfirmation = false"
+          @confirm="executeConfirmation"
+          :isSidebarAware="false"
       />
-
-      <!-- Footer Actions -->
-      <div class="mt-8 grid grid-cols-2 gap-4">
-        <button @click="handleCancel"
-          class="px-6 py-3.5 bg-surface-muted hover:bg-surface border border-border text-text rounded-xl text-sm font-bold uppercase tracking-wider transition-all">
-          Cancelar
-        </button>
-        <button @click="handleConfirm" :disabled="!isValid"
-          class="px-6 py-3.5 bg-primary hover:bg-primary/90 text-primary-fg rounded-xl text-sm font-bold uppercase tracking-wider shadow-lg shadow-primary/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
-          {{ config.buttonText }}
-        </button>
-      </div>
-
     </div>
-
-    <!-- Confirmation Overlay -->
-    <ConfirmationDialog
-        :show="showConfirmation"
-        :title="confirmationTitle"
-        :message="confirmationMessage"
-        :confirmText="confirmationConfirmText"
-        @close="showConfirmation = false"
-        @confirm="executeConfirmation"
-        :isSidebarAware="false"
-    />
-  </div>
+  </Teleport>
 </template>
 
 <script setup lang="ts">
