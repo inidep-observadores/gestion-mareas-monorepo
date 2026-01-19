@@ -45,7 +45,7 @@ export interface WorkforceStatus {
     disponibles: number
     licencia: number
     impedidos: number
-    topDry: Array<{ id: string; name: string; days: number; lastArrival: string }>
+    topDry: Array<{ id: string; name: string; days: number; lastArrival: string; mareaCode?: string; vesselName?: string }>
     listNavegando: Array<{ id: string; name: string; days: number; vessel: string; startDate: string }>
     listDescanso: Array<{ id: string; name: string; days: number; lastArrival: string }>
     listDisponibles: Array<{ id: string; name: string; days: number; lastArrival: string }>

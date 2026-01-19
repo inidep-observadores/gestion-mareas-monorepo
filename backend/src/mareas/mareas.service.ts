@@ -929,10 +929,13 @@ export class MareasService {
             where: { activo: true }
         });
 
-        // Etapas del año operativo (incluye las que cruzan año)
+        // Etapas del año operativo y el anterior (para cálculo de días sin navegar)
         const etapas = await (this.prisma as any).mareaEtapa.findMany({
             where: {
-                marea: { activo: true, ...mareaYearFilter },
+                marea: {
+                    activo: true,
+                    anioMarea: { in: [operationalYear, operationalYear - 1] }
+                },
                 fechaZarpada: { not: null }
             },
             include: {
@@ -946,7 +949,7 @@ export class MareasService {
         });
 
         const activeNav = new Map<string, { start: Date; vessel: string }>();
-        const lastArrivalByObs = new Map<string, Date>();
+        const lastArrivalByObs = new Map<string, { date: Date; mareaCode: string; vessel: string }>();
         const obsConMareas = new Set<string>();
 
         etapas.forEach((etapa: any) => {
@@ -954,7 +957,7 @@ export class MareasService {
             if (!inicio) return;
             const finRaw = etapa.fechaArribo ? new Date(etapa.fechaArribo) : null;
             const fin = finRaw || now;
-            if (fin < periodStart) return;
+            // if (fin < periodStart) return; <-- REMOVED to allow previous year mareas for lastArrival check
 
             // Helper to process observer logic
             const processObs = (obs: any) => {
@@ -972,8 +975,12 @@ export class MareasService {
 
                 if (finRaw) {
                     const prev = lastArrivalByObs.get(obs.id);
-                    if (!prev || finRaw > prev) {
-                        lastArrivalByObs.set(obs.id, finRaw);
+                    if (!prev || finRaw > prev.date) {
+                        lastArrivalByObs.set(obs.id, {
+                            date: finRaw,
+                            mareaCode: MareaUtils.formatCodigo(etapa.marea),
+                            vessel: etapa.marea.buque.nombreBuque
+                        });
                     }
                 }
             };
@@ -986,22 +993,26 @@ export class MareasService {
         const listImpedidos: Array<{ id: string; name: string; motivo: string }> = [];
         const listDisponibles: Array<{ id: string; name: string; days: number; lastArrival: string }> = [];
         const listNavegando: Array<{ id: string; name: string; days: number; vessel: string; startDate: string }> = [];
-        const topDryCandidates: Array<{ id: string; name: string; days: number; lastArrival: string }> = [];
+        const topDryCandidates: Array<{ id: string; name: string; days: number; lastArrival: string; mareaCode: string; vesselName: string }> = [];
 
         observadores.forEach((obs) => {
             if (!obs.activo) return;
 
             const name = `${obs.apellido}, ${obs.nombre}`;
-            const lastArrival = lastArrivalByObs.get(obs.id);
+            const lastArrivalData = lastArrivalByObs.get(obs.id);
+            const lastArrival = lastArrivalData?.date;
+
             const daysSince = lastArrival ? Math.floor((now.getTime() - lastArrival.getTime()) / (1000 * 60 * 60 * 24)) : null;
 
             // Top Dry Check
-            if (obsConMareas.has(obs.id) && !activeNav.has(obs.id) && lastArrival && daysSince !== null) {
+            if (obsConMareas.has(obs.id) && !activeNav.has(obs.id) && lastArrival && lastArrivalData && daysSince !== null && !obs.conImpedimento) {
                 topDryCandidates.push({
                     id: obs.id,
                     name,
                     days: daysSince,
-                    lastArrival: lastArrival.toISOString()
+                    lastArrival: lastArrival.toISOString(),
+                    mareaCode: lastArrivalData.mareaCode,
+                    vesselName: lastArrivalData.vessel
                 });
             }
 
