@@ -762,14 +762,14 @@ const requestConfirmation = (newState: 'SEGUIMIENTO' | 'DESCARTADA' | 'RESUELTA'
 
 const buildConfirmationMessage = (state: 'SEGUIMIENTO' | 'DESCARTADA' | 'RESUELTA') => {
     if (state === 'SEGUIMIENTO') {
-        return 'Si confirma, la alerta quedará en seguimiento y continuará visible en la lista de alertas de atención inmediata. Seleccione esta opción si la situación aún no está resuelta.'
+        return 'Si confirma, el alerta quedará en seguimiento y continuará visible en la lista de alertas de atención inmediata. Seleccione esta opción si la situación aún no está resuelta.'
     }
 
     if (state === 'DESCARTADA') {
-        return 'Si confirma, la alerta se descartará y se dará por concluida. Dejará de aparecer en la lista de alertas de atención inmediata. Si la situación aún no está resuelta, seleccione la opción de seguimiento para mantenerla vigente.'
+        return 'Si confirma, el alerta se descartará y se dará por concluida. Dejará de aparecer en la lista de alertas de atención inmediata. Si la situación aún no está resuelta, seleccione la opción de seguimiento para mantenerla vigente.'
     }
 
-    return 'Si confirma, la alerta se marcará como resuelta y se dará por concluida. Dejará de aparecer en la lista de alertas de atención inmediata. Si la situación aún no está resuelta, seleccione la opción de seguimiento para mantenerla vigente.'
+    return 'Si confirma, el alerta se marcará como resuelta y se dará por concluida. Dejará de aparecer en la lista de alertas de atención inmediata. Si la situación aún no está resuelta, seleccione la opción de seguimiento para mantenerla vigente.'
 }
 
 const closeConfirmation = () => {
