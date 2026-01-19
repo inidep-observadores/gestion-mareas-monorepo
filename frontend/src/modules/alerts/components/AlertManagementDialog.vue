@@ -76,15 +76,17 @@
                 </div>
 
                 <div class="mt-4 pt-4 border-t border-border flex items-center gap-4">
-                    <div class="text-[10px] font-bold text-text-muted uppercase tracking-tight">ID: <span class="font-mono text-text/60">{{ localAlert.codigoUnico }}</span></div>
                     <div class="text-[10px] font-bold text-text-muted uppercase tracking-tight">Detectado: <span class="text-text/60">{{ formatDate(localAlert.fechaDetectada) }}</span></div>
                 </div>
                 <div v-if="isMarea" class="mt-4 pt-4 border-t border-border space-y-2">
                     <div class="text-[10px] font-bold text-text-muted uppercase tracking-tight">
-                        Marea: <span class="text-text/70">{{ mareaLabel }}</span>
+                        Marea: <span class="text-text/70">{{ fixedMareaLabel }}</span>
                     </div>
                     <div class="text-[10px] font-bold text-text-muted uppercase tracking-tight">
-                        Observadores: <span class="text-text/70">{{ mareaObserversLabel }}</span>
+                        Observador: <span class="text-text/70">{{ mareaObserversLabel }}</span>
+                    </div>
+                    <div v-if="externalObserverLabel && mareaObserversLabel === 'Sin asignar'" class="text-[10px] font-bold text-warning uppercase tracking-tight">
+                        Observador Externo (Access): <span class="text-warning/90">{{ externalObserverLabel }}</span>
                     </div>
                 </div>
               </div>
@@ -299,6 +301,11 @@ type AlertMetadata = {
   nroEtapa?: number
   externalData?: any
   localData?: any
+  externalObserver?: {
+    nombre: string
+    apellido: string
+    codigo: number
+  }
 }
 
 type LocalAlert = Partial<Alerta> & { metadata?: AlertMetadata }
@@ -419,6 +426,9 @@ const loadFullAlert = async (id: string) => {
     try {
         const full = await alertsService.getOne(id)
         localAlert.value = full
+        if (full.referenciaTipo === 'MAREA' && full.referenciaId) {
+            loadMareaData(full.referenciaId)
+        }
         setDefaultFollowUpDate(full?.fechaVencimiento || null)
     } catch (e) {
         console.error('Error cargando detalle de alerta:', e)
@@ -427,15 +437,28 @@ const loadFullAlert = async (id: string) => {
 
 const isClosed = computed(() => ['RESUELTA', 'DESCARTADA'].includes(localAlert.value.estado ?? ''))
 const isClaimableAlert = computed(() => localAlert.value?.tipo === 'RETRASO_DATOS' && localAlert.value?.referenciaId)
-const mareaLabel = computed(() => localAlert.value?.metadata?.mareaCode || localAlert.value?.referenciaId || 'N/D')
+
+const mareaData = ref<MareaData | null>(null)
+
+const fixedMareaLabel = computed(() => {
+    if (localAlert.value?.metadata?.mareaCode) return localAlert.value.metadata.mareaCode
+    if (mareaData.value) return buildFormattedMareaCode(mareaData.value)
+    return 'N/D'
+})
+
+const externalObserverLabel = computed(() => {
+    const extObs = localAlert.value?.metadata?.externalObserver
+    if (!extObs) return null
+    return `${extObs.nombre} ${extObs.apellido} (Cód: ${extObs.codigo})`
+})
 
 const mareaObserversLabel = computed(() => {
     if (mareaObservers.value.length) return mareaObservers.value.join(', ')
-    
+
     // Fallback: Metadata de la propia alerta
     const metaObs = getMetadataObserver()
     if (metaObs && metaObs !== 'Sin Asignar' && metaObs !== 'Sin asignar') return metaObs
-    
+
     return 'Sin asignar'
 })
 
@@ -546,29 +569,57 @@ const prepareStagesData = async (isNewStageConfig = false) => {
         mareaDataForStages.value = marea
         // Ensure strictly editable copy
         let currentStages = marea.etapas ? JSON.parse(JSON.stringify(marea.etapas)) : []
-        
+
+        const subTipo = localAlert.value?.metadata?.subTipo || localAlert.value?.tipo
+        const ext = localAlert.value.metadata?.externalData || {}
+        const nroEtapaAlert = localAlert.value.metadata?.nroEtapa
+
         if (isNewStageConfig) {
             const lastStage = currentStages.length > 0 ? currentStages[currentStages.length - 1] : null
-            const ext = localAlert.value.metadata?.externalData || {}
-            
+
             const newStage = {
-                id: null, // New stage
+                id: null, // Nueva etapa
                 nroEtapa: (lastStage?.nroEtapa || 0) + 1,
-                // Inherit from last stage or use default
+                // Heredar del último o usar puerto base
                 puertoZarpadaId: lastStage?.puertoArriboId || marea.puertoBaseId || '',
-                // Use alert data for dates
+                // Usar datos del alerta para fechas
                 fechaZarpada: ext.fechaZarpada || '',
-                puertoArriboId: '', // User must select
+                puertoArriboId: '', // Pendiente de usuario
                 fechaArribo: ext.fechaArribo || '',
-                // Inherit config
+                // Heredar configuración
                 pesqueriaId: lastStage?.pesqueriaId || marea.id_pesqueria,
                 tipoEtapa: lastStage?.tipoEtapa || 'COMERCIAL',
                 observaciones: 'Etapa detectada automáticamente desde Access',
                 observadores: []
             }
             currentStages.push(newStage)
+        } else if (subTipo === 'ARRIBO' && nroEtapaAlert) {
+            // Caso Arribo: Buscar la etapa y sugerir la fecha de arribo de Access
+            const stageToUpdate = currentStages.find((s: any) => 
+                (s.nroEtapa === nroEtapaAlert) || (s.nro_etapa === nroEtapaAlert)
+            )
+            if (stageToUpdate && ext.fechaArribo) {
+                stageToUpdate.fechaArribo = ext.fechaArribo
+            }
+        } else if (subTipo === 'INCONGRUENCIA' && nroEtapaAlert) {
+            // Caso Incongruencia: Sugerir ambas fechas si vienen en los metadatos
+            const stageToUpdate = currentStages.find((s: any) => 
+                (s.nroEtapa === nroEtapaAlert) || (s.nro_etapa === nroEtapaAlert)
+            )
+            if (stageToUpdate) {
+                if (ext.fechaZarpada) stageToUpdate.fechaZarpada = ext.fechaZarpada
+                if (ext.fechaArribo) stageToUpdate.fechaArribo = ext.fechaArribo
+            }
+        } else if (subTipo === 'ZARPADA' && nroEtapaAlert) {
+            // Caso Zarpada: Buscar la etapa y sugerir la fecha de zarpada de Access
+            const stageToUpdate = currentStages.find((s: any) => 
+                (s.nroEtapa === nroEtapaAlert) || (s.nro_etapa === nroEtapaAlert)
+            )
+            if (stageToUpdate && ext.fechaZarpada) {
+                stageToUpdate.fechaZarpada = ext.fechaZarpada
+            }
         }
-        
+
         mareaStagesForStages.value = currentStages
     } catch (e) {
         toast.error('Error al cargar datos de marea.')
@@ -643,6 +694,13 @@ const goToFullHistory = () => {
     }
 }
 
+const buildFormattedMareaCode = (marea?: MareaData | null) => {
+    if (!marea) return ''
+    const yearSuffix = String(marea.anioMarea || '').slice(-2)
+    const tipo = marea.tipoMarea === 'COMERCIAL' ? 'MC' : (marea.tipoMarea === 'INSTITUCIONAL' ? 'CI' : marea.tipoMarea)
+    return `${tipo}-${marea.nroMarea}-${yearSuffix}`
+}
+
 const buildMareaCode = (marea?: MareaData | null) => {
     if (!marea) return ''
     const yearSuffix = String(marea.anioMarea || '').slice(-2)
@@ -678,12 +736,12 @@ const loadReclamoData = async () => {
         const marea = await mareasService.getById(localAlert.value.referenciaId) as MareaData
         const etapas = marea?.etapas || []
         const etapaActual = etapas[etapas.length - 1]
-        
+
         // Prioridad 1: Observador Principal de la marea (Cabecera)
         // Prioridad 2: Observador Principal de la etapa actual
         const primaryObsFromEtapa = getPrimaryObserver(etapaActual)
         const obs = marea.observadorPrincipal || primaryObsFromEtapa?.observador || {}
-        
+
         const metadata = localAlert.value?.metadata || {}
         const arrivalDateRaw = etapaActual?.fechaArribo || null
 
@@ -717,6 +775,16 @@ const loadMareaObservers = async (mareaId: string) => {
     } catch (e) {
         console.error('Error cargando observadores de la marea:', e)
         mareaObservers.value = []
+    }
+}
+
+const loadMareaData = async (mareaId: string) => {
+    try {
+        const data = await mareasService.getById(mareaId)
+        mareaData.value = data
+    } catch (e) {
+        console.error('Error cargando datos de marea:', e)
+        mareaData.value = null
     }
 }
 

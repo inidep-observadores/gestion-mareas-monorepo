@@ -227,9 +227,10 @@ export class AccessImportService {
     ) {
         const { marea, buque, observador, etapa } = localMatch;
 
+        const yearSuffix = String(parsedMarea.anioMarea || '').slice(-2);
         const mareaLabel = parsedMarea.tipoMarea === 'INSTITUCIONAL'
-            ? `CI (${parsedMarea.anioMarea})`
-            : `MC ${parsedMarea.nroMarea}/${parsedMarea.anioMarea}`;
+            ? `CI-${yearSuffix}`
+            : `MC-${parsedMarea.nroMarea}-${yearSuffix}`;
 
         const nroEtapa = record.NroEtapa || 1;
         let titulo = '';
@@ -265,6 +266,8 @@ export class AccessImportService {
 
         if (observador) {
             descripcion += ` \nObservador: ${observador.nombre} ${observador.apellido} (Cód: ${observador.codigoInterno})`;
+        } else if (record.ObservadorNombre) {
+            descripcion += ` \nObservador (Access): ${record.ObservadorNombre} ${record.ObservadorApellido} (Cód: ${record.CodObs})`;
         }
 
         await this.alertsService.create({
@@ -284,7 +287,12 @@ export class AccessImportService {
                 nroEtapa: nroEtapa,
                 anioMarea: parsedMarea.anioMarea || undefined,
                 nroMarea: parsedMarea.nroMarea || undefined,
-                observerCode: observador?.codigoInterno || undefined, // ADDED
+                observerCode: observador?.codigoInterno || record.CodObs || undefined,
+                externalObserver: record.ObservadorNombre ? {
+                    nombre: record.ObservadorNombre,
+                    apellido: record.ObservadorApellido,
+                    codigo: record.CodObs
+                } : undefined,
                 externalData: {
                     fechaZarpada: record.Fecha_Zarpada,
                     fechaArribo: record.Fecha_Arribo,

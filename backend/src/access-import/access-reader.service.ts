@@ -21,6 +21,9 @@ export interface ExternalRecord {
     NroEtapa: number;
     FechaInicioCI?: Date | string;
     FechaFinCI?: Date | string;
+    // Campos extendidos desde tabla Agentes
+    ObservadorNombre?: string;
+    ObservadorApellido?: string;
 }
 
 @Injectable()
@@ -37,6 +40,21 @@ export class AccessReaderService {
             const tables = reader.getTableNames();
             this.logger.log(`Tablas encontradas en el archivo Access: ${tables.join(', ')}`);
 
+            // Mapeo de Agentes para enriquecer los registros de misiones
+            const agentsMap = new Map<number, { nombre: string, apellido: string }>();
+            if (tables.includes('Agentes')) {
+                const agentsTable = reader.getTable('Agentes');
+                const agentsData = agentsTable.getData();
+                for (const agent of agentsData) {
+                    if (agent.CodigoObs) {
+                        agentsMap.set(Number(agent.CodigoObs), {
+                            nombre: String(agent.Nombre || '').trim(),
+                            apellido: String(agent.Apellido || '').trim()
+                        });
+                    }
+                }
+            }
+
             // Priorizamos la tabla 'Mareas' si existe, sino buscamos la primera no-sistema
             const targetTable = tables.find(t => t === 'Mareas') ||
                 tables.find(t => !t.startsWith('MSys')) ||
@@ -48,9 +66,19 @@ export class AccessReaderService {
 
             this.logger.log(`Leyendo tabla de novedades: ${targetTable}`);
             const table = reader.getTable(targetTable);
-            const data = table.getData();
+            const data = table.getData() as any[];
 
-            return data as unknown as ExternalRecord[];
+            // Enriquecer datos con información de agentes
+            const enrichedData = data.map(record => {
+                const agent = agentsMap.get(record.CodObs);
+                return {
+                    ...record,
+                    ObservadorNombre: agent?.nombre,
+                    ObservadorApellido: agent?.apellido
+                };
+            });
+
+            return enrichedData as unknown as ExternalRecord[];
         } catch (error) {
             this.logger.error(`Error al leer archivo Access: ${error.message}`);
             throw new Error(`Error al procesar el archivo .accdb: ${error.message}`);

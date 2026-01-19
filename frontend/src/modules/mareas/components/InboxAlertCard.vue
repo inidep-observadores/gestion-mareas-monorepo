@@ -33,9 +33,18 @@
       <h4 class="text-sm font-black text-text truncate uppercase tracking-tight">
         {{ titulo }}
       </h4>
-      <p class="text-[11px] text-text-muted line-clamp-1 mt-0.5 leading-relaxed font-medium">
-        {{ descripcion }}
-      </p>
+      <div class="relative group/desc">
+        <p class="text-[11px] text-text-muted line-clamp-1 mt-0.5 leading-relaxed font-medium">
+          {{ descripcion }}
+        </p>
+        <!-- Tooltip -->
+        <div class="absolute bottom-full left-0 mb-2 px-3 py-2 bg-surface border border-border text-text text-[11px] rounded-xl opacity-0 group-hover/desc:opacity-100 transition-all pointer-events-none shadow-theme-lg z-50 max-w-xs leading-relaxed font-medium whitespace-normal">
+          {{ descripcion }}
+          <!-- Triángulo -->
+          <div class="absolute top-full left-4 border-8 border-transparent border-t-border"></div>
+          <div class="absolute top-full left-4 border-7 border-transparent border-t-surface mt-[-1px] ml-[1px]"></div>
+        </div>
+      </div>
       <p v-if="notaGestionCorta" class="text-[10px] text-text-muted/60 mt-1 leading-relaxed font-semibold">
         Nota de gestion: {{ notaGestionCorta }}
       </p>
