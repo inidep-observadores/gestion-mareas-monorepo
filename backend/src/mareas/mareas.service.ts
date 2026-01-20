@@ -12,6 +12,7 @@ import { AlertsService } from '../alerts/alerts.service';
 import { MareaEstado } from './mareas.constants';
 import { DateUtils } from '../common/utils/date.utils';
 import { MareaUtils } from '../common/utils/marea.utils';
+import * as ExcelJS from 'exceljs';
 
 @Injectable()
 export class MareasService {
@@ -1912,4 +1913,148 @@ export class MareasService {
         group.stages.push({ inicio, fin });
     }
 
+    async exportToExcel(year: number, searchQuery?: string, ids?: string[]) {
+        const where: any = { activo: true };
+        if (year) {
+            where.anioMarea = year;
+        }
+
+        if (ids && ids.length > 0) {
+            where.id = { in: ids };
+        } else if (searchQuery) {
+            const query = searchQuery.toLowerCase().trim();
+            where.OR = [
+                { buque: { nombreBuque: { contains: query, mode: 'insensitive' } } },
+                { observadorPrincipal: { nombre: { contains: query, mode: 'insensitive' } } },
+                { observadorPrincipal: { apellido: { contains: query, mode: 'insensitive' } } },
+                { nroProtocolizacion: !isNaN(Number(query)) ? Number(query) : undefined },
+            ].filter(cond => (cond as any).nroProtocolizacion !== undefined || Object.keys(cond).length > 0);
+
+            if (query.includes('/')) {
+                const [nro] = query.split('/');
+                if (!isNaN(Number(nro))) {
+                    where.OR.push({ nroMarea: Number(nro) });
+                }
+            }
+        }
+
+        const mareas = await this.prisma.marea.findMany({
+            where,
+            include: {
+                buque: {
+                    include: { tipoFlota: true }
+                },
+                observadorPrincipal: true,
+                estadoActual: true,
+                etapas: {
+                    orderBy: { nroEtapa: 'asc' },
+                    include: {
+                        pesqueria: true,
+                        puertoZarpada: true,
+                        puertoArribo: true
+                    }
+                }
+            },
+            orderBy: { nroMarea: 'asc' }
+        });
+
+        const workbook = new ExcelJS.Workbook();
+
+        let maxEtapas = 0;
+        mareas.forEach(m => {
+            if (m.etapas.length > maxEtapas) maxEtapas = m.etapas.length;
+        });
+
+        const setupSheet = (name: string, data: any[]) => {
+            const sheet = workbook.addWorksheet(name);
+            const columns = [
+                { header: 'DISPOSICION', key: 'disposicion', width: 12 },
+                { header: 'OBSERVADOR', key: 'observador', width: 25 },
+                { header: 'BUQUE', key: 'buque', width: 25 },
+                { header: 'EMPRESA', key: 'empresa', width: 25 },
+                { header: 'ZARPADA', key: 'zarpada', width: 15 },
+                { header: 'Dias estimados', key: 'dias_estimados', width: 15 },
+                { header: 'FLOTA', key: 'flota', width: 20 },
+                { header: 'ESPECIE', key: 'especie', width: 20 },
+                { header: 'CONTRATO', key: 'contrato', width: 20 },
+                { header: 'ESTADO ACTUAL', key: 'estado', width: 20 },
+                { header: 'DÍAS TOTALES', key: 'dias_totales', width: 15 },
+                { header: 'DÍAS NAVEGADOS', key: 'dias_navegados', width: 15 },
+                { header: 'ZONA AUSTRAL', key: 'zona_austral', width: 15 },
+                { header: 'etapas', key: 'nro_etapas', width: 10 },
+                { header: 'Novedades', key: 'novedades', width: 30 },
+            ];
+
+            for (let i = 1; i <= maxEtapas; i++) {
+                columns.push(
+                    { header: `ETAPA ${i} Zarpada`, key: `etapa_${i}_zarpada`, width: 15 },
+                    { header: `ETAPA ${i} Arribo`, key: `etapa_${i}_arribo`, width: 15 },
+                    { header: `ETAPA ${i} Días`, key: `etapa_${i}_dias`, width: 10 }
+                );
+            }
+
+            sheet.columns = columns;
+            sheet.getRow(1).font = { bold: true };
+            sheet.getRow(1).fill = {
+                type: 'pattern',
+                pattern: 'solid',
+                fgColor: { argb: 'FFE0E0E0' }
+            };
+
+            data.forEach(m => {
+                const zarpada = m.fechaInicioObservador || m.fechaZarpadaEstimada;
+                const especie = m.etapas[0]?.pesqueria?.nombre || '-';
+
+                const diasTotales = DateUtils.calculateInclusiveDays(
+                    m.fechaInicioObservador,
+                    m.fechaFinObservador || (m.estadoActual.codigo === 'EN_EJECUCION' ? new Date() : null)
+                );
+
+                const intervals = m.etapas.map(e => ({
+                    start: e.fechaZarpada,
+                    end: e.fechaArribo || (m.estadoActual.codigo === 'EN_EJECUCION' ? new Date() : null)
+                }));
+                const diasNavegados = DateUtils.calculateUniqueDays(intervals);
+
+                const rowData: any = {
+                    disposicion: m.nroMarea,
+                    observador: m.observadorPrincipal ? `${m.observadorPrincipal.apellido}, ${m.observadorPrincipal.nombre}` : 'Sin asignar',
+                    buque: m.buque?.nombreBuque || '-',
+                    empresa: m.buque?.empresaNombre || '-',
+                    zarpada: DateUtils.formatDate(zarpada),
+                    dias_estimados: m.buque?.diasMareaEstimada || '-',
+                    flota: m.buque?.tipoFlota?.nombre || '-',
+                    especie: especie,
+                    contrato: m.observadorPrincipal?.tipoContrato || '-',
+                    estado: m.estadoActual?.nombre || '-',
+                    dias_totales: diasTotales || '-',
+                    dias_navegados: diasNavegados || '-',
+                    zona_austral: m.diasZonaAustral && m.diasZonaAustral !== 0 ? m.diasZonaAustral : '',
+                    nro_etapas: m.etapas.length,
+                    novedades: m.observaciones || '',
+                };
+
+                m.etapas.forEach((e, idx) => {
+                    const i = idx + 1;
+                    rowData[`etapa_${i}_zarpada`] = DateUtils.formatDate(e.fechaZarpada);
+                    rowData[`etapa_${i}_arribo`] = DateUtils.formatDate(e.fechaArribo);
+                    rowData[`etapa_${i}_dias`] = DateUtils.calculateInclusiveDays(e.fechaZarpada, e.fechaArribo);
+                });
+
+                sheet.addRow(rowData);
+            });
+        };
+
+        setupSheet('Por Disposición', mareas);
+
+        const sortedBySpecie = [...mareas].sort((a, b) => {
+            const especieA = a.etapas[0]?.pesqueria?.nombre || '';
+            const especieB = b.etapas[0]?.pesqueria?.nombre || '';
+            if (especieA !== especieB) return especieA.localeCompare(especieB);
+            return a.nroMarea - b.nroMarea;
+        });
+        setupSheet('Por Especie', sortedBySpecie);
+
+        return workbook;
+    }
 }

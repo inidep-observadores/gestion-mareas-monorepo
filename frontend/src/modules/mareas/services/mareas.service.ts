@@ -119,6 +119,13 @@ const mareasService = {
         const { selectedYear } = useConfigStore();
         const { data } = await httpClient.get<CalendarEvent[]>(`/mareas/calendar/events?year=${selectedYear}`);
         return data;
+    },
+
+    exportToExcel: async (params: { year?: number; searchQuery?: string; ids?: string[] }): Promise<Blob> => {
+        const { data } = await httpClient.post('/mareas/export/excel', params, {
+            responseType: 'blob'
+        });
+        return data;
     }
 };
 

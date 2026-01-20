@@ -45,6 +45,16 @@
                   placeholder="Filtrar por buque o marea..."
                 />
                 <button
+                  @click="handleExport"
+                  class="flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600/10 text-emerald-600 rounded-xl text-sm font-bold hover:bg-emerald-600 hover:text-white transition-all active:scale-95 border border-emerald-600/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                  :disabled="exporting"
+                  :title="searchQuery ? 'Exportar mareas filtradas' : 'Exportar todas las mareas del año'"
+                >
+                  <DownloadIcon class="w-4 h-4" v-if="!exporting" />
+                  <LoadingSpinner size="xs" v-else />
+                  <span class="hidden sm:inline">{{ searchQuery ? 'Exportar Filtradas' : 'Exportar Excel' }}</span>
+                </button>
+                <button
                   v-if="!isReadOnly"
                   @click="router.push('/mareas/nueva')"
                   class="flex items-center justify-center gap-2 px-4 py-2 bg-primary text-primary-fg rounded-xl text-sm font-bold hover:bg-primary-hover transition-all shadow-lg shadow-primary/20 active:scale-95"
@@ -405,6 +415,8 @@ import StatusFilterChip from '../components/StatusFilterChip.vue'
 import { useAuthStore } from '@/modules/auth/stores/auth.store'
 import { useMareas } from '../composables/useMareas'
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
+import mareasService from '../services/mareas.service'
+import { useConfigStore } from '@/modules/shared/stores/config.store'
 import {
   ShipIcon,
   SearchIcon,
@@ -415,7 +427,8 @@ import {
   PlusIcon,
   ChevronDownIcon,
   WarningIcon,
-  EditIcon
+  EditIcon,
+  DownloadIcon
 } from '@/icons'
 
 import { ValidRoles } from '@/modules/auth/interfaces/roles.enum'
@@ -448,6 +461,41 @@ const selectedMarea = ref<any>(null)
 const showGestionDialog = ref(false)
 const showRecibirDialog = ref(false)
 const showCancelarDialog = ref(false)
+
+const exporting = ref(false)
+const configStore = useConfigStore()
+
+const handleExport = async () => {
+    try {
+        exporting.value = true
+        const params: any = {
+            year: configStore.selectedYear
+        }
+
+        if (searchQuery.value) {
+            // Enviamos los IDs de las mareas visibles actualmente para respetar filtros
+            params.ids = mareas.value.map(m => m.id)
+            params.searchQuery = searchQuery.value
+        }
+
+        const blob = await mareasService.exportToExcel(params)
+        const url = window.URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        
+        const filename = `MAREAS_${configStore.selectedYear}.xlsx`
+        
+        link.setAttribute('download', filename)
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        window.URL.revokeObjectURL(url)
+    } catch (err) {
+        console.error('Error al exportar Excel:', err)
+    } finally {
+        exporting.value = false
+    }
+}
 const executingAction = ref(false)
 const gestionMode = ref<'INICIAR' | 'EDITAR' | 'FINALIZAR'>('INICIAR')
 const mareaToManage = ref<any>(null)

@@ -1,4 +1,5 @@
-import { Controller, Get, Param, Post, Query, Body, Patch } from '@nestjs/common';
+import { Controller, Get, Param, Post, Query, Body, Patch, Res } from '@nestjs/common';
+import { Response } from 'express';
 import { MareasService } from './mareas.service';
 import { Auth, GetUser } from '../auth/decorators';
 import { User } from '@prisma/client';
@@ -6,6 +7,7 @@ import { CreateMareaDto } from './dto/create-marea.dto';
 import { UpdateMareaDto } from './dto/update-marea.dto';
 
 import { ClaimMareaDto } from './dto/claim-marea.dto';
+import { ExportMareaDto } from './dto/export-marea.dto';
 
 @Controller('mareas')
 @Auth()
@@ -77,6 +79,30 @@ export class MareasController {
     @Get('search')
     search(@Query('q') q: string) {
         return this.mareasService.search(q);
+    }
+
+    @Post('export/excel')
+    async exportExcel(
+        @Body() dto: ExportMareaDto,
+        @Res() res: Response
+    ) {
+        const workbook = await this.mareasService.exportToExcel(
+            dto.year || new Date().getFullYear(),
+            dto.searchQuery,
+            dto.ids
+        );
+
+        res.setHeader(
+            'Content-Type',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        );
+        res.setHeader(
+            'Content-Disposition',
+            `attachment; filename=MAREAS_${dto.year || new Date().getFullYear()}.xlsx`,
+        );
+
+        await workbook.xlsx.write(res);
+        res.end();
     }
 
     @Get(':id')
