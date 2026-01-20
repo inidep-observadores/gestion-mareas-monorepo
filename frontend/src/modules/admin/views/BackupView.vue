@@ -75,6 +75,13 @@
               <td class="px-6 py-4">
                 <div class="flex justify-center gap-3">
                     <button 
+                        @click="handleDownload(bkp)"
+                        class="p-2 text-primary bg-primary/5 border border-primary/10 hover:bg-primary/20 transition-colors"
+                        title="Descargar"
+                    >
+                        <DownloadIcon class="w-5 h-5" />
+                    </button>
+                    <button 
                         @click="confirmRestore(bkp)"
                         class="p-2 text-warning bg-warning/5 border border-warning/10 hover:bg-warning/10 transition-colors"
                         title="Restaurar"
@@ -175,7 +182,8 @@ import {
     InfoCircleIcon,
     BoxCubeIcon,
     ListIcon,
-    ChatIcon
+    ChatIcon,
+    DownloadIcon
 } from '@/icons';
 
 interface BackupFile {
@@ -252,6 +260,30 @@ const handleCreateBackup = async () => {
     } finally {
         isCreating.value = false;
         isProcessing.value = false;
+    }
+};
+
+const handleDownload = async (bkp: BackupFile) => {
+    try {
+        const response = await httpClient.get(`/admin/backup/download/${bkp.filename}`, {
+            responseType: 'blob'
+        });
+        
+        const url = window.URL.createObjectURL(new Blob([response.data]));
+        const link = document.createElement('a');
+        link.href = url;
+        const zipFilename = bkp.filename.replace('.sql', '.zip');
+        link.setAttribute('download', zipFilename);
+        document.body.appendChild(link);
+        link.click();
+        
+        // Limpiar
+        link.remove();
+        window.URL.revokeObjectURL(url);
+        toast.success('Descarga iniciada');
+    } catch (error) {
+        console.error('Download error:', error);
+        toast.error('No se pudo descargar el archivo');
     }
 };
 

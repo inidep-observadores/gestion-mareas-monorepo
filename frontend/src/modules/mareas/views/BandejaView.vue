@@ -7,7 +7,7 @@
       <div class="flex-1 min-w-0 w-full">
       
       <!-- 1. ALERTAS URGENTES (Urgente) -->
-      <section v-if="alertasUrgente.length > 0" class="mb-8 space-y-4">
+      <section v-if="alertasUrgente.misAlertas.length > 0 || alertasUrgente.disponibles.length > 0" class="mb-8 space-y-4">
         <button 
           @click="toggleAlertSection('urgente')"
           class="flex items-center justify-between w-full px-2 group cursor-pointer"
@@ -27,25 +27,47 @@
         <Transition
           enter-active-class="transition-all duration-300 ease-out"
           enter-from-class="max-h-0 opacity-0"
-          enter-to-class="max-h-[1000px] opacity-100"
+          enter-to-class="max-h-[2000px] opacity-100"
           leave-active-class="transition-all duration-200 ease-in"
-          leave-from-class="max-h-[1000px] opacity-100"
+          leave-from-class="max-h-[2000px] opacity-100"
           leave-to-class="max-h-0 opacity-0"
         >
-          <div v-if="expandedAlerts.urgente" class="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-4 overflow-hidden">
-            <InboxAlertCard 
-              v-for="alerta in alertasUrgente" 
-              :key="alerta.id"
-              v-bind="alerta"
-              :fecha="formatDate(alerta.fechaDetectada)"
-              @action="(type) => handleAlertAction(alerta.id, type)"
-            />
+          <div v-if="expandedAlerts.urgente" class="space-y-6">
+            <!-- Mis Alertas -->
+            <div v-if="alertasUrgente.misAlertas.length > 0" class="space-y-3">
+              <label class="text-[9px] font-black uppercase tracking-widest text-text-muted/60 ml-2">Mis Alertas</label>
+              <div class="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-4">
+                <InboxAlertCard 
+                  v-for="alerta in alertasUrgente.misAlertas" 
+                  :key="alerta.id"
+                  v-bind="alerta"
+                  :fecha="formatDate(alerta.fechaDetectada)"
+                  @action="(type) => handleAlertAction(alerta.id, type)"
+                />
+              </div>
+            </div>
+
+            <!-- Alertas Disponibles -->
+            <div v-if="alertasUrgente.disponibles.length > 0" class="space-y-3">
+              <label class="text-[9px] font-black uppercase tracking-widest text-text-muted/60 ml-2">
+  {{ isAdminOrCoordinator ? 'Alertas Disponibles / De otros' : 'Alertas Disponibles / Sin asignar' }}
+</label>
+              <div class="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-4">
+                <InboxAlertCard 
+                  v-for="alerta in alertasUrgente.disponibles" 
+                  :key="alerta.id"
+                  v-bind="alerta"
+                  :fecha="formatDate(alerta.fechaDetectada)"
+                  @action="(type) => handleAlertAction(alerta.id, type)"
+                />
+              </div>
+            </div>
           </div>
         </Transition>
       </section>
 
       <!-- 2. ALERTAS CRÍTICAS (Alta) -->
-      <section v-if="alertasAlta.length > 0" class="mb-8 space-y-4">
+      <section v-if="alertasAlta.misAlertas.length > 0 || alertasAlta.disponibles.length > 0" class="mb-8 space-y-4">
         <button 
           @click="toggleAlertSection('alta')"
           class="flex items-center justify-between w-full px-2 group cursor-pointer"
@@ -64,25 +86,47 @@
         <Transition
           enter-active-class="transition-all duration-300 ease-out"
           enter-from-class="max-h-0 opacity-0"
-          enter-to-class="max-h-[1000px] opacity-100"
+          enter-to-class="max-h-[2000px] opacity-100"
           leave-active-class="transition-all duration-200 ease-in"
-          leave-from-class="max-h-[1000px] opacity-100"
+          leave-from-class="max-h-[2000px] opacity-100"
           leave-to-class="max-h-0 opacity-0"
         >
-          <div v-if="expandedAlerts.alta" class="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-4 overflow-hidden">
-            <InboxAlertCard 
-              v-for="alerta in alertasAlta" 
-              :key="alerta.id"
-              v-bind="alerta"
-              :fecha="formatDate(alerta.fechaDetectada)"
-              @action="(type) => handleAlertAction(alerta.id, type)"
-            />
+          <div v-if="expandedAlerts.alta" class="space-y-6">
+            <!-- Mis Alertas -->
+            <div v-if="alertasAlta.misAlertas.length > 0" class="space-y-3">
+              <label class="text-[9px] font-black uppercase tracking-widest text-text-muted/60 ml-2">Mis Alertas</label>
+              <div class="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-4">
+                <InboxAlertCard 
+                  v-for="alerta in alertasAlta.misAlertas" 
+                  :key="alerta.id"
+                  v-bind="alerta"
+                  :fecha="formatDate(alerta.fechaDetectada)"
+                  @action="(type) => handleAlertAction(alerta.id, type)"
+                />
+              </div>
+            </div>
+
+            <!-- Alertas Disponibles -->
+            <div v-if="alertasAlta.disponibles.length > 0" class="space-y-3">
+              <label class="text-[9px] font-black uppercase tracking-widest text-text-muted/60 ml-2">
+  {{ isAdminOrCoordinator ? 'Alertas Disponibles / De otros' : 'Alertas Disponibles / Sin asignar' }}
+</label>
+              <div class="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-4">
+                <InboxAlertCard 
+                  v-for="alerta in alertasAlta.disponibles" 
+                  :key="alerta.id"
+                  v-bind="alerta"
+                  :fecha="formatDate(alerta.fechaDetectada)"
+                  @action="(type) => handleAlertAction(alerta.id, type)"
+                />
+              </div>
+            </div>
           </div>
         </Transition>
       </section>
 
       <!-- 3. ALERTAS RECOMENDADAS (Media) -->
-      <section v-if="alertasMedia.length > 0" class="mb-8 space-y-4">
+      <section v-if="alertasMedia.misAlertas.length > 0 || alertasMedia.disponibles.length > 0" class="mb-8 space-y-4">
         <button 
           @click="toggleAlertSection('media')"
           class="flex items-center justify-between w-full px-2 group cursor-pointer"
@@ -101,25 +145,47 @@
         <Transition
           enter-active-class="transition-all duration-300 ease-out"
           enter-from-class="max-h-0 opacity-0"
-          enter-to-class="max-h-[1000px] opacity-100"
+          enter-to-class="max-h-[2000px] opacity-100"
           leave-active-class="transition-all duration-200 ease-in"
-          leave-from-class="max-h-[1000px] opacity-100"
+          leave-from-class="max-h-[2000px] opacity-100"
           leave-to-class="max-h-0 opacity-0"
         >
-          <div v-if="expandedAlerts.media" class="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-4 overflow-hidden">
-            <InboxAlertCard 
-              v-for="alerta in alertasMedia" 
-              :key="alerta.id"
-              v-bind="alerta"
-              :fecha="formatDate(alerta.fechaDetectada)"
-              @action="(type) => handleAlertAction(alerta.id, type)"
-            />
+          <div v-if="expandedAlerts.media" class="space-y-6">
+            <!-- Mis Alertas -->
+            <div v-if="alertasMedia.misAlertas.length > 0" class="space-y-3">
+              <label class="text-[9px] font-black uppercase tracking-widest text-text-muted/60 ml-2">Mis Alertas</label>
+              <div class="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-4">
+                <InboxAlertCard 
+                  v-for="alerta in alertasMedia.misAlertas" 
+                  :key="alerta.id"
+                  v-bind="alerta"
+                  :fecha="formatDate(alerta.fechaDetectada)"
+                  @action="(type) => handleAlertAction(alerta.id, type)"
+                />
+              </div>
+            </div>
+
+            <!-- Alertas Disponibles -->
+            <div v-if="alertasMedia.disponibles.length > 0" class="space-y-3">
+              <label class="text-[9px] font-black uppercase tracking-widest text-text-muted/60 ml-2">
+  {{ isAdminOrCoordinator ? 'Alertas Disponibles / De otros' : 'Alertas Disponibles / Sin asignar' }}
+</label>
+              <div class="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-4">
+                <InboxAlertCard 
+                  v-for="alerta in alertasMedia.disponibles" 
+                  :key="alerta.id"
+                  v-bind="alerta"
+                  :fecha="formatDate(alerta.fechaDetectada)"
+                  @action="(type) => handleAlertAction(alerta.id, type)"
+                />
+              </div>
+            </div>
           </div>
         </Transition>
       </section>
 
       <!-- 4. ALERTAS INFORMATIVAS (Baja) -->
-      <section v-if="alertasBaja.length > 0" class="mb-8 space-y-4">
+      <section v-if="alertasBaja.misAlertas.length > 0 || alertasBaja.disponibles.length > 0" class="mb-8 space-y-4">
         <button 
           @click="toggleAlertSection('baja')"
           class="flex items-center justify-between w-full px-2 group cursor-pointer"
@@ -138,25 +204,47 @@
         <Transition
           enter-active-class="transition-all duration-300 ease-out"
           enter-from-class="max-h-0 opacity-0"
-          enter-to-class="max-h-[1000px] opacity-100"
+          enter-to-class="max-h-[2000px] opacity-100"
           leave-active-class="transition-all duration-200 ease-in"
-          leave-from-class="max-h-[1000px] opacity-100"
+          leave-from-class="max-h-[2000px] opacity-100"
           leave-to-class="max-h-0 opacity-0"
         >
-          <div v-if="expandedAlerts.baja" class="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-4 overflow-hidden">
-            <InboxAlertCard 
-              v-for="alerta in alertasBaja" 
-              :key="alerta.id"
-              v-bind="alerta"
-              :fecha="formatDate(alerta.fechaDetectada)"
-              @action="(type) => handleAlertAction(alerta.id, type)"
-            />
+          <div v-if="expandedAlerts.baja" class="space-y-6">
+            <!-- Mis Alertas -->
+            <div v-if="alertasBaja.misAlertas.length > 0" class="space-y-3">
+              <label class="text-[9px] font-black uppercase tracking-widest text-text-muted/60 ml-2">Mis Alertas</label>
+              <div class="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-4">
+                <InboxAlertCard 
+                  v-for="alerta in alertasBaja.misAlertas" 
+                  :key="alerta.id"
+                  v-bind="alerta"
+                  :fecha="formatDate(alerta.fechaDetectada)"
+                  @action="(type) => handleAlertAction(alerta.id, type)"
+                />
+              </div>
+            </div>
+
+            <!-- Alertas Disponibles -->
+            <div v-if="alertasBaja.disponibles.length > 0" class="space-y-3">
+              <label class="text-[9px] font-black uppercase tracking-widest text-text-muted/60 ml-2">
+  {{ isAdminOrCoordinator ? 'Alertas Disponibles / De otros' : 'Alertas Disponibles / Sin asignar' }}
+</label>
+              <div class="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-4">
+                <InboxAlertCard 
+                  v-for="alerta in alertasBaja.disponibles" 
+                  :key="alerta.id"
+                  v-bind="alerta"
+                  :fecha="formatDate(alerta.fechaDetectada)"
+                  @action="(type) => handleAlertAction(alerta.id, type)"
+                />
+              </div>
+            </div>
           </div>
         </Transition>
       </section>
 
       <!-- 1b. HEADER: ALERTAS EN SEGUIMIENTO -->
-      <section v-if="alertasSeguimiento.length > 0" class="mb-8 space-y-4">
+      <section v-if="alertasSeguimiento.misAlertas.length > 0 || alertasSeguimiento.disponibles.length > 0" class="mb-8 space-y-4">
         <button 
           @click="toggleAlertSection('seguimiento')"
           class="flex items-center justify-between w-full px-2 group cursor-pointer"
@@ -175,20 +263,43 @@
         <Transition
           enter-active-class="transition-all duration-300 ease-out"
           enter-from-class="max-h-0 opacity-0"
-          enter-to-class="max-h-[1000px] opacity-100"
+          enter-to-class="max-h-[2000px] opacity-100"
           leave-active-class="transition-all duration-200 ease-in"
-          leave-from-class="max-h-[1000px] opacity-100"
+          leave-from-class="max-h-[2000px] opacity-100"
           leave-to-class="max-h-0 opacity-0"
         >
-          <div v-if="expandedAlerts.seguimiento" class="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-4 overflow-hidden">
-            <InboxAlertCard 
-              v-for="alerta in alertasSeguimiento" 
-              :key="alerta.id"
-              v-bind="alerta"
-              :fecha="formatDate(alerta.fechaDetectada)"
-              :estado="AlertaEstado.SEGUIMIENTO"
-              @action="(type) => handleAlertAction(alerta.id, type)"
-            />
+          <div v-if="expandedAlerts.seguimiento" class="space-y-6">
+            <!-- Mis Alertas -->
+            <div v-if="alertasSeguimiento.misAlertas.length > 0" class="space-y-3">
+              <label class="text-[9px] font-black uppercase tracking-widest text-text-muted/60 ml-2">Mis Alertas</label>
+              <div class="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-4">
+                <InboxAlertCard 
+                  v-for="alerta in alertasSeguimiento.misAlertas" 
+                  :key="alerta.id"
+                  v-bind="alerta"
+                  :fecha="formatDate(alerta.fechaDetectada)"
+                  :estado="AlertaEstado.SEGUIMIENTO"
+                  @action="(type) => handleAlertAction(alerta.id, type)"
+                />
+              </div>
+            </div>
+
+            <!-- Alertas Disponibles -->
+            <div v-if="alertasSeguimiento.disponibles.length > 0" class="space-y-3">
+              <label class="text-[9px] font-black uppercase tracking-widest text-text-muted/60 ml-2">
+                {{ isAdminOrCoordinator ? 'Alertas Disponibles / De otros' : 'Alertas Disponibles / Sin asignar' }}
+              </label>
+              <div class="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-4">
+                <InboxAlertCard 
+                  v-for="alerta in alertasSeguimiento.disponibles" 
+                  :key="alerta.id"
+                  v-bind="alerta"
+                  :fecha="formatDate(alerta.fechaDetectada)"
+                  :estado="AlertaEstado.SEGUIMIENTO"
+                  @action="(type) => handleAlertAction(alerta.id, type)"
+                />
+              </div>
+            </div>
           </div>
         </Transition>
       </section>
@@ -464,8 +575,11 @@ import { EditIcon, CheckIcon, DocsIcon, BellIcon, ChevronDownIcon } from '@/icon
 import { useMareas } from '../composables/useMareas'
 import { toast } from 'vue-sonner'
 import { AlertaEstado, AlertaPrioridad } from '../../alerts/services/alerts.service'
+import { useAuthStore } from '@/modules/auth/stores/auth.store'
+import { ValidRoles } from '@/modules/auth/interfaces/roles.enum'
 
 const router = useRouter()
+const authStore = useAuthStore()
 const { fetchMareaContext, selectedMareaContext, executeAction } = useMareas()
 
 // Data State
@@ -494,14 +608,55 @@ const toggleAlertSection = (section: keyof typeof expandedAlerts.value) => {
 const tareasUrgentes = computed(() => tasks.value.filter(t => t.tab === 'urgentes'))
 const tareasPendientes = computed(() => tasks.value.filter(t => t.tab === 'pendientes'))
 
-// Nuevas subdivisiones de alertas activas
-// Nuevas subdivisiones de alertas activas por prioridad
+// Nuevas subdivisiones de alertas activas por prioridad y asignación
+const isAdminOrCoordinator = computed(() => {
+  const roles = authStore.user?.roles || []
+  return roles.includes(ValidRoles.admin) || roles.includes(ValidRoles.coordinador)
+})
+
 const alertasPendientesTotal = computed(() => alertas.value.filter(a => [AlertaEstado.PENDIENTE, AlertaEstado.VENCIDA].includes(a.estado)))
-const alertasUrgente = computed(() => alertasPendientesTotal.value.filter(a => a.prioridad === AlertaPrioridad.URGENTE))
-const alertasAlta = computed(() => alertasPendientesTotal.value.filter(a => a.prioridad === AlertaPrioridad.ALTA))
-const alertasMedia = computed(() => alertasPendientesTotal.value.filter(a => a.prioridad === AlertaPrioridad.MEDIA))
-const alertasBaja = computed(() => alertasPendientesTotal.value.filter(a => a.prioridad === AlertaPrioridad.BAJA))
-const alertasSeguimiento = computed(() => alertas.value.filter(a => a.estado === AlertaEstado.SEGUIMIENTO))
+
+const getAlertsByPriority = (prioridad: AlertaPrioridad) => {
+  const filtradas = alertasPendientesTotal.value.filter(a => a.prioridad === prioridad)
+  const userId = authStore.user?.id
+  
+  // Si no hay ID de usuario (aún cargando o no auth), no hay "Mis Alertas"
+  const misAlertas = userId 
+    ? filtradas.filter(a => a.asignadoId === userId)
+    : []
+  
+  const disponibles = filtradas.filter(a => {
+    if (isAdminOrCoordinator.value) {
+      // Admins y coordinadores ven todo lo que NO es suyo
+      // Si no hay userId, ven todo
+      return !userId || a.asignadoId !== userId
+    }
+    // Usuarios regulares solo ven lo que NO está asignado
+    return !a.asignadoId
+  })
+  
+  return { misAlertas, disponibles }
+}
+
+const alertasUrgente = computed(() => getAlertsByPriority(AlertaPrioridad.URGENTE))
+const alertasAlta = computed(() => getAlertsByPriority(AlertaPrioridad.ALTA))
+const alertasMedia = computed(() => getAlertsByPriority(AlertaPrioridad.MEDIA))
+const alertasBaja = computed(() => getAlertsByPriority(AlertaPrioridad.BAJA))
+
+const alertasSeguimiento = computed(() => {
+  const filtradas = alertas.value.filter(a => a.estado === AlertaEstado.SEGUIMIENTO)
+  const userId = authStore.user?.id
+
+  return {
+    misAlertas: userId ? filtradas.filter(a => a.asignadoId === userId) : [],
+    disponibles: filtradas.filter(a => {
+      if (isAdminOrCoordinator.value) {
+        return !userId || a.asignadoId !== userId
+      }
+      return !a.asignadoId
+    })
+  }
+})
 
 const tabs = computed(() => [
   { id: 'urgentes', label: 'Acciones Urgentes', count: tareasUrgentes.value?.length || 0 },

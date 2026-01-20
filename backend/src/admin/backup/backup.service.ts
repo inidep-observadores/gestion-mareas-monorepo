@@ -3,6 +3,8 @@ import { ConfigService } from '@nestjs/config';
 import { execSync } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
+import * as archiver from 'archiver';
+import { Response } from 'express';
 
 @Injectable()
 export class BackupService {
@@ -267,5 +269,39 @@ export class BackupService {
             this.logger.error(`Deletion failed: ${error.message}`);
             throw new InternalServerErrorException('Failed to delete backup');
         }
+    }
+
+    async createBackupZip(filename: string, res: Response): Promise<void> {
+        const sqlPath = path.join(this.backupPath, filename);
+        if (!fs.existsSync(sqlPath)) {
+            throw new NotFoundException('Archivo de copia de seguridad no encontrado');
+        }
+
+        const jsonPath = sqlPath.replace('.sql', '.json');
+        const zipFilename = filename.replace('.sql', '.zip');
+
+        res.setHeader('Content-Type', 'application/zip');
+        res.setHeader('Content-Disposition', `attachment; filename="${zipFilename}"`);
+
+        const archive = archiver('zip', {
+            zlib: { level: 9 } // Nivel máximo de compresión
+        });
+
+        archive.on('error', (err) => {
+            this.logger.error(`Error zipping backup: ${err.message}`);
+            throw new InternalServerErrorException('Error al crear el archivo comprimido');
+        });
+
+        archive.pipe(res);
+
+        // Añadir SQL
+        archive.file(sqlPath, { name: filename });
+
+        // Añadir JSON si existe
+        if (fs.existsSync(jsonPath)) {
+            archive.file(jsonPath, { name: path.basename(jsonPath) });
+        }
+
+        await archive.finalize();
     }
 }

@@ -16,57 +16,81 @@
 
     <!-- Content -->
     <div class="flex-1 min-w-0">
-      <div class="flex items-center gap-2 mb-0.5 flex-wrap">
-        <span :class="['text-[10px] font-black uppercase tracking-widest', labelClass]">{{ statusLabel }}</span>
-        <Badge 
-          v-if="referenciaTipo" 
-          :color="originBadgeColor" 
-          variant="light" 
-          size="sm"
-          class="font-bold uppercase tracking-wider py-0.5 px-2 rounded-lg"
-        >
-            {{ referenciaTipo }}
-            <span v-if="metadata && metadata.mareaCode" class="ml-1 opacity-75 font-mono">{{ metadata.mareaCode }}</span>
-        </Badge>
-        <span class="text-[10px] text-text-muted/60 font-mono">• {{ fecha }}</span>
-      </div>
-      <h4 class="text-sm font-black text-text truncate uppercase tracking-tight">
-        {{ titulo }}
-      </h4>
-      <div class="relative group/desc">
-        <p class="text-[11px] text-text-muted line-clamp-1 mt-0.5 leading-relaxed font-medium">
-          {{ descripcion }}
-        </p>
-        <!-- Tooltip -->
-        <div class="absolute bottom-full left-0 mb-2 px-3 py-2 bg-surface border border-border text-text text-[11px] rounded-xl opacity-0 group-hover/desc:opacity-100 transition-all pointer-events-none shadow-theme-lg z-50 max-w-xs leading-relaxed font-medium whitespace-normal">
-          {{ descripcion }}
-          <!-- Triángulo -->
-          <div class="absolute top-full left-4 border-8 border-transparent border-t-border"></div>
-          <div class="absolute top-full left-4 border-7 border-transparent border-t-surface mt-[-1px] ml-[1px]"></div>
+      <!-- Top Row: Status & Responsible -->
+      <div class="flex items-start justify-between gap-4 mb-1">
+        <div class="flex items-center gap-2 flex-wrap">
+          <span :class="['text-[10px] font-black uppercase tracking-widest', labelClass]">{{ statusLabel }}</span>
+          <Badge 
+            v-if="referenciaTipo" 
+            :color="originBadgeColor" 
+            variant="light" 
+            size="sm"
+            class="font-bold uppercase tracking-wider py-0.5 px-2 rounded-lg"
+          >
+              {{ referenciaTipo }}
+              <span v-if="metadata && metadata.mareaCode" class="ml-1 opacity-75 font-mono">{{ metadata.mareaCode }}</span>
+          </Badge>
+          <span class="text-[10px] text-text-muted/60 font-mono">• {{ fecha }}</span>
+        </div>
+
+        <!-- Responsable (Top Right) -->
+        <div v-if="!isHistoric" class="flex items-center gap-2 flex-shrink-0">
+          <div class="flex flex-col items-end">
+            <span class="text-[9px] font-black uppercase tracking-tighter text-text-muted/40 leading-none mb-0.5">Responsable</span>
+            <span class="text-[10px] font-bold text-text/70 truncate max-w-[100px] leading-none">
+              {{ asignadoA?.fullName || 'Sin asignar' }}
+            </span>
+          </div>
+          <div 
+            class="w-6 h-6 rounded-full flex items-center justify-center border border-border overflow-hidden shrink-0"
+            :class="asignadoA ? 'bg-primary/10 text-primary' : 'bg-surface-muted text-text-muted/30'"
+          >
+              <img v-if="asignadoA?.avatarUrl" :src="asignadoA.avatarUrl" class="w-full h-full object-cover" />
+              <UserCircleIcon v-else class="w-4 h-4" />
+          </div>
         </div>
       </div>
-      <p v-if="notaGestionCorta" class="text-[10px] text-text-muted/60 mt-1 leading-relaxed font-semibold">
-        Nota de gestion: {{ notaGestionCorta }}
-      </p>
-    </div>
 
-    <!-- Actions -->
-    <div class="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300">
-      <Button
-        @click="$emit('action', 'manage')"
-        :variant="actionButtonVariant"
-        size="sm"
-        class="uppercase tracking-tight h-8 px-4"
-      >
-        {{ isHistoric ? 'Ver Detalle' : 'Gestionar' }}
-      </Button>
+      <!-- Main Body & Action Slide -->
+      <div class="flex items-center gap-4">
+        <div class="flex-1 min-w-0">
+          <h4 class="text-sm font-black text-text truncate uppercase tracking-tight">
+            {{ titulo }}
+          </h4>
+          <div class="relative group/desc">
+            <p class="text-[11px] text-text-muted line-clamp-1 mt-0.5 leading-relaxed font-medium">
+              {{ descripcion }}
+            </p>
+            <!-- Tooltip -->
+            <div class="absolute bottom-full left-0 mb-2 px-3 py-2 bg-surface border border-border text-text text-[11px] rounded-xl opacity-0 group-hover/desc:opacity-100 transition-all pointer-events-none shadow-theme-lg z-50 max-w-xs leading-relaxed font-medium whitespace-normal">
+              {{ descripcion }}
+              <div class="absolute top-full left-4 border-8 border-transparent border-t-border"></div>
+              <div class="absolute top-full left-4 border-7 border-transparent border-t-surface mt-[-1px] ml-[1px]"></div>
+            </div>
+          </div>
+          <p v-if="notaGestionCorta" class="text-[10px] text-text-muted/60 mt-1 leading-relaxed font-semibold">
+            Nota de gestion: {{ notaGestionCorta }}
+          </p>
+        </div>
+
+        <div class="flex-shrink-0 flex items-center overflow-hidden transition-all duration-300 w-0 group-hover:w-[110px] opacity-0 group-hover:opacity-100">
+          <Button
+            :onClick="() => $emit('action', 'manage')"
+            :variant="actionButtonVariant"
+            size="sm"
+            class="uppercase tracking-tight h-8 w-full whitespace-nowrap"
+          >
+            {{ isHistoric ? 'Ver Detalle' : 'Gestionar' }}
+          </Button>
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { ErrorIcon, BellIcon, CheckIcon, DocsIcon } from '@/icons'
+import { ErrorIcon, BellIcon, CheckIcon, DocsIcon, UserCircleIcon } from '@/icons'
 import Button from '@/components/ui/Button.vue'
 import Badge from '@/components/ui/Badge.vue'
 import { AlertaEstado, AlertaPrioridad } from '../../alerts/services/alerts.service'
@@ -80,6 +104,8 @@ interface Props {
   referenciaTipo?: string
   metadata?: Record<string, any>
   notaGestion?: string
+  asignadoId?: string | null
+  asignadoA?: { fullName: string; avatarUrl?: string }
 }
 
 const props = withDefaults(defineProps<Props>(), {

@@ -1770,12 +1770,18 @@ export class MareasService {
                 // ALTA comes before MEDIA alphabetically? Yes. A < M.
             },
             include: {
-                eventos: {
-                    select: { detalle: true },
-                    orderBy: { fechaHora: 'desc' },
-                    take: 1
+            asignadoA: {
+                select: {
+                    fullName: true,
+                    avatarUrl: true
                 }
+            },
+            eventos: {
+                select: { detalle: true },
+                orderBy: { fechaHora: 'desc' },
+                take: 1
             }
+        }
         });
         const persistentAlerts = persistentAlertsRaw.map((alerta: any) => ({
             ...alerta,

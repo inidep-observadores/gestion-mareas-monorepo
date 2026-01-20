@@ -1,4 +1,5 @@
-import { Controller, Post, Get, Body, Param, Delete } from '@nestjs/common';
+import { Controller, Post, Get, Body, Param, Delete, Res } from '@nestjs/common';
+import { Response } from 'express';
 import { BackupService } from './backup.service';
 import { Auth } from '../../auth/decorators';
 import { ValidRoles } from '../../auth/interfaces';
@@ -21,6 +22,14 @@ export class BackupController {
     @Get()
     listBackups() {
         return this.backupService.listBackups();
+    }
+
+    @Get('download/:filename')
+    async downloadBackup(
+        @Param('filename') filename: string,
+        @Res() res: Response
+    ) {
+        await this.backupService.createBackupZip(filename, res);
     }
 
     @Post('restore/:filename')
