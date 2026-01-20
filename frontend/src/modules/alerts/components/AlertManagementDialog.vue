@@ -337,6 +337,7 @@ import { useWorkflowStore } from '@/modules/shared/stores/workflow.store'
 import usersAdminApi from '@/modules/admin/services/users.service'
 import type { User } from '@/modules/auth/types/auth.types'
 import { ChevronDownIcon } from '@/icons'
+import { TipoEtapa, TipoMarea } from '@/modules/mareas/types/enums'
 
 const workflowStore = useWorkflowStore()
 
@@ -722,7 +723,7 @@ const prepareStagesData = async (isNewStageConfig = false) => {
                 fechaArribo: ext.fechaArribo || '',
                 // Heredar configuración
                 pesqueriaId: lastStage?.pesqueriaId || marea.id_pesqueria,
-                tipoEtapa: lastStage?.tipoEtapa || 'MC',
+                tipoEtapa: lastStage?.tipoEtapa || TipoEtapa.MC,
                 observaciones: 'Etapa detectada automáticamente desde Access',
                 observadores: []
             }
@@ -831,7 +832,7 @@ const goToFullHistory = () => {
 const buildFormattedMareaCode = (marea?: MareaData | null) => {
     if (!marea) return ''
     const yearSuffix = String(marea.anioMarea || '').slice(-2)
-    const tipo = marea.tipoMarea === 'COMERCIAL' ? 'MC' : (marea.tipoMarea === 'INSTITUCIONAL' ? 'CI' : marea.tipoMarea)
+    const tipo = marea.tipoMarea === TipoMarea.CI ? 'CI' : 'MC'
     return `${tipo}-${marea.nroMarea}-${yearSuffix}`
 }
 

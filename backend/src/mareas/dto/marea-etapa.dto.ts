@@ -1,4 +1,5 @@
 import { IsArray, IsBoolean, IsDateString, IsInt, IsOptional, IsString, IsUUID, ValidateNested, IsEnum } from 'class-validator';
+import { TipoEtapa } from '../mareas.constants';
 import { Type } from 'class-transformer';
 
 export class MareaEtapaObservadorDto {
@@ -41,8 +42,8 @@ export class MareaEtapaDto {
     @IsOptional()
     fechaArribo?: string;
 
-    @IsEnum(['MC', 'CI'])
-    tipoEtapa: 'MC' | 'CI';
+    @IsEnum(TipoEtapa)
+    tipoEtapa: TipoEtapa;
 
     @IsString()
     @IsOptional()

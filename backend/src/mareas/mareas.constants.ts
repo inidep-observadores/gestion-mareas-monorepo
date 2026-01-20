@@ -13,3 +13,13 @@ export enum MareaEstado {
     PROTOCOLIZADA = 'PROTOCOLIZADA',
     CANCELADA = 'CANCELADA'
 }
+
+export enum TipoMarea {
+    MC = 'MC',
+    CI = 'CI',
+}
+
+export enum TipoEtapa {
+    MC = 'MC',
+    CI = 'CI',
+}

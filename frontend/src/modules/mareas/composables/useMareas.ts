@@ -1,6 +1,7 @@
 import { ref, computed } from 'vue';
 import mareasService from '../services/mareas.service';
 import type { MareaListItem, MareaContext } from '../services/mareas.service';
+import { TipoMarea } from '../types/enums';
 
 export function useMareas() {
     const loading = ref(false);
@@ -97,13 +98,17 @@ export function useMareas() {
     const filteredMareas = computed(() => {
         let result = mareas.value.filter(m => {
             const matchesState = !hiddenStates.value.has(m.estado_codigo);
-            const query = searchQuery.value.toLowerCase().trim();
+            const query = searchQuery.value;
             if (!query) return matchesState;
 
+            const normalize = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+            const queryNorm = normalize(query);
+
             const matchesText =
-                m.buque_nombre.toLowerCase().includes(query) ||
-                m.id_marea.toLowerCase().includes(query) ||
-                (m.observador && m.observador.toLowerCase().includes(query));
+                normalize(m.buque_nombre).includes(queryNorm) ||
+                normalize(m.id_marea).includes(queryNorm) ||
+                (m.observador && normalize(m.observador).includes(queryNorm)) ||
+                (m.pesquerias_nombres && m.pesquerias_nombres.some(p => normalize(p).includes(queryNorm)));
 
             return matchesState && matchesText;
         });
@@ -158,6 +163,7 @@ export function useMareas() {
         filteredMareas,
         toggleStateVisibility,
         setVisibleStates,
-        toggleSort
+        toggleSort,
+        TipoMarea // Exportar el Enum para usarlo en componentes que usen este composable
     };
 }

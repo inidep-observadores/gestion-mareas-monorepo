@@ -2,10 +2,13 @@ import { Injectable, Logger, InternalServerErrorException, NotFoundException, Ba
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Prisma } from '@prisma/client';
 import { ConfigService } from '@nestjs/config';
+import { MareaUtils } from '../../common/utils/marea.utils';
+import { TipoMarea } from '../../mareas/mareas.constants';
+import * as ExcelJS from 'exceljs';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as archiver from 'archiver';
-import * as AdmZip from 'adm-zip';
+import AdmZip = require('adm-zip');
 
 @Injectable()
 export class DataExportService {
@@ -683,8 +686,8 @@ export class DataExportService {
                     identificadorMarea: {
                         anioMarea: m.anioMarea,
                         nroMarea: m.nroMarea,
-                        tipoMarea: m.tipoMarea || 'MC'
-                    }
+                        tipoMarea: m.tipoMarea || TipoMarea.MC
+                    },
                 }
             });
 
@@ -697,7 +700,7 @@ export class DataExportService {
             const mareaData = {
                 anioMarea: m.anioMarea,
                 nroMarea: m.nroMarea,
-                tipoMarea: m.tipoMarea || 'MC',
+                tipoMarea: m.tipoMarea || TipoMarea.MC,
                 fechaZarpadaEstimada: m.fechaZarpadaEstimada ? new Date(m.fechaZarpadaEstimada) : null,
                 fechaInicioObservador: m.fechaInicioObservador ? new Date(m.fechaInicioObservador) : null,
                 fechaFinObservador: m.fechaFinObservador ? new Date(m.fechaFinObservador) : null,

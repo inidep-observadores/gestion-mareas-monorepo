@@ -87,6 +87,7 @@ import NavigationStagesEditor from './NavigationStagesEditor.vue';
 import catalogosService from '../services/catalogos.service';
 import { TrashIcon, WarningIcon } from '@/icons';
 import { isDateBefore, isDateAfter, isDateSameOrBefore, isDateSameOrAfter } from '@/utils/date.utils';
+import { TipoEtapa } from '../types/enums';
 
 const props = defineProps<{
   show: boolean;
@@ -172,7 +173,7 @@ const addInitialStage = () => {
     puertoArriboId: '',
     fechaArribo: '',
     pesqueriaId: props.marea?.id_pesqueria || props.marea?.pesqueriaId || '',
-    tipoEtapa: 'MC',
+    tipoEtapa: TipoEtapa.MC,
     observaciones: ''
   });
 };
@@ -188,7 +189,7 @@ watch(() => props.show, (val) => {
         ...s,
         fechaZarpada: s.fechaZarpada || '',
         fechaArribo: s.fechaArribo || '',
-        tipoEtapa: s.tipoEtapa || 'MC',
+        tipoEtapa: s.tipoEtapa || TipoEtapa.MC,
         nroEtapa: s.nroEtapa || s.nro_etapa // Fallback for safety
     }));
     

@@ -2,6 +2,7 @@ import * as dotenv from 'dotenv';
 import * as path from 'path';
 import * as fs from 'fs';
 import { PrismaClient } from '@prisma/client';
+import { TipoEtapa, TipoMarea } from '../../mareas/mareas.constants';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
 import MDBReader from 'mdb-reader';
@@ -168,10 +169,10 @@ async function main() {
                 // Parsear Identificador de Marea
                 let nroMarea: number;
                 let anioMarea: number;
-                let tipoMarea: string;
+                let tipoMarea: TipoMarea;
 
                 if (rawNroMarea === 'CI') {
-                    tipoMarea = 'CI';
+                    tipoMarea = TipoMarea.CI;
                     const fechaZarpada = firstRow.Fecha_Zarpada ? new Date(firstRow.Fecha_Zarpada) : new Date();
                     anioMarea = fechaZarpada.getFullYear();
 
@@ -183,7 +184,7 @@ async function main() {
                     if (parts.length === 2) {
                         nroMarea = parseInt(parts[0], 10);
                         anioMarea = parseInt(parts[1], 10);
-                        tipoMarea = 'MC';
+                        tipoMarea = TipoMarea.MC;
                     } else {
                         log(`[SKIP] Formato de NroMarea inválido: ${rawNroMarea} (Buque: ${buqueNombre})`);
                         skippedMareas++;
@@ -216,7 +217,7 @@ async function main() {
                                 nroEtapa: r.NroEtapa || 1,
                                 fechaZarpada: r.Fecha_Zarpada ? new Date(r.Fecha_Zarpada) : null,
                                 fechaArribo: r.Fecha_Arribo ? new Date(r.Fecha_Arribo) : null,
-                                tipoEtapa: 'MC',
+                                tipoEtapa: TipoEtapa.MC,
                                 pesqueriaId: buque.pesqueriaHabitualId,
                                 puertoZarpadaId: buque.puertoBaseId,
                                 puertoArriboId: buque.puertoBaseId,

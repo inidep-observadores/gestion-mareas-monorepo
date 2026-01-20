@@ -4,6 +4,7 @@ import { AlertsService } from '../alerts/alerts.service';
 import { AlertaEstado, AlertaPrioridad } from '../alerts/alerts.enums';
 import { AccessReaderService, ExternalRecord } from './access-reader.service';
 import { ErrorLogsService } from '../common/error-logs/error-logs.service';
+import { TipoMarea } from '../mareas/mareas.constants';
 import * as crypto from 'crypto';
 
 export interface ProcessingSummary {
@@ -159,7 +160,7 @@ export class AccessImportService {
         const fechaZarpada = this.readerService.parseDate(fechaZarpadaRaw) || new Date();
 
         if (nroMareaStr === 'CI') {
-            return { nroMarea: null, anioMarea: fechaZarpada.getFullYear(), tipoMarea: 'CI' };
+            return { nroMarea: null, anioMarea: fechaZarpada.getFullYear(), tipoMarea: TipoMarea.CI };
         }
 
         const parts = nroMareaStr.split('/');
@@ -167,11 +168,11 @@ export class AccessImportService {
             return {
                 nroMarea: parseInt(parts[0], 10),
                 anioMarea: parseInt(parts[1], 10),
-                tipoMarea: 'MC'
+                tipoMarea: TipoMarea.MC
             };
         }
 
-        return { nroMarea: null, anioMarea: fechaZarpada.getFullYear(), tipoMarea: 'MC' };
+        return { nroMarea: null, anioMarea: fechaZarpada.getFullYear(), tipoMarea: TipoMarea.MC };
     }
 
     private async findLocalEntities(parsedMarea: any, buqueNombre: string, codObs: number, nroEtapa: number) {
@@ -228,7 +229,7 @@ export class AccessImportService {
         const { marea, buque, observador, etapa } = localMatch;
 
         const yearSuffix = String(parsedMarea.anioMarea || '').slice(-2);
-        const mareaLabel = parsedMarea.tipoMarea === 'CI'
+        const mareaLabel = parsedMarea.tipoMarea === TipoMarea.CI
             ? `CI-${yearSuffix}`
             : `MC-${parsedMarea.nroMarea}-${yearSuffix}`;
 

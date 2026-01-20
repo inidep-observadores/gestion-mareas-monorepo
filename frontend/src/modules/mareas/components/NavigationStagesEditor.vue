@@ -117,8 +117,8 @@
                 <SettingsIcon class="w-2.5 h-2.5" /> Propósito
               </label>
               <select v-model="stage.tipoEtapa" :disabled="readOnly" class="w-full bg-surface border border-border rounded-lg py-2 font-bold text-xs h-[38px] focus:ring-1 focus:ring-primary outline-none px-2">
-                <option value="MC">Comercial</option>
-                <option value="CI">Institucional</option>
+                <option :value="TipoEtapa.MC">Comercial</option>
+                <option :value="TipoEtapa.CI">Institucional</option>
               </select>
             </div>
             <div class="sm:col-span-5 space-y-1">
@@ -165,6 +165,7 @@ import {
   EditIcon,
   WarningIcon
 } from '@/icons';
+import { TipoEtapa } from '../types/enums';
 
 const props = defineProps<{
   modelValue: any[];
@@ -219,7 +220,7 @@ async function addStage() {
     puertoArriboId: '',
     fechaArribo: '',
     pesqueriaId: defaultPesqueria,
-    tipoEtapa: 'MC',
+    tipoEtapa: TipoEtapa.MC,
     observaciones: ''
   });
 

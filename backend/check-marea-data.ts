@@ -1,5 +1,5 @@
-
 import { PrismaClient } from '@prisma/client';
+import { TipoMarea } from './src/mareas/mareas.constants';
 
 const prisma = new PrismaClient();
 
@@ -11,7 +11,7 @@ async function main() {
         where: {
             nroMarea: 171,
             anioMarea: 25, // Assuming 25 is stored as 25 or 2025
-            tipoMarea: 'MC'
+            tipoMarea: TipoMarea.MC
         },
         include: {
             observadorPrincipal: true,
@@ -32,7 +32,7 @@ async function main() {
             where: {
                 nroMarea: 171,
                 anioMarea: 2025,
-                tipoMarea: 'MC'
+                tipoMarea: TipoMarea.MC
             },
             include: {
                 observadorPrincipal: true,

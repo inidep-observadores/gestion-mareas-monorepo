@@ -630,11 +630,16 @@ const groupedMareas = computed(() => {
 
     // 1. Get filtered list based on search only (ignore state filters from composable)
     const filtered = mareas.value.filter(m => {
-        const query = searchQuery.value.toLowerCase().trim();
+        const query = searchQuery.value;
         if (!query) return true;
-        return m.buque_nombre.toLowerCase().includes(query) ||
-               m.id_marea.toLowerCase().includes(query) ||
-               (m.observador && m.observador.toLowerCase().includes(query));
+
+        const normalize = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+        const queryNorm = normalize(query);
+
+        return normalize(m.buque_nombre).includes(queryNorm) ||
+               normalize(m.id_marea).includes(queryNorm) ||
+               (m.observador && normalize(m.observador).includes(queryNorm)) ||
+               (m.pesquerias_nombres && m.pesquerias_nombres.some(p => normalize(p).includes(queryNorm)));
     });
 
     // 2. Iterate over KPIs to guarantee order

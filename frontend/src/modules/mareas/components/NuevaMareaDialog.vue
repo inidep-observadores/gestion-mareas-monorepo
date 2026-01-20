@@ -67,22 +67,22 @@
                 <div class="inline-flex p-1 bg-surface-muted border-border">
                   <button 
                     type="button"
-                    @click="form.tipoMarea = 'MC'"
-                    class="px-6 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2"
-                    :class="form.tipoMarea === 'MC' ? 'bg-surface text-primary shadow-theme-xs ring-1 ring-border' : 'text-text-muted hover:text-text'"
-                  >
-                    <div class="w-1.5 h-1.5 rounded-full" :class="form.tipoMarea === 'MC' ? 'bg-primary' : 'bg-transparent border border-border'"></div>
-                    Comercial (MC)
-                  </button>
-                  <button 
+                    @click="form.tipoMarea = TipoMarea.MC"
+                    class="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-all"
+                    :class="form.tipoMarea === TipoMarea.MC ? 'bg-surface text-primary shadow-theme-xs ring-1 ring-border' : 'text-text-muted hover:text-text'"
+                >
+                    <div class="w-1.5 h-1.5 rounded-full" :class="form.tipoMarea === TipoMarea.MC ? 'bg-primary' : 'bg-transparent border border-border'"></div>
+                    Comercial
+                </button>
+                <button
                     type="button"
-                    @click="form.tipoMarea = 'CI'"
-                    class="px-6 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2"
-                    :class="form.tipoMarea === 'CI' ? 'bg-surface text-primary shadow-theme-xs ring-1 ring-border' : 'text-text-muted hover:text-text'"
-                  >
-                    <div class="w-1.5 h-1.5 rounded-full" :class="form.tipoMarea === 'CI' ? 'bg-primary' : 'bg-transparent border border-border'"></div>
-                    Institucional (CI)
-                  </button>
+                    @click="form.tipoMarea = TipoMarea.CI"
+                    class="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-all"
+                    :class="form.tipoMarea === TipoMarea.CI ? 'bg-surface text-primary shadow-theme-xs ring-1 ring-border' : 'text-text-muted hover:text-text'"
+                >
+                    <div class="w-1.5 h-1.5 rounded-full" :class="form.tipoMarea === TipoMarea.CI ? 'bg-primary' : 'bg-transparent border border-border'"></div>
+                    Institucional
+                </button>
                 </div>
               </div>
 
@@ -365,6 +365,7 @@ import DatePicker from '@/components/common/DatePicker.vue'
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 import ConfirmationDialog from '@/components/common/ConfirmationDialog.vue'
 import NavigationStagesEditor from './NavigationStagesEditor.vue'
+import { TipoMarea } from '../types/enums';
 import { useMareas } from '../composables/useMareas'
 import { useWorkflowStore } from '../../shared/stores/workflow.store'
 import { useConfigStore } from '../../shared/stores/config.store'
@@ -410,7 +411,7 @@ const getInitialForm = () => ({
   buqueId: '',
   anioMarea: configStore.selectedYear,
   nroMarea: null as number | null,
-  tipoMarea: 'MC' as 'MC' | 'CI',
+  tipoMarea: TipoMarea.MC as TipoMarea,
   pesqueriaId: '',
   observadorId: '',
   arteId: '',
@@ -580,7 +581,7 @@ watch(currentStep, (newStep) => {
 
 const generatedCode = computed(() => {
   if (!form.value.nroMarea) return '---'
-  const prefix = form.value.tipoMarea === 'CI' ? 'CI' : 'MC'
+  const prefix = form.value.tipoMarea === TipoMarea.CI ? 'CI' : 'MC'
   const shortYear = form.value.anioMarea.toString().slice(-2)
   return `${prefix}-${form.value.nroMarea}-${shortYear}`
 })

@@ -9,7 +9,7 @@ import { UpdateMareaDto } from './dto/update-marea.dto';
 import { MailService } from '../mail/mail.service';
 import { ClaimMareaDto } from './dto/claim-marea.dto';
 import { AlertsService } from '../alerts/alerts.service';
-import { MareaEstado } from './mareas.constants';
+import { MareaEstado, TipoEtapa, TipoMarea } from './mareas.constants';
 import { DateUtils } from '../common/utils/date.utils';
 import { MareaUtils } from '../common/utils/marea.utils';
 import * as ExcelJS from 'exceljs';
@@ -195,7 +195,7 @@ export class MareasService {
         return this.findOne(id);
     }
 
-    private formatMareaId(m: { tipoMarea: string; nroMarea: number; anioMarea: number }): string {
+    private formatMareaId(m: { tipoMarea: TipoMarea; nroMarea: number; anioMarea: number }): string {
         return MareaUtils.formatCodigo(m);
     }
 
@@ -296,8 +296,13 @@ export class MareasService {
                 fechaZarpadaEstimada: true,
                 fechaInicioObservador: true,
                 fechaFinObservador: true,
-                buque: true,
+                buque: {
+                    include: {
+                        pesqueriaHabitual: true
+                    }
+                },
                 observadorPrincipal: true,
+                pesqueria: true,
                 estadoActual: true,
                 etapas: {
                     orderBy: { nroEtapa: 'asc' },
@@ -363,7 +368,11 @@ export class MareasService {
                 total_etapas: etapaFinal?.nroEtapa || 1,
                 alertas: activeAlerts.filter((a: any) => a.referenciaId === m.id),
                 actionsAvailable,
-                dias_estimados: m.diasEstimados
+                dias_estimados: m.diasEstimados,
+                pesquerias_nombres: Array.from(new Set([
+                    m.pesqueria?.nombre,
+                    ...m.etapas.map(e => e.pesqueria?.nombre)
+                ].filter(Boolean) as string[]))
             };
         });
 
@@ -1379,7 +1388,7 @@ export class MareasService {
                 puertoArriboId: this.sanitizeUuid(stg.puertoArriboId),
                 fechaArribo: stg.fechaArribo ? new Date(stg.fechaArribo) : null,
                 pesqueriaId: this.sanitizeUuid(stg.pesqueriaId),
-                tipoEtapa: stg.tipoEtapa || 'COMERCIAL',
+                tipoEtapa: stg.tipoEtapa || TipoEtapa.MC,
                 observaciones: stg.observaciones || ''
             };
 
@@ -1393,7 +1402,7 @@ export class MareasService {
                     data: {
                         mareaId: mareaId,
                         ...stageData,
-                        tipoEtapa: 'COMERCIAL'
+                        tipoEtapa: TipoEtapa.MC
                     }
                 });
 
@@ -1509,7 +1518,7 @@ export class MareasService {
                             nroEtapa: 1,
                             pesqueriaId: payload.pesqueriaId || (marea as any).pesqueriaId,
                             puertoZarpadaId: payload.puertoId || buque?.puertoBaseId,
-                            tipoEtapa: marea.tipoMarea === 'CI' ? 'INSTITUCIONAL' : 'COMERCIAL',
+                            tipoEtapa: marea.tipoMarea === TipoMarea.CI ? TipoEtapa.CI : TipoEtapa.MC,
                             fechaZarpada: new Date(fechaIn),
                             // No observer assignment here (implicit in Marea)
                         }
@@ -1574,7 +1583,7 @@ export class MareasService {
     }
 
     async create(createMareaDto: CreateMareaDto, user: User) {
-        const { buqueId, anioMarea, nroMarea, pesqueriaId, observadorId, arteId, fechaZarpadaEstimada, fechaInicioObservador, tipoMarea = 'MC', diasEstimados } = createMareaDto;
+        const { buqueId, anioMarea, nroMarea, pesqueriaId, observadorId, arteId, fechaZarpadaEstimada, fechaInicioObservador, tipoMarea = TipoMarea.MC, diasEstimados } = createMareaDto;
 
         const existing = await this.prisma.marea.findMany({
             where: {

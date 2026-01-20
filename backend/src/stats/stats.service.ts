@@ -4,6 +4,7 @@ import { DateUtils } from '../common/utils/date.utils';
 import { Prisma } from '@prisma/client';
 import { StatsDetailItem, DashboardStats } from './interfaces/dashboard.interface';
 import { MareaUtils } from '../common/utils/marea.utils';
+import { TipoMarea } from '../mareas/mareas.constants';
 import * as ExcelJS from 'exceljs';
 
 @Injectable()
@@ -77,7 +78,7 @@ export class StatsService {
 
         // Filter Campaigns
         if (!includeCampaigns) {
-            where.tipoMarea = { not: 'CI' };
+            where.tipoMarea = { not: TipoMarea.CI };
         }
 
         const mareas = await this.prisma.marea.findMany({
@@ -333,7 +334,7 @@ export class StatsService {
         const where = this.getSharedWhereClause(yearStart, yearEnd, includeNonProtocolized, includeProtocolizedOutOfPeriod);
 
         if (!includeCampaigns) {
-            where.tipoMarea = { not: 'CI' };
+            where.tipoMarea = { not: TipoMarea.CI };
         }
 
         // Apply dynamic filter
@@ -499,7 +500,7 @@ export class StatsService {
         const where = this.getSharedWhereClause(yearStart, yearEnd, includeNonProtocolized, includeProtocolizedOutOfPeriod);
 
         if (!includeCampaigns) {
-            where.tipoMarea = { not: 'CI' };
+            where.tipoMarea = { not: TipoMarea.CI };
         }
 
         if (filterType && filterValue) {

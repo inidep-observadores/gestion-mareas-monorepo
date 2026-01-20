@@ -223,8 +223,8 @@
                     v-model="marea.tipo_marea"
                     class="w-full px-4 py-3 bg-surface-muted border-none rounded-2xl focus:ring-2 focus:ring-primary/20 text-text transition-all font-medium outline-none"
                   >
-                    <option value="MC">Comercial (MC)</option>
-                    <option value="CI">Institucional (CI)</option>
+                    <option :value="TipoMarea.MC">Comercial (MC)</option>
+                    <option :value="TipoMarea.CI">Institucional (CI)</option>
                   </select>
                 </div>
                 <div class="space-y-1.5">
@@ -729,6 +729,7 @@ import {
   FlagIcon,
   EditIcon
 } from '@/icons'
+import { TipoMarea, TipoEtapa } from '../types/enums';
 const router = useRouter()
 const activeTab = ref('general')
 
@@ -849,7 +850,7 @@ async function loadMarea() {
             fecha_zarpada_estimada: data.fechaZarpadaEstimada,
             observaciones: data.observaciones || '',
             activo: data.activo ?? true,
-            tipo_marea: data.tipoMarea || 'MC',
+            tipo_marea: data.tipoMarea || TipoMarea.MC,
             dias_estimados: data.diasEstimados ?? null,
             dias_zona_austral: data.diasZonaAustral ?? null,
             tipo_calculo_zona_austral: data.tipoCalculoZonaAustral || 'AUTOMATICO',
@@ -941,11 +942,7 @@ async function loadMarea() {
 }
 
 const displayTitle = computed(() => {
-  let tipo = marea.value.tipo_marea || 'MC'
-  // Normalizar COMERCIAL -> MC e INSTITUCIONAL -> CI si vienen expandidos
-  if (tipo === 'COMERCIAL') tipo = 'MC'
-  if (tipo === 'INSTITUCIONAL') tipo = 'CI'
-  
+  const tipo = marea.value.tipo_marea === TipoMarea.CI ? 'CI' : 'MC'
   const nro = marea.value.nro_marea || '000'
   const anio = String(marea.value.anio_marea || '').slice(-2)
   return `Marea ${tipo}-${nro}-${anio}`
@@ -1022,7 +1019,7 @@ const saveChanges = async () => {
         puertoArriboId: etapa.puertoArriboId || undefined,
         fechaZarpada: toIsoStringOrUndefined(etapa.fechaZarpada),
         fechaArribo: toIsoStringOrUndefined(etapa.fechaArribo),
-        tipoEtapa: etapa.tipoEtapa || 'COMERCIAL',
+        tipoEtapa: etapa.tipoEtapa || TipoEtapa.MC,
         observaciones: etapa.observaciones || undefined,
         observadores: etapa.observadores?.map((obs: any) => ({
           observadorId: obs.observadorId,

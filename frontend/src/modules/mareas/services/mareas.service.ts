@@ -1,5 +1,6 @@
 import httpClient from '@/config/http/http.client';
 import { useConfigStore } from '@/modules/shared/stores/config.store';
+import { TipoMarea } from '../types/enums';
 
 export interface MareaDashboard {
     kpis: { label: string; value: number; codigo: string }[];
@@ -16,6 +17,7 @@ export interface MareaListItem {
     estado: string;
     estado_codigo: string;
     fecha_zarpada?: string;
+    tipo_marea: TipoMarea;
     puerto: string;
     puerto_zarpada?: string;
     puerto_arribo?: string;
@@ -25,6 +27,7 @@ export interface MareaListItem {
     fecha_fin_observador?: string;
     en_tierra?: boolean;
     total_etapas: number;
+    pesquerias_nombres: string[];
     alertas: any[];
     dias_estimados?: number;
     actionsAvailable: Record<string, { enabled: boolean; label: string; blockedReason?: string; claseBoton?: string }>;
@@ -45,6 +48,7 @@ export interface MareaContext {
         progreso: number;
         observador: string;
         id_pesqueria?: string;
+        tipo_marea: TipoMarea;
         etapas?: any[];
     };
     actions: Record<string, { enabled: boolean; label: string; blockedReason?: string; claseBoton?: string }>;

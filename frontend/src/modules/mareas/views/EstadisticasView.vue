@@ -235,7 +235,7 @@
                            <div class="flex items-center gap-2 mb-2">
                               <span class="font-black text-sm text-text tabular-nums tracking-tighter">{{ marea.id_marea }}</span>
                               <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest bg-secondary/10 text-secondary border border-secondary/20">{{ marea.estado }}</span>
-                              <span v-if="marea.tipoMarea === 'CI'" class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest bg-accent/10 text-accent border border-accent/20">Campaña</span>
+                              <span v-if="marea.tipoMarea === TipoMarea.CI" class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest bg-accent/10 text-accent border border-accent/20">Campaña</span>
                            </div>
                            <div class="text-[11px] text-text-muted grid grid-cols-2 lg:grid-cols-4 gap-4">
                               <div class="flex flex-col">
@@ -544,6 +544,7 @@ import {
   TrendingUpIcon
 } from 'lucide-vue-next'
 import { statsService, type DashboardStats, type StatsDetailItem } from '@/modules/stats/services/stats.service'
+import { TipoMarea } from '@/modules/mareas/types/enums'
 import { toast } from 'vue-sonner'
 
 const configStore = useConfigStore();
