@@ -183,7 +183,7 @@ async function main() {
                     if (parts.length === 2) {
                         nroMarea = parseInt(parts[0], 10);
                         anioMarea = parseInt(parts[1], 10);
-                        tipoMarea = 'COMERCIAL';
+                        tipoMarea = 'MC';
                     } else {
                         log(`[SKIP] Formato de NroMarea inválido: ${rawNroMarea} (Buque: ${buqueNombre})`);
                         skippedMareas++;
@@ -216,7 +216,7 @@ async function main() {
                                 nroEtapa: r.NroEtapa || 1,
                                 fechaZarpada: r.Fecha_Zarpada ? new Date(r.Fecha_Zarpada) : null,
                                 fechaArribo: r.Fecha_Arribo ? new Date(r.Fecha_Arribo) : null,
-                                tipoEtapa: 'PESCA',
+                                tipoEtapa: 'MC',
                                 pesqueriaId: buque.pesqueriaHabitualId,
                                 puertoZarpadaId: buque.puertoBaseId,
                                 puertoArriboId: buque.puertoBaseId,

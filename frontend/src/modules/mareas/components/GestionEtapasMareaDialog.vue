@@ -172,7 +172,7 @@ const addInitialStage = () => {
     puertoArriboId: '',
     fechaArribo: '',
     pesqueriaId: props.marea?.id_pesqueria || props.marea?.pesqueriaId || '',
-    tipoEtapa: 'COMERCIAL',
+    tipoEtapa: 'MC',
     observaciones: ''
   });
 };
@@ -188,7 +188,7 @@ watch(() => props.show, (val) => {
         ...s,
         fechaZarpada: s.fechaZarpada || '',
         fechaArribo: s.fechaArribo || '',
-        tipoEtapa: s.tipoEtapa || 'COMERCIAL',
+        tipoEtapa: s.tipoEtapa || 'MC',
         nroEtapa: s.nroEtapa || s.nro_etapa // Fallback for safety
     }));
     

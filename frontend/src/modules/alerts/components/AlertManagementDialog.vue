@@ -722,7 +722,7 @@ const prepareStagesData = async (isNewStageConfig = false) => {
                 fechaArribo: ext.fechaArribo || '',
                 // Heredar configuración
                 pesqueriaId: lastStage?.pesqueriaId || marea.id_pesqueria,
-                tipoEtapa: lastStage?.tipoEtapa || 'COMERCIAL',
+                tipoEtapa: lastStage?.tipoEtapa || 'MC',
                 observaciones: 'Etapa detectada automáticamente desde Access',
                 observadores: []
             }

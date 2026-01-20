@@ -1,4 +1,4 @@
-import { IsArray, IsBoolean, IsDateString, IsInt, IsOptional, IsString, IsUUID, ValidateNested } from 'class-validator';
+import { IsArray, IsBoolean, IsDateString, IsInt, IsOptional, IsString, IsUUID, ValidateNested, IsEnum } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class MareaEtapaObservadorDto {
@@ -41,8 +41,8 @@ export class MareaEtapaDto {
     @IsOptional()
     fechaArribo?: string;
 
-    @IsString()
-    tipoEtapa: string;
+    @IsEnum(['MC', 'CI'])
+    tipoEtapa: 'MC' | 'CI';
 
     @IsString()
     @IsOptional()

@@ -241,7 +241,7 @@ model Marea {
   fechaUltimaActualizacion DateTime          @updatedAt @map("fecha_ultima_actualizacion") @db.Timestamptz(6)
   activo                   Boolean           @default(true)
   observaciones            String?
-  tipoMarea                String            @default("MC") @map("tipo_marea")
+  tipoMarea                TipoMarea         @default(MC) @map("tipo_marea")
   diasEstimados            Int?              @map("dias_estimados")
   artePrincipal            ArtePesca?        @relation(fields: [artePrincipalId], references: [id])
   pesqueria                Pesqueria?        @relation(fields: [pesqueriaId], references: [id])
@@ -266,7 +266,7 @@ model MareaEtapa {
   puertoArriboId  String?                @map("id_puerto_arribo") @db.Uuid
   fechaZarpada    DateTime?              @map("fecha_zarpada") @db.Timestamptz(6)
   fechaArribo     DateTime?              @map("fecha_arribo") @db.Timestamptz(6)
-  tipoEtapa       String                 @map("tipo_etapa")
+  tipoEtapa       TipoEtapa              @map("tipo_etapa")
   observaciones   String?
   lances          Lance[]
   marea           Marea                  @relation(fields: [mareaId], references: [id])
@@ -643,4 +643,14 @@ model ImportacionAccessSnapshot {
 
   @@index([nroMarea, anioMarea, tipoMarea])
   @@map("importacion_access_snapshots")
+}
+
+enum TipoMarea {
+  MC
+  CI
+}
+
+enum TipoEtapa {
+  MC
+  CI
 }

@@ -67,20 +67,20 @@
                 <div class="inline-flex p-1 bg-surface-muted border-border">
                   <button 
                     type="button"
-                    @click="form.tipoMarea = 'COMERCIAL'"
+                    @click="form.tipoMarea = 'MC'"
                     class="px-6 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2"
-                    :class="form.tipoMarea === 'COMERCIAL' ? 'bg-surface text-primary shadow-theme-xs ring-1 ring-border' : 'text-text-muted hover:text-text'"
+                    :class="form.tipoMarea === 'MC' ? 'bg-surface text-primary shadow-theme-xs ring-1 ring-border' : 'text-text-muted hover:text-text'"
                   >
-                    <div class="w-1.5 h-1.5 rounded-full" :class="form.tipoMarea === 'COMERCIAL' ? 'bg-primary' : 'bg-transparent border border-border'"></div>
+                    <div class="w-1.5 h-1.5 rounded-full" :class="form.tipoMarea === 'MC' ? 'bg-primary' : 'bg-transparent border border-border'"></div>
                     Comercial (MC)
                   </button>
                   <button 
                     type="button"
-                    @click="form.tipoMarea = 'INSTITUCIONAL'"
+                    @click="form.tipoMarea = 'CI'"
                     class="px-6 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2"
-                    :class="form.tipoMarea === 'INSTITUCIONAL' ? 'bg-surface text-primary shadow-theme-xs ring-1 ring-border' : 'text-text-muted hover:text-text'"
+                    :class="form.tipoMarea === 'CI' ? 'bg-surface text-primary shadow-theme-xs ring-1 ring-border' : 'text-text-muted hover:text-text'"
                   >
-                    <div class="w-1.5 h-1.5 rounded-full" :class="form.tipoMarea === 'INSTITUCIONAL' ? 'bg-primary' : 'bg-transparent border border-border'"></div>
+                    <div class="w-1.5 h-1.5 rounded-full" :class="form.tipoMarea === 'CI' ? 'bg-primary' : 'bg-transparent border border-border'"></div>
                     Institucional (CI)
                   </button>
                 </div>
@@ -410,7 +410,7 @@ const getInitialForm = () => ({
   buqueId: '',
   anioMarea: configStore.selectedYear,
   nroMarea: null as number | null,
-  tipoMarea: 'COMERCIAL' as 'COMERCIAL' | 'INSTITUCIONAL',
+  tipoMarea: 'MC' as 'MC' | 'CI',
   pesqueriaId: '',
   observadorId: '',
   arteId: '',
@@ -580,7 +580,7 @@ watch(currentStep, (newStep) => {
 
 const generatedCode = computed(() => {
   if (!form.value.nroMarea) return '---'
-  const prefix = form.value.tipoMarea === 'INSTITUCIONAL' ? 'CI' : 'MC'
+  const prefix = form.value.tipoMarea === 'CI' ? 'CI' : 'MC'
   const shortYear = form.value.anioMarea.toString().slice(-2)
   return `${prefix}-${form.value.nroMarea}-${shortYear}`
 })
