@@ -14,15 +14,34 @@
             </h2>
             <p class="text-sm text-text-muted mt-1">Crea un punto de restauración actual de toda la base de datos.</p>
           </div>
-          <button
-            @click="showCreateConfirmModal = true"
-            :disabled="isProcessing || !backendStatus.isConfigured"
-            class="flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-bold text-primary-fg shadow-lg shadow-primary/20 hover:bg-primary/90 active:scale-95 disabled:opacity-50 transition-all"
-          >
-            <RefreshIcon v-if="isCreating" class="w-5 h-5 animate-spin" />
-            <PlusIcon v-else class="w-5 h-5" />
-            {{ isCreating ? 'Generando copia...' : 'Crear nueva copia de seguridad' }}
-          </button>
+          <div class="flex flex-wrap gap-3">
+            <button
+              @click="triggerFileUpload"
+              :disabled="isProcessing || !backendStatus.isConfigured"
+              class="flex items-center justify-center gap-2 rounded-xl bg-surface border-2 border-primary/20 px-5 py-3 text-sm font-bold text-primary hover:bg-primary/5 active:scale-95 disabled:opacity-50 transition-all"
+            >
+              <RefreshIcon v-if="isUploading" class="w-5 h-5 animate-spin" />
+              <CloudUploadIcon v-else class="w-5 h-5" />
+              {{ isUploading ? 'Subiendo...' : 'Cargar copia externa (.zip)' }}
+            </button>
+            <button
+              @click="showCreateConfirmModal = true"
+              :disabled="isProcessing || !backendStatus.isConfigured"
+              class="flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-bold text-primary-fg shadow-lg shadow-primary/20 hover:bg-primary/90 active:scale-95 disabled:opacity-50 transition-all"
+            >
+              <RefreshIcon v-if="isCreating" class="w-5 h-5 animate-spin" />
+              <PlusIcon v-else class="w-5 h-5" />
+              {{ isCreating ? 'Generando copia...' : 'Crear nueva copia de seguridad' }}
+            </button>
+          </div>
+          <!-- Input oculto para subir archivos -->
+          <input 
+            type="file" 
+            ref="fileInput" 
+            class="hidden" 
+            accept=".zip" 
+            @change="handleFileUpload"
+          />
         </div>
       </div>
 
@@ -183,7 +202,8 @@ import {
     BoxCubeIcon,
     ListIcon,
     ChatIcon,
-    DownloadIcon
+    DownloadIcon,
+    CloudUploadIcon
 } from '@/icons';
 
 interface BackupFile {
@@ -205,6 +225,8 @@ const showCreateConfirmModal = ref(false);
 const newBackupComment = ref('');
 const selectedBackup = ref<BackupFile | null>(null);
 const backendStatus = ref({ isConfigured: true, backupPath: '' });
+const fileInput = ref<HTMLInputElement | null>(null);
+const isUploading = ref(false);
 
 const restorePhrases = [
     'RESTAURAR BASE DE DATOS',
@@ -259,6 +281,55 @@ const handleCreateBackup = async () => {
         toast.error('Falló la creación de la copia de seguridad');
     } finally {
         isCreating.value = false;
+        isProcessing.value = false;
+    }
+};
+
+const triggerFileUpload = () => {
+    fileInput.value?.click();
+};
+
+const handleFileUpload = async (event: Event) => {
+    const target = event.target as HTMLInputElement;
+    if (!target.files?.length) return;
+
+    const file = target.files[0];
+    if (file.type !== 'application/zip' && !file.name.endsWith('.zip')) {
+        toast.error('Por favor, selecciona un archivo .zip');
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    isUploading.value = true;
+    isProcessing.value = true;
+    try {
+        const { data } = await httpClient.post('/admin/backup/upload', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            }
+        });
+        
+        toast.success(data.message || 'Archivo subido correctamente');
+        
+        // Limpiar input
+        target.value = '';
+        
+        // Actualizar lista
+        await fetchBackups();
+        
+        // Buscar el backup recién subido en la lista para tener el objeto completo
+        const newBkp = backups.value.find(b => b.filename === data.filename);
+        if (newBkp) {
+            confirmRestore(newBkp);
+        }
+    } catch (error: any) {
+        const msg = error.response?.data?.message || 'Error al subir el archivo';
+        toast.error(msg);
+        console.error('Upload error:', error);
+    } finally {
+        isUploading.value = false;
         isProcessing.value = false;
     }
 };

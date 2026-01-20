@@ -1,4 +1,5 @@
-import { Controller, Post, Get, Body, Param, Delete, Res } from '@nestjs/common';
+import { Controller, Post, Get, Body, Param, Delete, Res, UseInterceptors, UploadedFile } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { Response } from 'express';
 import { BackupService } from './backup.service';
 import { Auth } from '../../auth/decorators';
@@ -30,6 +31,12 @@ export class BackupController {
         @Res() res: Response
     ) {
         await this.backupService.createBackupZip(filename, res);
+    }
+
+    @Post('upload')
+    @UseInterceptors(FileInterceptor('file'))
+    uploadBackup(@UploadedFile() file: Express.Multer.File) {
+        return this.backupService.uploadBackup(file);
     }
 
     @Post('restore/:filename')

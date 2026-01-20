@@ -4,6 +4,8 @@ import { execSync } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as archiver from 'archiver';
+import * as AdmZip from 'adm-zip';
+import * as crypto from 'crypto';
 import { Response } from 'express';
 
 @Injectable()
@@ -20,6 +22,14 @@ export class BackupService {
 
         if (!fs.existsSync(this.backupPath)) {
             fs.mkdirSync(this.backupPath, { recursive: true });
+        }
+
+        // Registrar formato encryptable una sola vez al inicio
+        try {
+            const archiverEncryptable = require('archiver-zip-encryptable');
+            archiver.registerFormat('zip-encryptable', archiverEncryptable);
+        } catch (e) {
+            this.logger.warn('No se pudo registrar zip-encryptable o ya estaba registrado');
         }
 
         const logsPath = path.join(this.backupPath, 'logs');
@@ -83,15 +93,31 @@ export class BackupService {
             }
 
             // Guardar metadatos
-            const metadata = {
+            const sqlBuffer = fs.readFileSync(filePath);
+            const sqlHash = crypto.createHash('sha256').update(sqlBuffer).digest('hex');
+
+            const backupSecret = this.configService.get<string>('BACKUP_SECRET') || this.configService.get<string>('JWT_SECRET');
+
+            const metadata: any = {
                 filename,
                 comment: comment || '',
                 createdAt: new Date().toISOString(),
                 systemInfo: {
                     dbName: dbName,
                     backupPath: this.backupPath
+                },
+                security: {
+                    sqlHash: sqlHash,
                 }
             };
+
+            // Crear firma HMAC de los datos críticos
+            const stringToSign = JSON.stringify({ filename, sqlHash });
+            metadata.security.signature = crypto
+                .createHmac('sha256', backupSecret)
+                .update(stringToSign)
+                .digest('hex');
+
             fs.writeFileSync(metaPath, JSON.stringify(metadata, null, 2));
 
             const stats = fs.statSync(filePath);
@@ -121,7 +147,7 @@ export class BackupService {
                 .map(f => {
                     const fullPath = path.join(this.backupPath, f);
                     const stats = fs.statSync(fullPath);
-                    
+
                     const metaPath = fullPath.replace('.sql', '.json');
                     let comment = '';
                     let createdAt = stats.birthtime;
@@ -192,9 +218,9 @@ export class BackupService {
             const runCmdWithLog = (cmd: string, env: any = {}) => {
                 fs.appendFileSync(logFile, `\n> Executing: ${cmd}\n`);
                 try {
-                    const output = execSync(cmd, { 
+                    const output = execSync(cmd, {
                         env: { ...process.env, ...env },
-                        stdio: 'pipe', 
+                        stdio: 'pipe',
                         shell: true,
                         maxBuffer: 1024 * 1024 * 100 // 100MB
                     } as any);
@@ -213,7 +239,7 @@ export class BackupService {
                 // Verificar si psql está disponible localmente
                 execSync('psql --version', { stdio: 'ignore' });
                 const catCmd = process.platform === 'win32' ? 'type' : 'cat';
-                
+
                 // Fase 1: Limpieza total
                 runCmdWithLog(`psql -h "${dbHost}" -p "${dbPort}" -U "${dbUser}" -d "${dbName}" -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"`, { PGPASSWORD: dbPass });
 
@@ -245,7 +271,7 @@ export class BackupService {
             const stderr = error.stderr?.toString() || '';
             const msg = `Restore failed. See logs/ ${logFilename} for details. Error: ${error.message}`;
             this.logger.error(msg);
-            
+
             fs.appendFileSync(logFile, `\n[${new Date().toISOString()}] CRITICAL FAILURE: ${error.message}\n${stderr}\n`);
 
             throw new InternalServerErrorException(`La restauración falló. Revisa el archivo de log ${logFilename} en la carpeta de backups.`);
@@ -279,29 +305,127 @@ export class BackupService {
 
         const jsonPath = sqlPath.replace('.sql', '.json');
         const zipFilename = filename.replace('.sql', '.zip');
+        const zipPassword = this.configService.get<string>('BACKUP_ZIP_PASSWORD');
 
         res.setHeader('Content-Type', 'application/zip');
         res.setHeader('Content-Disposition', `attachment; filename="${zipFilename}"`);
 
-        const archive = archiver('zip', {
-            zlib: { level: 9 } // Nivel máximo de compresión
-        });
+        // Si no hay contraseña, usamos el archiver estándar que ya tenemos cargado
+        // Pero si HAY contraseña, necesitamos el encryptable
+        if (zipPassword) {
+            const archive = archiver('zip-encryptable' as any, {
+                zlib: { level: 9 },
+                password: zipPassword
+            } as any);
 
-        archive.on('error', (err) => {
-            this.logger.error(`Error zipping backup: ${err.message}`);
-            throw new InternalServerErrorException('Error al crear el archivo comprimido');
-        });
+            archive.on('error', (err) => {
+                this.logger.error(`Error zipping backup with password: ${err.message}`);
+                throw new InternalServerErrorException('Error al crear el archivo comprimido protegido');
+            });
 
-        archive.pipe(res);
+            archive.pipe(res);
+            archive.file(sqlPath, { name: filename });
+            if (fs.existsSync(jsonPath)) {
+                archive.file(jsonPath, { name: path.basename(jsonPath) });
+            }
+            await archive.finalize();
+        } else {
+            // ZIP estándar sin contraseña (usando archiver normal)
+            const archive = archiver('zip', { zlib: { level: 9 } });
 
-        // Añadir SQL
-        archive.file(sqlPath, { name: filename });
+            archive.on('error', (err) => {
+                this.logger.error(`Error zipping backup: ${err.message}`);
+                throw new InternalServerErrorException('Error al crear el archivo comprimido');
+            });
 
-        // Añadir JSON si existe
-        if (fs.existsSync(jsonPath)) {
-            archive.file(jsonPath, { name: path.basename(jsonPath) });
+            archive.pipe(res);
+            archive.file(sqlPath, { name: filename });
+            if (fs.existsSync(jsonPath)) {
+                archive.file(jsonPath, { name: path.basename(jsonPath) });
+            }
+            await archive.finalize();
+        }
+    }
+
+    async uploadBackup(file: Express.Multer.File) {
+        const tempDir = path.join(this.backupPath, 'temp_upload');
+        if (!fs.existsSync(tempDir)) {
+            fs.mkdirSync(tempDir, { recursive: true });
         }
 
-        await archive.finalize();
+        const zipPassword = this.configService.get<string>('BACKUP_ZIP_PASSWORD');
+
+        try {
+            const zip = new AdmZip(file.buffer);
+
+            // Intentar extraer con contraseña si existe
+            zip.extractAllTo(tempDir, true, false, zipPassword);
+
+            const extractedFiles = fs.readdirSync(tempDir);
+            const sqlFile = extractedFiles.find(f => f.endsWith('.sql'));
+            const jsonFile = extractedFiles.find(f => f.endsWith('.json'));
+
+            if (!sqlFile || !jsonFile) {
+                throw new ConflictException('El archivo ZIP debe contener un archivo .sql y un archivo .json de metadatos.');
+            }
+
+            // Validar firma y hash
+            const metaContent = fs.readFileSync(path.join(tempDir, jsonFile), 'utf8');
+            const metadata = JSON.parse(metaContent);
+
+            if (!metadata.security || !metadata.security.signature || !metadata.security.sqlHash) {
+                throw new ConflictException('El archivo de metadatos no contiene información de seguridad válida.');
+            }
+
+            const backupSecret = this.configService.get<string>('BACKUP_SECRET') || this.configService.get<string>('JWT_SECRET');
+            const stringToSign = JSON.stringify({ filename: metadata.filename, sqlHash: metadata.security.sqlHash });
+            const expectedSignature = crypto
+                .createHmac('sha256', backupSecret)
+                .update(stringToSign)
+                .digest('hex');
+
+            if (metadata.security.signature !== expectedSignature) {
+                throw new ConflictException('Fallo de autenticidad: La firma del backup no es válida para este servidor.');
+            }
+
+            const sqlBuffer = fs.readFileSync(path.join(tempDir, sqlFile));
+            const actualHash = crypto.createHash('sha256').update(sqlBuffer).digest('hex');
+
+            if (metadata.security.sqlHash !== actualHash) {
+                throw new ConflictException('Fallo de integridad: El contenido del archivo SQL ha sido alterado.');
+            }
+
+            // Si todo está bien, mover a la carpeta de backups
+            const finalSqlPath = path.join(this.backupPath, sqlFile);
+            const finalJsonPath = path.join(this.backupPath, jsonFile);
+
+            // Evitar colisiones o avisar si ya existe
+            if (fs.existsSync(finalSqlPath)) {
+                // Si ya existe, lo sobreescribimos (o podríamos renombrarlo si preferimos)
+                this.logger.warn(`Sobreescribiendo backup existente: ${sqlFile}`);
+            }
+
+            fs.renameSync(path.join(tempDir, sqlFile), finalSqlPath);
+            fs.renameSync(path.join(tempDir, jsonFile), finalJsonPath);
+
+            return {
+                message: 'Backup subido y verificado correctamente',
+                filename: sqlFile,
+                size: fs.statSync(finalSqlPath).size,
+                createdAt: metadata.createdAt,
+                comment: metadata.comment
+            };
+
+        } catch (error) {
+            this.logger.error(`Error procesando subida de backup: ${error.message}`);
+            if (error instanceof ConflictException) throw error;
+            throw new InternalServerErrorException('Error al procesar el archivo de backup subido.');
+        } finally {
+            // Limpiar temp dir
+            if (fs.existsSync(tempDir)) {
+                fs.readdirSync(tempDir).forEach(f => fs.unlinkSync(path.join(tempDir, f)));
+                fs.rmdirSync(tempDir);
+            }
+        }
     }
 }
