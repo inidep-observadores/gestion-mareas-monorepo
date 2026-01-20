@@ -40,6 +40,10 @@ export class CreateMareaDto {
     @IsOptional()
     diasEstimados?: number;
 
+    @IsDateString()
+    @IsOptional()
+    fechaInicioObservador?: string;
+
     @IsArray()
     @IsOptional()
     @ValidateNested({ each: true })

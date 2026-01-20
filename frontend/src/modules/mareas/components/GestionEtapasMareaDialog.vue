@@ -46,7 +46,7 @@
           :puertoOptions="puertoOptions"
           :pesqueriaOptions="pesqueriaOptions"
           :puertoBaseId="initialPortId || marea?.puertoBaseId"
-          :defaultPesqueriaId="marea?.id_pesqueria"
+          :defaultPesqueriaId="marea?.id_pesqueria || marea?.pesqueriaId"
           :minStages="mode === 'INICIAR' ? 1 : 0"
         />
 
@@ -171,7 +171,7 @@ const addInitialStage = () => {
     fechaZarpada: form.value.fechaInicio,
     puertoArriboId: '',
     fechaArribo: '',
-    pesqueriaId: props.marea?.id_pesqueria || '',
+    pesqueriaId: props.marea?.id_pesqueria || props.marea?.pesqueriaId || '',
     tipoEtapa: 'COMERCIAL',
     observaciones: ''
   });

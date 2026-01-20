@@ -48,6 +48,7 @@ export class MareasService {
                     }
                 },
                 observadorPrincipal: true,
+                pesqueria: true,
                 estadoActual: true,
                 etapas: {
                     orderBy: { nroEtapa: 'asc' },
@@ -117,6 +118,7 @@ export class MareasService {
             if (updateData.fechaProtocolizacion) updateData.fechaProtocolizacion = new Date(updateData.fechaProtocolizacion);
 
             if (observadorPrincipalId) updateData.observadorPrincipalId = observadorPrincipalId;
+            if (pesqueriaId) updateData.pesqueriaId = pesqueriaId;
 
             if (Object.keys(updateData).length > 0) {
                 await tx.marea.update({
@@ -1251,6 +1253,7 @@ export class MareasService {
                 dias_marea: diasMarea,
                 dias_navegados: diasNavegados,
                 progreso: progreso,
+                id_pesqueria: marea.pesqueriaId,
                 alertas: activeAlerts,
                 etapas: marea.etapas.map((e: any) => ({
                     id: e.id,
@@ -1504,8 +1507,8 @@ export class MareasService {
                         data: {
                             mareaId: id,
                             nroEtapa: 1,
-                            pesqueriaId: marea.artePrincipalId ? undefined : payload.pesqueriaId, // Try to infer or use default? Payload might not have it.
-                            puertoZarpadaId: payload.puertoId || buque?.puertoBaseId, // Use payload puerto if available (Zarpada)
+                            pesqueriaId: payload.pesqueriaId || (marea as any).pesqueriaId,
+                            puertoZarpadaId: payload.puertoId || buque?.puertoBaseId,
                             tipoEtapa: marea.tipoMarea === 'CI' ? 'INSTITUCIONAL' : 'COMERCIAL',
                             fechaZarpada: new Date(fechaIn),
                             // No observer assignment here (implicit in Marea)
@@ -1571,7 +1574,7 @@ export class MareasService {
     }
 
     async create(createMareaDto: CreateMareaDto, user: User) {
-        const { buqueId, anioMarea, nroMarea, pesqueriaId, observadorId, arteId, fechaZarpadaEstimada, tipoMarea = 'COMERCIAL', diasEstimados } = createMareaDto;
+        const { buqueId, anioMarea, nroMarea, pesqueriaId, observadorId, arteId, fechaZarpadaEstimada, fechaInicioObservador, tipoMarea = 'COMERCIAL', diasEstimados } = createMareaDto;
 
         const existing = await this.prisma.marea.findMany({
             where: {
@@ -1609,11 +1612,13 @@ export class MareasService {
                     anioMarea,
                     nroMarea,
                     buqueId,
+                    pesqueriaId,
                     estadoActualId: estadoInicial.id,
                     tipoMarea,
                     artePrincipalId: arteId,
                     observadorPrincipalId: observadorId,
                     fechaZarpadaEstimada: fechaZarpadaEstimada ? new Date(fechaZarpadaEstimada) : null,
+                    fechaInicioObservador: fechaInicioObservador ? new Date(fechaInicioObservador) : null,
                     diasEstimados,
                 }
             });
@@ -1951,6 +1956,7 @@ export class MareasService {
                     include: { tipoFlota: true }
                 },
                 observadorPrincipal: true,
+                pesqueria: true,
                 estadoActual: true,
                 etapas: {
                     orderBy: { nroEtapa: 'asc' },
@@ -2007,9 +2013,16 @@ export class MareasService {
                 fgColor: { argb: 'FFE0E0E0' }
             };
 
+            let lastGroupValue: string | null = null;
             data.forEach(m => {
                 const zarpada = m.fechaInicioObservador || m.fechaZarpadaEstimada;
-                const especie = m.etapas[0]?.pesqueria?.nombre || '-';
+                const especie = m.pesqueria?.nombre || m.etapas[0]?.pesqueria?.nombre || '-';
+
+                // Si estamos en la hoja "Por Especie" y el valor cambió, agregamos fila vacía
+                if (name === 'Por Especie' && lastGroupValue !== null && lastGroupValue !== especie) {
+                    sheet.addRow({});
+                }
+                lastGroupValue = especie;
 
                 const diasTotales = DateUtils.calculateInclusiveDays(
                     m.fechaInicioObservador,
@@ -2054,8 +2067,8 @@ export class MareasService {
         setupSheet('Por Disposición', mareas);
 
         const sortedBySpecie = [...mareas].sort((a, b) => {
-            const especieA = a.etapas[0]?.pesqueria?.nombre || '';
-            const especieB = b.etapas[0]?.pesqueria?.nombre || '';
+            const especieA = a.pesqueria?.nombre || a.etapas[0]?.pesqueria?.nombre || '';
+            const especieB = b.pesqueria?.nombre || b.etapas[0]?.pesqueria?.nombre || '';
             if (especieA !== especieB) return especieA.localeCompare(especieB);
             return a.nroMarea - b.nroMarea;
         });

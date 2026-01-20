@@ -1,7 +1,7 @@
 ﻿<template>
   <AdminLayout
-    :title="`Marea ${marea.nro_marea}/${marea.anio_marea}`"
-    description="Detalles técnicos y operativos de la marea."
+    :title="displayTitle"
+    :description="displayDescription"
   >
     <div class="max-w-6xl mx-auto pb-12 px-4 sm:px-6 lg:px-8">
       <!-- Header Actions & Meta -->
@@ -843,7 +843,7 @@ async function loadMarea() {
             anio_marea: data.anioMarea,
             nro_marea: data.nroMarea,
             id_buque: data.buqueId,
-            id_pesqueria: etapaPrincipal?.pesqueriaId || '',
+            id_pesqueria: data.pesqueriaId || '',
             puertoBaseId: data.buque?.puertoBaseId,
             id_arte_principal: data.artePrincipalId || '',
             fecha_zarpada_estimada: data.fechaZarpadaEstimada,
@@ -864,7 +864,9 @@ async function loadMarea() {
             anio_protocolizacion: data.anioProtocolizacion ?? null,
             fecha_protocolizacion: data.fechaProtocolizacion,
             observador_principal_id: data.observadorPrincipalId,
-            responsable_correccion: 'N/D'
+            responsable_correccion: 'N/D',
+            buque_nombre: data.buque?.nombreBuque || 'N/D',
+            observador_nombre: data.observadorPrincipal ? `${data.observadorPrincipal.apellido}, ${data.observadorPrincipal.nombre}` : 'Sin asignar'
         }
 
         const p = await catalogosService.getPuertos()
@@ -937,6 +939,23 @@ async function loadMarea() {
         console.error('Error loading Marea', e)
     }
 }
+
+const displayTitle = computed(() => {
+  let tipo = marea.value.tipo_marea || 'MC'
+  // Normalizar COMERCIAL -> MC e INSTITUCIONAL -> CI si vienen expandidos
+  if (tipo === 'COMERCIAL') tipo = 'MC'
+  if (tipo === 'INSTITUCIONAL') tipo = 'CI'
+  
+  const nro = marea.value.nro_marea || '000'
+  const anio = String(marea.value.anio_marea || '').slice(-2)
+  return `Marea ${tipo}-${nro}-${anio}`
+})
+
+const displayDescription = computed(() => {
+  const buque = marea.value.buque_nombre || '...'
+  const obs = marea.value.observador_nombre || '...'
+  return `Buque: ${buque} • Observador: ${obs}`
+})
 
 onMounted(() => {
     loadMarea();
@@ -1016,6 +1035,7 @@ const saveChanges = async () => {
       anioMarea: toNumberOrUndefined(marea.value.anio_marea),
       nroMarea: toNumberOrUndefined(marea.value.nro_marea),
       buqueId: marea.value.id_buque || undefined,
+      pesqueriaId: marea.value.id_pesqueria || undefined,
       artePrincipalId: marea.value.id_arte_principal || undefined,
       fechaZarpadaEstimada: toIsoStringOrUndefined(marea.value.fecha_zarpada_estimada),
       fechaInicioObservador: toIsoStringOrUndefined(marea.value.fecha_inicio_observador),

@@ -90,6 +90,7 @@ export class StatsService {
                     }
                 },
                 observadorPrincipal: true,
+                pesqueria: true,
                 estadoActual: true,
                 etapas: {
                     orderBy: { nroEtapa: 'asc' },
@@ -168,8 +169,8 @@ export class StatsService {
             totalDaysCalculated += days;
 
             // Aggregations
-            // Fishery
-            const fisheryName = marea.buque?.pesqueriaHabitual?.nombre || 'Desconocida';
+            // Fishery: Priority -> Marea Header -> Buque Default
+            const fisheryName = marea.pesqueria?.nombre || marea.buque?.pesqueriaHabitual?.nombre || 'Desconocida';
             if (!byFishery[fisheryName]) byFishery[fisheryName] = { name: fisheryName, mareas: 0, days: 0 };
             byFishery[fisheryName].mareas++;
             byFishery[fisheryName].days += days;
@@ -337,9 +338,15 @@ export class StatsService {
 
         // Apply dynamic filter
         if (filterType === 'FISHERY') {
-            where.buque = {
-                pesqueriaHabitual: { nombre: filterValue }
-            };
+            where.OR = [
+                { pesqueria: { nombre: filterValue } },
+                { 
+                    AND: [
+                        { pesqueriaId: null },
+                        { buque: { pesqueriaHabitual: { nombre: filterValue } } }
+                    ]
+                }
+            ];
         } else if (filterType === 'FLEET') {
             where.buque = {
                 tipoFlota: { nombre: filterValue }
@@ -369,6 +376,7 @@ export class StatsService {
                     }
                 },
                 observadorPrincipal: true,
+                pesqueria: true,
                 estadoActual: true,
                 etapas: {
                     orderBy: { nroEtapa: 'asc' },
@@ -463,7 +471,7 @@ export class StatsService {
                 tipoMarea: m.tipoMarea,
                 buque: m.buque?.nombreBuque || 'Desconocido',
                 flota: m.buque?.tipoFlota?.nombre || '-',
-                pesqueria: m.buque?.pesqueriaHabitual?.nombre || '-',
+                pesqueria: (m as any).pesqueria?.nombre || m.buque?.pesqueriaHabitual?.nombre || '-',
                 observador: m.observadorPrincipal ? `${m.observadorPrincipal.nombre} ${m.observadorPrincipal.apellido}` : 'Sin asignar',
                 estado: m.estadoActual?.nombre || 'Desconocido',
                 diasContabilizados: days,
@@ -496,7 +504,15 @@ export class StatsService {
 
         if (filterType && filterValue) {
             if (filterType === 'FISHERY') {
-                where.buque = { pesqueriaHabitual: { nombre: filterValue } };
+                where.OR = [
+                    { pesqueria: { nombre: filterValue } },
+                    { 
+                        AND: [
+                            { pesqueriaId: null },
+                            { buque: { pesqueriaHabitual: { nombre: filterValue } } }
+                        ]
+                    }
+                ];
             } else if (filterType === 'FLEET') {
                 where.buque = { tipoFlota: { nombre: filterValue } };
             } else if (filterType === 'OBSERVER') {
@@ -524,6 +540,7 @@ export class StatsService {
                     }
                 },
                 observadorPrincipal: true,
+                pesqueria: true,
                 estadoActual: true,
                 etapas: {
                     orderBy: { nroEtapa: 'asc' },
@@ -572,7 +589,7 @@ export class StatsService {
             { header: 'ID Marea', key: 'id_marea', width: 15 },
             { header: 'Buque', key: 'buque', width: 25 },
             { header: 'Flota', key: 'flota', width: 20 },
-            { header: 'Pesquería', key: 'pesqueria', width: 20 },
+            { header: 'Pesquer�a', key: 'pesqueria', width: 20 },
             { header: 'Observador Principal', key: 'observador', width: 25 },
         ];
 
@@ -583,19 +600,19 @@ export class StatsService {
 
         columns.push(
             { header: 'Estado', key: 'estado', width: 20 },
-            { header: 'Días (Calendario)', key: 'dias_calendario', width: 15 },
-            { header: 'Días (Total Marea)', key: 'dias_total', width: 15 },
+            { header: 'D�as (Calendario)', key: 'dias_calendario', width: 15 },
+            { header: 'D�as (Total Marea)', key: 'dias_total', width: 15 },
             { header: 'Inicio', key: 'inicio', width: 15 },
             { header: 'Fin', key: 'fin', width: 15 },
         );
 
-        // Columnas dinámicas de etapas
+        // Columnas din�micas de etapas
         for (let i = 1; i <= maxEtapas; i++) {
             columns.push(
                 { header: `Etapa ${i}: #`, key: `etapa_${i}_nro`, width: 10 },
                 { header: `Etapa ${i}: Zarpada`, key: `etapa_${i}_zarpada`, width: 15 },
                 { header: `Etapa ${i}: Arribo`, key: `etapa_${i}_arribo`, width: 15 },
-                { header: `Etapa ${i}: Días`, key: `etapa_${i}_dias`, width: 10 }
+                { header: `Etapa ${i}: D�as`, key: `etapa_${i}_dias`, width: 10 }
             );
         }
 
@@ -682,7 +699,7 @@ export class StatsService {
                 id_marea: MareaUtils.formatCodigo(m),
                 buque: m.buque?.nombreBuque || 'Desconocido',
                 flota: m.buque?.tipoFlota?.nombre || '-',
-                pesqueria: m.buque?.pesqueriaHabitual?.nombre || '-',
+                pesqueria: (m as any).pesqueria?.nombre || m.buque?.pesqueriaHabitual?.nombre || '-',
                 observador: m.observadorPrincipal ? `${m.observadorPrincipal.nombre} ${m.observadorPrincipal.apellido}` : 'Sin asignar',
                 estado: m.estadoActual?.nombre || 'Desconocido',
                 dias_calendario: calendarDays,

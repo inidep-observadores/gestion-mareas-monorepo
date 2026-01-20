@@ -137,6 +137,7 @@ model Pesqueria {
   activo                 Boolean               @default(true)
   buquesHabituales       Buque[]
   etapasMarea            MareaEtapa[]
+  mareas                 Marea[]
   observadoresPesquerias ObservadorPesqueria[]
 
   @@map("pesquerias")
@@ -224,6 +225,7 @@ model Marea {
   anioMarea                Int               @map("anio_marea")
   nroMarea                 Int               @map("nro_marea")
   buqueId                  String            @map("id_buque") @db.Uuid
+  pesqueriaId              String?           @map("id_pesqueria") @db.Uuid
   artePrincipalId          String?           @map("id_arte_principal") @db.Uuid
   observadorPrincipalId    String?           @map("id_observador_principal") @db.Uuid
   estadoActualId           String            @map("id_estado_actual") @db.Uuid
@@ -242,6 +244,7 @@ model Marea {
   tipoMarea                String            @default("MC") @map("tipo_marea")
   diasEstimados            Int?              @map("dias_estimados")
   artePrincipal            ArtePesca?        @relation(fields: [artePrincipalId], references: [id])
+  pesqueria                Pesqueria?        @relation(fields: [pesqueriaId], references: [id])
   observadorPrincipal      Observador?       @relation("ObservadorPrincipal", fields: [observadorPrincipalId], references: [id])
   buque                    Buque             @relation(fields: [buqueId], references: [id])
   estadoActual             EstadoMarea       @relation(fields: [estadoActualId], references: [id])

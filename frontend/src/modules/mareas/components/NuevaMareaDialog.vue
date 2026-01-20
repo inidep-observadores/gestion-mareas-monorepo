@@ -218,6 +218,21 @@
               <p class="text-text-muted text-xs font-medium mt-1">Defina las etapas de navegación iniciales si ya son conocidas.</p>
             </div>
 
+            <div v-if="form.etapas.length > 0" class="p-4 bg-primary/5 border border-primary/20 rounded-xl mb-6">
+              <label class="block text-xs font-black uppercase tracking-widest text-primary mb-3">Inicio de Actividad del Observador</label>
+              <div class="max-w-xs">
+                <DatePicker 
+                  v-model="form.fechaInicioObservador"
+                  :icon="CalenderIcon"
+                  :show-time="true"
+                  :error="fieldErrors.fechaInicioObservador"
+                  placeholder="Fecha y hora de inicio..."
+                />
+                <p v-if="fieldErrors.fechaInicioObservador" class="text-[10px] text-error font-bold uppercase mt-1">{{ fieldErrors.fechaInicioObservador }}</p>
+              </div>
+              <p class="text-[10px] text-text-muted mt-2 italic">* Requerido al definir etapas manuales.</p>
+            </div>
+
             <NavigationStagesEditor 
               v-model="form.etapas"
               :puerto-options="puertoOptions"
@@ -259,6 +274,10 @@
             
             <div v-if="form.etapas.length > 0" class="p-6 bg-surface-muted rounded-xl border border-border/50">
                 <p class="text-[9px] font-black text-text-muted uppercase tracking-widest mb-2">Etapas Definidas</p>
+                <div v-if="form.fechaInicioObservador" class="mb-3 pb-3 border-b border-border/50 flex items-center justify-between">
+                    <span class="text-[10px] font-bold text-text-muted uppercase tracking-tight">Inicio Observador:</span>
+                    <span class="text-xs font-black text-primary">{{ formatDate(form.fechaInicioObservador, true) }}</span>
+                </div>
                 <ul class="space-y-2">
                     <li v-for="(etapa, idx) in form.etapas" :key="idx" class="text-xs text-text-muted flex items-center gap-2">
                          <div class="w-1.5 h-1.5 rounded-full bg-primary/40"></div>
@@ -312,6 +331,17 @@
       </div>
     </div>
 
+    <!-- Year Conflict Confirmation Modal -->
+    <ConfirmationDialog
+      :show="showYearConfirm"
+      title="Año de Marea Diferente"
+      :message="`El año seleccionado (${form.anioMarea}) no coincide con el Año Operativo del sistema (${configStore.selectedYear}). ¿Desea continuar con esta designación?`"
+      confirm-text="Sí, Continuar"
+      cancel-text="Corregir Año"
+      @close="showYearConfirm = false"
+      @confirm="confirmYearAndNext"
+    />
+
     <!-- Cancel Confirmation Modal -->
     <ConfirmationDialog
       :show="showCancelConfirm"
@@ -337,6 +367,7 @@ import ConfirmationDialog from '@/components/common/ConfirmationDialog.vue'
 import NavigationStagesEditor from './NavigationStagesEditor.vue'
 import { useMareas } from '../composables/useMareas'
 import { useWorkflowStore } from '../../shared/stores/workflow.store'
+import { useConfigStore } from '../../shared/stores/config.store'
 import { alertsService } from '@/modules/alerts/services/alerts.service'
 import catalogosService from '../services/catalogos.service'
 import { 
@@ -362,6 +393,7 @@ const props = defineProps<{
 const emit = defineEmits(['close', 'success'])
 const router = useRouter()
 const workflowStore = useWorkflowStore()
+const configStore = useConfigStore()
 const { createMarea, loading, error } = useMareas()
 
 // Steps
@@ -376,13 +408,14 @@ const currentStep = ref(1)
 // Form initial state
 const getInitialForm = () => ({
   buqueId: '',
-  anioMarea: new Date().getFullYear(),
+  anioMarea: configStore.selectedYear,
   nroMarea: null as number | null,
   tipoMarea: 'COMERCIAL' as 'COMERCIAL' | 'INSTITUCIONAL',
   pesqueriaId: '',
   observadorId: '',
   arteId: '',
   fechaZarpadaEstimada: '',
+  fechaInicioObservador: '',
   diasEstimados: null as number | null,
   etapas: [] as any[]
 })
@@ -391,6 +424,7 @@ const form = ref(getInitialForm())
 
 const fieldErrors = ref<Record<string, string>>({})
 const showCancelConfirm = ref(false)
+const showYearConfirm = ref(false)
 
 // Refs for focus
 const buqueSelect = ref<any>(null)
@@ -527,20 +561,9 @@ const prefillFromAlert = (data: any) => {
       if (obsFound) form.value.observadorId = obsFound.id
   }
 
-  // Pre-fill initial stage
+  // Pre-fill fields but DO NOT create stages automatically
   if (ext.fechaZarpada) {
     form.value.fechaZarpadaEstimada = ext.fechaZarpada
-    form.value.etapas = [{
-      id: null,
-      nroEtapa: meta.nroEtapa || 1,
-      puertoZarpadaId: '',
-      fechaZarpada: ext.fechaZarpada,
-      puertoArriboId: '',
-      fechaArribo: ext.fechaArribo || '',
-      pesqueriaId: form.value.pesqueriaId || '',
-      tipoEtapa: 'COMERCIAL',
-      observaciones: 'Importado desde sistema externo'
-    }]
   }
 }
 
@@ -565,13 +588,9 @@ const generatedCode = computed(() => {
 const handleBuqueChange = () => {
   const buque = buques.value.find(b => b.id === form.value.buqueId)
   if (buque) {
+    // Default fishery from ship (now saved in marea header)
     if (buque.pesqueriaHabitualId) {
         form.value.pesqueriaId = buque.pesqueriaHabitualId
-        if (form.value.etapas.length > 0) {
-            form.value.etapas.forEach((etapa: any) => {
-                if (!etapa.pesqueriaId) etapa.pesqueriaId = buque.pesqueriaHabitualId
-            })
-        }
     }
     if (buque.arteHabitualId) form.value.arteId = buque.arteHabitualId
     if (buque.diasMareaEstimada) form.value.diasEstimados = buque.diasMareaEstimada
@@ -597,14 +616,42 @@ const validateStep = (step: number) => {
     if (!form.value.observadorId) fieldErrors.value.observadorId = 'Debe asignar un observador'
     if (!form.value.arteId) fieldErrors.value.arteId = 'El arte de pesca es obligatorio'
     if (!form.value.fechaZarpadaEstimada) fieldErrors.value.fechaZarpadaEstimada = 'La fecha de zarpada es obligatoria'
+
+    if (form.value.fechaZarpadaEstimada) {
+        const year = new Date(form.value.fechaZarpadaEstimada).getFullYear()
+        if (year < form.value.anioMarea) {
+            fieldErrors.value.fechaZarpadaEstimada = `El año de la fecha (${year}) no puede ser menor al año de la marea (${form.value.anioMarea})`
+        }
+    }
   }
 
   if (step === 3) {
       if (form.value.etapas.length > 0) {
+          if (!form.value.fechaInicioObservador) {
+              fieldErrors.value.fechaInicioObservador = 'La fecha de inicio del observador es requerida si crea etapas'
+              toast.error('Debe indicar el inicio del observador si define etapas', { position: 'top-center' })
+          }
+
+          const firstStage = form.value.etapas[0]
+          if (form.value.fechaInicioObservador && firstStage.fechaZarpada) {
+              const startObs = new Date(form.value.fechaInicioObservador)
+              const startTrip = new Date(firstStage.fechaZarpada)
+              if (startObs > startTrip) {
+                  fieldErrors.value.fechaInicioObservador = 'El inicio del observador no puede ser posterior a la zarpada'
+                  toast.error('Coherencia de fechas: El inicio del observador debe ser <= a la zarpada', { position: 'top-center' })
+              }
+          }
+
           form.value.etapas.forEach((etapa: any, idx: number) => {
               if (!etapa.fechaZarpada) {
                   fieldErrors.value[`etapa_${idx}_fechaZarpada`] = 'Falta fecha de zarpada'
                   toast.error(`Etapa ${idx + 1}: La fecha de zarpada es obligatoria`, { position: 'top-center' })
+              } else {
+                  const stageYear = new Date(etapa.fechaZarpada).getFullYear()
+                  if (stageYear < form.value.anioMarea) {
+                      fieldErrors.value[`etapa_${idx}_fechaZarpada`] = 'Año inválido'
+                      toast.error(`Etapa ${idx + 1}: El año no puede ser menor al de la marea`, { position: 'top-center' })
+                  }
               }
               if (!etapa.puertoZarpadaId) {
                    fieldErrors.value[`etapa_${idx}_puertoZarpadaId`] = 'Falta puerto de zarpada'
@@ -626,6 +673,16 @@ const validateStep = (step: number) => {
 }
 
 const nextStep = async () => {
+  if (currentStep.value === 1) {
+    if (!validateStep(1)) return
+    if (form.value.anioMarea !== configStore.selectedYear) {
+      showYearConfirm.value = true
+      return
+    }
+    currentStep.value++
+    return
+  }
+
   if (currentStep.value < 4) {
     if (!validateStep(currentStep.value)) return
     currentStep.value++
@@ -633,6 +690,7 @@ const nextStep = async () => {
     try {
       const payload = { ...form.value }
       if (!payload.fechaZarpadaEstimada) delete (payload as any).fechaZarpadaEstimada
+      if (!payload.fechaInicioObservador) delete (payload as any).fechaInicioObservador
       
       if (payload.etapas && payload.etapas.length > 0) {
           payload.etapas = payload.etapas.map((e: any) => {
@@ -686,6 +744,11 @@ const prevStep = () => {
   }
 }
 
+const confirmYearAndNext = () => {
+  showYearConfirm.value = false
+  currentStep.value++
+}
+
 const cancel = () => {
   showCancelConfirm.value = true
 }
@@ -706,8 +769,13 @@ const getObserverName = (id: string) => {
   const o = observadores.value.find(obs => obs.id === id)
   return o ? `${o.apellido}, ${o.nombre}` : '---'
 }
-const formatDate = (dateStr?: string) => {
+const formatDate = (dateStr?: string, withTime = false) => {
   if (!dateStr) return 'N/D'
-  return new Date(dateStr).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' })
+  const options: Intl.DateTimeFormatOptions = { day: '2-digit', month: '2-digit', year: 'numeric' }
+  if (withTime) {
+    options.hour = '2-digit'
+    options.minute = '2-digit'
+  }
+  return new Date(dateStr).toLocaleDateString('es-AR', options)
 }
 </script>
