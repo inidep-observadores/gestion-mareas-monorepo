@@ -39,7 +39,7 @@ export class DataExportService {
         return new Promise((resolve, reject) => {
             output.on('close', () => {
                 this.logger.log(`Export completed: ${archive.pointer()} total bytes`);
-                
+
                 // Guardar manifiesto externo
                 const manifest = {
                     filename: zipFilename,
@@ -78,7 +78,7 @@ export class DataExportService {
                 .map(f => {
                     const fullPath = path.join(this.exportPath, f);
                     const stats = fs.statSync(fullPath);
-                    
+
                     const manifestPath = fullPath.replace('.zip', '.json');
                     let comment = '';
                     let createdAt = stats.birthtime;
@@ -119,11 +119,11 @@ export class DataExportService {
     }
 
     private async appendDataToArchive(archive: archiver.Archiver, comment?: string) {
-        archive.append(JSON.stringify({ 
-            info: "Export started", 
+        archive.append(JSON.stringify({
+            info: "Export started",
             comment: comment || '',
-            date: new Date(), 
-            version: "1.0" 
+            date: new Date(),
+            version: "1.0"
         }), { name: 'metadata.json' });
 
         await this.exportCatalogs(archive);
@@ -683,7 +683,6 @@ export class DataExportService {
                     identificadorMarea: {
                         anioMarea: m.anioMarea,
                         nroMarea: m.nroMarea,
-                        buqueId: buqueId,
                         tipoMarea: m.tipoMarea || 'MC'
                     }
                 }
