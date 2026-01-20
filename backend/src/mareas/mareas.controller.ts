@@ -37,8 +37,11 @@ export class MareasController {
     }
 
     @Get('inbox')
-    getInbox(@Query('year') year?: string) {
-        return this.mareasService.getInbox(year ? Number(year) : undefined);
+    getInbox(
+        @Query('year') year: string,
+        @GetUser() user: User
+    ) {
+        return this.mareasService.getInbox(year ? Number(year) : undefined, user);
     }
 
     @Get('flota-por-pesqueria')

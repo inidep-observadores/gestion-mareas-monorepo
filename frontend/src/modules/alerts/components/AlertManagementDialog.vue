@@ -131,7 +131,61 @@
                         </Button>
                     </div>
 
-                    <h4 class="font-black text-[10px] uppercase tracking-widest text-text-muted">Notas de Gestión</h4>
+                    <h4 class="font-black text-[10px] uppercase tracking-widest text-text-muted mt-5 mb-2">Responsable</h4>
+                    <div class="relative">
+                        <div class="flex items-center gap-2" v-if="!isAssigning">
+                            <div class="flex items-center gap-2 flex-1 p-3 bg-surface-muted/30 border border-border rounded-xl">
+                                <template v-if="currentAssignee">
+                                    <div class="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-black text-primary overflow-hidden">
+                                        <img v-if="currentAssignee.avatarUrl" :src="currentAssignee.avatarUrl" class="w-full h-full object-cover" />
+                                        <span v-else>{{ getInitials(currentAssignee.fullName) }}</span>
+                                    </div>
+                                    <span class="text-xs font-bold text-text">{{ currentAssignee.fullName }}</span>
+                                </template>
+                                <template v-else>
+                                    <div class="w-6 h-6 rounded-full bg-text-muted/10 flex items-center justify-center">
+                                       <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                                    </div>
+                                    <span class="text-xs text-text-muted italic">Sin asignar</span>
+                                </template>
+                            </div>
+                            <Button 
+                                variant="soft" 
+                                size="sm" 
+                                class="h-11 px-4"
+                                @click="isAssigning = true"
+                            >
+                                {{ currentAssignee ? 'Cambiar' : 'Asignar' }}
+                            </Button>
+                        </div>
+
+                        <!-- Assignment Dropdown Mode -->
+                        <div v-else class="space-y-2 animate-in fade-in zoom-in-95 duration-200">
+                             <div class="relative">
+                                <select 
+                                    v-model="pendingAssigneeId" 
+                                    class="w-full appearance-none bg-surface border border-primary rounded-xl px-4 py-3 pr-10 text-xs font-bold text-text focus:outline-none focus:ring-4 focus:ring-primary/10 transition-all cursor-pointer"
+                                    :disabled="processingAssignment"
+                                >
+                                    <option value="" class="text-text-muted">-- Sin asignar (Visible para todos) --</option>
+                                    <option v-for="user in availableUsers" :key="user.id" :value="user.id">
+                                        {{ user.fullName }}
+                                    </option>
+                                </select>
+                                <div class="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none text-primary">
+                                    <ChevronDownIcon class="w-4 h-4" />
+                                </div>
+                             </div>
+                             <div class="flex items-center gap-2 justify-end">
+                                <Button variant="ghost" size="xs" @click="cancelAssignment" :disabled="processingAssignment">Cancelar</Button>
+                                <Button variant="primary" size="xs" @click="confirmAssignment" :disabled="processingAssignment">
+                                    {{ processingAssignment ? 'Guardando...' : 'Confirmar' }}
+                                </Button>
+                             </div>
+                        </div>
+                    </div>
+
+                    <h4 class="font-black text-[10px] uppercase tracking-widest text-text-muted mt-5">Notas de Gestión</h4>
                     <textarea
                         v-model="comment"
                         class="w-full bg-surface-muted/30 border border-border rounded-2xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all p-4 text-sm h-16 text-text placeholder:text-text-muted/40"
@@ -256,7 +310,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { type Alerta, alertsService } from '../services/alerts.service'
 import AlertTimeline from './AlertTimeline.vue'
@@ -280,6 +334,9 @@ import NuevaMareaDialog from '@/modules/mareas/components/NuevaMareaDialog.vue'
 import { storeToRefs } from 'pinia'
 import { useBusinessRulesStore } from '@/modules/shared/stores/business-rules.store'
 import { useWorkflowStore } from '@/modules/shared/stores/workflow.store'
+import usersAdminApi from '@/modules/admin/services/users.service'
+import type { User } from '@/modules/auth/types/auth.types'
+import { ChevronDownIcon } from '@/icons'
 
 const workflowStore = useWorkflowStore()
 
@@ -287,6 +344,80 @@ const props = defineProps<{
   isOpen: boolean
   alert: Alerta | null
 }>()
+
+import { ValidRoles } from '@/modules/auth/interfaces/roles.enum'
+
+// Assignment State
+const availableUsers = ref<User[]>([])
+const isAssigning = ref(false)
+const pendingAssigneeId = ref<string>('')
+const processingAssignment = ref(false)
+
+onMounted(async () => {
+    try {
+        const users = await usersAdminApi.getUsers()
+        availableUsers.value = users.filter(u => 
+            u.isActive && 
+            (u.roles.includes(ValidRoles.coordinador) || u.roles.includes(ValidRoles.tecnico))
+        )
+    } catch (e) {
+        console.error('Error fetching users for assignment:', e)
+    }
+})
+
+const currentAssignee = computed(() => localAlert.value?.asignadoA) // Backend includes asignadoA relation
+
+const cancelAssignment = () => {
+    isAssigning.value = false
+    pendingAssigneeId.value = ''
+}
+
+const confirmAssignment = async () => {
+    if (!localAlert.value?.id) return
+    
+    processingAssignment.value = true
+    try {
+        // Optimistic update
+        const selectedUser = availableUsers.value.find(u => u.id === pendingAssigneeId.value)
+        const previous = localAlert.value.asignadoA
+        
+        if (pendingAssigneeId.value) {
+            await alertsService.update(localAlert.value.id, {
+                asignadoId: pendingAssigneeId.value
+            })
+        } else {
+             // Unassign: usually update DTOs might want explicit null or specific handling. 
+             // Assuming service handles null for optional string.
+             await alertsService.update(localAlert.value.id, {
+                asignadoId: null as any // Force null to clear
+            })
+        }
+
+        // Update local object to reflect change immediately
+        if (pendingAssigneeId.value && selectedUser) {
+            localAlert.value.asignadoId = selectedUser.id
+            localAlert.value.asignadoA = selectedUser as any
+            toast.success(`Asignado a ${selectedUser.fullName}`)
+        } else {
+            localAlert.value.asignadoId = null
+            localAlert.value.asignadoA = null
+            toast.success('Alerta desasignada (visible para todos)')
+        }
+        
+    } catch (e) {
+        console.error(e)
+        toast.error('Error al actualizar la asignación')
+    } finally {
+        processingAssignment.value = false
+        isAssigning.value = false
+        emit('refresh') // Refresh list to update state if needed
+    }
+}
+
+const getInitials = (name?: string) => {
+    if (!name) return '?'
+    return name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()
+}
 
 const emit = defineEmits(['close', 'refresh'])
 const router = useRouter()
@@ -308,7 +439,10 @@ type AlertMetadata = {
   }
 }
 
-type LocalAlert = Partial<Alerta> & { metadata?: AlertMetadata }
+type LocalAlert = Omit<Partial<Alerta>, 'asignadoA'> & { 
+    metadata?: AlertMetadata
+    asignadoA?: User | { fullName: string; avatarUrl?: string } | null 
+}
 
 type Observador = {
   nombre?: string

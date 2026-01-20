@@ -1734,7 +1734,7 @@ export class MareasService {
         }
     }
 
-    async getInbox(year?: number) {
+    async getInbox(year?: number, user?: User) {
         const { operationalYear, mareaYearFilter } = this.buildMareaYearFilter(year);
 
         // Ejecutar motor de reglas (con unicidad garantizada por el servicio)
@@ -1743,12 +1743,26 @@ export class MareasService {
 
         // 1. Obtener Alertas Persistentes
         // Filtrar las que NO están resueltas ni descartadas (solo activas)
-        // O incluir las 'EN_SEGUIMIENTO' también.
-        // Prisma 'NOT' filter or explicitly IN ['PENDIENTE', 'SEGUIMIENTO', 'VENCIDA']
+        const whereAlerts: any = {
+            estado: { in: ['PENDIENTE', 'SEGUIMIENTO', 'VENCIDA'] }
+        };
+
+        // Si hay usuario y NO es admin/coordinador, aplicar filtro de visibilidad
+        // (Visible para todos si no tiene responsable, o visible si soy yo el responsable)
+        if (user) {
+            const isAdmin = user.roles.includes('admin');
+            const isCoordinador = user.roles.includes('coordinador');
+
+            if (!isAdmin && !isCoordinador) {
+                whereAlerts.OR = [
+                    { asignadoId: null },
+                    { asignadoId: user.id }
+                ];
+            }
+        }
+
         const persistentAlertsRaw = await this.prisma.alerta.findMany({
-            where: {
-                estado: { in: ['PENDIENTE', 'SEGUIMIENTO', 'VENCIDA'] }
-            },
+            where: whereAlerts,
             orderBy: {
                 prioridad: 'asc', // ALTA < MEDIA ?? No, string sort might be tricky. 'ALTA' < 'BAJA'? 'A' < 'B'. So 'ALTA' comes first.
                 // Better order by fechaDetectada desc? Or priority.

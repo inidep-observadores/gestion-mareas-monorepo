@@ -39,6 +39,7 @@ export interface Alerta {
     metadata?: Record<string, any>
     eventos?: AlertEvent[]
     notaGestion?: string
+    asignadoId?: string | null
     asignadoA?: { fullName: string; avatarUrl?: string }
     visible: boolean
 }
@@ -54,7 +55,7 @@ export const alertsService = {
         return data
     },
 
-    update: async (id: string, payload: { estado?: string; prioridad?: string; fechaVencimiento?: string; comment?: string; asignadoId?: string }): Promise<Alerta> => {
+    update: async (id: string, payload: { estado?: string; prioridad?: string; fechaVencimiento?: string; comment?: string; asignadoId?: string | null }): Promise<Alerta> => {
         const { data } = await httpClient.patch<Alerta>(`/alerts/${id}`, payload)
         return data
     }
