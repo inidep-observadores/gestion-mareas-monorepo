@@ -40,7 +40,7 @@ export interface VesselTrajectory {
 
 const props = defineProps<{
   fleet: Record<string, VesselTrajectory>
-  activeLayers: { veda: boolean; isobatas: boolean; points: boolean }
+  activeLayers: { veda: boolean; vieira: boolean; centolla: boolean; points: boolean }
 }>()
 
 const emit = defineEmits(['update:mouse-coords', 'seek-vessel'])
@@ -52,15 +52,68 @@ let map: L.Map | null = null
 const trajectoriesLayer = L.layerGroup()
 const markersLayer = L.layerGroup()
 const pointsLayer = L.layerGroup()
+const geojsonLayers = {
+  limite: L.layerGroup(),
+  veda: L.layerGroup(),
+  vieira: L.layerGroup(),
+  centolla: L.layerGroup()
+}
+
+const LAYER_FILES = {
+  limite: [
+    'areas_generales/mar_territorial.geojson',
+    'areas_generales/zona_economica_exclusiva.geojson',
+    'areas_generales/ZCP.geojson'
+  ],
+  veda: [
+    'zonas_veda/Veda 2014.geojson',
+    'zonas_veda/Veda Merluza Negra.geojson'
+  ],
+  vieira: [
+// (rest as before)
+    'areas_vieira/areas_vieira.geojson'
+  ],
+  centolla: [
+    'areas_centolla/area_centolla_C1.geojson',
+    'areas_centolla/area_centolla_C2.geojson',
+    'areas_centolla/area_centolla_C3.geojson',
+    'areas_centolla/area_centolla_C4.geojson',
+    'areas_centolla/area_centolla_C5.geojson',
+    'areas_centolla/area_centolla_S1.geojson',
+    'areas_centolla/area_centolla_S2.geojson',
+    'areas_centolla/area_centolla_S3.geojson',
+    'areas_centolla/area_centolla_S4.geojson'
+  ]
+}
 
 const vesselMarkers = new Map<string, L.Marker>()
 
 const onMapReady = (mapInstance: L.Map) => {
   map = mapInstance
+
+  // Create pane for GeoJSON behind everything
+  if (!map.getPane('geojson')) {
+    map.createPane('geojson')
+    map.getPane('geojson')!.style.zIndex = '350' // Below overlays (400)
+    map.getPane('geojson')!.style.pointerEvents = 'none'
+  }
+
+  // Add layers in correct order
+  geojsonLayers.limite.addTo(map)
+  geojsonLayers.veda.addTo(map)
+  geojsonLayers.vieira.addTo(map)
+  geojsonLayers.centolla.addTo(map)
+  
   trajectoriesLayer.addTo(map)
   markersLayer.addTo(map)
   pointsLayer.addTo(map)
   
+  // Initial load of active geojson layers
+  loadGeoJson('limite') // Fixed layer
+  if (props.activeLayers.veda) loadGeoJson('veda')
+  if (props.activeLayers.vieira) loadGeoJson('vieira')
+  if (props.activeLayers.centolla) loadGeoJson('centolla')
+
   updateAll()
 }
 
@@ -101,7 +154,7 @@ const renderTrajectory = (vessel: VesselTrajectory) => {
 
     const poly = L.polyline([[p1.lat, p1.lon], [p2.lat, p2.lon]], {
       color: color,
-      weight: 6, // Larger invisible hitbox
+      weight: 3, // Thinner, cleaner look
       opacity: 0.9,
       lineCap: 'round',
       className: 'interactive-trajectory'
@@ -118,9 +171,9 @@ const renderTrajectory = (vessel: VesselTrajectory) => {
     const remaining = vessel.points.slice(vessel.currentIndex).map(p => [p.lat, p.lon])
     const ghost = L.polyline(remaining as L.LatLngExpression[], {
       color: vessel.color,
-      weight: 4,
+      weight: 2,
       opacity: 0.4,
-      dashArray: '5, 10',
+      dashArray: '4, 8',
       className: 'interactive-trajectory'
     }).addTo(trajectoriesLayer)
 
@@ -175,6 +228,54 @@ const renderPoints = (vessel: VesselTrajectory) => {
   })
 }
 
+const loadGeoJson = async (type: 'veda' | 'vieira' | 'centolla' | 'limite') => {
+  if (!map) return
+  
+  const group = geojsonLayers[type]
+  group.clearLayers()
+  
+  if (type !== 'limite' && !props.activeLayers[type]) return
+
+  const files = LAYER_FILES[type as keyof typeof LAYER_FILES]
+  
+  for (const file of files) {
+    try {
+      const response = await fetch(`/data/layers/geojson/${file}`)
+      if (!response.ok) throw new Error(`Status: ${response.status}`)
+      const data = await response.json()
+      
+      let style: L.PathOptions = {}
+      
+      if (type === 'limite') {
+        if (file.includes('mar_territorial')) {
+          style = { color: '#3B82F6', weight: 1, opacity: 0.8, fillOpacity: 0 }
+        } else if (file.includes('zona_economica_exclusiva')) {
+          style = { color: '#EF4444', weight: 2.5, opacity: 0.8, fillOpacity: 0 }
+        } else if (file.includes('ZCP')) {
+          style = { color: '#10B981', weight: 1.2, opacity: 0.7, fillOpacity: 0 }
+        }
+      } else {
+        const color = type === 'veda' ? '#F43F5E' : type === 'vieira' ? '#10B981' : '#F59E0B'
+        style = {
+          color: color,
+          weight: 2,
+          opacity: 1, // Visible border
+          fillColor: color,
+          fillOpacity: 0.15, // Subtle fill
+          dashArray: type === 'veda' ? '5, 5' : undefined
+        }
+      }
+
+      L.geoJSON(data, {
+        pane: 'geojson',
+        style: style
+      }).addTo(group)
+    } catch (e) {
+      console.error(`Error loading geojson ${file}:`, e)
+    }
+  }
+}
+
 // Optimization: Find nearest point index in trajectory
 const findNearestPoint = (latlng: L.LatLng, points: FleetTrackPoint[]): number => {
   let minMarkerDist = Infinity
@@ -198,6 +299,10 @@ watch(() => props.activeLayers.points, (val) => {
   else pointsLayer.clearLayers()
 })
 
+watch(() => props.activeLayers.veda, () => loadGeoJson('veda'))
+watch(() => props.activeLayers.vieira, () => loadGeoJson('vieira'))
+watch(() => props.activeLayers.centolla, () => loadGeoJson('centolla'))
+
 const fitVesselBounds = (vesselId: string) => {
   if (!map) return
   const vessel = props.fleet[vesselId]
@@ -219,6 +324,10 @@ onUnmounted(() => {
   trajectoriesLayer.remove()
   markersLayer.remove()
   pointsLayer.remove()
+  geojsonLayers.limite.remove()
+  geojsonLayers.veda.remove()
+  geojsonLayers.vieira.remove()
+  geojsonLayers.centolla.remove()
 })
 </script>
 

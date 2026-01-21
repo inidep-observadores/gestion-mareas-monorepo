@@ -101,10 +101,10 @@ defineEmits(['update:layer'])
 const isCollapsed = ref(false)
 
 const layerLabels: Record<string, string> = {
-  totalPoints: 'Puntos totales',
-  totalTrack: 'Trayectoria total',
   veda: 'Zonas de Veda',
-  isobatas: 'Isobatas',
+  vieira: 'Áreas de Vieira',
+  centolla: 'Áreas de Centolla',
+  points: 'Puntos de Reporte',
 }
 
 const formatCoordinate = (val: number, type: 'lat' | 'lon') => {

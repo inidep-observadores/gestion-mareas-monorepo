@@ -1,14 +1,13 @@
 <template>
-  <div class="relative z-[2000] flex pointer-events-none h-full shadow-2xl">
+  <div class="relative z-[2000] flex pointer-events-none h-full">
     <!-- Trigger Button (Integrated in edge) -->
     <div class="flex items-center">
       <button
         @click="toggleSidebar"
-        class="pointer-events-auto w-10 h-20 bg-surface/80 backdrop-blur-xl border border-border/20 border-r-0 rounded-l-2xl flex flex-col items-center justify-center gap-2 text-text-muted hover:text-primary transition-all group overflow-hidden shadow-2xl"
+        class="pointer-events-auto w-8 h-12 bg-surface/90 backdrop-blur-md border border-border/20 border-r-0 rounded-l-xl flex items-center justify-center text-text-muted hover:text-primary transition-all group overflow-hidden shadow-xl"
         :class="{ 'translate-x-full opacity-0': isOpen }"
       >
-        <div class="w-1 h-8 bg-border/40 rounded-full group-hover:bg-primary/40 transition-colors"></div>
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 -rotate-90 group-hover:scale-110 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 -rotate-90 group-hover:scale-110 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
           <path d="M19 9l-7 7-7-7"/>
         </svg>
       </button>
@@ -16,9 +15,12 @@
 
     <!-- Sidebar Panel -->
     <div
-      class="pointer-events-auto h-full bg-surface shadow-[-20px_0_50px_-20px_rgba(0,0,0,0.3)] transition-all duration-500 ease-spring border-l border-border/10"
+      class="pointer-events-auto h-full bg-surface transition-all duration-500 ease-spring"
       :style="{ width: isOpen ? '320px' : '0px' }"
-      :class="{ 'invisible': !isOpen }"
+      :class="{ 
+        'invisible': !isOpen,
+        'shadow-[-20px_0_50px_-20px_rgba(0,0,0,0.3)] border-l border-border/10': isOpen 
+      }"
     >
       <div class="flex flex-col h-full w-[320px] overflow-hidden">
         <!-- Header -->
@@ -85,7 +87,7 @@
         </div>
 
         <!-- Footer -->
-        <div class="p-4 bg-surface-muted/20 border-t border-border/10">
+        <div v-if="false" class="p-4 bg-surface-muted/20 border-t border-border/10">
            <div class="flex items-center justify-between px-2">
               <span class="text-[9px] font-black text-text-muted/60 uppercase tracking-tighter italic">VMS Engine v2.0</span>
               <div class="flex gap-1.5 Items-center">
@@ -122,7 +124,8 @@ const toggleSidebar = () => {
 const formatKey = (key: string) => {
   const labels: any = {
     veda: 'Zonas de Veda',
-    isobatas: 'Isobátas (200m)',
+    vieira: 'Áreas de Vieira',
+    centolla: 'Áreas de Centolla',
     points: 'Puntos de Reporte',
   }
   return labels[key] || key

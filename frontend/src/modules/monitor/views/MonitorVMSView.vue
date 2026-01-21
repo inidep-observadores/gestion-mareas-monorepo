@@ -1,7 +1,7 @@
 <template>
   <AdminLayout 
-    title="Mapa de Recorridos (VMS)" 
-    description="Monitoreo satelital y tracking en tiempo real de la flota."
+    title="Mapa de Recorridos" 
+    description="Monitoreo satelital y tracking de la flota en operación."
   >
     <div
       class="h-full w-full flex overflow-hidden bg-background text-text"
@@ -138,8 +138,9 @@ const mapMonitor = ref<InstanceType<typeof MapMonitor> | null>(null)
 const leftSidebarOpen = ref(true)
 const rightSidebarOpen = ref(false)
 const mapLayers = ref({
-  veda: false,
-  isobatas: false,
+  veda: true,
+  vieira: false,
+  centolla: false,
   points: false,
 }) as any
 

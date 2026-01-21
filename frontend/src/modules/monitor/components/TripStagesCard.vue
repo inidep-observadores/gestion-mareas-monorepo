@@ -50,7 +50,7 @@
             @click.stop="$emit('select-date', stage.startDate)"
           >
             <span class="text-text-muted font-black uppercase w-8 group-hover/date:text-primary/70">Zar:</span>
-            <span class="text-text tabular-nums group-hover/date:underline decoration-primary/30 underline-offset-2">{{ formatDate(stage.startDate) }} {{ formatTime(stage.startDate) }}</span>
+            <span class="text-text tabular-nums group-hover/date:underline decoration-primary/30 underline-offset-2">{{ formatDate(stage.startDate) }}</span>
           </div>
           <div
             class="flex items-center gap-2 group/date cursor-pointer hover:text-primary transition-colors"
@@ -59,7 +59,7 @@
             <span class="text-text-muted font-black uppercase w-8 group-hover/date:text-primary/70">Arr:</span>
             <span class="text-text tabular-nums group-hover/date:underline decoration-primary/30 underline-offset-2">
               <template v-if="stage.endDate">
-                {{ formatDate(stage.endDate) }} {{ formatTime(stage.endDate) }}
+                {{ formatDate(stage.endDate) }}
               </template>
               <template v-else>
                 Actual (En Navegación)
@@ -103,17 +103,8 @@ const calculateDuration = (start: string, end: string | null) => {
 const isCollapsed = ref(false)
 
 const formatDate = (ts: string) => {
-  if (!ts) return '--/--'
+  if (!ts) return '--/--/----'
   const date = new Date(ts)
-  return `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}`
-}
-
-const formatTime = (ts: string) => {
-  if (!ts) return '--:--'
-  return new Date(ts).toLocaleTimeString('es-AR', {
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false
-  })
+  return `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`
 }
 </script>
