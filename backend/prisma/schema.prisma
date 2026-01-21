@@ -81,7 +81,7 @@ model TipoFlota {
 
 model Buque {
   id                      String                  @id @default(uuid()) @db.Uuid
-  nombreBuque             String                  @map("nombre_buque")
+  nombreBuque             String                  @unique @map("nombre_buque")
   matricula               String                  @unique
   codigoInterno           Int?                    @map("codigo_interno")
   tipoFlotaId             String?                 @map("id_tipo_flota") @db.Uuid

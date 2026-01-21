@@ -31,20 +31,30 @@
             </svg>
           </button>
         </div>
+        
+        <!-- Search Area -->
+        <div class="px-4 py-3 bg-surface/5 border-b border-border/5">
+          <SearchInput
+            v-model="searchQuery"
+            placeholder="Marea, buque u observador..."
+            size="sm"
+          />
+        </div>
 
         <!-- Quick Actions -->
-        <div class="p-5 border-b border-border/5 flex gap-2">
-          <Button 
-            variant="soft" 
-            size="xs" 
+         <!-- Lo dejamos oculto ya que mostrar todo ralentiza demasiado el renderizado del mapa -->
+        <div v-if="false" class="p-5 border-b border-border/5 flex gap-2">
+          <Button
+            variant="soft"
+            size="xs"
             class="flex-1 !text-[10px] !font-black uppercase tracking-tighter !rounded-xl"
             @click="$emit('select-all')"
           >
             Todos
           </Button>
-          <Button 
-            variant="ghost" 
-            size="xs" 
+          <Button
+            variant="ghost"
+            size="xs"
             class="flex-1 !text-[10px] !font-black uppercase tracking-tighter !rounded-xl border border-border/10"
             @click="$emit('deselect-all')"
           >
@@ -54,21 +64,20 @@
 
         <!-- Vessel List -->
         <div class="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-2">
-          <div 
-            v-for="vessel in vessels" 
-            :key="vessel.id"
+          <div
+            v-for="vessel in filteredVessels"
             class="group relative flex items-center gap-3 p-3 rounded-2xl border transition-all cursor-pointer"
             :class="[
-              selectedId === vessel.id 
-                ? 'bg-primary/5 border-primary/20 shadow-theme-sm' 
+              selectedId === vessel.id
+                ? 'bg-primary/5 border-primary/20 shadow-theme-sm'
                 : 'bg-surface-muted/30 border-border/5 hover:border-border/20'
             ]"
             @click="$emit('select', vessel.id)"
           >
             <!-- Visibility Toggle -->
             <div class="shrink-0" @click.stop>
-              <BaseSwitch 
-                :modelValue="vessel.visible" 
+              <BaseSwitch
+                :modelValue="vessel.visible"
                 @update:modelValue="$emit('toggle-visibility', vessel.id)"
                 scale="0.75"
               />
@@ -77,8 +86,8 @@
             <!-- Vessel Info -->
             <div class="flex-1 min-w-0">
               <div class="flex items-center gap-2 mb-0.5">
-                <div 
-                  class="w-2 h-2 rounded-full shrink-0" 
+                <div
+                  class="w-2 h-2 rounded-full shrink-0"
                   :style="{ backgroundColor: vessel.color }"
                 ></div>
                 <span class="text-[10.5px] font-black text-text uppercase truncate tracking-tight">
@@ -104,11 +113,11 @@
             </div>
           </div>
 
-          <div v-if="vessels.length === 0" class="flex flex-col items-center justify-center py-10 opacity-30">
+          <div v-if="filteredVessels.length === 0" class="flex flex-col items-center justify-center py-10 opacity-30">
             <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12 mb-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
-              <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+              <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
             </svg>
-            <p class="text-[10px] font-black uppercase tracking-widest text-center">Sin buques activos</p>
+            <p class="text-[10px] font-black uppercase tracking-widest text-center">No hay coincidencias</p>
           </div>
         </div>
 
@@ -142,9 +151,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import Button from '@/components/ui/Button.vue'
 import BaseSwitch from '@/components/ui/BaseSwitch.vue'
+import SearchInput from '@/components/ui/SearchInput.vue'
 
 export interface MonitorVessel {
   id: string
@@ -165,6 +175,18 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits(['select', 'toggle-visibility', 'select-all', 'deselect-all', 'update:isOpen'])
+
+const searchQuery = ref('')
+
+const filteredVessels = computed(() => {
+  const q = searchQuery.value.toLowerCase().trim()
+  if (!q) return props.vessels
+  return props.vessels.filter(v => 
+    v.name.toLowerCase().includes(q) ||
+    v.mareaCode.toLowerCase().includes(q) ||
+    v.observer.toLowerCase().includes(q)
+  )
+})
 
 const toggleSidebar = () => {
   emit('update:isOpen', !props.isOpen)

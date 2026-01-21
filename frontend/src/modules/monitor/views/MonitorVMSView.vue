@@ -55,10 +55,11 @@
             <!-- Right: Trip Stages (Optional or for selected vessel) -->
             <div class="flex flex-col gap-3 items-end">
               <TripStagesCard
-                v-if="activeVessel && mockStages.length"
-                :stages="mockStages"
-                :totalDays="36"
+                v-if="activeVessel && currentVesselStages.length"
+                :stages="currentVesselStages"
+                :totalDays="activeVessel.totalDays || 0"
                 @select-stage="handleStageSelection"
+                @select-date="handleDateSelection"
               />
             </div>
           </div>
@@ -213,7 +214,9 @@ const fetchFleet = async () => {
           observer: buque.observer,
           voyageStart: buque.voyageStart,
           voyageEnd: buque.voyageEnd,
-          lastUpdate: buque.lastUpdate
+          lastUpdate: buque.lastUpdate,
+          totalDays: buque.totalDays,
+          etapas: buque.etapas
         }
         fetchVesselHistory(buque.id, buque.voyageStart, buque.voyageEnd)
       }
@@ -304,14 +307,23 @@ const handleStageSelection = (stage: TripStage) => {
   if (index !== -1) activeVessel.value.currentIndex = index
 }
 
-const handleDateSelection = (date: Date) => {
-  if (!activeVessel.value) return
-  const dateStr = date.toISOString().split('T')[0]
-  const index = activeVessel.value.points.findIndex((p) => {
-    const ts = typeof p.timestamp === 'string' ? p.timestamp : (p.timestamp as Date).toISOString()
-    return ts.startsWith(dateStr)
+const handleDateSelection = (dateStr: string) => {
+  if (!activeVessel.value || !activeVessel.value.points.length) return
+  
+  const targetTime = new Date(dateStr).getTime()
+  let minDiff = Infinity
+  let nearestIdx = 0
+  
+  activeVessel.value.points.forEach((p, idx) => {
+    const pTime = new Date(p.timestamp).getTime()
+    const diff = Math.abs(pTime - targetTime)
+    if (diff < minDiff) {
+      minDiff = diff
+      nearestIdx = idx
+    }
   })
-  if (index !== -1) activeVessel.value.currentIndex = index
+  
+  activeVessel.value.currentIndex = nearestIdx
 }
 
 const togglePlay = () => {
@@ -352,15 +364,17 @@ const handleSpeedChange = (newSpeed: number) => {
   }
 }
 
-const mockStages: TripStage[] = [
-  {
-    id: '1',
-    startDate: '2025-11-03T20:27:00Z',
-    endDate: '2025-11-12T02:14:00Z',
-    durationDays: 10,
-    color: 'var(--color-warning)',
-  },
-]
+const currentVesselStages = computed<TripStage[]>(() => {
+  if (!activeVessel.value || !activeVessel.value.etapas) return []
+  return activeVessel.value.etapas.map((e: any) => ({
+    id: e.id,
+    nroEtapa: e.nroEtapa,
+    startDate: e.fechaZarpada,
+    endDate: e.fechaArribo,
+    durationDays: e.diasNavegados,
+    color: e.id_tipo_etapa === 'PESCA' ? 'var(--color-info)' : 'var(--color-primary)'
+  }))
+})
 
 onMounted(() => {
   fetchFleet()

@@ -82,7 +82,11 @@ export class MareasService {
         if (!marea) throw new NotFoundException('Marea no encontrada');
         return {
             ...marea,
-            id_marea: MareaUtils.formatCodigo(marea as any)
+            id_marea: MareaUtils.formatCodigo(marea as any),
+            etapas: marea.etapas.map(e => ({
+                ...e,
+                diasNavegados: MareaUtils.calculateStageDays(e)
+            }))
         };
     }
 
@@ -366,6 +370,7 @@ export class MareasService {
                 progreso,
                 en_tierra: m.estadoActual.codigo === MareaEstado.EN_EJECUCION && etapaFinal?.fechaArribo !== null,
                 total_etapas: etapaFinal?.nroEtapa || 1,
+                dias_navegados: MareaUtils.calculateNavigatedDays(m),
                 alertas: activeAlerts.filter((a: any) => a.referenciaId === m.id),
                 actionsAvailable,
                 dias_estimados: m.diasEstimados,
@@ -769,38 +774,22 @@ export class MareasService {
     }
 
     private calculateProgress(m: any): number {
-        const etapaActual = m.etapas?.[0] || null;
-        let progreso = 0;
         const estadoCodigo = m.estadoActual?.codigo;
 
         if (estadoCodigo === MareaEstado.DESIGNADA) {
-            progreso = 0;
-        } else if (estadoCodigo === MareaEstado.EN_EJECUCION) {
-            const fechaInicio = etapaActual?.fechaZarpada || m.fechaZarpadaEstimada;
-            if (fechaInicio) {
-                const diffDays = DateUtils.calculateInclusiveDays(fechaInicio, new Date());
-                const estimatedDuration = (m.diasEstimados && m.diasEstimados > 0) ? m.diasEstimados : 30;
-                progreso = Math.round((diffDays / estimatedDuration) * 100);
-            }
-        } else {
-            const stageIntervals = (m.etapas || [])
-                .filter((e: any) => e.fechaZarpada && e.fechaArribo)
-                .map((e: any) => ({ start: e.fechaZarpada, end: e.fechaArribo }));
-
-            let diasTrabajados = 0;
-            if (m.fechaInicioObservador && m.fechaFinObservador) {
-                diasTrabajados = DateUtils.calculateInclusiveDays(m.fechaInicioObservador, m.fechaFinObservador);
-            } else if (stageIntervals.length > 0) {
-                diasTrabajados = DateUtils.calculateUniqueDays(stageIntervals);
-            }
-
-            const estimatedDuration = (m.diasEstimados && m.diasEstimados > 0) ? m.diasEstimados : 30;
-            if (diasTrabajados > 0) {
-                progreso = Math.round((diasTrabajados / estimatedDuration) * 100);
-                if (progreso < 100) progreso = 100;
-            }
+            return 0;
         }
-        return progreso;
+
+        const diasTrabajados = MareaUtils.calculateNavigatedDays(m);
+        const estimatedDuration = (m.diasEstimados && m.diasEstimados > 0) ? m.diasEstimados : 30;
+
+        let progreso = Math.round((diasTrabajados / estimatedDuration) * 100);
+
+        if (estadoCodigo !== MareaEstado.EN_EJECUCION && progreso < 100 && diasTrabajados > 0) {
+            progreso = 100;
+        }
+
+        return Math.min(progreso, 100);
     }
 
     async getFatigueAlerts(year?: number) {
@@ -1784,18 +1773,18 @@ export class MareasService {
                 // ALTA comes before MEDIA alphabetically? Yes. A < M.
             },
             include: {
-            asignadoA: {
-                select: {
-                    fullName: true,
-                    avatarUrl: true
+                asignadoA: {
+                    select: {
+                        fullName: true,
+                        avatarUrl: true
+                    }
+                },
+                eventos: {
+                    select: { detalle: true },
+                    orderBy: { fechaHora: 'desc' },
+                    take: 1
                 }
-            },
-            eventos: {
-                select: { detalle: true },
-                orderBy: { fechaHora: 'desc' },
-                take: 1
             }
-        }
         });
         const persistentAlerts = persistentAlertsRaw.map((alerta: any) => ({
             ...alerta,

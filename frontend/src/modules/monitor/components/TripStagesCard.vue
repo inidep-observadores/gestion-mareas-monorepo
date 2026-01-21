@@ -10,7 +10,7 @@
             {{ totalDays }} días navegados
           </p>
         </div>
-        <div 
+        <div
           class="shrink-0 p-1.5 bg-primary/10 rounded-lg border border-primary/20 text-primary transition-transform duration-300"
           :class="{ 'rotate-180': isCollapsed }"
         >
@@ -37,37 +37,37 @@
 
         <div class="flex items-center justify-between ml-1">
           <span class="font-black uppercase tracking-tighter text-xs" :style="{ color: stage.color }">
-            Etapa {{ index + 1 }}
+            Etapa {{ stage.nroEtapa || index + 1 }}
           </span>
           <span class="font-black px-2 py-0.5 rounded-lg bg-primary/10 text-primary border border-primary/20 shadow-[0_0_8px_rgba(var(--color-primary-rgb),0.1)] text-[10px]">
-            {{ stage.durationDays }}d
+            {{ stage.durationDays ?? calculateDuration(stage.startDate, stage.endDate) }}d
           </span>
         </div>
 
         <div class="ml-1 flex flex-col gap-0.5 opacity-80 text-[10px]">
-          <div class="flex items-center gap-2">
-            <span class="text-text-muted font-black uppercase w-8">Zar:</span>
-            <span class="text-text tabular-nums">{{ formatDate(stage.startDate) }} {{ formatTime(stage.startDate) }}</span>
+          <div
+            class="flex items-center gap-2 group/date cursor-pointer hover:text-primary transition-colors"
+            @click.stop="$emit('select-date', stage.startDate)"
+          >
+            <span class="text-text-muted font-black uppercase w-8 group-hover/date:text-primary/70">Zar:</span>
+            <span class="text-text tabular-nums group-hover/date:underline decoration-primary/30 underline-offset-2">{{ formatDate(stage.startDate) }} {{ formatTime(stage.startDate) }}</span>
           </div>
-          <div class="flex items-center gap-2">
-            <span class="text-text-muted font-black uppercase w-8">Arr:</span>
-            <span class="text-text tabular-nums">{{ formatDate(stage.endDate) }} {{ formatTime(stage.endDate) }}</span>
+          <div
+            class="flex items-center gap-2 group/date cursor-pointer hover:text-primary transition-colors"
+            @click.stop="$emit('select-date', stage.endDate || new Date().toISOString())"
+          >
+            <span class="text-text-muted font-black uppercase w-8 group-hover/date:text-primary/70">Arr:</span>
+            <span class="text-text tabular-nums group-hover/date:underline decoration-primary/30 underline-offset-2">
+              <template v-if="stage.endDate">
+                {{ formatDate(stage.endDate) }} {{ formatTime(stage.endDate) }}
+              </template>
+              <template v-else>
+                Actual (En Navegación)
+              </template>
+            </span>
           </div>
         </div>
 
-        <!-- Action Icons -->
-        <div class="flex items-center gap-3 ml-1 mt-1 pt-2 border-t border-border/10">
-          <button class="text-text-muted/60 hover:text-primary transition-colors">
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-              <path d="M12 20v-6M9 20v-10M15 20v-4M18 20v-8M21 20v-12M6 20v-12M3 20v-14"/>
-            </svg>
-          </button>
-          <button class="text-text-muted/60 hover:text-primary transition-colors">
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-              <circle cx="12" cy="12" r="10"/><path d="M12 8l4 4-4 4M8 12h7"/>
-            </svg>
-          </button>
-        </div>
       </div>
     </div>
   </HudCard>
@@ -79,9 +79,10 @@ import HudCard from './HudCard.vue'
 
 export interface TripStage {
   id: string
+  nroEtapa?: number
   startDate: string
-  endDate: string
-  durationDays: number
+  endDate: string | null
+  durationDays?: number
   color?: string
 }
 
@@ -90,7 +91,14 @@ const props = defineProps<{
   totalDays: number
 }>()
 
-defineEmits(['select-stage'])
+defineEmits(['select-stage', 'select-date'])
+
+const calculateDuration = (start: string, end: string | null) => {
+  const d1 = new Date(start)
+  const d2 = end ? new Date(end) : new Date()
+  const diff = d2.getTime() - d1.getTime()
+  return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)))
+}
 
 const isCollapsed = ref(false)
 

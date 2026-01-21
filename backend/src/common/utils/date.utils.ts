@@ -32,7 +32,7 @@ export class DateUtils {
         if (!start) return 0;
 
         const startDate = new Date(start);
-        const endDate = end ? new Date(end) : startDate;
+        const endDate = end ? new Date(end) : new Date();
 
         // Normalizar a medianoche para evitar problemas de horas
         startDate.setHours(0, 0, 0, 0);
@@ -93,9 +93,8 @@ export class DateUtils {
         const normalized = intervals
             .map(i => {
                 const s = new Date(i.start);
-                // WARNING: If end is null, we NO LONGER use new Date() by default here 
-                // to prevent historical data from inflating.
-                const e = i.end ? new Date(i.end) : new Date(s);
+                // If end is null, we use current date to show live progress
+                const e = i.end ? new Date(i.end) : new Date();
                 s.setHours(0, 0, 0, 0);
                 e.setHours(0, 0, 0, 0);
                 return { start: s, end: e };

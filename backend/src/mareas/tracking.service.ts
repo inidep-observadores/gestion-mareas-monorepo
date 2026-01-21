@@ -4,6 +4,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { parse } from 'csv-parse/sync';
 import { getDistance } from 'geolib';
 import { DateTime } from 'luxon';
+import { MareaUtils } from '../common/utils/marea.utils';
 
 interface TrackingPoint {
     lat: number;
@@ -117,21 +118,33 @@ export class TrackingService {
         }
 
         for (const [buqueName, points] of Object.entries(pointsByShip)) {
-            // Resolve Buque ID
+            // 1. Resolve Buque ID sequentially
             let buqueId = buquesCache.get(buqueName);
             if (!buqueId) {
-                const buque = await this.prisma.buque.findFirst({
-                    where: {
-                        OR: [
-                            { nombreBuque: { contains: buqueName, mode: 'insensitive' } },
-                            { matricula: points[0]['Matricula'] }
-                        ]
-                    }
-                });
-                if (buque) {
-                    buqueId = buque.id;
-                    buquesCache.set(buqueName, buque.id);
+                const matricula = points[0]['Matricula'];
+                let buqueFound = null;
+
+                // Priority 1: Exact Matricula
+                if (matricula) {
+                    buqueFound = await this.prisma.buque.findUnique({
+                        where: { matricula }
+                    });
+                }
+
+                // Priority 2: Name Fallback
+                if (!buqueFound) {
+                    buqueFound = await this.prisma.buque.findFirst({
+                        where: {
+                            nombreBuque: { equals: buqueName, mode: 'insensitive' }
+                        }
+                    });
+                }
+
+                if (buqueFound) {
+                    buqueId = buqueFound.id;
+                    buquesCache.set(buqueName, buqueFound.id);
                 } else {
+                    this.logger.warn(`Buque no encontrado: ${buqueName} (Matrícula: ${matricula || 'N/A'})`);
                     continue;
                 }
             }
@@ -235,6 +248,8 @@ export class TrackingService {
                 if (hoursOld > 48) status = 'OLD';
             }
 
+            const totalDays = MareaUtils.calculateNavigatedDays(marea);
+
             fleet.push({
                 id: marea.buque.id,
                 name: marea.buque.nombreBuque,
@@ -252,7 +267,12 @@ export class TrackingService {
                     ? `${marea.observadorPrincipal.apellido} ${marea.observadorPrincipal.nombre}`
                     : 'Sin asignar',
                 voyageStart,
-                voyageEnd
+                voyageEnd,
+                totalDays,
+                etapas: marea.etapas.map(e => ({
+                    ...e,
+                    diasNavegados: MareaUtils.calculateStageDays(e)
+                }))
             });
         }
         return fleet;
