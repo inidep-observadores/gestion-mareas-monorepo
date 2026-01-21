@@ -10,6 +10,7 @@
       <!-- THE MAP (Background) -->
       <div class="absolute inset-0">
         <MapMonitor
+          ref="mapMonitor"
           class="w-full h-full"
           :fleet="fleet"
           :activeLayers="mapLayers"
@@ -56,7 +57,7 @@
           <div class="w-full flex justify-center pb-4">
             <div class="w-full max-w-md">
               <TimelinePlayer
-                v-if="activeVessel && activeVessel.points.length"
+                v-if="activeVessel && activeVessel.visible && activeVessel.points.length"
                 :currentIndex="activeVessel.currentIndex"
                 :maxIndex="activeVessel.points.length - 1"
                 :currentTime="currentPoint?.timestamp?.toString() || ''"
@@ -122,6 +123,7 @@ const showUploadDialog = ref(false)
 const fleet = reactive<Record<string, VesselTrajectory>>({})
 const selectedVesselId = ref<string | null>(null)
 const mouseCoords = ref<LatLng | null>(null)
+const mapMonitor = ref<InstanceType<typeof MapMonitor> | null>(null)
 const mapLayers = ref({
   veda: false,
   isobatas: false,
@@ -219,6 +221,14 @@ const setSelectedVessel = (id: string) => {
 const toggleVesselVisibility = (id: string) => {
   if (fleet[id]) {
     fleet[id].visible = !fleet[id].visible
+    
+    // Auto-zoom and auto-select if activating
+    if (fleet[id].visible) {
+      selectedVesselId.value = id
+      setTimeout(() => {
+        mapMonitor.value?.fitVesselBounds(id)
+      }, 100)
+    }
   }
 }
 

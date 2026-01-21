@@ -155,6 +155,17 @@ watch(() => props.activeLayers.points, (val) => {
   else pointsLayer.clearLayers()
 })
 
+const fitVesselBounds = (vesselId: string) => {
+  if (!map) return
+  const vessel = props.fleet[vesselId]
+  if (!vessel || vessel.points.length === 0) return
+
+  const bounds = L.latLngBounds(vessel.points.map(p => [p.lat, p.lon]))
+  map.fitBounds(bounds, { padding: [50, 50], animate: true })
+}
+
+defineExpose({ fitVesselBounds })
+
 onUnmounted(() => {
   trajectoriesLayer.remove()
   markersLayer.remove()
