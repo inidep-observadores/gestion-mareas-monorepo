@@ -490,7 +490,7 @@ model BuqueTrayectoriaPunto {
   velocidad     Float?
   rumbo         Int?
   buque         Buque            @relation(fields: [buqueId], references: [id])
-  trayectoria   BuqueTrayectoria @relation(fields: [trayectoriaId], references: [id])
+  trayectoria   BuqueTrayectoria @relation(fields: [trayectoriaId], references: [id], onDelete: Cascade)
 
   @@unique([buqueId, timestamp])
   @@index([trayectoriaId, timestamp])
