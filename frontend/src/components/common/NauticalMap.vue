@@ -66,8 +66,9 @@ const updateGraticule = () => {
   const minLon = Math.floor(bounds.getWest() / interval) * interval
   const maxLon = Math.ceil(bounds.getEast() / interval) * interval
   
+  const isDark = document.documentElement.classList.contains('dark')
   const lineStyle = {
-    color: 'var(--color-border)',
+    color: isDark ? 'var(--color-border)' : 'rgba(0, 0, 0, 0.12)',
     weight: 1,
     interactive: false,
     pane: 'overlayPane'
@@ -75,7 +76,7 @@ const updateGraticule = () => {
 
   const labelIcon = (text: string) => L.divIcon({
     className: 'graticule-label',
-    html: `<div class="text-[8px] font-black text-text-muted/40 uppercase tracking-widest whitespace-nowrap font-sans">${text}</div>`,
+    html: `<div class="text-[8px] font-black ${isDark ? 'text-text-muted/40' : 'text-text-muted/70'} uppercase tracking-widest whitespace-nowrap font-sans">${text}</div>`,
     iconSize: [0, 0],
     iconAnchor: [0, 0]
   })

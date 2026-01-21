@@ -28,6 +28,7 @@
             :fleet="fleet"
             :activeLayers="mapLayers"
             @update:mouse-coords="mouseCoords = $event"
+            @seek-vessel="handleSeekVessel"
           />
         </div>
 
@@ -41,11 +42,14 @@
             <VesselInfoCard
               v-if="activeVessel"
               :vesselName="activeVessel.name"
-              :vesselMat="activeVessel.id"
+              :mareaCode="activeVessel.mareaCode || '--'"
               :position="{ lat: currentPoint?.lat || 0, lon: currentPoint?.lon || 0 }"
               :timestamp="currentPoint?.timestamp?.toString() || ''"
               :speed="currentPoint?.speed || 0"
               :course="currentPoint?.course || 0"
+              :lastUpdate="activeVessel.lastUpdate"
+              :layers="mapLayers"
+              @update:layer="handleLayerToggle"
             />
 
             <!-- Right: Trip Stages (Optional or for selected vessel) -->
@@ -149,7 +153,8 @@ const vesselList = computed<MonitorVessel[]>(() => {
     id: v.id,
     name: v.name,
     matricula: v.matricula || v.id,
-    status: 'OK',
+    mareaCode: v.mareaCode || '--',
+    observer: v.observer || 'Sin asignar',
     color: v.color,
     visible: v.visible,
     voyageStart: v.voyageStart || null,
@@ -204,8 +209,11 @@ const fetchFleet = async () => {
           currentIndex: 0,
           visible: false,
           matricula: buque.matricula,
+          mareaCode: buque.mareaCode,
+          observer: buque.observer,
           voyageStart: buque.voyageStart,
-          voyageEnd: buque.voyageEnd
+          voyageEnd: buque.voyageEnd,
+          lastUpdate: buque.lastUpdate
         }
         fetchVesselHistory(buque.id, buque.voyageStart, buque.voyageEnd)
       }
@@ -256,6 +264,13 @@ const toggleVesselVisibility = (id: string) => {
 
 const selectAllVessels = (visible: boolean) => {
   Object.values(fleet).forEach(v => v.visible = visible)
+}
+
+const handleSeekVessel = ({ vesselId, index }: { vesselId: string, index: number }) => {
+  if (fleet[vesselId]) {
+    fleet[vesselId].currentIndex = index
+    selectedVesselId.value = vesselId
+  }
 }
 
 const handleLayerToggle = (key: string, val: boolean) => {

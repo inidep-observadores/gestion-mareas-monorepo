@@ -85,11 +85,13 @@
                   {{ vessel.name }}
                 </span>
               </div>
-              <div class="flex items-center gap-2 text-[9px] font-bold text-text-muted uppercase tracking-tighter">
-                <span>{{ vessel.matricula }}</span>
-                <span class="opacity-30">|</span>
-                <span :class="vessel.status === 'OK' ? 'text-success' : 'text-warning'">
-                  {{ vessel.status }}
+              <div class="flex items-center gap-2 mt-1 whitespace-nowrap overflow-hidden">
+                <span class="text-[9px] font-black text-primary/80 uppercase tracking-tighter shrink-0">
+                  {{ vessel.mareaCode }}
+                </span>
+                <span class="text-[9px] text-text-muted/40 font-bold shrink-0">|</span>
+                <span class="text-[9px] font-bold text-text-muted/80 truncate">
+                  {{ vessel.observer }}
                 </span>
               </div>
             </div>
@@ -148,7 +150,8 @@ export interface MonitorVessel {
   id: string
   name: string
   matricula: string
-  status: string
+  mareaCode: string
+  observer: string
   color: string
   visible: boolean
   voyageStart: string | null

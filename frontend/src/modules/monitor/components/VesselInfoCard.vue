@@ -7,7 +7,12 @@
         <h2 class="font-black text-text leading-tight tracking-tighter truncate text-sm">
           {{ vesselName }}
         </h2>
-        <p v-if="!isCollapsed" class="font-bold text-text-muted/60 uppercase mt-0.5 text-[10px]">Mat. {{ vesselMat }}</p>
+        <div v-if="!isCollapsed" class="flex flex-col gap-0.5 mt-0.5">
+          <p class="font-black text-primary uppercase text-[10px]">{{ mareaCode }}</p>
+          <p v-if="lastUpdate" class="font-bold text-text-muted/60 uppercase text-[8px] italic tracking-tighter">
+            Datos actualizados al {{ formatDate(lastUpdate.toString()) }} {{ formatTime(lastUpdate.toString()) }}
+          </p>
+        </div>
       </div>
       <div 
         class="shrink-0 p-1.5 bg-primary/10 rounded-lg border border-primary/20 text-primary transition-transform duration-300"
@@ -82,11 +87,12 @@ import BaseSwitch from '@/components/ui/BaseSwitch.vue'
 
 const props = defineProps<{
   vesselName: string
-  vesselMat: string
+  mareaCode: string
   position: { lat: number; lon: number }
   timestamp: string
   speed: number
   course: number
+  lastUpdate?: string | Date | null
   layers?: Record<string, boolean>
 }>()
 

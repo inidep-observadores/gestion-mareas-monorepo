@@ -29,8 +29,11 @@ export interface VesselTrajectory {
   currentIndex: number
   visible: boolean
   matricula?: string
+  mareaCode?: string
+  observer?: string
   voyageStart?: string | null
   voyageEnd?: string | null
+  lastUpdate?: string | Date | null
   totalDays?: number
   etapas?: any[]
 }
@@ -40,7 +43,7 @@ const props = defineProps<{
   activeLayers: { veda: boolean; isobatas: boolean; points: boolean }
 }>()
 
-const emit = defineEmits(['update:mouse-coords'])
+const emit = defineEmits(['update:mouse-coords', 'seek-vessel'])
 
 const nauticalMap = ref<InstanceType<typeof NauticalMap> | null>(null)
 let map: L.Map | null = null
@@ -96,23 +99,36 @@ const renderTrajectory = (vessel: VesselTrajectory) => {
       color = 'var(--color-info)' // Using theme info color for fishing
     }
 
-    L.polyline([[p1.lat, p1.lon], [p2.lat, p2.lon]], {
+    const poly = L.polyline([[p1.lat, p1.lon], [p2.lat, p2.lon]], {
       color: color,
-      weight: 3,
+      weight: 6, // Larger invisible hitbox
       opacity: 0.9,
-      lineCap: 'round'
+      lineCap: 'round',
+      className: 'interactive-trajectory'
     }).addTo(trajectoriesLayer)
+
+    poly.on('click', (e: L.LeafletMouseEvent) => {
+      const index = findNearestPoint(e.latlng, vessel.points)
+      emit('seek-vessel', { vesselId: vessel.id, index })
+    })
   }
 
   // Ghost path (remaining path)
   if (vessel.currentIndex < vessel.points.length - 1) {
     const remaining = vessel.points.slice(vessel.currentIndex).map(p => [p.lat, p.lon])
-    L.polyline(remaining as L.LatLngExpression[], {
+    const ghost = L.polyline(remaining as L.LatLngExpression[], {
       color: vessel.color,
-      weight: 2,
+      weight: 4,
       opacity: 0.4,
-      dashArray: '5, 10'
+      dashArray: '5, 10',
+      className: 'interactive-trajectory'
     }).addTo(trajectoriesLayer)
+
+    ghost.on('click', (e: L.LeafletMouseEvent) => {
+      // Adjust click index because slice starts from currentIndex
+      const indexInSlice = findNearestPoint(e.latlng, vessel.points.slice(vessel.currentIndex))
+      emit('seek-vessel', { vesselId: vessel.id, index: vessel.currentIndex + indexInSlice })
+    })
   }
 }
 
@@ -143,15 +159,37 @@ const renderMarker = (vessel: VesselTrajectory) => {
 }
 
 const renderPoints = (vessel: VesselTrajectory) => {
-  vessel.points.forEach(p => {
-    L.circleMarker([p.lat, p.lon], {
-      radius: 2,
+  vessel.points.forEach((p, idx) => {
+    const dot = L.circleMarker([p.lat, p.lon], {
+      radius: 4,
       color: vessel.color,
       fillColor: vessel.color,
       fillOpacity: 0.5,
-      weight: 1
+      weight: 1,
+      className: 'interactive-dot'
     }).addTo(pointsLayer)
+
+    dot.on('click', () => {
+      emit('seek-vessel', { vesselId: vessel.id, index: idx })
+    })
   })
+}
+
+// Optimization: Find nearest point index in trajectory
+const findNearestPoint = (latlng: L.LatLng, points: FleetTrackPoint[]): number => {
+  let minMarkerDist = Infinity
+  let nearestIdx = 0
+
+  for (let i = 0; i < points.length; i++) {
+    const p = points[i]
+    // Simple Euclidean-like distance is enough for local proximity at zoom
+    const d = Math.pow(latlng.lat - p.lat, 2) + Math.pow(latlng.lng - p.lon, 2)
+    if (d < minMarkerDist) {
+      minMarkerDist = d
+      nearestIdx = i
+    }
+  }
+  return nearestIdx
 }
 
 watch(() => props.fleet, updateAll, { deep: true })
@@ -195,5 +233,9 @@ onUnmounted(() => {
   text-transform: uppercase !important;
   padding: 2px 8px !important;
   box-shadow: var(--shadow-theme-md) !important;
+}
+
+.interactive-trajectory, .interactive-dot {
+  cursor: pointer !important;
 }
 </style>

@@ -197,7 +197,8 @@ export class TrackingService {
                 artePrincipal: true,
                 etapas: {
                     orderBy: { nroEtapa: 'asc' }
-                }
+                },
+                observadorPrincipal: true
             }
         });
 
@@ -246,6 +247,10 @@ export class TrackingService {
                 speed: lastPoint?.velocidad || 0,
                 lastUpdate: lastPoint?.timestamp || null,
                 mareaId: marea.id,
+                mareaCode: `${marea.tipoMarea}-${marea.nroMarea}-${marea.anioMarea.toString().slice(-2)}`,
+                observer: marea.observadorPrincipal
+                    ? `${marea.observadorPrincipal.apellido} ${marea.observadorPrincipal.nombre}`
+                    : 'Sin asignar',
                 voyageStart,
                 voyageEnd
             });
