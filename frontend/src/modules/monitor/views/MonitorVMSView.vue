@@ -1,4 +1,3 @@
-
 <template>
   <AdminLayout 
     title="Mapa de Recorridos (VMS)" 
@@ -7,33 +6,15 @@
     <div
       class="relative w-full overflow-hidden bg-background text-text"
       style="height: calc(100vh - 64px)"
-      @dragover.prevent="dragOver = true"
-      @dragleave.prevent="dragOver = false"
-      @drop.prevent="handleDrop"
     >
-      <!-- Drag Overlay -->
-      <transition name="fade">
-        <div v-if="dragOver || isUploading" class="absolute inset-0 z-[2000] bg-primary/20 backdrop-blur-sm flex items-center justify-center pointer-events-none">
-           <div class="bg-surface p-8 rounded-2xl shadow-2xl flex flex-col items-center gap-4 animate-bounce-custom">
-               <svg xmlns="http://www.w3.org/2000/svg" class="w-16 h-16 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
-               </svg>
-               <h3 class="text-xl font-bold text-text">{{ isUploading ? 'Procesando...' : 'Soltar archivo CSV aquí' }}</h3>
-           </div>
-        </div>
-      </transition>
-
       <!-- THE MAP (Background) -->
       <div class="absolute inset-0">
         <MapMonitor
           class="w-full h-full"
           :points="trackPoints"
-          :current-index="playerIndex"
-          :active-layers="mapLayers"
-          :mode="viewMode"
-          :fleet-data="fleet"
+          :currentIndex="playerIndex"
+          :activeLayers="mapLayers"
           @update:mouse-coords="mouseCoords = $event"
-          @select-vessel="handleVesselSelection"
         />
       </div>
 
@@ -44,11 +25,11 @@
       >
         <!-- Top Row -->
         <div class="flex justify-between items-start w-full">
-          <!-- Left: Vessel Info (Only in TRACK Mode or if selected) -->
+          <!-- Left: Vessel Info -->
           <VesselInfoCard
-            v-if="selectedVessel && viewMode === 'TRACK'"
+            v-if="selectedVessel"
             :vesselName="selectedVessel.name"
-            :vesselMat="selectedVessel.matricula"
+            :vesselMat="'6508'"
             :position="{ lat: currentPoint?.lat || 0, lon: currentPoint?.lon || 0 }"
             :timestamp="currentPoint?.timestamp || ''"
             :speed="currentPoint?.speed || 0"
@@ -58,23 +39,36 @@
           />
 
           <!-- Right: Control Panel (Layers & Font Size) -->
-          <div class="flex flex-col gap-3 items-end pointer-events-auto">
-             <div v-if="viewMode === 'TRACK'" class="mb-2">
-                 <button @click="resetToFleet" class="px-3 py-1 bg-primary text-primary-fg rounded-lg text-sm font-bold shadow-lg hover:bg-primary-hover transition-colors">
-                     ← Volver a Flota
-                 </button>
-             </div>
-
-             <!-- Font Size Context Menu -->
-             <div class="flex items-center gap-1.5 p-1.5 bg-surface/20 backdrop-blur-xl rounded-2xl border border-border/20 shadow-2xl">
+          <div class="flex flex-col gap-3 items-end">
+            <TripStagesCard
+              :stages="mockStages"
+              :totalDays="36"
+              @select-stage="handleStageSelection"
+            />
+            
+            <!-- Font Size Context Menu -->
+            <div class="pointer-events-auto flex items-center gap-1.5 p-1.5 bg-surface/20 backdrop-blur-xl rounded-2xl border border-border/20 shadow-2xl">
               <button 
                 @click="fontScale = Math.max(0, fontScale - 1)"
                 class="w-7 h-7 flex items-center justify-center rounded-xl bg-surface/10 hover:bg-surface/20 text-text-muted hover:text-primary transition-all active:scale-90"
-              >A-</button>
+                title="Reducir fuente"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                  <path d="M5 12h14"/>
+                </svg>
+              </button>
+              <div class="px-2 text-[10px] font-black text-text-muted uppercase tracking-widest select-none">
+                A<span class="text-primary">±</span>
+              </div>
               <button 
                 @click="fontScale = Math.min(4, fontScale + 1)"
                 class="w-7 h-7 flex items-center justify-center rounded-xl bg-surface/10 hover:bg-surface/20 text-text-muted hover:text-primary transition-all active:scale-90"
-              >A+</button>
+                title="Aumentar fuente"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                  <path d="M12 5v14M5 12h14"/>
+                </svg>
+              </button>
             </div>
           </div>
         </div>
@@ -86,8 +80,8 @@
             <MouseCoordinates :coords="mouseCoords" />
           </div>
 
-          <!-- Player Control (Only in TRACK Mode) -->
-          <div v-if="viewMode === 'TRACK'" class="w-full flex justify-center pb-4 pointer-events-auto">
+          <!-- Player Control -->
+          <div class="w-full flex justify-center pb-4">
             <div class="w-full max-w-md">
               <TimelinePlayer
                 :currentIndex="playerIndex"
@@ -121,88 +115,108 @@ import AdminLayout from '@/components/layout/AdminLayout.vue'
 import MapMonitor from '../components/MapMonitor.vue'
 import TimelinePlayer from '../components/TimelinePlayer.vue'
 import VesselInfoCard from '../components/VesselInfoCard.vue'
+import TripStagesCard, { type TripStage } from '../components/TripStagesCard.vue'
 import MouseCoordinates from '../components/MouseCoordinates.vue'
-import { useMonitorVMS, type FleetVessel } from '../composables/useMonitorVMS'
-import { toast } from 'vue-sonner'
+import { generateMockTrack, type TrackingPoint } from '../data/mockTracking'
 
-// Composables
-const { fleet, uploadFile, isUploading, getHistory } = useMonitorVMS()
+interface Trip {
+  id: string
+  date: string
+  status: string
+}
 
-// Refs
-const viewMode = ref<'FLEET' | 'TRACK'>('FLEET')
-const selectedVessel = ref<FleetVessel | null>(null)
-const mouseCoords = ref<LatLng | null>(null)
-const dragOver = ref(false)
+interface Vessel {
+  id: number
+  name: string
+  type: string
+  active: boolean
+  trips: Trip[]
+}
 
-// Track Data
-const trackPoints = ref<any[]>([])
-const playerIndex = ref(0)
+const selectedVessel = ref<Vessel>({
+  id: 1,
+  name: 'BP VICTORIA',
+  type: 'Pesquero',
+  active: true,
+  trips: [],
+})
+
+const fontScale = ref(0)
+const trackPoints = ref<TrackingPoint[]>(generateMockTrack(new Date('2025-11-02T21:11:00Z')))
+const playerIndex = ref(trackPoints.value.length - 1)
 const isPlaying = ref(false)
 const playbackSpeed = ref(1)
-let playbackInterval: any = null
-
-// Display Refs
-const fontScale = ref(0)
 const mapLayers = ref({
   totalPoints: true,
   totalTrack: true,
   veda: false,
   isobatas: false,
 })
+const mouseCoords = ref<LatLng | null>(null)
+let playbackInterval: ReturnType<typeof setInterval> | null = null
 
 const currentPoint = computed(() => trackPoints.value[playerIndex.value] || null)
 
-// Methods
-const handleDrop = async (e: DragEvent) => {
-    dragOver.value = false
-    const files = e.dataTransfer?.files
-    if (files && files.length > 0) {
-        const file = files[0]
-        if (file.type === 'text/csv' || file.name.endsWith('.csv')) {
-            const success = await uploadFile(file)
-            if (success) toast.success('Archivo procesado correctamente')
-            else toast.error('Error al procesar archivo')
-        } else {
-            toast.error('Solo archivos CSV permitidos')
-        }
-    }
+const mockStages: TripStage[] = [
+  {
+    id: '1',
+    startDate: '2025-11-03T20:27:00Z',
+    endDate: '2025-11-12T02:14:00Z',
+    durationDays: 10,
+    color: 'var(--color-warning)',
+  },
+  {
+    id: '2',
+    startDate: '2025-11-14T10:30:00Z',
+    endDate: '2025-11-21T13:33:00Z',
+    durationDays: 8,
+    color: 'var(--color-info)',
+  },
+  {
+    id: '3',
+    startDate: '2025-11-23T12:33:00Z',
+    endDate: '2025-12-01T16:21:00Z',
+    durationDays: 9,
+    color: 'var(--color-success)',
+  },
+  {
+    id: '4',
+    startDate: '2025-12-03T19:07:00Z',
+    endDate: '2025-12-11T15:39:00Z',
+    durationDays: 9,
+    color: 'var(--color-error)',
+  },
+]
+
+const handleLayerToggle = (key: string, val: boolean) => {
+  ;(mapLayers.value as any)[key] = val
 }
 
-const handleVesselSelection = async (vesselId: string) => {
-    const vessel = fleet.value.find(v => v.id === vesselId)
-    if (!vessel) return
-
-    toast.info(`Cargando historial de ${vessel.name}...`)
-    selectedVessel.value = vessel
-    
-    // Load history
-    const history = await getHistory(vessel.id)
-    if (history.length > 0) {
-        trackPoints.value = history
-        playerIndex.value = history.length - 1 // Start at end
-        viewMode.value = 'TRACK'
-    } else {
-        toast.warning('No hay historial de recorrido para este buque')
-    }
+const handleStageSelection = (stage: TripStage) => {
+  // Logic to jump to stage start
+  const index = trackPoints.value.findIndex((p) => p.timestamp >= stage.startDate)
+  if (index !== -1) playerIndex.value = index
 }
 
-const resetToFleet = () => {
-    viewMode.value = 'FLEET'
-    selectedVessel.value = null
-    stopPlayback()
-    trackPoints.value = []
+const handleDateSelection = (date: Date) => {
+  const dateStr = date.toISOString().split('T')[0]
+  const index = trackPoints.value.findIndex((p) => p.timestamp.startsWith(dateStr))
+  if (index !== -1) playerIndex.value = index
 }
 
-// Player Logic (Reused)
 const togglePlay = () => {
-  if (isPlaying.value) stopPlayback()
-  else startPlayback()
+  if (isPlaying.value) {
+    stopPlayback()
+  } else {
+    startPlayback()
+  }
 }
 
 const startPlayback = () => {
   if (playerIndex.value >= trackPoints.value.length - 1) {
     playerIndex.value = 0
   }
+
   isPlaying.value = true
   playbackInterval = setInterval(() => {
     if (playerIndex.value < trackPoints.value.length - 1) {
@@ -229,30 +243,14 @@ const handleSpeedChange = (newSpeed: number) => {
   }
 }
 
-const handleDateSelection = (date: Date) => {
-  const dateStr = date.toISOString().split('T')[0]
-  const index = trackPoints.value.findIndex((p) => p.timestamp.startsWith(dateStr))
-  if (index !== -1) playerIndex.value = index
-}
-
-const handleLayerToggle = (key: string, val: boolean) => {
-  (mapLayers.value as any)[key] = val
-}
-
 onUnmounted(stopPlayback)
 </script>
 
 <style scoped>
+/* Override AdminLayout padding to allow full-screen map */
 :deep(.admin-layout-content) {
   padding: 0 !important;
   max-width: none !important;
   margin: 0 !important;
-}
-
-.fade-enter-active, .fade-leave-active {
-  transition: opacity 0.3s;
-}
-.fade-enter-from, .fade-leave-to {
-  opacity: 0;
 }
 </style>
