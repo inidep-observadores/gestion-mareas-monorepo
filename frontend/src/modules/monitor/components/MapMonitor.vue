@@ -130,7 +130,7 @@ watch(() => props.activeLayers, (newLayers) => {
   console.log('Layers updated:', newLayers)
 }, { deep: true })
 </script>
-</script>
+
 
 <style>
 .vessel-icon {
