@@ -106,6 +106,7 @@ class NauticalScale extends L.Control {
   override options: L.ControlOptions & { maxWidth: number }
   private container?: HTMLDivElement
   private line?: HTMLDivElement
+  private label?: HTMLDivElement
   private mapInstance: L.Map | null = null
 
   constructor(options?: Partial<{ position: L.ControlPosition; maxWidth: number }>) {
@@ -120,8 +121,10 @@ class NauticalScale extends L.Control {
 
   onAdd(map: L.Map): HTMLElement {
     this.mapInstance = map
-    this.container = L.DomUtil.create('div', 'leaflet-control-scale')
-    this.line = L.DomUtil.create('div', 'leaflet-control-scale-line', this.container)
+    this.container = L.DomUtil.create('div', 'nautical-scale-container')
+    this.label = L.DomUtil.create('div', 'nautical-scale-label', this.container)
+    this.line = L.DomUtil.create('div', 'nautical-scale-bar', this.container)
+    
     map.on('move', this.updateScale, this)
     map.whenReady(this.updateScale, this)
     return this.container
@@ -133,7 +136,7 @@ class NauticalScale extends L.Control {
   }
 
   private updateScale = () => {
-    if (!this.mapInstance || !this.line) return
+    if (!this.mapInstance || !this.line || !this.label) return
     const mapSize = this.mapInstance.getSize()
     const y = mapSize.y / 2
     const maxMeters = this.mapInstance.distance(
@@ -143,8 +146,9 @@ class NauticalScale extends L.Control {
     const maxNM = maxMeters / 1852
     const nm = this.getRoundNum(maxNM)
     const px = (nm * 1852 * this.options.maxWidth) / maxMeters
+    
     this.line.style.width = `${px}px`
-    this.line.innerHTML = `${nm} nm`
+    this.label.innerHTML = `${nm} NM`
   }
 
   private getRoundNum(num: number) {
@@ -229,19 +233,38 @@ defineExpose({
 </script>
 
 <style>
-.graticule-label {
-  pointer-events: none !important;
+/* --- Nautical Scale Redesign --- */
+.nautical-scale-container {
+  margin-right: 12px !important;
+  margin-bottom: 85px !important; /* Arriba de los botones de zoom */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: none;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));
 }
 
-/* Ensure scale line matches our theme better */
-.leaflet-control-scale-line {
-  background: var(--color-surface) !important;
+.nautical-scale-label {
+  font-family: 'Inter', sans-serif;
+  font-size: 9px !important;
+  font-weight: 900 !important;
   color: var(--color-text) !important;
-  border: 2px solid var(--color-border) !important;
-  border-top: none !important;
-  font-weight: bold !important;
-  font-size: 10px !important;
-  padding: 2px 5px !important;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 2px;
+  text-shadow: 0 0 4px var(--color-surface);
+}
+
+.nautical-scale-bar {
+  height: 4px;
+  border: 1.5px solid var(--color-text);
+  border-top: none;
+  box-sizing: border-box;
+  transition: width 0.2s ease;
+}
+
+/* Graticule labels */
+.graticule-label {
+  pointer-events: none !important;
 }
 </style>

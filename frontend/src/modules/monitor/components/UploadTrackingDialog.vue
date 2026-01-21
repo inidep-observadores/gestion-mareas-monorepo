@@ -184,7 +184,8 @@ const startUpload = async () => {
       formData.append('file', item.file)
 
       await httpClient.post('/tracking/upload', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
+        headers: { 'Content-Type': 'multipart/form-data' },
+        timeout: 600000 // 10 minutos para procesos pesados
       })
 
       item.status = 'success'
