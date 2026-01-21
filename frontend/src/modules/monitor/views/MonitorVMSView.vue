@@ -4,83 +4,12 @@
     description="Monitoreo satelital y tracking en tiempo real de la flota."
   >
     <div
-      class="relative w-full overflow-hidden bg-background text-text"
+      class="h-full w-full flex overflow-hidden bg-background text-text"
       style="height: calc(100vh - 64px)"
     >
-      <!-- THE MAP (Background) -->
-      <div class="absolute inset-0">
-        <MapMonitor
-          ref="mapMonitor"
-          class="w-full h-full"
-          :fleet="fleet"
-          :activeLayers="mapLayers"
-          @update:mouse-coords="mouseCoords = $event"
-        />
-      </div>
-
-      <!-- HUD LAYER (Floating Components) -->
-      <div
-        class="relative w-full h-full pointer-events-none z-[1000] p-6 flex flex-col justify-between"
-      >
-        <!-- Top Row -->
-        <div class="flex justify-between items-start w-full">
-          <!-- Left: Vessel Info -->
-          <VesselInfoCard
-            v-if="activeVessel"
-            :vesselName="activeVessel.name"
-            :vesselMat="activeVessel.id"
-            :position="{ lat: currentPoint?.lat || 0, lon: currentPoint?.lon || 0 }"
-            :timestamp="currentPoint?.timestamp?.toString() || ''"
-            :speed="currentPoint?.speed || 0"
-            :course="currentPoint?.course || 0"
-          />
-
-          <!-- Right: Trip Stages (Optional or for selected vessel) -->
-          <div class="flex flex-col gap-3 items-end">
-            <TripStagesCard
-              v-if="activeVessel && mockStages.length"
-              :stages="mockStages"
-              :totalDays="36"
-              @select-stage="handleStageSelection"
-            />
-          </div>
-        </div>
-
-        <!-- Bottom Row -->
-        <div class="flex flex-col gap-2">
-          <!-- Mouse Coordinates -->
-          <div class="flex items-end justify-between">
-            <MouseCoordinates :coords="mouseCoords" />
-          </div>
-
-          <!-- Player Control -->
-          <div class="w-full flex justify-center pb-4">
-            <div class="w-full max-w-md">
-              <TimelinePlayer
-                v-if="activeVessel && activeVessel.visible && activeVessel.points.length"
-                :currentIndex="activeVessel.currentIndex"
-                :maxIndex="activeVessel.points.length - 1"
-                :currentTime="currentPoint?.timestamp?.toString() || ''"
-                :isPlaying="isPlaying"
-                :speed="playbackSpeed"
-                :startDate="activeVessel.points[0]?.timestamp.toString().split('T')[0] || '--'"
-                :endDate="activeVessel.points[activeVessel.points.length - 1]?.timestamp.toString().split('T')[0] || '--'"
-                @update:index="handlePlayerIndexUpdate"
-                @update:speed="handleSpeedChange"
-                @toggle-play="togglePlay"
-                @prev="handlePlayerPrev"
-                @next="handlePlayerNext"
-                @skip-start="activeVessel.currentIndex = 0"
-                @skip-end="activeVessel.currentIndex = activeVessel.points.length - 1"
-                @select-date="handleDateSelection"
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- SIDEBARS & DIALOGS -->
+      <!-- SIDEBAR IZQUIERDO (FLOTA) -->
       <VesselListSidebar 
+        v-model:isOpen="leftSidebarOpen"
         :vessels="vesselList"
         :selectedId="selectedVesselId"
         @select="setSelectedVessel"
@@ -89,7 +18,84 @@
         @deselect-all="selectAllVessels(false)"
       />
 
+      <!-- THE MAP AREA (Dynamic Width) -->
+      <div class="relative flex-1 min-w-0 h-full overflow-hidden">
+        <!-- THE MAP (Background) -->
+        <div class="absolute inset-0">
+          <MapMonitor
+            ref="mapMonitor"
+            class="w-full h-full"
+            :fleet="fleet"
+            :activeLayers="mapLayers"
+            @update:mouse-coords="mouseCoords = $event"
+          />
+        </div>
+
+        <!-- HUD LAYER (Floating Components inside map area) -->
+        <div
+          class="relative w-full h-full pointer-events-none z-[1000] p-6 flex flex-col justify-between"
+        >
+          <!-- Top Row -->
+          <div class="flex justify-between items-start w-full">
+            <!-- Left: Vessel Info -->
+            <VesselInfoCard
+              v-if="activeVessel"
+              :vesselName="activeVessel.name"
+              :vesselMat="activeVessel.id"
+              :position="{ lat: currentPoint?.lat || 0, lon: currentPoint?.lon || 0 }"
+              :timestamp="currentPoint?.timestamp?.toString() || ''"
+              :speed="currentPoint?.speed || 0"
+              :course="currentPoint?.course || 0"
+            />
+
+            <!-- Right: Trip Stages (Optional or for selected vessel) -->
+            <div class="flex flex-col gap-3 items-end">
+              <TripStagesCard
+                v-if="activeVessel && mockStages.length"
+                :stages="mockStages"
+                :totalDays="36"
+                @select-stage="handleStageSelection"
+              />
+            </div>
+          </div>
+
+          <!-- Bottom Row -->
+          <div class="flex flex-col gap-2">
+            <!-- Mouse Coordinates -->
+            <div class="flex items-end justify-between">
+              <MouseCoordinates :coords="mouseCoords" />
+            </div>
+
+            <!-- Player Control -->
+            <div class="w-full flex justify-center pb-4">
+              <div class="w-full max-w-md">
+                <TimelinePlayer
+                  v-if="activeVessel && activeVessel.visible && activeVessel.points.length"
+                  :currentIndex="activeVessel.currentIndex"
+                  :maxIndex="activeVessel.points.length - 1"
+                  :currentTime="currentPoint?.timestamp?.toString() || ''"
+                  :isPlaying="isPlaying"
+                  :speed="playbackSpeed"
+                  :startDate="activeVessel.points[0]?.timestamp.toString().split('T')[0] || '--'"
+                  :endDate="activeVessel.points[activeVessel.points.length - 1]?.timestamp.toString().split('T')[0] || '--'"
+                  @update:index="handlePlayerIndexUpdate"
+                  @update:speed="handleSpeedChange"
+                  @toggle-play="togglePlay"
+                  @prev="handlePlayerPrev"
+                  @next="handlePlayerNext"
+                  @skip-start="activeVessel.currentIndex = 0"
+                  @skip-end="activeVessel.currentIndex = activeVessel.points.length - 1"
+                  @select-date="handleDateSelection"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SIDEBAR DERECHO (CONTROL) -->
       <MonitorSidebar 
+        v-model:isOpen="rightSidebarOpen"
         :mapLayers="mapLayers"
         @update:layer="handleLayerToggle"
         @open-upload="showUploadDialog = true"
@@ -105,7 +111,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onUnmounted, onMounted, reactive } from 'vue'
+import { ref, computed, onUnmounted, onMounted, reactive, watch } from 'vue'
 import type { LatLng } from 'leaflet'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import MapMonitor, { type VesselTrajectory } from '../components/MapMonitor.vue'
@@ -124,11 +130,13 @@ const fleet = reactive<Record<string, VesselTrajectory>>({})
 const selectedVesselId = ref<string | null>(null)
 const mouseCoords = ref<LatLng | null>(null)
 const mapMonitor = ref<InstanceType<typeof MapMonitor> | null>(null)
+const leftSidebarOpen = ref(true)
+const rightSidebarOpen = ref(false)
 const mapLayers = ref({
   veda: false,
   isobatas: false,
   points: false,
-})
+}) as any
 
 // Playback State
 const isPlaying = ref(false)
@@ -140,12 +148,12 @@ const vesselList = computed<MonitorVessel[]>(() => {
   return Object.values(fleet).map(v => ({
     id: v.id,
     name: v.name,
-    matricula: v.id, // Using ID for now
+    matricula: v.matricula || v.id,
     status: 'OK',
     color: v.color,
     visible: v.visible,
-    voyageStart: null,
-    voyageEnd: null
+    voyageStart: v.voyageStart || null,
+    voyageEnd: v.voyageEnd || null
   }))
 })
 
@@ -170,6 +178,17 @@ const generateLightColor = (id: string) => {
   return `hsl(${h}, 70%, 60%)`
 }
 
+// Watch sidebars to invalidate map size
+watch([leftSidebarOpen, rightSidebarOpen], () => {
+  // Wait for CSS transition to finish (500ms in CSS)
+  let elapsed = 0
+  const interval = setInterval(() => {
+    mapMonitor.value?.invalidateSize()
+    elapsed += 50
+    if (elapsed > 600) clearInterval(interval)
+  }, 50)
+})
+
 const fetchFleet = async () => {
   try {
     const response = await httpClient.get('/tracking/fleet')
@@ -183,7 +202,10 @@ const fetchFleet = async () => {
           color: generateLightColor(buque.id),
           points: [],
           currentIndex: 0,
-          visible: false
+          visible: false,
+          matricula: buque.matricula,
+          voyageStart: buque.voyageStart,
+          voyageEnd: buque.voyageEnd
         }
         fetchVesselHistory(buque.id, buque.voyageStart, buque.voyageEnd)
       }

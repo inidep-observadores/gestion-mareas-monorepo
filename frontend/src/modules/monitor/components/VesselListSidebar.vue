@@ -1,5 +1,5 @@
 <template>
-  <div class="absolute left-0 top-0 bottom-0 z-[2000] flex pointer-events-none">
+  <div class="relative z-[2000] flex pointer-events-none h-full shadow-2xl">
     <!-- Sidebar Panel -->
     <div
       class="pointer-events-auto h-full bg-surface shadow-[20px_0_50px_-20px_rgba(0,0,0,0.3)] transition-all duration-500 ease-spring border-r border-border/10"
@@ -23,7 +23,7 @@
             </div>
           </div>
           <button
-            @click="isOpen = false"
+            @click="toggleSidebar"
             class="p-2 hover:bg-surface-muted rounded-xl transition-colors text-text-muted hover:text-primary"
           >
             <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -126,7 +126,7 @@
     <!-- Trigger Button (Integrated in edge) -->
     <div class="flex items-center">
       <button
-        @click="isOpen = !isOpen"
+        @click="toggleSidebar"
         class="pointer-events-auto w-10 h-20 bg-surface/80 backdrop-blur-xl border border-border/20 border-l-0 rounded-r-2xl flex flex-col items-center justify-center gap-2 text-text-muted hover:text-primary transition-all group overflow-hidden shadow-2xl"
         :class="{ '-translate-x-full opacity-0': isOpen }"
       >
@@ -155,19 +155,17 @@ export interface MonitorVessel {
   voyageEnd: string | null
 }
 
-defineProps<{
+const props = defineProps<{
   vessels: MonitorVessel[]
   selectedId: string | null
+  isOpen: boolean
 }>()
 
-defineEmits(['select', 'toggle-visibility', 'select-all', 'deselect-all'])
+const emit = defineEmits(['select', 'toggle-visibility', 'select-all', 'deselect-all', 'update:isOpen'])
 
-const isOpen = ref(true)
-
-defineExpose({
-  open: () => isOpen.value = true,
-  close: () => isOpen.value = false
-})
+const toggleSidebar = () => {
+  emit('update:isOpen', !props.isOpen)
+}
 </script>
 
 <style scoped>

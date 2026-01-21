@@ -1,9 +1,9 @@
 <template>
-  <div class="absolute right-0 top-0 bottom-0 z-[2000] flex pointer-events-none">
+  <div class="relative z-[2000] flex pointer-events-none h-full shadow-2xl">
     <!-- Trigger Button (Integrated in edge) -->
     <div class="flex items-center">
       <button
-        @click="isOpen = !isOpen"
+        @click="toggleSidebar"
         class="pointer-events-auto w-10 h-20 bg-surface/80 backdrop-blur-xl border border-border/20 border-r-0 rounded-l-2xl flex flex-col items-center justify-center gap-2 text-text-muted hover:text-primary transition-all group overflow-hidden shadow-2xl"
         :class="{ 'translate-x-full opacity-0': isOpen }"
       >
@@ -28,7 +28,7 @@
             <p class="text-[9px] text-text-muted font-bold uppercase tracking-tight">Configuración del Monitor</p>
           </div>
           <button
-            @click="isOpen = false"
+            @click="toggleSidebar"
             class="p-2 hover:bg-surface-muted rounded-xl transition-colors text-text-muted hover:text-primary"
           >
             <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -106,14 +106,18 @@ import BaseSwitch from '@/components/ui/BaseSwitch.vue'
 
 const props = defineProps<{
   mapLayers: Record<string, boolean>
+  isOpen: boolean
 }>()
 
 const emit = defineEmits<{
   (e: 'update:layer', key: string, val: boolean): void
   (e: 'open-upload'): void
+  (e: 'update:isOpen', val: boolean): void
 }>()
 
-const isOpen = ref(false)
+const toggleSidebar = () => {
+  emit('update:isOpen', !props.isOpen)
+}
 
 const formatKey = (key: string) => {
   const labels: any = {
@@ -123,11 +127,6 @@ const formatKey = (key: string) => {
   }
   return labels[key] || key
 }
-
-defineExpose({
-  open: () => isOpen.value = true,
-  close: () => isOpen.value = false
-})
 </script>
 
 <style scoped>

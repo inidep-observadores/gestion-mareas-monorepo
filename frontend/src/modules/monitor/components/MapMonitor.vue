@@ -28,6 +28,11 @@ export interface VesselTrajectory {
   points: FleetTrackPoint[]
   currentIndex: number
   visible: boolean
+  matricula?: string
+  voyageStart?: string | null
+  voyageEnd?: string | null
+  totalDays?: number
+  etapas?: any[]
 }
 
 const props = defineProps<{
@@ -164,7 +169,13 @@ const fitVesselBounds = (vesselId: string) => {
   map.fitBounds(bounds, { padding: [50, 50], animate: true })
 }
 
-defineExpose({ fitVesselBounds })
+const invalidateSize = () => {
+  if (map) {
+    map.invalidateSize({ animate: true })
+  }
+}
+
+defineExpose({ fitVesselBounds, invalidateSize })
 
 onUnmounted(() => {
   trajectoriesLayer.remove()
