@@ -1,66 +1,31 @@
 <template>
-  <AdminLayout 
-    title="Mapa de Recorridos" 
-    description="Monitoreo satelital y tracking de la flota en operación."
-  >
-    <div
-      class="h-full w-full flex overflow-hidden bg-background text-text"
-      style="height: calc(100vh - 64px)"
-    >
-      <!-- SIDEBAR IZQUIERDO (FLOTA) -->
-      <VesselListSidebar 
-        v-model:isOpen="leftSidebarOpen"
-        :vessels="vesselList"
-        :selectedId="selectedVesselId"
-        @select="setSelectedVessel"
-        @toggle-visibility="toggleVesselVisibility"
-        @select-all="selectAllVessels(true)"
-        @deselect-all="selectAllVessels(false)"
-      />
-
-      <!-- THE MAP AREA (Dynamic Width) -->
-      <div class="relative flex-1 min-w-0 h-full overflow-hidden">
+  <AdminLayout title="Mapa de Recorridos" description="Monitoreo satelital y tracking de la flota en operación.">
+    <div class="h-full w-full relative overflow-hidden bg-background text-text" style="height: calc(100vh - 64px)">
+      <!-- MAP AND HUD AREA (Full Width background) -->
+      <div class="absolute inset-0 z-0">
         <!-- THE MAP (Background) -->
         <div class="absolute inset-0">
-          <MapMonitor
-            ref="mapMonitor"
-            class="w-full h-full"
-            :fleet="fleet"
-            :activeLayers="mapLayers"
-            @update:mouse-coords="mouseCoords = $event"
-            @seek-vessel="handleSeekVessel"
-          />
+          <MapMonitor ref="mapMonitor" class="w-full h-full" :fleet="fleet" :activeLayers="mapLayers"
+            @update:mouse-coords="mouseCoords = $event" @seek-vessel="handleSeekVessel" />
         </div>
 
         <!-- HUD LAYER (Floating Components inside map area) -->
-        <div
-          class="relative w-full h-full pointer-events-none z-[1000] p-6 flex flex-col justify-between"
-        >
+        <div class="relative w-full h-full pointer-events-none z-[1000] p-6 flex flex-col justify-between">
           <!-- Top Row -->
           <div class="flex justify-between items-start w-full">
             <!-- Left: Vessel Info -->
-            <VesselInfoCard
-              v-if="activeVessel"
-              :vesselName="activeVessel.name"
+            <VesselInfoCard v-if="activeVessel" :vesselName="activeVessel.name"
               :mareaCode="activeVessel.mareaCode || '--'"
               :position="{ lat: currentPoint?.lat || 0, lon: currentPoint?.lon || 0 }"
-              :timestamp="currentPoint?.timestamp?.toString() || ''"
-              :speed="currentPoint?.speed || 0"
-              :course="currentPoint?.course || 0"
-              :lastUpdate="activeVessel.lastUpdate"
-              :layers="mapLayers"
-              @update:layer="handleLayerToggle"
-            />
+              :timestamp="currentPoint?.timestamp?.toString() || ''" :speed="currentPoint?.speed || 0"
+              :course="currentPoint?.course || 0" :lastUpdate="activeVessel.lastUpdate" :layers="mapLayers"
+              @update:layer="handleLayerToggle" />
 
             <!-- Right: Trip Stages (Optional or for selected vessel) -->
             <div class="flex flex-col gap-3 items-end">
-              <TripStagesCard
-                v-if="activeVessel && currentVesselStages.length"
-                :stages="currentVesselStages"
-                :totalDays="activeVessel.totalDays || 0"
-                @select-stage="handleStageSelection"
-                @select-date="handleDateSelection"
-              />
+              <TripStagesCard v-if="activeVessel && currentVesselStages.length" :stages="currentVesselStages"
+                :totalDays="activeVessel.totalDays || 0" @select-stage="handleStageSelection"
+                @select-date="handleDateSelection" />
             </div>
           </div>
 
@@ -74,43 +39,32 @@
             <!-- Player Control -->
             <div class="w-full flex justify-center pb-4">
               <div class="w-full max-w-md">
-                <TimelinePlayer
-                  v-if="activeVessel && activeVessel.visible && activeVessel.points.length"
-                  :currentIndex="activeVessel.currentIndex"
-                  :maxIndex="activeVessel.points.length - 1"
-                  :currentTime="currentPoint?.timestamp?.toString() || ''"
-                  :isPlaying="isPlaying"
-                  :speed="playbackSpeed"
+                <TimelinePlayer v-if="activeVessel && activeVessel.visible && activeVessel.points.length"
+                  :currentIndex="activeVessel.currentIndex" :maxIndex="activeVessel.points.length - 1"
+                  :currentTime="currentPoint?.timestamp?.toString() || ''" :isPlaying="isPlaying" :speed="playbackSpeed"
                   :startDate="activeVessel.points[0]?.timestamp.toString().split('T')[0] || '--'"
                   :endDate="activeVessel.points[activeVessel.points.length - 1]?.timestamp.toString().split('T')[0] || '--'"
-                  @update:index="handlePlayerIndexUpdate"
-                  @update:speed="handleSpeedChange"
-                  @toggle-play="togglePlay"
-                  @prev="handlePlayerPrev"
-                  @next="handlePlayerNext"
-                  @skip-start="activeVessel.currentIndex = 0"
+                  @update:index="handlePlayerIndexUpdate" @update:speed="handleSpeedChange" @toggle-play="togglePlay"
+                  @prev="handlePlayerPrev" @next="handlePlayerNext" @skip-start="activeVessel.currentIndex = 0"
                   @skip-end="activeVessel.currentIndex = activeVessel.points.length - 1"
-                  @select-date="handleDateSelection"
-                />
+                  @select-date="handleDateSelection" />
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- SIDEBAR DERECHO (CONTROL) -->
-      <MonitorSidebar 
-        v-model:isOpen="rightSidebarOpen"
-        :mapLayers="mapLayers"
-        @update:layer="handleLayerToggle"
-        @open-upload="showUploadDialog = true"
-      />
+      <!-- SIDEBAR IZQUIERDO (FLOTA) -->
+      <VesselListSidebar class="absolute left-0 top-0 h-full z-[2000]" v-model:isOpen="leftSidebarOpen"
+        :vessels="vesselList" :selectedId="selectedVesselId" @select="setSelectedVessel"
+        @toggle-visibility="toggleVesselVisibility" @select-all="selectAllVessels(true)"
+        @deselect-all="selectAllVessels(false)" />
 
-      <UploadTrackingDialog 
-        :show="showUploadDialog"
-        @close="showUploadDialog = false"
-        @refresh="fetchFleet"
-      />
+      <!-- SIDEBAR DERECHO (CONTROL) -->
+      <MonitorSidebar class="absolute right-0 top-0 h-full z-[2000]" v-model:isOpen="rightSidebarOpen"
+        :mapLayers="mapLayers" @update:layer="handleLayerToggle" @open-upload="showUploadDialog = true" />
+
+      <UploadTrackingDialog :show="showUploadDialog" @close="showUploadDialog = false" @refresh="fetchFleet" />
     </div>
   </AdminLayout>
 </template>
@@ -136,7 +90,7 @@ const selectedVesselId = ref<string | null>(null)
 const mouseCoords = ref<LatLng | null>(null)
 const mapMonitor = ref<InstanceType<typeof MapMonitor> | null>(null)
 const leftSidebarOpen = ref(true)
-const rightSidebarOpen = ref(false)
+const rightSidebarOpen = ref(true)
 const mapLayers = ref({
   veda: true,
   vieira: false,
@@ -200,7 +154,7 @@ const fetchFleet = async () => {
   try {
     const response = await httpClient.get('/tracking/fleet')
     const activeBuques = response.data
-    
+
     activeBuques.forEach((buque: any) => {
       if (!fleet[buque.id]) {
         fleet[buque.id] = {
@@ -222,7 +176,7 @@ const fetchFleet = async () => {
         fetchVesselHistory(buque.id, buque.voyageStart, buque.voyageEnd)
       }
     })
-    
+
     if (!selectedVesselId.value && activeBuques.length > 0) {
       selectedVesselId.value = activeBuques[0].id
     }
@@ -236,7 +190,7 @@ const fetchVesselHistory = async (buqueId: string, from?: string, to?: string) =
     const params: any = {}
     if (from) params.from = from
     if (to) params.to = to
-    
+
     const response = await httpClient.get(`/tracking/history/${buqueId}`, { params })
     if (fleet[buqueId]) {
       fleet[buqueId].points = response.data
@@ -255,7 +209,7 @@ const setSelectedVessel = (id: string) => {
 const toggleVesselVisibility = (id: string) => {
   if (fleet[id]) {
     fleet[id].visible = !fleet[id].visible
-    
+
     // Auto-zoom and auto-select if activating
     if (fleet[id].visible) {
       selectedVesselId.value = id
@@ -278,7 +232,7 @@ const handleSeekVessel = ({ vesselId, index }: { vesselId: string, index: number
 }
 
 const handleLayerToggle = (key: string, val: boolean) => {
-  ;(mapLayers.value as any)[key] = val
+  ; (mapLayers.value as any)[key] = val
 }
 
 const handlePlayerIndexUpdate = (val: number) => {
@@ -310,11 +264,11 @@ const handleStageSelection = (stage: TripStage) => {
 
 const handleDateSelection = (dateStr: string) => {
   if (!activeVessel.value || !activeVessel.value.points.length) return
-  
+
   const targetTime = new Date(dateStr).getTime()
   let minDiff = Infinity
   let nearestIdx = 0
-  
+
   activeVessel.value.points.forEach((p, idx) => {
     const pTime = new Date(p.timestamp).getTime()
     const diff = Math.abs(pTime - targetTime)
@@ -323,7 +277,7 @@ const handleDateSelection = (dateStr: string) => {
       nearestIdx = idx
     }
   })
-  
+
   activeVessel.value.currentIndex = nearestIdx
 }
 
@@ -334,7 +288,7 @@ const togglePlay = () => {
 
 const startPlayback = () => {
   if (!activeVessel.value || activeVessel.value.points.length === 0) return
-  
+
   if (activeVessel.value.currentIndex >= activeVessel.value.points.length - 1) {
     activeVessel.value.currentIndex = 0
   }
