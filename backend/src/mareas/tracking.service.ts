@@ -107,8 +107,10 @@ export class TrackingService {
         });
 
         let newPointsCount = 0;
+        let updatedShipsCount = 0;
         const buquesCache = new Map<string, string>();
         const pointsByShip: Record<string, any[]> = {};
+        const errors: { vessel: string, reason: string }[] = [];
 
         for (const record of records) {
             const buqueName = record['Buque']?.toUpperCase();
@@ -118,86 +120,106 @@ export class TrackingService {
         }
 
         for (const [buqueName, points] of Object.entries(pointsByShip)) {
-            // 1. Resolve Buque ID sequentially
-            let buqueId = buquesCache.get(buqueName);
-            if (!buqueId) {
-                const matricula = points[0]['Matricula'];
-                let buqueFound = null;
+            try {
+                // 1. Resolve Buque ID sequentially
+                let buqueId = buquesCache.get(buqueName);
+                if (!buqueId) {
+                    const matriculaRaw = points[0]['Matricula'];
+                    const matricula = matriculaRaw ? matriculaRaw.trim() : null;
+                    let buqueFound = null;
 
-                // Priority 1: Exact Matricula
-                if (matricula) {
-                    buqueFound = await this.prisma.buque.findUnique({
-                        where: { matricula }
-                    });
-                }
+                    // Priority 1: Exact Matricula
+                    if (matricula) {
+                        buqueFound = await this.prisma.buque.findUnique({
+                            where: { matricula }
+                        });
+                    }
 
-                // Priority 2: Name Fallback
-                if (!buqueFound) {
-                    buqueFound = await this.prisma.buque.findFirst({
-                        where: {
-                            nombreBuque: { equals: buqueName, mode: 'insensitive' }
+                    // Priority 2: Name Fallback (with TRIM on DB value via insensitive + trim on input)
+                    if (!buqueFound) {
+                        // Note: Prisma insensitive mode handles casing, but we need to be careful with spaces.
+                        // We'll search by name and then manually verify or trust the lenient match.
+                        // For best results, we try exact match insensitive.
+                        const nameToSearch = buqueName.trim();
+                        buqueFound = await this.prisma.buque.findFirst({
+                            where: {
+                                nombreBuque: { equals: nameToSearch, mode: 'insensitive' }
+                            }
+                        });
+
+                        // Auto-correct Matricula if found by name but not matricula
+                        if (buqueFound && matricula && buqueFound.matricula !== matricula) {
+                            this.logger.log(`Auto-correcting matricula for ${buqueName}: ${buqueFound.matricula} -> ${matricula}`);
+                            buqueFound = await this.prisma.buque.update({
+                                where: { id: buqueFound.id },
+                                data: { matricula: matricula }
+                            });
+                            updatedShipsCount++;
                         }
-                    });
+                    }
+
+                    if (buqueFound) {
+                        buqueId = buqueFound.id;
+                        buquesCache.set(buqueName, buqueFound.id);
+                    } else {
+                        const reason = `Buque no encontrado: ${buqueName} (Matrícula: ${matricula || 'N/A'})`;
+                        this.logger.warn(reason);
+                        errors.push({ vessel: buqueName, reason: 'Buque no encontrado en base de datos' });
+                        continue;
+                    }
                 }
 
-                if (buqueFound) {
-                    buqueId = buqueFound.id;
-                    buquesCache.set(buqueName, buqueFound.id);
-                } else {
-                    this.logger.warn(`Buque no encontrado: ${buqueName} (Matrícula: ${matricula || 'N/A'})`);
-                    continue;
-                }
-            }
-
-            // Ensure Trajectory
-            const tray = await this.prisma.buqueTrayectoria.upsert({
-                where: { buqueId },
-                update: {},
-                create: { buqueId }
-            });
-
-            const pointsToInsert = points.map(p => {
-                // Raw date from CSV (e.g. "2026-01-08 23:56:00")
-                // If the CSV is UTC, `new Date("2026-01-08 23:56:00")` depends on server locale if no 'Z'.
-                // User says "CSV is UTC".
-                // Robust parsing:
-                let dateStr = p['Fecha'];
-                // Assume format 'YYYY-MM-DD HH:mm:ss'
-                // Create a UTC date object manually to avoid local timezone interference
-                const dt = DateTime.fromFormat(dateStr, 'yyyy-MM-dd HH:mm:ss', { zone: 'utc' });
-                // Or if it fails try ISO
-                const validDt = dt.isValid ? dt : DateTime.fromISO(dateStr, { zone: 'utc' });
-
-                const lat = parseFloat(p['Latitud'].replace(',', '.'));
-                const lon = parseFloat(p['Longitud'].replace(',', '.'));
-                const speed = parseFloat(p['Velocidad'].replace(',', '.'));
-                const course = parseInt(p['Rumbo']);
-
-                return {
-                    trayectoriaId: tray.id,
-                    buqueId: buqueId,
-                    timestamp: validDt.toJSDate(), // Store as native Date (Prisma handles as UTC usually)
-                    lat,
-                    lon,
-                    velocidad: isNaN(speed) ? null : speed,
-                    rumbo: isNaN(course) ? null : course,
-                };
-            }).filter(p => !isNaN(p.timestamp.getTime()) && !isNaN(p.lat) && !isNaN(p.lon));
-
-            if (pointsToInsert.length > 0) {
-                const result = await this.prisma.buqueTrayectoriaPunto.createMany({
-                    data: pointsToInsert,
-                    skipDuplicates: true,
+                // Ensure Trajectory
+                const tray = await this.prisma.buqueTrayectoria.upsert({
+                    where: { buqueId },
+                    update: {},
+                    create: { buqueId }
                 });
-                newPointsCount += result.count;
 
-                // Run analysis on this new batch
-                await this.detectPortEvents(buqueId, pointsToInsert);
-                await this.analyzeGaps(buqueId, pointsToInsert);
+                const pointsToInsert = points.map(p => {
+                    let dateStr = p['Fecha'];
+                    const dt = DateTime.fromFormat(dateStr, 'yyyy-MM-dd HH:mm:ss', { zone: 'utc' });
+                    const validDt = dt.isValid ? dt : DateTime.fromISO(dateStr, { zone: 'utc' });
+
+                    const lat = parseFloat(p['Latitud'].replace(',', '.'));
+                    const lon = parseFloat(p['Longitud'].replace(',', '.'));
+                    const speed = parseFloat(p['Velocidad'].replace(',', '.'));
+                    const course = parseInt(p['Rumbo']);
+
+                    return {
+                        trayectoriaId: tray.id,
+                        buqueId: buqueId,
+                        timestamp: validDt.toJSDate(),
+                        lat,
+                        lon,
+                        velocidad: isNaN(speed) ? null : speed,
+                        rumbo: isNaN(course) ? null : course,
+                    };
+                }).filter(p => !isNaN(p.timestamp.getTime()) && !isNaN(p.lat) && !isNaN(p.lon));
+
+                if (pointsToInsert.length > 0) {
+                    const result = await this.prisma.buqueTrayectoriaPunto.createMany({
+                        data: pointsToInsert,
+                        skipDuplicates: true,
+                    });
+                    newPointsCount += result.count;
+
+                    // Run analysis on this new batch
+                    await this.detectPortEvents(buqueId, pointsToInsert);
+                    await this.analyzeGaps(buqueId, pointsToInsert);
+                }
+            } catch (e) {
+                this.logger.error(`Error processing ship ${buqueName}:`, e);
+                errors.push({ vessel: buqueName, reason: `Error interno: ${e.message}` });
             }
         }
 
-        return { processed: records.length, inserted: newPointsCount };
+        return {
+            processed: records.length,
+            inserted: newPointsCount,
+            updated: updatedShipsCount,
+            errors: errors
+        };
     }
 
     // --- Visuals & Data Retrieval ---
