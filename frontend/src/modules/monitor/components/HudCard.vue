@@ -1,7 +1,7 @@
 <template>
   <div
     :class="[
-      'pointer-events-auto bg-white/10 dark:bg-gray-900/40 backdrop-blur-xl rounded-[1.25rem] border border-white/20 dark:border-white/5 shadow-2xl shadow-black/5 overflow-hidden flex flex-col transition-all duration-500',
+      'pointer-events-auto bg-surface/10 dark:bg-surface/20 backdrop-blur-md rounded-2xl border border-border/10 shadow-theme-lg overflow-hidden flex flex-col transition-all duration-500 hover:border-border/20',
       customClass
     ]"
   >

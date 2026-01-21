@@ -21,7 +21,6 @@
       <!-- HUD LAYER (Floating Components) -->
       <div
         class="relative w-full h-full pointer-events-none z-[1000] p-6 flex flex-col justify-between"
-        :style="{ '--hud-font-offset': `${fontScale}px` }"
       >
         <!-- Top Row -->
         <div class="flex justify-between items-start w-full">
@@ -48,33 +47,9 @@
 
         <!-- Bottom Row -->
         <div class="flex flex-col gap-2">
-          <!-- Mouse Coordinates & Font Size (Moved together) -->
+          <!-- Mouse Coordinates -->
           <div class="flex items-end justify-between">
             <MouseCoordinates :coords="mouseCoords" />
-            
-            <div class="pointer-events-auto flex items-center gap-1.5 p-1.5 bg-surface/20 backdrop-blur-xl rounded-2xl border border-border/20 shadow-2xl mb-4 mr-2">
-              <button 
-                @click="fontScale = Math.max(0, fontScale - 1)"
-                class="w-7 h-7 flex items-center justify-center rounded-xl bg-surface/10 hover:bg-surface/20 text-text-muted hover:text-primary transition-all active:scale-90"
-                title="Reducir fuente"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                  <path d="M5 12h14"/>
-                </svg>
-              </button>
-              <div class="px-2 text-[10px] font-black text-text-muted uppercase tracking-widest select-none">
-                A<span class="text-primary">±</span>
-              </div>
-              <button 
-                @click="fontScale = Math.min(4, fontScale + 1)"
-                class="w-7 h-7 flex items-center justify-center rounded-xl bg-surface/10 hover:bg-surface/20 text-text-muted hover:text-primary transition-all active:scale-90"
-                title="Aumentar fuente"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                  <path d="M12 5v14M5 12h14"/>
-                </svg>
-              </button>
-            </div>
           </div>
 
           <!-- Player Control -->
@@ -154,7 +129,6 @@ const selectedVessel = ref<Vessel>({
   trips: [],
 })
 
-const fontScale = ref(0)
 const trackPoints = ref<TrackingPoint[]>(generateMockTrack(new Date('2025-11-02T21:11:00Z')))
 const playerIndex = ref(trackPoints.value.length - 1)
 const isPlaying = ref(false)
