@@ -654,3 +654,11 @@ enum TipoEtapa {
   MC
   CI
 }
+
+model SystemStatus {
+  key         String   @id
+  value       String?
+  lastUpdate  DateTime @updatedAt @map("last_update") @db.Timestamptz(6)
+  
+  @@map("system_status")
+}

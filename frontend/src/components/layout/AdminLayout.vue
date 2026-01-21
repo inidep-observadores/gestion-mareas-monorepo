@@ -22,13 +22,14 @@
 </template>
 
 <script setup lang="ts">
-import { watchEffect, onUnmounted } from 'vue'
+import { watchEffect, onUnmounted, onMounted } from 'vue'
 import AppSidebar from './AppSidebar.vue'
 import AppHeader from './AppHeader.vue'
 import { useSidebar } from '@/composables/useSidebar'
 import { usePageHeader } from '@/composables/usePageHeader'
 import Backdrop from './Backdrop.vue'
 import SpotlightSearch from '../common/SpotlightSearch.vue'
+import httpClient from '@/config/http/http.client'
 
 const props = defineProps<{
   title?: string
@@ -42,6 +43,12 @@ watchEffect(() => {
   if (props.title) {
     setHeader(props.title, props.description || '')
   }
+})
+
+
+onMounted(() => {
+  // Global heartbeat to trigger automated tracking checks (fire & forget)
+  httpClient.get('/tracking/heartbeat', { skipToast: true }).catch(() => {})
 })
 
 onUnmounted(() => {

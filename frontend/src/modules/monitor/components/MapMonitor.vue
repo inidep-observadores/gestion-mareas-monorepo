@@ -11,20 +11,26 @@ import 'leaflet/dist/leaflet.css'
 import type { TrackingPoint } from '../data/mockTracking'
 
 const props = defineProps<{
+
   points: TrackingPoint[]
   currentIndex: number
   activeLayers: { veda: boolean; isobatas: boolean }
+  mode?: 'TRACK' | 'FLEET'
+  fleetData?: any[]
 }>()
+
+const emit = defineEmits(['update:mouse-coords', 'select-vessel'])
 
 const mapContainer = ref<HTMLElement | null>(null)
 let map: L.Map | null = null
 let trackLayer: L.FeatureGroup | null = null
+let fleetLayer: L.FeatureGroup | null = null
 let vesselMarker: L.Marker | null = null
 let ghostPath: L.Polyline | null = null
 let baseLayer: L.TileLayer | null = null
 let themeObserver: MutationObserver | null = null
 
-const emit = defineEmits(['update:mouse-coords'])
+
 
 let graticuleLayer: L.LayerGroup | null = null
 
@@ -171,7 +177,10 @@ const initMap = () => {
   
   new NauticalScale().addTo(map)
 
+  new NauticalScale().addTo(map)
+
   trackLayer = L.featureGroup().addTo(map)
+  fleetLayer = L.featureGroup().addTo(map)
 
   map.on('mousemove', (e: L.LeafletMouseEvent) => {
     emit('update:mouse-coords', e.latlng)
@@ -258,6 +267,7 @@ const updateVesselMarker = (index: number) => {
     iconAnchor: [16, 16],
   })
 
+
   if (!vesselMarker) {
     vesselMarker = L.marker([current.lat, current.lon], { icon }).addTo(map)
   } else {
@@ -280,11 +290,71 @@ const updateVesselMarker = (index: number) => {
   }
 }
 
-watch(() => props.points, drawTrack)
+const drawFleet = () => {
+  if (!map || !fleetLayer || !props.fleetData) return
+  fleetLayer.clearLayers()
+
+  if (vesselMarker) map.removeLayer(vesselMarker)
+  if (ghostPath) map.removeLayer(ghostPath)
+  if (trackLayer) trackLayer.clearLayers()
+
+  const bounds = L.latLngBounds([])
+
+  props.fleetData.forEach((v) => {
+    // Status Color Logic
+    let colorClass = 'bg-success'
+    if (v.status === 'OLD') colorClass = 'bg-error'
+    else if (v.status === 'ALARM') colorClass = 'bg-warning'
+
+    const icon = L.divIcon({
+      className: 'fleet-marker-icon',
+      html: `
+        <div class="group relative cursor-pointer" style="transform: rotate(${v.course}deg)">
+           <!-- Ship Body -->
+           <div class="w-6 h-10 ${colorClass} rounded-t-full shadow-md border border-white hover:scale-110 transition-transform"></div>
+           <!-- Label (Static Rotation) -->
+           <div class="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-surface/90 backdrop-blur px-2 py-0.5 rounded text-[10px] font-bold text-text whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" style="transform: rotate(-${v.course}deg)">
+             ${v.name}
+           </div>
+        </div>
+      `,
+      iconSize: [24, 40],
+      iconAnchor: [12, 20],
+    })
+
+    const marker = L.marker([v.lat, v.lon], { icon }).addTo(fleetLayer!)
+    marker.on('click', () => emit('select-vessel', v.id))
+    bounds.extend([v.lat, v.lon])
+  })
+
+  if (props.fleetData.length > 0) {
+    map.fitBounds(bounds, { padding: [50, 50], maxZoom: 10 })
+  }
+}
+
+watch(() => props.points, () => {
+  if (props.mode !== 'FLEET') drawTrack()
+})
 
 watch(() => props.currentIndex, (newIndex) => {
-  isInitialLoad = false
-  updateVesselMarker(newIndex)
+  if (props.mode !== 'FLEET') {
+      isInitialLoad = false
+      updateVesselMarker(newIndex)
+  }
+})
+
+watch(() => props.fleetData, () => {
+  if (props.mode === 'FLEET') drawFleet()
+}, { deep: true, immediate: true })
+
+watch(() => props.mode, (val) => {
+  if (val === 'FLEET') {
+    drawFleet()
+  } else {
+    if (fleetLayer) fleetLayer.clearLayers()
+    drawTrack()
+    updateVesselMarker(props.currentIndex)
+  }
 })
 
 // In a real app we would add/remove GeoJSON layers here based on props.activeLayers
