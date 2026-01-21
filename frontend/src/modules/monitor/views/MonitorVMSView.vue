@@ -62,7 +62,8 @@
 
       <!-- SIDEBAR DERECHO (CONTROL) -->
       <MonitorSidebar class="absolute right-0 top-0 h-full z-[2000]" v-model:isOpen="rightSidebarOpen"
-        :mapLayers="mapLayers" @update:layer="handleLayerToggle" @open-upload="showUploadDialog = true" />
+        :mapLayers="mapLayers" :totalPoints="activeVessel?.points.length || 0" :visiblePoints="visiblePointsCount"
+        @update:layer="handleLayerToggle" @open-upload="showUploadDialog = true" />
 
       <UploadTrackingDialog :show="showUploadDialog" @close="showUploadDialog = false" @refresh="fetchFleet" />
     </div>
@@ -91,12 +92,15 @@ const mouseCoords = ref<LatLng | null>(null)
 const mapMonitor = ref<InstanceType<typeof MapMonitor> | null>(null)
 const leftSidebarOpen = ref(true)
 const rightSidebarOpen = ref(false)
+const pendingZoomVesselId = ref<string | null>(null)
 const mapLayers = ref({
   veda: true,
   vieira: false,
   centolla: false,
   points: false,
 })
+
+import { MAX_DISPLAY_POINTS } from '../constants'
 
 // Playback State
 const isPlaying = ref(false)
@@ -121,6 +125,22 @@ const vesselList = computed<MonitorVessel[]>(() => {
 const activeVessel = computed(() => {
   if (!selectedVesselId.value) return null
   return fleet[selectedVesselId.value]
+})
+
+const visiblePointsCount = computed(() => {
+  if (!activeVessel.value) return 0
+  const total = activeVessel.value.points.length
+  if (total === 0) return 0
+  const step = Math.max(1, Math.ceil(total / MAX_DISPLAY_POINTS))
+
+  if (step === 1) return total
+
+  let count = 0
+  for (let i = 0; i < total; i++) {
+    const isLast = i === total - 1
+    if (i % step === 0 || isLast) count++
+  }
+  return count
 })
 
 const currentPoint = computed(() => {
@@ -198,6 +218,14 @@ const fetchVesselHistory = async (buqueId: string, mareaId: string, from?: strin
     if (fleet[mareaId]) {
       fleet[mareaId].points = response.data
       fleet[mareaId].currentIndex = response.data.length - 1
+
+      // Auto-trigger zoom if this vessel was waiting for it
+      if (pendingZoomVesselId.value === mareaId) {
+        setTimeout(() => {
+          mapMonitor.value?.fitVesselBounds(mareaId)
+          pendingZoomVesselId.value = null
+        }, 300)
+      }
     }
   } catch (error) {
     console.error(`Error fetching history for marea ${mareaId} (vessel ${buqueId}):`, error)
@@ -216,9 +244,15 @@ const toggleVesselVisibility = (id: string) => {
     // Auto-zoom and auto-select if activating
     if (fleet[id].visible) {
       selectedVesselId.value = id
-      setTimeout(() => {
-        mapMonitor.value?.fitVesselBounds(id)
-      }, 100)
+
+      if (fleet[id].points.length > 0) {
+        setTimeout(() => {
+          mapMonitor.value?.fitVesselBounds(id)
+        }, 300)
+      } else {
+        // Data not loaded yet, mark for pending zoom
+        pendingZoomVesselId.value = id
+      }
     }
   }
 }

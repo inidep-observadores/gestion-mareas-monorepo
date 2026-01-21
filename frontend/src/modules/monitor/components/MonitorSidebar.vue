@@ -68,7 +68,13 @@
         </div>
 
         <!-- Footer -->
-        <div v-if="false" class="p-4 bg-surface-muted/20 border-t border-border/10">
+        <div class="p-4 bg-surface-muted/20 border-t border-border/10">
+          <div class="flex items-center justify-between px-2 mb-2">
+            <span class="text-[10px] font-black text-primary uppercase tracking-tighter">Depuración</span>
+            <span class="text-[10px] font-bold text-text-muted uppercase tracking-tighter">
+              {{ totalPoints }} ({{ visiblePoints }} visibles)
+            </span>
+          </div>
           <div class="flex items-center justify-between px-2">
             <span class="text-xs font-black text-text-muted/60 uppercase tracking-tighter italic">VMS Engine
               v2.0</span>
@@ -103,6 +109,8 @@ import BaseSwitch from '@/components/ui/BaseSwitch.vue'
 const props = defineProps<{
   mapLayers: Record<string, boolean>
   isOpen: boolean
+  totalPoints: number
+  visiblePoints: number
 }>()
 
 const emit = defineEmits<{

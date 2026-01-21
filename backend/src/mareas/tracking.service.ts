@@ -112,6 +112,20 @@ export class TrackingService {
         const pointsByShip: Record<string, any[]> = {};
         const errors: { vessel: string, reason: string }[] = [];
 
+        // Pre-load numeric matriculas for fallback search
+        const allBuques = await this.prisma.buque.findMany({
+            select: { id: true, matricula: true }
+        });
+        const numericMatriculaMap = new Map<number, string>();
+        for (const b of allBuques) {
+            if (b.matricula && /^\d+$/.test(b.matricula.trim())) {
+                const val = parseInt(b.matricula.trim(), 10);
+                if (!numericMatriculaMap.has(val)) {
+                    numericMatriculaMap.set(val, b.id);
+                }
+            }
+        }
+
         for (const record of records) {
             const buqueName = record['Buque']?.toUpperCase();
             if (!buqueName) continue;
@@ -155,6 +169,28 @@ export class TrackingService {
                                 data: { matricula: matricula }
                             });
                             updatedShipsCount++;
+                        }
+                    }
+
+                    // Priority 3: Numeric Matricula Match (if strict string and name failed)
+                    if (!buqueFound && matricula && /^\d+$/.test(matricula)) {
+                        const matriculaNum = parseInt(matricula, 10);
+                        const idFound = numericMatriculaMap.get(matriculaNum);
+                        if (idFound) {
+                            buqueFound = await this.prisma.buque.findUnique({ where: { id: idFound } });
+                            if (buqueFound) {
+                                this.logger.log(`Found buque by numeric matricula: ${buqueName} (${matricula}) -> ${buqueFound.nombreBuque} (${buqueFound.matricula})`);
+
+                                // Auto-correct Matricula to match CSV format (as per user request)
+                                if (buqueFound.matricula !== matricula) {
+                                    this.logger.log(`Auto-correcting matricula (numeric match) for ${buqueName}: ${buqueFound.matricula} -> ${matricula}`);
+                                    buqueFound = await this.prisma.buque.update({
+                                        where: { id: buqueFound.id },
+                                        data: { matricula: matricula }
+                                    });
+                                    updatedShipsCount++;
+                                }
+                            }
                         }
                     }
 
@@ -263,6 +299,16 @@ export class TrackingService {
                 voyageEnd = new Date();
             }
 
+            // Adjust hours as per user request: 00:00 for start, 23:50 for end
+            if (voyageStart) {
+                const dtStart = DateTime.fromJSDate(voyageStart).setZone(this.TIMEZONE).set({ hour: 0, minute: 0, second: 0, millisecond: 0 });
+                voyageStart = dtStart.toJSDate();
+            }
+            if (voyageEnd) {
+                const dtEnd = DateTime.fromJSDate(voyageEnd).setZone(this.TIMEZONE).set({ hour: 23, minute: 50, second: 0, millisecond: 0 });
+                voyageEnd = dtEnd.toJSDate();
+            }
+
             // Determine status color based on age
             let status = 'OK';
             if (lastPoint) {
@@ -300,7 +346,7 @@ export class TrackingService {
         return fleet;
     }
 
-    async getVesselHistory(buqueId: string, from?: string, to?: string, limit = 5000) {
+    async getVesselHistory(buqueId: string, from?: string, to?: string, limit = 30000) {
         const where: any = { buqueId };
 
         if (from || to) {
@@ -309,21 +355,24 @@ export class TrackingService {
             if (to) where.timestamp.lte = new Date(to);
         }
 
+        // We take the LATEST points up to the limit
         const points = await this.prisma.buqueTrayectoriaPunto.findMany({
             where,
-            orderBy: { timestamp: 'asc' },
+            orderBy: { timestamp: 'desc' },
             take: limit
         });
 
-        return points.map(p => ({
-            lat: p.lat,
-            lon: p.lon,
-            timestamp: p.timestamp,
-            speed: p.velocidad || 0,
-            course: p.rumbo || 0,
-            // Calculated props for UI optimization if needed
-            isFishing: (p.velocidad || 0) < 4.5 && (p.velocidad || 0) > 1.0 // Example logic
-        }));
+        // Re-sort ascending for the map rendering (chronological)
+        return points
+            .sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime())
+            .map(p => ({
+                lat: p.lat,
+                lon: p.lon,
+                timestamp: p.timestamp,
+                speed: p.velocidad || 0,
+                course: p.rumbo || 0,
+                isFishing: (p.velocidad || 0) < 4.5 && (p.velocidad || 0) > 1.0
+            }));
     }
 
     // --- Internal Logic ---

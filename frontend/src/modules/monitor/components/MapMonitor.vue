@@ -208,8 +208,19 @@ const renderMarker = (vessel: VesselTrajectory) => {
   vesselMarkers.set(vessel.id, marker)
 }
 
+// Configuración de límites de visualización para rendimiento
+import { MAX_DISPLAY_POINTS } from '../constants'
+
 const renderPoints = (vessel: VesselTrajectory) => {
+  const total = vessel.points.length
+  // Calculamos el salto necesario para no superar el límite
+  const step = Math.max(1, Math.ceil(total / MAX_DISPLAY_POINTS))
+
   vessel.points.forEach((p, idx) => {
+    // Dibujamos el punto si cumple el salto O si es el último (posición actual)
+    const isLast = idx === total - 1
+    if (idx % step !== 0 && !isLast) return
+
     const dot = L.circleMarker([p.lat, p.lon], {
       radius: 4,
       color: vessel.color,

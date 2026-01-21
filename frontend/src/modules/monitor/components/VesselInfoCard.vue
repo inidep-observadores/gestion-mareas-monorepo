@@ -10,11 +10,11 @@
         <div v-if="!isCollapsed" class="flex flex-col gap-0.5 mt-0.5">
           <p class="font-black text-primary uppercase text-[10px]">{{ mareaCode }}</p>
           <p v-if="lastUpdate" class="font-bold text-text-muted/60 uppercase text-[8px] italic tracking-tighter">
-            Datos actualizados al {{ formatDate(lastUpdate.toString()) }} {{ formatTime(lastUpdate.toString()) }}
+            Actualizado al {{ formatDate(lastUpdate.toString()) }} {{ formatTime(lastUpdate.toString()) }}
           </p>
         </div>
       </div>
-      <div 
+      <div
         class="shrink-0 p-1.5 bg-primary/10 rounded-lg border border-primary/20 text-primary transition-transform duration-300"
         :class="{ 'rotate-180': isCollapsed }"
       >
@@ -69,9 +69,9 @@
       <div v-if="layers" class="flex flex-col gap-1.5 pt-2 border-t border-border/10">
         <div v-for="(val, key) in layers" :key="key" class="flex items-center justify-between group/layer">
           <span class="font-bold text-text-muted/80 group-hover/layer:text-text transition-colors capitalize tracking-tighter text-[11px]">{{ layerLabels[key] || key }}</span>
-          <BaseSwitch 
-            :modelValue="val" 
-            @update:modelValue="$emit('update:layer', key, $event)" 
+          <BaseSwitch
+            :modelValue="val"
+            @update:modelValue="$emit('update:layer', key, $event)"
             class="scale-90 origin-right"
           />
         </div>
