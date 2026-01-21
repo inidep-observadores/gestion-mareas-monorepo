@@ -34,20 +34,25 @@
             :timestamp="currentPoint?.timestamp || ''"
             :speed="currentPoint?.speed || 0"
             :course="currentPoint?.course || 0"
-            :layers="mapLayers"
-            @update:layer="handleLayerToggle"
           />
 
-          <!-- Right: Control Panel (Layers & Font Size) -->
+          <!-- Right: Trip Stages -->
           <div class="flex flex-col gap-3 items-end">
             <TripStagesCard
               :stages="mockStages"
               :totalDays="36"
               @select-stage="handleStageSelection"
             />
+          </div>
+        </div>
+
+        <!-- Bottom Row -->
+        <div class="flex flex-col gap-2">
+          <!-- Mouse Coordinates & Font Size (Moved together) -->
+          <div class="flex items-end justify-between">
+            <MouseCoordinates :coords="mouseCoords" />
             
-            <!-- Font Size Context Menu -->
-            <div class="pointer-events-auto flex items-center gap-1.5 p-1.5 bg-surface/20 backdrop-blur-xl rounded-2xl border border-border/20 shadow-2xl">
+            <div class="pointer-events-auto flex items-center gap-1.5 p-1.5 bg-surface/20 backdrop-blur-xl rounded-2xl border border-border/20 shadow-2xl mb-4 mr-2">
               <button 
                 @click="fontScale = Math.max(0, fontScale - 1)"
                 class="w-7 h-7 flex items-center justify-center rounded-xl bg-surface/10 hover:bg-surface/20 text-text-muted hover:text-primary transition-all active:scale-90"
@@ -70,14 +75,6 @@
                 </svg>
               </button>
             </div>
-          </div>
-        </div>
-
-        <!-- Bottom Row -->
-        <div class="flex flex-col gap-2">
-          <!-- Mouse Coordinates -->
-          <div class="flex items-end justify-between">
-            <MouseCoordinates :coords="mouseCoords" />
           </div>
 
           <!-- Player Control -->
@@ -104,6 +101,19 @@
           </div>
         </div>
       </div>
+
+      <!-- NEW SIDEBAR & DIALOGS -->
+      <MonitorSidebar 
+        :mapLayers="mapLayers"
+        @update:layer="handleLayerToggle"
+        @open-upload="showUploadDialog = true"
+      />
+
+      <UploadTrackingDialog 
+        :show="showUploadDialog"
+        @close="showUploadDialog = false"
+        @refresh="handleDataRefresh"
+      />
     </div>
   </AdminLayout>
 </template>
@@ -117,6 +127,8 @@ import TimelinePlayer from '../components/TimelinePlayer.vue'
 import VesselInfoCard from '../components/VesselInfoCard.vue'
 import TripStagesCard, { type TripStage } from '../components/TripStagesCard.vue'
 import MouseCoordinates from '../components/MouseCoordinates.vue'
+import MonitorSidebar from '../components/MonitorSidebar.vue'
+import UploadTrackingDialog from '../components/UploadTrackingDialog.vue'
 import { generateMockTrack, type TrackingPoint } from '../data/mockTracking'
 
 interface Trip {
@@ -133,6 +145,7 @@ interface Vessel {
   trips: Trip[]
 }
 
+const showUploadDialog = ref(false)
 const selectedVessel = ref<Vessel>({
   id: 1,
   name: 'BP VICTORIA',
@@ -233,6 +246,11 @@ const stopPlayback = () => {
     clearInterval(playbackInterval)
     playbackInterval = null
   }
+}
+
+const handleDataRefresh = () => {
+  // Logic to reload fleet or tracking points
+  console.log('Refreshing data after successful upload...')
 }
 
 const handleSpeedChange = (newSpeed: number) => {

@@ -1,5 +1,5 @@
 
-import { Controller, Post, Get, Param, UseInterceptors, UploadedFile, ParseFilePipeBuilder, HttpStatus } from '@nestjs/common';
+import { Controller, Post, Get, Param, UseInterceptors, UploadedFile, ParseFilePipeBuilder, HttpStatus, UnprocessableEntityException } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { TrackingService } from './tracking.service';
 
@@ -10,18 +10,28 @@ export class TrackingController {
     @Post('upload')
     @UseInterceptors(FileInterceptor('file'))
     async uploadFile(
-        @UploadedFile(
-            new ParseFilePipeBuilder()
-                .addFileTypeValidator({
-                    fileType: 'csv|text/csv',
-                })
-                .build({
-                    errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
-                }),
-        )
-        file: Express.Multer.File,
+        @UploadedFile() file: Express.Multer.File,
     ) {
-        return this.trackingService.importTrackingData(file.buffer);
+        if (!file) {
+            throw new UnprocessableEntityException('No se ha recibido ningún archivo');
+        }
+
+        console.log(`[TrackingController] Recibido: ${file.originalname}, Mime: ${file.mimetype}`);
+
+        // Validación manual de tipo (más permisiva y con mensaje en español)
+        const allowedTypes = ['text/csv', 'application/vnd.ms-excel', 'text/plain', 'application/octet-stream'];
+        const isCsv = file.originalname.toLowerCase().endsWith('.csv');
+
+        if (!allowedTypes.includes(file.mimetype) && !isCsv) {
+            throw new UnprocessableEntityException('El archivo debe ser un CSV válido');
+        }
+
+        try {
+            return await this.trackingService.importTrackingData(file.buffer);
+        } catch (error) {
+            console.error('[TrackingController] Error al importar:', error);
+            throw new UnprocessableEntityException('Error al procesar el contenido del CSV. Verifique el formato.');
+        }
     }
 
     @Get('heartbeat')

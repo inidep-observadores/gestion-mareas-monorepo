@@ -44,21 +44,21 @@ export class TrackingService {
 
         if (diffHours >= this.CHECK_INTERVAL_HOURS) {
             // Fire and forget - don't await strictly for the HTTP response
-            this.runAutomatedChecks().catch(e => this.logger.error('Auto check failed', e));
+            this.runAutomatedChecks().catch(e => this.logger.error('Error en verificación automática', e));
 
             // Update immediately
             await this.prisma.systemStatus.update({
                 where: { key: KEY },
                 data: { lastUpdate: new Date() }
             });
-            return { status: 'Triggered', timestamp: new Date() };
+            return { status: 'Iniciado', timestamp: new Date() };
         }
 
-        return { status: 'Skipped', timestamp: status.lastUpdate };
+        return { status: 'Omitido', timestamp: status.lastUpdate };
     }
 
     async runAutomatedChecks() {
-        this.logger.log('Running automated tracking checks...');
+        this.logger.log('Ejecutando verificaciones automáticas de seguimiento...');
         // 1. Get active trips
         const activeMareas = await this.prisma.marea.findMany({
             where: {

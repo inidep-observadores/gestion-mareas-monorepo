@@ -58,7 +58,7 @@
       </div>
 
       <!-- Visibility Layers -->
-      <div class="flex flex-col gap-1.5 pt-2 border-t border-border/10">
+      <div v-if="layers" class="flex flex-col gap-1.5 pt-2 border-t border-border/10">
         <div v-for="(val, key) in layers" :key="key" class="flex items-center justify-between group/layer">
           <span class="font-bold text-text-muted group-hover/layer:text-text transition-colors capitalize tracking-tighter" :style="{ fontSize: 'calc(7px + var(--hud-font-offset))' }">{{ layerLabels[key] || key }}</span>
           <button
@@ -88,7 +88,7 @@ const props = defineProps<{
   timestamp: string
   speed: number
   course: number
-  layers: Record<string, boolean>
+  layers?: Record<string, boolean>
 }>()
 
 defineEmits(['update:layer'])
