@@ -90,13 +90,13 @@ const selectedVesselId = ref<string | null>(null)
 const mouseCoords = ref<LatLng | null>(null)
 const mapMonitor = ref<InstanceType<typeof MapMonitor> | null>(null)
 const leftSidebarOpen = ref(true)
-const rightSidebarOpen = ref(true)
+const rightSidebarOpen = ref(false)
 const mapLayers = ref({
   veda: true,
   vieira: false,
   centolla: false,
   points: false,
-}) as any
+})
 
 // Playback State
 const isPlaying = ref(false)
@@ -153,51 +153,54 @@ watch([leftSidebarOpen, rightSidebarOpen], () => {
 const fetchFleet = async () => {
   try {
     const response = await httpClient.get('/tracking/fleet')
-    const activeBuques = response.data
+    const activeMareas = response.data
 
-    activeBuques.forEach((buque: any) => {
-      if (!fleet[buque.id]) {
-        fleet[buque.id] = {
-          id: buque.id,
-          name: buque.name,
-          color: generateLightColor(buque.id),
+    activeMareas.forEach((marea: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
+      // Key by mareaId to allow multiple mareas per vessel
+      if (!fleet[marea.mareaId]) {
+        fleet[marea.mareaId] = {
+          id: marea.mareaId,   // Use mareaId as the UI ID
+          vesselId: marea.id,  // Store original vesselId for backend calls
+          name: marea.name,
+          color: generateLightColor(marea.id), // Color still based on vessel ID for consistency
           points: [],
           currentIndex: 0,
           visible: false,
-          matricula: buque.matricula,
-          mareaCode: buque.mareaCode,
-          observer: buque.observer,
-          voyageStart: buque.voyageStart,
-          voyageEnd: buque.voyageEnd,
-          lastUpdate: buque.lastUpdate,
-          totalDays: buque.totalDays,
-          etapas: buque.etapas
+          matricula: marea.matricula,
+          mareaCode: marea.mareaCode,
+          observer: marea.observer,
+          voyageStart: marea.voyageStart,
+          voyageEnd: marea.voyageEnd,
+          lastUpdate: marea.lastUpdate,
+          totalDays: marea.totalDays,
+          etapas: marea.etapas
         }
-        fetchVesselHistory(buque.id, buque.voyageStart, buque.voyageEnd)
+        // Fetch history using vesselId but passing mareaId to update correct fleet entry
+        fetchVesselHistory(marea.id, marea.mareaId, marea.voyageStart, marea.voyageEnd)
       }
     })
 
-    if (!selectedVesselId.value && activeBuques.length > 0) {
-      selectedVesselId.value = activeBuques[0].id
+    if (!selectedVesselId.value && activeMareas.length > 0) {
+      selectedVesselId.value = activeMareas[0].mareaId
     }
   } catch (error) {
     console.error('Error fetching fleet:', error)
   }
 }
 
-const fetchVesselHistory = async (buqueId: string, from?: string, to?: string) => {
+const fetchVesselHistory = async (buqueId: string, mareaId: string, from?: string, to?: string) => {
   try {
-    const params: any = {}
+    const params: Record<string, string> = {}
     if (from) params.from = from
     if (to) params.to = to
 
     const response = await httpClient.get(`/tracking/history/${buqueId}`, { params })
-    if (fleet[buqueId]) {
-      fleet[buqueId].points = response.data
-      fleet[buqueId].currentIndex = response.data.length - 1
+    if (fleet[mareaId]) {
+      fleet[mareaId].points = response.data
+      fleet[mareaId].currentIndex = response.data.length - 1
     }
   } catch (error) {
-    console.error(`Error fetching history for ${buqueId}:`, error)
+    console.error(`Error fetching history for marea ${mareaId} (vessel ${buqueId}):`, error)
   }
 }
 
@@ -232,6 +235,7 @@ const handleSeekVessel = ({ vesselId, index }: { vesselId: string, index: number
 }
 
 const handleLayerToggle = (key: string, val: boolean) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ; (mapLayers.value as any)[key] = val
 }
 
@@ -321,7 +325,7 @@ const handleSpeedChange = (newSpeed: number) => {
 
 const currentVesselStages = computed<TripStage[]>(() => {
   if (!activeVessel.value || !activeVessel.value.etapas) return []
-  return activeVessel.value.etapas.map((e: any) => ({
+  return activeVessel.value.etapas.map((e: any) => ({ // eslint-disable-line @typescript-eslint/no-explicit-any
     id: e.id,
     nroEtapa: e.nroEtapa,
     startDate: e.fechaZarpada,

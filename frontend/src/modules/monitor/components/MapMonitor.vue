@@ -1,9 +1,5 @@
 <template>
-  <NauticalMap 
-    ref="nauticalMap"
-    @map-ready="onMapReady"
-    @mousemove="emit('update:mouse-coords', $event.latlng)"
-  >
+  <NauticalMap ref="nauticalMap" @map-ready="onMapReady" @mousemove="emit('update:mouse-coords', $event.latlng)">
     <!-- Slot for extra overlays if needed later -->
   </NauticalMap>
 </template>
@@ -23,6 +19,7 @@ export interface FleetTrackPoint {
 
 export interface VesselTrajectory {
   id: string
+  vesselId?: string
   name: string
   color: string
   points: FleetTrackPoint[]
@@ -35,7 +32,7 @@ export interface VesselTrajectory {
   voyageEnd?: string | null
   lastUpdate?: string | Date | null
   totalDays?: number
-  etapas?: any[]
+  etapas?: any[] // eslint-disable-line @typescript-eslint/no-explicit-any
 }
 
 const props = defineProps<{
@@ -70,7 +67,7 @@ const LAYER_FILES = {
     'zonas_veda/Veda Merluza Negra.geojson'
   ],
   vieira: [
-// (rest as before)
+    // (rest as before)
     'areas_vieira/areas_vieira.geojson'
   ],
   centolla: [
@@ -103,11 +100,11 @@ const onMapReady = (mapInstance: L.Map) => {
   geojsonLayers.veda.addTo(map)
   geojsonLayers.vieira.addTo(map)
   geojsonLayers.centolla.addTo(map)
-  
+
   trajectoriesLayer.addTo(map)
   markersLayer.addTo(map)
   pointsLayer.addTo(map)
-  
+
   // Initial load of active geojson layers
   loadGeoJson('limite') // Fixed layer
   if (props.activeLayers.veda) loadGeoJson('veda')
@@ -119,7 +116,7 @@ const onMapReady = (mapInstance: L.Map) => {
 
 const updateAll = () => {
   if (!map) return
-  
+
   trajectoriesLayer.clearLayers()
   markersLayer.clearLayers()
   pointsLayer.clearLayers()
@@ -127,7 +124,7 @@ const updateAll = () => {
 
   Object.values(props.fleet).forEach(vessel => {
     if (!vessel.visible || vessel.points.length === 0) return
-    
+
     renderTrajectory(vessel)
     renderMarker(vessel)
     if (props.activeLayers.points) {
@@ -202,12 +199,12 @@ const renderMarker = (vessel: VesselTrajectory) => {
   })
 
   const marker = L.marker([current.lat, current.lon], { icon }).addTo(markersLayer)
-  marker.bindTooltip(vessel.name, { 
-    permanent: false, 
-    direction: 'top', 
-    className: 'vessel-tooltip' 
+  marker.bindTooltip(vessel.name, {
+    permanent: false,
+    direction: 'top',
+    className: 'vessel-tooltip'
   })
-  
+
   vesselMarkers.set(vessel.id, marker)
 }
 
@@ -230,22 +227,22 @@ const renderPoints = (vessel: VesselTrajectory) => {
 
 const loadGeoJson = async (type: 'veda' | 'vieira' | 'centolla' | 'limite') => {
   if (!map) return
-  
+
   const group = geojsonLayers[type]
   group.clearLayers()
-  
+
   if (type !== 'limite' && !props.activeLayers[type]) return
 
   const files = LAYER_FILES[type as keyof typeof LAYER_FILES]
-  
+
   for (const file of files) {
     try {
       const response = await fetch(`/data/layers/geojson/${file}`)
       if (!response.ok) throw new Error(`Status: ${response.status}`)
       const data = await response.json()
-      
+
       let style: L.PathOptions = {}
-      
+
       if (type === 'limite') {
         if (file.includes('mar_territorial')) {
           style = { color: '#3B82F6', weight: 1, opacity: 0.8, fillOpacity: 0 }
@@ -344,7 +341,8 @@ onUnmounted(() => {
   box-shadow: var(--shadow-theme-md) !important;
 }
 
-.interactive-trajectory, .interactive-dot {
+.interactive-trajectory,
+.interactive-dot {
   cursor: pointer !important;
 }
 </style>

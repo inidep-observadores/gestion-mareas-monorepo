@@ -703,7 +703,7 @@ const prepareStagesData = async (isNewStageConfig = false) => {
         const marea = await mareasService.getById(localAlert.value.referenciaId)
         mareaDataForStages.value = marea
         // Ensure strictly editable copy
-        let currentStages = marea.etapas ? JSON.parse(JSON.stringify(marea.etapas)) : []
+        const currentStages = marea.etapas ? JSON.parse(JSON.stringify(marea.etapas)) : []
 
         const subTipo = localAlert.value?.metadata?.subTipo || localAlert.value?.tipo
         const ext = localAlert.value.metadata?.externalData || {}

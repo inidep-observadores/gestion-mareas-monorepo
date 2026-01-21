@@ -10,8 +10,8 @@
         <!-- Header -->
         <div class="p-6 flex items-center justify-between">
           <div>
-            <h2 class="text-xs font-black text-text uppercase tracking-widest">Panel de Control</h2>
-            <p class="text-[9px] text-text-muted font-bold uppercase tracking-tight">Configuración del Monitor</p>
+            <h2 class="text-sm font-black text-text uppercase tracking-widest">Panel de Control</h2>
+            <p class="text-xs text-text-muted font-bold uppercase tracking-tight">Configuración del Monitor</p>
           </div>
           <button @click="toggleSidebar"
             class="p-2 hover:bg-surface-muted rounded-xl transition-colors text-text-muted hover:text-primary">
@@ -26,7 +26,7 @@
         <div class="flex-1 overflow-y-auto p-6 space-y-8 custom-scrollbar">
           <!-- Quick Actions -->
           <section>
-            <h3 class="text-[10px] font-black text-primary uppercase tracking-widest mb-4">Acciones Rápidas</h3>
+            <h3 class="text-xs font-black text-primary uppercase tracking-widest mb-4">Acciones Rápidas</h3>
             <Button variant="soft"
               className="w-full !rounded-2xl !p-4 border border-primary/20 hover:border-primary/40 active:scale-95"
               @click="$emit('open-upload')">
@@ -39,8 +39,8 @@
                   </svg>
                 </div>
                 <div class="text-left">
-                  <div class="text-[11px] font-black text-text uppercase tracking-tight">Importar Seguimiento</div>
-                  <div class="text-[9px] text-text-muted/80 uppercase font-bold">CSV de SIOP</div>
+                  <div class="text-sm font-black text-text uppercase tracking-tight">Importar Seguimiento</div>
+                  <div class="text-xs text-text-muted/80 uppercase font-bold">CSV de SIOP</div>
                 </div>
               </div>
             </Button>
@@ -48,7 +48,7 @@
 
           <!-- Layer Visibility -->
           <section>
-            <h3 class="text-[10px] font-black text-primary uppercase tracking-widest mb-4">Capas de Información</h3>
+            <h3 class="text-xs font-black text-primary uppercase tracking-widest mb-4">Capas de Información</h3>
             <div class="space-y-2">
               <div v-for="(val, key) in mapLayers" :key="key"
                 class="flex items-center justify-between p-3 rounded-xl bg-surface-muted/30 border border-border/10 hover:border-border/30 transition-all group">
@@ -57,7 +57,7 @@
                     :class="val ? 'bg-primary shadow-[0_0_8px_rgba(var(--color-primary-rgb),0.5)]' : 'bg-text-muted/20'">
                   </div>
                   <span
-                    class="text-[10px] font-bold text-text-muted uppercase tracking-wider group-hover:text-text transition-colors">{{
+                    class="text-xs font-bold text-text-muted uppercase tracking-wider group-hover:text-text transition-colors">{{
                       formatKey(key) }}</span>
                 </div>
 
@@ -70,7 +70,7 @@
         <!-- Footer -->
         <div v-if="false" class="p-4 bg-surface-muted/20 border-t border-border/10">
           <div class="flex items-center justify-between px-2">
-            <span class="text-[9px] font-black text-text-muted/60 uppercase tracking-tighter italic">VMS Engine
+            <span class="text-xs font-black text-text-muted/60 uppercase tracking-tighter italic">VMS Engine
               v2.0</span>
             <div class="flex gap-1.5 Items-center">
               <div class="w-1 h-1 bg-success rounded-full"></div>

@@ -57,9 +57,25 @@
               <div class="text-[10px] font-black text-text uppercase tracking-tight truncate max-w-[220px]">{{
                 f.file.name
                 }}</div>
-              <div class="text-[8px] font-bold uppercase mt-0.5" :class="statusColor(f.status)">
+              <div class="text-[8px] font-bold uppercase mt-0.5" :class="statusColor(f)">
                 {{ statusText(f) }}
               </div>
+
+              <!-- Summary & Errors -->
+              <div v-if="f.status === 'success' && f.results" class="mt-2 pl-4 border-l-2 border-border/10">
+                <div class="flex flex-wrap gap-2 text-[9px] font-bold uppercase tracking-wide text-text-muted/80">
+                  <span class="text-primary">Procesados: {{ f.results.processed }}</span>
+                  <span class="text-success">Insertados: {{ f.results.inserted }}</span>
+                  <span v-if="f.results.updated > 0" class="text-warning">Matrículas Corregidas: {{ f.results.updated
+                  }}</span>
+                </div>
+              </div>
+
+              <!-- Error List removed as per user request to avoid clutter -->
+            </div>
+
+            <div v-if="f.status === 'error'" class="mt-1 text-[9px] text-error font-medium px-1">
+              {{ f.error }}
             </div>
           </div>
 
@@ -106,19 +122,27 @@ import httpClient from '@/config/http/http.client'
 import BaseModal from '@/components/common/BaseModal.vue'
 import Button from '@/components/ui/Button.vue'
 
-const props = defineProps<{
-  show: boolean
-}>()
-
 const emit = defineEmits<{
   (e: 'close'): void
   (e: 'refresh'): void
 }>()
 
+defineProps<{
+  show: boolean
+}>()
+
+interface ImportResult {
+  processed: number
+  inserted: number
+  updated: number
+  errors: { vessel: string, reason: string }[]
+}
+
 interface FileQueueItem {
   file: File
   status: 'pending' | 'processing' | 'success' | 'error'
   error?: string
+  results?: ImportResult
 }
 
 const fileInput = ref<HTMLInputElement | null>(null)
@@ -158,15 +182,21 @@ const removeFile = (idx: number) => {
 const statusText = (f: FileQueueItem) => {
   if (f.status === 'pending') return 'En espera'
   if (f.status === 'processing') return 'Procesando datos...'
-  if (f.status === 'success') return 'Completado con éxito'
-  if (f.status === 'error') return f.error || 'Error en la importación'
+  if (f.status === 'success') {
+    if (f.results && f.results.errors.length > 0) return 'Completado con advertencias'
+    return 'Completado con éxito'
+  }
+  if (f.status === 'error') return 'Fallo en la carga'
   return ''
 }
 
-const statusColor = (status: string) => {
-  if (status === 'processing') return 'text-primary'
-  if (status === 'success') return 'text-success'
-  if (status === 'error') return 'text-error'
+const statusColor = (f: FileQueueItem) => {
+  if (f.status === 'processing') return 'text-primary'
+  if (f.status === 'success') {
+    if (f.results && f.results.errors.length > 0) return 'text-warning'
+    return 'text-success'
+  }
+  if (f.status === 'error') return 'text-error'
   return 'text-text-muted/60'
 }
 
@@ -179,20 +209,24 @@ const startUpload = async () => {
     if (item.status === 'success') continue
 
     item.status = 'processing'
+    item.error = undefined
+    item.results = undefined
 
     try {
       const formData = new FormData()
       formData.append('file', item.file)
 
-      await httpClient.post('/tracking/upload', formData, {
+      const response = await httpClient.post('/tracking/upload', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
         timeout: 600000 // 10 minutos para procesos pesados
       })
 
+      item.results = response.data
       item.status = 'success'
-    } catch (err: any) {
+    } catch (err: unknown) {
       item.status = 'error'
-      const responseData = err.response?.data
+      const error = err as any // eslint-disable-line @typescript-eslint/no-explicit-any
+      const responseData = error.response?.data
 
       // Extracción robusta de mensajes de error
       let backendMsg = ''
@@ -205,7 +239,7 @@ const startUpload = async () => {
           ''
       }
 
-      const isValidationError = err.response?.status === 422
+      const isValidationError = error.response?.status === 422
       item.error = backendMsg || (isValidationError ? 'Formato no válido' : 'Error procesando')
     }
   }

@@ -241,8 +241,8 @@ const sortedItems = computed(() => {
       return (a.nroMarea - b.nroMarea) * modifier
     }
 
-    let valA = a[sortKey.value]
-    let valB = b[sortKey.value]
+    const valA = a[sortKey.value]
+    const valB = b[sortKey.value]
 
     if (valA === valB) return 0
 

@@ -17,9 +17,9 @@
               </svg>
             </div>
             <div>
-              <h2 class="text-xs font-black text-text uppercase tracking-widest">Flota Activa</h2>
-              <p class="text-[9px] text-text-muted font-bold uppercase tracking-tight opacity-60">
-                {{ vessels.length }} Buques Detectados
+              <h2 class="text-sm font-black text-text uppercase tracking-widest">Mareas Activas</h2>
+              <p class="text-xs text-text-muted font-bold uppercase tracking-tight opacity-60">
+                {{ vessels.length }} Mareas Activas
               </p>
             </div>
           </div>
@@ -40,12 +40,12 @@
         <!-- Quick Actions -->
         <!-- Lo dejamos oculto ya que mostrar todo ralentiza demasiado el renderizado del mapa -->
         <div v-if="false" class="p-5 border-b border-border/5 flex gap-2">
-          <Button variant="soft" size="xs"
-            class="flex-1 !text-[10px] !font-black uppercase tracking-tighter !rounded-xl" @click="$emit('select-all')">
+          <Button variant="soft" size="xs" class="flex-1 !text-xs !font-black uppercase tracking-tighter !rounded-xl"
+            @click="$emit('select-all')">
             Todos
           </Button>
           <Button variant="ghost" size="xs"
-            class="flex-1 !text-[10px] !font-black uppercase tracking-tighter !rounded-xl border border-border/10"
+            class="flex-1 !text-xs !font-black uppercase tracking-tighter !rounded-xl border border-border/10"
             @click="$emit('deselect-all')">
             Ninguno
           </Button>
@@ -69,16 +69,16 @@
             <div class="flex-1 min-w-0">
               <div class="flex items-center gap-2 mb-0.5">
                 <div class="w-2 h-2 rounded-full shrink-0" :style="{ backgroundColor: vessel.color }"></div>
-                <span class="text-[10.5px] font-black text-text uppercase truncate tracking-tight">
+                <span class="text-sm font-black text-text uppercase truncate tracking-tight">
                   {{ vessel.name }}
                 </span>
               </div>
               <div class="flex items-center gap-2 mt-1 whitespace-nowrap overflow-hidden">
-                <span class="text-[9px] font-black text-primary/80 uppercase tracking-tighter shrink-0">
+                <span class="text-xs font-black text-primary/80 uppercase tracking-tighter shrink-0">
                   {{ vessel.mareaCode }}
                 </span>
-                <span class="text-[9px] text-text-muted/40 font-bold shrink-0">|</span>
-                <span class="text-[9px] font-bold text-text-muted/80 truncate">
+                <span class="text-xs text-text-muted/40 font-bold shrink-0">|</span>
+                <span class="text-xs font-bold text-text-muted/80 truncate">
                   {{ vessel.observer }}
                 </span>
               </div>
@@ -99,14 +99,14 @@
               <circle cx="11" cy="11" r="8" />
               <path d="m21 21-4.3-4.3" />
             </svg>
-            <p class="text-[10px] font-black uppercase tracking-widest text-center">No hay coincidencias</p>
+            <p class="text-xs font-black uppercase tracking-widest text-center">No hay coincidencias</p>
           </div>
         </div>
 
         <!-- Footer -->
         <div v-if="false" class="p-4 bg-surface-muted/20 border-t border-border/10">
           <div class="flex items-center justify-between px-2">
-            <span class="text-[9px] font-black text-text-muted/60 uppercase tracking-tighter italic">Fleet Manager
+            <span class="text-xs font-black text-text-muted/60 uppercase tracking-tighter italic">Fleet Manager
               v1.0</span>
             <div class="flex gap-1.5 Items-center">
               <div class="w-1 h-1 bg-success rounded-full"></div>
@@ -160,13 +160,33 @@ const emit = defineEmits(['select', 'toggle-visibility', 'select-all', 'deselect
 const searchQuery = ref('')
 
 const filteredVessels = computed(() => {
+  let list = [...props.vessels]
+
   const q = searchQuery.value.toLowerCase().trim()
-  if (!q) return props.vessels
-  return props.vessels.filter(v =>
-    v.name.toLowerCase().includes(q) ||
-    v.mareaCode.toLowerCase().includes(q) ||
-    v.observer.toLowerCase().includes(q)
-  )
+  if (q) {
+    list = list.filter(v =>
+      v.name.toLowerCase().includes(q) ||
+      v.mareaCode.toLowerCase().includes(q) ||
+      v.observer.toLowerCase().includes(q)
+    )
+  }
+
+  // Sort by Year ASC, then Number ASC based on mareaCode (Format: TYPE-NUM-YY)
+  return list.sort((a, b) => {
+    const partsA = a.mareaCode.split('-')
+    const partsB = b.mareaCode.split('-')
+
+    // Format is TYPE-NUM-YY, so Year is at index 2, Number at index 1
+    const yearA = parseInt(partsA[2]) || 0
+    const yearB = parseInt(partsB[2]) || 0
+
+    if (yearA !== yearB) return yearA - yearB
+
+    const numA = parseInt(partsA[1]) || 0
+    const numB = parseInt(partsB[1]) || 0
+
+    return numA - numB
+  })
 })
 
 const toggleSidebar = () => {
