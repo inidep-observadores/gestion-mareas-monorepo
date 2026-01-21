@@ -50,25 +50,25 @@ const updateGraticule = () => {
   if (!graticuleLayer) {
     graticuleLayer = L.layerGroup().addTo(map)
   }
-  
+
   graticuleLayer.clearLayers()
-  
+
   const bounds = map.getBounds()
   const currentZoom = map.getZoom()
-  
+
   let interval = 1
   if (currentZoom < 5) interval = 5
   else if (currentZoom < 7) interval = 2
   else if (currentZoom > 10) interval = 0.5
-  
+
   const minLat = Math.floor(bounds.getSouth() / interval) * interval
   const maxLat = Math.ceil(bounds.getNorth() / interval) * interval
   const minLon = Math.floor(bounds.getWest() / interval) * interval
   const maxLon = Math.ceil(bounds.getEast() / interval) * interval
-  
+
   const isDark = document.documentElement.classList.contains('dark')
   const lineStyle = {
-    color: isDark ? 'var(--color-border)' : 'rgba(0, 0, 0, 0.12)',
+    color: isDark ? 'rgba(255, 255, 255, 0.10)' : 'rgba(0, 0, 0, 0.12)',
     weight: 1,
     interactive: false,
     pane: 'overlayPane'
@@ -90,7 +90,7 @@ const updateGraticule = () => {
     L.marker(map.containerPointToLatLng([pLeft.x + 5, pLeft.y]), { icon: labelIcon(labelText), interactive: false, pane: 'tooltipPane' }).addTo(graticuleLayer)
     L.marker(map.containerPointToLatLng([pRight.x - 25, pRight.y]), { icon: labelIcon(labelText), interactive: false, pane: 'tooltipPane' }).addTo(graticuleLayer)
   }
-  
+
   // Longitude
   for (let lon = minLon; lon <= maxLon; lon += interval) {
     L.polyline([[minLat, lon], [maxLat, lon]], lineStyle).addTo(graticuleLayer)
@@ -125,7 +125,7 @@ class NauticalScale extends L.Control {
     this.container = L.DomUtil.create('div', 'nautical-scale-container')
     this.label = L.DomUtil.create('div', 'nautical-scale-label', this.container)
     this.line = L.DomUtil.create('div', 'nautical-scale-bar', this.container)
-    
+
     map.on('move', this.updateScale, this)
     map.whenReady(this.updateScale, this)
     return this.container
@@ -147,7 +147,7 @@ class NauticalScale extends L.Control {
     const maxNM = maxMeters / 1852
     const nm = this.getRoundNum(maxNM)
     const px = (nm * 1852 * this.options.maxWidth) / maxMeters
-    
+
     this.line.style.width = `${px}px`
     this.label.innerHTML = `${nm} NM`
   }
@@ -193,7 +193,7 @@ onMounted(() => {
 
   updateBaseLayer()
   L.control.zoom({ position: 'bottomright' }).addTo(map)
-  
+
   if (props.showScale) {
     new NauticalScale().addTo(map)
   }
@@ -237,12 +237,13 @@ defineExpose({
 /* --- Nautical Scale Redesign --- */
 .nautical-scale-container {
   margin-right: 12px !important;
-  margin-bottom: 85px !important; /* Arriba de los botones de zoom */
+  margin-bottom: 85px !important;
+  /* Arriba de los botones de zoom */
   display: flex;
   flex-direction: column;
   align-items: center;
   pointer-events: none;
-  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
 }
 
 .nautical-scale-label {
