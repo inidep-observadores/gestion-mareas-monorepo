@@ -1,12 +1,20 @@
 import axios, { type AxiosInstance, type AxiosRequestConfig, type AxiosError } from 'axios';
 import { useAuthStore } from '@/modules/auth/stores/auth.store';
 import { normalizeError } from './http.errors';
+import { toast } from 'vue-sonner';
+
+// Custom type for Axios config to support skipToast
+declare module 'axios' {
+    export interface AxiosRequestConfig {
+        skipToast?: boolean;
+    }
+}
 
 // Create Axios Instance
 const httpClient: AxiosInstance = axios.create({
     baseURL: import.meta.env.VITE_BACKEND_URL,
     withCredentials: true, // Critical for httpOnly cookies
-    timeout: 10000,
+    timeout: 30000, // Aumentado a 30s para procesos pesados como backup
     headers: {
         'Content-Type': 'application/json',
     },
@@ -42,7 +50,11 @@ httpClient.interceptors.response.use(
 
         // prevent loop for auth endpoints
         if (originalRequest.url?.includes('/auth/login') || originalRequest.url?.includes('/auth/refresh')) {
-            return Promise.reject(normalizeError(error));
+            const appError = normalizeError(error);
+            if (!originalRequest.skipToast) {
+                toast.error(appError.message);
+            }
+            return Promise.reject(appError);
         }
 
         if (error.response?.status === 401 && !originalRequest._retry) {
@@ -69,14 +81,25 @@ httpClient.interceptors.response.use(
                 processQueue(err, null);
                 // Terminal Logout
                 authStore.logout();
-                // Redirect is handled by router guard or store
-                return Promise.reject(normalizeError(err));
+
+                const appError = normalizeError(err);
+                if (!originalRequest.skipToast) {
+                    toast.error(appError.message);
+                }
+                return Promise.reject(appError);
             } finally {
                 isRefreshing = false;
             }
         }
 
-        return Promise.reject(normalizeError(error));
+        const appError = normalizeError(error);
+
+        // MOSTRAR TOAST AUTOMÁTICO (si no se pide explícitamente saltarlo)
+        if (!originalRequest?.skipToast) {
+            toast.error(appError.message);
+        }
+
+        return Promise.reject(appError);
     }
 );
 

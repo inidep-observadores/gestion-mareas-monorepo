@@ -278,7 +278,7 @@ const handleCreateBackup = async () => {
         newBackupComment.value = '';
         fetchBackups();
     } catch (error) {
-        toast.error('Falló la creación de la copia de seguridad');
+        // El error ya es notificado automáticamente por el httpClient
     } finally {
         isCreating.value = false;
         isProcessing.value = false;
@@ -325,8 +325,7 @@ const handleFileUpload = async (event: Event) => {
             confirmRestore(newBkp);
         }
     } catch (error: any) {
-        const msg = error.response?.data?.message || 'Error al subir el archivo';
-        toast.error(msg);
+        // Notificación automática activa
         console.error('Upload error:', error);
     } finally {
         isUploading.value = false;
@@ -379,8 +378,7 @@ const handleRestore = async (phrase: string) => {
         // Forzar recarga completa ya que los datos cambiaron
         setTimeout(() => location.reload(), 2000);
     } catch (error: any) {
-        const msg = error.response?.data?.message || 'Error durante la restauración';
-        toast.error(msg);
+        // Notificación automática activa
     } finally {
         isRestoring.value = false;
         isProcessing.value = false;
