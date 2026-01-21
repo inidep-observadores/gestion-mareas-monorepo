@@ -1,5 +1,5 @@
 
-import { Controller, Post, Get, Param, UseInterceptors, UploadedFile, ParseFilePipeBuilder, HttpStatus, UnprocessableEntityException } from '@nestjs/common';
+import { Controller, Post, Get, Param, Query, UseInterceptors, UploadedFile, ParseFilePipeBuilder, HttpStatus, UnprocessableEntityException } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { TrackingService } from './tracking.service';
 
@@ -45,7 +45,11 @@ export class TrackingController {
     }
 
     @Get('history/:buqueId')
-    async getHistory(@Param('buqueId') buqueId: string) {
-        return this.trackingService.getVesselHistory(buqueId);
+    async getHistory(
+        @Param('buqueId') buqueId: string,
+        @Query('from') from?: string,
+        @Query('to') to?: string
+    ) {
+        return this.trackingService.getVesselHistory(buqueId, from, to);
     }
 }

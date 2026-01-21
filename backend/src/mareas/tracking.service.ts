@@ -190,11 +190,15 @@ export class TrackingService {
     // --- Visuals & Data Retrieval ---
 
     async getLatestFleetPositions() {
-        // 1. Get all active buques (those with active Mareas or just all active from Fleet)
-        // Preference: Active Mareas first
         const activeMareas = await this.prisma.marea.findMany({
             where: { estadoActual: { codigo: { in: ['EN_EJECUCION', 'DESIGNADA'] } } },
-            include: { buque: true, artePrincipal: true }
+            include: {
+                buque: true,
+                artePrincipal: true,
+                etapas: {
+                    orderBy: { nroEtapa: 'asc' }
+                }
+            }
         });
 
         const fleet = [];
@@ -204,6 +208,24 @@ export class TrackingService {
                 where: { buqueId: marea.buqueId },
                 orderBy: { timestamp: 'desc' }
             });
+
+            // Calculate Voyage Bounds
+            // Start: Estimated departure, observer start, or first stage departure
+            let voyageStart: Date | null = marea.fechaZarpadaEstimada || marea.fechaInicioObservador;
+            if (marea.etapas.length > 0 && marea.etapas[0].fechaZarpada) {
+                if (!voyageStart || marea.etapas[0].fechaZarpada < voyageStart) {
+                    voyageStart = marea.etapas[0].fechaZarpada;
+                }
+            }
+
+            // End: Last stage arrival or Now
+            let voyageEnd: Date | null = null;
+            const lastStage = marea.etapas[marea.etapas.length - 1];
+            if (lastStage && lastStage.fechaArribo) {
+                voyageEnd = lastStage.fechaArribo;
+            } else {
+                voyageEnd = new Date();
+            }
 
             // Determine status color based on age
             let status = 'OK';
@@ -223,17 +245,27 @@ export class TrackingService {
                 course: lastPoint?.rumbo || 0,
                 speed: lastPoint?.velocidad || 0,
                 lastUpdate: lastPoint?.timestamp || null,
-                mareaId: marea.id
+                mareaId: marea.id,
+                voyageStart,
+                voyageEnd
             });
         }
         return fleet;
     }
 
-    async getVesselHistory(buqueId: string, limit = 2000) {
+    async getVesselHistory(buqueId: string, from?: string, to?: string, limit = 5000) {
+        const where: any = { buqueId };
+
+        if (from || to) {
+            where.timestamp = {};
+            if (from) where.timestamp.gte = new Date(from);
+            if (to) where.timestamp.lte = new Date(to);
+        }
+
         const points = await this.prisma.buqueTrayectoriaPunto.findMany({
-            where: { buqueId },
-            orderBy: { timestamp: 'asc' }, // Chronological for timeline
-            take: limit // Safety limit, maybe filter by date range in future
+            where,
+            orderBy: { timestamp: 'asc' },
+            take: limit
         });
 
         return points.map(p => ({

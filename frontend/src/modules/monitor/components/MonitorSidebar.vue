@@ -1,5 +1,5 @@
 <template>
-  <div class="fixed right-0 top-16 bottom-0 z-[2000] flex pointer-events-none">
+  <div class="absolute right-0 top-0 bottom-0 z-[2000] flex pointer-events-none">
     <!-- Trigger Button (Integrated in edge) -->
     <div class="flex items-center">
       <button
@@ -119,8 +119,7 @@ const formatKey = (key: string) => {
   const labels: any = {
     veda: 'Zonas de Veda',
     isobatas: 'Isobátas (200m)',
-    totalPoints: 'Puntos de Reporte',
-    totalTrack: 'Trayectoria Completa'
+    points: 'Puntos de Reporte',
   }
   return labels[key] || key
 }
