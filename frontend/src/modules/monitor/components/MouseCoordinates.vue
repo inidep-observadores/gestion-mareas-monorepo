@@ -1,21 +1,21 @@
 <template>
-  <HudCard customClass="px-2 py-1 pointer-events-none !bg-surface/5 !backdrop-blur-sm border-border/5">
-    <div class="flex items-center gap-2 font-black tracking-tighter text-text tabular-nums text-[9px]">
-      <div v-if="coords" class="flex items-center gap-2">
-        <span class="text-text-muted/60 uppercase font-black text-[7px]">
+  <HudCard customClass="px-3 py-1.5 pointer-events-none !bg-surface/5 !backdrop-blur-sm border-border/5">
+    <div class="flex items-center gap-3 font-black tracking-tighter text-text tabular-nums text-xs">
+      <div v-if="coords" class="flex items-center gap-3">
+        <span class="text-text-muted/60 uppercase font-black text-[9px]">
           Cursor:
         </span>
-        <div class="flex items-center gap-1">
-          <span class="text-text-muted/40 font-black uppercase text-[6px]">LAT</span>
+        <div class="flex items-center gap-1.5">
+          <span class="text-text-muted/40 font-black uppercase text-[9px]">LAT</span>
           <span>{{ formatCoordinate(coords.lat, 'lat') }}</span>
         </div>
         <span class="opacity-30 text-text-muted">|</span>
-        <div class="flex items-center gap-1">
-          <span class="text-text-muted/40 font-black uppercase text-[6px]">LON</span>
+        <div class="flex items-center gap-1.5">
+          <span class="text-text-muted/40 font-black uppercase text-[9px]">LON</span>
           <span>{{ formatCoordinate(coords.lng, 'lon') }}</span>
         </div>
       </div>
-      <div v-else class="font-black uppercase opacity-30 text-text-muted text-[8px]">
+      <div v-else class="font-black uppercase opacity-30 text-text-muted text-[10px]">
         Fuera de mapa
       </div>
     </div>
