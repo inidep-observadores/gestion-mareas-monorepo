@@ -1,6 +1,6 @@
 import { Injectable, Logger, ConflictException, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { execSync } from 'child_process';
+import { execSync, spawn } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as archiver from 'archiver';
@@ -65,36 +65,38 @@ export class BackupService {
 
             try {
                 // Intento local
-                execSync('pg_dump --version', { stdio: 'ignore' });
-                console.log(`[BackupService] pg_dump encontrado en host Windows.`);
-
-                const command = `pg_dump -h "${dbHost}" -p "${dbPort}" -U "${dbUser}" -d "${dbName}" --clean --if-exists --no-owner --no-privileges -f "${filePath}"`;
-                execSync(command, {
-                    env: { ...process.env, PGPASSWORD: dbPass },
-                    stdio: 'pipe',
-                    maxBuffer: 1024 * 1024 * 100 // 100MB
-                });
-            } catch (localError) {
+                await this.executeDumpCommand(
+                    'pg_dump',
+                    [
+                        '-h', dbHost, '-p', dbPort, '-U', dbUser, '-d', dbName,
+                        '--clean', '--if-exists', '--no-owner', '--no-privileges',
+                        '-T', 'buque_trayectorias', '-T', 'buque_trayectoria_puntos'
+                    ],
+                    { PGPASSWORD: dbPass },
+                    filePath
+                );
+                console.log(`[BackupService] Backup local completado exitosamente.`);
+            } catch (localError: any) {
                 // Fallback Docker
-                console.warn(`[BackupService] pg_dump NO encontrado en host. Usando Docker fallback 'mareasdb'...`);
+                console.warn(`[BackupService] pg_dump local falló o no se encontró. Usando Docker fallback 'mareasdb'...`);
 
                 // IMPORTANTE: Dentro del contenedor el puerto es 5432, NO el 5435 externo
-                const dockerCommand = `docker exec -e PGPASSWORD="${dbPass}" mareasdb pg_dump -h localhost -p 5432 -U "${dbUser}" -d "${dbName}" --clean --if-exists --no-owner --no-privileges`;
-
-                console.log(`[BackupService] Ejecutando en Docker: ${dockerCommand}`);
-
-                const output = execSync(dockerCommand, {
-                    maxBuffer: 1024 * 1024 * 100, // 100MB
-                    stdio: ['ignore', 'pipe', 'pipe']
-                });
-
-                console.log(`[BackupService] Datos recibidos: ${output.length} bytes.`);
-                fs.writeFileSync(filePath, output);
+                await this.executeDumpCommand(
+                    'docker',
+                    [
+                        'exec', '-i', '-e', `PGPASSWORD=${dbPass}`, 'mareasdb',
+                        'pg_dump', '-h', 'localhost', '-p', '5432', '-U', dbUser, '-d', dbName,
+                        '--clean', '--if-exists', '--no-owner', '--no-privileges',
+                        '-T', 'buque_trayectorias', '-T', 'buque_trayectoria_puntos'
+                    ],
+                    {},
+                    filePath
+                );
+                console.log(`[BackupService] Backup vía Docker completado exitosamente.`);
             }
 
-            // Guardar metadatos
-            const sqlBuffer = fs.readFileSync(filePath);
-            const sqlHash = crypto.createHash('sha256').update(sqlBuffer).digest('hex');
+            // Guardar metadatos (Cálculo de hash por streams)
+            const sqlHash = await this.calculateFileHash(filePath);
 
             const backupSecret = this.configService.get<string>('BACKUP_SECRET') || this.configService.get<string>('JWT_SECRET');
 
@@ -427,5 +429,45 @@ export class BackupService {
                 fs.rmdirSync(tempDir);
             }
         }
+    }
+
+    private async calculateFileHash(filePath: string): Promise<string> {
+        return new Promise((resolve, reject) => {
+            const hash = crypto.createHash('sha256');
+            const stream = fs.createReadStream(filePath);
+            stream.on('data', (data) => hash.update(data));
+            stream.on('end', () => resolve(hash.digest('hex')));
+            stream.on('error', (err) => reject(err));
+        });
+    }
+
+    private async executeDumpCommand(command: string, args: string[], env: any, outputPath: string): Promise<void> {
+        return new Promise((resolve, reject) => {
+            const writeStream = fs.createWriteStream(outputPath);
+            const child = spawn(command, args, {
+                env: { ...process.env, ...env },
+                shell: true // Necesario en Windows para resolver rutas de forma robusta
+            });
+
+            child.stdout.pipe(writeStream);
+
+            let stderr = '';
+            child.stderr.on('data', (data) => {
+                stderr += data.toString();
+            });
+
+            child.on('close', (code) => {
+                if (code === 0) {
+                    resolve();
+                } else {
+                    const errorMsg = stderr || `Proceso de backup falló con código ${code}`;
+                    reject(new Error(errorMsg));
+                }
+            });
+
+            child.on('error', (err) => {
+                reject(err);
+            });
+        });
     }
 }
