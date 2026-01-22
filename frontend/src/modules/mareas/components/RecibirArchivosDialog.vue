@@ -30,8 +30,40 @@
 
       <!-- Form Content -->
       <form novalidate @submit.prevent class="space-y-8">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          <!-- 0.1 Fecha Inicio Observador -->
+          <div class="space-y-2">
+            <label class="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-text-muted/60">
+              <CalenderIcon class="w-3.5 h-3.5" />
+              Inicio Observador
+            </label>
+            <DatePicker
+              v-model="form.fechaInicioObservador"
+              :error="validationErrors.fechaInicioObservador"
+            />
+            <p v-if="marea?.etapas?.length" class="text-[10px] font-bold text-text-muted/40 uppercase tracking-tight">
+              Máximo: {{ formatDate(marea.etapas[0].fechaZarpada) }} (zarpada)
+            </p>
+          </div>
+
+          <!-- 0.2 Fecha Fin Observador -->
+          <div class="space-y-2">
+            <label class="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-text-muted/60">
+              <CalenderIcon class="w-3.5 h-3.5" />
+              Fin Observador
+            </label>
+            <DatePicker
+              v-model="form.fechaFinObservador"
+              :error="validationErrors.fechaFinObservador"
+            />
+            <p v-if="marea?.etapas?.length" class="text-[10px] font-bold text-text-muted/40 uppercase tracking-tight">
+              Mínimo: {{ formatDate(marea.etapas[marea.etapas.length - 1].fechaArribo) }} (arribo)
+            </p>
+          </div>
+        </div>
+
         <!-- 1. Fecha de Recepción -->
-        <div class="space-y-2">
+        <div class="space-y-2 border-t border-border pt-6">
           <label class="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-text-muted/60">
             <HistoryIcon class="w-3.5 h-3.5" />
             Fecha de Recepción
@@ -42,8 +74,8 @@
             :error="validationErrors.fechaRecepcion"
             class="max-w-xs"
           />
-          <p v-if="!validationErrors.fechaRecepcion && marea?.fecha_fin_observador" class="text-[10px] font-bold text-text-muted/40 uppercase tracking-tight">
-            No puede ser anterior a la llegada ({{ formatDate(marea.fecha_fin_observador) }})
+          <p v-if="!validationErrors.fechaRecepcion && form.fechaFinObservador" class="text-[10px] font-bold text-text-muted/40 uppercase tracking-tight">
+            No puede ser anterior a la finalización ({{ formatDate(form.fechaFinObservador) }})
           </p>
         </div>
 
@@ -213,7 +245,8 @@ import {
   HistoryIcon,
   SearchIcon,
   CheckIcon,
-  ChatIcon
+  ChatIcon,
+  CalenderIcon
 } from '@/icons';
 
 const props = defineProps<{
@@ -229,6 +262,8 @@ const ALLOWED_EXT_STRING = ALLOWED_EXTENSIONS.map(e => `.${e}`).join(', ');
 
 // Form State
 const form = ref({
+  fechaInicioObservador: null as string | null,
+  fechaFinObservador: null as string | null,
   fechaRecepcion: new Date().toISOString(),
   files: [] as File[],
   otolitos: null as number | null,
@@ -251,6 +286,8 @@ const confirmationConfirmText = ref('Confirmar');
 watch(() => props.show, (val) => {
   if (val) {
     form.value = {
+      fechaInicioObservador: props.marea?.fechaInicioObservador || null,
+      fechaFinObservador: props.marea?.fecha_fin_observador || props.marea?.fechaFinObservador || null,
       fechaRecepcion: new Date().toISOString(),
       files: [],
       otolitos: null,
@@ -318,7 +355,32 @@ const isValid = computed(() => {
   validationErrors.value = {};
   let valid = true;
 
-  // 1. Validar Fecha
+  // 0. Validar Fechas Observador
+  if (!form.value.fechaInicioObservador) {
+    validationErrors.value.fechaInicioObservador = 'Requerido';
+    valid = false;
+  } else if (props.marea?.etapas?.length) {
+    const start = new Date(form.value.fechaInicioObservador);
+    const firstZarpada = new Date(props.marea.etapas[0].fechaZarpada);
+    if (start > firstZarpada) {
+      validationErrors.value.fechaInicioObservador = 'Debe ser <= zarpada';
+      valid = false;
+    }
+  }
+
+  if (!form.value.fechaFinObservador) {
+    validationErrors.value.fechaFinObservador = 'Requerido';
+    valid = false;
+  } else if (props.marea?.etapas?.length) {
+    const end = new Date(form.value.fechaFinObservador);
+    const lastArribo = new Date(props.marea.etapas[props.marea.etapas.length - 1].fechaArribo);
+    if (end < lastArribo) {
+      validationErrors.value.fechaFinObservador = 'Debe ser >= arribo';
+      valid = false;
+    }
+  }
+
+  // 1. Validar Fecha Recepción
   if (!form.value.fechaRecepcion) {
     valid = false;
   } else {
@@ -331,10 +393,10 @@ const isValid = computed(() => {
       valid = false;
     }
 
-    if (props.marea?.fecha_fin_observador) {
-      const arrived = new Date(props.marea.fecha_fin_observador);
+    if (form.value.fechaFinObservador) {
+      const arrived = new Date(form.value.fechaFinObservador);
       if (recv < arrived) {
-        validationErrors.value.fechaRecepcion = 'No puede ser anterior a la finalización de marea (' + formatDate(props.marea.fecha_fin_observador) + ')';
+        validationErrors.value.fechaRecepcion = 'No puede ser anterior a la finalización de marea (' + formatDate(form.value.fechaFinObservador) + ')';
         valid = false;
       }
     }
@@ -391,6 +453,8 @@ function executeConfirmation() {
   showConfirmation.value = false;
   if (confirmationAction.value === 'SAVE') {
     emit('confirm', {
+      fechaInicioObservador: form.value.fechaInicioObservador,
+      fechaFinObservador: form.value.fechaFinObservador,
       fechaRecepcion: form.value.fechaRecepcion,
       cantidadOtolitos: form.value.otolitos,
       comentarios: form.value.comentarios,

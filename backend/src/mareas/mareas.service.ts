@@ -1507,12 +1507,36 @@ export class MareasService {
 
             if (actionKey === 'RECIBIR_DATOS') {
                 const fechaRecepcion = payload.fechaRecepcion;
+                const fechaInicioObs = payload.fechaInicioObservador ? new Date(payload.fechaInicioObservador) : (marea.fechaInicioObservador ? new Date(marea.fechaInicioObservador) : null);
+                const fechaFinObs = payload.fechaFinObservador ? new Date(payload.fechaFinObservador) : (marea.fechaFinObservador ? new Date(marea.fechaFinObservador) : null);
+
+                if (!fechaInicioObs || !fechaFinObs) {
+                    throw new Error('Las fechas de inicio y fin del observador son requeridas para la recepción.');
+                }
+
+                const stages = marea.etapas;
+                if (stages.length > 0) {
+                    const firstStageZarpada = stages[0].fechaZarpada ? new Date(stages[0].fechaZarpada) : null;
+                    const lastStageArribo = stages[stages.length - 1].fechaArribo ? new Date(stages[stages.length - 1].fechaArribo) : null;
+
+                    if (firstStageZarpada && fechaInicioObs > firstStageZarpada) {
+                        throw new Error('La fecha de inicio del observador no puede ser posterior a la zarpada de la primera etapa.');
+                    }
+                    if (lastStageArribo && fechaFinObs < lastStageArribo) {
+                        throw new Error('La fecha de fin del observador no puede ser anterior al arribo de la última etapa.');
+                    }
+                }
+
                 if (!fechaRecepcion) throw new Error('La fecha de recepción es requerida.');
 
                 const dateRecepcion = new Date(fechaRecepcion);
-                if (marea.fechaFinObservador && dateRecepcion < new Date(marea.fechaFinObservador)) {
+                if (dateRecepcion < fechaFinObs) {
                     throw new Error('La fecha de recepción no puede ser anterior a la finalización del observador.');
                 }
+
+                // Guardar las fechas confirmadas/corregidas en la marea
+                additionalMareaData.fechaInicioObservador = fechaInicioObs;
+                additionalMareaData.fechaFinObservador = fechaFinObs;
             }
 
             const mareaUpdated = await tx.marea.update({
