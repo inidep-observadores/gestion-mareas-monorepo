@@ -246,8 +246,8 @@ const isValid = computed(() => {
   validationErrors.value = {};
   if (!form.value.fechaInicio) return false;
 
-  // Mode FINALIZAR: require fechaFin
-  if (props.mode === 'FINALIZAR' && !form.value.fechaFin) return false;
+  // Mode FINALIZAR: require fechaFin -> NO LONGER REQUIRED PER USER REQUEST
+  // Note: if (props.mode === 'FINALIZAR' && !form.value.fechaFin) return false;
 
   // Stages validation
   if (form.value.stages.length === 0) return false;
@@ -260,14 +260,12 @@ const isValid = computed(() => {
   const firstZarpada = form.value.stages[0].fechaZarpada;
   
   // 1. Start Obs > First Stage Departure
-  // "No puede ser posterior a la primera zarpada"
-  // CORRECCIÓN: Si es el MISMO día, es válido. Solo falla si startObs > firstZarpada
   if (isDateAfter(startObs, firstZarpada)) {
     validationErrors.value.fechaInicio = 'No puede ser posterior a la primera zarpada';
     return false;
   }
 
-  if (props.mode === 'FINALIZAR') {
+  if (props.mode === 'FINALIZAR' && form.value.fechaFin) {
     const endObs = form.value.fechaFin;
     const lastArribo = form.value.stages[form.value.stages.length - 1].fechaArribo;
 

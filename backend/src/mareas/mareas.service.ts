@@ -1496,9 +1496,9 @@ export class MareasService {
 
             if (actionKey === 'REGISTRAR_ARRIBO') {
                 const fechaFin = payload.fechaFinObservador;
-                if (!fechaFin) throw new Error('La fecha de fin del observador es requerida.');
+                // if (!fechaFin) throw new Error('La fecha de fin del observador es requerida.'); // Eliminado por pedido del usuario
 
-                additionalMareaData.fechaFinObservador = new Date(fechaFin);
+                additionalMareaData.fechaFinObservador = fechaFin ? new Date(fechaFin) : null;
 
                 if (payload.etapas) {
                     await this.syncStages(tx, id, payload.etapas);
@@ -1536,7 +1536,7 @@ export class MareasService {
                     detalle: actionKey === 'REGISTRAR_INICIO'
                         ? `Inicio Marea. Obs: ${new Date(additionalMareaData.fechaInicioObservador).toLocaleDateString('es-AR')}`
                         : actionKey === 'REGISTRAR_ARRIBO'
-                            ? `Fin Marea. Obs: ${new Date(additionalMareaData.fechaFinObservador).toLocaleDateString('es-AR')}`
+                            ? `Fin Marea. Obs: ${additionalMareaData.fechaFinObservador ? new Date(additionalMareaData.fechaFinObservador).toLocaleDateString('es-AR') : 'Sin fecha definida'}`
                             : `Acción: ${transicion.etiqueta}`,
                     comentarios: payload.comentarios
                 }
