@@ -7,18 +7,17 @@
           {{ mareaTitle }}
         </h3>
         <div class="flex items-center gap-2 mt-0.5">
-           <div class="px-1.5 py-0.5 bg-primary/10 rounded text-[10px] font-mono font-bold text-primary uppercase tracking-wider">
-             {{ mareaCode }}
-           </div>
-           <span class="text-[10px] font-black text-text-muted uppercase tracking-widest truncate">
-             {{ currentMarea.observador }}
-           </span>
+          <div
+            class="px-1.5 py-0.5 bg-primary/10 rounded text-[10px] font-mono font-bold text-primary uppercase tracking-wider">
+            {{ mareaCode }}
+          </div>
+          <span class="text-[10px] font-black text-text-muted uppercase tracking-widest truncate">
+            {{ currentMarea.observador }}
+          </span>
         </div>
       </div>
-      <button
-        @click="$emit('close')"
-        class="p-2 hover:bg-surface-muted rounded-xl transition-all text-text-muted hover:text-text"
-      >
+      <button @click="$emit('close')"
+        class="p-2 hover:bg-surface-muted rounded-xl transition-all text-text-muted hover:text-text">
         <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
         </svg>
@@ -38,10 +37,8 @@
         <section class="space-y-6">
           <div class="flex items-center justify-between">
             <h4 class="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted">Estado & Progreso</h4>
-            <span
-              class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter shadow-sm"
-              :class="getStatusClasses(context.marea.estado_codigo)"
-            >
+            <span class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter shadow-sm"
+              :class="getStatusClasses(context.marea.estado_codigo)">
               {{ context.marea.estado }}
             </span>
           </div>
@@ -50,27 +47,32 @@
           <div class="space-y-2">
             <div class="flex justify-between items-end">
               <span class="text-[10px] font-bold text-text-muted uppercase tracking-widest">Avance Estimado</span>
-              <span v-if="currentMarea?.progreso !== undefined" class="text-xs font-black text-primary">{{ currentMarea.progreso }}%</span>
+              <span v-if="currentMarea?.progreso !== undefined" class="text-xs font-black text-primary">{{
+                currentMarea.progreso }}%</span>
             </div>
             <div class="h-2 w-full bg-surface-muted rounded-full overflow-hidden border border-border">
-              <div
-                class="h-full transition-all duration-1000 ease-out"
+              <div class="h-full transition-all duration-1000 ease-out"
                 :class="(currentMarea?.progreso || 0) > 100 ? 'bg-error' : 'bg-primary'"
-                :style="{ width: (currentMarea?.progreso || 0) + '%' }"
-              ></div>
+                :style="{ width: (currentMarea?.progreso || 0) + '%' }"></div>
             </div>
           </div>
 
           <div class="grid grid-cols-2 gap-3">
-            <div class="bg-surface-muted/50 border border-border p-4 rounded-2xl hover:bg-surface transition-colors group">
-              <p class="text-[9px] font-bold text-text-muted uppercase tracking-widest mb-1 group-hover:text-primary transition-colors">Días Marea</p>
+            <div
+              class="bg-surface-muted/50 border border-border p-4 rounded-2xl hover:bg-surface transition-colors group">
+              <p
+                class="text-[9px] font-bold text-text-muted uppercase tracking-widest mb-1 group-hover:text-primary transition-colors">
+                Días Marea</p>
               <div class="flex items-baseline gap-1">
                 <span class="text-2xl font-black text-text">{{ context.marea.dias_marea }}</span>
                 <span class="text-[10px] font-bold text-text-muted">días</span>
               </div>
             </div>
-            <div class="bg-surface-muted/50 border border-border p-4 rounded-2xl hover:bg-surface transition-colors group">
-              <p class="text-[9px] font-bold text-text-muted uppercase tracking-widest mb-1 group-hover:text-primary transition-colors">Días Nav.</p>
+            <div
+              class="bg-surface-muted/50 border border-border p-4 rounded-2xl hover:bg-surface transition-colors group">
+              <p
+                class="text-[9px] font-bold text-text-muted uppercase tracking-widest mb-1 group-hover:text-primary transition-colors">
+                Días Nav.</p>
               <div class="flex items-baseline gap-1">
                 <span class="text-2xl font-black text-text">{{ context.marea.dias_navegados }}</span>
                 <span class="text-[10px] font-bold text-text-muted">días</span>
@@ -83,14 +85,16 @@
         <section class="space-y-4">
           <div class="flex items-center justify-between">
             <h4 class="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted">Logística de Operación</h4>
-            <span class="px-2 py-0.5 bg-surface-muted rounded text-[9px] font-bold text-text-muted uppercase tracking-tighter">
+            <span
+              class="px-2 py-0.5 bg-surface-muted rounded text-[9px] font-bold text-text-muted uppercase tracking-tighter">
               {{ countEtapas }} {{ countEtapas === 1 ? 'Etapa' : 'Etapas' }}
             </span>
           </div>
 
           <div class="bg-primary/5 border border-primary/20 rounded-2xl p-5 space-y-4 relative overflow-hidden">
             <!-- Indicador En Tierra -->
-            <div v-if="isEnTierra" class="absolute top-0 right-0 px-3 py-1 bg-success/10 text-success text-[10px] font-black uppercase tracking-tighter rounded-bl-xl border-l border-b border-success/20 z-10 flex items-center gap-1.5">
+            <div v-if="isEnTierra"
+              class="absolute top-0 right-0 px-3 py-1 bg-success/10 text-success text-[10px] font-black uppercase tracking-tighter rounded-bl-xl border-l border-b border-success/20 z-10 flex items-center gap-1.5">
               <span class="flex h-1.5 w-1.5 relative">
                 <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75"></span>
                 <span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-success"></span>
@@ -105,7 +109,8 @@
               <div class="flex-1 min-w-0">
                 <p class="text-[9px] font-bold text-primary uppercase tracking-widest mb-0.5">Zarpada Prevista</p>
                 <p class="text-sm font-black text-text truncate">
-                  {{ formatDate(currentMarea.fecha_zarpada) }} <span class="mx-1 text-primary/60">en</span> {{ puertoZarpada }}
+                  {{ formatDate(currentMarea.fecha_zarpada) }} <span class="mx-1 text-primary/60">en</span> {{
+                    puertoZarpada }}
                 </p>
               </div>
             </div>
@@ -118,7 +123,8 @@
               <div class="flex-1 min-w-0">
                 <p class="text-[9px] font-bold text-primary uppercase tracking-widest mb-0.5">Arribo</p>
                 <p class="text-sm font-black text-text truncate">
-                  {{ formatDate(finalArribo.fechaArribo) }} <span class="mx-1 text-primary/60">en</span> {{ finalArribo.puertoArriboNombre }}
+                  {{ formatDate(finalArribo.fechaArribo) }} <span class="mx-1 text-primary/60">en</span> {{
+                    finalArribo.puertoArriboNombre }}
                 </p>
               </div>
             </div>
@@ -131,39 +137,43 @@
             <h4 class="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted italic">Acciones sugeridas</h4>
           </div>
           <div class="flex flex-col gap-2.5">
-            <button
-              v-for="(action, key) in context.actions"
-              :key="key"
-              @click="onAction(key)"
+            <button v-for="(action, key) in context.actions" :key="key" @click="onAction(key)"
               class="group relative flex items-center justify-between p-4 rounded-2xl border transition-all duration-300"
               :class="[
                 action.enabled
                   ? 'bg-surface border-border hover:shadow-lg transition-all'
                   : 'bg-surface-muted/30 border-border/50 text-text-muted cursor-not-allowed',
                 action.enabled && action.claseBoton === 'error' ? 'hover:border-error/50 hover:shadow-error/5' : 'hover:border-primary/50 hover:shadow-primary/5'
-              ]"
-              :disabled="!action.enabled"
-            >
+              ]" :disabled="!action.enabled">
               <div class="flex items-center gap-4">
-                <div
-                  class="p-2 rounded-xl transition-colors"
-                  :class="[
-                    !action.enabled ? 'bg-surface-muted text-text-muted' :
+                <div class="p-2 rounded-xl transition-colors" :class="[
+                  !action.enabled ? 'bg-surface-muted text-text-muted' :
                     action.claseBoton === 'error' ? 'bg-error/10 text-error' : 'bg-primary/10 text-primary'
-                  ]"
-                >
+                ]">
                   <component :is="getActionIcon(key)" class="w-4 h-4" />
                 </div>
                 <div class="text-left">
-                  <p class="text-sm font-bold" :class="action.enabled && action.claseBoton === 'error' ? 'text-error' : 'text-text'">{{ action.label }}</p>
-                  <p v-if="!action.enabled" class="text-[10px] font-medium text-text-muted mt-0.5">{{ action.blockedReason }}</p>
+                  <p class="text-sm font-bold"
+                    :class="action.enabled && action.claseBoton === 'error' ? 'text-error' : 'text-text'">{{
+                      action.label }}</p>
+                  <p v-if="!action.enabled" class="text-[10px] font-medium text-text-muted mt-0.5">{{
+                    action.blockedReason }}</p>
                 </div>
               </div>
-              <ChevronRightIcon v-if="action.enabled" class="w-4 h-4 transition-transform group-hover:translate-x-1" :class="action.claseBoton === 'error' ? 'text-error/40' : 'text-text-muted/40'" />
+              <ChevronRightIcon v-if="action.enabled" class="w-4 h-4 transition-transform group-hover:translate-x-1"
+                :class="action.claseBoton === 'error' ? 'text-error/40' : 'text-text-muted/40'" />
               <LockIcon v-else class="w-3.5 h-3.5 text-text-muted/40" />
             </button>
           </div>
         </section>
+
+        <!-- 3.5 Trajectory Quick Access -->
+        <button @click="$emit('view-trajectory')"
+          class="w-full py-3.5 bg-primary/5 border border-primary/20 hover:border-primary/50 text-text rounded-2xl text-sm font-black transition-all hover:shadow-lg hover:shadow-primary/5 active:scale-[0.98] flex items-center justify-center gap-3 group">
+          <MapPinIcon class="w-5 h-5 text-primary transition-transform group-hover:scale-110" />
+          <span>Visualizar Trayectoria</span>
+          <ChevronRightIcon class="w-4 h-4 ml-auto text-primary/40 group-hover:translate-x-1 transition-transform" />
+        </button>
 
         <!-- 4. Active Alerts -->
         <section v-if="currentMarea?.alertas?.length" class="space-y-4">
@@ -175,21 +185,16 @@
             Alertas Críticas
           </h4>
           <div class="space-y-3">
-            <div
-              v-for="alerta in currentMarea.alertas"
-              :key="alerta.id"
-              class="p-4 bg-error/5 border border-error/20 rounded-2xl relative overflow-hidden group"
-            >
+            <div v-for="alerta in currentMarea.alertas" :key="alerta.id"
+              class="p-4 bg-error/5 border border-error/20 rounded-2xl relative overflow-hidden group">
               <div class="absolute top-0 right-0 p-2 opacity-0 group-hover:opacity-100 transition-opacity">
                 <WarningIcon class="w-12 h-12 text-error/10 -mr-4 -mt-4 rotate-12" />
               </div>
               <p class="text-xs font-black text-error uppercase tracking-tight">{{ alerta.titulo }}</p>
               <p class="text-[11px] text-error/80 mt-1 leading-relaxed">{{ alerta.descripcion }}</p>
               <div v-if="!readOnly" class="flex justify-end mt-4">
-                <button
-                  @click="$emit('manage-alert', alerta)"
-                  class="px-4 py-2 bg-error text-error-fg text-[10px] font-black uppercase tracking-widest rounded-xl hover:opacity-90 transition-all shadow-lg shadow-error/20 active:scale-95 flex items-center gap-2"
-                >
+                <button @click="$emit('manage-alert', alerta)"
+                  class="px-4 py-2 bg-error text-error-fg text-[10px] font-black uppercase tracking-widest rounded-xl hover:opacity-90 transition-all shadow-lg shadow-error/20 active:scale-95 flex items-center gap-2">
                   Gestionar
                   <ChevronRightIcon class="w-3 h-3" />
                 </button>
@@ -207,7 +212,9 @@
           <div class="relative pl-6 space-y-6">
             <div class="absolute left-[7px] top-2 bottom-2 w-[1px] bg-border"></div>
             <div v-for="event in context.lastEvents" :key="event.id" class="relative group">
-              <div class="absolute -left-[23px] top-1.5 w-2 h-2 rounded-full border-2 border-surface bg-primary z-10 transition-transform group-hover:scale-125"></div>
+              <div
+                class="absolute -left-[23px] top-1.5 w-2 h-2 rounded-full border-2 border-surface bg-primary z-10 transition-transform group-hover:scale-125">
+              </div>
               <div>
                 <p class="text-[11px] font-bold text-text">{{ event.titulo }}</p>
                 <div class="flex items-center gap-2 mt-0.5">
@@ -224,18 +231,14 @@
 
     <!-- Footer Actions -->
     <div class="p-6 border-t border-border bg-surface-muted/50 space-y-3 shrink-0">
-      <button
-        v-if="!readOnly"
-        @click="$emit('open-detalle')"
-        class="w-full py-3.5 bg-primary hover:bg-primary-hover text-primary-fg rounded-2xl text-sm font-bold shadow-xl shadow-primary/20 transition-all hover:-translate-y-0.5 active:scale-[0.98] flex items-center justify-center gap-2"
-      >
+      <button v-if="!readOnly" @click="$emit('open-detalle')"
+        class="w-full py-3.5 bg-primary hover:bg-primary-hover text-primary-fg rounded-2xl text-sm font-bold shadow-xl shadow-primary/20 transition-all hover:-translate-y-0.5 active:scale-[0.98] flex items-center justify-center gap-2">
         <DocsIcon class="w-4 h-4" />
         Editar Detalles Completos
       </button>
-      <button
-        @click="$emit('close')"
-        class="w-full py-3 text-text-muted text-xs font-bold hover:text-text transition-colors"
-      >
+
+      <button @click="$emit('close')"
+        class="w-full py-3 text-text-muted text-xs font-bold hover:text-text transition-colors">
         Cerrar Panel
       </button>
     </div>
@@ -295,7 +298,7 @@ const mareaCode = computed(() => {
   return currentMarea.value?.id_marea || '0000-000'
 })
 
-const emit = defineEmits(['close', 'open-detalle', 'action', 'manage-alert'])
+const emit = defineEmits(['close', 'open-detalle', 'action', 'manage-alert', 'view-trajectory'])
 
 const countEtapas = computed(() => {
   return props.context?.marea?.etapas?.length || 0
@@ -389,13 +392,16 @@ const formatDate = (date?: string) => {
 .custom-scrollbar::-webkit-scrollbar {
   width: 4px;
 }
+
 .custom-scrollbar::-webkit-scrollbar-track {
   background: transparent;
 }
+
 .custom-scrollbar::-webkit-scrollbar-thumb {
   background: var(--color-border);
   border-radius: 10px;
 }
+
 .dark .custom-scrollbar::-webkit-scrollbar-thumb {
   background: var(--color-border);
 }

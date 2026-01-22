@@ -182,7 +182,7 @@ const router = createRouter({
       },
     },
     {
-      path: '/mareas/monitor',
+      path: '/mareas/monitor/:mareaId?',
       name: 'MareasMonitor',
       component: () => import('@/modules/monitor/views/MonitorVMSView.vue'),
       meta: {

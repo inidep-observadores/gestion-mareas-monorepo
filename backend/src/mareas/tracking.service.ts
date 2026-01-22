@@ -260,6 +260,62 @@ export class TrackingService {
 
     // --- Visuals & Data Retrieval ---
 
+    async getMareaTrackingInfo(mareaId: string) {
+        const marea = await this.prisma.marea.findUnique({
+            where: { id: mareaId },
+            include: {
+                buque: true,
+                etapas: {
+                    orderBy: { nroEtapa: 'asc' }
+                },
+                observadorPrincipal: true
+            }
+        });
+
+        if (!marea) throw new Error('Marea no encontrada');
+
+        // Logic reused from getLatestFleetPositions
+        let voyageStart: Date | null = marea.fechaZarpadaEstimada || marea.fechaInicioObservador;
+        if (marea.etapas.length > 0 && marea.etapas[0].fechaZarpada) {
+            if (!voyageStart || marea.etapas[0].fechaZarpada < voyageStart) {
+                voyageStart = marea.etapas[0].fechaZarpada;
+            }
+        }
+
+        let voyageEnd: Date | null = null;
+        const lastStage = marea.etapas[marea.etapas.length - 1];
+        if (lastStage && lastStage.fechaArribo) {
+            voyageEnd = lastStage.fechaArribo;
+        } else {
+            voyageEnd = new Date();
+        }
+
+        // Adjust hours
+        if (voyageStart) {
+            voyageStart = DateTime.fromJSDate(voyageStart).setZone(this.TIMEZONE).set({ hour: 0, minute: 0, second: 0, millisecond: 0 }).toJSDate();
+        }
+        if (voyageEnd) {
+            voyageEnd = DateTime.fromJSDate(voyageEnd).setZone(this.TIMEZONE).set({ hour: 23, minute: 50, second: 0, millisecond: 0 }).toJSDate();
+        }
+
+        return {
+            id: marea.id,
+            buqueId: marea.buqueId,
+            name: marea.buque.nombreBuque,
+            matricula: marea.buque.matricula,
+            mareaCode: `${marea.nroMarea}/${marea.anioMarea}`,
+            observer: marea.observadorPrincipal?.apellido ? `${marea.observadorPrincipal.apellido}, ${marea.observadorPrincipal.nombre}` : 'Sin asignar',
+            voyageStart: voyageStart?.toISOString(),
+            voyageEnd: voyageEnd?.toISOString(),
+            lastUpdate: marea.fechaUltimaActualizacion,
+            totalDays: MareaUtils.calculateNavigatedDays(marea),
+            etapas: marea.etapas.map(e => ({
+                ...e,
+                durationDays: MareaUtils.calculateStageDays(e)
+            }))
+        };
+    }
+
     async getLatestFleetPositions() {
         const activeMareas = await this.prisma.marea.findMany({
             where: { estadoActual: { codigo: { in: ['EN_EJECUCION', 'DESIGNADA'] } } },
@@ -339,7 +395,7 @@ export class TrackingService {
                 totalDays,
                 etapas: marea.etapas.map(e => ({
                     ...e,
-                    diasNavegados: MareaUtils.calculateStageDays(e)
+                    durationDays: MareaUtils.calculateStageDays(e)
                 }))
             });
         }

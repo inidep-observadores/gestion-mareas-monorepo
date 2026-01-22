@@ -220,7 +220,7 @@ const navigationGroups = computed(() => {
         },
         {
           icon: MapPinIcon,
-          name: 'Mapa de Mareas Activas',
+          name: 'Mapa Interactivo',
           to: { name: 'MareasMonitor' },
           show: isAdmin.value,
         },

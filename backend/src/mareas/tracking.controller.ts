@@ -52,4 +52,9 @@ export class TrackingController {
     ) {
         return this.trackingService.getVesselHistory(buqueId, from, to);
     }
+
+    @Get('marea/:mareaId')
+    async getMareaTrackingInfo(@Param('mareaId') mareaId: string) {
+        return this.trackingService.getMareaTrackingInfo(mareaId);
+    }
 }

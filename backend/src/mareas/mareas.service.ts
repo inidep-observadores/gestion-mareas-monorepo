@@ -85,7 +85,7 @@ export class MareasService {
             id_marea: MareaUtils.formatCodigo(marea as any),
             etapas: marea.etapas.map(e => ({
                 ...e,
-                diasNavegados: MareaUtils.calculateStageDays(e)
+                durationDays: MareaUtils.calculateStageDays(e)
             }))
         };
     }
@@ -1197,42 +1197,16 @@ export class MareasService {
 
         if (codigoEstado !== MareaEstado.DESIGNADA && codigoEstado !== MareaEstado.CANCELADA) {
             // 1. Días de Marea: Tiempo del observador (Inclusivo)
-            const startObs = marea.fechaInicioObservador ? new Date(marea.fechaInicioObservador) : null;
-            const endObs = marea.fechaFinObservador ? new Date(marea.fechaFinObservador) : now;
-
-            if (startObs) {
-                const diffMs = endObs.getTime() - startObs.getTime();
-                diasMarea = Math.floor(diffMs / (1000 * 60 * 60 * 24)) + 1;
-                if (diasMarea < 0) diasMarea = 0;
+            if (marea.fechaInicioObservador) {
+                diasMarea = DateUtils.calculateInclusiveDays(marea.fechaInicioObservador, marea.fechaFinObservador);
             }
 
-            // 2. Días Navegados: Suma de etapas únicas
-            const stageIntervals = marea.etapas
-                .filter((e: any) => e.fechaZarpada)
-                .map((e: any) => ({
-                    start: new Date(e.fechaZarpada),
-                    end: e.fechaArribo ? new Date(e.fechaArribo) : now
-                }));
-
-            diasNavegados = DateUtils.calculateUniqueDays(stageIntervals);
+            // 2. Días Navegados: Suma de etapas únicas usando la utilidad centralizada
+            diasNavegados = MareaUtils.calculateNavigatedDays(marea);
         }
 
-        // Cálculo de progreso consistente con los días calculados arriba
-        const estimatedDuration = (marea.diasEstimados && marea.diasEstimados > 0) ? marea.diasEstimados : 30;
-        let progreso = 0;
-
-        if (codigoEstado === MareaEstado.DESIGNADA) {
-            progreso = 0;
-        } else if (codigoEstado === MareaEstado.EN_EJECUCION) {
-            progreso = Math.round((diasMarea / estimatedDuration) * 100);
-        } else {
-            // Para estados de revisión o finalizados, usamos los días navegados
-            const totalDias = diasNavegados > 0 ? diasNavegados : diasMarea;
-            progreso = Math.round((totalDias / estimatedDuration) * 100);
-            if (progreso < 100 && (codigoEstado !== MareaEstado.EN_EJECUCION)) {
-                progreso = 100; // Si ya terminó, al menos 100%
-            }
-        }
+        // Cálculo de progreso consistente (reutilizando la lógica centralizada)
+        const progreso = this.calculateProgress(marea);
 
         return {
             marea: {
@@ -1262,7 +1236,8 @@ export class MareasService {
                     puertoArriboId: e.puertoArriboId,
                     puertoArriboNombre: e.puertoArribo?.nombre,
                     fechaZarpada: e.fechaZarpada,
-                    fechaArribo: e.fechaArribo
+                    fechaArribo: e.fechaArribo,
+                    durationDays: MareaUtils.calculateStageDays(e)
                 }))
             },
             actions,

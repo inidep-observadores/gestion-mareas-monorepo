@@ -55,15 +55,15 @@
       </div>
 
       <!-- SIDEBAR IZQUIERDO (FLOTA) -->
-      <VesselListSidebar class="absolute left-0 top-0 h-full z-[2000]" v-model:isOpen="leftSidebarOpen"
-        :vessels="vesselList" :selectedId="selectedVesselId" @select="setSelectedVessel"
-        @toggle-visibility="toggleVesselVisibility" @select-all="selectAllVessels(true)"
+      <VesselListSidebar v-if="!isSingleMareaMode" class="absolute left-0 top-0 h-full z-[2000]"
+        v-model:isOpen="leftSidebarOpen" :vessels="vesselList" :selectedId="selectedVesselId"
+        @select="setSelectedVessel" @toggle-visibility="toggleVesselVisibility" @select-all="selectAllVessels(true)"
         @deselect-all="selectAllVessels(false)" />
 
       <!-- SIDEBAR DERECHO (CONTROL) -->
-      <MonitorSidebar class="absolute right-0 top-0 h-full z-[2000]" v-model:isOpen="rightSidebarOpen"
-        :mapLayers="mapLayers" :totalPoints="activeVessel?.points.length || 0" :visiblePoints="visiblePointsCount"
-        @update:layer="handleLayerToggle" @open-upload="showUploadDialog = true" />
+      <MonitorSidebar v-if="!isSingleMareaMode" class="absolute right-0 top-0 h-full z-[2000]"
+        v-model:isOpen="rightSidebarOpen" :mapLayers="mapLayers" @update:layer="handleLayerToggle"
+        @open-upload="showUploadDialog = true" />
 
       <UploadTrackingDialog :show="showUploadDialog" @close="showUploadDialog = false" @refresh="fetchFleet" />
     </div>
@@ -72,6 +72,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onUnmounted, onMounted, reactive, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import type { LatLng } from 'leaflet'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import MapMonitor, { type VesselTrajectory } from '../components/MapMonitor.vue'
@@ -100,6 +101,9 @@ const mapLayers = ref({
   points: false,
 })
 
+const route = useRoute()
+const isSingleMareaMode = computed(() => !!route.params.mareaId)
+
 import { MAX_DISPLAY_POINTS } from '../constants'
 
 // Playback State
@@ -125,22 +129,6 @@ const vesselList = computed<MonitorVessel[]>(() => {
 const activeVessel = computed(() => {
   if (!selectedVesselId.value) return null
   return fleet[selectedVesselId.value]
-})
-
-const visiblePointsCount = computed(() => {
-  if (!activeVessel.value) return 0
-  const total = activeVessel.value.points.length
-  if (total === 0) return 0
-  const step = Math.max(1, Math.ceil(total / MAX_DISPLAY_POINTS))
-
-  if (step === 1) return total
-
-  let count = 0
-  for (let i = 0; i < total; i++) {
-    const isLast = i === total - 1
-    if (i % step === 0 || isLast) count++
-  }
-  return count
 })
 
 const currentPoint = computed(() => {
@@ -205,6 +193,38 @@ const fetchFleet = async () => {
     }
   } catch (error) {
     console.error('Error fetching fleet:', error)
+  }
+}
+
+const fetchSingleMarea = async (mareaId: string) => {
+  try {
+    const response = await httpClient.get(`/tracking/marea/${mareaId}`)
+    const marea = response.data
+
+    fleet[marea.id] = {
+      id: marea.id,
+      vesselId: marea.buqueId,
+      name: marea.name,
+      color: generateLightColor(marea.buqueId),
+      points: [],
+      currentIndex: 0,
+      visible: true, // Always visible in single mode
+      matricula: marea.matricula,
+      mareaCode: marea.mareaCode,
+      observer: marea.observer,
+      voyageStart: marea.voyageStart,
+      voyageEnd: marea.voyageEnd,
+      lastUpdate: marea.lastUpdate,
+      totalDays: marea.totalDays,
+      etapas: marea.etapas
+    }
+
+    selectedVesselId.value = marea.id
+    // History is fetched and zoom is triggered automatically by the watcher/pending logic
+    fetchVesselHistory(marea.buqueId, marea.id, marea.voyageStart, marea.voyageEnd)
+    pendingZoomVesselId.value = marea.id // Ensure zoom to this marea
+  } catch (error) {
+    console.error('Error fetching single marea tracking info:', error)
   }
 }
 
@@ -300,10 +320,16 @@ const handleStageSelection = (stage: TripStage) => {
   if (index !== -1) activeVessel.value.currentIndex = index
 }
 
-const handleDateSelection = (dateStr: string) => {
+const handleDateSelection = (dateStr: string, isEnd: boolean = false) => {
   if (!activeVessel.value || !activeVessel.value.points.length) return
 
-  const targetTime = new Date(dateStr).getTime()
+  const date = new Date(dateStr)
+  if (isEnd) {
+    // Si es fin (arribo), apuntamos al último momento del día para asegurar ver el tramo final
+    date.setHours(23, 59, 59, 999)
+  }
+
+  const targetTime = date.getTime()
   let minDiff = Infinity
   let nearestIdx = 0
 
@@ -370,7 +396,14 @@ const currentVesselStages = computed<TripStage[]>(() => {
 })
 
 onMounted(() => {
-  fetchFleet()
+  const mareaId = route.params.mareaId as string
+  if (mareaId) {
+    leftSidebarOpen.value = false
+    rightSidebarOpen.value = false
+    fetchSingleMarea(mareaId)
+  } else {
+    fetchFleet()
+  }
 })
 
 onUnmounted(stopPlayback)
