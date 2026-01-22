@@ -22,16 +22,29 @@ async function bootstrap() {
   app.use(cookieParser());
 
   const frontendUrl = process.env.FRONTEND_URL;
+  const envOrigins = frontendUrl ? frontendUrl.split(',').map(o => o.trim().replace(/\/$/, '')) : [];
+
   const origins = [
     'http://localhost:5173',
     'http://127.0.0.1:5173',
     'http://localhost:5174',
     'http://127.0.0.1:5174',
-    ...(frontendUrl ? [frontendUrl] : [])
+    'https://mareas-obs.netlify.app',
+    ...envOrigins
   ];
 
+  // Limpiar posibles rutas en los orígenes para que sean orígenes puros (protocolo + dominio + puerto)
+  const cleanOrigins = origins.map(url => {
+    try {
+      const parsed = new URL(url);
+      return `${parsed.protocol}//${parsed.host}`;
+    } catch {
+      return url;
+    }
+  });
+
   app.enableCors({
-    origin: origins,
+    origin: cleanOrigins,
     credentials: true,
   });
 
