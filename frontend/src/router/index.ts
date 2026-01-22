@@ -182,11 +182,20 @@ const router = createRouter({
       },
     },
     {
-      path: '/mareas/monitor/:mareaId?',
+      path: '/mareas/monitor',
       name: 'MareasMonitor',
       component: () => import('@/modules/monitor/views/MonitorSeguimientoView.vue'),
       meta: {
-        title: 'Mapa interactivo',
+        title: 'Mapa interactivo de Flota',
+        requiresAuth: true,
+      },
+    },
+    {
+      path: '/mareas/monitor/marea/:mareaId',
+      name: 'MareaTrajectory',
+      component: () => import('@/modules/monitor/views/MonitorSeguimientoView.vue'),
+      meta: {
+        title: 'Seguimiento de Marea',
         requiresAuth: true,
       },
     },

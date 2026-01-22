@@ -40,7 +40,7 @@ const props = defineProps<{
   activeLayers: { veda: boolean; vieira: boolean; centolla: boolean; points: boolean }
 }>()
 
-const emit = defineEmits(['update:mouse-coords', 'seek-vessel'])
+const emit = defineEmits(['update:mouse-coords', 'seek-vessel', 'select-vessel'])
 
 const nauticalMap = ref<InstanceType<typeof NauticalMap> | null>(null)
 let map: L.Map | null = null
@@ -123,13 +123,18 @@ const updateAll = () => {
   vesselMarkers.clear()
 
   Object.values(props.fleet).forEach(vessel => {
-    if (!vessel.visible || vessel.points.length === 0) return
+    if (vessel.points.length === 0) return
 
-    renderTrajectory(vessel)
-    renderMarker(vessel)
-    if (props.activeLayers.points) {
-      renderPoints(vessel)
+    // Solo renderizar trayectoria si es visible (seleccionado)
+    if (vessel.visible) {
+      renderTrajectory(vessel)
+      if (props.activeLayers.points) {
+        renderPoints(vessel)
+      }
     }
+
+    // Renderizar marcador para TODOS los buques que tengan puntos
+    renderMarker(vessel)
   })
 }
 
@@ -183,14 +188,17 @@ const renderTrajectory = (vessel: VesselTrajectory) => {
 }
 
 const renderMarker = (vessel: VesselTrajectory) => {
-  const current = vessel.points[vessel.currentIndex]
+  // Si está seleccionado, seguimos el currentIndex (reproyector)
+  // Si no está seleccionado, mostramos el ÚLTIMO punto conocido
+  const pointIndex = vessel.visible ? vessel.currentIndex : (vessel.points.length - 1)
+  const current = vessel.points[pointIndex]
   if (!current) return
 
   const icon = L.divIcon({
     className: 'vessel-marker-icon',
     html: `
-      <div class="relative w-8 h-8 flex items-center justify-center transition-all duration-300" style="transform: rotate(${current.course}deg)">
-        <div class="w-4 h-6 rounded-t-full shadow-lg border-2 border-surface" style="background-color: ${vessel.color}"></div>
+      <div class="relative w-8 h-8 flex items-center justify-center transition-all duration-300 ${!vessel.visible ? 'opacity-80 scale-90' : ''}" style="transform: rotate(${current.course}deg)">
+        <div class="w-4 h-6 rounded-t-full shadow-lg border-2 border-surface cursor-pointer" style="background-color: ${vessel.color}"></div>
         <div class="absolute -top-1 w-1.5 h-1.5 bg-surface rounded-full shadow-sm"></div>
       </div>
     `,
@@ -198,11 +206,16 @@ const renderMarker = (vessel: VesselTrajectory) => {
     iconAnchor: [16, 16],
   })
 
-  const marker = L.marker([current.lat, current.lon], { icon }).addTo(markersLayer)
+  // interactive: true para permitir clics
+  const marker = L.marker([current.lat, current.lon], { icon, interactive: true }).addTo(markersLayer)
   marker.bindTooltip(vessel.name, {
     permanent: false,
     direction: 'top',
     className: 'vessel-tooltip'
+  })
+
+  marker.on('click', () => {
+    emit('select-vessel', vessel.id)
   })
 
   vesselMarkers.set(vessel.id, marker)

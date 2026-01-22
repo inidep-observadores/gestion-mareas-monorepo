@@ -23,13 +23,23 @@
               </p>
             </div>
           </div>
-          <button @click="toggleSidebar"
-            class="p-2 hover:bg-surface-muted rounded-xl transition-colors text-text-muted hover:text-primary">
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none"
-              stroke="currentColor" stroke-width="2.5">
-              <path d="M18 6L6 18M6 6l12 12" />
-            </svg>
-          </button>
+          <div class="flex items-center gap-1">
+            <button @click="$emit('refresh')"
+              class="p-2 hover:bg-surface-muted rounded-xl transition-all text-text-muted hover:text-primary active:rotate-180 duration-500"
+              title="Refrescar lista">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2.5">
+                <path d="M21 12a9 9 0 11-9-9c2.52 0 4.85.83 6.72 2.25L21 8m0-5v5h-5" />
+              </svg>
+            </button>
+            <button @click="toggleSidebar"
+              class="p-2 hover:bg-surface-muted rounded-xl transition-colors text-text-muted hover:text-primary">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2.5">
+                <path d="M18 6L6 18M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
         </div>
 
         <!-- Search Area -->
@@ -137,7 +147,7 @@ const props = defineProps<{
   isOpen: boolean
 }>()
 
-const emit = defineEmits(['select', 'update:isOpen'])
+const emit = defineEmits(['select', 'update:isOpen', 'refresh'])
 
 const searchQuery = ref('')
 

@@ -767,7 +767,7 @@ const goToDetalle = () => {
 
 const goToTrajectory = () => {
   if (selectedMarea.value) {
-    router.push({ name: 'MareasMonitor', params: { mareaId: selectedMarea.value.id } })
+    router.push({ name: 'MareaTrajectory', params: { mareaId: selectedMarea.value.id } })
   }
 }
 

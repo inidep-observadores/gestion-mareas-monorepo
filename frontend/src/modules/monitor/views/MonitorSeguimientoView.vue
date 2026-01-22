@@ -6,20 +6,28 @@
         <!-- THE MAP (Background) -->
         <div class="absolute inset-0">
           <MapMonitor ref="mapMonitor" class="w-full h-full" :fleet="fleet" :activeLayers="mapLayers"
-            @update:mouse-coords="mouseCoords = $event" @seek-vessel="handleSeekVessel" />
+            @update:mouse-coords="mouseCoords = $event" @seek-vessel="handleSeekVessel" @select-vessel="setSelectedVessel" />
         </div>
 
         <!-- HUD LAYER (Floating Components inside map area) -->
         <div class="relative w-full h-full pointer-events-none z-[1000] p-6 flex flex-col justify-between">
           <!-- Top Row -->
           <div class="flex justify-between items-start w-full">
-            <!-- Left: Vessel Info -->
-            <VesselInfoCard v-if="activeVessel" :vesselName="activeVessel.name"
+            <!-- Left: Back Button and Vessel Info -->
+            <div class="flex flex-col gap-4">
+              <button v-if="isSingleMareaMode" @click="handleGoBack"
+                class="pointer-events-auto flex items-center gap-2 px-4 py-2.5 bg-surface/90 backdrop-blur-md border border-border/20 rounded-2xl text-text-muted hover:text-primary transition-all shadow-xl group w-fit">
+                <ArrowLeftIcon class="w-5 h-5 transition-transform group-hover:-translate-x-1" />
+                <span class="text-xs font-black uppercase tracking-widest">Volver</span>
+              </button>
+              
+              <VesselInfoCard v-if="activeVessel" :vesselName="activeVessel.name"
               :mareaCode="activeVessel.mareaCode || '--'"
               :position="{ lat: currentPoint?.lat || 0, lon: currentPoint?.lon || 0 }"
               :timestamp="currentPoint?.timestamp?.toString() || ''" :speed="currentPoint?.speed || 0"
               :course="currentPoint?.course || 0" :lastUpdate="activeVessel.lastUpdate" :layers="mapLayers"
               @update:layer="handleLayerToggle" />
+            </div>
 
             <!-- Right: Trip Stages (Optional or for selected vessel) -->
             <div class="flex flex-col gap-3 items-end">
@@ -57,7 +65,7 @@
       <!-- SIDEBAR IZQUIERDO (FLOTA) -->
       <VesselListSidebar v-if="!isSingleMareaMode" class="absolute left-0 top-0 h-full z-[2000]"
         v-model:isOpen="leftSidebarOpen" :vessels="vesselList" :selectedId="selectedVesselId"
-        @select="setSelectedVessel" />
+        @select="setSelectedVessel" @refresh="fetchFleet" />
 
       <!-- SIDEBAR DERECHO (CONTROL) -->
       <MonitorSidebar v-if="!isSingleMareaMode" class="absolute right-0 top-0 h-full z-[2000]"
@@ -83,6 +91,8 @@ import MonitorSidebar from '../components/MonitorSidebar.vue'
 import VesselListSidebar, { type MonitorVessel } from '../components/VesselListSidebar.vue'
 import UploadTrackingDialog from '../components/UploadTrackingDialog.vue'
 import httpClient from '@/config/http/http.client'
+import { useRouter } from 'vue-router'
+import { ArrowLeftIcon } from '@/icons'
 
 // --- State ---
 const showUploadDialog = ref(false)
@@ -101,7 +111,8 @@ const mapLayers = ref({
 })
 
 const route = useRoute()
-const isSingleMareaMode = computed(() => !!route.params.mareaId)
+const router = useRouter()
+const isSingleMareaMode = computed(() => route.name === 'MareaTrajectory' || !!route.params.mareaId)
 
 import { MAX_DISPLAY_POINTS } from '../constants'
 
@@ -365,6 +376,14 @@ const stopPlayback = () => {
   }
 }
 
+const handleGoBack = () => {
+  if (window.history.length > 1) {
+    router.back()
+  } else {
+    router.push({ name: 'MareasDashboard' })
+  }
+}
+
 const handleSpeedChange = (newSpeed: number) => {
   playbackSpeed.value = newSpeed
   if (isPlaying.value) {
@@ -385,15 +404,33 @@ const currentVesselStages = computed<TripStage[]>(() => {
   }))
 })
 
-onMounted(() => {
+const initializeMonitor = () => {
+  stopPlayback()
+  
+  // Reset state to avoid residual data
+  Object.keys(fleet).forEach(key => delete fleet[key])
+  selectedVesselId.value = null
+  pendingZoomVesselId.value = null
+
   const mareaId = route.params.mareaId as string
   if (mareaId) {
     leftSidebarOpen.value = false
     rightSidebarOpen.value = false
     fetchSingleMarea(mareaId)
   } else {
+    leftSidebarOpen.value = true
+    rightSidebarOpen.value = false
     fetchFleet()
   }
+}
+
+// Watch for route changes (since the component is reused)
+watch(() => route.path, () => {
+  initializeMonitor()
+})
+
+onMounted(() => {
+  initializeMonitor()
 })
 
 onUnmounted(stopPlayback)

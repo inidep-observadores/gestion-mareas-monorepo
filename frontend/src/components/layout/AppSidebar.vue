@@ -195,7 +195,7 @@ const navigationGroups = computed(() => {
         {
           icon: MapPinIcon,
           name: 'Mapa Interactivo',
-          to: { name: 'MareasMonitor' },
+          to: { name: 'MareasMonitor' }, // Apunta al monitor general de flota
           show: true,
         },
         {
