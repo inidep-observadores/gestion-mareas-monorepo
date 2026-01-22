@@ -184,7 +184,7 @@ const router = createRouter({
     {
       path: '/mareas/monitor/:mareaId?',
       name: 'MareasMonitor',
-      component: () => import('@/modules/monitor/views/MonitorVMSView.vue'),
+      component: () => import('@/modules/monitor/views/MonitorSeguimientoView.vue'),
       meta: {
         title: 'Centro de Operaciones Marítimas',
         requiresAuth: true,

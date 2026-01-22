@@ -71,7 +71,7 @@
         <div class="p-4 bg-surface-muted/20 border-t border-border/10">
 
           <div class="flex items-center justify-between px-2">
-            <span class="text-xs font-black text-text-muted/60 uppercase tracking-tighter italic">VMS Engine
+            <span class="text-xs font-black text-text-muted/60 uppercase tracking-tighter italic">Motor de Seguimiento
               v2.0</span>
             <div class="flex gap-1.5 Items-center">
               <div class="w-1 h-1 bg-success rounded-full"></div>

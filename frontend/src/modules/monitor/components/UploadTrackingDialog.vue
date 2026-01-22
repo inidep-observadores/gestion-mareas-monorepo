@@ -117,7 +117,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import httpClient from '@/config/http/http.client'
 import BaseModal from '@/components/common/BaseModal.vue'
 import Button from '@/components/ui/Button.vue'
@@ -127,7 +127,7 @@ const emit = defineEmits<{
   (e: 'refresh'): void
 }>()
 
-defineProps<{
+const props = defineProps<{
   show: boolean
 }>()
 
@@ -148,6 +148,14 @@ interface FileQueueItem {
 const fileInput = ref<HTMLInputElement | null>(null)
 const files = ref<FileQueueItem[]>([])
 const isUploading = ref(false)
+
+// Reset state when closing
+watch(() => props.show, (newVal) => {
+  if (!newVal) {
+    files.value = []
+    isUploading.value = false
+  }
+})
 
 const allFinished = computed(() =>
   files.value.length > 0 && files.value.every(f => f.status === 'success' || f.status === 'error')

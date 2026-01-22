@@ -645,6 +645,20 @@ model ImportacionAccessSnapshot {
   @@map("importacion_access_snapshots")
 }
 
+model TrackingEventSnapshot {
+  id          String   @id @default(uuid()) @db.Uuid
+  buqueId     String   @map("buque_id") @db.Uuid
+  eventType   String   @map("event_type") // POSIBLE_ZARPADA, POSIBLE_ARRIBO, ERROR_REGISTRO_PUERTO
+  timestamp   DateTime @db.Timestamptz(6)
+  puertoId    String?  @map("puerto_id") @db.Uuid
+  hash        String   @unique
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([buqueId])
+  @@index([hash])
+  @@map("tracking_event_snapshots")
+}
+
 enum TipoMarea {
   MC
   CI
