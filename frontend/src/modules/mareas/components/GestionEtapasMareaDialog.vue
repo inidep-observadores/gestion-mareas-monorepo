@@ -205,7 +205,7 @@ watch(() => props.show, (val) => {
       firstInput.value?.focus();
     });
   }
-});
+}, { immediate: true });
 
 // Watch initialPortId to update first stage if it arrives late
 watch(() => props.initialPortId, (newPortId) => {
@@ -298,7 +298,7 @@ function handleConfirm() {
   confirmationAction.value = 'SAVE';
   confirmationTitle.value = config.value.title;
   confirmationMessage.value = props.mode === 'FINALIZAR' 
-    ? '¿Está seguro que desea finalizar la marea? Esta acción es irreversible.'
+    ? '¿Está seguro que desea finalizar la marea? Esta acción es irreversible.' 
     : '¿Desea guardar los cambios en las etapas y fechas del observador?';
   confirmationConfirmText.value = 'Confirmar';
   showConfirmation.value = true;

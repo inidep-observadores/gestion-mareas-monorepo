@@ -509,30 +509,7 @@ const setDefaultFollowUpDate = (dateStr?: string | null) => {
     customFollowUpDate.value = formatToLocalISODate(fallback)
 }
 
-watch(() => props.alert, (newVal) => {
-    if (newVal) {
-        localAlert.value = { ...newVal } // Sync immediately
-        comment.value = ''
-        loadFullAlert(newVal.id)
-        setDefaultFollowUpDate(newVal.fechaVencimiento || null)
-        if (newVal.referenciaTipo === 'MAREA' && newVal.referenciaId) {
-            loadMareaObservers(newVal.referenciaId)
-        } else {
-            mareaObservers.value = []
-        }
-    }
-}, { immediate: true })
 
-watch(() => props.isOpen, (isOpen) => {
-    if (!isOpen) {
-        comment.value = ''
-        customFollowUpDate.value = ''
-        isConfirmationOpen.value = false
-        pendingAction.value = ''
-        confirmationMessage.value = ''
-        // No limpiar observers inmediatamente para evitar parpadeo si se reabre la misma
-    }
-})
 
 const getMetadataObserver = () => {
     return localAlert.value?.metadata?.observerName || (localAlert.value as any)?.metadata?.obs || null
@@ -1046,6 +1023,31 @@ const close = () => {
     confirmationMessage.value = ''
     emit('close')
 }
+
+watch(() => props.alert, (newVal) => {
+    if (newVal) {
+        localAlert.value = { ...newVal } // Sync immediately
+        comment.value = ''
+        loadFullAlert(newVal.id)
+        setDefaultFollowUpDate(newVal.fechaVencimiento || null)
+        if (newVal.referenciaTipo === 'MAREA' && newVal.referenciaId) {
+            loadMareaObservers(newVal.referenciaId)
+        } else {
+            mareaObservers.value = []
+        }
+    }
+}, { immediate: true })
+
+watch(() => props.isOpen, (isOpen) => {
+    if (!isOpen) {
+        comment.value = ''
+        customFollowUpDate.value = ''
+        isConfirmationOpen.value = false
+        pendingAction.value = ''
+        confirmationMessage.value = ''
+        // No limpiar observers inmediatamente para evitar parpadeo si se reabre la misma
+    }
+})
 
 const formatDate = (dateStr?: string) => {
     if (!dateStr) return 'N/A'

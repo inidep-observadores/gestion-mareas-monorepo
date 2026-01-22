@@ -30,8 +30,7 @@ export class CreateMareaDto {
     arteId?: string;
 
     @IsDateString()
-    @IsOptional()
-    fechaZarpadaEstimada?: string;
+    fechaZarpadaEstimada: string;
 
     @IsEnum(TipoMarea)
     @IsOptional()

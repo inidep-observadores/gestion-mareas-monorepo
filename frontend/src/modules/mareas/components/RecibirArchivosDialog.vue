@@ -296,10 +296,12 @@ watch(() => props.show, (val) => {
     validationErrors.value = {};
 
     nextTick(() => {
-      firstInput.value?.focus();
+      if (typeof firstInput.value?.focus === 'function') {
+        firstInput.value.focus();
+      }
     });
   }
-});
+}, { immediate: true });
 
 // File Handlers
 function triggerFileInput() {
