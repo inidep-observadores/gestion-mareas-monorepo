@@ -37,7 +37,7 @@ export interface VesselTrajectory {
 
 const props = defineProps<{
   fleet: Record<string, VesselTrajectory>
-  activeLayers: { veda: boolean; vieira: boolean; centolla: boolean; points: boolean }
+  activeLayers: { veda: boolean; vieira: boolean; centolla: boolean; points: boolean; showAllVessels: boolean }
 }>()
 
 const emit = defineEmits(['update:mouse-coords', 'seek-vessel', 'select-vessel'])
@@ -133,8 +133,10 @@ const updateAll = () => {
       }
     }
 
-    // Renderizar marcador para TODOS los buques que tengan puntos
-    renderMarker(vessel)
+    // Renderizar marcador si showAllVessels es true o si es el buque seleccionado
+    if (props.activeLayers.showAllVessels || vessel.visible) {
+      renderMarker(vessel)
+    }
   })
 }
 
@@ -323,6 +325,7 @@ watch(() => props.activeLayers.points, (val) => {
 watch(() => props.activeLayers.veda, () => loadGeoJson('veda'))
 watch(() => props.activeLayers.vieira, () => loadGeoJson('vieira'))
 watch(() => props.activeLayers.centolla, () => loadGeoJson('centolla'))
+watch(() => props.activeLayers.showAllVessels, updateAll)
 
 const fitVesselBounds = (vesselId: string) => {
   if (!map) return

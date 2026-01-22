@@ -108,6 +108,7 @@ const mapLayers = ref({
   vieira: false,
   centolla: false,
   points: false,
+  showAllVessels: true,
 })
 
 const route = useRoute()

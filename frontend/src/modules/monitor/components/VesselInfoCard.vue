@@ -105,6 +105,7 @@ const layerLabels: Record<string, string> = {
   vieira: 'Áreas de Vieira',
   centolla: 'Áreas de Centolla',
   points: 'Puntos de Reporte',
+  showAllVessels: 'Todos los buques',
 }
 
 const formatCoordinate = (val: number, type: 'lat' | 'lon') => {
