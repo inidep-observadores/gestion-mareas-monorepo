@@ -22,34 +22,39 @@ async function bootstrap() {
   app.use(cookieParser());
 
   const frontendUrl = process.env.FRONTEND_URL;
-  const envOrigins = frontendUrl ? frontendUrl.split(',').map(o => o.trim().replace(/\/$/, '')) : [];
-
-  const origins = [
+  const rawOrigins = [
     'http://localhost:5173',
     'http://127.0.0.1:5173',
     'http://localhost:5174',
     'http://127.0.0.1:5174',
     'https://mareas-obs.netlify.app',
-    ...envOrigins
   ];
 
-  // Limpiar posibles rutas en los orígenes para que sean orígenes puros (protocolo + dominio + puerto)
-  const cleanOrigins = origins.map(url => {
-    try {
-      const parsed = new URL(url);
-      return `${parsed.protocol}//${parsed.host}`;
-    } catch {
-      return url;
-    }
-  });
+  if (frontendUrl) {
+    frontendUrl.split(',').forEach(url => {
+      const trimmed = url.trim();
+      if (trimmed) rawOrigins.push(trimmed);
+    });
+  }
+
+  // Limpiar orígenes: quitar barra final y espacios
+  const cleanOrigins = [...new Set(rawOrigins.map(url => url.replace(/\/$/, '')))];
+
+  logger.log(`CORS enabled for origins: ${cleanOrigins.join(', ')}`);
 
   app.enableCors({
     origin: cleanOrigins,
     credentials: true,
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    allowedHeaders: 'Content-Type, Accept, Authorization',
   });
 
 
   await app.listen(process.env.PORT || 3000);
   logger.log(`App running on port ${process.env.PORT || 3000}`);
 }
-bootstrap();
+
+bootstrap().catch(err => {
+  console.error('CRITICAL ERROR DURING BOOTSTRAP:', err);
+  process.exit(1);
+});
