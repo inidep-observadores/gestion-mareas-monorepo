@@ -37,19 +37,6 @@
           <SearchInput v-model="searchQuery" placeholder="Marea, buque u observador..." size="sm" />
         </div>
 
-        <!-- Quick Actions -->
-        <!-- Lo dejamos oculto ya que mostrar todo ralentiza demasiado el renderizado del mapa -->
-        <div v-if="false" class="p-5 border-b border-border/5 flex gap-2">
-          <Button variant="soft" size="xs" class="flex-1 !text-xs !font-black uppercase tracking-tighter !rounded-xl"
-            @click="$emit('select-all')">
-            Todos
-          </Button>
-          <Button variant="ghost" size="xs"
-            class="flex-1 !text-xs !font-black uppercase tracking-tighter !rounded-xl border border-border/10"
-            @click="$emit('deselect-all')">
-            Ninguno
-          </Button>
-        </div>
 
         <!-- Vessel List -->
         <div class="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-2">
@@ -59,11 +46,6 @@
                 ? 'bg-primary/5 border-primary/20 shadow-theme-sm'
                 : 'bg-surface-muted/30 border-border/5 hover:border-border/20'
             ]" @click="$emit('select', vessel.id)">
-            <!-- Visibility Toggle -->
-            <div class="shrink-0" @click.stop>
-              <BaseSwitch :modelValue="vessel.visible" @update:modelValue="$emit('toggle-visibility', vessel.id)"
-                scale="0.75" />
-            </div>
 
             <!-- Vessel Info -->
             <div class="flex-1 min-w-0">
@@ -155,7 +137,7 @@ const props = defineProps<{
   isOpen: boolean
 }>()
 
-const emit = defineEmits(['select', 'toggle-visibility', 'select-all', 'deselect-all', 'update:isOpen'])
+const emit = defineEmits(['select', 'update:isOpen'])
 
 const searchQuery = ref('')
 

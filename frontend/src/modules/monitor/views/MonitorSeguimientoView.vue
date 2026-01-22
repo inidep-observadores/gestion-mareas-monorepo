@@ -57,8 +57,7 @@
       <!-- SIDEBAR IZQUIERDO (FLOTA) -->
       <VesselListSidebar v-if="!isSingleMareaMode" class="absolute left-0 top-0 h-full z-[2000]"
         v-model:isOpen="leftSidebarOpen" :vessels="vesselList" :selectedId="selectedVesselId"
-        @select="setSelectedVessel" @toggle-visibility="toggleVesselVisibility" @select-all="selectAllVessels(true)"
-        @deselect-all="selectAllVessels(false)" />
+        @select="setSelectedVessel" />
 
       <!-- SIDEBAR DERECHO (CONTROL) -->
       <MonitorSidebar v-if="!isSingleMareaMode" class="absolute right-0 top-0 h-full z-[2000]"
@@ -255,30 +254,21 @@ const fetchVesselHistory = async (buqueId: string, mareaId: string, from?: strin
 const setSelectedVessel = (id: string) => {
   selectedVesselId.value = id
   stopPlayback()
-}
 
-const toggleVesselVisibility = (id: string) => {
-  if (fleet[id]) {
-    fleet[id].visible = !fleet[id].visible
+  // Visibilidad exclusiva: solo la seleccionada es visible
+  Object.values(fleet).forEach(v => {
+    v.visible = v.id === id
+  })
 
-    // Auto-zoom and auto-select if activating
-    if (fleet[id].visible) {
-      selectedVesselId.value = id
-
-      if (fleet[id].points.length > 0) {
-        setTimeout(() => {
-          mapMonitor.value?.fitVesselBounds(id)
-        }, 300)
-      } else {
-        // Data not loaded yet, mark for pending zoom
-        pendingZoomVesselId.value = id
-      }
-    }
+  // Auto-zoom si hay puntos cargados
+  if (fleet[id]?.visible && fleet[id].points.length > 0) {
+    setTimeout(() => {
+      mapMonitor.value?.fitVesselBounds(id)
+    }, 300)
+  } else if (fleet[id]?.visible) {
+    // Si no hay puntos, marcar para zoom pendiente cuando carguen
+    pendingZoomVesselId.value = id
   }
-}
-
-const selectAllVessels = (visible: boolean) => {
-  Object.values(fleet).forEach(v => v.visible = visible)
 }
 
 const handleSeekVessel = ({ vesselId, index }: { vesselId: string, index: number }) => {

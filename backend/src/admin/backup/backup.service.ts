@@ -70,7 +70,7 @@ export class BackupService {
                     [
                         '-h', dbHost, '-p', dbPort, '-U', dbUser, '-d', dbName,
                         '--clean', '--if-exists', '--no-owner', '--no-privileges',
-                        '-T', 'buque_trayectorias', '-T', 'buque_trayectoria_puntos'
+                        '--exclude-table-data', 'buque_trayectorias', '--exclude-table-data', 'buque_trayectoria_puntos'
                     ],
                     { PGPASSWORD: dbPass },
                     filePath
@@ -87,7 +87,7 @@ export class BackupService {
                         'exec', '-i', '-e', `PGPASSWORD=${dbPass}`, 'mareasdb',
                         'pg_dump', '-h', 'localhost', '-p', '5432', '-U', dbUser, '-d', dbName,
                         '--clean', '--if-exists', '--no-owner', '--no-privileges',
-                        '-T', 'buque_trayectorias', '-T', 'buque_trayectoria_puntos'
+                        '--exclude-table-data', 'buque_trayectorias', '--exclude-table-data', 'buque_trayectoria_puntos'
                     ],
                     {},
                     filePath
