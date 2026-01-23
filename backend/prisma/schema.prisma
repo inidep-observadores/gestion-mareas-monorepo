@@ -254,7 +254,6 @@ model Marea {
   producciones             Produccion[]
 
   @@unique([anioMarea, nroMarea, tipoMarea], name: "identificadorMarea", map: "identificadorMarea")
-  @@unique([anioMarea, nroMarea, tipoMarea], name: "identificadorMarea")
   @@map("mareas")
 }
 
