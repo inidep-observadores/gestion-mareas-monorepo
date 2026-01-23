@@ -62,6 +62,23 @@
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
              </button>
           </div>
+
+          <!-- Filtros por Tipo (Solo para Disponibles) -->
+          <div v-if="selectedStatus === 'Disponibles'" class="px-6 py-2.5 bg-surface border-b border-border flex gap-2 shrink-0">
+            <button 
+              v-for="type in [{ key: 'OBSERVADOR', label: 'Observadores' }, { key: 'TECNICO', label: 'Técnicos' }]"
+              :key="type.key"
+              @click="toggleType(type.key)"
+              class="px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-tight transition-all duration-200"
+              :class="[
+                selectedTypes.includes(type.key) 
+                ? 'bg-primary text-white shadow-sm ring-1 ring-primary' 
+                : 'bg-surface-muted text-text-muted border border-border hover:bg-surface hover:text-text'
+              ]"
+            >
+              {{ type.label }}
+            </button>
+          </div>
           
           <div class="flex-grow overflow-y-auto no-scrollbar min-h-0">
              <table class="w-full text-left border-collapse">
@@ -75,22 +92,22 @@
                       </th>
                    </tr>
                 </thead>
-                <tbody class="divide-y divide-border bg-surface">
-                   <tr v-for="item in currentList" :key="item.id" class="hover:bg-surface-muted/50 transition-colors">
-                      <td class="px-6 py-3 text-xs font-bold text-text">{{ item.name }}</td>
-                      
-                      <!-- Navegando Columns -->
-                      <td v-if="selectedStatus === 'Navegando'" class="px-6 py-3 text-xs text-text-muted">{{ (item as any).vessel }}</td>
-                      
-                      <!-- Impedidos Columns -->
-                      <td v-if="selectedStatus === 'Impedidos'" class="px-6 py-3 text-xs text-text-muted">{{ (item as any).motivo }}</td>
-                      
-                      <!-- Days Column (Shared) -->
-                      <td v-else class="px-6 py-3 text-xs font-bold text-text-muted text-right tabular-nums">
-                         {{ (item as any).days }} días
-                         <span class="block text-[9px] font-normal text-text-muted/60">Desde: {{ formatDate((item as any).lastArrival || (item as any).startDate) }}</span>
-                      </td>
-                   </tr>
+                 <tbody class="divide-y divide-border bg-surface">
+                    <tr v-for="item in currentList" :key="item.id" class="hover:bg-surface-muted/50 transition-colors">
+                       <td class="px-6 py-3 text-xs font-bold text-text">{{ item.name }}</td>
+                       
+                       <!-- Navegando Columns -->
+                       <td v-if="selectedStatus === 'Navegando'" class="px-6 py-3 text-xs text-text-muted">{{ (item as any).vessel }}</td>
+                       
+                       <!-- Impedidos Columns -->
+                       <td v-if="selectedStatus === 'Impedidos'" class="px-6 py-3 text-xs text-text-muted">{{ (item as any).motivo }}</td>
+                       
+                       <!-- Days Column (Shared) -->
+                       <td v-else class="px-6 py-3 text-xs font-bold text-text-muted text-right tabular-nums">
+                          {{ (item as any).days }} días
+                          <span class="block text-[9px] font-normal text-text-muted/60">Desde: {{ formatDate((item as any).lastArrival || (item as any).startDate) }}</span>
+                       </td>
+                    </tr>
                    <tr v-if="currentList.length === 0">
                       <td colspan="3" class="px-6 py-8 text-center text-xs text-text-muted">No hay observadores en este estado</td>
                    </tr>
@@ -112,6 +129,19 @@ const props = defineProps<{
 }>()
 
 const selectedStatus = ref<string | null>(null)
+const selectedTypes = ref<string[]>(['OBSERVADOR'])
+
+const toggleType = (type: string) => {
+  const index = selectedTypes.value.indexOf(type)
+  if (index > -1) {
+    // Solo permitir deseleccionar si queda al menos un elemento
+    if (selectedTypes.value.length > 1) {
+      selectedTypes.value.splice(index, 1)
+    }
+  } else {
+    selectedTypes.value.push(type)
+  }
+}
 
 type DistributionItem = {
   label: string
@@ -193,13 +223,26 @@ const selectStatus = (label: string) => {
 
 const currentList = computed(() => {
    if (!props.data || !selectedStatus.value) return []
+   let list: any[] = []
    switch (selectedStatus.value) {
-      case 'Navegando': return props.data.listNavegando
-      case 'Descanso': return props.data.listDescanso
-      case 'Disponibles': return props.data.listDisponibles
-      case 'Impedidos': return props.data.listImpedidos
-      default: return []
+      case 'Navegando': list = props.data.listNavegando; break
+      case 'Descanso': list = props.data.listDescanso; break
+      case 'Disponibles': list = props.data.listDisponibles; break
+      case 'Impedidos': list = props.data.listImpedidos; break
+      default: list = []
    }
+
+   if (selectedStatus.value === 'Disponibles') {
+      return (list || []).filter(item => {
+         const raw = (item.tipoObservador || item.tipo_observador || '').toString().toUpperCase();
+         
+         let itemType = 'OBSERVADOR';
+         if (raw.includes('TECNIC')) itemType = 'TECNICO';
+         
+         return selectedTypes.value.includes(itemType);
+      });
+   }
+   return list
 })
 </script>
 

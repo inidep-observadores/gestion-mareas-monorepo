@@ -1008,11 +1008,11 @@ export class MareasService {
             if (etapa.marea.observadorPrincipal) processObs(etapa.marea.observadorPrincipal);
         });
 
-        const listDescanso: Array<{ id: string; name: string; days: number; lastArrival: string }> = [];
-        const listImpedidos: Array<{ id: string; name: string; motivo: string }> = [];
-        const listDisponibles: Array<{ id: string; name: string; days: number; lastArrival: string }> = [];
-        const listNavegando: Array<{ id: string; name: string; days: number; vessel: string; startDate: string }> = [];
-        const topDryCandidates: Array<{ id: string; name: string; days: number; lastArrival: string; mareaCode: string; vesselName: string }> = [];
+        const listDescanso: Array<{ id: string; name: string; days: number; lastArrival: string; tipoObservador: string }> = [];
+        const listImpedidos: Array<{ id: string; name: string; motivo: string; tipoObservador: string }> = [];
+        const listDisponibles: Array<{ id: string; name: string; days: number; lastArrival: string; tipoObservador: string }> = [];
+        const listNavegando: Array<{ id: string; name: string; days: number; vessel: string; startDate: string; tipoObservador: string }> = [];
+        const topDryCandidates: Array<{ id: string; name: string; days: number; lastArrival: string; mareaCode: string; vesselName: string; tipoObservador: string }> = [];
 
         observadores.forEach((obs) => {
             if (!obs.activo) return;
@@ -1031,7 +1031,8 @@ export class MareasService {
                     days: daysSince,
                     lastArrival: lastArrival.toISOString(),
                     mareaCode: lastArrivalData.mareaCode,
-                    vesselName: lastArrivalData.vessel
+                    vesselName: lastArrivalData.vessel,
+                    tipoObservador: obs.tipoObservador
                 });
             }
 
@@ -1046,14 +1047,16 @@ export class MareasService {
                         name,
                         vessel: navData?.vessel || 'Desconocido',
                         days: daysNav,
-                        startDate: navData?.start?.toISOString() || ''
+                        startDate: navData?.start?.toISOString() || '',
+                        tipoObservador: obs.tipoObservador
                     });
                     break;
                 case 'IMPEDIDO':
                     listImpedidos.push({
                         id: obs.id,
                         name,
-                        motivo: obs.motivoImpedimento || 'Sin motivo especificado'
+                        motivo: obs.motivoImpedimento || 'Sin motivo especificado',
+                        tipoObservador: obs.tipoObservador
                     });
                     break;
                 case 'DESCANSO':
@@ -1061,7 +1064,8 @@ export class MareasService {
                         id: obs.id,
                         name,
                         days: daysSince || 0,
-                        lastArrival: lastArrival?.toISOString() || ''
+                        lastArrival: lastArrival?.toISOString() || '',
+                        tipoObservador: obs.tipoObservador
                     });
                     break;
                 case 'DISPONIBLE':
@@ -1069,7 +1073,8 @@ export class MareasService {
                         id: obs.id,
                         name,
                         days: daysSince || 0, // 0 if never arrived (new observer?)
-                        lastArrival: lastArrival?.toISOString() || ''
+                        lastArrival: lastArrival?.toISOString() || '',
+                        tipoObservador: obs.tipoObservador
                     });
                     break;
             }

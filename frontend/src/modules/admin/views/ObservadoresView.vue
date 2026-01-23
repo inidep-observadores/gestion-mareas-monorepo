@@ -48,7 +48,7 @@
                     'text-[10px] font-bold px-2 py-0.5 rounded-full w-fit uppercase tracking-wider',
                     obs.disponible ? 'bg-primary/10 text-primary' : 'bg-warning/10 text-warning'
                 ]">
-                  {{ obs.disponible ? 'Disponible' : 'En Marea' }}
+                  {{ obs.disponible ? 'Disponible' : 'No disponible' }}
                 </span>
             </div>
           </td>
@@ -96,8 +96,8 @@
             </div>
 
             <div class="pt-3 border-t border-border">
-                <button 
-                    @click="openEditModal(obs)" 
+                <button
+                    @click="openEditModal(obs)"
                     class="w-full py-2.5 text-sm font-bold text-primary bg-primary/10 rounded-lg hover:bg-primary/20 transition-colors flex items-center justify-center gap-2"
                 >
                     <EditIcon class="w-4 h-4" />
