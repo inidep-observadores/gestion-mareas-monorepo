@@ -136,8 +136,8 @@ model Pesqueria {
   orden                  Int?
   activo                 Boolean               @default(true)
   buquesHabituales       Buque[]
-  etapasMarea            MareaEtapa[]
   mareas                 Marea[]
+  etapasMarea            MareaEtapa[]
   observadoresPesquerias ObservadorPesqueria[]
 
   @@map("pesquerias")
@@ -193,9 +193,9 @@ model Observador {
   conImpedimento             Boolean                @default(false) @map("con_impedimento")
   email                      String?                @unique
   motivoImpedimento          String?                @map("motivo_impedimento")
+  mareasAsignadas            Marea[]                @relation("ObservadorPrincipal")
   etapas                     MareaEtapaObservador[]
   pesquerias                 ObservadorPesqueria[]
-  mareasAsignadas            Marea[]                @relation("ObservadorPrincipal")
 
   @@map("observadores")
 }
@@ -225,9 +225,7 @@ model Marea {
   anioMarea                Int               @map("anio_marea")
   nroMarea                 Int               @map("nro_marea")
   buqueId                  String            @map("id_buque") @db.Uuid
-  pesqueriaId              String?           @map("id_pesqueria") @db.Uuid
   artePrincipalId          String?           @map("id_arte_principal") @db.Uuid
-  observadorPrincipalId    String?           @map("id_observador_principal") @db.Uuid
   estadoActualId           String            @map("id_estado_actual") @db.Uuid
   fechaZarpadaEstimada     DateTime?         @map("fecha_zarpada_estimada") @db.Timestamptz(6)
   fechaInicioObservador    DateTime?         @map("fecha_inicio_observador") @db.Timestamptz(6)
@@ -243,16 +241,19 @@ model Marea {
   observaciones            String?
   tipoMarea                TipoMarea         @default(MC) @map("tipo_marea")
   diasEstimados            Int?              @map("dias_estimados")
+  observadorPrincipalId    String?           @map("id_observador_principal") @db.Uuid
+  pesqueriaId              String?           @map("id_pesqueria") @db.Uuid
   artePrincipal            ArtePesca?        @relation(fields: [artePrincipalId], references: [id])
-  pesqueria                Pesqueria?        @relation(fields: [pesqueriaId], references: [id])
-  observadorPrincipal      Observador?       @relation("ObservadorPrincipal", fields: [observadorPrincipalId], references: [id])
   buque                    Buque             @relation(fields: [buqueId], references: [id])
   estadoActual             EstadoMarea       @relation(fields: [estadoActualId], references: [id])
+  observadorPrincipal      Observador?       @relation("ObservadorPrincipal", fields: [observadorPrincipalId], references: [id])
+  pesqueria                Pesqueria?        @relation(fields: [pesqueriaId], references: [id])
   archivos                 MareaArchivo[]
   etapas                   MareaEtapa[]
   movimientos              MareaMovimiento[]
   producciones             Produccion[]
 
+  @@unique([anioMarea, nroMarea, tipoMarea], name: "identificadorMarea", map: "identificadorMarea")
   @@unique([anioMarea, nroMarea, tipoMarea], name: "identificadorMarea")
   @@map("mareas")
 }
@@ -555,41 +556,26 @@ model ErrorLog {
   @@map("error_logs")
 }
 
-enum AlertaEstado {
-  PENDIENTE
-  SEGUIMIENTO
-  RESUELTA
-  DESCARTADA
-  VENCIDA
-}
-
-enum AlertaPrioridad {
-  URGENTE
-  ALTA
-  MEDIA
-  BAJA
-}
-
 model Alerta {
-  id                  String         @id @default(uuid()) @db.Uuid
-  codigoUnico         String         @unique @map("codigo_unico")
-  referenciaId        String?        @map("referencia_id")
-  referenciaTipo      String?        @map("referencia_tipo")
-  metadata            Json?          @map("metadata")
+  id                  String          @id @default(uuid()) @db.Uuid
+  codigoUnico         String          @unique @map("codigo_unico")
+  referenciaId        String?         @map("referencia_id")
   tipo                String
   titulo              String
   descripcion         String
   estado              AlertaEstado
   prioridad           AlertaPrioridad
-  fechaDetectada      DateTime       @map("fecha_detectada") @db.Timestamptz(6)
-  fechaVencimiento    DateTime?      @map("fecha_vencimiento") @db.Timestamptz(6)
-  fechaCierre         DateTime?      @map("fecha_cierre") @db.Timestamptz(6)
-  asignadoId          String?        @map("asignado_id") @db.Uuid
-  creadoPorId         String?        @map("creado_por_id") @db.Uuid
-  visible             Boolean        @default(true)
-  ultimaActualizacion DateTime       @updatedAt @map("ultima_actualizacion") @db.Timestamptz(6)
-  asignadoA           User?          @relation("AlertaAsignado", fields: [asignadoId], references: [id])
-  creadoPor           User?          @relation("AlertaCreadoPor", fields: [creadoPorId], references: [id])
+  fechaDetectada      DateTime        @map("fecha_detectada") @db.Timestamptz(6)
+  fechaVencimiento    DateTime?       @map("fecha_vencimiento") @db.Timestamptz(6)
+  fechaCierre         DateTime?       @map("fecha_cierre") @db.Timestamptz(6)
+  asignadoId          String?         @map("asignado_id") @db.Uuid
+  creadoPorId         String?         @map("creado_por_id") @db.Uuid
+  ultimaActualizacion DateTime        @updatedAt @map("ultima_actualizacion") @db.Timestamptz(6)
+  metadata            Json?           @map("metadata")
+  referenciaTipo      String?         @map("referencia_tipo")
+  visible             Boolean         @default(true)
+  asignadoA           User?           @relation("AlertaAsignado", fields: [asignadoId], references: [id])
+  creadoPor           User?           @relation("AlertaCreadoPor", fields: [creadoPorId], references: [id])
   eventos             AlertaEvento[]
 
   @@index([referenciaId])
@@ -613,50 +599,61 @@ model AlertaEvento {
 }
 
 model ImportacionAccessSnapshot {
-  id                   String   @id @default(uuid()) @db.Uuid
-  idExterno            Int      @unique @map("id_externo")
-  
-  // Datos parseados del registro
-  nroMarea             Int?     @map("nro_marea")
-  anioMarea            Int      @map("anio_marea")
-  tipoMarea            String   @map("tipo_marea") // 'MC' o 'CI'
-  nroEtapa             Int      @map("nro_etapa")
-  
-  // Fechas del registro
-  fechaZarpada         DateTime? @map("fecha_zarpada") @db.Date
-  fechaArribo          DateTime? @map("fecha_arribo") @db.Date
-  
-  // Datos adicionales para matching
-  buqueNombre          String?  @map("buque_nombre")
-  observadorCodigo     Int?     @map("observador_codigo")
-  
-  // Hash del contenido para detección rápida de cambios
-  hashContenido        String   @map("hash_contenido")
-  
-  // Tracking de procesamiento
-  fechaPrimeraLectura  DateTime @default(now()) @map("fecha_primera_lectura") @db.Timestamptz(6)
-  fechaUltimaLectura   DateTime @updatedAt @map("fecha_ultima_lectura") @db.Timestamptz(6)
-  
-  // Vinculación opcional con entidades locales
-  mareaId              String?  @map("marea_id") @db.Uuid
-  etapaId              String?  @map("etapa_id") @db.Uuid
+  id                  String    @id @default(uuid()) @db.Uuid
+  idExterno           Int       @unique @map("id_externo")
+  nroMarea            Int?      @map("nro_marea")
+  anioMarea           Int       @map("anio_marea")
+  tipoMarea           String    @map("tipo_marea")
+  nroEtapa            Int       @map("nro_etapa")
+  fechaZarpada        DateTime? @map("fecha_zarpada") @db.Date
+  fechaArribo         DateTime? @map("fecha_arribo") @db.Date
+  buqueNombre         String?   @map("buque_nombre")
+  observadorCodigo    Int?      @map("observador_codigo")
+  hashContenido       String    @map("hash_contenido")
+  fechaPrimeraLectura DateTime  @default(now()) @map("fecha_primera_lectura") @db.Timestamptz(6)
+  fechaUltimaLectura  DateTime  @updatedAt @map("fecha_ultima_lectura") @db.Timestamptz(6)
+  mareaId             String?   @map("marea_id") @db.Uuid
+  etapaId             String?   @map("etapa_id") @db.Uuid
 
   @@index([nroMarea, anioMarea, tipoMarea])
   @@map("importacion_access_snapshots")
 }
 
 model TrackingEventSnapshot {
-  id          String   @id @default(uuid()) @db.Uuid
-  buqueId     String   @map("buque_id") @db.Uuid
-  eventType   String   @map("event_type") // POSIBLE_ZARPADA, POSIBLE_ARRIBO, ERROR_REGISTRO_PUERTO
-  timestamp   DateTime @db.Timestamptz(6)
-  puertoId    String?  @map("puerto_id") @db.Uuid
-  hash        String   @unique
-  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  id        String   @id @default(uuid()) @db.Uuid
+  buqueId   String   @map("buque_id") @db.Uuid
+  eventType String   @map("event_type")
+  timestamp DateTime @db.Timestamptz(6)
+  puertoId  String?  @map("puerto_id") @db.Uuid
+  hash      String   @unique
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
   @@index([buqueId])
   @@index([hash])
   @@map("tracking_event_snapshots")
+}
+
+model SystemStatus {
+  key        String   @id
+  value      String?
+  lastUpdate DateTime @updatedAt @map("last_update") @db.Timestamptz(6)
+
+  @@map("system_status")
+}
+
+enum AlertaEstado {
+  PENDIENTE
+  SEGUIMIENTO
+  RESUELTA
+  DESCARTADA
+  VENCIDA
+}
+
+enum AlertaPrioridad {
+  URGENTE
+  ALTA
+  MEDIA
+  BAJA
 }
 
 enum TipoMarea {
@@ -667,12 +664,4 @@ enum TipoMarea {
 enum TipoEtapa {
   MC
   CI
-}
-
-model SystemStatus {
-  key         String   @id
-  value       String?
-  lastUpdate  DateTime @updatedAt @map("last_update") @db.Timestamptz(6)
-  
-  @@map("system_status")
 }

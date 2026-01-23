@@ -331,7 +331,7 @@ export class MareasService {
         const activeAlerts = await this.prisma.alerta.findMany({
             where: {
                 referenciaId: { in: mareaIds },
-                estado: { in: ['PENDIENTE', 'SEGUIMIENTO', 'VENCIDA'] }
+                estado: 'PENDIENTE'
             }
         });
 
@@ -577,14 +577,20 @@ export class MareasService {
         const { mareaYearFilter } = this.buildMareaYearFilter(year);
         const now = new Date();
         const limit = this.rules.PLAZO_CONFECCION_INFORME;
+
+        // Estados con orden >= 4 (ENTREGADA_RECIBIDA) y <= 8 (PENDIENTE_DE_INFORME)
         const TARGET_STATES = [
-            MareaEstado.ENTREGADA_RECIBIDA,
-            MareaEstado.VERIFICACION_INICIAL,
-            MareaEstado.EN_CORRECCION,
-            MareaEstado.DELEGADA_EXTERNA,
-            MareaEstado.PENDIENTE_DE_INFORME
+            MareaEstado.ENTREGADA_RECIBIDA,     // Orden 4
+            MareaEstado.VERIFICACION_INICIAL,   // Orden 5
+            MareaEstado.EN_CORRECCION,          // Orden 6
+            MareaEstado.DELEGADA_EXTERNA,       // Orden 7
+            MareaEstado.PENDIENTE_DE_INFORME    // Orden 8
         ];
-        const RECEPCION_EVENT = 'RECEPCION_DATOS_ORIGINALES';
+
+        // Obtener el ID del estado ENTREGADA_RECIBIDA para buscar el movimiento exacto
+        const estadoRecepcion = await this.prisma.estadoMarea.findFirst({
+            where: { codigo: MareaEstado.ENTREGADA_RECIBIDA }
+        });
 
         const mareas = await (this.prisma as any).marea.findMany({
             where: {
@@ -607,8 +613,11 @@ export class MareasService {
                     }
                 },
                 movimientos: {
-                    where: {
-                        tipoEvento: RECEPCION_EVENT
+                    where: estadoRecepcion ? {
+                        tipoEvento: 'CAMBIO_ESTADO',
+                        estadoHastaId: estadoRecepcion.id
+                    } : {
+                        tipoEvento: 'RECEPCION_DATOS_ORIGINALES' // Fallback
                     },
                     orderBy: { fechaHora: 'asc' }, // Primer recepción
                     take: 1
@@ -621,11 +630,11 @@ export class MareasService {
         mareas.forEach((m: any) => {
             let baseDate: Date | null = null;
 
-            // 1. Try reception event
+            // 1. Prioridad: Fecha del movimiento de cambio a ENTREGADA_RECIBIDA
             if (m.movimientos.length > 0) {
                 baseDate = new Date(m.movimientos[0].fechaHora);
             }
-            // 2. Fallback to arrival date
+            // 2. Fallback: Fecha de arribo de la última etapa conocida
             else if (m.etapas[0]?.fechaArribo) {
                 baseDate = new Date(m.etapas[0].fechaArribo);
             }
@@ -1155,7 +1164,7 @@ export class MareasService {
             this.prisma.alerta.findMany({
                 where: {
                     referenciaId: id,
-                    estado: { in: ['PENDIENTE', 'SEGUIMIENTO', 'VENCIDA'] }
+                    estado: 'PENDIENTE'
                 }
             })
         ])) as [any, any[], any[]];
@@ -1549,20 +1558,37 @@ export class MareasService {
                 include: { estadoActual: true }
             });
 
+            // Determinar fecha del movimiento
+            let fechaMovimiento = new Date();
+            if (actionKey === 'RECIBIR_DATOS' && payload.fechaRecepcion) {
+                fechaMovimiento = new Date(payload.fechaRecepcion);
+            }
+
             await tx.mareaMovimiento.create({
                 data: {
                     mareaId: id,
-                    fechaHora: new Date(),
+                    fechaHora: fechaMovimiento,
                     usuarioId: user.id,
                     tipoEvento: 'CAMBIO_ESTADO',
                     estadoDesdeId: marea.estadoActualId,
                     estadoHastaId: transicion.estadoDestinoId,
+                    cantidadMuestrasOtolitos: actionKey === 'RECIBIR_DATOS' ? (payload.cantidadOtolitos || null) : null,
                     detalle: actionKey === 'REGISTRAR_INICIO'
                         ? `Inicio Marea. Obs: ${new Date(additionalMareaData.fechaInicioObservador).toLocaleDateString('es-AR')}`
                         : actionKey === 'REGISTRAR_ARRIBO'
                             ? `Fin Marea. Obs: ${additionalMareaData.fechaFinObservador ? new Date(additionalMareaData.fechaFinObservador).toLocaleDateString('es-AR') : 'Sin fecha definida'}`
-                            : `Acción: ${transicion.etiqueta}`,
-                    comentarios: payload.comentarios
+                            : actionKey === 'RECIBIR_DATOS'
+                                ? `Recepción de datos. Otolitos: ${payload.cantidadOtolitos || 0}`
+                                : `Acción: ${transicion.etiqueta}`,
+                    comentarios: payload.comentarios,
+                    archivos: (actionKey === 'RECIBIR_DATOS' && payload.archivosSnapshot) ? {
+                        create: payload.archivosSnapshot.map((a: any) => ({
+                            tipoArchivo: 'DIGITAL_ORIGINAL',
+                            rutaArchivo: `received/${id}/${a.name}`,
+                            descripcion: `Archivo recibido: ${a.name} (${(a.size / 1024).toFixed(2)} KB)`,
+                            formato: a.name.split('.').pop()?.toUpperCase(),
+                        }))
+                    } : undefined
                 }
             });
 
@@ -1747,7 +1773,7 @@ export class MareasService {
         // 1. Obtener Alertas Persistentes
         // Filtrar las que NO están resueltas ni descartadas (solo activas)
         const whereAlerts: any = {
-            estado: { in: ['PENDIENTE', 'SEGUIMIENTO', 'VENCIDA'] }
+            estado: 'PENDIENTE'
         };
 
         // Si hay usuario y NO es admin/coordinador, aplicar filtro de visibilidad

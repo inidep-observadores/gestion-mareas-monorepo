@@ -426,6 +426,9 @@ export class DataExportService {
             throw new BadRequestException('Invalid archive: metadata.json missing');
         }
 
+        // 0. Clean current data
+        await this.deleteAllData();
+
         // 1. Catalogs
         await this.importCatalogs(zip);
 
@@ -678,24 +681,6 @@ export class DataExportService {
                 continue;
             }
 
-            // Check duplicates (Buque + Nro + Anio? OR Buque + FechaInicio)
-            // Implementation Plan says: "identificadorMarea compuesto: anioMarea, nroMarea, buqueMatricula"
-            // Let's rely on that if available, otherwise just check buque + fechaInicio
-            const exists = await this.prisma.marea.findUnique({
-                where: {
-                    identificadorMarea: {
-                        anioMarea: m.anioMarea,
-                        nroMarea: m.nroMarea,
-                        tipoMarea: m.tipoMarea || TipoMarea.MC
-                    },
-                }
-            });
-
-            if (exists) {
-                this.logger.log(`Skipping existing Marea ${m.anioMarea}-${m.nroMarea} for Buque ${m.buqueMatricula}`);
-                continue;
-            }
-
             // Prepare nested structure for creating new Marea
             const mareaData = {
                 anioMarea: m.anioMarea,
@@ -855,7 +840,6 @@ export class DataExportService {
             });
         }
     }
-
     async deleteExport(filename: string) {
         const safeFilename = path.basename(filename);
         const filePath = path.join(this.exportPath, safeFilename);
@@ -874,6 +858,53 @@ export class DataExportService {
         } catch (error) {
             this.logger.error(`Deletion failed: ${error.message}`);
             throw new InternalServerErrorException('Failed to delete export');
+        }
+    }
+
+    private async deleteAllData() {
+        this.logger.log('Cleaning all data before import...');
+
+        // Order is critical to avoid FK violations (children first, then parents)
+        const modelsToClean = [
+            'ErrorLog',
+            'TrackingEventSnapshot',
+            'ImportacionAccessSnapshot',
+            'AlertaEvento',
+            'Alerta',
+            'BuqueTrayectoriaPunto',
+            'BuqueTrayectoria',
+            'MuestraDetalleTalla',
+            'Submuestra',
+            'Muestra',
+            'Captura',
+            'Lance',
+            'MareaArchivo',
+            'MareaMovimiento',
+            'MareaEtapaObservador',
+            'MareaEtapa',
+            'Produccion',
+            'Marea',
+            'ObservadorPesqueria',
+            'Observador',
+            'Buque',
+            'TransicionEstado',
+            'EstadoMarea',
+            'ArtePesca',
+            'Especie',
+            'Puerto',
+            'Pesqueria',
+            'TipoFlota',
+            'ProductImage',
+            'Product',
+            'PasswordResetToken',
+            'SystemStatus'
+        ];
+
+        for (const modelName of modelsToClean) {
+            const propertyName = modelName.charAt(0).toLowerCase() + modelName.slice(1);
+            if ((this.prisma as any)[propertyName]) {
+                await (this.prisma as any)[propertyName].deleteMany();
+            }
         }
     }
 }
