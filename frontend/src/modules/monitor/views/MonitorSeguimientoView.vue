@@ -73,6 +73,11 @@
         @open-upload="showUploadDialog = true" />
 
       <UploadTrackingDialog :show="showUploadDialog" @close="showUploadDialog = false" @refresh="fetchFleet" />
+
+      <!-- LOADING OVERLAY -->
+      <div class="absolute bottom-10 left-1/2 -translate-x-1/2 z-[3000] pointer-events-none">
+        <TrajectoryLoadingOverlay :show="pendingTrajectoriesCount > 0" :count="pendingTrajectoriesCount" />
+      </div>
     </div>
   </AdminLayout>
 </template>
@@ -90,6 +95,7 @@ import MouseCoordinates from '../components/MouseCoordinates.vue'
 import MonitorSidebar from '../components/MonitorSidebar.vue'
 import VesselListSidebar, { type MonitorVessel } from '../components/VesselListSidebar.vue'
 import UploadTrackingDialog from '../components/UploadTrackingDialog.vue'
+import TrajectoryLoadingOverlay from '../components/TrajectoryLoadingOverlay.vue'
 import httpClient from '@/config/http/http.client'
 import { useRouter } from 'vue-router'
 import { ArrowLeftIcon } from '@/icons'
@@ -103,6 +109,8 @@ const mapMonitor = ref<InstanceType<typeof MapMonitor> | null>(null)
 const leftSidebarOpen = ref(true)
 const rightSidebarOpen = ref(false)
 const pendingZoomVesselId = ref<string | null>(null)
+const pendingTrajectoriesCount = ref(0)
+const isInitialLoad = ref(true)
 const mapLayers = ref({
   veda: true,
   vieira: false,
@@ -191,8 +199,15 @@ const fetchFleet = async () => {
           voyageStart: marea.voyageStart,
           voyageEnd: marea.voyageEnd,
           lastUpdate: marea.lastUpdate,
-          totalDays: marea.totalDays,
-          etapas: marea.etapas
+           totalDays: marea.totalDays,
+          etapas: marea.etapas,
+          lastKnownPoint: (marea.lat !== null && marea.lon !== null) ? {
+            lat: marea.lat,
+            lon: marea.lon,
+            timestamp: marea.lastUpdate,
+            speed: marea.speed,
+            course: marea.course
+          } : null
         }
         // Fetch history using vesselId but passing mareaId to update correct fleet entry
         fetchVesselHistory(marea.id, marea.mareaId, marea.voyageStart, marea.voyageEnd)
@@ -201,6 +216,14 @@ const fetchFleet = async () => {
 
     if (!selectedVesselId.value && activeMareas.length > 0) {
       selectedVesselId.value = activeMareas[0].mareaId
+    }
+
+    // Zoom a toda la flota en la carga inicial si no hay mareaId específico
+    if (isInitialLoad.value && activeMareas.length > 0) {
+      setTimeout(() => {
+        mapMonitor.value?.fitAllVesselsBounds()
+        isInitialLoad.value = false
+      }, 500)
     }
   } catch (error) {
     console.error('Error fetching fleet:', error)
@@ -240,6 +263,7 @@ const fetchSingleMarea = async (mareaId: string) => {
 }
 
 const fetchVesselHistory = async (buqueId: string, mareaId: string, from?: string, to?: string) => {
+  pendingTrajectoriesCount.value++
   try {
     const params: Record<string, string> = {}
     if (from) params.from = from
@@ -260,6 +284,8 @@ const fetchVesselHistory = async (buqueId: string, mareaId: string, from?: strin
     }
   } catch (error) {
     console.error(`Error fetching history for marea ${mareaId} (vessel ${buqueId}):`, error)
+  } finally {
+    pendingTrajectoriesCount.value = Math.max(0, pendingTrajectoriesCount.value - 1)
   }
 }
 
@@ -272,12 +298,12 @@ const setSelectedVessel = (id: string) => {
     v.visible = v.id === id
   })
 
-  // Auto-zoom si hay puntos cargados
-  if (fleet[id]?.visible && fleet[id].points.length > 0) {
+  // Auto-zoom si hay puntos cargados y NO es la carga inicial
+  if (!isInitialLoad.value && fleet[id]?.visible && fleet[id].points.length > 0) {
     setTimeout(() => {
       mapMonitor.value?.fitVesselBounds(id)
     }, 300)
-  } else if (fleet[id]?.visible) {
+  } else if (fleet[id]?.visible && !isInitialLoad.value) {
     // Si no hay puntos, marcar para zoom pendiente cuando carguen
     pendingZoomVesselId.value = id
   }
@@ -412,6 +438,8 @@ const initializeMonitor = () => {
   Object.keys(fleet).forEach(key => delete fleet[key])
   selectedVesselId.value = null
   pendingZoomVesselId.value = null
+  pendingTrajectoriesCount.value = 0
+  isInitialLoad.value = true
 
   const mareaId = route.params.mareaId as string
   if (mareaId) {

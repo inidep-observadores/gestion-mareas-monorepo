@@ -23,6 +23,7 @@ export interface VesselTrajectory {
   name: string
   color: string
   points: FleetTrackPoint[]
+  lastKnownPoint?: FleetTrackPoint | null
   currentIndex: number
   visible: boolean
   matricula?: string
@@ -123,10 +124,10 @@ const updateAll = () => {
   vesselMarkers.clear()
 
   Object.values(props.fleet).forEach(vessel => {
-    if (vessel.points.length === 0) return
+    const hasHistory = vessel.points.length > 0
 
-    // Solo renderizar trayectoria si es visible (seleccionado)
-    if (vessel.visible) {
+    // Solo renderizar trayectoria si es visible (seleccionado) y tiene datos
+    if (vessel.visible && hasHistory) {
       renderTrajectory(vessel)
       if (props.activeLayers.points) {
         renderPoints(vessel)
@@ -190,10 +191,17 @@ const renderTrajectory = (vessel: VesselTrajectory) => {
 }
 
 const renderMarker = (vessel: VesselTrajectory) => {
-  // Si está seleccionado, seguimos el currentIndex (reproyector)
-  // Si no está seleccionado, mostramos el ÚLTIMO punto conocido
-  const pointIndex = vessel.visible ? vessel.currentIndex : (vessel.points.length - 1)
-  const current = vessel.points[pointIndex]
+  // Si tiene puntos de trayectoria, usamos el índice actual o el último
+  // Si no tiene puntos todavía, usamos el lastKnownPoint de la carga inicial
+  let current: FleetTrackPoint | null = null
+  
+  if (vessel.points.length > 0) {
+    const pointIndex = vessel.visible ? vessel.currentIndex : (vessel.points.length - 1)
+    current = vessel.points[pointIndex]
+  } else {
+    current = vessel.lastKnownPoint || null
+  }
+
   if (!current) return
 
   const icon = L.divIcon({
@@ -336,13 +344,37 @@ const fitVesselBounds = (vesselId: string) => {
   map.fitBounds(bounds, { padding: [50, 50], animate: true })
 }
 
+const fitAllVesselsBounds = () => {
+  if (!map) return
+  const currentPoints: L.LatLngExpression[] = []
+  
+  Object.values(props.fleet).forEach(vessel => {
+    let current: FleetTrackPoint | null = null
+    if (vessel.points.length > 0) {
+      const pointIndex = vessel.visible ? vessel.currentIndex : (vessel.points.length - 1)
+      current = vessel.points[pointIndex]
+    } else {
+      current = vessel.lastKnownPoint || null
+    }
+
+    if (current) {
+      currentPoints.push([current.lat, current.lon])
+    }
+  })
+
+  if (currentPoints.length === 0) return
+
+  const bounds = L.latLngBounds(currentPoints)
+  map.fitBounds(bounds, { padding: [100, 100], animate: true })
+}
+
 const invalidateSize = () => {
   if (map) {
     map.invalidateSize({ animate: true })
   }
 }
 
-defineExpose({ fitVesselBounds, invalidateSize })
+defineExpose({ fitVesselBounds, fitAllVesselsBounds, invalidateSize })
 
 onUnmounted(() => {
   trajectoriesLayer.remove()

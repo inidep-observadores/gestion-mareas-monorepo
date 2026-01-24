@@ -16,7 +16,7 @@
       </div>
       <div
         class="shrink-0 p-1.5 bg-primary/10 rounded-lg border border-primary/20 text-primary transition-transform duration-300"
-        :class="{ 'rotate-180': isCollapsed }"
+        :class="{ 'rotate-180': !isCollapsed }"
       >
         <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
           <path d="M19 9l-7 7-7-7"/>
@@ -112,7 +112,7 @@ const formatCoordinate = (val: number, type: 'lat' | 'lon') => {
   const absVal = Math.abs(val)
   const degrees = Math.floor(absVal)
   const minutes = ((absVal - degrees) * 60).toFixed(3)
-  const suffix = type === 'lat' ? (val >= 0 ? 'S' : 'N') : (val >= 0 ? 'O' : 'E')
+  const suffix = type === 'lat' ? (val >= 0 ? 'N' : 'S') : (val >= 0 ? 'E' : 'O')
   return `${degrees}° ${minutes}' ${suffix}`
 }
 
