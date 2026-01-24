@@ -75,14 +75,21 @@ export class AccessImportService {
     }
 
     private async processSingleRecord(record: ExternalRecord) {
-        const snapshotContent = JSON.stringify(record);
+        // Normalizar fechas del record antes de generar hash y procesar
+        const normalizedRecord = {
+            ...record,
+            Fecha_Zarpada: this.readerService.parseDate(record.Fecha_Zarpada),
+            Fecha_Arribo: this.readerService.parseDate(record.Fecha_Arribo)
+        };
+
+        const snapshotContent = JSON.stringify(normalizedRecord);
         const hash = crypto.createHash('md5').update(snapshotContent).digest('hex');
 
         const existing = await this.prisma.importacionAccessSnapshot.findUnique({
             where: { idExterno: record.Id },
         });
 
-        const parsedMarea = this.parseMareaIdentifier(record.NroMarea, record.Fecha_Zarpada);
+        const parsedMarea = this.parseMareaIdentifier(record.NroMarea, normalizedRecord.Fecha_Zarpada);
         const nroEtapa = record.NroEtapa || 1;
 
         // 1. Intentar matching con entidades locales
@@ -98,8 +105,8 @@ export class AccessImportService {
                 tipoHallazgo = 'NUEVA_ETAPA';
             } else {
                 // Existe marea y etapa -> ¿Coinciden las fechas y el observador?
-                const zarpadaMatches = this.datesMatch(record.Fecha_Zarpada, localMatch.etapa.fechaZarpada);
-                const arriboMatches = this.datesMatch(record.Fecha_Arribo, localMatch.etapa.fechaArribo);
+                const zarpadaMatches = this.datesMatch(normalizedRecord.Fecha_Zarpada, localMatch.etapa.fechaZarpada);
+                const arriboMatches = this.datesMatch(normalizedRecord.Fecha_Arribo, localMatch.etapa.fechaArribo);
 
                 // Ahora el observador se compara a nivel de Marea
                 const observerMatches = localMatch.marea.observadorPrincipalId === localMatch.observador?.id;
@@ -114,8 +121,8 @@ export class AccessImportService {
                     anioMarea: parsedMarea.anioMarea,
                     tipoMarea: parsedMarea.tipoMarea,
                     nroEtapa: nroEtapa,
-                    fechaZarpada: this.readerService.parseDate(record.Fecha_Zarpada),
-                    fechaArribo: this.readerService.parseDate(record.Fecha_Arribo),
+                    fechaZarpada: normalizedRecord.Fecha_Zarpada,
+                    fechaArribo: normalizedRecord.Fecha_Arribo,
                     buqueNombre: record.Buque,
                     observadorCodigo: record.CodObs,
                     hashContenido: hash,
@@ -134,13 +141,13 @@ export class AccessImportService {
 
         // El hash cambió -> ¿Es un arribo nuevo o un cambio de fechas?
         const previousArribo = existing.fechaArribo;
-        const currentArribo = this.readerService.parseDate(record.Fecha_Arribo);
+        const currentArribo = normalizedRecord.Fecha_Arribo;
         const isNewArribo = !previousArribo && !!currentArribo;
 
         await this.prisma.importacionAccessSnapshot.update({
             where: { id: existing.id },
             data: {
-                fechaZarpada: this.readerService.parseDate(record.Fecha_Zarpada),
+                fechaZarpada: normalizedRecord.Fecha_Zarpada,
                 fechaArribo: currentArribo,
                 hashContenido: hash,
                 mareaId: localMatch.marea?.id,
@@ -217,7 +224,19 @@ export class AccessImportService {
         const date2 = this.readerService.parseDate(d2);
         if (!date1 && !date2) return true;
         if (!date1 || !date2) return false;
-        return date1.toISOString().split('T')[0] === date2.toISOString().split('T')[0];
+
+        return this.toLocalDateString(date1) === this.toLocalDateString(date2);
+    }
+
+    private toLocalDateString(date: Date): string {
+        try {
+            return new Intl.DateTimeFormat('sv-SE', {
+                timeZone: process.env.APP_TIMEZONE || 'America/Argentina/Buenos_Aires'
+            }).format(date);
+        } catch (error) {
+            // Fallback en caso de zona horaria inválida
+            return date.toISOString().split('T')[0];
+        }
     }
 
     private async createAlertFromHallazgo(
