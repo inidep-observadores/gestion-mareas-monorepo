@@ -131,6 +131,8 @@ import {
   GridIcon,
   MapPinIcon,
   ShieldIcon,
+  ShipIcon,
+  UserCircleIcon,
 } from '../../icons'
 import SigmaLogo from '../brand/SigmaLogo.vue'
 import { useSidebar } from '@/composables/useSidebar'
@@ -155,8 +157,8 @@ const closeMobileSidebar = () => {
   }
 }
 
-const isAdmin = computed(() => authStore.user?.roles.includes(ValidRoles.admin))
-const isCoordinator = computed(() => authStore.user?.roles.includes(ValidRoles.coordinador))
+const isAdmin = computed(() => !!authStore.user?.roles.includes(ValidRoles.admin))
+const isCoordinator = computed(() => !!authStore.user?.roles.includes(ValidRoles.coordinador))
 
 const navigationGroups = computed(() => {
   const groups = [
@@ -215,15 +217,27 @@ const navigationGroups = computed(() => {
     },
   ]
 
-  if (isAdmin.value) {
+  if (isAdmin.value || isCoordinator.value || authStore.user?.roles.includes(ValidRoles.asistente) || authStore.user?.roles.includes(ValidRoles.tecnico)) {
     groups.push({
       title: 'Sistema',
       items: [
         {
+          icon: ShipIcon,
+          name: 'Buques',
+          to: { name: 'AdminBuques' },
+          show: true,
+        },
+        {
+          icon: UserCircleIcon,
+          name: 'Observadores',
+          to: { name: 'AdminObservadores' },
+          show: true,
+        },
+        {
           icon: ShieldIcon,
           name: 'Administración',
           to: { name: 'AdminUsers' },
-          show: true,
+          show: isAdmin.value,
         },
       ],
     })

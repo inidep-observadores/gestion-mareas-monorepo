@@ -221,7 +221,7 @@ const router = createRouter({
       meta: {
         title: 'Gestión de Observadores',
         requiresAuth: true,
-        roles: [ValidRoles.admin],
+        roles: [ValidRoles.admin, ValidRoles.coordinador, ValidRoles.asistente, ValidRoles.tecnico],
       },
     },
     {
@@ -231,7 +231,7 @@ const router = createRouter({
       meta: {
         title: 'Gestión de Buques',
         requiresAuth: true,
-        roles: [ValidRoles.admin],
+        roles: [ValidRoles.admin, ValidRoles.coordinador, ValidRoles.asistente, ValidRoles.tecnico],
       },
     },
     {
