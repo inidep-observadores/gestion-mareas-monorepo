@@ -12,7 +12,7 @@
     <!-- Footer -->
     <div class="absolute bottom-4 text-center w-full z-10 opacity-30">
       <p class="text-[10px] tracking-widest uppercase font-mono">
-        &copy; 2025 Daniel Di Tullio - INIDEP. Todos los derechos reservados.
+        &copy; 2026 Daniel Di Tullio - INIDEP. Todos los derechos reservados.
       </p>
     </div>
 

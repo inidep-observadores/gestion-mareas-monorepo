@@ -82,6 +82,7 @@ export class MareasService {
         if (!marea) throw new NotFoundException('Marea no encontrada');
         return {
             ...marea,
+            observaciones: marea.observaciones || '',
             id_marea: MareaUtils.formatCodigo(marea as any),
             etapas: marea.etapas.map(e => ({
                 ...e,
@@ -472,9 +473,9 @@ export class MareasService {
                     }
                 },
                 observadorPrincipal: true,
+                pesqueria: true, // Incluir pesquería de cabecera
                 etapas: {
-                    orderBy: { nroEtapa: 'desc' },
-                    take: 1,
+                    orderBy: { nroEtapa: 'asc' }, // Traer todas las etapas
                     include: {
                         pesqueria: true
                     }
@@ -485,7 +486,35 @@ export class MareasService {
         const distributionMap = new Map<string, { count: number; vessels: Map<string, { mareaCode: string; status: string }> }>();
 
         activeMareas.forEach((marea: any) => {
-            const label = marea.etapas[0]?.pesqueria?.nombre ?? 'Sin pesquería';
+            let label = 'Sin pesquería';
+
+            if (marea.etapas && marea.etapas.length > 0) {
+                // Cálculo de pesquería predominante por días de navegación
+                const daysByFishery = new Map<string, number>();
+
+                marea.etapas.forEach((etapa: any) => {
+                    const fisheryName = etapa.pesqueria?.nombre || 'Sin pesquería';
+                    const days = MareaUtils.calculateStageDays(etapa);
+                    daysByFishery.set(fisheryName, (daysByFishery.get(fisheryName) || 0) + days);
+                });
+
+                // Encontrar la pesquería con el máximo total de días
+                let maxDays = -1;
+                let bestFishery = 'Sin pesquería';
+
+                daysByFishery.forEach((days, name) => {
+                    if (days > maxDays) {
+                        maxDays = days;
+                        bestFishery = name;
+                    }
+                });
+
+                label = bestFishery;
+            } else if (marea.pesqueria?.nombre) {
+                // Fallback a pesquería de cabecera si no hay etapas
+                label = marea.pesqueria.nombre;
+            }
+
             const vesselName = marea.buque.nombreBuque;
             const mareaCode = `${marea.tipoMarea}-${String(marea.nroMarea).padStart(3, '0')}-${String(marea.anioMarea).slice(-2)}`;
             const status = marea.estadoActual?.codigo ?? MareaEstado.EN_EJECUCION;
@@ -1023,8 +1052,10 @@ export class MareasService {
 
             const daysSince = lastArrival ? Math.floor((now.getTime() - lastArrival.getTime()) / (1000 * 60 * 60 * 24)) : null;
 
-            // Top Dry Check
-            if (obsConMareas.has(obs.id) && !activeNav.has(obs.id) && lastArrival && lastArrivalData && daysSince !== null && !obs.conImpedimento) {
+            const status = this.getObserverStatus(obs, activeNav.has(obs.id), lastArrival, now);
+
+            // Top Dry Check: Solo listar observadores genuinamente DISPONIBLES
+            if (obsConMareas.has(obs.id) && status === 'DISPONIBLE' && lastArrival && lastArrivalData && daysSince !== null) {
                 topDryCandidates.push({
                     id: obs.id,
                     name,
@@ -1035,8 +1066,6 @@ export class MareasService {
                     tipoObservador: obs.tipoObservador
                 });
             }
-
-            const status = this.getObserverStatus(obs, activeNav.has(obs.id), lastArrival, now);
 
             switch (status) {
                 case 'NAVEGANDO':
@@ -1240,6 +1269,7 @@ export class MareasService {
                 dias_navegados: diasNavegados,
                 progreso: progreso,
                 id_pesqueria: marea.pesqueriaId,
+                observaciones: marea.observaciones || '',
                 alertas: activeAlerts,
                 etapas: marea.etapas.map((e: any) => ({
                     id: e.id,
@@ -1648,6 +1678,7 @@ export class MareasService {
                     fechaZarpadaEstimada: fechaZarpadaEstimada ? new Date(fechaZarpadaEstimada) : null,
                     fechaInicioObservador: fechaInicioObservador ? new Date(fechaInicioObservador) : null,
                     diasEstimados,
+                    observaciones: createMareaDto.observaciones || '',
                 }
             });
 

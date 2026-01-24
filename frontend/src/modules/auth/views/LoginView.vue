@@ -107,7 +107,7 @@
       <!-- Version Tag -->
        <div class="mt-8 text-center">
         <p class="text-[10px] text-white/20 font-mono tracking-widest uppercase">
-          SIGMA v2.0.1
+          SIGMA v0.0.1
         </p>
       </div>
 

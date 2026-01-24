@@ -44,6 +44,10 @@ export class CreateMareaDto {
     @IsOptional()
     fechaInicioObservador?: string;
 
+    @IsString()
+    @IsOptional()
+    observaciones?: string;
+
     @IsArray()
     @IsOptional()
     @ValidateNested({ each: true })
