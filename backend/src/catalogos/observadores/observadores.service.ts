@@ -1,4 +1,4 @@
-import { Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateObservadorDto, UpdateObservadorDto } from './dto';
 
@@ -7,6 +7,10 @@ export class ObservadoresService {
     constructor(private readonly prisma: PrismaService) { }
 
     async crear(createObservadorDto: CreateObservadorDto) {
+        if (createObservadorDto.disponible && createObservadorDto.conImpedimento) {
+            throw new BadRequestException('Un observador no puede estar disponible y tener impedimento al mismo tiempo');
+        }
+
         if (createObservadorDto.conImpedimento === false) {
             createObservadorDto.motivoImpedimento = null;
         }
@@ -41,6 +45,10 @@ export class ObservadoresService {
 
     async actualizar(id: string, updateObservadorDto: UpdateObservadorDto) {
         const observador = await this.obtenerUno(id);
+
+        if (updateObservadorDto.disponible && updateObservadorDto.conImpedimento) {
+            throw new BadRequestException('Un observador no puede estar disponible y tener impedimento al mismo tiempo');
+        }
 
         if (updateObservadorDto.conImpedimento === false) {
             updateObservadorDto.motivoImpedimento = null;

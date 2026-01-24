@@ -5,11 +5,43 @@
             :is-loading="isLoading" v-model:search="searchQuery" search-placeholder="Buscar observadores..."
             @create="openCreateModal">
             <template #table-header>
-                <th scope="col" class="px-6 py-3">Código</th>
-                <th scope="col" class="px-6 py-3">Nombre</th>
-                <th scope="col" class="px-6 py-3">Tipo</th>
-                <th scope="col" class="px-6 py-3">Estado</th>
-                <th scope="col" class="px-6 py-3">Acciones</th>
+                <th scope="col" class="px-6 py-3 cursor-pointer group" @click="handleSort('codigoInterno')">
+                    <div class="flex items-center gap-2">
+                        Código
+                        <component :is="getSortIcon()" class="w-3.5 h-3.5 transition-all duration-200" :class="[
+                            sortKey === 'codigoInterno' ? 'opacity-100 text-primary' : 'opacity-0 group-hover:opacity-50',
+                            sortKey === 'codigoInterno' && sortOrder === 'asc' ? 'rotate-180' : ''
+                        ]" />
+                    </div>
+                </th>
+                <th scope="col" class="px-6 py-3 cursor-pointer group" @click="handleSort('apellido')">
+                    <div class="flex items-center gap-2">
+                        Nombre
+                        <component :is="getSortIcon()" class="w-3.5 h-3.5 transition-all duration-200" :class="[
+                            sortKey === 'apellido' ? 'opacity-100 text-primary' : 'opacity-0 group-hover:opacity-50',
+                            sortKey === 'apellido' && sortOrder === 'asc' ? 'rotate-180' : ''
+                        ]" />
+                    </div>
+                </th>
+                <th scope="col" class="px-6 py-3 cursor-pointer group" @click="handleSort('tipoObservador')">
+                    <div class="flex items-center gap-2">
+                        Tipo
+                        <component :is="getSortIcon()" class="w-3.5 h-3.5 transition-all duration-200" :class="[
+                            sortKey === 'tipoObservador' ? 'opacity-100 text-primary' : 'opacity-0 group-hover:opacity-50',
+                            sortKey === 'tipoObservador' && sortOrder === 'asc' ? 'rotate-180' : ''
+                        ]" />
+                    </div>
+                </th>
+                <th scope="col" class="px-6 py-3 cursor-pointer group" @click="handleSort('activo')">
+                    <div class="flex items-center gap-2">
+                        Estado
+                        <component :is="getSortIcon()" class="w-3.5 h-3.5 transition-all duration-200" :class="[
+                            sortKey === 'activo' ? 'opacity-100 text-primary' : 'opacity-0 group-hover:opacity-50',
+                            sortKey === 'activo' && sortOrder === 'asc' ? 'rotate-180' : ''
+                        ]" />
+                    </div>
+                </th>
+                <th scope="col" class="px-6 py-3 text-right">Acciones</th>
             </template>
 
             <template #table-row="{ item: obs }">
@@ -113,9 +145,9 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, computed } from 'vue'
+import { onMounted, computed, ref } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
-import { EditIcon, SearchIcon } from '@/icons';
+import { EditIcon, SearchIcon, ChevronDownIcon } from '@/icons';
 import ObservadorDialog from '../components/ObservadorDialog.vue'
 import BaseDataList from '@/components/common/BaseDataList.vue'
 import { useObservadores } from '../composables/useObservadores'
@@ -136,13 +168,47 @@ const {
     showModal,
     selectedObservador,
     isSaving,
-    filteredObservadores,
+    filteredObservadores: baseFilteredObservadores,
     fetchObservadores,
     openCreateModal,
     openEditModal,
     closeModal,
     handleSave
 } = useObservadores()
+
+// Sorting Logic
+const sortKey = ref<string>('apellido')
+const sortOrder = ref<'asc' | 'desc'>('asc')
+
+const handleSort = (key: string) => {
+    if (sortKey.value === key) {
+        sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc'
+    } else {
+        sortKey.value = key
+        sortOrder.value = 'asc'
+    }
+}
+
+const getSortIcon = () => ChevronDownIcon
+
+const filteredObservadores = computed(() => {
+    const items = [...baseFilteredObservadores.value]
+
+    items.sort((a: any, b: any) => {
+        let valA = a[sortKey.value]
+        let valB = b[sortKey.value]
+
+        if (typeof valA === 'string') {
+            return sortOrder.value === 'asc'
+                ? valA.localeCompare(valB)
+                : valB.localeCompare(valA)
+        }
+
+        return sortOrder.value === 'asc' ? (valA > valB ? 1 : -1) : (valA < valB ? 1 : -1)
+    })
+
+    return items
+})
 
 onMounted(() => {
     fetchObservadores()

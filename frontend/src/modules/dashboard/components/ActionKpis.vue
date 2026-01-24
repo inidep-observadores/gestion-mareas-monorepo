@@ -1,15 +1,11 @@
 <template>
   <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:gap-6">
-    <div
-      v-for="kpi in kpis"
-      :key="kpi.title"
-            class="group relative overflow-hidden rounded-2xl border border-border bg-surface p-5 shadow-sm transition-all hover:shadow-xl hover:-translate-y-1"
-      >
+    <div v-for="kpi in kpis" :key="kpi.title"
+      class="group relative overflow-hidden rounded-2xl border border-border bg-surface p-5 shadow-sm transition-all hover:shadow-xl hover:-translate-y-1">
       <!-- Background Decorative Gradient -->
       <div
         class="absolute -right-4 -top-4 h-24 w-24 rounded-full opacity-5 blur-3xl transition-opacity group-hover:opacity-10"
-        :class="kpi.bgClass"
-      ></div>
+        :class="kpi.bgClass"></div>
 
       <div class="flex items-center justify-between gap-4">
         <div class="z-10">
@@ -28,36 +24,28 @@
             {{ kpi.subtext }}
           </p>
         </div>
-        <div
-          :class="[
-            'flex h-12 w-12 items-center justify-center rounded-2xl transition-all group-hover:rotate-12 group-hover:scale-110 shadow-sm',
-            kpi.iconContainerClass,
-          ]"
-        >
+        <div :class="[
+          'flex h-12 w-12 items-center justify-center rounded-2xl transition-all group-hover:rotate-12 group-hover:scale-110 shadow-sm',
+          kpi.iconContainerClass,
+        ]">
           <component :is="kpi.icon" class="h-6 w-6" :class="kpi.iconClass" />
         </div>
       </div>
-      
+
       <!-- Progress Bar for Monthly Target -->
       <div v-if="kpi.progress !== undefined" class="mt-4">
         <div class="flex justify-between items-center mb-1.5">
-           <span class="text-[9px] font-black text-text-muted uppercase tracking-tighter">Progreso Objetivo</span>
-           <span class="text-[9px] font-black text-primary">{{ kpi.progress }}%</span>
+          <span class="text-[9px] font-black text-text-muted uppercase tracking-tighter">Progreso Objetivo</span>
+          <span class="text-[9px] font-black text-primary">{{ kpi.progress }}%</span>
         </div>
         <div class="h-1.5 w-full rounded-full bg-surface-muted overflow-hidden">
-          <div
-            class="h-full rounded-full bg-primary transition-all duration-1000 ease-out"
-            :style="{ width: kpi.progress + '%' }"
-          ></div>
+          <div class="h-full rounded-full bg-primary transition-all duration-1000 ease-out"
+            :style="{ width: kpi.progress + '%' }"></div>
         </div>
       </div>
 
       <!-- Drill-down link overlay -->
-      <router-link
-        :to="kpi.link"
-        class="absolute inset-0 z-10"
-        aria-label="Ver detalles"
-      ></router-link>
+      <router-link :to="kpi.link" class="absolute inset-0 z-10" aria-label="Ver detalles"></router-link>
     </div>
   </div>
 </template>
@@ -86,47 +74,47 @@ const kpiDefinitions: Array<
     progress?: number
   }
 > = [
-  {
-    key: 'mareasDesignadas',
-    title: 'Mareas Designadas',
-    subtext: 'Pendientes de inicio',
-    icon: TaskIcon,
-    bgClass: 'bg-text-muted',
-    iconContainerClass: 'bg-surface-muted',
-    iconClass: 'text-text-muted',
-    link: { name: 'MareasDashboard', query: { estado: 'DESIGNADA' } },
-  },
-  {
-    key: 'flotaActiva',
-    title: 'Navegando',
-    subtext: 'Observadores en operación',
-    icon: ShipIcon,
-    bgClass: 'bg-info',
-    iconContainerClass: 'bg-info/10',
-    iconClass: 'text-info',
-    link: { name: 'MareasDashboard', query: { estado: 'EN_EJECUCION' } },
-  },
-  {
-    key: 'enRevision',
-    title: 'En revisión',
-    subtext: 'Procesos de informe',
-    icon: UserGroupIcon,
-    bgClass: 'bg-warning',
-    iconContainerClass: 'bg-warning/10',
-    iconClass: 'text-warning',
-    link: { name: 'MareasDashboard', query: { estado: 'ENTREGADA_RECIBIDA,VERIFICACION_INICIAL,EN_CORRECCION,PENDIENTE_DE_INFORME,ESPERANDO_REVISION' } },
-  },
-  {
-    key: 'listasParaProtocolizar',
-    title: 'Listas para protocolizar',
-    subtext: 'Informes aprobados',
-    icon: CheckIcon,
-    bgClass: 'bg-primary',
-    iconContainerClass: 'bg-primary/10',
-    iconClass: 'text-primary',
-    link: '/mareas/stats',
-  },
-]
+    {
+      key: 'mareasDesignadas',
+      title: 'Mareas Designadas',
+      subtext: 'Pendientes de inicio',
+      icon: TaskIcon,
+      bgClass: 'bg-text-muted',
+      iconContainerClass: 'bg-surface-muted',
+      iconClass: 'text-text-muted',
+      link: { name: 'MareasDashboard', query: { estado: 'DESIGNADA' } },
+    },
+    {
+      key: 'flotaActiva',
+      title: 'Navegando',
+      subtext: 'Observadores en operación',
+      icon: ShipIcon,
+      bgClass: 'bg-info',
+      iconContainerClass: 'bg-info/10',
+      iconClass: 'text-info',
+      link: { name: 'MareasDashboard', query: { estado: 'EN_EJECUCION' } },
+    },
+    {
+      key: 'enRevision',
+      title: 'En revisión',
+      subtext: 'Procesos de informe',
+      icon: UserGroupIcon,
+      bgClass: 'bg-warning',
+      iconContainerClass: 'bg-warning/10',
+      iconClass: 'text-warning',
+      link: { name: 'MareasWorkflow', query: { expand: 'ENTREGADA_RECIBIDA,VERIFICACION_INICIAL,EN_CORRECCION,PENDIENTE_DE_INFORME,ESPERANDO_REVISION' } },
+    },
+    {
+      key: 'listasParaProtocolizar',
+      title: 'Listas para protocolizar',
+      subtext: 'Informes aprobados',
+      icon: CheckIcon,
+      bgClass: 'bg-primary',
+      iconContainerClass: 'bg-primary/10',
+      iconClass: 'text-primary',
+      link: { name: 'MareasWorkflow', query: { expand: 'ESPERANDO_PROTOCOLIZACION' } },
+    },
+  ]
 
 const kpis = computed(() =>
   kpiDefinitions.map((definition) => ({

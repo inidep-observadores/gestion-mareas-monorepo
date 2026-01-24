@@ -4,11 +4,51 @@
       :button-text="canEdit ? 'Nuevo Buque' : undefined" :items="filteredBuques" :is-loading="isLoading"
       v-model:search="searchQuery" search-placeholder="Buscar por nombre o matrícula..." @create="openCreateModal">
       <template #table-header>
-        <th scope="col" class="px-6 py-3">Buque</th>
-        <th scope="col" class="px-6 py-3">Matrícula</th>
-        <th scope="col" class="px-6 py-3">Tipo Flota</th>
-        <th scope="col" class="px-6 py-3">Puerto Base</th>
-        <th scope="col" class="px-6 py-3">Estado</th>
+        <th scope="col" class="px-6 py-3 cursor-pointer group" @click="handleSort('nombreBuque')">
+          <div class="flex items-center gap-2">
+            Buque
+            <component :is="getSortIcon()" class="w-3.5 h-3.5 transition-all duration-200" :class="[
+              sortKey === 'nombreBuque' ? 'opacity-100 text-primary' : 'opacity-0 group-hover:opacity-50',
+              sortKey === 'nombreBuque' && sortOrder === 'asc' ? 'rotate-180' : ''
+            ]" />
+          </div>
+        </th>
+        <th scope="col" class="px-6 py-3 cursor-pointer group" @click="handleSort('matricula')">
+          <div class="flex items-center gap-2">
+            Matrícula
+            <component :is="getSortIcon()" class="w-3.5 h-3.5 transition-all duration-200" :class="[
+              sortKey === 'matricula' ? 'opacity-100 text-primary' : 'opacity-0 group-hover:opacity-50',
+              sortKey === 'matricula' && sortOrder === 'asc' ? 'rotate-180' : ''
+            ]" />
+          </div>
+        </th>
+        <th scope="col" class="px-6 py-3 cursor-pointer group" @click="handleSort('tipoFlota')">
+          <div class="flex items-center gap-2">
+            Tipo Flota
+            <component :is="getSortIcon()" class="w-3.5 h-3.5 transition-all duration-200" :class="[
+              sortKey === 'tipoFlota' ? 'opacity-100 text-primary' : 'opacity-0 group-hover:opacity-50',
+              sortKey === 'tipoFlota' && sortOrder === 'asc' ? 'rotate-180' : ''
+            ]" />
+          </div>
+        </th>
+        <th scope="col" class="px-6 py-3 cursor-pointer group" @click="handleSort('puertoBase')">
+          <div class="flex items-center gap-2">
+            Puerto Base
+            <component :is="getSortIcon()" class="w-3.5 h-3.5 transition-all duration-200" :class="[
+              sortKey === 'puertoBase' ? 'opacity-100 text-primary' : 'opacity-0 group-hover:opacity-50',
+              sortKey === 'puertoBase' && sortOrder === 'asc' ? 'rotate-180' : ''
+            ]" />
+          </div>
+        </th>
+        <th scope="col" class="px-6 py-3 cursor-pointer group" @click="handleSort('activo')">
+          <div class="flex items-center gap-2">
+            Estado
+            <component :is="getSortIcon()" class="w-3.5 h-3.5 transition-all duration-200" :class="[
+              sortKey === 'activo' ? 'opacity-100 text-primary' : 'opacity-0 group-hover:opacity-50',
+              sortKey === 'activo' && sortOrder === 'asc' ? 'rotate-180' : ''
+            ]" />
+          </div>
+        </th>
         <th scope="col" class="px-6 py-3 text-right">Acciones</th>
       </template>
 
@@ -92,12 +132,12 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, computed } from 'vue'
+import { onMounted, computed, ref } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import BuqueDialog from '../components/BuqueDialog.vue'
 import BaseDataList from '@/components/common/BaseDataList.vue'
 import { useBuques } from '../composables/useBuques'
-import { EditIcon, SearchIcon } from '@/icons'
+import { EditIcon, SearchIcon, ChevronDownIcon } from '@/icons'
 import { useAuthStore } from '@/modules/auth/stores/auth.store'
 import { ValidRoles } from '@/modules/auth/interfaces/roles.enum'
 
@@ -113,7 +153,7 @@ const {
   searchQuery,
   isModalOpen,
   currentBuque,
-  filteredBuques,
+  filteredBuques: baseFilteredBuques,
   tiposFlota,
   puertos,
   pesquerias,
@@ -125,6 +165,49 @@ const {
   closeModal,
   handleSave,
 } = useBuques()
+
+// Sorting Logic
+const sortKey = ref<string>('nombreBuque')
+const sortOrder = ref<'asc' | 'desc'>('asc')
+
+const handleSort = (key: string) => {
+  if (sortKey.value === key) {
+    sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc'
+  } else {
+    sortKey.value = key
+    sortOrder.value = 'asc'
+  }
+}
+
+const getSortIcon = () => ChevronDownIcon
+
+const filteredBuques = computed(() => {
+  const items = [...baseFilteredBuques.value]
+
+  items.sort((a: any, b: any) => {
+    let valA = a[sortKey.value]
+    let valB = b[sortKey.value]
+
+    // Handle nested objects
+    if (sortKey.value === 'tipoFlota') {
+      valA = a.tipoFlota?.nombre || ''
+      valB = b.tipoFlota?.nombre || ''
+    } else if (sortKey.value === 'puertoBase') {
+      valA = a.puertoBase?.nombre || ''
+      valB = b.puertoBase?.nombre || ''
+    }
+
+    if (typeof valA === 'string') {
+      return sortOrder.value === 'asc'
+        ? valA.localeCompare(valB)
+        : valB.localeCompare(valA)
+    }
+
+    return sortOrder.value === 'asc' ? (valA > valB ? 1 : -1) : (valA < valB ? 1 : -1)
+  })
+
+  return items
+})
 
 onMounted(async () => {
   // Parallel fetch for better performance

@@ -115,8 +115,8 @@
                         <div class="relative">
                             <input type="checkbox" v-model="form.activo" class="sr-only">
                             <div :class="form.activo
-                                    ? 'border-primary bg-primary'
-                                    : 'bg-surface border-border group-hover:border-primary/50'
+                                ? 'border-primary bg-primary'
+                                : 'bg-surface border-border group-hover:border-primary/50'
                                 "
                                 class="mr-3 flex h-5 w-5 items-center justify-center rounded-md border-[1.25px] transition-colors">
                                 <span :class="form.activo ? '' : 'opacity-0'">
@@ -136,9 +136,10 @@
                         <div class="relative">
                             <input type="checkbox" v-model="form.disponible" class="sr-only">
                             <div :class="form.disponible
-                                    ? 'border-primary bg-primary'
-                                    : 'border-border bg-surface group-hover:border-primary/50'
-                                " class="mr-3 flex h-5 w-5 items-center justify-center rounded-md border-[1.25px] transition-colors">
+                                ? 'border-primary bg-primary'
+                                : 'border-border bg-surface group-hover:border-primary/50'
+                                "
+                                class="mr-3 flex h-5 w-5 items-center justify-center rounded-md border-[1.25px] transition-colors">
                                 <span :class="form.disponible ? '' : 'opacity-0'">
                                     <svg width="14" height="14" viewBox="0 0 14 14" fill="none"
                                         xmlns="http://www.w3.org/2000/svg">
@@ -156,9 +157,10 @@
                         <div class="relative">
                             <input type="checkbox" v-model="form.conImpedimento" class="sr-only">
                             <div :class="form.conImpedimento
-                                    ? 'border-primary bg-primary'
-                                    : 'border-border bg-surface group-hover:border-primary/50'
-                                " class="mr-3 flex h-5 w-5 items-center justify-center rounded-md border-[1.25px] transition-colors">
+                                ? 'border-primary bg-primary'
+                                : 'border-border bg-surface group-hover:border-primary/50'
+                                "
+                                class="mr-3 flex h-5 w-5 items-center justify-center rounded-md border-[1.25px] transition-colors">
                                 <span :class="form.conImpedimento ? '' : 'opacity-0'">
                                     <svg width="14" height="14" viewBox="0 0 14 14" fill="none"
                                         xmlns="http://www.w3.org/2000/svg">
@@ -279,6 +281,19 @@ watch(
     },
     { immediate: true }
 )
+
+// Mutual exclusivity logic
+watch(() => form.value.disponible, (val) => {
+    if (val && form.value.conImpedimento) {
+        form.value.conImpedimento = false
+    }
+})
+
+watch(() => form.value.conImpedimento, (val) => {
+    if (val && form.value.disponible) {
+        form.value.disponible = false
+    }
+})
 
 const closeModal = () => {
     if (previewUrl.value) URL.revokeObjectURL(previewUrl.value)
