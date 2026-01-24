@@ -10,7 +10,7 @@
         </div>
 
         <!-- HUD LAYER (Floating Components inside map area) -->
-        <div class="relative w-full h-full pointer-events-none z-[1000] p-6 flex flex-col justify-between">
+        <div class="relative w-full h-full pointer-events-none z-[1000] p-6">
           <!-- Top Row -->
           <div class="flex justify-between items-start w-full">
             <!-- Left: Back Button and Vessel Info -->
@@ -21,12 +21,15 @@
                 <span class="text-xs font-black uppercase tracking-widest">Volver</span>
               </button>
               
-              <VesselInfoCard v-if="activeVessel" :vesselName="activeVessel.name"
-              :mareaCode="activeVessel.mareaCode || '--'"
-              :position="{ lat: currentPoint?.lat || 0, lon: currentPoint?.lon || 0 }"
-              :timestamp="currentPoint?.timestamp?.toString() || ''" :speed="currentPoint?.speed || 0"
-              :course="currentPoint?.course || 0" :lastUpdate="activeVessel.lastUpdate" :layers="mapLayers"
-              @update:layer="handleLayerToggle" />
+              <Transition name="hud-fade">
+                <VesselInfoCard v-if="activeVessel && (!leftSidebarOpen || isSingleMareaMode)" 
+                  :vesselName="activeVessel.name"
+                  :mareaCode="activeVessel.mareaCode || '--'"
+                  :position="{ lat: currentPoint?.lat || 0, lon: currentPoint?.lon || 0 }"
+                  :timestamp="currentPoint?.timestamp?.toString() || ''" :speed="currentPoint?.speed || 0"
+                  :course="currentPoint?.course || 0" :lastUpdate="activeVessel.lastUpdate" :layers="mapLayers"
+                  @update:layer="handleLayerToggle" />
+              </Transition>
             </div>
 
             <!-- Right: Trip Stages (Optional or for selected vessel) -->
@@ -34,11 +37,21 @@
               <TripStagesCard v-if="activeVessel && currentVesselStages.length" :stages="currentVesselStages"
                 :totalDays="activeVessel.totalDays || 0" @select-stage="handleStageSelection"
                 @select-date="handleDateSelection" />
+
+              <Transition name="hud-fade">
+                <VesselInfoCard v-if="activeVessel && (leftSidebarOpen && !isSingleMareaMode)" 
+                  :vesselName="activeVessel.name"
+                  :mareaCode="activeVessel.mareaCode || '--'"
+                  :position="{ lat: currentPoint?.lat || 0, lon: currentPoint?.lon || 0 }"
+                  :timestamp="currentPoint?.timestamp?.toString() || ''" :speed="currentPoint?.speed || 0"
+                  :course="currentPoint?.course || 0" :lastUpdate="activeVessel.lastUpdate" :layers="mapLayers"
+                  @update:layer="handleLayerToggle" />
+              </Transition>
             </div>
           </div>
 
-          <!-- Bottom Row -->
-          <div class="flex flex-col gap-2">
+          <!-- Bottom Row (Anclado al fondo) -->
+          <div class="absolute bottom-6 left-6 right-6 flex flex-col gap-2">
             <!-- Mouse Coordinates -->
             <div class="flex items-end justify-between">
               <MouseCoordinates :coords="mouseCoords" />
@@ -470,5 +483,17 @@ onUnmounted(stopPlayback)
   padding: 0 !important;
   max-width: none !important;
   margin: 0 !important;
+}
+
+/* Transiciones para el HUD */
+.hud-fade-enter-active,
+.hud-fade-leave-active {
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.hud-fade-enter-from,
+.hud-fade-leave-to {
+  opacity: 0;
+  transform: translateY(10px) scale(0.95);
 }
 </style>
