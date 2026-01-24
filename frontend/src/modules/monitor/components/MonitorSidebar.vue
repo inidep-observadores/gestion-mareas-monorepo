@@ -122,6 +122,8 @@ const formatKey = (key: string) => {
     vieira: 'Áreas de Vieira',
     centolla: 'Áreas de Centolla',
     points: 'Puntos de Reporte',
+    showAllVessels: 'Ver toda la flota',
+    showVesselNames: 'Mostrar identificación',
   }
   return labels[key] || key
 }

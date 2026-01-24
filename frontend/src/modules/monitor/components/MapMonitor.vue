@@ -613,4 +613,25 @@ onUnmounted(() => {
 .vessel-marker-wrapper:hover {
   cursor: pointer;
 }
+
+/* Ajustes de controles de Leaflet */
+.leaflet-bottom.leaflet-right .leaflet-control-zoom {
+  margin-bottom: 28px !important;
+  margin-right: 14px !important;
+  border: none !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+}
+
+.leaflet-control-zoom a {
+  background-color: rgba(var(--color-surface-rgb), 0.9) !important;
+  color: var(--color-text) !important;
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(var(--color-text-rgb), 0.1) !important;
+  transition: all 0.3s ease !important;
+}
+
+.leaflet-control-zoom a:hover {
+  background-color: var(--color-primary) !important;
+  color: white !important;
+}
 </style>

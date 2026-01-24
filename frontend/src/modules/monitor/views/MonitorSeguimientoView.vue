@@ -6,7 +6,8 @@
         <!-- THE MAP (Background) -->
         <div class="absolute inset-0">
           <MapMonitor ref="mapMonitor" class="w-full h-full" :fleet="fleet" :activeLayers="mapLayers"
-            @update:mouse-coords="mouseCoords = $event" @seek-vessel="handleSeekVessel" @select-vessel="setSelectedVessel" />
+            @update:mouse-coords="mouseCoords = $event" @seek-vessel="handleSeekVessel"
+            @select-vessel="setSelectedVessel" />
         </div>
 
         <!-- HUD LAYER (Floating Components inside map area) -->
@@ -20,16 +21,14 @@
                 <ArrowLeftIcon class="w-5 h-5 transition-transform group-hover:-translate-x-1" />
                 <span class="text-xs font-black uppercase tracking-widest">Volver</span>
               </button>
-              
+
               <Transition name="hud-fade">
-                <VesselInfoCard v-if="activeVessel && (!leftSidebarOpen || isSingleMareaMode)" 
-                  :vesselName="activeVessel.name"
-                  :mareaCode="activeVessel.mareaCode || '--'"
+                <VesselInfoCard v-if="activeVessel && (!leftSidebarOpen || isSingleMareaMode)"
+                  :vesselName="activeVessel.name" :mareaCode="activeVessel.mareaCode || '--'"
                   :position="{ lat: currentPoint?.lat || 0, lon: currentPoint?.lon || 0 }"
                   :timestamp="currentPoint?.timestamp?.toString() || ''" :speed="currentPoint?.speed || 0"
                   :course="currentPoint?.course || 0" :lastUpdate="activeVessel.lastUpdate" :layers="mapLayers"
-                  :isSingleMode="isSingleMareaMode"
-                  @update:layer="handleLayerToggle" />
+                  :isSingleMode="isSingleMareaMode" @update:layer="handleLayerToggle" />
               </Transition>
             </div>
 
@@ -40,14 +39,12 @@
                 @select-date="handleDateSelection" />
 
               <Transition name="hud-fade">
-                <VesselInfoCard v-if="activeVessel && (leftSidebarOpen && !isSingleMareaMode)" 
-                  :vesselName="activeVessel.name"
-                  :mareaCode="activeVessel.mareaCode || '--'"
+                <VesselInfoCard v-if="activeVessel && (leftSidebarOpen && !isSingleMareaMode)"
+                  :vesselName="activeVessel.name" :mareaCode="activeVessel.mareaCode || '--'"
                   :position="{ lat: currentPoint?.lat || 0, lon: currentPoint?.lon || 0 }"
                   :timestamp="currentPoint?.timestamp?.toString() || ''" :speed="currentPoint?.speed || 0"
                   :course="currentPoint?.course || 0" :lastUpdate="activeVessel.lastUpdate" :layers="mapLayers"
-                  :isSingleMode="isSingleMareaMode"
-                  @update:layer="handleLayerToggle" />
+                  :isSingleMode="isSingleMareaMode" @update:layer="handleLayerToggle" />
               </Transition>
             </div>
           </div>
@@ -55,7 +52,10 @@
           <!-- Bottom Row (Anclado al fondo) -->
           <div class="absolute bottom-6 left-6 right-6 flex flex-col gap-2">
             <!-- Mouse Coordinates -->
-            <div class="flex items-end justify-between">
+            <div :class="[
+              'flex items-end transition-all duration-500 ease-in-out',
+              leftSidebarOpen ? 'justify-end pr-14' : 'justify-start'
+            ]">
               <MouseCoordinates :coords="mouseCoords" />
             </div>
 
@@ -216,7 +216,7 @@ const fetchFleet = async () => {
           voyageStart: marea.voyageStart,
           voyageEnd: marea.voyageEnd,
           lastUpdate: marea.lastUpdate,
-           totalDays: marea.totalDays,
+          totalDays: marea.totalDays,
           etapas: marea.etapas,
           lastKnownPoint: (marea.lat !== null && marea.lon !== null) ? {
             lat: marea.lat,
@@ -450,7 +450,7 @@ const currentVesselStages = computed<TripStage[]>(() => {
 
 const initializeMonitor = () => {
   stopPlayback()
-  
+
   // Reset state to avoid residual data
   Object.keys(fleet).forEach(key => delete fleet[key])
   selectedVesselId.value = null
