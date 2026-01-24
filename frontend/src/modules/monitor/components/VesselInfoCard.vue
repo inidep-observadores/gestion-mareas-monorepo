@@ -108,7 +108,7 @@ const layerLabels: Record<string, string> = {
   centolla: 'Áreas de centolla',
   points: 'Puntos de reporte',
   showAllVessels: 'Todos los buques',
-  showVesselNames: 'Mostrar nombres',
+  showVesselNames: 'Mostrar identificación',
 }
 
 const shouldShowLayer = (key: string) => {

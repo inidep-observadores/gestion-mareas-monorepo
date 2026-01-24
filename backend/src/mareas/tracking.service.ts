@@ -288,12 +288,12 @@ export class TrackingService {
 
         if (!marea) throw new Error('Marea no encontrada');
 
-        // Logic reused from getLatestFleetPositions
-        let voyageStart: Date | null = marea.fechaZarpadaEstimada || marea.fechaInicioObservador;
+        // Logic: prioritize first stage departure for voyage start
+        let voyageStart: Date | null = null;
         if (marea.etapas.length > 0 && marea.etapas[0].fechaZarpada) {
-            if (!voyageStart || marea.etapas[0].fechaZarpada < voyageStart) {
-                voyageStart = marea.etapas[0].fechaZarpada;
-            }
+            voyageStart = marea.etapas[0].fechaZarpada;
+        } else {
+            voyageStart = marea.fechaZarpadaEstimada || marea.fechaInicioObservador;
         }
 
         let voyageEnd: Date | null = null;
@@ -304,12 +304,19 @@ export class TrackingService {
             voyageEnd = new Date();
         }
 
-        // Adjust hours
+        // Adjust hours strictly: 00:00 for start, 23:59:59 for end
+        // Consider that voyageStart/End (from DB) are treated as being in the local timezone
         if (voyageStart) {
-            voyageStart = DateTime.fromJSDate(voyageStart).setZone(this.TIMEZONE).set({ hour: 0, minute: 0, second: 0, millisecond: 0 }).toJSDate();
+            voyageStart = DateTime.fromJSDate(voyageStart, { zone: 'utc' })
+                .setZone(this.TIMEZONE)
+                .set({ hour: 0, minute: 0, second: 0, millisecond: 0 })
+                .toJSDate();
         }
         if (voyageEnd) {
-            voyageEnd = DateTime.fromJSDate(voyageEnd).setZone(this.TIMEZONE).set({ hour: 23, minute: 50, second: 0, millisecond: 0 }).toJSDate();
+            voyageEnd = DateTime.fromJSDate(voyageEnd, { zone: 'utc' })
+                .setZone(this.TIMEZONE)
+                .set({ hour: 23, minute: 59, second: 59, millisecond: 999 })
+                .toJSDate();
         }
 
         return {
@@ -352,12 +359,12 @@ export class TrackingService {
             });
 
             // Calculate Voyage Bounds
-            // Start: Estimated departure, observer start, or first stage departure
-            let voyageStart: Date | null = marea.fechaZarpadaEstimada || marea.fechaInicioObservador;
+            // Start: prioritize first stage departure
+            let voyageStart: Date | null = null;
             if (marea.etapas.length > 0 && marea.etapas[0].fechaZarpada) {
-                if (!voyageStart || marea.etapas[0].fechaZarpada < voyageStart) {
-                    voyageStart = marea.etapas[0].fechaZarpada;
-                }
+                voyageStart = marea.etapas[0].fechaZarpada;
+            } else {
+                voyageStart = marea.fechaZarpadaEstimada || marea.fechaInicioObservador;
             }
 
             // End: Last stage arrival or Now
@@ -369,14 +376,19 @@ export class TrackingService {
                 voyageEnd = new Date();
             }
 
-            // Adjust hours as per user request: 00:00 for start, 23:50 for end
+            // Adjust hours as requested: 00:00 for start, 23:59:59 for end
+            // Dates from Prisma are in UTC, we shift to local to set boundaries, then back to UTC (implicit in Date object)
             if (voyageStart) {
-                const dtStart = DateTime.fromJSDate(voyageStart).setZone(this.TIMEZONE).set({ hour: 0, minute: 0, second: 0, millisecond: 0 });
-                voyageStart = dtStart.toJSDate();
+                voyageStart = DateTime.fromJSDate(voyageStart, { zone: 'utc' })
+                    .setZone(this.TIMEZONE)
+                    .set({ hour: 0, minute: 0, second: 0, millisecond: 0 })
+                    .toJSDate();
             }
             if (voyageEnd) {
-                const dtEnd = DateTime.fromJSDate(voyageEnd).setZone(this.TIMEZONE).set({ hour: 23, minute: 50, second: 0, millisecond: 0 });
-                voyageEnd = dtEnd.toJSDate();
+                voyageEnd = DateTime.fromJSDate(voyageEnd, { zone: 'utc' })
+                    .setZone(this.TIMEZONE)
+                    .set({ hour: 23, minute: 59, second: 59, millisecond: 999 })
+                    .toJSDate();
             }
 
             // Determine status color based on age
@@ -582,7 +594,7 @@ export class TrackingService {
             const tipoMov = type === 'ZARPADA' ? 'zarpada' : 'arribo';
             const prep = type === 'ZARPADA' ? 'desde' : 'a';
             const alertTitle = `${buqueNombre}: Posible ${tipoMov} ${prep} ${port?.nombre} el ${dateStr} (${mareaLabel})`;
-            
+
 
             await this.createAlert(buqueId, alertType, alertTitle, date, metadata, mareaTarget.id, 'MAREA', `${alertTitle}\n\nOrigen: Datos de monitoreo satelital.`);
             await this.saveSnapshot(buqueId, type, date, portId, hash);
