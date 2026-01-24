@@ -211,6 +211,7 @@ const fetchFleet = async () => {
           visible: false,
           matricula: marea.matricula,
           mareaCode: marea.mareaCode,
+          mareaStatus: marea.mareaStatus,
           observer: marea.observer,
           voyageStart: marea.voyageStart,
           voyageEnd: marea.voyageEnd,

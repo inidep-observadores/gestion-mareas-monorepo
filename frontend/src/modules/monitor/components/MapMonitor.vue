@@ -28,6 +28,7 @@ export interface VesselTrajectory {
   visible: boolean
   matricula?: string
   mareaCode?: string
+  mareaStatus?: string
   observer?: string
   voyageStart?: string | null
   voyageEnd?: string | null
@@ -38,11 +39,11 @@ export interface VesselTrajectory {
 
 const props = defineProps<{
   fleet: Record<string, VesselTrajectory>
-  activeLayers: { 
-    veda: boolean; 
-    vieira: boolean; 
-    centolla: boolean; 
-    points: boolean; 
+  activeLayers: {
+    veda: boolean;
+    vieira: boolean;
+    centolla: boolean;
+    points: boolean;
     showAllVessels: boolean;
     showVesselNames: boolean;
   }
@@ -201,7 +202,7 @@ const renderMarker = (vessel: VesselTrajectory) => {
   // Si tiene puntos de trayectoria, usamos el índice actual o el último
   // Si no tiene puntos todavía, usamos el lastKnownPoint de la carga inicial
   let current: FleetTrackPoint | null = null
-  
+
   if (vessel.points.length > 0) {
     const pointIndex = vessel.visible ? vessel.currentIndex : (vessel.points.length - 1)
     current = vessel.points[pointIndex]
@@ -212,25 +213,77 @@ const renderMarker = (vessel: VesselTrajectory) => {
   if (!current) return
 
   const icon = L.divIcon({
-    className: 'vessel-marker-icon',
+    className: 'vessel-marker-container',
     html: `
-      <div class="relative w-8 h-8 flex items-center justify-center transition-all duration-300 ${!vessel.visible ? 'opacity-80 scale-90' : ''}" style="transform: rotate(${current.course}deg)">
-        <div class="w-4 h-6 rounded-t-full shadow-lg border-2 border-surface cursor-pointer" style="background-color: ${vessel.color}"></div>
-        <div class="absolute -top-1 w-1.5 h-1.5 bg-surface rounded-full shadow-sm"></div>
+      <div class="vessel-marker-wrapper ${vessel.visible ? 'is-active' : ''}" style="--vessel-color: ${vessel.color}; transform: rotate(${current.course}deg)">
+        <svg viewBox="0 0 40 40" class="vessel-svg">
+          <!-- Realistic Vessel Shape (Skinnier profile, square stern) -->
+          <!-- Main Hull -->
+          <path d="M20 4 C23 4 27 10 27 24 L27 34 Q27 36 20 36 Q13 36 13 34 L13 24 C13 10 17 4 20 4 Z" class="vessel-hull" fill="${vessel.color}" />
+          
+          <!-- Bridge / Cabin (Center-Forward) -->
+          <rect x="17" y="14" width="6" height="6" rx="1" class="vessel-bridge" />
+          <rect x="18.5" y="10" width="3" height="4" rx="0.5" class="vessel-bridge-upper" />
+          
+          <!-- Deck Lines -->
+          <line x1="15" y1="22" x2="25" y2="22" class="vessel-deck-line" />
+          <line x1="15" y1="28" x2="25" y2="28" class="vessel-deck-line" />
+          
+          <!-- Bow Detail (Pointer) -->
+          <path d="M18.5 6 L20 3 L21.5 6" fill="white" opacity="0.8" />
+        </svg>
       </div>
     `,
-    iconSize: [32, 32],
-    iconAnchor: [16, 16],
+    iconSize: [40, 40],
+    iconAnchor: [20, 20],
   })
 
   // interactive: true para permitir clics
   const marker = L.marker([current.lat, current.lon], { icon, interactive: true }).addTo(markersLayer)
-  
+
   const showNames = props.activeLayers.showVesselNames
-  marker.bindTooltip(vessel.name, {
+
+  // HTML para versión simple vs HUD detallada
+  const simpleContent = `<div class="tooltip-simple-name">${vessel.name}</div>`
+  const mareaLabel = vessel.mareaCode ? `<span class="tooltip-marea">${vessel.mareaCode}</span>` : ''
+  const statusLabel = vessel.mareaStatus === 'DESIGNADA' ? '<span class="tooltip-status">Designado</span>' : ''
+  const hudContent = `
+    <div class="vessel-tooltip-content">
+      <span class="tooltip-name">${vessel.name}</span>
+      ${mareaLabel}
+      ${statusLabel}
+    </div>
+  `
+
+  // Vincular tooltip inicial (Simple)
+  marker.bindTooltip(simpleContent, {
     permanent: showNames,
     direction: 'top',
-    className: `vessel-tooltip ${showNames ? 'pointer-events-none' : ''}`
+    className: 'vessel-tooltip-simple'
+  })
+
+  // Eventos para intercambio dinámico
+  marker.on('mouseover', () => {
+    marker.setTooltipContent(hudContent)
+    // Cambiamos la clase al elemento del tooltip para aplicar estilos HUD
+    const el = marker.getTooltip()?.getElement()
+    if (el) {
+      el.classList.add('vessel-tooltip-hud')
+      el.classList.remove('vessel-tooltip-simple')
+    }
+    marker.openTooltip()
+  })
+
+  marker.on('mouseout', () => {
+    marker.setTooltipContent(simpleContent)
+    const el = marker.getTooltip()?.getElement()
+    if (el) {
+      el.classList.add('vessel-tooltip-simple')
+      el.classList.remove('vessel-tooltip-hud')
+    }
+    if (!props.activeLayers.showVesselNames) {
+      marker.closeTooltip()
+    }
   })
 
   marker.on('click', () => {
@@ -357,7 +410,7 @@ const fitVesselBounds = (vesselId: string) => {
 const fitAllVesselsBounds = () => {
   if (!map) return
   const currentPoints: L.LatLngExpression[] = []
-  
+
   Object.values(props.fleet).forEach(vessel => {
     let current: FleetTrackPoint | null = null
     if (vessel.points.length > 0) {
@@ -398,20 +451,166 @@ onUnmounted(() => {
 </script>
 
 <style>
-.vessel-tooltip {
-  background: var(--color-surface) !important;
-  color: var(--color-text) !important;
-  border: 1px solid var(--color-border) !important;
+/* Variables locales para opacidad si no están en el global */
+:root {
+  --color-surface-rgb: 255, 255, 255;
+  /* Light surface */
+  --color-text-rgb: 15, 23, 42;
+  /* Light text */
+}
+
+.dark {
+  --color-surface-rgb: 15, 23, 42;
+  /* Dark surface */
+  --color-text-rgb: 241, 245, 249;
+  /* Dark text */
+}
+
+/* Tooltips HUD Estilizados */
+.leaflet-tooltip.vessel-tooltip-hud {
+  background: rgba(var(--color-surface-rgb), 0.98) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(var(--color-primary-rgb), 0.5) !important;
+  border-radius: 14px !important;
+  padding: 12px 16px !important;
+  box-shadow: 0 12px 40px -10px rgba(0, 0, 0, 0.8) !important;
+  z-index: 2000 !important;
+}
+
+/* Tooltip Simple (Solo nombre) */
+.leaflet-tooltip.vessel-tooltip-simple {
+  background: rgba(var(--color-surface-rgb), 0.95) !important;
+  backdrop-filter: blur(8px) !important;
+  border: 1px solid rgba(var(--color-text-rgb), 0.3) !important;
   border-radius: 8px !important;
-  font-weight: 900 !important;
-  font-size: 10px !important;
-  text-transform: uppercase !important;
-  padding: 2px 8px !important;
-  box-shadow: var(--shadow-theme-md) !important;
+  padding: 6px 12px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5) !important;
+  pointer-events: none !important;
+}
+
+.vessel-tooltip-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 8px;
+  color: var(--color-text);
+  font-family: 'Inter', sans-serif;
+  min-width: 150px;
+}
+
+.tooltip-simple-name {
+  font-weight: 900;
+  text-transform: uppercase;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--color-text);
+}
+
+.tooltip-name {
+  font-weight: 900;
+  text-transform: uppercase;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  color: var(--color-text);
+  border-bottom: 2px solid rgba(var(--color-text-rgb), 0.2);
+  padding-bottom: 6px;
+  margin-bottom: 4px;
+  width: 100%;
+}
+
+.tooltip-marea {
+  color: var(--color-primary);
+  font-weight: 800;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  background: rgba(var(--color-primary-rgb), 0.15);
+  padding: 3px 10px;
+  border-radius: 6px;
+}
+
+.tooltip-marea::before {
+  content: 'MAREA';
+  font-size: 8px;
+  font-weight: 900;
+  opacity: 0.8;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted);
+}
+
+.tooltip-status {
+  color: var(--color-warning);
+  font-size: 10px;
+  text-transform: uppercase;
+  font-weight: 950;
+  letter-spacing: 0.1em;
+  background: rgba(var(--color-warning-rgb), 0.2);
+  padding: 4px 10px;
+  border-radius: 6px;
+  width: fit-content;
+  border: 1px solid rgba(var(--color-warning-rgb), 0.3);
+  margin-top: 2px;
+}
+
+.tooltip-permanent {
+  pointer-events: none !important;
+}
+
+/* Triángulo del tooltip */
+.leaflet-tooltip-top.vessel-tooltip-hud:before,
+.leaflet-tooltip-top.vessel-tooltip-simple:before {
+  border-top-color: rgba(var(--color-surface-rgb), 0.98) !important;
 }
 
 .interactive-trajectory,
 .interactive-dot {
   cursor: pointer !important;
+}
+
+/* MARCADOR DE BUQUE PREMIUM */
+.vessel-marker-container {
+  overflow: visible !important;
+}
+
+.vessel-marker-wrapper {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.3s ease;
+}
+
+.vessel-svg {
+  width: 100%;
+  height: 100%;
+}
+
+.vessel-hull {
+  stroke: rgba(255, 255, 255, 0.5);
+  stroke-width: 0.8;
+  transition: all 0.3s ease;
+}
+
+.vessel-bridge {
+  fill: rgba(255, 255, 255, 0.4);
+}
+
+.vessel-bridge-upper {
+  fill: rgba(255, 255, 255, 0.6);
+}
+
+.vessel-deck-line {
+  stroke: rgba(0, 0, 0, 0.2);
+  stroke-width: 0.8;
+}
+
+.vessel-marker-wrapper:hover {
+  cursor: pointer;
 }
 </style>

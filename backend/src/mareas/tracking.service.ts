@@ -346,7 +346,8 @@ export class TrackingService {
                 etapas: {
                     orderBy: { nroEtapa: 'asc' }
                 },
-                observadorPrincipal: true
+                observadorPrincipal: true,
+                estadoActual: true
             }
         });
 
@@ -412,6 +413,7 @@ export class TrackingService {
                 speed: lastPoint?.velocidad || 0,
                 lastUpdate: lastPoint?.timestamp || null,
                 mareaId: marea.id,
+                mareaStatus: marea.estadoActual?.codigo || 'EN_EJECUCION',
                 mareaCode: `${marea.tipoMarea}-${marea.nroMarea}-${marea.anioMarea.toString().slice(-2)}`,
                 observer: marea.observadorPrincipal
                     ? `${marea.observadorPrincipal.apellido} ${marea.observadorPrincipal.nombre}`
