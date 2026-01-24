@@ -38,7 +38,14 @@ export interface VesselTrajectory {
 
 const props = defineProps<{
   fleet: Record<string, VesselTrajectory>
-  activeLayers: { veda: boolean; vieira: boolean; centolla: boolean; points: boolean; showAllVessels: boolean }
+  activeLayers: { 
+    veda: boolean; 
+    vieira: boolean; 
+    centolla: boolean; 
+    points: boolean; 
+    showAllVessels: boolean;
+    showVesselNames: boolean;
+  }
 }>()
 
 const emit = defineEmits(['update:mouse-coords', 'seek-vessel', 'select-vessel'])
@@ -218,10 +225,12 @@ const renderMarker = (vessel: VesselTrajectory) => {
 
   // interactive: true para permitir clics
   const marker = L.marker([current.lat, current.lon], { icon, interactive: true }).addTo(markersLayer)
+  
+  const showNames = props.activeLayers.showVesselNames
   marker.bindTooltip(vessel.name, {
-    permanent: false,
+    permanent: showNames,
     direction: 'top',
-    className: 'vessel-tooltip'
+    className: `vessel-tooltip ${showNames ? 'pointer-events-none' : ''}`
   })
 
   marker.on('click', () => {
@@ -334,6 +343,7 @@ watch(() => props.activeLayers.veda, () => loadGeoJson('veda'))
 watch(() => props.activeLayers.vieira, () => loadGeoJson('vieira'))
 watch(() => props.activeLayers.centolla, () => loadGeoJson('centolla'))
 watch(() => props.activeLayers.showAllVessels, updateAll)
+watch(() => props.activeLayers.showVesselNames, updateAll)
 
 const fitVesselBounds = (vesselId: string) => {
   if (!map) return

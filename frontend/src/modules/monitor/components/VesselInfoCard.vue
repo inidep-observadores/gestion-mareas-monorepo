@@ -65,16 +65,17 @@
         </div>
       </div>
 
-      <!-- Visibility Layers -->
       <div v-if="layers" class="flex flex-col gap-1.5 pt-2 border-t border-border/10">
-        <div v-for="(val, key) in layers" :key="key" class="flex items-center justify-between group/layer">
-          <span class="font-bold text-text-muted/80 group-hover/layer:text-text transition-colors capitalize tracking-tighter text-[11px]">{{ layerLabels[key] || key }}</span>
-          <BaseSwitch
-            :modelValue="val"
-            @update:modelValue="$emit('update:layer', key, $event)"
-            class="scale-90 origin-right"
-          />
-        </div>
+        <template v-for="(val, key) in layers" :key="key">
+          <div v-if="shouldShowLayer(key)" class="flex items-center justify-between group/layer">
+            <span class="font-bold text-text-muted/80 group-hover/layer:text-text transition-colors tracking-tighter text-[11px]">{{ layerLabels[key] || key }}</span>
+            <BaseSwitch
+              :modelValue="val"
+              @update:modelValue="$emit('update:layer', key, $event)"
+              class="scale-90 origin-right"
+            />
+          </div>
+        </template>
       </div>
     </div>
   </HudCard>
@@ -94,6 +95,7 @@ const props = defineProps<{
   course: number
   lastUpdate?: string | Date | null
   layers?: Record<string, boolean>
+  isSingleMode?: boolean
 }>()
 
 defineEmits(['update:layer'])
@@ -101,11 +103,30 @@ defineEmits(['update:layer'])
 const isCollapsed = ref(false)
 
 const layerLabels: Record<string, string> = {
-  veda: 'Zonas de Veda',
-  vieira: 'Áreas de Vieira',
-  centolla: 'Áreas de Centolla',
-  points: 'Puntos de Reporte',
+  veda: 'Zonas de veda',
+  vieira: 'Áreas de vieira',
+  centolla: 'Áreas de centolla',
+  points: 'Puntos de reporte',
   showAllVessels: 'Todos los buques',
+  showVesselNames: 'Mostrar nombres',
+}
+
+const shouldShowLayer = (key: string) => {
+  // TODO: Habilitar 'points' en el futuro para análisis avanzado de datos.
+  // Por ahora se mantiene oculta por no tener una utilidad operativa inmediata.
+  if (key === 'points') {
+    return false
+  }
+
+  // En modo marea única, ocultamos los controles de flota global
+  if (props.isSingleMode && (key === 'showAllVessels' || key === 'showVesselNames')) {
+    return false
+  }
+
+  if (key === 'showVesselNames') {
+    return props.layers?.showAllVessels === true
+  }
+  return true
 }
 
 const formatCoordinate = (val: number, type: 'lat' | 'lon') => {

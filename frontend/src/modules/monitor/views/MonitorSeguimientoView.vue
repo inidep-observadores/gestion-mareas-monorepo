@@ -28,6 +28,7 @@
                   :position="{ lat: currentPoint?.lat || 0, lon: currentPoint?.lon || 0 }"
                   :timestamp="currentPoint?.timestamp?.toString() || ''" :speed="currentPoint?.speed || 0"
                   :course="currentPoint?.course || 0" :lastUpdate="activeVessel.lastUpdate" :layers="mapLayers"
+                  :isSingleMode="isSingleMareaMode"
                   @update:layer="handleLayerToggle" />
               </Transition>
             </div>
@@ -45,6 +46,7 @@
                   :position="{ lat: currentPoint?.lat || 0, lon: currentPoint?.lon || 0 }"
                   :timestamp="currentPoint?.timestamp?.toString() || ''" :speed="currentPoint?.speed || 0"
                   :course="currentPoint?.course || 0" :lastUpdate="activeVessel.lastUpdate" :layers="mapLayers"
+                  :isSingleMode="isSingleMareaMode"
                   @update:layer="handleLayerToggle" />
               </Transition>
             </div>
@@ -130,6 +132,7 @@ const mapLayers = ref({
   centolla: false,
   points: false,
   showAllVessels: true,
+  showVesselNames: false,
 })
 
 const route = useRoute()
@@ -458,6 +461,8 @@ const initializeMonitor = () => {
   if (mareaId) {
     leftSidebarOpen.value = false
     rightSidebarOpen.value = false
+    mapLayers.value.showAllVessels = false
+    mapLayers.value.showVesselNames = false
     fetchSingleMarea(mareaId)
   } else {
     leftSidebarOpen.value = true
