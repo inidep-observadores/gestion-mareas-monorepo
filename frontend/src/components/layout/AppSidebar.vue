@@ -204,7 +204,7 @@ const navigationGroups = computed(() => {
           icon: CalenderIcon,
           name: 'Calendario',
           to: { name: 'MareasCalendar' },
-          show: true,
+          show: false,  //Lo dejamos desactivado hasta que le encontremos una buena utilidad
         },
         {
           icon: BarChartIcon,

@@ -3,7 +3,7 @@
     title="Centro de Comando"
     description="Panel General Operativo: Gestión por excepción y monitoreo de flota en tiempo real."
   >
-    <template #extra-header>
+    <!-- <template #extra-header>
       <div class="flex items-center gap-4">
         <router-link
           to="/mareas/calendar"
@@ -13,10 +13,10 @@
           <span class="text-xs font-bold text-text">Calendario Logístico</span>
         </router-link>
       </div>
-    </template>
+    </template> -->
 
     <div class="relative min-h-[calc(100vh-120px)] z-1 pb-10 mt-6 md:mt-0">
-      
+
       <!-- ROW 1: THE PULSE OF THE MOMENT (KPIs) -->
       <div class="mb-8">
         <ActionKpis />
