@@ -27,14 +27,16 @@
         <!-- ALERT CENTER (Left) -->
         <div class="col-span-12 lg:col-span-6 xl:col-span-5 flex flex-col gap-8">
           <AlertTrafficLight :show-actions="false" />
-          <WorkforceOverview :data="workforceData" />
+          <div class="flex flex-col gap-2">
+            <WorkforceOverview :data="workforceData" />
+            <TopDryTime :topDry="workforceData?.topDry || []" />
+          </div>
         </div>
 
         <!-- PANELS DERECHA (Right) -->
         <div class="col-span-12 lg:col-span-6 xl:col-span-7 flex flex-col gap-8">
           <ExpiringMareas />
           <FleetDistributionByFishery />
-          <TopDryTime :topDry="workforceData?.topDry || []" />
         </div>
       </div>
     </div>
