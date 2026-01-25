@@ -1,0 +1,13 @@
+{
+  "filename": "BKP-2026-01-24T13-18-13.sql",
+  "comment": "",
+  "createdAt": "2026-01-24T13:18:15.537Z",
+  "systemInfo": {
+    "dbName": "MareasDB",
+    "backupPath": "./backups"
+  },
+  "security": {
+    "sqlHash": "8c9e7c1868eba14d785fd6314d761e57f40d9eb67507e41fca7f085e33be1324",
+    "signature": "5375e4d68ca7edb4e0691e1781cce53fd492987c58c5c7bef9359edb2d42f0c0"
+  }
+}

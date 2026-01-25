@@ -1,0 +1,9 @@
+{
+  "filename": "BKP-2026-01-13T17-24-29.sql",
+  "comment": "Backup desde Producción",
+  "createdAt": "2026-01-13T17:24:29.860Z",
+  "systemInfo": {
+    "dbName": "mareas_db",
+    "backupPath": "./backups"
+  }
+}

@@ -4,8 +4,8 @@
   "private": true,
   "packageManager": "pnpm@10.26.2",
   "workspaces": [
-    "backend",
-    "frontend"
+    "app/backend",
+    "app/frontend"
   ],
   "scripts": {
     "dev:backend": "pnpm --filter sigma-backend start:dev",

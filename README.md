@@ -6,8 +6,8 @@ Este es el repositorio principal para el proyecto Mareas, que contiene tanto el 
 
 Este monorepo está organizado en dos partes principales:
 
-- **`backend/`**: Una API de NestJS que gestiona los datos, la autenticación y la lógica de negocio.
-- **`frontend/`**: Una aplicación de Vue.js que proporciona la interfaz de usuario.
+- **`app/backend/`**: Una API de NestJS que gestiona los datos, la autenticación y la lógica de negocio.
+- **`app/frontend/`**: Una aplicación de Vue.js que proporciona la interfaz de usuario.
 
 ## Tecnologías Utilizadas
 
@@ -79,7 +79,7 @@ Primero, configura y ejecuta el servidor de la API.
     La API estará disponible en `http://localhost:3000`.
 
 7. **(Opcional) Ejecuta el SEED:**
-    Para poblar la base de datos con datos de prueba ejecuta el seed que se define en `backend/prisma/seed.ts` usando el binario de Prisma:
+    Para poblar la base de datos con datos de prueba ejecuta el seed que se define en `app/backend/prisma/seed.ts` usando el binario de Prisma:
 
     ```bash
     cd backend

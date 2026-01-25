@@ -1,0 +1,9 @@
+{
+  "filename": "BKP-2026-01-18T16-17-39.sql",
+  "comment": "Observadores no identificados corregidos",
+  "createdAt": "2026-01-18T16:17:42.261Z",
+  "systemInfo": {
+    "dbName": "MareasDB",
+    "backupPath": "./backups"
+  }
+}
