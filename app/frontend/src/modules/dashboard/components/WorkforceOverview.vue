@@ -82,7 +82,7 @@
           </div>
         </div>
 
-        <div class="flex-grow overflow-y-auto no-scrollbar min-h-0">
+        <div class="flex-grow overflow-y-auto custom-scrollbar min-h-0 max-h-[400px]">
           <table class="w-full text-left border-collapse">
             <thead class="bg-surface sticky top-0 z-10 shadow-sm">
               <tr>

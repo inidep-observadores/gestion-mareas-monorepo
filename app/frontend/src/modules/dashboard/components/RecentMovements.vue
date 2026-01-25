@@ -55,83 +55,87 @@
         <p class="text-xs font-bold text-text-muted uppercase tracking-widest">Sin movimientos recientes</p>
       </div>
 
-      <div v-else class="overflow-y-auto max-h-[400px] custom-scrollbar">
-        <table class="w-full text-left border-collapse">
-          <thead class="bg-surface sticky top-0 z-10 shadow-sm">
-            <tr>
-              <th class="px-6 py-3 text-[10px] font-black uppercase text-text-muted tracking-wider w-[20%]">
-                Buque
-              </th>
-              <th class="px-4 py-3 text-[10px] font-black uppercase text-text-muted tracking-wider w-[15%]">
-                Evento
-              </th>
-              <th class="px-4 py-3 text-[10px] font-black uppercase text-text-muted tracking-wider w-[15%]">
-                Fecha / Puerto
-              </th>
-              <th class="px-4 py-3 text-[10px] font-black uppercase text-text-muted tracking-wider w-[20%]">
-                Marea
-              </th>
-              <th class="px-4 py-3 text-[10px] font-black uppercase text-text-muted tracking-wider w-[30%]">
-                Observador
-              </th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-border bg-surface">
-            <tr
-              v-for="mov in movements"
-              :key="mov.id"
-              class="hover:bg-surface-muted/50 transition-colors"
-            >
-              <!-- Col 1: Buque -->
-              <td class="px-6 py-4 align-middle">
-                <div class="font-bold text-text text-xs leading-tight">
-                  {{ mov.buque }}
-                </div>
-              </td>
-
-              <!-- Col 2: Evento (Nombre) -->
-              <td class="px-4 py-4 align-middle">
-                <span
-                  class="text-[10px] font-bold uppercase"
-                  :class="mov.tipo === 'ZARPADA' ? 'text-blue-500' : 'text-emerald-500'"
+      <div class="px-6 pb-6">
+        <div class="rounded-2xl border border-border overflow-hidden bg-surface">
+          <div class="overflow-y-auto max-h-[400px] custom-scrollbar">
+            <table class="w-full text-left border-collapse">
+              <thead class="bg-surface sticky top-0 z-10 shadow-sm border-b border-border">
+                <tr>
+                  <th class="px-6 py-3 text-[10px] font-black uppercase text-text-muted tracking-wider w-[20%]">
+                    Buque
+                  </th>
+                  <th class="px-4 py-3 text-[10px] font-black uppercase text-text-muted tracking-wider w-[15%]">
+                    Evento
+                  </th>
+                  <th class="px-4 py-3 text-[10px] font-black uppercase text-text-muted tracking-wider w-[15%]">
+                    Fecha / Puerto
+                  </th>
+                  <th class="px-4 py-3 text-[10px] font-black uppercase text-text-muted tracking-wider w-[20%]">
+                    Marea
+                  </th>
+                  <th class="px-4 py-3 text-[10px] font-black uppercase text-text-muted tracking-wider w-[30%]">
+                    Observador
+                  </th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-border bg-surface">
+                <tr
+                  v-for="mov in movements"
+                  :key="mov.id"
+                  class="hover:bg-surface-muted/50 transition-colors"
                 >
-                  {{ mov.tipo }}
-                </span>
-              </td>
+                  <!-- Col 1: Buque -->
+                  <td class="px-6 py-4 align-middle">
+                    <div class="font-bold text-text text-xs leading-tight">
+                      {{ mov.buque }}
+                    </div>
+                  </td>
 
-              <!-- Col 3: Fecha / Puerto -->
-              <td class="px-4 py-4 align-middle">
-                 <div class="flex flex-col gap-0.5">
-                    <span class="text-[11px] font-bold text-text tabular-nums">
-                      {{ formatDate(mov.fecha) }}
+                  <!-- Col 2: Evento (Nombre) -->
+                  <td class="px-4 py-4 align-middle">
+                    <span
+                      class="text-[10px] font-bold uppercase"
+                      :class="mov.tipo === 'ZARPADA' ? 'text-blue-500' : 'text-emerald-500'"
+                    >
+                      {{ mov.tipo }}
                     </span>
-                    <span class="text-[10px] font-medium text-text-muted/70 truncate max-w-[120px]" :title="mov.puerto">
-                      {{ mov.puerto }}
-                    </span>
-                 </div>
-              </td>
+                  </td>
 
-              <!-- Col 4: Marea (Code + Badge Etapa) -->
-              <td class="px-4 py-4 align-middle">
-                <div class="flex flex-col gap-1">
-                  <span class="text-[11px] font-bold text-text-muted tabular-nums">
-                    {{ mov.marea }}
-                  </span>
-                  <span class="px-2 py-0.5 bg-surface-muted text-text-muted rounded-full text-[9px] font-black uppercase tracking-tighter border border-border w-fit">
-                    Etapa {{ mov.etapa }}
-                  </span>
-                </div>
-              </td>
+                  <!-- Col 3: Fecha / Puerto -->
+                  <td class="px-4 py-4 align-middle">
+                    <div class="flex flex-col gap-0.5">
+                        <span class="text-[11px] font-bold text-text tabular-nums">
+                          {{ formatDate(mov.fecha) }}
+                        </span>
+                        <span class="text-[10px] font-medium text-text-muted/70 truncate max-w-[120px]" :title="mov.puerto">
+                          {{ mov.puerto }}
+                        </span>
+                    </div>
+                  </td>
 
-              <!-- Col 5: Observador -->
-              <td class="px-4 py-4 align-middle">
-                <div class="text-xs font-bold text-text">
-                  {{ mov.observador }}
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+                  <!-- Col 4: Marea (Code + Badge Etapa) -->
+                  <td class="px-4 py-4 align-middle">
+                    <div class="flex flex-col gap-1">
+                      <span class="text-[11px] font-bold text-text-muted tabular-nums">
+                        {{ mov.marea }}
+                      </span>
+                      <span class="px-2 py-0.5 bg-surface-muted text-text-muted rounded-full text-[9px] font-black uppercase tracking-tighter border border-border w-fit">
+                        Etapa {{ mov.etapa }}
+                      </span>
+                    </div>
+                  </td>
+
+                  <!-- Col 5: Observador -->
+                  <td class="px-4 py-4 align-middle">
+                    <div class="text-xs font-bold text-text">
+                      {{ mov.observador }}
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </div>
   </div>
