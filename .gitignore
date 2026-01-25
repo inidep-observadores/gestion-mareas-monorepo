@@ -32,19 +32,19 @@ lerna-debug.log\*
 
 # **\=========================**
 
-backend/dist/
+app/backend/dist/
 
-backend/postgres/
-backend/backups/
-backend/data-exports/
-backend/uploads/
-backend/test-results/
+app/backend/postgres/
+app/backend/backups/
+app/backend/data-exports/
+app/backend/uploads/
+app/backend/test-results/
 
 # **Prisma**
 
-backend/generated/prisma/  
-backend/prisma/.db  
-backend/prisma/.db-journal
+app/backend/generated/prisma/  
+app/backend/prisma/.db  
+app/backend/prisma/.db-journal
 
 # **\=========================**
 
@@ -61,11 +61,11 @@ frontend/\*.tsbuildinfo
 
 # **Testing & Linting**
 
-frontend/.eslintcache  
-frontend/cypress/videos/  
-frontend/cypress/screenshots/  
-frontend/screenshots/  
-frontend/coverage/
+app/frontend/.eslintcache  
+app/frontend/cypress/videos/  
+app/frontend/cypress/screenshots/  
+app/frontend/screenshots/  
+app/frontend/coverage/
 
 # **\=========================**
 
