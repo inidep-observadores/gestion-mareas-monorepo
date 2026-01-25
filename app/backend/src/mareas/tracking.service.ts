@@ -110,6 +110,7 @@ export class TrackingService {
 
         let newPointsCount = 0;
         let updatedShipsCount = 0;
+        let alertsCount = 0;
         const buquesCache = new Map<string, string>();
         const pointsByShip: Record<string, any[]> = {};
         const errors: { vessel: string, reason: string }[] = [];
@@ -130,7 +131,7 @@ export class TrackingService {
 
         for (const record of records) {
             const buqueName = record['Buque']?.toUpperCase();
-            if (!buqueName) continue;
+            if (!buqueName) continue; // Skip silently if no vessel name
             if (!pointsByShip[buqueName]) pointsByShip[buqueName] = [];
             pointsByShip[buqueName].push(record);
         }
@@ -200,9 +201,8 @@ export class TrackingService {
                         buqueId = buqueFound.id;
                         buquesCache.set(buqueName, buqueFound.id);
                     } else {
-                        const reason = `Buque no encontrado: ${buqueName} (Matrícula: ${matricula || 'N/A'})`;
-                        this.logger.warn(reason);
-                        errors.push({ vessel: buqueName, reason: 'Buque no encontrado en base de datos' });
+                        // Buque no encontrado - ignorar silenciosamente (es normal que no todos estén en la DB)
+                        this.logger.debug(`Buque no encontrado en DB, ignorando: ${buqueName} (Matrícula: ${matricula || 'N/A'})`);
                         continue;
                     }
                 }
@@ -243,7 +243,8 @@ export class TrackingService {
                     newPointsCount += result.count;
 
                     // Run analysis on this new batch
-                    await this.detectPortEvents(buqueId, pointsToInsert);
+                    const detectedAlerts = await this.detectPortEvents(buqueId, pointsToInsert);
+                    alertsCount += detectedAlerts;
 
                     // Solo analizar GAPs si tiene marea activa (mismo criterio que movimientos de puerto)
                     const mareaActiva = await this.prisma.marea.findFirst({
@@ -268,6 +269,7 @@ export class TrackingService {
             processed: records.length,
             inserted: newPointsCount,
             updated: updatedShipsCount,
+            alerts: alertsCount,
             errors: errors
         };
     }
@@ -282,7 +284,8 @@ export class TrackingService {
                 etapas: {
                     orderBy: { nroEtapa: 'asc' }
                 },
-                observadorPrincipal: true
+                observadorPrincipal: true,
+                estadoActual: true
             }
         });
 
@@ -298,7 +301,11 @@ export class TrackingService {
 
         let voyageEnd: Date | null = null;
         const lastStage = marea.etapas[marea.etapas.length - 1];
-        if (lastStage && lastStage.fechaArribo) {
+        const isActiveMarea = marea.estadoActual.codigo === 'EN_EJECUCION' || marea.estadoActual.codigo === 'DESIGNADA';
+
+        if (isActiveMarea) {
+            voyageEnd = new Date(); // Always show all points up to now for active mareas
+        } else if (lastStage && lastStage.fechaArribo) {
             voyageEnd = lastStage.fechaArribo;
         } else {
             voyageEnd = new Date();
@@ -368,10 +375,14 @@ export class TrackingService {
                 voyageStart = marea.fechaZarpadaEstimada || marea.fechaInicioObservador;
             }
 
-            // End: Last stage arrival or Now
+            // End: Last stage arrival or Now (for active mareas, always use Now)
             let voyageEnd: Date | null = null;
             const lastStage = marea.etapas[marea.etapas.length - 1];
-            if (lastStage && lastStage.fechaArribo) {
+            const isActiveMarea = marea.estadoActual.codigo === 'EN_EJECUCION' || marea.estadoActual.codigo === 'DESIGNADA';
+
+            if (isActiveMarea) {
+                voyageEnd = new Date(); // Always show all points up to now for active mareas
+            } else if (lastStage && lastStage.fechaArribo) {
                 voyageEnd = lastStage.fechaArribo;
             } else {
                 voyageEnd = new Date();
@@ -477,16 +488,17 @@ export class TrackingService {
         });
 
         if (mareasActivas.length === 0) {
-            return;
+            return 0;
         }
 
         const ports = await this.prisma.puerto.findMany({
             where: { activo: true, latitud: { not: null }, longitud: { not: null } }
         });
         if (ports.length === 0) {
-            return;
+            return 0;
         }
 
+        let alertsCreated = 0;
 
         // Sort chronological
         points.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
@@ -505,12 +517,16 @@ export class TrackingService {
             const currentState = this.checkPortStatus(p.lat, p.lon, ports);
 
             if (lastState.inPort && !currentState.inPort) {
-                await this.handleProcessedEvent(buqueId, 'ZARPADA', lastState.portId!, p.timestamp, mareasActivas, ports);
+                const created = await this.handleProcessedEvent(buqueId, 'ZARPADA', lastState.portId!, p.timestamp, mareasActivas, ports);
+                if (created) alertsCreated++;
             } else if (!lastState.inPort && currentState.inPort) {
-                await this.handleProcessedEvent(buqueId, 'ARRIBO', currentState.portId!, p.timestamp, mareasActivas, ports);
+                const created = await this.handleProcessedEvent(buqueId, 'ARRIBO', currentState.portId!, p.timestamp, mareasActivas, ports);
+                if (created) alertsCreated++;
             }
             lastState = currentState;
         }
+
+        return alertsCreated;
     }
 
     private async handleProcessedEvent(buqueId: string, type: 'ZARPADA' | 'ARRIBO', portId: string, date: Date, mareas: any[], ports: any[]) {
@@ -524,7 +540,7 @@ export class TrackingService {
         const hash = crypto.createHash('md5').update(hashContent).digest('hex');
         const snapshot = await (this.prisma as any).trackingEventSnapshot.findUnique({ where: { hash } });
         if (snapshot) {
-            return;
+            return false;
         }
 
         // 2) Iterar sobre las mareas para encontrar la correcta (SHORT-CIRCUIT)
@@ -539,10 +555,9 @@ export class TrackingService {
             if (stageMatch) {
                 const matchedPortId = type === 'ZARPADA' ? stageMatch.puertoZarpadaId : stageMatch.puertoArriboId;
                 if (matchedPortId === portId) {
-                    return;
+                    return false;
                 } else {
-                    await this.createDiscrepancyAlert(buqueId, type, port, date, marea, stageMatch, ports, hash);
-                    return;
+                    return await this.createDiscrepancyAlert(buqueId, type, port, date, marea, stageMatch, ports, hash);
                 }
             }
         }
@@ -574,6 +589,11 @@ export class TrackingService {
             metadata.externalData = { fechaZarpada: date, puertoZarpadaId: portId };
         } else {
             // ARRIBO: Buscar etapa abierta
+            // Si la marea está DESIGNADA, no generamos alertas de arribo (regla de negocio)
+            if (mareaTarget.estadoActual.codigo === 'DESIGNADA') {
+                return false;
+            }
+
             const lastStageOpen = [...mareaTarget.etapas].sort((a, b) => b.nroEtapa - a.nroEtapa).find(e => !e.fechaArribo);
 
             // VALIDACIÓN: El arribo detectado debe ser posterior a la zarpada registrada
@@ -598,9 +618,13 @@ export class TrackingService {
             const alertTitle = `${buqueNombre}: Posible ${tipoMov} ${prep} ${port?.nombre} el ${dateStr} (${mareaLabel})`;
 
 
-            await this.createAlert(buqueId, alertType, alertTitle, date, metadata, mareaTarget.id, 'MAREA', `${alertTitle}\n\nOrigen: Datos de monitoreo satelital.`);
-            await this.saveSnapshot(buqueId, type, date, portId, hash);
+            const created = await this.createAlert(buqueId, alertType, alertTitle, date, metadata, mareaTarget.id, 'MAREA', `${alertTitle}\n\nOrigen: Datos de monitoreo satelital.`);
+            if (created) {
+                await this.saveSnapshot(buqueId, type, date, portId, hash);
+                return true;
+            }
         }
+        return false;
     }
 
     private async createDiscrepancyAlert(buqueId: string, type: 'ZARPADA' | 'ARRIBO', port: any, date: Date, marea: any, stageMatch: any, ports: any[], hash: string) {
@@ -639,8 +663,12 @@ export class TrackingService {
 
         const descripcion = `${alertTitle}\n\nOrigen: Datos de monitoreo satelital.\nDetalle: Puerto real detectado ${port?.nombre} vs registrado ${puertoLocal}`;
 
-        await this.createAlert(buqueId, 'ERROR_REGISTRO_PUERTO', alertTitle, date, metadata, marea.id, 'MAREA', descripcion);
-        await this.saveSnapshot(buqueId, type, date, port.id, hash);
+        const created = await this.createAlert(buqueId, 'ERROR_REGISTRO_PUERTO', alertTitle, date, metadata, marea.id, 'MAREA', descripcion);
+        if (created) {
+            await this.saveSnapshot(buqueId, type, date, port.id, hash);
+            return true;
+        }
+        return false;
     }
 
     private async saveSnapshot(buqueId: string, eventType: string, timestamp: Date, puertoId: string, hash: string) {
@@ -693,10 +721,10 @@ export class TrackingService {
         }
     }
 
-    private async createAlert(buqueId: string, type: string, titulo: string, date: Date, meta: any = {}, refId?: string, refTipo?: string, descripcion?: string) {
+    private async createAlert(buqueId: string, type: string, titulo: string, date: Date, meta: any = {}, refId?: string, refTipo?: string, descripcion?: string): Promise<boolean> {
         const code = `${type}_${buqueId}_${date.getTime()}`;
         const exists = await this.prisma.alerta.findFirst({ where: { codigoUnico: code } });
-        if (exists) return;
+        if (exists) return false;
 
         await this.prisma.alerta.create({
             data: {
@@ -713,5 +741,6 @@ export class TrackingService {
                 visible: true
             } as any
         });
+        return true;
     }
 }

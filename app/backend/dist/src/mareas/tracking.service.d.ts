@@ -17,6 +17,7 @@ export declare class TrackingService {
         processed: number;
         inserted: number;
         updated: number;
+        alerts: number;
         errors: {
             vessel: string;
             reason: string;
@@ -39,12 +40,12 @@ export declare class TrackingService {
             observaciones: string | null;
             pesqueriaId: string | null;
             nroEtapa: number;
+            mareaId: string;
             puertoZarpadaId: string | null;
             puertoArriboId: string | null;
             fechaZarpada: Date | null;
             fechaArribo: Date | null;
             tipoEtapa: import("@prisma/client").$Enums.TipoEtapa;
-            mareaId: string;
         }[];
     }>;
     getLatestFleetPositions(): Promise<any[]>;

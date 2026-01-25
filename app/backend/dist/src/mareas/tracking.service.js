@@ -82,6 +82,7 @@ let TrackingService = TrackingService_1 = class TrackingService {
         });
         let newPointsCount = 0;
         let updatedShipsCount = 0;
+        let alertsCount = 0;
         const buquesCache = new Map();
         const pointsByShip = {};
         const errors = [];
@@ -156,9 +157,7 @@ let TrackingService = TrackingService_1 = class TrackingService {
                         buquesCache.set(buqueName, buqueFound.id);
                     }
                     else {
-                        const reason = `Buque no encontrado: ${buqueName} (Matrícula: ${matricula || 'N/A'})`;
-                        this.logger.warn(reason);
-                        errors.push({ vessel: buqueName, reason: 'Buque no encontrado en base de datos' });
+                        this.logger.debug(`Buque no encontrado en DB, ignorando: ${buqueName} (Matrícula: ${matricula || 'N/A'})`);
                         continue;
                     }
                 }
@@ -191,7 +190,8 @@ let TrackingService = TrackingService_1 = class TrackingService {
                         skipDuplicates: true,
                     });
                     newPointsCount += result.count;
-                    await this.detectPortEvents(buqueId, pointsToInsert);
+                    const detectedAlerts = await this.detectPortEvents(buqueId, pointsToInsert);
+                    alertsCount += detectedAlerts;
                     const mareaActiva = await this.prisma.marea.findFirst({
                         where: {
                             buqueId,
@@ -213,6 +213,7 @@ let TrackingService = TrackingService_1 = class TrackingService {
             processed: records.length,
             inserted: newPointsCount,
             updated: updatedShipsCount,
+            alerts: alertsCount,
             errors: errors
         };
     }
@@ -224,7 +225,8 @@ let TrackingService = TrackingService_1 = class TrackingService {
                 etapas: {
                     orderBy: { nroEtapa: 'asc' }
                 },
-                observadorPrincipal: true
+                observadorPrincipal: true,
+                estadoActual: true
             }
         });
         if (!marea)
@@ -238,7 +240,11 @@ let TrackingService = TrackingService_1 = class TrackingService {
         }
         let voyageEnd = null;
         const lastStage = marea.etapas[marea.etapas.length - 1];
-        if (lastStage && lastStage.fechaArribo) {
+        const isActiveMarea = marea.estadoActual.codigo === 'EN_EJECUCION' || marea.estadoActual.codigo === 'DESIGNADA';
+        if (isActiveMarea) {
+            voyageEnd = new Date();
+        }
+        else if (lastStage && lastStage.fechaArribo) {
             voyageEnd = lastStage.fechaArribo;
         }
         else {
@@ -301,7 +307,11 @@ let TrackingService = TrackingService_1 = class TrackingService {
             }
             let voyageEnd = null;
             const lastStage = marea.etapas[marea.etapas.length - 1];
-            if (lastStage && lastStage.fechaArribo) {
+            const isActiveMarea = marea.estadoActual.codigo === 'EN_EJECUCION' || marea.estadoActual.codigo === 'DESIGNADA';
+            if (isActiveMarea) {
+                voyageEnd = new Date();
+            }
+            else if (lastStage && lastStage.fechaArribo) {
                 voyageEnd = lastStage.fechaArribo;
             }
             else {
@@ -393,14 +403,15 @@ let TrackingService = TrackingService_1 = class TrackingService {
             }
         });
         if (mareasActivas.length === 0) {
-            return;
+            return 0;
         }
         const ports = await this.prisma.puerto.findMany({
             where: { activo: true, latitud: { not: null }, longitud: { not: null } }
         });
         if (ports.length === 0) {
-            return;
+            return 0;
         }
+        let alertsCreated = 0;
         points.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
         let lastState = { inPort: false, portId: null };
         const prev = await this.prisma.buqueTrayectoriaPunto.findFirst({
@@ -413,13 +424,18 @@ let TrackingService = TrackingService_1 = class TrackingService {
         for (const p of points) {
             const currentState = this.checkPortStatus(p.lat, p.lon, ports);
             if (lastState.inPort && !currentState.inPort) {
-                await this.handleProcessedEvent(buqueId, 'ZARPADA', lastState.portId, p.timestamp, mareasActivas, ports);
+                const created = await this.handleProcessedEvent(buqueId, 'ZARPADA', lastState.portId, p.timestamp, mareasActivas, ports);
+                if (created)
+                    alertsCreated++;
             }
             else if (!lastState.inPort && currentState.inPort) {
-                await this.handleProcessedEvent(buqueId, 'ARRIBO', currentState.portId, p.timestamp, mareasActivas, ports);
+                const created = await this.handleProcessedEvent(buqueId, 'ARRIBO', currentState.portId, p.timestamp, mareasActivas, ports);
+                if (created)
+                    alertsCreated++;
             }
             lastState = currentState;
         }
+        return alertsCreated;
     }
     async handleProcessedEvent(buqueId, type, portId, date, mareas, ports) {
         const port = ports.find(x => x.id === portId);
@@ -429,7 +445,7 @@ let TrackingService = TrackingService_1 = class TrackingService {
         const hash = crypto.createHash('md5').update(hashContent).digest('hex');
         const snapshot = await this.prisma.trackingEventSnapshot.findUnique({ where: { hash } });
         if (snapshot) {
-            return;
+            return false;
         }
         for (const marea of mareas) {
             const stageMatch = marea.etapas.find(e => {
@@ -442,11 +458,10 @@ let TrackingService = TrackingService_1 = class TrackingService {
             if (stageMatch) {
                 const matchedPortId = type === 'ZARPADA' ? stageMatch.puertoZarpadaId : stageMatch.puertoArriboId;
                 if (matchedPortId === portId) {
-                    return;
+                    return false;
                 }
                 else {
-                    await this.createDiscrepancyAlert(buqueId, type, port, date, marea, stageMatch, ports, hash);
-                    return;
+                    return await this.createDiscrepancyAlert(buqueId, type, port, date, marea, stageMatch, ports, hash);
                 }
             }
         }
@@ -473,6 +488,9 @@ let TrackingService = TrackingService_1 = class TrackingService {
             metadata.externalData = { fechaZarpada: date, puertoZarpadaId: portId };
         }
         else {
+            if (mareaTarget.estadoActual.codigo === 'DESIGNADA') {
+                return false;
+            }
             const lastStageOpen = [...mareaTarget.etapas].sort((a, b) => b.nroEtapa - a.nroEtapa).find(e => !e.fechaArribo);
             if (lastStageOpen && new Date(date) > new Date(lastStageOpen.fechaZarpada)) {
                 alertType = 'POSIBLE_ARRIBO';
@@ -493,9 +511,13 @@ let TrackingService = TrackingService_1 = class TrackingService {
             const tipoMov = type === 'ZARPADA' ? 'zarpada' : 'arribo';
             const prep = type === 'ZARPADA' ? 'desde' : 'a';
             const alertTitle = `${buqueNombre}: Posible ${tipoMov} ${prep} ${port?.nombre} el ${dateStr} (${mareaLabel})`;
-            await this.createAlert(buqueId, alertType, alertTitle, date, metadata, mareaTarget.id, 'MAREA', `${alertTitle}\n\nOrigen: Datos de monitoreo satelital.`);
-            await this.saveSnapshot(buqueId, type, date, portId, hash);
+            const created = await this.createAlert(buqueId, alertType, alertTitle, date, metadata, mareaTarget.id, 'MAREA', `${alertTitle}\n\nOrigen: Datos de monitoreo satelital.`);
+            if (created) {
+                await this.saveSnapshot(buqueId, type, date, portId, hash);
+                return true;
+            }
         }
+        return false;
     }
     async createDiscrepancyAlert(buqueId, type, port, date, marea, stageMatch, ports, hash) {
         const eventDate = luxon_1.DateTime.fromJSDate(date).setZone(this.TIMEZONE);
@@ -529,8 +551,12 @@ let TrackingService = TrackingService_1 = class TrackingService {
             }
         };
         const descripcion = `${alertTitle}\n\nOrigen: Datos de monitoreo satelital.\nDetalle: Puerto real detectado ${port?.nombre} vs registrado ${puertoLocal}`;
-        await this.createAlert(buqueId, 'ERROR_REGISTRO_PUERTO', alertTitle, date, metadata, marea.id, 'MAREA', descripcion);
-        await this.saveSnapshot(buqueId, type, date, port.id, hash);
+        const created = await this.createAlert(buqueId, 'ERROR_REGISTRO_PUERTO', alertTitle, date, metadata, marea.id, 'MAREA', descripcion);
+        if (created) {
+            await this.saveSnapshot(buqueId, type, date, port.id, hash);
+            return true;
+        }
+        return false;
     }
     async saveSnapshot(buqueId, eventType, timestamp, puertoId, hash) {
         await this.prisma.trackingEventSnapshot.create({
@@ -565,7 +591,7 @@ let TrackingService = TrackingService_1 = class TrackingService {
         const code = `${type}_${buqueId}_${date.getTime()}`;
         const exists = await this.prisma.alerta.findFirst({ where: { codigoUnico: code } });
         if (exists)
-            return;
+            return false;
         await this.prisma.alerta.create({
             data: {
                 codigoUnico: code,
@@ -581,6 +607,7 @@ let TrackingService = TrackingService_1 = class TrackingService {
                 visible: true
             }
         });
+        return true;
     }
 };
 exports.TrackingService = TrackingService;

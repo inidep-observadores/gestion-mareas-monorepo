@@ -66,10 +66,12 @@
                 <div class="flex flex-wrap gap-2 text-[9px] font-bold uppercase tracking-wide text-text-muted/80">
                   <span class="text-primary">Procesados: {{ f.results.processed }}</span>
                   <span class="text-success">Insertados: {{ f.results.inserted }}</span>
-                  <span v-if="f.results.updated > 0" class="text-warning">Matrículas Corregidas: {{ f.results.updated
-                  }}</span>
-                </div>
-              </div>
+                  <span v-if="f.results.alerts > 0" class="text-info">Alertas: {{ f.results.alerts }}</span>
+                   <span v-if="f.results.updated > 0" class="text-warning">Matrículas Corregidas: {{ f.results.updated
+                   }}</span>
+                   <span v-if="f.results.errors.length > 0" class="text-error">Buques con Error: {{ f.results.errors.length }}</span>
+                 </div>
+               </div>
 
               <!-- Error List removed as per user request to avoid clutter -->
             </div>
@@ -135,6 +137,7 @@ interface ImportResult {
   processed: number
   inserted: number
   updated: number
+  alerts: number
   errors: { vessel: string, reason: string }[]
 }
 
