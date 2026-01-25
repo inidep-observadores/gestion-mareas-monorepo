@@ -544,6 +544,90 @@ export class MareasService {
         };
     }
 
+    async getRecentMovements(days: number) {
+        // Asegurar que days sea válido (por defecto 7)
+        const daysToLookBack = days || 7;
+        const now = new Date();
+        const limitDate = new Date();
+        limitDate.setDate(now.getDate() - daysToLookBack);
+        // Reset a inicio del dia
+        limitDate.setHours(0, 0, 0, 0);
+
+        // Buscar etapas con fecha de zarpada o arribo dentro del rango
+        const etapas = await this.prisma.mareaEtapa.findMany({
+            where: {
+                OR: [
+                    {
+                        fechaZarpada: {
+                            gte: limitDate
+                        }
+                    },
+                    {
+                        fechaArribo: {
+                            gte: limitDate
+                        }
+                    }
+                ]
+            },
+            include: {
+                marea: {
+                    include: {
+                        buque: true,
+                        observadorPrincipal: true
+                    }
+                },
+                puertoZarpada: true,
+                puertoArribo: true,
+                observadores: {
+                    where: { rol: 'PRINCIPAL' },
+                    include: { observador: true }
+                }
+            }
+        });
+
+        // Procesar y aplanar los eventos
+        const events: any[] = [];
+
+        for (const etapa of etapas) {
+            const marea = etapa.marea;
+            const primaryObs = marea.observadorPrincipal || etapa.observadores[0]?.observador;
+            const obsName = primaryObs ? `${primaryObs.apellido}, ${primaryObs.nombre}` : 'Sin Asignar';
+            const mareaCode = MareaUtils.formatCodigo(marea as any);
+            const buqueName = marea.buque.nombreBuque;
+
+            // Agregar evento ZARPADA si aplica
+            if (etapa.fechaZarpada && new Date(etapa.fechaZarpada) >= limitDate) {
+                events.push({
+                    id: `zar-${etapa.id}`,
+                    buque: buqueName,
+                    marea: mareaCode,
+                    observador: obsName,
+                    etapa: etapa.nroEtapa || 1,
+                    tipo: 'ZARPADA',
+                    fecha: etapa.fechaZarpada,
+                    puerto: (etapa as any).puertoZarpada?.nombre || 'N/D'
+                });
+            }
+
+            // Agregar evento ARRIBO si aplica
+            if (etapa.fechaArribo && new Date(etapa.fechaArribo) >= limitDate) {
+                events.push({
+                    id: `arr-${etapa.id}`,
+                    buque: buqueName,
+                    marea: mareaCode,
+                    observador: obsName,
+                    etapa: etapa.nroEtapa || 1,
+                    tipo: 'ARRIBO',
+                    fecha: etapa.fechaArribo,
+                    puerto: (etapa as any).puertoArribo?.nombre || 'N/D'
+                });
+            }
+        }
+
+        // Ordenar por fecha descendente (más reciente primero)
+        return events.sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
+    }
+
     async getCriticalDelays(year?: number) {
         const { mareaYearFilter } = this.buildMareaYearFilter(year);
         const now = new Date();

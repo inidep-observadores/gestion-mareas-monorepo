@@ -81,6 +81,11 @@ export class MareasController {
         return this.mareasService.search(q);
     }
 
+    @Get('movimientos-recientes')
+    getRecentMovements(@Query('days') days?: string) {
+        return this.mareasService.getRecentMovements(days ? Number(days) : 7);
+    }
+
     @Post('export/excel')
     async exportExcel(
         @Body() dto: ExportMareaDto,

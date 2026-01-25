@@ -23,43 +23,19 @@ export declare class MareasService {
             durationDays: number;
             pesqueria: {
                 id: string;
+                activo: boolean;
+                descripcion: string | null;
                 codigo: string;
                 nombre: string;
-                descripcion: string | null;
-                orden: number | null;
-                activo: boolean;
                 grupo: string | null;
+                orden: number | null;
             };
-            observadores: ({
-                observador: {
-                    id: string;
-                    nombre: string;
-                    activo: boolean;
-                    observaciones: string | null;
-                    email: string | null;
-                    codigoInterno: number;
-                    apellido: string;
-                    fotoUrl: string | null;
-                    tipoObservador: string;
-                    tipoContrato: string;
-                    disponible: boolean;
-                    conImpedimento: boolean;
-                    motivoImpedimento: string | null;
-                    fechaProximaDisponibilidad: Date | null;
-                };
-            } & {
-                id: string;
-                observadorId: string;
-                rol: string;
-                esDesignado: boolean;
-                etapaId: string;
-            })[];
             puertoArribo: {
                 id: string;
-                nombre: string;
-                orden: number | null;
                 activo: boolean;
                 observaciones: string | null;
+                nombre: string;
+                orden: number | null;
                 provincia: string | null;
                 pais: string | null;
                 codigoInterno: string | null;
@@ -70,10 +46,10 @@ export declare class MareasService {
             };
             puertoZarpada: {
                 id: string;
-                nombre: string;
-                orden: number | null;
                 activo: boolean;
                 observaciones: string | null;
+                nombre: string;
+                orden: number | null;
                 provincia: string | null;
                 pais: string | null;
                 codigoInterno: string | null;
@@ -82,25 +58,49 @@ export declare class MareasService {
                 latitud: number | null;
                 longitud: number | null;
             };
+            observadores: ({
+                observador: {
+                    id: string;
+                    activo: boolean;
+                    observaciones: string | null;
+                    nombre: string;
+                    codigoInterno: number;
+                    apellido: string;
+                    fotoUrl: string | null;
+                    tipoObservador: string;
+                    tipoContrato: string;
+                    disponible: boolean;
+                    fechaProximaDisponibilidad: Date | null;
+                    conImpedimento: boolean;
+                    email: string | null;
+                    motivoImpedimento: string | null;
+                };
+            } & {
+                id: string;
+                etapaId: string;
+                observadorId: string;
+                rol: string;
+                esDesignado: boolean;
+            })[];
             id: string;
             observaciones: string | null;
             pesqueriaId: string | null;
             nroEtapa: number;
+            mareaId: string;
             puertoZarpadaId: string | null;
             puertoArriboId: string | null;
             fechaZarpada: Date | null;
             fechaArribo: Date | null;
             tipoEtapa: import("@prisma/client").$Enums.TipoEtapa;
-            mareaId: string;
         }[];
         buque: {
             tipoFlota: {
                 id: string;
+                activo: boolean;
+                descripcion: string | null;
                 codigo: string;
                 nombre: string;
-                descripcion: string | null;
                 orden: number | null;
-                activo: boolean;
                 codigo_numerico: number;
             };
         } & {
@@ -131,70 +131,69 @@ export declare class MareasService {
         };
         estadoActual: {
             id: string;
+            activo: boolean;
+            descripcion: string | null;
             codigo: string;
             nombre: string;
-            descripcion: string | null;
-            categoria: string;
             orden: number;
+            categoria: string;
             esInicial: boolean;
             esFinal: boolean;
             permiteCargaArchivos: boolean;
             permiteCorreccion: boolean;
             permiteInforme: boolean;
-            activo: boolean;
             mostrarEnPanel: boolean;
         };
         observadorPrincipal: {
             id: string;
-            nombre: string;
             activo: boolean;
             observaciones: string | null;
-            email: string | null;
+            nombre: string;
             codigoInterno: number;
             apellido: string;
             fotoUrl: string | null;
             tipoObservador: string;
             tipoContrato: string;
             disponible: boolean;
-            conImpedimento: boolean;
-            motivoImpedimento: string | null;
             fechaProximaDisponibilidad: Date | null;
+            conImpedimento: boolean;
+            email: string | null;
+            motivoImpedimento: string | null;
         };
         pesqueria: {
             id: string;
+            activo: boolean;
+            descripcion: string | null;
             codigo: string;
             nombre: string;
-            descripcion: string | null;
-            orden: number | null;
-            activo: boolean;
             grupo: string | null;
+            orden: number | null;
         };
         archivos: ({
             movimientoOrigen: {
                 id: string;
                 mareaId: string;
                 fechaHora: Date;
-                tipoEvento: string;
-                detalle: string | null;
                 usuarioId: string | null;
+                tipoEvento: string;
                 estadoDesdeId: string | null;
                 estadoHastaId: string | null;
                 cantidadMuestrasOtolitos: number | null;
+                detalle: string | null;
                 comentarios: string | null;
             };
             usuarioSubio: {
                 id: string;
-                roles: string[];
                 email: string;
                 password: string;
                 fullName: string;
                 isActive: boolean;
+                roles: string[];
                 themePreference: string;
                 avatarUrl: string | null;
             };
         } & {
             id: string;
-            descripcion: string | null;
             mareaId: string;
             fechaSubida: Date;
             movimientoOrigenId: string | null;
@@ -203,62 +202,62 @@ export declare class MareasService {
             version: string | null;
             rutaArchivo: string;
             usuarioSubioId: string | null;
+            descripcion: string | null;
         })[];
         movimientos: ({
-            usuario: {
-                id: string;
-                roles: string[];
-                email: string;
-                password: string;
-                fullName: string;
-                isActive: boolean;
-                themePreference: string;
-                avatarUrl: string | null;
-            };
             estadoDesde: {
                 id: string;
+                activo: boolean;
+                descripcion: string | null;
                 codigo: string;
                 nombre: string;
-                descripcion: string | null;
-                categoria: string;
                 orden: number;
+                categoria: string;
                 esInicial: boolean;
                 esFinal: boolean;
                 permiteCargaArchivos: boolean;
                 permiteCorreccion: boolean;
                 permiteInforme: boolean;
-                activo: boolean;
                 mostrarEnPanel: boolean;
             };
             estadoHasta: {
                 id: string;
+                activo: boolean;
+                descripcion: string | null;
                 codigo: string;
                 nombre: string;
-                descripcion: string | null;
-                categoria: string;
                 orden: number;
+                categoria: string;
                 esInicial: boolean;
                 esFinal: boolean;
                 permiteCargaArchivos: boolean;
                 permiteCorreccion: boolean;
                 permiteInforme: boolean;
-                activo: boolean;
                 mostrarEnPanel: boolean;
+            };
+            usuario: {
+                id: string;
+                email: string;
+                password: string;
+                fullName: string;
+                isActive: boolean;
+                roles: string[];
+                themePreference: string;
+                avatarUrl: string | null;
             };
         } & {
             id: string;
             mareaId: string;
             fechaHora: Date;
-            tipoEvento: string;
-            detalle: string | null;
             usuarioId: string | null;
+            tipoEvento: string;
             estadoDesdeId: string | null;
             estadoHastaId: string | null;
             cantidadMuestrasOtolitos: number | null;
+            detalle: string | null;
             comentarios: string | null;
         })[];
         id: string;
-        activo: boolean;
         anioMarea: number;
         nroMarea: number;
         buqueId: string;
@@ -274,6 +273,7 @@ export declare class MareasService {
         fechaProtocolizacion: Date | null;
         fechaCreacion: Date;
         fechaUltimaActualizacion: Date;
+        activo: boolean;
         tipoMarea: import("@prisma/client").$Enums.TipoMarea;
         diasEstimados: number | null;
         observadorPrincipalId: string | null;
@@ -286,43 +286,19 @@ export declare class MareasService {
             durationDays: number;
             pesqueria: {
                 id: string;
+                activo: boolean;
+                descripcion: string | null;
                 codigo: string;
                 nombre: string;
-                descripcion: string | null;
-                orden: number | null;
-                activo: boolean;
                 grupo: string | null;
+                orden: number | null;
             };
-            observadores: ({
-                observador: {
-                    id: string;
-                    nombre: string;
-                    activo: boolean;
-                    observaciones: string | null;
-                    email: string | null;
-                    codigoInterno: number;
-                    apellido: string;
-                    fotoUrl: string | null;
-                    tipoObservador: string;
-                    tipoContrato: string;
-                    disponible: boolean;
-                    conImpedimento: boolean;
-                    motivoImpedimento: string | null;
-                    fechaProximaDisponibilidad: Date | null;
-                };
-            } & {
-                id: string;
-                observadorId: string;
-                rol: string;
-                esDesignado: boolean;
-                etapaId: string;
-            })[];
             puertoArribo: {
                 id: string;
-                nombre: string;
-                orden: number | null;
                 activo: boolean;
                 observaciones: string | null;
+                nombre: string;
+                orden: number | null;
                 provincia: string | null;
                 pais: string | null;
                 codigoInterno: string | null;
@@ -333,10 +309,10 @@ export declare class MareasService {
             };
             puertoZarpada: {
                 id: string;
-                nombre: string;
-                orden: number | null;
                 activo: boolean;
                 observaciones: string | null;
+                nombre: string;
+                orden: number | null;
                 provincia: string | null;
                 pais: string | null;
                 codigoInterno: string | null;
@@ -345,25 +321,49 @@ export declare class MareasService {
                 latitud: number | null;
                 longitud: number | null;
             };
+            observadores: ({
+                observador: {
+                    id: string;
+                    activo: boolean;
+                    observaciones: string | null;
+                    nombre: string;
+                    codigoInterno: number;
+                    apellido: string;
+                    fotoUrl: string | null;
+                    tipoObservador: string;
+                    tipoContrato: string;
+                    disponible: boolean;
+                    fechaProximaDisponibilidad: Date | null;
+                    conImpedimento: boolean;
+                    email: string | null;
+                    motivoImpedimento: string | null;
+                };
+            } & {
+                id: string;
+                etapaId: string;
+                observadorId: string;
+                rol: string;
+                esDesignado: boolean;
+            })[];
             id: string;
             observaciones: string | null;
             pesqueriaId: string | null;
             nroEtapa: number;
+            mareaId: string;
             puertoZarpadaId: string | null;
             puertoArriboId: string | null;
             fechaZarpada: Date | null;
             fechaArribo: Date | null;
             tipoEtapa: import("@prisma/client").$Enums.TipoEtapa;
-            mareaId: string;
         }[];
         buque: {
             tipoFlota: {
                 id: string;
+                activo: boolean;
+                descripcion: string | null;
                 codigo: string;
                 nombre: string;
-                descripcion: string | null;
                 orden: number | null;
-                activo: boolean;
                 codigo_numerico: number;
             };
         } & {
@@ -394,70 +394,69 @@ export declare class MareasService {
         };
         estadoActual: {
             id: string;
+            activo: boolean;
+            descripcion: string | null;
             codigo: string;
             nombre: string;
-            descripcion: string | null;
-            categoria: string;
             orden: number;
+            categoria: string;
             esInicial: boolean;
             esFinal: boolean;
             permiteCargaArchivos: boolean;
             permiteCorreccion: boolean;
             permiteInforme: boolean;
-            activo: boolean;
             mostrarEnPanel: boolean;
         };
         observadorPrincipal: {
             id: string;
-            nombre: string;
             activo: boolean;
             observaciones: string | null;
-            email: string | null;
+            nombre: string;
             codigoInterno: number;
             apellido: string;
             fotoUrl: string | null;
             tipoObservador: string;
             tipoContrato: string;
             disponible: boolean;
-            conImpedimento: boolean;
-            motivoImpedimento: string | null;
             fechaProximaDisponibilidad: Date | null;
+            conImpedimento: boolean;
+            email: string | null;
+            motivoImpedimento: string | null;
         };
         pesqueria: {
             id: string;
+            activo: boolean;
+            descripcion: string | null;
             codigo: string;
             nombre: string;
-            descripcion: string | null;
-            orden: number | null;
-            activo: boolean;
             grupo: string | null;
+            orden: number | null;
         };
         archivos: ({
             movimientoOrigen: {
                 id: string;
                 mareaId: string;
                 fechaHora: Date;
-                tipoEvento: string;
-                detalle: string | null;
                 usuarioId: string | null;
+                tipoEvento: string;
                 estadoDesdeId: string | null;
                 estadoHastaId: string | null;
                 cantidadMuestrasOtolitos: number | null;
+                detalle: string | null;
                 comentarios: string | null;
             };
             usuarioSubio: {
                 id: string;
-                roles: string[];
                 email: string;
                 password: string;
                 fullName: string;
                 isActive: boolean;
+                roles: string[];
                 themePreference: string;
                 avatarUrl: string | null;
             };
         } & {
             id: string;
-            descripcion: string | null;
             mareaId: string;
             fechaSubida: Date;
             movimientoOrigenId: string | null;
@@ -466,62 +465,62 @@ export declare class MareasService {
             version: string | null;
             rutaArchivo: string;
             usuarioSubioId: string | null;
+            descripcion: string | null;
         })[];
         movimientos: ({
-            usuario: {
-                id: string;
-                roles: string[];
-                email: string;
-                password: string;
-                fullName: string;
-                isActive: boolean;
-                themePreference: string;
-                avatarUrl: string | null;
-            };
             estadoDesde: {
                 id: string;
+                activo: boolean;
+                descripcion: string | null;
                 codigo: string;
                 nombre: string;
-                descripcion: string | null;
-                categoria: string;
                 orden: number;
+                categoria: string;
                 esInicial: boolean;
                 esFinal: boolean;
                 permiteCargaArchivos: boolean;
                 permiteCorreccion: boolean;
                 permiteInforme: boolean;
-                activo: boolean;
                 mostrarEnPanel: boolean;
             };
             estadoHasta: {
                 id: string;
+                activo: boolean;
+                descripcion: string | null;
                 codigo: string;
                 nombre: string;
-                descripcion: string | null;
-                categoria: string;
                 orden: number;
+                categoria: string;
                 esInicial: boolean;
                 esFinal: boolean;
                 permiteCargaArchivos: boolean;
                 permiteCorreccion: boolean;
                 permiteInforme: boolean;
-                activo: boolean;
                 mostrarEnPanel: boolean;
+            };
+            usuario: {
+                id: string;
+                email: string;
+                password: string;
+                fullName: string;
+                isActive: boolean;
+                roles: string[];
+                themePreference: string;
+                avatarUrl: string | null;
             };
         } & {
             id: string;
             mareaId: string;
             fechaHora: Date;
-            tipoEvento: string;
-            detalle: string | null;
             usuarioId: string | null;
+            tipoEvento: string;
             estadoDesdeId: string | null;
             estadoHastaId: string | null;
             cantidadMuestrasOtolitos: number | null;
+            detalle: string | null;
             comentarios: string | null;
         })[];
         id: string;
-        activo: boolean;
         anioMarea: number;
         nroMarea: number;
         buqueId: string;
@@ -537,6 +536,7 @@ export declare class MareasService {
         fechaProtocolizacion: Date | null;
         fechaCreacion: Date;
         fechaUltimaActualizacion: Date;
+        activo: boolean;
         tipoMarea: import("@prisma/client").$Enums.TipoMarea;
         diasEstimados: number | null;
         observadorPrincipalId: string | null;
@@ -572,6 +572,7 @@ export declare class MareasService {
             }[];
         }[];
     }>;
+    getRecentMovements(days: number): Promise<any[]>;
     getCriticalDelays(year?: number): Promise<any[]>;
     getReportDelays(year?: number): Promise<any[]>;
     getCalendarEvents(year?: number): Promise<any[]>;
@@ -704,22 +705,21 @@ export declare class MareasService {
     } | ({
         estadoActual: {
             id: string;
+            activo: boolean;
+            descripcion: string | null;
             codigo: string;
             nombre: string;
-            descripcion: string | null;
-            categoria: string;
             orden: number;
+            categoria: string;
             esInicial: boolean;
             esFinal: boolean;
             permiteCargaArchivos: boolean;
             permiteCorreccion: boolean;
             permiteInforme: boolean;
-            activo: boolean;
             mostrarEnPanel: boolean;
         };
     } & {
         id: string;
-        activo: boolean;
         anioMarea: number;
         nroMarea: number;
         buqueId: string;
@@ -735,6 +735,7 @@ export declare class MareasService {
         fechaProtocolizacion: Date | null;
         fechaCreacion: Date;
         fechaUltimaActualizacion: Date;
+        activo: boolean;
         observaciones: string | null;
         tipoMarea: import("@prisma/client").$Enums.TipoMarea;
         diasEstimados: number | null;

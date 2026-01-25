@@ -35,6 +35,7 @@
 
         <!-- PANELS DERECHA (Right) -->
         <div class="col-span-12 lg:col-span-6 xl:col-span-7 flex flex-col gap-8">
+          <RecentMovements />
           <ExpiringMareas />
           <FleetDistributionByFishery />
         </div>
@@ -53,6 +54,7 @@ import ExpiringMareas from '../components/ExpiringMareas.vue'
 import FleetDistributionByFishery from '../components/FleetDistributionByFishery.vue'
 import WorkforceOverview from '../components/WorkforceOverview.vue'
 import TopDryTime from '../components/TopDryTime.vue'
+import RecentMovements from '../components/RecentMovements.vue'
 import dashboardService, { type WorkforceStatus } from '../services/dashboard.service'
 
 const workforceData = ref<WorkforceStatus | null>(null)

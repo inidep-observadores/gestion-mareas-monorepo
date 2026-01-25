@@ -63,6 +63,17 @@ export interface DashboardKpis {
     enRevision: number;
 }
 
+export interface MovementEvent {
+    id: string;
+    buque: string;
+    marea: string;
+    observador: string;
+    etapa: number;
+    tipo: 'ZARPADA' | 'ARRIBO';
+    fecha: string;
+    puerto: string;
+}
+
 export interface CalendarEvent {
     id: string
     title: string
@@ -130,6 +141,11 @@ const mareasService = {
         const { data } = await httpClient.post('/mareas/export/excel', params, {
             responseType: 'blob'
         });
+        return data;
+    },
+
+    getRecentMovements: async (days: number): Promise<MovementEvent[]> => {
+        const { data } = await httpClient.get<MovementEvent[]>(`/mareas/movimientos-recientes?days=${days}`);
         return data;
     }
 };

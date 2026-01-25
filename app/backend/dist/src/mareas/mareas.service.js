@@ -491,6 +491,76 @@ let MareasService = class MareasService {
             distribution
         };
     }
+    async getRecentMovements(days) {
+        const daysToLookBack = days || 7;
+        const now = new Date();
+        const limitDate = new Date();
+        limitDate.setDate(now.getDate() - daysToLookBack);
+        limitDate.setHours(0, 0, 0, 0);
+        const etapas = await this.prisma.mareaEtapa.findMany({
+            where: {
+                OR: [
+                    {
+                        fechaZarpada: {
+                            gte: limitDate
+                        }
+                    },
+                    {
+                        fechaArribo: {
+                            gte: limitDate
+                        }
+                    }
+                ]
+            },
+            include: {
+                marea: {
+                    include: {
+                        buque: true,
+                        observadorPrincipal: true
+                    }
+                },
+                puertoZarpada: true,
+                puertoArribo: true,
+                observadores: {
+                    where: { rol: 'PRINCIPAL' },
+                    include: { observador: true }
+                }
+            }
+        });
+        const events = [];
+        for (const etapa of etapas) {
+            const marea = etapa.marea;
+            const primaryObs = marea.observadorPrincipal || etapa.observadores[0]?.observador;
+            const obsName = primaryObs ? `${primaryObs.apellido}, ${primaryObs.nombre}` : 'Sin Asignar';
+            const mareaCode = marea_utils_1.MareaUtils.formatCodigo(marea);
+            const buqueName = marea.buque.nombreBuque;
+            if (etapa.fechaZarpada && new Date(etapa.fechaZarpada) >= limitDate) {
+                events.push({
+                    id: `zar-${etapa.id}`,
+                    buque: buqueName,
+                    marea: mareaCode,
+                    observador: obsName,
+                    etapa: etapa.nroEtapa || 1,
+                    tipo: 'ZARPADA',
+                    fecha: etapa.fechaZarpada,
+                    puerto: etapa.puertoZarpada?.nombre || 'N/D'
+                });
+            }
+            if (etapa.fechaArribo && new Date(etapa.fechaArribo) >= limitDate) {
+                events.push({
+                    id: `arr-${etapa.id}`,
+                    buque: buqueName,
+                    marea: mareaCode,
+                    observador: obsName,
+                    etapa: etapa.nroEtapa || 1,
+                    tipo: 'ARRIBO',
+                    fecha: etapa.fechaArribo,
+                    puerto: etapa.puertoArribo?.nombre || 'N/D'
+                });
+            }
+        }
+        return events.sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
+    }
     async getCriticalDelays(year) {
         const { mareaYearFilter } = this.buildMareaYearFilter(year);
         const now = new Date();

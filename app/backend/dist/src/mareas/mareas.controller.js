@@ -57,6 +57,9 @@ let MareasController = class MareasController {
     search(q) {
         return this.mareasService.search(q);
     }
+    getRecentMovements(days) {
+        return this.mareasService.getRecentMovements(days ? Number(days) : 7);
+    }
     async exportExcel(dto, res) {
         const workbook = await this.mareasService.exportToExcel(dto.year || new Date().getFullYear(), dto.searchQuery, dto.ids);
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
@@ -161,6 +164,13 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", void 0)
 ], MareasController.prototype, "search", null);
+__decorate([
+    (0, common_1.Get)('movimientos-recientes'),
+    __param(0, (0, common_1.Query)('days')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], MareasController.prototype, "getRecentMovements", null);
 __decorate([
     (0, common_1.Post)('export/excel'),
     __param(0, (0, common_1.Body)()),
