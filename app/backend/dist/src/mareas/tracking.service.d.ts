@@ -33,6 +33,7 @@ export declare class TrackingService {
         voyageStart: string;
         voyageEnd: string;
         lastUpdate: Date;
+        lastTrackingUpdate: string;
         totalDays: number;
         etapas: {
             durationDays: number;
@@ -46,9 +47,13 @@ export declare class TrackingService {
             fechaZarpada: Date | null;
             fechaArribo: Date | null;
             tipoEtapa: import("@prisma/client").$Enums.TipoEtapa;
+            updatedAt: Date;
         }[];
     }>;
-    getLatestFleetPositions(): Promise<any[]>;
+    getLatestFleetPositions(): Promise<{
+        fleet: any[];
+        lastUpdate: string;
+    }>;
     getVesselHistory(buqueId: string, from?: string, to?: string, limit?: number): Promise<{
         lat: number;
         lon: number;

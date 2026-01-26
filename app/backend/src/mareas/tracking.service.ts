@@ -265,13 +265,34 @@ export class TrackingService {
             }
         }
 
-        return {
+        const result = {
             processed: records.length,
             inserted: newPointsCount,
             updated: updatedShipsCount,
             alerts: alertsCount,
             errors: errors
         };
+
+        // Al finalizar, actualizar el estado global con la fecha del punto más reciente
+        try {
+            const lastPoint = await this.prisma.buqueTrayectoriaPunto.findFirst({
+                orderBy: { timestamp: 'desc' },
+                select: { timestamp: true }
+            });
+
+            if (lastPoint) {
+                const dateStr = DateTime.fromJSDate(lastPoint.timestamp).setZone(this.TIMEZONE).toFormat('dd/MM/yyyy HH:mm');
+                await this.prisma.systemStatus.upsert({
+                    where: { key: 'LAST_TRACKING_UPDATE' },
+                    update: { value: dateStr, lastUpdate: new Date() },
+                    create: { key: 'LAST_TRACKING_UPDATE', value: dateStr, lastUpdate: new Date() }
+                });
+            }
+        } catch (e) {
+            this.logger.error('Error al actualizar LAST_TRACKING_UPDATE:', e);
+        }
+
+        return result;
     }
 
     // --- Visuals & Data Retrieval ---
@@ -326,6 +347,10 @@ export class TrackingService {
                 .toJSDate();
         }
 
+        const lastTrackingStatus = await this.prisma.systemStatus.findUnique({
+            where: { key: 'LAST_TRACKING_UPDATE' }
+        });
+
         return {
             id: marea.id,
             buqueId: marea.buqueId,
@@ -336,6 +361,7 @@ export class TrackingService {
             voyageStart: voyageStart?.toISOString(),
             voyageEnd: voyageEnd?.toISOString(),
             lastUpdate: marea.fechaUltimaActualizacion,
+            lastTrackingUpdate: lastTrackingStatus?.value || null,
             totalDays: MareaUtils.calculateNavigatedDays(marea),
             etapas: marea.etapas.map(e => ({
                 ...e,
@@ -438,7 +464,15 @@ export class TrackingService {
                 }))
             });
         }
-        return fleet;
+
+        const lastTrackingStatus = await this.prisma.systemStatus.findUnique({
+            where: { key: 'LAST_TRACKING_UPDATE' }
+        });
+
+        return {
+            fleet,
+            lastUpdate: lastTrackingStatus?.value || null
+        };
     }
 
     async getVesselHistory(buqueId: string, from?: string, to?: string, limit = 30000) {

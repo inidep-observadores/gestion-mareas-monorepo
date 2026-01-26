@@ -1,5 +1,5 @@
 <template>
-  <HudCard customClass="px-3 py-1.5 pointer-events-none !bg-surface/5 !backdrop-blur-sm border-border/5">
+  <HudCard customClass="px-3 py-1.5 pointer-events-none border-border/5">
     <div class="flex items-center gap-3 font-black tracking-tighter text-text tabular-nums text-xs">
       <div v-if="coords" class="flex items-center gap-3">
         <span class="text-text-muted/60 uppercase font-black text-[9px]">

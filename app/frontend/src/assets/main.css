@@ -527,6 +527,14 @@
   }
 }
 
+@utility glass-hud {
+  @apply pointer-events-auto bg-surface/10 dark:bg-surface/20 backdrop-blur-md rounded-2xl border border-border/10 shadow-theme-lg overflow-hidden flex flex-col transition-all duration-500 hover:border-border/20;
+}
+
+@utility glass-hud-header {
+  @apply p-3 border-b border-border/10 flex items-start justify-between bg-surface/5;
+}
+
 .sidebar:hover {
   width: 18.125rem;
 }

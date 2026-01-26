@@ -16,7 +16,10 @@ export declare class TrackingController {
         status: string;
         timestamp: Date;
     }>;
-    getFleet(): Promise<any[]>;
+    getFleet(): Promise<{
+        fleet: any[];
+        lastUpdate: string;
+    }>;
     getHistory(buqueId: string, from?: string, to?: string): Promise<{
         lat: number;
         lon: number;
@@ -35,6 +38,7 @@ export declare class TrackingController {
         voyageStart: string;
         voyageEnd: string;
         lastUpdate: Date;
+        lastTrackingUpdate: string;
         totalDays: number;
         etapas: {
             durationDays: number;
@@ -48,6 +52,7 @@ export declare class TrackingController {
             fechaZarpada: Date | null;
             fechaArribo: Date | null;
             tipoEtapa: import("@prisma/client").$Enums.TipoEtapa;
+            updatedAt: Date;
         }[];
     }>;
 }

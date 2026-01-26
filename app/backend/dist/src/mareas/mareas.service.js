@@ -559,7 +559,15 @@ let MareasService = class MareasService {
                 });
             }
         }
-        return events.sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
+        const sortedEvents = events.sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
+        const lastStageUpdate = await this.prisma.mareaEtapa.findFirst({
+            orderBy: { updatedAt: 'desc' },
+            select: { updatedAt: true }
+        });
+        return {
+            events: sortedEvents,
+            lastUpdate: lastStageUpdate?.updatedAt || null
+        };
     }
     async getCriticalDelays(year) {
         const { mareaYearFilter } = this.buildMareaYearFilter(year);

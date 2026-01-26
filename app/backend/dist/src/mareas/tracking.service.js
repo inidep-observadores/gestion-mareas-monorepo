@@ -209,13 +209,31 @@ let TrackingService = TrackingService_1 = class TrackingService {
                 errors.push({ vessel: buqueName, reason: `Error interno: ${e.message}` });
             }
         }
-        return {
+        const result = {
             processed: records.length,
             inserted: newPointsCount,
             updated: updatedShipsCount,
             alerts: alertsCount,
             errors: errors
         };
+        try {
+            const lastPoint = await this.prisma.buqueTrayectoriaPunto.findFirst({
+                orderBy: { timestamp: 'desc' },
+                select: { timestamp: true }
+            });
+            if (lastPoint) {
+                const dateStr = luxon_1.DateTime.fromJSDate(lastPoint.timestamp).setZone(this.TIMEZONE).toFormat('dd/MM/yyyy HH:mm');
+                await this.prisma.systemStatus.upsert({
+                    where: { key: 'LAST_TRACKING_UPDATE' },
+                    update: { value: dateStr, lastUpdate: new Date() },
+                    create: { key: 'LAST_TRACKING_UPDATE', value: dateStr, lastUpdate: new Date() }
+                });
+            }
+        }
+        catch (e) {
+            this.logger.error('Error al actualizar LAST_TRACKING_UPDATE:', e);
+        }
+        return result;
     }
     async getMareaTrackingInfo(mareaId) {
         const marea = await this.prisma.marea.findUnique({
@@ -262,6 +280,9 @@ let TrackingService = TrackingService_1 = class TrackingService {
                 .set({ hour: 23, minute: 59, second: 59, millisecond: 999 })
                 .toJSDate();
         }
+        const lastTrackingStatus = await this.prisma.systemStatus.findUnique({
+            where: { key: 'LAST_TRACKING_UPDATE' }
+        });
         return {
             id: marea.id,
             buqueId: marea.buqueId,
@@ -272,6 +293,7 @@ let TrackingService = TrackingService_1 = class TrackingService {
             voyageStart: voyageStart?.toISOString(),
             voyageEnd: voyageEnd?.toISOString(),
             lastUpdate: marea.fechaUltimaActualizacion,
+            lastTrackingUpdate: lastTrackingStatus?.value || null,
             totalDays: marea_utils_1.MareaUtils.calculateNavigatedDays(marea),
             etapas: marea.etapas.map(e => ({
                 ...e,
@@ -362,7 +384,13 @@ let TrackingService = TrackingService_1 = class TrackingService {
                 }))
             });
         }
-        return fleet;
+        const lastTrackingStatus = await this.prisma.systemStatus.findUnique({
+            where: { key: 'LAST_TRACKING_UPDATE' }
+        });
+        return {
+            fleet,
+            lastUpdate: lastTrackingStatus?.value || null
+        };
     }
     async getVesselHistory(buqueId, from, to, limit = 30000) {
         const where = { buqueId };

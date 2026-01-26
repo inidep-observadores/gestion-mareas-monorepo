@@ -144,8 +144,8 @@ const mareasService = {
         return data;
     },
 
-    getRecentMovements: async (days: number): Promise<MovementEvent[]> => {
-        const { data } = await httpClient.get<MovementEvent[]>(`/mareas/movimientos-recientes?days=${days}`);
+    getRecentMovements: async (days: number): Promise<{ events: MovementEvent[], lastUpdate: string | null }> => {
+        const { data } = await httpClient.get<{ events: MovementEvent[], lastUpdate: string | null }>(`/mareas/movimientos-recientes?days=${days}`);
         return data;
     }
 };

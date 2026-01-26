@@ -625,7 +625,18 @@ export class MareasService {
         }
 
         // Ordenar por fecha descendente (más reciente primero)
-        return events.sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
+        const sortedEvents = events.sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
+
+        // Obtener la fecha de la última modificación en mareas_etapas
+        const lastStageUpdate = await this.prisma.mareaEtapa.findFirst({
+            orderBy: { updatedAt: 'desc' },
+            select: { updatedAt: true }
+        });
+
+        return {
+            events: sortedEvents,
+            lastUpdate: lastStageUpdate?.updatedAt || null
+        };
     }
 
     async getCriticalDelays(year?: number) {

@@ -136,6 +136,11 @@
             </table>
           </div>
         </div>
+        <!-- Display Last Updated Time for Etapas -->
+        <div v-if="lastEtapaUpdate" class="mt-4 pt-4 border-t border-border/30 flex items-center justify-end gap-2 text-[10px] font-bold text-text-muted/60 uppercase tracking-widest bg-surface/30">
+          <span class="w-1.5 h-1.5 rounded-full bg-success/40"></span>
+          Última actualización de etapas: {{ formatDateTime(lastEtapaUpdate) }}
+        </div>
       </div>
     </div>
   </div>
@@ -151,18 +156,20 @@ const isCollapsed = ref(false)
 const selectedDays = ref(3)
 const movements = ref<MovementEvent[]>([])
 const loading = ref(false)
+const lastEtapaUpdate = ref<string | null>(null)
 
 const toggleCollapse = () => {
   isCollapsed.value = !isCollapsed.value
 }
 
-const setDays = (days: number) => {
+const setDays = async (days: number) => {
   if (selectedDays.value === days) return
   selectedDays.value = days
-  loadMovements()
+  await loadMovements()
 }
 
 const formatDate = (dateStr: string) => {
+  if (!dateStr) return '-'
   const date = new Date(dateStr)
   return new Intl.DateTimeFormat('es-AR', {
     day: '2-digit',
@@ -171,10 +178,24 @@ const formatDate = (dateStr: string) => {
   }).format(date)
 }
 
+const formatDateTime = (dateTimeStr: string) => {
+  if (!dateTimeStr) return '-'
+  const date = new Date(dateTimeStr)
+  return new Intl.DateTimeFormat('es-AR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(date)// + ' hs'
+}
+
 const loadMovements = async () => {
   loading.value = true
   try {
-    movements.value = await mareasService.getRecentMovements(selectedDays.value)
+    const response = await mareasService.getRecentMovements(selectedDays.value)
+    movements.value = response.events
+    lastEtapaUpdate.value = response.lastUpdate
   } catch (error) {
     toast.error('Error al cargar movimientos recientes')
     console.error(error)

@@ -17,7 +17,7 @@
             <!-- Left: Back Button and Vessel Info -->
             <div class="flex flex-col gap-4">
               <button v-if="isSingleMareaMode" @click="handleGoBack"
-                class="pointer-events-auto flex items-center gap-2 px-4 py-2.5 bg-surface/90 backdrop-blur-md border border-border/20 rounded-2xl text-text-muted hover:text-primary transition-all shadow-xl group w-fit">
+                class="glass-hud flex items-center gap-2 px-4 py-2.5 text-text-muted hover:text-primary group w-fit">
                 <ArrowLeftIcon class="w-5 h-5 transition-transform group-hover:-translate-x-1" />
                 <span class="text-xs font-black uppercase tracking-widest">Volver</span>
               </button>
@@ -31,7 +31,6 @@
                   :isSingleMode="isSingleMareaMode" @update:layer="handleLayerToggle" />
               </Transition>
             </div>
-
             <!-- Right: Trip Stages (Optional or for selected vessel) -->
             <div class="flex flex-col gap-3 items-end">
               <TripStagesCard v-if="activeVessel && currentVesselStages.length" :stages="currentVesselStages"
@@ -49,11 +48,36 @@
             </div>
           </div>
 
+          <!-- Top Center: Last Update HUD -->
+          <div class="absolute top-6 left-1/2 -translate-x-1/2 pointer-events-none z-[1000] flex justify-center">
+            <Transition name="hud-fade">
+              <HudCard v-if="lastTrackingUpdate" customClass="px-5 py-2.5">
+                <div class="flex items-center gap-4">
+                  <div class="relative flex items-center justify-center">
+                    <div class="absolute w-3 h-3 rounded-full bg-success animate-ping opacity-20"></div>
+                    <div
+                      class="relative w-2 h-2 rounded-full bg-success shadow-[0_0_8px_rgba(var(--color-success-rgb),0.6)]">
+                    </div>
+                  </div>
+                  <div class="flex flex-col">
+                    <span
+                      class="text-[8px] font-black text-primary uppercase tracking-[0.25em] leading-none mb-1 opacity-80 group-hover:opacity-100 transition-opacity">
+                      Estado Satelital
+                    </span>
+                    <span class="text-[11px] font-bold text-text uppercase tracking-wider leading-none">
+                      Actualizado: {{ lastTrackingUpdate }}
+                    </span>
+                  </div>
+                </div>
+              </HudCard>
+            </Transition>
+          </div>
+
           <!-- Bottom Row (Anclado al fondo) -->
           <div class="absolute bottom-6 left-6 right-6 flex flex-col gap-2">
             <!-- Mouse Coordinates -->
             <div :class="[
-              'flex items-end transition-all duration-500 ease-in-out',
+              'flex transition-all duration-500 ease-in-out',
               leftSidebarOpen ? 'justify-end pr-14' : 'justify-start'
             ]">
               <MouseCoordinates :coords="mouseCoords" />
@@ -105,6 +129,7 @@ import AdminLayout from '@/components/layout/AdminLayout.vue'
 import MapMonitor, { type VesselTrajectory } from '../components/MapMonitor.vue'
 import TimelinePlayer from '../components/TimelinePlayer.vue'
 import VesselInfoCard from '../components/VesselInfoCard.vue'
+import HudCard from '../components/HudCard.vue'
 import TripStagesCard, { type TripStage } from '../components/TripStagesCard.vue'
 import MouseCoordinates from '../components/MouseCoordinates.vue'
 import MonitorSidebar from '../components/MonitorSidebar.vue'
@@ -117,6 +142,7 @@ import { ArrowLeftIcon } from '@/icons'
 
 // --- State ---
 const showUploadDialog = ref(false)
+const lastTrackingUpdate = ref<string | null>(null)
 const fleet = reactive<Record<string, VesselTrajectory>>({})
 const selectedVesselId = ref<string | null>(null)
 const mouseCoords = ref<LatLng | null>(null)
@@ -196,7 +222,11 @@ watch([leftSidebarOpen, rightSidebarOpen], () => {
 const fetchFleet = async () => {
   try {
     const response = await httpClient.get('/tracking/fleet')
-    const activeMareas = response.data
+    const { fleet: activeMareas, lastUpdate } = response.data
+
+    if (lastUpdate) {
+      lastTrackingUpdate.value = lastUpdate
+    }
 
     activeMareas.forEach((marea: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
       // Key by mareaId to allow multiple mareas per vessel
@@ -268,6 +298,10 @@ const fetchSingleMarea = async (mareaId: string) => {
       lastUpdate: marea.lastUpdate,
       totalDays: marea.totalDays,
       etapas: marea.etapas
+    }
+
+    if (marea.lastTrackingUpdate) {
+      lastTrackingUpdate.value = marea.lastTrackingUpdate
     }
 
     selectedVesselId.value = marea.id

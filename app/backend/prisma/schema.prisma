@@ -254,6 +254,7 @@ model Marea {
   producciones             Produccion[]
 
   @@unique([anioMarea, nroMarea, tipoMarea], name: "identificadorMarea", map: "identificadorMarea")
+  @@unique([anioMarea, nroMarea, tipoMarea])
   @@map("mareas")
 }
 
@@ -268,6 +269,7 @@ model MareaEtapa {
   fechaArribo     DateTime?              @map("fecha_arribo") @db.Timestamptz(6)
   tipoEtapa       TipoEtapa              @map("tipo_etapa")
   observaciones   String?
+  updatedAt       DateTime               @updatedAt @map("updated_at") @db.Timestamptz(6)
   lances          Lance[]
   marea           Marea                  @relation(fields: [mareaId], references: [id])
   pesqueria       Pesqueria?             @relation(fields: [pesqueriaId], references: [id])
