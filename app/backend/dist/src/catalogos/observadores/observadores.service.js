@@ -11,6 +11,9 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ObservadoresService = void 0;
 const common_1 = require("@nestjs/common");
+const mareas_constants_1 = require("../../mareas/mareas.constants");
+const date_utils_1 = require("../../common/utils/date.utils");
+const marea_utils_1 = require("../../common/utils/marea.utils");
 const prisma_service_1 = require("../../prisma/prisma.service");
 let ObservadoresService = class ObservadoresService {
     constructor(prisma) {
@@ -78,6 +81,145 @@ let ObservadoresService = class ObservadoresService {
             where: { id: observador.id },
         });
         return { mensaje: 'Observador eliminado correctamente' };
+    }
+    async obtenerHistorial(id, operationalYear) {
+        const startYear = operationalYear - 1;
+        const periodStart = new Date(startYear, 0, 1, 0, 0, 0, 0);
+        const periodEnd = new Date(operationalYear, 11, 31, 23, 59, 59, 999);
+        const mareasRaw = await this.prisma.marea.findMany({
+            where: {
+                activo: true,
+                OR: [
+                    { observadorPrincipalId: id },
+                    {
+                        etapas: {
+                            some: {
+                                observadores: { some: { observadorId: id } }
+                            }
+                        }
+                    }
+                ],
+                AND: [
+                    {
+                        OR: [
+                            { anioMarea: { in: [operationalYear, startYear] } },
+                            { fechaInicioObservador: { gte: periodStart, lte: periodEnd } },
+                            { fechaFinObservador: { gte: periodStart, lte: periodEnd } },
+                            { fechaFinObservador: null, fechaInicioObservador: { lte: periodEnd } }
+                        ]
+                    }
+                ]
+            },
+            include: {
+                buque: true,
+                estadoActual: true,
+                etapas: {
+                    where: {
+                        fechaZarpada: { not: null }
+                    },
+                    orderBy: { nroEtapa: 'asc' },
+                    include: {
+                        observadores: {
+                            where: { observadorId: id }
+                        }
+                    }
+                }
+            },
+            orderBy: { fechaInicioObservador: 'asc' }
+        });
+        const now = new Date();
+        const currentYear = now.getFullYear();
+        const timeline = [];
+        const years = [operationalYear, startYear].sort((a, b) => b - a);
+        const trips = mareasRaw.map(m => {
+            const mRaw = m;
+            const start = mRaw.fechaInicioObservador || mRaw.fechaZarpadaEstimada;
+            if (!start)
+                return null;
+            let finRaw = mRaw.fechaFinObservador;
+            if (!finRaw && mRaw.etapas.length > 0) {
+                const arrivals = mRaw.etapas
+                    .map((e) => e.fechaArribo ? new Date(e.fechaArribo).getTime() : null)
+                    .filter(Boolean);
+                if (arrivals.length > 0) {
+                    finRaw = new Date(Math.max(...arrivals));
+                }
+            }
+            const isNavegando = mRaw.estadoActual.codigo === mareas_constants_1.MareaEstado.EN_EJECUCION;
+            const end = finRaw || (isNavegando ? now : start);
+            const totalDays = date_utils_1.DateUtils.calculateInclusiveDays(start, finRaw || (isNavegando ? now : null));
+            const isPrincipal = mRaw.observadorPrincipalId === id;
+            const relevantStages = mRaw.etapas.filter((e) => isPrincipal || e.observadores.length > 0);
+            const navigatedDays = date_utils_1.DateUtils.calculateUniqueDays(relevantStages.map((e) => ({
+                start: e.fechaZarpada,
+                end: e.fechaArribo || (isNavegando ? now : null)
+            })));
+            return {
+                id: mRaw.id,
+                mareaCode: marea_utils_1.MareaUtils.formatCodigo(mRaw),
+                vessel: mRaw.buque.nombreBuque,
+                start,
+                end,
+                totalDays,
+                navigatedDays,
+                year: new Date(start).getFullYear(),
+                isNavegando
+            };
+        }).filter(Boolean);
+        const sortedTrips = trips.sort((a, b) => b.start.getTime() - a.start.getTime());
+        let tripIdx = 0;
+        const refDate = operationalYear === currentYear ? now : new Date(operationalYear, 11, 31, 23, 59, 59, 999);
+        for (const y of years) {
+            timeline.push({
+                type: 'YEAR_TOTAL',
+                year: y,
+                totalDays: this.calculateYearTotal(trips, y)
+            });
+            if (y === operationalYear && tripIdx === 0) {
+                const firstTrip = sortedTrips[0];
+                if (firstTrip && !firstTrip.isNavegando) {
+                    const diffTierraActual = date_utils_1.DateUtils.calculateInclusiveDays(firstTrip.end, refDate) - 1;
+                    if (diffTierraActual > 0) {
+                        timeline.push({
+                            type: 'LAND',
+                            days: diffTierraActual,
+                            start: firstTrip.end,
+                            end: refDate,
+                            isCurrent: true
+                        });
+                    }
+                }
+            }
+            while (tripIdx < sortedTrips.length) {
+                const trip = sortedTrips[tripIdx];
+                const displayYear = trip.end.getFullYear();
+                if (displayYear < y)
+                    break;
+                timeline.push({
+                    type: 'TRIP',
+                    ...trip
+                });
+                if (tripIdx + 1 < sortedTrips.length) {
+                    const nextTrip = sortedTrips[tripIdx + 1];
+                    const diffTierra = date_utils_1.DateUtils.calculateInclusiveDays(nextTrip.end, trip.start) - 2;
+                    if (diffTierra > 0) {
+                        timeline.push({
+                            type: 'LAND',
+                            days: diffTierra,
+                            start: nextTrip.end,
+                            end: trip.start
+                        });
+                    }
+                }
+                tripIdx++;
+            }
+        }
+        return timeline;
+    }
+    calculateYearTotal(trips, year) {
+        return trips.reduce((acc, trip) => {
+            return acc + date_utils_1.DateUtils.calculateDaysInYear(trip.start, trip.end, year);
+        }, 0);
     }
 };
 exports.ObservadoresService = ObservadoresService;

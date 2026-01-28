@@ -82,4 +82,6 @@ export declare class ObservadoresService {
     eliminar(id: string): Promise<{
         mensaje: string;
     }>;
+    obtenerHistorial(id: string, operationalYear: number): Promise<any[]>;
+    private calculateYearTotal;
 }

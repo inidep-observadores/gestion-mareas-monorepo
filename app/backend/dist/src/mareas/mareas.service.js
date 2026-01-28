@@ -980,7 +980,7 @@ let MareasService = class MareasService {
             const name = `${obs.apellido}, ${obs.nombre}`;
             const lastArrivalData = lastArrivalByObs.get(obs.id);
             const lastArrival = lastArrivalData?.date;
-            const daysSince = lastArrival ? Math.floor((now.getTime() - lastArrival.getTime()) / (1000 * 60 * 60 * 24)) : null;
+            const daysSince = lastArrival ? date_utils_1.DateUtils.calculateInclusiveDays(lastArrival, now) - 1 : null;
             const status = this.getObserverStatus(obs, activeNav.has(obs.id), lastArrival, now);
             if (obsConMareas.has(obs.id) && status === 'DISPONIBLE' && lastArrival && lastArrivalData && daysSince !== null) {
                 topDryCandidates.push({
@@ -997,7 +997,7 @@ let MareasService = class MareasService {
             switch (status) {
                 case 'NAVEGANDO':
                     const navData = activeNav.get(obs.id);
-                    const daysNav = navData ? Math.floor((now.getTime() - navData.start.getTime()) / (1000 * 60 * 60 * 24)) : 0;
+                    const daysNav = navData ? date_utils_1.DateUtils.calculateInclusiveDays(navData.start, now) : 0;
                     listNavegando.push({
                         id: obs.id,
                         name,
@@ -1070,7 +1070,7 @@ let MareasService = class MareasService {
         if (obs.conImpedimento)
             return 'IMPEDIDO';
         if (lastArrival) {
-            const daysSince = Math.floor((now.getTime() - lastArrival.getTime()) / (1000 * 60 * 60 * 24));
+            const daysSince = date_utils_1.DateUtils.calculateInclusiveDays(lastArrival, now) - 1;
             if (daysSince < this.rules.DIAS_DESCANSO_POST_MAREA) {
                 return 'DESCANSO';
             }

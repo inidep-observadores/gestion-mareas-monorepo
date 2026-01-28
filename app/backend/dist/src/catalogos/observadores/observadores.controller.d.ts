@@ -63,6 +63,7 @@ export declare class ObservadoresController {
         email: string | null;
         motivoImpedimento: string | null;
     }>;
+    obtenerHistorial(id: string, year: string): Promise<any[]>;
     actualizar(id: string, updateObservadorDto: UpdateObservadorDto): Promise<{
         id: string;
         codigoInterno: number;

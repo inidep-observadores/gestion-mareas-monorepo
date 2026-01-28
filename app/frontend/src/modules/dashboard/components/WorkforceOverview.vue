@@ -112,9 +112,13 @@
             <tbody class="divide-y divide-border bg-surface">
               <tr v-for="item in currentList" :key="item.id" class="hover:bg-surface-muted/50 transition-colors">
                 <td class="px-6 py-3 text-xs font-bold text-text">
-                  {{ item.name }}
+                  <span
+                    class="hover:text-primary transition-colors cursor-pointer hover:underline decoration-primary/30 underline-offset-2"
+                    @click="openTimeline(item.id, item.name)">
+                    {{ item.name }}
+                  </span>
                   <span class="block text-[9px] font-normal text-text-muted/60 lowercase italic">{{ item.tipoObservador
-                    }}</span>
+                  }}</span>
                 </td>
 
                 <!-- Impedidos Columns -->
@@ -150,7 +154,7 @@
                 <td v-if="selectedStatus !== 'Impedidos'"
                   class="px-6 py-3 text-xs font-black text-text text-right tabular-nums">
                   <span :class="selectedStatus === 'Navegando' ? 'text-info' : 'text-text-muted'">{{ (item as any).days
-                    }}
+                  }}
                     d</span>
                 </td>
               </tr>
@@ -163,6 +167,8 @@
         </div>
       </div>
     </div>
+    <ObservadorTimelineDialog :show="showTimelineDialog" :observador-id="selectedObserver?.id"
+      :observador-name="selectedObserver?.name" :year="selectedYear" @close="showTimelineDialog = false" />
   </div>
 </template>
 
@@ -171,6 +177,9 @@ import { ref, markRaw, computed } from 'vue'
 import { ShipIcon, UserGroupIcon, DocsIcon, HotelIcon, ChevronDownIcon } from '@/icons'
 import type { WorkforceStatus } from '../services/dashboard.service'
 import SearchInput from '@/components/ui/SearchInput.vue'
+import ObservadorTimelineDialog from '@/modules/admin/components/ObservadorTimelineDialog.vue'
+import { useConfigStore } from '@/modules/shared/stores/config.store'
+import { storeToRefs } from 'pinia'
 
 const props = defineProps<{
   data: WorkforceStatus | null
@@ -181,6 +190,16 @@ const selectedTypes = ref<string[]>(['OBSERVADOR'])
 const searchQuery = ref('')
 const sortBy = ref<'name' | 'days' | null>(null)
 const sortOrder = ref<'asc' | 'desc'>('desc')
+
+const showTimelineDialog = ref(false)
+const selectedObserver = ref<{ id: string, name: string } | null>(null)
+const configStore = useConfigStore()
+const { selectedYear } = storeToRefs(configStore)
+
+const openTimeline = (id: string, name: string) => {
+  selectedObserver.value = { id, name }
+  showTimelineDialog.value = true
+}
 
 const toggleSort = (key: 'name' | 'days') => {
   if (sortBy.value === key) {

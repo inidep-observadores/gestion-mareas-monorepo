@@ -10,7 +10,7 @@ export class ObservadoresController {
     constructor(private readonly observadoresService: ObservadoresService) { }
 
     @Post()
-    @Auth(ValidRoles.admin)
+    @Auth(ValidRoles.admin, ValidRoles.coordinador)
     crear(@Body() createObservadorDto: CreateObservadorDto) {
         return this.observadoresService.crear(createObservadorDto);
     }
@@ -23,6 +23,14 @@ export class ObservadoresController {
     @Get(':id')
     obtenerUno(@Param('id', ParseUUIDPipe) id: string) {
         return this.observadoresService.obtenerUno(id);
+    }
+
+    @Get(':id/historial/:year')
+    obtenerHistorial(
+        @Param('id', ParseUUIDPipe) id: string,
+        @Param('year') year: string
+    ) {
+        return this.observadoresService.obtenerHistorial(id, parseInt(year));
     }
 
     @Patch(':id')

@@ -50,6 +50,11 @@ const observadoresApi = {
             headers: { 'Content-Type': 'multipart/form-data' }
         });
         return data.secureUrl;
+    },
+
+    getHistorial: async (id: string, year: number): Promise<any[]> => {
+        const { data } = await httpClient.get<any[]>(`/catalogos/observadores/${id}/historial/${year}`);
+        return data;
     }
 }
 

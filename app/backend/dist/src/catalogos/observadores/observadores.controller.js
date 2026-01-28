@@ -31,6 +31,9 @@ let ObservadoresController = class ObservadoresController {
     obtenerUno(id) {
         return this.observadoresService.obtenerUno(id);
     }
+    obtenerHistorial(id, year) {
+        return this.observadoresService.obtenerHistorial(id, parseInt(year));
+    }
     actualizar(id, updateObservadorDto) {
         return this.observadoresService.actualizar(id, updateObservadorDto);
     }
@@ -41,7 +44,7 @@ let ObservadoresController = class ObservadoresController {
 exports.ObservadoresController = ObservadoresController;
 __decorate([
     (0, common_1.Post)(),
-    (0, decorators_1.Auth)(interfaces_1.ValidRoles.admin),
+    (0, decorators_1.Auth)(interfaces_1.ValidRoles.admin, interfaces_1.ValidRoles.coordinador),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [dto_1.CreateObservadorDto]),
@@ -60,6 +63,14 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", void 0)
 ], ObservadoresController.prototype, "obtenerUno", null);
+__decorate([
+    (0, common_1.Get)(':id/historial/:year'),
+    __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
+    __param(1, (0, common_1.Param)('year')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:returntype", void 0)
+], ObservadoresController.prototype, "obtenerHistorial", null);
 __decorate([
     (0, common_1.Patch)(':id'),
     (0, decorators_1.Auth)(interfaces_1.ValidRoles.admin, interfaces_1.ValidRoles.coordinador),
