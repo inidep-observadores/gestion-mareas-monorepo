@@ -115,13 +115,13 @@ let MareasService = class MareasService {
             if (!artePrincipalId && arteId)
                 updateData.artePrincipalId = arteId;
             if (updateData.fechaZarpadaEstimada)
-                updateData.fechaZarpadaEstimada = new Date(updateData.fechaZarpadaEstimada);
+                updateData.fechaZarpadaEstimada = date_utils_1.DateUtils.truncateTime(updateData.fechaZarpadaEstimada);
             if (updateData.fechaInicioObservador)
-                updateData.fechaInicioObservador = new Date(updateData.fechaInicioObservador);
+                updateData.fechaInicioObservador = date_utils_1.DateUtils.truncateTime(updateData.fechaInicioObservador);
             if (updateData.fechaFinObservador)
-                updateData.fechaFinObservador = new Date(updateData.fechaFinObservador);
+                updateData.fechaFinObservador = date_utils_1.DateUtils.truncateTime(updateData.fechaFinObservador);
             if (updateData.fechaProtocolizacion)
-                updateData.fechaProtocolizacion = new Date(updateData.fechaProtocolizacion);
+                updateData.fechaProtocolizacion = date_utils_1.DateUtils.truncateTime(updateData.fechaProtocolizacion);
             if (observadorPrincipalId)
                 updateData.observadorPrincipalId = observadorPrincipalId;
             if (pesqueriaId)
@@ -149,9 +149,9 @@ let MareasService = class MareasService {
                     etapaData.puertoArriboId = this.sanitizeUuid(etapaData.puertoArriboId);
                     etapaData.pesqueriaId = this.sanitizeUuid(etapaData.pesqueriaId);
                     if (etapaData.fechaZarpada)
-                        etapaData.fechaZarpada = new Date(etapaData.fechaZarpada);
+                        etapaData.fechaZarpada = date_utils_1.DateUtils.truncateTime(etapaData.fechaZarpada);
                     if (etapaData.fechaArribo)
-                        etapaData.fechaArribo = new Date(etapaData.fechaArribo);
+                        etapaData.fechaArribo = date_utils_1.DateUtils.truncateTime(etapaData.fechaArribo);
                     if (currentEtapaId) {
                         const existing = await tx.mareaEtapa.findFirst({
                             where: { id: currentEtapaId, mareaId: id }
@@ -1279,9 +1279,9 @@ let MareasService = class MareasService {
             const stageData = {
                 nroEtapa: i + 1,
                 puertoZarpadaId: this.sanitizeUuid(stg.puertoZarpadaId),
-                fechaZarpada: stg.fechaZarpada ? new Date(stg.fechaZarpada) : null,
+                fechaZarpada: stg.fechaZarpada ? date_utils_1.DateUtils.truncateTime(stg.fechaZarpada) : null,
                 puertoArriboId: this.sanitizeUuid(stg.puertoArriboId),
-                fechaArribo: stg.fechaArribo ? new Date(stg.fechaArribo) : null,
+                fechaArribo: stg.fechaArribo ? date_utils_1.DateUtils.truncateTime(stg.fechaArribo) : null,
                 pesqueriaId: this.sanitizeUuid(stg.pesqueriaId),
                 tipoEtapa: stg.tipoEtapa || mareas_constants_1.TipoEtapa.MC,
                 observaciones: stg.observaciones || ''
@@ -1340,7 +1340,7 @@ let MareasService = class MareasService {
             throw new common_1.NotFoundException('Marea no encontrada');
         if (actionKey === 'EDITAR_ETAPAS') {
             return await this.prisma.$transaction(async (tx) => {
-                const fechaInicioObs = payload.fechaInicioObservador ? new Date(payload.fechaInicioObservador) : marea.fechaInicioObservador;
+                const fechaInicioObs = payload.fechaInicioObservador ? date_utils_1.DateUtils.truncateTime(payload.fechaInicioObservador) : marea.fechaInicioObservador;
                 await tx.marea.update({
                     where: { id },
                     data: {
@@ -1377,7 +1377,7 @@ let MareasService = class MareasService {
                 const fechaIn = payload.fechaInicioObservador || payload.fechaInicio;
                 if (!fechaIn)
                     throw new Error('La fecha de inicio del observador es requerida.');
-                additionalMareaData.fechaInicioObservador = new Date(fechaIn);
+                additionalMareaData.fechaInicioObservador = date_utils_1.DateUtils.truncateTime(fechaIn);
                 const existingStages = await tx.mareaEtapa.count({ where: { mareaId: id } });
                 if (existingStages === 0) {
                     const buque = await tx.buque.findUnique({
@@ -1391,7 +1391,7 @@ let MareasService = class MareasService {
                             pesqueriaId: payload.pesqueriaId || marea.pesqueriaId,
                             puertoZarpadaId: payload.puertoId || buque?.puertoBaseId,
                             tipoEtapa: marea.tipoMarea === mareas_constants_1.TipoMarea.CI ? mareas_constants_1.TipoEtapa.CI : mareas_constants_1.TipoEtapa.MC,
-                            fechaZarpada: new Date(fechaIn),
+                            fechaZarpada: date_utils_1.DateUtils.truncateTime(fechaIn),
                         }
                     });
                 }
@@ -1401,15 +1401,15 @@ let MareasService = class MareasService {
             }
             if (actionKey === 'REGISTRAR_ARRIBO') {
                 const fechaFin = payload.fechaFinObservador;
-                additionalMareaData.fechaFinObservador = fechaFin ? new Date(fechaFin) : null;
+                additionalMareaData.fechaFinObservador = fechaFin ? date_utils_1.DateUtils.truncateTime(fechaFin) : null;
                 if (payload.etapas) {
                     await this.syncStages(tx, id, payload.etapas);
                 }
             }
             if (actionKey === 'RECIBIR_DATOS') {
                 const fechaRecepcion = payload.fechaRecepcion;
-                const fechaInicioObs = payload.fechaInicioObservador ? new Date(payload.fechaInicioObservador) : (marea.fechaInicioObservador ? new Date(marea.fechaInicioObservador) : null);
-                const fechaFinObs = payload.fechaFinObservador ? new Date(payload.fechaFinObservador) : (marea.fechaFinObservador ? new Date(marea.fechaFinObservador) : null);
+                const fechaInicioObs = payload.fechaInicioObservador ? date_utils_1.DateUtils.truncateTime(payload.fechaInicioObservador) : (marea.fechaInicioObservador ? date_utils_1.DateUtils.truncateTime(marea.fechaInicioObservador) : null);
+                const fechaFinObs = payload.fechaFinObservador ? date_utils_1.DateUtils.truncateTime(payload.fechaFinObservador) : (marea.fechaFinObservador ? date_utils_1.DateUtils.truncateTime(marea.fechaFinObservador) : null);
                 if (!fechaInicioObs || !fechaFinObs) {
                     throw new Error('Las fechas de inicio y fin del observador son requeridas para la recepción.');
                 }
@@ -1513,8 +1513,8 @@ let MareasService = class MareasService {
                     tipoMarea,
                     artePrincipalId: arteId,
                     observadorPrincipalId: observadorId,
-                    fechaZarpadaEstimada: fechaZarpadaEstimada ? new Date(fechaZarpadaEstimada) : null,
-                    fechaInicioObservador: fechaInicioObservador ? new Date(fechaInicioObservador) : null,
+                    fechaZarpadaEstimada: fechaZarpadaEstimada ? date_utils_1.DateUtils.truncateTime(fechaZarpadaEstimada) : null,
+                    fechaInicioObservador: fechaInicioObservador ? date_utils_1.DateUtils.truncateTime(fechaInicioObservador) : null,
                     diasEstimados,
                     observaciones: createMareaDto.observaciones || '',
                 }

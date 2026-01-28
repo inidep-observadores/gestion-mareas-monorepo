@@ -41,7 +41,7 @@ let BuquesController = class BuquesController {
 exports.BuquesController = BuquesController;
 __decorate([
     (0, common_1.Post)(),
-    (0, decorators_1.Auth)(interfaces_1.ValidRoles.admin),
+    (0, decorators_1.Auth)(interfaces_1.ValidRoles.admin, interfaces_1.ValidRoles.coordinador),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [dto_1.CreateBuqueDto]),
@@ -62,7 +62,7 @@ __decorate([
 ], BuquesController.prototype, "obtenerUno", null);
 __decorate([
     (0, common_1.Patch)(':id'),
-    (0, decorators_1.Auth)(interfaces_1.ValidRoles.admin),
+    (0, decorators_1.Auth)(interfaces_1.ValidRoles.admin, interfaces_1.ValidRoles.coordinador),
     __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),

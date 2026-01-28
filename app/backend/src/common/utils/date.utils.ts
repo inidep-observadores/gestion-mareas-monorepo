@@ -130,4 +130,19 @@ export class DateUtils {
             return acc + this.calculateInclusiveDays(interval.start, interval.end);
         }, 0);
     }
+
+    /**
+     * Normaliza una fecha a las 00:00:00.000 local para ser guardada sin componente horaria.
+     * @param date Fecha a normalizar (Date u objeto ISO string)
+     * @returns Nueva instancia de Date con la hora truncada, o null si la fecha es inválida.
+     */
+    static truncateTime(date: Date | string | null | undefined): Date | null {
+        if (!date) return null;
+        const d = new Date(date);
+        if (isNaN(d.getTime())) return null;
+
+        // Truncar horas, minutos, segundos y milisegundos
+        d.setHours(0, 0, 0, 0);
+        return d;
+    }
 }

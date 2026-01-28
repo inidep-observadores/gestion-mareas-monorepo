@@ -26,7 +26,7 @@ export class ObservadoresController {
     }
 
     @Patch(':id')
-    @Auth(ValidRoles.admin)
+    @Auth(ValidRoles.admin, ValidRoles.coordinador)
     actualizar(
         @Param('id', ParseUUIDPipe) id: string,
         @Body() updateObservadorDto: UpdateObservadorDto,

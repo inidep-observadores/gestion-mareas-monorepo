@@ -1,8 +1,9 @@
 import { Injectable, Logger, InternalServerErrorException, NotFoundException, BadRequestException } from '@nestjs/common';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { PrismaService } from '../../prisma/prisma.service';
 import { Prisma } from '@prisma/client';
 import { ConfigService } from '@nestjs/config';
 import { MareaUtils } from '../../common/utils/marea.utils';
+import { DateUtils } from '../../common/utils/date.utils';
 import { TipoMarea } from '../../mareas/mareas.constants';
 import * as ExcelJS from 'exceljs';
 import * as fs from 'fs';
@@ -686,14 +687,14 @@ export class DataExportService {
                 anioMarea: m.anioMarea,
                 nroMarea: m.nroMarea,
                 tipoMarea: m.tipoMarea || TipoMarea.MC,
-                fechaZarpadaEstimada: m.fechaZarpadaEstimada ? new Date(m.fechaZarpadaEstimada) : null,
-                fechaInicioObservador: m.fechaInicioObservador ? new Date(m.fechaInicioObservador) : null,
-                fechaFinObservador: m.fechaFinObservador ? new Date(m.fechaFinObservador) : null,
+                fechaZarpadaEstimada: DateUtils.truncateTime(m.fechaZarpadaEstimada),
+                fechaInicioObservador: DateUtils.truncateTime(m.fechaInicioObservador),
+                fechaFinObservador: DateUtils.truncateTime(m.fechaFinObservador),
                 diasZonaAustral: m.diasZonaAustral,
                 tipoCalculoZonaAustral: m.tipoCalculoZonaAustral,
                 nroProtocolizacion: m.nroProtocolizacion,
                 anioProtocolizacion: m.anioProtocolizacion,
-                fechaProtocolizacion: m.fechaProtocolizacion ? new Date(m.fechaProtocolizacion) : null,
+                fechaProtocolizacion: DateUtils.truncateTime(m.fechaProtocolizacion),
                 observaciones: m.observaciones,
                 activo: m.activo,
                 diasEstimados: m.diasEstimados,
@@ -708,8 +709,8 @@ export class DataExportService {
                     create: m.etapas?.map((et: any) => ({
                         nroEtapa: et.nroEtapa || 1,
                         tipoEtapa: et.tipoEtapa || 'PESCA',
-                        fechaZarpada: et.fechaZarpada ? new Date(et.fechaZarpada) : undefined,
-                        fechaArribo: et.fechaArribo ? new Date(et.fechaArribo) : undefined,
+                        fechaZarpada: DateUtils.truncateTime(et.fechaZarpada),
+                        fechaArribo: DateUtils.truncateTime(et.fechaArribo),
                         observaciones: et.observaciones,
 
                         puertoZarpada: et.puertoZarpadaCodigo ? { connect: { id: puertoCodeMap.get(et.puertoZarpadaCodigo) || puertoNameMap.get(et.puertoZarpadaCodigo) } } : undefined,
