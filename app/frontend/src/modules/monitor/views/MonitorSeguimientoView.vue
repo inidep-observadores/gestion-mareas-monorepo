@@ -229,9 +229,11 @@ const fetchFleet = async () => {
     }
 
     activeMareas.forEach((marea: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
-      // Key by mareaId to allow multiple mareas per vessel
-      if (!fleet[marea.mareaId]) {
-        fleet[marea.mareaId] = {
+      const id = marea.mareaId
+
+      if (!fleet[id]) {
+        // Create new entry
+        fleet[id] = {
           id: marea.mareaId,   // Use mareaId as the UI ID
           vesselId: marea.id,  // Store original vesselId for backend calls
           name: marea.name,
@@ -256,9 +258,24 @@ const fetchFleet = async () => {
             course: marea.course
           } : null
         }
-        // Fetch history using vesselId but passing mareaId to update correct fleet entry
-        fetchVesselHistory(marea.id, marea.mareaId, marea.voyageStart, marea.voyageEnd)
+      } else {
+        // Update existing metadata
+        const existing = fleet[id]
+        existing.lastUpdate = marea.lastUpdate
+        existing.totalDays = marea.totalDays
+        existing.etapas = marea.etapas
+        existing.mareaStatus = marea.mareaStatus
+        existing.lastKnownPoint = (marea.lat !== null && marea.lon !== null) ? {
+          lat: marea.lat,
+          lon: marea.lon,
+          timestamp: marea.lastUpdate,
+          speed: marea.speed,
+          course: marea.course
+        } : null
       }
+
+      // Always re-fetch history to ensure new data from CSV is loaded
+      fetchVesselHistory(marea.id, id, marea.voyageStart, marea.voyageEnd)
     })
 
     if (!selectedVesselId.value && activeMareas.length > 0) {
