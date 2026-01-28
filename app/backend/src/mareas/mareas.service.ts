@@ -603,14 +603,14 @@ export class MareasService {
             }
 
             const item = distributionMap.get(label)!;
-            item.count++;
+            // item.count++; // Removed: count is calculated from map size
             item.vessels.set(vesselName, { mareaCode, status });
         });
 
         const distribution = Array.from(distributionMap.entries())
             .map(([label, data]) => ({
                 label,
-                count: data.count,
+                count: data.vessels.size,
                 vessels: Array.from(data.vessels.entries())
                     .map(([name, vesselData]) => ({ name, ...vesselData }))
                     .sort((a, b) => a.name.localeCompare(b.name))
