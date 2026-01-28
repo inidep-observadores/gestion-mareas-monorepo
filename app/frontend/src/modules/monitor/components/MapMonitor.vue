@@ -215,11 +215,13 @@ const renderMarker = (vessel: VesselTrajectory) => {
   const icon = L.divIcon({
     className: 'vessel-marker-container',
     html: `
-      <div class="vessel-marker-wrapper ${vessel.visible ? 'is-active' : ''}" style="--vessel-color: ${vessel.color}; transform: rotate(${current.course}deg)">
+      <div class="vessel-marker-wrapper ${vessel.visible ? 'is-active' : ''}" style="--vessel-color: ${vessel.color}; --vessel-rotation: ${current.course}deg; transform: rotate(${current.course}deg)">
         <svg viewBox="0 0 40 40" class="vessel-svg">
-          <!-- Realistic Vessel Shape (Skinnier profile, square stern) -->
+          <!-- Background Halo for high contrast against same-colored trajectories -->
+          <path d="M20 4 C22.5 4 26 10 26 24 L26 34 Q26 36 20 36 Q14 36 14 34 L14 24 C14 10 17.5 4 20 4 Z" class="vessel-hull-halo" />
+          
           <!-- Main Hull -->
-          <path d="M20 4 C23 4 27 10 27 24 L27 34 Q27 36 20 36 Q13 36 13 34 L13 24 C13 10 17 4 20 4 Z" class="vessel-hull" fill="${vessel.color}" />
+          <path d="M20 4 C22.5 4 26 10 26 24 L26 34 Q26 36 20 36 Q14 36 14 34 L14 24 C14 10 17.5 4 20 4 Z" class="vessel-hull" fill="${vessel.color}" />
           
           <!-- Bridge / Cabin (Center-Forward) -->
           <rect x="17" y="14" width="6" height="6" rx="1" class="vessel-bridge" />
@@ -230,16 +232,21 @@ const renderMarker = (vessel: VesselTrajectory) => {
           <line x1="15" y1="28" x2="25" y2="28" class="vessel-deck-line" />
           
           <!-- Bow Detail (Pointer) -->
-          <path d="M18.5 6 L20 3 L21.5 6" fill="white" opacity="0.8" />
+          <path d="M18.5 6 L20 3 L21.5 6" fill="white" />
         </svg>
       </div>
     `,
-    iconSize: [40, 40],
-    iconAnchor: [20, 20],
+    iconSize: [36, 36],
+    iconAnchor: [18, 18],
   })
 
   // interactive: true para permitir clics
-  const marker = L.marker([current.lat, current.lon], { icon, interactive: true }).addTo(markersLayer)
+  // zIndexOffset: 1000 para que el seleccionado flote sobre los demás
+  const marker = L.marker([current.lat, current.lon], {
+    icon,
+    interactive: true,
+    zIndexOffset: vessel.visible ? 1000 : 0
+  }).addTo(markersLayer)
 
   const showNames = props.activeLayers.showVesselNames
 
@@ -578,12 +585,37 @@ onUnmounted(() => {
 
 .vessel-marker-wrapper {
   position: relative;
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: opacity 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+.vessel-marker-wrapper.is-active {
+  z-index: 1000;
+  filter: drop-shadow(0 4px 12px rgba(var(--color-primary-rgb), 0.4));
+  animation: vessel-pulse 2s infinite cubic-bezier(0.4, 0, 0.6, 1);
+}
+
+@keyframes vessel-pulse {
+
+  0%,
+  100% {
+    transform: scale(1) rotate(var(--vessel-rotation, 0deg));
+  }
+
+  50% {
+    transform: scale(1.15) rotate(var(--vessel-rotation, 0deg));
+  }
+}
+
+.vessel-marker-wrapper.is-active .vessel-hull-halo {
+  stroke-width: 5;
+  stroke: white;
+  opacity: 1;
 }
 
 .vessel-svg {
@@ -591,14 +623,22 @@ onUnmounted(() => {
   height: 100%;
 }
 
+.vessel-hull-halo {
+  fill: none;
+  stroke: white;
+  stroke-width: 3.5;
+  stroke-linejoin: round;
+  opacity: 1;
+}
+
 .vessel-hull {
-  stroke: rgba(255, 255, 255, 0.5);
-  stroke-width: 0.8;
+  stroke: rgba(0, 0, 0, 0.4);
+  stroke-width: 0.6;
   transition: all 0.3s ease;
 }
 
 .vessel-bridge {
-  fill: rgba(255, 255, 255, 0.4);
+  fill: rgba(255, 255, 255, 0.6);
 }
 
 .vessel-bridge-upper {
