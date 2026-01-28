@@ -14,6 +14,14 @@ export class ObservadoresService {
         if (createObservadorDto.conImpedimento === false) {
             createObservadorDto.motivoImpedimento = null;
         }
+
+        // Si el email viene vacío o solo con espacios, ponerlo como null
+        if (createObservadorDto.email && createObservadorDto.email.trim() === '') {
+            createObservadorDto.email = null;
+        } else if (createObservadorDto.email === '') {
+            createObservadorDto.email = null;
+        }
+
         return await this.prisma.observador.create({
             data: createObservadorDto as any,
         });
@@ -52,6 +60,13 @@ export class ObservadoresService {
 
         if (updateObservadorDto.conImpedimento === false) {
             updateObservadorDto.motivoImpedimento = null;
+        }
+
+        // Si el email viene vacío o solo con espacios, ponerlo como null
+        if (updateObservadorDto.email !== undefined) {
+            if (updateObservadorDto.email === null || updateObservadorDto.email.trim() === '') {
+                updateObservadorDto.email = null;
+            }
         }
 
         return await this.prisma.observador.update({

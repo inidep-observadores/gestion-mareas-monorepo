@@ -23,6 +23,12 @@ let ObservadoresService = class ObservadoresService {
         if (createObservadorDto.conImpedimento === false) {
             createObservadorDto.motivoImpedimento = null;
         }
+        if (createObservadorDto.email && createObservadorDto.email.trim() === '') {
+            createObservadorDto.email = null;
+        }
+        else if (createObservadorDto.email === '') {
+            createObservadorDto.email = null;
+        }
         return await this.prisma.observador.create({
             data: createObservadorDto,
         });
@@ -55,6 +61,11 @@ let ObservadoresService = class ObservadoresService {
         }
         if (updateObservadorDto.conImpedimento === false) {
             updateObservadorDto.motivoImpedimento = null;
+        }
+        if (updateObservadorDto.email !== undefined) {
+            if (updateObservadorDto.email === null || updateObservadorDto.email.trim() === '') {
+                updateObservadorDto.email = null;
+            }
         }
         return await this.prisma.observador.update({
             where: { id: observador.id },

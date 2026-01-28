@@ -364,6 +364,11 @@ const handleSubmit = async () => {
     }
     const data = { ...form.value, id: props.observador?.id }
     if (!data.fechaProximaDisponibilidad) data.fechaProximaDisponibilidad = null as any
+    if (data.email && data.email.trim() === '') {
+        data.email = null as any
+    } else if (data.email === '') {
+        data.email = null as any
+    }
     emit('save', data)
 }
 </script>
