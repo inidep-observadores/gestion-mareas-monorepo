@@ -114,16 +114,94 @@ export class MareasService {
         }
 
         await this.prisma.$transaction(async (tx) => {
-            const updateData: any = { ...data };
-            if (artePrincipalId) updateData.artePrincipalId = artePrincipalId;
-            if (!artePrincipalId && arteId) updateData.artePrincipalId = arteId;
-            if (updateData.fechaZarpadaEstimada) updateData.fechaZarpadaEstimada = DateUtils.truncateTime(updateData.fechaZarpadaEstimada);
-            if (updateData.fechaInicioObservador) updateData.fechaInicioObservador = DateUtils.truncateTime(updateData.fechaInicioObservador);
-            if (updateData.fechaFinObservador) updateData.fechaFinObservador = DateUtils.truncateTime(updateData.fechaFinObservador);
-            if (updateData.fechaProtocolizacion) updateData.fechaProtocolizacion = DateUtils.truncateTime(updateData.fechaProtocolizacion);
+            // Validaciones cruzadas de negocio
 
-            if (observadorPrincipalId) updateData.observadorPrincipalId = observadorPrincipalId;
-            if (pesqueriaId) updateData.pesqueriaId = pesqueriaId;
+            // 1. Regla de Observador: Si hay un cambio en fechaFinObservador o fechaInicioObservador
+            if (updateMareaDto.fechaFinObservador !== undefined || updateMareaDto.fechaInicioObservador !== undefined) {
+                const current = await tx.marea.findUnique({
+                    where: { id },
+                    select: { fechaInicioObservador: true, fechaFinObservador: true }
+                });
+
+                const fin = updateMareaDto.fechaFinObservador !== undefined ? updateMareaDto.fechaFinObservador : current?.fechaFinObservador;
+                const inicio = updateMareaDto.fechaInicioObservador !== undefined ? updateMareaDto.fechaInicioObservador : current?.fechaInicioObservador;
+
+                // Solo validamos si hay un periodo (fin no es nulo)
+                if (fin) {
+                    if (!inicio) {
+                        throw new BadRequestException('Si se especifica la fecha de fin del observador, la fecha de inicio es obligatoria.');
+                    }
+                    if (new Date(inicio as any) > new Date(fin as any)) {
+                        throw new BadRequestException('La fecha de inicio del observador no puede ser posterior a la de fin.');
+                    }
+
+                    // No se puede indicar fecha_fin_observador si hay etapas sin arribo
+                    const currentEtapas = updateMareaDto.etapas;
+                    if (currentEtapas) {
+                        const hasOpenStages = currentEtapas.some(e => !e.fechaArribo);
+                        if (hasOpenStages) {
+                            throw new BadRequestException('No se puede establecer la fecha de fin del observador si existen etapas sin fecha de arribo.');
+                        }
+                    } else {
+                        const openStagesCount = await tx.mareaEtapa.count({
+                            where: {
+                                mareaId: id,
+                                fechaArribo: null
+                            }
+                        });
+                        if (openStagesCount > 0) {
+                            throw new BadRequestException('No se puede establecer la fecha de fin del observador si existen etapas sin fecha de arribo.');
+                        }
+                    }
+                }
+            }
+
+            // 2. Regla de Protocolización: Atómica (todos o ninguno)
+            // Solo validamos si alguno de los campos de protocolización viene en el DTO (cambio intencional)
+            if (updateMareaDto.nroProtocolizacion !== undefined ||
+                updateMareaDto.anioProtocolizacion !== undefined ||
+                updateMareaDto.fechaProtocolizacion !== undefined) {
+
+                const current = await tx.marea.findUnique({
+                    where: { id },
+                    select: { nroProtocolizacion: true, anioProtocolizacion: true, fechaProtocolizacion: true }
+                });
+
+                const nro = updateMareaDto.nroProtocolizacion !== undefined ? updateMareaDto.nroProtocolizacion : current?.nroProtocolizacion;
+                const anio = updateMareaDto.anioProtocolizacion !== undefined ? updateMareaDto.anioProtocolizacion : current?.anioProtocolizacion;
+                const fecha = updateMareaDto.fechaProtocolizacion !== undefined ? updateMareaDto.fechaProtocolizacion : current?.fechaProtocolizacion;
+
+                const values = [nro, anio, fecha];
+                const someDefined = values.some(v => v !== null && v !== undefined);
+                const allDefined = values.every(v => v !== null && v !== undefined);
+
+                if (someDefined && !allDefined) {
+                    throw new BadRequestException('Los campos de protocolización (número, año y fecha) deben completarse todos juntos o permanecer todos vacíos.');
+                }
+            }
+
+            const updateData: any = { ...data };
+
+            // Procesamiento de campos con soporte para NULL
+            const processDate = (val: any) => (val === undefined || val === null) ? val : DateUtils.truncateTime(val);
+
+            if (artePrincipalId !== undefined) updateData.artePrincipalId = artePrincipalId;
+            if (artePrincipalId === undefined && arteId !== undefined) updateData.artePrincipalId = arteId;
+
+            if (updateMareaDto.fechaZarpadaEstimada !== undefined) updateData.fechaZarpadaEstimada = processDate(updateMareaDto.fechaZarpadaEstimada);
+            if (updateMareaDto.fechaInicioObservador !== undefined) updateData.fechaInicioObservador = processDate(updateMareaDto.fechaInicioObservador);
+            if (updateMareaDto.fechaFinObservador !== undefined) updateData.fechaFinObservador = processDate(updateMareaDto.fechaFinObservador);
+            if (updateMareaDto.fechaProtocolizacion !== undefined) updateData.fechaProtocolizacion = processDate(updateMareaDto.fechaProtocolizacion);
+
+            if (observadorPrincipalId !== undefined) updateData.observadorPrincipalId = observadorPrincipalId;
+            if (pesqueriaId !== undefined) updateData.pesqueriaId = pesqueriaId;
+
+            // Otros campos que pueden ser nulos
+            if (updateMareaDto.diasZonaAustral !== undefined) updateData.diasZonaAustral = updateMareaDto.diasZonaAustral;
+            if (updateMareaDto.nroProtocolizacion !== undefined) updateData.nroProtocolizacion = updateMareaDto.nroProtocolizacion;
+            if (updateMareaDto.anioProtocolizacion !== undefined) updateData.anioProtocolizacion = updateMareaDto.anioProtocolizacion;
+            if (updateMareaDto.diasEstimados !== undefined) updateData.diasEstimados = updateMareaDto.diasEstimados;
+            if (updateMareaDto.tipoCalculoZonaAustral !== undefined) updateData.tipoCalculoZonaAustral = updateMareaDto.tipoCalculoZonaAustral;
 
             if (Object.keys(updateData).length > 0) {
                 await tx.marea.update({
@@ -143,6 +221,7 @@ export class MareasService {
                 });
 
                 this.validateStagesChronology(etapas);
+                this.validateStagesIntegrity(etapas);
                 for (const etapa of etapas) {
                     const { observadores, id: etapaId, ...rest } = etapa;
                     const etapaData: any = { ...rest };
@@ -1484,8 +1563,9 @@ export class MareasService {
     async syncStages(tx: any, mareaId: string, incomingStages: any[]) {
         if (!incomingStages || !Array.isArray(incomingStages)) return;
 
-        // Validar cronología antes de sincronizar
+        // Validar cronología e integridad antes de sincronizar
         this.validateStagesChronology(incomingStages);
+        this.validateStagesIntegrity(incomingStages);
 
         const incomingIds = incomingStages.filter((s: any) => s.id).map((s: any) => s.id);
 
@@ -1553,6 +1633,25 @@ export class MareasService {
                         throw new Error(`Error en Etapa #${i + 1}: La fecha de zarpada no puede ser anterior al arribo de la etapa anterior (#${i}).`);
                     }
                 }
+            }
+        }
+    }
+
+    private validateStagesIntegrity(stages: any[]) {
+        for (let i = 0; i < stages.length; i++) {
+            const current = stages[i];
+
+            // 1. Zarpada: Fecha y Puerto Obligatorios
+            if (!current.fechaZarpada || !current.puertoZarpadaId) {
+                throw new BadRequestException(`Error en Etapa #${i + 1}: La fecha y el puerto de zarpada son obligatorios.`);
+            }
+
+            // 2. Arribo: Atómico (Ambos o Ninguno)
+            const hasFechaArr = !!current.fechaArribo;
+            const hasPuertoArr = !!current.puertoArriboId;
+
+            if (hasFechaArr !== hasPuertoArr) {
+                throw new BadRequestException(`Error en Etapa #${i + 1}: La fecha y el puerto de arribo deben completarse juntos o dejarse ambos vacíos.`);
             }
         }
     }

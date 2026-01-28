@@ -79,7 +79,7 @@
                     </span>
                     <span v-if="isExpanded || isHovered || isMobileOpen" class="menu-item-text">{{
                       item.name
-                      }}</span>
+                    }}</span>
                   </router-link>
                 </li>
               </template>
@@ -106,7 +106,7 @@
                   </span>
                   <span v-if="isExpanded || isHovered || isMobileOpen" class="menu-item-text">{{
                     item.name
-                    }}</span>
+                  }}</span>
                 </button>
               </template>
             </li>
@@ -210,8 +210,7 @@ const navigationGroups = computed(() => {
           icon: BarChartIcon,
           name: 'Estadísticas',
           to: { name: 'MareasStats' },
-          // show: isAdmin.value || isCoordinator.value,
-          show: true,
+          show: isAdmin.value || isCoordinator.value,
         },
       ],
     },

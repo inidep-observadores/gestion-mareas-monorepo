@@ -681,6 +681,7 @@ export declare class MareasService {
     search(query: string): Promise<any>;
     syncStages(tx: any, mareaId: string, incomingStages: any[]): Promise<void>;
     private validateStagesChronology;
+    private validateStagesIntegrity;
     private sanitizeUuid;
     executeAction(id: string, actionKey: string, user: User, payload?: any): Promise<{
         marea: {

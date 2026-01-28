@@ -1,0 +1,68 @@
+﻿
+> sigma-mareas-monorepo@0.1.0 test
+> pnpm -r run test app/backend/src/mareas/mareas.service.spec.ts --no-cache
+
+Scope: 2 of 3 workspace projects
+app/backend test$ jest "app/backend/src/mareas/mareas.service.spec.ts" "--no-cache"
+app/backend test: FAIL src/mareas/mareas.service.spec.ts
+app/backend test:   MareasService
+app/backend test:     validateStagesChronology (Edge Cases)
+app/backend test:       ÔêÜ should throw error if arrival is before departure in same stage (9 ms)
+app/backend test:       ÔêÜ should throw error if stage 2 departure is before stage 1 arrival (2 ms)
+app/backend test:       ÔêÜ should pass if dates are equal (limit case) (1 ms)
+app/backend test:     update (Impediment check)
+app/backend test:       ÔêÜ should throw BadRequestException if assigning an observer with impediment (2 ms)
+app/backend test:     executeAction - RECIBIR_DATOS (Date range checks)
+app/backend test:       ├ù should throw if reception date is before arrival (17 ms)
+app/backend test:       ÔêÜ should throw if observer dates are inconsistent with stages (1 ms)
+app/backend test:     create (Uniqueness and Initialization)
+app/backend test:       ÔêÜ should throw error if marea already exists (2 ms)
+app/backend test:       ÔêÜ should create marea and state is initialized (1 ms)
+app/backend test:     executeAction - REGISTRAR_INICIO
+app/backend test:       ├ù should create first stage automatically if it does not exist (3 ms)
+app/backend test:     update (Business Rules and Blinking)
+app/backend test:       ÔêÜ should allow clearing optional fields by sending null (1 ms)
+app/backend test:       ÔêÜ should throw error if fechaFinObservador is provided without fechaInicioObservador (and not in DB) (1 ms)
+app/backend test:       ÔêÜ should throw error if fechaInicioObservador is after fechaFinObservador (1 ms)
+app/backend test:       ÔêÜ should throw error if protocolization fields are inconsistent (some null, some defined) (1 ms)
+app/backend test:       ÔêÜ should throw error if protocolization fields are partially cleared (some null, some defined)
+app/backend test:       ÔêÜ should pass if all protocolization fields are null
+app/backend test:   ÔùÅ MareasService ÔÇ║ executeAction - RECIBIR_DATOS (Date range checks) ÔÇ║ should throw if reception date is before arrival
+app/backend test:     expect(received).rejects.toThrow(expected)
+app/backend test:     Expected pattern: /La fecha de recepci├│n no puede ser anterior a la finalizaci├│n del observador/
+app/backend test:     Received message: "La fecha de fin del observador no puede ser anterior al arribo de la ├║ltima etapa."
+app/backend test:         [0m [90m 1738 |[39m                     }
+app/backend test:          [90m 1739 |[39m                     [36mif[39m (lastStageArribo [33m&&[39m fechaFinObs [33m<[39m lastStageArribo) {
+app/backend test:         [31m[1m>[22m[39m[90m 1740 |[39m                         [36mthrow[39m [36mnew[39m [33mError[39m([32m'La fecha de fin del observador no puede ser anterior al arribo de la ├║ltima etapa.'[39m)[33m;[39m
+app/backend test:          [90m      |[39m                               [31m[1m^[22m[39m
+app/backend test:          [90m 1741 |[39m                     }
+app/backend test:          [90m 1742 |[39m                 }
+app/backend test:          [90m 1743 |[39m[0m
+app/backend test:       at mareas/mareas.service.ts:1740:31
+app/backend test:       at Object.<anonymous> (mareas/mareas.service.spec.ts:50:39)
+app/backend test:       at MareasService.executeAction (mareas/mareas.service.ts:1676:34)
+app/backend test:       at Object.<anonymous> (mareas/mareas.service.spec.ts:174:13)
+app/backend test:       at Object.toThrow (../../../node_modules/.pnpm/expect@30.2.0/node_modules/expect/build/index.js:2155:20)
+app/backend test:       at Object.<anonymous> (mareas/mareas.service.spec.ts:175:26)
+app/backend test:   ÔùÅ MareasService ÔÇ║ executeAction - REGISTRAR_INICIO ÔÇ║ should create first stage automatically if it does not exist
+app/backend test:     expect(jest.fn()).toHaveBeenCalledWith(...expected)
+app/backend test:     Expected: ObjectContaining {"data": ObjectContaining {"fechaZarpada": 2025-01-01T10:00:00.000Z, "nroEtapa": 1}}
+app/backend test:     Received: {"data": {"fechaZarpada": 2025-01-01T03:00:00.000Z, "mareaId": "marea-1", "nroEtapa": 1, "pesqueriaId": undefined, "puertoZarpadaId": "puerto-base", "tipoEtapa": "MC"}}
+app/backend test:     Number of calls: 1
+app/backend test:     [0m [90m 261 |[39m             [36mawait[39m service[33m.[39mexecuteAction(mareaId[33m,[39m [32m'REGISTRAR_INICIO'[39m[33m,[39m { id[33m:[39m [32m'user-1'[39m } [36mas[39m any[33m,[39m payload)[33m;[39m
+app/backend test:      [90m 262 |[39m
+app/backend test:     [31m[1m>[22m[39m[90m 263 |[39m             expect(mockPrismaService[33m.[39mmareaEtapa[33m.[39mcreate)[33m.[39mtoHaveBeenCalledWith(expect[33m.[39mobjectContaining({
+app/backend test:      [90m     |[39m                                                         [31m[1m^[22m[39m
+app/backend test:      [90m 264 |[39m                 data[33m:[39m expect[33m.[39mobjectContaining({
+app/backend test:      [90m 265 |[39m                     nroEtapa[33m:[39m [35m1[39m[33m,[39m
+app/backend test:      [90m 266 |[39m                     fechaZarpada[33m:[39m [36mnew[39m [33mDate[39m(payload[33m.[39mfechaInicioObservador)[0m
+app/backend test:       at Object.<anonymous> (mareas/mareas.service.spec.ts:263:57)
+app/backend test: Test Suites: 1 failed, 1 total
+app/backend test: Tests:       2 failed, 13 passed, 15 total
+app/backend test: Snapshots:   0 total
+app/backend test: Time:        3.332 s
+app/backend test: Ran all test suites matching app/backend/src/mareas/mareas.service.spec.ts.
+app/backend test: Failed
+D:\Desarrollo\_INIDEP\OBS\Mareas\gestion-mareas-monorepo\app\backend:
+ÔÇëERR_PNPM_RECURSIVE_RUN_FIRST_FAILÔÇë sigma-backend@0.0.1 test: `jest "app/backend/src/mareas/mareas.service.spec.ts" "--no-cache"`
+Exit status 1

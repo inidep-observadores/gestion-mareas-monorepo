@@ -7,35 +7,35 @@ import { MareaEtapaDto } from './marea-etapa.dto';
 export class UpdateMareaDto extends PartialType(CreateMareaDto) {
     @IsInt()
     @IsOptional()
-    diasZonaAustral?: number;
+    diasZonaAustral?: number | null;
 
     @IsString()
     @IsOptional()
-    tipoCalculoZonaAustral?: string;
+    tipoCalculoZonaAustral?: string | null;
 
     @IsDateString()
     @IsOptional()
-    fechaInicioObservador?: string;
+    fechaInicioObservador?: string | null;
 
     @IsDateString()
     @IsOptional()
-    fechaFinObservador?: string;
+    fechaFinObservador?: string | null;
 
     @IsInt()
     @IsOptional()
-    nroProtocolizacion?: number;
+    nroProtocolizacion?: number | null;
 
     @IsInt()
     @IsOptional()
-    anioProtocolizacion?: number;
+    anioProtocolizacion?: number | null;
 
     @IsDateString()
     @IsOptional()
-    fechaProtocolizacion?: string;
+    fechaProtocolizacion?: string | null;
 
     @IsString()
     @IsOptional()
-    observaciones?: string;
+    observaciones?: string | null;
 
     @IsBoolean()
     @IsOptional()
@@ -43,11 +43,11 @@ export class UpdateMareaDto extends PartialType(CreateMareaDto) {
 
     @IsUUID()
     @IsOptional()
-    artePrincipalId?: string;
+    artePrincipalId?: string | null;
 
     @IsUUID()
     @IsOptional()
-    observadorPrincipalId?: string;
+    observadorPrincipalId?: string | null;
 
     @IsArray()
     @IsOptional()

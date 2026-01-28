@@ -109,23 +109,85 @@ let MareasService = class MareasService {
             }
         }
         await this.prisma.$transaction(async (tx) => {
+            if (updateMareaDto.fechaFinObservador !== undefined || updateMareaDto.fechaInicioObservador !== undefined) {
+                const current = await tx.marea.findUnique({
+                    where: { id },
+                    select: { fechaInicioObservador: true, fechaFinObservador: true }
+                });
+                const fin = updateMareaDto.fechaFinObservador !== undefined ? updateMareaDto.fechaFinObservador : current?.fechaFinObservador;
+                const inicio = updateMareaDto.fechaInicioObservador !== undefined ? updateMareaDto.fechaInicioObservador : current?.fechaInicioObservador;
+                if (fin) {
+                    if (!inicio) {
+                        throw new common_1.BadRequestException('Si se especifica la fecha de fin del observador, la fecha de inicio es obligatoria.');
+                    }
+                    if (new Date(inicio) > new Date(fin)) {
+                        throw new common_1.BadRequestException('La fecha de inicio del observador no puede ser posterior a la de fin.');
+                    }
+                    const currentEtapas = updateMareaDto.etapas;
+                    if (currentEtapas) {
+                        const hasOpenStages = currentEtapas.some(e => !e.fechaArribo);
+                        if (hasOpenStages) {
+                            throw new common_1.BadRequestException('No se puede establecer la fecha de fin del observador si existen etapas sin fecha de arribo.');
+                        }
+                    }
+                    else {
+                        const openStagesCount = await tx.mareaEtapa.count({
+                            where: {
+                                mareaId: id,
+                                fechaArribo: null
+                            }
+                        });
+                        if (openStagesCount > 0) {
+                            throw new common_1.BadRequestException('No se puede establecer la fecha de fin del observador si existen etapas sin fecha de arribo.');
+                        }
+                    }
+                }
+            }
+            if (updateMareaDto.nroProtocolizacion !== undefined ||
+                updateMareaDto.anioProtocolizacion !== undefined ||
+                updateMareaDto.fechaProtocolizacion !== undefined) {
+                const current = await tx.marea.findUnique({
+                    where: { id },
+                    select: { nroProtocolizacion: true, anioProtocolizacion: true, fechaProtocolizacion: true }
+                });
+                const nro = updateMareaDto.nroProtocolizacion !== undefined ? updateMareaDto.nroProtocolizacion : current?.nroProtocolizacion;
+                const anio = updateMareaDto.anioProtocolizacion !== undefined ? updateMareaDto.anioProtocolizacion : current?.anioProtocolizacion;
+                const fecha = updateMareaDto.fechaProtocolizacion !== undefined ? updateMareaDto.fechaProtocolizacion : current?.fechaProtocolizacion;
+                const values = [nro, anio, fecha];
+                const someDefined = values.some(v => v !== null && v !== undefined);
+                const allDefined = values.every(v => v !== null && v !== undefined);
+                if (someDefined && !allDefined) {
+                    throw new common_1.BadRequestException('Los campos de protocolización (número, año y fecha) deben completarse todos juntos o permanecer todos vacíos.');
+                }
+            }
             const updateData = { ...data };
-            if (artePrincipalId)
+            const processDate = (val) => (val === undefined || val === null) ? val : date_utils_1.DateUtils.truncateTime(val);
+            if (artePrincipalId !== undefined)
                 updateData.artePrincipalId = artePrincipalId;
-            if (!artePrincipalId && arteId)
+            if (artePrincipalId === undefined && arteId !== undefined)
                 updateData.artePrincipalId = arteId;
-            if (updateData.fechaZarpadaEstimada)
-                updateData.fechaZarpadaEstimada = date_utils_1.DateUtils.truncateTime(updateData.fechaZarpadaEstimada);
-            if (updateData.fechaInicioObservador)
-                updateData.fechaInicioObservador = date_utils_1.DateUtils.truncateTime(updateData.fechaInicioObservador);
-            if (updateData.fechaFinObservador)
-                updateData.fechaFinObservador = date_utils_1.DateUtils.truncateTime(updateData.fechaFinObservador);
-            if (updateData.fechaProtocolizacion)
-                updateData.fechaProtocolizacion = date_utils_1.DateUtils.truncateTime(updateData.fechaProtocolizacion);
-            if (observadorPrincipalId)
+            if (updateMareaDto.fechaZarpadaEstimada !== undefined)
+                updateData.fechaZarpadaEstimada = processDate(updateMareaDto.fechaZarpadaEstimada);
+            if (updateMareaDto.fechaInicioObservador !== undefined)
+                updateData.fechaInicioObservador = processDate(updateMareaDto.fechaInicioObservador);
+            if (updateMareaDto.fechaFinObservador !== undefined)
+                updateData.fechaFinObservador = processDate(updateMareaDto.fechaFinObservador);
+            if (updateMareaDto.fechaProtocolizacion !== undefined)
+                updateData.fechaProtocolizacion = processDate(updateMareaDto.fechaProtocolizacion);
+            if (observadorPrincipalId !== undefined)
                 updateData.observadorPrincipalId = observadorPrincipalId;
-            if (pesqueriaId)
+            if (pesqueriaId !== undefined)
                 updateData.pesqueriaId = pesqueriaId;
+            if (updateMareaDto.diasZonaAustral !== undefined)
+                updateData.diasZonaAustral = updateMareaDto.diasZonaAustral;
+            if (updateMareaDto.nroProtocolizacion !== undefined)
+                updateData.nroProtocolizacion = updateMareaDto.nroProtocolizacion;
+            if (updateMareaDto.anioProtocolizacion !== undefined)
+                updateData.anioProtocolizacion = updateMareaDto.anioProtocolizacion;
+            if (updateMareaDto.diasEstimados !== undefined)
+                updateData.diasEstimados = updateMareaDto.diasEstimados;
+            if (updateMareaDto.tipoCalculoZonaAustral !== undefined)
+                updateData.tipoCalculoZonaAustral = updateMareaDto.tipoCalculoZonaAustral;
             if (Object.keys(updateData).length > 0) {
                 await tx.marea.update({
                     where: { id },
@@ -141,6 +203,7 @@ let MareasService = class MareasService {
                     }
                 });
                 this.validateStagesChronology(etapas);
+                this.validateStagesIntegrity(etapas);
                 for (const etapa of etapas) {
                     const { observadores, id: etapaId, ...rest } = etapa;
                     const etapaData = { ...rest };
@@ -1267,6 +1330,7 @@ let MareasService = class MareasService {
         if (!incomingStages || !Array.isArray(incomingStages))
             return;
         this.validateStagesChronology(incomingStages);
+        this.validateStagesIntegrity(incomingStages);
         const incomingIds = incomingStages.filter((s) => s.id).map((s) => s.id);
         await tx.mareaEtapa.deleteMany({
             where: {
@@ -1322,6 +1386,19 @@ let MareasService = class MareasService {
                         throw new Error(`Error en Etapa #${i + 1}: La fecha de zarpada no puede ser anterior al arribo de la etapa anterior (#${i}).`);
                     }
                 }
+            }
+        }
+    }
+    validateStagesIntegrity(stages) {
+        for (let i = 0; i < stages.length; i++) {
+            const current = stages[i];
+            if (!current.fechaZarpada || !current.puertoZarpadaId) {
+                throw new common_1.BadRequestException(`Error en Etapa #${i + 1}: La fecha y el puerto de zarpada son obligatorios.`);
+            }
+            const hasFechaArr = !!current.fechaArribo;
+            const hasPuertoArr = !!current.puertoArriboId;
+            if (hasFechaArr !== hasPuertoArr) {
+                throw new common_1.BadRequestException(`Error en Etapa #${i + 1}: La fecha y el puerto de arribo deben completarse juntos o dejarse ambos vacíos.`);
             }
         }
     }

@@ -66,8 +66,8 @@
         <div class="flex gap-8 min-w-max">
           <button v-for="tab in tabs" :key="tab.id" @click="activeTab = tab.id"
             class="pb-4 text-sm font-bold transition-all relative" :class="activeTab === tab.id
-                ? 'text-primary'
-                : 'text-text-muted hover:text-text'
+              ? 'text-primary'
+              : 'text-text-muted hover:text-text'
               ">
             <div class="flex items-center gap-2">
               <component :is="tab.icon" class="w-4 h-4" />
@@ -811,10 +811,10 @@ const toNumberOrUndefined = (value: any) => {
   return Number.isNaN(parsed) ? undefined : parsed
 }
 
-const toIsoStringOrUndefined = (value: any) => {
-  if (!value) return undefined
+const toIsoStringOrNull = (value: any) => {
+  if (value === null || value === undefined || value === '') return null
   const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return undefined
+  if (Number.isNaN(date.getTime())) return null
   return date.toISOString()
 }
 
@@ -826,8 +826,8 @@ const saveChanges = async () => {
       pesqueriaId: (index === 0 && marea.value.id_pesqueria) ? marea.value.id_pesqueria : (etapa.pesqueriaId || undefined),
       puertoZarpadaId: etapa.puertoZarpadaId || undefined,
       puertoArriboId: etapa.puertoArriboId || undefined,
-      fechaZarpada: toIsoStringOrUndefined(etapa.fechaZarpada),
-      fechaArribo: toIsoStringOrUndefined(etapa.fechaArribo),
+      fechaZarpada: toIsoStringOrNull(etapa.fechaZarpada),
+      fechaArribo: toIsoStringOrNull(etapa.fechaArribo),
       tipoEtapa: etapa.tipoEtapa || TipoEtapa.MC,
       observaciones: etapa.observaciones || undefined,
       observadores: etapa.observadores?.map((obs: any) => ({
@@ -837,24 +837,26 @@ const saveChanges = async () => {
       })) || []
     }))
 
+    const toNullIfEmpty = (val: any) => (val === undefined || val === '') ? null : val
+
     const payload = {
       anioMarea: toNumberOrUndefined(marea.value.anio_marea),
       nroMarea: toNumberOrUndefined(marea.value.nro_marea),
       buqueId: marea.value.id_buque || undefined,
       pesqueriaId: marea.value.id_pesqueria || undefined,
-      artePrincipalId: marea.value.id_arte_principal || undefined,
-      fechaZarpadaEstimada: toIsoStringOrUndefined(marea.value.fecha_zarpada_estimada),
-      fechaInicioObservador: toIsoStringOrUndefined(marea.value.fecha_inicio_observador),
-      fechaFinObservador: toIsoStringOrUndefined(marea.value.fecha_fin_observador),
-      diasZonaAustral: toNumberOrUndefined(marea.value.dias_zona_austral),
-      tipoCalculoZonaAustral: marea.value.tipo_calculo_zona_austral || undefined,
-      nroProtocolizacion: toNumberOrUndefined(marea.value.nro_protocolizacion),
-      anioProtocolizacion: toNumberOrUndefined(marea.value.anio_protocolizacion),
-      fechaProtocolizacion: toIsoStringOrUndefined(marea.value.fecha_protocolizacion),
-      observaciones: marea.value.observaciones,
+      artePrincipalId: toNullIfEmpty(marea.value.id_arte_principal),
+      fechaZarpadaEstimada: toIsoStringOrNull(marea.value.fecha_zarpada_estimada),
+      fechaInicioObservador: toIsoStringOrNull(marea.value.fecha_inicio_observador),
+      fechaFinObservador: toIsoStringOrNull(marea.value.fecha_fin_observador),
+      diasZonaAustral: toNumberOrUndefined(marea.value.dias_zona_austral) === undefined ? null : toNumberOrUndefined(marea.value.dias_zona_austral),
+      tipoCalculoZonaAustral: marea.value.tipo_calculo_zona_austral || null,
+      nroProtocolizacion: toNumberOrUndefined(marea.value.nro_protocolizacion) === undefined ? null : toNumberOrUndefined(marea.value.nro_protocolizacion),
+      anioProtocolizacion: toNumberOrUndefined(marea.value.anio_protocolizacion) === undefined ? null : toNumberOrUndefined(marea.value.anio_protocolizacion),
+      fechaProtocolizacion: toIsoStringOrNull(marea.value.fecha_protocolizacion),
+      observaciones: marea.value.observaciones || null,
       tipoMarea: marea.value.tipo_marea || undefined,
-      diasEstimados: toNumberOrUndefined(marea.value.dias_estimados),
-      observadorPrincipalId: marea.value.observador_principal_id || undefined,
+      diasEstimados: toNumberOrUndefined(marea.value.dias_estimados) === undefined ? null : toNumberOrUndefined(marea.value.dias_estimados),
+      observadorPrincipalId: marea.value.observador_principal_id || null,
       activo: marea.value.activo,
       etapas: etapasPayload
     }
