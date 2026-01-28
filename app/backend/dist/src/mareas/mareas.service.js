@@ -982,7 +982,7 @@ let MareasService = class MareasService {
             const lastArrival = lastArrivalData?.date;
             const daysSince = lastArrival ? date_utils_1.DateUtils.calculateInclusiveDays(lastArrival, now) - 1 : null;
             const status = this.getObserverStatus(obs, activeNav.has(obs.id), lastArrival, now);
-            if (obsConMareas.has(obs.id) && status === 'DISPONIBLE' && lastArrival && lastArrivalData && daysSince !== null) {
+            if (obsConMareas.has(obs.id) && status === 'DISPONIBLE' && lastArrival && lastArrivalData && daysSince !== null && obs.tipoObservador === 'OBSERVADOR') {
                 topDryCandidates.push({
                     id: obs.id,
                     name,

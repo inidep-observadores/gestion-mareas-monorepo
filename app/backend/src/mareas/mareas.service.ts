@@ -1155,8 +1155,8 @@ export class MareasService {
 
             const status = this.getObserverStatus(obs, activeNav.has(obs.id), lastArrival, now);
 
-            // Top Dry Check: Solo listar observadores genuinamente DISPONIBLES
-            if (obsConMareas.has(obs.id) && status === 'DISPONIBLE' && lastArrival && lastArrivalData && daysSince !== null) {
+            // Top Dry Check: Solo listar observadores genuinamente DISPONIBLES y de tipo OBSERVADOR
+            if (obsConMareas.has(obs.id) && status === 'DISPONIBLE' && lastArrival && lastArrivalData && daysSince !== null && obs.tipoObservador === 'OBSERVADOR') {
                 topDryCandidates.push({
                     id: obs.id,
                     name,
