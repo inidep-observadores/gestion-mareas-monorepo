@@ -1,14 +1,31 @@
 <template>
   <div class="relative h-full w-full overflow-hidden bg-surface-muted">
     <div ref="mapContainer" class="h-full w-full"></div>
+    
+    <!-- Control de Capas (Posicionado sobre el Zoom) -->
+    <div class="absolute bottom-[50px] right-[14px] z-[1000] pointer-events-auto">
+      <MapLayerControl
+        :base-layers="BASE_LAYERS"
+        :overlay-layers="OVERLAY_LAYERS"
+        :current-base-id="currentBaseId"
+        :active-overlay-ids="activeOverlayIds"
+        :show-graticule="localShowGraticule"
+        @change-base="setBaseLayer"
+        @toggle-overlay="toggleOverlay"
+        @update:show-graticule="toggleGraticule"
+      />
+    </div>
+
     <slot></slot>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch } from 'vue'
+import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
+import MapLayerControl from './MapLayerControl.vue'
+import { BASE_LAYERS, OVERLAY_LAYERS } from './map-layers'
 
 const props = withDefaults(defineProps<{
   center?: [number, number]
@@ -24,6 +41,11 @@ const props = withDefaults(defineProps<{
   maxZoom: 18,
   showGraticule: true,
   showScale: true
+})
+
+const localShowGraticule = ref(props.showGraticule)
+watch(() => props.showGraticule, (newVal) => {
+  localShowGraticule.value = newVal
 })
 
 const emit = defineEmits<{
@@ -46,7 +68,7 @@ const formatLabel = (val: number) => {
 }
 
 const updateGraticule = () => {
-  if (!map || !props.showGraticule) return
+  if (!map || !localShowGraticule.value) return
   if (!graticuleLayer) {
     graticuleLayer = L.layerGroup().addTo(map)
   }
@@ -149,7 +171,9 @@ class NauticalScale extends L.Control {
     const px = (nm * 1852 * this.options.maxWidth) / maxMeters
 
     this.line.style.width = `${px}px`
-    this.label.innerHTML = `${nm} NM`
+    // Redondear para evitar decimales infinitos (ej. 0.3000...004)
+    const displayNM = nm < 1 ? nm.toFixed(1) : Math.round(nm)
+    this.label.innerHTML = `${displayNM} NM`
   }
 
   private getRoundNum(num: number) {
@@ -161,24 +185,66 @@ class NauticalScale extends L.Control {
 }
 
 // --- Layers handling ---
-const updateBaseLayer = () => {
-  if (!map) return
-  const isDark = document.documentElement.classList.contains('dark')
-  if (baseLayer) map.removeLayer(baseLayer)
+const currentBaseId = ref('carto-voyager')
+const activeOverlayIds = ref<string[]>([])
+const overlayLayersMap = new Map<string, L.TileLayer>()
 
-  if (isDark) {
-    baseLayer = L.tileLayer(
-      'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-      { attribution: 'Tiles &copy; Esri', maxZoom: 19 }
-    )
-  } else {
-    baseLayer = L.tileLayer(
-      'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
-      { attribution: '&copy; OpenStreetMap &copy; CARTO', maxZoom: 20 }
-    )
-  }
+const setBaseLayer = (id: string) => {
+  if (!map) return
+  const layerDef = BASE_LAYERS.find(l => l.id === id)
+  if (!layerDef) return
+
+  if (baseLayer) map.removeLayer(baseLayer)
+  
+  baseLayer = L.tileLayer(layerDef.url, { 
+    attribution: layerDef.attribution, 
+    maxZoom: layerDef.maxZoom || 18 
+  })
+  
   baseLayer.addTo(map)
   baseLayer.bringToBack()
+  currentBaseId.value = id
+}
+
+const toggleOverlay = (id: string) => {
+  if (!map) return
+  const layerDef = OVERLAY_LAYERS.find(l => l.id === id)
+  if (!layerDef) return
+
+  const existing = overlayLayersMap.get(id)
+  if (existing) {
+    map.removeLayer(existing)
+    overlayLayersMap.delete(id)
+    activeOverlayIds.value = activeOverlayIds.value.filter(oid => oid !== id)
+  } else {
+    const newOverlay = L.tileLayer(layerDef.url, {
+      attribution: layerDef.attribution,
+      maxZoom: layerDef.maxZoom || 18,
+      pane: 'overlayPane'
+    })
+    newOverlay.addTo(map)
+    overlayLayersMap.set(id, newOverlay)
+    activeOverlayIds.value.push(id)
+  }
+}
+
+const toggleGraticule = (val: boolean) => {
+  localShowGraticule.value = val
+  if (val) {
+    if (!graticuleLayer) {
+      graticuleLayer = L.layerGroup().addTo(map!)
+    }
+    setTimeout(() => updateGraticule(), 50) // Un poco más de tiempo para estar seguros
+  } else if (graticuleLayer) {
+    graticuleLayer.clearLayers()
+  }
+}
+
+const updateBaseLayerByTheme = () => {
+  if (!map) return
+  const isDark = document.documentElement.classList.contains('dark')
+  const targetId = isDark ? 'carto-dark' : 'carto-voyager'
+  setBaseLayer(targetId)
 }
 
 onMounted(() => {
@@ -191,7 +257,7 @@ onMounted(() => {
     maxZoom: props.maxZoom
   }).setView(props.center, props.zoom)
 
-  updateBaseLayer()
+  updateBaseLayerByTheme()
   L.control.zoom({ position: 'bottomright' }).addTo(map)
 
   if (props.showScale) {
@@ -206,7 +272,7 @@ onMounted(() => {
   updateGraticule()
 
   // Theme observer
-  themeObserver = new MutationObserver(() => updateBaseLayer())
+  themeObserver = new MutationObserver(() => updateBaseLayerByTheme())
   themeObserver.observe(document.documentElement, {
     attributes: true,
     attributeFilter: ['class'],
@@ -234,11 +300,19 @@ defineExpose({
 </script>
 
 <style>
+/* Ajustes de controles de Leaflet */
+.leaflet-bottom.leaflet-right .leaflet-control-zoom {
+  margin-bottom: 24px !important;
+  margin-right: 14px !important;
+  border: none !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+}
+
 /* --- Nautical Scale Redesign --- */
 .nautical-scale-container {
-  margin-right: 12px !important;
-  margin-bottom: 85px !important;
-  /* Arriba de los botones de zoom */
+  margin-right: 14px !important;
+  margin-bottom: 160px !important;
+  /* Arriba de todos los controles */
   display: flex;
   flex-direction: column;
   align-items: center;
