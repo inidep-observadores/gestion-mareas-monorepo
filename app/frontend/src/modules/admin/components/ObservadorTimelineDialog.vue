@@ -54,6 +54,9 @@
                                 <div class="flex items-center gap-2">
                                     <span class="text-[10px] font-black uppercase tracking-widest text-primary">{{
                                         item.mareaCode }}</span>
+                                    <span v-if="item.ignoreStats"
+                                        class="text-[8px] font-black bg-surface-muted text-text-muted px-1.5 py-0.5 rounded-md border border-border">ESPERANDO
+                                        ZARPADA</span>
                                     <span v-if="item.isNavegando"
                                         class="text-[8px] font-black bg-info/10 text-info px-1.5 py-0.5 rounded-md animate-pulse">EN
                                         NAVEGACION</span>

@@ -124,7 +124,7 @@ export class StatsService {
 
             const intervals = marea.etapas.map(e => ({
                 start: e.fechaZarpada,
-                end: e.fechaArribo || (marea.estadoActual?.codigo === 'EN_EJECUCION' ? new Date() : null)
+                end: e.fechaArribo || (marea.estadoActual?.codigo === 'EN_EJECUCION' ? DateUtils.getNow() : null)
             })).filter(i => i.start);
 
             let days = 0;
@@ -143,7 +143,7 @@ export class StatsService {
             marea.etapas.forEach(etapa => {
                 if (!etapa.fechaZarpada) return;
                 const start = etapa.fechaZarpada;
-                const end = etapa.fechaArribo || (marea.estadoActual?.codigo === 'EN_EJECUCION' ? new Date() : null);
+                const end = etapa.fechaArribo || (marea.estadoActual?.codigo === 'EN_EJECUCION' ? DateUtils.getNow() : null);
 
                 etapa.observadores.forEach(obsRel => {
                     if (obsRel.observador && obsRel.observador.id !== marea.observadorPrincipalId) {
@@ -281,7 +281,7 @@ export class StatsService {
                     if (count === 0) return;
 
                     const s = new Date(etapa.fechaZarpada);
-                    const e = etapa.fechaArribo || (marea.estadoActualId === 'EN_EJECUCION' ? new Date() : null) || new Date(s); // Fallback to start if historical missing
+                    const e = etapa.fechaArribo || (marea.estadoActualId === 'EN_EJECUCION' ? DateUtils.getNow() : null) || new Date(s); // Fallback to start if historical missing
 
                     s.setHours(0, 0, 0, 0);
                     e.setHours(0, 0, 0, 0);
@@ -341,7 +341,7 @@ export class StatsService {
         if (filterType === 'FISHERY') {
             where.OR = [
                 { pesqueria: { nombre: filterValue } },
-                { 
+                {
                     AND: [
                         { pesqueriaId: null },
                         { buque: { pesqueriaHabitual: { nombre: filterValue } } }
@@ -395,7 +395,7 @@ export class StatsService {
         // Format for list display
         return mareas.map(m => {
             const overallStart = m.etapas[0]?.fechaZarpada;
-            const overallEnd = m.etapas[m.etapas.length - 1]?.fechaArribo || (m.estadoActual?.codigo === 'EN_EJECUCION' ? new Date() : null);
+            const overallEnd = m.etapas[m.etapas.length - 1]?.fechaArribo || (m.estadoActual?.codigo === 'EN_EJECUCION' ? DateUtils.getNow() : null);
 
             let days = 0;
             let calendarDays = 0;
@@ -403,7 +403,7 @@ export class StatsService {
 
             const intervals = m.etapas.map(e => ({
                 start: e.fechaZarpada,
-                end: e.fechaArribo || (m.estadoActual?.codigo === 'EN_EJECUCION' ? new Date() : null)
+                end: e.fechaArribo || (m.estadoActual?.codigo === 'EN_EJECUCION' ? DateUtils.getNow() : null)
             })).filter(i => i.start);
 
             if (daysCalculationMode === 'SHIP') {
@@ -426,7 +426,7 @@ export class StatsService {
                             if (isAdditional) {
                                 obsIntervals.push({
                                     start: etapa.fechaZarpada,
-                                    end: etapa.fechaArribo || (m.estadoActual?.codigo === 'EN_EJECUCION' ? new Date() : null)
+                                    end: etapa.fechaArribo || (m.estadoActual?.codigo === 'EN_EJECUCION' ? DateUtils.getNow() : null)
                                 });
                             }
                         });
@@ -443,7 +443,7 @@ export class StatsService {
                     m.etapas.forEach(etapa => {
                         if (!etapa.fechaZarpada) return;
                         const start = etapa.fechaZarpada;
-                        const end = etapa.fechaArribo || (m.estadoActual?.codigo === 'EN_EJECUCION' ? new Date() : null);
+                        const end = etapa.fechaArribo || (m.estadoActual?.codigo === 'EN_EJECUCION' ? DateUtils.getNow() : null);
 
                         etapa.observadores.forEach(obsRel => {
                             if (obsRel.observador && obsRel.observador.id !== m.observadorPrincipalId) {
@@ -507,7 +507,7 @@ export class StatsService {
             if (filterType === 'FISHERY') {
                 where.OR = [
                     { pesqueria: { nombre: filterValue } },
-                    { 
+                    {
                         AND: [
                             { pesqueriaId: null },
                             { buque: { pesqueriaHabitual: { nombre: filterValue } } }
@@ -630,14 +630,14 @@ export class StatsService {
         // Cargar Datos
         mareas.forEach(m => {
             const overallStart = m.etapas[0]?.fechaZarpada;
-            const overallEnd = m.etapas[m.etapas.length - 1]?.fechaArribo || (m.estadoActual?.codigo === 'EN_EJECUCION' ? new Date() : null);
+            const overallEnd = m.etapas[m.etapas.length - 1]?.fechaArribo || (m.estadoActual?.codigo === 'EN_EJECUCION' ? DateUtils.getNow() : null);
 
             let calendarDays = 0;
             let totalMareaDays = 0;
 
             const intervals = m.etapas.map(e => ({
                 start: e.fechaZarpada,
-                end: e.fechaArribo || (m.estadoActual?.codigo === 'EN_EJECUCION' ? new Date() : null)
+                end: e.fechaArribo || (m.estadoActual?.codigo === 'EN_EJECUCION' ? DateUtils.getNow() : null)
             })).filter(i => i.start);
 
             if (daysCalculationMode === 'SHIP') {
@@ -659,7 +659,7 @@ export class StatsService {
                             if (isAdditional) {
                                 obsIntervals.push({
                                     start: etapa.fechaZarpada,
-                                    end: etapa.fechaArribo || (m.estadoActual?.codigo === 'EN_EJECUCION' ? new Date() : null)
+                                    end: etapa.fechaArribo || (m.estadoActual?.codigo === 'EN_EJECUCION' ? DateUtils.getNow() : null)
                                 });
                             }
                         });
@@ -676,7 +676,7 @@ export class StatsService {
                     m.etapas.forEach(etapa => {
                         if (!etapa.fechaZarpada) return;
                         const start = etapa.fechaZarpada;
-                        const end = etapa.fechaArribo || (m.estadoActual?.codigo === 'EN_EJECUCION' ? new Date() : null);
+                        const end = etapa.fechaArribo || (m.estadoActual?.codigo === 'EN_EJECUCION' ? DateUtils.getNow() : null);
 
                         etapa.observadores.forEach(obsRel => {
                             if (obsRel.observador && obsRel.observador.id !== m.observadorPrincipalId) {

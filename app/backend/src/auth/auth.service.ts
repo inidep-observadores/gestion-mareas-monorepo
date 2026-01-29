@@ -12,6 +12,7 @@ import { User } from '@prisma/client';
 import { LoginUserDto, CreateUserDto, ResetPasswordDto } from './dto';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
 import { HashService } from '../common/services/hash.service';
+import { DateUtils } from '../common/utils/date.utils';
 
 @Injectable()
 export class AuthService {
@@ -108,7 +109,7 @@ export class AuthService {
     }
 
     const token = crypto.randomBytes(32).toString('hex');
-    const expiresAt = new Date();
+    const expiresAt = DateUtils.getNow(true);
     expiresAt.setMinutes(expiresAt.getMinutes() + 30);
 
     await this.prisma.passwordResetToken.create({
@@ -158,7 +159,7 @@ export class AuthService {
       throw new BadRequestException('Token ya utilizado');
     }
 
-    if (resetToken.expiresAt < new Date()) {
+    if (resetToken.expiresAt < DateUtils.getNow(true)) {
       throw new BadRequestException('Token expirado');
     }
 
@@ -181,7 +182,7 @@ export class AuthService {
       throw new BadRequestException('Token ya utilizado');
     }
 
-    if (resetToken.expiresAt < new Date()) {
+    if (resetToken.expiresAt < DateUtils.getNow(true)) {
       throw new BadRequestException('Token expirado');
     }
 

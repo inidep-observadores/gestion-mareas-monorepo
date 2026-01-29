@@ -5,6 +5,7 @@ import { parse } from 'csv-parse/sync';
 import { getDistance } from 'geolib';
 import { DateTime } from 'luxon';
 import { MareaUtils } from '../common/utils/marea.utils';
+import { DateUtils } from '../common/utils/date.utils';
 import * as crypto from 'crypto';
 
 interface TrackingPoint {
@@ -51,9 +52,9 @@ export class TrackingService {
             // Update immediately
             await this.prisma.systemStatus.update({
                 where: { key: KEY },
-                data: { lastUpdate: new Date() }
+                data: { lastUpdate: DateUtils.getNow(true) }
             });
-            return { status: 'Iniciado', timestamp: new Date() };
+            return { status: 'Iniciado', timestamp: DateUtils.getNow(true) };
         }
 
         return { status: 'Omitido', timestamp: status.lastUpdate };

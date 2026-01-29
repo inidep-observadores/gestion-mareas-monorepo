@@ -14,10 +14,10 @@ export declare class AuthService {
     create(createUserDto: CreateUserDto): Promise<{
         user: {
             id: string;
-            roles: string[];
             email: string;
             fullName: string;
             isActive: boolean;
+            roles: string[];
             themePreference: string;
             avatarUrl: string | null;
         };
@@ -27,10 +27,10 @@ export declare class AuthService {
     login(loginUserDto: LoginUserDto): Promise<{
         user: {
             id: string;
-            roles: string[];
             email: string;
             fullName: string;
             isActive: boolean;
+            roles: string[];
             themePreference: string;
             avatarUrl: string | null;
         };
@@ -40,10 +40,10 @@ export declare class AuthService {
     checkAuthStatus(user: User): Promise<{
         user: {
             id: string;
-            roles: string[];
             email: string;
             fullName: string;
             isActive: boolean;
+            roles: string[];
             themePreference: string;
             avatarUrl: string | null;
         };
@@ -65,10 +65,10 @@ export declare class AuthService {
     refreshAuth(refreshToken: string): Promise<{
         user: {
             id: string;
-            roles: string[];
             email: string;
             fullName: string;
             isActive: boolean;
+            roles: string[];
             themePreference: string;
             avatarUrl: string | null;
         };

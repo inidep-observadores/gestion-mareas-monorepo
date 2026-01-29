@@ -3,6 +3,7 @@ import { AlertaEstado, AlertaPrioridad } from './alerts.enums';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateAlertDto } from './dto/create-alert.dto';
 import { UpdateAlertDto } from './dto/update-alert.dto';
+import { DateUtils } from '../common/utils/date.utils';
 
 @Injectable()
 export class AlertsService {
@@ -32,7 +33,7 @@ export class AlertsService {
                 where: { id: existing.id },
                 data: {
                     estado: AlertaEstado.PENDIENTE,
-                    fechaDetectada: new Date(), // Refresh detection date
+                    fechaDetectada: DateUtils.getNow(true), // Refresh detection date
                     fechaCierre: null,
                     prioridad: createAlertDto.prioridad // Update priority if changed
                 }
@@ -43,7 +44,7 @@ export class AlertsService {
         const alert = await this.prisma.alerta.create({
             data: {
                 ...createAlertDto,
-                fechaDetectada: new Date(),
+                fechaDetectada: DateUtils.getNow(true),
                 creadoPorId: user?.id
             }
         });
@@ -127,7 +128,7 @@ export class AlertsService {
             where: { id },
             data: {
                 ...data,
-                fechaCierre: data.estado === AlertaEstado.RESUELTA || data.estado === AlertaEstado.DESCARTADA ? new Date() : undefined
+                fechaCierre: data.estado === AlertaEstado.RESUELTA || data.estado === AlertaEstado.DESCARTADA ? DateUtils.getNow(true) : undefined
             }
         });
 

@@ -15,6 +15,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.MareasController = void 0;
 const common_1 = require("@nestjs/common");
 const mareas_service_1 = require("./mareas.service");
+const date_utils_1 = require("../common/utils/date.utils");
 const decorators_1 = require("../auth/decorators");
 const create_marea_dto_1 = require("./dto/create-marea.dto");
 const update_marea_dto_1 = require("./dto/update-marea.dto");
@@ -61,9 +62,9 @@ let MareasController = class MareasController {
         return this.mareasService.getRecentMovements(days ? Number(days) : 7);
     }
     async exportExcel(dto, res) {
-        const workbook = await this.mareasService.exportToExcel(dto.year || new Date().getFullYear(), dto.searchQuery, dto.ids);
+        const workbook = await this.mareasService.exportToExcel(dto.year || date_utils_1.DateUtils.getNow().getFullYear(), dto.searchQuery, dto.ids);
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        res.setHeader('Content-Disposition', `attachment; filename=MAREAS_${dto.year || new Date().getFullYear()}.xlsx`);
+        res.setHeader('Content-Disposition', `attachment; filename=MAREAS_${dto.year || date_utils_1.DateUtils.getNow().getFullYear()}.xlsx`);
         await workbook.xlsx.write(res);
         res.end();
     }

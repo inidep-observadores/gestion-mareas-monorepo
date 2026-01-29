@@ -16,6 +16,7 @@ const mailer_1 = require("@nestjs-modules/mailer");
 const crypto = require("crypto");
 const prisma_service_1 = require("../prisma/prisma.service");
 const hash_service_1 = require("../common/services/hash.service");
+const date_utils_1 = require("../common/utils/date.utils");
 let AuthService = class AuthService {
     constructor(prisma, jwtService, mailerService, hashService) {
         this.prisma = prisma;
@@ -85,7 +86,7 @@ let AuthService = class AuthService {
             };
         }
         const token = crypto.randomBytes(32).toString('hex');
-        const expiresAt = new Date();
+        const expiresAt = date_utils_1.DateUtils.getNow(true);
         expiresAt.setMinutes(expiresAt.getMinutes() + 30);
         await this.prisma.passwordResetToken.create({
             data: {
@@ -128,7 +129,7 @@ let AuthService = class AuthService {
         if (resetToken.used) {
             throw new common_1.BadRequestException('Token ya utilizado');
         }
-        if (resetToken.expiresAt < new Date()) {
+        if (resetToken.expiresAt < date_utils_1.DateUtils.getNow(true)) {
             throw new common_1.BadRequestException('Token expirado');
         }
         return { valid: true, email: resetToken.user.email };
@@ -145,7 +146,7 @@ let AuthService = class AuthService {
         if (resetToken.used) {
             throw new common_1.BadRequestException('Token ya utilizado');
         }
-        if (resetToken.expiresAt < new Date()) {
+        if (resetToken.expiresAt < date_utils_1.DateUtils.getNow(true)) {
             throw new common_1.BadRequestException('Token expirado');
         }
         const newHash = this.hashService.hash(newPassword);

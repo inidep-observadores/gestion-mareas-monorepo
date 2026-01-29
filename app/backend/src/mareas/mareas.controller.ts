@@ -1,6 +1,7 @@
 import { Controller, Get, Param, Post, Query, Body, Patch, Res } from '@nestjs/common';
 import { Response } from 'express';
 import { MareasService } from './mareas.service';
+import { DateUtils } from '../common/utils/date.utils';
 import { Auth, GetUser } from '../auth/decorators';
 import { User } from '@prisma/client';
 import { CreateMareaDto } from './dto/create-marea.dto';
@@ -92,7 +93,7 @@ export class MareasController {
         @Res() res: Response
     ) {
         const workbook = await this.mareasService.exportToExcel(
-            dto.year || new Date().getFullYear(),
+            dto.year || DateUtils.getNow().getFullYear(),
             dto.searchQuery,
             dto.ids
         );
@@ -103,7 +104,7 @@ export class MareasController {
         );
         res.setHeader(
             'Content-Disposition',
-            `attachment; filename=MAREAS_${dto.year || new Date().getFullYear()}.xlsx`,
+            `attachment; filename=MAREAS_${dto.year || DateUtils.getNow().getFullYear()}.xlsx`,
         );
 
         await workbook.xlsx.write(res);

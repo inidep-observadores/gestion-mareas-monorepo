@@ -1,8 +1,17 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.DateUtils = void 0;
+const luxon_1 = require("luxon");
 const constants_1 = require("../constants");
 class DateUtils {
+    static getNow(withTime = false) {
+        const timezone = process.env.APP_TIMEZONE || 'UTC';
+        const now = luxon_1.DateTime.now().setZone(timezone);
+        if (withTime) {
+            return now.toJSDate();
+        }
+        return now.startOf('day').toJSDate();
+    }
     static formatDate(date) {
         if (!date)
             return '-';

@@ -14,6 +14,7 @@ exports.AlertsService = void 0;
 const common_1 = require("@nestjs/common");
 const alerts_enums_1 = require("./alerts.enums");
 const prisma_service_1 = require("../prisma/prisma.service");
+const date_utils_1 = require("../common/utils/date.utils");
 let AlertsService = AlertsService_1 = class AlertsService {
     constructor(prisma) {
         this.prisma = prisma;
@@ -36,7 +37,7 @@ let AlertsService = AlertsService_1 = class AlertsService {
                 where: { id: existing.id },
                 data: {
                     estado: alerts_enums_1.AlertaEstado.PENDIENTE,
-                    fechaDetectada: new Date(),
+                    fechaDetectada: date_utils_1.DateUtils.getNow(true),
                     fechaCierre: null,
                     prioridad: createAlertDto.prioridad
                 }
@@ -45,7 +46,7 @@ let AlertsService = AlertsService_1 = class AlertsService {
         const alert = await this.prisma.alerta.create({
             data: {
                 ...createAlertDto,
-                fechaDetectada: new Date(),
+                fechaDetectada: date_utils_1.DateUtils.getNow(true),
                 creadoPorId: user?.id
             }
         });
@@ -120,7 +121,7 @@ let AlertsService = AlertsService_1 = class AlertsService {
             where: { id },
             data: {
                 ...data,
-                fechaCierre: data.estado === alerts_enums_1.AlertaEstado.RESUELTA || data.estado === alerts_enums_1.AlertaEstado.DESCARTADA ? new Date() : undefined
+                fechaCierre: data.estado === alerts_enums_1.AlertaEstado.RESUELTA || data.estado === alerts_enums_1.AlertaEstado.DESCARTADA ? date_utils_1.DateUtils.getNow(true) : undefined
             }
         });
         let finalDetail = changes.join(', ');

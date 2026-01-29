@@ -1,6 +1,23 @@
+import { DateTime } from 'luxon';
 import { APP_CONFIG } from '../constants';
 
 export class DateUtils {
+    /**
+     * Obtiene la fecha actual respetando la zona horaria configurada en APP_TIMEZONE.
+     * @param withTime Si es true, retorna la fecha con hora actual. Si es false (default), retorna el inicio del día (00:00:00).
+     * @returns Instancia de Date convertida a JS Date estándar.
+     */
+    static getNow(withTime: boolean = false): Date {
+        const timezone = process.env.APP_TIMEZONE || 'UTC';
+        const now = DateTime.now().setZone(timezone);
+
+        if (withTime) {
+            return now.toJSDate();
+        }
+
+        return now.startOf('day').toJSDate();
+    }
+
     /**
      * Formatea una fecha según el formato global configurado en APP_CONFIG.
      * @param date Fecha a formatear

@@ -32,6 +32,7 @@ describe('MareasService', () => {
             create: jest.fn(),
             deleteMany: jest.fn(),
             count: jest.fn(),
+            findMany: jest.fn(),
         },
         mareaEtapaObservador: {
             deleteMany: jest.fn(),
@@ -421,6 +422,25 @@ describe('MareasService', () => {
 
             await expect(service.update(mareaId, dto as any))
                 .rejects.toThrow(/arribo deben completarse juntos/);
+        });
+    });
+
+    describe('getRecentMovements', () => {
+        const { DateUtils } = require('../common/utils/date.utils');
+
+        it('should calculate limitDate based on DateUtils.getNow', async () => {
+            const days = 7;
+            const fixedNow = new Date('2024-06-15T10:00:00Z');
+
+            const getNowSpy = jest.spyOn(DateUtils, 'getNow').mockReturnValue(fixedNow);
+
+            mockPrismaService.mareaEtapa.findMany.mockResolvedValue([]);
+
+            await service.getRecentMovements(days);
+
+            expect(getNowSpy).toHaveBeenCalled();
+
+            getNowSpy.mockRestore();
         });
     });
 });

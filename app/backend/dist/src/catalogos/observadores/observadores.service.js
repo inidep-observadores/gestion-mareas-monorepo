@@ -127,7 +127,7 @@ let ObservadoresService = class ObservadoresService {
             },
             orderBy: { fechaInicioObservador: 'asc' }
         });
-        const now = new Date();
+        const now = date_utils_1.DateUtils.getNow(true);
         const currentYear = now.getFullYear();
         const timeline = [];
         const years = [operationalYear, startYear].sort((a, b) => b - a);
@@ -146,8 +146,9 @@ let ObservadoresService = class ObservadoresService {
                 }
             }
             const isNavegando = mRaw.estadoActual.codigo === mareas_constants_1.MareaEstado.EN_EJECUCION;
+            const isDesignada = mRaw.estadoActual.codigo === mareas_constants_1.MareaEstado.DESIGNADA;
             const end = finRaw || (isNavegando ? now : start);
-            const totalDays = date_utils_1.DateUtils.calculateInclusiveDays(start, finRaw || (isNavegando ? now : null));
+            const totalDays = isDesignada ? 0 : date_utils_1.DateUtils.calculateInclusiveDays(start, end);
             const isPrincipal = mRaw.observadorPrincipalId === id;
             const relevantStages = mRaw.etapas.filter((e) => isPrincipal || e.observadores.length > 0);
             const navigatedDays = date_utils_1.DateUtils.calculateUniqueDays(relevantStages.map((e) => ({
@@ -163,7 +164,8 @@ let ObservadoresService = class ObservadoresService {
                 totalDays,
                 navigatedDays,
                 year: new Date(start).getFullYear(),
-                isNavegando
+                isNavegando,
+                ignoreStats: isDesignada
             };
         }).filter(Boolean);
         const sortedTrips = trips.sort((a, b) => b.start.getTime() - a.start.getTime());
@@ -218,6 +220,8 @@ let ObservadoresService = class ObservadoresService {
     }
     calculateYearTotal(trips, year) {
         return trips.reduce((acc, trip) => {
+            if (trip.ignoreStats)
+                return acc;
             return acc + date_utils_1.DateUtils.calculateDaysInYear(trip.start, trip.end, year);
         }, 0);
     }

@@ -9,10 +9,10 @@ export declare class AuthController {
     createUser(createUserDto: CreateUserDto, res: Response): Promise<{
         user: {
             id: string;
-            roles: string[];
             email: string;
             fullName: string;
             isActive: boolean;
+            roles: string[];
             themePreference: string;
             avatarUrl: string | null;
         };
@@ -22,10 +22,10 @@ export declare class AuthController {
     loginUser(loginUserDto: LoginUserDto, res: Response): Promise<{
         user: {
             id: string;
-            roles: string[];
             email: string;
             fullName: string;
             isActive: boolean;
+            roles: string[];
             themePreference: string;
             avatarUrl: string | null;
         };
@@ -35,10 +35,10 @@ export declare class AuthController {
     refreshAuth(req: Request, res: Response): Promise<{
         user: {
             id: string;
-            roles: string[];
             email: string;
             fullName: string;
             isActive: boolean;
+            roles: string[];
             themePreference: string;
             avatarUrl: string | null;
         };
@@ -62,10 +62,10 @@ export declare class AuthController {
     checkAuthStatus(user: User): Promise<{
         user: {
             id: string;
-            roles: string[];
             email: string;
             fullName: string;
             isActive: boolean;
+            roles: string[];
             themePreference: string;
             avatarUrl: string | null;
         };
@@ -76,11 +76,11 @@ export declare class AuthController {
         message: string;
         user: {
             id: string;
-            roles: string[];
             email: string;
             password: string;
             fullName: string;
             isActive: boolean;
+            roles: string[];
             themePreference: string;
             avatarUrl: string | null;
         };
@@ -92,11 +92,11 @@ export declare class AuthController {
         ok: boolean;
         user: {
             id: string;
-            roles: string[];
             email: string;
             password: string;
             fullName: string;
             isActive: boolean;
+            roles: string[];
             themePreference: string;
             avatarUrl: string | null;
         };
@@ -105,11 +105,11 @@ export declare class AuthController {
         ok: boolean;
         user: {
             id: string;
-            roles: string[];
             email: string;
             password: string;
             fullName: string;
             isActive: boolean;
+            roles: string[];
             themePreference: string;
             avatarUrl: string | null;
         };

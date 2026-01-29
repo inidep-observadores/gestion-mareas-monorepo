@@ -134,7 +134,7 @@ export class ObservadoresService {
             orderBy: { fechaInicioObservador: 'asc' }
         });
 
-        const now = new Date();
+        const now = DateUtils.getNow(true);
         const currentYear = now.getFullYear();
         const timeline: any[] = [];
         const years = [operationalYear, startYear].sort((a, b) => b - a);
@@ -157,10 +157,13 @@ export class ObservadoresService {
             }
 
             const isNavegando = mRaw.estadoActual.codigo === MareaEstado.EN_EJECUCION;
+            const isDesignada = mRaw.estadoActual.codigo === MareaEstado.DESIGNADA;
             const end = finRaw || (isNavegando ? now : start);
 
             // Días totales (rango de vinculación a la marea)
-            const totalDays = DateUtils.calculateInclusiveDays(start, finRaw || (isNavegando ? now : null));
+            // Si es DESIGNADA, son 0 días.
+            // Si no, usamos 'end' calculado para evitar que calculateInclusiveDays use 'now' por defecto al recibir null.
+            const totalDays = isDesignada ? 0 : DateUtils.calculateInclusiveDays(start, end);
 
             // Días navegados (solo si estuvo en etapas)
             const isPrincipal = mRaw.observadorPrincipalId === id;
@@ -182,7 +185,8 @@ export class ObservadoresService {
                 totalDays,
                 navigatedDays,
                 year: new Date(start).getFullYear(),
-                isNavegando
+                isNavegando,
+                ignoreStats: isDesignada // Flag para excluir del total anual
             };
         }).filter(Boolean);
 
@@ -252,6 +256,7 @@ export class ObservadoresService {
 
     private calculateYearTotal(trips: any[], year: number): number {
         return trips.reduce((acc, trip) => {
+            if (trip.ignoreStats) return acc;
             return acc + DateUtils.calculateDaysInYear(trip.start, trip.end, year);
         }, 0);
     }

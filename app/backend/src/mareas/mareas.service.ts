@@ -626,10 +626,10 @@ export class MareasService {
     async getRecentMovements(days: number) {
         // Asegurar que days sea válido (por defecto 7)
         const daysToLookBack = days || 7;
-        const now = new Date();
-        const limitDate = new Date();
-        limitDate.setDate(now.getDate() - daysToLookBack);
-        // Reset a inicio del dia
+        const now = DateUtils.getNow(); // getNow() returns start of day
+        const limitDate = new Date(now);
+        limitDate.setDate(limitDate.getDate() - daysToLookBack);
+        // Reset a inicio del dia (ya viene truncado por getNow, pero por seguridad)
         limitDate.setHours(0, 0, 0, 0);
 
         // Buscar etapas con fecha de zarpada o arribo dentro del rango
@@ -720,7 +720,7 @@ export class MareasService {
 
     async getCriticalDelays(year?: number) {
         const { mareaYearFilter } = this.buildMareaYearFilter(year);
-        const now = new Date();
+        const now = DateUtils.getNow(true);
         const limit = this.rules.PLAZO_ENTREGA_DATOS;
 
         const mareas = await this.prisma.marea.findMany({
@@ -778,7 +778,7 @@ export class MareasService {
 
     async getReportDelays(year?: number) {
         const { mareaYearFilter } = this.buildMareaYearFilter(year);
-        const now = new Date();
+        const now = DateUtils.getNow(true);
         const limit = this.rules.PLAZO_CONFECCION_INFORME;
 
         // Estados con orden >= 4 (ENTREGADA_RECIBIDA) y <= 8 (PENDIENTE_DE_INFORME)

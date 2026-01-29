@@ -17,6 +17,7 @@ const sync_1 = require("csv-parse/sync");
 const geolib_1 = require("geolib");
 const luxon_1 = require("luxon");
 const marea_utils_1 = require("../common/utils/marea.utils");
+const date_utils_1 = require("../common/utils/date.utils");
 const crypto = require("crypto");
 let TrackingService = TrackingService_1 = class TrackingService {
     constructor(prisma) {
@@ -43,9 +44,9 @@ let TrackingService = TrackingService_1 = class TrackingService {
             this.runAutomatedChecks().catch(e => this.logger.error('Error en verificación automática', e));
             await this.prisma.systemStatus.update({
                 where: { key: KEY },
-                data: { lastUpdate: new Date() }
+                data: { lastUpdate: date_utils_1.DateUtils.getNow(true) }
             });
-            return { status: 'Iniciado', timestamp: new Date() };
+            return { status: 'Iniciado', timestamp: date_utils_1.DateUtils.getNow(true) };
         }
         return { status: 'Omitido', timestamp: status.lastUpdate };
     }

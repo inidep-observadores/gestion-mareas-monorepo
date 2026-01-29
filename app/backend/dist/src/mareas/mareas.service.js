@@ -555,9 +555,9 @@ let MareasService = class MareasService {
     }
     async getRecentMovements(days) {
         const daysToLookBack = days || 7;
-        const now = new Date();
-        const limitDate = new Date();
-        limitDate.setDate(now.getDate() - daysToLookBack);
+        const now = date_utils_1.DateUtils.getNow();
+        const limitDate = new Date(now);
+        limitDate.setDate(limitDate.getDate() - daysToLookBack);
         limitDate.setHours(0, 0, 0, 0);
         const etapas = await this.prisma.mareaEtapa.findMany({
             where: {
@@ -633,7 +633,7 @@ let MareasService = class MareasService {
     }
     async getCriticalDelays(year) {
         const { mareaYearFilter } = this.buildMareaYearFilter(year);
-        const now = new Date();
+        const now = date_utils_1.DateUtils.getNow(true);
         const limit = this.rules.PLAZO_ENTREGA_DATOS;
         const mareas = await this.prisma.marea.findMany({
             where: {
@@ -684,7 +684,7 @@ let MareasService = class MareasService {
     }
     async getReportDelays(year) {
         const { mareaYearFilter } = this.buildMareaYearFilter(year);
-        const now = new Date();
+        const now = date_utils_1.DateUtils.getNow(true);
         const limit = this.rules.PLAZO_CONFECCION_INFORME;
         const TARGET_STATES = [
             mareas_constants_1.MareaEstado.ENTREGADA_RECIBIDA,
