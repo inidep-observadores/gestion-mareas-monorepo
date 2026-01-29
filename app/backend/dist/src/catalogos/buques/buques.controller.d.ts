@@ -5,12 +5,18 @@ export declare class BuquesController {
     constructor(buquesService: BuquesService);
     crear(createBuqueDto: CreateBuqueDto): Promise<{
         id: string;
+        activo: boolean;
+        observaciones: string | null;
         nombreBuque: string;
         matricula: string;
         codigoInterno: number | null;
+        tipoFlotaId: string | null;
+        arteHabitualId: string | null;
+        pesqueriaHabitualId: string | null;
         diasMareaEstimada: number | null;
         esloraM: import("@prisma/client/runtime/client").Decimal | null;
         potenciaHp: number | null;
+        puertoBaseId: string | null;
         empresaNombre: string | null;
         empresaLocalidad: string | null;
         empresaTelefono: string | null;
@@ -20,38 +26,32 @@ export declare class BuquesController {
         armadorNombre: string | null;
         armadorTelefono: string | null;
         agenciaMaritimaNombre: string | null;
-        activo: boolean;
         fechaAlta: Date | null;
         fechaBaja: Date | null;
-        observaciones: string | null;
-        tipoFlotaId: string | null;
-        arteHabitualId: string | null;
-        pesqueriaHabitualId: string | null;
-        puertoBaseId: string | null;
     }>;
     obtenerTodos(): Promise<({
         arteHabitual: {
             id: string;
+            nombre: string;
             activo: boolean;
             codigoNumerico: number;
-            nombre: string;
         };
         pesqueriaHabitual: {
             id: string;
-            activo: boolean;
-            nombre: string;
-            codigo: string;
             descripcion: string | null;
-            grupo: string | null;
+            codigo: string;
+            nombre: string;
             orden: number | null;
+            activo: boolean;
+            grupo: string | null;
         };
         puertoBase: {
             id: string;
-            codigoInterno: string | null;
-            activo: boolean;
-            observaciones: string | null;
             nombre: string;
             orden: number | null;
+            activo: boolean;
+            observaciones: string | null;
+            codigoInterno: string | null;
             provincia: string | null;
             pais: string | null;
             codigoExterno: string | null;
@@ -61,21 +61,27 @@ export declare class BuquesController {
         };
         tipoFlota: {
             id: string;
-            activo: boolean;
-            nombre: string;
-            codigo: string;
             descripcion: string | null;
+            codigo: string;
+            nombre: string;
             orden: number | null;
+            activo: boolean;
             codigo_numerico: number;
         };
     } & {
         id: string;
+        activo: boolean;
+        observaciones: string | null;
         nombreBuque: string;
         matricula: string;
         codigoInterno: number | null;
+        tipoFlotaId: string | null;
+        arteHabitualId: string | null;
+        pesqueriaHabitualId: string | null;
         diasMareaEstimada: number | null;
         esloraM: import("@prisma/client/runtime/client").Decimal | null;
         potenciaHp: number | null;
+        puertoBaseId: string | null;
         empresaNombre: string | null;
         empresaLocalidad: string | null;
         empresaTelefono: string | null;
@@ -85,38 +91,32 @@ export declare class BuquesController {
         armadorNombre: string | null;
         armadorTelefono: string | null;
         agenciaMaritimaNombre: string | null;
-        activo: boolean;
         fechaAlta: Date | null;
         fechaBaja: Date | null;
-        observaciones: string | null;
-        tipoFlotaId: string | null;
-        arteHabitualId: string | null;
-        pesqueriaHabitualId: string | null;
-        puertoBaseId: string | null;
     })[]>;
     obtenerUno(id: string): Promise<{
         arteHabitual: {
             id: string;
+            nombre: string;
             activo: boolean;
             codigoNumerico: number;
-            nombre: string;
         };
         pesqueriaHabitual: {
             id: string;
-            activo: boolean;
-            nombre: string;
-            codigo: string;
             descripcion: string | null;
-            grupo: string | null;
+            codigo: string;
+            nombre: string;
             orden: number | null;
+            activo: boolean;
+            grupo: string | null;
         };
         puertoBase: {
             id: string;
-            codigoInterno: string | null;
-            activo: boolean;
-            observaciones: string | null;
             nombre: string;
             orden: number | null;
+            activo: boolean;
+            observaciones: string | null;
+            codigoInterno: string | null;
             provincia: string | null;
             pais: string | null;
             codigoExterno: string | null;
@@ -126,21 +126,27 @@ export declare class BuquesController {
         };
         tipoFlota: {
             id: string;
-            activo: boolean;
-            nombre: string;
-            codigo: string;
             descripcion: string | null;
+            codigo: string;
+            nombre: string;
             orden: number | null;
+            activo: boolean;
             codigo_numerico: number;
         };
     } & {
         id: string;
+        activo: boolean;
+        observaciones: string | null;
         nombreBuque: string;
         matricula: string;
         codigoInterno: number | null;
+        tipoFlotaId: string | null;
+        arteHabitualId: string | null;
+        pesqueriaHabitualId: string | null;
         diasMareaEstimada: number | null;
         esloraM: import("@prisma/client/runtime/client").Decimal | null;
         potenciaHp: number | null;
+        puertoBaseId: string | null;
         empresaNombre: string | null;
         empresaLocalidad: string | null;
         empresaTelefono: string | null;
@@ -150,23 +156,23 @@ export declare class BuquesController {
         armadorNombre: string | null;
         armadorTelefono: string | null;
         agenciaMaritimaNombre: string | null;
-        activo: boolean;
         fechaAlta: Date | null;
         fechaBaja: Date | null;
-        observaciones: string | null;
-        tipoFlotaId: string | null;
-        arteHabitualId: string | null;
-        pesqueriaHabitualId: string | null;
-        puertoBaseId: string | null;
     }>;
     actualizar(id: string, updateBuqueDto: UpdateBuqueDto): Promise<{
         id: string;
+        activo: boolean;
+        observaciones: string | null;
         nombreBuque: string;
         matricula: string;
         codigoInterno: number | null;
+        tipoFlotaId: string | null;
+        arteHabitualId: string | null;
+        pesqueriaHabitualId: string | null;
         diasMareaEstimada: number | null;
         esloraM: import("@prisma/client/runtime/client").Decimal | null;
         potenciaHp: number | null;
+        puertoBaseId: string | null;
         empresaNombre: string | null;
         empresaLocalidad: string | null;
         empresaTelefono: string | null;
@@ -176,14 +182,8 @@ export declare class BuquesController {
         armadorNombre: string | null;
         armadorTelefono: string | null;
         agenciaMaritimaNombre: string | null;
-        activo: boolean;
         fechaAlta: Date | null;
         fechaBaja: Date | null;
-        observaciones: string | null;
-        tipoFlotaId: string | null;
-        arteHabitualId: string | null;
-        pesqueriaHabitualId: string | null;
-        puertoBaseId: string | null;
     }>;
     eliminar(id: string): Promise<{
         mensaje: string;

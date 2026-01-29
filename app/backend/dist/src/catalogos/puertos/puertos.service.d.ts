@@ -9,9 +9,9 @@ export declare class PuertosService {
         orden: number | null;
         activo: boolean;
         observaciones: string | null;
+        codigoInterno: string | null;
         provincia: string | null;
         pais: string | null;
-        codigoInterno: string | null;
         codigoExterno: string | null;
         esLocal: boolean;
         latitud: number | null;
@@ -23,9 +23,9 @@ export declare class PuertosService {
         orden: number | null;
         activo: boolean;
         observaciones: string | null;
+        codigoInterno: string | null;
         provincia: string | null;
         pais: string | null;
-        codigoInterno: string | null;
         codigoExterno: string | null;
         esLocal: boolean;
         latitud: number | null;
@@ -37,9 +37,9 @@ export declare class PuertosService {
         orden: number | null;
         activo: boolean;
         observaciones: string | null;
+        codigoInterno: string | null;
         provincia: string | null;
         pais: string | null;
-        codigoInterno: string | null;
         codigoExterno: string | null;
         esLocal: boolean;
         latitud: number | null;
@@ -51,9 +51,9 @@ export declare class PuertosService {
         orden: number | null;
         activo: boolean;
         observaciones: string | null;
+        codigoInterno: string | null;
         provincia: string | null;
         pais: string | null;
-        codigoInterno: string | null;
         codigoExterno: string | null;
         esLocal: boolean;
         latitud: number | null;

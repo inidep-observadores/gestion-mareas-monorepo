@@ -135,6 +135,16 @@ export class MareasService {
                         throw new BadRequestException('La fecha de inicio del observador no puede ser posterior a la de fin.');
                     }
 
+                    // Validación de integridad de estado: No se puede finalizar si está en curso/designada
+                    const marea = await tx.marea.findUnique({
+                        where: { id },
+                        include: { estadoActual: true }
+                    });
+                    const codigoEstado = marea.estadoActual.codigo;
+                    if (codigoEstado === MareaEstado.DESIGNADA || codigoEstado === MareaEstado.EN_EJECUCION) {
+                        throw new BadRequestException(`No se puede establecer la fecha de fin del observador mientras la marea esté en estado ${marea.estadoActual.nombre}.`);
+                    }
+
                     // No se puede indicar fecha_fin_observador si hay etapas sin arribo
                     const currentEtapas = updateMareaDto.etapas;
                     if (currentEtapas) {

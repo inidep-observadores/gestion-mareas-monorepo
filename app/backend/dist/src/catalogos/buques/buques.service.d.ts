@@ -7,9 +7,9 @@ export declare class BuquesService {
         id: string;
         activo: boolean;
         observaciones: string | null;
-        codigoInterno: number | null;
         nombreBuque: string;
         matricula: string;
+        codigoInterno: number | null;
         tipoFlotaId: string | null;
         arteHabitualId: string | null;
         pesqueriaHabitualId: string | null;
@@ -30,15 +30,6 @@ export declare class BuquesService {
         fechaBaja: Date | null;
     }>;
     obtenerTodos(): Promise<({
-        tipoFlota: {
-            id: string;
-            codigo: string;
-            nombre: string;
-            descripcion: string | null;
-            orden: number | null;
-            activo: boolean;
-            codigo_numerico: number;
-        };
         arteHabitual: {
             id: string;
             nombre: string;
@@ -47,9 +38,9 @@ export declare class BuquesService {
         };
         pesqueriaHabitual: {
             id: string;
+            descripcion: string | null;
             codigo: string;
             nombre: string;
-            descripcion: string | null;
             orden: number | null;
             activo: boolean;
             grupo: string | null;
@@ -60,21 +51,30 @@ export declare class BuquesService {
             orden: number | null;
             activo: boolean;
             observaciones: string | null;
+            codigoInterno: string | null;
             provincia: string | null;
             pais: string | null;
-            codigoInterno: string | null;
             codigoExterno: string | null;
             esLocal: boolean;
             latitud: number | null;
             longitud: number | null;
         };
+        tipoFlota: {
+            id: string;
+            descripcion: string | null;
+            codigo: string;
+            nombre: string;
+            orden: number | null;
+            activo: boolean;
+            codigo_numerico: number;
+        };
     } & {
         id: string;
         activo: boolean;
         observaciones: string | null;
-        codigoInterno: number | null;
         nombreBuque: string;
         matricula: string;
+        codigoInterno: number | null;
         tipoFlotaId: string | null;
         arteHabitualId: string | null;
         pesqueriaHabitualId: string | null;
@@ -95,15 +95,6 @@ export declare class BuquesService {
         fechaBaja: Date | null;
     })[]>;
     obtenerUno(id: string): Promise<{
-        tipoFlota: {
-            id: string;
-            codigo: string;
-            nombre: string;
-            descripcion: string | null;
-            orden: number | null;
-            activo: boolean;
-            codigo_numerico: number;
-        };
         arteHabitual: {
             id: string;
             nombre: string;
@@ -112,9 +103,9 @@ export declare class BuquesService {
         };
         pesqueriaHabitual: {
             id: string;
+            descripcion: string | null;
             codigo: string;
             nombre: string;
-            descripcion: string | null;
             orden: number | null;
             activo: boolean;
             grupo: string | null;
@@ -125,21 +116,30 @@ export declare class BuquesService {
             orden: number | null;
             activo: boolean;
             observaciones: string | null;
+            codigoInterno: string | null;
             provincia: string | null;
             pais: string | null;
-            codigoInterno: string | null;
             codigoExterno: string | null;
             esLocal: boolean;
             latitud: number | null;
             longitud: number | null;
         };
+        tipoFlota: {
+            id: string;
+            descripcion: string | null;
+            codigo: string;
+            nombre: string;
+            orden: number | null;
+            activo: boolean;
+            codigo_numerico: number;
+        };
     } & {
         id: string;
         activo: boolean;
         observaciones: string | null;
-        codigoInterno: number | null;
         nombreBuque: string;
         matricula: string;
+        codigoInterno: number | null;
         tipoFlotaId: string | null;
         arteHabitualId: string | null;
         pesqueriaHabitualId: string | null;
@@ -163,9 +163,9 @@ export declare class BuquesService {
         id: string;
         activo: boolean;
         observaciones: string | null;
-        codigoInterno: number | null;
         nombreBuque: string;
         matricula: string;
+        codigoInterno: number | null;
         tipoFlotaId: string | null;
         arteHabitualId: string | null;
         pesqueriaHabitualId: string | null;

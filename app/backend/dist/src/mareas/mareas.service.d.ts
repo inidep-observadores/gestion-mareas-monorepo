@@ -23,8 +23,8 @@ export declare class MareasService {
             durationDays: number;
             pesqueria: {
                 id: string;
-                descripcion: string | null;
                 activo: boolean;
+                descripcion: string | null;
                 codigo: string;
                 nombre: string;
                 grupo: string | null;
@@ -61,7 +61,6 @@ export declare class MareasService {
             observadores: ({
                 observador: {
                     id: string;
-                    email: string | null;
                     activo: boolean;
                     observaciones: string | null;
                     nombre: string;
@@ -73,6 +72,7 @@ export declare class MareasService {
                     disponible: boolean;
                     fechaProximaDisponibilidad: Date | null;
                     conImpedimento: boolean;
+                    email: string | null;
                     motivoImpedimento: string | null;
                 };
             } & {
@@ -94,99 +94,11 @@ export declare class MareasService {
             tipoEtapa: import("@prisma/client").$Enums.TipoEtapa;
             updatedAt: Date;
         }[];
-        archivos: ({
-            movimientoOrigen: {
-                id: string;
-                fechaHora: Date;
-                usuarioId: string | null;
-                tipoEvento: string;
-                detalle: string | null;
-                mareaId: string;
-                estadoDesdeId: string | null;
-                estadoHastaId: string | null;
-                cantidadMuestrasOtolitos: number | null;
-                comentarios: string | null;
-            };
-            usuarioSubio: {
-                id: string;
-                email: string;
-                password: string;
-                fullName: string;
-                isActive: boolean;
-                roles: string[];
-                themePreference: string;
-                avatarUrl: string | null;
-            };
-        } & {
-            id: string;
-            descripcion: string | null;
-            mareaId: string;
-            fechaSubida: Date;
-            movimientoOrigenId: string | null;
-            tipoArchivo: string;
-            formato: string | null;
-            version: string | null;
-            rutaArchivo: string;
-            usuarioSubioId: string | null;
-        })[];
-        movimientos: ({
-            usuario: {
-                id: string;
-                email: string;
-                password: string;
-                fullName: string;
-                isActive: boolean;
-                roles: string[];
-                themePreference: string;
-                avatarUrl: string | null;
-            };
-            estadoDesde: {
-                id: string;
-                descripcion: string | null;
-                activo: boolean;
-                codigo: string;
-                nombre: string;
-                orden: number;
-                categoria: string;
-                esInicial: boolean;
-                esFinal: boolean;
-                permiteCargaArchivos: boolean;
-                permiteCorreccion: boolean;
-                permiteInforme: boolean;
-                mostrarEnPanel: boolean;
-            };
-            estadoHasta: {
-                id: string;
-                descripcion: string | null;
-                activo: boolean;
-                codigo: string;
-                nombre: string;
-                orden: number;
-                categoria: string;
-                esInicial: boolean;
-                esFinal: boolean;
-                permiteCargaArchivos: boolean;
-                permiteCorreccion: boolean;
-                permiteInforme: boolean;
-                mostrarEnPanel: boolean;
-            };
-        } & {
-            id: string;
-            fechaHora: Date;
-            usuarioId: string | null;
-            tipoEvento: string;
-            detalle: string | null;
-            mareaId: string;
-            estadoDesdeId: string | null;
-            estadoHastaId: string | null;
-            cantidadMuestrasOtolitos: number | null;
-            comentarios: string | null;
-        })[];
         buque: {
             tipoFlota: {
                 id: string;
-                descripcion: string | null;
                 activo: boolean;
+                descripcion: string | null;
                 codigo: string;
                 nombre: string;
                 orden: number | null;
@@ -220,8 +132,8 @@ export declare class MareasService {
         };
         estadoActual: {
             id: string;
-            descripcion: string | null;
             activo: boolean;
+            descripcion: string | null;
             codigo: string;
             nombre: string;
             orden: number;
@@ -235,7 +147,6 @@ export declare class MareasService {
         };
         observadorPrincipal: {
             id: string;
-            email: string | null;
             activo: boolean;
             observaciones: string | null;
             nombre: string;
@@ -247,17 +158,106 @@ export declare class MareasService {
             disponible: boolean;
             fechaProximaDisponibilidad: Date | null;
             conImpedimento: boolean;
+            email: string | null;
             motivoImpedimento: string | null;
         };
         pesqueria: {
             id: string;
-            descripcion: string | null;
             activo: boolean;
+            descripcion: string | null;
             codigo: string;
             nombre: string;
             grupo: string | null;
             orden: number | null;
         };
+        archivos: ({
+            movimientoOrigen: {
+                id: string;
+                mareaId: string;
+                fechaHora: Date;
+                usuarioId: string | null;
+                tipoEvento: string;
+                estadoDesdeId: string | null;
+                estadoHastaId: string | null;
+                cantidadMuestrasOtolitos: number | null;
+                detalle: string | null;
+                comentarios: string | null;
+            };
+            usuarioSubio: {
+                id: string;
+                email: string;
+                password: string;
+                fullName: string;
+                isActive: boolean;
+                roles: string[];
+                themePreference: string;
+                avatarUrl: string | null;
+            };
+        } & {
+            id: string;
+            mareaId: string;
+            fechaSubida: Date;
+            movimientoOrigenId: string | null;
+            tipoArchivo: string;
+            formato: string | null;
+            version: string | null;
+            rutaArchivo: string;
+            usuarioSubioId: string | null;
+            descripcion: string | null;
+        })[];
+        movimientos: ({
+            estadoDesde: {
+                id: string;
+                activo: boolean;
+                descripcion: string | null;
+                codigo: string;
+                nombre: string;
+                orden: number;
+                categoria: string;
+                esInicial: boolean;
+                esFinal: boolean;
+                permiteCargaArchivos: boolean;
+                permiteCorreccion: boolean;
+                permiteInforme: boolean;
+                mostrarEnPanel: boolean;
+            };
+            estadoHasta: {
+                id: string;
+                activo: boolean;
+                descripcion: string | null;
+                codigo: string;
+                nombre: string;
+                orden: number;
+                categoria: string;
+                esInicial: boolean;
+                esFinal: boolean;
+                permiteCargaArchivos: boolean;
+                permiteCorreccion: boolean;
+                permiteInforme: boolean;
+                mostrarEnPanel: boolean;
+            };
+            usuario: {
+                id: string;
+                email: string;
+                password: string;
+                fullName: string;
+                isActive: boolean;
+                roles: string[];
+                themePreference: string;
+                avatarUrl: string | null;
+            };
+        } & {
+            id: string;
+            mareaId: string;
+            fechaHora: Date;
+            usuarioId: string | null;
+            tipoEvento: string;
+            estadoDesdeId: string | null;
+            estadoHastaId: string | null;
+            cantidadMuestrasOtolitos: number | null;
+            detalle: string | null;
+            comentarios: string | null;
+        })[];
         id: string;
         anioMarea: number;
         nroMarea: number;
@@ -287,8 +287,8 @@ export declare class MareasService {
             durationDays: number;
             pesqueria: {
                 id: string;
-                descripcion: string | null;
                 activo: boolean;
+                descripcion: string | null;
                 codigo: string;
                 nombre: string;
                 grupo: string | null;
@@ -325,7 +325,6 @@ export declare class MareasService {
             observadores: ({
                 observador: {
                     id: string;
-                    email: string | null;
                     activo: boolean;
                     observaciones: string | null;
                     nombre: string;
@@ -337,6 +336,7 @@ export declare class MareasService {
                     disponible: boolean;
                     fechaProximaDisponibilidad: Date | null;
                     conImpedimento: boolean;
+                    email: string | null;
                     motivoImpedimento: string | null;
                 };
             } & {
@@ -358,99 +358,11 @@ export declare class MareasService {
             tipoEtapa: import("@prisma/client").$Enums.TipoEtapa;
             updatedAt: Date;
         }[];
-        archivos: ({
-            movimientoOrigen: {
-                id: string;
-                fechaHora: Date;
-                usuarioId: string | null;
-                tipoEvento: string;
-                detalle: string | null;
-                mareaId: string;
-                estadoDesdeId: string | null;
-                estadoHastaId: string | null;
-                cantidadMuestrasOtolitos: number | null;
-                comentarios: string | null;
-            };
-            usuarioSubio: {
-                id: string;
-                email: string;
-                password: string;
-                fullName: string;
-                isActive: boolean;
-                roles: string[];
-                themePreference: string;
-                avatarUrl: string | null;
-            };
-        } & {
-            id: string;
-            descripcion: string | null;
-            mareaId: string;
-            fechaSubida: Date;
-            movimientoOrigenId: string | null;
-            tipoArchivo: string;
-            formato: string | null;
-            version: string | null;
-            rutaArchivo: string;
-            usuarioSubioId: string | null;
-        })[];
-        movimientos: ({
-            usuario: {
-                id: string;
-                email: string;
-                password: string;
-                fullName: string;
-                isActive: boolean;
-                roles: string[];
-                themePreference: string;
-                avatarUrl: string | null;
-            };
-            estadoDesde: {
-                id: string;
-                descripcion: string | null;
-                activo: boolean;
-                codigo: string;
-                nombre: string;
-                orden: number;
-                categoria: string;
-                esInicial: boolean;
-                esFinal: boolean;
-                permiteCargaArchivos: boolean;
-                permiteCorreccion: boolean;
-                permiteInforme: boolean;
-                mostrarEnPanel: boolean;
-            };
-            estadoHasta: {
-                id: string;
-                descripcion: string | null;
-                activo: boolean;
-                codigo: string;
-                nombre: string;
-                orden: number;
-                categoria: string;
-                esInicial: boolean;
-                esFinal: boolean;
-                permiteCargaArchivos: boolean;
-                permiteCorreccion: boolean;
-                permiteInforme: boolean;
-                mostrarEnPanel: boolean;
-            };
-        } & {
-            id: string;
-            fechaHora: Date;
-            usuarioId: string | null;
-            tipoEvento: string;
-            detalle: string | null;
-            mareaId: string;
-            estadoDesdeId: string | null;
-            estadoHastaId: string | null;
-            cantidadMuestrasOtolitos: number | null;
-            comentarios: string | null;
-        })[];
         buque: {
             tipoFlota: {
                 id: string;
-                descripcion: string | null;
                 activo: boolean;
+                descripcion: string | null;
                 codigo: string;
                 nombre: string;
                 orden: number | null;
@@ -484,8 +396,8 @@ export declare class MareasService {
         };
         estadoActual: {
             id: string;
-            descripcion: string | null;
             activo: boolean;
+            descripcion: string | null;
             codigo: string;
             nombre: string;
             orden: number;
@@ -499,7 +411,6 @@ export declare class MareasService {
         };
         observadorPrincipal: {
             id: string;
-            email: string | null;
             activo: boolean;
             observaciones: string | null;
             nombre: string;
@@ -511,17 +422,106 @@ export declare class MareasService {
             disponible: boolean;
             fechaProximaDisponibilidad: Date | null;
             conImpedimento: boolean;
+            email: string | null;
             motivoImpedimento: string | null;
         };
         pesqueria: {
             id: string;
-            descripcion: string | null;
             activo: boolean;
+            descripcion: string | null;
             codigo: string;
             nombre: string;
             grupo: string | null;
             orden: number | null;
         };
+        archivos: ({
+            movimientoOrigen: {
+                id: string;
+                mareaId: string;
+                fechaHora: Date;
+                usuarioId: string | null;
+                tipoEvento: string;
+                estadoDesdeId: string | null;
+                estadoHastaId: string | null;
+                cantidadMuestrasOtolitos: number | null;
+                detalle: string | null;
+                comentarios: string | null;
+            };
+            usuarioSubio: {
+                id: string;
+                email: string;
+                password: string;
+                fullName: string;
+                isActive: boolean;
+                roles: string[];
+                themePreference: string;
+                avatarUrl: string | null;
+            };
+        } & {
+            id: string;
+            mareaId: string;
+            fechaSubida: Date;
+            movimientoOrigenId: string | null;
+            tipoArchivo: string;
+            formato: string | null;
+            version: string | null;
+            rutaArchivo: string;
+            usuarioSubioId: string | null;
+            descripcion: string | null;
+        })[];
+        movimientos: ({
+            estadoDesde: {
+                id: string;
+                activo: boolean;
+                descripcion: string | null;
+                codigo: string;
+                nombre: string;
+                orden: number;
+                categoria: string;
+                esInicial: boolean;
+                esFinal: boolean;
+                permiteCargaArchivos: boolean;
+                permiteCorreccion: boolean;
+                permiteInforme: boolean;
+                mostrarEnPanel: boolean;
+            };
+            estadoHasta: {
+                id: string;
+                activo: boolean;
+                descripcion: string | null;
+                codigo: string;
+                nombre: string;
+                orden: number;
+                categoria: string;
+                esInicial: boolean;
+                esFinal: boolean;
+                permiteCargaArchivos: boolean;
+                permiteCorreccion: boolean;
+                permiteInforme: boolean;
+                mostrarEnPanel: boolean;
+            };
+            usuario: {
+                id: string;
+                email: string;
+                password: string;
+                fullName: string;
+                isActive: boolean;
+                roles: string[];
+                themePreference: string;
+                avatarUrl: string | null;
+            };
+        } & {
+            id: string;
+            mareaId: string;
+            fechaHora: Date;
+            usuarioId: string | null;
+            tipoEvento: string;
+            estadoDesdeId: string | null;
+            estadoHastaId: string | null;
+            cantidadMuestrasOtolitos: number | null;
+            detalle: string | null;
+            comentarios: string | null;
+        })[];
         id: string;
         anioMarea: number;
         nroMarea: number;
@@ -711,8 +711,8 @@ export declare class MareasService {
     } | ({
         estadoActual: {
             id: string;
-            descripcion: string | null;
             activo: boolean;
+            descripcion: string | null;
             codigo: string;
             nombre: string;
             orden: number;

@@ -15,12 +15,12 @@ export declare class ErrorLogsService {
         method?: string;
         ip?: string;
     }): Promise<{
-        level: string;
         id: string;
+        level: string;
+        userId: string | null;
         timestamp: Date;
         source: string;
         context: string | null;
-        userId: string | null;
         userEmail: string | null;
         message: string;
         stack: string | null;
@@ -30,12 +30,12 @@ export declare class ErrorLogsService {
         ip: string | null;
     }>;
     findAll(): Promise<{
-        level: string;
         id: string;
+        level: string;
+        userId: string | null;
         timestamp: Date;
         source: string;
         context: string | null;
-        userId: string | null;
         userEmail: string | null;
         message: string;
         stack: string | null;
@@ -45,12 +45,12 @@ export declare class ErrorLogsService {
         ip: string | null;
     }[]>;
     findOne(id: string): Promise<{
-        level: string;
         id: string;
+        level: string;
+        userId: string | null;
         timestamp: Date;
         source: string;
         context: string | null;
-        userId: string | null;
         userEmail: string | null;
         message: string;
         stack: string | null;

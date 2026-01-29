@@ -8,10 +8,10 @@ export declare class UsersService {
     constructor(prisma: PrismaService, hashService: HashService);
     updateProfile(user: User, updateUserDto: UpdateUserDto): Promise<{
         id: string;
-        roles: string[];
         email: string;
         fullName: string;
         isActive: boolean;
+        roles: string[];
         themePreference: string;
         avatarUrl: string | null;
     }>;
@@ -20,58 +20,58 @@ export declare class UsersService {
     }>;
     updateAvatar(user: User, avatarUrl: string): Promise<{
         id: string;
-        roles: string[];
         email: string;
         fullName: string;
         isActive: boolean;
+        roles: string[];
         themePreference: string;
         avatarUrl: string | null;
     }>;
     findAll(): Promise<{
         id: string;
-        roles: string[];
         email: string;
         password: string;
         fullName: string;
         isActive: boolean;
+        roles: string[];
         themePreference: string;
         avatarUrl: string | null;
     }[]>;
     create(createUserDto: CreateUserDto): Promise<{
         id: string;
-        roles: string[];
         email: string;
         fullName: string;
         isActive: boolean;
+        roles: string[];
         themePreference: string;
         avatarUrl: string | null;
     }>;
     update(id: string, adminUpdateUserDto: AdminUpdateUserDto, currentUser: User): Promise<{
         id: string;
-        roles: string[];
         email: string;
         fullName: string;
         isActive: boolean;
+        roles: string[];
         themePreference: string;
         avatarUrl: string | null;
     }>;
     toggleStatus(id: string, currentUser: User): Promise<{
         id: string;
-        roles: string[];
         email: string;
         password: string;
         fullName: string;
         isActive: boolean;
+        roles: string[];
         themePreference: string;
         avatarUrl: string | null;
     }>;
     remove(id: string, currentUser: User): Promise<{
         id: string;
-        roles: string[];
         email: string;
         password: string;
         fullName: string;
         isActive: boolean;
+        roles: string[];
         themePreference: string;
         avatarUrl: string | null;
     }>;

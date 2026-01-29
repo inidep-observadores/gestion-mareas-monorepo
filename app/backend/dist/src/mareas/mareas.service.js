@@ -123,6 +123,14 @@ let MareasService = class MareasService {
                     if (new Date(inicio) > new Date(fin)) {
                         throw new common_1.BadRequestException('La fecha de inicio del observador no puede ser posterior a la de fin.');
                     }
+                    const marea = await tx.marea.findUnique({
+                        where: { id },
+                        include: { estadoActual: true }
+                    });
+                    const codigoEstado = marea.estadoActual.codigo;
+                    if (codigoEstado === mareas_constants_1.MareaEstado.DESIGNADA || codigoEstado === mareas_constants_1.MareaEstado.EN_EJECUCION) {
+                        throw new common_1.BadRequestException(`No se puede establecer la fecha de fin del observador mientras la marea esté en estado ${marea.estadoActual.nombre}.`);
+                    }
                     const currentEtapas = updateMareaDto.etapas;
                     if (currentEtapas) {
                         const hasOpenStages = currentEtapas.some(e => !e.fechaArribo);

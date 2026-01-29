@@ -45,8 +45,8 @@ export declare class TrackingController {
             id: string;
             observaciones: string | null;
             pesqueriaId: string | null;
-            nroEtapa: number;
             mareaId: string;
+            nroEtapa: number;
             puertoZarpadaId: string | null;
             puertoArriboId: string | null;
             fechaZarpada: Date | null;

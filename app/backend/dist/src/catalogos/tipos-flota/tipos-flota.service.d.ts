@@ -5,36 +5,36 @@ export declare class TiposFlotaService {
     constructor(prisma: PrismaService);
     crear(createTipoFlotaDto: CreateTipoFlotaDto): Promise<{
         id: string;
+        descripcion: string | null;
         codigo: string;
         nombre: string;
-        descripcion: string | null;
         orden: number | null;
         activo: boolean;
         codigo_numerico: number;
     }>;
     obtenerTodos(): Promise<{
         id: string;
+        descripcion: string | null;
         codigo: string;
         nombre: string;
-        descripcion: string | null;
         orden: number | null;
         activo: boolean;
         codigo_numerico: number;
     }[]>;
     obtenerUno(id: string): Promise<{
         id: string;
+        descripcion: string | null;
         codigo: string;
         nombre: string;
-        descripcion: string | null;
         orden: number | null;
         activo: boolean;
         codigo_numerico: number;
     }>;
     actualizar(id: string, updateTipoFlotaDto: UpdateTipoFlotaDto): Promise<{
         id: string;
+        descripcion: string | null;
         codigo: string;
         nombre: string;
-        descripcion: string | null;
         orden: number | null;
         activo: boolean;
         codigo_numerico: number;

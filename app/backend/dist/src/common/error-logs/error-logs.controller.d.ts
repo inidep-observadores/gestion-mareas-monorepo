@@ -3,12 +3,12 @@ export declare class ErrorLogsController {
     private readonly errorLogsService;
     constructor(errorLogsService: ErrorLogsService);
     findAll(): Promise<{
-        level: string;
         id: string;
+        level: string;
+        userId: string | null;
         timestamp: Date;
         source: string;
         context: string | null;
-        userId: string | null;
         userEmail: string | null;
         message: string;
         stack: string | null;
@@ -18,12 +18,12 @@ export declare class ErrorLogsController {
         ip: string | null;
     }[]>;
     findOne(id: string): Promise<{
-        level: string;
         id: string;
+        level: string;
+        userId: string | null;
         timestamp: Date;
         source: string;
         context: string | null;
-        userId: string | null;
         userEmail: string | null;
         message: string;
         stack: string | null;

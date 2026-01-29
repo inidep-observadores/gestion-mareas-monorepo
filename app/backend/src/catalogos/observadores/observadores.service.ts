@@ -120,14 +120,9 @@ export class ObservadoresService {
                 buque: true,
                 estadoActual: true,
                 etapas: {
-                    where: {
-                        fechaZarpada: { not: null }
-                    },
                     orderBy: { nroEtapa: 'asc' },
                     include: {
-                        observadores: {
-                            where: { observadorId: id }
-                        }
+                        observadores: true
                     }
                 }
             } as any,
@@ -145,9 +140,18 @@ export class ObservadoresService {
             const start = mRaw.fechaInicioObservador || mRaw.fechaZarpadaEstimada;
             if (!start) return null;
 
-            // Determinar fin: Preferir fechaFinObservador, sino último arribo de etapas
+            const isNavegando = mRaw.estadoActual.codigo === MareaEstado.EN_EJECUCION;
+            const isDesignada = mRaw.estadoActual.codigo === MareaEstado.DESIGNADA;
+
+            // Determinar fin: Preferir fechaFinObservador si es futura, sino basarse en etapas o estado actual
             let finRaw = mRaw.fechaFinObservador;
-            if (!finRaw && mRaw.etapas.length > 0) {
+
+            // Si la marea está en ejecución, el final es 'ahora' a menos que haya una fecha de fin futuro (planificada)
+            if (isNavegando) {
+                if (!finRaw || finRaw < now) {
+                    finRaw = now;
+                }
+            } else if (!finRaw && mRaw.etapas.length > 0) {
                 const arrivals = mRaw.etapas
                     .map((e: any) => e.fechaArribo ? new Date(e.fechaArribo).getTime() : null)
                     .filter(Boolean);
@@ -156,8 +160,6 @@ export class ObservadoresService {
                 }
             }
 
-            const isNavegando = mRaw.estadoActual.codigo === MareaEstado.EN_EJECUCION;
-            const isDesignada = mRaw.estadoActual.codigo === MareaEstado.DESIGNADA;
             const end = finRaw || (isNavegando ? now : start);
 
             // Días totales (rango de vinculación a la marea)
@@ -167,7 +169,9 @@ export class ObservadoresService {
 
             // Días navegados (solo si estuvo en etapas)
             const isPrincipal = mRaw.observadorPrincipalId === id;
-            const relevantStages = mRaw.etapas.filter((e: any) => isPrincipal || e.observadores.length > 0);
+            const relevantStages = mRaw.etapas.filter((e: any) =>
+                isPrincipal || e.observadores.some((o: any) => o.observadorId === id)
+            );
 
             const navigatedDays = DateUtils.calculateUniqueDays(
                 relevantStages.map((e: any) => ({

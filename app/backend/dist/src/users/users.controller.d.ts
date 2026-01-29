@@ -8,20 +8,20 @@ export declare class UsersController {
     constructor(usersService: UsersService, configService: ConfigService);
     getProfile(user: User): {
         id: string;
-        roles: string[];
         email: string;
         password: string;
         fullName: string;
         isActive: boolean;
+        roles: string[];
         themePreference: string;
         avatarUrl: string | null;
     };
     updateProfile(user: User, updateUserDto: UpdateUserDto): Promise<{
         id: string;
-        roles: string[];
         email: string;
         fullName: string;
         isActive: boolean;
+        roles: string[];
         themePreference: string;
         avatarUrl: string | null;
     }>;
@@ -30,49 +30,49 @@ export declare class UsersController {
     }>;
     findAll(): Promise<{
         id: string;
-        roles: string[];
         email: string;
         password: string;
         fullName: string;
         isActive: boolean;
+        roles: string[];
         themePreference: string;
         avatarUrl: string | null;
     }[]>;
     create(createUserDto: CreateUserDto): Promise<{
         id: string;
-        roles: string[];
         email: string;
         fullName: string;
         isActive: boolean;
+        roles: string[];
         themePreference: string;
         avatarUrl: string | null;
     }>;
     update(id: string, adminUpdateUserDto: AdminUpdateUserDto, user: User): Promise<{
         id: string;
-        roles: string[];
         email: string;
         fullName: string;
         isActive: boolean;
+        roles: string[];
         themePreference: string;
         avatarUrl: string | null;
     }>;
     toggleStatus(id: string, user: User): Promise<{
         id: string;
-        roles: string[];
         email: string;
         password: string;
         fullName: string;
         isActive: boolean;
+        roles: string[];
         themePreference: string;
         avatarUrl: string | null;
     }>;
     remove(id: string, user: User): Promise<{
         id: string;
-        roles: string[];
         email: string;
         password: string;
         fullName: string;
         isActive: boolean;
+        roles: string[];
         themePreference: string;
         avatarUrl: string | null;
     }>;

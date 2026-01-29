@@ -114,14 +114,9 @@ let ObservadoresService = class ObservadoresService {
                 buque: true,
                 estadoActual: true,
                 etapas: {
-                    where: {
-                        fechaZarpada: { not: null }
-                    },
                     orderBy: { nroEtapa: 'asc' },
                     include: {
-                        observadores: {
-                            where: { observadorId: id }
-                        }
+                        observadores: true
                     }
                 }
             },
@@ -136,8 +131,15 @@ let ObservadoresService = class ObservadoresService {
             const start = mRaw.fechaInicioObservador || mRaw.fechaZarpadaEstimada;
             if (!start)
                 return null;
+            const isNavegando = mRaw.estadoActual.codigo === mareas_constants_1.MareaEstado.EN_EJECUCION;
+            const isDesignada = mRaw.estadoActual.codigo === mareas_constants_1.MareaEstado.DESIGNADA;
             let finRaw = mRaw.fechaFinObservador;
-            if (!finRaw && mRaw.etapas.length > 0) {
+            if (isNavegando) {
+                if (!finRaw || finRaw < now) {
+                    finRaw = now;
+                }
+            }
+            else if (!finRaw && mRaw.etapas.length > 0) {
                 const arrivals = mRaw.etapas
                     .map((e) => e.fechaArribo ? new Date(e.fechaArribo).getTime() : null)
                     .filter(Boolean);
@@ -145,12 +147,10 @@ let ObservadoresService = class ObservadoresService {
                     finRaw = new Date(Math.max(...arrivals));
                 }
             }
-            const isNavegando = mRaw.estadoActual.codigo === mareas_constants_1.MareaEstado.EN_EJECUCION;
-            const isDesignada = mRaw.estadoActual.codigo === mareas_constants_1.MareaEstado.DESIGNADA;
             const end = finRaw || (isNavegando ? now : start);
             const totalDays = isDesignada ? 0 : date_utils_1.DateUtils.calculateInclusiveDays(start, end);
             const isPrincipal = mRaw.observadorPrincipalId === id;
-            const relevantStages = mRaw.etapas.filter((e) => isPrincipal || e.observadores.length > 0);
+            const relevantStages = mRaw.etapas.filter((e) => isPrincipal || e.observadores.some((o) => o.observadorId === id));
             const navigatedDays = date_utils_1.DateUtils.calculateUniqueDays(relevantStages.map((e) => ({
                 start: e.fechaZarpada,
                 end: e.fechaArribo || (isNavegando ? now : null)

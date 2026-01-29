@@ -5,9 +5,9 @@ export declare class EstadosMareaController {
     constructor(estadosMareaService: EstadosMareaService);
     crear(createEstadoMareaDto: CreateEstadoMareaDto): Promise<{
         id: string;
+        descripcion: string | null;
         codigo: string;
         nombre: string;
-        descripcion: string | null;
         categoria: string;
         orden: number;
         esInicial: boolean;
@@ -20,9 +20,9 @@ export declare class EstadosMareaController {
     }>;
     obtenerTodos(): Promise<{
         id: string;
+        descripcion: string | null;
         codigo: string;
         nombre: string;
-        descripcion: string | null;
         categoria: string;
         orden: number;
         esInicial: boolean;
@@ -35,9 +35,9 @@ export declare class EstadosMareaController {
     }[]>;
     obtenerUno(id: string): Promise<{
         id: string;
+        descripcion: string | null;
         codigo: string;
         nombre: string;
-        descripcion: string | null;
         categoria: string;
         orden: number;
         esInicial: boolean;
@@ -50,9 +50,9 @@ export declare class EstadosMareaController {
     }>;
     actualizar(id: string, updateEstadoMareaDto: UpdateEstadoMareaDto): Promise<{
         id: string;
+        descripcion: string | null;
         codigo: string;
         nombre: string;
-        descripcion: string | null;
         categoria: string;
         orden: number;
         esInicial: boolean;

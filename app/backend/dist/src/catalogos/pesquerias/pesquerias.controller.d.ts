@@ -5,36 +5,36 @@ export declare class PesqueriasController {
     constructor(pesqueriasService: PesqueriasService);
     crear(createPesqueriaDto: CreatePesqueriaDto): Promise<{
         id: string;
+        descripcion: string | null;
         codigo: string;
         nombre: string;
-        descripcion: string | null;
         orden: number | null;
         activo: boolean;
         grupo: string | null;
     }>;
     obtenerTodos(): Promise<{
         id: string;
+        descripcion: string | null;
         codigo: string;
         nombre: string;
-        descripcion: string | null;
         orden: number | null;
         activo: boolean;
         grupo: string | null;
     }[]>;
     obtenerUno(id: string): Promise<{
         id: string;
+        descripcion: string | null;
         codigo: string;
         nombre: string;
-        descripcion: string | null;
         orden: number | null;
         activo: boolean;
         grupo: string | null;
     }>;
     actualizar(id: string, updatePesqueriaDto: UpdatePesqueriaDto): Promise<{
         id: string;
+        descripcion: string | null;
         codigo: string;
         nombre: string;
-        descripcion: string | null;
         orden: number | null;
         activo: boolean;
         grupo: string | null;
