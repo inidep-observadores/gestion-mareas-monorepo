@@ -30,6 +30,7 @@
           :read-only="isReadOnly"
           @close="router.back()"
           @open-detalle="goToDetalle"
+          @view-trajectory="goToTrajectory"
           @action="executeActionFromView"
           @manage-alert="handleManageAlert"
         />
@@ -126,6 +127,12 @@ onMounted(loadContext)
 const goToDetalle = () => {
   if (selectedMarea.value) {
     router.push({ name: 'MareaDetalle', params: { id: selectedMarea.value.id } })
+  }
+}
+
+const goToTrajectory = () => {
+  if (selectedMarea.value) {
+    router.push({ name: 'MareaTrajectory', params: { mareaId: selectedMarea.value.id } })
   }
 }
 

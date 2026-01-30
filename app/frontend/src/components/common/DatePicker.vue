@@ -39,7 +39,7 @@
       <div 
         v-if="isOpen"
         ref="dropdownRef"
-        class="fixed z-[200000] mt-2 bg-surface border border-border rounded-xl shadow-theme-xl p-4 w-[320px] animate-in fade-in zoom-in-95 duration-200"
+        class="fixed z-[200000] bg-surface border border-border rounded-xl shadow-theme-xl p-4 w-[320px] animate-in fade-in zoom-in-95 duration-200"
         :style="dropdownStyle"
       >
         <!-- Header: Month & Year Picker -->
@@ -409,11 +409,31 @@ const handleManualInput = (e: Event) => {
 }
 
 const updateDropdownPosition = () => {
-  if (!containerRef.value) return
+  if (!containerRef.value || !dropdownRef.value) return
+  
   const rect = containerRef.value.getBoundingClientRect()
+  const dropdownHeight = dropdownRef.value.offsetHeight || 380 // estimate if not visible yet
+  const spaceBelow = window.innerHeight - rect.bottom
+  const spaceAbove = rect.top
+  
+  // Default to bottom
+  let top = rect.bottom + 8 // 8px default mt-2
+  let left = rect.left
+  
+  // Check collision with window bottom
+  if (spaceBelow < dropdownHeight && spaceAbove > dropdownHeight) {
+    // Flip to top
+    top = rect.top - dropdownHeight - 8
+  } 
+  
+  // Check right edge collision
+  if (left + 320 > window.innerWidth) {
+    left = window.innerWidth - 320 - 16 // 16px padding from edge
+  }
+
   dropdownStyle.value = {
-    top: `${rect.bottom}px`,
-    left: `${rect.left}px`,
+    top: `${top}px`,
+    left: `${left}px`,
   }
 }
 
