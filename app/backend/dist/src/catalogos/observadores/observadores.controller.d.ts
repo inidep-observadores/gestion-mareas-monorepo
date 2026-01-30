@@ -5,10 +5,11 @@ export declare class ObservadoresController {
     constructor(observadoresService: ObservadoresService);
     crear(createObservadorDto: CreateObservadorDto): Promise<{
         id: string;
+        email: string | null;
+        nombre: string;
         activo: boolean;
         observaciones: string | null;
         codigoInterno: number;
-        nombre: string;
         apellido: string;
         fotoUrl: string | null;
         tipoObservador: string;
@@ -16,15 +17,15 @@ export declare class ObservadoresController {
         disponible: boolean;
         fechaProximaDisponibilidad: Date | null;
         conImpedimento: boolean;
-        email: string | null;
         motivoImpedimento: string | null;
     }>;
     obtenerTodos(): Promise<{
         id: string;
+        email: string | null;
+        nombre: string;
         activo: boolean;
         observaciones: string | null;
         codigoInterno: number;
-        nombre: string;
         apellido: string;
         fotoUrl: string | null;
         tipoObservador: string;
@@ -32,7 +33,6 @@ export declare class ObservadoresController {
         disponible: boolean;
         fechaProximaDisponibilidad: Date | null;
         conImpedimento: boolean;
-        email: string | null;
         motivoImpedimento: string | null;
     }[]>;
     obtenerUno(id: string): Promise<{
@@ -49,10 +49,11 @@ export declare class ObservadoresController {
         }[];
     } & {
         id: string;
+        email: string | null;
+        nombre: string;
         activo: boolean;
         observaciones: string | null;
         codigoInterno: number;
-        nombre: string;
         apellido: string;
         fotoUrl: string | null;
         tipoObservador: string;
@@ -60,16 +61,16 @@ export declare class ObservadoresController {
         disponible: boolean;
         fechaProximaDisponibilidad: Date | null;
         conImpedimento: boolean;
-        email: string | null;
         motivoImpedimento: string | null;
     }>;
     obtenerHistorial(id: string, year: string): Promise<any[]>;
     actualizar(id: string, updateObservadorDto: UpdateObservadorDto): Promise<{
         id: string;
+        email: string | null;
+        nombre: string;
         activo: boolean;
         observaciones: string | null;
         codigoInterno: number;
-        nombre: string;
         apellido: string;
         fotoUrl: string | null;
         tipoObservador: string;
@@ -77,7 +78,6 @@ export declare class ObservadoresController {
         disponible: boolean;
         fechaProximaDisponibilidad: Date | null;
         conImpedimento: boolean;
-        email: string | null;
         motivoImpedimento: string | null;
     }>;
     eliminar(id: string): Promise<{

@@ -83,8 +83,15 @@
 
         <!-- 2. Logistics Section -->
         <section class="space-y-4">
-          <div class="flex items-center justify-between">
-            <h4 class="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted">Logística de Operación</h4>
+          <div class="flex items-center justify-between cursor-pointer group"
+            @click="isLogisticaCollapsed = !isLogisticaCollapsed">
+            <div class="flex items-center gap-2">
+              <h4
+                class="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted group-hover:text-primary transition-colors">
+                Logística de Operación</h4>
+              <ChevronRightIcon class="w-3 h-3 text-text-muted transition-transform duration-300"
+                :class="{ 'rotate-90': !isLogisticaCollapsed }" />
+            </div>
             <span
               class="px-2 py-0.5 bg-surface-muted rounded text-[9px] font-bold text-text-muted uppercase tracking-tighter">
               {{ countEtapas }} {{ countEtapas === 1 ? 'Etapa' : 'Etapas' }}
@@ -102,32 +109,79 @@
               En Tierra
             </div>
 
-            <div class="flex items-center gap-4">
-              <div class="p-2.5 bg-surface rounded-xl shadow-sm text-primary shrink-0">
-                <ShipIcon class="w-4 h-4" />
+            <!-- CASE: DESIGNADA -->
+            <template v-if="currentMarea.estado_codigo === 'DESIGNADA'">
+              <div class="flex items-center gap-4">
+                <div class="p-2.5 bg-surface rounded-xl shadow-sm text-primary shrink-0">
+                  <ShipIcon class="w-4 h-4" />
+                </div>
+                <div class="flex-1 min-w-0">
+                  <p class="text-[9px] font-bold text-primary uppercase tracking-widest mb-0.5">Zarpada Prevista</p>
+                  <p class="text-sm font-black text-text truncate">
+                    {{ formatDate(currentMarea.fecha_zarpada) }} <span class="mx-1 text-primary/60">en</span> {{
+                      puertoZarpada }}
+                  </p>
+                </div>
               </div>
-              <div class="flex-1 min-w-0">
-                <p class="text-[9px] font-bold text-primary uppercase tracking-widest mb-0.5">Zarpada Prevista</p>
-                <p class="text-sm font-black text-text truncate">
-                  {{ formatDate(currentMarea.fecha_zarpada) }} <span class="mx-1 text-primary/60">en</span> {{
-                    puertoZarpada }}
-                </p>
-              </div>
-            </div>
+            </template>
 
-            <!-- Arribo Final (Condicional) -->
-            <div v-if="finalArribo" class="flex items-center gap-4 pt-4 border-t border-primary/10">
-              <div class="p-2.5 bg-surface rounded-xl shadow-sm text-primary shrink-0">
-                <MapPinIcon class="w-4 h-4" />
+            <!-- CASE: OTHER STATUSES (EXECUTION/REVISION) -->
+            <template v-else>
+              <div class="grid grid-cols-1 gap-3">
+                <!-- Inicio Observador (Always Visible) -->
+                <div class="flex items-center gap-3">
+                  <div class="w-8 h-8 rounded-lg bg-surface flex items-center justify-center text-primary shrink-0">
+                    <HistoryIcon class="w-3.5 h-3.5" />
+                  </div>
+                  <div>
+                    <p class="text-[8px] font-bold text-text-muted uppercase tracking-widest mb-0.5">Inicio Obs.</p>
+                    <p class="text-xs font-black text-text">{{ formatDate(currentMarea.fecha_inicio_observador) }}</p>
+                  </div>
+                </div>
+
+                <!-- Navigation Summary (Collapsed) or Stages List (Expanded) -->
+                <div v-if="isLogisticaCollapsed" class="flex items-center gap-3">
+                  <div class="w-8 h-8 rounded-lg bg-surface flex items-center justify-center text-primary shrink-0">
+                    <ShipIcon class="w-3.5 h-3.5" />
+                  </div>
+                  <div>
+                    <p class="text-[8px] font-bold text-text-muted uppercase tracking-widest mb-0.5">Navegación</p>
+                    <p class="text-xs font-black text-text">
+                      {{ firstStageZarpada }} - {{ lastStageArribo }}
+                    </p>
+                  </div>
+                </div>
+
+                <!-- Stages List (Expanded) -->
+                <div v-else class="space-y-1.5 py-1">
+                  <div v-for="etapa in (props.context?.marea?.etapas || [])" :key="etapa.id"
+                    class="flex items-center justify-between p-2.5 rounded-xl bg-surface/50 border border-border/10">
+                    <div class="flex items-center gap-3">
+                      <span class="text-[10px] font-black text-primary w-5">#{{ etapa.nroEtapa }}</span>
+                      <div class="flex flex-col">
+                        <p class="text-[10px] font-bold text-text truncate max-w-[110px]">
+                          {{ etapa.puertoZarpadaNombre || '?' }} → {{ etapa.puertoArriboNombre || '?' }}
+                        </p>
+                      </div>
+                    </div>
+                    <div class="text-[9px] font-bold text-text-muted tabular-nums whitespace-nowrap">
+                      {{ formatDate(etapa.fechaZarpada) }} - {{ formatDate(etapa.fechaArribo) || 'Nav...' }}
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Fin Observador (Always Visible) -->
+                <div class="flex items-center gap-3">
+                  <div class="w-8 h-8 rounded-lg bg-surface flex items-center justify-center text-primary shrink-0">
+                    <SportsScoreIcon class="w-3.5 h-3.5" />
+                  </div>
+                  <div>
+                    <p class="text-[8px] font-bold text-text-muted uppercase tracking-widest mb-0.5">Fin Obs.</p>
+                    <p class="text-xs font-black text-text">{{ formatDate(currentMarea.fecha_fin_observador) }}</p>
+                  </div>
+                </div>
               </div>
-              <div class="flex-1 min-w-0">
-                <p class="text-[9px] font-bold text-primary uppercase tracking-widest mb-0.5">Arribo</p>
-                <p class="text-sm font-black text-text truncate">
-                  {{ formatDate(finalArribo.fechaArribo) }} <span class="mx-1 text-primary/60">en</span> {{
-                    finalArribo.puertoArriboNombre }}
-                </p>
-              </div>
-            </div>
+            </template>
           </div>
         </section>
 
@@ -246,7 +300,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 import {
   ChevronRightIcon,
@@ -267,7 +321,8 @@ import {
   SendIcon,
   SuccessIcon,
   ErrorIcon,
-  ShieldIcon
+  ShieldIcon,
+  SportsScoreIcon
 } from '@/icons'
 import type { MareaContext } from '../services/mareas.service'
 
@@ -327,16 +382,36 @@ const finalArribo = computed(() => {
 
 const puertoZarpada = computed(() => {
   const m = props.context?.marea || props.marea
-  // If we have stages, get the zarpada of the first stage (ordered by desc)
+  // Prioridad al puerto base si es designada
+  if (m?.estado_codigo === 'DESIGNADA' && m?.puertoBaseNombre) {
+    return m.puertoBaseNombre
+  }
+  // Si tenemos etapas, obtener la zarpada de la primera etapa (nroEtapa 1)
   if (props.context?.marea?.etapas?.length) {
-    // This is a bit tricky since etapas are desc, but maybe we want the first stage's zarpada?
-    // User wants "Fecha de zarpada y puerto" in one line.
-    // Usually means the "Initial zarpada" or the current one.
-    // Let's assume the first stage ever (last in desc array).
     const stages = props.context.marea.etapas
-    return stages[stages.length - 1].puertoZarpadaNombre || m?.puerto || 'N/D'
+    const firstStage = stages.find((e: any) => e.nroEtapa === 1) || stages[0]
+    return firstStage.puertoZarpadaNombre || m?.puerto || 'N/D'
   }
   return m?.puerto || 'N/D'
+})
+
+const isLogisticaCollapsed = ref(true)
+
+const firstStageZarpada = computed(() => {
+  const etapas = props.context?.marea?.etapas
+  if (!etapas || etapas.length === 0) return '---'
+  // Etapas ordenadas por número ascendente, la primera es el índice 0
+  const first = etapas[0]
+  return first.fechaZarpada ? formatDate(first.fechaZarpada) : '---'
+})
+
+const lastStageArribo = computed(() => {
+  const etapas = props.context?.marea?.etapas
+  if (!etapas || etapas.length === 0) return '---'
+  // Etapas ordenadas por número ascendente, la última etapa es el final del array
+  const last = etapas[etapas.length - 1]
+  if (last.fechaArribo) return formatDate(last.fechaArribo)
+  return 'Navegando'
 })
 
 const getStatusClasses = (status?: string) => {

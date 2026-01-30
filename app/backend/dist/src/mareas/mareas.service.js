@@ -1159,7 +1159,9 @@ let MareasService = class MareasService {
             this.prisma.marea.findUnique({
                 where: { id },
                 include: {
-                    buque: true,
+                    buque: {
+                        include: { puertoBase: true }
+                    },
                     observadorPrincipal: true,
                     estadoActual: true,
                     etapas: {
@@ -1232,13 +1234,14 @@ let MareasService = class MareasService {
                 id_marea: this.formatMareaId(marea),
                 buque_nombre: marea.buque.nombreBuque,
                 puertoBaseId: marea.buque.puertoBaseId,
+                puertoBaseNombre: marea.buque.puertoBase?.nombre || 'N/D',
                 estado: marea.estadoActual.nombre,
                 estado_codigo: marea.estadoActual.codigo,
                 observador: mainObs ? `${mainObs.nombre} ${mainObs.apellido}` : 'No asignado',
                 pesqueria: etapaFinal?.pesqueria?.nombre || 'General',
                 fecha_zarpada: fechaZarpada,
                 fecha_zarpada_estimada: marea.fechaZarpadaEstimada,
-                fechaInicioObservador: marea.fechaInicioObservador,
+                fecha_inicio_observador: marea.fechaInicioObservador,
                 fecha_fin_observador: marea.fechaFinObservador,
                 dias_marea: diasMarea,
                 dias_navegados: diasNavegados,
