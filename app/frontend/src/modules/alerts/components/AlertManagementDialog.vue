@@ -672,6 +672,31 @@ const smartActionConfig = computed(() => {
                     showStagesDialog.value = true
                 }
             }
+        case 'POSIBLE_ZARPADA':
+        case 'ZARPADA':
+            if (mareaData.value?.estado_codigo === 'DESIGNADA') {
+                return {
+                    label: 'Registrar Inicio',
+                    description: 'Se detectó la zarpada de una marea designada. Inicie el registro oficial del viaje.',
+                    icon: ShipIcon,
+                    handler: async () => {
+                        await prepareStagesData()
+                        stagesDialogMode.value = 'INICIAR'
+                        showStagesDialog.value = true
+                    }
+                }
+            } else {
+                return {
+                    label: 'Gestionar Etapas',
+                    description: 'Se detectó una zarpada. El buque ya se encuentra en navegación. Actualice las etapas del viaje.',
+                    icon: MapPinIcon,
+                    handler: async () => {
+                        await prepareStagesData()
+                        stagesDialogMode.value = 'EDITAR'
+                        showStagesDialog.value = true
+                    }
+                }
+            }
         default:
             return null
     }
@@ -715,7 +740,7 @@ const prepareStagesData = async (isNewStageConfig = false) => {
                 observadores: []
             }
             currentStages.push(newStage)
-        } else if (subTipo && ['ARRIBO', 'INCONGRUENCIA', 'ZARPADA'].includes(subTipo as string) && nroEtapaAlert) {
+        } else if (subTipo && ['ARRIBO', 'INCONGRUENCIA', 'ZARPADA', 'POSIBLE_ZARPADA'].includes(subTipo as string) && nroEtapaAlert) {
             // Caso Actualización de Etapa: Buscar la etapa y sugerir cambios de Access/Tracking
             const stageToUpdate = currentStages.find((s: any) =>
                 (s.nroEtapa === nroEtapaAlert) || (s.nro_etapa === nroEtapaAlert)
