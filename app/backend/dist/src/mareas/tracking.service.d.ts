@@ -40,8 +40,8 @@ export declare class TrackingService {
             id: string;
             observaciones: string | null;
             pesqueriaId: string | null;
-            mareaId: string;
             nroEtapa: number;
+            mareaId: string;
             puertoZarpadaId: string | null;
             puertoArriboId: string | null;
             fechaZarpada: Date | null;

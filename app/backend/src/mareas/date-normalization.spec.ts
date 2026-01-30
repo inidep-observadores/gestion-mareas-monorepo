@@ -93,8 +93,8 @@ describe('Mareas - Normalización de Fechas', () => {
 
         expect(mockPrisma.marea.create).toHaveBeenCalledWith(expect.objectContaining({
             data: expect.objectContaining({
-                fechaZarpadaEstimada: DateUtils.truncateTime('2025-01-28T15:30:00Z'),
-                fechaInicioObservador: DateUtils.truncateTime('2025-01-29T08:45:00Z'),
+                fechaZarpadaEstimada: new Date('2025-01-28T15:30:00Z'),
+                fechaInicioObservador: new Date('2025-01-29T08:45:00Z'),
             })
         }));
     });
@@ -112,8 +112,8 @@ describe('Mareas - Normalización de Fechas', () => {
         expect(mockPrisma.marea.update).toHaveBeenCalledWith(expect.objectContaining({
             where: { id },
             data: expect.objectContaining({
-                fechaProtocolizacion: DateUtils.truncateTime('2025-02-15T12:00:00Z'),
-                fechaFinObservador: DateUtils.truncateTime('2025-02-10T23:59:59Z'),
+                fechaProtocolizacion: new Date('2025-02-15T12:00:00Z'),
+                fechaFinObservador: new Date('2025-02-10T23:59:59Z'),
             })
         }));
     });
@@ -133,8 +133,8 @@ describe('Mareas - Normalización de Fechas', () => {
 
         expect(mockPrisma.mareaEtapa.create).toHaveBeenCalledWith(expect.objectContaining({
             data: expect.objectContaining({
-                fechaZarpada: DateUtils.truncateTime('2025-01-01T10:00:00Z'),
-                fechaArribo: DateUtils.truncateTime('2025-01-05T18:00:00Z'),
+                fechaZarpada: new Date('2025-01-01T10:00:00Z'),
+                fechaArribo: new Date('2025-01-05T18:00:00Z'),
             })
         }));
     });
@@ -161,13 +161,13 @@ describe('Mareas - Normalización de Fechas', () => {
 
         expect(mockPrisma.marea.update).toHaveBeenCalledWith(expect.objectContaining({
             data: expect.objectContaining({
-                fechaInicioObservador: DateUtils.truncateTime('2025-01-10T14:20:00Z')
+                fechaInicioObservador: new Date('2025-01-10T14:20:00Z')
             })
         }));
 
         expect(mockPrisma.mareaEtapa.create).toHaveBeenCalledWith(expect.objectContaining({
             data: expect.objectContaining({
-                fechaZarpada: DateUtils.truncateTime('2025-01-10T14:20:00Z')
+                fechaZarpada: new Date('2025-01-10T14:20:00Z')
             })
         }));
     });
@@ -193,9 +193,10 @@ describe('Mareas - Normalización de Fechas', () => {
 
         expect(mockPrisma.marea.update).toHaveBeenCalledWith(expect.objectContaining({
             data: expect.objectContaining({
-                fechaInicioObservador: DateUtils.truncateTime('2025-01-01T08:00:00Z'),
-                fechaFinObservador: DateUtils.truncateTime('2025-02-01T20:00:00Z')
+                fechaInicioObservador: new Date('2025-01-01T08:00:00Z'),
+                fechaFinObservador: new Date('2025-02-01T20:00:00Z')
             })
         }));
     });
 });
+

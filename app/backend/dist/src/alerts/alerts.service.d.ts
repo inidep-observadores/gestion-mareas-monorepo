@@ -7,11 +7,12 @@ export declare class AlertsService {
     constructor(prisma: PrismaService);
     create(createAlertDto: CreateAlertDto, user?: any): Promise<{
         id: string;
+        descripcion: string;
+        metadata: import("@prisma/client/runtime/client").JsonValue | null;
         codigoUnico: string;
         referenciaId: string | null;
         tipo: string;
         titulo: string;
-        descripcion: string;
         estado: import("@prisma/client").$Enums.AlertaEstado;
         prioridad: import("@prisma/client").$Enums.AlertaPrioridad;
         fechaDetectada: Date;
@@ -20,7 +21,6 @@ export declare class AlertsService {
         asignadoId: string | null;
         creadoPorId: string | null;
         ultimaActualizacion: Date;
-        metadata: import("@prisma/client/runtime/client").JsonValue | null;
         referenciaTipo: string | null;
         visible: boolean;
     }>;
@@ -50,11 +50,12 @@ export declare class AlertsService {
         })[];
     } & {
         id: string;
+        descripcion: string;
+        metadata: import("@prisma/client/runtime/client").JsonValue | null;
         codigoUnico: string;
         referenciaId: string | null;
         tipo: string;
         titulo: string;
-        descripcion: string;
         estado: import("@prisma/client").$Enums.AlertaEstado;
         prioridad: import("@prisma/client").$Enums.AlertaPrioridad;
         fechaDetectada: Date;
@@ -63,17 +64,17 @@ export declare class AlertsService {
         asignadoId: string | null;
         creadoPorId: string | null;
         ultimaActualizacion: Date;
-        metadata: import("@prisma/client/runtime/client").JsonValue | null;
         referenciaTipo: string | null;
         visible: boolean;
     }>;
     update(id: string, updateAlertDto: UpdateAlertDto, user: any): Promise<{
         id: string;
+        descripcion: string;
+        metadata: import("@prisma/client/runtime/client").JsonValue | null;
         codigoUnico: string;
         referenciaId: string | null;
         tipo: string;
         titulo: string;
-        descripcion: string;
         estado: import("@prisma/client").$Enums.AlertaEstado;
         prioridad: import("@prisma/client").$Enums.AlertaPrioridad;
         fechaDetectada: Date;
@@ -82,7 +83,6 @@ export declare class AlertsService {
         asignadoId: string | null;
         creadoPorId: string | null;
         ultimaActualizacion: Date;
-        metadata: import("@prisma/client/runtime/client").JsonValue | null;
         referenciaTipo: string | null;
         visible: boolean;
     }>;

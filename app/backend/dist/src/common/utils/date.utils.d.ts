@@ -7,5 +7,4 @@ export declare class DateUtils {
         start: Date | string;
         end?: Date | string | null;
     }>, year?: number): number;
-    static truncateTime(date: Date | string | null | undefined): Date | null;
 }

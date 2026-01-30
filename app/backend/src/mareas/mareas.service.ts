@@ -193,7 +193,11 @@ export class MareasService {
             const updateData: any = { ...data };
 
             // Procesamiento de campos con soporte para NULL
-            const processDate = (val: any) => (val === undefined || val === null) ? val : DateUtils.truncateTime(val);
+            const processDate = (val: any) => {
+                if (val === undefined || val === null) return val;
+                const d = new Date(val);
+                return isNaN(d.getTime()) ? null : d;
+            };
 
             if (artePrincipalId !== undefined) updateData.artePrincipalId = artePrincipalId;
             if (artePrincipalId === undefined && arteId !== undefined) updateData.artePrincipalId = arteId;
@@ -242,8 +246,8 @@ export class MareasService {
                     etapaData.puertoArriboId = this.sanitizeUuid(etapaData.puertoArriboId);
                     etapaData.pesqueriaId = this.sanitizeUuid(etapaData.pesqueriaId);
 
-                    if (etapaData.fechaZarpada) etapaData.fechaZarpada = DateUtils.truncateTime(etapaData.fechaZarpada);
-                    if (etapaData.fechaArribo) etapaData.fechaArribo = DateUtils.truncateTime(etapaData.fechaArribo);
+                    if (etapaData.fechaZarpada) etapaData.fechaZarpada = new Date(etapaData.fechaZarpada);
+                    if (etapaData.fechaArribo) etapaData.fechaArribo = new Date(etapaData.fechaArribo);
 
                     if (currentEtapaId) {
                         const existing = await tx.mareaEtapa.findFirst({
@@ -1593,9 +1597,9 @@ export class MareasService {
             const stageData = {
                 nroEtapa: i + 1,
                 puertoZarpadaId: this.sanitizeUuid(stg.puertoZarpadaId),
-                fechaZarpada: stg.fechaZarpada ? DateUtils.truncateTime(stg.fechaZarpada) : null,
+                fechaZarpada: stg.fechaZarpada ? new Date(stg.fechaZarpada) : null,
                 puertoArriboId: this.sanitizeUuid(stg.puertoArriboId),
-                fechaArribo: stg.fechaArribo ? DateUtils.truncateTime(stg.fechaArribo) : null,
+                fechaArribo: stg.fechaArribo ? new Date(stg.fechaArribo) : null,
                 pesqueriaId: this.sanitizeUuid(stg.pesqueriaId),
                 tipoEtapa: stg.tipoEtapa || TipoEtapa.MC,
                 observaciones: stg.observaciones || ''
@@ -1683,7 +1687,7 @@ export class MareasService {
         // Acción especial que NO cambia el estado
         if (actionKey === 'EDITAR_ETAPAS') {
             return await this.prisma.$transaction(async (tx) => {
-                const fechaInicioObs = payload.fechaInicioObservador ? DateUtils.truncateTime(payload.fechaInicioObservador) : marea.fechaInicioObservador;
+                const fechaInicioObs = payload.fechaInicioObservador ? new Date(payload.fechaInicioObservador) : marea.fechaInicioObservador;
 
                 await tx.marea.update({
                     where: { id },
@@ -1730,7 +1734,7 @@ export class MareasService {
                 const fechaIn = payload.fechaInicioObservador || payload.fechaInicio;
                 if (!fechaIn) throw new Error('La fecha de inicio del observador es requerida.');
 
-                additionalMareaData.fechaInicioObservador = DateUtils.truncateTime(fechaIn);
+                additionalMareaData.fechaInicioObservador = new Date(fechaIn);
 
                 // Check and create Stage 1 if it doesn't exist
                 const existingStages = await tx.mareaEtapa.count({ where: { mareaId: id } });
@@ -1747,7 +1751,7 @@ export class MareasService {
                             pesqueriaId: payload.pesqueriaId || (marea as any).pesqueriaId,
                             puertoZarpadaId: payload.puertoId || buque?.puertoBaseId,
                             tipoEtapa: marea.tipoMarea === TipoMarea.CI ? TipoEtapa.CI : TipoEtapa.MC,
-                            fechaZarpada: DateUtils.truncateTime(fechaIn),
+                            fechaZarpada: new Date(fechaIn),
                             // No observer assignment here (implicit in Marea)
                         }
                     });
@@ -1762,7 +1766,7 @@ export class MareasService {
                 const fechaFin = payload.fechaFinObservador;
                 // if (!fechaFin) throw new Error('La fecha de fin del observador es requerida.'); // Eliminado por pedido del usuario
 
-                additionalMareaData.fechaFinObservador = fechaFin ? DateUtils.truncateTime(fechaFin) : null;
+                additionalMareaData.fechaFinObservador = fechaFin ? new Date(fechaFin) : null;
 
                 if (payload.etapas) {
                     await this.syncStages(tx, id, payload.etapas);
@@ -1771,8 +1775,8 @@ export class MareasService {
 
             if (actionKey === 'RECIBIR_DATOS') {
                 const fechaRecepcion = payload.fechaRecepcion;
-                const fechaInicioObs = payload.fechaInicioObservador ? DateUtils.truncateTime(payload.fechaInicioObservador) : (marea.fechaInicioObservador ? DateUtils.truncateTime(marea.fechaInicioObservador) : null);
-                const fechaFinObs = payload.fechaFinObservador ? DateUtils.truncateTime(payload.fechaFinObservador) : (marea.fechaFinObservador ? DateUtils.truncateTime(marea.fechaFinObservador) : null);
+                const fechaInicioObs = payload.fechaInicioObservador ? new Date(payload.fechaInicioObservador) : (marea.fechaInicioObservador ? new Date(marea.fechaInicioObservador) : null);
+                const fechaFinObs = payload.fechaFinObservador ? new Date(payload.fechaFinObservador) : (marea.fechaFinObservador ? new Date(marea.fechaFinObservador) : null);
 
                 if (!fechaInicioObs || !fechaFinObs) {
                     throw new Error('Las fechas de inicio y fin del observador son requeridas para la recepción.');
@@ -1895,8 +1899,8 @@ export class MareasService {
                     tipoMarea,
                     artePrincipalId: arteId,
                     observadorPrincipalId: observadorId,
-                    fechaZarpadaEstimada: fechaZarpadaEstimada ? DateUtils.truncateTime(fechaZarpadaEstimada) : null,
-                    fechaInicioObservador: fechaInicioObservador ? DateUtils.truncateTime(fechaInicioObservador) : null,
+                    fechaZarpadaEstimada: fechaZarpadaEstimada ? new Date(fechaZarpadaEstimada) : null,
+                    fechaInicioObservador: fechaInicioObservador ? new Date(fechaInicioObservador) : null,
                     diasEstimados,
                     observaciones: createMareaDto.observaciones || '',
                 }

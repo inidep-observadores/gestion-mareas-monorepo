@@ -95,15 +95,6 @@ class DateUtils {
             return acc + this.calculateInclusiveDays(interval.start, interval.end);
         }, 0);
     }
-    static truncateTime(date) {
-        if (!date)
-            return null;
-        const d = new Date(date);
-        if (isNaN(d.getTime()))
-            return null;
-        d.setHours(0, 0, 0, 0);
-        return d;
-    }
 }
 exports.DateUtils = DateUtils;
 //# sourceMappingURL=date.utils.js.map

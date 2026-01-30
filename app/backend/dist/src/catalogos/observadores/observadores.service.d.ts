@@ -5,32 +5,32 @@ export declare class ObservadoresService {
     constructor(prisma: PrismaService);
     crear(createObservadorDto: CreateObservadorDto): Promise<{
         id: string;
+        activo: boolean;
+        observaciones: string | null;
         codigoInterno: number;
         nombre: string;
         apellido: string;
         fotoUrl: string | null;
         tipoObservador: string;
         tipoContrato: string;
-        activo: boolean;
         disponible: boolean;
         fechaProximaDisponibilidad: Date | null;
-        observaciones: string | null;
         conImpedimento: boolean;
         email: string | null;
         motivoImpedimento: string | null;
     }>;
     obtenerTodos(): Promise<{
         id: string;
+        activo: boolean;
+        observaciones: string | null;
         codigoInterno: number;
         nombre: string;
         apellido: string;
         fotoUrl: string | null;
         tipoObservador: string;
         tipoContrato: string;
-        activo: boolean;
         disponible: boolean;
         fechaProximaDisponibilidad: Date | null;
-        observaciones: string | null;
         conImpedimento: boolean;
         email: string | null;
         motivoImpedimento: string | null;
@@ -39,8 +39,8 @@ export declare class ObservadoresService {
         pesquerias: {
             id: string;
             activo: boolean;
-            observadorId: string;
             pesqueriaId: string;
+            observadorId: string;
             modo: string;
             motivo: string | null;
             fechaDesde: Date | null;
@@ -49,32 +49,32 @@ export declare class ObservadoresService {
         }[];
     } & {
         id: string;
+        activo: boolean;
+        observaciones: string | null;
         codigoInterno: number;
         nombre: string;
         apellido: string;
         fotoUrl: string | null;
         tipoObservador: string;
         tipoContrato: string;
-        activo: boolean;
         disponible: boolean;
         fechaProximaDisponibilidad: Date | null;
-        observaciones: string | null;
         conImpedimento: boolean;
         email: string | null;
         motivoImpedimento: string | null;
     }>;
     actualizar(id: string, updateObservadorDto: UpdateObservadorDto): Promise<{
         id: string;
+        activo: boolean;
+        observaciones: string | null;
         codigoInterno: number;
         nombre: string;
         apellido: string;
         fotoUrl: string | null;
         tipoObservador: string;
         tipoContrato: string;
-        activo: boolean;
         disponible: boolean;
         fechaProximaDisponibilidad: Date | null;
-        observaciones: string | null;
         conImpedimento: boolean;
         email: string | null;
         motivoImpedimento: string | null;

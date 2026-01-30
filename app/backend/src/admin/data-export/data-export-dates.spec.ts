@@ -86,13 +86,13 @@ describe('DataExportService - Normalización de Fechas', () => {
 
         expect(mockPrisma.marea.create).toHaveBeenCalledWith(expect.objectContaining({
             data: expect.objectContaining({
-                fechaZarpadaEstimada: DateUtils.truncateTime('2025-05-10T15:00:00Z'),
-                fechaInicioObservador: DateUtils.truncateTime('2025-05-11T10:30:00Z'),
+                fechaZarpadaEstimada: new Date('2025-05-10T15:00:00Z'),
+                fechaInicioObservador: new Date('2025-05-11T10:30:00Z'),
                 etapas: expect.objectContaining({
                     create: expect.arrayContaining([
                         expect.objectContaining({
-                            fechaZarpada: DateUtils.truncateTime('2025-05-12T08:00:00Z'),
-                            fechaArribo: DateUtils.truncateTime('2025-05-20T20:45:00Z'),
+                            fechaZarpada: new Date('2025-05-12T08:00:00Z'),
+                            fechaArribo: new Date('2025-05-20T20:45:00Z'),
                         })
                     ])
                 })
