@@ -201,7 +201,7 @@ const parseDate = (str: string) => {
     if (parts[4].length < 2) return null // Minutes incomplete
     hh = parseInt(parts[3])
     mm = parseInt(parts[4])
-  } else if (selectedDate.value) {
+  } else if (selectedDate.value && props.showTime) {
     hh = selectedDate.value.getHours()
     mm = selectedDate.value.getMinutes()
   }
@@ -224,8 +224,8 @@ watch(() => props.modelValue, (newVal) => {
       selectedDate.value = date
       viewDate.value = new Date(date)
       displayValue.value = formatDate(date)
-      hours.value = date.getHours()
-      minutes.value = date.getMinutes()
+      hours.value = props.showTime ? date.getHours() : 0
+      minutes.value = props.showTime ? date.getMinutes() : 0
     }
   } else {
     selectedDate.value = null
@@ -316,8 +316,12 @@ const closeCalendar = () => {
 
 const selectDate = (date: Date) => {
   const newDate = new Date(date)
-  newDate.setHours(hours.value)
-  newDate.setMinutes(minutes.value)
+  if (props.showTime) {
+    newDate.setHours(hours.value)
+    newDate.setMinutes(minutes.value)
+  } else {
+    newDate.setHours(0, 0, 0, 0)
+  }
   selectedDate.value = newDate
   emit('update:modelValue', newDate.toISOString())
   displayValue.value = formatDate(newDate)

@@ -813,6 +813,14 @@ const toNumberOrUndefined = (value: any) => {
 
 const toIsoStringOrNull = (value: any) => {
   if (value === null || value === undefined || value === '') return null
+  
+  // Si es un string de fecha simple (YYYY-MM-DD) sin zona horaria, 
+  // forzamos que se interprete como local 00:00 para evitar el desfase UTC de JS
+  if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    const [y, m, d] = value.split('-').map(Number)
+    return new Date(y, m - 1, d, 0, 0, 0).toISOString()
+  }
+
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return null
   return date.toISOString()
