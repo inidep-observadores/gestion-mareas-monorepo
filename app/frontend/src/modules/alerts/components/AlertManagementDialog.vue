@@ -697,7 +697,7 @@ const smartActionConfig = computed(() => {
                     description: 'Se detectó la zarpada de una marea designada. Inicie el registro oficial del viaje.',
                     icon: ShipIcon,
                     handler: async () => {
-                        await prepareStagesData()
+                        await prepareStagesData(true)
                         stagesDialogMode.value = 'INICIAR'
                         showStagesDialog.value = true
                     }
@@ -708,7 +708,7 @@ const smartActionConfig = computed(() => {
                     description: 'Se detectó una zarpada. El buque ya se encuentra en navegación. Actualice las etapas del viaje.',
                     icon: MapPinIcon,
                     handler: async () => {
-                        await prepareStagesData()
+                        await prepareStagesData(true)
                         stagesDialogMode.value = 'EDITAR'
                         showStagesDialog.value = true
                     }
@@ -737,6 +737,21 @@ const prepareStagesData = async (isNewStageConfig = false) => {
         const subTipo = localAlert.value?.metadata?.subTipo || localAlert.value?.tipo
         const ext = localAlert.value.metadata?.externalData || {}
         const nroEtapaAlert = localAlert.value.metadata?.nroEtapa
+
+        // Ajuste sugerido por el usuario: Fecha Inicio Observador
+        if (ext.fechaZarpada) {
+            const alertZarpadaDate = new Date(ext.fechaZarpada)
+            const currentStartStr = marea.fechaInicioObservador
+            
+            if (!currentStartStr) {
+                marea.fechaInicioObservador = ext.fechaZarpada
+            } else {
+                const currentStartDate = new Date(currentStartStr)
+                if (alertZarpadaDate < currentStartDate) {
+                    marea.fechaInicioObservador = ext.fechaZarpada
+                }
+            }
+        }
 
         if (isNewStageConfig) {
             const lastStage = currentStages.length > 0 ? currentStages[currentStages.length - 1] : null
