@@ -40,6 +40,7 @@ export interface MareaContext {
         buque_nombre: string;
         puertoBaseId?: string;
         puertoBaseNombre?: string;
+        puertoBaseCodigo?: string;
         estado: string;
         estado_codigo: string;
         fecha_zarpada_estimada?: string;

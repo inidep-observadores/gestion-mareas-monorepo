@@ -160,7 +160,7 @@
                       <span class="text-[10px] font-black text-primary w-5">#{{ etapa.nroEtapa }}</span>
                       <div class="flex flex-col">
                         <p class="text-[10px] font-bold text-text truncate max-w-[110px]">
-                          {{ etapa.puertoZarpadaNombre || '?' }} → {{ etapa.puertoArriboNombre || '?' }}
+                          {{ etapa.puertoZarpadaCodigo || etapa.puertoZarpadaNombre || '?' }} → {{ etapa.puertoArriboCodigo || etapa.puertoArriboNombre || '?' }}
                         </p>
                       </div>
                     </div>
@@ -383,14 +383,14 @@ const finalArribo = computed(() => {
 const puertoZarpada = computed(() => {
   const m = props.context?.marea || props.marea
   // Prioridad al puerto base si es designada
-  if (m?.estado_codigo === 'DESIGNADA' && m?.puertoBaseNombre) {
-    return m.puertoBaseNombre
+  if (m?.estado_codigo === 'DESIGNADA') {
+    return m.puertoBaseCodigo || m.puertoBaseNombre || 'N/D'
   }
   // Si tenemos etapas, obtener la zarpada de la primera etapa (nroEtapa 1)
   if (props.context?.marea?.etapas?.length) {
     const stages = props.context.marea.etapas
     const firstStage = stages.find((e: any) => e.nroEtapa === 1) || stages[0]
-    return firstStage.puertoZarpadaNombre || m?.puerto || 'N/D'
+    return firstStage.puertoZarpadaCodigo || firstStage.puertoZarpadaNombre || m?.puerto || 'N/D'
   }
   return m?.puerto || 'N/D'
 })

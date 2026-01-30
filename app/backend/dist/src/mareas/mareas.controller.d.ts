@@ -655,6 +655,7 @@ export declare class MareasController {
             buque_nombre: any;
             puertoBaseId: any;
             puertoBaseNombre: any;
+            puertoBaseCodigo: any;
             estado: any;
             estado_codigo: any;
             observador: string;
@@ -682,6 +683,7 @@ export declare class MareasController {
             buque_nombre: any;
             puertoBaseId: any;
             puertoBaseNombre: any;
+            puertoBaseCodigo: any;
             estado: any;
             estado_codigo: any;
             observador: string;

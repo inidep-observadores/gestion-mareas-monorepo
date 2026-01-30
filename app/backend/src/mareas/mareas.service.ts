@@ -1464,6 +1464,7 @@ export class MareasService {
                 buque_nombre: marea.buque.nombreBuque,
                 puertoBaseId: marea.buque.puertoBaseId,
                 puertoBaseNombre: marea.buque.puertoBase?.nombre || 'N/D',
+                puertoBaseCodigo: marea.buque.puertoBase?.codigoExterno,
                 estado: marea.estadoActual.nombre,
                 estado_codigo: marea.estadoActual.codigo,
                 observador: mainObs ? `${mainObs.nombre} ${mainObs.apellido}` : 'No asignado',
@@ -1484,8 +1485,10 @@ export class MareasService {
                     pesqueriaId: e.pesqueriaId,
                     puertoZarpadaId: e.puertoZarpadaId,
                     puertoZarpadaNombre: e.puertoZarpada?.nombre,
+                    puertoZarpadaCodigo: e.puertoZarpada?.codigoExterno,
                     puertoArriboId: e.puertoArriboId,
                     puertoArriboNombre: e.puertoArribo?.nombre,
+                    puertoArriboCodigo: e.puertoArribo?.codigoExterno,
                     fechaZarpada: e.fechaZarpada,
                     fechaArribo: e.fechaArribo,
                     durationDays: MareaUtils.calculateStageDays(e)
