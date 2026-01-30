@@ -28,7 +28,7 @@ export interface Alerta {
     codigoUnico: string
     titulo: string
     descripcion: string
-    tipo: 'FATIGA' | 'RETRASO_DATOS' | 'RETRASO_INFORME' | 'GENERICO' | 'MONITOREO_SATELITAL' | 'GAP_DETECTADO' | 'POSIBLE_ZARPADA' | 'POSIBLE_ARRIBO' | 'ERROR_REGISTRO_PUERTO'
+    tipo: 'FATIGA' | 'RETRASO_DATOS' | 'RETRASO_INFORME' | 'GENERICO' | 'MONITOREO_SATELITAL' | 'GAP_DETECTADO' | 'POSIBLE_ZARPADA' | 'POSIBLE_ARRIBO' | 'ERROR_REGISTRO_PUERTO' | 'TRACKING_EVENT'
     estado: AlertaEstado
     prioridad: AlertaPrioridad
     fechaDetectada: string

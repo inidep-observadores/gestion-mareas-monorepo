@@ -450,6 +450,11 @@ type MareaData = {
     buque?: { nombreBuque?: string }
     observadorPrincipal?: Observador
     etapas?: MareaEtapa[]
+    estado_codigo?: string
+    estadoActual?: {
+        codigo: string
+        nombre: string
+    }
 }
 
 const localAlert = ref<LocalAlert>({})
@@ -627,8 +632,19 @@ const mareaDataForStages = ref<any>(null)
 const mareaStagesForStages = ref<any[]>([])
 
 const smartActionConfig = computed(() => {
-    const subTipo = localAlert.value?.metadata?.subTipo || localAlert.value?.tipo
-    switch (subTipo) {
+    const tipo = localAlert.value?.tipo
+    const metadata = localAlert.value?.metadata || {}
+    const subTipoMetadata = metadata.subTipo
+    
+    // Determinar la clave de acción priorizando tipos específicos
+    let actionKey = subTipoMetadata || tipo
+
+    // Fallback para datos históricos de tracking (cuando tipo era TRACKING_EVENT)
+    if (tipo === 'TRACKING_EVENT' && metadata.type === 'ZARPADA') {
+        actionKey = 'ZARPADA'
+    }
+
+    switch (actionKey) {
         case 'NUEVA_MAREA':
             return {
                 label: 'Registrar Marea',
@@ -642,7 +658,7 @@ const smartActionConfig = computed(() => {
         case 'NUEVA_ETAPA':
             return {
                 label: 'Registrar Etapa',
-                description: 'Se detectó una nueva etapa (# ' + (localAlert.value?.metadata?.nroEtapa || '') + '). Inicie el registro local.',
+                description: 'Se detectó una nueva etapa (# ' + (metadata.nroEtapa || '') + '). Inicie el registro local.',
                 icon: MapPinIcon,
                 handler: async () => {
                     await prepareStagesData(true) // Pass true to indicate creating a new stage
@@ -674,7 +690,8 @@ const smartActionConfig = computed(() => {
             }
         case 'POSIBLE_ZARPADA':
         case 'ZARPADA':
-            if (mareaData.value?.estado_codigo === 'DESIGNADA') {
+            const mareaStatusCode = mareaData.value?.estadoActual?.codigo || mareaData.value?.estado_codigo
+            if (mareaStatusCode === 'DESIGNADA') {
                 return {
                     label: 'Registrar Inicio',
                     description: 'Se detectó la zarpada de una marea designada. Inicie el registro oficial del viaje.',

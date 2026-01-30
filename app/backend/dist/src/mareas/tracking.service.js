@@ -512,7 +512,7 @@ let TrackingService = TrackingService_1 = class TrackingService {
         };
         if (type === 'ZARPADA') {
             alertType = 'POSIBLE_ZARPADA';
-            alertSubTipo = 'NUEVA_ETAPA';
+            alertSubTipo = 'ZARPADA';
             metadata.subTipo = alertSubTipo;
             metadata.externalData = { fechaZarpada: date, puertoZarpadaId: portId };
         }
@@ -624,7 +624,7 @@ let TrackingService = TrackingService_1 = class TrackingService {
         await this.prisma.alerta.create({
             data: {
                 codigoUnico: code,
-                tipo: 'TRACKING_EVENT',
+                tipo: type,
                 titulo: titulo,
                 descripcion: descripcion || titulo,
                 estado: 'PENDIENTE',
