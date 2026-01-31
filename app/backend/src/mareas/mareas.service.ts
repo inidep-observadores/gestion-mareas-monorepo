@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { BusinessRulesService } from '../common/business-rules/business-rules.service';
 import { User } from '@prisma/client';
@@ -12,10 +12,14 @@ import { AlertsService } from '../alerts/alerts.service';
 import { MareaEstado, TipoEtapa, TipoMarea } from './mareas.constants';
 import { DateUtils } from '../common/utils/date.utils';
 import { MareaUtils } from '../common/utils/marea.utils';
+import { ConfigService } from '@nestjs/config';
 import * as ExcelJS from 'exceljs';
+
+
 
 @Injectable()
 export class MareasService {
+    private readonly logger = new Logger(MareasService.name);
     // Fuentes únicas de verdad para estados operativos
     // Fuentes únicas de verdad para estados operativos
     private readonly ESTADOS_NAVEGANDO = [MareaEstado.EN_EJECUCION];
@@ -31,8 +35,10 @@ export class MareasService {
         private readonly prisma: PrismaService,
         private readonly mailService: MailService,
         private readonly alertsService: AlertsService,
-        private readonly businessRulesService: BusinessRulesService
+        private readonly businessRulesService: BusinessRulesService,
+        private readonly configService: ConfigService
     ) { }
+
 
     private get rules() {
         return this.businessRulesService.getRules();
@@ -1325,7 +1331,11 @@ export class MareasService {
         // 4: Ordenar por apellido y nombre
         listImpedidos.sort((a, b) => a.name.localeCompare(b.name));
 
+        // Ejecutar chequeo de alertas optimizado (throttled)
+        await this.runThrottledAlertCheck(operationalYear);
+
         return {
+
             totalActivos: observadores.length,
             navegando: listNavegando.length,
             descanso: listDescanso.length,
@@ -1953,7 +1963,46 @@ export class MareasService {
         return { success: true };
     }
 
+    private async runThrottledAlertCheck(year: number) {
+        const key = 'LAST_ALERT_CHECK';
+        const intervalMinutes = parseInt(this.configService.get('ALERT_CHECK_INTERVAL_MINUTES') || '15');
+
+        const lastCheck = await this.prisma.systemStatus.findUnique({
+            where: { key }
+        });
+
+        const now = DateUtils.getNow(true);
+        let shouldCheck = false;
+
+
+        if (!lastCheck || !lastCheck.lastUpdate) {
+            shouldCheck = true;
+        } else {
+            const diffMs = now.getTime() - lastCheck.lastUpdate.getTime();
+            const diffMin = diffMs / (1000 * 60);
+            if (diffMin >= intervalMinutes) {
+                shouldCheck = true;
+            }
+        }
+
+        if (shouldCheck) {
+            this.logger.log(`Ejecutando chequeo de alertas (intervalo: ${intervalMinutes} min)...`);
+            await this.checkAlertRules(year);
+            await this.expireFollowUps();
+
+            // Upsert system status
+            await this.prisma.systemStatus.upsert({
+                where: { key },
+                update: { lastUpdate: now },
+                create: { key, lastUpdate: now }
+            });
+        } else {
+            // this.logger.debug('Chequeo de alertas omitido por throttling');
+        }
+    }
+
     private async checkAlertRules(year: number) {
+
         const [fatigue, criticalDelays, reportDelays] = await Promise.all([
             this.getFatigueAlerts(year),
             this.getCriticalDelays(year),
@@ -2032,11 +2081,11 @@ export class MareasService {
     async getInbox(year?: number, user?: User) {
         const { operationalYear, mareaYearFilter } = this.buildMareaYearFilter(year);
 
-        // Ejecutar motor de reglas (con unicidad garantizada por el servicio)
-        await this.checkAlertRules(operationalYear);
-        await this.expireFollowUps();
+        // Ejecutar motor de reglas con chequeo optimizado (throttled)
+        await this.runThrottledAlertCheck(operationalYear);
 
         // 1. Obtener Alertas Persistentes
+
         // Filtrar las que NO están resueltas ni descartadas (solo activas)
         const whereAlerts: any = {
             estado: 'PENDIENTE'

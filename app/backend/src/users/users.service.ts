@@ -69,6 +69,15 @@ export class UsersService {
 
     async findAll() {
         return this.prisma.user.findMany({
+            select: {
+                id: true,
+                fullName: true,
+                email: true,
+                roles: true,
+                isActive: true,
+                avatarUrl: true,
+                // password: false // Excluimos explícitamente el hash
+            },
             orderBy: { fullName: 'asc' }
         });
     }
