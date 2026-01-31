@@ -38,6 +38,10 @@ export class CreateAuditApiDto {
     @IsObject()
     responseBody?: any;
 
+    @IsOptional()
+    @IsString()
+    errorMessage?: string;
+
     @IsInt()
     responseTimeMs: number;
 

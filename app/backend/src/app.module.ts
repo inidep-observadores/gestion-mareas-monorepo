@@ -22,6 +22,9 @@ import { AccessImportModule } from './access-import/access-import.module';
 import { StatsModule } from './stats/stats.module';
 import { AuditModule } from './audit/audit.module';
 
+import { APP_INTERCEPTOR } from '@nestjs/core';
+import { AuditInterceptor } from './audit/interceptors/audit.interceptor';
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -58,6 +61,12 @@ import { AuditModule } from './audit/audit.module';
     AccessImportModule,
     StatsModule,
     AuditModule,
+  ],
+  providers: [
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: AuditInterceptor,
+    },
   ],
 })
 export class AppModule { }
