@@ -17,3 +17,13 @@ services:
       - "1025:1025" # puerto SMTP
       - "8025:8025" # interfaz web
     container_name: mailhog
+
+  redis:
+    image: redis:7-alpine
+    restart: always
+    ports:
+      - "6379:6379"
+    container_name: sigma-redis
+    volumes:
+      - ./redis_data:/data
+    command: redis-server --appendonly yes
