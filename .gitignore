@@ -46,18 +46,21 @@ app/backend/generated/prisma/
 app/backend/prisma/.db  
 app/backend/prisma/.db-journal
 
-# **\=========================**
+# **=========================**
 
 # **FRONTEND (Vue/Vite)**
 
-# **\=========================**
+# **=========================**
 
-frontend/dist/  
-frontend/dist-ssr/  
-frontend/.output/  
-frontend/.nuxt/  
-frontend/storybook-static/  
-frontend/\*.tsbuildinfo
+app/frontend/dist/
+app/frontend/dist-ssr/
+app/frontend/.output/
+app/frontend/.nuxt/
+app/frontend/.vite/
+app/frontend/storybook-static/
+app/frontend/*.tsbuildinfo
+.vite/
+**/ .vite/
 
 # **Testing & Linting**
 
