@@ -24,6 +24,7 @@ services:
     environment:
       DB_HOST: db
       SMTP_HOST: mailhog
+      REDIS_HOST: redis
     depends_on:
       - db
     volumes:
