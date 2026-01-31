@@ -14,9 +14,9 @@
                         {{ localAlert.referenciaTipo || 'N/D' }}
                     </Badge>
                 </div>
-                <Button v-if="localAlert.referenciaId" @click="goToFullHistory" variant="soft" size="sm"
+                <Button v-if="localAlert.referenciaId" @click="handleHeaderAction" variant="soft" size="sm"
                     class="gap-2 ml-4 text-[11px] font-bold" title="Ver detalle del origen">
-                    {{ isMarea ? 'Ir a Marea' : 'Ver' }}
+                    {{ isMarea ? 'Detalles de la marea' : 'Ver historial' }}
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none"
                         stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
@@ -302,6 +302,13 @@
     <AlertTrajectoryMapModal :show="showMapModal" :vesselId="mapVesselId || ''" :vesselName="mapVesselName || ''"
         :referenceDate="mapReferenceDate" :mareaId="mareaData?.id" :mareaCode="fixedMareaLabel"
         @close="showMapModal = false" />
+
+    <MareaQuickDetailModal :isOpen="showMareaQuickDetail" :mareaId="localAlert.referenciaId || null"
+        @close="showMareaQuickDetail = false" />
+
+    <ObservadorTimelineDialog :show="showObservadorTimeline" :observadorId="localAlert.referenciaId || null"
+        :observadorName="localAlert.metadata?.observadorNombre || localAlert.metadata?.observerName || 'Observador'"
+        :year="configStore.selectedYear" @close="showObservadorTimeline = false" />
 </template>
 
 <script setup lang="ts">
@@ -327,9 +334,12 @@ import mareasService from '@/modules/mareas/services/mareas.service'
 import GestionEtapasMareaDialog from '@/modules/mareas/components/GestionEtapasMareaDialog.vue'
 import NuevaMareaDialog from '@/modules/mareas/components/NuevaMareaDialog.vue'
 import AlertTrajectoryMapModal from './AlertTrajectoryMapModal.vue'
+import MareaQuickDetailModal from '@/modules/stats/components/MareaQuickDetailModal.vue'
+import ObservadorTimelineDialog from '@/modules/admin/components/ObservadorTimelineDialog.vue'
 import { storeToRefs } from 'pinia'
 import { useBusinessRulesStore } from '@/modules/shared/stores/business-rules.store'
 import { useWorkflowStore } from '@/modules/shared/stores/workflow.store'
+import { useConfigStore } from '@/modules/shared/stores/config.store'
 import usersAdminApi from '@/modules/admin/services/users.service'
 import type { User } from '@/modules/auth/types/auth.types'
 import { ChevronDownIcon } from '@/icons'
@@ -383,7 +393,7 @@ const confirmAssignment = async () => {
                 asignadoId: pendingAssigneeId.value
             })
         } else {
-            // Unassign: usually update DTOs might want explicit null or specific handling. 
+            // Unassign: usually update DTOs might want explicit null or specific handling.
             // Assuming service handles null for optional string.
             await alertsService.update(localAlert.value.id, {
                 asignadoId: null as any // Force null to clear
@@ -493,7 +503,10 @@ const confirmationMessage = ref('')
 const mareaObservers = ref<string[]>([])
 const showNuevaMareaDialog = ref(false)
 const showMapModal = ref(false)
+const showMareaQuickDetail = ref(false)
+const showObservadorTimeline = ref(false)
 const businessRulesStore = useBusinessRulesStore()
+const configStore = useConfigStore()
 const { rules } = storeToRefs(businessRulesStore)
 const recheckCorto = computed(() => rules.value.PLAZO_RECHECK_CORTO || 0)
 const recheckMedio = computed(() => rules.value.PLAZO_RECHECK_MEDIO || 0)
@@ -615,6 +628,7 @@ const mapReferenceDate = computed(() => {
 })
 
 const canShowMap = computed(() => {
+    if (localAlert.value?.referenciaTipo !== 'MAREA' || !localAlert.value?.referenciaId) return false
     return !!mapVesselId.value && !!mapReferenceDate.value
 })
 
@@ -893,6 +907,28 @@ const getOriginBadgeColor = (type?: string) => {
 }
 
 const isMarea = computed(() => !localAlert.value.referenciaTipo || localAlert.value.referenciaTipo === 'MAREA')
+
+const handleHeaderAction = () => {
+    if (!localAlert.value.referenciaId) return
+
+    if (localAlert.value.referenciaTipo === 'MAREA') {
+        showMareaQuickDetail.value = true
+        return
+    }
+
+    if (localAlert.value.referenciaTipo === 'OBSERVADOR') {
+        showObservadorTimeline.value = true
+        return
+    }
+
+    // Fallback logic (original implementation or generic routing)
+    // For now, if it's not handled, we do nothing or could implement generic routing
+    // original:
+    // const route = isMarea.value ? `/mareas/detalle/${localAlert.value.referenciaId}` : `/admin/observadores/${localAlert.value.referenciaId}`
+    // router.push(route)
+    // emit('close')
+    goToFullHistory()
+}
 
 const goToFullHistory = () => {
     if (localAlert.value.referenciaId) {
