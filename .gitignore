@@ -94,4 +94,9 @@ Thumbs.db
 
 # **Opcional: Descomentar si prefieres no versionar las reglas**
 
-# **AGENTS.md**
+
+# **Ignored Obsolete Folders**
+/backend/
+/frontend/
+/frontend-practice/
+/frontend-template/
