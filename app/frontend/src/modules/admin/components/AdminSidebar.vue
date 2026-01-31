@@ -138,7 +138,8 @@ import {
   ShipIcon,
   HistoryIcon,
   ArchiveIcon,
-  BackupIcon
+  BackupIcon,
+  PieChartIcon
 } from '@/icons'
 import { useSidebar } from '@/composables/useSidebar'
 import { useAuthStore } from '@/modules/auth/stores/auth.store'
@@ -183,6 +184,11 @@ const navigationGroups = [
         icon: HistoryIcon,
         name: 'Log de Errores',
         path: '/admin/error-logs',
+      },
+      {
+        icon: PieChartIcon,
+        name: 'Centro de Auditoría',
+        path: '/admin/audit',
       },
     ],
   },

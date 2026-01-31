@@ -1,4 +1,7 @@
+import { registerAs } from '@nestjs/config';
+
 export interface AuditConfig {
+    enabled: boolean;
     level: 'ALL' | 'CRITICAL';
     api: {
         enabled: boolean;
@@ -22,7 +25,8 @@ export interface AuditConfig {
     };
 }
 
-export const auditConfig = (): AuditConfig => ({
+export const auditConfig = registerAs('audit', (): AuditConfig => ({
+    enabled: process.env.AUDIT_ENABLED !== 'false',
     level: (process.env.AUDIT_LEVEL as 'ALL' | 'CRITICAL') || 'ALL',
     api: {
         enabled: process.env.AUDIT_API_ENABLED === 'true',
@@ -44,4 +48,4 @@ export const auditConfig = (): AuditConfig => ({
     async: {
         enabled: process.env.AUDIT_ASYNC_ENABLED === 'true',
     },
-});
+}));

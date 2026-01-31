@@ -5,11 +5,14 @@ import { AuditService } from './services/audit.service';
 import { AuditQueueProcessor } from './processors/audit.processor';
 import { PrismaModule } from '../prisma/prisma.module';
 import { AuditController } from './controllers/audit.controller';
+import { AuthModule } from '../auth/auth.module';
 
 @Global()
 @Module({
     imports: [
         PrismaModule,
+        ConfigModule,
+        AuthModule,
         BullModule.registerQueueAsync({
             name: 'audit',
             imports: [ConfigModule],

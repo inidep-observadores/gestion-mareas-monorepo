@@ -66,6 +66,7 @@ import BackupIcon from './BackupIcon.vue'
 import SportsScoreIcon from './SportsScoreIcon.vue'
 import LayersIcon from './LayersIcon.vue'
 import XIcon from './XIcon.vue'
+import ArrowRightIcon from './ArrowRightIcon.vue'
 
 import PhoneIcon from './PhoneIcon.vue'
 
@@ -139,4 +140,5 @@ export {
   PhoneIcon,
   LayersIcon,
   XIcon,
+  ArrowRightIcon,
 }

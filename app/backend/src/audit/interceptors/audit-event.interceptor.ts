@@ -34,11 +34,13 @@ export class AuditEventInterceptor implements NestInterceptor {
                     descripcion: metadata.descripcion || `Ejecución exitosa de ${context.getHandler().name}`,
                     resultado: AuditResultado.EXITO,
                     usuarioId: user?.id,
+                    usuarioEmail: user?.email,
                     ip: ip,
+                    entidadPrincipal: result, // Agregamos el resultado como entidad principal
                     metadata: {
                         method: context.getHandler().name,
-                        args: context.getArgs()[0]?.body || context.getArgs()[0], // Attempt to capture meaningful args (DTO or similar)
-                        // Be careful with large payloads
+                        args: request?.body,
+                        params: request?.params,
                     },
                     esCritico: metadata.esCritico
                 }).catch(err => this.logger.error('Error logging audit event (success)', err));
@@ -50,9 +52,13 @@ export class AuditEventInterceptor implements NestInterceptor {
                     descripcion: metadata.descripcion || `Error en ejecución de ${context.getHandler().name}`,
                     resultado: AuditResultado.ERROR,
                     usuarioId: user?.id,
+                    usuarioEmail: user?.email,
                     ip: ip,
+                    entidadPrincipal: request?.params, // En caso de error, guardamos los params para identificar el objetivo
                     metadata: {
                         method: context.getHandler().name,
+                        args: request?.body,
+                        params: request?.params,
                         error: err.message
                     },
                     esCritico: metadata.esCritico

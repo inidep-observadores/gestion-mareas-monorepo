@@ -1,32 +1,42 @@
-import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
 import { AuditService } from '../services/audit.service';
 import { AuditQueryDto } from '../dto/audit-query.dto';
-import { AuthGuard } from '@nestjs/passport';
-// Import RolesGuard if available, otherwise just use AuthGuard for now
-// import { RolesGuard } from '../../auth/guards/roles.guard';
-// import { Roles } from '../../auth/decorators/roles.decorator';
+import { CreateAuditoriaNavegacionDto } from '../dto/create-auditoria-navegacion.dto';
+import { Auth } from '../../auth/decorators/auth.decorator';
+import { GetUser } from '../../auth/decorators/get-user.decorator';
+import { User } from '@prisma/client';
+import { ValidRoles } from '../../auth/interfaces/valid-roles';
 
 @Controller('audit')
-// @UseGuards(AuthGuard('jwt'), RolesGuard)
-@UseGuards(AuthGuard('jwt'))
+@Auth(ValidRoles.admin)
 export class AuditController {
     constructor(private readonly auditService: AuditService) { }
 
     @Get('api')
-    // @Roles('admin')
     async getApiLogs(@Query() query: AuditQueryDto) {
         return this.auditService.findApiLogs(query);
     }
 
     @Get('entidades')
-    // @Roles('admin')
     async getEntityLogs(@Query() query: AuditQueryDto) {
         return this.auditService.findEntityLogs(query);
     }
 
     @Get('eventos')
-    // @Roles('admin')
     async getEventLogs(@Query() query: AuditQueryDto) {
         return this.auditService.findEventLogs(query);
+    }
+
+    @Get('navegacion')
+    async getNavigationLogs(@Query() query: AuditQueryDto) {
+        return this.auditService.findNavigationLogs(query);
+    }
+
+    @Post('navigation')
+    @Auth() // Allow any authenticated user to log their navigation
+    async logNavigation(@Body() dto: CreateAuditoriaNavegacionDto, @GetUser() user: User) {
+        // Enlazar con el usuario actual si no viene en el DTO
+        if (!dto.usuarioId) dto.usuarioId = user.id;
+        return this.auditService.logNavegacion(dto);
     }
 }

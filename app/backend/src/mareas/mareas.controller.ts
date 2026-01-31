@@ -9,6 +9,8 @@ import { UpdateMareaDto } from './dto/update-marea.dto';
 
 import { ClaimMareaDto } from './dto/claim-marea.dto';
 import { ExportMareaDto } from './dto/export-marea.dto';
+import { AuditEvent } from '../audit/decorators/audit-event.decorator';
+import { AuditCategoria } from '../audit/enums/audit.enums';
 
 @Controller('mareas')
 @Auth()
@@ -127,6 +129,11 @@ export class MareasController {
     }
 
     @Post(':id/actions/:actionKey')
+    @AuditEvent({
+        tipoEvento: 'EJECUTAR_ACCION_FLUJO',
+        categoria: AuditCategoria.MAREAS,
+        descripcion: 'Ejecución de acción de cambio de estado en marea'
+    })
     executeAction(
         @Param('id') id: string,
         @Param('actionKey') actionKey: string,
@@ -137,6 +144,11 @@ export class MareasController {
     }
 
     @Post()
+    @AuditEvent({
+        tipoEvento: 'CREAR_MAREA',
+        categoria: AuditCategoria.MAREAS,
+        descripcion: 'Creación de una nueva marea en el sistema'
+    })
     createMarea(
         @Body() createMareaDto: CreateMareaDto,
         @GetUser() user: User

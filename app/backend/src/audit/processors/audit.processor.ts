@@ -9,25 +9,33 @@ export class AuditQueueProcessor {
 
     constructor(private readonly prisma: PrismaService) { }
 
+    private getModel(name: string) {
+        const p = this.prisma as any;
+        const camel = name.charAt(0).toLowerCase() + name.slice(1);
+        const pascal = name.charAt(0).toUpperCase() + name.slice(1);
+        const model = p[camel] || p[pascal];
+        if (!model) {
+            this.logger.error(`Prisma model NOT found in client: ${camel} or ${pascal}. Did you run 'npx prisma generate'?`);
+        }
+        return model;
+    }
+
     @Process('log-api')
     async handleLogApi(job: Job) {
         try {
-            await (this.prisma as any).auditoriaApi.create({
-                data: job.data
-            });
-            // this.logger.debug(`Audit API log processed for path: ${job.data.ruta}`);
+            const model = this.getModel('AuditoriaApi');
+            if (model) await model.create({ data: job.data });
         } catch (error) {
             this.logger.error(`Failed to process audit API log: ${error.message}`, error.stack);
-            throw error; // Reintento automático por Bull
+            throw error;
         }
     }
 
     @Process('log-evento')
     async handleLogEvento(job: Job) {
         try {
-            await (this.prisma as any).auditoriaEvento.create({
-                data: job.data
-            });
+            const model = this.getModel('AuditoriaEvento');
+            if (model) await model.create({ data: job.data });
         } catch (error) {
             this.logger.error(`Failed to process audit Event log: ${error.message}`, error.stack);
             throw error;
@@ -37,11 +45,21 @@ export class AuditQueueProcessor {
     @Process('log-entidad')
     async handleLogEntidad(job: Job) {
         try {
-            await (this.prisma as any).auditoriaEntidad.create({
-                data: job.data
-            });
+            const model = this.getModel('AuditoriaEntidad');
+            if (model) await model.create({ data: job.data });
         } catch (error) {
             this.logger.error(`Failed to process audit Entity log: ${error.message}`, error.stack);
+            throw error;
+        }
+    }
+
+    @Process('log-navegacion')
+    async handleLogNavegacion(job: Job) {
+        try {
+            const model = this.getModel('AuditoriaNavegacion');
+            if (model) await model.create({ data: job.data });
+        } catch (error) {
+            this.logger.error(`Failed to process audit Navigation log: ${error.message}`, error.stack);
             throw error;
         }
     }

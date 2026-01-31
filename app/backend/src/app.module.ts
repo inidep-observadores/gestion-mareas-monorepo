@@ -21,14 +21,20 @@ import { BusinessRulesModule } from './common/business-rules/business-rules.modu
 import { AccessImportModule } from './access-import/access-import.module';
 import { StatsModule } from './stats/stats.module';
 import { AuditModule } from './audit/audit.module';
+import { UserContextMiddleware } from './common/middlewares/user-context.middleware';
 
 import { APP_INTERCEPTOR } from '@nestjs/core';
+import { NestModule, MiddlewareConsumer } from '@nestjs/common';
 import { AuditInterceptor } from './audit/interceptors/audit.interceptor';
 import { AuditEventInterceptor } from './audit/interceptors/audit-event.interceptor';
+
+import { auditConfig } from './common/config/audit.config';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
+      isGlobal: true,
+      load: [auditConfig],
       expandVariables: true,
     }),
 
@@ -68,6 +74,16 @@ import { AuditEventInterceptor } from './audit/interceptors/audit-event.intercep
       provide: APP_INTERCEPTOR,
       useClass: AuditInterceptor,
     },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: AuditEventInterceptor,
+    },
   ],
 })
-export class AppModule { }
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply(UserContextMiddleware)
+      .forRoutes('*');
+  }
+}

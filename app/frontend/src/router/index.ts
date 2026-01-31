@@ -245,6 +245,16 @@ const router = createRouter({
       },
     },
     {
+      path: '/admin/audit',
+      name: 'AdminAudit',
+      component: () => import('@/modules/admin/views/AuditLogsView.vue'),
+      meta: {
+        title: 'Centro de Auditoría',
+        requiresAuth: true,
+        roles: [ValidRoles.admin],
+      },
+    },
+    {
       path: '/admin/backup',
       name: 'AdminBackup',
       component: () => import('@/modules/admin/views/BackupView.vue'),
@@ -327,6 +337,19 @@ const router = createRouter({
 
 import { useAuthStore } from '@/modules/auth/stores/auth.store'
 import { useBusinessRulesStore } from '@/modules/shared/stores/business-rules.store'
+import auditApi from '@/modules/admin/services/audit.service'
+
+/**
+ * Gestión de ID de Sesión para Auditoría de Navegación
+ */
+const getSessionId = () => {
+  let sessionId = sessionStorage.getItem('audit_session_id');
+  if (!sessionId) {
+    sessionId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    sessionStorage.setItem('audit_session_id', sessionId);
+  }
+  return sessionId;
+};
 
 router.beforeEach(async (to, from, next) => {
   document.title = `${to.meta.title} | Gestión de Mareas - INIDEP`
@@ -371,6 +394,19 @@ router.beforeEach(async (to, from, next) => {
 
   // 5. Default
   next()
+})
+
+router.afterEach((to, from) => {
+  const authStore = useAuthStore()
+  if (authStore.isAuthenticated) {
+    // Registramos la navegación de forma asíncrona (fire and forget)
+    auditApi.logNavigation({
+      sessionId: getSessionId(),
+      rutaDestino: to.fullPath,
+      rutaOrigen: from.fullPath !== '/' ? from.fullPath : undefined,
+      parametros: { ...to.params, ...to.query }
+    }).catch(err => console.warn('[RouterAudit] Error logging navigation:', err));
+  }
 })
 
 export default router

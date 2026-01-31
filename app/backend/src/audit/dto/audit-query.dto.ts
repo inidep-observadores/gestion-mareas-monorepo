@@ -1,12 +1,15 @@
 import { IsOptional, IsString, IsDateString, IsUUID, IsBoolean } from 'class-validator';
+import { Transform } from 'class-transformer';
 import { PaginationDto } from '../../common/dto/pagination.dto';
 
 export class AuditQueryDto extends PaginationDto {
     @IsOptional()
+    @Transform(({ value }) => (value === '' ? undefined : value))
     @IsDateString()
     desde?: string;
 
     @IsOptional()
+    @Transform(({ value }) => (value === '' ? undefined : value))
     @IsDateString()
     hasta?: string;
 
@@ -27,6 +30,11 @@ export class AuditQueryDto extends PaginationDto {
     entidadId?: string;
 
     @IsOptional()
+    @Transform(({ value }) => {
+        if (value === 'true') return true;
+        if (value === 'false') return false;
+        return value;
+    })
     @IsBoolean()
     soloErrores?: boolean;
 

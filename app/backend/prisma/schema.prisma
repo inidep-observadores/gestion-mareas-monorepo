@@ -1,33 +1,36 @@
 generator client {
   provider      = "prisma-client-js"
-  previewFeatures = ["multiSchema"]
   binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
   schemas  = ["public", "audit"]
 }
 
 model User {
-  id               String               @id @default(uuid()) @db.Uuid
-  email            String               @unique
-  password         String
-  fullName         String
-  isActive         Boolean              @default(true)
-  roles            String[]             @default(["invitado"])
-  themePreference  String               @default("system")
-  avatarUrl        String?
-  alertasAsignadas Alerta[]             @relation("AlertaAsignado")
-  alertasCreadas   Alerta[]             @relation("AlertaCreadoPor")
-  eventosAlerta    AlertaEvento[]
-  archivos         MareaArchivo[]
-  movimientos      MareaMovimiento[]
-  resetTokens      PasswordResetToken[]
-  products         Product[]
+  id                  String               @id @default(uuid()) @db.Uuid
+  email               String               @unique
+  password            String
+  fullName            String
+  isActive            Boolean              @default(true)
+  roles               String[]             @default(["invitado"])
+  themePreference     String               @default("system")
+  avatarUrl           String?
+  alertasAsignadas    Alerta[]             @relation("AlertaAsignado")
+  alertasCreadas      Alerta[]             @relation("AlertaCreadoPor")
+  eventosAlerta       AlertaEvento[]
+  archivos            MareaArchivo[]
+  movimientos         MareaMovimiento[]
+  resetTokens         PasswordResetToken[]
+  products            Product[]
+  auditoriaApi        AuditoriaApi[]
+  auditoriaNavegacion AuditoriaNavegacion[]
+  auditoriaEntidad    AuditoriaEntidad[]
+  auditoriaEventos    AuditoriaEvento[]
 
   @@map("users")
+  @@schema("public")
 }
 
 model PasswordResetToken {
@@ -41,6 +44,7 @@ model PasswordResetToken {
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("password_reset_tokens")
+  @@schema("public")
 }
 
 model Product {
@@ -58,6 +62,7 @@ model Product {
   user        User           @relation(fields: [userId], references: [id])
 
   @@map("products")
+  @@schema("public")
 }
 
 model ProductImage {
@@ -67,6 +72,7 @@ model ProductImage {
   product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@map("product_images")
+  @@schema("public")
 }
 
 model TipoFlota {
@@ -80,6 +86,7 @@ model TipoFlota {
   buques          Buque[]
 
   @@map("tipos_flota")
+  @@schema("public")
 }
 
 model Buque {
@@ -116,6 +123,7 @@ model Buque {
   mareas                  Marea[]
 
   @@map("buques")
+  @@schema("public")
 }
 
 model ArtePesca {
@@ -128,6 +136,7 @@ model ArtePesca {
   mareas           Marea[]
 
   @@map("artes_pesca")
+  @@schema("public")
 }
 
 model Pesqueria {
@@ -144,6 +153,7 @@ model Pesqueria {
   observadoresPesquerias ObservadorPesqueria[]
 
   @@map("pesquerias")
+  @@schema("public")
 }
 
 model Puerto {
@@ -164,6 +174,7 @@ model Puerto {
   etapasZarpada MareaEtapa[] @relation("PuertoZarpada")
 
   @@map("puertos")
+  @@schema("public")
 }
 
 model Especie {
@@ -179,6 +190,7 @@ model Especie {
   producciones           Produccion[]
 
   @@map("especies")
+  @@schema("public")
 }
 
 model Observador {
@@ -201,6 +213,7 @@ model Observador {
   pesquerias                 ObservadorPesqueria[]
 
   @@map("observadores")
+  @@schema("public")
 }
 
 model ObservadorPesqueria {
@@ -221,6 +234,7 @@ model ObservadorPesqueria {
   @@index([observadorId])
   @@index([pesqueriaId])
   @@map("observador_pesquerias")
+  @@schema("public")
 }
 
 model Marea {
@@ -259,6 +273,7 @@ model Marea {
   @@unique([anioMarea, nroMarea, tipoMarea], name: "identificadorMarea", map: "identificadorMarea")
   @@unique([anioMarea, nroMarea, tipoMarea])
   @@map("mareas")
+  @@schema("public")
 }
 
 model MareaEtapa {
@@ -283,6 +298,7 @@ model MareaEtapa {
   @@unique([mareaId, nroEtapa])
   @@index([mareaId])
   @@map("mareas_etapas")
+  @@schema("public")
 }
 
 model MareaEtapaObservador {
@@ -298,6 +314,7 @@ model MareaEtapaObservador {
   @@index([etapaId])
   @@index([observadorId])
   @@map("mareas_etapas_observadores")
+  @@schema("public")
 }
 
 model MareaMovimiento {
@@ -319,6 +336,7 @@ model MareaMovimiento {
 
   @@index([mareaId])
   @@map("mareas_movimientos")
+  @@schema("public")
 }
 
 model MareaArchivo {
@@ -338,6 +356,7 @@ model MareaArchivo {
 
   @@index([mareaId])
   @@map("mareas_archivos")
+  @@schema("public")
 }
 
 model Lance {
@@ -378,6 +397,7 @@ model Lance {
   @@unique([etapaId, numeroLance])
   @@index([etapaId])
   @@map("lances")
+  @@schema("public")
 }
 
 model Captura {
@@ -394,6 +414,7 @@ model Captura {
   @@unique([lanceId, especieId])
   @@index([lanceId])
   @@map("capturas")
+  @@schema("public")
 }
 
 model Muestra {
@@ -417,6 +438,7 @@ model Muestra {
   @@unique([lanceId, especieId, tipoMuestra])
   @@index([lanceId])
   @@map("muestras")
+  @@schema("public")
 }
 
 model MuestraDetalleTalla {
@@ -433,6 +455,7 @@ model MuestraDetalleTalla {
   @@unique([muestraId, tallaMm])
   @@index([muestraId])
   @@map("muestras_detalle_talla")
+  @@schema("public")
 }
 
 model Submuestra {
@@ -453,6 +476,7 @@ model Submuestra {
   @@unique([muestraId, numeroEjemplar])
   @@index([muestraId])
   @@map("submuestras")
+  @@schema("public")
 }
 
 model Produccion {
@@ -471,6 +495,7 @@ model Produccion {
   @@unique([mareaId, especieId, fecha, producto, categoria])
   @@index([mareaId])
   @@map("producciones")
+  @@schema("public")
 }
 
 model BuqueTrayectoria {
@@ -483,6 +508,7 @@ model BuqueTrayectoria {
 
   @@index([buqueId])
   @@map("buque_trayectorias")
+  @@schema("public")
 }
 
 model BuqueTrayectoriaPunto {
@@ -501,6 +527,7 @@ model BuqueTrayectoriaPunto {
   @@index([trayectoriaId, timestamp])
   @@index([buqueId, timestamp])
   @@map("buque_trayectoria_puntos")
+  @@schema("public")
 }
 
 model EstadoMarea {
@@ -524,6 +551,7 @@ model EstadoMarea {
   transicionesDesde    TransicionEstado[] @relation("TransicionEstadoDesde")
 
   @@map("estados_marea")
+  @@schema("public")
 }
 
 model TransicionEstado {
@@ -540,6 +568,7 @@ model TransicionEstado {
 
   @@unique([estadoOrigenId, estadoDestinoId, accion])
   @@map("transiciones_estados")
+  @@schema("public")
 }
 
 model ErrorLog {
@@ -558,6 +587,7 @@ model ErrorLog {
   ip        String?
 
   @@map("error_logs")
+  @@schema("public")
 }
 
 model Alerta {
@@ -586,6 +616,7 @@ model Alerta {
   @@index([estado])
   @@index([asignadoId])
   @@map("alertas")
+  @@schema("public")
 }
 
 model AlertaEvento {
@@ -600,6 +631,7 @@ model AlertaEvento {
 
   @@index([alertaId])
   @@map("alertas_eventos")
+  @@schema("public")
 }
 
 model ImportacionAccessSnapshot {
@@ -621,6 +653,7 @@ model ImportacionAccessSnapshot {
 
   @@index([nroMarea, anioMarea, tipoMarea])
   @@map("importacion_access_snapshots")
+  @@schema("public")
 }
 
 model TrackingEventSnapshot {
@@ -635,6 +668,7 @@ model TrackingEventSnapshot {
   @@index([buqueId])
   @@index([hash])
   @@map("tracking_event_snapshots")
+  @@schema("public")
 }
 
 model SystemStatus {
@@ -643,6 +677,7 @@ model SystemStatus {
   lastUpdate DateTime @updatedAt @map("last_update") @db.Timestamptz(6)
 
   @@map("system_status")
+  @@schema("public")
 }
 
 enum AlertaEstado {
@@ -651,6 +686,8 @@ enum AlertaEstado {
   RESUELTA
   DESCARTADA
   VENCIDA
+
+  @@schema("public")
 }
 
 enum AlertaPrioridad {
@@ -658,24 +695,22 @@ enum AlertaPrioridad {
   ALTA
   MEDIA
   BAJA
+
+  @@schema("public")
 }
 
 enum TipoMarea {
   MC
   CI
+
+  @@schema("public")
 }
-
-
-
-// ... (skipping other existing models updates for brevity, assuming they are okay. 
-// Actually I need to be careful not to overwrite the file incorrectly.
-// Since I can only replace, and the file is huge, I will append by replacing the last Enum or part of it and adding the rest.)
-// Wait, the file ends with Enum TipoEtapa.
-// I will replace the last enum with itself + new models.
 
 enum TipoEtapa {
   MC
   CI
+
+  @@schema("public")
 }
 
 /// MODELOS DE AUDITORÍA ///
@@ -748,12 +783,14 @@ model AuditoriaEvento {
   usuarioEmail          String?  @map("usuario_email")
   tipoEvento            String   @map("tipo_evento")
   categoria             String
-  entidadPrincipal      Json     @map("entidad_principal")
+  entidadPrincipal      Json?    @map("entidad_principal")
   entidadesRelacionadas Json?    @map("entidades_relacionadas")
   descripcion           String
   metadata              Json?
   resultado             String
   mensajeError          String?  @map("mensaje_error")
+  ip                    String?
+  esCritico             Boolean  @default(false) @map("es_critico")
   usuario               User?    @relation(fields: [usuarioId], references: [id])
 
   @@map("auditoria_eventos")
