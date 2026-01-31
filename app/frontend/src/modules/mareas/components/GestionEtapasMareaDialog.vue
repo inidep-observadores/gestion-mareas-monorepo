@@ -89,15 +89,17 @@ import { TrashIcon, WarningIcon } from '@/icons';
 import { isDateBefore, isDateAfter, isDateSameOrBefore, isDateSameOrAfter } from '@/utils/date.utils';
 import { TipoEtapa } from '../types/enums';
 
+import type { Marea } from '../types/marea.types';
+
+const emit = defineEmits(['close', 'confirm']);
+
 const props = defineProps<{
   show: boolean;
   mode: 'INICIAR' | 'EDITAR' | 'FINALIZAR';
-  marea: any;
+  marea: Partial<Marea>;
   currentStages: any[];
   initialPortId?: string;
 }>();
-
-const emit = defineEmits(['close', 'confirm']);
 
 // Form State
 const form = ref({
@@ -181,8 +183,10 @@ const addInitialStage = () => {
 watch(() => props.show, (val) => {
   if (val) {
     // 1. Initial Dates
-    form.value.fechaInicio = props.marea?.fechaInicioObservador || props.marea?.fecha_zarpada_estimada || new Date().toISOString();
-    form.value.fechaFin = props.marea?.fechaFinObservador || '';
+    // Fix: Only use saved DB value. Do not default to current date.
+    // Also support snake_case from DB object if needed, though Marea type should handle it.
+    form.value.fechaInicio = props.marea?.fechaInicioObservador || props.marea?.fecha_inicio_observador || '';
+    form.value.fechaFin = props.marea?.fechaFinObservador || props.marea?.fecha_fin_observador || '';
 
     // 2. Clone and Sort Stages
     const clonedStages = (props.currentStages || []).map(s => ({ 
@@ -199,6 +203,19 @@ watch(() => props.show, (val) => {
     // 3. Logic for INICIAR: Ensure at least one stage
     if (props.mode === 'INICIAR' && form.value.stages.length === 0) {
       addInitialStage();
+    }
+
+    // 4. Logic for FINALIZAR: Auto-set end date if empty and last stage is ARMDQ
+    if (props.mode === 'FINALIZAR' && !form.value.fechaFin && form.value.stages.length > 0) {
+      const lastStage = form.value.stages[form.value.stages.length - 1];
+      if (lastStage.fechaArribo && lastStage.puertoArriboId) {
+         // Find port object to check code
+         const puertoArribo = puertos.value.find(p => p.id === lastStage.puertoArriboId);
+         // Check for 'ARMDQ' code (Mar del Plata)
+         if (puertoArribo && puertoArribo.codigo === 'ARMDQ') {
+            form.value.fechaFin = lastStage.fechaArribo;
+         }
+      }
     }
 
     nextTick(() => {
