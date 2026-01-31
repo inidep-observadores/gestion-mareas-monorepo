@@ -8,7 +8,7 @@
                         {{ localAlert.prioridad || 'N/D' }}
                     </Badge>
                     <span class="text-text font-black uppercase tracking-tight">{{ localAlert.titulo || 'Alerta'
-                        }}</span>
+                    }}</span>
                     <Badge v-if="localAlert.referenciaTipo" :color="getOriginBadgeColor(localAlert.referenciaTipo)"
                         variant="light" size="sm" class="font-bold text-[10px] uppercase tracking-wider h-6">
                         {{ localAlert.referenciaTipo || 'N/D' }}
@@ -88,7 +88,7 @@
                                 class="text-[10px] font-bold text-warning uppercase tracking-tight">
                                 Observador Externo ({{ externalSourceName }}): <span class="text-warning/90">{{
                                     externalObserverLabel
-                                }}</span>
+                                    }}</span>
                             </div>
                         </div>
                     </div>
@@ -243,8 +243,18 @@
                 </div>
             </div>
 
+            <!-- Map Verification Action -->
+            <div v-if="canShowMap && !isClosed" class="pt-4 border-t border-border w-full">
+                <Button variant="soft" size="sm"
+                    class="w-full font-black h-11 bg-primary/5 hover:bg-primary/10 text-primary border border-primary/20"
+                    @click="showMapModal = true">
+                    <MapPinIcon class="w-4 h-4 mr-2" />
+                    Visualizar Trayectoria en Mapa
+                </Button>
+            </div>
+
             <!-- Unified Actions Row (Bottom) -->
-            <div v-if="!isClosed" class="pt-6 border-t border-border flex items-center gap-3 w-full">
+            <div v-if="!isClosed" class="pt-4 flex items-center gap-3 w-full">
                 <Button variant="soft" size="sm" class="flex-1 font-bold h-10"
                     @click="requestConfirmation('SEGUIMIENTO')" :disabled="processing">
                     Seguimiento
@@ -288,6 +298,10 @@
     <!-- Smart Action: Registro de Nueva Marea -->
     <NuevaMareaDialog :show="showNuevaMareaDialog" :init-from-alert="true" @close="showNuevaMareaDialog = false"
         @success="handleMareaSuccess" />
+
+    <AlertTrajectoryMapModal :show="showMapModal" :vesselId="mapVesselId || ''" :vesselName="mapVesselName || ''"
+        :referenceDate="mapReferenceDate" :mareaId="mareaData?.id" :mareaCode="fixedMareaLabel"
+        @close="showMapModal = false" />
 </template>
 
 <script setup lang="ts">
@@ -312,6 +326,7 @@ import ReclamoEntregaDialog from '@/modules/dashboard/components/ReclamoEntregaD
 import mareasService from '@/modules/mareas/services/mareas.service'
 import GestionEtapasMareaDialog from '@/modules/mareas/components/GestionEtapasMareaDialog.vue'
 import NuevaMareaDialog from '@/modules/mareas/components/NuevaMareaDialog.vue'
+import AlertTrajectoryMapModal from './AlertTrajectoryMapModal.vue'
 import { storeToRefs } from 'pinia'
 import { useBusinessRulesStore } from '@/modules/shared/stores/business-rules.store'
 import { useWorkflowStore } from '@/modules/shared/stores/workflow.store'
@@ -477,6 +492,7 @@ const pendingAction = ref<'SEGUIMIENTO' | 'DESCARTADA' | 'RESUELTA' | ''>('')
 const confirmationMessage = ref('')
 const mareaObservers = ref<string[]>([])
 const showNuevaMareaDialog = ref(false)
+const showMapModal = ref(false)
 const businessRulesStore = useBusinessRulesStore()
 const { rules } = storeToRefs(businessRulesStore)
 const recheckCorto = computed(() => rules.value.PLAZO_RECHECK_CORTO || 0)
@@ -567,6 +583,41 @@ const externalSourceName = computed(() => {
     return 'Access (Externo)'
 })
 
+// --- Map data resolution ---
+const mapVesselId = computed(() => {
+    // Priority: Metadata vesselId (from tracking) > Marea BuqueId > null
+    if (localAlert.value?.metadata?.vesselId) return localAlert.value.metadata.vesselId
+
+    // Safer access with casting since local type definition might be incomplete
+    const m = mareaData.value as any
+    if (m?.buque?.id) return m.buque.id
+    if (m?.buqueId) return m.buqueId
+
+    return null
+})
+
+const mapVesselName = computed(() => {
+    if (localAlert.value?.metadata?.vessel) return localAlert.value.metadata.vessel
+    if (mareaData.value?.buque?.nombreBuque) return mareaData.value.buque.nombreBuque
+    return 'Buque'
+})
+
+const mapReferenceDate = computed(() => {
+    // 1. Alert detected date
+    if (localAlert.value?.fechaDetectada) return localAlert.value.fechaDetectada
+    // 2. Metadata specific event date
+    const meta = localAlert.value?.metadata || {}
+    if (meta.fechaZarpada) return meta.fechaZarpada
+    if (meta.fechaArribo) return meta.fechaArribo
+    if (meta.date) return meta.date
+    // 3. Current time fallback
+    return new Date().toISOString()
+})
+
+const canShowMap = computed(() => {
+    return !!mapVesselId.value && !!mapReferenceDate.value
+})
+
 const smartActionDescription = computed(() => {
     const subTipo = localAlert.value?.metadata?.subTipo || localAlert.value?.tipo
     if (subTipo === 'INCONGRUENCIA') {
@@ -635,7 +686,7 @@ const smartActionConfig = computed(() => {
     const tipo = localAlert.value?.tipo
     const metadata = localAlert.value?.metadata || {}
     const subTipoMetadata = metadata.subTipo
-    
+
     // Determinar la clave de acción priorizando tipos específicos
     let actionKey = subTipoMetadata || tipo
 
@@ -742,7 +793,7 @@ const prepareStagesData = async (isNewStageConfig = false) => {
         if (ext.fechaZarpada) {
             const alertZarpadaDate = new Date(ext.fechaZarpada)
             const currentStartStr = marea.fechaInicioObservador
-            
+
             if (!currentStartStr) {
                 marea.fechaInicioObservador = ext.fechaZarpada
             } else {
@@ -766,7 +817,7 @@ const prepareStagesData = async (isNewStageConfig = false) => {
                 puertoArriboId: ext.puertoArriboId || '', // Sugerir si viene en el alerta
                 fechaArribo: ext.fechaArribo || '',
                 // Heredar configuración
-                pesqueriaId: lastStage?.pesqueriaId || marea.id_pesqueria,
+                pesqueriaId: lastStage?.pesqueriaId || marea.buque?.pesqueriaHabitualId || marea.id_pesqueria,
                 tipoEtapa: lastStage?.tipoEtapa || TipoEtapa.MC,
                 observaciones: `Etapa detectada automáticamente desde ${externalSourceName.value}`,
                 observadores: []

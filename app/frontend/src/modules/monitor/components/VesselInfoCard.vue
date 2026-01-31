@@ -1,7 +1,8 @@
 <template>
   <HudCard customClass="w-[210px]">
     <!-- Vessel Header -->
-    <div class="p-3 border-b border-border/10 flex items-start justify-between bg-surface/5 group/card cursor-pointer" @click="isCollapsed = !isCollapsed">
+    <div class="p-3 border-b border-border/10 flex items-start justify-between bg-surface/5 group/card cursor-pointer"
+      @click="isCollapsed = !isCollapsed">
       <div class="flex flex-col gap-0.5 overflow-hidden pr-2">
         <h4 class="font-black uppercase tracking-[0.2em] text-primary/80 mb-0.5 text-[10px]">Marea Activa</h4>
         <h2 class="font-black text-text leading-tight tracking-tighter truncate text-sm">
@@ -16,10 +17,10 @@
       </div>
       <div
         class="shrink-0 p-1.5 bg-primary/10 rounded-lg border border-primary/20 text-primary transition-transform duration-300"
-        :class="{ 'rotate-180': !isCollapsed }"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-          <path d="M19 9l-7 7-7-7"/>
+        :class="{ 'rotate-180': !isCollapsed }">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="3">
+          <path d="M19 9l-7 7-7-7" />
         </svg>
       </div>
     </div>
@@ -28,15 +29,18 @@
     <div v-show="!isCollapsed" class="flex flex-col gap-3 p-3 transition-all duration-300">
       <!-- Current Position -->
       <div class="flex flex-col gap-2">
-        <h4 class="font-black uppercase tracking-[0.2em] text-text-muted/60 text-center text-[10px]">Posición Satelital</h4>
+        <h4 class="font-black uppercase tracking-[0.2em] text-text-muted/60 text-center text-[10px]">Posición Satelital
+        </h4>
         <div class="grid grid-cols-2 gap-2">
           <div class="flex flex-col items-center bg-surface/5 py-1.5 px-1 rounded-xl border border-border/5">
             <span class="font-black uppercase text-primary mb-0.5 text-[9px]">Latitud</span>
-            <span class="font-black tabular-nums text-text tracking-tighter text-xs">{{ formatCoordinate(position.lat, 'lat') }}</span>
+            <span class="font-black tabular-nums text-text tracking-tighter text-xs">{{ formatCoordinate(position.lat,
+              'lat') }}</span>
           </div>
           <div class="flex flex-col items-center bg-surface/5 py-1.5 px-1 rounded-xl border border-border/5">
             <span class="font-black uppercase text-primary mb-0.5 text-[9px]">Longitud</span>
-            <span class="font-black tabular-nums text-text tracking-tighter text-xs">{{ formatCoordinate(position.lon, 'lon') }}</span>
+            <span class="font-black tabular-nums text-text tracking-tighter text-xs">{{ formatCoordinate(position.lon,
+              'lon') }}</span>
           </div>
         </div>
       </div>
@@ -45,8 +49,8 @@
       <div class="flex flex-col gap-2">
         <div class="flex items-center justify-between font-black uppercase tracking-tighter text-xs px-1">
           <div class="flex items-center gap-2 text-text-muted/80">
-             <span class="w-2 h-2 rounded-full bg-success shadow-[0_0_8px_rgba(var(--color-primary-rgb),0.4)]"></span>
-             <span>{{ formatDate(timestamp) }}</span>
+            <span class="w-2 h-2 rounded-full bg-success shadow-[0_0_8px_rgba(var(--color-primary-rgb),0.4)]"></span>
+            <span>{{ formatDate(timestamp) }}</span>
           </div>
           <div class="text-text font-black tracking-tight">{{ formatTime(timestamp) }}</div>
         </div>
@@ -65,15 +69,14 @@
         </div>
       </div>
 
-      <div v-if="layers" class="flex flex-col gap-1.5 pt-2 border-t border-border/10">
+      <div v-if="layers && !hideLayerControls" class="flex flex-col gap-1.5 pt-2 border-t border-border/10">
         <template v-for="(val, key) in layers" :key="key">
           <div v-if="shouldShowLayer(key)" class="flex items-center justify-between group/layer">
-            <span class="font-bold text-text-muted/80 group-hover/layer:text-text transition-colors tracking-tighter text-[11px]">{{ layerLabels[key] || key }}</span>
-            <BaseSwitch
-              :modelValue="val"
-              @update:modelValue="$emit('update:layer', key, $event)"
-              class="scale-90 origin-right"
-            />
+            <span
+              class="font-bold text-text-muted/80 group-hover/layer:text-text transition-colors tracking-tighter text-[11px]">{{
+                layerLabels[key] || key }}</span>
+            <BaseSwitch :modelValue="val" @update:modelValue="$emit('update:layer', key, $event)"
+              class="scale-90 origin-right" />
           </div>
         </template>
       </div>
@@ -96,6 +99,7 @@ const props = defineProps<{
   lastUpdate?: string | Date | null
   layers?: Record<string, boolean>
   isSingleMode?: boolean
+  hideLayerControls?: boolean
 }>()
 
 defineEmits(['update:layer'])
