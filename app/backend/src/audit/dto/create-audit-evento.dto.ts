@@ -16,8 +16,9 @@ export class CreateAuditEventoDto {
     @IsEnum(AuditCategoria)
     categoria: AuditCategoria;
 
+    @IsOptional()
     @IsObject()
-    entidadPrincipal: any;
+    entidadPrincipal?: any;
 
     @IsOptional()
     @IsObject()
@@ -36,4 +37,12 @@ export class CreateAuditEventoDto {
     @IsOptional()
     @IsString()
     mensajeError?: string;
+
+    @IsOptional()
+    @IsString()
+    ip?: string;
+
+    @IsOptional()
+    @IsString()
+    esCritico?: boolean;
 }

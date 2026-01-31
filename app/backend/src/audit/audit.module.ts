@@ -3,7 +3,8 @@ import { BullModule } from '@nestjs/bull';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuditService } from './services/audit.service';
 import { AuditQueueProcessor } from './processors/audit.processor';
-import { PrismaModule } from '../../prisma/prisma.module';
+import { PrismaModule } from '../prisma/prisma.module';
+import { AuditController } from './controllers/audit.controller';
 
 @Global()
 @Module({
@@ -21,6 +22,7 @@ import { PrismaModule } from '../../prisma/prisma.module';
             inject: [ConfigService],
         }),
     ],
+    controllers: [AuditController],
     providers: [AuditService, AuditQueueProcessor],
     exports: [AuditService],
 })

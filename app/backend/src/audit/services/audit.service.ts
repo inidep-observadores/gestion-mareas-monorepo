@@ -8,6 +8,7 @@ import { CreateAuditEventoDto } from '../dto/create-audit-evento.dto';
 import { CreateAuditEntidadDto } from '../dto/create-audit-entidad.dto';
 import { AuditLevel } from '../enums/audit.enums';
 import { sanitizeObject } from '../utils/sanitize.util';
+import { AuditQueryDto } from '../dto/audit-query.dto';
 
 @Injectable()
 export class AuditService {
@@ -114,5 +115,101 @@ export class AuditService {
         } catch (error) {
             this.logger.error(`Error logging Entity audit: ${error.message}`, error.stack);
         }
+    }
+    /**
+     * Obtiene logs de API con filtrado y paginación
+     */
+    async findApiLogs(query: AuditQueryDto) {
+        const where: any = {};
+
+        if (query.desde || query.hasta) {
+            where.timestamp = {};
+            if (query.desde) where.timestamp.gte = new Date(query.desde);
+            if (query.hasta) where.timestamp.lte = new Date(query.hasta);
+        }
+
+        if (query.usuarioId) where.usuarioId = query.usuarioId;
+        if (query.categoria) where.categoria = query.categoria;
+        if (query.soloErrores) where.esError = true;
+        if (query.busqueda) {
+            where.OR = [
+                { ruta: { contains: query.busqueda, mode: 'insensitive' } },
+                { usuarioEmail: { contains: query.busqueda, mode: 'insensitive' } }
+            ];
+        }
+
+        const [total, data] = await Promise.all([
+            (this.prisma as any).auditoriaApi.count({ where }),
+            (this.prisma as any).auditoriaApi.findMany({
+                where,
+                skip: query.skip,
+                take: query.limit,
+                orderBy: { timestamp: 'desc' },
+                include: { usuario: { select: { id: true, fullName: true, email: true } } }
+            })
+        ]);
+
+        return { total, data, page: query.page, limit: query.limit };
+    }
+
+    /**
+     * Obtiene logs de cambios en entidades
+     */
+    async findEntityLogs(query: AuditQueryDto) {
+        const where: any = {};
+
+        if (query.desde || query.hasta) {
+            where.timestamp = {};
+            if (query.desde) where.timestamp.gte = new Date(query.desde);
+            if (query.hasta) where.timestamp.lte = new Date(query.hasta);
+        }
+
+        if (query.usuarioId) where.usuarioId = query.usuarioId;
+        if (query.tipo) where.entidadTipo = query.tipo;
+        if (query.entidadId) where.entidadId = query.entidadId;
+
+        const [total, data] = await Promise.all([
+            (this.prisma as any).auditoriaEntidad.count({ where }),
+            (this.prisma as any).auditoriaEntidad.findMany({
+                where,
+                skip: query.skip,
+                take: query.limit,
+                orderBy: { timestamp: 'desc' },
+                include: { usuario: { select: { id: true, fullName: true, email: true } } }
+            })
+        ]);
+
+        return { total, data, page: query.page, limit: query.limit };
+    }
+
+    /**
+     * Obtiene logs de eventos de negocio
+     */
+    async findEventLogs(query: AuditQueryDto) {
+        const where: any = {};
+
+        if (query.desde || query.hasta) {
+            where.timestamp = {};
+            if (query.desde) where.timestamp.gte = new Date(query.desde);
+            if (query.hasta) where.timestamp.lte = new Date(query.hasta);
+        }
+
+        if (query.usuarioId) where.usuarioId = query.usuarioId;
+        if (query.categoria) where.categoria = query.categoria;
+        if (query.tipo) where.tipoEvento = query.tipo;
+        if (query.soloErrores) where.resultado = 'ERROR';
+
+        const [total, data] = await Promise.all([
+            (this.prisma as any).auditoriaEvento.count({ where }),
+            (this.prisma as any).auditoriaEvento.findMany({
+                where,
+                skip: query.skip,
+                take: query.limit,
+                orderBy: { timestamp: 'desc' },
+                include: { usuario: { select: { id: true, fullName: true, email: true } } }
+            })
+        ]);
+
+        return { total, data, page: query.page, limit: query.limit };
     }
 }

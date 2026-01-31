@@ -24,6 +24,7 @@ import { AuditModule } from './audit/audit.module';
 
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { AuditInterceptor } from './audit/interceptors/audit.interceptor';
+import { AuditEventInterceptor } from './audit/interceptors/audit-event.interceptor';
 
 @Module({
   imports: [
