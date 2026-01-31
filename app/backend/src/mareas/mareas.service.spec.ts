@@ -5,6 +5,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { BusinessRulesService } from '../common/business-rules/business-rules.service';
 import { MailService } from '../mail/mail.service';
 import { AlertsService } from '../alerts/alerts.service';
+import { ConfigService } from '@nestjs/config';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { MareaEstado, TipoEtapa } from './mareas.constants';
 
@@ -74,6 +75,7 @@ describe('MareasService', () => {
                 { provide: BusinessRulesService, useValue: mockBusinessRulesService },
                 { provide: MailService, useValue: mockMailService },
                 { provide: AlertsService, useValue: mockAlertsService },
+                { provide: ConfigService, useValue: { get: jest.fn() } },
             ],
         }).compile();
 
@@ -261,7 +263,6 @@ describe('MareasService', () => {
 
             // La fecha en el payload será truncada por el servicio
             const expectedDate = new Date(payload.fechaInicioObservador);
-            expectedDate.setHours(0, 0, 0, 0);
 
             await service.executeAction(mareaId, 'REGISTRAR_INICIO', { id: 'user-1' } as any, payload);
 
@@ -323,7 +324,7 @@ describe('MareasService', () => {
         });
 
         it('should throw error if fechaFinObservador is provided but there are open stages in DTO', async () => {
-            mockPrismaService.marea.findUnique.mockResolvedValue({ id: mareaId, fechaInicioObservador: '2025-01-01', etapas: [] });
+            mockPrismaService.marea.findUnique.mockResolvedValue({ id: mareaId, fechaInicioObservador: '2025-01-01', etapas: [], estadoActual: { codigo: 'MC', nombre: 'Navegando' } });
 
             const dto = {
                 fechaFinObservador: '2025-01-10T00:00:00Z',
@@ -337,7 +338,7 @@ describe('MareasService', () => {
         });
 
         it('should throw error if fechaFinObservador is provided but there are open stages in DB', async () => {
-            mockPrismaService.marea.findUnique.mockResolvedValue({ id: mareaId, fechaInicioObservador: '2025-01-01', etapas: [] });
+            mockPrismaService.marea.findUnique.mockResolvedValue({ id: mareaId, fechaInicioObservador: '2025-01-01', etapas: [], estadoActual: { codigo: 'MC', nombre: 'Navegando' } });
             mockPrismaService.mareaEtapa.count.mockResolvedValue(1);
 
             const dto = { fechaFinObservador: '2025-01-10T00:00:00Z' };

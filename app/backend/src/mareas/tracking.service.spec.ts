@@ -58,7 +58,7 @@ describe('TrackingService', () => {
             ];
             mockPrismaService.puerto.findMany.mockResolvedValue(ports);
             mockPrismaService.marea.findMany.mockResolvedValue([{ id: 'marea-1', buqueId: 'vessel-1', etapas: [], estadoActual: { codigo: 'EN_EJECUCION' }, buque: { nombreBuque: 'Test' } }]);
-            
+
             // First point outside, second inside
             const points = [
                 { lat: -37.00, lon: -56.00, timestamp: new Date('2025-01-01T10:00:00Z') }, // far
@@ -67,7 +67,7 @@ describe('TrackingService', () => {
 
             // Mocking previous state as outside
             mockPrismaService.buqueTrayectoriaPunto.findFirst.mockResolvedValue(null);
-            
+
             await (service as any).detectPortEvents('vessel-1', points);
 
             // Should create an ARRIBO alert
@@ -86,7 +86,7 @@ describe('TrackingService', () => {
                 { id: 'port-reg', nombre: 'Puerto Registrado', latitud: -41.0, longitud: -61.0 }
             ];
             mockPrismaService.puerto.findMany.mockResolvedValue(ports);
-            
+
             const marea = {
                 id: 'marea-1',
                 buqueId: 'vessel-1',
@@ -96,10 +96,10 @@ describe('TrackingService', () => {
                 estadoActual: { codigo: 'EN_EJECUCION' },
                 buque: { nombreBuque: 'Test Vessel' },
                 etapas: [
-                    { 
-                        nroEtapa: 1, 
-                        fechaZarpada: new Date('2025-01-01T00:00:00Z'), 
-                        puertoZarpadaId: 'port-reg' 
+                    {
+                        nroEtapa: 1,
+                        fechaZarpada: new Date('2025-01-01T00:00:00Z'),
+                        puertoZarpadaId: 'port-reg'
                     }
                 ]
             };
@@ -121,7 +121,7 @@ describe('TrackingService', () => {
 
             expect(mockPrismaService.alerta.create).toHaveBeenCalledWith(expect.objectContaining({
                 data: expect.objectContaining({
-                    tipo: 'TRACKING_EVENT',
+                    tipo: 'ERROR_REGISTRO_PUERTO',
                     titulo: expect.stringContaining('Discrepancia en puerto de zarpada')
                 })
             } as any));

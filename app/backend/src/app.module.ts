@@ -20,6 +20,7 @@ import { AlertsModule } from './alerts/alerts.module';
 import { BusinessRulesModule } from './common/business-rules/business-rules.module';
 import { AccessImportModule } from './access-import/access-import.module';
 import { StatsModule } from './stats/stats.module';
+import { AuditModule } from './audit/audit.module';
 
 @Module({
   imports: [
@@ -56,6 +57,7 @@ import { StatsModule } from './stats/stats.module';
     AlertsModule,
     AccessImportModule,
     StatsModule,
+    AuditModule,
   ],
 })
 export class AppModule { }
