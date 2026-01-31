@@ -28,6 +28,7 @@
   },
   "dependencies": {
     "@nestjs-modules/mailer": "^2.0.2",
+    "@nestjs/bull": "^10.2.1",
     "@nestjs/common": "^11.1.10",
     "@nestjs/config": "^4.0.2",
     "@nestjs/core": "^11.1.10",
@@ -36,6 +37,7 @@
     "@nestjs/passport": "^11.0.5",
     "@nestjs/platform-express": "^11.1.10",
     "@nestjs/serve-static": "^5.0.4",
+    "bull": "^4.16.3",
     "@prisma/adapter-pg": "^7.2.0",
     "@prisma/client": "^7.2.0",
     "adm-zip": "^0.5.16",
@@ -71,6 +73,7 @@
     "@types/adm-zip": "^0.5.7",
     "@types/archiver": "^7.0.0",
     "@types/bcrypt": "^6.0.0",
+    "@types/bull": "^4.10.0",
     "@types/cookie-parser": "^1.4.10",
     "@types/express": "^5.0.6",
     "@types/jest": "30.0.0",

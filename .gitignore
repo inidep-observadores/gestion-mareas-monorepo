@@ -85,13 +85,22 @@ Thumbs.db
 
 # **Visual Studio / Windows specific**
 
-\*.suo  
+*.suo  
 .ntvs  
-\*.njsproj  
-\*.sln
+*.njsproj  
+*.sln
 
-# **\--- AGENTS \---**
+# **--- AGENTS ---**
 
 # **Opcional: Descomentar si prefieres no versionar las reglas**
 
 # **AGENTS.md**
+
+# **=========================**
+# **CARPETAS DUPLICADAS (NO DEBEN EXISTIR)**
+# **=========================**
+# Las carpetas correctas están en /app/backend, /app/frontend y /demos
+/backend/
+/frontend/
+/frontend-practice/
+/frontend-template/

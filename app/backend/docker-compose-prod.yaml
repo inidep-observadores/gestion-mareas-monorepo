@@ -53,6 +53,18 @@ services:
     networks:
       - sigma-network
 
+  redis:
+    image: redis:7-alpine
+    restart: always
+    container_name: sigma-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    networks:
+      - sigma-network
+
 networks:
   sigma-network:
     driver: bridge
@@ -61,3 +73,4 @@ networks:
 
 volumes:
   mareas_db_data:
+  redis_data:
