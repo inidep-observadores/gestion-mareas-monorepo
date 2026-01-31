@@ -1,0 +1,9 @@
+{
+  "filename": "BKP-2026-01-18T23-18-27.sql",
+  "comment": "Mareas canceladas 2025 cargadas",
+  "createdAt": "2026-01-18T23:18:27.667Z",
+  "systemInfo": {
+    "dbName": "MareasDB",
+    "backupPath": "./backups"
+  }
+}

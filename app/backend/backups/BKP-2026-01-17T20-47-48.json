@@ -1,0 +1,9 @@
+{
+  "filename": "BKP-2026-01-17T20-47-48.sql",
+  "comment": "DB sin mareas",
+  "createdAt": "2026-01-17T20:47:49.373Z",
+  "systemInfo": {
+    "dbName": "MareasDB",
+    "backupPath": "./backups"
+  }
+}

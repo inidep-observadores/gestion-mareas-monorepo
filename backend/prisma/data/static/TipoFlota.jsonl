@@ -1,0 +1,6 @@
+{"id":"04d57c5c-390c-4334-bba9-d4635e1cb0c0","codigo":"COSTERO","nombre":"Costero","descripcion":null,"orden":null,"activo":true,"codigo_numerico":21}
+{"id":"a1373c68-08c7-4c4c-b9a5-b23ccf0abdcc","codigo":"RADA_RIA","nombre":"Rada o Ría","descripcion":null,"orden":null,"activo":true,"codigo_numerico":11}
+{"id":"991d17ee-9376-401c-8883-c0409127d0af","codigo":"ALTURA_FRESQUERO","nombre":"Altura (Fresquero)","descripcion":null,"orden":null,"activo":true,"codigo_numerico":31}
+{"id":"bbebd1ff-edd5-48dd-925c-9735bb61b50d","codigo":"ALTURA_CONGELADOR","nombre":"Altura (Congelador)","descripcion":null,"orden":null,"activo":true,"codigo_numerico":32}
+{"id":"1e6f3be0-9af3-40cf-8306-e1358231f214","codigo":"INVESTIGACION","nombre":"Investigación","descripcion":null,"orden":null,"activo":true,"codigo_numerico":90}
+{"id":"a4a18385-067c-481b-97e9-56dc132240d8","codigo":"INDETERMINADO","nombre":"Indeterminado","descripcion":null,"orden":null,"activo":true,"codigo_numerico":99}

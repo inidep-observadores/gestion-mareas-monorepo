@@ -1,0 +1,9 @@
+{
+  "filename": "BKP-2026-01-20T03-58-35.sql",
+  "comment": "Nuevas mareas cargadas",
+  "createdAt": "2026-01-20T03:58:36.560Z",
+  "systemInfo": {
+    "dbName": "MareasDB",
+    "backupPath": "./backups"
+  }
+}

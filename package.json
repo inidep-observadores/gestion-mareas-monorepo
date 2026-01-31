@@ -1,0 +1,18 @@
+{
+  "name": "sigma-mareas-monorepo",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@10.26.2",
+  "workspaces": [
+    "app/backend",
+    "app/frontend"
+  ],
+  "scripts": {
+    "dev:backend": "pnpm --filter sigma-backend run start:dev",
+    "dev:frontend": "pnpm --filter gestion-mareas-0-0-1 run dev",
+    "dev": "pnpm --filter sigma-backend --filter gestion-mareas-0-0-1 --parallel run dev",
+    "build": "pnpm -r run build",
+    "lint": "pnpm -r run lint",
+    "test": "pnpm -r run test"
+  }
+}

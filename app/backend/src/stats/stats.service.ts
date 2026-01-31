@@ -1,0 +1,745 @@
+import { Injectable } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
+import { DateUtils } from '../common/utils/date.utils';
+import { Prisma } from '@prisma/client';
+import { StatsDetailItem, DashboardStats } from './interfaces/dashboard.interface';
+import { MareaUtils } from '../common/utils/marea.utils';
+import { TipoMarea } from '../mareas/mareas.constants';
+import * as ExcelJS from 'exceljs';
+
+@Injectable()
+export class StatsService {
+    constructor(private readonly prisma: PrismaService) { }
+
+    private getSharedWhereClause(
+        yearStart: Date,
+        yearEnd: Date,
+        includeNonProtocolized: boolean,
+        includeProtocolizedOutOfPeriod: boolean
+    ): Prisma.MareaWhereInput {
+        const where: Prisma.MareaWhereInput = {
+            activo: true,
+        };
+
+        // Source of Truth: Stages (Etapas)
+        // A marea is ACTIVE in the period if it has at least one stage overlapping the period.
+        // Overlap Logic: Stage Start <= Period End AND (Stage End >= Period Start OR Stage End is NULL)
+        const activityOverlapCondition: Prisma.MareaWhereInput = {
+            etapas: {
+                some: {
+                    AND: [
+                        { fechaZarpada: { lte: yearEnd } },
+                        {
+                            OR: [
+                                { fechaArribo: { gte: yearStart } },
+                                { fechaArribo: null }
+                            ]
+                        }
+                    ]
+                }
+            }
+        };
+
+        const protocolizedInYearCondition: Prisma.MareaWhereInput = {
+            fechaProtocolizacion: {
+                gte: yearStart,
+                lte: yearEnd,
+            },
+        };
+
+        if (!includeNonProtocolized) {
+            if (includeProtocolizedOutOfPeriod) {
+                where.AND = protocolizedInYearCondition;
+            } else {
+                where.AND = [
+                    activityOverlapCondition,
+                    protocolizedInYearCondition
+                ];
+            }
+        } else {
+            where.AND = activityOverlapCondition;
+        }
+
+        return where;
+    }
+
+    async getDashboardStats(
+        year: number,
+        mode: 'CALENDAR' | 'TOTAL',
+        includeNonProtocolized: boolean,
+        includeProtocolizedOutOfPeriod: boolean,
+        daysCalculationMode: 'SHIP' | 'OBSERVER' = 'SHIP',
+        includeCampaigns: boolean = true,
+    ) {
+        const yearStart = new Date(Date.UTC(year, 0, 1, 0, 0, 0, 0));
+        const yearEnd = new Date(Date.UTC(year, 11, 31, 23, 59, 59, 999));
+
+        const where = this.getSharedWhereClause(yearStart, yearEnd, includeNonProtocolized, includeProtocolizedOutOfPeriod);
+
+        // Filter Campaigns
+        if (!includeCampaigns) {
+            where.tipoMarea = { not: TipoMarea.CI };
+        }
+
+        const mareas = await this.prisma.marea.findMany({
+            where,
+            include: {
+                buque: {
+                    include: {
+                        tipoFlota: true,
+                        pesqueriaHabitual: true,
+                    }
+                },
+                observadorPrincipal: true,
+                pesqueria: true,
+                estadoActual: true,
+                etapas: {
+                    orderBy: { nroEtapa: 'asc' },
+                    include: {
+                        observadores: {
+                            include: { observador: true }
+                        }
+                    }
+                }
+            },
+        });
+
+        // 3. Process & Aggregate
+        let totalMareas = 0;
+        let totalDaysCalculated = 0;
+
+        // Monthly aggregations
+        const mareasByMonth = new Array(12).fill(0);
+        const daysByMonth = new Array(12).fill(0);
+
+        // Groupings
+        const byFishery: Record<string, { name: string; mareas: number; days: number }> = {};
+        const byFleet: Record<string, { name: string; mareas: number; days: number }> = {};
+        const byObserver: Record<string, { id: string; name: string; mareas: number; days: number; active: boolean }> = {};
+
+        for (const marea of mareas) {
+            // Source of Truth: Start with the first stage's departure
+            const overallStart = marea.etapas[0]?.fechaZarpada;
+            if (!overallStart) continue;
+
+            const intervals = marea.etapas.map(e => ({
+                start: e.fechaZarpada,
+                end: e.fechaArribo || (marea.estadoActual?.codigo === 'EN_EJECUCION' ? DateUtils.getNow() : null)
+            })).filter(i => i.start);
+
+            let days = 0;
+
+            // 1. Calculate uniquely navigated days for the Principal Observer (the whole marea)
+            const totalMareaDays = DateUtils.calculateUniqueDays(intervals, mode === 'CALENDAR' ? year : undefined);
+
+            const mareaObserverMap: Record<string, number> = {}; // ObsID -> Days attributed in this marea
+
+            if (marea.observadorPrincipal) {
+                mareaObserverMap[marea.observadorPrincipal.id] = totalMareaDays;
+            }
+
+            // 2. Calculate unique days for EACH additional observer involved in stages
+            const additionalsMap: Record<string, Array<{ start: Date, end: Date }>> = {};
+            marea.etapas.forEach(etapa => {
+                if (!etapa.fechaZarpada) return;
+                const start = etapa.fechaZarpada;
+                const end = etapa.fechaArribo || (marea.estadoActual?.codigo === 'EN_EJECUCION' ? DateUtils.getNow() : null);
+
+                etapa.observadores.forEach(obsRel => {
+                    if (obsRel.observador && obsRel.observador.id !== marea.observadorPrincipalId) {
+                        if (!additionalsMap[obsRel.observador.id]) additionalsMap[obsRel.observador.id] = [];
+                        additionalsMap[obsRel.observador.id].push({ start, end });
+                    }
+                });
+            });
+
+            // Sum additional efforts
+            Object.entries(additionalsMap).forEach(([obsId, obsIntervals]) => {
+                mareaObserverMap[obsId] = DateUtils.calculateUniqueDays(obsIntervals, mode === 'CALENDAR' ? year : undefined);
+            });
+
+            if (daysCalculationMode === 'SHIP') {
+                days = totalMareaDays;
+            } else {
+                // OBSERVER Mode Effort = Sum of all individual unique contributions
+                days = Object.values(mareaObserverMap).reduce((sum, d) => sum + d, 0);
+            }
+
+            // Add to Totals
+            totalMareas++;
+            totalDaysCalculated += days;
+
+            // Aggregations
+            // Fishery: Priority -> Marea Header -> Buque Default
+            const fisheryName = marea.pesqueria?.nombre || marea.buque?.pesqueriaHabitual?.nombre || 'Desconocida';
+            if (!byFishery[fisheryName]) byFishery[fisheryName] = { name: fisheryName, mareas: 0, days: 0 };
+            byFishery[fisheryName].mareas++;
+            byFishery[fisheryName].days += days;
+
+            // Fleet
+            const fleetName = marea.buque?.tipoFlota?.nombre || 'Desconocida';
+            if (!byFleet[fleetName]) byFleet[fleetName] = { name: fleetName, mareas: 0, days: 0 };
+            byFleet[fleetName].mareas++;
+            byFleet[fleetName].days += days;
+
+            // Observer Ranking
+            Object.entries(mareaObserverMap).forEach(([oId, d]) => {
+                // Ensure observer exists in byObserver (names/active status)
+                if (!byObserver[oId]) {
+                    let obsObj = null;
+                    if (marea.observadorPrincipalId === oId) {
+                        obsObj = marea.observadorPrincipal;
+                    } else {
+                        for (const etapa of marea.etapas) {
+                            const found = etapa.observadores.find(rel => rel.observador?.id === oId);
+                            if (found) {
+                                obsObj = found.observador;
+                                break;
+                            }
+                        }
+                    }
+                    if (obsObj) {
+                        byObserver[oId] = {
+                            id: oId,
+                            name: `${obsObj.nombre} ${obsObj.apellido}`,
+                            mareas: 0,
+                            days: 0,
+                            active: obsObj.activo
+                        };
+                    }
+                }
+
+                if (byObserver[oId]) {
+                    byObserver[oId].days += d;
+                    byObserver[oId].mareas++;
+                }
+            });
+
+            // Monthly Trend (Starts)
+            const startMonth = overallStart.getMonth();
+            if (overallStart.getFullYear() === year) {
+                mareasByMonth[startMonth]++;
+            }
+
+            // Distribute Days in Month
+            if (daysCalculationMode === 'SHIP') {
+                if (days > 0) {
+                    // Existing logic for SHIP days distribution
+                    // ... (merged logic) ...
+                    const normalized = intervals
+                        .map(i => {
+                            const s = new Date(i.start);
+                            // If end is null, we treat as open end (today?) or single day?
+                            // For 'active' mareas, end is today. For historic missing, it's start.
+                            // In this loop we already handled "intervals" construction correctly above with `marea.estadoActualId`.
+                            const e = i.end ? new Date(i.end) : new Date(s);
+                            s.setHours(0, 0, 0, 0);
+                            e.setHours(0, 0, 0, 0);
+                            return { start: s, end: e };
+                        })
+                        .filter(i => !isNaN(i.start.getTime()) && !isNaN(i.end.getTime()) && i.end >= i.start)
+                        .sort((a, b) => a.start.getTime() - b.start.getTime());
+
+                    const merged: Array<{ start: Date; end: Date }> = [];
+                    if (normalized.length > 0) {
+                        let curr = normalized[0];
+                        for (let i = 1; i < normalized.length; i++) {
+                            if (normalized[i].start.getTime() <= curr.end.getTime()) {
+                                if (normalized[i].end.getTime() > curr.end.getTime()) curr.end = normalized[i].end;
+                            } else {
+                                merged.push(curr);
+                                curr = normalized[i];
+                            }
+                        }
+                        merged.push(curr);
+                    }
+
+                    for (const interval of merged) {
+                        let cursor = new Date(interval.start);
+                        if (mode === 'CALENDAR') {
+                            if (cursor < yearStart) cursor = new Date(yearStart);
+                        }
+                        const limitEnd = (mode === 'CALENDAR' && interval.end > yearEnd) ? yearEnd : interval.end;
+
+                        while (cursor <= limitEnd) {
+                            if (cursor.getFullYear() === year) {
+                                daysByMonth[cursor.getMonth()]++;
+                            }
+                            cursor.setDate(cursor.getDate() + 1);
+                        }
+                    }
+                }
+            } else {
+                // OBSERVER MODE: Distribute DAYS * OBSERVERS
+                // Iterate stages again?
+                marea.etapas.forEach(etapa => {
+                    if (!etapa.fechaZarpada) return;
+                    const count = (etapa.observadores && etapa.observadores.length > 0)
+                        ? etapa.observadores.length
+                        : (marea.observadorPrincipal ? 1 : 0);
+
+                    if (count === 0) return;
+
+                    const s = new Date(etapa.fechaZarpada);
+                    const e = etapa.fechaArribo || (marea.estadoActualId === 'EN_EJECUCION' ? DateUtils.getNow() : null) || new Date(s); // Fallback to start if historical missing
+
+                    s.setHours(0, 0, 0, 0);
+                    e.setHours(0, 0, 0, 0);
+
+                    let cursor = new Date(s);
+                    if (mode === 'CALENDAR') {
+                        if (cursor < yearStart) cursor = new Date(yearStart);
+                    }
+                    const limitEnd = (mode === 'CALENDAR' && e > yearEnd) ? yearEnd : e;
+
+                    while (cursor <= limitEnd) {
+                        if (cursor.getFullYear() === year) {
+                            daysByMonth[cursor.getMonth()] += count; // Add N days for this day
+                        }
+                        cursor.setDate(cursor.getDate() + 1);
+                    }
+                });
+            }
+        }
+
+        return {
+            year,
+            mode,
+            totalMareas,
+            totalDaysNavigated: totalDaysCalculated,
+            avgDaysPerMarea: totalMareas ? Math.round(totalDaysCalculated / totalMareas) : 0,
+            monthly: {
+                mareas: mareasByMonth,
+                days: daysByMonth,
+            },
+            fisheries: Object.values(byFishery).sort((a, b) => b.days - a.days),
+            fleets: Object.values(byFleet).sort((a, b) => b.days - a.days),
+            observers: Object.values(byObserver).sort((a, b) => b.days - a.days),
+        };
+    }
+
+    async getDashboardStatsDetail(
+        year: number,
+        mode: 'CALENDAR' | 'TOTAL',
+        includeNonProtocolized: boolean,
+        includeProtocolizedOutOfPeriod = false,
+        filterType: 'FISHERY' | 'FLEET' | 'OBSERVER',
+        filterValue: string,
+        daysCalculationMode: 'SHIP' | 'OBSERVER' = 'SHIP',
+        includeCampaigns: boolean = true,
+    ): Promise<StatsDetailItem[]> {
+        const yearStart = new Date(Date.UTC(year, 0, 1, 0, 0, 0, 0));
+        const yearEnd = new Date(Date.UTC(year, 11, 31, 23, 59, 59, 999));
+
+        const where = this.getSharedWhereClause(yearStart, yearEnd, includeNonProtocolized, includeProtocolizedOutOfPeriod);
+
+        if (!includeCampaigns) {
+            where.tipoMarea = { not: TipoMarea.CI };
+        }
+
+        // Apply dynamic filter
+        if (filterType === 'FISHERY') {
+            where.OR = [
+                { pesqueria: { nombre: filterValue } },
+                {
+                    AND: [
+                        { pesqueriaId: null },
+                        { buque: { pesqueriaHabitual: { nombre: filterValue } } }
+                    ]
+                }
+            ];
+        } else if (filterType === 'FLEET') {
+            where.buque = {
+                tipoFlota: { nombre: filterValue }
+            };
+        } else if (filterType === 'OBSERVER') {
+            // Robust UUID check: Length 36 and hex chars + dashes
+            const isUUID = filterValue.length === 36 && /^[0-9a-f-]{36}$/i.test(filterValue);
+            if (isUUID) {
+                where.observadorPrincipalId = filterValue;
+            } else {
+                where.observadorPrincipal = {
+                    OR: [
+                        { nombre: { contains: filterValue, mode: 'insensitive' } },
+                        { apellido: { contains: filterValue, mode: 'insensitive' } }
+                    ]
+                };
+            }
+        }
+
+        const mareas = await this.prisma.marea.findMany({
+            where,
+            include: {
+                buque: {
+                    include: {
+                        tipoFlota: true,
+                        pesqueriaHabitual: true,
+                    }
+                },
+                observadorPrincipal: true,
+                pesqueria: true,
+                estadoActual: true,
+                etapas: {
+                    orderBy: { nroEtapa: 'asc' },
+                    include: {
+                        observadores: { include: { observador: true } }
+                    }
+                }
+            },
+            orderBy: [
+                { anioMarea: 'asc' },
+                { nroMarea: 'asc' }
+            ]
+        });
+
+        // Format for list display
+        return mareas.map(m => {
+            const overallStart = m.etapas[0]?.fechaZarpada;
+            const overallEnd = m.etapas[m.etapas.length - 1]?.fechaArribo || (m.estadoActual?.codigo === 'EN_EJECUCION' ? DateUtils.getNow() : null);
+
+            let days = 0;
+            let calendarDays = 0;
+            let totalMareaDays = 0;
+
+            const intervals = m.etapas.map(e => ({
+                start: e.fechaZarpada,
+                end: e.fechaArribo || (m.estadoActual?.codigo === 'EN_EJECUCION' ? DateUtils.getNow() : null)
+            })).filter(i => i.start);
+
+            if (daysCalculationMode === 'SHIP') {
+                calendarDays = DateUtils.calculateUniqueDays(intervals, year);
+                totalMareaDays = DateUtils.calculateUniqueDays(intervals);
+                days = mode === 'CALENDAR' ? calendarDays : totalMareaDays;
+            } else {
+                // OBSERVER Mode
+                // Case A: Filtered by a specific observer -> Show ONLY their individual contribution
+                if (filterType === 'OBSERVER' && filterValue) {
+                    let obsIntervals: Array<{ start: Date, end: Date }> = [];
+                    const isPrincipal = (m.observadorPrincipalId === filterValue);
+
+                    if (isPrincipal) {
+                        obsIntervals = intervals; // Principal gets full marea
+                    } else {
+                        // Find stages where they are additional
+                        m.etapas.forEach(etapa => {
+                            const isAdditional = etapa.observadores.some(rel => rel.observadorId === filterValue);
+                            if (isAdditional) {
+                                obsIntervals.push({
+                                    start: etapa.fechaZarpada,
+                                    end: etapa.fechaArribo || (m.estadoActual?.codigo === 'EN_EJECUCION' ? DateUtils.getNow() : null)
+                                });
+                            }
+                        });
+                    }
+
+                    calendarDays = DateUtils.calculateUniqueDays(obsIntervals, year);
+                    totalMareaDays = DateUtils.calculateUniqueDays(obsIntervals);
+                } else {
+                    // Case B: General Detail (by Fishery/Fleet/All) -> Show total EFFORT (sum of all unique contributions)
+                    let effortCal = DateUtils.calculateUniqueDays(intervals, year);
+                    let effortTotal = DateUtils.calculateUniqueDays(intervals);
+
+                    const additionalsMap: Record<string, Array<{ start: Date, end: Date }>> = {};
+                    m.etapas.forEach(etapa => {
+                        if (!etapa.fechaZarpada) return;
+                        const start = etapa.fechaZarpada;
+                        const end = etapa.fechaArribo || (m.estadoActual?.codigo === 'EN_EJECUCION' ? DateUtils.getNow() : null);
+
+                        etapa.observadores.forEach(obsRel => {
+                            if (obsRel.observador && obsRel.observador.id !== m.observadorPrincipalId) {
+                                if (!additionalsMap[obsRel.observador.id]) additionalsMap[obsRel.observador.id] = [];
+                                additionalsMap[obsRel.observador.id].push({ start, end });
+                            }
+                        });
+                    });
+
+                    Object.values(additionalsMap).forEach(obsIntervals => {
+                        effortCal += DateUtils.calculateUniqueDays(obsIntervals, year);
+                        effortTotal += DateUtils.calculateUniqueDays(obsIntervals);
+                    });
+
+                    calendarDays = effortCal;
+                    totalMareaDays = effortTotal;
+                }
+                days = mode === 'CALENDAR' ? calendarDays : totalMareaDays;
+            }
+
+            return {
+                id: m.id,
+                id_marea: MareaUtils.formatCodigo(m),
+                anioMarea: m.anioMarea,
+                nroMarea: m.nroMarea,
+                tipoMarea: m.tipoMarea,
+                buque: m.buque?.nombreBuque || 'Desconocido',
+                flota: m.buque?.tipoFlota?.nombre || '-',
+                pesqueria: (m as any).pesqueria?.nombre || m.buque?.pesqueriaHabitual?.nombre || '-',
+                observador: m.observadorPrincipal ? `${m.observadorPrincipal.nombre} ${m.observadorPrincipal.apellido}` : 'Sin asignar',
+                estado: m.estadoActual?.nombre || 'Desconocido',
+                diasContabilizados: days,
+                diasCalendario: calendarDays,
+                diasTotales: totalMareaDays,
+                fechaInicio: overallStart,
+                fechaFin: overallEnd
+            };
+        });
+    }
+
+    async getExportWorkbook(
+        year: number,
+        mode: 'CALENDAR' | 'TOTAL',
+        includeNonProtocolized: boolean,
+        includeProtocolizedOutOfPeriod: boolean,
+        daysCalculationMode: 'SHIP' | 'OBSERVER' = 'SHIP',
+        includeCampaigns: boolean = true,
+        filterType?: 'FISHERY' | 'FLEET' | 'OBSERVER',
+        filterValue?: string
+    ): Promise<ExcelJS.Workbook> {
+        const yearStart = new Date(Date.UTC(year, 0, 1, 0, 0, 0, 0));
+        const yearEnd = new Date(Date.UTC(year, 11, 31, 23, 59, 59, 999));
+
+        const where = this.getSharedWhereClause(yearStart, yearEnd, includeNonProtocolized, includeProtocolizedOutOfPeriod);
+
+        if (!includeCampaigns) {
+            where.tipoMarea = { not: TipoMarea.CI };
+        }
+
+        if (filterType && filterValue) {
+            if (filterType === 'FISHERY') {
+                where.OR = [
+                    { pesqueria: { nombre: filterValue } },
+                    {
+                        AND: [
+                            { pesqueriaId: null },
+                            { buque: { pesqueriaHabitual: { nombre: filterValue } } }
+                        ]
+                    }
+                ];
+            } else if (filterType === 'FLEET') {
+                where.buque = { tipoFlota: { nombre: filterValue } };
+            } else if (filterType === 'OBSERVER') {
+                const isUUID = filterValue.length === 36 && /^[0-9a-f-]{36}$/i.test(filterValue);
+                if (isUUID) {
+                    where.observadorPrincipalId = filterValue;
+                } else {
+                    where.observadorPrincipal = {
+                        OR: [
+                            { nombre: { contains: filterValue, mode: 'insensitive' } },
+                            { apellido: { contains: filterValue, mode: 'insensitive' } }
+                        ]
+                    };
+                }
+            }
+        }
+
+        const mareas = await this.prisma.marea.findMany({
+            where,
+            include: {
+                buque: {
+                    include: {
+                        tipoFlota: true,
+                        pesqueriaHabitual: true,
+                    }
+                },
+                observadorPrincipal: true,
+                pesqueria: true,
+                estadoActual: true,
+                etapas: {
+                    orderBy: { nroEtapa: 'asc' },
+                    include: {
+                        puertoZarpada: true,
+                        puertoArribo: true,
+                        observadores: { include: { observador: true } }
+                    }
+                }
+            },
+            orderBy: [
+                { anioMarea: 'asc' },
+                { nroMarea: 'asc' }
+            ]
+        });
+
+        const workbook = new ExcelJS.Workbook();
+        const sheet = workbook.addWorksheet('Mareas');
+
+        // Determinar max etapas para las columnas
+        // Determinar max etapas y observadores adicionales
+        let maxEtapas = 0;
+        let maxExtraObservers = 0;
+
+        mareas.forEach(m => {
+            if (m.etapas.length > maxEtapas) maxEtapas = m.etapas.length;
+
+            // Find extra observers in this marea
+            const uniqueObserversInMarea = new Set<string>();
+            if (m.observadorPrincipal) uniqueObserversInMarea.add(m.observadorPrincipal.id);
+
+            const extras = new Set<string>();
+            m.etapas.forEach(e => {
+                e.observadores.forEach(obsRel => {
+                    const oid = obsRel.observadorId;
+                    if (oid && (!m.observadorPrincipal || oid !== m.observadorPrincipal.id)) {
+                        extras.add(oid);
+                    }
+                });
+            });
+            if (extras.size > maxExtraObservers) maxExtraObservers = extras.size;
+        });
+
+        // Definir columnas base
+        const columns = [
+            { header: 'ID Marea', key: 'id_marea', width: 15 },
+            { header: 'Buque', key: 'buque', width: 25 },
+            { header: 'Flota', key: 'flota', width: 20 },
+            { header: 'Pesquer�a', key: 'pesqueria', width: 20 },
+            { header: 'Observador Principal', key: 'observador', width: 25 },
+        ];
+
+        // Dynamic Extra Observers Columns
+        for (let i = 1; i <= maxExtraObservers; i++) {
+            columns.push({ header: `Observador Adic. ${i}`, key: `obs_adic_${i}`, width: 25 });
+        }
+
+        columns.push(
+            { header: 'Estado', key: 'estado', width: 20 },
+            { header: 'D�as (Calendario)', key: 'dias_calendario', width: 15 },
+            { header: 'D�as (Total Marea)', key: 'dias_total', width: 15 },
+            { header: 'Inicio', key: 'inicio', width: 15 },
+            { header: 'Fin', key: 'fin', width: 15 },
+        );
+
+        // Columnas din�micas de etapas
+        for (let i = 1; i <= maxEtapas; i++) {
+            columns.push(
+                { header: `Etapa ${i}: #`, key: `etapa_${i}_nro`, width: 10 },
+                { header: `Etapa ${i}: Zarpada`, key: `etapa_${i}_zarpada`, width: 15 },
+                { header: `Etapa ${i}: Arribo`, key: `etapa_${i}_arribo`, width: 15 },
+                { header: `Etapa ${i}: D�as`, key: `etapa_${i}_dias`, width: 10 }
+            );
+        }
+
+        sheet.columns = columns;
+
+        // Estilo cabecera
+        sheet.getRow(1).font = { bold: true };
+        sheet.getRow(1).fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FFE0E0E0' }
+        };
+
+        // Cargar Datos
+        mareas.forEach(m => {
+            const overallStart = m.etapas[0]?.fechaZarpada;
+            const overallEnd = m.etapas[m.etapas.length - 1]?.fechaArribo || (m.estadoActual?.codigo === 'EN_EJECUCION' ? DateUtils.getNow() : null);
+
+            let calendarDays = 0;
+            let totalMareaDays = 0;
+
+            const intervals = m.etapas.map(e => ({
+                start: e.fechaZarpada,
+                end: e.fechaArribo || (m.estadoActual?.codigo === 'EN_EJECUCION' ? DateUtils.getNow() : null)
+            })).filter(i => i.start);
+
+            if (daysCalculationMode === 'SHIP') {
+                calendarDays = DateUtils.calculateUniqueDays(intervals, year);
+                totalMareaDays = DateUtils.calculateUniqueDays(intervals);
+            } else {
+                // OBSERVER Mode
+                // Case A: Filtered by a specific observer -> Show ONLY their individual contribution
+                if (filterType === 'OBSERVER' && filterValue) {
+                    let obsIntervals: Array<{ start: Date, end: Date }> = [];
+                    const isPrincipal = (m.observadorPrincipalId === filterValue);
+
+                    if (isPrincipal) {
+                        obsIntervals = intervals; // Principal gets full marea
+                    } else {
+                        // Find stages where they are additional
+                        m.etapas.forEach(etapa => {
+                            const isAdditional = etapa.observadores.some(rel => rel.observadorId === filterValue);
+                            if (isAdditional) {
+                                obsIntervals.push({
+                                    start: etapa.fechaZarpada,
+                                    end: etapa.fechaArribo || (m.estadoActual?.codigo === 'EN_EJECUCION' ? DateUtils.getNow() : null)
+                                });
+                            }
+                        });
+                    }
+
+                    calendarDays = DateUtils.calculateUniqueDays(obsIntervals, year);
+                    totalMareaDays = DateUtils.calculateUniqueDays(obsIntervals);
+                } else {
+                    // Case B: General Detail (by Fishery/Fleet/All) -> Show total EFFORT (sum of all unique contributions)
+                    let effortCal = DateUtils.calculateUniqueDays(intervals, year);
+                    let effortTotal = DateUtils.calculateUniqueDays(intervals);
+
+                    const additionalsMap: Record<string, Array<{ start: Date, end: Date }>> = {};
+                    m.etapas.forEach(etapa => {
+                        if (!etapa.fechaZarpada) return;
+                        const start = etapa.fechaZarpada;
+                        const end = etapa.fechaArribo || (m.estadoActual?.codigo === 'EN_EJECUCION' ? DateUtils.getNow() : null);
+
+                        etapa.observadores.forEach(obsRel => {
+                            if (obsRel.observador && obsRel.observador.id !== m.observadorPrincipalId) {
+                                if (!additionalsMap[obsRel.observador.id]) additionalsMap[obsRel.observador.id] = [];
+                                additionalsMap[obsRel.observador.id].push({ start, end });
+                            }
+                        });
+                    });
+
+                    Object.values(additionalsMap).forEach(obsIntervals => {
+                        effortCal += DateUtils.calculateUniqueDays(obsIntervals, year);
+                        effortTotal += DateUtils.calculateUniqueDays(obsIntervals);
+                    });
+
+                    calendarDays = effortCal;
+                    totalMareaDays = effortTotal;
+                }
+            }
+
+            const rowData: any = {
+                id_marea: MareaUtils.formatCodigo(m),
+                buque: m.buque?.nombreBuque || 'Desconocido',
+                flota: m.buque?.tipoFlota?.nombre || '-',
+                pesqueria: (m as any).pesqueria?.nombre || m.buque?.pesqueriaHabitual?.nombre || '-',
+                observador: m.observadorPrincipal ? `${m.observadorPrincipal.nombre} ${m.observadorPrincipal.apellido}` : 'Sin asignar',
+                estado: m.estadoActual?.nombre || 'Desconocido',
+                dias_calendario: calendarDays,
+                dias_total: totalMareaDays,
+                inicio: DateUtils.formatDate(overallStart),
+                fin: overallEnd ? DateUtils.formatDate(overallEnd) : (m.estadoActual?.codigo === 'EN_EJECUCION' ? 'En curso' : '-')
+            };
+
+            // Extra Observers
+            const extraObservers = new Set<string>();
+            m.etapas.forEach(e => {
+                e.observadores.forEach(obsRel => {
+                    const oid = obsRel.observadorId;
+                    // Logic: If main observer is defined, exclude him from "Adicionales".
+                    if (m.observadorPrincipal && oid === m.observadorPrincipal.id) return;
+                    if (obsRel.observador) {
+                        // Store Name
+                        extraObservers.add(`${obsRel.observador.nombre} ${obsRel.observador.apellido}`);
+                    }
+                });
+            });
+            const extrasArray = Array.from(extraObservers);
+            extrasArray.forEach((name, idx) => {
+                rowData[`obs_adic_${idx + 1}`] = name;
+            });
+
+
+            // Etapas
+            m.etapas.forEach((e, idx) => {
+                const i = idx + 1;
+                rowData[`etapa_${i}_nro`] = e.nroEtapa;
+                rowData[`etapa_${i}_zarpada`] = DateUtils.formatDate(e.fechaZarpada);
+                rowData[`etapa_${i}_arribo`] = DateUtils.formatDate(e.fechaArribo);
+                rowData[`etapa_${i}_dias`] = DateUtils.calculateInclusiveDays(e.fechaZarpada, e.fechaArribo);
+            });
+
+            sheet.addRow(rowData);
+        });
+
+        return workbook;
+    }
+}

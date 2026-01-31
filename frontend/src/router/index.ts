@@ -1,0 +1,367 @@
+import { createRouter, createWebHistory } from 'vue-router'
+import { ValidRoles } from '@/modules/auth/interfaces/roles.enum'
+
+import BandejaView from '@/modules/mareas/views/BandejaView.vue'
+import PanelOperativoView from '@/modules/mareas/views/PanelOperativoView.vue'
+import FlujoMareasView from '@/modules/mareas/views/FlujoMareasView.vue'
+import EstadisticasView from '@/modules/mareas/views/EstadisticasView.vue'
+import CalendarioView from '@/modules/mareas/views/CalendarioView.vue'
+import MareaDetalleView from '@/modules/mareas/views/MareaDetalleView.vue'
+import MareaOperativaDetalleView from '@/modules/mareas/views/MareaOperativaDetalleView.vue'
+import NuevaMareaView from '@/modules/mareas/views/NuevaMareaView.vue'
+
+const router = createRouter({
+  history: createWebHistory(import.meta.env.BASE_URL),
+  scrollBehavior(to, from, savedPosition) {
+    return savedPosition || { left: 0, top: 0 }
+  },
+  routes: [
+    {
+      path: '/',
+      name: 'Landing',
+      component: () => import('@/modules/landing/views/LandingView.vue'),
+      meta: {
+        title: 'Bienvenido',
+        requiresAuth: false,
+        guestOnly: true,
+      },
+    },
+    {
+      path: '/dashboard',
+      name: 'Dashboard',
+      component: () => import('@/modules/dashboard/views/DashboardView.vue'),
+      meta: {
+        title: 'Centro de Comando',
+        requiresAuth: true,
+      },
+    },
+    {
+      path: '/signin',
+      name: 'Signin',
+      component: () => import('@/modules/auth/views/LoginView.vue'),
+      meta: {
+        title: 'Iniciar Sesión',
+        guestOnly: true,
+      },
+    },
+    {
+      path: '/signup',
+      name: 'Signup',
+      component: () => import('@/modules/auth/views/RegisterView.vue'),
+      meta: {
+        title: 'Crear Cuenta',
+        guestOnly: true,
+      },
+    },
+    {
+      path: '/forgot-password',
+      name: 'ForgotPassword',
+      component: () => import('@/modules/auth/views/ForgotPasswordView.vue'),
+      meta: {
+        title: 'Recuperar Contraseña',
+        guestOnly: true,
+      },
+    },
+    {
+      path: '/reset-password',
+      name: 'ResetPassword',
+      component: () => import('@/modules/auth/views/ResetPasswordView.vue'),
+      meta: {
+        title: 'Restablecer Contraseña',
+        guestOnly: true,
+      },
+    },
+    {
+      path: '/terms',
+      name: 'Terms',
+      component: () => import('@/modules/auth/views/TermsView.vue'),
+      meta: {
+        title: 'Términos y Condiciones',
+        requiresAuth: false,
+      },
+    },
+    {
+      path: '/privacy',
+      name: 'Privacy',
+      component: () => import('@/modules/auth/views/PrivacyView.vue'),
+      meta: {
+        title: 'Política de Privacidad',
+        requiresAuth: false,
+      },
+    },
+    {
+      path: '/profile',
+      name: 'Profile',
+      component: () => import('@/modules/auth/views/ProfileView.vue'),
+      meta: {
+        title: 'Mi Perfil',
+        requiresAuth: true,
+      },
+    },
+    // Mareas Module
+    {
+      path: '/mareas/inbox',
+      name: 'MareasInbox',
+      component: BandejaView,
+      meta: {
+        title: 'Bandeja de Entrada',
+        requiresAuth: true,
+      },
+    },
+    {
+      path: '/mareas/dashboard',
+      name: 'MareasDashboard',
+      component: PanelOperativoView,
+      meta: {
+        title: 'Panel Operativo',
+        requiresAuth: true,
+      },
+    },
+    {
+      path: '/mareas/nueva',
+      name: 'NuevaMarea',
+      component: NuevaMareaView,
+      meta: {
+        title: 'Registrar Nueva Marea',
+        requiresAuth: true,
+      },
+    },
+    {
+      path: '/mareas/workflow',
+      name: 'MareasWorkflow',
+      component: FlujoMareasView,
+      meta: {
+        title: 'Flujo de Trabajo',
+        requiresAuth: true,
+      },
+    },
+    {
+      path: '/mareas/detalle/:id',
+      name: 'MareaDetalle',
+      component: MareaDetalleView,
+      meta: {
+        title: 'Detalle Técnico de Marea',
+        requiresAuth: true,
+      },
+    },
+    {
+      path: '/mareas/operativa/:id',
+      name: 'MareaOperativaDetalle',
+      component: MareaOperativaDetalleView,
+      meta: {
+        title: 'Resumen Operativo',
+        requiresAuth: true,
+      },
+    },
+    {
+      path: '/mareas/editar/:id',
+      name: 'EditarMarea',
+      component: () => import('@/modules/mareas/views/EditarMareaView.vue'),
+      meta: {
+        title: 'Editar Marea',
+        requiresAuth: true,
+      },
+    },
+    {
+      path: '/mareas/calendar',
+      name: 'MareasCalendar',
+      component: CalendarioView,
+      meta: {
+        title: 'Calendario de Mareas',
+        requiresAuth: true,
+      },
+    },
+    {
+      path: '/mareas/stats',
+      name: 'MareasStats',
+      component: EstadisticasView,
+      meta: {
+        title: 'Estadísticas Anuales',
+        requiresAuth: true,
+        roles: [ValidRoles.admin, ValidRoles.coordinador],
+      },
+    },
+    {
+      path: '/mareas/monitor',
+      name: 'MareasMonitor',
+      component: () => import('@/modules/monitor/views/MonitorVMSView.vue'),
+      meta: {
+        title: 'Centro de Operaciones Marítimas',
+        requiresAuth: true,
+      },
+    },
+    // Admin Module
+    {
+      path: '/admin',
+      redirect: '/admin/users',
+    },
+    {
+      path: '/admin/users',
+      name: 'AdminUsers',
+      component: () => import('@/modules/admin/views/UsersView.vue'),
+      meta: {
+        title: 'Gestión de Usuarios',
+        requiresAuth: true,
+        roles: [ValidRoles.admin],
+      },
+    },
+    {
+      path: '/admin/observadores',
+      name: 'AdminObservadores',
+      component: () => import('@/modules/admin/views/ObservadoresView.vue'),
+      meta: {
+        title: 'Gestión de Observadores',
+        requiresAuth: true,
+        roles: [ValidRoles.admin],
+      },
+    },
+    {
+      path: '/admin/buques',
+      name: 'AdminBuques',
+      component: () => import('@/modules/admin/views/BuquesView.vue'),
+      meta: {
+        title: 'Gestión de Buques',
+        requiresAuth: true,
+        roles: [ValidRoles.admin],
+      },
+    },
+    {
+      path: '/admin/error-logs',
+      name: 'AdminErrorLogs',
+      component: () => import('@/modules/admin/views/ErrorLogsView.vue'),
+      meta: {
+        title: 'Auditoría de Errores',
+        requiresAuth: true,
+        roles: [ValidRoles.admin],
+      },
+    },
+    {
+      path: '/admin/backup',
+      name: 'AdminBackup',
+      component: () => import('@/modules/admin/views/BackupView.vue'),
+      meta: {
+        title: 'Copia de Seguridad',
+        requiresAuth: true,
+        roles: [ValidRoles.admin],
+      },
+    },
+    {
+      path: '/admin/data-export',
+      name: 'AdminDataExport',
+      component: () => import('@/modules/admin/views/DataExportView.vue'),
+      meta: {
+        title: 'Portabilidad de Datos',
+        requiresAuth: true,
+        roles: [ValidRoles.admin],
+      },
+    },
+    {
+      path: '/admin/import-access',
+      name: 'AdminImportAccess',
+      component: () => import('@/modules/admin/views/ImportAccessView.vue'),
+      meta: {
+        title: 'Importación Access',
+        requiresAuth: true,
+        roles: [ValidRoles.admin],
+      },
+    },
+    // 404 No encontrado
+    {
+      path: '/error-servidor',
+      name: 'ServerError',
+      component: () => import('@/modules/common/views/ServerErrorView.vue'),
+      meta: {
+        title: 'Error del Servidor',
+        guestOnly: false,
+        requiresAuth: false
+      }
+    },
+    {
+      path: '/:pathMatch(.*)*',
+      name: 'NotFound',
+      component: () => import('@/modules/common/views/NotFoundView.vue'),
+      meta: {
+        title: 'Página no encontrada',
+        guestOnly: false, // Accessible by everyone
+        requiresAuth: false
+      }
+    },
+    {
+      path: '/unauthorized',
+      name: 'Unauthorized',
+      component: () => import('@/modules/auth/views/UnauthorizedView.vue'),
+      meta: {
+        title: 'Acceso Restringido',
+        requiresAuth: true
+      }
+    },
+    {
+      path: '/preferences',
+      name: 'Preferences',
+      component: () => import('@/modules/shared/views/PreferencesView.vue'),
+      meta: {
+        title: 'Preferencias de Diseño',
+        requiresAuth: true,
+      },
+    },
+    {
+      path: '/ui-demo',
+      name: 'UIDemo',
+      component: () => import('@/modules/shared/views/UIDemoView.vue'),
+      meta: {
+        title: 'Guía de Estilos',
+        requiresAuth: true,
+      },
+    },
+  ],
+})
+
+import { useAuthStore } from '@/modules/auth/stores/auth.store'
+import { useBusinessRulesStore } from '@/modules/shared/stores/business-rules.store'
+
+router.beforeEach(async (to, from, next) => {
+  document.title = `${to.meta.title} | Gestión de Mareas - INIDEP`
+
+  const authStore = useAuthStore()
+  const businessRulesStore = useBusinessRulesStore()
+
+  if (businessRulesStore.failed && to.name !== 'ServerError') {
+    return next({ name: 'ServerError' })
+  }
+  await authStore.whenReady() // Wait for bootstrap
+
+  const isAuthenticated = authStore.isAuthenticated
+
+  // 1. Check for Guest Only (e.g. Login page, Landing page)
+  if (to.meta.guestOnly && isAuthenticated) {
+    return next({ name: 'Dashboard' })
+  }
+
+  // 2. Check for Requires Auth
+  if (to.meta.requiresAuth && !isAuthenticated) {
+    return next({ name: 'Signin', query: { redirect: to.fullPath } })
+  }
+
+  // 3. User with 'invitado' role must be trapped in '/unauthorized'
+  const isGuest = authStore.user?.roles?.includes(ValidRoles.invitado)
+  if (isAuthenticated && isGuest && to.name !== 'Unauthorized') {
+    return next({ name: 'Unauthorized' })
+  }
+
+  // 4. Check for Roles (Regular role authorization)
+  if (to.meta.roles) {
+    const roles = to.meta.roles as ValidRoles[]
+    const userRoles = authStore.user?.roles || []
+    const hasRole = roles.some(role => userRoles.includes(role))
+
+    if (!hasRole) {
+      // Redirect to home if not authorized
+      return next({ name: 'Dashboard' })
+    }
+  }
+
+  // 5. Default
+  next()
+})
+
+export default router

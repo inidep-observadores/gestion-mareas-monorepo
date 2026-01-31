@@ -1,0 +1,97 @@
+# **\--- DEPENDENCIES \---**
+
+node\_modules/  
+\*\*/node\_modules/  
+package-lock.json  
+yarn.lock  
+pnpm-lock.yaml
+
+# **\--- ENVIRONMENT VARIABLES \---**
+
+.env  
+.env.\*  
+\!.env.example  
+backend/.env  
+backend/.env.production  
+frontend/.env  
+\*.local
+
+# **\--- LOGS \---**
+
+logs/  
+.log  
+npm-debug.log  
+yarn-debug.log\*  
+yarn-error.log\*  
+pnpm-debug.log\*  
+lerna-debug.log\*
+
+# **\=========================**
+
+# **BACKEND (NestJS)**
+
+# **\=========================**
+
+app/backend/dist/
+
+app/backend/postgres/
+app/backend/backups/
+app/backend/data-exports/
+app/backend/uploads/
+app/backend/test-results/
+
+# **Prisma**
+
+app/backend/generated/prisma/  
+app/backend/prisma/.db  
+app/backend/prisma/.db-journal
+
+# **=========================**
+
+# **FRONTEND (Vue/Vite)**
+
+# **=========================**
+
+app/frontend/dist/
+app/frontend/dist-ssr/
+app/frontend/.output/
+app/frontend/.nuxt/
+app/frontend/.vite/
+app/frontend/storybook-static/
+app/frontend/*.tsbuildinfo
+.vite/
+**/ .vite/
+
+# **Testing & Linting**
+
+app/frontend/.eslintcache  
+app/frontend/cypress/videos/  
+app/frontend/cypress/screenshots/  
+app/frontend/screenshots/  
+app/frontend/coverage/
+
+# **\=========================**
+
+# **IDE & OS**
+
+# **\=========================**
+
+.DS\_Store  
+Thumbs.db  
+.idea/  
+.vscode/  
+\*.swp  
+\*.swo
+
+# **Visual Studio / Windows specific**
+
+\*.suo  
+.ntvs  
+\*.njsproj  
+\*.sln
+
+# **\--- AGENTS \---**
+
+# **Opcional: Descomentar si prefieres no versionar las reglas**
+
+# **AGENTS.md**
