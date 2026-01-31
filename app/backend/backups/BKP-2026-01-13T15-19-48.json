@@ -1,0 +1,9 @@
+{
+  "filename": "BKP-2026-01-13T15-19-48.sql",
+  "comment": "Mareas 2026 actualizadas al 13/01/2026",
+  "createdAt": "2026-01-13T15:19:49.450Z",
+  "systemInfo": {
+    "dbName": "MareasDB",
+    "backupPath": "./backups"
+  }
+}

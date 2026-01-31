@@ -47,10 +47,10 @@ cd gestion-mareas-monorepo
 1. Copie el template del backend:
 
    ```bash
-   cp backend/.env.template backend/.env
+   cp app/backend/.env.template app/backend/.env
    ```
 
-2. Edite `backend/.env` y configure valores reales. Para un despliegue con Docker Compose:
+2. Edite `app/backend/.env` y configure valores reales. Para un despliegue con Docker Compose:
 
 - `DB_HOST=db`
 - `DB_PORT=5432`
@@ -70,7 +70,7 @@ cd gestion-mareas-monorepo
 Utilizamos un flujo multi-stage para optimizar el tamaño de la imagen y la seguridad:
 
 ```dockerfile
-# backend/Dockerfile
+# app/backend/Dockerfile
 FROM node:20-alpine AS builder
 WORKDIR /app
 RUN corepack enable && corepack prepare pnpm@latest --activate
@@ -98,7 +98,7 @@ CMD ["node", "dist/main"]
 Configuración optimizada para Traefik con persistencia de datos y migraciones automáticas:
 
 ```yaml
-# backend/docker-compose-prod.yaml
+# app/backend/docker-compose-prod.yaml
 services:
   db:
     image: postgres:15-alpine
@@ -155,7 +155,7 @@ volumes:
 
 ## 7. Levantar servicios
 
-Desde la carpeta `backend/`:
+Desde la carpeta `app/backend/`:
 
 ```bash
 docker compose -f docker-compose-prod.yaml up -d --build

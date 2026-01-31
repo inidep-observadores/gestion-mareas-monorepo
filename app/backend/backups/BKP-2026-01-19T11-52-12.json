@@ -1,0 +1,9 @@
+{
+  "filename": "BKP-2026-01-19T11-52-12.sql",
+  "comment": "Inicio de jornada 2026-01-19",
+  "createdAt": "2026-01-19T11:52:12.697Z",
+  "systemInfo": {
+    "dbName": "mareas_db",
+    "backupPath": "./backups"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "filename": "BKP-2026-01-22T11-54-02.sql",
+  "comment": "Backup si datos de trayectorias",
+  "createdAt": "2026-01-22T11:54:04.481Z",
+  "systemInfo": {
+    "dbName": "MareasDB",
+    "backupPath": "./backups"
+  },
+  "security": {
+    "sqlHash": "1a3f72025b6395b98d6f43456d045fcfe8f8146a2e831d9b023996626b849491",
+    "signature": "eb5133bb713a6c1d3cdbae57a1fbe3f27aaa07cec9c5999d0e5fdd4d426b0ab4"
+  }
+}

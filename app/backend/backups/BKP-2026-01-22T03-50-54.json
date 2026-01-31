@@ -1,0 +1,13 @@
+{
+  "filename": "BKP-2026-01-22T03-50-54.sql",
+  "comment": "Tracks importados y mareas corregidas",
+  "createdAt": "2026-01-22T03:50:55.361Z",
+  "systemInfo": {
+    "dbName": "MareasDB",
+    "backupPath": "./backups"
+  },
+  "security": {
+    "sqlHash": "ae13fcdb36ef3c2dfba0700bfc985d557e5e500778711a3e7d64bc16acf35591",
+    "signature": "166a7cc07fb1eecd35e9575760cc7b0cd611b87ca4903a9c2646cb326e53c583"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "filename": "BKP-2026-01-22T02-47-38.sql",
+  "comment": "2026-01-21 Noche - Previo a cambio de esquema (TipoMarea)",
+  "createdAt": "2026-01-22T02:47:38.685Z",
+  "systemInfo": {
+    "dbName": "mareas_db",
+    "backupPath": "./backups"
+  },
+  "security": {
+    "sqlHash": "78d04bff6aaed16642e6ececd2e32ef21e94e715707bfce6b6e4b08d3cae14b6",
+    "signature": "5ce1d752ab69ea7b018736b621e06158f1841d4ef547223be2eac5b3dd17090d"
+  }
+}

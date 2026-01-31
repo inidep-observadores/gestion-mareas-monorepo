@@ -1,0 +1,75 @@
+import httpClient from '@/config/http/http.client';
+import { useConfigStore } from '@/modules/shared/stores/config.store';
+import { TipoMarea } from '../types/enums';
+
+import type { MareaDashboard, MareaContext, DashboardKpis, MovementEvent, CalendarEvent } from '../types/marea.types';
+
+const mareasService = {
+    getDashboardOperativo: async (showAll: boolean = false): Promise<MareaDashboard> => {
+        const { selectedYear } = useConfigStore();
+        const { data } = await httpClient.get<MareaDashboard>(`/mareas/operativo?year=${selectedYear}&showAll=${showAll}`);
+        return data;
+    },
+
+    getDashboardKpis: async (): Promise<DashboardKpis> => {
+        const { selectedYear } = useConfigStore();
+        const { data } = await httpClient.get<DashboardKpis>(`/mareas/kpis?year=${selectedYear}`);
+        return data;
+    },
+
+    getInbox: async (): Promise<{ alerts: any[], tasks: any[] }> => {
+        const { selectedYear } = useConfigStore();
+        const { data } = await httpClient.get<{ alerts: any[], tasks: any[] }>(`/mareas/inbox?year=${selectedYear}`);
+        return data;
+    },
+
+    getMareaContext: async (id: string): Promise<MareaContext> => {
+        const { data } = await httpClient.get<MareaContext>(`/mareas/${id}/context`);
+        return data;
+    },
+
+    search: async (q: string): Promise<any[]> => {
+        const { data } = await httpClient.get<any[]>(`/mareas/search?q=${q}`);
+        return data;
+    },
+
+    executeAction: async (id: string, actionKey: string, payload: any = {}): Promise<any> => {
+        const { data } = await httpClient.post(`/mareas/${id}/actions/${actionKey}`, payload);
+        return data;
+    },
+
+    create: async (mareaData: any): Promise<any> => {
+        const { data } = await httpClient.post('/mareas', mareaData);
+        return data;
+    },
+
+    getById: async (id: string): Promise<any> => {
+        const { data } = await httpClient.get<any>(`/mareas/${id}`);
+        return data;
+    },
+
+    update: async (id: string, updateData: any): Promise<any> => {
+        const { data } = await httpClient.patch<any>(`/mareas/${id}`, updateData);
+        return data;
+    },
+
+    getCalendarEvents: async (): Promise<CalendarEvent[]> => {
+        const { selectedYear } = useConfigStore();
+        const { data } = await httpClient.get<CalendarEvent[]>(`/mareas/calendar/events?year=${selectedYear}`);
+        return data;
+    },
+
+    exportToExcel: async (params: { year?: number; searchQuery?: string; ids?: string[] }): Promise<Blob> => {
+        const { data } = await httpClient.post('/mareas/export/excel', params, {
+            responseType: 'blob'
+        });
+        return data;
+    },
+
+    getRecentMovements: async (days: number): Promise<{ events: MovementEvent[], lastUpdate: string | null }> => {
+        const { data } = await httpClient.get<{ events: MovementEvent[], lastUpdate: string | null }>(`/mareas/movimientos-recientes?days=${days}`);
+        return data;
+    }
+};
+
+export default mareasService;
