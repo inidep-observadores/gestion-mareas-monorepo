@@ -23,7 +23,7 @@
         <div
           class="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-info flex items-center justify-center flex-shrink-0"
         >
-          <ShieldIcon class="w-6 h-6 text-primary-fg" />
+          <SettingsIcon class="w-6 h-6 text-primary-fg" />
         </div>
         <div v-if="isExpanded || isHovered || isMobileOpen" class="flex flex-col">
           <span class="text-lg font-bold text-text leading-tight"
@@ -133,13 +133,14 @@ import {
   HorizontalDots,
   UserGroupIcon,
   UserCircleIcon,
-  ShieldIcon,
+  SettingsIcon,
   ArrowLeftIcon,
   ShipIcon,
   HistoryIcon,
   ArchiveIcon,
+  PieChartIcon,
+  LayoutDashboardIcon,
   BackupIcon,
-  PieChartIcon
 } from '@/icons'
 import { useSidebar } from '@/composables/useSidebar'
 import { useAuthStore } from '@/modules/auth/stores/auth.store'
@@ -157,6 +158,16 @@ const closeMobileSidebar = () => {
 }
 
 const navigationGroups = [
+  {
+    title: 'Panel',
+    items: [
+      {
+        icon: LayoutDashboardIcon,
+        name: 'Dashboard',
+        path: '/admin/dashboard',
+      },
+    ],
+  },
   {
     title: 'Gestión',
     items: [
