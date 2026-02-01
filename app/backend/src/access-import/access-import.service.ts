@@ -344,7 +344,32 @@ export class AccessImportService {
                 alertTypeBase = 'ERROR_FECHA_MOVIMIENTO';
                 subTipo = 'EDITAR_ETAPA';
                 titulo = `Incongruencia de FECHA (Access): ${buqueNombre} (${mareaLabel})`;
-                descripcion = `Existen diferencias entre las fechas locales y las de Access para la etapa #${nroEtapa}. Se sugiere EDITAR LA ETAPA para corregir la fecha oficial.`;
+
+                // Formatear fechas para mostrar en la descripción
+                const formatDate = (date: Date | string | null | undefined) => {
+                    if (!date) return 'N/D';
+                    const parsedDate = this.readerService.parseDate(date);
+                    if (!parsedDate) return 'N/D';
+                    return new Intl.DateTimeFormat('es-AR', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric'
+                    }).format(parsedDate);
+                };
+
+                const accessZarpada = formatDate(record.Fecha_Zarpada);
+                const accessArribo = formatDate(record.Fecha_Arribo);
+                const localZarpada = formatDate(etapa?.fechaZarpada);
+                const localArribo = formatDate(etapa?.fechaArribo);
+
+                descripcion = `Existen diferencias entre las fechas locales y las de Access para la etapa #${nroEtapa}.\n\n` +
+                    `📅 FECHAS EN ACCESS:\n` +
+                    `  • Zarpada: ${accessZarpada}\n` +
+                    `  • Arribo: ${accessArribo}\n\n` +
+                    `📅 FECHAS LOCALES:\n` +
+                    `  • Zarpada: ${localZarpada}\n` +
+                    `  • Arribo: ${localArribo}\n\n` +
+                    `Se sugiere EDITAR LA ETAPA para corregir la fecha oficial.`;
                 break;
             case 'ARRIBO':
                 alertTypeBase = 'POSIBLE_ARRIBO';
