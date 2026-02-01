@@ -36,6 +36,7 @@ app/backend/dist/
 
 app/backend/postgres/
 app/backend/backups/
+app/backend/backups-staging/
 app/backend/data-exports/
 app/backend/uploads/
 app/backend/test-results/
@@ -100,3 +101,4 @@ Thumbs.db
 /frontend/
 /frontend-practice/
 /frontend-template/
+demos/

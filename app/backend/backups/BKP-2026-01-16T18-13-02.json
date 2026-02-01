@@ -1,9 +1,0 @@
-{
-  "filename": "BKP-2026-01-16T18-13-02.sql",
-  "comment": "Antes de probar importación desde Access",
-  "createdAt": "2026-01-16T18:13:03.594Z",
-  "systemInfo": {
-    "dbName": "MareasDB",
-    "backupPath": "./backups"
-  }
-}
