@@ -54,7 +54,8 @@
 import { computed, onMounted, ref } from 'vue'
 import { toast } from 'vue-sonner'
 import { ShipIcon, UserGroupIcon, TaskIcon, CheckIcon } from '@/icons'
-import mareasService, { type DashboardKpis } from '@/modules/mareas/services/mareas.service'
+import mareasService from '@/modules/mareas/services/mareas.service'
+import type { DashboardKpis } from '@/modules/mareas/types/marea.types'
 
 type DashboardKpiKey = keyof DashboardKpis
 

@@ -70,13 +70,8 @@
               class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all duration-200 group"
               :class="[
                 currentTab === tab.id
-<<<<<<< HEAD:app/frontend/src/modules/mareas/views/EditarMareaView.vue
                   ? 'bg-surface text-primary shadow-sm ring-1 ring-border font-bold'
                   : 'text-text-muted hover:bg-surface-muted hover:text-text'
-=======
-                  ? 'bg-white dark:bg-gray-800 text-brand-600 dark:text-brand-400 shadow-sm ring-1 ring-gray-200 dark:ring-gray-700 font-medium'
-                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200'
->>>>>>> 0d3abac (Calcular Alertas de Personal / Fatiga):frontend/src/modules/mareas/views/EditarMareaView.vue
               ]"
             >
               <component :is="tab.icon" class="w-5 h-5 flex-shrink-0" :class="currentTab === tab.id ? 'text-primary' : 'text-text-muted/60 group-hover:text-text-muted'" />
@@ -122,11 +117,7 @@
               <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
                 <!-- Nro Marea -->
                 <div class="space-y-1.5">
-<<<<<<< HEAD:app/frontend/src/modules/mareas/views/EditarMareaView.vue
                   <label class="block text-sm font-medium text-text-muted">Nro. Marea</label>
-=======
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Nro. Marea</label>
->>>>>>> 0d3abac (Calcular Alertas de Personal / Fatiga):frontend/src/modules/mareas/views/EditarMareaView.vue
                   <input
                     v-model.number="form.nroMarea"
                     type="number"
@@ -136,11 +127,7 @@
 
                 <!-- Año -->
                 <div class="space-y-1.5">
-<<<<<<< HEAD:app/frontend/src/modules/mareas/views/EditarMareaView.vue
                   <label class="block text-sm font-medium text-text-muted">Año</label>
-=======
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Año</label>
->>>>>>> 0d3abac (Calcular Alertas de Personal / Fatiga):frontend/src/modules/mareas/views/EditarMareaView.vue
                   <input
                     v-model.number="form.anioMarea"
                     type="number"
@@ -283,11 +270,7 @@
 
            <!-- TAB: OBSERVADORES -->
           <div v-if="currentTab === 'observadores'" class="space-y-6">
-<<<<<<< HEAD:app/frontend/src/modules/mareas/views/EditarMareaView.vue
             <h2 class="text-lg font-bold text-text">Tripulación Científica</h2>
-=======
-            <h2 class="text-lg font-bold text-gray-900 dark:text-white">Tripulación Científica</h2>
->>>>>>> 0d3abac (Calcular Alertas de Personal / Fatiga):frontend/src/modules/mareas/views/EditarMareaView.vue
 
              <!-- Placeholder for now -->
              <div class="bg-surface rounded-xl border border-border p-8 text-center">
@@ -351,7 +334,8 @@ const form = ref({
   diasEstimados: null,
   diasZonaAustral: null,
   fechaZarpadaEstimada: '',
-  observadorId: ''
+  observadorId: '',
+  descripcion: ''
 });
 
 const observadores = ref<Observador[]>([]);
@@ -394,7 +378,6 @@ onMounted(async () => {
             catalogosService.getObservadores()
         ]);
         marea.value = data;
-<<<<<<< HEAD:app/frontend/src/modules/mareas/views/EditarMareaView.vue
         observadores.value = obsList;
 
         const etapaPrincipal = data.etapas?.find((e: any) => e.nroEtapa === 1) || data.etapas?.[0];
@@ -411,8 +394,6 @@ onMounted(async () => {
             const day = String(d.getDate()).padStart(2, '0');
             return `${year}-${month}-${day}`;
         };
-=======
->>>>>>> 0d3abac (Calcular Alertas de Personal / Fatiga):frontend/src/modules/mareas/views/EditarMareaView.vue
 
         // Init form
         form.value = {
@@ -421,7 +402,8 @@ onMounted(async () => {
             diasEstimados: data.diasEstimados,
             diasZonaAustral: data.diasZonaAustral,
             fechaZarpadaEstimada: toLocalISO(data.fechaZarpadaEstimada),
-            observadorId: currentObsId
+            observadorId: currentObsId,
+            descripcion: data.descripcion || ''
         };
         initialForm.value = JSON.parse(JSON.stringify(form.value));
     } catch (e) {

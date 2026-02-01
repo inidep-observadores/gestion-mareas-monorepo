@@ -150,7 +150,8 @@
 import { ref, onMounted } from 'vue'
 import { toast } from 'vue-sonner'
 import { ChevronDownIcon, ShipIcon } from '@/icons'
-import mareasService, { type MovementEvent } from '@/modules/mareas/services/mareas.service'
+import mareasService from '@/modules/mareas/services/mareas.service'
+import type { MovementEvent } from '@/modules/mareas/types/marea.types'
 
 const isCollapsed = ref(false)
 const selectedDays = ref(3)

@@ -1,6 +1,6 @@
 import { ref, computed } from 'vue';
 import mareasService from '../services/mareas.service';
-import type { MareaListItem, MareaContext } from '../services/mareas.service';
+import type { MareaListItem, MareaContext } from '../types/marea.types';
 import { TipoMarea } from '../types/enums';
 
 export function useMareas() {

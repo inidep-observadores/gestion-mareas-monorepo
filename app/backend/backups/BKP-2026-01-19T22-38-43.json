@@ -1,9 +1,0 @@
-{
-  "filename": "BKP-2026-01-19T22-38-43.sql",
-  "comment": "Mareas 2025 corregidas",
-  "createdAt": "2026-01-19T22:38:43.508Z",
-  "systemInfo": {
-    "dbName": "mareas_db",
-    "backupPath": "./backups"
-  }
-}

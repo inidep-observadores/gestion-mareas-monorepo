@@ -1,9 +1,0 @@
-{
-  "filename": "BKP-2026-01-17T19-48-15.sql",
-  "comment": "Buques actualizados",
-  "createdAt": "2026-01-17T19:48:17.813Z",
-  "systemInfo": {
-    "dbName": "MareasDB",
-    "backupPath": "./backups"
-  }
-}

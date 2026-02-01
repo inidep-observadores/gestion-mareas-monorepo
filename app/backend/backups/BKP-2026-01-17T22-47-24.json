@@ -1,9 +1,0 @@
-{
-  "filename": "BKP-2026-01-17T22-47-24.sql",
-  "comment": "Migración exitosa de histórico de mareas",
-  "createdAt": "2026-01-17T22:47:25.409Z",
-  "systemInfo": {
-    "dbName": "MareasDB",
-    "backupPath": "./backups"
-  }
-}
