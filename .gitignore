@@ -6,15 +6,14 @@ package-lock.json
 yarn.lock  
 pnpm-lock.yaml
 
-# **\--- ENVIRONMENT VARIABLES \---**
+# **--- ENVIRONMENT VARIABLES ---**
 
-.env  
-.env.\*  
-\!.env.example  
-backend/.env  
-backend/.env.production  
-frontend/.env  
-\*.local
+.env
+.env.*
+!.env.template
+!.env.example
+!.env.audit.example
+*.local
 
 # **\--- LOGS \---**
 
