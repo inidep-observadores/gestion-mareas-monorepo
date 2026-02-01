@@ -32,6 +32,8 @@ lerna-debug.log\*
 # **\=========================**
 
 app/backend/dist/
+app/backend/dist-staging/
+app/backend/redis_data/
 
 app/backend/postgres/
 app/backend/backups/
@@ -53,6 +55,7 @@ app/backend/prisma/.db-journal
 # **=========================**
 
 app/frontend/dist/
+app/frontend/dist-staging/
 app/frontend/dist-ssr/
 app/frontend/.output/
 app/frontend/.nuxt/
