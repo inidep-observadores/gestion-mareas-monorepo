@@ -6,15 +6,14 @@ package-lock.json
 yarn.lock  
 pnpm-lock.yaml
 
-# **\--- ENVIRONMENT VARIABLES \---**
+# **--- ENVIRONMENT VARIABLES ---**
 
-.env  
-.env.\*  
-\!.env.example  
-backend/.env  
-backend/.env.production  
-frontend/.env  
-\*.local
+.env
+.env.*
+!.env.template
+!.env.example
+!.env.audit.example
+*.local
 
 # **\--- LOGS \---**
 
@@ -86,17 +85,21 @@ Thumbs.db
 
 # **Visual Studio / Windows specific**
 
-\*.suo  
+*.suo  
 .ntvs  
-\*.njsproj  
-\*.sln
+*.njsproj  
+*.sln
 
-# **\--- AGENTS \---**
+# **--- AGENTS ---**
 
 # **Opcional: Descomentar si prefieres no versionar las reglas**
 
+# **AGENTS.md**
 
-# **Ignored Obsolete Folders**
+# **=========================**
+# **CARPETAS DUPLICADAS (NO DEBEN EXISTIR)**
+# **=========================**
+# Las carpetas correctas están en /app/backend, /app/frontend y /demos
 /backend/
 /frontend/
 /frontend-practice/
