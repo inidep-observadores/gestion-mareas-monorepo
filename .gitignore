@@ -39,6 +39,7 @@ app/backend/backups-staging/
 app/backend/data-exports/
 app/backend/uploads/
 app/backend/test-results/
+app/backend/redis_data/
 
 # **Prisma**
 
