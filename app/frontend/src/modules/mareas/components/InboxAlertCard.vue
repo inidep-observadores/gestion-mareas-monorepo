@@ -30,6 +30,17 @@
               {{ referenciaTipo }}
               <span v-if="metadata && metadata.mareaCode" class="ml-1 opacity-75 font-mono">{{ metadata.mareaCode }}</span>
           </Badge>
+          <!-- Source Badge -->
+          <Badge 
+            v-if="sourceLabel" 
+            :color="sourceBadgeColor" 
+            variant="light" 
+            size="sm"
+            class="font-bold uppercase tracking-wider py-0.5 px-1.5 rounded-md text-[9px] flex items-center gap-1"
+          >
+            <component :is="sourceIcon" class="w-3 h-3" />
+            {{ sourceLabel }}
+          </Badge>
           <span class="text-[10px] text-text-muted/60 font-mono">• {{ fecha }}</span>
         </div>
 
@@ -90,7 +101,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { ErrorIcon, BellIcon, CheckIcon, DocsIcon, UserCircleIcon } from '@/icons'
+import { ErrorIcon, BellIcon, CheckIcon, DocsIcon, UserCircleIcon, BoxCubeIcon, MapPinIcon } from '@/icons'
 import Button from '@/components/ui/Button.vue'
 import Badge from '@/components/ui/Badge.vue'
 import { AlertaEstado, AlertaPrioridad } from '../../alerts/services/alerts.service'
@@ -230,5 +241,27 @@ const notaGestionCorta = computed(() => {
     const text = props.notaGestion?.trim()
     if (!text) return ''
     return text.length > 50 ? `${text.slice(0, 47)}...` : text
+})
+
+const sourceLabel = computed(() => {
+    const source = props.metadata?.source
+    if (!source) return null
+    if (source === 'ACCESS_IMPORT') return 'Access'
+    if (source === 'TRACKING_CSV') return 'Tracking'
+    return null
+})
+
+const sourceBadgeColor = computed(() => {
+    const source = props.metadata?.source
+    if (source === 'ACCESS_IMPORT') return 'purple'
+    if (source === 'TRACKING_CSV') return 'success'
+    return 'light'
+})
+
+const sourceIcon = computed(() => {
+    const source = props.metadata?.source
+    if (source === 'ACCESS_IMPORT') return BoxCubeIcon
+    if (source === 'TRACKING_CSV') return MapPinIcon
+    return null
 })
 </script>
