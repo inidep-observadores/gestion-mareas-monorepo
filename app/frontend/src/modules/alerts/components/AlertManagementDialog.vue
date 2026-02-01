@@ -732,9 +732,12 @@ const smartActionConfig = computed(() => {
                 }
             }
         case 'INCONGRUENCIA':
+        case 'EDITAR_ETAPA':
             return {
-                label: 'Conciliar Datos',
-                description: `Existen diferencias entre las fechas locales y las informadas por ${externalSourceName.value}.`,
+                label: 'Gestionar Etapas',
+                description: subTipoMetadata === 'EDITAR_ETAPA' 
+                    ? 'Se detectaron discrepancias con los datos oficiales. Se recomienda revisar y corregir la etapa.'
+                    : `Existen diferencias entre las fechas locales y las informadas por ${externalSourceName.value}.`,
                 icon: RefreshIcon,
                 handler: async () => {
                     await prepareStagesData()
