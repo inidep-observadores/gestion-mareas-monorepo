@@ -11,6 +11,7 @@
         <RouterView />
       </SidebarProvider>
       <Toaster position="bottom-right" richColors :theme="darkMode ? 'dark' : 'light'" />
+      <StagingWatermark />
     </ThemeProvider>
   </div>
 </template>
@@ -22,6 +23,7 @@ import { useThemeStore } from '@/modules/shared/stores/theme.store'
 import ThemeProvider from './components/layout/ThemeProvider.vue'
 import SidebarProvider from './components/layout/SidebarProvider.vue'
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
+import StagingWatermark from '@/components/layout/StagingWatermark.vue'
 import { Toaster } from 'vue-sonner'
 
 const authStore = useAuthStore()

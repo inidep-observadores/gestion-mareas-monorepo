@@ -7,6 +7,8 @@ import { GetUser, Auth } from '../auth/decorators';
 import { User } from '@prisma/client';
 import { UpdateUserDto, ChangePasswordDto, CreateUserDto, AdminUpdateUserDto } from './dto';
 import { ValidRoles } from '../auth/interfaces';
+import { AuditEvent } from '../audit/decorators/audit-event.decorator';
+import { AuditCategoria } from '../audit/enums/audit.enums';
 
 @Controller('users')
 @UseGuards(AuthGuard())
@@ -61,6 +63,11 @@ export class UsersController {
 
     @Patch(':id/toggle-status')
     @Auth(ValidRoles.admin)
+    @AuditEvent({
+        tipoEvento: 'CAMBIAR_ESTADO_USUARIO',
+        categoria: AuditCategoria.USUARIOS,
+        descripcion: 'Activación/Desactivación de cuenta de usuario por administrador'
+    })
     toggleStatus(
         @Param('id') id: string,
         @GetUser() user: User
@@ -70,6 +77,11 @@ export class UsersController {
 
     @Delete(':id')
     @Auth(ValidRoles.admin)
+    @AuditEvent({
+        tipoEvento: 'ELIMINAR_USUARIO',
+        categoria: AuditCategoria.USUARIOS,
+        descripcion: 'Eliminación permanente de usuario del sistema'
+    })
     remove(
         @Param('id') id: string,
         @GetUser() user: User

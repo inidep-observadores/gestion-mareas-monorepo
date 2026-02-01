@@ -1,0 +1,79 @@
+services:
+  db-staging:
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    container_name: mareasdb-staging
+    ports:
+      - "5436:5432"
+    volumes:
+      - mareas_db_data_staging:/var/lib/postgresql/data
+    networks:
+      - sigma-network-staging
+
+  backend-staging:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sigma-backend-staging
+    restart: always
+    env_file:
+      - .env.staging
+    environment:
+      DB_HOST: db-staging
+      SMTP_HOST: mailhog-staging
+      REDIS_HOST: redis-staging
+    depends_on:
+      - db-staging
+      - redis-staging
+    volumes:
+      - ./backups-staging:/app/backups
+      - ./static-staging:/app/static
+      - ./uploads-staging:/app/uploads
+    command: >
+      sh -c "npx prisma generate && npx prisma migrate deploy && node dist/src/main"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.sigma-backend-staging.rule=Host(`${STAGING_API_DOMAIN}`)"
+      - "traefik.http.routers.sigma-backend-staging.entrypoints=websecure"
+      - "traefik.http.routers.sigma-backend-staging.tls=true"
+      - "traefik.http.routers.sigma-backend-staging.tls.certresolver=mytlschallenge"
+      - "traefik.http.services.sigma-backend-staging.loadbalancer.server.port=3000"
+      - "traefik.docker.network=traefik"
+    networks:
+      - sigma-network-staging
+      - traefik
+
+  mailhog-staging:
+    image: mailhog/mailhog
+    restart: always
+    container_name: mailhog-staging
+    ports:
+      - "8026:8025" # Web UI en puerto diferente
+      - "1026:1025" # SMTP en puerto diferente
+    networks:
+      - sigma-network-staging
+
+  redis-staging:
+    image: redis:7-alpine
+    restart: always
+    container_name: sigma-redis-staging
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis_data_staging:/data
+    command: redis-server --appendonly yes
+    networks:
+      - sigma-network-staging
+
+networks:
+  sigma-network-staging:
+    driver: bridge
+  traefik:
+    external: true
+
+volumes:
+  mareas_db_data_staging:
+  redis_data_staging:

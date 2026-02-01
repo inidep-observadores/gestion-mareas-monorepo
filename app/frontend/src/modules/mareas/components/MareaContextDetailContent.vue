@@ -324,7 +324,7 @@ import {
   ShieldIcon,
   SportsScoreIcon
 } from '@/icons'
-import type { MareaContext } from '../services/mareas.service'
+import type { MareaContext } from '../types/marea.types'
 
 interface Props {
   marea: any | null

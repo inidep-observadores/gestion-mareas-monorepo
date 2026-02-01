@@ -189,7 +189,8 @@ import interactionPlugin from '@fullcalendar/interaction'
 import listPlugin from '@fullcalendar/list'
 import esLocale from '@fullcalendar/core/locales/es'
 import { CALENDAR_EVENT_COLORS } from '../config/calendarColors'
-import mareasService, { type CalendarEvent } from '../services/mareas.service'
+import mareasService from '../services/mareas.service'
+import type { CalendarEvent } from '../types/marea.types'
 
 import {
   EyeIcon,

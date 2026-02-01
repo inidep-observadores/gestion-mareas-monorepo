@@ -133,6 +133,7 @@ import {
   ShieldIcon,
   ShipIcon,
   UserCircleIcon,
+  HistoryIcon,
 } from '../../icons'
 import SigmaLogo from '../brand/SigmaLogo.vue'
 import { useSidebar } from '@/composables/useSidebar'

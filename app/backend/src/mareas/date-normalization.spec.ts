@@ -5,6 +5,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { BusinessRulesService } from '../common/business-rules/business-rules.service';
 import { MailService } from '../mail/mail.service';
 import { AlertsService } from '../alerts/alerts.service';
+import { ConfigService } from '@nestjs/config';
 import { TipoMarea, TipoEtapa } from './mareas.constants';
 import { DateUtils } from '../common/utils/date.utils';
 
@@ -49,14 +50,18 @@ describe('Mareas - Normalización de Fechas', () => {
         getRules: jest.fn().mockReturnValue({}),
     };
 
+    const mockMailService = {}; // Added as per instruction
+    const mockAlertsService = {}; // Added as per instruction
+
     beforeEach(async () => {
         const module: TestingModule = await Test.createTestingModule({
             providers: [
                 MareasService,
                 { provide: PrismaService, useValue: mockPrisma },
                 { provide: BusinessRulesService, useValue: mockBusinessRulesService },
-                { provide: MailService, useValue: {} },
-                { provide: AlertsService, useValue: {} },
+                { provide: MailService, useValue: mockMailService },
+                { provide: AlertsService, useValue: mockAlertsService },
+                { provide: ConfigService, useValue: { get: jest.fn() } },
             ],
         }).compile();
 
@@ -70,9 +75,12 @@ describe('Mareas - Normalización de Fechas', () => {
             anioMarea: 2025,
             nroMarea: 1,
             tipoMarea: TipoMarea.MC,
+            fechaInicioObservador: new Date('2025-01-01'),
             etapas: [],
-            observaciones: ''
+            observaciones: '',
+            estadoActual: { codigo: 'FIN', nombre: 'FINALIZADA' }
         });
+        mockPrisma.mareaEtapa.count.mockResolvedValue(0);
     });
 
     it('debería truncar la hora al crear una marea', async () => {
@@ -103,7 +111,9 @@ describe('Mareas - Normalización de Fechas', () => {
         const id = 'marea-1';
         const dto = {
             fechaProtocolizacion: '2025-02-15T12:00:00Z',
-            fechaFinObservador: '2025-02-10T23:59:59Z'
+            fechaFinObservador: '2025-02-10T23:59:59Z',
+            nroProtocolizacion: '123',
+            anioProtocolizacion: 2025
         } as any;
 
         // No necesitamos mockResolvedValueOnce porque el mock base de findUnique ya devuelve etapas: []
@@ -114,6 +124,8 @@ describe('Mareas - Normalización de Fechas', () => {
             data: expect.objectContaining({
                 fechaProtocolizacion: new Date('2025-02-15T12:00:00Z'),
                 fechaFinObservador: new Date('2025-02-10T23:59:59Z'),
+                nroProtocolizacion: '123',
+                anioProtocolizacion: 2025,
             })
         }));
     });
