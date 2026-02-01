@@ -701,6 +701,7 @@ export class TrackingService {
             type,
             subTipo: type,
             nroEtapa,
+            source: 'TRACKING_CSV',
             externalData: {
                 [type === 'ZARPADA' ? 'fechaZarpada' : 'fechaArribo']: date,
                 [type === 'ZARPADA' ? 'puertoZarpadaId' : 'puertoArriboId']: port.id
@@ -734,7 +735,8 @@ export class TrackingService {
             eventDate: date,
             type: 'ARRIBO',
             subTipo: 'FIN_MAREA',
-            nroEtapa: lastStage?.nroEtapa
+            nroEtapa: lastStage?.nroEtapa,
+            source: 'TRACKING_CSV'
         };
 
         const descripcion = `${alertTitle}\n\nHay una marea DESIGNADA esperando (${mareaSiguiente.nroMarea}/${mareaSiguiente.anioMarea}). Se sugiere finalizar la marea actual en lugar de registrar un arribo intermedio.`;
@@ -767,6 +769,7 @@ export class TrackingService {
             type,
             subTipo: 'EDITAR_ETAPA', // Sugerir edición
             nroEtapa: stageMatch.nroEtapa,
+            source: 'TRACKING_CSV',
             externalData: { date: date },
             localData: { date: registeredDate }
         };
@@ -803,6 +806,7 @@ export class TrackingService {
             type,
             subTipo: 'EDITAR_ETAPA', // Sugerir edición
             nroEtapa: stageMatch.nroEtapa,
+            source: 'TRACKING_CSV',
             externalData: {
                 [type === 'ZARPADA' ? 'fechaZarpada' : 'fechaArribo']: date,
                 [type === 'ZARPADA' ? 'puertoZarpadaId' : 'puertoArriboId']: port.id,
