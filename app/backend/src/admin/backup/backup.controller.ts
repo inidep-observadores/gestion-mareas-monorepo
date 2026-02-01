@@ -11,8 +11,11 @@ export class BackupController {
     constructor(private readonly backupService: BackupService) { }
 
     @Post()
-    createBackup(@Body('comment') comment?: string) {
-        return this.backupService.createBackup(comment);
+    createBackup(
+        @Body('comment') comment?: string,
+        @Body('includeTrajectories') includeTrajectories?: boolean
+    ) {
+        return this.backupService.createBackup(comment, includeTrajectories);
     }
 
     @Get('status')

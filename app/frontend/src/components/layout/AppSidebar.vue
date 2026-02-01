@@ -134,6 +134,7 @@ import {
   ShipIcon,
   UserCircleIcon,
   HistoryIcon,
+  SettingsIcon,
 } from '../../icons'
 import SigmaLogo from '../brand/SigmaLogo.vue'
 import { useSidebar } from '@/composables/useSidebar'
@@ -234,9 +235,9 @@ const navigationGroups = computed(() => {
           show: true,
         },
         {
-          icon: ShieldIcon,
+          icon: SettingsIcon,
           name: 'Administración',
-          to: { name: 'AdminUsers' },
+          to: { name: 'AdminDashboard' },
           show: isAdmin.value,
         },
       ],

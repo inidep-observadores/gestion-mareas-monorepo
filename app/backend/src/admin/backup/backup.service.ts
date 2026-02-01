@@ -45,7 +45,7 @@ export class BackupService {
         };
     }
 
-    async createBackup(comment?: string) {
+    async createBackup(comment?: string, includeTrajectories = false) {
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
         const filename = `BKP-${timestamp}.sql`;
         const metaFilename = `BKP-${timestamp}.json`;
@@ -63,6 +63,8 @@ export class BackupService {
             console.log(`[${startMark}] [BackupService] === INICIO DE BACKUP ===`);
             console.log(`[${startMark}] [BackupService] Archivo: ${filename}`);
 
+            const exclusionArgs = includeTrajectories ? [] : ['--exclude-table-data', 'buque_trayectorias', '--exclude-table-data', 'buque_trayectoria_puntos'];
+
             try {
                 // Intento local
                 await this.executeDumpCommand(
@@ -70,12 +72,12 @@ export class BackupService {
                     [
                         '-h', dbHost, '-p', dbPort, '-U', dbUser, '-d', dbName,
                         '--clean', '--if-exists', '--no-owner', '--no-privileges',
-                        '--exclude-table-data', 'buque_trayectorias', '--exclude-table-data', 'buque_trayectoria_puntos'
+                        ...exclusionArgs
                     ],
                     { PGPASSWORD: dbPass },
                     filePath
                 );
-                console.log(`[BackupService] Backup local completado exitosamente.`);
+                console.log(`[BackupService] Backup local completado exitosamente. Trayectorias: ${includeTrajectories}`);
             } catch (localError: any) {
                 // Fallback Docker
                 console.warn(`[BackupService] pg_dump local falló o no se encontró. Usando Docker fallback 'mareasdb'...`);
@@ -87,12 +89,12 @@ export class BackupService {
                         'exec', '-i', '-e', `PGPASSWORD=${dbPass}`, 'mareasdb',
                         'pg_dump', '-h', 'localhost', '-p', '5432', '-U', dbUser, '-d', dbName,
                         '--clean', '--if-exists', '--no-owner', '--no-privileges',
-                        '--exclude-table-data', 'buque_trayectorias', '--exclude-table-data', 'buque_trayectoria_puntos'
+                        ...exclusionArgs
                     ],
                     {},
                     filePath
                 );
-                console.log(`[BackupService] Backup vía Docker completado exitosamente.`);
+                console.log(`[BackupService] Backup vía Docker completado exitosamente. Trayectorias: ${includeTrajectories}`);
             }
 
             // Guardar metadatos (Cálculo de hash por streams)

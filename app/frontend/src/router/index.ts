@@ -202,7 +202,17 @@ const router = createRouter({
     // Admin Module
     {
       path: '/admin',
-      redirect: '/admin/users',
+      redirect: '/admin/dashboard',
+    },
+    {
+      path: '/admin/dashboard',
+      name: 'AdminDashboard',
+      component: () => import('@/modules/admin/views/AdminHomeView.vue'),
+      meta: {
+        title: 'Panel de Administración',
+        requiresAuth: true,
+        roles: [ValidRoles.admin],
+      },
     },
     {
       path: '/admin/users',
