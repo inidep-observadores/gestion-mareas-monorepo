@@ -1,9 +1,0 @@
-{
-  "filename": "BKP-2026-01-20T18-42-41.sql",
-  "comment": "Fin de día 2026-01-20",
-  "createdAt": "2026-01-20T18:42:42.016Z",
-  "systemInfo": {
-    "dbName": "mareas_db",
-    "backupPath": "./backups"
-  }
-}

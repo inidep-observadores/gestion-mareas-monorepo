@@ -1,9 +1,0 @@
-{
-  "filename": "BKP-2026-01-19T01-32-40.sql",
-  "comment": "Antes de importar access con correcciones a snapshots",
-  "createdAt": "2026-01-19T01:32:40.769Z",
-  "systemInfo": {
-    "dbName": "MareasDB",
-    "backupPath": "./backups"
-  }
-}

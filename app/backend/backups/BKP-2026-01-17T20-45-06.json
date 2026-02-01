@@ -1,9 +1,0 @@
-{
-  "filename": "BKP-2026-01-17T20-45-06.sql",
-  "comment": "Nueva estructura de observadores por marea",
-  "createdAt": "2026-01-17T20:45:07.368Z",
-  "systemInfo": {
-    "dbName": "MareasDB",
-    "backupPath": "./backups"
-  }
-}

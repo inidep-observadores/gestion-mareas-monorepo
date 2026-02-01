@@ -1,9 +1,0 @@
-{
-  "filename": "BKP-2026-01-20T21-28-05.sql",
-  "comment": "Paso a desarrollo",
-  "createdAt": "2026-01-20T21:28:05.764Z",
-  "systemInfo": {
-    "dbName": "mareas_db",
-    "backupPath": "./backups"
-  }
-}

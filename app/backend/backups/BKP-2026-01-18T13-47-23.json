@@ -1,9 +1,0 @@
-{
-  "filename": "BKP-2026-01-18T13-47-23.sql",
-  "comment": "Antes de la implementación de estadísticas (fecha de protocolización actualizada a mano)",
-  "createdAt": "2026-01-18T13:47:23.955Z",
-  "systemInfo": {
-    "dbName": "MareasDB",
-    "backupPath": "./backups"
-  }
-}
