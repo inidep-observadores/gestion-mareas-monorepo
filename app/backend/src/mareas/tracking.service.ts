@@ -555,13 +555,14 @@ export class TrackingService {
         let alertsCreated = 0;
 
         // Get state before this batch
-        let lastState = { inPort: false, portId: null as string | null };
+        let lastState = { inPort: false, portId: null as string | null, timestamp: null as Date | null };
         const prev = await this.prisma.buqueTrayectoriaPunto.findFirst({
             where: { buqueId, timestamp: { lt: points[0].timestamp } },
             orderBy: { timestamp: 'desc' }
         });
         if (prev) {
-            lastState = this.checkPortStatus(prev.lat, prev.lon, ports);
+            const status = this.checkPortStatus(prev.lat, prev.lon, ports);
+            lastState = { ...status, timestamp: prev.timestamp };
         }
 
         for (const p of points) {
@@ -569,14 +570,16 @@ export class TrackingService {
 
             if (lastState.inPort && !currentState.inPort) {
                 // ZARPADA detectada al salir del puerto donde estábamos
-                const created = await this.handleProcessedEvent(buqueId, 'ZARPADA', lastState.portId!, p.timestamp, mareas, ports);
+                // Se toma el punto inmediatamente ANTERIOR al que disparó el evento (último en puerto)
+                const eventDate = lastState.timestamp || p.timestamp;
+                const created = await this.handleProcessedEvent(buqueId, 'ZARPADA', lastState.portId!, eventDate, mareas, ports);
                 if (created) alertsCreated++;
             } else if (!lastState.inPort && currentState.inPort) {
                 // ARRIBO detectado al entrar a un puerto
                 const created = await this.handleProcessedEvent(buqueId, 'ARRIBO', currentState.portId!, p.timestamp, mareas, ports);
                 if (created) alertsCreated++;
             }
-            lastState = currentState;
+            lastState = { ...currentState, timestamp: p.timestamp };
         }
 
         return alertsCreated;
@@ -717,15 +720,21 @@ export class TrackingService {
         const dateStr = DateTime.fromJSDate(date).setZone(this.TIMEZONE).toFormat('dd/MM HH:mm');
         const alertTitle = `${buqueNombre}: Se recomienda FINALIZAR MAREA. Arribo detectado a ${port?.nombre} el ${dateStr}`;
 
+        const yearSuffix = String(mareaActual.anioMarea).slice(-2);
+        const mareaLabel = mareaActual.tipoMarea === 'CI' ? `CI-${yearSuffix}` : `MC-${mareaActual.nroMarea}-${yearSuffix}`;
+        const lastStage = [...mareaActual.etapas].sort((a, b) => b.nroEtapa - a.nroEtapa)[0];
+
         const metadata = {
             mareaId: mareaActual.id,
+            mareaCode: mareaLabel,
             mareaSiguienteId: mareaSiguiente.id,
             vesselName: buqueNombre,
             portId: port.id,
             portName: port.nombre,
             eventDate: date,
             type: 'ARRIBO',
-            subTipo: 'FIN_MAREA'
+            subTipo: 'FIN_MAREA',
+            nroEtapa: lastStage?.nroEtapa
         };
 
         const descripcion = `${alertTitle}\n\nHay una marea DESIGNADA esperando (${mareaSiguiente.nroMarea}/${mareaSiguiente.anioMarea}). Se sugiere finalizar la marea actual en lugar de registrar un arribo intermedio.`;
@@ -746,8 +755,12 @@ export class TrackingService {
         const buqueNombre = marea.buque.nombreBuque;
         const alertTitle = `${buqueNombre}: Incongruencia de FECHA en ${type.toLowerCase()} (${port.nombre})`;
 
+        const yearSuffix = String(marea.anioMarea).slice(-2);
+        const mareaLabel = marea.tipoMarea === 'CI' ? `CI-${yearSuffix}` : `MC-${marea.nroMarea}-${yearSuffix}`;
+
         const metadata = {
             mareaId: marea.id,
+            mareaCode: mareaLabel,
             vesselName: buqueNombre,
             portId: port.id,
             portName: port.nombre,

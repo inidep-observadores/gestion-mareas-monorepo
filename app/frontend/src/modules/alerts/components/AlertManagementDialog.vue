@@ -745,6 +745,17 @@ const smartActionConfig = computed(() => {
                     showStagesDialog.value = true
                 }
             }
+        case 'FIN_MAREA':
+            return {
+                label: 'Finalizar Marea',
+                description: 'Se recomienda finalizar la marea actual para dar inicio a la siguiente marea designada.',
+                icon: CheckIcon,
+                handler: async () => {
+                    await prepareStagesData()
+                    stagesDialogMode.value = 'FINALIZAR'
+                    showStagesDialog.value = true
+                }
+            }
         case 'ARRIBO':
             return {
                 label: 'Gestionar Etapas',
