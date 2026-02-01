@@ -170,6 +170,29 @@
           class="w-full px-4 py-3 rounded-2xl border-2 border-border bg-surface-muted focus:bg-surface focus:border-primary/50 focus:ring-4 focus:ring-primary/10 transition-all duration-300 outline-none text-sm placeholder:text-text-muted/40 resize-none"
           placeholder="Ej: Antes de grandes cambios en la base de datos..."
         ></textarea>
+
+        <div class="mt-4 flex items-center justify-between p-4 rounded-2xl bg-primary/5 border border-primary/10">
+          <div class="flex items-center gap-3">
+            <div class="p-2 rounded-lg bg-primary/10 text-primary">
+              <HistoryIcon class="w-5 h-5" />
+            </div>
+            <div>
+              <span class="text-sm font-bold text-text block">Incluir trayectorias de buques</span>
+              <span class="text-[10px] text-text-muted uppercase tracking-wider">Aumenta significativamente el tamaño de la copia</span>
+            </div>
+          </div>
+          <button 
+            @click="includeTrajectories = !includeTrajectories"
+            type="button"
+            class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+            :class="includeTrajectories ? 'bg-primary' : 'bg-border'"
+          >
+            <span
+              class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform"
+              :class="includeTrajectories ? 'translate-x-6' : 'translate-x-1'"
+            />
+          </button>
+        </div>
       </div>
     </ConfirmationDialog>
 
@@ -227,6 +250,7 @@ const selectedBackup = ref<BackupFile | null>(null);
 const backendStatus = ref({ isConfigured: true, backupPath: '' });
 const fileInput = ref<HTMLInputElement | null>(null);
 const isUploading = ref(false);
+const includeTrajectories = ref(false);
 
 const restorePhrases = [
     'RESTAURAR BASE DE DATOS',
@@ -272,7 +296,8 @@ const handleCreateBackup = async () => {
     isProcessing.value = true;
     try {
         await httpClient.post('/admin/backup', {
-            comment: newBackupComment.value
+            comment: newBackupComment.value,
+            includeTrajectories: includeTrajectories.value
         });
         toast.success('Copia de seguridad creada correctamente');
         newBackupComment.value = '';
