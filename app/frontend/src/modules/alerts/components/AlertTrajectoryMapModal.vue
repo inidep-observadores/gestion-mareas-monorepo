@@ -69,6 +69,7 @@ const props = defineProps<{
     show: boolean
     vesselId: string
     referenceDate: string | Date
+    endDate?: string | Date
     vesselName: string
     mareaId?: string
     mareaCode?: string
@@ -122,15 +123,24 @@ const close = () => {
 
 const fetchTrajectory = async () => {
     loading.value = true
-    // Calcular rango +/- 12h
-    const refDate = new Date(props.referenceDate)
-    if (isNaN(refDate.getTime())) {
+    // Calcular rango inicial y final
+    const startDate = new Date(props.referenceDate)
+    let endDate = props.endDate ? new Date(props.endDate) : startDate
+
+    if (isNaN(startDate.getTime())) {
         loading.value = false
         return
     }
 
-    const fromDate = new Date(refDate.getTime() - 12 * 60 * 60 * 1000)
-    const toDate = new Date(refDate.getTime() + 12 * 60 * 60 * 1000)
+    // Si hay un endDate específico y parece ser solo una fecha (hora 00:00:00)
+    // le asignamos el fin del día para asegurar que el rango sea inclusivo.
+    if (props.endDate && endDate.getHours() === 0 && endDate.getMinutes() === 0) {
+        endDate.setHours(23, 59, 59, 999)
+    }
+
+    // Ampliar 12h hacia afuera de los extremos
+    const fromDate = new Date(startDate.getTime() - 12 * 60 * 60 * 1000)
+    const toDate = new Date(endDate.getTime() + 12 * 60 * 60 * 1000)
 
     try {
         const params = {
@@ -162,7 +172,7 @@ const fetchTrajectory = async () => {
         if (points.length) {
             let minDiff = Infinity
             let initialIdx = 0
-            const targetTime = refDate.getTime()
+            const targetTime = startDate.getTime()
 
             points.forEach((p: any, idx: number) => {
                 const pTime = new Date(p.timestamp).getTime()

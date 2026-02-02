@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AlertsService } from '../alerts/alerts.service';
 import { AlertaEstado, AlertaPrioridad } from '../alerts/alerts.enums';
+import { AlertMetadata } from '../alerts/interfaces/alert-metadata.interface';
 import { AccessReaderService, ExternalRecord } from './access-reader.service';
 import { ErrorLogsService } from '../common/error-logs/error-logs.service';
 import { TipoMarea } from '../mareas/mareas.constants';
@@ -94,7 +95,7 @@ export class AccessImportService {
         const nroEtapa = record.NroEtapa || 1;
 
         // 1. Intentar matching con entidades locales (Prioridad 1: Match Directo)
-        const localMatch = await this.findLocalEntities(parsedMarea, record.Buque, record.CodObs, nroEtapa);
+        const localMatch = await this.findLocalEntities(parsedMarea, normalizedRecord, nroEtapa);
 
         if (!existing) {
             // Registro nuevo -> Determinar tipo de hallazgo
@@ -221,7 +222,10 @@ export class AccessImportService {
         return { nroMarea: null, anioMarea: fechaZarpada.getFullYear(), tipoMarea: TipoMarea.MC };
     }
 
-    private async findLocalEntities(parsedMarea: any, buqueNombre: string, codObs: number, nroEtapa: number) {
+    private async findLocalEntities(parsedMarea: any, record: ExternalRecord, nroEtapa: number) {
+        const buqueNombre = record.Buque;
+        const codObs = record.CodObs;
+
         // Prioridad 1: Match Directo por Nro/Año/Tipo
         let marea = await this.prisma.marea.findFirst({
             where: {
@@ -271,13 +275,55 @@ export class AccessImportService {
         }
 
         const mareaConEtapas = marea as (any & { etapas: any[] });
-        const etapa = mareaConEtapas?.etapas?.find((eIn: any) => (eIn.nroEtapa || eIn.nro_etapa) === nroEtapa);
+        let etapa = mareaConEtapas?.etapas?.find((eIn: any) => (eIn.nroEtapa || eIn.nro_etapa) === nroEtapa);
+
+        // SEGUNDA PASADA: Si no hay match por nroEtapa, buscar por coincidencia de fechas (+/- 1 día)
+        if (!etapa && mareaConEtapas?.etapas?.length > 0) {
+            etapa = mareaConEtapas.etapas.find((eIn: any) => {
+                const accessZarpada = record.Fecha_Zarpada;
+                const accessArribo = record.Fecha_Arribo;
+
+                // Match por Zarpada
+                if (accessZarpada && eIn.fechaZarpada && this.datesMatchWithTolerance(accessZarpada, eIn.fechaZarpada, 1)) {
+                    return true;
+                }
+
+                // Match por Arribo
+                if (accessArribo && eIn.fechaArribo && this.datesMatchWithTolerance(accessArribo, eIn.fechaArribo, 1)) {
+                    return true;
+                }
+
+                return false;
+            });
+
+            if (etapa) {
+                this.logger.log(`Etapa #${nroEtapa} de Access vinculada a Etapa Local #${etapa.nroEtapa} por coincidencia de fechas.`);
+            }
+        }
 
         const observador = await this.prisma.observador.findFirst({
             where: { codigoInterno: codObs, activo: true }
         });
 
-        return { marea, buque: marea?.buque, observador, etapa };
+        // Extraer buque de la marea o del buque encontrado individualmente
+        const finalBuque = marea?.buque || (await this.prisma.buque.findFirst({
+            where: { nombreBuque: { equals: buqueNombre, mode: 'insensitive' } }
+        }));
+
+        return { marea, buque: finalBuque, observador, etapa };
+    }
+
+    private datesMatchWithTolerance(d1: Date | string | null | undefined, d2: Date | string | null | undefined, daysTolerance: number = 1): boolean {
+        const dateEx = this.readerService.parseDate(d1);
+        const dateLoc = this.readerService.parseDate(d2);
+
+        if (!dateEx || !dateLoc) return false;
+
+        const luxEx = DateTime.fromJSDate(dateEx).setZone('America/Argentina/Buenos_Aires').startOf('day');
+        const luxLoc = DateTime.fromJSDate(dateLoc).setZone('America/Argentina/Buenos_Aires').startOf('day');
+
+        const diffInDays = Math.abs(luxEx.diff(luxLoc, 'days').days);
+        return diffInDays <= daysTolerance;
     }
 
     private datesMatch(d1: Date | string | null | undefined, d2: Date | string | null | undefined): boolean {
@@ -318,8 +364,8 @@ export class AccessImportService {
         const { marea, buque, observador, etapa } = localMatch;
         const yearSuffix = String(parsedMarea.anioMarea || '').slice(-2);
         const mareaLabel = parsedMarea.tipoMarea === TipoMarea.CI
-            ? `CI-${yearSuffix}`
-            : `MC-${parsedMarea.nroMarea}-${yearSuffix}`;
+            ? `CI - ${yearSuffix} `
+            : `MC - ${parsedMarea.nroMarea} -${yearSuffix} `;
 
         const nroEtapa = record.NroEtapa || 1;
         const buqueNombre = marea?.buque?.nombreBuque || buque?.nombreBuque || record.Buque;
@@ -332,18 +378,18 @@ export class AccessImportService {
         switch (tipoHallazgo) {
             case 'NUEVA_MAREA':
                 alertTypeBase = 'NUEVA_MAREA';
-                titulo = `NUEVA MAREA (Access): ${buqueNombre} - ${mareaLabel}`;
+                titulo = `NUEVA MAREA(Access): ${buqueNombre} - ${mareaLabel} `;
                 descripcion = `Se detectó una nueva marea en Access que no existe localmente.`;
                 break;
             case 'NUEVA_ETAPA':
                 alertTypeBase = 'NUEVA_ETAPA';
-                titulo = `NUEVA ETAPA (Access): ${buqueNombre} - ${mareaLabel} (Etapa ${nroEtapa})`;
-                descripcion = `La marea existe pero tiene una nueva etapa (#${nroEtapa}) en Access.`;
+                titulo = `NUEVA ETAPA(Access): ${buqueNombre} - ${mareaLabel} (Etapa ${nroEtapa})`;
+                descripcion = `La marea existe pero tiene una nueva etapa(#${nroEtapa}) en Access.`;
                 break;
             case 'ERROR_FECHA_MOVIMIENTO':
                 alertTypeBase = 'ERROR_FECHA_MOVIMIENTO';
                 subTipo = 'EDITAR_ETAPA';
-                titulo = `Incongruencia de FECHA (Access): ${buqueNombre} (${mareaLabel})`;
+                titulo = `Incongruencia de FECHA(Access): ${buqueNombre} (${mareaLabel})`;
 
                 // Formatear fechas para mostrar en la descripción
                 const formatDate = (date: Date | string | null | undefined) => {
@@ -363,33 +409,33 @@ export class AccessImportService {
                 const localArribo = formatDate(etapa?.fechaArribo);
 
                 descripcion = `Existen diferencias entre las fechas locales y las de Access para la etapa #${nroEtapa}.\n\n` +
-                    `📅 FECHAS EN ACCESS:\n` +
-                    `  • Zarpada: ${accessZarpada}\n` +
-                    `  • Arribo: ${accessArribo}\n\n` +
-                    `📅 FECHAS LOCALES:\n` +
-                    `  • Zarpada: ${localZarpada}\n` +
-                    `  • Arribo: ${localArribo}\n\n` +
+                    `📅 FECHAS EN ACCESS: \n` +
+                    `  • Zarpada: ${accessZarpada} \n` +
+                    `  • Arribo: ${accessArribo} \n\n` +
+                    `📅 FECHAS LOCALES: \n` +
+                    `  • Zarpada: ${localZarpada} \n` +
+                    `  • Arribo: ${localArribo} \n\n` +
                     `Se sugiere EDITAR LA ETAPA para corregir la fecha oficial.`;
                 break;
             case 'ARRIBO':
                 alertTypeBase = 'POSIBLE_ARRIBO';
-                titulo = `ARRIBO (Access): ${buqueNombre} - ${mareaLabel} (Etapa ${nroEtapa})`;
+                titulo = `ARRIBO(Access): ${buqueNombre} - ${mareaLabel} (Etapa ${nroEtapa})`;
                 descripcion = `Se detectó arribo en sistema externo para la etapa #${nroEtapa}.`;
                 break;
             case 'POSIBLE_ZARPADA':
                 alertTypeBase = 'POSIBLE_ZARPADA';
                 subTipo = 'ZARPADA'; // Alinear con CSV (subTipo es el evento)
-                titulo = `ZARPADA (Access): ${buqueNombre} - ${mareaLabel}`;
+                titulo = `ZARPADA(Access): ${buqueNombre} - ${mareaLabel} `;
                 descripcion = `Se detectó la zarpada de una marea designada en el sistema externo.`;
                 break;
             case 'ETAPA_FALTANTE':
                 alertTypeBase = 'NUEVA_ETAPA';
                 subTipo = 'EDITAR_ETAPA';
-                titulo = `ETAPAS FALTANTES (Access): ${buqueNombre} - ${mareaLabel}`;
-                descripcion = `Se detectó la etapa #${nroEtapa} en Access, pero faltan etapas intermedias en el sistema local. Se recomienda EDITAR LAS ETAPAS para completar la información.`;
+                titulo = `ETAPAS FALTANTES(Access): ${buqueNombre} - ${mareaLabel} `;
+                descripcion = `Se detectó la etapa #${nroEtapa} en Access, pero faltan etapas intermedias en el sistema local.Se recomienda EDITAR LAS ETAPAS para completar la información.`;
                 break;
             default:
-                titulo = `${tipoHallazgo} (Access): ${buqueNombre} - ${mareaLabel}`;
+                titulo = `${tipoHallazgo} (Access): ${buqueNombre} - ${mareaLabel} `;
                 descripcion = `Novedad detectada en sistema externo.`;
         }
 
@@ -401,7 +447,7 @@ export class AccessImportService {
         const type = record.Fecha_Arribo ? 'ARRIBO' : 'ZARPADA';
 
         await this.alertsService.create({
-            codigoUnico: `ACCESS-${tipoHallazgo}-${record.Id}`,
+            codigoUnico: `ACCESS - ${tipoHallazgo} -${record.Id} `,
             referenciaId: marea?.id || buque?.id || null,
             referenciaTipo: marea ? 'MAREA' : (buque ? 'BUQUE' : 'OTRO'),
             tipo: alertTypeBase as any,
@@ -422,20 +468,23 @@ export class AccessImportService {
                 eventDate: eventDate,
                 mareaCode: mareaLabel,
                 vesselName: buqueNombre,
+                fechaZarpada: record.Fecha_Zarpada,
+                fechaArribo: record.Fecha_Arribo,
 
                 // Campos adicionales específicos de Access (no interfieren)
-                idExterno: record.Id,
+                idExterno: record.Id?.toString(),
                 source: 'ACCESS_IMPORT',
 
                 externalData: {
-                    [type === 'ARRIBO' ? 'fechaArribo' : 'fechaZarpada']: eventDate,
+                    fechaZarpada: record.Fecha_Zarpada,
+                    fechaArribo: record.Fecha_Arribo,
                     buque: record.Buque,
-                    nroMarea: record.NroMarea,
+                    nroMarea: record.NroMarea ? parseInt(record.NroMarea, 10) : undefined,
                     // Datos del observador externo si no hay match local
                     observer: !observador ? {
                         nombre: record.ObservadorNombre,
                         apellido: record.ObservadorApellido,
-                        codigo: record.CodObs
+                        codigo: record.CodObs?.toString()
                     } : undefined
                 },
                 localData: etapa ? {
@@ -443,7 +492,7 @@ export class AccessImportService {
                     fechaArribo: etapa.fechaArribo,
                     id: etapa.id
                 } : null
-            }
+            } as AlertMetadata
         });
     }
 }

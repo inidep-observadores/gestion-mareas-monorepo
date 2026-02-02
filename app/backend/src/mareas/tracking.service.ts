@@ -1,5 +1,7 @@
 
 import { Injectable, Logger } from '@nestjs/common';
+import { AlertsService } from '../alerts/alerts.service';
+import { AlertMetadata } from '../alerts/interfaces/alert-metadata.interface';
 import { PrismaService } from '../prisma/prisma.service';
 import { parse } from 'csv-parse/sync';
 import { getDistance } from 'geolib';
@@ -691,10 +693,11 @@ export class TrackingService {
         const prep = type === 'ZARPADA' ? 'desde' : 'a';
         const alertTitle = `${buqueNombre}: Posible ${type.toLowerCase()} ${prep} ${port?.nombre} el ${dateStr} (${mareaLabel})`;
 
-        const metadata: any = {
+        const metadata: AlertMetadata = {
             mareaId: marea.id,
             mareaCode: mareaLabel,
             vesselName: buqueNombre,
+            buqueId,
             portId: port.id,
             portName: port?.nombre,
             eventDate: date,

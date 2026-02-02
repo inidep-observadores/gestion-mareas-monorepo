@@ -300,8 +300,8 @@
         @success="handleMareaSuccess" />
 
     <AlertTrajectoryMapModal :show="showMapModal" :vesselId="mapVesselId || ''" :vesselName="mapVesselName || ''"
-        :referenceDate="mapReferenceDate" :mareaId="mareaData?.id" :mareaCode="fixedMareaLabel"
-        @close="showMapModal = false" />
+        :referenceDate="mapReferenceDate" :endDate="mapEndDate || undefined" :mareaId="mareaData?.id"
+        :mareaCode="fixedMareaLabel" @close="showMapModal = false" />
 
     <MareaQuickDetailModal :isOpen="showMareaQuickDetail" :mareaId="localAlert.referenciaId || null"
         @close="showMareaQuickDetail = false" />
@@ -315,6 +315,7 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { type Alerta, alertsService } from '../services/alerts.service'
+import type { AlertMetadata } from '../interfaces/alert-metadata.interface'
 import AlertTimeline from './AlertTimeline.vue'
 import BaseModal from '@/components/common/BaseModal.vue'
 import Button from '@/components/ui/Button.vue'
@@ -428,23 +429,6 @@ const getInitials = (name?: string) => {
 
 const emit = defineEmits(['close', 'refresh'])
 const router = useRouter()
-
-type AlertMetadata = {
-    mareaCode?: string
-    vessel?: string
-    busDays?: number
-    observerName?: string
-    days?: number
-    subTipo?: string
-    nroEtapa?: number
-    externalData?: any
-    localData?: any
-    externalObserver?: {
-        nombre: string
-        apellido: string
-        codigo: number
-    }
-}
 
 type LocalAlert = Omit<Partial<Alerta>, 'asignadoA'> & {
     metadata?: AlertMetadata
@@ -598,8 +582,9 @@ const externalSourceName = computed(() => {
 
 // --- Map data resolution ---
 const mapVesselId = computed(() => {
-    // Priority: Metadata vesselId (from tracking) > Marea BuqueId > null
+    // Priority: Metadata vesselId/buqueId (from tracking/access) > Marea BuqueId > null
     if (localAlert.value?.metadata?.vesselId) return localAlert.value.metadata.vesselId
+    if (localAlert.value?.metadata?.buqueId) return localAlert.value.metadata.buqueId
 
     // Safer access with casting since local type definition might be incomplete
     const m = mareaData.value as any
@@ -616,20 +601,60 @@ const mapVesselName = computed(() => {
 })
 
 const mapReferenceDate = computed(() => {
-    // 1. Alert detected date
-    if (localAlert.value?.fechaDetectada) return localAlert.value.fechaDetectada
-    // 2. Metadata specific event date
     const meta = localAlert.value?.metadata || {}
+
+    // Incongruency Logic: Get MIN start date
+    if (meta.subTipo === 'EDITAR_ETAPA' || meta.subTipo === 'INCONGRUENCIA') {
+        const dates = [
+            meta.fechaZarpada,
+            meta.localData?.fechaZarpada
+        ].filter(d => !!d).map(d => new Date(d as string).getTime())
+
+        if (dates.length > 0) {
+            return new Date(Math.min(...dates)).toISOString()
+        }
+    }
+
+    // Default Logic: Metadata specific event date
+    if (meta.eventDate) return meta.eventDate
     if (meta.fechaZarpada) return meta.fechaZarpada
-    if (meta.fechaArribo) return meta.fechaArribo
     if (meta.date) return meta.date
+
+    // Fallback: Alert detected date
+    if (localAlert.value?.fechaDetectada) return localAlert.value.fechaDetectada
+
     // 3. Current time fallback
-    return new Date().toISOString()
+    return ''
+})
+
+const mapEndDate = computed(() => {
+    const meta = localAlert.value?.metadata || {}
+
+    // Incongruency Logic: Get MAX end date
+    if (meta.subTipo === 'EDITAR_ETAPA' || meta.subTipo === 'INCONGRUENCIA') {
+        const dates = [
+            meta.fechaArribo,
+            meta.localData?.fechaArribo
+        ].filter(d => !!d).map(d => new Date(d as string).getTime())
+
+        if (dates.length > 0) {
+            return new Date(Math.max(...dates)).toISOString()
+        }
+    }
+
+    // Default Logic: If we have an arrival date in metadata, it's the end of our range
+    if (meta.fechaArribo) return meta.fechaArribo
+
+    // For simple events with no end date, we return null
+    return null
 })
 
 const canShowMap = computed(() => {
-    if (localAlert.value?.referenciaTipo !== 'MAREA' || !localAlert.value?.referenciaId) return false
-    return !!mapVesselId.value && !!mapReferenceDate.value
+    // We need both a vessel and a valid reference date to show the map
+    return (localAlert.value?.referenciaTipo === 'MAREA' || localAlert.value?.referenciaTipo === 'BUQUE') &&
+        !!localAlert.value?.referenciaId &&
+        !!mapVesselId.value &&
+        !!mapReferenceDate.value
 })
 
 const smartActionDescription = computed(() => {
@@ -735,7 +760,7 @@ const smartActionConfig = computed(() => {
         case 'EDITAR_ETAPA':
             return {
                 label: 'Gestionar Etapas',
-                description: subTipoMetadata === 'EDITAR_ETAPA' 
+                description: subTipoMetadata === 'EDITAR_ETAPA'
                     ? 'Se detectaron discrepancias con los datos oficiales. Se recomienda revisar y corregir la etapa.'
                     : `Existen diferencias entre las fechas locales y las informadas por ${externalSourceName.value}.`,
                 icon: RefreshIcon,
