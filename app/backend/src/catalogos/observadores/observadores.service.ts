@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import * as ExcelJS from 'exceljs';
 import { MareaEstado, TipoEtapa, TipoMarea } from '../../mareas/mareas.constants';
 import { DateUtils } from '../../common/utils/date.utils';
 import { MareaUtils } from '../../common/utils/marea.utils';
@@ -39,6 +40,73 @@ export class ObservadoresService {
             console.error(error);
             throw new InternalServerErrorException('Error al obtener observadores');
         }
+    }
+
+    async exportToExcel(searchQuery?: string) {
+        const where: any = {};
+
+        if (searchQuery) {
+            const query = searchQuery.toLowerCase().trim();
+            where.OR = [
+                { nombre: { contains: query, mode: 'insensitive' } },
+                { apellido: { contains: query, mode: 'insensitive' } },
+                { email: { contains: query, mode: 'insensitive' } },
+                { motivoImpedimento: { contains: query, mode: 'insensitive' } },
+            ];
+            
+            if (!isNaN(Number(query))) {
+                where.OR.push({ codigoInterno: Number(query) });
+            }
+        }
+
+        const observadores = await this.prisma.observador.findMany({
+            where,
+            orderBy: [{ apellido: 'asc' }, { nombre: 'asc' }],
+        });
+
+        const workbook = new ExcelJS.Workbook();
+        const sheet = workbook.addWorksheet('Observadores');
+
+        sheet.columns = [
+            { header: 'CÓDIGO', key: 'codigoInterno', width: 10 },
+            { header: 'APELLIDO', key: 'apellido', width: 20 },
+            { header: 'NOMBRE', key: 'nombre', width: 20 },
+            { header: 'TIPO', key: 'tipoObservador', width: 15 },
+            { header: 'CONTRATO', key: 'tipoContrato', width: 20 },
+            { header: 'ACTIVO', key: 'activo', width: 10 },
+            { header: 'DISPONIBLE', key: 'disponible', width: 12 },
+            { header: 'IMPEDIMENTO', key: 'conImpedimento', width: 12 },
+            { header: 'MOTIVO IMPEDIMENTO', key: 'motivoImpedimento', width: 30 },
+            { header: 'EMAIL', key: 'email', width: 25 },
+            { header: 'PRÓXIMA DISPONIBILIDAD', key: 'fechaProximaDisponibilidad', width: 20 },
+            { header: 'OBSERVACIONES', key: 'observaciones', width: 40 },
+        ];
+
+        sheet.getRow(1).font = { bold: true };
+        sheet.getRow(1).fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FFE0E0E0' }
+        };
+
+        observadores.forEach(obs => {
+            sheet.addRow({
+                codigoInterno: obs.codigoInterno,
+                apellido: obs.apellido,
+                nombre: obs.nombre,
+                tipoObservador: obs.tipoObservador,
+                tipoContrato: obs.tipoContrato,
+                activo: obs.activo ? 'SÍ' : 'NO',
+                disponible: obs.disponible ? 'SÍ' : 'NO',
+                conImpedimento: obs.conImpedimento ? 'SÍ' : 'NO',
+                motivoImpedimento: obs.motivoImpedimento || '-',
+                email: obs.email || '-',
+                fechaProximaDisponibilidad: obs.fechaProximaDisponibilidad ? DateUtils.formatDate(obs.fechaProximaDisponibilidad) : '-',
+                observaciones: obs.observaciones || '-',
+            });
+        });
+
+        return workbook;
     }
 
     async obtenerUno(id: string) {

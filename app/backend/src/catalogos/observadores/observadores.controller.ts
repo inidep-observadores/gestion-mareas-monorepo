@@ -1,4 +1,5 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, ParseUUIDPipe } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, ParseUUIDPipe, Res, Query } from '@nestjs/common';
+import { Response } from 'express';
 import { ObservadoresService } from './observadores.service';
 import { CreateObservadorDto, UpdateObservadorDto } from './dto';
 import { Auth } from '../../auth/decorators';
@@ -18,6 +19,27 @@ export class ObservadoresController {
     @Get()
     obtenerTodos() {
         return this.observadoresService.obtenerTodos();
+    }
+
+    @Post('export/excel')
+    @Auth(ValidRoles.admin, ValidRoles.coordinador)
+    async exportExcel(
+        @Body('searchQuery') searchQuery: string,
+        @Res() res: Response
+    ) {
+        const workbook = await this.observadoresService.exportToExcel(searchQuery);
+
+        res.setHeader(
+            'Content-Type',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        );
+        res.setHeader(
+            'Content-Disposition',
+            `attachment; filename=OBSERVADORES.xlsx`,
+        );
+
+        await workbook.xlsx.write(res);
+        res.end();
     }
 
     @Get(':id')
