@@ -43,9 +43,11 @@ describe('AuditQueueProcessor', () => {
         });
 
         it('should throw error if prisma fails (triggering Bull retry)', async () => {
+            const loggerSpy = jest.spyOn((processor as any).logger, 'error').mockImplementation(() => { });
             mockPrismaService.auditoriaApi.create.mockRejectedValue(new Error('DB Error'));
             const job = { data: {} } as Job;
             await expect(processor.handleLogApi(job)).rejects.toThrow('DB Error');
+            loggerSpy.mockRestore();
         });
     });
 

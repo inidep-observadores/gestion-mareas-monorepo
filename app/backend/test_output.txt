@@ -1,0 +1,33 @@
+
+> sigma-backend@0.0.1 test D:\Desarrollo\_INIDEP\OBS\Mareas\gestion-mareas-monorepo\app\backend
+> jest "audit/controllers/audit.controller.spec.ts"
+
+node.exe : PASS src/audit/controllers/
+audit.controller.spec.ts
+En C:\Users\danie\AppData\Roaming\npm\
+pnpm.ps1: 24 Car?cter: 5
++     & "node$exe"  "$basedir/node_mod
+ules/pnpm/bin/pnpm.cjs" $args
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : 
+NotSpecified    : (PASS 
+src/audit/...troller.spec.ts:S    
+tring) [], RemoteException
+    + FullyQualifiedErrorId : 
+NativeComman    dError
+ 
+  AuditController
+    ??? should be defined (7 ms)
+    ??? should call findApiLogs (2 ms)
+    ??? should call findEntityLogs (1 
+ms)
+    ??? should call findEventLogs (1 
+ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       4 passed, 4 total
+Snapshots:   0 total
+Time:        2.651 s, estimated 3 s
+Ran all test suites matching audit/con
+trollers/audit.controller.spec.ts.

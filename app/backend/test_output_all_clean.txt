@@ -1,0 +1,416 @@
+
+> sigma-backend@0.0.1 test D:\Desarrollo\_INIDEP\OBS\Mareas\gestion-mareas-monorepo\app\backend
+> jest
+
+node.exe : PASS 
+src/common/utils/date.utils.spec.ts (7.59 
+s)
+En C:\Users\danie\AppData\Roaming\npm\pnpm.
+ps1: 24 Car?cter: 5
++     & "node$exe"  
+"$basedir/node_modules/pnpm/bin/pnpm.cjs" 
+$args
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecif    
+ied: (PASS src/common...pec.ts (7.5    9 
+s):String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCom    
+mandError
+ 
+PASS src/auth/dto/auth-dtos.spec.ts (8.03 
+s)
+PASS src/mareas/dto/marea-dtos.spec.ts 
+(8.026 s)
+PASS src/catalogos/buques/buques.service.sp
+ec.ts (8.513 s)
+PASS src/catalogos/tipos-flota/tipos-flota.
+service.spec.ts (8.638 s)
+PASS src/auth/auth.service.spec.ts (8.777 
+s)
+PASS src/audit/utils/sanitize.util.spec.ts
+PASS src/catalogos/observadores/observadore
+s.service.spec.ts (9.149 s)
+PASS src/alerts/alerts.service.spec.ts 
+(9.205 s)
+PASS src/mareas/tracking.service.spec.ts 
+(9.374 s)
+PASS src/audit/interceptors/audit-event.int
+erceptor.spec.ts
+PASS src/admin/data-export/data-export-date
+s.spec.ts (9.477 s)
+PASS 
+src/mareas/tracking.matching_v2.spec.ts
+PASS 
+src/audit/services/audit.service.spec.ts 
+(9.587 s)
+  ??? Console
+
+    console.log
+      [AuditService] Configuration 
+Initialized:
+
+      at new AuditService 
+(audit/services/audit.service.ts:34:17)
+          at async Promise.all (index 3)
+          at async Promise.all (index 1)
+
+    console.log
+       - Global Enabled: true
+
+      at new AuditService 
+(audit/services/audit.service.ts:35:17)
+          at async Promise.all (index 3)
+          at async Promise.all (index 1)
+
+    console.log
+       - API Enabled: true
+
+      at new AuditService 
+(audit/services/audit.service.ts:36:17)
+          at async Promise.all (index 3)
+          at async Promise.all (index 1)
+
+    console.log
+       - Navigation Enabled: true
+
+      at new AuditService 
+(audit/services/audit.service.ts:37:17)
+          at async Promise.all (index 3)
+          at async Promise.all (index 1)
+
+    console.log
+       - Async: true
+
+      at new AuditService 
+(audit/services/audit.service.ts:38:17)
+          at async Promise.all (index 3)
+          at async Promise.all (index 1)
+
+    console.log
+       - Level: ALL
+
+      at new AuditService 
+(audit/services/audit.service.ts:39:17)
+          at async Promise.all (index 3)
+          at async Promise.all (index 1)
+
+    console.log
+      [AuditService] Configuration 
+Initialized:
+
+      at new AuditService 
+(audit/services/audit.service.ts:34:17)
+          at async Promise.all (index 3)
+          at async Promise.all (index 1)
+
+    console.log
+       - Global Enabled: true
+
+      at new AuditService 
+(audit/services/audit.service.ts:35:17)
+          at async Promise.all (index 3)
+          at async Promise.all (index 1)
+
+    console.log
+       - API Enabled: true
+
+      at new AuditService 
+(audit/services/audit.service.ts:36:17)
+          at async Promise.all (index 3)
+          at async Promise.all (index 1)
+
+    console.log
+       - Navigation Enabled: true
+
+      at new AuditService 
+(audit/services/audit.service.ts:37:17)
+          at async Promise.all (index 3)
+          at async Promise.all (index 1)
+
+    console.log
+       - Async: true
+
+      at new AuditService 
+(audit/services/audit.service.ts:38:17)
+          at async Promise.all (index 3)
+          at async Promise.all (index 1)
+
+    console.log
+       - Level: ALL
+
+      at new AuditService 
+(audit/services/audit.service.ts:39:17)
+          at async Promise.all (index 3)
+          at async Promise.all (index 1)
+
+    console.log
+      [AuditService] Configuration 
+Initialized:
+
+      at new AuditService 
+(audit/services/audit.service.ts:34:17)
+          at async Promise.all (index 3)
+          at async Promise.all (index 1)
+
+    console.log
+       - Global Enabled: true
+
+      at new AuditService 
+(audit/services/audit.service.ts:35:17)
+          at async Promise.all (index 3)
+          at async Promise.all (index 1)
+
+    console.log
+       - API Enabled: true
+
+      at new AuditService 
+(audit/services/audit.service.ts:36:17)
+          at async Promise.all (index 3)
+          at async Promise.all (index 1)
+
+    console.log
+       - Navigation Enabled: true
+
+      at new AuditService 
+(audit/services/audit.service.ts:37:17)
+          at async Promise.all (index 3)
+          at async Promise.all (index 1)
+
+    console.log
+       - Async: true
+
+      at new AuditService 
+(audit/services/audit.service.ts:38:17)
+          at async Promise.all (index 3)
+          at async Promise.all (index 1)
+
+    console.log
+       - Level: ALL
+
+      at new AuditService 
+(audit/services/audit.service.ts:39:17)
+          at async Promise.all (index 3)
+          at async Promise.all (index 1)
+
+    console.log
+      [AuditService] Configuration 
+Initialized:
+
+      at new AuditService 
+(audit/services/audit.service.ts:34:17)
+          at async Promise.all (index 3)
+          at async Promise.all (index 1)
+
+    console.log
+       - Global Enabled: true
+
+      at new AuditService 
+(audit/services/audit.service.ts:35:17)
+          at async Promise.all (index 3)
+          at async Promise.all (index 1)
+
+    console.log
+       - API Enabled: true
+
+      at new AuditService 
+(audit/services/audit.service.ts:36:17)
+          at async Promise.all (index 3)
+          at async Promise.all (index 1)
+
+    console.log
+       - Navigation Enabled: true
+
+      at new AuditService 
+(audit/services/audit.service.ts:37:17)
+          at async Promise.all (index 3)
+          at async Promise.all (index 1)
+
+    console.log
+       - Async: true
+
+      at new AuditService 
+(audit/services/audit.service.ts:38:17)
+          at async Promise.all (index 3)
+          at async Promise.all (index 1)
+
+    console.log
+       - Level: ALL
+
+      at new AuditService 
+(audit/services/audit.service.ts:39:17)
+          at async Promise.all (index 3)
+          at async Promise.all (index 1)
+
+    console.log
+      [AuditService] Configuration 
+Initialized:
+
+      at new AuditService 
+(audit/services/audit.service.ts:34:17)
+          at async Promise.all (index 3)
+          at async Promise.all (index 1)
+
+    console.log
+       - Global Enabled: false
+
+      at new AuditService 
+(audit/services/audit.service.ts:35:17)
+          at async Promise.all (index 3)
+          at async Promise.all (index 1)
+
+    console.log
+       - API Enabled: true
+
+      at new AuditService 
+(audit/services/audit.service.ts:36:17)
+          at async Promise.all (index 3)
+          at async Promise.all (index 1)
+
+    console.log
+       - Navigation Enabled: true
+
+      at new AuditService 
+(audit/services/audit.service.ts:37:17)
+          at async Promise.all (index 3)
+          at async Promise.all (index 1)
+
+    console.log
+       - Async: true
+
+      at new AuditService 
+(audit/services/audit.service.ts:38:17)
+          at async Promise.all (index 3)
+          at async Promise.all (index 1)
+
+    console.log
+       - Level: true
+
+      at new AuditService 
+(audit/services/audit.service.ts:39:17)
+          at async Promise.all (index 3)
+          at async Promise.all (index 1)
+
+    console.log
+      [AuditService] Configuration 
+Initialized:
+
+      at new AuditService 
+(audit/services/audit.service.ts:34:17)
+          at async Promise.all (index 3)
+          at async Promise.all (index 1)
+
+    console.log
+       - Global Enabled: true
+
+      at new AuditService 
+(audit/services/audit.service.ts:35:17)
+          at async Promise.all (index 3)
+          at async Promise.all (index 1)
+
+    console.log
+       - API Enabled: true
+
+      at new AuditService 
+(audit/services/audit.service.ts:36:17)
+          at async Promise.all (index 3)
+          at async Promise.all (index 1)
+
+    console.log
+       - Navigation Enabled: true
+
+      at new AuditService 
+(audit/services/audit.service.ts:37:17)
+          at async Promise.all (index 3)
+          at async Promise.all (index 1)
+
+    console.log
+       - Async: true
+
+      at new AuditService 
+(audit/services/audit.service.ts:38:17)
+          at async Promise.all (index 3)
+          at async Promise.all (index 1)
+
+    console.log
+       - Level: ALL
+
+      at new AuditService 
+(audit/services/audit.service.ts:39:17)
+          at async Promise.all (index 3)
+          at async Promise.all (index 1)
+
+    console.log
+      [AuditService] Adding event to Bull 
+queue: LOGIN_SUCCESS
+
+      at AuditService.logEvento 
+(audit/services/audit.service.ts:110:25)
+
+    console.log
+      [AuditService] Configuration 
+Initialized:
+
+      at new AuditService 
+(audit/services/audit.service.ts:34:17)
+          at async Promise.all (index 3)
+          at async Promise.all (index 1)
+
+    console.log
+       - Global Enabled: true
+
+      at new AuditService 
+(audit/services/audit.service.ts:35:17)
+          at async Promise.all (index 3)
+          at async Promise.all (index 1)
+
+    console.log
+       - API Enabled: true
+
+      at new AuditService 
+(audit/services/audit.service.ts:36:17)
+          at async Promise.all (index 3)
+          at async Promise.all (index 1)
+
+    console.log
+       - Navigation Enabled: true
+
+      at new AuditService 
+(audit/services/audit.service.ts:37:17)
+          at async Promise.all (index 3)
+          at async Promise.all (index 1)
+
+    console.log
+       - Async: true
+
+      at new AuditService 
+(audit/services/audit.service.ts:38:17)
+          at async Promise.all (index 3)
+          at async Promise.all (index 1)
+
+    console.log
+       - Level: ALL
+
+      at new AuditService 
+(audit/services/audit.service.ts:39:17)
+          at async Promise.all (index 3)
+          at async Promise.all (index 1)
+
+PASS src/mareas/date-normalization.spec.ts 
+(9.604 s)
+PASS src/audit/processors/audit.processor.s
+pec.ts (9.731 s)
+PASS src/audit/interceptors/audit.intercept
+or.spec.ts
+PASS src/stats/stats.service.spec.ts (9.88 
+s)
+PASS src/audit/controllers/audit.controller
+.spec.ts
+PASS src/mareas/mareas.service.spec.ts 
+(9.983 s)
+
+Test Suites: 20 passed, 20 total
+Tests:       103 passed, 103 total
+Snapshots:   0 total
+Time:        11.098 s
+Ran all test suites.
