@@ -1,5 +1,5 @@
 <template>
-  <NauticalMap ref="nauticalMap" @map-ready="onMapReady" @mousemove="emit('update:mouse-coords', $event.latlng)">
+  <NauticalMap ref="nauticalMap" :show-controls="!isMobile" @map-ready="onMapReady" @mousemove="emit('update:mouse-coords', $event.latlng)">
     <!-- Slot for extra overlays if needed later -->
   </NauticalMap>
 </template>
@@ -47,6 +47,7 @@ const props = defineProps<{
     showAllVessels: boolean;
     showVesselNames: boolean;
   }
+  isMobile?: boolean
 }>()
 
 const emit = defineEmits(['update:mouse-coords', 'seek-vessel', 'select-vessel'])
@@ -269,29 +270,31 @@ const renderMarker = (vessel: VesselTrajectory) => {
     className: 'vessel-tooltip-simple'
   })
 
-  // Eventos para intercambio dinámico
-  marker.on('mouseover', () => {
-    marker.setTooltipContent(hudContent)
-    // Cambiamos la clase al elemento del tooltip para aplicar estilos HUD
-    const el = marker.getTooltip()?.getElement()
-    if (el) {
-      el.classList.add('vessel-tooltip-hud')
-      el.classList.remove('vessel-tooltip-simple')
-    }
-    marker.openTooltip()
-  })
+  if (!props.isMobile) {
+    // Eventos para intercambio dinámico solo en desktop
+    marker.on('mouseover', () => {
+      marker.setTooltipContent(hudContent)
+      // Cambiamos la clase al elemento del tooltip para aplicar estilos HUD
+      const el = marker.getTooltip()?.getElement()
+      if (el) {
+        el.classList.add('vessel-tooltip-hud')
+        el.classList.remove('vessel-tooltip-simple')
+      }
+      marker.openTooltip()
+    })
 
-  marker.on('mouseout', () => {
-    marker.setTooltipContent(simpleContent)
-    const el = marker.getTooltip()?.getElement()
-    if (el) {
-      el.classList.add('vessel-tooltip-simple')
-      el.classList.remove('vessel-tooltip-hud')
-    }
-    if (!props.activeLayers.showVesselNames) {
-      marker.closeTooltip()
-    }
-  })
+    marker.on('mouseout', () => {
+      marker.setTooltipContent(simpleContent)
+      const el = marker.getTooltip()?.getElement()
+      if (el) {
+        el.classList.add('vessel-tooltip-simple')
+        el.classList.remove('vessel-tooltip-hud')
+      }
+      if (!props.activeLayers.showVesselNames) {
+        marker.closeTooltip()
+      }
+    })
+  }
 
   marker.on('click', () => {
     emit('select-vessel', vessel.id)
@@ -444,7 +447,13 @@ const invalidateSize = () => {
   }
 }
 
-defineExpose({ fitVesselBounds, fitAllVesselsBounds, invalidateSize })
+const setBaseLayer = (id: string) => {
+  if (nauticalMap.value) {
+    nauticalMap.value.setBaseLayer(id)
+  }
+}
+
+defineExpose({ fitVesselBounds, fitAllVesselsBounds, invalidateSize, setBaseLayer })
 
 onUnmounted(() => {
   trajectoriesLayer.remove()

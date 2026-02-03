@@ -6,6 +6,7 @@
         <!-- THE MAP (Background) -->
         <div class="absolute inset-0">
           <MapMonitor ref="mapMonitor" class="w-full h-full" :fleet="fleet" :activeLayers="mapLayers"
+            :isMobile="isMobile"
             @update:mouse-coords="mouseCoords = $event" @seek-vessel="handleSeekVessel"
             @select-vessel="setSelectedVessel" />
         </div>
@@ -23,22 +24,23 @@
               </button>
 
               <Transition name="hud-fade">
-                <VesselInfoCard v-if="activeVessel && (!leftSidebarOpen || isSingleMareaMode)"
+                <VesselInfoCard v-if="activeVessel && (!leftSidebarOpen || isSingleMareaMode || isMobile)"
                   :vesselName="activeVessel.name" :mareaCode="activeVessel.mareaCode || '--'"
                   :position="{ lat: currentPoint?.lat || 0, lon: currentPoint?.lon || 0 }"
                   :timestamp="currentPoint?.timestamp?.toString() || ''" :speed="currentPoint?.speed || 0"
                   :course="currentPoint?.course || 0" :lastUpdate="activeVessel.lastUpdate" :layers="mapLayers"
-                  :isSingleMode="isSingleMareaMode" @update:layer="handleLayerToggle" />
+                  :isSingleMode="isSingleMareaMode" :hideLayerControls="isMobile" :isCompact="isMobile"
+                  @update:layer="handleLayerToggle" @close-card="selectedVesselId = null" />
               </Transition>
             </div>
             <!-- Right: Trip Stages (Optional or for selected vessel) -->
             <div class="flex flex-col gap-3 items-end">
-              <TripStagesCard v-if="activeVessel && currentVesselStages.length" :stages="currentVesselStages"
+              <TripStagesCard v-if="activeVessel && currentVesselStages.length && !isMobile" :stages="currentVesselStages"
                 :totalDays="activeVessel.totalDays || 0" @select-stage="handleStageSelection"
                 @select-date="handleDateSelection" />
 
               <Transition name="hud-fade">
-                <VesselInfoCard v-if="activeVessel && (leftSidebarOpen && !isSingleMareaMode)"
+                <VesselInfoCard v-if="activeVessel && (leftSidebarOpen && !isSingleMareaMode && !isMobile)"
                   :vesselName="activeVessel.name" :mareaCode="activeVessel.mareaCode || '--'"
                   :position="{ lat: currentPoint?.lat || 0, lon: currentPoint?.lon || 0 }"
                   :timestamp="currentPoint?.timestamp?.toString() || ''" :speed="currentPoint?.speed || 0"
@@ -49,7 +51,7 @@
           </div>
 
           <!-- Top Center: Last Update HUD -->
-          <div class="absolute top-6 left-1/2 -translate-x-1/2 pointer-events-none z-[1000] flex justify-center">
+          <div v-if="!isMobile" class="absolute top-6 left-1/2 -translate-x-1/2 pointer-events-none z-[1000] flex justify-center">
             <Transition name="hud-fade">
               <HudCard v-if="lastTrackingUpdate" customClass="px-5 py-2.5">
                 <div class="flex items-center gap-4">
@@ -76,7 +78,7 @@
           <!-- Bottom Row (Anclado al fondo) -->
           <div class="absolute bottom-6 left-6 right-6 flex flex-col gap-2">
             <!-- Mouse Coordinates -->
-            <div :class="[
+            <div v-if="!isMobile" :class="[
               'flex transition-all duration-500 ease-in-out',
               leftSidebarOpen ? 'justify-end pr-14' : 'justify-start'
             ]">
@@ -102,14 +104,20 @@
       </div>
 
       <!-- SIDEBAR IZQUIERDO (FLOTA) -->
-      <VesselListSidebar v-if="!isSingleMareaMode" class="absolute left-0 top-0 h-full z-[2000]"
+      <VesselListSidebar v-if="!isSingleMareaMode && !isMobile" class="absolute left-0 top-0 h-full z-[2000]"
         v-model:isOpen="leftSidebarOpen" :vessels="vesselList" :selectedId="selectedVesselId"
         @select="setSelectedVessel" @refresh="fetchFleet" />
 
       <!-- SIDEBAR DERECHO (CONTROL) -->
-      <MonitorSidebar v-if="!isSingleMareaMode" class="absolute right-0 top-0 h-full z-[2000]"
+      <MonitorSidebar v-if="!isSingleMareaMode && !isMobile" class="absolute right-0 top-0 h-full z-[2000]"
         v-model:isOpen="rightSidebarOpen" :mapLayers="mapLayers" @update:layer="handleLayerToggle"
         @open-upload="showUploadDialog = true" />
+
+      <!-- CONTROLES MÓVILES -->
+      <MobileMonitorControls v-if="isMobile && !isSingleMareaMode"
+        :mapLayers="mapLayers" :vessels="vesselList" :selectedId="selectedVesselId"
+        @update:layer="handleLayerToggle" @select-vessel="setSelectedVessel"
+        @change-base="handleBaseLayerChange" />
 
       <UploadTrackingDialog :show="showUploadDialog" @close="showUploadDialog = false" @refresh="fetchFleet" />
 
@@ -134,6 +142,7 @@ import TripStagesCard, { type TripStage } from '../components/TripStagesCard.vue
 import MouseCoordinates from '../components/MouseCoordinates.vue'
 import MonitorSidebar from '../components/MonitorSidebar.vue'
 import VesselListSidebar, { type MonitorVessel } from '../components/VesselListSidebar.vue'
+import MobileMonitorControls from '../components/MobileMonitorControls.vue'
 import UploadTrackingDialog from '../components/UploadTrackingDialog.vue'
 import TrajectoryLoadingOverlay from '../components/TrajectoryLoadingOverlay.vue'
 import httpClient from '@/config/http/http.client'
@@ -160,6 +169,12 @@ const mapLayers = ref({
   showAllVessels: true,
   showVesselNames: false,
 })
+
+const isMobile = ref(false)
+
+const checkMobile = () => {
+  isMobile.value = window.matchMedia('(max-width: 768px)').matches
+}
 
 const route = useRoute()
 const router = useRouter()
@@ -357,6 +372,12 @@ const fetchVesselHistory = async (buqueId: string, mareaId: string, from?: strin
   }
 }
 
+const handleBaseLayerChange = (id: string) => {
+  if (mapMonitor.value) {
+    mapMonitor.value.setBaseLayer(id)
+  }
+}
+
 const setSelectedVessel = (id: string) => {
   selectedVesselId.value = id
   stopPlayback()
@@ -529,10 +550,15 @@ watch(() => route.path, () => {
 })
 
 onMounted(() => {
+  checkMobile()
+  window.addEventListener('resize', checkMobile)
   initializeMonitor()
 })
 
-onUnmounted(stopPlayback)
+onUnmounted(() => {
+  window.removeEventListener('resize', checkMobile)
+  stopPlayback()
+})
 </script>
 
 <style scoped>

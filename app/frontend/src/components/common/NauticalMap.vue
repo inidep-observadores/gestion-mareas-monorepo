@@ -1,9 +1,9 @@
 <template>
-  <div class="relative h-full w-full overflow-hidden bg-surface-muted">
+  <div class="relative h-full w-full overflow-hidden bg-surface-muted" :class="{ 'hide-zoom-controls': !showControls }">
     <div ref="mapContainer" class="h-full w-full"></div>
     
     <!-- Control de Capas (Posicionado sobre el Zoom) -->
-    <div class="absolute bottom-[50px] right-[14px] z-[1000] pointer-events-auto">
+    <div v-if="showControls" class="absolute bottom-[50px] right-[14px] z-[1000] pointer-events-auto">
       <MapLayerControl
         :base-layers="BASE_LAYERS"
         :overlay-layers="OVERLAY_LAYERS"
@@ -21,7 +21,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
+import { ref, onMounted, onUnmounted, watch } from 'vue'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import MapLayerControl from './MapLayerControl.vue'
@@ -34,13 +34,15 @@ const props = withDefaults(defineProps<{
   maxZoom?: number
   showGraticule?: boolean
   showScale?: boolean
+  showControls?: boolean
 }>(), {
   center: () => [-42.5, -60.2],
   zoom: 7,
   minZoom: 3,
   maxZoom: 18,
   showGraticule: true,
-  showScale: true
+  showScale: true,
+  showControls: true
 })
 
 const localShowGraticule = ref(props.showGraticule)
@@ -59,193 +61,125 @@ let baseLayer: L.TileLayer | null = null
 let graticuleLayer: L.LayerGroup | null = null
 let themeObserver: MutationObserver | null = null
 
-// --- Graticule Logic ---
-const formatLabel = (val: number) => {
-  const absVal = Math.abs(val)
-  const deg = Math.floor(absVal)
-  const min = Math.round((absVal - deg) * 60)
-  return `${val < 0 ? '-' : ''}${deg}°${min > 0 ? min.toString().padStart(2, '0') + "'" : ''}`
-}
-
-const updateGraticule = () => {
-  if (!map || !localShowGraticule.value) return
-  if (!graticuleLayer) {
-    graticuleLayer = L.layerGroup().addTo(map)
-  }
-
-  graticuleLayer.clearLayers()
-
-  const bounds = map.getBounds()
-  const currentZoom = map.getZoom()
-
-  let interval = 1
-  if (currentZoom < 5) interval = 5
-  else if (currentZoom < 7) interval = 2
-  else if (currentZoom > 10) interval = 0.5
-
-  const minLat = Math.floor(bounds.getSouth() / interval) * interval
-  const maxLat = Math.ceil(bounds.getNorth() / interval) * interval
-  const minLon = Math.floor(bounds.getWest() / interval) * interval
-  const maxLon = Math.ceil(bounds.getEast() / interval) * interval
-
-  const isDark = document.documentElement.classList.contains('dark')
-  const lineStyle = {
-    color: isDark ? 'rgba(255, 255, 255, 0.10)' : 'rgba(0, 0, 0, 0.12)',
-    weight: 1,
-    interactive: false,
-    pane: 'overlayPane'
-  }
-
-  const labelIcon = (text: string) => L.divIcon({
-    className: 'graticule-label',
-    html: `<div class="text-[8px] font-black ${isDark ? 'text-text-muted/40' : 'text-text-muted/70'} uppercase tracking-widest whitespace-nowrap font-sans">${text}</div>`,
-    iconSize: [0, 0],
-    iconAnchor: [0, 0]
-  })
-
-  // Latitude
-  for (let lat = minLat; lat <= maxLat; lat += interval) {
-    L.polyline([[lat, minLon], [lat, maxLon]], lineStyle).addTo(graticuleLayer)
-    const labelText = formatLabel(lat)
-    const pLeft = map.latLngToContainerPoint([lat, bounds.getWest()])
-    const pRight = map.latLngToContainerPoint([lat, bounds.getEast()])
-    L.marker(map.containerPointToLatLng([pLeft.x + 5, pLeft.y]), { icon: labelIcon(labelText), interactive: false, pane: 'tooltipPane' }).addTo(graticuleLayer)
-    L.marker(map.containerPointToLatLng([pRight.x - 25, pRight.y]), { icon: labelIcon(labelText), interactive: false, pane: 'tooltipPane' }).addTo(graticuleLayer)
-  }
-
-  // Longitude
-  for (let lon = minLon; lon <= maxLon; lon += interval) {
-    L.polyline([[minLat, lon], [maxLat, lon]], lineStyle).addTo(graticuleLayer)
-    const labelText = formatLabel(lon)
-    const pTop = map.latLngToContainerPoint([bounds.getNorth(), lon])
-    const pBottom = map.latLngToContainerPoint([bounds.getSouth(), lon])
-    L.marker(map.containerPointToLatLng([pTop.x, pTop.y + 5]), { icon: labelIcon(labelText), interactive: false, pane: 'tooltipPane' }).addTo(graticuleLayer)
-    L.marker(map.containerPointToLatLng([pBottom.x, pBottom.y - 5]), { icon: labelIcon(labelText), interactive: false, pane: 'tooltipPane' }).addTo(graticuleLayer)
-  }
-}
-
-// --- Custom Nautical Scale ---
-class NauticalScale extends L.Control {
-  override options: L.ControlOptions & { maxWidth: number }
-  private container?: HTMLDivElement
-  private line?: HTMLDivElement
-  private label?: HTMLDivElement
-  private mapInstance: L.Map | null = null
-
-  constructor(options?: Partial<{ position: L.ControlPosition; maxWidth: number }>) {
-    const mergedOptions = {
-      position: 'bottomright' as L.ControlPosition,
-      maxWidth: 100,
-      ...options,
-    }
-    super(mergedOptions)
-    this.options = mergedOptions
-  }
-
-  onAdd(map: L.Map): HTMLElement {
-    this.mapInstance = map
-    this.container = L.DomUtil.create('div', 'nautical-scale-container')
-    this.label = L.DomUtil.create('div', 'nautical-scale-label', this.container)
-    this.line = L.DomUtil.create('div', 'nautical-scale-bar', this.container)
-
-    map.on('move', this.updateScale, this)
-    map.whenReady(this.updateScale, this)
-    return this.container
-  }
-
-  onRemove(map: L.Map): void {
-    map.off('move', this.updateScale, this)
-    this.mapInstance = null
-  }
-
-  private updateScale = () => {
-    if (!this.mapInstance || !this.line || !this.label) return
-    const mapSize = this.mapInstance.getSize()
-    const y = mapSize.y / 2
-    const maxMeters = this.mapInstance.distance(
-      this.mapInstance.containerPointToLatLng([0, y]),
-      this.mapInstance.containerPointToLatLng([this.options.maxWidth, y]),
-    )
-    const maxNM = maxMeters / 1852
-    const nm = this.getRoundNum(maxNM)
-    const px = (nm * 1852 * this.options.maxWidth) / maxMeters
-
-    this.line.style.width = `${px}px`
-    // Redondear para evitar decimales infinitos (ej. 0.3000...004)
-    const displayNM = nm < 1 ? nm.toFixed(1) : Math.round(nm)
-    this.label.innerHTML = `${displayNM} NM`
-  }
-
-  private getRoundNum(num: number) {
-    const pow10 = Math.pow(10, Math.floor(Math.log10(num)))
-    let d = num / pow10
-    d = d >= 10 ? 10 : d >= 5 ? 5 : d >= 3 ? 3 : d >= 2 ? 2 : 1
-    return pow10 * d
-  }
-}
-
-// --- Layers handling ---
 const currentBaseId = ref('carto-voyager')
 const activeOverlayIds = ref<string[]>([])
-const overlayLayersMap = new Map<string, L.TileLayer>()
 
 const setBaseLayer = (id: string) => {
   if (!map) return
   const layerDef = BASE_LAYERS.find(l => l.id === id)
   if (!layerDef) return
 
-  if (baseLayer) map.removeLayer(baseLayer)
-  
-  baseLayer = L.tileLayer(layerDef.url, { 
-    attribution: layerDef.attribution, 
-    maxZoom: layerDef.maxZoom || 18 
-  })
-  
-  baseLayer.addTo(map)
-  baseLayer.bringToBack()
+  if (baseLayer) {
+    map.removeLayer(baseLayer)
+  }
+
+  baseLayer = L.tileLayer(layerDef.url, {
+    attribution: layerDef.attribution,
+    maxZoom: layerDef.maxZoom
+  }).addTo(map)
   currentBaseId.value = id
 }
 
 const toggleOverlay = (id: string) => {
-  if (!map) return
-  const layerDef = OVERLAY_LAYERS.find(l => l.id === id)
-  if (!layerDef) return
-
-  const existing = overlayLayersMap.get(id)
-  if (existing) {
-    map.removeLayer(existing)
-    overlayLayersMap.delete(id)
-    activeOverlayIds.value = activeOverlayIds.value.filter(oid => oid !== id)
-  } else {
-    const newOverlay = L.tileLayer(layerDef.url, {
-      attribution: layerDef.attribution,
-      maxZoom: layerDef.maxZoom || 18,
-      pane: 'overlayPane'
-    })
-    newOverlay.addTo(map)
-    overlayLayersMap.set(id, newOverlay)
+  const index = activeOverlayIds.value.indexOf(id)
+  if (index === -1) {
     activeOverlayIds.value.push(id)
+  } else {
+    activeOverlayIds.value.splice(index, 1)
   }
 }
 
 const toggleGraticule = (val: boolean) => {
   localShowGraticule.value = val
-  if (val) {
-    if (!graticuleLayer) {
-      graticuleLayer = L.layerGroup().addTo(map!)
+  updateGraticule()
+}
+
+const updateGraticule = () => {
+  if (!map) return
+  
+  if (graticuleLayer) {
+    map.removeLayer(graticuleLayer)
+    graticuleLayer = null
+  }
+
+  if (localShowGraticule.value) {
+    graticuleLayer = L.layerGroup().addTo(map)
+    const bounds = map.getBounds()
+    const zoom = map.getZoom()
+    
+    let interval = 5
+    if (zoom > 10) interval = 0.1
+    else if (zoom > 8) interval = 0.5
+    else if (zoom > 6) interval = 1
+    else if (zoom > 4) interval = 2
+
+    const latMin = Math.floor(bounds.getSouth() / interval) * interval
+    const latMax = Math.ceil(bounds.getNorth() / interval) * interval
+    const lonMin = Math.floor(bounds.getWest() / interval) * interval
+    const lonMax = Math.ceil(bounds.getEast() / interval) * interval
+
+    for (let lat = latMin; lat <= latMax; lat += interval) {
+      L.polyline([[lat, lonMin], [lat, lonMax]], {
+        color: 'var(--color-text)',
+        weight: 0.5,
+        opacity: 0.15,
+        dashArray: '5, 5',
+        interactive: false,
+        className: 'graticule-line'
+      }).addTo(graticuleLayer)
     }
-    setTimeout(() => updateGraticule(), 50) // Un poco más de tiempo para estar seguros
-  } else if (graticuleLayer) {
-    graticuleLayer.clearLayers()
+
+    for (let lon = lonMin; lon <= lonMax; lon += interval) {
+      L.polyline([[latMin, lon], [latMax, lon]], {
+        color: 'var(--color-text)',
+        weight: 0.5,
+        opacity: 0.15,
+        dashArray: '5, 5',
+        interactive: false,
+        className: 'graticule-line'
+      }).addTo(graticuleLayer)
+    }
   }
 }
 
 const updateBaseLayerByTheme = () => {
-  if (!map) return
   const isDark = document.documentElement.classList.contains('dark')
-  const targetId = isDark ? 'carto-dark' : 'carto-voyager'
-  setBaseLayer(targetId)
+  const defaultId = isDark ? 'carto-dark' : 'carto-voyager'
+  setBaseLayer(defaultId)
 }
+
+const NauticalScale = L.Control.extend({
+  onAdd: function(map: L.Map) {
+    const container = L.DomUtil.create('div', 'nautical-scale-container')
+    const label = L.DomUtil.create('div', 'nautical-scale-label', container)
+    const bar = L.DomUtil.create('div', 'nautical-scale-bar', container)
+    
+    const update = () => {
+      const center = map.getCenter()
+      const zoom = map.getZoom()
+      const latRad = center.lat * Math.PI / 180
+      const milesPerPixel = (21639 * Math.cos(latRad)) / Math.pow(2, zoom + 8)
+      const targetMiles = 100 * milesPerPixel
+      let miles = 1
+      if (targetMiles > 500) miles = 500
+      else if (targetMiles > 250) miles = 250
+      else if (targetMiles > 100) miles = 100
+      else if (targetMiles > 50) miles = 50
+      else if (targetMiles > 25) miles = 25
+      else if (targetMiles > 10) miles = 10
+      else if (targetMiles > 5) miles = 5
+      else if (targetMiles > 2) miles = 2
+      
+      const width = miles / milesPerPixel
+      bar.style.width = width + 'px'
+      label.innerHTML = miles + ' NM'
+    }
+
+    map.on('move zoom', update)
+    update()
+    return container
+  }
+})
 
 onMounted(() => {
   if (!mapContainer.value) return
@@ -258,10 +192,15 @@ onMounted(() => {
   }).setView(props.center, props.zoom)
 
   updateBaseLayerByTheme()
-  L.control.zoom({ position: 'bottomright' }).addTo(map)
+  
+  if (props.showControls) {
+    L.control.zoom({ position: 'bottomright' }).addTo(map)
+  }
 
   if (props.showScale) {
-    new NauticalScale().addTo(map)
+    // @ts-ignore - Leaflet custom control types
+    const scalePosition = props.showControls ? 'bottomright' : 'bottomleft'
+    new NauticalScale({ position: scalePosition }).addTo(map)
   }
 
   map.on('mousemove', (e: L.LeafletMouseEvent) => {
@@ -271,7 +210,6 @@ onMounted(() => {
   map.on('moveend zoomend', updateGraticule)
   updateGraticule()
 
-  // Theme observer
   themeObserver = new MutationObserver(() => updateBaseLayerByTheme())
   themeObserver.observe(document.documentElement, {
     attributes: true,
@@ -286,21 +224,13 @@ onUnmounted(() => {
   if (map) map.remove()
 })
 
-// Watchers for reactive props
-watch(() => props.center, (newVal) => map?.setView(newVal))
-watch(() => props.zoom, (newVal) => map?.setZoom(newVal))
-watch(() => props.showGraticule, (show) => {
-  if (show) updateGraticule()
-  else if (graticuleLayer) graticuleLayer.clearLayers()
-})
-
 defineExpose({
-  getMap: () => map
+  getMap: () => map,
+  setBaseLayer
 })
 </script>
 
 <style>
-/* Ajustes de controles de Leaflet */
 .leaflet-bottom.leaflet-right .leaflet-control-zoom {
   margin-bottom: 24px !important;
   margin-right: 14px !important;
@@ -308,11 +238,10 @@ defineExpose({
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
 }
 
-/* --- Nautical Scale Redesign --- */
 .nautical-scale-container {
+  margin-left: 14px !important;
   margin-right: 14px !important;
-  margin-bottom: 160px !important;
-  /* Arriba de todos los controles */
+  margin-bottom: 24px !important;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -339,8 +268,12 @@ defineExpose({
   transition: width 0.2s ease;
 }
 
-/* Graticule labels */
 .graticule-label {
   pointer-events: none !important;
+}
+
+/* Ocultar controles de zoom en móvil */
+.hide-zoom-controls .leaflet-control-zoom {
+  display: none !important;
 }
 </style>
