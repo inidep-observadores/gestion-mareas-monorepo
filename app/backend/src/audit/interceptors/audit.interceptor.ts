@@ -44,7 +44,7 @@ export class AuditInterceptor implements NestInterceptor {
                     const duration = Date.now() - startTime;
                     const user = request.user; // Get user AFTER Guard/Controller has run
                     const cookies = request.cookies || {};
-                    const sessionId = cookies['connect.sid'] || cookies['io'] || request.headers['x-session-id'] || request.headers['x-request-id'] || null;
+                    const sessionId = cookies['connect.sid'] || cookies['io'] || request.headers?.['x-session-id'] || request.headers?.['x-request-id'] || null;
 
                     this.auditService.logApi({
                         metodoHttp: method,
@@ -70,7 +70,7 @@ export class AuditInterceptor implements NestInterceptor {
                     const statusCode = error.status || 500;
                     const user = request.user;
                     const cookies = request.cookies || {};
-                    const sessionId = cookies['connect.sid'] || cookies['io'] || request.headers['x-session-id'] || request.headers['x-request-id'] || null;
+                    const sessionId = cookies['connect.sid'] || cookies['io'] || request.headers?.['x-session-id'] || request.headers?.['x-request-id'] || null;
 
                     this.auditService.logApi({
                         metodoHttp: method,

@@ -69,8 +69,15 @@ export function useObservadores() {
             } else {
                 toast.error(errorMessage)
             }
-        } finally {
-            isSaving.value = false
+        }
+    }
+
+    const exportData = async () => {
+        try {
+            await observadoresApi.exportToExcel(searchQuery.value)
+            toast.success('Planilla de observadores exportada correctamente')
+        } catch (error) {
+            toast.error('Error al exportar los datos')
         }
     }
 
@@ -91,5 +98,6 @@ export function useObservadores() {
         openEditModal,
         closeModal,
         handleSave,
+        exportData
     }
 }

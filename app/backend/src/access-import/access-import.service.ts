@@ -2,10 +2,12 @@ import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AlertsService } from '../alerts/alerts.service';
 import { AlertaEstado, AlertaPrioridad } from '../alerts/alerts.enums';
+import { AlertMetadata } from '../alerts/interfaces/alert-metadata.interface';
 import { AccessReaderService, ExternalRecord } from './access-reader.service';
 import { ErrorLogsService } from '../common/error-logs/error-logs.service';
 import { TipoMarea } from '../mareas/mareas.constants';
 import * as crypto from 'crypto';
+import { DateTime } from 'luxon';
 
 export interface ProcessingSummary {
     total: number;
@@ -92,26 +94,37 @@ export class AccessImportService {
         const parsedMarea = this.parseMareaIdentifier(record.NroMarea, normalizedRecord.Fecha_Zarpada);
         const nroEtapa = record.NroEtapa || 1;
 
-        // 1. Intentar matching con entidades locales
-        const localMatch = await this.findLocalEntities(parsedMarea, record.Buque, record.CodObs, nroEtapa);
+        // 1. Intentar matching con entidades locales (Prioridad 1: Match Directo)
+        const localMatch = await this.findLocalEntities(parsedMarea, normalizedRecord, nroEtapa);
 
         if (!existing) {
             // Registro nuevo -> Determinar tipo de hallazgo
-            let tipoHallazgo: 'NUEVA_MAREA' | 'NUEVA_ETAPA' | 'INCONGRUENCIA' | 'SINCRONIZADO' = 'NUEVA_MAREA';
+            let tipoHallazgo: 'NUEVA_MAREA' | 'NUEVA_ETAPA' | 'ERROR_FECHA_MOVIMIENTO' | 'SINCRONIZADO' | 'POSIBLE_ZARPADA' | 'ETAPA_FALTANTE' = 'NUEVA_MAREA';
 
             if (!localMatch.marea) {
                 tipoHallazgo = 'NUEVA_MAREA';
             } else if (!localMatch.etapa) {
-                tipoHallazgo = 'NUEVA_ETAPA';
+                // Validar coherencia de etapas: verificar que no haya saltos
+                const etapasExistentes = localMatch.marea.etapas || [];
+                const maxEtapa = etapasExistentes.length > 0
+                    ? Math.max(...etapasExistentes.map((e: any) => e.nroEtapa || 0))
+                    : 0;
+
+                if (nroEtapa > maxEtapa + 1) {
+                    // Hay etapas faltantes (ej: existe etapa 1, pero Access reporta etapa 3)
+                    tipoHallazgo = 'ETAPA_FALTANTE';
+                } else if (localMatch.marea.estadoActual?.codigo === 'DESIGNADA' && nroEtapa === 1) {
+                    // Si es marea DESIGNADA, solo permitimos Etapa #1 como zarpada automática
+                    tipoHallazgo = 'POSIBLE_ZARPADA';
+                } else {
+                    tipoHallazgo = 'NUEVA_ETAPA';
+                }
             } else {
-                // Existe marea y etapa -> ¿Coinciden las fechas y el observador?
+                // Existe marea y etapa -> ¿Coinciden las fechas? (Considerando UTC-3 y tolerancia)
                 const zarpadaMatches = this.datesMatch(normalizedRecord.Fecha_Zarpada, localMatch.etapa.fechaZarpada);
                 const arriboMatches = this.datesMatch(normalizedRecord.Fecha_Arribo, localMatch.etapa.fechaArribo);
 
-                // Ahora el observador se compara a nivel de Marea
-                const observerMatches = localMatch.marea.observadorPrincipalId === localMatch.observador?.id;
-
-                tipoHallazgo = (zarpadaMatches && arriboMatches && observerMatches) ? 'SINCRONIZADO' : 'INCONGRUENCIA';
+                tipoHallazgo = (zarpadaMatches && arriboMatches) ? 'SINCRONIZADO' : 'ERROR_FECHA_MOVIMIENTO';
             }
 
             await this.prisma.importacionAccessSnapshot.create({
@@ -139,15 +152,16 @@ export class AccessImportService {
             return { type: 'UNCHANGED', alertGenerated: false };
         }
 
-        // El hash cambió -> ¿Es un arribo nuevo o un cambio de fechas?
+        // El hash cambió -> Detectar qué cambió específicamente
+        const previousZarpada = existing.fechaZarpada;
         const previousArribo = existing.fechaArribo;
+        const currentZarpada = normalizedRecord.Fecha_Zarpada;
         const currentArribo = normalizedRecord.Fecha_Arribo;
-        const isNewArribo = !previousArribo && !!currentArribo;
 
         await this.prisma.importacionAccessSnapshot.update({
             where: { id: existing.id },
             data: {
-                fechaZarpada: normalizedRecord.Fecha_Zarpada,
+                fechaZarpada: currentZarpada,
                 fechaArribo: currentArribo,
                 hashContenido: hash,
                 mareaId: localMatch.marea?.id,
@@ -155,12 +169,38 @@ export class AccessImportService {
             },
         });
 
-        if (isNewArribo) {
-            await this.createAlertFromHallazgo('ARRIBO', record, localMatch, parsedMarea);
-            return { type: 'UPDATED', alertGenerated: true };
+        let alertGenerated = false;
+
+        // Detectar cambio en ZARPADA
+        if (previousZarpada && currentZarpada && !this.datesMatch(previousZarpada, currentZarpada)) {
+            if (localMatch.etapa) {
+                // Verificar si la nueva fecha difiere de la local
+                if (!this.datesMatch(currentZarpada, localMatch.etapa.fechaZarpada)) {
+                    await this.createAlertFromHallazgo('ERROR_FECHA_MOVIMIENTO', record, localMatch, parsedMarea);
+                    alertGenerated = true;
+                }
+            }
         }
 
-        return { type: 'UPDATED', alertGenerated: false };
+        // Detectar cambio en ARRIBO (nuevo o modificado)
+        const isNewArribo = !previousArribo && !!currentArribo;
+        const isModifiedArribo = previousArribo && currentArribo && !this.datesMatch(previousArribo, currentArribo);
+
+        if (isNewArribo || isModifiedArribo) {
+            if (localMatch.etapa) {
+                // Verificar si la fecha de arribo difiere de la local
+                if (!this.datesMatch(currentArribo, localMatch.etapa.fechaArribo)) {
+                    await this.createAlertFromHallazgo('ERROR_FECHA_MOVIMIENTO', record, localMatch, parsedMarea);
+                    alertGenerated = true;
+                }
+            } else {
+                // No hay etapa local, reportar como arribo nuevo
+                await this.createAlertFromHallazgo('ARRIBO', record, localMatch, parsedMarea);
+                alertGenerated = true;
+            }
+        }
+
+        return { type: 'UPDATED', alertGenerated };
     }
 
     private parseMareaIdentifier(nroMareaStr: string, fechaZarpadaRaw: Date | string) {
@@ -182,50 +222,124 @@ export class AccessImportService {
         return { nroMarea: null, anioMarea: fechaZarpada.getFullYear(), tipoMarea: TipoMarea.MC };
     }
 
-    private async findLocalEntities(parsedMarea: any, buqueNombre: string, codObs: number, nroEtapa: number) {
-        const [marea, buque, observador] = await Promise.all([
-            // Matching de marea
-            this.prisma.marea.findFirst({
-                where: {
-                    nroMarea: parsedMarea.nroMarea || undefined,
-                    anioMarea: parsedMarea.anioMarea,
-                    tipoMarea: parsedMarea.tipoMarea,
-                    activo: true
-                },
-                include: {
-                    etapas: true,
-                    observadorPrincipal: true
-                }
-            } as any),
-            // Matching de buque
-            this.prisma.buque.findFirst({
-                where: {
-                    nombreBuque: { equals: buqueNombre, mode: 'insensitive' },
-                    activo: true
-                }
-            }),
-            // Matching de observador
-            this.prisma.observador.findFirst({
-                where: {
-                    codigoInterno: codObs,
-                    activo: true
-                }
-            }) as any,
-        ]);
+    private async findLocalEntities(parsedMarea: any, record: ExternalRecord, nroEtapa: number) {
+        const buqueNombre = record.Buque;
+        const codObs = record.CodObs;
+
+        // Prioridad 1: Match Directo por Nro/Año/Tipo
+        let marea = await this.prisma.marea.findFirst({
+            where: {
+                nroMarea: parsedMarea.nroMarea || undefined,
+                anioMarea: parsedMarea.anioMarea,
+                tipoMarea: parsedMarea.tipoMarea,
+                activo: true
+            },
+            include: {
+                etapas: true,
+                buque: true,
+                observadorPrincipal: true,
+                estadoActual: true
+            }
+        });
+
+        // Prioridad 2: Match por Buque y Cercanía Temporal (si P1 falla)
+        if (!marea && buqueNombre && parsedMarea.anioMarea) {
+            const buque = await this.prisma.buque.findFirst({
+                where: { nombreBuque: { equals: buqueNombre, mode: 'insensitive' } }
+            });
+
+            if (buque) {
+                // Ventana temporal: +/- 1 año del año de la marea en Access
+                const minYear = parsedMarea.anioMarea - 1;
+                const maxYear = parsedMarea.anioMarea + 1;
+
+                marea = await this.prisma.marea.findFirst({
+                    where: {
+                        buqueId: buque.id,
+                        activo: true,
+                        anioMarea: { gte: minYear, lte: maxYear },
+                        OR: [
+                            { etapas: { some: { fechaZarpada: { not: null } } } },
+                            { estadoActual: { codigo: 'DESIGNADA' } }
+                        ]
+                    },
+                    include: {
+                        etapas: true,
+                        buque: true,
+                        observadorPrincipal: true,
+                        estadoActual: true
+                    },
+                    orderBy: { anioMarea: 'desc' } // Tomar la más reciente dentro de la ventana
+                }) as any;
+            }
+        }
 
         const mareaConEtapas = marea as (any & { etapas: any[] });
-        const etapa = mareaConEtapas?.etapas?.find((eIn: any) => (eIn.nroEtapa || eIn.nro_etapa) === nroEtapa);
+        let etapa = mareaConEtapas?.etapas?.find((eIn: any) => (eIn.nroEtapa || eIn.nro_etapa) === nroEtapa);
 
-        return { marea, buque, observador, etapa };
+        // SEGUNDA PASADA: Si no hay match por nroEtapa, buscar por coincidencia de fechas (+/- 1 día)
+        if (!etapa && mareaConEtapas?.etapas?.length > 0) {
+            etapa = mareaConEtapas.etapas.find((eIn: any) => {
+                const accessZarpada = record.Fecha_Zarpada;
+                const accessArribo = record.Fecha_Arribo;
+
+                // Match por Zarpada
+                if (accessZarpada && eIn.fechaZarpada && this.datesMatchWithTolerance(accessZarpada, eIn.fechaZarpada, 1)) {
+                    return true;
+                }
+
+                // Match por Arribo
+                if (accessArribo && eIn.fechaArribo && this.datesMatchWithTolerance(accessArribo, eIn.fechaArribo, 1)) {
+                    return true;
+                }
+
+                return false;
+            });
+
+            if (etapa) {
+                this.logger.log(`Etapa #${nroEtapa} de Access vinculada a Etapa Local #${etapa.nroEtapa} por coincidencia de fechas.`);
+            }
+        }
+
+        const observador = await this.prisma.observador.findFirst({
+            where: { codigoInterno: codObs, activo: true }
+        });
+
+        // Extraer buque de la marea o del buque encontrado individualmente
+        const finalBuque = marea?.buque || (await this.prisma.buque.findFirst({
+            where: { nombreBuque: { equals: buqueNombre, mode: 'insensitive' } }
+        }));
+
+        return { marea, buque: finalBuque, observador, etapa };
+    }
+
+    private datesMatchWithTolerance(d1: Date | string | null | undefined, d2: Date | string | null | undefined, daysTolerance: number = 1): boolean {
+        const dateEx = this.readerService.parseDate(d1);
+        const dateLoc = this.readerService.parseDate(d2);
+
+        if (!dateEx || !dateLoc) return false;
+
+        const luxEx = DateTime.fromJSDate(dateEx).setZone('America/Argentina/Buenos_Aires').startOf('day');
+        const luxLoc = DateTime.fromJSDate(dateLoc).setZone('America/Argentina/Buenos_Aires').startOf('day');
+
+        const diffInDays = Math.abs(luxEx.diff(luxLoc, 'days').days);
+        return diffInDays <= daysTolerance;
     }
 
     private datesMatch(d1: Date | string | null | undefined, d2: Date | string | null | undefined): boolean {
-        const date1 = this.readerService.parseDate(d1);
-        const date2 = this.readerService.parseDate(d2);
-        if (!date1 && !date2) return true;
-        if (!date1 || !date2) return false;
+        const dateEx = this.readerService.parseDate(d1);
+        const dateLoc = this.readerService.parseDate(d2);
 
-        return this.toLocalDateString(date1) === this.toLocalDateString(date2);
+        if (!dateEx && !dateLoc) return true;
+        if (!dateEx || !dateLoc) return false;
+
+        // Comparar SOLO por fecha, ignorando completamente la hora
+        // Forzar UTC-3 para ambos
+        const luxEx = DateTime.fromJSDate(dateEx).setZone('America/Argentina/Buenos_Aires');
+        const luxLoc = DateTime.fromJSDate(dateLoc).setZone('America/Argentina/Buenos_Aires');
+
+        // Comparación estricta por día calendario (YYYY-MM-DD)
+        return luxEx.toISODate() === luxLoc.toISODate();
     }
 
     private toLocalDateString(date: Date): string {
@@ -240,91 +354,145 @@ export class AccessImportService {
     }
 
     private async createAlertFromHallazgo(
-        tipoHallazgo: 'NUEVA_MAREA' | 'NUEVA_ETAPA' | 'INCONGRUENCIA' | 'SINCRONIZADO' | 'ARRIBO' | 'ZARPADA',
+        tipoHallazgo: 'NUEVA_MAREA' | 'NUEVA_ETAPA' | 'ERROR_FECHA_MOVIMIENTO' | 'SINCRONIZADO' | 'ARRIBO' | 'POSIBLE_ZARPADA' | 'ETAPA_FALTANTE',
         record: ExternalRecord,
         localMatch: any,
         parsedMarea: any
     ) {
-        const { marea, buque, observador, etapa } = localMatch;
+        if (tipoHallazgo === 'SINCRONIZADO') return;
 
+        const { marea, buque, observador, etapa } = localMatch;
         const yearSuffix = String(parsedMarea.anioMarea || '').slice(-2);
         const mareaLabel = parsedMarea.tipoMarea === TipoMarea.CI
-            ? `CI-${yearSuffix}`
-            : `MC-${parsedMarea.nroMarea}-${yearSuffix}`;
+            ? `CI - ${yearSuffix} `
+            : `MC - ${parsedMarea.nroMarea} -${yearSuffix} `;
 
         const nroEtapa = record.NroEtapa || 1;
+        const buqueNombre = marea?.buque?.nombreBuque || buque?.nombreBuque || record.Buque;
+
         let titulo = '';
         let descripcion = '';
-        let estado = AlertaEstado.PENDIENTE;
+        let alertTypeBase = 'OTRO';
+        let subTipo = tipoHallazgo === 'ERROR_FECHA_MOVIMIENTO' ? 'EDITAR_ETAPA' : tipoHallazgo;
 
         switch (tipoHallazgo) {
             case 'NUEVA_MAREA':
-                titulo = `NUEVA MAREA: ${record.Buque} - ${mareaLabel}`;
-                descripcion = `Se detectó una nueva marea en el sistema externo que no existe localmente.`;
+                alertTypeBase = 'NUEVA_MAREA';
+                titulo = `NUEVA MAREA(Access): ${buqueNombre} - ${mareaLabel} `;
+                descripcion = `Se detectó una nueva marea en Access que no existe localmente.`;
                 break;
             case 'NUEVA_ETAPA':
-                titulo = `NUEVA ETAPA: ${record.Buque} - ${mareaLabel} (Etapa ${nroEtapa})`;
-                descripcion = `La marea existe pero tiene una nueva etapa (#${nroEtapa}) en el sistema externo.`;
+                alertTypeBase = 'NUEVA_ETAPA';
+                titulo = `NUEVA ETAPA(Access): ${buqueNombre} - ${mareaLabel} (Etapa ${nroEtapa})`;
+                descripcion = `La marea existe pero tiene una nueva etapa(#${nroEtapa}) en Access.`;
                 break;
-            case 'INCONGRUENCIA':
-                titulo = `INCONGRUENCIA: ${record.Buque} - ${mareaLabel} (Etapa ${nroEtapa})`;
-                descripcion = `Existen diferencias entre las fechas locales y las del sistema externo para la etapa #${nroEtapa}.`;
-                break;
-            case 'SINCRONIZADO':
-                titulo = `SINCRONIZADO: ${record.Buque} - ${mareaLabel}`;
-                descripcion = `Los datos del sistema externo coinciden plenamente con los registros locales. Sincronización automática realizada.`;
-                estado = AlertaEstado.DESCARTADA;
+            case 'ERROR_FECHA_MOVIMIENTO':
+                alertTypeBase = 'ERROR_FECHA_MOVIMIENTO';
+                subTipo = 'EDITAR_ETAPA';
+                titulo = `Incongruencia de FECHA(Access): ${buqueNombre} (${mareaLabel})`;
+
+                // Formatear fechas para mostrar en la descripción
+                const formatDate = (date: Date | string | null | undefined) => {
+                    if (!date) return 'N/D';
+                    const parsedDate = this.readerService.parseDate(date);
+                    if (!parsedDate) return 'N/D';
+                    return new Intl.DateTimeFormat('es-AR', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric'
+                    }).format(parsedDate);
+                };
+
+                const accessZarpada = formatDate(record.Fecha_Zarpada);
+                const accessArribo = formatDate(record.Fecha_Arribo);
+                const localZarpada = formatDate(etapa?.fechaZarpada);
+                const localArribo = formatDate(etapa?.fechaArribo);
+
+                descripcion = `Existen diferencias entre las fechas locales y las de Access para la etapa #${nroEtapa}.\n\n` +
+                    `📅 FECHAS EN ACCESS: \n` +
+                    `  • Zarpada: ${accessZarpada} \n` +
+                    `  • Arribo: ${accessArribo} \n\n` +
+                    `📅 FECHAS LOCALES: \n` +
+                    `  • Zarpada: ${localZarpada} \n` +
+                    `  • Arribo: ${localArribo} \n\n` +
+                    `Se sugiere EDITAR LA ETAPA para corregir la fecha oficial.`;
                 break;
             case 'ARRIBO':
-                titulo = `ARRIBO: ${record.Buque} - ${mareaLabel} (Etapa ${nroEtapa})`;
+                alertTypeBase = 'POSIBLE_ARRIBO';
+                titulo = `ARRIBO(Access): ${buqueNombre} - ${mareaLabel} (Etapa ${nroEtapa})`;
                 descripcion = `Se detectó arribo en sistema externo para la etapa #${nroEtapa}.`;
                 break;
+            case 'POSIBLE_ZARPADA':
+                alertTypeBase = 'POSIBLE_ZARPADA';
+                subTipo = 'ZARPADA'; // Alinear con CSV (subTipo es el evento)
+                titulo = `ZARPADA(Access): ${buqueNombre} - ${mareaLabel} `;
+                descripcion = `Se detectó la zarpada de una marea designada en el sistema externo.`;
+                break;
+            case 'ETAPA_FALTANTE':
+                alertTypeBase = 'NUEVA_ETAPA';
+                subTipo = 'EDITAR_ETAPA';
+                titulo = `ETAPAS FALTANTES(Access): ${buqueNombre} - ${mareaLabel} `;
+                descripcion = `Se detectó la etapa #${nroEtapa} en Access, pero faltan etapas intermedias en el sistema local.Se recomienda EDITAR LAS ETAPAS para completar la información.`;
+                break;
             default:
-                titulo = `${tipoHallazgo}: ${record.Buque} - ${mareaLabel}`;
+                titulo = `${tipoHallazgo} (Access): ${buqueNombre} - ${mareaLabel} `;
                 descripcion = `Novedad detectada en sistema externo.`;
         }
 
         if (observador) {
-            descripcion += ` \nObservador: ${observador.nombre} ${observador.apellido} (Cód: ${observador.codigoInterno})`;
-        } else if (record.ObservadorNombre) {
-            descripcion += ` \nObservador (Access): ${record.ObservadorNombre} ${record.ObservadorApellido} (Cód: ${record.CodObs})`;
+            descripcion += `\n\nObservador: ${observador.nombre} ${observador.apellido} (Cód: ${observador.codigoInterno})`;
         }
 
+        const eventDate = this.readerService.parseDate(record.Fecha_Arribo || record.Fecha_Zarpada);
+        const type = record.Fecha_Arribo ? 'ARRIBO' : 'ZARPADA';
+
         await this.alertsService.create({
-            codigoUnico: `EXTERNO-${tipoHallazgo}-${record.Id}`,
+            codigoUnico: `ACCESS - ${tipoHallazgo} -${record.Id} `,
             referenciaId: marea?.id || buque?.id || null,
             referenciaTipo: marea ? 'MAREA' : (buque ? 'BUQUE' : 'OTRO'),
-            tipo: tipoHallazgo,
+            tipo: alertTypeBase as any,
             titulo: titulo,
             descripcion: descripcion,
-            estado: estado,
+            estado: AlertaEstado.PENDIENTE,
             prioridad: AlertaPrioridad.MEDIA,
-            visible: tipoHallazgo !== 'SINCRONIZADO',
+            visible: true,
             metadata: {
-                idExterno: record.Id,
-                source: 'ACCESS_IMPORT',
-                subTipo: tipoHallazgo,
+                // Metadata Estandarizada - Igual al proceso CSV
+                type,
+                portId: null,
+                buqueId: buque?.id || marea?.buqueId || null,
+                mareaId: marea?.id || null,
+                subTipo: subTipo,
                 nroEtapa: nroEtapa,
-                anioMarea: parsedMarea.anioMarea || undefined,
-                nroMarea: parsedMarea.nroMarea || undefined,
-                observerCode: observador?.codigoInterno || record.CodObs || undefined,
-                externalObserver: record.ObservadorNombre ? {
-                    nombre: record.ObservadorNombre,
-                    apellido: record.ObservadorApellido,
-                    codigo: record.CodObs
-                } : undefined,
+                portName: null,
+                eventDate: eventDate,
+                mareaCode: mareaLabel,
+                vesselName: buqueNombre,
+                fechaZarpada: record.Fecha_Zarpada,
+                fechaArribo: record.Fecha_Arribo,
+
+                // Campos adicionales específicos de Access (no interfieren)
+                idExterno: record.Id?.toString(),
+                source: 'ACCESS_IMPORT',
+
                 externalData: {
                     fechaZarpada: record.Fecha_Zarpada,
                     fechaArribo: record.Fecha_Arribo,
                     buque: record.Buque,
-                    nroMarea: record.NroMarea
+                    nroMarea: record.NroMarea ? parseInt(record.NroMarea, 10) : undefined,
+                    // Datos del observador externo si no hay match local
+                    observer: !observador ? {
+                        nombre: record.ObservadorNombre,
+                        apellido: record.ObservadorApellido,
+                        codigo: record.CodObs?.toString()
+                    } : undefined
                 },
                 localData: etapa ? {
                     fechaZarpada: etapa.fechaZarpada,
                     fechaArribo: etapa.fechaArribo,
                     id: etapa.id
                 } : null
-            }
+            } as AlertMetadata
         });
     }
 }

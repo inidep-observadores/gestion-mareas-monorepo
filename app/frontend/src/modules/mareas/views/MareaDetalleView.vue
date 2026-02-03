@@ -779,7 +779,7 @@ function openFinalizeDialog() {
 
 async function handleFinalizeMarea(payload: any) {
   try {
-    await mareasService.executeAction(marea.value.id, 'REGISTRAR_ARRIBO', payload);
+    await mareasService.executeAction(marea.value.id, 'REGISTRAR_FINALIZACION', payload);
     showFinalizarDialog.value = false;
     // Refresh marea context
     await loadMarea();
@@ -813,8 +813,8 @@ const toNumberOrUndefined = (value: any) => {
 
 const toIsoStringOrNull = (value: any) => {
   if (value === null || value === undefined || value === '') return null
-  
-  // Si es un string de fecha simple (YYYY-MM-DD) sin zona horaria, 
+
+  // Si es un string de fecha simple (YYYY-MM-DD) sin zona horaria,
   // forzamos que se interprete como local 00:00 para evitar el desfase UTC de JS
   if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
     const [y, m, d] = value.split('-').map(Number)

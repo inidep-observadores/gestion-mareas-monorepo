@@ -55,6 +55,21 @@ const observadoresApi = {
     getHistorial: async (id: string, year: number): Promise<any[]> => {
         const { data } = await httpClient.get<any[]>(`/catalogos/observadores/${id}/historial/${year}`);
         return data;
+    },
+
+    exportToExcel: async (searchQuery?: string): Promise<void> => {
+        const response = await httpClient.post('/catalogos/observadores/export/excel', 
+            { searchQuery }, 
+            { responseType: 'blob' }
+        );
+        
+        const url = window.URL.createObjectURL(new Blob([response.data]));
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', 'OBSERVADORES.xlsx');
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     }
 }
 

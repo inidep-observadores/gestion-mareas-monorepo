@@ -1,5 +1,7 @@
 
 import { Injectable, Logger } from '@nestjs/common';
+import { AlertsService } from '../alerts/alerts.service';
+import { AlertMetadata } from '../alerts/interfaces/alert-metadata.interface';
 import { PrismaService } from '../prisma/prisma.service';
 import { parse } from 'csv-parse/sync';
 import { getDistance } from 'geolib';
@@ -508,11 +510,30 @@ export class TrackingService {
     // --- Internal Logic ---
 
     private async detectPortEvents(buqueId: string, points: any[]) {
-        // 1. Monitorear buques que tienen mareas activas (designada o en ejecución)
-        const mareasActivas = await this.prisma.marea.findMany({
+        // Encontrar rango de fechas de los puntos con un margen
+        points.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+        const minDate = points[0].timestamp;
+        const maxDate = points[points.length - 1].timestamp;
+        const fromDate = DateTime.fromJSDate(minDate).minus({ days: 10 }).toJSDate();
+        const toDate = DateTime.fromJSDate(maxDate).plus({ days: 10 }).toJSDate();
+
+        // 1. Obtener marea en ejecución y designada (prioritarias) + mareas que se solapen temporalmente
+        const mareas = await this.prisma.marea.findMany({
             where: {
                 buqueId,
-                estadoActual: { codigo: { in: ['EN_EJECUCION', 'DESIGNADA'] } }
+                OR: [
+                    { estadoActual: { codigo: { in: ['EN_EJECUCION', 'DESIGNADA'] } } },
+                    {
+                        etapas: {
+                            some: {
+                                OR: [
+                                    { fechaZarpada: { gte: fromDate, lte: toDate } },
+                                    { fechaArribo: { gte: fromDate, lte: toDate } }
+                                ]
+                            }
+                        }
+                    }
+                ]
             },
             include: {
                 etapas: true,
@@ -522,7 +543,7 @@ export class TrackingService {
             }
         });
 
-        if (mareasActivas.length === 0) {
+        if (mareas.length === 0) {
             return 0;
         }
 
@@ -535,30 +556,32 @@ export class TrackingService {
 
         let alertsCreated = 0;
 
-        // Sort chronological
-        points.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
-
         // Get state before this batch
-        let lastState = { inPort: false, portId: null as string | null };
+        let lastState = { inPort: false, portId: null as string | null, timestamp: null as Date | null };
         const prev = await this.prisma.buqueTrayectoriaPunto.findFirst({
             where: { buqueId, timestamp: { lt: points[0].timestamp } },
             orderBy: { timestamp: 'desc' }
         });
         if (prev) {
-            lastState = this.checkPortStatus(prev.lat, prev.lon, ports);
+            const status = this.checkPortStatus(prev.lat, prev.lon, ports);
+            lastState = { ...status, timestamp: prev.timestamp };
         }
 
         for (const p of points) {
             const currentState = this.checkPortStatus(p.lat, p.lon, ports);
 
             if (lastState.inPort && !currentState.inPort) {
-                const created = await this.handleProcessedEvent(buqueId, 'ZARPADA', lastState.portId!, p.timestamp, mareasActivas, ports);
+                // ZARPADA detectada al salir del puerto donde estábamos
+                // Se toma el punto inmediatamente ANTERIOR al que disparó el evento (último en puerto)
+                const eventDate = lastState.timestamp || p.timestamp;
+                const created = await this.handleProcessedEvent(buqueId, 'ZARPADA', lastState.portId!, eventDate, mareas, ports);
                 if (created) alertsCreated++;
             } else if (!lastState.inPort && currentState.inPort) {
-                const created = await this.handleProcessedEvent(buqueId, 'ARRIBO', currentState.portId!, p.timestamp, mareasActivas, ports);
+                // ARRIBO detectado al entrar a un puerto
+                const created = await this.handleProcessedEvent(buqueId, 'ARRIBO', currentState.portId!, p.timestamp, mareas, ports);
                 if (created) alertsCreated++;
             }
-            lastState = currentState;
+            lastState = { ...currentState, timestamp: p.timestamp };
         }
 
         return alertsCreated;
@@ -567,97 +590,199 @@ export class TrackingService {
     private async handleProcessedEvent(buqueId: string, type: 'ZARPADA' | 'ARRIBO', portId: string, date: Date, mareas: any[], ports: any[]) {
         const port = ports.find(x => x.id === portId);
         const eventDate = DateTime.fromJSDate(date).setZone(this.TIMEZONE);
-        const dateKey = eventDate.toFormat('yyyy-MM-dd');
 
-
-        // 1) Asegurarse de no repetir alertas (usando snapshots)
-        const hashContent = `${buqueId}_${type}_${dateKey}_${portId}`;
+        // 1) Asegurarse de no repetir alertas (Snapshot con precisión de tiempo)
+        const hashContent = `${buqueId}_${type}_${date.getTime()}_${portId}`;
         const hash = crypto.createHash('md5').update(hashContent).digest('hex');
         const snapshot = await (this.prisma as any).trackingEventSnapshot.findUnique({ where: { hash } });
         if (snapshot) {
             return false;
         }
 
-        // 2) Iterar sobre las mareas para encontrar la correcta (SHORT-CIRCUIT)
+        // 2) Intentar encontrar match con etapas existentes (cualquier marea)
         for (const marea of mareas) {
             const stageMatch = marea.etapas.find(e => {
                 const field = type === 'ZARPADA' ? e.fechaZarpada : e.fechaArribo;
                 if (!field) return false;
-                const fieldDateKey = DateTime.fromJSDate(field).setZone(this.TIMEZONE).toFormat('yyyy-MM-dd');
-                return fieldDateKey === dateKey;
+
+                const regDate = DateTime.fromJSDate(field).setZone(this.TIMEZONE);
+                const detDate = DateTime.fromJSDate(date).setZone(this.TIMEZONE);
+
+                // CRITERIO DE MATCH: +/- 1 día calendario (ignora horas)
+                const regDateStart = regDate.startOf('day');
+                const detDateStart = detDate.startOf('day');
+                const diffDays = Math.abs(regDateStart.diff(detDateStart, 'days').days);
+
+                return diffDays <= 1;
             });
 
             if (stageMatch) {
                 const matchedPortId = type === 'ZARPADA' ? stageMatch.puertoZarpadaId : stageMatch.puertoArriboId;
-                if (matchedPortId === portId) {
-                    return false;
-                } else {
+                const registeredDate = type === 'ZARPADA' ? stageMatch.fechaZarpada : stageMatch.fechaArribo;
+
+                // VALIDACIÓN DE PUERTO: Por ID o por Nombre (para evitar duplicados si hay IDs distintos para el mismo lugar)
+                const registeredPortName = ports.find(p => p.id === matchedPortId)?.nombre;
+                const portIsSame = matchedPortId === portId || (registeredPortName && registeredPortName === port?.nombre);
+
+                // A. Incongruencia de Puerto
+                if (!portIsSame) {
                     return await this.createDiscrepancyAlert(buqueId, type, port, date, marea, stageMatch, ports, hash);
+                }
+
+                // B. Incongruencia de Fecha (Local Time)
+                // Si hubo match pero NO es el mismo día calendario (es decir, entró por la ventana de 18h en días distintos)
+                const registeredLocalKey = DateTime.fromJSDate(registeredDate!).setZone(this.TIMEZONE).toFormat('yyyy-MM-dd');
+                const eventLocalKey = eventDate.toFormat('yyyy-MM-dd');
+
+                if (registeredLocalKey !== eventLocalKey) {
+                    return await this.createDateInconsistencyAlert(buqueId, type, port, date, marea, stageMatch, hash);
+                }
+
+                return false; // Match perfecto (mismo puerto y mismo día, o dentro de ventana sin cambio de día)
+            }
+        }
+
+        // 3) Si no hubo match, manejar como nuevo evento SOLAMENTE en mareas activas
+        const mareaDesignada = mareas.find(m => m.estadoActual.codigo === 'DESIGNADA');
+        const mareaEnEjecucion = mareas.find(m => m.estadoActual.codigo === 'EN_EJECUCION');
+
+        if (type === 'ZARPADA') {
+            // Regla: Si hay una DESIGNADA, la zarpada es para ella. Si no, es una nueva etapa
+            const target = mareaDesignada || mareaEnEjecucion;
+            if (target) {
+                // COHERENCIA CRONOLÓGICA: Ignorar si la zarpada es anterior a etapas ya registradas
+                const hasPosteriorStage = target.etapas.some(e => e.fechaZarpada && new Date(e.fechaZarpada) > date);
+                if (hasPosteriorStage) {
+                    return false; // Ignorar evento antiguo
+                }
+                return await this.createPossibleMovementAlert(buqueId, 'ZARPADA', port, date, target, hash);
+            }
+        } else {
+            // ARRIBO
+            if (mareaEnEjecucion) {
+                // Regla especial: Si hay una marea DESIGNADA esperando, sugerir FINALIZAR marea en lugar de solo arribo.
+                if (mareaDesignada) {
+                    return await this.createRecommendationFinMarea(buqueId, port, date, mareaEnEjecucion, mareaDesignada, hash);
+                }
+
+                const lastStageOpen = [...mareaEnEjecucion.etapas].sort((a, b) => b.nroEtapa - a.nroEtapa).find(e => !e.fechaArribo);
+
+                // COHERENCIA CRONOLÓGICA: Ignorar si el arribo es anterior al inicio de la marea
+                const hasPosteriorStage = mareaEnEjecucion.etapas.some(e => e.fechaZarpada && new Date(e.fechaZarpada) > date);
+                if (hasPosteriorStage) {
+                    return false; // Ignorar evento antiguo
+                }
+
+                // El arribo debe ser posterior a la zarpada registrada de la etapa abierta (si existe)
+                if (!lastStageOpen || new Date(date) > new Date(lastStageOpen.fechaZarpada)) {
+                    return await this.createPossibleMovementAlert(buqueId, 'ARRIBO', port, date, mareaEnEjecucion, hash, lastStageOpen?.nroEtapa);
                 }
             }
         }
 
-        // 3) Si ninguna marea coincide en fecha, sugerimos un nuevo evento para la marea más relevante
-        const mareaTarget = mareas.find(m => m.estadoActual.codigo === 'EN_EJECUCION') || mareas[0];
-        const buqueNombre = mareaTarget.buque.nombreBuque;
-        const yearSuffix = String(mareaTarget.anioMarea).slice(-2);
-        const mareaLabel = mareaTarget.tipoMarea === 'CI' ? `CI-${yearSuffix}` : `MC-${mareaTarget.nroMarea}-${yearSuffix}`;
-        const dateStr = eventDate.toFormat('dd/MM HH:mm');
+        return false;
+    }
 
+    private async createPossibleMovementAlert(buqueId: string, type: 'ZARPADA' | 'ARRIBO', port: any, date: Date, marea: any, hash: string, nroEtapa?: number) {
+        const buqueNombre = marea.buque.nombreBuque;
+        const yearSuffix = String(marea.anioMarea).slice(-2);
+        const mareaLabel = marea.tipoMarea === 'CI' ? `CI-${yearSuffix}` : `MC-${marea.nroMarea}-${yearSuffix}`;
+        const dateStr = DateTime.fromJSDate(date).setZone(this.TIMEZONE).toFormat('dd/MM HH:mm');
 
-        let alertType: string | null = null;
-        let alertSubTipo: string | null = null;
-        let metadata: any = {
-            mareaId: mareaTarget.id,
+        const alertType = type === 'ZARPADA' ? 'POSIBLE_ZARPADA' : 'POSIBLE_ARRIBO';
+        const prep = type === 'ZARPADA' ? 'desde' : 'a';
+        const alertTitle = `${buqueNombre}: Posible ${type.toLowerCase()} ${prep} ${port?.nombre} el ${dateStr} (${mareaLabel})`;
+
+        const metadata: AlertMetadata = {
+            mareaId: marea.id,
             mareaCode: mareaLabel,
             vesselName: buqueNombre,
-            portId: portId,
+            buqueId,
+            portId: port.id,
             portName: port?.nombre,
             eventDate: date,
-            type
+            type,
+            subTipo: type,
+            nroEtapa,
+            source: 'TRACKING_CSV',
+            externalData: {
+                [type === 'ZARPADA' ? 'fechaZarpada' : 'fechaArribo']: date,
+                [type === 'ZARPADA' ? 'puertoZarpadaId' : 'puertoArriboId']: port.id
+            }
         };
 
-        if (type === 'ZARPADA') {
-            alertType = 'POSIBLE_ZARPADA';
-            alertSubTipo = 'ZARPADA';
-            metadata.subTipo = alertSubTipo;
-            metadata.externalData = { fechaZarpada: date, puertoZarpadaId: portId };
-        } else {
-            // ARRIBO: Buscar etapa abierta
-            // Si la marea está DESIGNADA, no generamos alertas de arribo (regla de negocio)
-            if (mareaTarget.estadoActual.codigo === 'DESIGNADA') {
-                return false;
-            }
-
-            const lastStageOpen = [...mareaTarget.etapas].sort((a, b) => b.nroEtapa - a.nroEtapa).find(e => !e.fechaArribo);
-
-            // VALIDACIÓN: El arribo detectado debe ser posterior a la zarpada registrada
-            if (lastStageOpen && new Date(date) > new Date(lastStageOpen.fechaZarpada)) {
-                alertType = 'POSIBLE_ARRIBO';
-                alertSubTipo = 'ARRIBO';
-                metadata.subTipo = alertSubTipo;
-                metadata.nroEtapa = lastStageOpen.nroEtapa;
-                metadata.externalData = { fechaArribo: date, puertoArriboId: portId };
-            } else if (!lastStageOpen) {
-                alertType = 'POSIBLE_ARRIBO';
-                alertSubTipo = 'ARRIBO';
-                metadata.subTipo = alertSubTipo;
-            } else {
-                // Silently skip if date not after departure
-            }
+        const created = await this.createAlert(buqueId, alertType, alertTitle, date, metadata, marea.id, 'MAREA', `${alertTitle}\n\nOrigen: Monitoreo satelital.`);
+        if (created) {
+            await this.saveSnapshot(buqueId, type, date, port.id, hash);
+            return true;
         }
+        return false;
+    }
 
-        if (alertType) {
-            const tipoMov = type === 'ZARPADA' ? 'zarpada' : 'arribo';
-            const prep = type === 'ZARPADA' ? 'desde' : 'a';
-            const alertTitle = `${buqueNombre}: Posible ${tipoMov} ${prep} ${port?.nombre} el ${dateStr} (${mareaLabel})`;
+    private async createRecommendationFinMarea(buqueId: string, port: any, date: Date, mareaActual: any, mareaSiguiente: any, hash: string) {
+        const buqueNombre = mareaActual.buque.nombreBuque;
+        const dateStr = DateTime.fromJSDate(date).setZone(this.TIMEZONE).toFormat('dd/MM HH:mm');
+        const alertTitle = `${buqueNombre}: Se recomienda FINALIZAR MAREA. Arribo detectado a ${port?.nombre} el ${dateStr}`;
 
+        const yearSuffix = String(mareaActual.anioMarea).slice(-2);
+        const mareaLabel = mareaActual.tipoMarea === 'CI' ? `CI-${yearSuffix}` : `MC-${mareaActual.nroMarea}-${yearSuffix}`;
+        const lastStage = [...mareaActual.etapas].sort((a, b) => b.nroEtapa - a.nroEtapa)[0];
 
-            const created = await this.createAlert(buqueId, alertType, alertTitle, date, metadata, mareaTarget.id, 'MAREA', `${alertTitle}\n\nOrigen: Datos de monitoreo satelital.`);
-            if (created) {
-                await this.saveSnapshot(buqueId, type, date, portId, hash);
-                return true;
-            }
+        const metadata = {
+            mareaId: mareaActual.id,
+            mareaCode: mareaLabel,
+            mareaSiguienteId: mareaSiguiente.id,
+            vesselName: buqueNombre,
+            portId: port.id,
+            portName: port.nombre,
+            eventDate: date,
+            type: 'ARRIBO',
+            subTipo: 'FIN_MAREA',
+            nroEtapa: lastStage?.nroEtapa,
+            source: 'TRACKING_CSV'
+        };
+
+        const descripcion = `${alertTitle}\n\nHay una marea DESIGNADA esperando (${mareaSiguiente.nroMarea}/${mareaSiguiente.anioMarea}). Se sugiere finalizar la marea actual en lugar de registrar un arribo intermedio.`;
+
+        const created = await this.createAlert(buqueId, 'RECOMENDACION_FIN_MAREA', alertTitle, date, metadata, mareaActual.id, 'MAREA', descripcion);
+        if (created) {
+            await this.saveSnapshot(buqueId, 'ARRIBO', date, port.id, hash);
+            return true;
+        }
+        return false;
+    }
+
+    private async createDateInconsistencyAlert(buqueId: string, type: 'ZARPADA' | 'ARRIBO', port: any, date: Date, marea: any, stageMatch: any, hash: string) {
+        const registeredDate = type === 'ZARPADA' ? stageMatch.fechaZarpada : stageMatch.fechaArribo;
+        const regStr = DateTime.fromJSDate(registeredDate).setZone(this.TIMEZONE).toFormat('dd/MM HH:mm');
+        const detStr = DateTime.fromJSDate(date).setZone(this.TIMEZONE).toFormat('dd/MM HH:mm');
+
+        const buqueNombre = marea.buque.nombreBuque;
+        const alertTitle = `${buqueNombre}: Incongruencia de FECHA en ${type.toLowerCase()} (${port.nombre})`;
+
+        const yearSuffix = String(marea.anioMarea).slice(-2);
+        const mareaLabel = marea.tipoMarea === 'CI' ? `CI-${yearSuffix}` : `MC-${marea.nroMarea}-${yearSuffix}`;
+
+        const metadata = {
+            mareaId: marea.id,
+            mareaCode: mareaLabel,
+            vesselName: buqueNombre,
+            portId: port.id,
+            portName: port.nombre,
+            type,
+            subTipo: 'EDITAR_ETAPA', // Sugerir edición
+            nroEtapa: stageMatch.nroEtapa,
+            source: 'TRACKING_CSV',
+            externalData: { date: date },
+            localData: { date: registeredDate }
+        };
+
+        const descripcion = `${alertTitle}\n\nDetectado: ${detStr}\nRegistrado: ${regStr}\n\nLa proximidad temporal sugiere que se trata del mismo evento. Se recomienda EDITAR LA ETAPA para corregir la fecha oficial.`;
+
+        const created = await this.createAlert(buqueId, 'ERROR_FECHA_MOVIMIENTO', alertTitle, date, metadata, marea.id, 'MAREA', descripcion);
+        if (created) {
+            await this.saveSnapshot(buqueId, type, date, port.id, hash);
+            return true;
         }
         return false;
     }
@@ -682,8 +807,9 @@ export class TrackingService {
             portName: port.nombre,
             eventDate: date,
             type,
-            subTipo: 'INCONGRUENCIA',
+            subTipo: 'EDITAR_ETAPA', // Sugerir edición
             nroEtapa: stageMatch.nroEtapa,
+            source: 'TRACKING_CSV',
             externalData: {
                 [type === 'ZARPADA' ? 'fechaZarpada' : 'fechaArribo']: date,
                 [type === 'ZARPADA' ? 'puertoZarpadaId' : 'puertoArriboId']: port.id,
@@ -696,7 +822,7 @@ export class TrackingService {
             }
         };
 
-        const descripcion = `${alertTitle}\n\nOrigen: Datos de monitoreo satelital.\nDetalle: Puerto real detectado ${port?.nombre} vs registrado ${puertoLocal}`;
+        const descripcion = `${alertTitle}\n\nDetectado puerto ${port?.nombre} vs registrado ${puertoLocal}.\n\nSe sugiere EDITAR LA ETAPA para corregir el puerto oficial basado en el monitoreo satelital.`;
 
         const created = await this.createAlert(buqueId, 'ERROR_REGISTRO_PUERTO', alertTitle, date, metadata, marea.id, 'MAREA', descripcion);
         if (created) {

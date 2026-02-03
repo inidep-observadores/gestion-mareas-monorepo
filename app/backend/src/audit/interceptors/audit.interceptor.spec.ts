@@ -20,6 +20,8 @@ describe('AuditInterceptor', () => {
         query: {},
         user: { id: 'user-1' },
         ip: '127.0.0.1',
+        headers: {},
+        cookies: {},
         get: jest.fn().mockReturnValue('Mozilla/5.0')
     };
 

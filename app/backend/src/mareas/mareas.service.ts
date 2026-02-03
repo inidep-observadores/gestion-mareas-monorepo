@@ -1778,7 +1778,7 @@ export class MareasService {
                 }
             }
 
-            if (actionKey === 'REGISTRAR_ARRIBO') {
+            if (actionKey === 'REGISTRAR_FINALIZACION') {
                 const fechaFin = payload.fechaFinObservador;
                 // if (!fechaFin) throw new Error('La fecha de fin del observador es requerida.'); // Eliminado por pedido del usuario
 
@@ -1850,7 +1850,7 @@ export class MareasService {
                     cantidadMuestrasOtolitos: actionKey === 'RECIBIR_DATOS' ? (payload.cantidadOtolitos || null) : null,
                     detalle: actionKey === 'REGISTRAR_INICIO'
                         ? `Inicio Marea. Obs: ${new Date(additionalMareaData.fechaInicioObservador).toLocaleDateString('es-AR')}`
-                        : actionKey === 'REGISTRAR_ARRIBO'
+                        : actionKey === 'REGISTRAR_FINALIZACION'
                             ? `Fin Marea. Obs: ${additionalMareaData.fechaFinObservador ? new Date(additionalMareaData.fechaFinObservador).toLocaleDateString('es-AR') : 'Sin fecha definida'}`
                             : actionKey === 'RECIBIR_DATOS'
                                 ? `Recepción de datos. Otolitos: ${payload.cantidadOtolitos || 0}`
