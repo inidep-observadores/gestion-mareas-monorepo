@@ -28,8 +28,8 @@
         <div class="col-span-12 lg:col-span-6 xl:col-span-5 flex flex-col gap-8">
           <AlertTrafficLight :show-actions="false" />
           <div class="flex flex-col gap-2">
-            <WorkforceOverview :data="workforceData" />
-            <TopDryTime :topDry="workforceData?.topDry || []" />
+            <WorkforceOverview :data="workforceData" @view-timeline="openTimeline" />
+            <TopDryTime :topDry="workforceData?.topDry || []" @view-timeline="openTimeline" />
           </div>
         </div>
 
@@ -41,6 +41,16 @@
         </div>
       </div>
     </div>
+
+    <!-- Centralized Dialogs -->
+    <ObservadorTimelineDialog 
+      v-if="showTimelineDialog"
+      :show="showTimelineDialog" 
+      :observador-id="selectedObserver?.id"
+      :observador-name="selectedObserver?.name" 
+      :year="selectedYear" 
+      @close="showTimelineDialog = false" 
+    />
   </AdminLayout>
 </template>
 
@@ -55,9 +65,21 @@ import FleetDistributionByFishery from '../components/FleetDistributionByFishery
 import WorkforceOverview from '../components/WorkforceOverview.vue'
 import TopDryTime from '../components/TopDryTime.vue'
 import RecentMovements from '../components/RecentMovements.vue'
+import ObservadorTimelineDialog from '@/modules/admin/components/ObservadorTimelineDialog.vue'
 import dashboardService, { type WorkforceStatus } from '../services/dashboard.service'
+import { useConfigStore } from '@/modules/shared/stores/config.store'
+import { storeToRefs } from 'pinia'
 
 const workforceData = ref<WorkforceStatus | null>(null)
+const showTimelineDialog = ref(false)
+const selectedObserver = ref<{ id: string, name: string } | null>(null)
+const configStore = useConfigStore()
+const { selectedYear } = storeToRefs(configStore)
+
+const openTimeline = (id: string, name: string) => {
+  selectedObserver.value = { id, name }
+  showTimelineDialog.value = true
+}
 
 const loadWorkforce = async () => {
   try {

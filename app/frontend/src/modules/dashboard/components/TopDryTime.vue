@@ -31,7 +31,8 @@
               </td>
               <td class="py-2.5 px-2">
                 <span
-                  class="text-xs font-bold text-text group-hover:text-primary transition-colors block truncate max-w-[140px]">
+                  class="text-xs font-bold text-text hover:text-primary cursor-pointer hover:underline decoration-primary/30 underline-offset-2 transition-colors block truncate max-w-[140px]"
+                  @click="$emit('view-timeline', obs.id, obs.name)">
                   {{ obs.name }}
                 </span>
               </td>
@@ -75,6 +76,8 @@ import type { WorkforceStatus } from '../services/dashboard.service'
 const props = defineProps<{
   topDry: WorkforceStatus['topDry']
 }>()
+
+defineEmits(['view-timeline'])
 
 const formatDate = (dateString: string) => {
   if (!dateString) return '-'

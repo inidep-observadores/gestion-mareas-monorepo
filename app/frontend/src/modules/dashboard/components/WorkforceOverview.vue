@@ -67,7 +67,7 @@
           <SearchInput v-model="searchQuery" placeholder="Buscar observador, buque o marea..."
             class="!w-full sm:!w-80" />
 
-          <div v-if="selectedStatus === 'Disponibles'" class="flex gap-2">
+          <div class="flex gap-2">
             <button
               v-for="type in [{ key: 'OBSERVADOR', label: 'Observadores' }, { key: 'TECNICO', label: 'Técnicos' }]"
               :key="type.key" @click="toggleType(type.key)"
@@ -114,7 +114,7 @@
                 <td class="px-6 py-3 text-xs font-bold text-text">
                   <span
                     class="hover:text-primary transition-colors cursor-pointer hover:underline decoration-primary/30 underline-offset-2"
-                    @click="openTimeline(item.id, item.name)">
+                    @click="$emit('view-timeline', item.id, item.name)">
                     {{ item.name }}
                   </span>
                   <span class="block text-[9px] font-normal text-text-muted/60 lowercase italic">{{ item.tipoObservador
@@ -167,8 +167,6 @@
         </div>
       </div>
     </div>
-    <ObservadorTimelineDialog :show="showTimelineDialog" :observador-id="selectedObserver?.id"
-      :observador-name="selectedObserver?.name" :year="selectedYear" @close="showTimelineDialog = false" />
   </div>
 </template>
 
@@ -177,9 +175,6 @@ import { ref, markRaw, computed } from 'vue'
 import { ShipIcon, UserGroupIcon, DocsIcon, HotelIcon, ChevronDownIcon } from '@/icons'
 import type { WorkforceStatus } from '../services/dashboard.service'
 import SearchInput from '@/components/ui/SearchInput.vue'
-import ObservadorTimelineDialog from '@/modules/admin/components/ObservadorTimelineDialog.vue'
-import { useConfigStore } from '@/modules/shared/stores/config.store'
-import { storeToRefs } from 'pinia'
 
 const props = defineProps<{
   data: WorkforceStatus | null
@@ -190,16 +185,6 @@ const selectedTypes = ref<string[]>(['OBSERVADOR'])
 const searchQuery = ref('')
 const sortBy = ref<'name' | 'days' | null>(null)
 const sortOrder = ref<'asc' | 'desc'>('desc')
-
-const showTimelineDialog = ref(false)
-const selectedObserver = ref<{ id: string, name: string } | null>(null)
-const configStore = useConfigStore()
-const { selectedYear } = storeToRefs(configStore)
-
-const openTimeline = (id: string, name: string) => {
-  selectedObserver.value = { id, name }
-  showTimelineDialog.value = true
-}
 
 const toggleSort = (key: 'name' | 'days') => {
   if (sortBy.value === key) {
@@ -243,16 +228,37 @@ const formatDate = (dateString: string) => {
   })
 }
 
+const getFilteredList = (list: any[]) => {
+  return (list || []).filter(item => {
+    const raw = (item.tipoObservador || item.tipo_observador || '').toString().toUpperCase();
+    let itemType = 'OBSERVADOR';
+    if (raw.includes('TECNIC')) itemType = 'TECNICO';
+    return selectedTypes.value.includes(itemType);
+  });
+}
+
+const filteredStats = computed(() => {
+  if (!props.data) return { navegando: 0, descanso: 0, disponibles: 0, impedidos: 0, total: 0 }
+  
+  const navegando = getFilteredList(props.data.listNavegando).length
+  const descanso = getFilteredList(props.data.listDescanso).length
+  const disponibles = getFilteredList(props.data.listDisponibles).length
+  const impedidos = getFilteredList(props.data.listImpedidos).length
+  const total = navegando + descanso + disponibles + impedidos
+
+  return { navegando, descanso, disponibles, impedidos, total }
+})
+
 const distributions = computed<DistributionItem[]>(() => {
   if (!props.data) return []
-  const data = props.data
-  const base = data.totalActivos || 1
+  const stats = filteredStats.value
+  const base = stats.total || 1
 
   return [
     {
       label: 'Navegando',
-      count: data.navegando,
-      value: Math.round((data.navegando / base) * 100),
+      count: stats.navegando,
+      value: Math.round((stats.navegando / base) * 100),
       colorClass: 'text-info',
       bgClass: 'bg-info',
       borderColorClass: 'border-info',
@@ -261,8 +267,8 @@ const distributions = computed<DistributionItem[]>(() => {
     },
     {
       label: 'Descanso',
-      count: data.descanso,
-      value: Math.round((data.descanso / base) * 100),
+      count: stats.descanso,
+      value: Math.round((stats.descanso / base) * 100),
       colorClass: 'text-primary',
       bgClass: 'bg-primary',
       borderColorClass: 'border-primary',
@@ -271,8 +277,8 @@ const distributions = computed<DistributionItem[]>(() => {
     },
     {
       label: 'Disponibles',
-      count: data.disponibles,
-      value: Math.round((data.disponibles / base) * 100),
+      count: stats.disponibles,
+      value: Math.round((stats.disponibles / base) * 100),
       colorClass: 'text-success',
       bgClass: 'bg-success',
       borderColorClass: 'border-success',
@@ -281,8 +287,8 @@ const distributions = computed<DistributionItem[]>(() => {
     },
     {
       label: 'Impedidos',
-      count: data.impedidos,
-      value: Math.round((data.impedidos / base) * 100),
+      count: stats.impedidos,
+      value: Math.round((stats.impedidos / base) * 100),
       colorClass: 'text-error',
       bgClass: 'bg-error',
       borderColorClass: 'border-error',
@@ -312,14 +318,7 @@ const currentList = computed(() => {
   }
 
   // 1. Filtrado por tipo (si aplica)
-  if (selectedStatus.value === 'Disponibles') {
-    list = (list || []).filter(item => {
-      const raw = (item.tipoObservador || item.tipo_observador || '').toString().toUpperCase();
-      let itemType = 'OBSERVADOR';
-      if (raw.includes('TECNIC')) itemType = 'TECNICO';
-      return selectedTypes.value.includes(itemType);
-    });
-  }
+  list = getFilteredList(list);
 
   // 2. Filtrado por búsqueda
   if (searchQuery.value) {
