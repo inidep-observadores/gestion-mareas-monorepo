@@ -5,7 +5,7 @@
             :is-loading="isLoading" v-model:search="searchQuery" search-placeholder="Buscar observadores..."
             @create="openCreateModal">
             <template #header-actions>
-                <button @click="exportData"
+                <button v-if="canEdit" @click="exportData"
                     class="flex items-center justify-center gap-2 rounded-lg bg-success/10 px-4 py-2.5 text-sm font-semibold text-success hover:bg-success/20 transition-colors border border-success/20"
                     title="Exportar a Excel">
                     <DownloadIcon class="w-4 h-4" />

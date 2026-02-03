@@ -189,7 +189,7 @@ watch(() => props.show, (newShow) => {
     } else {
         items.value = []
     }
-})
+}, { immediate: true })
 
 const formatDate = (dateStr: string) => {
     if (!dateStr) return '-'

@@ -24,8 +24,8 @@ docs/
 │   ├── api/            # Especificaciones de endpoints
 │   └── features/       # Documentación por funcionalidad
 ├── user-guide/         # Guías para usuarios finales
-│   ├── getting-started.md
-│   └── features/       # Guías de uso por funcionalidad
+├── changelog/          # Registro histórico de cambios por versión
+│   └── v0.1.0.md       # Archivo separado por versión (según package.json raíz)
 └── assets/             # Screenshots, diagramas, videos
     ├── screenshots/
     └── diagrams/
@@ -229,6 +229,34 @@ Qué esperar al finalizar.
 |----------|----------|
 | Error: "X no está disponible" | Verifica que tengas los permisos necesarios |
 | Los cambios no se guardan | Refresca la página y vuelve a intentar |
+
+## 📝 3. Registro de Cambios (Changelog)
+
+### Regla Obligatoria
+Cada cambio más o menos importante tiene que ser registrado en un changelog correspondiente a la versión de la app. La versión de referencia es la que figura en el `package.json` general del monorepo.
+
+### Ubicación y Formato
+- **Ruta**: `docs/changelog/v[version].md` (Ejemplo: `docs/changelog/v0.1.0.md`)
+- **Frecuencia**: En cada fase de cambios significativos.
+
+### Plantilla de Changelog
+```markdown
+# Changelog v[VERSIÓN]
+
+## [FECHA] - [Título del Bloque de Cambios]
+
+### ✨ Nuevas Funcionalidades
+- [ ] Descripción breve...
+
+### 🛠️ Mejoras y Refactorizaciones
+- [ ] Descripción breve...
+
+### 🐛 Correcciones de Errores
+- [ ] Descripción breve...
+
+### ⚠️ Cambios Importantes / Breaking Changes
+- [ ] Descripción...
+```
 
 ## Video Tutorial
 [Enlace al video tutorial si existe]
