@@ -433,7 +433,7 @@ const getStatusClasses = (status?: string) => {
 const getActionIcon = (key: string | number) => {
   const meta: Record<string, any> = {
     REGISTRAR_INICIO: TaskIcon,
-    REGISTRAR_ARRIBO: MapPinIcon,
+    REGISTRAR_FINALIZACION: MapPinIcon,
     EDITAR_ETAPAS: EditIcon,
     RECIBIR_DATOS: CloudUploadIcon,
     INICIAR_VERIFICACION: SearchIcon,

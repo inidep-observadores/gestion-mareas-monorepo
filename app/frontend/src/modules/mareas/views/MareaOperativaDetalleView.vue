@@ -4,7 +4,7 @@
     :description="selectedMarea ? `Marea ${selectedMarea.id_marea}` : 'Cargando información...'"
   >
     <template #header-actions>
-      <Button 
+      <Button
         variant="soft"
         size="sm"
         @click="router.back()"
@@ -20,11 +20,11 @@
         <span class="mt-4 text-text-muted font-bold">Cargando contexto operativo...</span>
       </div>
 
-      <div 
+      <div
         v-else-if="selectedMarea"
         class="bg-surface border border-border rounded-2xl shadow-sm overflow-hidden"
       >
-        <MareaContextDetailContent 
+        <MareaContextDetailContent
           :marea="selectedMarea"
           :context="selectedMareaContext"
           :read-only="isReadOnly"
@@ -38,7 +38,7 @@
 
       <div v-else class="text-center py-20">
         <p class="text-text-muted">No se pudo cargar la información de la marea.</p>
-        <button 
+        <button
           @click="router.back()"
           class="mt-4 text-primary font-bold hover:underline"
         >
@@ -160,7 +160,7 @@ const executeActionFromView = async (actionKey: string) => {
     return
   }
 
-  if (actionKey === 'REGISTRAR_ARRIBO') {
+  if (actionKey === 'REGISTRAR_FINALIZACION') {
     mareaToManage.value = mareaContext
     gestionMode.value = 'FINALIZAR'
     showGestionDialog.value = true
@@ -186,7 +186,7 @@ const handleGestionConfirm = async (payload: any) => {
         const actionKey = gestionMode.value === 'INICIAR'
             ? 'REGISTRAR_INICIO'
             : gestionMode.value === 'FINALIZAR'
-                ? 'REGISTRAR_ARRIBO'
+                ? 'REGISTRAR_FINALIZACION'
                 : 'EDITAR_ETAPAS';
 
         await executeAction(mareaToManage.value.id, actionKey, payload)

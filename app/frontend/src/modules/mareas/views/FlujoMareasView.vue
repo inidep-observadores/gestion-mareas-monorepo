@@ -666,7 +666,7 @@ watch(
 
 const openSidebar = async (marea: any) => {
   if (window.innerWidth < 1280) {
-    // Navigate to mobile detail route if strictly mobile, 
+    // Navigate to mobile detail route if strictly mobile,
     // BUT user asked to replicate PanelOperationalView which does navigating on mobile < 1280
     // Checking logic in PanelOperativo:
     router.push({ name: 'MareaOperativaDetalle', params: { id: marea.id } })
@@ -695,7 +695,7 @@ const executeActionFromSidebar = async (actionKey: string) => {
     return
   }
 
-  if (actionKey === 'REGISTRAR_ARRIBO') {
+  if (actionKey === 'REGISTRAR_FINALIZACION') {
     mareaToManage.value = mareaContext
     gestionMode.value = 'FINALIZAR'
     showGestionDialog.value = true
@@ -732,7 +732,7 @@ const handleGestionConfirm = async (payload: any) => {
     const actionKey = gestionMode.value === 'INICIAR'
       ? 'REGISTRAR_INICIO'
       : gestionMode.value === 'FINALIZAR'
-        ? 'REGISTRAR_ARRIBO'
+        ? 'REGISTRAR_FINALIZACION'
         : 'EDITAR_ETAPAS';
 
     await executeAction(mareaToManage.value.id, actionKey, payload)
