@@ -33,7 +33,7 @@ lerna-debug.log\*
 
 app/backend/dist/
 app/backend/dist-staging/
-app/backend/redis_data/
+
 
 app/backend/postgres/
 app/backend/backups/
@@ -41,13 +41,17 @@ app/backend/backups-staging/
 app/backend/data-exports/
 app/backend/uploads/
 app/backend/test-results/
-app/backend/redis_data/
+
 
 # **Prisma**
 
 app/backend/generated/prisma/  
 app/backend/prisma/.db  
 app/backend/prisma/.db-journal
+
+# **Redis**
+
+app/backend/redis_data
 
 # **=========================**
 
