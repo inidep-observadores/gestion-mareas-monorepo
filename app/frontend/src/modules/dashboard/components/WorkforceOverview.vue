@@ -1,5 +1,12 @@
 <template>
-  <div class="rounded-3xl border border-border bg-surface p-5 shadow-sm border-l-4 border-l-primary flex flex-col">
+  <div
+    class="relative rounded-3xl border border-border bg-surface p-5 shadow-sm border-l-4 border-l-primary flex flex-col overflow-hidden">
+    <!-- Total Badge -->
+    <div v-if="filteredStats"
+      class="absolute top-0 right-0 px-4 py-1.5 bg-primary/10 text-primary border-b border-l border-primary/20 rounded-bl-2xl font-black text-[10px] tracking-widest uppercase shadow-sm">
+      {{ filteredStats.total }} TOTAL
+    </div>
+
     <div class="flex items-center gap-3 mb-6">
       <UserGroupIcon class="w-6 h-6 text-primary" />
       <div>
@@ -118,7 +125,7 @@
                     {{ item.name }}
                   </span>
                   <span class="block text-[9px] font-normal text-text-muted/60 lowercase italic">{{ item.tipoObservador
-                  }}</span>
+                    }}</span>
                 </td>
 
                 <!-- Impedidos Columns -->
@@ -154,7 +161,7 @@
                 <td v-if="selectedStatus !== 'Impedidos'"
                   class="px-6 py-3 text-xs font-black text-text text-right tabular-nums">
                   <span :class="selectedStatus === 'Navegando' ? 'text-info' : 'text-text-muted'">{{ (item as any).days
-                  }}
+                    }}
                     d</span>
                 </td>
               </tr>
@@ -239,7 +246,7 @@ const getFilteredList = (list: any[]) => {
 
 const filteredStats = computed(() => {
   if (!props.data) return { navegando: 0, descanso: 0, disponibles: 0, impedidos: 0, total: 0 }
-  
+
   const navegando = getFilteredList(props.data.listNavegando).length
   const descanso = getFilteredList(props.data.listDescanso).length
   const disponibles = getFilteredList(props.data.listDisponibles).length
