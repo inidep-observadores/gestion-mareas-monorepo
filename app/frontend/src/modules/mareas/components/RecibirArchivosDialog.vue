@@ -286,7 +286,7 @@ const confirmationConfirmText = ref('Confirmar');
 watch(() => props.show, (val) => {
   if (val) {
     form.value = {
-      fechaInicioObservador: props.marea?.fechaInicioObservador || null,
+      fechaInicioObservador: props.marea?.fecha_inicio_observador || props.marea?.fechaInicioObservador || null,
       fechaFinObservador: props.marea?.fecha_fin_observador || props.marea?.fechaFinObservador || null,
       fechaRecepcion: new Date().toISOString(),
       files: [],
@@ -454,9 +454,18 @@ function handleConfirm() {
 function executeConfirmation() {
   showConfirmation.value = false;
   if (confirmationAction.value === 'SAVE') {
+    // Helper to extract YYYY-MM-DD from local date
+    const getLocalDateStr = (isoStr: string | null) => {
+      if (!isoStr) return null;
+      // create date from ISO (restores local time)
+      const d = new Date(isoStr);
+      // format to YYYY-MM-DD using Sweden locale (ISO standard)
+      return d.toLocaleDateString('sv');
+    };
+
     emit('confirm', {
-      fechaInicioObservador: form.value.fechaInicioObservador,
-      fechaFinObservador: form.value.fechaFinObservador,
+      fechaInicioObservador: getLocalDateStr(form.value.fechaInicioObservador),
+      fechaFinObservador: getLocalDateStr(form.value.fechaFinObservador),
       fechaRecepcion: form.value.fechaRecepcion,
       cantidadOtolitos: form.value.otolitos,
       comentarios: form.value.comentarios,

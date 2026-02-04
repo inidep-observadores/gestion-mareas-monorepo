@@ -149,4 +149,29 @@ export class DateUtils {
     }
 
 
+    /**
+     * Parsea un string de fecha (YYYY-MM-DD o ISO) interpretándolo como inicio del día (00:00:00)
+     * en la zona horaria configurada en APP_TIMEZONE.
+     * @param dateStr Fecha en formato string
+     * @returns Date object (JS Date) representando ese instante.
+     */
+    static parseToAppZone(dateStr: string): Date {
+        if (!dateStr) return new Date(); // Fallback to now if empty
+
+        const timezone = process.env.APP_TIMEZONE || 'UTC';
+        
+        // Intentar parsear ISO o SQL formato
+        // Si viene con T (ISO), tomamos la parte de fecha
+        const simpleDate = dateStr.includes('T') ? dateStr.split('T')[0] : dateStr;
+        
+        // Crear fecha en esa zona horaria specificamente a las 00:00
+        const dt = DateTime.fromFormat(simpleDate, 'yyyy-MM-dd', { zone: timezone }).startOf('day');
+        
+        if (!dt.isValid) {
+            // Fallback: tratar de parsear ISO directo si el formato anterior falla
+            return new Date(dateStr);
+        }
+
+        return dt.toJSDate();
+    }
 }

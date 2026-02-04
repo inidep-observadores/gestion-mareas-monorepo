@@ -1750,7 +1750,7 @@ export class MareasService {
                 const fechaIn = payload.fechaInicioObservador || payload.fechaInicio;
                 if (!fechaIn) throw new Error('La fecha de inicio del observador es requerida.');
 
-                additionalMareaData.fechaInicioObservador = new Date(fechaIn);
+                additionalMareaData.fechaInicioObservador = DateUtils.parseToAppZone(fechaIn);
 
                 // Check and create Stage 1 if it doesn't exist
                 const existingStages = await tx.mareaEtapa.count({ where: { mareaId: id } });
@@ -1782,7 +1782,7 @@ export class MareasService {
                 const fechaFin = payload.fechaFinObservador;
                 // if (!fechaFin) throw new Error('La fecha de fin del observador es requerida.'); // Eliminado por pedido del usuario
 
-                additionalMareaData.fechaFinObservador = fechaFin ? new Date(fechaFin) : null;
+                additionalMareaData.fechaFinObservador = fechaFin ? DateUtils.parseToAppZone(fechaFin) : null;
 
                 if (payload.etapas) {
                     await this.syncStages(tx, id, payload.etapas);
@@ -1791,8 +1791,8 @@ export class MareasService {
 
             if (actionKey === 'RECIBIR_DATOS') {
                 const fechaRecepcion = payload.fechaRecepcion;
-                const fechaInicioObs = payload.fechaInicioObservador ? new Date(payload.fechaInicioObservador) : (marea.fechaInicioObservador ? new Date(marea.fechaInicioObservador) : null);
-                const fechaFinObs = payload.fechaFinObservador ? new Date(payload.fechaFinObservador) : (marea.fechaFinObservador ? new Date(marea.fechaFinObservador) : null);
+                const fechaInicioObs = payload.fechaInicioObservador ? DateUtils.parseToAppZone(payload.fechaInicioObservador) : (marea.fechaInicioObservador ? new Date(marea.fechaInicioObservador) : null);
+                const fechaFinObs = payload.fechaFinObservador ? DateUtils.parseToAppZone(payload.fechaFinObservador) : (marea.fechaFinObservador ? new Date(marea.fechaFinObservador) : null);
 
                 if (!fechaInicioObs || !fechaFinObs) {
                     throw new Error('Las fechas de inicio y fin del observador son requeridas para la recepción.');

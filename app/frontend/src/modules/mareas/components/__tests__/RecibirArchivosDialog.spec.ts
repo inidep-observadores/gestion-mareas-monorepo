@@ -111,4 +111,24 @@ describe('RecibirArchivosDialog.vue', () => {
     const confirmBtn = wrapper.findAll('button').find(b => b.text().includes('Confirmar'))
     expect(confirmBtn?.attributes('disabled')).toBeUndefined()
   })
+
+  it('initializes dates from snake_case backend properties', async () => {
+    const wrapper = mountComponent({
+      marea: {
+        ...defaultProps.marea,
+        fecha_inicio_observador: '2024-02-01T00:00:00.000Z',
+        fecha_fin_observador: '2024-02-10T00:00:00.000Z',
+        fechaInicioObservador: undefined,
+        fechaFinObservador: undefined 
+      },
+      show: true
+    })
+
+    await wrapper.vm.$nextTick()
+    
+    // Check internal form state
+    const vm = wrapper.vm as any
+    expect(vm.form.fechaInicioObservador).toBe('2024-02-01T00:00:00.000Z') // This should fail before fix
+    expect(vm.form.fechaFinObservador).toBe('2024-02-10T00:00:00.000Z')
+  })
 })

@@ -44,28 +44,30 @@ DROP INDEX "audit"."auditoria_navegacion_usuario_id_timestamp_idx";
 
 CREATE OR REPLACE FUNCTION truncate_timestamp_fields()
 RETURNS TRIGGER AS $$
+DECLARE
+    app_timezone TEXT := 'America/Argentina/Buenos_Aires';
 BEGIN
     -- Logic for 'mareas' table
     IF TG_TABLE_NAME = 'mareas' THEN
         IF NEW.fecha_zarpada_estimada IS NOT NULL THEN
-            NEW.fecha_zarpada_estimada := date_trunc('day', NEW.fecha_zarpada_estimada);
+            NEW.fecha_zarpada_estimada := date_trunc('day', NEW.fecha_zarpada_estimada AT TIME ZONE app_timezone) AT TIME ZONE app_timezone;
         END IF;
         IF NEW.fecha_inicio_observador IS NOT NULL THEN
-            NEW.fecha_inicio_observador := date_trunc('day', NEW.fecha_inicio_observador);
+            NEW.fecha_inicio_observador := date_trunc('day', NEW.fecha_inicio_observador AT TIME ZONE app_timezone) AT TIME ZONE app_timezone;
         END IF;
         IF NEW.fecha_fin_observador IS NOT NULL THEN
-            NEW.fecha_fin_observador := date_trunc('day', NEW.fecha_fin_observador);
+            NEW.fecha_fin_observador := date_trunc('day', NEW.fecha_fin_observador AT TIME ZONE app_timezone) AT TIME ZONE app_timezone;
         END IF;
         IF NEW.fecha_protocolizacion IS NOT NULL THEN
-            NEW.fecha_protocolizacion := date_trunc('day', NEW.fecha_protocolizacion);
+            NEW.fecha_protocolizacion := date_trunc('day', NEW.fecha_protocolizacion AT TIME ZONE app_timezone) AT TIME ZONE app_timezone;
         END IF;
     -- Logic for 'mareas_etapas' table
     ELSIF TG_TABLE_NAME = 'mareas_etapas' THEN
         IF NEW.fecha_zarpada IS NOT NULL THEN
-            NEW.fecha_zarpada := date_trunc('day', NEW.fecha_zarpada);
+            NEW.fecha_zarpada := date_trunc('day', NEW.fecha_zarpada AT TIME ZONE app_timezone) AT TIME ZONE app_timezone;
         END IF;
         IF NEW.fecha_arribo IS NOT NULL THEN
-            NEW.fecha_arribo := date_trunc('day', NEW.fecha_arribo);
+            NEW.fecha_arribo := date_trunc('day', NEW.fecha_arribo AT TIME ZONE app_timezone) AT TIME ZONE app_timezone;
         END IF;
     END IF;
     RETURN NEW;
