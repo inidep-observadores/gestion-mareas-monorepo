@@ -173,7 +173,7 @@ describe('Mareas - Normalización de Fechas', () => {
 
         expect(mockPrisma.marea.update).toHaveBeenCalledWith(expect.objectContaining({
             data: expect.objectContaining({
-                fechaInicioObservador: new Date('2025-01-10T14:20:00Z')
+                fechaInicioObservador: new Date('2025-01-10T00:00:00.000Z')
             })
         }));
 
@@ -205,8 +205,8 @@ describe('Mareas - Normalización de Fechas', () => {
 
         expect(mockPrisma.marea.update).toHaveBeenCalledWith(expect.objectContaining({
             data: expect.objectContaining({
-                fechaInicioObservador: new Date('2025-01-01T08:00:00Z'),
-                fechaFinObservador: new Date('2025-02-01T20:00:00Z')
+                fechaInicioObservador: new Date('2025-01-01T00:00:00.000Z'),
+                fechaFinObservador: new Date('2025-02-01T00:00:00.000Z')
             })
         }));
     });
