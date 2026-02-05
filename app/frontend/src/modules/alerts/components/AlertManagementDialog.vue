@@ -901,7 +901,13 @@ const handleStagesConfirm = async (data: any) => {
     try {
         processing.value = true
         if (localAlert.value.referenciaId) {
-            await mareasService.update(localAlert.value.referenciaId, {
+            const actionKey = stagesDialogMode.value === 'INICIAR'
+                ? 'REGISTRAR_INICIO'
+                : stagesDialogMode.value === 'FINALIZAR'
+                    ? 'REGISTRAR_FINALIZACION'
+                    : 'EDITAR_ETAPAS';
+
+            await mareasService.executeAction(localAlert.value.referenciaId, actionKey, {
                 fechaInicioObservador: data.fechaInicioObservador,
                 fechaFinObservador: data.fechaFinObservador,
                 etapas: data.etapas
