@@ -83,6 +83,11 @@ export interface CalendarEvent {
     type: string
 }
 
+export enum TipoCalculoZonaAustral {
+    AUTOMATICO = 'AUTOMATICO',
+    MANUAL = 'MANUAL'
+}
+
 // Defining a specific Marea interface for use in forms/dialogs if the nested structure in MareaContext isn't sufficient
 export interface Marea {
     id: string;
@@ -99,6 +104,8 @@ export interface Marea {
     id_pesqueria?: string;
     pesqueriaId?: string;
     tipo_marea?: TipoMarea;
+    diasZonaAustral?: number | null;
+    tipoCalculoZonaAustral?: TipoCalculoZonaAustral;
 }
 
 export interface ZonaAustralEtapa {

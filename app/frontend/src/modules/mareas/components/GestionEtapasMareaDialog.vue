@@ -8,7 +8,8 @@
         <div class="border-b border-border pb-5 mb-6">
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <h3 class="text-xl font-black text-text uppercase tracking-tight">{{ config.title }}</h3>
-            <div v-if="marea" class="flex items-center gap-2 px-3 py-1.5 bg-primary/5 rounded-xl border border-primary/10">
+            <div v-if="marea"
+              class="flex items-center gap-2 px-3 py-1.5 bg-primary/5 rounded-xl border border-primary/10">
               <span class="text-[10px] font-mono font-black text-primary uppercase tracking-widest">
                 {{ marea.id_marea }}
               </span>
@@ -24,31 +25,21 @@
         <!-- Observer Dates -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           <div class="space-y-1.5">
-            <label class="block text-[10px] font-black uppercase text-text-muted tracking-widest">Fecha Inicio Observador</label>
-            <DatePicker 
-              ref="firstInput"
-              v-model="form.fechaInicio" 
-              :error="validationErrors.fechaInicio"
-            />
+            <label class="block text-[10px] font-black uppercase text-text-muted tracking-widest">Fecha Inicio
+              Observador</label>
+            <DatePicker ref="firstInput" v-model="form.fechaInicio" :error="validationErrors.fechaInicio" />
           </div>
           <div v-if="mode === 'FINALIZAR'" class="space-y-1.5 animate-in fade-in duration-300">
-            <label class="block text-[10px] font-black uppercase text-text-muted tracking-widest">Fecha Fin Observador</label>
-            <DatePicker 
-              v-model="form.fechaFin" 
-              :error="validationErrors.fechaFin"
-            />
+            <label class="block text-[10px] font-black uppercase text-text-muted tracking-widest">Fecha Fin
+              Observador</label>
+            <DatePicker v-model="form.fechaFin" :error="validationErrors.fechaFin" />
           </div>
         </div>
 
         <!-- Stages List -->
-        <NavigationStagesEditor
-          v-model="form.stages"
-          :puertoOptions="puertoOptions"
-          :pesqueriaOptions="pesqueriaOptions"
-          :puertoBaseId="initialPortId || marea?.puertoBaseId"
-          :defaultPesqueriaId="marea?.id_pesqueria || marea?.pesqueriaId"
-          :minStages="mode === 'INICIAR' ? 1 : 0"
-        />
+        <NavigationStagesEditor v-model="form.stages" :puertoOptions="puertoOptions"
+          :pesqueriaOptions="pesqueriaOptions" :puertoBaseId="initialPortId || marea?.puertoBaseId"
+          :defaultPesqueriaId="marea?.id_pesqueria || marea?.pesqueriaId" :minStages="mode === 'INICIAR' ? 1 : 0" />
 
         <!-- Footer Actions -->
         <div class="mt-8 grid grid-cols-2 gap-4">
@@ -65,15 +56,9 @@
       </div>
 
       <!-- Confirmation Overlay -->
-      <ConfirmationDialog
-          :show="showConfirmation"
-          :title="confirmationTitle"
-          :message="confirmationMessage"
-          :confirmText="confirmationConfirmText"
-          @close="showConfirmation = false"
-          @confirm="executeConfirmation"
-          :isSidebarAware="false"
-      />
+      <ConfirmationDialog :show="showConfirmation" :title="confirmationTitle" :message="confirmationMessage"
+        :confirmText="confirmationConfirmText" @close="showConfirmation = false" @confirm="executeConfirmation"
+        :isSidebarAware="false" />
     </div>
   </Teleport>
 </template>
@@ -166,7 +151,7 @@ const pesqueriaOptions = computed(() => pesquerias.value.map(p => ({ value: p.id
 // Initial stage creation logic
 const addInitialStage = () => {
   if (form.value.stages.length > 0) return;
-  
+
   form.value.stages.push({
     id: null,
     nroEtapa: 1,
@@ -189,14 +174,14 @@ watch(() => props.show, (val) => {
     form.value.fechaFin = props.marea?.fechaFinObservador || props.marea?.fecha_fin_observador || '';
 
     // 2. Clone and Sort Stages
-    const clonedStages = (props.currentStages || []).map(s => ({ 
-        ...s,
-        fechaZarpada: s.fechaZarpada || '',
-        fechaArribo: s.fechaArribo || '',
-        tipoEtapa: s.tipoEtapa || TipoEtapa.MC,
-        nroEtapa: s.nroEtapa || s.nro_etapa // Fallback for safety
+    const clonedStages = (props.currentStages || []).map(s => ({
+      ...s,
+      fechaZarpada: s.fechaZarpada || '',
+      fechaArribo: s.fechaArribo || '',
+      tipoEtapa: s.tipoEtapa || TipoEtapa.MC,
+      nroEtapa: s.nroEtapa || s.nro_etapa // Fallback for safety
     }));
-    
+
     // Sort by nroEtapa
     form.value.stages = clonedStages.sort((a, b) => (a.nroEtapa || 0) - (b.nroEtapa || 0));
 
@@ -209,12 +194,12 @@ watch(() => props.show, (val) => {
     if (props.mode === 'FINALIZAR' && !form.value.fechaFin && form.value.stages.length > 0) {
       const lastStage = form.value.stages[form.value.stages.length - 1];
       if (lastStage.fechaArribo && lastStage.puertoArriboId) {
-         // Find port object to check code
-         const puertoArribo = puertos.value.find(p => p.id === lastStage.puertoArriboId);
-         // Check for 'ARMDQ' code (Mar del Plata)
-         if (puertoArribo && puertoArribo.codigo === 'ARMDQ') {
-            form.value.fechaFin = lastStage.fechaArribo;
-         }
+        // Find port object to check code
+        const puertoArribo = puertos.value.find(p => p.id === lastStage.puertoArriboId);
+        // Check for 'ARMDQ' code (Mar del Plata)
+        if (puertoArribo && puertoArribo.codigo === 'ARMDQ') {
+          form.value.fechaFin = lastStage.fechaArribo;
+        }
       }
     }
 
@@ -247,10 +232,10 @@ function hasOverlap(index: number): boolean {
 function stageErrors(index: number): boolean {
   const s = form.value.stages[index];
   const basic = !s.fechaZarpada || !s.puertoZarpadaId || !s.pesqueriaId;
-  
+
   // Internal Chronology: Arrival >= Departure
   if (s.fechaZarpada && s.fechaArribo) {
-     if (isDateBefore(s.fechaArribo, s.fechaZarpada)) return true;
+    if (isDateBefore(s.fechaArribo, s.fechaZarpada)) return true;
   }
 
   // If not last stage, or if FINALIZAR, arrival is required
@@ -275,7 +260,7 @@ const isValid = computed(() => {
   // Cross-date validations
   const startObs = form.value.fechaInicio;
   const firstZarpada = form.value.stages[0].fechaZarpada;
-  
+
   // 1. Start Obs > First Stage Departure
   if (isDateAfter(startObs, firstZarpada)) {
     validationErrors.value.fechaInicio = 'No puede ser posterior a la primera zarpada';
@@ -288,14 +273,14 @@ const isValid = computed(() => {
 
     // 2. End Obs < Last Stage Arrival
     if (isDateBefore(endObs, lastArribo)) {
-        validationErrors.value.fechaFin = 'No puede ser anterior al último arribo';
-        return false;
+      validationErrors.value.fechaFin = 'No puede ser anterior al último arribo';
+      return false;
     }
 
     // 3. End Obs <= Start Obs
     if (isDateSameOrBefore(endObs, startObs)) {
-        validationErrors.value.fechaFin = 'Debe ser posterior al inicio';
-        return false;
+      validationErrors.value.fechaFin = 'Debe ser posterior al inicio';
+      return false;
     }
   }
 
@@ -314,8 +299,8 @@ function handleCancel() {
 function handleConfirm() {
   confirmationAction.value = 'SAVE';
   confirmationTitle.value = config.value.title;
-  confirmationMessage.value = props.mode === 'FINALIZAR' 
-    ? '¿Está seguro que desea finalizar la marea? Esta acción es irreversible.' 
+  confirmationMessage.value = props.mode === 'FINALIZAR'
+    ? '¿Está seguro que desea finalizar la marea? Esta acción es irreversible.'
     : '¿Desea guardar los cambios en las etapas y fechas del observador?';
   confirmationConfirmText.value = 'Confirmar';
   showConfirmation.value = true;

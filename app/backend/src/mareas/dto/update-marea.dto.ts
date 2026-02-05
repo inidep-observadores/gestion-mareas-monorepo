@@ -1,17 +1,18 @@
 import { PartialType } from '@nestjs/mapped-types';
 import { CreateMareaDto } from './create-marea.dto';
-import { IsBoolean, IsDateString, IsInt, IsOptional, IsArray, IsString, IsUUID, ValidateNested } from 'class-validator';
+import { IsBoolean, IsDateString, IsInt, IsOptional, IsArray, IsString, IsUUID, ValidateNested, IsEnum } from 'class-validator';
 import { Type } from 'class-transformer';
 import { MareaEtapaDto } from './marea-etapa.dto';
+import { TipoCalculoZonaAustral } from '@prisma/client';
 
 export class UpdateMareaDto extends PartialType(CreateMareaDto) {
     @IsInt()
     @IsOptional()
     diasZonaAustral?: number | null;
 
-    @IsString()
+    @IsEnum(TipoCalculoZonaAustral)
     @IsOptional()
-    tipoCalculoZonaAustral?: string | null;
+    tipoCalculoZonaAustral?: TipoCalculoZonaAustral | null;
 
     @IsDateString()
     @IsOptional()
