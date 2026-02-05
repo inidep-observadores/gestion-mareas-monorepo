@@ -128,6 +128,11 @@ export class MareasController {
         return this.mareasService.getMareaContext(id);
     }
 
+    @Get(':id/zona-austral')
+    getZonaAustral(@Param('id') id: string) {
+        return this.mareasService.getZonaAustralDays(id);
+    }
+
     @Get('valida/buque/:id')
     async validarBuque(@Param('id') id: string) {
         return this.mareasService.checkVesselAvailability(id);
