@@ -3,7 +3,7 @@
     <div v-if="show" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
       <div class="absolute inset-x-0 inset-y-0 bg-black/40 backdrop-blur-sm" @click="handleCancel"></div>
       <div
-        class="bg-surface rounded-2xl p-8 max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl relative animate-in fade-in zoom-in-95 duration-300 border border-border">
+        class="bg-surface rounded-2xl p-8 max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl relative animate-in fade-in zoom-in-95 duration-300 border border-border custom-scrollbar">
 
         <div class="border-b border-border pb-5 mb-6">
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -22,24 +22,94 @@
           <p class="text-text-muted text-xs mt-2 font-medium">{{ config.description }}</p>
         </div>
 
-        <!-- Observer Dates -->
+        <!-- Observer Dates (Main Controls) -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           <div class="space-y-1.5">
-            <label class="block text-[10px] font-black uppercase text-text-muted tracking-widest">Fecha Inicio
-              Observador</label>
+            <label class="block text-[10px] font-black uppercase text-text-muted tracking-widest">
+              Fecha Inicio Observador
+            </label>
             <DatePicker ref="firstInput" v-model="form.fechaInicio" :error="validationErrors.fechaInicio" />
           </div>
           <div v-if="mode === 'FINALIZAR'" class="space-y-1.5 animate-in fade-in duration-300">
-            <label class="block text-[10px] font-black uppercase text-text-muted tracking-widest">Fecha Fin
-              Observador</label>
+            <label class="block text-[10px] font-black uppercase text-text-muted tracking-widest">
+              Fecha Fin Observador
+            </label>
             <DatePicker v-model="form.fechaFin" :error="validationErrors.fechaFin" />
           </div>
         </div>
 
-        <!-- Stages List -->
-        <NavigationStagesEditor v-model="form.stages" :puertoOptions="puertoOptions"
-          :pesqueriaOptions="pesqueriaOptions" :puertoBaseId="initialPortId || marea?.puertoBaseId"
-          :defaultPesqueriaId="marea?.id_pesqueria || marea?.pesqueriaId" :minStages="mode === 'INICIAR' ? 1 : 0" />
+        <div class="space-y-6">
+          <!-- Section 1: Zona Austral -->
+          <CollapsibleSection title="Zona Austral"
+            :description="`Detección técnica: ${zonaAustralData?.totalDiasMarea || 0} días`"
+            :initialOpen="shouldOpenZonaAustral">
+            <template #icon>
+              <HistoryIcon class="w-5 h-5 text-primary" />
+            </template>
+            <template #title-extra>
+              <Badge v-if="form.diasZonaAustral > 0" color="primary" variant="solid" size="sm" class="ml-2">
+                {{ form.diasZonaAustral }} DÍAS
+              </Badge>
+            </template>
+            <template #actions>
+              <button @click.stop="loadZonaAustralData" :disabled="loadingZonaAustral"
+                class="text-[10px] font-black uppercase text-primary hover:underline flex items-center gap-1.5 px-2 py-1">
+                <RefreshIcon class="w-3.5 h-3.5" :class="{ 'animate-spin': loadingZonaAustral }" />
+                {{ loadingZonaAustral ? 'Calculando...' : 'Recalcular Ahora' }}
+              </button>
+            </template>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div class="space-y-2">
+                <label class="block text-[10px] font-black uppercase text-text-muted tracking-widest">
+                  Días Zona Austral
+                </label>
+                <div class="relative">
+                  <input v-model="form.diasZonaAustral" type="number" @input="checkManualMode"
+                    class="w-full px-4 py-3 bg-surface-muted/50 border border-border rounded-xl focus:ring-2 focus:ring-primary/20 text-text transition-all font-bold outline-none"
+                    placeholder="0" />
+                </div>
+              </div>
+              <div class="space-y-2">
+                <label class="block text-[10px] font-black uppercase text-text-muted tracking-widest">
+                  Cálculo Zona Austral
+                </label>
+                <div class="flex items-center h-[50px]">
+                  <Badge
+                    :color="form.tipoCalculoZonaAustral === TipoCalculoZonaAustral.AUTOMATICO ? 'success' : 'warning'"
+                    variant="light"
+                    class="font-black uppercase tracking-widest py-1.5 px-4 rounded-xl flex items-center gap-2">
+                    <span class="w-1.5 h-1.5 rounded-full"
+                      :class="form.tipoCalculoZonaAustral === TipoCalculoZonaAustral.AUTOMATICO ? 'bg-success' : 'bg-warning'"></span>
+                    {{ form.tipoCalculoZonaAustral }}
+                  </Badge>
+                </div>
+              </div>
+
+              <!-- Detalle de cálculos (igual que en las vistas) -->
+              <div class="md:col-span-2">
+                <ZonaAustralDetalle v-if="form.tipoCalculoZonaAustral === TipoCalculoZonaAustral.AUTOMATICO"
+                  :data="zonaAustralData" />
+                <div v-else class="p-6 bg-surface-muted/30 rounded-2xl border border-dashed border-border text-center">
+                  <p class="text-[10px] text-text-muted font-bold italic uppercase tracking-widest">
+                    Modo manual activado. Presione recalcular para volver al desglose técnico.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </CollapsibleSection>
+
+          <!-- Section 2: Etapas del Viaje -->
+          <CollapsibleSection :title="`${form.stages.length} Etapas registradas`" :description="etapasRangeDescription"
+            :initialOpen="false">
+            <template #icon>
+              <ShipIcon class="w-5 h-5 text-primary" />
+            </template>
+            <NavigationStagesEditor v-model="form.stages" :puertoOptions="puertoOptions"
+              :pesqueriaOptions="pesqueriaOptions" :puertoBaseId="initialPortId || marea?.puertoBaseId"
+              :defaultPesqueriaId="marea?.id_pesqueria || marea?.pesqueriaId" :minStages="mode === 'INICIAR' ? 1 : 0" />
+          </CollapsibleSection>
+        </div>
 
         <!-- Footer Actions -->
         <div class="mt-8 grid grid-cols-2 gap-4">
@@ -66,15 +136,18 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch, nextTick } from 'vue';
 import DatePicker from '@/components/common/DatePicker.vue';
-import SearchableSelect from '@/components/common/SearchableSelect.vue';
 import ConfirmationDialog from '@/components/common/ConfirmationDialog.vue';
 import NavigationStagesEditor from './NavigationStagesEditor.vue';
+import CollapsibleSection from '@/components/common/CollapsibleSection.vue';
+import ZonaAustralDetalle from './ZonaAustralDetalle.vue';
+import Badge from '@/components/ui/Badge.vue';
 import catalogosService from '../services/catalogos.service';
-import { TrashIcon, WarningIcon } from '@/icons';
-import { isDateBefore, isDateAfter, isDateSameOrBefore, isDateSameOrAfter } from '@/utils/date.utils';
+import mareasService from '../services/mareas.service';
+import { RefreshIcon, HistoryIcon, ShipIcon } from '@/icons';
+import { isDateBefore, isDateAfter, isDateSameOrBefore } from '@/utils/date.utils';
 import { TipoEtapa } from '../types/enums';
-
-import type { Marea } from '../types/marea.types';
+import { TipoCalculoZonaAustral } from '../types/marea.types';
+import type { Marea, ZonaAustralResponse } from '../types/marea.types';
 
 const emit = defineEmits(['close', 'confirm']);
 
@@ -90,13 +163,19 @@ const props = defineProps<{
 const form = ref({
   fechaInicio: '',
   fechaFin: '',
-  stages: [] as any[]
+  stages: [] as any[],
+  diasZonaAustral: 0,
+  tipoCalculoZonaAustral: TipoCalculoZonaAustral.AUTOMATICO
 });
 
 const validationErrors = ref<Record<string, string>>({});
 const puertos = ref<any[]>([]);
 const pesquerias = ref<any[]>([]);
 const firstInput = ref<any>(null);
+
+// Zona Austral State
+const loadingZonaAustral = ref(false);
+const zonaAustralData = ref<ZonaAustralResponse | null>(null);
 
 // Confirmation Dialog State
 const showConfirmation = ref(false);
@@ -131,6 +210,24 @@ const config = computed(() => {
   }
 });
 
+// Computed info for CollapsibleSection title
+const etapasRangeDescription = computed(() => {
+  if (form.value.stages.length === 0) return 'Sin etapas registradas';
+  const first = form.value.stages[0].fechaZarpada;
+  const last = form.value.stages[form.value.stages.length - 1].fechaArribo;
+
+  const formatDate = (d: string) => {
+    if (!d) return '---';
+    return new Date(d).toLocaleDateString();
+  };
+
+  return `Rango: ${formatDate(first)} - ${formatDate(last)}`;
+});
+
+const shouldOpenZonaAustral = computed(() => {
+  return form.value.diasZonaAustral > 0;
+});
+
 // Catalogs
 onMounted(async () => {
   try {
@@ -147,6 +244,41 @@ onMounted(async () => {
 
 const puertoOptions = computed(() => puertos.value.map(p => ({ value: p.id, label: p.nombre })));
 const pesqueriaOptions = computed(() => pesquerias.value.map(p => ({ value: p.id, label: p.nombre })));
+
+// Zona Austral Logic
+async function loadZonaAustralData() {
+  if (!props.marea?.id) return;
+
+  try {
+    loadingZonaAustral.value = true;
+    const result = await mareasService.getZonaAustralDays(props.marea.id);
+    zonaAustralData.value = result;
+
+    // Al presionar recalcular, siempre volvemos al valor técnico y modo automático
+    form.value.diasZonaAustral = result.totalDiasMarea;
+    form.value.tipoCalculoZonaAustral = TipoCalculoZonaAustral.AUTOMATICO;
+  } catch (error) {
+    console.error('Error loading zona austral data:', error);
+  } finally {
+    loadingZonaAustral.value = false;
+  }
+}
+
+function checkManualMode() {
+  const currentVal = form.value.diasZonaAustral;
+  if (zonaAustralData.value) {
+    const val = Number(currentVal);
+    const calculated = Number(zonaAustralData.value.totalDiasMarea);
+
+    if (val === calculated) {
+      form.value.tipoCalculoZonaAustral = TipoCalculoZonaAustral.AUTOMATICO;
+    } else {
+      form.value.tipoCalculoZonaAustral = TipoCalculoZonaAustral.MANUAL;
+    }
+  } else {
+    form.value.tipoCalculoZonaAustral = TipoCalculoZonaAustral.MANUAL;
+  }
+}
 
 // Initial stage creation logic
 const addInitialStage = () => {
@@ -168,40 +300,39 @@ const addInitialStage = () => {
 watch(() => props.show, (val) => {
   if (val) {
     // 1. Initial Dates
-    // Fix: Only use saved DB value. Do not default to current date.
-    // Also support snake_case from DB object if needed, though Marea type should handle it.
     form.value.fechaInicio = props.marea?.fechaInicioObservador || props.marea?.fecha_inicio_observador || '';
     form.value.fechaFin = props.marea?.fechaFinObservador || props.marea?.fecha_fin_observador || '';
 
-    // 2. Clone and Sort Stages
+    // 2. Zona Austral Initial State
+    form.value.diasZonaAustral = props.marea?.diasZonaAustral || 0;
+    form.value.tipoCalculoZonaAustral = props.marea?.tipoCalculoZonaAustral || TipoCalculoZonaAustral.AUTOMATICO;
+
+    // 3. Clone and Sort Stages
     const clonedStages = (props.currentStages || []).map(s => ({
       ...s,
       fechaZarpada: s.fechaZarpada || '',
       fechaArribo: s.fechaArribo || '',
       tipoEtapa: s.tipoEtapa || TipoEtapa.MC,
-      nroEtapa: s.nroEtapa || s.nro_etapa // Fallback for safety
+      nroEtapa: s.nroEtapa || s.nro_etapa
     }));
-
-    // Sort by nroEtapa
     form.value.stages = clonedStages.sort((a, b) => (a.nroEtapa || 0) - (b.nroEtapa || 0));
 
-    // 3. Logic for INICIAR: Ensure at least one stage
     if (props.mode === 'INICIAR' && form.value.stages.length === 0) {
       addInitialStage();
     }
 
-    // 4. Logic for FINALIZAR: Auto-set end date if empty and last stage is ARMDQ
     if (props.mode === 'FINALIZAR' && !form.value.fechaFin && form.value.stages.length > 0) {
       const lastStage = form.value.stages[form.value.stages.length - 1];
       if (lastStage.fechaArribo && lastStage.puertoArriboId) {
-        // Find port object to check code
         const puertoArribo = puertos.value.find(p => p.id === lastStage.puertoArriboId);
-        // Check for 'ARMDQ' code (Mar del Plata)
         if (puertoArribo && puertoArribo.codigo === 'ARMDQ') {
           form.value.fechaFin = lastStage.fechaArribo;
         }
       }
     }
+
+    // Load technical calculation details automatically
+    loadZonaAustralData();
 
     nextTick(() => {
       firstInput.value?.focus();
@@ -209,36 +340,21 @@ watch(() => props.show, (val) => {
   }
 }, { immediate: true });
 
-// Watch initialPortId to update first stage if it arrives late
-watch(() => props.initialPortId, (newPortId) => {
-  if (props.show && props.mode === 'INICIAR' && form.value.stages.length > 0 && newPortId) {
-    if (!form.value.stages[0].puertoZarpadaId) {
-      form.value.stages[0].puertoZarpadaId = newPortId;
-    }
-  }
-});
-
-
 // Validations
 function hasOverlap(index: number): boolean {
   if (index === 0) return false;
   const current = form.value.stages[index];
   const prev = form.value.stages[index - 1];
   if (!current.fechaZarpada || !prev.fechaArribo) return false;
-  // current.fechaZarpada < prev.fechaArribo
   return isDateBefore(current.fechaZarpada, prev.fechaArribo);
 }
 
 function stageErrors(index: number): boolean {
   const s = form.value.stages[index];
   const basic = !s.fechaZarpada || !s.puertoZarpadaId || !s.pesqueriaId;
-
-  // Internal Chronology: Arrival >= Departure
   if (s.fechaZarpada && s.fechaArribo) {
     if (isDateBefore(s.fechaArribo, s.fechaZarpada)) return true;
   }
-
-  // If not last stage, or if FINALIZAR, arrival is required
   const arrivalRequired = props.mode === 'FINALIZAR' || index < form.value.stages.length - 1;
   if (arrivalRequired && (!s.fechaArribo || !s.puertoArriboId)) return true;
   return basic;
@@ -247,43 +363,28 @@ function stageErrors(index: number): boolean {
 const isValid = computed(() => {
   validationErrors.value = {};
   if (!form.value.fechaInicio) return false;
-
-  // Mode FINALIZAR: require fechaFin -> NO LONGER REQUIRED PER USER REQUEST
-  // Note: if (props.mode === 'FINALIZAR' && !form.value.fechaFin) return false;
-
-  // Stages validation
   if (form.value.stages.length === 0) return false;
   for (let i = 0; i < form.value.stages.length; i++) {
     if (stageErrors(i) || hasOverlap(i)) return false;
   }
-
-  // Cross-date validations
   const startObs = form.value.fechaInicio;
   const firstZarpada = form.value.stages[0].fechaZarpada;
-
-  // 1. Start Obs > First Stage Departure
   if (isDateAfter(startObs, firstZarpada)) {
     validationErrors.value.fechaInicio = 'No puede ser posterior a la primera zarpada';
     return false;
   }
-
   if (props.mode === 'FINALIZAR' && form.value.fechaFin) {
     const endObs = form.value.fechaFin;
     const lastArribo = form.value.stages[form.value.stages.length - 1].fechaArribo;
-
-    // 2. End Obs < Last Stage Arrival
     if (isDateBefore(endObs, lastArribo)) {
       validationErrors.value.fechaFin = 'No puede ser anterior al último arribo';
       return false;
     }
-
-    // 3. End Obs <= Start Obs
     if (isDateSameOrBefore(endObs, startObs)) {
       validationErrors.value.fechaFin = 'Debe ser posterior al inicio';
       return false;
     }
   }
-
   return true;
 });
 
@@ -309,18 +410,16 @@ function handleConfirm() {
 function executeConfirmation() {
   showConfirmation.value = false;
   if (confirmationAction.value === 'SAVE') {
-    // Clean payload to match DTO
     const cleanStages = form.value.stages.map((s: any) => ({
-      id: s.id, // Keep ID for updates
+      id: s.id,
       nroEtapa: s.nroEtapa,
       puertoZarpadaId: s.puertoZarpadaId,
       fechaZarpada: s.fechaZarpada,
-      puertoArriboId: s.puertoArriboId || null, // Handle empty string
-      fechaArribo: s.fechaArribo || null, // Handle empty string
+      puertoArriboId: s.puertoArriboId || null,
+      fechaArribo: s.fechaArribo || null,
       pesqueriaId: s.pesqueriaId,
       tipoEtapa: s.tipoEtapa,
       observaciones: s.observaciones,
-      // Clean observers list if present
       observadores: s.observadores?.map((o: any) => ({
         observadorId: o.observadorId,
         rol: o.rol,
@@ -330,7 +429,9 @@ function executeConfirmation() {
 
     emit('confirm', {
       fechaInicioObservador: form.value.fechaInicio || null,
-      fechaFinObservador: form.value.fechaFin || null, // Ensure null if empty string
+      fechaFinObservador: form.value.fechaFin || null,
+      diasZonaAustral: form.value.diasZonaAustral,
+      tipoCalculoZonaAustral: form.value.tipoCalculoZonaAustral,
       etapas: cleanStages
     });
   } else if (confirmationAction.value === 'CANCEL') {
@@ -338,3 +439,18 @@ function executeConfirmation() {
   }
 }
 </script>
+
+<style scoped>
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 10px;
+}
+</style>
