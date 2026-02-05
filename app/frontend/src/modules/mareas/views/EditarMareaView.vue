@@ -165,6 +165,32 @@
                   />
                    <p class="text-xs text-text-muted">Días computados para zona austral.</p>
                 </div>
+                
+                <!-- Tipo de Cálculo -->
+                <div class="space-y-1.5">
+                   <label class="block text-sm font-medium text-text-muted">Tipo de Cálculo</label>
+                   <select
+                    v-model="form.tipoCalculoZonaAustral"
+                    class="w-full rounded-lg border-border bg-surface-muted text-text py-2.5 px-3 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors outline-hidden"
+                   >
+                     <option value="AUTOMATICO">Automático</option>
+                     <option value="MANUAL">Manual</option>
+                   </select>
+                </div>
+
+                <!-- Detalle Zona Austral (Si es Automático) -->
+                <div v-if="form.tipoCalculoZonaAustral === 'AUTOMATICO'" class="md:col-span-2">
+                   <div class="flex items-center justify-between mb-2">
+                      <span class="text-xs font-bold uppercase tracking-wider text-text-muted">Desglose Técnico de Zona Austral</span>
+                      <button @click="loadZonaAustralData" 
+                              :disabled="loadingZonaAustral"
+                              class="text-[10px] font-black uppercase text-primary hover:underline flex items-center gap-1">
+                        <RefreshIcon class="w-3 h-3" :class="{'animate-spin': loadingZonaAustral}" v-if="RefreshIcon" />
+                        {{ loadingZonaAustral ? 'Recalculando...' : 'Recalcular Ahora' }}
+                      </button>
+                   </div>
+                   <ZonaAustralDetalle :data="zonaAustralData" />
+                </div>
 
                 <!-- Observador -->
                 <div class="space-y-1.5">
@@ -310,6 +336,9 @@ import EditIcon from '@/icons/EditIcon.vue';
 import SettingsIcon from '@/icons/SettingsIcon.vue';
 import MapPinIcon from '@/icons/MapPinIcon.vue';
 import UserGroupIcon from '@/icons/UserGroupIcon.vue';
+import RefreshIcon from '@/icons/RefreshIcon.vue';
+import ZonaAustralDetalle from '../components/ZonaAustralDetalle.vue';
+import type { ZonaAustralResponse } from '../types/marea.types';
 
 const route = useRoute();
 const router = useRouter();
@@ -317,6 +346,8 @@ const router = useRouter();
 const marea = ref<any>(null);
 const loading = ref(true);
 const saving = ref(false);
+const loadingZonaAustral = ref(false);
+const zonaAustralData = ref<ZonaAustralResponse | null>(null);
 
 const tabs = computed(() => [
   { id: 'general', label: 'General', icon: EditIcon },
@@ -331,11 +362,12 @@ const currentTab = ref('general');
 const form = ref({
   nroMarea: null,
   anioMarea: null,
-  diasEstimados: null,
-  diasZonaAustral: null,
+  diasEstimados: null as number | null,
+  diasZonaAustral: null as number | null,
   fechaZarpadaEstimada: '',
   observadorId: '',
-  descripcion: ''
+  descripcion: '',
+  tipoCalculoZonaAustral: 'AUTOMATICO'
 });
 
 const observadores = ref<Observador[]>([]);
@@ -403,9 +435,14 @@ onMounted(async () => {
             diasZonaAustral: data.diasZonaAustral,
             fechaZarpadaEstimada: toLocalISO(data.fechaZarpadaEstimada),
             observadorId: currentObsId,
-            descripcion: data.descripcion || ''
+            descripcion: data.descripcion || '',
+            tipoCalculoZonaAustral: data.tipoCalculoZonaAustral || 'AUTOMATICO'
         };
         initialForm.value = JSON.parse(JSON.stringify(form.value));
+
+        if (form.value.tipoCalculoZonaAustral === 'AUTOMATICO') {
+            loadZonaAustralData();
+        }
     } catch (e) {
         console.error("Error cargando marea", e);
         toast.error("Error al cargar la marea");
@@ -413,6 +450,23 @@ onMounted(async () => {
         loading.value = false;
     }
 });
+
+async function loadZonaAustralData() {
+    if (!marea.value?.id) return;
+    loadingZonaAustral.value = true;
+    try {
+        const result = await mareasService.getZonaAustralDays(marea.value.id);
+        zonaAustralData.value = result;
+        if (form.value.tipoCalculoZonaAustral === 'AUTOMATICO') {
+            form.value.diasZonaAustral = result.totalDiasMarea;
+        }
+    } catch (e) {
+        console.error("Error calculando zona austral", e);
+        toast.error("Error al calcular días de zona austral");
+    } finally {
+        loadingZonaAustral.value = false;
+    }
+}
 
 async function handleSave() {
     try {

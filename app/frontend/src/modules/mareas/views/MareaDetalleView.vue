@@ -186,6 +186,19 @@
                     <option value="MANUAL">Manual</option>
                   </select>
                 </div>
+                <!-- Detalle Zona Austral (Si es Automático) -->
+                <div v-if="marea.tipo_calculo_zona_austral === 'AUTOMATICO'" class="md:col-span-2">
+                   <div class="flex items-center justify-between mb-2 px-1">
+                      <span class="text-xs font-bold uppercase tracking-wider text-text-muted">Detalle de Cálculos</span>
+                      <button @click="loadZonaAustralData" 
+                              :disabled="loadingZonaAustral"
+                              class="text-[10px] font-black uppercase text-primary hover:underline flex items-center gap-1">
+                        <RefreshIcon class="w-3 h-3" :class="{'animate-spin': loadingZonaAustral}" />
+                        {{ loadingZonaAustral ? 'Calculando...' : 'Recalcular Ahora' }}
+                      </button>
+                   </div>
+                   <ZonaAustralDetalle :data="zonaAustralData" />
+                </div>
               </div>
             </div>
           </div>
@@ -509,6 +522,7 @@ import AlertHistoryTab from '../../alerts/components/AlertHistoryTab.vue'
 import GestionEtapasMareaDialog from '../components/GestionEtapasMareaDialog.vue'
 import mareasService from '../services/mareas.service';
 import NavigationStagesEditor from '../components/NavigationStagesEditor.vue'
+import ZonaAustralDetalle from '../components/ZonaAustralDetalle.vue'
 import catalogosService from '../services/catalogos.service'
 import { toast } from 'vue-sonner'
 import {
@@ -539,6 +553,7 @@ import {
   EditIcon
 } from '@/icons'
 import { TipoMarea, TipoEtapa } from '../types/enums';
+import type { ZonaAustralResponse } from '../types/marea.types';
 const router = useRouter()
 const activeTab = ref('general')
 
@@ -570,6 +585,9 @@ const buqueOptions = ref<{ value: string; label: string }[]>([])
 const pesqueriaOptions = ref<{ value: string; label: string }[]>([])
 const arteOptions = ref<{ value: string; label: string }[]>([])
 const puertos = ref<any[]>([])
+const zonaAustralData = ref<ZonaAustralResponse | null>(null);
+const loadingZonaAustral = ref(false);
+const showZonaAustralBreakdown = ref(false);
 
 const puertoOptions = computed(() => puertos.value.map(p => ({ value: p.id, label: p.nombre })))
 
@@ -745,8 +763,30 @@ async function loadMarea() {
       version: file.version
     })) || []
 
+    if (marea.value.tipo_calculo_zona_austral === 'AUTOMATICO') {
+      loadZonaAustralData();
+    }
+
   } catch (e) {
     console.error('Error loading Marea', e)
+  }
+}
+
+async function loadZonaAustralData() {
+  if (!marea.value.id) return;
+  loadingZonaAustral.value = true;
+  try {
+    const result = await mareasService.getZonaAustralDays(marea.value.id);
+    zonaAustralData.value = result;
+    // Si el modo es automático, actualizamos el valor en el modelo principal
+    if (marea.value.tipo_calculo_zona_austral === 'AUTOMATICO') {
+      marea.value.dias_zona_austral = result.totalDiasMarea;
+    }
+  } catch (e) {
+    console.error('Error loading Zona Austral info', e);
+    toast.error('No se pudo calcular los días de Zona Austral');
+  } finally {
+    loadingZonaAustral.value = false;
   }
 }
 

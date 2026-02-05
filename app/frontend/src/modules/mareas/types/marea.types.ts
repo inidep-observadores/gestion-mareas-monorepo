@@ -100,3 +100,17 @@ export interface Marea {
     pesqueriaId?: string;
     tipo_marea?: TipoMarea;
 }
+
+export interface ZonaAustralEtapa {
+    etapaId: string;
+    nroEtapa: number;
+    diasDetectados: string[];
+    totalDias: number;
+}
+
+export interface ZonaAustralResponse {
+    mareaId: string;
+    totalDiasMarea: number;
+    diasDetectadosMarea: string[];
+    etapas: ZonaAustralEtapa[];
+}
