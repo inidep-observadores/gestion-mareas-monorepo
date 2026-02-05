@@ -120,6 +120,11 @@ fix(api): corregir formato de fecha en respuesta
 fix(api): corregir formato de fecha en respuesta.
 ```
 
+### 6. Actualización de Changelog
+Para cambios importantes (nuevas funcionalidades, correcciones lógicas significativas, mejoras de UX), **siempre** debe actualizarse el archivo de changelog correspondiente en `docs/changelog/`.
+- **Ignorar**: Correcciones triviales, cambios de formato (`style`), ajustes de documentación menor o cambios menores de mantenimiento (`chore`).
+- **Verificar**: Usar siempre el archivo de la versión actual definida en el `package.json` raíz.
+
 ## 📝 Estructura del Mensaje Completo
 
 ### Mensaje Simple (Cambios Obvios)
@@ -340,6 +345,7 @@ Antes de hacer commit, verifica:
 - [ ] No excede 72 caracteres
 - [ ] No termina en punto
 - [ ] El mensaje describe QUÉ y POR QUÉ, no CÓMO
+- [ ] Se han registrado los cambios importantes en el changelog (si aplica)
 
 ---
 

@@ -361,6 +361,10 @@
     <CancelarMareaDialog :show="showCancelarDialog" :marea="mareaToManage" :loading="executingAction"
       @close="showCancelarDialog = false" @confirm="handleCancelarConfirm" />
 
+    <MareaGenericActionDialog :show="showGenericDialog" :marea="mareaToManage" :actionKey="selectedActionKey"
+      :actionData="selectedActionData" :loading="executingAction" @close="showGenericDialog = false"
+      @confirm="handleGenericConfirm" />
+
     <AlertManagementDialog :is-open="isAlertDialogOpen" :alert="selectedAlert" @close="isAlertDialogOpen = false"
       @refresh="handleAlertRefresh" />
   </AdminLayout>
@@ -375,6 +379,7 @@ import MareaContextDetailContent from '../components/MareaContextDetailContent.v
 import GestionEtapasMareaDialog from '../components/GestionEtapasMareaDialog.vue'
 import RecibirArchivosDialog from '../components/RecibirArchivosDialog.vue'
 import CancelarMareaDialog from '../components/CancelarMareaDialog.vue'
+import MareaGenericActionDialog from '../components/MareaGenericActionDialog.vue'
 // @ts-ignore
 import AlertManagementDialog from '../../alerts/components/AlertManagementDialog.vue'
 import StatusFilterChip from '../components/StatusFilterChip.vue'
@@ -427,6 +432,9 @@ const selectedMarea = ref<any>(null)
 const showGestionDialog = ref(false)
 const showRecibirDialog = ref(false)
 const showCancelarDialog = ref(false)
+const showGenericDialog = ref(false)
+const selectedActionKey = ref<string | null>(null)
+const selectedActionData = ref<any>(null)
 
 const exporting = ref(false)
 const configStore = useConfigStore()
@@ -714,11 +722,41 @@ const executeActionFromSidebar = async (actionKey: string) => {
     return
   }
 
+  // Si la acción tiene metadatos en el contexto y no es una de las especiales manejadas arriba, usar diálogo genérico
+  const actionMetadata = selectedMareaContext.value?.actions[actionKey]
+  if (actionMetadata) {
+    mareaToManage.value = mareaContext
+    selectedActionKey.value = actionKey
+    selectedActionData.value = actionMetadata
+    showGenericDialog.value = true
+    return
+  }
+
   try {
     await executeAction(selectedMarea.value.id, actionKey)
     closeSidebar()
+    await fetchDashboard()
   } catch (err) {
     console.error('Action failed:', err)
+  }
+}
+
+const handleGenericConfirm = async (payload: any) => {
+  if (!mareaToManage.value || !selectedActionKey.value) return
+
+  try {
+    executingAction.value = true
+    await executeAction(mareaToManage.value.id, selectedActionKey.value, payload)
+    showGenericDialog.value = false
+    mareaToManage.value = null
+    selectedActionKey.value = null
+    selectedActionData.value = null
+    closeSidebar()
+    await fetchDashboard()
+  } catch (err) {
+    console.error("Error en acción de marea:", err)
+  } finally {
+    executingAction.value = false
   }
 }
 

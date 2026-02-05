@@ -49,6 +49,9 @@ describe('MareasService', () => {
             findMany: jest.fn(),
             findFirst: jest.fn(),
         },
+        alerta: {
+            findMany: jest.fn(),
+        },
         $transaction: jest.fn((cb) => cb(mockPrismaService)),
     });
 
@@ -442,6 +445,56 @@ describe('MareasService', () => {
             expect(getNowSpy).toHaveBeenCalled();
 
             getNowSpy.mockRestore();
+        });
+        describe('getMareaContext', () => {
+            it('should enrich actions with toStateName and requiresNotes', async () => {
+                const mareaId = 'marea-1';
+                const estadoOrigenId = 'estado-origin-id';
+                const mockMarea = {
+                    id: mareaId,
+                    id_marea: 'MC-100-24',
+                    estadoActualId: estadoOrigenId,
+                    buque: { nombre: 'Ship' },
+                    estadoActual: { nombre: 'Designada' },
+                    etapas: [],
+                    alertas: [],
+                    movimientos: []
+                };
+
+                mockPrismaService.marea.findUnique.mockResolvedValue(mockMarea);
+                mockPrismaService.transicionEstado.findMany.mockResolvedValue([
+                    {
+                        accion: 'REGISTRAR_INICIO',
+                        etiqueta: 'Iniciar Marea',
+                        estadoOrigenId: estadoOrigenId,
+                        estadoDestinoId: 'dest-1',
+                        requiereObs: true,
+                        claseBoton: 'btn-primary',
+                        estadoDestino: { nombre: 'En Ejecución' }
+                    },
+                    {
+                        accion: 'OTRA_ACCION',
+                        etiqueta: 'Otra',
+                        estadoOrigenId: estadoOrigenId,
+                        estadoDestinoId: 'dest-2',
+                        requiereObs: false,
+                        claseBoton: 'btn-secondary',
+                        estadoDestino: { nombre: 'Otro Estado' }
+                    }
+                ]);
+                mockPrismaService.alerta.findMany.mockResolvedValue([]);
+
+                const result = await service.getMareaContext(mareaId);
+
+                expect(result.actions['REGISTRAR_INICIO']).toMatchObject({
+                    toStateName: 'En Ejecución',
+                    requiresNotes: true
+                });
+                expect(result.actions['OTRA_ACCION']).toMatchObject({
+                    toStateName: 'Otro Estado',
+                    requiresNotes: false
+                });
+            });
         });
     });
 });

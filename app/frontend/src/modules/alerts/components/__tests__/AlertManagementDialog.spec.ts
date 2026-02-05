@@ -323,7 +323,7 @@ describe('AlertManagementDialog.vue', () => {
     const wrapper = mountComponent({ alert: diffAlert })
     await flushPromises()
 
-    const smartBtn = wrapper.findAll('.button-stub').find(b => b.text().includes('Conciliar Datos'))
+    const smartBtn = wrapper.findAll('.button-stub').find(b => b.text().includes('Gestionar Etapas'))
     expect(smartBtn?.exists()).toBe(true)
 
     await smartBtn?.trigger('click')

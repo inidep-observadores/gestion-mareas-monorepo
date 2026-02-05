@@ -1409,7 +1409,8 @@ export class MareasService {
                 } as any
             }),
             this.prisma.transicionEstado.findMany({
-                where: { activo: true }
+                where: { activo: true },
+                include: { estadoDestino: true }
             }),
             this.prisma.alerta.findMany({
                 where: {
@@ -1433,6 +1434,8 @@ export class MareasService {
                 enabled: true,
                 label: t.etiqueta,
                 toState: t.estadoDestinoId,
+                toStateName: (t as any).estadoDestino?.nombre || 'Nuevo Estado',
+                requiresNotes: (t as any).requiereObs || false,
                 claseBoton: t.claseBoton
             };
         });
