@@ -20,6 +20,7 @@ describe('Mareas - Normalización de Fechas', () => {
             findUnique: jest.fn(),
             findMany: jest.fn(),
             count: jest.fn(),
+            findFirst: jest.fn(),
         },
         mareaEtapa: {
             create: jest.fn(),

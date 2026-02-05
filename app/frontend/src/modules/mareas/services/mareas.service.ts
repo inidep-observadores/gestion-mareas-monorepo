@@ -69,6 +69,21 @@ const mareasService = {
     getRecentMovements: async (days: number): Promise<{ events: MovementEvent[], lastUpdate: string | null }> => {
         const { data } = await httpClient.get<{ events: MovementEvent[], lastUpdate: string | null }>(`/mareas/movimientos-recientes?days=${days}`);
         return data;
+    },
+
+    getNextMareaNumber: async (year: number, tipo: TipoMarea): Promise<number> => {
+        const { data } = await httpClient.get<number>(`/mareas/config/proximo-numero?year=${year}&tipo=${tipo}`);
+        return data;
+    },
+
+    validateVesselAvailability: async (id: string): Promise<{ available: boolean; marea: string | null }> => {
+        const { data } = await httpClient.get<{ available: boolean; marea: string | null }>(`/mareas/valida/buque/${id}`, { skipToast: true });
+        return data;
+    },
+
+    validateObserverAvailability: async (id: string): Promise<{ available: boolean; marea: string | null }> => {
+        const { data } = await httpClient.get<{ available: boolean; marea: string | null }>(`/mareas/valida/observador/${id}`, { skipToast: true });
+        return data;
     }
 };
 

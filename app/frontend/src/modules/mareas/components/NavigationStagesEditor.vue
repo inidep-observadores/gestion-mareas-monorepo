@@ -62,6 +62,7 @@
                   v-model="stage.fechaZarpada" 
                   :show-time="false" 
                   :disabled="readOnly" 
+                  :error="errors?.[`etapa_${index}_fechaZarpada`]"
                 />
               </div>
               <div class="space-y-1">
@@ -71,6 +72,7 @@
                   :options="puertoOptions"
                   placeholder="Origen..."
                   :disabled="readOnly"
+                  :error="errors?.[`etapa_${index}_puertoZarpadaId`]"
                 />
               </div>
             </div>
@@ -153,7 +155,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, nextTick } from 'vue';
+import { computed, ref, nextTick, watch } from 'vue';
 import DatePicker from '@/components/common/DatePicker.vue';
 import SearchableSelect from '@/components/common/SearchableSelect.vue';
 import { 
@@ -175,6 +177,8 @@ const props = defineProps<{
   defaultPesqueriaId?: string;
   readOnly?: boolean;
   minStages?: number;
+  errors?: Record<string, string>;
+  defaultFechaZarpada?: string;
 }>();
 
 const emit = defineEmits(['update:modelValue', 'remove-stage']);
@@ -206,17 +210,20 @@ async function addStage() {
   
   let defaultPesqueria = props.defaultPesqueriaId || '';
   let defaultPuertoZarpada = props.puertoBaseId || '';
+  let defaultFechaZarpada = props.defaultFechaZarpada || '';
 
   if (lastStage) {
     if (lastStage.pesqueriaId) defaultPesqueria = lastStage.pesqueriaId;
     if (lastStage.puertoArriboId) defaultPuertoZarpada = lastStage.puertoArriboId;
+    // Si no es la primera etapa, no usamos la zarpada estimada de la marea
+    defaultFechaZarpada = '';
   }
 
   currentStages.push({
     id: null,
     nroEtapa: currentStages.length + 1,
     puertoZarpadaId: defaultPuertoZarpada,
-    fechaZarpada: '',
+    fechaZarpada: defaultFechaZarpada,
     puertoArriboId: '',
     fechaArribo: '',
     pesqueriaId: defaultPesqueria,
@@ -239,6 +246,12 @@ async function addStage() {
     }
   }
 }
+
+// Watch stages for changes to clear errors
+watch(() => props.modelValue, () => {
+    // Si cambia el modelValue, notificamos al padre (ya se hace con el v-model)
+    // Pero el padre debe limpiar los errores. Añadiremos watchers profundos en el diálogo mejor.
+}, { deep: true });
 
 function removeStage(index: number) {
   const currentStages = [...props.modelValue];

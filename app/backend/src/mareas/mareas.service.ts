@@ -1874,6 +1874,56 @@ export class MareasService {
         });
     }
 
+    async getNextMareaNumber(anio: number, tipo: TipoMarea): Promise<number> {
+        const result = await this.prisma.marea.aggregate({
+            where: {
+                anioMarea: anio,
+                tipoMarea: tipo,
+                activo: true
+            },
+            _max: {
+                nroMarea: true
+            }
+        });
+
+        const max = result._max.nroMarea || 0;
+        return max + 1;
+    }
+
+    async checkVesselAvailability(buqueId: string) {
+        const marea = await this.prisma.marea.findFirst({
+            where: {
+                buqueId,
+                activo: true,
+                estadoActual: { codigo: MareaEstado.DESIGNADA }
+            },
+            select: {
+                nroMarea: true, anioMarea: true, tipoMarea: true
+            }
+        });
+        return {
+            available: !marea,
+            marea: marea ? MareaUtils.formatCodigo(marea as any) : null
+        };
+    }
+
+    async checkObserverAvailability(observadorId: string) {
+        const marea = await this.prisma.marea.findFirst({
+            where: {
+                observadorPrincipalId: observadorId,
+                activo: true,
+                estadoActual: { codigo: MareaEstado.DESIGNADA }
+            },
+            select: {
+                nroMarea: true, anioMarea: true, tipoMarea: true
+            }
+        });
+        return {
+            available: !marea,
+            marea: marea ? MareaUtils.formatCodigo(marea as any) : null
+        };
+    }
+
     async create(createMareaDto: CreateMareaDto, user: User) {
         const { buqueId, anioMarea, nroMarea, pesqueriaId, observadorId, arteId, fechaZarpadaEstimada, fechaInicioObservador, tipoMarea = TipoMarea.MC, diasEstimados } = createMareaDto;
 
@@ -1885,7 +1935,7 @@ export class MareasService {
         });
 
         if (existing.length > 0) {
-            throw new Error(`La marea ${tipoMarea}-${nroMarea}-${anioMarea} para este buque ya existe.`);
+            throw new BadRequestException(`La marea ${tipoMarea}-${nroMarea}-${anioMarea} ya está registrada en el sistema.`);
         }
 
         const estadoInicial = await this.prisma.estadoMarea.findFirst({
@@ -1893,11 +1943,48 @@ export class MareasService {
         });
 
         if (!estadoInicial) {
-            throw new Error('No se encontró un estado inicial configurado para las mareas.');
+            throw new BadRequestException('No se encontró un estado inicial configurado para las mareas.');
         }
 
-        // Validate observer impairment
+        // Validate year coherence
+        if (fechaZarpadaEstimada) {
+            const year = new Date(fechaZarpadaEstimada).getUTCFullYear();
+            if (year !== anioMarea && year !== anioMarea + 1) {
+                throw new BadRequestException(`El año de zarpada estimada (${year}) debe coincidir con el año de la marea (${anioMarea}) o el siguiente.`);
+            }
+        }
+        if (fechaInicioObservador) {
+            const year = new Date(fechaInicioObservador).getUTCFullYear();
+            if (year !== anioMarea && year !== anioMarea + 1) {
+                throw new BadRequestException(`El año de inicio del observador (${year}) debe coincidir con el año de la marea (${anioMarea}) o el siguiente.`);
+            }
+        }
+
+        // Validate vessel availability (not already designated)
+        const vesselOccupied = await this.prisma.marea.findFirst({
+            where: {
+                buqueId,
+                activo: true,
+                estadoActual: { codigo: MareaEstado.DESIGNADA }
+            }
+        });
+        if (vesselOccupied) {
+            throw new BadRequestException(`El buque ya tiene una marea designada (${MareaUtils.formatCodigo(vesselOccupied as any)}).`);
+        }
+
+        // Validate observer availability (not already designated)
         if (observadorId) {
+            const observerOccupied = await this.prisma.marea.findFirst({
+                where: {
+                    observadorPrincipalId: observadorId,
+                    activo: true,
+                    estadoActual: { codigo: MareaEstado.DESIGNADA }
+                }
+            });
+            if (observerOccupied) {
+                throw new BadRequestException(`El observador ya está designado en otra marea (${MareaUtils.formatCodigo(observerOccupied as any)}).`);
+            }
+
             const obs = await this.prisma.observador.findUnique({
                 where: { id: observadorId },
                 select: { conImpedimento: true, motivoImpedimento: true }

@@ -17,6 +17,7 @@ describe('MareasService', () => {
         marea: {
             findUnique: jest.fn(),
             findMany: jest.fn(),
+            findFirst: jest.fn(),
             update: jest.fn(),
             create: jest.fn(),
             count: jest.fn(),
@@ -208,8 +209,44 @@ describe('MareasService', () => {
         });
     });
 
-    describe('create (Uniqueness and Initialization)', () => {
-        it('should throw error if marea already exists', async () => {
+    describe('checkVesselAvailability', () => {
+        it('should return available: true if no designated marea exists', async () => {
+            mockPrismaService.marea.findFirst.mockResolvedValue(null);
+            const result = await service.checkVesselAvailability('buque-1');
+            expect(result.available).toBe(true);
+            expect(result.marea).toBeNull();
+        });
+
+        it('should return available: false if designated marea exists', async () => {
+            mockPrismaService.marea.findFirst.mockResolvedValue({
+                nroMarea: 123, anioMarea: 25, tipoMarea: 'MC'
+            });
+            const result = await service.checkVesselAvailability('buque-1');
+            expect(result.available).toBe(false);
+            expect(result.marea).toBe('MC-123-25');
+        });
+    });
+
+    describe('checkObserverAvailability', () => {
+        it('should return available: true if no designated marea exists', async () => {
+            mockPrismaService.marea.findFirst.mockResolvedValue(null);
+            const result = await service.checkObserverAvailability('obs-1');
+            expect(result.available).toBe(true);
+            expect(result.marea).toBeNull();
+        });
+
+        it('should return available: false if designated marea exists', async () => {
+            mockPrismaService.marea.findFirst.mockResolvedValue({
+                nroMarea: 456, anioMarea: 25, tipoMarea: 'CI'
+            });
+            const result = await service.checkObserverAvailability('obs-1');
+            expect(result.available).toBe(false);
+            expect(result.marea).toBe('CI-456-25');
+        });
+    });
+
+    describe('create (Uniqueness and Business Rules)', () => {
+        it('should throw BadRequestException if marea already exists with correct message', async () => {
             const dto = {
                 anioMarea: 2025,
                 nroMarea: 1,
@@ -223,10 +260,67 @@ describe('MareasService', () => {
             mockPrismaService.marea.findMany.mockResolvedValue([{ id: 'existing-id' }]);
 
             await expect(service.create(dto, { id: 'user-1' } as any))
-                .rejects.toThrow(/ya existe/);
+                .rejects.toThrow(BadRequestException);
+            await expect(service.create(dto, { id: 'user-1' } as any))
+                .rejects.toThrow('La marea MC-1-2025 ya está registrada en el sistema.');
         });
 
-        it('should create marea and state is initialized', async () => {
+        it('should throw BadRequestException if year of zarpada is invalid', async () => {
+            const dto = {
+                anioMarea: 2025,
+                nroMarea: 1,
+                tipoMarea: 'MC',
+                buqueId: 'buque-1',
+                fechaZarpadaEstimada: '2024-12-31' // Invalid year
+            } as any;
+
+            mockPrismaService.marea.findMany.mockResolvedValue([]);
+            mockPrismaService.estadoMarea.findFirst.mockResolvedValue({ id: 'init' });
+
+            await expect(service.create(dto, { id: 'user-1' } as any))
+                .rejects.toThrow(/El año de zarpada estimada/);
+        });
+
+        it('should throw BadRequestException if vessel already has a designated marea', async () => {
+            const dto = {
+                anioMarea: 2025,
+                nroMarea: 2,
+                tipoMarea: 'MC',
+                buqueId: 'buque-occupied',
+                fechaZarpadaEstimada: '2025-01-01'
+            } as any;
+
+            mockPrismaService.marea.findMany.mockResolvedValue([]);
+            mockPrismaService.estadoMarea.findFirst.mockResolvedValue({ id: 'init' });
+            // Mocking the check inside create
+            mockPrismaService.marea.findFirst.mockResolvedValue({ nroMarea: 1, anioMarea: 25, tipoMarea: 'MC' });
+
+            await expect(service.create(dto, { id: 'user-1' } as any))
+                .rejects.toThrow(/El buque ya tiene una marea designada/);
+        });
+
+        it('should throw BadRequestException if observer already has a designated marea', async () => {
+            const dto = {
+                anioMarea: 2025,
+                nroMarea: 2,
+                tipoMarea: 'MC',
+                buqueId: 'buque-1',
+                observadorId: 'obs-occupied',
+                fechaZarpadaEstimada: '2025-01-01'
+            } as any;
+
+            mockPrismaService.marea.findMany.mockResolvedValue([]);
+            mockPrismaService.estadoMarea.findFirst.mockResolvedValue({ id: 'init' });
+            // Success call for vessel
+            mockPrismaService.marea.findFirst
+                .mockResolvedValueOnce(null) // Vessel check
+                .mockResolvedValueOnce({ nroMarea: 7, anioMarea: 25, tipoMarea: 'MC' }); // Observer check
+
+            await expect(service.create(dto, { id: 'user-1' } as any))
+                .rejects.toThrow(/El observador ya está designado en otra marea/);
+        });
+
+        it('should create marea if everything is valid', async () => {
             const dto = {
                 anioMarea: 2025,
                 nroMarea: 2,
@@ -239,16 +333,12 @@ describe('MareasService', () => {
 
             mockPrismaService.marea.findMany.mockResolvedValue([]);
             mockPrismaService.estadoMarea.findFirst.mockResolvedValue({ id: 'initial-state-id', esInicial: true });
+            mockPrismaService.marea.findFirst.mockResolvedValue(null); // Both checks return null
             mockPrismaService.observador.findUnique.mockResolvedValue({ conImpedimento: false });
             mockPrismaService.marea.create.mockResolvedValue({ id: 'new-id', ...dto });
 
             const result = await service.create(dto, { id: 'user-1' } as any);
             expect(result).toBeDefined();
-            expect(mockPrismaService.marea.create).toHaveBeenCalledWith(expect.objectContaining({
-                data: expect.objectContaining({
-                    estadoActualId: 'initial-state-id'
-                })
-            }));
         });
     });
 

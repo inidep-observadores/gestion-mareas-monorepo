@@ -7,6 +7,7 @@ export interface Buque {
     diasMareaEstimada?: number;
     pesqueriaHabitualId?: string;
     arteHabitualId?: string;
+    puertoBaseId?: string;
 }
 
 export interface Pesqueria {

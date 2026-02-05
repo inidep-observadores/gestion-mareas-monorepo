@@ -11,29 +11,29 @@
         <div class="flex items-center justify-between relative">
           <!-- Connection Line -->
           <div class="absolute top-1/2 left-0 w-full h-0.5 bg-surface-muted -z-10 -translate-y-1/2"></div>
-          <div 
+          <div
             class="absolute top-1/2 left-0 h-0.5 bg-primary transition-all duration-500 -z-10 -translate-y-1/2"
             :style="{ width: progressLineWidth }"
           ></div>
 
           <!-- Step Indicators -->
-          <div 
-            v-for="step in steps" 
+          <div
+            v-for="step in steps"
             :key="step.id"
             class="flex flex-col items-center gap-2"
           >
-            <div 
+            <div
               class="w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all duration-300"
               :class="[
-                currentStep >= step.id 
-                  ? 'bg-primary border-primary/50 text-primary-fg shadow-theme-xs shadow-primary/20 scale-110' 
+                currentStep >= step.id
+                  ? 'bg-primary border-primary/50 text-primary-fg shadow-theme-xs shadow-primary/20 scale-110'
                   : 'bg-surface border-border text-text-muted'
               ]"
             >
               <CheckIcon v-if="currentStep > step.id" class="w-5 h-5" />
               <component v-else :is="step.icon" class="w-5 h-5" />
             </div>
-            <span 
+            <span
               class="text-[10px] font-bold uppercase tracking-widest transition-colors duration-300"
               :class="currentStep >= step.id ? 'text-primary' : 'text-text-muted'"
             >
@@ -45,7 +45,7 @@
 
       <!-- Step Content -->
       <div class="bg-surface border border-border shadow-theme-xs min-h-[380px] flex flex-col rounded-2xl overflow-hidden p-6">
-        
+
         <!-- Loading State for Catalogs -->
         <div v-if="loadingCatalogs" class="flex-1 flex flex-col items-center justify-center py-20">
           <LoadingSpinner size="xl" class="text-primary" />
@@ -65,7 +65,7 @@
               <div class="flex flex-col items-center gap-4">
                 <label class="block text-xs font-black uppercase tracking-widest text-text-muted">Tipo de Designación</label>
                 <div class="inline-flex p-1 bg-surface-muted border-border">
-                  <button 
+                  <button
                     type="button"
                     @click="form.tipoMarea = TipoMarea.MC"
                     class="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-all"
@@ -91,7 +91,7 @@
                 <div class="md:col-span-7 space-y-4">
                   <div>
                     <label class="block text-sm font-medium text-text-muted mb-1.5">Buque Seleccionado</label>
-                    <SearchableSelect 
+                    <SearchableSelect
                       ref="buqueSelect"
                       v-model="form.buqueId"
                       :options="buqueOptions"
@@ -100,14 +100,13 @@
                       placeholder="Seleccione el buque..."
                       @change="handleBuqueChange"
                     />
-                    <p v-if="fieldErrors.buqueId" class="text-[10px] text-error font-bold uppercase mt-1">{{ fieldErrors.buqueId }}</p>
                   </div>
                 </div>
 
                 <div class="md:col-span-5 grid grid-cols-2 gap-4">
                   <div class="space-y-1.5">
                     <label class="block text-sm font-medium text-text-muted">Año</label>
-                    <input 
+                    <input
                       v-model="form.anioMarea"
                       type="number"
                       class="w-full px-4 py-2.5 bg-surface border rounded-lg text-sm text-text outline-none focus:border-primary transition-all shadow-theme-xs"
@@ -116,7 +115,7 @@
                   </div>
                   <div class="space-y-1.5">
                     <label class="block text-sm font-medium text-text-muted">Nro. Marea</label>
-                    <input 
+                    <input
                       ref="nroMareaInput"
                       v-model="form.nroMarea"
                       type="number"
@@ -124,6 +123,7 @@
                       class="w-full px-4 py-2.5 bg-surface border rounded-lg text-sm text-text outline-none focus:border-primary transition-all shadow-theme-xs"
                       :class="fieldErrors.nroMarea ? 'border-error bg-error/5' : 'border-border focus:ring-3 focus:ring-primary/10'"
                     />
+                    <p v-if="fieldErrors.nroMarea" class="text-[10px] text-error font-bold uppercase mt-1">{{ fieldErrors.nroMarea }}</p>
                   </div>
                 </div>
               </div>
@@ -148,30 +148,29 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div class="space-y-1.5">
                 <label class="block text-sm font-medium text-text-muted">Pesquería</label>
-                <SearchableSelect 
+                <SearchableSelect
                   v-model="form.pesqueriaId"
                   :options="pesqueriaOptions"
                   :icon="WaveIcon"
                   :error="fieldErrors.pesqueriaId"
                   placeholder="Seleccione la pesquería..."
                 />
-                <p v-if="fieldErrors.pesqueriaId" class="text-[10px] text-error font-bold uppercase mt-1">{{ fieldErrors.pesqueriaId }}</p>
               </div>
 
               <div class="space-y-1.5">
                 <label class="block text-sm font-medium text-text-muted">Arte de Pesca</label>
-                <SearchableSelect 
+                <SearchableSelect
                   v-model="form.arteId"
                   :options="arteOptions"
                   :icon="SettingsIcon"
                   placeholder="Seleccione el arte..."
+                  :error="fieldErrors.arteId"
                 />
-                <p v-if="fieldErrors.arteId" class="text-[10px] text-error font-bold uppercase mt-1">{{ fieldErrors.arteId }}</p>
               </div>
 
               <div class="space-y-1.5">
                 <label class="block text-sm font-medium text-text-muted">Observador Asignado</label>
-                <SearchableSelect 
+                <SearchableSelect
                   ref="observadorSelect"
                   v-model="form.observadorId"
                   :options="observadorOptions"
@@ -179,18 +178,16 @@
                   :error="fieldErrors.observadorId"
                   placeholder="Seleccione el observador..."
                 />
-                <p v-if="fieldErrors.observadorId" class="text-[10px] text-error font-bold uppercase mt-1">{{ fieldErrors.observadorId }}</p>
               </div>
 
               <div class="space-y-1.5">
                 <label class="block text-sm font-medium text-text-muted">Fecha Zarpada Estimada</label>
-                <DatePicker 
+                <DatePicker
                   v-model="form.fechaZarpadaEstimada"
                   :icon="CalenderIcon"
                   :show-time="false"
                   :error="fieldErrors.fechaZarpadaEstimada"
                 />
-                <p v-if="fieldErrors.fechaZarpadaEstimada" class="text-[10px] text-error font-bold uppercase mt-1">{{ fieldErrors.fechaZarpadaEstimada }}</p>
               </div>
 
               <div class="space-y-1.5">
@@ -199,7 +196,7 @@
                   <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <HistoryIcon class="h-5 w-5 text-text-muted" />
                   </div>
-                  <input 
+                  <input
                     v-model.number="form.diasEstimados"
                     type="number"
                     min="1"
@@ -221,23 +218,25 @@
             <div v-if="form.etapas.length > 0" class="p-4 bg-primary/5 border border-primary/20 rounded-xl mb-6">
               <label class="block text-xs font-black uppercase tracking-widest text-primary mb-3">Inicio de Actividad del Observador</label>
               <div class="max-w-xs">
-                <DatePicker 
+                <DatePicker
                   v-model="form.fechaInicioObservador"
                   :icon="CalenderIcon"
-                  :show-time="true"
+                  :show-time="false"
                   :error="fieldErrors.fechaInicioObservador"
-                  placeholder="Fecha y hora de inicio..."
+                  placeholder="Fecha de inicio..."
                 />
-                <p v-if="fieldErrors.fechaInicioObservador" class="text-[10px] text-error font-bold uppercase mt-1">{{ fieldErrors.fechaInicioObservador }}</p>
               </div>
               <p class="text-[10px] text-text-muted mt-2 italic">* Requerido al definir etapas manuales.</p>
             </div>
 
-            <NavigationStagesEditor 
+            <NavigationStagesEditor
               v-model="form.etapas"
               :puerto-options="puertoOptions"
               :pesqueria-options="pesqueriaOptions"
               :default-pesqueria-id="form.pesqueriaId"
+              :errors="fieldErrors"
+              :default-fecha-zarpada="form.fechaZarpadaEstimada"
+              :puerto-base-id="form.puertoBaseId"
             />
           </div>
 
@@ -271,7 +270,7 @@
                 <p v-if="form.diasEstimados" class="text-xs text-text-muted font-medium mt-0.5">Est: {{ form.diasEstimados }} días</p>
               </div>
             </div>
-            
+
             <div v-if="form.etapas.length > 0" class="p-6 bg-surface-muted rounded-xl border border-border/50">
                 <p class="text-[9px] font-black text-text-muted uppercase tracking-widest mb-2">Etapas Definidas</p>
                 <div v-if="form.fechaInicioObservador" class="mb-3 pb-3 border-b border-border/50 flex items-center justify-between">
@@ -289,7 +288,7 @@
             <div class="p-4 bg-warning/5 border border-warning/20 rounded-xl flex gap-4">
               <InfoIcon class="w-5 h-5 text-warning shrink-0" />
               <p class="text-[11px] text-warning/80 leading-relaxed font-medium italic">
-                Al confirmar, se enviará una notificación al observador y la marea quedará en estado **DESIGNADA** disponible en el Panel Operativo.
+                Al confirmar, la marea quedará en estado **DESIGNADA** disponible en el Panel Operativo.
               </p>
             </div>
           </div>
@@ -297,7 +296,7 @@
 
         <!-- Actions -->
         <div class="mt-auto pt-6 flex items-center justify-between border-t border-border">
-          <button 
+          <button
             @click="prevStep"
             v-if="currentStep > 1"
             class="px-6 py-3 text-sm font-bold text-text-muted hover:text-text transition-all flex items-center gap-2"
@@ -307,13 +306,13 @@
           <div v-else></div>
 
           <div class="flex gap-3">
-            <button 
+            <button
               @click="cancel"
               class="px-6 py-3 text-xs font-black uppercase tracking-widest text-text-muted hover:text-error transition-all"
             >
               Cancelar
             </button>
-            <button 
+            <button
               @click="nextStep"
               :disabled="loading"
               class="px-8 py-3 bg-primary hover:bg-primary-hover text-primary-fg rounded-lg text-xs font-black uppercase tracking-widest shadow-theme-xs shadow-primary/20 transition-all active:scale-95 flex items-center gap-2 disabled:opacity-50"
@@ -371,11 +370,12 @@ import { useWorkflowStore } from '../../shared/stores/workflow.store'
 import { useConfigStore } from '../../shared/stores/config.store'
 import { alertsService } from '@/modules/alerts/services/alerts.service'
 import catalogosService from '../services/catalogos.service'
-import { 
-  ShipIcon, 
-  DocsIcon, 
-  RefreshIcon, 
-  CheckIcon, 
+import mareasService from '../services/mareas.service'
+import {
+  ShipIcon,
+  DocsIcon,
+  RefreshIcon,
+  CheckIcon,
   ChevronRightIcon,
   InfoIcon,
   WaveIcon,
@@ -418,6 +418,7 @@ const getInitialForm = () => ({
   fechaZarpadaEstimada: '',
   fechaInicioObservador: '',
   diasEstimados: null as number | null,
+  puertoBaseId: '',
   etapas: [] as any[]
 })
 
@@ -516,11 +517,67 @@ watch(() => props.show, (newVal) => {
         if (props.initFromAlert && workflowStore.activeAlertData) {
             prefillFromAlert(workflowStore.activeAlertData)
         }
+
+        // Sugerir número inicial
+        suggestNextNumber()
+
         nextTick(() => {
             setInitialFocus()
         })
     }
 })
+
+// Watchers for automatic numbering
+watch([() => form.value.anioMarea, () => form.value.tipoMarea], () => {
+    suggestNextNumber()
+})
+
+// Clear errors when fields change
+watch(() => form.value.buqueId, (val) => {
+    if (val && fieldErrors.value.buqueId) delete fieldErrors.value.buqueId
+})
+watch(() => form.value.nroMarea, (val) => {
+    if (val && fieldErrors.value.nroMarea) delete fieldErrors.value.nroMarea
+})
+watch(() => form.value.pesqueriaId, (val) => {
+    if (val && fieldErrors.value.pesqueriaId) delete fieldErrors.value.pesqueriaId
+})
+watch(() => form.value.arteId, (val) => {
+    if (val && fieldErrors.value.arteId) delete fieldErrors.value.arteId
+})
+watch(() => form.value.observadorId, (val) => {
+    if (val && fieldErrors.value.observadorId) delete fieldErrors.value.observadorId
+})
+watch(() => form.value.fechaZarpadaEstimada, (val) => {
+    if (val && fieldErrors.value.fechaZarpadaEstimada) delete fieldErrors.value.fechaZarpadaEstimada
+})
+watch(() => form.value.fechaInicioObservador, (val) => {
+    if (val && fieldErrors.value.fechaInicioObservador) delete fieldErrors.value.fechaInicioObservador
+})
+
+watch(() => form.value.etapas, () => {
+    // Limpieza reactiva de errores de etapas
+    Object.keys(fieldErrors.value).forEach(key => {
+        if (key.startsWith('etapa_')) {
+            const parts = key.split('_');
+            const idx = parseInt(parts[1]);
+            const field = parts[2];
+            if (form.value.etapas[idx] && form.value.etapas[idx][field]) {
+                delete fieldErrors.value[key];
+            }
+        }
+    });
+}, { deep: true });
+
+const suggestNextNumber = async () => {
+    if (!form.value.anioMarea || !form.value.tipoMarea) return
+    try {
+        const next = await mareasService.getNextMareaNumber(form.value.anioMarea, form.value.tipoMarea)
+        form.value.nroMarea = next
+    } catch (err) {
+        console.error('Error suggesting marea number:', err)
+    }
+}
 
 const setInitialFocus = () => {
     if (form.value.buqueId) {
@@ -533,11 +590,11 @@ const setInitialFocus = () => {
 const prefillFromAlert = (data: any) => {
   const meta = data.metadata || {}
   const ext = meta.externalData || {}
-  
+
   if (meta.anioMarea) form.value.anioMarea = meta.anioMarea
   if (meta.nroMarea) form.value.nroMarea = meta.nroMarea
   if (meta.tipoMarea) form.value.tipoMarea = meta.tipoMarea
-  
+
   // Try to find Buque by name
   if (ext.buque) {
     const match = buques.value.find(b => b.nombreBuque.toLowerCase() === ext.buque.toLowerCase())
@@ -552,10 +609,10 @@ const prefillFromAlert = (data: any) => {
   if (meta.observerCode) {
     obsFound = observadores.value.find((o: any) => o.codigoInterno == meta.observerCode || o.codigo == meta.observerCode);
     if (obsFound) form.value.observadorId = obsFound.id
-  } 
-  
+  }
+
   if (!obsFound && meta.observerName) {
-      obsFound = observadores.value.find(o => 
+      obsFound = observadores.value.find(o =>
           `${o.apellido} ${o.nombre}`.toLowerCase().includes(meta.observerName.toLowerCase()) ||
           `${o.nombre} ${o.apellido}`.toLowerCase().includes(meta.observerName.toLowerCase())
       )
@@ -575,6 +632,10 @@ watch(currentStep, (newStep) => {
       buqueSelect.value?.focus()
     } else if (newStep === 2) {
       observadorSelect.value?.focus()
+    } else if (newStep === 3) {
+      if (!form.value.fechaInicioObservador && form.value.fechaZarpadaEstimada) {
+        form.value.fechaInicioObservador = form.value.fechaZarpadaEstimada
+      }
     }
   })
 })
@@ -595,6 +656,7 @@ const handleBuqueChange = () => {
     }
     if (buque.arteHabitualId) form.value.arteId = buque.arteHabitualId
     if (buque.diasMareaEstimada) form.value.diasEstimados = buque.diasMareaEstimada
+    if (buque.puertoBaseId) form.value.puertoBaseId = buque.puertoBaseId
   }
 }
 
@@ -602,26 +664,49 @@ const progressLineWidth = computed(() => {
   return `${((currentStep.value - 1) / (steps.length - 1)) * 100}%`
 })
 
-const validateStep = (step: number) => {
+const validateStep = async (step: number) => {
   fieldErrors.value = {}
-  
+
   if (step === 1) {
     if (!form.value.buqueId) fieldErrors.value.buqueId = 'El buque es obligatorio'
     if (!form.value.anioMarea) fieldErrors.value.anioMarea = 'El año es obligatorio'
     if (!form.value.nroMarea) fieldErrors.value.nroMarea = 'El número de marea es obligatorio'
     if (form.value.nroMarea && form.value.nroMarea <= 0) fieldErrors.value.nroMarea = 'Número inválido'
+
+    if (form.value.buqueId && !fieldErrors.value.buqueId) {
+        try {
+            const { available, marea } = await mareasService.validateVesselAvailability(form.value.buqueId)
+            if (!available) {
+                fieldErrors.value.buqueId = `El buque ya tiene una marea designada (${marea})`
+            }
+        } catch (e) {
+            console.error('Error validating vessel:', e)
+        }
+    }
   }
-  
+
   if (step === 2) {
     if (!form.value.pesqueriaId) fieldErrors.value.pesqueriaId = 'La pesquería es obligatoria'
     if (!form.value.observadorId) fieldErrors.value.observadorId = 'Debe asignar un observador'
     if (!form.value.arteId) fieldErrors.value.arteId = 'El arte de pesca es obligatorio'
     if (!form.value.fechaZarpadaEstimada) fieldErrors.value.fechaZarpadaEstimada = 'La fecha de zarpada es obligatoria'
 
-    if (form.value.fechaZarpadaEstimada) {
+    if (form.value.observadorId && !fieldErrors.value.observadorId) {
+        try {
+            const { available, marea } = await mareasService.validateObserverAvailability(form.value.observadorId)
+            if (!available) {
+                fieldErrors.value.observadorId = `El observador ya está designado en otra marea (${marea})`
+            }
+        } catch (e) {
+            console.error('Error validating observer:', e)
+        }
+    }
+
+    if (form.value.fechaZarpadaEstimada && !fieldErrors.value.fechaZarpadaEstimada) {
         const year = new Date(form.value.fechaZarpadaEstimada).getFullYear()
-        if (year < form.value.anioMarea) {
-            fieldErrors.value.fechaZarpadaEstimada = `El año de la fecha (${year}) no puede ser menor al año de la marea (${form.value.anioMarea})`
+        const mareaYear = form.value.anioMarea
+        if (year !== mareaYear && year !== mareaYear + 1) {
+            fieldErrors.value.fechaZarpadaEstimada = `El año de la fecha (${year}) debe ser ${mareaYear} o ${mareaYear + 1}`
         }
     }
   }
@@ -629,53 +714,53 @@ const validateStep = (step: number) => {
   if (step === 3) {
       if (form.value.etapas.length > 0) {
           if (!form.value.fechaInicioObservador) {
-              fieldErrors.value.fechaInicioObservador = 'La fecha de inicio del observador es requerida si crea etapas'
-              toast.error('Debe indicar el inicio del observador si define etapas', { position: 'top-center' })
+              fieldErrors.value.fechaInicioObservador = 'Requerido si define etapas'
           }
 
           const firstStage = form.value.etapas[0]
-          if (form.value.fechaInicioObservador && firstStage.fechaZarpada) {
+          if (form.value.fechaInicioObservador) {
               const startObs = new Date(form.value.fechaInicioObservador)
-              const startTrip = new Date(firstStage.fechaZarpada)
-              if (startObs > startTrip) {
-                  fieldErrors.value.fechaInicioObservador = 'El inicio del observador no puede ser posterior a la zarpada'
-                  toast.error('Coherencia de fechas: El inicio del observador debe ser <= a la zarpada', { position: 'top-center' })
+              const obsYear = startObs.getFullYear()
+              const mareaYear = form.value.anioMarea
+              if (obsYear !== mareaYear && obsYear !== mareaYear + 1) {
+                  fieldErrors.value.fechaInicioObservador = `El año (${obsYear}) debe ser ${mareaYear} o ${mareaYear + 1}`
+              }
+              if (firstStage.fechaZarpada) {
+                  const startTrip = new Date(firstStage.fechaZarpada)
+                  if (startObs > startTrip) {
+                      fieldErrors.value.fechaInicioObservador = 'No puede ser posterior a la zarpada'
+                  }
               }
           }
 
           form.value.etapas.forEach((etapa: any, idx: number) => {
               if (!etapa.fechaZarpada) {
-                  fieldErrors.value[`etapa_${idx}_fechaZarpada`] = 'Falta fecha de zarpada'
-                  toast.error(`Etapa ${idx + 1}: La fecha de zarpada es obligatoria`, { position: 'top-center' })
+                  fieldErrors.value[`etapa_${idx}_fechaZarpada`] = 'Indique la fecha'
               } else {
                   const stageYear = new Date(etapa.fechaZarpada).getFullYear()
-                  if (stageYear < form.value.anioMarea) {
-                      fieldErrors.value[`etapa_${idx}_fechaZarpada`] = 'Año inválido'
-                      toast.error(`Etapa ${idx + 1}: El año no puede ser menor al de la marea`, { position: 'top-center' })
+                  const mareaYear = form.value.anioMarea
+                  if (stageYear !== mareaYear && stageYear !== mareaYear + 1) {
+                      fieldErrors.value[`etapa_${idx}_fechaZarpada`] = `El año (${stageYear}) debe ser ${mareaYear} o ${mareaYear + 1}`
                   }
               }
               if (!etapa.puertoZarpadaId) {
-                   fieldErrors.value[`etapa_${idx}_puertoZarpadaId`] = 'Falta puerto de zarpada'
-                   toast.error(`Etapa ${idx + 1}: El puerto de zarpada es obligatorio`, { position: 'top-center' })
+                   fieldErrors.value[`etapa_${idx}_puertoZarpadaId`] = 'Indique el puerto'
               }
               if (!etapa.pesqueriaId) {
-                   fieldErrors.value[`etapa_${idx}_pesqueriaId`] = 'Falta pesquería'
-                   toast.error(`Etapa ${idx + 1}: La pesquería es obligatoria`, { position: 'top-center' })
-              }
-              if (etapa.fechaArribo && !etapa.puertoArriboId) {
-                   fieldErrors.value[`etapa_${idx}_puertoArriboId`] = 'Falta puerto de arribo'
-                   toast.error(`Etapa ${idx + 1}: Si define fecha de arribo, el puerto es obligatorio`, { position: 'top-center' })
+                   // Para pesquería no tenemos :error actualmente en el template del editor pero lo agregaremos si es necesario
+                   // Por ahora nos concentramos en zarpada y puerto que pidió el usuario
+                   // fieldErrors.value[`etapa_${idx}_pesqueriaId`] = 'Falta pesquería'
               }
           })
       }
   }
-  
+
   return Object.keys(fieldErrors.value).length === 0
 }
 
 const nextStep = async () => {
   if (currentStep.value === 1) {
-    if (!validateStep(1)) return
+    if (!(await validateStep(1))) return
     if (form.value.anioMarea !== configStore.selectedYear) {
       showYearConfirm.value = true
       return
@@ -685,14 +770,15 @@ const nextStep = async () => {
   }
 
   if (currentStep.value < 4) {
-    if (!validateStep(currentStep.value)) return
+    if (!(await validateStep(currentStep.value))) return
     currentStep.value++
   } else {
     try {
       const payload = { ...form.value }
+      delete (payload as any).puertoBaseId
       if (!payload.fechaZarpadaEstimada) delete (payload as any).fechaZarpadaEstimada
       if (!payload.fechaInicioObservador) delete (payload as any).fechaInicioObservador
-      
+
       if (payload.etapas && payload.etapas.length > 0) {
           payload.etapas = payload.etapas.map((e: any) => {
               const cleanStage = { ...e }
@@ -707,7 +793,7 @@ const nextStep = async () => {
       }
 
       const newMarea = await createMarea(payload)
-      
+
       if (workflowStore.activeAlertData?.id) {
           try {
               await alertsService.update(workflowStore.activeAlertData.id, {
@@ -724,16 +810,9 @@ const nextStep = async () => {
       emit('success')
     } catch (err: any) {
       console.error('Error creating marea:', err)
-      const backendMsg = err.response?.data?.message
-      if (backendMsg) {
-         const msg = Array.isArray(backendMsg) ? backendMsg.join(', ') : backendMsg
-         error.value = msg
-         toast.error('Error de validación', { description: msg })
-      } else {
-         const msg = err.message || 'Error desconocido al crear la marea.'
-         error.value = msg
-         toast.error('Error al crear marea', { description: msg })
-      }
+      const msg = err.message || 'Error desconocido al crear la marea.'
+      error.value = msg
+      toast.error('Error al crear marea', { description: msg })
     }
   }
 }

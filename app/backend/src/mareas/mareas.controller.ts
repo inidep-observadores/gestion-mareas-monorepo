@@ -128,6 +128,24 @@ export class MareasController {
         return this.mareasService.getMareaContext(id);
     }
 
+    @Get('valida/buque/:id')
+    async validarBuque(@Param('id') id: string) {
+        return this.mareasService.checkVesselAvailability(id);
+    }
+
+    @Get('valida/observador/:id')
+    async validarObservador(@Param('id') id: string) {
+        return this.mareasService.checkObserverAvailability(id);
+    }
+
+    @Get('config/proximo-numero')
+    getNextMareaNumber(
+        @Query('year') year: string,
+        @Query('tipo') tipo: string
+    ) {
+        return this.mareasService.getNextMareaNumber(Number(year), tipo as any);
+    }
+
     @Post(':id/actions/:actionKey')
     @AuditEvent({
         tipoEvento: 'EJECUTAR_ACCION_FLUJO',

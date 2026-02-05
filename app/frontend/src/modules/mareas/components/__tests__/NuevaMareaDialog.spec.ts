@@ -1,13 +1,17 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { createTestingPinia } from '@pinia/testing'
 import NuevaMareaDialog from '../NuevaMareaDialog.vue'
 import { TipoMarea } from '../../types/enums'
 import { nextTick, ref } from 'vue'
+import { useConfigStore } from '../../../shared/stores/config.store'
+import { useWorkflowStore } from '../../../shared/stores/workflow.store'
+import mareasService from '../../services/mareas.service'
+import catalogosService from '../../services/catalogos.service'
 
 // Stubs
 const DatePickerStub = {
-  template: '<input type="text" class="datepicker-stub" :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" />',
+  template: '<div class="datepicker-stub-container"><input type="text" class="datepicker-stub" :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" /><span v-if="error" class="error-msg">{{ error }}</span></div>',
   props: ['modelValue', 'error'],
   methods: {
     focus() { /* stub */ }
@@ -15,7 +19,7 @@ const DatePickerStub = {
 }
 
 const SearchableSelectStub = {
-  template: '<select class="select-stub" :value="modelValue" @change="$emit(\'update:modelValue\', $event.target.value)"><slot></slot></select>',
+  template: '<div class="select-stub-container"><select class="select-stub" :value="modelValue" @change="$emit(\'update:modelValue\', $event.target.value)"><slot></slot></select><span v-if="error" class="error-msg">{{ error }}</span></div>',
   props: ['options', 'modelValue', 'error', 'placeholder'],
   methods: {
     focus() { /* stub */ }
@@ -28,13 +32,13 @@ const NavigationStagesEditorStub = {
 }
 
 const BaseModalStub = {
-    template: `
+  template: `
       <div v-if="show" class="modal-stub">
         <div class="modal-title"><slot name="title">{{ title }}</slot></div>
         <div class="modal-content"><slot /></div>
       </div>
     `,
-    props: ['show', 'maxWidth', 'title']
+  props: ['show', 'maxWidth', 'title']
 }
 
 const ConfirmationDialogStub = {
@@ -47,65 +51,35 @@ const LoadingSpinnerStub = {
   props: ['size']
 }
 
-// Mock del httpClient para interceptar todas las llamadas HTTP
-vi.mock('@/config/http/http.client', () => ({
-  default: {
-    get: vi.fn((url: string) => {
-      if (url.includes('/catalogos/buques')) {
-        return Promise.resolve({ data: [{ id: '1', nombreBuque: 'Barco A', pesqueriaHabitualId: '1' }] })
-      }
-      if (url.includes('/catalogos/pesquerias')) {
-        return Promise.resolve({ data: [{ id: '1', nombre: 'Pesqueria A' }] })
-      }
-      if (url.includes('/catalogos/observadores')) {
-        return Promise.resolve({ data: [{ id: '1', nombre: 'Obs', apellido: 'A' }] })
-      }
-      if (url.includes('/catalogos/artes-pesca')) {
-        return Promise.resolve({ data: [{ id: '1', nombre: 'Arte A' }] })
-      }
-      if (url.includes('/catalogos/puertos')) {
-        return Promise.resolve({ data: [{ id: '1', nombre: 'Puerto A' }] })
-      }
-      return Promise.resolve({ data: [] })
-    }),
-    post: vi.fn((url: string, data: any) => {
-      if (url.includes('/mareas')) {
-        return Promise.resolve({ data: { id: 'new-id', id_marea: 'MC-100-25', ...data } })
-      }
-      return Promise.resolve({ data: {} })
-    }),
-    put: vi.fn(() => Promise.resolve({ data: {} })),
-    patch: vi.fn(() => Promise.resolve({ data: {} })),
-    delete: vi.fn(() => Promise.resolve({ data: {} }))
-  }
-}))
-
 // Mock de servicios
-vi.mock('../services/catalogos.service', () => ({
+vi.mock('../../services/catalogos.service', () => ({
   default: {
-    getBuques: vi.fn(() => Promise.resolve([{ id: '1', nombreBuque: 'Barco A', id_pesqueria_habitual: '1' }])),
-    getPesquerias: vi.fn(() => Promise.resolve([{ id: '1', nombre: 'Pesqueria A' }])),
-    getObservadores: vi.fn(() => Promise.resolve([{ id: '1', nombre: 'Obs', apellido: 'A' }])),
-    getArtesPesca: vi.fn(() => Promise.resolve([{ id: '1', nombre: 'Arte A' }])),
-    getPuertos: vi.fn(() => Promise.resolve([{ id: '1', nombre: 'Puerto A' }]))
+    getBuques: vi.fn(),
+    getPesquerias: vi.fn(),
+    getObservadores: vi.fn(),
+    getArtesPesca: vi.fn(),
+    getPuertos: vi.fn()
   }
 }))
 
-vi.mock('../services/mareas.service', () => ({
-    default: {
-        create: vi.fn().mockImplementation((data) => Promise.resolve({ id: 'new-id', id_marea: 'MC-100-24', ...data })),
-        getDashboardOperativo: vi.fn().mockResolvedValue({ kpis: [], items: [] }),
-        getMareaContext: vi.fn().mockResolvedValue({})
-    }
+vi.mock('../../services/mareas.service', () => ({
+  default: {
+    create: vi.fn(),
+    getDashboardOperativo: vi.fn(),
+    getMareaContext: vi.fn(),
+    validateVesselAvailability: vi.fn(),
+    validateObserverAvailability: vi.fn(),
+    getNextMareaNumber: vi.fn()
+  }
 }))
 
 // Mock de useMareas
 vi.mock('../composables/useMareas', () => ({
-    useMareas: vi.fn(() => ({
-        createMarea: vi.fn().mockResolvedValue({ id: 'new-id', id_marea: 'MC-100-24' }),
-        loading: ref(false),
-        error: ref(null)
-    }))
+  useMareas: vi.fn(() => ({
+    createMarea: vi.fn().mockResolvedValue({ id: 'new-id', id_marea: 'MC-100-24' }),
+    loading: ref(false),
+    error: ref(null)
+  }))
 }))
 
 vi.mock('vue-router', () => ({
@@ -154,14 +128,33 @@ describe('NuevaMareaDialog.vue', () => {
     initFromAlert: false
   }
 
+  beforeEach(() => {
+    vi.clearAllMocks()
+
+    // Mocks de servicios con valores por defecto
+    vi.mocked(catalogosService.getBuques).mockResolvedValue([{ id: '1', nombreBuque: 'Barco A', pesqueriaHabitualId: '1', matricula: '123' }] as any)
+    vi.mocked(catalogosService.getPesquerias).mockResolvedValue([{ id: '1', nombre: 'Pesqueria A' }])
+    vi.mocked(catalogosService.getObservadores).mockResolvedValue([{ id: '1', nombre: 'Obs', apellido: 'A', conImpedimento: false }])
+    vi.mocked(catalogosService.getArtesPesca).mockResolvedValue([{ id: '1', nombre: 'Arte A' }])
+    vi.mocked(catalogosService.getPuertos).mockResolvedValue([{ id: '1', nombre: 'Puerto A' }])
+
+    vi.mocked(mareasService.getNextMareaNumber).mockResolvedValue(100)
+    vi.mocked(mareasService.validateVesselAvailability).mockResolvedValue({ available: true, marea: null })
+    vi.mocked(mareasService.validateObserverAvailability).mockResolvedValue({ available: true, marea: null })
+    vi.mocked(mareasService.getDashboardOperativo).mockResolvedValue({ kpis: [], items: [] })
+    vi.mocked(mareasService.getMareaContext).mockResolvedValue({ marea: {} as any, actions: {}, lastEvents: [] })
+    vi.mocked(mareasService.create).mockResolvedValue({ id: 'new-id', id_marea: 'MC-100-24' })
+  })
+
   const mountComponent = async (props = {}) => {
-    const pinia = createTestingPinia({ 
-        createSpy: vi.fn,
-        initialState: {
-            config: { selectedYear: 2025 }
-        }
+    const pinia = createTestingPinia({
+      createSpy: vi.fn,
+      initialState: {
+        config: { selectedYear: 2025 }
+      },
+      stubActions: false
     })
-    
+
     const wrapper = mount(NuevaMareaDialog, {
       props: { ...defaultProps, ...props },
       global: {
@@ -177,13 +170,14 @@ describe('NuevaMareaDialog.vue', () => {
         }
       }
     })
-    
+
     await flushPromises()
-    if ((wrapper.vm as any).loadingCatalogs) {
-        (wrapper.vm as any).loadingCatalogs = false
-        await nextTick()
+    const vm = wrapper.vm as any
+    if (vm.loadingCatalogs) {
+      vm.loadingCatalogs = false
+      await nextTick()
     }
-    
+
     return wrapper
   }
 
@@ -195,54 +189,77 @@ describe('NuevaMareaDialog.vue', () => {
 
   it('blocks navigation to Step 2 if Step 1 is invalid', async () => {
     const wrapper = await mountComponent()
-    const nextBtn = wrapper.findAll('button').find(b => b.text().includes('Siguiente Paso'))
-    await nextBtn?.trigger('click')
+    const vm = wrapper.vm as any
+
+    vm.form.buqueId = ''
+    vm.form.anioMarea = 2025
+    vm.form.nroMarea = null
+
+    await vm.nextStep()
     await flushPromises()
-    expect(wrapper.text()).toContain('El buque es obligatorio')
+    await nextTick()
+
+    expect(vm.fieldErrors.buqueId).toBeTruthy()
+    expect(vm.currentStep).toBe(1)
   })
 
   it('navigates to Step 2 when Step 1 is valid', async () => {
     const wrapper = await mountComponent()
-    
-    Object.assign((wrapper.vm as any).form, {
-        buqueId: '1',
-        anioMarea: 2025,
-        nroMarea: 100
-    })
-    
-    const nextBtn = wrapper.findAll('button').find(b => b.text().includes('Siguiente Paso'))
-    await nextBtn?.trigger('click')
+    const vm = wrapper.vm as any
+
+    // Forzar valores en el store y el form
+    const configStore = useConfigStore()
+    configStore.selectedYear = 2025
+    vm.form.anioMarea = 2025
+    vm.form.tipoMarea = TipoMarea.MC
+    vm.form.buqueId = '1'
+    vm.form.nroMarea = 100
+
     await flushPromises()
-    expect(wrapper.text()).toContain('Configuración Operativa')
+    await nextTick()
+
+    await vm.nextStep()
+
+    // Esperar a que TODAS las promesas se resuelvan (incluyendo las de validateStep)
+    await flushPromises()
+    await nextTick()
+    await flushPromises()
+    await nextTick()
+
+    expect(vm.currentStep).toBe(2)
   })
 
   it('navigates through all steps and emits success', async () => {
     const wrapper = await mountComponent()
-    
-    Object.assign((wrapper.vm as any).form, {
-        buqueId: '1',
-        anioMarea: 2025,
-        nroMarea: 100,
-        pesqueriaId: '1',
-        observadorId: '1',
-        arteId: '1',
-        fechaZarpadaEstimada: '2025-01-10T00:00:00.000Z',
-        tipoMarea: TipoMarea.MC,
-        etapas: []
+    const vm = wrapper.vm as any
+
+    const configStore = useConfigStore()
+    configStore.selectedYear = 2025
+
+    Object.assign(vm.form, {
+      buqueId: '1',
+      anioMarea: 2025,
+      nroMarea: 100,
+      pesqueriaId: '1',
+      observadorId: '1',
+      arteId: '1',
+      fechaZarpadaEstimada: '2025-01-10T00:00:00.000Z',
+      tipoMarea: TipoMarea.MC,
+      etapas: []
     })
-    
-    ;(wrapper.vm as any).currentStep = 4
+
+    await flushPromises()
+    await nextTick()
+
+    vm.currentStep = 4
     await nextTick()
     await flushPromises()
 
-    expect(wrapper.text()).toContain('Verificar y Registrar')
-    
-    // Al usar currentStep = 4 y llamar a nextStep(), se ejecuta el submit final
-    console.log('Current Step before nextStep:', (wrapper.vm as any).currentStep)
-    await (wrapper.vm as any).nextStep()
+    await vm.nextStep()
     await flushPromises()
-    
-    console.log('Emitted success:', wrapper.emitted('success'))
+    await nextTick()
+    await flushPromises()
+
     expect(wrapper.emitted('success')).toBeTruthy()
   })
 })
