@@ -50,7 +50,7 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
                 await (clientInstance as any).$executeRawUnsafe(sql);
 
                 if (userId || userEmail) {
-                  console.log(`[Prisma Extension] Session context set for: ${userEmail || userId}`);
+                  // Log opcional en debug si fuera necesario
                 }
               } catch (e) {
                 console.error(`[Prisma Extension] Error setting session variables: ${e.message}`);

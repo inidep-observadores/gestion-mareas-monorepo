@@ -26,17 +26,11 @@ export class AuditService {
         this.isAsync = this.configService.get<boolean>('audit.async.enabled', true);
         this.level = this.configService.get<AuditLevel>('audit.level', AuditLevel.ALL);
 
-        // Verification logs
         const globalEnabled = this.configService.get<boolean>('audit.enabled', true);
         const apiEnabled = this.configService.get<boolean>('audit.api.enabled', true);
         const navEnabled = this.configService.get<boolean>('audit.navigation.enabled', true);
 
-        console.log(`[AuditService] Configuration Initialized:`);
-        console.log(` - Global Enabled: ${globalEnabled}`);
-        console.log(` - API Enabled: ${apiEnabled}`);
-        console.log(` - Navigation Enabled: ${navEnabled}`);
-        console.log(` - Async: ${this.isAsync}`);
-        console.log(` - Level: ${this.level}`);
+        this.logger.log(`AuditService Initialized (Async: ${this.isAsync}, Level: ${this.level})`);
     }
 
     private isTypeEnabled(type: 'api' | 'navigation' | 'entities' | 'events'): boolean {
@@ -107,7 +101,7 @@ export class AuditService {
 
         try {
             if (this.isAsync) {
-                console.log(`[AuditService] Adding event to Bull queue: ${dto.tipoEvento}`);
+                this.logger.debug(`Adding event to Bull queue: ${dto.tipoEvento}`);
                 await this.auditQueue.add('log-evento', sanitizedDto, {
                     removeOnComplete: true,
                     attempts: 3
@@ -115,7 +109,7 @@ export class AuditService {
             } else {
                 const model = this.getPrismaModel('AuditoriaEvento');
                 if (model) {
-                    console.log(`[AuditService] Saving event to DB synchronously: ${dto.tipoEvento}`);
+                    this.logger.debug(`Saving event to DB synchronously: ${dto.tipoEvento}`);
                     await model.create({ data: sanitizedDto });
                 }
             }

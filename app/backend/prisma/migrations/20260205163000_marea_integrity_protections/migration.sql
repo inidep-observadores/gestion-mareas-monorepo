@@ -29,7 +29,7 @@ BEGIN
             WHERE m.id_buque = NEW.id_buque
               AND m.activo = true
               AND m.id <> COALESCE(NEW.id, '00000000-0000-0000-0000-000000000000'::uuid)
-              AND e.codigo IN ('DESIGNADA', 'ACTIVA', 'EJEC')
+              AND e.codigo IN ('DESIGNADA', 'ACTIVA', 'EJEC', 'EN_EJECUCION')
         ) INTO v_vessel_occupied;
 
         IF v_vessel_occupied THEN
@@ -47,7 +47,7 @@ BEGIN
             WHERE m.id_observador_principal = NEW.id_observador_principal
               AND m.activo = true
               AND m.id <> COALESCE(NEW.id, '00000000-0000-0000-0000-000000000000'::uuid)
-              AND e.codigo IN ('DESIGNADA', 'ACTIVA', 'EJEC')
+              AND e.codigo IN ('DESIGNADA', 'ACTIVA', 'EJEC', 'EN_EJECUCION')
         ) INTO v_vessel_occupied; -- Reuso variable para ahorrar memoria
 
         IF v_vessel_occupied THEN
