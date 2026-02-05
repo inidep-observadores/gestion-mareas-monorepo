@@ -8,6 +8,10 @@ export class CreateBuqueDto {
     @IsString()
     matricula: string;
 
+    @IsString()
+    @IsOptional()
+    matriculaSiop?: string | null;
+
     @IsInt()
     @IsOptional()
     @ValidateIf((o, v) => v !== null)

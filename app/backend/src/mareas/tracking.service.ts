@@ -120,12 +120,12 @@ export class TrackingService {
 
         // Pre-load numeric matriculas for fallback search
         const allBuques = await this.prisma.buque.findMany({
-            select: { id: true, matricula: true }
+            select: { id: true, matriculaSiop: true }
         });
         const numericMatriculaMap = new Map<number, string>();
         for (const b of allBuques) {
-            if (b.matricula && /^\d+$/.test(b.matricula.trim())) {
-                const val = parseInt(b.matricula.trim(), 10);
+            if (b.matriculaSiop && /^\d+$/.test(b.matriculaSiop.trim())) {
+                const val = parseInt(b.matriculaSiop.trim(), 10);
                 if (!numericMatriculaMap.has(val)) {
                     numericMatriculaMap.set(val, b.id);
                 }
@@ -148,10 +148,10 @@ export class TrackingService {
                     const matricula = matriculaRaw ? matriculaRaw.trim() : null;
                     let buqueFound = null;
 
-                    // Priority 1: Exact Matricula
+                    // Priority 1: SIOP Matricula
                     if (matricula) {
                         buqueFound = await this.prisma.buque.findUnique({
-                            where: { matricula }
+                            where: { matriculaSiop: matricula }
                         });
                     }
 
@@ -167,12 +167,12 @@ export class TrackingService {
                             }
                         });
 
-                        // Auto-correct Matricula if found by name but not matricula
-                        if (buqueFound && matricula && buqueFound.matricula !== matricula) {
-                            this.logger.log(`Auto-correcting matricula for ${buqueName}: ${buqueFound.matricula} -> ${matricula}`);
+                        // Auto-correct Matricula (SIOP) if found by name but not matricula
+                        if (buqueFound && matricula && buqueFound.matriculaSiop !== matricula) {
+                            this.logger.log(`Auto-correcting SIOP matricula for ${buqueName}: ${buqueFound.matriculaSiop} -> ${matricula}`);
                             buqueFound = await this.prisma.buque.update({
                                 where: { id: buqueFound.id },
-                                data: { matricula: matricula }
+                                data: { matriculaSiop: matricula }
                             });
                             updatedShipsCount++;
                         }
@@ -185,14 +185,14 @@ export class TrackingService {
                         if (idFound) {
                             buqueFound = await this.prisma.buque.findUnique({ where: { id: idFound } });
                             if (buqueFound) {
-                                this.logger.log(`Found buque by numeric matricula: ${buqueName} (${matricula}) -> ${buqueFound.nombreBuque} (${buqueFound.matricula})`);
+                                this.logger.log(`Found buque by numeric SIOP matricula: ${buqueName} (${matricula}) -> ${buqueFound.nombreBuque} (${buqueFound.matriculaSiop})`);
 
-                                // Auto-correct Matricula to match CSV format (as per user request)
-                                if (buqueFound.matricula !== matricula) {
-                                    this.logger.log(`Auto-correcting matricula (numeric match) for ${buqueName}: ${buqueFound.matricula} -> ${matricula}`);
+                                // Auto-correct SIOP Matricula to match CSV format
+                                if (buqueFound.matriculaSiop !== matricula) {
+                                    this.logger.log(`Auto-correcting SIOP matricula (numeric match) for ${buqueName}: ${buqueFound.matriculaSiop} -> ${matricula}`);
                                     buqueFound = await this.prisma.buque.update({
                                         where: { id: buqueFound.id },
-                                        data: { matricula: matricula }
+                                        data: { matriculaSiop: matricula }
                                     });
                                     updatedShipsCount++;
                                 }
