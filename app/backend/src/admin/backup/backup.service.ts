@@ -313,12 +313,15 @@ export class BackupService {
 
         res.setHeader('Content-Type', 'application/zip');
         res.setHeader('Content-Disposition', `attachment; filename="${zipFilename}"`);
+        res.setHeader('X-Accel-Buffering', 'no'); // Desactivar buffering en Nginx para streaming
+        res.setHeader('Cache-Control', 'no-cache');
+        res.setHeader('Transfer-Encoding', 'chunked');
 
         // Si no hay contraseña, usamos el archiver estándar que ya tenemos cargado
         // Pero si HAY contraseña, necesitamos el encryptable
         if (zipPassword) {
             const archive = archiver('zip-encryptable' as any, {
-                zlib: { level: 9 },
+                zlib: { level: 5 }, // Nivel 5 es un buen balance entre velocidad y tamaño
                 password: zipPassword
             } as any);
 
@@ -335,7 +338,7 @@ export class BackupService {
             await archive.finalize();
         } else {
             // ZIP estándar sin contraseña (usando archiver normal)
-            const archive = archiver('zip', { zlib: { level: 9 } });
+            const archive = archiver('zip', { zlib: { level: 5 } });
 
             archive.on('error', (err) => {
                 this.logger.error(`Error zipping backup: ${err.message}`);

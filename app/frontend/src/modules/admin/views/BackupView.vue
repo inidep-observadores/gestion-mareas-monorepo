@@ -196,11 +196,11 @@
       </div>
     </ConfirmationDialog>
 
-    <!-- Overlay de Procesamiento (Backup o Restauración en curso) -->
+    <!-- Overlay de Procesamiento (Backup, Restauración o Descarga en curso) -->
     <ProcessingOverlay 
-        :show="isCreating || isRestoring"
-        :title="isCreating ? 'Generando Respaldo' : 'Restaurando Base de Datos'"
-        :message="isCreating ? 'Por favor espera un momento...' : 'Este proceso es crítico, no cierres la ventana.'"
+        :show="isCreating || isRestoring || isDownloading"
+        :title="isCreating ? 'Generando Respaldo' : (isRestoring ? 'Restaurando Base de Datos' : 'Preparando Descarga')"
+        :message="isCreating ? 'Por favor espera un momento...' : (isRestoring ? 'Este proceso es crítico, no cierres la ventana.' : 'Estamos comprimiendo los archivos, esto puede demorar unos segundos...')"
     />
 
   </AdminDashboardLayout>
@@ -250,6 +250,7 @@ const selectedBackup = ref<BackupFile | null>(null);
 const backendStatus = ref({ isConfigured: true, backupPath: '' });
 const fileInput = ref<HTMLInputElement | null>(null);
 const isUploading = ref(false);
+const isDownloading = ref(false);
 const includeTrajectories = ref(false);
 
 const restorePhrases = [
@@ -359,9 +360,12 @@ const handleFileUpload = async (event: Event) => {
 };
 
 const handleDownload = async (bkp: BackupFile) => {
+    isDownloading.value = true;
+    isProcessing.value = true;
     try {
         const response = await httpClient.get(`/admin/backup/download/${bkp.filename}`, {
-            responseType: 'blob'
+            responseType: 'blob',
+            timeout: 0 // Eliminar timeout para descargas de archivos grandes
         });
         
         const url = window.URL.createObjectURL(new Blob([response.data]));
@@ -379,6 +383,9 @@ const handleDownload = async (bkp: BackupFile) => {
     } catch (error) {
         console.error('Download error:', error);
         toast.error('No se pudo descargar el archivo');
+    } finally {
+        isDownloading.value = false;
+        isProcessing.value = false;
     }
 };
 
