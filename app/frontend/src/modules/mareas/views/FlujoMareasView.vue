@@ -60,7 +60,7 @@
                       class="flex items-center justify-between gap-2 px-1 cursor-pointer">
                       <div class="flex items-center gap-2">
                         <span class="text-xs font-black uppercase tracking-widest text-text-muted">{{ group.label
-                          }}</span>
+                        }}</span>
                         <span class="px-2 py-0.5 bg-surface-muted rounded-full text-[10px] font-bold text-text">{{
                           group.items.length }}</span>
                       </div>
@@ -234,7 +234,7 @@
                             <div class="flex items-center gap-2">
                               <component :is="group.kpiData.icon" class="w-4 h-4" :class="group.kpiData.color" />
                               <span class="text-xs font-black uppercase text-text tracking-wide">{{ group.label
-                                }}</span>
+                              }}</span>
                               <span
                                 class="px-2 py-0.5 bg-surface text-text-muted border border-border rounded-full text-[10px] font-bold">{{
                                   group.items.length }}</span>
@@ -261,7 +261,7 @@
                             <div class="flex flex-col min-w-0">
                               <div class="flex items-center gap-2">
                                 <span class="text-sm font-bold text-text leading-tight truncate">{{ marea.buque_nombre
-                                  }}</span>
+                                }}</span>
                                 <!-- Indicadores movidos aquí -->
                                 <span v-if="marea.total_etapas > 1 && marea.estado_codigo === 'EN_EJECUCION'"
                                   class="px-1.5 py-0 bg-surface-muted text-text-muted rounded-md text-[8px] font-black uppercase border border-border"
@@ -282,16 +282,16 @@
                         <td class="px-5 py-1.5">
                           <div class="flex flex-col">
                             <span class="text-xs font-bold text-text leading-none">{{ formatDate(marea.fecha_zarpada)
-                              }}</span>
+                            }}</span>
                             <span class="text-[10px] text-text-muted leading-none mt-1">{{ marea.puerto }}</span>
                           </div>
                         </td>
                         <td class="px-5 py-1.5">
                           <div class="flex flex-col" v-if="marea.fecha_arribo">
                             <span class="text-xs font-bold text-text leading-none">{{ formatDate(marea.fecha_arribo)
-                              }}</span>
+                            }}</span>
                             <span class="text-[10px] text-text-muted leading-none mt-1">{{ marea.puerto_arribo || 'N/D'
-                              }}</span>
+                            }}</span>
                           </div>
                           <div v-else-if="marea.estado_codigo === 'EN_EJECUCION'" class="flex items-center gap-1">
                             <div class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></div>
@@ -762,6 +762,7 @@ const handleGenericConfirm = async (payload: any) => {
 
 const handleGestionCancel = () => {
   showGestionDialog.value = false
+  mareaToManage.value = null
   closeSidebar()
 }
 

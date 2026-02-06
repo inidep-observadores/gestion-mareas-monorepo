@@ -180,7 +180,7 @@
                             </div>
                             <div class="flex flex-col min-w-0">
                               <span class="text-sm font-bold text-text leading-tight truncate">{{ marea.buque_nombre
-                                }}</span>
+                              }}</span>
                               <span class="text-[10px] font-bold text-text-muted leading-tight truncate mt-0.5">{{
                                 marea.observador || 'Sin asignar' }}</span>
                             </div>
@@ -207,7 +207,7 @@
                         <td class="px-5 py-1.5">
                           <div class="flex flex-col">
                             <span class="text-xs font-bold text-text leading-none">{{ formatDate(marea.fecha_zarpada)
-                              }}</span>
+                            }}</span>
                             <span class="text-[10px] text-text-muted leading-none mt-1">{{ marea.puerto }}</span>
                           </div>
                         </td>
@@ -536,6 +536,7 @@ const handleGenericConfirm = async (payload: any) => {
 
 const handleGestionCancel = () => {
   showGestionDialog.value = false
+  mareaToManage.value = null
   closeSidebar()
 }
 

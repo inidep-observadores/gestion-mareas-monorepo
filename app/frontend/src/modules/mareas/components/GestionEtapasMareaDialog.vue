@@ -40,9 +40,8 @@
 
         <div class="space-y-6">
           <!-- Section 1: Zona Austral -->
-          <CollapsibleSection v-if="mode === 'FINALIZAR'" title="Zona Austral"
-            :description="`Detección técnica: ${zonaAustralData?.totalDiasMarea || 0} días`"
-            :initialOpen="shouldOpenZonaAustral">
+          <CollapsibleSection v-if="mode === 'FINALIZAR'" v-model="zonaAustralExpanded" title="Zona Austral"
+            :description="`Detección técnica: ${zonaAustralData?.totalDiasMarea || 0} días`">
             <template #icon>
               <HistoryIcon class="w-5 h-5 text-primary" />
             </template>
@@ -100,8 +99,8 @@
           </CollapsibleSection>
 
           <!-- Section 2: Etapas del Viaje -->
-          <CollapsibleSection :title="`${form.stages.length} Etapas registradas`" :description="etapasRangeDescription"
-            :initialOpen="mode === 'EDITAR'">
+          <CollapsibleSection v-model="etapasExpanded" :title="`${form.stages.length} Etapas registradas`"
+            :description="etapasRangeDescription">
             <template #icon>
               <ShipIcon class="w-5 h-5 text-primary" />
             </template>
@@ -177,6 +176,10 @@ const firstInput = ref<any>(null);
 const loadingZonaAustral = ref(false);
 const zonaAustralData = ref<ZonaAustralResponse | null>(null);
 
+// UI State (Expansion)
+const zonaAustralExpanded = ref(false);
+const etapasExpanded = ref(false);
+
 // Confirmation Dialog State
 const showConfirmation = ref(false);
 const confirmationAction = ref<'SAVE' | 'CANCEL' | null>(null);
@@ -210,7 +213,6 @@ const config = computed(() => {
   }
 });
 
-// Computed info for CollapsibleSection title
 const etapasRangeDescription = computed(() => {
   if (form.value.stages.length === 0) return 'Sin etapas registradas';
   const first = form.value.stages[0].fechaZarpada;
@@ -222,10 +224,6 @@ const etapasRangeDescription = computed(() => {
   };
 
   return `Rango: ${formatDate(first)} - ${formatDate(last)}`;
-});
-
-const shouldOpenZonaAustral = computed(() => {
-  return form.value.diasZonaAustral > 0;
 });
 
 // Catalogs
@@ -333,6 +331,10 @@ watch(() => props.show, (val) => {
 
     // Load technical calculation details automatically
     loadZonaAustralData();
+
+    // Set initial expansion states based on mode
+    etapasExpanded.value = props.mode === 'EDITAR';
+    zonaAustralExpanded.value = props.mode === 'FINALIZAR';
 
     nextTick(() => {
       firstInput.value?.focus();

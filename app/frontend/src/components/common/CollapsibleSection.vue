@@ -63,7 +63,7 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits(['update:modelValue', 'toggle'])
 
 // Estado local que se sincroniza con los props
-const isOpen = ref(props.modelValue !== undefined ? props.modelValue : props.initialOpen)
+const isOpen = ref(props.modelValue ?? props.initialOpen)
 
 function toggle() {
     isOpen.value = !isOpen.value
