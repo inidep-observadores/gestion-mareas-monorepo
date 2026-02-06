@@ -2519,15 +2519,33 @@ export class MareasService {
         if (!marea) throw new NotFoundException('Marea no encontrada');
 
         // 1. Preparar estructuras de las etapas
+        const timezone = process.env.APP_TIMEZONE || 'America/Argentina/Buenos_Aires';
+
         const stagesResult = marea.etapas
             .filter(e => e.fechaZarpada)
-            .map(e => ({
-                id: e.id,
-                nroEtapa: e.nroEtapa,
-                start: new Date(e.fechaZarpada),
-                end: e.fechaArribo ? new Date(e.fechaArribo) : new Date(),
-                puntosPorDia: new Map<string, number>()
-            }));
+            .map(e => {
+                // Normalizamos el inicio al comienzo del día (00:00:00) 
+                // y el fin al final del día (23:59:59) en la zona horaria local
+                // Esto garantiza que si hay puntos de trayectoria en cualquier momento 
+                // de esos días calendario, sean incluidos en el cálculo.
+                const start = DateTime.fromJSDate(new Date(e.fechaZarpada)).setZone(timezone).startOf('day').toJSDate();
+
+                let endJS: Date;
+                if (e.fechaArribo) {
+                    endJS = DateTime.fromJSDate(new Date(e.fechaArribo)).setZone(timezone).endOf('day').toJSDate();
+                } else {
+                    // Si no tiene arribo, es una marea en curso. Usamos 'ahora'.
+                    endJS = new Date();
+                }
+
+                return {
+                    id: e.id,
+                    nroEtapa: e.nroEtapa,
+                    start,
+                    end: endJS,
+                    puntosPorDia: new Map<string, number>()
+                };
+            });
 
         if (stagesResult.length === 0) {
             return {
@@ -2555,7 +2573,6 @@ export class MareasService {
         });
 
         // 3. Procesar puntos y asignarlos a la etapa correspondiente
-        const timezone = process.env.APP_TIMEZONE || 'America/Argentina/Buenos_Aires';
         const globalDetectedDays = new Set<string>();
 
         for (const point of points) {
