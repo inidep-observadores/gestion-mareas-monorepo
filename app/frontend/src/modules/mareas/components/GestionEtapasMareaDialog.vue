@@ -40,7 +40,7 @@
 
         <div class="space-y-6">
           <!-- Section 1: Zona Austral -->
-          <CollapsibleSection title="Zona Austral"
+          <CollapsibleSection v-if="mode === 'FINALIZAR'" title="Zona Austral"
             :description="`Detección técnica: ${zonaAustralData?.totalDiasMarea || 0} días`"
             :initialOpen="shouldOpenZonaAustral">
             <template #icon>
@@ -101,7 +101,7 @@
 
           <!-- Section 2: Etapas del Viaje -->
           <CollapsibleSection :title="`${form.stages.length} Etapas registradas`" :description="etapasRangeDescription"
-            :initialOpen="false">
+            :initialOpen="mode === 'EDITAR'">
             <template #icon>
               <ShipIcon class="w-5 h-5 text-primary" />
             </template>
