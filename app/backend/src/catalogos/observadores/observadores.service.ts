@@ -31,9 +31,27 @@ export class ObservadoresService {
         });
     }
 
-    async obtenerTodos() {
+    async obtenerTodos(soloDisponibles: boolean = false) {
         try {
+            const where: any = { activo: true };
+
+            if (soloDisponibles) {
+                // 1. Sin impedimento
+                where.conImpedimento = false;
+
+                // 2. No asignado a ninguna marea activa (Designada o En Ejecución)
+                where.mareasAsignadas = {
+                    none: {
+                        activo: true,
+                        estadoActual: {
+                            codigo: { in: [MareaEstado.DESIGNADA, MareaEstado.EN_EJECUCION] }
+                        }
+                    }
+                };
+            }
+
             return await this.prisma.observador.findMany({
+                where,
                 orderBy: [{ apellido: 'asc' }, { nombre: 'asc' }],
             });
         } catch (error) {
@@ -53,7 +71,7 @@ export class ObservadoresService {
                 { email: { contains: query, mode: 'insensitive' } },
                 { motivoImpedimento: { contains: query, mode: 'insensitive' } },
             ];
-            
+
             if (!isNaN(Number(query))) {
                 where.OR.push({ codigoInterno: Number(query) });
             }

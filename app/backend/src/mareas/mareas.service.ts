@@ -1913,15 +1913,16 @@ export class MareasService {
             where: {
                 observadorPrincipalId: observadorId,
                 activo: true,
-                estadoActual: { codigo: MareaEstado.DESIGNADA }
+                estadoActual: { codigo: { in: [MareaEstado.DESIGNADA, MareaEstado.EN_EJECUCION] } }
             },
             select: {
-                nroMarea: true, anioMarea: true, tipoMarea: true
+                nroMarea: true, anioMarea: true, tipoMarea: true, estadoActual: true
             }
         });
         return {
             available: !marea,
-            marea: marea ? MareaUtils.formatCodigo(marea as any) : null
+            marea: marea ? MareaUtils.formatCodigo(marea as any) : null,
+            estado: marea?.estadoActual?.nombre
         };
     }
 
@@ -1973,17 +1974,18 @@ export class MareasService {
             throw new BadRequestException(`El buque ya tiene una marea designada (${MareaUtils.formatCodigo(vesselOccupied as any)}).`);
         }
 
-        // Validate observer availability (not already designated)
+        // Validate observer availability (not already designated or executing)
         if (observadorId) {
             const observerOccupied = await this.prisma.marea.findFirst({
                 where: {
                     observadorPrincipalId: observadorId,
                     activo: true,
-                    estadoActual: { codigo: MareaEstado.DESIGNADA }
-                }
+                    estadoActual: { codigo: { in: [MareaEstado.DESIGNADA, MareaEstado.EN_EJECUCION] } }
+                },
+                include: { estadoActual: true }
             });
             if (observerOccupied) {
-                throw new BadRequestException(`El observador ya está designado en otra marea (${MareaUtils.formatCodigo(observerOccupied as any)}).`);
+                throw new BadRequestException(`El observador ya se encuentra embarcado o designado en la marea ${MareaUtils.formatCodigo(observerOccupied as any)} (${observerOccupied.estadoActual.nombre}).`);
             }
 
             const obs = await this.prisma.observador.findUnique({

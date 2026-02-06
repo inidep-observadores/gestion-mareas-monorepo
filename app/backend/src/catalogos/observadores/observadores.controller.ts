@@ -17,8 +17,8 @@ export class ObservadoresController {
     }
 
     @Get()
-    obtenerTodos() {
-        return this.observadoresService.obtenerTodos();
+    obtenerTodos(@Query('soloDisponibles') soloDisponibles?: string) {
+        return this.observadoresService.obtenerTodos(soloDisponibles === 'true');
     }
 
     @Post('export/excel')

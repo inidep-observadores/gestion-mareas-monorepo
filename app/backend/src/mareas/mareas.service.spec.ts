@@ -228,7 +228,7 @@ describe('MareasService', () => {
     });
 
     describe('checkObserverAvailability', () => {
-        it('should return available: true if no designated marea exists', async () => {
+        it('should return available: true if no designated or executing marea exists', async () => {
             mockPrismaService.marea.findFirst.mockResolvedValue(null);
             const result = await service.checkObserverAvailability('obs-1');
             expect(result.available).toBe(true);
@@ -237,11 +237,20 @@ describe('MareasService', () => {
 
         it('should return available: false if designated marea exists', async () => {
             mockPrismaService.marea.findFirst.mockResolvedValue({
-                nroMarea: 456, anioMarea: 25, tipoMarea: 'CI'
+                nroMarea: 456, anioMarea: 25, tipoMarea: 'CI', estadoActual: { nombre: 'Designada' }
             });
             const result = await service.checkObserverAvailability('obs-1');
             expect(result.available).toBe(false);
             expect(result.marea).toBe('CI-456-25');
+        });
+
+        it('should return available: false if executing marea exists', async () => {
+            mockPrismaService.marea.findFirst.mockResolvedValue({
+                nroMarea: 789, anioMarea: 25, tipoMarea: 'MC', estadoActual: { nombre: 'En Ejecución' }
+            });
+            const result = await service.checkObserverAvailability('obs-1');
+            expect(result.available).toBe(false);
+            expect(result.marea).toBe('MC-789-25');
         });
     });
 
@@ -314,10 +323,10 @@ describe('MareasService', () => {
             // Success call for vessel
             mockPrismaService.marea.findFirst
                 .mockResolvedValueOnce(null) // Vessel check
-                .mockResolvedValueOnce({ nroMarea: 7, anioMarea: 25, tipoMarea: 'MC' }); // Observer check
+                .mockResolvedValueOnce({ nroMarea: 7, anioMarea: 25, tipoMarea: 'MC', estadoActual: { nombre: 'Designada' } }); // Observer check
 
             await expect(service.create(dto, { id: 'user-1' } as any))
-                .rejects.toThrow(/El observador ya está designado en otra marea/);
+                .rejects.toThrow(/El observador ya se encuentra embarcado o designado en la marea/);
         });
 
         it('should create marea if everything is valid', async () => {

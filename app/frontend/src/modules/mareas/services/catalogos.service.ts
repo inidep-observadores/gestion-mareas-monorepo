@@ -40,8 +40,8 @@ const catalogosService = {
         return data;
     },
 
-    getObservadores: async (): Promise<Observador[]> => {
-        const { data } = await httpClient.get<Observador[]>('/catalogos/observadores');
+    getObservadores: async (soloDisponibles: boolean = false): Promise<Observador[]> => {
+        const { data } = await httpClient.get<Observador[]>(`/catalogos/observadores?soloDisponibles=${soloDisponibles}`);
         return data;
     },
 
