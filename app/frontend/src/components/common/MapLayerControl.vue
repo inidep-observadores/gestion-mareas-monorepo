@@ -30,7 +30,7 @@
         <!-- Sección Mapa Base -->
         <div class="p-4">
           <h3 class="mb-3 text-[10px] font-black uppercase tracking-widest text-text-muted/60">
-            Mapa Base
+            Mapa Base (Argenmap)
           </h3>
           <div class="grid grid-cols-2 gap-2">
             <button
@@ -53,6 +53,28 @@
                 ✓
               </div>
             </button>
+          </div>
+        </div>
+
+        <!-- Sección Overlays (Solo si existen) -->
+        <div v-if="overlayLayers.length > 0" class="p-4">
+          <h3 class="mb-3 text-[10px] font-black uppercase tracking-widest text-text-muted/60">
+            Capas Superpuestas
+          </h3>
+          <div class="space-y-2">
+            <label
+              v-for="layer in overlayLayers"
+              :key="layer.id"
+              class="flex cursor-pointer items-center justify-between rounded-lg bg-text/5 p-3 transition-colors hover:bg-text/10"
+            >
+              <span class="text-[12px] font-medium text-text">{{ layer.name }}</span>
+              <input
+                type="checkbox"
+                :checked="activeOverlayIds.includes(layer.id)"
+                @change="$emit('toggle-overlay', layer.id)"
+                class="h-4 w-4 rounded border-text/20 bg-transparent text-primary focus:ring-primary"
+              />
+            </label>
           </div>
         </div>
 

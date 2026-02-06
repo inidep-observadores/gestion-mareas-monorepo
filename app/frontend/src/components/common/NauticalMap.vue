@@ -61,7 +61,7 @@ let baseLayer: L.TileLayer | null = null
 let graticuleLayer: L.LayerGroup | null = null
 let themeObserver: MutationObserver | null = null
 
-const currentBaseId = ref('carto-voyager')
+const currentBaseId = ref('argenmap-mapa-base')
 const activeOverlayIds = ref<string[]>([])
 
 const setBaseLayer = (id: string) => {
@@ -144,7 +144,7 @@ const updateGraticule = () => {
 
 const updateBaseLayerByTheme = () => {
   const isDark = document.documentElement.classList.contains('dark')
-  const defaultId = isDark ? 'carto-dark' : 'carto-voyager'
+  const defaultId = isDark ? 'argenmap-oscuro' : 'argenmap-mapa-base'
   setBaseLayer(defaultId)
 }
 
