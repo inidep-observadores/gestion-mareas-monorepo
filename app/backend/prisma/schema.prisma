@@ -250,7 +250,7 @@ model Marea {
   fechaInicioObservador    DateTime?         @map("fecha_inicio_observador") @db.Timestamptz(6)
   fechaFinObservador       DateTime?         @map("fecha_fin_observador") @db.Timestamptz(6)
   diasZonaAustral          Int?              @map("dias_zona_austral")
-  tipoCalculoZonaAustral   String            @default("AUTOMATICO") @map("tipo_calculo_zona_austral")
+  tipoCalculoZonaAustral   TipoCalculoZonaAustral   @default(AUTOMATICO) @map("tipo_calculo_zona_austral")
   nroProtocolizacion       Int?              @map("nro_protocolizacion")
   anioProtocolizacion      Int?              @map("anio_protocolizacion")
   fechaProtocolizacion     DateTime?         @map("fecha_protocolizacion") @db.Timestamptz(6)
@@ -797,4 +797,11 @@ model AuditoriaEvento {
 
   @@map("auditoria_eventos")
   @@schema("audit")
+}
+
+enum TipoCalculoZonaAustral {
+  AUTOMATICO
+  MANUAL
+
+  @@schema("public")
 }

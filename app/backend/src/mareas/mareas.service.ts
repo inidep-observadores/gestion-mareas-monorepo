@@ -14,6 +14,7 @@ import { DateUtils } from '../common/utils/date.utils';
 import { MareaUtils } from '../common/utils/marea.utils';
 import { ConfigService } from '@nestjs/config';
 import * as ExcelJS from 'exceljs';
+import { DateTime } from 'luxon';
 
 
 
@@ -2503,5 +2504,110 @@ export class MareasService {
         setupSheet('Por Especie', sortedBySpecie);
 
         return workbook;
+    }
+
+    async getZonaAustralDays(mareaId: string) {
+        const marea = await this.prisma.marea.findUnique({
+            where: { id: mareaId },
+            include: {
+                etapas: {
+                    orderBy: { nroEtapa: 'asc' }
+                }
+            }
+        });
+
+        if (!marea) throw new NotFoundException('Marea no encontrada');
+
+        // 1. Preparar estructuras de las etapas
+        const timezone = process.env.APP_TIMEZONE || 'America/Argentina/Buenos_Aires';
+
+        const stagesResult = marea.etapas
+            .filter(e => e.fechaZarpada)
+            .map(e => {
+                // Normalizamos el inicio al comienzo del día (00:00:00) 
+                // y el fin al final del día (23:59:59) en la zona horaria local
+                // Esto garantiza que si hay puntos de trayectoria en cualquier momento 
+                // de esos días calendario, sean incluidos en el cálculo.
+                const start = DateTime.fromJSDate(new Date(e.fechaZarpada)).setZone(timezone).startOf('day').toJSDate();
+
+                let endJS: Date;
+                if (e.fechaArribo) {
+                    endJS = DateTime.fromJSDate(new Date(e.fechaArribo)).setZone(timezone).endOf('day').toJSDate();
+                } else {
+                    // Si no tiene arribo, es una marea en curso. Usamos 'ahora'.
+                    endJS = new Date();
+                }
+
+                return {
+                    id: e.id,
+                    nroEtapa: e.nroEtapa,
+                    start,
+                    end: endJS,
+                    puntosPorDia: new Map<string, number>()
+                };
+            });
+
+        if (stagesResult.length === 0) {
+            return {
+                mareaId,
+                totalDiasMarea: 0,
+                diasDetectadosMarea: [],
+                etapas: []
+            };
+        }
+
+        // 2. Obtener puntos de trayectoria del buque para el rango total
+        const oldestStart = new Date(Math.min(...stagesResult.map(r => r.start.getTime())));
+        const newestEnd = new Date(Math.max(...stagesResult.map(r => r.end.getTime())));
+
+        const points = await this.prisma.buqueTrayectoriaPunto.findMany({
+            where: {
+                buqueId: marea.buqueId,
+                timestamp: {
+                    gte: oldestStart,
+                    lte: newestEnd
+                },
+                lat: { lte: -50 } // Zona Austral: Latitud <= 50º Sur
+            },
+            orderBy: { timestamp: 'asc' }
+        });
+
+        // 3. Procesar puntos y asignarlos a la etapa correspondiente
+        const globalDetectedDays = new Set<string>();
+
+        for (const point of points) {
+            const pointDate = point.timestamp;
+
+            // Encontrar la etapa a la que pertenece el punto
+            const stage = stagesResult.find(r => pointDate >= r.start && pointDate <= r.end);
+            if (!stage) continue;
+
+            const localDay = DateTime.fromJSDate(pointDate).setZone(timezone).toFormat('yyyy-MM-dd');
+            stage.puntosPorDia.set(localDay, (stage.puntosPorDia.get(localDay) || 0) + 1);
+        }
+
+        // 4. Consolidar resultados
+        const breakdownEtapas = stagesResult.map(s => {
+            const detected = Array.from(s.puntosPorDia.entries())
+                .filter(([_, count]) => count >= 2)
+                .map(([day, _]) => day)
+                .sort();
+
+            detected.forEach(d => globalDetectedDays.add(d));
+
+            return {
+                etapaId: s.id,
+                nroEtapa: s.nroEtapa,
+                diasDetectados: detected,
+                totalDias: detected.length
+            };
+        });
+
+        return {
+            mareaId,
+            totalDiasMarea: globalDetectedDays.size,
+            diasDetectadosMarea: Array.from(globalDetectedDays).sort(),
+            etapas: breakdownEtapas
+        };
     }
 }

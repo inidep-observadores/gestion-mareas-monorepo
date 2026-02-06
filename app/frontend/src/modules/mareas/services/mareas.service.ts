@@ -2,7 +2,7 @@ import httpClient from '@/config/http/http.client';
 import { useConfigStore } from '@/modules/shared/stores/config.store';
 import { TipoMarea } from '../types/enums';
 
-import type { MareaDashboard, MareaContext, DashboardKpis, MovementEvent, CalendarEvent } from '../types/marea.types';
+import type { MareaDashboard, MareaContext, DashboardKpis, MovementEvent, CalendarEvent, ZonaAustralResponse } from '../types/marea.types';
 
 const mareasService = {
     getDashboardOperativo: async (showAll: boolean = false): Promise<MareaDashboard> => {
@@ -83,6 +83,11 @@ const mareasService = {
 
     validateObserverAvailability: async (id: string): Promise<{ available: boolean; marea: string | null }> => {
         const { data } = await httpClient.get<{ available: boolean; marea: string | null }>(`/mareas/valida/observador/${id}`, { skipToast: true });
+        return data;
+    },
+
+    getZonaAustralDays: async (id: string): Promise<ZonaAustralResponse> => {
+        const { data } = await httpClient.get<ZonaAustralResponse>(`/mareas/${id}/zona-austral`);
         return data;
     }
 };

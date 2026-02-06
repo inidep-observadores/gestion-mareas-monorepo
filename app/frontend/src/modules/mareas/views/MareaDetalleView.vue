@@ -174,17 +174,42 @@
                 </div>
                 <div class="space-y-1.5">
                   <label class="text-xs font-bold uppercase tracking-wider text-text-muted">Días Zona Austral</label>
-                  <input v-model="marea.dias_zona_austral" type="number"
+                  <input v-model="marea.dias_zona_austral" type="number" @input="checkManualMode"
                     class="w-full px-4 py-3 bg-surface-muted border-none rounded-2xl focus:ring-2 focus:ring-primary/20 text-text transition-all font-medium outline-none"
                     placeholder="0" />
                 </div>
                 <div class="space-y-1.5">
                   <label class="text-xs font-bold uppercase tracking-wider text-text-muted">Cálculo Zona Austral</label>
-                  <select v-model="marea.tipo_calculo_zona_austral"
-                    class="w-full px-4 py-3 bg-surface-muted border-none rounded-2xl focus:ring-2 focus:ring-primary/20 text-text transition-all font-medium outline-none">
-                    <option value="AUTOMATICO">Automático</option>
-                    <option value="MANUAL">Manual</option>
-                  </select>
+                  <div class="flex items-center gap-2 py-3 px-1">
+                    <span v-if="marea.tipo_calculo_zona_austral === 'AUTOMATICO'"
+                      class="px-2.5 py-1 rounded-md bg-success/10 text-success text-xs font-bold uppercase tracking-wider border border-success/20 flex items-center gap-1.5">
+                      <div class="w-2 h-2 rounded-full bg-success"></div>
+                      Automático
+                    </span>
+                    <span v-else
+                      class="px-2.5 py-1 rounded-md bg-warning/10 text-warning text-xs font-bold uppercase tracking-wider border border-warning/20 flex items-center gap-1.5">
+                      <div class="w-2 h-2 rounded-full bg-warning"></div>
+                      Manual
+                    </span>
+                  </div>
+                </div>
+                <!-- Detalle Zona Austral -->
+                <div class="md:col-span-2">
+                  <div class="flex items-center justify-between mb-2 px-1">
+                    <span class="text-xs font-bold uppercase tracking-wider text-text-muted">Detalle de Cálculos</span>
+                    <button @click="loadZonaAustralData" :disabled="loadingZonaAustral"
+                      class="text-[10px] font-black uppercase text-primary hover:underline flex items-center gap-1">
+                      <RefreshIcon class="w-3 h-3" :class="{ 'animate-spin': loadingZonaAustral }" />
+                      {{ loadingZonaAustral ? 'Calculando...' : 'Recalcular Ahora' }}
+                    </button>
+                  </div>
+                  <ZonaAustralDetalle v-if="marea.tipo_calculo_zona_austral === 'AUTOMATICO'" :data="zonaAustralData" />
+                  <div v-else
+                    class="p-4 bg-surface-muted/50 rounded-2xl border border-dashed border-border text-center">
+                    <p class="text-[10px] text-text-muted font-medium italic">
+                      Modo manual activado. Presione recalcular para volver al valor técnico.
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -509,6 +534,7 @@ import AlertHistoryTab from '../../alerts/components/AlertHistoryTab.vue'
 import GestionEtapasMareaDialog from '../components/GestionEtapasMareaDialog.vue'
 import mareasService from '../services/mareas.service';
 import NavigationStagesEditor from '../components/NavigationStagesEditor.vue'
+import ZonaAustralDetalle from '../components/ZonaAustralDetalle.vue'
 import catalogosService from '../services/catalogos.service'
 import { toast } from 'vue-sonner'
 import {
@@ -539,6 +565,8 @@ import {
   EditIcon
 } from '@/icons'
 import { TipoMarea, TipoEtapa } from '../types/enums';
+import { TipoCalculoZonaAustral } from '../types/marea.types';
+import type { ZonaAustralResponse } from '../types/marea.types';
 const router = useRouter()
 const activeTab = ref('general')
 
@@ -570,6 +598,9 @@ const buqueOptions = ref<{ value: string; label: string }[]>([])
 const pesqueriaOptions = ref<{ value: string; label: string }[]>([])
 const arteOptions = ref<{ value: string; label: string }[]>([])
 const puertos = ref<any[]>([])
+const zonaAustralData = ref<ZonaAustralResponse | null>(null);
+const loadingZonaAustral = ref(false);
+const showZonaAustralBreakdown = ref(false);
 
 const puertoOptions = computed(() => puertos.value.map(p => ({ value: p.id, label: p.nombre })))
 
@@ -745,8 +776,47 @@ async function loadMarea() {
       version: file.version
     })) || []
 
+    if (marea.value.tipo_calculo_zona_austral === 'AUTOMATICO') {
+      loadZonaAustralData();
+    }
+
   } catch (e) {
     console.error('Error loading Marea', e)
+  }
+}
+
+async function loadZonaAustralData() {
+  if (!marea.value.id) return;
+  loadingZonaAustral.value = true;
+  try {
+    const result = await mareasService.getZonaAustralDays(marea.value.id);
+    zonaAustralData.value = result;
+
+    // Al presionar recalcular, siempre volvemos al valor técnico y modo automático
+    marea.value.dias_zona_austral = result.totalDiasMarea;
+    marea.value.tipo_calculo_zona_austral = TipoCalculoZonaAustral.AUTOMATICO;
+  } catch (e) {
+    console.error('Error loading Zona Austral info', e);
+    toast.error('No se pudo calcular los días de Zona Austral');
+  } finally {
+    loadingZonaAustral.value = false;
+  }
+}
+
+function checkManualMode() {
+  const currentVal = marea.value.dias_zona_austral;
+  if (zonaAustralData.value) {
+    const val = Number(currentVal);
+    const calculated = Number(zonaAustralData.value.totalDiasMarea);
+
+    if (val === calculated) {
+      marea.value.tipo_calculo_zona_austral = TipoCalculoZonaAustral.AUTOMATICO;
+    } else {
+      marea.value.tipo_calculo_zona_austral = TipoCalculoZonaAustral.MANUAL;
+    }
+  } else {
+    // Si no hay datos de cálculo cargados, al editar asumimos manual
+    marea.value.tipo_calculo_zona_austral = TipoCalculoZonaAustral.MANUAL;
   }
 }
 
