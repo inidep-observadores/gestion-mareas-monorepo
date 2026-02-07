@@ -214,8 +214,8 @@ export class TrackingService {
                     }
                 }
 
-                // PRUEBA: Sincronizar datos oficiales para TAI AN
-                if (buqueName === 'TAI AN') {
+                // PRUEBA: Sincronizar datos oficiales para CAPESANTE
+                if (buqueName === 'CAPESANTE') {
                     this.logger.log(`[PRUEBA] Sincronizando datos oficiales para: ${buqueName}`);
                     const matricula = points[0]['Matricula']?.trim();
                     await this.vesselSyncService.syncVesselIfNeeded({

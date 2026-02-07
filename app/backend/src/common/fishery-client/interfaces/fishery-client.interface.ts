@@ -22,6 +22,11 @@ export abstract class FisheryClient {
     abstract getVesselByName(nombre: string): Promise<VesselOfficialData | null>;
 
     /**
+     * Obtiene los datos oficiales de un buque por su MMSI.
+     */
+    abstract getVesselByMmsi(mmsi: string): Promise<VesselOfficialData | null>;
+
+    /**
      * Obtiene movimientos recientes para todos los buques o uno específico.
      */
     abstract getRecentMovements(since: Date, idMbpc?: string): Promise<OfficialMovement[]>;

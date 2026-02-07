@@ -61,25 +61,53 @@ export class VesselSyncService {
         await this.prisma.jobQueue.create({
             data: {
                 type: 'VESSEL_SYNC',
-                payload: { id: buque.id, matricula: buque.matricula },
+                payload: {
+                    id: buque.id,
+                    matricula: buque.matricula,
+                    nombreBuque: buque.nombreBuque,  // IMPORTANTE: necesario para búsqueda por nombre
+                    idMbpc: buque.idMbpc  // Opcional: para búsqueda por ID si está disponible
+                },
                 priority: 10,
             },
         });
 
-        this.logger.log(`Trabajo encolado para sincronización de buque: ${buque.matricula}`);
+        this.logger.log(`Trabajo encolado para sincronización de buque: ${buque.nombreBuque} (${buque.matricula})`);
     }
 
     /**
      * Ejecuta la sincronización real (llamado por el JobProcessor)
+     * Orden de búsqueda: ID MBPC → MMSI → Nombre
      */
     async executeVesselSync(id: string): Promise<void> {
         const localVessel = await this.prisma.buque.findUnique({ where: { id } });
         if (!localVessel) return;
 
-        const officialData = await this.fisheryClient.getVesselByMatricula(localVessel.matricula);
+        let officialData: VesselOfficialData | null = null;
+
+        // 1. Búsqueda por ID MBPC (más preciso)
+        if (!officialData && localVessel.idMbpc) {
+            this.logger.debug(`Buscando buque por ID MBPC: ${localVessel.idMbpc}`);
+            officialData = await this.fisheryClient.getVesselDetails(localVessel.idMbpc);
+        }
+
+        // 2. Fallback: búsqueda por MMSI
+        if (!officialData && localVessel.mmsi) {
+            this.logger.debug(`Buscando buque por MMSI: ${localVessel.mmsi}`);
+            officialData = await this.fisheryClient.getVesselByMmsi(localVessel.mmsi);
+        }
+
+        // 3. Fallback final: búsqueda por nombre
+        if (!officialData && localVessel.nombreBuque) {
+            this.logger.debug(`Buscando buque por nombre: ${localVessel.nombreBuque}`);
+            officialData = await this.fisheryClient.getVesselByName(localVessel.nombreBuque);
+        }
+
+        // 4. Actualizar si se encontraron datos
         if (officialData) {
             await this.updateVessel(localVessel.id, officialData);
-            this.logger.log(`Sincronización ejecutada para buque: ${officialData.nombre}`);
+            this.logger.log(`✓ Sincronización ejecutada para buque: ${officialData.nombre} (ID MBPC: ${officialData.id_mbpc})`);
+        } else {
+            this.logger.warn(`No se encontraron datos oficiales para: ${localVessel.nombreBuque} (ID: ${localVessel.idMbpc || 'N/A'}, MMSI: ${localVessel.mmsi || 'N/A'})`);
         }
     }
 

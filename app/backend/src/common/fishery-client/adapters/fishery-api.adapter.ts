@@ -102,6 +102,27 @@ export class FisheryApiAdapter implements FisheryClient {
     }
 
     /**
+     * Busca un buque por MMSI.
+     */
+    async getVesselByMmsi(mmsi: string): Promise<VesselOfficialData | null> {
+        try {
+            const envelope = this.buildSoapEnvelope({ mmsi });
+            const xmlResponse = await this.callSoapApi(envelope);
+            const vessels = this.parseVesselsFromXml(xmlResponse);
+
+            if (vessels.length === 0) {
+                this.logger.debug(`No se encontró buque con MMSI: ${mmsi}`);
+                return null;
+            }
+
+            return vessels[0];
+        } catch (error) {
+            this.logger.error(`Error al buscar buque por MMSI "${mmsi}": ${error.message}`);
+            throw error;
+        }
+    }
+
+    /**
      * Obtiene movimientos recientes.
      * Nota: No implementado en la API SOAP de PNA.
      */
