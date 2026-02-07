@@ -197,7 +197,7 @@ const navigationGroups = [
       },
       {
         icon: HistoryIcon,
-        name: 'Gestión de Tareas',
+        name: 'Cola de Tareas',
         path: '/admin/jobs',
       },
     ],

@@ -15,6 +15,7 @@ import { jobQueueService } from '../services/JobQueueService';
 import type { JobQueue, JobQueueStats } from '../interfaces/job-queue.interface';
 
 // Components
+import AdminDashboardLayout from '../layouts/AdminDashboardLayout.vue';
 import JobQueueActivityChart from '../components/JobQueueActivityChart.vue';
 import JobQueuePerformanceChart from '../components/JobQueuePerformanceChart.vue';
 import JobQueueTable from '../components/JobQueueTable.vue';
@@ -62,62 +63,61 @@ const cards = computed(() => [
 </script>
 
 <template>
-    <div class="p-6 space-y-6">
-        <!-- Header -->
-        <div class="flex justify-between items-center">
-            <div>
-                <h1 class="text-2xl font-bold text-slate-800">Administración de Tareas</h1>
-                <p class="text-slate-500 text-sm">Monitoreo y gestión de la cola de procesamiento en segundo plano.</p>
+    <AdminDashboardLayout title="Cola de Tareas"
+        description="Monitoreo y gestión de la cola de procesamiento en segundo plano.">
+        <div class="space-y-6">
+            <!-- Header (Simplificado ya que el layout ya tiene título) -->
+            <div class="flex justify-end items-center">
+                <button @click="refreshData"
+                    class="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors shadow-sm text-slate-700 font-medium"
+                    :disabled="refreshing">
+                    <RefreshCw class="w-4 h-4" :class="{ 'animate-spin': refreshing }" />
+                    Actualizar
+                </button>
             </div>
-            <button @click="refreshData"
-                class="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors shadow-sm text-slate-700 font-medium"
-                :disabled="refreshing">
-                <RefreshCw class="w-4 h-4" :class="{ 'animate-spin': refreshing }" />
-                Actualizar
-            </button>
-        </div>
 
-        <!-- KPIs -->
-        <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
-            <div v-for="card in cards" :key="card.title"
-                class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
-                <div :class="[card.bg, card.color, 'p-3 rounded-lg']">
-                    <component :is="card.icon" class="w-6 h-6" />
+            <!-- KPIs -->
+            <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                <div v-for="card in cards" :key="card.title"
+                    class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
+                    <div :class="[card.bg, card.color, 'p-3 rounded-lg']">
+                        <component :is="card.icon" class="w-6 h-6" />
+                    </div>
+                    <div>
+                        <p class="text-xs font-medium text-slate-500 uppercase tracking-wider">{{ card.title }}</p>
+                        <p class="text-xl font-bold text-slate-800">{{ card.value }}</p>
+                    </div>
                 </div>
-                <div>
-                    <p class="text-xs font-medium text-slate-500 uppercase tracking-wider">{{ card.title }}</p>
-                    <p class="text-xl font-bold text-slate-800">{{ card.value }}</p>
+            </div>
+
+            <!-- Charts Row -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Evolución Temporal -->
+                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm h-[400px]">
+                    <h3 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                        <Activity class="w-5 h-5 text-indigo-500" />
+                        Evolución de Tareas (7 días)
+                    </h3>
+                    <JobQueueActivityChart :refresh-trigger="refreshing ? 1 : 0" />
+                </div>
+
+                <!-- Rendimiento por Tipo -->
+                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm h-[400px]">
+                    <h3 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                        <Clock class="w-5 h-5 text-sky-500" />
+                        Rendimiento por Tipo (ms)
+                    </h3>
+                    <JobQueuePerformanceChart :refresh-trigger="refreshing ? 1 : 0" />
                 </div>
             </div>
-        </div>
 
-        <!-- Charts Row -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <!-- Evolución Temporal -->
-            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm h-[400px]">
-                <h3 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
-                    <Activity class="w-5 h-5 text-indigo-500" />
-                    Evolución de Tareas (7 días)
-                </h3>
-                <JobQueueActivityChart :refresh-trigger="refreshing ? 1 : 0" />
+            <!-- Table Row -->
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <JobQueueTable :refresh-trigger="refreshing ? 1 : 0" @open-detail="openDetail" />
             </div>
 
-            <!-- Rendimiento por Tipo -->
-            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm h-[400px]">
-                <h3 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
-                    <Clock class="w-5 h-5 text-sky-500" />
-                    Rendimiento por Tipo (ms)
-                </h3>
-                <JobQueuePerformanceChart :refresh-trigger="refreshing ? 1 : 0" />
-            </div>
+            <!-- Detail Dialog -->
+            <JobDetailDialog v-model:visible="detailVisible" :job="selectedJob" />
         </div>
-
-        <!-- Table Row -->
-        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-            <JobQueueTable :refresh-trigger="refreshing ? 1 : 0" @open-detail="openDetail" />
-        </div>
-
-        <!-- Detail Dialog -->
-        <JobDetailDialog v-model:visible="detailVisible" :job="selectedJob" />
-    </div>
+    </AdminDashboardLayout>
 </template>

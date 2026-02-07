@@ -1,7 +1,5 @@
-import axios from 'axios';
+import httpClient from '@/config/http/http.client';
 import type { JobQueue, JobQueueStats, JobPerformanceStats, JobTimeseriesData } from '../interfaces/job-queue.interface';
-
-const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 export class JobQueueService {
     private static instance: JobQueueService;
@@ -16,42 +14,42 @@ export class JobQueueService {
     }
 
     async getJobs(params: { page?: number; limit?: number; status?: string; type?: string; search?: string }) {
-        const { data } = await axios.get(`${API_URL}/jobs`, { params });
+        const { data } = await httpClient.get('/jobs', { params });
         return data;
     }
 
     async getJobDetail(id: string): Promise<JobQueue> {
-        const { data } = await axios.get(`${API_URL}/jobs/${id}`);
+        const { data } = await httpClient.get(`/jobs/${id}`);
         return data;
     }
 
     async getSummaryStats(): Promise<JobQueueStats> {
-        const { data } = await axios.get(`${API_URL}/jobs/stats/summary`);
+        const { data } = await httpClient.get('/jobs/stats/summary');
         return data;
     }
 
     async getPerformanceStats(): Promise<JobPerformanceStats[]> {
-        const { data } = await axios.get(`${API_URL}/jobs/stats/performance`);
+        const { data } = await httpClient.get('/jobs/stats/performance');
         return data;
     }
 
     async getErrorStats() {
-        const { data } = await axios.get(`${API_URL}/jobs/stats/errors`);
+        const { data } = await httpClient.get('/jobs/stats/errors');
         return data;
     }
 
     async getTimeseriesStats(days = 7): Promise<JobTimeseriesData[]> {
-        const { data } = await axios.get(`${API_URL}/jobs/stats/timeseries`, { params: { days } });
+        const { data } = await httpClient.get('/jobs/stats/timeseries', { params: { days } });
         return data;
     }
 
     async retryJob(id: string) {
-        const { data } = await axios.post(`${API_URL}/jobs/${id}/retry`);
+        const { data } = await httpClient.post(`/jobs/${id}/retry`);
         return data;
     }
 
     async cancelJob(id: string) {
-        const { data } = await axios.delete(`${API_URL}/jobs/${id}`);
+        const { data } = await httpClient.delete(`/jobs/${id}`);
         return data;
     }
 }
