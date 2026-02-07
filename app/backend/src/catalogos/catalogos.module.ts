@@ -15,10 +15,12 @@ import { EstadosMareaController } from './estados-marea/estados-marea.controller
 import { EstadosMareaService } from './estados-marea/estados-marea.service';
 import { BuquesController } from './buques/buques.controller';
 import { BuquesService } from './buques/buques.service';
+import { VesselSyncService } from './buques/vessel-sync.service';
+import { FisheryClientModule } from '../common/fishery-client/fishery-client.module';
 import { AuthModule } from '../auth/auth.module';
 
 @Module({
-    imports: [AuthModule],
+    imports: [AuthModule, FisheryClientModule],
     controllers: [
         TiposFlotaController,
         ArtesPescaController,
@@ -38,6 +40,7 @@ import { AuthModule } from '../auth/auth.module';
         ObservadoresService,
         EstadosMareaService,
         BuquesService,
+        VesselSyncService,
     ]
 })
 export class CatalogosModule { }

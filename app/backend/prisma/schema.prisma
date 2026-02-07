@@ -116,6 +116,27 @@ model Buque {
   fechaAlta               DateTime?               @map("fecha_alta") @db.Date
   fechaBaja               DateTime?               @map("fecha_baja") @db.Date
   observaciones           String?
+
+  // [NEW] API Oficial Fields
+  idMbpc            String?   @map("id_mbpc")
+  bandera           String?
+  anioConstruccion  Int?      @map("anio_construccion")
+  mmsi              String?
+  tipoBuque         String?   @map("tipo_buque")
+  senalDistintiva   String?   @map("senal_distintiva")
+  velocidad         Float?
+  esloraMbpc        Decimal?  @map("eslora_mbpc") @db.Decimal(6, 2)
+  manga             Decimal?  @db.Decimal(6, 2)
+  puntal            Decimal?  @db.Decimal(6, 2)
+  arqueoTotal       Decimal?  @map("arqueo_total") @db.Decimal(10, 2)
+  caladoMax         Decimal?  @map("calado_max") @db.Decimal(6, 2)
+  puertoAsiento     String?   @map("puerto_asiento")
+  arqueoNeto        Decimal?  @map("arqueo_neto") @db.Decimal(10, 2)
+  dotacionMinima    Int?      @map("dotacion_minima")
+  tipo              String?
+  estadoReg         String?   @map("estado_reg")
+  fechaUltimaActApi DateTime? @map("fecha_ultima_actualizacion_api")
+
   puntosTrayectoria       BuqueTrayectoriaPunto[]
   trayectorias            BuqueTrayectoria?
   arteHabitual            ArtePesca?              @relation(fields: [arteHabitualId], references: [id])
