@@ -64,6 +64,39 @@ export class VesselSyncService {
         this.logger.log(`Sincronizado buque: ${officialData.nombre} (${officialData.matricula})`);
     }
 
+    async syncVessel(id: string): Promise<void> {
+        const buque = await this.prisma.buque.findUnique({
+            where: { id },
+        });
+
+        if (!buque) return;
+
+        // En lugar de sincronizar aquí, encolamos el trabajo
+        await this.prisma.jobQueue.create({
+            data: {
+                type: 'VESSEL_SYNC',
+                payload: { id: buque.id, matricula: buque.matricula },
+                priority: 10,
+            },
+        });
+
+        this.logger.log(`Trabajo encolado para sincronización de buque: ${buque.matricula}`);
+    }
+
+    /**
+     * Ejecuta la sincronización real (llamado por el JobProcessor)
+     */
+    async executeVesselSync(id: string): Promise<void> {
+        const localVessel = await this.prisma.buque.findUnique({ where: { id } });
+        if (!localVessel) return;
+
+        const officialData = await this.fisheryClient.getVesselByMatricula(localVessel.matricula);
+        if (officialData) {
+            await this.updateVessel(localVessel.id, officialData);
+            this.logger.log(`Sincronización ejecutada para buque: ${officialData.nombre}`);
+        }
+    }
+
     private isDataFresh(lastUpdate: Date | null): boolean {
         if (!lastUpdate) return false;
         const diff = (new Date().getTime() - lastUpdate.getTime()) / (1000 * 3600 * 24);
@@ -82,7 +115,7 @@ export class VesselSyncService {
                 tipoBuque: data.tipo_buque,
                 senalDistintiva: data.senal_distintiva,
                 velocidad: data.velocidad,
-                esloraM: data.eslora_mbpc, // Mapeo: eslora_mbpc del XML -> eslora_m en DB
+                esloraM: data.eslora_mbpc,
                 puntal: data.puntal,
                 arqueoTotal: data.arqueo_total,
                 caladoMax: data.calado_max,

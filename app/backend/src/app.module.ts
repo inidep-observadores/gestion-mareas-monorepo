@@ -21,6 +21,7 @@ import { BusinessRulesModule } from './common/business-rules/business-rules.modu
 import { AccessImportModule } from './access-import/access-import.module';
 import { StatsModule } from './stats/stats.module';
 import { AuditModule } from './audit/audit.module';
+import { JobsModule } from './jobs/jobs.module';
 import { UserContextMiddleware } from './common/middlewares/user-context.middleware';
 
 import { APP_INTERCEPTOR } from '@nestjs/core';
@@ -68,6 +69,7 @@ import { auditConfig } from './common/config/audit.config';
     AccessImportModule,
     StatsModule,
     AuditModule,
+    JobsModule,
   ],
   providers: [
     {

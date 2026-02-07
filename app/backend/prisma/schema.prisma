@@ -701,6 +701,26 @@ model SystemStatus {
   @@schema("public")
 }
 
+// [NEW] Sistema Genérico de Tareas Programadas
+model JobQueue {
+  id          String    @id @default(cuid())
+  type        String    // e.g., 'VESSEL_SYNC', 'TRAJECTORY_SYNC'
+  payload     Json?     // Parámetros de la tarea
+  status      String    @default("PENDING") // PENDING, PROCESSING, COMPLETED, FAILED
+  attempts    Int       @default(0)
+  maxAttempts Int       @default(3)
+  nextRunAt   DateTime? @default(now()) @map("next_run_at")
+  lastRunAt   DateTime? @map("last_run_at")
+  lastError   String?   @map("last_error")
+  priority    Int       @default(0)
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  @@index([status, nextRunAt])
+  @@map("job_queue")
+  @@schema("public")
+}
+
 enum AlertaEstado {
   PENDIENTE
   SEGUIMIENTO
