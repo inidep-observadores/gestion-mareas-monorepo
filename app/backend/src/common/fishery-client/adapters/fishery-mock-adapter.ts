@@ -21,6 +21,12 @@ export class FisheryMockAdapter extends FisheryClient {
         return vessels.find(v => v.id_mbpc === idMbpc) || null;
     }
 
+    async getVesselByName(nombre: string): Promise<VesselOfficialData | null> {
+        const vessels = await this.loadVesselsFromXml();
+        const normalizedSearch = nombre.toLowerCase().trim();
+        return vessels.find((v) => v.nombre.toLowerCase().includes(normalizedSearch)) || null;
+    }
+
     async getVesselByMatricula(matricula: string): Promise<VesselOfficialData | null> {
         this.logger.log(`[Mock] Buscando detalles para buque matrícula: ${matricula}`);
         const vessels = await this.loadVesselsFromXml();

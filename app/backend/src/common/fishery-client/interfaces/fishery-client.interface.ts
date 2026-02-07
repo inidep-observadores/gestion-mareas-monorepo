@@ -7,14 +7,19 @@ export interface TimeWindow {
 
 export abstract class FisheryClient {
     /**
-     * Obtiene los detalles de un buque por su ID en el sistema externo (id_mbpc).
+     * Obtiene los datos oficiales de un buque por su matrícula.
+     */
+    abstract getVesselByMatricula(matricula: string): Promise<VesselOfficialData | null>;
+
+    /**
+     * Obtiene los datos oficiales de un buque por su ID MBPC.
      */
     abstract getVesselDetails(idMbpc: string): Promise<VesselOfficialData | null>;
 
     /**
-     * Obtiene los detalles de un buque buscando por su matrícula.
+     * Obtiene los datos oficiales de un buque por su nombre.
      */
-    abstract getVesselByMatricula(matricula: string): Promise<VesselOfficialData | null>;
+    abstract getVesselByName(nombre: string): Promise<VesselOfficialData | null>;
 
     /**
      * Obtiene movimientos recientes para todos los buques o uno específico.

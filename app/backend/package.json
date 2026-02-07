@@ -43,6 +43,7 @@
     "adm-zip": "^0.5.16",
     "archiver": "^7.0.1",
     "archiver-zip-encryptable": "^1.0.10",
+    "axios": "^1.13.2",
     "bcrypt": "^6.0.0",
     "bull": "^4.16.3",
     "class-transformer": "^0.5.1",

@@ -20,6 +20,7 @@ export class VesselSyncService {
     /**
      * Sincroniza los datos de un buque si ha pasado suficiente tiempo desde la última actualización.
      * La búsqueda se realiza prioritariamente por matrícula, luego por nombre.
+     * IMPORTANTE: Este método encola el trabajo en JobQueue en lugar de ejecutarlo síncronamente.
      */
     async syncVesselIfNeeded(params: { matricula?: string; nombre?: string }): Promise<void> {
         const { matricula, nombre } = params;
@@ -44,24 +45,9 @@ export class VesselSyncService {
             return;
         }
 
-        // 4. Obtener datos oficiales
-        let officialData: VesselOfficialData | null = null;
-
-        if (matricula) {
-            officialData = await this.fisheryClient.getVesselByMatricula(matricula);
-        }
-
-        if (!officialData && localVessel.idMbpc) {
-            officialData = await this.fisheryClient.getVesselDetails(localVessel.idMbpc);
-        }
-
-        if (!officialData) {
-            return; // Omisión silenciosa
-        }
-
-        // 5. Actualizar registro directamente
-        await this.updateVessel(localVessel.id, officialData);
-        this.logger.log(`Sincronizado buque: ${officialData.nombre} (${officialData.matricula})`);
+        // 4. Encolar trabajo de sincronización (no bloqueante)
+        await this.syncVessel(localVessel.id);
+        this.logger.log(`Trabajo de sincronización encolado para: ${localVessel.nombreBuque} (${localVessel.matricula})`);
     }
 
     async syncVessel(id: string): Promise<void> {
