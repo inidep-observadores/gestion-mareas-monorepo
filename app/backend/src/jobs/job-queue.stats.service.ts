@@ -174,16 +174,16 @@ export class JobQueueStatsService {
         SinceDate.setHours(0, 0, 0, 0);
 
         // Usamos raw query para agrupar por fecha/hora y tipo eficientemente
-        // Nota: Ajustar sintaxis según motor DB (PostgreSQL)
+        // Convertimos a zona horaria de Argentina (America/Argentina/Buenos_Aires) antes de truncar
         const rawStats = await this.prisma.$queryRaw`
             SELECT 
-                DATE_TRUNC('hour', "updated_at") as timestamp,
+                DATE_TRUNC('hour', "updated_at" AT TIME ZONE 'UTC' AT TIME ZONE 'America/Argentina/Buenos_Aires') as timestamp,
                 "type",
                 SUM(CASE WHEN "status" = 'COMPLETED' THEN 1 ELSE 0 END) as completed,
                 SUM(CASE WHEN "status" = 'FAILED' THEN 1 ELSE 0 END) as failed
             FROM "job_queue"
             WHERE "updated_at" >= ${SinceDate}
-            GROUP BY DATE_TRUNC('hour', "updated_at"), "type"
+            GROUP BY DATE_TRUNC('hour', "updated_at" AT TIME ZONE 'UTC' AT TIME ZONE 'America/Argentina/Buenos_Aires'), "type"
             ORDER BY timestamp ASC, "type" ASC
         `;
 
