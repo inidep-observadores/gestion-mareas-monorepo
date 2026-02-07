@@ -125,8 +125,6 @@ model Buque {
   tipoBuque         String?   @map("tipo_buque")
   senalDistintiva   String?   @map("senal_distintiva")
   velocidad         Float?
-  esloraMbpc        Decimal?  @map("eslora_mbpc") @db.Decimal(6, 2)
-  manga             Decimal?  @db.Decimal(6, 2)
   puntal            Decimal?  @db.Decimal(6, 2)
   arqueoTotal       Decimal?  @map("arqueo_total") @db.Decimal(10, 2)
   caladoMax         Decimal?  @map("calado_max") @db.Decimal(6, 2)

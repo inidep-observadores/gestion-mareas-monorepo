@@ -17,8 +17,8 @@ export interface VesselOfficialData {
     tipo_explotacion?: string;
     senal_distintiva?: string; // Mapeado desde 'sdist'
     velocidad?: number;
-    eslora_mbpc?: number;
-    manga?: number;
+    eslora_mbpc?: number; // Se mapea a eslora_m en DB
+    manga?: number; // Se mapea a manga en DB (si existe)
     puntal?: number;
     arqueo_total?: number;
     calado_max?: number;

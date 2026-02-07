@@ -8,6 +8,7 @@ import { getDistance } from 'geolib';
 import { DateTime } from 'luxon';
 import { MareaUtils } from '../common/utils/marea.utils';
 import { DateUtils } from '../common/utils/date.utils';
+import { VesselSyncService } from '../catalogos/buques/vessel-sync.service';
 import * as crypto from 'crypto';
 
 interface TrackingPoint {
@@ -27,7 +28,10 @@ export class TrackingService {
     private readonly CHECK_INTERVAL_HOURS = 1;
     private readonly TIMEZONE = process.env.APP_TIMEZONE || 'America/Argentina/Buenos_Aires';
 
-    constructor(private prisma: PrismaService) { }
+    constructor(
+        private prisma: PrismaService,
+        private vesselSyncService: VesselSyncService,
+    ) { }
 
     /**
      * Called globally by the frontend to trigger periodic checks
@@ -208,6 +212,16 @@ export class TrackingService {
                         this.logger.debug(`Buque no encontrado en DB, ignorando: ${buqueName} (Matrícula: ${matricula || 'N/A'})`);
                         continue;
                     }
+                }
+
+                // PRUEBA: Sincronizar datos oficiales para TAI AN
+                if (buqueName === 'TAI AN') {
+                    this.logger.log(`[PRUEBA] Sincronizando datos oficiales para: ${buqueName}`);
+                    const matricula = points[0]['Matricula']?.trim();
+                    await this.vesselSyncService.syncVesselIfNeeded({
+                        matricula: matricula || undefined,
+                        nombre: buqueName
+                    });
                 }
 
                 // Ensure Trajectory

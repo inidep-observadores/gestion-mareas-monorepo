@@ -41,6 +41,7 @@ import { AuthModule } from '../auth/auth.module';
         EstadosMareaService,
         BuquesService,
         VesselSyncService,
-    ]
+    ],
+    exports: [VesselSyncService],
 })
 export class CatalogosModule { }

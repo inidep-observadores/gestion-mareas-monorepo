@@ -617,7 +617,6 @@ export class DataExportService {
                 codigoINIDEP: b.codigoINIDEP,
                 activo: b.activo,
                 esloraM: b.esloraM || b.eslora, // Map if schema differs (esloraM vs eslora)
-                manga: b.manga,
                 puntal: b.puntal,
                 potenciaHp: b.potenciaHp || b.potencia, // Map if schema differs
                 capacidadBodega: b.capacidadBodega,

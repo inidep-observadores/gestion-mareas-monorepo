@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../prisma/prisma.service';
 import { FisheryClient } from '../../common/fishery-client/interfaces/fishery-client.interface';
 import { VesselOfficialData } from '../../common/fishery-client/interfaces/fishery-client-response.interface';
@@ -6,12 +7,15 @@ import { VesselOfficialData } from '../../common/fishery-client/interfaces/fishe
 @Injectable()
 export class VesselSyncService {
     private readonly logger = new Logger(VesselSyncService.name);
-    private readonly SYNC_THRESHOLD_DAYS = 7;
+    private readonly syncThresholdDays: number;
 
     constructor(
         private readonly prisma: PrismaService,
         private readonly fisheryClient: FisheryClient,
-    ) { }
+        private readonly configService: ConfigService,
+    ) {
+        this.syncThresholdDays = this.configService.get<number>('VESSEL_SYNC_THRESHOLD_DAYS', 7);
+    }
 
     /**
      * Sincroniza los datos de un buque si ha pasado suficiente tiempo desde la última actualización.
@@ -40,7 +44,7 @@ export class VesselSyncService {
             return;
         }
 
-        // 4. Obtener datos oficiales (JSON)
+        // 4. Obtener datos oficiales
         let officialData: VesselOfficialData | null = null;
 
         if (matricula) {
@@ -55,7 +59,7 @@ export class VesselSyncService {
             return; // Omisión silenciosa
         }
 
-        // 5. Update local record
+        // 5. Actualizar registro directamente
         await this.updateVessel(localVessel.id, officialData);
         this.logger.log(`Sincronizado buque: ${officialData.nombre} (${officialData.matricula})`);
     }
@@ -63,7 +67,7 @@ export class VesselSyncService {
     private isDataFresh(lastUpdate: Date | null): boolean {
         if (!lastUpdate) return false;
         const diff = (new Date().getTime() - lastUpdate.getTime()) / (1000 * 3600 * 24);
-        return diff < this.SYNC_THRESHOLD_DAYS;
+        return diff < this.syncThresholdDays;
     }
 
     private async updateVessel(id: string, data: VesselOfficialData): Promise<void> {
@@ -71,15 +75,14 @@ export class VesselSyncService {
             where: { id },
             data: {
                 idMbpc: data.id_mbpc,
-                matricula: data.matricula, // Corregir si hubiera discrepancia
+                matricula: data.matricula,
                 bandera: data.bandera,
                 anioConstruccion: data.anio_construccion,
                 mmsi: data.mmsi,
                 tipoBuque: data.tipo_buque,
                 senalDistintiva: data.senal_distintiva,
                 velocidad: data.velocidad,
-                esloraMbpc: data.eslora_mbpc,
-                manga: data.manga,
+                esloraM: data.eslora_mbpc, // Mapeo: eslora_mbpc del XML -> eslora_m en DB
                 puntal: data.puntal,
                 arqueoTotal: data.arqueo_total,
                 caladoMax: data.calado_max,
@@ -88,8 +91,8 @@ export class VesselSyncService {
                 dotacionMinima: data.dotacion_minima,
                 tipo: data.tipo,
                 estadoReg: data.estado_reg,
-                observaciones: data.observaciones ? data.observaciones : undefined,
-                fechaUltimaActApi: new Date(), // Marcamos como actualizado ahora
+                observaciones: data.observaciones || undefined,
+                fechaUltimaActApi: new Date(),
             },
         });
     }
