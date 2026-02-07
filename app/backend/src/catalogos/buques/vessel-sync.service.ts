@@ -19,18 +19,19 @@ export class VesselSyncService {
 
     /**
      * Sincroniza los datos de un buque si ha pasado suficiente tiempo desde la última actualización.
-     * La búsqueda se realiza prioritariamente por matrícula, luego por nombre.
+     * La búsqueda se realiza por nombre, MMSI o ID MBPC.
      * IMPORTANTE: Este método encola el trabajo en JobQueue en lugar de ejecutarlo síncronamente.
      */
-    async syncVesselIfNeeded(params: { matricula?: string; nombre?: string }): Promise<void> {
-        const { matricula, nombre } = params;
+    async syncVesselIfNeeded(params: { nombre?: string; mmsi?: string; idMbpc?: string }): Promise<void> {
+        const { nombre, mmsi, idMbpc } = params;
 
         // 1. Buscar buque localmente
         const localVessel = await this.prisma.buque.findFirst({
             where: {
                 OR: [
-                    matricula ? { matricula } : undefined,
                     nombre ? { nombreBuque: { contains: nombre, mode: 'insensitive' } } : undefined,
+                    mmsi ? { mmsi } : undefined,
+                    idMbpc ? { idMbpc } : undefined,
                 ].filter(Boolean) as any,
             },
         });
@@ -47,7 +48,7 @@ export class VesselSyncService {
 
         // 4. Encolar trabajo de sincronización (no bloqueante)
         await this.syncVessel(localVessel.id);
-        this.logger.log(`Trabajo de sincronización encolado para: ${localVessel.nombreBuque} (${localVessel.matricula})`);
+        this.logger.log(`Trabajo de sincronización encolado para: ${localVessel.nombreBuque} (MMSI: ${localVessel.mmsi || 'N/A'})`);
     }
 
     async syncVessel(id: string): Promise<void> {
@@ -65,7 +66,8 @@ export class VesselSyncService {
                     id: buque.id,
                     matricula: buque.matricula,
                     nombreBuque: buque.nombreBuque,  // IMPORTANTE: necesario para búsqueda por nombre
-                    idMbpc: buque.idMbpc  // Opcional: para búsqueda por ID si está disponible
+                    idMbpc: buque.idMbpc,  // Opcional: para búsqueda por ID si está disponible
+                    mmsi: buque.mmsi  // IMPORTANTE: necesario para búsqueda por MMSI
                 },
                 priority: 10,
             },

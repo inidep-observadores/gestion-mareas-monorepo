@@ -214,15 +214,12 @@ export class TrackingService {
                     }
                 }
 
-                // PRUEBA: Sincronizar datos oficiales para CAPESANTE
-                if (buqueName === 'CAPESANTE') {
-                    this.logger.log(`[PRUEBA] Sincronizando datos oficiales para: ${buqueName}`);
-                    const matricula = points[0]['Matricula']?.trim();
-                    await this.vesselSyncService.syncVesselIfNeeded({
-                        matricula: matricula || undefined,
-                        nombre: buqueName
-                    });
-                }
+                // Sincronizar datos oficiales si es necesario (basado en umbral de actualización)
+                const mmsi = points[0]['MMSI']?.trim();
+                await this.vesselSyncService.syncVesselIfNeeded({
+                    nombre: buqueName,
+                    mmsi: mmsi || undefined
+                });
 
                 // Ensure Trajectory
                 const tray = await this.prisma.buqueTrayectoria.upsert({
