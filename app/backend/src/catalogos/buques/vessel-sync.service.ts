@@ -64,7 +64,6 @@ export class VesselSyncService {
                 type: 'VESSEL_SYNC',
                 payload: {
                     id: buque.id,
-                    matricula: buque.matricula,
                     nombreBuque: buque.nombreBuque,  // IMPORTANTE: necesario para búsqueda por nombre
                     idMbpc: buque.idMbpc,  // Opcional: para búsqueda por ID si está disponible
                     mmsi: buque.mmsi  // IMPORTANTE: necesario para búsqueda por MMSI
@@ -73,7 +72,7 @@ export class VesselSyncService {
             },
         });
 
-        this.logger.log(`Trabajo encolado para sincronización de buque: ${buque.nombreBuque} (${buque.matricula})`);
+        this.logger.log(`Trabajo encolado para sincronización de buque: ${buque.nombreBuque} (MMSI: ${buque.mmsi || 'N/A'})`);
     }
 
     /**
@@ -120,6 +119,50 @@ export class VesselSyncService {
     }
 
     private async updateVessel(id: string, data: VesselOfficialData): Promise<void> {
+        // Verificar si la matrícula que viene de la API ya existe en otro buque
+        if (data.matricula) {
+            const existingVessel = await this.prisma.buque.findFirst({
+                where: {
+                    matricula: data.matricula,
+                    NOT: { id }  // Excluir el buque actual
+                }
+            });
+
+            if (existingVessel) {
+                this.logger.warn(
+                    `Conflicto de matrícula detectado: "${data.matricula}" ya existe en buque "${existingVessel.nombreBuque}" (ID: ${existingVessel.id}). ` +
+                    `No se actualizará la matrícula del buque "${data.nombre}" (ID: ${id}).`
+                );
+                // Actualizar sin modificar la matrícula
+                await this.prisma.buque.update({
+                    where: { id },
+                    data: {
+                        idMbpc: data.id_mbpc,
+                        // matricula: OMITIDA por conflicto
+                        bandera: data.bandera,
+                        anioConstruccion: data.anio_construccion,
+                        mmsi: data.mmsi,
+                        tipoBuque: data.tipo_buque,
+                        senalDistintiva: data.senal_distintiva,
+                        velocidad: data.velocidad,
+                        esloraM: data.eslora_mbpc,
+                        puntal: data.puntal,
+                        arqueoTotal: data.arqueo_total,
+                        caladoMax: data.calado_max,
+                        puertoAsiento: data.puerto_asiento,
+                        arqueoNeto: data.arqueo_neto,
+                        dotacionMinima: data.dotacion_minima,
+                        tipo: data.tipo,
+                        estadoReg: data.estado_reg,
+                        observaciones: data.observaciones || undefined,
+                        fechaUltimaActApi: new Date(),
+                    },
+                });
+                return;
+            }
+        }
+
+        // No hay conflicto, actualizar normalmente
         await this.prisma.buque.update({
             where: { id },
             data: {
