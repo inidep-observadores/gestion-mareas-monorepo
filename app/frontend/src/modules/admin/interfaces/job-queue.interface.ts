@@ -38,6 +38,7 @@ export interface JobPerformanceStats {
 
 export interface JobTimeseriesData {
     timestamp: string;
+    type: string;
     completed: number;
     failed: number;
 }

@@ -1,0 +1,1 @@
+import{_ as s,c,b as n,a0 as a,e as o}from"./index-CUnzVPkB.js";const r={},t={class:"min-h-screen"};function l(e,_){return o(),c("div",t,[n("main",null,[a(e.$slots,"default")])])}const i=s(r,[["render",l]]);export{i as F};

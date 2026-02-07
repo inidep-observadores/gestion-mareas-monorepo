@@ -69,7 +69,7 @@ const cards = computed(() => [
             <!-- Header (Simplificado ya que el layout ya tiene título) -->
             <div class="flex justify-end items-center">
                 <button @click="refreshData"
-                    class="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors shadow-sm text-slate-700 font-medium"
+                    class="flex items-center gap-2 px-4 py-2 bg-surface border border-border rounded-lg hover:bg-surface-muted transition-colors shadow-sm text-text font-medium"
                     :disabled="refreshing">
                     <RefreshCw class="w-4 h-4" :class="{ 'animate-spin': refreshing }" />
                     Actualizar
@@ -79,13 +79,13 @@ const cards = computed(() => [
             <!-- KPIs -->
             <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
                 <div v-for="card in cards" :key="card.title"
-                    class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
+                    class="bg-surface p-4 rounded-xl border border-border shadow-sm flex items-center gap-4">
                     <div :class="[card.bg, card.color, 'p-3 rounded-lg']">
                         <component :is="card.icon" class="w-6 h-6" />
                     </div>
                     <div>
-                        <p class="text-xs font-medium text-slate-500 uppercase tracking-wider">{{ card.title }}</p>
-                        <p class="text-xl font-bold text-slate-800">{{ card.value }}</p>
+                        <p class="text-xs font-medium text-text-muted uppercase tracking-wider">{{ card.title }}</p>
+                        <p class="text-xl font-bold text-text">{{ card.value }}</p>
                     </div>
                 </div>
             </div>
@@ -93,18 +93,18 @@ const cards = computed(() => [
             <!-- Charts Row -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <!-- Evolución Temporal -->
-                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm h-[400px]">
-                    <h3 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
-                        <Activity class="w-5 h-5 text-indigo-500" />
+                <div class="bg-surface p-6 rounded-xl border border-border shadow-sm h-[400px]">
+                    <h3 class="text-lg font-semibold text-text mb-4 flex items-center gap-2">
+                        <Activity class="w-5 h-5 text-primary" />
                         Evolución de Tareas (7 días)
                     </h3>
                     <JobQueueActivityChart :refresh-trigger="refreshing ? 1 : 0" />
                 </div>
 
                 <!-- Rendimiento por Tipo -->
-                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm h-[400px]">
-                    <h3 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
-                        <Clock class="w-5 h-5 text-sky-500" />
+                <div class="bg-surface p-6 rounded-xl border border-border shadow-sm h-[400px]">
+                    <h3 class="text-lg font-semibold text-text mb-4 flex items-center gap-2">
+                        <Clock class="w-5 h-5 text-secondary" />
                         Rendimiento por Tipo (ms)
                     </h3>
                     <JobQueuePerformanceChart :refresh-trigger="refreshing ? 1 : 0" />
@@ -112,7 +112,7 @@ const cards = computed(() => [
             </div>
 
             <!-- Table Row -->
-            <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="bg-surface rounded-xl border border-border shadow-sm overflow-hidden">
                 <JobQueueTable :refresh-trigger="refreshing ? 1 : 0" @open-detail="openDetail" />
             </div>
 

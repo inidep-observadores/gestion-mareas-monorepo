@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { JobStatus, JobType } from '@prisma/client';
+import { Prisma } from '@prisma/client';
+import { JobStatus, JobType } from './job-types';
 
 export interface JobStatsSummary {
     total: number;
@@ -92,7 +93,7 @@ export class JobQueueStatsService {
         return {
             ...counts,
             successRate: parseFloat(successRate.toFixed(2)),
-            avgDuration: durationAggr._avg.duration || 0,
+            avgDuration: (durationAggr._avg as any).duration || 0,
         };
     }
 
@@ -158,7 +159,12 @@ export class JobQueueStatsService {
 
         return {
             distribution: failedJobs.map(f => ({ type: f.type, count: f._count.type })),
-            recent: recentErrors,
+            recent: recentErrors.map((e: any) => ({
+                id: e.id,
+                type: e.type,
+                result: e.result,
+                updatedAt: e.updatedAt
+            })),
         };
     }
 
@@ -167,22 +173,24 @@ export class JobQueueStatsService {
         SinceDate.setDate(SinceDate.getDate() - days);
         SinceDate.setHours(0, 0, 0, 0);
 
-        // Usamos raw query para agrupar por fecha/hora eficientemente
+        // Usamos raw query para agrupar por fecha/hora y tipo eficientemente
         // Nota: Ajustar sintaxis según motor DB (PostgreSQL)
         const rawStats = await this.prisma.$queryRaw`
             SELECT 
                 DATE_TRUNC('hour', "updated_at") as timestamp,
+                "type",
                 SUM(CASE WHEN "status" = 'COMPLETED' THEN 1 ELSE 0 END) as completed,
                 SUM(CASE WHEN "status" = 'FAILED' THEN 1 ELSE 0 END) as failed
             FROM "job_queue"
             WHERE "updated_at" >= ${SinceDate}
-            GROUP BY DATE_TRUNC('hour', "updated_at")
-            ORDER BY timestamp ASC
+            GROUP BY DATE_TRUNC('hour', "updated_at"), "type"
+            ORDER BY timestamp ASC, "type" ASC
         `;
 
         // Mapear BigInt a number si es necesario
         return (rawStats as any[]).map(row => ({
             timestamp: new Date(row.timestamp),
+            type: row.type,
             completed: Number(row.completed),
             failed: Number(row.failed),
         }));

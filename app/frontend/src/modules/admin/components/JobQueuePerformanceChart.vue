@@ -14,6 +14,9 @@ const chartOptions = ref<ApexOptions>({
         type: 'bar' as const,
         toolbar: { show: false },
         fontFamily: 'Inter, sans-serif',
+        height: '100%',
+        offsetY: -10,
+        parentHeightOffset: 0,
     },
     plotOptions: {
         bar: {
@@ -28,7 +31,8 @@ const chartOptions = ref<ApexOptions>({
         categories: [] as string[],
         labels: {
             style: { colors: '#64748b' },
-            formatter: (val: any) => `${Math.round(Number(val))}ms`
+            formatter: (val: any) => `${Math.round(Number(val))}ms`,
+            offsetY: -5,
         }
     },
     yaxis: {
@@ -78,8 +82,8 @@ watch(() => props.refreshTrigger, loadData);
 
 <template>
     <div class="h-full w-full relative">
-        <div v-if="loading" class="absolute inset-0 flex items-center justify-center bg-white/50 z-10">
-            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div>
+        <div v-if="loading" class="absolute inset-0 flex items-center justify-center bg-surface/50 z-10">
+            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
         </div>
         <VueApexCharts height="100%" width="100%" :options="chartOptions" :series="series" />
     </div>

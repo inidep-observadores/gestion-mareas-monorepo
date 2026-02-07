@@ -1,15 +1,6 @@
-export enum JobType {
-    VESSEL_SYNC = 'VESSEL_SYNC',
-    TRAJECTORY_SYNC = 'TRAJECTORY_SYNC',
-}
-
-export enum JobStatus {
-    PENDING = 'PENDING',
-    PROCESSING = 'PROCESSING',
-    COMPLETED = 'COMPLETED',
-    FAILED = 'FAILED',
-}
+// Importar y re-exportar los enums generados por Prisma
+export { JobStatus, JobType } from '@prisma/client';
 
 export interface JobProcessor {
-    process(payload: any): Promise<void>;
+    process(payload: any): Promise<any>;
 }

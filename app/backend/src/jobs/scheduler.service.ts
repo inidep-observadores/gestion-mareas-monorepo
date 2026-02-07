@@ -3,16 +3,21 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
 import { JobStatus, JobType } from './job-types';
 import { VesselSyncProcessor } from './processors/vessel-sync.processor';
+import * as os from 'os';
 
 @Injectable()
 export class SchedulerService {
     private readonly logger = new Logger(SchedulerService.name);
     private isProcessing = false;
+    private readonly workerId: string;
 
     constructor(
         private readonly prisma: PrismaService,
         private readonly vesselSyncProcessor: VesselSyncProcessor,
-    ) { }
+    ) {
+        // Generar un ID único para este worker basado en hostname y PID
+        this.workerId = `${os.hostname()}-${process.pid}`;
+    }
 
     @Cron(process.env.JOB_SCHEDULER_INTERVAL_CRON || CronExpression.EVERY_MINUTE)
     async handleCron() {
@@ -63,30 +68,50 @@ export class SchedulerService {
         });
 
         for (const job of jobs) {
+            const startTime = Date.now();
+            let result: any = null;
+            let errorMessage: string | null = null;
+            let stackTrace: string | null = null;
+
             try {
                 await this.prisma.jobQueue.update({
                     where: { id: job.id },
-                    data: { status: JobStatus.PROCESSING, lastRunAt: new Date() },
+                    data: {
+                        status: JobStatus.PROCESSING,
+                        lastRunAt: new Date(),
+                        workerId: this.workerId,
+                    },
                 });
 
-                await this.dispatchJob(job);
+                result = await this.dispatchJob(job);
+                const duration = Date.now() - startTime;
 
                 await this.prisma.jobQueue.update({
                     where: { id: job.id },
-                    data: { status: JobStatus.COMPLETED },
+                    data: {
+                        status: JobStatus.COMPLETED,
+                        result: result || null,
+                        duration,
+                    },
                 });
             } catch (error) {
                 this.logger.error(`Error processing job ${job.id}:`, error);
 
+                const duration = Date.now() - startTime;
                 const nextAttempts = job.attempts + 1;
                 const isFinalFailure = nextAttempts >= job.maxAttempts;
+
+                errorMessage = error.message || 'Unknown error';
+                stackTrace = error.stack || null;
 
                 await this.prisma.jobQueue.update({
                     where: { id: job.id },
                     data: {
                         status: isFinalFailure ? JobStatus.FAILED : JobStatus.PENDING,
                         attempts: nextAttempts,
-                        lastError: error.message,
+                        errorMessage,
+                        stackTrace,
+                        duration,
                         nextRunAt: this.calculateNextRun(nextAttempts),
                     },
                 });
@@ -94,11 +119,10 @@ export class SchedulerService {
         }
     }
 
-    private async dispatchJob(job: any) {
+    private async dispatchJob(job: any): Promise<any> {
         switch (job.type) {
             case JobType.VESSEL_SYNC:
-                await this.vesselSyncProcessor.process(job.payload);
-                break;
+                return await this.vesselSyncProcessor.process(job.payload);
             default:
                 throw new Error(`Unknown job type: ${job.type}`);
         }

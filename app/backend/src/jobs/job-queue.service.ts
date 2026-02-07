@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { JobStatus, JobType, Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
+import { JobStatus, JobType } from './job-types';
 
 export interface JobFilterParams {
     page: number;
@@ -96,6 +97,7 @@ export class JobQueueService {
                 payload,
                 priority,
                 status: JobStatus.PENDING,
+                nextRunAt: new Date(),
             },
         });
     }
