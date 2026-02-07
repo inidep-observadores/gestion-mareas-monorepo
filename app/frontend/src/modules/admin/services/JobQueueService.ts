@@ -52,6 +52,11 @@ export class JobQueueService {
         const { data } = await httpClient.delete(`/jobs/${id}`);
         return data;
     }
+
+    async triggerJob(type: string) {
+        const { data } = await httpClient.post(`/jobs/trigger/${type}`);
+        return data;
+    }
 }
 
 export const jobQueueService = JobQueueService.getInstance();

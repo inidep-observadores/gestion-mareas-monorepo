@@ -692,6 +692,29 @@ model TrackingEventSnapshot {
   @@schema("public")
 }
 
+model PnaApiSnapshot {
+  id               String    @id @default(uuid()) @db.Uuid
+  idCostera        String    @map("id_costera")
+  externalComboId  String    @unique @map("external_combo_id") // id_costera + id_buque_mbpc + fecha + estado
+  source           String    @default("API_PNA")
+  payload          Json      // Datos completos del XML
+  processedAt      DateTime  @default(now()) @map("processed_at") @db.Timestamptz(6)
+  alertId          String?   @map("alert_id") @db.Uuid
+  
+  // Campos extraídos para búsqueda rápida
+  buqueIdMbpc      String?   @map("buque_id_mbpc")
+  buqueNombre      String?   @map("buque_nombre")
+  estado           String    // ZARPADA o ARRIBO
+  fecha            DateTime  @db.Timestamptz(6)
+  
+  @@index([buqueIdMbpc])
+  @@index([fecha])
+  @@index([estado])
+  @@map("pna_api_snapshots")
+  @@schema("public")
+}
+
+
 model SystemStatus {
   key        String   @id
   value      String?
@@ -746,9 +769,11 @@ enum JobType {
   TRAJECTORY_SYNC
   NOTIFICATION
   REPORT_GENERATION
+  PNA_API_SYNC
 
   @@schema("public")
 }
+
 
 enum AlertaEstado {
   PENDIENTE

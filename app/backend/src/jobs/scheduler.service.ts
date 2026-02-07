@@ -3,6 +3,7 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
 import { JobStatus, JobType } from './job-types';
 import { VesselSyncProcessor } from './processors/vessel-sync.processor';
+import { PnaApiSyncProcessor } from './processors/pna-api-sync.processor';
 import * as os from 'os';
 
 @Injectable()
@@ -14,6 +15,7 @@ export class SchedulerService {
     constructor(
         private readonly prisma: PrismaService,
         private readonly vesselSyncProcessor: VesselSyncProcessor,
+        private readonly pnaApiSyncProcessor: PnaApiSyncProcessor,
     ) {
         // Generar un ID único para este worker basado en hostname y PID
         this.workerId = `${os.hostname()}-${process.pid}`;
@@ -53,6 +55,31 @@ export class SchedulerService {
             await this.prisma.systemStatus.update({
                 where: { key: lockKey },
                 data: { value: 'UNLOCKED' },
+            });
+        }
+    }
+
+    /**
+     * Asegura que siempre haya una tarea de sincronización de PNA programada
+     */
+    @Cron(CronExpression.EVERY_HOUR)
+    async ensurePnaSyncJob() {
+        const existingJob = await this.prisma.jobQueue.findFirst({
+            where: {
+                type: JobType.PNA_API_SYNC,
+                status: { in: [JobStatus.PENDING, JobStatus.PROCESSING] },
+            },
+        });
+
+        if (!existingJob) {
+            this.logger.log('Programando nueva tarea de sincronización de PNA API...');
+            await this.prisma.jobQueue.create({
+                data: {
+                    type: JobType.PNA_API_SYNC,
+                    status: JobStatus.PENDING,
+                    nextRunAt: new Date(),
+                    priority: 5, // Prioridad media-alta
+                },
             });
         }
     }
@@ -123,6 +150,8 @@ export class SchedulerService {
         switch (job.type) {
             case JobType.VESSEL_SYNC:
                 return await this.vesselSyncProcessor.process(job.payload);
+            case JobType.PNA_API_SYNC:
+                return await this.pnaApiSyncProcessor.process(job.payload);
             default:
                 throw new Error(`Unknown job type: ${job.type}`);
         }

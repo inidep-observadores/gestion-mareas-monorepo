@@ -101,4 +101,22 @@ export class JobQueueService {
             },
         });
     }
+
+    /**
+     * Dispara una tarea por tipo si no hay una ya activa
+     */
+    async triggerJobByType(type: JobType) {
+        const activeJob = await this.prisma.jobQueue.findFirst({
+            where: {
+                type,
+                status: { in: [JobStatus.PENDING, JobStatus.PROCESSING] }
+            }
+        });
+
+        if (activeJob) {
+            return activeJob;
+        }
+
+        return this.addJob(type, {});
+    }
 }

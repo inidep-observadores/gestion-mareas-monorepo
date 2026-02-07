@@ -7,6 +7,8 @@ import { JobQueueService } from './job-queue.service';
 import { JobQueueStatsService } from './job-queue.stats.service';
 import { JobQueueController } from './job-queue.controller';
 import { AuthModule } from '../auth/auth.module'; // Necesario para AuthGuard
+import { PnaApiModule } from '../pna-api/pna-api.module';
+import { PnaApiSyncProcessor } from './processors/pna-api-sync.processor';
 
 @Global()
 @Module({
@@ -14,6 +16,7 @@ import { AuthModule } from '../auth/auth.module'; // Necesario para AuthGuard
         ScheduleModule.forRoot(),
         CatalogosModule,
         AuthModule,
+        PnaApiModule,
     ],
     controllers: [
         JobQueueController,
@@ -21,6 +24,7 @@ import { AuthModule } from '../auth/auth.module'; // Necesario para AuthGuard
     providers: [
         SchedulerService,
         VesselSyncProcessor,
+        PnaApiSyncProcessor,
         JobQueueService,
         JobQueueStatsService,
     ],

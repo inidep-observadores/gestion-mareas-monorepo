@@ -168,4 +168,54 @@ export class AlertsService {
             }
         });
     }
+
+    /**
+     * Add a validation source to an existing alert
+     * Used when multiple detection systems confirm the same event
+     */
+    async addValidationSource(alertaId: string, sourceName: string, sourceData: any) {
+        const alert = await this.prisma.alerta.findUnique({ where: { id: alertaId } });
+        if (!alert) {
+            throw new Error(`Alert ${alertaId} not found`);
+        }
+
+        // Get current metadata
+        const metadata = (alert.metadata as any) || {};
+        const sources = metadata.sources || [];
+
+        // Check if source already exists
+        const existingSource = sources.find((s: any) => s.name === sourceName);
+        if (existingSource) {
+            this.logger.log(`Source ${sourceName} already validated alert ${alertaId}`);
+            return alert;
+        }
+
+        // Add new validation source
+        sources.push({
+            name: sourceName,
+            detectedAt: new Date().toISOString(),
+            data: sourceData,
+        });
+
+        // Update metadata
+        const updatedAlert = await this.prisma.alerta.update({
+            where: { id: alertaId },
+            data: {
+                metadata: {
+                    ...metadata,
+                    sources,
+                },
+            },
+        });
+
+        // Log event
+        await this.logEvent(
+            alertaId,
+            'VALIDACION',
+            `Alerta confirmada por fuente adicional: ${sourceName}`,
+        );
+
+        this.logger.log(`Added validation source ${sourceName} to alert ${alertaId}`);
+        return updatedAlert;
+    }
 }

@@ -85,6 +85,12 @@ export class JobQueueController {
         return this.jobService.retryJob(id);
     }
 
+    @Post('trigger/:type')
+    @Auth(ValidRoles.admin)
+    async triggerJob(@Param('type') type: JobType) {
+        return this.jobService.triggerJobByType(type);
+    }
+
     @Delete(':id')
     @Auth(ValidRoles.admin)
     async cancelJob(@Param('id') id: string) {
