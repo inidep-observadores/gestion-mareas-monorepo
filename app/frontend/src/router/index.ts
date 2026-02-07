@@ -294,6 +294,16 @@ const router = createRouter({
         roles: [ValidRoles.admin],
       },
     },
+    {
+      path: '/admin/jobs',
+      name: 'AdminJobs',
+      component: () => import('@/modules/admin/views/JobQueueView.vue'),
+      meta: {
+        title: 'Gestión de Tareas',
+        requiresAuth: true,
+        roles: [ValidRoles.admin],
+      },
+    },
     // 404 No encontrado
     {
       path: '/error-servidor',
