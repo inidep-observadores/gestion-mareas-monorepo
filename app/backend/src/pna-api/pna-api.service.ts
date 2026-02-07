@@ -152,7 +152,7 @@ export class PnaApiService {
         }
 
         // 2. Alert logic: search for existing or create new
-        const alertResult = await this.handleAlert(buque.id, reporte.estado, fechaLocal, puerto?.id, reporte, activeTide.id);
+        const alertResult = await this.handleAlert(buque, reporte.estado, fechaLocal, puerto, reporte, activeTide);
 
         // Update snapshot with alert link
         if (alertResult.alertId) {
@@ -269,12 +269,12 @@ export class PnaApiService {
      * Returns: { alertId, created, validated }
      */
     private async handleAlert(
-        buqueId: string,
+        buque: any,
         estado: 'ZARPADA' | 'ARRIBO',
         fechaLocal: DateTime,
-        puertoId: string | null,
+        puerto: any | null,
         reporte: PnaReporteCostera,
-        mareaId: string,
+        marea: any,
     ) {
         // Search for existing alert in time window
         const windowStart = fechaLocal.minus({ hours: this.ALERT_WINDOW_HOURS }).toJSDate();
@@ -290,7 +290,7 @@ export class PnaApiService {
                 },
                 metadata: {
                     path: ['buqueId'],
-                    equals: buqueId,
+                    equals: buque.id,
                 },
             },
         });
@@ -305,6 +305,7 @@ export class PnaApiService {
                     fecha: fechaLocal.toISO(),
                     id_costera: reporte.id_costera,
                     nombre_costera: reporte.nombre_costera,
+                    source: 'API_PNA',
                 },
             );
             return { alertId: existingAlert.id, created: false, validated: true };
@@ -312,20 +313,54 @@ export class PnaApiService {
 
         // Create new alert linked to marea
         this.logger.log(`Creating new alert for ${estado} detected by PNA API`);
+
+        const yearSuffix = String(marea.anioMarea).slice(-2);
+        const mareaLabel = marea.tipoMarea === 'CI' ? `CI-${yearSuffix}` : `MC-${marea.nroMarea}-${yearSuffix}`;
+        const dateStr = fechaLocal.toFormat('dd/MM HH:mm');
+        const portName = puerto?.nombre || reporte.nombre_costera || 'Puerto Desconocido';
+
+        const titulo = `${buque.nombreBuque}: ${estado} detectada en ${portName} el ${dateStr} (PNA)`;
+        const descripcion = `Se detectó un evento de ${estado.toLowerCase()} informado por Prefectura Naval Argentina.\n\n` +
+            `🚢 Buque: ${buque.nombreBuque}\n` +
+            `📍 Puerto: ${portName}\n` +
+            `📅 Fecha: ${fechaLocal.toFormat('dd/MM/yyyy HH:mm')}\n` +
+            `🌊 Marea: ${mareaLabel}\n\n` +
+            `Origen: Reporte oficial API PNA (ID: ${reporte.id_costera}).`;
+
         const newAlert = await this.alertsService.create({
-            codigoUnico: `PNA_${estado}_${buqueId}_${fechaLocal.toFormat('yyyyMMdd_HHmmss')}`,
+            codigoUnico: `PNA_${estado}_${buque.id}_${fechaLocal.toFormat('yyyyMMdd_HHmmss')}`,
             tipo: estado,
-            titulo: `${estado} detectada - ${reporte.nombre}`,
-            descripcion: `${estado} en ${reporte.nombre_costera} el ${fechaLocal.toFormat('dd/MM/yyyy HH:mm')}`,
+            titulo: titulo,
+            descripcion: descripcion,
             estado: AlertaEstado.PENDIENTE,
             prioridad: AlertaPrioridad.MEDIA,
-            referenciaId: mareaId,
+            referenciaId: marea.id,
             referenciaTipo: 'MAREA',
             metadata: {
-                buqueId,
-                puertoId,
-                fecha: fechaLocal.toISO(),
+                // Metadata Estandarizada
+                type: estado,
+                subTipo: estado,
                 source: 'API_PNA',
+                buqueId: buque.id,
+                mareaId: marea.id,
+                mareaCode: mareaLabel,
+                vesselName: buque.nombreBuque,
+                portId: puerto?.id || null,
+                portName: portName,
+                eventDate: fechaLocal.toJSDate(),
+
+                // Datos específicos de PNA
+                externalData: {
+                    id_costera: reporte.id_costera,
+                    nombre_costera: reporte.nombre_costera,
+                    id_buque_mbpc: reporte.id_buque_mbpc,
+                    senial: reporte.sdist,
+                    matricula: reporte.matricula,
+                    [estado === 'ZARPADA' ? 'fechaZarpada' : 'fechaArribo']: fechaLocal.toJSDate(),
+                    [estado === 'ZARPADA' ? 'puertoZarpadaId' : 'puertoArriboId']: puerto?.id || null,
+                },
+
+                // Compatibilidad con Source Stacking
                 sources: [{
                     name: 'API_PNA',
                     detectedAt: fechaLocal.toISO(),
@@ -334,7 +369,7 @@ export class PnaApiService {
                         nombre_costera: reporte.nombre_costera,
                     },
                 }],
-            },
+            } as any, // Cast to any because source 'API_PNA' was just added and might not be in all relevant types yet if they are cached
         });
 
         return { alertId: newAlert.id, created: true, validated: false };
