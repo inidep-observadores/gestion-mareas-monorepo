@@ -33,9 +33,11 @@ export class PnaApiService {
     ) { }
 
     /**
-     * Main processing method - reads mock file and processes reports
-     */
-    async processMovements(): Promise<ProcessingSummary> {
+    * Main processing method - reads mock file and processes reports
+    * @param fromDate Optional start date. If not provided, uses LAST_PNA_SYNC from system_status
+    * @param toDate Optional end date. Defaults to now.
+    */
+    async processMovements(fromDate?: Date, toDate?: Date): Promise<ProcessingSummary> {
         const summary: ProcessingSummary = {
             total: 0,
             processed: 0,
@@ -46,6 +48,26 @@ export class PnaApiService {
         };
 
         try {
+            // 1. Determinar rango de fechas
+            const now = DateTime.now().setZone(this.TIMEZONE);
+            const effectiveToDate = toDate ? DateTime.fromJSDate(toDate).setZone(this.TIMEZONE) : now;
+
+            let effectiveFromDate: DateTime;
+            if (fromDate) {
+                effectiveFromDate = DateTime.fromJSDate(fromDate).setZone(this.TIMEZONE);
+            } else {
+                const lastSync = await this.getLastSuccessfulSyncDate();
+                // Si no hay última sincro, usamos una ventana por defecto de 48hs
+                effectiveFromDate = lastSync
+                    ? DateTime.fromJSDate(lastSync).setZone(this.TIMEZONE)
+                    : now.minus({ days: 2 });
+            }
+
+            // REGLA: Iniciamos siempre a las 00:00:00 de la fecha "desde" para solapar datos
+            const startRange = effectiveFromDate.startOf('day');
+            const endRange = effectiveToDate.endOf('day');
+
+            this.logger.log(`Iniciando sincronización PNA: ${startRange.toFormat('yyyy-MM-dd HH:mm:ss')} -> ${endRange.toFormat('yyyy-MM-dd HH:mm:ss')}`);
             // Read mock XML file
             const mockPath = join(process.cwd(), 'old_data', 'zarpadas_y_arribos.asmx');
             const xmlContent = readFileSync(mockPath, 'utf-8');
@@ -66,6 +88,16 @@ export class PnaApiService {
                 try {
                     // Skip deleted reports
                     if (reporte.borrado === 'True') {
+                        summary.skipped++;
+                        continue;
+                    }
+
+                    // 2. Filtrado por rango de fechas
+                    const fechaReporteUtc = DateTime.fromFormat(reporte.fecha, 'yyyy-MM-dd HH:mm:ss', { zone: 'utc' });
+                    const fechaReporteLocal = fechaReporteUtc.setZone(this.TIMEZONE);
+
+                    if (fechaReporteLocal < startRange || fechaReporteLocal > endRange) {
+                        this.logger.debug(`Saltando reporte fuera de rango: ${reporte.fecha} (Rango: ${startRange.toISODate()} - ${endRange.toISODate()})`);
                         summary.skipped++;
                         continue;
                     }
@@ -515,5 +547,32 @@ export class PnaApiService {
             referenciaTipo: 'MAREA',
             metadata: metadata as any
         });
+    }
+
+    /**
+     * Recupera la fecha de la última sincronización exitosa de system_status
+     */
+    async getLastSuccessfulSyncDate(): Promise<Date | null> {
+        const status = await this.prisma.systemStatus.findUnique({
+            where: { key: 'LAST_PNA_SYNC' }
+        });
+        return status?.value ? new Date(status.value) : null;
+    }
+
+    /**
+     * Actualiza la fecha de la última sincronización exitosa en system_status
+     */
+    async updateLastSuccessfulSyncDate(date: Date): Promise<void> {
+        await this.prisma.systemStatus.upsert({
+            where: { key: 'LAST_PNA_SYNC' },
+            create: {
+                key: 'LAST_PNA_SYNC',
+                value: date.toISOString()
+            },
+            update: {
+                value: date.toISOString()
+            }
+        });
+        this.logger.log(`Actualizado LAST_PNA_SYNC en system_status: ${date.toISOString()}`);
     }
 }

@@ -72,7 +72,13 @@ describe('TrackingService', () => {
                 { id: 'port-1', nombre: 'Mar del Plata', latitud: -38.03, longitud: -57.53 }
             ];
             mockPrismaService.puerto.findMany.mockResolvedValue(ports);
-            mockPrismaService.marea.findMany.mockResolvedValue([{ id: 'marea-1', buqueId: 'vessel-1', etapas: [], estadoActual: { codigo: 'EN_EJECUCION' }, buque: { nombreBuque: 'Test' } }]);
+            mockPrismaService.marea.findMany.mockResolvedValue([{
+                id: 'marea-1',
+                buqueId: 'vessel-1',
+                etapas: [{ nroEtapa: 1, fechaZarpada: new Date('2025-01-01T00:00:00Z'), puertoZarpadaId: 'port-1' }],
+                estadoActual: { codigo: 'EN_EJECUCION' },
+                buque: { nombreBuque: 'Test' }
+            }]);
 
             // First point outside, second inside
             const points = [

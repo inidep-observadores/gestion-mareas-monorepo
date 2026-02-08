@@ -93,7 +93,7 @@ describe('EventCorrelationService (Hotfix Rules)', () => {
             expect(result.mareaSiguiente.id).toBe('marea-designada');
         });
 
-        it('debería retornar IGNORE_OLD si no hay etapas abiertas', async () => {
+        it('debería retornar IGNORE_OLD si el evento es el mismo día que una etapa ya cerrada', async () => {
             mockPrisma.marea.findMany.mockResolvedValue([
                 {
                     id: 'marea-1',
@@ -107,7 +107,8 @@ describe('EventCorrelationService (Hotfix Rules)', () => {
             ]);
             mockPrisma.alerta.findFirst.mockResolvedValue(null);
 
-            const result = await service.evaluateEventContext('buque-1', 'ARRIBO', new Date('2024-01-06T10:00:00Z'));
+            // Misma fecha local (Jan 05) pero hora distinta -> Debe ignorarse como duplicado/viejo en lugar de crear discrepancia
+            const result = await service.evaluateEventContext('buque-1', 'ARRIBO', new Date('2024-01-05T15:00:00Z'));
 
             expect(result.action).toBe(EventDecisionAction.IGNORE_OLD);
         });

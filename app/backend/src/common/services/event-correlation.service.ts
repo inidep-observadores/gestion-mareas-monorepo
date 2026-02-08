@@ -72,25 +72,25 @@ export class EventCorrelationService {
             return { action: EventDecisionAction.VALIDATE_ALERT, marea: mareaMatch, existingAlert };
         }
 
-        // 4. Caso Etapa Registrada: ¿Coincide con una etapa ya registrada?
+        // 4. Caso Etapa Registrada: ¿Coincide con una etapa ya registrada? (Match por ventana temporal)
         const stageMatch = this.findMatchingStage(mareaMatch, type, date, portId, portName);
         if (stageMatch) {
             const matchedPortId = type === 'ZARPADA' ? stageMatch.puertoZarpadaId : stageMatch.puertoArriboId;
             const registeredDate = type === 'ZARPADA' ? stageMatch.fechaZarpada : stageMatch.fechaArribo;
 
-            // VALIDACIÓN DE PUERTO: Priorizar coincidencia por ID (codigo_externo)
-            let portIsSame = false;
-            if (portId && matchedPortId) {
-                // Si ambos tienen ID, deben coincidir estrictamente
-                portIsSame = matchedPortId === portId;
-            } else if (portName) {
-                // Fallback por nombre solo si falta alguno de los IDs
-                const registeredPortName = allPorts.find(p => p.id === matchedPortId)?.nombre;
-                portIsSame = registeredPortName && registeredPortName.toLowerCase() === portName.toLowerCase();
-            }
+            // VALIDACIÓN DE PUERTO: Solo si se provee información de puerto para comparar
+            if (portId || portName) {
+                let portIsSame = false;
+                if (portId && matchedPortId) {
+                    portIsSame = matchedPortId === portId;
+                } else if (portName) {
+                    const registeredPortName = allPorts.find(p => p.id === matchedPortId)?.nombre;
+                    portIsSame = registeredPortName && registeredPortName.toLowerCase() === portName.toLowerCase();
+                }
 
-            if (!portIsSame) {
-                return { action: EventDecisionAction.DISCREPANCY_PORT, marea: mareaMatch, stageMatch };
+                if (!portIsSame && (portId || portName)) {
+                    return { action: EventDecisionAction.DISCREPANCY_PORT, marea: mareaMatch, stageMatch };
+                }
             }
 
             // VALIDACIÓN DE FECHA: Mismo día local
@@ -98,7 +98,14 @@ export class EventCorrelationService {
             const eventLocalKey = eventDate.toFormat('yyyy-MM-dd');
 
             if (registeredLocalKey !== eventLocalKey) {
+                // Si el día es distinto, es una discrepancia de fecha importante
                 return { action: EventDecisionAction.DISCREPANCY_DATE, marea: mareaMatch, stageMatch };
+            }
+
+            // REGLA DE COHERENCIA: Si el día es el mismo pero el evento es posterior al ya registrado,
+            // lo ignoramos (ya tenemos un registro igual de válido o más reciente del mismo día).
+            if (registeredDate && new Date(date) >= new Date(registeredDate)) {
+                return { action: EventDecisionAction.IGNORE_OLD, marea: mareaMatch };
             }
 
             return { action: EventDecisionAction.NO_MATCH, marea: mareaMatch, stageMatch };
@@ -130,9 +137,15 @@ export class EventCorrelationService {
                     };
                 }
 
-                // COHERENCIA CRONOLÓGICA: Ignorar si el arribo es anterior al inicio de la marea o etapas posteriores
-                const hasPosteriorStage = mareaEnEjecucion.etapas.some(e => e.fechaZarpada && new Date(e.fechaZarpada) > date);
-                if (hasPosteriorStage) {
+                // COHERENCIA CRONOLÓGICA: Ignorar si el arribo es anterior a cualquier etapa ya cerrada o zarpadas posteriores
+                const hasConflictiveStage = mareaEnEjecucion.etapas.some(e => {
+                    const fZarpada = e.fechaZarpada ? new Date(e.fechaZarpada) : null;
+                    const fArribo = e.fechaArribo ? new Date(e.fechaArribo) : null;
+                    // Es anterior a una zarpada o un arribo ya registrado
+                    return (fZarpada && fZarpada > date) || (fArribo && fArribo > date);
+                });
+
+                if (hasConflictiveStage) {
                     return { action: EventDecisionAction.IGNORE_OLD, marea: mareaEnEjecucion };
                 }
 
@@ -145,7 +158,7 @@ export class EventCorrelationService {
                 }
 
                 // SECUENCIALIDAD: El arribo debe ser posterior a la zarpada registrada de la etapa abierta
-                if (new Date(date) < new Date(lastStageOpen.fechaZarpada)) {
+                if (lastStageOpen.fechaZarpada && new Date(date) < new Date(lastStageOpen.fechaZarpada)) {
                     this.logger.debug(`Ignorando ARRIBO para buque ${buqueId}: Fecha de arribo anterior a la zarpada de la etapa`);
                     return { action: EventDecisionAction.IGNORE_OLD, marea: mareaEnEjecucion };
                 }

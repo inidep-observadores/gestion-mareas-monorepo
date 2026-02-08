@@ -27,6 +27,10 @@ describe('PnaApiService - Reglas de Negocio Unificadas', () => {
             create: jest.fn().mockImplementation((args) => Promise.resolve({ id: 'mock-snap-id', ...args.data })),
             update: jest.fn().mockImplementation((args) => Promise.resolve({ id: 'mock-snap-id', ...args.data })),
         },
+        systemStatus: {
+            findUnique: jest.fn(),
+            upsert: jest.fn(),
+        },
     };
 
     const mockAlertsService = {
@@ -350,6 +354,48 @@ describe('PnaApiService - Reglas de Negocio Unificadas', () => {
             await (service as any).processSingleReport(reporte);
 
             expect(mockPrismaService.pnaApiSnapshot.create).toHaveBeenCalled();
+        });
+        describe('Sincronización Incremental y system_status', () => {
+            it('debe recuperar la fecha de última sincronización exitosa', async () => {
+                const mockDate = new Date('2025-02-01T10:00:00Z');
+                mockPrismaService.systemStatus.findUnique.mockResolvedValue({ key: 'LAST_PNA_SYNC', value: mockDate.toISOString() });
+
+                const result = await service.getLastSuccessfulSyncDate();
+                expect(result).toEqual(mockDate);
+            });
+
+            it('debe actualizar la fecha de última sincronización exitosa (upsert)', async () => {
+                const mockDate = new Date();
+                await service.updateLastSuccessfulSyncDate(mockDate);
+
+                expect(mockPrismaService.systemStatus.upsert).toHaveBeenCalledWith(expect.objectContaining({
+                    where: { key: 'LAST_PNA_SYNC' },
+                    update: { value: mockDate.toISOString() }
+                }));
+            });
+
+            it('debe filtrar reportes fuera del rango solicitado (00:00:00 del primer día -> 23:59:59 del último)', async () => {
+                // Rango solicitado: 2025-01-15 (automáticamente desde las 00:00:00)
+                const lastSync = new Date('2025-01-15T15:00:00Z');
+                mockPrismaService.systemStatus.findUnique.mockResolvedValue({ key: 'LAST_PNA_SYNC', value: lastSync.toISOString() });
+
+                mockParser.parseXml.mockResolvedValue({
+                    reportes: [
+                        generateReport({ fecha: '2025-01-15 01:00:00' }), // FUERA (Equivale a 14/01 22:00:00 ART)
+                        generateReport({ fecha: '2025-01-15 04:00:00' }), // DENTRO (Equivale a 15/01 01:00:00 ART)
+                        generateReport({ fecha: '2025-01-15 22:00:00' }), // DENTRO (Equivale a 15/01 19:00:00 ART)
+                    ],
+                    error: false
+                });
+
+                // Mock findVessel para que no falle el procesamiento
+                mockPrismaService.buque.findFirst.mockResolvedValue(mockBuque);
+
+                const summary = await service.processMovements();
+
+                expect(summary.processed).toBe(2);
+                expect(summary.skipped).toBe(1);
+            });
         });
     });
 });

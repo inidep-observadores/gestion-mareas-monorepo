@@ -14,6 +14,9 @@ export class PnaApiSyncProcessor implements JobProcessor {
         try {
             const summary = await this.pnaApiService.processMovements();
 
+            // Solo si tuvo éxito (no lanzó error), actualizamos la fecha de última sincronización
+            await this.pnaApiService.updateLastSuccessfulSyncDate(new Date());
+
             this.logger.log(`Sincronización finalizada exitosamente: ${JSON.stringify(summary)}`);
 
             return {
