@@ -9,11 +9,13 @@ import { AlertsModule } from '../alerts/alerts.module';
 import { CatalogosModule } from '../catalogos/catalogos.module';
 import { BusinessRulesModule } from '../common/business-rules/business-rules.module';
 import { ConfigModule } from '@nestjs/config';
+import { CommonModule } from '../common/common.module';
+import { EventCorrelationService } from '../common/services/event-correlation.service';
 
 @Module({
     controllers: [MareasController, TrackingController],
-    providers: [MareasService, TrackingService],
-    imports: [PrismaModule, AuthModule, AlertsModule, CatalogosModule, BusinessRulesModule, ConfigModule],
+    providers: [MareasService, TrackingService, EventCorrelationService],
+    imports: [PrismaModule, AuthModule, AlertsModule, CatalogosModule, BusinessRulesModule, ConfigModule, CommonModule],
     exports: [MareasService, TrackingService],
 })
 

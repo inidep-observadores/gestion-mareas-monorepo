@@ -7,6 +7,7 @@ import { DateTime } from 'luxon';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { AlertaPrioridad, AlertaEstado } from '../alerts/alerts.enums';
+import { EventCorrelationService } from '../common/services/event-correlation.service';
 
 interface ProcessingSummary {
     total: number;
@@ -27,6 +28,7 @@ export class PnaApiService {
         private prisma: PrismaService,
         private alertsService: AlertsService,
         private parser: PnaApiParser,
+        private correlationService: EventCorrelationService,
     ) { }
 
     /**
@@ -97,7 +99,7 @@ export class PnaApiService {
         const comboId = this.parser.generateComboId(reporte);
 
         // Check if already processed
-        const existing = await this.prisma.pnaApiSnapshot.findUnique({
+        const existing = await (this.prisma as any).pnaApiSnapshot.findUnique({
             where: { externalComboId: comboId },
         });
 
@@ -122,41 +124,30 @@ export class PnaApiService {
         // Find puerto
         const puerto = await this.findPuerto(reporte.id_costera);
 
-        // Check if vessel has an active tide (DESIGNADA or EN_EJECUCION)
-        const activeTide = await this.prisma.marea.findFirst({
-            where: {
-                buqueId: buque.id,
-                estadoActual: {
-                    codigo: { in: ['DESIGNADA', 'EN_EJECUCION'] }
-                }
-            },
-            include: {
-                etapas: true,
-                estadoActual: true
-            }
-        });
-
         // Create snapshot (always created for audit)
         const snapshot = await this.createSnapshot(reporte, comboId, fechaLocal.toJSDate(), null);
 
+        // 1. Encontrar la mejor marea para este evento usando el servicio centralizado
+        const activeTide = await this.correlationService.findBestMareaMatch(buque.id, reporte.estado);
+
         if (!activeTide) {
-            this.logger.debug(`Skipping alert for ${buque.nombreBuque}: No active tide found`);
+            this.logger.debug(`Skipping alert for ${buque.nombreBuque}: No matchable tide found`);
             return { processed: true, alertCreated: false, alertValidated: false };
         }
 
-        // 1. Check if event matches an existing registered stage
-        const stageMatch = await this.findMatchingStage(activeTide, reporte.estado, fechaLocal, puerto?.id);
+        // 2. Verificar si el evento coincide con una etapa ya registrada
+        const stageMatch = this.correlationService.findMatchingStage(activeTide, reporte.estado, fechaLocal.toJSDate(), puerto?.id, reporte.nombre_costera);
         if (stageMatch) {
             this.logger.log(`Report matches registered stage in marea ${activeTide.nroMarea}/${activeTide.anioMarea}. No alert needed.`);
             return { processed: true, alertCreated: false, alertValidated: false };
         }
 
-        // 2. Alert logic: search for existing or create new
+        // 3. Lógica de alertas: buscar existentes (deduplicación) o crear nueva
         const alertResult = await this.handleAlert(buque, reporte.estado, fechaLocal, puerto, reporte, activeTide);
 
         // Update snapshot with alert link
         if (alertResult.alertId) {
-            await this.prisma.pnaApiSnapshot.update({
+            await (this.prisma as any).pnaApiSnapshot.update({
                 where: { id: snapshot.id },
                 data: { alertId: alertResult.alertId },
             });
@@ -169,29 +160,6 @@ export class PnaApiService {
         };
     }
 
-    /**
-     * Check if the event matches a registered stage (+/- 24h, same port)
-     */
-    private async findMatchingStage(marea: any, estado: 'ZARPADA' | 'ARRIBO', fechaLocal: DateTime, puertoId?: string) {
-        for (const etapa of marea.etapas) {
-            const fechaEtapaRaw = estado === 'ZARPADA' ? etapa.fechaZarpada : etapa.fechaArribo;
-            if (!fechaEtapaRaw) continue;
-
-            const fechaEtapa = DateTime.fromJSDate(fechaEtapaRaw).setZone(this.TIMEZONE);
-
-            // Match criteria: same day (+/- 24h window)
-            const diffDays = Math.abs(fechaLocal.startOf('day').diff(fechaEtapa.startOf('day'), 'days').days);
-
-            if (diffDays <= 1) {
-                // Port validation: if we have puertoId, it should match
-                const etapaPuertoId = estado === 'ZARPADA' ? etapa.puertoZarpadaId : etapa.puertoArriboId;
-                if (!puertoId || !etapaPuertoId || puertoId === etapaPuertoId) {
-                    return etapa;
-                }
-            }
-        }
-        return null;
-    }
 
     /**
      * Find vessel by priority: MBPC > Señal Distintiva > Matrícula > Nombre
@@ -250,7 +218,7 @@ export class PnaApiService {
         fecha: Date,
         alertId: string | null,
     ) {
-        return this.prisma.pnaApiSnapshot.create({
+        return (this.prisma as any).pnaApiSnapshot.create({
             data: {
                 idCostera: reporte.id_costera,
                 externalComboId: comboId,
@@ -276,24 +244,8 @@ export class PnaApiService {
         reporte: PnaReporteCostera,
         marea: any,
     ) {
-        // Search for existing alert in time window
-        const windowStart = fechaLocal.minus({ hours: this.ALERT_WINDOW_HOURS }).toJSDate();
-        const windowEnd = fechaLocal.plus({ hours: this.ALERT_WINDOW_HOURS }).toJSDate();
-
-        const existingAlert = await this.prisma.alerta.findFirst({
-            where: {
-                tipo: estado,
-                estado: { in: [AlertaEstado.PENDIENTE, AlertaEstado.SEGUIMIENTO] },
-                fechaDetectada: {
-                    gte: windowStart,
-                    lte: windowEnd,
-                },
-                metadata: {
-                    path: ['buqueId'],
-                    equals: buque.id,
-                },
-            },
-        });
+        // Search for existing alert in time window using centralized correlation service
+        const existingAlert = await this.correlationService.findExistingAlert(buque.id, estado, fechaLocal.toJSDate());
 
         if (existingAlert) {
             // Validate existing alert
@@ -334,6 +286,7 @@ export class PnaApiService {
             descripcion: descripcion,
             estado: AlertaEstado.PENDIENTE,
             prioridad: AlertaPrioridad.MEDIA,
+            fechaDetectada: fechaLocal.toJSDate(),
             referenciaId: marea.id,
             referenciaTipo: 'MAREA',
             metadata: {

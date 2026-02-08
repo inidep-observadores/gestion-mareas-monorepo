@@ -9,6 +9,7 @@ import { DateTime } from 'luxon';
 import { MareaUtils } from '../common/utils/marea.utils';
 import { DateUtils } from '../common/utils/date.utils';
 import { VesselSyncService } from '../catalogos/buques/vessel-sync.service';
+import { EventCorrelationService } from '../common/services/event-correlation.service';
 import * as crypto from 'crypto';
 
 interface TrackingPoint {
@@ -31,6 +32,8 @@ export class TrackingService {
     constructor(
         private prisma: PrismaService,
         private vesselSyncService: VesselSyncService,
+        private alertsService: AlertsService,
+        private correlationService: EventCorrelationService,
     ) { }
 
     /**
@@ -602,7 +605,7 @@ export class TrackingService {
         const port = ports.find(x => x.id === portId);
         const eventDate = DateTime.fromJSDate(date).setZone(this.TIMEZONE);
 
-        // 1) Asegurarse de no repetir alertas (Snapshot con precisión de tiempo)
+        // 1) Asegurarse de no repetir detecciones idénticas (Snapshot técnico)
         const hashContent = `${buqueId}_${type}_${date.getTime()}_${portId}`;
         const hash = crypto.createHash('md5').update(hashContent).digest('hex');
         const snapshot = await (this.prisma as any).trackingEventSnapshot.findUnique({ where: { hash } });
@@ -610,52 +613,58 @@ export class TrackingService {
             return false;
         }
 
-        // 2) Intentar encontrar match con etapas existentes (cualquier marea)
-        for (const marea of mareas) {
-            const stageMatch = marea.etapas.find(e => {
-                const field = type === 'ZARPADA' ? e.fechaZarpada : e.fechaArribo;
-                if (!field) return false;
-
-                const regDate = DateTime.fromJSDate(field).setZone(this.TIMEZONE);
-                const detDate = DateTime.fromJSDate(date).setZone(this.TIMEZONE);
-
-                // CRITERIO DE MATCH: +/- 1 día calendario (ignora horas)
-                const regDateStart = regDate.startOf('day');
-                const detDateStart = detDate.startOf('day');
-                const diffDays = Math.abs(regDateStart.diff(detDateStart, 'days').days);
-
-                return diffDays <= 1;
-            });
-
-            if (stageMatch) {
-                const matchedPortId = type === 'ZARPADA' ? stageMatch.puertoZarpadaId : stageMatch.puertoArriboId;
-                const registeredDate = type === 'ZARPADA' ? stageMatch.fechaZarpada : stageMatch.fechaArribo;
-
-                // VALIDACIÓN DE PUERTO: Por ID o por Nombre (para evitar duplicados si hay IDs distintos para el mismo lugar)
-                const registeredPortName = ports.find(p => p.id === matchedPortId)?.nombre;
-                const portIsSame = matchedPortId === portId || (registeredPortName && registeredPortName === port?.nombre);
-
-                // A. Incongruencia de Puerto
-                if (!portIsSame) {
-                    return await this.createDiscrepancyAlert(buqueId, type, port, date, marea, stageMatch, ports, hash);
+        // 2) Deduplicación funcional: ¿Ya existe una alerta para este evento (PNA u otro Tracking)?
+        const existingAlert = await this.correlationService.findExistingAlert(buqueId, type, date);
+        if (existingAlert) {
+            // Validar la alerta existente con esta nueva fuente
+            this.logger.log(`Reforzando alerta existente ${existingAlert.id} con detección de Tracking CSV`);
+            await this.alertsService.addValidationSource(
+                existingAlert.id,
+                'TRACKING_CSV',
+                {
+                    fecha: eventDate.toISO(),
+                    puerto: port?.nombre,
+                    source: 'TRACKING_CSV'
                 }
-
-                // B. Incongruencia de Fecha (Local Time)
-                // Si hubo match pero NO es el mismo día calendario (es decir, entró por la ventana de 18h en días distintos)
-                const registeredLocalKey = DateTime.fromJSDate(registeredDate!).setZone(this.TIMEZONE).toFormat('yyyy-MM-dd');
-                const eventLocalKey = eventDate.toFormat('yyyy-MM-dd');
-
-                if (registeredLocalKey !== eventLocalKey) {
-                    return await this.createDateInconsistencyAlert(buqueId, type, port, date, marea, stageMatch, hash);
-                }
-
-                return false; // Match perfecto (mismo puerto y mismo día, o dentro de ventana sin cambio de día)
-            }
+            );
+            // Guardar snapshot para no reprocesar este punto exacto
+            await this.saveSnapshot(buqueId, type, date, portId, hash);
+            return true;
         }
 
-        // 3) Si no hubo match, manejar como nuevo evento SOLAMENTE en mareas activas
-        const mareaDesignada = mareas.find(m => m.estadoActual.codigo === 'DESIGNADA');
-        const mareaEnEjecucion = mareas.find(m => m.estadoActual.codigo === 'EN_EJECUCION');
+        // 3) Encontrar la marea y etapa adecuada usando el servicio centralizado
+        const mareaMatch = await this.correlationService.findBestMareaMatch(buqueId, type);
+        if (!mareaMatch) return false;
+
+        const stageMatch = this.correlationService.findMatchingStage(mareaMatch, type, date, portId, port?.nombre);
+
+        if (stageMatch) {
+            const matchedPortId = type === 'ZARPADA' ? stageMatch.puertoZarpadaId : stageMatch.puertoArriboId;
+            const registeredDate = type === 'ZARPADA' ? stageMatch.fechaZarpada : stageMatch.fechaArribo;
+
+            // VALIDACIÓN DE PUERTO: Por ID o por Nombre (para evitar duplicados si hay IDs distintos para el mismo lugar)
+            const registeredPortName = ports.find(p => p.id === matchedPortId)?.nombre;
+            const portIsSame = matchedPortId === portId || (registeredPortName && registeredPortName === port?.nombre);
+
+            // A. Incongruencia de Puerto
+            if (!portIsSame) {
+                return await this.createDiscrepancyAlert(buqueId, type, port, date, mareaMatch, stageMatch, ports, hash);
+            }
+
+            // B. Incongruencia de Fecha (Local Time)
+            const registeredLocalKey = DateTime.fromJSDate(registeredDate!).setZone(this.TIMEZONE).toFormat('yyyy-MM-dd');
+            const eventLocalKey = eventDate.toFormat('yyyy-MM-dd');
+
+            if (registeredLocalKey !== eventLocalKey) {
+                return await this.createDateInconsistencyAlert(buqueId, type, port, date, mareaMatch, stageMatch, hash);
+            }
+
+            return false; // Match perfecto
+        }
+
+        // 4) Si no hubo match con etapa, manejar como nuevo evento (Lógica intacta de Tracking)
+        const mareaDesignada = mareaMatch.estadoActual.codigo === 'DESIGNADA' ? mareaMatch : null;
+        const mareaEnEjecucion = mareaMatch.estadoActual.codigo === 'EN_EJECUCION' ? mareaMatch : null;
 
         if (type === 'ZARPADA') {
             // Regla: Si hay una DESIGNADA, la zarpada es para ella. Si no, es una nueva etapa
@@ -895,23 +904,19 @@ export class TrackingService {
 
     private async createAlert(buqueId: string, type: string, titulo: string, date: Date, meta: any = {}, refId?: string, refTipo?: string, descripcion?: string): Promise<boolean> {
         const code = `${type}_${buqueId}_${date.getTime()}`;
-        const exists = await this.prisma.alerta.findFirst({ where: { codigoUnico: code } });
-        if (exists) return false;
 
-        await this.prisma.alerta.create({
-            data: {
-                codigoUnico: code,
-                tipo: type,
-                titulo: titulo,
-                descripcion: descripcion || titulo,
-                estado: 'PENDIENTE',
-                prioridad: 'MEDIA',
-                fechaDetectada: date,
-                referenciaId: refId,
-                referenciaTipo: refTipo,
-                metadata: { ...meta, buqueId },
-                visible: true
-            } as any
+        await this.alertsService.create({
+            codigoUnico: code,
+            tipo: type,
+            titulo: titulo,
+            descripcion: descripcion || titulo,
+            estado: 'PENDIENTE' as any,
+            prioridad: 'MEDIA' as any,
+            fechaDetectada: date,
+            referenciaId: refId,
+            referenciaTipo: refTipo,
+            metadata: { ...meta, buqueId },
+            visible: true
         });
         return true;
     }

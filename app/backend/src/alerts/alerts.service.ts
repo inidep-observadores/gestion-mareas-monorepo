@@ -44,9 +44,9 @@ export class AlertsService {
         const alert = await this.prisma.alerta.create({
             data: {
                 ...createAlertDto,
-                fechaDetectada: DateUtils.getNow(true),
+                fechaDetectada: createAlertDto.fechaDetectada || DateUtils.getNow(true),
                 creadoPorId: user?.id
-            }
+            } as any
         });
 
         // 3. Log Event

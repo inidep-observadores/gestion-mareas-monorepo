@@ -26,7 +26,7 @@
             class="font-bold uppercase tracking-wider py-0.5 px-2 rounded-lg">
             {{ referenciaTipo }}
             <span v-if="metadata && metadata.mareaCode" class="ml-1 opacity-75 font-mono">{{ metadata.mareaCode
-              }}</span>
+            }}</span>
           </Badge>
           <!-- Source Badge -->
           <Badge v-if="sourceLabel" :color="sourceBadgeColor" variant="light" size="sm"
@@ -93,7 +93,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { ErrorIcon, BellIcon, CheckIcon, DocsIcon, UserCircleIcon, BoxCubeIcon, MapPinIcon } from '@/icons'
+import { ErrorIcon, BellIcon, CheckIcon, DocsIcon, UserCircleIcon, BoxCubeIcon, MapPinIcon, ShipIcon } from '@/icons'
 import Button from '@/components/ui/Button.vue'
 import Badge from '@/components/ui/Badge.vue'
 import { AlertaEstado, AlertaPrioridad } from '../../alerts/services/alerts.service'
@@ -240,6 +240,7 @@ const sourceLabel = computed(() => {
   if (!source) return null
   if (source === 'ACCESS_IMPORT') return 'Access'
   if (source === 'TRACKING_CSV') return 'Tracking'
+  if (source === 'API_PNA' || source === 'PNA') return 'PNA'
   return null
 })
 
@@ -247,6 +248,7 @@ const sourceBadgeColor = computed(() => {
   const source = props.metadata?.source
   if (source === 'ACCESS_IMPORT') return 'purple'
   if (source === 'TRACKING_CSV') return 'success'
+  if (source === 'API_PNA' || source === 'PNA') return 'warning'
   return 'light'
 })
 
@@ -254,6 +256,7 @@ const sourceIcon = computed(() => {
   const source = props.metadata?.source
   if (source === 'ACCESS_IMPORT') return BoxCubeIcon
   if (source === 'TRACKING_CSV') return MapPinIcon
+  if (source === 'API_PNA' || source === 'PNA') return ShipIcon
   return null
 })
 </script>

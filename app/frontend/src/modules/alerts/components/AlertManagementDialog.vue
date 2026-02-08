@@ -8,7 +8,7 @@
                         {{ localAlert.prioridad || 'N/D' }}
                     </Badge>
                     <span class="text-text font-black uppercase tracking-tight">{{ localAlert.titulo || 'Alerta'
-                    }}</span>
+                        }}</span>
                     <Badge v-if="localAlert.referenciaTipo" :color="getOriginBadgeColor(localAlert.referenciaTipo)"
                         variant="light" size="sm" class="font-bold text-[10px] uppercase tracking-wider h-6">
                         {{ localAlert.referenciaTipo || 'N/D' }}
@@ -97,7 +97,7 @@
                                 class="text-[10px] font-bold text-warning uppercase tracking-tight">
                                 Observador Externo ({{ externalSourceName }}): <span class="text-warning/90">{{
                                     externalObserverLabel
-                                    }}</span>
+                                }}</span>
                             </div>
                         </div>
                     </div>
@@ -992,7 +992,7 @@ const getBadgeColor = (prio?: string) => {
 
 const getSourceColor = (name: string): 'primary' | 'success' | 'error' | 'warning' | 'info' | 'purple' | 'light' | 'dark' => {
     const colors: Record<string, 'primary' | 'success' | 'error' | 'warning' | 'info' | 'purple' | 'light' | 'dark'> = {
-        'PNA': 'info',
+        'PNA': 'warning',
         'Access': 'purple',
         'VMS': 'success',
         'Sistema': 'light'
