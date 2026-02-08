@@ -2,6 +2,9 @@ import 'reflect-metadata';
 import { Test, TestingModule } from '@nestjs/testing';
 import { TrackingService } from './tracking.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { EventCorrelationService } from '../common/services/event-correlation.service';
+import { AlertsService } from '../alerts/alerts.service';
+import { VesselSyncService } from '../catalogos/buques/vessel-sync.service';
 
 describe('TrackingService', () => {
     let service: TrackingService;
@@ -25,17 +28,26 @@ describe('TrackingService', () => {
         },
         alerta: {
             findFirst: jest.fn(),
-            create: jest.fn(),
+            create: jest.fn().mockImplementation((args) => Promise.resolve({ id: 'mock-alert-id', ...args.data })),
+            findUnique: jest.fn(),
+            update: jest.fn(),
+        },
+        alertaEvento: {
+            create: jest.fn().mockResolvedValue({ id: 'mock-event-id' }),
         },
         trackingEventSnapshot: {
             findUnique: jest.fn(),
             create: jest.fn(),
         },
         systemStatus: {
-            findUnique: jest.fn(),
+            findUnique: jest.fn().mockResolvedValue({ lastUpdate: new Date() }),
             create: jest.fn(),
             update: jest.fn(),
         }
+    };
+
+    const mockVesselSyncService = {
+        syncVessel: jest.fn().mockResolvedValue({ success: true }),
     };
 
     beforeEach(async () => {
@@ -43,6 +55,9 @@ describe('TrackingService', () => {
         const module: TestingModule = await Test.createTestingModule({
             providers: [
                 TrackingService,
+                EventCorrelationService,
+                AlertsService,
+                { provide: VesselSyncService, useValue: mockVesselSyncService },
                 { provide: PrismaService, useValue: mockPrismaService },
             ],
         }).compile();

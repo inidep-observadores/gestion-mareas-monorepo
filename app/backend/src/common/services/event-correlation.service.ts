@@ -196,17 +196,8 @@ export class EventCorrelationService {
 
             if (diffDays <= 1) {
                 // Validación de puerto si se provee
-                const registeredPortId = type === 'ZARPADA' ? etapa.puertoZarpadaId : etapa.puertoArriboId;
-
-                // Si no hay info de puerto en el evento, confiamos en la fecha
-                if (!portId && !portName) return etapa;
-
-                // Si hay ID de puerto registrado y coincide
-                if (portId && registeredPortId === portId) return etapa;
-
-                // Si hay ID de puerto registrado y no coincide, seguimos buscando
-                if (portId && registeredPortId && portId !== registeredPortId) continue;
-
+                // Nota: Eliminamos la restricción estricta de ID aquí para permitir que
+                // evaluateEventContext detecte discrepancias de puerto o valide por NOMBRE.
                 return etapa;
             }
         }
