@@ -244,8 +244,8 @@
                   <div class="flex items-center gap-2 mb-1">
                     <span class="text-[10px] font-semibold px-1.5 py-0.5 rounded-md uppercase tracking-tighter border"
                       :class="[
-                        item.metadata.type === 'ZARPADA' ? 'bg-sky-100 text-sky-700 border-sky-200 dark:bg-sky-500/10 dark:text-sky-400 dark:border-sky-500/20' :
-                        item.metadata.type === 'ARRIBO' ? 'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-600/10 dark:text-blue-400 dark:border-blue-500/20' :
+                        item.metadata.type === 'ZARPADA' ? 'bg-cyan-100 text-cyan-700 border-cyan-200 dark:bg-cyan-500/10 dark:text-cyan-400 dark:border-cyan-500/20' :
+                        item.metadata.type === 'ARRIBO' ? 'bg-indigo-100 text-indigo-700 border-indigo-200 dark:bg-indigo-500/10 dark:text-indigo-400 dark:border-indigo-500/20' :
                         'bg-success/20 text-success border-success/30'
                       ]">
                       {{ item.metadata.type }}
