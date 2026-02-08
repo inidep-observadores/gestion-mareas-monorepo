@@ -52,6 +52,29 @@ export interface WorkforceStatus {
     listImpedidos: Array<{ id: string; name: string; motivo: string; tipoObservador: string }>
 }
 
+export interface MovementAlert {
+    id: string
+    tipo: 'ZARPADA' | 'ARRIBO' | 'POSIBLE_ZARPADA' | 'POSIBLE_ARRIBO' | 'RECOMENDACION_FIN_MAREA'
+    titulo: string
+    descripcion: string
+    fechaDetectada: string
+    referenciaId: string
+    metadata: {
+        mareaCode: string
+        vesselName: string
+        observerName: string
+        portName: string
+        eventDate: string
+        type: 'ZARPADA' | 'ARRIBO'
+        sources: Array<{
+            name: string
+            detectedAt: string
+            data?: any
+        }>
+        [key: string]: any
+    }
+}
+
 const dashboardService = {
     async getFleetDistribution(): Promise<FleetDistributionResponse> {
         const { selectedYear } = useConfigStore()
@@ -80,6 +103,13 @@ const dashboardService = {
     async getWorkforceStatus(): Promise<WorkforceStatus> {
         const { selectedYear } = useConfigStore()
         const { data } = await httpClient.get<WorkforceStatus>(`/mareas/workforce/status?year=${selectedYear}`)
+        return data
+    },
+
+    async getMovementAlerts(): Promise<MovementAlert[]> {
+        // Filtrar por los tipos confirmados de zarpada y arribo (PNA, Tracking y Recomendaciones)
+        const types = 'ZARPADA,ARRIBO,POSIBLE_ZARPADA,POSIBLE_ARRIBO,RECOMENDACION_FIN_MAREA'
+        const { data } = await httpClient.get<MovementAlert[]>(`/alerts?type=${types}&status=PENDIENTE`)
         return data
     },
 

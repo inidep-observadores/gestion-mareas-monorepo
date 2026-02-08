@@ -56,7 +56,7 @@ export class AlertsService {
     }
 
     async findAll(query: any) {
-        const { refId, status, userId, showHidden } = query;
+        const { refId, status, userId, showHidden, type } = query;
         const where: any = {};
 
         // Filter by visibility by default
@@ -66,6 +66,13 @@ export class AlertsService {
 
         if (refId) where.referenciaId = refId;
         if (status) where.estado = status;
+        if (type) {
+            if (type.includes(',')) {
+                where.tipo = { in: type.split(',') };
+            } else {
+                where.tipo = type;
+            }
+        }
         if (userId) {
             where.OR = [
                 { asignadoId: userId },

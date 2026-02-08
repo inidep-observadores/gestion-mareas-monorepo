@@ -112,8 +112,6 @@ export interface AlertMetadata {
     idExterno?: string;
 
     // === Campos Adicionales ===
-    /** Nombre del observador */
-    observadorNombre?: string;
 
     /** Nombre del observador (alias) */
     observerName?: string;

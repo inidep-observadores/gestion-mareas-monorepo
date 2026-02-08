@@ -312,7 +312,8 @@ export class PnaApiService {
         const dateStr = fechaLocal.toFormat('dd/MM HH:mm');
         const portName = puerto?.nombre || reporte.nombre_costera || 'Puerto Desconocido';
 
-        const titulo = `${buque.nombreBuque}: ${estado} detectada en ${portName} el ${dateStr} (PNA)`;
+        const sufijo = estado === 'ARRIBO' ? 'detectado' : 'detectada';
+        const titulo = `${buque.nombreBuque}: ${estado} ${sufijo} en ${portName} el ${dateStr} (PNA)`;
         const descripcion = `Se detectó un evento de ${estado.toLowerCase()} informado por Prefectura Naval Argentina.\n\n` +
             `Buque: ${buque.nombreBuque}\n` +
             `Puerto: ${portName}\n` +
@@ -329,6 +330,7 @@ export class PnaApiService {
             mareaId: marea.id,
             mareaCode: mareaLabel,
             vesselName: buque.nombreBuque,
+            observerName: marea.observadorPrincipal ? `${marea.observadorPrincipal.nombre} ${marea.observadorPrincipal.apellido}` : 'Sin Observador',
             portId: puerto?.id || null,
             portName: portName,
             eventDate: fechaLocal.toJSDate(),
@@ -385,6 +387,7 @@ export class PnaApiService {
             mareaId: marea.id,
             mareaCode: mareaLabel,
             vesselName: buque.nombreBuque,
+            observerName: marea.observadorPrincipal ? `${marea.observadorPrincipal.nombre} ${marea.observadorPrincipal.apellido}` : 'Sin Observador',
             portId: port?.id || null,
             portName: port?.nombre,
             eventDate: fechaLocal.toJSDate(),
@@ -438,6 +441,7 @@ export class PnaApiService {
             mareaId: marea.id,
             mareaCode: mareaLabel,
             vesselName: buque.nombreBuque,
+            observerName: marea.observadorPrincipal ? `${marea.observadorPrincipal.nombre} ${marea.observadorPrincipal.apellido}` : 'Sin Observador',
             portId: port?.id || null,
             portName: port?.nombre,
             type,
@@ -482,6 +486,7 @@ export class PnaApiService {
             mareaCode: mareaLabel,
             mareaSiguienteId: mareaSiguiente.id,
             vesselName: buque.nombreBuque,
+            observerName: mareaActual.observadorPrincipal ? `${mareaActual.observadorPrincipal.nombre} ${mareaActual.observadorPrincipal.apellido}` : 'Sin Observador',
             portId: port?.id || null,
             portName: port?.nombre,
             eventDate: fechaLocal.toJSDate(),

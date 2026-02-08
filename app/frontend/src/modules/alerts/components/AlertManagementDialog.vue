@@ -316,7 +316,7 @@
         @close="showMareaQuickDetail = false" />
 
     <ObservadorTimelineDialog :show="showObservadorTimeline" :observadorId="localAlert.referenciaId || null"
-        :observadorName="localAlert.metadata?.observadorNombre || localAlert.metadata?.observerName || 'Observador'"
+        :observadorName="localAlert.metadata?.observerName || 'Observador'"
         :year="configStore.selectedYear" @close="showObservadorTimeline = false" />
 </template>
 
@@ -825,6 +825,7 @@ const smartActionConfig = computed(() => {
                     showStagesDialog.value = true
                 }
             }
+        case 'RECOMENDACION_FIN_MAREA':
         case 'FIN_MAREA':
             return {
                 label: 'Finalizar Marea',
@@ -931,7 +932,7 @@ const prepareStagesData = async (isNewStageConfig = false) => {
                 observadores: []
             }
             currentStages.push(newStage)
-        } else if (subTipo && ['ARRIBO', 'INCONGRUENCIA', 'ZARPADA', 'POSIBLE_ZARPADA'].includes(subTipo as string) && nroEtapaAlert) {
+        } else if (subTipo && ['ARRIBO', 'INCONGRUENCIA', 'ZARPADA', 'POSIBLE_ZARPADA', 'FIN_MAREA', 'RECOMENDACION_FIN_MAREA'].includes(subTipo as string) && nroEtapaAlert) {
             // Caso Actualización de Etapa: Buscar la etapa y sugerir cambios de Access/Tracking
             const stageToUpdate = currentStages.find((s: any) =>
                 (s.nroEtapa === nroEtapaAlert) || (s.nro_etapa === nroEtapaAlert)

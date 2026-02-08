@@ -50,7 +50,8 @@ export class EventCorrelationService {
             include: {
                 estadoActual: true,
                 etapas: { orderBy: { nroEtapa: 'asc' } },
-                buque: true
+                buque: true,
+                observadorPrincipal: true
             }
         });
 
@@ -114,6 +115,11 @@ export class EventCorrelationService {
             return { action: EventDecisionAction.CREATE_ALERT, marea: mareaMatch };
         } else {
             // ARRIBO
+            // REGLA: Si la marea está DESIGNADA, ignoramos los arribos (solo buscamos la Zarpada)
+            if (mareaMatch.estadoActual.codigo === 'DESIGNADA') {
+                return { action: EventDecisionAction.NO_MATCH, marea: mareaMatch };
+            }
+
             if (mareaEnEjecucion) {
                 // REGLA ESPECIAL: Si hay una marea DESIGNADA esperando, sugerir FINALIZAR marea
                 if (mareaDesignada) {
@@ -132,15 +138,22 @@ export class EventCorrelationService {
 
                 const lastStageOpen = [...mareaEnEjecucion.etapas].sort((a, b) => b.nroEtapa - a.nroEtapa).find(e => !e.fechaArribo);
 
-                // SECUENCIALIDAD: El arribo debe ser posterior a la zarpada registrada de la etapa abierta (si existe)
-                if (lastStageOpen && new Date(date) <= new Date(lastStageOpen.fechaZarpada)) {
+                // REGLA DE ARRIBO: Debe existir una etapa abierta
+                if (!lastStageOpen) {
+                    this.logger.debug(`Ignorando ARRIBO para buque ${buqueId}: No hay etapa abierta en marea ${mareaEnEjecucion.id}`);
+                    return { action: EventDecisionAction.IGNORE_OLD, marea: mareaEnEjecucion };
+                }
+
+                // SECUENCIALIDAD: El arribo debe ser posterior a la zarpada registrada de la etapa abierta
+                if (new Date(date) < new Date(lastStageOpen.fechaZarpada)) {
+                    this.logger.debug(`Ignorando ARRIBO para buque ${buqueId}: Fecha de arribo anterior a la zarpada de la etapa`);
                     return { action: EventDecisionAction.IGNORE_OLD, marea: mareaEnEjecucion };
                 }
 
                 return {
                     action: EventDecisionAction.CREATE_ALERT,
                     marea: mareaEnEjecucion,
-                    nroEtapa: lastStageOpen?.nroEtapa
+                    nroEtapa: lastStageOpen.nroEtapa
                 };
             }
         }
