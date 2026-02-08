@@ -28,13 +28,18 @@
             <span v-if="metadata && metadata.mareaCode" class="ml-1 opacity-75 font-mono">{{ metadata.mareaCode
               }}</span>
           </Badge>
-          <!-- Source Badges (Multi-source support) -->
-          <Badge v-for="source in alertSources" :key="source.name" :color="source.color" variant="light" size="sm"
-            class="font-bold uppercase tracking-wider py-0.5 px-1.5 rounded-md text-[9px] flex items-center gap-1">
-            <component :is="source.icon" class="w-3 h-3" />
-            {{ source.label }}
-          </Badge>
-          <span class="text-[10px] text-text-muted/60 font-mono">• {{ fecha }}</span>
+          <!-- Source & Date Group -->
+          <div class="flex items-center gap-2 ml-1">
+            <span class="text-[10px] text-text-muted/50 font-black uppercase tracking-widest">Fuente:</span>
+            <div class="flex items-center gap-1">
+              <Badge v-for="source in alertSources" :key="source.name" :color="source.color" variant="light" size="sm"
+                class="font-bold uppercase tracking-wider py-0.5 px-1.5 rounded-md text-[9px] flex items-center gap-1">
+                <component :is="source.icon" class="w-3 h-3" />
+                {{ source.label }}
+              </Badge>
+            </div>
+            <span class="text-[10px] text-text-muted/60 font-mono">• {{ fecha }}</span>
+          </div>
         </div>
 
         <!-- Responsable (Top Right) -->
