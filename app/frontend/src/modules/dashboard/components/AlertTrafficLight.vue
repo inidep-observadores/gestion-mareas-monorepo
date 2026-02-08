@@ -242,7 +242,12 @@
                 class="flex items-center justify-between rounded-xl border border-border bg-surface-muted/50 p-3 transition-colors hover:bg-success/5 hover:border-success/20">
                 <div class="flex-1 min-w-0">
                   <div class="flex items-center gap-2 mb-1">
-                    <span class="text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-success/20 text-success uppercase tracking-tighter border border-success/30">
+                    <span class="text-[10px] font-semibold px-1.5 py-0.5 rounded-md uppercase tracking-tighter border"
+                      :class="[
+                        item.metadata.type === 'ZARPADA' ? 'bg-sky-100 text-sky-700 border-sky-200 dark:bg-sky-500/10 dark:text-sky-400 dark:border-sky-500/20' :
+                        item.metadata.type === 'ARRIBO' ? 'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-600/10 dark:text-blue-400 dark:border-blue-500/20' :
+                        'bg-success/20 text-success border-success/30'
+                      ]">
                       {{ item.metadata.type }}
                     </span>
                     <span class="text-xs font-black text-text truncate">{{ item.metadata.vesselName }}</span>
