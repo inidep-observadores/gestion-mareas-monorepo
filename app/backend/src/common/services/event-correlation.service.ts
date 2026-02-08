@@ -77,9 +77,16 @@ export class EventCorrelationService {
             const matchedPortId = type === 'ZARPADA' ? stageMatch.puertoZarpadaId : stageMatch.puertoArriboId;
             const registeredDate = type === 'ZARPADA' ? stageMatch.fechaZarpada : stageMatch.fechaArribo;
 
-            // VALIDACIÓN DE PUERTO: Por ID o por Nombre
-            const registeredPortName = allPorts.find(p => p.id === matchedPortId)?.nombre;
-            const portIsSame = matchedPortId === portId || (registeredPortName && registeredPortName === portName);
+            // VALIDACIÓN DE PUERTO: Priorizar coincidencia por ID (codigo_externo)
+            let portIsSame = false;
+            if (portId && matchedPortId) {
+                // Si ambos tienen ID, deben coincidir estrictamente
+                portIsSame = matchedPortId === portId;
+            } else if (portName) {
+                // Fallback por nombre solo si falta alguno de los IDs
+                const registeredPortName = allPorts.find(p => p.id === matchedPortId)?.nombre;
+                portIsSame = registeredPortName && registeredPortName.toLowerCase() === portName.toLowerCase();
+            }
 
             if (!portIsSame) {
                 return { action: EventDecisionAction.DISCREPANCY_PORT, marea: mareaMatch, stageMatch };

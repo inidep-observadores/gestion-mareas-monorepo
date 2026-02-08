@@ -207,9 +207,14 @@ describe('TrackingService Matching V2', () => {
         // El sistema detecta 'port-mdp-new'
         const result = await (service as any).handleProcessedEvent('vessel-1', 'ZARPADA', 'port-mdp-new', date, [marea], ports);
 
-        // Ahora el resultado debe ser FALSE (encontró el match por nombre y abortó creación de alerta)
-        expect(result).toBe(false);
-        expect(mockPrismaService.alerta.create).not.toHaveBeenCalled();
+        // AHORA el resultado debe ser TRUE (detecta discrepancia por ID distinto, aunque el nombre sea igual)
+        // Esto cumple con la nueva política de integridad: IDs distintos = Puertos distintos.
+        expect(result).toBe(true);
+        expect(mockPrismaService.alerta.create).toHaveBeenCalledWith(expect.objectContaining({
+            data: expect.objectContaining({
+                tipo: 'ERROR_REGISTRO_PUERTO'
+            })
+        }));
     });
     it('debe ignorar zarpada si la fecha es anterior a etapas existentes (Caso Anita 05/01 vs 27/01)', async () => {
         // Marea con etapa iniciada el 27/01
