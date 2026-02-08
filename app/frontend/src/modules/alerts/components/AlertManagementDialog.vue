@@ -8,7 +8,7 @@
                         {{ localAlert.prioridad || 'N/D' }}
                     </Badge>
                     <span class="text-text font-black uppercase tracking-tight">{{ localAlert.titulo || 'Alerta'
-                        }}</span>
+                    }}</span>
                     <Badge v-if="localAlert.referenciaTipo" :color="getOriginBadgeColor(localAlert.referenciaTipo)"
                         variant="light" size="sm" class="font-bold text-[10px] uppercase tracking-wider h-6">
                         {{ localAlert.referenciaTipo || 'N/D' }}
@@ -97,7 +97,7 @@
                                 class="text-[10px] font-bold text-warning uppercase tracking-tight">
                                 Observador Externo ({{ externalSourceName }}): <span class="text-warning/90">{{
                                     externalObserverLabel
-                                }}</span>
+                                    }}</span>
                             </div>
                         </div>
                     </div>
@@ -596,14 +596,21 @@ const alertSources = computed(() => {
 
     // 1. Si hay lista de fuentes estructurada (Source Stacking)
     if (sources.length > 0) {
-        return sources.map((s: { name: string }) => ({
-            name: s.name === 'API_PNA' ? 'PNA' : (s.name === 'ACCESS_IMPORT' ? 'Access' : s.name)
-        }))
+        return sources.map((s: { name: string }) => {
+            let name = s.name
+            if (name === 'API_PNA' || name === 'PNA') name = 'PNA'
+            else if (name === 'ACCESS_IMPORT') name = 'Access'
+            else if (name === 'TRACKING_CSV') name = 'Tracking'
+            return { name }
+        })
     }
 
     // 2. Fallback: Campo source único (Access o PNA creados sin stacking)
     if (meta.source) {
-        const name = meta.source === 'API_PNA' ? 'PNA' : (meta.source === 'ACCESS_IMPORT' ? 'Access' : meta.source)
+        let name = meta.source
+        if (name === 'API_PNA' || name === 'PNA') name = 'PNA'
+        else if (name === 'ACCESS_IMPORT') name = 'Access'
+        else if (name === 'TRACKING_CSV') name = 'Tracking'
         return [{ name }]
     }
 
@@ -995,6 +1002,7 @@ const getSourceColor = (name: string): 'primary' | 'success' | 'error' | 'warnin
         'PNA': 'warning',
         'Access': 'purple',
         'VMS': 'success',
+        'Tracking': 'success',
         'Sistema': 'light'
     }
     return colors[name] || 'light'

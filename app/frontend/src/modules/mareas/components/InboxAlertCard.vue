@@ -26,13 +26,13 @@
             class="font-bold uppercase tracking-wider py-0.5 px-2 rounded-lg">
             {{ referenciaTipo }}
             <span v-if="metadata && metadata.mareaCode" class="ml-1 opacity-75 font-mono">{{ metadata.mareaCode
-            }}</span>
+              }}</span>
           </Badge>
-          <!-- Source Badge -->
-          <Badge v-if="sourceLabel" :color="sourceBadgeColor" variant="light" size="sm"
+          <!-- Source Badges (Multi-source support) -->
+          <Badge v-for="source in alertSources" :key="source.name" :color="source.color" variant="light" size="sm"
             class="font-bold uppercase tracking-wider py-0.5 px-1.5 rounded-md text-[9px] flex items-center gap-1">
-            <component :is="sourceIcon" class="w-3 h-3" />
-            {{ sourceLabel }}
+            <component :is="source.icon" class="w-3 h-3" />
+            {{ source.label }}
           </Badge>
           <span class="text-[10px] text-text-muted/60 font-mono">• {{ fecha }}</span>
         </div>
@@ -235,28 +235,35 @@ const notaGestionCorta = computed(() => {
   return text.length > 50 ? `${text.slice(0, 47)}...` : text
 })
 
-const sourceLabel = computed(() => {
-  const source = props.metadata?.source
-  if (!source) return null
-  if (source === 'ACCESS_IMPORT') return 'Access'
-  if (source === 'TRACKING_CSV') return 'Tracking'
-  if (source === 'API_PNA' || source === 'PNA') return 'PNA'
-  return null
-})
+const alertSources = computed(() => {
+  const meta = props.metadata || {}
+  const sources = (meta as any).sources || []
+  const result: any[] = []
 
-const sourceBadgeColor = computed(() => {
-  const source = props.metadata?.source
-  if (source === 'ACCESS_IMPORT') return 'purple'
-  if (source === 'TRACKING_CSV') return 'success'
-  if (source === 'API_PNA' || source === 'PNA') return 'warning'
-  return 'light'
-})
+  const formatSource = (name: string) => {
+    if (name === 'ACCESS_IMPORT') return { label: 'Access', color: 'purple', icon: BoxCubeIcon }
+    if (name === 'TRACKING_CSV') return { label: 'Tracking', color: 'success', icon: MapPinIcon }
+    if (name === 'API_PNA' || name === 'PNA') return { label: 'PNA', color: 'warning', icon: ShipIcon }
+    return { label: name, color: 'light', icon: BoxCubeIcon }
+  }
 
-const sourceIcon = computed(() => {
-  const source = props.metadata?.source
-  if (source === 'ACCESS_IMPORT') return BoxCubeIcon
-  if (source === 'TRACKING_CSV') return MapPinIcon
-  if (source === 'API_PNA' || source === 'PNA') return ShipIcon
-  return null
+  // 1. Si hay lista de fuentes estructurada
+  if (sources.length > 0) {
+    sources.forEach((s: { name: string }) => {
+      const fmt = formatSource(s.name)
+      if (!result.find(r => r.label === fmt.label)) {
+        result.push({ ...fmt, name: s.name })
+      }
+    })
+    return result
+  }
+
+  // 2. Fallback: Campo source único
+  if (meta.source) {
+    result.push({ ...formatSource(meta.source as string), name: meta.source })
+    return result
+  }
+
+  return []
 })
 </script>

@@ -9,7 +9,7 @@ import { DateTime } from 'luxon';
 import { MareaUtils } from '../common/utils/marea.utils';
 import { DateUtils } from '../common/utils/date.utils';
 import { VesselSyncService } from '../catalogos/buques/vessel-sync.service';
-import { EventCorrelationService } from '../common/services/event-correlation.service';
+import { EventCorrelationService, EventDecisionAction } from '../common/services/event-correlation.service';
 import * as crypto from 'crypto';
 
 interface TrackingPoint {
@@ -613,91 +613,43 @@ export class TrackingService {
             return false;
         }
 
-        // 2) Deduplicación funcional: ¿Ya existe una alerta para este evento (PNA u otro Tracking)?
-        const existingAlert = await this.correlationService.findExistingAlert(buqueId, type, date);
-        if (existingAlert) {
-            // Validar la alerta existente con esta nueva fuente
-            this.logger.log(`Reforzando alerta existente ${existingAlert.id} con detección de Tracking CSV`);
-            await this.alertsService.addValidationSource(
-                existingAlert.id,
-                'TRACKING_CSV',
-                {
-                    fecha: eventDate.toISO(),
-                    puerto: port?.nombre,
-                    source: 'TRACKING_CSV'
-                }
-            );
-            // Guardar snapshot para no reprocesar este punto exacto
-            await this.saveSnapshot(buqueId, type, date, portId, hash);
-            return true;
-        }
+        // 2) Evaluar contexto del evento usando el servicio centralizado
+        const decision = await this.correlationService.evaluateEventContext(buqueId, type, date, portId, port?.nombre, ports);
 
-        // 3) Encontrar la marea y etapa adecuada usando el servicio centralizado
-        const mareaMatch = await this.correlationService.findBestMareaMatch(buqueId, type);
-        if (!mareaMatch) return false;
+        switch (decision.action) {
+            case EventDecisionAction.VALIDATE_ALERT:
+                this.logger.log(`Reforzando alerta existente ${decision.existingAlert.id} con detección de Tracking CSV`);
+                await this.alertsService.addValidationSource(
+                    decision.existingAlert.id,
+                    'TRACKING_CSV',
+                    {
+                        fecha: eventDate.toISO(),
+                        puerto: port?.nombre,
+                        source: 'TRACKING_CSV'
+                    }
+                );
+                await this.saveSnapshot(buqueId, type, date, portId, hash);
+                return true;
 
-        const stageMatch = this.correlationService.findMatchingStage(mareaMatch, type, date, portId, port?.nombre);
+            case EventDecisionAction.DISCREPANCY_PORT:
+                return await this.createDiscrepancyAlert(buqueId, type, port, date, decision.marea, decision.stageMatch, ports, hash);
 
-        if (stageMatch) {
-            const matchedPortId = type === 'ZARPADA' ? stageMatch.puertoZarpadaId : stageMatch.puertoArriboId;
-            const registeredDate = type === 'ZARPADA' ? stageMatch.fechaZarpada : stageMatch.fechaArribo;
+            case EventDecisionAction.DISCREPANCY_DATE:
+                return await this.createDateInconsistencyAlert(buqueId, type, port, date, decision.marea, decision.stageMatch, hash);
 
-            // VALIDACIÓN DE PUERTO: Por ID o por Nombre (para evitar duplicados si hay IDs distintos para el mismo lugar)
-            const registeredPortName = ports.find(p => p.id === matchedPortId)?.nombre;
-            const portIsSame = matchedPortId === portId || (registeredPortName && registeredPortName === port?.nombre);
+            case EventDecisionAction.RECOMMEND_FIN_MAREA:
+                return await this.createRecommendationFinMarea(buqueId, port, date, decision.marea, decision.mareaSiguiente, hash);
 
-            // A. Incongruencia de Puerto
-            if (!portIsSame) {
-                return await this.createDiscrepancyAlert(buqueId, type, port, date, mareaMatch, stageMatch, ports, hash);
-            }
+            case EventDecisionAction.CREATE_ALERT:
+                return await this.createPossibleMovementAlert(buqueId, type, port, date, decision.marea, hash, decision.nroEtapa);
 
-            // B. Incongruencia de Fecha (Local Time)
-            const registeredLocalKey = DateTime.fromJSDate(registeredDate!).setZone(this.TIMEZONE).toFormat('yyyy-MM-dd');
-            const eventLocalKey = eventDate.toFormat('yyyy-MM-dd');
+            case EventDecisionAction.IGNORE_OLD:
+                this.logger.debug(`Ignorando evento antiguo/fuera de secuencia para buque ${buqueId}`);
+                return false;
 
-            if (registeredLocalKey !== eventLocalKey) {
-                return await this.createDateInconsistencyAlert(buqueId, type, port, date, mareaMatch, stageMatch, hash);
-            }
-
-            return false; // Match perfecto
-        }
-
-        // 4) Si no hubo match con etapa, manejar como nuevo evento (Lógica intacta de Tracking)
-        const mareaDesignada = mareaMatch.estadoActual.codigo === 'DESIGNADA' ? mareaMatch : null;
-        const mareaEnEjecucion = mareaMatch.estadoActual.codigo === 'EN_EJECUCION' ? mareaMatch : null;
-
-        if (type === 'ZARPADA') {
-            // Regla: Si hay una DESIGNADA, la zarpada es para ella. Si no, es una nueva etapa
-            const target = mareaDesignada || mareaEnEjecucion;
-            if (target) {
-                // COHERENCIA CRONOLÓGICA: Ignorar si la zarpada es anterior a etapas ya registradas
-                const hasPosteriorStage = target.etapas.some(e => e.fechaZarpada && new Date(e.fechaZarpada) > date);
-                if (hasPosteriorStage) {
-                    return false; // Ignorar evento antiguo
-                }
-                return await this.createPossibleMovementAlert(buqueId, 'ZARPADA', port, date, target, hash);
-            }
-        } else {
-            // ARRIBO
-            if (mareaEnEjecucion) {
-                // Regla especial: Si hay una marea DESIGNADA esperando, sugerir FINALIZAR marea en lugar de solo arribo.
-                if (mareaDesignada) {
-                    return await this.createRecommendationFinMarea(buqueId, port, date, mareaEnEjecucion, mareaDesignada, hash);
-                }
-
-                const lastStageOpen = [...mareaEnEjecucion.etapas].sort((a, b) => b.nroEtapa - a.nroEtapa).find(e => !e.fechaArribo);
-
-                // COHERENCIA CRONOLÓGICA: Ignorar si el arribo es anterior al inicio de la marea
-                const hasPosteriorStage = mareaEnEjecucion.etapas.some(e => e.fechaZarpada && new Date(e.fechaZarpada) > date);
-                if (hasPosteriorStage) {
-                    return false; // Ignorar evento antiguo
-                }
-
-                // El arribo debe ser posterior a la zarpada registrada de la etapa abierta (si existe)
-                if (!lastStageOpen || new Date(date) > new Date(lastStageOpen.fechaZarpada)) {
-                    return await this.createPossibleMovementAlert(buqueId, 'ARRIBO', port, date, mareaEnEjecucion, hash, lastStageOpen?.nroEtapa);
-                }
-            }
+            case EventDecisionAction.NO_MATCH:
+            default:
+                return false;
         }
 
         return false;
@@ -724,11 +676,19 @@ export class TrackingService {
             type,
             subTipo: type,
             nroEtapa,
-            source: 'TRACKING_CSV',
             externalData: {
                 [type === 'ZARPADA' ? 'fechaZarpada' : 'fechaArribo']: date,
                 [type === 'ZARPADA' ? 'puertoZarpadaId' : 'puertoArriboId']: port.id
-            }
+            },
+            // Compatibilidad con Source Stacking
+            sources: [{
+                name: 'TRACKING_CSV',
+                detectedAt: date,
+                data: {
+                    puerto: port.nombre,
+                    velocidad: null // En este punto ya procesamos el punto de puerto
+                }
+            }]
         };
 
         const created = await this.createAlert(buqueId, alertType, alertTitle, date, metadata, marea.id, 'MAREA', `${alertTitle}\n\nOrigen: Monitoreo satelital.`);

@@ -181,7 +181,16 @@ export class AlertsService {
 
         // Get current metadata
         const metadata = (alert.metadata as any) || {};
-        const sources = metadata.sources || [];
+        let sources = metadata.sources || [];
+
+        // Si el array de fuentes está vacío, intentar recuperar la fuente original de metadata.source
+        if (sources.length === 0 && metadata.source) {
+            sources = [{
+                name: metadata.source,
+                detectedAt: alert.fechaDetectada?.toISOString(),
+                data: { info: 'Fuente primaria original' }
+            }];
+        }
 
         // Check if source already exists
         const existingSource = sources.find((s: any) => s.name === sourceName);
