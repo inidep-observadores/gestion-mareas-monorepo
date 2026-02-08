@@ -90,7 +90,7 @@ export class JobQueueService {
     /**
      * Crea una nueva tarea en la cola
      */
-    async addJob(type: JobType, payload: any, priority = 0) {
+    async addJob(type: JobType, payload: any, priority = 10) {
         return this.prisma.jobQueue.create({
             data: {
                 type,
@@ -105,7 +105,7 @@ export class JobQueueService {
     /**
      * Dispara una tarea por tipo si no hay una ya activa
      */
-    async triggerJobByType(type: JobType) {
+    async triggerJobByType(type: JobType, priority = 50) {
         const activeJob = await this.prisma.jobQueue.findFirst({
             where: {
                 type,
@@ -117,6 +117,6 @@ export class JobQueueService {
             return activeJob;
         }
 
-        return this.addJob(type, {});
+        return this.addJob(type, {}, priority);
     }
 }

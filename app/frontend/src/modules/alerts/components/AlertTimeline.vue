@@ -30,7 +30,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { AlertEvent } from '../services/alerts.service'
-import { CheckIcon, DocsIcon, EditIcon, ChatIcon } from '@/icons' // Updated imports
+import { CheckIcon, DocsIcon, EditIcon, ChatIcon, RefreshIcon } from '@/icons' // Updated imports
 
 const props = defineProps<{
   eventos: AlertEvent[]
@@ -46,6 +46,7 @@ const getIcon = (type: string) => {
     case 'RESUELTA': return CheckIcon
     case 'AUTO_RESOLUCION': return CheckIcon
     case 'CAMBIO_ESTADO': return EditIcon
+    case 'VALIDACION': return RefreshIcon
     default: return ChatIcon // Updates/Comments
   }
 }
@@ -57,7 +58,8 @@ const getTitle = (type: string) => {
         'ASIGNACION': 'Asignación de Responsable',
         'COMENTARIO': 'Nuevo Comentario',
         'AUTO_RESOLUCION': 'Resuelta Automáticamente',
-        'ESCALADO': 'Alerta Escalada / Vencida'
+        'ESCALADO': 'Alerta Escalada / Vencida',
+        'VALIDACION': 'Validación de Fuente'
     }
     return titulos[type] || type
 }

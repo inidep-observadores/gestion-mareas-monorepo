@@ -78,7 +78,7 @@ export class SchedulerService {
                     type: JobType.PNA_API_SYNC,
                     status: JobStatus.PENDING,
                     nextRunAt: new Date(),
-                    priority: 5, // Prioridad media-alta
+                    priority: 20, // Prioridad alta (mayor que VESSEL_SYNC que tiene 10)
                 },
             });
         }

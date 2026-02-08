@@ -73,9 +73,18 @@
                             </table>
                         </div>
 
-                        <div class="mt-4 pt-4 border-t border-border flex items-center gap-4">
-                            <div class="text-[10px] font-bold text-text-muted uppercase tracking-tight">Detectado: <span
-                                    class="text-text/60">{{ formatDate(localAlert.fechaDetectada) }}</span></div>
+                        <div class="mt-4 pt-4 border-t border-border flex flex-col gap-3">
+                            <div class="flex items-center justify-between">
+                                <div class="text-[10px] font-bold text-text-muted uppercase tracking-tight">Detectado:
+                                    <span class="text-text/60">{{ formatDate(localAlert.fechaDetectada) }}</span>
+                                </div>
+                                <div class="flex gap-1.5">
+                                    <Badge v-for="src in alertSources" :key="src.name" :color="getSourceColor(src.name)"
+                                        variant="light" size="sm" class="font-black text-[9px] uppercase px-2">
+                                        {{ src.name }}
+                                    </Badge>
+                                </div>
+                            </div>
                         </div>
                         <div v-if="isMarea" class="mt-4 pt-4 border-t border-border space-y-2">
                             <div class="text-[10px] font-bold text-text-muted uppercase tracking-tight">
@@ -312,39 +321,49 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, markRaw } from 'vue'
 import { useRouter } from 'vue-router'
-import { type Alerta, alertsService } from '../services/alerts.service'
-import type { AlertMetadata } from '../interfaces/alert-metadata.interface'
-import AlertTimeline from './AlertTimeline.vue'
+import { storeToRefs } from 'pinia'
+import { toast } from 'vue-sonner'
+
+// Components
 import BaseModal from '@/components/common/BaseModal.vue'
 import Button from '@/components/ui/Button.vue'
 import Badge from '@/components/ui/Badge.vue'
-import { toast } from 'vue-sonner'
+import AlertTimeline from './AlertTimeline.vue'
+import AlertTrajectoryMapModal from './AlertTrajectoryMapModal.vue'
+import MareaQuickDetailModal from '@/modules/stats/components/MareaQuickDetailModal.vue'
+import ObservadorTimelineDialog from '@/modules/admin/components/ObservadorTimelineDialog.vue'
+import dashboardService from '@/modules/dashboard/services/dashboard.service'
+import ReclamoEntregaDialog from '@/modules/dashboard/components/ReclamoEntregaDialog.vue'
+import GestionEtapasMareaDialog from '@/modules/mareas/components/GestionEtapasMareaDialog.vue'
+import NuevaMareaDialog from '@/modules/mareas/components/NuevaMareaDialog.vue'
+
+// Icons
 import {
     CheckIcon,
     ShipIcon,
     MapPinIcon,
     RefreshIcon,
     ChevronRightIcon,
-    InfoIcon
+    InfoIcon,
+    WarningIcon,
+    ChevronDownIcon
 } from '@/icons'
-import dashboardService from '@/modules/dashboard/services/dashboard.service'
-import ReclamoEntregaDialog from '@/modules/dashboard/components/ReclamoEntregaDialog.vue'
+
+// Services & Types
+import { type Alerta, alertsService } from '../services/alerts.service'
+import type { AlertMetadata } from '../interfaces/alert-metadata.interface'
 import mareasService from '@/modules/mareas/services/mareas.service'
-import GestionEtapasMareaDialog from '@/modules/mareas/components/GestionEtapasMareaDialog.vue'
-import NuevaMareaDialog from '@/modules/mareas/components/NuevaMareaDialog.vue'
-import AlertTrajectoryMapModal from './AlertTrajectoryMapModal.vue'
-import MareaQuickDetailModal from '@/modules/stats/components/MareaQuickDetailModal.vue'
-import ObservadorTimelineDialog from '@/modules/admin/components/ObservadorTimelineDialog.vue'
-import { storeToRefs } from 'pinia'
+import usersAdminApi from '@/modules/admin/services/users.service'
+import type { User } from '@/modules/auth/types/auth.types'
+import { ValidRoles } from '@/modules/auth/interfaces/roles.enum'
+import { TipoEtapa, TipoMarea } from '@/modules/mareas/types/enums'
+
+// Stores
 import { useBusinessRulesStore } from '@/modules/shared/stores/business-rules.store'
 import { useWorkflowStore } from '@/modules/shared/stores/workflow.store'
 import { useConfigStore } from '@/modules/shared/stores/config.store'
-import usersAdminApi from '@/modules/admin/services/users.service'
-import type { User } from '@/modules/auth/types/auth.types'
-import { ChevronDownIcon } from '@/icons'
-import { TipoEtapa, TipoMarea } from '@/modules/mareas/types/enums'
 
 const workflowStore = useWorkflowStore()
 
@@ -352,8 +371,6 @@ const props = defineProps<{
     isOpen: boolean
     alert: Alerta | null
 }>()
-
-import { ValidRoles } from '@/modules/auth/interfaces/roles.enum'
 
 // Assignment State
 const availableUsers = ref<User[]>([])
@@ -492,9 +509,9 @@ const showObservadorTimeline = ref(false)
 const businessRulesStore = useBusinessRulesStore()
 const configStore = useConfigStore()
 const { rules } = storeToRefs(businessRulesStore)
-const recheckCorto = computed(() => rules.value.PLAZO_RECHECK_CORTO || 0)
-const recheckMedio = computed(() => rules.value.PLAZO_RECHECK_MEDIO || 0)
-const recheckLargo = computed(() => rules.value.PLAZO_RECHECK_LARGO || 0)
+const recheckCorto = computed(() => rules.value?.PLAZO_RECHECK_CORTO || 0)
+const recheckMedio = computed(() => rules.value?.PLAZO_RECHECK_MEDIO || 0)
+const recheckLargo = computed(() => rules.value?.PLAZO_RECHECK_LARGO || 0)
 
 const formatToLocalISODate = (date: Date) => {
     const year = date.getFullYear()
@@ -573,11 +590,42 @@ const mareaObserversLabel = computed(() => {
     return 'Sin asignar'
 })
 
-const externalSourceName = computed(() => {
+const alertSources = computed(() => {
+    const meta = localAlert.value?.metadata || {}
+    const sources = (meta as any).sources || []
+
+    // 1. Si hay lista de fuentes estructurada (Source Stacking)
+    if (sources.length > 0) {
+        return sources.map((s: { name: string }) => ({
+            name: s.name === 'API_PNA' ? 'PNA' : (s.name === 'ACCESS_IMPORT' ? 'Access' : s.name)
+        }))
+    }
+
+    // 2. Fallback: Campo source único (Access o PNA creados sin stacking)
+    if (meta.source) {
+        const name = meta.source === 'API_PNA' ? 'PNA' : (meta.source === 'ACCESS_IMPORT' ? 'Access' : meta.source)
+        return [{ name }]
+    }
+
+    // 3. Fallback: Tipos de monitoreo satelital (VMS)
     const monitoringTypes = ['MONITOREO_SATELITAL', 'GAP_DETECTADO', 'POSIBLE_ZARPADA', 'POSIBLE_ARRIBO', 'ERROR_REGISTRO_PUERTO']
-    const isMonitoring = monitoringTypes.includes(localAlert.value?.tipo ?? '') || !!localAlert.value?.metadata?.type
-    if (isMonitoring) return 'Monitoreo Satelital'
-    return 'Access (Externo)'
+    const isMonitoring = monitoringTypes.includes(localAlert.value?.tipo ?? '') || !!meta.type
+    if (isMonitoring) return [{ name: 'VMS' }]
+
+    return [{ name: 'Sistema' }]
+})
+
+
+
+const externalSourceName = computed(() => {
+    const sources = alertSources.value
+    if (sources.length > 0) {
+        // Si hay PNA, priorizar ese nombre para la tabla de comparación si existe
+        const pna = sources.find((s: { name: string }) => s.name === 'PNA')
+        if (pna) return 'PNA (API)'
+        return sources[0].name
+    }
+    return 'Sistema Externo'
 })
 
 // --- Map data resolution ---
@@ -942,8 +990,18 @@ const getBadgeColor = (prio?: string) => {
     }
 }
 
-const getOriginBadgeColor = (type?: string) => {
-    switch (type || '') {
+const getSourceColor = (name: string): 'primary' | 'success' | 'error' | 'warning' | 'info' | 'purple' | 'light' | 'dark' => {
+    const colors: Record<string, 'primary' | 'success' | 'error' | 'warning' | 'info' | 'purple' | 'light' | 'dark'> = {
+        'PNA': 'info',
+        'Access': 'purple',
+        'VMS': 'success',
+        'Sistema': 'light'
+    }
+    return colors[name] || 'light'
+}
+
+const getOriginBadgeColor = (type?: string): 'primary' | 'success' | 'error' | 'warning' | 'info' | 'purple' | 'light' | 'dark' => {
+    switch (type) {
         case 'MAREA': return 'info'
         case 'OBSERVADOR': return 'primary'
         case 'BUQUE': return 'warning'

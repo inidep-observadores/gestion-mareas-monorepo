@@ -13,7 +13,7 @@ export interface AlertMetadata {
     subTipo?: string
 
     /** Fuente de origen de la alerta */
-    source?: 'ACCESS_IMPORT' | 'TRACKING_CSV'
+    source?: 'ACCESS_IMPORT' | 'TRACKING_CSV' | 'API_PNA' | 'PNA' | string
 
     // === Referencias ===
     /** ID del buque relacionado */
