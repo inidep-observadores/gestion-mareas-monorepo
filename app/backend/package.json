@@ -27,6 +27,7 @@
     "seed:prod": "node prisma/seed-minimal.js"
   },
   "dependencies": {
+    "@sigma/types": "workspace:*",
     "@nestjs-modules/mailer": "^2.0.2",
     "@nestjs/bull": "^10.2.1",
     "@nestjs/common": "^11.1.10",

@@ -353,7 +353,7 @@ import {
 
 // Services & Types
 import { type Alerta, alertsService } from '../services/alerts.service'
-import type { AlertMetadata } from '../interfaces/alert-metadata.interface'
+import { AlertMetadata } from '@sigma/types'
 import mareasService from '@/modules/mareas/services/mareas.service'
 import usersAdminApi from '@/modules/admin/services/users.service'
 import type { User } from '@/modules/auth/types/auth.types'

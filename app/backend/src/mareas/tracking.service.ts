@@ -1,7 +1,7 @@
 
 import { Injectable, Logger } from '@nestjs/common';
 import { AlertsService } from '../alerts/alerts.service';
-import { AlertMetadata } from '../alerts/interfaces/alert-metadata.interface';
+import { AlertMetadata } from '@sigma/types';
 import { PrismaService } from '../prisma/prisma.service';
 import { parse } from 'csv-parse/sync';
 import { getDistance } from 'geolib';
@@ -677,6 +677,7 @@ export class TrackingService {
             type,
             subTipo: type,
             nroEtapa,
+            source: 'TRACKING_CSV',
             externalData: {
                 [type === 'ZARPADA' ? 'fechaZarpada' : 'fechaArribo']: date,
                 [type === 'ZARPADA' ? 'puertoZarpadaId' : 'puertoArriboId']: port.id
@@ -879,7 +880,7 @@ export class TrackingService {
             fechaDetectada: date,
             referenciaId: refId,
             referenciaTipo: refTipo,
-            metadata: { ...meta, buqueId },
+            metadata: { ...meta, buqueId, source: 'TRACKING_CSV' },
             visible: true
         });
         return true;

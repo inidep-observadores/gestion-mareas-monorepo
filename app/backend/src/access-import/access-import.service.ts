@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AlertsService } from '../alerts/alerts.service';
 import { AlertaEstado, AlertaPrioridad } from '../alerts/alerts.enums';
-import { AlertMetadata } from '../alerts/interfaces/alert-metadata.interface';
+import { AlertMetadata } from '@sigma/types';
 import { AccessReaderService, ExternalRecord } from './access-reader.service';
 import { ErrorLogsService } from '../common/error-logs/error-logs.service';
 import { TipoMarea } from '../mareas/mareas.constants';

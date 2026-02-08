@@ -1,6 +1,7 @@
 packages:
   - app/backend
   - app/frontend
+  - packages/*
 
 onlyBuiltDependencies:
   - '@nestjs/core'

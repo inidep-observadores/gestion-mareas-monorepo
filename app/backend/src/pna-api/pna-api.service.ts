@@ -7,7 +7,7 @@ import { DateTime } from 'luxon';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { AlertaPrioridad, AlertaEstado } from '../alerts/alerts.enums';
-import { AlertMetadata } from '../alerts/interfaces/alert-metadata.interface';
+import { AlertMetadata } from '@sigma/types';
 import { EventCorrelationService, EventDecisionAction } from '../common/services/event-correlation.service';
 
 interface ProcessingSummary {
@@ -318,7 +318,7 @@ export class PnaApiService {
         marea: any,
     ) {
         // Search for existing alert in time window using centralized correlation service
-        const existingAlert = await this.correlationService.findExistingAlert(buque.id, estado, fechaLocal.toJSDate());
+        const existingAlert = await this.correlationService.findExistingAlert(buque.id, estado, fechaLocal.toJSDate(), marea.id);
 
         if (existingAlert) {
             // Validate existing alert
