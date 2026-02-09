@@ -187,7 +187,7 @@
                               <div class="flex items-center gap-2 mb-2">
                                  <span class="font-black text-sm text-text tabular-nums tracking-tighter">{{
                                     marea.id_marea
-                                 }}</span>
+                                    }}</span>
                                  <span
                                     class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest bg-secondary/10 text-secondary border border-secondary/20">{{
                                        marea.estado }}</span>
@@ -320,7 +320,7 @@
                                  <td class="px-4 py-2 border-r border-border/50">
                                     <div class="flex flex-col">
                                        <span class="font-black text-xs text-text tabular-nums">{{ marea.id_marea
-                                       }}</span>
+                                          }}</span>
                                        <span class="text-[9px] font-bold text-text-muted uppercase tracking-tighter">{{
                                           marea.estado }}</span>
                                     </div>
@@ -330,7 +330,7 @@
                                  </td>
                                  <td class="px-4 py-2 text-xs font-bold text-text border-r border-border/50">{{
                                     marea.pesqueria
-                                 }}</td>
+                                    }}</td>
                                  <td v-if="filterType !== 'OBSERVER'"
                                     class="px-4 py-2 text-xs font-bold text-text border-r border-border/50">{{
                                        marea.observador
@@ -344,7 +344,7 @@
                                  <td v-if="mode === 'CALENDAR'" class="px-4 py-2 text-right">
                                     <span class="font-bold text-xs text-text-muted tabular-nums opacity-80">{{
                                        marea.diasTotales
-                                    }}</span>
+                                       }}</span>
                                  </td>
                               </tr>
                            </tbody>
@@ -952,17 +952,14 @@ const fisheryDualAxisOptions = computed(() => ({
 
 // 6. Operational Profile Chart (Scatter: Mareas vs Days)
 const fisheryProfileSeries = computed(() => {
-   // We want each point to be identifiable. 
-   // Option A: One series per fishery (Color-coded, legend might be big if many)
-   // Option B: One single series with all points (Best for "Profile" visualization)
-   return [{
-      name: 'Pesquerías',
-      data: fisheryDetailData.value.map(f => ({
+   // One series per fishery to enable distinct colors and legends automatically
+   return fisheryDetailData.value.map(f => ({
+      name: f.name,
+      data: [{
          x: f.mareas,
-         y: f.days,
-         name: f.name // Store name for custom tooltip
-      }))
-   }];
+         y: f.days
+      }]
+   }));
 });
 
 const fisheryProfileOptions = computed(() => ({
@@ -971,50 +968,77 @@ const fisheryProfileOptions = computed(() => ({
       zoom: { enabled: true, type: 'xy' },
       toolbar: { show: true }
    },
+   legend: {
+      show: true,
+      position: 'bottom',
+      horizontalAlign: 'center',
+      fontSize: '10px',
+      fontFamily: 'Inter, sans-serif',
+      fontWeight: 600,
+      labels: { colors: 'var(--color-text-muted)' },
+      markers: { radius: 12, size: 6 },
+      itemMargin: { horizontal: 10, vertical: 5 }
+   },
    xaxis: {
       title: {
          text: 'CANTIDAD DE MAREAS (FRECUENCIA)',
          style: { color: 'var(--color-text-muted)', fontSize: '10px', fontWeight: 800 }
       },
       tickAmount: 5,
-      labels: { formatter: (val: number) => Math.floor(val) }
+      labels: {
+         style: { colors: 'var(--color-text-muted)', fontWeight: 600 },
+         formatter: (val: number) => Math.floor(val)
+      }
    },
    yaxis: {
       title: {
          text: 'DÍAS NAVEGADOS (ESFUERZO)',
          style: { color: 'var(--color-text-muted)', fontSize: '10px', fontWeight: 800 }
       },
-      labels: { formatter: (val: number) => Math.floor(val) }
+      labels: {
+         style: { colors: 'var(--color-text-muted)', fontWeight: 600 },
+         formatter: (val: number) => Math.floor(val)
+      }
    },
    markers: {
-      size: 8,
+      size: 9,
       strokeWidth: 2,
       strokeOpacity: 0.8,
-      fillOpacity: 0.6,
-      hover: { size: 10 }
+      fillOpacity: 0.7,
+      hover: { size: 11 }
    },
-   colors: ['#8b5cf6'], // Purple tone for differentiation
+   // Diverse premium color palette
+   colors: ['#0ea5e9', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#ec4899', '#6366f1', '#14b8a6', '#f43f5e', '#84cc16', '#22c55e', '#a855f7'],
    grid: {
+      borderColor: 'var(--color-border)',
+      opacity: 0.1,
+      strokeDashArray: 4,
       xaxis: { lines: { show: true } },
       yaxis: { lines: { show: true } }
    },
    tooltip: {
       custom: ({ series, seriesIndex, dataPointIndex, w }: any) => {
          const data = w.config.series[seriesIndex].data[dataPointIndex];
+         const name = w.config.series[seriesIndex].name;
+         const color = w.globals.colors[seriesIndex];
+
          return `
-           <div class="px-4 py-3 bg-surface text-text border border-border rounded-xl flex flex-col gap-1 shadow-2xl min-w-[180px]">
-             <span class="text-[10px] font-black text-primary uppercase tracking-widest border-b border-border pb-1 mb-1">${data.name}</span>
-             <div class="flex justify-between items-center gap-4">
-               <span class="text-text-muted text-[10px] font-bold">FRECUENCIA:</span>
-               <span class="text-text font-black text-xs">${data.x} Mareas</span>
+           <div class="px-4 py-3 bg-surface text-text border border-border rounded-xl flex flex-col gap-1 shadow-2xl min-w-[200px]">
+             <div class="flex items-center gap-2 border-b border-border pb-1.5 mb-1.5">
+               <span class="w-2.5 h-2.5 rounded-full" style="background:${color}"></span>
+               <span class="text-[10px] font-black text-text uppercase tracking-widest">${name}</span>
              </div>
              <div class="flex justify-between items-center gap-4">
-               <span class="text-text-muted text-[10px] font-bold">ESFUERZO:</span>
-               <span class="text-text font-black text-xs">${data.y} Días</span>
+               <span class="text-text-muted text-[10px] font-bold uppercase tracking-tighter">Frecuencia:</span>
+               <span class="text-text font-black text-xs tabular-nums">${data.x} Mareas</span>
              </div>
-             <div class="mt-2 pt-1 border-t border-border/50 flex justify-between items-center">
+             <div class="flex justify-between items-center gap-4">
+               <span class="text-text-muted text-[10px] font-bold uppercase tracking-tighter">Esfuerzo:</span>
+               <span class="text-text font-black text-xs tabular-nums">${data.y} Días</span>
+             </div>
+             <div class="mt-2 pt-1.5 border-t border-border/50 flex justify-between items-center">
                 <span class="text-text-muted text-[9px] font-black italic uppercase">Intensidad:</span>
-                <span class="text-primary font-black text-[10px]">${(data.y / data.x).toFixed(1)} días/marea</span>
+                <span class="text-primary font-black text-[11px] tabular-nums">${(data.y / data.x).toFixed(1)} días/marea</span>
              </div>
            </div>
          `;
