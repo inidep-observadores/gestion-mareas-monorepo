@@ -1,4 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import axios from 'axios';
 import { PrismaService } from '../prisma/prisma.service';
 import { AlertsService } from '../alerts/alerts.service';
 import { PnaApiParser } from './pna-api.parser';
@@ -7,7 +9,7 @@ import { DateTime } from 'luxon';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { AlertaPrioridad, AlertaEstado } from '../alerts/alerts.enums';
-import { AlertMetadata } from '@sigma/types';
+import { AlertMetadata } from '../alerts/interfaces/alert-metadata.interface';
 import { EventCorrelationService, EventDecisionAction } from '../common/services/event-correlation.service';
 
 interface ProcessingSummary {
@@ -30,6 +32,7 @@ export class PnaApiService {
         private alertsService: AlertsService,
         private parser: PnaApiParser,
         private correlationService: EventCorrelationService,
+        private configService: ConfigService,
     ) { }
 
     /**
@@ -49,17 +52,18 @@ export class PnaApiService {
 
         try {
             // 1. Determinar rango de fechas
-            const now = DateTime.now().setZone(this.TIMEZONE);
-            const effectiveToDate = toDate ? DateTime.fromJSDate(toDate).setZone(this.TIMEZONE) : now;
+            // 1. Determinar rango de fechas
+            const now = DateTime.now().toUTC();
+            const effectiveToDate = toDate ? DateTime.fromJSDate(toDate).toUTC() : now;
 
             let effectiveFromDate: DateTime;
             if (fromDate) {
-                effectiveFromDate = DateTime.fromJSDate(fromDate).setZone(this.TIMEZONE);
+                effectiveFromDate = DateTime.fromJSDate(fromDate).toUTC();
             } else {
                 const lastSync = await this.getLastSuccessfulSyncDate();
                 // Si no hay última sincro, usamos una ventana por defecto de 48hs
                 effectiveFromDate = lastSync
-                    ? DateTime.fromJSDate(lastSync).setZone(this.TIMEZONE)
+                    ? DateTime.fromJSDate(lastSync).toUTC()
                     : now.minus({ days: 2 });
             }
 
@@ -68,9 +72,18 @@ export class PnaApiService {
             const endRange = effectiveToDate.endOf('day');
 
             this.logger.log(`Iniciando sincronización PNA: ${startRange.toFormat('yyyy-MM-dd HH:mm:ss')} -> ${endRange.toFormat('yyyy-MM-dd HH:mm:ss')}`);
-            // Read mock XML file
-            const mockPath = join(process.cwd(), 'old_data', 'zarpadas_y_arribos.asmx');
-            const xmlContent = readFileSync(mockPath, 'utf-8');
+
+            let xmlContent: string;
+            const useMock = this.configService.get<string>('USE_MOCK_FISHERY_API') !== 'false';
+
+            if (useMock) {
+                this.logger.log('Modo Mock activado: Leyendo archivo local');
+                const mockPath = join(process.cwd(), 'old_data', 'zarpadas_y_arribos.asmx');
+                xmlContent = readFileSync(mockPath, 'utf-8');
+            } else {
+                this.logger.log('Modo API Real activado: Consultando servicio web PNA');
+                xmlContent = await this.fetchFromApi(startRange.toJSDate(), endRange.toJSDate());
+            }
 
             // Parse XML
             const apiResponse = await this.parser.parseXml(xmlContent);
@@ -121,6 +134,55 @@ export class PnaApiService {
             return summary;
         } catch (error) {
             this.logger.error('Error in processMovements:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Realiza la llamada SOAP a la API de PNA.
+     */
+    private async fetchFromApi(desde: Date, hasta: Date): Promise<string> {
+        const endpoint = this.configService.get<string>('PNA_API_ENDPOINT');
+        const user = this.configService.get<string>('PNA_API_USER');
+        const password = this.configService.get<string>('PNA_API_PASSWORD');
+        const timeout = parseInt(this.configService.get<string>('PNA_API_TIMEOUT') || '30000', 10);
+
+        if (!endpoint || !user || !password) {
+            throw new Error('Configuración incompleta para API PNA (ENDPOINT, USER, PASSWORD)');
+        }
+
+        // Formato fechas: yyyy-MM-dd HH:mm:ss
+        // Formato fechas: yyyy-MM-dd HH:mm:ss
+        const desdeStr = DateTime.fromJSDate(desde).toUTC().toFormat('yyyy-MM-dd HH:mm:ss');
+        const hastaStr = DateTime.fromJSDate(hasta).toUTC().toFormat('yyyy-MM-dd HH:mm:ss');
+
+        const envelope = `<?xml version="1.0" encoding="utf-8"?>
+<soap12:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap12="http://www.w3.org/2003/05/soap-envelope">
+  <soap12:Body>
+    <GetArribosYZarpadas xmlns="http://200.41.238.203/">
+      <user>${user}</user>
+      <password>${password}</password>
+      <desde>${desdeStr}</desde>
+      <hasta>${hastaStr}</hasta>
+    </GetArribosYZarpadas>
+  </soap12:Body>
+</soap12:Envelope>`;
+
+        try {
+            this.logger.log(`Calling PNA API: ${endpoint} (Range: ${desdeStr} - ${hastaStr})`);
+            const response = await axios.post(endpoint, envelope, {
+                timeout,
+                headers: {
+                    'Content-Type': 'application/soap+xml; charset=utf-8',
+                },
+            });
+
+            return response.data;
+        } catch (error) {
+            if (axios.isAxiosError(error)) {
+                this.logger.error(`Error HTTP ${error.response?.status} calling PNA API: ${error.message}`);
+                throw new Error(`Error de comunicación con PNA API: ${error.message}`);
+            }
             throw error;
         }
     }

@@ -8,6 +8,8 @@ import { EventCorrelationService } from '../common/services/event-correlation.se
 import { DateTime } from 'luxon';
 import { PnaReporteCostera } from './pna-api.interfaces';
 
+import { ConfigService } from '@nestjs/config';
+
 describe('PnaApiService - Reglas de Negocio Unificadas', () => {
     let service: PnaApiService;
     let prisma: PrismaService;
@@ -43,6 +45,13 @@ describe('PnaApiService - Reglas de Negocio Unificadas', () => {
         parseXml: jest.fn(),
     };
 
+    const mockConfigService = {
+        get: jest.fn((key: string) => {
+            if (key === 'USE_MOCK_FISHERY_API') return 'true';
+            return null;
+        }),
+    };
+
     beforeEach(async () => {
         jest.clearAllMocks();
 
@@ -63,6 +72,7 @@ describe('PnaApiService - Reglas de Negocio Unificadas', () => {
                 { provide: PrismaService, useValue: mockPrismaService },
                 { provide: AlertsService, useValue: mockAlertsService },
                 { provide: PnaApiParser, useValue: mockParser },
+                { provide: ConfigService, useValue: mockConfigService },
             ],
         }).compile();
 
@@ -388,13 +398,12 @@ describe('PnaApiService - Reglas de Negocio Unificadas', () => {
                     error: false
                 });
 
-                // Mock findVessel para que no falle el procesamiento
                 mockPrismaService.buque.findFirst.mockResolvedValue(mockBuque);
 
                 const summary = await service.processMovements();
 
-                expect(summary.processed).toBe(2);
-                expect(summary.skipped).toBe(1);
+                expect(summary.processed).toBe(3); // En lógica UTC, los 3 caen el día 15
+                expect(summary.skipped).toBe(0);
             });
         });
     });
