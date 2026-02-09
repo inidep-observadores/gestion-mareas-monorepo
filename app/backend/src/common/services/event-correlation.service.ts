@@ -38,10 +38,7 @@ export class EventCorrelationService {
         const TIMEZONE = process.env.APP_TIMEZONE || 'America/Argentina/Buenos_Aires';
         const eventDate = DateTime.fromJSDate(date).setZone(TIMEZONE);
 
-        // 1. Deduplicación funcional: ¿Ya existe una alerta (PNA, Tracking u otro)?
-        const existingAlert = await this.findExistingAlert(buqueId, type, date);
-
-        // 2. Encontrar las mareas potenciales (DESIGNADA o EN_EJECUCION)
+        // 1. Encontrar las mareas potenciales (DESIGNADA o EN_EJECUCION)
         const mareas = await this.prisma.marea.findMany({
             where: {
                 buqueId,
@@ -60,12 +57,18 @@ export class EventCorrelationService {
         const mareaDesignada = mareas.find(m => m.estadoActual.codigo === 'DESIGNADA');
         const mareaEnEjecucion = mareas.find(m => m.estadoActual.codigo === 'EN_EJECUCION');
 
-        // Determinar marea objetivo inicial según tipo de evento
+        // REGLA: Para ZARPADA, priorizamos DESIGNADA (la más reciente/por empezar)
+        // Para ARRIBO, priorizamos EN_EJECUCION (la actual)
         let mareaMatch = type === 'ZARPADA'
             ? (mareaDesignada || mareaEnEjecucion)
             : (mareaEnEjecucion || mareaDesignada);
 
         if (!mareaMatch) return { action: EventDecisionAction.NO_MATCH, marea: null };
+
+        // 2. Deduplicación funcional: ¿Ya existe una alerta (PNA, Tracking u otro)?
+        // REGLA: Si tenemos una marea candidata, la deduplicación debe ser ESTRICTA para esa marea.
+        // Esto evita que alertas de mareas anteriores bloqueen las alertas de la marea nueva.
+        const existingAlert = await this.findExistingAlert(buqueId, type, date, mareaMatch.id);
 
         // 3. Caso Deduplicación: Si ya existe alerta, indicamos VALIDAR (Source Stacking)
         if (existingAlert) {
@@ -122,9 +125,10 @@ export class EventCorrelationService {
             return { action: EventDecisionAction.CREATE_ALERT, marea: mareaMatch };
         } else {
             // ARRIBO
-            // REGLA: Si la marea está DESIGNADA, ignoramos los arribos (solo buscamos la Zarpada)
-            if (mareaMatch.estadoActual.codigo === 'DESIGNADA') {
-                return { action: EventDecisionAction.NO_MATCH, marea: mareaMatch };
+            // REGLA: Si no hay marea EN_EJECUCION, ignoramos los arribos (aunque haya una DESIGNADA)
+            if (!mareaEnEjecucion) {
+                this.logger.debug(`Ignorando ARRIBO para buque ${buqueId}: Solo existe marea DESIGNADA o ninguna.`);
+                return { action: EventDecisionAction.NO_MATCH, marea: mareaDesignada || null };
             }
 
             if (mareaEnEjecucion) {
@@ -240,8 +244,9 @@ export class EventCorrelationService {
     /**
      * Busca alertas existentes en el sistema que puedan referirse al mismo evento.
      * Realiza una búsqueda bidireccional entre tipos 'ARRIBO'/'POSIBLE_ARRIBO'.
+     * Prioriza la búsqueda por mareaId (referenciaId) si se proporciona.
      */
-    async findExistingAlert(buqueId: string, type: 'ZARPADA' | 'ARRIBO', date: Date) {
+    async findExistingAlert(buqueId: string, type: 'ZARPADA' | 'ARRIBO', date: Date, mareaId?: string) {
         const windowStart = DateTime.fromJSDate(date).minus({ hours: this.ALERT_WINDOW_HOURS }).toJSDate();
         const windowEnd = DateTime.fromJSDate(date).plus({ hours: this.ALERT_WINDOW_HOURS }).toJSDate();
 
@@ -250,18 +255,24 @@ export class EventCorrelationService {
             ? ['ZARPADA', 'POSIBLE_ZARPADA']
             : ['ARRIBO', 'POSIBLE_ARRIBO'];
 
+        // REGLA: Si conocemos la mareaId, la búsqueda debe ser ESTRICTA por marea.
+        // Si no, usamos el buqueId como fallback general.
+        const filterCriteria = mareaId ? {
+            referenciaId: mareaId,
+            referenciaTipo: 'MAREA'
+        } : {
+            metadata: {
+                path: ['buqueId'],
+                equals: buqueId
+            }
+        };
+
         return this.prisma.alerta.findFirst({
             where: {
                 estado: { in: [AlertaEstado.PENDIENTE, AlertaEstado.SEGUIMIENTO] },
                 fechaDetectada: { gte: windowStart, lte: windowEnd },
                 AND: [
-                    // 1) Filtro de Buque (Obligatorio)
-                    {
-                        metadata: {
-                            path: ['buqueId'],
-                            equals: buqueId
-                        }
-                    },
+                    filterCriteria as any,
                     // 2) Filtro de Tipo (Cualquier coincidencia semántica)
                     {
                         OR: [

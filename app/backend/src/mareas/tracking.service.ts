@@ -1,7 +1,7 @@
 
 import { Injectable, Logger } from '@nestjs/common';
 import { AlertsService } from '../alerts/alerts.service';
-import { AlertMetadata } from '@sigma/types';
+import { AlertMetadata } from '../alerts/interfaces/alert-metadata.interface';
 import { PrismaService } from '../prisma/prisma.service';
 import { parse } from 'csv-parse/sync';
 import { getDistance } from 'geolib';

@@ -17,7 +17,7 @@ describe('PnaApiService - Reglas de Negocio Unificadas', () => {
 
     const mockPrismaService = {
         buque: { findFirst: jest.fn() },
-        puerto: { findFirst: jest.fn(), findMany: jest.fn() },
+        puerto: { findFirst: jest.fn(), findMany: jest.fn(), findUnique: jest.fn() },
         marea: { findMany: jest.fn() },
         alerta: {
             findFirst: jest.fn(),
@@ -153,6 +153,24 @@ describe('PnaApiService - Reglas de Negocio Unificadas', () => {
             );
             expect(mockAlertsService.create).not.toHaveBeenCalled();
         });
+
+        it('debe incluir portId en los metadatos de la alerta si el puerto se resuelve exitosamente', async () => {
+            const reporte = generateReport({ id_costera: 'MDP' });
+
+            mockPrismaService.buque.findFirst.mockResolvedValue(mockBuque);
+            mockPrismaService.puerto.findFirst.mockResolvedValue(mockPuertos[0]); // MDP
+            mockPrismaService.pnaApiSnapshot.findUnique.mockResolvedValue(null);
+            mockPrismaService.marea.findMany.mockResolvedValue([generateMarea()]);
+
+            await (service as any).processSingleReport(reporte);
+
+            expect(mockAlertsService.create).toHaveBeenCalledWith(expect.objectContaining({
+                metadata: expect.objectContaining({
+                    portId: 'port-mdp',
+                    portName: 'Mar del Plata'
+                })
+            }));
+        });
     });
 
     describe('Asignación a Marea Correcta', () => {
@@ -207,6 +225,9 @@ describe('PnaApiService - Reglas de Negocio Unificadas', () => {
                     puertoZarpadaId: 'port-mdp' // MDP != USH
                 }]
             })]);
+
+            // Mock para puerto local en la marea
+            mockPrismaService.puerto.findUnique.mockResolvedValue(mockPuertos[0]); // Mar del Plata
 
             await (service as any).processSingleReport(reporte);
 

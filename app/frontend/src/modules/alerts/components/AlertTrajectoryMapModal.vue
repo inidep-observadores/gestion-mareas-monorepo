@@ -10,6 +10,17 @@
                     trayectoria...</span>
             </div>
 
+            <!-- Coverage Alert Overlay -->
+            <div v-if="!loading && coverageStatus !== 'COMPLETE'" 
+                 class="absolute top-20 left-1/2 -translate-x-1/2 z-[1500] w-full max-w-lg animate-in slide-in-from-top duration-500">
+                <Alert v-if="coverageStatus === 'NO_DATA'" variant="error" 
+                    title="SIN DATOS DE SEGUIMIENTO" 
+                    message="No se encontraron posiciones para el buque en el rango de tiempo del evento." />
+                <Alert v-else-if="coverageStatus === 'PARTIAL_DATA'" variant="warning" 
+                    title="DATOS INCOMPLETOS" 
+                    :message="coverageMessage" />
+            </div>
+
             <!-- Map -->
             <MapMonitor v-if="fleetData" ref="mapMonitor" class="w-full h-full" :fleet="fleetData"
                 :activeLayers="mapLayers" @update:mouse-coords="mouseCoords = $event" @seek-vessel="handleSeekVessel" />
@@ -62,6 +73,7 @@ import VesselInfoCard from '@/modules/monitor/components/VesselInfoCard.vue'
 import TimelinePlayer from '@/modules/monitor/components/TimelinePlayer.vue'
 import MouseCoordinates from '@/modules/monitor/components/MouseCoordinates.vue'
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
+import Alert from '@/components/ui/Alert.vue'
 import httpClient from '@/config/http/http.client'
 import type { LatLng } from 'leaflet'
 
@@ -81,6 +93,11 @@ const loading = ref(false)
 const fleetData = ref<Record<string, VesselTrajectory>>({})
 const mouseCoords = ref<LatLng | null>(null)
 const mapMonitor = ref<InstanceType<typeof MapMonitor> | null>(null)
+
+// Coverage validation
+const coverageStatus = ref<'COMPLETE' | 'PARTIAL_DATA' | 'NO_DATA'>('COMPLETE')
+const coverageMessage = ref('')
+const COVERAGE_TOLERANCE_MS = 2 * 60 * 60 * 1000 // 2 hours tolerance
 
 // Playback state
 const isPlaying = ref(false)
@@ -150,6 +167,38 @@ const fetchTrajectory = async () => {
 
         const response = await httpClient.get(`/tracking/history/${props.vesselId}`, { params })
         const points = response.data
+
+        // Validate Coverage
+        if (!points || points.length === 0) {
+            coverageStatus.value = 'NO_DATA'
+        } else {
+            const firstPointTime = new Date(points[0].timestamp).getTime()
+            const lastPointTime = new Date(points[points.length - 1].timestamp).getTime()
+            const startLimit = startDate.getTime()
+            const endLimit = endDate.getTime()
+
+            const startGap = firstPointTime - startLimit
+            const endGap = endLimit - lastPointTime
+
+            if (startGap > COVERAGE_TOLERANCE_MS || endGap > COVERAGE_TOLERANCE_MS) {
+                coverageStatus.value = 'PARTIAL_DATA'
+                
+                const formatTime = (ms: number) => {
+                    const hours = Math.floor(Math.abs(ms) / (1000 * 60 * 60))
+                    return hours > 0 ? `${hours}h` : 'menos de 1h'
+                }
+
+                if (startGap > COVERAGE_TOLERANCE_MS && endGap > COVERAGE_TOLERANCE_MS) {
+                    coverageMessage.value = `Faltan datos al inicio (gap de ${formatTime(startGap)}) y al final (gap de ${formatTime(endGap)}) del evento.`
+                } else if (startGap > COVERAGE_TOLERANCE_MS) {
+                    coverageMessage.value = `Faltan datos al inicio del evento (comienzan ${formatTime(startGap)} después).`
+                } else {
+                    coverageMessage.value = `Faltan datos al final del evento (terminan ${formatTime(endGap)} antes).`
+                }
+            } else {
+                coverageStatus.value = 'COMPLETE'
+            }
+        }
 
         // Build single-vessel fleet object
         fleetData.value = {

@@ -1,8 +1,6 @@
 /**
- * Metadata estándar para alertas del sistema
- * 
- * Esta interfaz define la estructura de metadatos que pueden acompañar
- * a las alertas generadas por diferentes fuentes (Access Import, Tracking CSV, etc.)
+ * Metadata estándar para alertas del sistema SIGMA
+ * CENTRALIZADO: Este archivo es la ÚNICA fuente de verdad para AlertMetadata.
  */
 export interface AlertMetadata {
     // === Campos Comunes ===
@@ -56,22 +54,11 @@ export interface AlertMetadata {
 
     // === Datos Externos (de sistemas externos como Access o Tracking) ===
     externalData?: {
-        /** Fecha de zarpada según sistema externo */
         fechaZarpada?: Date | string;
-
-        /** Fecha de arribo según sistema externo */
         fechaArribo?: Date | string;
-
-        /** ID de puerto de zarpada según sistema externo */
         puertoZarpadaId?: string;
-
-        /** ID de puerto de arribo según sistema externo */
         puertoArriboId?: string;
-
-        /** Nombre de buque según sistema externo */
         buque?: string;
-
-        /** Número de marea según sistema externo */
         nroMarea?: number;
 
         /** Campos específicos de PNA */
@@ -81,50 +68,32 @@ export interface AlertMetadata {
         senial?: string;
         matricula?: string;
 
-        /** Información del observador externo (cuando no hay match local) */
+        /** Información del observador externo */
         observer?: {
             nombre?: string;
             apellido?: string;
             codigo?: string;
         };
 
-        /** Otros datos específicos del sistema externo */
         [key: string]: any;
     };
 
     // === Datos Locales (del sistema local) ===
     localData?: {
-        /** Fecha de zarpada local */
         fechaZarpada?: Date | string;
-
-        /** Fecha de arribo local */
         fechaArribo?: Date | string;
-
-        /** ID de la etapa local */
         id?: string;
-
-        /** Otros datos locales */
         [key: string]: any;
     };
 
-    // === Campos Específicos de Access Import ===
     /** ID externo del registro en Access */
     idExterno?: string;
 
-    // === Campos Adicionales ===
-
-    /** Nombre del observador (alias) */
+    /** Alias y campos adicionales */
     observerName?: string;
-
-    /** Nombre del buque (alias) */
     vessel?: string;
-
-    /** Fecha específica */
     date?: Date | string;
-
-    /** Días de retraso en entrega */
     busDays?: number;
 
-    /** Permite campos adicionales no tipados */
     [key: string]: any;
 }

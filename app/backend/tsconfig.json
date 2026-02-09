@@ -17,11 +17,6 @@
     "noImplicitAny": false,
     "strictBindCallApply": false,
     "forceConsistentCasingInFileNames": false,
-    "noFallthroughCasesInSwitch": false,
-    "paths": {
-      "@sigma/types": [
-        "../../packages/types/src"
-      ]
-    }
+    "noFallthroughCasesInSwitch": false
   }
 }

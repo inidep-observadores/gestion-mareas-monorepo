@@ -1,0 +1,12 @@
+{
+    "name": "@sigma/types",
+    "version": "1.0.0",
+    "description": "Tipos y contratos compartidos del sistema SIGMA",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "private": true,
+    "scripts": {
+        "build": "tsc",
+        "dev": "tsc -w"
+    }
+}

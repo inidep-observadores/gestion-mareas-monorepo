@@ -5,8 +5,10 @@ import { PrismaModule } from '../prisma/prisma.module';
 import { CommonModule } from '../common/common.module';
 import { AlertsModule } from '../alerts/alerts.module';
 
+import { ConfigModule } from '@nestjs/config';
+
 @Module({
-    imports: [PrismaModule, AlertsModule, CommonModule],
+    imports: [PrismaModule, AlertsModule, CommonModule, ConfigModule],
     providers: [PnaApiService, PnaApiParser],
     exports: [PnaApiService],
 })

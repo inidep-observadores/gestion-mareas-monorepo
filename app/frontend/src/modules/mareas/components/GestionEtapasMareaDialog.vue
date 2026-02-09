@@ -333,7 +333,7 @@ watch(() => props.show, (val) => {
     loadZonaAustralData();
 
     // Set initial expansion states based on mode
-    etapasExpanded.value = props.mode === 'EDITAR';
+    etapasExpanded.value = props.mode === 'EDITAR' || (props.mode === 'INICIAR' && form.value.stages.length > 0);
     zonaAustralExpanded.value = props.mode === 'FINALIZAR';
 
     nextTick(() => {

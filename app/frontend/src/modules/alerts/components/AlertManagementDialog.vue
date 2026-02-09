@@ -353,7 +353,7 @@ import {
 
 // Services & Types
 import { type Alerta, alertsService } from '../services/alerts.service'
-import { AlertMetadata } from '@sigma/types'
+import type { AlertMetadata } from '../interfaces/alert-metadata.interface'
 import mareasService from '@/modules/mareas/services/mareas.service'
 import usersAdminApi from '@/modules/admin/services/users.service'
 import type { User } from '@/modules/auth/types/auth.types'
@@ -915,12 +915,14 @@ const prepareStagesData = async (isNewStageConfig = false) => {
 
         if (isNewStageConfig) {
             const lastStage = currentStages.length > 0 ? currentStages[currentStages.length - 1] : null
+            // Heredar del último o usar puerto de alerta/base
+            const portFromAlert = localAlert.value.metadata?.portId || ext.puertoZarpadaId || ext.portId;
+            const puertoZarpadaId = portFromAlert || lastStage?.puertoArriboId || marea.puertoBaseId || '';
 
             const newStage = {
                 id: null, // Nueva etapa
                 nroEtapa: (lastStage?.nroEtapa || 0) + 1,
-                // Heredar del último o usar puerto base
-                puertoZarpadaId: ext.puertoZarpadaId || lastStage?.puertoArriboId || marea.puertoBaseId || '',
+                puertoZarpadaId: puertoZarpadaId,
                 // Usar datos del alerta para fechas
                 fechaZarpada: ext.fechaZarpada || '',
                 puertoArriboId: ext.puertoArriboId || '', // Sugerir si viene en el alerta

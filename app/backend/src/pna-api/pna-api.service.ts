@@ -152,7 +152,6 @@ export class PnaApiService {
         }
 
         // Formato fechas: yyyy-MM-dd HH:mm:ss
-        // Formato fechas: yyyy-MM-dd HH:mm:ss
         const desdeStr = DateTime.fromJSDate(desde).toUTC().toFormat('yyyy-MM-dd HH:mm:ss');
         const hastaStr = DateTime.fromJSDate(hasta).toUTC().toFormat('yyyy-MM-dd HH:mm:ss');
 
@@ -194,12 +193,14 @@ export class PnaApiService {
         const comboId = this.parser.generateComboId(reporte);
 
         // Check if already processed
-        const existing = await (this.prisma as any).pnaApiSnapshot.findUnique({
+        const existing = await this.prisma.pnaApiSnapshot.findUnique({
             where: { externalComboId: comboId },
         });
 
-        if (existing) {
-            this.logger.debug(`Reporte ${comboId} already processed, skipping`);
+        // REGLA: Si el snapshot existe Y ya tiene un alertId, lo salteamos.
+        // Si existe pero NO tiene alertId, permitimos el re-procesamiento por si ahora sí hay una marea cargada.
+        if (existing && existing.alertId) {
+            this.logger.debug(`Reporte ${comboId} already processed with alert ${existing.alertId}, skipping`);
             return { processed: false, alertCreated: false, alertValidated: false };
         }
 
@@ -210,64 +211,55 @@ export class PnaApiService {
         // Find vessel
         const buque = await this.findVessel(reporte);
         if (!buque) {
-            this.logger.warn(`Vessel not found for reporte: ${reporte.nombre} (MBPC: ${reporte.id_buque_mbpc})`);
-            // Still save snapshot for audit
-            await this.createSnapshot(reporte, comboId, fechaLocal.toJSDate(), null);
-            return { processed: true, alertCreated: false, alertValidated: false };
+            // Manejo de Snapshot sin buque (solo si no existe el snapshot previo)
+            if (!existing) {
+                await this.createSnapshot(reporte, comboId, fechaUtc.toJSDate(), null);
+            }
+            return { processed: false, alertCreated: false, alertValidated: false };
         }
 
         // Find puerto
         const puerto = await this.findPuerto(reporte.id_costera);
 
-        // Create snapshot (always created for audit)
-        const snapshot = await this.createSnapshot(reporte, comboId, fechaLocal.toJSDate(), null);
-
-        // 1. Evaluar contexto del evento usando el servicio centralizado (Reglas unificadas)
-        const allPorts = await this.prisma.puerto.findMany({ where: { activo: true } });
         const decision = await this.correlationService.evaluateEventContext(
             buque.id,
             reporte.estado,
-            fechaLocal.toJSDate(),
+            fechaUtc.toJSDate(),
             puerto?.id,
-            reporte.nombre_costera,
-            allPorts
+            reporte.nombre_costera || puerto?.nombre,
         );
 
         let alertResult: { alertId?: string, created: boolean, validated: boolean } = { created: false, validated: false };
 
         switch (decision.action) {
             case EventDecisionAction.VALIDATE_ALERT:
-                this.logger.log(`Validating existing alert ${decision.existingAlert.id} with PNA API source`);
-                await this.alertsService.addValidationSource(
-                    decision.existingAlert.id,
-                    'API_PNA',
-                    {
-                        fecha: fechaLocal.toISO(),
-                        id_costera: reporte.id_costera,
-                        nombre_costera: reporte.nombre_costera,
-                        source: 'API_PNA',
-                    },
-                );
-                alertResult = { alertId: decision.existingAlert.id, created: false, validated: true };
-                break;
-
-            case EventDecisionAction.DISCREPANCY_PORT:
-                const discPort = await this.createDiscrepancyAlert(buque, reporte.estado, puerto || { nombre: reporte.nombre_costera }, fechaLocal, decision.marea, decision.stageMatch, allPorts, reporte);
-                alertResult = { alertId: discPort.id, created: true, validated: false };
-                break;
-
-            case EventDecisionAction.DISCREPANCY_DATE:
-                const discDate = await this.createDateInconsistencyAlert(buque, reporte.estado, puerto || { nombre: reporte.nombre_costera }, fechaLocal, decision.marea, decision.stageMatch, reporte);
-                alertResult = { alertId: discDate.id, created: true, validated: false };
-                break;
-
-            case EventDecisionAction.RECOMMEND_FIN_MAREA:
-                const recFin = await this.createRecommendationFinMarea(buque, puerto || { nombre: reporte.nombre_costera }, fechaLocal, decision.marea, decision.mareaSiguiente, reporte);
-                alertResult = { alertId: recFin.id, created: true, validated: false };
+                this.logger.log(`Validating existing alert ${decision.existingAlert!.id} with PNA API source`);
+                await this.alertsService.addValidationSource(decision.existingAlert!.id, 'API_PNA', {
+                    fecha: fechaLocal.toISO(),
+                    id_costera: reporte.id_costera,
+                    nombre_costera: reporte.nombre_costera,
+                    source: 'API_PNA',
+                });
+                alertResult = { alertId: decision.existingAlert!.id, created: false, validated: true };
                 break;
 
             case EventDecisionAction.CREATE_ALERT:
                 alertResult = await this.handleAlert(buque, reporte.estado, fechaLocal, puerto, reporte, decision.marea);
+                break;
+
+            case EventDecisionAction.DISCREPANCY_PORT:
+                const alertDiscPort = await this.createDiscrepancyAlert(buque, reporte.estado, puerto, fechaLocal, decision.marea, decision.stageMatch, reporte);
+                alertResult = { alertId: alertDiscPort.id, created: true, validated: false };
+                break;
+
+            case EventDecisionAction.DISCREPANCY_DATE:
+                const alertDiscDate = await this.createDateInconsistencyAlert(buque, reporte.estado, puerto, fechaLocal, decision.marea, decision.stageMatch, reporte);
+                alertResult = { alertId: alertDiscDate.id, created: true, validated: false };
+                break;
+
+            case EventDecisionAction.RECOMMEND_FIN_MAREA:
+                const alertRecFin = await this.createRecommendationFinMarea(buque, puerto, fechaLocal, decision.marea, decision.mareaSiguiente, reporte);
+                alertResult = { alertId: alertRecFin.id, created: true, validated: false };
                 break;
 
             case EventDecisionAction.IGNORE_OLD:
@@ -276,16 +268,24 @@ export class PnaApiService {
 
             case EventDecisionAction.NO_MATCH:
             default:
+                // Si no hay marea, guardamos snapshot sin alertId (si no existía)
+                if (!existing) {
+                    await this.createSnapshot(reporte, comboId, fechaUtc.toJSDate(), null);
+                }
                 this.logger.debug(`Skipping alert for ${buque.nombreBuque}: Event already registered or no matchable tide`);
                 return { processed: true, alertCreated: false, alertValidated: false };
         }
 
-        // Update snapshot with alert link
+        // Vincular la alerta al snapshot (existente o nuevo)
         if (alertResult.alertId) {
-            await (this.prisma as any).pnaApiSnapshot.update({
-                where: { id: snapshot.id },
-                data: { alertId: alertResult.alertId },
-            });
+            if (existing) {
+                await this.prisma.pnaApiSnapshot.update({
+                    where: { id: existing.id },
+                    data: { alertId: alertResult.alertId }
+                });
+            } else {
+                await this.createSnapshot(reporte, comboId, fechaUtc.toJSDate(), alertResult.alertId);
+            }
         }
 
         return {
@@ -294,6 +294,7 @@ export class PnaApiService {
             alertValidated: alertResult.validated,
         };
     }
+
 
 
     /**
@@ -402,17 +403,17 @@ export class PnaApiService {
         this.logger.log(`Creating new alert for ${estado} detected by PNA API`);
 
         const yearSuffix = String(marea.anioMarea).slice(-2);
-        const mareaLabel = marea.tipoMarea === 'CI' ? `CI-${yearSuffix}` : `MC-${marea.nroMarea}-${yearSuffix}`;
+        const mareaLabel = marea.tipoMarea === 'CI' ? `CI - ${yearSuffix} ` : `MC - ${marea.nroMarea} -${yearSuffix} `;
         const dateStr = fechaLocal.toFormat('dd/MM HH:mm');
         const portName = puerto?.nombre || reporte.nombre_costera || 'Puerto Desconocido';
 
         const sufijo = estado === 'ARRIBO' ? 'detectado' : 'detectada';
         const titulo = `${buque.nombreBuque}: ${estado} ${sufijo} en ${portName} el ${dateStr} (PNA)`;
         const descripcion = `Se detectó un evento de ${estado.toLowerCase()} informado por Prefectura Naval Argentina.\n\n` +
-            `Buque: ${buque.nombreBuque}\n` +
-            `Puerto: ${portName}\n` +
-            `Fecha: ${fechaLocal.toFormat('dd/MM/yyyy HH:mm')}\n` +
-            `Marea: ${mareaLabel}\n\n` +
+            `Buque: ${buque.nombreBuque} \n` +
+            `Puerto: ${portName} \n` +
+            `Fecha: ${fechaLocal.toFormat('dd/MM/yyyy HH:mm')} \n` +
+            `Marea: ${mareaLabel} \n\n` +
             `Origen: Reporte oficial API PNA.`;
 
         const metadata: AlertMetadata = {
@@ -424,7 +425,7 @@ export class PnaApiService {
             mareaId: marea.id,
             mareaCode: mareaLabel,
             vesselName: buque.nombreBuque,
-            observerName: marea.observadorPrincipal ? `${marea.observadorPrincipal.nombre} ${marea.observadorPrincipal.apellido}` : 'Sin Observador',
+            observerName: marea.observadorPrincipal ? `${marea.observadorPrincipal.nombre} ${marea.observadorPrincipal.apellido} ` : 'Sin Observador',
             portId: puerto?.id || null,
             portName: portName,
             eventDate: fechaLocal.toJSDate(),
@@ -452,7 +453,7 @@ export class PnaApiService {
         };
 
         const newAlert = await this.alertsService.create({
-            codigoUnico: `PNA_${estado}_${buque.id}_${fechaLocal.toFormat('yyyyMMdd_HHmmss')}`,
+            codigoUnico: `PNA_${estado}_${buque.id}_${fechaLocal.toFormat('yyyyMMdd_HHmmss')} `,
             tipo: estado,
             titulo: titulo,
             descripcion: descripcion,
@@ -467,13 +468,19 @@ export class PnaApiService {
         return { alertId: newAlert.id, created: true, validated: false };
     }
 
-    private async createDiscrepancyAlert(buque: any, type: 'ZARPADA' | 'ARRIBO', port: any, fechaLocal: DateTime, marea: any, stageMatch: any, allPorts: any[], reporte: PnaReporteCostera) {
+    private async createDiscrepancyAlert(buque: any, type: 'ZARPADA' | 'ARRIBO', port: any, fechaLocal: DateTime, marea: any, stageMatch: any, reporte: PnaReporteCostera) {
         const dateStr = fechaLocal.toFormat('dd/MM HH:mm');
         const yearSuffix = String(marea.anioMarea).slice(-2);
-        const mareaLabel = marea.tipoMarea === 'CI' ? `CI-${yearSuffix}` : `MC-${marea.nroMarea}-${yearSuffix}`;
+        const mareaLabel = marea.tipoMarea === 'CI' ? `CI - ${yearSuffix} ` : `MC - ${marea.nroMarea} -${yearSuffix} `;
 
         const matchedPortId = type === 'ZARPADA' ? stageMatch.puertoZarpadaId : stageMatch.puertoArriboId;
-        const puertoLocal = allPorts.find(p => p.id === matchedPortId)?.nombre || 'N/D';
+
+        let puertoLocal = 'N/D';
+        if (matchedPortId) {
+            const p = await this.prisma.puerto.findUnique({ where: { id: matchedPortId } });
+            if (p) puertoLocal = p.nombre;
+        }
+
         const tipoMov = type === 'ZARPADA' ? 'zarpada' : 'arribo';
         const alertTitle = `${buque.nombreBuque}: Discrepancia en puerto de ${tipoMov} el ${dateStr} (PNA)`;
 
@@ -481,7 +488,7 @@ export class PnaApiService {
             mareaId: marea.id,
             mareaCode: mareaLabel,
             vesselName: buque.nombreBuque,
-            observerName: marea.observadorPrincipal ? `${marea.observadorPrincipal.nombre} ${marea.observadorPrincipal.apellido}` : 'Sin Observador',
+            observerName: marea.observadorPrincipal ? `${marea.observadorPrincipal.nombre} ${marea.observadorPrincipal.apellido} ` : 'Sin Observador',
             portId: port?.id || null,
             portName: port?.nombre,
             eventDate: fechaLocal.toJSDate(),
@@ -506,10 +513,10 @@ export class PnaApiService {
             }]
         };
 
-        const descripcion = `${alertTitle}\n\nDetectado puerto ${port?.nombre} (PNA) vs registrado ${puertoLocal}.\n\nSe sugiere revisar la etapa para corregir el puerto oficial.`;
+        const descripcion = `${alertTitle} \n\nDetectado puerto ${port?.nombre} (PNA) vs registrado ${puertoLocal}.\n\nSe sugiere revisar la etapa para corregir el puerto oficial.`;
 
         return await this.alertsService.create({
-            codigoUnico: `PNA_DISC_PORT_${buque.id}_${fechaLocal.toFormat('yyyyMMdd_HHmm')}`,
+            codigoUnico: `PNA_DISC_PORT_${buque.id}_${fechaLocal.toFormat('yyyyMMdd_HHmm')} `,
             tipo: 'ERROR_REGISTRO_PUERTO',
             titulo: alertTitle,
             descripcion,
@@ -529,13 +536,13 @@ export class PnaApiService {
 
         const alertTitle = `${buque.nombreBuque}: Incongruencia de FECHA en ${type.toLowerCase()} (PNA)`;
         const yearSuffix = String(marea.anioMarea).slice(-2);
-        const mareaLabel = marea.tipoMarea === 'CI' ? `CI-${yearSuffix}` : `MC-${marea.nroMarea}-${yearSuffix}`;
+        const mareaLabel = marea.tipoMarea === 'CI' ? `CI - ${yearSuffix} ` : `MC - ${marea.nroMarea} -${yearSuffix} `;
 
         const metadata: AlertMetadata = {
             mareaId: marea.id,
             mareaCode: mareaLabel,
             vesselName: buque.nombreBuque,
-            observerName: marea.observadorPrincipal ? `${marea.observadorPrincipal.nombre} ${marea.observadorPrincipal.apellido}` : 'Sin Observador',
+            observerName: marea.observadorPrincipal ? `${marea.observadorPrincipal.nombre} ${marea.observadorPrincipal.apellido} ` : 'Sin Observador',
             portId: port?.id || null,
             portName: port?.nombre,
             type,
@@ -551,10 +558,10 @@ export class PnaApiService {
             }]
         };
 
-        const descripcion = `${alertTitle}\n\nDetectado (PNA): ${detStr}\nRegistrado: ${regStr}\n\nSe recomienda revisar la etapa para corregir la fecha oficial basada en el reporte de PNA.`;
+        const descripcion = `${alertTitle} \n\nDetectado(PNA): ${detStr} \nRegistrado: ${regStr} \n\nSe recomienda revisar la etapa para corregir la fecha oficial basada en el reporte de PNA.`;
 
         return await this.alertsService.create({
-            codigoUnico: `PNA_DISC_DATE_${buque.id}_${fechaLocal.toFormat('yyyyMMdd_HHmm')}`,
+            codigoUnico: `PNA_DISC_DATE_${buque.id}_${fechaLocal.toFormat('yyyyMMdd_HHmm')} `,
             tipo: 'ERROR_FECHA_MOVIMIENTO',
             titulo: alertTitle,
             descripcion,
@@ -569,10 +576,10 @@ export class PnaApiService {
 
     private async createRecommendationFinMarea(buque: any, port: any, fechaLocal: DateTime, mareaActual: any, mareaSiguiente: any, reporte: PnaReporteCostera) {
         const dateStr = fechaLocal.toFormat('dd/MM HH:mm');
-        const alertTitle = `${buque.nombreBuque}: Recomendación FINALIZAR MAREA. Arribo detectado (PNA) el ${dateStr}`;
+        const alertTitle = `${buque.nombreBuque}: Recomendación FINALIZAR MAREA.Arribo detectado(PNA) el ${dateStr} `;
 
         const yearSuffix = String(mareaActual.anioMarea).slice(-2);
-        const mareaLabel = mareaActual.tipoMarea === 'CI' ? `CI-${yearSuffix}` : `MC-${mareaActual.nroMarea}-${yearSuffix}`;
+        const mareaLabel = mareaActual.tipoMarea === 'CI' ? `CI - ${yearSuffix} ` : `MC - ${mareaActual.nroMarea} -${yearSuffix} `;
         const lastStage = [...mareaActual.etapas].sort((a, b) => b.nroEtapa - a.nroEtapa)[0];
 
         const metadata: AlertMetadata = {
@@ -580,7 +587,7 @@ export class PnaApiService {
             mareaCode: mareaLabel,
             mareaSiguienteId: mareaSiguiente.id,
             vesselName: buque.nombreBuque,
-            observerName: mareaActual.observadorPrincipal ? `${mareaActual.observadorPrincipal.nombre} ${mareaActual.observadorPrincipal.apellido}` : 'Sin Observador',
+            observerName: mareaActual.observadorPrincipal ? `${mareaActual.observadorPrincipal.nombre} ${mareaActual.observadorPrincipal.apellido} ` : 'Sin Observador',
             portId: port?.id || null,
             portName: port?.nombre,
             eventDate: fechaLocal.toJSDate(),
@@ -595,10 +602,10 @@ export class PnaApiService {
             }]
         };
 
-        const descripcion = `${alertTitle}\n\nHay una marea DESIGNADA esperando (${mareaSiguiente.nroMarea}/${mareaSiguiente.anioMarea}). Se sugiere finalizar la marea actual (${mareaLabel}) en lugar de registrar un arribo intermedio.`;
+        const descripcion = `${alertTitle} \n\nHay una marea DESIGNADA esperando(${mareaSiguiente.nroMarea} / ${mareaSiguiente.anioMarea}).Se sugiere finalizar la marea actual(${mareaLabel}) en lugar de registrar un arribo intermedio.`;
 
         return await this.alertsService.create({
-            codigoUnico: `PNA_REC_FIN_${buque.id}_${fechaLocal.toFormat('yyyyMMdd_HHmm')}`,
+            codigoUnico: `PNA_REC_FIN_${buque.id}_${fechaLocal.toFormat('yyyyMMdd_HHmm')} `,
             tipo: 'RECOMENDACION_FIN_MAREA',
             titulo: alertTitle,
             descripcion,
@@ -635,6 +642,6 @@ export class PnaApiService {
                 value: date.toISOString()
             }
         });
-        this.logger.log(`Actualizado LAST_PNA_SYNC en system_status: ${date.toISOString()}`);
+        this.logger.log(`Actualizado LAST_PNA_SYNC en system_status: ${date.toISOString()} `);
     }
 }
