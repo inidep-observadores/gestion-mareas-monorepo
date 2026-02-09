@@ -4,7 +4,16 @@ import { useConfigStore } from '@/modules/shared/stores/config.store'
 export interface FleetDistributionItem {
     label: string
     count: number
-    vessels: Array<{ name: string; mareaCode: string; status: string }>
+    stats?: Record<string, { count: number, nombre: string }>
+    vessels: Array<{
+        name: string;
+        mareaCode: string;
+        status: string;
+        tipoFlota?: {
+            codigo: string;
+            nombre: string;
+        }
+    }>
 }
 
 export interface FleetDistributionResponse {

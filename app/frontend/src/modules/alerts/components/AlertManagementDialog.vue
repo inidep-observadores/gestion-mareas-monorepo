@@ -732,7 +732,7 @@ const incongruencyFields = computed(() => {
     const loc = incongruencyData.value.localData || {}
     const type = incongruencyData.value.type // 'ZARPADA' or 'ARRIBO'
 
-    let fields = []
+    const fields = []
     if (!type || type === 'ZARPADA') {
         fields.push({ key: 'fechaZarpada', label: 'Fecha Zarpada', type: 'date' })
         fields.push({ key: 'puertoZarpadaNombre', label: 'Puerto Zarpada', type: 'text' })

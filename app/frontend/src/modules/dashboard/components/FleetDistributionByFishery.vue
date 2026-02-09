@@ -46,8 +46,22 @@
                   <span class="text-text-muted font-bold ml-1">({{ item.percentage }}%)</span>
                 </span>
               </div>
-              <div class="relative h-1.5 w-full bg-surface-muted rounded-full overflow-hidden border border-border/30">
+              <div class="relative h-2 w-full bg-surface-muted rounded-full overflow-hidden border border-border/30 flex shadow-inner">
+                <template v-if="item.stats && Object.keys(item.stats).length > 1">
+                  <div
+                    v-for="(stat, code) in item.stats"
+                    :key="code"
+                    class="h-full transition-all duration-1000 ease-out"
+                    :style="{
+                      width: `${(stat.count / item.count) * 100}%`,
+                      backgroundColor: getFleetColor(stat.nombre),
+                      filter: 'saturate(0.8)'
+                    }"
+                    v-tooltip="`${stat.nombre}: ${stat.count} buques`"
+                  ></div>
+                </template>
                 <div
+                  v-else
                   class="h-full transition-all duration-1000 ease-out shadow-sm"
                   :style="{
                     width: totalActive ? `${(item.count / totalActive) * 100}%` : '0%',
@@ -60,13 +74,44 @@
               <Transition
                 enter-active-class="transition-all duration-300 ease-out"
                 enter-from-class="max-h-0 opacity-0 transform -translate-y-2"
-                enter-to-class="max-h-40 opacity-100 transform translate-y-0"
+                enter-to-class="max-h-[1000px] opacity-100 transform translate-y-0"
                 leave-active-class="transition-all duration-200 ease-in"
-                leave-from-class="max-h-40 opacity-100 transform translate-y-0"
+                leave-from-class="max-h-[1000px] opacity-100 transform translate-y-0"
                 leave-to-class="max-h-0 opacity-0 transform -translate-y-2"
               >
                 <div v-if="expandedId === item.label" class="pt-3 overflow-hidden">
-                  <div class="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto custom-scrollbar-mini pr-1">
+                  <!-- Conditional Grouping: Only if multiple fleet types exist -->
+                  <div v-if="item.stats && Object.keys(item.stats).length > 1" class="space-y-4">
+                    <div v-for="(group, typeLabel) in groupVesselsByFleet(item.vessels)" :key="typeLabel" class="space-y-2">
+                      <div class="flex items-center gap-2 px-1">
+                        <div class="w-1 h-3 rounded-full" :style="{ backgroundColor: getFleetColor(typeLabel) }"></div>
+                        <span class="text-[9px] font-black uppercase tracking-tighter text-text-muted flex items-center gap-1.5">
+                          {{ typeLabel }}
+                          <span class="px-1.5 py-0.5 rounded-md bg-surface-muted text-[8px] border border-border">{{ group.length }}</span>
+                        </span>
+                      </div>
+                      <div class="flex flex-wrap gap-1.5 pr-1">
+                        <div 
+                          v-for="vessel in group" 
+                          :key="vessel.name"
+                          class="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-surface border border-border shadow-sm transition-all hover:border-primary/50 group/chip"
+                          v-tooltip="vessel.status === 'EN_EJECUCION' ? 'En ejecución' : 'Designada'"
+                        >
+                          <component 
+                            :is="vessel.status === 'EN_EJECUCION' ? ShipIcon : TaskIcon" 
+                            class="w-3 h-3" 
+                            :class="vessel.status === 'EN_EJECUCION' ? 'text-primary' : 'text-text-muted'"
+                          />
+                          <span class="text-[10px] font-bold text-text uppercase tracking-tighter group-hover/chip:text-primary transition-colors">
+                            {{ vessel.name }}
+                            <span class="text-[9px] opacity-60 ml-0.5">({{ vessel.mareaCode }})</span>
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <!-- Direct list if only one fleet type -->
+                  <div v-else class="flex flex-wrap gap-1.5 pr-1">
                     <div 
                       v-for="vessel in item.vessels" 
                       :key="vessel.name"
@@ -107,7 +152,13 @@ type FleetDisplayItem = {
   count: number
   color: string
   percentage: number
-  vessels: Array<{ name: string; mareaCode: string; status: string }>
+  stats?: Record<string, { count: number, nombre: string }>
+  vessels: Array<{ 
+    name: string; 
+    mareaCode: string; 
+    status: string;
+    tipoFlota?: { codigo: string; nombre: string }
+  }>
 }
 
 const distribution = ref<FleetDisplayItem[]>([])
@@ -223,16 +274,57 @@ const chartOptions = computed(() => ({
       const val = series[seriesIndex]
       const label = w.globals.labels[seriesIndex]
       const accent = chartColors.value[seriesIndex] || 'var(--color-primary)'
+      const item = distribution.value[seriesIndex]
+
       return `
-        <div class="px-3 py-2 bg-surface text-text border border-border rounded-xl flex items-center gap-2 text-[11px] font-bold shadow-xl">
-          <span class="w-2 h-2 rounded-full" style="background:${accent}"></span>
-          <span class="text-text-muted uppercase tracking-widest">${label}</span>
-          <span class="text-text font-black">${val} buques</span>
+        <div class="px-4 py-3 bg-surface/95 backdrop-blur-md text-text border border-border/50 rounded-2xl flex flex-col gap-3 shadow-2xl ring-1 ring-black/5 min-w-[180px]">
+          <div class="flex items-center gap-2 border-b border-border/30 pb-2">
+            <span class="w-1.5 h-3 rounded-full" style="background:${accent}"></span>
+            <span class="text-[10px] text-text-muted uppercase font-black tracking-widest">${label}</span>
+          </div>
+          
+          ${item.stats && Object.keys(item.stats).length > 1 ? `
+            <div class="flex flex-col gap-2">
+              ${Object.entries(item.stats).map(([_, stat]: any) => `
+                <div class="flex items-center justify-between gap-4">
+                  <div class="flex items-center gap-1.5">
+                    <div class="w-1.5 h-1.5 rounded-full" style="background:${getFleetColor(stat.nombre)}"></div>
+                    <span class="text-[9px] font-bold text-text-muted uppercase">${stat.nombre}</span>
+                  </div>
+                  <span class="text-[10px] font-black text-text">${stat.count}</span>
+                </div>
+              `).join('')}
+            </div>
+          ` : ''}
+
+          <div class="flex items-center justify-between pt-1 ${item.stats && Object.keys(item.stats).length > 1 ? 'border-t border-border/30' : ''}">
+            <span class="text-[9px] font-black text-primary uppercase">Total Pesquería</span>
+            <div class="flex items-baseline gap-1">
+              <span class="text-xs font-black text-text">${val}</span>
+              <span class="text-[9px] font-bold text-text-muted">(${Math.round((val / totalActive.value) * 100)}%)</span>
+            </div>
+          </div>
         </div>
       `
     }
   }
 }))
+
+const groupVesselsByFleet = (vessels: FleetDisplayItem['vessels']) => {
+  const groups: Record<string, any[]> = {}
+  vessels.forEach(v => {
+    const fleetName = v.tipoFlota?.nombre || 'Indeterminado'
+    if (!groups[fleetName]) groups[fleetName] = []
+    groups[fleetName].push(v)
+  })
+  return groups
+}
+
+const getFleetColor = (name: string) => {
+  if (name.toUpperCase().includes('FRESQUERO')) return 'var(--color-info)'
+  if (name.toUpperCase().includes('CONGELADOR')) return 'var(--color-warning)'
+  return 'var(--color-primary)'
+}
 
 const loadDistribution = async () => {
   try {
@@ -244,6 +336,7 @@ const loadDistribution = async () => {
       count: item.count,
       color: palette[index % palette.length],
       percentage: total > 0 ? Math.round((item.count / total) * 100) : 0,
+      stats: item.stats,
       vessels: item.vessels || []
     }))
   } catch (error) {

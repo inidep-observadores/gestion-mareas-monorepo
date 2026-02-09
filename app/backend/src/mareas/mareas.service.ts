@@ -554,7 +554,6 @@ export class MareasService {
 
     async getFleetDistributionByFishery(year?: number) {
         const { mareaYearFilter } = this.buildMareaYearFilter(year);
-        // Use strictly Active states (Designated + Navigating) to match Command Center KPIs
         const activeStates = [MareaEstado.DESIGNADA, ...this.ESTADOS_NAVEGANDO];
 
         const activeMareas = await (this.prisma as any).marea.findMany({
@@ -569,69 +568,72 @@ export class MareasService {
                 estadoActual: true,
                 buque: {
                     select: {
-                        nombreBuque: true
+                        nombreBuque: true,
+                        tipoFlota: true
                     }
                 },
-                observadorPrincipal: true,
-                pesqueria: true, // Incluir pesquería de cabecera
+                pesqueria: true,
                 etapas: {
-                    orderBy: { nroEtapa: 'asc' }, // Traer todas las etapas
-                    include: {
-                        pesqueria: true
-                    }
+                    orderBy: { nroEtapa: 'asc' },
+                    include: { pesqueria: true }
                 }
             } as any
         });
 
-        const distributionMap = new Map<string, { count: number; vessels: Map<string, { mareaCode: string; status: string }> }>();
+        const distributionMap = new Map<string, {
+            vessels: Map<string, { mareaCode: string; status: string; tipoFlota: any }>;
+            stats: Record<string, { count: number, nombre: string }>
+        }>();
 
         activeMareas.forEach((marea: any) => {
             let label = 'Sin pesquería';
 
             if (marea.etapas && marea.etapas.length > 0) {
-                // Cálculo de pesquería predominante por días de navegación
                 const daysByFishery = new Map<string, number>();
-
                 marea.etapas.forEach((etapa: any) => {
                     const fisheryName = etapa.pesqueria?.nombre || 'Sin pesquería';
                     const days = MareaUtils.calculateStageDays(etapa);
                     daysByFishery.set(fisheryName, (daysByFishery.get(fisheryName) || 0) + days);
                 });
 
-                // Encontrar la pesquería con el máximo total de días
                 let maxDays = -1;
                 let bestFishery = 'Sin pesquería';
-
                 daysByFishery.forEach((days, name) => {
                     if (days > maxDays) {
                         maxDays = days;
                         bestFishery = name;
                     }
                 });
-
                 label = bestFishery;
             } else if (marea.pesqueria?.nombre) {
-                // Fallback a pesquería de cabecera si no hay etapas
                 label = marea.pesqueria.nombre;
             }
 
             const vesselName = marea.buque.nombreBuque;
             const mareaCode = `${marea.tipoMarea}-${String(marea.nroMarea).padStart(3, '0')}-${String(marea.anioMarea).slice(-2)}`;
             const status = marea.estadoActual?.codigo ?? MareaEstado.EN_EJECUCION;
+            const tipoFlota = marea.buque.tipoFlota;
+            const fleetCode = tipoFlota?.codigo || 'INDETERMINADO';
+            const fleetName = tipoFlota?.nombre || 'Indeterminado';
 
             if (!distributionMap.has(label)) {
-                distributionMap.set(label, { count: 0, vessels: new Map() });
+                distributionMap.set(label, { vessels: new Map(), stats: {} });
             }
 
             const item = distributionMap.get(label)!;
-            // item.count++; // Removed: count is calculated from map size
-            item.vessels.set(vesselName, { mareaCode, status });
+            item.vessels.set(vesselName, { mareaCode, status, tipoFlota });
+
+            if (!item.stats[fleetCode]) {
+                item.stats[fleetCode] = { count: 0, nombre: fleetName };
+            }
+            item.stats[fleetCode].count++;
         });
 
         const distribution = Array.from(distributionMap.entries())
             .map(([label, data]) => ({
                 label,
                 count: data.vessels.size,
+                stats: data.stats,
                 vessels: Array.from(data.vessels.entries())
                     .map(([name, vesselData]) => ({ name, ...vesselData }))
                     .sort((a, b) => a.name.localeCompare(b.name))

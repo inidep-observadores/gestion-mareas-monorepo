@@ -204,8 +204,8 @@ const filteredObservadores = computed(() => {
     const items = [...baseFilteredObservadores.value]
 
     items.sort((a: any, b: any) => {
-        let valA = a[sortKey.value]
-        let valB = b[sortKey.value]
+        const valA = a[sortKey.value]
+        const valB = b[sortKey.value]
 
         if (typeof valA === 'string') {
             return sortOrder.value === 'asc'

@@ -142,7 +142,7 @@ const fetchTrajectory = async () => {
     loading.value = true
     // Calcular rango inicial y final
     const startDate = new Date(props.referenceDate)
-    let endDate = props.endDate ? new Date(props.endDate) : startDate
+    const endDate = props.endDate ? new Date(props.endDate) : startDate
 
     if (isNaN(startDate.getTime())) {
         loading.value = false
