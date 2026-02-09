@@ -100,18 +100,29 @@ export class DateUtils {
      * Calcula la cantidad total de días únicos navegados dados varios intervalos.
      * Fusiona intervalos solapados para evitar conteo doble (ej: arribo y zarpada el mismo día).
      * @param intervals Lista de intervalos con start y end.
-     * @param year Año opcional para filtrar días (modo calendario).
+     * @param periodRange Rango opcional para filtrar días (modo calendario o sub-periodo).
+     * @param limitEnd Fecha límite opcional (física) para el cálculo (ej: "hoy").
      * @returns Total de días únicos.
      */
-    static calculateUniqueDays(intervals: Array<{ start: Date | string; end?: Date | string | null }>, year?: number): number {
+    static calculateUniqueDays(
+        intervals: Array<{ start: Date | string; end?: Date | string | null }>,
+        periodRange?: { start: Date; end: Date },
+        limitEnd?: Date
+    ): number {
         if (!intervals.length) return 0;
+
+        const now = limitEnd || this.getNow(true);
 
         // Convertir y Normalizar
         const normalized = intervals
             .map(i => {
                 const s = new Date(i.start);
                 // If end is null, we use current date to show live progress
-                const e = i.end ? new Date(i.end) : new Date();
+                let e = i.end ? new Date(i.end) : now;
+
+                // Asegurar que no supere el límite
+                if (e > now) e = new Date(now);
+
                 s.setHours(0, 0, 0, 0);
                 e.setHours(0, 0, 0, 0);
                 return { start: s, end: e };
@@ -141,8 +152,16 @@ export class DateUtils {
 
         // Sumar días de intervalos fusionados
         return merged.reduce((acc, interval) => {
-            if (year) {
-                return acc + this.calculateDaysInYear(interval.start, interval.end, year);
+            if (periodRange) {
+                // Intersect with the specific period (Month, Quarter, or Custom Range)
+                const effectiveStart = interval.start < periodRange.start ? periodRange.start : interval.start;
+                const effectiveEnd = interval.end > periodRange.end ? periodRange.end : interval.end;
+
+                if (effectiveStart > effectiveEnd) return 0;
+
+                const diffTime = Math.abs(effectiveEnd.getTime() - effectiveStart.getTime());
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                return acc + diffDays + 1;
             }
             return acc + this.calculateInclusiveDays(interval.start, interval.end);
         }, 0);
@@ -159,14 +178,14 @@ export class DateUtils {
         if (!dateStr) return new Date(); // Fallback to now if empty
 
         const timezone = process.env.APP_TIMEZONE || 'UTC';
-        
+
         // Intentar parsear ISO o SQL formato
         // Si viene con T (ISO), tomamos la parte de fecha
         const simpleDate = dateStr.includes('T') ? dateStr.split('T')[0] : dateStr;
-        
+
         // Crear fecha en esa zona horaria specificamente a las 00:00
         const dt = DateTime.fromFormat(simpleDate, 'yyyy-MM-dd', { zone: timezone }).startOf('day');
-        
+
         if (!dt.isValid) {
             // Fallback: tratar de parsear ISO directo si el formato anterior falla
             return new Date(dateStr);

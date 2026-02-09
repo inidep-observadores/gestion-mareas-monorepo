@@ -40,7 +40,9 @@ export const statsService = {
         includeNonProtocolized: boolean,
         includeProtocolizedOutOfPeriod: boolean,
         daysCalculationMode: 'SHIP' | 'OBSERVER',
-        includeCampaigns: boolean
+        includeCampaigns: boolean,
+        startDate?: string,
+        endDate?: string
     ): Promise<DashboardStats> {
         const params = new URLSearchParams({
             year: year.toString(),
@@ -50,6 +52,8 @@ export const statsService = {
             daysCalculationMode,
             includeCampaigns: String(includeCampaigns)
         });
+        if (startDate) params.append('startDate', startDate);
+        if (endDate) params.append('endDate', endDate);
         const response = await httpClient.get<DashboardStats>(`/stats/dashboard?${params.toString()}`);
         return response.data;
     },
@@ -62,7 +66,9 @@ export const statsService = {
         filterType: 'FISHERY' | 'FLEET' | 'OBSERVER',
         filterValue: string,
         daysCalculationMode: 'SHIP' | 'OBSERVER',
-        includeCampaigns: boolean
+        includeCampaigns: boolean,
+        startDate?: string,
+        endDate?: string
     ): Promise<StatsDetailItem[]> {
         const params = new URLSearchParams({
             year: year.toString(),
@@ -74,6 +80,8 @@ export const statsService = {
             daysCalculationMode,
             includeCampaigns: String(includeCampaigns)
         });
+        if (startDate) params.append('startDate', startDate);
+        if (endDate) params.append('endDate', endDate);
         const response = await httpClient.get<StatsDetailItem[]>(`/stats/detail?${params.toString()}`);
         return response.data;
     },
@@ -88,6 +96,8 @@ export const statsService = {
         filterType?: 'FISHERY' | 'FLEET' | 'OBSERVER',
         filterValue?: string,
         filename?: string,
+        startDate?: string,
+        endDate?: string
     ): Promise<void> {
         const params = new URLSearchParams({
             year: year.toString(),
@@ -97,6 +107,9 @@ export const statsService = {
             daysCalculationMode,
             includeCampaigns: String(includeCampaigns)
         });
+
+        if (startDate) params.append('startDate', startDate);
+        if (endDate) params.append('endDate', endDate);
 
         if (filterType && filterValue) {
             params.append('filterType', filterType);

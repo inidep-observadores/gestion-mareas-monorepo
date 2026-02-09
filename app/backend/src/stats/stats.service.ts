@@ -24,11 +24,21 @@ export class StatsService {
         // Source of Truth: Stages (Etapas)
         // A marea is ACTIVE in the period if it has at least one stage overlapping the period.
         // Overlap Logic: Stage Start <= Period End AND (Stage End >= Period Start OR Stage End is NULL)
+        // CRITICAL: We must also filter out activity that is in the future relative to "Now"
+        const now = DateUtils.getNow(true);
+
+        // If the period requested START after NOW, it's a future period.
+        if (yearStart > now) {
+            return { anioMarea: -1 }; // Prisma will return empty safely
+        }
+
+        const effectivePeriodEnd = yearEnd < now ? yearEnd : now;
+
         const activityOverlapCondition: Prisma.MareaWhereInput = {
             etapas: {
                 some: {
                     AND: [
-                        { fechaZarpada: { lte: yearEnd } },
+                        { fechaZarpada: { lte: effectivePeriodEnd } },
                         {
                             OR: [
                                 { fechaArribo: { gte: yearStart } },
@@ -70,9 +80,14 @@ export class StatsService {
         includeProtocolizedOutOfPeriod: boolean,
         daysCalculationMode: 'SHIP' | 'OBSERVER' = 'SHIP',
         includeCampaigns: boolean = true,
+        startDate?: string,
+        endDate?: string,
     ) {
-        const yearStart = new Date(Date.UTC(year, 0, 1, 0, 0, 0, 0));
-        const yearEnd = new Date(Date.UTC(year, 11, 31, 23, 59, 59, 999));
+        const yearStart = startDate ? new Date(startDate) : new Date(Date.UTC(year, 0, 1, 0, 0, 0, 0));
+        const yearEnd = endDate ? new Date(endDate) : new Date(Date.UTC(year, 11, 31, 23, 59, 59, 999));
+
+        if (startDate) yearStart.setUTCHours(0, 0, 0, 0);
+        if (endDate) yearEnd.setUTCHours(23, 59, 59, 999);
 
         const where = this.getSharedWhereClause(yearStart, yearEnd, includeNonProtocolized, includeProtocolizedOutOfPeriod);
 
@@ -122,15 +137,19 @@ export class StatsService {
             const overallStart = marea.etapas[0]?.fechaZarpada;
             if (!overallStart) continue;
 
+            const now = DateUtils.getNow(true);
             const intervals = marea.etapas.map(e => ({
                 start: e.fechaZarpada,
-                end: e.fechaArribo || (marea.estadoActual?.codigo === 'EN_EJECUCION' ? DateUtils.getNow() : null)
-            })).filter(i => i.start);
+                end: e.fechaArribo || (marea.estadoActual?.codigo === 'EN_EJECUCION' ? now : null)
+            })).filter(i => i.start && i.start <= now);
 
             let days = 0;
 
             // 1. Calculate uniquely navigated days for the Principal Observer (the whole marea)
-            const totalMareaDays = DateUtils.calculateUniqueDays(intervals, mode === 'CALENDAR' ? year : undefined);
+            // Limit the calculation to the MIN of (PeriodEnd, CurrentDate)
+            const calculationLimit = yearEnd < now ? yearEnd : now;
+            const periodRange = mode === 'CALENDAR' ? { start: yearStart, end: yearEnd } : undefined;
+            const totalMareaDays = DateUtils.calculateUniqueDays(intervals, periodRange, calculationLimit);
 
             const mareaObserverMap: Record<string, number> = {}; // ObsID -> Days attributed in this marea
 
@@ -141,9 +160,9 @@ export class StatsService {
             // 2. Calculate unique days for EACH additional observer involved in stages
             const additionalsMap: Record<string, Array<{ start: Date, end: Date }>> = {};
             marea.etapas.forEach(etapa => {
-                if (!etapa.fechaZarpada) return;
+                if (!etapa.fechaZarpada || etapa.fechaZarpada > now) return;
                 const start = etapa.fechaZarpada;
-                const end = etapa.fechaArribo || (marea.estadoActual?.codigo === 'EN_EJECUCION' ? DateUtils.getNow() : null);
+                const end = etapa.fechaArribo || (marea.estadoActual?.codigo === 'EN_EJECUCION' ? now : null);
 
                 etapa.observadores.forEach(obsRel => {
                     if (obsRel.observador && obsRel.observador.id !== marea.observadorPrincipalId) {
@@ -155,7 +174,7 @@ export class StatsService {
 
             // Sum additional efforts
             Object.entries(additionalsMap).forEach(([obsId, obsIntervals]) => {
-                mareaObserverMap[obsId] = DateUtils.calculateUniqueDays(obsIntervals, mode === 'CALENDAR' ? year : undefined);
+                mareaObserverMap[obsId] = DateUtils.calculateUniqueDays(obsIntervals, periodRange, calculationLimit);
             });
 
             if (daysCalculationMode === 'SHIP') {
@@ -233,6 +252,7 @@ export class StatsService {
                             // For 'active' mareas, end is today. For historic missing, it's start.
                             // In this loop we already handled "intervals" construction correctly above with `marea.estadoActualId`.
                             const e = i.end ? new Date(i.end) : new Date(s);
+                            if (e > now) e.setTime(now.getTime());
                             s.setHours(0, 0, 0, 0);
                             e.setHours(0, 0, 0, 0);
                             return { start: s, end: e };
@@ -259,9 +279,9 @@ export class StatsService {
                         if (mode === 'CALENDAR') {
                             if (cursor < yearStart) cursor = new Date(yearStart);
                         }
-                        const limitEnd = (mode === 'CALENDAR' && interval.end > yearEnd) ? yearEnd : interval.end;
+                        const limitEndForDistribution = calculationLimit < interval.end ? calculationLimit : interval.end;
 
-                        while (cursor <= limitEnd) {
+                        while (cursor <= limitEndForDistribution) {
                             if (cursor.getFullYear() === year) {
                                 daysByMonth[cursor.getMonth()]++;
                             }
@@ -281,7 +301,8 @@ export class StatsService {
                     if (count === 0) return;
 
                     const s = new Date(etapa.fechaZarpada);
-                    const e = etapa.fechaArribo || (marea.estadoActualId === 'EN_EJECUCION' ? DateUtils.getNow() : null) || new Date(s); // Fallback to start if historical missing
+                    const e = etapa.fechaArribo || (marea.estadoActualId === 'EN_EJECUCION' ? now : null) || new Date(s); // Fallback to start if historical missing
+                    if (e > now) e.setTime(now.getTime());
 
                     s.setHours(0, 0, 0, 0);
                     e.setHours(0, 0, 0, 0);
@@ -290,7 +311,7 @@ export class StatsService {
                     if (mode === 'CALENDAR') {
                         if (cursor < yearStart) cursor = new Date(yearStart);
                     }
-                    const limitEnd = (mode === 'CALENDAR' && e > yearEnd) ? yearEnd : e;
+                    const limitEnd = calculationLimit < e ? calculationLimit : e;
 
                     while (cursor <= limitEnd) {
                         if (cursor.getFullYear() === year) {
@@ -327,9 +348,14 @@ export class StatsService {
         filterValue: string,
         daysCalculationMode: 'SHIP' | 'OBSERVER' = 'SHIP',
         includeCampaigns: boolean = true,
+        startDate?: string,
+        endDate?: string,
     ): Promise<StatsDetailItem[]> {
-        const yearStart = new Date(Date.UTC(year, 0, 1, 0, 0, 0, 0));
-        const yearEnd = new Date(Date.UTC(year, 11, 31, 23, 59, 59, 999));
+        const yearStart = startDate ? new Date(startDate) : new Date(Date.UTC(year, 0, 1, 0, 0, 0, 0));
+        const yearEnd = endDate ? new Date(endDate) : new Date(Date.UTC(year, 11, 31, 23, 59, 59, 999));
+
+        if (startDate) yearStart.setUTCHours(0, 0, 0, 0);
+        if (endDate) yearEnd.setUTCHours(23, 59, 59, 999);
 
         const where = this.getSharedWhereClause(yearStart, yearEnd, includeNonProtocolized, includeProtocolizedOutOfPeriod);
 
@@ -401,14 +427,18 @@ export class StatsService {
             let calendarDays = 0;
             let totalMareaDays = 0;
 
+            const now = DateUtils.getNow(true);
             const intervals = m.etapas.map(e => ({
                 start: e.fechaZarpada,
-                end: e.fechaArribo || (m.estadoActual?.codigo === 'EN_EJECUCION' ? DateUtils.getNow() : null)
-            })).filter(i => i.start);
+                end: e.fechaArribo || (m.estadoActual?.codigo === 'EN_EJECUCION' ? now : null)
+            })).filter(i => i.start && i.start <= now);
+
+            const calculationLimit = yearEnd < now ? yearEnd : now;
+            const periodRange = mode === 'CALENDAR' ? { start: yearStart, end: yearEnd } : undefined;
 
             if (daysCalculationMode === 'SHIP') {
-                calendarDays = DateUtils.calculateUniqueDays(intervals, year);
-                totalMareaDays = DateUtils.calculateUniqueDays(intervals);
+                calendarDays = DateUtils.calculateUniqueDays(intervals, periodRange, calculationLimit);
+                totalMareaDays = DateUtils.calculateUniqueDays(intervals, undefined, now);
                 days = mode === 'CALENDAR' ? calendarDays : totalMareaDays;
             } else {
                 // OBSERVER Mode
@@ -426,24 +456,24 @@ export class StatsService {
                             if (isAdditional) {
                                 obsIntervals.push({
                                     start: etapa.fechaZarpada,
-                                    end: etapa.fechaArribo || (m.estadoActual?.codigo === 'EN_EJECUCION' ? DateUtils.getNow() : null)
+                                    end: etapa.fechaArribo || (m.estadoActual?.codigo === 'EN_EJECUCION' ? now : null)
                                 });
                             }
                         });
                     }
 
-                    calendarDays = DateUtils.calculateUniqueDays(obsIntervals, year);
-                    totalMareaDays = DateUtils.calculateUniqueDays(obsIntervals);
+                    calendarDays = DateUtils.calculateUniqueDays(obsIntervals, periodRange, calculationLimit);
+                    totalMareaDays = DateUtils.calculateUniqueDays(obsIntervals, undefined, now);
                 } else {
                     // Case B: General Detail (by Fishery/Fleet/All) -> Show total EFFORT (sum of all unique contributions)
-                    let effortCal = DateUtils.calculateUniqueDays(intervals, year);
-                    let effortTotal = DateUtils.calculateUniqueDays(intervals);
+                    let effortCal = DateUtils.calculateUniqueDays(intervals, periodRange, calculationLimit);
+                    let effortTotal = DateUtils.calculateUniqueDays(intervals, undefined, now);
 
                     const additionalsMap: Record<string, Array<{ start: Date, end: Date }>> = {};
                     m.etapas.forEach(etapa => {
                         if (!etapa.fechaZarpada) return;
                         const start = etapa.fechaZarpada;
-                        const end = etapa.fechaArribo || (m.estadoActual?.codigo === 'EN_EJECUCION' ? DateUtils.getNow() : null);
+                        const end = etapa.fechaArribo || (m.estadoActual?.codigo === 'EN_EJECUCION' ? now : null);
 
                         etapa.observadores.forEach(obsRel => {
                             if (obsRel.observador && obsRel.observador.id !== m.observadorPrincipalId) {
@@ -454,8 +484,8 @@ export class StatsService {
                     });
 
                     Object.values(additionalsMap).forEach(obsIntervals => {
-                        effortCal += DateUtils.calculateUniqueDays(obsIntervals, year);
-                        effortTotal += DateUtils.calculateUniqueDays(obsIntervals);
+                        effortCal += DateUtils.calculateUniqueDays(obsIntervals, periodRange, calculationLimit);
+                        effortTotal += DateUtils.calculateUniqueDays(obsIntervals, undefined, now);
                     });
 
                     calendarDays = effortCal;
@@ -492,10 +522,15 @@ export class StatsService {
         daysCalculationMode: 'SHIP' | 'OBSERVER' = 'SHIP',
         includeCampaigns: boolean = true,
         filterType?: 'FISHERY' | 'FLEET' | 'OBSERVER',
-        filterValue?: string
+        filterValue?: string,
+        startDate?: string,
+        endDate?: string,
     ): Promise<ExcelJS.Workbook> {
-        const yearStart = new Date(Date.UTC(year, 0, 1, 0, 0, 0, 0));
-        const yearEnd = new Date(Date.UTC(year, 11, 31, 23, 59, 59, 999));
+        const yearStart = startDate ? new Date(startDate) : new Date(Date.UTC(year, 0, 1, 0, 0, 0, 0));
+        const yearEnd = endDate ? new Date(endDate) : new Date(Date.UTC(year, 11, 31, 23, 59, 59, 999));
+
+        if (startDate) yearStart.setUTCHours(0, 0, 0, 0);
+        if (endDate) yearEnd.setUTCHours(23, 59, 59, 999);
 
         const where = this.getSharedWhereClause(yearStart, yearEnd, includeNonProtocolized, includeProtocolizedOutOfPeriod);
 
@@ -635,14 +670,18 @@ export class StatsService {
             let calendarDays = 0;
             let totalMareaDays = 0;
 
+            const now = DateUtils.getNow(true);
             const intervals = m.etapas.map(e => ({
                 start: e.fechaZarpada,
-                end: e.fechaArribo || (m.estadoActual?.codigo === 'EN_EJECUCION' ? DateUtils.getNow() : null)
-            })).filter(i => i.start);
+                end: e.fechaArribo || (m.estadoActual?.codigo === 'EN_EJECUCION' ? now : null)
+            })).filter(i => i.start && i.start <= now);
+
+            const calculationLimit = yearEnd < now ? yearEnd : now;
+            const periodRange = mode === 'CALENDAR' ? { start: yearStart, end: yearEnd } : undefined;
 
             if (daysCalculationMode === 'SHIP') {
-                calendarDays = DateUtils.calculateUniqueDays(intervals, year);
-                totalMareaDays = DateUtils.calculateUniqueDays(intervals);
+                calendarDays = DateUtils.calculateUniqueDays(intervals, periodRange, calculationLimit);
+                totalMareaDays = DateUtils.calculateUniqueDays(intervals, undefined, now);
             } else {
                 // OBSERVER Mode
                 // Case A: Filtered by a specific observer -> Show ONLY their individual contribution
@@ -659,24 +698,24 @@ export class StatsService {
                             if (isAdditional) {
                                 obsIntervals.push({
                                     start: etapa.fechaZarpada,
-                                    end: etapa.fechaArribo || (m.estadoActual?.codigo === 'EN_EJECUCION' ? DateUtils.getNow() : null)
+                                    end: etapa.fechaArribo || (m.estadoActual?.codigo === 'EN_EJECUCION' ? now : null)
                                 });
                             }
                         });
                     }
 
-                    calendarDays = DateUtils.calculateUniqueDays(obsIntervals, year);
-                    totalMareaDays = DateUtils.calculateUniqueDays(obsIntervals);
+                    calendarDays = DateUtils.calculateUniqueDays(obsIntervals, periodRange, calculationLimit);
+                    totalMareaDays = DateUtils.calculateUniqueDays(obsIntervals, undefined, now);
                 } else {
                     // Case B: General Detail (by Fishery/Fleet/All) -> Show total EFFORT (sum of all unique contributions)
-                    let effortCal = DateUtils.calculateUniqueDays(intervals, year);
-                    let effortTotal = DateUtils.calculateUniqueDays(intervals);
+                    let effortCal = DateUtils.calculateUniqueDays(intervals, periodRange, calculationLimit);
+                    let effortTotal = DateUtils.calculateUniqueDays(intervals, undefined, now);
 
                     const additionalsMap: Record<string, Array<{ start: Date, end: Date }>> = {};
                     m.etapas.forEach(etapa => {
                         if (!etapa.fechaZarpada) return;
                         const start = etapa.fechaZarpada;
-                        const end = etapa.fechaArribo || (m.estadoActual?.codigo === 'EN_EJECUCION' ? DateUtils.getNow() : null);
+                        const end = etapa.fechaArribo || (m.estadoActual?.codigo === 'EN_EJECUCION' ? now : null);
 
                         etapa.observadores.forEach(obsRel => {
                             if (obsRel.observador && obsRel.observador.id !== m.observadorPrincipalId) {
@@ -687,8 +726,8 @@ export class StatsService {
                     });
 
                     Object.values(additionalsMap).forEach(obsIntervals => {
-                        effortCal += DateUtils.calculateUniqueDays(obsIntervals, year);
-                        effortTotal += DateUtils.calculateUniqueDays(obsIntervals);
+                        effortCal += DateUtils.calculateUniqueDays(obsIntervals, periodRange, calculationLimit);
+                        effortTotal += DateUtils.calculateUniqueDays(obsIntervals, undefined, now);
                     });
 
                     calendarDays = effortCal;

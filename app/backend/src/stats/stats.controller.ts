@@ -17,7 +17,9 @@ export class StatsController {
             query.includeNonProtocolized,
             query.includeProtocolizedOutOfPeriod,
             query.daysCalculationMode,
-            query.includeCampaigns
+            query.includeCampaigns,
+            query.startDate,
+            query.endDate
         );
     }
 
@@ -31,7 +33,9 @@ export class StatsController {
             query.filterType,
             query.filterValue,
             query.daysCalculationMode,
-            query.includeCampaigns
+            query.includeCampaigns,
+            query.startDate,
+            query.endDate
         );
     }
 
@@ -48,7 +52,9 @@ export class StatsController {
             query.daysCalculationMode,
             query.includeCampaigns,
             query.filterType,
-            query.filterValue
+            query.filterValue,
+            query.startDate,
+            query.endDate
         );
 
         const filename = query.customFilename ? `${query.customFilename}.xlsx` : `Estadisticas_Mareas_${query.year}.xlsx`;

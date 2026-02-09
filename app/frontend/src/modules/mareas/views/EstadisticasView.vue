@@ -11,6 +11,15 @@
                @update:includeOutOfPeriod="includeOutOfPeriod = $event" @refresh="fetchData"
                v-model:daysCalculationMode="daysCalculationMode" v-model:includeCampaigns="includeCampaigns" />
 
+            <div class="mt-4">
+               <TimeFilterBar 
+                 :year="year" 
+                 :startDate="startDate" 
+                 :endDate="endDate"
+                 @update:filter="handleTimeFilter"
+               />
+            </div>
+
             <!-- Collapsible Criteria Explanation -->
             <div
                class="mt-4 bg-surface-muted/30 border border-border/50 rounded-xl overflow-hidden transition-all duration-300">
@@ -484,6 +493,7 @@ import AdminLayout from '@/components/layout/AdminLayout.vue'
 import StatsFilterBar from '@/modules/stats/components/StatsFilterBar.vue'
 import StatKpiCard from '@/modules/stats/components/StatKpiCard.vue'
 import ChartWidget from '@/modules/stats/components/ChartWidget.vue'
+import TimeFilterBar from '@/modules/stats/components/TimeFilterBar.vue'
 import BaseModal from '@/components/common/BaseModal.vue'
 import SearchInput from '@/components/ui/SearchInput.vue'
 import MareaQuickDetailModal from '@/modules/stats/components/MareaQuickDetailModal.vue'
@@ -525,6 +535,9 @@ const protocolizedOnly = ref(false);
 const includeOutOfPeriod = ref(false);
 const daysCalculationMode = ref<'SHIP' | 'OBSERVER'>('SHIP');
 const includeCampaigns = ref(true);
+
+const startDate = ref<string | null>(null);
+const endDate = ref<string | null>(null);
 
 const filterType = ref<'FISHERY' | 'FLEET' | 'OBSERVER' | null>(null);
 const filterValue = ref<string | null>(null);
@@ -657,6 +670,11 @@ const criteriaList = computed(() => {
       if (filterType.value === 'OBSERVER') typeLabel = 'Observador';
       list.push(`Filtro Activo: <strong>${typeLabel}</strong> ${dialogTitle.value ? `(${dialogTitle.value.replace('Detalle: ', '')})` : ''}.`);
    }
+   if (startDate.value || endDate.value) {
+      const start = startDate.value ? new Date(startDate.value).toLocaleDateString() : 'Inicio del año';
+      const end = endDate.value ? new Date(endDate.value).toLocaleDateString() : 'Fin del año';
+      list.push(`Rango de Tiempo: <strong>${start} - ${end}</strong>.`);
+   }
    return list;
 });
 
@@ -670,7 +688,9 @@ const fetchData = async () => {
          !protocolizedOnly.value,
          includeOutOfPeriod.value,
          daysCalculationMode.value,
-         includeCampaigns.value
+         includeCampaigns.value,
+         startDate.value || undefined,
+         endDate.value || undefined
       );
    } catch (error) {
       console.error('Error fetching stats:', error);
@@ -681,9 +701,14 @@ const fetchData = async () => {
 };
 
 // --- Watchers ---
-watch([year, mode, protocolizedOnly, includeOutOfPeriod, daysCalculationMode, includeCampaigns], () => {
+watch([year, mode, protocolizedOnly, includeOutOfPeriod, daysCalculationMode, includeCampaigns, startDate, endDate], () => {
    fetchData();
 });
+
+const handleTimeFilter = (filter: { startDate: string | null, endDate: string | null }) => {
+   startDate.value = filter.startDate;
+   endDate.value = filter.endDate;
+};
 
 // --- Dialog Logic ---
 const openDialog = async (type: 'FISHERY' | 'FLEET' | 'OBSERVER', value: string, titleName: string) => {
@@ -703,7 +728,9 @@ const openDialog = async (type: 'FISHERY' | 'FLEET' | 'OBSERVER', value: string,
          type,
          value,
          daysCalculationMode.value,
-         includeCampaigns.value
+         includeCampaigns.value,
+         startDate.value || undefined,
+         endDate.value || undefined
       );
    } catch (error) {
       console.error('Error fetching details:', error);
@@ -769,7 +796,9 @@ const handleDownload = async (titlePrefix: string, fType?: 'FISHERY' | 'FLEET' |
          includeCampaigns.value,
          fTypeParam,
          fValue, // PASSING UNDEFINED IF NULL
-         `${finalTitle}_${mode.value === 'CALENDAR' ? year.value : 'TOTAL'}`
+         `${finalTitle}_${mode.value === 'CALENDAR' ? year.value : 'TOTAL'}`,
+         startDate.value || undefined,
+         endDate.value || undefined
       );
       const prettyTitle = (dialogOpen.value && dialogTitle.value) ? dialogTitle.value : 'Estadísticas Generales';
       toast.success(`Exportación iniciada: ${prettyTitle}`);

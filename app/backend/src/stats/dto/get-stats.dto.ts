@@ -56,5 +56,13 @@ export class GetStatsDto {
 
     @IsString()
     @IsOptional()
+    startDate?: string;
+
+    @IsString()
+    @IsOptional()
+    endDate?: string;
+
+    @IsString()
+    @IsOptional()
     customFilename?: string;
 }
