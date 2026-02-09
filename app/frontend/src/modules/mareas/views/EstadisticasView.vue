@@ -12,12 +12,8 @@
                v-model:daysCalculationMode="daysCalculationMode" v-model:includeCampaigns="includeCampaigns" />
 
             <div class="mt-4">
-               <TimeFilterBar 
-                 :year="year" 
-                 :startDate="startDate" 
-                 :endDate="endDate"
-                 @update:filter="handleTimeFilter"
-               />
+               <TimeFilterBar :year="year" :startDate="startDate" :endDate="endDate"
+                  @update:filter="handleTimeFilter" />
             </div>
 
             <!-- Collapsible Criteria Explanation -->
@@ -92,6 +88,16 @@
                         </button>
                      </template>
                   </ChartWidget>
+               </div>
+            </section>
+
+            <!-- ROW 4: DETAILED FISHERY ANALYSIS (DUAL AXIS) -->
+            <section class="grid grid-cols-12 gap-8">
+               <div class="col-span-12">
+                  <ChartWidget title="Detalle de Actividad por Pesquería"
+                     subtitle="Comparativa de Mareas y Días Navegados" type="bar" :series="fisheryDualAxisSeries"
+                     :options="fisheryDualAxisOptions" allow-download @dataPointClick="handleFisheryClick"
+                     @download="handleDownload('Detalle_Pesqueria_Mareas_Dias', 'FISHERY')" />
                </div>
             </section>
 
@@ -175,10 +181,10 @@
                               <div class="flex items-center gap-2 mb-2">
                                  <span class="font-black text-sm text-text tabular-nums tracking-tighter">{{
                                     marea.id_marea
-                                    }}</span>
+                                 }}</span>
                                  <span
                                     class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest bg-secondary/10 text-secondary border border-secondary/20">{{
-                                    marea.estado }}</span>
+                                       marea.estado }}</span>
                                  <span v-if="marea.tipoMarea === TipoMarea.CI"
                                     class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest bg-accent/10 text-accent border border-accent/20">Campaña</span>
                               </div>
@@ -222,7 +228,7 @@
                                  <div class="text-right">
                                     <span
                                        class="block text-xl font-bold text-text-muted/80 leading-tight tabular-nums">{{
-                                       marea.diasTotales }}</span>
+                                          marea.diasTotales }}</span>
                                     <span
                                        class="text-[9px] font-bold text-text-muted uppercase tracking-tighter">Totales</span>
                                  </div>
@@ -308,7 +314,7 @@
                                  <td class="px-4 py-2 border-r border-border/50">
                                     <div class="flex flex-col">
                                        <span class="font-black text-xs text-text tabular-nums">{{ marea.id_marea
-                                          }}</span>
+                                       }}</span>
                                        <span class="text-[9px] font-bold text-text-muted uppercase tracking-tighter">{{
                                           marea.estado }}</span>
                                     </div>
@@ -318,10 +324,10 @@
                                  </td>
                                  <td class="px-4 py-2 text-xs font-bold text-text border-r border-border/50">{{
                                     marea.pesqueria
-                                    }}</td>
+                                 }}</td>
                                  <td v-if="filterType !== 'OBSERVER'"
                                     class="px-4 py-2 text-xs font-bold text-text border-r border-border/50">{{
-                                    marea.observador
+                                       marea.observador
                                     }}</td>
                                  <td class="px-4 py-2 text-right border-r border-border/50">
                                     <span
@@ -332,7 +338,7 @@
                                  <td v-if="mode === 'CALENDAR'" class="px-4 py-2 text-right">
                                     <span class="font-bold text-xs text-text-muted tabular-nums opacity-80">{{
                                        marea.diasTotales
-                                       }}</span>
+                                    }}</span>
                                  </td>
                               </tr>
                            </tbody>
@@ -345,7 +351,7 @@
                         <SearchIcon class="w-12 h-12 text-text-muted/20 mb-4" />
                         <p class="text-xs font-black text-text-muted uppercase tracking-widest">No hay resultados para
                            "{{
-                           searchTerm }}"</p>
+                              searchTerm }}"</p>
                         <p class="text-[10px] text-text-muted/60 mt-2 font-bold uppercase">Intenta ajustar los criterios
                            de
                            búsqueda</p>
@@ -442,7 +448,7 @@
                                  <div class="flex flex-col">
                                     <span
                                        class="font-bold text-sm text-text group-hover:text-primary transition-colors">{{
-                                       obs.name }}</span>
+                                          obs.name }}</span>
                                     <span v-if="!obs.active"
                                        class="text-[9px] font-bold text-error uppercase tracking-tighter">Inactivo</span>
                                  </div>
@@ -862,6 +868,81 @@ const observerChartOptions = computed(() => ({
    xaxis: { categories: observerSort.value.map(o => o.name) },
    colors: ['#8b5cf6']
 }))
+
+// 5. Dual Axis Fishery Chart (Mareas vs Days) - Shows ALL (or Top 20) for detail
+const fisheryDetailData = computed(() => stats.value?.fisheries || []);
+
+const fisheryDualAxisSeries = computed(() => {
+   const data = fisheryDetailData.value;
+   return [
+      {
+         name: 'Mareas Iniciadas',
+         type: 'column',
+         data: data.map(f => f.mareas)
+      },
+      {
+         name: 'Días Navegados',
+         type: 'column',
+         data: data.map(f => f.days)
+      }
+   ];
+});
+
+const fisheryDualAxisOptions = computed(() => ({
+   chart: {
+      type: 'bar', // Combined chart type
+      stacked: false,
+      toolbar: { show: true }, // Allow zoom/pan for many items
+      zoom: { enabled: true }
+   },
+   stroke: {
+      width: [0, 0], // No stroke for bars
+      curve: 'smooth'
+   },
+   plotOptions: {
+      bar: {
+         columnWidth: '70%', // Thicker bars
+         borderRadius: 2 // Less rounded
+      }
+   },
+   dataLabels: {
+      enabled: false, // Clean look
+   },
+   xaxis: {
+      categories: fisheryDetailData.value.map(f => f.name),
+   },
+   yaxis: [
+      {
+         seriesName: 'Mareas Iniciadas',
+         axisTicks: { show: true },
+         axisBorder: { show: true, color: '#0ea5e9' },
+         labels: { style: { colors: '#0ea5e9', fontWeight: 700 } },
+         title: { text: 'Cantidad de Mareas', style: { color: '#0ea5e9', fontWeight: 800 } }
+      },
+      {
+         opposite: true,
+         seriesName: 'Días Navegados',
+         axisTicks: { show: true },
+         axisBorder: { show: true, color: '#f59e0b' },
+         labels: { style: { colors: '#f59e0b', fontWeight: 700 } },
+         title: { text: 'Días Totales', style: { color: '#f59e0b', fontWeight: 800 } }
+      }
+   ],
+   colors: ['#0ea5e9', '#f59e0b'], // Primary Blue, Secondary Orange
+   tooltip: {
+      shared: true,
+      intersect: false,
+      theme: 'dark', // Force dark for contrast
+      x: { show: true },
+      y: {
+         formatter: (val: number, opts: any) => {
+            const unit = opts.seriesIndex === 0 ? 'mareas' : 'días';
+            return `${val} ${unit}`;
+         }
+      },
+      custom: undefined
+   }
+}));
 
 </script>
 

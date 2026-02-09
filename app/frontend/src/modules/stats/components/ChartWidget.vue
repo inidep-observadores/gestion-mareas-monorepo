@@ -64,6 +64,30 @@ const chartOptions = computed(() => {
       toolbar: { show: false },
       zoom: { enabled: false },
       animations: { enabled: true },
+      // Localization: Spanish by default
+      defaultLocale: 'es',
+      locales: [{
+        name: 'es',
+        options: {
+          months: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'],
+          shortMonths: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'],
+          days: ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'],
+          shortDays: ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'],
+          toolbar: {
+            download: 'Descargar SVG',
+            selection: 'Selección',
+            selectionZoom: 'Zoom de Selección',
+            zoomIn: 'Acercar',
+            zoomOut: 'Alejar',
+            pan: 'Desplazamiento',
+            reset: 'Restablecer Zoom',
+            menu: 'Menú',
+            exportToSVG: 'Descargar SVG',
+            exportToPNG: 'Descargar PNG',
+            exportToCSV: 'Descargar CSV',
+          }
+        }
+      }],
       events: {
         dataPointSelection: (event: any, chartContext: any, config: any) => {
           const { seriesIndex, dataPointIndex, w } = config
@@ -183,7 +207,25 @@ const chartOptions = computed(() => {
     }
   }
   
-  return { ...defaults, ...props.options }
+  // Manual Deep Merge for 'chart' object to preserve locales
+  const mergedOptions = { ...defaults, ...props.options };
+  
+  if (props.options?.chart) {
+    mergedOptions.chart = {
+      ...defaults.chart,
+      ...props.options.chart,
+      // Ensure locales are not overwritten if not provided in props
+      locales: props.options.chart.locales || defaults.chart.locales,
+      defaultLocale: props.options.chart.defaultLocale || defaults.chart.defaultLocale,
+      // Merge events if necessary (careful with function references)
+      events: {
+        ...defaults.chart.events,
+        ...props.options.chart.events
+      }
+    };
+  }
+
+  return mergedOptions;
 })
 </script>
 
