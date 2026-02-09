@@ -3,16 +3,13 @@
     <div class="flex items-center justify-between mb-6">
       <div>
         <h3 class="text-sm font-black text-text uppercase tracking-tight">{{ title }}</h3>
-        <p v-if="subtitle" class="text-[10px] font-bold text-text-muted uppercase tracking-widest mt-1">{{ subtitle }}</p>
+        <p v-if="subtitle" class="text-[10px] font-bold text-text-muted uppercase tracking-widest mt-1">{{ subtitle }}
+        </p>
       </div>
       <div class="flex items-center gap-1">
         <slot name="header-action"></slot>
-        <button 
-          v-if="allowDownload" 
-          class="text-text-muted hover:text-primary transition-colors p-1"
-          title="Descargar Datos"
-          @click="$emit('download')"
-        >
+        <button v-if="allowDownload" class="text-text-muted hover:text-primary transition-colors p-1"
+          title="Descargar Datos" @click="$emit('download')">
           <DownloadIcon class="w-4 h-4" />
         </button>
       </div>
@@ -20,17 +17,11 @@
 
     <!-- Chart Container -->
     <div class="flex-1 min-h-[300px] w-full relative">
-       <apexchart 
-         v-if="options && series"
-         :type="type" 
-         height="100%"
-         width="100%"
-         :options="chartOptions" 
-         :series="series"
-       />
-       <div v-else class="absolute inset-0 flex items-center justify-center text-text-muted text-xs font-medium">
-         Cargando datos...
-       </div>
+      <apexchart v-if="options && series" :type="type" height="100%" width="100%" :options="chartOptions"
+        :series="series" />
+      <div v-else class="absolute inset-0 flex items-center justify-center text-text-muted text-xs font-medium">
+        Cargando datos...
+      </div>
     </div>
   </div>
 </template>
@@ -43,7 +34,7 @@ import { useThemeStore } from '@/modules/shared/stores/theme.store'
 const props = defineProps<{
   title: string
   subtitle?: string
-  type?: 'line' | 'area' | 'bar' | 'pie' | 'donut' | 'radar'
+  type?: 'line' | 'area' | 'bar' | 'pie' | 'donut' | 'radar' | 'scatter'
   series: any[]
   options?: any
   allowDownload?: boolean
@@ -56,7 +47,7 @@ const emit = defineEmits(['dataPointClick', 'download'])
 // Merit: Default chart options for premium look
 const chartOptions = computed(() => {
   const isDark = themeStore.darkMode
-  
+
   const defaults = {
     chart: {
       fontFamily: 'Inter, system-ui, sans-serif',
@@ -98,9 +89,9 @@ const chartOptions = computed(() => {
       }
     },
     dataLabels: { enabled: false },
-    stroke: { 
+    stroke: {
       show: true,
-      curve: 'smooth', 
+      curve: 'smooth',
       width: props.type === 'pie' || props.type === 'donut' ? 2 : 2,
       colors: props.type === 'pie' || props.type === 'donut' ? ['var(--color-surface)'] : undefined
     },
@@ -113,21 +104,21 @@ const chartOptions = computed(() => {
     xaxis: {
       axisBorder: { show: false },
       axisTicks: { show: false },
-      labels: { 
-        style: { 
-          colors: 'var(--color-text-muted)', 
-          fontSize: '10px', 
-          fontWeight: 600 
-        } 
+      labels: {
+        style: {
+          colors: 'var(--color-text-muted)',
+          fontSize: '10px',
+          fontWeight: 600
+        }
       }
     },
     yaxis: {
-      labels: { 
-        style: { 
-          colors: 'var(--color-text-muted)', 
-          fontSize: '10px', 
-          fontWeight: 600 
-        } 
+      labels: {
+        style: {
+          colors: 'var(--color-text-muted)',
+          fontSize: '10px',
+          fontWeight: 600
+        }
       }
     },
     legend: {
@@ -176,16 +167,16 @@ const chartOptions = computed(() => {
           size: '55%',
           labels: {
             show: props.type === 'donut',
-            name: { 
-              show: true, 
+            name: {
+              show: true,
               color: 'var(--color-text-muted)',
               fontSize: '11px',
               fontWeight: 900,
               offsetY: -8
             },
-            value: { 
-              show: true, 
-              color: 'var(--color-text)', 
+            value: {
+              show: true,
+              color: 'var(--color-text)',
               fontSize: '22px',
               fontWeight: 900,
               offsetY: 10,
@@ -206,10 +197,10 @@ const chartOptions = computed(() => {
       }
     }
   }
-  
+
   // Manual Deep Merge for 'chart' object to preserve locales
   const mergedOptions = { ...defaults, ...props.options };
-  
+
   if (props.options?.chart) {
     mergedOptions.chart = {
       ...defaults.chart,
@@ -235,6 +226,7 @@ const chartOptions = computed(() => {
   border: none !important;
   box-shadow: none !important;
 }
+
 :deep(.apexcharts-tooltip-series-group) {
   background: transparent !important;
 }

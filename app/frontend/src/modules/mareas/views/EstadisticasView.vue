@@ -91,13 +91,19 @@
                </div>
             </section>
 
-            <!-- ROW 4: DETAILED FISHERY ANALYSIS (DUAL AXIS) -->
+            <!-- ROW 4: DETAILED FISHERY ANALYSIS & OPERATIONAL PROFILE -->
             <section class="grid grid-cols-12 gap-8">
-               <div class="col-span-12">
+               <div class="col-span-12 lg:col-span-7">
                   <ChartWidget title="Detalle de Actividad por Pesquería"
                      subtitle="Comparativa de Mareas y Días Navegados" type="bar" :series="fisheryDualAxisSeries"
                      :options="fisheryDualAxisOptions" allow-download @dataPointClick="handleFisheryClick"
                      @download="handleDownload('Detalle_Pesqueria_Mareas_Dias', 'FISHERY')" />
+               </div>
+               <div class="col-span-12 lg:col-span-5">
+                  <ChartWidget title="Perfil Operativo" subtitle="Esfuerzo (Días) vs Frecuencia (Mareas)" type="scatter"
+                     :series="fisheryProfileSeries" :options="fisheryProfileOptions" allow-download
+                     @dataPointClick="handleFisheryClick"
+                     @download="handleDownload('Perfil_Operativo_Pesqueria', 'FISHERY')" />
                </div>
             </section>
 
@@ -941,6 +947,78 @@ const fisheryDualAxisOptions = computed(() => ({
          }
       },
       custom: undefined
+   }
+}));
+
+// 6. Operational Profile Chart (Scatter: Mareas vs Days)
+const fisheryProfileSeries = computed(() => {
+   // We want each point to be identifiable. 
+   // Option A: One series per fishery (Color-coded, legend might be big if many)
+   // Option B: One single series with all points (Best for "Profile" visualization)
+   return [{
+      name: 'Pesquerías',
+      data: fisheryDetailData.value.map(f => ({
+         x: f.mareas,
+         y: f.days,
+         name: f.name // Store name for custom tooltip
+      }))
+   }];
+});
+
+const fisheryProfileOptions = computed(() => ({
+   chart: {
+      type: 'scatter',
+      zoom: { enabled: true, type: 'xy' },
+      toolbar: { show: true }
+   },
+   xaxis: {
+      title: {
+         text: 'CANTIDAD DE MAREAS (FRECUENCIA)',
+         style: { color: 'var(--color-text-muted)', fontSize: '10px', fontWeight: 800 }
+      },
+      tickAmount: 5,
+      labels: { formatter: (val: number) => Math.floor(val) }
+   },
+   yaxis: {
+      title: {
+         text: 'DÍAS NAVEGADOS (ESFUERZO)',
+         style: { color: 'var(--color-text-muted)', fontSize: '10px', fontWeight: 800 }
+      },
+      labels: { formatter: (val: number) => Math.floor(val) }
+   },
+   markers: {
+      size: 8,
+      strokeWidth: 2,
+      strokeOpacity: 0.8,
+      fillOpacity: 0.6,
+      hover: { size: 10 }
+   },
+   colors: ['#8b5cf6'], // Purple tone for differentiation
+   grid: {
+      xaxis: { lines: { show: true } },
+      yaxis: { lines: { show: true } }
+   },
+   tooltip: {
+      custom: ({ series, seriesIndex, dataPointIndex, w }: any) => {
+         const data = w.config.series[seriesIndex].data[dataPointIndex];
+         return `
+           <div class="px-4 py-3 bg-surface text-text border border-border rounded-xl flex flex-col gap-1 shadow-2xl min-w-[180px]">
+             <span class="text-[10px] font-black text-primary uppercase tracking-widest border-b border-border pb-1 mb-1">${data.name}</span>
+             <div class="flex justify-between items-center gap-4">
+               <span class="text-text-muted text-[10px] font-bold">FRECUENCIA:</span>
+               <span class="text-text font-black text-xs">${data.x} Mareas</span>
+             </div>
+             <div class="flex justify-between items-center gap-4">
+               <span class="text-text-muted text-[10px] font-bold">ESFUERZO:</span>
+               <span class="text-text font-black text-xs">${data.y} Días</span>
+             </div>
+             <div class="mt-2 pt-1 border-t border-border/50 flex justify-between items-center">
+                <span class="text-text-muted text-[9px] font-black italic uppercase">Intensidad:</span>
+                <span class="text-primary font-black text-[10px]">${(data.y / data.x).toFixed(1)} días/marea</span>
+             </div>
+           </div>
+         `;
+      }
    }
 }));
 
