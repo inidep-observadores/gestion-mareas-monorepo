@@ -1195,7 +1195,14 @@ export class MareasService {
             } as any
         });
 
-        const activeNav = new Map<string, { start: Date; vessel: string; mareaCode: string; fishery: string; enTierra: boolean }>();
+        // Agrupar etapas por marea para contar el total
+        const stageCountByMarea = new Map<string, number>();
+        etapas.forEach((e: any) => {
+            const mareaId = e.mareaId;
+            stageCountByMarea.set(mareaId, (stageCountByMarea.get(mareaId) || 0) + 1);
+        });
+
+        const activeNav = new Map<string, { start: Date; vessel: string; mareaCode: string; fishery: string; enTierra: boolean; stageCount: number }>();
         const lastArrivalByObs = new Map<string, { date: Date; mareaCode: string; vessel: string; fishery: string }>();
         const obsConMareas = new Set<string>();
 
@@ -1219,7 +1226,8 @@ export class MareasService {
                         vessel: etapa.marea.buque.nombreBuque,
                         mareaCode: MareaUtils.formatCodigo(etapa.marea),
                         fishery: etapa.pesqueria?.nombre || etapa.marea.pesqueria?.nombre || 'Desconocida',
-                        enTierra: finRaw !== null
+                        enTierra: finRaw !== null,
+                        stageCount: stageCountByMarea.get(etapa.mareaId) || 1
                     });
                 }
 
@@ -1243,7 +1251,7 @@ export class MareasService {
         const listDescanso: Array<{ id: string; name: string; days: number; lastArrival: string; mareaCode: string; vesselName: string; fishery: string; tipoObservador: string }> = [];
         const listImpedidos: Array<{ id: string; name: string; motivo: string; tipoObservador: string }> = [];
         const listDisponibles: Array<{ id: string; name: string; days: number; lastArrival: string; mareaCode: string; vesselName: string; fishery: string; tipoObservador: string }> = [];
-        const listNavegando: Array<{ id: string; name: string; days: number; vessel: string; mareaCode: string; fishery: string; enTierra: boolean; startDate: string; tipoObservador: string }> = [];
+        const listNavegando: Array<{ id: string; name: string; days: number; vessel: string; mareaCode: string; fishery: string; enTierra: boolean; startDate: string; tipoObservador: string, stageCount: number }> = [];
         const topDryCandidates: Array<{ id: string; name: string; days: number; lastArrival: string; mareaCode: string; vesselName: string; fishery: string; tipoObservador: string }> = [];
 
         observadores.forEach((obs) => {
@@ -1284,7 +1292,8 @@ export class MareasService {
                         enTierra: navData?.enTierra || false,
                         days: daysNav,
                         startDate: navData?.start?.toISOString() || '',
-                        tipoObservador: obs.tipoObservador
+                        tipoObservador: obs.tipoObservador,
+                        stageCount: navData?.stageCount || 1
                     });
                     break;
                 case 'IMPEDIDO':

@@ -125,7 +125,7 @@
                     {{ item.name }}
                   </span>
                   <span class="block text-[9px] font-normal text-text-muted/60 lowercase italic">{{ item.tipoObservador
-                    }}</span>
+                  }}</span>
                 </td>
 
                 <!-- Impedidos Columns -->
@@ -147,10 +147,19 @@
                         {{ formatDate((item as any).lastArrival) }}
                       </template>
                     </span>
-                    <span class="text-[9px] font-bold text-text-muted/60 uppercase tracking-tighter">
-                      {{ (item as any).mareaCode || 'S/M' }} • {{ (item as any).vessel || (item as any).vesselName ||
-                        'Desconocido' }}
-                    </span>
+                    <div class="flex items-center gap-1.5">
+                      <span class="text-[9px] font-bold text-text-muted/60 uppercase tracking-tighter">
+                        {{ (item as any).mareaCode || 'S/M' }}
+                      </span>
+                      <span v-if="(item as any).stageCount > 1"
+                        class="px-1 py-0.5 bg-primary/10 text-primary text-[7px] font-black rounded border border-primary/20 leading-none"
+                        title="Marea con múltiples etapas">
+                        E{{ (item as any).stageCount }}
+                      </span>
+                      <span class="text-[9px] font-bold text-text-muted/60 uppercase tracking-tighter">
+                        • {{ (item as any).vessel || (item as any).vesselName || 'Desconocido' }}
+                      </span>
+                    </div>
                     <span class="text-[8px] font-medium text-primary uppercase tracking-widest italic">
                       {{ (item as any).fishery || 'Pesquería N/D' }}
                     </span>
@@ -161,7 +170,7 @@
                 <td v-if="selectedStatus !== 'Impedidos'"
                   class="px-6 py-3 text-xs font-black text-text text-right tabular-nums">
                   <span :class="selectedStatus === 'Navegando' ? 'text-info' : 'text-text-muted'">{{ (item as any).days
-                    }}
+                  }}
                     d</span>
                 </td>
               </tr>
