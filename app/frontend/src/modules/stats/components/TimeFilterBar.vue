@@ -20,7 +20,7 @@
       <div class="flex-1 flex flex-wrap items-center gap-4 p-4">
 
         <!-- Mes Selector -->
-        <div class="flex flex-col gap-1.5 min-w-[140px]">
+        <div class="flex flex-col gap-1.5 min-w-[170px]">
           <label class="text-[9px] font-black text-text-muted uppercase tracking-widest px-1">Mes Específico</label>
           <select v-model="localMonth" @change="handleMonthChange"
             class="bg-surface border border-border rounded-xl px-3 py-2 text-xs font-bold text-text focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none appearance-none cursor-pointer transition-all hover:bg-surface-muted/50">
@@ -48,17 +48,17 @@
         <div class="hidden lg:block w-px h-8 bg-border mx-2"></div>
 
         <!-- Rango Manual (DatePicker) -->
-        <div class="flex-1 flex flex-col gap-1.5 min-w-[340px]">
+        <div class="flex-1 flex flex-col gap-1.5 min-w-0 sm:min-w-[340px]">
           <label class="text-[9px] font-black text-text-muted uppercase tracking-widest px-1">Rango
             Personalizado</label>
-          <div class="flex items-center gap-2">
-            <div class="flex-1 max-w-[170px]">
+          <div class="flex flex-col sm:flex-row sm:items-center gap-2">
+            <div class="flex-1 sm:max-w-[170px]">
               <DatePicker v-model="localStartDate" placeholder="Desde" @update:modelValue="handleRangeChange" />
             </div>
-            <div class="text-text-muted opacity-30">
+            <div class="hidden sm:block text-text-muted opacity-30">
               <ArrowRightIcon class="w-3 h-3" />
             </div>
-            <div class="flex-1 max-w-[170px]">
+            <div class="flex-1 sm:max-w-[170px]">
               <DatePicker v-model="localEndDate" placeholder="Hasta" @update:modelValue="handleRangeChange" />
             </div>
           </div>
