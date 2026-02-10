@@ -125,7 +125,7 @@
                     {{ item.name }}
                   </span>
                   <span class="block text-[9px] font-normal text-text-muted/60 lowercase italic">{{ item.tipoObservador
-                  }}</span>
+                    }}</span>
                 </td>
 
                 <!-- Impedidos Columns -->
@@ -153,7 +153,7 @@
                       </span>
                       <span v-if="(item as any).stageCount > 1"
                         class="px-1 py-0.5 bg-primary/10 text-primary text-[7px] font-black rounded border border-primary/20 leading-none"
-                        title="Marea con múltiples etapas">
+                        :title="'Etapa ' + (item as any).stageCount">
                         E{{ (item as any).stageCount }}
                       </span>
                       <span class="text-[9px] font-bold text-text-muted/60 uppercase tracking-tighter">
@@ -170,7 +170,7 @@
                 <td v-if="selectedStatus !== 'Impedidos'"
                   class="px-6 py-3 text-xs font-black text-text text-right tabular-nums">
                   <span :class="selectedStatus === 'Navegando' ? 'text-info' : 'text-text-muted'">{{ (item as any).days
-                  }}
+                    }}
                     d</span>
                 </td>
               </tr>
