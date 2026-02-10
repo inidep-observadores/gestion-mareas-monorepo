@@ -100,10 +100,14 @@ describe('TrackingService Integrity (CSV & Robustness)', () => {
         const buffer = Buffer.from(csvContent);
 
         mockPrismaService.buque.findMany.mockResolvedValue([]);
+        // Simular que no lo encuentra por MMSI (Priority 1)
+        mockPrismaService.buque.findFirst.mockImplementation((args) => {
+            if (args.where.mmsi === '123456') return Promise.resolve(null);
+            if (args.where.nombreBuque?.equals === 'TEST_VESSEL') return Promise.resolve({ id: 'v-1', nombreBuque: 'TEST_VESSEL' });
+            return Promise.resolve(null);
+        });
+        // Simular que lo encuentra por Matricula SIOP (Priority 4)
         mockPrismaService.buque.findUnique.mockResolvedValue({ id: 'v-1', nombreBuque: 'TEST_VESSEL', matriculaSiop: '123' });
-        mockPrismaService.marea.findFirst.mockResolvedValue(null);
-        mockPrismaService.puerto.findMany.mockResolvedValue([]);
-        mockPrismaService.buqueTrayectoriaPunto.createMany.mockResolvedValue({ count: 0 });
 
         const result = await service.importTrackingData(buffer);
 
@@ -116,9 +120,14 @@ describe('TrackingService Integrity (CSV & Robustness)', () => {
         const buffer = Buffer.from(csvContent);
 
         mockPrismaService.buque.findMany.mockResolvedValue([]);
+        mockPrismaService.buque.findFirst.mockImplementation((args) => {
+            if (args.where.mmsi === '123456') return Promise.resolve(null); // P1
+            if (args.where.nombreBuque?.equals === 'TEST_VESSEL') {
+                return Promise.resolve({ id: 'v-1', nombreBuque: 'TEST_VESSEL' }); // P2
+            }
+            return Promise.resolve(null);
+        });
         mockPrismaService.buque.findUnique.mockResolvedValue(null);
-        mockPrismaService.buque.findFirst.mockResolvedValue({ id: 'v-1', nombreBuque: 'TEST_VESSEL', matriculaSiop: '123' });
-        mockPrismaService.marea.findFirst.mockResolvedValue(null);
 
         await service.importTrackingData(buffer);
 
@@ -137,10 +146,11 @@ describe('TrackingService Integrity (CSV & Robustness)', () => {
         mockPrismaService.buque.findUnique.mockResolvedValue(null);
         mockPrismaService.buque.findFirst.mockImplementation((args) => {
             if (args.where.nombreBuque?.equals === 'KNOWN') {
-                return Promise.resolve({ id: 'v-known', nombreBuque: 'KNOWN' });
+                return Promise.resolve({ id: 'v-known', nombreBuque: 'KNOWN', matricula: '123', mmsi: '123456' });
             }
             return Promise.resolve(null);
         });
+        mockPrismaService.buque.update.mockImplementation((args) => Promise.resolve({ id: 'v-known', ...args.data }));
 
         mockPrismaService.marea.findFirst.mockResolvedValue(null);
         mockPrismaService.puerto.findMany.mockResolvedValue([]);
@@ -157,7 +167,13 @@ describe('TrackingService Integrity (CSV & Robustness)', () => {
         const buffer = Buffer.from(csvContent);
 
         mockPrismaService.buque.findMany.mockResolvedValue([]);
-        mockPrismaService.buque.findUnique.mockResolvedValue({ id: 'v-1', nombreBuque: 'TEST' });
+        mockPrismaService.buque.findFirst.mockImplementation((args) => {
+            if (args.where.mmsi === '123456') return Promise.resolve(null);
+            if (args.where.nombreBuque?.equals === 'TEST') return Promise.resolve({ id: 'v-1', nombreBuque: 'TEST', matricula: '123' });
+            return Promise.resolve(null);
+        });
+        mockPrismaService.buque.findUnique.mockResolvedValue({ id: 'v-1', nombreBuque: 'TEST', matricula: '123' });
+        mockPrismaService.buque.update.mockImplementation((args) => Promise.resolve({ id: 'v-1', ...args.data }));
         mockPrismaService.marea.findFirst.mockResolvedValue(null);
         mockPrismaService.puerto.findMany.mockResolvedValue([]);
 
