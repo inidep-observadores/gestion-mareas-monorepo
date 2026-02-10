@@ -14,10 +14,19 @@
           <button 
             @click="triggerPnaSync"
             :disabled="triggeringPna"
-            class="px-4 py-2 bg-primary/10 border border-primary/20 text-primary rounded-lg hover:bg-primary/20 transition-all flex items-center gap-2 font-semibold text-sm disabled:opacity-50"
+            class="px-4 py-2 bg-warning/10 border border-warning/20 text-warning rounded-lg hover:bg-warning/20 transition-all flex items-center gap-2 font-semibold text-sm disabled:opacity-50"
           >
             <Activity class="w-4 h-4" :class="{ 'animate-pulse': triggeringPna }" />
             {{ triggeringPna ? 'Sincronizando...' : 'Sincronizar PNA' }}
+          </button>
+
+          <button 
+            @click="triggerTrackingSync"
+            :disabled="triggeringTracking"
+            class="px-4 py-2 bg-success/10 border border-success/20 text-success rounded-lg hover:bg-success/20 transition-all flex items-center gap-2 font-semibold text-sm disabled:opacity-50"
+          >
+            <ShipIcon class="w-4 h-4" :class="{ 'animate-pulse': triggeringTracking }" />
+            {{ triggeringTracking ? 'Programando...' : 'Sincronizar Tracking' }}
           </button>
 
           <button 
@@ -237,6 +246,7 @@ const alerts = ref<AlertLogEntry[]>([])
 const isLoading = ref(false)
 const isProcessingBatch = ref(false)
 const triggeringPna = ref(false)
+const triggeringTracking = ref(false)
 const totalAlerts = ref(0)
 const batchDialogVisible = ref(false)
 const batchResults = ref<{ 
@@ -319,6 +329,21 @@ const triggerPnaSync = async () => {
     console.error(error)
   } finally {
     triggeringPna.value = false
+  }
+}
+
+const triggerTrackingSync = async () => {
+  triggeringTracking.value = true
+  try {
+    const result = await alertsAdminApi.syncTracking()
+    toast.success(`Sincronización de tracking programada: ${result.queuedJobs} tareas en cola`)
+    // Refrescar pronto para ver si el primer bloque generó algo (aunque sea improbable tan rápido)
+    setTimeout(() => refreshLogs(), 10000)
+  } catch (error) {
+    toast.error('Error al iniciar sincronización de tracking')
+    console.error(error)
+  } finally {
+    triggeringTracking.value = false
   }
 }
 

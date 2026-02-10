@@ -15,8 +15,20 @@ export interface PnaReporteCostera {
     borrado: string;
 }
 
-export interface PnaApiResponse {
-    reportes: PnaReporteCostera[];
+export interface PnaTrackingReporte {
+    matricula: string;
+    mmsi: string;
+    nombre: string;
+    latitud: string;
+    longitud: string;
+    fecha: string;
+    rumbo: string;
+    velocidad: string;
+    eslora?: string;
+}
+
+export interface PnaTrackingResponse {
+    reportes: PnaTrackingReporte[];
     error: boolean;
     mensaje: string;
 }

@@ -59,6 +59,11 @@ const alertsAdminApi = {
     processBatchAutomation: async (): Promise<BatchProcessResult> => {
         const { data } = await httpClient.post<BatchProcessResult>('/alerts/automation/batch');
         return data;
+    },
+
+    syncTracking: async (): Promise<any> => {
+        const { data } = await httpClient.post('/pna-api/sync-tracking');
+        return data;
     }
 };
 

@@ -4,6 +4,8 @@ import { PrismaService } from '../prisma/prisma.service';
 import { JobStatus, JobType } from './job-types';
 import { VesselSyncProcessor } from './processors/vessel-sync.processor';
 import { PnaApiSyncProcessor } from './processors/pna-api-sync.processor';
+import { PnaTrackingSyncProcessor } from './processors/pna-tracking-sync.processor';
+import { PnaTrackingService } from '../pna-api/pna-tracking.service';
 import * as os from 'os';
 
 @Injectable()
@@ -16,6 +18,8 @@ export class SchedulerService {
         private readonly prisma: PrismaService,
         private readonly vesselSyncProcessor: VesselSyncProcessor,
         private readonly pnaApiSyncProcessor: PnaApiSyncProcessor,
+        private readonly pnaTrackingSyncProcessor: PnaTrackingSyncProcessor,
+        private readonly pnaTrackingService: PnaTrackingService,
     ) {
         // Generar un ID único para este worker basado en hostname y PID
         this.workerId = `${os.hostname()}-${process.pid}`;
@@ -82,6 +86,15 @@ export class SchedulerService {
                 },
             });
         }
+    }
+
+    /**
+     * Programa la sincronización fragmentada de tracking PNA
+     */
+    @Cron(CronExpression.EVERY_2_HOURS)
+    async ensurePnaTrackingSyncJob() {
+        this.logger.log('Iniciando programación periódica de Tracking PNA...');
+        await this.pnaTrackingService.scheduleSynchronization();
     }
 
     private async processQueue() {
@@ -152,6 +165,8 @@ export class SchedulerService {
                 return await this.vesselSyncProcessor.process(job.payload);
             case JobType.PNA_API_SYNC:
                 return await this.pnaApiSyncProcessor.process(job.payload);
+            case JobType.PNA_TRACKING_SYNC:
+                return await this.pnaTrackingSyncProcessor.process(job.payload);
             default:
                 throw new Error(`Unknown job type: ${job.type}`);
         }

@@ -90,14 +90,14 @@ export class JobQueueService {
     /**
      * Crea una nueva tarea en la cola
      */
-    async addJob(type: JobType, payload: any, priority = 10) {
+    async addJob(type: JobType, payload: any, priority = 10, nextRunAt?: Date) {
         return this.prisma.jobQueue.create({
             data: {
                 type,
                 payload,
                 priority,
                 status: JobStatus.PENDING,
-                nextRunAt: new Date(),
+                nextRunAt: nextRunAt || new Date(),
             },
         });
     }

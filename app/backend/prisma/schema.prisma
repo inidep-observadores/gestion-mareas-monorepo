@@ -842,6 +842,7 @@ enum JobType {
   NOTIFICATION
   REPORT_GENERATION
   PNA_API_SYNC
+  PNA_TRACKING_SYNC
 
   @@schema("public")
 }
