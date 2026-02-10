@@ -12,7 +12,7 @@ describe('TrackingService Integrity (CSV & Robustness)', () => {
 
     const mockPrismaService = {
         marea: {
-            findMany: jest.fn(),
+            findMany: jest.fn().mockResolvedValue([]),
             findFirst: jest.fn(),
             findUnique: jest.fn()
         },

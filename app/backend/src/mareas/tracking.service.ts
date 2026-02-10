@@ -618,7 +618,7 @@ export class TrackingService {
             }
         });
 
-        if (mareas.length === 0) {
+        if (!mareas || mareas.length === 0) {
             return 0;
         }
 
