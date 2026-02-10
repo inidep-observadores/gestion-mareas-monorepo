@@ -213,7 +213,6 @@ const getSources = (fuentes: any): string[] => {
       if (s.name === 'TRACKING_CSV') return 'TRK'
       return s.name
     })
-    if (fuentes.automatizado) names.push('AUTO')
     return [...new Set(names)]
   }
   return []
@@ -223,7 +222,6 @@ const getSourceStyle = (source: string) => {
   switch (source) {
     case 'PNA': return 'bg-amber-100/50 text-amber-700 border-amber-200/50 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800/50'
     case 'TRK': return 'bg-emerald-100/50 text-emerald-700 border-emerald-200/50 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800/50'
-    case 'AUTO': return 'bg-purple-100/50 text-purple-700 border-purple-200/50 dark:bg-purple-900/30 dark:text-purple-400 dark:border-purple-800/50 animate-pulse'
     default: return 'bg-gray-100/50 text-gray-700 border-gray-200/50 dark:bg-gray-800/30 dark:text-gray-400 dark:border-gray-700/50'
   }
 }
