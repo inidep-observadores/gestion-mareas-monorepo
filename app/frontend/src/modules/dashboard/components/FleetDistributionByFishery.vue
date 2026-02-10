@@ -1,5 +1,6 @@
 ﻿<template>
-  <div class="rounded-3xl border border-border bg-surface p-6 shadow-sm flex flex-col gap-4 border-l-4 border-l-primary">
+  <div
+    class="rounded-3xl border border-border bg-surface p-6 shadow-sm flex flex-col gap-4 border-l-4 border-l-primary">
     <div class="mb-6 flex items-center justify-between">
       <div>
         <h2 class="text-sm font-black text-text uppercase tracking-widest flex items-center gap-2">
@@ -23,22 +24,23 @@
       </div>
 
       <div class="flex flex-col justify-center py-2">
-        <h3 class="text-[10px] font-black text-text-muted uppercase tracking-widest mb-4 border-b border-border pb-2">Distribución Nominal</h3>
+        <h3 class="text-[10px] font-black text-text-muted uppercase tracking-widest mb-4 border-b border-border pb-2">
+          Distribución Nominal</h3>
         <div class="space-y-4" v-if="distribution.length">
           <div v-for="item in distribution" :key="item.label" class="group/item">
-            <div 
-              @click="toggleExpand(item.label)"
+            <div @click="toggleExpand(item.label)"
               class="space-y-2 p-2 rounded-2xl transition-all cursor-pointer hover:bg-surface-muted/80"
-              :class="{ 'bg-surface-muted shadow-sm ring-1 ring-border': expandedId === item.label }"
-            >
+              :class="{ 'bg-surface-muted shadow-sm ring-1 ring-border': expandedId === item.label }">
               <div class="flex items-center justify-between text-[10px] font-black uppercase tracking-widest">
                 <div class="flex items-center gap-2">
-                  <span class="text-text-muted transition-colors" :class="{ 'text-primary': expandedId === item.label }">{{ item.label }}</span>
-                  <div 
-                    class="w-4 h-4 rounded-full flex items-center justify-center transition-transform duration-300"
-                    :class="{ 'rotate-180 bg-primary text-white': expandedId === item.label, 'bg-surface-muted text-text-muted': expandedId !== item.label }"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                  <span class="text-text-muted transition-colors"
+                    :class="{ 'text-primary': expandedId === item.label }">{{ item.label }}</span>
+                  <div class="w-4 h-4 rounded-full flex items-center justify-center transition-transform duration-300"
+                    :class="{ 'rotate-180 bg-primary text-white': expandedId === item.label, 'bg-surface-muted text-text-muted': expandedId !== item.label }">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="m6 9 6 6 6-6" />
+                    </svg>
                   </div>
                 </div>
                 <span class="text-text tabular-nums">
@@ -46,63 +48,52 @@
                   <span class="text-text-muted font-bold ml-1">({{ item.percentage }}%)</span>
                 </span>
               </div>
-              <div class="relative h-2 w-full bg-surface-muted rounded-full overflow-hidden border border-border/30 flex shadow-inner">
+              <div
+                class="relative h-2 w-full bg-surface-muted rounded-full overflow-hidden border border-border/30 flex shadow-inner">
                 <template v-if="item.stats && Object.keys(item.stats).length > 1">
-                  <div
-                    v-for="(stat, code) in item.stats"
-                    :key="code"
-                    class="h-full transition-all duration-1000 ease-out"
-                    :style="{
+                  <div v-for="(stat, code) in item.stats" :key="code"
+                    class="h-full transition-all duration-1000 ease-out" :style="{
                       width: `${(stat.count / item.count) * 100}%`,
                       backgroundColor: getFleetColor(stat.nombre),
                       filter: 'saturate(0.8)'
-                    }"
-                    v-tooltip="`${stat.nombre}: ${stat.count} buques`"
-                  ></div>
+                    }" v-tooltip="`${stat.nombre}: ${stat.count} buques`"></div>
                 </template>
-                <div
-                  v-else
-                  class="h-full transition-all duration-1000 ease-out shadow-sm"
-                  :style="{
-                    width: totalActive ? `${(item.count / totalActive) * 100}%` : '0%',
-                    backgroundColor: item.color
-                  }"
-                ></div>
+                <div v-else class="h-full transition-all duration-1000 ease-out shadow-sm" :style="{
+                  width: totalActive ? `${(item.count / totalActive) * 100}%` : '0%',
+                  backgroundColor: item.color
+                }"></div>
               </div>
 
               <!-- Draggable/Scrollable Vessel Cloud -->
-              <Transition
-                enter-active-class="transition-all duration-300 ease-out"
+              <Transition enter-active-class="transition-all duration-300 ease-out"
                 enter-from-class="max-h-0 opacity-0 transform -translate-y-2"
                 enter-to-class="max-h-[1000px] opacity-100 transform translate-y-0"
                 leave-active-class="transition-all duration-200 ease-in"
                 leave-from-class="max-h-[1000px] opacity-100 transform translate-y-0"
-                leave-to-class="max-h-0 opacity-0 transform -translate-y-2"
-              >
+                leave-to-class="max-h-0 opacity-0 transform -translate-y-2">
                 <div v-if="expandedId === item.label" class="pt-3 overflow-hidden">
                   <!-- Conditional Grouping: Only if multiple fleet types exist -->
                   <div v-if="item.stats && Object.keys(item.stats).length > 1" class="space-y-4">
-                    <div v-for="(group, typeLabel) in groupVesselsByFleet(item.vessels)" :key="typeLabel" class="space-y-2">
+                    <div v-for="(group, typeLabel) in groupVesselsByFleet(item.vessels)" :key="typeLabel"
+                      class="space-y-2">
                       <div class="flex items-center gap-2 px-1">
                         <div class="w-1 h-3 rounded-full" :style="{ backgroundColor: getFleetColor(typeLabel) }"></div>
-                        <span class="text-[9px] font-black uppercase tracking-tighter text-text-muted flex items-center gap-1.5">
+                        <span
+                          class="text-[9px] font-black uppercase tracking-tighter text-text-muted flex items-center gap-1.5">
                           {{ typeLabel }}
-                          <span class="px-1.5 py-0.5 rounded-md bg-surface-muted text-[8px] border border-border">{{ group.length }}</span>
+                          <span class="px-1.5 py-0.5 rounded-md bg-surface-muted text-[8px] border border-border">{{
+                            group.length
+                            }}</span>
                         </span>
                       </div>
                       <div class="flex flex-wrap gap-1.5 pr-1">
-                        <div 
-                          v-for="vessel in group" 
-                          :key="vessel.name"
+                        <div v-for="vessel in group" :key="vessel.name"
                           class="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-surface border border-border shadow-sm transition-all hover:border-primary/50 group/chip"
-                          v-tooltip="vessel.status === 'EN_EJECUCION' ? 'En ejecución' : 'Designada'"
-                        >
-                          <component 
-                            :is="vessel.status === 'EN_EJECUCION' ? ShipIcon : TaskIcon" 
-                            class="w-3 h-3" 
-                            :class="vessel.status === 'EN_EJECUCION' ? 'text-primary' : 'text-text-muted'"
-                          />
-                          <span class="text-[10px] font-bold text-text uppercase tracking-tighter group-hover/chip:text-primary transition-colors">
+                          v-tooltip="vessel.status === 'EN_EJECUCION' ? 'En ejecución' : 'Designada'">
+                          <component :is="vessel.status === 'EN_EJECUCION' ? ShipIcon : TaskIcon" class="w-3 h-3"
+                            :class="vessel.status === 'EN_EJECUCION' ? 'text-primary' : 'text-text-muted'" />
+                          <span
+                            class="text-[10px] font-bold text-text uppercase tracking-tighter group-hover/chip:text-primary transition-colors">
                             {{ vessel.name }}
                             <span class="text-[9px] opacity-60 ml-0.5">({{ vessel.mareaCode }})</span>
                           </span>
@@ -112,18 +103,13 @@
                   </div>
                   <!-- Direct list if only one fleet type -->
                   <div v-else class="flex flex-wrap gap-1.5 pr-1">
-                    <div 
-                      v-for="vessel in item.vessels" 
-                      :key="vessel.name"
+                    <div v-for="vessel in item.vessels" :key="vessel.name"
                       class="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-surface border border-border shadow-sm transition-all hover:border-primary/50 group/chip"
-                      v-tooltip="vessel.status === 'EN_EJECUCION' ? 'En ejecución' : 'Designada'"
-                    >
-                      <component 
-                        :is="vessel.status === 'EN_EJECUCION' ? ShipIcon : TaskIcon" 
-                        class="w-3 h-3" 
-                        :class="vessel.status === 'EN_EJECUCION' ? 'text-primary' : 'text-text-muted'"
-                      />
-                      <span class="text-[10px] font-bold text-text uppercase tracking-tighter group-hover/chip:text-primary transition-colors">
+                      v-tooltip="vessel.status === 'EN_EJECUCION' ? 'En ejecución' : 'Designada'">
+                      <component :is="vessel.status === 'EN_EJECUCION' ? ShipIcon : TaskIcon" class="w-3 h-3"
+                        :class="vessel.status === 'EN_EJECUCION' ? 'text-primary' : 'text-text-muted'" />
+                      <span
+                        class="text-[10px] font-bold text-text uppercase tracking-tighter group-hover/chip:text-primary transition-colors">
                         {{ vessel.name }}
                         <span class="text-[9px] opacity-60 ml-0.5">({{ vessel.mareaCode }})</span>
                       </span>
@@ -153,9 +139,9 @@ type FleetDisplayItem = {
   color: string
   percentage: number
   stats?: Record<string, { count: number, nombre: string }>
-  vessels: Array<{ 
-    name: string; 
-    mareaCode: string; 
+  vessels: Array<{
+    name: string;
+    mareaCode: string;
     status: string;
     tipoFlota?: { codigo: string; nombre: string }
   }>
@@ -208,7 +194,7 @@ const chartOptions = computed(() => ({
   plotOptions: {
     pie: {
       donut: {
-        size: '72%',
+        size: '55%',
         labels: {
           show: true,
           name: {
@@ -245,7 +231,7 @@ const chartOptions = computed(() => ({
         plotOptions: {
           pie: {
             donut: {
-              size: '65%',
+              size: '55%',
               labels: {
                 value: { fontSize: '18px' },
                 total: { fontSize: '8px' }
@@ -351,9 +337,11 @@ onMounted(() => void loadDistribution())
 .custom-scrollbar::-webkit-scrollbar {
   width: 4px;
 }
+
 .custom-scrollbar::-webkit-scrollbar-track {
   background: transparent;
 }
+
 .custom-scrollbar::-webkit-scrollbar-thumb {
   background: var(--color-surface-muted);
   border-radius: 10px;
@@ -362,9 +350,11 @@ onMounted(() => void loadDistribution())
 .custom-scrollbar-mini::-webkit-scrollbar {
   width: 2px;
 }
+
 .custom-scrollbar-mini::-webkit-scrollbar-track {
   background: transparent;
 }
+
 .custom-scrollbar-mini::-webkit-scrollbar-thumb {
   background: var(--color-border);
   border-radius: 10px;
@@ -375,6 +365,7 @@ onMounted(() => void loadDistribution())
   border: none !important;
   box-shadow: none !important;
 }
+
 :deep(.apexcharts-tooltip-series-group) {
   background: transparent !important;
 }

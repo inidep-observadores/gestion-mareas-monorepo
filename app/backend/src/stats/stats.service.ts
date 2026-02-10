@@ -128,7 +128,12 @@ export class StatsService {
         const daysByMonth = new Array(12).fill(0);
 
         // Groupings
-        const byFishery: Record<string, { name: string; mareas: number; days: number }> = {};
+        const byFishery: Record<string, {
+            name: string;
+            mareas: number;
+            days: number;
+            vessels: Map<string, { code: string; nombre: string }> // VesselID -> FleetInfo
+        }> = {};
         const byFleet: Record<string, { name: string; mareas: number; days: number }> = {};
         const byObserver: Record<string, { id: string; name: string; mareas: number; days: number; active: boolean }> = {};
 
@@ -191,9 +196,17 @@ export class StatsService {
             // Aggregations
             // Fishery: Priority -> Marea Header -> Buque Default
             const fisheryName = marea.pesqueria?.nombre || marea.buque?.pesqueriaHabitual?.nombre || 'Desconocida';
-            if (!byFishery[fisheryName]) byFishery[fisheryName] = { name: fisheryName, mareas: 0, days: 0 };
+            if (!byFishery[fisheryName]) {
+                byFishery[fisheryName] = { name: fisheryName, mareas: 0, days: 0, vessels: new Map() };
+            }
             byFishery[fisheryName].mareas++;
             byFishery[fisheryName].days += days;
+
+            if (marea.buque) {
+                const fleetCode = marea.buque.tipoFlota?.codigo || 'INDETERMINADO';
+                const fleetName = marea.buque.tipoFlota?.nombre || 'Indeterminado';
+                byFishery[fisheryName].vessels.set(marea.buque.id, { code: fleetCode, nombre: fleetName });
+            }
 
             // Fleet
             const fleetName = marea.buque?.tipoFlota?.nombre || 'Desconocida';
@@ -333,7 +346,19 @@ export class StatsService {
                 mareas: mareasByMonth,
                 days: daysByMonth,
             },
-            fisheries: Object.values(byFishery).sort((a, b) => b.days - a.days),
+            fisheries: Object.values(byFishery).map(f => {
+                const stats: Record<string, { count: number, nombre: string }> = {};
+                f.vessels.forEach(v => {
+                    if (!stats[v.code]) stats[v.code] = { count: 0, nombre: v.nombre };
+                    stats[v.code].count++;
+                });
+                return {
+                    name: f.name,
+                    mareas: f.mareas,
+                    days: f.days,
+                    stats: Object.keys(stats).length > 0 ? stats : undefined
+                };
+            }).sort((a, b) => b.days - a.days),
             fleets: Object.values(byFleet).sort((a, b) => b.days - a.days),
             observers: Object.values(byObserver).sort((a, b) => b.days - a.days),
         };

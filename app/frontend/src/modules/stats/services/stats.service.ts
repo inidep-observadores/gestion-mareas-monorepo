@@ -10,7 +10,7 @@ export interface DashboardStats {
         mareas: number[];
         days: number[];
     };
-    fisheries: { name: string; mareas: number; days: number }[];
+    fisheries: { name: string; mareas: number; days: number; stats?: Record<string, { count: number, nombre: string }> }[];
     fleets: { name: string; mareas: number; days: number }[];
     observers: { name: string; id: string; mareas: number; days: number; active: boolean }[];
 }

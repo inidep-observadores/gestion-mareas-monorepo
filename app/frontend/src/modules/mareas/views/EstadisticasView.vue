@@ -204,6 +204,11 @@
                                  </div>
                                  <div class="flex flex-col">
                                     <span
+                                       class="font-black opacity-40 uppercase tracking-tighter text-[9px] mb-0.5">Flota</span>
+                                    <span class="font-bold text-text truncate">{{ marea.flota }}</span>
+                                 </div>
+                                 <div class="flex flex-col">
+                                    <span
                                        class="font-black opacity-40 uppercase tracking-tighter text-[9px] mb-0.5">Pesquería</span>
                                     <span class="font-bold text-text truncate">{{ marea.pesqueria }}</span>
                                  </div>
@@ -276,6 +281,15 @@
                                     </div>
                                  </th>
                                  <th class="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-text-muted cursor-pointer hover:bg-surface-muted transition-colors group"
+                                    @click="handleSort('flota')">
+                                    <div class="flex items-center gap-2">
+                                       Flota
+                                       <component :is="getSortIcon('flota')"
+                                          class="w-3 h-3 text-primary opacity-0 group-hover:opacity-100"
+                                          :class="{ 'opacity-100': sortKey === 'flota' }" />
+                                    </div>
+                                 </th>
+                                 <th class="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-text-muted cursor-pointer hover:bg-surface-muted transition-colors group"
                                     @click="handleSort('pesqueria')">
                                     <div class="flex items-center gap-2">
                                        Pesquería
@@ -330,6 +344,9 @@
                                  </td>
                                  <td class="px-4 py-2 text-xs font-bold text-text border-r border-border/50">{{
                                     marea.buque }}
+                                 </td>
+                                 <td class="px-4 py-2 text-xs font-bold text-text border-r border-border/50">{{
+                                    marea.flota }}
                                  </td>
                                  <td class="px-4 py-2 text-xs font-bold text-text border-r border-border/50">{{
                                     marea.pesqueria
@@ -594,6 +611,7 @@ const filteredDialogItems = computed(() => {
       items = items.filter(m =>
          m.id_marea.toLowerCase().includes(s) ||
          m.buque.toLowerCase().includes(s) ||
+         m.flota.toLowerCase().includes(s) ||
          m.observador.toLowerCase().includes(s) ||
          m.pesqueria.toLowerCase().includes(s)
       );
@@ -823,6 +841,12 @@ const handleDownload = async (titlePrefix: string, fType?: 'FISHERY' | 'FLEET' |
    }
 }
 
+const getFleetColor = (name: string) => {
+   if (name.toUpperCase().includes('FRESQUERO')) return 'var(--color-info)';
+   if (name.toUpperCase().includes('CONGELADOR')) return 'var(--color-warning)';
+   return 'var(--color-primary)';
+}
+
 onMounted(() => {
    fetchData()
 })
@@ -862,6 +886,46 @@ const fisherySort = computed(() => stats.value?.fisheries.slice(0, 7) || []) // 
 const fisherySeries = computed(() => fisherySort.value.map(f => f.days))
 const fisheryChartOptions = computed(() => ({
    labels: fisherySort.value.map(f => f.name),
+   tooltip: {
+      custom: ({ series, seriesIndex, w }: any) => {
+         const val = series[seriesIndex];
+         const label = w.globals.labels[seriesIndex];
+         const item = fisherySort.value[seriesIndex];
+         const colors = w.globals.colors;
+         const accent = colors[seriesIndex] || 'var(--color-primary)';
+
+         return `
+            <div class="px-4 py-3 bg-surface/95 backdrop-blur-md text-text border border-border/50 rounded-2xl flex flex-col gap-3 shadow-2xl ring-1 ring-black/5 min-w-[180px]">
+               <div class="flex items-center gap-2 border-b border-border/30 pb-2">
+                  <span class="w-1.5 h-3 rounded-full" style="background:${accent}"></span>
+                  <span class="text-[10px] text-text-muted uppercase font-black tracking-widest">${label}</span>
+               </div>
+               
+               ${item.stats && Object.keys(item.stats).length > 1 ? `
+                  <div class="flex flex-col gap-2">
+                     ${Object.entries(item.stats).map(([_, stat]: any) => `
+                        <div class="flex items-center justify-between gap-4">
+                           <div class="flex items-center gap-1.5">
+                              <div class="w-1.5 h-1.5 rounded-full" style="background:${getFleetColor(stat.nombre)}"></div>
+                              <span class="text-[9px] font-bold text-text-muted uppercase">${stat.nombre}</span>
+                           </div>
+                           <span class="text-[10px] font-black text-text">${stat.count} <span class="text-[8px] opacity-60">buques</span></span>
+                        </div>
+                     `).join('')}
+                  </div>
+               ` : ''}
+
+               <div class="flex items-center justify-between pt-1 ${item.stats && Object.keys(item.stats).length > 1 ? 'border-t border-border/30' : ''}">
+                  <span class="text-[9px] font-black text-primary uppercase">Total Esfuerzo</span>
+                  <div class="flex items-baseline gap-1">
+                     <span class="text-xs font-black text-text">${val}</span>
+                     <span class="text-[9px] font-bold text-text-muted">días</span>
+                  </div>
+               </div>
+            </div>
+         `;
+      }
+   }
 }))
 
 // 4. Observer Ranking (Bar Horizontal)
