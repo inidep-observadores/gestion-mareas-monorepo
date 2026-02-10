@@ -159,6 +159,7 @@ describe('TrackingService Integrity (CSV & Robustness)', () => {
         const result = await service.importTrackingData(buffer);
 
         expect(result.processed).toBe(2);
+        expect(result.errors).toHaveLength(0); // Debe ser silencioso
     });
 
     it('should use skipDuplicates in createMany to ensure idempotence at point level', async () => {

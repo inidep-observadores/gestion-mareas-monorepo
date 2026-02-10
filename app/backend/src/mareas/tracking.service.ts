@@ -222,7 +222,7 @@ export class TrackingService {
             // 1. Resolución de Buque
             const buqueId = await this.resolveBuqueId(vesselInfo);
             if (!buqueId) {
-                return { inserted, updated, alerts, error: 'Buque no encontrado en base de datos' };
+                return { inserted, updated, alerts };
             }
 
             // Sincronizar datos oficiales si es necesario
@@ -335,13 +335,6 @@ export class TrackingService {
             const dataToUpdate: any = {};
             if (info.mmsi && buqueFound.mmsi !== info.mmsi) {
                 dataToUpdate.mmsi = info.mmsi;
-            }
-            if (info.matricula && buqueFound.matricula !== info.matricula) {
-                const currentNorm = normalizeNum(buqueFound.matricula || '');
-                const incomingNorm = normalizeNum(info.matricula);
-                if (!buqueFound.matricula || currentNorm === incomingNorm) {
-                    dataToUpdate.matricula = info.matricula;
-                }
             }
             if (info.matriculaSiop && buqueFound.matriculaSiop !== info.matriculaSiop) {
                 dataToUpdate.matriculaSiop = info.matriculaSiop;
