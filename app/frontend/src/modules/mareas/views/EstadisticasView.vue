@@ -130,8 +130,9 @@
                         asociadas</p>
                   </div>
 
-                  <!-- Layout Toggle -->
-                  <div class="flex items-center bg-surface border border-border rounded-lg p-0.5 ml-4 shadow-sm">
+                  <!-- Layout Toggle (Hidden on mobile) -->
+                  <div
+                     class="hidden lg:flex items-center bg-surface border border-border rounded-lg p-0.5 ml-4 shadow-sm">
                      <button @click="detailViewMode = 'cards'" :class="[
                         'p-1.5 rounded-md transition-all duration-200',
                         detailViewMode === 'cards' ? 'bg-primary text-primary-fg shadow-sm' : 'text-text-muted hover:text-text hover:bg-surface-muted'
@@ -179,10 +180,11 @@
                   </div>
 
                   <div v-else class="p-6">
-                     <!-- CARD VIEW -->
-                     <div v-if="detailViewMode === 'cards'" class="space-y-3">
+                     <!-- CARD VIEW (Responsive: Always on mobile, or forced in desktop) -->
+                     <div v-if="detailViewMode === 'cards' || detailViewMode === 'table'"
+                        :class="{ 'lg:hidden': detailViewMode === 'table' }" class="space-y-3">
                         <div v-for="marea in filteredDialogItems" :key="marea.id" @click="openQuickDetail(marea.id)"
-                           class="flex items-center justify-between p-4 rounded-xl border border-border bg-surface shadow-theme-xs hover:shadow-theme-md hover:border-primary/40 transition-all duration-200 group cursor-pointer">
+                           class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between p-4 rounded-xl border border-border bg-surface shadow-theme-xs hover:shadow-theme-md hover:border-primary/40 transition-all duration-200 group cursor-pointer">
                            <div class="flex-1 min-w-0">
                               <div class="flex items-center gap-2 mb-2">
                                  <span class="font-black text-sm text-text tabular-nums tracking-tighter">{{
@@ -219,9 +221,9 @@
                               </div>
                            </div>
 
-                           <!-- Dual Metrics (Redesigned) -->
+                           <!-- Dual Metrics (Responsive alignment) -->
                            <div
-                              class="flex items-center gap-4 pl-4 min-w-[140px] justify-end border-l border-border/40 ml-4">
+                              class="flex items-center gap-4 sm:pl-4 min-w-[140px] justify-end sm:border-l border-border/40 sm:ml-4 pt-3 sm:pt-0 mt-3 sm:mt-0 border-t sm:border-t-0">
                               <div v-if="mode === 'CALENDAR'" class="flex items-center gap-3">
                                  <div class="text-right">
                                     <span class="block text-xl font-black text-primary leading-tight tabular-nums">{{
@@ -249,8 +251,9 @@
                         </div>
                      </div>
 
-                     <!-- TABLE VIEW -->
-                     <div v-else class="bg-surface rounded-xl border border-border shadow-theme-xs overflow-hidden">
+                     <!-- TABLE VIEW (Desktop only) -->
+                     <div v-if="detailViewMode === 'table'"
+                        class="hidden lg:block bg-surface rounded-xl border border-border shadow-theme-xs overflow-hidden">
                         <table class="w-full text-left border-collapse">
                            <thead>
                               <tr class="bg-surface-muted/50 border-b border-border">
