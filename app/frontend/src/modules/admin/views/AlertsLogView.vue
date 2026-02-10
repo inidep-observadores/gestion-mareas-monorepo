@@ -12,6 +12,15 @@
         </div>
         <div class="flex gap-3">
           <button 
+            @click="triggerPnaSync"
+            :disabled="triggeringPna"
+            class="px-4 py-2 bg-primary/10 border border-primary/20 text-primary rounded-lg hover:bg-primary/20 transition-all flex items-center gap-2 font-semibold text-sm disabled:opacity-50"
+          >
+            <Activity class="w-4 h-4" :class="{ 'animate-pulse': triggeringPna }" />
+            {{ triggeringPna ? 'Sincronizando...' : 'Sincronizar PNA' }}
+          </button>
+
+          <button 
             @click="runBatchAutomation"
             :disabled="isProcessingBatch"
             class="px-5 py-2.5 bg-primary text-primary-fg rounded-lg text-sm font-semibold shadow-lg shadow-primary/20 flex items-center gap-2 disabled:opacity-50 transition-all active:scale-95"
@@ -207,8 +216,10 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
+import { Activity } from 'lucide-vue-next'
 import AdminDashboardLayout from '../layouts/AdminDashboardLayout.vue'
 import alertsAdminApi, { type AlertLogEntry } from '../services/alerts.service'
+import { jobQueueService } from '../services/JobQueueService'
 import { toast } from 'vue-sonner'
 import SortIcon from '@/components/shared/icons/SortIcon.vue'
 import BatchProcessDialog from '../components/BatchProcessDialog.vue'
@@ -225,6 +236,7 @@ import {
 const alerts = ref<AlertLogEntry[]>([])
 const isLoading = ref(false)
 const isProcessingBatch = ref(false)
+const triggeringPna = ref(false)
 const totalAlerts = ref(0)
 const batchDialogVisible = ref(false)
 const batchResults = ref<{ 
@@ -292,6 +304,21 @@ const runBatchAutomation = async () => {
     batchDialogVisible.value = false
   } finally {
     isProcessingBatch.value = false
+  }
+}
+
+const triggerPnaSync = async () => {
+  triggeringPna.value = true
+  try {
+    await jobQueueService.triggerJob('PNA_API_SYNC')
+    toast.success('Sincronización de PNA iniciada correctamente')
+    // Esperar un momento y refrescar para ver si hay nuevas alertas
+    setTimeout(() => refreshLogs(), 5000)
+  } catch (error) {
+    toast.error('Error al iniciar sincronización de PNA')
+    console.error(error)
+  } finally {
+    triggeringPna.value = false
   }
 }
 

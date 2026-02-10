@@ -3,6 +3,18 @@
     <BaseDataList title="Gestión de Buques" description="Administra la flota de buques y sus especificaciones técnicas"
       :button-text="canEdit ? 'Nuevo Buque' : undefined" :items="filteredBuques" :is-loading="isLoading"
       v-model:search="searchQuery" search-placeholder="Buscar por nombre o matrícula..." @create="openCreateModal">
+      
+      <template #header-actions v-if="isAdmin">
+        <button 
+          @click="triggerVesselSync"
+          :disabled="triggeringVessel"
+          class="flex items-center justify-center gap-2 px-4 py-2 bg-secondary/10 border border-secondary/20 text-secondary rounded-lg hover:bg-secondary/20 transition-all font-semibold text-sm disabled:opacity-50 shadow-sm"
+        >
+          <RefreshIcon class="w-4 h-4" :class="{ 'animate-spin': triggeringVessel }" />
+          {{ triggeringVessel ? 'Sincronizando...' : 'Sincronizar Buques' }}
+        </button>
+      </template>
+
       <template #table-header>
         <th scope="col" class="px-6 py-3 cursor-pointer group" @click="handleSort('nombreBuque')">
           <div class="flex items-center gap-2">
@@ -137,15 +149,24 @@ import AdminLayout from '@/components/layout/AdminLayout.vue'
 import BuqueDialog from '../components/BuqueDialog.vue'
 import BaseDataList from '@/components/common/BaseDataList.vue'
 import { useBuques } from '../composables/useBuques'
-import { EditIcon, SearchIcon, ChevronDownIcon } from '@/icons'
+import { EditIcon, SearchIcon, ChevronDownIcon, RefreshIcon } from '@/icons'
 import { useAuthStore } from '@/modules/auth/stores/auth.store'
 import { ValidRoles } from '@/modules/auth/interfaces/roles.enum'
+import { jobQueueService } from '../services/JobQueueService'
+import { toast } from 'vue-sonner'
 
 const authStore = useAuthStore()
 const canEdit = computed(() => {
   const roles = authStore.user?.roles || []
   return roles.includes(ValidRoles.admin) || roles.includes(ValidRoles.coordinador)
 })
+
+const isAdmin = computed(() => {
+  const roles = authStore.user?.roles || []
+  return roles.includes(ValidRoles.admin)
+})
+
+const triggeringVessel = ref(false)
 
 const {
   isLoading,
@@ -165,6 +186,21 @@ const {
   closeModal,
   handleSave,
 } = useBuques()
+
+const triggerVesselSync = async () => {
+  triggeringVessel.value = true
+  try {
+    await jobQueueService.triggerJob('VESSEL_SYNC')
+    toast.success('Sincronización de buques iniciada correctamente')
+    // Refrescar lista después de un momento
+    setTimeout(() => fetchBuques(), 5000)
+  } catch (error) {
+    toast.error('Error al iniciar sincronización de buques')
+    console.error(error)
+  } finally {
+    triggeringVessel.value = false
+  }
+}
 
 // Sorting Logic
 const sortKey = ref<string>('nombreBuque')

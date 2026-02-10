@@ -24,8 +24,6 @@ import JobDetailDialog from '../components/JobDetailDialog.vue';
 const stats = ref<JobQueueStats | null>(null);
 const loading = ref(true);
 const refreshing = ref(false);
-const triggeringPna = ref(false);
-const triggeringVessel = ref(false);
 
 const selectedJob = ref<JobQueue | null>(null);
 const detailVisible = ref(false);
@@ -35,29 +33,6 @@ const openDetail = (job: JobQueue) => {
     detailVisible.value = true;
 };
 
-const triggerPnaSync = async () => {
-    triggeringPna.value = true;
-    try {
-        await jobQueueService.triggerJob('PNA_API_SYNC');
-        await refreshData();
-    } catch (error) {
-        console.error('Error triggering PNA sync:', error);
-    } finally {
-        triggeringPna.value = false;
-    }
-};
-
-const triggerVesselSync = async () => {
-    triggeringVessel.value = true;
-    try {
-        await jobQueueService.triggerJob('VESSEL_SYNC');
-        await refreshData();
-    } catch (error) {
-        console.error('Error triggering Vessel sync:', error);
-    } finally {
-        triggeringVessel.value = false;
-    }
-};
 
 const loadStats = async () => {
     try {
@@ -94,22 +69,6 @@ const cards = computed(() => [
         <div class="space-y-6">
             <!-- Header (Simplificado ya que el layout ya tiene título) -->
             <div class="flex justify-end items-center gap-3">
-                <button @click="triggerPnaSync"
-                    class="flex items-center gap-2 px-4 py-2 bg-primary/10 border border-primary/20 text-primary rounded-lg hover:bg-primary/20 transition-colors shadow-sm font-medium"
-                    :disabled="triggeringPna">
-                    <Activity class="w-4 h-4" :class="{ 'animate-pulse': triggeringPna }" />
-                    Sincronizar PNA
-                </button>
-
-                <button @click="triggerVesselSync"
-                    class="flex items-center gap-2 px-4 py-2 bg-secondary/10 border border-secondary/20 text-secondary rounded-lg hover:bg-secondary/20 transition-colors shadow-sm font-medium"
-                    :disabled="triggeringVessel">
-                    <RefreshCw class="w-4 h-4" :class="{ 'animate-spin': triggeringVessel }" />
-                    Sincronizar Buques
-                </button>
-
-                <div class="h-6 w-px bg-border mx-2"></div>
-
                 <button @click="refreshData"
                     class="flex items-center gap-2 px-4 py-2 bg-surface border border-border rounded-lg hover:bg-surface-muted transition-colors shadow-sm text-text font-medium"
                     :disabled="refreshing">
