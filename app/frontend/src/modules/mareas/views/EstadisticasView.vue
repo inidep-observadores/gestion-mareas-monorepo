@@ -786,8 +786,13 @@ const openQuickDetail = (mareaId: string) => {
 };
 
 // --- Click Handlers ---
-const handleFisheryClick = ({ dataPointIndex }: any) => {
-   const item = stats.value?.fisheries[dataPointIndex];
+const handleFisheryClick = ({ seriesIndex, dataPointIndex, w }: any) => {
+   // En el Donut (Participación), usamos dataPointIndex (serie única).
+   // En el Scatter (Perfil Operativo), usamos seriesIndex (una serie por pesquería).
+   const isScatter = w?.config?.chart?.type === 'scatter';
+   const index = isScatter ? seriesIndex : dataPointIndex;
+
+   const item = stats.value?.fisheries[index];
    if (item) openDialog('FISHERY', item.name, item.name);
 };
 

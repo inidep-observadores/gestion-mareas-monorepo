@@ -84,7 +84,7 @@ const chartOptions = computed(() => {
           const { seriesIndex, dataPointIndex, w } = config
           const label = w.globals.labels[dataPointIndex]
           const value = w.globals.series[seriesIndex][dataPointIndex] || w.globals.series[seriesIndex]
-          emit('dataPointClick', { label, value, seriesIndex, dataPointIndex })
+          emit('dataPointClick', { label, value, seriesIndex, dataPointIndex, w })
         }
       }
     },
