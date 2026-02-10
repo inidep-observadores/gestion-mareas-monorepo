@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { MareasService } from './mareas.service';
 import { MareasController } from './mareas.controller';
 import { TrackingService } from './tracking.service';
@@ -15,7 +15,15 @@ import { EventCorrelationService } from '../common/services/event-correlation.se
 @Module({
     controllers: [MareasController, TrackingController],
     providers: [MareasService, TrackingService, EventCorrelationService],
-    imports: [PrismaModule, AuthModule, AlertsModule, CatalogosModule, BusinessRulesModule, ConfigModule, CommonModule],
+    imports: [
+        PrismaModule,
+        AuthModule,
+        forwardRef(() => AlertsModule),
+        CatalogosModule,
+        BusinessRulesModule,
+        ConfigModule,
+        CommonModule
+    ],
     exports: [MareasService, TrackingService],
 })
 

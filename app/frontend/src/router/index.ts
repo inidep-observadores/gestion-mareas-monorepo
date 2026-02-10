@@ -304,6 +304,16 @@ const router = createRouter({
         roles: [ValidRoles.admin],
       },
     },
+    {
+      path: '/admin/alerts-log',
+      name: 'AdminAlertsLog',
+      component: () => import('@/modules/admin/views/AlertsLogView.vue'),
+      meta: {
+        title: 'Gestión y Auditoría de Alertas',
+        requiresAuth: true,
+        roles: [ValidRoles.admin],
+      },
+    },
     // 404 No encontrado
     {
       path: '/error-servidor',

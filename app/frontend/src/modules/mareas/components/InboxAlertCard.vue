@@ -242,10 +242,11 @@ const notaGestionCorta = computed(() => {
 
 const alertSources = computed(() => {
   const meta = props.metadata || {}
-  const sources = (meta as any).sources || []
+  const sources = (meta as any).sources
   const result: any[] = []
 
   const formatSource = (name: string) => {
+    if (!name) return { label: 'Desconocido', color: 'light', icon: BoxCubeIcon }
     if (name === 'ACCESS_IMPORT') return { label: 'Access', color: 'purple', icon: BoxCubeIcon }
     if (name === 'TRACKING_CSV') return { label: 'Tracking', color: 'success', icon: MapPinIcon }
     if (name === 'API_PNA' || name === 'PNA') return { label: 'PNA', color: 'warning', icon: ShipIcon }
@@ -253,22 +254,27 @@ const alertSources = computed(() => {
   }
 
   // 1. Si hay lista de fuentes estructurada
-  if (sources.length > 0) {
-    sources.forEach((s: { name: string }) => {
-      const fmt = formatSource(s.name)
-      if (!result.find(r => r.label === fmt.label)) {
-        result.push({ ...fmt, name: s.name })
+  if (Array.isArray(sources) && sources.length > 0) {
+    sources.forEach((s: any) => {
+      // Manejar tanto string directo como objeto con propiedad name
+      const name = typeof s === 'string' ? s : s?.name
+      if (name) {
+        const fmt = formatSource(name)
+        if (!result.find(r => r.label === fmt.label)) {
+          result.push({ ...fmt, name: name })
+        }
       }
     })
-    return result
+  }
+  
+  // 2. Si no se encontraron fuentes en la lista, buscar en campo source único
+  if (result.length === 0 && meta.source) {
+    const name = typeof meta.source === 'string' ? meta.source : (meta.source as any)?.name
+    if (name) {
+      result.push({ ...formatSource(name), name: name })
+    }
   }
 
-  // 2. Fallback: Campo source único
-  if (meta.source) {
-    result.push({ ...formatSource(meta.source as string), name: meta.source })
-    return result
-  }
-
-  return []
+  return result
 })
 </script>

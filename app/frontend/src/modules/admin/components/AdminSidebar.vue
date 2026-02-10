@@ -115,6 +115,7 @@ import {
   PieChartIcon,
   LayoutDashboardIcon,
   BackupIcon,
+  BellIcon,
 } from '@/icons'
 import { useSidebar } from '@/composables/useSidebar'
 import { useAuthStore } from '@/modules/auth/stores/auth.store'
@@ -159,6 +160,11 @@ const navigationGroups = [
         icon: ShipIcon,
         name: 'Buques',
         path: '/admin/buques',
+      },
+      {
+        icon: BellIcon,
+        name: 'Gestión de Alertas',
+        path: '/admin/alerts-log',
       },
     ],
   },

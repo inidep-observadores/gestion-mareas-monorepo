@@ -4,10 +4,10 @@
             <div class="flex items-center justify-between w-full pr-8 py-1">
                 <div class="flex items-center gap-4">
                     <Badge :color="getBadgeColor(localAlert.prioridad)" variant="solid" size="sm"
-                        class="font-black text-[10px] uppercase tracking-widest px-3 py-2.5 rounded-lg">
+                        class="font-bold text-[10px] uppercase tracking-wider px-3 py-1">
                         {{ localAlert.prioridad || 'N/D' }}
                     </Badge>
-                    <span class="text-text font-black uppercase tracking-tight">{{ localAlert.titulo || 'Alerta'
+                    <span class="text-text font-bold uppercase tracking-tight">{{ localAlert.titulo || 'Alerta'
                     }}</span>
                     <Badge v-if="localAlert.referenciaTipo" :color="getOriginBadgeColor(localAlert.referenciaTipo)"
                         variant="light" size="sm" class="font-bold text-[10px] uppercase tracking-wider h-6">
@@ -32,11 +32,11 @@
             <div class="flex flex-col md:flex-row gap-8">
                 <!-- Main Content (Left) -->
                 <div class="flex-1 space-y-6">
-                    <div class="p-4 bg-surface-muted/50 border border-border rounded-2xl">
-                        <h4 class="font-black text-[10px] uppercase tracking-widest text-text-muted mb-2">Detalles del
+                    <div class="p-4 bg-surface-muted/50 border border-border rounded-xl">
+                        <h4 class="font-semibold text-[10px] uppercase tracking-wider text-text-muted mb-2">Detalles del
                             Incidente
                         </h4>
-                        <p class="text-sm text-text/80 leading-relaxed">{{ localAlert.descripcion }}</p>
+                        <p class="text-sm text-text/80 leading-relaxed font-medium">{{ localAlert.descripcion }}</p>
 
                         <!-- Incongruency Diff Table -->
                         <div v-if="isIncongruency && incongruencyData"
@@ -45,13 +45,13 @@
                                 <thead>
                                     <tr class="bg-surface-muted/50 border-b border-border">
                                         <th
-                                            class="px-3 py-2 text-left font-black text-text-muted uppercase tracking-wider text-[10px]">
+                                            class="px-3 py-2 text-left font-semibold text-text-muted uppercase tracking-wider text-[10px]">
                                             Dato</th>
                                         <th
-                                            class="px-3 py-2 text-left font-black text-text-muted uppercase tracking-wider text-[10px]">
+                                            class="px-3 py-2 text-left font-semibold text-text-muted uppercase tracking-wider text-[10px]">
                                             Sistema Local</th>
                                         <th
-                                            class="px-3 py-2 text-left font-black text-text-muted uppercase tracking-wider text-[10px]">
+                                            class="px-3 py-2 text-left font-semibold text-text-muted uppercase tracking-wider text-[10px]">
                                             {{ externalSourceName }}</th>
                                     </tr>
                                 </thead>
@@ -105,12 +105,12 @@
                     <!-- Action Area -->
                     <div v-if="!isClosed" class="space-y-4">
                         <div v-if="isClaimableAlert"
-                            class="flex items-center justify-between p-4 bg-info/5 border border-info/20 rounded-2xl">
+                            class="flex items-center justify-between p-4 bg-info/5 border border-info/20 rounded-xl">
                             <div>
-                                <p class="text-xs font-black uppercase tracking-widest text-info/60">Reclamo de
+                                <p class="text-xs font-bold uppercase tracking-wider text-info/60">Reclamo de
                                     Documentación
                                 </p>
-                                <p class="text-[11px] text-info/50 mt-1">Disponible para alertas por retraso en entrega
+                                <p class="text-[11px] text-info/50 mt-1 font-medium">Disponible para alertas por retraso en entrega
                                     de
                                     datos.</p>
                             </div>
@@ -123,20 +123,20 @@
 
                         <!-- Smart Actions Area -->
                         <div v-if="smartActionConfig && !isClosed"
-                            class="p-4 bg-primary/5 border border-primary/20 rounded-2xl flex items-center justify-between animate-in zoom-in-95 duration-300">
+                            class="p-4 bg-primary/5 border border-primary/20 rounded-xl flex items-center justify-between animate-in zoom-in-95 duration-300 shadow-sm">
                             <div class="flex items-center gap-4">
                                 <div class="p-2.5 bg-primary/10 rounded-xl text-primary">
                                     <component :is="smartActionConfig.icon" class="w-5 h-5" />
                                 </div>
                                 <div>
-                                    <h4 class="text-xs font-black text-primary uppercase tracking-widest mb-1">{{
+                                    <h4 class="text-xs font-bold text-primary uppercase tracking-wider mb-1">{{
                                         smartActionConfig.label }}</h4>
-                                    <p class="text-[10px] text-text/80 font-bold uppercase tracking-tight">{{
+                                    <p class="text-[10px] text-text/80 font-semibold uppercase tracking-tight leading-tight">{{
                                         smartActionDescription }}</p>
                                 </div>
                             </div>
                             <Button variant="primary" size="sm" @click="executeSmartAction"
-                                class="font-black text-[10px] uppercase tracking-widest" :disabled="processing">
+                                class="font-bold text-[10px] uppercase tracking-wider px-4" :disabled="processing">
                                 {{ smartActionConfig.label }}
                             </Button>
                         </div>
@@ -204,13 +204,13 @@
                         <h4 class="font-black text-[10px] uppercase tracking-widest text-text-muted mt-5">Notas de
                             Gestión</h4>
                         <textarea v-model="comment"
-                            class="w-full bg-surface-muted/30 border border-border rounded-2xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all p-4 text-sm h-16 text-text placeholder:text-text-muted/40"
+                            class="w-full bg-surface-muted/30 border border-border rounded-xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all p-4 text-sm h-16 text-text font-medium placeholder:text-text-muted/40"
                             placeholder="Agregar notas de seguimiento, causas o detalles de la resolución..."></textarea>
 
                         <!-- Follow Up Date Picker -->
                         <div
-                            class="p-4 bg-surface-muted/30 rounded-2xl border border-border animate-in fade-in slide-in-from-top-2">
-                            <label class="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-3">
+                            class="p-4 bg-surface-muted/30 rounded-xl border border-border animate-in fade-in slide-in-from-top-2">
+                            <label class="block text-[10px] font-semibold uppercase tracking-wider text-text-muted mb-3">
                                 Fecha de Re-Check
                             </label>
                             <div class="flex flex-wrap gap-2 items-center">
@@ -233,9 +233,9 @@
                     </div>
 
                     <div v-else
-                        class="flex items-center gap-3 p-4 bg-success/5 text-success rounded-2xl border border-success/10">
-                        <CheckIcon class="w-5 h-5" />
-                        <span class="text-xs font-bold uppercase tracking-tight">Incidente Cerrado el {{
+                        class="flex items-center gap-3 p-4 bg-success/5 text-success rounded-xl border border-success/10 font-semibold text-xs uppercase tracking-tight">
+                        <CheckIcon class="w-5 h-5 text-success" />
+                        <span>Incidente Cerrado el {{
                             localAlert.fechaCierre
                                 ? formatDate(localAlert.fechaCierre) : 'N/A' }}</span>
                     </div>
@@ -243,7 +243,7 @@
 
                 <!-- Sidebar / Timeline (Right) -->
                 <div class="w-full md:w-80 border-l border-border pl-8">
-                    <h4 class="font-black text-[10px] uppercase tracking-widest text-text-muted mb-6">Historial de
+                    <h4 class="font-semibold text-[10px] uppercase tracking-wider text-text-muted mb-6">Historial de
                         Auditoría
                     </h4>
                     <div class="max-h-112.5 overflow-y-auto pr-4 custom-scrollbar">
@@ -255,7 +255,7 @@
             <!-- Map Verification Action -->
             <div v-if="canShowMap && !isClosed" class="pt-4 border-t border-border w-full">
                 <Button variant="soft" size="sm"
-                    class="w-full font-black h-11 bg-primary/5 hover:bg-primary/10 text-primary border border-primary/20"
+                    class="w-full font-bold h-11 bg-primary/5 hover:bg-primary/10 text-primary border border-primary/20"
                     @click="showMapModal = true">
                     <MapPinIcon class="w-4 h-4 mr-2" />
                     Visualizar Trayectoria en Mapa
@@ -264,7 +264,7 @@
 
             <!-- Unified Actions Row (Bottom) -->
             <div v-if="!isClosed" class="pt-4 flex items-center gap-3 w-full">
-                <Button variant="soft" size="sm" class="flex-1 font-bold h-10"
+                <Button variant="soft" size="sm" class="flex-1 font-semibold h-10"
                     @click="requestConfirmation('SEGUIMIENTO')" :disabled="processing">
                     Seguimiento
                 </Button>
@@ -291,9 +291,9 @@
 
     <BaseModal :show="isConfirmationOpen" @close="closeConfirmation" maxWidth="xl" title="Confirmar acción">
         <div class="space-y-5">
-            <p class="text-sm text-text/80 leading-relaxed">{{ confirmationMessage }}</p>
+            <p class="text-sm text-text/80 leading-relaxed font-medium">{{ confirmationMessage }}</p>
             <div class="flex items-center gap-3 justify-end">
-                <Button variant="soft" size="sm" class="font-bold" @click="closeConfirmation">Cancelar</Button>
+                <Button variant="soft" size="sm" class="font-semibold" @click="closeConfirmation">Cancelar</Button>
                 <Button variant="primary" size="sm" class="font-bold" @click="confirmAction"
                     :disabled="processing">Confirmar</Button>
             </div>

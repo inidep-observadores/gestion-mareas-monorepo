@@ -60,7 +60,7 @@ export class AlertsService {
     }
 
     async findAll(query: any) {
-        const { refId, status, userId, showHidden, type } = query;
+        const { refId, status, userId, showHidden, type, busqueda } = query;
         const where: any = {};
 
         // Filter by visibility by default
@@ -85,26 +85,73 @@ export class AlertsService {
             ];
         }
 
-        this.logger.log(`findAll query: ${JSON.stringify(where)}`);
-        const results = await this.prisma.alerta.findMany({
-            where,
-            orderBy: { fechaDetectada: 'desc' },
-            include: {
-                asignadoA: { select: { fullName: true, avatarUrl: true } },
-                creadoPor: { select: { fullName: true } },
-                eventos: {
-                    select: { detalle: true },
-                    orderBy: { fechaHora: 'desc' },
-                    take: 1
-                }
-            }
-        });
+        if (busqueda) {
+            const searchCondition = {
+                OR: [
+                    { titulo: { contains: busqueda, mode: 'insensitive' } },
+                    { metadata: { path: ['vesselName'], string_contains: busqueda } },
+                    { metadata: { path: ['mareaCode'], string_contains: busqueda } },
+                    { metadata: { path: ['portName'], string_contains: busqueda } }
+                ]
+            };
 
-        this.logger.log(`findAll results count: ${results.length}`);
-        return results.map((alerta: any) => ({
+            if (where.OR) {
+                // Si ya había un OR (por userId), los combinamos en un AND
+                const previousOr = where.OR;
+                delete where.OR;
+                where.AND = [{ OR: previousOr }, searchCondition];
+            } else {
+                where.OR = searchCondition.OR;
+            }
+        }
+
+        this.logger.log(`findAll query: ${JSON.stringify(where)}`);
+
+        // Pagination and Sorting
+        const page = parseInt(query.page) || 1;
+        const limit = parseInt(query.limit) || 20;
+        const skip = (page - 1) * limit;
+
+        const sortBy = query.sortBy || 'fechaDetectada';
+        const sortOrder = query.sortOrder || 'desc';
+
+        const [total, results] = await Promise.all([
+            this.prisma.alerta.count({ where }),
+            this.prisma.alerta.findMany({
+                where,
+                orderBy: { [sortBy]: sortOrder },
+                take: limit,
+                skip,
+                include: {
+                    asignadoA: { select: { fullName: true, avatarUrl: true } },
+                    creadoPor: { select: { fullName: true } },
+                    eventos: {
+                        select: { detalle: true },
+                        orderBy: { fechaHora: 'desc' },
+                        take: 1
+                    }
+                }
+            })
+        ]);
+
+        this.logger.log(`findAll results count: ${results.length}, total: ${total}`);
+
+        const data = results.map((alerta: any) => ({
             ...alerta,
             notaGestion: this.extractNotaGestion(alerta.eventos?.[0]?.detalle || '')
         }));
+
+        // Si se solicitó paginación explícitamente o es modo administrativo, devolvemos objeto estructurado
+        if (query.page || query.limit) {
+            return {
+                data,
+                total,
+                page,
+                limit
+            };
+        }
+
+        return data; // Retrocompatibilidad
     }
 
     async findOne(id: string) {
