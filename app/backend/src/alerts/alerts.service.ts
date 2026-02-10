@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { AlertaEstado, AlertaPrioridad } from './alerts.enums';
+import { AlertAutomationService } from './alert-automation.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateAlertDto } from './dto/create-alert.dto';
 import { UpdateAlertDto } from './dto/update-alert.dto';
@@ -9,7 +10,10 @@ import { DateUtils } from '../common/utils/date.utils';
 export class AlertsService {
     private readonly logger = new Logger(AlertsService.name);
 
-    constructor(private prisma: PrismaService) { }
+    constructor(
+        private prisma: PrismaService,
+        private automationService: AlertAutomationService
+    ) { }
 
     async create(createAlertDto: CreateAlertDto, user?: any) {
         const { codigoUnico } = createAlertDto;
@@ -232,6 +236,12 @@ export class AlertsService {
         );
 
         this.logger.log(`Added validation source ${sourceName} to alert ${alertaId}`);
+
+        // Disparar proceso de automatización (sin esperar el resultado para no bloquear el flujo principal)
+        this.automationService.processAlertAutomation(updatedAlert.id).catch(err => {
+            this.logger.error(`Error en automatización de alerta ${alertaId}: ${err.message}`);
+        });
+
         return updatedAlert;
     }
 }

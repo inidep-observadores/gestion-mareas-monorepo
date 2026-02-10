@@ -707,7 +707,8 @@ export class MareasService {
                     etapa: etapa.nroEtapa || 1,
                     tipo: 'ZARPADA',
                     fecha: etapa.fechaZarpada,
-                    puerto: (etapa as any).puertoZarpada?.nombre || 'N/D'
+                    puerto: (etapa as any).puertoZarpada?.nombre || 'N/D',
+                    fuentes: etapa.fuentesZarpada
                 });
             }
 
@@ -721,7 +722,8 @@ export class MareasService {
                     etapa: etapa.nroEtapa || 1,
                     tipo: 'ARRIBO',
                     fecha: etapa.fechaArribo,
-                    puerto: (etapa as any).puertoArribo?.nombre || 'N/D'
+                    puerto: (etapa as any).puertoArribo?.nombre || 'N/D',
+                    fuentes: etapa.fuentesArribo
                 });
             }
         }
@@ -1633,6 +1635,8 @@ export class MareasService {
                 fechaArribo: stg.fechaArribo ? new Date(stg.fechaArribo) : null,
                 pesqueriaId: this.sanitizeUuid(stg.pesqueriaId),
                 tipoEtapa: stg.tipoEtapa || TipoEtapa.MC,
+                fuentesZarpada: stg.fuentesZarpada || null,
+                fuentesArribo: stg.fuentesArribo || null,
                 observaciones: stg.observaciones || ''
             };
 

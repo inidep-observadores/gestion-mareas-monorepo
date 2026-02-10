@@ -4,12 +4,17 @@ import { TrackingService } from './tracking.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { EventCorrelationService } from '../common/services/event-correlation.service';
 import { AlertsService } from '../alerts/alerts.service';
+import { AlertAutomationService } from '../alerts/alert-automation.service';
 import { VesselSyncService } from '../catalogos/buques/vessel-sync.service';
 import { DateTime } from 'luxon';
 
 describe('TrackingService Matching V2', () => {
     let service: TrackingService;
     let prisma: PrismaService;
+
+    const mockAutomationService = {
+        processAlertAutomation: jest.fn().mockResolvedValue(undefined),
+    };
 
     const mockPrismaService = {
         marea: { findMany: jest.fn() },
@@ -37,6 +42,7 @@ describe('TrackingService Matching V2', () => {
                 TrackingService,
                 EventCorrelationService,
                 AlertsService,
+                { provide: AlertAutomationService, useValue: mockAutomationService },
                 { provide: VesselSyncService, useValue: mockVesselSyncService },
                 { provide: PrismaService, useValue: mockPrismaService },
             ],

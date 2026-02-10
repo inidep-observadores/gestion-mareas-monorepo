@@ -422,6 +422,8 @@ function executeConfirmation() {
       pesqueriaId: s.pesqueriaId,
       tipoEtapa: s.tipoEtapa,
       observaciones: s.observaciones,
+      fuentesZarpada: s.fuentesZarpada || null,
+      fuentesArribo: s.fuentesArribo || null,
       observadores: s.observadores?.map((o: any) => ({
         observadorId: o.observadorId,
         rol: o.rol,

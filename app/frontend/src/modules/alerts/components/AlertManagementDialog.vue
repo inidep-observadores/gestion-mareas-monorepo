@@ -897,6 +897,7 @@ const prepareStagesData = async (isNewStageConfig = false) => {
         const subTipo = localAlert.value?.metadata?.subTipo || localAlert.value?.tipo
         const ext = localAlert.value.metadata?.externalData || {}
         const nroEtapaAlert = localAlert.value.metadata?.nroEtapa
+        const sources = (localAlert.value?.metadata as any)?.sources || []
 
         // Ajuste sugerido por el usuario: Fecha Inicio Observador
         if (ext.fechaZarpada) {
@@ -931,6 +932,7 @@ const prepareStagesData = async (isNewStageConfig = false) => {
                 pesqueriaId: lastStage?.pesqueriaId || marea.buque?.pesqueriaHabitualId || marea.id_pesqueria,
                 tipoEtapa: lastStage?.tipoEtapa || TipoEtapa.MC,
                 observaciones: `Etapa detectada automáticamente desde ${externalSourceName.value}`,
+                fuentesZarpada: sources.length > 0 ? { sources, manual: true } : null,
                 observadores: []
             }
             currentStages.push(newStage)
@@ -940,10 +942,22 @@ const prepareStagesData = async (isNewStageConfig = false) => {
                 (s.nroEtapa === nroEtapaAlert) || (s.nro_etapa === nroEtapaAlert)
             )
             if (stageToUpdate) {
-                if (ext.fechaZarpada) stageToUpdate.fechaZarpada = ext.fechaZarpada
-                if (ext.puertoZarpadaId) stageToUpdate.puertoZarpadaId = ext.puertoZarpadaId
-                if (ext.fechaArribo) stageToUpdate.fechaArribo = ext.fechaArribo
-                if (ext.puertoArriboId) stageToUpdate.puertoArriboId = ext.puertoArriboId
+                if (ext.fechaZarpada) {
+                    stageToUpdate.fechaZarpada = ext.fechaZarpada
+                    stageToUpdate.fuentesZarpada = sources.length > 0 ? { sources, manual: true } : null
+                }
+                if (ext.puertoZarpadaId) {
+                    stageToUpdate.puertoZarpadaId = ext.puertoZarpadaId
+                    stageToUpdate.fuentesZarpada = sources.length > 0 ? { sources, manual: true } : null
+                }
+                if (ext.fechaArribo) {
+                    stageToUpdate.fechaArribo = ext.fechaArribo
+                    stageToUpdate.fuentesArribo = sources.length > 0 ? { sources, manual: true } : null
+                }
+                if (ext.puertoArriboId) {
+                    stageToUpdate.puertoArriboId = ext.puertoArriboId
+                    stageToUpdate.fuentesArribo = sources.length > 0 ? { sources, manual: true } : null
+                }
             }
         }
 

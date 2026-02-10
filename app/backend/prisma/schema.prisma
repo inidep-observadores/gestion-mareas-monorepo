@@ -305,6 +305,8 @@ model MareaEtapa {
   fechaArribo     DateTime?              @map("fecha_arribo") @db.Timestamptz(6)
   tipoEtapa       TipoEtapa              @map("tipo_etapa")
   observaciones   String?
+  fuentesZarpada  Json?                  @map("fuentes_zarpada")
+  fuentesArribo   Json?                  @map("fuentes_arribo")
   updatedAt       DateTime               @updatedAt @map("updated_at") @db.Timestamptz(6)
   lances          Lance[]
   marea           Marea                  @relation(fields: [mareaId], references: [id])

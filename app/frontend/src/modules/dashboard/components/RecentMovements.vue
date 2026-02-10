@@ -93,12 +93,25 @@
 
                   <!-- Col 2: Evento (Nombre) -->
                   <td class="px-4 py-4 align-middle">
-                    <span
-                      class="text-[10px] font-bold uppercase"
-                      :class="mov.tipo === 'ZARPADA' ? 'text-blue-500' : 'text-emerald-500'"
-                    >
-                      {{ mov.tipo }}
-                    </span>
+                    <div class="flex flex-col gap-1.5">
+                      <span
+                        class="text-[10px] font-bold uppercase"
+                        :class="mov.tipo === 'ZARPADA' ? 'text-blue-500' : 'text-emerald-500'"
+                      >
+                        {{ mov.tipo }}
+                      </span>
+                      <!-- Badges de fuentes -->
+                      <div v-if="mov.fuentes" class="flex flex-wrap gap-1">
+                        <span
+                          v-for="source in getSources(mov.fuentes)"
+                          :key="source"
+                          class="px-1.5 py-0.5 rounded text-[8px] font-black tracking-tighter uppercase border"
+                          :class="getSourceStyle(source)"
+                        >
+                          {{ source }}
+                        </span>
+                      </div>
+                    </div>
                   </td>
 
                   <!-- Col 3: Fecha / Puerto -->
@@ -189,6 +202,30 @@ const formatDateTime = (dateTimeStr: string) => {
     hour: '2-digit',
     minute: '2-digit',
   }).format(date)// + ' hs'
+}
+
+const getSources = (fuentes: any): string[] => {
+  if (!fuentes) return []
+  // Estructura: { sources: [{ name, ... }], automatizado: boolean }
+  if (Array.isArray(fuentes.sources)) {
+    const names: string[] = fuentes.sources.map((s: any) => {
+      if (s.name === 'API_PNA') return 'PNA'
+      if (s.name === 'TRACKING_CSV') return 'TRK'
+      return s.name
+    })
+    if (fuentes.automatizado) names.push('AUTO')
+    return [...new Set(names)]
+  }
+  return []
+}
+
+const getSourceStyle = (source: string) => {
+  switch (source) {
+    case 'PNA': return 'bg-blue-100/50 text-blue-700 border-blue-200/50 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800/50'
+    case 'TRK': return 'bg-amber-100/50 text-amber-700 border-amber-200/50 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800/50'
+    case 'AUTO': return 'bg-purple-100/50 text-purple-700 border-purple-200/50 dark:bg-purple-900/30 dark:text-purple-400 dark:border-purple-800/50 animate-pulse'
+    default: return 'bg-gray-100/50 text-gray-700 border-gray-200/50 dark:bg-gray-800/30 dark:text-gray-400 dark:border-gray-700/50'
+  }
 }
 
 const loadMovements = async () => {

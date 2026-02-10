@@ -73,6 +73,7 @@ export interface MovementEvent {
     tipo: 'ZARPADA' | 'ARRIBO';
     fecha: string;
     puerto: string;
+    fuentes?: any;
 }
 
 export interface CalendarEvent {
