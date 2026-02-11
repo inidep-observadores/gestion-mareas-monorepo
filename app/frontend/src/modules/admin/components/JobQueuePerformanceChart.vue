@@ -61,14 +61,34 @@ const series = ref([{
 
 const loading = ref(true);
 
+const jobTypeLabels: Record<string, string> = {
+    'VESSEL_SYNC': 'Sincro Buques',
+    'PNA_API_SYNC': 'Sincro PNA (Eventos)',
+    'PNA_TRACKING_SYNC': 'Sincro Tracking',
+    'TRAJECTORY_SYNC': 'Sincro Trayectorias',
+};
+
 const loadData = async () => {
     loading.value = true;
     try {
         const data = await jobQueueService.getPerformanceStats();
-        if (chartOptions.value.xaxis) {
-            chartOptions.value.xaxis.categories = data.map(d => d.type);
-        }
-        series.value[0].data = data.map(d => d.avgDuration);
+        
+        // Update data
+        series.value = [{
+            name: 'Promedio Duración',
+            data: data.map(d => d.avgDuration)
+        }];
+
+        // Update categories reactively
+        const categories = data.map(d => jobTypeLabels[d.type] || d.type);
+        
+        chartOptions.value = {
+            ...chartOptions.value,
+            xaxis: {
+                ...chartOptions.value.xaxis,
+                categories: categories
+            }
+        };
     } catch (error) {
         console.error('Error loading performance stats:', error);
     } finally {

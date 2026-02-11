@@ -167,10 +167,16 @@ export class PnaTrackingService {
     }
 
     private async fetchFromApi(desde: Date, hasta: Date): Promise<string> {
-        const endpoint = this.configService.get<string>('PNA_API_ENDPOINT');
+        // Endpoint oficial para WsPescaExternos
+        const endpoint = 'https://sscpwsexternos.prefecturanaval.gob.ar/WsPescaExternos.asmx';
+
         const user = this.configService.get<string>('PNA_API_USER');
         const password = this.configService.get<string>('PNA_API_PASSWORD');
         const timeout = parseInt(this.configService.get<string>('PNA_API_TIMEOUT') || '60000', 10);
+
+        if (!user || !password) {
+            throw new Error('Configuración incompleta para API PNA Tracking (PNA_API_USER, PNA_API_PASSWORD)');
+        }
 
         const desdeStr = DateTime.fromJSDate(desde).toUTC().toFormat('yyyy-MM-dd HH:mm:ss');
         const hastaStr = DateTime.fromJSDate(hasta).toUTC().toFormat('yyyy-MM-dd HH:mm:ss');
@@ -187,12 +193,24 @@ export class PnaTrackingService {
   </soap12:Body>
 </soap12:Envelope>`;
 
-        const response = await axios.post(endpoint!, envelope, {
-            timeout,
-            headers: { 'Content-Type': 'application/soap+xml; charset=utf-8' },
-        });
+        try {
+            // this.logger.debug(`Calling PNA Tracking API: ${endpoint} (${desdeStr} - ${hastaStr})`);
+            const response = await axios.post(endpoint, envelope, {
+                timeout,
+                headers: { 'Content-Type': 'application/soap+xml; charset=utf-8' },
+            });
 
-        return response.data;
+            return response.data;
+        } catch (error) {
+            if (axios.isAxiosError(error)) {
+                this.logger.error(`Error HTTP ${error.response?.status} calling PNA Tracking API: ${error.message}`);
+                if (error.response?.data) {
+                    this.logger.debug(`PNA Error Response Body: ${typeof error.response.data === 'string' ? error.response.data.substring(0, 200) : 'binary/json'}`);
+                }
+                throw new Error(`Error de comunicación con PNA Tracking API: ${error.message}`);
+            }
+            throw error;
+        }
     }
 
     private async getLastSuccessfulSyncDate(): Promise<Date | null> {
