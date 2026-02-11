@@ -314,6 +314,16 @@ const router = createRouter({
         roles: [ValidRoles.admin],
       },
     },
+    {
+      path: '/admin/pna-sync',
+      name: 'AdminPnaSync',
+      component: () => import('@/modules/admin/views/PnaSyncDashboardView.vue'),
+      meta: {
+        title: 'Configuracion de Sincronización PNA',
+        requiresAuth: true,
+        roles: [ValidRoles.admin],
+      },
+    },
     // 404 No encontrado
     {
       path: '/error-servidor',

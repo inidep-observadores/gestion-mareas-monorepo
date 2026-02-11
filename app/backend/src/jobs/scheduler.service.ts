@@ -6,6 +6,7 @@ import { VesselSyncProcessor } from './processors/vessel-sync.processor';
 import { PnaApiSyncProcessor } from './processors/pna-api-sync.processor';
 import { PnaTrackingSyncProcessor } from './processors/pna-tracking-sync.processor';
 import { PnaTrackingService } from '../pna-api/pna-tracking.service';
+import { DateTime } from 'luxon';
 import * as os from 'os';
 
 @Injectable()
@@ -64,9 +65,79 @@ export class SchedulerService {
     }
 
     /**
-     * Asegura que siempre haya una tarea de sincronización de PNA programada
+     * Metrónomo de un minuto que verifica y dispara tareas programadas dinámicamente
      */
-    @Cron(CronExpression.EVERY_HOUR)
+    @Cron(CronExpression.EVERY_MINUTE)
+    async handleAutoSchedule() {
+        const config = await this.getAutoSyncConfig();
+        const now = DateTime.now();
+
+        // 1. Sincronización de PNA API (Eventos/Alertas)
+        if (config.pnaApi.enabled) {
+            const lastRunKey = 'LAST_PNA_API_SYNC_RUN';
+            const lastRunStatus = await this.prisma.systemStatus.findUnique({ where: { key: lastRunKey } });
+            const lastRun = lastRunStatus ? DateTime.fromISO(lastRunStatus.value) : DateTime.fromMillis(0);
+
+            if (now.diff(lastRun, 'minutes').minutes >= config.pnaApi.intervalMinutes) {
+                this.logger.log(`Disparando Sincronización PNA API automática (Intervalo: ${config.pnaApi.intervalMinutes} min)`);
+                await this.ensurePnaSyncJob();
+                await this.updateStatusDate(lastRunKey, now);
+            }
+        }
+
+        // 2. Sincronización de Tracking PNA
+        if (config.pnaTracking.enabled) {
+            const lastRunKey = 'LAST_PNA_TRACKING_SYNC_RUN';
+            const lastRunStatus = await this.prisma.systemStatus.findUnique({ where: { key: lastRunKey } });
+            const lastRun = lastRunStatus ? DateTime.fromISO(lastRunStatus.value) : DateTime.fromMillis(0);
+
+            if (now.diff(lastRun, 'minutes').minutes >= config.pnaTracking.intervalMinutes) {
+                this.logger.log(`Disparando Sincronización Tracking PNA automática (Intervalo: ${config.pnaTracking.intervalMinutes} min)`);
+                await this.pnaTrackingService.scheduleSynchronization();
+                await this.updateStatusDate(lastRunKey, now);
+            }
+        }
+    }
+
+    private async updateStatusDate(key: string, date: DateTime) {
+        await this.prisma.systemStatus.upsert({
+            where: { key: key },
+            update: { value: date.toISO() || '', lastUpdate: new Date() },
+            create: { key: key, value: date.toISO() || '', lastUpdate: new Date() }
+        });
+    }
+
+    async getAutoSyncConfig() {
+        const key = 'PNA_SYNC_CONFIG';
+        const status = await this.prisma.systemStatus.findUnique({ where: { key } });
+
+        const defaultConfig = {
+            pnaApi: { enabled: true, intervalMinutes: 60 },
+            pnaTracking: { enabled: true, intervalMinutes: 120 }
+        };
+
+        if (!status?.value) return defaultConfig;
+
+        try {
+            return JSON.parse(status.value);
+        } catch (e) {
+            return defaultConfig;
+        }
+    }
+
+    async updateAutoSyncConfig(config: any) {
+        const key = 'PNA_SYNC_CONFIG';
+        await this.prisma.systemStatus.upsert({
+            where: { key },
+            update: { value: JSON.stringify(config), lastUpdate: new Date() },
+            create: { key, value: JSON.stringify(config), lastUpdate: new Date() }
+        });
+        this.logger.log('Configuración de sincronización PNA actualizada.');
+    }
+
+    /**
+     * Asegura que siempre haya una tarea de sincronización de PNA programada (Llamado interno)
+     */
     async ensurePnaSyncJob() {
         const existingJob = await this.prisma.jobQueue.findFirst({
             where: {
@@ -86,15 +157,6 @@ export class SchedulerService {
                 },
             });
         }
-    }
-
-    /**
-     * Programa la sincronización fragmentada de tracking PNA
-     */
-    @Cron(CronExpression.EVERY_2_HOURS)
-    async ensurePnaTrackingSyncJob() {
-        this.logger.log('Iniciando programación periódica de Tracking PNA...');
-        await this.pnaTrackingService.scheduleSynchronization();
     }
 
     private async processQueue() {

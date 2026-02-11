@@ -12,7 +12,7 @@ import { AlertaPrioridad, AlertaEstado } from '../alerts/alerts.enums';
 import { AlertMetadata } from '../alerts/interfaces/alert-metadata.interface';
 import { EventCorrelationService, EventDecisionAction } from '../common/services/event-correlation.service';
 
-interface ProcessingSummary {
+export interface ProcessingSummary {
     total: number;
     processed: number;
     skipped: number;

@@ -166,6 +166,11 @@ const navigationGroups = [
         name: 'Gestión de Alertas',
         path: '/admin/alerts-log',
       },
+      {
+        icon: SettingsIcon,
+        name: 'Sincronización PNA',
+        path: '/admin/pna-sync',
+      },
     ],
   },
   {

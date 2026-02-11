@@ -25,20 +25,25 @@ export class PnaTrackingService {
     /**
      * Orquestador que decide el rango y encola las tareas fragmentadas.
      */
-    async scheduleSynchronization() {
+    async scheduleSynchronization(manualFromDate?: Date, manualToDate?: Date) {
         try {
-            const lastSync = await this.getLastSuccessfulSyncDate();
             const now = DateTime.now().toUTC();
 
-            // Rango "desde": LAST_PNA_TRACKING_SYNC o últimas 8 horas UTC
-            let fromDate = lastSync
-                ? DateTime.fromJSDate(lastSync).toUTC()
-                : now.minus({ hours: 8 });
+            // Rango "desde": manual o de BD o últimas 8 horas UTC
+            let fromDate: DateTime;
+            if (manualFromDate) {
+                fromDate = DateTime.fromJSDate(manualFromDate).toUTC();
+            } else {
+                const lastSync = await this.getLastSuccessfulSyncDate();
+                fromDate = lastSync
+                    ? DateTime.fromJSDate(lastSync).toUTC()
+                    : now.minus({ hours: 8 });
+            }
 
-            const toDate = now;
+            const toDate = manualToDate ? DateTime.fromJSDate(manualToDate).toUTC() : now;
 
             if (fromDate >= toDate) {
-                this.logger.log('Sincronización ya está al día.');
+                this.logger.log('Sincronización ya está al día o rango inválido.');
                 return { success: true, queuedJobs: 0 };
             }
 

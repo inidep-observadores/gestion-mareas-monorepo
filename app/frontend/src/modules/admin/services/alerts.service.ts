@@ -64,6 +64,20 @@ const alertsAdminApi = {
     syncTracking: async (): Promise<any> => {
         const { data } = await httpClient.post('/pna-api/sync-tracking');
         return data;
+    },
+
+    getConfig: async (): Promise<any> => {
+        const { data } = await httpClient.get('/pna-api/config');
+        return data;
+    },
+
+    updateConfig: async (config: any): Promise<void> => {
+        await httpClient.post('/pna-api/config', config);
+    },
+
+    syncManual: async (params: { type: 'API' | 'TRACKING', fromDate: string, toDate: string }): Promise<any> => {
+        const { data } = await httpClient.post('/pna-api/sync-manual', params);
+        return data;
     }
 };
 
