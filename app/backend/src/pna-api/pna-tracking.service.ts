@@ -135,7 +135,7 @@ export class PnaTrackingService {
                         mmsi: points[0].mmsi
                     },
                     points: points.map(p => ({
-                        timestamp: DateTime.fromFormat(p.fecha, 'yyyy-MM-dd HH:mm:ss').toJSDate(),
+                        timestamp: DateTime.fromFormat(p.fecha, 'yyyy-MM-dd HH:mm:ss', { zone: 'utc' }).toJSDate(),
                         lat: parseFloat(p.latitud),
                         lon: parseFloat(p.longitud),
                         velocidad: parseFloat(p.velocidad),
@@ -150,11 +150,12 @@ export class PnaTrackingService {
 
             // Actualizar fecha de última sincronización al máximo timestamp encontrado
             const maxTimestamp = reportes.reduce((max, r) => {
-                const dt = DateTime.fromFormat(r.fecha, 'yyyy-MM-dd HH:mm:ss');
+                const dt = DateTime.fromFormat(r.fecha, 'yyyy-MM-dd HH:mm:ss', { zone: 'utc' });
                 return dt > max ? dt : max;
             }, startRange);
 
             await this.updateLastSuccessfulSyncDate(maxTimestamp.toJSDate());
+            await this.trackingService.updateLastTrackingStatus();
 
             this.logger.log(`Sincronización finalizada: ${totalInserted} puntos insertados, ${totalAlerts} alertas/eventos detectados.`);
             return { success: true, inserted: totalInserted, alerts: totalAlerts };

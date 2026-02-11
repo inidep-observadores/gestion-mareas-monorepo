@@ -1,4 +1,4 @@
-import { Module, Global } from '@nestjs/common';
+import { Module, Global, forwardRef } from '@nestjs/common';
 import { ScheduleModule } from '@nestjs/schedule';
 import { SchedulerService } from './scheduler.service';
 import { VesselSyncProcessor } from './processors/vessel-sync.processor';
@@ -17,7 +17,7 @@ import { PnaTrackingSyncProcessor } from './processors/pna-tracking-sync.process
         ScheduleModule.forRoot(),
         CatalogosModule,
         AuthModule,
-        PnaApiModule,
+        forwardRef(() => PnaApiModule),
     ],
     controllers: [
         JobQueueController,

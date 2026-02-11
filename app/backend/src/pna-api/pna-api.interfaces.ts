@@ -15,6 +15,12 @@ export interface PnaReporteCostera {
     borrado: string;
 }
 
+export interface PnaApiResponse {
+    reportes: PnaReporteCostera[];
+    error: boolean;
+    mensaje: string;
+}
+
 export interface PnaTrackingReporte {
     matricula: string;
     mmsi: string;

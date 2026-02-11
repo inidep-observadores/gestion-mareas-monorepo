@@ -31,7 +31,7 @@ export class SchedulerService {
             return;
         }
 
-        const lockKey = 'job_scheduler_lock';
+        const lockKey = 'JOB_SCHEDULER_LOCK';
 
         try {
             // Intento de bloqueo distribuido simple usando system_status
@@ -82,7 +82,7 @@ export class SchedulerService {
                     type: JobType.PNA_API_SYNC,
                     status: JobStatus.PENDING,
                     nextRunAt: new Date(),
-                    priority: 20, // Prioridad alta (mayor que VESSEL_SYNC que tiene 10)
+                    priority: 20,
                 },
             });
         }

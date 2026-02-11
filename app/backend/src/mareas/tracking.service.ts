@@ -351,7 +351,7 @@ export class TrackingService {
         return buqueFound?.id || null;
     }
 
-    private async updateLastTrackingStatus() {
+    async updateLastTrackingStatus() {
         try {
             const lastPoint = await this.prisma.buqueTrayectoriaPunto.findFirst({
                 orderBy: { timestamp: 'desc' },
