@@ -90,10 +90,10 @@
             color="success"
           />
           <AdminHomeCard
-            title="Importación Access"
-            description="Herramientas de migración para datos desde bases Access heredadas."
-            :to="{ name: 'AdminImportAccess' }"
-            :icon="LayersIcon"
+            title="Sincronización PNA"
+            description="Configuración de procesos automáticos y herramientas de sincronización manual de flota."
+            :to="{ name: 'AdminPnaSync' }"
+            :icon="SettingsIcon"
             color="success"
           />
           <AdminHomeCard

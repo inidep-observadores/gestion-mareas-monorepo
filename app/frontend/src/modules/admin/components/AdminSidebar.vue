@@ -201,11 +201,7 @@ const navigationGroups = [
         name: 'Copias de seguridad',
         path: '/admin/backup',
       },
-      {
-        icon: ArchiveIcon,
-        name: 'Importación Access',
-        path: '/admin/import-access',
-      },
+
       {
         icon: HistoryIcon,
         name: 'Cola de Tareas',
