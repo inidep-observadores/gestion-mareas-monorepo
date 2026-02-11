@@ -285,10 +285,10 @@ export class TrackingService {
         const isNumeric = (val?: string) => val && /^\d+$/.test(val.trim());
         const normalizeNum = (val: string) => val.trim().replace(/^0+/, '');
 
-        // Prioridad 1: MMSI (Internacional, más exacto)
-        if (info.mmsi) {
-            buqueFound = await this.prisma.buque.findFirst({
-                where: { mmsi: info.mmsi }
+        // Prioridad 1: Matrícula SIOP
+        if (!buqueFound && info.matriculaSiop) {
+            buqueFound = await this.prisma.buque.findUnique({
+                where: { matriculaSiop: info.matriculaSiop }
             });
         }
 
@@ -324,12 +324,13 @@ export class TrackingService {
             }
         }
 
-        // Prioridad 4: Matrícula SIOP (Último recurso)
-        if (!buqueFound && info.matriculaSiop) {
-            buqueFound = await this.prisma.buque.findUnique({
-                where: { matriculaSiop: info.matriculaSiop }
+        // Prioridad 4: MMSI (Internacional, más exacto)
+        if (!buqueFound && info.mmsi) {
+            buqueFound = await this.prisma.buque.findFirst({
+                where: { mmsi: info.mmsi }
             });
         }
+
         // Auto-corrección de datos si se encontró el buque
         if (buqueFound) {
             const dataToUpdate: any = {};
