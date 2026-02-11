@@ -199,7 +199,8 @@ watch(() => props.refreshTrigger, loadJobs);
                     class="bg-surface border border-border rounded-lg px-3 py-1.5 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/20">
                     <option value="">Todos los Tipos</option>
                     <option value="VESSEL_SYNC">Sincro Buques</option>
-                    <option value="TRAJECTORY_SYNC">Sincro Trayectorias</option>
+                    <option value="PNA_API_SYNC">Sincro PNA (Alertas)</option>
+                    <option value="PNA_TRACKING_SYNC">Sincro Tracking</option>
                 </select>
             </div>
 

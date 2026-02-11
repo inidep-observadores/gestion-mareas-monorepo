@@ -135,7 +135,7 @@ export class PnaTrackingService {
                         mmsi: points[0].mmsi
                     },
                     points: points.map(p => ({
-                        timestamp: DateTime.fromFormat(p.fecha, 'yyyy-MM-dd HH:mm:ss', { zone: 'utc' }).toJSDate(),
+                        timestamp: DateTime.fromFormat(p.fecha, 'yyyy-MM-dd HH:mm:ss', { zone: 'utc' }).isValid ? DateTime.fromFormat(p.fecha, 'yyyy-MM-dd HH:mm:ss', { zone: 'utc' }).toJSDate() : DateTime.fromISO(p.fecha, { zone: 'utc' }).toJSDate(),
                         lat: parseFloat(p.latitud),
                         lon: parseFloat(p.longitud),
                         velocidad: parseFloat(p.velocidad),
