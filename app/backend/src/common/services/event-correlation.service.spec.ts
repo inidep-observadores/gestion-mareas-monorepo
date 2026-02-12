@@ -67,6 +67,62 @@ describe('EventCorrelationService (Hotfix Rules)', () => {
         });
     });
 
+    describe('evaluateEventContext - Restricción fecha_zarpada_estimada', () => {
+        it('debería retornar IGNORE_OLD si la zarpada es anterior a la fecha estimada', async () => {
+            mockPrisma.marea.findMany.mockResolvedValue([
+                {
+                    id: 'marea-1',
+                    estadoActual: { codigo: 'DESIGNADA' },
+                    fechaZarpadaEstimada: new Date('2026-02-14T03:00:00Z'), // 00:00 ART
+                    etapas: [],
+                    buque: { id: 'buque-1' },
+                },
+            ]);
+            mockPrisma.alerta.findFirst.mockResolvedValue(null);
+
+            // Evento el 13/02/2026 (10:00 ART -> 13:00 UTC)
+            const result = await service.evaluateEventContext('buque-1', 'ZARPADA', new Date('2026-02-13T13:00:00Z'));
+
+            expect(result.action).toBe(EventDecisionAction.IGNORE_OLD);
+        });
+
+        it('debería retornar CREATE_ALERT si la zarpada es el mismo día que la fecha estimada', async () => {
+            mockPrisma.marea.findMany.mockResolvedValue([
+                {
+                    id: 'marea-1',
+                    estadoActual: { codigo: 'DESIGNADA' },
+                    fechaZarpadaEstimada: new Date('2026-02-14T03:00:00Z'), // 00:00 ART
+                    etapas: [],
+                    buque: { id: 'buque-1' },
+                },
+            ]);
+            mockPrisma.alerta.findFirst.mockResolvedValue(null);
+
+            // Evento el 14/02/2026 (10:00 ART -> 13:00 UTC)
+            const result = await service.evaluateEventContext('buque-1', 'ZARPADA', new Date('2026-02-14T13:00:00Z'));
+
+            expect(result.action).toBe(EventDecisionAction.CREATE_ALERT);
+        });
+
+        it('debería retornar CREATE_ALERT si la zarpada es posterior a la fecha estimada', async () => {
+            mockPrisma.marea.findMany.mockResolvedValue([
+                {
+                    id: 'marea-1',
+                    estadoActual: { codigo: 'DESIGNADA' },
+                    fechaZarpadaEstimada: new Date('2026-02-14T03:00:00Z'), // 00:00 ART
+                    etapas: [],
+                    buque: { id: 'buque-1' },
+                },
+            ]);
+            mockPrisma.alerta.findFirst.mockResolvedValue(null);
+
+            // Evento el 15/02/2026 (10:00 ART -> 13:00 UTC)
+            const result = await service.evaluateEventContext('buque-1', 'ZARPADA', new Date('2026-02-15T13:00:00Z'));
+
+            expect(result.action).toBe(EventDecisionAction.CREATE_ALERT);
+        });
+    });
+
     describe('evaluateEventContext - Arribos en Mareas EN_EJECUCION', () => {
         it('debería retornar RECOMMEND_FIN_MAREA si hay una marea DESIGNADA esperando (Prioridad sobre Arribo)', async () => {
             mockPrisma.marea.findMany.mockResolvedValue([

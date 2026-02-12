@@ -122,6 +122,17 @@ export class EventCorrelationService {
                 return { action: EventDecisionAction.IGNORE_OLD, marea: mareaMatch };
             }
 
+            // REGLA: Sólo se considerará un alerta de zarpada si la fecha del evento reportado es >= a la fecha de zarpada estimada en la marea.
+            if (mareaMatch.fechaZarpadaEstimada) {
+                const fZarpadaEstimada = DateTime.fromJSDate(mareaMatch.fechaZarpadaEstimada).setZone(this.TIMEZONE).startOf('day');
+                const fEvento = DateTime.fromJSDate(date).setZone(this.TIMEZONE).startOf('day');
+
+                if (fEvento < fZarpadaEstimada) {
+                    this.logger.log(`Ignorando ZARPADA para buque ${buqueId}: Fecha del evento (${fEvento.toFormat('dd/MM/yyyy')}) es anterior a la fecha estimada de zarpada (${fZarpadaEstimada.toFormat('dd/MM/yyyy')}) en marea ${mareaMatch.id}`);
+                    return { action: EventDecisionAction.IGNORE_OLD, marea: mareaMatch };
+                }
+            }
+
             return { action: EventDecisionAction.CREATE_ALERT, marea: mareaMatch };
         } else {
             // ARRIBO
