@@ -73,10 +73,11 @@
           <div v-if="expandedSection === 'delays'" class="p-5 pt-2">
             <div v-if="revisionDelays.length" class="grid gap-3">
               <div v-for="item in revisionDelays" :key="item.id"
-                class="flex items-center justify-between rounded-xl border border-border bg-surface-muted/50 p-3 transition-colors hover:bg-error/5 hover:border-error/20">
-                <div>
+                @click="openMareaDetail(item.id)"
+                class="flex items-center justify-between rounded-xl border border-border bg-surface-muted/50 p-3 transition-colors hover:bg-error/5 hover:border-error/20 cursor-pointer group/item">
+                <div class="flex-1 min-w-0 pr-4">
                   <div class="flex items-center gap-2 mb-1">
-                    <span class="text-xs font-black text-text">{{ item.mareaId }}</span>
+                    <span class="text-xs font-black text-text group-hover/item:text-error transition-colors">{{ item.mareaId }}</span>
                     <span
                       class="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-surface border border-border text-text-muted uppercase tracking-tight">{{
                       item.vesselName }}</span>
@@ -96,7 +97,7 @@
                     <span class="block text-sm font-black text-error leading-none">{{ item.days }}</span>
                     <span class="text-[8px] font-bold text-error uppercase tracking-tighter">Días</span>
                   </div>
-                  <button v-if="showActions" @click="openReclamo(item)"
+                  <button v-if="showActions" @click.stop="openReclamo(item)"
                     class="w-8 h-8 rounded-lg bg-surface shadow-sm border border-border flex items-center justify-center text-text-muted hover:text-error hover:border-error transition-all"
                     title="Reclamar documentación">
                     <MailIcon v-if="item.email" class="w-4 h-4" />
@@ -159,10 +160,11 @@
           <div v-if="expandedSection === 'reports'" class="p-5 pt-2">
             <div v-if="reportDelays.length" class="grid gap-3">
               <div v-for="item in reportDelays" :key="item.id"
-                class="flex items-center justify-between rounded-xl border border-border bg-surface-muted/50 p-3 transition-colors hover:bg-warning/5 hover:border-warning/20">
-                <div>
+                @click="openMareaDetail(item.id)"
+                class="flex items-center justify-between rounded-xl border border-border bg-surface-muted/50 p-3 transition-colors hover:bg-warning/5 hover:border-warning/20 cursor-pointer group/item">
+                <div class="flex-1 min-w-0 pr-4">
                   <div class="flex items-center gap-2 mb-1">
-                    <span class="text-xs font-black text-text">{{ item.mareaId }}</span>
+                    <span class="text-xs font-black text-text group-hover/item:text-warning transition-colors">{{ item.mareaId }}</span>
                     <span
                       class="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-surface border border-border text-text-muted uppercase tracking-tight">{{
                       item.vesselName }}</span>
@@ -182,7 +184,7 @@
                     <span class="block text-sm font-black text-warning leading-none">{{ item.days }}</span>
                     <span class="text-[8px] font-bold text-warning uppercase tracking-tighter">Días</span>
                   </div>
-                  <router-link v-if="showActions" :to="`/mareas/workflow/${item.id}`"
+                  <router-link v-if="showActions" :to="`/mareas/workflow/${item.id}`" @click.stop
                     class="w-8 h-8 rounded-lg bg-surface shadow-sm border border-border flex items-center justify-center text-text-muted hover:text-warning hover:border-warning transition-all">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none"
                       stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -239,7 +241,8 @@
           <div v-if="expandedSection === 'movements'" class="p-5 pt-2">
             <div v-if="movementAlerts.length" class="grid gap-3">
               <div v-for="item in movementAlerts" :key="item.id"
-                class="flex items-center justify-between rounded-xl border border-border bg-surface-muted/50 p-3 transition-colors hover:bg-success/5 hover:border-success/20">
+                @click="openMareaDetail(item.metadata.mareaId)"
+                class="flex items-center justify-between rounded-xl border border-border bg-surface-muted/50 p-3 transition-colors hover:bg-success/5 hover:border-success/20 cursor-pointer group/item">
                 <div class="flex-1 min-w-0">
                   <div class="flex items-center gap-2 mb-1">
                     <span class="text-[10px] font-semibold px-1.5 py-0.5 rounded-md uppercase tracking-tighter border"
@@ -270,23 +273,30 @@
                     </div>
                   </div>
 
-                  <!-- Badges de Origen -->
-                  <div class="flex items-center gap-2 mt-2">
-                    <span class="text-[8px] font-bold text-text-muted uppercase tracking-tight">Fuente:</span>
-                    <div class="flex gap-1.5">
-                      <div v-for="source in item.metadata.sources" :key="source.name"
-                        class="flex items-center gap-1 px-1.5 py-0.5 rounded-full border text-[8px] font-black uppercase tracking-tighter transition-colors"
-                        :class="[
-                          source.name === 'API_PNA' ? 'bg-orange-500/10 border-orange-500/20 text-orange-600 dark:text-orange-400' :
-                          source.name === 'TRACKING_CSV' ? 'bg-success/10 border-success/20 text-success' :
-                          'bg-surface-muted border-border text-text-muted'
-                        ]">
-                        <span class="w-1.5 h-1.5 rounded-full" 
-                          :class="source.name === 'API_PNA' ? 'bg-orange-500' : 'bg-success'"></span>
-                        {{ source.name.replace('_CSV', '').replace('API_', '') }}
+                    <div class="flex items-center gap-2 mt-2">
+                      <span class="text-[8px] font-bold text-text-muted uppercase tracking-tight">Fuente:</span>
+                      <div class="flex gap-1.5">
+                        <template v-for="source in item.metadata.sources" :key="source.name">
+                          <TrajectorySourceBadge
+                            v-if="source.name === 'TRACKING_CSV' || source.name === 'API_PNA'"
+                            :source="source.name === 'API_PNA' ? 'PNA' : 'TRACKING'"
+                            :vesselId="item.metadata.vesselId || item.metadata.buqueId"
+                            :vesselName="item.metadata.vesselName"
+                            :referenceDate="item.metadata.eventDate"
+                            :mareaCode="item.metadata.mareaCode"
+                            size="sm"
+                          />
+                          <div v-else
+                            class="flex items-center gap-1 px-1.5 py-0.5 rounded-full border text-[8px] font-black uppercase tracking-tighter transition-colors"
+                            :class="[
+                              'bg-surface-muted border-border text-text-muted'
+                            ]">
+                            <span class="w-1.5 h-1.5 rounded-full bg-success"></span>
+                            {{ source.name.replace('_CSV', '').replace('API_', '') }}
+                          </div>
+                        </template>
                       </div>
                     </div>
-                  </div>
                 </div>
 
                 <div class="text-right ml-4">
@@ -429,6 +439,12 @@
       @close="showReclamoDialog = false" @confirm="handleReclamoConfirm" />
     <ObservadorTimelineDialog :show="showTimelineDialog" :observador-id="selectedObserver?.id"
       :observador-name="selectedObserver?.name" :year="selectedYear" @close="showTimelineDialog = false" />
+    
+    <MareaQuickDetailModal 
+      :is-open="showMareaModal" 
+      :marea-id="selectedMareaId" 
+      @close="showMareaModal = false" 
+    />
   </div>
 </template>
 
@@ -441,6 +457,8 @@ import { useBusinessRulesStore } from '@/modules/shared/stores/business-rules.st
 import dashboardService, { type FatigueAlert, type FatigueTrip, type MovementAlert } from '@/modules/dashboard/services/dashboard.service'
 import ReclamoEntregaDialog from './ReclamoEntregaDialog.vue'
 import ObservadorTimelineDialog from '@/modules/admin/components/ObservadorTimelineDialog.vue'
+import MareaQuickDetailModal from '@/modules/stats/components/MareaQuickDetailModal.vue'
+import TrajectorySourceBadge from '@/modules/alerts/components/TrajectorySourceBadge.vue'
 import { useConfigStore } from '@/modules/shared/stores/config.store'
 
 const showReclamoDialog = ref(false)
@@ -450,6 +468,9 @@ const selectedObserver = ref<{ id: string, name: string } | null>(null)
 const configStore = useConfigStore()
 const { selectedYear } = storeToRefs(configStore)
 const businessRulesStore = useBusinessRulesStore()
+
+const showMareaModal = ref(false)
+const selectedMareaId = ref<string | null>(null)
 const { rules } = storeToRefs(businessRulesStore)
 const diasNavegadosAnuales = computed(() => rules.value.DIAS_NAVEGADOS_ANUALES || 0)
 
@@ -461,6 +482,12 @@ const openReclamo = (item: any) => {
 const openTimeline = (id: string, name: string) => {
   selectedObserver.value = { id, name }
   showTimelineDialog.value = true
+}
+
+const openMareaDetail = (mareaId: string) => {
+  if (!mareaId) return
+  selectedMareaId.value = mareaId
+  showMareaModal.value = true
 }
 
 const handleReclamoConfirm = async (payload: any) => {

@@ -101,15 +101,25 @@
                         {{ mov.tipo }}
                       </span>
                       <!-- Badges de fuentes -->
-                      <div v-if="mov.fuentes" class="flex flex-wrap gap-1">
-                        <span
-                          v-for="source in getSources(mov.fuentes)"
-                          :key="source"
-                          class="px-1.5 py-0.5 rounded text-[8px] font-black tracking-tighter uppercase border"
-                          :class="getSourceStyle(source)"
-                        >
-                          {{ source }}
-                        </span>
+                      <div v-if="mov.fuentes && mov.fuentes.sources" class="flex flex-wrap gap-1">
+                        <template v-for="(src, index) in mov.fuentes.sources" :key="index">
+                          <TrajectorySourceBadge
+                            v-if="src.name === 'TRACKING_CSV' || src.name === 'PNA'"
+                            :source="src.name === 'PNA' ? 'PNA' : 'TRACKING'"
+                            :vesselId="mov.vesselId"
+                            :vesselName="mov.buque"
+                            :referenceDate="mov.fecha"
+                            :mareaCode="mov.marea"
+                            :abbreviated="true"
+                          />
+                          <span
+                            v-else
+                            class="px-1.5 py-0.5 rounded text-[8px] font-black tracking-tighter uppercase border"
+                            :class="getSourceStyle(src.name === 'API_PNA' ? 'PNA' : src.name)"
+                          >
+                            {{ src.name === 'API_PNA' ? 'PNA' : src.name }}
+                          </span>
+                        </template>
                       </div>
                     </div>
                   </td>
@@ -164,6 +174,7 @@ import { ref, onMounted } from 'vue'
 import { toast } from 'vue-sonner'
 import { ChevronDownIcon, ShipIcon } from '@/icons'
 import mareasService from '@/modules/mareas/services/mareas.service'
+import TrajectorySourceBadge from '@/modules/alerts/components/TrajectorySourceBadge.vue'
 import type { MovementEvent } from '@/modules/mareas/types/marea.types'
 
 const isCollapsed = ref(false)

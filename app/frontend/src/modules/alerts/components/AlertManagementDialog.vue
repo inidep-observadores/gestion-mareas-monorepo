@@ -79,10 +79,16 @@
                                     <span class="text-text/60">{{ formatDate(localAlert.fechaDetectada) }}</span>
                                 </div>
                                 <div class="flex gap-1.5">
-                                    <Badge v-for="src in alertSources" :key="src.name" :color="getSourceColor(src.name)"
-                                        variant="light" size="sm" class="font-black text-[9px] uppercase px-2">
-                                        {{ src.name }}
-                                    </Badge>
+                                    <template v-for="src in alertSources" :key="src.name">
+                                        <TrajectorySourceBadge v-if="src.name === 'Tracking' || src.name === 'PNA'"
+                                            :source="src.name === 'PNA' ? 'PNA' : 'TRACKING'" :vesselId="mapVesselId"
+                                            :vesselName="mapVesselName" :referenceDate="mapReferenceDate" :endDate="mapEndDate"
+                                            :mareaId="localAlert?.referenciaId" :mareaCode="fixedMareaLabel" size="sm" />
+                                        <Badge v-else :color="getSourceColor(src.name)" variant="light" size="sm"
+                                            class="font-black text-[9px] uppercase px-2">
+                                            {{ src.name }}
+                                        </Badge>
+                                    </template>
                                 </div>
                             </div>
                         </div>
@@ -252,16 +258,6 @@
                 </div>
             </div>
 
-            <!-- Map Verification Action -->
-            <div v-if="canShowMap && !isClosed" class="pt-4 border-t border-border w-full">
-                <Button variant="soft" size="sm"
-                    class="w-full font-bold h-11 bg-primary/5 hover:bg-primary/10 text-primary border border-primary/20"
-                    @click="showMapModal = true">
-                    <MapPinIcon class="w-4 h-4 mr-2" />
-                    Visualizar Trayectoria en Mapa
-                </Button>
-            </div>
-
             <!-- Unified Actions Row (Bottom) -->
             <div v-if="!isClosed" class="pt-4 flex items-center gap-3 w-full">
                 <Button variant="soft" size="sm" class="flex-1 font-semibold h-10"
@@ -308,10 +304,6 @@
     <NuevaMareaDialog :show="showNuevaMareaDialog" :init-from-alert="true" @close="showNuevaMareaDialog = false"
         @success="handleMareaSuccess" />
 
-    <AlertTrajectoryMapModal :show="showMapModal" :vesselId="mapVesselId || ''" :vesselName="mapVesselName || ''"
-        :referenceDate="mapReferenceDate" :endDate="mapEndDate || undefined" :mareaId="mareaData?.id"
-        :mareaCode="fixedMareaLabel" @close="showMapModal = false" />
-
     <MareaQuickDetailModal :isOpen="showMareaQuickDetail" :mareaId="localAlert.referenciaId || null"
         @close="showMareaQuickDetail = false" />
 
@@ -331,7 +323,7 @@ import BaseModal from '@/components/common/BaseModal.vue'
 import Button from '@/components/ui/Button.vue'
 import Badge from '@/components/ui/Badge.vue'
 import AlertTimeline from './AlertTimeline.vue'
-import AlertTrajectoryMapModal from './AlertTrajectoryMapModal.vue'
+import TrajectorySourceBadge from '@/modules/alerts/components/TrajectorySourceBadge.vue'
 import MareaQuickDetailModal from '@/modules/stats/components/MareaQuickDetailModal.vue'
 import ObservadorTimelineDialog from '@/modules/admin/components/ObservadorTimelineDialog.vue'
 import dashboardService from '@/modules/dashboard/services/dashboard.service'
@@ -503,7 +495,6 @@ const pendingAction = ref<'SEGUIMIENTO' | 'DESCARTADA' | 'RESUELTA' | ''>('')
 const confirmationMessage = ref('')
 const mareaObservers = ref<string[]>([])
 const showNuevaMareaDialog = ref(false)
-const showMapModal = ref(false)
 const showMareaQuickDetail = ref(false)
 const showObservadorTimeline = ref(false)
 const businessRulesStore = useBusinessRulesStore()

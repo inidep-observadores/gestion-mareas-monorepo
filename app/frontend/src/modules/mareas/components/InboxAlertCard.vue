@@ -32,11 +32,23 @@
           <div class="flex items-center gap-2 ml-1">
             <span class="text-[10px] text-text-muted/50 font-black uppercase tracking-widest">Fuente:</span>
             <div class="flex items-center gap-1">
-              <Badge v-for="source in alertSources" :key="source.name" :color="source.color" variant="light" size="sm"
-                class="font-bold uppercase tracking-wider py-0.5 px-1.5 rounded-md text-[9px] flex items-center gap-1">
-                <component :is="source.icon" class="w-3 h-3" />
-                {{ source.label }}
-              </Badge>
+              <template v-for="source in alertSources" :key="source.name">
+                <TrajectorySourceBadge
+                  v-if="source.label === 'Tracking' || source.label === 'PNA'"
+                  :source="source.label === 'PNA' ? 'PNA' : 'TRACKING'"
+                  :vesselId="metadata?.vesselId || metadata?.buqueId"
+                  :vesselName="metadata?.vessel || 'Buque'"
+                  :referenceDate="metadata?.eventDate || metadata?.fechaZarpada || metadata?.date"
+                  :endDate="metadata?.fechaArribo"
+                  :mareaCode="metadata?.mareaCode"
+                  size="sm"
+                />
+                <Badge v-else :color="source.color" variant="light" size="sm"
+                  class="font-bold uppercase tracking-wider py-0.5 px-1.5 rounded-md text-[9px] flex items-center gap-1">
+                  <component :is="source.icon" class="w-3 h-3" />
+                  {{ source.label }}
+                </Badge>
+              </template>
             </div>
             <span class="text-[10px] text-text-muted/60 font-mono">• {{ fecha }}</span>
           </div>
@@ -101,6 +113,7 @@ import { computed } from 'vue'
 import { ErrorIcon, BellIcon, CheckIcon, DocsIcon, UserCircleIcon, BoxCubeIcon, MapPinIcon, ShipIcon } from '@/icons'
 import Button from '@/components/ui/Button.vue'
 import Badge from '@/components/ui/Badge.vue'
+import TrajectorySourceBadge from '@/modules/alerts/components/TrajectorySourceBadge.vue'
 import { AlertaEstado, AlertaPrioridad } from '../../alerts/services/alerts.service'
 
 interface Props {

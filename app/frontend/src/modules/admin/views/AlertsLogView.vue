@@ -139,14 +139,26 @@
                 </td>
                 <td class="px-6 py-4">
                   <div class="flex gap-1.5 flex-wrap">
-                    <span 
-                      v-for="source in getSources(alert)" 
-                      :key="source"
-                      class="px-2 py-0.5 rounded text-[10px] font-bold border uppercase tracking-wider"
-                      :class="getSourceStyle(source)"
-                    >
-                      {{ source }}
-                    </span>
+                    <template v-for="source in getSources(alert)" :key="source">
+                      <TrajectorySourceBadge
+                        v-if="source === 'TRK' || source === 'PNA'"
+                        :source="source === 'PNA' ? 'PNA' : 'TRACKING'"
+                        :vesselId="alert.metadata?.vesselId || alert.metadata?.buqueId"
+                        :vesselName="alert.metadata?.vesselName || 'Buque'"
+                        :referenceDate="alert.fechaDetectada"
+                        :endDate="alert.metadata?.fechaArribo"
+                        :mareaCode="alert.metadata?.mareaCode"
+                        label="TRK"
+                        :abbreviated="true"
+                      />
+                      <span 
+                        v-else
+                        class="px-2 py-0.5 rounded text-[10px] font-bold border uppercase tracking-wider"
+                        :class="getSourceStyle(source)"
+                      >
+                        {{ source }}
+                      </span>
+                    </template>
                   </div>
                 </td>
                 <td class="px-6 py-4">
@@ -214,6 +226,7 @@ import { jobQueueService } from '../services/JobQueueService'
 import { toast } from 'vue-sonner'
 import SortIcon from '@/components/shared/icons/SortIcon.vue'
 import BatchProcessDialog from '../components/BatchProcessDialog.vue'
+import TrajectorySourceBadge from '@/modules/alerts/components/TrajectorySourceBadge.vue'
 import { 
   RefreshIcon, 
   SettingsIcon, 
