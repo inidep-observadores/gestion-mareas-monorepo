@@ -183,9 +183,14 @@ export class AlertAutomationService {
             }
         } else if (tipo === 'ARRIBO' || tipo === 'POSIBLE_ARRIBO' || tipo === 'RECOMENDACION_FIN_MAREA') {
             if (marea.estadoActual.codigo === 'EN_EJECUCION') {
-                actionKey = 'REGISTRAR_FINALIZACION';
+                // REGLA: Si es una RECOMENDACIÓN de fin de marea (hay otra esperando), finalizamos la marea.
+                // Si es un ARRIBO normal, solo cerramos la etapa mediante EDITAR_ETAPAS (mantiene estado EN_EJECUCION).
+                actionKey = tipo === 'RECOMENDACION_FIN_MAREA' ? 'REGISTRAR_FINALIZACION' : 'EDITAR_ETAPAS';
+
                 payload = {
-                    fechaFinObservador: fechaDetectadaIso,
+                    ...(actionKey === 'REGISTRAR_FINALIZACION'
+                        ? { fechaFinObservador: fechaDetectadaIso }
+                        : { fechaInicioObservador: marea.fechaInicioObservador }),
                     etapas: (marea.etapas || []).map((e: any, index: number, arr: any[]) => {
                         if (index === arr.length - 1) {
                             return {

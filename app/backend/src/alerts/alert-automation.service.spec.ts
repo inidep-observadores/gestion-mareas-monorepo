@@ -80,6 +80,26 @@ describe('AlertAutomationService', () => {
             expect(result.reason).toContain('Fuentes insuficientes');
         });
 
+        it('should process standard ARRIBO with EDITAR_ETAPAS (not finishing marea)', async () => {
+            mockPrisma.alerta.findUnique.mockResolvedValue({
+                id: 'a1', tipo: 'ARRIBO', estado: 'PENDIENTE',
+                fechaDetectada: fixedDate, referenciaId: 'm1', referenciaTipo: 'MAREA',
+                metadata: { sources: [{ name: 'TRK' }, { name: 'PNA' }] }
+            });
+            mockPrisma.marea.findUnique.mockResolvedValue({
+                id: 'm1', estadoActual: { codigo: 'EN_EJECUCION' },
+                etapas: [{ nroEtapa: 1, fechaArribo: null }]
+            });
+
+            const result = await service.processAlertAutomation('a1');
+            expect(result.status).toBe('CONFIRMED');
+            expect(mockMareasService.executeAction).toHaveBeenCalledWith(
+                'm1', 'EDITAR_ETAPAS', mockSystemUser, expect.objectContaining({
+                    comentarios: expect.stringContaining('(ARRIBO)')
+                })
+            );
+        });
+
         it('should return ERROR if system user not found', async () => {
             mockPrisma.alerta.findUnique.mockResolvedValue({
                 id: 'a1', estado: 'PENDIENTE', tipo: 'RECOMENDACION_FIN_MAREA',
