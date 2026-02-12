@@ -47,6 +47,7 @@ export class TrackingService {
     private readonly GAP_THRESHOLD_MINUTES = 240; // 4h
     private readonly OLD_DATA_THRESHOLD_HOURS = 48;
     private readonly CHECK_INTERVAL_HOURS = 1;
+    private readonly MAX_SPEED_KNOTS = 15;
     private readonly TIMEZONE = process.env.APP_TIMEZONE || 'America/Argentina/Buenos_Aires';
 
     constructor(
@@ -633,14 +634,18 @@ export class TrackingService {
         let alertsCreated = 0;
 
         // Get state before this batch
-        let lastState = { inPort: false, portId: null as string | null, timestamp: null as Date | null };
+        let lastState = { inPort: false, portId: null as string | null, timestamp: null as Date | null, lat: null as number | null, lon: null as number | null };
         const prev = await this.prisma.buqueTrayectoriaPunto.findFirst({
             where: { buqueId, timestamp: { lt: points[0].timestamp } },
             orderBy: { timestamp: 'desc' }
         });
         if (prev) {
             const status = this.checkPortStatus(prev.lat, prev.lon, ports);
-            lastState = { ...status, timestamp: prev.timestamp };
+            lastState = { ...status, timestamp: prev.timestamp, lat: prev.lat, lon: prev.lon };
+        } else if (points.length > 0) {
+            // Si no hay previo, inicializamos con el primer punto para tener una referencia de puerto/posición
+            const status = this.checkPortStatus(points[0].lat, points[0].lon, ports);
+            lastState = { ...status, timestamp: points[0].timestamp, lat: points[0].lat, lon: points[0].lon };
         }
 
         for (const p of points) {
@@ -648,19 +653,54 @@ export class TrackingService {
 
             if (lastState.inPort && !currentState.inPort) {
                 // ZARPADA detectada al salir del puerto donde estábamos
-                // Se toma el punto inmediatamente ANTERIOR al que disparó el evento (último en puerto)
-                const eventDate = lastState.timestamp || p.timestamp;
-                const created = await this.handleProcessedEvent(buqueId, 'ZARPADA', lastState.portId!, eventDate, mareas, ports);
-                if (created) alertsCreated++;
+                // VALIDACIÓN: Evitar saltos GPS ilógicos
+                if (this.isValidMovement(lastState, { lat: p.lat, lon: p.lon, timestamp: p.timestamp })) {
+                    const eventDate = lastState.timestamp || p.timestamp;
+                    const created = await this.handleProcessedEvent(buqueId, 'ZARPADA', lastState.portId!, eventDate, mareas, ports);
+                    if (created) alertsCreated++;
+                } else {
+                    this.logger.warn(`Zarpada ignorada para buque ${buqueId}: Salto GPS detectado (velocidad ilógica).`);
+                }
             } else if (!lastState.inPort && currentState.inPort) {
                 // ARRIBO detectado al entrar a un puerto
-                const created = await this.handleProcessedEvent(buqueId, 'ARRIBO', currentState.portId!, p.timestamp, mareas, ports);
-                if (created) alertsCreated++;
+                // VALIDACIÓN: Evitar saltos GPS ilógicos
+                if (this.isValidMovement(lastState, { lat: p.lat, lon: p.lon, timestamp: p.timestamp })) {
+                    const created = await this.handleProcessedEvent(buqueId, 'ARRIBO', currentState.portId!, p.timestamp, mareas, ports);
+                    if (created) alertsCreated++;
+                } else {
+                    this.logger.warn(`Arribo ignorado para buque ${buqueId}: Salto GPS detectado (velocidad ilógica).`);
+                }
             }
-            lastState = { ...currentState, timestamp: p.timestamp };
+            lastState = { ...currentState, timestamp: p.timestamp, lat: p.lat, lon: p.lon };
         }
 
         return alertsCreated;
+    }
+
+    /**
+     * Valida si el movimiento entre dos puntos es físicamente posible para un buque.
+     * Calcula la velocidad en nudos y la compara con un máximo razonable.
+     */
+    private isValidMovement(p1: { lat: number | null, lon: number | null, timestamp: Date | null }, p2: { lat: number, lon: number, timestamp: Date }): boolean {
+        if (!p1.lat || !p1.lon || !p1.timestamp) return true; // No hay punto anterior para comparar
+
+        const distanceMeters = getDistance(
+            { latitude: p1.lat, longitude: p1.lon },
+            { latitude: p2.lat, longitude: p2.lon }
+        );
+
+        const timeSeconds = Math.abs(p2.timestamp.getTime() - p1.timestamp.getTime()) / 1000;
+        if (timeSeconds === 0) return true;
+
+        const speedMps = distanceMeters / timeSeconds;
+        const speedKnots = speedMps * 1.94384; // m/s to knots
+
+        if (speedKnots > this.MAX_SPEED_KNOTS) {
+            this.logger.debug(`Movimiento detectado a ${speedKnots.toFixed(2)} nudos - Excede el límite de ${this.MAX_SPEED_KNOTS}`);
+            return false;
+        }
+
+        return true;
     }
 
     private async handleProcessedEvent(buqueId: string, type: 'ZARPADA' | 'ARRIBO', portId: string, date: Date, mareas: any[], ports: any[]) {

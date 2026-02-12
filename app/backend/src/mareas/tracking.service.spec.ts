@@ -88,8 +88,8 @@ describe('TrackingService', () => {
 
             // First point outside, second inside
             const points = [
-                { lat: -37.00, lon: -56.00, timestamp: new Date('2025-01-01T10:00:00Z') }, // far
-                { lat: -38.03, lon: -57.53, timestamp: new Date('2025-01-01T11:00:00Z') }  // inside
+                { lat: -37.00, lon: -56.00, timestamp: new Date('2025-01-01T00:00:00Z') }, // far
+                { lat: -38.03, lon: -57.53, timestamp: new Date('2025-01-01T10:00:00Z') }  // inside (10h later, ~6 knots)
             ];
 
             // Mocking previous state as outside
@@ -97,10 +97,10 @@ describe('TrackingService', () => {
 
             await (service as any).detectPortEvents('vessel-1', points);
 
-            // Should create an ARRIBO alert
+            // Should create an ARRIBO alert (now POSIBLE_ARRIBO)
             expect(mockPrismaService.alerta.create).toHaveBeenCalledWith(expect.objectContaining({
                 data: expect.objectContaining({
-                    titulo: expect.stringContaining('Posible arribo a Mar del Plata')
+                    titulo: expect.stringMatching(/posible arribo a Mar del Plata/i)
                 })
             }));
         });
@@ -135,9 +135,9 @@ describe('TrackingService', () => {
 
             // Detect ZARPADA from a DIFFERENT port than registered
             // Prev state: in port-real
-            // Current point: outside
+            // Current point: outside (near port-real to keep speed low)
             const points = [
-                { lat: -30.0, lon: -30.0, timestamp: new Date('2025-01-01T01:00:00Z') } // outside
+                { lat: -40.1, lon: -60.1, timestamp: new Date('2025-01-01T01:00:00Z') } // outside (1h later, ~8 knots)
             ];
             // Mock prev point in port-real
             mockPrismaService.buqueTrayectoriaPunto.findFirst.mockResolvedValue({

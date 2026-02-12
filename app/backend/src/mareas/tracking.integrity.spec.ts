@@ -42,6 +42,10 @@ describe('TrackingService Integrity (CSV & Robustness)', () => {
             upsert: jest.fn(),
             update: jest.fn()
         },
+        trackingEventSnapshot: {
+            findUnique: jest.fn().mockResolvedValue(null),
+            create: jest.fn().mockResolvedValue({ id: 'snapshot-1' })
+        }
     };
 
     const mockVesselSyncService = {
@@ -183,5 +187,88 @@ describe('TrackingService Integrity (CSV & Robustness)', () => {
         expect(mockPrismaService.buqueTrayectoriaPunto.createMany).toHaveBeenCalledWith(expect.objectContaining({
             skipDuplicates: true
         }));
+    });
+
+    describe('GPS Jump Filtering', () => {
+        const harborPort = {
+            id: 'p-mdp',
+            nombre: 'Mar del Plata',
+            latitud: -38.03,
+            longitud: -57.53,
+            activo: true
+        };
+
+        beforeEach(() => {
+            mockPrismaService.puerto.findMany.mockResolvedValue([harborPort]);
+            mockPrismaService.marea.findMany.mockResolvedValue([{
+                id: 'm-1',
+                estadoActual: { codigo: 'EN_EJECUCION' },
+                etapas: []
+            }]);
+            mockCorrelationService.evaluateEventContext.mockResolvedValue({ 
+                action: 'CREATE_ALERT',
+                marea: {
+                    id: 'm-1',
+                    anioMarea: 2025,
+                    nroMarea: 1,
+                    tipoMarea: 'MC',
+                    buque: { nombreBuque: 'TEST' }
+                }
+            });
+        });
+
+        it('should detect a valid departure (normal speed)', async () => {
+            const csvContent = 'Buque;Matricula;MMSI;Fecha;Latitud;Longitud;Velocidad;Rumbo\n' +
+                'TEST;123;123456;2025-01-01 10:00:00;-38.03;-57.53;0;0\n' + // Punto 1: Inicializa lastState (InPort)
+                'TEST;123;123456;2025-01-01 11:00:00;-38.03;-57.53;0;0\n' + // Punto 2: Sigue en puerto, confirma estado base
+                'TEST;123;123456;2025-01-01 12:00:00;-38.20;-57.70;8;0';   // Punto 3: ZARPADA (InPort -> OutPort)
+            const buffer = Buffer.from(csvContent);
+
+            mockPrismaService.buqueTrayectoriaPunto.findFirst.mockResolvedValue(null);
+            mockPrismaService.buque.findFirst.mockResolvedValue({ id: 'v-1', nombreBuque: 'TEST' });
+
+            await service.importTrackingData(buffer);
+
+            // Debe haber intentado crear una alerta de POSIBLE_ZARPADA
+            expect(mockAlertsService.create).toHaveBeenCalledWith(expect.objectContaining({
+                tipo: 'POSIBLE_ZARPADA'
+            }));
+        });
+
+        it('should detect a valid arrival (normal speed)', async () => {
+            const csvContent = 'Buque;Matricula;MMSI;Fecha;Latitud;Longitud;Velocidad;Rumbo\n' +
+                'TEST;123;123456;2025-01-01 10:00:00;-38.20;-57.70;8;0\n' + // Punto 1: Inicializa lastState (OutPort)
+                'TEST;123;123456;2025-01-01 11:00:00;-38.20;-57.70;8;0\n' + // Punto 2: Sigue fuera, confirma OutPort
+                'TEST;123;123456;2025-01-01 13:00:00;-38.03;-57.53;0;0';   // Punto 3: ARRIBO (OutPort -> InPort) a vel normal
+            const buffer = Buffer.from(csvContent);
+
+            mockPrismaService.buqueTrayectoriaPunto.findFirst.mockResolvedValue(null);
+            mockPrismaService.buque.findFirst.mockResolvedValue({ id: 'v-1', nombreBuque: 'TEST' });
+
+            await service.importTrackingData(buffer);
+
+            // Debe haber intentado crear una alerta de POSIBLE_ARRIBO
+            expect(mockAlertsService.create).toHaveBeenCalledWith(expect.objectContaining({
+                tipo: 'POSIBLE_ARRIBO'
+            }));
+        });
+
+        it('should ignore an illogical "jump" (excessive speed)', async () => {
+            const csvContent = 'Buque;Matricula;MMSI;Fecha;Latitud;Longitud;Velocidad;Rumbo\n' +
+                'TEST;123;123456;2025-01-01 10:00:00;-38.03;-57.53;0;0\n' + // Punto inicial (InPort)
+                'TEST;123;123456;2025-10-01 10:00:00;-38.03;-57.53;0;0\n' + // Punto de reposo (InPort)
+                'TEST;123;123456;2025-10-01 10:01:00;-40.03;-58.53;10;0';  // Salto masivo en 1 min
+            const buffer = Buffer.from(csvContent);
+
+            mockPrismaService.buqueTrayectoriaPunto.findFirst.mockResolvedValue(null);
+            mockPrismaService.buque.findFirst.mockResolvedValue({ id: 'v-1', nombreBuque: 'TEST' });
+
+            await service.importTrackingData(buffer);
+
+            // NO debe haber creado alerta de ZARPADA
+            expect(mockAlertsService.create).not.toHaveBeenCalledWith(expect.objectContaining({
+                tipo: 'ZARPADA'
+            }));
+        });
     });
 });
