@@ -1800,9 +1800,12 @@ export class MareasService {
             }
 
             if (actionKey === 'REGISTRAR_FINALIZACION') {
+                const fechaIn = payload.fechaInicioObservador;
                 const fechaFin = payload.fechaFinObservador;
-                // if (!fechaFin) throw new Error('La fecha de fin del observador es requerida.'); // Eliminado por pedido del usuario
 
+                if (fechaIn) {
+                    additionalMareaData.fechaInicioObservador = DateUtils.parseToAppZone(fechaIn);
+                }
                 additionalMareaData.fechaFinObservador = fechaFin ? DateUtils.parseToAppZone(fechaFin) : null;
 
                 if (payload.etapas) {
