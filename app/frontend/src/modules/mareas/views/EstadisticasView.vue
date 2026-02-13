@@ -603,7 +603,11 @@ const selectedDistributionFishery = ref<string>('ALL');
 const loading = ref(false);
 
 const dynamicChartHeight = computed(() => {
-   const uniqueVessels = new Set(distributionData.value.map(item => item.buque)).size;
+   let filtered = distributionData.value;
+   if (selectedDistributionFishery.value !== 'ALL') {
+      filtered = filtered.filter(item => item.pesqueria === selectedDistributionFishery.value);
+   }
+   const uniqueVessels = new Set(filtered.map(item => item.buque)).size;
    // Base 100px para ejes + 20px por buque. Mínimo 500px.
    return Math.max(500, uniqueVessels * 20 + 100);
 });
