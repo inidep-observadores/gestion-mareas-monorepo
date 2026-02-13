@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { DateUtils } from '../common/utils/date.utils';
 import { Prisma } from '@prisma/client';
-import { StatsDetailItem, DashboardStats } from './interfaces/dashboard.interface';
+import { StatsDetailItem, DashboardStats, MareaDistributionItem } from './interfaces/dashboard.interface';
 import { MareaUtils } from '../common/utils/marea.utils';
 import { TipoMarea } from '../mareas/mareas.constants';
 import * as ExcelJS from 'exceljs';
@@ -805,5 +805,89 @@ export class StatsService {
         });
 
         return workbook;
+    }
+
+    async getMareaDistribution(
+        year: number,
+        mode: 'CALENDAR' | 'TOTAL',
+        includeNonProtocolized: boolean,
+        includeProtocolizedOutOfPeriod = false,
+        includeCampaigns: boolean = true,
+        startDate?: string,
+        endDate?: string,
+    ): Promise<MareaDistributionItem[]> {
+        const yearStart = startDate ? new Date(startDate) : new Date(Date.UTC(year, 0, 1, 0, 0, 0, 0));
+        const yearEnd = endDate ? new Date(endDate) : new Date(Date.UTC(year, 11, 31, 23, 59, 59, 999));
+
+        if (startDate) yearStart.setUTCHours(0, 0, 0, 0);
+        if (endDate) yearEnd.setUTCHours(23, 59, 59, 999);
+
+        // El where clause ya maneja la inclusión/exclusión según el modo para PROTOCOLIZADAS
+        const where = this.getSharedWhereClause(yearStart, yearEnd, includeNonProtocolized, includeProtocolizedOutOfPeriod);
+
+        if (!includeCampaigns) {
+            where.tipoMarea = { not: TipoMarea.CI };
+        }
+
+        const mareas = await this.prisma.marea.findMany({
+            where,
+            include: {
+                buque: {
+                    include: {
+                        pesqueriaHabitual: true
+                    }
+                },
+                pesqueria: true,
+                observadorPrincipal: true,
+                estadoActual: true,
+                etapas: {
+                    orderBy: { nroEtapa: 'asc' },
+                    include: {
+                        observadores: { include: { observador: true } }
+                    }
+                }
+            }
+        });
+
+        const items: MareaDistributionItem[] = [];
+
+        for (const marea of mareas) {
+            for (const etapa of marea.etapas) {
+                if (!etapa.fechaZarpada) continue;
+
+                let zarpada = new Date(etapa.fechaZarpada);
+                let arribo = etapa.fechaArribo ? new Date(etapa.fechaArribo) : (marea.estadoActual?.codigo === 'EN_EJECUCION' ? DateUtils.getNow() : null);
+
+                // Si estamos en modo CALENDAR, recortamos los días fuera del año seleccionado
+                if (mode === 'CALENDAR') {
+                    if (zarpada < yearStart) zarpada = new Date(yearStart);
+                    if (arribo && arribo > yearEnd) arribo = new Date(yearEnd);
+                }
+
+                // Verificar solapamiento tras recorte
+                if (zarpada > yearEnd || (arribo && arribo < yearStart)) continue;
+
+                items.push({
+                    mareaId: marea.id,
+                    id_marea: MareaUtils.formatCodigo(marea),
+                    buque: marea.buque?.nombreBuque || 'Desconocido',
+                    pesqueria: marea.pesqueria?.nombre || marea.buque?.pesqueriaHabitual?.nombre || 'Desconocida',
+                    pesqueriaId: marea.pesqueriaId,
+                    nroEtapa: etapa.nroEtapa,
+                    fechaZarpada: zarpada,
+                    fechaArribo: arribo,
+                    observador: marea.observadorPrincipal ? `${marea.observadorPrincipal.nombre} ${marea.observadorPrincipal.apellido}` : 'Sin asignar',
+                    tipoMarea: marea.tipoMarea
+                });
+            }
+        }
+
+        // Ordenamiento: Por fecha de zarpada y luego por buque
+        return items.sort((a, b) => {
+            const dateA = new Date(a.fechaZarpada).getTime();
+            const dateB = new Date(b.fechaZarpada).getTime();
+            if (dateA !== dateB) return dateA - dateB;
+            return a.buque.localeCompare(b.buque);
+        });
     }
 }

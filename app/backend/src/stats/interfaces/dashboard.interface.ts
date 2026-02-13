@@ -30,3 +30,15 @@ export interface StatsDetailItem {
     fechaInicio: Date | string;
     fechaFin: Date | string | null;
 }
+export interface MareaDistributionItem {
+    mareaId: string;
+    id_marea: string;
+    buque: string;
+    pesqueria: string;
+    pesqueriaId: string | null;
+    nroEtapa: number;
+    fechaZarpada: Date | string;
+    fechaArribo: Date | string | null;
+    observador: string;
+    tipoMarea: string;
+}

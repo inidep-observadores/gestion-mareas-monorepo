@@ -39,6 +39,19 @@ export class StatsController {
         );
     }
 
+    @Get('distribution')
+    getMareaDistribution(@Query() query: GetStatsDto) {
+        return this.statsService.getMareaDistribution(
+            query.year,
+            query.mode || 'CALENDAR',
+            query.includeNonProtocolized,
+            query.includeProtocolizedOutOfPeriod,
+            query.includeCampaigns,
+            query.startDate,
+            query.endDate
+        );
+    }
+
     @Get('export')
     async exportStats(
         @Res() res: Response,

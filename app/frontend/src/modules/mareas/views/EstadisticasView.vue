@@ -107,6 +107,29 @@
                </div>
             </section>
 
+            <!-- ROW 5: TEMPORAL DISTRIBUTION (GANTT) -->
+            <section class="grid grid-cols-12 gap-8">
+               <div class="col-span-12">
+                  <ChartWidget title="Cronograma de Distribución de Mareas"
+                     subtitle="Distribución temporal de mareas y etapas por buque" type="rangeBar" :series="ganttSeries"
+                     :options="ganttChartOptions" :chart-height="dynamicChartHeight"
+                     chart-container-class="max-h-[700px] overflow-y-auto custom-scrollbar" allow-download
+                     @download="handleDownload('Distribucion_Temporal_Gantt')">
+                     <template #header-action>
+                        <div class="flex items-center gap-2">
+                           <span class="text-[10px] font-black text-text-muted uppercase tracking-widest">Filtrar
+                              Pesquería:</span>
+                           <select v-model="selectedDistributionFishery"
+                              class="bg-surface border border-border rounded-lg px-3 py-1 text-xs font-bold text-text focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none">
+                              <option value="ALL">Todas las Pesquerías</option>
+                              <option v-for="f in ganttFisheries" :key="f" :value="f">{{ f }}</option>
+                           </select>
+                        </div>
+                     </template>
+                  </ChartWidget>
+               </div>
+            </section>
+
          </div>
 
          <!-- Loading State -->
@@ -550,7 +573,7 @@ import {
    Maximize2Icon,
    TrendingUpIcon
 } from 'lucide-vue-next'
-import { statsService, type DashboardStats, type StatsDetailItem } from '@/modules/stats/services/stats.service'
+import { statsService, type DashboardStats, type StatsDetailItem, type MareaDistributionItem } from '@/modules/stats/services/stats.service'
 import { TipoMarea } from '@/modules/mareas/types/enums'
 import { toast } from 'vue-sonner'
 
@@ -575,7 +598,17 @@ const filterType = ref<'FISHERY' | 'FLEET' | 'OBSERVER' | null>(null);
 const filterValue = ref<string | null>(null);
 
 const stats = ref<DashboardStats | null>(null);
+const distributionData = ref<MareaDistributionItem[]>([]);
+const selectedDistributionFishery = ref<string>('ALL');
 const loading = ref(false);
+
+const dynamicChartHeight = computed(() => {
+   const uniqueVessels = new Set(distributionData.value.map(item => item.buque)).size;
+   // Base 100px para ejes + 20px por buque. Mínimo 500px.
+   return Math.max(500, uniqueVessels * 20 + 100);
+});
+
+// --- Fetch Data ---
 const dialogOpen = ref(false);
 const dialogLoading = ref(false);
 const dialogItems = ref<StatsDetailItem[]>([]);
@@ -715,16 +748,29 @@ const criteriaList = computed(() => {
 const fetchData = async () => {
    loading.value = true;
    try {
-      stats.value = await statsService.getDashboardStats(
-         year.value,
-         mode.value,
-         !protocolizedOnly.value,
-         includeOutOfPeriod.value,
-         daysCalculationMode.value,
-         includeCampaigns.value,
-         startDate.value || undefined,
-         endDate.value || undefined
-      );
+      const [newStats, distribution] = await Promise.all([
+         statsService.getDashboardStats(
+            year.value,
+            mode.value,
+            !protocolizedOnly.value,
+            includeOutOfPeriod.value,
+            daysCalculationMode.value,
+            includeCampaigns.value,
+            startDate.value || undefined,
+            endDate.value || undefined
+         ),
+         statsService.getMareaDistribution(
+            year.value,
+            mode.value,
+            !protocolizedOnly.value,
+            includeOutOfPeriod.value,
+            includeCampaigns.value,
+            startDate.value || undefined,
+            endDate.value || undefined
+         )
+      ]);
+      stats.value = newStats;
+      distributionData.value = distribution;
    } catch (error) {
       console.error('Error fetching stats:', error);
       toast.error('Error al cargar estadísticas');
@@ -732,6 +778,189 @@ const fetchData = async () => {
       loading.value = false;
    }
 };
+
+// --- Gantt Chart Logic ---
+const fisheryColors: Record<string, string> = {
+   'CALAMAR': '#3B82F6',       // Blue 500
+   'LANGOSTINO': '#EF4444',    // Red 500
+   'MERLUZA': '#10B981',       // Emerald 500
+   'VIEIRA': '#F59E0B',        // Amber 500
+   'CENTOLLA': '#8B5CF6',      // Violet 500
+   'VARIADO COSTERO': '#EC4899', // Pink 500
+};
+
+const getFisheryColor = (name: string) => {
+   const normalized = name.toUpperCase();
+   for (const key in fisheryColors) {
+      if (normalized.includes(key)) return fisheryColors[key];
+   }
+   return '#64748B'; // Slate 500 (Default)
+};
+
+const ganttFisheries = computed(() => {
+   const set = new Set(distributionData.value.map(item => item.pesqueria));
+   return Array.from(set).sort();
+});
+
+const ganttSeries = computed(() => {
+   let filtered = distributionData.value;
+   if (selectedDistributionFishery.value !== 'ALL') {
+      filtered = filtered.filter(item => item.pesqueria === selectedDistributionFishery.value);
+   }
+
+   const yearStart = new Date(Date.UTC(year.value, 0, 1, 0, 0, 0, 0)).getTime();
+   const seriesData: any[] = [];
+
+   filtered.forEach(item => {
+      const start = new Date(item.fechaZarpada).getTime();
+      const end = item.fechaArribo ? new Date(item.fechaArribo).getTime() : Date.now();
+      const baseColor = getFisheryColor(item.pesqueria);
+
+      // Si estamos en modo TOTAL y el segmento cruza el inicio del año
+      if (mode.value === 'TOTAL' && start < yearStart && end > yearStart) {
+         // Segmento Año Anterior (Desaturado)
+         seriesData.push({
+            x: item.buque,
+            y: [start, yearStart],
+            fillColor: baseColor + '40', // 25% opacidad para desaturar
+            meta: { ...item, isPreviousYear: true }
+         });
+         // Segmento Año Actual (Normal)
+         seriesData.push({
+            x: item.buque,
+            y: [yearStart, end],
+            fillColor: baseColor,
+            meta: { ...item, isPreviousYear: false }
+         });
+      } else {
+         // Segmento único (Normal o Año Anterior Completo)
+         let color = baseColor;
+         if (mode.value === 'TOTAL' && end <= yearStart) {
+            color = baseColor + '40';
+         }
+
+         seriesData.push({
+            x: item.buque,
+            y: [start, end],
+            fillColor: color,
+            meta: { ...item, isPreviousYear: end <= yearStart }
+         });
+      }
+   });
+
+   return [{ data: seriesData }];
+});
+
+const ganttChartOptions = computed(() => ({
+   chart: {
+      type: 'rangeBar',
+      height: 450,
+      fontFamily: 'Inter, sans-serif',
+      toolbar: {
+         show: true,
+         tools: {
+            download: true
+         }
+      },
+      animations: {
+         enabled: true,
+         easing: 'easeinout',
+         speed: 800,
+         animateGradually: {
+            enabled: true,
+            delay: 150
+         },
+         dynamicAnimation: {
+            enabled: true,
+            speed: 350
+         }
+      }
+   },
+   plotOptions: {
+      bar: {
+         horizontal: true,
+         barHeight: '75%',
+         rangeBarGroupRows: true,
+         borderRadius: 4
+      }
+   },
+   xaxis: {
+      type: 'datetime',
+      labels: {
+         datetimeUTC: false,
+         style: {
+            fontSize: '10px',
+            fontWeight: 600,
+            colors: 'var(--text-muted)'
+         }
+      }
+   },
+   yaxis: {
+      labels: {
+         style: {
+            fontSize: '11px',
+            fontWeight: 700,
+            colors: 'var(--text)'
+         }
+      }
+   },
+   tooltip: {
+      custom: function ({ series, seriesIndex, dataPointIndex, w }: any) {
+         const meta = w.config.series[seriesIndex].data[dataPointIndex].meta;
+         const start = new Date(meta.fechaZarpada).toLocaleDateString();
+         const end = meta.fechaArribo ? new Date(meta.fechaArribo).toLocaleDateString() : 'En curso';
+
+         return `
+                <div class="tooltip-gantt p-3 bg-surface border border-border rounded-lg shadow-xl min-w-[220px]">
+                    <div class="flex items-center gap-2 mb-2 pb-2 border-b border-border/50">
+                        <span class="font-black text-primary tabular-nums text-sm">${meta.id_marea}</span>
+                        <div class="flex flex-col items-end ml-auto">
+                           <span class="text-[9px] font-bold text-text-muted uppercase tracking-widest bg-surface-muted px-2 py-0.5 rounded border border-border">Etapa ${meta.nroEtapa}</span>
+                           ${meta.isPreviousYear ? '<span class="text-[7px] font-black text-amber-500 uppercase mt-1">Días Año Anterior</span>' : ''}
+                        </div>
+                    </div>
+                    <div class="space-y-2 text-[11px]">
+                        <div class="flex justify-between items-center bg-surface-muted/30 p-1.5 rounded">
+                            <span class="text-text-muted font-bold uppercase text-[9px]">Pesquería</span>
+                            <span class="font-bold text-text">${meta.pesqueria}</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-text-muted">Observador:</span>
+                            <span class="font-bold text-text">${meta.observador}</span>
+                        </div>
+                        <div class="mt-2 pt-2 border-t border-border/30 grid grid-cols-2 gap-4">
+                             <div>
+                                <span class="block text-[8px] uppercase tracking-tighter text-text-muted mb-0.5 font-black opacity-60">Zarpada</span>
+                                <span class="font-bold text-text">${start}</span>
+                             </div>
+                             <div class="text-right">
+                                <span class="block text-[8px] uppercase tracking-tighter text-text-muted mb-0.5 font-black opacity-60">Arribo</span>
+                                <span class="font-bold ${meta.fechaArribo ? 'text-text' : 'text-primary animate-pulse'}">${end}</span>
+                             </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+      }
+   },
+   grid: {
+      borderColor: 'var(--border)',
+      opacity: 0.1,
+      xaxis: {
+         lines: {
+            show: true
+         }
+      }
+   },
+   noData: {
+      text: 'No hay datos de distribución para el periodo',
+      style: {
+         color: 'var(--text-muted)',
+         fontSize: '14px',
+         fontFamily: 'Inter'
+      }
+   }
+}));
 
 // --- Watchers ---
 watch([year, mode, protocolizedOnly, includeOutOfPeriod, daysCalculationMode, includeCampaigns, startDate, endDate], () => {

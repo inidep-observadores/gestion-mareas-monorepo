@@ -16,8 +16,8 @@
     </div>
 
     <!-- Chart Container -->
-    <div class="flex-1 min-h-[300px] w-full relative">
-      <apexchart v-if="options && series" :type="type" height="100%" width="100%" :options="chartOptions"
+    <div :class="['flex-1 min-h-[300px] w-full relative', chartContainerClass]">
+      <apexchart v-if="options && series" :type="type" :height="chartHeight" width="100%" :options="chartOptions"
         :series="series" />
       <div v-else class="absolute inset-0 flex items-center justify-center text-text-muted text-xs font-medium">
         Cargando datos...
@@ -31,14 +31,20 @@ import { computed } from 'vue'
 import { DownloadIcon } from 'lucide-vue-next'
 import { useThemeStore } from '@/modules/shared/stores/theme.store'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   title: string
   subtitle?: string
-  type?: 'line' | 'area' | 'bar' | 'pie' | 'donut' | 'radar' | 'scatter'
+  type?: 'line' | 'area' | 'bar' | 'pie' | 'donut' | 'radar' | 'scatter' | 'rangeBar'
   series: any[]
   options?: any
   allowDownload?: boolean
-}>()
+  chartHeight?: string | number
+  chartContainerClass?: string
+}>(), {
+  type: 'line',
+  chartHeight: '100%',
+  chartContainerClass: ''
+})
 
 const themeStore = useThemeStore()
 
@@ -135,7 +141,7 @@ const chartOptions = computed(() => {
     tooltip: {
       enabled: true,
       theme: isDark ? 'dark' : 'light',
-      custom: ({ series, seriesIndex, dataPointIndex, w }: any) => {
+      custom: props.options?.tooltip?.custom || (({ series, seriesIndex, dataPointIndex, w }: any) => {
         const isSingleArray = series.length > 0 && !Array.isArray(series[0]);
         let val, label, color;
 
@@ -158,7 +164,7 @@ const chartOptions = computed(() => {
             <span class="text-text font-black">${val?.toLocaleString()} ${unit}</span>
           </div>
         `;
-      }
+      })
     },
     plotOptions: {
       pie: {

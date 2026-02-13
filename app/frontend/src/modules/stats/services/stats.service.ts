@@ -33,7 +33,42 @@ export interface StatsDetailItem {
     fechaFin: string | null;
 }
 
+export interface MareaDistributionItem {
+    mareaId: string;
+    id_marea: string;
+    buque: string;
+    pesqueria: string;
+    pesqueriaId: string | null;
+    nroEtapa: number;
+    fechaZarpada: string;
+    fechaArribo: string | null;
+    observador: string;
+    tipoMarea: string;
+}
+
 export const statsService = {
+    async getMareaDistribution(
+        year: number,
+        mode: 'CALENDAR' | 'TOTAL',
+        includeNonProtocolized: boolean,
+        includeProtocolizedOutOfPeriod: boolean,
+        includeCampaigns: boolean,
+        startDate?: string,
+        endDate?: string
+    ): Promise<MareaDistributionItem[]> {
+        const params = new URLSearchParams({
+            year: year.toString(),
+            mode: mode,
+            includeNonProtocolized: String(includeNonProtocolized),
+            includeProtocolizedOutOfPeriod: String(includeProtocolizedOutOfPeriod),
+            includeCampaigns: String(includeCampaigns)
+        });
+        if (startDate) params.append('startDate', startDate);
+        if (endDate) params.append('endDate', endDate);
+        const response = await httpClient.get<MareaDistributionItem[]>(`/stats/distribution?${params.toString()}`);
+        return response.data;
+    },
+
     async getDashboardStats(
         year: number,
         mode: 'CALENDAR' | 'TOTAL',
