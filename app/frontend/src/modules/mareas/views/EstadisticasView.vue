@@ -1307,6 +1307,10 @@ const criteriaList = computed(() => {
 // --- Fetch Data ---
 const fetchData = async () => {
    loading.value = true;
+   // Reset data points to force chart re-render/loading state
+   stats.value = null;
+   distributionData.value = [];
+   
    try {
       const [newStats, distribution] = await Promise.all([
          statsService.getDashboardStats(
@@ -1540,7 +1544,7 @@ const ganttChartOptions = computed(() => ({
 // --- Watchers ---
 watch([year, mode, protocolizedOnly, includeOutOfPeriod, daysCalculationMode, includeCampaigns, startDate, endDate], () => {
    fetchData();
-});
+}, { immediate: true });
 
 const handleTimeFilter = (filter: { startDate: string | null, endDate: string | null }) => {
    startDate.value = filter.startDate;
