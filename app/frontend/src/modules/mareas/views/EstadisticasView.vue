@@ -813,7 +813,20 @@ const coverageChartOptions = computed(() => {
          type: 'area',
          height: 160,
          sparkline: { enabled: false },
-         toolbar: { show: false },
+         toolbar: { 
+            show: true,
+            offsetX: -10,
+            offsetY: 0,
+            tools: {
+               download: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>',
+               selection: true,
+               zoom: true,
+               zoomin: true,
+               zoomout: true,
+               pan: true,
+               reset: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>'
+            }
+         },
          animations: { enabled: false },
          background: 'transparent',
          fontFamily: 'Inter, sans-serif',
@@ -825,11 +838,14 @@ const coverageChartOptions = computed(() => {
                days: ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'],
                shortDays: ['Dom', 'Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab'],
                toolbar: {
-                  download: 'Descargar SVG',
+                  exportToSVG: 'Descargar SVG',
+                  exportToPNG: 'Descargar PNG',
+                  exportToCSV: 'Descargar CSV',
                   selection: 'Selección',
-                  zoomIn: 'Aumentar',
-                  zoomOut: 'Disminuir',
-                  pan: 'Navegación',
+                  selectionZoom: 'Zoom de Selección',
+                  zoomIn: 'Acercar',
+                  zoomOut: 'Alejar',
+                  pan: 'Desplazamiento',
                   reset: 'Restablecer Zoom'
                }
             }
@@ -837,6 +853,9 @@ const coverageChartOptions = computed(() => {
          defaultLocale: 'es',
          events: {
             click: (event: any, chartContext: any, config: any) => {
+               // Evitar disparar el diálogo si se hace clic en la toolbar
+               if (event.target?.closest('.apexcharts-toolbar')) return;
+
                // En este contexto, globals parece estar directamente en config
                const globals = config.globals || config.w?.globals;
                
@@ -944,7 +963,20 @@ const monthlyCoverageChartOptions = computed(() => {
          group: 'gantt-group',
          type: 'bar',
          height: 180,
-         toolbar: { show: false },
+         toolbar: { 
+            show: true,
+            offsetX: -10,
+            offsetY: 0,
+            tools: {
+               download: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>',
+               selection: true,
+               zoom: true,
+               zoomin: true,
+               zoomout: true,
+               pan: true,
+               reset: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>'
+            }
+         },
          animations: { enabled: true },
          fontFamily: 'Inter, sans-serif',
          locales: [{
@@ -955,11 +987,14 @@ const monthlyCoverageChartOptions = computed(() => {
                days: ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'],
                shortDays: ['Dom', 'Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab'],
                toolbar: {
-                  download: 'Descargar SVG',
+                  exportToSVG: 'Descargar SVG',
+                  exportToPNG: 'Descargar PNG',
+                  exportToCSV: 'Descargar CSV',
                   selection: 'Selección',
-                  zoomIn: 'Aumentar',
-                  zoomOut: 'Disminuir',
-                  pan: 'Navegación',
+                  selectionZoom: 'Zoom de Selección',
+                  zoomIn: 'Acercar',
+                  zoomOut: 'Alejar',
+                  pan: 'Desplazamiento',
                   reset: 'Restablecer Zoom'
                }
             }
@@ -967,6 +1002,9 @@ const monthlyCoverageChartOptions = computed(() => {
          defaultLocale: 'es',
          events: {
             click: (event: any, chartContext: any, config: any) => {
+               // Evitar disparar el diálogo si se hace clic en la toolbar
+               if (event.target?.closest('.apexcharts-toolbar')) return;
+               
                if (config.dataPointIndex === -1) return;
                
                const monthIndex = config.dataPointIndex;
