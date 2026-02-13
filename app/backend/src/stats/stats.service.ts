@@ -375,6 +375,8 @@ export class StatsService {
         includeCampaigns: boolean = true,
         startDate?: string,
         endDate?: string,
+        filterStartDate?: string,
+        filterEndDate?: string,
     ): Promise<StatsDetailItem[]> {
         const yearStart = startDate ? new Date(startDate) : new Date(Date.UTC(year, 0, 1, 0, 0, 0, 0));
         const yearEnd = endDate ? new Date(endDate) : new Date(Date.UTC(year, 11, 31, 23, 59, 59, 999));
@@ -382,7 +384,15 @@ export class StatsService {
         if (startDate) yearStart.setUTCHours(0, 0, 0, 0);
         if (endDate) yearEnd.setUTCHours(23, 59, 59, 999);
 
-        const where = this.getSharedWhereClause(yearStart, yearEnd, includeNonProtocolized, includeProtocolizedOutOfPeriod);
+        // Si hay fechas de drill-down (filtro específico de lista), las usamos para el where
+        // pero mantenemos yearStart/End para el cálculo del esfuerzo (periodRange)
+        const searchStart = filterStartDate ? new Date(filterStartDate) : yearStart;
+        const searchEnd = filterEndDate ? new Date(filterEndDate) : yearEnd;
+
+        if (filterStartDate) searchStart.setUTCHours(0, 0, 0, 0);
+        if (filterEndDate) searchEnd.setUTCHours(23, 59, 59, 999);
+
+        const where = this.getSharedWhereClause(searchStart, searchEnd, includeNonProtocolized, includeProtocolizedOutOfPeriod);
 
         if (!includeCampaigns) {
             where.tipoMarea = { not: TipoMarea.CI };

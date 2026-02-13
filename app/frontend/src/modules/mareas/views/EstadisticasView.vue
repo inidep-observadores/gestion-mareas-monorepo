@@ -107,23 +107,42 @@
                </div>
             </section>
 
-            <!-- ROW 5: TEMPORAL DISTRIBUTION (GANTT) -->
+            <!-- ROW 5: TEMPORAL DISTRIBUTION (GANTT) + COVERAGE -->
             <section class="grid grid-cols-12 gap-8">
-               <div class="col-span-12">
+               <div class="col-span-12 space-y-4">
+                  <!-- Sincronized Coverage Chart -->
+                  <div class="bg-surface rounded-2xl border border-border shadow-theme-xs p-4 pb-0">
+                     <div class="flex items-center justify-between mb-2">
+                        <div>
+                           <h3 class="text-[10px] font-black text-text-muted uppercase tracking-widest flex items-center gap-2">
+                              <TrendingUpIcon class="w-3.5 h-3.5 text-primary" />
+                              Evolución de Cobertura Diaria
+                           </h3>
+                        </div>
+                        <div class="text-[10px] font-bold text-text-muted uppercase">
+                           Total embarcaciones activas por día
+                        </div>
+                     </div>
+                     <apexchart type="area" height="150" :options="coverageChartOptions" :series="coverageSeries" />
+                  </div>
+
                   <ChartWidget title="Cronograma de Distribución de Mareas"
                      subtitle="Distribución temporal de mareas y etapas por buque" type="rangeBar" :series="ganttSeries"
                      :options="ganttChartOptions" :chart-height="dynamicChartHeight"
-                     chart-container-class="max-h-[700px] overflow-y-auto custom-scrollbar" allow-download
-                     @download="handleDownload('Distribucion_Temporal_Gantt')">
+                     chart-container-class="max-h-[600px] overflow-y-auto custom-scrollbar" allow-download
+                      @download="handleDownload('Distribucion_Temporal_Gantt')">
                      <template #header-action>
-                        <div class="flex items-center gap-2">
-                           <span class="text-[10px] font-black text-text-muted uppercase tracking-widest">Filtrar
-                              Pesquería:</span>
-                           <select v-model="selectedDistributionFishery"
-                              class="bg-surface border border-border rounded-lg px-3 py-1 text-xs font-bold text-text focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none">
-                              <option value="ALL">Todas las Pesquerías</option>
-                              <option v-for="f in ganttFisheries" :key="f" :value="f">{{ f }}</option>
-                           </select>
+                        <div class="flex items-center gap-6">
+
+                           <div class="flex items-center gap-2">
+                              <span class="text-[10px] font-black text-text-muted uppercase tracking-widest">Filtrar
+                                 Pesquería:</span>
+                              <select v-model="selectedDistributionFishery"
+                                 class="bg-surface border border-border rounded-lg px-3 py-1 text-xs font-bold text-text focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none">
+                                 <option value="ALL">Todas las Pesquerías</option>
+                                 <option v-for="f in ganttFisheries" :key="f" :value="f">{{ f }}</option>
+                              </select>
+                           </div>
                         </div>
                      </template>
                   </ChartWidget>
@@ -206,7 +225,7 @@
                      <!-- CARD VIEW (Responsive: Always on mobile, or forced in desktop) -->
                      <div v-if="detailViewMode === 'cards' || detailViewMode === 'table'"
                         :class="{ 'lg:hidden': detailViewMode === 'table' }" class="space-y-3">
-                        <div v-for="marea in filteredDialogItems" :key="marea.id" @click="openQuickDetail(marea.id)"
+                        <div v-for="marea in filteredDialogItems" :key="marea.id" @click="openMareaDetail(marea.id)"
                            class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between p-4 rounded-xl border border-border bg-surface shadow-theme-xs hover:shadow-theme-md hover:border-primary/40 transition-all duration-200 group cursor-pointer">
                            <div class="flex-1 min-w-0">
                               <div class="flex items-center gap-2 mb-2">
@@ -355,7 +374,7 @@
                            </thead>
                            <tbody class="divide-y divide-border">
                               <tr v-for="marea in filteredDialogItems" :key="marea.id"
-                                 @click="openQuickDetail(marea.id)"
+                                 @click="openMareaDetail(marea.id)"
                                  class="hover:bg-primary/5 transition-colors group cursor-pointer">
                                  <td class="px-4 py-2 border-r border-border/50">
                                     <div class="flex flex-col">
@@ -426,10 +445,6 @@
             </div>
          </BaseModal>
 
-         <!-- Individual Marea Quick Detail -->
-         <MareaQuickDetailModal :is-open="quickDetailOpen" :marea-id="selectedMareaId"
-            @close="quickDetailOpen = false" />
-
          <!-- FULL OBSERVER RANKING DIALOG -->
          <BaseModal :show="rankingModalOpen" maxWidth="4xl" @close="rankingModalOpen = false">
             <template #title>
@@ -438,11 +453,8 @@
                      <TrendingUpIcon class="w-5 h-5" />
                   </div>
                   <div>
-                     <span
-                        class="text-sm font-black text-text uppercase tracking-tight leading-none block mb-0.5">Ranking
-                        Completo de Observadores</span>
-                     <p class="text-[10px] font-bold text-text-muted uppercase tracking-widest mt-0.5">{{ year }} • {{
-                        mode === 'CALENDAR' ? 'Periodo' : 'Total' }}</p>
+                     <span class="text-sm font-black text-text uppercase tracking-tight leading-none block mb-0.5">Ranking Completo de Observadores</span>
+                     <p class="text-[10px] font-bold text-text-muted uppercase tracking-widest mt-0.5">{{ year }} • {{ mode === 'CALENDAR' ? 'Periodo' : 'Total' }}</p>
                   </div>
                </div>
             </template>
@@ -537,6 +549,13 @@
                </div>
             </div>
          </BaseModal>
+
+         <!-- Individual Marea Quick Detail -->
+         <MareaQuickDetailModal 
+            :is-open="isMareaDetailOpen" 
+            :marea-id="selectedMareaId"
+            @close="isMareaDetailOpen = false" 
+         />
       </div>
    </AdminLayout>
 </template>
@@ -553,6 +572,7 @@ import BaseModal from '@/components/common/BaseModal.vue'
 import SearchInput from '@/components/ui/SearchInput.vue'
 import MareaQuickDetailModal from '@/modules/stats/components/MareaQuickDetailModal.vue'
 import { useConfigStore } from '@/modules/shared/stores/config.store'
+import { useThemeStore } from '@/modules/shared/stores/theme.store'
 import {
    BarChartIcon,
    ShipIcon,
@@ -578,6 +598,7 @@ import { TipoMarea } from '@/modules/mareas/types/enums'
 import { toast } from 'vue-sonner'
 
 const configStore = useConfigStore();
+const themeStore = useThemeStore();
 const router = useRouter();
 const year = computed(() => configStore.selectedYear);
 const detailViewMode = computed({
@@ -602,6 +623,172 @@ const distributionData = ref<MareaDistributionItem[]>([]);
 const selectedDistributionFishery = ref<string>('ALL');
 const loading = ref(false);
 
+// --- Detail Dialogs State ---
+const selectedMareaId = ref<string | null>(null);
+const isMareaDetailOpen = ref(false);
+
+const openMareaDetail = (mareaId: string) => {
+   selectedMareaId.value = mareaId;
+   isMareaDetailOpen.value = true;
+};
+
+// --- Time Range Constants ---
+const timeRange = computed(() => {
+   return {
+      min: new Date(year.value, 0, 1, 0, 0, 0).getTime(),
+      max: new Date(year.value, 11, 31, 23, 59, 59).getTime()
+   };
+});
+
+// --- Coverage Timeline Logic ---
+const coverageSeries = computed(() => {
+   const { min: yearStart, max: yearEnd } = timeRange.value;
+   const oneDay = 24 * 60 * 60 * 1000;
+   
+   let filtered = distributionData.value;
+   if (selectedDistributionFishery.value !== 'ALL') {
+      filtered = filtered.filter(item => item.pesqueria === selectedDistributionFishery.value);
+   }
+
+   const data: { x: number, y: number }[] = [];
+   
+   // Generar puntos diarios
+   for (let t = yearStart; t <= yearEnd; t += oneDay) {
+      const dayStart = t;
+      const dayEnd = t + oneDay - 1;
+
+      const activeVessels = new Set(
+         filtered
+            .filter(item => {
+               const start = new Date(item.fechaZarpada).getTime();
+               const end = item.fechaArribo ? new Date(item.fechaArribo).getTime() : Date.now();
+               // Un barco está activo ese día si su rango de marea solapa con el rango del día
+               return start <= dayEnd && end >= dayStart;
+            })
+            .map(item => item.buque)
+      );
+      data.push({ x: t, y: activeVessels.size });
+   }
+
+   return [{ name: 'Barcos Activos', data }];
+});
+
+const coverageChartOptions = computed(() => {
+   const isDark = themeStore.darkMode;
+   
+   return {
+      chart: {
+         id: 'coverage-chart',
+         group: 'gantt-group',
+         type: 'area',
+         height: 160,
+         sparkline: { enabled: false },
+         toolbar: { show: false },
+         animations: { enabled: false },
+         background: 'transparent',
+         fontFamily: 'Inter, sans-serif',
+         events: {
+            click: (event: any, chartContext: any, config: any) => {
+               // En este contexto, globals parece estar directamente en config
+               const globals = config.globals || config.w?.globals;
+               
+               let timestamp = globals?.lastXAxisTraversedValue;
+
+               if (!timestamp && config.dataPointIndex !== -1 && globals?.seriesX) {
+                  const sIdx = config.seriesIndex >= 0 ? config.seriesIndex : 0;
+                  if (globals.seriesX[sIdx]) {
+                     timestamp = globals.seriesX[sIdx][config.dataPointIndex];
+                  }
+               }
+
+               if (timestamp) {
+                  const date = new Date(timestamp);
+                  const dateStr = date.toISOString().split('T')[0];
+                  
+                  const type = selectedDistributionFishery.value === 'ALL' ? undefined : 'FISHERY';
+                  const value = selectedDistributionFishery.value === 'ALL' ? undefined : selectedDistributionFishery.value;
+                  const title = `Barcos Activos: ${date.toLocaleDateString()}`;
+                  
+                  openDialog(type, value, title, dateStr, dateStr);
+               }
+            }
+         }
+      },
+      markers: {
+         size: 0,
+         strokeWidth: 2,
+         hover: { size: 6 }
+      },
+      colors: ['var(--color-primary, #0ea5e9)'],
+      fill: {
+         type: 'gradient',
+         gradient: {
+            shadeIntensity: 1,
+            opacityFrom: 0.45,
+            opacityTo: 0.05,
+            stops: [20, 100]
+         }
+      },
+      stroke: { curve: 'smooth', width: 2 },
+      xaxis: {
+         type: 'datetime',
+         min: timeRange.value.min,
+         max: timeRange.value.max,
+         labels: { show: false },
+         axisBorder: { show: false },
+         axisTicks: { show: false },
+         tooltip: { enabled: false }
+      },
+      yaxis: {
+         tickAmount: 3,
+         labels: {
+            minWidth: 150,
+            maxWidth: 150,
+            style: { 
+               fontSize: '10px', 
+               fontWeight: 600, 
+               colors: isDark ? '#94a3b8' : '#64748b' 
+            }
+         }
+      },
+      grid: {
+         borderColor: 'var(--color-border)',
+         opacity: 0.1,
+         padding: { bottom: -20, left: 10, right: 10 }
+      },
+      theme: { mode: isDark ? 'dark' : 'light' },
+      tooltip: {
+         enabled: true,
+         theme: isDark ? 'dark' : 'light',
+         x: { format: 'dd MMM yyyy' },
+         custom: function({ series, seriesIndex, dataPointIndex, w }: any) {
+            const val = series[seriesIndex][dataPointIndex];
+            const timestamp = w.globals.seriesX[seriesIndex][dataPointIndex];
+            const date = new Date(timestamp).toLocaleDateString('es-AR', {
+               day: '2-digit',
+               month: 'short',
+               year: 'numeric'
+            });
+            return `
+               <div class="px-4 py-3 bg-surface/90 backdrop-blur-md text-text border border-border shadow-2xl rounded-2xl min-w-[180px] animate-in fade-in zoom-in-95 duration-200">
+                  <div class="flex items-center justify-between mb-2 pb-2 border-b border-border/50">
+                     <span class="text-[10px] font-black text-text-muted uppercase tracking-widest">${date}</span>
+                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="text-primary"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+                  </div>
+                  <div class="flex items-baseline gap-2">
+                     <span class="text-2xl font-black text-primary tabular-nums">${val}</span>
+                     <span class="text-[10px] font-bold text-text-muted uppercase tracking-tighter">Barcos Activos</span>
+                  </div>
+               </div>
+            `;
+         }
+      },
+      dataLabels: { enabled: false }
+   };
+});
+
+
+
 const dynamicChartHeight = computed(() => {
    let filtered = distributionData.value;
    if (selectedDistributionFishery.value !== 'ALL') {
@@ -618,9 +805,7 @@ const dialogLoading = ref(false);
 const dialogItems = ref<StatsDetailItem[]>([]);
 const searchTerm = ref('');
 
-// Quick Detail State
-const quickDetailOpen = ref(false);
-const selectedMareaId = ref<string | null>(null);
+// Quick Detail State (Managed by openMareaDetail)
 
 const sortKey = ref<string>('id_marea');
 const sortOrder = ref<'asc' | 'desc'>('asc');
@@ -857,6 +1042,8 @@ const ganttSeries = computed(() => {
 
 const ganttChartOptions = computed(() => ({
    chart: {
+      id: 'gantt-chart',
+      group: 'gantt-group',
       type: 'rangeBar',
       height: 450,
       fontFamily: 'Inter, sans-serif',
@@ -864,6 +1051,14 @@ const ganttChartOptions = computed(() => ({
          show: true,
          tools: {
             download: true
+         }
+      },
+      events: {
+         dataPointSelection: (event: any, chartContext: any, config: any) => {
+            const meta = config.w.config.series[config.seriesIndex].data[config.dataPointIndex].meta;
+            if (meta && meta.mareaId) {
+               openMareaDetail(meta.mareaId);
+            }
          }
       },
       animations: {
@@ -890,6 +1085,8 @@ const ganttChartOptions = computed(() => ({
    },
    xaxis: {
       type: 'datetime',
+      min: timeRange.value.min,
+      max: timeRange.value.max,
       labels: {
          datetimeUTC: false,
          style: {
@@ -901,6 +1098,8 @@ const ganttChartOptions = computed(() => ({
    },
    yaxis: {
       labels: {
+         minWidth: 150,
+         maxWidth: 150,
          style: {
             fontSize: '11px',
             fontWeight: 700,
@@ -954,7 +1153,8 @@ const ganttChartOptions = computed(() => ({
          lines: {
             show: true
          }
-      }
+      },
+      padding: { left: 10, right: 10 }
    },
    noData: {
       text: 'No hay datos de distribución para el periodo',
@@ -977,11 +1177,13 @@ const handleTimeFilter = (filter: { startDate: string | null, endDate: string | 
 };
 
 // --- Dialog Logic ---
-const openDialog = async (type: 'FISHERY' | 'FLEET' | 'OBSERVER', value: string, titleName: string) => {
-   filterType.value = type;
-   filterValue.value = value; // NOW value is correct: Name for Fishery/Fleet, UUID for Observer
+const openDialog = async (type?: 'FISHERY' | 'FLEET' | 'OBSERVER', value?: string, titleName?: string, filterStart?: string, filterEnd?: string) => {
+   filterType.value = type || null;
+   filterValue.value = value || null; // NOW value is correct: Name for Fishery/Fleet, UUID for Observer
 
-   dialogTitle.value = `Detalle: ${titleName}`; // Use pretty name for title
+   dialogTitle.value = titleName || ''; // Use provided name for title or "Detalle: ${titleName}" 
+   if (!filterStart && titleName) dialogTitle.value = `Detalle: ${titleName}`;
+   
    dialogOpen.value = true;
    dialogLoading.value = true;
 
@@ -991,17 +1193,18 @@ const openDialog = async (type: 'FISHERY' | 'FLEET' | 'OBSERVER', value: string,
          mode.value,
          !protocolizedOnly.value,
          includeOutOfPeriod.value,
-         type,
-         value,
          daysCalculationMode.value,
          includeCampaigns.value,
-         startDate.value || undefined,
-         endDate.value || undefined
+         type,
+         value,
+         startDate.value || undefined, // Use dashboard period for effort calculation
+         endDate.value || undefined,
+         filterStart,                 // Use optional drill-down for list filtering
+         filterEnd
       );
    } catch (error) {
-      console.error('Error fetching details:', error);
-      toast.error('Error al cargar detalle');
-      dialogOpen.value = false;
+      console.error('Error loading detail:', error);
+      toast.error('No se pudo cargar el detalle.');
    } finally {
       dialogLoading.value = false;
    }
@@ -1013,10 +1216,6 @@ const closeDialog = () => {
    searchTerm.value = '';
 };
 
-const openQuickDetail = (mareaId: string) => {
-   selectedMareaId.value = mareaId;
-   quickDetailOpen.value = true;
-};
 
 // --- Click Handlers ---
 const handleFisheryClick = ({ seriesIndex, dataPointIndex, w }: any) => {

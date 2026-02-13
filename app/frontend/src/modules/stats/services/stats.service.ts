@@ -98,25 +98,31 @@ export const statsService = {
         mode: 'CALENDAR' | 'TOTAL',
         includeNonProtocolized: boolean,
         includeProtocolizedOutOfPeriod: boolean,
-        filterType: 'FISHERY' | 'FLEET' | 'OBSERVER',
-        filterValue: string,
         daysCalculationMode: 'SHIP' | 'OBSERVER',
         includeCampaigns: boolean,
+        filterType?: 'FISHERY' | 'FLEET' | 'OBSERVER',
+        filterValue?: string,
         startDate?: string,
-        endDate?: string
+        endDate?: string,
+        filterStartDate?: string,
+        filterEndDate?: string
     ): Promise<StatsDetailItem[]> {
-        const params = new URLSearchParams({
+        const paramsObj: any = {
             year: year.toString(),
             mode,
-            filterType,
-            filterValue,
             includeNonProtocolized: String(includeNonProtocolized),
             includeProtocolizedOutOfPeriod: String(includeProtocolizedOutOfPeriod),
             daysCalculationMode,
             includeCampaigns: String(includeCampaigns)
-        });
-        if (startDate) params.append('startDate', startDate);
-        if (endDate) params.append('endDate', endDate);
+        };
+        if (filterType) paramsObj.filterType = filterType;
+        if (filterValue) paramsObj.filterValue = filterValue;
+        if (startDate) paramsObj.startDate = startDate;
+        if (endDate) paramsObj.endDate = endDate;
+        if (filterStartDate) paramsObj.filterStartDate = filterStartDate;
+        if (filterEndDate) paramsObj.filterEndDate = filterEndDate;
+
+        const params = new URLSearchParams(paramsObj);
         const response = await httpClient.get<StatsDetailItem[]>(`/stats/detail?${params.toString()}`);
         return response.data;
     },

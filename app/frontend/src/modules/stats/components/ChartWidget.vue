@@ -22,6 +22,8 @@
       <div v-else class="absolute inset-0 flex items-center justify-center text-text-muted text-xs font-medium">
         Cargando datos...
       </div>
+      <!-- Default slot for overlays/modals -->
+      <slot></slot>
     </div>
   </div>
 </template>

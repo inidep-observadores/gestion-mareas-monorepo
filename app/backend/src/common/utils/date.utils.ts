@@ -48,22 +48,16 @@ export class DateUtils {
     static calculateInclusiveDays(start: Date | string, end?: Date | string | null): number {
         if (!start) return 0;
 
-        const startDate = new Date(start);
-        const endDate = end ? new Date(end) : new Date();
+        const s = DateTime.fromJSDate(new Date(start)).setZone('UTC').startOf('day');
+        const e = end 
+            ? DateTime.fromJSDate(new Date(end)).setZone('UTC').startOf('day') 
+            : DateTime.fromJSDate(this.getNow(true)).setZone('UTC').startOf('day');
 
-        // Normalizar a medianoche para evitar problemas de horas
-        startDate.setHours(0, 0, 0, 0);
-        endDate.setHours(0, 0, 0, 0);
+        if (!s.isValid || !e.isValid) return 0;
+        if (e < s) return 0;
 
-        if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) return 0;
-
-        // Si la fecha de fin es anterior a la de inicio, retornamos 0 (o error de datos)
-        if (endDate < startDate) return 0;
-
-        const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-        return diffDays + 1;
+        const diff = e.diff(s, 'days').days;
+        return Math.floor(diff) + 1;
     }
 
     /**
@@ -75,25 +69,20 @@ export class DateUtils {
     static calculateDaysInYear(start: Date | string, end: Date | string | null, year: number): number {
         if (!start) return 0;
 
-        const startDate = new Date(start);
-        startDate.setHours(0, 0, 0, 0);
+        const s = DateTime.fromJSDate(new Date(start)).setZone('UTC').startOf('day');
+        const e = end ? DateTime.fromJSDate(new Date(end)).setZone('UTC').startOf('day') : s;
 
-        const endDate = end ? new Date(end) : startDate;
-        endDate.setHours(0, 0, 0, 0);
-
-        const yearStart = new Date(year, 0, 1, 0, 0, 0, 0); // Enero 1
-        const yearEnd = new Date(year, 11, 31, 0, 0, 0, 0); // Dic 31
+        const yearStart = DateTime.fromObject({ year, month: 1, day: 1 }, { zone: 'UTC' }).startOf('day');
+        const yearEnd = DateTime.fromObject({ year, month: 12, day: 31 }, { zone: 'UTC' }).startOf('day');
 
         // Calcular intersección
-        const effectiveStart = startDate < yearStart ? yearStart : startDate;
-        const effectiveEnd = endDate > yearEnd ? yearEnd : endDate;
+        const effectiveStart = s < yearStart ? yearStart : s;
+        const effectiveEnd = e > yearEnd ? yearEnd : e;
 
         if (effectiveStart > effectiveEnd) return 0;
 
-        const diffTime = Math.abs(effectiveEnd.getTime() - effectiveStart.getTime());
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-        return diffDays + 1;
+        const diff = effectiveEnd.diff(effectiveStart, 'days').days;
+        return Math.floor(diff) + 1;
     }
 
     /**
@@ -154,13 +143,16 @@ export class DateUtils {
         return merged.reduce((acc, interval) => {
             if (periodRange) {
                 // Intersect with the specific period (Month, Quarter, or Custom Range)
-                const effectiveStart = interval.start < periodRange.start ? periodRange.start : interval.start;
-                const effectiveEnd = interval.end > periodRange.end ? periodRange.end : interval.end;
+                const effectiveStart = (interval.start as Date) < periodRange.start ? periodRange.start : (interval.start as Date);
+                const effectiveEnd = (interval.end as Date) > periodRange.end ? periodRange.end : (interval.end as Date);
 
                 if (effectiveStart > effectiveEnd) return 0;
 
-                const diffTime = Math.abs(effectiveEnd.getTime() - effectiveStart.getTime());
-                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                // Normalizar extremos de intersección a medianoche (UTC) para cálculo de días enteros sin desfases
+                const s = DateTime.fromJSDate(effectiveStart).setZone('UTC').startOf('day');
+                const e = DateTime.fromJSDate(effectiveEnd).setZone('UTC').startOf('day');
+                
+                const diffDays = Math.floor(e.diff(s, 'days').days);
                 return acc + diffDays + 1;
             }
             return acc + this.calculateInclusiveDays(interval.start, interval.end);

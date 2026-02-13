@@ -35,7 +35,9 @@ export class StatsController {
             query.daysCalculationMode,
             query.includeCampaigns,
             query.startDate,
-            query.endDate
+            query.endDate,
+            query.filterStartDate,
+            query.filterEndDate
         );
     }
 
