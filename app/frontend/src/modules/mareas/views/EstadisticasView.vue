@@ -1100,19 +1100,22 @@ const monthlyCoverageChartOptions = computed(() => {
                .map(([name, set]) => ({ name, count: set.size }))
                .sort((a, b) => b.count - a.count);
 
-            const fleetHtml = `
-               <div class="mt-3 pt-3 border-t border-border/50 flex flex-col gap-2">
-                  ${fleetEntries.map(f => `
-                     <div class="flex items-center justify-between gap-4">
-                        <div class="flex items-center gap-2">
-                           <span class="w-1.5 h-1.5 rounded-full" style="background: ${getFleetColor(f.name)}"></span>
-                           <span class="text-[9px] font-bold text-text-muted uppercase tracking-wider">${f.name}</span>
+            let fleetHtml = '';
+            if (fleetEntries.length > 1) {
+               fleetHtml = `
+                  <div class="mt-3 pt-3 border-t border-border/50 flex flex-col gap-2">
+                     ${fleetEntries.map(f => `
+                        <div class="flex items-center justify-between gap-4">
+                           <div class="flex items-center gap-2">
+                              <span class="w-1.5 h-1.5 rounded-full" style="background: ${getFleetColor(f.name)}"></span>
+                              <span class="text-[9px] font-bold text-text-muted uppercase tracking-wider">${f.name}</span>
+                           </div>
+                           <span class="text-[10px] font-black text-text tabular-nums">${f.count}</span>
                         </div>
-                        <span class="text-[10px] font-black text-text tabular-nums">${f.count}</span>
-                     </div>
-                  `).join('')}
-               </div>
-            `;
+                     `).join('')}
+                  </div>
+               `;
+            }
 
             return `
                <div class="px-4 py-3 bg-surface/90 backdrop-blur-md text-text border border-border shadow-2xl rounded-2xl min-w-[200px] animate-in fade-in zoom-in-95 duration-200">
