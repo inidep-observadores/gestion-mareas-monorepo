@@ -11,13 +11,11 @@
             </div>
 
             <!-- Coverage Alert Overlay -->
-            <div v-if="!loading && coverageStatus !== 'COMPLETE'" 
-                 class="absolute top-20 left-1/2 -translate-x-1/2 z-[1500] w-full max-w-lg animate-in slide-in-from-top duration-500">
-                <Alert v-if="coverageStatus === 'NO_DATA'" variant="error" 
-                    title="SIN DATOS DE SEGUIMIENTO" 
+            <div v-if="!loading && coverageStatus !== 'COMPLETE'"
+                class="absolute top-20 left-1/2 -translate-x-1/2 z-[1500] w-full max-w-lg animate-in slide-in-from-top duration-500">
+                <Alert v-if="coverageStatus === 'NO_DATA'" variant="error" title="SIN DATOS DE SEGUIMIENTO"
                     message="No se encontraron posiciones para el buque en el rango de tiempo del evento." />
-                <Alert v-else-if="coverageStatus === 'PARTIAL_DATA'" variant="warning" 
-                    title="DATOS INCOMPLETOS" 
+                <Alert v-else-if="coverageStatus === 'PARTIAL_DATA'" variant="warning" title="DATOS INCOMPLETOS"
                     :message="coverageMessage" />
             </div>
 
@@ -156,8 +154,8 @@ const fetchTrajectory = async () => {
     }
 
     // Ampliar 12h hacia afuera de los extremos
-    const fromDate = new Date(startDate.getTime() - 12 * 60 * 60 * 1000)
-    const toDate = new Date(endDate.getTime() + 12 * 60 * 60 * 1000)
+    const fromDate = new Date(startDate.getTime() - 6 * 60 * 60 * 1000)
+    const toDate = new Date(endDate.getTime() + 6 * 60 * 60 * 1000)
 
     try {
         const params = {
@@ -182,7 +180,7 @@ const fetchTrajectory = async () => {
 
             if (startGap > COVERAGE_TOLERANCE_MS || endGap > COVERAGE_TOLERANCE_MS) {
                 coverageStatus.value = 'PARTIAL_DATA'
-                
+
                 const formatTime = (ms: number) => {
                     const hours = Math.floor(Math.abs(ms) / (1000 * 60 * 60))
                     return hours > 0 ? `${hours}h` : 'menos de 1h'
