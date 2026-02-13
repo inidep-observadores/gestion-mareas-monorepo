@@ -126,6 +126,7 @@ export class StatsService {
         // Monthly aggregations
         const mareasByMonth = new Array(12).fill(0);
         const daysByMonth = new Array(12).fill(0);
+        const vesselsByMonth = new Array(12).fill(0).map(() => new Set<string>());
 
         // Groupings
         const byFishery: Record<string, {
@@ -297,6 +298,9 @@ export class StatsService {
                         while (cursor <= limitEndForDistribution) {
                             if (cursor.getFullYear() === year) {
                                 daysByMonth[cursor.getMonth()]++;
+                                if (marea.buqueId) {
+                                    vesselsByMonth[cursor.getMonth()].add(marea.buqueId);
+                                }
                             }
                             cursor.setDate(cursor.getDate() + 1);
                         }
@@ -329,6 +333,9 @@ export class StatsService {
                     while (cursor <= limitEnd) {
                         if (cursor.getFullYear() === year) {
                             daysByMonth[cursor.getMonth()] += count; // Add N days for this day
+                            if (marea.buqueId) {
+                                vesselsByMonth[cursor.getMonth()].add(marea.buqueId);
+                            }
                         }
                         cursor.setDate(cursor.getDate() + 1);
                     }
@@ -345,6 +352,7 @@ export class StatsService {
             monthly: {
                 mareas: mareasByMonth,
                 days: daysByMonth,
+                vessels: vesselsByMonth.map(s => s.size),
             },
             fisheries: Object.values(byFishery).map(f => {
                 const stats: Record<string, { count: number, nombre: string }> = {};

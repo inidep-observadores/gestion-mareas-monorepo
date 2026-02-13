@@ -9,6 +9,7 @@ export interface DashboardStats {
     monthly: {
         mareas: number[];
         days: number[];
+        vessels: number[];
     };
     fisheries: { name: string; mareas: number; days: number; stats?: Record<string, { count: number, nombre: string }> }[];
     fleets: { name: string; mareas: number; days: number }[];

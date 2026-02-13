@@ -110,7 +110,23 @@
             <!-- ROW 5: TEMPORAL DISTRIBUTION (GANTT) + COVERAGE -->
             <section class="grid grid-cols-12 gap-8">
                <div class="col-span-12 space-y-4">
-                  <!-- Sincronized Coverage Chart -->
+                  <!-- Sincronized Monthly Coverage Chart -->
+                  <div class="bg-surface rounded-2xl border border-border shadow-theme-xs p-4 pb-0">
+                     <div class="flex items-center justify-between mb-2">
+                        <div>
+                           <h3 class="text-[10px] font-black text-text-muted uppercase tracking-widest flex items-center gap-2">
+                              <LayoutGridIcon class="w-3.5 h-3.5 text-sky-500" />
+                              Cobertura Mensual (Barcos Únicos)
+                           </h3>
+                        </div>
+                        <div class="text-[10px] font-bold text-text-muted uppercase">
+                           Total embarcaciones cubiertas por mes
+                        </div>
+                     </div>
+                     <apexchart type="bar" height="150" :options="monthlyCoverageChartOptions" :series="monthlyCoverageSeries" />
+                  </div>
+
+                  <!-- Sincronized Daily Coverage Chart -->
                   <div class="bg-surface rounded-2xl border border-border shadow-theme-xs p-4 pb-0">
                      <div class="flex items-center justify-between mb-2">
                         <div>
@@ -673,6 +689,21 @@ const coverageSeries = computed(() => {
    return [{ name: 'Barcos Activos', data }];
 });
 
+const monthlyCoverageSeries = computed(() => {
+   if (!stats.value?.monthly?.vessels) return [];
+   
+   // Crear puntos centrados en cada mes para el gráfico de barras
+   const data = stats.value.monthly.vessels.map((count, index) => ({
+      x: new Date(year.value, index, 15).getTime(), // Día 15 para centrar la barra
+      y: count
+   }));
+
+   return [{
+      name: 'Barcos Mensuales (Únicos)',
+      data
+   }];
+});
+
 const coverageChartOptions = computed(() => {
    const isDark = themeStore.darkMode;
    
@@ -687,6 +718,24 @@ const coverageChartOptions = computed(() => {
          animations: { enabled: false },
          background: 'transparent',
          fontFamily: 'Inter, sans-serif',
+         locales: [{
+            name: 'es',
+            options: {
+               months: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'],
+               shortMonths: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'],
+               days: ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'],
+               shortDays: ['Dom', 'Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab'],
+               toolbar: {
+                  download: 'Descargar SVG',
+                  selection: 'Selección',
+                  zoomIn: 'Aumentar',
+                  zoomOut: 'Disminuir',
+                  pan: 'Navegación',
+                  reset: 'Restablecer Zoom'
+               }
+            }
+         }],
+         defaultLocale: 'es',
          events: {
             click: (event: any, chartContext: any, config: any) => {
                // En este contexto, globals parece estar directamente en config
@@ -784,6 +833,135 @@ const coverageChartOptions = computed(() => {
          }
       },
       dataLabels: { enabled: false }
+   };
+});
+
+const monthlyCoverageChartOptions = computed(() => {
+   const isDark = themeStore.darkMode;
+   
+   return {
+      chart: {
+         id: 'monthly-coverage-chart',
+         group: 'gantt-group',
+         type: 'bar',
+         height: 180,
+         toolbar: { show: false },
+         animations: { enabled: true },
+         fontFamily: 'Inter, sans-serif',
+         locales: [{
+            name: 'es',
+            options: {
+               months: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'],
+               shortMonths: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'],
+               days: ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'],
+               shortDays: ['Dom', 'Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab'],
+               toolbar: {
+                  download: 'Descargar SVG',
+                  selection: 'Selección',
+                  zoomIn: 'Aumentar',
+                  zoomOut: 'Disminuir',
+                  pan: 'Navegación',
+                  reset: 'Restablecer Zoom'
+               }
+            }
+         }],
+         defaultLocale: 'es',
+         events: {
+            click: (event: any, chartContext: any, config: any) => {
+               if (config.dataPointIndex === -1) return;
+               
+               const monthIndex = config.dataPointIndex;
+               const start = new Date(year.value, monthIndex, 1);
+               const end = new Date(year.value, monthIndex + 1, 0); // Último día del mes
+               
+               const startStr = start.toISOString().split('T')[0];
+               const endStr = end.toISOString().split('T')[0];
+               
+               const monthName = start.toLocaleDateString('es-AR', { month: 'long', year: 'numeric' });
+               const title = `Cobertura Mensual: ${monthName}`;
+               
+               const type = selectedDistributionFishery.value === 'ALL' ? undefined : 'FISHERY';
+               const value = selectedDistributionFishery.value === 'ALL' ? undefined : selectedDistributionFishery.value;
+               
+               openDialog(type, value, title, startStr, endStr);
+            }
+         }
+      },
+      plotOptions: {
+         bar: {
+            borderRadius: 4,
+            columnWidth: '50%',
+            distributed: false,
+            dataLabels: { position: 'top' }
+         }
+      },
+      colors: [isDark ? '#38bdf8' : '#0284c7'],
+      xaxis: {
+         type: 'datetime',
+         min: timeRange.value.min,
+         max: timeRange.value.max,
+         labels: { 
+            style: { 
+               colors: isDark ? '#94a3b8' : '#64748b',
+               fontSize: '10px'
+            }
+         },
+         axisBorder: { show: false },
+         axisTicks: { show: false },
+         tooltip: { enabled: false }
+      },
+      yaxis: {
+         tickAmount: 3,
+         labels: {
+            minWidth: 150,
+            maxWidth: 150,
+            style: { 
+               fontSize: '10px', 
+               fontWeight: 600, 
+               colors: isDark ? '#94a3b8' : '#64748b' 
+            }
+         }
+      },
+      grid: {
+         borderColor: 'var(--color-border)',
+         opacity: 0.1,
+         padding: { top: 10, bottom: 0, left: 10, right: 10 }
+      },
+      theme: { mode: isDark ? 'dark' : 'light' },
+      tooltip: {
+         enabled: true,
+         theme: isDark ? 'dark' : 'light',
+         x: { format: 'MMMM yyyy' },
+         custom: function({ series, seriesIndex, dataPointIndex, w }: any) {
+            const val = series[seriesIndex][dataPointIndex];
+            const timestamp = w.globals.seriesX[seriesIndex][dataPointIndex];
+            const date = new Date(timestamp).toLocaleDateString('es-AR', {
+               month: 'long',
+               year: 'numeric'
+            });
+            return `
+               <div class="px-4 py-3 bg-surface/90 backdrop-blur-md text-text border border-border shadow-2xl rounded-2xl min-w-[200px] animate-in fade-in zoom-in-95 duration-200">
+                  <div class="flex items-center justify-between mb-2 pb-2 border-b border-border/50">
+                     <span class="text-[10px] font-black text-text-muted uppercase tracking-widest">${date}</span>
+                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="text-primary-light"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+                  </div>
+                  <div class="flex items-baseline gap-2">
+                     <span class="text-2xl font-black text-sky-400 tabular-nums">${val}</span>
+                     <span class="text-[10px] font-bold text-text-muted uppercase tracking-tighter">Barcos Únicos</span>
+                  </div>
+               </div>
+            `;
+         }
+      },
+      dataLabels: {
+         enabled: true,
+         formatter: (val: number) => val,
+         offsetY: -20,
+         style: {
+            fontSize: '10px',
+            colors: [isDark ? '#e2e8f0' : '#1e293b']
+         }
+      }
    };
 });
 
