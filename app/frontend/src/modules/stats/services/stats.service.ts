@@ -45,6 +45,7 @@ export interface MareaDistributionItem {
     fechaArribo: string | null;
     observador: string;
     tipoMarea: string;
+    flota: string;
 }
 export interface MonthlyVesselItem {
     buqueId: string;

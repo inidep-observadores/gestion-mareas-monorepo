@@ -1067,20 +1067,64 @@ const monthlyCoverageChartOptions = computed(() => {
          custom: function({ series, seriesIndex, dataPointIndex, w }: any) {
             const val = series[seriesIndex][dataPointIndex];
             const timestamp = w.globals.seriesX[seriesIndex][dataPointIndex];
-            const date = new Date(timestamp).toLocaleDateString('es-AR', {
+            const dateObj = new Date(timestamp);
+            const dateLabel = dateObj.toLocaleDateString('es-AR', {
                month: 'long',
                year: 'numeric'
             });
+
+            // Calcular desglose por flota para este mes
+            const m = dateObj.getMonth();
+            const monthStart = new Date(year.value, m, 1).getTime();
+            const monthEnd = new Date(year.value, m + 1, 0, 23, 59, 59, 999).getTime();
+
+            const fleetCounts: Record<string, Set<string>> = {};
+            
+            let filtered = distributionData.value;
+            if (selectedDistributionFishery.value !== 'ALL') {
+               filtered = filtered.filter(item => item.pesqueria === selectedDistributionFishery.value);
+            }
+
+            filtered.forEach(item => {
+               const start = new Date(item.fechaZarpada).getTime();
+               const end = item.fechaArribo ? new Date(item.fechaArribo).getTime() : Date.now();
+               
+               if (start <= monthEnd && end >= monthStart) {
+                  const fleet = item.flota || 'Desconocida';
+                  if (!fleetCounts[fleet]) fleetCounts[fleet] = new Set();
+                  fleetCounts[fleet].add(item.buque);
+               }
+            });
+
+            const fleetEntries = Object.entries(fleetCounts)
+               .map(([name, set]) => ({ name, count: set.size }))
+               .sort((a, b) => b.count - a.count);
+
+            const fleetHtml = `
+               <div class="mt-3 pt-3 border-t border-border/50 flex flex-col gap-2">
+                  ${fleetEntries.map(f => `
+                     <div class="flex items-center justify-between gap-4">
+                        <div class="flex items-center gap-2">
+                           <span class="w-1.5 h-1.5 rounded-full" style="background: ${getFleetColor(f.name)}"></span>
+                           <span class="text-[9px] font-bold text-text-muted uppercase tracking-wider">${f.name}</span>
+                        </div>
+                        <span class="text-[10px] font-black text-text tabular-nums">${f.count}</span>
+                     </div>
+                  `).join('')}
+               </div>
+            `;
+
             return `
                <div class="px-4 py-3 bg-surface/90 backdrop-blur-md text-text border border-border shadow-2xl rounded-2xl min-w-[200px] animate-in fade-in zoom-in-95 duration-200">
                   <div class="flex items-center justify-between mb-2 pb-2 border-b border-border/50">
-                     <span class="text-[10px] font-black text-text-muted uppercase tracking-widest">${date}</span>
+                     <span class="text-[10px] font-black text-text-muted uppercase tracking-widest">${dateLabel}</span>
                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="text-primary-light"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
                   </div>
                   <div class="flex items-baseline gap-2">
                      <span class="text-2xl font-black text-sky-400 tabular-nums">${val}</span>
                      <span class="text-[10px] font-bold text-text-muted uppercase tracking-tighter">Barcos Únicos</span>
                   </div>
+                  ${fleetHtml}
                </div>
             `;
          }

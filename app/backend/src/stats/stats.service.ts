@@ -852,6 +852,7 @@ export class StatsService {
             include: {
                 buque: {
                     include: {
+                        tipoFlota: true,
                         pesqueriaHabitual: true
                     }
                 },
@@ -895,7 +896,8 @@ export class StatsService {
                     fechaZarpada: zarpada,
                     fechaArribo: arribo,
                     observador: marea.observadorPrincipal ? `${marea.observadorPrincipal.nombre} ${marea.observadorPrincipal.apellido}` : 'Sin asignar',
-                    tipoMarea: marea.tipoMarea
+                    tipoMarea: marea.tipoMarea,
+                    flota: marea.buque?.tipoFlota?.nombre || marea.buque?.pesqueriaHabitual?.nombre || 'Desconocida'
                 });
             }
         }
