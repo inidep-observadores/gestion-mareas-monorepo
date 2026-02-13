@@ -566,6 +566,82 @@
             </div>
          </BaseModal>
 
+         <!-- MONTHLY VESSELS DRILL DOWN DIALOG -->
+         <BaseModal :show="vesselsDialogOpen" maxWidth="4xl" @close="vesselsDialogOpen = false">
+            <template #title>
+               <div class="flex items-center gap-4">
+                  <div class="p-2 bg-sky-500/10 rounded-lg text-sky-500">
+                     <ShipIcon class="w-5 h-5" />
+                  </div>
+                  <div>
+                     <span class="text-sm font-black text-text uppercase tracking-tight leading-none block mb-0.5">
+                        Cobertura por Mes: <span class="capitalize">{{ selectedMonthLabel }}</span>
+                     </span>
+                     <p class="text-[10px] font-bold text-text-muted uppercase tracking-widest mt-0.5">Desglose de buques únicos cubiertos</p>
+                  </div>
+               </div>
+            </template>
+
+            <div class="flex flex-col min-h-0 -mx-6 -mb-6 -mt-6 h-[70vh] max-h-[75vh]">
+               <div class="px-6 py-4 border-b border-border bg-surface-muted/20 flex items-center justify-between flex-none">
+                  <div class="text-[10px] font-black text-text-muted uppercase tracking-widest">
+                     {{ monthlyVessels.length }} Embarcaciones Identificadas
+                  </div>
+               </div>
+
+               <div class="flex-1 overflow-y-auto custom-scrollbar bg-surface/30 p-6">
+                  <div v-if="vesselsLoading" class="flex justify-center items-center h-full">
+                     <div class="flex flex-col items-center gap-4">
+                        <Loader2Icon class="w-10 h-10 animate-spin text-sky-500" />
+                        <span class="text-xs font-bold text-text-muted uppercase tracking-widest">Cargando flota...</span>
+                     </div>
+                  </div>
+
+                  <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                     <div v-for="vessel in monthlyVessels" :key="vessel.buqueId"
+                        class="p-4 rounded-2xl border border-border bg-surface shadow-theme-xs hover:border-sky-500/40 transition-all duration-200 group">
+                        <div class="flex justify-between items-start mb-3">
+                           <div class="flex flex-col">
+                              <span class="text-xs font-black text-text uppercase tracking-tight">{{ vessel.buqueNombre }}</span>
+                              <span class="text-[9px] font-bold text-text-muted uppercase tracking-widest">{{ vessel.flota }}</span>
+                           </div>
+                           <div class="text-right">
+                              <span class="block text-lg font-black text-sky-500 leading-none tabular-nums">{{ vessel.diasEnMes }}</span>
+                              <span class="text-[8px] font-bold text-text-muted uppercase tracking-tighter">Días en Mes</span>
+                           </div>
+                        </div>
+                        
+                        <div class="pt-3 border-t border-border/50 flex items-center justify-between">
+                           <div class="flex items-center gap-1.5">
+                              <div class="w-1.5 h-1.5 rounded-full bg-primary/40"></div>
+                              <span class="text-[10px] font-bold text-text-muted uppercase truncate max-w-[150px]">
+                                 {{ vessel.pesqueriaHabitual }}
+                              </span>
+                           </div>
+                           <div class="px-2 py-0.5 rounded bg-surface-muted border border-border text-[9px] font-bold text-text-muted uppercase">
+                              {{ vessel.mareasEnMes }} {{ vessel.mareasEnMes === 1 ? 'Marea' : 'Mareas' }}
+                           </div>
+                        </div>
+                     </div>
+                  </div>
+
+                  <!-- Empty State -->
+                  <div v-if="!vesselsLoading && monthlyVessels.length === 0" class="flex flex-col items-center justify-center py-20 text-center">
+                     <ShipIcon class="w-12 h-12 text-text-muted/20 mb-4" />
+                     <p class="text-xs font-black text-text-muted uppercase tracking-widest">Sin actividad registrada</p>
+                  </div>
+               </div>
+
+               <div class="flex justify-end p-4 border-t border-border bg-surface-muted/20 flex-none bg-surface/50 backdrop-blur-md">
+                  <button
+                     class="px-6 py-2 rounded-lg bg-primary text-primary-fg text-xs font-black uppercase tracking-widest hover:bg-primary-hover transition-colors shadow-theme-sm active:scale-95 duration-200"
+                     @click="vesselsDialogOpen = false">
+                     Cerrar
+                  </button>
+               </div>
+            </div>
+         </BaseModal>
+
          <!-- Individual Marea Quick Detail -->
          <MareaQuickDetailModal 
             :is-open="isMareaDetailOpen" 
@@ -642,6 +718,10 @@ const loading = ref(false);
 // --- Detail Dialogs State ---
 const selectedMareaId = ref<string | null>(null);
 const isMareaDetailOpen = ref(false);
+const vesselsDialogOpen = ref(false);
+const vesselsLoading = ref(false);
+const monthlyVessels = ref<any[]>([]);
+const selectedMonthLabel = ref('');
 
 const openMareaDetail = (mareaId: string) => {
    selectedMareaId.value = mareaId;
@@ -690,13 +770,32 @@ const coverageSeries = computed(() => {
 });
 
 const monthlyCoverageSeries = computed(() => {
-   if (!stats.value?.monthly?.vessels) return [];
+   let filtered = distributionData.value;
+   if (selectedDistributionFishery.value !== 'ALL') {
+      filtered = filtered.filter(item => item.pesqueria === selectedDistributionFishery.value);
+   }
+
+   const data: { x: number, y: number }[] = [];
    
-   // Crear puntos centrados en cada mes para el gráfico de barras
-   const data = stats.value.monthly.vessels.map((count, index) => ({
-      x: new Date(year.value, index, 15).getTime(), // Día 15 para centrar la barra
-      y: count
-   }));
+   for (let m = 0; m < 12; m++) {
+      const monthStart = new Date(year.value, m, 1).getTime();
+      const monthEnd = new Date(year.value, m + 1, 0, 23, 59, 59, 999).getTime();
+
+      const uniqueVessels = new Set(
+         filtered
+            .filter(item => {
+               const start = new Date(item.fechaZarpada).getTime();
+               const end = item.fechaArribo ? new Date(item.fechaArribo).getTime() : Date.now();
+               return start <= monthEnd && end >= monthStart;
+            })
+            .map(item => item.buque)
+      );
+      
+      data.push({
+         x: new Date(year.value, m, 15).getTime(),
+         y: uniqueVessels.size
+      });
+   }
 
    return [{
       name: 'Barcos Mensuales (Únicos)',
@@ -878,12 +977,7 @@ const monthlyCoverageChartOptions = computed(() => {
                const endStr = end.toISOString().split('T')[0];
                
                const monthName = start.toLocaleDateString('es-AR', { month: 'long', year: 'numeric' });
-               const title = `Cobertura Mensual: ${monthName}`;
-               
-               const type = selectedDistributionFishery.value === 'ALL' ? undefined : 'FISHERY';
-               const value = selectedDistributionFishery.value === 'ALL' ? undefined : selectedDistributionFishery.value;
-               
-               openDialog(type, value, title, startStr, endStr);
+               openVesselsDialog(monthIndex, monthName);
             }
          }
       },
@@ -1413,9 +1507,35 @@ const handleFleetClick = ({ dataPointIndex }: any) => {
 
 const handleObserverClick = ({ dataPointIndex }: any) => {
    const item = stats.value?.observers[dataPointIndex];
-   // Now we pass the ID to the API filter logic, but Name to the Dialog Title
    if (item) openDialog('OBSERVER', item.id, item.name);
 }
+
+// --- Vessels by Month Logic ---
+const openVesselsDialog = async (monthIndex: number, label: string) => {
+   selectedMonthLabel.value = label;
+   vesselsDialogOpen.value = true;
+   vesselsLoading.value = true;
+
+   const type = selectedDistributionFishery.value === 'ALL' ? undefined : ('FISHERY' as const);
+   const value = selectedDistributionFishery.value === 'ALL' ? undefined : selectedDistributionFishery.value;
+
+   try {
+      monthlyVessels.value = await statsService.getVesselsByMonth(
+         Number(year.value),
+         Number(monthIndex),
+         Boolean(!protocolizedOnly.value),
+         Boolean(includeOutOfPeriod.value),
+         Boolean(includeCampaigns.value),
+         type,
+         value
+      );
+   } catch (error) {
+      console.error('Error loading monthly vessels:', error);
+      toast.error('No se pudo cargar el detalle de buques.');
+   } finally {
+      vesselsLoading.value = false;
+   }
+};
 
 // --- Download Handler ---
 const handleDownload = async (titlePrefix: string, fType?: 'FISHERY' | 'FLEET' | 'OBSERVER') => {

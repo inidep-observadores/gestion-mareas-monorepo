@@ -70,6 +70,11 @@ export class GetStatsDto {
     @IsOptional()
     filterEndDate?: string;
 
+    @IsInt()
+    @IsOptional()
+    @Transform(({ value }) => parseInt(value))
+    monthIndex?: number;
+
     @IsString()
     @IsOptional()
     customFilename?: string;

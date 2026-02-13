@@ -42,3 +42,11 @@ export interface MareaDistributionItem {
     observador: string;
     tipoMarea: string;
 }
+export interface MonthlyVesselItem {
+    buqueId: string;
+    buqueNombre: string;
+    flota: string;
+    pesqueriaHabitual: string;
+    diasEnMes: number;
+    mareasEnMes: number;
+}

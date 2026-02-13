@@ -74,10 +74,20 @@ export class StatsController {
 
         const filename = query.customFilename ? `${query.customFilename}.xlsx` : `Estadisticas_Mareas_${query.year}.xlsx`;
 
-        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        res.setHeader('Content-Disposition', `attachment; filename=${filename}`);
-
         await workbook.xlsx.write(res);
         res.end();
+    }
+
+    @Get('vessels-by-month')
+    getVesselsByMonth(@Query() query: GetStatsDto) {
+        return this.statsService.getVesselsByMonth(
+            query.year,
+            query.monthIndex || 0,
+            query.includeNonProtocolized,
+            query.includeProtocolizedOutOfPeriod,
+            query.includeCampaigns,
+            query.filterType,
+            query.filterValue
+        );
     }
 }

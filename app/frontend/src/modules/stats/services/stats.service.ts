@@ -46,8 +46,40 @@ export interface MareaDistributionItem {
     observador: string;
     tipoMarea: string;
 }
+export interface MonthlyVesselItem {
+    buqueId: string;
+    buqueNombre: string;
+    flota: string;
+    pesqueriaHabitual: string;
+    diasEnMes: number;
+    mareasEnMes: number;
+}
 
 export const statsService = {
+    // ... existentes
+    async getVesselsByMonth(
+        year: number,
+        monthIndex: number,
+        includeNonProtocolized: boolean,
+        includeProtocolizedOutOfPeriod: boolean,
+        includeCampaigns: boolean,
+        filterType?: 'FISHERY' | 'FLEET' | 'OBSERVER',
+        filterValue?: string
+    ): Promise<MonthlyVesselItem[]> {
+        const params = new URLSearchParams({
+            year: String(year),
+            monthIndex: String(monthIndex),
+            includeNonProtocolized: String(includeNonProtocolized),
+            includeProtocolizedOutOfPeriod: String(includeProtocolizedOutOfPeriod),
+            includeCampaigns: String(includeCampaigns),
+            mode: 'CALENDAR'
+        });
+        if (filterType) params.append('filterType', filterType);
+        if (filterValue) params.append('filterValue', filterValue);
+
+        const response = await httpClient.get<MonthlyVesselItem[]>(`/stats/vessels-by-month?${params.toString()}`);
+        return response.data;
+    },
     async getMareaDistribution(
         year: number,
         mode: 'CALENDAR' | 'TOTAL',

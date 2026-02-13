@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { DateUtils } from '../common/utils/date.utils';
 import { Prisma } from '@prisma/client';
-import { StatsDetailItem, DashboardStats, MareaDistributionItem } from './interfaces/dashboard.interface';
+import { StatsDetailItem, DashboardStats, MareaDistributionItem, MonthlyVesselItem } from './interfaces/dashboard.interface';
 import { MareaUtils } from '../common/utils/marea.utils';
 import { TipoMarea } from '../mareas/mareas.constants';
 import * as ExcelJS from 'exceljs';
@@ -907,5 +907,85 @@ export class StatsService {
             if (dateA !== dateB) return dateA - dateB;
             return a.buque.localeCompare(b.buque);
         });
+    }
+    async getVesselsByMonth(
+        year: number,
+        monthIndex: number,
+        includeNonProtocolized: boolean,
+        includeProtocolizedOutOfPeriod = false,
+        includeCampaigns = true,
+        filterType?: 'FISHERY' | 'FLEET' | 'OBSERVER',
+        filterValue?: string
+    ): Promise<MonthlyVesselItem[]> {
+        const monthStart = new Date(Date.UTC(year, monthIndex, 1, 0, 0, 0, 0));
+        const monthEnd = new Date(Date.UTC(year, monthIndex + 1, 0, 23, 59, 59, 999));
+
+        const where = this.getSharedWhereClause(monthStart, monthEnd, includeNonProtocolized, includeProtocolizedOutOfPeriod);
+        if (!includeCampaigns) {
+            where.tipoMarea = { not: TipoMarea.CI as any };
+        }
+
+        if (filterType && filterValue) {
+            if (filterType === 'FISHERY') {
+                where.OR = [
+                    { pesqueria: { nombre: filterValue } },
+                    {
+                        AND: [
+                            { pesqueriaId: null },
+                            { buque: { pesqueriaHabitual: { nombre: filterValue } } }
+                        ]
+                    }
+                ];
+            } else if (filterType === 'FLEET') {
+                where.buque = {
+                    tipoFlota: { nombre: filterValue }
+                };
+            } else if (filterType === 'OBSERVER') {
+                where.observadorPrincipalId = filterValue;
+            }
+        }
+
+        const mareas = await this.prisma.marea.findMany({
+            where,
+            include: {
+                buque: {
+                    include: {
+                        tipoFlota: true,
+                        pesqueriaHabitual: true,
+                    }
+                },
+                etapas: true
+            }
+        });
+
+        const vesselsMap = new Map<string, MonthlyVesselItem>();
+
+        for (const marea of mareas) {
+            if (!marea.buqueId) continue;
+
+            if (!vesselsMap.has(marea.buqueId)) {
+                vesselsMap.set(marea.buqueId, {
+                    buqueId: marea.buqueId,
+                    buqueNombre: marea.buque?.nombreBuque || 'Desconocido',
+                    flota: marea.buque?.tipoFlota?.nombre || 'Desconocida',
+                    pesqueriaHabitual: marea.buque?.pesqueriaHabitual?.nombre || 'Desconocida',
+                    diasEnMes: 0,
+                    mareasEnMes: 0
+                });
+            }
+
+            const item = vesselsMap.get(marea.buqueId)!;
+            item.mareasEnMes++;
+
+            // Calcular esfuerzo específico de este mes para este buque
+            const intervals = marea.etapas.map(e => ({
+                start: e.fechaZarpada,
+                end: e.fechaArribo || (marea.estadoActualId === 'EN_EJECUCION' ? DateUtils.getNow() : null)
+            })).filter(i => i.start);
+
+            item.diasEnMes += DateUtils.calculateUniqueDays(intervals as any, { start: monthStart, end: monthEnd });
+        }
+
+        return Array.from(vesselsMap.values()).sort((a, b) => b.diasEnMes - a.diasEnMes);
     }
 }
