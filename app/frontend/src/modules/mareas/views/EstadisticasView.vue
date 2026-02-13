@@ -730,10 +730,9 @@ const openMareaDetail = (mareaId: string) => {
 
 // --- Time Range Constants ---
 const timeRange = computed(() => {
-   return {
-      min: new Date(year.value, 0, 1, 0, 0, 0).getTime(),
-      max: new Date(year.value, 11, 31, 23, 59, 59).getTime()
-   };
+   const start = startDate.value ? new Date(startDate.value).getTime() : new Date(year.value, 0, 1, 0, 0, 0).getTime();
+   const end = endDate.value ? new Date(endDate.value).getTime() : new Date(year.value, 11, 31, 23, 59, 59).getTime();
+   return { min: start, max: end };
 });
 
 // --- Coverage Timeline Logic ---
@@ -777,24 +776,41 @@ const monthlyCoverageSeries = computed(() => {
 
    const data: { x: number, y: number }[] = [];
    
-   for (let m = 0; m < 12; m++) {
-      const monthStart = new Date(year.value, m, 1).getTime();
-      const monthEnd = new Date(year.value, m + 1, 0, 23, 59, 59, 999).getTime();
+   const { min: rangeMin, max: rangeMax } = timeRange.value;
+   const startMonth = new Date(rangeMin).getMonth();
+   const endMonth = new Date(rangeMax).getMonth();
+   const startYear = new Date(rangeMin).getFullYear();
+   const endYear = new Date(rangeMax).getFullYear();
 
-      const uniqueVessels = new Set(
-         filtered
-            .filter(item => {
-               const start = new Date(item.fechaZarpada).getTime();
-               const end = item.fechaArribo ? new Date(item.fechaArribo).getTime() : Date.now();
-               return start <= monthEnd && end >= monthStart;
-            })
-            .map(item => item.buque)
-      );
-      
-      data.push({
-         x: new Date(year.value, m, 15).getTime(),
-         y: uniqueVessels.size
-      });
+   for (let y = startYear; y <= endYear; y++) {
+      const mStart = (y === startYear) ? startMonth : 0;
+      const mEnd = (y === endYear) ? endMonth : 11;
+
+      for (let m = mStart; m <= mEnd; m++) {
+         const monthStart = new Date(y, m, 1, 0, 0, 0).getTime();
+         const monthEnd = new Date(y, m + 1, 0, 23, 59, 59, 999).getTime();
+
+         // Ajustar el punto para que no caiga fuera del rango si el mes está recortado
+         const pointX = Math.max(rangeMin, Math.min(rangeMax, new Date(y, m, 15).getTime()));
+
+         const uniqueVessels = new Set(
+            filtered
+               .filter(item => {
+                  const start = new Date(item.fechaZarpada).getTime();
+                  const end = item.fechaArribo ? new Date(item.fechaArribo).getTime() : Date.now();
+                  // Solapamiento entre el mes y el rango filtrado
+                  const effectiveMonthStart = Math.max(monthStart, rangeMin);
+                  const effectiveMonthEnd = Math.min(monthEnd, rangeMax);
+                  return start <= effectiveMonthEnd && end >= effectiveMonthStart;
+               })
+               .map(item => item.buque)
+         );
+         
+         data.push({
+            x: pointX,
+            y: uniqueVessels.size
+         });
+      }
    }
 
    return [{
@@ -1007,14 +1023,12 @@ const monthlyCoverageChartOptions = computed(() => {
                
                if (config.dataPointIndex === -1) return;
                
-               const monthIndex = config.dataPointIndex;
-               const start = new Date(year.value, monthIndex, 1);
-               const end = new Date(year.value, monthIndex + 1, 0); // Último día del mes
+               const sIdx = config.seriesIndex >= 0 ? config.seriesIndex : 0;
+               const timestamp = config.w.globals.seriesX[sIdx][config.dataPointIndex];
+               const date = new Date(timestamp);
+               const monthIndex = date.getMonth();
+               const monthName = date.toLocaleDateString('es-AR', { month: 'long', year: 'numeric' });
                
-               const startStr = start.toISOString().split('T')[0];
-               const endStr = end.toISOString().split('T')[0];
-               
-               const monthName = start.toLocaleDateString('es-AR', { month: 'long', year: 'numeric' });
                openVesselsDialog(monthIndex, monthName);
             }
          }
