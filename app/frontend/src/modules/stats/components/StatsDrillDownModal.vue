@@ -269,10 +269,10 @@ const fetchDetail = async () => {
       props.mode,
       props.includeNonProtocolized,
       props.includeProtocolizedOutOfPeriod,
-      props.filterType,
-      props.filterValue,
       props.daysCalculationMode,
-      props.includeCampaigns
+      props.includeCampaigns,
+      props.filterType,
+      props.filterValue
     )
   } catch (error) {
     console.error('Error fetching stats detail:', error)
