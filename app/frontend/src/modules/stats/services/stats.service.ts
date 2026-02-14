@@ -52,6 +52,7 @@ export const statsService = {
         mode: 'CALENDAR' | 'TOTAL',
         includeNonProtocolized: boolean,
         includeProtocolizedOutOfPeriod: boolean,
+        daysCalculationMode: 'SHIP' | 'OBSERVER',
         includeCampaigns: boolean,
         startDate?: string,
         endDate?: string
@@ -61,6 +62,7 @@ export const statsService = {
             mode: mode,
             includeNonProtocolized: String(includeNonProtocolized),
             includeProtocolizedOutOfPeriod: String(includeProtocolizedOutOfPeriod),
+            daysCalculationMode,
             includeCampaigns: String(includeCampaigns)
         });
         if (startDate) params.append('startDate', startDate);

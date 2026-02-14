@@ -812,6 +812,7 @@ export class StatsService {
         mode: 'CALENDAR' | 'TOTAL',
         includeNonProtocolized: boolean,
         includeProtocolizedOutOfPeriod = false,
+        daysCalculationMode: 'SHIP' | 'OBSERVER' = 'SHIP',
         includeCampaigns: boolean = true,
         startDate?: string,
         endDate?: string,
@@ -866,6 +867,20 @@ export class StatsService {
 
                 // Verificar solapamiento tras recorte
                 if (zarpada > yearEnd || (arribo && arribo < yearStart)) continue;
+
+                // FILTRO DE MODO DE CÁLCULO:
+                // Si la métrica es "OBSERVADOR", solo mostramos segmentos donde hubo efectivamente un observador a bordo.
+                if (daysCalculationMode === 'OBSERVER') {
+                    const hasPrincipal = !!marea.observadorPrincipal;
+                    const hasAdditionalInStage = etapa.observadores && etapa.observadores.length > 0;
+
+                    // Si no hay observador principal NI adicionales en esta etapa, se omite.
+                    // NOTA: Si hay principal, asumimos que estuvo toda la marea, por tanto todas las etapas son válidas.
+                    // Si NO hay principal, dependemos de que haya adicionales en la etapa específica.
+                    if (!hasPrincipal && !hasAdditionalInStage) {
+                        continue;
+                    }
+                }
 
                 items.push({
                     mareaId: marea.id,
