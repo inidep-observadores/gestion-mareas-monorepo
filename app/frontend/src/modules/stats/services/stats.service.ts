@@ -174,5 +174,32 @@ export const statsService = {
         // Clean up
         link.remove();
         window.URL.revokeObjectURL(url);
+    },
+
+    async getUniqueVesselsCount(
+        year: number,
+        mode: 'CALENDAR' | 'TOTAL',
+        includeNonProtocolized: boolean,
+        includeProtocolizedOutOfPeriod: boolean,
+        includeCampaigns: boolean,
+        startDate?: string,
+        endDate?: string,
+        fisheryName?: string,
+    ): Promise<number> {
+        const params = new URLSearchParams({
+            year: year.toString(),
+            mode,
+            includeNonProtocolized: String(includeNonProtocolized),
+            includeProtocolizedOutOfPeriod: String(includeProtocolizedOutOfPeriod),
+            includeCampaigns: String(includeCampaigns)
+        });
+        if (startDate) params.append('startDate', startDate);
+        if (endDate) params.append('endDate', endDate);
+        if (fisheryName) {
+            params.append('filterType', 'FISHERY');
+            params.append('filterValue', fisheryName);
+        }
+        const response = await httpClient.get<{ count: number }>(`/stats/vessels-count?${params.toString()}`);
+        return response.data.count;
     }
 };

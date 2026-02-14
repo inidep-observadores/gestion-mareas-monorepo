@@ -890,4 +890,79 @@ export class StatsService {
             return a.buque.localeCompare(b.buque);
         });
     }
+
+    async getUniqueVesselsCount(
+        year: number,
+        mode: 'CALENDAR' | 'TOTAL',
+        includeNonProtocolized: boolean,
+        includeProtocolizedOutOfPeriod: boolean,
+        includeCampaigns: boolean = true,
+        startDate?: string,
+        endDate?: string,
+        fisheryName?: string,
+    ): Promise<{ count: number }> {
+        const yearStart = startDate ? new Date(startDate) : new Date(Date.UTC(year, 0, 1, 0, 0, 0, 0));
+        const yearEnd = endDate ? new Date(endDate) : new Date(Date.UTC(year, 11, 31, 23, 59, 59, 999));
+
+        if (startDate) yearStart.setUTCHours(0, 0, 0, 0);
+        if (endDate) yearEnd.setUTCHours(23, 59, 59, 999);
+
+        const where = this.getSharedWhereClause(yearStart, yearEnd, includeNonProtocolized, includeProtocolizedOutOfPeriod);
+
+        if (!includeCampaigns) {
+            where.tipoMarea = { not: TipoMarea.CI };
+        }
+
+        const mareas = await this.prisma.marea.findMany({
+            where,
+            include: {
+                etapas: {
+                    include: { pesqueria: true },
+                    orderBy: { nroEtapa: 'asc' }
+                },
+                estadoActual: true
+            }
+        });
+
+        const now = DateUtils.getNow(true);
+        const uniqueVessels = new Set<string>();
+
+        const effectivePeriodEnd = yearEnd < now ? yearEnd : now;
+
+        for (const marea of mareas) {
+            let mareaMatches = false;
+            for (const etapa of marea.etapas) {
+                if (!etapa.fechaZarpada) continue;
+
+                let zarpada = new Date(etapa.fechaZarpada);
+                let arribo = etapa.fechaArribo ? new Date(etapa.fechaArribo) : (marea.estadoActual?.codigo === 'EN_EJECUCION' ? now : null);
+
+                // Si estamos en modo CALENDAR, recortamos los días fuera del año seleccionado
+                if (mode === 'CALENDAR') {
+                    if (zarpada < yearStart) zarpada = new Date(yearStart);
+                    if (arribo && arribo > yearEnd) arribo = new Date(yearEnd);
+                }
+
+                // Verificar solapamiento tras recorte
+                if (zarpada > effectivePeriodEnd || (arribo && arribo < yearStart)) continue;
+
+                // Validar pesquería si hay filtro (NOMBRE de pesquería de la ETAPA)
+                if (fisheryName) {
+                    const etapaPesqueria = etapa.pesqueria?.nombre || 'Desconocida';
+                    // Comparación insensible a mayúsculas/minúsculas para mayor robustez
+                    if (!etapaPesqueria.toUpperCase().includes(fisheryName.toUpperCase())) continue;
+                }
+
+                // Si llegamos aquí, esta etapa de este buque cumple los criterios
+                mareaMatches = true;
+                break;
+            }
+
+            if (mareaMatches) {
+                uniqueVessels.add(marea.buqueId);
+            }
+        }
+
+        return { count: uniqueVessels.size };
+    }
 }

@@ -39,6 +39,20 @@ export class StatsController {
         );
     }
 
+    @Get('vessels-count')
+    getVesselsCount(@Query() query: GetStatsDto) {
+        return this.statsService.getUniqueVesselsCount(
+            query.year,
+            query.mode || 'CALENDAR',
+            query.includeNonProtocolized,
+            query.includeProtocolizedOutOfPeriod,
+            query.includeCampaigns,
+            query.startDate,
+            query.endDate,
+            query.filterType === 'FISHERY' ? query.filterValue : undefined
+        );
+    }
+
     @Get('distribution')
     getMareaDistribution(@Query() query: GetStatsDto) {
         return this.statsService.getMareaDistribution(
