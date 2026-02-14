@@ -843,6 +843,7 @@ export class StatsService {
                 etapas: {
                     orderBy: { nroEtapa: 'asc' },
                     include: {
+                        pesqueria: true,
                         observadores: { include: { observador: true } }
                     }
                 }
@@ -871,8 +872,8 @@ export class StatsService {
                     mareaId: marea.id,
                     id_marea: MareaUtils.formatCodigo(marea),
                     buque: marea.buque?.nombreBuque || 'Desconocido',
-                    pesqueria: marea.pesqueria?.nombre || marea.buque?.pesqueriaHabitual?.nombre || 'Desconocida',
-                    pesqueriaId: marea.pesqueriaId,
+                    pesqueria: etapa.pesqueria?.nombre || marea.pesqueria?.nombre || marea.buque?.pesqueriaHabitual?.nombre || 'Desconocida',
+                    pesqueriaId: etapa.pesqueriaId || marea.pesqueriaId,
                     nroEtapa: etapa.nroEtapa,
                     fechaZarpada: zarpada,
                     fechaArribo: arribo,

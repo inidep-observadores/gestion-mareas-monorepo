@@ -86,12 +86,13 @@ describe('StatsService', () => {
                 {
                     id: 'm1',
                     buque: { nombreBuque: 'Barco A' },
-                    pesqueria: { nombre: 'Calamar' },
+                    pesqueria: { nombre: 'Calamar' }, // General (unused for label now)
                     etapas: [
                         {
                             nroEtapa: 1,
                             fechaZarpada: new Date('2023-12-20'), // Starts before year
                             fechaArribo: new Date('2024-01-10'),   // Ends inside year
+                            pesqueria: { nombre: 'Merluza' } // Stage fishery
                         }
                     ],
                     estadoActual: { codigo: 'PROTOCOLIZADA' }
@@ -104,6 +105,38 @@ describe('StatsService', () => {
             // In CALENDAR mode, zarpada should be trimmed to yearStart
             expect(new Date(result[0].fechaZarpada).getTime()).toBe(yearStart.getTime());
             expect(new Date(result[0].fechaArribo!).getTime()).toBe(new Date('2024-01-10').getTime());
+            // Should use stage fishery
+            expect(result[0].pesqueria).toBe('Merluza');
+        });
+
+        it('should return multiple segments with different fisheries for the same marea', async () => {
+            const year = 2024;
+            mockPrisma.marea.findMany.mockResolvedValue([
+                {
+                    id: 'm1',
+                    buque: { nombreBuque: 'Barco A' },
+                    etapas: [
+                        {
+                            nroEtapa: 1,
+                            fechaZarpada: new Date('2024-01-01'),
+                            fechaArribo: new Date('2024-01-10'),
+                            pesqueria: { nombre: 'Calamar' }
+                        },
+                        {
+                            nroEtapa: 2,
+                            fechaZarpada: new Date('2024-01-11'),
+                            fechaArribo: new Date('2024-01-20'),
+                            pesqueria: { nombre: 'Langostino' }
+                        }
+                    ]
+                }
+            ]);
+
+            const result = await service.getMareaDistribution(year, 'CALENDAR', true, true, true);
+
+            expect(result).toHaveLength(2);
+            expect(result[0].pesqueria).toBe('Calamar');
+            expect(result[1].pesqueria).toBe('Langostino');
         });
 
         it('should not return items starting in the future', async () => {
