@@ -233,7 +233,7 @@
                               <div class="flex items-center gap-2 mb-2">
                                  <span class="font-black text-sm text-text tabular-nums tracking-tighter">{{
                                     marea.id_marea
-                                 }}</span>
+                                    }}</span>
                                  <span
                                     class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest bg-secondary/10 text-secondary border border-secondary/20">{{
                                        marea.estado }}</span>
@@ -381,7 +381,7 @@
                                  <td class="px-4 py-2 border-r border-border/50">
                                     <div class="flex flex-col">
                                        <span class="font-black text-xs text-text tabular-nums">{{ marea.id_marea
-                                       }}</span>
+                                          }}</span>
                                        <span class="text-[9px] font-bold text-text-muted uppercase tracking-tighter">{{
                                           marea.estado }}</span>
                                     </div>
@@ -394,7 +394,7 @@
                                  </td>
                                  <td class="px-4 py-2 text-xs font-bold text-text border-r border-border/50">{{
                                     marea.pesqueria
-                                 }}</td>
+                                    }}</td>
                                  <td v-if="filterType !== 'OBSERVER'"
                                     class="px-4 py-2 text-xs font-bold text-text border-r border-border/50">{{
                                        marea.observador
@@ -408,7 +408,7 @@
                                  <td v-if="mode === 'CALENDAR'" class="px-4 py-2 text-right">
                                     <span class="font-bold text-xs text-text-muted tabular-nums opacity-80">{{
                                        marea.diasTotales
-                                    }}</span>
+                                       }}</span>
                                  </td>
                               </tr>
                            </tbody>
@@ -1091,7 +1091,11 @@ const handleCoverageClick = (_event: any, _chartContext: any, { dataPointIndex }
    const start = new Date(Date.UTC(year.value, dataPointIndex, 1)).toISOString().split('T')[0];
    const end = new Date(Date.UTC(year.value, dataPointIndex + 1, 0)).toISOString().split('T')[0];
 
-   openDialog(null, null, `Cobertura ${monthName} ${year.value}`, start, end);
+   // Respect the global fishery filter of the chart
+   const filterT = selectedCoverageFishery.value !== 'ALL' ? 'FISHERY' : null;
+   const filterV = selectedCoverageFishery.value !== 'ALL' ? selectedCoverageFishery.value : null;
+
+   openDialog(filterT, filterV, `Cobertura ${monthName} ${year.value}`, start, end);
 };
 
 const handleGanttClick = ({ seriesIndex, dataPointIndex, w }: any) => {
