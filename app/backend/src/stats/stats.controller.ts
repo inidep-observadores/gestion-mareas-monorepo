@@ -46,7 +46,6 @@ export class StatsController {
             query.mode || 'CALENDAR',
             query.includeNonProtocolized,
             query.includeProtocolizedOutOfPeriod,
-            query.daysCalculationMode,
             query.includeCampaigns,
             query.startDate,
             query.endDate
