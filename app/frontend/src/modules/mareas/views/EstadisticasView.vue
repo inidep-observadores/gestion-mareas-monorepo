@@ -233,7 +233,7 @@
                               <div class="flex items-center gap-2 mb-2">
                                  <span class="font-black text-sm text-text tabular-nums tracking-tighter">{{
                                     marea.id_marea
-                                    }}</span>
+                                 }}</span>
                                  <span
                                     class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest bg-secondary/10 text-secondary border border-secondary/20">{{
                                        marea.estado }}</span>
@@ -353,16 +353,16 @@
                                     </div>
                                  </th>
                                  <th class="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-text-muted cursor-pointer hover:bg-surface-muted transition-colors group text-right"
-                                    @click="handleSort(mode === 'CALENDAR' ? 'diasCalendario' : 'diasTotales')">
+                                    @click="handleSort(dialogPeriodLabel ? 'diasPeriodo' : (mode === 'CALENDAR' ? 'diasCalendario' : 'diasTotales'))">
                                     <div class="flex items-center justify-end gap-2">
-                                       Días {{ mode === 'CALENDAR' ? year : 'Tot.' }}
+                                       Días {{ dialogPeriodLabel || (mode === 'CALENDAR' ? year : 'Tot.') }}
                                        <component
-                                          :is="getSortIcon(mode === 'CALENDAR' ? 'diasCalendario' : 'diasTotales')"
+                                          :is="getSortIcon(dialogPeriodLabel ? 'diasPeriodo' : (mode === 'CALENDAR' ? 'diasCalendario' : 'diasTotales'))"
                                           class="w-3 h-3 text-primary opacity-0 group-hover:opacity-100"
-                                          :class="{ 'opacity-100': sortKey === (mode === 'CALENDAR' ? 'diasCalendario' : 'diasTotales') }" />
+                                          :class="{ 'opacity-100': sortKey === (dialogPeriodLabel ? 'diasPeriodo' : (mode === 'CALENDAR' ? 'diasCalendario' : 'diasTotales')) }" />
                                     </div>
                                  </th>
-                                 <th v-if="mode === 'CALENDAR'"
+                                 <th v-if="mode === 'CALENDAR' && !dialogPeriodLabel"
                                     class="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-text-muted cursor-pointer hover:bg-surface-muted transition-colors group text-right"
                                     @click="handleSort('diasTotales')">
                                     <div class="flex items-center justify-end gap-2">
@@ -381,7 +381,7 @@
                                  <td class="px-4 py-2 border-r border-border/50">
                                     <div class="flex flex-col">
                                        <span class="font-black text-xs text-text tabular-nums">{{ marea.id_marea
-                                          }}</span>
+                                       }}</span>
                                        <span class="text-[9px] font-bold text-text-muted uppercase tracking-tighter">{{
                                           marea.estado }}</span>
                                     </div>
@@ -394,21 +394,23 @@
                                  </td>
                                  <td class="px-4 py-2 text-xs font-bold text-text border-r border-border/50">{{
                                     marea.pesqueria
-                                    }}</td>
+                                 }}</td>
                                  <td v-if="filterType !== 'OBSERVER'"
                                     class="px-4 py-2 text-xs font-bold text-text border-r border-border/50">{{
                                        marea.observador
                                     }}</td>
                                  <td class="px-4 py-2 text-right border-r border-border/50">
                                     <span
-                                       :class="['font-black text-sm tabular-nums', mode === 'CALENDAR' ? 'text-primary' : 'text-text']">
-                                       {{ mode === 'CALENDAR' ? marea.diasCalendario : marea.diasTotales }}
+                                       :class="['font-black text-sm tabular-nums', (mode === 'CALENDAR' || dialogPeriodLabel) ? 'text-primary' : 'text-text']">
+                                       {{ dialogPeriodLabel ? marea.diasPeriodo : (mode === 'CALENDAR' ?
+                                          marea.diasCalendario :
+                                       marea.diasTotales) }}
                                     </span>
                                  </td>
-                                 <td v-if="mode === 'CALENDAR'" class="px-4 py-2 text-right">
+                                 <td v-if="mode === 'CALENDAR' && !dialogPeriodLabel" class="px-4 py-2 text-right">
                                     <span class="font-bold text-xs text-text-muted tabular-nums opacity-80">{{
                                        marea.diasTotales
-                                       }}</span>
+                                    }}</span>
                                  </td>
                               </tr>
                            </tbody>
@@ -620,7 +622,7 @@ const filterValue = ref<string | null>(null);
 
 const stats = ref<DashboardStats | null>(null);
 const distributionData = ref<MareaDistributionItem[]>([]);
-const coverageData = ref<{ month: number, count: number, fleets: { name: string, count: number }[] }[]>([]);
+const coverageData = ref<{ month: number, count: number, days: number, fleets: { name: string, count: number, days: number }[] }[]>([]);
 const selectedDistributionFishery = ref<string>('ALL');
 const selectedCoverageFishery = ref<string>('ALL');
 const loading = ref(false);
@@ -706,6 +708,23 @@ const filteredDialogItems = computed(() => {
    return items;
 });
 const dialogTitle = ref('');
+const isMonthlyDetail = computed(() => {
+   if (!filterType.value && startDate.value && endDate.value) {
+      // If it's coverage, it usually has no filterType but has specific dates
+      return true;
+   }
+   return false;
+});
+
+const dialogPeriodLabel = computed(() => {
+   if (!startDate.value || !endDate.value) return '';
+   const start = new Date(startDate.value + 'T12:00:00');
+   const end = new Date(endDate.value + 'T12:00:00');
+   if (start.getMonth() === end.getMonth() && start.getFullYear() === end.getFullYear()) {
+      return start.toLocaleDateString('es-AR', { month: 'long' });
+   }
+   return '';
+});
 
 // Ranking Full View State
 const rankingModalOpen = ref(false);
@@ -1416,33 +1435,52 @@ const fisheryProfileOptions = computed(() => ({
    }
 }));
 
-// 7. Monthly Coverage (Unique Vessels)
-const coverageSeries = computed(() => [{
-   name: 'Buques Únicos',
-   data: coverageData.value.map(c => c.count)
-}]);
+// 7. Monthly Coverage (Unique Vessels & Effort)
+const coverageSeries = computed(() => [
+   {
+      name: 'Buques Únicos',
+      type: 'bar',
+      data: coverageData.value.map(c => c.count)
+   },
+   {
+      name: 'Días de Marea',
+      type: 'line',
+      data: coverageData.value.map(c => c.days)
+   }
+]);
 
 const coverageChartOptions = computed(() => ({
    chart: {
-      type: 'bar',
+      type: 'line', // Base type for combo
+      stacked: false,
       toolbar: { show: false },
       events: {
          dataPointSelection: handleCoverageClick
       }
    },
-   colors: ['#10b981'], // Emerald
+   stroke: {
+      width: [0, 3], // 0 for bars, 3 for line
+      curve: 'smooth'
+   },
+   colors: ['#10b981', '#3b82f6'], // Emerald (Vessels), Blue (Days)
    plotOptions: {
       bar: {
          borderRadius: 4,
-         columnWidth: '60%',
-         dataLabels: { position: 'top' }
+         columnWidth: '50%',
       }
+   },
+   markers: {
+      size: 4,
+      strokeWidth: 2,
+      strokeColors: '#ffffff',
+      hover: { size: 6 }
    },
    dataLabels: {
       enabled: true,
+      enabledOnSeries: [0], // Only on bars
       formatter: (val: number) => val > 0 ? val : '',
-      offsetY: -20,
-      style: { fontSize: '10px', colors: ['var(--color-text)'] }
+      offsetY: -10,
+      style: { fontSize: '9px', colors: ['var(--color-text)'] }
    },
    xaxis: {
       categories: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'],
@@ -1450,46 +1488,86 @@ const coverageChartOptions = computed(() => ({
       axisBorder: { show: false },
       axisTicks: { show: false }
    },
-   yaxis: {
-      axisBorder: { show: false },
-      axisTicks: { show: false },
-      labels: { show: true },
-      title: { text: 'Cantidad de Buques' }
+   yaxis: [
+      {
+         title: {
+            text: 'Buques Únicos',
+            style: { color: '#10b981', fontWeight: 900 }
+         },
+         labels: { style: { colors: '#10b981' } },
+         min: 0,
+         forceNiceScale: true
+      },
+      {
+         opposite: true,
+         title: {
+            text: 'Días de Marea',
+            style: { color: '#3b82f6', fontWeight: 900 }
+         },
+         labels: { style: { colors: '#3b82f6' } },
+         min: 0,
+         forceNiceScale: true
+      }
+   ],
+   legend: {
+      show: true,
+      position: 'top',
+      horizontalAlign: 'right',
+      fontSize: '10px',
+      fontFamily: 'inherit',
+      fontWeight: 600,
+      itemMargin: { horizontal: 10, vertical: 0 },
+      markers: { radius: 12 }
    },
    tooltip: {
+      shared: true,
+      intersect: false,
       custom: ({ series, seriesIndex, dataPointIndex, w }: any) => {
-         const val = series[seriesIndex][dataPointIndex];
-         const label = w.config.xaxis.categories[dataPointIndex]; // Correctly get the month name
-         const color = w.globals.colors[seriesIndex];
+         const label = w.config.xaxis.categories[dataPointIndex];
          const monthData = coverageData.value[dataPointIndex];
+         const vessels = series[0][dataPointIndex];
+         const days = series[1][dataPointIndex];
 
          return `
-            <div class="px-4 py-3 bg-surface/95 backdrop-blur-md text-text border border-border/50 rounded-2xl flex flex-col gap-3 shadow-2xl ring-1 ring-black/5 min-w-[200px]">
-               <div class="flex items-center gap-2 border-b border-border/30 pb-2">
-                  <span class="w-1.5 h-3 rounded-full" style="background:${color}"></span>
-                  <span class="text-[10px] text-text-muted uppercase font-black tracking-widest">${label}</span>
+            <div class="px-4 py-4 bg-surface/90 backdrop-blur-xl text-text border border-border/50 rounded-2xl flex flex-col gap-3 shadow-2xl ring-1 ring-black/10 min-w-[240px]">
+               <div class="flex items-center justify-between border-b border-border/30 pb-2 mb-1">
+                  <span class="text-[10px] text-text-muted uppercase font-black tracking-widest">${label} ${year.value}</span>
+                  <div class="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[9px] font-black uppercase">Cobertura</div>
                </div>
                
+               <div class="grid grid-cols-2 gap-3 pb-2 border-b border-border/20">
+                  <div class="flex flex-col">
+                     <span class="text-[9px] font-black text-emerald-500 uppercase tracking-tighter">Buques Únicos</span>
+                     <span class="text-lg font-black tabular-nums">${vessels}</span>
+                  </div>
+                  <div class="flex flex-col border-l border-border/20 pl-3">
+                     <span class="text-[9px] font-black text-blue-500 uppercase tracking-tighter">Días de Marea</span>
+                     <span class="text-lg font-black tabular-nums">${days}</span>
+                  </div>
+               </div>
+
                ${monthData?.fleets && monthData.fleets.length > 0 ? `
-                  <div class="flex flex-col gap-2 py-1">
+                  <div class="flex flex-col gap-1.5 py-1">
+                     <span class="text-[8px] font-black text-text-muted uppercase tracking-widest mb-1 opacity-60">Desglose por Flota</span>
                      ${monthData.fleets.map(f => `
-                        <div class="flex items-center justify-between gap-4">
-                           <div class="flex items-center gap-1.5">
-                              <div class="w-1.5 h-1.5 rounded-full" style="background:${getFleetColor(f.name)}"></div>
+                        <div class="flex items-center justify-between gap-4 py-0.5">
+                           <div class="flex items-center gap-2">
+                              <div class="w-1.5 h-1.5 rounded-full shadow-sm" style="background:${getFleetColor(f.name)}"></div>
                               <span class="text-[9px] font-bold text-text-muted uppercase">${f.name}</span>
                            </div>
-                           <span class="text-[10px] font-black text-text">${f.count} <span class="text-[8px] opacity-60">buques</span></span>
+                           <div class="flex items-center gap-2">
+                              <span class="text-[10px] font-black text-text tabular-nums">${f.count} <span class="text-[8px] opacity-40 font-bold">B</span></span>
+                              <span class="h-2 w-px bg-border/30"></span>
+                              <span class="text-[10px] font-black text-text/80 tabular-nums">${f.days} <span class="text-[8px] opacity-40 font-bold">D</span></span>
+                           </div>
                         </div>
                      `).join('')}
                   </div>
                ` : ''}
 
-               <div class="flex items-center justify-between pt-2 border-t border-border/30">
-                  <span class="text-[9px] font-black text-primary uppercase">Total Buques Únicos</span>
-                  <div class="flex items-baseline gap-1">
-                     <span class="text-xs font-black text-text tabular-nums">${val}</span>
-                     <span class="text-[9px] font-bold text-text-muted">buques</span>
-                  </div>
+               <div class="pt-2 border-t border-border/30 flex justify-between items-center opacity-60">
+                   <span class="text-[8px] font-black italic uppercase">Click para ver detalle</span>
+                   <span class="text-[10px]">📊</span>
                </div>
             </div>
          `;

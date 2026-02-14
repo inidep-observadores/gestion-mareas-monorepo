@@ -164,9 +164,10 @@ describe('StatsService', () => {
                     buque: { tipoFlota: { nombre: 'Fresquero' } },
                     etapas: [
                         {
-                            fechaZarpada: new Date('2024-01-05'),
-                            fechaArribo: new Date('2024-01-15'),
-                            pesqueria: { nombre: 'Merluza' }
+                            fechaZarpada: new Date('2024-01-01'),
+                            fechaArribo: new Date('2024-01-10'),
+                            pesqueria: { nombre: 'Merluza' },
+                            observadores: []
                         }
                     ],
                     estadoActual: { codigo: 'PROTOCOLIZADA' }
@@ -179,7 +180,8 @@ describe('StatsService', () => {
                         {
                             fechaZarpada: new Date('2024-01-05'),
                             fechaArribo: new Date('2024-01-15'),
-                            pesqueria: { nombre: 'Calamar' } // Different fishery
+                            pesqueria: { nombre: 'Calamar' }, // Different fishery
+                            observadores: []
                         }
                     ],
                     estadoActual: { codigo: 'PROTOCOLIZADA' }
@@ -190,12 +192,9 @@ describe('StatsService', () => {
             const result = await service.getUniqueVesselsCount(year, 'CALENDAR', true, true, true, undefined, undefined, 'Merluza');
 
             expect(result.count).toBe(1);
-            expect(result.monthly).toHaveLength(12);
             expect(result.monthly[0].count).toBe(1); // Jan
-            expect(result.monthly[0].fleets).toContainEqual({ name: 'Fresquero', count: 1 });
-            expect(result.monthly[1].count).toBe(0); // Feb
-            // Verify Prisma was called with shared where clause logic (at least basics)
-            expect(mockPrisma.marea.findMany).toHaveBeenCalled();
+            expect(result.monthly[0].days).toBe(10); // 1 to 10
+            expect(result.monthly[0].fleets[0]).toEqual({ name: 'Fresquero', count: 1, days: 10 });
         });
 
         it('should handle case-insensitive and partial matches for fishery', async () => {
@@ -209,7 +208,8 @@ describe('StatsService', () => {
                         {
                             fechaZarpada: new Date('2024-01-05'),
                             fechaArribo: new Date('2024-01-15'),
-                            pesqueria: { nombre: 'LANGOSTINO COSTEÑO' }
+                            pesqueria: { nombre: 'LANGOSTINO COSTEÑO' },
+                            observadores: []
                         }
                     ]
                 }
@@ -218,6 +218,7 @@ describe('StatsService', () => {
             const result = await service.getUniqueVesselsCount(year, 'CALENDAR', true, true, true, undefined, undefined, 'langostino');
             expect(result.count).toBe(1);
             expect(result.monthly[0].count).toBe(1);
+            expect(result.monthly[0].days).toBe(11); // 5 to 15 is 11 days
             expect(result.monthly[0].fleets[0].name).toBe('Fresquero');
         });
 
@@ -232,7 +233,8 @@ describe('StatsService', () => {
                         {
                             fechaZarpada: new Date('2024-01-05'),
                             fechaArribo: new Date('2024-01-15'),
-                            pesqueria: { nombre: 'Merluza' }
+                            pesqueria: { nombre: 'Merluza' },
+                            observadores: []
                         }
                     ]
                 }
@@ -266,29 +268,37 @@ describe('StatsService', () => {
                     etapas: [
                         {
                             fechaZarpada: new Date('2024-02-01'),
-                            fechaArribo: new Date('2024-02-15'),
-                            pesqueria: { nombre: 'Merluza' }
+                            fechaArribo: new Date('2024-03-10'),
+                            pesqueria: { nombre: 'Merluza' },
+                            observadores: []
                         }
                     ]
                 }
             ]);
 
-            const result = await service.getUniqueVesselsCount(year, 'CALENDAR', true, true, true);
+            const result = await service.getUniqueVesselsCount(year, 'CALENDAR', true, true);
 
             expect(result.count).toBe(2);
             // Jan: vessel-1 (Fresquero)
             expect(result.monthly[0].count).toBe(1);
-            expect(result.monthly[0].fleets).toContainEqual({ name: 'Fresquero', count: 1 });
+            expect(result.monthly[0].days).toBe(17); // 15-31
+            expect(result.monthly[0].fleets).toContainEqual({ name: 'Fresquero', count: 1, days: 17 });
 
             // Feb: vessel-1 (Fresquero), vessel-2 (Congelador)
             expect(result.monthly[1].count).toBe(2);
+            expect(result.monthly[1].days).toBe(29); // 29 days in Feb 2024
             expect(result.monthly[1].fleets).toHaveLength(2);
-            expect(result.monthly[1].fleets).toContainEqual({ name: 'Fresquero', count: 1 });
-            expect(result.monthly[1].fleets).toContainEqual({ name: 'Congelador', count: 1 });
+            expect(result.monthly[1].fleets).toContainEqual({ name: 'Fresquero', count: 1, days: 29 });
+            expect(result.monthly[1].fleets).toContainEqual({ name: 'Congelador', count: 1, days: 29 });
 
-            // Mar: vessel-1 (Fresquero)
-            expect(result.monthly[2].count).toBe(1);
-            expect(result.monthly[2].fleets[0].name).toBe('Fresquero');
+            // Mar: vessel-1 (Fresquero), vessel-2 (Congelador)
+            expect(result.monthly[2].count).toBe(2);
+            expect(result.monthly[2].days).toBe(10); // 1-10
+            expect(result.monthly[2].fleets).toHaveLength(2);
+            expect(result.monthly[2].fleets).toContainEqual({ name: 'Fresquero', count: 1, days: 10 });
+            expect(result.monthly[2].fleets).toContainEqual({ name: 'Congelador', count: 1, days: 10 });
+
+            expect(result.monthly[3].count).toBe(0); // Apr
         });
     });
 

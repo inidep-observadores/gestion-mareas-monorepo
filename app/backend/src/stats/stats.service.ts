@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { DateUtils } from '../common/utils/date.utils';
 import { Prisma } from '@prisma/client';
-import { StatsDetailItem, DashboardStats, MareaDistributionItem } from './interfaces/dashboard.interface';
+import { StatsDetailItem, DashboardStats, MareaDistributionItem, UniqueVesselsResult } from './interfaces/dashboard.interface';
 import { MareaUtils } from '../common/utils/marea.utils';
 import { TipoMarea } from '../mareas/mareas.constants';
 import * as ExcelJS from 'exceljs';
@@ -483,9 +483,9 @@ export class StatsService {
             const overallStart = m.etapas[0]?.fechaZarpada;
             const overallEnd = m.etapas[m.etapas.length - 1]?.fechaArribo || (m.estadoActual?.codigo === 'EN_EJECUCION' ? DateUtils.getNow() : null);
 
-            let days = 0;
             let calendarDays = 0;
             let totalMareaDays = 0;
+            let diasPeriodo = 0;
 
             const now = DateUtils.getNow(true);
             const intervals = m.etapas.map(e => ({
@@ -495,11 +495,12 @@ export class StatsService {
 
             const calculationLimit = yearEnd < now ? yearEnd : now;
             const periodRange = mode === 'CALENDAR' ? { start: yearStart, end: yearEnd } : undefined;
+            const strictPeriodRange = { start: yearStart, end: yearEnd };
 
             if (daysCalculationMode === 'SHIP') {
                 calendarDays = DateUtils.calculateUniqueDays(intervals, periodRange, calculationLimit);
                 totalMareaDays = DateUtils.calculateUniqueDays(intervals, undefined, now);
-                days = mode === 'CALENDAR' ? calendarDays : totalMareaDays;
+                diasPeriodo = DateUtils.calculateUniqueDays(intervals, strictPeriodRange, calculationLimit);
             } else {
                 // OBSERVER Mode
                 // Case A: Filtered by a specific observer -> Show ONLY their individual contribution
@@ -524,10 +525,12 @@ export class StatsService {
 
                     calendarDays = DateUtils.calculateUniqueDays(obsIntervals, periodRange, calculationLimit);
                     totalMareaDays = DateUtils.calculateUniqueDays(obsIntervals, undefined, now);
+                    diasPeriodo = DateUtils.calculateUniqueDays(obsIntervals, strictPeriodRange, calculationLimit);
                 } else {
                     // Case B: General Detail (by Fishery/Fleet/All) -> Show total EFFORT (sum of all unique contributions)
                     let effortCal = DateUtils.calculateUniqueDays(intervals, periodRange, calculationLimit);
                     let effortTotal = DateUtils.calculateUniqueDays(intervals, undefined, now);
+                    let effortPeriodo = DateUtils.calculateUniqueDays(intervals, strictPeriodRange, calculationLimit);
 
                     const additionalsMap: Record<string, Array<{ start: Date, end: Date }>> = {};
                     m.etapas.forEach(etapa => {
@@ -543,16 +546,19 @@ export class StatsService {
                         });
                     });
 
-                    Object.values(additionalsMap).forEach(obsIntervals => {
-                        effortCal += DateUtils.calculateUniqueDays(obsIntervals, periodRange, calculationLimit);
-                        effortTotal += DateUtils.calculateUniqueDays(obsIntervals, undefined, now);
+                    Object.values(additionalsMap).forEach(obsInts => {
+                        effortCal += DateUtils.calculateUniqueDays(obsInts, periodRange, calculationLimit);
+                        effortTotal += DateUtils.calculateUniqueDays(obsInts, undefined, now);
+                        effortPeriodo += DateUtils.calculateUniqueDays(obsInts, strictPeriodRange, calculationLimit);
                     });
 
                     calendarDays = effortCal;
                     totalMareaDays = effortTotal;
+                    diasPeriodo = effortPeriodo;
                 }
-                days = mode === 'CALENDAR' ? calendarDays : totalMareaDays;
             }
+
+            const days = mode === 'CALENDAR' ? calendarDays : totalMareaDays;
 
             return {
                 id: m.id,
@@ -570,6 +576,7 @@ export class StatsService {
                 diasContabilizados: days,
                 diasCalendario: calendarDays,
                 diasTotales: totalMareaDays,
+                diasPeriodo: diasPeriodo,
                 fechaInicio: overallStart,
                 fechaFin: overallEnd
             };
@@ -937,14 +944,7 @@ export class StatsService {
         startDate?: string,
         endDate?: string,
         fisheryName?: string,
-    ): Promise<{
-        count: number,
-        monthly: {
-            month: number,
-            count: number,
-            fleets: { name: string, count: number }[]
-        }[]
-    }> {
+    ): Promise<UniqueVesselsResult> {
         const yearStart = startDate ? new Date(startDate) : new Date(Date.UTC(year, 0, 1, 0, 0, 0, 0));
         const yearEnd = endDate ? new Date(endDate) : new Date(Date.UTC(year, 11, 31, 23, 59, 59, 999));
 
@@ -974,9 +974,9 @@ export class StatsService {
         const now = DateUtils.getNow(true);
         const uniqueVesselsTotal = new Set<string>();
 
-        // Track vessels per month and per fleet within each month
-        // monthlyVesselsMap[monthIndex][fleetName] = Set of buoyIds
-        const monthlyVesselsMap = new Array(12).fill(null).map(() => ({} as Record<string, Set<string>>));
+        // Track vessels and days per month/fleet
+        // monthlyVesselsMap[monthIndex][fleetName] = { vessels: Set<string>, days: number }
+        const monthlyDataMap = new Array(12).fill(null).map(() => ({} as Record<string, { vessels: Set<string>, days: number }>));
 
         const effectivePeriodEnd = yearEnd < now ? yearEnd : now;
 
@@ -992,58 +992,57 @@ export class StatsService {
                 let zarpada = new Date(zarpadaOriginal);
                 let arribo = arriboOriginal ? new Date(arriboOriginal) : null;
 
-                // Si estamos en modo CALENDAR, recortamos los días fuera del año seleccionado
                 if (mode === 'CALENDAR') {
                     if (zarpada < yearStart) zarpada = new Date(yearStart);
                     if (arribo && arribo > yearEnd) arribo = new Date(yearEnd);
                 }
 
-                // Verificar solapamiento tras recorte
                 if (zarpada > effectivePeriodEnd || (arribo && arribo < yearStart)) continue;
 
-                // Validar pesquería si hay filtro
                 if (fisheryName) {
                     const etapaPesqueria = etapa.pesqueria?.nombre || 'Desconocida';
                     if (!etapaPesqueria.toUpperCase().includes(fisheryName.toUpperCase())) continue;
                 }
 
-                // Esta etapa es válida. Agregamos el buque al total
                 uniqueVesselsTotal.add(marea.buqueId);
 
-                // Determinar en qué meses este buque tuvo actividad para esta etapa DENTRO del periodo
-                const startMonthDate = zarpada > yearStart ? zarpada : yearStart;
-                const endMonthDate = (arribo && arribo < effectivePeriodEnd) ? arribo : effectivePeriodEnd;
+                // Determine monthly activity and sum days
+                const s = zarpada > yearStart ? zarpada : yearStart;
+                const e = (arribo && arribo < effectivePeriodEnd) ? arribo : effectivePeriodEnd;
 
-                // Iterar sobre los meses que abarca esta etapa recortada
-                let current = new Date(Date.UTC(startMonthDate.getUTCFullYear(), startMonthDate.getUTCMonth(), 1));
-                const last = new Date(Date.UTC(endMonthDate.getUTCFullYear(), endMonthDate.getUTCMonth(), 1));
+                let cursor = new Date(Date.UTC(s.getUTCFullYear(), s.getUTCMonth(), s.getUTCDate()));
+                const last = new Date(Date.UTC(e.getUTCFullYear(), e.getUTCMonth(), e.getUTCDate()));
 
-                while (current <= last) {
-                    if (current.getUTCFullYear() === year) {
-                        const monthIdx = current.getUTCMonth();
-                        if (!monthlyVesselsMap[monthIdx][fleetName]) {
-                            monthlyVesselsMap[monthIdx][fleetName] = new Set<string>();
+                while (cursor <= last) {
+                    if (cursor.getUTCFullYear() === year) {
+                        const monthIdx = cursor.getUTCMonth();
+                        if (!monthlyDataMap[monthIdx][fleetName]) {
+                            monthlyDataMap[monthIdx][fleetName] = { vessels: new Set<string>(), days: 0 };
                         }
-                        monthlyVesselsMap[monthIdx][fleetName].add(marea.buqueId);
+                        monthlyDataMap[monthIdx][fleetName].vessels.add(marea.buqueId);
+                        monthlyDataMap[monthIdx][fleetName].days++;
                     }
-                    current.setUTCMonth(current.getUTCMonth() + 1);
+                    cursor.setUTCDate(cursor.getUTCDate() + 1);
                 }
             }
         }
 
         return {
             count: uniqueVesselsTotal.size,
-            monthly: monthlyVesselsMap.map((fleetMap, index) => {
+            monthly: monthlyDataMap.map((fleetMap, index) => {
                 const monthlySet = new Set<string>();
-                const fleetsCountArr = Object.entries(fleetMap).map(([name, set]) => {
-                    set.forEach(id => monthlySet.add(id));
-                    return { name, count: set.size };
+                let totalMonthDays = 0;
+                const fleetsArr = Object.entries(fleetMap).map(([name, data]) => {
+                    data.vessels.forEach(id => monthlySet.add(id));
+                    totalMonthDays += data.days;
+                    return { name, count: data.vessels.size, days: data.days };
                 });
 
                 return {
                     month: index + 1,
                     count: monthlySet.size,
-                    fleets: fleetsCountArr.sort((a, b) => b.count - a.count)
+                    days: totalMonthDays,
+                    fleets: fleetsArr.sort((a, b) => b.count - a.count)
                 };
             })
         };

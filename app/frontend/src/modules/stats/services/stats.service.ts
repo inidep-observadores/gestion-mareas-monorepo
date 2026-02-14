@@ -29,6 +29,7 @@ export interface StatsDetailItem {
     diasContabilizados: number;
     diasCalendario: number;
     diasTotales: number;
+    diasPeriodo: number; // New field
     fechaInicio: string;
     fechaFin: string | null;
 }
@@ -191,7 +192,8 @@ export const statsService = {
         monthly: {
             month: number,
             count: number,
-            fleets: { name: string, count: number }[]
+            days: number,
+            fleets: { name: string, count: number, days: number }[]
         }[]
     }> {
         const params = new URLSearchParams({
@@ -212,7 +214,8 @@ export const statsService = {
             monthly: {
                 month: number,
                 count: number,
-                fleets: { name: string, count: number }[]
+                days: number,
+                fleets: { name: string, count: number, days: number }[]
             }[]
         }>(`/stats/vessels-count?${params.toString()}`);
         return response.data;

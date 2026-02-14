@@ -27,8 +27,19 @@ export interface StatsDetailItem {
     diasContabilizados: number;
     diasCalendario: number;
     diasTotales: number;
+    diasPeriodo: number;
     fechaInicio: Date | string;
     fechaFin: Date | string | null;
+}
+
+export interface UniqueVesselsResult {
+    count: number;
+    monthly: {
+        month: number;
+        count: number;
+        days: number;
+        fleets: { name: string; count: number; days: number }[];
+    }[];
 }
 export interface MareaDistributionItem {
     mareaId: string;
