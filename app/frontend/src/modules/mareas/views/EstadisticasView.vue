@@ -135,7 +135,19 @@
                <div class="col-span-12">
                   <ChartWidget title="Cobertura de Buques" subtitle="Cantidad de buques únicos cubiertos por mes"
                      type="bar" :series="coverageSeries" :options="coverageChartOptions" allow-download
-                     @download="handleDownload('Cobertura_Buques_Mensual')" />
+                     @download="handleDownload('Cobertura_Buques_Mensual')">
+                     <template #header-action>
+                        <div class="flex items-center gap-2">
+                           <span class="text-[10px] font-black text-text-muted uppercase tracking-widest">Filtrar
+                              Pesquería:</span>
+                           <select v-model="selectedCoverageFishery"
+                              class="bg-surface border border-border rounded-lg px-3 py-1 text-xs font-bold text-text focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none">
+                              <option value="ALL">Todas las Pesquerías</option>
+                              <option v-for="f in ganttFisheries" :key="f" :value="f">{{ f }}</option>
+                           </select>
+                        </div>
+                     </template>
+                  </ChartWidget>
                </div>
             </section>
 
@@ -221,7 +233,7 @@
                               <div class="flex items-center gap-2 mb-2">
                                  <span class="font-black text-sm text-text tabular-nums tracking-tighter">{{
                                     marea.id_marea
-                                    }}</span>
+                                 }}</span>
                                  <span
                                     class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest bg-secondary/10 text-secondary border border-secondary/20">{{
                                        marea.estado }}</span>
@@ -369,7 +381,7 @@
                                  <td class="px-4 py-2 border-r border-border/50">
                                     <div class="flex flex-col">
                                        <span class="font-black text-xs text-text tabular-nums">{{ marea.id_marea
-                                          }}</span>
+                                       }}</span>
                                        <span class="text-[9px] font-bold text-text-muted uppercase tracking-tighter">{{
                                           marea.estado }}</span>
                                     </div>
@@ -382,7 +394,7 @@
                                  </td>
                                  <td class="px-4 py-2 text-xs font-bold text-text border-r border-border/50">{{
                                     marea.pesqueria
-                                    }}</td>
+                                 }}</td>
                                  <td v-if="filterType !== 'OBSERVER'"
                                     class="px-4 py-2 text-xs font-bold text-text border-r border-border/50">{{
                                        marea.observador
@@ -396,7 +408,7 @@
                                  <td v-if="mode === 'CALENDAR'" class="px-4 py-2 text-right">
                                     <span class="font-bold text-xs text-text-muted tabular-nums opacity-80">{{
                                        marea.diasTotales
-                                       }}</span>
+                                    }}</span>
                                  </td>
                               </tr>
                            </tbody>
@@ -610,6 +622,7 @@ const stats = ref<DashboardStats | null>(null);
 const distributionData = ref<MareaDistributionItem[]>([]);
 const coverageData = ref<{ month: number, count: number }[]>([]);
 const selectedDistributionFishery = ref<string>('ALL');
+const selectedCoverageFishery = ref<string>('ALL');
 const loading = ref(false);
 
 const dynamicChartHeight = computed(() => {
@@ -797,7 +810,8 @@ const fetchData = async () => {
             includeOutOfPeriod.value,
             includeCampaigns.value,
             startDate.value || undefined,
-            endDate.value || undefined
+            endDate.value || undefined,
+            selectedCoverageFishery.value === 'ALL' ? undefined : selectedCoverageFishery.value
          )
       ]);
       stats.value = newStats;
@@ -995,7 +1009,7 @@ const ganttChartOptions = computed(() => ({
 }));
 
 // --- Watchers ---
-watch([year, mode, protocolizedOnly, includeOutOfPeriod, daysCalculationMode, includeCampaigns, startDate, endDate], () => {
+watch([year, mode, protocolizedOnly, includeOutOfPeriod, daysCalculationMode, includeCampaigns, startDate, endDate, selectedCoverageFishery], () => {
    fetchData();
 });
 
