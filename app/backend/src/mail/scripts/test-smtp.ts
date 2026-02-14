@@ -3,11 +3,12 @@ import * as nodemailer from 'nodemailer';
 import * as dotenv from 'dotenv';
 import { join } from 'path';
 
-// Cargar .env desde la raíz del backend
-dotenv.config({ path: join(__dirname, '../.env') });
+// Cargar .env desde el directorio de trabajo actual (raíz del backend)
+// Esto funciona tanto en desarrollo (ts-node) como en producción (node dist/...)
+dotenv.config({ path: join(process.cwd(), '.env') });
 
 async function testSMTP() {
-    console.log('--- Iniciando Prueba de Diagnóstico SMTP ---');
+    console.log('--- Iniciando Prueba de Diagnóstico SMTP (Versión Compilable) ---');
 
     const config = {
         host: process.env.SMTP_HOST,
@@ -39,11 +40,10 @@ async function testSMTP() {
         console.log('Enviando email de prueba...');
         const info = await transporter.sendMail({
             from: process.env.SMTP_FROM,
-            // to: config.auth.user, // Enviar a sí mismo para prueba
             to: "danieldt2000@hotmail.com",
-            subject: 'Prueba de Diagnóstico Sitema SIGMA',
-            text: 'Este es un correo de prueba enviado por la utilidad de diagnóstico SMTP.',
-            html: '<b>Este es un correo de prueba</b> enviado por la utilidad de diagnóstico SMTP.',
+            subject: 'Prueba de Diagnóstico Sistema SIGMA',
+            text: 'Este es un correo de prueba enviado por la utilidad de diagnóstico SMTP compilada.',
+            html: '<b>Este es un correo de prueba</b> enviado por la utilidad de diagnóstico SMTP compilada.',
         });
 
         console.log('✅ Email enviado con éxito!');
