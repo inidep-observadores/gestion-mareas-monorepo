@@ -130,6 +130,15 @@
                </div>
             </section>
 
+            <!-- ROW 6: MONTHLY COVERAGE (UNIQUE VESSELS) -->
+            <section class="grid grid-cols-12 gap-8">
+               <div class="col-span-12">
+                  <ChartWidget title="Cobertura de Buques" subtitle="Cantidad de buques únicos cubiertos por mes"
+                     type="bar" :series="coverageSeries" :options="coverageChartOptions" allow-download
+                     @download="handleDownload('Cobertura_Buques_Mensual')" />
+               </div>
+            </section>
+
          </div>
 
          <!-- Loading State -->
@@ -212,7 +221,7 @@
                               <div class="flex items-center gap-2 mb-2">
                                  <span class="font-black text-sm text-text tabular-nums tracking-tighter">{{
                                     marea.id_marea
-                                 }}</span>
+                                    }}</span>
                                  <span
                                     class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest bg-secondary/10 text-secondary border border-secondary/20">{{
                                        marea.estado }}</span>
@@ -360,7 +369,7 @@
                                  <td class="px-4 py-2 border-r border-border/50">
                                     <div class="flex flex-col">
                                        <span class="font-black text-xs text-text tabular-nums">{{ marea.id_marea
-                                       }}</span>
+                                          }}</span>
                                        <span class="text-[9px] font-bold text-text-muted uppercase tracking-tighter">{{
                                           marea.estado }}</span>
                                     </div>
@@ -373,7 +382,7 @@
                                  </td>
                                  <td class="px-4 py-2 text-xs font-bold text-text border-r border-border/50">{{
                                     marea.pesqueria
-                                 }}</td>
+                                    }}</td>
                                  <td v-if="filterType !== 'OBSERVER'"
                                     class="px-4 py-2 text-xs font-bold text-text border-r border-border/50">{{
                                        marea.observador
@@ -387,7 +396,7 @@
                                  <td v-if="mode === 'CALENDAR'" class="px-4 py-2 text-right">
                                     <span class="font-bold text-xs text-text-muted tabular-nums opacity-80">{{
                                        marea.diasTotales
-                                    }}</span>
+                                       }}</span>
                                  </td>
                               </tr>
                            </tbody>
@@ -599,6 +608,7 @@ const filterValue = ref<string | null>(null);
 
 const stats = ref<DashboardStats | null>(null);
 const distributionData = ref<MareaDistributionItem[]>([]);
+const coverageData = ref<{ month: number, count: number }[]>([]);
 const selectedDistributionFishery = ref<string>('ALL');
 const loading = ref(false);
 
@@ -760,7 +770,7 @@ const criteriaList = computed(() => {
 const fetchData = async () => {
    loading.value = true;
    try {
-      const [newStats, distribution] = await Promise.all([
+      const [newStats, distribution, coverage] = await Promise.all([
          statsService.getDashboardStats(
             year.value,
             mode.value,
@@ -779,10 +789,20 @@ const fetchData = async () => {
             includeCampaigns.value,
             startDate.value || undefined,
             endDate.value || undefined
+         ),
+         statsService.getUniqueVesselsCount(
+            year.value,
+            mode.value,
+            !protocolizedOnly.value,
+            includeOutOfPeriod.value,
+            includeCampaigns.value,
+            startDate.value || undefined,
+            endDate.value || undefined
          )
       ]);
       stats.value = newStats;
       distributionData.value = distribution;
+      coverageData.value = coverage.monthly;
    } catch (error) {
       console.error('Error fetching stats:', error);
       toast.error('Error al cargar estadísticas');
@@ -1362,6 +1382,51 @@ const fisheryProfileOptions = computed(() => ({
              </div>
            </div>
          `;
+      }
+   }
+}));
+
+// 7. Monthly Coverage (Unique Vessels)
+const coverageSeries = computed(() => [{
+   name: 'Buques Únicos',
+   data: coverageData.value.map(c => c.count)
+}]);
+
+const coverageChartOptions = computed(() => ({
+   chart: {
+      type: 'bar',
+      toolbar: { show: true }
+   },
+   colors: ['#10b981'], // Emerald
+   plotOptions: {
+      bar: {
+         borderRadius: 4,
+         columnWidth: '60%',
+         dataLabels: { position: 'top' }
+      }
+   },
+   dataLabels: {
+      enabled: true,
+      formatter: (val: number) => val > 0 ? val : '',
+      offsetY: -20,
+      style: { fontSize: '10px', colors: ['var(--color-text)'] }
+   },
+   xaxis: {
+      categories: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'],
+      position: 'bottom',
+      axisBorder: { show: false },
+      axisTicks: { show: false }
+   },
+   yaxis: {
+      axisBorder: { show: false },
+      axisTicks: { show: false },
+      labels: { show: true },
+      title: { text: 'Cantidad de Buques' }
+   },
+   tooltip: {
+      theme: 'dark',
+      y: {
+         formatter: (val: number) => `${val} buques únicos`
       }
    }
 }));

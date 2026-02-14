@@ -155,6 +155,9 @@ describe('StatsService', () => {
             const result = await service.getUniqueVesselsCount(year, 'CALENDAR', true, true, true, undefined, undefined, 'Merluza');
 
             expect(result.count).toBe(1);
+            expect(result.monthly).toHaveLength(12);
+            expect(result.monthly[0].count).toBe(1); // Jan
+            expect(result.monthly[1].count).toBe(0); // Feb
             // Verify Prisma was called with shared where clause logic (at least basics)
             expect(mockPrisma.marea.findMany).toHaveBeenCalled();
         });
@@ -177,6 +180,7 @@ describe('StatsService', () => {
 
             const result = await service.getUniqueVesselsCount(year, 'CALENDAR', true, true, true, undefined, undefined, 'langostino');
             expect(result.count).toBe(1);
+            expect(result.monthly[0].count).toBe(1);
         });
 
         it('should NOT count vessels if no stage matches the fishery in the period', async () => {
@@ -198,6 +202,32 @@ describe('StatsService', () => {
             // Filter by 'Calamar'
             const result = await service.getUniqueVesselsCount(year, 'CALENDAR', true, true, true, undefined, undefined, 'Calamar');
             expect(result.count).toBe(0);
+            expect(result.monthly.every(m => m.count === 0)).toBe(true);
+        });
+
+        it('should accurately distribute unique vessels across multiple months', async () => {
+            const year = 2024;
+            mockPrisma.marea.findMany.mockResolvedValue([
+                {
+                    id: 'm1',
+                    buqueId: 'vessel-1',
+                    etapas: [
+                        {
+                            fechaZarpada: new Date('2024-01-15'),
+                            fechaArribo: new Date('2024-03-10'),
+                            pesqueria: { nombre: 'Merluza' }
+                        }
+                    ]
+                }
+            ]);
+
+            const result = await service.getUniqueVesselsCount(year, 'CALENDAR', true, true, true);
+
+            expect(result.count).toBe(1);
+            expect(result.monthly[0].count).toBe(1); // Jan
+            expect(result.monthly[1].count).toBe(1); // Feb
+            expect(result.monthly[2].count).toBe(1); // Mar
+            expect(result.monthly[3].count).toBe(0); // Apr
         });
     });
 });

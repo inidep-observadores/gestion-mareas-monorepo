@@ -900,7 +900,7 @@ export class StatsService {
         startDate?: string,
         endDate?: string,
         fisheryName?: string,
-    ): Promise<{ count: number }> {
+    ): Promise<{ count: number, monthly: { month: number, count: number }[] }> {
         const yearStart = startDate ? new Date(startDate) : new Date(Date.UTC(year, 0, 1, 0, 0, 0, 0));
         const yearEnd = endDate ? new Date(endDate) : new Date(Date.UTC(year, 11, 31, 23, 59, 59, 999));
 
@@ -925,17 +925,22 @@ export class StatsService {
         });
 
         const now = DateUtils.getNow(true);
-        const uniqueVessels = new Set<string>();
+        const uniqueVesselsTotal = new Set<string>();
+
+        // Initialize monthly counts (0-11 for JS months)
+        const monthlyVessels = new Array(12).fill(null).map(() => new Set<string>());
 
         const effectivePeriodEnd = yearEnd < now ? yearEnd : now;
 
         for (const marea of mareas) {
-            let mareaMatches = false;
             for (const etapa of marea.etapas) {
                 if (!etapa.fechaZarpada) continue;
 
-                let zarpada = new Date(etapa.fechaZarpada);
-                let arribo = etapa.fechaArribo ? new Date(etapa.fechaArribo) : (marea.estadoActual?.codigo === 'EN_EJECUCION' ? now : null);
+                const zarpadaOriginal = new Date(etapa.fechaZarpada);
+                const arriboOriginal = etapa.fechaArribo ? new Date(etapa.fechaArribo) : (marea.estadoActual?.codigo === 'EN_EJECUCION' ? now : null);
+
+                let zarpada = new Date(zarpadaOriginal);
+                let arribo = arriboOriginal ? new Date(arriboOriginal) : null;
 
                 // Si estamos en modo CALENDAR, recortamos los días fuera del año seleccionado
                 if (mode === 'CALENDAR') {
@@ -946,23 +951,38 @@ export class StatsService {
                 // Verificar solapamiento tras recorte
                 if (zarpada > effectivePeriodEnd || (arribo && arribo < yearStart)) continue;
 
-                // Validar pesquería si hay filtro (NOMBRE de pesquería de la ETAPA)
+                // Validar pesquería si hay filtro
                 if (fisheryName) {
                     const etapaPesqueria = etapa.pesqueria?.nombre || 'Desconocida';
-                    // Comparación insensible a mayúsculas/minúsculas para mayor robustez
                     if (!etapaPesqueria.toUpperCase().includes(fisheryName.toUpperCase())) continue;
                 }
 
-                // Si llegamos aquí, esta etapa de este buque cumple los criterios
-                mareaMatches = true;
-                break;
-            }
+                // Esta etapa es válida. Agregamos el buque al total
+                uniqueVesselsTotal.add(marea.buqueId);
 
-            if (mareaMatches) {
-                uniqueVessels.add(marea.buqueId);
+                // Determinar en qué meses este buque tuvo actividad para esta etapa DENTRO del periodo
+                const startMonthDate = zarpada > yearStart ? zarpada : yearStart;
+                const endMonthDate = (arribo && arribo < effectivePeriodEnd) ? arribo : effectivePeriodEnd;
+
+                // Iterar sobre los meses que abarca esta etapa recortada
+                let current = new Date(Date.UTC(startMonthDate.getUTCFullYear(), startMonthDate.getUTCMonth(), 1));
+                const last = new Date(Date.UTC(endMonthDate.getUTCFullYear(), endMonthDate.getUTCMonth(), 1));
+
+                while (current <= last) {
+                    if (current.getUTCFullYear() === year) {
+                        monthlyVessels[current.getUTCMonth()].add(marea.buqueId);
+                    }
+                    current.setUTCMonth(current.getUTCMonth() + 1);
+                }
             }
         }
 
-        return { count: uniqueVessels.size };
+        return {
+            count: uniqueVesselsTotal.size,
+            monthly: monthlyVessels.map((set, index) => ({
+                month: index + 1,
+                count: set.size
+            }))
+        };
     }
 }
