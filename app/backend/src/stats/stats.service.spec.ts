@@ -161,6 +161,7 @@ describe('StatsService', () => {
                 {
                     id: 'm1',
                     buqueId: 'vessel-1',
+                    buque: { tipoFlota: { nombre: 'Fresquero' } },
                     etapas: [
                         {
                             fechaZarpada: new Date('2024-01-05'),
@@ -173,6 +174,7 @@ describe('StatsService', () => {
                 {
                     id: 'm2',
                     buqueId: 'vessel-2',
+                    buque: { tipoFlota: { nombre: 'Fresquero' } },
                     etapas: [
                         {
                             fechaZarpada: new Date('2024-01-05'),
@@ -190,6 +192,7 @@ describe('StatsService', () => {
             expect(result.count).toBe(1);
             expect(result.monthly).toHaveLength(12);
             expect(result.monthly[0].count).toBe(1); // Jan
+            expect(result.monthly[0].fleets).toContainEqual({ name: 'Fresquero', count: 1 });
             expect(result.monthly[1].count).toBe(0); // Feb
             // Verify Prisma was called with shared where clause logic (at least basics)
             expect(mockPrisma.marea.findMany).toHaveBeenCalled();
@@ -201,6 +204,7 @@ describe('StatsService', () => {
                 {
                     id: 'm1',
                     buqueId: 'vessel-1',
+                    buque: { tipoFlota: { nombre: 'Fresquero' } },
                     etapas: [
                         {
                             fechaZarpada: new Date('2024-01-05'),
@@ -214,6 +218,7 @@ describe('StatsService', () => {
             const result = await service.getUniqueVesselsCount(year, 'CALENDAR', true, true, true, undefined, undefined, 'langostino');
             expect(result.count).toBe(1);
             expect(result.monthly[0].count).toBe(1);
+            expect(result.monthly[0].fleets[0].name).toBe('Fresquero');
         });
 
         it('should NOT count vessels if no stage matches the fishery in the period', async () => {
@@ -222,6 +227,7 @@ describe('StatsService', () => {
                 {
                     id: 'm1',
                     buqueId: 'vessel-1',
+                    buque: { tipoFlota: { nombre: 'Fresquero' } },
                     etapas: [
                         {
                             fechaZarpada: new Date('2024-01-05'),
@@ -238,16 +244,29 @@ describe('StatsService', () => {
             expect(result.monthly.every(m => m.count === 0)).toBe(true);
         });
 
-        it('should accurately distribute unique vessels across multiple months', async () => {
+        it('should accurately distribute unique vessels across multiple months with fleet breakdown', async () => {
             const year = 2024;
             mockPrisma.marea.findMany.mockResolvedValue([
                 {
                     id: 'm1',
                     buqueId: 'vessel-1',
+                    buque: { tipoFlota: { nombre: 'Fresquero' } },
                     etapas: [
                         {
                             fechaZarpada: new Date('2024-01-15'),
                             fechaArribo: new Date('2024-03-10'),
+                            pesqueria: { nombre: 'Merluza' }
+                        }
+                    ]
+                },
+                {
+                    id: 'm2',
+                    buqueId: 'vessel-2',
+                    buque: { tipoFlota: { nombre: 'Congelador' } },
+                    etapas: [
+                        {
+                            fechaZarpada: new Date('2024-02-01'),
+                            fechaArribo: new Date('2024-02-15'),
                             pesqueria: { nombre: 'Merluza' }
                         }
                     ]
@@ -256,12 +275,20 @@ describe('StatsService', () => {
 
             const result = await service.getUniqueVesselsCount(year, 'CALENDAR', true, true, true);
 
-            expect(result.count).toBe(1);
-            expect(result.monthly[0].count).toBe(1); // Jan
-            expect(result.monthly[1].count).toBe(1); // Feb
-            expect(result.monthly[2].count).toBe(1); // Mar
-            expect(result.monthly[3].count).toBe(0); // Apr
+            expect(result.count).toBe(2);
+            // Jan: vessel-1 (Fresquero)
+            expect(result.monthly[0].count).toBe(1);
+            expect(result.monthly[0].fleets).toContainEqual({ name: 'Fresquero', count: 1 });
+
+            // Feb: vessel-1 (Fresquero), vessel-2 (Congelador)
+            expect(result.monthly[1].count).toBe(2);
+            expect(result.monthly[1].fleets).toHaveLength(2);
+            expect(result.monthly[1].fleets).toContainEqual({ name: 'Fresquero', count: 1 });
+            expect(result.monthly[1].fleets).toContainEqual({ name: 'Congelador', count: 1 });
+
+            // Mar: vessel-1 (Fresquero)
+            expect(result.monthly[2].count).toBe(1);
+            expect(result.monthly[2].fleets[0].name).toBe('Fresquero');
         });
     });
 });
-

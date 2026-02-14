@@ -185,7 +185,14 @@ export const statsService = {
         startDate?: string,
         endDate?: string,
         fisheryName?: string,
-    ): Promise<{ count: number, monthly: { month: number, count: number }[] }> {
+    ): Promise<{
+        count: number,
+        monthly: {
+            month: number,
+            count: number,
+            fleets: { name: string, count: number }[]
+        }[]
+    }> {
         const params = new URLSearchParams({
             year: year.toString(),
             mode,
@@ -199,7 +206,14 @@ export const statsService = {
             params.append('filterType', 'FISHERY');
             params.append('filterValue', fisheryName);
         }
-        const response = await httpClient.get<{ count: number, monthly: { month: number, count: number }[] }>(`/stats/vessels-count?${params.toString()}`);
+        const response = await httpClient.get<{
+            count: number,
+            monthly: {
+                month: number,
+                count: number,
+                fleets: { name: string, count: number }[]
+            }[]
+        }>(`/stats/vessels-count?${params.toString()}`);
         return response.data;
     }
 };

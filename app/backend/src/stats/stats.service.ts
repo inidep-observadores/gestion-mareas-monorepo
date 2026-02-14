@@ -901,7 +901,14 @@ export class StatsService {
         startDate?: string,
         endDate?: string,
         fisheryName?: string,
-    ): Promise<{ count: number, monthly: { month: number, count: number }[] }> {
+    ): Promise<{
+        count: number,
+        monthly: {
+            month: number,
+            count: number,
+            fleets: { name: string, count: number }[]
+        }[]
+    }> {
         const yearStart = startDate ? new Date(startDate) : new Date(Date.UTC(year, 0, 1, 0, 0, 0, 0));
         const yearEnd = endDate ? new Date(endDate) : new Date(Date.UTC(year, 11, 31, 23, 59, 59, 999));
 
@@ -917,6 +924,9 @@ export class StatsService {
         const mareas = await this.prisma.marea.findMany({
             where,
             include: {
+                buque: {
+                    include: { tipoFlota: true }
+                },
                 etapas: {
                     include: { pesqueria: true },
                     orderBy: { nroEtapa: 'asc' }
@@ -928,12 +938,15 @@ export class StatsService {
         const now = DateUtils.getNow(true);
         const uniqueVesselsTotal = new Set<string>();
 
-        // Initialize monthly counts (0-11 for JS months)
-        const monthlyVessels = new Array(12).fill(null).map(() => new Set<string>());
+        // Track vessels per month and per fleet within each month
+        // monthlyVesselsMap[monthIndex][fleetName] = Set of buoyIds
+        const monthlyVesselsMap = new Array(12).fill(null).map(() => ({} as Record<string, Set<string>>));
 
         const effectivePeriodEnd = yearEnd < now ? yearEnd : now;
 
         for (const marea of mareas) {
+            const fleetName = marea.buque?.tipoFlota?.nombre || 'Desconocida';
+
             for (const etapa of marea.etapas) {
                 if (!etapa.fechaZarpada) continue;
 
@@ -971,7 +984,11 @@ export class StatsService {
 
                 while (current <= last) {
                     if (current.getUTCFullYear() === year) {
-                        monthlyVessels[current.getUTCMonth()].add(marea.buqueId);
+                        const monthIdx = current.getUTCMonth();
+                        if (!monthlyVesselsMap[monthIdx][fleetName]) {
+                            monthlyVesselsMap[monthIdx][fleetName] = new Set<string>();
+                        }
+                        monthlyVesselsMap[monthIdx][fleetName].add(marea.buqueId);
                     }
                     current.setUTCMonth(current.getUTCMonth() + 1);
                 }
@@ -980,10 +997,19 @@ export class StatsService {
 
         return {
             count: uniqueVesselsTotal.size,
-            monthly: monthlyVessels.map((set, index) => ({
-                month: index + 1,
-                count: set.size
-            }))
+            monthly: monthlyVesselsMap.map((fleetMap, index) => {
+                const monthlySet = new Set<string>();
+                const fleetsCountArr = Object.entries(fleetMap).map(([name, set]) => {
+                    set.forEach(id => monthlySet.add(id));
+                    return { name, count: set.size };
+                });
+
+                return {
+                    month: index + 1,
+                    count: monthlySet.size,
+                    fleets: fleetsCountArr.sort((a, b) => b.count - a.count)
+                };
+            })
         };
     }
 }

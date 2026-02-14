@@ -233,7 +233,7 @@
                               <div class="flex items-center gap-2 mb-2">
                                  <span class="font-black text-sm text-text tabular-nums tracking-tighter">{{
                                     marea.id_marea
-                                    }}</span>
+                                 }}</span>
                                  <span
                                     class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest bg-secondary/10 text-secondary border border-secondary/20">{{
                                        marea.estado }}</span>
@@ -381,7 +381,7 @@
                                  <td class="px-4 py-2 border-r border-border/50">
                                     <div class="flex flex-col">
                                        <span class="font-black text-xs text-text tabular-nums">{{ marea.id_marea
-                                          }}</span>
+                                       }}</span>
                                        <span class="text-[9px] font-bold text-text-muted uppercase tracking-tighter">{{
                                           marea.estado }}</span>
                                     </div>
@@ -394,7 +394,7 @@
                                  </td>
                                  <td class="px-4 py-2 text-xs font-bold text-text border-r border-border/50">{{
                                     marea.pesqueria
-                                    }}</td>
+                                 }}</td>
                                  <td v-if="filterType !== 'OBSERVER'"
                                     class="px-4 py-2 text-xs font-bold text-text border-r border-border/50">{{
                                        marea.observador
@@ -408,7 +408,7 @@
                                  <td v-if="mode === 'CALENDAR'" class="px-4 py-2 text-right">
                                     <span class="font-bold text-xs text-text-muted tabular-nums opacity-80">{{
                                        marea.diasTotales
-                                       }}</span>
+                                    }}</span>
                                  </td>
                               </tr>
                            </tbody>
@@ -620,7 +620,7 @@ const filterValue = ref<string | null>(null);
 
 const stats = ref<DashboardStats | null>(null);
 const distributionData = ref<MareaDistributionItem[]>([]);
-const coverageData = ref<{ month: number, count: number }[]>([]);
+const coverageData = ref<{ month: number, count: number, fleets: { name: string, count: number }[] }[]>([]);
 const selectedDistributionFishery = ref<string>('ALL');
 const selectedCoverageFishery = ref<string>('ALL');
 const loading = ref(false);
@@ -1440,18 +1440,37 @@ const coverageChartOptions = computed(() => ({
    tooltip: {
       custom: ({ series, seriesIndex, dataPointIndex, w }: any) => {
          const val = series[seriesIndex][dataPointIndex];
-         const label = w.globals.categoryLabels[dataPointIndex];
+         const label = w.config.xaxis.categories[dataPointIndex]; // Correctly get the month name
          const color = w.globals.colors[seriesIndex];
+         const monthData = coverageData.value[dataPointIndex];
 
          return `
-            <div class="px-4 py-3 bg-surface/95 backdrop-blur-md text-text border border-border/50 rounded-2xl flex flex-col gap-1 shadow-2xl ring-1 ring-black/5 min-w-[180px]">
-               <div class="flex items-center gap-2 border-b border-border/30 pb-2 mb-2">
+            <div class="px-4 py-3 bg-surface/95 backdrop-blur-md text-text border border-border/50 rounded-2xl flex flex-col gap-3 shadow-2xl ring-1 ring-black/5 min-w-[200px]">
+               <div class="flex items-center gap-2 border-b border-border/30 pb-2">
                   <span class="w-1.5 h-3 rounded-full" style="background:${color}"></span>
                   <span class="text-[10px] text-text-muted uppercase font-black tracking-widest">${label}</span>
                </div>
-               <div class="flex justify-between items-center px-1">
-                  <span class="text-[10px] font-bold text-text-muted uppercase tracking-tighter">Buques Únicos:</span>
-                  <span class="text-xs font-black text-text tabular-nums">${val} buques</span>
+               
+               ${monthData?.fleets && monthData.fleets.length > 0 ? `
+                  <div class="flex flex-col gap-2 py-1">
+                     ${monthData.fleets.map(f => `
+                        <div class="flex items-center justify-between gap-4">
+                           <div class="flex items-center gap-1.5">
+                              <div class="w-1.5 h-1.5 rounded-full" style="background:${getFleetColor(f.name)}"></div>
+                              <span class="text-[9px] font-bold text-text-muted uppercase">${f.name}</span>
+                           </div>
+                           <span class="text-[10px] font-black text-text">${f.count} <span class="text-[8px] opacity-60">buques</span></span>
+                        </div>
+                     `).join('')}
+                  </div>
+               ` : ''}
+
+               <div class="flex items-center justify-between pt-2 border-t border-border/30">
+                  <span class="text-[9px] font-black text-primary uppercase">Total Buques Únicos</span>
+                  <div class="flex items-baseline gap-1">
+                     <span class="text-xs font-black text-text tabular-nums">${val}</span>
+                     <span class="text-[9px] font-bold text-text-muted">buques</span>
+                  </div>
                </div>
             </div>
          `;
