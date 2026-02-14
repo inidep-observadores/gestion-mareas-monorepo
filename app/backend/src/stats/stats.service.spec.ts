@@ -291,4 +291,49 @@ describe('StatsService', () => {
             expect(result.monthly[2].fleets[0].name).toBe('Fresquero');
         });
     });
+
+    describe('getDashboardStats - multi-fishery', () => {
+        it('should distribute days and counts across multiple fisheries for a marea with different stage fisheries', async () => {
+            const year = 2024;
+            mockPrisma.marea.findMany.mockResolvedValue([
+                {
+                    id: 'm1',
+                    buqueId: 'vessel-1',
+                    buque: { tipoFlota: { nombre: 'Fresquero', codigo: 'F' } },
+                    etapas: [
+                        {
+                            fechaZarpada: new Date('2024-01-01'),
+                            fechaArribo: new Date('2024-01-10'),
+                            pesqueria: { nombre: 'Calamar' },
+                            observadores: []
+                        },
+                        {
+                            fechaZarpada: new Date('2024-01-11'),
+                            fechaArribo: new Date('2024-01-20'),
+                            pesqueria: { nombre: 'Merluza' },
+                            observadores: []
+                        }
+                    ],
+                    estadoActual: { codigo: 'PROTOCOLIZADA' }
+                }
+            ]);
+
+            const result = await service.getDashboardStats(year, 'CALENDAR', true, true);
+
+            // Marea counts: this marea touched both fisheries
+            const calamar = result.fisheries.find(f => f.name === 'Calamar');
+            const merluza = result.fisheries.find(f => f.name === 'Merluza');
+
+            expect(calamar?.mareas).toBe(1);
+            expect(merluza?.mareas).toBe(1);
+
+            // Days: 10 days for each (approx, DateUtils logic is used)
+            expect(calamar?.days).toBe(10);
+            expect(merluza?.days).toBe(10);
+
+            // Total should still be correct
+            expect(result.totalMareas).toBe(1);
+            expect(result.totalDaysNavigated).toBe(20);
+        });
+    });
 });

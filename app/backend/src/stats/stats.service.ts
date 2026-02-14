@@ -111,6 +111,7 @@ export class StatsService {
                 etapas: {
                     orderBy: { nroEtapa: 'asc' },
                     include: {
+                        pesqueria: true,
                         observadores: {
                             include: { observador: true }
                         }
@@ -193,22 +194,59 @@ export class StatsService {
             totalMareas++;
             totalDaysCalculated += days;
 
-            // Aggregations
-            // Fishery: Priority -> Marea Header -> Buque Default
-            const fisheryName = marea.pesqueria?.nombre || marea.buque?.pesqueriaHabitual?.nombre || 'Desconocida';
-            if (!byFishery[fisheryName]) {
-                byFishery[fisheryName] = { name: fisheryName, mareas: 0, days: 0, vessels: new Map() };
-            }
-            byFishery[fisheryName].mareas++;
-            byFishery[fisheryName].days += days;
+            // Aggregations: Fishery & Fleet
+            // Instead of one fishery per marea, we iterate stages
+            const mareaFisheries = new Set<string>();
 
-            if (marea.buque) {
-                const fleetCode = marea.buque.tipoFlota?.codigo || 'INDETERMINADO';
-                const fleetName = marea.buque.tipoFlota?.nombre || 'Indeterminado';
-                byFishery[fisheryName].vessels.set(marea.buque.id, { code: fleetCode, nombre: fleetName });
-            }
+            marea.etapas.forEach(etapa => {
+                const fisheryName = etapa.pesqueria?.nombre || marea.buque?.pesqueriaHabitual?.nombre || 'Desconocida';
+                mareaFisheries.add(fisheryName);
 
-            // Fleet
+                if (etapa.fechaZarpada && etapa.fechaZarpada <= now) {
+                    const start = etapa.fechaZarpada;
+                    const end = etapa.fechaArribo || (marea.estadoActual?.codigo === 'EN_EJECUCION' ? now : null);
+                    const stageIntervals = [{ start, end }];
+
+                    // Calculate unique days for this specific stage fishery within the period
+                    const stageNavigatedDays = DateUtils.calculateUniqueDays(stageIntervals, periodRange, calculationLimit);
+
+                    if (stageNavigatedDays > 0) {
+                        if (!byFishery[fisheryName]) {
+                            byFishery[fisheryName] = { name: fisheryName, mareas: 0, days: 0, vessels: new Map() };
+                        }
+                        byFishery[fisheryName].days += stageNavigatedDays;
+
+                        if (marea.buque) {
+                            const fleetCode = marea.buque.tipoFlota?.codigo || 'INDETERMINADO';
+                            const fleetName = marea.buque.tipoFlota?.nombre || 'Indeterminado';
+                            byFishery[fisheryName].vessels.set(marea.buque.id, { code: fleetCode, nombre: fleetName });
+                        }
+                    }
+                }
+            });
+
+            // Count marea only once per fishery it touched in the period (if it had days)
+            mareaFisheries.forEach(fisheryName => {
+                // Check if this marea actually contributed days to THIS fishery in the period
+                // (We already added the days above, so if byFishery[fisheryName] exists and we haven't counted this marea yet...)
+                // Actually easier: if ANY stage of this fishery overlaps period, count marea.
+                const hasOverlap = marea.etapas.some(e => {
+                    const stageFishery = e.pesqueria?.nombre || marea.buque?.pesqueriaHabitual?.nombre || 'Desconocida';
+                    if (stageFishery !== fisheryName) return false;
+                    const start = e.fechaZarpada;
+                    const end = e.fechaArribo || (marea.estadoActual?.codigo === 'EN_EJECUCION' ? now : null);
+                    return start && DateUtils.calculateUniqueDays([{ start, end }], periodRange, calculationLimit) > 0;
+                });
+
+                if (hasOverlap) {
+                    if (!byFishery[fisheryName]) {
+                        byFishery[fisheryName] = { name: fisheryName, mareas: 0, days: 0, vessels: new Map() };
+                    }
+                    byFishery[fisheryName].mareas++;
+                }
+            });
+
+            // Fleet: Keep global for the marea (the vessel belongs to a fleet)
             const fleetName = marea.buque?.tipoFlota?.nombre || 'Desconocida';
             if (!byFleet[fleetName]) byFleet[fleetName] = { name: fleetName, mareas: 0, days: 0 };
             byFleet[fleetName].mareas++;
@@ -390,15 +428,11 @@ export class StatsService {
 
         // Apply dynamic filter
         if (filterType === 'FISHERY') {
-            where.OR = [
-                { pesqueria: { nombre: filterValue } },
-                {
-                    AND: [
-                        { pesqueriaId: null },
-                        { buque: { pesqueriaHabitual: { nombre: filterValue } } }
-                    ]
+            where.etapas = {
+                some: {
+                    pesqueria: { nombre: { contains: filterValue, mode: 'insensitive' } }
                 }
-            ];
+            };
         } else if (filterType === 'FLEET') {
             where.buque = {
                 tipoFlota: { nombre: filterValue }
@@ -433,6 +467,7 @@ export class StatsService {
                 etapas: {
                     orderBy: { nroEtapa: 'asc' },
                     include: {
+                        pesqueria: true,
                         observadores: { include: { observador: true } }
                     }
                 }
@@ -527,7 +562,9 @@ export class StatsService {
                 tipoMarea: m.tipoMarea,
                 buque: m.buque?.nombreBuque || 'Desconocido',
                 flota: m.buque?.tipoFlota?.nombre || '-',
-                pesqueria: (m as any).pesqueria?.nombre || m.buque?.pesqueriaHabitual?.nombre || '-',
+                pesqueria: filterType === 'FISHERY'
+                    ? filterValue
+                    : (m.etapas[0]?.pesqueria?.nombre || m.buque?.pesqueriaHabitual?.nombre || '-'),
                 observador: m.observadorPrincipal ? `${m.observadorPrincipal.nombre} ${m.observadorPrincipal.apellido}` : 'Sin asignar',
                 estado: m.estadoActual?.nombre || 'Desconocido',
                 diasContabilizados: days,
@@ -565,15 +602,11 @@ export class StatsService {
 
         if (filterType && filterValue) {
             if (filterType === 'FISHERY') {
-                where.OR = [
-                    { pesqueria: { nombre: filterValue } },
-                    {
-                        AND: [
-                            { pesqueriaId: null },
-                            { buque: { pesqueriaHabitual: { nombre: filterValue } } }
-                        ]
+                where.etapas = {
+                    some: {
+                        pesqueria: { nombre: { contains: filterValue, mode: 'insensitive' } }
                     }
-                ];
+                };
             } else if (filterType === 'FLEET') {
                 where.buque = { tipoFlota: { nombre: filterValue } };
             } else if (filterType === 'OBSERVER') {
@@ -606,6 +639,7 @@ export class StatsService {
                 etapas: {
                     orderBy: { nroEtapa: 'asc' },
                     include: {
+                        pesqueria: true,
                         puertoZarpada: true,
                         puertoArribo: true,
                         observadores: { include: { observador: true } }
@@ -764,7 +798,9 @@ export class StatsService {
                 id_marea: MareaUtils.formatCodigo(m),
                 buque: m.buque?.nombreBuque || 'Desconocido',
                 flota: m.buque?.tipoFlota?.nombre || '-',
-                pesqueria: (m as any).pesqueria?.nombre || m.buque?.pesqueriaHabitual?.nombre || '-',
+                pesqueria: filterType === 'FISHERY'
+                    ? filterValue
+                    : (m.etapas[0]?.pesqueria?.nombre || m.buque?.pesqueriaHabitual?.nombre || '-'),
                 observador: m.observadorPrincipal ? `${m.observadorPrincipal.nombre} ${m.observadorPrincipal.apellido}` : 'Sin asignar',
                 estado: m.estadoActual?.nombre || 'Desconocido',
                 dias_calendario: calendarDays,
