@@ -412,9 +412,28 @@
                                        marea.diasTotales
                                     }}</span>
                                  </td>
-                              </tr>
-                           </tbody>
-                        </table>
+                               </tr>
+                            </tbody>
+                            <!-- Footer Totales -->
+                            <tfoot v-if="filteredDialogItems.length > 0" class="sticky bottom-0 z-10">
+                               <tr class="bg-background/95 backdrop-blur-md border-t-2 border-primary/20 shadow-[0_-4px_12px_rgba(0,0,0,0.1)]">
+                                  <td :colspan="filterType !== 'OBSERVER' ? 5 : 4"
+                                     class="px-4 py-3 text-right text-[10px] font-black text-text-muted uppercase tracking-widest">
+                                     Totales Seleccionados
+                                  </td>
+                                  <td class="px-4 py-3 text-right bg-primary/5">
+                                     <span class="font-black text-sm tabular-nums text-primary">
+                                        {{ dialogPeriodLabel ? totalDiasPeriodo : (mode === 'CALENDAR' ? totalDiasCalendario : totalDiasTotales) }}
+                                     </span>
+                                  </td>
+                                  <td v-if="mode === 'CALENDAR' && !dialogPeriodLabel" class="px-4 py-3 text-right bg-text/5">
+                                     <span class="font-black text-xs text-text-muted tabular-nums opacity-80">
+                                        {{ totalDiasTotales }}
+                                     </span>
+                                  </td>
+                               </tr>
+                            </tfoot>
+                         </table>
                      </div>
 
                      <!-- Empty Filter Result -->
@@ -709,6 +728,19 @@ const filteredDialogItems = computed(() => {
 
    return items;
 });
+
+const totalDiasPeriodo = computed(() => {
+   return filteredDialogItems.value.reduce((acc, item) => acc + (item.diasPeriodo || 0), 0);
+});
+
+const totalDiasCalendario = computed(() => {
+   return filteredDialogItems.value.reduce((acc, item) => acc + (item.diasCalendario || 0), 0);
+});
+
+const totalDiasTotales = computed(() => {
+   return filteredDialogItems.value.reduce((acc, item) => acc + (item.diasTotales || 0), 0);
+});
+
 const dialogTitle = ref('');
 const isMonthlyDetail = computed(() => {
    if (!filterType.value && dialogStartDate.value && dialogEndDate.value) {

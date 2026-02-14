@@ -589,22 +589,9 @@ export class MareasService {
             let label = 'Sin pesquería';
 
             if (marea.etapas && marea.etapas.length > 0) {
-                const daysByFishery = new Map<string, number>();
-                marea.etapas.forEach((etapa: any) => {
-                    const fisheryName = etapa.pesqueria?.nombre || 'Sin pesquería';
-                    const days = MareaUtils.calculateStageDays(etapa);
-                    daysByFishery.set(fisheryName, (daysByFishery.get(fisheryName) || 0) + days);
-                });
-
-                let maxDays = -1;
-                let bestFishery = 'Sin pesquería';
-                daysByFishery.forEach((days, name) => {
-                    if (days > maxDays) {
-                        maxDays = days;
-                        bestFishery = name;
-                    }
-                });
-                label = bestFishery;
+                // Priorizar la etapa más reciente (ordenadas por nroEtapa asc)
+                const lastStage = marea.etapas[marea.etapas.length - 1];
+                label = lastStage.pesqueria?.nombre || 'Sin pesquería';
             } else if (marea.pesqueria?.nombre) {
                 label = marea.pesqueria.nombre;
             }
