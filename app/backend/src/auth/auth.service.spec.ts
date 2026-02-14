@@ -92,4 +92,62 @@ describe('AuthService', () => {
             getNowSpy.mockRestore();
         });
     });
+
+    describe('forgotPassword', () => {
+        const mockUser = {
+            id: 'user1',
+            email: 'test@test.com',
+            fullName: 'Test User',
+            isActive: true,
+        };
+
+        beforeEach(() => {
+            jest.clearAllMocks();
+            // Default mock for user found
+            mockPrisma.user.findUnique.mockResolvedValue(mockUser);
+            mockPrisma.passwordResetToken.create.mockResolvedValue({});
+            mockMailService.sendMail.mockResolvedValue(true);
+        });
+
+        it('should use default URL if FRONTEND_URL is not set', async () => {
+            delete process.env.FRONTEND_URL;
+            await service.forgotPassword('test@test.com');
+
+            expect(mockMailService.sendMail).toHaveBeenCalled();
+            const emailContent = mockMailService.sendMail.mock.calls[0][2];
+            expect(emailContent).toContain('http://localhost:5173/reset-password?token=');
+        });
+
+        it('should correctly format URL when FRONTEND_URL has no trailing slash', async () => {
+            process.env.FRONTEND_URL = 'https://myapp.com';
+            await service.forgotPassword('test@test.com');
+
+            const emailContent = mockMailService.sendMail.mock.calls[0][2];
+            expect(emailContent).toContain('https://myapp.com/reset-password?token=');
+        });
+
+        it('should remove trailing slash from FRONTEND_URL', async () => {
+            process.env.FRONTEND_URL = 'https://myapp.com/';
+            await service.forgotPassword('test@test.com');
+
+            const emailContent = mockMailService.sendMail.mock.calls[0][2];
+            expect(emailContent).toContain('https://myapp.com/reset-password?token=');
+        });
+
+        it('should remove /reset-password from FRONTEND_URL', async () => {
+            process.env.FRONTEND_URL = 'https://myapp.com/reset-password';
+            await service.forgotPassword('test@test.com');
+
+            const emailContent = mockMailService.sendMail.mock.calls[0][2];
+            expect(emailContent).toContain('https://myapp.com/reset-password?token=');
+        });
+
+        it('should remove /reset-password/ from FRONTEND_URL', async () => {
+            process.env.FRONTEND_URL = 'https://myapp.com/reset-password/';
+            await service.forgotPassword('test@test.com');
+
+            const emailContent = mockMailService.sendMail.mock.calls[0][2];
+            expect(emailContent).toContain('https://myapp.com/reset-password?token=');
+        });
+    });
 });

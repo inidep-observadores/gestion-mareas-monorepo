@@ -121,7 +121,13 @@ export class AuthService {
       },
     });
 
-    const resetLink = `${process.env.FRONTEND_URL}?token=${token}`;
+    // Normalizar FRONTEND_URL: eliminar ruta /reset-password si existe y asegurar que no termine en /
+    let baseUrl = (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/reset-password\/?$/, '');
+    if (baseUrl.endsWith('/')) {
+      baseUrl = baseUrl.slice(0, -1);
+    }
+
+    const resetLink = `${baseUrl}/reset-password?token=${token}`;
 
     await this.mailService.sendMail(
       user.email,
