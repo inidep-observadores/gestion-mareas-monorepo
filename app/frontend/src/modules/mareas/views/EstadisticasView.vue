@@ -616,6 +616,8 @@ const includeCampaigns = ref(true);
 
 const startDate = ref<string | null>(null);
 const endDate = ref<string | null>(null);
+const dialogStartDate = ref<string | null>(null);
+const dialogEndDate = ref<string | null>(null);
 
 const filterType = ref<'FISHERY' | 'FLEET' | 'OBSERVER' | null>(null);
 const filterValue = ref<string | null>(null);
@@ -709,7 +711,7 @@ const filteredDialogItems = computed(() => {
 });
 const dialogTitle = ref('');
 const isMonthlyDetail = computed(() => {
-   if (!filterType.value && startDate.value && endDate.value) {
+   if (!filterType.value && dialogStartDate.value && dialogEndDate.value) {
       // If it's coverage, it usually has no filterType but has specific dates
       return true;
    }
@@ -717,9 +719,9 @@ const isMonthlyDetail = computed(() => {
 });
 
 const dialogPeriodLabel = computed(() => {
-   if (!startDate.value || !endDate.value) return '';
-   const start = new Date(startDate.value + 'T12:00:00');
-   const end = new Date(endDate.value + 'T12:00:00');
+   if (!dialogStartDate.value || !dialogEndDate.value) return '';
+   const start = new Date(dialogStartDate.value.includes('T') ? dialogStartDate.value : dialogStartDate.value + 'T12:00:00');
+   const end = new Date(dialogEndDate.value.includes('T') ? dialogEndDate.value : dialogEndDate.value + 'T12:00:00');
    if (start.getMonth() === end.getMonth() && start.getFullYear() === end.getFullYear()) {
       return start.toLocaleDateString('es-AR', { month: 'long' });
    }
@@ -1040,9 +1042,13 @@ const handleTimeFilter = (filter: { startDate: string | null, endDate: string | 
 // --- Dialog Logic ---
 const openDialog = async (type: 'FISHERY' | 'FLEET' | 'OBSERVER' | null, value: string | null, titleName: string, customStart?: string, customEnd?: string) => {
    filterType.value = type;
-   filterValue.value = value; // NOW value is correct: Name for Fishery/Fleet, UUID for Observer
+   filterValue.value = value;
+   
+   // Save period for the dialog
+   dialogStartDate.value = customStart || startDate.value;
+   dialogEndDate.value = customEnd || endDate.value;
 
-   dialogTitle.value = `Detalle: ${titleName}`; // Use pretty name for title
+   dialogTitle.value = `Detalle: ${titleName}`;
    dialogOpen.value = true;
    dialogLoading.value = true;
 
@@ -1071,6 +1077,8 @@ const closeDialog = () => {
    dialogOpen.value = false;
    filterType.value = null;
    filterValue.value = null;
+   dialogStartDate.value = null;
+   dialogEndDate.value = null;
    searchTerm.value = '';
 };
 
@@ -1152,8 +1160,8 @@ const handleDownload = async (titlePrefix: string, fType?: 'FISHERY' | 'FLEET' |
          fTypeParam,
          fValue, // PASSING UNDEFINED IF NULL
          `${finalTitle}_${mode.value === 'CALENDAR' ? year.value : 'TOTAL'}`,
-         startDate.value || undefined,
-         endDate.value || undefined
+         (dialogOpen.value ? dialogStartDate.value : startDate.value) || undefined,
+         (dialogOpen.value ? dialogEndDate.value : endDate.value) || undefined
       );
       const prettyTitle = (dialogOpen.value && dialogTitle.value) ? dialogTitle.value : 'Estadísticas Generales';
       toast.success(`Exportación iniciada: ${prettyTitle}`);
