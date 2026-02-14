@@ -12,14 +12,19 @@ export class StatsService {
     constructor(private readonly prisma: PrismaService) { }
 
     private getSharedWhereClause(
-        yearStart: Date,
-        yearEnd: Date,
+        activityStart: Date,
+        activityEnd: Date,
         includeNonProtocolized: boolean,
-        includeProtocolizedOutOfPeriod: boolean
+        includeProtocolizedOutOfPeriod: boolean,
+        protocolizationStart?: Date,
+        protocolizationEnd?: Date
     ): Prisma.MareaWhereInput {
         const where: Prisma.MareaWhereInput = {
             activo: true,
         };
+
+        const protStart = protocolizationStart || activityStart;
+        const protEnd = protocolizationEnd || activityEnd;
 
         // Source of Truth: Stages (Etapas)
         // A marea is ACTIVE in the period if it has at least one stage overlapping the period.
@@ -28,11 +33,11 @@ export class StatsService {
         const now = DateUtils.getNow(true);
 
         // If the period requested START after NOW, it's a future period.
-        if (yearStart > now) {
+        if (activityStart > now) {
             return { anioMarea: -1 }; // Prisma will return empty safely
         }
 
-        const effectivePeriodEnd = yearEnd < now ? yearEnd : now;
+        const effectivePeriodEnd = activityEnd < now ? activityEnd : now;
 
         const activityOverlapCondition: Prisma.MareaWhereInput = {
             etapas: {
@@ -41,7 +46,7 @@ export class StatsService {
                         { fechaZarpada: { lte: effectivePeriodEnd } },
                         {
                             OR: [
-                                { fechaArribo: { gte: yearStart } },
+                                { fechaArribo: { gte: activityStart } },
                                 { fechaArribo: null }
                             ]
                         }
@@ -52,22 +57,24 @@ export class StatsService {
 
         const protocolizedInYearCondition: Prisma.MareaWhereInput = {
             fechaProtocolizacion: {
-                gte: yearStart,
-                lte: yearEnd,
+                gte: protStart,
+                lte: protEnd,
             },
         };
+
+        const finalActivityOverlapCondition = activityOverlapCondition;
 
         if (!includeNonProtocolized) {
             if (includeProtocolizedOutOfPeriod) {
                 where.AND = protocolizedInYearCondition;
             } else {
                 where.AND = [
-                    activityOverlapCondition,
+                    finalActivityOverlapCondition,
                     protocolizedInYearCondition
                 ];
             }
         } else {
-            where.AND = activityOverlapCondition;
+            where.AND = finalActivityOverlapCondition;
         }
 
         return where;
@@ -77,11 +84,13 @@ export class StatsService {
         year: number,
         mode: 'CALENDAR' | 'TOTAL',
         includeNonProtocolized: boolean,
-        includeProtocolizedOutOfPeriod: boolean,
+        includeProtocolizedOutOfPeriod = false,
         daysCalculationMode: 'SHIP' | 'OBSERVER' = 'SHIP',
         includeCampaigns: boolean = true,
         startDate?: string,
         endDate?: string,
+        protocolizationStartDate?: string,
+        protocolizationEndDate?: string
     ) {
         const yearStart = startDate ? new Date(startDate) : new Date(Date.UTC(year, 0, 1, 0, 0, 0, 0));
         const yearEnd = endDate ? new Date(endDate) : new Date(Date.UTC(year, 11, 31, 23, 59, 59, 999));
@@ -89,7 +98,26 @@ export class StatsService {
         if (startDate) yearStart.setUTCHours(0, 0, 0, 0);
         if (endDate) yearEnd.setUTCHours(23, 59, 59, 999);
 
-        const where = this.getSharedWhereClause(yearStart, yearEnd, includeNonProtocolized, includeProtocolizedOutOfPeriod);
+        // Optional protocolization range
+        let protStart: Date | undefined;
+        let protEnd: Date | undefined;
+        if (protocolizationStartDate) {
+            protStart = new Date(protocolizationStartDate);
+            protStart.setUTCHours(0, 0, 0, 0);
+        }
+        if (protocolizationEndDate) {
+            protEnd = new Date(protocolizationEndDate);
+            protEnd.setUTCHours(23, 59, 59, 999);
+        }
+
+        const where = this.getSharedWhereClause(
+            yearStart,
+            yearEnd,
+            includeNonProtocolized,
+            includeProtocolizedOutOfPeriod,
+            protStart,
+            protEnd
+        );
 
         // Filter Campaigns
         if (!includeCampaigns) {
@@ -285,11 +313,11 @@ export class StatsService {
                 }
             });
 
-            // Monthly Trend (Starts)
-            const startMonth = overallStart.getMonth();
-            if (overallStart.getFullYear() === year) {
-                mareasByMonth[startMonth]++;
-            }
+            // Monthly Trend (Starts) - DEPRECATED
+            // const startMonth = overallStart.getMonth();
+            // if (overallStart.getFullYear() === year) {
+            //     mareasByMonth[startMonth]++;
+            // }
 
             // Distribute Days in Month
             if (daysCalculationMode === 'SHIP') {
@@ -304,8 +332,8 @@ export class StatsService {
                             // In this loop we already handled "intervals" construction correctly above with `marea.estadoActualId`.
                             const e = i.end ? new Date(i.end) : new Date(s);
                             if (e > now) e.setTime(now.getTime());
-                            s.setHours(0, 0, 0, 0);
-                            e.setHours(0, 0, 0, 0);
+                            s.setUTCHours(0, 0, 0, 0);
+                            e.setUTCHours(0, 0, 0, 0);
                             return { start: s, end: e };
                         })
                         .filter(i => !isNaN(i.start.getTime()) && !isNaN(i.end.getTime()) && i.end >= i.start)
@@ -333,10 +361,10 @@ export class StatsService {
                         const limitEndForDistribution = calculationLimit < interval.end ? calculationLimit : interval.end;
 
                         while (cursor <= limitEndForDistribution) {
-                            if (cursor.getFullYear() === year) {
-                                daysByMonth[cursor.getMonth()]++;
+                            if (cursor.getUTCFullYear() === year) {
+                                daysByMonth[cursor.getUTCMonth()]++;
                             }
-                            cursor.setDate(cursor.getDate() + 1);
+                            cursor.setUTCDate(cursor.getUTCDate() + 1);
                         }
                     }
                 }
@@ -355,8 +383,8 @@ export class StatsService {
                     const e = etapa.fechaArribo || (marea.estadoActualId === 'EN_EJECUCION' ? now : null) || new Date(s); // Fallback to start if historical missing
                     if (e > now) e.setTime(now.getTime());
 
-                    s.setHours(0, 0, 0, 0);
-                    e.setHours(0, 0, 0, 0);
+                    s.setUTCHours(0, 0, 0, 0);
+                    e.setUTCHours(0, 0, 0, 0);
 
                     let cursor = new Date(s);
                     if (mode === 'CALENDAR') {
@@ -365,10 +393,10 @@ export class StatsService {
                     const limitEnd = calculationLimit < e ? calculationLimit : e;
 
                     while (cursor <= limitEnd) {
-                        if (cursor.getFullYear() === year) {
-                            daysByMonth[cursor.getMonth()] += count; // Add N days for this day
+                        if (cursor.getUTCFullYear() === year) {
+                            daysByMonth[cursor.getUTCMonth()] += count; // Add N days for this day
                         }
-                        cursor.setDate(cursor.getDate() + 1);
+                        cursor.setUTCDate(cursor.getUTCDate() + 1);
                     }
                 });
             }
@@ -413,6 +441,8 @@ export class StatsService {
         includeCampaigns: boolean = true,
         startDate?: string,
         endDate?: string,
+        protocolizationStartDate?: string,
+        protocolizationEndDate?: string
     ): Promise<StatsDetailItem[]> {
         const yearStart = startDate ? new Date(startDate) : new Date(Date.UTC(year, 0, 1, 0, 0, 0, 0));
         const yearEnd = endDate ? new Date(endDate) : new Date(Date.UTC(year, 11, 31, 23, 59, 59, 999));
@@ -420,7 +450,26 @@ export class StatsService {
         if (startDate) yearStart.setUTCHours(0, 0, 0, 0);
         if (endDate) yearEnd.setUTCHours(23, 59, 59, 999);
 
-        const where = this.getSharedWhereClause(yearStart, yearEnd, includeNonProtocolized, includeProtocolizedOutOfPeriod);
+        // Optional protocolization range
+        let protStart: Date | undefined;
+        let protEnd: Date | undefined;
+        if (protocolizationStartDate) {
+            protStart = new Date(protocolizationStartDate);
+            protStart.setUTCHours(0, 0, 0, 0);
+        }
+        if (protocolizationEndDate) {
+            protEnd = new Date(protocolizationEndDate);
+            protEnd.setUTCHours(23, 59, 59, 999);
+        }
+
+        const where = this.getSharedWhereClause(
+            yearStart,
+            yearEnd,
+            includeNonProtocolized,
+            includeProtocolizedOutOfPeriod,
+            protStart,
+            protEnd
+        );
 
         if (!includeCampaigns) {
             where.tipoMarea = { not: TipoMarea.CI };
@@ -488,7 +537,16 @@ export class StatsService {
             let diasPeriodo = 0;
 
             const now = DateUtils.getNow(true);
-            const intervals = m.etapas.map(e => ({
+
+            // Filter stages by fishery if applicable
+            const relevantStages = filterType === 'FISHERY'
+                ? m.etapas.filter(e => {
+                    const fName = e.pesqueria?.nombre || m.buque?.pesqueriaHabitual?.nombre || 'Desconocida';
+                    return fName.toLowerCase() === filterValue.toLowerCase();
+                })
+                : m.etapas;
+
+            const intervals = relevantStages.map(e => ({
                 start: e.fechaZarpada,
                 end: e.fechaArribo || (m.estadoActual?.codigo === 'EN_EJECUCION' ? now : null)
             })).filter(i => i.start && i.start <= now);
@@ -509,10 +567,10 @@ export class StatsService {
                     const isPrincipal = (m.observadorPrincipalId === filterValue);
 
                     if (isPrincipal) {
-                        obsIntervals = intervals; // Principal gets full marea
+                        obsIntervals = intervals; // Use the already filtered fishery intervals if applicable
                     } else {
-                        // Find stages where they are additional
-                        m.etapas.forEach(etapa => {
+                        // Find stages where they are additional (also respecting fishery filter)
+                        relevantStages.forEach(etapa => {
                             const isAdditional = etapa.observadores.some(rel => rel.observadorId === filterValue);
                             if (isAdditional) {
                                 obsIntervals.push({
@@ -533,7 +591,7 @@ export class StatsService {
                     let effortPeriodo = DateUtils.calculateUniqueDays(intervals, strictPeriodRange, calculationLimit);
 
                     const additionalsMap: Record<string, Array<{ start: Date, end: Date }>> = {};
-                    m.etapas.forEach(etapa => {
+                    relevantStages.forEach(etapa => {
                         if (!etapa.fechaZarpada) return;
                         const start = etapa.fechaZarpada;
                         const end = etapa.fechaArribo || (m.estadoActual?.codigo === 'EN_EJECUCION' ? now : null);
@@ -594,6 +652,9 @@ export class StatsService {
         filterValue?: string,
         startDate?: string,
         endDate?: string,
+        filterByStart: boolean = false,
+        protocolizationStartDate?: string,
+        protocolizationEndDate?: string,
     ): Promise<ExcelJS.Workbook> {
         const yearStart = startDate ? new Date(startDate) : new Date(Date.UTC(year, 0, 1, 0, 0, 0, 0));
         const yearEnd = endDate ? new Date(endDate) : new Date(Date.UTC(year, 11, 31, 23, 59, 59, 999));
@@ -601,7 +662,26 @@ export class StatsService {
         if (startDate) yearStart.setUTCHours(0, 0, 0, 0);
         if (endDate) yearEnd.setUTCHours(23, 59, 59, 999);
 
-        const where = this.getSharedWhereClause(yearStart, yearEnd, includeNonProtocolized, includeProtocolizedOutOfPeriod);
+        // Optional protocolization range
+        let protStart: Date | undefined;
+        let protEnd: Date | undefined;
+        if (protocolizationStartDate) {
+            protStart = new Date(protocolizationStartDate);
+            protStart.setUTCHours(0, 0, 0, 0);
+        }
+        if (protocolizationEndDate) {
+            protEnd = new Date(protocolizationEndDate);
+            protEnd.setUTCHours(23, 59, 59, 999);
+        }
+
+        const where = this.getSharedWhereClause(
+            yearStart,
+            yearEnd,
+            includeNonProtocolized,
+            includeProtocolizedOutOfPeriod,
+            protStart,
+            protEnd
+        );
 
         if (!includeCampaigns) {
             where.tipoMarea = { not: TipoMarea.CI };
@@ -883,10 +963,12 @@ export class StatsService {
         year: number,
         mode: 'CALENDAR' | 'TOTAL',
         includeNonProtocolized: boolean,
-        includeProtocolizedOutOfPeriod = false,
+        includeProtocolizedOutOfPeriod: boolean,
         includeCampaigns: boolean = true,
         startDate?: string,
         endDate?: string,
+        protocolizationStartDate?: string,
+        protocolizationEndDate?: string
     ): Promise<MareaDistributionItem[]> {
         const yearStart = startDate ? new Date(startDate) : new Date(Date.UTC(year, 0, 1, 0, 0, 0, 0));
         const yearEnd = endDate ? new Date(endDate) : new Date(Date.UTC(year, 11, 31, 23, 59, 59, 999));
@@ -894,8 +976,26 @@ export class StatsService {
         if (startDate) yearStart.setUTCHours(0, 0, 0, 0);
         if (endDate) yearEnd.setUTCHours(23, 59, 59, 999);
 
-        // El where clause ya maneja la inclusión/exclusión según el modo para PROTOCOLIZADAS
-        const where = this.getSharedWhereClause(yearStart, yearEnd, includeNonProtocolized, includeProtocolizedOutOfPeriod);
+        // Optional protocolization range
+        let protStart: Date | undefined;
+        let protEnd: Date | undefined;
+        if (protocolizationStartDate) {
+            protStart = new Date(protocolizationStartDate);
+            protStart.setUTCHours(0, 0, 0, 0);
+        }
+        if (protocolizationEndDate) {
+            protEnd = new Date(protocolizationEndDate);
+            protEnd.setUTCHours(23, 59, 59, 999);
+        }
+
+        const where = this.getSharedWhereClause(
+            yearStart,
+            yearEnd,
+            includeNonProtocolized,
+            includeProtocolizedOutOfPeriod,
+            protStart,
+            protEnd
+        );
 
         if (!includeCampaigns) {
             where.tipoMarea = { not: TipoMarea.CI };
@@ -973,6 +1073,8 @@ export class StatsService {
         startDate?: string,
         endDate?: string,
         fisheryName?: string,
+        protocolizationStartDate?: string,
+        protocolizationEndDate?: string,
     ): Promise<UniqueVesselsResult> {
         const yearStart = startDate ? new Date(startDate) : new Date(Date.UTC(year, 0, 1, 0, 0, 0, 0));
         const yearEnd = endDate ? new Date(endDate) : new Date(Date.UTC(year, 11, 31, 23, 59, 59, 999));
@@ -980,7 +1082,26 @@ export class StatsService {
         if (startDate) yearStart.setUTCHours(0, 0, 0, 0);
         if (endDate) yearEnd.setUTCHours(23, 59, 59, 999);
 
-        const where = this.getSharedWhereClause(yearStart, yearEnd, includeNonProtocolized, includeProtocolizedOutOfPeriod);
+        // Optional protocolization range
+        let protStart: Date | undefined;
+        let protEnd: Date | undefined;
+        if (protocolizationStartDate) {
+            protStart = new Date(protocolizationStartDate);
+            protStart.setUTCHours(0, 0, 0, 0);
+        }
+        if (protocolizationEndDate) {
+            protEnd = new Date(protocolizationEndDate);
+            protEnd.setUTCHours(23, 59, 59, 999);
+        }
+
+        const where = this.getSharedWhereClause(
+            yearStart,
+            yearEnd,
+            includeNonProtocolized,
+            includeProtocolizedOutOfPeriod,
+            protStart,
+            protEnd
+        );
 
         if (!includeCampaigns) {
             where.tipoMarea = { not: TipoMarea.CI };

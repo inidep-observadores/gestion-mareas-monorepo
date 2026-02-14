@@ -87,10 +87,23 @@ const chartOptions = computed(() => {
       }],
       events: {
         dataPointSelection: (event: any, chartContext: any, config: any) => {
+          // Check if the click came from a legend item (labels or markers)
+          const target = event?.target;
+          const isLegend = target && (
+            target.closest('.apexcharts-legend') ||
+            target.classList.contains('apexcharts-legend-text') ||
+            target.classList.contains('apexcharts-legend-marker')
+          );
+
+          if (isLegend) return;
+
           const { seriesIndex, dataPointIndex, w } = config
-          const label = w.globals.labels[dataPointIndex]
-          const value = w.globals.series[seriesIndex][dataPointIndex] || w.globals.series[seriesIndex]
-          emit('dataPointClick', { label, value, seriesIndex, dataPointIndex, w })
+          // Safeguard: Only emit click if a real data point was selected
+          if (dataPointIndex !== undefined && dataPointIndex !== -1) {
+            const label = w.globals.labels[dataPointIndex]
+            const value = w.globals.series[seriesIndex][dataPointIndex] || w.globals.series[seriesIndex]
+            emit('dataPointClick', { label, value, seriesIndex, dataPointIndex, w })
+          }
         }
       }
     },

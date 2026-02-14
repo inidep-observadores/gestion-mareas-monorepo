@@ -56,7 +56,7 @@
             <!-- ROW 2: TEMPORAL TRENDS -->
             <section class="grid grid-cols-12 gap-8">
                <div class="col-span-12 lg:col-span-8">
-                  <ChartWidget title="Tendencia Mensual" subtitle="Mareas iniciadas y Días Navegados por mes" type="bar"
+                  <ChartWidget title="Tendencia Mensual" subtitle="Evolución de Días Navegados por mes" type="area"
                      :series="monthlySeries" :options="monthlyChartOptions" allow-download
                      @download="handleDownload('Tendencia_Mensual')" />
                </div>
@@ -215,7 +215,7 @@
 
                <!-- Scrollable content -->
                <div class="flex-1 overflow-y-auto custom-scrollbar bg-surface/30">
-                  <div v-if="dialogLoading" class="flex justify-center items-center h-full">
+                  <div v-if="loadingDetail" class="flex justify-center items-center h-full">
                      <div class="flex flex-col items-center gap-4">
                         <Loader2Icon class="w-10 h-10 animate-spin text-primary" />
                         <span class="text-xs font-bold text-text-muted uppercase tracking-widest">Cargando
@@ -233,7 +233,7 @@
                               <div class="flex items-center gap-2 mb-2">
                                  <span class="font-black text-sm text-text tabular-nums tracking-tighter">{{
                                     marea.id_marea
-                                 }}</span>
+                                    }}</span>
                                  <span
                                     class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest bg-secondary/10 text-secondary border border-secondary/20">{{
                                        marea.estado }}</span>
@@ -265,7 +265,8 @@
                                     <span
                                        class="font-black opacity-40 uppercase tracking-tighter text-[9px] mb-0.5">Inicio</span>
                                     <span class="font-bold text-text">{{ marea.fechaInicio ? new
-                                       Date(marea.fechaInicio).toLocaleDateString() : '-' }}</span>
+                                       Date(marea.fechaInicio).toLocaleDateString('es-AR', { timeZone: 'UTC' }) : '-'
+                                    }}</span>
                                  </div>
                               </div>
                            </div>
@@ -381,7 +382,7 @@
                                  <td class="px-4 py-2 border-r border-border/50">
                                     <div class="flex flex-col">
                                        <span class="font-black text-xs text-text tabular-nums">{{ marea.id_marea
-                                       }}</span>
+                                          }}</span>
                                        <span class="text-[9px] font-bold text-text-muted uppercase tracking-tighter">{{
                                           marea.estado }}</span>
                                     </div>
@@ -394,7 +395,7 @@
                                  </td>
                                  <td class="px-4 py-2 text-xs font-bold text-text border-r border-border/50">{{
                                     marea.pesqueria
-                                 }}</td>
+                                    }}</td>
                                  <td v-if="filterType !== 'OBSERVER'"
                                     class="px-4 py-2 text-xs font-bold text-text border-r border-border/50">{{
                                        marea.observador
@@ -404,36 +405,40 @@
                                        :class="['font-black text-sm tabular-nums', (mode === 'CALENDAR' || dialogPeriodLabel) ? 'text-primary' : 'text-text']">
                                        {{ dialogPeriodLabel ? marea.diasPeriodo : (mode === 'CALENDAR' ?
                                           marea.diasCalendario :
-                                       marea.diasTotales) }}
+                                          marea.diasTotales) }}
                                     </span>
                                  </td>
                                  <td v-if="mode === 'CALENDAR' && !dialogPeriodLabel" class="px-4 py-2 text-right">
                                     <span class="font-bold text-xs text-text-muted tabular-nums opacity-80">{{
                                        marea.diasTotales
-                                    }}</span>
+                                       }}</span>
                                  </td>
-                               </tr>
-                            </tbody>
-                            <!-- Footer Totales -->
-                            <tfoot v-if="filteredDialogItems.length > 0" class="sticky bottom-0 z-10">
-                               <tr class="bg-background/95 backdrop-blur-md border-t-2 border-primary/20 shadow-[0_-4px_12px_rgba(0,0,0,0.1)]">
-                                  <td :colspan="filterType !== 'OBSERVER' ? 5 : 4"
-                                     class="px-4 py-3 text-right text-[10px] font-black text-text-muted uppercase tracking-widest">
-                                     Totales Seleccionados
-                                  </td>
-                                  <td class="px-4 py-3 text-right bg-primary/5">
-                                     <span class="font-black text-sm tabular-nums text-primary">
-                                        {{ dialogPeriodLabel ? totalDiasPeriodo : (mode === 'CALENDAR' ? totalDiasCalendario : totalDiasTotales) }}
-                                     </span>
-                                  </td>
-                                  <td v-if="mode === 'CALENDAR' && !dialogPeriodLabel" class="px-4 py-3 text-right bg-text/5">
-                                     <span class="font-black text-xs text-text-muted tabular-nums opacity-80">
-                                        {{ totalDiasTotales }}
-                                     </span>
-                                  </td>
-                               </tr>
-                            </tfoot>
-                         </table>
+                              </tr>
+                           </tbody>
+                           <!-- Footer Totales -->
+                           <tfoot v-if="filteredDialogItems.length > 0" class="sticky bottom-0 z-10">
+                              <tr
+                                 class="bg-background/95 backdrop-blur-md border-t-2 border-primary/20 shadow-[0_-4px_12px_rgba(0,0,0,0.1)]">
+                                 <td :colspan="filterType !== 'OBSERVER' ? 5 : 4"
+                                    class="px-4 py-3 text-right text-[10px] font-black text-text-muted uppercase tracking-widest">
+                                    Totales Seleccionados
+                                 </td>
+                                 <td class="px-4 py-3 text-right bg-primary/5">
+                                    <span class="font-black text-sm tabular-nums text-primary">
+                                       {{ dialogPeriodLabel ? totalDiasPeriodo : (mode === 'CALENDAR' ?
+                                          totalDiasCalendario :
+                                          totalDiasTotales) }}
+                                    </span>
+                                 </td>
+                                 <td v-if="mode === 'CALENDAR' && !dialogPeriodLabel"
+                                    class="px-4 py-3 text-right bg-text/5">
+                                    <span class="font-black text-xs text-text-muted tabular-nums opacity-80">
+                                       {{ totalDiasTotales }}
+                                    </span>
+                                 </td>
+                              </tr>
+                           </tfoot>
+                        </table>
                      </div>
 
                      <!-- Empty Filter Result -->
@@ -619,6 +624,8 @@ import { statsService, type DashboardStats, type StatsDetailItem, type MareaDist
 import { TipoMarea } from '@/modules/mareas/types/enums'
 import { toast } from 'vue-sonner'
 
+type FilterType = 'FISHERY' | 'FLEET' | 'OBSERVER';
+
 const configStore = useConfigStore();
 const router = useRouter();
 const year = computed(() => configStore.selectedYear);
@@ -635,18 +642,15 @@ const includeCampaigns = ref(true);
 
 const startDate = ref<string | null>(null);
 const endDate = ref<string | null>(null);
-const dialogStartDate = ref<string | null>(null);
-const dialogEndDate = ref<string | null>(null);
-
-const filterType = ref<'FISHERY' | 'FLEET' | 'OBSERVER' | null>(null);
+const filterType = ref<FilterType | null>(null);
 const filterValue = ref<string | null>(null);
+const loading = ref(false);
+const selectedCoverageFishery = ref<string>('ALL');
 
 const stats = ref<DashboardStats | null>(null);
 const distributionData = ref<MareaDistributionItem[]>([]);
 const coverageData = ref<{ month: number, count: number, days: number, fleets: { name: string, count: number, days: number }[] }[]>([]);
 const selectedDistributionFishery = ref<string>('ALL');
-const selectedCoverageFishery = ref<string>('ALL');
-const loading = ref(false);
 
 const dynamicChartHeight = computed(() => {
    let filtered = distributionData.value;
@@ -659,10 +663,7 @@ const dynamicChartHeight = computed(() => {
 });
 
 // --- Fetch Data ---
-const dialogOpen = ref(false);
-const dialogLoading = ref(false);
-const dialogItems = ref<StatsDetailItem[]>([]);
-const searchTerm = ref('');
+// (Variables moved to Dialog State)
 
 // Quick Detail State
 const quickDetailOpen = ref(false);
@@ -684,6 +685,8 @@ const getSortIcon = (key: string) => {
    if (sortKey.value !== key) return ChevronDownIcon;
    return sortOrder.value === 'asc' ? ChevronUpIcon : ChevronDownIcon;
 };
+
+const searchTerm = ref(''); // Moved from dialog state
 
 const filteredDialogItems = computed(() => {
    let items = [...dialogItems.value];
@@ -741,9 +744,9 @@ const totalDiasTotales = computed(() => {
    return filteredDialogItems.value.reduce((acc, item) => acc + (item.diasTotales || 0), 0);
 });
 
-const dialogTitle = ref('');
+// const dialogTitle = ref(''); // This was duplicated, removed.
 const isMonthlyDetail = computed(() => {
-   if (!filterType.value && dialogStartDate.value && dialogEndDate.value) {
+   if (!dialogFilterType.value && dialogStartDate.value && dialogEndDate.value) {
       // If it's coverage, it usually has no filterType but has specific dates
       return true;
    }
@@ -752,10 +755,16 @@ const isMonthlyDetail = computed(() => {
 
 const dialogPeriodLabel = computed(() => {
    if (!dialogStartDate.value || !dialogEndDate.value) return '';
-   const start = new Date(dialogStartDate.value.includes('T') ? dialogStartDate.value : dialogStartDate.value + 'T12:00:00');
-   const end = new Date(dialogEndDate.value.includes('T') ? dialogEndDate.value : dialogEndDate.value + 'T12:00:00');
-   if (start.getMonth() === end.getMonth() && start.getFullYear() === end.getFullYear()) {
-      return start.toLocaleDateString('es-AR', { month: 'long' });
+
+   // Parse YYYY-MM-DD strings directly as UTC to avoid local timezone shifts
+   const [sYear, sMonth, sDay] = dialogStartDate.value.split('T')[0].split('-').map(Number);
+   const [eYear, eMonth, eDay] = dialogEndDate.value.split('T')[0].split('-').map(Number);
+
+   const start = new Date(Date.UTC(sYear, sMonth - 1, sDay));
+   const end = new Date(Date.UTC(eYear, eMonth - 1, eDay));
+
+   if (start.getUTCMonth() === end.getUTCMonth() && start.getUTCFullYear() === end.getUTCFullYear()) {
+      return start.toLocaleDateString('es-AR', { month: 'long', timeZone: 'UTC' });
    }
    return '';
 });
@@ -788,9 +797,11 @@ const criteriaList = computed(() => {
    // Formateo dinámico del rango para la leyenda
    const formatDate = (dateStr: string | null, defaultValue: string) => {
       if (!dateStr) return defaultValue;
-      const d = new Date(dateStr.includes('T') ? dateStr : `${dateStr}T12:00:00`);
-      if (isNaN(d.getTime())) return defaultValue;
-      return d.toLocaleDateString('es-AR', { day: '2-digit', month: 'short' });
+      const cleanDate = dateStr.split('T')[0];
+      const [y, m, d] = cleanDate.split('-').map(Number);
+      const date = new Date(Date.UTC(y, m - 1, d));
+      if (isNaN(date.getTime())) return defaultValue;
+      return date.toLocaleDateString('es-AR', { day: '2-digit', month: 'short', timeZone: 'UTC' });
    };
 
    const start = formatDate(startDate.value, '01/Ene');
@@ -822,11 +833,11 @@ const criteriaList = computed(() => {
    } else {
       list.push(`Tipo: <strong>Excluye</strong> Campañas Institucionales.`);
    }
-   if (filterType.value && filterValue.value) {
+   if (dialogFilterType.value && dialogFilterValue.value) {
       let typeLabel = '';
-      if (filterType.value === 'FISHERY') typeLabel = 'Pesquería';
-      if (filterType.value === 'FLEET') typeLabel = 'Flota';
-      if (filterType.value === 'OBSERVER') typeLabel = 'Observador';
+      if (dialogFilterType.value === 'FISHERY') typeLabel = 'Pesquería';
+      if (dialogFilterType.value === 'FLEET') typeLabel = 'Flota';
+      if (dialogFilterType.value === 'OBSERVER') typeLabel = 'Observador';
       list.push(`Filtro Activo: <strong>${typeLabel}</strong> ${dialogTitle.value ? `(${dialogTitle.value.replace('Detalle: ', '')})` : ''}.`);
    }
    return list;
@@ -845,7 +856,9 @@ const fetchData = async () => {
             daysCalculationMode.value,
             includeCampaigns.value,
             startDate.value || undefined,
-            endDate.value || undefined
+            endDate.value || undefined,
+            startDate.value || undefined, // protocolizationStartDate
+            endDate.value || undefined    // protocolizationEndDate
          ),
          statsService.getMareaDistribution(
             year.value,
@@ -854,7 +867,9 @@ const fetchData = async () => {
             includeOutOfPeriod.value,
             includeCampaigns.value,
             startDate.value || undefined,
-            endDate.value || undefined
+            endDate.value || undefined,
+            startDate.value || undefined, // protocolizationStartDate
+            endDate.value || undefined    // protocolizationEndDate
          ),
          statsService.getUniqueVesselsCount(
             year.value,
@@ -864,7 +879,9 @@ const fetchData = async () => {
             includeCampaigns.value,
             startDate.value || undefined,
             endDate.value || undefined,
-            selectedCoverageFishery.value === 'ALL' ? undefined : selectedCoverageFishery.value
+            selectedCoverageFishery.value === 'ALL' ? undefined : selectedCoverageFishery.value, // fisheryName
+            startDate.value || undefined, // protocolizationStartDate
+            endDate.value || undefined    // protocolizationEndDate
          )
       ]);
       stats.value = newStats;
@@ -911,6 +928,7 @@ const ganttSeries = computed(() => {
    const seriesData: any[] = [];
 
    filtered.forEach(item => {
+      // Use UTC for Gantt milestones to avoid shifts
       const start = new Date(item.fechaZarpada).getTime();
       const end = item.fechaArribo ? new Date(item.fechaArribo).getTime() : Date.now();
       const baseColor = getFisheryColor(item.pesqueria);
@@ -1071,46 +1089,61 @@ const handleTimeFilter = (filter: { startDate: string | null, endDate: string | 
    endDate.value = filter.endDate;
 };
 
-// --- Dialog Logic ---
-const openDialog = async (type: 'FISHERY' | 'FLEET' | 'OBSERVER' | null, value: string | null, titleName: string, customStart?: string, customEnd?: string) => {
-   filterType.value = type;
-   filterValue.value = value;
-   
-   // Save period for the dialog
-   dialogStartDate.value = customStart || startDate.value;
-   dialogEndDate.value = customEnd || endDate.value;
+// DIALOG STATE
+const dialogOpen = ref(false)
+const dialogItems = ref<StatsDetailItem[]>([])
+const dialogTitle = ref('')
+const dialogStartDate = ref<string | null>(null)
+const dialogEndDate = ref<string | null>(null)
+const dialogFilterType = ref<FilterType | null>(null)
+const dialogFilterValue = ref<string | null>(null)
+const loadingDetail = ref(false)
+const dialogFilterByStart = ref(false)
 
-   dialogTitle.value = `Detalle: ${titleName}`;
-   dialogOpen.value = true;
-   dialogLoading.value = true;
+const openDialog = (fType: FilterType | null, fValue: string | null, title: string, start?: string, end?: string) => {
+   dialogFilterType.value = fType
+   dialogFilterValue.value = fValue
+   dialogTitle.value = title
+   dialogStartDate.value = start || startDate.value
+   dialogEndDate.value = end || endDate.value
+   dialogFilterByStart.value = false
+   dialogOpen.value = true
+   fetchItems()
+}
 
+const fetchItems = async () => {
+   loadingDetail.value = true
    try {
       dialogItems.value = await statsService.getDashboardStatsDetail(
          year.value,
          mode.value,
          !protocolizedOnly.value,
          includeOutOfPeriod.value,
-         type,
-         value,
+         dialogFilterType.value || null,
+         dialogFilterValue.value || null,
          daysCalculationMode.value,
          includeCampaigns.value,
-         customStart || startDate.value || undefined,
-         customEnd || endDate.value || undefined
-      );
+         dialogStartDate.value || undefined,
+         dialogEndDate.value || undefined,
+         startDate.value || undefined, // protocolizationStartDate (use GLOBAL view filter)
+         endDate.value || undefined    // protocolizationEndDate (use GLOBAL view filter)
+      )
    } catch (error) {
-      console.error('Error fetching details:', error);
+      console.error('Error fetching detail items:', error)
       toast.error('Error al cargar detalle');
       dialogOpen.value = false;
    } finally {
-      dialogLoading.value = false;
+      loadingDetail.value = false
    }
-};
+}
+
 const closeDialog = () => {
    dialogOpen.value = false;
-   filterType.value = null;
-   filterValue.value = null;
+   dialogFilterType.value = null;
+   dialogFilterValue.value = null;
    dialogStartDate.value = null;
    dialogEndDate.value = null;
+   dialogFilterByStart.value = false;
    searchTerm.value = '';
 };
 
@@ -1121,6 +1154,7 @@ const openQuickDetail = (mareaId: string) => {
 
 // --- Click Handlers ---
 const handleFisheryClick = ({ seriesIndex, dataPointIndex, w }: any) => {
+   if (dataPointIndex === -1) return;
    // En el Donut (Participación), usamos dataPointIndex (serie única).
    // En el Scatter (Perfil Operativo), usamos seriesIndex (una serie por pesquería).
    const isScatter = w?.config?.chart?.type === 'scatter';
@@ -1131,30 +1165,45 @@ const handleFisheryClick = ({ seriesIndex, dataPointIndex, w }: any) => {
 };
 
 const handleFleetClick = ({ dataPointIndex }: any) => {
+   if (dataPointIndex === -1) return;
    const item = stats.value?.fleets[dataPointIndex];
    if (item) openDialog('FLEET', item.name, item.name);
 };
 
 const handleObserverClick = ({ dataPointIndex }: any) => {
+   if (dataPointIndex === -1) return;
    const item = stats.value?.observers[dataPointIndex];
    // Now we pass the ID to the API filter logic, but Name to the Dialog Title
    if (item) openDialog('OBSERVER', item.id, item.name);
 }
 
-const handleCoverageClick = (_event: any, _chartContext: any, { dataPointIndex }: any) => {
+const handleCoverageClick = (event: any, _chartContext: any, { dataPointIndex }: any) => {
+   const target = event?.target;
+   const isLegend = target && (
+      target.closest('.apexcharts-legend') ||
+      target.classList.contains('apexcharts-legend-text') ||
+      target.classList.contains('apexcharts-legend-marker')
+   );
+   if (isLegend || dataPointIndex === undefined || dataPointIndex === -1) return;
    const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
    const monthName = monthNames[dataPointIndex];
 
    // Calculate month range for the dialog
-   // We use UTC to avoid timezone shifts during DST changes when calculating start/end
-   const start = new Date(Date.UTC(year.value, dataPointIndex, 1)).toISOString().split('T')[0];
-   const end = new Date(Date.UTC(year.value, dataPointIndex + 1, 0)).toISOString().split('T')[0];
+   const mStart = new Date(Date.UTC(year.value, dataPointIndex, 1)).toISOString().split('T')[0];
+   const mEnd = new Date(Date.UTC(year.value, dataPointIndex + 1, 0)).toISOString().split('T')[0];
+
+   // INTERSECTION: Respect the global time filter
+   let finalStart = mStart;
+   let finalEnd = mEnd;
+
+   if (startDate.value && startDate.value > finalStart) finalStart = startDate.value;
+   if (endDate.value && endDate.value < finalEnd) finalEnd = endDate.value;
 
    // Respect the global fishery filter of the chart
    const filterT = selectedCoverageFishery.value !== 'ALL' ? 'FISHERY' : null;
    const filterV = selectedCoverageFishery.value !== 'ALL' ? selectedCoverageFishery.value : null;
 
-   openDialog(filterT, filterV, `Cobertura ${monthName} ${year.value}`, start, end);
+   openDialog(filterT, filterV, `Cobertura ${monthName} ${year.value}`, finalStart, finalEnd);
 };
 
 const handleGanttClick = ({ seriesIndex, dataPointIndex, w }: any) => {
@@ -1166,8 +1215,8 @@ const handleGanttClick = ({ seriesIndex, dataPointIndex, w }: any) => {
 
 // --- Download Handler ---
 const handleDownload = async (titlePrefix: string, fType?: 'FISHERY' | 'FLEET' | 'OBSERVER') => {
-   const fValue = filterValue.value || undefined;
-   const fTypeParam = fType || filterType.value || undefined;
+   const fValue = dialogFilterValue.value || undefined;
+   const fTypeParam = fType || dialogFilterType.value || undefined;
 
    let finalTitle = titlePrefix;
    if (dialogOpen.value && dialogTitle.value) {
@@ -1193,13 +1242,14 @@ const handleDownload = async (titlePrefix: string, fType?: 'FISHERY' | 'FLEET' |
          fValue, // PASSING UNDEFINED IF NULL
          `${finalTitle}_${mode.value === 'CALENDAR' ? year.value : 'TOTAL'}`,
          (dialogOpen.value ? dialogStartDate.value : startDate.value) || undefined,
-         (dialogOpen.value ? dialogEndDate.value : endDate.value) || undefined
+         (dialogOpen.value ? dialogEndDate.value : endDate.value) || undefined,
+         startDate.value || undefined, // protocolizationStartDate
+         endDate.value || undefined    // protocolizationEndDate
       );
-      const prettyTitle = (dialogOpen.value && dialogTitle.value) ? dialogTitle.value : 'Estadísticas Generales';
-      toast.success(`Exportación iniciada: ${prettyTitle}`);
+      toast.success('Exportación preparada con éxito');
    } catch (error) {
-      console.error('Download error:', error);
-      toast.error('Error al exportar archivo');
+      console.error('Error in handleDownload:', error);
+      toast.error('No se pudo generar la exportación');
    }
 }
 
@@ -1215,24 +1265,103 @@ onMounted(() => {
 
 // --- CHART COMPUTED PROPS ---
 
-// 1. Monthly Trends (Mixed Chart)
-const monthlySeries = computed(() => {
-   if (!stats.value) return []
-   return [
-      { name: 'Mareas Iniciadas', type: 'column', data: stats.value.monthly.mareas },
-      { name: 'Días Navegados', type: 'line', data: stats.value.monthly.days }
-   ]
-})
+// 1. Monthly Trends (Area Chart)
 const monthlyChartOptions = computed(() => ({
+   chart: {
+      type: 'area',
+      toolbar: { show: false },
+      events: {
+         click: handleMonthlyTrendClick
+      },
+      sparkline: { enabled: false }
+   },
    labels: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'],
-   colors: ['#0ea5e9', '#f59e0b'],
-   stroke: { width: [0, 3] },
-   plotOptions: { bar: { borderRadius: 4, columnWidth: '50%' } },
-   yaxis: [
-      { title: { text: 'Mareas' } },
-      { opposite: true, title: { text: 'Días' } }
-   ]
+   colors: ['#f59e0b'],
+   stroke: {
+      width: 3,
+      curve: 'smooth'
+   },
+   fill: {
+      type: 'gradient',
+      gradient: {
+         shadeIntensity: 1,
+         opacityFrom: 0.5,
+         opacityTo: 0.05,
+         stops: [0, 90, 100],
+         colorStops: [
+            { offset: 0, color: '#f59e0b', opacity: 0.5 },
+            { offset: 100, color: '#f59e0b', opacity: 0 }
+         ]
+      }
+   },
+   markers: {
+      size: 5,
+      colors: ['#f59e0b'],
+      strokeWidth: 2,
+      strokeColors: '#ffffff',
+      hover: { size: 7 }
+   },
+   yaxis: {
+      title: { text: 'Días Navegados', style: { color: '#f59e0b', fontWeight: 800 } },
+      labels: { style: { colors: '#f59e0b', fontWeight: 600 } }
+   },
+   tooltip: {
+      shared: true,
+      intersect: false,
+      custom: ({ series, dataPointIndex }: any) => {
+         if (dataPointIndex === -1) return '';
+         const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+         const label = monthNames[dataPointIndex];
+         const days = series[0][dataPointIndex];
+
+         return `
+            <div class="px-4 py-4 bg-surface/90 backdrop-blur-xl text-text border border-border/50 rounded-2xl flex flex-col gap-3 shadow-2xl ring-1 ring-black/10 min-w-[220px]">
+               <div class="flex items-center justify-between border-b border-border/30 pb-2 mb-1">
+                  <span class="text-[10px] text-text-muted uppercase font-black tracking-widest">${label} ${year.value}</span>
+                  <div class="px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-500 text-[9px] font-black uppercase">Esfuerzo</div>
+               </div>
+               
+               <div class="flex flex-col gap-1">
+                  <span class="text-[9px] font-black text-amber-500 uppercase tracking-tighter">Días Navegados Totales</span>
+                  <span class="text-2xl font-black tabular-nums">${days}</span>
+               </div>
+            </div>
+         `;
+      }
+   }
 }))
+
+const monthlySeries = computed(() => [
+   { name: 'Días Navegados', data: stats.value?.monthly.days || [] }
+])
+
+const handleMonthlyTrendClick = (event: any, _chartContext: any, config: any) => {
+   const { dataPointIndex } = config;
+   const target = event?.target;
+   const isLegend = target && (
+      target.closest('.apexcharts-legend') ||
+      target.classList.contains('apexcharts-legend-text') ||
+      target.classList.contains('apexcharts-legend-marker')
+   );
+
+   // Only proceed if a valid point was clicked (index >= 0) and not on legend
+   if (isLegend || dataPointIndex === undefined || dataPointIndex === -1) return;
+
+   const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+   const monthName = monthNames[dataPointIndex];
+
+   const mStart = new Date(Date.UTC(year.value, dataPointIndex, 1)).toISOString().split('T')[0];
+   const mEnd = new Date(Date.UTC(year.value, dataPointIndex + 1, 0)).toISOString().split('T')[0];
+
+   // INTERSECTION: Respect the global time filter
+   let finalStart = mStart;
+   let finalEnd = mEnd;
+
+   if (startDate.value && startDate.value > finalStart) finalStart = startDate.value;
+   if (endDate.value && endDate.value < finalEnd) finalEnd = endDate.value;
+
+   openDialog(null, null, `Tendencia ${monthName} ${year.value}`, finalStart, finalEnd);
+};
 
 // 2. Fleet Distribution (Donut)
 const fleetSort = computed(() => stats.value?.fleets.slice(0, 5) || []) // Top 5
@@ -1367,15 +1496,36 @@ const fisheryDualAxisOptions = computed(() => ({
    tooltip: {
       shared: true,
       intersect: false,
-      theme: 'dark', // Force dark for contrast
-      x: { show: true },
-      y: {
-         formatter: (val: number, opts: any) => {
-            const unit = opts.seriesIndex === 0 ? 'mareas' : 'días';
-            return `${val} ${unit}`;
-         }
-      },
-      custom: undefined
+      custom: ({ series, seriesIndex, dataPointIndex, w }: any) => {
+         const label = w.config.xaxis.categories[dataPointIndex];
+         const mareas = series[0][dataPointIndex];
+         const days = series[1][dataPointIndex];
+
+         return `
+            <div class="px-4 py-4 bg-surface/90 backdrop-blur-xl text-text border border-border/50 rounded-2xl flex flex-col gap-3 shadow-2xl ring-1 ring-black/10 min-w-[220px]">
+               <div class="flex items-center justify-between border-b border-border/30 pb-2 mb-1">
+                  <span class="text-[10px] text-text-muted uppercase font-black tracking-widest">${label}</span>
+                  <div class="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[9px] font-black uppercase">Actividad</div>
+               </div>
+               
+               <div class="grid grid-cols-2 gap-3 pb-1">
+                  <div class="flex flex-col">
+                     <span class="text-[9px] font-black text-blue-500 uppercase tracking-tighter">Mareas</span>
+                     <span class="text-lg font-black tabular-nums">${mareas}</span>
+                  </div>
+                  <div class="flex flex-col border-l border-border/20 pl-3">
+                     <span class="text-[9px] font-black text-amber-500 uppercase tracking-tighter">Días Navegados</span>
+                     <span class="text-lg font-black tabular-nums">${days}</span>
+                  </div>
+               </div>
+
+               <div class="pt-2 border-t border-border/30 flex justify-between items-center">
+                  <span class="text-text-muted text-[9px] font-black italic uppercase">Promedio:</span>
+                  <span class="text-primary font-black text-[11px] tabular-nums">${mareas > 0 ? (days / mareas).toFixed(1) : 0} días/marea</span>
+               </div>
+            </div>
+         `;
+      }
    }
 }));
 

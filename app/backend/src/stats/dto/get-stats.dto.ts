@@ -64,5 +64,18 @@ export class GetStatsDto {
 
     @IsString()
     @IsOptional()
+    protocolizationStartDate?: string;
+
+    @IsString()
+    @IsOptional()
+    protocolizationEndDate?: string;
+
+    @IsString()
+    @IsOptional()
     customFilename?: string;
+
+    @IsBoolean()
+    @IsOptional()
+    @Transform(({ value }) => value === 'true')
+    filterByStart?: boolean = false;
 }

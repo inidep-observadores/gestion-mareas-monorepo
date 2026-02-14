@@ -55,7 +55,9 @@ export const statsService = {
         includeProtocolizedOutOfPeriod: boolean,
         includeCampaigns: boolean,
         startDate?: string,
-        endDate?: string
+        endDate?: string,
+        protocolizationStartDate?: string,
+        protocolizationEndDate?: string
     ): Promise<MareaDistributionItem[]> {
         const params = new URLSearchParams({
             year: year.toString(),
@@ -66,6 +68,8 @@ export const statsService = {
         });
         if (startDate) params.append('startDate', startDate);
         if (endDate) params.append('endDate', endDate);
+        if (protocolizationStartDate) params.append('protocolizationStartDate', protocolizationStartDate);
+        if (protocolizationEndDate) params.append('protocolizationEndDate', protocolizationEndDate);
         const response = await httpClient.get<MareaDistributionItem[]>(`/stats/distribution?${params.toString()}`);
         return response.data;
     },
@@ -78,7 +82,9 @@ export const statsService = {
         daysCalculationMode: 'SHIP' | 'OBSERVER',
         includeCampaigns: boolean,
         startDate?: string,
-        endDate?: string
+        endDate?: string,
+        protocolizationStartDate?: string,
+        protocolizationEndDate?: string
     ): Promise<DashboardStats> {
         const params = new URLSearchParams({
             year: year.toString(),
@@ -90,6 +96,8 @@ export const statsService = {
         });
         if (startDate) params.append('startDate', startDate);
         if (endDate) params.append('endDate', endDate);
+        if (protocolizationStartDate) params.append('protocolizationStartDate', protocolizationStartDate);
+        if (protocolizationEndDate) params.append('protocolizationEndDate', protocolizationEndDate);
         const response = await httpClient.get<DashboardStats>(`/stats/dashboard?${params.toString()}`);
         return response.data;
     },
@@ -104,7 +112,9 @@ export const statsService = {
         daysCalculationMode: 'SHIP' | 'OBSERVER',
         includeCampaigns: boolean,
         startDate?: string,
-        endDate?: string
+        endDate?: string,
+        protocolizationStartDate?: string,
+        protocolizationEndDate?: string
     ): Promise<StatsDetailItem[]> {
         const params = new URLSearchParams({
             year: year.toString(),
@@ -112,13 +122,15 @@ export const statsService = {
             includeNonProtocolized: String(includeNonProtocolized),
             includeProtocolizedOutOfPeriod: String(includeProtocolizedOutOfPeriod),
             daysCalculationMode,
-            includeCampaigns: String(includeCampaigns)
+            includeCampaigns: String(includeCampaigns),
+            ...(startDate && { startDate }),
+            ...(endDate && { endDate }),
+            ...(protocolizationStartDate && { protocolizationStartDate }),
+            ...(protocolizationEndDate && { protocolizationEndDate })
         });
         if (filterType) params.append('filterType', filterType);
         if (filterValue) params.append('filterValue', filterValue);
 
-        if (startDate) params.append('startDate', startDate);
-        if (endDate) params.append('endDate', endDate);
         const response = await httpClient.get<StatsDetailItem[]>(`/stats/detail?${params.toString()}`);
         return response.data;
     },
@@ -134,8 +146,10 @@ export const statsService = {
         filterValue?: string,
         filename?: string,
         startDate?: string,
-        endDate?: string
-    ): Promise<void> {
+        endDate?: string,
+        protocolizationStartDate?: string,
+        protocolizationEndDate?: string
+    ) {
         const params = new URLSearchParams({
             year: year.toString(),
             mode,
@@ -147,33 +161,28 @@ export const statsService = {
 
         if (startDate) params.append('startDate', startDate);
         if (endDate) params.append('endDate', endDate);
+        if (protocolizationStartDate) params.append('protocolizationStartDate', protocolizationStartDate);
+        if (protocolizationEndDate) params.append('protocolizationEndDate', protocolizationEndDate);
 
         if (filterType && filterValue) {
             params.append('filterType', filterType);
             params.append('filterValue', filterValue);
         }
 
-        if (filename) {
-            params.append('customFilename', filename);
-        }
-
-        const response = await httpClient.get(`/stats/export?${params.toString()}`, {
-            responseType: 'blob',
+        const response = await httpClient.get('/stats/export', {
+            params,
+            responseType: 'blob'
         });
 
-        // Create a URL for the blob
-        const url = window.URL.createObjectURL(new Blob([response.data]));
+        const blob = new Blob([response.data], {
+            type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        });
+        const url = window.URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-
-        // Use provided filename or default
-        const downloadFilename = filename ? `${filename}.xlsx` : `Estadisticas_${year}.xlsx`;
-        link.setAttribute('download', downloadFilename);
-
+        link.setAttribute('download', `${filename || 'export'}.xlsx`);
         document.body.appendChild(link);
         link.click();
-
-        // Clean up
         link.remove();
         window.URL.revokeObjectURL(url);
     },
@@ -187,6 +196,8 @@ export const statsService = {
         startDate?: string,
         endDate?: string,
         fisheryName?: string,
+        protocolizationStartDate?: string,
+        protocolizationEndDate?: string,
     ): Promise<{
         count: number,
         monthly: {
@@ -205,6 +216,8 @@ export const statsService = {
         });
         if (startDate) params.append('startDate', startDate);
         if (endDate) params.append('endDate', endDate);
+        if (protocolizationStartDate) params.append('protocolizationStartDate', protocolizationStartDate);
+        if (protocolizationEndDate) params.append('protocolizationEndDate', protocolizationEndDate);
         if (fisheryName) {
             params.append('filterType', 'FISHERY');
             params.append('filterValue', fisheryName);

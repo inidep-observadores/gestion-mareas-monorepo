@@ -19,7 +19,9 @@ export class StatsController {
             query.daysCalculationMode,
             query.includeCampaigns,
             query.startDate,
-            query.endDate
+            query.endDate,
+            query.protocolizationStartDate,
+            query.protocolizationEndDate
         );
     }
 
@@ -35,7 +37,9 @@ export class StatsController {
             query.daysCalculationMode,
             query.includeCampaigns,
             query.startDate,
-            query.endDate
+            query.endDate,
+            query.protocolizationStartDate,
+            query.protocolizationEndDate
         );
     }
 
@@ -49,7 +53,9 @@ export class StatsController {
             query.includeCampaigns,
             query.startDate,
             query.endDate,
-            query.filterType === 'FISHERY' ? query.filterValue : undefined
+            query.filterType === 'FISHERY' ? query.filterValue : undefined,
+            query.protocolizationStartDate,
+            query.protocolizationEndDate
         );
     }
 
@@ -62,7 +68,9 @@ export class StatsController {
             query.includeProtocolizedOutOfPeriod,
             query.includeCampaigns,
             query.startDate,
-            query.endDate
+            query.endDate,
+            query.protocolizationStartDate,
+            query.protocolizationEndDate
         );
     }
 
@@ -81,7 +89,10 @@ export class StatsController {
             query.filterType,
             query.filterValue,
             query.startDate,
-            query.endDate
+            query.endDate,
+            query.filterByStart,
+            query.protocolizationStartDate,
+            query.protocolizationEndDate
         );
 
         const filename = query.customFilename ? `${query.customFilename}.xlsx` : `Estadisticas_Mareas_${query.year}.xlsx`;
