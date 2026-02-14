@@ -353,6 +353,10 @@ git add -A && git commit -m "mensaje"
 
 ✅ **USAR EN SU LUGAR:**
 ```bash
+git add -A ; git commit -m "mensaje"
+```
+o también:
+```bash
 git add -A
 git commit -m "mensaje"
 ```
