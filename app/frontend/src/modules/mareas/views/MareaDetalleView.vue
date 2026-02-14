@@ -901,7 +901,7 @@ const saveChanges = async () => {
     const etapasPayload = etapas.value.map((etapa, index) => ({
       id: etapa.id,
       nroEtapa: etapa.nroEtapa,
-      pesqueriaId: (index === 0 && marea.value.id_pesqueria) ? marea.value.id_pesqueria : (etapa.pesqueriaId || undefined),
+      pesqueriaId: etapa.pesqueriaId || undefined,
       puertoZarpadaId: etapa.puertoZarpadaId || undefined,
       puertoArriboId: etapa.puertoArriboId || undefined,
       fechaZarpada: toIsoStringOrNull(etapa.fechaZarpada),

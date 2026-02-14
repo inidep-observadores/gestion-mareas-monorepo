@@ -5,7 +5,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { MailerService } from '@nestjs-modules/mailer';
+import { MailService } from '../mail/mail.service';
 import * as crypto from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { User } from '@prisma/client';
@@ -19,7 +19,7 @@ export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
-    private readonly mailerService: MailerService,
+    private readonly mailService: MailService,
     private readonly hashService: HashService,
   ) { }
 
@@ -123,22 +123,18 @@ export class AuthService {
 
     const resetLink = `${process.env.FRONTEND_URL}?token=${token}`;
 
-    try {
-      await this.mailerService.sendMail({
-        to: user.email,
-        subject: 'Recuperación de contraseña',
-        html: `
-          <h1>Recuperación de contraseña</h1>
-          <p>Hola ${user.fullName},</p>
-          <p>Usted ha solicitado restablecer su contraseña. Haga clic en el siguiente enlace para continuar:</p>
-          <a href="${resetLink}">Restablecer contraseña</a>
-          <p>Este enlace expirará en 30 minutos.</p>
-          <p>Si usted no solicitó esto, ignore este correo.</p>
-        `,
-      });
-    } catch (error) {
-      console.error('Error sending email:', error);
-    }
+    await this.mailService.sendMail(
+      user.email,
+      'Recuperación de contraseña',
+      `
+        <h1>Recuperación de contraseña</h1>
+        <p>Hola ${user.fullName},</p>
+        <p>Usted ha solicitado restablecer su contraseña. Haga clic en el siguiente enlace para continuar:</p>
+        <a href="${resetLink}">Restablecer contraseña</a>
+        <p>Este enlace expirará en 30 minutos.</p>
+        <p>Si usted no solicitó esto, ignore este correo.</p>
+      `,
+    );
 
     return {
       message: 'Si el correo existe y está activo, se enviaron instrucciones',

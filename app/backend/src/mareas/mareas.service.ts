@@ -231,7 +231,7 @@ export class MareasService {
                 });
             }
 
-            if (etapas && etapas.length > 0) {
+            if (etapas !== undefined) {
                 // Eliminar etapas que no vienen en el payload (etapas borradas en el frontend)
                 const payloadEtapaIds = etapas.map(e => e.id).filter(id => !!id);
                 await tx.mareaEtapa.deleteMany({

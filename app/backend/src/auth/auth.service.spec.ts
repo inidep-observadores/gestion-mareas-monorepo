@@ -3,7 +3,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { AuthService } from './auth.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
-import { MailerService } from '@nestjs-modules/mailer';
+import { MailService } from '../mail/mail.service';
 import { HashService } from '../common/services/hash.service';
 import { DateUtils } from '../common/utils/date.utils';
 import { BadRequestException } from '@nestjs/common';
@@ -29,7 +29,7 @@ describe('AuthService', () => {
     };
 
     const mockJwtService = { sign: jest.fn(), verify: jest.fn() };
-    const mockMailerService = { sendMail: jest.fn() };
+    const mockMailService = { sendMail: jest.fn() };
     const mockHashService = { hash: jest.fn(), compare: jest.fn() };
 
     beforeEach(async () => {
@@ -39,7 +39,7 @@ describe('AuthService', () => {
                 AuthService,
                 { provide: PrismaService, useValue: mockPrisma },
                 { provide: JwtService, useValue: mockJwtService },
-                { provide: MailerService, useValue: mockMailerService },
+                { provide: MailService, useValue: mockMailService },
                 { provide: HashService, useValue: mockHashService },
             ],
         }).compile();

@@ -286,14 +286,14 @@ describe('StatsService', () => {
 
             // Feb: vessel-1 (Fresquero), vessel-2 (Congelador)
             expect(result.monthly[1].count).toBe(2);
-            expect(result.monthly[1].days).toBe(29); // 29 days in Feb 2024
+            expect(result.monthly[1].days).toBe(58); // vessel-1: 29 days + vessel-2: 29 days
             expect(result.monthly[1].fleets).toHaveLength(2);
             expect(result.monthly[1].fleets).toContainEqual({ name: 'Fresquero', count: 1, days: 29 });
             expect(result.monthly[1].fleets).toContainEqual({ name: 'Congelador', count: 1, days: 29 });
 
             // Mar: vessel-1 (Fresquero), vessel-2 (Congelador)
             expect(result.monthly[2].count).toBe(2);
-            expect(result.monthly[2].days).toBe(10); // 1-10
+            expect(result.monthly[2].days).toBe(20); // vessel-1: 10 days (1-10) + vessel-2: 10 days (1-10)
             expect(result.monthly[2].fleets).toHaveLength(2);
             expect(result.monthly[2].fleets).toContainEqual({ name: 'Fresquero', count: 1, days: 10 });
             expect(result.monthly[2].fleets).toContainEqual({ name: 'Congelador', count: 1, days: 10 });

@@ -9,7 +9,7 @@
                 </div>
                 <div>
                     <h2 class="text-base font-black text-text uppercase tracking-tight leading-none">{{ observadorName
-                    }}</h2>
+                        }}</h2>
                     <p class="text-[10px] font-bold text-text-muted uppercase tracking-tighter mt-1">Historial Operativo
                         ({{ year }} - {{ year - 1 }})</p>
                 </div>
@@ -61,8 +61,8 @@
                                         class="text-[8px] font-black bg-info/10 text-info px-1.5 py-0.5 rounded-md animate-pulse">EN
                                         NAVEGACION</span>
                                 </div>
-                                <div
-                                    class="flex flex-col rounded-2xl border border-border bg-surface p-4 shadow-sm group-hover:shadow-md group-hover:border-primary/20 transition-all">
+                                <div @click="openMareaDetail(item.id)"
+                                    class="flex flex-col rounded-2xl border border-border bg-surface p-4 shadow-sm group-hover:shadow-md group-hover:border-primary/20 transition-all cursor-pointer active:scale-[0.98]">
                                     <div class="flex justify-between items-start mb-3">
                                         <div>
                                             <h4 class="text-sm font-black text-text leading-tight">{{ item.vessel }}
@@ -87,7 +87,7 @@
                                                 <span
                                                     class="text-[9px] font-black text-text-muted uppercase">Navegados</span>
                                                 <span class="text-xs font-black text-primary">{{ item.navigatedDays
-                                                }}d</span>
+                                                    }}d</span>
                                             </div>
                                         </div>
                                     </div>
@@ -138,11 +138,15 @@
             </div>
         </div>
     </BaseModal>
+
+    <!-- Marea Detail Modal -->
+    <MareaQuickDetailModal :is-open="showDetailModal" :marea-id="selectedMareaId" @close="showDetailModal = false" />
 </template>
 
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue'
 import BaseModal from '@/components/common/BaseModal.vue'
+import MareaQuickDetailModal from '@/modules/stats/components/MareaQuickDetailModal.vue'
 import observadoresApi from '../services/observadores.service'
 import { toast } from 'vue-sonner'
 
@@ -157,6 +161,15 @@ const emit = defineEmits(['close'])
 
 const items = ref<any[]>([])
 const loading = ref(false)
+
+// Marea Detail Modal State
+const showDetailModal = ref(false)
+const selectedMareaId = ref<string | null>(null)
+
+const openMareaDetail = (mareaId: string) => {
+    selectedMareaId.value = mareaId
+    showDetailModal.value = true
+}
 
 const initials = computed(() => {
     if (!props.observadorName) return '?'
