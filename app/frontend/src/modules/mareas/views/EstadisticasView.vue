@@ -212,7 +212,7 @@
                               <div class="flex items-center gap-2 mb-2">
                                  <span class="font-black text-sm text-text tabular-nums tracking-tighter">{{
                                     marea.id_marea
-                                    }}</span>
+                                 }}</span>
                                  <span
                                     class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest bg-secondary/10 text-secondary border border-secondary/20">{{
                                        marea.estado }}</span>
@@ -360,7 +360,7 @@
                                  <td class="px-4 py-2 border-r border-border/50">
                                     <div class="flex flex-col">
                                        <span class="font-black text-xs text-text tabular-nums">{{ marea.id_marea
-                                          }}</span>
+                                       }}</span>
                                        <span class="text-[9px] font-bold text-text-muted uppercase tracking-tighter">{{
                                           marea.estado }}</span>
                                     </div>
@@ -373,7 +373,7 @@
                                  </td>
                                  <td class="px-4 py-2 text-xs font-bold text-text border-r border-border/50">{{
                                     marea.pesqueria
-                                    }}</td>
+                                 }}</td>
                                  <td v-if="filterType !== 'OBSERVER'"
                                     class="px-4 py-2 text-xs font-bold text-text border-r border-border/50">{{
                                        marea.observador
@@ -387,7 +387,7 @@
                                  <td v-if="mode === 'CALENDAR'" class="px-4 py-2 text-right">
                                     <span class="font-bold text-xs text-text-muted tabular-nums opacity-80">{{
                                        marea.diasTotales
-                                       }}</span>
+                                    }}</span>
                                  </td>
                               </tr>
                            </tbody>
@@ -710,8 +710,15 @@ const criteriaList = computed(() => {
    const yearText = `<span class="font-bold text-text">${year.value}</span>`;
 
    // Formateo dinámico del rango para la leyenda
-   const start = startDate.value ? new Date(startDate.value + 'T00:00:00').toLocaleDateString('es-AR', { day: '2-digit', month: 'short' }) : '01/Ene';
-   const end = endDate.value ? new Date(endDate.value + 'T00:00:00').toLocaleDateString('es-AR', { day: '2-digit', month: 'short' }) : '31/Dic';
+   const formatDate = (dateStr: string | null, defaultValue: string) => {
+      if (!dateStr) return defaultValue;
+      const d = new Date(dateStr.includes('T') ? dateStr : `${dateStr}T12:00:00`);
+      if (isNaN(d.getTime())) return defaultValue;
+      return d.toLocaleDateString('es-AR', { day: '2-digit', month: 'short' });
+   };
+
+   const start = formatDate(startDate.value, '01/Ene');
+   const end = formatDate(endDate.value, '31/Dic');
    const periodRange = `(${start} - ${end})`;
 
    if (mode.value === 'CALENDAR') {
