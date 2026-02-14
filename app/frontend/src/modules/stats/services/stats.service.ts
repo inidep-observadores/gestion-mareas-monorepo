@@ -98,8 +98,8 @@ export const statsService = {
         mode: 'CALENDAR' | 'TOTAL',
         includeNonProtocolized: boolean,
         includeProtocolizedOutOfPeriod: boolean,
-        filterType: 'FISHERY' | 'FLEET' | 'OBSERVER',
-        filterValue: string,
+        filterType: 'FISHERY' | 'FLEET' | 'OBSERVER' | null,
+        filterValue: string | null,
         daysCalculationMode: 'SHIP' | 'OBSERVER',
         includeCampaigns: boolean,
         startDate?: string,
@@ -108,13 +108,14 @@ export const statsService = {
         const params = new URLSearchParams({
             year: year.toString(),
             mode,
-            filterType,
-            filterValue,
             includeNonProtocolized: String(includeNonProtocolized),
             includeProtocolizedOutOfPeriod: String(includeProtocolizedOutOfPeriod),
             daysCalculationMode,
             includeCampaigns: String(includeCampaigns)
         });
+        if (filterType) params.append('filterType', filterType);
+        if (filterValue) params.append('filterValue', filterValue);
+
         if (startDate) params.append('startDate', startDate);
         if (endDate) params.append('endDate', endDate);
         const response = await httpClient.get<StatsDetailItem[]>(`/stats/detail?${params.toString()}`);

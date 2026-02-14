@@ -1019,7 +1019,7 @@ const handleTimeFilter = (filter: { startDate: string | null, endDate: string | 
 };
 
 // --- Dialog Logic ---
-const openDialog = async (type: 'FISHERY' | 'FLEET' | 'OBSERVER', value: string, titleName: string) => {
+const openDialog = async (type: 'FISHERY' | 'FLEET' | 'OBSERVER' | null, value: string | null, titleName: string, customStart?: string, customEnd?: string) => {
    filterType.value = type;
    filterValue.value = value; // NOW value is correct: Name for Fishery/Fleet, UUID for Observer
 
@@ -1037,8 +1037,8 @@ const openDialog = async (type: 'FISHERY' | 'FLEET' | 'OBSERVER', value: string,
          value,
          daysCalculationMode.value,
          includeCampaigns.value,
-         startDate.value || undefined,
-         endDate.value || undefined
+         customStart || startDate.value || undefined,
+         customEnd || endDate.value || undefined
       );
    } catch (error) {
       console.error('Error fetching details:', error);
@@ -1081,6 +1081,18 @@ const handleObserverClick = ({ dataPointIndex }: any) => {
    // Now we pass the ID to the API filter logic, but Name to the Dialog Title
    if (item) openDialog('OBSERVER', item.id, item.name);
 }
+
+const handleCoverageClick = (_event: any, _chartContext: any, { dataPointIndex }: any) => {
+   const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+   const monthName = monthNames[dataPointIndex];
+
+   // Calculate month range for the dialog
+   // We use UTC to avoid timezone shifts during DST changes when calculating start/end
+   const start = new Date(Date.UTC(year.value, dataPointIndex, 1)).toISOString().split('T')[0];
+   const end = new Date(Date.UTC(year.value, dataPointIndex + 1, 0)).toISOString().split('T')[0];
+
+   openDialog(null, null, `Cobertura ${monthName} ${year.value}`, start, end);
+};
 
 const handleGanttClick = ({ seriesIndex, dataPointIndex, w }: any) => {
    const data = w.config.series[seriesIndex].data[dataPointIndex];
@@ -1409,7 +1421,10 @@ const coverageSeries = computed(() => [{
 const coverageChartOptions = computed(() => ({
    chart: {
       type: 'bar',
-      toolbar: { show: true }
+      toolbar: { show: false },
+      events: {
+         dataPointSelection: handleCoverageClick
+      }
    },
    colors: ['#10b981'], // Emerald
    plotOptions: {
