@@ -212,7 +212,7 @@
                               <div class="flex items-center gap-2 mb-2">
                                  <span class="font-black text-sm text-text tabular-nums tracking-tighter">{{
                                     marea.id_marea
-                                 }}</span>
+                                    }}</span>
                                  <span
                                     class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest bg-secondary/10 text-secondary border border-secondary/20">{{
                                        marea.estado }}</span>
@@ -360,7 +360,7 @@
                                  <td class="px-4 py-2 border-r border-border/50">
                                     <div class="flex flex-col">
                                        <span class="font-black text-xs text-text tabular-nums">{{ marea.id_marea
-                                       }}</span>
+                                          }}</span>
                                        <span class="text-[9px] font-bold text-text-muted uppercase tracking-tighter">{{
                                           marea.estado }}</span>
                                     </div>
@@ -373,7 +373,7 @@
                                  </td>
                                  <td class="px-4 py-2 text-xs font-bold text-text border-r border-border/50">{{
                                     marea.pesqueria
-                                 }}</td>
+                                    }}</td>
                                  <td v-if="filterType !== 'OBSERVER'"
                                     class="px-4 py-2 text-xs font-bold text-text border-r border-border/50">{{
                                        marea.observador
@@ -387,7 +387,7 @@
                                  <td v-if="mode === 'CALENDAR'" class="px-4 py-2 text-right">
                                     <span class="font-bold text-xs text-text-muted tabular-nums opacity-80">{{
                                        marea.diasTotales
-                                    }}</span>
+                                       }}</span>
                                  </td>
                               </tr>
                            </tbody>
@@ -706,14 +706,20 @@ const openObserverDetail = (obs: any) => {
 // ... (previous criteria logic) ...
 const isCriteriaOpen = ref(false);
 const criteriaList = computed(() => {
-   // ... (existing computed body) ...
    const list: string[] = [];
    const yearText = `<span class="font-bold text-text">${year.value}</span>`;
+
+   // Formateo dinámico del rango para la leyenda
+   const start = startDate.value ? new Date(startDate.value + 'T00:00:00').toLocaleDateString('es-AR', { day: '2-digit', month: 'short' }) : '01/Ene';
+   const end = endDate.value ? new Date(endDate.value + 'T00:00:00').toLocaleDateString('es-AR', { day: '2-digit', month: 'short' }) : '31/Dic';
+   const periodRange = `(${start} - ${end})`;
+
    if (mode.value === 'CALENDAR') {
-      list.push(`Periodo Analizado: <strong>Calendario ${yearText}</strong> (01/Ene - 31/Dic). Solo se contabilizan los días de navegación ocurridos estrictamente dentro de este rango.`);
+      list.push(`Periodo Analizado: <strong>Calendario ${yearText} ${periodRange}</strong>. Solo se contabilizan los días de navegación ocurridos estrictamente dentro de este rango.`);
    } else {
-      list.push(`Periodo Analizado: <strong>Total Marea ${yearText}</strong>. Se incluyen mareas completas que hayan tenido actividad durante el año, sumando la totalidad de sus días.`);
+      list.push(`Periodo Analizado: <strong>Total Marea ${yearText} ${periodRange}</strong>. Se incluyen mareas completas con actividad en este rango, sumando la totalidad de sus días.`);
    }
+
    if (daysCalculationMode.value === 'SHIP') {
       list.push(`Métrica: <strong>Días de Buque</strong>. Días únicos que la embarcación estuvo operando, sin multiplicar por observadores embarcados.`);
    } else {
@@ -739,11 +745,6 @@ const criteriaList = computed(() => {
       if (filterType.value === 'FLEET') typeLabel = 'Flota';
       if (filterType.value === 'OBSERVER') typeLabel = 'Observador';
       list.push(`Filtro Activo: <strong>${typeLabel}</strong> ${dialogTitle.value ? `(${dialogTitle.value.replace('Detalle: ', '')})` : ''}.`);
-   }
-   if (startDate.value || endDate.value) {
-      const start = startDate.value ? new Date(startDate.value).toLocaleDateString() : 'Inicio del año';
-      const end = endDate.value ? new Date(endDate.value).toLocaleDateString() : 'Fin del año';
-      list.push(`Rango de Tiempo: <strong>${start} - ${end}</strong>.`);
    }
    return list;
 });
