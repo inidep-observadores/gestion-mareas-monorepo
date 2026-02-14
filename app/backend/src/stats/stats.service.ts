@@ -686,12 +686,35 @@ export class StatsService {
             if (extras.size > maxExtraObservers) maxExtraObservers = extras.size;
         });
 
+        // Determinar si es exportación mensual
+        let isMonthlyDetail = false;
+        let monthName = '';
+        const monthNames = [
+            'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+            'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+        ];
+
+        if (startDate && endDate) {
+            const sDate = new Date(startDate);
+            const eDate = new Date(endDate);
+            // Use UTC methods because "YYYY-MM-DD" is parsed as UTC midnight
+            // and local time methods (getFullYear/getMonth) might shift the date 
+            // depending on server timezone (e.g. GMT-3).
+            if (
+                sDate.getUTCFullYear() === eDate.getUTCFullYear() &&
+                sDate.getUTCMonth() === eDate.getUTCMonth()
+            ) {
+                isMonthlyDetail = true;
+                monthName = monthNames[sDate.getUTCMonth()];
+            }
+        }
+
         // Definir columnas base
-        const columns = [
+        const columns: Partial<ExcelJS.Column>[] = [
             { header: 'ID Marea', key: 'id_marea', width: 15 },
             { header: 'Buque', key: 'buque', width: 25 },
             { header: 'Flota', key: 'flota', width: 20 },
-            { header: 'Pesquer�a', key: 'pesqueria', width: 20 },
+            { header: 'Pesquería', key: 'pesqueria', width: 20 }, // Fixed encoding
             { header: 'Observador Principal', key: 'observador', width: 25 },
         ];
 
@@ -700,21 +723,27 @@ export class StatsService {
             columns.push({ header: `Observador Adic. ${i}`, key: `obs_adic_${i}`, width: 25 });
         }
 
-        columns.push(
-            { header: 'Estado', key: 'estado', width: 20 },
-            { header: 'D�as (Calendario)', key: 'dias_calendario', width: 15 },
-            { header: 'D�as (Total Marea)', key: 'dias_total', width: 15 },
-            { header: 'Inicio', key: 'inicio', width: 15 },
-            { header: 'Fin', key: 'fin', width: 15 },
-        );
+        columns.push({ header: 'Estado', key: 'estado', width: 20 });
 
-        // Columnas din�micas de etapas
+        if (isMonthlyDetail) {
+            columns.push({ header: `Días (${monthName})`, key: 'dias_calendario', width: 18 });
+            // "Días (Total Marea)", "Inicio", "Fin" are excluded for Monthly Detail to match frontend view
+        } else {
+            columns.push(
+                { header: 'Días (Calendario)', key: 'dias_calendario', width: 18 },
+                { header: 'Días (Total Marea)', key: 'dias_total', width: 18 }, // Fixed encoding
+                { header: 'Inicio', key: 'inicio', width: 15 },
+                { header: 'Fin', key: 'fin', width: 15 },
+            );
+        }
+
+        // Columnas de etapas
         for (let i = 1; i <= maxEtapas; i++) {
             columns.push(
                 { header: `Etapa ${i}: #`, key: `etapa_${i}_nro`, width: 10 },
                 { header: `Etapa ${i}: Zarpada`, key: `etapa_${i}_zarpada`, width: 15 },
                 { header: `Etapa ${i}: Arribo`, key: `etapa_${i}_arribo`, width: 15 },
-                { header: `Etapa ${i}: D�as`, key: `etapa_${i}_dias`, width: 10 }
+                { header: `Etapa ${i}: Días`, key: `etapa_${i}_dias`, width: 10 } // Fixed encoding
             );
         }
 
