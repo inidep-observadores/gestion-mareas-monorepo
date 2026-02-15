@@ -36,15 +36,12 @@
             </button>
           </div>
 
-          <div class="relative group">
-            <SearchIcon class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted group-focus-within:text-primary transition-colors" />
-            <input
-              v-model="filters.busqueda"
-              @keyup.enter="fetchLogs"
-              placeholder="Buscar..."
-              class="w-full bg-surface-muted border-2 border-border rounded-2xl py-2.5 pl-10 pr-4 text-xs font-bold focus:bg-surface focus:border-primary/50 transition-all outline-none"
+            <SearchInput
+              :model-value="filters.busqueda || ''"
+              @update:model-value="filters.busqueda = $event"
+              placeholder="Buscar por usuario, ruta..."
+              class="!w-full"
             />
-          </div>
         </div>
 
         <!-- Lista -->
@@ -251,13 +248,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import AdminDashboardLayout from '../layouts/AdminDashboardLayout.vue';
 import DataInspector from '@/components/admin/DataInspector.vue';
+import SearchInput from '@/components/ui/SearchInput.vue';
 import { useAuditLogs, type AuditType } from '../composables/useAuditLogs';
 import { 
     RefreshIcon, 
-    SearchIcon, 
     ShieldIcon, 
     UserCircleIcon, 
     BoxCubeIcon, 
@@ -299,6 +296,13 @@ const logs = computed(() => {
 // Responsividad
 const isMobileView = ref(false);
 const checkMobile = () => isMobileView.value = window.innerWidth < 1024;
+
+// Búsqueda proactiva
+watch(() => filters.value.busqueda, () => {
+    filters.value.page = 1;
+    fetchLogs();
+});
+
 onMounted(() => {
     checkMobile();
     window.addEventListener('resize', checkMobile);
@@ -334,13 +338,20 @@ const getStatusClass = (log: any) => {
 
 const formatDateShort = (dateStr: string) => {
     const date = new Date(dateStr);
-    return date.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+    return date.toLocaleString('es-AR', { 
+        day: '2-digit', 
+        month: '2-digit',
+        hour: '2-digit', 
+        minute: '2-digit',
+        hour12: false
+    }).replace(',', '');
 };
 
 const formatDateFull = (dateStr: string) => {
     return new Date(dateStr).toLocaleString('es-AR', {
         day: '2-digit', month: '2-digit', year: 'numeric',
-        hour: '2-digit', minute: '2-digit', second: '2-digit'
+        hour: '2-digit', minute: '2-digit', second: '2-digit',
+        hour12: false
     });
 };
 </script>
