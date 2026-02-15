@@ -289,8 +289,26 @@ const fetchFleet = async () => {
         } : null
       }
 
+      // Determinar rango de tracking con ampliación
+      let from: string | undefined = marea.voyageStart;
+      let to: string | undefined = marea.voyageEnd;
+
+      if (from) {
+        from = new Date(new Date(from).getTime() - 6 * 60 * 60 * 1000).toISOString();
+      }
+      if (to) {
+        to = new Date(new Date(to).getTime() + 6 * 60 * 60 * 1000).toISOString();
+      }
+
+      // Regla para DESIGNADAS sin rango (ventana deslizante 12h)
+      if (!from && marea.mareaStatus === 'DESIGNADA') {
+        const now = new Date();
+        to = now.toISOString();
+        from = new Date(now.getTime() - 12 * 60 * 60 * 1000).toISOString();
+      }
+
       // Always re-fetch history to ensure new data from CSV is loaded
-      fetchVesselHistory(marea.id, id, marea.voyageStart, marea.voyageEnd)
+      fetchVesselHistory(marea.id, id, from, to)
     })
 
     if (!selectedVesselId.value && activeMareas.length > 0) {
@@ -338,7 +356,26 @@ const fetchSingleMarea = async (mareaId: string) => {
 
     selectedVesselId.value = marea.id
     // History is fetched and zoom is triggered automatically by the watcher/pending logic
-    fetchVesselHistory(marea.buqueId, marea.id, marea.voyageStart, marea.voyageEnd)
+    // Determinar rango de tracking con ampliación
+    let from: string | undefined = marea.voyageStart;
+    let to: string | undefined = marea.voyageEnd;
+
+    if (from) {
+      from = new Date(new Date(from).getTime() - 6 * 60 * 60 * 1000).toISOString();
+    }
+    if (to) {
+      to = new Date(new Date(to).getTime() + 6 * 60 * 60 * 1000).toISOString();
+    }
+
+    // Regla para DESIGNADAS sin rango (ventana deslizante 12h)
+    // En el modo single, si no hay voyageStart usamos el fallback (marea.mareaStatus o marea.estado)
+    if (!from && (marea.mareaStatus === 'DESIGNADA' || marea.estado === 'DESIGNADA')) {
+      const now = new Date();
+      to = now.toISOString();
+      from = new Date(now.getTime() - 12 * 60 * 60 * 1000).toISOString();
+    }
+
+    fetchVesselHistory(marea.buqueId, marea.id, from, to)
     pendingZoomVesselId.value = marea.id // Ensure zoom to this marea
   } catch (error) {
     console.error('Error fetching single marea tracking info:', error)

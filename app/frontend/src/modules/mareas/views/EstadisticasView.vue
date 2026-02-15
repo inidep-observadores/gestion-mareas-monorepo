@@ -1498,8 +1498,11 @@ const fisheryDualAxisOptions = computed(() => ({
       intersect: false,
       custom: ({ series, seriesIndex, dataPointIndex, w }: any) => {
          const label = w.config.xaxis.categories[dataPointIndex];
-         const mareas = series[0][dataPointIndex];
-         const days = series[1][dataPointIndex];
+         const mareas = series[0] ? series[0][dataPointIndex] : undefined;
+         const days = series[1] ? series[1][dataPointIndex] : undefined;
+
+         const hasMareas = mareas !== undefined && mareas !== null;
+         const hasDays = days !== undefined && days !== null;
 
          return `
             <div class="px-4 py-4 bg-surface/90 backdrop-blur-xl text-text border border-border/50 rounded-2xl flex flex-col gap-3 shadow-2xl ring-1 ring-black/10 min-w-[220px]">
@@ -1508,21 +1511,27 @@ const fisheryDualAxisOptions = computed(() => ({
                   <div class="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[9px] font-black uppercase">Actividad</div>
                </div>
                
-               <div class="grid grid-cols-2 gap-3 pb-1">
+               <div class="grid ${hasMareas && hasDays ? 'grid-cols-2' : 'grid-cols-1'} gap-3 pb-1">
+                  ${hasMareas ? `
                   <div class="flex flex-col">
                      <span class="text-[9px] font-black text-blue-500 uppercase tracking-tighter">Mareas</span>
                      <span class="text-lg font-black tabular-nums">${mareas}</span>
                   </div>
-                  <div class="flex flex-col border-l border-border/20 pl-3">
+                  ` : ''}
+                  ${hasDays ? `
+                  <div class="flex flex-col ${hasMareas ? 'border-l border-border/20 pl-3' : ''}">
                      <span class="text-[9px] font-black text-amber-500 uppercase tracking-tighter">Días Navegados</span>
                      <span class="text-lg font-black tabular-nums">${days}</span>
                   </div>
+                  ` : ''}
                </div>
 
+               ${hasMareas && hasDays ? `
                <div class="pt-2 border-t border-border/30 flex justify-between items-center">
                   <span class="text-text-muted text-[9px] font-black italic uppercase">Promedio:</span>
                   <span class="text-primary font-black text-[11px] tabular-nums">${mareas > 0 ? (days / mareas).toFixed(1) : 0} días/marea</span>
                </div>
+               ` : ''}
             </div>
          `;
       }
@@ -1715,8 +1724,11 @@ const coverageChartOptions = computed(() => ({
       custom: ({ series, seriesIndex, dataPointIndex, w }: any) => {
          const label = w.config.xaxis.categories[dataPointIndex];
          const monthData = coverageData.value[dataPointIndex];
-         const vessels = series[0][dataPointIndex];
-         const days = series[1][dataPointIndex];
+         const vessels = series[0] ? series[0][dataPointIndex] : undefined;
+         const days = series[1] ? series[1][dataPointIndex] : undefined;
+
+         const hasVessels = vessels !== undefined && vessels !== null;
+         const hasDays = days !== undefined && days !== null;
 
          return `
             <div class="px-4 py-4 bg-surface/90 backdrop-blur-xl text-text border border-border/50 rounded-2xl flex flex-col gap-3 shadow-2xl ring-1 ring-black/10 min-w-[240px]">
@@ -1725,15 +1737,19 @@ const coverageChartOptions = computed(() => ({
                   <div class="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[9px] font-black uppercase">Cobertura</div>
                </div>
                
-               <div class="grid grid-cols-2 gap-3 pb-2 border-b border-border/20">
+               <div class="grid ${hasVessels && hasDays ? 'grid-cols-2' : 'grid-cols-1'} gap-3 pb-2 border-b border-border/20">
+                  ${hasVessels ? `
                   <div class="flex flex-col">
                      <span class="text-[9px] font-black text-emerald-500 uppercase tracking-tighter">Buques Únicos</span>
                      <span class="text-lg font-black tabular-nums">${vessels}</span>
                   </div>
-                  <div class="flex flex-col border-l border-border/20 pl-3">
+                  ` : ''}
+                  ${hasDays ? `
+                  <div class="flex flex-col ${hasVessels ? 'border-l border-border/20 pl-3' : ''}">
                      <span class="text-[9px] font-black text-blue-500 uppercase tracking-tighter">Días de Marea</span>
                      <span class="text-lg font-black tabular-nums">${days}</span>
                   </div>
+                  ` : ''}
                </div>
 
                ${monthData?.fleets && monthData.fleets.length > 0 ? `
@@ -1746,9 +1762,9 @@ const coverageChartOptions = computed(() => ({
                               <span class="text-[9px] font-bold text-text-muted uppercase">${f.name}</span>
                            </div>
                            <div class="flex items-center gap-2">
-                              <span class="text-[10px] font-black text-text tabular-nums">${f.count} <span class="text-[8px] opacity-40 font-bold">B</span></span>
-                              <span class="h-2 w-px bg-border/30"></span>
-                              <span class="text-[10px] font-black text-text/80 tabular-nums">${f.days} <span class="text-[8px] opacity-40 font-bold">D</span></span>
+                              ${hasVessels ? `<span class="text-[10px] font-black text-text tabular-nums">${f.count} <span class="text-[8px] opacity-40 font-bold">B</span></span>` : ''}
+                              ${hasVessels && hasDays ? `<span class="h-2 w-px bg-border/30"></span>` : ''}
+                              ${hasDays ? `<span class="text-[10px] font-black text-text/80 tabular-nums">${f.days} <span class="text-[8px] opacity-40 font-bold">D</span></span>` : ''}
                            </div>
                         </div>
                      `).join('')}
