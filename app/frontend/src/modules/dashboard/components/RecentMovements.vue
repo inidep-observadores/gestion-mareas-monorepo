@@ -104,8 +104,8 @@
                       <div v-if="mov.fuentes && mov.fuentes.sources" class="flex flex-wrap gap-1">
                         <template v-for="(src, index) in mov.fuentes.sources" :key="index">
                           <TrajectorySourceBadge
-                            v-if="src.name === 'TRACKING_CSV' || src.name === 'PNA'"
-                            :source="src.name === 'PNA' ? 'PNA' : 'TRACKING'"
+                            v-if="src.name === 'TRACKING_CSV' || src.name === 'PNA' || src.name === 'API_PNA'"
+                            :source="src.name"
                             :vesselId="mov.vesselId"
                             :vesselName="mov.buque"
                             :referenceDate="mov.fecha"

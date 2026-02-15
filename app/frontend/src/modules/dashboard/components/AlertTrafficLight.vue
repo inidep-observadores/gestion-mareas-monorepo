@@ -278,12 +278,13 @@
                       <div class="flex gap-1.5">
                         <template v-for="source in item.metadata.sources" :key="source.name">
                           <TrajectorySourceBadge
-                            v-if="source.name === 'TRACKING_CSV' || source.name === 'API_PNA'"
-                            :source="source.name === 'API_PNA' ? 'PNA' : 'TRACKING'"
+                            v-if="source.name === 'TRACKING_CSV' || source.name === 'API_PNA' || source.name === 'PNA'"
+                            :source="source.name"
                             :vesselId="item.metadata.vesselId || item.metadata.buqueId"
                             :vesselName="item.metadata.vesselName"
                             :referenceDate="item.metadata.eventDate"
                             :mareaCode="item.metadata.mareaCode"
+                            :abbreviated="true"
                             size="sm"
                           />
                           <div v-else

@@ -14,7 +14,7 @@
       <div 
         v-if="!abbreviated"
         class="w-1.5 h-1.5 rounded-full animate-pulse group-hover:scale-125 transition-transform shrink-0"
-        :class="source === 'PNA' ? 'bg-warning' : 'bg-success'"
+        :class="normalizedSource === 'PNA' ? 'bg-warning' : 'bg-success'"
       ></div>
       {{ resolvedLabel }}
     </Badge>
@@ -39,7 +39,7 @@ import Badge from '@/components/ui/Badge.vue'
 import AlertTrajectoryMapModal from '@/modules/alerts/components/AlertTrajectoryMapModal.vue'
 
 type BadgeColor = 'primary' | 'success' | 'error' | 'warning' | 'info' | 'purple' | 'light' | 'dark'
-type TrajectorySource = 'TRACKING' | 'PNA' | 'TRK'
+type TrajectorySource = 'TRACKING' | 'PNA' | 'TRK' | 'API_PNA' | 'TRACKING_CSV'
 
 interface Props {
   vesselId: string | null | undefined
@@ -59,19 +59,27 @@ const props = withDefaults(defineProps<Props>(), {
   abbreviated: false
 })
 
+// Normalización de fuente para consistencia interna
+const normalizedSource = computed((): TrajectorySource => {
+  if (props.source === 'API_PNA') return 'PNA'
+  if (props.source === 'TRACKING_CSV') return 'TRACKING'
+  if (props.source === 'TRK') return 'TRACKING'
+  return props.source
+})
+
 const showMap = ref(false)
 
 const resolvedColor = computed(() => {
   if (props.color) return props.color
-  return props.source === 'PNA' ? 'warning' : 'success'
+  return normalizedSource.value === 'PNA' ? 'warning' : 'success'
 })
 
 const resolvedLabel = computed(() => {
   if (props.label) return props.label
   if (props.abbreviated) {
-    return props.source === 'PNA' ? 'PNA' : 'TRK'
+    return normalizedSource.value === 'PNA' ? 'PNA' : 'TRK'
   }
-  return props.source === 'PNA' ? 'PNA' : 'TRACKING'
+  return normalizedSource.value === 'PNA' ? 'PNA' : 'TRACKING'
 })
 
 // Si no hay endDate (evento puntual), calculamos +/- 12h para ver el contexto

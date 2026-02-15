@@ -141,14 +141,13 @@
                   <div class="flex gap-1.5 flex-wrap">
                     <template v-for="source in getSources(alert)" :key="source">
                       <TrajectorySourceBadge
-                        v-if="source === 'TRK' || source === 'PNA'"
-                        :source="source === 'PNA' ? 'PNA' : 'TRACKING'"
+                        v-if="source === 'TRK' || source === 'PNA' || source === 'API_PNA'"
+                        :source="source"
                         :vesselId="alert.metadata?.vesselId || alert.metadata?.buqueId"
                         :vesselName="alert.metadata?.vesselName || 'Buque'"
                         :referenceDate="alert.fechaDetectada"
                         :endDate="alert.metadata?.fechaArribo"
                         :mareaCode="alert.metadata?.mareaCode"
-                        label="TRK"
                         :abbreviated="true"
                       />
                       <span 
