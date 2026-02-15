@@ -24,7 +24,7 @@
         </div>
 
         <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-          <button
+          <button v-if="!isReadOnly"
             class="px-5 py-2.5 text-sm font-semibold text-text-muted bg-surface border border-border rounded-xl hover:bg-surface-muted transition-all shadow-sm active:scale-95 text-center"
             @click="goBack">
             Descartar
