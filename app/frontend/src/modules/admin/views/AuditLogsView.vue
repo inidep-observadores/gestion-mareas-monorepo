@@ -58,38 +58,51 @@
             <p class="text-[10px] font-black text-text-muted uppercase tracking-widest">Sin registros encontrados</p>
           </div>
 
-          <div
-            v-for="log in logs"
+          <template
+            v-for="(log, index) in logs"
             :key="log.id"
-            @click="selectLog(log)"
-            class="p-4 border-b border-border/50 cursor-pointer hover:bg-surface transition-all relative group"
-            :class="{ 'bg-primary/5 border-l-4 border-l-primary shadow-inner': selectedLog?.id === log.id }"
           >
-            <div class="flex justify-between items-center mb-2">
-              <span 
-                class="text-[9px] font-black px-2 py-0.5 rounded uppercase tracking-tighter"
-                :class="getStatusClass(log)"
-              >
-                {{ getLogTag(log) }}
+            <!-- Separador de Fecha Discreto -->
+            <div 
+              v-if="shouldShowDateHeader(log, index)"
+              class="px-4 py-2 bg-surface-muted/50 border-y border-border/30"
+            >
+              <span class="text-[9px] font-black text-text-muted uppercase tracking-[0.2em]">
+                {{ formatDateGroup(log.timestamp) }}
               </span>
-              <span class="text-[9px] font-bold text-text-muted font-mono">{{ formatDateShort(log.timestamp) }}</span>
             </div>
-            
-            <h4 class="text-[11px] font-bold text-text line-clamp-2 leading-snug mb-2 group-hover:text-primary transition-colors">
-              {{ getLogTitle(log) }}
-            </h4>
 
-            <div class="flex items-center gap-2">
-              <div v-if="log.usuario" class="flex items-center gap-1.5 truncate">
-                <UserCircleIcon class="w-3 h-3 text-text-muted" />
-                <span class="text-[10px] text-text-muted font-bold truncate">{{ log.usuario.fullName }}</span>
+            <div
+              @click="selectLog(log)"
+              class="p-4 border-b border-border/50 cursor-pointer hover:bg-surface transition-all relative group"
+              :class="{ 'bg-primary/5 border-l-4 border-l-primary shadow-inner': selectedLog?.id === log.id }"
+            >
+              <div class="flex justify-between items-center mb-2">
+                <span 
+                  class="text-[9px] font-black px-2 py-0.5 rounded uppercase tracking-tighter"
+                  :class="getStatusClass(log)"
+                >
+                  {{ getLogTag(log) }}
+                </span>
+                <span class="text-[9px] font-bold text-text-muted font-mono">{{ formatDateShort(log.timestamp) }}</span>
               </div>
-              <div v-else class="flex items-center gap-1.5">
-                <BoxCubeIcon class="w-3 h-3 text-text-muted" />
-                <span class="text-[10px] text-text-muted font-bold italic">Sistema</span>
+              
+              <h4 class="text-[11px] font-bold text-text line-clamp-2 leading-snug mb-2 group-hover:text-primary transition-colors">
+                {{ getLogTitle(log) }}
+              </h4>
+
+              <div class="flex items-center gap-2">
+                <div v-if="log.usuario" class="flex items-center gap-1.5 truncate">
+                  <UserCircleIcon class="w-3 h-3 text-text-muted" />
+                  <span class="text-[10px] text-text-muted font-bold truncate">{{ log.usuario.fullName }}</span>
+                </div>
+                <div v-else class="flex items-center gap-1.5">
+                  <BoxCubeIcon class="w-3 h-3 text-text-muted" />
+                  <span class="text-[10px] text-text-muted font-bold italic">Sistema</span>
+                </div>
               </div>
             </div>
-          </div>
+          </template>
         </div>
 
         <!-- Paginación Simple -->
@@ -334,6 +347,22 @@ const getStatusClass = (log: any) => {
     }
     if (activeType.value === 'navegacion') return 'bg-info/20 text-info';
     return log.resultado === 'ERROR' ? 'bg-error/20 text-error' : 'bg-success/20 text-success';
+};
+
+const shouldShowDateHeader = (log: any, index: number) => {
+    if (index === 0) return true;
+    const prevLog = logs.value[index - 1];
+    const currentDate = new Date(log.timestamp).toLocaleDateString();
+    const prevDate = new Date(prevLog.timestamp).toLocaleDateString();
+    return currentDate !== prevDate;
+};
+
+const formatDateGroup = (dateStr: string) => {
+    return new Date(dateStr).toLocaleDateString('es-AR', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric'
+    });
 };
 
 const formatDateShort = (dateStr: string) => {
