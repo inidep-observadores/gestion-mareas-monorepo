@@ -45,7 +45,10 @@
         </div>
 
         <!-- Lista -->
-        <div class="flex-1 overflow-y-auto custom-scrollbar bg-linear-to-b from-surface to-surface-muted/20">
+        <div 
+          ref="listContainer"
+          class="flex-1 overflow-y-auto custom-scrollbar bg-linear-to-b from-surface to-surface-muted/20"
+        >
           <div v-if="isLoading && logs.length === 0" class="p-12 text-center">
             <RefreshIcon class="w-8 h-8 text-primary animate-spin mx-auto mb-4" />
             <p class="text-[10px] font-black text-text-muted uppercase tracking-widest">Cargando bitácora...</p>
@@ -306,6 +309,14 @@ const logs = computed(() => {
     return navigationLogs.value;
 });
 
+// Scroll al tope
+const listContainer = ref<HTMLElement | null>(null);
+const scrollToTop = () => {
+    if (listContainer.value) {
+        listContainer.value.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+};
+
 // Responsividad
 const isMobileView = ref(false);
 const checkMobile = () => isMobileView.value = window.innerWidth < 1024;
@@ -314,6 +325,11 @@ const checkMobile = () => isMobileView.value = window.innerWidth < 1024;
 watch(() => filters.value.busqueda, () => {
     filters.value.page = 1;
     fetchLogs();
+});
+
+// Watcher para scroll al cambiar página
+watch(() => filters.value.page, () => {
+    scrollToTop();
 });
 
 onMounted(() => {
