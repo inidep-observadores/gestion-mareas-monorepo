@@ -149,5 +149,22 @@ describe('AuthService', () => {
             const emailContent = mockMailService.sendMail.mock.calls[0][2];
             expect(emailContent).toContain('https://myapp.com/reset-password?token=');
         });
+
+        it('should throw BadRequestException if user is not found', async () => {
+            mockPrisma.user.findUnique.mockResolvedValue(null);
+            await expect(service.forgotPassword('nonexistent@test.com')).rejects.toThrow(BadRequestException);
+            await expect(service.forgotPassword('nonexistent@test.com')).rejects.toThrow('Correo no registrado');
+        });
+
+        it('should throw BadRequestException if user is inactive', async () => {
+            mockPrisma.user.findUnique.mockResolvedValue({ ...mockUser, isActive: false });
+            await expect(service.forgotPassword('inactive@test.com')).rejects.toThrow(BadRequestException);
+            await expect(service.forgotPassword('inactive@test.com')).rejects.toThrow('Cuenta inactiva');
+        });
+
+        it('should handle mail service failure gracefully', async () => {
+            mockMailService.sendMail.mockRejectedValue(new Error('SMTP Error'));
+            await expect(service.forgotPassword('test@test.com')).rejects.toThrow('No se pudo enviar el correo de recuperación');
+        });
     });
 });

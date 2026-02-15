@@ -102,10 +102,12 @@ export class AuthService {
   async forgotPassword(email: string) {
     const user = await this.prisma.user.findUnique({ where: { email } });
 
-    if (!user || !user.isActive) {
-      return {
-        message: 'Si el correo existe y está activo, se enviaron instrucciones',
-      };
+    if (!user) {
+      throw new BadRequestException('Correo no registrado');
+    }
+
+    if (!user.isActive) {
+      throw new BadRequestException('Cuenta inactiva');
     }
 
     const token = crypto.randomBytes(32).toString('hex');
@@ -129,18 +131,23 @@ export class AuthService {
 
     const resetLink = `${baseUrl}/reset-password?token=${token}`;
 
-    await this.mailService.sendMail(
-      user.email,
-      'Recuperación de contraseña',
-      `
-        <h1>Recuperación de contraseña</h1>
-        <p>Hola ${user.fullName},</p>
-        <p>Usted ha solicitado restablecer su contraseña. Haga clic en el siguiente enlace para continuar:</p>
-        <a href="${resetLink}">Restablecer contraseña</a>
-        <p>Este enlace expirará en 30 minutos.</p>
-        <p>Si usted no solicitó esto, ignore este correo.</p>
-      `,
-    );
+    try {
+      await this.mailService.sendMail(
+        user.email,
+        'Recuperación de contraseña',
+        `
+          <h1>Recuperación de contraseña</h1>
+          <p>Hola ${user.fullName},</p>
+          <p>Usted ha solicitado restablecer su contraseña. Haga clic en el siguiente enlace para continuar:</p>
+          <a href="${resetLink}">Restablecer contraseña</a>
+          <p>Este enlace expirará en 30 minutos.</p>
+          <p>Si usted no solicitó esto, ignore este correo.</p>
+        `,
+      );
+    } catch (error) {
+      console.error('Error enviando mail de recuperación:', error);
+      throw new InternalServerErrorException('No se pudo enviar el correo de recuperación');
+    }
 
     return {
       message: 'Si el correo existe y está activo, se enviaron instrucciones',
