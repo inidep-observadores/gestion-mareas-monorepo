@@ -285,10 +285,10 @@
 
     <!-- Footer Actions -->
     <div class="p-6 border-t border-border bg-surface-muted/50 space-y-3 shrink-0">
-      <button v-if="!readOnly && canManage" @click="$emit('open-detalle')"
+      <button v-if="!readOnly && canViewFullDetail" @click="$emit('open-detalle')"
         class="w-full py-3.5 bg-primary hover:bg-primary-hover text-primary-fg rounded-2xl text-sm font-bold shadow-xl shadow-primary/20 transition-all hover:-translate-y-0.5 active:scale-[0.98] flex items-center justify-center gap-2">
         <DocsIcon class="w-4 h-4" />
-        Editar Detalles Completos
+        {{ buttonText }}
       </button>
 
       <button @click="$emit('close')"
@@ -345,6 +345,15 @@ const authStore = useAuthStore()
 const canManage = computed(() => {
   const roles = authStore.user?.roles || []
   return roles.includes(ValidRoles.admin) || roles.includes(ValidRoles.tecnico)
+})
+
+const canViewFullDetail = computed(() => {
+  const roles = authStore.user?.roles || []
+  return canManage.value || roles.includes(ValidRoles.asistente) || roles.includes(ValidRoles.coordinador)
+})
+
+const buttonText = computed(() => {
+  return canManage.value ? 'Editar Detalles Completos' : 'Consultar Detalles Completos'
 })
 
 const currentMarea = computed(() => {

@@ -30,6 +30,7 @@
             Descartar
           </button>
           <button
+            v-if="!isReadOnly"
             class="px-5 py-2.5 text-sm font-semibold text-primary-fg bg-primary border border-transparent rounded-xl hover:opacity-90 transition-all shadow-md shadow-primary/20 active:scale-95 flex items-center justify-center gap-2"
             @click="saveChanges">
             <CheckIcon class="w-4 h-4" />
@@ -93,21 +94,21 @@
               <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="space-y-1.5">
                   <label class="text-xs font-bold uppercase tracking-wider text-text-muted">Año Marea</label>
-                  <input v-model="marea.anio_marea" type="number"
-                    class="w-full px-4 py-3 bg-surface-muted border-none rounded-2xl focus:ring-2 focus:ring-primary/20 text-text transition-all font-medium outline-none"
+                  <input v-model="marea.anio_marea" type="number" :disabled="isReadOnly"
+                    class="w-full px-4 py-3 bg-surface-muted border-none rounded-2xl focus:ring-2 focus:ring-primary/20 text-text transition-all font-medium outline-none disabled:opacity-60"
                     placeholder="2023" />
                 </div>
                 <div class="space-y-1.5">
                   <label class="text-xs font-bold uppercase tracking-wider text-text-muted">Nro. Marea</label>
-                  <input v-model="marea.nro_marea" type="number"
-                    class="w-full px-4 py-3 bg-surface-muted border-none rounded-2xl focus:ring-2 focus:ring-primary/20 text-text transition-all font-medium outline-none"
+                  <input v-model="marea.nro_marea" type="number" :disabled="isReadOnly"
+                    class="w-full px-4 py-3 bg-surface-muted border-none rounded-2xl focus:ring-2 focus:ring-primary/20 text-text transition-all font-medium outline-none disabled:opacity-60"
                     placeholder="000" />
                 </div>
                 <!-- Observador Principal -->
                 <div class="md:col-span-2 space-y-1.5">
                   <label class="text-xs font-bold uppercase tracking-wider text-text-muted">Observador Designado</label>
                   <SearchableSelect v-model="marea.observador_principal_id" :options="observadorCatalogOptions"
-                    placeholder="Seleccione observador principal..." :icon="BeakerIcon" />
+                    placeholder="Seleccione observador principal..." :icon="BeakerIcon" :disabled="isReadOnly" />
                 </div>
               </div>
             </div>
@@ -122,34 +123,34 @@
                 <div class="space-y-1.5">
                   <label class="text-xs font-bold uppercase tracking-wider text-text-muted">Buque Seleccionado</label>
                   <SearchableSelect v-model="marea.id_buque" :options="buqueOptions"
-                    placeholder="Seleccione buque..." />
+                    placeholder="Seleccione buque..." :disabled="isReadOnly" />
                 </div>
                 <div class="space-y-1.5">
                   <label class="text-xs font-bold uppercase tracking-wider text-text-muted">Pesquería</label>
                   <SearchableSelect v-model="marea.id_pesqueria" :options="pesqueriaOptions"
-                    placeholder="Seleccione pesquería..." />
+                    placeholder="Seleccione pesquería..." :disabled="isReadOnly" />
                 </div>
                 <div class="space-y-1.5">
                   <label class="text-xs font-bold uppercase tracking-wider text-text-muted">Arte Principal</label>
                   <SearchableSelect v-model="marea.id_arte_principal" :options="arteOptions"
-                    placeholder="Seleccione arte..." />
+                    placeholder="Seleccione arte..." :disabled="isReadOnly" />
                 </div>
                 <div class="space-y-1.5">
                   <label class="text-xs font-bold uppercase tracking-wider text-text-muted">Fecha Zarpada Est.</label>
-                  <DatePicker v-model="marea.fecha_zarpada_estimada" :show-time="false" />
+                  <DatePicker v-model="marea.fecha_zarpada_estimada" :show-time="false" :disabled="isReadOnly" />
                 </div>
                 <div class="space-y-1.5">
                   <label class="text-xs font-bold uppercase tracking-wider text-text-muted">Tipo de Marea</label>
-                  <select v-model="marea.tipo_marea"
-                    class="w-full px-4 py-3 bg-surface-muted border-none rounded-2xl focus:ring-2 focus:ring-primary/20 text-text transition-all font-medium outline-none">
+                  <select v-model="marea.tipo_marea" :disabled="isReadOnly"
+                    class="w-full px-4 py-3 bg-surface-muted border-none rounded-2xl focus:ring-2 focus:ring-primary/20 text-text transition-all font-medium outline-none disabled:opacity-60">
                     <option :value="TipoMarea.MC">Comercial (MC)</option>
                     <option :value="TipoMarea.CI">Institucional (CI)</option>
                   </select>
                 </div>
                 <div class="space-y-1.5">
                   <label class="text-xs font-bold uppercase tracking-wider text-text-muted">Días Estimados</label>
-                  <input v-model="marea.dias_estimados" type="number"
-                    class="w-full px-4 py-3 bg-surface-muted border-none rounded-2xl focus:ring-2 focus:ring-primary/20 text-text transition-all font-medium outline-none"
+                  <input v-model="marea.dias_estimados" type="number" :disabled="isReadOnly"
+                    class="w-full px-4 py-3 bg-surface-muted border-none rounded-2xl focus:ring-2 focus:ring-primary/20 text-text transition-all font-medium outline-none disabled:opacity-60"
                     placeholder="0" />
                 </div>
               </div>
@@ -166,16 +167,16 @@
               <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="space-y-1.5">
                   <label class="text-xs font-bold uppercase tracking-wider text-text-muted">Inicio Observador</label>
-                  <DatePicker v-model="marea.fecha_inicio_observador" :show-time="false" />
+                  <DatePicker v-model="marea.fecha_inicio_observador" :show-time="false" :disabled="isReadOnly" />
                 </div>
                 <div class="space-y-1.5">
                   <label class="text-xs font-bold uppercase tracking-wider text-text-muted">Fin Observador</label>
-                  <DatePicker v-model="marea.fecha_fin_observador" :show-time="false" />
+                  <DatePicker v-model="marea.fecha_fin_observador" :show-time="false" :disabled="isReadOnly" />
                 </div>
                 <div class="space-y-1.5">
                   <label class="text-xs font-bold uppercase tracking-wider text-text-muted">Días Zona Austral</label>
-                  <input v-model="marea.dias_zona_austral" type="number" @input="checkManualMode"
-                    class="w-full px-4 py-3 bg-surface-muted border-none rounded-2xl focus:ring-2 focus:ring-primary/20 text-text transition-all font-medium outline-none"
+                  <input v-model="marea.dias_zona_austral" type="number" @input="checkManualMode" :disabled="isReadOnly"
+                    class="w-full px-4 py-3 bg-surface-muted border-none rounded-2xl focus:ring-2 focus:ring-primary/20 text-text transition-all font-medium outline-none disabled:opacity-60"
                     placeholder="0" />
                 </div>
                 <div class="space-y-1.5">
@@ -197,7 +198,7 @@
                 <div class="md:col-span-2">
                   <div class="flex items-center justify-between mb-2 px-1">
                     <span class="text-xs font-bold uppercase tracking-wider text-text-muted">Detalle de Cálculos</span>
-                    <button @click="loadZonaAustralData" :disabled="loadingZonaAustral"
+                    <button v-if="!isReadOnly" @click="loadZonaAustralData" :disabled="loadingZonaAustral"
                       class="text-[10px] font-black uppercase text-primary hover:underline flex items-center gap-1">
                       <RefreshIcon class="w-3 h-3" :class="{ 'animate-spin': loadingZonaAustral }" />
                       {{ loadingZonaAustral ? 'Calculando...' : 'Recalcular Ahora' }}
@@ -233,8 +234,8 @@
                 </div>
                 <div class="pt-4 border-t border-border">
                   <div class="flex items-center gap-2">
-                    <input type="checkbox" v-model="marea.activo"
-                      class="rounded border-border text-primary focus:ring-primary/20" />
+                    <input type="checkbox" v-model="marea.activo" :disabled="isReadOnly"
+                      class="rounded border-border text-primary focus:ring-primary/20 disabled:opacity-50" />
                     <span class="text-sm font-medium text-text">Marea Activa</span>
                   </div>
                 </div>
@@ -247,7 +248,7 @@
                 <InfoIcon class="w-4 h-4" />
                 Observaciones Importantes
               </h4>
-              <textarea v-model="marea.observaciones" rows="4"
+              <textarea v-model="marea.observaciones" rows="4" :readonly="isReadOnly"
                 class="w-full bg-transparent border-none text-sm text-warning focus:ring-0 placeholder:text-warning/40 resize-none font-medium"
                 placeholder="Añada notas que otros usuarios verán inmediatamente..."></textarea>
             </div>
@@ -264,7 +265,7 @@
           </div>
 
           <NavigationStagesEditor v-model="etapas" :puertoOptions="puertoOptions" :pesqueriaOptions="pesqueriaOptions"
-            :puertoBaseId="marea.puertoBaseId" :defaultPesqueriaId="marea.id_pesqueria" />
+            :puertoBaseId="marea.puertoBaseId" :defaultPesqueriaId="marea.id_pesqueria" :readOnly="isReadOnly" />
         </div>
 
         <!-- 3. Observadores Tab -->
@@ -301,6 +302,7 @@
             </div>
           </div>
           <button
+            v-if="!isReadOnly"
             class="border-2 border-dashed border-border rounded-2xl p-6 flex flex-col items-center justify-center text-text-muted/40 hover:text-primary hover:border-primary/40 transition-all gap-2 group">
             <div class="p-2 rounded-full group-hover:bg-primary/10 transition-colors">
               <PlusIcon class="w-6 h-6" />
@@ -431,6 +433,7 @@
 
               <!-- Upload Placeholder for Category -->
               <button
+                v-if="!isReadOnly"
                 class="border-2 border-dashed border-border rounded-3xl p-6 flex items-center justify-center gap-4 text-text-muted/40 hover:border-primary/40 hover:text-primary hover:bg-primary/5 transition-all duration-300 group shadow-sm active:scale-95">
                 <div
                   class="w-10 h-10 rounded-full bg-surface-muted flex items-center justify-center group-hover:bg-primary/10 transition-colors">
@@ -469,21 +472,21 @@
                 <div class="space-y-2">
                   <label class="text-xs font-bold uppercase tracking-wider text-text-muted ml-1">Nro.
                     Protocolización</label>
-                  <input v-model="marea.nro_protocolizacion" type="number"
-                    class="w-full px-4 py-3 bg-surface-muted border-none rounded-2xl focus:ring-2 focus:ring-primary/20 text-text transition-all font-medium outline-none"
+                  <input v-model="marea.nro_protocolizacion" type="number" :disabled="isReadOnly"
+                    class="w-full px-4 py-3 bg-surface-muted border-none rounded-2xl focus:ring-2 focus:ring-primary/20 text-text transition-all font-medium outline-none disabled:opacity-60"
                     placeholder="0000" />
                 </div>
                 <div class="space-y-2">
                   <label class="text-xs font-bold uppercase tracking-wider text-text-muted ml-1">Año
                     Protocolización</label>
-                  <input v-model="marea.anio_protocolizacion" type="number"
-                    class="w-full px-4 py-3 bg-surface-muted border-none rounded-2xl focus:ring-2 focus:ring-primary/20 text-text transition-all font-medium outline-none"
+                  <input v-model="marea.anio_protocolizacion" type="number" :disabled="isReadOnly"
+                    class="w-full px-4 py-3 bg-surface-muted border-none rounded-2xl focus:ring-2 focus:ring-primary/20 text-text transition-all font-medium outline-none disabled:opacity-60"
                     placeholder="2024" />
                 </div>
                 <div class="sm:col-span-2 space-y-2">
                   <label class="text-xs font-bold uppercase tracking-wider text-text-muted ml-1">Fecha de
                     Registro</label>
-                  <DatePicker v-model="marea.fecha_protocolizacion" :show-time="false" />
+                  <DatePicker v-model="marea.fecha_protocolizacion" :show-time="false" :disabled="isReadOnly" />
                 </div>
               </div>
 
@@ -537,6 +540,8 @@ import NavigationStagesEditor from '../components/NavigationStagesEditor.vue'
 import ZonaAustralDetalle from '../components/ZonaAustralDetalle.vue'
 import catalogosService from '../services/catalogos.service'
 import { toast } from 'vue-sonner'
+import { useAuthStore } from '@/modules/auth/stores/auth.store'
+import { ValidRoles } from '@/modules/auth/interfaces/roles.enum'
 import {
   ArrowLeftIcon,
   ShipIcon,
@@ -571,6 +576,13 @@ const router = useRouter()
 const activeTab = ref('general')
 
 const route = useRoute()
+
+const authStore = useAuthStore()
+
+const isReadOnly = computed(() => {
+  const roles = authStore.user?.roles || []
+  return roles.includes(ValidRoles.asistente) || roles.includes(ValidRoles.coordinador)
+})
 
 const tabs = [
   { id: 'general', label: 'Datos Generales', icon: DocsIcon },
