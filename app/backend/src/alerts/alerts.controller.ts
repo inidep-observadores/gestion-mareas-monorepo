@@ -17,6 +17,7 @@ export class AlertsController {
     ) { }
 
     @Post()
+    @Auth(ValidRoles.admin, ValidRoles.tecnico)
     create(@Body() createAlertDto: CreateAlertDto, @GetUser() user: User) {
         return this.alertsService.create(createAlertDto, user);
     }
@@ -32,6 +33,7 @@ export class AlertsController {
     }
 
     @Patch(':id')
+    @Auth(ValidRoles.admin, ValidRoles.tecnico)
     update(
         @Param('id') id: string,
         @Body() updateAlertDto: UpdateAlertDto,

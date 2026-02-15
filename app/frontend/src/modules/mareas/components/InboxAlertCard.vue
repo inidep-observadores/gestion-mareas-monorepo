@@ -96,9 +96,9 @@
           </p>
         </div>
 
-        <div
+        <div v-if="canManage || isHistoric"
           class="flex-shrink-0 flex items-center overflow-hidden transition-all duration-300 w-0 group-hover:w-[110px] opacity-0 group-hover:opacity-100">
-          <Button @click="$emit('action', 'manage')" :variant="actionButtonVariant" size="sm"
+          <Button @click="emit('action', 'manage')" :variant="actionButtonVariant" size="sm"
             class="uppercase tracking-tight h-8 w-full whitespace-nowrap">
             {{ isHistoric ? 'Ver Detalle' : 'Gestionar' }}
           </Button>
@@ -115,6 +115,8 @@ import Button from '@/components/ui/Button.vue'
 import Badge from '@/components/ui/Badge.vue'
 import TrajectorySourceBadge from '@/modules/alerts/components/TrajectorySourceBadge.vue'
 import { AlertaEstado, AlertaPrioridad } from '../../alerts/services/alerts.service'
+import { useAuthStore } from '@/modules/auth/stores/auth.store'
+import { ValidRoles } from '@/modules/auth/interfaces/roles.enum'
 
 interface Props {
   titulo: string
@@ -134,7 +136,14 @@ const props = withDefaults(defineProps<Props>(), {
   prioridad: AlertaPrioridad.MEDIA
 })
 
-defineEmits(['action'])
+const emit = defineEmits(['action'])
+
+const authStore = useAuthStore()
+
+const canManage = computed(() => {
+  const roles = authStore.user?.roles || []
+  return roles.includes(ValidRoles.admin) || roles.includes(ValidRoles.tecnico)
+})
 
 const isHistoric = computed(() => [AlertaEstado.RESUELTA, AlertaEstado.DESCARTADA].includes(props.estado as AlertaEstado))
 const isUrgent = computed(() => props.prioridad === AlertaPrioridad.URGENTE && !isHistoric.value)
