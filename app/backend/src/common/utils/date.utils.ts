@@ -54,7 +54,7 @@ export class DateUtils {
         const startDate = this.toPureDate(start);
         const endDate = end
             ? this.toPureDate(end)
-            : this.toPureDate(new Date()); // Hoy (UTC)
+            : this.toPureDate(DateTime.now().toJSDate()); // Hoy (UTC)
 
         if (!startDate.isValid || !endDate.isValid || endDate < startDate) return 0;
 
@@ -92,7 +92,7 @@ export class DateUtils {
     ): number {
         if (!intervals.length) return 0;
 
-        const nowPure = limitEnd ? this.toPureDate(limitEnd) : this.toPureDate(new Date());
+        const nowPure = limitEnd ? this.toPureDate(limitEnd) : this.toPureDate(DateTime.now().toJSDate());
 
         // Normalizar a fechas puras (ignorar horas/offsets)
         const normalized = intervals
