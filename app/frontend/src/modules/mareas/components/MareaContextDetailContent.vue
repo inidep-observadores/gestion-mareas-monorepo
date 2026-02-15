@@ -186,7 +186,7 @@
         </section>
 
         <!-- 3. Actions -->
-        <section v-if="!readOnly" class="space-y-4">
+        <section v-if="!readOnly && canManage" class="space-y-4">
           <div class="flex items-center justify-between">
             <h4 class="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted italic">Acciones sugeridas</h4>
           </div>
@@ -285,7 +285,7 @@
 
     <!-- Footer Actions -->
     <div class="p-6 border-t border-border bg-surface-muted/50 space-y-3 shrink-0">
-      <button v-if="!readOnly" @click="$emit('open-detalle')"
+      <button v-if="!readOnly && canManage" @click="$emit('open-detalle')"
         class="w-full py-3.5 bg-primary hover:bg-primary-hover text-primary-fg rounded-2xl text-sm font-bold shadow-xl shadow-primary/20 transition-all hover:-translate-y-0.5 active:scale-[0.98] flex items-center justify-center gap-2">
         <DocsIcon class="w-4 h-4" />
         Editar Detalles Completos
@@ -325,6 +325,8 @@ import {
   SportsScoreIcon
 } from '@/icons'
 import type { MareaContext } from '../types/marea.types'
+import { useAuthStore } from '@/modules/auth/stores/auth.store'
+import { ValidRoles } from '@/modules/auth/interfaces/roles.enum'
 
 interface Props {
   marea: any | null
@@ -334,6 +336,15 @@ interface Props {
 
 const props = withDefaults(defineProps<Props>(), {
   readOnly: false
+})
+
+const emit = defineEmits(['close', 'open-detalle', 'action', 'manage-alert', 'view-trajectory'])
+
+const authStore = useAuthStore()
+
+const canManage = computed(() => {
+  const roles = authStore.user?.roles || []
+  return roles.includes(ValidRoles.admin) || roles.includes(ValidRoles.tecnico)
 })
 
 const currentMarea = computed(() => {
@@ -352,8 +363,6 @@ const mareaTitle = computed(() => {
 const mareaCode = computed(() => {
   return currentMarea.value?.id_marea || '0000-000'
 })
-
-const emit = defineEmits(['close', 'open-detalle', 'action', 'manage-alert', 'view-trajectory'])
 
 const countEtapas = computed(() => {
   return props.context?.marea?.etapas?.length || 0

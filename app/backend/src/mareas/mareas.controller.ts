@@ -4,6 +4,7 @@ import { MareasService } from './mareas.service';
 import { DateUtils } from '../common/utils/date.utils';
 import { Auth, GetUser } from '../auth/decorators';
 import { User } from '@prisma/client';
+import { ValidRoles } from '../auth/interfaces';
 import { CreateMareaDto } from './dto/create-marea.dto';
 import { UpdateMareaDto } from './dto/update-marea.dto';
 
@@ -18,6 +19,7 @@ export class MareasController {
     constructor(private readonly mareasService: MareasService) { }
 
     @Post('claim')
+    @Auth(ValidRoles.admin, ValidRoles.tecnico)
     sendClaim(
         @Body() dto: ClaimMareaDto,
         @GetUser() user: User
@@ -119,6 +121,7 @@ export class MareasController {
     }
 
     @Patch(':id')
+    @Auth(ValidRoles.admin, ValidRoles.tecnico)
     update(@Param('id') id: string, @Body() updateMareaDto: UpdateMareaDto) {
         return this.mareasService.update(id, updateMareaDto);
     }
@@ -152,6 +155,7 @@ export class MareasController {
     }
 
     @Post(':id/actions/:actionKey')
+    @Auth(ValidRoles.admin, ValidRoles.tecnico)
     @AuditEvent({
         tipoEvento: 'EJECUTAR_ACCION_FLUJO',
         categoria: AuditCategoria.MAREAS,
@@ -167,6 +171,7 @@ export class MareasController {
     }
 
     @Post()
+    @Auth(ValidRoles.admin, ValidRoles.tecnico)
     @AuditEvent({
         tipoEvento: 'CREAR_MAREA',
         categoria: AuditCategoria.MAREAS,
