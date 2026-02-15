@@ -29,8 +29,7 @@
             @click="goBack">
             Descartar
           </button>
-          <button
-            v-if="!isReadOnly"
+          <button v-if="!isReadOnly"
             class="px-5 py-2.5 text-sm font-semibold text-primary-fg bg-primary border border-transparent rounded-xl hover:opacity-90 transition-all shadow-md shadow-primary/20 active:scale-95 flex items-center justify-center gap-2"
             @click="saveChanges">
             <CheckIcon class="w-4 h-4" />
@@ -122,8 +121,8 @@
               <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="space-y-1.5">
                   <label class="text-xs font-bold uppercase tracking-wider text-text-muted">Buque Seleccionado</label>
-                  <SearchableSelect v-model="marea.id_buque" :options="buqueOptions"
-                    placeholder="Seleccione buque..." :disabled="isReadOnly" />
+                  <SearchableSelect v-model="marea.id_buque" :options="buqueOptions" placeholder="Seleccione buque..."
+                    :disabled="isReadOnly" />
                 </div>
                 <div class="space-y-1.5">
                   <label class="text-xs font-bold uppercase tracking-wider text-text-muted">Pesquería</label>
@@ -301,8 +300,7 @@
               </div>
             </div>
           </div>
-          <button
-            v-if="!isReadOnly"
+          <button v-if="!isReadOnly"
             class="border-2 border-dashed border-border rounded-2xl p-6 flex flex-col items-center justify-center text-text-muted/40 hover:text-primary hover:border-primary/40 transition-all gap-2 group">
             <div class="p-2 rounded-full group-hover:bg-primary/10 transition-colors">
               <PlusIcon class="w-6 h-6" />
@@ -432,8 +430,7 @@
               </div>
 
               <!-- Upload Placeholder for Category -->
-              <button
-                v-if="!isReadOnly"
+              <button v-if="!isReadOnly"
                 class="border-2 border-dashed border-border rounded-3xl p-6 flex items-center justify-center gap-4 text-text-muted/40 hover:border-primary/40 hover:text-primary hover:bg-primary/5 transition-all duration-300 group shadow-sm active:scale-95">
                 <div
                   class="w-10 h-10 rounded-full bg-surface-muted flex items-center justify-center group-hover:bg-primary/10 transition-colors">
@@ -581,7 +578,10 @@ const authStore = useAuthStore()
 
 const isReadOnly = computed(() => {
   const roles = authStore.user?.roles || []
-  return roles.includes(ValidRoles.asistente) || roles.includes(ValidRoles.coordinador)
+  const canManage = roles.includes(ValidRoles.admin) || roles.includes(ValidRoles.tecnico)
+  const isProtocolizada = marea.value.estado_codigo === 'PROTOCOLIZADA'
+
+  return !canManage || isProtocolizada
 })
 
 const tabs = [
