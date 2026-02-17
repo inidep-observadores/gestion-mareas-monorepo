@@ -82,8 +82,9 @@
                                     <template v-for="src in alertSources" :key="src.name">
                                         <TrajectorySourceBadge v-if="src.name === 'Tracking' || src.name === 'PNA'"
                                             :source="src.name === 'PNA' ? 'PNA' : 'TRACKING'" :vesselId="mapVesselId"
-                                            :vesselName="mapVesselName" :referenceDate="mapReferenceDate" :endDate="mapEndDate"
-                                            :mareaId="localAlert?.referenciaId" :mareaCode="fixedMareaLabel" size="sm" />
+                                            :vesselName="mapVesselName" :referenceDate="mapReferenceDate"
+                                            :endDate="mapEndDate" :mareaId="localAlert?.referenciaId"
+                                            :mareaCode="fixedMareaLabel" size="sm" />
                                         <Badge v-else :color="getSourceColor(src.name)" variant="light" size="sm"
                                             class="font-black text-[9px] uppercase px-2">
                                             {{ src.name }}
@@ -116,7 +117,9 @@
                                 <p class="text-xs font-bold uppercase tracking-wider text-info/60">Reclamo de
                                     Documentación
                                 </p>
-                                <p class="text-[11px] text-info/50 mt-1 font-medium">Disponible para alertas por retraso en entrega
+                                <p class="text-[11px] text-info/50 mt-1 font-medium">Disponible para alertas por retraso
+                                    en
+                                    entrega
                                     de
                                     datos.</p>
                             </div>
@@ -137,8 +140,10 @@
                                 <div>
                                     <h4 class="text-xs font-bold text-primary uppercase tracking-wider mb-1">{{
                                         smartActionConfig.label }}</h4>
-                                    <p class="text-[10px] text-text/80 font-semibold uppercase tracking-tight leading-tight">{{
-                                        smartActionDescription }}</p>
+                                    <p
+                                        class="text-[10px] text-text/80 font-semibold uppercase tracking-tight leading-tight">
+                                        {{
+                                            smartActionDescription }}</p>
                                 </div>
                             </div>
                             <Button variant="primary" size="sm" @click="executeSmartAction"
@@ -216,7 +221,8 @@
                         <!-- Follow Up Date Picker -->
                         <div
                             class="p-4 bg-surface-muted/30 rounded-xl border border-border animate-in fade-in slide-in-from-top-2">
-                            <label class="block text-[10px] font-semibold uppercase tracking-wider text-text-muted mb-3">
+                            <label
+                                class="block text-[10px] font-semibold uppercase tracking-wider text-text-muted mb-3">
                                 Fecha de Re-Check
                             </label>
                             <div class="flex flex-wrap gap-2 items-center">
@@ -308,8 +314,8 @@
         @close="showMareaQuickDetail = false" />
 
     <ObservadorTimelineDialog :show="showObservadorTimeline" :observadorId="localAlert.referenciaId || null"
-        :observadorName="localAlert.metadata?.observerName || 'Observador'"
-        :year="configStore.selectedYear" @close="showObservadorTimeline = false" />
+        :observadorName="localAlert.metadata?.observerName || 'Observador'" :year="configStore.selectedYear"
+        @close="showObservadorTimeline = false" />
 </template>
 
 <script setup lang="ts">
@@ -318,12 +324,9 @@ import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { toast } from 'vue-sonner'
 
-// Components
-import BaseModal from '@/components/common/BaseModal.vue'
-import Button from '@/components/ui/Button.vue'
 import Badge from '@/components/ui/Badge.vue'
-import AlertTimeline from './AlertTimeline.vue'
 import TrajectorySourceBadge from '@/modules/alerts/components/TrajectorySourceBadge.vue'
+import { TrajectoryRangeUtils } from '@/modules/alerts/utils/trajectory-range.utils'
 import MareaQuickDetailModal from '@/modules/stats/components/MareaQuickDetailModal.vue'
 import ObservadorTimelineDialog from '@/modules/admin/components/ObservadorTimelineDialog.vue'
 import dashboardService from '@/modules/dashboard/services/dashboard.service'
@@ -647,52 +650,11 @@ const mapVesselName = computed(() => {
 })
 
 const mapReferenceDate = computed(() => {
-    const meta = localAlert.value?.metadata || {}
-
-    // Incongruency Logic: Get MIN start date
-    if (meta.subTipo === 'EDITAR_ETAPA' || meta.subTipo === 'INCONGRUENCIA') {
-        const dates = [
-            meta.fechaZarpada,
-            meta.localData?.fechaZarpada
-        ].filter(d => !!d).map(d => new Date(d as string).getTime())
-
-        if (dates.length > 0) {
-            return new Date(Math.min(...dates)).toISOString()
-        }
-    }
-
-    // Default Logic: Metadata specific event date
-    if (meta.eventDate) return meta.eventDate
-    if (meta.fechaZarpada) return meta.fechaZarpada
-    if (meta.date) return meta.date
-
-    // Fallback: Alert detected date
-    if (localAlert.value?.fechaDetectada) return localAlert.value.fechaDetectada
-
-    // 3. Current time fallback
-    return ''
+    return TrajectoryRangeUtils.resolveAlertDates(localAlert.value).referenceDate
 })
 
 const mapEndDate = computed(() => {
-    const meta = localAlert.value?.metadata || {}
-
-    // Incongruency Logic: Get MAX end date
-    if (meta.subTipo === 'EDITAR_ETAPA' || meta.subTipo === 'INCONGRUENCIA') {
-        const dates = [
-            meta.fechaArribo,
-            meta.localData?.fechaArribo
-        ].filter(d => !!d).map(d => new Date(d as string).getTime())
-
-        if (dates.length > 0) {
-            return new Date(Math.max(...dates)).toISOString()
-        }
-    }
-
-    // Default Logic: If we have an arrival date in metadata, it's the end of our range
-    if (meta.fechaArribo) return meta.fechaArribo
-
-    // For simple events with no end date, we return null
-    return null
+    return TrajectoryRangeUtils.resolveAlertDates(localAlert.value).endDate
 })
 
 const canShowMap = computed(() => {

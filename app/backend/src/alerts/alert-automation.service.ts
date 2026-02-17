@@ -142,7 +142,7 @@ export class AlertAutomationService {
                         puertoZarpadaId: metadataValue(sources, 'portId') || marea.puertoZarpadaId || (alert.metadata as any)?.portId,
                         fechaZarpada: fechaDetectadaIso,
                         pesqueriaId: marea.pesqueriaId,
-                        fuentesZarpada: { sources, automatizado: true }
+                        fuentesZarpada: { sources, automatizado: true, eventDate: fechaDetectadaIso }
                     }],
                     comentarios: `Confirmación automática por lógica de negocio (${alert.tipo})`
                 };
@@ -174,7 +174,7 @@ export class AlertAutomationService {
                                 puertoZarpadaId: metadataValue(sources, 'portId') || lastStage.puertoArriboId || (alert.metadata as any)?.portId,
                                 fechaZarpada: fechaDetectadaIso,
                                 pesqueriaId: lastStage.pesqueriaId || marea.pesqueriaId,
-                                fuentesZarpada: { sources, automatizado: true }
+                                fuentesZarpada: { sources, automatizado: true, eventDate: fechaDetectadaIso }
                             }
                         ],
                         comentarios: `Nueva etapa detectada automáticamente por lógica de negocio (${alert.tipo})`
@@ -197,7 +197,7 @@ export class AlertAutomationService {
                                 ...e,
                                 puertoArriboId: metadataValue(sources, 'portId') || e.puertoArriboId || (alert.metadata as any)?.portId,
                                 fechaArribo: fechaDetectadaIso,
-                                fuentesArribo: { sources, automatizado: true }
+                                fuentesArribo: { sources, automatizado: true, eventDate: fechaDetectadaIso }
                             };
                         }
                         return e;

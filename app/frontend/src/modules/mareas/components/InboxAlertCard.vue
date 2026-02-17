@@ -26,23 +26,19 @@
             class="font-bold uppercase tracking-wider py-0.5 px-2 rounded-lg">
             {{ referenciaTipo }}
             <span v-if="metadata && metadata.mareaCode" class="ml-1 opacity-75 font-mono">{{ metadata.mareaCode
-              }}</span>
+            }}</span>
           </Badge>
           <!-- Source & Date Group -->
           <div class="flex items-center gap-2 ml-1">
             <span class="text-[10px] text-text-muted/50 font-black uppercase tracking-widest">Fuente:</span>
             <div class="flex items-center gap-1">
               <template v-for="source in alertSources" :key="source.name">
-                <TrajectorySourceBadge
-                  v-if="source.label === 'Tracking' || source.label === 'PNA'"
+                <TrajectorySourceBadge v-if="source.label === 'Tracking' || source.label === 'PNA'"
                   :source="source.label === 'PNA' ? 'PNA' : 'TRACKING'"
-                  :vesselId="metadata?.vesselId || metadata?.buqueId"
-                  :vesselName="metadata?.vessel || 'Buque'"
-                  :referenceDate="metadata?.eventDate || metadata?.fechaZarpada || metadata?.date"
-                  :endDate="metadata?.fechaArribo"
-                  :mareaCode="metadata?.mareaCode"
-                  size="sm"
-                />
+                  :vesselId="metadata?.vesselId || metadata?.buqueId" :vesselName="metadata?.vessel || 'Buque'"
+                  :referenceDate="TrajectoryRangeUtils.resolveAlertDates({ metadata, fechaDetectada: fecha }).referenceDate"
+                  :endDate="TrajectoryRangeUtils.resolveAlertDates({ metadata, fechaDetectada: fecha }).endDate"
+                  :mareaCode="metadata?.mareaCode" size="sm" />
                 <Badge v-else :color="source.color" variant="light" size="sm"
                   class="font-bold uppercase tracking-wider py-0.5 px-1.5 rounded-md text-[9px] flex items-center gap-1">
                   <component :is="source.icon" class="w-3 h-3" />
@@ -114,6 +110,7 @@ import { ErrorIcon, BellIcon, CheckIcon, DocsIcon, UserCircleIcon, BoxCubeIcon, 
 import Button from '@/components/ui/Button.vue'
 import Badge from '@/components/ui/Badge.vue'
 import TrajectorySourceBadge from '@/modules/alerts/components/TrajectorySourceBadge.vue'
+import { TrajectoryRangeUtils } from '@/modules/alerts/utils/trajectory-range.utils'
 import { AlertaEstado, AlertaPrioridad } from '../../alerts/services/alerts.service'
 import { useAuthStore } from '@/modules/auth/stores/auth.store'
 import { ValidRoles } from '@/modules/auth/interfaces/roles.enum'
@@ -288,7 +285,7 @@ const alertSources = computed(() => {
       }
     })
   }
-  
+
   // 2. Si no se encontraron fuentes en la lista, buscar en campo source único
   if (result.length === 0 && meta.source) {
     const name = typeof meta.source === 'string' ? meta.source : (meta.source as any)?.name

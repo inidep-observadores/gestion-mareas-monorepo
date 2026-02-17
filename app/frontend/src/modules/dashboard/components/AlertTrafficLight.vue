@@ -72,15 +72,15 @@
           leave-from-class="max-h-[1000px] opacity-100" leave-to-class="max-h-0 opacity-0">
           <div v-if="expandedSection === 'delays'" class="p-5 pt-2">
             <div v-if="revisionDelays.length" class="grid gap-3">
-              <div v-for="item in revisionDelays" :key="item.id"
-                @click="openMareaDetail(item.id)"
+              <div v-for="item in revisionDelays" :key="item.id" @click="openMareaDetail(item.id)"
                 class="flex items-center justify-between rounded-xl border border-border bg-surface-muted/50 p-3 transition-colors hover:bg-error/5 hover:border-error/20 cursor-pointer group/item">
                 <div class="flex-1 min-w-0 pr-4">
                   <div class="flex items-center gap-2 mb-1">
-                    <span class="text-xs font-black text-text group-hover/item:text-error transition-colors">{{ item.mareaId }}</span>
+                    <span class="text-xs font-black text-text group-hover/item:text-error transition-colors">{{
+                      item.mareaId }}</span>
                     <span
                       class="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-surface border border-border text-text-muted uppercase tracking-tight">{{
-                      item.vesselName }}</span>
+                        item.vesselName }}</span>
                   </div>
                   <div class="flex items-center gap-1.5 text-text-muted">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 24 24" fill="none"
@@ -159,15 +159,15 @@
           leave-from-class="max-h-[1000px] opacity-100" leave-to-class="max-h-0 opacity-0">
           <div v-if="expandedSection === 'reports'" class="p-5 pt-2">
             <div v-if="reportDelays.length" class="grid gap-3">
-              <div v-for="item in reportDelays" :key="item.id"
-                @click="openMareaDetail(item.id)"
+              <div v-for="item in reportDelays" :key="item.id" @click="openMareaDetail(item.id)"
                 class="flex items-center justify-between rounded-xl border border-border bg-surface-muted/50 p-3 transition-colors hover:bg-warning/5 hover:border-warning/20 cursor-pointer group/item">
                 <div class="flex-1 min-w-0 pr-4">
                   <div class="flex items-center gap-2 mb-1">
-                    <span class="text-xs font-black text-text group-hover/item:text-warning transition-colors">{{ item.mareaId }}</span>
+                    <span class="text-xs font-black text-text group-hover/item:text-warning transition-colors">{{
+                      item.mareaId }}</span>
                     <span
                       class="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-surface border border-border text-text-muted uppercase tracking-tight">{{
-                      item.vesselName }}</span>
+                        item.vesselName }}</span>
                   </div>
                   <div class="flex items-center gap-1.5 text-text-muted">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 24 24" fill="none"
@@ -240,27 +240,26 @@
           leave-from-class="max-h-[1000px] opacity-100" leave-to-class="max-h-0 opacity-0">
           <div v-if="expandedSection === 'movements'" class="p-5 pt-2">
             <div v-if="movementAlerts.length" class="grid gap-3">
-              <div v-for="item in movementAlerts" :key="item.id"
-                @click="openMareaDetail(item.metadata.mareaId)"
+              <div v-for="item in movementAlerts" :key="item.id" @click="openMareaDetail(item.metadata.mareaId)"
                 class="flex items-center justify-between rounded-xl border border-border bg-surface-muted/50 p-3 transition-colors hover:bg-success/5 hover:border-success/20 cursor-pointer group/item">
                 <div class="flex-1 min-w-0">
                   <div class="flex items-center gap-2 mb-1">
                     <span class="text-[10px] font-semibold px-1.5 py-0.5 rounded-md uppercase tracking-tighter border"
                       :class="[
                         item.metadata.type === 'ZARPADA' ? 'bg-cyan-100 text-cyan-700 border-cyan-200 dark:bg-cyan-500/10 dark:text-cyan-400 dark:border-cyan-500/20' :
-                        item.metadata.type === 'ARRIBO' ? 'bg-indigo-100 text-indigo-700 border-indigo-200 dark:bg-indigo-500/10 dark:text-indigo-400 dark:border-indigo-500/20' :
-                        'bg-success/20 text-success border-success/30'
+                          item.metadata.type === 'ARRIBO' ? 'bg-indigo-100 text-indigo-700 border-indigo-200 dark:bg-indigo-500/10 dark:text-indigo-400 dark:border-indigo-500/20' :
+                            'bg-success/20 text-success border-success/30'
                       ]">
                       {{ item.metadata.type }}
                     </span>
                     <span class="text-xs font-black text-text truncate">{{ item.metadata.vesselName }}</span>
-                    <span class="text-[10px] font-bold text-text-muted whitespace-nowrap">({{ item.metadata.mareaCode }})</span>
+                    <span class="text-[10px] font-bold text-text-muted whitespace-nowrap">({{ item.metadata.mareaCode
+                    }})</span>
                   </div>
-                  
                   <div class="flex items-center gap-3">
                     <div class="flex items-center gap-1 text-text-muted min-w-0">
                       <UserCircleIcon class="w-3 h-3 flex-shrink-0" />
-                      <span class="text-[9px] font-bold uppercase truncate">{{ item.metadata.observerName || 'Sin Observador' }}</span>
+                      <span class="text-[9px] font-bold uppercase truncate">{{ getObserverName(item) }}</span>
                     </div>
 
                     <div class="flex items-center gap-1 text-text-muted border-l border-border pl-3">
@@ -273,39 +272,36 @@
                     </div>
                   </div>
 
-                    <div class="flex items-center gap-2 mt-2">
-                      <span class="text-[8px] font-bold text-text-muted uppercase tracking-tight">Fuente:</span>
-                      <div class="flex gap-1.5">
-                        <template v-for="source in item.metadata.sources" :key="source.name">
-                          <TrajectorySourceBadge
-                            v-if="source.name === 'TRACKING_CSV' || source.name === 'API_PNA' || source.name === 'PNA'"
-                            :source="source.name"
-                            :vesselId="item.metadata.vesselId || item.metadata.buqueId"
-                            :vesselName="item.metadata.vesselName"
-                            :referenceDate="item.metadata.eventDate"
-                            :mareaCode="item.metadata.mareaCode"
-                            :abbreviated="true"
-                            size="sm"
-                          />
-                          <div v-else
-                            class="flex items-center gap-1 px-1.5 py-0.5 rounded-full border text-[8px] font-black uppercase tracking-tighter transition-colors"
-                            :class="[
-                              'bg-surface-muted border-border text-text-muted'
-                            ]">
-                            <span class="w-1.5 h-1.5 rounded-full bg-success"></span>
-                            {{ source.name.replace('_CSV', '').replace('API_', '') }}
-                          </div>
-                        </template>
-                      </div>
+                  <div class="flex items-center gap-2 mt-2">
+                    <span class="text-[8px] font-bold text-text-muted uppercase tracking-tight">Fuente:</span>
+                    <div class="flex gap-1.5">
+                      <template v-for="source in item.metadata.sources" :key="source.name">
+                        <TrajectorySourceBadge
+                          v-if="source.name === 'TRACKING_CSV' || source.name === 'API_PNA' || source.name === 'PNA'"
+                          :source="source.name" :vesselId="item.metadata.vesselId || item.metadata.buqueId"
+                          :vesselName="item.metadata.vesselName"
+                          :referenceDate="TrajectoryRangeUtils.resolveAlertDates(item).referenceDate"
+                          :endDate="TrajectoryRangeUtils.resolveAlertDates(item).endDate"
+                          :mareaCode="item.metadata.mareaCode" :abbreviated="true" size="sm" />
+                        <div v-else
+                          class="flex items-center gap-1 px-1.5 py-0.5 rounded-full border text-[8px] font-black uppercase tracking-tighter transition-colors"
+                          :class="[
+                            'bg-surface-muted border-border text-text-muted'
+                          ]">
+                          <span class="w-1.5 h-1.5 rounded-full bg-success"></span>
+                          {{ source.name.replace('_CSV', '').replace('API_', '') }}
+                        </div>
+                      </template>
                     </div>
+                  </div>
                 </div>
 
                 <div class="text-right ml-4">
                   <div class="text-xs font-black text-text leading-none mb-1">
-                    {{ new Date(item.metadata.eventDate).toLocaleDateString(undefined, { day: '2-digit', month: '2-digit' }) }}
+                    {{ formatDate(item.metadata.eventDate) }}
                   </div>
                   <div class="text-[10px] font-bold text-text-muted">
-                    {{ new Date(item.metadata.eventDate).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hour12: false }) }}h
+                    {{ formatTime(item.metadata.eventDate) }}h
                   </div>
                 </div>
               </div>
@@ -384,7 +380,7 @@
                         {{ item.name }}
                       </span>
                       <span class="text-[9px] font-bold text-text-muted uppercase tracking-tighter">{{ item.reason
-                        }}</span>
+                      }}</span>
                     </div>
                   </div>
                   <div class="text-right flex flex-col items-end gap-0.5 shrink-0">
@@ -417,7 +413,7 @@
                             <span class="text-[9px] text-text-muted font-medium truncate">{{ trip.vessel }}</span>
                           </div>
                           <span class="text-[10px] font-bold text-primary whitespace-nowrap">{{ trip.navigatedDays
-                            }}d</span>
+                          }}d</span>
                         </div>
                       </div>
                     </div>
@@ -440,12 +436,8 @@
       @close="showReclamoDialog = false" @confirm="handleReclamoConfirm" />
     <ObservadorTimelineDialog :show="showTimelineDialog" :observador-id="selectedObserver?.id"
       :observador-name="selectedObserver?.name" :year="selectedYear" @close="showTimelineDialog = false" />
-    
-    <MareaQuickDetailModal 
-      :is-open="showMareaModal" 
-      :marea-id="selectedMareaId" 
-      @close="showMareaModal = false" 
-    />
+
+    <MareaQuickDetailModal :is-open="showMareaModal" :marea-id="selectedMareaId" @close="showMareaModal = false" />
   </div>
 </template>
 
@@ -460,6 +452,7 @@ import ReclamoEntregaDialog from './ReclamoEntregaDialog.vue'
 import ObservadorTimelineDialog from '@/modules/admin/components/ObservadorTimelineDialog.vue'
 import MareaQuickDetailModal from '@/modules/stats/components/MareaQuickDetailModal.vue'
 import TrajectorySourceBadge from '@/modules/alerts/components/TrajectorySourceBadge.vue'
+import { TrajectoryRangeUtils } from '@/modules/alerts/utils/trajectory-range.utils'
 import { useConfigStore } from '@/modules/shared/stores/config.store'
 
 const showReclamoDialog = ref(false)
@@ -547,6 +540,18 @@ const toggleExpandIndividual = (id: string) => {
 const totalAlerts = computed(
   () => revisionDelays.value.length + reportDelays.value.length + movementAlerts.value.length + fatigueAlerts.value.length
 )
+
+const getObserverName = (item: any) => item.metadata?.observerName || 'Sin Observador'
+
+const formatDate = (date: string) => {
+  if (!date) return ''
+  return new Date(date).toLocaleDateString(undefined, { day: '2-digit', month: '2-digit' })
+}
+
+const formatTime = (date: string) => {
+  if (!date) return ''
+  return new Date(date).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hour12: false })
+}
 
 const buildInitials = (name: string) =>
   name

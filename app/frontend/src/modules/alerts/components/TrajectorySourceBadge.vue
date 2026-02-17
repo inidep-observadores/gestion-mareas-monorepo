@@ -1,35 +1,20 @@
 <template>
   <div class="inline-flex items-center">
-    <Badge
-      :color="resolvedColor"
-      variant="light"
-      size="sm"
+    <Badge :color="resolvedColor" variant="light" size="sm"
       class="font-black text-[9px] uppercase tracking-tighter py-0.5 rounded-md cursor-pointer transition-all flex items-center active:scale-95 group"
       :class="[
         abbreviated ? 'px-1 gap-0.5' : 'px-1.5 gap-1',
         source === 'PNA' ? 'hover:bg-warning/20' : 'hover:bg-success/20'
-      ]"
-      @click.stop="openMap"
-    >
-      <div 
-        v-if="!abbreviated"
+      ]" @click.stop="openMap">
+      <div v-if="!abbreviated"
         class="w-1.5 h-1.5 rounded-full animate-pulse group-hover:scale-125 transition-transform shrink-0"
-        :class="normalizedSource === 'PNA' ? 'bg-warning' : 'bg-success'"
-      ></div>
+        :class="normalizedSource === 'PNA' ? 'bg-warning' : 'bg-success'"></div>
       {{ resolvedLabel }}
     </Badge>
 
-    <AlertTrajectoryMapModal
-      v-if="vesselId && visualReferenceDate"
-      :show="showMap"
-      :vesselId="vesselId"
-      :vesselName="vesselName"
-      :referenceDate="visualReferenceDate"
-      :endDate="visualEndDate || undefined"
-      :mareaId="mareaId || undefined"
-      :mareaCode="mareaCode || undefined"
-      @close="showMap = false"
-    />
+    <AlertTrajectoryMapModal v-if="vesselId && visualReferenceDate" :show="showMap" :vesselId="vesselId"
+      :vesselName="vesselName" :referenceDate="visualReferenceDate" :endDate="visualEndDate || undefined"
+      :mareaId="mareaId || undefined" :mareaCode="mareaCode || undefined" @close="showMap = false" />
   </div>
 </template>
 
@@ -37,6 +22,7 @@
 import { ref, computed } from 'vue'
 import Badge from '@/components/ui/Badge.vue'
 import AlertTrajectoryMapModal from '@/modules/alerts/components/AlertTrajectoryMapModal.vue'
+import { TrajectoryRangeUtils } from '@/modules/alerts/utils/trajectory-range.utils'
 
 type BadgeColor = 'primary' | 'success' | 'error' | 'warning' | 'info' | 'purple' | 'light' | 'dark'
 type TrajectorySource = 'TRACKING' | 'PNA' | 'TRK' | 'API_PNA' | 'TRACKING_CSV'
@@ -85,18 +71,24 @@ const resolvedLabel = computed(() => {
 // Si no hay endDate (evento puntual), calculamos +/- 12h para ver el contexto
 const visualReferenceDate = computed(() => {
   if (!props.referenceDate) return null
-  if (props.endDate) return props.referenceDate
-  
-  const d = new Date(props.referenceDate)
-  return new Date(d.getTime() - 12 * 60 * 60 * 1000)
+  const dates = TrajectoryRangeUtils.resolveAlertDates({ metadata: { eventDate: props.referenceDate, fechaArribo: props.endDate } })
+
+  if (props.endDate) return dates.referenceDate
+
+  // Para eventos puntuales, retroceder 12h
+  const d = new Date(TrajectoryRangeUtils.normalize(dates.referenceDate))
+  return new Date(d.getTime() - 12 * 60 * 60 * 1000).toISOString()
 })
 
 const visualEndDate = computed(() => {
   if (!props.referenceDate) return null
-  if (props.endDate) return props.endDate
-  
-  const d = new Date(props.referenceDate)
-  return new Date(d.getTime() + 12 * 60 * 60 * 1000)
+  const dates = TrajectoryRangeUtils.resolveAlertDates({ metadata: { eventDate: props.referenceDate, fechaArribo: props.endDate } })
+
+  if (props.endDate) return dates.endDate
+
+  // Para eventos puntuales, adelantar 12h
+  const d = new Date(TrajectoryRangeUtils.normalize(dates.referenceDate))
+  return new Date(d.getTime() + 12 * 60 * 60 * 1000).toISOString()
 })
 
 const openMap = () => {

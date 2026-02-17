@@ -1,21 +1,17 @@
 <template>
-  <AdminDashboardLayout
-    title="Gestión y Auditoría de Alertas"
-    description="Supervisión de notificaciones automáticas y procesos de conciliación de movimientos"
-  >
+  <AdminDashboardLayout title="Gestión y Auditoría de Alertas"
+    description="Supervisión de notificaciones automáticas y procesos de conciliación de movimientos">
     <div class="flex flex-col gap-6">
       <!-- Header de Acciones -->
-      <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-surface p-6 rounded-xl border border-border shadow-sm">
+      <div
+        class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-surface p-6 rounded-xl border border-border shadow-sm">
         <div>
           <h3 class="text-lg font-semibold text-text mb-1">Alertas de Movimientos</h3>
           <p class="text-sm text-text-muted">Filtre y gestione las alertas detectadas por el sistema de monitoreo.</p>
         </div>
         <div class="flex gap-3">
-          <button 
-            @click="runBatchAutomation"
-            :disabled="isProcessingBatch"
-            class="px-5 py-2.5 bg-primary text-primary-fg rounded-lg text-sm font-semibold shadow-lg shadow-primary/20 flex items-center gap-2 disabled:opacity-50 transition-all active:scale-95"
-          >
+          <button @click="runBatchAutomation" :disabled="isProcessingBatch"
+            class="px-5 py-2.5 bg-primary text-primary-fg rounded-lg text-sm font-semibold shadow-lg shadow-primary/20 flex items-center gap-2 disabled:opacity-50 transition-all active:scale-95">
             <RefreshIcon v-if="isProcessingBatch" class="w-4 h-4 animate-spin" />
             <SettingsIcon v-else class="w-4 h-4" />
             {{ isProcessingBatch ? 'Procesando...' : 'Autoconfirmación Masiva' }}
@@ -24,32 +20,25 @@
       </div>
 
       <!-- Filtros -->
-      <div class="bg-surface-muted/30 p-4 border border-border rounded-xl flex flex-col md:flex-row gap-4 items-center justify-between">
+      <div
+        class="bg-surface-muted/30 p-4 border border-border rounded-xl flex flex-col md:flex-row gap-4 items-center justify-between">
         <div class="flex flex-1 flex-col md:flex-row gap-4 w-full">
           <div class="relative group flex-1">
-            <SearchIcon class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted group-focus-within:text-primary transition-colors" />
-            <input
-              v-model="filters.busqueda"
-              @keyup.enter="refreshLogs"
-              placeholder="Buscar buque, marea o puerto..."
-              class="w-full bg-surface border border-border rounded-lg py-2 pl-10 pr-4 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all outline-none"
-            />
+            <SearchIcon
+              class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted group-focus-within:text-primary transition-colors" />
+            <input v-model="filters.busqueda" @keyup.enter="refreshLogs" placeholder="Buscar buque, marea o puerto..."
+              class="w-full bg-surface border border-border rounded-lg py-2 pl-10 pr-4 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all outline-none" />
           </div>
-          <select 
-            v-model="filters.status" 
-            @change="refreshLogs"
-            class="bg-surface border border-border rounded-lg py-2 px-4 text-sm font-medium outline-none focus:outline-none focus:ring-2 focus:ring-primary/20"
-          >
+          <select v-model="filters.status" @change="refreshLogs"
+            class="bg-surface border border-border rounded-lg py-2 px-4 text-sm font-medium outline-none focus:outline-none focus:ring-2 focus:ring-primary/20">
             <option value="">Todos los estados</option>
             <option value="PENDIENTE">Solo Pendientes</option>
             <option value="RESUELTA">Solo Resueltas</option>
             <option value="DESCARTADA">Solo Descartadas</option>
           </select>
         </div>
-        <button 
-          @click="refreshLogs"
-          class="flex items-center justify-center gap-2 bg-surface border border-border rounded-lg px-4 py-2 font-semibold text-sm hover:bg-surface-muted transition-all shadow-sm text-text"
-        >
+        <button @click="refreshLogs"
+          class="flex items-center justify-center gap-2 bg-surface border border-border rounded-lg px-4 py-2 font-semibold text-sm hover:bg-surface-muted transition-all shadow-sm text-text">
           <RefreshIcon class="w-4 h-4" :class="{ 'animate-spin': isLoading }" />
           Actualizar
         </button>
@@ -60,43 +49,49 @@
         <div class="overflow-x-auto">
           <table class="w-full text-left border-collapse">
             <thead>
-              <tr class="bg-surface-muted/50 text-text-muted text-xs uppercase tracking-wider font-semibold border-b border-border">
-                 <th @click="toggleSort('fechaDetectada')" class="p-4 cursor-pointer hover:text-primary transition-colors group">
+              <tr
+                class="bg-surface-muted/50 text-text-muted text-xs uppercase tracking-wider font-semibold border-b border-border">
+                <th @click="toggleSort('fechaDetectada')"
+                  class="p-4 cursor-pointer hover:text-primary transition-colors group">
                   <div class="flex items-center gap-2">
                     Fecha / Hora
-                    <SortIcon v-if="filters.sortBy === 'fechaDetectada'" :order="filters.sortOrder" class="w-3 h-3 text-primary" />
+                    <SortIcon v-if="filters.sortBy === 'fechaDetectada'" :order="filters.sortOrder"
+                      class="w-3 h-3 text-primary" />
                   </div>
                 </th>
-                <th 
-                  v-if="filters.status !== 'PENDIENTE'"
-                  @click="toggleSort('fechaCierre')" 
-                  class="p-4 cursor-pointer hover:text-primary transition-colors group"
-                >
+                <th v-if="filters.status !== 'PENDIENTE'" @click="toggleSort('fechaCierre')"
+                  class="p-4 cursor-pointer hover:text-primary transition-colors group">
                   <div class="flex items-center gap-2">
                     Resolución
-                    <SortIcon v-if="filters.sortBy === 'fechaCierre'" :order="filters.sortOrder" class="w-3 h-3 text-primary" />
+                    <SortIcon v-if="filters.sortBy === 'fechaCierre'" :order="filters.sortOrder"
+                      class="w-3 h-3 text-primary" />
                   </div>
                 </th>
                 <th @click="toggleSort('tipo')" class="p-4 cursor-pointer hover:text-primary transition-colors">
                   <div class="flex items-center gap-2">
                     Alerta
-                    <SortIcon v-if="filters.sortBy === 'tipo'" :order="filters.sortOrder" class="w-3 h-3 text-primary" />
+                    <SortIcon v-if="filters.sortBy === 'tipo'" :order="filters.sortOrder"
+                      class="w-3 h-3 text-primary" />
                   </div>
                 </th>
                 <th class="p-4">Marea / Buque</th>
                 <th class="p-4">Fuentes</th>
                 <th class="p-4">Modo</th>
-                <th @click="toggleSort('estado')" class="p-4 text-center cursor-pointer hover:text-primary transition-colors">
+                <th @click="toggleSort('estado')"
+                  class="p-4 text-center cursor-pointer hover:text-primary transition-colors">
                   <div class="flex items-center justify-center gap-2">
                     Estado
-                    <SortIcon v-if="filters.sortBy === 'estado'" :order="filters.sortOrder" class="w-3 h-3 text-primary" />
+                    <SortIcon v-if="filters.sortBy === 'estado'" :order="filters.sortOrder"
+                      class="w-3 h-3 text-primary" />
                   </div>
                 </th>
               </tr>
             </thead>
             <tbody class="divide-y divide-border">
               <tr v-if="isLoading" v-for="i in 5" :key="i" class="animate-pulse">
-                <td :colspan="filters.status !== 'PENDIENTE' ? 7 : 6" class="p-5"><div class="h-4 bg-surface-muted rounded w-full"></div></td>
+                <td :colspan="filters.status !== 'PENDIENTE' ? 7 : 6" class="p-5">
+                  <div class="h-4 bg-surface-muted rounded w-full"></div>
+                </td>
               </tr>
               <tr v-else-if="alerts.length === 0" class="text-center">
                 <td :colspan="filters.status !== 'PENDIENTE' ? 7 : 6" class="p-20">
@@ -116,16 +111,15 @@
                 <td v-if="filters.status !== 'PENDIENTE'" class="px-6 py-4">
                   <div class="flex flex-col" v-if="alert.fechaCierre">
                     <span class="text-sm font-semibold text-text">{{ formatDate(alert.fechaCierre) }}</span>
-                    <span class="text-[10px] text-text-muted">{{ getTimeDifference(alert.fechaDetectada, alert.fechaCierre) }}</span>
+                    <span class="text-[10px] text-text-muted">{{ getTimeDifference(alert.fechaDetectada,
+                      alert.fechaCierre) }}</span>
                   </div>
                   <span v-else class="text-sm text-text-muted">-</span>
                 </td>
                 <td class="px-6 py-4">
                   <div class="flex items-center gap-3">
-                    <div 
-                      class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 shadow-sm"
-                      :class="getAlertIconClass(alert.tipo)"
-                    >
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 shadow-sm"
+                      :class="getAlertIconClass(alert.tipo)">
                       <ShipIcon class="w-4 h-4" />
                     </div>
                     <span class="text-sm font-semibold text-text leading-tight max-w-[200px]">{{ alert.titulo }}</span>
@@ -133,28 +127,23 @@
                 </td>
                 <td class="px-6 py-4">
                   <div class="flex flex-col">
-                    <span class="text-sm font-bold text-primary hover:underline cursor-pointer">{{ getMareaCode(alert) }}</span>
-                    <span class="text-[11px] font-medium text-text-muted">{{ metadataValue(alert, 'vesselName') || 'N/D' }}</span>
+                    <span class="text-sm font-bold text-primary hover:underline cursor-pointer">{{ getMareaCode(alert)
+                      }}</span>
+                    <span class="text-[11px] font-medium text-text-muted">{{ metadataValue(alert, 'vesselName') || 'N/D'
+                      }}</span>
                   </div>
                 </td>
                 <td class="px-6 py-4">
                   <div class="flex gap-1.5 flex-wrap">
                     <template v-for="source in getSources(alert)" :key="source">
-                      <TrajectorySourceBadge
-                        v-if="source === 'TRK' || source === 'PNA' || source === 'API_PNA'"
-                        :source="source"
-                        :vesselId="alert.metadata?.vesselId || alert.metadata?.buqueId"
+                      <TrajectorySourceBadge v-if="source === 'TRK' || source === 'PNA' || source === 'API_PNA'"
+                        :source="source" :vesselId="alert.metadata?.vesselId || alert.metadata?.buqueId"
                         :vesselName="alert.metadata?.vesselName || 'Buque'"
-                        :referenceDate="alert.fechaDetectada"
-                        :endDate="alert.metadata?.fechaArribo"
-                        :mareaCode="alert.metadata?.mareaCode"
-                        :abbreviated="true"
-                      />
-                      <span 
-                        v-else
-                        class="px-2 py-0.5 rounded text-[10px] font-bold border uppercase tracking-wider"
-                        :class="getSourceStyle(source)"
-                      >
+                        :referenceDate="TrajectoryRangeUtils.resolveAlertDates(alert).referenceDate"
+                        :endDate="TrajectoryRangeUtils.resolveAlertDates(alert).endDate"
+                        :mareaCode="alert.metadata?.mareaCode" :abbreviated="true" />
+                      <span v-else class="px-2 py-0.5 rounded text-[10px] font-bold border uppercase tracking-wider"
+                        :class="getSourceStyle(source)">
                         {{ source }}
                       </span>
                     </template>
@@ -162,19 +151,16 @@
                 </td>
                 <td class="px-6 py-4">
                   <template v-if="alert.estado !== 'PENDIENTE'">
-                    <span 
-                      class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border"
-                      :class="alert.metadata?.isAuto ? 'bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-900/30 dark:text-purple-400' : 'bg-surface-muted text-text-muted border-border'"
-                    >
+                    <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border"
+                      :class="alert.metadata?.isAuto ? 'bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-900/30 dark:text-purple-400' : 'bg-surface-muted text-text-muted border-border'">
                       {{ alert.metadata?.isAuto ? 'Auto' : 'Manual' }}
                     </span>
                   </template>
                 </td>
                 <td class="px-6 py-4 text-center">
-                  <span 
+                  <span
                     class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider border"
-                    :class="getStatusStyle(alert.estado)"
-                  >
+                    :class="getStatusStyle(alert.estado)">
                     {{ alert.estado }}
                   </span>
                 </td>
@@ -186,32 +172,22 @@
         <!-- Paginación -->
         <div class="p-4 bg-surface-muted/30 border-t border-border flex justify-between items-center">
           <span class="text-[11px] font-semibold uppercase tracking-wider text-text-muted">
-             Página {{ pagination.page }} | Total: {{ totalAlerts }} alertas
+            Página {{ pagination.page }} | Total: {{ totalAlerts }} alertas
           </span>
           <div class="flex gap-2">
-            <button 
-              @click="changePage(pagination.page - 1)" 
-              :disabled="pagination.page <= 1"
-              class="p-1.5 rounded-lg bg-surface border border-border hover:border-primary/50 disabled:opacity-30 transition-all hover:bg-surface-muted"
-            >
+            <button @click="changePage(pagination.page - 1)" :disabled="pagination.page <= 1"
+              class="p-1.5 rounded-lg bg-surface border border-border hover:border-primary/50 disabled:opacity-30 transition-all hover:bg-surface-muted">
               <ArrowLeftIcon class="w-5 h-5" />
             </button>
-            <button 
-              @click="changePage(pagination.page + 1)" 
-              :disabled="alerts.length < pagination.limit"
-              class="p-1.5 rounded-lg bg-surface border border-border hover:border-primary/50 disabled:opacity-30 transition-all hover:bg-surface-muted"
-            >
+            <button @click="changePage(pagination.page + 1)" :disabled="alerts.length < pagination.limit"
+              class="p-1.5 rounded-lg bg-surface border border-border hover:border-primary/50 disabled:opacity-30 transition-all hover:bg-surface-muted">
               <ArrowRightIcon class="w-5 h-5" />
             </button>
           </div>
         </div>
       </div>
-      <BatchProcessDialog 
-        :visible="batchDialogVisible"
-        :is-processing="isProcessingBatch"
-        :results="batchResults"
-        @close="closeBatchDialog"
-      />
+      <BatchProcessDialog :visible="batchDialogVisible" :is-processing="isProcessingBatch" :results="batchResults"
+        @close="closeBatchDialog" />
     </div>
   </AdminDashboardLayout>
 </template>
@@ -226,10 +202,11 @@ import { toast } from 'vue-sonner'
 import SortIcon from '@/components/shared/icons/SortIcon.vue'
 import BatchProcessDialog from '../components/BatchProcessDialog.vue'
 import TrajectorySourceBadge from '@/modules/alerts/components/TrajectorySourceBadge.vue'
-import { 
-  RefreshIcon, 
-  SettingsIcon, 
-  SearchIcon, 
+import { TrajectoryRangeUtils } from '@/modules/alerts/utils/trajectory-range.utils'
+import {
+  RefreshIcon,
+  SettingsIcon,
+  SearchIcon,
   BellIcon,
   ArrowLeftIcon,
   ArrowRightIcon
@@ -240,16 +217,16 @@ const isLoading = ref(false)
 const isProcessingBatch = ref(false)
 const totalAlerts = ref(0)
 const batchDialogVisible = ref(false)
-const batchResults = ref<{ 
-    total: number; 
-    processed: number; 
-    details: Array<{
-        id: string;
-        titulo: string;
-        status: 'CONFIRMED' | 'SKIPPED' | 'ERROR';
-        reason?: string;
-    }>;
-  } | null>(null)
+const batchResults = ref<{
+  total: number;
+  processed: number;
+  details: Array<{
+    id: string;
+    titulo: string;
+    status: 'CONFIRMED' | 'SKIPPED' | 'ERROR';
+    reason?: string;
+  }>;
+} | null>(null)
 
 const filters = reactive({
   busqueda: '',
@@ -295,7 +272,7 @@ const runBatchAutomation = async () => {
   isProcessingBatch.value = true
   batchDialogVisible.value = true
   batchResults.value = null
-  
+
   try {
     const result = await alertsAdminApi.processBatchAutomation()
     batchResults.value = result // { total, processed }
@@ -362,7 +339,7 @@ const getSourceStyle = (source: string) => {
 
 const getAlertIconClass = (tipo: string) => {
   switch (tipo) {
-    case 'ZARPADA': 
+    case 'ZARPADA':
     case 'POSIBLE_ZARPADA':
       return 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400'
     case 'ARRIBO':

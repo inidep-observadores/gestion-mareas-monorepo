@@ -68,6 +68,7 @@ import { ref, computed, watch } from 'vue'
 import BaseModal from '@/components/common/BaseModal.vue'
 import MapMonitor, { type VesselTrajectory } from '@/modules/monitor/components/MapMonitor.vue'
 import VesselInfoCard from '@/modules/monitor/components/VesselInfoCard.vue'
+import { TrajectoryRangeUtils } from '../utils/trajectory-range.utils'
 import TimelinePlayer from '@/modules/monitor/components/TimelinePlayer.vue'
 import MouseCoordinates from '@/modules/monitor/components/MouseCoordinates.vue'
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
@@ -138,24 +139,22 @@ const close = () => {
 
 const fetchTrajectory = async () => {
     loading.value = true
-    // Calcular rango inicial y final
+
+    // Calcular rango inicial y final para validación de cobertura
     const startDate = new Date(props.referenceDate)
     const endDate = props.endDate ? new Date(props.endDate) : startDate
 
-    if (isNaN(startDate.getTime())) {
+    // Calcular el rango de búsqueda en la API
+    const { from: fromDate, to: toDate } = TrajectoryRangeUtils.calculateFetchRange(
+        props.referenceDate as string,
+        props.endDate as string || null,
+        12 // buffer de 12 horas para contexto
+    )
+
+    if (isNaN(fromDate.getTime())) {
         loading.value = false
         return
     }
-
-    // Si hay un endDate específico y parece ser solo una fecha (hora 00:00:00)
-    // le asignamos el fin del día para asegurar que el rango sea inclusivo.
-    if (props.endDate && endDate.getHours() === 0 && endDate.getMinutes() === 0) {
-        endDate.setHours(23, 59, 59, 999)
-    }
-
-    // Ampliar 12h hacia afuera de los extremos
-    const fromDate = new Date(startDate.getTime() - 6 * 60 * 60 * 1000)
-    const toDate = new Date(endDate.getTime() + 6 * 60 * 60 * 1000)
 
     try {
         const params = {
