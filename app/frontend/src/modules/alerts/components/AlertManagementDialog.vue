@@ -291,7 +291,8 @@
         :arrival-date="reclamoData?.arrivalDate || ''" @close="showReclamoDialog = false"
         @confirm="handleReclamoConfirm" />
 
-    <BaseModal :show="isConfirmationOpen" @close="closeConfirmation" maxWidth="xl" title="Confirmar acción">
+    <BaseModal ref="confirmationModal" :show="isConfirmationOpen" @close="closeConfirmation" maxWidth="xl"
+        :title="'Confirmar acción'">
         <div class="space-y-5">
             <p class="text-sm text-text/80 leading-relaxed font-medium">{{ confirmationMessage }}</p>
             <div class="flex items-center gap-3 justify-end">

@@ -5,22 +5,43 @@ export const TrajectoryRangeUtils = {
      */
     normalize(date: any): string {
         if (!date) return ''
-        if (typeof date === 'string') return date
-        if (date.value && date.$type === 'DateTime') return date.value
-        if (date instanceof Date) return date.toISOString()
-        return String(date)
+        let d: Date
+        if (typeof date === 'object' && date.value && date.$type === 'DateTime') {
+            d = new Date(date.value)
+        } else {
+            d = new Date(date)
+        }
+
+        if (isNaN(d.getTime())) {
+            return typeof date === 'string' ? date : ''
+        }
+        return d.toISOString()
     },
 
     /**
      * Detecta si una fecha tiene componente de hora significativo (no es solo medianoche)
      */
     hasTime(date: any): boolean {
-        const dStr = this.normalize(date)
-        if (!dStr) return false
+        if (!date) return false
+        const dStr = typeof date === 'string' ? date : this.normalize(date)
 
-        // Si tiene "T" y la hora no es 00:00:00.000
+        // Si es un string YYYY-MM-DD puro sin T ni espacio ni :, no tiene hora
+        if (typeof date === 'string' && !date.includes('T') && !date.includes(':') && !date.includes(' ')) {
+            return false
+        }
+
         const d = new Date(dStr)
-        return d.getHours() !== 0 || d.getMinutes() !== 0 || d.getSeconds() !== 0
+        if (isNaN(d.getTime())) return false
+
+        // Si el string original contiene 'Z' o '+', lo tratamos como UTC/ISO
+        const isISO = dStr.includes('T') || dStr.includes('Z') || dStr.includes('+')
+
+        if (isISO) {
+            return d.getUTCHours() !== 0 || d.getUTCMinutes() !== 0 || d.getUTCSeconds() !== 0
+        } else {
+            // Formatos locales como '2026-02-17 15:45'
+            return d.getHours() !== 0 || d.getMinutes() !== 0 || d.getSeconds() !== 0
+        }
     },
 
     /**
@@ -64,10 +85,10 @@ export const TrajectoryRangeUtils = {
 
         // Si no tiene hora (es fecha calendario), expandir a día completo
         if (!this.hasTime(referenceDate)) {
-            start.setHours(0, 0, 0, 0)
+            start.setUTCHours(0, 0, 0, 0)
             if (!endDate) {
                 end = new Date(start)
-                end.setHours(23, 59, 59, 999)
+                end.setUTCHours(23, 59, 59, 999)
             }
         }
 
