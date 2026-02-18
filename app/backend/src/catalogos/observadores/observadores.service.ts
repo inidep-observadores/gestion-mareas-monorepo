@@ -39,12 +39,12 @@ export class ObservadoresService {
                 // 1. Sin impedimento
                 where.conImpedimento = false;
 
-                // 2. No asignado a ninguna marea activa (Designada o En Ejecución)
+                // 2. No asignado a ninguna marea DESIGNADA activa
                 where.mareasAsignadas = {
                     none: {
                         activo: true,
                         estadoActual: {
-                            codigo: { in: [MareaEstado.DESIGNADA, MareaEstado.EN_EJECUCION] }
+                            codigo: MareaEstado.DESIGNADA
                         }
                     }
                 };

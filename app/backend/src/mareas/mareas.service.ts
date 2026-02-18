@@ -1920,7 +1920,7 @@ export class MareasService {
             where: {
                 observadorPrincipalId: observadorId,
                 activo: true,
-                estadoActual: { codigo: { in: [MareaEstado.DESIGNADA, MareaEstado.EN_EJECUCION] } }
+                estadoActual: { codigo: MareaEstado.DESIGNADA }
             },
             select: {
                 nroMarea: true, anioMarea: true, tipoMarea: true, estadoActual: true
@@ -1987,12 +1987,12 @@ export class MareasService {
                 where: {
                     observadorPrincipalId: observadorId,
                     activo: true,
-                    estadoActual: { codigo: { in: [MareaEstado.DESIGNADA, MareaEstado.EN_EJECUCION] } }
+                    estadoActual: { codigo: MareaEstado.DESIGNADA }
                 },
                 include: { estadoActual: true }
             });
             if (observerOccupied) {
-                throw new BadRequestException(`El observador ya se encuentra embarcado o designado en la marea ${MareaUtils.formatCodigo(observerOccupied as any)} (${observerOccupied.estadoActual.nombre}).`);
+                throw new BadRequestException(`El observador ya tiene una marea designada para el futuro (${MareaUtils.formatCodigo(observerOccupied as any)}).`);
             }
 
             const obs = await this.prisma.observador.findUnique({
