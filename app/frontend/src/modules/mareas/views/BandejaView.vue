@@ -384,7 +384,7 @@
         <div v-if="selectedMarea"
           class="w-full xl:w-[400px] shrink-0 sticky top-6 bg-surface border border-border rounded-[2.5rem] shadow-xl overflow-hidden self-start hidden xl:block">
           <MareaContextDetailContent :marea="selectedMarea" :context="selectedMareaContext"
-            @close="selectedMarea = null" @open-detalle="goToDetalle" @action="executeSidebarAction" />
+            @close="selectedMarea = null" @open-detalle="goToDetalle" @action="executeSidebarAction" @manage-alert="handleAlertAction" />
         </div>
       </Transition>
     </div>
@@ -682,11 +682,17 @@ const handleTaskAction = (taskId: string, actionKey: string) => {
   }
 }
 
-const handleAlertAction = (alertId: string, type: string) => {
-  const alert = alertas.value.find(a => a.id === alertId) || alertasHistoricas.value.find(a => a.id === alertId)
+const handleAlertAction = (alertId: string | object, type?: string) => {
+  const alert = typeof alertId === 'object'
+    ? alertId
+    : (alertas.value.find(a => a.id === alertId) || alertasHistoricas.value.find(a => a.id === alertId))
+
   if (alert) {
-    selectedAlert.value = alert
-    isAlertDialogOpen.value = true
+    selectedAlert.value = null
+    setTimeout(() => {
+      selectedAlert.value = alert as any
+      isAlertDialogOpen.value = true
+    }, 0)
   }
 }
 
