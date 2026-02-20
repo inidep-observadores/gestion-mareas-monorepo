@@ -22,6 +22,7 @@ interface SeedUser {
     fullName: string;
     password: string;
     roles: string[];
+    isActive?: boolean;
 }
 
 
@@ -57,6 +58,20 @@ export const initialData: SeedData = {
             fullName: 'Coordinador General',
             password: bcrypt.hashSync('Abc123', 10),
             roles: [ValidRoles.coordinador]
+        },
+        {
+            email: 'dev@google.com',
+            fullName: 'Desarrollador Invitado',
+            password: bcrypt.hashSync('Abc123', 10),
+            roles: [ValidRoles.desarrollador],
+            isActive: false,
+        },
+        {
+            email: 'visitante@google.com',
+            fullName: 'Visitante Externo',
+            password: bcrypt.hashSync('Abc123', 10),
+            roles: [ValidRoles.visitante],
+            isActive: false,
         }
     ],
 

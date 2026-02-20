@@ -167,8 +167,9 @@ import { ValidRoles } from '@/modules/auth/interfaces/roles.enum'
 const authStore = useAuthStore()
 const canEdit = computed(() => {
     const roles = authStore.user?.roles || []
-    return roles.includes(ValidRoles.admin) || roles.includes(ValidRoles.coordinador)
+    return roles.includes(ValidRoles.admin) || roles.includes(ValidRoles.tecnico)
 })
+
 
 const {
     isLoading,

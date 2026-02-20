@@ -11,7 +11,7 @@ export class ObservadoresController {
     constructor(private readonly observadoresService: ObservadoresService) { }
 
     @Post()
-    @Auth(ValidRoles.admin, ValidRoles.coordinador)
+    @Auth(ValidRoles.admin, ValidRoles.tecnico)
     crear(@Body() createObservadorDto: CreateObservadorDto) {
         return this.observadoresService.crear(createObservadorDto);
     }
@@ -22,7 +22,7 @@ export class ObservadoresController {
     }
 
     @Post('export/excel')
-    @Auth(ValidRoles.admin, ValidRoles.coordinador)
+    @Auth(ValidRoles.admin, ValidRoles.tecnico)
     async exportExcel(
         @Body('searchQuery') searchQuery: string,
         @Res() res: Response
@@ -56,7 +56,7 @@ export class ObservadoresController {
     }
 
     @Patch(':id')
-    @Auth(ValidRoles.admin, ValidRoles.coordinador)
+    @Auth(ValidRoles.admin, ValidRoles.tecnico)
     actualizar(
         @Param('id', ParseUUIDPipe) id: string,
         @Body() updateObservadorDto: UpdateObservadorDto,

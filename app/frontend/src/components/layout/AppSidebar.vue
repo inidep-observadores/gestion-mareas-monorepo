@@ -208,12 +208,13 @@ const navigationGroups = computed(() => {
           to: { name: 'MareasCalendar' },
           show: false,  //Lo dejamos desactivado hasta que le encontremos una buena utilidad
         },
-        {
-          icon: BarChartIcon,
-          name: 'Estadísticas',
-          to: { name: 'MareasStats' },
-          show: isAdmin.value || isCoordinator.value,
-        },
+          {
+            icon: BarChartIcon,
+            name: 'Estadísticas',
+            to: { name: 'MareasStats' },
+            show: isAdmin.value || isCoordinator.value || authStore.user?.roles.includes(ValidRoles.desarrollador),
+          },
+
       ],
     },
   ]

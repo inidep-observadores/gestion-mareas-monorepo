@@ -178,7 +178,7 @@ const router = createRouter({
       meta: {
         title: 'Estadísticas Anuales',
         requiresAuth: true,
-        roles: [ValidRoles.admin, ValidRoles.coordinador],
+        roles: [ValidRoles.admin, ValidRoles.coordinador, ValidRoles.desarrollador],
       },
     },
     {

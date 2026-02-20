@@ -10,7 +10,7 @@ export class BuquesController {
     constructor(private readonly buquesService: BuquesService) { }
 
     @Post()
-    @Auth(ValidRoles.admin, ValidRoles.coordinador)
+    @Auth(ValidRoles.admin, ValidRoles.tecnico)
     crear(@Body() createBuqueDto: CreateBuqueDto) {
         return this.buquesService.crear(createBuqueDto);
     }
@@ -26,7 +26,7 @@ export class BuquesController {
     }
 
     @Patch(':id')
-    @Auth(ValidRoles.admin, ValidRoles.coordinador)
+    @Auth(ValidRoles.admin, ValidRoles.tecnico)
     actualizar(
         @Param('id', ParseUUIDPipe) id: string,
         @Body() updateBuqueDto: UpdateBuqueDto,
