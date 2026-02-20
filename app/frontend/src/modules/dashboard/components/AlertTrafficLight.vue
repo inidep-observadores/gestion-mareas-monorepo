@@ -225,7 +225,7 @@
                   {{ movementAlerts.length }}
                 </span>
               </h3>
-              <p class="text-[10px] font-bold text-text-muted uppercase tracking-tighter">Eventos detectados</p>
+              <p class="text-[10px] font-bold text-text-muted uppercase tracking-tighter">Eventos sin procesar</p>
             </div>
           </div>
           <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-text-muted transition-transform duration-300"
@@ -545,29 +545,29 @@ const getObserverName = (item: any) => item.metadata?.observerName || 'Sin Obser
 
 const formatDate = (dateInput: any) => {
   if (!dateInput) return '-'
-  
+
   // Extraer valor si es un objeto de fecha serializado
-  const dateStr = typeof dateInput === 'object' && dateInput?.value 
-    ? dateInput.value 
+  const dateStr = typeof dateInput === 'object' && dateInput?.value
+    ? dateInput.value
     : dateInput
 
   const date = new Date(dateStr)
   if (isNaN(date.getTime())) return '-'
-  
+
   return date.toLocaleDateString(undefined, { day: '2-digit', month: '2-digit' })
 }
 
 const formatTime = (dateInput: any) => {
   if (!dateInput) return ''
-  
+
   // Extraer valor si es un objeto de fecha serializado
-  const dateStr = typeof dateInput === 'object' && dateInput?.value 
-    ? dateInput.value 
+  const dateStr = typeof dateInput === 'object' && dateInput?.value
+    ? dateInput.value
     : dateInput
 
   const date = new Date(dateStr)
   if (isNaN(date.getTime())) return ''
-  
+
   return date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hour12: false })
 }
 

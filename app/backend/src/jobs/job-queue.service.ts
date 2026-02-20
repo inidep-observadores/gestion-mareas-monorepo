@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Prisma } from '@prisma/client';
 import { JobStatus, JobType } from './job-types';
+import { DateTime } from 'luxon';
 
 export interface JobFilterParams {
     page: number;
@@ -117,6 +118,16 @@ export class JobQueueService {
             return activeJob;
         }
 
-        return this.addJob(type, {}, priority);
+        let payload = {};
+        if (type === JobType.PNA_API_SYNC) {
+            const lastSync = await this.prisma.systemStatus.findUnique({ where: { key: 'LAST_PNA_SYNC' } });
+            const fromDate = lastSync?.value ? new Date(lastSync.value) : DateTime.now().minus({ days: 2 }).toJSDate();
+            payload = {
+                fromDate: fromDate.toISOString(),
+                toDate: new Date().toISOString(),
+            };
+        }
+
+        return this.addJob(type, payload, priority);
     }
 }

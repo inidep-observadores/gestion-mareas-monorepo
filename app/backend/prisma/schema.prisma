@@ -711,6 +711,33 @@ model PnaApiSnapshot {
   @@schema("public")
 }
 
+model PnaArriboZarpada {
+  id                  String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  idCostera           String   @map("id_costera")
+  nombreCostera       String   @map("nombre_costera")
+  idBuqueMbpc         String   @map("id_buque_mbpc")
+  matricula           String
+  sdist               String?
+  nombre              String
+  latitud             String
+  longitud            String
+  estado              String
+  fecha               DateTime @db.Timestamptz(6)
+  fechaModificacion   DateTime @map("fecha_modificacion") @db.Timestamptz(6)
+  cantidadTripulantes Int      @map("cantidad_tripulantes")
+  observaciones       String?
+  borrado             Boolean  @default(false)
+  externalComboId     String   @unique @map("external_combo_id")
+  createdAt           DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([idBuqueMbpc])
+  @@index([fecha])
+  @@index([estado])
+  @@index([externalComboId])
+  @@map("zarpadas_arribos_pna")
+  @@schema("public")
+}
+
 model SystemStatus {
   key        String   @id
   value      String?

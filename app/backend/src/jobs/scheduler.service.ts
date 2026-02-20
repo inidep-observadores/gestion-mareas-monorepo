@@ -6,6 +6,7 @@ import { VesselSyncProcessor } from './processors/vessel-sync.processor';
 import { PnaApiSyncProcessor } from './processors/pna-api-sync.processor';
 import { PnaTrackingSyncProcessor } from './processors/pna-tracking-sync.processor';
 import { PnaTrackingService } from '../pna-api/pna-tracking.service';
+import { PnaApiService } from '../pna-api/pna-api.service';
 import { DateTime } from 'luxon';
 import * as os from 'os';
 
@@ -21,6 +22,7 @@ export class SchedulerService {
         private readonly pnaApiSyncProcessor: PnaApiSyncProcessor,
         private readonly pnaTrackingSyncProcessor: PnaTrackingSyncProcessor,
         private readonly pnaTrackingService: PnaTrackingService,
+        private readonly pnaApiService: PnaApiService,
     ) {
         // Generar un ID único para este worker basado en hostname y PID
         this.workerId = `${os.hostname()}-${process.pid}`;
@@ -147,10 +149,18 @@ export class SchedulerService {
         });
 
         if (!existingJob) {
-            this.logger.log('Programando nueva tarea de sincronización de PNA API...');
+            const lastSync = await this.pnaApiService.getLastSuccessfulSyncDate();
+            const fromDate = lastSync ? lastSync : DateTime.now().minus({ days: 2 }).toJSDate();
+            const toDate = new Date();
+
+            this.logger.log(`Programando nueva tarea de sincronización de PNA API (${fromDate.toISOString()} -> ${toDate.toISOString()})...`);
             await this.prisma.jobQueue.create({
                 data: {
                     type: JobType.PNA_API_SYNC,
+                    payload: {
+                        fromDate: fromDate.toISOString(),
+                        toDate: toDate.toISOString(),
+                    },
                     status: JobStatus.PENDING,
                     nextRunAt: new Date(),
                     priority: 20,

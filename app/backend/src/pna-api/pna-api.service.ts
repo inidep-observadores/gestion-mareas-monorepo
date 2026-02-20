@@ -115,6 +115,9 @@ export class PnaApiService {
                         continue;
                     }
 
+                    // 3. Persistencia Histórica (Mapeo 1 a 1 de la API)
+                    await this.persistHistoricalData(reporte);
+
                     const result = await this.processSingleReport(reporte);
 
                     if (result.processed) {
@@ -643,5 +646,51 @@ export class PnaApiService {
             }
         });
         this.logger.log(`Actualizado LAST_PNA_SYNC en system_status: ${date.toISOString()} `);
+    }
+
+    /**
+     * Persiste un reporte de la API de PNA en la tabla histórica zarpadas_arribos_pna.
+     * Utiliza el comboId generado por el parser como clave única.
+     */
+    private async persistHistoricalData(reporte: PnaReporteCostera): Promise<void> {
+        const comboId = this.parser.generateComboId(reporte);
+
+        try {
+            await (this.prisma as any).pnaArriboZarpada.upsert({
+                where: { externalComboId: comboId },
+                update: {
+                    // Actualizamos por si algo cambió (ej. fecha_modificacion o observaciones)
+                    nombreCostera: reporte.nombre_costera,
+                    matricula: reporte.matricula,
+                    sdist: reporte.sdist || null,
+                    nombre: reporte.nombre,
+                    latitud: reporte.latitud,
+                    longitud: reporte.longitud,
+                    fechaModificacion: DateTime.fromFormat(reporte.fecha_modificacion, 'yyyy-MM-dd HH:mm:ss', { zone: 'utc' }).toJSDate(),
+                    cantidadTripulantes: parseInt(reporte.cantidad_tripulantes, 10) || 0,
+                    observaciones: reporte.observaciones || null,
+                    borrado: reporte.borrado.toLowerCase() === 'true',
+                },
+                create: {
+                    idCostera: reporte.id_costera,
+                    nombreCostera: reporte.nombre_costera,
+                    idBuqueMbpc: reporte.id_buque_mbpc,
+                    matricula: reporte.matricula,
+                    sdist: reporte.sdist || null,
+                    nombre: reporte.nombre,
+                    latitud: reporte.latitud,
+                    longitud: reporte.longitud,
+                    estado: reporte.estado,
+                    fecha: DateTime.fromFormat(reporte.fecha, 'yyyy-MM-dd HH:mm:ss', { zone: 'utc' }).toJSDate(),
+                    fechaModificacion: DateTime.fromFormat(reporte.fecha_modificacion, 'yyyy-MM-dd HH:mm:ss', { zone: 'utc' }).toJSDate(),
+                    cantidadTripulantes: parseInt(reporte.cantidad_tripulantes, 10) || 0,
+                    observaciones: reporte.observaciones || null,
+                    borrado: reporte.borrado.toLowerCase() === 'true',
+                    externalComboId: comboId,
+                },
+            });
+        } catch (error) {
+            this.logger.error(`Error persistiendo datos históricos de PNA (${comboId}): ${error.message}`);
+        }
     }
 }
