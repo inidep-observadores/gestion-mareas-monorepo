@@ -711,7 +711,7 @@ model PnaApiSnapshot {
   @@schema("public")
 }
 
-model PnaArriboZarpada {
+model PnaZarpadaArribo {
   id                  String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   idCostera           String   @map("id_costera")
   nombreCostera       String   @map("nombre_costera")
@@ -734,7 +734,7 @@ model PnaArriboZarpada {
   @@index([fecha])
   @@index([estado])
   @@index([externalComboId])
-  @@map("zarpadas_arribos_pna")
+  @@map("pna_zarpadas_arribos")
   @@schema("public")
 }
 

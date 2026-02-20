@@ -649,14 +649,14 @@ export class PnaApiService {
     }
 
     /**
-     * Persiste un reporte de la API de PNA en la tabla histórica zarpadas_arribos_pna.
+     * Persiste un reporte de la API de PNA en la tabla histórica pna_zarpadas_arribos.
      * Utiliza el comboId generado por el parser como clave única.
      */
     private async persistHistoricalData(reporte: PnaReporteCostera): Promise<void> {
         const comboId = this.parser.generateComboId(reporte);
 
         try {
-            await (this.prisma as any).pnaArriboZarpada.upsert({
+            await (this.prisma as any).pnaZarpadaArribo.upsert({
                 where: { externalComboId: comboId },
                 update: {
                     // Actualizamos por si algo cambió (ej. fecha_modificacion o observaciones)
