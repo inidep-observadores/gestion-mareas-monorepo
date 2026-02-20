@@ -543,14 +543,32 @@ const totalAlerts = computed(
 
 const getObserverName = (item: any) => item.metadata?.observerName || 'Sin Observador'
 
-const formatDate = (date: string) => {
-  if (!date) return ''
-  return new Date(date).toLocaleDateString(undefined, { day: '2-digit', month: '2-digit' })
+const formatDate = (dateInput: any) => {
+  if (!dateInput) return '-'
+  
+  // Extraer valor si es un objeto de fecha serializado
+  const dateStr = typeof dateInput === 'object' && dateInput?.value 
+    ? dateInput.value 
+    : dateInput
+
+  const date = new Date(dateStr)
+  if (isNaN(date.getTime())) return '-'
+  
+  return date.toLocaleDateString(undefined, { day: '2-digit', month: '2-digit' })
 }
 
-const formatTime = (date: string) => {
-  if (!date) return ''
-  return new Date(date).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hour12: false })
+const formatTime = (dateInput: any) => {
+  if (!dateInput) return ''
+  
+  // Extraer valor si es un objeto de fecha serializado
+  const dateStr = typeof dateInput === 'object' && dateInput?.value 
+    ? dateInput.value 
+    : dateInput
+
+  const date = new Date(dateStr)
+  if (isNaN(date.getTime())) return ''
+  
+  return date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hour12: false })
 }
 
 const buildInitials = (name: string) =>

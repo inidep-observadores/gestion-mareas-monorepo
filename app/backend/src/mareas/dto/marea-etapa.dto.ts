@@ -49,6 +49,12 @@ export class MareaEtapaDto {
     @IsOptional()
     observaciones?: string;
 
+    @IsOptional()
+    fuentesZarpada?: any;
+
+    @IsOptional()
+    fuentesArribo?: any;
+
     @IsArray()
     @IsOptional()
     @ValidateNested({ each: true })

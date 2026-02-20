@@ -263,6 +263,15 @@ export class MareasService {
                         if (!existing) {
                             throw new NotFoundException('Etapa no encontrada para la marea.');
                         }
+
+                        // Proteccion de fuentes: No permitir nulificar si no viene en el payload
+                        if (etapa.fuentesZarpada !== undefined && etapa.fuentesZarpada !== null) {
+                            etapaData.fuentesZarpada = etapa.fuentesZarpada;
+                        }
+                        if (etapa.fuentesArribo !== undefined && etapa.fuentesArribo !== null) {
+                            etapaData.fuentesArribo = etapa.fuentesArribo;
+                        }
+
                         await tx.mareaEtapa.update({
                             where: { id: currentEtapaId },
                             data: etapaData
@@ -1630,9 +1639,17 @@ export class MareasService {
             };
 
             if (stg.id) {
+                // Para actualizaciones, solo incluimos fuentes si vienen en el payload
+                // de lo contrario Prisma ignorará el campo si es undefined
+                const updateData: any = {
+                    ...stageData,
+                    fuentesZarpada: stg.fuentesZarpada ?? undefined,
+                    fuentesArribo: stg.fuentesArribo ?? undefined
+                };
+
                 await tx.mareaEtapa.update({
                     where: { id: stg.id },
-                    data: stageData
+                    data: updateData
                 });
             } else {
                 const newStage = await tx.mareaEtapa.create({

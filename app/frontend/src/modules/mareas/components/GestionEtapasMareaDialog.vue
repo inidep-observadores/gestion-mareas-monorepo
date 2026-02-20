@@ -311,7 +311,9 @@ watch(() => props.show, (val) => {
       fechaZarpada: s.fechaZarpada || '',
       fechaArribo: s.fechaArribo || '',
       tipoEtapa: s.tipoEtapa || TipoEtapa.MC,
-      nroEtapa: s.nroEtapa || s.nro_etapa
+      nroEtapa: s.nroEtapa || s.nro_etapa,
+      fuentesZarpada: s.fuentesZarpada || null,
+      fuentesArribo: s.fuentesArribo || null
     }));
     form.value.stages = clonedStages.sort((a, b) => (a.nroEtapa || 0) - (b.nroEtapa || 0));
 
