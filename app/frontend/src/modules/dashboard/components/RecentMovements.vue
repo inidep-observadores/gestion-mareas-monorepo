@@ -68,7 +68,9 @@
                 </tr>
               </thead>
               <tbody class="divide-y divide-border bg-surface">
-                <tr v-for="mov in movements" :key="mov.id" class="hover:bg-surface-muted/50 transition-colors">
+                <tr v-for="mov in movements" :key="mov.id" 
+                @click="openMareaDetail(mov.mareaId)"
+                class="hover:bg-surface-muted/50 transition-colors cursor-pointer group">
                   <!-- Col 1: Buque -->
                   <td class="px-6 py-4 align-middle">
                     <div class="font-bold text-text text-xs leading-tight">
@@ -147,6 +149,12 @@
         </div>
       </div>
     </div>
+    
+    <MareaQuickDetailModal 
+      :is-open="showMareaModal" 
+      :marea-id="selectedMareaId" 
+      @close="showMareaModal = false" 
+    />
   </div>
 </template>
 
@@ -158,12 +166,23 @@ import mareasService from '@/modules/mareas/services/mareas.service'
 import TrajectorySourceBadge from '@/modules/alerts/components/TrajectorySourceBadge.vue'
 import { TrajectoryRangeUtils } from '@/modules/alerts/utils/trajectory-range.utils'
 import type { MovementEvent } from '@/modules/mareas/types/marea.types'
+import MareaQuickDetailModal from '@/modules/stats/components/MareaQuickDetailModal.vue'
 
 const isCollapsed = ref(false)
 const selectedDays = ref(3)
 const movements = ref<MovementEvent[]>([])
 const loading = ref(false)
 const lastEtapaUpdate = ref<string | null>(null)
+
+// Marea Quick Detail Modal
+const showMareaModal = ref(false)
+const selectedMareaId = ref<string | null>(null)
+
+const openMareaDetail = (mareaId: string) => {
+  if (!mareaId) return
+  selectedMareaId.value = mareaId
+  showMareaModal.value = true
+}
 
 const toggleCollapse = () => {
   isCollapsed.value = !isCollapsed.value

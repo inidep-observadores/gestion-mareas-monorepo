@@ -75,6 +75,7 @@ export interface MovementEvent {
     puerto: string;
     fuentes?: any;
     vesselId?: string;
+    mareaId: string;
 }
 
 export interface CalendarEvent {

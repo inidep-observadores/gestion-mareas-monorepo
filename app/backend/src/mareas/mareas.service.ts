@@ -705,7 +705,8 @@ export class MareasService {
                     fecha: etapa.fechaZarpada,
                     puerto: (etapa as any).puertoZarpada?.nombre || 'N/D',
                     fuentes: etapa.fuentesZarpada,
-                    vesselId: marea.buqueId
+                    vesselId: marea.buqueId,
+                    mareaId: marea.id
                 });
             }
 
@@ -721,7 +722,8 @@ export class MareasService {
                     fecha: etapa.fechaArribo,
                     puerto: (etapa as any).puertoArribo?.nombre || 'N/D',
                     fuentes: etapa.fuentesArribo,
-                    vesselId: marea.buqueId
+                    vesselId: marea.buqueId,
+                    mareaId: marea.id
                 });
             }
         }
