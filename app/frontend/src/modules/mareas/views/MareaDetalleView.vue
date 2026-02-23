@@ -264,7 +264,9 @@
           </div>
 
           <NavigationStagesEditor v-model="etapas" :puertoOptions="puertoOptions" :pesqueriaOptions="pesqueriaOptions"
-            :puertoBaseId="marea.puertoBaseId" :defaultPesqueriaId="marea.id_pesqueria" :readOnly="isReadOnly" />
+            :puertoBaseId="marea.puertoBaseId" :defaultPesqueriaId="marea.id_pesqueria" :readOnly="isReadOnly"
+            :mareaId="marea.id" :mareaTieneDesignacion="tieneDesignacion" @action-success="(msg) => toast.success(msg)"
+            @action-error="(msg) => toast.error(msg)" @action-warning="(msg) => toast.warning(msg)" />
         </div>
 
         <!-- 3. Observadores Tab -->
@@ -594,7 +596,6 @@ const tabs = [
   { id: 'historial_alertas', label: 'Historial Alertas', icon: BellIcon },
 ]
 
-// Data Refs
 const marea = ref<any>({
   etapas: [],
   observadores: []
@@ -605,6 +606,10 @@ const movimientos = ref<any[]>([]);
 const archivos = ref<any[]>([]);
 const observadorCatalog = ref<any[]>([]);
 const originalObservadorPrincipalId = ref<string | null>(null);
+
+const tieneDesignacion = computed(() => {
+   return marea.value?.estado_codigo === 'DESIGNADA' || observadores.value.some(obs => obs.es_designado);
+});
 
 const buqueOptions = ref<{ value: string; label: string }[]>([])
 const pesqueriaOptions = ref<{ value: string; label: string }[]>([])
@@ -735,6 +740,7 @@ async function loadMarea() {
       tipoEtapa: e.tipoEtapa,
       observaciones: e.observaciones || '',
       pesqueriaId: e.pesqueriaId,
+      metadata: e.metadata,
       observadores: e.observadores?.map((rel: any) => ({
         observadorId: rel.observadorId || rel.observador?.id,
         rol: rel.rol,
@@ -920,6 +926,7 @@ const saveChanges = async () => {
       fechaArribo: toIsoStringOrNull(etapa.fechaArribo),
       tipoEtapa: etapa.tipoEtapa || TipoEtapa.MC,
       observaciones: etapa.observaciones || undefined,
+      metadata: etapa.metadata,
       observadores: etapa.observadores?.map((obs: any) => ({
         observadorId: obs.observadorId,
         rol: obs.rol,

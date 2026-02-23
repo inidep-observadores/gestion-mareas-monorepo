@@ -31,11 +31,12 @@ describe('MareasService', () => {
         },
         mareaEtapa: {
             findFirst: jest.fn(),
+            findUnique: jest.fn(),
             update: jest.fn(),
             create: jest.fn(),
             deleteMany: jest.fn(),
             count: jest.fn(),
-            findMany: jest.fn(),
+            findMany: jest.fn().mockResolvedValue([]),
         },
         mareaEtapaObservador: {
             deleteMany: jest.fn(),
@@ -195,6 +196,61 @@ describe('MareasService', () => {
                 where: { id: etapaId },
                 data: expect.not.objectContaining({ fuentesZarpada: null })
             }));
+        });
+    });
+
+    describe('Intención de Cierre de Marea', () => {
+        const mareaId = 'm-1';
+        const etapaId = 'e-1';
+
+        it('should throw error if attempting to set intention on a marea not in execution', async () => {
+            mockPrismaService.marea.findUnique.mockResolvedValue({
+                id: mareaId,
+                estadoActual: { codigo: 'PROTOCOLIZADA', nombre: 'Protocolizada' },
+                etapas: [{ id: etapaId }]
+            });
+            await expect(service.setIntencionCierreMarea(mareaId, etapaId, true, { id: 'user' } as any))
+                .rejects.toThrow(/marea no está en ejecución/);
+        });
+
+        it('should activate intention if valid', async () => {
+            const mockMarea = {
+                id: mareaId,
+                estadoActual: { codigo: 'EN_EJECUCION' },
+                etapas: [{ id: etapaId, metadata: {} }]
+            };
+            mockPrismaService.marea.findUnique.mockResolvedValue(mockMarea);
+            mockPrismaService.marea.findFirst.mockResolvedValue(null); // No tiene designacion pendiente
+
+            const result = await service.setIntencionCierreMarea(mareaId, etapaId, true, { id: 'user' } as any);
+            expect(result.success).toBe(true);
+            expect(result.metadata.opcionesCierre.finalizarMareaAlArribo).toBe(true);
+            expect(mockPrismaService.mareaEtapa.update).toHaveBeenCalled();
+            expect(mockPrismaService.mareaMovimiento.create).toHaveBeenCalled();
+        });
+
+        it('debeFinalizarMareaAlArribar should return true if metadata flag is true', async () => {
+            mockPrismaService.marea.findUnique.mockResolvedValue({ buqueId: 'b-1' });
+            mockPrismaService.mareaEtapa.findUnique.mockResolvedValue({
+                id: etapaId,
+                metadata: { opcionesCierre: { finalizarMareaAlArribo: true } }
+            });
+            mockPrismaService.marea.findFirst.mockResolvedValue(null);
+
+            const result = await (service as any).debeFinalizarMareaAlArribar(mareaId, etapaId);
+            expect(result).toBe(true);
+        });
+        
+        it('debeFinalizarMareaAlArribar should return true if a designation is pending', async () => {
+            mockPrismaService.marea.findUnique.mockResolvedValue({ buqueId: 'b-1' });
+            mockPrismaService.mareaEtapa.findUnique.mockResolvedValue({
+                id: etapaId,
+                metadata: { opcionesCierre: { finalizarMareaAlArribo: false } }
+            });
+            mockPrismaService.marea.findFirst.mockResolvedValue({ id: 'designated-marea-1' }); 
+
+            const result = await (service as any).debeFinalizarMareaAlArribar(mareaId, etapaId);
+            expect(result).toBe(true);
         });
     });
 });

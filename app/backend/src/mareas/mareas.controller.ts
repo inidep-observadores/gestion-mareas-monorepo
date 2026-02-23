@@ -170,6 +170,22 @@ export class MareasController {
         return this.mareasService.executeAction(id, actionKey, user, payload);
     }
 
+    @Patch(':id/etapas/:etapaId/intencion-cierre')
+    @Auth(ValidRoles.admin, ValidRoles.tecnico)
+    @AuditEvent({
+        tipoEvento: 'ACTUALIZAR_INTENCION_CIERRE',
+        categoria: AuditCategoria.MAREAS,
+        descripcion: 'Modificación de la intención de cierre de marea al arribo'
+    })
+    setIntencionCierre(
+        @Param('id') id: string,
+        @Param('etapaId') etapaId: string,
+        @Body('activar') activar: boolean,
+        @GetUser() user: User
+    ) {
+        return this.mareasService.setIntencionCierreMarea(id, etapaId, activar, user);
+    }
+
     @Post()
     @Auth(ValidRoles.admin, ValidRoles.tecnico)
     @AuditEvent({

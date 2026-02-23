@@ -31,6 +31,7 @@ describe('MareasService (CRUD)', () => {
                 }
                 return Promise.resolve(null);
             }),
+            findMany: jest.fn().mockResolvedValue([{ id: 'existing-id', fechaZarpada: new Date('2024-01-01T10:00:00Z'), fechaArribo: new Date('2024-01-08T10:00:00Z') }]),
             create: jest.fn().mockResolvedValue({ id: 'new-e-id' }),
             update: jest.fn().mockResolvedValue({ id: 'existing-e-id' }),
             count: jest.fn().mockResolvedValue(0),
@@ -63,7 +64,7 @@ describe('MareasService (CRUD)', () => {
     it('should complete full lifecycle (update existing stage and create new one)', async () => {
         const payload = {
             etapas: [
-                { id: 'existing-id', nroEtapa: 1, puertoZarpadaId: 'p1', fechaZarpada: '2024-01-01T10:00:00Z', tipoEtapa: TipoEtapa.MC },
+                { id: 'existing-id', nroEtapa: 1, puertoZarpadaId: 'p1', puertoArriboId: 'p2', fechaZarpada: '2024-01-01T10:00:00Z', fechaArribo: '2024-01-08T10:00:00Z', tipoEtapa: TipoEtapa.MC },
                 { nroEtapa: 2, puertoZarpadaId: 'p2', fechaZarpada: '2024-01-10T10:00:00Z', tipoEtapa: TipoEtapa.MC }
             ]
         };

@@ -89,6 +89,11 @@ const mareasService = {
     getZonaAustralDays: async (id: string): Promise<ZonaAustralResponse> => {
         const { data } = await httpClient.get<ZonaAustralResponse>(`/mareas/${id}/zona-austral`);
         return data;
+    },
+
+    setIntencionCierre: async (mareaId: string, etapaId: string, activar: boolean): Promise<any> => {
+        const { data } = await httpClient.patch(`/mareas/${mareaId}/etapas/${etapaId}/intencion-cierre`, { activar });
+        return data;
     }
 };
 

@@ -102,7 +102,7 @@
           </div>
 
           <!-- Meta Info: Compact Row -->
-          <div class="md:col-span-2 grid grid-cols-1 sm:grid-cols-12 gap-4 pt-3 border-t border-border">
+          <div class="md:col-span-2 grid grid-cols-1 sm:grid-cols-12 gap-4 pt-3 border-t border-border items-end">
             <div class="sm:col-span-4 space-y-1">
               <label class="text-[8px] font-black uppercase text-text-muted tracking-widest flex items-center gap-1.5">
                 <FlagIcon class="w-2.5 h-2.5" /> Pesquería
@@ -136,6 +136,29 @@
               />
             </div>
           </div>
+
+          <!-- Intención de Cierre (Solo visible en la última etapa si no está readonly) -->
+          <div v-if="!readOnly && index === modelValue.length - 1 && isEtapaEnCurso(stage)" class="md:col-span-2 pt-3 border-t border-border mt-1">
+            <div class="flex items-center justify-between bg-primary/5 border border-primary/20 rounded-xl p-3">
+              <div>
+                <h5 class="text-xs font-bold text-primary flex items-center gap-1.5 mb-0.5">
+                  FINALIZAR MAREA AL PRÓXIMO ARRIBO
+                </h5>
+                <p class="text-[10px] text-text-muted leading-tight">
+                  Active esta opción si el buque descargará y la marea debe darse por concluida al llegar a puerto.
+                </p>
+              </div>
+              <BaseSwitch
+                v-model="stageIntencionCierre[index]"
+                @update:modelValue="(val: boolean) => onToggleIntencionCierre(index, stage, val)"
+                :disabled="isIntencionCierreLoading(index) || mareaTieneDesignacion"
+              />
+            </div>
+            <p v-if="mareaTieneDesignacion" class="text-[9px] text-warning mt-1.5 font-medium ml-1 flex items-center gap-1">
+              <WarningIcon class="w-3 h-3" />
+              Existe una designación pendiente que forzará el cierre de la marea de todos modos.
+            </p>
+          </div>
         </div>
 
         <!-- Overlap Warning (Inter-stage) -->
@@ -167,7 +190,10 @@ import {
   EditIcon,
   WarningIcon
 } from '@/icons';
+import BaseSwitch from '@/components/ui/BaseSwitch.vue';
 import { TipoEtapa } from '../types/enums';
+import type { MareaEtapaMetadata } from '../types/marea.types';
+import mareasService from '../services/mareas.service';
 
 const props = defineProps<{
   modelValue: any[];
@@ -179,9 +205,21 @@ const props = defineProps<{
   minStages?: number;
   errors?: Record<string, string>;
   defaultFechaZarpada?: string;
+  mareaId?: string;
+  mareaTieneDesignacion?: boolean;
 }>();
 
-const emit = defineEmits(['update:modelValue', 'remove-stage']);
+const emit = defineEmits([
+  'update:modelValue', 
+  'remove-stage', 
+  'action-success', 
+  'action-error',
+  'action-warning'
+]);
+
+// Local state para tracking de los toggles de intención de cierre por index (útil si hay llamadas async)
+const stageIntencionCierre = ref<Record<number, boolean>>({});
+const loadingIntencionCierre = ref<Record<number, boolean>>({});
 
 // Refs for focus/scroll
 const zarpadaDates = ref<any[]>([]);
@@ -247,11 +285,17 @@ async function addStage() {
   }
 }
 
-// Watch stages for changes to clear errors
-watch(() => props.modelValue, () => {
-    // Si cambia el modelValue, notificamos al padre (ya se hace con el v-model)
-    // Pero el padre debe limpiar los errores. Añadiremos watchers profundos en el diálogo mejor.
-}, { deep: true });
+// Watch stages for changes to clear errors and sync intencion cierre
+watch(() => props.modelValue, (newStages) => {
+    // Sincronizar el ref local stageIntencionCierre con la metadata de cada etapa al montarse o cambiar
+    newStages.forEach((stage, index) => {
+      const metadata = stage.metadata as MareaEtapaMetadata;
+      const tieneCierre = metadata?.opcionesCierre?.finalizarMareaAlArribo === true;
+      if (stageIntencionCierre.value[index] !== tieneCierre) {
+         stageIntencionCierre.value[index] = tieneCierre;
+      }
+    });
+}, { deep: true, immediate: true });
 
 function removeStage(index: number) {
   const currentStages = [...props.modelValue];
@@ -282,4 +326,43 @@ function isInternalInconsistent(index: number) {
   
   return arribo < zarpada;
 }
+
+// Lógica para Intención de Cierre de Marea
+
+function isEtapaEnCurso(stage: any) {
+  // Debe ser una etapa ya guardada (con ID), tener zarpada pero NO arribo
+  return !!stage.id && !!stage.fechaZarpada && !stage.fechaArribo;
+}
+
+function isIntencionCierreLoading(index: number) {
+  return loadingIntencionCierre.value[index] === true;
+}
+
+async function onToggleIntencionCierre(index: number, stage: any, activar: boolean) {
+  if (!props.mareaId || !stage.id) {
+    emit('action-warning', 'No se puede modificar la intención de cierre en una etapa sin guardar.');
+    // Revertir
+    stageIntencionCierre.value[index] = !activar;
+    return;
+  }
+
+  loadingIntencionCierre.value[index] = true;
+  try {
+    const res = await mareasService.setIntencionCierre(props.mareaId, stage.id, activar);
+    emit('action-success', `Intención de cierre de marea ${activar ? 'activada' : 'desactivada'}.`);
+    
+    // Actualizar metadata localmente para mantener el v-model sincronizado
+    const currentStages = [...props.modelValue];
+    currentStages[index].metadata = res.metadata;
+    emit('update:modelValue', currentStages);
+  } catch (error: any) {
+    const errorMessage = error.response?.data?.message || error.message || 'Error al modificar intención de cierre.';
+    emit('action-error', errorMessage);
+    // Revertir
+    stageIntencionCierre.value[index] = !activar;
+  } finally {
+    loadingIntencionCierre.value[index] = false;
+  }
+}
+
 </script>

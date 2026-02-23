@@ -243,6 +243,24 @@ export class MareasService {
 
                 this.validateStagesChronology(etapas);
                 this.validateStagesIntegrity(etapas);
+
+                // Bloquear creación de nuevas etapas si la última etapa (existente en BD) tiene la intención de cierre
+                const [ultimaEtapaEnBd] = await tx.mareaEtapa.findMany({
+                    where: { mareaId: id },
+                    orderBy: { nroEtapa: 'desc' },
+                    take: 1
+                });
+                
+                if (ultimaEtapaEnBd) {
+                    const ultimaEtapaAny: any = ultimaEtapaEnBd;
+                    const metadata = ultimaEtapaAny.metadata as import('./interfaces/marea-etapa-metadata.interface').MareaEtapaMetadata;
+                    if (metadata?.opcionesCierre?.finalizarMareaAlArribo === true) {
+                        const nuevasEtapas = etapas.filter(e => !e.id);
+                        if (nuevasEtapas.length > 0) {
+                            throw new BadRequestException('No se pueden agregar nuevas etapas porque la etapa en curso está marcada para finalizar la marea al arribo.');
+                        }
+                    }
+                }
                 for (const etapa of etapas) {
                     const { observadores, id: etapaId, ...rest } = etapa;
                     const etapaData: any = { ...rest };
@@ -1518,7 +1536,8 @@ export class MareasService {
                     puertoArriboCodigo: e.puertoArribo?.codigoExterno,
                     fechaZarpada: e.fechaZarpada,
                     fechaArribo: e.fechaArribo,
-                    durationDays: MareaUtils.calculateStageDays(e)
+                    durationDays: MareaUtils.calculateStageDays(e),
+                    metadata: e.metadata
                 }))
             },
             actions,
@@ -1609,6 +1628,9 @@ export class MareasService {
 
     async syncStages(tx: any, mareaId: string, incomingStages: any[]) {
         if (!incomingStages || !Array.isArray(incomingStages)) return;
+        
+        console.log('--- SYNC STAGES START ---');
+        console.log('Incoming Stages in syncStages:', JSON.stringify(incomingStages, null, 2));
 
         // Validar cronología e integridad antes de sincronizar
         this.validateStagesChronology(incomingStages);
@@ -1637,7 +1659,8 @@ export class MareasService {
                 tipoEtapa: stg.tipoEtapa || TipoEtapa.MC,
                 fuentesZarpada: stg.fuentesZarpada || null,
                 fuentesArribo: stg.fuentesArribo || null,
-                observaciones: stg.observaciones || ''
+                observaciones: stg.observaciones || '',
+                metadata: stg.metadata ?? undefined
             };
 
             if (stg.id) {
@@ -1719,6 +1742,135 @@ export class MareasService {
         return trimmed === '' ? null : trimmed;
     }
 
+    /**
+     * Evalúa si una marea debe darse por finalizada al registrarse un arribo.
+     * Evalúa designaciones pendientes o intenciones manuales de cierre.
+     */
+    private async debeFinalizarMareaAlArribar(mareaId: string, etapaId: string): Promise<boolean> {
+        const [marea, etapa] = await Promise.all([
+            this.prisma.marea.findUnique({
+                where: { id: mareaId },
+                include: {
+                    buque: true,
+                    estadoActual: true
+                }
+            }),
+            this.prisma.mareaEtapa.findUnique({
+                where: { id: etapaId }
+            })
+        ]);
+
+        if (!marea || !etapa) return false;
+
+        // 1. Condición por designación activa
+        const tieneDesignacion = await this.prisma.marea.findFirst({
+            where: {
+                buqueId: marea.buqueId,
+                activo: true,
+                estadoActual: { codigo: MareaEstado.DESIGNADA }
+            }
+        });
+
+        if (tieneDesignacion) {
+            return true;
+        }
+
+        // 2. Condición por metadata de la etapa
+        const etapaAny: any = etapa;
+        const metadata = etapaAny.metadata as import('./interfaces/marea-etapa-metadata.interface').MareaEtapaMetadata;
+        if (metadata?.opcionesCierre?.finalizarMareaAlArribo === true) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Permite activar o desactivar la intención manual de cierre de marea para la etapa actual
+     */
+    async setIntencionCierreMarea(mareaId: string, etapaId: string, activar: boolean, user: User) {
+        return await this.prisma.$transaction(async (tx) => {
+            const marea = await tx.marea.findUnique({
+                where: { id: mareaId },
+                include: { 
+                    estadoActual: true,
+                    etapas: { orderBy: { nroEtapa: 'desc' }, take: 1 } 
+                }
+            });
+
+            if (!marea) throw new NotFoundException('Marea no encontrada');
+
+            // 1. Validar que la marea esté en ejecución
+            if (!this.ESTADOS_NAVEGANDO.includes(marea.estadoActual.codigo as any)) {
+                throw new BadRequestException(`No se puede modificar la intención de cierre. La marea no está en ejecución (Estado actual: ${marea.estadoActual.nombre}).`);
+            }
+
+            // 2. Validar que la etapa sea la última etapa de la marea
+            const ultimaEtapa = marea.etapas[0];
+            if (!ultimaEtapa || ultimaEtapa.id !== etapaId) {
+                throw new BadRequestException('La intención de cierre solo puede modificarse sobre la etapa en curso (última etapa).');
+            }
+
+            // 3. Validar que la etapa esté activa (sin arribo)
+            if (ultimaEtapa.fechaArribo) {
+                throw new BadRequestException('No se puede modificar la intención de cierre porque la etapa ya cuenta con fecha de arribo.');
+            }
+
+            // 4. Conflicto con designaciones: advertir/bloquear si ya hay designación y se intenta activar
+            if (activar) {
+                const tieneDesignacion = await tx.marea.findFirst({
+                    where: {
+                        buqueId: marea.buqueId,
+                        activo: true,
+                        estadoActual: { codigo: MareaEstado.DESIGNADA }
+                    }
+                });
+                
+                if (tieneDesignacion) {
+                    throw new BadRequestException('No es necesario activar esta opción. Ya existe una designación en curso para este buque que forzará el cierre de la marea al arribo.');
+                }
+            }
+
+            const ultimaEtapaAny: any = ultimaEtapa;
+            const currentMetadata = (ultimaEtapaAny.metadata as import('./interfaces/marea-etapa-metadata.interface').MareaEtapaMetadata) || {};
+            
+            let nuevaMetadata: import('./interfaces/marea-etapa-metadata.interface').MareaEtapaMetadata;
+            
+            if (activar) {
+                nuevaMetadata = {
+                    ...currentMetadata,
+                    opcionesCierre: {
+                        finalizarMareaAlArribo: true,
+                        marcadoPorUsuarioId: user.id,
+                        fechaMarca: new Date()
+                    }
+                };
+            } else {
+                nuevaMetadata = { ...currentMetadata };
+                delete nuevaMetadata.opcionesCierre;
+            }
+
+            await tx.mareaEtapa.update({
+                where: { id: etapaId },
+                data: { metadata: nuevaMetadata } as any
+            });
+
+            await tx.mareaMovimiento.create({
+                data: {
+                    mareaId: mareaId,
+                    fechaHora: new Date(),
+                    usuarioId: user.id,
+                    tipoEvento: 'EDICION_ESTRUCTURA',
+                    detalle: activar 
+                        ? 'Se activó bandera de cierre de marea para el próximo arribo.' 
+                        : 'Se desactivó bandera de cierre de marea anticipado.'
+                }
+            });
+
+            return { success: true, metadata: nuevaMetadata };
+        });
+    }
+
     async executeAction(id: string, actionKey: string, user: User, payload: any = {}) {
         const marea = await this.prisma.marea.findUnique({
             where: { id },
@@ -1771,6 +1923,14 @@ export class MareasService {
 
         // Ejecutar cambio de estado
         return await this.prisma.$transaction(async (tx) => {
+            console.log('--- MAREAS UPDATE START ---');
+            console.log('Payload Update Etapas RAW:', JSON.stringify(payload.etapas, null, 2));
+
+            // Validate chronology first
+            if (payload.etapas) {
+                this.validateStagesChronology(payload.etapas);
+            }
+
             let additionalMareaData: any = {};
 
             if (actionKey === 'REGISTRAR_INICIO') {
@@ -1853,10 +2013,32 @@ export class MareasService {
                 additionalMareaData.fechaFinObservador = fechaFinObs;
             }
 
+            // Evaluación de fin de Marea por arribo automático a puerto en etapa "Final"
+            let destinoEstadoId = transicion.estadoDestinoId;
+
+            // Si la acción proviene de un avance o arribo de etapa mediante un flujo general (ej: CERRAR_ETAPA)
+            // Evaluamos si esta etapa desencadena el fin de marea
+            // Asumimos que si estamos en un estado de navegación y hay una etapa con arribo, evaluamos:
+            if (this.ESTADOS_NAVEGANDO.includes(marea.estadoActual.codigo as any) && payload.etapas) {
+                const ultimaEtapaRecibida = payload.etapas[payload.etapas.length - 1];
+                if (ultimaEtapaRecibida?.fechaArribo && ultimaEtapaRecibida.id) {
+                    const debeFinalizar = await this.debeFinalizarMareaAlArribar(id, ultimaEtapaRecibida.id);
+                    if (debeFinalizar) {
+                        const estadoFinalizacion = await tx.estadoMarea.findFirst({
+                            where: { codigo: MareaEstado.ESPERANDO_ENTREGA } 
+                        });
+                        if (estadoFinalizacion) {
+                            destinoEstadoId = estadoFinalizacion.id;
+                            actionKey = 'FINALIZAR_POR_ARRIBO'; // Sobrescribimos lógicamente la acción para el historial
+                        }
+                    }
+                }
+            }
+
             const mareaUpdated = await tx.marea.update({
                 where: { id },
                 data: {
-                    estadoActualId: transicion.estadoDestinoId,
+                    estadoActualId: destinoEstadoId,
                     fechaUltimaActualizacion: new Date(),
                     ...additionalMareaData
                 },
@@ -1876,12 +2058,14 @@ export class MareasService {
                     usuarioId: user.id,
                     tipoEvento: 'CAMBIO_ESTADO',
                     estadoDesdeId: marea.estadoActualId,
-                    estadoHastaId: transicion.estadoDestinoId,
+                    estadoHastaId: destinoEstadoId,
                     cantidadMuestrasOtolitos: actionKey === 'RECIBIR_DATOS' ? (payload.cantidadOtolitos || null) : null,
                     detalle: actionKey === 'REGISTRAR_INICIO'
                         ? `Inicio Marea. Obs: ${new Date(additionalMareaData.fechaInicioObservador).toLocaleDateString('es-AR')}`
                         : actionKey === 'REGISTRAR_FINALIZACION'
                             ? `Fin Marea. Obs: ${additionalMareaData.fechaFinObservador ? new Date(additionalMareaData.fechaFinObservador).toLocaleDateString('es-AR') : 'Sin fecha definida'}`
+                            : actionKey === 'FINALIZAR_POR_ARRIBO'
+                                ? `Marea finalizada automáticamente por arribo a puerto (designación o intención de cierre).`
                             : actionKey === 'RECIBIR_DATOS'
                                 ? `Recepción de datos. Otolitos: ${payload.cantidadOtolitos || 0}`
                                 : `Acción: ${transicion.etiqueta}`,

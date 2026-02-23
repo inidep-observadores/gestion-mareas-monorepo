@@ -106,7 +106,11 @@
             </template>
             <NavigationStagesEditor v-model="form.stages" :puertoOptions="puertoOptions"
               :pesqueriaOptions="pesqueriaOptions" :puertoBaseId="initialPortId || marea?.puertoBaseId"
-              :defaultPesqueriaId="marea?.id_pesqueria || marea?.pesqueriaId" :minStages="mode === 'INICIAR' ? 1 : 0" />
+              :defaultPesqueriaId="marea?.id_pesqueria || marea?.pesqueriaId" :minStages="mode === 'INICIAR' ? 1 : 0"
+              :mareaId="marea?.id"
+              @action-success="(msg: string) => toast.success(msg)"
+              @action-error="(msg: string) => toast.error(msg)"
+              @action-warning="(msg: string) => toast.warning(msg)" />
           </CollapsibleSection>
         </div>
 
@@ -142,6 +146,7 @@ import ZonaAustralDetalle from './ZonaAustralDetalle.vue';
 import Badge from '@/components/ui/Badge.vue';
 import catalogosService from '../services/catalogos.service';
 import mareasService from '../services/mareas.service';
+import { toast } from 'vue-sonner';
 import { RefreshIcon, HistoryIcon, ShipIcon } from '@/icons';
 import { isDateBefore, isDateAfter, isDateSameOrBefore } from '@/utils/date.utils';
 import { TipoEtapa } from '../types/enums';
@@ -424,6 +429,7 @@ function executeConfirmation() {
       pesqueriaId: s.pesqueriaId,
       tipoEtapa: s.tipoEtapa,
       observaciones: s.observaciones,
+      metadata: s.metadata,
       fuentesZarpada: s.fuentesZarpada || null,
       fuentesArribo: s.fuentesArribo || null,
       observadores: s.observadores?.map((o: any) => ({

@@ -111,11 +111,23 @@ export interface Marea {
     tipoCalculoZonaAustral?: TipoCalculoZonaAustral;
 }
 
+export interface MareaOpcionesCierre {
+    finalizarMareaAlArribo: boolean;
+    marcadoPorUsuarioId?: string;
+    fechaMarca?: string;
+}
+
+export interface MareaEtapaMetadata {
+    opcionesCierre?: MareaOpcionesCierre;
+    [key: string]: any;
+}
+
 export interface ZonaAustralEtapa {
     etapaId: string;
     nroEtapa: number;
     diasDetectados: string[];
     totalDias: number;
+    metadata?: MareaEtapaMetadata;
 }
 
 export interface ZonaAustralResponse {

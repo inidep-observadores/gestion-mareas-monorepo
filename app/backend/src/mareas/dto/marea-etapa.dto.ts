@@ -1,4 +1,4 @@
-import { IsArray, IsBoolean, IsDateString, IsInt, IsOptional, IsString, IsUUID, ValidateNested, IsEnum } from 'class-validator';
+import { IsObject, IsArray, IsBoolean, IsDateString, IsInt, IsOptional, IsString, IsUUID, ValidateNested, IsEnum } from 'class-validator';
 import { TipoEtapa } from '../mareas.constants';
 import { Type } from 'class-transformer';
 
@@ -50,10 +50,16 @@ export class MareaEtapaDto {
     observaciones?: string;
 
     @IsOptional()
-    fuentesZarpada?: any;
+    @IsObject()
+    fuentesZarpada?: Record<string, any>;
 
     @IsOptional()
-    fuentesArribo?: any;
+    @IsObject()
+    fuentesArribo?: Record<string, any>;
+
+    @IsOptional()
+    @IsObject()
+    metadata?: Record<string, any>;
 
     @IsArray()
     @IsOptional()
