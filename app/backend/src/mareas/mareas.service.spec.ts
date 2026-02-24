@@ -124,7 +124,7 @@ describe('MareasService', () => {
             const observerId = 'obs-uuid';
             mockPrismaService.marea.findUnique.mockResolvedValue({ observadorPrincipalId: 'old-obs' });
             mockPrismaService.observador.findUnique.mockResolvedValue({ conImpedimento: true, motivoImpedimento: 'Licencia medica' });
-            await expect(service.update(mareaId, { observadorId: observerId } as any)).rejects.toThrow(/No se puede asignar el observador porque posee un impedimento/);
+            await expect(service.update(mareaId, { observadorId: observerId } as any, { id: 'user-id' } as any)).rejects.toThrow(/No se puede asignar el observador porque posee un impedimento/);
         });
     });
 
@@ -190,7 +190,7 @@ describe('MareasService', () => {
             mockPrismaService.mareaEtapa.findFirst.mockResolvedValue(existingEtapa);
 
             const dto = { etapas: [{ id: etapaId, puertoZarpadaId: 'p2', fechaZarpada: '2025-01-02' }] };
-            await service.update(mareaId, dto as any);
+            await service.update(mareaId, dto as any, { id: 'user-id' } as any);
 
             expect(mockPrismaService.mareaEtapa.update).toHaveBeenCalledWith(expect.objectContaining({
                 where: { id: etapaId },
@@ -237,20 +237,20 @@ describe('MareasService', () => {
             });
             mockPrismaService.marea.findFirst.mockResolvedValue(null);
 
-            const result = await (service as any).debeFinalizarMareaAlArribar(mareaId, etapaId);
-            expect(result).toBe(true);
+            const result = await (service as any).evaluarCierreAlArribar(mareaId, etapaId);
+            expect(result).toBe('RECOMENDADO_POR_INTENCION');
         });
-        
+
         it('debeFinalizarMareaAlArribar should return true if a designation is pending', async () => {
             mockPrismaService.marea.findUnique.mockResolvedValue({ buqueId: 'b-1' });
             mockPrismaService.mareaEtapa.findUnique.mockResolvedValue({
                 id: etapaId,
                 metadata: { opcionesCierre: { finalizarMareaAlArribo: false } }
             });
-            mockPrismaService.marea.findFirst.mockResolvedValue({ id: 'designated-marea-1' }); 
+            mockPrismaService.marea.findFirst.mockResolvedValue({ id: 'designated-marea-1' });
 
-            const result = await (service as any).debeFinalizarMareaAlArribar(mareaId, etapaId);
-            expect(result).toBe(true);
+            const result = await (service as any).evaluarCierreAlArribar(mareaId, etapaId);
+            expect(result).toBe('FORZADO_POR_DESIGNACION');
         });
     });
 });
