@@ -109,7 +109,10 @@
                     <div class="flex flex-col gap-0.5">
                       <span class="text-[11px] font-bold text-text tabular-nums"
                         :title="mov.fechaDb && mov.fechaDb !== mov.fecha ? `Metadata: ${formatDateTime(mov.fecha)} | DB: ${formatDate(mov.fechaDb)}` : 'Fecha de registro'">
-                        {{ formatDateTime(mov.fecha) }}
+                        {{ formatDate(mov.fecha) }}
+                        <span class="text-[10px] font-normal text-text-muted ml-1">
+                          {{ formatTime(mov.fecha) }}
+                        </span>
                       </span>
                       <span class="text-[10px] font-medium text-text-muted/70 truncate max-w-[120px]"
                         :title="mov.puerto">
@@ -212,6 +215,17 @@ const formatDateTime = (dateTimeStr: string) => {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(date)
+}
+
+const formatTime = (dateTimeStr: string) => {
+  if (!dateTimeStr) return ''
+  const date = new Date(dateTimeStr)
+  // Si la hora es exactamente 00:00, podríamos ocultarla, 
+  // pero el usuario pidió dejarla visible definitivamente.
+  return new Intl.DateTimeFormat('es-AR', {
     hour: '2-digit',
     minute: '2-digit',
   }).format(date)
