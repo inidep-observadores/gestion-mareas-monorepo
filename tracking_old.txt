@@ -1,0 +1,142 @@
+﻿
+>                 return await thi
+s.createRecommendationFinMarea(buq
+ueId, port, date, decision.marea, 
+decision.mareaSiguiente, hash);
+  
+              case 
+EventDecisionAction.CREATE_ALERT:
+                  return await thi
+s.createPossibleMovementAlert(buqu
+eId, type, port, date, 
+decision.marea, hash, 
+decision.nroEtapa);
+  
+              case 
+EventDecisionAction.IGNORE_OLD:
+                  
+this.logger.debug(`Ignorando 
+evento antiguo/fuera de secuencia 
+para buque ${buqueId}`);
+                  return false;
+  
+              case 
+EventDecisionAction.NO_MATCH:
+              default:
+                  return false;
+          }
+  
+          return false;
+      }
+  
+      private async createPossible
+MovementAlert(buqueId: string, 
+type: 'ZARPADA' | 'ARRIBO', port: 
+any, date: Date, marea: any, 
+hash: string, nroEtapa?: number) {
+          const buqueNombre = 
+marea.buque.nombreBuque;
+          const yearSuffix = 
+String(marea.anioMarea).slice(-2);
+          const mareaLabel = 
+marea.tipoMarea === 'CI' ? 
+`CI-${yearSuffix}` : `MC-${marea.n
+roMarea}-${yearSuffix}`;
+          const dateStr = DateTime
+.fromJSDate(date).setZone(this.TIM
+EZONE).toFormat('dd/MM HH:mm');
+  
+          const alertType = type 
+=== 'ZARPADA' ? 'POSIBLE_ZARPADA' 
+: 'POSIBLE_ARRIBO';
+          const prep = type === 
+'ZARPADA' ? 'desde' : 'a';
+          const alertTitle = 
+`${buqueNombre}: Posible 
+${type.toLowerCase()} ${prep} 
+${port?.nombre} el ${dateStr} 
+(${mareaLabel})`;
+  
+          const metadata: 
+AlertMetadata = {
+              mareaId: marea.id,
+              mareaCode: 
+mareaLabel,
+              vesselName: 
+buqueNombre,
+>     private async createRecommen
+dationFinMarea(buqueId: string, 
+port: any, date: Date, 
+mareaActual: any, mareaSiguiente: 
+any, hash: string) {
+          const buqueNombre = 
+mareaActual.buque.nombreBuque;
+          const dateStr = DateTime
+.fromJSDate(date).setZone(this.TIM
+EZONE).toFormat('dd/MM HH:mm');
+          const alertTitle = 
+`${buqueNombre}: Se recomienda 
+FINALIZAR MAREA. Arribo detectado 
+a ${port?.nombre} el ${dateStr}`;
+  
+          const yearSuffix = Strin
+g(mareaActual.anioMarea).slice(-2)
+;
+          const mareaLabel = 
+mareaActual.tipoMarea === 'CI' ? 
+`CI-${yearSuffix}` : `MC-${mareaAc
+tual.nroMarea}-${yearSuffix}`;
+          const lastStage = 
+[...mareaActual.etapas].sort((a, 
+b) => b.nroEtapa - a.nroEtapa)[0];
+  
+          const metadata = {
+              mareaId: 
+mareaActual.id,
+              mareaCode: 
+mareaLabel,
+              mareaSiguienteId: 
+mareaSiguiente.id,
+              vesselName: 
+buqueNombre,
+              observerName: 
+mareaActual.observadorPrincipal ? 
+`${mareaActual.observadorPrincipal
+.nombre} ${mareaActual.observadorP
+rincipal.apellido}` : 'Sin 
+Observador',
+              portId: port.id,
+              portName: 
+port.nombre,
+              eventDate: date,
+              type: 'ARRIBO',
+              subTipo: 
+'FIN_MAREA',
+              nroEtapa: 
+lastStage?.nroEtapa,
+              source: 
+'TRACKING_CSV'
+          };
+  
+          const descripcion = 
+`${alertTitle}\n\nHay una marea 
+DESIGNADA esperando (${mareaSiguie
+nte.nroMarea}/${mareaSiguiente.ani
+oMarea}). Se sugiere finalizar la 
+marea actual en lugar de 
+registrar un arribo intermedio.`;
+  
+          const created = await 
+this.createAlert(buqueId, 
+'RECOMENDACION_FIN_MAREA', 
+alertTitle, date, metadata, 
+mareaActual.id, 'MAREA', 
+descripcion);
+          if (created) {
+              await 
+this.saveSnapshot(buqueId, 
+'ARRIBO', date, port.id, hash);
+              return true;
+          }
+
+

@@ -193,6 +193,7 @@ import {
 import BaseSwitch from '@/components/ui/BaseSwitch.vue';
 import { TipoEtapa } from '../types/enums';
 import type { MareaEtapaMetadata } from '../types/marea.types';
+import mareasService from '../services/mareas.service';
 
 const props = defineProps<{
   modelValue: any[];
@@ -330,29 +331,42 @@ function isEtapaEnCurso(stage: any) {
   return !!stage.id && !!stage.fechaZarpada && !stage.fechaArribo;
 }
 
-function onToggleIntencionCierre(index: number, stage: any, activar: boolean) {
-  const currentStages = [...props.modelValue];
-  const currentStage = { ...currentStages[index] };
-  const currentMetadata = (currentStage.metadata as any) || {};
-
-  if (activar) {
-    currentStage.metadata = {
-      ...currentMetadata,
-      opcionesCierre: {
-        finalizarMareaAlArribo: true,
-        fechaMarca: new Date().toISOString()
-      }
-    };
-  } else {
-    // Mantener otros campos de metadata si existen
-    currentStage.metadata = { ...currentMetadata };
-    if (currentStage.metadata.opcionesCierre) {
-      delete currentStage.metadata.opcionesCierre;
-    }
+async function onToggleIntencionCierre(index: number, stage: any, activar: boolean) {
+  if (!props.mareaId) {
+    emit('action-warning', 'No se puede modificar la intención de cierre sin una marea guardada.');
+    return;
   }
 
-  currentStages[index] = currentStage;
-  emit('update:modelValue', currentStages);
+  try {
+    await mareasService.setIntencionCierre(props.mareaId, stage.id, activar);
+    
+    const currentStages = [...props.modelValue];
+    const currentStage = { ...currentStages[index] };
+    const currentMetadata = (currentStage.metadata as any) || {};
+
+    if (activar) {
+      currentStage.metadata = {
+        ...currentMetadata,
+        opcionesCierre: {
+          finalizarMareaAlArribo: true,
+          fechaMarca: new Date().toISOString()
+        }
+      };
+    } else {
+      // Mantener otros campos de metadata si existen
+      currentStage.metadata = { ...currentMetadata };
+      if (currentStage.metadata.opcionesCierre) {
+        delete currentStage.metadata.opcionesCierre;
+      }
+    }
+
+    currentStages[index] = currentStage;
+    emit('update:modelValue', currentStages);
+  } catch (error: any) {
+    // Revert local switch state visually
+    stageIntencionCierre.value[index] = !activar;
+    throw error; // Let the global error handler show the toast
+  }
 }
 
 </script>

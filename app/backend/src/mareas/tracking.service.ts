@@ -824,7 +824,16 @@ export class TrackingService {
             type: 'ARRIBO',
             subTipo: 'FIN_MAREA',
             nroEtapa: lastStage?.nroEtapa,
-            source: 'TRACKING_CSV'
+            source: 'TRACKING_CSV',
+            sources: [{
+                name: 'TRACKING_CSV',
+                detectedAt: date,
+                data: {
+                    puerto: port.nombre,
+                    portId: port.id,
+                    velocidad: null
+                }
+            }]
         };
 
         const descripcion = `${alertTitle}\n\nHay una marea DESIGNADA esperando (${mareaSiguiente.nroMarea}/${mareaSiguiente.anioMarea}). Se sugiere finalizar la marea actual en lugar de registrar un arribo intermedio.`;
@@ -834,6 +843,7 @@ export class TrackingService {
             await this.saveSnapshot(buqueId, 'ARRIBO', date, port.id, hash);
             return true;
         }
+
         return false;
     }
 

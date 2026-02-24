@@ -2152,7 +2152,7 @@ export class MareasService {
                         : actionKey === 'REGISTRAR_FINALIZACION'
                             ? `Fin Marea.Obs: ${additionalMareaData.fechaFinObservador ? new Date(additionalMareaData.fechaFinObservador).toLocaleDateString('es-AR') : 'Sin fecha definida'} `
                             : actionKey === 'FINALIZAR_POR_ARRIBO'
-                                ? `Marea finalizada automáticamente por arribo a puerto(designación o intención de cierre).`
+                                ? `Marea finalizada automáticamente por arribo a puerto(designación activa).`
                                 : actionKey === 'RECIBIR_DATOS'
                                     ? `Recepción de datos.Otolitos: ${payload.cantidadOtolitos || 0} `
                                     : `Acción: ${transicion.etiqueta} `,

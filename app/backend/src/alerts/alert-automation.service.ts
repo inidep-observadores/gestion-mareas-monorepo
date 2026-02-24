@@ -195,7 +195,7 @@ export class AlertAutomationService {
                         if (index === arr.length - 1) {
                             return {
                                 ...e,
-                                puertoArriboId: metadataValue(sources, 'portId') || e.puertoArriboId || (alert.metadata as any)?.portId,
+                                puertoArriboId: metadataValue(sources, 'portId') || (alert.metadata as any)?.portId || e.puertoArriboId,
                                 fechaArribo: fechaDetectadaIso,
                                 fuentesArribo: { sources, automatizado: true, eventDate: fechaDetectadaIso }
                             };

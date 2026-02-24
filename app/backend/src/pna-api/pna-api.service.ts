@@ -585,15 +585,15 @@ export class PnaApiService {
         const mareaLabel = mareaActual.tipoMarea === 'CI' ? `CI - ${yearSuffix} ` : `MC - ${mareaActual.nroMarea} -${yearSuffix} `;
         const lastStage = [...mareaActual.etapas].sort((a, b) => b.nroEtapa - a.nroEtapa)[0];
 
-        const metadata: AlertMetadata = {
+        const metadata = {
             mareaId: mareaActual.id,
             mareaCode: mareaLabel,
             mareaSiguienteId: mareaSiguiente.id,
             vesselName: buque.nombreBuque,
-            observerName: mareaActual.observadorPrincipal ? `${mareaActual.observadorPrincipal.nombre} ${mareaActual.observadorPrincipal.apellido} ` : 'Sin Observador',
+            observerName: mareaActual.observadorPrincipal ? `${mareaActual.observadorPrincipal.nombre} ${mareaActual.observadorPrincipal.apellido}` : 'Sin Observador',
             portId: port?.id || null,
-            portName: port?.nombre,
-            eventDate: fechaLocal.toJSDate(),
+            portName: port?.nombre || 'Desconocido',
+            eventDate: fechaLocal.toISO()!,
             type: 'ARRIBO',
             subTipo: 'FIN_MAREA',
             nroEtapa: lastStage?.nroEtapa,
@@ -601,7 +601,11 @@ export class PnaApiService {
             sources: [{
                 name: 'API_PNA',
                 detectedAt: fechaLocal.toISO()!,
-                data: { info: 'Sugerencia de fin de marea' }
+                data: {
+                    info: 'Sugerencia de fin de marea',
+                    portId: port?.id || null,
+                    puerto: port?.nombre || null
+                }
             }]
         };
 

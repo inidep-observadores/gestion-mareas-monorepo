@@ -1,0 +1,268 @@
+﻿
+                  if (!fechaIn) 
+throw new Error('La fecha de 
+inicio del observador es 
+requerida.');
+  
+                  additionalMareaD
+ata.fechaInicioObservador = 
+DateUtils.parseToAppZone(fechaIn);
+  
+                  // Check and 
+create Stage 1 if it doesn't exist
+                  const 
+existingStages = await 
+tx.mareaEtapa.count({ where: { 
+mareaId: id } });
+                  if 
+(existingStages === 0) {
+                      const buque 
+= await tx.buque.findUnique({
+                          where: 
+{ id: marea.buqueId },
+                          select: 
+{ puertoBaseId: true }
+                      });
+  
+                      await 
+tx.mareaEtapa.create({
+                          data: {
+                              
+mareaId: id,
+                              
+nroEtapa: 1,
+                              
+pesqueriaId: payload.pesqueriaId 
+|| (marea as any).pesqueriaId,
+                              
+puertoZarpadaId: payload.puertoId 
+|| buque?.puertoBaseId,
+                              
+tipoEtapa: marea.tipoMarea === 
+TipoMarea.CI ? TipoEtapa.CI : 
+TipoEtapa.MC,
+                              
+fechaZarpada: new Date(fechaIn),
+                              // 
+No observer assignment here 
+(implicit in Marea)
+                          }
+                      });
+                  }
+  
+                  if 
+(payload.etapas) {
+                      await 
+this.syncStages(tx, id, 
+payload.etapas);
+                  }
+              }
+  
+>             if (actionKey === 
+'REGISTRAR_FINALIZACION') {
+                  const fechaIn = 
+payload.fechaInicioObservador;
+                  const fechaFin 
+= payload.fechaFinObservador;
+  
+                  if (fechaIn) {
+                      additionalMa
+reaData.fechaInicioObservador = 
+DateUtils.parseToAppZone(fechaIn);
+                  }
+                  additionalMareaD
+ata.fechaFinObservador = fechaFin 
+? DateUtils.parseToAppZone(fechaFi
+n) : null;
+  
+                  if 
+(payload.etapas) {
+                      await 
+this.syncStages(tx, id, 
+payload.etapas);
+                  }
+              }
+  
+              if (actionKey === 
+'RECIBIR_DATOS') {
+                  const 
+fechaRecepcion = 
+payload.fechaRecepcion;
+                  const 
+fechaInicioObs = 
+payload.fechaInicioObservador ? Da
+teUtils.parseToAppZone(payload.fec
+haInicioObservador) : 
+(marea.fechaInicioObservador ? 
+new 
+Date(marea.fechaInicioObservador) 
+: null);
+                  const 
+fechaFinObs = 
+payload.fechaFinObservador ? DateU
+tils.parseToAppZone(payload.fechaF
+inObservador) : 
+(marea.fechaFinObservador ? new 
+Date(marea.fechaFinObservador) : 
+null);
+  
+                  if 
+(!fechaInicioObs || !fechaFinObs) 
+{
+                      throw new 
+Error('Las fechas de inicio y fin 
+del observador son requeridas 
+para la recepci├│n.');
+                  }
+  
+                  const stages = 
+marea.etapas;
+                  if 
+(stages.length > 0) {
+                      const 
+firstStageZarpada = 
+stages[0].fechaZarpada ? new 
+Date(stages[0].fechaZarpada) : 
+null;
+                      const 
+lastStageArribo = 
+stages[stages.length - 
+1].fechaArribo ? new 
+Date(stages[stages.length - 
+1].fechaArribo) : null;
+  
+                      if 
+(firstStageZarpada && 
+fechaInicioObs > 
+firstStageZarpada) {
+                          throw 
+new Error('La fecha de inicio del 
+observador no puede ser posterior 
+a la zarpada de la primera 
+etapa.');
+                      }
+                  additionalMareaD
+ata.fechaFinObservador = 
+fechaFinObs;
+              }
+  
+              const mareaUpdated 
+= await tx.marea.update({
+                  where: { id },
+                  data: {
+                      
+estadoActualId: 
+transicion.estadoDestinoId,
+                      
+fechaUltimaActualizacion: new 
+Date(),
+                      
+...additionalMareaData
+                  },
+                  include: { 
+estadoActual: true }
+              });
+  
+              // Determinar fecha 
+del movimiento
+              let fechaMovimiento 
+= new Date();
+              if (actionKey === 
+'RECIBIR_DATOS' && 
+payload.fechaRecepcion) {
+                  fechaMovimiento 
+= new 
+Date(payload.fechaRecepcion);
+              }
+  
+              await 
+tx.mareaMovimiento.create({
+                  data: {
+                      mareaId: id,
+                      fechaHora: 
+fechaMovimiento,
+                      usuarioId: 
+user.id,
+                      tipoEvento: 
+'CAMBIO_ESTADO',
+                      
+estadoDesdeId: 
+marea.estadoActualId,
+                      
+estadoHastaId: 
+transicion.estadoDestinoId,
+                      
+cantidadMuestrasOtolitos: 
+actionKey === 'RECIBIR_DATOS' ? 
+(payload.cantidadOtolitos || 
+null) : null,
+                      detalle: 
+actionKey === 'REGISTRAR_INICIO'
+                          ? 
+`Inicio Marea. Obs: ${new Date(add
+itionalMareaData.fechaInicioObserv
+ador).toLocaleDateString('es-AR')}
+`
+>                         : 
+actionKey === 
+'REGISTRAR_FINALIZACION'
+                              ? 
+`Fin Marea. Obs: ${additionalMarea
+Data.fechaFinObservador ? new Date
+(additionalMareaData.fechaFinObser
+vador).toLocaleDateString('es-AR')
+ : 'Sin fecha definida'}`
+                              : 
+actionKey === 'RECIBIR_DATOS'
+                                  
+? `Recepci├│n de datos. Otolitos: 
+${payload.cantidadOtolitos || 0}`
+                                  
+: `Acci├│n: 
+${transicion.etiqueta}`,
+                      
+comentarios: payload.comentarios,
+                      archivos: 
+(actionKey === 'RECIBIR_DATOS' && 
+payload.archivosSnapshot) ? {
+                          create: 
+payload.archivosSnapshot.map((a: 
+any) => ({
+                              
+tipoArchivo: 'DIGITAL_ORIGINAL',
+                              
+rutaArchivo: 
+`received/${id}/${a.name}`,
+                              
+descripcion: `Archivo recibido: 
+${a.name} (${(a.size / 
+1024).toFixed(2)} KB)`,
+                              
+formato: a.name.split('.').pop()?.
+toUpperCase(),
+                          }))
+                      } : 
+undefined
+                  }
+              });
+  
+              return mareaUpdated;
+          });
+      }
+  
+      async 
+getNextMareaNumber(anio: number, 
+tipo: TipoMarea): Promise<number> 
+{
+          const result = await 
+this.prisma.marea.aggregate({
+              where: {
+                  anioMarea: anio,
+                  tipoMarea: tipo,
+                  activo: true
+              },
+              _max: {
+                  nroMarea: true
+              }
+
+
