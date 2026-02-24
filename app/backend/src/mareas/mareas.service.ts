@@ -714,9 +714,10 @@ export class MareasService {
 
             // Agregar evento ZARPADA si aplica
             if (etapa.fechaZarpada && new Date(etapa.fechaZarpada) >= limitDate) {
-                // Intentar extraer la fecha precisa de la metadata
+                // Intentar extraer la fecha precisa de la metadata (eventDate es el estándar del sistema, fecha es alternativo)
                 const metadataZarpada = etapa.fuentesZarpada as any;
-                const preciseDate = metadataZarpada?.fecha ? new Date(metadataZarpada.fecha) : etapa.fechaZarpada;
+                const preciseDateValue = metadataZarpada?.eventDate || metadataZarpada?.fecha;
+                const preciseDate = preciseDateValue ? new Date(preciseDateValue) : etapa.fechaZarpada;
 
                 events.push({
                     id: `zar - ${etapa.id} `,
@@ -736,9 +737,10 @@ export class MareasService {
 
             // Agregar evento ARRIBO si aplica
             if (etapa.fechaArribo && new Date(etapa.fechaArribo) >= limitDate) {
-                // Intentar extraer la fecha precisa de la metadata
+                // Intentar extraer la fecha precisa de la metadata (eventDate es el estándar del sistema, fecha es alternativo)
                 const metadataArribo = etapa.fuentesArribo as any;
-                const preciseDate = metadataArribo?.fecha ? new Date(metadataArribo.fecha) : etapa.fechaArribo;
+                const preciseDateValue = metadataArribo?.eventDate || metadataArribo?.fecha;
+                const preciseDate = preciseDateValue ? new Date(preciseDateValue) : etapa.fechaArribo;
 
                 events.push({
                     id: `arr - ${etapa.id} `,
