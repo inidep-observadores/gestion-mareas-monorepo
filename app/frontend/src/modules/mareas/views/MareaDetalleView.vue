@@ -265,8 +265,8 @@
 
           <NavigationStagesEditor v-model="etapas" :puertoOptions="puertoOptions" :pesqueriaOptions="pesqueriaOptions"
             :puertoBaseId="marea.puertoBaseId" :defaultPesqueriaId="marea.id_pesqueria" :readOnly="isReadOnly"
-            :mareaId="marea.id" :mareaTieneDesignacion="tieneDesignacion" @action-success="(msg) => toast.success(msg)"
-            @action-error="(msg) => toast.error(msg)" @action-warning="(msg) => toast.warning(msg)" />
+            :mareaId="marea.id" :mareaTieneDesignacion="tieneDesignacion" @action-success="(msg: string) => toast.success(msg)"
+            @action-error="(msg: string) => toast.error(msg)" @action-warning="(msg: string) => toast.warning(msg)" />
         </div>
 
         <!-- 3. Observadores Tab -->
