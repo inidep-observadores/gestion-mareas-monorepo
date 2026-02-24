@@ -714,6 +714,10 @@ export class MareasService {
 
             // Agregar evento ZARPADA si aplica
             if (etapa.fechaZarpada && new Date(etapa.fechaZarpada) >= limitDate) {
+                // Intentar extraer la fecha precisa de la metadata
+                const metadataZarpada = etapa.fuentesZarpada as any;
+                const preciseDate = metadataZarpada?.fecha ? new Date(metadataZarpada.fecha) : etapa.fechaZarpada;
+
                 events.push({
                     id: `zar - ${etapa.id} `,
                     buque: buqueName,
@@ -721,7 +725,8 @@ export class MareasService {
                     observador: obsName,
                     etapa: etapa.nroEtapa || 1,
                     tipo: 'ZARPADA',
-                    fecha: etapa.fechaZarpada,
+                    fecha: preciseDate, // Usar la fecha precisa si existe, sino la de la DB
+                    fechaDb: etapa.fechaZarpada, // Guardar la original para mostrar en UI si es necesario
                     puerto: (etapa as any).puertoZarpada?.nombre || 'N/D',
                     fuentes: etapa.fuentesZarpada,
                     vesselId: marea.buqueId,
@@ -731,6 +736,10 @@ export class MareasService {
 
             // Agregar evento ARRIBO si aplica
             if (etapa.fechaArribo && new Date(etapa.fechaArribo) >= limitDate) {
+                // Intentar extraer la fecha precisa de la metadata
+                const metadataArribo = etapa.fuentesArribo as any;
+                const preciseDate = metadataArribo?.fecha ? new Date(metadataArribo.fecha) : etapa.fechaArribo;
+
                 events.push({
                     id: `arr - ${etapa.id} `,
                     buque: buqueName,
@@ -738,7 +747,8 @@ export class MareasService {
                     observador: obsName,
                     etapa: etapa.nroEtapa || 1,
                     tipo: 'ARRIBO',
-                    fecha: etapa.fechaArribo,
+                    fecha: preciseDate, // Usar la fecha precisa si existe, sino la de la DB
+                    fechaDb: etapa.fechaArribo, // Guardar la original para mostrar en UI si es necesario
                     puerto: (etapa as any).puertoArribo?.nombre || 'N/D',
                     fuentes: etapa.fuentesArribo,
                     vesselId: marea.buqueId,

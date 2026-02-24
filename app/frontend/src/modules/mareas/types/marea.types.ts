@@ -72,6 +72,7 @@ export interface MovementEvent {
     etapa: number;
     tipo: 'ZARPADA' | 'ARRIBO';
     fecha: string;
+    fechaDb?: string;
     puerto: string;
     fuentes?: any;
     vesselId?: string;

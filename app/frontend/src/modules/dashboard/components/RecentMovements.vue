@@ -107,8 +107,9 @@
                   <!-- Col 3: Fecha / Puerto -->
                   <td class="px-4 py-4 align-middle">
                     <div class="flex flex-col gap-0.5">
-                      <span class="text-[11px] font-bold text-text tabular-nums">
-                        {{ formatDate(mov.fecha) }}
+                      <span class="text-[11px] font-bold text-text tabular-nums"
+                        :title="mov.fechaDb !== mov.fecha ? 'Fecha precisa de metadata' : 'Fecha de registro'">
+                        {{ mov.fechaDb !== mov.fecha ? formatDateTime(mov.fecha) : formatDate(mov.fecha) }}
                       </span>
                       <span class="text-[10px] font-medium text-text-muted/70 truncate max-w-[120px]"
                         :title="mov.puerto">
@@ -213,7 +214,7 @@ const formatDateTime = (dateTimeStr: string) => {
     year: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
-  }).format(date)// + ' hs'
+  }).format(date)
 }
 
 const getSources = (fuentes: any): string[] => {
