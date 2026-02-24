@@ -151,7 +151,7 @@
               <BaseSwitch
                 v-model="stageIntencionCierre[index]"
                 @update:modelValue="(val: boolean) => onToggleIntencionCierre(index, stage, val)"
-                :disabled="isIntencionCierreLoading(index) || mareaTieneDesignacion"
+                :disabled="mareaTieneDesignacion"
               />
             </div>
             <p v-if="mareaTieneDesignacion" class="text-[9px] text-warning mt-1.5 font-medium ml-1 flex items-center gap-1">
@@ -193,7 +193,6 @@ import {
 import BaseSwitch from '@/components/ui/BaseSwitch.vue';
 import { TipoEtapa } from '../types/enums';
 import type { MareaEtapaMetadata } from '../types/marea.types';
-import mareasService from '../services/mareas.service';
 
 const props = defineProps<{
   modelValue: any[];
@@ -212,14 +211,11 @@ const props = defineProps<{
 const emit = defineEmits([
   'update:modelValue', 
   'remove-stage', 
-  'action-success', 
-  'action-error',
   'action-warning'
 ]);
 
 // Local state para tracking de los toggles de intención de cierre por index (útil si hay llamadas async)
 const stageIntencionCierre = ref<Record<number, boolean>>({});
-const loadingIntencionCierre = ref<Record<number, boolean>>({});
 
 // Refs for focus/scroll
 const zarpadaDates = ref<any[]>([]);
@@ -334,35 +330,29 @@ function isEtapaEnCurso(stage: any) {
   return !!stage.id && !!stage.fechaZarpada && !stage.fechaArribo;
 }
 
-function isIntencionCierreLoading(index: number) {
-  return loadingIntencionCierre.value[index] === true;
-}
+function onToggleIntencionCierre(index: number, stage: any, activar: boolean) {
+  const currentStages = [...props.modelValue];
+  const currentStage = { ...currentStages[index] };
+  const currentMetadata = (currentStage.metadata as any) || {};
 
-async function onToggleIntencionCierre(index: number, stage: any, activar: boolean) {
-  if (!props.mareaId || !stage.id) {
-    emit('action-warning', 'No se puede modificar la intención de cierre en una etapa sin guardar.');
-    // Revertir
-    stageIntencionCierre.value[index] = !activar;
-    return;
+  if (activar) {
+    currentStage.metadata = {
+      ...currentMetadata,
+      opcionesCierre: {
+        finalizarMareaAlArribo: true,
+        fechaMarca: new Date().toISOString()
+      }
+    };
+  } else {
+    // Mantener otros campos de metadata si existen
+    currentStage.metadata = { ...currentMetadata };
+    if (currentStage.metadata.opcionesCierre) {
+      delete currentStage.metadata.opcionesCierre;
+    }
   }
 
-  loadingIntencionCierre.value[index] = true;
-  try {
-    const res = await mareasService.setIntencionCierre(props.mareaId, stage.id, activar);
-    emit('action-success', `Intención de cierre de marea ${activar ? 'activada' : 'desactivada'}.`);
-    
-    // Actualizar metadata localmente para mantener el v-model sincronizado
-    const currentStages = [...props.modelValue];
-    currentStages[index].metadata = res.metadata;
-    emit('update:modelValue', currentStages);
-  } catch (error: any) {
-    const errorMessage = error.response?.data?.message || error.message || 'Error al modificar intención de cierre.';
-    emit('action-error', errorMessage);
-    // Revertir
-    stageIntencionCierre.value[index] = !activar;
-  } finally {
-    loadingIntencionCierre.value[index] = false;
-  }
+  currentStages[index] = currentStage;
+  emit('update:modelValue', currentStages);
 }
 
 </script>

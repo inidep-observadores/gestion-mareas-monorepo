@@ -28,6 +28,7 @@ export interface MareaListItem {
     pesquerias_nombres: string[];
     alertas: any[];
     dias_estimados?: number;
+    intencion_cierre?: boolean;
     actionsAvailable: Record<string, { enabled: boolean; label: string; blockedReason?: string; claseBoton?: string }>;
 }
 

@@ -122,8 +122,12 @@ export class MareasController {
 
     @Patch(':id')
     @Auth(ValidRoles.admin, ValidRoles.tecnico)
-    update(@Param('id') id: string, @Body() updateMareaDto: UpdateMareaDto) {
-        return this.mareasService.update(id, updateMareaDto);
+    update(
+        @Param('id') id: string,
+        @Body() updateMareaDto: UpdateMareaDto,
+        @GetUser() user: User
+    ) {
+        return this.mareasService.update(id, updateMareaDto, user);
     }
 
     @Get(':id/context')

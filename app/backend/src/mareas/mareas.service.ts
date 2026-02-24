@@ -10,6 +10,7 @@ import { MailService } from '../mail/mail.service';
 import { ClaimMareaDto } from './dto/claim-marea.dto';
 import { AlertsService } from '../alerts/alerts.service';
 import { MareaEstado, TipoEtapa, TipoMarea } from './mareas.constants';
+import { MareaEtapaMetadata } from './interfaces/marea-etapa-metadata.interface';
 import { DateUtils } from '../common/utils/date.utils';
 import { MareaUtils } from '../common/utils/marea.utils';
 import { ConfigService } from '@nestjs/config';
@@ -98,7 +99,7 @@ export class MareasService {
         };
     }
 
-    async update(id: string, updateMareaDto: UpdateMareaDto) {
+    async update(id: string, updateMareaDto: UpdateMareaDto, user?: User) {
         const { etapas, artePrincipalId, arteId, pesqueriaId, observadorId, observadorPrincipalId, ...data } = updateMareaDto;
 
         // Validar impedimentos si cambia el observador principal
@@ -253,12 +254,29 @@ export class MareasService {
 
                 if (ultimaEtapaEnBd) {
                     const ultimaEtapaAny: any = ultimaEtapaEnBd;
-                    const metadata = ultimaEtapaAny.metadata as import('./interfaces/marea-etapa-metadata.interface').MareaEtapaMetadata;
+                    const metadata = (ultimaEtapaAny.metadata as any) as import('./interfaces/marea-etapa-metadata.interface').MareaEtapaMetadata;
                     if (metadata?.opcionesCierre?.finalizarMareaAlArribo === true) {
                         const nuevasEtapas = etapas.filter(e => !e.id);
                         if (nuevasEtapas.length > 0) {
                             throw new BadRequestException('No se pueden agregar nuevas etapas porque la etapa en curso está marcada para finalizar la marea al arribo.');
                         }
+                    }
+
+                    // Auditoría de cambio de intención de cierre diferido
+                    const ultimaEtapaPayload = etapas[etapas.length - 1];
+                    const intencionPrevia = metadata?.opcionesCierre?.finalizarMareaAlArribo || false;
+                    const intencionNueva = (ultimaEtapaPayload?.metadata as any)?.opcionesCierre?.finalizarMareaAlArribo || false;
+
+                    if (intencionPrevia !== intencionNueva) {
+                        await tx.mareaMovimiento.create({
+                            data: {
+                                mareaId: id,
+                                fechaHora: new Date(),
+                                usuarioId: user?.id ?? null,
+                                tipoEvento: 'EDICION_ESTRUCTURA',
+                                detalle: `${intencionNueva ? 'Activada' : 'Desactivada'} intención de cierre de marea al arribo en etapa #${ultimaEtapaEnBd.nroEtapa} (Guardado diferido).`
+                            }
+                        });
                     }
                 }
                 for (const etapa of etapas) {
@@ -280,6 +298,11 @@ export class MareasService {
                         });
                         if (!existing) {
                             throw new NotFoundException('Etapa no encontrada para la marea.');
+                        }
+
+                        // Asegurar persistencia de metadata
+                        if (etapa.metadata !== undefined) {
+                            etapaData.metadata = etapa.metadata;
                         }
 
                         // Proteccion de fuentes: No permitir nulificar si no viene en el payload
@@ -429,21 +452,48 @@ export class MareasService {
                 fechaInicioObservador: true,
                 fechaFinObservador: true,
                 buque: {
-                    include: {
+                    select: {
+                        id: true,
+                        nombreBuque: true,
+                        matricula: true,
+                        puertoBaseId: true,
                         pesqueriaHabitual: true
                     }
                 },
                 observadorPrincipal: true,
                 pesqueria: true,
-                estadoActual: true,
+                estadoActual: {
+                    select: {
+                        id: true,
+                        codigo: true,
+                        nombre: true,
+                        categoria: true
+                    }
+                },
                 etapas: {
                     orderBy: { nroEtapa: 'asc' },
-                    include: {
-                        puertoZarpada: true,
-                        puertoArribo: true,
-                        pesqueria: true,
+                    select: {
+                        id: true,
+                        nroEtapa: true,
+                        fechaZarpada: true,
+                        fechaArribo: true,
+                        observaciones: true,
+                        metadata: true,
+                        puertoZarpada: { select: { nombre: true } },
+                        puertoArribo: { select: { nombre: true } },
+                        pesqueria: { select: { nombre: true } },
                         observadores: {
-                            include: { observador: true },
+                            select: {
+                                rol: true,
+                                esDesignado: true,
+                                observador: {
+                                    select: {
+                                        id: true,
+                                        nombre: true,
+                                        apellido: true
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -464,8 +514,10 @@ export class MareasService {
         });
 
         const items = mareas.map((m: any) => {
-            const etapaInicial = m.etapas[0] || null;
-            const etapaFinal = m.etapas[m.etapas.length - 1] || null;
+            // Las etapas vienen ordenadas por nroEtapa ASC desde Prisma
+            const etapasSorted = [...m.etapas].sort((a: any, b: any) => a.nroEtapa - b.nroEtapa);
+            const etapaInicial = etapasSorted[0] || null;
+            const etapaFinal = etapasSorted[etapasSorted.length - 1] || null;
             const primaryObs = m.observadorPrincipal || etapaFinal?.observadores[0]?.observador || null;
             const allowedTransitions = transiciones.filter(t => t.estadoOrigenId === m.estadoActualId);
 
@@ -500,6 +552,8 @@ export class MareasService {
                 total_etapas: etapaFinal?.nroEtapa || 1,
                 dias_navegados: MareaUtils.calculateNavigatedDays(m),
                 alertas: activeAlerts.filter((a: any) => a.referenciaId === m.id),
+                intencion_cierre: m.estadoActual.codigo.trim().toUpperCase() === MareaEstado.EN_EJECUCION &&
+                    (etapaFinal?.metadata as unknown as MareaEtapaMetadata)?.opcionesCierre?.finalizarMareaAlArribo === true,
                 actionsAvailable,
                 dias_estimados: m.diasEstimados,
                 pesquerias_nombres: Array.from(new Set([
