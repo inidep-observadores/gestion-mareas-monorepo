@@ -108,8 +108,8 @@
                   <td class="px-4 py-4 align-middle">
                     <div class="flex flex-col gap-0.5">
                       <span class="text-[11px] font-bold text-text tabular-nums"
-                        :title="mov.fechaDb !== mov.fecha ? 'Fecha precisa de metadata' : 'Fecha de registro'">
-                        {{ mov.fechaDb !== mov.fecha ? formatDateTime(mov.fecha) : formatDate(mov.fecha) }}
+                        :title="mov.fechaDb && mov.fechaDb !== mov.fecha ? `Metadata: ${formatDateTime(mov.fecha)} | DB: ${formatDate(mov.fechaDb)}` : 'Fecha de registro'">
+                        {{ formatDateTime(mov.fecha) }}
                       </span>
                       <span class="text-[10px] font-medium text-text-muted/70 truncate max-w-[120px]"
                         :title="mov.puerto">
