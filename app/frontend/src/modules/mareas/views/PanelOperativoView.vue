@@ -76,8 +76,8 @@
                         <div class="flex flex-col items-end gap-1">
                           <span v-if="marea.intencion_cierre"
                             class="px-2 py-0.5 bg-error/10 text-error rounded-full text-[8px] font-black uppercase tracking-tighter whitespace-nowrap flex items-center gap-1 border border-error/20">
-                            <FlagIcon class="w-2 h-2" />
-                            Intención Cierre
+                            <SportsScoreIcon class="w-4 h-4" />
+                            A finalizar
                           </span>
                           <span v-if="marea.en_tierra"
                             class="px-2 py-0.5 bg-success/10 text-success rounded-full text-[8px] font-black uppercase tracking-tighter whitespace-nowrap flex items-center gap-1 border border-success/20">
@@ -223,8 +223,8 @@
                             </span>
                             <span v-if="marea.intencion_cierre"
                               class="px-2 py-0.5 bg-error/10 text-error rounded-full text-[10px] font-black uppercase tracking-tighter whitespace-nowrap flex items-center gap-1 border border-error/20">
-                              <FlagIcon class="w-2.5 h-2.5" />
-                              Finalizando
+                              <SportsScoreIcon class="w-3 h-3" />
+                              A finalizar
                             </span>
                           </div>
                         </td>
@@ -334,7 +334,7 @@ import {
   ChevronDownIcon,
   WarningIcon,
   EditIcon,
-  FlagIcon
+  SportsScoreIcon
 } from '@/icons'
 
 import { ValidRoles } from '@/modules/auth/interfaces/roles.enum'
