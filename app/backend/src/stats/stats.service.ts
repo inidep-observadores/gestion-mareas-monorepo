@@ -796,6 +796,8 @@ export class StatsService {
             { header: 'Flota', key: 'flota', width: 20 },
             { header: 'Pesquería', key: 'pesqueria', width: 20 }, // Fixed encoding
             { header: 'Observador Principal', key: 'observador', width: 25 },
+            { header: 'Contrato', key: 'contrato', width: 15 },
+            { header: 'Tipo Obs.', key: 'tipo_observador', width: 15 },
         ];
 
         // Dynamic Extra Observers Columns
@@ -918,6 +920,8 @@ export class StatsService {
                     ? filterValue
                     : (m.etapas[0]?.pesqueria?.nombre || m.buque?.pesqueriaHabitual?.nombre || '-'),
                 observador: m.observadorPrincipal ? `${m.observadorPrincipal.nombre} ${m.observadorPrincipal.apellido}` : 'Sin asignar',
+                contrato: m.observadorPrincipal?.tipoContrato || '-',
+                tipo_observador: m.observadorPrincipal?.tipoObservador || '-',
                 estado: m.estadoActual?.nombre || 'Desconocido',
                 dias_calendario: calendarDays,
                 dias_total: totalMareaDays,
