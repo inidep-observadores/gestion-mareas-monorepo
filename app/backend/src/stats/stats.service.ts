@@ -21,6 +21,11 @@ export class StatsService {
     ): Prisma.MareaWhereInput {
         const where: Prisma.MareaWhereInput = {
             activo: true,
+            estadoActual: {
+                codigo: {
+                    notIn: ['A_REASIGNAR', 'CANCELADA']
+                }
+            }
         };
 
         const protStart = protocolizationStart || activityStart;

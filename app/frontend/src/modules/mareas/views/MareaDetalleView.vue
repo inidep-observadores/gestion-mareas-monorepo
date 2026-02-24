@@ -517,6 +517,10 @@
         </div>
       </div>
     </div>
+    <!-- Edit Designada Dialog -->
+    <EditMareaDesignadaDialog :show="showEditDesignadaDialog" :initial-data="marea" :marea-id="marea.id"
+      @close="showEditDesignadaDialog = false" @success="handleEditSuccess" />
+
     <!-- Finalize Dialog -->
     <GestionEtapasMareaDialog :show="showFinalizarDialog" :mode="'FINALIZAR'" :marea="marea" :currentStages="etapas"
       :initialPortId="marea.puertoBaseId" @close="showFinalizarDialog = false" @confirm="handleFinalizeMarea" />
@@ -534,6 +538,7 @@ import DatePicker from '@/components/common/DatePicker.vue'
 import ConfirmationDialog from '@/components/common/ConfirmationDialog.vue'
 import AlertHistoryTab from '../../alerts/components/AlertHistoryTab.vue'
 import GestionEtapasMareaDialog from '../components/GestionEtapasMareaDialog.vue'
+import EditMareaDesignadaDialog from '../components/EditMareaDesignadaDialog.vue'
 import mareasService from '../services/mareas.service';
 import NavigationStagesEditor from '../components/NavigationStagesEditor.vue'
 import ZonaAustralDetalle from '../components/ZonaAustralDetalle.vue'
@@ -577,6 +582,7 @@ const activeTab = ref('general')
 const route = useRoute()
 
 const authStore = useAuthStore()
+const showEditDesignadaDialog = ref(false)
 
 const isReadOnly = computed(() => {
   const roles = authStore.user?.roles || []
@@ -875,6 +881,11 @@ async function handleFinalizeMarea(payload: any) {
     console.error(e);
     // Handle error notification
   }
+}
+
+async function handleEditSuccess() {
+  showEditDesignadaDialog.value = false;
+  await loadMarea();
 }
 
 

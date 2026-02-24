@@ -162,6 +162,21 @@ async function main() {
     }
 
     process.env.DATABASE_URL = expandEnv(process.env.DATABASE_URL);
+    
+    // =========================================================================
+    // SALVAGUARDA CONTRA PÉRDIDA DE DATOS
+    // =========================================================================
+    const isProduction = process.env.NODE_ENV === 'production';
+    const isProdDb = process.env.DATABASE_URL?.includes('supabase') || process.env.DATABASE_URL?.includes('prod');
+
+    if (isProduction || isProdDb) {
+        console.error('🚨 [ERROR CRÍTICO] EL SEED FUE BLOQUEADO.');
+        console.error('Intentaste ejecutar `prisma db seed` en una base de datos de PRODUCCIÓN o con NODE_ENV=production.');
+        console.error('El seed estático contiene una instrucción destructiva de borrado en cascada (cleanAll) que eliminaría la data operativa.');
+        console.error('Abortando de inmediato para salvaguardar el sistema.');
+        process.exit(1);
+    }
+    // =========================================================================
 
     const pool = new Pool({ connectionString: process.env.DATABASE_URL });
     const adapter = new PrismaPg(pool);

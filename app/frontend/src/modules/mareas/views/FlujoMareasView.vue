@@ -376,6 +376,15 @@
     <MareaGenericActionDialog :show="showGenericDialog" :marea="mareaToManage" :actionKey="selectedActionKey"
       :actionData="selectedActionData" :loading="executingAction" @close="showGenericDialog = false"
       @confirm="handleGenericConfirm" />
+      
+    <EditMareaDesignadaDialog 
+      v-if="selectedMarea"
+      :show="showEditDesignadaDialog" 
+      :initial-data="selectedMarea" 
+      :marea-id="selectedMarea.id"
+      @close="showEditDesignadaDialog = false" 
+      @success="handleEditSuccess" 
+    />
 
     <AlertManagementDialog :is-open="isAlertDialogOpen" :alert="selectedAlert" @close="isAlertDialogOpen = false"
       @refresh="handleAlertRefresh" />
@@ -392,6 +401,7 @@ import GestionEtapasMareaDialog from '../components/GestionEtapasMareaDialog.vue
 import RecibirArchivosDialog from '../components/RecibirArchivosDialog.vue'
 import CancelarMareaDialog from '../components/CancelarMareaDialog.vue'
 import MareaGenericActionDialog from '../components/MareaGenericActionDialog.vue'
+import EditMareaDesignadaDialog from '../components/EditMareaDesignadaDialog.vue'
 // @ts-ignore
 import AlertManagementDialog from '../../alerts/components/AlertManagementDialog.vue'
 import StatusFilterChip from '../components/StatusFilterChip.vue'
@@ -846,10 +856,24 @@ const closeSidebar = () => {
   }, 300)
 }
 
+const showEditDesignadaDialog = ref(false)
+
 const goToDetalle = () => {
   if (selectedMarea.value) {
-    router.push({ name: 'MareaDetalle', params: { id: selectedMarea.value.id } })
+    if (selectedMarea.value.estado_codigo === 'DESIGNADA' && !isReadOnly.value) {
+      showEditDesignadaDialog.value = true
+    } else {
+      router.push({ name: 'MareaDetalle', params: { id: selectedMarea.value.id } })
+    }
   }
+}
+
+const handleEditSuccess = async () => {
+  showEditDesignadaDialog.value = false
+  if (selectedMarea.value) {
+    await fetchMareaContext(selectedMarea.value.id)
+  }
+  await fetchDashboard(true)
 }
 
 const goToTrajectory = () => {

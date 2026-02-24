@@ -451,6 +451,7 @@ export class MareasService {
                 fechaZarpadaEstimada: true,
                 fechaInicioObservador: true,
                 fechaFinObservador: true,
+                artePrincipalId: true,
                 buque: {
                     select: {
                         id: true,
@@ -556,6 +557,11 @@ export class MareasService {
                     (etapaFinal?.metadata as unknown as MareaEtapaMetadata)?.opcionesCierre?.finalizarMareaAlArribo === true,
                 actionsAvailable,
                 dias_estimados: m.diasEstimados,
+                buqueId: m.buque.id,
+                pesqueriaId: m.pesqueria?.id,
+                artePrincipalId: (m as any).artePrincipalId, // Tipado seguro para Prisma
+                observadorPrincipalId: m.observadorPrincipal?.id,
+                fecha_zarpada_estimada_cruda: m.fechaZarpadaEstimada,
                 pesquerias_nombres: Array.from(new Set([
                     m.pesqueria?.nombre,
                     ...m.etapas.map(e => e.pesqueria?.nombre)

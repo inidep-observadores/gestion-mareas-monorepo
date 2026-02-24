@@ -404,6 +404,15 @@
     <MareaGenericActionDialog :show="showGenericDialog" :marea="mareaToManage" :actionKey="selectedActionKey"
       :actionData="selectedActionData" :loading="executingAction" @close="showGenericDialog = false"
       @confirm="handleGenericConfirm" />
+      
+    <EditMareaDesignadaDialog 
+      v-if="selectedMarea"
+      :show="showEditDesignadaDialog" 
+      :initial-data="selectedMareaContext?.marea || selectedMarea" 
+      :marea-id="selectedMarea.id"
+      @close="showEditDesignadaDialog = false" 
+      @success="handleEditSuccess" 
+    />
   </AdminLayout>
 </template>
 
@@ -417,6 +426,7 @@ import MareaContextDetailContent from '../components/MareaContextDetailContent.v
 import GestionEtapasMareaDialog from '../components/GestionEtapasMareaDialog.vue'
 import RecibirArchivosDialog from '../components/RecibirArchivosDialog.vue'
 import MareaGenericActionDialog from '../components/MareaGenericActionDialog.vue'
+import EditMareaDesignadaDialog from '../components/EditMareaDesignadaDialog.vue'
 import SearchInput from '@/components/ui/SearchInput.vue'
 import Button from '@/components/ui/Button.vue'
 import Badge from '@/components/ui/Badge.vue'
@@ -434,6 +444,11 @@ import { ValidRoles } from '@/modules/auth/interfaces/roles.enum'
 const router = useRouter()
 const authStore = useAuthStore()
 const { fetchMareaContext, selectedMareaContext, executeAction } = useMareas()
+
+const isReadOnly = computed(() => {
+  const roles = authStore.user?.roles || []
+  return !roles.includes(ValidRoles.admin) && !roles.includes(ValidRoles.tecnico)
+})
 
 // Data State
 const loading = ref(true)
@@ -759,10 +774,24 @@ const handleGenericConfirm = async (payload: any) => {
   }
 }
 
+const showEditDesignadaDialog = ref(false)
+
 const goToDetalle = () => {
   if (selectedMarea.value) {
-    router.push({ name: 'MareaDetalle', params: { id: selectedMarea.value.id } })
+    if (selectedMareaContext.value?.marea?.estado_codigo === 'DESIGNADA' && !isReadOnly.value) {
+      showEditDesignadaDialog.value = true
+    } else {
+      router.push({ name: 'MareaDetalle', params: { id: selectedMarea.value.id } })
+    }
   }
+}
+
+const handleEditSuccess = async () => {
+  showEditDesignadaDialog.value = false
+  if (selectedMarea.value) {
+    await fetchMareaContext(selectedMarea.value.id)
+  }
+  await loadInbox()
 }
 
 const handleRecibirCancel = () => {

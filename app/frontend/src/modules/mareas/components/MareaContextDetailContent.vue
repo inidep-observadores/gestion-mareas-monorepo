@@ -286,9 +286,16 @@
     <!-- Footer Actions -->
     <div class="p-6 border-t border-border bg-surface-muted/50 space-y-3 shrink-0">
       <button v-if="canViewFullDetail" @click="$emit('open-detalle')"
-        class="w-full py-3.5 bg-primary hover:bg-primary-hover text-primary-fg rounded-2xl text-sm font-bold shadow-xl shadow-primary/20 transition-all hover:-translate-y-0.5 active:scale-[0.98] flex items-center justify-center gap-2">
-        <DocsIcon class="w-4 h-4" />
-        {{ buttonText }}
+        :disabled="currentMarea.estado_codigo === 'A_REASIGNAR'"
+        class="w-full py-3.5 rounded-2xl text-sm font-bold shadow-xl transition-all flex items-center justify-center gap-2"
+        :class="currentMarea.estado_codigo === 'A_REASIGNAR' 
+          ? 'bg-surface-muted text-text-muted/50 cursor-not-allowed shadow-none' 
+          : 'bg-primary hover:bg-primary-hover text-primary-fg shadow-primary/20 hover:-translate-y-0.5 active:scale-[0.98]'">
+        <LockIcon v-if="currentMarea.estado_codigo === 'A_REASIGNAR'" class="w-4 h-4" />
+        <DocsIcon v-else class="w-4 h-4" />
+        <span v-if="currentMarea.estado_codigo === 'A_REASIGNAR'">Edición Bloqueada</span>
+        <span v-else-if="currentMarea.estado_codigo === 'DESIGNADA' && canManage">Editar Datos Básicos</span>
+        <span v-else>{{ buttonText }}</span>
       </button>
 
       <button @click="$emit('close')"
@@ -322,7 +329,8 @@ import {
   SuccessIcon,
   ErrorIcon,
   ShieldIcon,
-  SportsScoreIcon
+  SportsScoreIcon,
+  ArchiveIcon
 } from '@/icons'
 import type { MareaContext } from '../types/marea.types'
 import { useAuthStore } from '@/modules/auth/stores/auth.store'
@@ -465,7 +473,8 @@ const getActionIcon = (key: string | number) => {
     RECHAZAR_INFORME: ErrorIcon,
     INICIAR_TRAMITE: HistoryIcon,
     FINALIZAR_PROTOCOLIZACION: ShieldIcon,
-    CANCELAR: ErrorIcon
+    CANCELAR: ErrorIcon,
+    PASAR_A_REASIGNAR: ArchiveIcon
   }
   return meta[key] || PlusIcon
 }
