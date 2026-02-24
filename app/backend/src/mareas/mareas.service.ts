@@ -250,7 +250,7 @@ export class MareasService {
                     orderBy: { nroEtapa: 'desc' },
                     take: 1
                 });
-                
+
                 if (ultimaEtapaEnBd) {
                     const ultimaEtapaAny: any = ultimaEtapaEnBd;
                     const metadata = ultimaEtapaAny.metadata as import('./interfaces/marea-etapa-metadata.interface').MareaEtapaMetadata;
@@ -1628,7 +1628,7 @@ export class MareasService {
 
     async syncStages(tx: any, mareaId: string, incomingStages: any[]) {
         if (!incomingStages || !Array.isArray(incomingStages)) return;
-        
+
         console.log('--- SYNC STAGES START ---');
         console.log('Incoming Stages in syncStages:', JSON.stringify(incomingStages, null, 2));
 
@@ -1746,7 +1746,7 @@ export class MareasService {
      * Evalúa si una marea debe darse por finalizada al registrarse un arribo.
      * Evalúa designaciones pendientes o intenciones manuales de cierre.
      */
-    private async debeFinalizarMareaAlArribar(mareaId: string, etapaId: string): Promise<boolean> {
+    private async evaluarCierreAlArribar(mareaId: string, etapaId: string): Promise<'FORZADO_POR_DESIGNACION' | 'RECOMENDADO_POR_INTENCION' | 'NINGUNO'> {
         const [marea, etapa] = await Promise.all([
             this.prisma.marea.findUnique({
                 where: { id: mareaId },
@@ -1760,9 +1760,9 @@ export class MareasService {
             })
         ]);
 
-        if (!marea || !etapa) return false;
+        if (!marea || !etapa) return 'NINGUNO';
 
-        // 1. Condición por designación activa
+        // 1. Condición por designación activa (FORZADO)
         const tieneDesignacion = await this.prisma.marea.findFirst({
             where: {
                 buqueId: marea.buqueId,
@@ -1772,17 +1772,17 @@ export class MareasService {
         });
 
         if (tieneDesignacion) {
-            return true;
+            return 'FORZADO_POR_DESIGNACION';
         }
 
-        // 2. Condición por metadata de la etapa
+        // 2. Condición por metadata de la etapa (RECOMENDADO)
         const etapaAny: any = etapa;
         const metadata = etapaAny.metadata as import('./interfaces/marea-etapa-metadata.interface').MareaEtapaMetadata;
         if (metadata?.opcionesCierre?.finalizarMareaAlArribo === true) {
-            return true;
+            return 'RECOMENDADO_POR_INTENCION';
         }
 
-        return false;
+        return 'NINGUNO';
     }
 
     /**
@@ -1792,9 +1792,9 @@ export class MareasService {
         return await this.prisma.$transaction(async (tx) => {
             const marea = await tx.marea.findUnique({
                 where: { id: mareaId },
-                include: { 
+                include: {
                     estadoActual: true,
-                    etapas: { orderBy: { nroEtapa: 'desc' }, take: 1 } 
+                    etapas: { orderBy: { nroEtapa: 'desc' }, take: 1 }
                 }
             });
 
@@ -1825,7 +1825,7 @@ export class MareasService {
                         estadoActual: { codigo: MareaEstado.DESIGNADA }
                     }
                 });
-                
+
                 if (tieneDesignacion) {
                     throw new BadRequestException('No es necesario activar esta opción. Ya existe una designación en curso para este buque que forzará el cierre de la marea al arribo.');
                 }
@@ -1833,9 +1833,9 @@ export class MareasService {
 
             const ultimaEtapaAny: any = ultimaEtapa;
             const currentMetadata = (ultimaEtapaAny.metadata as import('./interfaces/marea-etapa-metadata.interface').MareaEtapaMetadata) || {};
-            
+
             let nuevaMetadata: import('./interfaces/marea-etapa-metadata.interface').MareaEtapaMetadata;
-            
+
             if (activar) {
                 nuevaMetadata = {
                     ...currentMetadata,
@@ -1861,8 +1861,8 @@ export class MareasService {
                     fechaHora: new Date(),
                     usuarioId: user.id,
                     tipoEvento: 'EDICION_ESTRUCTURA',
-                    detalle: activar 
-                        ? 'Se activó bandera de cierre de marea para el próximo arribo.' 
+                    detalle: activar
+                        ? 'Se activó bandera de cierre de marea para el próximo arribo.'
                         : 'Se desactivó bandera de cierre de marea anticipado.'
                 }
             });
@@ -2022,15 +2022,35 @@ export class MareasService {
             if (this.ESTADOS_NAVEGANDO.includes(marea.estadoActual.codigo as any) && payload.etapas) {
                 const ultimaEtapaRecibida = payload.etapas[payload.etapas.length - 1];
                 if (ultimaEtapaRecibida?.fechaArribo && ultimaEtapaRecibida.id) {
-                    const debeFinalizar = await this.debeFinalizarMareaAlArribar(id, ultimaEtapaRecibida.id);
-                    if (debeFinalizar) {
+                    const motivoCierre = await this.evaluarCierreAlArribar(id, ultimaEtapaRecibida.id);
+
+                    if (motivoCierre === 'FORZADO_POR_DESIGNACION') {
                         const estadoFinalizacion = await tx.estadoMarea.findFirst({
-                            where: { codigo: MareaEstado.ESPERANDO_ENTREGA } 
+                            where: { codigo: MareaEstado.ESPERANDO_ENTREGA }
                         });
                         if (estadoFinalizacion) {
                             destinoEstadoId = estadoFinalizacion.id;
                             actionKey = 'FINALIZAR_POR_ARRIBO'; // Sobrescribimos lógicamente la acción para el historial
                         }
+                    } else if (motivoCierre === 'RECOMENDADO_POR_INTENCION' && actionKey !== 'FINALIZAR_POR_ARRIBO') {
+                        // Generar alerta de recomendación de cierre pero NO cambiar el estado del flujo
+                        await this.alertsService.create({
+                            codigoUnico: `REC_FIN_${marea.id}_${ultimaEtapaRecibida.id}`,
+                            tipo: 'RECOMENDACION_FIN_MAREA',
+                            titulo: 'Recomendación de Fin de Marea',
+                            descripcion: `El usuario marcó la intención de finalizar la marea al arribo de esta etapa (${ultimaEtapaRecibida.nroEtapa}).`,
+                            estado: AlertaEstado.PENDIENTE,
+                            prioridad: AlertaPrioridad.MEDIA,
+                            referenciaId: marea.id,
+                            referenciaTipo: 'MAREA',
+                            metadata: {
+                                mareaId: marea.id,
+                                etapaId: ultimaEtapaRecibida.id,
+                                trigger: 'INTENCION_MANUAL_ARRIBO'
+                            }
+                        }, user);
+
+                        this.logger.log(`Generada alerta de recomendación de cierre para marea ${marea.id} por intención manual en etapa ${ultimaEtapaRecibida.nroEtapa}`);
                     }
                 }
             }
@@ -2066,9 +2086,9 @@ export class MareasService {
                             ? `Fin Marea. Obs: ${additionalMareaData.fechaFinObservador ? new Date(additionalMareaData.fechaFinObservador).toLocaleDateString('es-AR') : 'Sin fecha definida'}`
                             : actionKey === 'FINALIZAR_POR_ARRIBO'
                                 ? `Marea finalizada automáticamente por arribo a puerto (designación o intención de cierre).`
-                            : actionKey === 'RECIBIR_DATOS'
-                                ? `Recepción de datos. Otolitos: ${payload.cantidadOtolitos || 0}`
-                                : `Acción: ${transicion.etiqueta}`,
+                                : actionKey === 'RECIBIR_DATOS'
+                                    ? `Recepción de datos. Otolitos: ${payload.cantidadOtolitos || 0}`
+                                    : `Acción: ${transicion.etiqueta}`,
                     comentarios: payload.comentarios,
                     archivos: (actionKey === 'RECIBIR_DATOS' && payload.archivosSnapshot) ? {
                         create: payload.archivosSnapshot.map((a: any) => ({
