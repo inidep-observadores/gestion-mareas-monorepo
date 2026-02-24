@@ -608,7 +608,7 @@ export class MareasService {
         });
 
         const distributionMap = new Map<string, {
-            vessels: Map<string, { mareaCode: string; status: string; tipoFlota: any }>;
+            vessels: Map<string, { name: string; status: string; tipoFlota: any }>;
             stats: Record<string, { count: number, nombre: string }>
         }>();
 
@@ -635,7 +635,8 @@ export class MareasService {
             }
 
             const item = distributionMap.get(label)!;
-            item.vessels.set(vesselName, { mareaCode, status, tipoFlota });
+            // Usar mareaCode como llave para permitir múltiples mareas del mismo buque en la distribución
+            item.vessels.set(mareaCode, { name: vesselName, status, tipoFlota });
 
             if (!item.stats[fleetCode]) {
                 item.stats[fleetCode] = { count: 0, nombre: fleetName };
@@ -649,7 +650,7 @@ export class MareasService {
                 count: data.vessels.size,
                 stats: data.stats,
                 vessels: Array.from(data.vessels.entries())
-                    .map(([name, vesselData]) => ({ name, ...vesselData }))
+                    .map(([code, vesselData]) => ({ mareaCode: code, ...vesselData }))
                     .sort((a, b) => a.name.localeCompare(b.name))
             }))
             .sort((a, b) => b.count - a.count);
