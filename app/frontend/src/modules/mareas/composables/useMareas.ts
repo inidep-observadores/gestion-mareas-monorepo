@@ -2,6 +2,7 @@ import { ref, computed } from 'vue';
 import mareasService from '../services/mareas.service';
 import type { MareaListItem, MareaContext } from '../types/marea.types';
 import { TipoMarea } from '../types/enums';
+import catalogosService, { type Pesqueria } from '../services/catalogos.service';
 
 export function useMareas() {
     const loading = ref(false);
@@ -11,6 +12,7 @@ export function useMareas() {
     const selectedMareaContext = ref<MareaContext | null>(null);
     const hiddenStates = ref<Set<string>>(new Set());
     const searchQuery = ref('');
+    const filterPesqueria = ref('');
     const sortBy = ref<string | null>('id_marea');
     const sortOrder = ref<'asc' | 'desc'>('asc');
 
@@ -38,6 +40,16 @@ export function useMareas() {
             loading.value = false;
         }
     };
+
+    const availablePesquerias = computed(() => {
+        const names = new Set<string>();
+        mareas.value.forEach(m => {
+            if (m.pesquerias_nombres) {
+                m.pesquerias_nombres.forEach(p => names.add(p));
+            }
+        });
+        return Array.from(names).sort();
+    });
 
     const executeAction = async (id: string, actionKey: string, payload: any = {}) => {
         try {
@@ -98,8 +110,13 @@ export function useMareas() {
     const filteredMareas = computed(() => {
         let result = mareas.value.filter(m => {
             const matchesState = !hiddenStates.value.has(m.estado_codigo);
+
+            // Filtro por pesquería
+            const matchesPesqueria = !filterPesqueria.value ||
+                (m.pesquerias_nombres && m.pesquerias_nombres.includes(filterPesqueria.value));
+
             const query = searchQuery.value;
-            if (!query) return matchesState;
+            if (!query) return matchesState && matchesPesqueria;
 
             const normalize = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
             const queryNorm = normalize(query);
@@ -110,7 +127,7 @@ export function useMareas() {
                 (m.observador && normalize(m.observador).includes(queryNorm)) ||
                 (m.pesquerias_nombres && m.pesquerias_nombres.some(p => normalize(p).includes(queryNorm)));
 
-            return matchesState && matchesText;
+            return matchesState && matchesPesqueria && matchesText;
         });
 
         if (sortBy.value) {
@@ -158,6 +175,8 @@ export function useMareas() {
         createMarea,
         hiddenStates,
         searchQuery,
+        filterPesqueria,
+        availablePesquerias,
         sortBy,
         sortOrder,
         filteredMareas,

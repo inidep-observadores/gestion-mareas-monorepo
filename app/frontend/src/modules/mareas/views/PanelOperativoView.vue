@@ -23,7 +23,19 @@
                 Mareas Activas
               </h2>
               <div class="flex flex-wrap items-center gap-3 w-full sm:w-auto">
-                <SearchInput v-model="searchQuery" placeholder="Filtrar por buque o marea..." />
+                <div class="flex items-center gap-2 bg-surface border border-border rounded-xl px-3 py-1.5 focus-within:ring-2 focus-within:ring-primary/20 transition-all shadow-sm group">
+                  <span class="text-text-muted group-focus-within:text-primary transition-colors">
+                    <ShipIcon class="w-3.5 h-3.5" />
+                  </span>
+                  <select v-model="filterPesqueria"
+                    class="bg-transparent border-none outline-none text-sm font-bold text-text-muted focus:text-text transition-colors cursor-pointer min-w-[140px] appearance-none pr-4">
+                    <option value="">Todas las pesquerías</option>
+                    <option v-for="pesqueria in availablePesquerias" :key="pesqueria" :value="pesqueria">
+                      {{ pesqueria }}
+                    </option>
+                  </select>
+                </div>
+                <SearchInput v-model="searchQuery" placeholder="Buscar buque o marea..." />
                 <button v-if="!isReadOnly" @click="router.push('/mareas/nueva')"
                   class="flex items-center justify-center gap-2 px-4 py-2 bg-primary text-primary-fg rounded-xl text-sm font-bold hover:bg-primary-hover transition-all shadow-lg shadow-primary/20 active:scale-95">
                   <PlusIcon class="w-4 h-4" />
@@ -326,6 +338,8 @@ const {
   selectedMareaContext,
   hiddenStates,
   searchQuery,
+  filterPesqueria,
+  availablePesquerias,
   sortBy,
   sortOrder,
   filteredMareas,
