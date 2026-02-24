@@ -171,8 +171,6 @@
         </div>
         <div v-else class="text-center text-xs font-bold text-gray-400">No hay datos para mostrar</div>
       </div>
-    <div class="grid grid-cols-1 xl:grid-cols-2 gap-8 items-start">
-      <!-- ... (resto del contenido previo igual) ... -->
     </div>
 
     <!-- Marea Quick Detail Modal -->
