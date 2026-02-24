@@ -123,7 +123,9 @@
                       </div>
                       <div class="flex flex-wrap gap-1.5 pr-1">
                         <div v-for="vessel in group" :key="vessel.mareaCode"
+                          @click.stop="openMareaDetail(vessel.id)"
                           class="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-surface border border-border shadow-sm transition-all hover:border-primary/50 group/chip"
+                          :class="{ 'cursor-pointer hover:bg-surface-muted active:scale-95': viewType === 'MAREAS' }"
                           v-tooltip="vessel.status === 'EN_EJECUCION' ? 'En ejecución' : 'Designada'">
                           <component :is="vessel.status === 'EN_EJECUCION' ? ShipIcon : TaskIcon" class="w-3 h-3"
                             :class="vessel.status === 'EN_EJECUCION' ? 'text-primary' : 'text-text-muted'" />
@@ -144,7 +146,9 @@
                   <!-- Direct list if only one fleet type -->
                   <div v-else class="flex flex-wrap gap-1.5 pr-1">
                     <div v-for="vessel in item.vessels" :key="vessel.mareaCode"
+                      @click.stop="openMareaDetail(vessel.id)"
                       class="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-surface border border-border shadow-sm transition-all hover:border-primary/50 group/chip"
+                      :class="{ 'cursor-pointer hover:bg-surface-muted active:scale-95': viewType === 'MAREAS' }"
                       v-tooltip="vessel.status === 'EN_EJECUCION' ? 'En ejecución' : 'Designada'">
                       <component :is="vessel.status === 'EN_EJECUCION' ? ShipIcon : TaskIcon" class="w-3 h-3"
                         :class="vessel.status === 'EN_EJECUCION' ? 'text-primary' : 'text-text-muted'" />
@@ -167,7 +171,16 @@
         </div>
         <div v-else class="text-center text-xs font-bold text-gray-400">No hay datos para mostrar</div>
       </div>
+    <div class="grid grid-cols-1 xl:grid-cols-2 gap-8 items-start">
+      <!-- ... (resto del contenido previo igual) ... -->
     </div>
+
+    <!-- Marea Quick Detail Modal -->
+    <MareaQuickDetailModal
+      :is-open="isDetailModalOpen"
+      :marea-id="selectedMareaId"
+      @close="closeDetailModal"
+    />
   </div>
 </template>
 
@@ -177,6 +190,8 @@ import { toast } from 'vue-sonner'
 import { useTheme } from '@/components/layout/ThemeProvider.vue'
 import { ShipIcon, TaskIcon } from '@/icons'
 import dashboardService from '@/modules/dashboard/services/dashboard.service'
+import MareaQuickDetailModal from '@/modules/stats/components/MareaQuickDetailModal.vue'
+import mareasService from '@/modules/mareas/services/mareas.service'
 
 type FleetDisplayItem = {
   label: string
@@ -185,6 +200,7 @@ type FleetDisplayItem = {
   percentage: number
   stats?: Record<string, { count: number, nombre: string }>
   vessels: Array<{
+    id: string;
     name: string;
     mareaCode: string;
     status: string;
@@ -196,6 +212,21 @@ const viewType = ref<'MAREAS' | 'BUQUES'>('MAREAS')
 const includeDesignated = ref(true)
 const distribution = ref<FleetDisplayItem[]>([])
 const expandedId = ref<string | null>(null)
+
+// Marea Detail Modal State
+const isDetailModalOpen = ref(false)
+const selectedMareaId = ref<string | null>(null)
+
+const openMareaDetail = (mareaId: string) => {
+  if (viewType.value !== 'MAREAS') return
+  selectedMareaId.value = mareaId
+  isDetailModalOpen.value = true
+}
+
+const closeDetailModal = () => {
+  isDetailModalOpen.value = false
+  selectedMareaId.value = null
+}
 
 // Lógica de procesamiento de datos según vista y filtros
 const processedDistribution = computed(() => {
@@ -444,7 +475,13 @@ const loadDistribution = async () => {
       color: palette[index % palette.length],
       percentage: total > 0 ? Math.round((item.count / total) * 100) : 0,
       stats: item.stats,
-      vessels: item.vessels || []
+      vessels: (item.vessels || []).map(v => ({
+        id: v.id,
+        name: v.name,
+        mareaCode: v.mareaCode,
+        status: v.status,
+        tipoFlota: v.tipoFlota
+      }))
     }))
   } catch (error) {
     toast.error('No se pudo cargar la distribución por pesquería.')

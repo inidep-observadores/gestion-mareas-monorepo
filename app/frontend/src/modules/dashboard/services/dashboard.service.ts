@@ -6,6 +6,7 @@ export interface FleetDistributionItem {
     count: number
     stats?: Record<string, { count: number, nombre: string }>
     vessels: Array<{
+        id: string; // UUID de la marea
         name: string;
         mareaCode: string;
         status: string;

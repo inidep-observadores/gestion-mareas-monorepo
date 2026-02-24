@@ -608,7 +608,7 @@ export class MareasService {
         });
 
         const distributionMap = new Map<string, {
-            vessels: Map<string, { name: string; status: string; tipoFlota: any }>;
+            vessels: Map<string, { id: string; name: string; status: string; tipoFlota: any }>;
             stats: Record<string, { count: number, nombre: string }>
         }>();
 
@@ -636,7 +636,7 @@ export class MareasService {
 
             const item = distributionMap.get(label)!;
             // Usar mareaCode como llave para permitir múltiples mareas del mismo buque en la distribución
-            item.vessels.set(mareaCode, { name: vesselName, status, tipoFlota });
+            item.vessels.set(mareaCode, { id: marea.id, name: vesselName, status, tipoFlota });
 
             if (!item.stats[fleetCode]) {
                 item.stats[fleetCode] = { count: 0, nombre: fleetName };
@@ -708,14 +708,14 @@ export class MareasService {
         for (const etapa of etapas) {
             const marea = etapa.marea;
             const primaryObs = marea.observadorPrincipal || etapa.observadores[0]?.observador;
-            const obsName = primaryObs ? `${primaryObs.apellido}, ${primaryObs.nombre}` : 'Sin Asignar';
+            const obsName = primaryObs ? `${primaryObs.apellido}, ${primaryObs.nombre} ` : 'Sin Asignar';
             const mareaCode = MareaUtils.formatCodigo(marea as any);
             const buqueName = marea.buque.nombreBuque;
 
             // Agregar evento ZARPADA si aplica
             if (etapa.fechaZarpada && new Date(etapa.fechaZarpada) >= limitDate) {
                 events.push({
-                    id: `zar-${etapa.id}`,
+                    id: `zar - ${etapa.id} `,
                     buque: buqueName,
                     marea: mareaCode,
                     observador: obsName,
@@ -732,7 +732,7 @@ export class MareasService {
             // Agregar evento ARRIBO si aplica
             if (etapa.fechaArribo && new Date(etapa.fechaArribo) >= limitDate) {
                 events.push({
-                    id: `arr-${etapa.id}`,
+                    id: `arr - ${etapa.id} `,
                     buque: buqueName,
                     marea: mareaCode,
                     observador: obsName,
@@ -807,7 +807,7 @@ export class MareasService {
                         id: m.id,
                         mareaId: this.formatMareaId(m),
                         vesselName: m.buque.nombreBuque,
-                        obs: primaryObs ? `${primaryObs.nombre} ${primaryObs.apellido}` : 'Sin Asignar',
+                        obs: primaryObs ? `${primaryObs.nombre} ${primaryObs.apellido} ` : 'Sin Asignar',
                         email: primaryObs?.email || null,
                         observerId: primaryObs?.id,
                         arrivalDate: arrivalDate,
@@ -898,7 +898,7 @@ export class MareasService {
                         id: m.id,
                         mareaId: this.formatMareaId(m),
                         vesselName: m.buque.nombreBuque,
-                        obs: primaryObs ? `${primaryObs.nombre} ${primaryObs.apellido}` : 'Sin Asignar',
+                        obs: primaryObs ? `${primaryObs.nombre} ${primaryObs.apellido} ` : 'Sin Asignar',
                         baseDate: baseDate,
                         days: diffDays
                     });
@@ -950,13 +950,13 @@ export class MareasService {
             const commonProps = {
                 mareaId: m.id,
                 vesselName: buque,
-                description: `Marea ${mareaCode} - Buque ${buque} - Observador ${obs}`
+                description: `Marea ${mareaCode} - Buque ${buque} - Observador ${obs} `
             };
 
             // 1. Designación (Fecha Inicio Observador)
             if (m.fechaInicioObservador) {
                 events.push({
-                    id: `des-${m.id}`,
+                    id: `des - ${m.id} `,
                     title: `📋 Designación ${mareaCode} - ${buque} (${obs})`,
                     start: m.fechaInicioObservador,
                     type: 'designacion',
@@ -968,8 +968,8 @@ export class MareasService {
                 // 2. Zarpada
                 if (e.fechaZarpada) {
                     events.push({
-                        id: `zar-${e.id}`,
-                        title: `⛵ Zarpada ${mareaCode} - ${buque}`,
+                        id: `zar - ${e.id} `,
+                        title: `⛵ Zarpada ${mareaCode} - ${buque} `,
                         start: e.fechaZarpada,
                         type: 'zarpada',
                         ...commonProps
@@ -979,8 +979,8 @@ export class MareasService {
                 // 3. Arribo
                 if (e.fechaArribo) {
                     events.push({
-                        id: `arr-${e.id}`,
-                        title: `🚢 Arribo ${mareaCode} - ${buque}`,
+                        id: `arr - ${e.id} `,
+                        title: `🚢 Arribo ${mareaCode} - ${buque} `,
                         start: e.fechaArribo,
                         type: 'arribo',
                         ...commonProps
@@ -993,12 +993,12 @@ export class MareasService {
                         deadline.setDate(deadline.getDate() + this.rules.PLAZO_ENTREGA_DATOS);
 
                         events.push({
-                            id: `ven-${e.id}`,
-                            title: `⚠️ Vencimiento Datos ${mareaCode}`,
+                            id: `ven - ${e.id} `,
+                            title: `⚠️ Vencimiento Datos ${mareaCode} `,
                             start: deadline,
                             type: 'alerta',
                             ...commonProps,
-                            description: `Vencimiento de plazo para entrega de datos. Marea ${mareaCode}.`
+                            description: `Vencimiento de plazo para entrega de datos.Marea ${mareaCode}.`
                         });
                     }
                 }
@@ -1008,16 +1008,16 @@ export class MareasService {
             m.movimientos.forEach((mov: any) => {
                 if (mov.tipoEvento === 'INFORME_PROTOCOLIZADO') {
                     events.push({
-                        id: `inf-${mov.id}`,
-                        title: `📄 Informe Protocolizado ${mareaCode}`,
+                        id: `inf - ${mov.id} `,
+                        title: `📄 Informe Protocolizado ${mareaCode} `,
                         start: mov.fechaHora,
                         type: 'informe',
                         ...commonProps
                     });
                 } else if (mov.tipoEvento === 'INFORME_APROBADO') {
                     events.push({
-                        id: `val-${mov.id}`,
-                        title: `✅ Validación ${mareaCode}`,
+                        id: `val - ${mov.id} `,
+                        title: `✅ Validación ${mareaCode} `,
                         start: mov.fechaHora,
                         type: 'validacion',
                         ...commonProps
@@ -1278,7 +1278,7 @@ export class MareasService {
         observadores.forEach((obs) => {
             if (!obs.activo) return;
 
-            const name = `${obs.apellido}, ${obs.nombre}`;
+            const name = `${obs.apellido}, ${obs.nombre} `;
             const lastArrivalData = lastArrivalByObs.get(obs.id);
             const lastArrival = lastArrivalData?.date;
 
@@ -1513,7 +1513,7 @@ export class MareasService {
                 puertoBaseCodigo: marea.buque.puertoBase?.codigoExterno,
                 estado: marea.estadoActual.nombre,
                 estado_codigo: marea.estadoActual.codigo,
-                observador: mainObs ? `${mainObs.nombre} ${mainObs.apellido}` : 'No asignado',
+                observador: mainObs ? `${mainObs.nombre} ${mainObs.apellido} ` : 'No asignado',
                 pesqueria: etapaFinal?.pesqueria?.nombre || 'General',
                 fecha_zarpada: fechaZarpada,
                 fecha_zarpada_estimada: marea.fechaZarpadaEstimada,
@@ -1616,12 +1616,12 @@ export class MareasService {
 
         return mareas.map((m: any) => {
             const principalObs = m.observadorPrincipal;
-            const obsText = principalObs ? ` • ${principalObs.nombre} ${principalObs.apellido}` : '';
+            const obsText = principalObs ? ` • ${principalObs.nombre} ${principalObs.apellido} ` : '';
 
             return {
                 id: m.id,
-                title: `${m.buque.nombreBuque} (${m.tipoMarea}-${m.nroMarea}-${String(m.anioMarea).slice(-2)})`,
-                subtitle: `${m.estadoActual.nombre}${obsText}`,
+                title: `${m.buque.nombreBuque} (${m.tipoMarea} -${m.nroMarea} -${String(m.anioMarea).slice(-2)})`,
+                subtitle: `${m.estadoActual.nombre}${obsText} `,
                 type: 'marea'
             };
         });
@@ -1711,7 +1711,7 @@ export class MareasService {
                     const currentZarpada = new Date(current.fechaZarpada);
                     const prevArribo = new Date(previous.fechaArribo);
                     if (currentZarpada < prevArribo) {
-                        throw new Error(`Error en Etapa #${i + 1}: La fecha de zarpada no puede ser anterior al arribo de la etapa anterior (#${i}).`);
+                        throw new Error(`Error en Etapa #${i + 1}: La fecha de zarpada no puede ser anterior al arribo de la etapa anterior(#${i}).`);
                     }
                 }
             }
@@ -1803,7 +1803,7 @@ export class MareasService {
 
             // 1. Validar que la marea esté en ejecución
             if (!this.ESTADOS_NAVEGANDO.includes(marea.estadoActual.codigo as any)) {
-                throw new BadRequestException(`No se puede modificar la intención de cierre. La marea no está en ejecución (Estado actual: ${marea.estadoActual.nombre}).`);
+                throw new BadRequestException(`No se puede modificar la intención de cierre.La marea no está en ejecución(Estado actual: ${marea.estadoActual.nombre}).`);
             }
 
             // 2. Validar que la etapa sea la última etapa de la marea
@@ -1919,7 +1919,7 @@ export class MareasService {
         });
 
         if (!transicion) {
-            throw new Error(`Acción ${actionKey} no permitida para el estado ${marea.estadoActual.nombre}`);
+            throw new Error(`Acción ${actionKey} no permitida para el estado ${marea.estadoActual.nombre} `);
         }
 
         // Ejecutar cambio de estado
@@ -2036,10 +2036,10 @@ export class MareasService {
                     } else if (motivoCierre === 'RECOMENDADO_POR_INTENCION' && actionKey !== 'FINALIZAR_POR_ARRIBO') {
                         // Generar alerta de recomendación de cierre pero NO cambiar el estado del flujo
                         await this.alertsService.create({
-                            codigoUnico: `REC_FIN_${marea.id}_${ultimaEtapaRecibida.id}`,
+                            codigoUnico: `REC_FIN_${marea.id}_${ultimaEtapaRecibida.id} `,
                             tipo: 'RECOMENDACION_FIN_MAREA',
                             titulo: 'Recomendación de Fin de Marea',
-                            descripcion: `El usuario marcó la intención de finalizar la marea al arribo de esta etapa (${ultimaEtapaRecibida.nroEtapa}).`,
+                            descripcion: `El usuario marcó la intención de finalizar la marea al arribo de esta etapa(${ultimaEtapaRecibida.nroEtapa}).`,
                             estado: AlertaEstado.PENDIENTE,
                             prioridad: AlertaPrioridad.MEDIA,
                             referenciaId: marea.id,
@@ -2051,7 +2051,7 @@ export class MareasService {
                             }
                         }, user);
 
-                        this.logger.log(`Generada alerta de recomendación de cierre para marea ${marea.id} por intención manual en etapa ${ultimaEtapaRecibida.nroEtapa}`);
+                        this.logger.log(`Generada alerta de recomendación de cierre para marea ${marea.id} por intención manual en etapa ${ultimaEtapaRecibida.nroEtapa} `);
                     }
                 }
             }
@@ -2082,19 +2082,19 @@ export class MareasService {
                     estadoHastaId: destinoEstadoId,
                     cantidadMuestrasOtolitos: actionKey === 'RECIBIR_DATOS' ? (payload.cantidadOtolitos || null) : null,
                     detalle: actionKey === 'REGISTRAR_INICIO'
-                        ? `Inicio Marea. Obs: ${new Date(additionalMareaData.fechaInicioObservador).toLocaleDateString('es-AR')}`
+                        ? `Inicio Marea.Obs: ${new Date(additionalMareaData.fechaInicioObservador).toLocaleDateString('es-AR')} `
                         : actionKey === 'REGISTRAR_FINALIZACION'
-                            ? `Fin Marea. Obs: ${additionalMareaData.fechaFinObservador ? new Date(additionalMareaData.fechaFinObservador).toLocaleDateString('es-AR') : 'Sin fecha definida'}`
+                            ? `Fin Marea.Obs: ${additionalMareaData.fechaFinObservador ? new Date(additionalMareaData.fechaFinObservador).toLocaleDateString('es-AR') : 'Sin fecha definida'} `
                             : actionKey === 'FINALIZAR_POR_ARRIBO'
-                                ? `Marea finalizada automáticamente por arribo a puerto (designación o intención de cierre).`
+                                ? `Marea finalizada automáticamente por arribo a puerto(designación o intención de cierre).`
                                 : actionKey === 'RECIBIR_DATOS'
-                                    ? `Recepción de datos. Otolitos: ${payload.cantidadOtolitos || 0}`
-                                    : `Acción: ${transicion.etiqueta}`,
+                                    ? `Recepción de datos.Otolitos: ${payload.cantidadOtolitos || 0} `
+                                    : `Acción: ${transicion.etiqueta} `,
                     comentarios: payload.comentarios,
                     archivos: (actionKey === 'RECIBIR_DATOS' && payload.archivosSnapshot) ? {
                         create: payload.archivosSnapshot.map((a: any) => ({
                             tipoArchivo: 'DIGITAL_ORIGINAL',
-                            rutaArchivo: `received/${id}/${a.name}`,
+                            rutaArchivo: `received / ${id}/${a.name}`,
                             descripcion: `Archivo recibido: ${a.name} (${(a.size / 1024).toFixed(2)} KB)`,
                             formato: a.name.split('.').pop()?.toUpperCase(),
                         }))
