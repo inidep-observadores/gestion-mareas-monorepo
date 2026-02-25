@@ -161,6 +161,7 @@ const closeMobileSidebar = () => {
 
 const isAdmin = computed(() => !!authStore.user?.roles.includes(ValidRoles.admin))
 const isCoordinator = computed(() => !!authStore.user?.roles.includes(ValidRoles.coordinador))
+const isPlanificador = computed(() => !!authStore.user?.roles.includes(ValidRoles.planificador))
 
 const navigationGroups = computed(() => {
   const groups = [
@@ -234,6 +235,12 @@ const navigationGroups = computed(() => {
           name: 'Observadores',
           to: { name: 'AdminObservadores' },
           show: true,
+        },
+        {
+          icon: CalenderIcon,
+          name: 'Planificación',
+          to: { name: 'PlanificacionDashboard' },
+          show: isAdmin.value || isPlanificador.value,
         },
         {
           icon: SettingsIcon,

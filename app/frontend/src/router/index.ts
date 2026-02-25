@@ -199,6 +199,21 @@ const router = createRouter({
         requiresAuth: true,
       },
     },
+    // Planificacion Module
+    {
+      path: '/planificacion',
+      redirect: '/planificacion/dashboard',
+    },
+    {
+      path: '/planificacion/dashboard',
+      name: 'PlanificacionDashboard',
+      component: () => import('@/modules/planificacion/views/PlanificacionHomeView.vue'),
+      meta: {
+        title: 'Panel de Planificación',
+        requiresAuth: true,
+        roles: [ValidRoles.admin, ValidRoles.planificador],
+      },
+    },
     // Admin Module
     {
       path: '/admin',
