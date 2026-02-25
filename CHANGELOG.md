@@ -11,12 +11,14 @@
 - **Frontend (Mareas)**: Implementada visibilidad condicional en el panel de detalle para ocultar secciones operativas (Avance y Logística) en estados `DESIGNADA` y `A_REASIGNAR`.
 - Soporte para persistencia automática de fuentes de arribo en cierres sugeridos por intención de usuario.
 
+- **General**: Incorporado el nuevo rol `planificador` tanto en el backend como en el frontend para gestionar la planificación operativa.
+- **Frontend (Planificación)**: Implementado el nuevo módulo de **Planificación** con su propio layout y barra lateral dedicada.
+- **Frontend (Planificación)**: Creada la vista de **Requerimientos de Cobertura**, permitiendo gestionar una matriz mensual de buques requeridos por pesquería y tipo de flota.
+- **Frontend (Planificación)**: Integrado selector de año operativo en el sidebar de planificación, sincronizado globalmente con el estado de la aplicación.
+- **Backend (Planificación)**: Creado el servicio y controlador de planificación para gestionar la persistencia de requerimientos mensuales.
+- **Base de Datos**: Añadido modelo `RequerimientoCobertura` al esquema de Prisma para almacenar la matriz de planificación.
+
 ### Fixed
-- **Backend (Prisma)**: Integradas salvaguardas ambientales (`NODE_ENV` y `DATABASE_URL`) en `seed-static.ts` para prevenir la ejecución accidental de operaciones destructivas (`cleanAll`) en entornos de producción.
-- **Frontend (Mareas)**: Se mapearon correctamente las `initialData` nativas (en camelCase) en la consulta compacta de `getDashboardOperativo` para que `EditMareaDesignadaDialog` pueda hidratar la información ya existente.
-- **Backend (Tracking/PNA)**: Corregida la pérdida de `puertoArriboId` y `fuentesArribo` en las alertas de recomendación de fin de marea. Ahora el `portId` se inyecta correctamente en el array de `sources`.
-- **Backend (Alert Automation)**: Mejorada la robustez de la extracción de metadatos de alertas con un fallback prioritario para `portId`.
-- **Frontend (Mareas)**: Corregido el componente `NavigationStagesEditor` que no recibía `mareaId`, impidiendo guardar la intención de cierre manual.
-- **Base de Datos (Prisma)**: Eliminada carpeta de migración corrupta (`_add_marea_etapa_metadata`) que bloqueaba el despliegue de cambios en el esquema.
-- **Backend (Mareas Service)**: Ajustada la descripción del historial en cierres automáticos para mayor claridad semántica.
+- **Backend (Auth)**: Corregidas las rutas de importación de decoradores y guardias en el nuevo controlador de planificación para alinearlas con la estructura del proyecto.
+- **Backend (Testing)**: Actualizados los archivos de pruebas unitarias (`.spec.ts`) del módulo de planificación para incluir los proveedores necesarios (`PrismaService`).
 

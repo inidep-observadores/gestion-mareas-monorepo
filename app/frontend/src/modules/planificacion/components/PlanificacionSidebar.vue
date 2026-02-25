@@ -24,6 +24,35 @@
         </div>
       </router-link>
     </div>
+
+    <!-- Year Selector -->
+    <div :class="[
+      'mb-6 px-1 transition-all duration-300',
+      !isExpanded && !isHovered ? 'lg:opacity-0 lg:h-0 overflow-hidden' : 'opacity-100',
+    ]">
+      <div class="flex flex-col gap-1.5 p-3 rounded-xl bg-surface-muted/50 border border-border">
+        <label class="text-[10px] font-bold uppercase tracking-wider text-text-muted">
+          Año Operativo
+        </label>
+        <div class="relative flex items-center group">
+          <CalenderIcon class="absolute left-0 w-4 h-4 text-text-muted group-hover:text-primary transition-colors" />
+          <select v-model="configStore.selectedYear"
+            class="w-full bg-transparent border-none text-sm font-semibold text-text focus:ring-0 pl-6 pr-2 appearance-none cursor-pointer">
+            <option v-for="year in availableYears" :key="year" :value="year" class="bg-surface">
+              {{ year }}
+            </option>
+          </select>
+          <span class="absolute right-0 pointer-events-none text-text-muted">
+            <svg class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd"
+                d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                clip-rule="evenodd" />
+            </svg>
+          </span>
+        </div>
+      </div>
+    </div>
+    
     <div class="flex flex-col flex-1 overflow-y-auto duration-300 ease-linear no-scrollbar">
       <nav class="mb-6" @click="closeMobileSidebar">
         <div class="flex flex-col gap-4">
@@ -101,7 +130,7 @@
 
 <script setup lang="ts">
 import { useRoute, useRouter } from 'vue-router'
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
 import {
   LogoutIcon,
   HorizontalDots,
@@ -111,10 +140,12 @@ import {
 } from '@/icons'
 import { useSidebar } from '@/composables/useSidebar'
 import { useAuthStore } from '@/modules/auth/stores/auth.store'
+import { useConfigStore } from '@/modules/shared/stores/config.store'
 
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
+const configStore = useConfigStore()
 
 const { isExpanded, isMobileOpen, isHovered } = useSidebar()
 
@@ -124,6 +155,15 @@ const closeMobileSidebar = () => {
   }
 }
 
+const currentYear = new Date().getFullYear();
+const availableYears = computed(() => {
+  const years = [];
+  for (let i = currentYear - 2; i <= currentYear + 1; i++) {
+    years.push(i);
+  }
+  return years;
+});
+
 const navigationGroups = [
   {
     title: 'Panel',
@@ -132,6 +172,11 @@ const navigationGroups = [
         icon: LayoutDashboardIcon,
         name: 'Dashboard',
         path: '/planificacion/dashboard',
+      },
+      {
+        icon: HorizontalDots, // Placeholder if CalenderIcon wasn't available or reuse
+        name: 'Req. de Cobertura',
+        path: '/planificacion/requerimientos',
       },
     ],
   },
