@@ -257,10 +257,19 @@ const visiblePesquerias = computed(() => {
 });
 
 const sortedPesquerias = computed(() => {
-  return catalogos.value.pesquerias.map((p: any) => ({
-    ...p,
-    flotaAsignada: [...catalogos.value.tiposFlota].sort((a: any, b: any) => a.nombre.localeCompare(b.nombre))
-  })).sort((a: any, b: any) => a.nombre.localeCompare(b.nombre));
+  return catalogos.value.pesquerias.map((p: any) => {
+    let flotas = [...catalogos.value.tiposFlota].sort((a: any, b: any) => a.nombre.localeCompare(b.nombre));
+    
+    // Si estamos en modo visualización, filtramos las flotas que no tienen asignación en todo el año
+    if (!isEditMode.value) {
+      flotas = flotas.filter(f => getRowTotal(p.id, f.id) > 0);
+    }
+
+    return {
+      ...p,
+      flotaAsignada: flotas
+    };
+  }).sort((a: any, b: any) => a.nombre.localeCompare(b.nombre));
 });
 
 // Métodos de inicialización
