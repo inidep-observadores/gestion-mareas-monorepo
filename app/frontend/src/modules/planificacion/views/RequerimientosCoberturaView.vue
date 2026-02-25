@@ -14,11 +14,7 @@
 
         <div class="flex items-center gap-3">
           <!-- Toggle Modo Edición -->
-          <!-- Filtro: Ocultar pesquerías vacías (Solo en modo Vista) -->
-          <div v-if="!isEditMode" class="flex items-center gap-2 mr-2">
-            <BaseSwitch v-model="hideEmptyPesquerias" />
-            <span class="text-xs font-bold text-text-muted uppercase cursor-pointer" @click="hideEmptyPesquerias = !hideEmptyPesquerias">Ocultar vacías</span>
-          </div>
+
 
           <!-- Filtro por Pesquería (Solo en modo Vista) -->
           <div v-if="!isEditMode" class="flex items-center gap-2">
@@ -37,9 +33,15 @@
           </div>
 
           <button v-if="isEditMode" @click="saveChanges" :disabled="!isDirty || isSaving"
-            class="button-primary min-w-[140px]">
-            <span v-if="isSaving" class="button-spinner mr-2"></span>
-            {{ isSaving ? 'Guardando...' : 'Guardar Cambios' }}
+            class="flex items-center justify-center gap-2 px-6 py-2.5 bg-primary hover:opacity-90 text-primary-fg rounded-xl text-sm font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-primary/20 active:scale-95 min-w-[160px]">
+            <template v-if="isSaving">
+              <div class="w-4 h-4 border-2 border-primary-fg/30 border-t-primary-fg rounded-full animate-spin"></div>
+              <span>Guardando...</span>
+            </template>
+            <template v-else>
+              <CheckIcon class="w-4 h-4" />
+              <span>Guardar Cambios</span>
+            </template>
           </button>
         </div>
       </div>
@@ -81,20 +83,29 @@
                       </div>
                     </td>
 
-                    <td v-for="month in months" :key="month.num" class="p-2 align-middle text-center border-l border-border/50">
+                    <td v-for="month in months" :key="month.num" class="p-0 align-middle text-center border-l border-border/50 transition-colors"
+                      :style="!isEditMode && matrix[pesq.id]?.[flota.id]?.[month.num] && (matrix[pesq.id]?.[flota.id]?.[month.num] ?? 0) > 0 
+                        ? { backgroundColor: getPesqueriaColor(pesq) } 
+                        : {}"
+                      :class="{
+                        'bg-surface-muted/10': !isEditMode && !(matrix[pesq.id]?.[flota.id]?.[month.num] && (matrix[pesq.id]?.[flota.id]?.[month.num] ?? 0) > 0)
+                      }">
                       <!-- Modo Edición -->
                       <template v-if="isEditMode">
-                        <input type="number" min="0"
-                          v-model.number="matrix[pesq.id][flota.id][month.num]"
-                          @input="markDirty"
-                          class="w-full h-10 px-2 text-center text-sm font-semibold bg-surface-muted border border-border rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
-                          :class="{'text-primary border-primary/30 bg-primary/5': (matrix[pesq.id]?.[flota.id]?.[month.num] ?? 0) > 0}"
-                          placeholder="0" />
+                        <div class="p-2">
+                          <input type="number" min="0"
+                            v-model.number="matrix[pesq.id][flota.id][month.num]"
+                            @input="markDirty"
+                            class="w-full h-10 px-2 text-center text-sm font-semibold bg-surface-muted border border-border rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
+                            :class="{'text-primary border-primary/30 bg-primary/5': (matrix[pesq.id]?.[flota.id]?.[month.num] ?? 0) > 0}"
+                            placeholder="0" />
+                        </div>
                       </template>
                       <!-- Modo Vista -->
                       <template v-else>
-                        <div class="h-10 flex items-center justify-center">
-                          <span v-if="matrix[pesq.id]?.[flota.id]?.[month.num] && (matrix[pesq.id]?.[flota.id]?.[month.num] ?? 0) > 0" class="inline-flex items-center justify-center min-w-[2rem] h-8 px-2 rounded-lg bg-info/10 text-info font-bold text-sm">
+                        <div class="h-12 flex items-center justify-center">
+                          <span v-if="matrix[pesq.id]?.[flota.id]?.[month.num] && (matrix[pesq.id]?.[flota.id]?.[month.num] ?? 0) > 0" 
+                            class="text-white font-bold text-sm drop-shadow-sm">
                             {{ matrix[pesq.id]?.[flota.id]?.[month.num] }}
                           </span>
                           <span v-else class="text-text-muted/30 text-xs">-</span>
@@ -182,8 +193,12 @@
                           class="w-full text-center text-sm py-1.5 font-semibold bg-surface-muted border border-border rounded-md focus:border-primary" />
                       </template>
                       <template v-else>
-                         <div class="bg-surface-muted/50 rounded-md py-1.5 text-center flex items-center justify-center font-bold text-sm min-h-[34px]">
-                           <span v-if="matrix[pesq.id]?.[flota.id]?.[month.num] && (matrix[pesq.id]?.[flota.id]?.[month.num] ?? 0) > 0" class="text-info">{{ matrix[pesq.id]?.[flota.id]?.[month.num] }}</span>
+                         <div class="bg-surface-muted/50 rounded-md py-1.5 text-center flex items-center justify-center font-bold text-sm min-h-[34px] transition-all"
+                           :class="{'border': matrix[pesq.id]?.[flota.id]?.[month.num] && (matrix[pesq.id]?.[flota.id]?.[month.num] ?? 0) > 0}"
+                           :style="matrix[pesq.id]?.[flota.id]?.[month.num] && (matrix[pesq.id]?.[flota.id]?.[month.num] ?? 0) > 0 
+                             ? { backgroundColor: `${getPesqueriaColor(pesq)}20`, borderColor: getPesqueriaColor(pesq), color: getPesqueriaColor(pesq) } 
+                             : {}">
+                           <span v-if="matrix[pesq.id]?.[flota.id]?.[month.num] && (matrix[pesq.id]?.[flota.id]?.[month.num] ?? 0) > 0">{{ matrix[pesq.id]?.[flota.id]?.[month.num] }}</span>
                            <span v-else class="text-text-muted/30">-</span>
                          </div>
                       </template>
@@ -207,6 +222,7 @@ import { useConfigStore } from '@/modules/shared/stores/config.store';
 import catalogosService from '@/modules/mareas/services/catalogos.service';
 import { planificacionService } from '../services/planificacion.service';
 import { toast } from 'vue-sonner';
+import { CheckIcon } from '@/icons';
 const configStore = useConfigStore();
 
 // Estados de la UI
@@ -215,7 +231,6 @@ const isSaving = ref(false);
 const isEditMode = ref(false);
 const isDirty = ref(false);
 const selectedPesqueriaId = ref('');
-const hideEmptyPesquerias = ref(true);
 const expandedPesquerias = ref<Record<string, boolean>>({});
 
 // Catálogos
@@ -248,9 +263,8 @@ const visiblePesquerias = computed(() => {
       list = list.filter(p => p.id === selectedPesqueriaId.value);
     }
     
-    if (hideEmptyPesquerias.value) {
-      list = list.filter(p => getPesqueriaTotal(p.id) > 0);
-    }
+    // Forzamos ocultar vacías en modo vista para una interfaz más limpia
+    list = list.filter(p => getPesqueriaTotal(p.id) > 0);
   }
 
   return list;
@@ -326,7 +340,50 @@ const loadData = async () => {
   }
 };
 
-// Acciones de Usuario
+// Métodos de UI
+
+// Paleta de colores extraída de EstadisticasView (ApexCharts)
+const APEX_PALETTE = [
+  '#0ea5e9', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444', 
+  '#ec4899', '#6366f1', '#14b8a6', '#f43f5e', '#84cc16', 
+  '#22c55e', '#a855f7'
+];
+
+// Mapeo semántico por nombre de pesquería para consistencia institucional
+const FISHERY_COLOR_MAP: Record<string, string> = {
+  'CALAMAR': '#3B82F6',
+  'LANGOSTINO': '#EF4444',
+  'MERLUZA': '#10B981',
+  'VIEIRA': '#F59E0B',
+  'CENTOLLA': '#8B5CF6',
+  'VARIADO COSTERO': '#EC4899',
+};
+
+/**
+ * Obtiene el color para una pesqueria basado en su nombre o ID,
+ * priorizando el mapeo semántico y usando la paleta de ApexCharts como fallback.
+ */
+const getPesqueriaColor = (pesq: any) => {
+  if (!pesq) return 'var(--color-primary)';
+  
+  const nombre = pesq.nombre?.toUpperCase() || '';
+  
+  // 1. Intentar mapeo semántico por nombre
+  for (const key in FISHERY_COLOR_MAP) {
+    if (nombre.includes(key)) return FISHERY_COLOR_MAP[key];
+  }
+
+  // 2. Fallback: Usar paleta fija basada en un hash del ID
+  const id = pesq.id || '';
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) {
+    hash = id.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  
+  const colorIndex = Math.abs(hash % APEX_PALETTE.length);
+  return APEX_PALETTE[colorIndex];
+};
+
 const togglePesqueria = (id: string) => {
   expandedPesquerias.value[id] = !expandedPesquerias.value[id];
 };
