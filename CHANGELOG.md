@@ -11,13 +11,6 @@
 - **Frontend (Mareas)**: Implementada visibilidad condicional en el panel de detalle para ocultar secciones operativas (Avance y Logística) en estados `DESIGNADA` y `A_REASIGNAR`.
 - Soporte para persistencia automática de fuentes de arribo en cierres sugeridos por intención de usuario.
 
-- **General**: Incorporado el nuevo rol `planificador` tanto en el backend como en el frontend para gestionar la planificación operativa.
-- **Frontend (Planificación)**: Implementado el nuevo módulo de **Planificación** con su propio layout y barra lateral dedicada.
-- **Frontend (Planificación)**: Creada la vista de **Requerimientos de Cobertura**, permitiendo gestionar una matriz mensual de buques requeridos por pesquería y tipo de flota.
-- **Frontend (Planificación)**: Integrado selector de año operativo en el sidebar de planificación, sincronizado globalmente con el estado de la aplicación.
-- **Backend (Planificación)**: Creado el servicio y controlador de planificación para gestionar la persistencia de requerimientos mensuales.
-- **Base de Datos**: Añadido modelo `RequerimientoCobertura` al esquema de Prisma para almacenar la matriz de planificación.
-
 ### Fixed
 - **Backend (Auth)**: Corregidas las rutas de importación de decoradores y guardias en el nuevo controlador de planificación para alinearlas con la estructura del proyecto.
 - **Backend (Testing)**: Actualizados los archivos de pruebas unitarias (`.spec.ts`) del módulo de planificación para incluir los proveedores necesarios (`PrismaService`).
