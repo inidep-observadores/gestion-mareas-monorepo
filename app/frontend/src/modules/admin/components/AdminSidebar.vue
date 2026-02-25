@@ -1,37 +1,26 @@
 <template>
-  <aside
-    :class="[
-      'fixed mt-16 flex flex-col lg:mt-0 top-0 px-5 left-0 bg-surface text-text h-screen transition-all duration-300 ease-in-out z-50 border-r border-border',
-      {
-        'lg:w-[18.125rem]': isExpanded || isMobileOpen || isHovered,
-        'lg:w-[5.625rem]': !isExpanded && !isHovered,
-        'translate-x-0 w-[18.125rem]': isMobileOpen,
-        '-translate-x-full': !isMobileOpen,
-        'lg:translate-x-0': true,
-      },
-    ]"
-    @mouseenter="!isExpanded && (isHovered = true)"
-    @mouseleave="isHovered = false"
-  >
-    <div
-      :class="[
-        'py-8 flex items-center gap-3',
-        !isExpanded && !isHovered ? 'lg:justify-center' : 'justify-start',
-      ]"
-    >
+  <aside :class="[
+    'fixed mt-16 flex flex-col lg:mt-0 top-0 px-5 left-0 bg-surface text-text h-screen transition-all duration-300 ease-in-out z-50 border-r border-border',
+    {
+      'lg:w-[18.125rem]': isExpanded || isMobileOpen || isHovered,
+      'lg:w-[5.625rem]': !isExpanded && !isHovered,
+      'translate-x-0 w-[18.125rem]': isMobileOpen,
+      '-translate-x-full': !isMobileOpen,
+      'lg:translate-x-0': true,
+    },
+  ]" @mouseenter="!isExpanded && (isHovered = true)" @mouseleave="isHovered = false">
+    <div :class="[
+      'py-8 flex items-center gap-3',
+      !isExpanded && !isHovered ? 'lg:justify-center' : 'justify-start',
+    ]">
       <router-link to="/admin" class="flex items-center gap-3">
         <div
-          class="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-info flex items-center justify-center flex-shrink-0"
-        >
+          class="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-info flex items-center justify-center flex-shrink-0">
           <SettingsIcon class="w-6 h-6 text-primary-fg" />
         </div>
         <div v-if="isExpanded || isHovered || isMobileOpen" class="flex flex-col">
-          <span class="text-lg font-bold text-text leading-tight"
-            >Panel de</span
-          >
-          <span class="text-lg font-bold text-primary leading-tight"
-            >Admin</span
-          >
+          <span class="text-lg font-bold text-text leading-tight">Panel de</span>
+          <span class="text-lg font-bold text-primary leading-tight">Admin</span>
         </div>
       </router-link>
     </div>
@@ -39,12 +28,10 @@
       <nav class="mb-6" @click="closeMobileSidebar">
         <div class="flex flex-col gap-4">
           <div v-for="(menuGroup, groupIndex) in navigationGroups" :key="groupIndex">
-            <h2
-              :class="[
-                'mb-4 text-xs uppercase flex leading-[20px] text-text-muted',
-                !isExpanded && !isHovered ? 'lg:justify-center' : 'justify-start',
-              ]"
-            >
+            <h2 :class="[
+              'mb-4 text-xs uppercase flex leading-[20px] text-text-muted',
+              !isExpanded && !isHovered ? 'lg:justify-center' : 'justify-start',
+            ]">
               <template v-if="isExpanded || isHovered || isMobileOpen">
                 {{ menuGroup.title }}
               </template>
@@ -52,26 +39,21 @@
             </h2>
             <ul class="flex flex-col gap-4">
               <li v-for="item in menuGroup.items" :key="item.name">
-                <router-link
-                  :to="item.path"
-                  :class="[
-                    'menu-item group',
-                    {
-                      'menu-item-active': isActive(item.path),
-                      'menu-item-inactive': !isActive(item.path),
-                    },
-                  ]"
-                >
-                  <span
-                    :class="[
-                      isActive(item.path) ? 'menu-item-icon-active' : 'menu-item-icon-inactive',
-                    ]"
-                  >
+                <router-link :to="item.path" :class="[
+                  'menu-item group',
+                  {
+                    'menu-item-active': isActive(item.path),
+                    'menu-item-inactive': !isActive(item.path),
+                  },
+                ]">
+                  <span :class="[
+                    isActive(item.path) ? 'menu-item-icon-active' : 'menu-item-icon-inactive',
+                  ]">
                     <component :is="item.icon" />
                   </span>
                   <span v-if="isExpanded || isHovered || isMobileOpen" class="menu-item-text">{{
                     item.name
-                  }}</span>
+                    }}</span>
                 </router-link>
               </li>
             </ul>
@@ -86,36 +68,28 @@
         <ul class="flex flex-col gap-4">
           <li v-for="item in systemGroups.items" :key="item.name">
             <template v-if="item.name === 'Volver al Sitio'">
-                <router-link
-                :to="item.path"
-                class="menu-item group menu-item-inactive"
-              >
+              <router-link :to="item.path" class="menu-item group menu-item-inactive">
                 <span class="menu-item-icon-inactive">
                   <component :is="item.icon" />
                 </span>
                 <span v-if="isExpanded || isHovered || isMobileOpen" class="menu-item-text">{{
                   item.name
-                }}</span>
+                  }}</span>
               </router-link>
             </template>
             <template v-else-if="item.name === 'Cerrar Sesión'">
-              <button
-                @click="handleItemClick(item, $event)"
-                :class="[
-                  'menu-item group w-full text-left',
-                  isActive(item.path) ? 'menu-item-active' : 'menu-item-inactive',
-                ]"
-              >
-                <span
-                  :class="[
-                    isActive(item.path) ? 'menu-item-icon-active' : 'menu-item-icon-inactive',
-                  ]"
-                >
+              <button @click="handleItemClick(item, $event)" :class="[
+                'menu-item group w-full text-left',
+                isActive(item.path) ? 'menu-item-active' : 'menu-item-inactive',
+              ]">
+                <span :class="[
+                  isActive(item.path) ? 'menu-item-icon-active' : 'menu-item-icon-inactive',
+                ]">
                   <component :is="item.icon" />
                 </span>
                 <span v-if="isExpanded || isHovered || isMobileOpen" class="menu-item-text">{{
                   item.name
-                }}</span>
+                  }}</span>
               </button>
             </template>
           </li>
@@ -141,6 +115,7 @@ import {
   PieChartIcon,
   LayoutDashboardIcon,
   BackupIcon,
+  BellIcon,
 } from '@/icons'
 import { useSidebar } from '@/composables/useSidebar'
 import { useAuthStore } from '@/modules/auth/stores/auth.store'
@@ -186,6 +161,16 @@ const navigationGroups = [
         name: 'Buques',
         path: '/admin/buques',
       },
+      {
+        icon: BellIcon,
+        name: 'Gestión de Alertas',
+        path: '/admin/alerts-log',
+      },
+      {
+        icon: SettingsIcon,
+        name: 'Sincronización PNA',
+        path: '/admin/pna-sync',
+      },
     ],
   },
   {
@@ -216,10 +201,11 @@ const navigationGroups = [
         name: 'Copias de seguridad',
         path: '/admin/backup',
       },
+
       {
-        icon: ArchiveIcon,
-        name: 'Importación Access',
-        path: '/admin/import-access',
+        icon: HistoryIcon,
+        name: 'Cola de Tareas',
+        path: '/admin/jobs',
       },
     ],
   },

@@ -10,7 +10,7 @@ export interface DashboardStats {
         mareas: number[];
         days: number[];
     };
-    fisheries: { name: string; mareas: number; days: number }[];
+    fisheries: { name: string; mareas: number; days: number; stats?: Record<string, { count: number, nombre: string }> }[];
     fleets: { name: string; mareas: number; days: number }[];
     observers: { name: string; id: string; mareas: number; days: number; active: boolean }[];
 }
@@ -29,18 +29,62 @@ export interface StatsDetailItem {
     diasContabilizados: number;
     diasCalendario: number;
     diasTotales: number;
+    diasPeriodo: number; // New field
     fechaInicio: string;
     fechaFin: string | null;
 }
 
+export interface MareaDistributionItem {
+    mareaId: string;
+    id_marea: string;
+    buque: string;
+    pesqueria: string;
+    pesqueriaId: string | null;
+    nroEtapa: number;
+    fechaZarpada: string;
+    fechaArribo: string | null;
+    observador: string;
+    tipoMarea: string;
+}
+
 export const statsService = {
+    async getMareaDistribution(
+        year: number,
+        mode: 'CALENDAR' | 'TOTAL',
+        includeNonProtocolized: boolean,
+        includeProtocolizedOutOfPeriod: boolean,
+        includeCampaigns: boolean,
+        startDate?: string,
+        endDate?: string,
+        protocolizationStartDate?: string,
+        protocolizationEndDate?: string
+    ): Promise<MareaDistributionItem[]> {
+        const params = new URLSearchParams({
+            year: year.toString(),
+            mode: mode,
+            includeNonProtocolized: String(includeNonProtocolized),
+            includeProtocolizedOutOfPeriod: String(includeProtocolizedOutOfPeriod),
+            includeCampaigns: String(includeCampaigns)
+        });
+        if (startDate) params.append('startDate', startDate);
+        if (endDate) params.append('endDate', endDate);
+        if (protocolizationStartDate) params.append('protocolizationStartDate', protocolizationStartDate);
+        if (protocolizationEndDate) params.append('protocolizationEndDate', protocolizationEndDate);
+        const response = await httpClient.get<MareaDistributionItem[]>(`/stats/distribution?${params.toString()}`);
+        return response.data;
+    },
+
     async getDashboardStats(
         year: number,
         mode: 'CALENDAR' | 'TOTAL',
         includeNonProtocolized: boolean,
         includeProtocolizedOutOfPeriod: boolean,
         daysCalculationMode: 'SHIP' | 'OBSERVER',
-        includeCampaigns: boolean
+        includeCampaigns: boolean,
+        startDate?: string,
+        endDate?: string,
+        protocolizationStartDate?: string,
+        protocolizationEndDate?: string
     ): Promise<DashboardStats> {
         const params = new URLSearchParams({
             year: year.toString(),
@@ -50,6 +94,10 @@ export const statsService = {
             daysCalculationMode,
             includeCampaigns: String(includeCampaigns)
         });
+        if (startDate) params.append('startDate', startDate);
+        if (endDate) params.append('endDate', endDate);
+        if (protocolizationStartDate) params.append('protocolizationStartDate', protocolizationStartDate);
+        if (protocolizationEndDate) params.append('protocolizationEndDate', protocolizationEndDate);
         const response = await httpClient.get<DashboardStats>(`/stats/dashboard?${params.toString()}`);
         return response.data;
     },
@@ -59,21 +107,30 @@ export const statsService = {
         mode: 'CALENDAR' | 'TOTAL',
         includeNonProtocolized: boolean,
         includeProtocolizedOutOfPeriod: boolean,
-        filterType: 'FISHERY' | 'FLEET' | 'OBSERVER',
-        filterValue: string,
+        filterType: 'FISHERY' | 'FLEET' | 'OBSERVER' | null,
+        filterValue: string | null,
         daysCalculationMode: 'SHIP' | 'OBSERVER',
-        includeCampaigns: boolean
+        includeCampaigns: boolean,
+        startDate?: string,
+        endDate?: string,
+        protocolizationStartDate?: string,
+        protocolizationEndDate?: string
     ): Promise<StatsDetailItem[]> {
         const params = new URLSearchParams({
             year: year.toString(),
             mode,
-            filterType,
-            filterValue,
             includeNonProtocolized: String(includeNonProtocolized),
             includeProtocolizedOutOfPeriod: String(includeProtocolizedOutOfPeriod),
             daysCalculationMode,
-            includeCampaigns: String(includeCampaigns)
+            includeCampaigns: String(includeCampaigns),
+            ...(startDate && { startDate }),
+            ...(endDate && { endDate }),
+            ...(protocolizationStartDate && { protocolizationStartDate }),
+            ...(protocolizationEndDate && { protocolizationEndDate })
         });
+        if (filterType) params.append('filterType', filterType);
+        if (filterValue) params.append('filterValue', filterValue);
+
         const response = await httpClient.get<StatsDetailItem[]>(`/stats/detail?${params.toString()}`);
         return response.data;
     },
@@ -88,7 +145,11 @@ export const statsService = {
         filterType?: 'FISHERY' | 'FLEET' | 'OBSERVER',
         filterValue?: string,
         filename?: string,
-    ): Promise<void> {
+        startDate?: string,
+        endDate?: string,
+        protocolizationStartDate?: string,
+        protocolizationEndDate?: string
+    ) {
         const params = new URLSearchParams({
             year: year.toString(),
             mode,
@@ -98,33 +159,78 @@ export const statsService = {
             includeCampaigns: String(includeCampaigns)
         });
 
+        if (startDate) params.append('startDate', startDate);
+        if (endDate) params.append('endDate', endDate);
+        if (protocolizationStartDate) params.append('protocolizationStartDate', protocolizationStartDate);
+        if (protocolizationEndDate) params.append('protocolizationEndDate', protocolizationEndDate);
+
         if (filterType && filterValue) {
             params.append('filterType', filterType);
             params.append('filterValue', filterValue);
         }
 
-        if (filename) {
-            params.append('customFilename', filename);
-        }
-
-        const response = await httpClient.get(`/stats/export?${params.toString()}`, {
-            responseType: 'blob',
+        const response = await httpClient.get('/stats/export', {
+            params,
+            responseType: 'blob'
         });
 
-        // Create a URL for the blob
-        const url = window.URL.createObjectURL(new Blob([response.data]));
+        const blob = new Blob([response.data], {
+            type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        });
+        const url = window.URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-
-        // Use provided filename or default
-        const downloadFilename = filename ? `${filename}.xlsx` : `Estadisticas_${year}.xlsx`;
-        link.setAttribute('download', downloadFilename);
-
+        link.setAttribute('download', `${filename || 'export'}.xlsx`);
         document.body.appendChild(link);
         link.click();
-
-        // Clean up
         link.remove();
         window.URL.revokeObjectURL(url);
+    },
+
+    async getUniqueVesselsCount(
+        year: number,
+        mode: 'CALENDAR' | 'TOTAL',
+        includeNonProtocolized: boolean,
+        includeProtocolizedOutOfPeriod: boolean,
+        includeCampaigns: boolean,
+        startDate?: string,
+        endDate?: string,
+        fisheryName?: string,
+        protocolizationStartDate?: string,
+        protocolizationEndDate?: string,
+    ): Promise<{
+        count: number,
+        monthly: {
+            month: number,
+            count: number,
+            days: number,
+            fleets: { name: string, count: number, days: number }[]
+        }[]
+    }> {
+        const params = new URLSearchParams({
+            year: year.toString(),
+            mode,
+            includeNonProtocolized: String(includeNonProtocolized),
+            includeProtocolizedOutOfPeriod: String(includeProtocolizedOutOfPeriod),
+            includeCampaigns: String(includeCampaigns)
+        });
+        if (startDate) params.append('startDate', startDate);
+        if (endDate) params.append('endDate', endDate);
+        if (protocolizationStartDate) params.append('protocolizationStartDate', protocolizationStartDate);
+        if (protocolizationEndDate) params.append('protocolizationEndDate', protocolizationEndDate);
+        if (fisheryName) {
+            params.append('filterType', 'FISHERY');
+            params.append('filterValue', fisheryName);
+        }
+        const response = await httpClient.get<{
+            count: number,
+            monthly: {
+                month: number,
+                count: number,
+                days: number,
+                fleets: { name: string, count: number, days: number }[]
+            }[]
+        }>(`/stats/vessels-count?${params.toString()}`);
+        return response.data;
     }
 };

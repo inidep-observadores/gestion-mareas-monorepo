@@ -2,12 +2,17 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AlertsService } from './alerts.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { AlertAutomationService } from './alert-automation.service';
 import { DateUtils } from '../common/utils/date.utils';
 import { AlertaEstado, AlertaPrioridad } from './alerts.enums';
 
 describe('AlertsService', () => {
     let service: AlertsService;
     let prisma: PrismaService;
+
+    const mockAutomationService = {
+        processAlertAutomation: jest.fn().mockResolvedValue(undefined),
+    };
 
     const mockPrisma = {
         alerta: {
@@ -26,6 +31,7 @@ describe('AlertsService', () => {
             providers: [
                 AlertsService,
                 { provide: PrismaService, useValue: mockPrisma },
+                { provide: AlertAutomationService, useValue: mockAutomationService },
             ],
         }).compile();
 

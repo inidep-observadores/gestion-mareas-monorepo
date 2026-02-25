@@ -17,7 +17,7 @@
       <!-- Modo de Cálculo -->
       <div class="flex items-center gap-2 bg-surface-muted px-4 py-2 rounded-xl border border-border" title="Calendario: Solo días dentro del año. Total: Mareas completas con actividad en el año.">
         <div class="flex gap-1 bg-surface rounded-lg p-1 border border-border/50">
-          <button 
+          <button
             @click="$emit('update:mode', 'CALENDAR')"
             :class="[
               'px-3 py-1 rounded text-[10px] font-black uppercase tracking-wider transition-all',
@@ -26,7 +26,7 @@
           >
             Calendario
           </button>
-          <button 
+          <button
              @click="$emit('update:mode', 'TOTAL')"
              :class="[
               'px-3 py-1 rounded text-[10px] font-black uppercase tracking-wider transition-all',
@@ -72,7 +72,7 @@
              @change="$emit('update:protocolizedOnly', ($event.target as HTMLInputElement).checked)"
              class="w-4 h-4 rounded border-border text-primary focus:ring-primary/20"
            />
-           <span class="text-[10px] font-black text-text-muted uppercase tracking-widest">Protocolizadas</span>
+           <span class="text-[10px] font-black text-text-muted uppercase tracking-widest">Sólo Protocolizadas</span>
         </label>
       </div>
 

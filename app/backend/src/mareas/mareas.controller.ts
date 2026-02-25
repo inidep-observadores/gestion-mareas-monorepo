@@ -4,6 +4,7 @@ import { MareasService } from './mareas.service';
 import { DateUtils } from '../common/utils/date.utils';
 import { Auth, GetUser } from '../auth/decorators';
 import { User } from '@prisma/client';
+import { ValidRoles } from '../auth/interfaces';
 import { CreateMareaDto } from './dto/create-marea.dto';
 import { UpdateMareaDto } from './dto/update-marea.dto';
 
@@ -18,6 +19,7 @@ export class MareasController {
     constructor(private readonly mareasService: MareasService) { }
 
     @Post('claim')
+    @Auth(ValidRoles.admin, ValidRoles.tecnico)
     sendClaim(
         @Body() dto: ClaimMareaDto,
         @GetUser() user: User
@@ -119,8 +121,13 @@ export class MareasController {
     }
 
     @Patch(':id')
-    update(@Param('id') id: string, @Body() updateMareaDto: UpdateMareaDto) {
-        return this.mareasService.update(id, updateMareaDto);
+    @Auth(ValidRoles.admin, ValidRoles.tecnico)
+    update(
+        @Param('id') id: string,
+        @Body() updateMareaDto: UpdateMareaDto,
+        @GetUser() user: User
+    ) {
+        return this.mareasService.update(id, updateMareaDto, user);
     }
 
     @Get(':id/context')
@@ -152,6 +159,7 @@ export class MareasController {
     }
 
     @Post(':id/actions/:actionKey')
+    @Auth(ValidRoles.admin, ValidRoles.tecnico)
     @AuditEvent({
         tipoEvento: 'EJECUTAR_ACCION_FLUJO',
         categoria: AuditCategoria.MAREAS,
@@ -166,7 +174,24 @@ export class MareasController {
         return this.mareasService.executeAction(id, actionKey, user, payload);
     }
 
+    @Patch(':id/etapas/:etapaId/intencion-cierre')
+    @Auth(ValidRoles.admin, ValidRoles.tecnico)
+    @AuditEvent({
+        tipoEvento: 'ACTUALIZAR_INTENCION_CIERRE',
+        categoria: AuditCategoria.MAREAS,
+        descripcion: 'Modificación de la intención de cierre de marea al arribo'
+    })
+    setIntencionCierre(
+        @Param('id') id: string,
+        @Param('etapaId') etapaId: string,
+        @Body('activar') activar: boolean,
+        @GetUser() user: User
+    ) {
+        return this.mareasService.setIntencionCierreMarea(id, etapaId, activar, user);
+    }
+
     @Post()
+    @Auth(ValidRoles.admin, ValidRoles.tecnico)
     @AuditEvent({
         tipoEvento: 'CREAR_MAREA',
         categoria: AuditCategoria.MAREAS,

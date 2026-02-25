@@ -40,7 +40,7 @@ export class UsersController {
     }
 
     @Get()
-    @Auth(ValidRoles.admin, ValidRoles.tecnico, ValidRoles.coordinador)
+    @Auth()
     findAll() {
         return this.usersService.findAll();
     }

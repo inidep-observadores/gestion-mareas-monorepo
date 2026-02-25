@@ -1,0 +1,58 @@
+﻿
+>             if (actionKey === 
+'REGISTRAR_FINALIZACION') {
+                  const fechaIn = 
+payload.fechaInicioObservador;
+                  const fechaFin 
+= payload.fechaFinObservador;
+  
+                  if (fechaIn) {
+                      additionalMa
+reaData.fechaInicioObservador = 
+DateUtils.parseToAppZone(fechaIn);
+                  }
+                  additionalMareaD
+ata.fechaFinObservador = fechaFin 
+? DateUtils.parseToAppZone(fechaFi
+n) : null;
+  
+                  if 
+(payload.etapas) {
+                      await 
+this.syncStages(tx, id, 
+payload.etapas);
+                  }
+              }
+  
+              if (actionKey === 
+'RECIBIR_DATOS') {
+                  const 
+fechaRecepcion = 
+payload.fechaRecepcion;
+                  const 
+fechaInicioObs = 
+payload.fechaInicioObservador ? Da
+teUtils.parseToAppZone(payload.fec
+haInicioObservador) : 
+(marea.fechaInicioObservador ? 
+new 
+Date(marea.fechaInicioObservador) 
+: null);
+                  const 
+fechaFinObs = 
+payload.fechaFinObservador ? DateU
+tils.parseToAppZone(payload.fechaF
+inObservador) : 
+(marea.fechaFinObservador ? new 
+Date(marea.fechaFinObservador) : 
+null);
+  
+                  if 
+(!fechaInicioObs || !fechaFinObs) 
+{
+                      throw new 
+Error('Las fechas de inicio y fin 
+del observador son requeridas 
+para la recepci├│n.');
+
+

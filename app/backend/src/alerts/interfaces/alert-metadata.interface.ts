@@ -13,7 +13,7 @@ export interface AlertMetadata {
     subTipo?: string;
 
     /** Fuente de origen de la alerta */
-    source?: 'ACCESS_IMPORT' | 'TRACKING_CSV';
+    source?: 'ACCESS_IMPORT' | 'TRACKING_CSV' | 'API_PNA' | string;
 
     // === Referencias ===
     /** ID del buque relacionado */
@@ -47,6 +47,13 @@ export interface AlertMetadata {
     /** Fecha de arribo */
     fechaArribo?: Date | string;
 
+    /** Lista de fuentes que han validado esta alerta (Source Stacking) */
+    sources?: Array<{
+        name: string;
+        detectedAt: string | Date;
+        data?: any;
+    }>;
+
     // === Datos Externos (de sistemas externos como Access o Tracking) ===
     externalData?: {
         /** Fecha de zarpada según sistema externo */
@@ -66,6 +73,13 @@ export interface AlertMetadata {
 
         /** Número de marea según sistema externo */
         nroMarea?: number;
+
+        /** Campos específicos de PNA */
+        id_costera?: string | number;
+        nombre_costera?: string;
+        id_buque_mbpc?: string | number;
+        senial?: string;
+        matricula?: string;
 
         /** Información del observador externo (cuando no hay match local) */
         observer?: {
@@ -98,8 +112,6 @@ export interface AlertMetadata {
     idExterno?: string;
 
     // === Campos Adicionales ===
-    /** Nombre del observador */
-    observadorNombre?: string;
 
     /** Nombre del observador (alias) */
     observerName?: string;

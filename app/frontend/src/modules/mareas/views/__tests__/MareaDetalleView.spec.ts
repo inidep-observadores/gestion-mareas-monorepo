@@ -96,7 +96,8 @@ describe('MareaDetalleView.vue - Zona Austral Logic', () => {
                     ConfirmationDialog: { template: '<div></div>' },
                     AlertHistoryTab: { template: '<div></div>' },
                     GestionEtapasMareaDialog: { template: '<div></div>' },
-                    NavigationStagesEditor: { template: '<div></div>' }
+                    NavigationStagesEditor: { template: '<div></div>' },
+                    EditMareaDesignadaDialog: { template: '<div></div>' }
                 }
             }
         })

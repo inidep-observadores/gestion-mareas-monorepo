@@ -11,6 +11,11 @@
                @update:includeOutOfPeriod="includeOutOfPeriod = $event" @refresh="fetchData"
                v-model:daysCalculationMode="daysCalculationMode" v-model:includeCampaigns="includeCampaigns" />
 
+            <div class="mt-4">
+               <TimeFilterBar :year="year" :startDate="startDate" :endDate="endDate"
+                  @update:filter="handleTimeFilter" />
+            </div>
+
             <!-- Collapsible Criteria Explanation -->
             <div
                class="mt-4 bg-surface-muted/30 border border-border/50 rounded-xl overflow-hidden transition-all duration-300">
@@ -51,7 +56,7 @@
             <!-- ROW 2: TEMPORAL TRENDS -->
             <section class="grid grid-cols-12 gap-8">
                <div class="col-span-12 lg:col-span-8">
-                  <ChartWidget title="Tendencia Mensual" subtitle="Mareas iniciadas y Días Navegados por mes" type="bar"
+                  <ChartWidget title="Tendencia Mensual" subtitle="Evolución de Días Navegados por mes" type="area"
                      :series="monthlySeries" :options="monthlyChartOptions" allow-download
                      @download="handleDownload('Tendencia_Mensual')" />
                </div>
@@ -86,6 +91,66 @@
                </div>
             </section>
 
+            <!-- ROW 4: DETAILED FISHERY ANALYSIS & OPERATIONAL PROFILE -->
+            <section class="grid grid-cols-12 gap-8">
+               <div class="col-span-12 lg:col-span-7">
+                  <ChartWidget title="Detalle de Actividad por Pesquería"
+                     subtitle="Comparativa de Mareas y Días Navegados" type="bar" :series="fisheryDualAxisSeries"
+                     :options="fisheryDualAxisOptions" allow-download @dataPointClick="handleFisheryClick"
+                     @download="handleDownload('Detalle_Pesqueria_Mareas_Dias', 'FISHERY')" />
+               </div>
+               <div class="col-span-12 lg:col-span-5">
+                  <ChartWidget title="Perfil Operativo" subtitle="Esfuerzo (Días) vs Frecuencia (Mareas)" type="scatter"
+                     :series="fisheryProfileSeries" :options="fisheryProfileOptions" allow-download
+                     @dataPointClick="handleFisheryClick"
+                     @download="handleDownload('Perfil_Operativo_Pesqueria', 'FISHERY')" />
+               </div>
+            </section>
+
+            <!-- ROW 5: TEMPORAL DISTRIBUTION (GANTT) -->
+            <section class="grid grid-cols-12 gap-8">
+               <div class="col-span-12">
+                  <ChartWidget title="Cronograma de Distribución de Mareas"
+                     subtitle="Distribución temporal de mareas y etapas por buque" type="rangeBar" :series="ganttSeries"
+                     :options="ganttChartOptions" :chart-height="dynamicChartHeight"
+                     chart-container-class="max-h-[700px] overflow-y-auto custom-scrollbar" allow-download
+                     @dataPointClick="handleGanttClick" @download="handleDownload('Distribucion_Temporal_Gantt')">
+                     <template #header-action>
+                        <div class="flex items-center gap-2">
+                           <span class="text-[10px] font-black text-text-muted uppercase tracking-widest">Filtrar
+                              Pesquería:</span>
+                           <select v-model="selectedDistributionFishery"
+                              class="bg-surface border border-border rounded-lg px-3 py-1 text-xs font-bold text-text focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none">
+                              <option value="ALL">Todas las Pesquerías</option>
+                              <option v-for="f in ganttFisheries" :key="f" :value="f">{{ f }}</option>
+                           </select>
+                        </div>
+                     </template>
+                  </ChartWidget>
+               </div>
+            </section>
+
+            <!-- ROW 6: MONTHLY COVERAGE (UNIQUE VESSELS) -->
+            <section class="grid grid-cols-12 gap-8">
+               <div class="col-span-12">
+                  <ChartWidget title="Cobertura de Buques" subtitle="Cantidad de buques únicos cubiertos por mes"
+                     type="bar" :series="coverageSeries" :options="coverageChartOptions" allow-download
+                     @download="handleDownload('Cobertura_Buques_Mensual')">
+                     <template #header-action>
+                        <div class="flex items-center gap-2">
+                           <span class="text-[10px] font-black text-text-muted uppercase tracking-widest">Filtrar
+                              Pesquería:</span>
+                           <select v-model="selectedCoverageFishery"
+                              class="bg-surface border border-border rounded-lg px-3 py-1 text-xs font-bold text-text focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none">
+                              <option value="ALL">Todas las Pesquerías</option>
+                              <option v-for="f in ganttFisheries" :key="f" :value="f">{{ f }}</option>
+                           </select>
+                        </div>
+                     </template>
+                  </ChartWidget>
+               </div>
+            </section>
+
          </div>
 
          <!-- Loading State -->
@@ -109,8 +174,9 @@
                         asociadas</p>
                   </div>
 
-                  <!-- Layout Toggle -->
-                  <div class="flex items-center bg-surface border border-border rounded-lg p-0.5 ml-4 shadow-sm">
+                  <!-- Layout Toggle (Hidden on mobile) -->
+                  <div
+                     class="hidden lg:flex items-center bg-surface border border-border rounded-lg p-0.5 ml-4 shadow-sm">
                      <button @click="detailViewMode = 'cards'" :class="[
                         'p-1.5 rounded-md transition-all duration-200',
                         detailViewMode === 'cards' ? 'bg-primary text-primary-fg shadow-sm' : 'text-text-muted hover:text-text hover:bg-surface-muted'
@@ -149,7 +215,7 @@
 
                <!-- Scrollable content -->
                <div class="flex-1 overflow-y-auto custom-scrollbar bg-surface/30">
-                  <div v-if="dialogLoading" class="flex justify-center items-center h-full">
+                  <div v-if="loadingDetail" class="flex justify-center items-center h-full">
                      <div class="flex flex-col items-center gap-4">
                         <Loader2Icon class="w-10 h-10 animate-spin text-primary" />
                         <span class="text-xs font-bold text-text-muted uppercase tracking-widest">Cargando
@@ -158,10 +224,11 @@
                   </div>
 
                   <div v-else class="p-6">
-                     <!-- CARD VIEW -->
-                     <div v-if="detailViewMode === 'cards'" class="space-y-3">
+                     <!-- CARD VIEW (Responsive: Always on mobile, or forced in desktop) -->
+                     <div v-if="detailViewMode === 'cards' || detailViewMode === 'table'"
+                        :class="{ 'lg:hidden': detailViewMode === 'table' }" class="space-y-3">
                         <div v-for="marea in filteredDialogItems" :key="marea.id" @click="openQuickDetail(marea.id)"
-                           class="flex items-center justify-between p-4 rounded-xl border border-border bg-surface shadow-theme-xs hover:shadow-theme-md hover:border-primary/40 transition-all duration-200 group cursor-pointer">
+                           class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between p-4 rounded-xl border border-border bg-surface shadow-theme-xs hover:shadow-theme-md hover:border-primary/40 transition-all duration-200 group cursor-pointer">
                            <div class="flex-1 min-w-0">
                               <div class="flex items-center gap-2 mb-2">
                                  <span class="font-black text-sm text-text tabular-nums tracking-tighter">{{
@@ -169,7 +236,7 @@
                                     }}</span>
                                  <span
                                     class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest bg-secondary/10 text-secondary border border-secondary/20">{{
-                                    marea.estado }}</span>
+                                       marea.estado }}</span>
                                  <span v-if="marea.tipoMarea === TipoMarea.CI"
                                     class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest bg-accent/10 text-accent border border-accent/20">Campaña</span>
                               </div>
@@ -178,6 +245,11 @@
                                     <span
                                        class="font-black opacity-40 uppercase tracking-tighter text-[9px] mb-0.5">Buque</span>
                                     <span class="font-bold text-text truncate">{{ marea.buque }}</span>
+                                 </div>
+                                 <div class="flex flex-col">
+                                    <span
+                                       class="font-black opacity-40 uppercase tracking-tighter text-[9px] mb-0.5">Flota</span>
+                                    <span class="font-bold text-text truncate">{{ marea.flota }}</span>
                                  </div>
                                  <div class="flex flex-col">
                                     <span
@@ -193,14 +265,15 @@
                                     <span
                                        class="font-black opacity-40 uppercase tracking-tighter text-[9px] mb-0.5">Inicio</span>
                                     <span class="font-bold text-text">{{ marea.fechaInicio ? new
-                                       Date(marea.fechaInicio).toLocaleDateString() : '-' }}</span>
+                                       Date(marea.fechaInicio).toLocaleDateString('es-AR', { timeZone: 'UTC' }) : '-'
+                                    }}</span>
                                  </div>
                               </div>
                            </div>
 
-                           <!-- Dual Metrics (Redesigned) -->
+                           <!-- Dual Metrics (Responsive alignment) -->
                            <div
-                              class="flex items-center gap-4 pl-4 min-w-[140px] justify-end border-l border-border/40 ml-4">
+                              class="flex items-center gap-4 sm:pl-4 min-w-[140px] justify-end sm:border-l border-border/40 sm:ml-4 pt-3 sm:pt-0 mt-3 sm:mt-0 border-t sm:border-t-0">
                               <div v-if="mode === 'CALENDAR'" class="flex items-center gap-3">
                                  <div class="text-right">
                                     <span class="block text-xl font-black text-primary leading-tight tabular-nums">{{
@@ -213,7 +286,7 @@
                                  <div class="text-right">
                                     <span
                                        class="block text-xl font-bold text-text-muted/80 leading-tight tabular-nums">{{
-                                       marea.diasTotales }}</span>
+                                          marea.diasTotales }}</span>
                                     <span
                                        class="text-[9px] font-bold text-text-muted uppercase tracking-tighter">Totales</span>
                                  </div>
@@ -228,8 +301,9 @@
                         </div>
                      </div>
 
-                     <!-- TABLE VIEW -->
-                     <div v-else class="bg-surface rounded-xl border border-border shadow-theme-xs overflow-hidden">
+                     <!-- TABLE VIEW (Desktop only) -->
+                     <div v-if="detailViewMode === 'table'"
+                        class="hidden lg:block bg-surface rounded-xl border border-border shadow-theme-xs overflow-hidden">
                         <table class="w-full text-left border-collapse">
                            <thead>
                               <tr class="bg-surface-muted/50 border-b border-border">
@@ -252,6 +326,15 @@
                                     </div>
                                  </th>
                                  <th class="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-text-muted cursor-pointer hover:bg-surface-muted transition-colors group"
+                                    @click="handleSort('flota')">
+                                    <div class="flex items-center gap-2">
+                                       Flota
+                                       <component :is="getSortIcon('flota')"
+                                          class="w-3 h-3 text-primary opacity-0 group-hover:opacity-100"
+                                          :class="{ 'opacity-100': sortKey === 'flota' }" />
+                                    </div>
+                                 </th>
+                                 <th class="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-text-muted cursor-pointer hover:bg-surface-muted transition-colors group"
                                     @click="handleSort('pesqueria')">
                                     <div class="flex items-center gap-2">
                                        Pesquería
@@ -271,16 +354,16 @@
                                     </div>
                                  </th>
                                  <th class="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-text-muted cursor-pointer hover:bg-surface-muted transition-colors group text-right"
-                                    @click="handleSort(mode === 'CALENDAR' ? 'diasCalendario' : 'diasTotales')">
+                                    @click="handleSort(dialogPeriodLabel ? 'diasPeriodo' : (mode === 'CALENDAR' ? 'diasCalendario' : 'diasTotales'))">
                                     <div class="flex items-center justify-end gap-2">
-                                       Días {{ mode === 'CALENDAR' ? year : 'Tot.' }}
+                                       Días {{ dialogPeriodLabel || (mode === 'CALENDAR' ? year : 'Tot.') }}
                                        <component
-                                          :is="getSortIcon(mode === 'CALENDAR' ? 'diasCalendario' : 'diasTotales')"
+                                          :is="getSortIcon(dialogPeriodLabel ? 'diasPeriodo' : (mode === 'CALENDAR' ? 'diasCalendario' : 'diasTotales'))"
                                           class="w-3 h-3 text-primary opacity-0 group-hover:opacity-100"
-                                          :class="{ 'opacity-100': sortKey === (mode === 'CALENDAR' ? 'diasCalendario' : 'diasTotales') }" />
+                                          :class="{ 'opacity-100': sortKey === (dialogPeriodLabel ? 'diasPeriodo' : (mode === 'CALENDAR' ? 'diasCalendario' : 'diasTotales')) }" />
                                     </div>
                                  </th>
-                                 <th v-if="mode === 'CALENDAR'"
+                                 <th v-if="mode === 'CALENDAR' && !dialogPeriodLabel"
                                     class="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-text-muted cursor-pointer hover:bg-surface-muted transition-colors group text-right"
                                     @click="handleSort('diasTotales')">
                                     <div class="flex items-center justify-end gap-2">
@@ -308,25 +391,53 @@
                                     marea.buque }}
                                  </td>
                                  <td class="px-4 py-2 text-xs font-bold text-text border-r border-border/50">{{
+                                    marea.flota }}
+                                 </td>
+                                 <td class="px-4 py-2 text-xs font-bold text-text border-r border-border/50">{{
                                     marea.pesqueria
                                     }}</td>
                                  <td v-if="filterType !== 'OBSERVER'"
                                     class="px-4 py-2 text-xs font-bold text-text border-r border-border/50">{{
-                                    marea.observador
+                                       marea.observador
                                     }}</td>
                                  <td class="px-4 py-2 text-right border-r border-border/50">
                                     <span
-                                       :class="['font-black text-sm tabular-nums', mode === 'CALENDAR' ? 'text-primary' : 'text-text']">
-                                       {{ mode === 'CALENDAR' ? marea.diasCalendario : marea.diasTotales }}
+                                       :class="['font-black text-sm tabular-nums', (mode === 'CALENDAR' || dialogPeriodLabel) ? 'text-primary' : 'text-text']">
+                                       {{ dialogPeriodLabel ? marea.diasPeriodo : (mode === 'CALENDAR' ?
+                                          marea.diasCalendario :
+                                          marea.diasTotales) }}
                                     </span>
                                  </td>
-                                 <td v-if="mode === 'CALENDAR'" class="px-4 py-2 text-right">
+                                 <td v-if="mode === 'CALENDAR' && !dialogPeriodLabel" class="px-4 py-2 text-right">
                                     <span class="font-bold text-xs text-text-muted tabular-nums opacity-80">{{
                                        marea.diasTotales
                                        }}</span>
                                  </td>
                               </tr>
                            </tbody>
+                           <!-- Footer Totales -->
+                           <tfoot v-if="filteredDialogItems.length > 0" class="sticky bottom-0 z-10">
+                              <tr
+                                 class="bg-background/95 backdrop-blur-md border-t-2 border-primary/20 shadow-[0_-4px_12px_rgba(0,0,0,0.1)]">
+                                 <td :colspan="filterType !== 'OBSERVER' ? 5 : 4"
+                                    class="px-4 py-3 text-right text-[10px] font-black text-text-muted uppercase tracking-widest">
+                                    Totales Seleccionados
+                                 </td>
+                                 <td class="px-4 py-3 text-right bg-primary/5">
+                                    <span class="font-black text-sm tabular-nums text-primary">
+                                       {{ dialogPeriodLabel ? totalDiasPeriodo : (mode === 'CALENDAR' ?
+                                          totalDiasCalendario :
+                                          totalDiasTotales) }}
+                                    </span>
+                                 </td>
+                                 <td v-if="mode === 'CALENDAR' && !dialogPeriodLabel"
+                                    class="px-4 py-3 text-right bg-text/5">
+                                    <span class="font-black text-xs text-text-muted tabular-nums opacity-80">
+                                       {{ totalDiasTotales }}
+                                    </span>
+                                 </td>
+                              </tr>
+                           </tfoot>
                         </table>
                      </div>
 
@@ -336,7 +447,7 @@
                         <SearchIcon class="w-12 h-12 text-text-muted/20 mb-4" />
                         <p class="text-xs font-black text-text-muted uppercase tracking-widest">No hay resultados para
                            "{{
-                           searchTerm }}"</p>
+                              searchTerm }}"</p>
                         <p class="text-[10px] text-text-muted/60 mt-2 font-bold uppercase">Intenta ajustar los criterios
                            de
                            búsqueda</p>
@@ -433,7 +544,7 @@
                                  <div class="flex flex-col">
                                     <span
                                        class="font-bold text-sm text-text group-hover:text-primary transition-colors">{{
-                                       obs.name }}</span>
+                                          obs.name }}</span>
                                     <span v-if="!obs.active"
                                        class="text-[9px] font-bold text-error uppercase tracking-tighter">Inactivo</span>
                                  </div>
@@ -484,6 +595,7 @@ import AdminLayout from '@/components/layout/AdminLayout.vue'
 import StatsFilterBar from '@/modules/stats/components/StatsFilterBar.vue'
 import StatKpiCard from '@/modules/stats/components/StatKpiCard.vue'
 import ChartWidget from '@/modules/stats/components/ChartWidget.vue'
+import TimeFilterBar from '@/modules/stats/components/TimeFilterBar.vue'
 import BaseModal from '@/components/common/BaseModal.vue'
 import SearchInput from '@/components/ui/SearchInput.vue'
 import MareaQuickDetailModal from '@/modules/stats/components/MareaQuickDetailModal.vue'
@@ -508,9 +620,11 @@ import {
    Maximize2Icon,
    TrendingUpIcon
 } from 'lucide-vue-next'
-import { statsService, type DashboardStats, type StatsDetailItem } from '@/modules/stats/services/stats.service'
+import { statsService, type DashboardStats, type StatsDetailItem, type MareaDistributionItem } from '@/modules/stats/services/stats.service'
 import { TipoMarea } from '@/modules/mareas/types/enums'
 import { toast } from 'vue-sonner'
+
+type FilterType = 'FISHERY' | 'FLEET' | 'OBSERVER';
 
 const configStore = useConfigStore();
 const router = useRouter();
@@ -526,15 +640,30 @@ const includeOutOfPeriod = ref(false);
 const daysCalculationMode = ref<'SHIP' | 'OBSERVER'>('SHIP');
 const includeCampaigns = ref(true);
 
-const filterType = ref<'FISHERY' | 'FLEET' | 'OBSERVER' | null>(null);
+const startDate = ref<string | null>(null);
+const endDate = ref<string | null>(null);
+const filterType = ref<FilterType | null>(null);
 const filterValue = ref<string | null>(null);
+const loading = ref(false);
+const selectedCoverageFishery = ref<string>('ALL');
 
 const stats = ref<DashboardStats | null>(null);
-const loading = ref(false);
-const dialogOpen = ref(false);
-const dialogLoading = ref(false);
-const dialogItems = ref<StatsDetailItem[]>([]);
-const searchTerm = ref('');
+const distributionData = ref<MareaDistributionItem[]>([]);
+const coverageData = ref<{ month: number, count: number, days: number, fleets: { name: string, count: number, days: number }[] }[]>([]);
+const selectedDistributionFishery = ref<string>('ALL');
+
+const dynamicChartHeight = computed(() => {
+   let filtered = distributionData.value;
+   if (selectedDistributionFishery.value !== 'ALL') {
+      filtered = filtered.filter(item => item.pesqueria === selectedDistributionFishery.value);
+   }
+   const uniqueVessels = new Set(filtered.map(item => item.buque)).size;
+   // Base 100px para ejes + 20px por buque. Mínimo 500px.
+   return Math.max(500, uniqueVessels * 20 + 100);
+});
+
+// --- Fetch Data ---
+// (Variables moved to Dialog State)
 
 // Quick Detail State
 const quickDetailOpen = ref(false);
@@ -557,6 +686,8 @@ const getSortIcon = (key: string) => {
    return sortOrder.value === 'asc' ? ChevronUpIcon : ChevronDownIcon;
 };
 
+const searchTerm = ref(''); // Moved from dialog state
+
 const filteredDialogItems = computed(() => {
    let items = [...dialogItems.value];
 
@@ -566,6 +697,7 @@ const filteredDialogItems = computed(() => {
       items = items.filter(m =>
          m.id_marea.toLowerCase().includes(s) ||
          m.buque.toLowerCase().includes(s) ||
+         m.flota.toLowerCase().includes(s) ||
          m.observador.toLowerCase().includes(s) ||
          m.pesqueria.toLowerCase().includes(s)
       );
@@ -599,7 +731,43 @@ const filteredDialogItems = computed(() => {
 
    return items;
 });
-const dialogTitle = ref('');
+
+const totalDiasPeriodo = computed(() => {
+   return filteredDialogItems.value.reduce((acc, item) => acc + (item.diasPeriodo || 0), 0);
+});
+
+const totalDiasCalendario = computed(() => {
+   return filteredDialogItems.value.reduce((acc, item) => acc + (item.diasCalendario || 0), 0);
+});
+
+const totalDiasTotales = computed(() => {
+   return filteredDialogItems.value.reduce((acc, item) => acc + (item.diasTotales || 0), 0);
+});
+
+// const dialogTitle = ref(''); // This was duplicated, removed.
+const isMonthlyDetail = computed(() => {
+   if (!dialogFilterType.value && dialogStartDate.value && dialogEndDate.value) {
+      // If it's coverage, it usually has no filterType but has specific dates
+      return true;
+   }
+   return false;
+});
+
+const dialogPeriodLabel = computed(() => {
+   if (!dialogStartDate.value || !dialogEndDate.value) return '';
+
+   // Parse YYYY-MM-DD strings directly as UTC to avoid local timezone shifts
+   const [sYear, sMonth, sDay] = dialogStartDate.value.split('T')[0].split('-').map(Number);
+   const [eYear, eMonth, eDay] = dialogEndDate.value.split('T')[0].split('-').map(Number);
+
+   const start = new Date(Date.UTC(sYear, sMonth - 1, sDay));
+   const end = new Date(Date.UTC(eYear, eMonth - 1, eDay));
+
+   if (start.getUTCMonth() === end.getUTCMonth() && start.getUTCFullYear() === end.getUTCFullYear()) {
+      return start.toLocaleDateString('es-AR', { month: 'long', timeZone: 'UTC' });
+   }
+   return '';
+});
 
 // Ranking Full View State
 const rankingModalOpen = ref(false);
@@ -623,14 +791,29 @@ const openObserverDetail = (obs: any) => {
 // ... (previous criteria logic) ...
 const isCriteriaOpen = ref(false);
 const criteriaList = computed(() => {
-   // ... (existing computed body) ...
    const list: string[] = [];
    const yearText = `<span class="font-bold text-text">${year.value}</span>`;
+
+   // Formateo dinámico del rango para la leyenda
+   const formatDate = (dateStr: string | null, defaultValue: string) => {
+      if (!dateStr) return defaultValue;
+      const cleanDate = dateStr.split('T')[0];
+      const [y, m, d] = cleanDate.split('-').map(Number);
+      const date = new Date(Date.UTC(y, m - 1, d));
+      if (isNaN(date.getTime())) return defaultValue;
+      return date.toLocaleDateString('es-AR', { day: '2-digit', month: 'short', timeZone: 'UTC' });
+   };
+
+   const start = formatDate(startDate.value, '01/Ene');
+   const end = formatDate(endDate.value, '31/Dic');
+   const periodRange = `(${start} - ${end})`;
+
    if (mode.value === 'CALENDAR') {
-      list.push(`Periodo Analizado: <strong>Calendario ${yearText}</strong> (01/Ene - 31/Dic). Solo se contabilizan los días de navegación ocurridos estrictamente dentro de este rango.`);
+      list.push(`Periodo Analizado: <strong>Calendario ${yearText} ${periodRange}</strong>. Solo se contabilizan los días de navegación ocurridos estrictamente dentro de este rango.`);
    } else {
-      list.push(`Periodo Analizado: <strong>Total Marea ${yearText}</strong>. Se incluyen mareas completas que hayan tenido actividad durante el año, sumando la totalidad de sus días.`);
+      list.push(`Periodo Analizado: <strong>Total Marea ${yearText} ${periodRange}</strong>. Se incluyen mareas completas con actividad en este rango, sumando la totalidad de sus días.`);
    }
+
    if (daysCalculationMode.value === 'SHIP') {
       list.push(`Métrica: <strong>Días de Buque</strong>. Días únicos que la embarcación estuvo operando, sin multiplicar por observadores embarcados.`);
    } else {
@@ -650,11 +833,11 @@ const criteriaList = computed(() => {
    } else {
       list.push(`Tipo: <strong>Excluye</strong> Campañas Institucionales.`);
    }
-   if (filterType.value && filterValue.value) {
+   if (dialogFilterType.value && dialogFilterValue.value) {
       let typeLabel = '';
-      if (filterType.value === 'FISHERY') typeLabel = 'Pesquería';
-      if (filterType.value === 'FLEET') typeLabel = 'Flota';
-      if (filterType.value === 'OBSERVER') typeLabel = 'Observador';
+      if (dialogFilterType.value === 'FISHERY') typeLabel = 'Pesquería';
+      if (dialogFilterType.value === 'FLEET') typeLabel = 'Flota';
+      if (dialogFilterType.value === 'OBSERVER') typeLabel = 'Observador';
       list.push(`Filtro Activo: <strong>${typeLabel}</strong> ${dialogTitle.value ? `(${dialogTitle.value.replace('Detalle: ', '')})` : ''}.`);
    }
    return list;
@@ -664,14 +847,46 @@ const criteriaList = computed(() => {
 const fetchData = async () => {
    loading.value = true;
    try {
-      stats.value = await statsService.getDashboardStats(
-         year.value,
-         mode.value,
-         !protocolizedOnly.value,
-         includeOutOfPeriod.value,
-         daysCalculationMode.value,
-         includeCampaigns.value
-      );
+      const [newStats, distribution, coverage] = await Promise.all([
+         statsService.getDashboardStats(
+            year.value,
+            mode.value,
+            !protocolizedOnly.value,
+            includeOutOfPeriod.value,
+            daysCalculationMode.value,
+            includeCampaigns.value,
+            startDate.value || undefined,
+            endDate.value || undefined,
+            startDate.value || undefined, // protocolizationStartDate
+            endDate.value || undefined    // protocolizationEndDate
+         ),
+         statsService.getMareaDistribution(
+            year.value,
+            mode.value,
+            !protocolizedOnly.value,
+            includeOutOfPeriod.value,
+            includeCampaigns.value,
+            startDate.value || undefined,
+            endDate.value || undefined,
+            startDate.value || undefined, // protocolizationStartDate
+            endDate.value || undefined    // protocolizationEndDate
+         ),
+         statsService.getUniqueVesselsCount(
+            year.value,
+            mode.value,
+            !protocolizedOnly.value,
+            includeOutOfPeriod.value,
+            includeCampaigns.value,
+            startDate.value || undefined,
+            endDate.value || undefined,
+            selectedCoverageFishery.value === 'ALL' ? undefined : selectedCoverageFishery.value, // fisheryName
+            startDate.value || undefined, // protocolizationStartDate
+            endDate.value || undefined    // protocolizationEndDate
+         )
+      ]);
+      stats.value = newStats;
+      distributionData.value = distribution;
+      coverageData.value = coverage.monthly;
    } catch (error) {
       console.error('Error fetching stats:', error);
       toast.error('Error al cargar estadísticas');
@@ -680,43 +895,255 @@ const fetchData = async () => {
    }
 };
 
+// --- Gantt Chart Logic ---
+const fisheryColors: Record<string, string> = {
+   'CALAMAR': '#3B82F6',       // Blue 500
+   'LANGOSTINO': '#EF4444',    // Red 500
+   'MERLUZA': '#10B981',       // Emerald 500
+   'VIEIRA': '#F59E0B',        // Amber 500
+   'CENTOLLA': '#8B5CF6',      // Violet 500
+   'VARIADO COSTERO': '#EC4899', // Pink 500
+};
+
+const getFisheryColor = (name: string) => {
+   const normalized = name.toUpperCase();
+   for (const key in fisheryColors) {
+      if (normalized.includes(key)) return fisheryColors[key];
+   }
+   return '#64748B'; // Slate 500 (Default)
+};
+
+const ganttFisheries = computed(() => {
+   const set = new Set(distributionData.value.map(item => item.pesqueria));
+   return Array.from(set).sort();
+});
+
+const ganttSeries = computed(() => {
+   let filtered = distributionData.value;
+   if (selectedDistributionFishery.value !== 'ALL') {
+      filtered = filtered.filter(item => item.pesqueria === selectedDistributionFishery.value);
+   }
+
+   const yearStart = new Date(Date.UTC(year.value, 0, 1, 0, 0, 0, 0)).getTime();
+   const seriesData: any[] = [];
+
+   filtered.forEach(item => {
+      // Use UTC for Gantt milestones to avoid shifts
+      const start = new Date(item.fechaZarpada).getTime();
+      const end = item.fechaArribo ? new Date(item.fechaArribo).getTime() : Date.now();
+      const baseColor = getFisheryColor(item.pesqueria);
+
+      // Si estamos en modo TOTAL y el segmento cruza el inicio del año
+      if (mode.value === 'TOTAL' && start < yearStart && end > yearStart) {
+         // Segmento Año Anterior (Desaturado)
+         seriesData.push({
+            x: item.buque,
+            y: [start, yearStart],
+            fillColor: baseColor + '40', // 25% opacidad para desaturar
+            meta: { ...item, isPreviousYear: true }
+         });
+         // Segmento Año Actual (Normal)
+         seriesData.push({
+            x: item.buque,
+            y: [yearStart, end],
+            fillColor: baseColor,
+            meta: { ...item, isPreviousYear: false }
+         });
+      } else {
+         // Segmento único (Normal o Año Anterior Completo)
+         let color = baseColor;
+         if (mode.value === 'TOTAL' && end <= yearStart) {
+            color = baseColor + '40';
+         }
+
+         seriesData.push({
+            x: item.buque,
+            y: [start, end],
+            fillColor: color,
+            meta: { ...item, isPreviousYear: end <= yearStart }
+         });
+      }
+   });
+
+   return [{ data: seriesData }];
+});
+
+const ganttChartOptions = computed(() => ({
+   chart: {
+      type: 'rangeBar',
+      height: 450,
+      fontFamily: 'Inter, sans-serif',
+      toolbar: {
+         show: true,
+         tools: {
+            download: true
+         }
+      },
+      animations: {
+         enabled: true,
+         easing: 'easeinout',
+         speed: 800,
+         animateGradually: {
+            enabled: true,
+            delay: 150
+         },
+         dynamicAnimation: {
+            enabled: true,
+            speed: 350
+         }
+      }
+   },
+   plotOptions: {
+      bar: {
+         horizontal: true,
+         barHeight: '75%',
+         rangeBarGroupRows: true,
+         borderRadius: 4
+      }
+   },
+   xaxis: {
+      type: 'datetime',
+      labels: {
+         datetimeUTC: false,
+         style: {
+            fontSize: '10px',
+            fontWeight: 600,
+            colors: 'var(--text-muted)'
+         }
+      }
+   },
+   yaxis: {
+      labels: {
+         style: {
+            fontSize: '11px',
+            fontWeight: 700,
+            colors: 'var(--text)'
+         }
+      }
+   },
+   tooltip: {
+      custom: function ({ series, seriesIndex, dataPointIndex, w }: any) {
+         const meta = w.config.series[seriesIndex].data[dataPointIndex].meta;
+         const start = new Date(meta.fechaZarpada).toLocaleDateString();
+         const end = meta.fechaArribo ? new Date(meta.fechaArribo).toLocaleDateString() : 'En curso';
+
+         return `
+                <div class="tooltip-gantt p-3 bg-surface border border-border rounded-lg shadow-xl min-w-[220px]">
+                    <div class="flex items-center gap-2 mb-2 pb-2 border-b border-border/50">
+                        <span class="font-black text-primary tabular-nums text-sm">${meta.id_marea}</span>
+                        <div class="flex flex-col items-end ml-auto">
+                           <span class="text-[9px] font-bold text-text-muted uppercase tracking-widest bg-surface-muted px-2 py-0.5 rounded border border-border">Etapa ${meta.nroEtapa}</span>
+                           ${meta.isPreviousYear ? '<span class="text-[7px] font-black text-amber-500 uppercase mt-1">Días Año Anterior</span>' : ''}
+                        </div>
+                    </div>
+                    <div class="space-y-2 text-[11px]">
+                        <div class="flex justify-between items-center bg-surface-muted/30 p-1.5 rounded">
+                            <span class="text-text-muted font-bold uppercase text-[9px]">Pesquería</span>
+                            <span class="font-bold text-text">${meta.pesqueria}</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-text-muted">Observador:</span>
+                            <span class="font-bold text-text">${meta.observador}</span>
+                        </div>
+                        <div class="mt-2 pt-2 border-t border-border/30 grid grid-cols-2 gap-4">
+                             <div>
+                                <span class="block text-[8px] uppercase tracking-tighter text-text-muted mb-0.5 font-black opacity-60">Zarpada</span>
+                                <span class="font-bold text-text">${start}</span>
+                             </div>
+                             <div class="text-right">
+                                <span class="block text-[8px] uppercase tracking-tighter text-text-muted mb-0.5 font-black opacity-60">Arribo</span>
+                                <span class="font-bold ${meta.fechaArribo ? 'text-text' : 'text-primary animate-pulse'}">${end}</span>
+                             </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+      }
+   },
+   grid: {
+      borderColor: 'var(--border)',
+      opacity: 0.1,
+      xaxis: {
+         lines: {
+            show: true
+         }
+      }
+   },
+   noData: {
+      text: 'No hay datos de distribución para el periodo',
+      style: {
+         color: 'var(--text-muted)',
+         fontSize: '14px',
+         fontFamily: 'Inter'
+      }
+   }
+}));
+
 // --- Watchers ---
-watch([year, mode, protocolizedOnly, includeOutOfPeriod, daysCalculationMode, includeCampaigns], () => {
+watch([year, mode, protocolizedOnly, includeOutOfPeriod, daysCalculationMode, includeCampaigns, startDate, endDate, selectedCoverageFishery], () => {
    fetchData();
 });
 
-// --- Dialog Logic ---
-const openDialog = async (type: 'FISHERY' | 'FLEET' | 'OBSERVER', value: string, titleName: string) => {
-   filterType.value = type;
-   filterValue.value = value; // NOW value is correct: Name for Fishery/Fleet, UUID for Observer
+const handleTimeFilter = (filter: { startDate: string | null, endDate: string | null }) => {
+   startDate.value = filter.startDate;
+   endDate.value = filter.endDate;
+};
 
-   dialogTitle.value = `Detalle: ${titleName}`; // Use pretty name for title
-   dialogOpen.value = true;
-   dialogLoading.value = true;
+// DIALOG STATE
+const dialogOpen = ref(false)
+const dialogItems = ref<StatsDetailItem[]>([])
+const dialogTitle = ref('')
+const dialogStartDate = ref<string | null>(null)
+const dialogEndDate = ref<string | null>(null)
+const dialogFilterType = ref<FilterType | null>(null)
+const dialogFilterValue = ref<string | null>(null)
+const loadingDetail = ref(false)
+const dialogFilterByStart = ref(false)
 
+const openDialog = (fType: FilterType | null, fValue: string | null, title: string, start?: string, end?: string) => {
+   dialogFilterType.value = fType
+   dialogFilterValue.value = fValue
+   dialogTitle.value = title
+   dialogStartDate.value = start || startDate.value
+   dialogEndDate.value = end || endDate.value
+   dialogFilterByStart.value = false
+   dialogOpen.value = true
+   fetchItems()
+}
+
+const fetchItems = async () => {
+   loadingDetail.value = true
    try {
       dialogItems.value = await statsService.getDashboardStatsDetail(
          year.value,
          mode.value,
          !protocolizedOnly.value,
          includeOutOfPeriod.value,
-         type,
-         value,
+         dialogFilterType.value || null,
+         dialogFilterValue.value || null,
          daysCalculationMode.value,
-         includeCampaigns.value
-      );
+         includeCampaigns.value,
+         dialogStartDate.value || undefined,
+         dialogEndDate.value || undefined,
+         startDate.value || undefined, // protocolizationStartDate (use GLOBAL view filter)
+         endDate.value || undefined    // protocolizationEndDate (use GLOBAL view filter)
+      )
    } catch (error) {
-      console.error('Error fetching details:', error);
+      console.error('Error fetching detail items:', error)
       toast.error('Error al cargar detalle');
       dialogOpen.value = false;
    } finally {
-      dialogLoading.value = false;
+      loadingDetail.value = false
    }
-};
+}
+
 const closeDialog = () => {
    dialogOpen.value = false;
-   filterType.value = null;
-   filterValue.value = null;
+   dialogFilterType.value = null;
+   dialogFilterValue.value = null;
+   dialogStartDate.value = null;
+   dialogEndDate.value = null;
+   dialogFilterByStart.value = false;
    searchTerm.value = '';
 };
 
@@ -726,26 +1153,70 @@ const openQuickDetail = (mareaId: string) => {
 };
 
 // --- Click Handlers ---
-const handleFisheryClick = ({ dataPointIndex }: any) => {
-   const item = stats.value?.fisheries[dataPointIndex];
+const handleFisheryClick = ({ seriesIndex, dataPointIndex, w }: any) => {
+   if (dataPointIndex === -1) return;
+   // En el Donut (Participación), usamos dataPointIndex (serie única).
+   // En el Scatter (Perfil Operativo), usamos seriesIndex (una serie por pesquería).
+   const isScatter = w?.config?.chart?.type === 'scatter';
+   const index = isScatter ? seriesIndex : dataPointIndex;
+
+   const item = stats.value?.fisheries[index];
    if (item) openDialog('FISHERY', item.name, item.name);
 };
 
 const handleFleetClick = ({ dataPointIndex }: any) => {
+   if (dataPointIndex === -1) return;
    const item = stats.value?.fleets[dataPointIndex];
    if (item) openDialog('FLEET', item.name, item.name);
 };
 
 const handleObserverClick = ({ dataPointIndex }: any) => {
+   if (dataPointIndex === -1) return;
    const item = stats.value?.observers[dataPointIndex];
    // Now we pass the ID to the API filter logic, but Name to the Dialog Title
    if (item) openDialog('OBSERVER', item.id, item.name);
 }
 
+const handleCoverageClick = (event: any, _chartContext: any, { dataPointIndex }: any) => {
+   const target = event?.target;
+   const isLegend = target && (
+      target.closest('.apexcharts-legend') ||
+      target.classList.contains('apexcharts-legend-text') ||
+      target.classList.contains('apexcharts-legend-marker')
+   );
+   if (isLegend || dataPointIndex === undefined || dataPointIndex === -1) return;
+   const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+   const monthName = monthNames[dataPointIndex];
+
+   // Calculate month range for the dialog
+   const mStart = new Date(Date.UTC(year.value, dataPointIndex, 1)).toISOString().split('T')[0];
+   const mEnd = new Date(Date.UTC(year.value, dataPointIndex + 1, 0)).toISOString().split('T')[0];
+
+   // INTERSECTION: Respect the global time filter
+   let finalStart = mStart;
+   let finalEnd = mEnd;
+
+   if (startDate.value && startDate.value > finalStart) finalStart = startDate.value;
+   if (endDate.value && endDate.value < finalEnd) finalEnd = endDate.value;
+
+   // Respect the global fishery filter of the chart
+   const filterT = selectedCoverageFishery.value !== 'ALL' ? 'FISHERY' : null;
+   const filterV = selectedCoverageFishery.value !== 'ALL' ? selectedCoverageFishery.value : null;
+
+   openDialog(filterT, filterV, `Cobertura ${monthName} ${year.value}`, finalStart, finalEnd);
+};
+
+const handleGanttClick = ({ seriesIndex, dataPointIndex, w }: any) => {
+   const data = w.config.series[seriesIndex].data[dataPointIndex];
+   if (data?.meta?.mareaId) {
+      openQuickDetail(data.meta.mareaId);
+   }
+};
+
 // --- Download Handler ---
 const handleDownload = async (titlePrefix: string, fType?: 'FISHERY' | 'FLEET' | 'OBSERVER') => {
-   const fValue = filterValue.value || undefined;
-   const fTypeParam = fType || filterType.value || undefined;
+   const fValue = dialogFilterValue.value || undefined;
+   const fTypeParam = fType || dialogFilterType.value || undefined;
 
    let finalTitle = titlePrefix;
    if (dialogOpen.value && dialogTitle.value) {
@@ -769,14 +1240,23 @@ const handleDownload = async (titlePrefix: string, fType?: 'FISHERY' | 'FLEET' |
          includeCampaigns.value,
          fTypeParam,
          fValue, // PASSING UNDEFINED IF NULL
-         `${finalTitle}_${mode.value === 'CALENDAR' ? year.value : 'TOTAL'}`
+         `${finalTitle}_${mode.value === 'CALENDAR' ? year.value : 'TOTAL'}`,
+         (dialogOpen.value ? dialogStartDate.value : startDate.value) || undefined,
+         (dialogOpen.value ? dialogEndDate.value : endDate.value) || undefined,
+         startDate.value || undefined, // protocolizationStartDate
+         endDate.value || undefined    // protocolizationEndDate
       );
-      const prettyTitle = (dialogOpen.value && dialogTitle.value) ? dialogTitle.value : 'Estadísticas Generales';
-      toast.success(`Exportación iniciada: ${prettyTitle}`);
+      toast.success('Exportación preparada con éxito');
    } catch (error) {
-      console.error('Download error:', error);
-      toast.error('Error al exportar archivo');
+      console.error('Error in handleDownload:', error);
+      toast.error('No se pudo generar la exportación');
    }
+}
+
+const getFleetColor = (name: string) => {
+   if (name.toUpperCase().includes('FRESQUERO')) return 'var(--color-info)';
+   if (name.toUpperCase().includes('CONGELADOR')) return 'var(--color-warning)';
+   return 'var(--color-primary)';
 }
 
 onMounted(() => {
@@ -785,24 +1265,103 @@ onMounted(() => {
 
 // --- CHART COMPUTED PROPS ---
 
-// 1. Monthly Trends (Mixed Chart)
-const monthlySeries = computed(() => {
-   if (!stats.value) return []
-   return [
-      { name: 'Mareas Iniciadas', type: 'column', data: stats.value.monthly.mareas },
-      { name: 'Días Navegados', type: 'line', data: stats.value.monthly.days }
-   ]
-})
+// 1. Monthly Trends (Area Chart)
 const monthlyChartOptions = computed(() => ({
+   chart: {
+      type: 'area',
+      toolbar: { show: false },
+      events: {
+         click: handleMonthlyTrendClick
+      },
+      sparkline: { enabled: false }
+   },
    labels: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'],
-   colors: ['#0ea5e9', '#f59e0b'],
-   stroke: { width: [0, 3] },
-   plotOptions: { bar: { borderRadius: 4, columnWidth: '50%' } },
-   yaxis: [
-      { title: { text: 'Mareas' } },
-      { opposite: true, title: { text: 'Días' } }
-   ]
+   colors: ['#f59e0b'],
+   stroke: {
+      width: 3,
+      curve: 'smooth'
+   },
+   fill: {
+      type: 'gradient',
+      gradient: {
+         shadeIntensity: 1,
+         opacityFrom: 0.5,
+         opacityTo: 0.05,
+         stops: [0, 90, 100],
+         colorStops: [
+            { offset: 0, color: '#f59e0b', opacity: 0.5 },
+            { offset: 100, color: '#f59e0b', opacity: 0 }
+         ]
+      }
+   },
+   markers: {
+      size: 5,
+      colors: ['#f59e0b'],
+      strokeWidth: 2,
+      strokeColors: '#ffffff',
+      hover: { size: 7 }
+   },
+   yaxis: {
+      title: { text: 'Días Navegados', style: { color: '#f59e0b', fontWeight: 800 } },
+      labels: { style: { colors: '#f59e0b', fontWeight: 600 } }
+   },
+   tooltip: {
+      shared: true,
+      intersect: false,
+      custom: ({ series, dataPointIndex }: any) => {
+         if (dataPointIndex === -1) return '';
+         const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+         const label = monthNames[dataPointIndex];
+         const days = series[0][dataPointIndex];
+
+         return `
+            <div class="px-4 py-4 bg-surface/90 backdrop-blur-xl text-text border border-border/50 rounded-2xl flex flex-col gap-3 shadow-2xl ring-1 ring-black/10 min-w-[220px]">
+               <div class="flex items-center justify-between border-b border-border/30 pb-2 mb-1">
+                  <span class="text-[10px] text-text-muted uppercase font-black tracking-widest">${label} ${year.value}</span>
+                  <div class="px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-500 text-[9px] font-black uppercase">Esfuerzo</div>
+               </div>
+               
+               <div class="flex flex-col gap-1">
+                  <span class="text-[9px] font-black text-amber-500 uppercase tracking-tighter">Días Navegados Totales</span>
+                  <span class="text-2xl font-black tabular-nums">${days}</span>
+               </div>
+            </div>
+         `;
+      }
+   }
 }))
+
+const monthlySeries = computed(() => [
+   { name: 'Días Navegados', data: stats.value?.monthly.days || [] }
+])
+
+const handleMonthlyTrendClick = (event: any, _chartContext: any, config: any) => {
+   const { dataPointIndex } = config;
+   const target = event?.target;
+   const isLegend = target && (
+      target.closest('.apexcharts-legend') ||
+      target.classList.contains('apexcharts-legend-text') ||
+      target.classList.contains('apexcharts-legend-marker')
+   );
+
+   // Only proceed if a valid point was clicked (index >= 0) and not on legend
+   if (isLegend || dataPointIndex === undefined || dataPointIndex === -1) return;
+
+   const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+   const monthName = monthNames[dataPointIndex];
+
+   const mStart = new Date(Date.UTC(year.value, dataPointIndex, 1)).toISOString().split('T')[0];
+   const mEnd = new Date(Date.UTC(year.value, dataPointIndex + 1, 0)).toISOString().split('T')[0];
+
+   // INTERSECTION: Respect the global time filter
+   let finalStart = mStart;
+   let finalEnd = mEnd;
+
+   if (startDate.value && startDate.value > finalStart) finalStart = startDate.value;
+   if (endDate.value && endDate.value < finalEnd) finalEnd = endDate.value;
+
+   openDialog(null, null, `Tendencia ${monthName} ${year.value}`, finalStart, finalEnd);
+};
 
 // 2. Fleet Distribution (Donut)
 const fleetSort = computed(() => stats.value?.fleets.slice(0, 5) || []) // Top 5
@@ -818,6 +1377,46 @@ const fisherySort = computed(() => stats.value?.fisheries.slice(0, 7) || []) // 
 const fisherySeries = computed(() => fisherySort.value.map(f => f.days))
 const fisheryChartOptions = computed(() => ({
    labels: fisherySort.value.map(f => f.name),
+   tooltip: {
+      custom: ({ series, seriesIndex, w }: any) => {
+         const val = series[seriesIndex];
+         const label = w.globals.labels[seriesIndex];
+         const item = fisherySort.value[seriesIndex];
+         const colors = w.globals.colors;
+         const accent = colors[seriesIndex] || 'var(--color-primary)';
+
+         return `
+            <div class="px-4 py-3 bg-surface/95 backdrop-blur-md text-text border border-border/50 rounded-2xl flex flex-col gap-3 shadow-2xl ring-1 ring-black/5 min-w-[180px]">
+               <div class="flex items-center gap-2 border-b border-border/30 pb-2">
+                  <span class="w-1.5 h-3 rounded-full" style="background:${accent}"></span>
+                  <span class="text-[10px] text-text-muted uppercase font-black tracking-widest">${label}</span>
+               </div>
+               
+               ${item.stats && Object.keys(item.stats).length > 1 ? `
+                  <div class="flex flex-col gap-2">
+                     ${Object.entries(item.stats).map(([_, stat]: any) => `
+                        <div class="flex items-center justify-between gap-4">
+                           <div class="flex items-center gap-1.5">
+                              <div class="w-1.5 h-1.5 rounded-full" style="background:${getFleetColor(stat.nombre)}"></div>
+                              <span class="text-[9px] font-bold text-text-muted uppercase">${stat.nombre}</span>
+                           </div>
+                           <span class="text-[10px] font-black text-text">${stat.count} <span class="text-[8px] opacity-60">buques</span></span>
+                        </div>
+                     `).join('')}
+                  </div>
+               ` : ''}
+
+               <div class="flex items-center justify-between pt-1 ${item.stats && Object.keys(item.stats).length > 1 ? 'border-t border-border/30' : ''}">
+                  <span class="text-[9px] font-black text-primary uppercase">Total Esfuerzo</span>
+                  <div class="flex items-baseline gap-1">
+                     <span class="text-xs font-black text-text">${val}</span>
+                     <span class="text-[9px] font-bold text-text-muted">días</span>
+                  </div>
+               </div>
+            </div>
+         `;
+      }
+   }
 }))
 
 // 4. Observer Ranking (Bar Horizontal)
@@ -833,6 +1432,354 @@ const observerChartOptions = computed(() => ({
    xaxis: { categories: observerSort.value.map(o => o.name) },
    colors: ['#8b5cf6']
 }))
+
+// 5. Dual Axis Fishery Chart (Mareas vs Days) - Shows ALL (or Top 20) for detail
+const fisheryDetailData = computed(() => stats.value?.fisheries || []);
+
+const fisheryDualAxisSeries = computed(() => {
+   const data = fisheryDetailData.value;
+   return [
+      {
+         name: 'Mareas Iniciadas',
+         type: 'column',
+         data: data.map(f => f.mareas)
+      },
+      {
+         name: 'Días Navegados',
+         type: 'column',
+         data: data.map(f => f.days)
+      }
+   ];
+});
+
+const fisheryDualAxisOptions = computed(() => ({
+   chart: {
+      type: 'bar', // Combined chart type
+      stacked: false,
+      toolbar: { show: true }, // Allow zoom/pan for many items
+      zoom: { enabled: true }
+   },
+   stroke: {
+      width: [0, 0], // No stroke for bars
+      curve: 'smooth'
+   },
+   plotOptions: {
+      bar: {
+         columnWidth: '70%', // Thicker bars
+         borderRadius: 2 // Less rounded
+      }
+   },
+   dataLabels: {
+      enabled: false, // Clean look
+   },
+   xaxis: {
+      categories: fisheryDetailData.value.map(f => f.name),
+   },
+   yaxis: [
+      {
+         seriesName: 'Mareas Iniciadas',
+         axisTicks: { show: true },
+         axisBorder: { show: true, color: '#0ea5e9' },
+         labels: { style: { colors: '#0ea5e9', fontWeight: 700 } },
+         title: { text: 'Cantidad de Mareas', style: { color: '#0ea5e9', fontWeight: 800 } }
+      },
+      {
+         opposite: true,
+         seriesName: 'Días Navegados',
+         axisTicks: { show: true },
+         axisBorder: { show: true, color: '#f59e0b' },
+         labels: { style: { colors: '#f59e0b', fontWeight: 700 } },
+         title: { text: 'Días Totales', style: { color: '#f59e0b', fontWeight: 800 } }
+      }
+   ],
+   colors: ['#0ea5e9', '#f59e0b'], // Primary Blue, Secondary Orange
+   tooltip: {
+      shared: true,
+      intersect: false,
+      custom: ({ series, seriesIndex, dataPointIndex, w }: any) => {
+         const label = w.config.xaxis.categories[dataPointIndex];
+         const mareas = series[0] ? series[0][dataPointIndex] : undefined;
+         const days = series[1] ? series[1][dataPointIndex] : undefined;
+
+         const hasMareas = mareas !== undefined && mareas !== null;
+         const hasDays = days !== undefined && days !== null;
+
+         return `
+            <div class="px-4 py-4 bg-surface/90 backdrop-blur-xl text-text border border-border/50 rounded-2xl flex flex-col gap-3 shadow-2xl ring-1 ring-black/10 min-w-[220px]">
+               <div class="flex items-center justify-between border-b border-border/30 pb-2 mb-1">
+                  <span class="text-[10px] text-text-muted uppercase font-black tracking-widest">${label}</span>
+                  <div class="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[9px] font-black uppercase">Actividad</div>
+               </div>
+               
+               <div class="grid ${hasMareas && hasDays ? 'grid-cols-2' : 'grid-cols-1'} gap-3 pb-1">
+                  ${hasMareas ? `
+                  <div class="flex flex-col">
+                     <span class="text-[9px] font-black text-blue-500 uppercase tracking-tighter">Mareas</span>
+                     <span class="text-lg font-black tabular-nums">${mareas}</span>
+                  </div>
+                  ` : ''}
+                  ${hasDays ? `
+                  <div class="flex flex-col ${hasMareas ? 'border-l border-border/20 pl-3' : ''}">
+                     <span class="text-[9px] font-black text-amber-500 uppercase tracking-tighter">Días Navegados</span>
+                     <span class="text-lg font-black tabular-nums">${days}</span>
+                  </div>
+                  ` : ''}
+               </div>
+
+               ${hasMareas && hasDays ? `
+               <div class="pt-2 border-t border-border/30 flex justify-between items-center">
+                  <span class="text-text-muted text-[9px] font-black italic uppercase">Promedio:</span>
+                  <span class="text-primary font-black text-[11px] tabular-nums">${mareas > 0 ? (days / mareas).toFixed(1) : 0} días/marea</span>
+               </div>
+               ` : ''}
+            </div>
+         `;
+      }
+   }
+}));
+
+// 6. Operational Profile Chart (Scatter: Mareas vs Days)
+const fisheryProfileSeries = computed(() => {
+   // One series per fishery to enable distinct colors and legends automatically
+   return fisheryDetailData.value.map(f => ({
+      name: f.name,
+      data: [{
+         x: f.mareas,
+         y: f.days
+      }]
+   }));
+});
+
+const fisheryProfileOptions = computed(() => ({
+   chart: {
+      type: 'scatter',
+      zoom: { enabled: true, type: 'xy' },
+      toolbar: { show: true }
+   },
+   legend: {
+      show: true,
+      position: 'bottom',
+      horizontalAlign: 'center',
+      fontSize: '10px',
+      fontFamily: 'Inter, sans-serif',
+      fontWeight: 600,
+      labels: { colors: 'var(--color-text-muted)' },
+      markers: { radius: 12, size: 6 },
+      itemMargin: { horizontal: 10, vertical: 5 }
+   },
+   xaxis: {
+      title: {
+         text: 'CANTIDAD DE MAREAS (FRECUENCIA)',
+         style: { color: 'var(--color-text-muted)', fontSize: '10px', fontWeight: 800 }
+      },
+      tickAmount: 5,
+      labels: {
+         style: { colors: 'var(--color-text-muted)', fontWeight: 600 },
+         formatter: (val: number) => Math.floor(val)
+      }
+   },
+   yaxis: {
+      title: {
+         text: 'DÍAS NAVEGADOS (ESFUERZO)',
+         style: { color: 'var(--color-text-muted)', fontSize: '10px', fontWeight: 800 }
+      },
+      labels: {
+         style: { colors: 'var(--color-text-muted)', fontWeight: 600 },
+         formatter: (val: number) => Math.floor(val)
+      }
+   },
+   markers: {
+      size: 9,
+      strokeWidth: 2,
+      strokeOpacity: 0.8,
+      fillOpacity: 0.7,
+      hover: { size: 11 }
+   },
+   // Diverse premium color palette
+   colors: ['#0ea5e9', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#ec4899', '#6366f1', '#14b8a6', '#f43f5e', '#84cc16', '#22c55e', '#a855f7'],
+   grid: {
+      borderColor: 'var(--color-border)',
+      opacity: 0.1,
+      strokeDashArray: 4,
+      xaxis: { lines: { show: true } },
+      yaxis: { lines: { show: true } }
+   },
+   tooltip: {
+      custom: ({ series, seriesIndex, dataPointIndex, w }: any) => {
+         const data = w.config.series[seriesIndex].data[dataPointIndex];
+         const name = w.config.series[seriesIndex].name;
+         const color = w.globals.colors[seriesIndex];
+
+         return `
+           <div class="px-4 py-3 bg-surface text-text border border-border rounded-xl flex flex-col gap-1 shadow-2xl min-w-[200px]">
+             <div class="flex items-center gap-2 border-b border-border pb-1.5 mb-1.5">
+               <span class="w-2.5 h-2.5 rounded-full" style="background:${color}"></span>
+               <span class="text-[10px] font-black text-text uppercase tracking-widest">${name}</span>
+             </div>
+             <div class="flex justify-between items-center gap-4">
+               <span class="text-text-muted text-[10px] font-bold uppercase tracking-tighter">Frecuencia:</span>
+               <span class="text-text font-black text-xs tabular-nums">${data.x} Mareas</span>
+             </div>
+             <div class="flex justify-between items-center gap-4">
+               <span class="text-text-muted text-[10px] font-bold uppercase tracking-tighter">Esfuerzo:</span>
+               <span class="text-text font-black text-xs tabular-nums">${data.y} Días</span>
+             </div>
+             <div class="mt-2 pt-1.5 border-t border-border/50 flex justify-between items-center">
+                <span class="text-text-muted text-[9px] font-black italic uppercase">Intensidad:</span>
+                <span class="text-primary font-black text-[11px] tabular-nums">${(data.y / data.x).toFixed(1)} días/marea</span>
+             </div>
+           </div>
+         `;
+      }
+   }
+}));
+
+// 7. Monthly Coverage (Unique Vessels & Effort)
+const coverageSeries = computed(() => [
+   {
+      name: 'Buques Únicos',
+      type: 'bar',
+      data: coverageData.value.map(c => c.count)
+   },
+   {
+      name: 'Días de Marea',
+      type: 'line',
+      data: coverageData.value.map(c => c.days)
+   }
+]);
+
+const coverageChartOptions = computed(() => ({
+   chart: {
+      type: 'line', // Base type for combo
+      stacked: false,
+      toolbar: { show: false },
+      events: {
+         dataPointSelection: handleCoverageClick
+      }
+   },
+   stroke: {
+      width: [0, 3], // 0 for bars, 3 for line
+      curve: 'smooth'
+   },
+   colors: ['#10b981', '#3b82f6'], // Emerald (Vessels), Blue (Days)
+   plotOptions: {
+      bar: {
+         borderRadius: 4,
+         columnWidth: '50%',
+      }
+   },
+   markers: {
+      size: 4,
+      strokeWidth: 2,
+      strokeColors: '#ffffff',
+      hover: { size: 6 }
+   },
+   dataLabels: {
+      enabled: true,
+      enabledOnSeries: [0], // Only on bars
+      formatter: (val: number) => val > 0 ? val : '',
+      offsetY: -10,
+      style: { fontSize: '9px', colors: ['var(--color-text)'] }
+   },
+   xaxis: {
+      categories: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'],
+      position: 'bottom',
+      axisBorder: { show: false },
+      axisTicks: { show: false }
+   },
+   yaxis: [
+      {
+         title: {
+            text: 'Buques Únicos',
+            style: { color: '#10b981', fontWeight: 900 }
+         },
+         labels: { style: { colors: '#10b981' } },
+         min: 0,
+         forceNiceScale: true
+      },
+      {
+         opposite: true,
+         title: {
+            text: 'Días de Marea',
+            style: { color: '#3b82f6', fontWeight: 900 }
+         },
+         labels: { style: { colors: '#3b82f6' } },
+         min: 0,
+         forceNiceScale: true
+      }
+   ],
+   legend: {
+      show: true,
+      position: 'top',
+      horizontalAlign: 'right',
+      fontSize: '10px',
+      fontFamily: 'inherit',
+      fontWeight: 600,
+      itemMargin: { horizontal: 10, vertical: 0 },
+      markers: { radius: 12 }
+   },
+   tooltip: {
+      shared: true,
+      intersect: false,
+      custom: ({ series, seriesIndex, dataPointIndex, w }: any) => {
+         const label = w.config.xaxis.categories[dataPointIndex];
+         const monthData = coverageData.value[dataPointIndex];
+         const vessels = series[0] ? series[0][dataPointIndex] : undefined;
+         const days = series[1] ? series[1][dataPointIndex] : undefined;
+
+         const hasVessels = vessels !== undefined && vessels !== null;
+         const hasDays = days !== undefined && days !== null;
+
+         return `
+            <div class="px-4 py-4 bg-surface/90 backdrop-blur-xl text-text border border-border/50 rounded-2xl flex flex-col gap-3 shadow-2xl ring-1 ring-black/10 min-w-[240px]">
+               <div class="flex items-center justify-between border-b border-border/30 pb-2 mb-1">
+                  <span class="text-[10px] text-text-muted uppercase font-black tracking-widest">${label} ${year.value}</span>
+                  <div class="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[9px] font-black uppercase">Cobertura</div>
+               </div>
+               
+               <div class="grid ${hasVessels && hasDays ? 'grid-cols-2' : 'grid-cols-1'} gap-3 pb-2 border-b border-border/20">
+                  ${hasVessels ? `
+                  <div class="flex flex-col">
+                     <span class="text-[9px] font-black text-emerald-500 uppercase tracking-tighter">Buques Únicos</span>
+                     <span class="text-lg font-black tabular-nums">${vessels}</span>
+                  </div>
+                  ` : ''}
+                  ${hasDays ? `
+                  <div class="flex flex-col ${hasVessels ? 'border-l border-border/20 pl-3' : ''}">
+                     <span class="text-[9px] font-black text-blue-500 uppercase tracking-tighter">Días de Marea</span>
+                     <span class="text-lg font-black tabular-nums">${days}</span>
+                  </div>
+                  ` : ''}
+               </div>
+
+               ${monthData?.fleets && monthData.fleets.length > 0 ? `
+                  <div class="flex flex-col gap-1.5 py-1">
+                     <span class="text-[8px] font-black text-text-muted uppercase tracking-widest mb-1 opacity-60">Desglose por Flota</span>
+                     ${monthData.fleets.map(f => `
+                        <div class="flex items-center justify-between gap-4 py-0.5">
+                           <div class="flex items-center gap-2">
+                              <div class="w-1.5 h-1.5 rounded-full shadow-sm" style="background:${getFleetColor(f.name)}"></div>
+                              <span class="text-[9px] font-bold text-text-muted uppercase">${f.name}</span>
+                           </div>
+                           <div class="flex items-center gap-2">
+                              ${hasVessels ? `<span class="text-[10px] font-black text-text tabular-nums">${f.count} <span class="text-[8px] opacity-40 font-bold">B</span></span>` : ''}
+                              ${hasVessels && hasDays ? `<span class="h-2 w-px bg-border/30"></span>` : ''}
+                              ${hasDays ? `<span class="text-[10px] font-black text-text/80 tabular-nums">${f.days} <span class="text-[8px] opacity-40 font-bold">D</span></span>` : ''}
+                           </div>
+                        </div>
+                     `).join('')}
+                  </div>
+               ` : ''}
+
+               <div class="pt-2 border-t border-border/30 flex justify-between items-center opacity-60">
+                   <span class="text-[8px] font-black italic uppercase">Click para ver detalle</span>
+                   <span class="text-[10px]">📊</span>
+               </div>
+            </div>
+         `;
+      }
+   }
+}));
 
 </script>
 

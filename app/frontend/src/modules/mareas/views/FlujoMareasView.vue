@@ -24,7 +24,19 @@
                 Flujo de Mareas
               </h2>
               <div class="flex flex-wrap items-center gap-3 w-full sm:w-auto">
-                <SearchInput v-model="searchQuery" placeholder="Filtrar por buque o marea..." />
+                <div class="flex items-center gap-2 bg-surface border border-border rounded-xl px-3 py-1.5 focus-within:ring-2 focus-within:ring-primary/20 transition-all shadow-sm group">
+                  <span class="text-text-muted group-focus-within:text-primary transition-colors">
+                    <ShipIcon class="w-3.5 h-3.5" />
+                  </span>
+                  <select v-model="filterPesqueria"
+                    class="bg-transparent border-none outline-none text-sm font-bold text-text-muted focus:text-text transition-colors cursor-pointer min-w-[140px] appearance-none pr-4">
+                    <option value="">Todas las pesquerías</option>
+                    <option v-for="pesqueria in availablePesquerias" :key="pesqueria" :value="pesqueria">
+                      {{ pesqueria }}
+                    </option>
+                  </select>
+                </div>
+                <SearchInput v-model="searchQuery" placeholder="Buscar buque o marea..." />
                 <button @click="handleExport"
                   class="flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600/10 text-emerald-600 rounded-xl text-sm font-bold hover:bg-emerald-600 hover:text-white transition-all active:scale-95 border border-emerald-600/20 disabled:opacity-50 disabled:cursor-not-allowed"
                   :disabled="exporting"
@@ -364,6 +376,15 @@
     <MareaGenericActionDialog :show="showGenericDialog" :marea="mareaToManage" :actionKey="selectedActionKey"
       :actionData="selectedActionData" :loading="executingAction" @close="showGenericDialog = false"
       @confirm="handleGenericConfirm" />
+      
+    <EditMareaDesignadaDialog 
+      v-if="selectedMarea"
+      :show="showEditDesignadaDialog" 
+      :initial-data="selectedMarea" 
+      :marea-id="selectedMarea.id"
+      @close="showEditDesignadaDialog = false" 
+      @success="handleEditSuccess" 
+    />
 
     <AlertManagementDialog :is-open="isAlertDialogOpen" :alert="selectedAlert" @close="isAlertDialogOpen = false"
       @refresh="handleAlertRefresh" />
@@ -380,6 +401,7 @@ import GestionEtapasMareaDialog from '../components/GestionEtapasMareaDialog.vue
 import RecibirArchivosDialog from '../components/RecibirArchivosDialog.vue'
 import CancelarMareaDialog from '../components/CancelarMareaDialog.vue'
 import MareaGenericActionDialog from '../components/MareaGenericActionDialog.vue'
+import EditMareaDesignadaDialog from '../components/EditMareaDesignadaDialog.vue'
 // @ts-ignore
 import AlertManagementDialog from '../../alerts/components/AlertManagementDialog.vue'
 import StatusFilterChip from '../components/StatusFilterChip.vue'
@@ -415,6 +437,8 @@ const {
   executeAction,
   selectedMareaContext,
   searchQuery,
+  filterPesqueria,
+  availablePesquerias,
   sortBy,
   sortOrder,
   toggleSort
@@ -482,8 +506,11 @@ const isAlertDialogOpen = ref(false)
 const selectedAlert = ref(null)
 
 const handleManageAlert = (alert: any) => {
-  selectedAlert.value = alert
-  isAlertDialogOpen.value = true
+  selectedAlert.value = null
+  setTimeout(() => {
+    selectedAlert.value = alert
+    isAlertDialogOpen.value = true
+  }, 0)
 }
 
 const handleAlertRefresh = async () => {
@@ -602,18 +629,24 @@ const groupedMareas = computed(() => {
     });
   }
 
-  // 1. Get filtered list based on search only (ignore state filters from composable)
+  // 1. Get filtered list based on search and fishery
   const filtered = mareas.value.filter(m => {
+    // Filtro por pesquería
+    const matchesPesqueria = !filterPesqueria.value ||
+      (m.pesquerias_nombres && m.pesquerias_nombres.includes(filterPesqueria.value));
+
     const query = searchQuery.value;
-    if (!query) return true;
+    if (!query) return matchesPesqueria;
 
     const normalize = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
     const queryNorm = normalize(query);
 
-    return normalize(m.buque_nombre).includes(queryNorm) ||
+    const matchesText = normalize(m.buque_nombre).includes(queryNorm) ||
       normalize(m.id_marea).includes(queryNorm) ||
       (m.observador && normalize(m.observador).includes(queryNorm)) ||
       (m.pesquerias_nombres && m.pesquerias_nombres.some(p => normalize(p).includes(queryNorm)));
+
+    return matchesPesqueria && matchesText;
   });
 
   // 2. Iterate over KPIs to guarantee order
@@ -823,10 +856,24 @@ const closeSidebar = () => {
   }, 300)
 }
 
+const showEditDesignadaDialog = ref(false)
+
 const goToDetalle = () => {
   if (selectedMarea.value) {
-    router.push({ name: 'MareaDetalle', params: { id: selectedMarea.value.id } })
+    if (selectedMarea.value.estado_codigo === 'DESIGNADA' && !isReadOnly.value) {
+      showEditDesignadaDialog.value = true
+    } else {
+      router.push({ name: 'MareaDetalle', params: { id: selectedMarea.value.id } })
+    }
   }
+}
+
+const handleEditSuccess = async () => {
+  showEditDesignadaDialog.value = false
+  if (selectedMarea.value) {
+    await fetchMareaContext(selectedMarea.value.id)
+  }
+  await fetchDashboard(true)
 }
 
 const goToTrajectory = () => {

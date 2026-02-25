@@ -1,19 +1,12 @@
 <template>
   <div class="relative h-full w-full overflow-hidden bg-surface-muted" :class="{ 'hide-zoom-controls': !showControls }">
     <div ref="mapContainer" class="h-full w-full"></div>
-    
+
     <!-- Control de Capas (Posicionado sobre el Zoom) -->
     <div v-if="showControls" class="absolute bottom-[50px] right-[14px] z-[1000] pointer-events-auto">
-      <MapLayerControl
-        :base-layers="BASE_LAYERS"
-        :overlay-layers="OVERLAY_LAYERS"
-        :current-base-id="currentBaseId"
-        :active-overlay-ids="activeOverlayIds"
-        :show-graticule="localShowGraticule"
-        @change-base="setBaseLayer"
-        @toggle-overlay="toggleOverlay"
-        @update:show-graticule="toggleGraticule"
-      />
+      <MapLayerControl :base-layers="BASE_LAYERS" :overlay-layers="OVERLAY_LAYERS" :current-base-id="currentBaseId"
+        :active-overlay-ids="activeOverlayIds" :show-graticule="localShowGraticule" @change-base="setBaseLayer"
+        @toggle-overlay="toggleOverlay" @update:show-graticule="toggleGraticule" />
     </div>
 
     <slot></slot>
@@ -96,7 +89,7 @@ const toggleGraticule = (val: boolean) => {
 
 const updateGraticule = () => {
   if (!map) return
-  
+
   if (graticuleLayer) {
     map.removeLayer(graticuleLayer)
     graticuleLayer = null
@@ -106,7 +99,7 @@ const updateGraticule = () => {
     graticuleLayer = L.layerGroup().addTo(map)
     const bounds = map.getBounds()
     const zoom = map.getZoom()
-    
+
     let interval = 5
     if (zoom > 10) interval = 0.1
     else if (zoom > 8) interval = 0.5
@@ -118,25 +111,87 @@ const updateGraticule = () => {
     const lonMin = Math.floor(bounds.getWest() / interval) * interval
     const lonMax = Math.ceil(bounds.getEast() / interval) * interval
 
+    // Formatear coordenadas para humanos
+    const formatCoord = (val: number, isLat: boolean) => {
+      const abs = Math.abs(val)
+      const suffix = isLat ? (val >= 0 ? 'N' : 'S') : (val >= 0 ? 'E' : 'W')
+      // Si el intervalo es decimal, mostrar un decimal en la etiqueta
+      const fixed = interval < 1 ? 1 : 0
+      return `${abs.toFixed(fixed)}°${suffix}`
+    }
+
     for (let lat = latMin; lat <= latMax; lat += interval) {
+      // Línea de latitud
       L.polyline([[lat, lonMin], [lat, lonMax]], {
         color: 'var(--color-text)',
         weight: 0.5,
-        opacity: 0.15,
+        opacity: 0.35,
         dashArray: '5, 5',
         interactive: false,
         className: 'graticule-line'
       }).addTo(graticuleLayer)
+
+      // Etiqueta de latitud (en los bordes izquierdo y derecho visibles)
+      const latLabel = formatCoord(lat, true)
+      // Borde izquierdo
+      L.marker([lat, bounds.getWest()], {
+        icon: L.divIcon({
+          className: 'graticule-label graticule-label-lat',
+          html: `<span>${latLabel}</span>`,
+          iconSize: [40, 12],
+          iconAnchor: [-8, 6] // Un poco más adentro (8px)
+        }),
+        interactive: false,
+        zIndexOffset: 1000
+      }).addTo(graticuleLayer)
+
+      // Borde derecho
+      L.marker([lat, bounds.getEast()], {
+        icon: L.divIcon({
+          className: 'graticule-label graticule-label-lat',
+          html: `<span>${latLabel}</span>`,
+          iconSize: [40, 12],
+          iconAnchor: [48, 6] // 40px de ancho + 8px de margen hacia la izquierda
+        }),
+        interactive: false,
+        zIndexOffset: 1000
+      }).addTo(graticuleLayer)
     }
 
     for (let lon = lonMin; lon <= lonMax; lon += interval) {
+      // Línea de longitud
       L.polyline([[latMin, lon], [latMax, lon]], {
         color: 'var(--color-text)',
         weight: 0.5,
-        opacity: 0.15,
+        opacity: 0.35,
         dashArray: '5, 5',
         interactive: false,
         className: 'graticule-line'
+      }).addTo(graticuleLayer)
+
+      // Etiqueta de longitud (en el borde inferior visible)
+      const lonLabel = formatCoord(lon, false)
+      L.marker([bounds.getSouth(), lon], {
+        icon: L.divIcon({
+          className: 'graticule-label graticule-label-lon',
+          html: `<span>${lonLabel}</span>`,
+          iconSize: [60, 12],
+          iconAnchor: [30, 20] // 12px de alto + 8px de margen hacia arriba
+        }),
+        interactive: false,
+        zIndexOffset: 1000
+      }).addTo(graticuleLayer)
+
+      // Añadir también en el borde superior para asegurar visibilidad si el inferior está tapado
+      L.marker([bounds.getNorth(), lon], {
+        icon: L.divIcon({
+          className: 'graticule-label graticule-label-lon',
+          html: `<span>${lonLabel}</span>`,
+          iconSize: [60, 12],
+          iconAnchor: [30, -8] // 8px de margen hacia abajo desde el borde superior
+        }),
+        interactive: false,
+        zIndexOffset: 1000
       }).addTo(graticuleLayer)
     }
   }
@@ -149,11 +204,11 @@ const updateBaseLayerByTheme = () => {
 }
 
 const NauticalScale = L.Control.extend({
-  onAdd: function(map: L.Map) {
+  onAdd: function (map: L.Map) {
     const container = L.DomUtil.create('div', 'nautical-scale-container')
     const label = L.DomUtil.create('div', 'nautical-scale-label', container)
     const bar = L.DomUtil.create('div', 'nautical-scale-bar', container)
-    
+
     const update = () => {
       const center = map.getCenter()
       const zoom = map.getZoom()
@@ -169,7 +224,7 @@ const NauticalScale = L.Control.extend({
       else if (targetMiles > 10) miles = 10
       else if (targetMiles > 5) miles = 5
       else if (targetMiles > 2) miles = 2
-      
+
       const width = miles / milesPerPixel
       bar.style.width = width + 'px'
       label.innerHTML = miles + ' NM'
@@ -192,7 +247,7 @@ onMounted(() => {
   }).setView(props.center, props.zoom)
 
   updateBaseLayerByTheme()
-  
+
   if (props.showControls) {
     L.control.zoom({ position: 'bottomright' }).addTo(map)
   }
@@ -270,6 +325,23 @@ defineExpose({
 
 .graticule-label {
   pointer-events: none !important;
+  font-family: 'Inter', sans-serif;
+  font-size: 7px;
+  font-weight: 600;
+  color: var(--color-text);
+  opacity: 0.7;
+  text-shadow: 0 0 4px var(--color-surface);
+  white-space: nowrap;
+}
+
+.graticule-label-lat span {
+  display: block;
+  text-align: left;
+}
+
+.graticule-label-lon span {
+  display: block;
+  text-align: center;
 }
 
 /* Ocultar controles de zoom en móvil */

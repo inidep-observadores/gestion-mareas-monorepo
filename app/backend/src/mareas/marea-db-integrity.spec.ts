@@ -50,6 +50,30 @@ describe('Integridad de Base de Datos de Mareas (Triggers y Constraints)', () =>
     });
 
     describe('Reglas de Disponibilidad (Refinadas)', () => {
+        beforeEach(async () => {
+            // Limpiar TODAS las mareas del buque de prueba antes de cada test
+            // Primero eliminar las tablas relacionadas (foreign key constraints)
+            const mareasDelBuque = await prisma.marea.findMany({
+                where: { buqueId: buqueId },
+                select: { id: true }
+            });
+            const mareaIds = mareasDelBuque.map(m => m.id);
+
+            if (mareaIds.length > 0) {
+                // Eliminar movimientos (etapas)
+                await prisma.mareaMovimiento.deleteMany({
+                    where: { marea: { id: { in: mareaIds } } }
+                });
+                // Eliminar etapas
+                await prisma.mareaEtapa.deleteMany({
+                    where: { marea: { id: { in: mareaIds } } }
+                });
+                // Finalmente eliminar las mareas
+                await prisma.marea.deleteMany({
+                    where: { id: { in: mareaIds } }
+                });
+            }
+        });
         it('debería permitir 1 DESIGNADA mientras se está EN_EJECUCION', async () => {
             const marea1 = await prisma.marea.create({
                 data: {

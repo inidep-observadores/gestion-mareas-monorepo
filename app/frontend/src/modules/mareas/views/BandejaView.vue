@@ -384,7 +384,7 @@
         <div v-if="selectedMarea"
           class="w-full xl:w-[400px] shrink-0 sticky top-6 bg-surface border border-border rounded-[2.5rem] shadow-xl overflow-hidden self-start hidden xl:block">
           <MareaContextDetailContent :marea="selectedMarea" :context="selectedMareaContext"
-            @close="selectedMarea = null" @open-detalle="goToDetalle" @action="executeSidebarAction" />
+            @close="selectedMarea = null" @open-detalle="goToDetalle" @action="executeSidebarAction" @manage-alert="handleAlertAction" />
         </div>
       </Transition>
     </div>
@@ -404,6 +404,15 @@
     <MareaGenericActionDialog :show="showGenericDialog" :marea="mareaToManage" :actionKey="selectedActionKey"
       :actionData="selectedActionData" :loading="executingAction" @close="showGenericDialog = false"
       @confirm="handleGenericConfirm" />
+      
+    <EditMareaDesignadaDialog 
+      v-if="selectedMarea"
+      :show="showEditDesignadaDialog" 
+      :initial-data="selectedMareaContext?.marea || selectedMarea" 
+      :marea-id="selectedMarea.id"
+      @close="showEditDesignadaDialog = false" 
+      @success="handleEditSuccess" 
+    />
   </AdminLayout>
 </template>
 
@@ -417,6 +426,7 @@ import MareaContextDetailContent from '../components/MareaContextDetailContent.v
 import GestionEtapasMareaDialog from '../components/GestionEtapasMareaDialog.vue'
 import RecibirArchivosDialog from '../components/RecibirArchivosDialog.vue'
 import MareaGenericActionDialog from '../components/MareaGenericActionDialog.vue'
+import EditMareaDesignadaDialog from '../components/EditMareaDesignadaDialog.vue'
 import SearchInput from '@/components/ui/SearchInput.vue'
 import Button from '@/components/ui/Button.vue'
 import Badge from '@/components/ui/Badge.vue'
@@ -434,6 +444,11 @@ import { ValidRoles } from '@/modules/auth/interfaces/roles.enum'
 const router = useRouter()
 const authStore = useAuthStore()
 const { fetchMareaContext, selectedMareaContext, executeAction } = useMareas()
+
+const isReadOnly = computed(() => {
+  const roles = authStore.user?.roles || []
+  return !roles.includes(ValidRoles.admin) && !roles.includes(ValidRoles.tecnico)
+})
 
 // Data State
 const loading = ref(true)
@@ -682,11 +697,17 @@ const handleTaskAction = (taskId: string, actionKey: string) => {
   }
 }
 
-const handleAlertAction = (alertId: string, type: string) => {
-  const alert = alertas.value.find(a => a.id === alertId) || alertasHistoricas.value.find(a => a.id === alertId)
+const handleAlertAction = (alertId: string | object, type?: string) => {
+  const alert = typeof alertId === 'object'
+    ? alertId
+    : (alertas.value.find(a => a.id === alertId) || alertasHistoricas.value.find(a => a.id === alertId))
+
   if (alert) {
-    selectedAlert.value = alert
-    isAlertDialogOpen.value = true
+    selectedAlert.value = null
+    setTimeout(() => {
+      selectedAlert.value = alert as any
+      isAlertDialogOpen.value = true
+    }, 0)
   }
 }
 
@@ -753,10 +774,24 @@ const handleGenericConfirm = async (payload: any) => {
   }
 }
 
+const showEditDesignadaDialog = ref(false)
+
 const goToDetalle = () => {
   if (selectedMarea.value) {
-    router.push({ name: 'MareaDetalle', params: { id: selectedMarea.value.id } })
+    if (selectedMareaContext.value?.marea?.estado_codigo === 'DESIGNADA' && !isReadOnly.value) {
+      showEditDesignadaDialog.value = true
+    } else {
+      router.push({ name: 'MareaDetalle', params: { id: selectedMarea.value.id } })
+    }
   }
+}
+
+const handleEditSuccess = async () => {
+  showEditDesignadaDialog.value = false
+  if (selectedMarea.value) {
+    await fetchMareaContext(selectedMarea.value.id)
+  }
+  await loadInbox()
 }
 
 const handleRecibirCancel = () => {

@@ -74,7 +74,7 @@
           <h2 class="text-xl font-bold text-text">Sistema y Mantenimiento</h2>
         </div>
         
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
           <AdminHomeCard
             title="Copia de Seguridad"
             description="Gestión de respaldos de base de datos y puntos de restauración."
@@ -90,10 +90,24 @@
             color="success"
           />
           <AdminHomeCard
-            title="Importación Access"
-            description="Herramientas de migración para datos desde bases Access heredadas."
-            :to="{ name: 'AdminImportAccess' }"
-            :icon="LayersIcon"
+            title="Sincronización PNA"
+            description="Configuración de procesos automáticos y herramientas de sincronización manual de flota."
+            :to="{ name: 'AdminPnaSync' }"
+            :icon="SettingsIcon"
+            color="success"
+          />
+          <AdminHomeCard
+            title="Gestión de Tareas"
+            description="Monitoreo y administración de procesos en segundo plano y sincronizaciones."
+            :to="{ name: 'AdminJobs' }"
+            :icon="TaskIcon"
+            color="success"
+          />
+          <AdminHomeCard
+            title="Gestión de Alertas"
+            description="Supervisión y autoconfirmación masiva de alertas de zarpada y arribo."
+            :to="{ name: 'AdminAlertsLog' }"
+            :icon="BellIcon"
             color="success"
           />
         </div>
@@ -116,6 +130,8 @@ import {
   LayersIcon,
   UserCircleIcon,
   HistoryIcon,
-  SettingsIcon
+  SettingsIcon,
+  TaskIcon,
+  BellIcon
 } from '@/icons';
 </script>

@@ -4,4 +4,7 @@ export enum ValidRoles {
     tecnico = 'tecnico_datos',
     coordinador = 'coordinador',
     invitado = 'invitado',
+    desarrollador = 'desarrollador',
+    visitante = 'visitante',
 }
+

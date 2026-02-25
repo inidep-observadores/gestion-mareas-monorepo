@@ -32,7 +32,8 @@
         <div
           v-for="marea in expiringMareas"
           :key="marea.id"
-          class="group p-4 rounded-2xl border border-border bg-surface hover:bg-surface hover:shadow-md hover:border-success/30 transition-all"
+          @click="openMareaDetail(marea.id)"
+          class="group p-4 rounded-2xl border border-border bg-surface hover:bg-surface hover:shadow-md hover:border-success/30 transition-all cursor-pointer"
         >
           <div class="flex items-center justify-between mb-3">
             <div class="flex items-center gap-3">
@@ -98,6 +99,12 @@
         </div>
       </div>
     </div>
+
+    <MareaQuickDetailModal 
+      :is-open="showMareaModal" 
+      :marea-id="selectedMareaId" 
+      @close="showMareaModal = false" 
+    />
   </div>
 </template>
 
@@ -106,6 +113,7 @@ import { onMounted, ref } from 'vue'
 import { toast } from 'vue-sonner'
 import { ShipIcon, SportsScoreIcon, ChevronDownIcon } from '@/icons'
 import mareasService from '@/modules/mareas/services/mareas.service'
+import MareaQuickDetailModal from '@/modules/stats/components/MareaQuickDetailModal.vue'
 
 type ExpiringMarea = {
   id: string
@@ -122,6 +130,16 @@ type ExpiringMarea = {
 
 const expiringMareas = ref<ExpiringMarea[]>([])
 const isCollapsed = ref(false)
+
+// Marea Quick Detail Modal
+const showMareaModal = ref(false)
+const selectedMareaId = ref<string | null>(null)
+
+const openMareaDetail = (mareaId: string) => {
+  if (!mareaId) return
+  selectedMareaId.value = mareaId
+  showMareaModal.value = true
+}
 
 const toggleCollapse = () => {
   isCollapsed.value = !isCollapsed.value

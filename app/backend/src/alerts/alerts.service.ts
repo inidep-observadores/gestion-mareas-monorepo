@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { AlertaEstado, AlertaPrioridad } from './alerts.enums';
+import { AlertAutomationService } from './alert-automation.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateAlertDto } from './dto/create-alert.dto';
 import { UpdateAlertDto } from './dto/update-alert.dto';
@@ -9,7 +10,10 @@ import { DateUtils } from '../common/utils/date.utils';
 export class AlertsService {
     private readonly logger = new Logger(AlertsService.name);
 
-    constructor(private prisma: PrismaService) { }
+    constructor(
+        private prisma: PrismaService,
+        private automationService: AlertAutomationService
+    ) { }
 
     async create(createAlertDto: CreateAlertDto, user?: any) {
         const { codigoUnico } = createAlertDto;
@@ -44,9 +48,9 @@ export class AlertsService {
         const alert = await this.prisma.alerta.create({
             data: {
                 ...createAlertDto,
-                fechaDetectada: DateUtils.getNow(true),
+                fechaDetectada: createAlertDto.fechaDetectada || DateUtils.getNow(true),
                 creadoPorId: user?.id
-            }
+            } as any
         });
 
         // 3. Log Event
@@ -56,7 +60,7 @@ export class AlertsService {
     }
 
     async findAll(query: any) {
-        const { refId, status, userId, showHidden } = query;
+        const { refId, status, userId, showHidden, type, busqueda } = query;
         const where: any = {};
 
         // Filter by visibility by default
@@ -66,6 +70,13 @@ export class AlertsService {
 
         if (refId) where.referenciaId = refId;
         if (status) where.estado = status;
+        if (type) {
+            if (type.includes(',')) {
+                where.tipo = { in: type.split(',') };
+            } else {
+                where.tipo = type;
+            }
+        }
         if (userId) {
             where.OR = [
                 { asignadoId: userId },
@@ -74,26 +85,73 @@ export class AlertsService {
             ];
         }
 
-        this.logger.log(`findAll query: ${JSON.stringify(where)}`);
-        const results = await this.prisma.alerta.findMany({
-            where,
-            orderBy: { fechaDetectada: 'desc' },
-            include: {
-                asignadoA: { select: { fullName: true, avatarUrl: true } },
-                creadoPor: { select: { fullName: true } },
-                eventos: {
-                    select: { detalle: true },
-                    orderBy: { fechaHora: 'desc' },
-                    take: 1
-                }
-            }
-        });
+        if (busqueda) {
+            const searchCondition = {
+                OR: [
+                    { titulo: { contains: busqueda, mode: 'insensitive' } },
+                    { metadata: { path: ['vesselName'], string_contains: busqueda } },
+                    { metadata: { path: ['mareaCode'], string_contains: busqueda } },
+                    { metadata: { path: ['portName'], string_contains: busqueda } }
+                ]
+            };
 
-        this.logger.log(`findAll results count: ${results.length}`);
-        return results.map((alerta: any) => ({
+            if (where.OR) {
+                // Si ya había un OR (por userId), los combinamos en un AND
+                const previousOr = where.OR;
+                delete where.OR;
+                where.AND = [{ OR: previousOr }, searchCondition];
+            } else {
+                where.OR = searchCondition.OR;
+            }
+        }
+
+        this.logger.log(`findAll query: ${JSON.stringify(where)}`);
+
+        // Pagination and Sorting
+        const page = parseInt(query.page) || 1;
+        const limit = parseInt(query.limit) || 20;
+        const skip = (page - 1) * limit;
+
+        const sortBy = query.sortBy || 'fechaDetectada';
+        const sortOrder = query.sortOrder || 'desc';
+
+        const [total, results] = await Promise.all([
+            this.prisma.alerta.count({ where }),
+            this.prisma.alerta.findMany({
+                where,
+                orderBy: { [sortBy]: sortOrder },
+                take: limit,
+                skip,
+                include: {
+                    asignadoA: { select: { fullName: true, avatarUrl: true } },
+                    creadoPor: { select: { fullName: true } },
+                    eventos: {
+                        select: { detalle: true },
+                        orderBy: { fechaHora: 'desc' },
+                        take: 1
+                    }
+                }
+            })
+        ]);
+
+        this.logger.log(`findAll results count: ${results.length}, total: ${total}`);
+
+        const data = results.map((alerta: any) => ({
             ...alerta,
             notaGestion: this.extractNotaGestion(alerta.eventos?.[0]?.detalle || '')
         }));
+
+        // Si se solicitó paginación explícitamente o es modo administrativo, devolvemos objeto estructurado
+        if (query.page || query.limit) {
+            return {
+                data,
+                total,
+                page,
+                limit
+            };
+        }
+
+        return data; // Retrocompatibilidad
     }
 
     async findOne(id: string) {
@@ -167,5 +225,70 @@ export class AlertsService {
                 usuarioId: userId
             }
         });
+    }
+
+    /**
+     * Add a validation source to an existing alert
+     * Used when multiple detection systems confirm the same event
+     */
+    async addValidationSource(alertaId: string, sourceName: string, sourceData: any) {
+        const alert = await this.prisma.alerta.findUnique({ where: { id: alertaId } });
+        if (!alert) {
+            throw new Error(`Alert ${alertaId} not found`);
+        }
+
+        // Get current metadata
+        const metadata = (alert.metadata as any) || {};
+        let sources = metadata.sources || [];
+
+        // Si el array de fuentes está vacío, intentar recuperar la fuente original de metadata.source
+        if (sources.length === 0 && metadata.source) {
+            sources = [{
+                name: metadata.source,
+                detectedAt: alert.fechaDetectada?.toISOString(),
+                data: { info: 'Fuente primaria original' }
+            }];
+        }
+
+        // Check if source already exists
+        const existingSource = sources.find((s: any) => s.name === sourceName);
+        if (existingSource) {
+            this.logger.log(`Source ${sourceName} already validated alert ${alertaId}`);
+            return alert;
+        }
+
+        // Add new validation source
+        sources.push({
+            name: sourceName,
+            detectedAt: new Date().toISOString(),
+            data: sourceData,
+        });
+
+        // Update metadata
+        const updatedAlert = await this.prisma.alerta.update({
+            where: { id: alertaId },
+            data: {
+                metadata: {
+                    ...metadata,
+                    sources,
+                },
+            },
+        });
+
+        // Log event
+        await this.logEvent(
+            alertaId,
+            'VALIDACION',
+            `Alerta confirmada por fuente adicional: ${sourceName}`,
+        );
+
+        this.logger.log(`Added validation source ${sourceName} to alert ${alertaId}`);
+
+        // Disparar proceso de automatización (sin esperar el resultado para no bloquear el flujo principal)
+        this.automationService.processAlertAutomation(updatedAlert.id).catch(err => {
+            this.logger.error(`Error en automatización de alerta ${alertaId}: ${err.message}`);
+        });
+
+        return updatedAlert;
     }
 }

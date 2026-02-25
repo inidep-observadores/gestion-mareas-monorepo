@@ -4,10 +4,10 @@
             <div class="flex items-center justify-between w-full pr-8 py-1">
                 <div class="flex items-center gap-4">
                     <Badge :color="getBadgeColor(localAlert.prioridad)" variant="solid" size="sm"
-                        class="font-black text-[10px] uppercase tracking-widest px-3 py-2.5 rounded-lg">
+                        class="font-bold text-[10px] uppercase tracking-wider px-3 py-1">
                         {{ localAlert.prioridad || 'N/D' }}
                     </Badge>
-                    <span class="text-text font-black uppercase tracking-tight">{{ localAlert.titulo || 'Alerta'
+                    <span class="text-text font-bold uppercase tracking-tight">{{ localAlert.titulo || 'Alerta'
                     }}</span>
                     <Badge v-if="localAlert.referenciaTipo" :color="getOriginBadgeColor(localAlert.referenciaTipo)"
                         variant="light" size="sm" class="font-bold text-[10px] uppercase tracking-wider h-6">
@@ -32,11 +32,11 @@
             <div class="flex flex-col md:flex-row gap-8">
                 <!-- Main Content (Left) -->
                 <div class="flex-1 space-y-6">
-                    <div class="p-4 bg-surface-muted/50 border border-border rounded-2xl">
-                        <h4 class="font-black text-[10px] uppercase tracking-widest text-text-muted mb-2">Detalles del
+                    <div class="p-4 bg-surface-muted/50 border border-border rounded-xl">
+                        <h4 class="font-semibold text-[10px] uppercase tracking-wider text-text-muted mb-2">Detalles del
                             Incidente
                         </h4>
-                        <p class="text-sm text-text/80 leading-relaxed">{{ localAlert.descripcion }}</p>
+                        <p class="text-sm text-text/80 leading-relaxed font-medium">{{ localAlert.descripcion }}</p>
 
                         <!-- Incongruency Diff Table -->
                         <div v-if="isIncongruency && incongruencyData"
@@ -45,13 +45,13 @@
                                 <thead>
                                     <tr class="bg-surface-muted/50 border-b border-border">
                                         <th
-                                            class="px-3 py-2 text-left font-black text-text-muted uppercase tracking-wider text-[10px]">
+                                            class="px-3 py-2 text-left font-semibold text-text-muted uppercase tracking-wider text-[10px]">
                                             Dato</th>
                                         <th
-                                            class="px-3 py-2 text-left font-black text-text-muted uppercase tracking-wider text-[10px]">
+                                            class="px-3 py-2 text-left font-semibold text-text-muted uppercase tracking-wider text-[10px]">
                                             Sistema Local</th>
                                         <th
-                                            class="px-3 py-2 text-left font-black text-text-muted uppercase tracking-wider text-[10px]">
+                                            class="px-3 py-2 text-left font-semibold text-text-muted uppercase tracking-wider text-[10px]">
                                             {{ externalSourceName }}</th>
                                     </tr>
                                 </thead>
@@ -73,9 +73,25 @@
                             </table>
                         </div>
 
-                        <div class="mt-4 pt-4 border-t border-border flex items-center gap-4">
-                            <div class="text-[10px] font-bold text-text-muted uppercase tracking-tight">Detectado: <span
-                                    class="text-text/60">{{ formatDate(localAlert.fechaDetectada) }}</span></div>
+                        <div class="mt-4 pt-4 border-t border-border flex flex-col gap-3">
+                            <div class="flex items-center justify-between">
+                                <div class="text-[10px] font-bold text-text-muted uppercase tracking-tight">Detectado:
+                                    <span class="text-text/60">{{ formatDate(localAlert.fechaDetectada) }}</span>
+                                </div>
+                                <div class="flex gap-1.5">
+                                    <template v-for="src in alertSources" :key="src.name">
+                                        <TrajectorySourceBadge v-if="src.name === 'Tracking' || src.name === 'PNA'"
+                                            :source="src.name === 'PNA' ? 'PNA' : 'TRACKING'" :vesselId="mapVesselId"
+                                            :vesselName="mapVesselName" :referenceDate="mapReferenceDate"
+                                            :endDate="mapEndDate" :mareaId="localAlert?.referenciaId"
+                                            :mareaCode="fixedMareaLabel" size="sm" />
+                                        <Badge v-else :color="getSourceColor(src.name)" variant="light" size="sm"
+                                            class="font-black text-[9px] uppercase px-2">
+                                            {{ src.name }}
+                                        </Badge>
+                                    </template>
+                                </div>
+                            </div>
                         </div>
                         <div v-if="isMarea" class="mt-4 pt-4 border-t border-border space-y-2">
                             <div class="text-[10px] font-bold text-text-muted uppercase tracking-tight">
@@ -96,12 +112,14 @@
                     <!-- Action Area -->
                     <div v-if="!isClosed" class="space-y-4">
                         <div v-if="isClaimableAlert"
-                            class="flex items-center justify-between p-4 bg-info/5 border border-info/20 rounded-2xl">
+                            class="flex items-center justify-between p-4 bg-info/5 border border-info/20 rounded-xl">
                             <div>
-                                <p class="text-xs font-black uppercase tracking-widest text-info/60">Reclamo de
+                                <p class="text-xs font-bold uppercase tracking-wider text-info/60">Reclamo de
                                     Documentación
                                 </p>
-                                <p class="text-[11px] text-info/50 mt-1">Disponible para alertas por retraso en entrega
+                                <p class="text-[11px] text-info/50 mt-1 font-medium">Disponible para alertas por retraso
+                                    en
+                                    entrega
                                     de
                                     datos.</p>
                             </div>
@@ -114,20 +132,22 @@
 
                         <!-- Smart Actions Area -->
                         <div v-if="smartActionConfig && !isClosed"
-                            class="p-4 bg-primary/5 border border-primary/20 rounded-2xl flex items-center justify-between animate-in zoom-in-95 duration-300">
+                            class="p-4 bg-primary/5 border border-primary/20 rounded-xl flex items-center justify-between animate-in zoom-in-95 duration-300 shadow-sm">
                             <div class="flex items-center gap-4">
                                 <div class="p-2.5 bg-primary/10 rounded-xl text-primary">
                                     <component :is="smartActionConfig.icon" class="w-5 h-5" />
                                 </div>
                                 <div>
-                                    <h4 class="text-xs font-black text-primary uppercase tracking-widest mb-1">{{
+                                    <h4 class="text-xs font-bold text-primary uppercase tracking-wider mb-1">{{
                                         smartActionConfig.label }}</h4>
-                                    <p class="text-[10px] text-text/80 font-bold uppercase tracking-tight">{{
-                                        smartActionDescription }}</p>
+                                    <p
+                                        class="text-[10px] text-text/80 font-semibold uppercase tracking-tight leading-tight">
+                                        {{
+                                            smartActionDescription }}</p>
                                 </div>
                             </div>
                             <Button variant="primary" size="sm" @click="executeSmartAction"
-                                class="font-black text-[10px] uppercase tracking-widest" :disabled="processing">
+                                class="font-bold text-[10px] uppercase tracking-wider px-4" :disabled="processing">
                                 {{ smartActionConfig.label }}
                             </Button>
                         </div>
@@ -195,13 +215,14 @@
                         <h4 class="font-black text-[10px] uppercase tracking-widest text-text-muted mt-5">Notas de
                             Gestión</h4>
                         <textarea v-model="comment"
-                            class="w-full bg-surface-muted/30 border border-border rounded-2xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all p-4 text-sm h-16 text-text placeholder:text-text-muted/40"
+                            class="w-full bg-surface-muted/30 border border-border rounded-xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all p-4 text-sm h-16 text-text font-medium placeholder:text-text-muted/40"
                             placeholder="Agregar notas de seguimiento, causas o detalles de la resolución..."></textarea>
 
                         <!-- Follow Up Date Picker -->
                         <div
-                            class="p-4 bg-surface-muted/30 rounded-2xl border border-border animate-in fade-in slide-in-from-top-2">
-                            <label class="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-3">
+                            class="p-4 bg-surface-muted/30 rounded-xl border border-border animate-in fade-in slide-in-from-top-2">
+                            <label
+                                class="block text-[10px] font-semibold uppercase tracking-wider text-text-muted mb-3">
                                 Fecha de Re-Check
                             </label>
                             <div class="flex flex-wrap gap-2 items-center">
@@ -224,9 +245,9 @@
                     </div>
 
                     <div v-else
-                        class="flex items-center gap-3 p-4 bg-success/5 text-success rounded-2xl border border-success/10">
-                        <CheckIcon class="w-5 h-5" />
-                        <span class="text-xs font-bold uppercase tracking-tight">Incidente Cerrado el {{
+                        class="flex items-center gap-3 p-4 bg-success/5 text-success rounded-xl border border-success/10 font-semibold text-xs uppercase tracking-tight">
+                        <CheckIcon class="w-5 h-5 text-success" />
+                        <span>Incidente Cerrado el {{
                             localAlert.fechaCierre
                                 ? formatDate(localAlert.fechaCierre) : 'N/A' }}</span>
                     </div>
@@ -234,7 +255,7 @@
 
                 <!-- Sidebar / Timeline (Right) -->
                 <div class="w-full md:w-80 border-l border-border pl-8">
-                    <h4 class="font-black text-[10px] uppercase tracking-widest text-text-muted mb-6">Historial de
+                    <h4 class="font-semibold text-[10px] uppercase tracking-wider text-text-muted mb-6">Historial de
                         Auditoría
                     </h4>
                     <div class="max-h-112.5 overflow-y-auto pr-4 custom-scrollbar">
@@ -243,19 +264,9 @@
                 </div>
             </div>
 
-            <!-- Map Verification Action -->
-            <div v-if="canShowMap && !isClosed" class="pt-4 border-t border-border w-full">
-                <Button variant="soft" size="sm"
-                    class="w-full font-black h-11 bg-primary/5 hover:bg-primary/10 text-primary border border-primary/20"
-                    @click="showMapModal = true">
-                    <MapPinIcon class="w-4 h-4 mr-2" />
-                    Visualizar Trayectoria en Mapa
-                </Button>
-            </div>
-
             <!-- Unified Actions Row (Bottom) -->
             <div v-if="!isClosed" class="pt-4 flex items-center gap-3 w-full">
-                <Button variant="soft" size="sm" class="flex-1 font-bold h-10"
+                <Button variant="soft" size="sm" class="flex-1 font-semibold h-10"
                     @click="requestConfirmation('SEGUIMIENTO')" :disabled="processing">
                     Seguimiento
                 </Button>
@@ -280,11 +291,12 @@
         :arrival-date="reclamoData?.arrivalDate || ''" @close="showReclamoDialog = false"
         @confirm="handleReclamoConfirm" />
 
-    <BaseModal :show="isConfirmationOpen" @close="closeConfirmation" maxWidth="xl" title="Confirmar acción">
+    <BaseModal ref="confirmationModal" :show="isConfirmationOpen" @close="closeConfirmation" maxWidth="xl"
+        :title="'Confirmar acción'">
         <div class="space-y-5">
-            <p class="text-sm text-text/80 leading-relaxed">{{ confirmationMessage }}</p>
+            <p class="text-sm text-text/80 leading-relaxed font-medium">{{ confirmationMessage }}</p>
             <div class="flex items-center gap-3 justify-end">
-                <Button variant="soft" size="sm" class="font-bold" @click="closeConfirmation">Cancelar</Button>
+                <Button variant="soft" size="sm" class="font-semibold" @click="closeConfirmation">Cancelar</Button>
                 <Button variant="primary" size="sm" class="font-bold" @click="confirmAction"
                     :disabled="processing">Confirmar</Button>
             </div>
@@ -299,52 +311,58 @@
     <NuevaMareaDialog :show="showNuevaMareaDialog" :init-from-alert="true" @close="showNuevaMareaDialog = false"
         @success="handleMareaSuccess" />
 
-    <AlertTrajectoryMapModal :show="showMapModal" :vesselId="mapVesselId || ''" :vesselName="mapVesselName || ''"
-        :referenceDate="mapReferenceDate" :endDate="mapEndDate || undefined" :mareaId="mareaData?.id"
-        :mareaCode="fixedMareaLabel" @close="showMapModal = false" />
-
     <MareaQuickDetailModal :isOpen="showMareaQuickDetail" :mareaId="localAlert.referenciaId || null"
         @close="showMareaQuickDetail = false" />
 
     <ObservadorTimelineDialog :show="showObservadorTimeline" :observadorId="localAlert.referenciaId || null"
-        :observadorName="localAlert.metadata?.observadorNombre || localAlert.metadata?.observerName || 'Observador'"
-        :year="configStore.selectedYear" @close="showObservadorTimeline = false" />
+        :observadorName="localAlert.metadata?.observerName || 'Observador'" :year="configStore.selectedYear"
+        @close="showObservadorTimeline = false" />
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, markRaw } from 'vue'
 import { useRouter } from 'vue-router'
-import { type Alerta, alertsService } from '../services/alerts.service'
-import type { AlertMetadata } from '../interfaces/alert-metadata.interface'
-import AlertTimeline from './AlertTimeline.vue'
-import BaseModal from '@/components/common/BaseModal.vue'
-import Button from '@/components/ui/Button.vue'
-import Badge from '@/components/ui/Badge.vue'
+import { storeToRefs } from 'pinia'
 import { toast } from 'vue-sonner'
+
+import Badge from '@/components/ui/Badge.vue'
+import Button from '@/components/ui/Button.vue'
+import BaseModal from '@/components/common/BaseModal.vue'
+import TrajectorySourceBadge from '@/modules/alerts/components/TrajectorySourceBadge.vue'
+import AlertTimeline from '@/modules/alerts/components/AlertTimeline.vue'
+import { TrajectoryRangeUtils } from '@/modules/alerts/utils/trajectory-range.utils'
+import MareaQuickDetailModal from '@/modules/stats/components/MareaQuickDetailModal.vue'
+import ObservadorTimelineDialog from '@/modules/admin/components/ObservadorTimelineDialog.vue'
+import dashboardService from '@/modules/dashboard/services/dashboard.service'
+import ReclamoEntregaDialog from '@/modules/dashboard/components/ReclamoEntregaDialog.vue'
+import GestionEtapasMareaDialog from '@/modules/mareas/components/GestionEtapasMareaDialog.vue'
+import NuevaMareaDialog from '@/modules/mareas/components/NuevaMareaDialog.vue'
+
+// Icons
 import {
     CheckIcon,
     ShipIcon,
     MapPinIcon,
     RefreshIcon,
     ChevronRightIcon,
-    InfoIcon
+    InfoIcon,
+    WarningIcon,
+    ChevronDownIcon
 } from '@/icons'
-import dashboardService from '@/modules/dashboard/services/dashboard.service'
-import ReclamoEntregaDialog from '@/modules/dashboard/components/ReclamoEntregaDialog.vue'
+
+// Services & Types
+import { type Alerta, alertsService } from '../services/alerts.service'
+import type { AlertMetadata } from '../interfaces/alert-metadata.interface'
 import mareasService from '@/modules/mareas/services/mareas.service'
-import GestionEtapasMareaDialog from '@/modules/mareas/components/GestionEtapasMareaDialog.vue'
-import NuevaMareaDialog from '@/modules/mareas/components/NuevaMareaDialog.vue'
-import AlertTrajectoryMapModal from './AlertTrajectoryMapModal.vue'
-import MareaQuickDetailModal from '@/modules/stats/components/MareaQuickDetailModal.vue'
-import ObservadorTimelineDialog from '@/modules/admin/components/ObservadorTimelineDialog.vue'
-import { storeToRefs } from 'pinia'
+import usersAdminApi from '@/modules/admin/services/users.service'
+import type { User } from '@/modules/auth/types/auth.types'
+import { ValidRoles } from '@/modules/auth/interfaces/roles.enum'
+import { TipoEtapa, TipoMarea } from '@/modules/mareas/types/enums'
+
+// Stores
 import { useBusinessRulesStore } from '@/modules/shared/stores/business-rules.store'
 import { useWorkflowStore } from '@/modules/shared/stores/workflow.store'
 import { useConfigStore } from '@/modules/shared/stores/config.store'
-import usersAdminApi from '@/modules/admin/services/users.service'
-import type { User } from '@/modules/auth/types/auth.types'
-import { ChevronDownIcon } from '@/icons'
-import { TipoEtapa, TipoMarea } from '@/modules/mareas/types/enums'
 
 const workflowStore = useWorkflowStore()
 
@@ -352,8 +370,6 @@ const props = defineProps<{
     isOpen: boolean
     alert: Alerta | null
 }>()
-
-import { ValidRoles } from '@/modules/auth/interfaces/roles.enum'
 
 // Assignment State
 const availableUsers = ref<User[]>([])
@@ -486,15 +502,14 @@ const pendingAction = ref<'SEGUIMIENTO' | 'DESCARTADA' | 'RESUELTA' | ''>('')
 const confirmationMessage = ref('')
 const mareaObservers = ref<string[]>([])
 const showNuevaMareaDialog = ref(false)
-const showMapModal = ref(false)
 const showMareaQuickDetail = ref(false)
 const showObservadorTimeline = ref(false)
 const businessRulesStore = useBusinessRulesStore()
 const configStore = useConfigStore()
 const { rules } = storeToRefs(businessRulesStore)
-const recheckCorto = computed(() => rules.value.PLAZO_RECHECK_CORTO || 0)
-const recheckMedio = computed(() => rules.value.PLAZO_RECHECK_MEDIO || 0)
-const recheckLargo = computed(() => rules.value.PLAZO_RECHECK_LARGO || 0)
+const recheckCorto = computed(() => rules.value?.PLAZO_RECHECK_CORTO || 0)
+const recheckMedio = computed(() => rules.value?.PLAZO_RECHECK_MEDIO || 0)
+const recheckLargo = computed(() => rules.value?.PLAZO_RECHECK_LARGO || 0)
 
 const formatToLocalISODate = (date: Date) => {
     const year = date.getFullYear()
@@ -573,11 +588,49 @@ const mareaObserversLabel = computed(() => {
     return 'Sin asignar'
 })
 
-const externalSourceName = computed(() => {
+const alertSources = computed(() => {
+    const meta = localAlert.value?.metadata || {}
+    const sources = (meta as any).sources || []
+
+    // 1. Si hay lista de fuentes estructurada (Source Stacking)
+    if (sources.length > 0) {
+        return sources.map((s: { name: string }) => {
+            let name = s.name
+            if (name === 'API_PNA' || name === 'PNA') name = 'PNA'
+            else if (name === 'ACCESS_IMPORT') name = 'Access'
+            else if (name === 'TRACKING_CSV') name = 'Tracking'
+            return { name }
+        })
+    }
+
+    // 2. Fallback: Campo source único (Access o PNA creados sin stacking)
+    if (meta.source) {
+        let name = meta.source
+        if (name === 'API_PNA' || name === 'PNA') name = 'PNA'
+        else if (name === 'ACCESS_IMPORT') name = 'Access'
+        else if (name === 'TRACKING_CSV') name = 'Tracking'
+        return [{ name }]
+    }
+
+    // 3. Fallback: Tipos de monitoreo satelital (VMS)
     const monitoringTypes = ['MONITOREO_SATELITAL', 'GAP_DETECTADO', 'POSIBLE_ZARPADA', 'POSIBLE_ARRIBO', 'ERROR_REGISTRO_PUERTO']
-    const isMonitoring = monitoringTypes.includes(localAlert.value?.tipo ?? '') || !!localAlert.value?.metadata?.type
-    if (isMonitoring) return 'Monitoreo Satelital'
-    return 'Access (Externo)'
+    const isMonitoring = monitoringTypes.includes(localAlert.value?.tipo ?? '') || !!meta.type
+    if (isMonitoring) return [{ name: 'VMS' }]
+
+    return [{ name: 'Sistema' }]
+})
+
+
+
+const externalSourceName = computed(() => {
+    const sources = alertSources.value
+    if (sources.length > 0) {
+        // Si hay PNA, priorizar ese nombre para la tabla de comparación si existe
+        const pna = sources.find((s: { name: string }) => s.name === 'PNA')
+        if (pna) return 'PNA (API)'
+        return sources[0].name
+    }
+    return 'Sistema Externo'
 })
 
 // --- Map data resolution ---
@@ -601,52 +654,11 @@ const mapVesselName = computed(() => {
 })
 
 const mapReferenceDate = computed(() => {
-    const meta = localAlert.value?.metadata || {}
-
-    // Incongruency Logic: Get MIN start date
-    if (meta.subTipo === 'EDITAR_ETAPA' || meta.subTipo === 'INCONGRUENCIA') {
-        const dates = [
-            meta.fechaZarpada,
-            meta.localData?.fechaZarpada
-        ].filter(d => !!d).map(d => new Date(d as string).getTime())
-
-        if (dates.length > 0) {
-            return new Date(Math.min(...dates)).toISOString()
-        }
-    }
-
-    // Default Logic: Metadata specific event date
-    if (meta.eventDate) return meta.eventDate
-    if (meta.fechaZarpada) return meta.fechaZarpada
-    if (meta.date) return meta.date
-
-    // Fallback: Alert detected date
-    if (localAlert.value?.fechaDetectada) return localAlert.value.fechaDetectada
-
-    // 3. Current time fallback
-    return ''
+    return TrajectoryRangeUtils.resolveAlertDates(localAlert.value).referenceDate
 })
 
 const mapEndDate = computed(() => {
-    const meta = localAlert.value?.metadata || {}
-
-    // Incongruency Logic: Get MAX end date
-    if (meta.subTipo === 'EDITAR_ETAPA' || meta.subTipo === 'INCONGRUENCIA') {
-        const dates = [
-            meta.fechaArribo,
-            meta.localData?.fechaArribo
-        ].filter(d => !!d).map(d => new Date(d as string).getTime())
-
-        if (dates.length > 0) {
-            return new Date(Math.max(...dates)).toISOString()
-        }
-    }
-
-    // Default Logic: If we have an arrival date in metadata, it's the end of our range
-    if (meta.fechaArribo) return meta.fechaArribo
-
-    // For simple events with no end date, we return null
-    return null
+    return TrajectoryRangeUtils.resolveAlertDates(localAlert.value).endDate
 })
 
 const canShowMap = computed(() => {
@@ -677,7 +689,7 @@ const incongruencyFields = computed(() => {
     const loc = incongruencyData.value.localData || {}
     const type = incongruencyData.value.type // 'ZARPADA' or 'ARRIBO'
 
-    let fields = []
+    const fields = []
     if (!type || type === 'ZARPADA') {
         fields.push({ key: 'fechaZarpada', label: 'Fecha Zarpada', type: 'date' })
         fields.push({ key: 'puertoZarpadaNombre', label: 'Puerto Zarpada', type: 'text' })
@@ -770,6 +782,7 @@ const smartActionConfig = computed(() => {
                     showStagesDialog.value = true
                 }
             }
+        case 'RECOMENDACION_FIN_MAREA':
         case 'FIN_MAREA':
             return {
                 label: 'Finalizar Marea',
@@ -841,6 +854,7 @@ const prepareStagesData = async (isNewStageConfig = false) => {
         const subTipo = localAlert.value?.metadata?.subTipo || localAlert.value?.tipo
         const ext = localAlert.value.metadata?.externalData || {}
         const nroEtapaAlert = localAlert.value.metadata?.nroEtapa
+        const sources = (localAlert.value?.metadata as any)?.sources || []
 
         // Ajuste sugerido por el usuario: Fecha Inicio Observador
         if (ext.fechaZarpada) {
@@ -859,12 +873,14 @@ const prepareStagesData = async (isNewStageConfig = false) => {
 
         if (isNewStageConfig) {
             const lastStage = currentStages.length > 0 ? currentStages[currentStages.length - 1] : null
+            // Heredar del último o usar puerto de alerta/base
+            const portFromAlert = localAlert.value.metadata?.portId || ext.puertoZarpadaId || ext.portId;
+            const puertoZarpadaId = portFromAlert || lastStage?.puertoArriboId || marea.puertoBaseId || '';
 
             const newStage = {
                 id: null, // Nueva etapa
                 nroEtapa: (lastStage?.nroEtapa || 0) + 1,
-                // Heredar del último o usar puerto base
-                puertoZarpadaId: ext.puertoZarpadaId || lastStage?.puertoArriboId || marea.puertoBaseId || '',
+                puertoZarpadaId: puertoZarpadaId,
                 // Usar datos del alerta para fechas
                 fechaZarpada: ext.fechaZarpada || '',
                 puertoArriboId: ext.puertoArriboId || '', // Sugerir si viene en el alerta
@@ -873,19 +889,32 @@ const prepareStagesData = async (isNewStageConfig = false) => {
                 pesqueriaId: lastStage?.pesqueriaId || marea.buque?.pesqueriaHabitualId || marea.id_pesqueria,
                 tipoEtapa: lastStage?.tipoEtapa || TipoEtapa.MC,
                 observaciones: `Etapa detectada automáticamente desde ${externalSourceName.value}`,
+                fuentesZarpada: sources.length > 0 ? { sources, manual: true } : null,
                 observadores: []
             }
             currentStages.push(newStage)
-        } else if (subTipo && ['ARRIBO', 'INCONGRUENCIA', 'ZARPADA', 'POSIBLE_ZARPADA'].includes(subTipo as string) && nroEtapaAlert) {
+        } else if (subTipo && ['ARRIBO', 'INCONGRUENCIA', 'ZARPADA', 'POSIBLE_ZARPADA', 'FIN_MAREA', 'RECOMENDACION_FIN_MAREA'].includes(subTipo as string) && nroEtapaAlert) {
             // Caso Actualización de Etapa: Buscar la etapa y sugerir cambios de Access/Tracking
             const stageToUpdate = currentStages.find((s: any) =>
                 (s.nroEtapa === nroEtapaAlert) || (s.nro_etapa === nroEtapaAlert)
             )
             if (stageToUpdate) {
-                if (ext.fechaZarpada) stageToUpdate.fechaZarpada = ext.fechaZarpada
-                if (ext.puertoZarpadaId) stageToUpdate.puertoZarpadaId = ext.puertoZarpadaId
-                if (ext.fechaArribo) stageToUpdate.fechaArribo = ext.fechaArribo
-                if (ext.puertoArriboId) stageToUpdate.puertoArriboId = ext.puertoArriboId
+                if (ext.fechaZarpada) {
+                    stageToUpdate.fechaZarpada = ext.fechaZarpada
+                    stageToUpdate.fuentesZarpada = sources.length > 0 ? { sources, manual: true } : null
+                }
+                if (ext.puertoZarpadaId) {
+                    stageToUpdate.puertoZarpadaId = ext.puertoZarpadaId
+                    stageToUpdate.fuentesZarpada = sources.length > 0 ? { sources, manual: true } : null
+                }
+                if (ext.fechaArribo) {
+                    stageToUpdate.fechaArribo = ext.fechaArribo
+                    stageToUpdate.fuentesArribo = sources.length > 0 ? { sources, manual: true } : null
+                }
+                if (ext.puertoArriboId) {
+                    stageToUpdate.puertoArriboId = ext.puertoArriboId
+                    stageToUpdate.fuentesArribo = sources.length > 0 ? { sources, manual: true } : null
+                }
             }
         }
 
@@ -942,8 +971,19 @@ const getBadgeColor = (prio?: string) => {
     }
 }
 
-const getOriginBadgeColor = (type?: string) => {
-    switch (type || '') {
+const getSourceColor = (name: string): 'primary' | 'success' | 'error' | 'warning' | 'info' | 'purple' | 'light' | 'dark' => {
+    const colors: Record<string, 'primary' | 'success' | 'error' | 'warning' | 'info' | 'purple' | 'light' | 'dark'> = {
+        'PNA': 'warning',
+        'Access': 'purple',
+        'VMS': 'success',
+        'Tracking': 'success',
+        'Sistema': 'light'
+    }
+    return colors[name] || 'light'
+}
+
+const getOriginBadgeColor = (type?: string): 'primary' | 'success' | 'error' | 'warning' | 'info' | 'purple' | 'light' | 'dark' => {
+    switch (type) {
         case 'MAREA': return 'info'
         case 'OBSERVADOR': return 'primary'
         case 'BUQUE': return 'warning'

@@ -1,16 +1,52 @@
 ﻿<template>
-  <div class="rounded-3xl border border-border bg-surface p-6 shadow-sm flex flex-col gap-4 border-l-4 border-l-primary">
-    <div class="mb-6 flex items-center justify-between">
-      <div>
-        <h2 class="text-sm font-black text-text uppercase tracking-widest flex items-center gap-2">
-          <div class="w-1.5 h-4 bg-success rounded-full"></div>
-          Flota por Pesquería
-        </h2>
-        <span class="text-[10px] font-bold text-text-muted">Distribución de buques activos</span>
+  <div
+    class="rounded-3xl border border-border bg-surface p-6 shadow-sm flex flex-col gap-4 border-l-4 border-l-primary">
+    <div class="flex flex-col gap-6">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-sm font-black text-text uppercase tracking-widest flex items-center gap-2">
+            <div class="w-1.5 h-4 bg-success rounded-full"></div>
+            Distribución por Pesquería
+          </h2>
+          <span class="text-[10px] font-bold text-text-muted">Desglose operativo de la flota</span>
+        </div>
+        <div class="text-right">
+          <span class="text-[10px] font-black text-text-muted uppercase tracking-widest">Total Activo</span>
+          <p class="text-sm font-black text-text">{{ totalActive }} {{ viewType === 'MAREAS' ? 'mareas' : 'buques' }}</p>
+        </div>
       </div>
-      <div class="text-right">
-        <span class="text-[10px] font-black text-text-muted uppercase tracking-widest">Total Activo</span>
-        <p class="text-sm font-black text-text">{{ totalActive }} buques</p>
+
+      <!-- Control Bar -->
+      <div class="flex flex-wrap items-center justify-between gap-4 p-1.5 bg-surface-muted/50 rounded-2xl border border-border/50">
+        <!-- View Toggle (Mareas/Buques) -->
+        <div class="flex p-1 bg-surface border border-border rounded-xl shadow-sm">
+          <button 
+            @click="viewType = 'MAREAS'"
+            class="px-4 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all"
+            :class="viewType === 'MAREAS' ? 'bg-primary text-white shadow-md shadow-primary/20' : 'text-text-muted hover:text-text'"
+          >
+            Mareas
+          </button>
+          <button 
+            @click="viewType = 'BUQUES'"
+            class="px-4 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all"
+            :class="viewType === 'BUQUES' ? 'bg-primary text-white shadow-md shadow-primary/20' : 'text-text-muted hover:text-text'"
+          >
+            Buques
+          </button>
+        </div>
+
+        <!-- Designated Checkbox -->
+        <label class="flex items-center gap-3 px-4 py-2 bg-surface border border-border rounded-xl shadow-sm cursor-pointer hover:bg-surface-muted/80 transition-all select-none group">
+          <div class="relative flex items-center justify-center w-5 h-5 rounded-md border-2 transition-all duration-300"
+               :class="includeDesignated ? 'bg-primary border-primary' : 'bg-surface border-border group-hover:border-primary/50'">
+            <svg v-if="includeDesignated" xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20 6 9 17l-5-5" />
+            </svg>
+            <input type="checkbox" v-model="includeDesignated" class="absolute inset-0 opacity-0 cursor-pointer" />
+          </div>
+          <span class="text-[10px] font-black text-primary uppercase tracking-widest">Incluir Designadas</span>
+        </label>
       </div>
     </div>
 
@@ -23,22 +59,23 @@
       </div>
 
       <div class="flex flex-col justify-center py-2">
-        <h3 class="text-[10px] font-black text-text-muted uppercase tracking-widest mb-4 border-b border-border pb-2">Distribución Nominal</h3>
-        <div class="space-y-4" v-if="distribution.length">
-          <div v-for="item in distribution" :key="item.label" class="group/item">
-            <div 
-              @click="toggleExpand(item.label)"
+        <h3 class="text-[10px] font-black text-text-muted uppercase tracking-widest mb-4 border-b border-border pb-2">
+          Distribución Nominal</h3>
+        <div class="space-y-4" v-if="processedDistribution.length">
+          <div v-for="item in processedDistribution" :key="item.label" class="group/item">
+            <div @click="toggleExpand(item.label)"
               class="space-y-2 p-2 rounded-2xl transition-all cursor-pointer hover:bg-surface-muted/80"
-              :class="{ 'bg-surface-muted shadow-sm ring-1 ring-border': expandedId === item.label }"
-            >
+              :class="{ 'bg-surface-muted shadow-sm ring-1 ring-border': expandedId === item.label }">
               <div class="flex items-center justify-between text-[10px] font-black uppercase tracking-widest">
                 <div class="flex items-center gap-2">
-                  <span class="text-text-muted transition-colors" :class="{ 'text-primary': expandedId === item.label }">{{ item.label }}</span>
-                  <div 
-                    class="w-4 h-4 rounded-full flex items-center justify-center transition-transform duration-300"
-                    :class="{ 'rotate-180 bg-primary text-white': expandedId === item.label, 'bg-surface-muted text-text-muted': expandedId !== item.label }"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                  <span class="text-text-muted transition-colors"
+                    :class="{ 'text-primary': expandedId === item.label }">{{ item.label }}</span>
+                  <div class="w-4 h-4 rounded-full flex items-center justify-center transition-transform duration-300"
+                    :class="{ 'rotate-180 bg-primary text-white': expandedId === item.label, 'bg-surface-muted text-text-muted': expandedId !== item.label }">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="m6 9 6 6 6-6" />
+                    </svg>
                   </div>
                 </div>
                 <span class="text-text tabular-nums">
@@ -46,41 +83,84 @@
                   <span class="text-text-muted font-bold ml-1">({{ item.percentage }}%)</span>
                 </span>
               </div>
-              <div class="relative h-1.5 w-full bg-surface-muted rounded-full overflow-hidden border border-border/30">
-                <div
-                  class="h-full transition-all duration-1000 ease-out shadow-sm"
-                  :style="{
-                    width: totalActive ? `${(item.count / totalActive) * 100}%` : '0%',
-                    backgroundColor: item.color
-                  }"
-                ></div>
+              <div
+                class="relative h-2 w-full bg-surface-muted rounded-full overflow-hidden border border-border/30 flex shadow-inner">
+                <template v-if="item.stats && Object.keys(item.stats).length > 1">
+                  <div v-for="(stat, code) in item.stats" :key="code"
+                    class="h-full transition-all duration-1000 ease-out" :style="{
+                      width: `${(stat.count / item.count) * 100}%`,
+                      backgroundColor: getFleetColor(stat.nombre),
+                      filter: 'saturate(0.8)'
+                    }" v-tooltip="`${stat.nombre}: ${stat.count} ${viewType === 'MAREAS' ? 'mareas' : 'buques'}`"></div>
+                </template>
+                <div v-else class="h-full transition-all duration-1000 ease-out shadow-sm" :style="{
+                  width: totalActive ? `${(item.count / totalActive) * 100}%` : '0%',
+                  backgroundColor: item.color
+                }"></div>
               </div>
 
               <!-- Draggable/Scrollable Vessel Cloud -->
-              <Transition
-                enter-active-class="transition-all duration-300 ease-out"
+              <Transition enter-active-class="transition-all duration-300 ease-out"
                 enter-from-class="max-h-0 opacity-0 transform -translate-y-2"
-                enter-to-class="max-h-40 opacity-100 transform translate-y-0"
+                enter-to-class="max-h-[1000px] opacity-100 transform translate-y-0"
                 leave-active-class="transition-all duration-200 ease-in"
-                leave-from-class="max-h-40 opacity-100 transform translate-y-0"
-                leave-to-class="max-h-0 opacity-0 transform -translate-y-2"
-              >
+                leave-from-class="max-h-[1000px] opacity-100 transform translate-y-0"
+                leave-to-class="max-h-0 opacity-0 transform -translate-y-2">
                 <div v-if="expandedId === item.label" class="pt-3 overflow-hidden">
-                  <div class="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto custom-scrollbar-mini pr-1">
-                    <div 
-                      v-for="vessel in item.vessels" 
-                      :key="vessel.name"
+                  <!-- Conditional Grouping: Only if multiple fleet types exist -->
+                  <div v-if="item.stats && Object.keys(item.stats).length > 1" class="space-y-4">
+                    <div v-for="(group, typeLabel) in groupVesselsByFleet(item.vessels)" :key="typeLabel"
+                      class="space-y-2">
+                      <div class="flex items-center gap-2 px-1">
+                        <div class="w-1 h-3 rounded-full" :style="{ backgroundColor: getFleetColor(typeLabel) }"></div>
+                        <span
+                          class="text-[9px] font-black uppercase tracking-tighter text-text-muted flex items-center gap-1.5">
+                          {{ typeLabel }}
+                          <span class="px-1.5 py-0.5 rounded-md bg-surface-muted text-[8px] border border-border">{{
+                            group.length
+                            }}</span>
+                        </span>
+                      </div>
+                      <div class="flex flex-wrap gap-1.5 pr-1">
+                        <div v-for="vessel in group" :key="vessel.mareaCode"
+                          @click.stop="openMareaDetail(vessel.id)"
+                          class="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-surface border border-border shadow-sm transition-all hover:border-primary/50 group/chip"
+                          :class="{ 'cursor-pointer hover:bg-surface-muted active:scale-95': viewType === 'MAREAS' }"
+                          v-tooltip="vessel.status === 'EN_EJECUCION' ? 'En ejecución' : 'Designada'">
+                          <component :is="vessel.status === 'EN_EJECUCION' ? ShipIcon : TaskIcon" class="w-3 h-3"
+                            :class="vessel.status === 'EN_EJECUCION' ? 'text-primary' : 'text-text-muted'" />
+                          <span
+                            class="text-[10px] font-bold text-text uppercase tracking-tighter group-hover/chip:text-primary transition-colors">
+                            <template v-if="viewType === 'MAREAS'">
+                              {{ vessel.name }}
+                              <span class="text-[9px] opacity-60 ml-0.5">({{ vessel.mareaCode }})</span>
+                            </template>
+                            <template v-else>
+                              {{ vessel.name }}
+                            </template>
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <!-- Direct list if only one fleet type -->
+                  <div v-else class="flex flex-wrap gap-1.5 pr-1">
+                    <div v-for="vessel in item.vessels" :key="vessel.mareaCode"
+                      @click.stop="openMareaDetail(vessel.id)"
                       class="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-surface border border-border shadow-sm transition-all hover:border-primary/50 group/chip"
-                      v-tooltip="vessel.status === 'EN_EJECUCION' ? 'En ejecución' : 'Designada'"
-                    >
-                      <component 
-                        :is="vessel.status === 'EN_EJECUCION' ? ShipIcon : TaskIcon" 
-                        class="w-3 h-3" 
-                        :class="vessel.status === 'EN_EJECUCION' ? 'text-primary' : 'text-text-muted'"
-                      />
-                      <span class="text-[10px] font-bold text-text uppercase tracking-tighter group-hover/chip:text-primary transition-colors">
-                        {{ vessel.name }}
-                        <span class="text-[9px] opacity-60 ml-0.5">({{ vessel.mareaCode }})</span>
+                      :class="{ 'cursor-pointer hover:bg-surface-muted active:scale-95': viewType === 'MAREAS' }"
+                      v-tooltip="vessel.status === 'EN_EJECUCION' ? 'En ejecución' : 'Designada'">
+                      <component :is="vessel.status === 'EN_EJECUCION' ? ShipIcon : TaskIcon" class="w-3 h-3"
+                        :class="vessel.status === 'EN_EJECUCION' ? 'text-primary' : 'text-text-muted'" />
+                      <span
+                        class="text-[10px] font-bold text-text uppercase tracking-tighter group-hover/chip:text-primary transition-colors">
+                        <template v-if="viewType === 'MAREAS'">
+                          {{ vessel.name }}
+                          <span class="text-[9px] opacity-60 ml-0.5">({{ vessel.mareaCode }})</span>
+                        </template>
+                        <template v-else>
+                          {{ vessel.name }}
+                        </template>
                       </span>
                     </div>
                   </div>
@@ -92,6 +172,13 @@
         <div v-else class="text-center text-xs font-bold text-gray-400">No hay datos para mostrar</div>
       </div>
     </div>
+
+    <!-- Marea Quick Detail Modal -->
+    <MareaQuickDetailModal
+      :is-open="isDetailModalOpen"
+      :marea-id="selectedMareaId"
+      @close="closeDetailModal"
+    />
   </div>
 </template>
 
@@ -101,17 +188,114 @@ import { toast } from 'vue-sonner'
 import { useTheme } from '@/components/layout/ThemeProvider.vue'
 import { ShipIcon, TaskIcon } from '@/icons'
 import dashboardService from '@/modules/dashboard/services/dashboard.service'
+import MareaQuickDetailModal from '@/modules/stats/components/MareaQuickDetailModal.vue'
+import mareasService from '@/modules/mareas/services/mareas.service'
 
 type FleetDisplayItem = {
   label: string
   count: number
   color: string
   percentage: number
-  vessels: Array<{ name: string; mareaCode: string; status: string }>
+  stats?: Record<string, { count: number, nombre: string }>
+  vessels: Array<{
+    id: string;
+    name: string;
+    mareaCode: string;
+    status: string;
+    tipoFlota?: { codigo: string; nombre: string }
+  }>
 }
 
+const viewType = ref<'MAREAS' | 'BUQUES'>('MAREAS')
+const includeDesignated = ref(true)
 const distribution = ref<FleetDisplayItem[]>([])
 const expandedId = ref<string | null>(null)
+
+// Marea Detail Modal State
+const isDetailModalOpen = ref(false)
+const selectedMareaId = ref<string | null>(null)
+
+const openMareaDetail = (mareaId: string) => {
+  if (viewType.value !== 'MAREAS') return
+  selectedMareaId.value = mareaId
+  isDetailModalOpen.value = true
+}
+
+const closeDetailModal = () => {
+  isDetailModalOpen.value = false
+  selectedMareaId.value = null
+}
+
+// Lógica de procesamiento de datos según vista y filtros
+const processedDistribution = computed(() => {
+  if (!distribution.value.length) return []
+
+  const result = distribution.value.map(item => {
+    // 1. Filtrar mareas si no se incluyen designadas
+    const filteredMareas = includeDesignated.value
+      ? item.vessels
+      : item.vessels.filter(v => v.status === 'EN_EJECUCION')
+
+    if (!filteredMareas.length) return null
+
+    // 2. Agrupar según viewType para contar únicos
+    let count = 0
+    let stats: Record<string, { count: number, nombre: string }> = {}
+
+    if (viewType.value === 'BUQUES') {
+      // Agrupar por nombre de buque para evitar duplicados en el detalle
+      const uniqueVesselMap = new Map<string, typeof filteredMareas[0]>()
+      filteredMareas.forEach(v => {
+        // Si hay una en ejecución, priorizarla para el icono/estado
+        if (!uniqueVesselMap.has(v.name) || v.status === 'EN_EJECUCION') {
+          uniqueVesselMap.set(v.name, v)
+        }
+      })
+      
+      const uniqueVesselList = Array.from(uniqueVesselMap.values())
+      count = uniqueVesselList.length
+
+      // Recalcular stats por flota para buques únicos
+      uniqueVesselList.forEach(v => {
+        const fleetName = v.tipoFlota?.nombre || 'Indeterminado'
+        if (!stats[fleetName]) stats[fleetName] = { count: 0, nombre: fleetName }
+        stats[fleetName].count++
+      })
+
+      return {
+        ...item,
+        count,
+        stats,
+        vessels: uniqueVesselList // Lista de buques únicos
+      }
+    } else {
+      // Contar todas las mareas
+      count = filteredMareas.length
+      
+      // Recalcular stats por flota para todas las mareas
+      filteredMareas.forEach(v => {
+        const fleetName = v.tipoFlota?.nombre || 'Indeterminado'
+        if (!stats[fleetName]) stats[fleetName] = { count: 0, nombre: fleetName }
+        stats[fleetName].count++
+      })
+
+      return {
+        ...item,
+        count,
+        stats,
+        vessels: filteredMareas
+      }
+    }
+  }).filter(Boolean) as FleetDisplayItem[]
+
+  // Calcular porcentajes sobre el nuevo total
+  const newTotal = result.reduce((sum, item) => sum + item.count, 0)
+  return result.map(item => ({
+    ...item,
+    percentage: newTotal > 0 ? Math.round((item.count / newTotal) * 100) : 0
+  })).sort((a, b) => b.count - a.count)
+})
+
 const palette = ['var(--color-primary)', 'var(--color-info)', 'var(--color-success)', 'var(--color-warning)', 'var(--color-error)', 'var(--color-secondary)']
 
 const { isDarkMode } = useTheme() as any
@@ -121,14 +305,14 @@ const toggleExpand = (label: string) => {
 }
 
 const onDataPointSelection = (_event: any, _chartContext: any, config: any) => {
-  const label = distribution.value[config.dataPointIndex]?.label
+  const label = processedDistribution.value[config.dataPointIndex]?.label
   if (label) toggleExpand(label)
 }
 
-const totalActive = computed(() => distribution.value.reduce((sum, item) => sum + item.count, 0))
-const series = computed(() => distribution.value.map((item) => item.count))
+const totalActive = computed(() => processedDistribution.value.reduce((sum, item) => sum + item.count, 0))
+const series = computed(() => processedDistribution.value.map((item) => item.count))
 const chartColors = computed(() =>
-  distribution.value.map((item, index) => item.color || palette[index % palette.length])
+  processedDistribution.value.map((item, index) => item.color || palette[index % palette.length])
 )
 
 const chartOptions = computed(() => ({
@@ -147,7 +331,7 @@ const chartOptions = computed(() => ({
   theme: {
     mode: isDarkMode.value ? 'dark' : 'light'
   },
-  labels: distribution.value.map((item) => item.label),
+  labels: processedDistribution.value.map((item) => item.label),
   colors: chartColors.value,
   stroke: {
     show: true,
@@ -157,7 +341,7 @@ const chartOptions = computed(() => ({
   plotOptions: {
     pie: {
       donut: {
-        size: '72%',
+        size: '55%',
         labels: {
           show: true,
           name: {
@@ -177,7 +361,7 @@ const chartOptions = computed(() => ({
           },
           total: {
             show: true,
-            label: 'BUQUES',
+            label: viewType.value,
             fontSize: '9px',
             fontWeight: 900,
             color: 'var(--color-text-muted)',
@@ -194,7 +378,7 @@ const chartOptions = computed(() => ({
         plotOptions: {
           pie: {
             donut: {
-              size: '65%',
+              size: '55%',
               labels: {
                 value: { fontSize: '18px' },
                 total: { fontSize: '8px' }
@@ -207,7 +391,7 @@ const chartOptions = computed(() => ({
   ],
   dataLabels: { enabled: false },
   legend: {
-    show: distribution.value.length > 0,
+    show: processedDistribution.value.length > 0,
     position: 'bottom',
     fontSize: '10px',
     fontWeight: 700,
@@ -223,16 +407,60 @@ const chartOptions = computed(() => ({
       const val = series[seriesIndex]
       const label = w.globals.labels[seriesIndex]
       const accent = chartColors.value[seriesIndex] || 'var(--color-primary)'
+      const item = processedDistribution.value[seriesIndex]
+
       return `
-        <div class="px-3 py-2 bg-surface text-text border border-border rounded-xl flex items-center gap-2 text-[11px] font-bold shadow-xl">
-          <span class="w-2 h-2 rounded-full" style="background:${accent}"></span>
-          <span class="text-text-muted uppercase tracking-widest">${label}</span>
-          <span class="text-text font-black">${val} buques</span>
+        <div class="px-4 py-3 bg-surface/95 backdrop-blur-md text-text border border-border/50 rounded-2xl flex flex-col gap-3 shadow-2xl ring-1 ring-black/5 min-w-[200px]">
+          <div class="flex items-center justify-between border-b border-border/30 pb-2">
+            <div class="flex items-center gap-2">
+              <span class="w-1.5 h-3 rounded-full" style="background:${accent}"></span>
+              <span class="text-[10px] text-text-muted uppercase font-black tracking-widest">${label}</span>
+            </div>
+            <span class="text-[9px] font-black text-primary px-1.5 py-0.5 bg-primary/5 rounded-md border border-primary/20">${viewType.value}</span>
+          </div>
+          
+          ${item.stats && Object.keys(item.stats).length > 0 ? `
+            <div class="flex flex-col gap-2">
+              ${Object.entries(item.stats).map(([_, stat]: any) => `
+                <div class="flex items-center justify-between gap-4">
+                  <div class="flex items-center gap-1.5">
+                    <div class="w-1.5 h-1.5 rounded-full" style="background:${getFleetColor(stat.nombre)}"></div>
+                    <span class="text-[9px] font-bold text-text-muted uppercase">${stat.nombre}</span>
+                  </div>
+                  <span class="text-[10px] font-black text-text">${stat.count}</span>
+                </div>
+              `).join('')}
+            </div>
+          ` : ''}
+
+          <div class="flex items-center justify-between pt-1 ${item.stats && Object.keys(item.stats).length > 0 ? 'border-t border-border/30' : ''}">
+            <span class="text-[9px] font-black text-text-muted uppercase">Total Pesquería</span>
+            <div class="flex items-baseline gap-1">
+              <span class="text-xs font-black text-text">${val}</span>
+              <span class="text-[9px] font-bold text-text-muted">(${Math.round((val / totalActive.value) * 100)}%)</span>
+            </div>
+          </div>
         </div>
       `
     }
   }
 }))
+
+const groupVesselsByFleet = (vessels: FleetDisplayItem['vessels']) => {
+  const groups: Record<string, any[]> = {}
+  vessels.forEach(v => {
+    const fleetName = v.tipoFlota?.nombre || 'Indeterminado'
+    if (!groups[fleetName]) groups[fleetName] = []
+    groups[fleetName].push(v)
+  })
+  return groups
+}
+
+const getFleetColor = (name: string) => {
+  if (name.toUpperCase().includes('FRESQUERO')) return 'var(--color-info)'
+  if (name.toUpperCase().includes('CONGELADOR')) return 'var(--color-warning)'
+  return 'var(--color-primary)'
+}
 
 const loadDistribution = async () => {
   try {
@@ -244,7 +472,14 @@ const loadDistribution = async () => {
       count: item.count,
       color: palette[index % palette.length],
       percentage: total > 0 ? Math.round((item.count / total) * 100) : 0,
-      vessels: item.vessels || []
+      stats: item.stats,
+      vessels: (item.vessels || []).map(v => ({
+        id: v.id,
+        name: v.name,
+        mareaCode: v.mareaCode,
+        status: v.status,
+        tipoFlota: v.tipoFlota
+      }))
     }))
   } catch (error) {
     toast.error('No se pudo cargar la distribución por pesquería.')
@@ -258,9 +493,11 @@ onMounted(() => void loadDistribution())
 .custom-scrollbar::-webkit-scrollbar {
   width: 4px;
 }
+
 .custom-scrollbar::-webkit-scrollbar-track {
   background: transparent;
 }
+
 .custom-scrollbar::-webkit-scrollbar-thumb {
   background: var(--color-surface-muted);
   border-radius: 10px;
@@ -269,9 +506,11 @@ onMounted(() => void loadDistribution())
 .custom-scrollbar-mini::-webkit-scrollbar {
   width: 2px;
 }
+
 .custom-scrollbar-mini::-webkit-scrollbar-track {
   background: transparent;
 }
+
 .custom-scrollbar-mini::-webkit-scrollbar-thumb {
   background: var(--color-border);
   border-radius: 10px;
@@ -282,6 +521,7 @@ onMounted(() => void loadDistribution())
   border: none !important;
   box-shadow: none !important;
 }
+
 :deep(.apexcharts-tooltip-series-group) {
   background: transparent !important;
 }

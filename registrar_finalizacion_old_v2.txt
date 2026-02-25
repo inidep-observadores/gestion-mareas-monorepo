@@ -1,0 +1,209 @@
+﻿
+> old_mareas_v2.service.ts.tmp:180
+8:            if (actionKey === 
+'REGISTRAR_FINALIZACION') {
+  old_mareas_v2.service.ts.tmp:180
+9:                const fechaIn = 
+payload.fechaInicioObservador;
+  old_mareas_v2.service.ts.tmp:181
+0:                const fechaFin 
+= payload.fechaFinObservador;
+  
+old_mareas_v2.service.ts.tmp:1811:
+  old_mareas_v2.service.ts.tmp:181
+2:                if (fechaIn) {
+  old_mareas_v2.service.ts.tmp:181
+3:                    additionalMa
+reaData.fechaInicioObservador = 
+DateUtils.parseToAppZone(fechaIn);
+  old_mareas_v2.service.ts.tmp:181
+4:                }
+  old_mareas_v2.service.ts.tmp:181
+5:                additionalMareaD
+ata.fechaFinObservador = fechaFin 
+? DateUtils.parseToAppZone(fechaFi
+n) : null;
+  
+old_mareas_v2.service.ts.tmp:1816:
+  old_mareas_v2.service.ts.tmp:181
+7:                if 
+(payload.etapas) {
+  old_mareas_v2.service.ts.tmp:181
+8:                    await 
+this.syncStages(tx, id, 
+payload.etapas);
+  old_mareas_v2.service.ts.tmp:181
+9:                }
+  old_mareas_v2.service.ts.tmp:182
+0:            }
+  
+old_mareas_v2.service.ts.tmp:1821:
+  old_mareas_v2.service.ts.tmp:182
+2:            if (actionKey === 
+'RECIBIR_DATOS') {
+  old_mareas_v2.service.ts.tmp:182
+3:                const 
+fechaRecepcion = 
+payload.fechaRecepcion;
+  old_mareas_v2.service.ts.tmp:182
+4:                const 
+fechaInicioObs = 
+payload.fechaInicioObservador ? Da
+teUtils.parseToAppZone(payload.fec
+haInicioObservador) : 
+(marea.fechaInicioObservador ? 
+new 
+Date(marea.fechaInicioObservador) 
+: null);
+  old_mareas_v2.service.ts.tmp:182
+5:                const 
+fechaFinObs = 
+payload.fechaFinObservador ? DateU
+tils.parseToAppZone(payload.fechaF
+inObservador) : 
+(marea.fechaFinObservador ? new 
+Date(marea.fechaFinObservador) : 
+null);
+  
+old_mareas_v2.service.ts.tmp:1826:
+  old_mareas_v2.service.ts.tmp:182
+7:                if 
+(!fechaInicioObs || !fechaFinObs) 
+{
+  old_mareas_v2.service.ts.tmp:182
+8:                    throw new 
+Error('Las fechas de inicio y fin 
+del observador son requeridas 
+para la recepci├│n.');
+  old_mareas_v2.service.ts.tmp:182
+9:                }
+  
+old_mareas_v2.service.ts.tmp:1830:
+  old_mareas_v2.service.ts.tmp:183
+1:                const stages = 
+marea.etapas;
+  old_mareas_v2.service.ts.tmp:183
+2:                if 
+(stages.length > 0) {
+  old_mareas_v2.service.ts.tmp:183
+3:                    const 
+firstStageZarpada = 
+stages[0].fechaZarpada ? new 
+Date(stages[0].fechaZarpada) : 
+null;
+  old_mareas_v2.service.ts.tmp:183
+4:                    const 
+lastStageArribo = 
+stages[stages.length - 
+1].fechaArribo ? new 
+Date(stages[stages.length - 
+1].fechaArribo) : null;
+  
+old_mareas_v2.service.ts.tmp:1835:
+  old_mareas_v2.service.ts.tmp:183
+6:                    if 
+(firstStageZarpada && 
+fechaInicioObs > 
+firstStageZarpada) {
+  old_mareas_v2.service.ts.tmp:183
+7:                        throw 
+new Error('La fecha de inicio del 
+observador no puede ser posterior 
+a la zarpada de la primera 
+etapa.');
+  old_mareas_v2.service.ts.tmp:183
+8:                    }
+> old_mareas_v2.service.ts.tmp:188
+3:                        : 
+actionKey === 
+'REGISTRAR_FINALIZACION'
+  old_mareas_v2.service.ts.tmp:188
+4:                            ? 
+`Fin Marea. Obs: ${additionalMarea
+Data.fechaFinObservador ? new Date
+(additionalMareaData.fechaFinObser
+vador).toLocaleDateString('es-AR')
+ : 'Sin fecha definida'}`
+  old_mareas_v2.service.ts.tmp:188
+5:                            : 
+actionKey === 'RECIBIR_DATOS'
+  old_mareas_v2.service.ts.tmp:188
+6:                                
+? `Recepci├│n de datos. Otolitos: 
+${payload.cantidadOtolitos || 0}`
+  old_mareas_v2.service.ts.tmp:188
+7:                                
+: `Acci├│n: 
+${transicion.etiqueta}`,
+  old_mareas_v2.service.ts.tmp:188
+8:                    
+comentarios: payload.comentarios,
+  old_mareas_v2.service.ts.tmp:188
+9:                    archivos: 
+(actionKey === 'RECIBIR_DATOS' && 
+payload.archivosSnapshot) ? {
+  old_mareas_v2.service.ts.tmp:189
+0:                        create: 
+payload.archivosSnapshot.map((a: 
+any) => ({
+  old_mareas_v2.service.ts.tmp:189
+1:                            
+tipoArchivo: 'DIGITAL_ORIGINAL',
+  old_mareas_v2.service.ts.tmp:189
+2:                            
+rutaArchivo: 
+`received/${id}/${a.name}`,
+  old_mareas_v2.service.ts.tmp:189
+3:                            
+descripcion: `Archivo recibido: 
+${a.name} (${(a.size / 
+1024).toFixed(2)} KB)`,
+  old_mareas_v2.service.ts.tmp:189
+4:                            
+formato: a.name.split('.').pop()?.
+toUpperCase(),
+  old_mareas_v2.service.ts.tmp:189
+5:                        }))
+  old_mareas_v2.service.ts.tmp:189
+6:                    } : 
+undefined
+  old_mareas_v2.service.ts.tmp:189
+7:                }
+  old_mareas_v2.service.ts.tmp:189
+8:            });
+  
+old_mareas_v2.service.ts.tmp:1899:
+  old_mareas_v2.service.ts.tmp:190
+0:            return mareaUpdated;
+  old_mareas_v2.service.ts.tmp:190
+1:        });
+  old_mareas_v2.service.ts.tmp:190
+2:    }
+  
+old_mareas_v2.service.ts.tmp:1903:
+  old_mareas_v2.service.ts.tmp:190
+4:    async 
+getNextMareaNumber(anio: number, 
+tipo: TipoMarea): Promise<number> 
+{
+  old_mareas_v2.service.ts.tmp:190
+5:        const result = await 
+this.prisma.marea.aggregate({
+  old_mareas_v2.service.ts.tmp:190
+6:            where: {
+  old_mareas_v2.service.ts.tmp:190
+7:                anioMarea: anio,
+  old_mareas_v2.service.ts.tmp:190
+8:                tipoMarea: tipo,
+  old_mareas_v2.service.ts.tmp:190
+9:                activo: true
+  old_mareas_v2.service.ts.tmp:191
+0:            },
+  old_mareas_v2.service.ts.tmp:191
+1:            _max: {
+  old_mareas_v2.service.ts.tmp:191
+2:                nroMarea: true
+  old_mareas_v2.service.ts.tmp:191
+3:            }
+
+

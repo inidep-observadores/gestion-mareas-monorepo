@@ -178,7 +178,7 @@ const router = createRouter({
       meta: {
         title: 'Estadísticas Anuales',
         requiresAuth: true,
-        roles: [ValidRoles.admin, ValidRoles.coordinador],
+        roles: [ValidRoles.admin, ValidRoles.coordinador, ValidRoles.desarrollador],
       },
     },
     {
@@ -290,6 +290,36 @@ const router = createRouter({
       component: () => import('@/modules/admin/views/ImportAccessView.vue'),
       meta: {
         title: 'Importación Access',
+        requiresAuth: true,
+        roles: [ValidRoles.admin],
+      },
+    },
+    {
+      path: '/admin/jobs',
+      name: 'AdminJobs',
+      component: () => import('@/modules/admin/views/JobQueueView.vue'),
+      meta: {
+        title: 'Gestión de Tareas',
+        requiresAuth: true,
+        roles: [ValidRoles.admin],
+      },
+    },
+    {
+      path: '/admin/alerts-log',
+      name: 'AdminAlertsLog',
+      component: () => import('@/modules/admin/views/AlertsLogView.vue'),
+      meta: {
+        title: 'Gestión y Auditoría de Alertas',
+        requiresAuth: true,
+        roles: [ValidRoles.admin],
+      },
+    },
+    {
+      path: '/admin/pna-sync',
+      name: 'AdminPnaSync',
+      component: () => import('@/modules/admin/views/PnaSyncDashboardView.vue'),
+      meta: {
+        title: 'Configuracion de Sincronización PNA',
         requiresAuth: true,
         roles: [ValidRoles.admin],
       },

@@ -1,34 +1,34 @@
 generator client {
-  provider      = "prisma-client-js"
-  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+  provider        = "prisma-client-js"
   previewFeatures = ["multiSchema"]
+  binaryTargets   = ["native", "linux-musl-openssl-3.0.x"]
 }
 
 datasource db {
   provider = "postgresql"
-  schemas  = ["public", "audit"]
+  schemas  = ["audit", "public"]
 }
 
 model User {
-  id                  String               @id @default(uuid()) @db.Uuid
-  email               String               @unique
+  id                  String                @id @default(uuid()) @db.Uuid
+  email               String                @unique
   password            String
   fullName            String
-  isActive            Boolean              @default(true)
-  roles               String[]             @default(["invitado"])
-  themePreference     String               @default("system")
+  isActive            Boolean               @default(true)
+  roles               String[]              @default(["invitado"])
+  themePreference     String                @default("system")
   avatarUrl           String?
-  alertasAsignadas    Alerta[]             @relation("AlertaAsignado")
-  alertasCreadas      Alerta[]             @relation("AlertaCreadoPor")
+  auditoriaApi        AuditoriaApi[]
+  auditoriaEntidad    AuditoriaEntidad[]
+  auditoriaEventos    AuditoriaEvento[]
+  auditoriaNavegacion AuditoriaNavegacion[]
+  alertasAsignadas    Alerta[]              @relation("AlertaAsignado")
+  alertasCreadas      Alerta[]              @relation("AlertaCreadoPor")
   eventosAlerta       AlertaEvento[]
   archivos            MareaArchivo[]
   movimientos         MareaMovimiento[]
   resetTokens         PasswordResetToken[]
   products            Product[]
-  auditoriaApi        AuditoriaApi[]
-  auditoriaNavegacion AuditoriaNavegacion[]
-  auditoriaEntidad    AuditoriaEntidad[]
-  auditoriaEventos    AuditoriaEvento[]
 
   @@map("users")
   @@schema("public")
@@ -94,7 +94,6 @@ model Buque {
   id                      String                  @id @default(uuid()) @db.Uuid
   nombreBuque             String                  @unique @map("nombre_buque")
   matricula               String                  @unique
-  matriculaSiop           String?                 @unique @map("matricula_siop")
   codigoInterno           Int?                    @map("codigo_interno")
   tipoFlotaId             String?                 @map("id_tipo_flota") @db.Uuid
   arteHabitualId          String?                 @map("id_arte_habitual") @db.Uuid
@@ -116,6 +115,23 @@ model Buque {
   fechaAlta               DateTime?               @map("fecha_alta") @db.Date
   fechaBaja               DateTime?               @map("fecha_baja") @db.Date
   observaciones           String?
+  matriculaSiop           String?                 @unique @map("matricula_siop")
+  idMbpc                  String?                 @map("id_mbpc")
+  bandera                 String?
+  anioConstruccion        Int?                    @map("anio_construccion")
+  mmsi                    String?
+  tipoBuque               String?                 @map("tipo_buque")
+  senalDistintiva         String?                 @map("senal_distintiva")
+  velocidad               Float?
+  puntal                  Decimal?                @db.Decimal(6, 2)
+  arqueoTotal             Decimal?                @map("arqueo_total") @db.Decimal(10, 2)
+  caladoMax               Decimal?                @map("calado_max") @db.Decimal(6, 2)
+  puertoAsiento           String?                 @map("puerto_asiento")
+  arqueoNeto              Decimal?                @map("arqueo_neto") @db.Decimal(10, 2)
+  dotacionMinima          Int?                    @map("dotacion_minima")
+  tipo                    String?
+  estadoReg               String?                 @map("estado_reg")
+  fechaUltimaActApi       DateTime?               @map("fecha_ultima_actualizacion_api") @db.Timestamptz(6)
   puntosTrayectoria       BuqueTrayectoriaPunto[]
   trayectorias            BuqueTrayectoria?
   arteHabitual            ArtePesca?              @relation(fields: [arteHabitualId], references: [id])
@@ -240,33 +256,33 @@ model ObservadorPesqueria {
 }
 
 model Marea {
-  id                       String            @id @default(uuid()) @db.Uuid
-  anioMarea                Int               @map("anio_marea")
-  nroMarea                 Int               @map("nro_marea")
-  buqueId                  String            @map("id_buque") @db.Uuid
-  artePrincipalId          String?           @map("id_arte_principal") @db.Uuid
-  estadoActualId           String            @map("id_estado_actual") @db.Uuid
-  fechaZarpadaEstimada     DateTime?         @map("fecha_zarpada_estimada") @db.Timestamptz(6)
-  fechaInicioObservador    DateTime?         @map("fecha_inicio_observador") @db.Timestamptz(6)
-  fechaFinObservador       DateTime?         @map("fecha_fin_observador") @db.Timestamptz(6)
-  diasZonaAustral          Int?              @map("dias_zona_austral")
-  tipoCalculoZonaAustral   TipoCalculoZonaAustral   @default(AUTOMATICO) @map("tipo_calculo_zona_austral")
-  nroProtocolizacion       Int?              @map("nro_protocolizacion")
-  anioProtocolizacion      Int?              @map("anio_protocolizacion")
-  fechaProtocolizacion     DateTime?         @map("fecha_protocolizacion") @db.Timestamptz(6)
-  fechaCreacion            DateTime          @default(now()) @map("fecha_creacion") @db.Timestamptz(6)
-  fechaUltimaActualizacion DateTime          @updatedAt @map("fecha_ultima_actualizacion") @db.Timestamptz(6)
-  activo                   Boolean           @default(true)
+  id                       String                 @id @default(uuid()) @db.Uuid
+  anioMarea                Int                    @map("anio_marea")
+  nroMarea                 Int                    @map("nro_marea")
+  buqueId                  String                 @map("id_buque") @db.Uuid
+  artePrincipalId          String?                @map("id_arte_principal") @db.Uuid
+  estadoActualId           String                 @map("id_estado_actual") @db.Uuid
+  fechaZarpadaEstimada     DateTime?              @map("fecha_zarpada_estimada") @db.Timestamptz(6)
+  fechaInicioObservador    DateTime?              @map("fecha_inicio_observador") @db.Timestamptz(6)
+  fechaFinObservador       DateTime?              @map("fecha_fin_observador") @db.Timestamptz(6)
+  diasZonaAustral          Int?                   @map("dias_zona_austral")
+  tipoCalculoZonaAustral   TipoCalculoZonaAustral @default(AUTOMATICO) @map("tipo_calculo_zona_austral")
+  nroProtocolizacion       Int?                   @map("nro_protocolizacion")
+  anioProtocolizacion      Int?                   @map("anio_protocolizacion")
+  fechaProtocolizacion     DateTime?              @map("fecha_protocolizacion") @db.Timestamptz(6)
+  fechaCreacion            DateTime               @default(now()) @map("fecha_creacion") @db.Timestamptz(6)
+  fechaUltimaActualizacion DateTime               @updatedAt @map("fecha_ultima_actualizacion") @db.Timestamptz(6)
+  activo                   Boolean                @default(true)
   observaciones            String?
-  tipoMarea                TipoMarea         @default(MC) @map("tipo_marea")
-  diasEstimados            Int?              @map("dias_estimados")
-  observadorPrincipalId    String?           @map("id_observador_principal") @db.Uuid
-  pesqueriaId              String?           @map("id_pesqueria") @db.Uuid
-  artePrincipal            ArtePesca?        @relation(fields: [artePrincipalId], references: [id])
-  buque                    Buque             @relation(fields: [buqueId], references: [id])
-  estadoActual             EstadoMarea       @relation(fields: [estadoActualId], references: [id])
-  observadorPrincipal      Observador?       @relation("ObservadorPrincipal", fields: [observadorPrincipalId], references: [id])
-  pesqueria                Pesqueria?        @relation(fields: [pesqueriaId], references: [id])
+  tipoMarea                TipoMarea              @default(MC) @map("tipo_marea")
+  diasEstimados            Int?                   @map("dias_estimados")
+  observadorPrincipalId    String?                @map("id_observador_principal") @db.Uuid
+  pesqueriaId              String?                @map("id_pesqueria") @db.Uuid
+  artePrincipal            ArtePesca?             @relation(fields: [artePrincipalId], references: [id])
+  buque                    Buque                  @relation(fields: [buqueId], references: [id])
+  estadoActual             EstadoMarea            @relation(fields: [estadoActualId], references: [id])
+  observadorPrincipal      Observador?            @relation("ObservadorPrincipal", fields: [observadorPrincipalId], references: [id])
+  pesqueria                Pesqueria?             @relation(fields: [pesqueriaId], references: [id])
   archivos                 MareaArchivo[]
   etapas                   MareaEtapa[]
   movimientos              MareaMovimiento[]
@@ -289,6 +305,9 @@ model MareaEtapa {
   fechaArribo     DateTime?              @map("fecha_arribo") @db.Timestamptz(6)
   tipoEtapa       TipoEtapa              @map("tipo_etapa")
   observaciones   String?
+  fuentesZarpada  Json?                  @map("fuentes_zarpada")
+  fuentesArribo   Json?                  @map("fuentes_arribo")
+  metadata        Json?
   updatedAt       DateTime               @updatedAt @map("updated_at") @db.Timestamptz(6)
   lances          Lance[]
   marea           Marea                  @relation(fields: [mareaId], references: [id])
@@ -673,6 +692,53 @@ model TrackingEventSnapshot {
   @@schema("public")
 }
 
+model PnaApiSnapshot {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  idCostera       String   @map("id_costera")
+  externalComboId String   @unique @map("external_combo_id")
+  source          String   @default("API_PNA")
+  payload         Json
+  processedAt     DateTime @default(now()) @map("processed_at") @db.Timestamptz(6)
+  alertId         String?  @map("alert_id") @db.Uuid
+  buqueIdMbpc     String?  @map("buque_id_mbpc")
+  buqueNombre     String?  @map("buque_nombre")
+  estado          String
+  fecha           DateTime @db.Timestamptz(6)
+
+  @@index([buqueIdMbpc])
+  @@index([fecha])
+  @@index([estado])
+  @@map("pna_api_snapshots")
+  @@schema("public")
+}
+
+model PnaZarpadaArribo {
+  id                  String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  idCostera           String   @map("id_costera")
+  nombreCostera       String   @map("nombre_costera")
+  idBuqueMbpc         String   @map("id_buque_mbpc")
+  matricula           String
+  sdist               String?
+  nombre              String
+  latitud             String
+  longitud            String
+  estado              String
+  fecha               DateTime @db.Timestamptz(6)
+  fechaModificacion   DateTime @map("fecha_modificacion") @db.Timestamptz(6)
+  cantidadTripulantes Int      @map("cantidad_tripulantes")
+  observaciones       String?
+  borrado             Boolean  @default(false)
+  externalComboId     String   @unique @map("external_combo_id")
+  createdAt           DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([idBuqueMbpc])
+  @@index([fecha])
+  @@index([estado])
+  @@index([externalComboId])
+  @@map("pna_zarpadas_arribos")
+  @@schema("public")
+}
+
 model SystemStatus {
   key        String   @id
   value      String?
@@ -682,64 +748,53 @@ model SystemStatus {
   @@schema("public")
 }
 
-enum AlertaEstado {
-  PENDIENTE
-  SEGUIMIENTO
-  RESUELTA
-  DESCARTADA
-  VENCIDA
+model JobQueue {
+  id           String    @id @default(cuid())
+  payload      Json?
+  attempts     Int       @default(0)
+  maxAttempts  Int       @default(3)
+  nextRunAt    DateTime? @default(now()) @map("next_run_at")
+  lastRunAt    DateTime? @map("last_run_at")
+  priority     Int       @default(0)
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  result       Json?
+  duration     Int?
+  stackTrace   String?   @map("stack_trace")
+  errorMessage String?   @map("error_message")
+  workerId     String?   @map("worker_id")
+  type         JobType
+  status       JobStatus @default(PENDING)
 
+  @@index([type])
+  @@index([updatedAt])
+  @@map("job_queue")
   @@schema("public")
 }
-
-enum AlertaPrioridad {
-  URGENTE
-  ALTA
-  MEDIA
-  BAJA
-
-  @@schema("public")
-}
-
-enum TipoMarea {
-  MC
-  CI
-
-  @@schema("public")
-}
-
-enum TipoEtapa {
-  MC
-  CI
-
-  @@schema("public")
-}
-
-/// MODELOS DE AUDITORÍA ///
 
 model AuditoriaApi {
-  id              String   @id @default(uuid()) @db.Uuid
-  timestamp       DateTime @default(now()) @db.Timestamptz(6)
-  usuarioId       String?  @map("usuario_id") @db.Uuid
-  usuarioEmail    String?  @map("usuario_email")
-  sessionId       String?  @map("session_id")
-  metodoHttp      String   @map("metodo_http")
-  ruta            String
-  rutaBase        String   @map("ruta_base")
-  queryParams     Json?    @map("query_params")
-  requestBody     Json?    @map("request_body")
-  statusCode      Int      @map("status_code")
-  responseBody    Json?    @map("response_body")
-  responseTimeMs  Int      @map("response_time_ms")
-  ip              String?
-  userAgent       String?  @map("user_agent")
-  categoria       String
-  accion          String?
-  entidadTipo     String?  @map("entidad_tipo")
-  entidadId       String?  @map("entidad_id")
-  esError         Boolean  @default(false) @map("es_error")
-  esCritico       Boolean  @default(false) @map("es_critico")
-  usuario         User?    @relation(fields: [usuarioId], references: [id])
+  id             String   @id @default(uuid()) @db.Uuid
+  timestamp      DateTime @default(now()) @db.Timestamptz(6)
+  usuarioId      String?  @map("usuario_id") @db.Uuid
+  usuarioEmail   String?  @map("usuario_email")
+  sessionId      String?  @map("session_id")
+  metodoHttp     String   @map("metodo_http")
+  ruta           String
+  rutaBase       String   @map("ruta_base")
+  queryParams    Json?    @map("query_params")
+  requestBody    Json?    @map("request_body")
+  statusCode     Int      @map("status_code")
+  responseBody   Json?    @map("response_body")
+  responseTimeMs Int      @map("response_time_ms")
+  ip             String?
+  userAgent      String?  @map("user_agent")
+  categoria      String
+  accion         String?
+  entidadTipo    String?  @map("entidad_tipo")
+  entidadId      String?  @map("entidad_id")
+  esError        Boolean  @default(false) @map("es_error")
+  esCritico      Boolean  @default(false) @map("es_critico")
+  usuario        User?    @relation(fields: [usuarioId], references: [id])
 
   @@map("auditoria_api")
   @@schema("audit")
@@ -791,12 +846,66 @@ model AuditoriaEvento {
   metadata              Json?
   resultado             String
   mensajeError          String?  @map("mensaje_error")
-  ip                    String?
   esCritico             Boolean  @default(false) @map("es_critico")
+  ip                    String?
   usuario               User?    @relation(fields: [usuarioId], references: [id])
 
   @@map("auditoria_eventos")
   @@schema("audit")
+}
+
+enum JobStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+
+  @@schema("public")
+}
+
+enum JobType {
+  VESSEL_SYNC
+  TRAJECTORY_SYNC
+  NOTIFICATION
+  REPORT_GENERATION
+  PNA_API_SYNC
+  PNA_TRACKING_SYNC
+
+  @@schema("public")
+}
+
+enum AlertaEstado {
+  PENDIENTE
+  SEGUIMIENTO
+  RESUELTA
+  DESCARTADA
+  VENCIDA
+
+  @@schema("public")
+}
+
+enum AlertaPrioridad {
+  URGENTE
+  ALTA
+  MEDIA
+  BAJA
+
+  @@schema("public")
+}
+
+enum TipoMarea {
+  MC
+  CI
+
+  @@schema("public")
+}
+
+enum TipoEtapa {
+  MC
+  CI
+
+  @@schema("public")
 }
 
 enum TipoCalculoZonaAustral {

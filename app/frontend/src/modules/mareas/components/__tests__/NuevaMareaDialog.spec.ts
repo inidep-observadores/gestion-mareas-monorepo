@@ -262,4 +262,37 @@ describe('NuevaMareaDialog.vue', () => {
 
     expect(wrapper.emitted('success')).toBeTruthy()
   })
+
+  it('handles API error on creation', async () => {
+    const wrapper = await mountComponent()
+    const vm = wrapper.vm as any
+
+    const configStore = useConfigStore()
+    configStore.selectedYear = 2025
+
+    Object.assign(vm.form, {
+      buqueId: '1',
+      anioMarea: 2025,
+      nroMarea: 100,
+      pesqueriaId: '1',
+      observadorId: '1',
+      arteId: '1',
+      fechaZarpadaEstimada: '2025-01-10T00:00:00.000Z',
+      tipoMarea: TipoMarea.MC,
+      etapas: []
+    })
+
+    // Simular error en la API
+    vi.mocked(mareasService.create).mockRejectedValue(new Error('API Error'))
+
+    await flushPromises()
+    vm.currentStep = 4
+    await nextTick()
+
+    await vm.nextStep()
+    await flushPromises()
+    await nextTick()
+
+    expect(wrapper.emitted('success')).toBeFalsy()
+  })
 })

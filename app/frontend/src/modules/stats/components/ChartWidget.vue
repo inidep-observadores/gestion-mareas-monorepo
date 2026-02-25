@@ -3,34 +3,25 @@
     <div class="flex items-center justify-between mb-6">
       <div>
         <h3 class="text-sm font-black text-text uppercase tracking-tight">{{ title }}</h3>
-        <p v-if="subtitle" class="text-[10px] font-bold text-text-muted uppercase tracking-widest mt-1">{{ subtitle }}</p>
+        <p v-if="subtitle" class="text-[10px] font-bold text-text-muted uppercase tracking-widest mt-1">{{ subtitle }}
+        </p>
       </div>
       <div class="flex items-center gap-1">
         <slot name="header-action"></slot>
-        <button 
-          v-if="allowDownload" 
-          class="text-text-muted hover:text-primary transition-colors p-1"
-          title="Descargar Datos"
-          @click="$emit('download')"
-        >
+        <button v-if="allowDownload" class="text-text-muted hover:text-primary transition-colors p-1"
+          title="Descargar Datos" @click="$emit('download')">
           <DownloadIcon class="w-4 h-4" />
         </button>
       </div>
     </div>
 
     <!-- Chart Container -->
-    <div class="flex-1 min-h-[300px] w-full relative">
-       <apexchart 
-         v-if="options && series"
-         :type="type" 
-         height="100%"
-         width="100%"
-         :options="chartOptions" 
-         :series="series"
-       />
-       <div v-else class="absolute inset-0 flex items-center justify-center text-text-muted text-xs font-medium">
-         Cargando datos...
-       </div>
+    <div :class="['flex-1 min-h-[300px] w-full relative', chartContainerClass]">
+      <apexchart v-if="options && series" :type="type" :height="chartHeight" width="100%" :options="chartOptions"
+        :series="series" />
+      <div v-else class="absolute inset-0 flex items-center justify-center text-text-muted text-xs font-medium">
+        Cargando datos...
+      </div>
     </div>
   </div>
 </template>
@@ -40,14 +31,20 @@ import { computed } from 'vue'
 import { DownloadIcon } from 'lucide-vue-next'
 import { useThemeStore } from '@/modules/shared/stores/theme.store'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   title: string
   subtitle?: string
-  type?: 'line' | 'area' | 'bar' | 'pie' | 'donut' | 'radar'
+  type?: 'line' | 'area' | 'bar' | 'pie' | 'donut' | 'radar' | 'scatter' | 'rangeBar'
   series: any[]
   options?: any
   allowDownload?: boolean
-}>()
+  chartHeight?: string | number
+  chartContainerClass?: string
+}>(), {
+  type: 'line',
+  chartHeight: '100%',
+  chartContainerClass: ''
+})
 
 const themeStore = useThemeStore()
 
@@ -56,7 +53,7 @@ const emit = defineEmits(['dataPointClick', 'download'])
 // Merit: Default chart options for premium look
 const chartOptions = computed(() => {
   const isDark = themeStore.darkMode
-  
+
   const defaults = {
     chart: {
       fontFamily: 'Inter, system-ui, sans-serif',
@@ -64,19 +61,56 @@ const chartOptions = computed(() => {
       toolbar: { show: false },
       zoom: { enabled: false },
       animations: { enabled: true },
+      // Localization: Spanish by default
+      defaultLocale: 'es',
+      locales: [{
+        name: 'es',
+        options: {
+          months: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'],
+          shortMonths: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'],
+          days: ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'],
+          shortDays: ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'],
+          toolbar: {
+            download: 'Descargar SVG',
+            selection: 'Selección',
+            selectionZoom: 'Zoom de Selección',
+            zoomIn: 'Acercar',
+            zoomOut: 'Alejar',
+            pan: 'Desplazamiento',
+            reset: 'Restablecer Zoom',
+            menu: 'Menú',
+            exportToSVG: 'Descargar SVG',
+            exportToPNG: 'Descargar PNG',
+            exportToCSV: 'Descargar CSV',
+          }
+        }
+      }],
       events: {
         dataPointSelection: (event: any, chartContext: any, config: any) => {
+          // Check if the click came from a legend item (labels or markers)
+          const target = event?.target;
+          const isLegend = target && (
+            target.closest('.apexcharts-legend') ||
+            target.classList.contains('apexcharts-legend-text') ||
+            target.classList.contains('apexcharts-legend-marker')
+          );
+
+          if (isLegend) return;
+
           const { seriesIndex, dataPointIndex, w } = config
-          const label = w.globals.labels[dataPointIndex]
-          const value = w.globals.series[seriesIndex][dataPointIndex] || w.globals.series[seriesIndex]
-          emit('dataPointClick', { label, value, seriesIndex, dataPointIndex })
+          // Safeguard: Only emit click if a real data point was selected
+          if (dataPointIndex !== undefined && dataPointIndex !== -1) {
+            const label = w.globals.labels[dataPointIndex]
+            const value = w.globals.series[seriesIndex][dataPointIndex] || w.globals.series[seriesIndex]
+            emit('dataPointClick', { label, value, seriesIndex, dataPointIndex, w })
+          }
         }
       }
     },
     dataLabels: { enabled: false },
-    stroke: { 
+    stroke: {
       show: true,
-      curve: 'smooth', 
+      curve: 'smooth',
       width: props.type === 'pie' || props.type === 'donut' ? 2 : 2,
       colors: props.type === 'pie' || props.type === 'donut' ? ['var(--color-surface)'] : undefined
     },
@@ -89,21 +123,21 @@ const chartOptions = computed(() => {
     xaxis: {
       axisBorder: { show: false },
       axisTicks: { show: false },
-      labels: { 
-        style: { 
-          colors: 'var(--color-text-muted)', 
-          fontSize: '10px', 
-          fontWeight: 600 
-        } 
+      labels: {
+        style: {
+          colors: 'var(--color-text-muted)',
+          fontSize: '10px',
+          fontWeight: 600
+        }
       }
     },
     yaxis: {
-      labels: { 
-        style: { 
-          colors: 'var(--color-text-muted)', 
-          fontSize: '10px', 
-          fontWeight: 600 
-        } 
+      labels: {
+        style: {
+          colors: 'var(--color-text-muted)',
+          fontSize: '10px',
+          fontWeight: 600
+        }
       }
     },
     legend: {
@@ -120,7 +154,7 @@ const chartOptions = computed(() => {
     tooltip: {
       enabled: true,
       theme: isDark ? 'dark' : 'light',
-      custom: ({ series, seriesIndex, dataPointIndex, w }: any) => {
+      custom: props.options?.tooltip?.custom || (({ series, seriesIndex, dataPointIndex, w }: any) => {
         const isSingleArray = series.length > 0 && !Array.isArray(series[0]);
         let val, label, color;
 
@@ -143,7 +177,7 @@ const chartOptions = computed(() => {
             <span class="text-text font-black">${val?.toLocaleString()} ${unit}</span>
           </div>
         `;
-      }
+      })
     },
     plotOptions: {
       pie: {
@@ -152,16 +186,16 @@ const chartOptions = computed(() => {
           size: '55%',
           labels: {
             show: props.type === 'donut',
-            name: { 
-              show: true, 
+            name: {
+              show: true,
               color: 'var(--color-text-muted)',
               fontSize: '11px',
               fontWeight: 900,
               offsetY: -8
             },
-            value: { 
-              show: true, 
-              color: 'var(--color-text)', 
+            value: {
+              show: true,
+              color: 'var(--color-text)',
               fontSize: '22px',
               fontWeight: 900,
               offsetY: 10,
@@ -182,8 +216,26 @@ const chartOptions = computed(() => {
       }
     }
   }
-  
-  return { ...defaults, ...props.options }
+
+  // Manual Deep Merge for 'chart' object to preserve locales
+  const mergedOptions = { ...defaults, ...props.options };
+
+  if (props.options?.chart) {
+    mergedOptions.chart = {
+      ...defaults.chart,
+      ...props.options.chart,
+      // Ensure locales are not overwritten if not provided in props
+      locales: props.options.chart.locales || defaults.chart.locales,
+      defaultLocale: props.options.chart.defaultLocale || defaults.chart.defaultLocale,
+      // Merge events if necessary (careful with function references)
+      events: {
+        ...defaults.chart.events,
+        ...props.options.chart.events
+      }
+    };
+  }
+
+  return mergedOptions;
 })
 </script>
 
@@ -193,6 +245,7 @@ const chartOptions = computed(() => {
   border: none !important;
   box-shadow: none !important;
 }
+
 :deep(.apexcharts-tooltip-series-group) {
   background: transparent !important;
 }

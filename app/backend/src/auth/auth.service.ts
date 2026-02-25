@@ -5,7 +5,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { MailerService } from '@nestjs-modules/mailer';
+import { MailService } from '../mail/mail.service';
 import * as crypto from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { User } from '@prisma/client';
@@ -19,7 +19,7 @@ export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
-    private readonly mailerService: MailerService,
+    private readonly mailService: MailService,
     private readonly hashService: HashService,
   ) { }
 
@@ -102,10 +102,12 @@ export class AuthService {
   async forgotPassword(email: string) {
     const user = await this.prisma.user.findUnique({ where: { email } });
 
-    if (!user || !user.isActive) {
-      return {
-        message: 'Si el correo existe y está activo, se enviaron instrucciones',
-      };
+    if (!user) {
+      throw new BadRequestException('Correo no registrado');
+    }
+
+    if (!user.isActive) {
+      throw new BadRequestException('Cuenta inactiva');
     }
 
     const token = crypto.randomBytes(32).toString('hex');
@@ -121,13 +123,19 @@ export class AuthService {
       },
     });
 
-    const resetLink = `${process.env.FRONTEND_URL}?token=${token}`;
+    // Normalizar FRONTEND_URL: eliminar ruta /reset-password si existe y asegurar que no termine en /
+    let baseUrl = (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/reset-password\/?$/, '');
+    if (baseUrl.endsWith('/')) {
+      baseUrl = baseUrl.slice(0, -1);
+    }
+
+    const resetLink = `${baseUrl}/reset-password?token=${token}`;
 
     try {
-      await this.mailerService.sendMail({
-        to: user.email,
-        subject: 'Recuperación de contraseña',
-        html: `
+      await this.mailService.sendMail(
+        user.email,
+        'Recuperación de contraseña',
+        `
           <h1>Recuperación de contraseña</h1>
           <p>Hola ${user.fullName},</p>
           <p>Usted ha solicitado restablecer su contraseña. Haga clic en el siguiente enlace para continuar:</p>
@@ -135,9 +143,10 @@ export class AuthService {
           <p>Este enlace expirará en 30 minutos.</p>
           <p>Si usted no solicitó esto, ignore este correo.</p>
         `,
-      });
+      );
     } catch (error) {
-      console.error('Error sending email:', error);
+      console.error('Error enviando mail de recuperación:', error);
+      throw new InternalServerErrorException('No se pudo enviar el correo de recuperación');
     }
 
     return {

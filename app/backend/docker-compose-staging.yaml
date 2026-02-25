@@ -22,9 +22,7 @@ services:
     env_file:
       - .env.staging
     environment:
-      DB_HOST: db-staging
-      SMTP_HOST: mailhog-staging
-      REDIS_HOST: redis-staging
+      STAGING_API_DOMAIN: ${STAGING_API_DOMAIN}
     depends_on:
       - db-staging
       - redis-staging

@@ -118,8 +118,11 @@ const goToTrajectory = () => {
 }
 
 const handleManageAlert = (alert: any) => {
-  selectedAlert.value = alert
-  isAlertDialogOpen.value = true
+  selectedAlert.value = null
+  setTimeout(() => {
+    selectedAlert.value = alert
+    isAlertDialogOpen.value = true
+  }, 0)
 }
 
 const executeActionFromView = async (actionKey: string) => {

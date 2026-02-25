@@ -1,0 +1,28 @@
+﻿[dotenv@17.2.3] injecting env (43) from .env -- tip: ÔÜÖ´©Å  enable debug logging with { debug: true }
+node.exe : Loaded Prisma config from 
+prisma.config.js.
+En C:\Users\danie\AppData\Roaming\npm\
+pnpm.ps1: 24 Carácter: 5
++     & "node$exe"  "$basedir/node_mod
+ules/pnpm/bin/pnpm.cjs" $args
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpec 
+   ified: (Loaded Prisma c...isma.co  
+  nfig.js.:String) [], RemoteExcept   
+ ion
+    + FullyQualifiedErrorId : NativeC 
+   ommandError
+ 
+
+Prisma schema loaded from 
+prisma\schema.prisma.
+Datasource "db": PostgreSQL database "MareasDB", schemas "audit, public" at "localhost:5435"
+
+45 migrations found in prisma/migrations
+Following migrations have not yet been applied:
+20260208160000_unify_alert_metadata_observer_name
+20260210160000_add_pna_api_sync_job_type
+
+To apply migrations in development run prisma migrate dev.
+To apply migrations in production run prisma migrate deploy.

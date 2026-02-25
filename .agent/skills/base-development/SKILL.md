@@ -58,7 +58,10 @@ GastosCompartidos/
 | **Jest** | - | Framework de pruebas |
 
 ### Herramientas
-- **pnpm**: Gestor de paquetes (workspace-aware)
+- **pnpm**: Gestor de paquetes (workspace-aware) - **USAR PRIORITARIAMENTE**
+  - ⚠️ **IMPORTANTE**: Este proyecto usa `pnpm` para gestión de dependencias
+  - Siempre usar `pnpm` en lugar de `npm` o `yarn` para instalar, actualizar o ejecutar scripts
+  - Comandos: `pnpm install`, `pnpm add <package>`, `pnpm run <script>`
 - **TypeScript**: Configuración estricta en ambos apps
 - **ESLint**: Linting de código
 - **Prettier**: Formateo de código

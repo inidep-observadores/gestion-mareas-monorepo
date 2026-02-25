@@ -147,10 +147,31 @@
                         {{ formatDate((item as any).lastArrival) }}
                       </template>
                     </span>
-                    <span class="text-[9px] font-bold text-text-muted/60 uppercase tracking-tighter">
-                      {{ (item as any).mareaCode || 'S/M' }} • {{ (item as any).vessel || (item as any).vesselName ||
-                        'Desconocido' }}
-                    </span>
+                    <div class="flex items-center gap-1.5">
+                      <span class="text-[9px] font-bold text-text-muted/60 uppercase tracking-tighter">
+                        {{ (item as any).mareaCode || 'S/M' }}
+                      </span>
+                      <div v-if="(item as any).stageCount > 1" class="relative group/stage">
+                        <span
+                          class="px-1 py-0.5 bg-primary/10 text-primary text-[7px] font-black rounded border border-primary/20 leading-none cursor-help">
+                          E{{ (item as any).stageCount }}
+                        </span>
+                        <!-- Custom Tooltip -->
+                        <div
+                          class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-surface border border-border text-text text-[9px] rounded-lg opacity-0 group-hover/stage:opacity-100 transition-all pointer-events-none shadow-theme-lg z-50 whitespace-nowrap font-bold">
+                          Etapa {{ (item as any).stageCount }}
+                          <div
+                            class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-border">
+                          </div>
+                          <div
+                            class="absolute top-full left-1/2 -translate-x-1/2 border-[3px] border-transparent border-t-surface mt-[-1px]">
+                          </div>
+                        </div>
+                      </div>
+                      <span class="text-[9px] font-bold text-text-muted/60 uppercase tracking-tighter">
+                        • {{ (item as any).vessel || (item as any).vesselName || 'Desconocido' }}
+                      </span>
+                    </div>
                     <span class="text-[8px] font-medium text-primary uppercase tracking-widest italic">
                       {{ (item as any).fishery || 'Pesquería N/D' }}
                     </span>

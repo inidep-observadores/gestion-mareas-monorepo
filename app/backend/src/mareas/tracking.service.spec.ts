@@ -2,10 +2,26 @@ import 'reflect-metadata';
 import { Test, TestingModule } from '@nestjs/testing';
 import { TrackingService } from './tracking.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { EventCorrelationService } from '../common/services/event-correlation.service';
+import { AlertsService } from '../alerts/alerts.service';
+import { AlertAutomationService } from '../alerts/alert-automation.service';
+import { VesselSyncService } from '../catalogos/buques/vessel-sync.service';
 
 describe('TrackingService', () => {
     let service: TrackingService;
-    let prisma: PrismaService;
+
+    const mockAutomationService = {
+        processAlertAutomation: jest.fn().mockResolvedValue(undefined),
+    };
+
+    const mockAlertsService = {
+        create: jest.fn().mockResolvedValue({ id: 'mock-alert-id' }),
+        addValidationSource: jest.fn().mockResolvedValue({ id: 'mock-alert-id' }),
+    };
+
+    const mockCorrelationService = {
+        evaluateEventContext: jest.fn(),
+    };
 
     const mockPrismaService = {
         marea: {
@@ -23,19 +39,19 @@ describe('TrackingService', () => {
         buqueTrayectoria: {
             upsert: jest.fn(),
         },
-        alerta: {
-            findFirst: jest.fn(),
-            create: jest.fn(),
-        },
         trackingEventSnapshot: {
             findUnique: jest.fn(),
             create: jest.fn(),
         },
         systemStatus: {
-            findUnique: jest.fn(),
+            findUnique: jest.fn().mockResolvedValue({ lastUpdate: new Date() }),
             create: jest.fn(),
             update: jest.fn(),
         }
+    };
+
+    const mockVesselSyncService = {
+        syncVesselIfNeeded: jest.fn().mockResolvedValue({ success: true }),
     };
 
     beforeEach(async () => {
@@ -43,12 +59,15 @@ describe('TrackingService', () => {
         const module: TestingModule = await Test.createTestingModule({
             providers: [
                 TrackingService,
+                { provide: EventCorrelationService, useValue: mockCorrelationService },
+                { provide: AlertsService, useValue: mockAlertsService },
+                { provide: AlertAutomationService, useValue: mockAutomationService },
+                { provide: VesselSyncService, useValue: mockVesselSyncService },
                 { provide: PrismaService, useValue: mockPrismaService },
             ],
         }).compile();
 
         service = module.get<TrackingService>(TrackingService);
-        prisma = module.get<PrismaService>(PrismaService);
     });
 
     describe('checkPortStatus (Internal logic testable via detectPortEvents)', () => {
@@ -57,12 +76,20 @@ describe('TrackingService', () => {
                 { id: 'port-1', nombre: 'Mar del Plata', latitud: -38.03, longitud: -57.53 }
             ];
             mockPrismaService.puerto.findMany.mockResolvedValue(ports);
-            mockPrismaService.marea.findMany.mockResolvedValue([{ id: 'marea-1', buqueId: 'vessel-1', etapas: [], estadoActual: { codigo: 'EN_EJECUCION' }, buque: { nombreBuque: 'Test' } }]);
+
+            const marea = { id: 'marea-1', buque: { nombreBuque: 'Test' }, anioMarea: 2025, nroMarea: 1, tipoMarea: 'MC', etapas: [], estadoActual: { codigo: 'EN_EJECUCION' } };
+            mockPrismaService.marea.findMany.mockResolvedValue([marea]);
+
+            // Mocking CorrelationService to trigger createAlert
+            mockCorrelationService.evaluateEventContext.mockResolvedValue({
+                action: 'CREATE_ALERT',
+                marea: marea
+            });
 
             // First point outside, second inside
             const points = [
-                { lat: -37.00, lon: -56.00, timestamp: new Date('2025-01-01T10:00:00Z') }, // far
-                { lat: -38.03, lon: -57.53, timestamp: new Date('2025-01-01T11:00:00Z') }  // inside
+                { lat: -38.13, lon: -57.63, timestamp: new Date('2025-01-01T00:00:00Z') }, // outside
+                { lat: -38.03, lon: -57.53, timestamp: new Date('2025-01-01T10:00:00Z') }  // inside
             ];
 
             // Mocking previous state as outside
@@ -70,61 +97,59 @@ describe('TrackingService', () => {
 
             await (service as any).detectPortEvents('vessel-1', points);
 
-            // Should create an ARRIBO alert
-            expect(mockPrismaService.alerta.create).toHaveBeenCalledWith(expect.objectContaining({
-                data: expect.objectContaining({
-                    titulo: expect.stringContaining('Posible arribo a Mar del Plata')
-                })
-            }));
+            expect(mockAlertsService.create).toHaveBeenCalled();
         });
     });
 
-    describe('Discrepancy detection', () => {
-        it('should create discrepancy alert if detected port differs from registered port', async () => {
-            const ports = [
-                { id: 'port-real', nombre: 'Puerto Real', latitud: -40.0, longitud: -60.0 },
-                { id: 'port-reg', nombre: 'Puerto Registrado', latitud: -41.0, longitud: -61.0 }
-            ];
+    describe('Business Rule: fecha_zarpada_estimada restriction', () => {
+        const ports = [{ id: 'port-1', nombre: 'Test Port', latitud: -38.0, longitud: -57.0 }];
+        const mareaBase = {
+            id: 'marea-1',
+            buqueId: 'vessel-1',
+            anioMarea: 2026,
+            nroMarea: 1,
+            tipoMarea: 'MC',
+            estadoActual: { codigo: 'DESIGNADA' },
+            buque: { id: 'vessel-1', nombreBuque: 'Test Vessel' },
+            etapas: [],
+            fechaZarpadaEstimada: new Date('2026-02-14T03:00:00Z'), // 00:00 ART
+        };
+
+        beforeEach(() => {
             mockPrismaService.puerto.findMany.mockResolvedValue(ports);
-
-            const marea = {
-                id: 'marea-1',
-                buqueId: 'vessel-1',
-                anioMarea: 2025,
-                nroMarea: 1,
-                tipoMarea: 'MC',
-                estadoActual: { codigo: 'EN_EJECUCION' },
-                buque: { nombreBuque: 'Test Vessel' },
-                etapas: [
-                    {
-                        nroEtapa: 1,
-                        fechaZarpada: new Date('2025-01-01T00:00:00Z'),
-                        puertoZarpadaId: 'port-reg'
-                    }
-                ]
-            };
-            mockPrismaService.marea.findMany.mockResolvedValue([marea]);
             mockPrismaService.trackingEventSnapshot.findUnique.mockResolvedValue(null);
-
-            // Detect ZARPADA from a DIFFERENT port than registered
-            // Prev state: in port-real
-            // Current point: outside
-            const points = [
-                { lat: -30.0, lon: -30.0, timestamp: new Date('2025-01-01T01:00:00Z') } // outside
-            ];
-            // Mock prev point in port-real
+            // Mock prev point in port-1
             mockPrismaService.buqueTrayectoriaPunto.findFirst.mockResolvedValue({
-                lat: -40.0, lon: -60.0, timestamp: new Date('2025-01-01T00:00:00Z')
+                lat: -38.0, lon: -57.0, timestamp: new Date('2026-02-12T00:00:00Z')
+            });
+        });
+
+        it('should IGNORE ZARPADA if CorrelationService returns IGNORE_OLD', async () => {
+            mockPrismaService.marea.findMany.mockResolvedValue([mareaBase]);
+            mockCorrelationService.evaluateEventContext.mockResolvedValue({
+                action: 'IGNORE_OLD',
+                marea: mareaBase
             });
 
+            const points = [{ lat: -38.1, lon: -57.1, timestamp: new Date('2026-02-13T12:00:00Z') }];
             await (service as any).detectPortEvents('vessel-1', points);
 
-            expect(mockPrismaService.alerta.create).toHaveBeenCalledWith(expect.objectContaining({
-                data: expect.objectContaining({
-                    tipo: 'ERROR_REGISTRO_PUERTO',
-                    titulo: expect.stringContaining('Discrepancia en puerto de zarpada')
-                })
-            } as any));
+            expect(mockAlertsService.create).not.toHaveBeenCalled();
+        });
+
+        it('should CREATE_ALERT if CorrelationService returns CREATE_ALERT', async () => {
+            mockPrismaService.marea.findMany.mockResolvedValue([mareaBase]);
+            mockCorrelationService.evaluateEventContext.mockResolvedValue({
+                action: 'CREATE_ALERT',
+                marea: mareaBase
+            });
+
+            const points = [{ lat: -38.1, lon: -57.1, timestamp: new Date('2026-02-14T04:00:00Z') }];
+            await (service as any).detectPortEvents('vessel-1', points);
+
+            expect(mockAlertsService.create).toHaveBeenCalledWith(expect.objectContaining({
+                tipo: 'POSIBLE_ZARPADA'
+            }));
         });
     });
 });

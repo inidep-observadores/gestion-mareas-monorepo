@@ -22,11 +22,10 @@ services:
     env_file:
       - .env
     environment:
-      DB_HOST: db
-      SMTP_HOST: mailhog
-      REDIS_HOST: redis
+      API_DOMAIN: ${API_DOMAIN}
     depends_on:
       - db
+      - redis
     volumes:
       - ./backups:/app/backups
       - ./static:/app/static
@@ -44,15 +43,6 @@ services:
     networks:
       - sigma-network
       - traefik
-
-  mailhog:
-    image: mailhog/mailhog
-    restart: always
-    container_name: mailhog
-    ports:
-      - "8025:8025"
-    networks:
-      - sigma-network
 
   redis:
     image: redis:7-alpine

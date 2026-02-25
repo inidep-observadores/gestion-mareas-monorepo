@@ -6,6 +6,8 @@ export const ROLES = [
     { id: ValidRoles.tecnico, name: 'Técnico Datos' },
     { id: ValidRoles.coordinador, name: 'Coordinador' },
     { id: ValidRoles.invitado, name: 'Invitado' },
+    { id: ValidRoles.desarrollador, name: 'Desarrollador' },
+    { id: ValidRoles.visitante, name: 'Visitante' },
 ] as const;
 
 export type RoleId = typeof ROLES[number]['id'];
@@ -16,7 +18,10 @@ export const ROLE_LABELS: Record<ValidRoles | string, string> = {
     [ValidRoles.tecnico]: 'Técnico Datos',
     [ValidRoles.coordinador]: 'Coordinador',
     [ValidRoles.invitado]: 'Invitado',
+    [ValidRoles.desarrollador]: 'Desarrollador',
+    [ValidRoles.visitante]: 'Visitante',
     // Fallback/Legacy
     user: 'Usuario',
     observer: 'Observador'
 };
+

@@ -28,6 +28,7 @@ export interface MareaListItem {
     pesquerias_nombres: string[];
     alertas: any[];
     dias_estimados?: number;
+    intencion_cierre?: boolean;
     actionsAvailable: Record<string, { enabled: boolean; label: string; blockedReason?: string; claseBoton?: string }>;
 }
 
@@ -53,7 +54,7 @@ export interface MareaContext {
         etapas?: any[];
     };
     actions: Record<string, { enabled: boolean; label: string; blockedReason?: string; claseBoton?: string }>;
-    lastEvents: { id: string; titulo: string; fecha: string; usuario: string }[];
+    lastEvents: { id: string; titulo: string; fecha: string; usuario: string; comentarios?: string }[];
 }
 
 export interface DashboardKpis {
@@ -72,7 +73,11 @@ export interface MovementEvent {
     etapa: number;
     tipo: 'ZARPADA' | 'ARRIBO';
     fecha: string;
+    fechaDb?: string;
     puerto: string;
+    fuentes?: any;
+    vesselId?: string;
+    mareaId: string;
 }
 
 export interface CalendarEvent {
@@ -108,11 +113,23 @@ export interface Marea {
     tipoCalculoZonaAustral?: TipoCalculoZonaAustral;
 }
 
+export interface MareaOpcionesCierre {
+    finalizarMareaAlArribo: boolean;
+    marcadoPorUsuarioId?: string;
+    fechaMarca?: string;
+}
+
+export interface MareaEtapaMetadata {
+    opcionesCierre?: MareaOpcionesCierre;
+    [key: string]: any;
+}
+
 export interface ZonaAustralEtapa {
     etapaId: string;
     nroEtapa: number;
     diasDetectados: string[];
     totalDias: number;
+    metadata?: MareaEtapaMetadata;
 }
 
 export interface ZonaAustralResponse {

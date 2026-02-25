@@ -334,6 +334,35 @@ fix(auth): corregir error de autenticación con tokens expirados
 - [Semantic Versioning](https://semver.org/lang/es/)
 - [How to Write a Git Commit Message](https://cbea.ms/git-commit/)
 
+## 🔄 Actualización de esta Skill
+
+Esta skill debe actualizarse cuando:
+- Se adopten nuevas convenciones de commits en el proyecto
+- Cambien los alcances (scopes) del monorepo
+- Se identifiquen nuevos patrones o anti-patrones
+- Se agreguen nuevas reglas de negocio relacionadas con commits
+
+## ⚠️ Compatibilidad con Windows PowerShell
+
+**IMPORTANTE**: En Windows PowerShell, el operador `&&` NO funciona para concatenar comandos.
+
+❌ **NO USAR:**
+```bash
+git add -A && git commit -m "mensaje"
+```
+
+✅ **USAR EN SU LUGAR:**
+```bash
+git add -A ; git commit -m "mensaje"
+```
+o también:
+```bash
+git add -A
+git commit -m "mensaje"
+```
+
+**Razón**: PowerShell no reconoce `&&` como separador de comandos. Debes ejecutar los comandos por separado o usar `;` (punto y coma) si es absolutamente necesario concatenar.
+
 ## ✨ Checklist Pre-Commit
 
 Antes de hacer commit, verifica:

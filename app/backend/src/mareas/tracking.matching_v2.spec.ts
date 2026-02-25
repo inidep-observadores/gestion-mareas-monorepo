@@ -2,18 +2,37 @@ import 'reflect-metadata';
 import { Test, TestingModule } from '@nestjs/testing';
 import { TrackingService } from './tracking.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { EventCorrelationService } from '../common/services/event-correlation.service';
+import { AlertsService } from '../alerts/alerts.service';
+import { AlertAutomationService } from '../alerts/alert-automation.service';
+import { VesselSyncService } from '../catalogos/buques/vessel-sync.service';
 import { DateTime } from 'luxon';
 
 describe('TrackingService Matching V2', () => {
     let service: TrackingService;
     let prisma: PrismaService;
 
+    const mockAutomationService = {
+        processAlertAutomation: jest.fn().mockResolvedValue(undefined),
+    };
+
     const mockPrismaService = {
         marea: { findMany: jest.fn() },
         puerto: { findMany: jest.fn() },
         buqueTrayectoriaPunto: { findFirst: jest.fn(), createMany: jest.fn() },
-        alerta: { findFirst: jest.fn(), create: jest.fn() },
+        alerta: {
+            findFirst: jest.fn(),
+            create: jest.fn().mockImplementation((args) => Promise.resolve({ id: 'mock-alert-id', ...args.data })),
+            findUnique: jest.fn(),
+            update: jest.fn().mockImplementation((args) => Promise.resolve({ id: 'mock-alert-id', ...args.data }))
+        },
+        alertaEvento: { create: jest.fn().mockResolvedValue({ id: 'mock-event-id' }) },
         trackingEventSnapshot: { findUnique: jest.fn(), create: jest.fn() },
+        systemStatus: { findUnique: jest.fn().mockResolvedValue({ lastUpdate: new Date() }), create: jest.fn() },
+    };
+
+    const mockVesselSyncService = {
+        syncVessel: jest.fn().mockResolvedValue({ success: true }),
     };
 
     beforeEach(async () => {
@@ -21,6 +40,10 @@ describe('TrackingService Matching V2', () => {
         const module: TestingModule = await Test.createTestingModule({
             providers: [
                 TrackingService,
+                EventCorrelationService,
+                AlertsService,
+                { provide: AlertAutomationService, useValue: mockAutomationService },
+                { provide: VesselSyncService, useValue: mockVesselSyncService },
                 { provide: PrismaService, useValue: mockPrismaService },
             ],
         }).compile();
@@ -190,9 +213,14 @@ describe('TrackingService Matching V2', () => {
         // El sistema detecta 'port-mdp-new'
         const result = await (service as any).handleProcessedEvent('vessel-1', 'ZARPADA', 'port-mdp-new', date, [marea], ports);
 
-        // Ahora el resultado debe ser FALSE (encontró el match por nombre y abortó creación de alerta)
-        expect(result).toBe(false);
-        expect(mockPrismaService.alerta.create).not.toHaveBeenCalled();
+        // AHORA el resultado debe ser TRUE (detecta discrepancia por ID distinto, aunque el nombre sea igual)
+        // Esto cumple con la nueva política de integridad: IDs distintos = Puertos distintos.
+        expect(result).toBe(true);
+        expect(mockPrismaService.alerta.create).toHaveBeenCalledWith(expect.objectContaining({
+            data: expect.objectContaining({
+                tipo: 'ERROR_REGISTRO_PUERTO'
+            })
+        }));
     });
     it('debe ignorar zarpada si la fecha es anterior a etapas existentes (Caso Anita 05/01 vs 27/01)', async () => {
         // Marea con etapa iniciada el 27/01

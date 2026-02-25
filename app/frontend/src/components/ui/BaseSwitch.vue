@@ -1,8 +1,9 @@
 <template>
-  <label class="relative inline-flex items-center cursor-pointer group">
+  <label class="relative inline-flex items-center cursor-pointer group" :class="{ 'opacity-60 pointer-events-none': disabled }">
     <input 
       type="checkbox" 
       :checked="modelValue" 
+      :disabled="disabled"
       @change="$emit('update:modelValue', ($event.target as HTMLInputElement).checked)"
       class="sr-only peer"
     >
@@ -19,7 +20,8 @@
 
 <script setup lang="ts">
 defineProps<{
-  modelValue: boolean
+  modelValue: boolean;
+  disabled?: boolean;
 }>()
 
 defineEmits<{

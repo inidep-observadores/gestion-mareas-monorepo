@@ -17,7 +17,11 @@ export class StatsController {
             query.includeNonProtocolized,
             query.includeProtocolizedOutOfPeriod,
             query.daysCalculationMode,
-            query.includeCampaigns
+            query.includeCampaigns,
+            query.startDate,
+            query.endDate,
+            query.protocolizationStartDate,
+            query.protocolizationEndDate
         );
     }
 
@@ -31,7 +35,42 @@ export class StatsController {
             query.filterType,
             query.filterValue,
             query.daysCalculationMode,
-            query.includeCampaigns
+            query.includeCampaigns,
+            query.startDate,
+            query.endDate,
+            query.protocolizationStartDate,
+            query.protocolizationEndDate
+        );
+    }
+
+    @Get('vessels-count')
+    getVesselsCount(@Query() query: GetStatsDto) {
+        return this.statsService.getUniqueVesselsCount(
+            query.year,
+            query.mode || 'CALENDAR',
+            query.includeNonProtocolized,
+            query.includeProtocolizedOutOfPeriod,
+            query.includeCampaigns,
+            query.startDate,
+            query.endDate,
+            query.filterType === 'FISHERY' ? query.filterValue : undefined,
+            query.protocolizationStartDate,
+            query.protocolizationEndDate
+        );
+    }
+
+    @Get('distribution')
+    getMareaDistribution(@Query() query: GetStatsDto) {
+        return this.statsService.getMareaDistribution(
+            query.year,
+            query.mode || 'CALENDAR',
+            query.includeNonProtocolized,
+            query.includeProtocolizedOutOfPeriod,
+            query.includeCampaigns,
+            query.startDate,
+            query.endDate,
+            query.protocolizationStartDate,
+            query.protocolizationEndDate
         );
     }
 
@@ -48,7 +87,12 @@ export class StatsController {
             query.daysCalculationMode,
             query.includeCampaigns,
             query.filterType,
-            query.filterValue
+            query.filterValue,
+            query.startDate,
+            query.endDate,
+            query.filterByStart,
+            query.protocolizationStartDate,
+            query.protocolizationEndDate
         );
 
         const filename = query.customFilename ? `${query.customFilename}.xlsx` : `Estadisticas_Mareas_${query.year}.xlsx`;

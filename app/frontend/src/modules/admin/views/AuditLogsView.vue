@@ -36,19 +36,19 @@
             </button>
           </div>
 
-          <div class="relative group">
-            <SearchIcon class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted group-focus-within:text-primary transition-colors" />
-            <input
-              v-model="filters.busqueda"
-              @keyup.enter="fetchLogs"
-              placeholder="Buscar..."
-              class="w-full bg-surface-muted border-2 border-border rounded-2xl py-2.5 pl-10 pr-4 text-xs font-bold focus:bg-surface focus:border-primary/50 transition-all outline-none"
+            <SearchInput
+              :model-value="filters.busqueda || ''"
+              @update:model-value="filters.busqueda = $event"
+              placeholder="Buscar por usuario, ruta..."
+              class="!w-full"
             />
-          </div>
         </div>
 
         <!-- Lista -->
-        <div class="flex-1 overflow-y-auto custom-scrollbar bg-linear-to-b from-surface to-surface-muted/20">
+        <div 
+          ref="listContainer"
+          class="flex-1 overflow-y-auto custom-scrollbar bg-linear-to-b from-surface to-surface-muted/20"
+        >
           <div v-if="isLoading && logs.length === 0" class="p-12 text-center">
             <RefreshIcon class="w-8 h-8 text-primary animate-spin mx-auto mb-4" />
             <p class="text-[10px] font-black text-text-muted uppercase tracking-widest">Cargando bitácora...</p>
@@ -61,38 +61,51 @@
             <p class="text-[10px] font-black text-text-muted uppercase tracking-widest">Sin registros encontrados</p>
           </div>
 
-          <div
-            v-for="log in logs"
+          <template
+            v-for="(log, index) in logs"
             :key="log.id"
-            @click="selectLog(log)"
-            class="p-4 border-b border-border/50 cursor-pointer hover:bg-surface transition-all relative group"
-            :class="{ 'bg-primary/5 border-l-4 border-l-primary shadow-inner': selectedLog?.id === log.id }"
           >
-            <div class="flex justify-between items-center mb-2">
-              <span 
-                class="text-[9px] font-black px-2 py-0.5 rounded uppercase tracking-tighter"
-                :class="getStatusClass(log)"
-              >
-                {{ getLogTag(log) }}
+            <!-- Separador de Fecha Discreto -->
+            <div 
+              v-if="shouldShowDateHeader(log, index)"
+              class="px-4 py-2 bg-surface-muted/50 border-y border-border/30"
+            >
+              <span class="text-[9px] font-black text-text-muted uppercase tracking-[0.2em]">
+                {{ formatDateGroup(log.timestamp) }}
               </span>
-              <span class="text-[9px] font-bold text-text-muted font-mono">{{ formatDateShort(log.timestamp) }}</span>
             </div>
-            
-            <h4 class="text-[11px] font-bold text-text line-clamp-2 leading-snug mb-2 group-hover:text-primary transition-colors">
-              {{ getLogTitle(log) }}
-            </h4>
 
-            <div class="flex items-center gap-2">
-              <div v-if="log.usuario" class="flex items-center gap-1.5 truncate">
-                <UserCircleIcon class="w-3 h-3 text-text-muted" />
-                <span class="text-[10px] text-text-muted font-bold truncate">{{ log.usuario.fullName }}</span>
+            <div
+              @click="selectLog(log)"
+              class="p-4 border-b border-border/50 cursor-pointer hover:bg-surface transition-all relative group"
+              :class="{ 'bg-primary/5 border-l-4 border-l-primary shadow-inner': selectedLog?.id === log.id }"
+            >
+              <div class="flex justify-between items-center mb-2">
+                <span 
+                  class="text-[9px] font-black px-2 py-0.5 rounded uppercase tracking-tighter"
+                  :class="getStatusClass(log)"
+                >
+                  {{ getLogTag(log) }}
+                </span>
+                <span class="text-[9px] font-bold text-text-muted font-mono">{{ formatDateShort(log.timestamp) }}</span>
               </div>
-              <div v-else class="flex items-center gap-1.5">
-                <BoxCubeIcon class="w-3 h-3 text-text-muted" />
-                <span class="text-[10px] text-text-muted font-bold italic">Sistema</span>
+              
+              <h4 class="text-[11px] font-bold text-text line-clamp-2 leading-snug mb-2 group-hover:text-primary transition-colors">
+                {{ getLogTitle(log) }}
+              </h4>
+
+              <div class="flex items-center gap-2">
+                <div v-if="log.usuario" class="flex items-center gap-1.5 truncate">
+                  <UserCircleIcon class="w-3 h-3 text-text-muted" />
+                  <span class="text-[10px] text-text-muted font-bold truncate">{{ log.usuario.fullName }}</span>
+                </div>
+                <div v-else class="flex items-center gap-1.5">
+                  <BoxCubeIcon class="w-3 h-3 text-text-muted" />
+                  <span class="text-[10px] text-text-muted font-bold italic">Sistema</span>
+                </div>
               </div>
             </div>
-          </div>
+          </template>
         </div>
 
         <!-- Paginación Simple -->
@@ -251,13 +264,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import AdminDashboardLayout from '../layouts/AdminDashboardLayout.vue';
 import DataInspector from '@/components/admin/DataInspector.vue';
+import SearchInput from '@/components/ui/SearchInput.vue';
 import { useAuditLogs, type AuditType } from '../composables/useAuditLogs';
 import { 
     RefreshIcon, 
-    SearchIcon, 
     ShieldIcon, 
     UserCircleIcon, 
     BoxCubeIcon, 
@@ -296,9 +309,29 @@ const logs = computed(() => {
     return navigationLogs.value;
 });
 
+// Scroll al tope
+const listContainer = ref<HTMLElement | null>(null);
+const scrollToTop = () => {
+    if (listContainer.value) {
+        listContainer.value.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+};
+
 // Responsividad
 const isMobileView = ref(false);
 const checkMobile = () => isMobileView.value = window.innerWidth < 1024;
+
+// Búsqueda proactiva
+watch(() => filters.value.busqueda, () => {
+    filters.value.page = 1;
+    fetchLogs();
+});
+
+// Watcher para scroll al cambiar página
+watch(() => filters.value.page, () => {
+    scrollToTop();
+});
+
 onMounted(() => {
     checkMobile();
     window.addEventListener('resize', checkMobile);
@@ -332,15 +365,38 @@ const getStatusClass = (log: any) => {
     return log.resultado === 'ERROR' ? 'bg-error/20 text-error' : 'bg-success/20 text-success';
 };
 
+const shouldShowDateHeader = (log: any, index: number) => {
+    if (index === 0) return true;
+    const prevLog = logs.value[index - 1];
+    const currentDate = new Date(log.timestamp).toLocaleDateString();
+    const prevDate = new Date(prevLog.timestamp).toLocaleDateString();
+    return currentDate !== prevDate;
+};
+
+const formatDateGroup = (dateStr: string) => {
+    return new Date(dateStr).toLocaleDateString('es-AR', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric'
+    });
+};
+
 const formatDateShort = (dateStr: string) => {
     const date = new Date(dateStr);
-    return date.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+    return date.toLocaleString('es-AR', { 
+        day: '2-digit', 
+        month: '2-digit',
+        hour: '2-digit', 
+        minute: '2-digit',
+        hour12: false
+    }).replace(',', '');
 };
 
 const formatDateFull = (dateStr: string) => {
     return new Date(dateStr).toLocaleString('es-AR', {
         day: '2-digit', month: '2-digit', year: 'numeric',
-        hour: '2-digit', minute: '2-digit', second: '2-digit'
+        hour: '2-digit', minute: '2-digit', second: '2-digit',
+        hour12: false
     });
 };
 </script>

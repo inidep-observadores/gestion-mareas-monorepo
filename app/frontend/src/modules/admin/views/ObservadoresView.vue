@@ -167,8 +167,9 @@ import { ValidRoles } from '@/modules/auth/interfaces/roles.enum'
 const authStore = useAuthStore()
 const canEdit = computed(() => {
     const roles = authStore.user?.roles || []
-    return roles.includes(ValidRoles.admin) || roles.includes(ValidRoles.coordinador)
+    return roles.includes(ValidRoles.admin) || roles.includes(ValidRoles.tecnico)
 })
+
 
 const {
     isLoading,
@@ -204,8 +205,8 @@ const filteredObservadores = computed(() => {
     const items = [...baseFilteredObservadores.value]
 
     items.sort((a: any, b: any) => {
-        let valA = a[sortKey.value]
-        let valB = b[sortKey.value]
+        const valA = a[sortKey.value]
+        const valB = b[sortKey.value]
 
         if (typeof valA === 'string') {
             return sortOrder.value === 'asc'

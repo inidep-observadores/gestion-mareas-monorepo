@@ -182,9 +182,11 @@ export class AuditService {
         if (query.categoria && query.categoria.trim() !== '') where.categoria = query.categoria;
         if (query.soloErrores) where.esError = true;
         if (query.busqueda && query.busqueda.trim() !== '') {
+            const search = query.busqueda.trim();
             where.OR = [
-                { ruta: { contains: query.busqueda.trim(), mode: 'insensitive' } },
-                { usuarioEmail: { contains: query.busqueda.trim(), mode: 'insensitive' } }
+                { ruta: { contains: search, mode: 'insensitive' } },
+                { usuarioEmail: { contains: search, mode: 'insensitive' } },
+                { usuario: { fullName: { contains: search, mode: 'insensitive' } } }
             ];
         }
 
@@ -220,6 +222,14 @@ export class AuditService {
         if (query.usuarioId && query.usuarioId.trim() !== '') where.usuarioId = query.usuarioId;
         if (query.tipo && query.tipo.trim() !== '') where.entidadTipo = query.tipo;
         if (query.entidadId && query.entidadId.trim() !== '') where.entidadId = query.entidadId;
+        if (query.busqueda && query.busqueda.trim() !== '') {
+            const search = query.busqueda.trim();
+            where.OR = [
+                { entidadTipo: { contains: search, mode: 'insensitive' } },
+                { entidadId: { contains: search, mode: 'insensitive' } },
+                { usuario: { fullName: { contains: search, mode: 'insensitive' } } }
+            ];
+        }
 
         const model = this.getPrismaModel('AuditoriaEntidad');
         if (!model) return { total: 0, data: [], page: query.page, limit: query.limit };
@@ -254,6 +264,14 @@ export class AuditService {
         if (query.categoria && query.categoria.trim() !== '') where.categoria = query.categoria;
         if (query.tipo && query.tipo.trim() !== '') where.tipoEvento = query.tipo;
         if (query.soloErrores) where.resultado = 'ERROR';
+        if (query.busqueda && query.busqueda.trim() !== '') {
+            const search = query.busqueda.trim();
+            where.OR = [
+                { tipoEvento: { contains: search, mode: 'insensitive' } },
+                { descripcion: { contains: search, mode: 'insensitive' } },
+                { usuario: { fullName: { contains: search, mode: 'insensitive' } } }
+            ];
+        }
 
         const model = this.getPrismaModel('AuditoriaEvento');
         if (!model) return { total: 0, data: [], page: query.page, limit: query.limit };
@@ -285,9 +303,11 @@ export class AuditService {
 
         if (query.usuarioId && query.usuarioId.trim() !== '') where.usuarioId = query.usuarioId;
         if (query.busqueda && query.busqueda.trim() !== '') {
+            const search = query.busqueda.trim();
             where.OR = [
-                { rutaDestino: { contains: query.busqueda.trim(), mode: 'insensitive' } },
-                { sessionId: { contains: query.busqueda.trim(), mode: 'insensitive' } }
+                { rutaDestino: { contains: search, mode: 'insensitive' } },
+                { sessionId: { contains: search, mode: 'insensitive' } },
+                { usuario: { fullName: { contains: search, mode: 'insensitive' } } }
             ];
         }
 
