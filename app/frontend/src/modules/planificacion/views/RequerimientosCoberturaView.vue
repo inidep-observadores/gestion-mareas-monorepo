@@ -82,14 +82,14 @@
                           v-model.number="matrix[pesq.id][flota.id][month.num]"
                           @input="markDirty"
                           class="w-full h-10 px-2 text-center text-sm font-semibold bg-surface-muted border border-border rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
-                          :class="{'text-primary border-primary/30 bg-primary/5': matrix[pesq.id][flota.id][month.num] > 0}"
+                          :class="{'text-primary border-primary/30 bg-primary/5': (matrix[pesq.id]?.[flota.id]?.[month.num] ?? 0) > 0}"
                           placeholder="0" />
                       </template>
                       <!-- Modo Vista -->
                       <template v-else>
                         <div class="h-10 flex items-center justify-center">
-                          <span v-if="matrix[pesq.id]?.[flota.id]?.[month.num] && (matrix[pesq.id][flota.id][month.num] ?? 0) > 0" class="inline-flex items-center justify-center min-w-[2rem] h-8 px-2 rounded-lg bg-info/10 text-info font-bold text-sm">
-                            {{ matrix[pesq.id][flota.id][month.num] }}
+                          <span v-if="matrix[pesq.id]?.[flota.id]?.[month.num] && (matrix[pesq.id]?.[flota.id]?.[month.num] ?? 0) > 0" class="inline-flex items-center justify-center min-w-[2rem] h-8 px-2 rounded-lg bg-info/10 text-info font-bold text-sm">
+                            {{ matrix[pesq.id]?.[flota.id]?.[month.num] }}
                           </span>
                           <span v-else class="text-text-muted/30 text-xs">-</span>
                         </div>
@@ -177,7 +177,7 @@
                       </template>
                       <template v-else>
                          <div class="bg-surface-muted/50 rounded-md py-1.5 text-center flex items-center justify-center font-bold text-sm min-h-[34px]">
-                           <span v-if="matrix[pesq.id]?.[flota.id]?.[month.num]! > 0" class="text-info">{{ matrix[pesq.id][flota.id][month.num] }}</span>
+                           <span v-if="matrix[pesq.id]?.[flota.id]?.[month.num] && (matrix[pesq.id]?.[flota.id]?.[month.num] ?? 0) > 0" class="text-info">{{ matrix[pesq.id]?.[flota.id]?.[month.num] }}</span>
                            <span v-else class="text-text-muted/30">-</span>
                          </div>
                       </template>
@@ -273,9 +273,7 @@ const loadData = async () => {
     if (!catalogos.value.pesquerias.length) {
       const [pesquerias, tiposFlota] = await Promise.all([
         catalogosService.getPesquerias(),
-        // Nota: Como no hay un tipoFlota específico en catalogoService, usaremos los del backend o fallback
-        // Por ahora, asumimos que Pesquerias es lo principal
-        Promise.resolve([{ id: '1', nombre: 'Fresqueros' }, { id: '2', nombre: 'Congeladores' }]) 
+        catalogosService.getTiposFlota()
       ]);
       
       catalogos.value.pesquerias = pesquerias;
