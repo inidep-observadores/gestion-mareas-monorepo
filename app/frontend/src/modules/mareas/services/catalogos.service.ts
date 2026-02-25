@@ -32,6 +32,7 @@ export interface ArtePesca {
 export interface TipoFlota {
     id: string;
     nombre: string;
+    codigo: string;
     codigo_numerico?: number;
 }
 

@@ -277,7 +277,10 @@ const loadData = async () => {
       ]);
       
       catalogos.value.pesquerias = pesquerias;
-      catalogos.value.tiposFlota = tiposFlota;
+      // Sólo consideraremos flotas Congelador y Fresquero de altura
+      catalogos.value.tiposFlota = tiposFlota.filter(f => 
+        f.codigo === 'ALTURA_FRESQUERO' || f.codigo === 'ALTURA_CONGELADOR'
+      );
       initMatrix();
     } else {
       initMatrix();

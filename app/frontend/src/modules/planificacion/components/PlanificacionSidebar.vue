@@ -137,6 +137,7 @@ import {
   ArrowLeftIcon,
   LayoutDashboardIcon,
   CalenderIcon,
+  ShipIcon,
 } from '@/icons'
 import { useSidebar } from '@/composables/useSidebar'
 import { useAuthStore } from '@/modules/auth/stores/auth.store'
@@ -174,7 +175,7 @@ const navigationGroups = [
         path: '/planificacion/dashboard',
       },
       {
-        icon: HorizontalDots, // Placeholder if CalenderIcon wasn't available or reuse
+        icon: ShipIcon,
         name: 'Req. de Cobertura',
         path: '/planificacion/requerimientos',
       },

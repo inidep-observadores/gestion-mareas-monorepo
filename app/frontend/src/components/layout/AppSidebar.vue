@@ -237,7 +237,7 @@ const navigationGroups = computed(() => {
           show: true,
         },
         {
-          icon: CalenderIcon,
+          icon: ShipIcon,
           name: 'Planificación',
           to: { name: 'PlanificacionDashboard' },
           show: isAdmin.value || isPlanificador.value,
