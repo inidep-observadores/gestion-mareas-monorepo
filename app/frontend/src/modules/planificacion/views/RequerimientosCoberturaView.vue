@@ -8,16 +8,22 @@
       <!-- Header actions and modes -->
       <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 p-4 lg:p-6 bg-surface rounded-2xl border border-border mt-6">
         <div>
-          <h2 class="text-xl font-bold text-text">Matriz de Requerimientos</h2>
+          <h2 class="text-xl font-bold text-text">Requerimientos de buques por pesquería</h2>
           <p class="text-text-muted text-sm mt-1">Año operativo activo: <span class="font-bold text-info">{{ configStore.selectedYear }}</span></p>
         </div>
 
         <div class="flex items-center gap-3">
           <!-- Toggle Modo Edición -->
+          <!-- Filtro: Ocultar pesquerías vacías (Solo en modo Vista) -->
+          <div v-if="!isEditMode" class="flex items-center gap-2 mr-2">
+            <BaseSwitch v-model="hideEmptyPesquerias" />
+            <span class="text-xs font-bold text-text-muted uppercase cursor-pointer" @click="hideEmptyPesquerias = !hideEmptyPesquerias">Ocultar vacías</span>
+          </div>
+
           <!-- Filtro por Pesquería (Solo en modo Vista) -->
           <div v-if="!isEditMode" class="flex items-center gap-2">
             <label for="pesqueria-filter" class="text-xs font-bold text-text-muted uppercase">Filtrar:</label>
-            <select id="pesqueria-filter" v-model="selectedPesqueriaId" 
+            <select id="pesqueria-filter" v-model="selectedPesqueriaId"
               class="bg-surface border border-border text-sm rounded-lg px-3 py-1.5 focus:border-primary outline-none transition-all">
               <option value="">Todas las pesquerías</option>
               <option v-for="p in catalogos.pesquerias" :key="p.id" :value="p.id">{{ p.nombre }}</option>
@@ -67,7 +73,7 @@
                 <template v-for="pesq in visiblePesquerias" :key="pesq.id">
                   <!-- Solo mostramos aquellas que tienen flotas asociadas -->
                   <tr v-for="(flota, fIdx) in pesq.flotaAsignada" :key="flota.id" class="hover:bg-surface-muted/20 transition-colors">
-                    
+
                     <td class="p-4 align-middle sticky left-0 bg-surface z-10 custom-shadow-right">
                       <div class="flex flex-col">
                         <span v-if="fIdx === 0" class="text-xs font-bold text-text uppercase tracking-wide mb-1">{{ pesq.nombre }}</span>
@@ -78,7 +84,7 @@
                     <td v-for="month in months" :key="month.num" class="p-2 align-middle text-center border-l border-border/50">
                       <!-- Modo Edición -->
                       <template v-if="isEditMode">
-                        <input type="number" min="0" 
+                        <input type="number" min="0"
                           v-model.number="matrix[pesq.id][flota.id][month.num]"
                           @input="markDirty"
                           class="w-full h-10 px-2 text-center text-sm font-semibold bg-surface-muted border border-border rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
@@ -123,7 +129,7 @@
 
         <!-- Mobile View: Accordion / Cards -->
         <div class="block lg:hidden space-y-6">
-          
+
           <!-- Resumen de Totales Mensuales (Mobile) -->
           <div class="bg-surface rounded-2xl border border-border overflow-hidden shadow-sm">
             <div class="p-4 bg-surface-muted/30 border-b border-border">
@@ -163,14 +169,14 @@
                     <span>{{ flota.nombre }}</span>
                     <span class="text-primary font-bold">{{ getRowTotal(pesq.id, flota.id) }} req.</span>
                   </h4>
-                  
+
                   <div class="grid grid-cols-3 sm:grid-cols-4 gap-2">
                     <div v-for="month in months" :key="month.num" class="flex flex-col gap-1">
                       <label class="text-[10px] uppercase font-bold text-text-muted flex justify-between px-1">
                         {{ month.shortStr }}
                       </label>
                       <template v-if="isEditMode">
-                         <input type="number" min="0" 
+                         <input type="number" min="0"
                           v-model.number="matrix[pesq.id][flota.id][month.num]"
                           @input="markDirty"
                           class="w-full text-center text-sm py-1.5 font-semibold bg-surface-muted border border-border rounded-md focus:border-primary" />
@@ -209,6 +215,7 @@ const isSaving = ref(false);
 const isEditMode = ref(false);
 const isDirty = ref(false);
 const selectedPesqueriaId = ref('');
+const hideEmptyPesquerias = ref(true);
 const expandedPesquerias = ref<Record<string, boolean>>({});
 
 // Catálogos
@@ -234,12 +241,18 @@ const matrix = ref<Record<string, Record<string, Record<number, number | null>>>
 // Ordenar pesquerías por nombre y flotas por nombre
 const visiblePesquerias = computed(() => {
   let list = sortedPesquerias.value;
-  
+
   // Solo filtramos en modo vista
-  if (!isEditMode.value && selectedPesqueriaId.value) {
-    list = list.filter(p => p.id === selectedPesqueriaId.value);
+  if (!isEditMode.value) {
+    if (selectedPesqueriaId.value) {
+      list = list.filter(p => p.id === selectedPesqueriaId.value);
+    }
+    
+    if (hideEmptyPesquerias.value) {
+      list = list.filter(p => getPesqueriaTotal(p.id) > 0);
+    }
   }
-  
+
   return list;
 });
 
@@ -275,10 +288,10 @@ const loadData = async () => {
         catalogosService.getPesquerias(),
         catalogosService.getTiposFlota()
       ]);
-      
+
       catalogos.value.pesquerias = pesquerias;
       // Sólo consideraremos flotas Congelador y Fresquero de altura
-      catalogos.value.tiposFlota = tiposFlota.filter(f => 
+      catalogos.value.tiposFlota = tiposFlota.filter(f =>
         f.codigo === 'ALTURA_FRESQUERO' || f.codigo === 'ALTURA_CONGELADOR'
       );
       initMatrix();
@@ -288,7 +301,7 @@ const loadData = async () => {
 
     // 2. Cargar Requerimientos del año actual
     const reqs = await planificacionService.getRequerimientosPorAnio(configStore.selectedYear);
-    
+
     // 3. Poblar la matriz
     reqs.forEach(req => {
       if (matrix.value[req.pesqueriaId] && matrix.value[req.pesqueriaId][req.tipoFlotaId]) {
@@ -326,7 +339,7 @@ const getRowTotal = (pesqueriaId: string, flotaId: string) => {
 const getPesqueriaTotal = (pesqueriaId: string) => {
   const pesq = sortedPesquerias.value.find(p => p.id === pesqueriaId);
   if (!pesq) return 0;
-  
+
   let total = 0;
   pesq.flotaAsignada.forEach((f: any) => {
     total += getRowTotal(pesqueriaId, f.id);
@@ -355,11 +368,11 @@ const getGrandTotal = () => {
 
 const saveChanges = async () => {
   if (!isDirty.value) return;
-  
+
   isSaving.value = true;
   try {
     const arrayPlano = [];
-    
+
     // Aplanar matriz
     for (const pId in matrix.value) {
       for (const fId in matrix.value[pId]) {
@@ -418,10 +431,10 @@ onMounted(() => {
 }
 
 /* Remover flechas del input number para una vista de grilla mas limpia */
-input[type=number]::-webkit-inner-spin-button, 
-input[type=number]::-webkit-outer-spin-button { 
-  -webkit-appearance: none; 
-  margin: 0; 
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
 input[type=number] {
   -moz-appearance: textfield;
