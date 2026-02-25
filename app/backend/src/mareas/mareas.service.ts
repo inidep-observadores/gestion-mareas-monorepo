@@ -1618,7 +1618,8 @@ export class MareasService {
                 id: mov.id,
                 titulo: mov.detalle || mov.tipoEvento,
                 fecha: mov.fechaHora,
-                usuario: mov.usuario?.fullName || 'Sistema'
+                usuario: mov.usuario?.fullName || 'Sistema',
+                comentarios: mov.comentarios
             })),
             etapas: marea.etapas // Include stages for editing
         };

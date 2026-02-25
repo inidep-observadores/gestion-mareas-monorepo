@@ -34,7 +34,7 @@
 
       <template v-else>
         <!-- 1. Stats & Progress -->
-        <section class="space-y-6">
+        <section v-if="showOperationalInfo" class="space-y-6">
           <div class="flex items-center justify-between">
             <h4 class="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted">Estado & Progreso</h4>
             <span class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter shadow-sm"
@@ -82,7 +82,7 @@
         </section>
 
         <!-- 2. Logistics Section -->
-        <section class="space-y-4">
+        <section v-if="showOperationalInfo" class="space-y-4">
           <div class="flex items-center justify-between cursor-pointer group"
             @click="isLogisticaCollapsed = !isLogisticaCollapsed">
             <div class="flex items-center gap-2">
@@ -276,6 +276,11 @@
                   <span class="w-1 h-1 rounded-full bg-border"></span>
                   <span class="text-[10px] text-primary font-bold uppercase tracking-tighter">{{ event.usuario }}</span>
                 </div>
+                <div v-if="event.comentarios" class="mt-1.5 p-2 bg-surface-muted/30 border-l-2 border-primary/30 rounded-r-lg">
+                  <p class="text-[10px] text-text-muted leading-relaxed italic">
+                    {{ event.comentarios }}
+                  </p>
+                </div>
               </div>
             </div>
           </div>
@@ -362,6 +367,11 @@ const canViewFullDetail = computed(() => {
 
 const buttonText = computed(() => {
   return canManage.value ? 'Editar Detalles Completos' : 'Consultar Detalles Completos'
+})
+
+const showOperationalInfo = computed(() => {
+  const estado = currentMarea.value?.estado_codigo
+  return estado !== 'DESIGNADA' && estado !== 'A_REASIGNAR'
 })
 
 const currentMarea = computed(() => {

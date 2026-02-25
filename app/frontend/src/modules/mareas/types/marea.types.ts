@@ -54,7 +54,7 @@ export interface MareaContext {
         etapas?: any[];
     };
     actions: Record<string, { enabled: boolean; label: string; blockedReason?: string; claseBoton?: string }>;
-    lastEvents: { id: string; titulo: string; fecha: string; usuario: string }[];
+    lastEvents: { id: string; titulo: string; fecha: string; usuario: string; comentarios?: string }[];
 }
 
 export interface DashboardKpis {
