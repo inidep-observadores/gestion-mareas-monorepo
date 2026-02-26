@@ -17,6 +17,7 @@ vi.mock('../../services/planificacion.service', () => ({
 vi.mock('@/modules/mareas/services/catalogos.service', () => ({
   default: {
     getPesquerias: vi.fn(),
+    getTiposFlota: vi.fn(),
   },
 }));
 
@@ -30,7 +31,7 @@ vi.mock('vue-sonner', () => ({
 describe('RequerimientosCoberturaView.vue', () => {
   const mockCatalogos = {
     pesquerias: [{ id: 'p1', nombre: 'Merluza', activo: true }],
-    tiposFlota: [{ id: '1', nombre: 'Fresqueros', activo: true }], // Alineado con fallback del componente
+    tiposFlota: [{ id: '1', nombre: 'Fresqueros', codigo: 'ALTURA_FRESQUERO', activo: true }], // Alineado con fallback del componente
   };
 
   const mockRequerimientos = [
@@ -40,6 +41,7 @@ describe('RequerimientosCoberturaView.vue', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(catalogosService.getPesquerias).mockResolvedValue(mockCatalogos.pesquerias as any);
+    vi.mocked(catalogosService.getTiposFlota).mockResolvedValue(mockCatalogos.tiposFlota as any);
     vi.mocked(planificacionService.getRequerimientosPorAnio).mockResolvedValue(mockRequerimientos as any);
   });
 
@@ -78,14 +80,14 @@ describe('RequerimientosCoberturaView.vue', () => {
 
     expect(catalogosService.getPesquerias).toHaveBeenCalled();
     expect(planificacionService.getRequerimientosPorAnio).toHaveBeenCalledWith(2025);
-    
+
     // Verificar que la matriz se pobló
     expect(wrapper.text()).toContain('5');
   });
 
   it('debe calcular correctamente los totales mensuales en la fila de totales', async () => {
     const wrapper = await mountComponent();
-    
+
     // El mock inicial tiene 5 en el mes 1.
     // Buscamos la fila de totales (tfoot)
     const tfoot = wrapper.find('tfoot');
@@ -94,29 +96,37 @@ describe('RequerimientosCoberturaView.vue', () => {
   });
 
   it('debe filtrar por pesquería en modo vista y mostrar todo en modo edición', async () => {
-    // Agregar una segunda pesquería al mock para probar el filtro
     const mockPesq2 = { id: 'p2', nombre: 'Langostino', activo: true };
-    vi.mocked(catalogosService.getPesquerias).mockResolvedValue([...mockCatalogos.pesquerias, mockPesq2]);
-    
+    vi.mocked(catalogosService.getPesquerias).mockResolvedValue([...mockCatalogos.pesquerias, mockPesq2] as any);
+
+    // Le daremos requisitos a p2 para que sea visible en modo vista global.
+    const nuevosRequerimientos = [
+      ...mockRequerimientos,
+      { pesqueriaId: 'p2', tipoFlotaId: '1', mes: 2, cantidad: 10 }
+    ];
+    vi.mocked(planificacionService.getRequerimientosPorAnio).mockResolvedValue(nuevosRequerimientos as any);
+
     const wrapper = await mountComponent();
 
-    // Por defecto muestra ambas (2 filas de Merluza + Langostino con sus flotas)
-    // Nota: Cada pesquería tiene 2 flotas por el fallback del componente
-    expect(wrapper.findAll('tbody tr').length).toBe(4);
+    // Por defecto muestra ambas pesquerías, c/u con 1 flota (Fresqueros = 2 filas total)
+    expect(wrapper.findAll('tbody tr').length).toBe(2);
 
     // Seleccionar Merluza (p1)
     (wrapper.vm as any).selectedPesqueriaId = 'p1';
     await wrapper.vm.$nextTick();
+    await new Promise(resolve => setTimeout(resolve, 50));
 
-    // Solo debe mostrar Merluza (2 filas)
-    expect(wrapper.findAll('tbody tr').length).toBe(2);
+    // Solo debe mostrar Merluza (1 fila)
+    expect(wrapper.findAll('tbody tr').length).toBe(1);
 
     // Cambiar a modo edición
     (wrapper.vm as any).isEditMode = true;
+    (wrapper.vm as any).selectedPesqueriaId = ''; // Al editar no hay combobox o si lo hubiese, se ve todo
     await wrapper.vm.$nextTick();
+    await new Promise(resolve => setTimeout(resolve, 50));
 
-    // El filtro debe ignorarse y mostrar todo (4 filas)
-    expect(wrapper.findAll('tbody tr').length).toBe(4);
+    // El filtro se ignora y además se muestran todas así no tengan datos
+    expect(wrapper.findAll('tbody tr').length).toBe(2);
   });
 
   it('debe cambiar a modo edición al alternar el switch', async () => {

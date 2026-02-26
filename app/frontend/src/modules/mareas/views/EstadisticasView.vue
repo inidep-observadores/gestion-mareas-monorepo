@@ -1983,11 +1983,11 @@ const coverageChartOptions = computed(() => {
                      </div>
                      <div class="flex gap-4">
                          <div class="text-right flex flex-col items-end">
-                             <span class="text-[8px] font-black text-text-muted uppercase">Req Global</span>
+                             <span class="text-[8px] font-black text-text-muted uppercase">Requerido</span>
                              <span class="text-xs font-black tabular-nums opacity-60">${totalReqs} B</span>
                          </div>
                          <div class="text-right flex flex-col items-end pl-4 border-l border-border/20">
-                             <span class="text-[8px] font-black text-emerald-500 uppercase">Ejec Global</span>
+                             <span class="text-[8px] font-black text-emerald-500 uppercase">Ejecutado</span>
                              <span class="text-xs font-black tabular-nums text-emerald-600 dark:text-emerald-400">${totalExecs} B</span>
                          </div>
                      </div>
@@ -2020,11 +2020,11 @@ const coverageChartOptions = computed(() => {
                      </div>
                      <div class="flex gap-4">
                          <div class="text-right flex flex-col items-end">
-                             <span class="text-[8px] font-black text-text-muted uppercase">Req Global</span>
+                             <span class="text-[8px] font-black text-text-muted uppercase">Requerido</span>
                              <span class="text-xs font-black tabular-nums opacity-60">${required} B</span>
                          </div>
                          <div class="text-right flex flex-col items-end pl-4 border-l border-border/20">
-                             <span class="text-[8px] font-black text-emerald-500 uppercase">Ejec Global</span>
+                             <span class="text-[8px] font-black text-emerald-500 uppercase">Ejecutado</span>
                              <span class="text-xs font-black tabular-nums text-emerald-600 dark:text-emerald-400">${vessels} B</span>
                          </div>
                      </div>
