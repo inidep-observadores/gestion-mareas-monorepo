@@ -7,6 +7,7 @@ import { AuthModule } from '../auth/auth.module';
 @Module({
   imports: [PrismaModule, AuthModule],
   providers: [PlanificacionService],
-  controllers: [PlanificacionController]
+  controllers: [PlanificacionController],
+  exports: [PlanificacionService]
 })
 export class PlanificacionModule {}
