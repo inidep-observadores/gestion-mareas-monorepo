@@ -1626,7 +1626,7 @@ const fisheryProfileOptions = computed(() => ({
                <span class="text-text font-black text-xs tabular-nums">${data.x} Mareas</span>
              </div>
              <div class="flex justify-between items-center gap-4">
-               <span class="text-text-muted text-[10px] font-bold uppercase tracking-tighter">Esfuerzo:</span>
+               <span class="text-text-muted text-[10px] font-bold uppercase tracking-tighter">Esfuerzo</span>
                <span class="text-text font-black text-xs tabular-nums">${data.y} Días</span>
              </div>
              <div class="mt-2 pt-1.5 border-t border-border/50 flex justify-between items-center">
@@ -1667,7 +1667,7 @@ const coverageSeriesData = computed(() => {
                fleetName: null
             },
             {
-               name: 'Buques Únicos (Ejecutado)',
+               name: 'Buques Únicos (Cubiertos)',
                type: 'column',
                data: coverageData.value.map(c => c.count),
                metaType: 'EXECUTED',
@@ -1734,7 +1734,7 @@ const coverageSeriesData = computed(() => {
       });
 
       dynamicSeries.push({
-         name: `${fleetName} (Ejecutado)`,
+         name: `${fleetName} (Cubierto)`,
          type: 'column',
          data: execs,
          metaType: 'EXECUTED',
@@ -1952,16 +1952,16 @@ const coverageChartOptions = computed(() => {
                               <span class="text-[9px] font-black uppercase text-text">${fleet}</span>
                            </div>
                            <div class="flex items-center gap-6 pl-3">
-                              <div class="flex items-baseline gap-1">
-                                 <span class="text-[9px] font-bold text-text-muted opacity-60 uppercase w-[50px]">Requerido:</span>
+                              <div class="flex items-baseline gap-1.5">
+                                 <span class="text-[9px] font-bold text-text-muted opacity-60 uppercase w-[56px]">Requerido</span>
                                  <span class="text-[11px] font-black text-text tabular-nums opacity-60">${reqVal}</span>
                               </div>
-                              <div class="flex items-baseline gap-1">
-                                 <span class="text-[9px] font-bold text-text-muted uppercase w-[50px] text-emerald-500">Ejecutado:</span>
+                              <div class="flex items-baseline gap-1.5">
+                                 <span class="text-[9px] font-bold text-text-muted uppercase w-[56px] text-emerald-500">Cubierto</span>
                                  <span class="text-[11px] font-black text-text tabular-nums" style="color:${fleetColor}">${execVal}</span>
                               </div>
-                              <div class="flex items-baseline gap-1 ml-auto">
-                                 <span class="text-[9px] font-bold text-text-muted uppercase text-blue-500">Esfuerzo:</span>
+                              <div class="flex items-baseline gap-1.5 ml-auto">
+                                 <span class="text-[9px] font-bold text-text-muted uppercase text-blue-500">Esfuerzo</span>
                                  <span class="text-[11px] font-black text-text tabular-nums">${daysVal}</span>
                                  <span class="text-[8px] font-bold opacity-40">D</span>
                               </div>
@@ -1987,7 +1987,7 @@ const coverageChartOptions = computed(() => {
                              <span class="text-xs font-black tabular-nums opacity-60">${totalReqs} B</span>
                          </div>
                          <div class="text-right flex flex-col items-end pl-4 border-l border-border/20">
-                             <span class="text-[8px] font-black text-emerald-500 uppercase">Ejecutado</span>
+                             <span class="text-[8px] font-black text-emerald-500 uppercase">Cubierto</span>
                              <span class="text-xs font-black tabular-nums text-emerald-600 dark:text-emerald-400">${totalExecs} B</span>
                          </div>
                      </div>
@@ -2024,7 +2024,7 @@ const coverageChartOptions = computed(() => {
                              <span class="text-xs font-black tabular-nums opacity-60">${required} B</span>
                          </div>
                          <div class="text-right flex flex-col items-end pl-4 border-l border-border/20">
-                             <span class="text-[8px] font-black text-emerald-500 uppercase">Ejecutado</span>
+                             <span class="text-[8px] font-black text-emerald-500 uppercase">Cubierto</span>
                              <span class="text-xs font-black tabular-nums text-emerald-600 dark:text-emerald-400">${vessels} B</span>
                          </div>
                      </div>
@@ -2040,7 +2040,7 @@ const coverageChartOptions = computed(() => {
                                  <span class="text-[9px] font-bold text-text-muted uppercase">${f.name}</span>
                               </div>
                               <div class="flex items-center gap-2">
-                                 ${f.count > 0 ? `<div class="flex items-baseline gap-1"><span class="text-[8px] font-bold text-text-muted uppercase opacity-50">Ejec.</span><span class="text-[10px] font-black text-text tabular-nums">${f.count} <span class="text-[8px] opacity-40 font-bold">B</span></span></div>` : ''}
+                                 ${f.count > 0 ? `<div class="flex items-baseline gap-1"><span class="text-[8px] font-bold text-text-muted uppercase opacity-50">Cub.</span><span class="text-[10px] font-black text-text tabular-nums">${f.count} <span class="text-[8px] opacity-40 font-bold">B</span></span></div>` : ''}
                                  ${f.count > 0 && f.days > 0 ? `<span class="h-2 w-px bg-border/30"></span>` : ''}
                                  ${f.days > 0 ? `<div class="flex items-baseline gap-1"><span class="text-[8px] font-bold text-text-muted uppercase opacity-50 text-blue-500">Esf.</span><span class="text-[10px] font-black text-text/80 tabular-nums">${f.days} <span class="text-[8px] opacity-40 font-bold">D</span></span></div>` : ''}
                               </div>
