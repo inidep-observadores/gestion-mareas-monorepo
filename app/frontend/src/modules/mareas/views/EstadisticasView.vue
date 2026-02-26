@@ -1805,19 +1805,6 @@ const coverageChartOptions = computed(() => {
       });
    }
 
-   // Orden Semántico para la Leyenda: Siempre mostrar "Requerido" antes que "Ejecutado"
-   let legendLabels: string[] = [];
-
-   if (!baseData.isSplitByFleet) {
-      legendLabels = ['Buques Requeridos', 'Buques Únicos (Ejecutado)', 'Días de Marea'];
-   } else {
-      baseData.fleets.forEach(fleet => {
-         legendLabels.push(`${fleet} (Requerido)`);
-         legendLabels.push(`${fleet} (Ejecutado)`);
-      });
-      legendLabels.push('Días de Marea');
-   }
-
    // El único eje "Opposite" es el último (Esfuerzo). Los demás referencian al izquierdo (Buques)
    const yaxisNodes = baseData.series.map((s, idx) => {
       if (s.metaType === 'EFFORT') {
@@ -1918,8 +1905,7 @@ const coverageChartOptions = computed(() => {
             height: 14
          },
          onItemClick: { toggleDataSeries: true },
-         onItemHover: { highlightDataSeries: true },
-         customLegendItems: legendLabels
+         onItemHover: { highlightDataSeries: true }
       },
       tooltip: {
          shared: true,
@@ -2014,61 +2000,49 @@ const coverageChartOptions = computed(() => {
 
             } else {
                // Renderizado Simple (Aglomerado)
-               const execIdx = series.findIndex((s: any) => s.metaType === 'EXECUTED') ?? 0;
-               const reqIdx = series.findIndex((s: any) => s.metaType === 'REQUIRED') ?? 1;
+               const execIdx = baseData.series.findIndex((s: any) => s.metaType === 'EXECUTED');
+               const reqIdx = baseData.series.findIndex((s: any) => s.metaType === 'REQUIRED');
 
-               const required = series[reqIdx] ? series[reqIdx][dataPointIndex] : 0;
-               const vessels = series[execIdx] ? series[execIdx][dataPointIndex] : 0;
+               const required = reqIdx >= 0 && series[reqIdx] ? series[reqIdx][dataPointIndex] ?? 0 : 0;
+               const vessels = execIdx >= 0 && series[execIdx] ? series[execIdx][dataPointIndex] ?? 0 : 0;
 
                const hasVessels = vessels > 0;
                const hasRequired = required > 0;
 
                tooltipBody = `
-                  <div class="flex items-stretch gap-4 pb-2 border-b border-border/20">
-                     ${hasRequired ? `
-                     <div class="flex flex-col flex-1">
-                        <span class="text-[8px] font-black text-purple-500 uppercase tracking-tighter">Requerido</span>
+                  <div class="flex justify-between items-end gap-4 pb-2 border-b border-border/20">
+                     <div class="flex flex-col">
+                        <span class="text-[8px] font-black text-text-muted uppercase tracking-wider mb-0.5">Total Días</span>
                         <div class="flex items-baseline gap-1">
-                           <span class="text-xl font-black tabular-nums leading-none text-purple-600 dark:text-purple-400 opacity-90">${required}</span>
-                           <span class="text-[9px] font-bold text-text-muted">Buques</span>
-                        </div>
-                     </div>
-                     ` : ''}
-
-                     ${hasVessels ? `
-                     <div class="flex flex-col flex-1 ${hasRequired ? 'pl-4 border-l border-border/30' : ''}">
-                        <span class="text-[8px] font-black text-emerald-500 uppercase tracking-tighter">Ejecutado</span>
-                        <div class="flex items-baseline gap-1">
-                           <span class="text-xl font-black tabular-nums leading-none text-emerald-600 dark:text-emerald-400">${vessels}</span>
-                           <span class="text-[9px] font-bold text-text-muted">Buques</span>
-                        </div>
-                     </div>
-                     ` : ''}
-
-                     ${hasTotalDays ? `
-                     <div class="flex flex-col flex-1 pl-4 border-l border-border/30">
-                        <span class="text-[8px] font-black text-blue-500 uppercase tracking-tighter">Esfuerzo</span>
-                        <div class="flex items-baseline gap-1">
-                           <span class="text-xl font-black tabular-nums leading-none text-blue-600 dark:text-blue-400">${totalDays}</span>
+                           <span class="text-xl font-black tabular-nums leading-none text-blue-500">${totalDays}</span>
                            <span class="text-[9px] font-bold text-text-muted">Días</span>
                         </div>
                      </div>
-                     ` : ''}
+                     <div class="flex gap-4">
+                         <div class="text-right flex flex-col items-end">
+                             <span class="text-[8px] font-black text-text-muted uppercase">Req Global</span>
+                             <span class="text-xs font-black tabular-nums opacity-60">${required} B</span>
+                         </div>
+                         <div class="text-right flex flex-col items-end pl-4 border-l border-border/20">
+                             <span class="text-[8px] font-black text-emerald-500 uppercase">Ejec Global</span>
+                             <span class="text-xs font-black tabular-nums text-emerald-600 dark:text-emerald-400">${vessels} B</span>
+                         </div>
+                     </div>
                   </div>
 
                   ${monthData?.fleets && monthData.fleets.length > 0 ? `
-                     <div class="flex flex-col gap-1.5 py-1">
+                     <div class="flex flex-col gap-1.5 pt-2">
                         <span class="text-[8px] font-black text-text-muted uppercase tracking-widest mb-1 opacity-60">Desglose Operativo por Flota</span>
                         ${monthData.fleets.map(f => `
-                           <div class="flex items-center justify-between gap-4 py-0.5">
+                           <div class="flex items-center justify-between gap-4 py-0.5 pl-2">
                               <div class="flex items-center gap-2">
                                  <div class="w-1.5 h-1.5 rounded-full shadow-sm" style="background:${getFleetColor(f.name)}"></div>
                                  <span class="text-[9px] font-bold text-text-muted uppercase">${f.name}</span>
                               </div>
                               <div class="flex items-center gap-2">
-                                 ${hasVessels ? `<span class="text-[10px] font-black text-text tabular-nums">${f.count} <span class="text-[8px] opacity-40 font-bold">B</span></span>` : ''}
-                                 ${hasVessels && hasTotalDays ? `<span class="h-2 w-px bg-border/30"></span>` : ''}
-                                 ${hasTotalDays ? `<span class="text-[10px] font-black text-text/80 tabular-nums">${f.days} <span class="text-[8px] opacity-40 font-bold">D</span></span>` : ''}
+                                 ${f.count > 0 ? `<div class="flex items-baseline gap-1"><span class="text-[8px] font-bold text-text-muted uppercase opacity-50">Ejec.</span><span class="text-[10px] font-black text-text tabular-nums">${f.count} <span class="text-[8px] opacity-40 font-bold">B</span></span></div>` : ''}
+                                 ${f.count > 0 && f.days > 0 ? `<span class="h-2 w-px bg-border/30"></span>` : ''}
+                                 ${f.days > 0 ? `<div class="flex items-baseline gap-1"><span class="text-[8px] font-bold text-text-muted uppercase opacity-50 text-blue-500">Esf.</span><span class="text-[10px] font-black text-text/80 tabular-nums">${f.days} <span class="text-[8px] opacity-40 font-bold">D</span></span></div>` : ''}
                               </div>
                            </div>
                         `).join('')}
