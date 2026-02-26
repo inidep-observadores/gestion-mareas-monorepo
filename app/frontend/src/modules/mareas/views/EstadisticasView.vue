@@ -1660,17 +1660,17 @@ const coverageSeriesData = computed(() => {
          fleets: [],
          series: [
             {
-               name: 'Buques Únicos (Ejecutado)',
-               type: 'column',
-               data: coverageData.value.map(c => c.count),
-               metaType: 'EXECUTED',
-               fleetName: null
-            },
-            {
                name: 'Buques Requeridos',
                type: 'column',
                data: reqs,
                metaType: 'REQUIRED',
+               fleetName: null
+            },
+            {
+               name: 'Buques Únicos (Ejecutado)',
+               type: 'column',
+               data: coverageData.value.map(c => c.count),
+               metaType: 'EXECUTED',
                fleetName: null
             },
             {
@@ -1708,6 +1708,22 @@ const coverageSeriesData = computed(() => {
 
    // Para cada flota construimos Ejecutado y Requerido
    uniqueFleets.forEach(fleetName => {
+      // Data Requerida
+      const reqs = new Array(12).fill(0);
+      requerimientosData.value.forEach(req => {
+         if (req.pesqueria?.nombre === fisheryFilter && req.tipoFlota?.nombre === fleetName && req.cantidad) {
+            reqs[req.mes - 1] += req.cantidad;
+         }
+      });
+
+      dynamicSeries.push({
+         name: `${fleetName} (Requerido)`,
+         type: 'column',
+         data: reqs,
+         metaType: 'REQUIRED',
+         fleetName: fleetName
+      });
+
       // Data Ejecutada
       const execs = new Array(12).fill(0);
       coverageData.value.forEach((month, idx) => {
@@ -1722,22 +1738,6 @@ const coverageSeriesData = computed(() => {
          type: 'column',
          data: execs,
          metaType: 'EXECUTED',
-         fleetName: fleetName
-      });
-
-      // Data Requerida
-      const reqs = new Array(12).fill(0);
-      requerimientosData.value.forEach(req => {
-         if (req.pesqueria?.nombre === fisheryFilter && req.tipoFlota?.nombre === fleetName && req.cantidad) {
-            reqs[req.mes - 1] += req.cantidad;
-         }
-      });
-
-      dynamicSeries.push({
-         name: `${fleetName} (Requerido)`,
-         type: 'column',
-         data: reqs,
-         metaType: 'REQUIRED',
          fleetName: fleetName
       });
    });
@@ -1777,13 +1777,13 @@ const coverageChartOptions = computed(() => {
 
    if (!baseData.isSplitByFleet) {
       // Escenario Aglomerado Clásico (3 series)
-      // OJO: Cambió el orden, ahora es Ejecutado, Requerido, Esfuerzo
+      // OJO: Restaurado orden a Requerido, Ejecutado, Esfuerzo
       strokes.push(0, 0, 3);
-      colors.push('#10b981', '#a855f7', EFFORT_COLOR); // Verde, Púrpura, Azul
-      opacities.push(1, 0.85, 1);
+      colors.push('#a855f7', '#10b981', EFFORT_COLOR); // Púrpura, Verde, Azul
+      opacities.push(0.85, 1, 1);
       dashes.push(0, 0, 0);
-      fillTypes.push('solid', 'pattern', 'solid');
-      fillPatterns.push('none', 'slantedLines', 'none');
+      fillTypes.push('pattern', 'solid', 'solid');
+      fillPatterns.push('slantedLines', 'none', 'none');
    } else {
       // Escenario Desglose por Flota
       baseData.series.forEach(s => {
@@ -1803,6 +1803,19 @@ const coverageChartOptions = computed(() => {
             fillPatterns.push(s.metaType === 'REQUIRED' ? 'slantedLines' : 'none');
          }
       });
+   }
+
+   // Orden Semántico para la Leyenda: Siempre mostrar "Requerido" antes que "Ejecutado"
+   let legendLabels: string[] = [];
+
+   if (!baseData.isSplitByFleet) {
+      legendLabels = ['Buques Requeridos', 'Buques Únicos (Ejecutado)', 'Días de Marea'];
+   } else {
+      baseData.fleets.forEach(fleet => {
+         legendLabels.push(`${fleet} (Requerido)`);
+         legendLabels.push(`${fleet} (Ejecutado)`);
+      });
+      legendLabels.push('Días de Marea');
    }
 
    // El único eje "Opposite" es el último (Esfuerzo). Los demás referencian al izquierdo (Buques)
@@ -1893,19 +1906,20 @@ const coverageChartOptions = computed(() => {
       yaxis: yaxisNodes,
       legend: {
          show: true,
-         position: 'top',
-         horizontalAlign: 'left',
+         position: 'right', // Se alínean verticalmente en el lado derecho
+         offsetY: 20, // Bajar un poco para no pegarse al top de las grillas
          fontSize: '10px',
          fontFamily: 'inherit',
          fontWeight: 600,
-         itemMargin: { horizontal: 10, vertical: 8 },
+         itemMargin: { horizontal: 0, vertical: 8 },
          markers: {
             radius: 2,
             width: 14,
             height: 14
          },
          onItemClick: { toggleDataSeries: true },
-         onItemHover: { highlightDataSeries: true }
+         onItemHover: { highlightDataSeries: true },
+         customLegendItems: legendLabels
       },
       tooltip: {
          shared: true,
