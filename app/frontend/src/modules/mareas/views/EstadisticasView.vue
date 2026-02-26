@@ -134,8 +134,8 @@
             <section class="grid grid-cols-12 gap-8">
                <div class="col-span-12">
                   <ChartWidget title="Cobertura de Buques" subtitle="Cantidad de buques únicos cubiertos por mes"
-                     type="bar" :series="coverageSeries" :options="coverageChartOptions" allow-download
-                     @download="handleDownload('Cobertura_Buques_Mensual')">
+                     type="bar" :series="coverageSeries" :options="coverageChartOptions" :chart-height="450"
+                     allow-download @download="handleDownload('Cobertura_Buques_Mensual')">
                      <template #header-action>
                         <div class="flex items-center gap-2">
                            <span class="text-[10px] font-black text-text-muted uppercase tracking-widest">Filtrar
@@ -1660,17 +1660,17 @@ const coverageSeriesData = computed(() => {
          fleets: [],
          series: [
             {
+               name: 'Buques Únicos (Ejecutado)',
+               type: 'column',
+               data: coverageData.value.map(c => c.count),
+               metaType: 'EXECUTED',
+               fleetName: null
+            },
+            {
                name: 'Buques Requeridos',
                type: 'column',
                data: reqs,
                metaType: 'REQUIRED',
-               fleetName: null
-            },
-            {
-               name: 'Buques Únicos',
-               type: 'column',
-               data: coverageData.value.map(c => c.count),
-               metaType: 'EXECUTED',
                fleetName: null
             },
             {
@@ -1706,24 +1706,8 @@ const coverageSeriesData = computed(() => {
    const uniqueFleets = Array.from(fleetsSet).sort();
    const dynamicSeries: any[] = [];
 
-   // Para cada flota construimos Requerido y Ejecutado
+   // Para cada flota construimos Ejecutado y Requerido
    uniqueFleets.forEach(fleetName => {
-      // Data Requerida
-      const reqs = new Array(12).fill(0);
-      requerimientosData.value.forEach(req => {
-         if (req.pesqueria?.nombre === fisheryFilter && req.tipoFlota?.nombre === fleetName && req.cantidad) {
-            reqs[req.mes - 1] += req.cantidad;
-         }
-      });
-
-      dynamicSeries.push({
-         name: `${fleetName} (Requerido)`,
-         type: 'column',
-         data: reqs,
-         metaType: 'REQUIRED',
-         fleetName: fleetName
-      });
-
       // Data Ejecutada
       const execs = new Array(12).fill(0);
       coverageData.value.forEach((month, idx) => {
@@ -1738,6 +1722,22 @@ const coverageSeriesData = computed(() => {
          type: 'column',
          data: execs,
          metaType: 'EXECUTED',
+         fleetName: fleetName
+      });
+
+      // Data Requerida
+      const reqs = new Array(12).fill(0);
+      requerimientosData.value.forEach(req => {
+         if (req.pesqueria?.nombre === fisheryFilter && req.tipoFlota?.nombre === fleetName && req.cantidad) {
+            reqs[req.mes - 1] += req.cantidad;
+         }
+      });
+
+      dynamicSeries.push({
+         name: `${fleetName} (Requerido)`,
+         type: 'column',
+         data: reqs,
+         metaType: 'REQUIRED',
          fleetName: fleetName
       });
    });
@@ -1770,17 +1770,20 @@ const coverageChartOptions = computed(() => {
    const opacities: number[] = [];
    const dashes: number[] = [];
    const fillTypes: string[] = [];
+   const fillPatterns: string[] = [];
 
    // Colores fijos para Días (Azul profundo)
    const EFFORT_COLOR = '#3b82f6';
 
    if (!baseData.isSplitByFleet) {
       // Escenario Aglomerado Clásico (3 series)
-      strokes.push(0, 0, 3); // Requerido, Ejecutado, Esfuerzo
-      colors.push('#a855f7', '#10b981', EFFORT_COLOR);
-      opacities.push(0.85, 1, 1);
+      // OJO: Cambió el orden, ahora es Ejecutado, Requerido, Esfuerzo
+      strokes.push(0, 0, 3);
+      colors.push('#10b981', '#a855f7', EFFORT_COLOR); // Verde, Púrpura, Azul
+      opacities.push(1, 0.85, 1);
       dashes.push(0, 0, 0);
-      fillTypes.push('pattern', 'solid', 'solid');
+      fillTypes.push('solid', 'pattern', 'solid');
+      fillPatterns.push('none', 'slantedLines', 'none');
    } else {
       // Escenario Desglose por Flota
       baseData.series.forEach(s => {
@@ -1790,12 +1793,14 @@ const coverageChartOptions = computed(() => {
             opacities.push(1);
             dashes.push(0);
             fillTypes.push('solid');
+            fillPatterns.push('none');
          } else {
             strokes.push(0);
             colors.push(getFleetColor(s.fleetName as string));
             opacities.push(s.metaType === 'REQUIRED' ? 0.85 : 1);
             dashes.push(0);
             fillTypes.push(s.metaType === 'REQUIRED' ? 'pattern' : 'solid');
+            fillPatterns.push(s.metaType === 'REQUIRED' ? 'slantedLines' : 'none');
          }
       });
    }
@@ -1854,10 +1859,10 @@ const coverageChartOptions = computed(() => {
          type: fillTypes,
          opacity: opacities,
          pattern: {
-            style: 'slantedLines',
-            width: 4,
-            height: 4,
-            strokeWidth: 1.5
+            style: fillPatterns,
+            width: 5,
+            height: 5,
+            strokeWidth: 2
          }
       },
       plotOptions: {
@@ -1889,12 +1894,18 @@ const coverageChartOptions = computed(() => {
       legend: {
          show: true,
          position: 'top',
-         horizontalAlign: 'right',
+         horizontalAlign: 'left',
          fontSize: '10px',
          fontFamily: 'inherit',
          fontWeight: 600,
-         itemMargin: { horizontal: 10, vertical: 0 },
-         markers: { radius: 12 }
+         itemMargin: { horizontal: 10, vertical: 8 },
+         markers: {
+            radius: 2,
+            width: 14,
+            height: 14
+         },
+         onItemClick: { toggleDataSeries: true },
+         onItemHover: { highlightDataSeries: true }
       },
       tooltip: {
          shared: true,
@@ -1989,8 +2000,11 @@ const coverageChartOptions = computed(() => {
 
             } else {
                // Renderizado Simple (Aglomerado)
-               const required = series[0] ? series[0][dataPointIndex] : 0;
-               const vessels = series[1] ? series[1][dataPointIndex] : 0;
+               const execIdx = series.findIndex((s: any) => s.metaType === 'EXECUTED') ?? 0;
+               const reqIdx = series.findIndex((s: any) => s.metaType === 'REQUIRED') ?? 1;
+
+               const required = series[reqIdx] ? series[reqIdx][dataPointIndex] : 0;
+               const vessels = series[execIdx] ? series[execIdx][dataPointIndex] : 0;
 
                const hasVessels = vessels > 0;
                const hasRequired = required > 0;
