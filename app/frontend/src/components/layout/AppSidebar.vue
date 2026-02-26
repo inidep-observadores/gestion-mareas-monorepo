@@ -128,6 +128,7 @@ import {
   LayoutDashboardIcon,
   BarChartIcon,
   CalenderIcon,
+  TaskIcon,
   GridIcon,
   MapPinIcon,
   ShieldIcon,
@@ -209,12 +210,12 @@ const navigationGroups = computed(() => {
           to: { name: 'MareasCalendar' },
           show: false,  //Lo dejamos desactivado hasta que le encontremos una buena utilidad
         },
-          {
-            icon: BarChartIcon,
-            name: 'Estadísticas',
-            to: { name: 'MareasStats' },
-            show: isAdmin.value || isCoordinator.value || authStore.user?.roles.includes(ValidRoles.desarrollador),
-          },
+        {
+          icon: BarChartIcon,
+          name: 'Estadísticas',
+          to: { name: 'MareasStats' },
+          show: isAdmin.value || isCoordinator.value || authStore.user?.roles.includes(ValidRoles.desarrollador),
+        },
 
       ],
     },
@@ -237,7 +238,7 @@ const navigationGroups = computed(() => {
           show: true,
         },
         {
-          icon: ShipIcon,
+          icon: TaskIcon,
           name: 'Planificación',
           to: { name: 'PlanificacionDashboard' },
           show: isAdmin.value || isPlanificador.value,
