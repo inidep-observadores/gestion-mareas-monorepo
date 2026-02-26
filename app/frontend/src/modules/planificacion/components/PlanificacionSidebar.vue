@@ -138,6 +138,7 @@ import {
   LayoutDashboardIcon,
   CalenderIcon,
   ShipIcon,
+  UserGroupIcon,
 } from '@/icons'
 import { useSidebar } from '@/composables/useSidebar'
 import { useAuthStore } from '@/modules/auth/stores/auth.store'
@@ -178,6 +179,11 @@ const navigationGroups = [
         icon: ShipIcon,
         name: 'Req. de Cobertura',
         path: '/planificacion/requerimientos',
+      },
+      {
+        icon: UserGroupIcon,
+        name: 'Matriz Experiencia',
+        path: '/planificacion/experiencia-observadores',
       },
     ],
   },

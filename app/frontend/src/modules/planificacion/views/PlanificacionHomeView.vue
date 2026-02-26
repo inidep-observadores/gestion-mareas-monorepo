@@ -21,6 +21,13 @@
             :icon="ShipIcon"
             color="info"
           />
+          <PlanificacionHomeCard
+            title="Matriz de Experiencia"
+            description="Ranking y evaluación de experiencia de observadores activos por pesquería."
+            to="/planificacion/experiencia-observadores"
+            :icon="UserGroupIcon"
+            color="primary"
+          />
         </div>
       </section>
 
@@ -39,5 +46,5 @@
 <script setup lang="ts">
 import PlanificacionDashboardLayout from '../layouts/PlanificacionDashboardLayout.vue';
 import PlanificacionHomeCard from '../components/PlanificacionHomeCard.vue';
-import { CalenderIcon, ShipIcon } from '@/icons';
+import { CalenderIcon, ShipIcon, UserGroupIcon } from '@/icons';
 </script>

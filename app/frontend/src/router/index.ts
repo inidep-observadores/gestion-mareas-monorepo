@@ -224,6 +224,16 @@ const router = createRouter({
         roles: [ValidRoles.admin, ValidRoles.planificador],
       },
     },
+    {
+      path: '/planificacion/experiencia-observadores',
+      name: 'MatrizExperiencia',
+      component: () => import('@/modules/planificacion/views/MatrizExperienciaView.vue'),
+      meta: {
+        title: 'Matriz de Experiencia',
+        requiresAuth: true,
+        roles: [ValidRoles.admin, ValidRoles.planificador],
+      },
+    },
     // Admin Module
     {
       path: '/admin',

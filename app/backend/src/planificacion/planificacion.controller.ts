@@ -1,6 +1,7 @@
 import { Controller, Get, Param, ParseIntPipe, Post, Body } from '@nestjs/common';
 import { PlanificacionService } from './planificacion.service';
 import { BatchUpsertRequerimientosDto } from './dto/requerimientos.dto';
+import { BatchUpsertExperienciaDto } from './dto/experiencia.dto';
 import { Auth } from '../auth/decorators';
 import { ValidRoles } from '../auth/interfaces';
 
@@ -19,5 +20,17 @@ export class PlanificacionController {
   @Auth(ValidRoles.admin, ValidRoles.planificador)
   async upsertRequerimientos(@Body() dto: BatchUpsertRequerimientosDto) {
     return this.planificacionService.upsertRequerimientosBatch(dto);
+  }
+
+  @Get('experiencia-observadores')
+  @Auth(ValidRoles.admin, ValidRoles.planificador, ValidRoles.coordinador)
+  async getExperienciaObservadores() {
+    return this.planificacionService.getExperienciaObservadores();
+  }
+
+  @Post('experiencia-observadores')
+  @Auth(ValidRoles.admin, ValidRoles.planificador)
+  async upsertExperienciaObservadores(@Body() dto: BatchUpsertExperienciaDto) {
+    return this.planificacionService.upsertExperienciaObservadoresBatch(dto);
   }
 }

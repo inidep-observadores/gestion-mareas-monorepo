@@ -167,6 +167,7 @@ model Pesqueria {
   orden                  Int?
   activo                 Boolean                  @default(true)
   buquesHabituales       Buque[]
+  experienciaObservadores ExperienciaObservador[]
   mareas                 Marea[]
   etapasMarea            MareaEtapa[]
   observadoresPesquerias ObservadorPesqueria[]
@@ -228,6 +229,7 @@ model Observador {
   conImpedimento             Boolean                @default(false) @map("con_impedimento")
   email                      String?                @unique
   motivoImpedimento          String?                @map("motivo_impedimento")
+  experienciaPesquerias      ExperienciaObservador[]
   mareasAsignadas            Marea[]                @relation("ObservadorPrincipal")
   etapas                     MareaEtapaObservador[]
   pesquerias                 ObservadorPesqueria[]
@@ -254,6 +256,23 @@ model ObservadorPesqueria {
   @@index([observadorId])
   @@index([pesqueriaId])
   @@map("observador_pesquerias")
+  @@schema("public")
+}
+
+model ExperienciaObservador {
+  id                 String     @id @default(uuid()) @db.Uuid
+  observadorId       String     @map("id_observador") @db.Uuid
+  pesqueriaId        String     @map("id_pesqueria") @db.Uuid
+  valor              Int        @default(1)
+  fechaActualizacion DateTime   @default(now()) @updatedAt @map("fecha_actualizacion") @db.Timestamptz(6)
+  
+  observador         Observador @relation(fields: [observadorId], references: [id], onDelete: Cascade)
+  pesqueria          Pesqueria  @relation(fields: [pesqueriaId], references: [id], onDelete: Cascade)
+
+  @@unique([observadorId, pesqueriaId])
+  @@index([observadorId])
+  @@index([pesqueriaId])
+  @@map("experiencia_observadores")
   @@schema("public")
 }
 
