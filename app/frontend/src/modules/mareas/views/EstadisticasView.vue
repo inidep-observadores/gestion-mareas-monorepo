@@ -233,7 +233,7 @@
                               <div class="flex items-center gap-2 mb-2">
                                  <span class="font-black text-sm text-text tabular-nums tracking-tighter">{{
                                     marea.id_marea
-                                    }}</span>
+                                 }}</span>
                                  <span
                                     class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest bg-secondary/10 text-secondary border border-secondary/20">{{
                                        marea.estado }}</span>
@@ -266,7 +266,7 @@
                                        class="font-black opacity-40 uppercase tracking-tighter text-[9px] mb-0.5">Inicio</span>
                                     <span class="font-bold text-text">{{ marea.fechaInicio ? new
                                        Date(marea.fechaInicio).toLocaleDateString('es-AR', { timeZone: 'UTC' }) : '-'
-                                    }}</span>
+                                       }}</span>
                                  </div>
                               </div>
                            </div>
@@ -382,7 +382,7 @@
                                  <td class="px-4 py-2 border-r border-border/50">
                                     <div class="flex flex-col">
                                        <span class="font-black text-xs text-text tabular-nums">{{ marea.id_marea
-                                          }}</span>
+                                       }}</span>
                                        <span class="text-[9px] font-bold text-text-muted uppercase tracking-tighter">{{
                                           marea.estado }}</span>
                                     </div>
@@ -395,7 +395,7 @@
                                  </td>
                                  <td class="px-4 py-2 text-xs font-bold text-text border-r border-border/50">{{
                                     marea.pesqueria
-                                    }}</td>
+                                 }}</td>
                                  <td v-if="filterType !== 'OBSERVER'"
                                     class="px-4 py-2 text-xs font-bold text-text border-r border-border/50">{{
                                        marea.observador
@@ -411,7 +411,7 @@
                                  <td v-if="mode === 'CALENDAR' && !dialogPeriodLabel" class="px-4 py-2 text-right">
                                     <span class="font-bold text-xs text-text-muted tabular-nums opacity-80">{{
                                        marea.diasTotales
-                                       }}</span>
+                                    }}</span>
                                  </td>
                               </tr>
                            </tbody>
@@ -1640,202 +1640,424 @@ const fisheryProfileOptions = computed(() => ({
 }));
 
 // 7. Monthly Coverage (Unique Vessels & Effort & Requirements)
-const monthlyRequerimientos = computed(() => {
-   const reqs = new Array(12).fill(0);
-   const fisheryFilter = selectedCoverageFishery.value;
 
-   requerimientosData.value.forEach(req => {
-      // req.mes is 1-12
-      if (req.cantidad) {
-         if (fisheryFilter === 'ALL' || req.pesqueria?.nombre === fisheryFilter) {
+const coverageSeriesData = computed(() => {
+   const fisheryFilter = selectedCoverageFishery.value;
+   const isFilteredByFishery = fisheryFilter !== 'ALL';
+
+   // Construir la matriz base
+   // Si NO está filtrado por pesquería, tendremos dos series fijas (como antes)
+   if (!isFilteredByFishery) {
+      const reqs = new Array(12).fill(0);
+      requerimientosData.value.forEach(req => {
+         if (req.cantidad) {
             reqs[req.mes - 1] += req.cantidad;
          }
+      });
+
+      return {
+         isSplitByFleet: false,
+         fleets: [],
+         series: [
+            {
+               name: 'Buques Requeridos',
+               type: 'column',
+               data: reqs,
+               metaType: 'REQUIRED',
+               fleetName: null
+            },
+            {
+               name: 'Buques Únicos',
+               type: 'column',
+               data: coverageData.value.map(c => c.count),
+               metaType: 'EXECUTED',
+               fleetName: null
+            },
+            {
+               name: 'Días de Marea',
+               type: 'line',
+               data: coverageData.value.map(c => c.days),
+               metaType: 'EFFORT',
+               fleetName: null
+            }
+         ]
+      };
+   }
+
+   // LÓGICA DE DESGLOSE POR FLOTA CUANDO HAY FILTRO DE PESQUERÍA
+   const fleetsSet = new Set<string>();
+
+   // 1. Identificar Flotas en Requerimientos
+   requerimientosData.value.forEach(req => {
+      if (req.pesqueria?.nombre === fisheryFilter && req.tipoFlota?.nombre) {
+         fleetsSet.add(req.tipoFlota.nombre);
       }
    });
 
-   return reqs;
-});
+   // 2. Identificar Flotas en Ejecución (coverageData)
+   coverageData.value.forEach(month => {
+      month.fleets.forEach(fleet => {
+         // Ya coverageData viene filtrada del backend si selectedCoverageFishery !== 'ALL'
+         // Por seguridad, agregamos a fleetsSet
+         fleetsSet.add(fleet.name);
+      });
+   });
 
-const coverageSeries = computed(() => [
-   {
-      name: 'Buques Requeridos',
-      type: 'column',
-      data: monthlyRequerimientos.value
-   },
-   {
-      name: 'Buques Únicos',
-      type: 'column',
-      data: coverageData.value.map(c => c.count)
-   },
-   {
+   const uniqueFleets = Array.from(fleetsSet).sort();
+   const dynamicSeries: any[] = [];
+
+   // Para cada flota construimos Requerido y Ejecutado
+   uniqueFleets.forEach(fleetName => {
+      // Data Requerida
+      const reqs = new Array(12).fill(0);
+      requerimientosData.value.forEach(req => {
+         if (req.pesqueria?.nombre === fisheryFilter && req.tipoFlota?.nombre === fleetName && req.cantidad) {
+            reqs[req.mes - 1] += req.cantidad;
+         }
+      });
+
+      dynamicSeries.push({
+         name: `${fleetName} (Requerido)`,
+         type: 'column',
+         data: reqs,
+         metaType: 'REQUIRED',
+         fleetName: fleetName
+      });
+
+      // Data Ejecutada
+      const execs = new Array(12).fill(0);
+      coverageData.value.forEach((month, idx) => {
+         const fData = month.fleets.find(f => f.name === fleetName);
+         if (fData) {
+            execs[idx] = fData.count;
+         }
+      });
+
+      dynamicSeries.push({
+         name: `${fleetName} (Ejecutado)`,
+         type: 'column',
+         data: execs,
+         metaType: 'EXECUTED',
+         fleetName: fleetName
+      });
+   });
+
+   // Finalmente agregamos el esfuerzo global
+   dynamicSeries.push({
       name: 'Días de Marea',
       type: 'line',
-      data: coverageData.value.map(c => c.days)
+      data: coverageData.value.map(c => c.days),
+      metaType: 'EFFORT',
+      fleetName: null
+   });
+
+   return {
+      isSplitByFleet: true,
+      fleets: uniqueFleets,
+      series: dynamicSeries
+   };
+});
+
+const coverageSeries = computed(() => coverageSeriesData.value.series);
+
+const coverageChartOptions = computed(() => {
+   const baseData = coverageSeriesData.value;
+   const seriesCount = baseData.series.length;
+
+   // Definición dinámica de colores y opacidades
+   const strokes: number[] = [];
+   const colors: string[] = [];
+   const opacities: number[] = [];
+   const dashes: number[] = [];
+
+   // Colores fijos para Días (Azul profundo)
+   const EFFORT_COLOR = '#3b82f6';
+
+   if (!baseData.isSplitByFleet) {
+      // Escenario Aglomerado Clásico (3 series)
+      strokes.push(0, 0, 3); // Requerido, Ejecutado, Esfuerzo
+      colors.push('#a855f7', '#10b981', EFFORT_COLOR);
+      opacities.push(0.35, 1, 1);
+      dashes.push(0, 0, 0);
+   } else {
+      // Escenario Desglose por Flota
+      baseData.series.forEach(s => {
+         if (s.metaType === 'EFFORT') {
+            strokes.push(3);
+            colors.push(EFFORT_COLOR);
+            opacities.push(1);
+            dashes.push(0);
+         } else {
+            strokes.push(0);
+            colors.push(getFleetColor(s.fleetName as string));
+            opacities.push(s.metaType === 'REQUIRED' ? 0.35 : 1);
+            dashes.push(0);
+         }
+      });
    }
-]);
 
-const coverageChartOptions = computed(() => ({
-   chart: {
-      type: 'line', // Base type for combo
-      stacked: false,
-      toolbar: { show: false },
-      events: {
-         dataPointSelection: handleCoverageClick
+   // El único eje "Opposite" es el último (Esfuerzo). Los demás referencian al izquierdo (Buques)
+   const yaxisNodes = baseData.series.map((s, idx) => {
+      if (s.metaType === 'EFFORT') {
+         return {
+            opposite: true,
+            seriesName: s.name,
+            title: {
+               text: 'Días de Marea',
+               style: { color: EFFORT_COLOR, fontWeight: 900 }
+            },
+            labels: { style: { colors: EFFORT_COLOR } },
+            min: 0,
+            forceNiceScale: true
+         };
       }
-   },
-   stroke: {
-      width: [0, 0, 3], // 0 for bars, 3 for line
-      curve: 'smooth',
-      dashArray: [0, 0, 0]
-   },
-   colors: ['#a855f7', '#10b981', '#3b82f6'], // Purple (Required), Emerald (Vessels), Blue (Days)
-   fill: {
-      type: ['solid', 'solid', 'solid'],
-      opacity: [0.35, 1, 1], // Lower opacity for Required to look like a baseline/budget, full for executed
-   },
-   plotOptions: {
-      bar: {
-         borderRadius: 4,
-         columnWidth: '60%',
+
+      // Primera serie de buques dibuja el eje visible
+      if (idx === 0) {
+         return {
+            seriesName: s.name,
+            title: {
+               text: 'Buques',
+               style: { color: colors[0], fontWeight: 900 }
+            },
+            labels: { style: { colors: colors[0] } },
+            min: 0,
+            forceNiceScale: true
+         };
       }
-   },
-   markers: {
-      size: [0, 0, 4], // No markers for bar
-      strokeWidth: 2,
-      strokeColors: '#ffffff',
-      hover: { size: 6 }
-   },
-   dataLabels: {
-      enabled: true,
-      enabledOnSeries: [0, 1], // On columns
-      formatter: (val: number) => val > 0 ? val : '',
-      offsetY: -10,
-      style: { fontSize: '9px', colors: ['var(--color-text)'] }
-   },
-   xaxis: {
-      categories: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'],
-      position: 'bottom',
-      axisBorder: { show: false },
-      axisTicks: { show: false }
-   },
-   yaxis: [
-      {
-         seriesName: 'Buques Requeridos',
-         title: {
-            text: 'Buques',
-            style: { color: '#10b981', fontWeight: 900 }
-         },
-         labels: { style: { colors: '#10b981' } },
-         min: 0,
-         forceNiceScale: true
-      },
-      {
-         seriesName: 'Buques Requeridos', // Shares Y-axis with 0 (Buques)
+
+      // Las demás series de buques se atan a la serie principal de buques (índice 0) y ocultan su título
+      return {
+         seriesName: baseData.series[0].name,
          show: false
+      };
+   });
+
+   return {
+      chart: {
+         type: 'line',
+         stacked: false,
+         toolbar: { show: false },
+         events: { dataPointSelection: handleCoverageClick }
       },
-      {
-         opposite: true,
-         seriesName: 'Días de Marea',
-         title: {
-            text: 'Días de Marea',
-            style: { color: '#3b82f6', fontWeight: 900 }
-         },
-         labels: { style: { colors: '#3b82f6' } },
-         min: 0,
-         forceNiceScale: true
-      }
-   ],
-   legend: {
-      show: true,
-      position: 'top',
-      horizontalAlign: 'right',
-      fontSize: '10px',
-      fontFamily: 'inherit',
-      fontWeight: 600,
-      itemMargin: { horizontal: 10, vertical: 0 },
-      markers: { radius: 12 }
-   },
-   tooltip: {
-      shared: true,
-      intersect: false,
-      custom: ({ series, seriesIndex, dataPointIndex, w }: any) => {
-         const label = w.config.xaxis.categories[dataPointIndex];
-         const monthData = coverageData.value[dataPointIndex];
-         const required = series[0] ? series[0][dataPointIndex] : undefined;
-         const vessels = series[1] ? series[1][dataPointIndex] : undefined;
-         const days = series[2] ? series[2][dataPointIndex] : undefined;
+      stroke: {
+         width: strokes,
+         curve: 'smooth',
+         dashArray: dashes
+      },
+      colors: colors,
+      fill: {
+         type: new Array(seriesCount).fill('solid'),
+         opacity: opacities,
+      },
+      plotOptions: {
+         bar: {
+            borderRadius: 3,
+            columnWidth: baseData.isSplitByFleet ? '80%' : '60%', // Más fino si hay más barras
+         }
+      },
+      markers: {
+         size: baseData.series.map(s => s.metaType === 'EFFORT' ? 4 : 0),
+         strokeWidth: 2,
+         strokeColors: '#ffffff',
+         hover: { size: 6 }
+      },
+      dataLabels: {
+         enabled: true,
+         enabledOnSeries: baseData.series.map((s, i) => s.metaType !== 'EFFORT' ? i : -1).filter(i => i !== -1),
+         formatter: (val: number) => val > 0 ? val : '',
+         offsetY: -10,
+         style: { fontSize: '8px', colors: ['var(--color-text)'] }
+      },
+      xaxis: {
+         categories: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'],
+         position: 'bottom',
+         axisBorder: { show: false },
+         axisTicks: { show: false }
+      },
+      yaxis: yaxisNodes,
+      legend: {
+         show: true,
+         position: 'top',
+         horizontalAlign: 'right',
+         fontSize: '10px',
+         fontFamily: 'inherit',
+         fontWeight: 600,
+         itemMargin: { horizontal: 10, vertical: 0 },
+         markers: { radius: 12 }
+      },
+      tooltip: {
+         shared: true,
+         intersect: false,
+         custom: ({ series, seriesIndex, dataPointIndex, w }: any) => {
+            const label = w.config.xaxis.categories[dataPointIndex];
+            const monthData = coverageData.value[dataPointIndex];
 
-         const hasVessels = vessels !== undefined && vessels !== null;
-         const hasRequired = required !== undefined && required > 0;
-         const hasDays = days !== undefined && days !== null;
+            const baseData = coverageSeriesData.value;
 
-         return `
-            <div class="px-4 py-4 bg-surface/90 backdrop-blur-xl text-text border border-border/50 rounded-2xl flex flex-col gap-3 shadow-2xl ring-1 ring-black/10 min-w-[240px]">
-               <div class="flex items-center justify-between border-b border-border/30 pb-2 mb-1">
-                  <span class="text-[10px] text-text-muted uppercase font-black tracking-widest">${label} ${year.value}</span>
-                  <div class="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[9px] font-black uppercase">Cobertura</div>
-               </div>
-               
-               <div class="flex items-stretch gap-4 pb-2 border-b border-border/20">
-                  ${hasRequired ? `
-                  <div class="flex flex-col flex-1">
-                     <span class="text-[8px] font-black text-purple-500 uppercase tracking-tighter">Requerido</span>
-                     <div class="flex items-baseline gap-1">
-                        <span class="text-xl font-black tabular-nums leading-none text-purple-600 dark:text-purple-400 opacity-90">${required}</span>
-                        <span class="text-[9px] font-bold text-text-muted">Buques</span>
-                     </div>
-                  </div>
-                  ` : ''}
+            // Extraer esfuerzo
+            const effortDataIndex = baseData.series.findIndex(s => s.metaType === 'EFFORT');
+            const totalDays = effortDataIndex >= 0 ? series[effortDataIndex][dataPointIndex] : 0;
+            const hasTotalDays = totalDays !== undefined && totalDays > 0;
 
-                  ${hasVessels ? `
-                  <div class="flex flex-col flex-1 pl-4 border-l border-border/30">
-                     <span class="text-[8px] font-black text-emerald-500 uppercase tracking-tighter">Ejecutado</span>
-                     <div class="flex items-baseline gap-1">
-                        <span class="text-xl font-black tabular-nums leading-none text-emerald-600 dark:text-emerald-400">${vessels}</span>
-                        <span class="text-[9px] font-bold text-text-muted">Buques</span>
-                     </div>
-                  </div>
-                  ` : ''}
+            let tooltipBody = '';
 
-                  ${hasDays ? `
-                  <div class="flex flex-col flex-1 pl-4 border-l border-border/30">
-                     <span class="text-[8px] font-black text-blue-500 uppercase tracking-tighter">Esfuerzo</span>
-                     <div class="flex items-baseline gap-1">
-                        <span class="text-xl font-black tabular-nums leading-none text-blue-600 dark:text-blue-400">${days}</span>
-                        <span class="text-[9px] font-bold text-text-muted">Días</span>
-                     </div>
-                  </div>
-                  ` : ''}
-               </div>
+            if (baseData.isSplitByFleet) {
+               // Renderizado con Desglose por Flota
+               let fleetGridContent = '';
+               let totalReqs = 0;
+               let totalExecs = 0;
 
-               ${monthData?.fleets && monthData.fleets.length > 0 ? `
-                  <div class="flex flex-col gap-1.5 py-1">
-                     <span class="text-[8px] font-black text-text-muted uppercase tracking-widest mb-1 opacity-60">Desglose Operativo por Flota</span>
-                     ${monthData.fleets.map(f => `
-                        <div class="flex items-center justify-between gap-4 py-0.5">
-                           <div class="flex items-center gap-2">
-                              <div class="w-1.5 h-1.5 rounded-full shadow-sm" style="background:${getFleetColor(f.name)}"></div>
-                              <span class="text-[9px] font-bold text-text-muted uppercase">${f.name}</span>
+               baseData.fleets.forEach((fleet, fIdx) => {
+                  const reqIdx = baseData.series.findIndex(s => s.metaType === 'REQUIRED' && s.fleetName === fleet);
+                  const execIdx = baseData.series.findIndex(s => s.metaType === 'EXECUTED' && s.fleetName === fleet);
+
+                  const reqVal = reqIdx >= 0 ? series[reqIdx][dataPointIndex] ?? 0 : 0;
+                  const execVal = execIdx >= 0 ? series[execIdx][dataPointIndex] ?? 0 : 0;
+                  const fleetColor = getFleetColor(fleet as string);
+
+                  // Buscar días por flota
+                  const fData = monthData?.fleets?.find(f => f.name === fleet);
+                  const daysVal = fData ? fData.days : 0;
+
+                  totalReqs += reqVal;
+                  totalExecs += execVal;
+
+                  if (reqVal > 0 || execVal > 0 || daysVal > 0) {
+                     fleetGridContent += `
+                        <div class="flex flex-col gap-1 py-1.5 border-b border-border/10 last:border-0 pl-3">
+                           <div class="flex items-center gap-1.5">
+                              <div class="w-2 h-2 rounded-full shadow-sm" style="background:${fleetColor}"></div>
+                              <span class="text-[9px] font-black uppercase text-text">${fleet}</span>
                            </div>
-                           <div class="flex items-center gap-2">
-                              ${hasVessels ? `<span class="text-[10px] font-black text-text tabular-nums">${f.count} <span class="text-[8px] opacity-40 font-bold">B</span></span>` : ''}
-                              ${hasVessels && hasDays ? `<span class="h-2 w-px bg-border/30"></span>` : ''}
-                              ${hasDays ? `<span class="text-[10px] font-black text-text/80 tabular-nums">${f.days} <span class="text-[8px] opacity-40 font-bold">D</span></span>` : ''}
+                           <div class="flex items-center gap-6 pl-3">
+                              <div class="flex items-baseline gap-1">
+                                 <span class="text-[9px] font-bold text-text-muted opacity-60 uppercase w-[50px]">Requerido:</span>
+                                 <span class="text-[11px] font-black text-text tabular-nums opacity-60">${reqVal}</span>
+                              </div>
+                              <div class="flex items-baseline gap-1">
+                                 <span class="text-[9px] font-bold text-text-muted uppercase w-[50px] text-emerald-500">Ejecutado:</span>
+                                 <span class="text-[11px] font-black text-text tabular-nums" style="color:${fleetColor}">${execVal}</span>
+                              </div>
+                              <div class="flex items-baseline gap-1 ml-auto">
+                                 <span class="text-[9px] font-bold text-text-muted uppercase text-blue-500">Esfuerzo:</span>
+                                 <span class="text-[11px] font-black text-text tabular-nums">${daysVal}</span>
+                                 <span class="text-[8px] font-bold opacity-40">D</span>
+                              </div>
                            </div>
                         </div>
-                     `).join('')}
-                  </div>
-               ` : ''}
+                     `;
+                  }
+               });
 
-               <div class="pt-2 border-t border-border/30 flex justify-between items-center opacity-60">
-                   <span class="text-[8px] font-black italic uppercase">Click para ver detalle</span>
-                   <span class="text-[10px]">📊</span>
+               // Mostrar el Resumen y luego el detalle
+               tooltipBody = `
+                  <div class="flex justify-between items-end gap-4 pb-2 border-b border-border/20">
+                     <div class="flex flex-col">
+                        <span class="text-[8px] font-black text-text-muted uppercase tracking-wider mb-0.5">Total Días</span>
+                        <div class="flex items-baseline gap-1">
+                           <span class="text-xl font-black tabular-nums leading-none text-blue-500">${totalDays}</span>
+                           <span class="text-[9px] font-bold text-text-muted">Días</span>
+                        </div>
+                     </div>
+                     <div class="flex gap-4">
+                         <div class="text-right flex flex-col items-end">
+                             <span class="text-[8px] font-black text-text-muted uppercase">Req Global</span>
+                             <span class="text-xs font-black tabular-nums opacity-60">${totalReqs} B</span>
+                         </div>
+                         <div class="text-right flex flex-col items-end pl-4 border-l border-border/20">
+                             <span class="text-[8px] font-black text-emerald-500 uppercase">Ejec Global</span>
+                             <span class="text-xs font-black tabular-nums text-emerald-600 dark:text-emerald-400">${totalExecs} B</span>
+                         </div>
+                     </div>
+                  </div>
+                  
+                  <div class="flex flex-col pt-1">
+                     ${fleetGridContent || '<span class="text-[10px] italic opacity-50 py-2">Sin actividad planificada ni ejecutada en este mes</span>'}
+                  </div>
+               `;
+
+            } else {
+               // Renderizado Simple (Aglomerado)
+               const required = series[0] ? series[0][dataPointIndex] : 0;
+               const vessels = series[1] ? series[1][dataPointIndex] : 0;
+
+               const hasVessels = vessels > 0;
+               const hasRequired = required > 0;
+
+               tooltipBody = `
+                  <div class="flex items-stretch gap-4 pb-2 border-b border-border/20">
+                     ${hasRequired ? `
+                     <div class="flex flex-col flex-1">
+                        <span class="text-[8px] font-black text-purple-500 uppercase tracking-tighter">Requerido</span>
+                        <div class="flex items-baseline gap-1">
+                           <span class="text-xl font-black tabular-nums leading-none text-purple-600 dark:text-purple-400 opacity-90">${required}</span>
+                           <span class="text-[9px] font-bold text-text-muted">Buques</span>
+                        </div>
+                     </div>
+                     ` : ''}
+
+                     ${hasVessels ? `
+                     <div class="flex flex-col flex-1 ${hasRequired ? 'pl-4 border-l border-border/30' : ''}">
+                        <span class="text-[8px] font-black text-emerald-500 uppercase tracking-tighter">Ejecutado</span>
+                        <div class="flex items-baseline gap-1">
+                           <span class="text-xl font-black tabular-nums leading-none text-emerald-600 dark:text-emerald-400">${vessels}</span>
+                           <span class="text-[9px] font-bold text-text-muted">Buques</span>
+                        </div>
+                     </div>
+                     ` : ''}
+
+                     ${hasTotalDays ? `
+                     <div class="flex flex-col flex-1 pl-4 border-l border-border/30">
+                        <span class="text-[8px] font-black text-blue-500 uppercase tracking-tighter">Esfuerzo</span>
+                        <div class="flex items-baseline gap-1">
+                           <span class="text-xl font-black tabular-nums leading-none text-blue-600 dark:text-blue-400">${totalDays}</span>
+                           <span class="text-[9px] font-bold text-text-muted">Días</span>
+                        </div>
+                     </div>
+                     ` : ''}
+                  </div>
+
+                  ${monthData?.fleets && monthData.fleets.length > 0 ? `
+                     <div class="flex flex-col gap-1.5 py-1">
+                        <span class="text-[8px] font-black text-text-muted uppercase tracking-widest mb-1 opacity-60">Desglose Operativo por Flota</span>
+                        ${monthData.fleets.map(f => `
+                           <div class="flex items-center justify-between gap-4 py-0.5">
+                              <div class="flex items-center gap-2">
+                                 <div class="w-1.5 h-1.5 rounded-full shadow-sm" style="background:${getFleetColor(f.name)}"></div>
+                                 <span class="text-[9px] font-bold text-text-muted uppercase">${f.name}</span>
+                              </div>
+                              <div class="flex items-center gap-2">
+                                 ${hasVessels ? `<span class="text-[10px] font-black text-text tabular-nums">${f.count} <span class="text-[8px] opacity-40 font-bold">B</span></span>` : ''}
+                                 ${hasVessels && hasTotalDays ? `<span class="h-2 w-px bg-border/30"></span>` : ''}
+                                 ${hasTotalDays ? `<span class="text-[10px] font-black text-text/80 tabular-nums">${f.days} <span class="text-[8px] opacity-40 font-bold">D</span></span>` : ''}
+                              </div>
+                           </div>
+                        `).join('')}
+                     </div>
+                  ` : ''}
+               `;
+            }
+
+            return `
+               <div class="px-4 py-4 bg-surface/90 backdrop-blur-xl text-text border border-border/50 rounded-2xl flex flex-col gap-3 shadow-2xl ring-1 ring-black/10 min-w-[240px]">
+                  <div class="flex items-center justify-between border-b border-border/30 pb-2 mb-1">
+                     <span class="text-[10px] text-text-muted uppercase font-black tracking-widest">${label} ${year.value}</span>
+                     <div class="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[9px] font-black uppercase">Cobertura</div>
+                  </div>
+                  
+                  ${tooltipBody}
+
+                  <div class="pt-2 border-t border-border/30 flex justify-between items-center opacity-60">
+                      <span class="text-[8px] font-black italic uppercase">Click para ver detalle</span>
+                      <span class="text-[10px]">📊</span>
+                  </div>
                </div>
-            </div>
-         `;
+            `;
+         }
       }
-   }
-}));
+   };
+});
 
 </script>
 
