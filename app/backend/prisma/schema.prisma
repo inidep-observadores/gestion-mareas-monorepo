@@ -86,6 +86,7 @@ model TipoFlota {
   codigo_numerico Int                      @unique @map("codigo_numerico")
   buques          Buque[]
   requerimientos  RequerimientoCobertura[]
+  experiencias    ExperienciaObservador[]
 
   @@map("tipos_flota")
   @@schema("public")
@@ -167,7 +168,7 @@ model Pesqueria {
   orden                  Int?
   activo                 Boolean                  @default(true)
   buquesHabituales       Buque[]
-  experienciaObservadores ExperienciaObservador[]
+  experiencias           ExperienciaObservador[]
   mareas                 Marea[]
   etapasMarea            MareaEtapa[]
   observadoresPesquerias ObservadorPesqueria[]
@@ -229,7 +230,7 @@ model Observador {
   conImpedimento             Boolean                @default(false) @map("con_impedimento")
   email                      String?                @unique
   motivoImpedimento          String?                @map("motivo_impedimento")
-  experienciaPesquerias      ExperienciaObservador[]
+  experiencias               ExperienciaObservador[]
   mareasAsignadas            Marea[]                @relation("ObservadorPrincipal")
   etapas                     MareaEtapaObservador[]
   pesquerias                 ObservadorPesqueria[]
@@ -259,22 +260,7 @@ model ObservadorPesqueria {
   @@schema("public")
 }
 
-model ExperienciaObservador {
-  id                 String     @id @default(uuid()) @db.Uuid
-  observadorId       String     @map("id_observador") @db.Uuid
-  pesqueriaId        String     @map("id_pesqueria") @db.Uuid
-  valor              Int        @default(1)
-  fechaActualizacion DateTime   @default(now()) @updatedAt @map("fecha_actualizacion") @db.Timestamptz(6)
-  
-  observador         Observador @relation(fields: [observadorId], references: [id], onDelete: Cascade)
-  pesqueria          Pesqueria  @relation(fields: [pesqueriaId], references: [id], onDelete: Cascade)
 
-  @@unique([observadorId, pesqueriaId])
-  @@index([observadorId])
-  @@index([pesqueriaId])
-  @@map("experiencia_observadores")
-  @@schema("public")
-}
 
 model Marea {
   id                       String                 @id @default(uuid()) @db.Uuid
@@ -584,6 +570,24 @@ model BuqueTrayectoriaPunto {
   @@index([trayectoriaId, timestamp])
   @@index([buqueId, timestamp])
   @@map("buque_trayectoria_puntos")
+  @@schema("public")
+}
+
+model ExperienciaObservador {
+  id                 String      @id @default(uuid()) @db.Uuid
+  observadorId       String      @map("observador_id") @db.Uuid
+  pesqueriaId        String      @map("pesqueria_id") @db.Uuid
+  tipoFlotaId        String      @map("tipo_flota_id") @db.Uuid
+  valor              Int?        @db.SmallInt // 0 (No Apto) a 5 (Alta experiencia)
+  experiencia        Int?        @db.Integer // Valor numérico indicativo de experiencia
+  fechaActualizacion DateTime    @default(now()) @updatedAt @map("fecha_actualizacion") @db.Timestamptz(6)
+
+  observador         Observador  @relation(fields: [observadorId], references: [id], onDelete: Cascade)
+  pesqueria          Pesqueria   @relation(fields: [pesqueriaId], references: [id], onDelete: Cascade)
+  tipoFlota          TipoFlota   @relation(fields: [tipoFlotaId], references: [id], onDelete: Cascade)
+
+  @@unique([observadorId, pesqueriaId, tipoFlotaId])
+  @@map("experiencia_observadores")
   @@schema("public")
 }
 

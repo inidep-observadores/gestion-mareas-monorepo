@@ -87,6 +87,9 @@ export class PlanificacionService {
         },
         pesqueria: {
           select: { id: true, nombre: true }
+        },
+        tipoFlota: {
+          select: { id: true, nombre: true }
         }
       }
     });
@@ -113,14 +116,15 @@ export class PlanificacionService {
       let deletedCount = 0;
 
       for (const e of experiencias) {
-        if (e.valor === null || e.valor === undefined) {
-          // Si el valor viene nulo desde la vista, quiere decir que se limpia
+        if ((e.valor === null || e.valor === undefined) && (e.experiencia === null || e.experiencia === undefined)) {
+          // Si ambos valores son nulos, eliminamos el registro para evitar basura
           try {
              await prisma.experienciaObservador.delete({
                where: {
-                 observadorId_pesqueriaId: {
+                 observadorId_pesqueriaId_tipoFlotaId: {
                    observadorId: e.observadorId,
-                   pesqueriaId: e.pesqueriaId
+                   pesqueriaId: e.pesqueriaId,
+                   tipoFlotaId: e.tipoFlotaId
                  }
                }
              });
@@ -129,21 +133,25 @@ export class PlanificacionService {
             // Ignorar el error si no existe el registro al intentar borrar
           }
         } else {
-           // Insertamos / Actualizamos la experiencia (0 a 5)
+           // Insertamos / Actualizamos la experiencia (0 a 5) y el entero de experiencias previas
            await prisma.experienciaObservador.upsert({
              where: {
-               observadorId_pesqueriaId: {
+               observadorId_pesqueriaId_tipoFlotaId: {
                  observadorId: e.observadorId,
-                 pesqueriaId: e.pesqueriaId
+                 pesqueriaId: e.pesqueriaId,
+                 tipoFlotaId: e.tipoFlotaId
                }
              },
              update: {
-               valor: e.valor
+               valor: e.valor,
+               experiencia: e.experiencia
              },
              create: {
                observadorId: e.observadorId,
                pesqueriaId: e.pesqueriaId,
-               valor: e.valor
+               tipoFlotaId: e.tipoFlotaId,
+               valor: e.valor,
+               experiencia: e.experiencia
              }
            });
            upsertedCount++;
