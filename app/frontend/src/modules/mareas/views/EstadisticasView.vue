@@ -1911,6 +1911,18 @@ const coverageChartOptions = computed(() => {
          onItemClick: { toggleDataSeries: true },
          onItemHover: { highlightDataSeries: true }
       },
+      responsive: [
+         {
+            breakpoint: 1024,
+            options: {
+               legend: {
+                  position: 'bottom',
+                  offsetX: 0,
+                  offsetY: 7
+               }
+            }
+         }
+      ],
       tooltip: {
          shared: true,
          intersect: false,
