@@ -2,6 +2,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { StatsService } from './stats.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { PlanificacionService } from '../planificacion/planificacion.service';
 import { DateUtils } from '../common/utils/date.utils';
 
 describe('StatsService', () => {
@@ -14,11 +15,16 @@ describe('StatsService', () => {
         },
     };
 
+    const mockPlanificacion = {
+        getRequerimientosPorAnio: jest.fn(),
+    };
+
     beforeEach(async () => {
         const module: TestingModule = await Test.createTestingModule({
             providers: [
                 StatsService,
                 { provide: PrismaService, useValue: mockPrisma },
+                { provide: PlanificacionService, useValue: mockPlanificacion },
             ],
         }).compile();
 
