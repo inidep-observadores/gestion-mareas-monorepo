@@ -233,7 +233,7 @@
                               <div class="flex items-center gap-2 mb-2">
                                  <span class="font-black text-sm text-text tabular-nums tracking-tighter">{{
                                     marea.id_marea
-                                    }}</span>
+                                 }}</span>
                                  <span
                                     class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest bg-secondary/10 text-secondary border border-secondary/20">{{
                                        marea.estado }}</span>
@@ -266,7 +266,7 @@
                                        class="font-black opacity-40 uppercase tracking-tighter text-[9px] mb-0.5">Inicio</span>
                                     <span class="font-bold text-text">{{ marea.fechaInicio ? new
                                        Date(marea.fechaInicio).toLocaleDateString('es-AR', { timeZone: 'UTC' }) : '-'
-                                    }}</span>
+                                       }}</span>
                                  </div>
                               </div>
                            </div>
@@ -382,7 +382,7 @@
                                  <td class="px-4 py-2 border-r border-border/50">
                                     <div class="flex flex-col">
                                        <span class="font-black text-xs text-text tabular-nums">{{ marea.id_marea
-                                          }}</span>
+                                       }}</span>
                                        <span class="text-[9px] font-bold text-text-muted uppercase tracking-tighter">{{
                                           marea.estado }}</span>
                                     </div>
@@ -395,7 +395,7 @@
                                  </td>
                                  <td class="px-4 py-2 text-xs font-bold text-text border-r border-border/50">{{
                                     marea.pesqueria
-                                    }}</td>
+                                 }}</td>
                                  <td v-if="filterType !== 'OBSERVER'"
                                     class="px-4 py-2 text-xs font-bold text-text border-r border-border/50">{{
                                        marea.observador
@@ -411,7 +411,7 @@
                                  <td v-if="mode === 'CALENDAR' && !dialogPeriodLabel" class="px-4 py-2 text-right">
                                     <span class="font-bold text-xs text-text-muted tabular-nums opacity-80">{{
                                        marea.diasTotales
-                                       }}</span>
+                                    }}</span>
                                  </td>
                               </tr>
                            </tbody>
@@ -621,6 +621,8 @@ import {
    TrendingUpIcon
 } from 'lucide-vue-next'
 import { statsService, type DashboardStats, type StatsDetailItem, type MareaDistributionItem } from '@/modules/stats/services/stats.service'
+import { planificacionService } from '@/modules/planificacion/services/planificacion.service'
+import type { RequerimientoCobertura } from '@/modules/planificacion/interfaces/planificacion.interfaces'
 import { TipoMarea } from '@/modules/mareas/types/enums'
 import { toast } from 'vue-sonner'
 
@@ -650,6 +652,7 @@ const selectedCoverageFishery = ref<string>('ALL');
 const stats = ref<DashboardStats | null>(null);
 const distributionData = ref<MareaDistributionItem[]>([]);
 const coverageData = ref<{ month: number, count: number, days: number, fleets: { name: string, count: number, days: number }[] }[]>([]);
+const requerimientosData = ref<RequerimientoCobertura[]>([]);
 const selectedDistributionFishery = ref<string>('ALL');
 
 const dynamicChartHeight = computed(() => {
@@ -847,7 +850,7 @@ const criteriaList = computed(() => {
 const fetchData = async () => {
    loading.value = true;
    try {
-      const [newStats, distribution, coverage] = await Promise.all([
+      const [newStats, distribution, coverage, reqs] = await Promise.all([
          statsService.getDashboardStats(
             year.value,
             mode.value,
@@ -882,11 +885,13 @@ const fetchData = async () => {
             selectedCoverageFishery.value === 'ALL' ? undefined : selectedCoverageFishery.value, // fisheryName
             startDate.value || undefined, // protocolizationStartDate
             endDate.value || undefined    // protocolizationEndDate
-         )
+         ),
+         planificacionService.getRequerimientosPorAnio(year.value)
       ]);
       stats.value = newStats;
       distributionData.value = distribution;
       coverageData.value = coverage.monthly;
+      requerimientosData.value = reqs;
    } catch (error) {
       console.error('Error fetching stats:', error);
       toast.error('Error al cargar estadísticas');
@@ -1634,11 +1639,32 @@ const fisheryProfileOptions = computed(() => ({
    }
 }));
 
-// 7. Monthly Coverage (Unique Vessels & Effort)
+// 7. Monthly Coverage (Unique Vessels & Effort & Requirements)
+const monthlyRequerimientos = computed(() => {
+   const reqs = new Array(12).fill(0);
+   const fisheryFilter = selectedCoverageFishery.value;
+
+   requerimientosData.value.forEach(req => {
+      // req.mes is 1-12
+      if (req.cantidad) {
+         if (fisheryFilter === 'ALL' || req.pesqueria?.nombre === fisheryFilter) {
+            reqs[req.mes - 1] += req.cantidad;
+         }
+      }
+   });
+
+   return reqs;
+});
+
 const coverageSeries = computed(() => [
    {
+      name: 'Buques Requeridos',
+      type: 'column',
+      data: monthlyRequerimientos.value
+   },
+   {
       name: 'Buques Únicos',
-      type: 'bar',
+      type: 'column',
       data: coverageData.value.map(c => c.count)
    },
    {
@@ -1658,25 +1684,30 @@ const coverageChartOptions = computed(() => ({
       }
    },
    stroke: {
-      width: [0, 3], // 0 for bars, 3 for line
-      curve: 'smooth'
+      width: [0, 0, 3], // 0 for bars, 3 for line
+      curve: 'smooth',
+      dashArray: [0, 0, 0]
    },
-   colors: ['#10b981', '#3b82f6'], // Emerald (Vessels), Blue (Days)
+   colors: ['#a855f7', '#10b981', '#3b82f6'], // Purple (Required), Emerald (Vessels), Blue (Days)
+   fill: {
+      type: ['solid', 'solid', 'solid'],
+      opacity: [0.35, 1, 1], // Lower opacity for Required to look like a baseline/budget, full for executed
+   },
    plotOptions: {
       bar: {
          borderRadius: 4,
-         columnWidth: '50%',
+         columnWidth: '60%',
       }
    },
    markers: {
-      size: 4,
+      size: [0, 0, 4], // No markers for bar
       strokeWidth: 2,
       strokeColors: '#ffffff',
       hover: { size: 6 }
    },
    dataLabels: {
       enabled: true,
-      enabledOnSeries: [0], // Only on bars
+      enabledOnSeries: [0, 1], // On columns
       formatter: (val: number) => val > 0 ? val : '',
       offsetY: -10,
       style: { fontSize: '9px', colors: ['var(--color-text)'] }
@@ -1689,8 +1720,9 @@ const coverageChartOptions = computed(() => ({
    },
    yaxis: [
       {
+         seriesName: 'Buques Requeridos',
          title: {
-            text: 'Buques Únicos',
+            text: 'Buques',
             style: { color: '#10b981', fontWeight: 900 }
          },
          labels: { style: { colors: '#10b981' } },
@@ -1698,7 +1730,12 @@ const coverageChartOptions = computed(() => ({
          forceNiceScale: true
       },
       {
+         seriesName: 'Buques Requeridos', // Shares Y-axis with 0 (Buques)
+         show: false
+      },
+      {
          opposite: true,
+         seriesName: 'Días de Marea',
          title: {
             text: 'Días de Marea',
             style: { color: '#3b82f6', fontWeight: 900 }
@@ -1724,10 +1761,12 @@ const coverageChartOptions = computed(() => ({
       custom: ({ series, seriesIndex, dataPointIndex, w }: any) => {
          const label = w.config.xaxis.categories[dataPointIndex];
          const monthData = coverageData.value[dataPointIndex];
-         const vessels = series[0] ? series[0][dataPointIndex] : undefined;
-         const days = series[1] ? series[1][dataPointIndex] : undefined;
+         const required = series[0] ? series[0][dataPointIndex] : undefined;
+         const vessels = series[1] ? series[1][dataPointIndex] : undefined;
+         const days = series[2] ? series[2][dataPointIndex] : undefined;
 
          const hasVessels = vessels !== undefined && vessels !== null;
+         const hasRequired = required !== undefined && required > 0;
          const hasDays = days !== undefined && days !== null;
 
          return `
@@ -1737,24 +1776,41 @@ const coverageChartOptions = computed(() => ({
                   <div class="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[9px] font-black uppercase">Cobertura</div>
                </div>
                
-               <div class="grid ${hasVessels && hasDays ? 'grid-cols-2' : 'grid-cols-1'} gap-3 pb-2 border-b border-border/20">
+               <div class="flex items-stretch gap-4 pb-2 border-b border-border/20">
                   ${hasVessels ? `
-                  <div class="flex flex-col">
-                     <span class="text-[9px] font-black text-emerald-500 uppercase tracking-tighter">Buques Únicos</span>
-                     <span class="text-lg font-black tabular-nums">${vessels}</span>
+                  <div class="flex flex-col flex-1">
+                     <span class="text-[8px] font-black text-emerald-500 uppercase tracking-tighter">Ejecutado</span>
+                     <div class="flex items-baseline gap-1">
+                        <span class="text-xl font-black tabular-nums leading-none text-emerald-600 dark:text-emerald-400">${vessels}</span>
+                        <span class="text-[9px] font-bold text-text-muted">Buques</span>
+                     </div>
                   </div>
                   ` : ''}
+                  
+                  ${hasRequired ? `
+                  <div class="flex flex-col flex-1 pl-4 border-l border-border/30">
+                     <span class="text-[8px] font-black text-purple-500 uppercase tracking-tighter">Requerido</span>
+                     <div class="flex items-baseline gap-1">
+                        <span class="text-xl font-black tabular-nums leading-none text-purple-600 dark:text-purple-400 opacity-90">${required}</span>
+                        <span class="text-[9px] font-bold text-text-muted">Buques</span>
+                     </div>
+                  </div>
+                  ` : ''}
+
                   ${hasDays ? `
-                  <div class="flex flex-col ${hasVessels ? 'border-l border-border/20 pl-3' : ''}">
-                     <span class="text-[9px] font-black text-blue-500 uppercase tracking-tighter">Días de Marea</span>
-                     <span class="text-lg font-black tabular-nums">${days}</span>
+                  <div class="flex flex-col flex-1 pl-4 border-l border-border/30">
+                     <span class="text-[8px] font-black text-blue-500 uppercase tracking-tighter">Esfuerzo</span>
+                     <div class="flex items-baseline gap-1">
+                        <span class="text-xl font-black tabular-nums leading-none text-blue-600 dark:text-blue-400">${days}</span>
+                        <span class="text-[9px] font-bold text-text-muted">Días</span>
+                     </div>
                   </div>
                   ` : ''}
                </div>
 
                ${monthData?.fleets && monthData.fleets.length > 0 ? `
                   <div class="flex flex-col gap-1.5 py-1">
-                     <span class="text-[8px] font-black text-text-muted uppercase tracking-widest mb-1 opacity-60">Desglose por Flota</span>
+                     <span class="text-[8px] font-black text-text-muted uppercase tracking-widest mb-1 opacity-60">Desglose Operativo por Flota</span>
                      ${monthData.fleets.map(f => `
                         <div class="flex items-center justify-between gap-4 py-0.5">
                            <div class="flex items-center gap-2">

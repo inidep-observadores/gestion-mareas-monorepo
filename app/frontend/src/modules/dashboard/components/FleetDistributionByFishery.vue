@@ -240,7 +240,7 @@ const processedDistribution = computed(() => {
 
     // 2. Agrupar según viewType para contar únicos
     let count = 0
-    let stats: Record<string, { count: number, nombre: string }> = {}
+    const stats: Record<string, { count: number, nombre: string }> = {}
 
     if (viewType.value === 'BUQUES') {
       // Agrupar por nombre de buque para evitar duplicados en el detalle
