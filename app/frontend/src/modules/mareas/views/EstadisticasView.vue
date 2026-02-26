@@ -233,7 +233,7 @@
                               <div class="flex items-center gap-2 mb-2">
                                  <span class="font-black text-sm text-text tabular-nums tracking-tighter">{{
                                     marea.id_marea
-                                 }}</span>
+                                    }}</span>
                                  <span
                                     class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest bg-secondary/10 text-secondary border border-secondary/20">{{
                                        marea.estado }}</span>
@@ -266,7 +266,7 @@
                                        class="font-black opacity-40 uppercase tracking-tighter text-[9px] mb-0.5">Inicio</span>
                                     <span class="font-bold text-text">{{ marea.fechaInicio ? new
                                        Date(marea.fechaInicio).toLocaleDateString('es-AR', { timeZone: 'UTC' }) : '-'
-                                       }}</span>
+                                    }}</span>
                                  </div>
                               </div>
                            </div>
@@ -382,7 +382,7 @@
                                  <td class="px-4 py-2 border-r border-border/50">
                                     <div class="flex flex-col">
                                        <span class="font-black text-xs text-text tabular-nums">{{ marea.id_marea
-                                       }}</span>
+                                          }}</span>
                                        <span class="text-[9px] font-bold text-text-muted uppercase tracking-tighter">{{
                                           marea.estado }}</span>
                                     </div>
@@ -395,7 +395,7 @@
                                  </td>
                                  <td class="px-4 py-2 text-xs font-bold text-text border-r border-border/50">{{
                                     marea.pesqueria
-                                 }}</td>
+                                    }}</td>
                                  <td v-if="filterType !== 'OBSERVER'"
                                     class="px-4 py-2 text-xs font-bold text-text border-r border-border/50">{{
                                        marea.observador
@@ -411,7 +411,7 @@
                                  <td v-if="mode === 'CALENDAR' && !dialogPeriodLabel" class="px-4 py-2 text-right">
                                     <span class="font-bold text-xs text-text-muted tabular-nums opacity-80">{{
                                        marea.diasTotales
-                                    }}</span>
+                                       }}</span>
                                  </td>
                               </tr>
                            </tbody>
@@ -1777,21 +1777,21 @@ const coverageChartOptions = computed(() => ({
                </div>
                
                <div class="flex items-stretch gap-4 pb-2 border-b border-border/20">
-                  ${hasVessels ? `
+                  ${hasRequired ? `
                   <div class="flex flex-col flex-1">
-                     <span class="text-[8px] font-black text-emerald-500 uppercase tracking-tighter">Ejecutado</span>
+                     <span class="text-[8px] font-black text-purple-500 uppercase tracking-tighter">Requerido</span>
                      <div class="flex items-baseline gap-1">
-                        <span class="text-xl font-black tabular-nums leading-none text-emerald-600 dark:text-emerald-400">${vessels}</span>
+                        <span class="text-xl font-black tabular-nums leading-none text-purple-600 dark:text-purple-400 opacity-90">${required}</span>
                         <span class="text-[9px] font-bold text-text-muted">Buques</span>
                      </div>
                   </div>
                   ` : ''}
-                  
-                  ${hasRequired ? `
+
+                  ${hasVessels ? `
                   <div class="flex flex-col flex-1 pl-4 border-l border-border/30">
-                     <span class="text-[8px] font-black text-purple-500 uppercase tracking-tighter">Requerido</span>
+                     <span class="text-[8px] font-black text-emerald-500 uppercase tracking-tighter">Ejecutado</span>
                      <div class="flex items-baseline gap-1">
-                        <span class="text-xl font-black tabular-nums leading-none text-purple-600 dark:text-purple-400 opacity-90">${required}</span>
+                        <span class="text-xl font-black tabular-nums leading-none text-emerald-600 dark:text-emerald-400">${vessels}</span>
                         <span class="text-[9px] font-bold text-text-muted">Buques</span>
                      </div>
                   </div>
