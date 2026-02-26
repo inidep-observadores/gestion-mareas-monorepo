@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { PlanificacionService } from '../planificacion/planificacion.service';
 import { DateUtils } from '../common/utils/date.utils';
 import { Prisma } from '@prisma/client';
 import { StatsDetailItem, DashboardStats, MareaDistributionItem, UniqueVesselsResult } from './interfaces/dashboard.interface';
@@ -9,7 +10,10 @@ import * as ExcelJS from 'exceljs';
 
 @Injectable()
 export class StatsService {
-    constructor(private readonly prisma: PrismaService) { }
+    constructor(
+        private readonly prisma: PrismaService,
+        private readonly planificacion: PlanificacionService
+    ) { }
 
     private getSharedWhereClause(
         activityStart: Date,
@@ -440,7 +444,7 @@ export class StatsService {
         mode: 'CALENDAR' | 'TOTAL',
         includeNonProtocolized: boolean,
         includeProtocolizedOutOfPeriod = false,
-        filterType: 'FISHERY' | 'FLEET' | 'OBSERVER',
+        filterType: 'FISHERY' | 'FLEET' | 'OBSERVER' | 'COVERAGE' | 'CHART_TREND' | 'CHART_FLEET' | 'CHART_FISHERY' | 'CHART_OBSERVER' | 'CHART_FISHERY_DUAL',
         filterValue: string,
         daysCalculationMode: 'SHIP' | 'OBSERVER' = 'SHIP',
         includeCampaigns: boolean = true,
@@ -653,7 +657,7 @@ export class StatsService {
         includeProtocolizedOutOfPeriod: boolean,
         daysCalculationMode: 'SHIP' | 'OBSERVER' = 'SHIP',
         includeCampaigns: boolean = true,
-        filterType?: 'FISHERY' | 'FLEET' | 'OBSERVER',
+        filterType?: 'FISHERY' | 'FLEET' | 'OBSERVER' | 'COVERAGE' | 'CHART_TREND' | 'CHART_FLEET' | 'CHART_FISHERY' | 'CHART_OBSERVER' | 'CHART_FISHERY_DUAL',
         filterValue?: string,
         startDate?: string,
         endDate?: string,
@@ -661,6 +665,14 @@ export class StatsService {
         protocolizationStartDate?: string,
         protocolizationEndDate?: string,
     ): Promise<ExcelJS.Workbook> {
+        if (filterType === 'COVERAGE') {
+            return this.getCoverageExportWorkbook(year, mode, includeNonProtocolized, includeProtocolizedOutOfPeriod, includeCampaigns, startDate, endDate, filterValue, protocolizationStartDate, protocolizationEndDate);
+        }
+
+        if (filterType?.startsWith('CHART_')) {
+            return this.getChartDataExportWorkbook(year, mode, includeNonProtocolized, includeProtocolizedOutOfPeriod, includeCampaigns, filterType, startDate, endDate, protocolizationStartDate, protocolizationEndDate);
+        }
+
         const yearStart = startDate ? new Date(startDate) : new Date(Date.UTC(year, 0, 1, 0, 0, 0, 0));
         const yearEnd = endDate ? new Date(endDate) : new Date(Date.UTC(year, 11, 31, 23, 59, 59, 999));
 
@@ -1205,5 +1217,209 @@ export class StatsService {
                 };
             })
         };
+    }
+
+    private async getCoverageExportWorkbook(
+        year: number,
+        mode: 'CALENDAR' | 'TOTAL',
+        includeNonProtocolized: boolean,
+        includeProtocolizedOutOfPeriod: boolean,
+        includeCampaigns: boolean = true,
+        startDate?: string,
+        endDate?: string,
+        fisheryName?: string,
+        protocolizationStartDate?: string,
+        protocolizationEndDate?: string,
+    ): Promise<ExcelJS.Workbook> {
+        const coverage = await this.getUniqueVesselsCount(
+            year, mode, includeNonProtocolized, includeProtocolizedOutOfPeriod, includeCampaigns, startDate, endDate, fisheryName, protocolizationStartDate, protocolizationEndDate
+        );
+        let requirements = await this.planificacion.getRequerimientosPorAnio(year);
+
+        if (fisheryName) {
+            requirements = requirements.filter(r => r.pesqueria?.nombre.toLowerCase().includes(fisheryName.toLowerCase()));
+        }
+
+        const workbook = new ExcelJS.Workbook();
+        const sheet = workbook.addWorksheet('Cobertura Mensual');
+
+        sheet.columns = [
+            { header: 'Mes', key: 'mes', width: 15 },
+            { header: 'Flota', key: 'flota', width: 25 },
+            { header: 'Buques Cubiertos', key: 'cubiertos', width: 20 },
+            { header: 'Buques Requeridos', key: 'requeridos', width: 20 },
+            { header: 'Diferencia', key: 'diferencia', width: 15 },
+            { header: '% Cobertura', key: 'porcentaje', width: 15 },
+            { header: 'Días de Marea', key: 'dias', width: 20 },
+        ];
+
+        sheet.getRow(1).font = { bold: true };
+        sheet.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE0E0E0' } };
+
+        const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+
+        coverage.monthly.forEach(month => {
+            const monthName = monthNames[month.month - 1];
+            
+            // Si hay desglose por flota en los datos de cobertura
+            if (month.fleets && month.fleets.length > 0) {
+                month.fleets.forEach(fleet => {
+                    const req = requirements.find(r => r.mes === month.month && r.tipoFlota?.nombre === fleet.name);
+                    const requeridos = req?.cantidad || 0;
+                    const diferencia = fleet.count - requeridos;
+                    const porcentaje = requeridos > 0 ? (fleet.count / requeridos) * 100 : 0;
+
+                    sheet.addRow({
+                        mes: monthName,
+                        flota: fleet.name,
+                        cubiertos: fleet.count,
+                        requeridos: requeridos,
+                        diferencia: diferencia,
+                        porcentaje: `${porcentaje.toFixed(1)}%`,
+                        dias: fleet.days
+                    });
+                });
+            } else {
+                // Si no hay desglose, fila sumaria del mes
+                const totalReq = requirements.filter(r => r.mes === month.month).reduce((acc, r) => acc + (r.cantidad || 0), 0);
+                const diferencia = month.count - totalReq;
+                const porcentaje = totalReq > 0 ? (month.count / totalReq) * 100 : 0;
+
+                sheet.addRow({
+                    mes: monthName,
+                    flota: 'TODAS',
+                    cubiertos: month.count,
+                    requeridos: totalReq,
+                    diferencia: diferencia,
+                    porcentaje: `${porcentaje.toFixed(1)}%`,
+                    dias: month.days
+                });
+            }
+        });
+
+        // Aplicar estilos condicionales a la columna de diferencia
+        sheet.eachRow((row, rowNumber) => {
+            if (rowNumber === 1) return;
+            const diffCell = row.getCell('diferencia');
+            const diffValue = diffCell.value as number;
+            if (diffValue < 0) {
+                diffCell.font = { color: { argb: 'FFFF0000' }, bold: true };
+            } else if (diffValue > 0) {
+                diffCell.font = { color: { argb: 'FF008000' }, bold: true };
+            }
+        });
+
+        return workbook;
+    }
+
+    private async getChartDataExportWorkbook(
+        year: number,
+        mode: 'CALENDAR' | 'TOTAL',
+        includeNonProtocolized: boolean,
+        includeProtocolizedOutOfPeriod: boolean,
+        includeCampaigns: boolean,
+        chartType: string,
+        startDate?: string,
+        endDate?: string,
+        protocolizationStartDate?: string,
+        protocolizationEndDate?: string,
+    ): Promise<ExcelJS.Workbook> {
+        const stats = await this.getDashboardStats(
+            year, mode, includeNonProtocolized, includeProtocolizedOutOfPeriod, 'SHIP', includeCampaigns, startDate, endDate, protocolizationStartDate, protocolizationEndDate
+        );
+
+        let headers: { header: string; key: string; width: number }[] = [];
+        let rows: any[] = [];
+        let sheetName = 'Datos';
+
+        switch (chartType) {
+            case 'CHART_TREND':
+                sheetName = 'Tendencia Mensual';
+                headers = [
+                    { header: 'Mes', key: 'label', width: 20 },
+                    { header: 'Mareas Iniciadas', key: 'mareas', width: 20 },
+                    { header: 'Días Navegados', key: 'days', width: 20 },
+                ];
+                const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+                rows = stats.monthly.mareas.map((count, i) => ({
+                    label: monthNames[i],
+                    mareas: count,
+                    days: stats.monthly.days[i]
+                }));
+                break;
+
+            case 'CHART_FLEET':
+                sheetName = 'Distribución por Flota';
+                headers = [
+                    { header: 'Flota', key: 'name', width: 30 },
+                    { header: 'Mareas', key: 'mareas', width: 15 },
+                    { header: 'Días Navegados', key: 'days', width: 20 },
+                ];
+                rows = stats.fleets;
+                break;
+
+            case 'CHART_FISHERY':
+            case 'CHART_FISHERY_DUAL':
+                sheetName = 'Participación por Pesquería';
+                headers = [
+                    { header: 'Pesquería', key: 'name', width: 30 },
+                    { header: 'Mareas', key: 'mareas', width: 15 },
+                    { header: 'Días Navegados', key: 'days', width: 20 },
+                ];
+                rows = stats.fisheries;
+                break;
+
+            case 'CHART_OBSERVER':
+                sheetName = 'Ranking Observadores';
+                headers = [
+                    { header: 'Observador', key: 'name', width: 40 },
+                    { header: 'Mareas', key: 'mareas', width: 15 },
+                    { header: 'Días Navegados', key: 'days', width: 20 },
+                ];
+                rows = stats.observers;
+                break;
+        }
+
+        return this.createGenericWorkbook(sheetName, headers, rows);
+    }
+
+    private createGenericWorkbook(sheetName: string, headers: { header: string; key: string; width: number }[], rows: any[]): ExcelJS.Workbook {
+        const workbook = new ExcelJS.Workbook();
+        const sheet = workbook.addWorksheet(sheetName);
+
+        sheet.columns = headers;
+
+        // Header Style
+        sheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFF' } };
+        sheet.getRow(1).fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: '4472C4' }
+        };
+        sheet.getRow(1).alignment = { horizontal: 'center' };
+
+        // Add Rows
+        rows.forEach(row => {
+            sheet.addRow(row);
+        });
+
+        // Alternating row colors
+        sheet.eachRow((row, rowNumber) => {
+            if (rowNumber > 1 && rowNumber % 2 === 0) {
+                row.fill = {
+                    type: 'pattern',
+                    pattern: 'solid',
+                    fgColor: { argb: 'F2F2F2' }
+                };
+            }
+        });
+
+        // Auto filter
+        sheet.autoFilter = {
+            from: { row: 1, column: 1 },
+            to: { row: 1, column: headers.length }
+        };
+
+        return workbook;
     }
 }

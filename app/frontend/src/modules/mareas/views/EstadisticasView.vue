@@ -58,12 +58,14 @@
                <div class="col-span-12 lg:col-span-8">
                   <ChartWidget title="Tendencia Mensual" subtitle="Evolución de Días Navegados por mes" type="area"
                      :series="monthlySeries" :options="monthlyChartOptions" allow-download
-                     @download="handleDownload('Tendencia_Mensual')" />
+                     :export-filename="`Tendencia_Mensual_${year}`"
+                     @download="handleDownload('Tendencia_Mensual', 'CHART_TREND')" />
                </div>
                <div class="col-span-12 lg:col-span-4 space-y-8">
                   <ChartWidget title="Distribución por Flota" type="pie" :series="fleetSeries"
                      :options="fleetChartOptions" allow-download @dataPointClick="handleFleetClick"
-                     @download="handleDownload('Distribucion_Flota', 'FLEET')" />
+                     :export-filename="`Distribucion_Flota_${year}`"
+                     @download="handleDownload('Distribucion_Flota', 'CHART_FLEET')" />
                </div>
             </section>
 
@@ -73,13 +75,15 @@
                   <ChartWidget title="Participación por Pesquería" subtitle="Días navegados por especie objetivo"
                      type="donut" :series="fisherySeries" :options="fisheryChartOptions" allow-download
                      @dataPointClick="handleFisheryClick"
-                     @download="handleDownload('Participacion_Pesqueria', 'FISHERY')" />
+                     :export-filename="`Participacion_Pesqueria_${year}`"
+                     @download="handleDownload('Participacion_Pesqueria', 'CHART_FISHERY')" />
                </div>
                <div class="col-span-12 lg:col-span-7">
                   <ChartWidget title="Ranking de Observadores" subtitle="Top 10 por días navegados" type="bar"
                      :series="observerSeries" :options="observerChartOptions" allow-download
                      @dataPointClick="handleObserverClick"
-                     @download="handleDownload('Ranking_Observadores', 'OBSERVER')">
+                     :export-filename="`Ranking_Observadores_${year}`"
+                     @download="handleDownload('Ranking_Observadores', 'CHART_OBSERVER')">
                      <template #header-action>
                         <button @click="rankingModalOpen = true"
                            class="text-primary hover:text-primary-hover transition-colors p-1"
@@ -97,12 +101,14 @@
                   <ChartWidget title="Detalle de Actividad por Pesquería"
                      subtitle="Comparativa de Mareas y Días Navegados" type="bar" :series="fisheryDualAxisSeries"
                      :options="fisheryDualAxisOptions" allow-download @dataPointClick="handleFisheryClick"
-                     @download="handleDownload('Detalle_Pesqueria_Mareas_Dias', 'FISHERY')" />
+                     :export-filename="`Detalle_Pesqueria_${year}`"
+                     @download="handleDownload('Detalle_Pesqueria_Mareas_Dias', 'CHART_FISHERY_DUAL')" />
                </div>
                <div class="col-span-12 lg:col-span-5">
                   <ChartWidget title="Perfil Operativo" subtitle="Esfuerzo (Días) vs Frecuencia (Mareas)" type="scatter"
                      :series="fisheryProfileSeries" :options="fisheryProfileOptions" allow-download
                      @dataPointClick="handleFisheryClick"
+                     :export-filename="`Perfil_Operativo_Pesqueria_${year}`"
                      @download="handleDownload('Perfil_Operativo_Pesqueria', 'FISHERY')" />
                </div>
             </section>
@@ -114,6 +120,7 @@
                      subtitle="Distribución temporal de mareas y etapas por buque" type="rangeBar" :series="ganttSeries"
                      :options="ganttChartOptions" :chart-height="dynamicChartHeight"
                      chart-container-class="max-h-[700px] overflow-y-auto custom-scrollbar" allow-download
+                     :export-filename="`Cronograma_Distribucion_Mareas_${year}`"
                      @dataPointClick="handleGanttClick" @download="handleDownload('Distribucion_Temporal_Gantt')">
                      <template #header-action>
                         <div class="flex items-center gap-2">
@@ -135,7 +142,8 @@
                <div class="col-span-12">
                   <ChartWidget title="Cobertura de Buques" subtitle="Cantidad de buques únicos cubiertos por mes"
                      type="bar" :series="coverageSeries" :options="coverageChartOptions" :chart-height="450"
-                     allow-download @download="handleDownload('Cobertura_Buques_Mensual')">
+                     allow-download :export-filename="`Cobertura_Buques_Mensual_${year}`"
+                     @download="handleDownload('Cobertura_Buques_Mensual')">
                      <template #header-action>
                         <div class="flex items-center gap-2">
                            <span class="text-[10px] font-black text-text-muted uppercase tracking-widest">Filtrar
@@ -1013,7 +1021,7 @@ const ganttChartOptions = computed(() => ({
          style: {
             fontSize: '10px',
             fontWeight: 600,
-            colors: 'var(--text-muted)'
+            colors: '#64748b' // text-muted
          }
       }
    },
@@ -1022,7 +1030,7 @@ const ganttChartOptions = computed(() => ({
          style: {
             fontSize: '11px',
             fontWeight: 700,
-            colors: 'var(--text)'
+            colors: '#0f172a' // text
          }
       }
    },
@@ -1066,7 +1074,7 @@ const ganttChartOptions = computed(() => ({
       }
    },
    grid: {
-      borderColor: 'var(--border)',
+      borderColor: '#e2e8f0', // border
       opacity: 0.1,
       xaxis: {
          lines: {
@@ -1077,7 +1085,7 @@ const ganttChartOptions = computed(() => ({
    noData: {
       text: 'No hay datos de distribución para el periodo',
       style: {
-         color: 'var(--text-muted)',
+         color: '#64748b', // text-muted
          fontSize: '14px',
          fontFamily: 'Inter'
       }
@@ -1219,9 +1227,14 @@ const handleGanttClick = ({ seriesIndex, dataPointIndex, w }: any) => {
 };
 
 // --- Download Handler ---
-const handleDownload = async (titlePrefix: string, fType?: 'FISHERY' | 'FLEET' | 'OBSERVER') => {
-   const fValue = dialogFilterValue.value || undefined;
-   const fTypeParam = fType || dialogFilterType.value || undefined;
+const handleDownload = async (titlePrefix: string, fType?: 'FISHERY' | 'FLEET' | 'OBSERVER' | 'COVERAGE' | 'CHART_TREND' | 'CHART_FLEET' | 'CHART_FISHERY' | 'CHART_OBSERVER' | 'CHART_FISHERY_DUAL') => {
+   let fValue = dialogFilterValue.value || undefined;
+   let fTypeParam = fType || dialogFilterType.value || undefined;
+
+   if (titlePrefix === 'Cobertura_Buques_Mensual') {
+      fTypeParam = 'COVERAGE' as any;
+      fValue = selectedCoverageFishery.value === 'ALL' ? undefined : selectedCoverageFishery.value;
+   }
 
    let finalTitle = titlePrefix;
    if (dialogOpen.value && dialogTitle.value) {
@@ -1259,9 +1272,9 @@ const handleDownload = async (titlePrefix: string, fType?: 'FISHERY' | 'FLEET' |
 }
 
 const getFleetColor = (name: string) => {
-   if (name.toUpperCase().includes('FRESQUERO')) return 'var(--color-info)';
-   if (name.toUpperCase().includes('CONGELADOR')) return 'var(--color-warning)';
-   return 'var(--color-primary)';
+   if (name.toUpperCase().includes('FRESQUERO')) return '#0ea5e9'; // color-info
+   if (name.toUpperCase().includes('CONGELADOR')) return '#f59e0b'; // color-warning
+   return '#2563eb'; // color-primary
 }
 
 onMounted(() => {
@@ -1388,7 +1401,7 @@ const fisheryChartOptions = computed(() => ({
          const label = w.globals.labels[seriesIndex];
          const item = fisherySort.value[seriesIndex];
          const colors = w.globals.colors;
-         const accent = colors[seriesIndex] || 'var(--color-primary)';
+         const accent = colors[seriesIndex] || '#2563eb';
 
          return `
             <div class="px-4 py-3 bg-surface/95 backdrop-blur-md text-text border border-border/50 rounded-2xl flex flex-col gap-3 shadow-2xl ring-1 ring-black/5 min-w-[180px]">
@@ -1568,28 +1581,28 @@ const fisheryProfileOptions = computed(() => ({
       fontSize: '10px',
       fontFamily: 'Inter, sans-serif',
       fontWeight: 600,
-      labels: { colors: 'var(--color-text-muted)' },
+      labels: { colors: '#64748b' }, // color-text-muted
       markers: { radius: 12, size: 6 },
       itemMargin: { horizontal: 10, vertical: 5 }
    },
    xaxis: {
       title: {
          text: 'CANTIDAD DE MAREAS (FRECUENCIA)',
-         style: { color: 'var(--color-text-muted)', fontSize: '10px', fontWeight: 800 }
+         style: { color: '#64748b', fontSize: '10px', fontWeight: 800 }
       },
       tickAmount: 5,
       labels: {
-         style: { colors: 'var(--color-text-muted)', fontWeight: 600 },
+         style: { colors: '#64748b', fontWeight: 600 },
          formatter: (val: number) => Math.floor(val)
       }
    },
    yaxis: {
       title: {
          text: 'DÍAS NAVEGADOS (ESFUERZO)',
-         style: { color: 'var(--color-text-muted)', fontSize: '10px', fontWeight: 800 }
+         style: { color: '#64748b', fontSize: '10px', fontWeight: 800 }
       },
       labels: {
-         style: { colors: 'var(--color-text-muted)', fontWeight: 600 },
+         style: { colors: '#64748b', fontWeight: 600 },
          formatter: (val: number) => Math.floor(val)
       }
    },
@@ -1603,7 +1616,7 @@ const fisheryProfileOptions = computed(() => ({
    // Diverse premium color palette
    colors: ['#0ea5e9', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#ec4899', '#6366f1', '#14b8a6', '#f43f5e', '#84cc16', '#22c55e', '#a855f7'],
    grid: {
-      borderColor: 'var(--color-border)',
+      borderColor: '#e2e8f0', // color-border
       opacity: 0.1,
       strokeDashArray: 4,
       xaxis: { lines: { show: true } },
@@ -1886,7 +1899,7 @@ const coverageChartOptions = computed(() => {
          enabledOnSeries: baseData.series.map((s, i) => s.metaType !== 'EFFORT' ? i : -1).filter(i => i !== -1),
          formatter: (val: number) => val > 0 ? val : '',
          offsetY: -10,
-         style: { fontSize: '8px', colors: ['var(--color-text)'] }
+         style: { fontSize: '8px', colors: ['#0f172a'] } // color-text
       },
       xaxis: {
          categories: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'],

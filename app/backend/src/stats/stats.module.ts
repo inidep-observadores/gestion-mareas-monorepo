@@ -3,9 +3,10 @@ import { StatsService } from './stats.service';
 import { StatsController } from './stats.controller';
 import { PrismaModule } from '../prisma/prisma.module';
 import { AuthModule } from '../auth/auth.module';
+import { PlanificacionModule } from '../planificacion/planificacion.module';
 
 @Module({
-    imports: [PrismaModule, AuthModule],
+    imports: [PrismaModule, AuthModule, PlanificacionModule],
     controllers: [StatsController],
     providers: [StatsService],
     exports: [StatsService],

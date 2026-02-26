@@ -40,6 +40,7 @@ const props = withDefaults(defineProps<{
   allowDownload?: boolean
   chartHeight?: string | number
   chartContainerClass?: string
+  exportFilename?: string
 }>(), {
   type: 'line',
   chartHeight: '100%',
@@ -58,7 +59,14 @@ const chartOptions = computed(() => {
     chart: {
       fontFamily: 'Inter, system-ui, sans-serif',
       background: 'transparent',
-      toolbar: { show: false },
+      toolbar: {
+        show: false,
+        export: {
+          csv: { filename: props.exportFilename },
+          svg: { filename: props.exportFilename },
+          png: { filename: props.exportFilename },
+        }
+      },
       zoom: { enabled: false },
       animations: { enabled: true },
       // Localization: Spanish by default
@@ -112,10 +120,10 @@ const chartOptions = computed(() => {
       show: true,
       curve: 'smooth',
       width: props.type === 'pie' || props.type === 'donut' ? 2 : 2,
-      colors: props.type === 'pie' || props.type === 'donut' ? ['var(--color-surface)'] : undefined
+      colors: props.type === 'pie' || props.type === 'donut' ? ['#ffffff'] : undefined // color-surface
     },
     grid: {
-      borderColor: 'var(--color-border)',
+      borderColor: '#e2e8f0', // color-border
       opacity: 0.1,
       strokeDashArray: 4,
       xaxis: { lines: { show: false } }
@@ -125,7 +133,7 @@ const chartOptions = computed(() => {
       axisTicks: { show: false },
       labels: {
         style: {
-          colors: 'var(--color-text-muted)',
+          colors: '#64748b', // color-text-muted
           fontSize: '10px',
           fontWeight: 600
         }
@@ -134,7 +142,7 @@ const chartOptions = computed(() => {
     yaxis: {
       labels: {
         style: {
-          colors: 'var(--color-text-muted)',
+          colors: '#64748b', // color-text-muted
           fontSize: '10px',
           fontWeight: 600
         }
@@ -144,7 +152,7 @@ const chartOptions = computed(() => {
       position: 'bottom',
       fontFamily: 'inherit',
       fontWeight: 700,
-      labels: { colors: 'var(--color-text-muted)' },
+      labels: { colors: '#64748b' }, // color-text-muted
       markers: { radius: 12, size: 5 }
     },
     theme: {
@@ -220,20 +228,26 @@ const chartOptions = computed(() => {
   // Manual Deep Merge for 'chart' object to preserve locales
   const mergedOptions = { ...defaults, ...props.options };
 
-  if (props.options?.chart) {
-    mergedOptions.chart = {
-      ...defaults.chart,
-      ...props.options.chart,
-      // Ensure locales are not overwritten if not provided in props
-      locales: props.options.chart.locales || defaults.chart.locales,
-      defaultLocale: props.options.chart.defaultLocale || defaults.chart.defaultLocale,
-      // Merge events if necessary (careful with function references)
-      events: {
-        ...defaults.chart.events,
-        ...props.options.chart.events
+  // Forzar la configuración de exportación y locales
+  mergedOptions.chart = {
+    ...defaults.chart,
+    ...(props.options?.chart || {}),
+    toolbar: {
+      ...(defaults.chart.toolbar || {}),
+      ...(props.options?.chart?.toolbar || {}),
+      export: {
+        csv: { filename: props.exportFilename },
+        svg: { filename: props.exportFilename },
+        png: { filename: props.exportFilename },
       }
-    };
-  }
+    },
+    locales: props.options?.chart?.locales || defaults.chart.locales,
+    defaultLocale: props.options?.chart?.defaultLocale || defaults.chart.defaultLocale,
+    events: {
+      ...defaults.chart.events,
+      ...(props.options?.chart?.events || {})
+    }
+  };
 
   return mergedOptions;
 })

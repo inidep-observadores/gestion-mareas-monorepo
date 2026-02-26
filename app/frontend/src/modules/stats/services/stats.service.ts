@@ -142,7 +142,7 @@ export const statsService = {
         includeProtocolizedOutOfPeriod: boolean,
         daysCalculationMode: 'SHIP' | 'OBSERVER',
         includeCampaigns: boolean,
-        filterType?: 'FISHERY' | 'FLEET' | 'OBSERVER',
+        filterType?: 'FISHERY' | 'FLEET' | 'OBSERVER' | 'COVERAGE' | 'CHART_TREND' | 'CHART_FLEET' | 'CHART_FISHERY' | 'CHART_OBSERVER' | 'CHART_FISHERY_DUAL',
         filterValue?: string,
         filename?: string,
         startDate?: string,
@@ -164,10 +164,8 @@ export const statsService = {
         if (protocolizationStartDate) params.append('protocolizationStartDate', protocolizationStartDate);
         if (protocolizationEndDate) params.append('protocolizationEndDate', protocolizationEndDate);
 
-        if (filterType && filterValue) {
-            params.append('filterType', filterType);
-            params.append('filterValue', filterValue);
-        }
+        if (filterType) params.append('filterType', filterType);
+        if (filterValue) params.append('filterValue', filterValue);
 
         const response = await httpClient.get('/stats/export', {
             params,
