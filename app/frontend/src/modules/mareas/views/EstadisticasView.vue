@@ -233,7 +233,7 @@
                               <div class="flex items-center gap-2 mb-2">
                                  <span class="font-black text-sm text-text tabular-nums tracking-tighter">{{
                                     marea.id_marea
-                                 }}</span>
+                                    }}</span>
                                  <span
                                     class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest bg-secondary/10 text-secondary border border-secondary/20">{{
                                        marea.estado }}</span>
@@ -266,7 +266,7 @@
                                        class="font-black opacity-40 uppercase tracking-tighter text-[9px] mb-0.5">Inicio</span>
                                     <span class="font-bold text-text">{{ marea.fechaInicio ? new
                                        Date(marea.fechaInicio).toLocaleDateString('es-AR', { timeZone: 'UTC' }) : '-'
-                                       }}</span>
+                                    }}</span>
                                  </div>
                               </div>
                            </div>
@@ -382,7 +382,7 @@
                                  <td class="px-4 py-2 border-r border-border/50">
                                     <div class="flex flex-col">
                                        <span class="font-black text-xs text-text tabular-nums">{{ marea.id_marea
-                                       }}</span>
+                                          }}</span>
                                        <span class="text-[9px] font-bold text-text-muted uppercase tracking-tighter">{{
                                           marea.estado }}</span>
                                     </div>
@@ -395,7 +395,7 @@
                                  </td>
                                  <td class="px-4 py-2 text-xs font-bold text-text border-r border-border/50">{{
                                     marea.pesqueria
-                                 }}</td>
+                                    }}</td>
                                  <td v-if="filterType !== 'OBSERVER'"
                                     class="px-4 py-2 text-xs font-bold text-text border-r border-border/50">{{
                                        marea.observador
@@ -411,7 +411,7 @@
                                  <td v-if="mode === 'CALENDAR' && !dialogPeriodLabel" class="px-4 py-2 text-right">
                                     <span class="font-bold text-xs text-text-muted tabular-nums opacity-80">{{
                                        marea.diasTotales
-                                    }}</span>
+                                       }}</span>
                                  </td>
                               </tr>
                            </tbody>
@@ -1769,6 +1769,7 @@ const coverageChartOptions = computed(() => {
    const colors: string[] = [];
    const opacities: number[] = [];
    const dashes: number[] = [];
+   const fillTypes: string[] = [];
 
    // Colores fijos para Días (Azul profundo)
    const EFFORT_COLOR = '#3b82f6';
@@ -1777,8 +1778,9 @@ const coverageChartOptions = computed(() => {
       // Escenario Aglomerado Clásico (3 series)
       strokes.push(0, 0, 3); // Requerido, Ejecutado, Esfuerzo
       colors.push('#a855f7', '#10b981', EFFORT_COLOR);
-      opacities.push(0.35, 1, 1);
+      opacities.push(0.85, 1, 1);
       dashes.push(0, 0, 0);
+      fillTypes.push('pattern', 'solid', 'solid');
    } else {
       // Escenario Desglose por Flota
       baseData.series.forEach(s => {
@@ -1787,11 +1789,13 @@ const coverageChartOptions = computed(() => {
             colors.push(EFFORT_COLOR);
             opacities.push(1);
             dashes.push(0);
+            fillTypes.push('solid');
          } else {
             strokes.push(0);
             colors.push(getFleetColor(s.fleetName as string));
-            opacities.push(s.metaType === 'REQUIRED' ? 0.35 : 1);
+            opacities.push(s.metaType === 'REQUIRED' ? 0.85 : 1);
             dashes.push(0);
+            fillTypes.push(s.metaType === 'REQUIRED' ? 'pattern' : 'solid');
          }
       });
    }
@@ -1847,8 +1851,14 @@ const coverageChartOptions = computed(() => {
       },
       colors: colors,
       fill: {
-         type: new Array(seriesCount).fill('solid'),
+         type: fillTypes,
          opacity: opacities,
+         pattern: {
+            style: 'slantedLines',
+            width: 4,
+            height: 4,
+            strokeWidth: 1.5
+         }
       },
       plotOptions: {
          bar: {
