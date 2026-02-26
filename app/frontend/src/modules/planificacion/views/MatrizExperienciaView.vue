@@ -3,33 +3,37 @@
     title="Matriz de Experiencia"
     description="Administración de la experiencia de los observadores por pesquería."
   >
-    <div class="space-y-6 max-w-7xl mx-auto pb-10">
+    <div class="space-y-6 pb-10">
 
       <!-- Header actions and modes -->
-      <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 p-4 lg:p-6 bg-surface rounded-2xl border border-border mt-6">
-        <div>
-          <h2 class="text-xl font-bold text-text">Experiencia por Pesquería</h2>
-          <p class="text-text-muted text-sm mt-1">Calificación de 0 (No apto) a 5 (Alta experiencia)</p>
-        </div>
+      <div class="flex flex-col gap-3 p-4 lg:p-5 bg-surface rounded-2xl border border-border mt-6">
+        <!-- Fila 1: Título + Filtros -->
+        <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+          <div class="shrink-0">
+            <h2 class="text-xl font-bold text-text">Experiencia por Pesquería</h2>
+            <p class="text-text-muted text-sm mt-0.5">Calificación de 0 (No apto) a 5 (Alta experiencia)</p>
+          </div>
 
-        <div class="flex items-center gap-3">
           <!-- Filtros -->
-          <div class="flex flex-col md:flex-row gap-3 mr-4 flex-1">
+          <div class="flex flex-wrap gap-2 flex-1">
             <SearchInput
               v-model="filterSearch"
               placeholder="Buscar por nombre o código..."
-              class="max-w-md flex-1"
+              class="flex-1 min-w-[160px]"
             />
-            <select v-model="filterContrato" class="text-sm border border-border rounded-lg px-3 py-1.5 bg-surface focus:ring-2 focus:ring-primary/20 outline-none min-w-[180px]">
+            <select v-model="filterContrato" class="text-sm border border-border rounded-lg px-3 py-1.5 bg-surface focus:ring-2 focus:ring-primary/20 outline-none flex-1 min-w-[150px]">
               <option value="">Todos los Contratos</option>
               <option v-for="c in contratos" :key="c" :value="c">{{ c }}</option>
             </select>
-            <select v-model="filterTipo" class="text-sm border border-border rounded-lg px-3 py-1.5 bg-surface focus:ring-2 focus:ring-primary/20 outline-none min-w-[180px]">
+            <select v-model="filterTipo" class="text-sm border border-border rounded-lg px-3 py-1.5 bg-surface focus:ring-2 focus:ring-primary/20 outline-none flex-1 min-w-[150px]">
               <option value="">Todos los Tipos</option>
               <option v-for="t in tipos" :key="t" :value="t">{{ t }}</option>
             </select>
           </div>
+        </div>
 
+        <!-- Fila 2: Switch modo + Botón guardar (alineados a la derecha) -->
+        <div class="flex items-center justify-end gap-3 border-t border-border/50 pt-3">
           <div class="flex items-center gap-2 px-3 py-1.5 bg-surface-muted rounded-lg border border-border">
             <span :class="['text-sm font-medium transition-colors', !isEditMode ? 'text-text' : 'text-text-muted']">Lectura</span>
             <BaseSwitch v-model="isEditMode" />
@@ -37,7 +41,7 @@
           </div>
 
           <button v-if="isEditMode" @click="saveChanges" :disabled="!isDirty || isSaving"
-            class="flex items-center justify-center gap-2 px-6 py-2.5 bg-primary hover:opacity-90 text-primary-fg rounded-xl text-sm font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-primary/20 active:scale-95 min-w-[160px]">
+            class="flex items-center justify-center gap-2 px-6 py-2 bg-primary hover:opacity-90 text-primary-fg rounded-xl text-sm font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-primary/20 active:scale-95">
             <template v-if="isSaving">
               <div class="w-4 h-4 border-2 border-primary-fg/30 border-t-primary-fg rounded-full animate-spin"></div>
               <span>Guardando...</span>
