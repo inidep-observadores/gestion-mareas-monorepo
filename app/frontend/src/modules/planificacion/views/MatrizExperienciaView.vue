@@ -15,20 +15,11 @@
         <div class="flex items-center gap-3">
           <!-- Filtros -->
           <div class="flex flex-col md:flex-row gap-3 mr-4 flex-1">
-            <div class="relative flex-1 max-w-md">
-              <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-text-muted pointer-events-none">
-                <SearchIcon class="w-4 h-4" />
-              </span>
-              <input 
-                v-model="filterSearch" 
-                type="text" 
-                placeholder="Buscar por nombre o código..." 
-                class="text-sm pl-9 pr-9 py-2 border border-border rounded-xl bg-surface focus:ring-2 focus:ring-primary/10 focus:border-primary/40 outline-none transition-all w-full"
-              />
-              <button v-if="filterSearch" @click="filterSearch = ''" class="absolute inset-y-0 right-0 flex items-center pr-2.5 text-text-muted hover:text-text transition-colors">
-                <XIcon class="w-4 h-4" />
-              </button>
-            </div>
+            <SearchInput
+              v-model="filterSearch"
+              placeholder="Buscar por nombre o código..."
+              class="max-w-md flex-1"
+            />
             <select v-model="filterContrato" class="text-sm border border-border rounded-lg px-3 py-1.5 bg-surface focus:ring-2 focus:ring-primary/20 outline-none min-w-[180px]">
               <option value="">Todos los Contratos</option>
               <option v-for="c in contratos" :key="c" :value="c">{{ c }}</option>
@@ -86,7 +77,7 @@
                   <td class="p-4 align-middle sticky left-0 bg-surface z-10 custom-shadow-right">
                     <div class="flex flex-col">
                       <span class="text-sm font-bold text-text">{{ obs.apellido }}, {{ obs.nombre }}</span>
-                      <span class="text-xs text-text-muted mt-0.5">ID: {{ obs.codigoInterno }}</span>
+                      <span class="text-xs text-text-muted mt-0.5">COD: {{ obs.codigoInterno }}</span>
                     </div>
                   </td>
 
@@ -148,7 +139,7 @@
               <div class="space-y-3">
                  <div v-for="pesq in visiblePesquerias" :key="pesq.id" class="flex items-center justify-between">
                     <span class="text-sm text-text-muted">{{ pesq.nombre }}</span>
-                    
+
                     <template v-if="isEditMode">
                       <div class="flex items-center gap-2">
                          <input type="number" min="0" max="5"
@@ -191,7 +182,7 @@ import SearchInput from '@/components/ui/SearchInput.vue';
 import { planificacionService } from '../services/planificacion.service';
 import catalogosService from '@/modules/mareas/services/catalogos.service';
 import { toast } from 'vue-sonner';
-import { CheckIcon, XIcon, SearchIcon } from '@/icons';
+import { CheckIcon, XIcon } from '@/icons';
 
 // Estados de la UI
 const isLoading = ref(true);
@@ -227,7 +218,7 @@ const matrix = ref<Record<string, Record<string, number | null>>>({});
 // En modo edición mostramos todos. En visualización filtramos filas y columnas sin relaciones registradas.
 const visiblePesquerias = computed(() => {
   let list = pesquerias.value.slice().sort((a: any, b: any) => a.nombre.localeCompare(b.nombre));
-  
+
   if (!isEditMode.value) {
      list = list.filter(p => {
        // Buscar si al menos un observador tiene una relación con esta pesquería
@@ -250,9 +241,9 @@ const visibleObservadores = computed(() => {
     if (search) {
       const nom = (o.nombre || '').toLowerCase();
       const ape = (o.apellido || '').toLowerCase();
-      const cod = (o.codigoInterno || '').toLowerCase();
+      const cod = o.codigoInterno != null ? String(o.codigoInterno).toLowerCase() : '';
       const full = `${ape} ${nom}`.toLowerCase();
-      
+
       if (!nom.includes(search) && !ape.includes(search) && !cod.includes(search) && !full.includes(search)) {
         return false;
       }
@@ -302,11 +293,11 @@ const loadData = async () => {
       catalogosService.getObservadores(),
       catalogosService.getPesquerias()
     ]);
-    
+
     // Todos los observadores activos entran, incluso los no disponibles o con impedimento.
     observadores.value = obsRes.filter((o:any) => o.activo);
     pesquerias.value = pesqRes.filter((p:any) => p.activo);
-    
+
     initMatrix();
 
     // 2. Cargar experiencias actuales
@@ -330,13 +321,13 @@ const loadData = async () => {
 
 const handleInput = (obsId: string, pesqId: string) => {
   isDirty.value = true;
-  
+
   // Validar el rango 0..5
   const val = matrix.value[obsId][pesqId];
   if (val !== null && val !== undefined) {
      if (val < 0) matrix.value[obsId][pesqId] = 0;
      if (val > 5) matrix.value[obsId][pesqId] = 5;
-     
+
      // Evitar que el input numeric ponga un string si se escribe a mano y no falla la conversión en VUE
      matrix.value[obsId][pesqId] = Math.floor(matrix.value[obsId][pesqId]!);
   }
@@ -373,7 +364,7 @@ const saveChanges = async () => {
     toast.success('Se actualizó la matriz de experiencia correctamente.');
     isDirty.value = false;
     isEditMode.value = false;
-    
+
     await loadData(); // recargar para asegurar sincronización y refrescar grilla de visualización
 
   } catch (error) {
