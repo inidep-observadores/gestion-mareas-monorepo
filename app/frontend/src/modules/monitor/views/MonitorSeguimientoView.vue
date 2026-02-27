@@ -425,6 +425,21 @@ const handleBaseLayerChange = (id: string) => {
 }
 
 const setSelectedVessel = (id: string) => {
+  // Si ya estaba seleccionado, activamos modo TOGGLE para la visibilidad
+  if (selectedVesselId.value === id) {
+    if (fleet[id]) {
+      fleet[id].visible = !fleet[id].visible
+      
+      // Si pasa a ser visible y tiene puntos, hacemos zoom (opcional, pero ayuda al usuario)
+      if (fleet[id].visible && fleet[id].points.length > 0) {
+         setTimeout(() => {
+           mapMonitor.value?.fitVesselBounds(id)
+         }, 300)
+      }
+    }
+    return
+  }
+
   selectedVesselId.value = id
   stopPlayback()
 
