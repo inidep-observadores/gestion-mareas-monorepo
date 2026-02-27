@@ -1052,7 +1052,8 @@ const ganttChartOptions = computed(() => {
    yaxis: {
       labels: {
          align: 'left',
-         minWidth: 180,
+         minWidth: 200,
+         maxWidth: 300,
          style: {
             fontSize: '11px',
             fontWeight: 700,
