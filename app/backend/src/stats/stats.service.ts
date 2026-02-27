@@ -1027,7 +1027,8 @@ export class StatsService {
             include: {
                 buque: {
                     include: {
-                        pesqueriaHabitual: true
+                        pesqueriaHabitual: true,
+                        tipoFlota: true
                     }
                 },
                 pesqueria: true,
@@ -1065,6 +1066,7 @@ export class StatsService {
                     mareaId: marea.id,
                     id_marea: MareaUtils.formatCodigo(marea),
                     buque: marea.buque?.nombreBuque || 'Desconocido',
+                    flota: marea.buque?.tipoFlota?.nombre || 'Desconocida',
                     pesqueria: etapa.pesqueria?.nombre || marea.pesqueria?.nombre || marea.buque?.pesqueriaHabitual?.nombre || 'Desconocida',
                     pesqueriaId: etapa.pesqueriaId || marea.pesqueriaId,
                     nroEtapa: etapa.nroEtapa,

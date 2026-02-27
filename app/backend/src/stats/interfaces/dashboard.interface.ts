@@ -45,6 +45,7 @@ export interface MareaDistributionItem {
     mareaId: string;
     id_marea: string;
     buque: string;
+    flota: string;
     pesqueria: string;
     pesqueriaId: string | null;
     nroEtapa: number;

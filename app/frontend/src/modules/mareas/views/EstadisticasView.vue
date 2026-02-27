@@ -937,6 +937,17 @@ const ganttSeries = computed(() => {
       filtered = filtered.filter(item => item.pesqueria === selectedDistributionFishery.value);
    }
 
+   // Ordenar por Pesquería, luego Flota, luego Buque, luego Fecha Zarpada
+   filtered = [...filtered].sort((a, b) => {
+      const p = a.pesqueria.localeCompare(b.pesqueria);
+      if (p !== 0) return p;
+      const f = (a.flota || '').localeCompare(b.flota || '');
+      if (f !== 0) return f;
+      const bc = a.buque.localeCompare(b.buque);
+      if (bc !== 0) return bc;
+      return new Date(a.fechaZarpada).getTime() - new Date(b.fechaZarpada).getTime();
+   });
+
    const yearStart = new Date(Date.UTC(year.value, 0, 1, 0, 0, 0, 0)).getTime();
    const seriesData: any[] = [];
 
@@ -945,19 +956,20 @@ const ganttSeries = computed(() => {
       const start = new Date(item.fechaZarpada).getTime();
       const end = item.fechaArribo ? new Date(item.fechaArribo).getTime() : Date.now();
       const baseColor = getFisheryColor(item.pesqueria);
+      const labelFormat = [item.buque, `${item.pesqueria} - ${item.flota || 'Sin Flota'}`];
 
       // Si estamos en modo TOTAL y el segmento cruza el inicio del año
       if (mode.value === 'TOTAL' && start < yearStart && end > yearStart) {
          // Segmento Año Anterior (Desaturado)
          seriesData.push({
-            x: item.buque,
+            x: labelFormat,
             y: [start, yearStart],
             fillColor: baseColor + '40', // 25% opacidad para desaturar
             meta: { ...item, isPreviousYear: true }
          });
          // Segmento Año Actual (Normal)
          seriesData.push({
-            x: item.buque,
+            x: labelFormat,
             y: [yearStart, end],
             fillColor: baseColor,
             meta: { ...item, isPreviousYear: false }
@@ -970,7 +982,7 @@ const ganttSeries = computed(() => {
          }
 
          seriesData.push({
-            x: item.buque,
+            x: labelFormat,
             y: [start, end],
             fillColor: color,
             meta: { ...item, isPreviousYear: end <= yearStart }
@@ -1027,6 +1039,7 @@ const ganttChartOptions = computed(() => ({
    },
    yaxis: {
       labels: {
+         align: 'left',
          style: {
             fontSize: '11px',
             fontWeight: 700,

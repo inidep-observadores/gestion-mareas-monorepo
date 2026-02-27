@@ -50,7 +50,7 @@ const props = defineProps<{
     showVesselNames: boolean;
   }
   isMobile?: boolean
-  filterPesqueria: string
+  filterPesqueria?: string
 }>()
 
 const emit = defineEmits(['update:mouse-coords', 'seek-vessel', 'select-vessel'])
