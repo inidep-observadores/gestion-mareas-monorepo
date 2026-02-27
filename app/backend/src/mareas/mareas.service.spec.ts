@@ -127,7 +127,8 @@ describe('MareasService', () => {
             mockPrismaService.marea.findUnique.mockResolvedValue({ 
                 id: mareaId, 
                 anioMarea: 2024, 
-                estadoActual: estadoDesignada 
+                estadoActual: estadoDesignada,
+                etapas: []
             });
             const dto = { anioMarea: 2025 };
             await service.update(mareaId, dto as any, { id: 'user-id' } as any);

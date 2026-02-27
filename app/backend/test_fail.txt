@@ -1,0 +1,131 @@
+﻿node.exe : FAIL 
+src/mareas/mareas.service.spec.ts
+En línea: 1 Carácter: 1
++ & "C:\Program 
+Files\nodejs/node.exe" 
+"C:\Users\danieldt\AppData\Roami 
+...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~
+    + CategoryInfo          : Not 
+   Specified: (FAIL src/mareas/m  
+  areas.service.spec.ts:String)   
+  [], RemoteException
+    + FullyQualifiedErrorId : Nat 
+   iveCommandError
+ 
+  MareasService
+    validateStagesChronology 
+(Edge Cases)
+      Ôùï skipped should throw 
+error if arrival is before 
+departure in same stage
+      Ôùï skipped should throw 
+error if stage 2 departure is 
+before stage 1 arrival
+      Ôùï skipped should pass if 
+dates are equal (limit case)
+    update (Designation fields 
+restriction)
+      ├ù should allow modifying 
+anioMarea if state is DESIGNADA 
+(12 ms)
+      Ôùï skipped should throw 
+BadRequestException if modifying 
+anioMarea and state is NOT 
+DESIGNADA
+      Ôùï skipped should throw 
+BadRequestException if modifying 
+nroMarea and state is NOT 
+DESIGNADA
+      Ôùï skipped should throw 
+BadRequestException if modifying 
+tipoMarea and state is NOT 
+DESIGNADA
+    update (Impediment check)
+      Ôùï skipped should throw 
+BadRequestException if assigning 
+an observer with impediment
+    executeAction - RECIBIR_DATOS 
+(Date range checks)
+      Ôùï skipped should throw if 
+reception date is before arrival
+    checkVesselAvailability
+      Ôùï skipped should return 
+available: true if no designated 
+marea exists
+    create (Business Rules)
+      Ôùï skipped should throw 
+BadRequestException if marea 
+already exists
+    Fuentes Persistence
+      Ôùï skipped syncStages 
+should preserve existing fuentes 
+if they are not in the payload
+      Ôùï skipped update should 
+protect existing fuentes in stages
+    Intenci├│n de Cierre de Marea
+      Ôùï skipped should throw 
+error if attempting to set 
+intention on a marea not in 
+execution
+      Ôùï skipped should activate 
+intention if valid
+      Ôùï skipped 
+debeFinalizarMareaAlArribar 
+should return true if metadata 
+flag is true
+      Ôùï skipped 
+debeFinalizarMareaAlArribar 
+should return true if a 
+designation is pending
+
+  ÔùÅ MareasService ÔÇ║ update 
+(Designation fields restriction) 
+ÔÇ║ should allow modifying 
+anioMarea if state is DESIGNADA
+
+    TypeError: Cannot read 
+properties of undefined (reading 
+'map')
+
+    [0m [90m 93 |[39m          
+   observaciones[33m:[39m 
+marea[33m.[39mobservaciones 
+[33m||[39m 
+[32m''[39m[33m,[39m
+     [90m 94 |[39m             
+id_marea[33m:[39m [33mMareaUtil
+s[39m[33m.[39mformatCodigo(mare
+a [36mas[39m any)[33m,[39m
+    [31m[1m>[22m[39m[90m 95 
+|[39m             
+etapas[33m:[39m marea[33m.[39m
+etapas[33m.[39mmap(e 
+[33m=>[39m ({
+     [90m    |[39m              
+                    
+[31m[1m^[22m[39m
+     [90m 96 |[39m              
+   [33m...[39me[33m,[39m
+     [90m 97 |[39m              
+   durationDays[33m:[39m [33mMa
+reaUtils[39m[33m.[39mcalculateS
+tageDays(e)
+     [90m 98 |[39m             
+}))[0m
+
+      at MareasService.findOne 
+(mareas/mareas.service.ts:95:34)
+
+Test Suites: 1 failed, 1 total
+Tests:       1 failed, 16 
+skipped, 17 total
+Snapshots:   0 total
+Time:        5.178 s
+Ran all test suites matching 
+src/mareas/mareas.service.spec.ts 
+with tests matching "should allow 
+modifying anioMarea if state is 
+DESIGNADA".
