@@ -114,10 +114,10 @@
         @open-upload="showUploadDialog = true" />
 
       <!-- CONTROLES MÓVILES -->
-      <MobileMonitorControls v-if="isMobile && !isSingleMareaMode"
-        :mapLayers="mapLayers" :vessels="vesselList" :selectedId="selectedVesselId"
-        @update:layer="handleLayerToggle" @select-vessel="setSelectedVessel"
-        @change-base="handleBaseLayerChange" />
+      <MobileMonitorControls v-if="isMobile && !isSingleMareaMode" :vessels="vesselList" :mapLayers="mapLayers"
+        :selectedId="selectedVesselId" :filterPesqueria="selectedPesqueria"
+        @update:filter-pesqueria="selectedPesqueria = $event" @update:layer="handleLayerToggle"
+        @select-vessel="setSelectedVessel" @change-base="handleBaseLayerChange" />
 
       <UploadTrackingDialog :show="showUploadDialog" @close="showUploadDialog = false" @refresh="fetchFleet" />
 

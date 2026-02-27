@@ -129,14 +129,30 @@
           </button>
         </div>
         
-        <!-- Search Area -->
-        <div class="px-4 py-3 bg-surface/5 border-b border-border/5">
+        <!-- Search & Filter Area -->
+        <div class="px-4 py-3 bg-surface/5 border-b border-border/5 space-y-3">
+          <!-- Fishery Filter -->
+          <div class="relative group">
+            <select v-model="selectedPesqueria"
+              @change="openFleet = false"
+              class="w-full bg-surface border border-border/20 rounded-xl px-3 py-2 text-xs font-bold text-text-muted focus:text-text focus:border-primary/50 transition-all cursor-pointer appearance-none shadow-sm">
+              <option value="">Todas las pesquerías</option>
+              <option v-for="pesqueria in availablePesquerias" :key="pesqueria" :value="pesqueria">
+                {{ pesqueria }}
+              </option>
+            </select>
+            <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-text-muted/40">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                <path d="M6 9l6 6 6-6" />
+              </svg>
+            </div>
+          </div>
           <SearchInput v-model="searchQuery" placeholder="Marea, buque u observador..." size="sm" />
         </div>
         
         <div class="p-2 flex-1 overflow-y-auto">
            <div v-if="filteredVessels.length === 0" class="p-8 text-center text-text-muted text-sm">
-             <span v-if="searchQuery">No hay coincidencias</span>
+             <span v-if="searchQuery || filterPesqueria">No hay coincidencias</span>
              <span v-else>No hay buques activos</span>
            </div>
            <div class="space-y-2 p-2">
@@ -148,27 +164,33 @@
                   : 'bg-surface hover:bg-surface-muted border-border/10'">
                 
                 <!-- Vessel Icon -->
-                <div class="w-10 h-10 rounded-full flex items-center justify-center shadow-sm"
+                <div class="w-10 h-10 rounded-full flex items-center justify-center shadow-sm shrink-0"
                      :style="{ backgroundColor: vessel.color + '20', color: vessel.color }">
                    <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M12 2L2 22h20L12 2z"/> <!-- Simple placeholder ship -->
+                      <path d="M12 2L2 22h20L12 2z"/>
                    </svg>
                 </div>
 
                 <!-- Info -->
                 <div class="flex-1 min-w-0">
-                  <div class="flex items-center justify-between">
+                  <div class="flex items-center justify-between gap-2 overflow-hidden">
                     <span class="text-sm font-black text-text uppercase truncate">{{ vessel.name }}</span>
-                    <span v-if="vessel.mareaCode" class="text-[10px] font-bold bg-surface-muted px-2 py-0.5 rounded text-text-muted">{{ vessel.mareaCode }}</span>
+                    <span v-if="vessel.mareaCode" class="text-[10px] font-bold bg-surface-muted px-2 py-0.5 rounded text-text-muted shrink-0">{{ vessel.mareaCode }}</span>
                   </div>
-                  <div class="text-xs text-text-muted mt-0.5 flex gap-2">
+                  <div class="mt-0.5">
+                    <p class="text-[10px] font-bold text-text-muted truncate lowercase leading-tight">
+                      {{ vessel.pesquerias_nombres?.[0] || 'Sin pesquería' }}
+                      <span class="italic opacity-60 ml-1">- {{ vessel.flota }}</span>
+                    </p>
+                  </div>
+                  <div class="text-[10px] text-text-muted/60 mt-0.5 flex items-center gap-1">
                     <span class="truncate">{{ vessel.matricula }}</span>
-                    <span v-if="vessel.observer" class="text-primary font-bold">• {{ vessel.observer }}</span>
+                    <span v-if="vessel.observer" class="font-bold shrink-0">• {{ vessel.observer }}</span>
                   </div>
                 </div>
 
                 <!-- Chevron -->
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-text-muted/50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-text-muted/30 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M9 18l6-6-6-6"/>
                 </svg>
              </div>
@@ -191,12 +213,14 @@ const props = defineProps<{
   mapLayers: Record<string, boolean>
   vessels: MonitorVessel[]
   selectedId: string | null
+  filterPesqueria: string
 }>()
 
 const emit = defineEmits<{
   (e: 'update:layer', key: string, val: boolean): void
   (e: 'select-vessel', id: string): void
   (e: 'change-base', id: string): void
+  (e: 'update:filter-pesqueria', val: string): void
 }>()
 
 const openLayers = ref(false)
@@ -204,8 +228,26 @@ const openFleet = ref(false)
 const openMapBase = ref(false)
 const searchQuery = ref('')
 
+const selectedPesqueria = computed({
+  get: () => props.filterPesqueria,
+  set: (val) => emit('update:filter-pesqueria', val)
+})
+
+const availablePesquerias = computed(() => {
+  const set = new Set<string>()
+  props.vessels.forEach(v => {
+    v.pesquerias_nombres?.forEach(p => set.add(p))
+  })
+  return Array.from(set).sort()
+})
+
 const filteredVessels = computed(() => {
   let list = [...props.vessels]
+
+  // First filter by fishery
+  if (props.filterPesqueria) {
+    list = list.filter(v => v.pesquerias_nombres?.includes(props.filterPesqueria))
+  }
   
   const q = searchQuery.value.toLowerCase().trim()
   if (q) {

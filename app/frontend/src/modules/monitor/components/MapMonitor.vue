@@ -415,7 +415,12 @@ watch(() => props.activeLayers.vieira, () => loadGeoJson('vieira'))
 watch(() => props.activeLayers.centolla, () => loadGeoJson('centolla'))
 watch(() => props.activeLayers.showAllVessels, updateAll)
 watch(() => props.activeLayers.showVesselNames, updateAll)
-watch(() => props.filterPesqueria, updateAll)
+watch(() => props.filterPesqueria, () => {
+  updateAll()
+  setTimeout(() => {
+    fitAllVesselsBounds()
+  }, 100)
+})
 
 const fitVesselBounds = (vesselId: string) => {
   if (!map) return
@@ -431,6 +436,11 @@ const fitAllVesselsBounds = () => {
   const currentPoints: L.LatLngExpression[] = []
 
   Object.values(props.fleet).forEach(vessel => {
+    // FILTRO DE PESQUERÍA: Solo incluir buques que coincidan con la pesquería seleccionada
+    if (props.filterPesqueria && !vessel.pesquerias_nombres?.includes(props.filterPesqueria)) {
+      return
+    }
+
     let current: FleetTrackPoint | null = null
     if (vessel.points.length > 0) {
       const pointIndex = vessel.visible ? vessel.currentIndex : (vessel.points.length - 1)
