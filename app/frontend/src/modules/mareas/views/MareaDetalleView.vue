@@ -93,13 +93,13 @@
               <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="space-y-1.5">
                   <label class="text-xs font-bold uppercase tracking-wider text-text-muted">Año Marea</label>
-                  <input v-model="marea.anio_marea" type="number" :disabled="isReadOnly"
+                  <input v-model="marea.anio_marea" type="number" :disabled="!canEditDesignationFields"
                     class="w-full px-4 py-3 bg-surface-muted border-none rounded-2xl focus:ring-2 focus:ring-primary/20 text-text transition-all font-medium outline-none disabled:opacity-60"
                     placeholder="2023" />
                 </div>
                 <div class="space-y-1.5">
                   <label class="text-xs font-bold uppercase tracking-wider text-text-muted">Nro. Marea</label>
-                  <input v-model="marea.nro_marea" type="number" :disabled="isReadOnly"
+                  <input v-model="marea.nro_marea" type="number" :disabled="!canEditDesignationFields"
                     class="w-full px-4 py-3 bg-surface-muted border-none rounded-2xl focus:ring-2 focus:ring-primary/20 text-text transition-all font-medium outline-none disabled:opacity-60"
                     placeholder="000" />
                 </div>
@@ -140,7 +140,7 @@
                 </div>
                 <div class="space-y-1.5">
                   <label class="text-xs font-bold uppercase tracking-wider text-text-muted">Tipo de Marea</label>
-                  <select v-model="marea.tipo_marea" :disabled="isReadOnly"
+                  <select v-model="marea.tipo_marea" :disabled="!canEditDesignationFields"
                     class="w-full px-4 py-3 bg-surface-muted border-none rounded-2xl focus:ring-2 focus:ring-primary/20 text-text transition-all font-medium outline-none disabled:opacity-60">
                     <option :value="TipoMarea.MC">Comercial (MC)</option>
                     <option :value="TipoMarea.CI">Institucional (CI)</option>
@@ -590,6 +590,10 @@ const isReadOnly = computed(() => {
   const isProtocolizada = marea.value.estado_codigo === 'PROTOCOLIZADA'
 
   return !canManage || isProtocolizada
+})
+
+const canEditDesignationFields = computed(() => {
+  return !isReadOnly.value && marea.value.estado_codigo === 'DESIGNADA'
 })
 
 const tabs = [

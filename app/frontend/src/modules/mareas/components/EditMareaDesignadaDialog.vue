@@ -35,17 +35,26 @@
                   Identificación
                 </h3>
               </div>
+
+              <!-- Banner informativo si no es editable -->
+              <div v-if="!canEditDesignationFields" class="mb-6 p-4 bg-info/5 border border-info/20 rounded-xl flex items-start gap-3">
+                <InfoIcon class="w-5 h-5 text-info shrink-0 mt-0.5" />
+                <p class="text-xs font-medium text-info leading-relaxed">
+                  Los datos de <strong>año y número</strong> solo pueden modificarse cuando la marea está en estado <strong>DESIGNADA</strong>.
+                </p>
+              </div>
+
               <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="space-y-1.5">
                   <label class="block text-sm font-medium text-text-muted">Año</label>
-                  <input v-model.number="form.anioMarea" type="number"
-                    class="w-full px-4 py-2.5 bg-surface border rounded-lg text-sm text-text outline-none focus:border-primary transition-all shadow-theme-xs"
+                  <input v-model.number="form.anioMarea" type="number" :disabled="!canEditDesignationFields"
+                    class="w-full px-4 py-2.5 bg-surface border rounded-lg text-sm text-text outline-none focus:border-primary transition-all shadow-theme-xs disabled:opacity-60 disabled:bg-surface-muted"
                     :class="fieldErrors.anioMarea ? 'border-error bg-error/5' : 'border-border focus:ring-3 focus:ring-primary/10'" />
                 </div>
                 <div class="space-y-1.5">
                   <label class="block text-sm font-medium text-text-muted">Nro. Marea</label>
-                  <input v-model.number="form.nroMarea" type="number" placeholder="000"
-                    class="w-full px-4 py-2.5 bg-surface border rounded-lg text-sm text-text outline-none focus:border-primary transition-all shadow-theme-xs"
+                  <input v-model.number="form.nroMarea" type="number" placeholder="000" :disabled="!canEditDesignationFields"
+                    class="w-full px-4 py-2.5 bg-surface border rounded-lg text-sm text-text outline-none focus:border-primary transition-all shadow-theme-xs disabled:opacity-60 disabled:bg-surface-muted"
                     :class="fieldErrors.nroMarea ? 'border-error bg-error/5' : 'border-border focus:ring-3 focus:ring-primary/10'" />
                 </div>
                 <div class="space-y-1.5">
@@ -164,6 +173,10 @@ const loading = ref(false)
 const error = ref<string | null>(null)
 const loadingCatalogs = ref(false)
 const fieldErrors = ref<Record<string, string>>({})
+
+const canEditDesignationFields = computed(() => {
+  return props.initialData.estado_codigo === 'DESIGNADA'
+})
 
 const pesquerias = ref<any[]>([])
 const observadores = ref<any[]>([])

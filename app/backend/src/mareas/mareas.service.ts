@@ -102,22 +102,34 @@ export class MareasService {
     async update(id: string, updateMareaDto: UpdateMareaDto, user?: User) {
         const { etapas, artePrincipalId, arteId, pesqueriaId, observadorId, observadorPrincipalId, ...data } = updateMareaDto;
 
-        // Validar impedimentos si cambia el observador principal
-        const targetObsId = observadorPrincipalId || observadorId;
-        if (targetObsId) {
-            const currentMarea = await (this.prisma as any).marea.findUnique({
-                where: { id },
-                select: { observadorPrincipalId: true }
-            });
+        // 1. Obtención inicial de marea para validaciones de integridad
+        const mareaActual = await this.prisma.marea.findUnique({
+            where: { id },
+            include: { estadoActual: true }
+        });
 
-            if (currentMarea && targetObsId !== (currentMarea as any).observadorPrincipalId) {
-                const obs = await this.prisma.observador.findUnique({
-                    where: { id: targetObsId },
-                    select: { conImpedimento: true, motivoImpedimento: true }
-                });
-                if (obs?.conImpedimento) {
-                    throw new BadRequestException(`No se puede asignar el observador porque posee un impedimento: ${obs.motivoImpedimento || 'Sin motivo'}.`);
-                }
+        if (!mareaActual) throw new NotFoundException('Marea no encontrada');
+
+        // 2. Restricción de edición de datos básicos según estado (Regla de negocio crítica)
+        const esDesignado = mareaActual.estadoActual.codigo === MareaEstado.DESIGNADA;
+        const camposDesignacionInvolucrados = 
+            (updateMareaDto.anioMarea !== undefined && updateMareaDto.anioMarea !== mareaActual.anioMarea) ||
+            (updateMareaDto.nroMarea !== undefined && updateMareaDto.nroMarea !== mareaActual.nroMarea) ||
+            (updateMareaDto.tipoMarea !== undefined && updateMareaDto.tipoMarea !== mareaActual.tipoMarea);
+
+        if (!esDesignado && camposDesignacionInvolucrados) {
+            throw new BadRequestException(`Solo se puede modificar el número, año y tipo de marea si la misma está en estado "DESIGNADA".`);
+        }
+
+        // 3. Validar impedimentos si cambia el observador principal
+        const targetObsId = observadorPrincipalId || observadorId;
+        if (targetObsId && targetObsId !== mareaActual.observadorPrincipalId) {
+            const obs = await this.prisma.observador.findUnique({
+                where: { id: targetObsId },
+                select: { conImpedimento: true, motivoImpedimento: true }
+            });
+            if (obs?.conImpedimento) {
+                throw new BadRequestException(`No se puede asignar el observador porque posee un impedimento: ${obs.motivoImpedimento || 'Sin motivo'}.`);
             }
         }
 
