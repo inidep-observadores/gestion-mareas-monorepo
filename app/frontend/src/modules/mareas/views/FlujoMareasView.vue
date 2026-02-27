@@ -115,7 +115,15 @@
                             <ShipIcon class="w-3.5 h-3.5 text-primary" />
                             <h4 class="text-sm font-black text-text">{{ marea.buque_nombre }}</h4>
                           </div>
-                          <p class="text-xs font-bold text-text-muted truncate">{{ marea.observador || 'No asignado' }}
+                          <div class="flex flex-col gap-0.5 ml-5">
+                            <p class="text-[10px] font-black text-text-muted uppercase tracking-tight">
+                              {{ marea.pesquerias_nombres.join(' / ') || 'Sin pesquería' }}
+                            </p>
+                            <p class="text-[9px] font-bold text-text-muted/70 italic leading-none">
+                              {{ marea.flota }}
+                            </p>
+                          </div>
+                          <p class="text-xs font-bold text-text-muted truncate mt-1 ml-5">{{ marea.observador || 'No asignado' }}
                           </p>
                         </div>
 
@@ -187,6 +195,15 @@
                           <div class="flex items-center gap-1">
                             Buque
                             <ChevronDownIcon v-if="sortBy === 'buque_nombre'"
+                              class="w-3 h-3 text-primary transition-transform duration-300"
+                              :class="{ 'rotate-180': sortOrder === 'asc' }" />
+                          </div>
+                        </th>
+                        <th @click="toggleSort('pesquerias_nombres')"
+                          class="px-5 py-3 cursor-pointer hover:text-primary transition-colors group">
+                          <div class="flex items-center gap-1">
+                            Pesquería / Flota
+                            <ChevronDownIcon v-if="sortBy === 'pesquerias_nombres'"
                               class="w-3 h-3 text-primary transition-transform duration-300"
                               :class="{ 'rotate-180': sortOrder === 'asc' }" />
                           </div>
@@ -289,6 +306,16 @@
                               <span class="text-[10px] font-bold text-text-muted leading-tight truncate mt-0.5">{{
                                 marea.observador || 'Sin asignar' }}</span>
                             </div>
+                          </div>
+                        </td>
+                        <td class="px-5 py-1.5">
+                          <div class="flex flex-col">
+                            <span class="text-[11px] font-black text-text-muted uppercase tracking-tight leading-tight">
+                              {{ marea.pesquerias_nombres.join('\n') || 'N/D' }}
+                            </span>
+                            <span class="text-[9px] font-bold text-primary/70 italic leading-none mt-0.5">
+                              {{ marea.flota }}
+                            </span>
                           </div>
                         </td>
                         <td class="px-5 py-1.5">

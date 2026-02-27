@@ -458,7 +458,12 @@ export class MareasService {
                         nombreBuque: true,
                         matricula: true,
                         puertoBaseId: true,
-                        pesqueriaHabitual: true
+                        pesqueriaHabitual: true,
+                        tipoFlota: {
+                            select: {
+                                nombre: true
+                            }
+                        }
                     }
                 },
                 observadorPrincipal: true,
@@ -539,6 +544,7 @@ export class MareasService {
                 anio_marea: m.anioMarea,
                 nro_marea: m.nroMarea,
                 buque_nombre: m.buque.nombreBuque,
+                flota: m.buque.tipoFlota?.nombre || 'Indeterminada',
                 puertoBaseId: m.buque.puertoBaseId,
                 estado: m.estadoActual.nombre,
                 estado_codigo: m.estadoActual.codigo,
