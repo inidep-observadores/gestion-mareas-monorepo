@@ -956,7 +956,12 @@ const ganttSeries = computed(() => {
       const start = new Date(item.fechaZarpada).getTime();
       const end = item.fechaArribo ? new Date(item.fechaArribo).getTime() : Date.now();
       const baseColor = getFisheryColor(item.pesqueria);
-      const labelFormat = [item.buque, `${item.pesqueria} - ${item.flota || 'Sin Flota'}`];
+
+      const isFisheryFiltered = selectedDistributionFishery.value !== 'ALL';
+      const subLabel = isFisheryFiltered 
+         ? (item.flota || 'Sin Flota') 
+         : `${item.pesqueria} - ${item.flota || 'Sin Flota'}`;
+      const labelFormat = [item.buque, subLabel];
 
       // Si estamos en modo TOTAL y el segmento cruza el inicio del año
       if (mode.value === 'TOTAL' && start < yearStart && end > yearStart) {
@@ -993,10 +998,16 @@ const ganttSeries = computed(() => {
    return [{ data: seriesData }];
 });
 
-const ganttChartOptions = computed(() => ({
+const ganttChartOptions = computed(() => {
+   // Calcular la cantidad de filas únicas (buques) para determinar la altura
+   const uniqueRows = new Set(ganttSeries.value[0].data.map((d: any) => JSON.stringify(d.x))).size;
+   // Asegurar un mínimo de 450px, o ~55px por buque para las dos líneas
+   const dynamicHeight = Math.max(450, uniqueRows * 55);
+
+   return {
    chart: {
       type: 'rangeBar',
-      height: 450,
+      height: dynamicHeight,
       fontFamily: 'Inter, sans-serif',
       toolbar: {
          show: true,
@@ -1103,7 +1114,7 @@ const ganttChartOptions = computed(() => ({
          fontFamily: 'Inter'
       }
    }
-}));
+};});
 
 // --- Watchers ---
 watch([year, mode, protocolizedOnly, includeOutOfPeriod, daysCalculationMode, includeCampaigns, startDate, endDate, selectedCoverageFishery], () => {
