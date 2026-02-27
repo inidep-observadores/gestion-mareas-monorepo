@@ -1001,7 +1001,7 @@ const ganttSeries = computed(() => {
 const ganttDynamicHeight = computed(() => {
    const uniqueRows = new Set(ganttSeries.value[0].data.map((d: any) => JSON.stringify(d.x))).size;
    // Incrementar a 100px por fila para asegurar espacio total para las etiquetas de 2 líneas
-   return Math.max(500, uniqueRows * 100);
+   return Math.max(500, uniqueRows * 50);
 });
 
 const ganttChartOptions = computed(() => {
@@ -1052,7 +1052,7 @@ const ganttChartOptions = computed(() => {
    yaxis: {
       labels: {
          align: 'left',
-         minWidth: 150,
+         minWidth: 180,
          style: {
             fontSize: '11px',
             fontWeight: 700,
