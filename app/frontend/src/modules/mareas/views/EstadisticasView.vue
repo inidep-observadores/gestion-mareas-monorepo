@@ -1052,8 +1052,10 @@ const ganttChartOptions = computed(() => {
    yaxis: {
       labels: {
          align: 'left',
-         minWidth: 200,
-         maxWidth: 300,
+         minWidth: 50,
+         maxWidth: 230,
+         offsetX: 0,
+         offsetY: 6, // Ajuste para centrar verticalmente las dos líneas
          style: {
             fontSize: '11px',
             fontWeight: 700,
@@ -2150,5 +2152,10 @@ const coverageChartOptions = computed(() => {
       opacity: 1;
       transform: translateY(0);
    }
+}
+
+:deep(.apexcharts-yaxis-label-multiline) {
+   line-height: 1.2;
+   dominant-baseline: central;
 }
 </style>
