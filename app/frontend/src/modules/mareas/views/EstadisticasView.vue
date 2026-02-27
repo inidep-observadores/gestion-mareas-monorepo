@@ -118,7 +118,7 @@
                <div class="col-span-12">
                   <ChartWidget title="Cronograma de Distribución de Mareas"
                      subtitle="Distribución temporal de mareas y etapas por buque" type="rangeBar" :series="ganttSeries"
-                     :options="ganttChartOptions" :chart-height="dynamicChartHeight"
+                     :options="ganttChartOptions" :chart-height="ganttDynamicHeight"
                      chart-container-class="max-h-[700px] overflow-y-auto custom-scrollbar" allow-download
                      :export-filename="`Cronograma_Distribucion_Mareas_${year}`"
                      @dataPointClick="handleGanttClick" @download="handleDownload('Distribucion_Temporal_Gantt')">
@@ -998,16 +998,17 @@ const ganttSeries = computed(() => {
    return [{ data: seriesData }];
 });
 
-const ganttChartOptions = computed(() => {
-   // Calcular la cantidad de filas únicas (buques) para determinar la altura
+const ganttDynamicHeight = computed(() => {
    const uniqueRows = new Set(ganttSeries.value[0].data.map((d: any) => JSON.stringify(d.x))).size;
-   // Asegurar un mínimo de 450px, o ~55px por buque para las dos líneas
-   const dynamicHeight = Math.max(450, uniqueRows * 55);
+   // Incrementar a 100px por fila para asegurar espacio total para las etiquetas de 2 líneas
+   return Math.max(500, uniqueRows * 100);
+});
 
+const ganttChartOptions = computed(() => {
    return {
    chart: {
       type: 'rangeBar',
-      height: dynamicHeight,
+      height: ganttDynamicHeight.value,
       fontFamily: 'Inter, sans-serif',
       toolbar: {
          show: true,
@@ -1032,7 +1033,7 @@ const ganttChartOptions = computed(() => {
    plotOptions: {
       bar: {
          horizontal: true,
-         barHeight: '75%',
+         barHeight: '40%',
          rangeBarGroupRows: true,
          borderRadius: 4
       }
@@ -1051,10 +1052,12 @@ const ganttChartOptions = computed(() => {
    yaxis: {
       labels: {
          align: 'left',
+         minWidth: 150,
          style: {
             fontSize: '11px',
             fontWeight: 700,
-            colors: '#0f172a' // text
+            colors: '#0f172a', // text
+            cssClass: 'apexcharts-yaxis-label-multiline'
          }
       }
    },
@@ -1111,10 +1114,10 @@ const ganttChartOptions = computed(() => {
       style: {
          color: '#64748b', // text-muted
          fontSize: '14px',
-         fontFamily: 'Inter'
       }
    }
-};});
+};
+});
 
 // --- Watchers ---
 watch([year, mode, protocolizedOnly, includeOutOfPeriod, daysCalculationMode, includeCampaigns, startDate, endDate, selectedCoverageFishery], () => {
