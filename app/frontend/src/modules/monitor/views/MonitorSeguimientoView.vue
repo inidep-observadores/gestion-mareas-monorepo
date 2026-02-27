@@ -6,7 +6,7 @@
         <!-- THE MAP (Background) -->
         <div class="absolute inset-0">
           <MapMonitor ref="mapMonitor" class="w-full h-full" :fleet="fleet" :activeLayers="mapLayers"
-            :isMobile="isMobile"
+            :isMobile="isMobile" :filterPesqueria="selectedPesqueria"
             @update:mouse-coords="mouseCoords = $event" @seek-vessel="handleSeekVessel"
             @select-vessel="setSelectedVessel" />
         </div>
@@ -105,7 +105,7 @@
 
       <!-- SIDEBAR IZQUIERDO (FLOTA) -->
       <VesselListSidebar v-if="!isSingleMareaMode && !isMobile" class="absolute left-0 top-0 h-full z-[2000]"
-        v-model:isOpen="leftSidebarOpen" :vessels="vesselList" :selectedId="selectedVesselId"
+        v-model:isOpen="leftSidebarOpen" v-model:filterPesqueria="selectedPesqueria" :vessels="vesselList" :selectedId="selectedVesselId"
         @select="setSelectedVessel" @refresh="fetchFleet" />
 
       <!-- SIDEBAR DERECHO (CONTROL) -->
@@ -158,6 +158,7 @@ const mouseCoords = ref<LatLng | null>(null)
 const mapMonitor = ref<InstanceType<typeof MapMonitor> | null>(null)
 const leftSidebarOpen = ref(true)
 const rightSidebarOpen = ref(false)
+const selectedPesqueria = ref('')
 const pendingZoomVesselId = ref<string | null>(null)
 const pendingTrajectoriesCount = ref(0)
 const isInitialLoad = ref(true)

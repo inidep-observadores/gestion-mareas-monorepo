@@ -42,8 +42,24 @@
           </div>
         </div>
 
-        <!-- Search Area -->
-        <div class="px-4 py-3 bg-surface/5 border-b border-border/5">
+        <!-- Search & Filter Area -->
+        <div class="px-4 py-3 bg-surface/5 border-b border-border/5 space-y-3">
+          <!-- Fishery Filter -->
+          <div class="relative group">
+            <select v-model="selectedPesqueria"
+              class="w-full bg-surface border border-border/20 rounded-xl px-3 py-2 text-xs font-bold text-text-muted focus:text-text focus:border-primary/50 transition-all cursor-pointer appearance-none shadow-sm">
+              <option value="">Todas las pesquerías</option>
+              <option v-for="pesqueria in availablePesquerias" :key="pesqueria" :value="pesqueria">
+                {{ pesqueria }}
+              </option>
+            </select>
+            <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-text-muted/40">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                <path d="M6 9l6 6 6-6" />
+              </svg>
+            </div>
+          </div>
+
           <SearchInput v-model="searchQuery" placeholder="Marea, buque u observador..." size="sm" />
         </div>
 
@@ -153,14 +169,33 @@ const props = defineProps<{
   vessels: MonitorVessel[]
   selectedId: string | null
   isOpen: boolean
+  filterPesqueria: string
 }>()
 
-const emit = defineEmits(['select', 'update:isOpen', 'refresh'])
+const emit = defineEmits(['select', 'update:isOpen', 'update:filterPesqueria', 'refresh'])
 
 const searchQuery = ref('')
 
+const selectedPesqueria = computed({
+  get: () => props.filterPesqueria,
+  set: (val) => emit('update:filterPesqueria', val)
+})
+
+const availablePesquerias = computed(() => {
+  const set = new Set<string>()
+  props.vessels.forEach(v => {
+    v.pesquerias_nombres?.forEach(p => set.add(p))
+  })
+  return Array.from(set).sort()
+})
+
 const filteredVessels = computed(() => {
   let list = [...props.vessels]
+
+  // First filter by fishery (This also affects the map markers)
+  if (props.filterPesqueria) {
+    list = list.filter(v => v.pesquerias_nombres?.includes(props.filterPesqueria))
+  }
 
   const q = searchQuery.value.toLowerCase().trim()
   if (q) {

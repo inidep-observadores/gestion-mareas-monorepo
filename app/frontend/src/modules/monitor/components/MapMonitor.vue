@@ -50,6 +50,7 @@ const props = defineProps<{
     showVesselNames: boolean;
   }
   isMobile?: boolean
+  filterPesqueria: string
 }>()
 
 const emit = defineEmits(['update:mouse-coords', 'seek-vessel', 'select-vessel'])
@@ -135,6 +136,11 @@ const updateAll = () => {
   vesselMarkers.clear()
 
   Object.values(props.fleet).forEach(vessel => {
+    // FILTRO DE PESQUERÍA: Solo procesar buques que coincidan con la pesquería seleccionada
+    if (props.filterPesqueria && !vessel.pesquerias_nombres?.includes(props.filterPesqueria)) {
+      return
+    }
+
     const hasHistory = vessel.points.length > 0
 
     // Solo renderizar trayectoria si es visible (seleccionado) y tiene datos
@@ -409,6 +415,7 @@ watch(() => props.activeLayers.vieira, () => loadGeoJson('vieira'))
 watch(() => props.activeLayers.centolla, () => loadGeoJson('centolla'))
 watch(() => props.activeLayers.showAllVessels, updateAll)
 watch(() => props.activeLayers.showVesselNames, updateAll)
+watch(() => props.filterPesqueria, updateAll)
 
 const fitVesselBounds = (vesselId: string) => {
   if (!map) return
