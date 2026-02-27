@@ -34,6 +34,8 @@ export interface VesselTrajectory {
   voyageEnd?: string | null
   lastUpdate?: string | Date | null
   totalDays?: number
+  pesquerias_nombres?: string[]
+  flota?: string
   etapas?: any[] // eslint-disable-line @typescript-eslint/no-explicit-any
 }
 

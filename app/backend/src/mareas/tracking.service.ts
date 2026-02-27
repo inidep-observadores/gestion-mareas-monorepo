@@ -381,9 +381,16 @@ export class TrackingService {
         const marea = await this.prisma.marea.findUnique({
             where: { id: mareaId },
             include: {
-                buque: true,
+                buque: {
+                    include: {
+                        tipoFlota: true
+                    }
+                },
                 etapas: {
-                    orderBy: { nroEtapa: 'asc' }
+                    orderBy: { nroEtapa: 'asc' },
+                    include: {
+                        pesqueria: true
+                    }
                 },
                 observadorPrincipal: true,
                 estadoActual: true
@@ -437,6 +444,8 @@ export class TrackingService {
             name: marea.buque.nombreBuque,
             matricula: marea.buque.matricula,
             mareaCode: `${marea.nroMarea}/${marea.anioMarea}`,
+            pesquerias_nombres: marea.etapas.map(e => e.pesqueria?.nombre).filter(n => !!n),
+            flota: marea.buque.tipoFlota?.nombre || 'Indeterminada',
             observer: marea.observadorPrincipal?.apellido ? `${marea.observadorPrincipal.apellido}, ${marea.observadorPrincipal.nombre}` : 'Sin asignar',
             voyageStart: voyageStart?.toISOString(),
             voyageEnd: voyageEnd?.toISOString(),
@@ -454,10 +463,17 @@ export class TrackingService {
         const activeMareas = await this.prisma.marea.findMany({
             where: { estadoActual: { codigo: { in: ['EN_EJECUCION', 'DESIGNADA'] } } },
             include: {
-                buque: true,
+                buque: {
+                    include: {
+                        tipoFlota: true
+                    }
+                },
                 artePrincipal: true,
                 etapas: {
-                    orderBy: { nroEtapa: 'asc' }
+                    orderBy: { nroEtapa: 'asc' },
+                    include: {
+                        pesqueria: true
+                    }
                 },
                 observadorPrincipal: true,
                 estadoActual: true
@@ -532,6 +548,8 @@ export class TrackingService {
                 mareaId: marea.id,
                 mareaStatus: marea.estadoActual?.codigo || 'EN_EJECUCION',
                 mareaCode: `${marea.tipoMarea}-${marea.nroMarea}-${marea.anioMarea.toString().slice(-2)}`,
+                pesquerias_nombres: marea.etapas.map(e => e.pesqueria?.nombre).filter(n => !!n),
+                flota: marea.buque.tipoFlota?.nombre || 'Indeterminada',
                 observer: marea.observadorPrincipal
                     ? `${marea.observadorPrincipal.apellido} ${marea.observadorPrincipal.nombre}`
                     : 'Sin asignar',

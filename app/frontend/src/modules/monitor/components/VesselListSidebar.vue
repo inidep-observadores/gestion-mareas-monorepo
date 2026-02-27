@@ -65,7 +65,13 @@
                   {{ vessel.name }}
                 </span>
               </div>
-              <div class="flex items-center gap-2 mt-1 whitespace-nowrap overflow-hidden">
+              <div class="ml-4 -mt-0.5">
+                <p class="text-[10px] font-bold text-text-muted truncate leading-tight">
+                  {{ vessel.pesquerias_nombres?.[0] || 'Sin pesquería' }}
+                  <span class="italic opacity-60 ml-1">- {{ vessel.flota }}</span>
+                </p>
+              </div>
+              <div class="flex items-center gap-2 mt-0.5 whitespace-nowrap overflow-hidden">
                 <span class="text-xs font-black text-primary/80 uppercase tracking-tighter shrink-0">
                   {{ vessel.mareaCode }}
                 </span>
@@ -139,6 +145,8 @@ export interface MonitorVessel {
   visible: boolean
   voyageStart: string | null
   voyageEnd: string | null
+  pesquerias_nombres?: string[]
+  flota?: string
 }
 
 const props = defineProps<{

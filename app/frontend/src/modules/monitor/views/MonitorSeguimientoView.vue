@@ -197,6 +197,8 @@ const vesselList = computed<MonitorVessel[]>(() => {
     observer: v.observer || 'Sin asignar',
     color: v.color,
     visible: v.visible,
+    pesquerias_nombres: v.pesquerias_nombres,
+    flota: v.flota,
     voyageStart: v.voyageStart || null,
     voyageEnd: v.voyageEnd || null
   }))
@@ -259,6 +261,8 @@ const fetchFleet = async () => {
           matricula: marea.matricula,
           mareaCode: marea.mareaCode,
           mareaStatus: marea.mareaStatus,
+          pesquerias_nombres: marea.pesquerias_nombres,
+          flota: marea.flota,
           observer: marea.observer,
           voyageStart: marea.voyageStart,
           voyageEnd: marea.voyageEnd,
@@ -280,6 +284,8 @@ const fetchFleet = async () => {
         existing.totalDays = marea.totalDays
         existing.etapas = marea.etapas
         existing.mareaStatus = marea.mareaStatus
+        existing.pesquerias_nombres = marea.pesquerias_nombres
+        existing.flota = marea.flota
         existing.lastKnownPoint = (marea.lat !== null && marea.lon !== null) ? {
           lat: marea.lat,
           lon: marea.lon,
@@ -342,6 +348,8 @@ const fetchSingleMarea = async (mareaId: string) => {
       visible: true, // Always visible in single mode
       matricula: marea.matricula,
       mareaCode: marea.mareaCode,
+      pesquerias_nombres: marea.pesquerias_nombres,
+      flota: marea.flota,
       observer: marea.observer,
       voyageStart: marea.voyageStart,
       voyageEnd: marea.voyageEnd,
