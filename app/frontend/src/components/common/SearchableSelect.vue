@@ -10,7 +10,8 @@
         @input="onSearchInput"
         @keydown="onKeyDown"
         :placeholder="selectedLabel ? '' : placeholder"
-        class="w-full px-4 py-2.5 bg-background border rounded-lg text-sm text-text outline-none focus:border-primary transition-all appearance-none caret-primary"
+        :disabled="disabled"
+        class="w-full px-4 py-2.5 bg-background border rounded-lg text-sm text-text outline-none focus:border-primary transition-all appearance-none caret-primary disabled:opacity-50 disabled:bg-surface-muted disabled:cursor-not-allowed"
         style="color-scheme: light dark;"
         :class="[
           error ? 'border-error bg-error/5' : 'border-border',
@@ -28,7 +29,7 @@
       </div>
       <div class="absolute inset-y-0 right-0 flex items-center pr-3 gap-1">
         <button 
-          v-if="modelValue !== null"
+          v-if="modelValue !== null && !disabled"
           @click.stop="clearValue"
           type="button"
           class="p-1 text-text-muted/60 hover:text-error hover:bg-error/5 rounded-full transition-all group/clear"
@@ -37,6 +38,7 @@
           <XIcon class="w-3 h-3" />
         </button>
         <div 
+          v-if="!disabled"
           class="text-text-muted cursor-pointer transition-transform duration-300 hover:text-primary" 
           :class="{ 'rotate-180': isOpen }"
           @click.stop="toggleDropdown"
@@ -100,6 +102,7 @@ const props = defineProps<{
   placeholder?: string
   icon?: any
   error?: string
+  disabled?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -140,6 +143,7 @@ const filteredOptions = computed(() => {
 })
 
 const toggleDropdown = () => {
+  if (props.disabled) return
   if (isOpen.value) {
     closeDropdown()
   } else {
@@ -151,6 +155,7 @@ const toggleDropdown = () => {
 }
 
 const openDropdown = () => {
+  if (props.disabled) return
   isOpen.value = true
   highlightedIndex.value = -1
   updateDropdownPosition()
