@@ -111,14 +111,20 @@ export class MareasService {
         if (!mareaActual) throw new NotFoundException('Marea no encontrada');
 
         // 2. Restricción de edición de datos básicos según estado (Regla de negocio crítica)
-        const esDesignado = mareaActual.estadoActual.codigo === MareaEstado.DESIGNADA;
-        const camposDesignacionInvolucrados = 
+        const estadoCodigo = mareaActual.estadoActual.codigo;
+        const esPreparatoria = estadoCodigo === MareaEstado.DESIGNADA || estadoCodigo === MareaEstado.A_REASIGNAR;
+
+        const camposProtegidosModificados =
             (updateMareaDto.anioMarea !== undefined && updateMareaDto.anioMarea !== mareaActual.anioMarea) ||
             (updateMareaDto.nroMarea !== undefined && updateMareaDto.nroMarea !== mareaActual.nroMarea) ||
-            (updateMareaDto.tipoMarea !== undefined && updateMareaDto.tipoMarea !== mareaActual.tipoMarea);
+            (updateMareaDto.tipoMarea !== undefined && updateMareaDto.tipoMarea !== mareaActual.tipoMarea) ||
+            (updateMareaDto.buqueId !== undefined && updateMareaDto.buqueId !== mareaActual.buqueId) ||
+            (observadorPrincipalId !== undefined && observadorPrincipalId !== mareaActual.observadorPrincipalId) ||
+            (pesqueriaId !== undefined && pesqueriaId !== mareaActual.pesqueriaId) ||
+            (artePrincipalId !== undefined && artePrincipalId !== mareaActual.artePrincipalId);
 
-        if (!esDesignado && camposDesignacionInvolucrados) {
-            throw new BadRequestException(`Solo se puede modificar el número, año y tipo de marea si la misma está en estado "DESIGNADA".`);
+        if (!esPreparatoria && camposProtegidosModificados) {
+            throw new BadRequestException(`No se pueden modificar los datos de identidad, buque, observador, pesquería o arte de pesca una vez que la marea ha salido de los estados de planificación (DESIGNADA/A_REASIGNAR).`);
         }
 
         // 3. Validar impedimentos si cambia el observador principal

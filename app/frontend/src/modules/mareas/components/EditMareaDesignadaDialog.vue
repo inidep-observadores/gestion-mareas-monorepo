@@ -40,7 +40,7 @@
               <div v-if="!canEditDesignationFields" class="mb-6 p-4 bg-info/5 border border-info/20 rounded-xl flex items-start gap-3">
                 <InfoIcon class="w-5 h-5 text-info shrink-0 mt-0.5" />
                 <p class="text-xs font-medium text-info leading-relaxed">
-                  Los datos de <strong>año y número</strong> solo pueden modificarse cuando la marea está en estado <strong>DESIGNADA</strong>.
+                  Los datos de <strong>identidad, buque, observador, pesquería y arte de pesca</strong> solo pueden modificarse cuando la marea está en estado <strong>DESIGNADA</strong> o <strong>A_REASIGNAR</strong>.
                 </p>
               </div>
 
@@ -60,12 +60,14 @@
                 <div class="space-y-1.5">
                   <label class="block text-sm font-medium text-text-muted">Buque</label>
                   <SearchableSelect v-model="form.buqueId" :options="buqueOptions" :icon="ShipIcon"
-                    :error="fieldErrors.buqueId" placeholder="Seleccione el buque..." @update:modelValue="onBuqueChange" />
+                    :error="fieldErrors.buqueId" placeholder="Seleccione el buque..." @update:modelValue="onBuqueChange"
+                    :disabled="!canEditDesignationFields" />
                 </div>
                 <div class="space-y-1.5">
                   <label class="block text-sm font-medium text-text-muted">Observador Designado</label>
                   <SearchableSelect ref="observadorSelect" v-model="form.observadorPrincipalId" :options="observadorOptions"
-                    :icon="BeakerIcon" :error="fieldErrors.observadorPrincipalId" placeholder="Seleccione el observador..." />
+                    :icon="BeakerIcon" :error="fieldErrors.observadorPrincipalId" placeholder="Seleccione el observador..."
+                    :disabled="!canEditDesignationFields" />
                 </div>
               </div>
             </div>
@@ -82,13 +84,15 @@
                 <div class="space-y-1.5">
                   <label class="block text-sm font-medium text-text-muted">Pesquería</label>
                   <SearchableSelect v-model="form.pesqueriaId" :options="pesqueriaOptions" :icon="WaveIcon"
-                    :error="fieldErrors.pesqueriaId" placeholder="Seleccione la pesquería..." />
+                    :error="fieldErrors.pesqueriaId" placeholder="Seleccione la pesquería..."
+                    :disabled="!canEditDesignationFields" />
                 </div>
 
                 <div class="space-y-1.5">
                   <label class="block text-sm font-medium text-text-muted">Arte de Pesca Principal</label>
                   <SearchableSelect v-model="form.artePrincipalId" :options="arteOptions" :icon="SettingsIcon"
-                    placeholder="Seleccione el arte..." :error="fieldErrors.artePrincipalId" />
+                    placeholder="Seleccione el arte..." :error="fieldErrors.artePrincipalId"
+                    :disabled="!canEditDesignationFields" />
                 </div>
 
                 <div class="space-y-1.5">
@@ -175,7 +179,7 @@ const loadingCatalogs = ref(false)
 const fieldErrors = ref<Record<string, string>>({})
 
 const canEditDesignationFields = computed(() => {
-  return props.initialData.estado_codigo === 'DESIGNADA'
+  return props.initialData.estado_codigo === 'DESIGNADA' || props.initialData.estado_codigo === 'A_REASIGNAR'
 })
 
 const pesquerias = ref<any[]>([])

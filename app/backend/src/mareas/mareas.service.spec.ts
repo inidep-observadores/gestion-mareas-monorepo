@@ -123,11 +123,11 @@ describe('MareasService', () => {
         const estadoDesignada = { id: 'est-des', codigo: 'DESIGNADA', nombre: 'Designada' };
         const estadoEjecucion = { id: 'est-eje', codigo: 'EN_EJECUCION', nombre: 'En Ejecución' };
 
-        it('should allow modifying anioMarea if state is DESIGNADA', async () => {
-            mockPrismaService.marea.findUnique.mockResolvedValue({ 
-                id: mareaId, 
-                anioMarea: 2024, 
-                estadoActual: estadoDesignada,
+        it('should allow modifying anioMarea if state is DESIGNADA or A_REASIGNAR', async () => {
+            mockPrismaService.marea.findUnique.mockResolvedValue({
+                id: mareaId,
+                anioMarea: 2024,
+                estadoActual: { codigo: 'A_REASIGNAR' },
                 etapas: []
             });
             const dto = { anioMarea: 2025 };
@@ -135,37 +135,48 @@ describe('MareasService', () => {
             expect(mockPrismaService.marea.update).toHaveBeenCalled();
         });
 
-        it('should throw BadRequestException if modifying anioMarea and state is NOT DESIGNADA', async () => {
-            mockPrismaService.marea.findUnique.mockResolvedValue({ 
-                id: mareaId, 
-                anioMarea: 2024, 
-                estadoActual: estadoEjecucion 
+        it('should throw BadRequestException if modifying restricted fields (buque, obs, pesq) and state is NOT preparatoria', async () => {
+            mockPrismaService.marea.findUnique.mockResolvedValue({
+                id: mareaId,
+                buqueId: 'vessel-1',
+                estadoActual: estadoEjecucion
+            });
+            const dto = { buqueId: 'vessel-2' };
+            await expect(service.update(mareaId, dto as any, { id: 'user-id' } as any))
+                .rejects.toThrow(/No se pueden modificar los datos de identidad, buque, observador, pesquería o arte de pesca/);
+        });
+
+        it('should throw BadRequestException if modifying anioMarea and state is NOT preparatoria', async () => {
+            mockPrismaService.marea.findUnique.mockResolvedValue({
+                id: mareaId,
+                anioMarea: 2024,
+                estadoActual: estadoEjecucion
             });
             const dto = { anioMarea: 2025 };
             await expect(service.update(mareaId, dto as any, { id: 'user-id' } as any))
-                .rejects.toThrow(/Solo se puede modificar el número, año y tipo de marea/);
+                .rejects.toThrow(/No se pueden modificar los datos de identidad, buque, observador, pesquería o arte de pesca/);
         });
 
-        it('should throw BadRequestException if modifying nroMarea and state is NOT DESIGNADA', async () => {
-            mockPrismaService.marea.findUnique.mockResolvedValue({ 
-                id: mareaId, 
-                nroMarea: 100, 
-                estadoActual: estadoEjecucion 
+        it('should throw BadRequestException if modifying nroMarea and state is NOT preparatoria', async () => {
+            mockPrismaService.marea.findUnique.mockResolvedValue({
+                id: mareaId,
+                nroMarea: 100,
+                estadoActual: estadoEjecucion
             });
             const dto = { nroMarea: 101 };
             await expect(service.update(mareaId, dto as any, { id: 'user-id' } as any))
-                .rejects.toThrow(/Solo se puede modificar el número, año y tipo de marea/);
+                .rejects.toThrow(/No se pueden modificar los datos de identidad, buque, observador, pesquería o arte de pesca/);
         });
 
-        it('should throw BadRequestException if modifying tipoMarea and state is NOT DESIGNADA', async () => {
-            mockPrismaService.marea.findUnique.mockResolvedValue({ 
-                id: mareaId, 
-                tipoMarea: 'MC', 
-                estadoActual: estadoEjecucion 
+        it('should throw BadRequestException if modifying tipoMarea and state is NOT preparatoria', async () => {
+            mockPrismaService.marea.findUnique.mockResolvedValue({
+                id: mareaId,
+                tipoMarea: 'MC',
+                estadoActual: estadoEjecucion
             });
             const dto = { tipoMarea: 'CI' };
             await expect(service.update(mareaId, dto as any, { id: 'user-id' } as any))
-                .rejects.toThrow(/Solo se puede modificar el número, año y tipo de marea/);
+                .rejects.toThrow(/No se pueden modificar los datos de identidad, buque, observador, pesquería o arte de pesca/);
         });
     });
 
@@ -173,10 +184,10 @@ describe('MareasService', () => {
         it('should throw BadRequestException if assigning an observer with impediment', async () => {
             const mareaId = 'marea-uuid';
             const observerId = 'obs-uuid';
-            mockPrismaService.marea.findUnique.mockResolvedValue({ 
+            mockPrismaService.marea.findUnique.mockResolvedValue({
                 id: mareaId,
                 observadorPrincipalId: 'old-obs',
-                estadoActual: { codigo: 'DESIGNADA' } 
+                estadoActual: { codigo: 'DESIGNADA' }
             });
             mockPrismaService.observador.findUnique.mockResolvedValue({ conImpedimento: true, motivoImpedimento: 'Licencia medica' });
             await expect(service.update(mareaId, { observadorId: observerId } as any, { id: 'user-id' } as any)).rejects.toThrow(/No se puede asignar el observador porque posee un impedimento/);
@@ -241,10 +252,10 @@ describe('MareasService', () => {
 
         it('update should protect existing fuentes in stages', async () => {
             const existingEtapa = { id: etapaId, mareaId: mareaId, fuentesZarpada: { sources: ['PNA'] } };
-            mockPrismaService.marea.findUnique.mockResolvedValue({ 
-                id: mareaId, 
-                etapas: [], 
-                estadoActual: { codigo: 'DESIGNADA' } 
+            mockPrismaService.marea.findUnique.mockResolvedValue({
+                id: mareaId,
+                etapas: [],
+                estadoActual: { codigo: 'DESIGNADA' }
             });
             mockPrismaService.mareaEtapa.findFirst.mockResolvedValue(existingEtapa);
 

@@ -107,7 +107,7 @@
                 <div class="md:col-span-2 space-y-1.5">
                   <label class="text-xs font-bold uppercase tracking-wider text-text-muted">Observador Designado</label>
                   <SearchableSelect v-model="marea.observador_principal_id" :options="observadorCatalogOptions"
-                    placeholder="Seleccione observador principal..." :icon="BeakerIcon" :disabled="isReadOnly" />
+                    placeholder="Seleccione observador principal..." :icon="BeakerIcon" :disabled="!canEditDesignationFields" />
                 </div>
               </div>
             </div>
@@ -122,17 +122,17 @@
                 <div class="space-y-1.5">
                   <label class="text-xs font-bold uppercase tracking-wider text-text-muted">Buque Seleccionado</label>
                   <SearchableSelect v-model="marea.id_buque" :options="buqueOptions" placeholder="Seleccione buque..."
-                    :disabled="isReadOnly" />
+                    :disabled="!canEditDesignationFields" />
                 </div>
                 <div class="space-y-1.5">
                   <label class="text-xs font-bold uppercase tracking-wider text-text-muted">Pesquería</label>
                   <SearchableSelect v-model="marea.id_pesqueria" :options="pesqueriaOptions"
-                    placeholder="Seleccione pesquería..." :disabled="isReadOnly" />
+                    placeholder="Seleccione pesquería..." :disabled="!canEditDesignationFields" />
                 </div>
                 <div class="space-y-1.5">
                   <label class="text-xs font-bold uppercase tracking-wider text-text-muted">Arte Principal</label>
                   <SearchableSelect v-model="marea.id_arte_principal" :options="arteOptions"
-                    placeholder="Seleccione arte..." :disabled="isReadOnly" />
+                    placeholder="Seleccione arte..." :disabled="!canEditDesignationFields" />
                 </div>
                 <div class="space-y-1.5">
                   <label class="text-xs font-bold uppercase tracking-wider text-text-muted">Fecha Zarpada Est.</label>
@@ -593,7 +593,7 @@ const isReadOnly = computed(() => {
 })
 
 const canEditDesignationFields = computed(() => {
-  return !isReadOnly.value && marea.value.estado_codigo === 'DESIGNADA'
+  return !isReadOnly.value && (marea.value.estado_codigo === 'DESIGNADA' || marea.value.estado_codigo === 'A_REASIGNAR')
 })
 
 const tabs = [
