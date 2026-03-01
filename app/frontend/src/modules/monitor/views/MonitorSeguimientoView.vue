@@ -6,7 +6,7 @@
         <!-- THE MAP (Background) -->
         <div class="absolute inset-0">
           <MapMonitor ref="mapMonitor" class="w-full h-full" :fleet="fleet" :activeLayers="mapLayers"
-            :isMobile="isMobile" :filterPesqueria="selectedPesqueria"
+            :isMobile="isMobile" :filterPesqueria="selectedPesqueria" :selectedId="selectedVesselId"
             @update:mouse-coords="mouseCoords = $event" @seek-vessel="handleSeekVessel"
             @select-vessel="setSelectedVessel" />
         </div>
@@ -26,9 +26,9 @@
               <Transition name="hud-fade">
                 <VesselInfoCard v-if="activeVessel && (!leftSidebarOpen || isSingleMareaMode || isMobile)"
                   :vesselName="activeVessel.name" :mareaCode="activeVessel.mareaCode || '--'"
-                  :position="{ lat: currentPoint?.lat || 0, lon: currentPoint?.lon || 0 }"
-                  :timestamp="currentPoint?.timestamp?.toString() || ''" :speed="currentPoint?.speed || 0"
-                  :course="currentPoint?.course || 0" :lastUpdate="activeVessel.lastUpdate" :layers="mapLayers"
+                  :position="{ lat: displayPoint?.lat || 0, lon: displayPoint?.lon || 0 }"
+                  :timestamp="displayPoint?.timestamp?.toString() || ''" :speed="displayPoint?.speed || 0"
+                  :course="displayPoint?.course || 0" :lastUpdate="activeVessel.lastUpdate" :layers="mapLayers"
                   :isSingleMode="isSingleMareaMode" :hideLayerControls="isMobile" :isCompact="isMobile"
                   @update:layer="handleLayerToggle" @close-card="selectedVesselId = null" />
               </Transition>
@@ -42,9 +42,9 @@
               <Transition name="hud-fade">
                 <VesselInfoCard v-if="activeVessel && (leftSidebarOpen && !isSingleMareaMode && !isMobile)"
                   :vesselName="activeVessel.name" :mareaCode="activeVessel.mareaCode || '--'"
-                  :position="{ lat: currentPoint?.lat || 0, lon: currentPoint?.lon || 0 }"
-                  :timestamp="currentPoint?.timestamp?.toString() || ''" :speed="currentPoint?.speed || 0"
-                  :course="currentPoint?.course || 0" :lastUpdate="activeVessel.lastUpdate" :layers="mapLayers"
+                  :position="{ lat: displayPoint?.lat || 0, lon: displayPoint?.lon || 0 }"
+                  :timestamp="displayPoint?.timestamp?.toString() || ''" :speed="displayPoint?.speed || 0"
+                  :course="displayPoint?.course || 0" :lastUpdate="activeVessel.lastUpdate" :layers="mapLayers"
                   :isSingleMode="isSingleMareaMode" @update:layer="handleLayerToggle" />
               </Transition>
             </div>
@@ -215,6 +215,15 @@ const currentPoint = computed(() => {
   return activeVessel.value.points[activeVessel.value.currentIndex] || null
 })
 
+const displayPoint = computed(() => {
+  // Priorizamos el punto actual del reproductor (si existe historial)
+  if (currentPoint.value) return currentPoint.value
+  
+  // Fallback: Si el historial está vacío o el índice no es válido,
+  // usamos la última posición conocida reportada por la flota
+  return activeVessel.value?.lastKnownPoint || null
+})
+
 // --- Methods ---
 
 const generateLightColor = (id: string) => {
@@ -307,8 +316,8 @@ const fetchFleet = async () => {
         to = new Date(new Date(to).getTime() + 6 * 60 * 60 * 1000).toISOString();
       }
 
-      // Regla para DESIGNADAS sin rango (ventana deslizante 12h)
-      if (!from && marea.mareaStatus === 'DESIGNADA') {
+      // Regla para DESIGNADAS: Ventana deslizante 12h (Aunque tenga fecha estimada, priorizamos actividad reciente)
+      if (marea.mareaStatus === 'DESIGNADA') {
         const now = new Date();
         to = now.toISOString();
         from = new Date(now.getTime() - 12 * 60 * 60 * 1000).toISOString();
@@ -356,7 +365,14 @@ const fetchSingleMarea = async (mareaId: string) => {
       voyageEnd: marea.voyageEnd,
       lastUpdate: marea.lastUpdate,
       totalDays: marea.totalDays,
-      etapas: marea.etapas
+      etapas: marea.etapas,
+      lastKnownPoint: (marea.lat !== null && marea.lon !== null) ? {
+        lat: marea.lat,
+        lon: marea.lon,
+        timestamp: marea.lastUpdate,
+        speed: marea.speed,
+        course: marea.course
+      } : null
     }
 
     if (marea.lastTrackingUpdate) {
@@ -376,13 +392,14 @@ const fetchSingleMarea = async (mareaId: string) => {
       to = new Date(new Date(to).getTime() + 6 * 60 * 60 * 1000).toISOString();
     }
 
-    // Regla para DESIGNADAS sin rango (ventana deslizante 12h)
-    // En el modo single, si no hay voyageStart usamos el fallback (marea.mareaStatus o marea.estado)
-    if (!from && (marea.mareaStatus === 'DESIGNADA' || marea.estado === 'DESIGNADA')) {
+    // Regla para DESIGNADAS: Ventana deslizante 12h (En modo single también priorizamos actividad reciente)
+    if (marea.mareaStatus === 'DESIGNADA' || marea.estado === 'DESIGNADA') {
       const now = new Date();
       to = now.toISOString();
       from = new Date(now.getTime() - 12 * 60 * 60 * 1000).toISOString();
     }
+
+    console.log(`[Trajectory] Cargando marea ${marea.mareaCode} (${marea.id}). Rango: ${from || 'Inicio'} -> ${to || 'Fin'}`);
 
     fetchVesselHistory(marea.buqueId, marea.id, from, to)
     pendingZoomVesselId.value = marea.id // Ensure zoom to this marea
@@ -599,6 +616,9 @@ const initializeMonitor = () => {
     mapLayers.value.showVesselNames = false
     fetchSingleMarea(mareaId)
   } else {
+    // Restablecer capas por defecto para modo FLOTA
+    mapLayers.value.showAllVessels = true
+    mapLayers.value.showVesselNames = false
     leftSidebarOpen.value = true
     rightSidebarOpen.value = false
     fetchFleet()

@@ -51,6 +51,7 @@ const props = defineProps<{
   }
   isMobile?: boolean
   filterPesqueria?: string
+  selectedId?: string | null
 }>()
 
 const emit = defineEmits(['update:mouse-coords', 'seek-vessel', 'select-vessel'])
@@ -151,8 +152,11 @@ const updateAll = () => {
       }
     }
 
-    // Renderizar marcador si showAllVessels es true o si es el buque seleccionado
-    if (props.activeLayers.showAllVessels || vessel.visible) {
+    // Renderizar marcador si:
+    // 1. showAllVessels es true (comportamiento estándar de flota)
+    // 2. o si la trayectoria es visible (vessel.visible)
+    // 3. o si es el buque seleccionado explícitamente (props.selectedId)
+    if (props.activeLayers.showAllVessels || vessel.visible || (props.selectedId === vessel.id)) {
       renderMarker(vessel)
     }
   })

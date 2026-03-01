@@ -438,6 +438,11 @@ export class TrackingService {
             where: { key: 'LAST_TRACKING_UPDATE' }
         });
 
+        const lastPoint = await this.prisma.buqueTrayectoriaPunto.findFirst({
+            where: { buqueId: marea.buqueId },
+            orderBy: { timestamp: 'desc' }
+        });
+
         return {
             id: marea.id,
             buqueId: marea.buqueId,
@@ -451,6 +456,10 @@ export class TrackingService {
             voyageEnd: voyageEnd?.toISOString(),
             lastUpdate: marea.fechaUltimaActualizacion,
             lastTrackingUpdate: lastTrackingStatus?.value || null,
+            lat: lastPoint?.lat || null,
+            lon: lastPoint?.lon || null,
+            speed: lastPoint?.velocidad || 0,
+            course: lastPoint?.rumbo || 0,
             totalDays: MareaUtils.calculateNavigatedDays(marea),
             etapas: marea.etapas.map(e => ({
                 ...e,
