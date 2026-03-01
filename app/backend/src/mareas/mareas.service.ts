@@ -1997,8 +1997,8 @@ export class MareasService {
                         mareaId: id,
                         fechaHora: new Date(),
                         usuarioId: user.id,
-                        tipoEvento: 'EDICION_ESTRUCTURA',
-                        detalle: `Edición manual de etapas y fechas de observador.`
+                        tipoEvento: payload.tipoEvento || 'EDICION_ESTRUCTURA',
+                        detalle: payload.motivoDetalle || `Edición manual de etapas y fechas de observador.`
                     }
                 });
 
@@ -2174,24 +2174,24 @@ export class MareasService {
                     mareaId: id,
                     fechaHora: fechaMovimiento,
                     usuarioId: user.id,
-                    tipoEvento: 'CAMBIO_ESTADO',
+                    tipoEvento: payload.tipoEvento || 'CAMBIO_ESTADO',
                     estadoDesdeId: marea.estadoActualId,
                     estadoHastaId: destinoEstadoId,
                     cantidadMuestrasOtolitos: actionKey === 'RECIBIR_DATOS' ? (payload.cantidadOtolitos || null) : null,
-                    detalle: actionKey === 'REGISTRAR_INICIO'
-                        ? `Inicio Marea.Obs: ${new Date(additionalMareaData.fechaInicioObservador).toLocaleDateString('es-AR')} `
+                    detalle: payload.motivoDetalle || (actionKey === 'REGISTRAR_INICIO'
+                        ? `Inicio Marea. Obs: ${new Date(additionalMareaData.fechaInicioObservador).toLocaleDateString('es-AR')}`
                         : actionKey === 'REGISTRAR_FINALIZACION'
-                            ? `Fin Marea.Obs: ${additionalMareaData.fechaFinObservador ? new Date(additionalMareaData.fechaFinObservador).toLocaleDateString('es-AR') : 'Sin fecha definida'} `
+                            ? `Fin Marea. Obs: ${additionalMareaData.fechaFinObservador ? new Date(additionalMareaData.fechaFinObservador).toLocaleDateString('es-AR') : 'Sin fecha definida'}`
                             : actionKey === 'FINALIZAR_POR_ARRIBO'
-                                ? `Marea finalizada automáticamente por arribo a puerto(designación activa).`
+                                ? `Marea finalizada automáticamente por arribo a puerto (designación activa).`
                                 : actionKey === 'RECIBIR_DATOS'
-                                    ? `Recepción de datos.Otolitos: ${payload.cantidadOtolitos || 0} `
-                                    : `Acción: ${transicion.etiqueta} `,
+                                    ? `Recepción de datos. Otolitos: ${payload.cantidadOtolitos || 0}`
+                                    : `Acción: ${transicion.etiqueta}`),
                     comentarios: payload.comentarios,
                     archivos: (actionKey === 'RECIBIR_DATOS' && payload.archivosSnapshot) ? {
                         create: payload.archivosSnapshot.map((a: any) => ({
                             tipoArchivo: 'DIGITAL_ORIGINAL',
-                            rutaArchivo: `received / ${id}/${a.name}`,
+                            rutaArchivo: `received/${id}/${a.name}`,
                             descripcion: `Archivo recibido: ${a.name} (${(a.size / 1024).toFixed(2)} KB)`,
                             formato: a.name.split('.').pop()?.toUpperCase(),
                         }))
