@@ -393,7 +393,8 @@ export class TrackingService {
                     }
                 },
                 observadorPrincipal: true,
-                estadoActual: true
+                estadoActual: true,
+                pesqueria: true
             }
         });
 
@@ -449,7 +450,9 @@ export class TrackingService {
             name: marea.buque.nombreBuque,
             matricula: marea.buque.matricula,
             mareaCode: `${marea.nroMarea}/${marea.anioMarea}`,
-            pesquerias_nombres: marea.etapas.map(e => e.pesqueria?.nombre).filter(n => !!n),
+            pesquerias_nombres: marea.etapas.length > 0
+                ? marea.etapas.map(e => e.pesqueria?.nombre).filter(n => !!n)
+                : (marea.pesqueria?.nombre ? [marea.pesqueria.nombre] : []),
             flota: marea.buque.tipoFlota?.nombre || 'Indeterminada',
             observer: marea.observadorPrincipal?.apellido ? `${marea.observadorPrincipal.apellido}, ${marea.observadorPrincipal.nombre}` : 'Sin asignar',
             voyageStart: voyageStart?.toISOString(),
@@ -485,7 +488,8 @@ export class TrackingService {
                     }
                 },
                 observadorPrincipal: true,
-                estadoActual: true
+                estadoActual: true,
+                pesqueria: true
             }
         });
 
@@ -557,7 +561,9 @@ export class TrackingService {
                 mareaId: marea.id,
                 mareaStatus: marea.estadoActual?.codigo || 'EN_EJECUCION',
                 mareaCode: `${marea.tipoMarea}-${marea.nroMarea}-${marea.anioMarea.toString().slice(-2)}`,
-                pesquerias_nombres: marea.etapas.map(e => e.pesqueria?.nombre).filter(n => !!n),
+                pesquerias_nombres: marea.etapas.length > 0
+                    ? marea.etapas.map(e => e.pesqueria?.nombre).filter(n => !!n)
+                    : (marea.pesqueria?.nombre ? [marea.pesqueria.nombre] : []),
                 flota: marea.buque.tipoFlota?.nombre || 'Indeterminada',
                 observer: marea.observadorPrincipal
                     ? `${marea.observadorPrincipal.apellido} ${marea.observadorPrincipal.nombre}`
