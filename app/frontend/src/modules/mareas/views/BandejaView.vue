@@ -239,7 +239,7 @@
 
             <!-- Search & Sort -->
             <div class="flex items-center gap-3">
-              <SearchInput v-model="searchQuery" placeholder="Buscar por buque, marea, observador..." />
+              <SearchInput v-model="searchQuery" placeholder="Buscar por buque, marea, observador..." class="w-full sm:w-96" />
               <button @click="sortBy = sortBy === 'buque' ? 'observador' : 'buque'"
                 class="p-2.5 bg-background border border-border rounded-xl text-text-muted hover:text-text transition-all shadow-sm flex items-center gap-2"
                 :title="`Ordenar por: ${sortBy === 'buque' ? 'Buque' : 'Observador'}`">
@@ -279,7 +279,7 @@
             </div>
 
             <div class="w-full md:w-96">
-              <SearchInput v-model="historySearchQuery" placeholder="Buscar en el historial..." />
+              <SearchInput v-model="historySearchQuery" placeholder="Buscar en el historial..." class="w-full sm:w-96" />
             </div>
           </div>
 

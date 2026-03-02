@@ -44,6 +44,8 @@
 
         <!-- Search & Filter Area -->
         <div class="px-4 py-3 bg-surface/5 border-b border-border/5 space-y-3">
+
+          <SearchInput v-model="searchQuery" placeholder="Marea, buque u observador..." size="sm" />
           <!-- Fishery Filter -->
           <div class="relative group">
             <select v-model="selectedPesqueria"
@@ -59,8 +61,6 @@
               </svg>
             </div>
           </div>
-
-          <SearchInput v-model="searchQuery" placeholder="Marea, buque u observador..." size="sm" />
         </div>
 
 

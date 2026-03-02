@@ -1,5 +1,5 @@
 <template>
-  <div class="relative w-full sm:w-64">
+  <div class="relative w-full">
     <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-text-muted">
       <SearchIcon class="w-4 h-4" />
     </span>

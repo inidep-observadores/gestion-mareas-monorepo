@@ -40,7 +40,6 @@
               :model-value="filters.busqueda || ''"
               @update:model-value="filters.busqueda = $event"
               placeholder="Buscar por usuario, ruta..."
-              class="!w-full"
             />
         </div>
 
