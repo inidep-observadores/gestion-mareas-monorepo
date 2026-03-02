@@ -35,7 +35,7 @@
                     </option>
                   </select>
                 </div>
-                <SearchInput v-model="searchQuery" placeholder="Buscar buque o marea..." />
+                <SearchInput v-model="searchQuery" class="md:w-96" placeholder="Buscar buque o marea..." />
                 <button v-if="!isReadOnly" @click="router.push('/mareas/nueva')"
                   class="flex items-center justify-center gap-2 px-4 py-2 bg-primary text-primary-fg rounded-xl text-sm font-bold hover:bg-primary-hover transition-all shadow-lg shadow-primary/20 active:scale-95">
                   <PlusIcon class="w-4 h-4" />
