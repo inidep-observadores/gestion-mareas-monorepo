@@ -13,6 +13,7 @@
     "dev": "pnpm --filter sigma-backend --filter sigma-frontend --parallel run dev",
     "build": "pnpm -r run build",
     "lint": "pnpm -r run lint",
-    "test": "pnpm -r run test"
+    "test": "pnpm -r run test",
+    "prisma:studio": "pnpm --filter sigma-backend exec prisma studio"
   }
 }

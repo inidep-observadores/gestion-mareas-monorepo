@@ -26,7 +26,8 @@
     "seed:minimal": "ts-node prisma/seed-minimal.ts",
     "seed:prod": "node prisma/seed-minimal.js",
     "test:smtp": "ts-node src/mail/scripts/test-smtp.ts",
-    "test:smtp:prod": "node dist/src/mail/scripts/test-smtp.js"
+    "test:smtp:prod": "node dist/src/mail/scripts/test-smtp.js",
+    "prisma:studio": "prisma studio"
   },
   "dependencies": {
     "@nestjs-modules/mailer": "^2.0.2",
