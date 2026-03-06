@@ -194,8 +194,19 @@ export class AlertAutomationService {
         } else if (tipo === 'ARRIBO' || tipo === 'POSIBLE_ARRIBO' || tipo === 'RECOMENDACION_FIN_MAREA') {
             if (marea.estadoActual.codigo === 'EN_EJECUCION') {
                 // REGLA: Si es una RECOMENDACIÓN de fin de marea (hay otra esperando), finalizamos la marea.
-                // Si es un ARRIBO normal, solo cerramos la etapa mediante EDITAR_ETAPAS (mantiene estado EN_EJECUCION).
-                actionKey = tipo === 'RECOMENDACION_FIN_MAREA' ? 'REGISTRAR_FINALIZACION' : 'EDITAR_ETAPAS';
+                // Opcional/Flag: Si la última etapa de la marea tiene la intención de cierre manual activada, también finalizamos.
+                // Si es un ARRIBO normal sin flag, solo cerramos la etapa mediante EDITAR_ETAPAS (mantiene estado EN_EJECUCION).
+
+                let tieneIntencionCierre = false;
+                if (marea.etapas && marea.etapas.length > 0) {
+                    const ultimaEtapa = marea.etapas[marea.etapas.length - 1];
+                    const metadata = ultimaEtapa.metadata as import('../mareas/interfaces/marea-etapa-metadata.interface').MareaEtapaMetadata;
+                    if (metadata?.opcionesCierre?.finalizarMareaAlArribo === true) {
+                        tieneIntencionCierre = true;
+                    }
+                }
+
+                actionKey = (tipo === 'RECOMENDACION_FIN_MAREA' || tieneIntencionCierre) ? 'REGISTRAR_FINALIZACION' : 'EDITAR_ETAPAS';
 
                 const portName = metadataValue(sources, 'portName') || (alert.metadata as any)?.portName || 'Puerto Desconocido';
                 const sourcesStr = sources.map((s: any) => s.name).join(' y ');

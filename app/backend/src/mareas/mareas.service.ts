@@ -2131,24 +2131,16 @@ export class MareasService {
                             actionKey = 'FINALIZAR_POR_ARRIBO'; // Sobrescribimos lógicamente la acción para el historial
                         }
                     } else if (motivoCierre === 'RECOMENDADO_POR_INTENCION' && actionKey !== 'FINALIZAR_POR_ARRIBO') {
-                        // Generar alerta de recomendación de cierre pero NO cambiar el estado del flujo
-                        await this.alertsService.create({
-                            codigoUnico: `REC_FIN_${marea.id}_${ultimaEtapaRecibida.id} `,
-                            tipo: 'RECOMENDACION_FIN_MAREA',
-                            titulo: 'Recomendación de Fin de Marea',
-                            descripcion: `El usuario marcó la intención de finalizar la marea al arribo de esta etapa(${ultimaEtapaRecibida.nroEtapa}).`,
-                            estado: AlertaEstado.PENDIENTE,
-                            prioridad: AlertaPrioridad.MEDIA,
-                            referenciaId: marea.id,
-                            referenciaTipo: 'MAREA',
-                            metadata: {
-                                mareaId: marea.id,
-                                etapaId: ultimaEtapaRecibida.id,
-                                trigger: 'INTENCION_MANUAL_ARRIBO'
-                            }
-                        }, user);
-
-                        this.logger.log(`Generada alerta de recomendación de cierre para marea ${marea.id} por intención manual en etapa ${ultimaEtapaRecibida.nroEtapa} `);
+                        // TODO: Si en el futuro se desea restaurar el comportamiento de solo alerta, 
+                        // modificar aquí para usar alertsService.create y no cambiar el estado.
+                        // Actualmente, RECOMENDADO_POR_INTENCION opera igual que FORZADO_POR_DESIGNACION.
+                        const estadoFinalizacion = await tx.estadoMarea.findFirst({
+                            where: { codigo: MareaEstado.ESPERANDO_ENTREGA }
+                        });
+                        if (estadoFinalizacion) {
+                            destinoEstadoId = estadoFinalizacion.id;
+                            actionKey = 'FINALIZAR_POR_ARRIBO'; // Sobrescribimos lógicamente la acción para el historial
+                        }
                     }
                 }
             }
