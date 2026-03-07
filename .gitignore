@@ -40,6 +40,7 @@ app/backend/backups/
 app/backend/backups-staging/
 app/backend/data-exports/
 app/backend/uploads/
+app/backend/outputs/
 app/backend/test-results/
 
 
