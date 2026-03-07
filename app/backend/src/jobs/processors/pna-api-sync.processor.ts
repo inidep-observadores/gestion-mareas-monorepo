@@ -14,8 +14,9 @@ export class PnaApiSyncProcessor implements JobProcessor {
         try {
             const fromDate = payload?.fromDate ? new Date(payload.fromDate) : undefined;
             const toDate = payload?.toDate ? new Date(payload.toDate) : undefined;
+            const onlyIngest = payload?.onlyIngest === true;
 
-            const summary = await this.pnaApiService.processMovements(fromDate, toDate);
+            const summary = await this.pnaApiService.processMovements(fromDate, toDate, onlyIngest);
 
             // Solo si tuvo éxito (no lanzó error), actualizamos la fecha de última sincronización
             if (summary.processed > 0 || !fromDate) {

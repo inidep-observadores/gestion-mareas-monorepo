@@ -75,7 +75,7 @@ const alertsAdminApi = {
         await httpClient.post('/pna-api/config', config);
     },
 
-    syncManual: async (params: { type: 'API' | 'TRACKING', fromDate: string, toDate: string }): Promise<any> => {
+    syncManual: async (params: { type: 'API' | 'TRACKING', fromDate: string, toDate: string, onlyIngest?: boolean }): Promise<any> => {
         const { data } = await httpClient.post('/pna-api/sync-manual', params);
         return data;
     }

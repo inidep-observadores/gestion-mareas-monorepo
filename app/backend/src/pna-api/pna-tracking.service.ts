@@ -25,7 +25,7 @@ export class PnaTrackingService {
     /**
      * Orquestador que decide el rango y encola las tareas fragmentadas.
      */
-    async scheduleSynchronization(manualFromDate?: Date, manualToDate?: Date) {
+    async scheduleSynchronization(manualFromDate?: Date, manualToDate?: Date, onlyIngest = false) {
         try {
             const now = DateTime.now().toUTC();
 
@@ -64,7 +64,8 @@ export class PnaTrackingService {
                     fromDate: currentFrom.toJSDate().toISOString(),
                     toDate: nextTo.toJSDate().toISOString(),
                     // El último fragmento marcará la fecha de éxito definitiva
-                    isLastBlock: nextTo >= toDate
+                    isLastBlock: nextTo >= toDate,
+                    onlyIngest
                 };
 
                 const nextRunAt = new Date(Date.now() + (delayCounter * rateLimitMs));
@@ -92,7 +93,7 @@ export class PnaTrackingService {
     /**
      * Sincroniza posiciones históricas desde PNA para un rango específico.
      */
-    async syncTrackingData(fromDate: Date, toDate: Date) {
+    async syncTrackingData(fromDate: Date, toDate: Date, onlyIngest = false) {
         try {
             const startRange = DateTime.fromJSDate(fromDate).toUTC();
             const endRange = DateTime.fromJSDate(toDate).toUTC();
@@ -139,6 +140,7 @@ export class PnaTrackingService {
                         matricula: points[0].matricula,
                         mmsi: points[0].mmsi
                     },
+                    onlyIngest,
                     points: points.map(p => ({
                         timestamp: DateTime.fromFormat(p.fecha, 'yyyy-MM-dd HH:mm:ss', { zone: 'utc' }).isValid ? DateTime.fromFormat(p.fecha, 'yyyy-MM-dd HH:mm:ss', { zone: 'utc' }).toJSDate() : DateTime.fromISO(p.fecha, { zone: 'utc' }).toJSDate(),
                         lat: parseFloat(p.latitud),

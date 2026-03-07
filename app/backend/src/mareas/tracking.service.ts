@@ -31,6 +31,7 @@ export interface VesselTrackingBatch {
         matriculaSiop?: string;
         mmsi?: string;
     };
+    onlyIngest?: boolean;
     points: {
         timestamp: Date;
         lat: number;
@@ -255,7 +256,7 @@ export class TrackingService {
             });
             inserted = dbResult.count;
 
-            if (inserted > 0) {
+            if (inserted > 0 && !batch.onlyIngest) {
                 // 3. Análisis de Eventos (Zarpadas/Arribos)
                 alerts = await this.detectPortEvents(buqueId, pointsToInsert);
 

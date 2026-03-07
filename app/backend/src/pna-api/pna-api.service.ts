@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
 import { PrismaService } from '../prisma/prisma.service';
 import { AlertsService } from '../alerts/alerts.service';
+import { JobQueueService } from '../jobs/job-queue.service';
 import { PnaApiParser } from './pna-api.parser';
 import { PnaReporteCostera } from './pna-api.interfaces';
 import { DateTime } from 'luxon';
@@ -33,14 +34,16 @@ export class PnaApiService {
         private parser: PnaApiParser,
         private correlationService: EventCorrelationService,
         private configService: ConfigService,
+        private jobQueueService: JobQueueService,
     ) { }
 
     /**
     * Main processing method - reads mock file and processes reports
-    * @param fromDate Optional start date. If not provided, uses LAST_PNA_SYNC from system_status
+    * @param fromDate Optional start date.
     * @param toDate Optional end date. Defaults to now.
+    * @param onlyIngest If true, skips alert generation and only persists historical data.
     */
-    async processMovements(fromDate?: Date, toDate?: Date): Promise<ProcessingSummary> {
+    async processMovements(fromDate?: Date, toDate?: Date, onlyIngest = false): Promise<ProcessingSummary> {
         const summary: ProcessingSummary = {
             total: 0,
             processed: 0,
@@ -118,6 +121,11 @@ export class PnaApiService {
                     // 3. Persistencia Histórica (Mapeo 1 a 1 de la API)
                     await this.persistHistoricalData(reporte);
 
+                    if (onlyIngest) {
+                        summary.processed++;
+                        continue;
+                    }
+
                     const result = await this.processSingleReport(reporte);
 
                     if (result.processed) {
@@ -137,6 +145,58 @@ export class PnaApiService {
             return summary;
         } catch (error) {
             this.logger.error('Error in processMovements:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Programa la sincronización manual fragmentando rangos largos si es necesario.
+     */
+    async scheduleManualSynchronization(manualFromDate: Date, manualToDate: Date, onlyIngest = false) {
+        try {
+            const fromDate = DateTime.fromJSDate(manualFromDate).toUTC();
+            const toDate = DateTime.fromJSDate(manualToDate).toUTC();
+
+            if (fromDate >= toDate) {
+                throw new Error('La fecha desde debe ser anterior a la fecha hasta');
+            }
+
+            const safeRangeDays = parseInt(this.configService.get<string>('PNA_API_SYNC_SAFE_RANGE_DAYS') || '20', 10);
+            const rateLimitMs = parseInt(this.configService.get<string>('PNA_API_SYNC_RATE_LIMIT_MS') || '5000', 10);
+
+            let currentFrom = fromDate;
+            let delayCounter = 0;
+            let queuedJobs = 0;
+
+            this.logger.log(`Programando sincronización manual de PNA desde ${fromDate.toISO()} hasta ${toDate.toISO()} (OnlyIngest: ${onlyIngest})`);
+
+            while (currentFrom < toDate) {
+                let nextTo = currentFrom.plus({ days: safeRangeDays });
+                if (nextTo > toDate) nextTo = toDate;
+
+                const payload = {
+                    fromDate: currentFrom.toJSDate().toISOString(),
+                    toDate: nextTo.toJSDate().toISOString(),
+                    onlyIngest
+                };
+
+                const nextRunAt = new Date(Date.now() + (delayCounter * rateLimitMs));
+
+                await this.jobQueueService.addJob(
+                    'PNA_API_SYNC' as any,
+                    payload,
+                    50, // Prioridad media-alta para manuales
+                    nextRunAt
+                );
+
+                currentFrom = nextTo;
+                delayCounter++;
+                queuedJobs++;
+            }
+
+            return { success: true, queuedJobs };
+        } catch (error) {
+            this.logger.error('Error al programar sincronización manual de PNA:', error);
             throw error;
         }
     }
