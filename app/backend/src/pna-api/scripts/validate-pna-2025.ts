@@ -105,28 +105,40 @@ async function validatePna2025() {
 }
 
 async function validateEvent(prisma: any, marea: any, etapa: any, type: string, systemDate: Date, systemPort: any, tz: string) {
-    const windowStart = DateTime.fromJSDate(systemDate).minus({ hours: 24 }).toJSDate();
-    const windowEnd = DateTime.fromJSDate(systemDate).plus({ hours: 24 }).toJSDate();
+    const windowStart = DateTime.fromJSDate(systemDate).minus({ hours: 48 }).toJSDate();
+    const windowEnd = DateTime.fromJSDate(systemDate).plus({ hours: 48 }).toJSDate();
 
     // Buscar en el histórico de PNA
-    const buqueCriteria: any = marea.buque.idMbpc
-        ? { idBuqueMbpc: marea.buque.idMbpc }
-        : { matricula: marea.buque.matricula };
+    // Normalización de identificadores para evitar problemas con ceros a la izquierda
+    const normalizeId = (id: string | null | undefined) => id ? id.trim().replace(/^0+/, '') : null;
+    const mbpcNormalized = normalizeId(marea.buque.idMbpc);
+    const matriculaNormalized = normalizeId(marea.buque.matricula);
 
-    const pnaMatch = await prisma.pnaZarpadaArribo.findFirst({
+    const buqueCriteria: any = {
+        OR: [
+            mbpcNormalized ? { idBuqueMbpc: { in: [marea.buque.idMbpc, mbpcNormalized].filter((v, i, a) => v && a.indexOf(v) === i) } } : undefined,
+            matriculaNormalized ? { matricula: { in: [marea.buque.matricula, matriculaNormalized].filter((v, i, a) => v && a.indexOf(v) === i) } } : undefined
+        ].filter(Boolean)
+    };
+
+    const pnaMatches = await prisma.pnaZarpadaArribo.findMany({
         where: {
             ...buqueCriteria,
             estado: type,
             fecha: { gte: windowStart, lte: windowEnd }
-        },
-        orderBy: {
-            fecha: 'asc'
         }
     });
 
-    if (!pnaMatch) {
-        return { status: 'NOT_FOUND', pnaDate: null, pnaPortName: null, diffMin: null, comments: 'No se encontró registro en ventana de +/- 24h' };
+    if (pnaMatches.length === 0) {
+        return { status: 'NOT_FOUND', pnaDate: null, pnaPortName: null, diffMin: null, comments: 'No se encontró registro en ventana de +/- 48h' };
     }
+
+    // Seleccionar el registro más cercano temporalmente al sistema
+    const pnaMatch = pnaMatches.reduce((prev: any, curr: any) => {
+        const prevDiff = Math.abs(systemDate.getTime() - prev.fecha.getTime());
+        const currDiff = Math.abs(systemDate.getTime() - curr.fecha.getTime());
+        return currDiff < prevDiff ? curr : prev;
+    });
 
     const diffMillis = Math.abs(systemDate.getTime() - pnaMatch.fecha.getTime());
     const diffMin = Math.round(diffMillis / (1000 * 60));
