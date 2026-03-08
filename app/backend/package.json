@@ -29,7 +29,7 @@
     "test:smtp:prod": "node dist/src/mail/scripts/test-smtp.js",
     "validate:pna:2024": "ts-node src/pna-api/scripts/validate-pna-2024.ts",
     "validate:pna:2025": "ts-node src/pna-api/scripts/validate-pna-2025.ts",
-    "enqueue:vessels:sync": "ts-node src/pna-api/scripts/enqueue-vessels-sync.ts",
+    "validate:pna:2026": "ts-node src/pna-api/scripts/validate-pna-2026.ts",
     "prisma:studio": "prisma studio"
   },
   "dependencies": {
