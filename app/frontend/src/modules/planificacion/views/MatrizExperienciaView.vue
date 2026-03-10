@@ -411,7 +411,7 @@ const getVisibleFlotasForPesqueria = (pesqId: string) => {
 
 // Observadores filtrados por criterios de búsqueda y combos (sin el filtro de "tiene relación")
 const filteredObservadoresBase = computed(() => {
-  let list = observadores.value.slice();
+  const list = observadores.value.slice();
   const search = filterSearch.value?.toLowerCase().trim() || '';
   const contrato = filterContrato.value;
   const tipo = filterTipo.value;

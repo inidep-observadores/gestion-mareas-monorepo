@@ -15,7 +15,7 @@
       </div>
     </template> -->
 
-    <div class="relative min-h-[calc(100vh-120px)] z-1 pb-10 mt-6 md:mt-0">
+    <div v-if="!isHistoricalYear" class="relative min-h-[calc(100vh-120px)] z-1 pb-10 mt-6 md:mt-0">
 
       <!-- ROW 1: THE PULSE OF THE MOMENT (KPIs) -->
       <div class="mb-8">
@@ -42,20 +42,47 @@
       </div>
     </div>
 
+    <!-- Historical Year Placeholder -->
+    <div v-else class="relative flex flex-col items-center justify-center min-h-[calc(100vh-120px)] z-1 pb-10 mt-6 md:mt-0 px-4 text-center">
+      <div class="max-w-md mx-auto p-8 rounded-3xl bg-surface/50 backdrop-blur-sm border border-border shadow-theme-lg flex flex-col items-center">
+        <div class="w-16 h-16 mb-6 rounded-2xl bg-warning/10 text-warning flex items-center justify-center">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <polyline points="12 6 12 12 16 14"/>
+          </svg>
+        </div>
+        <h2 class="text-xl font-bold text-text mb-3 tracking-tight">Datos Históricos</h2>
+        <p class="text-sm text-text-muted leading-relaxed mb-8">
+          El Centro de Comando muestra el pulso operativo en tiempo real y sólo está disponible para el año en curso.
+          Ahora está visualizando datos del año operativo <strong class="text-text">{{ configStore.selectedYear }}</strong>.
+        </p>
+        <button
+          @click="resetToCurrentYear"
+          class="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-primary text-primary-fg text-sm font-bold shadow-theme-md hover:bg-primary/90 hover:shadow-theme-lg hover:-translate-y-0.5 transition-all active:scale-95"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+            <polyline points="9 22 9 12 15 12 15 22"/>
+          </svg>
+          Volver al año en curso
+        </button>
+      </div>
+    </div>
+
     <!-- Centralized Dialogs -->
-    <ObservadorTimelineDialog 
+    <ObservadorTimelineDialog
       v-if="showTimelineDialog"
-      :show="showTimelineDialog" 
+      :show="showTimelineDialog"
       :observador-id="selectedObserver?.id"
-      :observador-name="selectedObserver?.name" 
-      :year="selectedYear" 
-      @close="showTimelineDialog = false" 
+      :observador-name="selectedObserver?.name"
+      :year="selectedYear"
+      @close="showTimelineDialog = false"
     />
   </AdminLayout>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { toast } from 'vue-sonner'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import ActionKpis from '../components/ActionKpis.vue'
@@ -75,6 +102,13 @@ const showTimelineDialog = ref(false)
 const selectedObserver = ref<{ id: string, name: string } | null>(null)
 const configStore = useConfigStore()
 const { selectedYear } = storeToRefs(configStore)
+
+const currentYear = new Date().getFullYear()
+const isHistoricalYear = computed(() => configStore.selectedYear < currentYear)
+
+const resetToCurrentYear = () => {
+  configStore.setSelectedYear(currentYear)
+}
 
 const openTimeline = (id: string, name: string) => {
   selectedObserver.value = { id, name }

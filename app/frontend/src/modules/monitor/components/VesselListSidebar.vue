@@ -47,19 +47,27 @@
 
           <SearchInput v-model="searchQuery" placeholder="Marea, buque u observador..." size="sm" />
           <!-- Fishery Filter -->
-          <div class="relative group">
+          <div class="relative flex items-center group">
+            <div class="absolute left-0 pl-3 flex items-center pointer-events-none text-text-muted group-hover:text-primary transition-colors">
+              <!-- Filter Icon -->
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+              </svg>
+            </div>
             <select v-model="selectedPesqueria"
-              class="w-full bg-surface border border-border/20 rounded-xl px-3 py-2 text-xs font-bold text-text-muted focus:text-text focus:border-primary/50 transition-all cursor-pointer appearance-none shadow-sm">
-              <option value="">Todas las pesquerías</option>
-              <option v-for="pesqueria in availablePesquerias" :key="pesqueria" :value="pesqueria">
+              class="w-full pl-10 pr-10 py-2.5 bg-background border border-border rounded-lg text-sm font-semibold text-text outline-none focus:border-primary transition-all appearance-none cursor-pointer">
+              <option value="" class="bg-surface text-text">Todas las pesquerías</option>
+              <option v-for="pesqueria in availablePesquerias" :key="pesqueria" :value="pesqueria" class="bg-surface text-text">
                 {{ pesqueria }}
               </option>
             </select>
-            <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-text-muted/40">
-              <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                <path d="M6 9l6 6 6-6" />
+            <span class="absolute right-0 pr-3 flex items-center pointer-events-none text-text-muted group-hover:text-primary transition-colors">
+              <svg class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd"
+                  d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                  clip-rule="evenodd" />
               </svg>
-            </div>
+            </span>
           </div>
         </div>
 

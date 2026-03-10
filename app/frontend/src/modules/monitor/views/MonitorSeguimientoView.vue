@@ -3,7 +3,38 @@
     <div class="h-full w-full relative overflow-hidden bg-background text-text" style="height: calc(100vh - 64px)">
       <!-- MAP AND HUD AREA (Full Width background) -->
       <div class="absolute inset-0 z-0">
-        <!-- THE MAP (Background) -->
+      <!-- THE MAP (Background) -->
+      <template v-if="isHistoricalYear && !isSingleMareaMode">
+        <div class="relative flex flex-col items-center justify-center h-full w-full z-1 px-4 text-center">
+          <div class="max-w-md mx-auto p-8 rounded-3xl bg-surface/50 backdrop-blur-sm border border-border shadow-theme-lg flex flex-col items-center">
+            <div class="w-16 h-16 mb-6 rounded-2xl bg-warning/10 text-warning flex items-center justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <polyline points="12 6 12 12 16 14"/>
+              </svg>
+            </div>
+            <h2 class="text-xl font-bold text-text mb-3 tracking-tight">Vigilancia de Flota</h2>
+            <p class="text-sm text-text-muted leading-relaxed mb-8">
+              El Mapa Interactivo general está destinado al monitoreo de la flota operativa en tiempo real y sólo está disponible para el año en curso. 
+              Ahora está visualizando datos del año operativo <strong class="text-text">{{ configStore.selectedYear }}</strong>.
+              <br><br>
+              Para auditar trayectorias históricas, ingrese a la sección <strong>Mareas</strong> y seleccione una marea anterior para visualizar su recorrido individual.
+            </p>
+            <button 
+              @click="resetToCurrentYear"
+              class="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-primary text-primary-fg text-sm font-bold shadow-theme-md hover:bg-primary/90 hover:shadow-theme-lg hover:-translate-y-0.5 transition-all active:scale-95"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                <polyline points="9 22 9 12 15 12 15 22"/>
+              </svg>
+              Volver al año en curso
+            </button>
+          </div>
+        </div>
+      </template>
+
+      <template v-else>
         <div class="absolute inset-0">
           <MapMonitor ref="mapMonitor" class="w-full h-full" :fleet="fleet" :activeLayers="mapLayers"
             :isMobile="isMobile" :filterPesqueria="selectedPesqueria" :selectedId="selectedVesselId"
@@ -101,20 +132,21 @@
             </div>
           </div>
         </div>
+      </template>
       </div>
 
       <!-- SIDEBAR IZQUIERDO (FLOTA) -->
-      <VesselListSidebar v-if="!isSingleMareaMode && !isMobile" class="absolute left-0 top-0 h-full z-[2000]"
+      <VesselListSidebar v-if="!isHistoricalYear && !isSingleMareaMode && !isMobile" class="absolute left-0 top-0 h-full z-[2000]"
         v-model:isOpen="leftSidebarOpen" v-model:filterPesqueria="selectedPesqueria" :vessels="vesselList" :selectedId="selectedVesselId"
         @select="setSelectedVessel" @refresh="fetchFleet" />
 
       <!-- SIDEBAR DERECHO (CONTROL) -->
-      <MonitorSidebar v-if="!isSingleMareaMode && !isMobile" class="absolute right-0 top-0 h-full z-[2000]"
+      <MonitorSidebar v-if="!isHistoricalYear && !isSingleMareaMode && !isMobile" class="absolute right-0 top-0 h-full z-[2000]"
         v-model:isOpen="rightSidebarOpen" :mapLayers="mapLayers" @update:layer="handleLayerToggle"
         @open-upload="showUploadDialog = true" />
 
       <!-- CONTROLES MÓVILES -->
-      <MobileMonitorControls v-if="isMobile && !isSingleMareaMode" :vessels="vesselList" :mapLayers="mapLayers"
+      <MobileMonitorControls v-if="!isHistoricalYear && isMobile && !isSingleMareaMode" :vessels="vesselList" :mapLayers="mapLayers"
         :selectedId="selectedVesselId" :filterPesqueria="selectedPesqueria"
         @update:filter-pesqueria="selectedPesqueria = $event" @update:layer="handleLayerToggle"
         @select-vessel="setSelectedVessel" @change-base="handleBaseLayerChange" />
@@ -148,6 +180,7 @@ import TrajectoryLoadingOverlay from '../components/TrajectoryLoadingOverlay.vue
 import httpClient from '@/config/http/http.client'
 import { useRouter } from 'vue-router'
 import { ArrowLeftIcon } from '@/icons'
+import { useConfigStore } from '@/modules/shared/stores/config.store'
 
 // --- State ---
 const showUploadDialog = ref(false)
@@ -179,7 +212,15 @@ const checkMobile = () => {
 
 const route = useRoute()
 const router = useRouter()
+const configStore = useConfigStore()
+
+const currentYear = new Date().getFullYear()
+const isHistoricalYear = computed(() => configStore.selectedYear < currentYear)
 const isSingleMareaMode = computed(() => route.name === 'MareaTrajectory' || !!route.params.mareaId)
+
+const resetToCurrentYear = () => {
+  configStore.setSelectedYear(currentYear)
+}
 
 import { MAX_DISPLAY_POINTS } from '../constants'
 
@@ -621,12 +662,17 @@ const initializeMonitor = () => {
     mapLayers.value.showVesselNames = false
     leftSidebarOpen.value = true
     rightSidebarOpen.value = false
+
+    if (isHistoricalYear.value) {
+      return // No inicializamos la flota general si estamos en año histórico
+    }
+
     fetchFleet()
   }
 }
 
 // Watch for route changes (since the component is reused)
-watch(() => route.path, () => {
+watch(() => [route.path, configStore.selectedYear], () => {
   initializeMonitor()
 })
 
