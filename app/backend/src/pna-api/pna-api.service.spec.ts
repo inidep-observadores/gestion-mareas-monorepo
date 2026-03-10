@@ -47,8 +47,11 @@ describe('PnaApiService - Reglas de Negocio Unificadas', () => {
 
     const mockConfigService = {
         get: jest.fn((key: string) => {
-            if (key === 'USE_MOCK_FISHERY_API') return 'false';
+            if (key === 'USE_MOCK_FISHERY_API') return 'true';
             if (key === 'PNA_API_SYNC_SAFE_RANGE_DAYS') return '20';
+            if (key === 'PNA_API_ENDPOINT') return 'http://mock-pna-api';
+            if (key === 'PNA_API_USER') return 'mock-user';
+            if (key === 'PNA_API_PASSWORD') return 'mock-pass';
             return null;
         }),
     };
@@ -169,7 +172,7 @@ describe('PnaApiService - Reglas de Negocio Unificadas', () => {
     describe('Fragmentación de Rangos Largos', () => {
         it('debe encolar múltiples trabajos si el rango excede SAFE_RANGE_DAYS', async () => {
             const from = new Date('2024-01-01T10:00:00Z');
-            const to = new Date('2024-02-10T10:00:00Z');
+            const to = new Date('2024-02-11T10:00:00Z'); // 41 días (3 bloques de 20)
 
             await service.scheduleManualSynchronization(from, to, true);
 
