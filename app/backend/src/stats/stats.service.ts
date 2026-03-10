@@ -233,7 +233,9 @@ export class StatsService {
 
             // Aggregations: Fishery & Fleet
             // Instead of one fishery per marea, we iterate stages
+            // We group intervals by fishery within this marea to avoid double-counting days if stages of the SAME fishery overlap
             const mareaFisheries = new Set<string>();
+            const fisheryIntervalsMap = new Map<string, Array<{ start: Date, end: Date }>>();
 
             marea.etapas.forEach(etapa => {
                 const fisheryName = etapa.pesqueria?.nombre || marea.buque?.pesqueriaHabitual?.nombre || 'Desconocida';
@@ -242,44 +244,31 @@ export class StatsService {
                 if (etapa.fechaZarpada && etapa.fechaZarpada <= now) {
                     const start = etapa.fechaZarpada;
                     const end = etapa.fechaArribo || (marea.estadoActual?.codigo === 'EN_EJECUCION' ? now : null);
-                    const stageIntervals = [{ start, end }];
-
-                    // Calculate unique days for this specific stage fishery within the period
-                    const stageNavigatedDays = DateUtils.calculateUniqueDays(stageIntervals, periodRange, calculationLimit);
-
-                    if (stageNavigatedDays > 0) {
-                        if (!byFishery[fisheryName]) {
-                            byFishery[fisheryName] = { name: fisheryName, mareas: 0, days: 0, vessels: new Map() };
-                        }
-                        byFishery[fisheryName].days += stageNavigatedDays;
-
-                        if (marea.buque) {
-                            const fleetCode = marea.buque.tipoFlota?.codigo || 'INDETERMINADO';
-                            const fleetName = marea.buque.tipoFlota?.nombre || 'Indeterminado';
-                            byFishery[fisheryName].vessels.set(marea.buque.id, { code: fleetCode, nombre: fleetName });
-                        }
+                    
+                    if (!fisheryIntervalsMap.has(fisheryName)) {
+                        fisheryIntervalsMap.set(fisheryName, []);
                     }
+                    fisheryIntervalsMap.get(fisheryName)!.push({ start, end });
                 }
             });
 
             // Count marea only once per fishery it touched in the period (if it had days)
-            mareaFisheries.forEach(fisheryName => {
-                // Check if this marea actually contributed days to THIS fishery in the period
-                // (We already added the days above, so if byFishery[fisheryName] exists and we haven't counted this marea yet...)
-                // Actually easier: if ANY stage of this fishery overlaps period, count marea.
-                const hasOverlap = marea.etapas.some(e => {
-                    const stageFishery = e.pesqueria?.nombre || marea.buque?.pesqueriaHabitual?.nombre || 'Desconocida';
-                    if (stageFishery !== fisheryName) return false;
-                    const start = e.fechaZarpada;
-                    const end = e.fechaArribo || (marea.estadoActual?.codigo === 'EN_EJECUCION' ? now : null);
-                    return start && DateUtils.calculateUniqueDays([{ start, end }], periodRange, calculationLimit) > 0;
-                });
+            fisheryIntervalsMap.forEach((intervals, fisheryName) => {
+                // Calculate unique days for this specific fishery combining all stages within this marea
+                const fisheryNavigatedDays = DateUtils.calculateUniqueDays(intervals, periodRange, calculationLimit);
 
-                if (hasOverlap) {
+                if (fisheryNavigatedDays > 0) {
                     if (!byFishery[fisheryName]) {
                         byFishery[fisheryName] = { name: fisheryName, mareas: 0, days: 0, vessels: new Map() };
                     }
+                    byFishery[fisheryName].days += fisheryNavigatedDays;
                     byFishery[fisheryName].mareas++;
+
+                    if (marea.buque) {
+                        const fleetCode = marea.buque.tipoFlota?.codigo || 'INDETERMINADO';
+                        const fleetName = marea.buque.tipoFlota?.nombre || 'Indeterminado';
+                        byFishery[fisheryName].vessels.set(marea.buque.id, { code: fleetCode, nombre: fleetName });
+                    }
                 }
             });
 

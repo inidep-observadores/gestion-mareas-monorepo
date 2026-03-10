@@ -42,7 +42,34 @@
 
          </section>
 
-         <div v-if="stats" class="space-y-8">
+         <!-- TABS HEADER -->
+         <div v-if="stats" class="mb-6">
+            <div class="border-b border-border/50">
+               <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+                  <button @click="activeTab = 'general'"
+                     :class="[
+                        'whitespace-nowrap py-4 px-1 border-b-2 font-black text-xs uppercase tracking-widest transition-colors focus:outline-none',
+                        activeTab === 'general'
+                           ? 'border-primary text-primary'
+                           : 'border-transparent text-text-muted hover:text-text hover:border-border'
+                     ]">
+                     Estadísticas Generales
+                  </button>
+                  <button @click="activeTab = 'audit'"
+                     :class="[
+                        'whitespace-nowrap py-4 px-1 border-b-2 font-black text-xs uppercase tracking-widest transition-colors focus:outline-none',
+                        activeTab === 'audit'
+                           ? 'border-primary text-primary'
+                           : 'border-transparent text-text-muted hover:text-text hover:border-border'
+                     ]">
+                     Análisis para Auditoría
+                  </button>
+               </nav>
+            </div>
+         </div>
+
+         <!-- TAB CONTENT: GENERAL -->
+         <div v-if="stats && activeTab === 'general'" class="space-y-8 animate-in fade-in duration-500">
             <!-- ROW 1: CORE ANALYTICAL KPIs -->
             <section class="grid grid-cols-1 md:grid-cols-3 gap-6">
                <StatKpiCard label="Total Mareas" :value="stats.totalMareas" :icon="ShipIcon" color="primary"
@@ -159,6 +186,19 @@
                </div>
             </section>
 
+         </div>
+
+         <!-- TAB CONTENT: AUDITORÍA -->
+         <div v-if="stats && activeTab === 'audit'" class="space-y-8 animate-in fade-in duration-500">
+            <div class="flex flex-col items-center justify-center py-24 px-4 text-center bg-surface-muted/30 rounded-2xl border border-border border-dashed">
+               <div class="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-6">
+                  <SearchIcon class="w-8 h-8 text-primary" />
+               </div>
+               <h3 class="text-sm font-black text-text uppercase tracking-widest mb-3">Próximamente</h3>
+               <p class="text-[11px] font-bold text-text-muted leading-relaxed max-w-md">
+                  En esta pestaña se incluirán fichas y vistas específicas orientadas al cruce de datos y análisis de auditoría, las cuales reaccionarán dinámicamente a los filtros de gestión aplicados.
+               </p>
+            </div>
          </div>
 
          <!-- Loading State -->
@@ -643,6 +683,8 @@ const detailViewMode = computed({
    get: () => configStore.statsDetailViewMode,
    set: (val) => configStore.setStatsDetailViewMode(val)
 });
+
+const activeTab = ref<'general' | 'audit'>('general');
 
 const mode = ref<'CALENDAR' | 'TOTAL'>('CALENDAR');
 const protocolizedOnly = ref(false);
@@ -1421,7 +1463,27 @@ const fleetChartOptions = computed(() => ({
 }))
 
 // 3. Fishery Distribution (Pie)
-const fisherySort = computed(() => stats.value?.fisheries.slice(0, 7) || []) // Top 7
+const fisherySort = computed(() => {
+   const all = stats.value?.fisheries || [];
+   // Si son 15 o menos, las mostramos todas.
+   if (all.length <= 15) return all;
+   
+   // Si son más de 15, agrupamos el resto en "Otras" para evitar fragmentación extrema.
+   const top = all.slice(0, 14);
+   const others = all.slice(14);
+   const othersDays = others.reduce((acc, curr) => acc + curr.days, 0);
+   const othersMareas = others.reduce((acc, curr) => acc + curr.mareas, 0);
+   
+   if (othersDays > 0) {
+      top.push({
+         name: 'Otras',
+         days: othersDays,
+         mareas: othersMareas,
+         stats: undefined
+      });
+   }
+   return top;
+})
 const fisherySeries = computed(() => fisherySort.value.map(f => f.days))
 const fisheryChartOptions = computed(() => ({
    labels: fisherySort.value.map(f => f.name),
