@@ -893,11 +893,19 @@ const prepareStagesData = async (isNewStageConfig = false) => {
                 observadores: []
             }
             currentStages.push(newStage)
-        } else if (subTipo && ['ARRIBO', 'INCONGRUENCIA', 'ZARPADA', 'POSIBLE_ZARPADA', 'FIN_MAREA', 'RECOMENDACION_FIN_MAREA'].includes(subTipo as string) && nroEtapaAlert) {
+        } else if (subTipo && ['ARRIBO', 'INCONGRUENCIA', 'ZARPADA', 'POSIBLE_ZARPADA', 'FIN_MAREA', 'RECOMENDACION_FIN_MAREA'].includes(subTipo as string)) {
             // Caso Actualización de Etapa: Buscar la etapa y sugerir cambios de Access/Tracking
-            const stageToUpdate = currentStages.find((s: any) =>
-                (s.nroEtapa === nroEtapaAlert) || (s.nro_etapa === nroEtapaAlert)
-            )
+            let stageToUpdate = null;
+
+            if (nroEtapaAlert) {
+                stageToUpdate = currentStages.find((s: any) =>
+                    (s.nroEtapa === nroEtapaAlert) || (s.nro_etapa === nroEtapaAlert)
+                )
+            } else if (['ARRIBO', 'FIN_MAREA', 'RECOMENDACION_FIN_MAREA'].includes(subTipo as string) && currentStages.length > 0) {
+                // Fallback: Si no hay nroEtapa pero es un arribo, usar la última etapa
+                stageToUpdate = currentStages[currentStages.length - 1]
+            }
+
             if (stageToUpdate) {
                 if (ext.fechaZarpada) {
                     stageToUpdate.fechaZarpada = ext.fechaZarpada
@@ -913,6 +921,11 @@ const prepareStagesData = async (isNewStageConfig = false) => {
                 }
                 if (ext.puertoArriboId) {
                     stageToUpdate.puertoArriboId = ext.puertoArriboId
+                    stageToUpdate.fuentesArribo = sources.length > 0 ? { sources, manual: true } : null
+                }
+                // Si la metadata trae un puerto específico de la alerta (fuente PNA simple) y no está en externalData
+                if (!ext.puertoArriboId && localAlert.value.metadata?.portId && (subTipo === 'ARRIBO' || subTipo === 'FIN_MAREA')) {
+                    stageToUpdate.puertoArriboId = localAlert.value.metadata.portId
                     stageToUpdate.fuentesArribo = sources.length > 0 ? { sources, manual: true } : null
                 }
             }

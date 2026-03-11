@@ -133,7 +133,10 @@ export class EventCorrelationService {
                 }
             }
 
-            return { action: EventDecisionAction.CREATE_ALERT, marea: mareaMatch };
+            // REGLA: Si la marea es DESIGNADA y es una ZARPADA, asumimos que es el inicio (Etapa 1)
+            const nroEtapa = mareaMatch.estadoActual.codigo === 'DESIGNADA' ? 1 : undefined;
+
+            return { action: EventDecisionAction.CREATE_ALERT, marea: mareaMatch, nroEtapa };
         } else {
             // ARRIBO
             // REGLA: Si no hay marea EN_EJECUCION, ignoramos los arribos (aunque haya una DESIGNADA)
