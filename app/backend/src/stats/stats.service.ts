@@ -849,6 +849,9 @@ export class StatsService {
         };
 
         // Cargar Datos
+        const summaryMC = new Map<string, { pesqueria: string; flota: string; mareas: number; etapas: number; dias: number }>();
+        const summaryCI = new Map<string, { pesqueria: string; flota: string; mareas: number; etapas: number; dias: number }>();
+
         mareas.forEach(m => {
             const overallStart = m.etapas[0]?.fechaZarpada;
             const overallEnd = m.etapas[m.etapas.length - 1]?.fechaArribo || (m.estadoActual?.codigo === 'EN_EJECUCION' ? DateUtils.getNow() : null);
@@ -969,9 +972,106 @@ export class StatsService {
             });
 
             sheet.addRow(rowData);
+
+            // Aggregation for summaries
+            const summaryMap = m.tipoMarea === TipoMarea.CI ? summaryCI : summaryMC;
+            const key = `${rowData.pesqueria}|${rowData.flota}`;
+            if (!summaryMap.has(key)) {
+                summaryMap.set(key, { pesqueria: rowData.pesqueria, flota: rowData.flota, mareas: 0, etapas: 0, dias: 0 });
+            }
+            const current = summaryMap.get(key)!;
+            current.mareas += 1;
+            current.etapas += m.etapas.length;
+            current.dias += calendarDays;
         });
 
+        if (includeSummaries) {
+            this.buildSummarySheet(workbook, summaryMC, summaryCI);
+        }
+
         return workbook;
+    }
+
+    private buildSummarySheet(
+        workbook: ExcelJS.Workbook,
+        summaryMC: Map<string, { pesqueria: string; flota: string; mareas: number; etapas: number; dias: number }>,
+        summaryCI: Map<string, { pesqueria: string; flota: string; mareas: number; etapas: number; dias: number }>
+    ) {
+        const sheet = workbook.addWorksheet('Resumen por Pesquería');
+        sheet.getColumn(1).width = 30; // Pesquería
+        sheet.getColumn(2).width = 30; // Flota
+        sheet.getColumn(3).width = 20; // Cantidad Mareas
+        sheet.getColumn(4).width = 20; // Cantidad Etapas
+        sheet.getColumn(5).width = 20; // Total Días
+
+        let currentRow = 2;
+
+        if (summaryMC.size > 0) {
+            currentRow = this.buildSummaryTable(sheet, 'Resumen de Mareas Comerciales (MC)', summaryMC, currentRow);
+        }
+
+        if (summaryCI.size > 0) {
+            this.buildSummaryTable(sheet, 'Resumen de Campañas Institucionales (CI)', summaryCI, currentRow + 4);
+        }
+    }
+
+    private buildSummaryTable(
+        sheet: ExcelJS.Worksheet,
+        title: string,
+        data: Map<string, { pesqueria: string; flota: string; mareas: number; etapas: number; dias: number }>,
+        startRow: number
+    ): number {
+        // Title
+        sheet.mergeCells(startRow, 1, startRow, 5);
+        const titleCell = sheet.getCell(startRow, 1);
+        titleCell.value = title;
+        titleCell.font = { bold: true, size: 14 };
+        titleCell.alignment = { horizontal: 'center' };
+
+        // Headers
+        const headerRowIdx = startRow + 1;
+        const headers = ['Pesquería', 'Flota', 'Cantidad Mareas', 'Cantidad Etapas', 'Total Días'];
+        headers.forEach((h, i) => {
+            const cell = sheet.getCell(headerRowIdx, i + 1);
+            cell.value = h;
+            cell.font = { bold: true, color: { argb: 'FFFFFF' } };
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: '2563EB' } };
+            cell.alignment = { horizontal: 'center' };
+            cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+        });
+
+        // Rows
+        let currentRowIdx = headerRowIdx + 1;
+        const sortedData = Array.from(data.values()).sort((a, b) => {
+            if (a.pesqueria !== b.pesqueria) return a.pesqueria.localeCompare(b.pesqueria);
+            return a.flota.localeCompare(b.flota);
+        });
+
+        sortedData.forEach(row => {
+            const r = sheet.getRow(currentRowIdx);
+            r.values = [row.pesqueria, row.flota, row.mareas, row.etapas, row.dias];
+            for (let c = 1; c <= 5; c++) {
+                r.getCell(c).border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+            }
+            currentRowIdx++;
+        });
+
+        // Totals
+        const totalRowIdx = currentRowIdx;
+        const totalRow = sheet.getRow(totalRowIdx);
+        totalRow.getCell(1).value = 'TOTALES';
+        totalRow.getCell(3).value = { formula: `SUM(C${headerRowIdx + 1}:C${currentRowIdx - 1})` };
+        totalRow.getCell(4).value = { formula: `SUM(D${headerRowIdx + 1}:D${currentRowIdx - 1})` };
+        totalRow.getCell(5).value = { formula: `SUM(E${headerRowIdx + 1}:E${currentRowIdx - 1})` };
+
+        for (let c = 1; c <= 5; c++) {
+            const cell = totalRow.getCell(c);
+            cell.font = { bold: true };
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'EFF6FF' } };
+            cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+        }
+
+        return totalRowIdx;
     }
 
     async getMareaDistribution(
@@ -1416,12 +1516,7 @@ export class StatsService {
             to: { row: 1, column: headers.length }
         };
 
-        if (includeSummaries) {
-            // TODO: Agregar más hojas de resumen (Próximamente)
-            const summarySheet = workbook.addWorksheet('Resumen (Futuro)');
-            summarySheet.addRow(['Resumen por Pesquería y Flota']);
-            summarySheet.getRow(1).font = { bold: true };
-        }
+
 
         return workbook;
     }
