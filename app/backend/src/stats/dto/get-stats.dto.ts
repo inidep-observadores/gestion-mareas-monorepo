@@ -84,4 +84,9 @@ export class GetStatsDto {
     @IsOptional()
     @Transform(({ value }) => value === 'true')
     filterByStart?: boolean = false;
+
+    @IsBoolean()
+    @IsOptional()
+    @Transform(({ value }) => value === 'true')
+    includeSummaries?: boolean = false;
 }

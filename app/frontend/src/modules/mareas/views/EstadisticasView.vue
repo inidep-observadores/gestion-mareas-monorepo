@@ -1358,7 +1358,8 @@ const handleGeneralExport = async () => {
          startDate.value || undefined,
          endDate.value || undefined,
          startDate.value || undefined,
-         endDate.value || undefined
+         endDate.value || undefined,
+         true
       );
       toast.success('Exportación general preparada con éxito');
    } catch (error) {

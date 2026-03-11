@@ -653,6 +653,7 @@ export class StatsService {
         filterByStart: boolean = false,
         protocolizationStartDate?: string,
         protocolizationEndDate?: string,
+        includeSummaries: boolean = false,
     ): Promise<ExcelJS.Workbook> {
         if (filterType === 'COVERAGE') {
             return this.getCoverageExportWorkbook(year, mode, includeNonProtocolized, includeProtocolizedOutOfPeriod, includeCampaigns, startDate, endDate, filterValue, protocolizationStartDate, protocolizationEndDate);
@@ -746,7 +747,7 @@ export class StatsService {
         });
 
         const workbook = new ExcelJS.Workbook();
-        const sheet = workbook.addWorksheet('Mareas');
+        const sheet = workbook.addWorksheet('General');
 
         // Determinar max etapas para las columnas
         // Determinar max etapas y observadores adicionales
@@ -1414,6 +1415,13 @@ export class StatsService {
             from: { row: 1, column: 1 },
             to: { row: 1, column: headers.length }
         };
+
+        if (includeSummaries) {
+            // TODO: Agregar más hojas de resumen (Próximamente)
+            const summarySheet = workbook.addWorksheet('Resumen (Futuro)');
+            summarySheet.addRow(['Resumen por Pesquería y Flota']);
+            summarySheet.getRow(1).font = { bold: true };
+        }
 
         return workbook;
     }

@@ -149,7 +149,8 @@ export const statsService = {
         startDate?: string,
         endDate?: string,
         protocolizationStartDate?: string,
-        protocolizationEndDate?: string
+        protocolizationEndDate?: string,
+        includeSummaries: boolean = false
     ) {
         const params = new URLSearchParams({
             year: year.toString(),
@@ -157,7 +158,8 @@ export const statsService = {
             includeNonProtocolized: String(includeNonProtocolized),
             includeProtocolizedOutOfPeriod: String(includeProtocolizedOutOfPeriod),
             daysCalculationMode,
-            includeCampaigns: String(includeCampaigns)
+            includeCampaigns: String(includeCampaigns),
+            includeSummaries: String(includeSummaries)
         });
 
         if (startDate) params.append('startDate', startDate);
