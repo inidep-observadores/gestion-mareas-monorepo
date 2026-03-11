@@ -15,5 +15,10 @@
     "lint": "pnpm -r run lint",
     "test": "pnpm -r run test",
     "prisma:studio": "pnpm --filter sigma-backend exec prisma studio"
+  },
+  "pnpm": {
+    "overrides": {
+      "@types/pg": "8.11.11"
+    }
   }
 }
