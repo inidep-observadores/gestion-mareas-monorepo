@@ -17,11 +17,17 @@
           </div>
         </div>
 
-        <!-- Quick Reset (Only Mobile visible here) -->
-        <button @click="resetFilters" class="lg:hidden p-2 text-text-muted hover:text-primary transition-colors"
-          title="Reiniciar filtros">
-          <RefreshCcwIcon class="w-4 h-4" />
-        </button>
+        <!-- Actions (Mobile visible here) -->
+        <div class="flex items-center gap-1 lg:hidden">
+          <button @click="emit('export')" class="p-2 text-primary hover:text-primary-hover transition-colors"
+            title="Exportar reporte completo">
+            <DownloadIcon class="w-4 h-4" />
+          </button>
+          <button @click="resetFilters" class="p-2 text-text-muted hover:text-primary transition-colors"
+            title="Reiniciar filtros">
+            <RefreshCcwIcon class="w-4 h-4" />
+          </button>
+        </div>
       </div>
 
       <!-- Controls Area -->
@@ -73,8 +79,14 @@
             </div>
           </div>
 
-          <!-- Reset Action (Desktop only) -->
-          <div class="hidden lg:flex items-center pb-0.5">
+          <!-- Actions (Desktop only) -->
+          <div class="hidden lg:flex items-center gap-3 pb-0.5">
+            <button @click="emit('export')"
+              class="group flex items-center gap-2 px-4 py-2.5 rounded-xl border border-primary/20 text-[10px] font-black uppercase tracking-widest text-primary hover:bg-primary hover:text-primary-fg shadow-theme-xs transition-all active:scale-95"
+              title="Exportar reporte completo de este periodo">
+              <DownloadIcon class="w-3.5 h-3.5" />
+              Exportar
+            </button>
             <button @click="resetFilters"
               class="group flex items-center gap-2 px-4 py-2.5 rounded-xl border border-border text-[10px] font-black uppercase tracking-widest text-text-muted hover:bg-surface-muted hover:text-primary transition-all active:scale-95 bg-surface shadow-theme-xs"
               title="Reiniciar a vista anual">
@@ -94,7 +106,8 @@ import { ref, watch } from 'vue'
 import {
   CalendarIcon,
   ArrowRightIcon,
-  RefreshCcwIcon
+  RefreshCcwIcon,
+  DownloadIcon
 } from 'lucide-vue-next'
 import DatePicker from '@/components/common/DatePicker.vue'
 
@@ -107,7 +120,8 @@ interface Props {
 const props = defineProps<Props>()
 
 const emit = defineEmits<{
-  (e: 'update:filter', dates: { startDate: string | null; endDate: string | null }): void
+  (e: 'update:filter', dates: { startDate: string | null; endDate: string | null }): void,
+  (e: 'export'): void
 }>()
 
 const monthNames = [

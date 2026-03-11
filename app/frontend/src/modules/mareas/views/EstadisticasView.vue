@@ -13,7 +13,7 @@
 
             <div class="mt-4">
                <TimeFilterBar :year="year" :startDate="startDate" :endDate="endDate"
-                  @update:filter="handleTimeFilter" />
+                  @update:filter="handleTimeFilter" @export="handleGeneralExport" />
             </div>
 
             <!-- Collapsible Criteria Explanation -->
@@ -1343,6 +1343,30 @@ const handleDownload = async (titlePrefix: string, fType?: 'FISHERY' | 'FLEET' |
    }
 }
 
+const handleGeneralExport = async () => {
+   try {
+      await statsService.downloadExport(
+         year.value,
+         mode.value,
+         !protocolizedOnly.value,
+         includeOutOfPeriod.value,
+         daysCalculationMode.value,
+         includeCampaigns.value,
+         undefined,
+         undefined,
+         `Reporte_General_Mareas_${year.value}`,
+         startDate.value || undefined,
+         endDate.value || undefined,
+         startDate.value || undefined,
+         endDate.value || undefined
+      );
+      toast.success('Exportación general preparada con éxito');
+   } catch (error) {
+      console.error('Error in handleGeneralExport:', error);
+      toast.error('No se pudo generar la exportación general');
+   }
+}
+
 const getFleetColor = (name: string) => {
    if (name.toUpperCase().includes('FRESQUERO')) return '#0ea5e9'; // color-info
    if (name.toUpperCase().includes('CONGELADOR')) return '#f59e0b'; // color-warning
@@ -2221,3 +2245,4 @@ const coverageChartOptions = computed(() => {
    dominant-baseline: central;
 }
 </style>
+

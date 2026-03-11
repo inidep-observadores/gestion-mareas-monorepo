@@ -797,10 +797,12 @@ export class StatsService {
 
         // Definir columnas base
         const columns: Partial<ExcelJS.Column>[] = [
-            { header: 'ID Marea', key: 'id_marea', width: 15 },
+            { header: 'Tipo', key: 'tipo_marea', width: 10 },
+            { header: 'Marea', key: 'nro_marea', width: 10 },
+            { header: 'Año', key: 'anio_marea', width: 10 },
             { header: 'Buque', key: 'buque', width: 25 },
             { header: 'Flota', key: 'flota', width: 20 },
-            { header: 'Pesquería', key: 'pesqueria', width: 20 }, // Fixed encoding
+            { header: 'Pesquería', key: 'pesqueria', width: 20 },
             { header: 'Observador Principal', key: 'observador', width: 25 },
             { header: 'Contrato', key: 'contrato', width: 15 },
             { header: 'Tipo Obs.', key: 'tipo_observador', width: 15 },
@@ -818,7 +820,7 @@ export class StatsService {
             // "Días (Total Marea)", "Inicio", "Fin" are excluded for Monthly Detail to match frontend view
         } else {
             columns.push(
-                { header: 'Días (Calendario)', key: 'dias_calendario', width: 18 },
+                { header: `Días en ${year}`, key: 'dias_calendario', width: 18 },
                 { header: 'Días (Total Marea)', key: 'dias_total', width: 18 }, // Fixed encoding
                 { header: 'Inicio', key: 'inicio', width: 15 },
                 { header: 'Fin', key: 'fin', width: 15 },
@@ -919,7 +921,9 @@ export class StatsService {
             }
 
             const rowData: any = {
-                id_marea: MareaUtils.formatCodigo(m),
+                tipo_marea: m.tipoMarea,
+                nro_marea: m.nroMarea,
+                anio_marea: m.anioMarea,
                 buque: m.buque?.nombreBuque || 'Desconocido',
                 flota: m.buque?.tipoFlota?.nombre || '-',
                 pesqueria: filterType === 'FISHERY'
