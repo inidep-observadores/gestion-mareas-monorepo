@@ -1,5 +1,6 @@
 import { Injectable, Logger, ConflictException, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { PrismaService } from '../../prisma/prisma.service';
 import { execSync, spawn } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -7,6 +8,7 @@ import * as archiver from 'archiver';
 import * as AdmZip from 'adm-zip';
 import * as crypto from 'crypto';
 import { Response } from 'express';
+import { DateTime } from 'luxon';
 
 export const VALID_SCHEMAS = ['public', 'audit', 'datos_api'] as const;
 export type BackupSchema = typeof VALID_SCHEMAS[number];
@@ -29,7 +31,10 @@ export class BackupService {
     private readonly backupPath: string;
     private readonly isConfigured: boolean;
 
-    constructor(private configService: ConfigService) {
+    constructor(
+        private configService: ConfigService,
+        private prisma: PrismaService,
+    ) {
         const pathFromConfig = this.configService.get<string>('BACKUP_PATH');
 
         this.isConfigured = !!pathFromConfig;
@@ -61,8 +66,31 @@ export class BackupService {
         };
     }
 
+    async getAutoBackupConfig(): Promise<{ enabled: boolean; hour: string }> {
+        const key = 'BACKUP_AUTO_CONFIG';
+        const status = await this.prisma.systemStatus.findUnique({ where: { key } });
+        const defaults = { enabled: false, hour: '17:00' };
+        if (!status?.value) return defaults;
+        try {
+            return { ...defaults, ...JSON.parse(status.value) };
+        } catch {
+            return defaults;
+        }
+    }
+
+    async updateAutoBackupConfig(config: { enabled: boolean; hour: string }) {
+        const key = 'BACKUP_AUTO_CONFIG';
+        await this.prisma.systemStatus.upsert({
+            where: { key },
+            update: { value: JSON.stringify(config), lastUpdate: new Date() },
+            create: { key, value: JSON.stringify(config), lastUpdate: new Date() },
+        });
+        this.logger.log(`Configuración de backup automático actualizada: ${JSON.stringify(config)}`);
+    }
+
     async createBackup(comment?: string, schemas: BackupSchema[] = ['public']) {
-        const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+        const nowLocal = DateTime.now().setZone('America/Argentina/Buenos_Aires');
+        const timestamp = nowLocal.toFormat('yyyy-MM-dd--HH-mm-ss');
         const baseFilename = `BKP-${timestamp}`;
         const zipFilename = `${baseFilename}.zip`;
         const metaFilename = `${baseFilename}.json`;
@@ -187,6 +215,16 @@ export class BackupService {
             console.error(`[BackupService] !!! ERROR CRÍTICO !!!`, { message: error.message, stderr });
             throw new InternalServerErrorException(`Fallo al generar copia de seguridad: ${stderr.slice(0, 200) || error.message}`);
         }
+    }
+
+    /**
+     * Verifica si físicamente existe un backup para el día de hoy (en zona horaria local).
+     * Se usa para prevenir duplicaciones en el scheduler automático.
+     */
+    async hasBackupForToday(): Promise<boolean> {
+        const todayPrefix = `BKP-${DateTime.now().setZone('America/Argentina/Buenos_Aires').toFormat('yyyy-MM-dd')}`;
+        const backups = await this.listBackups();
+        return backups.some(b => b.filename.startsWith(todayPrefix));
     }
 
     async listBackups() {

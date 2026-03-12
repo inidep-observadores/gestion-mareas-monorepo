@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Body, Param, Delete, Res, UseInterceptors, UploadedFile } from '@nestjs/common';
+import { Controller, Post, Get, Put, Body, Param, Delete, Res, UseInterceptors, UploadedFile } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Response } from 'express';
 import { BackupService, BackupSchema } from './backup.service';
@@ -23,10 +23,19 @@ export class BackupController {
         return { message: 'Proceso de copia de seguridad iniciado. Actualizando la lista automáticamente...' };
     }
 
-
     @Get('status')
     getStatus() {
         return this.backupService.getStatus();
+    }
+
+    @Get('auto-config')
+    getAutoConfig() {
+        return this.backupService.getAutoBackupConfig();
+    }
+
+    @Put('auto-config')
+    updateAutoConfig(@Body() config: { enabled: boolean; hour: string }) {
+        return this.backupService.updateAutoBackupConfig(config);
     }
 
     @Get()

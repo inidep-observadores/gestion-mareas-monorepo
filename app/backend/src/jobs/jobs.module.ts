@@ -10,6 +10,8 @@ import { AuthModule } from '../auth/auth.module'; // Necesario para AuthGuard
 import { PnaApiModule } from '../pna-api/pna-api.module';
 import { PnaApiSyncProcessor } from './processors/pna-api-sync.processor';
 import { PnaTrackingSyncProcessor } from './processors/pna-tracking-sync.processor';
+import { BackupAutoProcessor } from './processors/backup-auto.processor';
+import { BackupModule } from '../admin/backup/backup.module';
 
 @Global()
 @Module({
@@ -18,6 +20,7 @@ import { PnaTrackingSyncProcessor } from './processors/pna-tracking-sync.process
         CatalogosModule,
         AuthModule,
         forwardRef(() => PnaApiModule),
+        BackupModule,
     ],
     controllers: [
         JobQueueController,
@@ -27,6 +30,7 @@ import { PnaTrackingSyncProcessor } from './processors/pna-tracking-sync.process
         VesselSyncProcessor,
         PnaApiSyncProcessor,
         PnaTrackingSyncProcessor,
+        BackupAutoProcessor,
         JobQueueService,
         JobQueueStatsService,
     ],

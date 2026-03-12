@@ -5,6 +5,8 @@ import { JobStatus, JobType } from './job-types';
 import { VesselSyncProcessor } from './processors/vessel-sync.processor';
 import { PnaApiSyncProcessor } from './processors/pna-api-sync.processor';
 import { PnaTrackingSyncProcessor } from './processors/pna-tracking-sync.processor';
+import { BackupAutoProcessor } from './processors/backup-auto.processor';
+import { BackupService } from '../admin/backup/backup.service';
 import { PnaTrackingService } from '../pna-api/pna-tracking.service';
 import { PnaApiService } from '../pna-api/pna-api.service';
 import { DateTime } from 'luxon';
@@ -21,10 +23,11 @@ export class SchedulerService {
         private readonly vesselSyncProcessor: VesselSyncProcessor,
         private readonly pnaApiSyncProcessor: PnaApiSyncProcessor,
         private readonly pnaTrackingSyncProcessor: PnaTrackingSyncProcessor,
+        private readonly backupAutoProcessor: BackupAutoProcessor,
+        private readonly backupService: BackupService,
         private readonly pnaTrackingService: PnaTrackingService,
         private readonly pnaApiService: PnaApiService,
     ) {
-        // Generar un ID único para este worker basado en hostname y PID
         this.workerId = `${os.hostname()}-${process.pid}`;
     }
 
@@ -37,9 +40,8 @@ export class SchedulerService {
         const lockKey = 'JOB_SCHEDULER_LOCK';
 
         try {
-            // Intento de bloqueo distribuido simple usando system_status
             const now = new Date();
-            const lockThreshold = new Date(now.getTime() - 5 * 60 * 1000); // 5 minutos timeout
+            const lockThreshold = new Date(now.getTime() - 5 * 60 * 1000);
 
             const lock = await this.prisma.systemStatus.findUnique({ where: { key: lockKey } });
 
@@ -67,7 +69,7 @@ export class SchedulerService {
     }
 
     /**
-     * Metrónomo de un minuto que verifica y dispara tareas programadas dinámicamente
+     * Metrónomo de un minuto que verifica y dispara tareas programadas dinámicamente.
      */
     @Cron(CronExpression.EVERY_MINUTE)
     async handleAutoSchedule() {
@@ -99,6 +101,65 @@ export class SchedulerService {
                 await this.updateStatusDate(lastRunKey, now);
             }
         }
+
+        // 3. Backup automático diario
+        await this.handleDailyBackupSchedule(now);
+    }
+
+    /**
+     * Verifica si corresponde ejecutar el backup diario automático.
+     *
+     * Lógica robusta: encola el backup si la hora configurada ya pasó hoy
+     * y no existe ni un backup del día en el filesystem ni un job pendiente en la cola.
+     * De esta forma, no importa si el cron se ejecutó exactamente en el minuto exacto —
+     * mientras llegue después de la hora configurada y no exista ya un backup, lo encolará.
+     */
+    private async handleDailyBackupSchedule(nowUtc: DateTime): Promise<void> {
+        const config = await this.backupService.getAutoBackupConfig();
+        if (!config.enabled) return;
+
+        // Trabajar siempre en hora local de Argentina para la programación
+        const nowLocal = nowUtc.setZone('America/Argentina/Buenos_Aires');
+        const [configHour, configMinute] = config.hour.split(':').map(Number);
+        const scheduledTime = nowLocal.set({ hour: configHour, minute: configMinute, second: 0, millisecond: 0 });
+
+        // Aún no llegó la hora configurada hoy
+        if (nowLocal < scheduledTime) return;
+
+        // 1. Verificar si ya hay un job de backup diario PENDIENTE o EN PROCESO
+        const pendingOrProcessingJob = await this.prisma.jobQueue.findFirst({
+            where: {
+                type: JobType.DAILY_BACKUP,
+                status: { in: [JobStatus.PENDING, JobStatus.PROCESSING] },
+            },
+        });
+        if (pendingOrProcessingJob) return;
+
+        // 2. Verificar si ya se COMPLETÓ un job de backup hoy (evita re-encolar si se borró el archivo)
+        const startOfDay = nowLocal.startOf('day').toJSDate();
+        const completedToday = await this.prisma.jobQueue.findFirst({
+            where: {
+                type: JobType.DAILY_BACKUP,
+                status: JobStatus.COMPLETED,
+                lastRunAt: { gte: startOfDay },
+            },
+        });
+        if (completedToday) return;
+
+        // 3. Verificar físicamente el filesystem (por si se reinició el server o falló la DB)
+        const todayBackupExists = await this.backupService.hasBackupForToday();
+        if (todayBackupExists) return;
+
+        this.logger.log(`Encolando backup automático diario (hora local: ${nowLocal.toFormat('HH:mm')}, configurado: ${config.hour}).`);
+        await this.prisma.jobQueue.create({
+            data: {
+                type: JobType.DAILY_BACKUP,
+                payload: {},
+                status: JobStatus.PENDING,
+                nextRunAt: new Date(),
+                priority: 5,
+            },
+        });
     }
 
     private async updateStatusDate(key: string, date: DateTime) {
@@ -239,6 +300,8 @@ export class SchedulerService {
                 return await this.pnaApiSyncProcessor.process(job.payload);
             case JobType.PNA_TRACKING_SYNC:
                 return await this.pnaTrackingSyncProcessor.process(job.payload);
+            case JobType.DAILY_BACKUP:
+                return await this.backupAutoProcessor.process(job.payload);
             default:
                 throw new Error(`Unknown job type: ${job.type}`);
         }

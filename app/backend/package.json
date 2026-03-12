@@ -126,5 +126,10 @@
   },
   "prisma": {
     "seed": "ts-node prisma/seed-static.ts"
+  },
+  "pnpm": {
+    "overrides": {
+      "@types/pg": "8.11.11"
+    }
   }
 }

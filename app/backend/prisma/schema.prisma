@@ -911,6 +911,7 @@ enum JobType {
   REPORT_GENERATION
   PNA_API_SYNC
   PNA_TRACKING_SYNC
+  DAILY_BACKUP
 
   @@schema("public")
 }
