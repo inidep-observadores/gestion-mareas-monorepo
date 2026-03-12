@@ -45,6 +45,69 @@
         </div>
       </div>
 
+      <!-- Card: Programación Automática -->
+      <div class="relative bg-surface rounded-2xl shadow-sm border border-border overflow-hidden">
+        <!-- Barra de acento izquierda -->
+        <div
+          class="absolute left-0 top-0 bottom-0 w-1 transition-all duration-500"
+          :class="autoBackupEnabled ? 'bg-gradient-to-b from-primary via-primary/70 to-primary/30' : 'bg-border'"
+        ></div>
+
+        <div class="pl-8 pr-6 py-6 grid grid-cols-1 md:grid-cols-[1fr_auto_auto] gap-6 md:gap-8 items-center">
+          <!-- Zona 1: Descripción -->
+          <div>
+            <div class="flex items-center gap-2.5 mb-2">
+              <div
+                class="p-2 rounded-xl transition-all duration-300"
+                :class="autoBackupEnabled ? 'bg-primary/10 text-primary' : 'bg-surface-muted text-text-muted'"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              </div>
+              <h2 class="text-base font-bold text-text">Respaldo Automático Diario</h2>
+            </div>
+            <p class="text-sm text-text-muted leading-relaxed">
+              Genera un respaldo del módulo de <strong class="text-text font-semibold">Datos Generales</strong>
+              todos los días a la hora indicada, de manera automática y sin intervención manual.
+            </p>
+          </div>
+
+          <!-- Zona 2: Toggle con estado prominente -->
+          <div class="flex flex-col items-center gap-2 border-l border-border pl-8">
+            <label class="relative cursor-pointer">
+              <input
+                type="checkbox"
+                class="sr-only peer"
+                v-model="autoBackupEnabled"
+                @change="saveAutoBackupConfig"
+              />
+              <!-- Toggle grande -->
+              <div class="w-14 h-7 bg-border rounded-full peer peer-checked:bg-primary transition-all duration-300 shadow-inner after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-white after:rounded-full after:h-[22px] after:w-[22px] after:transition-all after:shadow-sm peer-checked:after:translate-x-7 peer-checked:shadow-primary/30 peer-checked:shadow-md"></div>
+            </label>
+            <span
+              class="text-xs font-black uppercase tracking-widest transition-colors duration-300"
+              :class="autoBackupEnabled ? 'text-primary' : 'text-text-muted'"
+            >
+              {{ autoBackupEnabled ? 'Activo' : 'Inactivo' }}
+            </span>
+          </div>
+
+          <!-- Zona 3: Selector de hora -->
+          <div
+            class="flex flex-col items-center gap-2 border-l border-border pl-8 transition-opacity duration-300"
+            :class="autoBackupEnabled ? 'opacity-100' : 'opacity-40'"
+          >
+            <div class="w-32">
+              <TimePicker
+                v-model="autoBackupHour"
+                :disabled="!autoBackupEnabled"
+                @update:modelValue="debouncedSaveAutoBackupConfig"
+              />
+            </div>
+            <span class="text-[10px] font-black uppercase tracking-widest text-text-muted">Hora del respaldo</span>
+          </div>
+        </div>
+      </div>
+
       <!-- Lista de Backups -->
       <div class="bg-surface rounded-2xl shadow-sm border border-border overflow-hidden">
         <div class="p-6 border-b border-border flex justify-between items-center">
@@ -261,6 +324,7 @@ import AdminDashboardLayout from '../layouts/AdminDashboardLayout.vue';
 import ConfirmationDialog from '@/components/common/ConfirmationDialog.vue';
 import ProcessingOverlay from '@/components/common/ProcessingOverlay.vue';
 import SecurityConfirmationDialog from '@/components/common/SecurityConfirmationDialog.vue';
+import TimePicker from '@/components/common/TimePicker.vue';
 import { toast } from 'vue-sonner';
 import httpClient from '@/config/http/http.client';
 import {
@@ -276,6 +340,11 @@ import {
     DownloadIcon,
     CloudUploadIcon,
 } from '@/icons';
+
+// Ícono de reloj inline
+const ClockIcon = {
+    template: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`
+};
 
 type BackupSchema = 'public' | 'audit' | 'datos_api';
 
@@ -302,6 +371,10 @@ const isProcessing = ref(false);
 const isUploading = ref(false);
 const isDownloading = ref(false);
 const isCheckingStatus = ref(true);
+
+// --- Estado: backup automático ---
+const autoBackupEnabled = ref(false);
+const autoBackupHour = ref('17:00');
 
 const showRestoreModal = ref(false);
 const showDeleteModal = ref(false);
@@ -371,6 +444,35 @@ const fetchStatus = async () => {
     } finally {
         isCheckingStatus.value = false;
     }
+};
+
+const fetchAutoBackupConfig = async () => {
+    try {
+        const { data } = await httpClient.get('/admin/backup/auto-config', { skipToast: true } as any);
+        autoBackupEnabled.value = data.enabled ?? false;
+        autoBackupHour.value = data.hour ?? '17:00';
+    } catch {
+        // Silenciar: si el backend no tiene la config aún, usa defaults
+    }
+};
+
+const saveAutoBackupConfig = async () => {
+    try {
+        await httpClient.put('/admin/backup/auto-config', {
+            enabled: autoBackupEnabled.value,
+            hour: autoBackupHour.value,
+        }, { skipToast: true } as any);
+        toast.success(autoBackupEnabled.value ? `Respaldo automático habilitado a las ${autoBackupHour.value}` : 'Respaldo automático deshabilitado');
+    } catch {
+        toast.error('No se pudo guardar la configuración del respaldo automático');
+    }
+};
+
+// Debounce de 1s para el cambio de hora (evita múltiples llamadas mientras se escribe)
+let autoSaveTimer: ReturnType<typeof setTimeout> | null = null;
+const debouncedSaveAutoBackupConfig = () => {
+    if (autoSaveTimer) clearTimeout(autoSaveTimer);
+    autoSaveTimer = setTimeout(() => saveAutoBackupConfig(), 1000);
 };
 
 const fetchBackups = async () => {
@@ -567,5 +669,6 @@ const formatSize = (bytes: number) => {
 onMounted(() => {
     fetchStatus();
     fetchBackups();
+    fetchAutoBackupConfig();
 });
 </script>
