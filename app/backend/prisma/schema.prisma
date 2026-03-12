@@ -6,7 +6,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  schemas  = ["audit", "public"]
+  schemas  = ["audit", "datos_api", "public"]
 }
 
 model User {
@@ -551,7 +551,7 @@ model BuqueTrayectoria {
 
   @@index([buqueId])
   @@map("buque_trayectorias")
-  @@schema("public")
+  @@schema("datos_api")
 }
 
 model BuqueTrayectoriaPunto {
@@ -570,7 +570,7 @@ model BuqueTrayectoriaPunto {
   @@index([trayectoriaId, timestamp])
   @@index([buqueId, timestamp])
   @@map("buque_trayectoria_puntos")
-  @@schema("public")
+  @@schema("datos_api")
 }
 
 model ExperienciaObservador {
@@ -776,7 +776,7 @@ model PnaZarpadaArribo {
   @@index([estado])
   @@index([externalComboId])
   @@map("pna_zarpadas_arribos")
-  @@schema("public")
+  @@schema("datos_api")
 }
 
 model SystemStatus {
