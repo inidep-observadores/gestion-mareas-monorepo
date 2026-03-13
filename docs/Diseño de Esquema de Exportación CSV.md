@@ -18,6 +18,7 @@ Contiene la información general de cada operación de pesca.
 | `anio` | Integer | Año de la marea. |
 | `nro_marea` | Integer | Número de la marea. |
 | `buque_nombre` | String | Nombre de la embarcación (aplanado). |
+| `codigo_interno_buque` | Integer | Código interno del buque en el sistema INIDEP. |
 | `nro_lance` | Integer | Número del lance. |
 | `fecha` | Date | Fecha del lance (Formato YYYY-MM-DD). |
 | `hora_inicio` | Time | Hora de inicio (Formato HH:MM). |
@@ -57,6 +58,7 @@ Detalle de las especies capturadas por cada lance.
 | `nro_marea` | Integer | Clave de relación. |
 | `nro_lance` | Integer | Clave de relación. |
 | `especie_nombre_cientifico` | String | Nombre científico de la especie (Clave única por lance). |
+| `codigo_especie` | String | Código interno de la especie en el sistema INIDEP. |
 | `captura_kg` | Decimal | Peso de la captura en kilogramos. |
 | `descarte_kg` | Decimal | Peso del descarte en kilogramos. |
 
@@ -71,6 +73,7 @@ Información biométrica agrupada (frecuencia de tallas).
 | `nro_marea` | Integer | Clave de relación. |
 | `nro_lance` | Integer | Clave de relación. |
 | `especie_nombre_cientifico` | String | Nombre científico de la especie. |
+| `codigo_especie` | String | Código interno de la especie en el sistema INIDEP. |
 | `largo_cm` | Integer | Largo total del ejemplar en centímetros (Clave única con especie). |
 | `sexo` | String | Sexo del ejemplar (Ej: "Macho", "Hembra", "Indeterminado"). |
 | `cantidad_ejemplares`| Integer | Número de ejemplares registrados para esa talla/sexo. |
@@ -86,6 +89,7 @@ Datos individuales de ejemplares muestreados en detalle.
 | `nro_marea` | Integer | Clave de relación. |
 | `nro_lance` | Integer | Clave de relación. |
 | `especie_nombre_cientifico` | String | Nombre científico de la especie. |
+| `codigo_especie` | String | Código interno de la especie en el sistema INIDEP. |
 | `nro_ejemplar` | Integer | Número correlativo del ejemplar (Clave única por especie/lance). |
 | `largo_cm` | Integer | Largo total del ejemplar en centímetros. |
 | `sexo` | String | Sexo del ejemplar. |
