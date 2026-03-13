@@ -1558,6 +1558,15 @@ export class MareasService {
         const allowedTransitions = transiciones.filter(t => t.estadoOrigenId === marea.estadoActualId);
         const actions: Record<string, any> = {};
 
+        // Acción especial para editar etapas en curso (no cambia estado) - AHORA PRIMERA
+        if (marea.estadoActual.codigo === MareaEstado.EN_EJECUCION) {
+            actions['EDITAR_ETAPAS'] = {
+                enabled: true,
+                label: 'Editar Etapas',
+                claseBoton: 'btn-ghost'
+            };
+        }
+
         allowedTransitions.forEach(t => {
             actions[t.accion] = {
                 enabled: true,
@@ -1569,14 +1578,6 @@ export class MareasService {
             };
         });
 
-        // Acción especial para editar etapas en curso (no cambia estado)
-        if (marea.estadoActual.codigo === MareaEstado.EN_EJECUCION) {
-            actions['EDITAR_ETAPAS'] = {
-                enabled: true,
-                label: 'Editar Etapas',
-                claseBoton: 'btn-ghost'
-            };
-        }
 
         const fechaZarpada = etapaInicial?.fechaZarpada || marea.fechaZarpadaEstimada;
 
@@ -2074,6 +2075,22 @@ export class MareasService {
 
                 if (payload.etapas) {
                     await this.syncStages(tx, id, payload.etapas);
+                }
+            }
+
+            if (actionKey === 'DESHACER_INICIO') {
+                additionalMareaData.fechaInicioObservador = null;
+                const stage1 = await tx.mareaEtapa.findFirst({
+                    where: { mareaId: id, nroEtapa: 1 },
+                    include: { lances: { take: 1 } }
+                });
+
+                if (stage1) {
+                    if (stage1.lances && stage1.lances.length > 0) {
+                        throw new BadRequestException('No se puede deshacer el inicio porque la marea ya tiene datos técnicos registrados (lances).');
+                    }
+                    await tx.mareaEtapaObservador.deleteMany({ where: { etapaId: stage1.id } });
+                    await tx.mareaEtapa.delete({ where: { id: stage1.id } });
                 }
             }
 
