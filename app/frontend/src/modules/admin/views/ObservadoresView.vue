@@ -221,6 +221,6 @@ const filteredObservadores = computed(() => {
 })
 
 onMounted(() => {
-    fetchObservadores()
+    fetchObservadores(true)
 })
 </script>

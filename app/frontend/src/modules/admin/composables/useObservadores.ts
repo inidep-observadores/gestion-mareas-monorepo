@@ -11,10 +11,10 @@ export function useObservadores() {
     const showModal = ref(false)
     const selectedObservador = ref<Observador | null>(null)
 
-    const fetchObservadores = async () => {
+    const fetchObservadores = async (incluirInactivos: boolean = false) => {
         isLoading.value = true
         try {
-            observadores.value = await observadoresApi.getObservadores()
+            observadores.value = await observadoresApi.getObservadores(incluirInactivos)
         } catch (error) {
             toast.error('Error al cargar observadores')
         } finally {
@@ -59,7 +59,7 @@ export function useObservadores() {
                 await observadoresApi.createObservador(payload as CreateObservadorDto)
                 toast.success('Observador creado correctamente')
             }
-            await fetchObservadores()
+            await fetchObservadores(true)
             closeModal()
         } catch (error: any) {
             console.error('Save error:', error)
