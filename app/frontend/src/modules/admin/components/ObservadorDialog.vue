@@ -82,7 +82,7 @@
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     <div>
                         <label class="block text-xs font-black uppercase tracking-widest text-text-muted mb-1.5">Tipo
                             Contrato</label>
@@ -90,6 +90,13 @@
                             :error="fieldErrors.tipoContrato" placeholder="Seleccione..." />
                         <p v-if="fieldErrors.tipoContrato" class="text-[10px] text-error font-bold uppercase mt-1">{{
                             fieldErrors.tipoContrato }}</p>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-black uppercase tracking-widest text-text-muted mb-1.5">Sexo</label>
+                        <SearchableSelect v-model="form.sexo" :options="sexoOptions"
+                            :error="fieldErrors.sexo" placeholder="Seleccione..." />
+                        <p v-if="fieldErrors.sexo" class="text-[10px] text-error font-bold uppercase mt-1">{{
+                            fieldErrors.sexo }}</p>
                     </div>
                     <div>
                         <label class="block text-xs font-black uppercase tracking-widest text-text-muted mb-1.5">Fecha
@@ -172,6 +179,27 @@
                         </div>
                         <span class="transition-colors group-hover:text-text">Con Impedimento</span>
                     </label>
+
+                    <label
+                        class="flex items-center text-sm font-medium text-text-muted cursor-pointer select-none group">
+                        <div class="relative">
+                            <input type="checkbox" v-model="form.eventual" class="sr-only">
+                            <div :class="form.eventual
+                                ? 'border-primary bg-primary'
+                                : 'border-border bg-surface group-hover:border-primary/50'
+                                "
+                                class="mr-3 flex h-5 w-5 items-center justify-center rounded-md border-[1.25px] transition-colors">
+                                <span :class="form.eventual ? '' : 'opacity-0'">
+                                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"
+                                        xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M11.6666 3.5L5.24992 9.91667L2.33325 7" stroke="white"
+                                            stroke-width="1.94437" stroke-linecap="round" stroke-linejoin="round" />
+                                    </svg>
+                                </span>
+                            </div>
+                        </div>
+                        <span class="transition-colors group-hover:text-text">Eventual</span>
+                    </label>
                 </div>
 
                 <div v-if="form.conImpedimento" class="animate-in fade-in slide-in-from-top-2 duration-300">
@@ -217,7 +245,7 @@ import { toast } from 'vue-sonner'
 import BaseModal from '@/components/common/BaseModal.vue'
 import SearchableSelect from '@/components/common/SearchableSelect.vue'
 import DatePicker from '@/components/common/DatePicker.vue'
-import { TIPO_OBSERVADOR, TIPO_CONTRATO } from '../constants/observador.constants'
+import { TIPO_OBSERVADOR, TIPO_CONTRATO, SEXO } from '../constants/observador.constants'
 
 const props = defineProps<{
     show: boolean
@@ -228,6 +256,7 @@ const props = defineProps<{
 
 const tipoObservadorOptions = computed(() => TIPO_OBSERVADOR.map(t => ({ value: t.id, label: t.name })))
 const tipoContratoOptions = computed(() => TIPO_CONTRATO.map(t => ({ value: t.id, label: t.name })))
+const sexoOptions = computed(() => SEXO.map(t => ({ value: t.id, label: t.name })))
 
 const emit = defineEmits(['close', 'save'])
 
@@ -243,6 +272,8 @@ const initialForm = {
     email: '',
     tipoObservador: 'OBSERVADOR',
     tipoContrato: 'LEY MARCO',
+    sexo: 'Masculino' as 'Masculino' | 'Femenino',
+    eventual: false,
     activo: true,
     disponible: true,
     conImpedimento: false,
@@ -267,6 +298,8 @@ watch(
                 email: newObservador.email || '',
                 tipoObservador: newObservador.tipoObservador,
                 tipoContrato: newObservador.tipoContrato,
+                sexo: newObservador.sexo || 'Masculino',
+                eventual: newObservador.eventual ?? false,
                 activo: newObservador.activo,
                 disponible: newObservador.disponible,
                 conImpedimento: newObservador.conImpedimento ?? false,

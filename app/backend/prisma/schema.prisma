@@ -215,6 +215,13 @@ model Especie {
   @@schema("public")
 }
 
+enum Sexo {
+  Masculino
+  Femenino
+
+  @@schema("public")
+}
+
 model Observador {
   id                         String                 @id @default(uuid()) @db.Uuid
   codigoInterno              Int                    @unique @map("codigo_interno")
@@ -223,6 +230,8 @@ model Observador {
   fotoUrl                    String?                @map("foto_url")
   tipoObservador             String                 @map("tipo_observador")
   tipoContrato               String                 @map("tipo_contrato")
+  sexo                       Sexo                   @default(Masculino)
+  eventual                   Boolean                @default(false)
   activo                     Boolean                @default(true)
   disponible                 Boolean                @default(true)
   fechaProximaDisponibilidad DateTime?              @map("fecha_proxima_disponibilidad") @db.Timestamptz(6)

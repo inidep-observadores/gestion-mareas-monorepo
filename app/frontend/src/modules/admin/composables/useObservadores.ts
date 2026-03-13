@@ -69,6 +69,8 @@ export function useObservadores() {
             } else {
                 toast.error(errorMessage)
             }
+        } finally {
+            isSaving.value = false
         }
     }
 

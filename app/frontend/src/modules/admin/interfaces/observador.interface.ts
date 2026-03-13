@@ -6,6 +6,8 @@ export interface Observador {
     fotoUrl?: string;
     tipoObservador: string; // 'OBSERVADOR' | 'TECNICO'
     tipoContrato: string; // 'LEY MARCO' | '1109' | 'MONOTRIBUTISTA' | 'PLANTA PERMANENTE'
+    sexo: 'Masculino' | 'Femenino';
+    eventual: boolean;
     activo: boolean;
     disponible: boolean;
     email?: string;
