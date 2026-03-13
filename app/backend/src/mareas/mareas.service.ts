@@ -1312,6 +1312,15 @@ export class MareasService {
             } as any
         });
 
+        // Obtener mareas en estado DESIGNADA (que no tienen etapas todavía)
+        const mareasDesignadas = await this.prisma.marea.findMany({
+            where: {
+                activo: true,
+                estadoActual: { codigo: 'DESIGNADA' }
+            },
+            select: { observadorPrincipalId: true }
+        });
+
         // Agrupar etapas por marea para contar el total
         const stageCountByMarea = new Map<string, number>();
         etapas.forEach((e: any) => {
@@ -1321,7 +1330,13 @@ export class MareasService {
 
         const activeNav = new Map<string, { start: Date; vessel: string; mareaCode: string; fishery: string; enTierra: boolean; stageCount: number }>();
         const lastArrivalByObs = new Map<string, { date: Date; mareaCode: string; vessel: string; fishery: string }>();
+        const designadosActivosByObs = new Set<string>();
         const obsConMareas = new Set<string>();
+
+        // Poblar designados desde la consulta directa de mareas (estado DESIGNADA)
+        mareasDesignadas.forEach(m => {
+            if (m.observadorPrincipalId) designadosActivosByObs.add(m.observadorPrincipalId);
+        });
 
         etapas.forEach((etapa: any) => {
             const inicio = etapa.fechaZarpada ? new Date(etapa.fechaZarpada) : null;
@@ -1359,17 +1374,23 @@ export class MareasService {
                         });
                     }
                 }
+
+                // Las designaciones ahora se manejan mediante la consulta directa a Marea al inicio
+                // No obstante, si una etapa existe y es DESIGNADA, también la marcamos (por seguridad)
+                if (etapa.marea.estadoActual?.codigo === 'DESIGNADA') {
+                    designadosActivosByObs.add(obs.id);
+                }
             };
 
             etapa.observadores.forEach((o: any) => processObs(o.observador));
             if (etapa.marea.observadorPrincipal) processObs(etapa.marea.observadorPrincipal);
         });
 
-        const listDescanso: Array<{ id: string; name: string; days: number; lastArrival: string; mareaCode: string; vesselName: string; fishery: string; tipoObservador: string }> = [];
-        const listImpedidos: Array<{ id: string; name: string; motivo: string; tipoObservador: string }> = [];
-        const listDisponibles: Array<{ id: string; name: string; days: number; lastArrival: string; mareaCode: string; vesselName: string; fishery: string; tipoObservador: string }> = [];
-        const listNavegando: Array<{ id: string; name: string; days: number; vessel: string; mareaCode: string; fishery: string; enTierra: boolean; startDate: string; tipoObservador: string, stageCount: number }> = [];
-        const topDryCandidates: Array<{ id: string; name: string; days: number; lastArrival: string; mareaCode: string; vesselName: string; fishery: string; tipoObservador: string }> = [];
+        const listDescanso: Array<{ id: string; name: string; days: number; lastArrival: string; mareaCode: string; vesselName: string; fishery: string; tipoObservador: string; sexo: string; eventual: boolean; tieneDesignacionActiva: boolean }> = [];
+        const listImpedidos: Array<{ id: string; name: string; motivo: string; tipoObservador: string; sexo: string; eventual: boolean; tieneDesignacionActiva: boolean }> = [];
+        const listDisponibles: Array<{ id: string; name: string; days: number; lastArrival: string; mareaCode: string; vesselName: string; fishery: string; tipoObservador: string; sexo: string; eventual: boolean; tieneDesignacionActiva: boolean }> = [];
+        const listNavegando: Array<{ id: string; name: string; days: number; vessel: string; mareaCode: string; fishery: string; enTierra: boolean; startDate: string; tipoObservador: string, stageCount: number; sexo: string; eventual: boolean; tieneDesignacionActiva: boolean }> = [];
+        const topDryCandidates: Array<{ id: string; name: string; days: number; lastArrival: string; mareaCode: string; vesselName: string; fishery: string; tipoObservador: string; sexo: string; eventual: boolean; tieneDesignacionActiva: boolean }> = [];
 
         observadores.forEach((obs) => {
             if (!obs.activo) return;
@@ -1392,7 +1413,10 @@ export class MareasService {
                     mareaCode: lastArrivalData.mareaCode,
                     vesselName: lastArrivalData.vessel,
                     fishery: lastArrivalData.fishery,
-                    tipoObservador: obs.tipoObservador
+                    tipoObservador: obs.tipoObservador,
+                    sexo: obs.sexo,
+                    eventual: obs.eventual,
+                    tieneDesignacionActiva: designadosActivosByObs.has(obs.id)
                 });
             }
 
@@ -1410,7 +1434,10 @@ export class MareasService {
                         days: daysNav,
                         startDate: navData?.start?.toISOString() || '',
                         tipoObservador: obs.tipoObservador,
-                        stageCount: navData?.stageCount || 1
+                        stageCount: navData?.stageCount || 1,
+                        sexo: obs.sexo,
+                        eventual: obs.eventual,
+                        tieneDesignacionActiva: designadosActivosByObs.has(obs.id)
                     });
                     break;
                 case 'IMPEDIDO':
@@ -1418,7 +1445,10 @@ export class MareasService {
                         id: obs.id,
                         name,
                         motivo: obs.motivoImpedimento || 'Sin motivo especificado',
-                        tipoObservador: obs.tipoObservador
+                        tipoObservador: obs.tipoObservador,
+                        sexo: obs.sexo,
+                        eventual: obs.eventual,
+                        tieneDesignacionActiva: designadosActivosByObs.has(obs.id)
                     });
                     break;
                 case 'DESCANSO':
@@ -1430,7 +1460,10 @@ export class MareasService {
                         mareaCode: lastArrivalData?.mareaCode || '',
                         vesselName: lastArrivalData?.vessel || '',
                         fishery: lastArrivalData?.fishery || '',
-                        tipoObservador: obs.tipoObservador
+                        tipoObservador: obs.tipoObservador,
+                        sexo: obs.sexo,
+                        eventual: obs.eventual,
+                        tieneDesignacionActiva: designadosActivosByObs.has(obs.id)
                     });
                     break;
                 case 'DISPONIBLE':
@@ -1442,7 +1475,10 @@ export class MareasService {
                         mareaCode: lastArrivalData?.mareaCode || '',
                         vesselName: lastArrivalData?.vessel || '',
                         fishery: lastArrivalData?.fishery || '',
-                        tipoObservador: obs.tipoObservador
+                        tipoObservador: obs.tipoObservador,
+                        sexo: obs.sexo,
+                        eventual: obs.eventual,
+                        tieneDesignacionActiva: designadosActivosByObs.has(obs.id)
                     });
                     break;
             }

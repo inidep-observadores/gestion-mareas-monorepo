@@ -22,8 +22,8 @@
       <div v-for="status in distributions" :key="status.label" @click="selectStatus(status.label)"
         class="group relative flex flex-col items-center p-4 rounded-2xl bg-surface-muted/50 border border-border hover:bg-surface hover:shadow-xl hover:border-primary/30 transition-all duration-300 cursor-pointer"
         :class="[selectedStatus === status.label ? `ring-2 ${status.ringClass} bg-surface` : '']">
-        <!-- Naked Icon (Better Symmetry) -->
-        <div class="mb-3 transition-transform duration-300 group-hover:scale-110 group-hover:-translate-y-1">
+        <!-- Icon (Hidden for Disponibles as we have the chart) -->
+        <div v-if="status.label !== 'Disponibles'" class="mb-3 transition-transform duration-300 group-hover:scale-110 group-hover:-translate-y-1">
           <component :is="status.icon" class="w-6 h-6" :class="status.colorClass" />
         </div>
 
@@ -32,13 +32,24 @@
           {{ status.label }}
         </div>
 
-        <div class="flex flex-col items-center gap-0.5 mb-3">
+        <div class="flex flex-col items-center gap-0.5" :class="[status.label === 'Disponibles' ? 'mb-1' : 'mb-3']">
           <span class="text-2xl font-black tabular-nums transition-colors" :class="status.colorClass">
             {{ status.count }}
           </span>
           <span class="text-[11px] font-bold text-text-muted tabular-nums">
             ({{ status.value }}%)
           </span>
+        </div>
+
+        <!-- Donut Chart for Disponibles -->
+        <div v-if="status.label === 'Disponibles' && availableComposition.total > 0" @click.stop class="w-full h-24 mb-2 flex items-center justify-center transition-all">
+            <apexchart
+                type="donut"
+                height="100%"
+                width="100%"
+                :options="donutOptions"
+                :series="availableComposition.series"
+            />
         </div>
 
         <!-- Progress Indicator -->
@@ -59,7 +70,17 @@
     <div v-if="selectedStatus" class="animate-fadeIn flex-grow flex flex-col min-h-0">
       <div class="rounded-2xl border border-border overflow-hidden flex flex-col flex-grow">
         <div class="bg-surface-muted px-6 py-3 border-b border-border flex justify-between items-center shrink-0">
-          <h3 class="text-xs font-black text-text-muted uppercase tracking-widest">Detalle: {{ selectedStatus }}</h3>
+          <h3 class="text-xs font-black text-text-muted uppercase tracking-widest flex items-center gap-2">
+            Detalle: {{ selectedStatus }}
+            <span v-if="selectedCategory" class="px-2 py-0.5 bg-primary text-white text-[9px] rounded-full flex items-center gap-1 animate-fadeIn">
+              {{ selectedCategory }}
+              <button @click="selectedCategory = null" class="hover:text-white/80">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-2.5 w-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </span>
+          </h3>
           <button @click="selectedStatus = null" class="text-text-muted hover:text-text">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
               stroke="currentColor">
@@ -117,7 +138,22 @@
               </tr>
             </thead>
             <tbody class="divide-y divide-border bg-surface">
-              <tr v-for="item in currentList" :key="item.id" class="hover:bg-surface-muted/50 transition-colors">
+              <tr v-for="item in currentList" :key="item.id" class="transition-all duration-200" :class="[
+                // Prioridad 1: Designados (Celeste suave)
+                (item as any).tieneDesignacionActiva
+                  ? 'bg-sky-50 dark:bg-sky-950/20 border-l-4 border-l-sky-400'
+                  : item.eventual && (item as any).sexo === 'Femenino'
+                    ? 'bg-rose-100/40 dark:bg-rose-900/10 border-l-4 border-l-gray-400' 
+                    : item.eventual
+                      ? 'bg-slate-100 dark:bg-slate-800/60 border-l-4 border-l-slate-400 opacity-90' 
+                      : (item as any).sexo === 'Femenino'
+                        ? 'bg-rose-50 dark:bg-rose-950/20 border-l-4 border-l-rose-300' 
+                        : 'hover:bg-surface-muted/80',
+                
+                // Efecto de brillo en hover para todos los que tienen color
+                ((item as any).tieneDesignacionActiva || item.eventual || (item as any).sexo === 'Femenino') 
+                  ? 'hover:brightness-95 dark:hover:brightness-110' : ''
+              ]">
                 <td class="px-6 py-3 text-xs font-bold text-text">
                   <span
                     class="hover:text-primary transition-colors cursor-pointer hover:underline decoration-primary/30 underline-offset-2"
@@ -213,6 +249,102 @@ const selectedTypes = ref<string[]>(['OBSERVADOR'])
 const searchQuery = ref('')
 const sortBy = ref<'name' | 'days' | null>(null)
 const sortOrder = ref<'asc' | 'desc'>('desc')
+const selectedCategory = ref<string | null>(null)
+
+// Available Composition for Donut Chart
+const availableComposition = computed(() => {
+  if (!props.data || !props.data.listDisponibles) return { series: [], total: 0 }
+  
+  // IMPORTANTE: Aplicar el mismo filtro de tipos que el resto del dashboard
+  const list = getFilteredList(props.data.listDisponibles)
+  const stats = {
+    titulares: 0, // Masc Titular
+    femTitular: 0,
+    femEventual: 0,
+    otrosEventuales: 0, // Masc Eventual
+    designados: 0
+  }
+
+  list.forEach((obs: any) => {
+    if (obs.tieneDesignacionActiva) {
+      stats.designados++
+      return
+    }
+    
+    const isFem = obs.sexo === 'Femenino'
+    const isEventual = obs.eventual === true
+
+    if (!isEventual && !isFem) stats.titulares++
+    else if (!isEventual && isFem) stats.femTitular++
+    else if (isEventual && isFem) stats.femEventual++
+    else if (isEventual && !isFem) stats.otrosEventuales++
+  })
+
+  return {
+    series: [stats.titulares, stats.femTitular, stats.femEventual, stats.otrosEventuales, stats.designados],
+    total: list.length
+  }
+})
+
+const donutOptions = computed(() => ({
+  chart: {
+    type: 'donut',
+    sparkline: { enabled: true },
+    animations: { enabled: true, easing: 'easeinout', speed: 800 },
+    events: {
+      dataPointSelection: (event: any, chartContext: any, config: any) => {
+        const category = ['Titulares', 'Fem. Titular', 'Fem. Eventual', 'Otros Eventuales', 'Designados'][config.dataPointIndex]
+        if (selectedCategory.value === category) {
+            selectedCategory.value = null
+        } else {
+            selectedCategory.value = category
+            selectedStatus.value = 'Disponibles'
+        }
+      }
+    }
+  },
+  colors: ['#22c55e', '#ec4899', '#fb7185', '#94a3b8', '#38bdf8'],
+  labels: ['Titulares', 'Fem. Titular', 'Fem. Eventual', 'Otros Eventuales', 'Designados'],
+  stroke: { show: true, width: 2, colors: ['var(--color-surface)'] },
+  plotOptions: {
+    pie: {
+      donut: {
+        size: '55%',
+        background: 'transparent',
+        labels: {
+          show: true,
+          name: { show: false },
+          value: {
+            show: true,
+            fontSize: '14px',
+            fontFamily: 'inherit',
+            fontWeight: '900',
+            color: 'var(--color-success-500)',
+            offsetY: 5,
+            formatter: (val: string) => val
+          },
+          total: {
+            show: true,
+            showAlways: true,
+            label: '',
+            formatter: (w: any) => {
+              return w.globals.seriesTotals.reduce((a: number, b: number) => a + b, 0).toString()
+            }
+          }
+        }
+      }
+    }
+  },
+  dataLabels: { enabled: false },
+  tooltip: {
+    enabled: true,
+    theme: 'dark',
+    y: {
+      formatter: (val: number) => `${val} obs.`
+    }
+  },
+  legend: { show: false }
+}))
 
 const toggleSort = (key: 'name' | 'days') => {
   if (sortBy.value === key) {
@@ -331,6 +463,10 @@ const selectStatus = (label: string) => {
     selectedStatus.value = null
   } else {
     selectedStatus.value = label
+    // Limpiar filtro de categoría si cambiamos de estado y no es Disponibles
+    if (label !== 'Disponibles') {
+      selectedCategory.value = null
+    }
   }
 }
 
@@ -361,8 +497,41 @@ const currentList = computed(() => {
     });
   }
 
+  // 2.5 Filtrado por categoría de la dona (solo si está en Disponibles)
+  if (selectedStatus.value === 'Disponibles' && selectedCategory.value) {
+    list = list.filter(obs => {
+      if (selectedCategory.value === 'Designados') return obs.tieneDesignacionActiva;
+      if (obs.tieneDesignacionActiva) return false; // Los demás no deben ser designados
+
+      const isFem = obs.sexo === 'Femenino';
+      const isEventual = obs.eventual === true;
+
+      if (selectedCategory.value === 'Titulares') return !isEventual && !isFem;
+      if (selectedCategory.value === 'Fem. Titular') return !isEventual && isFem;
+      if (selectedCategory.value === 'Fem. Eventual') return isEventual && isFem;
+      if (selectedCategory.value === 'Otros Eventuales') return isEventual && !isFem;
+      
+      return true;
+    });
+  }
+
   // 3. Ordenamiento
-  if (sortBy.value) {
+  if (selectedStatus.value === 'Disponibles') {
+    // Orden especial para Disponibles:
+    // 1. No eventuales primero, eventuales después
+    // 2. Dentro de cada grupo: Masculinos primero, Femeninos después
+    // 3. Finalmente por días de inactividad descendente (comportamiento actual)
+    list = [...list].sort((a, b) => {
+      // Prioridad 1: Eventual (false < true)
+      if (a.eventual !== b.eventual) return a.eventual ? 1 : -1;
+
+      // Prioridad 2: Sexo (Masculino < Femenino)
+      if (a.sexo !== b.sexo) return a.sexo === 'Masculino' ? -1 : 1;
+
+      // Prioridad 3: Días de inactividad descendente
+      return b.days - a.days;
+    });
+  } else if (sortBy.value) {
     list = [...list].sort((a, b) => {
       const key = sortBy.value as 'name' | 'days'
       const valA = a[key]
