@@ -188,7 +188,7 @@ export const statsService = {
         window.URL.revokeObjectURL(url);
     },
 
-    async downloadWorkforceExport(year: number) {
+    async downloadWorkforceExport(year: number, filterValue?: string) {
         return this.downloadExport(
             year,
             'CALENDAR',
@@ -197,7 +197,7 @@ export const statsService = {
             'SHIP',
             true,
             'WORKFORCE',
-            undefined,
+            filterValue,
             `Dotacion_Personal_Mareas_${year}`
         );
     },

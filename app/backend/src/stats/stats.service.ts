@@ -5,16 +5,21 @@ import { DateUtils } from '../common/utils/date.utils';
 import { Prisma } from '@prisma/client';
 import { StatsDetailItem, DashboardStats, MareaDistributionItem, UniqueVesselsResult } from './interfaces/dashboard.interface';
 import { MareaUtils } from '../common/utils/marea.utils';
-import { TipoMarea } from '../mareas/mareas.constants';
+import { TipoMarea, MareaEstado } from '../mareas/mareas.constants';
 import { FilterType } from './dto/get-stats.dto';
+import { BusinessRulesService } from '../common/business-rules/business-rules.service';
 import * as ExcelJS from 'exceljs';
 import { Sexo } from '@prisma/client';
+
+import { MareasService } from '../mareas/mareas.service';
 
 @Injectable()
 export class StatsService {
     constructor(
         private readonly prisma: PrismaService,
-        private readonly planificacion: PlanificacionService
+        private readonly planificacion: PlanificacionService,
+        private readonly businessRules: BusinessRulesService,
+        private readonly mareasService: MareasService
     ) { }
 
     private getSharedWhereClause(
@@ -655,14 +660,14 @@ export class StatsService {
         filterByStart: boolean = false,
         protocolizationStartDate?: string,
         protocolizationEndDate?: string,
-        includeSummaries: boolean = false,
+        includeSummaries = false,
     ): Promise<ExcelJS.Workbook> {
         if (filterType === FilterType.COVERAGE) {
             return this.getCoverageExportWorkbook(year, mode, includeNonProtocolized, includeProtocolizedOutOfPeriod, includeCampaigns, startDate, endDate, filterValue, protocolizationStartDate, protocolizationEndDate);
         }
 
         if (filterType === FilterType.WORKFORCE) {
-            return this.getWorkforceExportWorkbook();
+            return this.getWorkforceExportWorkbook(filterValue);
         }
 
         if (filterType?.startsWith('CHART_')) {
@@ -1527,182 +1532,166 @@ export class StatsService {
         return workbook;
     }
 
-    private async getWorkforceExportWorkbook(): Promise<ExcelJS.Workbook> {
-        // 1. Obtener datos crudos
-        const observadores = await this.prisma.observador.findMany({
-            where: { 
-                activo: true,
-                tipoObservador: { not: 'TECNICO' }
-            },
-            include: {
-                mareasAsignadas: {
-                    where: { activo: true },
-                    include: {
-                        estadoActual: true,
-                    },
-                },
-                etapas: {
-                    include: {
-                        etapa: {
-                            include: {
-                                marea: {
-                                    include: { estadoActual: true }
-                                }
-                            }
-                        }
-                    }
-                }
-            },
-        });
+    private async getWorkforceExportWorkbook(filterValue?: string): Promise<ExcelJS.Workbook> {
+        // 1. Obtener datos unificados desde MareasService (Misma fuente que el Dashboard)
+        const workforce = await this.mareasService.getWorkforceStatus();
 
-        const now = DateUtils.getNow(true);
+        // Filtrado dinámico de técnicos usando el parámetro filterValue existente
+        // El frontend enviará 'ONLY_OBSERVERS' si el filtro de técnicos está desactivado
+        if (filterValue === 'ONLY_OBSERVERS') {
+            workforce.listNavegando = workforce.listNavegando.filter(obs => obs.tipoObservador !== 'TECNICO');
+            workforce.listDescanso = workforce.listDescanso.filter(obs => obs.tipoObservador !== 'TECNICO');
+            workforce.listDisponibles = workforce.listDisponibles.filter(obs => obs.tipoObservador !== 'TECNICO');
+            workforce.listImpedidos = workforce.listImpedidos.filter(obs => obs.tipoObservador !== 'TECNICO');
+        }
 
-        // 2. Clasificar personal (Lógica espejo del Dashboard)
-        const classification = observadores.map((obs) => {
-            const mareasComoPrincipal = obs.mareasAsignadas || [];
-            const mareasComoAdicional = obs.etapas?.map(e => e.etapa?.marea).filter(m => !!m) || [];
-            
-            // Consolidar todas las mareas únicas relacionadas
-            const todasLasMareas = [...mareasComoPrincipal];
-            mareasComoAdicional.forEach(m => {
-                if (!todasLasMareas.find(tm => tm.id === m.id)) {
-                    todasLasMareas.push(m);
-                }
-            });
-
-            // 1. Determinar Estado Operativo Básico (Prioridad: Navegando > Descanso > Disponible > Impedido)
-            let status = 'DISPONIBLE';
-            let statusLabel = 'Disponible';
-            let order = 3;
-
-            const tieneMareaEnEjecucion = todasLasMareas.some(m => m?.estadoActual?.codigo === 'EN_EJECUCION');
-            const tieneMareaArribada = todasLasMareas.some(m => m?.estadoActual?.codigo === 'ARRIBADA');
-
-            if (tieneMareaEnEjecucion) {
-                status = 'NAVEGANDO';
-                statusLabel = 'Navegando';
-                order = 1;
-            } else if (tieneMareaArribada) {
-                status = 'EN_DESCANSO';
-                statusLabel = 'En Descanso';
-                order = 2;
-            } else if (obs.conImpedimento) {
-                status = 'IMPEDIDO';
-                statusLabel = 'Impedido';
-                order = 4;
-            }
-
-            // 2. Condición Independiente: Designado
-            const isDesignated = todasLasMareas.some(m => m?.estadoActual?.codigo === 'DESIGNADA');
-
-            // Jerarquía interna (para el orden dentro del grupo)
-            let internalOrder = 4; // Regular (Titular)
-            if (obs.tipoObservador === 'EVENTUAL') internalOrder = 3;
-            if (obs.sexo === Sexo.Femenino) internalOrder = 2;
-            if (obs.tipoObservador !== 'EVENTUAL' && obs.sexo !== Sexo.Femenino) internalOrder = 1;
-
-            return {
-                ...obs,
-                status,
-                statusLabel,
-                isDesignated,
-                mainOrder: order,
-                internalOrder,
-                fullName: `${obs.apellido}, ${obs.nombre}`,
-            };
-        });
-
-        // 3. Ordenar
-        classification.sort((a, b) => {
-            if (a.mainOrder !== b.mainOrder) return a.mainOrder - b.mainOrder;
-            if (a.internalOrder !== b.internalOrder) return a.internalOrder - b.internalOrder;
-            return a.fullName.localeCompare(b.fullName);
-        });
-
-        // 4. Crear Excel
-        const workbook = new ExcelJS.Workbook();
-        const sheet = workbook.addWorksheet('Personal de Mareas');
-
-        sheet.columns = [
-            { header: 'ESTADO', key: 'statusLabel', width: 20 },
-            { header: 'APELLIDO Y NOMBRE', key: 'fullName', width: 40 },
-            { header: 'TIPO', key: 'tipoObservador', width: 15 },
-            { header: 'CONTRATO', key: 'tipoContrato', width: 20 },
-            { header: 'SEXO', key: 'sexo', width: 15 },
-            { header: 'OBSERVACIONES', key: 'observaciones', width: 50 },
+        // 2. Aplanar las listas para el reporte Excel
+        // Combinamos las listas y asignamos etiquetas/órdenes específicos
+        const rawData = [
+            ...workforce.listNavegando.map(item => ({ ...item, status: 'NAVEGANDO', statusLabel: 'Navegando', order: 1 })),
+            ...workforce.listDescanso.map(item => ({ ...item, status: 'DESCANSO', statusLabel: 'En Descanso', order: 2 })),
+            ...workforce.listDisponibles.map(item => ({ ...item, status: 'DISPONIBLE', statusLabel: 'Disponible', order: 3 })),
+            ...workforce.listImpedidos.map(item => ({ ...item, status: 'IMPEDIDO', statusLabel: 'Impedidos', order: 4, days: 0 as number }))
         ];
 
-        // Estilos de Cabecera
+        // 3. Jerarquía interna: Titular Masc (1) > Femenino (2) > Eventual Masc (3)
+        const getInternalOrder = (item: any) => {
+            if (item.sexo === Sexo.Femenino) return 2;
+            if (item.eventual === true) return 3;
+            return 1;
+        };
+
+        // 4. Ordenar: Por estado (order) y luego por jerarquía interna, finalmente por nombre
+        rawData.sort((a, b) => {
+            if (a.order !== b.order) return a.order - b.order;
+            const orderA = getInternalOrder(a);
+            const orderB = getInternalOrder(b);
+            if (orderA !== orderB) return orderA - orderB;
+            return a.name.localeCompare(b.name);
+        });
+
+        // 5. Crear Excel
+        const workbook = new ExcelJS.Workbook();
+        const sheet = workbook.addWorksheet('Dotación de Personal');
+
+        sheet.columns = [
+            { header: 'ESTADO', key: 'statusLabel', width: 15 },
+            { header: 'CONDICIÓN', key: 'condicion', width: 15 },
+            { header: 'APELLIDO Y NOMBRE', key: 'name', width: 35 },
+            { header: 'TIPO', key: 'tipoObservador', width: 15 },
+            { header: 'DÍAS NAVEGADOS', key: 'daysNav', width: 18 },
+            { header: 'DÍAS INACTIVO', key: 'daysInact', width: 15 },
+            { header: 'BUQUE', key: 'vessel', width: 25 },
+            { header: 'MAREA', key: 'mareaCode', width: 15 },
+            { header: 'PESQUERÍA', key: 'fishery', width: 25 },
+            { header: 'SEXO', key: 'sexo', width: 12 },
+            { header: 'OBSERVACIONES', key: 'observaciones', width: 40 },
+        ];
+
+        // Estilos de Cabecera (Deep Ocean / Professional Clean Style)
         sheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFF' } };
         sheet.getRow(1).fill = {
             type: 'pattern',
             pattern: 'solid',
-            fgColor: { argb: '1E293B' }, // Slate-800
+            fgColor: { argb: '1E293B' },
         };
 
-        // 5. Agregar Filas con Estilos
-        classification.forEach((item) => {
+        // 5. Agregar Filas con lógica de estilos
+        rawData.forEach((item) => {
+            const isNav = item.status === 'NAVEGANDO';
+            const isDry = item.status === 'DESCANSO' || item.status === 'DISPONIBLE'; // Sin impedidos
+
+            // Determinar texto condensado de condición
+            const condiciones: string[] = [];
+            if ((item as any).tieneDesignacionActiva) condiciones.push('Designado/a');
+            if ((item as any).eventual) condiciones.push('Eventual');
+            if ((item as any).sexo === Sexo.Femenino) condiciones.push('Mujer');
+
             const row = sheet.addRow({
                 statusLabel: item.statusLabel,
-                fullName: item.fullName,
+                condicion: condiciones.join(' + '),
+                name: item.name,
                 tipoObservador: item.tipoObservador,
-                tipoContrato: item.tipoContrato,
-                sexo: item.sexo,
+                daysNav: isNav ? item.days : '',
+                daysInact: isDry ? item.days : '',
+                vessel: (item as any).vessel || (item as any).vesselName || '',
+                mareaCode: (item as any).mareaCode || '',
+                fishery: (item as any).fishery || '',
+                sexo: (item as any).sexo || '',
                 observaciones: item.observaciones || '',
             });
 
-            // Color de la celda de ESTADO
+            // Estilos de celda de estado
             const statusCell = row.getCell(1);
-            let statusColor = 'F1F5F9'; // Default
-            if (item.status === 'NAVEGANDO') statusColor = 'E0F2FE'; // Sky-100 (Celeste)
-            if (item.status === 'EN_DESCANSO') statusColor = 'DBEAFE'; // Blue-100 (Azul)
-            if (item.status === 'DISPONIBLE') statusColor = 'DCFCE7'; // Green-100 (Verde)
-            if (item.status === 'IMPEDIDO') statusColor = 'FEE2E2'; // Red-100 (Rojo)
+            let statusColor = 'F1F5F9'; // Default Gray
+            if (item.status === 'NAVEGANDO') statusColor = 'E0F2FE'; // Celeste (Cian suave)
+            if (item.status === 'DESCANSO') statusColor = 'F0FDF4';   // Verde menta suave
+            if (item.status === 'DISPONIBLE') statusColor = 'DCFCE7'; // Verde esmeralda suave
+            if (item.status === 'IMPEDIDO') statusColor = 'FECACA';   // Rojo más intenso (Red 200)
 
             statusCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: statusColor } };
             statusCell.font = { bold: true };
 
-            // Estilos del resto de la fila
+            // Resaltar observadores con impedimento (fila completa en rojo muy tenue)
             if (item.status === 'IMPEDIDO') {
                 row.eachCell((cell) => {
-                    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FEF2F2' } }; // Red-50 (Fila completa en rojo suave)
+                    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FEF2F2' } };
                 });
-            } else {
-                // Fondos base por género o contrato
-                if (item.sexo === Sexo.Femenino) {
-                    row.eachCell((cell, colNumber) => {
-                        if (colNumber > 1) {
-                            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FDF2F8' } }; // Pink-50
-                        }
-                    });
-                } else if (item.tipoObservador === 'EVENTUAL') {
-                    row.eachCell((cell, colNumber) => {
-                        if (colNumber > 1) {
-                            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'F8FAFC' } }; // Slate-50
-                        }
-                    });
-                }
-
-                // Resaltado de condicional "Designado" (Precedencia en la celda de nombre)
-                if (item.isDesignated) {
-                    row.getCell(2).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'E0F2FE' } }; // Sky-100 (Celeste)
-                }
             }
+
+            // Resaltar DESIGNADOS (Toda la fila en cian suave si ya tienen buque/marea pero no están navegando)
+            if ((item as any).tieneDesignacionActiva && item.status !== 'NAVEGANDO') {
+                row.eachCell((cell) => {
+                    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'E0F2FE' } };
+                });
+                statusCell.font = { bold: true, italic: true };
+            }
+
+            // Coloreado por género (Femenino: rosa tenue) o condición (Eventual: gris tenue)
+            if ((item as any).sexo === Sexo.Femenino) {
+                row.eachCell((cell, colNumber) => {
+                    // No sobreescribir la columna de estado si ya tiene color específico
+                    if (colNumber > 1) {
+                         // Solo pintar si no tiene ya un color de impedimento/designado
+                         if (cell.fill?.type !== 'pattern') {
+                            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FDF2F8' } };
+                         }
+                    }
+                });
+            } else if ((item as any).eventual === true) {
+                row.eachCell((cell, colNumber) => {
+                    if (colNumber > 1) {
+                         if (cell.fill?.type !== 'pattern') {
+                            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'F1F5F9' } };
+                         }
+                    }
+                });
+            }
+
+            // Estilo por género o condición aplicado anteriormente
         });
 
-        // Auto filtro y bordes
-        sheet.autoFilter = { from: 'A1', to: 'F1' };
+        // 6. Configuración final de la hoja - Rango completo para que funcione el filtro
+        sheet.autoFilter = `A1:K${sheet.rowCount}`;
+
+        // Bordes suaves
         sheet.eachRow((row) => {
             row.eachCell((cell) => {
                 cell.border = {
                     top: { style: 'thin', color: { argb: 'E2E8F0' } },
                     left: { style: 'thin', color: { argb: 'E2E8F0' } },
                     bottom: { style: 'thin', color: { argb: 'E2E8F0' } },
-                    right: { style: 'thin', color: { argb: 'E2E8F0' } },
+                    right: { style: 'thin', color: { argb: 'E2E8F0' } }
                 };
             });
         });
 
+        // Inmovilizar cabecera
+        sheet.views = [
+            { state: 'frozen', xSplit: 0, ySplit: 1 }
+        ];
+
         return workbook;
     }
+
 }

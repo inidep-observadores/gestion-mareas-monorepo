@@ -7,7 +7,7 @@
       {{ filteredStats.total }} TOTAL
     </div>
 
-    <div class="flex items-center gap-3 mb-6">
+    <div class="flex items-center gap-3 mb-6 mt-4">
       <UserGroupIcon class="w-6 h-6 text-primary" />
       <div>
         <h2 class="text-sm font-black text-text uppercase tracking-widest leading-tight">
@@ -589,9 +589,16 @@ const handleExport = async () => {
   try {
     isExporting.value = true
     const currentYear = new Date().getFullYear()
-    await statsService.downloadWorkforceExport(currentYear)
+    
+    // Si el filtro de 'TECNICO' no está seleccionado, le indicamos al backend que los excluya
+    const filterValue = selectedTypes.value.includes('TECNICO') ? undefined : 'ONLY_OBSERVERS'
+    
+    await statsService.downloadWorkforceExport(currentYear, filterValue)
+    
     toast.success('Excel generado correctamente', {
-      description: `Lista completa de personal de mareas (${currentYear})`,
+      description: filterValue === 'ONLY_OBSERVERS' 
+        ? `Dotación de Observadores (${currentYear})`
+        : `Dotación Completa (${currentYear})`,
     })
   } catch (error) {
     console.error('Error al exportar personal:', error)
