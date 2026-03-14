@@ -1386,11 +1386,11 @@ export class MareasService {
             if (etapa.marea.observadorPrincipal) processObs(etapa.marea.observadorPrincipal);
         });
 
-        const listDescanso: Array<{ id: string; name: string; days: number; lastArrival: string; mareaCode: string; vesselName: string; fishery: string; tipoObservador: string; sexo: string; eventual: boolean; tieneDesignacionActiva: boolean }> = [];
-        const listImpedidos: Array<{ id: string; name: string; motivo: string; tipoObservador: string; sexo: string; eventual: boolean; tieneDesignacionActiva: boolean }> = [];
-        const listDisponibles: Array<{ id: string; name: string; days: number; lastArrival: string; mareaCode: string; vesselName: string; fishery: string; tipoObservador: string; sexo: string; eventual: boolean; tieneDesignacionActiva: boolean }> = [];
-        const listNavegando: Array<{ id: string; name: string; days: number; vessel: string; mareaCode: string; fishery: string; enTierra: boolean; startDate: string; tipoObservador: string, stageCount: number; sexo: string; eventual: boolean; tieneDesignacionActiva: boolean }> = [];
-        const topDryCandidates: Array<{ id: string; name: string; days: number; lastArrival: string; mareaCode: string; vesselName: string; fishery: string; tipoObservador: string; sexo: string; eventual: boolean; tieneDesignacionActiva: boolean }> = [];
+        const listDescanso: Array<{ id: string; name: string; days: number; lastArrival: string; mareaCode: string; vesselName: string; fishery: string; tipoObservador: string; sexo: string; eventual: boolean; tieneDesignacionActiva: boolean; observaciones?: string }> = [];
+        const listImpedidos: Array<{ id: string; name: string; motivo: string; tipoObservador: string; sexo: string; eventual: boolean; tieneDesignacionActiva: boolean; observaciones?: string }> = [];
+        const listDisponibles: Array<{ id: string; name: string; days: number; lastArrival: string; mareaCode: string; vesselName: string; fishery: string; tipoObservador: string; sexo: string; eventual: boolean; tieneDesignacionActiva: boolean; observaciones?: string }> = [];
+        const listNavegando: Array<{ id: string; name: string; days: number; vessel: string; mareaCode: string; fishery: string; enTierra: boolean; startDate: string; tipoObservador: string, stageCount: number; sexo: string; eventual: boolean; tieneDesignacionActiva: boolean; observaciones?: string }> = [];
+        const topDryCandidates: Array<{ id: string; name: string; days: number; lastArrival: string; mareaCode: string; vesselName: string; fishery: string; tipoObservador: string; sexo: string; eventual: boolean; tieneDesignacionActiva: boolean; observaciones?: string }> = [];
 
         observadores.forEach((obs) => {
             if (!obs.activo) return;
@@ -1416,7 +1416,8 @@ export class MareasService {
                     tipoObservador: obs.tipoObservador,
                     sexo: obs.sexo,
                     eventual: obs.eventual,
-                    tieneDesignacionActiva: designadosActivosByObs.has(obs.id)
+                    tieneDesignacionActiva: designadosActivosByObs.has(obs.id),
+                    observaciones: obs.observaciones
                 });
             }
 
@@ -1437,7 +1438,8 @@ export class MareasService {
                         stageCount: navData?.stageCount || 1,
                         sexo: obs.sexo,
                         eventual: obs.eventual,
-                        tieneDesignacionActiva: designadosActivosByObs.has(obs.id)
+                        tieneDesignacionActiva: designadosActivosByObs.has(obs.id),
+                        observaciones: obs.observaciones
                     });
                     break;
                 case 'IMPEDIDO':
@@ -1448,7 +1450,8 @@ export class MareasService {
                         tipoObservador: obs.tipoObservador,
                         sexo: obs.sexo,
                         eventual: obs.eventual,
-                        tieneDesignacionActiva: designadosActivosByObs.has(obs.id)
+                        tieneDesignacionActiva: designadosActivosByObs.has(obs.id),
+                        observaciones: obs.observaciones
                     });
                     break;
                 case 'DESCANSO':
@@ -1463,7 +1466,8 @@ export class MareasService {
                         tipoObservador: obs.tipoObservador,
                         sexo: obs.sexo,
                         eventual: obs.eventual,
-                        tieneDesignacionActiva: designadosActivosByObs.has(obs.id)
+                        tieneDesignacionActiva: designadosActivosByObs.has(obs.id),
+                        observaciones: obs.observaciones
                     });
                     break;
                 case 'DISPONIBLE':
@@ -1478,7 +1482,8 @@ export class MareasService {
                         tipoObservador: obs.tipoObservador,
                         sexo: obs.sexo,
                         eventual: obs.eventual,
-                        tieneDesignacionActiva: designadosActivosByObs.has(obs.id)
+                        tieneDesignacionActiva: designadosActivosByObs.has(obs.id),
+                        observaciones: obs.observaciones
                     });
                     break;
             }

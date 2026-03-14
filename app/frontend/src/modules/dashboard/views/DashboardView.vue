@@ -28,7 +28,7 @@
         <div class="col-span-12 lg:col-span-6 xl:col-span-5 flex flex-col gap-8">
           <AlertTrafficLight :show-actions="false" />
           <div class="flex flex-col gap-2">
-            <WorkforceOverview :data="workforceData" @view-timeline="openTimeline" />
+            <WorkforceOverview :data="workforceData" @view-timeline="openTimeline" @refresh="loadWorkforce" />
             <TopDryTime :topDry="workforceData?.topDry || []" @view-timeline="openTimeline" />
           </div>
         </div>
@@ -77,6 +77,7 @@
       :observador-name="selectedObserver?.name"
       :year="selectedYear"
       @close="showTimelineDialog = false"
+      @refresh="loadWorkforce"
     />
   </AdminLayout>
 </template>

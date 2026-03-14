@@ -21,7 +21,7 @@
         <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
           <div
             :class="[
-                'relative transform overflow-hidden rounded-2xl bg-white text-left shadow-2xl transition-all w-full sm:my-8 dark:bg-gray-900',
+                'relative transform overflow-hidden rounded-2xl bg-surface text-left shadow-2xl transition-all w-full sm:my-8',
                 variant === 'danger' ? 'border border-error/20 dark:border-error/50' : 'border border-border/50',
                 maxWidthClass
             ]"
@@ -30,17 +30,17 @@
             <div 
               :class="[
                 'px-4 pb-4 pt-5 sm:p-6',
-                variant === 'danger' ? 'bg-error/5 dark:bg-error/10' : 'bg-white dark:bg-gray-900'
+                variant === 'danger' ? 'bg-error/5 dark:bg-error/10' : 'bg-surface'
               ]"
             >
               <!-- Header -->
               <div class="flex items-center justify-between mb-4">
-                <h3 class="text-lg font-medium leading-6 text-gray-900 dark:text-white" id="modal-title">
+                <h3 class="text-lg font-black uppercase text-text tracking-tight" id="modal-title">
                   <slot name="title">{{ title }}</slot>
                 </h3>
                 <button
                   @click="emit('close')"
-                  class="text-gray-400 hover:text-gray-500 focus:outline-none"
+                  class="text-text-muted hover:text-text focus:outline-none transition-colors"
                 >
                   <span class="sr-only">Cerrar</span>
                   <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">

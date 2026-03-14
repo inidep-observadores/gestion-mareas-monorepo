@@ -57,12 +57,24 @@
               </button>
             </span>
           </h3>
-          <button @click="selectedStatus = null" class="text-text-muted hover:text-text">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
-              stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
+          <div class="flex items-center gap-3">
+            <button @click="isExpanded = true" 
+              class="p-1.5 hover:bg-primary/10 text-primary rounded-lg transition-all active:scale-95 group/expand"
+              title="Expandir vista">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 transition-transform group-hover/expand:scale-110" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="15 3 21 3 21 9"></polyline>
+                <polyline points="9 21 3 21 3 15"></polyline>
+                <line x1="21" y1="3" x2="14" y2="10"></line>
+                <line x1="3" y1="21" x2="10" y2="14"></line>
+              </svg>
+            </button>
+            <button @click="selectedStatus = null" class="text-text-muted hover:text-text transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
         </div>
 
         <!-- Filtros y Búsqueda -->
@@ -114,7 +126,7 @@
               </tr>
             </thead>
             <tbody class="divide-y divide-border bg-surface">
-              <tr v-for="item in currentList" :key="item.id" class="transition-all duration-200" :class="[
+              <tr v-for="item in currentList" :key="item.id" class="transition-all duration-200 group" :class="[
                 // Prioridad 1: Designados (Celeste suave)
                 (item as any).tieneDesignacionActiva
                   ? 'bg-sky-50 dark:bg-sky-950/20 border-l-4 border-l-sky-400'
@@ -131,13 +143,53 @@
                   ? 'hover:brightness-95 dark:hover:brightness-110' : ''
               ]">
                 <td class="px-6 py-3 text-xs font-bold text-text">
-                  <span
-                    class="hover:text-primary transition-colors cursor-pointer hover:underline decoration-primary/30 underline-offset-2"
-                    @click="$emit('view-timeline', item.id, item.name)">
-                    {{ item.name }}
-                  </span>
-                  <span class="block text-[9px] font-normal text-text-muted/60 lowercase italic">{{ item.tipoObservador
-                    }}</span>
+                  <div class="flex items-center gap-2">
+                    <span
+                      class="hover:text-primary transition-colors cursor-pointer hover:underline decoration-primary/30 underline-offset-2"
+                      @click="$emit('view-timeline', item.id, item.name)">
+                      {{ item.name }}
+                    </span>
+                    
+                    <!-- Botón Editar Inline -->
+                    <button v-if="editingObsId !== item.id" 
+                      @click="startEditing(item.id, (item as any).observaciones)"
+                      class="opacity-0 group-hover:opacity-100 p-1 hover:bg-primary/10 text-primary rounded transition-all"
+                      title="Editar observaciones">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 24 24" fill="none"
+                          stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                      </svg>
+                    </button>
+                  </div>
+
+                  <!-- Modo Edición Inline -->
+                  <div v-if="editingObsId === item.id" class="mt-2 flex flex-col gap-1.5 max-w-[180px]">
+                    <textarea v-model="tempObservaciones"
+                      class="w-full bg-surface border border-primary/30 rounded-lg p-2 text-[9px] font-medium text-text focus:outline-none focus:ring-2 focus:ring-primary/10 min-h-[60px]"
+                      placeholder="Observaciones..."></textarea>
+                    <div class="flex justify-end gap-2">
+                      <button @click="cancelEditing" :disabled="savingInline"
+                        class="text-[8px] font-black uppercase text-text-muted hover:text-text">
+                        X
+                      </button>
+                      <button @click="saveInline" :disabled="savingInline"
+                        class="text-[8px] font-black uppercase text-primary hover:text-primary-hover">
+                        {{ savingInline ? '...' : 'OK' }}
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Modo Vista -->
+                  <template v-else>
+                    <div v-if="(item as any).observaciones" 
+                      class="mt-1 pl-2 border-l-2 border-primary/20 text-[9px] font-medium text-text-muted italic leading-relaxed">
+                      {{ (item as any).observaciones }}
+                    </div>
+                    <span v-else class="block text-[9px] font-normal text-text-muted/40 uppercase tracking-tighter mt-0.5">
+                      {{ item.tipoObservador }}
+                    </span>
+                  </template>
                 </td>
 
                 <!-- Impedidos Columns -->
@@ -216,6 +268,196 @@
         </div>
       </div>
     </div>
+
+    <!-- Modal de Vista Expandida -->
+    <BaseModal :show="isExpanded" :title="`Detalle: ${selectedStatus}`" @close="isExpanded = false" maxWidth="4xl">
+      <div v-if="currentStatusInfo" class="flex flex-col h-[85vh]">
+        <!-- Header Estilo Ficha -->
+        <div class="px-8 py-6 bg-surface-muted/30 border-b border-border flex items-center justify-between gap-8 shrink-0 relative overflow-hidden">
+          <!-- Decoración de fondo -->
+          <div class="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -mr-32 -mt-32 pointer-events-none"></div>
+          
+          <div class="flex items-center gap-6 relative z-10">
+            <div class="w-16 h-16 rounded-2xl flex items-center justify-center shadow-xl transition-transform hover:scale-105" 
+              :class="[currentStatusInfo.bgClass]">
+              <component :is="currentStatusInfo.icon" class="w-8 h-8" :class="currentStatusInfo.colorClass" />
+            </div>
+            <div>
+              <h2 class="text-2xl font-black text-text uppercase tracking-tighter leading-none mb-1">
+                {{ selectedStatus }}
+              </h2>
+              <div class="flex items-center gap-3">
+                <span class="text-4xl font-black tabular-nums tracking-tighter" :class="currentStatusInfo.colorClass">
+                  {{ currentStatusInfo.count }}
+                </span>
+                <div class="flex flex-col">
+                  <span class="text-[10px] font-black text-text-muted uppercase tracking-widest leading-none">Personal Activo</span>
+                  <span class="text-[12px] font-bold text-text-muted">({{ currentStatusInfo.value }}%)</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Mini Dona y Progreso (Si no es Impedidos) -->
+          <div v-if="selectedStatus !== 'Impedidos'" class="flex items-center gap-8">
+            <WorkforceDonutChart 
+              :observers="getFilteredList(currentStatusObservers)"
+              class="!w-24 !h-24 scale-110"
+              @select-category="(category) => selectedCategory = category"
+            />
+            <div class="w-48 hidden md:block">
+              <div class="flex justify-between mb-1.5 flex-wrap gap-1">
+                <span class="text-[9px] font-black text-text-muted uppercase tracking-widest">Porcentaje de la Dotación</span>
+                <span class="text-[10px] font-black" :class="currentStatusInfo.colorClass">{{ currentStatusInfo.value }}%</span>
+              </div>
+              <div class="h-2 w-full bg-surface-muted rounded-full overflow-hidden shadow-inner border border-border/50">
+                <div class="h-full rounded-full transition-all duration-1000 ease-out shadow-sm" :class="currentStatusInfo.bgClass"
+                  :style="{ width: currentStatusInfo.value + '%' }"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Filtros y Búsqueda (Replicados para el Modal) -->
+        <div class="px-8 py-4 bg-surface border-b border-border flex items-center gap-6 shrink-0">
+          <div class="flex-1 max-w-md">
+            <SearchInput v-model="searchQuery" placeholder="Buscar observador, buque o marea..." class="!w-full" />
+          </div>
+          <div class="flex gap-2 p-1 bg-surface-muted rounded-xl border border-border">
+            <button
+              v-for="type in [{ key: 'OBSERVADOR', label: 'Observadores' }, { key: 'TECNICO', label: 'Técnicos' }]"
+              :key="type.key" @click="toggleType(type.key)"
+              class="px-5 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all duration-200"
+              :class="[
+                selectedTypes.includes(type.key)
+                  ? 'bg-primary text-white shadow-md'
+                  : 'text-text-muted hover:text-text'
+              ]">
+              {{ type.label }}
+            </button>
+          </div>
+          
+          <div v-if="selectedCategory" class="animate-fadeIn">
+            <span class="px-3 py-1.5 bg-primary text-white text-[10px] font-black uppercase rounded-lg flex items-center gap-2 shadow-sm ring-2 ring-primary/20">
+              Filtro: {{ selectedCategory }}
+              <button @click="selectedCategory = null" class="hover:bg-white/20 p-0.5 rounded transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </span>
+          </div>
+        </div>
+
+        <!-- Tabla (Replicada con scroll del modal) -->
+        <div class="flex-grow overflow-y-auto custom-scrollbar px-2">
+          <table class="w-full text-left border-collapse">
+            <thead class="bg-surface sticky top-0 z-10 shadow-sm">
+              <tr>
+                <th @click="toggleSort('name')"
+                  class="px-8 py-4 text-[10px] font-black uppercase text-text-muted tracking-widest cursor-pointer hover:text-primary transition-colors group">
+                  <div class="flex items-center gap-2">
+                    Observador
+                    <ChevronDownIcon v-if="sortBy === 'name'" class="w-3.5 h-3.5 transition-transform duration-300"
+                      :class="{ 'rotate-180': sortOrder === 'asc' }" />
+                  </div>
+                </th>
+                <th v-if="selectedStatus === 'Impedidos'"
+                  class="px-8 py-4 text-[10px] font-black uppercase text-text-muted tracking-widest">Motivo</th>
+                <th v-else class="px-8 py-4 text-[10px] font-black uppercase text-text-muted tracking-widest">
+                  {{ selectedStatus === 'Navegando' ? 'Marea Actual / Buque' : 'Último Arribo' }}
+                </th>
+                <th v-if="selectedStatus !== 'Impedidos'" @click="toggleSort('days')"
+                  class="px-8 py-4 text-[10px] font-black uppercase text-text-muted tracking-widest text-right cursor-pointer hover:text-primary transition-colors group">
+                  <div class="flex items-center justify-end gap-2">
+                    {{ selectedStatus === 'Navegando' ? 'Días' : 'Inactividad' }}
+                    <ChevronDownIcon v-if="sortBy === 'days'" class="w-3.5 h-3.5 transition-transform duration-300"
+                      :class="{ 'rotate-180': sortOrder === 'asc' }" />
+                  </div>
+                </th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-border/50">
+              <tr v-for="item in currentList" :key="item.id" 
+                class="transition-all duration-200 group" 
+                :class="[
+                  // Prioridad 1: Designados (Celeste suave)
+                  (item as any).tieneDesignacionActiva
+                    ? 'bg-sky-50 dark:bg-sky-950/20 border-l-4 border-l-sky-400'
+                    : item.eventual && (item as any).sexo === 'Femenino'
+                      ? 'bg-rose-100/40 dark:bg-rose-900/10 border-l-4 border-l-gray-400'
+                      : item.eventual
+                        ? 'bg-slate-100 dark:bg-slate-800/60 border-l-4 border-l-slate-400 opacity-90'
+                        : (item as any).sexo === 'Femenino'
+                          ? 'bg-rose-50 dark:bg-rose-950/20 border-l-4 border-l-rose-300'
+                          : 'hover:bg-surface-muted/80',
+
+                  // Efecto de brillo en hover para todos los que tienen color
+                  ((item as any).tieneDesignacionActiva || item.eventual || (item as any).sexo === 'Femenino')
+                    ? 'hover:brightness-95 dark:hover:brightness-110' : ''
+                ]">
+                <td class="px-8 py-4 text-sm font-bold text-text">
+                  <div class="flex items-center gap-3">
+                    <span
+                      class="hover:text-primary transition-colors cursor-pointer hover:underline decoration-primary/30 underline-offset-4"
+                      @click="$emit('view-timeline', item.id, item.name)">
+                      {{ item.name }}
+                    </span>
+                    <button v-if="editingObsId !== item.id" 
+                      @click="startEditing(item.id, (item as any).observaciones)"
+                      class="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-primary/10 text-primary rounded-lg transition-all">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                      </svg>
+                    </button>
+                  </div>
+
+                  <div v-if="editingObsId === item.id" class="mt-3 flex flex-col gap-2 max-w-sm">
+                    <textarea v-model="tempObservaciones"
+                      class="w-full bg-surface border border-primary/30 rounded-xl p-3 text-xs font-medium text-text focus:outline-none focus:ring-4 focus:ring-primary/5 min-h-[80px]"
+                      placeholder="Escriba observaciones..."></textarea>
+                    <div class="flex justify-end gap-3">
+                      <button @click="cancelEditing" class="text-[10px] font-black uppercase text-text-muted hover:text-text">Cancelar</button>
+                      <button @click="saveInline" class="px-4 py-1.5 bg-primary text-white text-[10px] font-black uppercase rounded-lg">Guardar</button>
+                    </div>
+                  </div>
+                  <template v-else>
+                    <div v-if="(item as any).observaciones" 
+                      class="mt-2 pl-3 border-l-2 border-primary/30 text-[11px] font-medium text-text-muted italic leading-relaxed">
+                      {{ (item as any).observaciones }}
+                    </div>
+                  </template>
+                </td>
+                
+                <td v-if="selectedStatus === 'Impedidos'" class="px-8 py-4 text-xs font-medium text-text-muted">
+                    {{ (item as any).motivo }}
+                </td>
+                <td v-else class="px-8 py-4">
+                  <div class="flex flex-col gap-1">
+                    <span class="text-xs font-bold" :class="selectedStatus === 'Navegando' ? 'text-info' : 'text-text'">
+                      {{ selectedStatus === 'Navegando' ? ((item as any).enTierra ? 'En tierra' : 'En navegación') : formatDate((item as any).lastArrival) }}
+                    </span>
+                    <span class="text-[10px] font-bold text-text-muted/60 uppercase tracking-tighter">
+                      {{ (item as any).mareaCode || 'S/M' }} • {{ (item as any).vessel || (item as any).vesselName }}
+                    </span>
+                  </div>
+                </td>
+                <td v-if="selectedStatus !== 'Impedidos'" class="px-8 py-4 text-right">
+                  <span class="text-sm font-black tabular-nums" :class="selectedStatus === 'Navegando' ? 'text-info' : 'text-text-muted'">
+                    {{ (item as any).days }} d
+                  </span>
+                </td>
+              </tr>
+              <tr v-if="currentList.length === 0">
+                <td colspan="3" class="px-8 py-12 text-center text-xs font-medium text-text-muted">
+                  No hay observadores que coincidan con los criterios
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </BaseModal>
   </div>
 </template>
 
@@ -225,10 +467,16 @@ import { ShipIcon, UserGroupIcon, DocsIcon, HotelIcon, ChevronDownIcon } from '@
 import type { WorkforceStatus } from '../services/dashboard.service'
 import SearchInput from '@/components/ui/SearchInput.vue'
 import WorkforceStatusCard from './WorkforceStatusCard.vue'
+import BaseModal from '@/components/common/BaseModal.vue'
+import WorkforceDonutChart from './WorkforceDonutChart.vue'
+import observadoresApi from '@/modules/admin/services/observadores.service'
+import { toast } from 'vue-sonner'
 
 const props = defineProps<{
   data: WorkforceStatus | null
 }>()
+
+const emit = defineEmits(['view-timeline', 'refresh'])
 
 const selectedStatus = ref<string | null>('Navegando')
 const selectedTypes = ref<string[]>(['OBSERVADOR'])
@@ -236,6 +484,55 @@ const searchQuery = ref('')
 const sortBy = ref<'name' | 'days' | null>(null)
 const sortOrder = ref<'asc' | 'desc'>('desc')
 const selectedCategory = ref<string | null>(null)
+
+// Vista Expandida
+const isExpanded = ref(false)
+const currentStatusInfo = computed(() => {
+  if (!selectedStatus.value) return null
+  return distributions.value.find(d => d.label === selectedStatus.value)
+})
+
+const currentStatusObservers = computed(() => {
+  if (!selectedStatus.value || !props.data) return []
+  return selectedStatus.value === 'Navegando' ? props.data.listNavegando :
+         selectedStatus.value === 'Descanso' ? props.data.listDescanso :
+         selectedStatus.value === 'Disponibles' ? props.data.listDisponibles :
+         props.data.listImpedidos
+})
+
+// Edición Inline
+const editingObsId = ref<string | null>(null)
+const tempObservaciones = ref('')
+const savingInline = ref(false)
+
+const startEditing = (id: string, currentVal: string = '') => {
+  editingObsId.value = id
+  tempObservaciones.value = currentVal
+}
+
+const cancelEditing = () => {
+  editingObsId.value = null
+  tempObservaciones.value = ''
+}
+
+const saveInline = async () => {
+  if (!editingObsId.value) return
+  
+  savingInline.value = true
+  try {
+    await observadoresApi.updateObservador(editingObsId.value, {
+      observaciones: tempObservaciones.value
+    })
+    toast.success('Observaciones actualizadas')
+    cancelEditing()
+    emit('refresh')
+  } catch (error) {
+    console.error('Error al actualizar inline:', error)
+    toast.error('No se pudo actualizar')
+  } finally {
+    savingInline.value = false
+  }
+}
 
 // Available Composition for Donut Chart
 const availableComposition = computed(() => {
@@ -389,6 +686,7 @@ type DistributionItem = {
   borderColorClass: string
   ringClass: string
   icon: any
+  color?: string
 }
 
 const formatDate = (dateString: string) => {
@@ -424,50 +722,54 @@ const filteredStats = computed(() => {
 
 const distributions = computed<DistributionItem[]>(() => {
   if (!props.data) return []
-  const stats = filteredStats.value
-  const base = stats.total || 1
+  const counts = filteredStats.value
+  const total = counts.total || 1
 
   return [
     {
       label: 'Navegando',
-      count: stats.navegando,
-      value: Math.round((stats.navegando / base) * 100),
+      count: counts.navegando,
+      value: total > 0 ? Math.round((counts.navegando / total) * 100) : 0,
+      icon: markRaw(ShipIcon),
+      color: 'info',
       colorClass: 'text-info',
-      bgClass: 'bg-info',
+      bgClass: 'bg-info/15',
       borderColorClass: 'border-info',
       ringClass: 'ring-info',
-      icon: markRaw(ShipIcon)
     },
     {
       label: 'Descanso',
-      count: stats.descanso,
-      value: Math.round((stats.descanso / base) * 100),
+      count: counts.descanso,
+      value: total > 0 ? Math.round((counts.descanso / total) * 100) : 0,
+      icon: markRaw(HotelIcon),
+      color: 'primary',
       colorClass: 'text-primary',
-      bgClass: 'bg-primary',
+      bgClass: 'bg-primary/15',
       borderColorClass: 'border-primary',
       ringClass: 'ring-primary',
-      icon: markRaw(HotelIcon)
     },
     {
       label: 'Disponibles',
-      count: stats.disponibles,
-      value: Math.round((stats.disponibles / base) * 100),
+      count: counts.disponibles,
+      value: total > 0 ? Math.round((counts.disponibles / total) * 100) : 0,
+      icon: markRaw(UserGroupIcon),
+      color: 'success',
       colorClass: 'text-success',
-      bgClass: 'bg-success',
+      bgClass: 'bg-success/15',
       borderColorClass: 'border-success',
       ringClass: 'ring-success',
-      icon: markRaw(UserGroupIcon)
     },
     {
       label: 'Impedidos',
-      count: stats.impedidos,
-      value: Math.round((stats.impedidos / base) * 100),
+      count: counts.impedidos,
+      value: total > 0 ? Math.round((counts.impedidos / total) * 100) : 0,
+      icon: markRaw(DocsIcon),
+      color: 'error',
       colorClass: 'text-error',
-      bgClass: 'bg-error',
+      bgClass: 'bg-error/15',
       borderColorClass: 'border-error',
       ringClass: 'ring-error',
-      icon: markRaw(DocsIcon)
-    }
+    },
   ]
 })
 

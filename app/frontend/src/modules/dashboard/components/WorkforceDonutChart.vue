@@ -13,10 +13,6 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useDarkMode } from '@/composables/useDarkMode'
-
-const { isDark } = useDarkMode()
-
 const props = defineProps<{
   observers: any[]
 }>()

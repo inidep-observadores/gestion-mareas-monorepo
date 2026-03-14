@@ -1,4 +1,4 @@
-﻿import httpClient from '@/config/http/http.client'
+import httpClient from '@/config/http/http.client'
 import { useConfigStore } from '@/modules/shared/stores/config.store'
 
 export interface FleetDistributionItem {
@@ -55,11 +55,11 @@ export interface WorkforceStatus {
     disponibles: number
     licencia: number
     impedidos: number
-    topDry: Array<{ id: string; name: string; days: number; lastArrival: string; mareaCode?: string; vesselName?: string; fishery?: string; tipoObservador: string }>
-    listNavegando: Array<{ id: string; name: string; days: number; vessel: string; mareaCode?: string; fishery?: string; enTierra?: boolean; startDate: string; tipoObservador: string, stageCount?: number }>
-    listDescanso: Array<{ id: string; name: string; days: number; lastArrival: string; mareaCode?: string; vesselName?: string; fishery?: string; tipoObservador: string }>
-    listDisponibles: Array<{ id: string; name: string; days: number; lastArrival: string; mareaCode?: string; vesselName?: string; fishery?: string; tipoObservador: string }>
-    listImpedidos: Array<{ id: string; name: string; motivo: string; tipoObservador: string }>
+    topDry: Array<{ id: string; name: string; days: number; lastArrival: string; mareaCode?: string; vesselName?: string; fishery?: string; tipoObservador: string; observaciones?: string }>
+    listNavegando: Array<{ id: string; name: string; days: number; vessel: string; mareaCode?: string; fishery?: string; enTierra?: boolean; startDate: string; tipoObservador: string, stageCount?: number; observaciones?: string }>
+    listDescanso: Array<{ id: string; name: string; days: number; lastArrival: string; mareaCode?: string; vesselName?: string; fishery?: string; tipoObservador: string; observaciones?: string }>
+    listDisponibles: Array<{ id: string; name: string; days: number; lastArrival: string; mareaCode?: string; vesselName?: string; fishery?: string; tipoObservador: string; observaciones?: string }>
+    listImpedidos: Array<{ id: string; name: string; motivo: string; tipoObservador: string; observaciones?: string }>
 }
 
 export interface MovementAlert {
