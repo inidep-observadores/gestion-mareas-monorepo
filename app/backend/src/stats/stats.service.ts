@@ -1530,7 +1530,10 @@ export class StatsService {
     private async getWorkforceExportWorkbook(): Promise<ExcelJS.Workbook> {
         // 1. Obtener datos crudos
         const observadores = await this.prisma.observador.findMany({
-            where: { activo: true },
+            where: { 
+                activo: true,
+                tipoObservador: { not: 'TECNICO' }
+            },
             include: {
                 mareasAsignadas: {
                     where: { activo: true },
@@ -1538,6 +1541,17 @@ export class StatsService {
                         estadoActual: true,
                     },
                 },
+                etapas: {
+                    include: {
+                        etapa: {
+                            include: {
+                                marea: {
+                                    include: { estadoActual: true }
+                                }
+                            }
+                        }
+                    }
+                }
             },
         });
 
@@ -1545,35 +1559,43 @@ export class StatsService {
 
         // 2. Clasificar personal (Lógica espejo del Dashboard)
         const classification = observadores.map((obs) => {
-            const mareaActiva = obs.mareasAsignadas.find((m) =>
-                ['EN_EJECUCION', 'DESIGNADA', 'ARRIBADA'].includes(m.estadoActual?.codigo),
-            );
+            const mareasComoPrincipal = obs.mareasAsignadas || [];
+            const mareasComoAdicional = obs.etapas?.map(e => e.etapa?.marea).filter(m => !!m) || [];
+            
+            // Consolidar todas las mareas únicas relacionadas
+            const todasLasMareas = [...mareasComoPrincipal];
+            mareasComoAdicional.forEach(m => {
+                if (!todasLasMareas.find(tm => tm.id === m.id)) {
+                    todasLasMareas.push(m);
+                }
+            });
 
+            // 1. Determinar Estado Operativo Básico (Prioridad: Navegando > Descanso > Disponible > Impedido)
             let status = 'DISPONIBLE';
             let statusLabel = 'Disponible';
             let order = 3;
 
-            if (obs.conImpedimento) {
+            const tieneMareaEnEjecucion = todasLasMareas.some(m => m?.estadoActual?.codigo === 'EN_EJECUCION');
+            const tieneMareaArribada = todasLasMareas.some(m => m?.estadoActual?.codigo === 'ARRIBADA');
+
+            if (tieneMareaEnEjecucion) {
+                status = 'NAVEGANDO';
+                statusLabel = 'Navegando';
+                order = 1;
+            } else if (tieneMareaArribada) {
+                status = 'EN_DESCANSO';
+                statusLabel = 'En Descanso';
+                order = 2;
+            } else if (obs.conImpedimento) {
                 status = 'IMPEDIDO';
                 statusLabel = 'Impedido';
                 order = 4;
-            } else if (mareaActiva) {
-                if (mareaActiva.estadoActual?.codigo === 'EN_EJECUCION') {
-                    status = 'NAVEGANDO';
-                    statusLabel = 'Navegando';
-                    order = 1;
-                } else if (mareaActiva.estadoActual?.codigo === 'ARRIBADA') {
-                    status = 'DESCANSO';
-                    statusLabel = 'En Descanso';
-                    order = 2;
-                } else if (mareaActiva.estadoActual?.codigo === 'DESIGNADA') {
-                    status = 'DESIGNADO';
-                    statusLabel = 'Designado';
-                    order = 3; // Se muestra en disponibles pero con badge
-                }
             }
 
-            // Jerarquía interna
+            // 2. Condición Independiente: Designado
+            const isDesignated = todasLasMareas.some(m => m?.estadoActual?.codigo === 'DESIGNADA');
+
+            // Jerarquía interna (para el orden dentro del grupo)
             let internalOrder = 4; // Regular (Titular)
             if (obs.tipoObservador === 'EVENTUAL') internalOrder = 3;
             if (obs.sexo === Sexo.Femenino) internalOrder = 2;
@@ -1583,6 +1605,7 @@ export class StatsService {
                 ...obs,
                 status,
                 statusLabel,
+                isDesignated,
                 mainOrder: order,
                 internalOrder,
                 fullName: `${obs.apellido}, ${obs.nombre}`,
@@ -1631,10 +1654,10 @@ export class StatsService {
             // Color de la celda de ESTADO
             const statusCell = row.getCell(1);
             let statusColor = 'F1F5F9'; // Default
-            if (item.status === 'NAVEGANDO') statusColor = 'E0F2FE'; // Sky-100
-            if (item.status === 'DESCANSO') statusColor = 'DBEAFE'; // Blue-100
-            if (item.status === 'DISPONIBLE' || item.status === 'DESIGNADO') statusColor = 'DCFCE7'; // Green-100
-            if (item.status === 'IMPEDIDO') statusColor = 'FEE2E2'; // Red-100
+            if (item.status === 'NAVEGANDO') statusColor = 'E0F2FE'; // Sky-100 (Celeste)
+            if (item.status === 'EN_DESCANSO') statusColor = 'DBEAFE'; // Blue-100 (Azul)
+            if (item.status === 'DISPONIBLE') statusColor = 'DCFCE7'; // Green-100 (Verde)
+            if (item.status === 'IMPEDIDO') statusColor = 'FEE2E2'; // Red-100 (Rojo)
 
             statusCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: statusColor } };
             statusCell.font = { bold: true };
@@ -1642,28 +1665,27 @@ export class StatsService {
             // Estilos del resto de la fila
             if (item.status === 'IMPEDIDO') {
                 row.eachCell((cell) => {
-                    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FEF2F2' } }; // Red-50 (Muy suave)
+                    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FEF2F2' } }; // Red-50 (Fila completa en rojo suave)
                 });
             } else {
-                // Femenino -> Pink
+                // Fondos base por género o contrato
                 if (item.sexo === Sexo.Femenino) {
                     row.eachCell((cell, colNumber) => {
                         if (colNumber > 1) {
                             cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FDF2F8' } }; // Pink-50
                         }
                     });
-                }
-                // Eventual -> Grey
-                if (item.tipoObservador === 'EVENTUAL') {
+                } else if (item.tipoObservador === 'EVENTUAL') {
                     row.eachCell((cell, colNumber) => {
                         if (colNumber > 1) {
                             cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'F8FAFC' } }; // Slate-50
                         }
                     });
                 }
-                // Designado (Celeste en el nombre)
-                if (item.status === 'DESIGNADO') {
-                    row.getCell(2).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'E0F2FE' } }; // Sky-100
+
+                // Resaltado de condicional "Designado" (Precedencia en la celda de nombre)
+                if (item.isDesignated) {
+                    row.getCell(2).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'E0F2FE' } }; // Sky-100 (Celeste)
                 }
             }
         });

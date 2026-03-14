@@ -5,6 +5,8 @@ import { PrismaService } from '../prisma/prisma.service';
 import { PlanificacionService } from '../planificacion/planificacion.service';
 import { DateUtils } from '../common/utils/date.utils';
 import { FilterType } from './dto/get-stats.dto';
+import { Sexo } from '@prisma/client';
+import * as ExcelJS from 'exceljs';
 
 describe('StatsService', () => {
     let service: StatsService;
@@ -12,6 +14,9 @@ describe('StatsService', () => {
 
     const mockPrisma = {
         marea: {
+            findMany: jest.fn(),
+        },
+        observador: {
             findMany: jest.fn(),
         },
     };
@@ -351,6 +356,115 @@ describe('StatsService', () => {
             // Total should still be correct
             expect(result.totalMareas).toBe(1);
             expect(result.totalDaysNavigated).toBe(20);
+        });
+    });
+    describe('getExportWorkbook - WORKFORCE', () => {
+        it('should exclude technical staff and classify by operational status', async () => {
+            const mockObservadores = [
+                {
+                    id: 'obs-1',
+                    apellido: 'Perez',
+                    nombre: 'Juan',
+                    tipoObservador: 'TITULAR',
+                    tipoContrato: 'PLANTA',
+                    sexo: Sexo.Masculino,
+                    conImpedimento: false,
+                    mareasAsignadas: [
+                        { id: 'm-1', estadoActual: { codigo: 'EN_EJECUCION' } }
+                    ],
+                    etapas: []
+                },
+                {
+                    id: 'obs-2',
+                    apellido: 'Gomez',
+                    nombre: 'Maria',
+                    tipoObservador: 'TITULAR',
+                    tipoContrato: 'PLANTA',
+                    sexo: Sexo.Femenino,
+                    conImpedimento: false,
+                    mareasAsignadas: [
+                        { id: 'm-2', estadoActual: { codigo: 'DESIGNADA' } }
+                    ],
+                    etapas: []
+                },
+                {
+                    id: 'obs-3',
+                    apellido: 'Lopez',
+                    nombre: 'Carlos',
+                    tipoObservador: 'EVENTUAL',
+                    tipoContrato: 'CONTRATO',
+                    sexo: Sexo.Masculino,
+                    conImpedimento: true,
+                    mareasAsignadas: [],
+                    etapas: []
+                }
+            ];
+
+            mockPrisma.observador.findMany.mockResolvedValue(mockObservadores);
+
+            const workbook = await service.getExportWorkbook(
+                2024,
+                'TOTAL',
+                true,
+                true,
+                'SHIP',
+                true,
+                FilterType.WORKFORCE
+            );
+
+            const sheet = workbook.getWorksheet('Personal de Mareas');
+            expect(sheet).toBeDefined();
+
+            // Verify count (headers + 3 rows)
+            expect(sheet.rowCount).toBe(4);
+
+            // Verify query filter
+            expect(mockPrisma.observador.findMany).toHaveBeenCalledWith(expect.objectContaining({
+                where: expect.objectContaining({
+                    tipoObservador: { not: 'TECNICO' }
+                })
+            }));
+
+            // Verify order: Perez (Navegando, mainOrder 1), Gomez (Disponible+Designada, mainOrder 3), Lopez (Impedido, mainOrder 4)
+            // Rows are 1-indexed (row 1 is header)
+            expect(sheet.getCell(2, 1).value).toBe('Navegando');
+            expect(sheet.getCell(2, 2).value).toBe('Perez, Juan');
+            
+            expect(sheet.getCell(3, 1).value).toBe('Disponible');
+            expect(sheet.getCell(3, 2).value).toBe('Gomez, Maria');
+            
+            expect(sheet.getCell(4, 1).value).toBe('Impedido');
+            expect(sheet.getCell(4, 2).value).toBe('Lopez, Carlos');
+        });
+
+        it('should correctly identify "Designado" status as an overlay highlight', async () => {
+            const mockObservadores = [
+                {
+                    id: 'obs-1',
+                    apellido: 'Test',
+                    nombre: 'Designado',
+                    tipoObservador: 'TITULAR',
+                    sexo: Sexo.Masculino,
+                    conImpedimento: false,
+                    mareasAsignadas: [
+                        { id: 'm-1', estadoActual: { codigo: 'DESIGNADA' } } // Condition: Designated
+                    ],
+                    etapas: []
+                }
+            ];
+
+            mockPrisma.observador.findMany.mockResolvedValue(mockObservadores);
+
+            const workbook = await service.getExportWorkbook(
+                2024, 'TOTAL', true, true, 'SHIP', true, FilterType.WORKFORCE
+            );
+
+            const sheet = workbook.getWorksheet('Personal de Mareas');
+            const nameCell = sheet.getCell(2, 2); // Perez, Juan equivalent
+
+            // Verify that it is "Disponible" but has the "Designado" highlight (Sky-100: E0F2FE)
+            expect(sheet.getCell(2, 1).value).toBe('Disponible');
+            expect((nameCell.fill as any).fgColor?.argb).toBe('E0F2FE');
         });
     });
 });
