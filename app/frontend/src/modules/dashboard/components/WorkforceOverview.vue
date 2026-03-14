@@ -141,8 +141,13 @@
                 </td>
 
                 <!-- Impedidos Columns -->
-                <td v-if="selectedStatus === 'Impedidos'" class="px-6 py-3 text-xs text-text-muted">{{ (item as
-                  any).motivo }}</td>
+                <td v-if="selectedStatus === 'Impedidos'" class="relative px-6 py-3 text-xs text-text-muted">
+                  <div v-if="(item as any).tieneDesignacionActiva" 
+                    class="absolute top-0 right-0 px-1.5 py-0.5 bg-sky-500 text-white text-[8px] font-black uppercase rounded-bl-lg shadow-sm z-20">
+                    Designado
+                  </div>
+                  {{ (item as any).motivo }}
+                </td>
 
                 <!-- Details (Navegando / Disponibles / Descanso) -->
                 <td v-else class="px-6 py-3">
@@ -192,7 +197,11 @@
 
                 <!-- Metric Column -->
                 <td v-if="selectedStatus !== 'Impedidos'"
-                  class="px-6 py-3 text-xs font-black text-text text-right tabular-nums">
+                  class="relative px-6 py-3 text-xs font-black text-text text-right tabular-nums">
+                  <div v-if="(item as any).tieneDesignacionActiva" 
+                    class="absolute top-0 right-0 px-1.5 py-0.5 bg-sky-500 text-white text-[7px] font-black uppercase rounded-bl-lg shadow-sm z-20">
+                    Designado
+                  </div>
                   <span :class="selectedStatus === 'Navegando' ? 'text-info' : 'text-text-muted'">{{ (item as any).days
                     }}
                     d</span>
