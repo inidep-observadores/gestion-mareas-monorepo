@@ -8,10 +8,11 @@
       </div>
       <div class="flex items-center gap-1">
         <slot name="header-action"></slot>
-        <button v-if="allowDownload" class="text-text-muted hover:text-primary transition-colors p-1"
-          title="Descargar Datos" @click="$emit('download')">
-          <DownloadIcon class="w-4 h-4" />
-        </button>
+        <ExportExcelButton 
+          v-if="allowDownload"
+          title="Descargar Datos"
+          @click="$emit('download')"
+        />
       </div>
     </div>
 
@@ -29,6 +30,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { DownloadIcon } from 'lucide-vue-next'
+import ExportExcelButton from '@/modules/shared/components/ExportExcelButton.vue';
 import { useThemeStore } from '@/modules/shared/stores/theme.store'
 
 const props = withDefaults(defineProps<{

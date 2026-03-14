@@ -37,14 +37,12 @@
                   </select>
                 </div>
                 <SearchInput v-model="searchQuery" class="md:w-96" placeholder="Buscar buque o marea..." />
-                <button @click="handleExport"
-                  class="flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600/10 text-emerald-600 rounded-xl text-sm font-bold hover:bg-emerald-600 hover:text-white transition-all active:scale-95 border border-emerald-600/20 disabled:opacity-50 disabled:cursor-not-allowed"
-                  :disabled="exporting"
-                  :title="searchQuery ? 'Exportar mareas filtradas' : 'Exportar todas las mareas del año'">
-                  <DownloadIcon class="w-4 h-4" v-if="!exporting" />
-                  <LoadingSpinner size="xs" v-else />
-                  <span class="hidden sm:inline">{{ searchQuery ? 'Exportar Filtradas' : 'Exportar Excel' }}</span>
-                </button>
+                <ExportExcelButton 
+                  :loading="exporting"
+                  :label="searchQuery ? 'Filtradas' : 'Excel'"
+                  :title="searchQuery ? 'Exportar mareas filtradas' : 'Exportar todas las mareas del año'"
+                  @click="handleExport"
+                />
                 <button v-if="!isReadOnly" @click="router.push('/mareas/nueva')"
                   class="flex items-center justify-center gap-2 px-4 py-2 bg-primary text-primary-fg rounded-xl text-sm font-bold hover:bg-primary-hover transition-all shadow-lg shadow-primary/20 active:scale-95">
                   <PlusIcon class="w-4 h-4" />
@@ -450,6 +448,7 @@ import {
   EditIcon,
   DownloadIcon
 } from '@/icons'
+import ExportExcelButton from '@/modules/shared/components/ExportExcelButton.vue';
 
 import { ValidRoles } from '@/modules/auth/interfaces/roles.enum'
 

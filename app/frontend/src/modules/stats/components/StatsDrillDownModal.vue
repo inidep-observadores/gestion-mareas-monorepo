@@ -5,19 +5,26 @@
     maxWidth="5xl"
   >
     <template #title>
-      <div class="flex items-center gap-3 py-1">
-        <div class="p-2 bg-primary/10 rounded-xl text-primary">
-          <ShipIcon class="w-5 h-5" />
+        <div class="flex items-center gap-3">
+          <div class="p-2 bg-primary/10 rounded-xl text-primary">
+            <ShipIcon class="w-5 h-5" />
+          </div>
+          <div>
+            <h3 class="text-sm font-black text-text uppercase tracking-widest">
+              Detalle de Mareas
+            </h3>
+            <p class="text-[10px] font-bold text-text-muted uppercase tracking-wider">
+              {{ title }} • {{ filterValueDisplay }}
+            </p>
+          </div>
         </div>
-        <div>
-          <h3 class="text-sm font-black text-text uppercase tracking-widest">
-            Detalle de Mareas
-          </h3>
-          <p class="text-[10px] font-bold text-text-muted uppercase tracking-wider">
-            {{ title }} • {{ filterValueDisplay }}
-          </p>
-        </div>
-      </div>
+        <ExportExcelButton 
+          v-if="!loading && items.length > 0"
+          :loading="exporting"
+          title="Exportar esta vista a Excel"
+          @click="handleExport"
+          class="ml-auto"
+        />
     </template>
 
     <div class="space-y-4 py-1 flex flex-col min-h-0">
@@ -146,7 +153,35 @@ import {
   ChevronDownIcon
 } from 'lucide-vue-next'
 import { statsService, type StatsDetailItem } from '../services/stats.service'
+import ExportExcelButton from '@/modules/shared/components/ExportExcelButton.vue';
 import { toast } from 'vue-sonner'
+
+const exporting = ref(false)
+
+const handleExport = async () => {
+  try {
+    exporting.value = true
+    const fileName = `Detalle_${props.title.replace(/\s+/g, '_')}_${props.year}`
+    
+    await statsService.downloadExport(
+      props.year,
+      props.mode,
+      props.includeNonProtocolized,
+      props.includeProtocolizedOutOfPeriod,
+      props.daysCalculationMode,
+      props.includeCampaigns,
+      props.filterType || undefined,
+      props.filterValue || undefined,
+      fileName
+    )
+    toast.success('Excel generado correctamente')
+  } catch (error) {
+    console.error('Error al exportar Excel:', error)
+    toast.error('No se pudo generar el archivo Excel')
+  } finally {
+    exporting.value = false
+  }
+}
 
 const props = defineProps<{
   isOpen: boolean

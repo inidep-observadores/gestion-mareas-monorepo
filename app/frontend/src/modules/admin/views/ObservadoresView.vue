@@ -5,12 +5,13 @@
             :is-loading="isLoading" v-model:search="searchQuery" search-placeholder="Buscar observadores..."
             @create="openCreateModal">
             <template #header-actions>
-                <button v-if="canEdit" @click="exportData"
-                    class="flex items-center justify-center gap-2 rounded-lg bg-success/10 px-4 py-2.5 text-sm font-semibold text-success hover:bg-success/20 transition-colors border border-success/20"
-                    title="Exportar a Excel">
-                    <DownloadIcon class="w-4 h-4" />
-                    <span class="hidden md:inline">Exportar Excel</span>
-                </button>
+                <ExportExcelButton 
+                  v-if="canEdit"
+                  :loading="isLoading"
+                  title="Exportar a Excel"
+                  @click="exportData"
+                  class="bg-success/10 border border-success/20"
+                />
             </template>
             <template #table-header>
                 <th scope="col" class="px-6 py-3 cursor-pointer group" @click="handleSort('codigoInterno')">
@@ -156,6 +157,7 @@
 import { onMounted, computed, ref } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import { EditIcon, SearchIcon, ChevronDownIcon, DownloadIcon } from '@/icons';
+import ExportExcelButton from '@/modules/shared/components/ExportExcelButton.vue';
 import ObservadorDialog from '../components/ObservadorDialog.vue'
 import BaseDataList from '@/components/common/BaseDataList.vue'
 import { useObservadores } from '../composables/useObservadores'

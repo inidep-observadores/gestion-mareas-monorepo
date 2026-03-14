@@ -3,6 +3,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { StatsService } from './stats.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { PlanificacionService } from '../planificacion/planificacion.service';
+import { BusinessRulesService } from '../common/business-rules/business-rules.service';
 import { DateUtils } from '../common/utils/date.utils';
 import { FilterType } from './dto/get-stats.dto';
 import { Sexo } from '@prisma/client';
@@ -25,12 +26,17 @@ describe('StatsService', () => {
         getRequerimientosPorAnio: jest.fn(),
     };
 
+    const mockBusinessRules = {
+        getRules: jest.fn().mockReturnValue({ DIAS_DESCANSO_POST_MAREA: 5 }),
+    };
+
     beforeEach(async () => {
         const module: TestingModule = await Test.createTestingModule({
             providers: [
                 StatsService,
                 { provide: PrismaService, useValue: mockPrisma },
                 { provide: PlanificacionService, useValue: mockPlanificacion },
+                { provide: BusinessRulesService, useValue: mockBusinessRules },
             ],
         }).compile();
 
@@ -418,10 +424,11 @@ describe('StatsService', () => {
             // Verify count (headers + 3 rows)
             expect(sheet.rowCount).toBe(4);
 
-            // Verify query filter
+            // Verify query filter (Now includes technicians but filters by active/disponible)
             expect(mockPrisma.observador.findMany).toHaveBeenCalledWith(expect.objectContaining({
                 where: expect.objectContaining({
-                    tipoObservador: { not: 'TECNICO' }
+                    activo: true,
+                    disponible: true
                 })
             }));
 
@@ -437,7 +444,7 @@ describe('StatsService', () => {
             expect(sheet.getCell(4, 2).value).toBe('Lopez, Carlos');
         });
 
-        it('should correctly identify "Designado" status as an overlay highlight', async () => {
+        it('should correctly identify "Designado" status as a full row highlight', async () => {
             const mockObservadores = [
                 {
                     id: 'obs-1',
@@ -445,13 +452,24 @@ describe('StatsService', () => {
                     nombre: 'Designado',
                     tipoObservador: 'TITULAR',
                     sexo: Sexo.Masculino,
+                    activo: true,
+                    disponible: true,
                     conImpedimento: false,
-                    mareasAsignadas: [
-                        { id: 'm-1', estadoActual: { codigo: 'DESIGNADA' } } // Condition: Designated
-                    ],
+                    mareasAsignadas: [],
                     etapas: []
                 }
             ];
+
+            // Mock mareas designadas
+            mockPrisma.marea.findMany.mockResolvedValueOnce([
+                {
+                    id: 'm-1',
+                    observadorPrincipalId: 'obs-1',
+                    buque: { nombreBuque: 'Barco X' },
+                    pesqueria: { nombre: 'Merluza' },
+                    estadoActual: { codigo: 'DESIGNADA' }
+                }
+            ]);
 
             mockPrisma.observador.findMany.mockResolvedValue(mockObservadores);
 
@@ -460,11 +478,13 @@ describe('StatsService', () => {
             );
 
             const sheet = workbook.getWorksheet('Personal de Mareas');
-            const nameCell = sheet.getCell(2, 2); // Perez, Juan equivalent
+            const statusCell = sheet.getCell(2, 1);
+            const nameCell = sheet.getCell(2, 2);
 
-            // Verify that it is "Disponible" but has the "Designado" highlight (Sky-100: E0F2FE)
-            expect(sheet.getCell(2, 1).value).toBe('Disponible');
+            // Verify that it is "Disponible" but has the "Designado" highlight (E0F2FE) in all row
+            expect(statusCell.value).toBe('Disponible');
             expect((nameCell.fill as any).fgColor?.argb).toBe('E0F2FE');
+            expect((statusCell.fill as any).fgColor?.argb).toBe('E0F2FE');
         });
     });
 });
