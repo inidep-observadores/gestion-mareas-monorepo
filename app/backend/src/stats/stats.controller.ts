@@ -2,7 +2,7 @@ import { Controller, Get, Query, Res } from '@nestjs/common';
 import { Response } from 'express';
 import { StatsService } from './stats.service';
 import { Auth } from '../auth/decorators';
-import { GetStatsDto } from './dto/get-stats.dto';
+import { GetStatsDto, FilterType } from './dto/get-stats.dto';
 
 @Controller('stats')
 @Auth()
@@ -53,7 +53,7 @@ export class StatsController {
             query.includeCampaigns,
             query.startDate,
             query.endDate,
-            query.filterType === 'FISHERY' ? query.filterValue : undefined,
+            query.filterType === FilterType.FISHERY ? query.filterValue : undefined,
             query.protocolizationStartDate,
             query.protocolizationEndDate
         );

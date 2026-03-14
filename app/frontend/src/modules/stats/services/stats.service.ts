@@ -143,7 +143,7 @@ export const statsService = {
         includeProtocolizedOutOfPeriod: boolean,
         daysCalculationMode: 'SHIP' | 'OBSERVER',
         includeCampaigns: boolean,
-        filterType?: 'FISHERY' | 'FLEET' | 'OBSERVER' | 'COVERAGE' | 'CHART_TREND' | 'CHART_FLEET' | 'CHART_FISHERY' | 'CHART_OBSERVER' | 'CHART_FISHERY_DUAL',
+        filterType?: 'FISHERY' | 'FLEET' | 'OBSERVER' | 'COVERAGE' | 'CHART_TREND' | 'CHART_FLEET' | 'CHART_FISHERY' | 'CHART_OBSERVER' | 'CHART_FISHERY_DUAL' | 'WORKFORCE',
         filterValue?: string,
         filename?: string,
         startDate?: string,
@@ -186,6 +186,20 @@ export const statsService = {
         link.click();
         link.remove();
         window.URL.revokeObjectURL(url);
+    },
+
+    async downloadWorkforceExport(year: number) {
+        return this.downloadExport(
+            year,
+            'CALENDAR',
+            false,
+            false,
+            'SHIP',
+            true,
+            'WORKFORCE',
+            undefined,
+            `Dotacion_Personal_Mareas_${year}`
+        );
     },
 
     async getUniqueVesselsCount(
@@ -235,3 +249,5 @@ export const statsService = {
         return response.data;
     }
 };
+
+export default statsService;

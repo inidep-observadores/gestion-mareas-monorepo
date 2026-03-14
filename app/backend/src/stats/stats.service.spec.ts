@@ -4,6 +4,7 @@ import { StatsService } from './stats.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { PlanificacionService } from '../planificacion/planificacion.service';
 import { DateUtils } from '../common/utils/date.utils';
+import { FilterType } from './dto/get-stats.dto';
 
 describe('StatsService', () => {
     let service: StatsService;
@@ -58,7 +59,7 @@ describe('StatsService', () => {
                 'TOTAL',
                 false, // includeNonProtocolized
                 false, // includeProtocolizedOutOfPeriod
-                'FLEET', // filterType
+                FilterType.FLEET, // filterType
                 'Test Fleet', // filterValue
                 'SHIP' // daysCalculationMode
             );

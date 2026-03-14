@@ -22,6 +22,7 @@ export enum FilterType {
     CHART_FISHERY = 'CHART_FISHERY',
     CHART_OBSERVER = 'CHART_OBSERVER',
     CHART_FISHERY_DUAL = 'CHART_FISHERY_DUAL',
+    WORKFORCE = 'WORKFORCE',
 }
 
 export class GetStatsDto {

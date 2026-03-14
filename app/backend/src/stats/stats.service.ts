@@ -6,7 +6,9 @@ import { Prisma } from '@prisma/client';
 import { StatsDetailItem, DashboardStats, MareaDistributionItem, UniqueVesselsResult } from './interfaces/dashboard.interface';
 import { MareaUtils } from '../common/utils/marea.utils';
 import { TipoMarea } from '../mareas/mareas.constants';
+import { FilterType } from './dto/get-stats.dto';
 import * as ExcelJS from 'exceljs';
+import { Sexo } from '@prisma/client';
 
 @Injectable()
 export class StatsService {
@@ -433,7 +435,7 @@ export class StatsService {
         mode: 'CALENDAR' | 'TOTAL',
         includeNonProtocolized: boolean,
         includeProtocolizedOutOfPeriod = false,
-        filterType: 'FISHERY' | 'FLEET' | 'OBSERVER' | 'COVERAGE' | 'CHART_TREND' | 'CHART_FLEET' | 'CHART_FISHERY' | 'CHART_OBSERVER' | 'CHART_FISHERY_DUAL',
+        filterType: FilterType,
         filterValue: string,
         daysCalculationMode: 'SHIP' | 'OBSERVER' = 'SHIP',
         includeCampaigns: boolean = true,
@@ -474,17 +476,17 @@ export class StatsService {
         }
 
         // Apply dynamic filter
-        if (filterType === 'FISHERY') {
+        if (filterType === FilterType.FISHERY) {
             where.etapas = {
                 some: {
                     pesqueria: { nombre: { contains: filterValue, mode: 'insensitive' } }
                 }
             };
-        } else if (filterType === 'FLEET') {
+        } else if (filterType === FilterType.FLEET) {
             where.buque = {
                 tipoFlota: { nombre: filterValue }
             };
-        } else if (filterType === 'OBSERVER') {
+        } else if (filterType === FilterType.OBSERVER) {
             // Robust UUID check: Length 36 and hex chars + dashes
             const isUUID = filterValue.length === 36 && /^[0-9a-f-]{36}$/i.test(filterValue);
             if (isUUID) {
@@ -537,12 +539,12 @@ export class StatsService {
             const now = DateUtils.getNow(true);
 
             // Filter stages by fishery if applicable
-            const relevantStages = filterType === 'FISHERY'
-                ? m.etapas.filter(e => {
+            const relevantStages = filterType === FilterType.FISHERY
+? m.etapas.filter(e => {
                     const fName = e.pesqueria?.nombre || m.buque?.pesqueriaHabitual?.nombre || 'Desconocida';
                     return fName.toLowerCase() === filterValue.toLowerCase();
-                })
-                : m.etapas;
+})
+: m.etapas;
 
             const intervals = relevantStages.map(e => ({
                 start: e.fechaZarpada,
@@ -560,7 +562,7 @@ export class StatsService {
             } else {
                 // OBSERVER Mode
                 // Case A: Filtered by a specific observer -> Show ONLY their individual contribution
-                if (filterType === 'OBSERVER' && filterValue) {
+                if (filterType === FilterType.OBSERVER && filterValue) {
                     let obsIntervals: Array<{ start: Date, end: Date }> = [];
                     const isPrincipal = (m.observadorPrincipalId === filterValue);
 
@@ -624,7 +626,7 @@ export class StatsService {
                 tipoMarea: m.tipoMarea,
                 buque: m.buque?.nombreBuque || 'Desconocido',
                 flota: m.buque?.tipoFlota?.nombre || '-',
-                pesqueria: filterType === 'FISHERY'
+                pesqueria: filterType === FilterType.FISHERY
                     ? filterValue
                     : (m.etapas[0]?.pesqueria?.nombre || m.buque?.pesqueriaHabitual?.nombre || '-'),
                 observador: m.observadorPrincipal ? `${m.observadorPrincipal.nombre} ${m.observadorPrincipal.apellido}` : 'Sin asignar',
@@ -646,7 +648,7 @@ export class StatsService {
         includeProtocolizedOutOfPeriod: boolean,
         daysCalculationMode: 'SHIP' | 'OBSERVER' = 'SHIP',
         includeCampaigns: boolean = true,
-        filterType?: 'FISHERY' | 'FLEET' | 'OBSERVER' | 'COVERAGE' | 'CHART_TREND' | 'CHART_FLEET' | 'CHART_FISHERY' | 'CHART_OBSERVER' | 'CHART_FISHERY_DUAL',
+        filterType?: FilterType,
         filterValue?: string,
         startDate?: string,
         endDate?: string,
@@ -655,8 +657,12 @@ export class StatsService {
         protocolizationEndDate?: string,
         includeSummaries: boolean = false,
     ): Promise<ExcelJS.Workbook> {
-        if (filterType === 'COVERAGE') {
+        if (filterType === FilterType.COVERAGE) {
             return this.getCoverageExportWorkbook(year, mode, includeNonProtocolized, includeProtocolizedOutOfPeriod, includeCampaigns, startDate, endDate, filterValue, protocolizationStartDate, protocolizationEndDate);
+        }
+
+        if (filterType === FilterType.WORKFORCE) {
+            return this.getWorkforceExportWorkbook();
         }
 
         if (filterType?.startsWith('CHART_')) {
@@ -930,7 +936,7 @@ export class StatsService {
                 anio_marea: m.anioMarea,
                 buque: m.buque?.nombreBuque || 'Desconocido',
                 flota: m.buque?.tipoFlota?.nombre || '-',
-                pesqueria: filterType === 'FISHERY'
+                pesqueria: filterType === FilterType.FISHERY
                     ? filterValue
                     : (m.etapas[0]?.pesqueria?.nombre || m.buque?.pesqueriaHabitual?.nombre || '-'),
                 observador: m.observadorPrincipal ? `${m.observadorPrincipal.nombre} ${m.observadorPrincipal.apellido}` : 'Sin asignar',
@@ -1517,6 +1523,163 @@ export class StatsService {
         };
 
 
+
+        return workbook;
+    }
+
+    private async getWorkforceExportWorkbook(): Promise<ExcelJS.Workbook> {
+        // 1. Obtener datos crudos
+        const observadores = await this.prisma.observador.findMany({
+            where: { activo: true },
+            include: {
+                mareasAsignadas: {
+                    where: { activo: true },
+                    include: {
+                        estadoActual: true,
+                    },
+                },
+            },
+        });
+
+        const now = DateUtils.getNow(true);
+
+        // 2. Clasificar personal (Lógica espejo del Dashboard)
+        const classification = observadores.map((obs) => {
+            const mareaActiva = obs.mareasAsignadas.find((m) =>
+                ['EN_EJECUCION', 'DESIGNADA', 'ARRIBADA'].includes(m.estadoActual?.codigo),
+            );
+
+            let status = 'DISPONIBLE';
+            let statusLabel = 'Disponible';
+            let order = 3;
+
+            if (obs.conImpedimento) {
+                status = 'IMPEDIDO';
+                statusLabel = 'Impedido';
+                order = 4;
+            } else if (mareaActiva) {
+                if (mareaActiva.estadoActual?.codigo === 'EN_EJECUCION') {
+                    status = 'NAVEGANDO';
+                    statusLabel = 'Navegando';
+                    order = 1;
+                } else if (mareaActiva.estadoActual?.codigo === 'ARRIBADA') {
+                    status = 'DESCANSO';
+                    statusLabel = 'En Descanso';
+                    order = 2;
+                } else if (mareaActiva.estadoActual?.codigo === 'DESIGNADA') {
+                    status = 'DESIGNADO';
+                    statusLabel = 'Designado';
+                    order = 3; // Se muestra en disponibles pero con badge
+                }
+            }
+
+            // Jerarquía interna
+            let internalOrder = 4; // Regular (Titular)
+            if (obs.tipoObservador === 'EVENTUAL') internalOrder = 3;
+            if (obs.sexo === Sexo.Femenino) internalOrder = 2;
+            if (obs.tipoObservador !== 'EVENTUAL' && obs.sexo !== Sexo.Femenino) internalOrder = 1;
+
+            return {
+                ...obs,
+                status,
+                statusLabel,
+                mainOrder: order,
+                internalOrder,
+                fullName: `${obs.apellido}, ${obs.nombre}`,
+            };
+        });
+
+        // 3. Ordenar
+        classification.sort((a, b) => {
+            if (a.mainOrder !== b.mainOrder) return a.mainOrder - b.mainOrder;
+            if (a.internalOrder !== b.internalOrder) return a.internalOrder - b.internalOrder;
+            return a.fullName.localeCompare(b.fullName);
+        });
+
+        // 4. Crear Excel
+        const workbook = new ExcelJS.Workbook();
+        const sheet = workbook.addWorksheet('Personal de Mareas');
+
+        sheet.columns = [
+            { header: 'ESTADO', key: 'statusLabel', width: 20 },
+            { header: 'APELLIDO Y NOMBRE', key: 'fullName', width: 40 },
+            { header: 'TIPO', key: 'tipoObservador', width: 15 },
+            { header: 'CONTRATO', key: 'tipoContrato', width: 20 },
+            { header: 'SEXO', key: 'sexo', width: 15 },
+            { header: 'OBSERVACIONES', key: 'observaciones', width: 50 },
+        ];
+
+        // Estilos de Cabecera
+        sheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFF' } };
+        sheet.getRow(1).fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: '1E293B' }, // Slate-800
+        };
+
+        // 5. Agregar Filas con Estilos
+        classification.forEach((item) => {
+            const row = sheet.addRow({
+                statusLabel: item.statusLabel,
+                fullName: item.fullName,
+                tipoObservador: item.tipoObservador,
+                tipoContrato: item.tipoContrato,
+                sexo: item.sexo,
+                observaciones: item.observaciones || '',
+            });
+
+            // Color de la celda de ESTADO
+            const statusCell = row.getCell(1);
+            let statusColor = 'F1F5F9'; // Default
+            if (item.status === 'NAVEGANDO') statusColor = 'E0F2FE'; // Sky-100
+            if (item.status === 'DESCANSO') statusColor = 'DBEAFE'; // Blue-100
+            if (item.status === 'DISPONIBLE' || item.status === 'DESIGNADO') statusColor = 'DCFCE7'; // Green-100
+            if (item.status === 'IMPEDIDO') statusColor = 'FEE2E2'; // Red-100
+
+            statusCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: statusColor } };
+            statusCell.font = { bold: true };
+
+            // Estilos del resto de la fila
+            if (item.status === 'IMPEDIDO') {
+                row.eachCell((cell) => {
+                    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FEF2F2' } }; // Red-50 (Muy suave)
+                });
+            } else {
+                // Femenino -> Pink
+                if (item.sexo === Sexo.Femenino) {
+                    row.eachCell((cell, colNumber) => {
+                        if (colNumber > 1) {
+                            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FDF2F8' } }; // Pink-50
+                        }
+                    });
+                }
+                // Eventual -> Grey
+                if (item.tipoObservador === 'EVENTUAL') {
+                    row.eachCell((cell, colNumber) => {
+                        if (colNumber > 1) {
+                            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'F8FAFC' } }; // Slate-50
+                        }
+                    });
+                }
+                // Designado (Celeste en el nombre)
+                if (item.status === 'DESIGNADO') {
+                    row.getCell(2).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'E0F2FE' } }; // Sky-100
+                }
+            }
+        });
+
+        // Auto filtro y bordes
+        sheet.autoFilter = { from: 'A1', to: 'F1' };
+        sheet.eachRow((row) => {
+            row.eachCell((cell) => {
+                cell.border = {
+                    top: { style: 'thin', color: { argb: 'E2E8F0' } },
+                    left: { style: 'thin', color: { argb: 'E2E8F0' } },
+                    bottom: { style: 'thin', color: { argb: 'E2E8F0' } },
+                    right: { style: 'thin', color: { argb: 'E2E8F0' } },
+                };
+            });
+        });
 
         return workbook;
     }

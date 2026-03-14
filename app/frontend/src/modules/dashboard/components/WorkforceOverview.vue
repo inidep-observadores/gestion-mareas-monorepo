@@ -16,6 +16,19 @@
         <p class="text-[10px] font-bold text-text-muted uppercase tracking-tighter">Distribución operativa de
           observadores</p>
       </div>
+      <!-- Export Action -->
+      <button @click="handleExport" 
+        class="ml-auto p-1.5 hover:bg-success/10 text-success rounded-lg transition-all active:scale-95 group/export flex items-center gap-1.5"
+        title="Exportar dotación completa a Excel"
+        :disabled="isExporting">
+        <svg v-if="!isExporting" xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 transition-transform group-hover/export:scale-110" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="7 10 12 15 17 10"></polyline>
+          <line x1="12" y1="15" x2="12" y2="3"></line>
+        </svg>
+        <span v-else class="loading loading-spinner loading-xs"></span>
+        <span class="text-[9px] font-black uppercase tracking-widest hidden group-hover/export:inline-block animate-fadeIn">Excel</span>
+      </button>
     </div>
 
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4" :class="[selectedStatus ? 'mb-8' : '']">
@@ -470,6 +483,7 @@ import WorkforceStatusCard from './WorkforceStatusCard.vue'
 import BaseModal from '@/components/common/BaseModal.vue'
 import WorkforceDonutChart from './WorkforceDonutChart.vue'
 import observadoresApi from '@/modules/admin/services/observadores.service'
+import statsService from '@/modules/stats/services/stats.service'
 import { toast } from 'vue-sonner'
 
 const props = defineProps<{
@@ -568,6 +582,26 @@ const availableComposition = computed(() => {
     total: list.length
   }
 })
+
+const isExporting = ref(false)
+
+const handleExport = async () => {
+  try {
+    isExporting.value = true
+    const currentYear = new Date().getFullYear()
+    await statsService.downloadWorkforceExport(currentYear)
+    toast.success('Excel generado correctamente', {
+      description: `Lista completa de personal de mareas (${currentYear})`,
+    })
+  } catch (error) {
+    console.error('Error al exportar personal:', error)
+    toast.error('Error al exportar', {
+      description: 'No se pudo generar el archivo Excel.',
+    })
+  } finally {
+    isExporting.value = false
+  }
+}
 
 const donutOptions = computed(() => ({
   chart: {
