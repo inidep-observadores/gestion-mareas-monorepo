@@ -8,6 +8,7 @@ import { DateUtils } from '../common/utils/date.utils';
 import { FilterType } from './dto/get-stats.dto';
 import { Sexo } from '@prisma/client';
 import * as ExcelJS from 'exceljs';
+import { MareasService } from '../mareas/mareas.service';
 
 describe('StatsService', () => {
     let service: StatsService;
@@ -30,6 +31,15 @@ describe('StatsService', () => {
         getRules: jest.fn().mockReturnValue({ DIAS_DESCANSO_POST_MAREA: 5 }),
     };
 
+    const mockMareasService = {
+        getWorkforceStatus: jest.fn().mockResolvedValue({
+            listNavegando: [],
+            listDescanso: [],
+            listDisponibles: [],
+            listImpedidos: []
+        }),
+    };
+
     beforeEach(async () => {
         const module: TestingModule = await Test.createTestingModule({
             providers: [
@@ -37,6 +47,7 @@ describe('StatsService', () => {
                 { provide: PrismaService, useValue: mockPrisma },
                 { provide: PlanificacionService, useValue: mockPlanificacion },
                 { provide: BusinessRulesService, useValue: mockBusinessRules },
+                { provide: MareasService, useValue: mockMareasService },
             ],
         }).compile();
 
@@ -366,120 +377,100 @@ describe('StatsService', () => {
     });
     describe('getExportWorkbook - WORKFORCE', () => {
         it('should exclude technical staff and classify by operational status', async () => {
-            const mockObservadores = [
-                {
-                    id: 'obs-1',
-                    apellido: 'Perez',
-                    nombre: 'Juan',
-                    tipoObservador: 'TITULAR',
-                    tipoContrato: 'PLANTA',
-                    sexo: Sexo.Masculino,
-                    conImpedimento: false,
-                    mareasAsignadas: [
-                        { id: 'm-1', estadoActual: { codigo: 'EN_EJECUCION' } }
-                    ],
-                    etapas: []
-                },
-                {
-                    id: 'obs-2',
-                    apellido: 'Gomez',
-                    nombre: 'Maria',
-                    tipoObservador: 'TITULAR',
-                    tipoContrato: 'PLANTA',
-                    sexo: Sexo.Femenino,
-                    conImpedimento: false,
-                    mareasAsignadas: [
-                        { id: 'm-2', estadoActual: { codigo: 'DESIGNADA' } }
-                    ],
-                    etapas: []
-                },
-                {
-                    id: 'obs-3',
-                    apellido: 'Lopez',
-                    nombre: 'Carlos',
-                    tipoObservador: 'EVENTUAL',
-                    tipoContrato: 'CONTRATO',
-                    sexo: Sexo.Masculino,
-                    conImpedimento: true,
-                    mareasAsignadas: [],
-                    etapas: []
-                }
-            ];
-
-            mockPrisma.observador.findMany.mockResolvedValue(mockObservadores);
-
-            const workbook = await service.getExportWorkbook(
-                2024,
-                'TOTAL',
-                true,
-                true,
-                'SHIP',
-                true,
-                FilterType.WORKFORCE
-            );
-
-            const sheet = workbook.getWorksheet('Personal de Mareas');
-            expect(sheet).toBeDefined();
-
-            // Verify count (headers + 3 rows)
-            expect(sheet.rowCount).toBe(4);
-
-            // Verify query filter (Now includes technicians but filters by active/disponible)
-            expect(mockPrisma.observador.findMany).toHaveBeenCalledWith(expect.objectContaining({
-                where: expect.objectContaining({
-                    activo: true,
-                    disponible: true
-                })
-            }));
-
-            // Verify order: Perez (Navegando, mainOrder 1), Gomez (Disponible+Designada, mainOrder 3), Lopez (Impedido, mainOrder 4)
-            // Rows are 1-indexed (row 1 is header)
-            expect(sheet.getCell(2, 1).value).toBe('Navegando');
-            expect(sheet.getCell(2, 2).value).toBe('Perez, Juan');
-            
-            expect(sheet.getCell(3, 1).value).toBe('Disponible');
-            expect(sheet.getCell(3, 2).value).toBe('Gomez, Maria');
-            
-            expect(sheet.getCell(4, 1).value).toBe('Impedido');
-            expect(sheet.getCell(4, 2).value).toBe('Lopez, Carlos');
-        });
-
-        it('should correctly identify "Designado" status as a full row highlight', async () => {
-            const mockObservadores = [
-                {
-                    id: 'obs-1',
-                    apellido: 'Test',
-                    nombre: 'Designado',
-                    tipoObservador: 'TITULAR',
-                    sexo: Sexo.Masculino,
-                    activo: true,
-                    disponible: true,
-                    conImpedimento: false,
-                    mareasAsignadas: [],
-                    etapas: []
-                }
-            ];
-
-            // Mock mareas designadas
-            mockPrisma.marea.findMany.mockResolvedValueOnce([
-                {
-                    id: 'm-1',
-                    observadorPrincipalId: 'obs-1',
-                    buque: { nombreBuque: 'Barco X' },
-                    pesqueria: { nombre: 'Merluza' },
-                    estadoActual: { codigo: 'DESIGNADA' }
-                }
-            ]);
-
-            mockPrisma.observador.findMany.mockResolvedValue(mockObservadores);
+            mockMareasService.getWorkforceStatus.mockResolvedValue({
+                listNavegando: [
+                    {
+                        id: 'obs-1',
+                        name: 'Juan Perez',
+                        tipoObservador: 'TITULAR',
+                        sexo: Sexo.Masculino,
+                        days: 10,
+                        vessel: 'Vessel A',
+                        mareaCode: '2024-001',
+                        fishery: 'Merluza',
+                    }
+                ],
+                listDescanso: [
+                    {
+                        id: 'obs-2',
+                        name: 'Maria Gomez',
+                        tipoObservador: 'TITULAR',
+                        sexo: Sexo.Femenino,
+                        days: 5,
+                        vessel: null,
+                        mareaCode: '',
+                        fishery: '',
+                        status: 'DESCANSO',
+                        tieneDesignacionActiva: true
+                    }
+                ],
+                listDisponibles: [
+                    {
+                        id: 'obs-3',
+                        name: 'Carlos Lopez',
+                        tipoObservador: 'EVENTUAL',
+                        sexo: Sexo.Masculino,
+                        days: 20,
+                        vessel: null,
+                        mareaCode: '',
+                        fishery: '',
+                    }
+                ],
+                listImpedidos: []
+            });
 
             const workbook = await service.getExportWorkbook(
                 2024, 'TOTAL', true, true, 'SHIP', true, FilterType.WORKFORCE
             );
 
-            const sheet = workbook.getWorksheet('Personal de Mareas');
+            const sheet = workbook.getWorksheet('Dotación de Personal');
+            expect(sheet).toBeDefined();
+
+            // Verify count (headers + 3 rows)
+            expect(sheet.rowCount).toBe(4);
+
+            // Verify that MareasService was called
+            expect(mockMareasService.getWorkforceStatus).toHaveBeenCalled();
+            // Verify order and values
+            // Rows are 1-indexed (row 1 is header)
+            expect(sheet.getCell(2, 3).value).toBe('Juan Perez');
+            expect(sheet.getCell(2, 1).value).toBe('Navegando');
+            
+            expect(sheet.getCell(3, 3).value).toBe('Maria Gomez');
+            expect(sheet.getCell(3, 1).value).toBe('En Descanso');
+            
+            expect(sheet.getCell(4, 3).value).toBe('Carlos Lopez');
+            expect(sheet.getCell(4, 1).value).toBe('Disponible');
+        });
+
+        it('should correctly identify "Designado" status as a full row highlight', async () => {
+            mockMareasService.getWorkforceStatus.mockResolvedValue({
+                listNavegando: [],
+                listDescanso: [],
+                listDisponibles: [
+                    {
+                        id: 'obs-1',
+                        name: 'Designado Test',
+                        tipoObservador: 'TITULAR',
+                        sexo: Sexo.Masculino,
+                        days: 0,
+                        vessel: 'Vessel X',
+                        mareaCode: '2024-002',
+                        fishery: 'Merluza',
+                        status: 'DISPONIBLE',
+                        tieneDesignacionActiva: true
+                    }
+                ],
+                listImpedidos: []
+            });
+
+            const workbook = await service.getExportWorkbook(
+                2024, 'TOTAL', true, true, 'SHIP', true, FilterType.WORKFORCE
+            );
+
+            const sheet = workbook.getWorksheet('Dotación de Personal');
             const statusCell = sheet.getCell(2, 1);
-            const nameCell = sheet.getCell(2, 2);
+            const nameCell = sheet.getCell(2, 3); // Apellido y Nombre es la columna 3
 
             // Verify that it is "Disponible" but has the "Designado" highlight (E0F2FE) in all row
             expect(statusCell.value).toBe('Disponible');
