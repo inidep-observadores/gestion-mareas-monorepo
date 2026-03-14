@@ -26,7 +26,7 @@
         :is-selected="selectedStatus === status.label"
         :show-chart="['Navegando', 'Descanso', 'Disponibles'].includes(status.label) && !!props.data"
         :chart-observers="getFilteredList(
-          status.label === 'Navegando' ? (props.data?.listNavegando || []) : 
+          status.label === 'Navegando' ? (props.data?.listNavegando || []) :
           (status.label === 'Descanso' ? (props.data?.listDescanso || []) : (props.data?.listDisponibles || []))
         )"
         @select-status="selectStatus"
@@ -142,7 +142,7 @@
 
                 <!-- Impedidos Columns -->
                 <td v-if="selectedStatus === 'Impedidos'" class="relative px-6 py-3 text-xs text-text-muted">
-                  <div v-if="(item as any).tieneDesignacionActiva" 
+                  <div v-if="(item as any).tieneDesignacionActiva"
                     class="absolute top-0 right-0 px-1.5 py-0.5 bg-sky-500 text-white text-[8px] font-black uppercase rounded-bl-lg shadow-sm z-20">
                     Designado
                   </div>
@@ -198,8 +198,8 @@
                 <!-- Metric Column -->
                 <td v-if="selectedStatus !== 'Impedidos'"
                   class="relative px-6 py-3 text-xs font-black text-text text-right tabular-nums">
-                  <div v-if="(item as any).tieneDesignacionActiva" 
-                    class="absolute top-0 right-0 px-1.5 py-0.5 bg-sky-500 text-white text-[7px] font-black uppercase rounded-bl-lg shadow-sm z-20">
+                  <div v-if="(item as any).tieneDesignacionActiva"
+                    class="absolute top-0 right-0 px-1.5 py-0.5 bg-sky-500 text-white text-[8px] font-black uppercase rounded-bl-lg shadow-sm z-20">
                     Designado
                   </div>
                   <span :class="selectedStatus === 'Navegando' ? 'text-info' : 'text-text-muted'">{{ (item as any).days
@@ -530,7 +530,7 @@ const currentList = computed(() => {
 
   // 3. Ordenamiento Jerárquico Unificado (Aplica a Navegando, Descanso y Disponibles)
   const hierarchicalStatuses = ['Navegando', 'Descanso', 'Disponibles']
-  
+
   if (hierarchicalStatuses.includes(selectedStatus.value)) {
     list = [...list].sort((a, b) => {
       // Prioridad 1: Eventual (false < true) -> Titulares primero
@@ -542,7 +542,7 @@ const currentList = computed(() => {
       // Prioridad 3: Orden dinámico (Manual o por días)
       const key = sortBy.value || 'days'
       const order = sortOrder.value || 'desc'
-      
+
       const valA = a[key]
       const valB = b[key]
 
