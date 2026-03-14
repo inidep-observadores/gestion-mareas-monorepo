@@ -19,51 +19,27 @@
     </div>
 
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4" :class="[selectedStatus ? 'mb-8' : '']">
-      <div v-for="status in distributions" :key="status.label" @click="selectStatus(status.label)"
-        class="group relative flex flex-col items-center p-4 rounded-2xl bg-surface-muted/50 border border-border hover:bg-surface hover:shadow-xl hover:border-primary/30 transition-all duration-300 cursor-pointer"
-        :class="[selectedStatus === status.label ? `ring-2 ${status.ringClass} bg-surface` : '']">
-        <!-- Icon (Hidden for Disponibles as we have the chart) -->
-        <div v-if="status.label !== 'Disponibles'" class="mb-3 transition-transform duration-300 group-hover:scale-110 group-hover:-translate-y-1">
-          <component :is="status.icon" class="w-6 h-6" :class="status.colorClass" />
-        </div>
-
-        <div
-          class="text-[10px] font-black text-text-muted uppercase tracking-widest mb-2 text-center transition-colors group-hover:text-text">
-          {{ status.label }}
-        </div>
-
-        <div class="flex flex-col items-center gap-0.5" :class="[status.label === 'Disponibles' ? 'mb-1' : 'mb-3']">
-          <span class="text-2xl font-black tabular-nums transition-colors" :class="status.colorClass">
-            {{ status.count }}
-          </span>
-          <span class="text-[11px] font-bold text-text-muted tabular-nums">
-            ({{ status.value }}%)
-          </span>
-        </div>
-
-        <!-- Donut Chart for Disponibles -->
-        <div v-if="status.label === 'Disponibles' && availableComposition.total > 0" @click.stop class="w-full h-24 mb-2 flex items-center justify-center transition-all">
-            <apexchart
-                type="donut"
-                height="100%"
-                width="100%"
-                :options="donutOptions"
-                :series="availableComposition.series"
-            />
-        </div>
-
-        <!-- Progress Indicator -->
-        <div class="w-full mt-auto">
-          <div class="h-1.5 w-full bg-surface-muted rounded-full overflow-hidden">
-            <div class="h-full rounded-full transition-all duration-1000 ease-out" :class="status.bgClass"
-              :style="{ width: status.value + '%' }"></div>
-          </div>
-        </div>
-        <!-- Active Indicator Arrow -->
-        <div v-if="selectedStatus === status.label"
-          class="absolute -bottom-[10px] left-1/2 -translate-x-1/2 w-4 h-4 bg-surface border-r-2 border-b-2 rotate-45 z-10"
-          :class="status.borderColorClass"></div>
-      </div>
+      <WorkforceStatusCard
+        v-for="status in distributions"
+        :key="status.label"
+        :status="status"
+        :is-selected="selectedStatus === status.label"
+        :show-chart="['Navegando', 'Descanso', 'Disponibles'].includes(status.label) && !!props.data"
+        :chart-observers="getFilteredList(
+          status.label === 'Navegando' ? (props.data?.listNavegando || []) : 
+          (status.label === 'Descanso' ? (props.data?.listDescanso || []) : (props.data?.listDisponibles || []))
+        )"
+        @select-status="selectStatus"
+        @select-category="(category) => {
+          if (selectedCategory === category && selectedStatus === status.label) {
+            selectedCategory = null;
+            selectedStatus = 'Disponibles';
+          } else {
+            selectedCategory = category;
+            selectedStatus = status.label;
+          }
+        }"
+      />
     </div>
 
     <!-- Detailed List Section -->
@@ -143,15 +119,15 @@
                 (item as any).tieneDesignacionActiva
                   ? 'bg-sky-50 dark:bg-sky-950/20 border-l-4 border-l-sky-400'
                   : item.eventual && (item as any).sexo === 'Femenino'
-                    ? 'bg-rose-100/40 dark:bg-rose-900/10 border-l-4 border-l-gray-400' 
+                    ? 'bg-rose-100/40 dark:bg-rose-900/10 border-l-4 border-l-gray-400'
                     : item.eventual
-                      ? 'bg-slate-100 dark:bg-slate-800/60 border-l-4 border-l-slate-400 opacity-90' 
+                      ? 'bg-slate-100 dark:bg-slate-800/60 border-l-4 border-l-slate-400 opacity-90'
                       : (item as any).sexo === 'Femenino'
-                        ? 'bg-rose-50 dark:bg-rose-950/20 border-l-4 border-l-rose-300' 
+                        ? 'bg-rose-50 dark:bg-rose-950/20 border-l-4 border-l-rose-300'
                         : 'hover:bg-surface-muted/80',
-                
+
                 // Efecto de brillo en hover para todos los que tienen color
-                ((item as any).tieneDesignacionActiva || item.eventual || (item as any).sexo === 'Femenino') 
+                ((item as any).tieneDesignacionActiva || item.eventual || (item as any).sexo === 'Femenino')
                   ? 'hover:brightness-95 dark:hover:brightness-110' : ''
               ]">
                 <td class="px-6 py-3 text-xs font-bold text-text">
@@ -239,6 +215,7 @@ import { ref, markRaw, computed } from 'vue'
 import { ShipIcon, UserGroupIcon, DocsIcon, HotelIcon, ChevronDownIcon } from '@/icons'
 import type { WorkforceStatus } from '../services/dashboard.service'
 import SearchInput from '@/components/ui/SearchInput.vue'
+import WorkforceStatusCard from './WorkforceStatusCard.vue'
 
 const props = defineProps<{
   data: WorkforceStatus | null
@@ -254,7 +231,7 @@ const selectedCategory = ref<string | null>(null)
 // Available Composition for Donut Chart
 const availableComposition = computed(() => {
   if (!props.data || !props.data.listDisponibles) return { series: [], total: 0 }
-  
+
   // IMPORTANTE: Aplicar el mismo filtro de tipos que el resto del dashboard
   const list = getFilteredList(props.data.listDisponibles)
   const stats = {
@@ -270,7 +247,7 @@ const availableComposition = computed(() => {
       stats.designados++
       return
     }
-    
+
     const isFem = obs.sexo === 'Femenino'
     const isEventual = obs.eventual === true
 
@@ -319,14 +296,14 @@ const donutOptions = computed(() => ({
             fontSize: '14px',
             fontFamily: 'inherit',
             fontWeight: '900',
-            color: 'var(--color-success-500)',
+            color: 'var(--color-text)',
             offsetY: 5,
             formatter: (val: string) => val
           },
           total: {
             show: true,
             showAlways: true,
-            label: '',
+            offsetY: 0,
             formatter: (w: any) => {
               return w.globals.seriesTotals.reduce((a: number, b: number) => a + b, 0).toString()
             }
@@ -338,9 +315,36 @@ const donutOptions = computed(() => ({
   dataLabels: { enabled: false },
   tooltip: {
     enabled: true,
-    theme: 'dark',
-    y: {
-      formatter: (val: number) => `${val} obs.`
+    custom: function ({ series, seriesIndex, w }: any) {
+      const val = series[seriesIndex];
+      const label = w.globals.labels[seriesIndex];
+      const colors = w.globals.colors;
+      const accent = colors[seriesIndex] || 'var(--color-primary)';
+
+      return `
+        <div class="m-6 px-4 py-4 bg-surface/90 backdrop-blur-xl text-text border border-border/50 rounded-2xl flex flex-col gap-3 shadow-[0_20px_50px_rgba(0,0,0,0.5)] ring-1 ring-black/10 min-w-[200px]">
+          <div class="flex items-center justify-between border-b border-border/30 pb-2 mb-1">
+            <div class="flex items-center gap-2">
+              <span class="w-1.5 h-3 rounded-full" style="background:${accent}"></span>
+              <span class="text-[10px] text-text-muted uppercase font-black tracking-widest">${label}</span>
+            </div>
+            <div class="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[9px] font-black uppercase">Estado</div>
+          </div>
+
+          <div class="flex flex-col gap-1">
+            <span class="text-[9px] font-black text-primary uppercase tracking-tighter">Observadores Totales</span>
+            <div class="flex items-baseline gap-1">
+              <span class="text-2xl font-black tabular-nums">${val}</span>
+              <span class="text-[10px] font-bold text-text-muted">obs.</span>
+            </div>
+          </div>
+
+          <div class="pt-2 border-t border-border/30 flex justify-between items-center opacity-60">
+              <span class="text-[8px] font-black italic uppercase">Click para filtrar lista</span>
+              <span class="text-[10px]">👥</span>
+          </div>
+        </div>
+      `;
     }
   },
   legend: { show: false }
@@ -497,8 +501,8 @@ const currentList = computed(() => {
     });
   }
 
-  // 2.5 Filtrado por categoría de la dona (solo si está en Disponibles)
-  if (selectedStatus.value === 'Disponibles' && selectedCategory.value) {
+  // 2.5 Filtrado por categoría de la dona (Aplica a cualquier estado seleccionado)
+  if (selectedCategory.value) {
     list = list.filter(obs => {
       if (selectedCategory.value === 'Designados') return obs.tieneDesignacionActiva;
       if (obs.tieneDesignacionActiva) return false; // Los demás no deben ser designados
@@ -510,7 +514,7 @@ const currentList = computed(() => {
       if (selectedCategory.value === 'Fem. Titular') return !isEventual && isFem;
       if (selectedCategory.value === 'Fem. Eventual') return isEventual && isFem;
       if (selectedCategory.value === 'Otros Eventuales') return isEventual && !isFem;
-      
+
       return true;
     });
   }
@@ -550,6 +554,18 @@ const currentList = computed(() => {
 <style scoped>
 .animate-fadeIn {
   animation: fadeIn 0.3s ease-out forwards;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes fadeIn {
