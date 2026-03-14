@@ -519,23 +519,30 @@ const currentList = computed(() => {
     });
   }
 
-  // 3. Ordenamiento
-  if (selectedStatus.value === 'Disponibles') {
-    // Orden especial para Disponibles:
-    // 1. No eventuales primero, eventuales después
-    // 2. Dentro de cada grupo: Masculinos primero, Femeninos después
-    // 3. Finalmente por días de inactividad descendente (comportamiento actual)
+  // 3. Ordenamiento Jerárquico Unificado (Aplica a Navegando, Descanso y Disponibles)
+  const hierarchicalStatuses = ['Navegando', 'Descanso', 'Disponibles']
+  
+  if (hierarchicalStatuses.includes(selectedStatus.value)) {
     list = [...list].sort((a, b) => {
-      // Prioridad 1: Eventual (false < true)
-      if (a.eventual !== b.eventual) return a.eventual ? 1 : -1;
+      // Prioridad 1: Eventual (false < true) -> Titulares primero
+      if (a.eventual !== b.eventual) return a.eventual ? 1 : -1
 
-      // Prioridad 2: Sexo (Masculino < Femenino)
-      if (a.sexo !== b.sexo) return a.sexo === 'Masculino' ? -1 : 1;
+      // Prioridad 2: Sexo (Masculino < Femenino) -> Según orden de la torta (Titulares masculinos son la primera categoría)
+      if (a.sexo !== b.sexo) return a.sexo === 'Masculino' ? -1 : 1
 
-      // Prioridad 3: Días de inactividad descendente
-      return b.days - a.days;
-    });
-  } else if (sortBy.value) {
+      // Prioridad 3: Orden dinámico (Manual o por días)
+      const key = sortBy.value || 'days'
+      const order = sortOrder.value || 'desc'
+      
+      const valA = a[key]
+      const valB = b[key]
+
+      if (valA < valB) return order === 'asc' ? -1 : 1
+      if (valA > valB) return order === 'asc' ? 1 : -1
+      return 0
+    })
+  } else if (selectedStatus.value === 'Impedidos' && sortBy.value) {
+    // Para Impedidos, ordenamiento estándar si hay una columna seleccionada
     list = [...list].sort((a, b) => {
       const key = sortBy.value as 'name' | 'days'
       const valA = a[key]
