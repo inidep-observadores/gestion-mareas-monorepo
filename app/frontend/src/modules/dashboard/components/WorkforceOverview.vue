@@ -158,7 +158,7 @@
                     </span>
                     
                     <!-- Botón Editar Inline -->
-                    <button v-if="editingObsId !== item.id" 
+                    <button v-if="canManageObservations && editingObsId !== item.id" 
                       @click="startEditing(item.id, (item as any).observaciones)"
                       class="opacity-0 group-hover:opacity-100 p-1 hover:bg-primary/10 text-primary rounded transition-all"
                       title="Editar observaciones">
@@ -189,7 +189,7 @@
 
                   <!-- Modo Vista -->
                   <template v-else>
-                    <div v-if="(item as any).observaciones" 
+                    <div v-if="canManageObservations && (item as any).observaciones" 
                       class="mt-1 pl-2 border-l-2 border-primary/20 text-[9px] font-medium text-text-muted italic leading-relaxed">
                       {{ (item as any).observaciones }}
                     </div>
@@ -410,7 +410,7 @@
                       @click="$emit('view-timeline', item.id, item.name)">
                       {{ item.name }}
                     </span>
-                    <button v-if="editingObsId !== item.id" 
+                    <button v-if="canManageObservations && editingObsId !== item.id" 
                       @click="startEditing(item.id, (item as any).observaciones)"
                       class="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-primary/10 text-primary rounded-lg transition-all">
                       <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -429,7 +429,7 @@
                     </div>
                   </div>
                   <template v-else>
-                    <div v-if="(item as any).observaciones" 
+                    <div v-if="canManageObservations && (item as any).observaciones" 
                       class="mt-2 pl-3 border-l-2 border-primary/30 text-[11px] font-medium text-text-muted italic leading-relaxed">
                       {{ (item as any).observaciones }}
                     </div>
@@ -480,6 +480,8 @@ import observadoresApi from '@/modules/admin/services/observadores.service'
 import statsService from '@/modules/stats/services/stats.service'
 import { toast } from 'vue-sonner';
 import ExportExcelButton from '@/modules/shared/components/ExportExcelButton.vue';
+import { useAuthStore } from '@/modules/auth/stores/auth.store';
+import { ValidRoles } from '@/modules/auth/interfaces/roles.enum';
 
 const props = defineProps<{
   data: WorkforceStatus | null
@@ -493,6 +495,13 @@ const searchQuery = ref('')
 const sortBy = ref<'name' | 'days' | null>(null)
 const sortOrder = ref<'asc' | 'desc'>('desc')
 const selectedCategory = ref<string | null>(null)
+
+const authStore = useAuthStore()
+const canManageObservations = computed(() => {
+  return authStore.user?.roles.some(role => 
+    [ValidRoles.admin, ValidRoles.coordinador].includes(role)
+  ) ?? false
+})
 
 // Vista Expandida
 const isExpanded = ref(false)

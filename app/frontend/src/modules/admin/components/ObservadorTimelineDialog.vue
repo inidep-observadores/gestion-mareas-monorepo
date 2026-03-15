@@ -17,7 +17,7 @@
                         </div>
 
                         <!-- Botón Editar (Solo ícono) -->
-                        <button v-if="observador && !isEditing" @click="startEditing"
+                        <button v-if="canManageObservations && observador && !isEditing" @click="startEditing"
                             class="p-2 hover:bg-primary/10 text-primary rounded-lg transition-colors shrink-0"
                             title="Editar observaciones">
                             <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none"
@@ -44,7 +44,7 @@
                             </button>
                         </div>
                     </div>
-                    <p v-else-if="observador?.observaciones"
+                    <p v-else-if="canManageObservations && observador?.observaciones"
                         class="text-[10px] font-medium text-text-muted italic mt-2 leading-tight max-w-sm border-l-2 border-primary/20 pl-2">
                         {{ observador.observaciones }}
                     </p>
@@ -185,6 +185,8 @@ import BaseModal from '@/components/common/BaseModal.vue'
 import MareaQuickDetailModal from '@/modules/stats/components/MareaQuickDetailModal.vue'
 import observadoresApi from '../services/observadores.service'
 import { toast } from 'vue-sonner'
+import { useAuthStore } from '@/modules/auth/stores/auth.store'
+import { ValidRoles } from '@/modules/auth/interfaces/roles.enum'
 
 const props = defineProps<{
     show: boolean
@@ -198,6 +200,13 @@ const emit = defineEmits(['close', 'refresh'])
 const items = ref<any[]>([])
 const loading = ref(false)
 const observador = ref<any>(null)
+
+const authStore = useAuthStore()
+const canManageObservations = computed(() => {
+    return authStore.user?.roles.some(role => 
+        [ValidRoles.admin, ValidRoles.coordinador].includes(role)
+    ) ?? false
+})
 
 // Marea Detail Modal State
 const showDetailModal = ref(false)
