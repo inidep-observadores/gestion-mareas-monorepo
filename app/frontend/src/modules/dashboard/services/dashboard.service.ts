@@ -55,11 +55,11 @@ export interface WorkforceStatus {
     disponibles: number
     licencia: number
     impedidos: number
-    topDry: Array<{ id: string; name: string; days: number; lastArrival: string; mareaCode?: string; vesselName?: string; fishery?: string; tipoObservador: string; observaciones?: string }>
-    listNavegando: Array<{ id: string; name: string; days: number; vessel: string; mareaCode?: string; fishery?: string; enTierra?: boolean; startDate: string; tipoObservador: string, stageCount?: number; observaciones?: string }>
-    listDescanso: Array<{ id: string; name: string; days: number; lastArrival: string; mareaCode?: string; vesselName?: string; fishery?: string; tipoObservador: string; observaciones?: string }>
-    listDisponibles: Array<{ id: string; name: string; days: number; lastArrival: string; mareaCode?: string; vesselName?: string; fishery?: string; tipoObservador: string; observaciones?: string }>
-    listImpedidos: Array<{ id: string; name: string; motivo: string; tipoObservador: string; observaciones?: string }>
+    topDry: Array<{ id: string; name: string; days: number; lastArrival: string; mareaCode?: string; vesselName?: string; fishery?: string; tipoObservador: string; tipoContrato: string; observaciones?: string }>
+    listNavegando: Array<{ id: string; name: string; days: number; vessel: string; mareaCode?: string; fishery?: string; enTierra?: boolean; startDate: string; tipoObservador: string; tipoContrato: string; stageCount?: number; observaciones?: string }>
+    listDescanso: Array<{ id: string; name: string; days: number; lastArrival: string; mareaCode?: string; vesselName?: string; fishery?: string; tipoObservador: string; tipoContrato: string; observaciones?: string }>
+    listDisponibles: Array<{ id: string; name: string; days: number; lastArrival: string; mareaCode?: string; vesselName?: string; fishery?: string; tipoObservador: string; tipoContrato: string; observaciones?: string }>
+    listImpedidos: Array<{ id: string; name: string; motivo: string; tipoObservador: string; tipoContrato: string; observaciones?: string }>
 }
 
 export interface MovementAlert {

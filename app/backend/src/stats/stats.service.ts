@@ -1289,7 +1289,7 @@ export class StatsService {
         sheet.getColumn(2).width = 30; // Flota
         sheet.getColumn(3).width = 20; // Cantidad Mareas
         sheet.getColumn(4).width = 20; // Cantidad Etapas
-        sheet.getColumn(5).width = 20; // Total Días
+        sheet.getColumn(5).width = 20; // Días navegados
 
         // Autofiltro para el resumen (cubriendo las primeras 2 columnas al menos)
         sheet.autoFilter = {
@@ -1321,7 +1321,7 @@ export class StatsService {
 
         // Headers
         const headerRowIdx = startRow + 1;
-        const headers = ['Pesquería', 'Flota', 'Cantidad Mareas', 'Cantidad Etapas', 'Total Días'];
+        const headers = ['Pesquería', 'Flota', 'Cantidad Mareas', 'Cantidad Etapas', 'Días navegados'];
         headers.forEach((h, i) => {
             const cell = sheet.getCell(headerRowIdx, i + 1);
             cell.value = h;
@@ -2067,6 +2067,7 @@ export class StatsService {
             { header: 'CONDICIÓN', key: 'condicion', width: 15 },
             { header: 'APELLIDO Y NOMBRE', key: 'name', width: 35 },
             { header: 'TIPO', key: 'tipoObservador', width: 15 },
+            { header: 'CONTRATO', key: 'tipoContrato', width: 15 },
             { header: 'DÍAS NAVEGADOS', key: 'daysNav', width: 18 },
             { header: 'DÍAS INACTIVO', key: 'daysInact', width: 15 },
             { header: 'BUQUE', key: 'vessel', width: 25 },
@@ -2100,6 +2101,7 @@ export class StatsService {
                 condicion: condiciones.join(' + '),
                 name: item.name,
                 tipoObservador: item.tipoObservador,
+                tipoContrato: (item as any).tipoContrato || '',
                 daysNav: isNav ? item.days : '',
                 daysInact: isDry ? item.days : '',
                 vessel: (item as any).vessel || (item as any).vesselName || '',
@@ -2160,7 +2162,7 @@ export class StatsService {
         });
 
         // 6. Configuración final de la hoja - Rango completo para que funcione el filtro
-        sheet.autoFilter = `A1:K${sheet.rowCount}`;
+        sheet.autoFilter = `A1:L${sheet.rowCount}`;
 
         // Bordes suaves
         sheet.eachRow((row) => {
