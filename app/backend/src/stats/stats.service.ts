@@ -757,21 +757,120 @@ export class StatsService {
             ]
         });
 
-        const workbook = new ExcelJS.Workbook();
-        const sheet = workbook.addWorksheet('General');
+        // Filtrado global por estado: Solo EN_EJECUCION o posteriores (excluyendo CANCELADA)
+        const mareasFiltradas = mareas.filter(m => {
+            const estado = m.estadoActual?.codigo as MareaEstado;
+            return estado && 
+                   estado !== MareaEstado.DESIGNADA && 
+                   estado !== MareaEstado.A_REASIGNAR && 
+                   estado !== MareaEstado.CANCELADA;
+        });
 
-        // Determinar max etapas para las columnas
+        const workbook = new ExcelJS.Workbook();
+        
+        // Hoja General
+        this.buildGeneralSheet(workbook, mareasFiltradas, {
+            year,
+            yearStart,
+            yearEnd,
+            mode,
+            daysCalculationMode,
+            filterType,
+            filterValue,
+            startDate,
+            endDate
+        });
+
+        // Hoja Resumen por Pesquería (Resumen General)
+        if (includeSummaries) {
+            const summaryMC = new Map<string, any>();
+            const summaryCI = new Map<string, any>();
+
+            mareasFiltradas.forEach(m => {
+                const rowData = this.calculateMareaRowData(m, { yearStart, yearEnd, mode, daysCalculationMode, filterType, filterValue });
+                const summaryMap = m.tipoMarea === TipoMarea.CI ? summaryCI : summaryMC;
+                const key = `${rowData.pesqueria}|${rowData.flota}`;
+                if (!summaryMap.has(key)) {
+                    summaryMap.set(key, { pesqueria: rowData.pesqueria, flota: rowData.flota, mareas: 0, etapas: 0, dias: 0 });
+                }
+                const current = summaryMap.get(key)!;
+                current.mareas += 1;
+                current.etapas += m.etapas.length;
+                current.dias += rowData.dias_calendario;
+            });
+
+            this.buildSummarySheet(workbook, summaryMC, summaryCI);
+        }
+
+        // Hoja Días por Observador - Comercial (Debe ir después de los resúmenes)
+        this.buildObserverDaysSheet(workbook, 'Días por Observador - Comercial', mareasFiltradas, TipoMarea.MC, {
+            yearStart,
+            yearEnd,
+            mode,
+            daysCalculationMode,
+            filterType,
+            filterValue
+        });
+
+        // Hoja Días por Observador - Institucional (Solo si se incluyeron campañas)
+        if (includeCampaigns) {
+            this.buildObserverDaysSheet(workbook, 'Días por Observador - Institucional', mareasFiltradas, TipoMarea.CI, {
+                yearStart,
+                yearEnd,
+                mode,
+                daysCalculationMode,
+                filterType,
+                filterValue
+            });
+        }
+
+        // Hoja Resumen Obs-Flota-Especie - Com
+        this.buildObserverSummarySheet(workbook, 'Resumen Obs-Flota-Especie - Com', mareasFiltradas, TipoMarea.MC, {
+            yearStart,
+            yearEnd,
+            mode,
+            daysCalculationMode,
+            filterType,
+            filterValue
+        });
+
+        // Hoja Resumen Obs-Flota-Especie - Ins
+        if (includeCampaigns) {
+            this.buildObserverSummarySheet(workbook, 'Resumen Obs-Flota-Especie - Ins', mareasFiltradas, TipoMarea.CI, {
+                yearStart,
+                yearEnd,
+                mode,
+                daysCalculationMode,
+                filterType,
+                filterValue
+            });
+        }
+
+        // Hoja Campañas Institucionales
+        if (includeCampaigns) {
+            this.buildInstitucionalesSheet(workbook, mareasFiltradas, {
+                year,
+                yearStart,
+                yearEnd,
+                mode,
+                daysCalculationMode,
+                filterType,
+                filterValue
+            });
+        }
+
+        return workbook;
+    }
+
+    private buildGeneralSheet(workbook: ExcelJS.Workbook, mareas: any[], options: any) {
+        const sheet = workbook.addWorksheet('General');
+        
         // Determinar max etapas y observadores adicionales
         let maxEtapas = 0;
         let maxExtraObservers = 0;
 
         mareas.forEach(m => {
             if (m.etapas.length > maxEtapas) maxEtapas = m.etapas.length;
-
-            // Find extra observers in this marea
-            const uniqueObserversInMarea = new Set<string>();
-            if (m.observadorPrincipal) uniqueObserversInMarea.add(m.observadorPrincipal.id);
-
             const extras = new Set<string>();
             m.etapas.forEach(e => {
                 e.observadores.forEach(obsRel => {
@@ -787,27 +886,18 @@ export class StatsService {
         // Determinar si es exportación mensual
         let isMonthlyDetail = false;
         let monthName = '';
-        const monthNames = [
-            'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-            'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
-        ];
+        const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 
-        if (startDate && endDate) {
-            const sDate = new Date(startDate);
-            const eDate = new Date(endDate);
-            // Use UTC methods because "YYYY-MM-DD" is parsed as UTC midnight
-            // and local time methods (getFullYear/getMonth) might shift the date 
-            // depending on server timezone (e.g. GMT-3).
-            if (
-                sDate.getUTCFullYear() === eDate.getUTCFullYear() &&
-                sDate.getUTCMonth() === eDate.getUTCMonth()
-            ) {
+        if (options.startDate && options.endDate) {
+            const sDate = new Date(options.startDate);
+            const eDate = new Date(options.endDate);
+            if (sDate.getUTCFullYear() === eDate.getUTCFullYear() && sDate.getUTCMonth() === eDate.getUTCMonth()) {
                 isMonthlyDetail = true;
                 monthName = monthNames[sDate.getUTCMonth()];
             }
         }
 
-        // Definir columnas base
+        // Columnas
         const columns: Partial<ExcelJS.Column>[] = [
             { header: 'Tipo', key: 'tipo_marea', width: 10 },
             { header: 'Marea', key: 'nro_marea', width: 10 },
@@ -820,7 +910,6 @@ export class StatsService {
             { header: 'Tipo Obs.', key: 'tipo_observador', width: 15 },
         ];
 
-        // Dynamic Extra Observers Columns
         for (let i = 1; i <= maxExtraObservers; i++) {
             columns.push({ header: `Observador Adic. ${i}`, key: `obs_adic_${i}`, width: 25 });
         }
@@ -829,178 +918,203 @@ export class StatsService {
 
         if (isMonthlyDetail) {
             columns.push({ header: `Días (${monthName})`, key: 'dias_calendario', width: 18 });
-            // "Días (Total Marea)", "Inicio", "Fin" are excluded for Monthly Detail to match frontend view
         } else {
             columns.push(
-                { header: `Días en ${year}`, key: 'dias_calendario', width: 18 },
-                { header: 'Días (Total Marea)', key: 'dias_total', width: 18 }, // Fixed encoding
+                { header: `Navegado en ${options.year}`, key: 'dias_calendario', width: 18 },
+                { header: 'Navegado Total', key: 'dias_total', width: 18 },
                 { header: 'Inicio', key: 'inicio', width: 15 },
                 { header: 'Fin', key: 'fin', width: 15 },
             );
         }
 
-        // Columnas de etapas
         for (let i = 1; i <= maxEtapas; i++) {
             columns.push(
                 { header: `Etapa ${i}: #`, key: `etapa_${i}_nro`, width: 10 },
                 { header: `Etapa ${i}: Zarpada`, key: `etapa_${i}_zarpada`, width: 15 },
                 { header: `Etapa ${i}: Arribo`, key: `etapa_${i}_arribo`, width: 15 },
-                { header: `Etapa ${i}: Días`, key: `etapa_${i}_dias`, width: 10 } // Fixed encoding
+                { header: `Etapa ${i}: Días`, key: `etapa_${i}_dias`, width: 10 }
             );
         }
 
         sheet.columns = columns;
 
         // Estilo cabecera
-        sheet.getRow(1).font = { bold: true };
-        sheet.getRow(1).fill = {
-            type: 'pattern',
-            pattern: 'solid',
-            fgColor: { argb: 'FFE0E0E0' }
+        const headerRow = sheet.getRow(1);
+        headerRow.font = { bold: true };
+        headerRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE0E0E0' } };
+        
+        // Autofiltro
+        sheet.autoFilter = {
+            from: { row: 1, column: 1 },
+            to: { row: 1, column: columns.length }
         };
 
-        // Cargar Datos
-        const summaryMC = new Map<string, { pesqueria: string; flota: string; mareas: number; etapas: number; dias: number }>();
-        const summaryCI = new Map<string, { pesqueria: string; flota: string; mareas: number; etapas: number; dias: number }>();
-
+        // Datos
         mareas.forEach(m => {
-            const overallStart = m.etapas[0]?.fechaZarpada;
-            const overallEnd = m.etapas[m.etapas.length - 1]?.fechaArribo || (m.estadoActual?.codigo === 'EN_EJECUCION' ? DateUtils.getNow() : null);
-
-            let calendarDays = 0;
-            let totalMareaDays = 0;
-
-            const now = DateUtils.getNow(true);
-            const intervals = m.etapas.map(e => ({
-                start: e.fechaZarpada,
-                end: e.fechaArribo || (m.estadoActual?.codigo === 'EN_EJECUCION' ? now : null)
-            })).filter(i => i.start && i.start <= now);
-
-            const calculationLimit = yearEnd < now ? yearEnd : now;
-            const periodRange = mode === 'CALENDAR' ? { start: yearStart, end: yearEnd } : undefined;
-
-            if (daysCalculationMode === 'SHIP') {
-                calendarDays = DateUtils.calculateUniqueDays(intervals, periodRange, calculationLimit);
-                totalMareaDays = DateUtils.calculateUniqueDays(intervals, undefined, now);
-            } else {
-                // OBSERVER Mode
-                // Case A: Filtered by a specific observer -> Show ONLY their individual contribution
-                if (filterType === 'OBSERVER' && filterValue) {
-                    let obsIntervals: Array<{ start: Date, end: Date }> = [];
-                    const isPrincipal = (m.observadorPrincipalId === filterValue);
-
-                    if (isPrincipal) {
-                        obsIntervals = intervals; // Principal gets full marea
-                    } else {
-                        // Find stages where they are additional
-                        m.etapas.forEach(etapa => {
-                            const isAdditional = etapa.observadores.some(rel => rel.observadorId === filterValue);
-                            if (isAdditional) {
-                                obsIntervals.push({
-                                    start: etapa.fechaZarpada,
-                                    end: etapa.fechaArribo || (m.estadoActual?.codigo === 'EN_EJECUCION' ? now : null)
-                                });
-                            }
-                        });
-                    }
-
-                    calendarDays = DateUtils.calculateUniqueDays(obsIntervals, periodRange, calculationLimit);
-                    totalMareaDays = DateUtils.calculateUniqueDays(obsIntervals, undefined, now);
-                } else {
-                    // Case B: General Detail (by Fishery/Fleet/All) -> Show total EFFORT (sum of all unique contributions)
-                    let effortCal = DateUtils.calculateUniqueDays(intervals, periodRange, calculationLimit);
-                    let effortTotal = DateUtils.calculateUniqueDays(intervals, undefined, now);
-
-                    const additionalsMap: Record<string, Array<{ start: Date, end: Date }>> = {};
-                    m.etapas.forEach(etapa => {
-                        if (!etapa.fechaZarpada) return;
-                        const start = etapa.fechaZarpada;
-                        const end = etapa.fechaArribo || (m.estadoActual?.codigo === 'EN_EJECUCION' ? now : null);
-
-                        etapa.observadores.forEach(obsRel => {
-                            if (obsRel.observador && obsRel.observador.id !== m.observadorPrincipalId) {
-                                if (!additionalsMap[obsRel.observador.id]) additionalsMap[obsRel.observador.id] = [];
-                                additionalsMap[obsRel.observador.id].push({ start, end });
-                            }
-                        });
-                    });
-
-                    Object.values(additionalsMap).forEach(obsIntervals => {
-                        effortCal += DateUtils.calculateUniqueDays(obsIntervals, periodRange, calculationLimit);
-                        effortTotal += DateUtils.calculateUniqueDays(obsIntervals, undefined, now);
-                    });
-
-                    calendarDays = effortCal;
-                    totalMareaDays = effortTotal;
-                }
-            }
-
-            const rowData: any = {
-                tipo_marea: m.tipoMarea,
-                nro_marea: m.nroMarea,
-                anio_marea: m.anioMarea,
-                buque: m.buque?.nombreBuque || 'Desconocido',
-                flota: m.buque?.tipoFlota?.nombre || '-',
-                pesqueria: filterType === FilterType.FISHERY
-                    ? filterValue
-                    : (m.etapas[0]?.pesqueria?.nombre || m.buque?.pesqueriaHabitual?.nombre || '-'),
-                observador: m.observadorPrincipal ? `${m.observadorPrincipal.nombre} ${m.observadorPrincipal.apellido}` : 'Sin asignar',
-                contrato: m.observadorPrincipal?.tipoContrato || '-',
-                tipo_observador: m.observadorPrincipal?.tipoObservador || '-',
-                estado: m.estadoActual?.nombre || 'Desconocido',
-                dias_calendario: calendarDays,
-                dias_total: totalMareaDays,
-                inicio: DateUtils.formatDate(overallStart),
-                fin: overallEnd ? DateUtils.formatDate(overallEnd) : (m.estadoActual?.codigo === 'EN_EJECUCION' ? 'En curso' : '-')
-            };
-
-            // Extra Observers
-            const extraObservers = new Set<string>();
-            m.etapas.forEach(e => {
-                e.observadores.forEach(obsRel => {
-                    const oid = obsRel.observadorId;
-                    // Logic: If main observer is defined, exclude him from "Adicionales".
-                    if (m.observadorPrincipal && oid === m.observadorPrincipal.id) return;
-                    if (obsRel.observador) {
-                        // Store Name
-                        extraObservers.add(`${obsRel.observador.nombre} ${obsRel.observador.apellido}`);
-                    }
-                });
+            const rowData = this.calculateMareaRowData(m, options);
+            sheet.addRow({
+                ...rowData,
+                estado_label: m.estadoActual?.codigo === MareaEstado.EN_EJECUCION ? 'En ejecución' : 'Finalizada'
             });
-            const extrasArray = Array.from(extraObservers);
-            extrasArray.forEach((name, idx) => {
-                rowData[`obs_adic_${idx + 1}`] = name;
-            });
-
-
-            // Etapas
-            m.etapas.forEach((e, idx) => {
-                const i = idx + 1;
-                rowData[`etapa_${i}_nro`] = e.nroEtapa;
-                rowData[`etapa_${i}_zarpada`] = DateUtils.formatDate(e.fechaZarpada);
-                rowData[`etapa_${i}_arribo`] = DateUtils.formatDate(e.fechaArribo);
-                rowData[`etapa_${i}_dias`] = DateUtils.calculateInclusiveDays(e.fechaZarpada, e.fechaArribo);
-            });
-
-            sheet.addRow(rowData);
-
-            // Aggregation for summaries
-            const summaryMap = m.tipoMarea === TipoMarea.CI ? summaryCI : summaryMC;
-            const key = `${rowData.pesqueria}|${rowData.flota}`;
-            if (!summaryMap.has(key)) {
-                summaryMap.set(key, { pesqueria: rowData.pesqueria, flota: rowData.flota, mareas: 0, etapas: 0, dias: 0 });
-            }
-            const current = summaryMap.get(key)!;
-            current.mareas += 1;
-            current.etapas += m.etapas.length;
-            current.dias += calendarDays;
         });
+    }
 
-        if (includeSummaries) {
-            this.buildSummarySheet(workbook, summaryMC, summaryCI);
+    private calculateMareaRowData(m: any, options: any): any {
+        const { yearStart, yearEnd, mode, daysCalculationMode, filterType, filterValue } = options;
+        const now = DateUtils.getNow(true);
+        const overallStart = m.etapas[0]?.fechaZarpada;
+        const overallEnd = m.etapas[m.etapas.length - 1]?.fechaArribo || (m.estadoActual?.codigo === 'EN_EJECUCION' ? now : null);
+
+        let calendarDays = 0;
+        let totalMareaDays = 0;
+
+        const intervals = m.etapas.map(e => ({
+            start: e.fechaZarpada,
+            end: e.fechaArribo || (m.estadoActual?.codigo === 'EN_EJECUCION' ? now : null)
+        })).filter(i => i.start && i.start <= now);
+
+        const calculationLimit = yearEnd < now ? yearEnd : now;
+        const periodRange = mode === 'CALENDAR' ? { start: yearStart, end: yearEnd } : undefined;
+
+        if (daysCalculationMode === 'SHIP') {
+            calendarDays = DateUtils.calculateUniqueDays(intervals, periodRange, calculationLimit);
+            totalMareaDays = DateUtils.calculateUniqueDays(intervals, undefined, now);
+        } else {
+            if (filterType === 'OBSERVER' && filterValue) {
+                let obsIntervals: any[] = [];
+                const isPrincipal = (m.observadorPrincipalId === filterValue);
+                if (isPrincipal) {
+                    obsIntervals = intervals;
+                } else {
+                    m.etapas.forEach(etapa => {
+                        const isAdditional = etapa.observadores.some(rel => rel.observadorId === filterValue);
+                        if (isAdditional) {
+                            obsIntervals.push({
+                                start: etapa.fechaZarpada,
+                                end: etapa.fechaArribo || (m.estadoActual?.codigo === 'EN_EJECUCION' ? now : null)
+                            });
+                        }
+                    });
+                }
+                calendarDays = DateUtils.calculateUniqueDays(obsIntervals, periodRange, calculationLimit);
+                totalMareaDays = DateUtils.calculateUniqueDays(obsIntervals, undefined, now);
+            } else {
+                let effortCal = DateUtils.calculateUniqueDays(intervals, periodRange, calculationLimit);
+                let effortTotal = DateUtils.calculateUniqueDays(intervals, undefined, now);
+                const additionalsMap: Record<string, any[]> = {};
+                m.etapas.forEach(etapa => {
+                    if (!etapa.fechaZarpada) return;
+                    const start = etapa.fechaZarpada;
+                    const end = etapa.fechaArribo || (m.estadoActual?.codigo === 'EN_EJECUCION' ? now : null);
+                    etapa.observadores.forEach(obsRel => {
+                        if (obsRel.observador && obsRel.observador.id !== m.observadorPrincipalId) {
+                            if (!additionalsMap[obsRel.observador.id]) additionalsMap[obsRel.observador.id] = [];
+                            additionalsMap[obsRel.observador.id].push({ start, end });
+                        }
+                    });
+                });
+                Object.values(additionalsMap).forEach(obsIntervals => {
+                    effortCal += DateUtils.calculateUniqueDays(obsIntervals, periodRange, calculationLimit);
+                    effortTotal += DateUtils.calculateUniqueDays(obsIntervals, undefined, now);
+                });
+                calendarDays = effortCal;
+                totalMareaDays = effortTotal;
+            }
         }
 
-        return workbook;
+        const rowData: any = {
+            tipo_marea: m.tipoMarea,
+            nro_marea: m.nroMarea,
+            anio_marea: m.anioMarea,
+            buque: m.buque?.nombreBuque || 'Desconocido',
+            flota: m.buque?.tipoFlota?.nombre || '-',
+            pesqueria: filterType === FilterType.FISHERY
+                ? filterValue
+                : (m.etapas[0]?.pesqueria?.nombre || m.buque?.pesqueriaHabitual?.nombre || '-'),
+            observador: m.observadorPrincipal ? `${m.observadorPrincipal.nombre} ${m.observadorPrincipal.apellido}` : 'Sin asignar',
+            contrato: m.observadorPrincipal?.tipoContrato || '-',
+            tipo_observador: m.observadorPrincipal?.tipoObservador || '-',
+            estado: m.estadoActual?.nombre || 'Desconocido',
+            dias_calendario: calendarDays,
+            dias_total: totalMareaDays,
+            inicio: DateUtils.formatDate(overallStart),
+            fin: overallEnd ? DateUtils.formatDate(overallEnd) : (m.estadoActual?.codigo === 'EN_EJECUCION' ? 'En curso' : '-')
+        };
+
+        const extraObservers = new Set<string>();
+        m.etapas.forEach(e => {
+            e.observadores.forEach(obsRel => {
+                const oid = obsRel.observadorId;
+                if (m.observadorPrincipal && oid === m.observadorPrincipal.id) return;
+                if (obsRel.observador) extraObservers.add(`${obsRel.observador.nombre} ${obsRel.observador.apellido}`);
+            });
+        });
+        const extrasArray = Array.from(extraObservers);
+        extrasArray.forEach((name, idx) => { rowData[`obs_adic_${idx + 1}`] = name; });
+
+        m.etapas.forEach((e, idx) => {
+            const i = idx + 1;
+            rowData[`etapa_${i}_nro`] = e.nroEtapa;
+            rowData[`etapa_${i}_zarpada`] = DateUtils.formatDate(e.fechaZarpada);
+            rowData[`etapa_${i}_arribo`] = DateUtils.formatDate(e.fechaArribo);
+            rowData[`etapa_${i}_dias`] = DateUtils.calculateInclusiveDays(e.fechaZarpada, e.fechaArribo);
+        });
+
+        return rowData;
+    }
+
+    private buildObserverDaysSheet(workbook: ExcelJS.Workbook, sheetName: string, mareas: any[], tipoMarea: TipoMarea, options: any) {
+        const sheet = workbook.addWorksheet(sheetName);
+        
+        const columns: Partial<ExcelJS.Column>[] = [
+            { header: 'Observador', key: 'observador', width: 30 },
+            { header: 'Buque', key: 'buque', width: 25 },
+            { header: 'Pesquería', key: 'pesqueria', width: 25 },
+            { header: 'Flota', key: 'flota', width: 20 },
+            { header: 'Año Marea', key: 'anio_marea', width: 12 },
+            { header: 'Número Marea', key: 'nro_marea', width: 15 },
+            { header: 'Cantidad Etapas', key: 'etapas_count', width: 15 },
+            { header: 'Días Navegados', key: 'dias_navegados', width: 18 },
+            { header: 'Estado', key: 'estado_label', width: 15 },
+        ];
+
+        sheet.columns = columns;
+
+        // Estilo cabecera
+        const headerRow = sheet.getRow(1);
+        headerRow.font = { bold: true };
+        headerRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE0E0E0' } };
+
+        // Autofiltro
+        sheet.autoFilter = {
+            from: { row: 1, column: 1 },
+            to: { row: 1, column: columns.length }
+        };
+
+        // Filtrar por tipo y preparar datos
+        const rowsReport: any[] = [];
+        const filteredMareas = mareas.filter(m => m.tipoMarea === tipoMarea);
+
+        filteredMareas.forEach(m => {
+            const rowData = this.calculateMareaRowData(m, options);
+            rowsReport.push({
+                observador: rowData.observador,
+                buque: rowData.buque,
+                pesqueria: rowData.pesqueria,
+                flota: rowData.flota,
+                anio_marea: rowData.anio_marea,
+                nro_marea: rowData.nro_marea,
+                etapas_count: m.etapas.length,
+                dias_navegados: rowData.dias_calendario,
+                estado_label: m.estadoActual?.codigo === MareaEstado.EN_EJECUCION ? 'En ejecución' : 'Finalizada'
+            });
+        });
+
+        // Ordenar alfabéticamente por Observador
+        rowsReport.sort((a, b) => a.observador.localeCompare(b.observador));
+
+        // Agregar filas
+        rowsReport.forEach(row => sheet.addRow(row));
     }
 
     private buildSummarySheet(
@@ -1015,12 +1129,16 @@ export class StatsService {
         sheet.getColumn(4).width = 20; // Cantidad Etapas
         sheet.getColumn(5).width = 20; // Total Días
 
-        let currentRow = 2;
+        // Autofiltro para el resumen (cubriendo las primeras 2 columnas al menos)
+        sheet.autoFilter = {
+            from: { row: 3, column: 1 },
+            to: { row: 3, column: 5 }
+        };
 
+        let currentRow = 2;
         if (summaryMC.size > 0) {
             currentRow = this.buildSummaryTable(sheet, 'Resumen de Mareas Comerciales (MC)', summaryMC, currentRow);
         }
-
         if (summaryCI.size > 0) {
             this.buildSummaryTable(sheet, 'Resumen de Campañas Institucionales (CI)', summaryCI, currentRow + 4);
         }
@@ -1050,6 +1168,14 @@ export class StatsService {
             cell.alignment = { horizontal: 'center' };
             cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
         });
+
+        // Aplicar autofiltro a la primera tabla encontrada
+        if (startRow === 2) {
+            sheet.autoFilter = {
+                from: { row: headerRowIdx, column: 1 },
+                to: { row: headerRowIdx, column: headers.length }
+            };
+        }
 
         // Rows
         let currentRowIdx = headerRowIdx + 1;
@@ -1416,6 +1542,12 @@ export class StatsService {
             }
         });
 
+        // Autofiltro
+        sheet.autoFilter = {
+            from: { row: 1, column: 1 },
+            to: { row: 1, column: 7 }
+        };
+
         return workbook;
     }
 
@@ -1530,6 +1662,149 @@ export class StatsService {
 
 
         return workbook;
+    }
+
+    private buildObserverSummarySheet(workbook: ExcelJS.Workbook, sheetName: string, mareas: any[], tipoMarea: TipoMarea, options: any) {
+        const sheet = workbook.addWorksheet(sheetName);
+        
+        const columns: Partial<ExcelJS.Column>[] = [
+            { header: 'Observador', key: 'observador', width: 30 },
+            { header: 'Pesquería', key: 'pesqueria', width: 25 },
+            { header: 'Flota', key: 'flota', width: 20 },
+            { header: 'Cantidad de mareas', key: 'mareas_count', width: 18 },
+            { header: 'Cantidad etapas', key: 'etapas_count', width: 18 },
+            { header: 'Cantidad total de días', key: 'total_dias', width: 20 },
+            { header: 'Detalle mareas', key: 'detalle_mareas', width: 50 },
+        ];
+
+        sheet.columns = columns;
+
+        // Estilo cabecera
+        const headerRow = sheet.getRow(1);
+        headerRow.font = { bold: true };
+        headerRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE0E0E0' } };
+
+        // Autofiltro
+        sheet.autoFilter = {
+            from: { row: 1, column: 1 },
+            to: { row: 1, column: columns.length }
+        };
+
+        // Agrupación y preparación de datos
+        const summaryMap = new Map<string, any>();
+        const filteredMareas = mareas.filter(m => m.tipoMarea === tipoMarea);
+
+        filteredMareas.forEach(m => {
+            const rowData = this.calculateMareaRowData(m, options);
+            const key = `${rowData.observador}|${rowData.pesqueria}|${rowData.flota}`;
+            
+            if (!summaryMap.has(key)) {
+                summaryMap.set(key, {
+                    observador: rowData.observador,
+                    pesqueria: rowData.pesqueria,
+                    flota: rowData.flota,
+                    mareas_count: 0,
+                    etapas_count: 0,
+                    total_dias: 0,
+                    mareas_list: [] as { nro: number, anio: number }[]
+                });
+            }
+
+            const current = summaryMap.get(key)!;
+            current.mareas_count += 1;
+            current.etapas_count += m.etapas.length;
+            current.total_dias += rowData.dias_calendario;
+            current.mareas_list.push({ nro: m.nroMarea, anio: m.anioMarea });
+        });
+
+        // Convertir Map a Array y procesar detalles
+        const rowsReport = Array.from(summaryMap.values()).map(item => {
+            // Ordenar mareas cronológicamente
+            item.mareas_list.sort((a, b) => {
+                if (a.anio !== b.anio) return a.anio - b.anio;
+                return a.nro - b.nro;
+            });
+
+            const detalle = item.mareas_list
+                .map(ml => `${String(ml.nro).padStart(2, '0')}/${ml.anio}`)
+                .join(' - ');
+
+            return {
+                ...item,
+                detalle_mareas: detalle
+            };
+        });
+
+        // Ordenar alfabéticamente por Observador, Pesquería, Flota
+        rowsReport.sort((a, b) => {
+            const obsCompare = a.observador.localeCompare(b.observador);
+            if (obsCompare !== 0) return obsCompare;
+            const pesqCompare = a.pesqueria.localeCompare(b.pesqueria);
+            if (pesqCompare !== 0) return pesqCompare;
+            return a.flota.localeCompare(b.flota);
+        });
+
+        // Agregar filas
+        rowsReport.forEach(row => sheet.addRow(row));
+    }
+
+    private buildInstitucionalesSheet(workbook: ExcelJS.Workbook, mareas: any[], options: any) {
+        const sheet = workbook.addWorksheet('Campañas Institucionales');
+        const ciMareas = mareas.filter(m => m.tipoMarea === TipoMarea.CI);
+
+        // Determinar max etapas
+        let maxEtapas = 0;
+        ciMareas.forEach(m => {
+            if (m.etapas.length > maxEtapas) maxEtapas = m.etapas.length;
+        });
+
+        // Columnas Base
+        const columns: Partial<ExcelJS.Column>[] = [
+            { header: 'Buque', key: 'buque', width: 25 },
+            { header: 'Pesquería', key: 'pesqueria', width: 25 },
+            { header: 'Flota', key: 'flota', width: 20 },
+            { header: 'Año', key: 'anio_marea', width: 10 },
+            { header: 'Marea', key: 'nro_marea', width: 10 },
+            { header: `Navegado en ${options.year}`, key: 'dias_calendario', width: 18 },
+            { header: 'Navegado Total', key: 'dias_total', width: 18 },
+            { header: 'Estado', key: 'estado_label', width: 20 },
+        ];
+
+        // Columnas Dinámicas para Etapas
+        for (let i = 1; i <= maxEtapas; i++) {
+            columns.push(
+                { header: `Etapa ${i}: #`, key: `etapa_${i}_nro`, width: 12 },
+                { header: `Etapa ${i}: Días`, key: `etapa_${i}_dias`, width: 12 }
+            );
+        }
+
+        sheet.columns = columns;
+
+        // Estilo cabecera
+        const headerRow = sheet.getRow(1);
+        headerRow.font = { bold: true };
+        headerRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE0E0E0' } };
+
+        // Autofiltro
+        sheet.autoFilter = {
+            from: { row: 1, column: 1 },
+            to: { row: 1, column: columns.length }
+        };
+
+        // Ordenar CI cronológicamente (Año y Nro)
+        const sortedCI = ciMareas.sort((a, b) => {
+            if (a.anioMarea !== b.anioMarea) return a.anioMarea - b.anioMarea;
+            return a.nroMarea - b.nroMarea;
+        });
+
+        // Datos
+        sortedCI.forEach(m => {
+            const rowData = this.calculateMareaRowData(m, options);
+            sheet.addRow({
+                ...rowData,
+                estado_label: m.estadoActual?.codigo === MareaEstado.EN_EJECUCION ? 'En ejecución' : 'Finalizada'
+            });
+        });
     }
 
     private async getWorkforceExportWorkbook(filterValue?: string): Promise<ExcelJS.Workbook> {

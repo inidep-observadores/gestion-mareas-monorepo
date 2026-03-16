@@ -19,7 +19,7 @@
 
         <!-- Actions (Mobile visible here) -->
         <div class="flex items-center gap-1 lg:hidden">
-          <ExportExcelButton 
+          <ExportExcelButton
             title="Exportar reporte completo"
             @click="emit('export')"
             class="text-primary"
@@ -34,7 +34,7 @@
       <!-- Controls Area -->
       <div class="flex-1 p-4 lg:px-6">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:flex lg:flex-row items-end gap-6 lg:gap-8">
-          
+
           <!-- ... (resto del código igual hasta las acciones de escritorio) -->
 
           <!-- Section: Rango Personalizado -->
@@ -56,7 +56,7 @@
 
           <!-- Actions (Desktop only) -->
           <div class="hidden lg:flex items-center gap-3 pb-0.5">
-            <ExportExcelButton 
+            <ExportExcelButton
               label="EXPORTAR"
               title="Exportar reporte completo de este periodo"
               @click="emit('export')"
@@ -85,6 +85,7 @@ import {
   DownloadIcon
 } from 'lucide-vue-next'
 import DatePicker from '@/components/common/DatePicker.vue'
+import ExportExcelButton from '@/modules/shared/components/ExportExcelButton.vue';
 
 interface Props {
   year: number
