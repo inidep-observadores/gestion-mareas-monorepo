@@ -711,7 +711,13 @@ const dynamicChartHeight = computed(() => {
       filtered = filtered.filter(item => item.pesqueria === selectedDistributionFishery.value);
    }
    const uniqueVessels = new Set(filtered.map(item => item.buque)).size;
-   // Base 100px para ejes + 20px por buque. Mínimo 500px.
+const handleTimeFilter = (period: { startDate: string | null; endDate: string | null }) => {
+   startDate.value = period.startDate;
+   endDate.value = period.endDate;
+   fetchData();
+};
+
+// Base 100px para ejes + 20px por buque. Mínimo 500px.
    return Math.max(500, uniqueVessels * 20 + 100);
 });
 

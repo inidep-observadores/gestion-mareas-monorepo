@@ -35,7 +35,40 @@
       <div class="flex-1 p-4 lg:px-6">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:flex lg:flex-row items-end gap-6 lg:gap-8">
 
-          <!-- ... (resto del código igual hasta las acciones de escritorio) -->
+          <!-- Section: Mes Específico -->
+          <div class="flex flex-col gap-1.5 shrink-0 w-full md:w-auto">
+            <label class="text-[9px] font-black text-text-muted uppercase tracking-widest px-1">Mes específico</label>
+            <div class="relative min-w-[180px]">
+              <select 
+                v-model="localMonth" 
+                @change="handleMonthChange"
+                class="w-full h-10.5 pl-4 pr-10 rounded-xl border border-border bg-surface text-xs font-bold text-text focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all outline-none appearance-none cursor-pointer"
+              >
+                <option :value="null">Seleccionar Mes...</option>
+                <option v-for="(month, index) in monthNames" :key="index" :value="index">
+                  {{ month }}
+                </option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Section: Trimestre -->
+          <div class="flex flex-col gap-1.5 shrink-0 w-full md:w-auto">
+            <label class="text-[9px] font-black text-text-muted uppercase tracking-widest px-1">Trimestre</label>
+            <div class="flex items-center h-10.5 p-1 bg-surface-muted/50 rounded-xl border border-border">
+              <button 
+                v-for="q in [1, 2, 3, 4]" 
+                :key="q"
+                @click="handleQuarterChange(q)"
+                class="flex-1 min-w-[36px] h-full flex items-center justify-center rounded-lg text-[10px] font-black transition-all"
+                :class="localQuarter === q 
+                  ? 'bg-surface shadow-theme-sm text-primary ring-1 ring-primary/10' 
+                  : 'text-text-muted hover:text-text hover:bg-surface/50'"
+              >
+                T{{ q }}
+              </button>
+            </div>
+          </div>
 
           <!-- Section: Rango Personalizado -->
           <div class="flex-1 flex flex-col gap-1.5 w-full">

@@ -859,6 +859,32 @@ export class StatsService {
             });
         }
 
+        // Hoja Resumen Total por Observador
+        this.buildObserverTotalSummarySheet(workbook, mareasFiltradas, {
+            year,
+            yearStart,
+            yearEnd,
+            mode,
+            daysCalculationMode
+        });
+
+        // Inmovilizar primera fila en todas las hojas
+        workbook.eachSheet((sheet) => {
+            // Solo si tiene al menos una fila y no es la de resumen por pesquería que tiene un header especial
+            if (sheet.name !== 'Resumen por Pesquería') {
+                sheet.views = [
+                    { state: 'frozen', xSplit: 0, ySplit: 1, topLeftCell: 'A2', activeCell: 'A2' }
+                ];
+            } else {
+                // Para la hoja de resumen, inmovilizamos después del título de la tabla (fila 3 es el header)
+                // Pero el usuario pidió "todos los excels que tengan los encabezados en la primera fila"
+                // Así que mantenemos la lógica general. Si en el futuro se quiere algo diferente para el resumen se ajustará.
+                sheet.views = [
+                    { state: 'frozen', xSplit: 0, ySplit: 3, topLeftCell: 'A4', activeCell: 'A4' }
+                ];
+            }
+        });
+
         return workbook;
     }
 
@@ -940,8 +966,8 @@ export class StatsService {
 
         // Estilo cabecera
         const headerRow = sheet.getRow(1);
-        headerRow.font = { bold: true };
-        headerRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE0E0E0' } };
+        headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+        headerRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF2563EB' } }; // Azul Corporativo (Primary)
         
         // Autofiltro
         sheet.autoFilter = {
@@ -957,6 +983,36 @@ export class StatsService {
                 estado_label: m.estadoActual?.codigo === MareaEstado.EN_EJECUCION ? 'En ejecución' : 'Finalizada'
             });
         });
+
+        // Fila de Totales (Solo si hay datos)
+        if (mareas.length > 0) {
+            const totalRowNumber = mareas.length + 2;
+            const totalRow = sheet.getRow(totalRowNumber);
+            totalRow.getCell(1).value = 'TOTAL';
+            
+            // Determinar columnas de días
+            let calCol = 10 + maxExtraObservers + 1;
+            totalRow.getCell(calCol).value = { formula: `SUM(${sheet.getColumn(calCol).letter}2:${sheet.getColumn(calCol).letter}${totalRowNumber - 1})` };
+            
+            if (!isMonthlyDetail) {
+                let totalCol = calCol + 1;
+                totalRow.getCell(totalCol).value = { formula: `SUM(${sheet.getColumn(totalCol).letter}2:${sheet.getColumn(totalCol).letter}${totalRowNumber - 1})` };
+            }
+
+            // Estilo unificado
+            const maxCol = columns.length;
+            for (let c = 1; c <= maxCol; c++) {
+                const cell = totalRow.getCell(c);
+                cell.font = { bold: true };
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'EFF6FF' } };
+                cell.border = { 
+                    top: { style: 'thin' }, 
+                    left: { style: 'thin', color: { argb: 'FFD4D4D4' } }, 
+                    right: { style: 'thin', color: { argb: 'FFD4D4D4' } }, 
+                    bottom: { style: 'thin', color: { argb: 'FFD4D4D4' } } 
+                };
+            }
+        }
     }
 
     private calculateMareaRowData(m: any, options: any): any {
@@ -1082,8 +1138,8 @@ export class StatsService {
 
         // Estilo cabecera
         const headerRow = sheet.getRow(1);
-        headerRow.font = { bold: true };
-        headerRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE0E0E0' } };
+        headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+        headerRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF2563EB' } }; // Azul Corporativo (Primary)
 
         // Autofiltro
         sheet.autoFilter = {
@@ -1115,6 +1171,112 @@ export class StatsService {
 
         // Agregar filas
         rowsReport.forEach(row => sheet.addRow(row));
+
+        // Fila de Totales (Solo si hay datos)
+        if (rowsReport.length > 0) {
+            const totalRowNumber = rowsReport.length + 2;
+            const totalRow = sheet.getRow(totalRowNumber);
+            totalRow.getCell(1).value = 'TOTAL';
+            // Columna G (7) es Cantidad Etapas, Columna H (8) es Días Navegados
+            totalRow.getCell(7).value = { formula: `SUM(G2:G${totalRowNumber - 1})` };
+            totalRow.getCell(8).value = { formula: `SUM(H2:H${totalRowNumber - 1})` };
+            
+            // Estilo unificado (de Resumen por Pesquería)
+            const maxCol = columns.length;
+            for (let c = 1; c <= maxCol; c++) {
+                const cell = totalRow.getCell(c);
+                cell.font = { bold: true };
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'EFF6FF' } };
+                cell.border = { 
+                    top: { style: 'thin' }, 
+                    left: { style: 'thin', color: { argb: 'FFD4D4D4' } }, 
+                    right: { style: 'thin', color: { argb: 'FFD4D4D4' } }, 
+                    bottom: { style: 'thin', color: { argb: 'FFD4D4D4' } } 
+                };
+            }
+        }
+    }
+
+    private buildObserverTotalSummarySheet(workbook: ExcelJS.Workbook, mareas: any[], options: any) {
+        const sheet = workbook.addWorksheet('Resumen Total por Observador');
+        
+        const columns: Partial<ExcelJS.Column>[] = [
+            { header: 'Observador', key: 'observador', width: 40 },
+            { header: 'Días Navegados', key: 'dias_navegados', width: 25 },
+        ];
+
+        sheet.columns = columns;
+
+        // Estilo cabecera
+        const headerRow = sheet.getRow(1);
+        headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+        headerRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF2563EB' } }; // Azul Corporativo (Primary)
+
+        // Autofiltro
+        sheet.autoFilter = {
+            from: { row: 1, column: 1 },
+            to: { row: 1, column: columns.length }
+        };
+
+        // Agrupar por observador (usando días del periodo)
+        const observerMap = new Map<string, number>();
+
+        mareas.forEach(m => {
+            const rowData = this.calculateMareaRowData(m, options);
+            const mainObserver = rowData.observador || 'Sin Observador';
+            
+            // Sumar días del observador principal
+            const currentDays = observerMap.get(mainObserver) || 0;
+            observerMap.set(mainObserver, currentDays + (rowData.dias_calendario || 0));
+
+            // Sumar días para observadores adicionales si existen
+            const extraObservers = new Set<string>();
+            m.etapas.forEach(e => {
+                e.observadoresAdicionales?.forEach(oa => {
+                    const name = `${oa.observador.apellido}, ${oa.observador.nombre}`;
+                    if (name !== mainObserver) extraObservers.add(name);
+                });
+            });
+
+            extraObservers.forEach(name => {
+                const currentExtraDays = observerMap.get(name) || 0;
+                observerMap.set(name, currentExtraDays + (rowData.dias_calendario || 0));
+            });
+        });
+
+        // Convertir a array para ordenar
+        const list = Array.from(observerMap.entries()).map(([name, days]) => ({
+            observador: name,
+            dias_navegados: days
+        }));
+
+        // Ordenar alfabéticamente por Observador
+        list.sort((a, b) => a.observador.localeCompare(b.observador));
+
+        // Agregar filas
+        list.forEach(row => sheet.addRow(row));
+
+        // Fila de Totales (Solo si hay datos)
+        if (list.length > 0) {
+            const totalRowNumber = list.length + 2;
+            const totalRow = sheet.getRow(totalRowNumber);
+            totalRow.getCell(1).value = 'TOTAL';
+            totalRow.getCell(2).value = { formula: `SUM(B2:B${totalRowNumber - 1})` };
+            
+            // Estilo unificado (de Resumen por Pesquería)
+            const maxCol = columns.length;
+            for (let c = 1; c <= maxCol; c++) {
+                const cell = totalRow.getCell(c);
+                cell.font = { bold: true };
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'EFF6FF' } };
+                cell.border = { 
+                    top: { style: 'thin' }, 
+                    left: { style: 'thin', color: { argb: 'FFD4D4D4' } }, 
+                    right: { style: 'thin', color: { argb: 'FFD4D4D4' } }, 
+                    bottom: { style: 'thin', color: { argb: 'FFD4D4D4' } } 
+                };
+            }
+        }
     }
 
     private buildSummarySheet(
@@ -1166,7 +1328,6 @@ export class StatsService {
             cell.font = { bold: true, color: { argb: 'FFFFFF' } };
             cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: '2563EB' } };
             cell.alignment = { horizontal: 'center' };
-            cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
         });
 
         // Aplicar autofiltro a la primera tabla encontrada
@@ -1187,9 +1348,6 @@ export class StatsService {
         sortedData.forEach(row => {
             const r = sheet.getRow(currentRowIdx);
             r.values = [row.pesqueria, row.flota, row.mareas, row.etapas, row.dias];
-            for (let c = 1; c <= 5; c++) {
-                r.getCell(c).border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
-            }
             currentRowIdx++;
         });
 
@@ -1201,11 +1359,17 @@ export class StatsService {
         totalRow.getCell(4).value = { formula: `SUM(D${headerRowIdx + 1}:D${currentRowIdx - 1})` };
         totalRow.getCell(5).value = { formula: `SUM(E${headerRowIdx + 1}:E${currentRowIdx - 1})` };
 
-        for (let c = 1; c <= 5; c++) {
+        const maxCol = headers.length;
+        for (let c = 1; c <= maxCol; c++) {
             const cell = totalRow.getCell(c);
             cell.font = { bold: true };
             cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'EFF6FF' } };
-            cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+            cell.border = { 
+                top: { style: 'thin' }, 
+                left: { style: 'thin', color: { argb: 'FFD4D4D4' } }, 
+                right: { style: 'thin', color: { argb: 'FFD4D4D4' } }, 
+                bottom: { style: 'thin', color: { argb: 'FFD4D4D4' } } 
+            };
         }
 
         return totalRowIdx;
@@ -1681,8 +1845,8 @@ export class StatsService {
 
         // Estilo cabecera
         const headerRow = sheet.getRow(1);
-        headerRow.font = { bold: true };
-        headerRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE0E0E0' } };
+        headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+        headerRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF2563EB' } }; // Azul Corporativo (Primary)
 
         // Autofiltro
         sheet.autoFilter = {
@@ -1746,6 +1910,31 @@ export class StatsService {
 
         // Agregar filas
         rowsReport.forEach(row => sheet.addRow(row));
+
+        // Fila de Totales (Solo si hay datos)
+        if (rowsReport.length > 0) {
+            const totalRowNumber = rowsReport.length + 2;
+            const totalRow = sheet.getRow(totalRowNumber);
+            totalRow.getCell(1).value = 'TOTAL';
+            // Columna D (4) es Cantidad Mareas, Columna E (5) es Cantidad Etapas, Columna F (6) es Cantidad Total de Días
+            totalRow.getCell(4).value = { formula: `SUM(D2:D${totalRowNumber - 1})` };
+            totalRow.getCell(5).value = { formula: `SUM(E2:E${totalRowNumber - 1})` };
+            totalRow.getCell(6).value = { formula: `SUM(F2:F${totalRowNumber - 1})` };
+            
+            // Estilo unificado (de Resumen por Pesquería)
+            const maxCol = columns.length;
+            for (let c = 1; c <= maxCol; c++) {
+                const cell = totalRow.getCell(c);
+                cell.font = { bold: true };
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'EFF6FF' } };
+                cell.border = { 
+                    top: { style: 'thin' }, 
+                    left: { style: 'thin', color: { argb: 'FFD4D4D4' } }, 
+                    right: { style: 'thin', color: { argb: 'FFD4D4D4' } }, 
+                    bottom: { style: 'thin', color: { argb: 'FFD4D4D4' } } 
+                };
+            }
+        }
     }
 
     private buildInstitucionalesSheet(workbook: ExcelJS.Workbook, mareas: any[], options: any) {
@@ -1782,8 +1971,8 @@ export class StatsService {
 
         // Estilo cabecera
         const headerRow = sheet.getRow(1);
-        headerRow.font = { bold: true };
-        headerRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE0E0E0' } };
+        headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+        headerRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF2563EB' } }; // Azul Corporativo (Primary)
 
         // Autofiltro
         sheet.autoFilter = {
@@ -1805,6 +1994,30 @@ export class StatsService {
                 estado_label: m.estadoActual?.codigo === MareaEstado.EN_EJECUCION ? 'En ejecución' : 'Finalizada'
             });
         });
+
+        // Fila de Totales (Solo si hay datos)
+        if (ciMareas.length > 0) {
+            const totalRowNumber = ciMareas.length + 2;
+            const totalRow = sheet.getRow(totalRowNumber);
+            totalRow.getCell(1).value = 'TOTAL';
+            // Columna F (6) es Navegado Periodo, Columna G (7) es Navegado Total
+            totalRow.getCell(6).value = { formula: `SUM(F2:F${totalRowNumber - 1})` };
+            totalRow.getCell(7).value = { formula: `SUM(G2:G${totalRowNumber - 1})` };
+
+            // Estilo unificado
+            const maxCol = columns.length;
+            for (let c = 1; c <= maxCol; c++) {
+                const cell = totalRow.getCell(c);
+                cell.font = { bold: true };
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'EFF6FF' } };
+                cell.border = { 
+                    top: { style: 'thin' }, 
+                    left: { style: 'thin', color: { argb: 'FFD4D4D4' } }, 
+                    right: { style: 'thin', color: { argb: 'FFD4D4D4' } }, 
+                    bottom: { style: 'thin', color: { argb: 'FFD4D4D4' } } 
+                };
+            }
+        }
     }
 
     private async getWorkforceExportWorkbook(filterValue?: string): Promise<ExcelJS.Workbook> {
