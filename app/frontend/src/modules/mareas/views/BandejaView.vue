@@ -404,6 +404,14 @@
     <MareaGenericActionDialog :show="showGenericDialog" :marea="mareaToManage" :actionKey="selectedActionKey"
       :actionData="selectedActionData" :loading="executingAction" @close="showGenericDialog = false"
       @confirm="handleGenericConfirm" />
+
+    <FinalizarProtocolizacionDialog
+      :show="showProtocolizacionDialog"
+      :marea="mareaToManage"
+      :loading="executingAction"
+      @close="showProtocolizacionDialog = false"
+      @confirm="handleProtocolizacionConfirm"
+    />
       
     <EditMareaDesignadaDialog 
       v-if="selectedMarea"
@@ -426,6 +434,7 @@ import MareaContextDetailContent from '../components/MareaContextDetailContent.v
 import GestionEtapasMareaDialog from '../components/GestionEtapasMareaDialog.vue'
 import RecibirArchivosDialog from '../components/RecibirArchivosDialog.vue'
 import MareaGenericActionDialog from '../components/MareaGenericActionDialog.vue'
+import FinalizarProtocolizacionDialog from '../components/FinalizarProtocolizacionDialog.vue'
 import EditMareaDesignadaDialog from '../components/EditMareaDesignadaDialog.vue'
 import SearchInput from '@/components/ui/SearchInput.vue'
 import Button from '@/components/ui/Button.vue'
@@ -669,7 +678,9 @@ const isSidebarOpen = ref(false)
 const selectedMarea = ref<any>(null)
 const showGestionDialog = ref(false)
 const showRecibirDialog = ref(false)
+const showCancelarDialog = ref(false)
 const showGenericDialog = ref(false)
+const showProtocolizacionDialog = ref(false)
 const selectedActionKey = ref<string | null>(null)
 const selectedActionData = ref<any>(null)
 const executingAction = ref(false)
@@ -735,6 +746,18 @@ const executeSidebarAction = async (key: string) => {
     return
   }
 
+  if (key === 'RECIBIR_DATOS') {
+    mareaToManage.value = selectedMareaContext.value?.marea || selectedMarea.value
+    showRecibirDialog.value = true
+    return
+  }
+
+  if (key === 'FINALIZAR_PROTOCOLIZACION') {
+    mareaToManage.value = selectedMareaContext.value?.marea || selectedMarea.value
+    showProtocolizacionDialog.value = true
+    return
+  }
+
   // Si la acción tiene metadatos en el contexto y no es una de las especiales, usar diálogo genérico
   const actionMetadata = selectedMareaContext.value?.actions[key]
   if (actionMetadata) {
@@ -774,6 +797,23 @@ const handleGenericConfirm = async (payload: any) => {
   }
 }
 
+const handleProtocolizacionConfirm = async (payload: any) => {
+  if (!mareaToManage.value) return
+
+  try {
+    executingAction.value = true
+    await executeAction(mareaToManage.value.id, 'FINALIZAR_PROTOCOLIZACION', payload)
+    showProtocolizacionDialog.value = false
+    mareaToManage.value = null
+    selectedMarea.value = null
+    await loadInbox()
+  } catch (err) {
+    console.error("Error en protocolización de marea:", err)
+  } finally {
+    executingAction.value = false
+  }
+}
+
 const showEditDesignadaDialog = ref(false)
 
 const goToDetalle = () => {
@@ -796,8 +836,9 @@ const handleEditSuccess = async () => {
 
 const handleRecibirCancel = () => {
   showRecibirDialog.value = false
-  isSidebarOpen.value = false
 }
+
+
 
 const handleRecibirConfirm = async (payload: any) => {
   try {

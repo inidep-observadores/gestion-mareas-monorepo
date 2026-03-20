@@ -323,4 +323,57 @@ describe('MareasService', () => {
             expect(result).toBe('FORZADO_POR_DESIGNACION');
         });
     });
+
+    describe('executeAction - FINALIZAR_PROTOCOLIZACION', () => {
+        const mareaId = 'marea-protocol-uuid';
+        const user = { id: 'user-id' } as any;
+
+        beforeEach(() => {
+            mockPrismaService.marea.findUnique.mockResolvedValue({
+                id: mareaId,
+                estadoActualId: 'estado-waiting-id',
+                estadoActual: { codigo: 'ESPERANDO_PROTOCOLIZACION', nombre: 'Esperando Protocolización' },
+                etapas: []
+            });
+            mockPrismaService.transicionEstado.findFirst.mockResolvedValue({
+                estadoDestinoId: 'estado-final-id',
+                etiqueta: 'Finalizar Protocolización'
+            });
+            mockPrismaService.estadoMarea.findFirst.mockResolvedValue({ id: 'estado-final-id', codigo: 'PROTOCOLIZADA' });
+        });
+
+        it('should update marea with protocolization data if payload is valid', async () => {
+            const payload = {
+                nroProtocolizacion: 123,
+                anioProtocolizacion: 2024,
+                fechaProtocolizacion: '2024-03-20T10:00:00Z',
+                comentarios: 'Protocolización finalizada con éxito'
+            };
+
+            await service.executeAction(mareaId, 'FINALIZAR_PROTOCOLIZACION', user, payload);
+
+            expect(mockPrismaService.marea.update).toHaveBeenCalledWith(expect.objectContaining({
+                where: { id: mareaId },
+                data: expect.objectContaining({
+                    nroProtocolizacion: 123,
+                    anioProtocolizacion: 2024,
+                    fechaProtocolizacion: expect.any(Date)
+                })
+            }));
+
+            expect(mockPrismaService.mareaMovimiento.create).toHaveBeenCalledWith(expect.objectContaining({
+                data: expect.objectContaining({
+                    mareaId,
+                    comentarios: 'Protocolización finalizada con éxito'
+                })
+            }));
+        });
+
+        it('should throw BadRequestException if protocolization fields are missing', async () => {
+            const payload = { nroProtocolizacion: 123 }; // missing year and date
+
+            await expect(service.executeAction(mareaId, 'FINALIZAR_PROTOCOLIZACION', user, payload))
+                .rejects.toThrow(BadRequestException);
+        });
+    });
 });

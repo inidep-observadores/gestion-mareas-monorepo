@@ -2174,6 +2174,15 @@ export class MareasService {
                 additionalMareaData.fechaFinObservador = fechaFinObs;
             }
 
+            if (actionKey === 'FINALIZAR_PROTOCOLIZACION') {
+                if (!payload.nroProtocolizacion || !payload.anioProtocolizacion || !payload.fechaProtocolizacion) {
+                    throw new BadRequestException('Los campos de protocolización (número, año y fecha) son obligatorios para finalizar el proceso.');
+                }
+                additionalMareaData.nroProtocolizacion = payload.nroProtocolizacion;
+                additionalMareaData.anioProtocolizacion = payload.anioProtocolizacion;
+                additionalMareaData.fechaProtocolizacion = new Date(payload.fechaProtocolizacion);
+            }
+
             // Evaluación de fin de Marea por arribo automático a puerto en etapa "Final"
             let destinoEstadoId = transicion.estadoDestinoId;
 
