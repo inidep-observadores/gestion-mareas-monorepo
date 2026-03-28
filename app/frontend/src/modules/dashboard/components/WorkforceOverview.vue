@@ -892,6 +892,7 @@ const currentList = computed(() => {
       const isFem = obs.sexo === 'Femenino';
       const isEventual = obs.eventual === true;
 
+      if (selectedCategory.value === 'Designados') return !!obs.tieneDesignacionActiva;
       if (selectedCategory.value === 'Titulares') return !isEventual && !isFem;
       if (selectedCategory.value === 'Fem. Titular') return !isEventual && isFem;
       if (selectedCategory.value === 'Fem. Eventual') return isEventual && isFem;

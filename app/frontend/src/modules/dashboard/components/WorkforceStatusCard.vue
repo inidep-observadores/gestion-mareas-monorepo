@@ -29,6 +29,7 @@
     <WorkforceDonutChart 
       v-if="showChart && chartObservers.length > 0"
       :observers="chartObservers"
+      :show-designated-sector="status.label === 'Navegando'"
       @select-category="(category) => $emit('select-category', category)"
     />
 

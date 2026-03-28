@@ -15,6 +15,7 @@
 import { computed } from 'vue'
 const props = defineProps<{
   observers: any[]
+  showDesignatedSector?: boolean
 }>()
 
 const emit = defineEmits(['select-category'])
@@ -22,13 +23,24 @@ const emit = defineEmits(['select-category'])
 // Lógica de composición reutilizable
 const composition = computed(() => {
   const stats = {
+    designados: 0,
     titulares: 0,
     femTitular: 0,
     femEventual: 0,
     otrosEventuales: 0
   }
 
+  // Solo mostramos el sector de designados si la prop está activa
+  // y si NO todos los observadores de la lista están designados (para no opacar la composición en la tarjeta de designados)
+  const allAreDesignated = props.observers.length > 0 && props.observers.every(obs => obs.tieneDesignacionActiva)
+  const shouldShowDesignados = props.showDesignatedSector && !allAreDesignated
+
   props.observers.forEach((obs: any) => {
+    if (shouldShowDesignados && obs.tieneDesignacionActiva) {
+      stats.designados++
+      return
+    }
+
     const isFem = obs.sexo === 'Femenino'
     const isEventual = obs.eventual === true
 
@@ -38,10 +50,19 @@ const composition = computed(() => {
     else if (isEventual && !isFem) stats.otrosEventuales++
   })
 
-  return {
-    series: [stats.titulares, stats.femTitular, stats.femEventual, stats.otrosEventuales],
-    labels: ['Titulares', 'Fem. Titular', 'Fem. Eventual', 'Otros Eventuales']
+  // Sincronizar series y etiquetas según si mostramos designados
+  const series = []
+  const labels = []
+
+  if (shouldShowDesignados && stats.designados > 0) {
+    series.push(stats.designados)
+    labels.push('Designados')
   }
+
+  series.push(stats.titulares, stats.femTitular, stats.femEventual, stats.otrosEventuales)
+  labels.push('Titulares', 'Fem. Titular', 'Fem. Eventual', 'Otros Eventuales')
+
+  return { series, labels }
 })
 
 const chartOptions = computed(() => ({
@@ -61,7 +82,10 @@ const chartOptions = computed(() => ({
       }
     }
   },
-  colors: ['#22c55e', '#ec4899', '#fb7185', '#94a3b8', '#38bdf8'],
+  // La paleta de colores debe ser dinámica si añadimos 'Designados'
+  colors: composition.value.labels[0] === 'Designados' 
+    ? ['#38bdf8', '#22c55e', '#ec4899', '#fb7185', '#94a3b8'] // Color celeste primero para designados
+    : ['#22c55e', '#ec4899', '#fb7185', '#94a3b8'],
   labels: composition.value.labels,
   stroke: { 
     show: true, 
