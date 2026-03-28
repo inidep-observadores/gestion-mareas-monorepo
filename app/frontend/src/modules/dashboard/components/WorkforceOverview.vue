@@ -31,16 +31,18 @@
         :key="status.label"
         :status="status"
         :is-selected="selectedStatus === status.label"
-        :show-chart="['Navegando', 'Descanso', 'Disponibles'].includes(status.label) && !!props.data"
+        :show-chart="['Navegando', 'Descanso', 'Disponibles', 'Designados'].includes(status.label) && !!props.data"
         :chart-observers="getFilteredList(
           status.label === 'Navegando' ? (props.data?.listNavegando || []) :
-          (status.label === 'Descanso' ? (props.data?.listDescanso || []) : (props.data?.listDisponibles || []))
+          status.label === 'Descanso' ? (props.data?.listDescanso || []) :
+          status.label === 'Disponibles' ? (props.data?.listDisponibles || []) :
+          (props.data?.listDesignados || [])
         )"
         @select-status="selectStatus"
         @select-category="(category) => {
           if (selectedCategory === category && selectedStatus === status.label) {
             selectedCategory = null;
-            selectedStatus = 'Disponibles';
+            selectedStatus = 'Designados';
           } else {
             selectedCategory = category;
             selectedStatus = status.label;
@@ -117,16 +119,16 @@
                       :class="{ 'rotate-180': sortOrder === 'asc' }" />
                   </div>
                 </th>
-                <th v-if="selectedStatus === 'Impedidos'"
-                  class="px-6 py-3 text-[10px] font-black uppercase text-text-muted tracking-wider">Motivo</th>
+                <th v-if="selectedStatus === 'Designados'"
+                  class="px-6 py-3 text-[10px] font-black uppercase text-text-muted tracking-wider">Marea Designada / Buque</th>
                 <th v-else class="px-6 py-3 text-[10px] font-black uppercase text-text-muted tracking-wider">
                   {{ selectedStatus === 'Navegando' ? 'Marea Actual / Buque' : 'Último Arribo' }}
                 </th>
                 <th v-if="selectedStatus !== 'Impedidos'" @click="toggleSort('days')"
                   class="px-6 py-3 text-[10px] font-black uppercase text-text-muted tracking-wider text-right cursor-pointer hover:text-primary transition-colors group">
                   <div class="flex items-center justify-end gap-1">
-                    {{ selectedStatus === 'Navegando' ? 'Días' : 'Inactividad' }}
-                    <ChevronDownIcon v-if="sortBy === 'days'" class="w-3 h-3 transition-transform duration-300"
+                    {{ selectedStatus === 'Navegando' ? 'Días' : (selectedStatus === 'Designados' ? 'Zarpada Estimada' : 'Inactividad') }}
+                    <ChevronDownIcon v-if="sortBy === 'days' && selectedStatus !== 'Designados'" class="w-3 h-3 transition-transform duration-300"
                       :class="{ 'rotate-180': sortOrder === 'asc' }" />
                   </div>
                 </th>
@@ -134,8 +136,8 @@
             </thead>
             <tbody class="divide-y divide-border bg-surface">
               <tr v-for="item in currentList" :key="item.id" class="transition-all duration-200 group" :class="[
-                // Prioridad 1: Designados (Celeste suave)
-                (item as any).tieneDesignacionActiva
+                // Prioridad 1: Designados (Celeste suave solo si no estamos en la lista de Designados)
+                (item as any).tieneDesignacionActiva && selectedStatus !== 'Designados'
                   ? 'bg-sky-50 dark:bg-sky-950/20 border-l-4 border-l-sky-400'
                   : item.eventual && (item as any).sexo === 'Femenino'
                     ? 'bg-rose-100/40 dark:bg-rose-900/10 border-l-4 border-l-gray-400'
@@ -146,7 +148,7 @@
                         : 'hover:bg-surface-muted/80',
 
                 // Efecto de brillo en hover para todos los que tienen color
-                ((item as any).tieneDesignacionActiva || item.eventual || (item as any).sexo === 'Femenino')
+                (((item as any).tieneDesignacionActiva && selectedStatus !== 'Designados') || item.eventual || (item as any).sexo === 'Femenino')
                   ? 'hover:brightness-95 dark:hover:brightness-110' : ''
               ]">
                 <td class="px-6 py-3 text-xs font-bold text-text">
@@ -208,8 +210,8 @@
                   {{ (item as any).motivo }}
                 </td>
 
-                <!-- Details (Navegando / Disponibles / Descanso) -->
-                <td v-else class="px-6 py-3">
+                <!-- Details (Navegando / Disponibles / Descanso / Designados) -->
+                <td class="px-6 py-3">
                   <div class="flex flex-col gap-0.5">
                     <span class="text-[10px] font-bold tabular-nums" :class="[
                       selectedStatus === 'Navegando'
@@ -219,12 +221,15 @@
                       <template v-if="selectedStatus === 'Navegando'">
                         {{ (item as any).enTierra ? 'En tierra' : 'En navegación' }}
                       </template>
+                      <template v-else-if="selectedStatus === 'Designados'">
+                        {{ (item as any).mareaCode }}
+                      </template>
                       <template v-else>
                         {{ formatDate((item as any).lastArrival) }}
                       </template>
                     </span>
                     <div class="flex items-center gap-1.5">
-                      <span class="text-[9px] font-bold text-text-muted/60 uppercase tracking-tighter">
+                      <span v-if="selectedStatus !== 'Designados'" class="text-[9px] font-bold text-text-muted/60 uppercase tracking-tighter">
                         {{ (item as any).mareaCode || 'S/M' }}
                       </span>
                       <div v-if="(item as any).stageCount > 1" class="relative group/stage">
@@ -245,25 +250,27 @@
                         </div>
                       </div>
                       <span class="text-[9px] font-bold text-text-muted/60 uppercase tracking-tighter">
-                        • {{ (item as any).vessel || (item as any).vesselName || 'Desconocido' }}
+                        {{ selectedStatus !== 'Designados' ? '• ' : '' }}{{ (item as any).vessel || (item as any).vesselName || 'Desconocido' }}
                       </span>
                     </div>
-                    <span class="text-[8px] font-medium text-primary uppercase tracking-widest italic">
+                    <span v-if="selectedStatus !== 'Designados'" class="text-[8px] font-medium text-primary uppercase tracking-widest italic">
                       {{ (item as any).fishery || 'Pesquería N/D' }}
                     </span>
                   </div>
                 </td>
 
                 <!-- Metric Column -->
-                <td v-if="selectedStatus !== 'Impedidos'"
-                  class="relative px-6 py-3 text-xs font-black text-text text-right tabular-nums">
-                  <div v-if="(item as any).tieneDesignacionActiva"
+                <td class="relative px-6 py-3 text-xs font-black text-text text-right tabular-nums">
+                  <div v-if="(item as any).tieneDesignacionActiva && selectedStatus !== 'Designados'"
                     class="absolute top-0 right-0 px-1.5 py-0.5 bg-sky-500 text-white text-[8px] font-black uppercase rounded-bl-lg shadow-sm z-20">
                     Designado
                   </div>
-                  <span :class="selectedStatus === 'Navegando' ? 'text-info' : 'text-text-muted'">{{ (item as any).days
-                    }}
-                    d</span>
+                  <template v-if="selectedStatus === 'Designados'">
+                    <span class="text-sky-600 dark:text-sky-400">{{ formatDate((item as any).fechaZarpadaEstimada) || 'Pendiente' }}</span>
+                  </template>
+                  <template v-else>
+                    <span :class="selectedStatus === 'Navegando' ? 'text-info' : 'text-text-muted'">{{ (item as any).days }} d</span>
+                  </template>
                 </td>
               </tr>
               <tr v-if="currentList.length === 0">
@@ -305,8 +312,8 @@
             </div>
           </div>
 
-          <!-- Mini Dona y Progreso (Si no es Impedidos) -->
-          <div v-if="selectedStatus !== 'Impedidos'" class="flex items-center gap-8">
+          <!-- Mini Dona y Progreso -->
+          <div class="flex items-center gap-8">
             <WorkforceDonutChart 
               :observers="getFilteredList(currentStatusObservers)"
               class="!w-24 !h-24 scale-110"
@@ -369,16 +376,16 @@
                       :class="{ 'rotate-180': sortOrder === 'asc' }" />
                   </div>
                 </th>
-                <th v-if="selectedStatus === 'Impedidos'"
-                  class="px-8 py-4 text-[10px] font-black uppercase text-text-muted tracking-widest">Motivo</th>
+                  <th v-if="selectedStatus === 'Designados'"
+                  class="px-8 py-4 text-[10px] font-black uppercase text-text-muted tracking-widest">Marea Designada / Buque</th>
                 <th v-else class="px-8 py-4 text-[10px] font-black uppercase text-text-muted tracking-widest">
                   {{ selectedStatus === 'Navegando' ? 'Marea Actual / Buque' : 'Último Arribo' }}
                 </th>
                 <th v-if="selectedStatus !== 'Impedidos'" @click="toggleSort('days')"
                   class="px-8 py-4 text-[10px] font-black uppercase text-text-muted tracking-widest text-right cursor-pointer hover:text-primary transition-colors group">
                   <div class="flex items-center justify-end gap-2">
-                    {{ selectedStatus === 'Navegando' ? 'Días' : 'Inactividad' }}
-                    <ChevronDownIcon v-if="sortBy === 'days'" class="w-3.5 h-3.5 transition-transform duration-300"
+                    {{ selectedStatus === 'Navegando' ? 'Días' : (selectedStatus === 'Designados' ? 'Zarpada Estimada' : 'Inactividad') }}
+                    <ChevronDownIcon v-if="sortBy === 'days' && selectedStatus !== 'Designados'" class="w-3.5 h-3.5 transition-transform duration-300"
                       :class="{ 'rotate-180': sortOrder === 'asc' }" />
                   </div>
                 </th>
@@ -388,8 +395,8 @@
               <tr v-for="item in currentList" :key="item.id" 
                 class="transition-all duration-200 group" 
                 :class="[
-                  // Prioridad 1: Designados (Celeste suave)
-                  (item as any).tieneDesignacionActiva
+                  // Prioridad 1: Designados (Celeste suave solo si no estamos en la lista de Designados)
+                  (item as any).tieneDesignacionActiva && selectedStatus !== 'Designados'
                     ? 'bg-sky-50 dark:bg-sky-950/20 border-l-4 border-l-sky-400'
                     : item.eventual && (item as any).sexo === 'Femenino'
                       ? 'bg-rose-100/40 dark:bg-rose-900/10 border-l-4 border-l-gray-400'
@@ -400,7 +407,7 @@
                           : 'hover:bg-surface-muted/80',
 
                   // Efecto de brillo en hover para todos los que tienen color
-                  ((item as any).tieneDesignacionActiva || item.eventual || (item as any).sexo === 'Femenino')
+                  (((item as any).tieneDesignacionActiva && selectedStatus !== 'Designados') || item.eventual || (item as any).sexo === 'Femenino')
                     ? 'hover:brightness-95 dark:hover:brightness-110' : ''
                 ]">
                 <td class="px-8 py-4 text-sm font-bold text-text">
@@ -439,20 +446,35 @@
                 <td v-if="selectedStatus === 'Impedidos'" class="px-8 py-4 text-xs font-medium text-text-muted">
                     {{ (item as any).motivo }}
                 </td>
-                <td v-else class="px-8 py-4">
+                <td class="px-8 py-4">
                   <div class="flex flex-col gap-1">
                     <span class="text-xs font-bold" :class="selectedStatus === 'Navegando' ? 'text-info' : 'text-text'">
-                      {{ selectedStatus === 'Navegando' ? ((item as any).enTierra ? 'En tierra' : 'En navegación') : formatDate((item as any).lastArrival) }}
+                      <template v-if="selectedStatus === 'Navegando'">
+                        {{ (item as any).enTierra ? 'En tierra' : 'En navegación' }}
+                      </template>
+                      <template v-else-if="selectedStatus === 'Designados'">
+                        {{ (item as any).mareaCode }}
+                      </template>
+                      <template v-else>
+                        {{ formatDate((item as any).lastArrival) }}
+                      </template>
                     </span>
                     <span class="text-[10px] font-bold text-text-muted/60 uppercase tracking-tighter">
-                      {{ (item as any).mareaCode || 'S/M' }} • {{ (item as any).vessel || (item as any).vesselName }}
+                      {{ selectedStatus !== 'Designados' ? ((item as any).mareaCode || 'S/M') + ' • ' : '' }}{{ (item as any).vessel || (item as any).vesselName }}
                     </span>
                   </div>
                 </td>
-                <td v-if="selectedStatus !== 'Impedidos'" class="px-8 py-4 text-right">
-                  <span class="text-sm font-black tabular-nums" :class="selectedStatus === 'Navegando' ? 'text-info' : 'text-text-muted'">
-                    {{ (item as any).days }} d
-                  </span>
+                <td class="px-8 py-4 text-right">
+                  <template v-if="selectedStatus === 'Designados'">
+                    <span class="text-xs font-black tabular-nums text-sky-600 dark:text-sky-400">
+                      {{ formatDate((item as any).fechaZarpadaEstimada) || 'Pendiente' }}
+                    </span>
+                  </template>
+                  <template v-else>
+                    <span class="text-sm font-black tabular-nums" :class="selectedStatus === 'Navegando' ? 'text-info' : 'text-text-muted'">
+                      {{ (item as any).days }} d
+                    </span>
+                  </template>
                 </td>
               </tr>
               <tr v-if="currentList.length === 0">
@@ -515,6 +537,7 @@ const currentStatusObservers = computed(() => {
   return selectedStatus.value === 'Navegando' ? props.data.listNavegando :
          selectedStatus.value === 'Descanso' ? props.data.listDescanso :
          selectedStatus.value === 'Disponibles' ? props.data.listDisponibles :
+         selectedStatus.value === 'Designados' ? props.data.listDesignados :
          props.data.listImpedidos
 })
 
@@ -553,25 +576,19 @@ const saveInline = async () => {
 }
 
 // Available Composition for Donut Chart
-const availableComposition = computed(() => {
-  if (!props.data || !props.data.listDisponibles) return { series: [], total: 0 }
-
-  // IMPORTANTE: Aplicar el mismo filtro de tipos que el resto del dashboard
-  const list = getFilteredList(props.data.listDisponibles)
+// Ahora esta lógica es compartida por cualquier lista de observadores
+const getListComposition = (observers: any[]) => {
+  if (!observers) return { series: [], total: 0 }
+  
+  const list = getFilteredList(observers)
   const stats = {
     titulares: 0, // Masc Titular
     femTitular: 0,
     femEventual: 0,
     otrosEventuales: 0, // Masc Eventual
-    designados: 0
   }
 
   list.forEach((obs: any) => {
-    if (obs.tieneDesignacionActiva) {
-      stats.designados++
-      return
-    }
-
     const isFem = obs.sexo === 'Femenino'
     const isEventual = obs.eventual === true
 
@@ -582,9 +599,20 @@ const availableComposition = computed(() => {
   })
 
   return {
-    series: [stats.titulares, stats.femTitular, stats.femEventual, stats.otrosEventuales, stats.designados],
+    series: [stats.titulares, stats.femTitular, stats.femEventual, stats.otrosEventuales],
     total: list.length
   }
+}
+
+// Para compatibilidad con WorkforceStatusCard si usaba series de 5 elementos
+// Pero ahora el usuario pidió quitar "Designados" de las otras series
+const availableComposition = computed(() => {
+  const list = selectedStatus.value === 'Navegando' ? (props.data?.listNavegando || []) :
+               selectedStatus.value === 'Descanso' ? (props.data?.listDescanso || []) :
+               selectedStatus.value === 'Designados' ? (props.data?.listDesignados || []) :
+               (props.data?.listDisponibles || [])
+  
+  return getListComposition(list)
 })
 
 const isExporting = ref(false)
@@ -621,18 +649,18 @@ const donutOptions = computed(() => ({
     animations: { enabled: true, easing: 'easeinout', speed: 800 },
     events: {
       dataPointSelection: (event: any, chartContext: any, config: any) => {
-        const category = ['Titulares', 'Fem. Titular', 'Fem. Eventual', 'Otros Eventuales', 'Designados'][config.dataPointIndex]
+        const category = ['Titulares', 'Fem. Titular', 'Fem. Eventual', 'Otros Eventuales'][config.dataPointIndex]
         if (selectedCategory.value === category) {
             selectedCategory.value = null
         } else {
             selectedCategory.value = category
-            selectedStatus.value = 'Disponibles'
+            // Mantener el status actual al filtrar por categoría
         }
       }
     }
   },
-  colors: ['#22c55e', '#ec4899', '#fb7185', '#94a3b8', '#38bdf8'],
-  labels: ['Titulares', 'Fem. Titular', 'Fem. Eventual', 'Otros Eventuales', 'Designados'],
+  colors: ['#22c55e', '#ec4899', '#fb7185', '#94a3b8'],
+  labels: ['Titulares', 'Fem. Titular', 'Fem. Eventual', 'Otros Eventuales'],
   stroke: { show: true, width: 2, colors: ['var(--color-surface)'] },
   plotOptions: {
     pie: {
@@ -745,7 +773,8 @@ const formatDate = (dateString: string) => {
 }
 
 const getFilteredList = (list: any[]) => {
-  return (list || []).filter(item => {
+  if (!list) return [];
+  return list.filter(item => {
     const raw = (item.tipoObservador || item.tipo_observador || '').toString().toUpperCase();
     let itemType = 'OBSERVADOR';
     if (raw.includes('TECNIC')) itemType = 'TECNICO';
@@ -754,15 +783,15 @@ const getFilteredList = (list: any[]) => {
 }
 
 const filteredStats = computed(() => {
-  if (!props.data) return { navegando: 0, descanso: 0, disponibles: 0, impedidos: 0, total: 0 }
+  if (!props.data) return { navegando: 0, descanso: 0, disponibles: 0, designados: 0, total: 0 }
 
   const navegando = getFilteredList(props.data.listNavegando).length
   const descanso = getFilteredList(props.data.listDescanso).length
   const disponibles = getFilteredList(props.data.listDisponibles).length
-  const impedidos = getFilteredList(props.data.listImpedidos).length
-  const total = navegando + descanso + disponibles + impedidos
+  const designados = getFilteredList(props.data.listDesignados).length
+  const total = navegando + descanso + disponibles + designados
 
-  return { navegando, descanso, disponibles, impedidos, total }
+  return { navegando, descanso, disponibles, designados, total }
 })
 
 const distributions = computed<DistributionItem[]>(() => {
@@ -805,15 +834,15 @@ const distributions = computed<DistributionItem[]>(() => {
       ringClass: 'ring-success',
     },
     {
-      label: 'Impedidos',
-      count: counts.impedidos,
-      value: total > 0 ? Math.round((counts.impedidos / total) * 100) : 0,
+      label: 'Designados',
+      count: counts.designados,
+      value: total > 0 ? Math.round((counts.designados / total) * 100) : 0,
       icon: markRaw(DocsIcon),
-      color: 'error',
-      colorClass: 'text-error',
-      bgClass: 'bg-error/15',
-      borderColorClass: 'border-error',
-      ringClass: 'ring-error',
+      color: 'sky',
+      colorClass: 'text-sky-500',
+      bgClass: 'bg-sky-500/15',
+      borderColorClass: 'border-sky-500',
+      ringClass: 'ring-sky-500',
     },
   ]
 })
@@ -837,7 +866,7 @@ const currentList = computed(() => {
     case 'Navegando': list = props.data.listNavegando; break
     case 'Descanso': list = props.data.listDescanso; break
     case 'Disponibles': list = props.data.listDisponibles; break
-    case 'Impedidos': list = props.data.listImpedidos; break
+    case 'Designados': list = props.data.listDesignados; break
     default: list = []
   }
 
@@ -860,9 +889,6 @@ const currentList = computed(() => {
   // 2.5 Filtrado por categoría de la dona (Aplica a cualquier estado seleccionado)
   if (selectedCategory.value) {
     list = list.filter(obs => {
-      if (selectedCategory.value === 'Designados') return obs.tieneDesignacionActiva;
-      if (obs.tieneDesignacionActiva) return false; // Los demás no deben ser designados
-
       const isFem = obs.sexo === 'Femenino';
       const isEventual = obs.eventual === true;
 
@@ -875,18 +901,27 @@ const currentList = computed(() => {
     });
   }
 
-  // 3. Ordenamiento Jerárquico Unificado (Aplica a Navegando, Descanso y Disponibles)
-  const hierarchicalStatuses = ['Navegando', 'Descanso', 'Disponibles']
+  // 3. Ordenamiento Jerárquico Unificado (Aplica a todas las listas operativas)
+  const hierarchicalStatuses = ['Navegando', 'Descanso', 'Disponibles', 'Designados']
 
   if (hierarchicalStatuses.includes(selectedStatus.value)) {
     list = [...list].sort((a, b) => {
-      // Prioridad 1: Eventual (false < true) -> Titulares primero
-      if (a.eventual !== b.eventual) return a.eventual ? 1 : -1
+      // Prioridad 1: Designados (true antes que false)
+      if (a.tieneDesignacionActiva !== b.tieneDesignacionActiva) {
+        return a.tieneDesignacionActiva ? -1 : 1
+      }
 
-      // Prioridad 2: Sexo (Masculino < Femenino) -> Según orden de la torta (Titulares masculinos son la primera categoría)
-      if (a.sexo !== b.sexo) return a.sexo === 'Masculino' ? -1 : 1
+      // Prioridad 2: Tipo de contrato (Titulares antes que Eventuales para que los eventuales sean "finalmente")
+      if (a.eventual !== b.eventual) {
+        return a.eventual ? 1 : -1
+      }
 
-      // Prioridad 3: Orden dinámico (Manual o por días)
+      // Prioridad 3: Sexo (Masculino antes que Femenino para que las mujeres sean "luego")
+      if (a.sexo !== b.sexo) {
+        return a.sexo === 'Masculino' ? -1 : 1
+      }
+
+      // Prioridad 4: Orden dinámico (Manual o por días)
       const key = sortBy.value || 'days'
       const order = sortOrder.value || 'desc'
 
@@ -897,8 +932,8 @@ const currentList = computed(() => {
       if (valA > valB) return order === 'asc' ? 1 : -1
       return 0
     })
-  } else if (selectedStatus.value === 'Impedidos' && sortBy.value) {
-    // Para Impedidos, ordenamiento estándar si hay una columna seleccionada
+  } else if (selectedStatus.value === 'Designados' && sortBy.value) {
+    // Para Designados, ordenamiento estándar si hay una columna seleccionada
     list = [...list].sort((a, b) => {
       const key = sortBy.value as 'name' | 'days'
       const valA = a[key]

@@ -1318,7 +1318,10 @@ export class MareasService {
                 activo: true,
                 estadoActual: { codigo: 'DESIGNADA' }
             },
-            select: { observadorPrincipalId: true }
+            include: {
+                buque: { select: { nombreBuque: true } },
+                observadorPrincipal: true
+            }
         });
 
         // Agrupar etapas por marea para contar el total
@@ -1330,12 +1333,18 @@ export class MareasService {
 
         const activeNav = new Map<string, { start: Date; vessel: string; mareaCode: string; fishery: string; enTierra: boolean; stageCount: number }>();
         const lastArrivalByObs = new Map<string, { date: Date; mareaCode: string; vessel: string; fishery: string }>();
-        const designadosActivosByObs = new Set<string>();
+        const designadosActivosByObs = new Map<string, { mareaCode: string; vesselName: string; fechaZarpadaEstimada: Date | null }>();
         const obsConMareas = new Set<string>();
 
         // Poblar designados desde la consulta directa de mareas (estado DESIGNADA)
-        mareasDesignadas.forEach(m => {
-            if (m.observadorPrincipalId) designadosActivosByObs.add(m.observadorPrincipalId);
+        mareasDesignadas.forEach((m: any) => {
+            if (m.observadorPrincipalId) {
+                designadosActivosByObs.set(m.observadorPrincipalId, {
+                    mareaCode: MareaUtils.formatCodigo(m),
+                    vesselName: m.buque.nombreBuque,
+                    fechaZarpadaEstimada: m.fechaZarpadaEstimada
+                });
+            }
         });
 
         etapas.forEach((etapa: any) => {
@@ -1378,7 +1387,11 @@ export class MareasService {
                 // Las designaciones ahora se manejan mediante la consulta directa a Marea al inicio
                 // No obstante, si una etapa existe y es DESIGNADA, también la marcamos (por seguridad)
                 if (etapa.marea.estadoActual?.codigo === 'DESIGNADA') {
-                    designadosActivosByObs.add(obs.id);
+                    designadosActivosByObs.set(obs.id, {
+                        mareaCode: MareaUtils.formatCodigo(etapa.marea),
+                        vesselName: etapa.marea.buque.nombreBuque,
+                        fechaZarpadaEstimada: etapa.marea.fechaZarpadaEstimada
+                    });
                 }
             };
 
@@ -1390,6 +1403,7 @@ export class MareasService {
         const listImpedidos: Array<{ id: string; name: string; motivo: string; tipoObservador: string; tipoContrato: string; sexo: string; eventual: boolean; tieneDesignacionActiva: boolean; observaciones?: string }> = [];
         const listDisponibles: Array<{ id: string; name: string; days: number; lastArrival: string; mareaCode: string; vesselName: string; fishery: string; tipoObservador: string; tipoContrato: string; sexo: string; eventual: boolean; tieneDesignacionActiva: boolean; observaciones?: string }> = [];
         const listNavegando: Array<{ id: string; name: string; days: number; vessel: string; mareaCode: string; fishery: string; enTierra: boolean; startDate: string; tipoObservador: string; tipoContrato: string, stageCount: number; sexo: string; eventual: boolean; tieneDesignacionActiva: boolean; observaciones?: string }> = [];
+        const listDesignados: Array<{ id: string; name: string; mareaCode: string; vesselName: string; fechaZarpadaEstimada: string; tipoObservador: string; tipoContrato: string; sexo: string; eventual: boolean; tieneDesignacionActiva: boolean; observaciones?: string }> = [];
         const topDryCandidates: Array<{ id: string; name: string; days: number; lastArrival: string; mareaCode: string; vesselName: string; fishery: string; tipoObservador: string; tipoContrato: string; sexo: string; eventual: boolean; tieneDesignacionActiva: boolean; observaciones?: string }> = [];
 
         observadores.forEach((obs) => {
@@ -1401,10 +1415,11 @@ export class MareasService {
 
             const daysSince = lastArrival ? DateUtils.calculateInclusiveDays(lastArrival, now) - 1 : null;
 
-            const status = this.getObserverStatus(obs, activeNav.has(obs.id), lastArrival, now);
+            const hasDesignation = designadosActivosByObs.has(obs.id);
+            const status = this.getObserverStatus(obs, activeNav.has(obs.id), hasDesignation, lastArrival, now);
 
-            // Top Dry Check: Solo listar observadores genuinamente DISPONIBLES y de tipo OBSERVADOR
-            if (obsConMareas.has(obs.id) && status === 'DISPONIBLE' && lastArrival && lastArrivalData && daysSince !== null && obs.tipoObservador === 'OBSERVADOR') {
+            // Top Dry Check: Solo listar observadores genuinamente DISPONIBLES y de tipo OBSERVADOR (y sin marea designada)
+            if (obsConMareas.has(obs.id) && status === 'DISPONIBLE' && !hasDesignation && lastArrival && lastArrivalData && daysSince !== null && obs.tipoObservador === 'OBSERVADOR') {
                 topDryCandidates.push({
                     id: obs.id,
                     name,
@@ -1457,6 +1472,22 @@ export class MareasService {
                         observaciones: obs.observaciones
                     });
                     break;
+                case 'DESIGNADO':
+                    const desigData = designadosActivosByObs.get(obs.id);
+                    listDesignados.push({
+                        id: obs.id,
+                        name,
+                        mareaCode: desigData?.mareaCode || '',
+                        vesselName: desigData?.vesselName || '',
+                        fechaZarpadaEstimada: desigData?.fechaZarpadaEstimada?.toISOString() || '',
+                        tipoObservador: obs.tipoObservador,
+                        tipoContrato: obs.tipoContrato,
+                        sexo: obs.sexo,
+                        eventual: obs.eventual,
+                        tieneDesignacionActiva: true,
+                        observaciones: obs.observaciones
+                    });
+                    break;
                 case 'DESCANSO':
                     listDescanso.push({
                         id: obs.id,
@@ -1502,6 +1533,7 @@ export class MareasService {
         listNavegando.sort((a, b) => b.days - a.days);
         listDescanso.sort((a, b) => b.days - a.days);
         listDisponibles.sort((a, b) => b.days - a.days);
+        listDesignados.sort((a, b) => a.name.localeCompare(b.name));
 
         // 4: Ordenar por apellido y nombre
         listImpedidos.sort((a, b) => a.name.localeCompare(b.name));
@@ -1515,6 +1547,7 @@ export class MareasService {
             navegando: listNavegando.length,
             descanso: listDescanso.length,
             disponibles: listDisponibles.length,
+            designados: listDesignados.length,
             impedidos: listImpedidos.length,
             licencia: 0,
             topDry,
@@ -1522,6 +1555,7 @@ export class MareasService {
             listNavegando,
             listDescanso,
             listDisponibles,
+            listDesignados,
             listImpedidos
         };
     }
@@ -1533,13 +1567,16 @@ export class MareasService {
     private getObserverStatus(
         obs: any,
         isNavigating: boolean,
+        hasDesignation: boolean,
         lastArrival: Date | undefined,
         now: Date
-    ): 'NAVEGANDO' | 'IMPEDIDO' | 'DESCANSO' | 'DISPONIBLE' | 'OTRO' {
+    ): 'NAVEGANDO' | 'IMPEDIDO' | 'DESIGNADO' | 'DESCANSO' | 'DISPONIBLE' | 'OTRO' {
 
         if (isNavigating) return 'NAVEGANDO';
 
         if (obs.conImpedimento) return 'IMPEDIDO';
+
+        if (hasDesignation) return 'DESIGNADO';
 
         if (lastArrival) {
             const daysSince = DateUtils.calculateInclusiveDays(lastArrival, now) - 1;

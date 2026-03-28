@@ -25,16 +25,10 @@ const composition = computed(() => {
     titulares: 0,
     femTitular: 0,
     femEventual: 0,
-    otrosEventuales: 0,
-    designados: 0
+    otrosEventuales: 0
   }
 
   props.observers.forEach((obs: any) => {
-    if (obs.tieneDesignacionActiva) {
-      stats.designados++
-      return
-    }
-    
     const isFem = obs.sexo === 'Femenino'
     const isEventual = obs.eventual === true
 
@@ -45,8 +39,8 @@ const composition = computed(() => {
   })
 
   return {
-    series: [stats.titulares, stats.femTitular, stats.femEventual, stats.otrosEventuales, stats.designados],
-    labels: ['Titulares', 'Fem. Titular', 'Fem. Eventual', 'Otros Eventuales', 'Designados']
+    series: [stats.titulares, stats.femTitular, stats.femEventual, stats.otrosEventuales],
+    labels: ['Titulares', 'Fem. Titular', 'Fem. Eventual', 'Otros Eventuales']
   }
 })
 
