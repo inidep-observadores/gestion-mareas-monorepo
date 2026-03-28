@@ -253,8 +253,8 @@
                         {{ selectedStatus !== 'Designados' ? '• ' : '' }}{{ (item as any).vessel || (item as any).vesselName || 'Desconocido' }}
                       </span>
                     </div>
-                    <span v-if="selectedStatus !== 'Designados'" class="text-[8px] font-medium text-primary uppercase tracking-widest italic">
-                      {{ (item as any).fishery || 'Pesquería N/D' }}
+                    <span class="text-[8px] font-medium text-primary uppercase tracking-widest italic">
+                      {{ (item as any).fishery || 'Sin Pesquería' }}
                     </span>
                   </div>
                 </td>
@@ -461,6 +461,9 @@
                     </span>
                     <span class="text-[10px] font-bold text-text-muted/60 uppercase tracking-tighter">
                       {{ selectedStatus !== 'Designados' ? ((item as any).mareaCode || 'S/M') + ' • ' : '' }}{{ (item as any).vessel || (item as any).vesselName }}
+                    </span>
+                    <span class="text-[9px] font-bold text-primary uppercase tracking-widest italic leading-none mt-1">
+                      {{ (item as any).fishery || 'Sin Pesquería' }}
                     </span>
                   </div>
                 </td>

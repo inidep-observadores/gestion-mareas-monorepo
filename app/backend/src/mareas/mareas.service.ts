@@ -1319,10 +1319,13 @@ export class MareasService {
                 estadoActual: { codigo: 'DESIGNADA' }
             },
             include: {
-                buque: { select: { nombreBuque: true } },
-                observadorPrincipal: true
+                buque: true,
+                pesqueria: true,
+                estadoActual: true
             }
         });
+
+
 
         // Agrupar etapas por marea para contar el total
         const stageCountByMarea = new Map<string, number>();
@@ -1333,7 +1336,7 @@ export class MareasService {
 
         const activeNav = new Map<string, { start: Date; vessel: string; mareaCode: string; fishery: string; enTierra: boolean; stageCount: number }>();
         const lastArrivalByObs = new Map<string, { date: Date; mareaCode: string; vessel: string; fishery: string }>();
-        const designadosActivosByObs = new Map<string, { mareaCode: string; vesselName: string; fechaZarpadaEstimada: Date | null }>();
+        const designadosActivosByObs = new Map<string, { mareaCode: string; vesselName: string; fechaZarpadaEstimada: Date | null; fishery: string }>();
         const obsConMareas = new Set<string>();
 
         // Poblar designados desde la consulta directa de mareas (estado DESIGNADA)
@@ -1342,7 +1345,8 @@ export class MareasService {
                 designadosActivosByObs.set(m.observadorPrincipalId, {
                     mareaCode: MareaUtils.formatCodigo(m),
                     vesselName: m.buque.nombreBuque,
-                    fechaZarpadaEstimada: m.fechaZarpadaEstimada
+                    fechaZarpadaEstimada: m.fechaZarpadaEstimada,
+                    fishery: m.pesqueria?.nombre || 'Sin Pesquería'
                 });
             }
         });
@@ -1366,7 +1370,7 @@ export class MareasService {
                         start: inicio,
                         vessel: etapa.marea.buque.nombreBuque,
                         mareaCode: MareaUtils.formatCodigo(etapa.marea),
-                        fishery: etapa.pesqueria?.nombre || etapa.marea.pesqueria?.nombre || 'Desconocida',
+                        fishery: etapa.pesqueria?.nombre || etapa.marea.pesqueria?.nombre || 'Sin Pesquería',
                         enTierra: finRaw !== null,
                         stageCount: stageCountByMarea.get(etapa.mareaId) || 1
                     });
@@ -1379,7 +1383,7 @@ export class MareasService {
                             date: finRaw,
                             mareaCode: MareaUtils.formatCodigo(etapa.marea),
                             vessel: etapa.marea.buque.nombreBuque,
-                            fishery: etapa.pesqueria?.nombre || etapa.marea.pesqueria?.nombre || 'Desconocida'
+                            fishery: etapa.pesqueria?.nombre || etapa.marea.pesqueria?.nombre || 'Sin Pesquería'
                         });
                     }
                 }
@@ -1390,7 +1394,8 @@ export class MareasService {
                     designadosActivosByObs.set(obs.id, {
                         mareaCode: MareaUtils.formatCodigo(etapa.marea),
                         vesselName: etapa.marea.buque.nombreBuque,
-                        fechaZarpadaEstimada: etapa.marea.fechaZarpadaEstimada
+                        fechaZarpadaEstimada: etapa.marea.fechaZarpadaEstimada,
+                        fishery: etapa.pesqueria?.nombre || etapa.marea.pesqueria?.nombre || 'Sin Pesquería'
                     });
                 }
             };
@@ -1403,7 +1408,7 @@ export class MareasService {
         const listImpedidos: Array<{ id: string; name: string; motivo: string; tipoObservador: string; tipoContrato: string; sexo: string; eventual: boolean; tieneDesignacionActiva: boolean; observaciones?: string }> = [];
         const listDisponibles: Array<{ id: string; name: string; days: number; lastArrival: string; mareaCode: string; vesselName: string; fishery: string; tipoObservador: string; tipoContrato: string; sexo: string; eventual: boolean; tieneDesignacionActiva: boolean; observaciones?: string }> = [];
         const listNavegando: Array<{ id: string; name: string; days: number; vessel: string; mareaCode: string; fishery: string; enTierra: boolean; startDate: string; tipoObservador: string; tipoContrato: string, stageCount: number; sexo: string; eventual: boolean; tieneDesignacionActiva: boolean; observaciones?: string }> = [];
-        const listDesignados: Array<{ id: string; name: string; mareaCode: string; vesselName: string; fechaZarpadaEstimada: string; tipoObservador: string; tipoContrato: string; sexo: string; eventual: boolean; tieneDesignacionActiva: boolean; observaciones?: string }> = [];
+        const listDesignados: Array<{ id: string; name: string; mareaCode: string; vesselName: string; fishery: string; fechaZarpadaEstimada: string; tipoObservador: string; tipoContrato: string; sexo: string; eventual: boolean; tieneDesignacionActiva: boolean; observaciones?: string }> = [];
         const topDryCandidates: Array<{ id: string; name: string; days: number; lastArrival: string; mareaCode: string; vesselName: string; fishery: string; tipoObservador: string; tipoContrato: string; sexo: string; eventual: boolean; tieneDesignacionActiva: boolean; observaciones?: string }> = [];
 
         observadores.forEach((obs) => {
@@ -1479,6 +1484,7 @@ export class MareasService {
                         name,
                         mareaCode: desigData?.mareaCode || '',
                         vesselName: desigData?.vesselName || '',
+                        fishery: desigData?.fishery || 'Sin Pesquería',
                         fechaZarpadaEstimada: desigData?.fechaZarpadaEstimada?.toISOString() || '',
                         tipoObservador: obs.tipoObservador,
                         tipoContrato: obs.tipoContrato,

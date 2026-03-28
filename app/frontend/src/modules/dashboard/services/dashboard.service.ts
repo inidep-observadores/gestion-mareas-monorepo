@@ -59,7 +59,7 @@ export interface WorkforceStatus {
     listNavegando: Array<{ id: string; name: string; days: number; vessel: string; mareaCode?: string; fishery?: string; enTierra?: boolean; startDate: string; tipoObservador: string; tipoContrato: string; stageCount?: number; sexo: string; eventual: boolean; observaciones?: string }>
     listDescanso: Array<{ id: string; name: string; days: number; lastArrival: string; mareaCode?: string; vesselName?: string; fishery?: string; tipoObservador: string; tipoContrato: string; sexo: string; eventual: boolean; observaciones?: string }>
     listDisponibles: Array<{ id: string; name: string; days: number; lastArrival: string; mareaCode?: string; vesselName?: string; fishery?: string; tipoObservador: string; tipoContrato: string; sexo: string; eventual: boolean; observaciones?: string }>
-    listDesignados: Array<{ id: string; name: string; mareaCode: string; vesselName: string; fechaZarpadaEstimada: string; tipoObservador: string; tipoContrato: string; sexo: string; eventual: boolean; tieneDesignacionActiva: boolean; observaciones?: string }>
+    listDesignados: Array<{ id: string; name: string; mareaCode: string; vesselName: string; fishery: string; fechaZarpadaEstimada: string; tipoObservador: string; tipoContrato: string; sexo: string; eventual: boolean; tieneDesignacionActiva: boolean; observaciones?: string }>
     listImpedidos: Array<{ id: string; name: string; motivo: string; tipoObservador: string; tipoContrato: string; sexo: string; eventual: boolean; observaciones?: string }>
 }
 

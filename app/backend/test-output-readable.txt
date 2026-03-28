@@ -1,0 +1,64 @@
+﻿node.exe : FAIL 
+src/mareas/workforce-status.spec.ts
+En línea: 1 Carácter: 1
++ & "C:\Program 
+Files\nodejs/node.exe" "C:\Program 
+Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSp 
+   ecified: (FAIL src/mareas/workf  
+  orce-status.spec.ts:String) [],   
+  RemoteException
+    + FullyQualifiedErrorId : Nativ 
+   eCommandError
+ 
+  MareasService - getWorkforceStatus
+    ÔêÜ debe mapear correctamente 
+los observadores designados y su 
+pesquer├¡a (9 ms)
+    ├ù debe priorizar la pesquer├¡a 
+de la marea cuando es DESIGNADA 
+incluso si viene de una etapa (3 ms)
+
+  ÔùÅ MareasService - 
+getWorkforceStatus ÔÇ║ debe 
+priorizar la pesquer├¡a de la marea 
+cuando es DESIGNADA incluso si 
+viene de una etapa
+
+    expect(received).toBe(expected) 
+// Object.is equality
+
+    Expected: "PESQUERIA ETAPA"
+    Received: "PESQUERIA MAREA"
+
+    [0m [90m 162 |[39m         
+[36mconst[39m obs [33m=[39m resu
+lt[33m.[39mlistDesignados[[35m0[
+39m][33m;[39m
+     [90m 163 |[39m         
+[90m// En DESIGNADA, deber├¡a 
+tomar la de la etapa si existe.[39m
+    [31m[1m>[22m[39m[90m 164 
+|[39m         expect(obs[33m.[39m
+fishery)[33m.[39mtoBe([32m'PESQUE
+RIA ETAPA'[39m)[33m;[39m
+     [90m     |[39m               
+              [31m[1m^[22m[39m
+     [90m 165 |[39m
+     [90m 166 |[39m         jest[
+33m.[39museRealTimers()[33m;[39m
+     [90m 167 |[39m     
+})[33m;[39m[0m
+
+      at Object.<anonymous> (mareas/
+workforce-status.spec.ts:164:29)
+
+Test Suites: 1 failed, 1 total
+Tests:       1 failed, 1 passed, 2 
+total
+Snapshots:   0 total
+Time:        4.401 s
+Ran all test suites matching 
+src/mareas/workforce-status.spec.ts.
