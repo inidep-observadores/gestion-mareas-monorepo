@@ -380,8 +380,8 @@
                         3.2 Distribución de Días por Pesquería y Flota
                      </h4>
                   </div>
-                  <div class="h-[300px]">
-                     <ChartWidget title="Distribución de Días" type="bar" :series="pesqueriaChartSeries" :options="pesqueriaChartOptions" height="100%" />
+                  <div class="h-[400px]">
+                     <ChartWidget title="Distribución de Días" type="bar" :series="pesqueriaChartSeries" :options="pesqueriaChartOptions" :chart-height="330" />
                   </div>
                </div>
             </div>
@@ -906,6 +906,9 @@ const pesqueriaChartOptions = computed(() => ({
    },
    yaxis: {
       title: { text: 'Días Navegados', style: { fontWeight: 800 } }
+   },
+   grid: {
+      padding: { left: 15 }
    },
    legend: { position: 'top' as const, fontSize: '10px', fontWeight: 700 },
    colors: ['#0ea5e9', '#f59e0b', '#10b981', '#8b5cf6', '#ef4444', '#ec4899'],
