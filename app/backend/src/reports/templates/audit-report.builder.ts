@@ -359,7 +359,7 @@ export class AuditReportBuilder {
                                             children: [
                                                 new TextRun({
                                                     text: 'Programa Observadores a Bordo - INIDEP',
-                                                    bold: true,
+                                                    bold: false,
                                                     color: INIDEP_COLORS.text,
                                                     size: 16,
                                                 }),
@@ -380,7 +380,7 @@ export class AuditReportBuilder {
                                             children: [
                                                 new TextRun({
                                                     text: `Informe de Ejecución de Mareas - ${period.short}`,
-                                                    bold: true,
+                                                    bold: false,
                                                     size: 16,
                                                     color: INIDEP_COLORS.text,
                                                 }),
