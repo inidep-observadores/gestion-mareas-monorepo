@@ -747,16 +747,31 @@ const navegacionData = computed(() => {
 
    const items = detailItems.value
 
+   // Determinar la fecha límite para evaluar el estado en contexto de auditoría
+   const limitDateStr = props.endDate ? props.endDate : `${props.year}-12-31`;
+
    // Construir lista de mareas con etapas
-   const mareasRaw: NavegacionMarea[] = items.map(item => ({
-      id_marea: item.id_marea,
-      buque: item.buque,
-      pesqueria: item.pesqueria,
-      flota: item.flota,
-      estado: item.estado,
-      etapas: etapasPorMarea.value.get(item.id) || 1,
-      dias: props.mode === 'CALENDAR' ? item.diasCalendario : item.diasTotales
-   }))
+   const mareasRaw: NavegacionMarea[] = items.map(item => {
+      let estadoAuditoria = 'Finalizada';
+      if (!item.fechaFin) {
+         estadoAuditoria = 'En ejecución';
+      } else {
+         const finDate = item.fechaFin.substring(0, 10);
+         if (finDate > limitDateStr) {
+            estadoAuditoria = 'En ejecución';
+         }
+      }
+
+      return {
+         id_marea: item.id_marea,
+         buque: item.buque,
+         pesqueria: item.pesqueria,
+         flota: item.flota,
+         estado: estadoAuditoria,
+         etapas: etapasPorMarea.value.get(item.id) || 1,
+         dias: props.mode === 'CALENDAR' ? item.diasCalendario : item.diasTotales
+      };
+   })
 
    // Aplicar ordenamiento global antes de agrupar
    const mareasSorted = sortMareas(mareasRaw)
