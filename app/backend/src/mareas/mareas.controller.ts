@@ -57,8 +57,11 @@ export class MareasController {
     }
 
     @Get('workforce/status')
-    getWorkforceStatus(@Query('year') year?: string) {
-        return this.mareasService.getWorkforceStatus(year ? Number(year) : undefined);
+    getWorkforceStatus(
+        @Query('year') year?: string,
+        @Query('role') role?: string
+    ) {
+        return this.mareasService.getWorkforceStatus(year ? Number(year) : undefined, role);
     }
 
     @Get('alertas/personal-fatiga')

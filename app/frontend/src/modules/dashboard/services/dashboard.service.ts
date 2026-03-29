@@ -111,9 +111,12 @@ const dashboardService = {
         return data
     },
 
-    async getWorkforceStatus(): Promise<WorkforceStatus> {
+    async getWorkforceStatus(role?: string): Promise<WorkforceStatus> {
         const { selectedYear } = useConfigStore()
-        const { data } = await httpClient.get<WorkforceStatus>(`/mareas/workforce/status?year=${selectedYear}`)
+        const url = role 
+            ? `/mareas/workforce/status?year=${selectedYear}&role=${role}`
+            : `/mareas/workforce/status?year=${selectedYear}`;
+        const { data } = await httpClient.get<WorkforceStatus>(url)
         return data
     },
 

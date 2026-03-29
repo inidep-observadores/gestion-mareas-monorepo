@@ -520,7 +520,7 @@ const dotacionLoading = ref(true)
 const fetchDotacion = async () => {
    dotacionLoading.value = true
    try {
-      const data = await dashboardService.getWorkforceStatus()
+      const data = await dashboardService.getWorkforceStatus('OBSERVADOR')
       dotacionTotal.value = data.totalActivos
    } catch (error) {
       console.error('Error fetching dotación:', error)

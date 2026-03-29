@@ -1281,14 +1281,18 @@ export class MareasService {
         return alerts;
     }
 
-    async getWorkforceStatus(year?: number) {
+    async getWorkforceStatus(year?: number, role?: string) {
         const { operationalYear, mareaYearFilter } = this.buildMareaYearFilter(year);
         const periodStart = new Date(operationalYear, 0, 1, 0, 0, 0, 0);
         const now = new Date();
 
         // Observadores activos sin impedimento
         const observadores = await this.prisma.observador.findMany({
-            where: { activo: true, conImpedimento: false }
+            where: {
+                activo: true,
+                conImpedimento: false,
+                ...(role ? { tipoObservador: role } : {})
+            }
         });
 
         // Etapas del año operativo y el anterior (para cálculo de días sin navegar)
