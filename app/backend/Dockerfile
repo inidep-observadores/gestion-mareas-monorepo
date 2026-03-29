@@ -13,7 +13,17 @@ FROM node:20-alpine
 WORKDIR /app
 ENV NODE_ENV=production
 RUN corepack enable && corepack prepare pnpm@latest --activate
-RUN apk add --no-cache postgresql-client
+# postgresql-client: migraciones y healthchecks
+# cairo, pango, libjpeg-turbo, giflib: requeridos por @napi-rs/canvas en runtime
+# fontconfig, ttf-dejavu: gestión de fuentes y fallback sans-serif para Chart.js (Calibri no disponible en Linux)
+RUN apk add --no-cache \
+    postgresql-client \
+    cairo \
+    pango \
+    libjpeg-turbo \
+    giflib \
+    fontconfig \
+    ttf-dejavu
 COPY package.json pnpm-lock.yaml* ./
 RUN pnpm install --prod --no-frozen-lockfile
 COPY --from=builder /app/dist ./dist
