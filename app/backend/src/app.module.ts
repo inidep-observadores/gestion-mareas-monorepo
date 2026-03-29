@@ -33,6 +33,7 @@ import { AuditEventInterceptor } from './audit/interceptors/audit-event.intercep
 
 import { auditConfig } from './common/config/audit.config';
 import { PlanificacionModule } from './planificacion/planificacion.module';
+import { ReportsModule } from './reports/reports.module';
 
 @Module({
   imports: [
@@ -75,6 +76,7 @@ import { PlanificacionModule } from './planificacion/planificacion.module';
     JobsModule,
     PnaApiModule,
     PlanificacionModule,
+    ReportsModule,
   ],
 
   providers: [
