@@ -2214,12 +2214,23 @@ export class StatsService {
             year, mode, includeNonProtocolized, includeProtocolizedOutOfPeriod, 'SHIP', includeCampaigns, startDate, endDate, protocolizationStartDate, protocolizationEndDate
         );
 
-        // Obtener dotación activa (observadores no eliminados y activos)
+        // 2. Obtener dotación activa (observadores no eliminados y activos) - Alineado con informe Word
         const dotacionActiva = await this.prisma.observador.count({
             where: {
                 activo: true,
+                conImpedimento: false,
+                tipoObservador: 'OBSERVADOR',
             }
         });
+
+        // 3. Filtrar observadores que navegaron para el KPI científico (excluyendo técnicos)
+        const observerIds = stats.observers.map((o: any) => o.id);
+        const observersData = await this.prisma.observador.findMany({
+            where: { id: { in: observerIds } },
+            select: { id: true, tipoObservador: true }
+        });
+        const observerTypeMap = new Map(observersData.map(o => [o.id, o.tipoObservador]));
+        const obsCientificosQueNavegaron = stats.observers.filter((o: any) => observerTypeMap.get(o.id) === 'OBSERVADOR').length;
 
         // Obtener marea distribution (para intervalos y etapas)
         const mareas = await this.getMareaDistribution(
@@ -2234,7 +2245,7 @@ export class StatsService {
         const workbook = new ExcelJS.Workbook();
 
         // Hoja 1: Estadísticas de Personal
-        this.buildAuditPersonalSheet(workbook, stats, dotacionActiva);
+        this.buildAuditPersonalSheet(workbook, stats, dotacionActiva, obsCientificosQueNavegaron);
 
         // Hoja 2: Estadísticas de Navegación
         this.buildAuditNavegacionSheet(workbook, mareas, detailItems, year, mode, endDate);
@@ -2245,7 +2256,7 @@ export class StatsService {
         return workbook;
     }
 
-    private buildAuditPersonalSheet(workbook: ExcelJS.Workbook, stats: any, dotacionActiva: number) {
+    private buildAuditPersonalSheet(workbook: ExcelJS.Workbook, stats: any, dotacionActiva: number, obsCientificosQueNavegaron: number) {
         const sheet = workbook.addWorksheet('Personal');
 
         // Título
@@ -2266,18 +2277,22 @@ export class StatsService {
             cell.alignment = { horizontal: 'center' };
         });
 
-        const obsAfectados = stats.observers.length;
-        const dotacionRef = Math.max(dotacionActiva, obsAfectados);
         const totalMareasGlobal = stats.totalMareas;
-        const cobertura = dotacionRef > 0 ? (totalMareasGlobal / dotacionRef) : 0;
+        
+        // El KPI científico usa solo los observadores (excluye técnicos)
+        // Pero la tabla de ranking (Tabla 2) muestra a todos los que navegaron.
+        const dotacionRef = Math.max(dotacionActiva, obsCientificosQueNavegaron);
+        
+        // Cobertura alineada con Word: % de la dotación que efectivamente navegó
+        const cobertura = dotacionRef > 0 ? (obsCientificosQueNavegaron / dotacionRef) : 0;
 
         const kpis = [
             { label: 'Dotación Activa (Actual)', val: dotacionActiva, met: 'Obs. Activos' },
-            { label: 'Observadores que navegaron', val: obsAfectados, met: 'Personal' },
+            { label: 'Observadores que navegaron', val: obsCientificosQueNavegaron, met: 'Personal' },
             { label: 'Dotación de Referencia', val: dotacionRef, met: 'Mix' },
             { label: 'Total de Mareas', val: totalMareasGlobal, met: 'Mareas' },
-            { label: '% Cobertura (Mareas/Dot)', val: (cobertura * 100).toFixed(1) + '%', met: 'Ratio' },
-            { label: 'Promedio Mareas/Obs', val: (totalMareasGlobal / (obsAfectados || 1)).toFixed(2), met: 'Productividad' }
+            { label: '% Cobertura Dotación', val: (cobertura * 100).toFixed(1) + '%', met: 'Ratio' },
+            { label: 'Promedio Mareas/Obs', val: (totalMareasGlobal / (obsCientificosQueNavegaron || 1)).toFixed(2), met: 'Productividad' }
         ];
 
         kpis.forEach((kpi, index) => {
