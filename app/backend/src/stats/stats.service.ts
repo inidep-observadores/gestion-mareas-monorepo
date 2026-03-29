@@ -2237,10 +2237,10 @@ export class StatsService {
         this.buildAuditPersonalSheet(workbook, stats, dotacionActiva);
 
         // Hoja 2: Estadísticas de Navegación
-        this.buildAuditNavegacionSheet(workbook, mareas, detailItems, year, mode);
+        this.buildAuditNavegacionSheet(workbook, mareas, detailItems, year, mode, endDate);
 
         // Hoja 3: Estadísticas por Pesquería
-        this.buildAuditPesqueriaSheet(workbook, mareas, detailItems, year, mode);
+        this.buildAuditPesqueriaSheet(workbook, mareas, detailItems, year, mode, endDate);
 
         return workbook;
     }
@@ -2354,7 +2354,7 @@ export class StatsService {
         sheet.getColumn(8).width = 15;
     }
 
-    private buildAuditNavegacionSheet(workbook: ExcelJS.Workbook, mareasDistribucion: any[], detailItems: any[], year: number, mode: 'CALENDAR' | 'TOTAL') {
+    private buildAuditNavegacionSheet(workbook: ExcelJS.Workbook, mareasDistribucion: any[], detailItems: any[], year: number, mode: 'CALENDAR' | 'TOTAL', endDate?: string) {
         const sheet = workbook.addWorksheet('Navegación');
 
         // Título
@@ -2382,19 +2382,33 @@ export class StatsService {
         });
 
 
+        const limitDateStr = endDate ? endDate : `${year}-12-31`;
+
         // Usar detailItems como base (paridad total con la tabla de navegación web)
-        const listMareas = detailItems.map(item => ({
-            id: item.id_marea,
-            tipo: item.id_marea.split('-')[0],
-            buque: item.buque,
-            flota: item.flota,
-            pesqueria: item.pesqueria,
-            fechaMin: item.fechaInicio ? new Date(item.fechaInicio) : null,
-            fechaMax: item.fechaFin ? new Date(item.fechaFin) : null,
-            etapas: etapasPorMarea.get(item.id_marea) || 1, // Fallback a 1 como en el frontend
-            dias: mode === 'CALENDAR' ? item.diasCalendario : item.diasTotales,
-            estado: item.estado
-        }));
+        const listMareas = detailItems.map(item => {
+            let estadoAuditoria = 'Finalizada';
+            if (!item.fechaFin) {
+                estadoAuditoria = 'En ejecución';
+            } else {
+                const finDateStr = new Date(item.fechaFin).toISOString().substring(0, 10);
+                if (finDateStr > limitDateStr) {
+                    estadoAuditoria = 'En ejecución';
+                }
+            }
+
+            return {
+                id: item.id_marea,
+                tipo: item.id_marea.split('-')[0],
+                buque: item.buque,
+                flota: item.flota,
+                pesqueria: item.pesqueria,
+                fechaMin: item.fechaInicio ? new Date(item.fechaInicio) : null,
+                fechaMax: item.fechaFin ? new Date(item.fechaFin) : null,
+                etapas: etapasPorMarea.get(item.id_marea) || 1, // Fallback a 1 como en el frontend
+                dias: mode === 'CALENDAR' ? item.diasCalendario : item.diasTotales,
+                estado: estadoAuditoria
+            };
+        });
 
         // Custom Sorting (Tipo DESC, Año ASC, Nro ASC) - Mismo que en Frontend
         listMareas.sort((a, b) => {
@@ -2453,7 +2467,7 @@ export class StatsService {
         });
     }
 
-    private buildAuditPesqueriaSheet(workbook: ExcelJS.Workbook, mareasDistribucion: any[], detailItems: any[], year: number, mode: 'CALENDAR' | 'TOTAL') {
+    private buildAuditPesqueriaSheet(workbook: ExcelJS.Workbook, mareasDistribucion: any[], detailItems: any[], year: number, mode: 'CALENDAR' | 'TOTAL', endDate?: string) {
         const sheet = workbook.addWorksheet('Pesquería');
 
         const periodRange = mode === 'CALENDAR' ? {
@@ -2545,17 +2559,31 @@ export class StatsService {
             cell.alignment = { horizontal: 'center' };
         });
 
-        const listMareasDetalle = detailItems.map(item => ({
-            pesqueria: item.pesqueria,
-            id: item.id_marea,
-            buque: item.buque,
-            flota: item.flota,
-            inicio: item.fechaInicio ? new Date(item.fechaInicio) : null,
-            fin: item.fechaFin ? new Date(item.fechaFin) : null,
-            etapas: etapasPorMarea.get(item.id_marea) || 1,
-            dias: mode === 'CALENDAR' ? item.diasCalendario : item.diasTotales,
-            estado: item.estado
-        }));
+        const limitDateStr = endDate ? endDate : `${year}-12-31`;
+
+        const listMareasDetalle = detailItems.map(item => {
+            let estadoAuditoria = 'Finalizada';
+            if (!item.fechaFin) {
+                estadoAuditoria = 'En ejecución';
+            } else {
+                const finDateStr = new Date(item.fechaFin).toISOString().substring(0, 10);
+                if (finDateStr > limitDateStr) {
+                    estadoAuditoria = 'En ejecución';
+                }
+            }
+
+            return {
+                pesqueria: item.pesqueria,
+                id: item.id_marea,
+                buque: item.buque,
+                flota: item.flota,
+                inicio: item.fechaInicio ? new Date(item.fechaInicio) : null,
+                fin: item.fechaFin ? new Date(item.fechaFin) : null,
+                etapas: etapasPorMarea.get(item.id_marea) || 1,
+                dias: mode === 'CALENDAR' ? item.diasCalendario : item.diasTotales,
+                estado: estadoAuditoria
+            };
+        });
 
         let detRow = headerRow + 1;
         let totalDiasDetalle = 0;

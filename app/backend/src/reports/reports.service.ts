@@ -92,20 +92,33 @@ export class ReportsService {
                 observers: stats.observers,
             },
             dotacionActiva,
-            detailItems: detailItems.map((item: any) => ({
-                id: item.id,
-                id_marea: item.id_marea,
-                anioMarea: item.anioMarea || year,
-                buque: item.buque,
-                flota: item.flota,
-                pesqueria: item.pesqueria,
-                observador: item.observador || '',
-                estado: item.estado,
-                diasCalendario: item.diasCalendario,
-                diasTotales: item.diasTotales,
-                fechaInicio: item.fechaZarpada,
-                fechaFin: item.fechaArribo,
-            })),
+            detailItems: detailItems.map((item: any) => {
+                let estadoAuditoria = 'Finalizada';
+                if (!item.fechaFin) {
+                    estadoAuditoria = 'En ejecución';
+                } else {
+                    const limitDateStr = endDate ? endDate : `${year}-12-31`;
+                    const finDateStr = new Date(item.fechaFin).toISOString().substring(0, 10);
+                    if (finDateStr > limitDateStr) {
+                        estadoAuditoria = 'En ejecución';
+                    }
+                }
+
+                return {
+                    id: item.id,
+                    id_marea: item.id_marea,
+                    anioMarea: item.anioMarea || year,
+                    buque: item.buque,
+                    flota: item.flota,
+                    pesqueria: item.pesqueria,
+                    observador: item.observador || '',
+                    estado: estadoAuditoria,
+                    diasCalendario: item.diasCalendario,
+                    diasTotales: item.diasTotales,
+                    fechaInicio: item.fechaInicio,
+                    fechaFin: item.fechaFin,
+                };
+            }),
             distribution: distribution.map((d: any) => ({
                 mareaId: d.mareaId || d.id,
                 id_marea: d.id_marea,

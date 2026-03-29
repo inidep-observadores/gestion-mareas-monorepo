@@ -78,15 +78,22 @@ export function describePeriod(info: PeriodInfo): PeriodDescription {
     const start = startDate ? new Date(startDate) : new Date(Date.UTC(year, 0, 1));
     const end = endDate ? new Date(endDate) : new Date(Date.UTC(year, 11, 31));
 
+    const startMonth = start.getUTCMonth();
+    const startDay = start.getUTCDate();
+    const startYear = start.getUTCFullYear();
+    const endMonth = end.getUTCMonth();
+    const endDay = end.getUTCDate();
+    const endYear = end.getUTCFullYear();
+
     // Detectar si es un trimestre exacto
     const quarter = detectQuarter(start, end, year);
     if (quarter !== null) {
-        const startMonth = quarter * 3;
-        const endMonth = startMonth + 2;
+        const sMonth = quarter * 3;
+        const eMonth = sMonth + 2;
         return {
-            full: `${QUARTER_NAMES[quarter]} trimestre del año ${year} (${MONTH_NAMES[startMonth]} – ${MONTH_NAMES[endMonth]})`,
+            full: `${QUARTER_NAMES[quarter]} trimestre del año ${year} (${MONTH_NAMES[sMonth]} – ${MONTH_NAMES[eMonth]})`,
             short: `${QUARTER_ORDINAL[quarter]} Trimestre ${year}`,
-            range: `${MONTH_NAMES[startMonth]} – ${MONTH_NAMES[endMonth]} ${year}`,
+            range: `${MONTH_NAMES[sMonth]} – ${MONTH_NAMES[eMonth]} ${year}`,
             article: `el ${QUARTER_NAMES[quarter]} trimestre`,
             articleAl: `al ${QUARTER_NAMES[quarter]} trimestre`,
             genitive: 'del trimestre',
@@ -98,23 +105,57 @@ export function describePeriod(info: PeriodInfo): PeriodDescription {
         };
     }
 
-    // Rango libre
-    const startMonthName = MONTH_NAMES[start.getUTCMonth()];
-    const endMonthName = MONTH_NAMES[end.getUTCMonth()];
-    const startMonthCap = MONTH_NAMES_CAP[start.getUTCMonth()];
-    const endMonthCap = MONTH_NAMES_CAP[end.getUTCMonth()];
+    // Detectar si es un mes completo
+    const lastDayOfEndMonth = new Date(Date.UTC(endYear, endMonth + 1, 0)).getUTCDate();
+    const isFullMonth = startDay === 1 && endDay === lastDayOfEndMonth && startMonth === endMonth && startYear === year;
 
-    const startYear = start.getUTCFullYear();
-    const endYear = end.getUTCFullYear();
+    if (isFullMonth) {
+        const monthName = MONTH_NAMES[startMonth];
+        const monthCap = MONTH_NAMES_CAP[startMonth];
+        return {
+            full: `mes de ${monthName} de ${year}`,
+            short: `${monthCap} ${year}`,
+            range: `${monthName} ${year}`,
+            article: 'el mes',
+            articleAl: 'al mes',
+            genitive: 'del mes',
+            documentDate,
+            quarter: null,
+            year,
+            startDate,
+            endDate,
+        };
+    }
+
+    // Rango libre
+    const startMonthName = MONTH_NAMES[startMonth];
+    const endMonthName = MONTH_NAMES[endMonth];
+    const startMonthCap = MONTH_NAMES_CAP[startMonth];
+    const endMonthCap = MONTH_NAMES_CAP[endMonth];
 
     const isSameYear = startYear === endYear;
-    const rangeStr = isSameYear
-        ? `${startMonthName} – ${endMonthName} ${startYear}`
-        : `${startMonthName} ${startYear} – ${endMonthName} ${endYear}`;
+    const isSameMonth = startMonth === endMonth && isSameYear;
 
-    const shortStr = isSameYear
-        ? `${startMonthCap}–${endMonthCap} ${startYear}`
-        : `${startMonthCap} ${startYear}–${endMonthCap} ${endYear}`;
+    let rangeStr: string;
+    let shortStr: string;
+
+    if (isSameMonth) {
+        if (startDay === endDay) {
+            rangeStr = `${startDay} de ${startMonthName} ${startYear}`;
+            shortStr = `${startDay} ${startMonthCap} ${startYear}`;
+        } else {
+            rangeStr = `${startDay} al ${endDay} de ${startMonthName} ${startYear}`;
+            shortStr = `${startDay}–${endDay} ${startMonthCap} ${startYear}`;
+        }
+    } else {
+        rangeStr = isSameYear
+            ? `${startMonthName} – ${endMonthName} ${startYear}`
+            : `${startMonthName} ${startYear} – ${endMonthName} ${endYear}`;
+
+        shortStr = isSameYear
+            ? `${startMonthCap}–${endMonthCap} ${startYear}`
+            : `${startMonthCap} ${startYear}–${endMonthCap} ${endYear}`;
+    }
 
     return {
         full: `período ${formatDateSpanish(start)} al ${formatDateSpanish(end)}`,

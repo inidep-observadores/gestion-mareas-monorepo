@@ -84,7 +84,7 @@ export interface AuditReportData {
 
 @Injectable()
 export class AuditReportBuilder {
-    constructor(private readonly chartService: DocxChartService) {}
+    constructor(private readonly chartService: DocxChartService) { }
 
     /**
      * Construye el informe de auditoría completo y retorna el Buffer del .docx
@@ -580,7 +580,7 @@ export class AuditReportBuilder {
             m.pesqueria,
             m.buque,
             this.formatMareaShort(m.id_marea),
-            'En ejec.',
+            'En ejecución',
             String(m.etapas),
             String(m.dias),
         ]);
