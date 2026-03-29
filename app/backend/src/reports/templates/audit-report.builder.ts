@@ -581,11 +581,11 @@ export class AuditReportBuilder {
             this.chartImage(observerChart, 14, 0.5),
             this.heading2('4.3 Distribución completa de días navegados'),
             createFormattedTable(
-                ['OBSERVADOR', 'MAREAS', 'DÍAS NAVEGADOS', 'ESTADO'],
-                stats.observers.map((o: any) => [o.name, o.mareas.toString(), o.days.toString(), o.active ? 'ACTIVO' : 'NO ACTIVO']),
+                ['OBSERVADOR', 'MAREAS', 'DÍAS NAVEGADOS'],
+                stats.observers.map((o: any) => [o.name, o.mareas.toString(), o.days.toString()]),
                 {
-                    columnWidths: [45, 15, 20, 20],
-                    alignments: [AlignmentType.LEFT, AlignmentType.CENTER, AlignmentType.CENTER, AlignmentType.CENTER],
+                    columnWidths: [60, 20, 20],
+                    alignments: [AlignmentType.LEFT, AlignmentType.CENTER, AlignmentType.CENTER],
                     totalsRow: { label: `TOTAL: ${obsAfectados} observadores`, values: ['', formatNumber(stats.totalDaysNavigated)] },
                 },
             ),
