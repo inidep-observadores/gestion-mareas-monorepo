@@ -213,4 +213,49 @@ export class DocxChartService {
 
         return buffer;
     }
+
+    /**
+     * Renderiza el logo de SIGMA usando Canvas (para insertar en informes).
+     */
+    async renderSigmaLogo(size: number = 400): Promise<Buffer> {
+        const canvas = createCanvas(size, size);
+        const ctx = canvas.getContext('2d');
+        const scale = size / 160;
+
+        ctx.save();
+        ctx.scale(scale, scale);
+
+        // Gradiente institucional (basado en SigmaLogo.vue light mode)
+        const grd = ctx.createLinearGradient(0, 0, 160, 160);
+        grd.addColorStop(0, '#2563eb');
+        grd.addColorStop(1, '#4f46e5');
+
+        ctx.lineWidth = 10;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.strokeStyle = grd;
+
+        // Brazo exterior (Arco)
+        ctx.beginPath();
+        ctx.moveTo(140, 25);
+        ctx.lineTo(80, 25);
+        ctx.arc(80, 80, 55, -Math.PI / 2, Math.PI / 2, true);
+        ctx.lineTo(92, 135);
+        ctx.stroke();
+
+        // Núcleo circular (Core)
+        ctx.beginPath();
+        ctx.lineWidth = 6;
+        ctx.arc(80, 80, 28, -Math.PI / 4, Math.PI * 1.4);
+        ctx.stroke();
+
+        // Punto central (Dot)
+        ctx.beginPath();
+        ctx.fillStyle = '#2563eb';
+        ctx.arc(80, 80, 6, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.restore();
+        return canvas.toBuffer('image/png');
+    }
 }

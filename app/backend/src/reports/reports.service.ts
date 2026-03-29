@@ -93,11 +93,16 @@ export class ReportsService {
             },
             dotacionActiva,
             detailItems: detailItems.map((item: any) => {
+                const limitDateStr = endDate ? endDate : `${year}-12-31`;
+                const todayStr = new Date().toISOString().substring(0, 10);
+                const isPeriodOpen = limitDateStr >= todayStr;
+
                 let estadoAuditoria = 'Finalizada';
-                if (!item.fechaFin) {
+                if (isPeriodOpen && item.estado === 'En ejecución') {
+                    estadoAuditoria = 'En ejecución';
+                } else if (!item.fechaFin) {
                     estadoAuditoria = 'En ejecución';
                 } else {
-                    const limitDateStr = endDate ? endDate : `${year}-12-31`;
                     const finDateStr = new Date(item.fechaFin).toISOString().substring(0, 10);
                     if (finDateStr > limitDateStr) {
                         estadoAuditoria = 'En ejecución';

@@ -752,8 +752,13 @@ const navegacionData = computed(() => {
 
    // Construir lista de mareas con etapas
    const mareasRaw: NavegacionMarea[] = items.map(item => {
+      const todayStr = new Date().toISOString().substring(0, 10);
+      const isPeriodOpen = limitDateStr >= todayStr;
+
       let estadoAuditoria = 'Finalizada';
-      if (!item.fechaFin) {
+      if (isPeriodOpen && item.estado === 'En ejecución') {
+         estadoAuditoria = 'En ejecución';
+      } else if (!item.fechaFin) {
          estadoAuditoria = 'En ejecución';
       } else {
          const finDate = item.fechaFin.substring(0, 10);

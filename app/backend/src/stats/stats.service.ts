@@ -2401,8 +2401,13 @@ export class StatsService {
 
         // Usar detailItems como base (paridad total con la tabla de navegación web)
         const listMareas = detailItems.map(item => {
+            const todayStr = DateUtils.getNow().toISOString().substring(0, 10);
+            const isPeriodOpen = limitDateStr >= todayStr;
+
             let estadoAuditoria = 'Finalizada';
-            if (!item.fechaFin) {
+            if (isPeriodOpen && item.estado === 'En ejecución') {
+                estadoAuditoria = 'En ejecución';
+            } else if (!item.fechaFin) {
                 estadoAuditoria = 'En ejecución';
             } else {
                 const finDateStr = new Date(item.fechaFin).toISOString().substring(0, 10);
@@ -2577,8 +2582,13 @@ export class StatsService {
         const limitDateStr = endDate ? endDate : `${year}-12-31`;
 
         const listMareasDetalle = detailItems.map(item => {
+            const todayStr = DateUtils.getNow().toISOString().substring(0, 10);
+            const isPeriodOpen = limitDateStr >= todayStr;
+
             let estadoAuditoria = 'Finalizada';
-            if (!item.fechaFin) {
+            if (isPeriodOpen && item.estado === 'En ejecución') {
+                estadoAuditoria = 'En ejecución';
+            } else if (!item.fechaFin) {
                 estadoAuditoria = 'En ejecución';
             } else {
                 const finDateStr = new Date(item.fechaFin).toISOString().substring(0, 10);
