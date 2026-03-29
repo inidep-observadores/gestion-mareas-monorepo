@@ -251,7 +251,7 @@ export class StatsService {
                 if (etapa.fechaZarpada && etapa.fechaZarpada <= now) {
                     const start = etapa.fechaZarpada;
                     const end = etapa.fechaArribo || (marea.estadoActual?.codigo === 'EN_EJECUCION' ? now : null);
-                    
+
                     if (!fisheryIntervalsMap.has(fisheryName)) {
                         fisheryIntervalsMap.set(fisheryName, []);
                     }
@@ -545,11 +545,11 @@ export class StatsService {
 
             // Filter stages by fishery if applicable
             const relevantStages = filterType === FilterType.FISHERY
-? m.etapas.filter(e => {
+                ? m.etapas.filter(e => {
                     const fName = e.pesqueria?.nombre || m.buque?.pesqueriaHabitual?.nombre || 'Desconocida';
                     return fName.toLowerCase() === filterValue.toLowerCase();
-})
-: m.etapas;
+                })
+                : m.etapas;
 
             const intervals = relevantStages.map(e => ({
                 start: e.fechaZarpada,
@@ -760,10 +760,10 @@ export class StatsService {
         // Filtrado global por estado: Solo EN_EJECUCION o posteriores (excluyendo CANCELADA)
         const mareasFiltradas = mareas.filter(m => {
             const estado = m.estadoActual?.codigo as MareaEstado;
-            return estado && 
-                   estado !== MareaEstado.DESIGNADA && 
-                   estado !== MareaEstado.A_REASIGNAR && 
-                   estado !== MareaEstado.CANCELADA;
+            return estado &&
+                estado !== MareaEstado.DESIGNADA &&
+                estado !== MareaEstado.A_REASIGNAR &&
+                estado !== MareaEstado.CANCELADA;
         });
 
         if (filterType === 'AUDIT') {
@@ -781,7 +781,7 @@ export class StatsService {
         }
 
         const workbook = new ExcelJS.Workbook();
-        
+
         // Hoja General
         this.buildGeneralSheet(workbook, mareasFiltradas, {
             year,
@@ -904,7 +904,7 @@ export class StatsService {
 
     private buildGeneralSheet(workbook: ExcelJS.Workbook, mareas: any[], options: any) {
         const sheet = workbook.addWorksheet('General');
-        
+
         // Determinar max etapas y observadores adicionales
         let maxEtapas = 0;
         let maxExtraObservers = 0;
@@ -982,7 +982,7 @@ export class StatsService {
         const headerRow = sheet.getRow(1);
         headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
         headerRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF2563EB' } }; // Azul Corporativo (Primary)
-        
+
         // Autofiltro
         sheet.autoFilter = {
             from: { row: 1, column: 1 },
@@ -1003,11 +1003,11 @@ export class StatsService {
             const totalRowNumber = mareas.length + 2;
             const totalRow = sheet.getRow(totalRowNumber);
             totalRow.getCell(1).value = 'TOTAL';
-            
+
             // Determinar columnas de días
             let calCol = 10 + maxExtraObservers + 1;
             totalRow.getCell(calCol).value = { formula: `SUM(${sheet.getColumn(calCol).letter}2:${sheet.getColumn(calCol).letter}${totalRowNumber - 1})` };
-            
+
             if (!isMonthlyDetail) {
                 let totalCol = calCol + 1;
                 totalRow.getCell(totalCol).value = { formula: `SUM(${sheet.getColumn(totalCol).letter}2:${sheet.getColumn(totalCol).letter}${totalRowNumber - 1})` };
@@ -1019,11 +1019,11 @@ export class StatsService {
                 const cell = totalRow.getCell(c);
                 cell.font = { bold: true };
                 cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'EFF6FF' } };
-                cell.border = { 
-                    top: { style: 'thin' }, 
-                    left: { style: 'thin', color: { argb: 'FFD4D4D4' } }, 
-                    right: { style: 'thin', color: { argb: 'FFD4D4D4' } }, 
-                    bottom: { style: 'thin', color: { argb: 'FFD4D4D4' } } 
+                cell.border = {
+                    top: { style: 'thin' },
+                    left: { style: 'thin', color: { argb: 'FFD4D4D4' } },
+                    right: { style: 'thin', color: { argb: 'FFD4D4D4' } },
+                    bottom: { style: 'thin', color: { argb: 'FFD4D4D4' } }
                 };
             }
         }
@@ -1135,7 +1135,7 @@ export class StatsService {
 
     private buildObserverDaysSheet(workbook: ExcelJS.Workbook, sheetName: string, mareas: any[], tipoMarea: TipoMarea, options: any) {
         const sheet = workbook.addWorksheet(sheetName);
-        
+
         const columns: Partial<ExcelJS.Column>[] = [
             { header: 'Observador', key: 'observador', width: 30 },
             { header: 'Buque', key: 'buque', width: 25 },
@@ -1194,18 +1194,18 @@ export class StatsService {
             // Columna G (7) es Cantidad Etapas, Columna H (8) es Días Navegados
             totalRow.getCell(7).value = { formula: `SUM(G2:G${totalRowNumber - 1})` };
             totalRow.getCell(8).value = { formula: `SUM(H2:H${totalRowNumber - 1})` };
-            
+
             // Estilo unificado (de Resumen por Pesquería)
             const maxCol = columns.length;
             for (let c = 1; c <= maxCol; c++) {
                 const cell = totalRow.getCell(c);
                 cell.font = { bold: true };
                 cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'EFF6FF' } };
-                cell.border = { 
-                    top: { style: 'thin' }, 
-                    left: { style: 'thin', color: { argb: 'FFD4D4D4' } }, 
-                    right: { style: 'thin', color: { argb: 'FFD4D4D4' } }, 
-                    bottom: { style: 'thin', color: { argb: 'FFD4D4D4' } } 
+                cell.border = {
+                    top: { style: 'thin' },
+                    left: { style: 'thin', color: { argb: 'FFD4D4D4' } },
+                    right: { style: 'thin', color: { argb: 'FFD4D4D4' } },
+                    bottom: { style: 'thin', color: { argb: 'FFD4D4D4' } }
                 };
             }
         }
@@ -1213,7 +1213,7 @@ export class StatsService {
 
     private buildObserverTotalSummarySheet(workbook: ExcelJS.Workbook, mareas: any[], options: any) {
         const sheet = workbook.addWorksheet('Resumen Total por Observador');
-        
+
         const columns: Partial<ExcelJS.Column>[] = [
             { header: 'Observador', key: 'observador', width: 40 },
             { header: 'Días Navegados', key: 'dias_navegados', width: 25 },
@@ -1238,7 +1238,7 @@ export class StatsService {
         mareas.forEach(m => {
             const rowData = this.calculateMareaRowData(m, options);
             const mainObserver = rowData.observador || 'Sin Observador';
-            
+
             // Sumar días del observador principal
             const currentDays = observerMap.get(mainObserver) || 0;
             observerMap.set(mainObserver, currentDays + (rowData.dias_calendario || 0));
@@ -1276,18 +1276,18 @@ export class StatsService {
             const totalRow = sheet.getRow(totalRowNumber);
             totalRow.getCell(1).value = 'TOTAL';
             totalRow.getCell(2).value = { formula: `SUM(B2:B${totalRowNumber - 1})` };
-            
+
             // Estilo unificado (de Resumen por Pesquería)
             const maxCol = columns.length;
             for (let c = 1; c <= maxCol; c++) {
                 const cell = totalRow.getCell(c);
                 cell.font = { bold: true };
                 cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'EFF6FF' } };
-                cell.border = { 
-                    top: { style: 'thin' }, 
-                    left: { style: 'thin', color: { argb: 'FFD4D4D4' } }, 
-                    right: { style: 'thin', color: { argb: 'FFD4D4D4' } }, 
-                    bottom: { style: 'thin', color: { argb: 'FFD4D4D4' } } 
+                cell.border = {
+                    top: { style: 'thin' },
+                    left: { style: 'thin', color: { argb: 'FFD4D4D4' } },
+                    right: { style: 'thin', color: { argb: 'FFD4D4D4' } },
+                    bottom: { style: 'thin', color: { argb: 'FFD4D4D4' } }
                 };
             }
         }
@@ -1378,11 +1378,11 @@ export class StatsService {
             const cell = totalRow.getCell(c);
             cell.font = { bold: true };
             cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'EFF6FF' } };
-            cell.border = { 
-                top: { style: 'thin' }, 
-                left: { style: 'thin', color: { argb: 'FFD4D4D4' } }, 
-                right: { style: 'thin', color: { argb: 'FFD4D4D4' } }, 
-                bottom: { style: 'thin', color: { argb: 'FFD4D4D4' } } 
+            cell.border = {
+                top: { style: 'thin' },
+                left: { style: 'thin', color: { argb: 'FFD4D4D4' } },
+                right: { style: 'thin', color: { argb: 'FFD4D4D4' } },
+                bottom: { style: 'thin', color: { argb: 'FFD4D4D4' } }
             };
         }
 
@@ -1671,7 +1671,7 @@ export class StatsService {
 
         coverage.monthly.forEach(month => {
             const monthName = monthNames[month.month - 1];
-            
+
             // Si hay desglose por flota en los datos de cobertura
             if (month.fleets && month.fleets.length > 0) {
                 month.fleets.forEach(fleet => {
@@ -1844,7 +1844,7 @@ export class StatsService {
 
     private buildObserverSummarySheet(workbook: ExcelJS.Workbook, sheetName: string, mareas: any[], tipoMarea: TipoMarea, options: any) {
         const sheet = workbook.addWorksheet(sheetName);
-        
+
         const columns: Partial<ExcelJS.Column>[] = [
             { header: 'Observador', key: 'observador', width: 30 },
             { header: 'Pesquería', key: 'pesqueria', width: 25 },
@@ -1875,7 +1875,7 @@ export class StatsService {
         filteredMareas.forEach(m => {
             const rowData = this.calculateMareaRowData(m, options);
             const key = `${rowData.observador}|${rowData.pesqueria}|${rowData.flota}`;
-            
+
             if (!summaryMap.has(key)) {
                 summaryMap.set(key, {
                     observador: rowData.observador,
@@ -1934,18 +1934,18 @@ export class StatsService {
             totalRow.getCell(4).value = { formula: `SUM(D2:D${totalRowNumber - 1})` };
             totalRow.getCell(5).value = { formula: `SUM(E2:E${totalRowNumber - 1})` };
             totalRow.getCell(6).value = { formula: `SUM(F2:F${totalRowNumber - 1})` };
-            
+
             // Estilo unificado (de Resumen por Pesquería)
             const maxCol = columns.length;
             for (let c = 1; c <= maxCol; c++) {
                 const cell = totalRow.getCell(c);
                 cell.font = { bold: true };
                 cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'EFF6FF' } };
-                cell.border = { 
-                    top: { style: 'thin' }, 
-                    left: { style: 'thin', color: { argb: 'FFD4D4D4' } }, 
-                    right: { style: 'thin', color: { argb: 'FFD4D4D4' } }, 
-                    bottom: { style: 'thin', color: { argb: 'FFD4D4D4' } } 
+                cell.border = {
+                    top: { style: 'thin' },
+                    left: { style: 'thin', color: { argb: 'FFD4D4D4' } },
+                    right: { style: 'thin', color: { argb: 'FFD4D4D4' } },
+                    bottom: { style: 'thin', color: { argb: 'FFD4D4D4' } }
                 };
             }
         }
@@ -2024,11 +2024,11 @@ export class StatsService {
                 const cell = totalRow.getCell(c);
                 cell.font = { bold: true };
                 cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'EFF6FF' } };
-                cell.border = { 
-                    top: { style: 'thin' }, 
-                    left: { style: 'thin', color: { argb: 'FFD4D4D4' } }, 
-                    right: { style: 'thin', color: { argb: 'FFD4D4D4' } }, 
-                    bottom: { style: 'thin', color: { argb: 'FFD4D4D4' } } 
+                cell.border = {
+                    top: { style: 'thin' },
+                    left: { style: 'thin', color: { argb: 'FFD4D4D4' } },
+                    right: { style: 'thin', color: { argb: 'FFD4D4D4' } },
+                    bottom: { style: 'thin', color: { argb: 'FFD4D4D4' } }
                 };
             }
         }
@@ -2156,18 +2156,18 @@ export class StatsService {
                 row.eachCell((cell, colNumber) => {
                     // No sobreescribir la columna de estado si ya tiene color específico
                     if (colNumber > 1) {
-                         // Solo pintar si no tiene ya un color de impedimento/designado
-                         if (cell.fill?.type !== 'pattern') {
+                        // Solo pintar si no tiene ya un color de impedimento/designado
+                        if (cell.fill?.type !== 'pattern') {
                             cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FDF2F8' } };
-                         }
+                        }
                     }
                 });
             } else if ((item as any).eventual === true) {
                 row.eachCell((cell, colNumber) => {
                     if (colNumber > 1) {
-                         if (cell.fill?.type !== 'pattern') {
+                        if (cell.fill?.type !== 'pattern') {
                             cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'F1F5F9' } };
-                         }
+                        }
                     }
                 });
             }
@@ -2216,7 +2216,7 @@ export class StatsService {
 
         // Obtener dotación activa (observadores no eliminados y activos)
         const dotacionActiva = await this.prisma.observador.count({
-            where: { 
+            where: {
                 activo: true,
             }
         });
@@ -2247,7 +2247,7 @@ export class StatsService {
 
     private buildAuditPersonalSheet(workbook: ExcelJS.Workbook, stats: any, dotacionActiva: number) {
         const sheet = workbook.addWorksheet('Personal');
-        
+
         // Título
         sheet.mergeCells('A1', 'H1');
         const titleCell = sheet.getCell('A1');
@@ -2255,56 +2255,11 @@ export class StatsService {
         titleCell.font = { bold: true, size: 16 };
         titleCell.alignment = { horizontal: 'center' };
 
-        // TABLA 1: RANKING DE OBSERVADORES (IZQUIERDA: A-D)
-        const startRowRanking = 3;
-        const headersRanking = ['Pos', 'Observador', 'Mareas', 'Días Navegados'];
-        headersRanking.forEach((h, i) => {
-            const cell = sheet.getCell(startRowRanking, i + 1);
-            cell.value = h;
-            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF00548B' } };
-            cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
-            cell.alignment = { horizontal: 'center' };
-        });
-
-        let currentRow = startRowRanking + 1;
-        let totalMareasRanking = 0;
-        let totalDiasRanking = 0;
-
-        stats.observers.forEach((obs, index) => {
-            sheet.getCell(currentRow, 1).value = index + 1;
-            sheet.getCell(currentRow, 2).value = obs.name;
-            sheet.getCell(currentRow, 3).value = obs.mareas;
-            sheet.getCell(currentRow, 4).value = obs.days;
-            
-            totalMareasRanking += obs.mareas;
-            totalDiasRanking += obs.days;
-
-            // Formato
-            sheet.getCell(currentRow, 1).alignment = { horizontal: 'center' };
-            sheet.getCell(currentRow, 3).alignment = { horizontal: 'center' };
-            sheet.getCell(currentRow, 4).alignment = { horizontal: 'center' };
-            
-            currentRow++;
-        });
-
-        // Fila de TOTAL para Ranking
-        const totalRowRanking = currentRow;
-        sheet.getCell(totalRowRanking, 1).value = 'TOTAL';
-        sheet.getCell(totalRowRanking, 1).font = { bold: true };
-        sheet.getCell(totalRowRanking, 3).value = totalMareasRanking;
-        sheet.getCell(totalRowRanking, 3).font = { bold: true };
-        sheet.getCell(totalRowRanking, 4).value = totalDiasRanking;
-        sheet.getCell(totalRowRanking, 4).font = { bold: true };
-        sheet.getCell(totalRowRanking, 3).alignment = { horizontal: 'center' };
-        sheet.getCell(totalRowRanking, 4).alignment = { horizontal: 'center' };
-        sheet.getRow(totalRowRanking).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF5F5F5' } };
-
-        // TABLA 2: KPIs DE AUDITORÍA (DERECHA: F-H)
-        const colOffset = 6; // Empieza en la columna F
+        // TABLA 1: KPIs DE AUDITORÍA (IZQUIERDA: A-C)
         const startRowKPI = 3;
         const headersKPI = ['Indicador', 'Valor', 'Metraje'];
         headersKPI.forEach((h, i) => {
-            const cell = sheet.getCell(startRowKPI, colOffset + i);
+            const cell = sheet.getCell(startRowKPI, i + 1);
             cell.value = h;
             cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF00548B' } };
             cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
@@ -2327,22 +2282,75 @@ export class StatsService {
 
         kpis.forEach((kpi, index) => {
             const row = startRowKPI + 1 + index;
-            sheet.getCell(row, colOffset).value = kpi.label;
-            sheet.getCell(row, colOffset + 1).value = kpi.val;
-            sheet.getCell(row, colOffset + 2).value = kpi.met;
-            sheet.getCell(row, colOffset).font = { bold: true };
-            sheet.getCell(row, colOffset + 1).alignment = { horizontal: 'center' };
-            sheet.getCell(row, colOffset + 2).alignment = { horizontal: 'center' };
+            sheet.getCell(row, 1).value = kpi.label;
+            sheet.getCell(row, 2).value = kpi.val;
+            sheet.getCell(row, 3).value = kpi.met;
+            sheet.getCell(row, 1).font = { bold: true };
+            sheet.getCell(row, 2).alignment = { horizontal: 'center' };
+            sheet.getCell(row, 3).alignment = { horizontal: 'center' };
         });
 
+        // TABLA 2: RANKING DE OBSERVADORES (DERECHA: E-H)
+        const colOffsetRanking = 5; // Columna E
+        const startRowRanking = 3;
+        const headersRanking = ['Pos', 'Observador', 'Mareas', 'Días Navegados'];
+        headersRanking.forEach((h, i) => {
+            const cell = sheet.getCell(startRowRanking, colOffsetRanking + i);
+            cell.value = h;
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF00548B' } };
+            cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+            cell.alignment = { horizontal: 'center' };
+        });
+
+        let currentRow = startRowRanking + 1;
+        let totalMareasRanking = 0;
+        let totalDiasRanking = 0;
+
+        stats.observers.forEach((obs, index) => {
+            sheet.getCell(currentRow, colOffsetRanking).value = index + 1;
+            sheet.getCell(currentRow, colOffsetRanking + 1).value = obs.name;
+            sheet.getCell(currentRow, colOffsetRanking + 2).value = obs.mareas;
+            sheet.getCell(currentRow, colOffsetRanking + 3).value = obs.days;
+
+            totalMareasRanking += obs.mareas;
+            totalDiasRanking += obs.days;
+
+            // Formato
+            sheet.getCell(currentRow, colOffsetRanking).alignment = { horizontal: 'center' };
+            sheet.getCell(currentRow, colOffsetRanking + 2).alignment = { horizontal: 'center' };
+            sheet.getCell(currentRow, colOffsetRanking + 3).alignment = { horizontal: 'center' };
+
+            currentRow++;
+        });
+
+        // Fila de TOTAL para Ranking
+        const totalRowRanking = currentRow;
+        sheet.getCell(totalRowRanking, colOffsetRanking).value = 'TOTAL';
+        sheet.getCell(totalRowRanking, colOffsetRanking).font = { bold: true };
+        sheet.getCell(totalRowRanking, colOffsetRanking + 2).value = totalMareasRanking;
+        sheet.getCell(totalRowRanking, colOffsetRanking + 2).font = { bold: true };
+        sheet.getCell(totalRowRanking, colOffsetRanking + 3).value = totalDiasRanking;
+        sheet.getCell(totalRowRanking, colOffsetRanking + 3).font = { bold: true };
+        sheet.getCell(totalRowRanking, colOffsetRanking + 2).alignment = { horizontal: 'center' };
+        sheet.getCell(totalRowRanking, colOffsetRanking + 3).alignment = { horizontal: 'center' };
+        sheet.getRow(totalRowRanking).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF5F5F5' } };
+
+        // Nota aclaratoria
+        const noteRow = totalRowRanking + 2;
+        sheet.mergeCells(`A${noteRow}`, `H${noteRow}`);
+        const noteCell = sheet.getCell(noteRow, 1);
+        noteCell.value = 'Nota: La información de esta hoja incluye a todo el personal que haya registrado navegación en el período consultado, incluso aquellos que actualmente no pertenecen al plantel activo.';
+        noteCell.font = { italic: true, size: 10, color: { argb: 'FF475569' } };
+        noteCell.alignment = { horizontal: 'left' };
+
         // Ajustar anchos
-        sheet.getColumn(1).width = 5;
-        sheet.getColumn(2).width = 30;
-        sheet.getColumn(3).width = 12;
-        sheet.getColumn(4).width = 15;
-        sheet.getColumn(5).width = 5; // Columna en blanco
+        sheet.getColumn(1).width = 30;
+        sheet.getColumn(2).width = 15;
+        sheet.getColumn(3).width = 15;
+        sheet.getColumn(4).width = 5; // Columna en blanco
+        sheet.getColumn(5).width = 5;
         sheet.getColumn(6).width = 30;
-        sheet.getColumn(7).width = 15;
+        sheet.getColumn(7).width = 12;
         sheet.getColumn(8).width = 15;
     }
 
@@ -2373,16 +2381,6 @@ export class StatsService {
             etapasPorMarea.set(key, Math.max(current, item.nroEtapa || 0));
         });
 
-        // Agrupar intervalos de distribución por marea para cálculo de días
-        const intervalosPorMarea = new Map<string, any[]>();
-        mareasDistribucion.forEach(m => {
-            const key = m.id_marea;
-            if (!intervalosPorMarea.has(key)) intervalosPorMarea.set(key, []);
-            intervalosPorMarea.get(key)!.push({
-                start: m.fechaZarpada,
-                end: m.fechaArribo || new Date()
-            });
-        });
 
         // Usar detailItems como base (paridad total con la tabla de navegación web)
         const listMareas = detailItems.map(item => ({
@@ -2394,10 +2392,9 @@ export class StatsService {
             fechaMin: item.fechaZarpada ? new Date(item.fechaZarpada) : null,
             fechaMax: item.fechaArribo ? new Date(item.fechaArribo) : new Date(),
             etapas: etapasPorMarea.get(item.id_marea) || 1, // Fallback a 1 como en el frontend
-            intervalos: intervalosPorMarea.get(item.id_marea) || [],
             dias: mode === 'CALENDAR' ? item.diasCalendario : item.diasTotales
         }));
-        
+
         // Custom Sorting (Tipo DESC, Año ASC, Nro ASC) - Mismo que en Frontend
         listMareas.sort((a, b) => {
             const regex = /^([A-Z]+)-(\d+)-(\d+)$/;
@@ -2419,18 +2416,7 @@ export class StatsService {
         let totalDias = 0;
         let totalEtapas = 0;
 
-        const periodRange = mode === 'CALENDAR' ? {
-            start: new Date(Date.UTC(year, 0, 1)),
-            end: new Date(Date.UTC(year, 11, 31, 23, 59, 59))
-        } : undefined;
-        
-        const calculationLimit = new Date(); // now
-
         listMareas.forEach(m => {
-            // Recalculamos días únicos usando los intervalos de distribución para mayor precisión
-            // Aunque detailItems ya tiene los días, los intervalos permiten re-validar el solapamiento
-            const diasUnicos = m.intervalos.length > 0 ? DateUtils.calculateUniqueDays(m.intervalos, periodRange, calculationLimit) : m.dias;
-            
             sheet.getCell(currentRow, 1).value = m.id;
             sheet.getCell(currentRow, 2).value = m.tipo;
             sheet.getCell(currentRow, 3).value = m.buque;
@@ -2438,13 +2424,13 @@ export class StatsService {
             sheet.getCell(currentRow, 5).value = m.pesqueria;
             sheet.getCell(currentRow, 6).value = m.fechaMin;
             sheet.getCell(currentRow, 7).value = m.fechaMax;
-            sheet.getCell(currentRow, 8).value = diasUnicos;
+            sheet.getCell(currentRow, 8).value = m.dias;
             sheet.getCell(currentRow, 9).value = m.etapas;
 
             sheet.getCell(currentRow, 6).numFmt = 'dd/mm/yyyy';
             sheet.getCell(currentRow, 7).numFmt = 'dd/mm/yyyy';
-            
-            totalDias += diasUnicos;
+
+            totalDias += m.dias;
             totalEtapas += m.etapas;
 
             currentRow++;
@@ -2471,27 +2457,22 @@ export class StatsService {
             start: new Date(Date.UTC(year, 0, 1)),
             end: new Date(Date.UTC(year, 11, 31, 23, 59, 59))
         } : undefined;
-        
+
         const calculationLimit = new Date(); // now
 
-        // 1. Resumen por Pesquería (Suma de días)
-        sheet.mergeCells('A1', 'E1');
-        const titleResumen = sheet.getCell('A1');
-        titleResumen.value = 'Resumen por Pesquería';
-        titleResumen.font = { bold: true, size: 14 };
-
-        const headersResumen = ['Pesquería', 'Cant. Mareas', 'Total Días Navig.'];
+        // 1. Resumen por Pesquería (IZQUIERDA: A-C)
         const startRowResumen = 3;
+        const headersResumen = ['Pesquería', 'Cant. Mareas', 'Total Días Naveg.'];
         headersResumen.forEach((h, i) => {
             const cell = sheet.getCell(startRowResumen, i + 1);
             cell.value = h;
-            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF008037' } };
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF00548B' } };
             cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
             cell.alignment = { horizontal: 'center' };
         });
 
         const fisheryStats = new Map<string, { mareas: Set<string>, dias: number }>();
-        
+
         // Mapa de etapas (mismo criterio que el frontend)
         const etapasPorMarea = new Map<string, number>();
         mareasDistribucion.forEach(item => {
@@ -2518,46 +2499,46 @@ export class StatsService {
             }
             const stats = fisheryStats.get(item.pesqueria)!;
             stats.mareas.add(item.id_marea);
-            
-            const intervals = intervalosPorMarea.get(item.id_marea) || [];
-            const diasUnicos = intervals.length > 0 ? DateUtils.calculateUniqueDays(intervals, periodRange, calculationLimit) : (mode === 'CALENDAR' ? item.diasCalendario : item.diasTotales);
-            stats.dias += diasUnicos;
+
+            // Sumar directamente los días contabilizados (paridad con dashboard)
+            const diasMarea = mode === 'CALENDAR' ? item.diasCalendario : item.diasTotales;
+            stats.dias += diasMarea;
         });
 
         let resRow = startRowResumen + 1;
         let totalDiasPesqueria = 0;
-        Array.from(fisheryStats.entries()).sort((a,b) => b[1].dias - a[1].dias).forEach(([name, data]) => {
+        let totalMareasPesqueria = 0;
+        Array.from(fisheryStats.entries()).sort((a, b) => b[1].dias - a[1].dias).forEach(([name, data]) => {
             sheet.getCell(resRow, 1).value = name;
             sheet.getCell(resRow, 2).value = data.mareas.size;
             sheet.getCell(resRow, 2).alignment = { horizontal: 'center' };
             sheet.getCell(resRow, 3).value = data.dias;
             sheet.getCell(resRow, 3).alignment = { horizontal: 'center' };
             totalDiasPesqueria += data.dias;
+            totalMareasPesqueria += data.mareas.size;
             resRow++;
         });
 
-        // TOTAL Pesquería
+        // TOTAL Resumen (Abajo de la tabla resumen)
         sheet.getCell(resRow, 1).value = 'TOTAL';
         sheet.getCell(resRow, 1).font = { bold: true };
+        sheet.getCell(resRow, 2).value = totalMareasPesqueria;
+        sheet.getCell(resRow, 2).font = { bold: true };
+        sheet.getCell(resRow, 2).alignment = { horizontal: 'center' };
         sheet.getCell(resRow, 3).value = totalDiasPesqueria;
         sheet.getCell(resRow, 3).font = { bold: true };
         sheet.getCell(resRow, 3).alignment = { horizontal: 'center' };
         sheet.getRow(resRow).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF5F5F5' } };
 
-        // 2. Detalle de Mareas (Lista consolidada por marea)
-        const startDetalle = resRow + 3;
-        sheet.mergeCells(startDetalle, 1, startDetalle, 8);
-        const titleDetalle = sheet.getCell(startDetalle, 1);
-        titleDetalle.value = 'Listado Detallado de Mareas';
-        titleDetalle.font = { bold: true, size: 14 };
-
+        // 2. Detalle de Mareas (DERECHA: E-L)
+        const colOffsetDetalle = 5; // Columna E
         const headersDetalle = ['Pesquería', 'Marea', 'Buque', 'Flota', 'Inicio', 'Fin', 'Días', 'Etapas'];
-        const headerRow = startDetalle + 2;
+        const headerRow = 3;
         headersDetalle.forEach((h, i) => {
-            const cell = sheet.getCell(headerRow, i + 1);
+            const cell = sheet.getCell(headerRow, colOffsetDetalle + i);
             cell.value = h;
-            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFAAAAAA' } };
-            cell.font = { bold: true };
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF00548B' } };
+            cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
             cell.alignment = { horizontal: 'center' };
         });
 
@@ -2569,18 +2550,18 @@ export class StatsService {
             inicio: item.fechaZarpada ? new Date(item.fechaZarpada) : null,
             fin: item.fechaArribo ? new Date(item.fechaArribo) : new Date(),
             etapas: etapasPorMarea.get(item.id_marea) || 1,
-            intervalos: intervalosPorMarea.get(item.id_marea) || [],
             dias: mode === 'CALENDAR' ? item.diasCalendario : item.diasTotales
         }));
 
         let detRow = headerRow + 1;
+        let totalDiasDetalle = 0;
+        let totalEtapasDetalle = 0;
+
         listMareasDetalle
             .sort((a, b) => {
-                // 1. Pesquería (Ascendente)
                 const pComp = a.pesqueria.localeCompare(b.pesqueria);
                 if (pComp !== 0) return pComp;
 
-                // 2. Marea: Tipo (Desc), Año (Asc), Número (Asc)
                 const regex = /^([A-Z]+)-(\d+)-(\d+)$/;
                 const matchA = a.id.match(regex);
                 const matchB = b.id.match(regex);
@@ -2596,27 +2577,48 @@ export class StatsService {
                 return a.id.localeCompare(b.id);
             })
             .forEach(d => {
-                const diasUnicos = d.intervalos.length > 0 ? DateUtils.calculateUniqueDays(d.intervalos, periodRange, calculationLimit) : d.dias;
-                sheet.getCell(detRow, 1).value = d.pesqueria;
-                sheet.getCell(detRow, 2).value = d.id;
-                sheet.getCell(detRow, 3).value = d.buque;
-                sheet.getCell(detRow, 4).value = d.flota;
-                sheet.getCell(detRow, 5).value = d.inicio;
-                sheet.getCell(detRow, 6).value = d.fin;
-                sheet.getCell(detRow, 7).value = diasUnicos;
-                sheet.getCell(detRow, 8).value = d.etapas;
+                sheet.getCell(detRow, colOffsetDetalle).value = d.pesqueria;
+                sheet.getCell(detRow, colOffsetDetalle + 1).value = d.id;
+                sheet.getCell(detRow, colOffsetDetalle + 2).value = d.buque;
+                sheet.getCell(detRow, colOffsetDetalle + 3).value = d.flota;
+                sheet.getCell(detRow, colOffsetDetalle + 4).value = d.inicio;
+                sheet.getCell(detRow, colOffsetDetalle + 5).value = d.fin;
+                sheet.getCell(detRow, colOffsetDetalle + 6).value = d.dias;
+                sheet.getCell(detRow, colOffsetDetalle + 7).value = d.etapas;
 
-                sheet.getCell(detRow, 5).numFmt = 'dd/mm/yyyy';
-                sheet.getCell(detRow, 6).numFmt = 'dd/mm/yyyy';
-                sheet.getCell(detRow, 7).alignment = { horizontal: 'center' };
-                sheet.getCell(detRow, 8).alignment = { horizontal: 'center' };
+                sheet.getCell(detRow, colOffsetDetalle + 4).numFmt = 'dd/mm/yyyy';
+                sheet.getCell(detRow, colOffsetDetalle + 5).numFmt = 'dd/mm/yyyy';
+                sheet.getCell(detRow, colOffsetDetalle + 6).alignment = { horizontal: 'center' };
+                sheet.getCell(detRow, colOffsetDetalle + 7).alignment = { horizontal: 'center' };
+
+                totalDiasDetalle += d.dias;
+                totalEtapasDetalle += d.etapas;
                 detRow++;
             });
 
-        sheet.columns.forEach((col, i) => {
-            if (i < headersDetalle.length) {
-                col.width = [25, 15, 25, 20, 12, 12, 10, 10][i];
-            }
-        });
+        // Fila de TOTAL Detalle
+        sheet.getCell(detRow, colOffsetDetalle).value = 'TOTAL';
+        sheet.getCell(detRow, colOffsetDetalle).font = { bold: true };
+        sheet.getCell(detRow, colOffsetDetalle + 6).value = totalDiasDetalle;
+        sheet.getCell(detRow, colOffsetDetalle + 6).font = { bold: true };
+        sheet.getCell(detRow, colOffsetDetalle + 7).value = totalEtapasDetalle;
+        sheet.getCell(detRow, colOffsetDetalle + 7).font = { bold: true };
+        sheet.getCell(detRow, colOffsetDetalle + 6).alignment = { horizontal: 'center' };
+        sheet.getCell(detRow, colOffsetDetalle + 7).alignment = { horizontal: 'center' };
+        sheet.getRow(detRow).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF5F5F5' } };
+
+        // Ajustar anchos
+        sheet.getColumn(1).width = 25;
+        sheet.getColumn(2).width = 15;
+        sheet.getColumn(3).width = 15;
+        sheet.getColumn(4).width = 5; // Blanco
+        sheet.getColumn(5).width = 25;
+        sheet.getColumn(6).width = 15;
+        sheet.getColumn(7).width = 25;
+        sheet.getColumn(8).width = 20;
+        sheet.getColumn(9).width = 12;
+        sheet.getColumn(10).width = 12;
+        sheet.getColumn(11).width = 10;
+        sheet.getColumn(12).width = 10;
     }
 }
