@@ -20,13 +20,22 @@
                </p>
             </div>
          </div>
-         <ExportExcelButton 
-            :loading="exporting"
-            label="EXPORTAR"
-            title="Exportar análisis completo para auditoría (3 hojas)"
-            class="px-4 py-2.5 rounded-xl border border-primary/20 bg-surface shadow-theme-xs"
-            @click="handleExportAudit"
-         />
+         <div class="flex items-center gap-2">
+            <ExportWordButton 
+               :loading="exportingWord"
+               label="GENERAR INFORME"
+               title="Generar informe narrativo completo en formato Word (.docx)"
+               class="px-4 py-2.5 rounded-xl border border-blue-500/20 bg-surface shadow-theme-xs"
+               @click="handleExportWord"
+            />
+            <ExportExcelButton 
+               :loading="exporting"
+               label="DATOS EXCEL"
+               title="Exportar análisis completo para auditoría (3 hojas)"
+               class="px-4 py-2.5 rounded-xl border border-primary/20 bg-surface shadow-theme-xs"
+               @click="handleExportAudit"
+            />
+         </div>
       </div>
 
       <!-- =========================================================== -->
@@ -471,6 +480,7 @@ import type { DashboardStats, MareaDistributionItem, StatsDetailItem } from '../
 import { statsService } from '../services/stats.service'
 import dashboardService from '@/modules/dashboard/services/dashboard.service'
 import ExportExcelButton from '@/modules/shared/components/ExportExcelButton.vue'
+import ExportWordButton from '@/modules/shared/components/ExportWordButton.vue'
 
 // Props
 const props = defineProps<{
@@ -555,6 +565,7 @@ const fetchDetailData = async () => {
 }
 
 const exporting = ref(false)
+const exportingWord = ref(false)
 
 const handleExportAudit = async () => {
    if (!props.stats || exporting.value) return
@@ -569,7 +580,7 @@ const handleExportAudit = async () => {
          props.includeCampaigns,
          'AUDIT',
          undefined,
-         `Informe_Auditoria_${props.year}`,
+         `Anexo_Auditoria_Mareas_${props.year}`,
          props.startDate || undefined,
          props.endDate || undefined,
          props.startDate || undefined,
@@ -580,6 +591,29 @@ const handleExportAudit = async () => {
       console.error('Error exporting audit report:', error)
    } finally {
       exporting.value = false
+   }
+}
+
+const handleExportWord = async () => {
+   if (!props.stats || exportingWord.value) return
+   exportingWord.value = true
+   try {
+      await statsService.downloadAuditReport(
+         props.year,
+         props.mode,
+         !props.protocolizedOnly,
+         props.includeOutOfPeriod,
+         props.includeCampaigns,
+         `Informe_Auditoria_Mareas_${props.year}`,
+         props.startDate || undefined,
+         props.endDate || undefined,
+         props.startDate || undefined,
+         props.endDate || undefined
+      )
+   } catch (error) {
+      console.error('Error exporting word audit report:', error)
+   } finally {
+      exportingWord.value = false
    }
 }
 

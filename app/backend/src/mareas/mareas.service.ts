@@ -1286,9 +1286,9 @@ export class MareasService {
         const periodStart = new Date(operationalYear, 0, 1, 0, 0, 0, 0);
         const now = new Date();
 
-        // Observadores activos
+        // Observadores activos sin impedimento
         const observadores = await this.prisma.observador.findMany({
-            where: { activo: true }
+            where: { activo: true, conImpedimento: false }
         });
 
         // Etapas del año operativo y el anterior (para cálculo de días sin navegar)

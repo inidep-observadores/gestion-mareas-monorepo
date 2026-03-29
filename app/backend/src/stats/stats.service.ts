@@ -635,7 +635,7 @@ export class StatsService {
                     ? filterValue
                     : (m.etapas[0]?.pesqueria?.nombre || m.buque?.pesqueriaHabitual?.nombre || '-'),
                 observador: m.observadorPrincipal ? `${m.observadorPrincipal.nombre} ${m.observadorPrincipal.apellido}` : 'Sin asignar',
-                estado: m.estadoActual?.nombre || 'Desconocido',
+                estado: m.estadoActual?.codigo === MareaEstado.EN_EJECUCION ? 'En ejecución' : 'Finalizada',
                 diasContabilizados: days,
                 diasCalendario: calendarDays,
                 diasTotales: totalMareaDays,
@@ -2358,13 +2358,13 @@ export class StatsService {
         const sheet = workbook.addWorksheet('Navegación');
 
         // Título
-        sheet.mergeCells('A1', 'I1');
+        sheet.mergeCells('A1', 'J1');
         const titleCell = sheet.getCell('A1');
         titleCell.value = `Estadísticas de Navegación - Período ${year}`;
         titleCell.font = { bold: true, size: 16 };
         titleCell.alignment = { horizontal: 'center' };
 
-        const headers = ['Marea', 'Tipo', 'Buque', 'Flota', 'Pesquería', 'Inicio', 'Fin', 'Días', 'Etapas'];
+        const headers = ['Marea', 'Tipo', 'Buque', 'Flota', 'Pesquería', 'Inicio', 'Fin', 'Días', 'Etapas', 'Estado'];
         headers.forEach((h, i) => {
             const cell = sheet.getCell(3, i + 1);
             cell.value = h;
@@ -2389,10 +2389,11 @@ export class StatsService {
             buque: item.buque,
             flota: item.flota,
             pesqueria: item.pesqueria,
-            fechaMin: item.fechaZarpada ? new Date(item.fechaZarpada) : null,
-            fechaMax: item.fechaArribo ? new Date(item.fechaArribo) : new Date(),
+            fechaMin: item.fechaInicio ? new Date(item.fechaInicio) : null,
+            fechaMax: item.fechaFin ? new Date(item.fechaFin) : null,
             etapas: etapasPorMarea.get(item.id_marea) || 1, // Fallback a 1 como en el frontend
-            dias: mode === 'CALENDAR' ? item.diasCalendario : item.diasTotales
+            dias: mode === 'CALENDAR' ? item.diasCalendario : item.diasTotales,
+            estado: item.estado
         }));
 
         // Custom Sorting (Tipo DESC, Año ASC, Nro ASC) - Mismo que en Frontend
@@ -2426,9 +2427,11 @@ export class StatsService {
             sheet.getCell(currentRow, 7).value = m.fechaMax;
             sheet.getCell(currentRow, 8).value = m.dias;
             sheet.getCell(currentRow, 9).value = m.etapas;
+            sheet.getCell(currentRow, 10).value = m.estado;
 
             sheet.getCell(currentRow, 6).numFmt = 'dd/mm/yyyy';
             sheet.getCell(currentRow, 7).numFmt = 'dd/mm/yyyy';
+            sheet.getCell(currentRow, 10).alignment = { horizontal: 'center' };
 
             totalDias += m.dias;
             totalEtapas += m.etapas;
@@ -2446,7 +2449,7 @@ export class StatsService {
         sheet.getRow(currentRow).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF5F5F5' } };
 
         sheet.columns.forEach((col, i) => {
-            col.width = [15, 8, 30, 20, 25, 12, 12, 10, 10][i];
+            col.width = [15, 8, 30, 20, 25, 12, 12, 10, 10, 15][i];
         });
     }
 
@@ -2532,7 +2535,7 @@ export class StatsService {
 
         // 2. Detalle de Mareas (DERECHA: E-L)
         const colOffsetDetalle = 5; // Columna E
-        const headersDetalle = ['Pesquería', 'Marea', 'Buque', 'Flota', 'Inicio', 'Fin', 'Días', 'Etapas'];
+        const headersDetalle = ['Pesquería', 'Marea', 'Buque', 'Flota', 'Inicio', 'Fin', 'Días', 'Etapas', 'Estado'];
         const headerRow = 3;
         headersDetalle.forEach((h, i) => {
             const cell = sheet.getCell(headerRow, colOffsetDetalle + i);
@@ -2547,10 +2550,11 @@ export class StatsService {
             id: item.id_marea,
             buque: item.buque,
             flota: item.flota,
-            inicio: item.fechaZarpada ? new Date(item.fechaZarpada) : null,
-            fin: item.fechaArribo ? new Date(item.fechaArribo) : new Date(),
+            inicio: item.fechaInicio ? new Date(item.fechaInicio) : null,
+            fin: item.fechaFin ? new Date(item.fechaFin) : null,
             etapas: etapasPorMarea.get(item.id_marea) || 1,
-            dias: mode === 'CALENDAR' ? item.diasCalendario : item.diasTotales
+            dias: mode === 'CALENDAR' ? item.diasCalendario : item.diasTotales,
+            estado: item.estado
         }));
 
         let detRow = headerRow + 1;
@@ -2585,11 +2589,13 @@ export class StatsService {
                 sheet.getCell(detRow, colOffsetDetalle + 5).value = d.fin;
                 sheet.getCell(detRow, colOffsetDetalle + 6).value = d.dias;
                 sheet.getCell(detRow, colOffsetDetalle + 7).value = d.etapas;
+                sheet.getCell(detRow, colOffsetDetalle + 8).value = d.estado;
 
                 sheet.getCell(detRow, colOffsetDetalle + 4).numFmt = 'dd/mm/yyyy';
                 sheet.getCell(detRow, colOffsetDetalle + 5).numFmt = 'dd/mm/yyyy';
                 sheet.getCell(detRow, colOffsetDetalle + 6).alignment = { horizontal: 'center' };
                 sheet.getCell(detRow, colOffsetDetalle + 7).alignment = { horizontal: 'center' };
+                sheet.getCell(detRow, colOffsetDetalle + 8).alignment = { horizontal: 'center' };
 
                 totalDiasDetalle += d.dias;
                 totalEtapasDetalle += d.etapas;
@@ -2620,5 +2626,6 @@ export class StatsService {
         sheet.getColumn(10).width = 12;
         sheet.getColumn(11).width = 10;
         sheet.getColumn(12).width = 10;
+        sheet.getColumn(13).width = 15;
     }
 }

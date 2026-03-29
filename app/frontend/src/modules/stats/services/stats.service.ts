@@ -247,6 +247,49 @@ export const statsService = {
             }[]
         }>(`/stats/vessels-count?${params.toString()}`);
         return response.data;
+    },
+
+    async downloadAuditReport(
+        year: number,
+        mode: 'CALENDAR' | 'TOTAL',
+        includeNonProtocolized: boolean,
+        includeProtocolizedOutOfPeriod: boolean,
+        includeCampaigns: boolean,
+        filename?: string,
+        startDate?: string,
+        endDate?: string,
+        protocolizationStartDate?: string,
+        protocolizationEndDate?: string
+    ) {
+        const params = new URLSearchParams({
+            year: year.toString(),
+            mode,
+            includeNonProtocolized: String(includeNonProtocolized),
+            includeProtocolizedOutOfPeriod: String(includeProtocolizedOutOfPeriod),
+            includeCampaigns: String(includeCampaigns)
+        });
+
+        if (startDate) params.append('startDate', startDate);
+        if (endDate) params.append('endDate', endDate);
+        if (protocolizationStartDate) params.append('protocolizationStartDate', protocolizationStartDate);
+        if (protocolizationEndDate) params.append('protocolizationEndDate', protocolizationEndDate);
+
+        const response = await httpClient.get('/reports/audit-report', {
+            params,
+            responseType: 'blob'
+        });
+
+        const blob = new Blob([response.data], {
+            type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `${filename || 'Informe_Auditoria'}.docx`);
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(url);
     }
 };
 
