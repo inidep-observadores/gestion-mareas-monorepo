@@ -143,7 +143,7 @@ export const statsService = {
         includeProtocolizedOutOfPeriod: boolean,
         daysCalculationMode: 'SHIP' | 'OBSERVER',
         includeCampaigns: boolean,
-        filterType?: 'FISHERY' | 'FLEET' | 'OBSERVER' | 'COVERAGE' | 'CHART_TREND' | 'CHART_FLEET' | 'CHART_FISHERY' | 'CHART_OBSERVER' | 'CHART_FISHERY_DUAL' | 'WORKFORCE',
+        filterType?: 'FISHERY' | 'FLEET' | 'OBSERVER' | 'COVERAGE' | 'CHART_TREND' | 'CHART_FLEET' | 'CHART_FISHERY' | 'CHART_OBSERVER' | 'CHART_FISHERY_DUAL' | 'WORKFORCE' | 'AUDIT',
         filterValue?: string,
         filename?: string,
         startDate?: string,

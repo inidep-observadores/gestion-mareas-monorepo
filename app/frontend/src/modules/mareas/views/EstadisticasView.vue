@@ -189,16 +189,20 @@
          </div>
 
          <!-- TAB CONTENT: AUDITORÍA -->
-         <div v-if="stats && activeTab === 'audit'" class="space-y-8 animate-in fade-in duration-500">
-            <div class="flex flex-col items-center justify-center py-24 px-4 text-center bg-surface-muted/30 rounded-2xl border border-border border-dashed">
-               <div class="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-6">
-                  <SearchIcon class="w-8 h-8 text-primary" />
-               </div>
-               <h3 class="text-sm font-black text-text uppercase tracking-widest mb-3">Próximamente</h3>
-               <p class="text-[11px] font-bold text-text-muted leading-relaxed max-w-md">
-                  En esta pestaña se incluirán fichas y vistas específicas orientadas al cruce de datos y análisis de auditoría, las cuales reaccionarán dinámicamente a los filtros de gestión aplicados.
-               </p>
-            </div>
+         <div v-if="stats && activeTab === 'audit'">
+            <AuditAnalysisPanel
+               :stats="stats"
+               :distributionData="distributionData"
+               :year="year"
+               :mode="mode"
+               :loading="loading"
+               :protocolizedOnly="protocolizedOnly"
+               :includeOutOfPeriod="includeOutOfPeriod"
+               :daysCalculationMode="daysCalculationMode"
+               :includeCampaigns="includeCampaigns"
+               :startDate="startDate"
+               :endDate="endDate"
+            />
          </div>
 
          <!-- Loading State -->
@@ -669,6 +673,7 @@ import {
    TrendingUpIcon
 } from 'lucide-vue-next'
 import { statsService, type DashboardStats, type StatsDetailItem, type MareaDistributionItem } from '@/modules/stats/services/stats.service'
+import AuditAnalysisPanel from '@/modules/stats/components/AuditAnalysisPanel.vue'
 import { planificacionService } from '@/modules/planificacion/services/planificacion.service'
 import type { RequerimientoCobertura } from '@/modules/planificacion/interfaces/planificacion.interfaces'
 import { TipoMarea } from '@/modules/mareas/types/enums'

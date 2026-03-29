@@ -766,6 +766,20 @@ export class StatsService {
                    estado !== MareaEstado.CANCELADA;
         });
 
+        if (filterType === 'AUDIT') {
+            return this.getAuditExportWorkbook(
+                year,
+                mode,
+                includeNonProtocolized,
+                includeProtocolizedOutOfPeriod,
+                includeCampaigns,
+                startDate,
+                endDate,
+                protocolizationStartDate,
+                protocolizationEndDate
+            );
+        }
+
         const workbook = new ExcelJS.Workbook();
         
         // Hoja General
@@ -2184,4 +2198,425 @@ export class StatsService {
         return workbook;
     }
 
+    private async getAuditExportWorkbook(
+        year: number,
+        mode: 'CALENDAR' | 'TOTAL',
+        includeNonProtocolized: boolean,
+        includeProtocolizedOutOfPeriod = false,
+        includeCampaigns = true,
+        startDate?: string,
+        endDate?: string,
+        protocolizationStartDate?: string,
+        protocolizationEndDate?: string
+    ): Promise<ExcelJS.Workbook> {
+        // 1. Obtener datos base
+        const stats = await this.getDashboardStats(
+            year, mode, includeNonProtocolized, includeProtocolizedOutOfPeriod, 'SHIP', includeCampaigns, startDate, endDate, protocolizationStartDate, protocolizationEndDate
+        );
+
+        // Obtener dotación activa (observadores no eliminados y activos)
+        const dotacionActiva = await this.prisma.observador.count({
+            where: { 
+                activo: true,
+            }
+        });
+
+        // Obtener marea distribution (para intervalos y etapas)
+        const mareas = await this.getMareaDistribution(
+            year, mode, includeNonProtocolized, includeProtocolizedOutOfPeriod, includeCampaigns, startDate, endDate, protocolizationStartDate, protocolizationEndDate
+        );
+
+        // Obtener detalle de mareas para paridad exacta con el dashboard
+        const detailItems = await this.getDashboardStatsDetail(
+            year, mode, includeNonProtocolized, includeProtocolizedOutOfPeriod, null, '', 'SHIP', includeCampaigns, startDate, endDate, protocolizationStartDate, protocolizationEndDate
+        );
+
+        const workbook = new ExcelJS.Workbook();
+
+        // Hoja 1: Estadísticas de Personal
+        this.buildAuditPersonalSheet(workbook, stats, dotacionActiva);
+
+        // Hoja 2: Estadísticas de Navegación
+        this.buildAuditNavegacionSheet(workbook, mareas, detailItems, year, mode);
+
+        // Hoja 3: Estadísticas por Pesquería
+        this.buildAuditPesqueriaSheet(workbook, mareas, detailItems, year, mode);
+
+        return workbook;
+    }
+
+    private buildAuditPersonalSheet(workbook: ExcelJS.Workbook, stats: any, dotacionActiva: number) {
+        const sheet = workbook.addWorksheet('Personal');
+        
+        // Título
+        sheet.mergeCells('A1', 'H1');
+        const titleCell = sheet.getCell('A1');
+        titleCell.value = 'Estadísticas de Personal - Auditoría';
+        titleCell.font = { bold: true, size: 16 };
+        titleCell.alignment = { horizontal: 'center' };
+
+        // TABLA 1: RANKING DE OBSERVADORES (IZQUIERDA: A-D)
+        const startRowRanking = 3;
+        const headersRanking = ['Pos', 'Observador', 'Mareas', 'Días Navegados'];
+        headersRanking.forEach((h, i) => {
+            const cell = sheet.getCell(startRowRanking, i + 1);
+            cell.value = h;
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF00548B' } };
+            cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+            cell.alignment = { horizontal: 'center' };
+        });
+
+        let currentRow = startRowRanking + 1;
+        let totalMareasRanking = 0;
+        let totalDiasRanking = 0;
+
+        stats.observers.forEach((obs, index) => {
+            sheet.getCell(currentRow, 1).value = index + 1;
+            sheet.getCell(currentRow, 2).value = obs.name;
+            sheet.getCell(currentRow, 3).value = obs.mareas;
+            sheet.getCell(currentRow, 4).value = obs.days;
+            
+            totalMareasRanking += obs.mareas;
+            totalDiasRanking += obs.days;
+
+            // Formato
+            sheet.getCell(currentRow, 1).alignment = { horizontal: 'center' };
+            sheet.getCell(currentRow, 3).alignment = { horizontal: 'center' };
+            sheet.getCell(currentRow, 4).alignment = { horizontal: 'center' };
+            
+            currentRow++;
+        });
+
+        // Fila de TOTAL para Ranking
+        const totalRowRanking = currentRow;
+        sheet.getCell(totalRowRanking, 1).value = 'TOTAL';
+        sheet.getCell(totalRowRanking, 1).font = { bold: true };
+        sheet.getCell(totalRowRanking, 3).value = totalMareasRanking;
+        sheet.getCell(totalRowRanking, 3).font = { bold: true };
+        sheet.getCell(totalRowRanking, 4).value = totalDiasRanking;
+        sheet.getCell(totalRowRanking, 4).font = { bold: true };
+        sheet.getCell(totalRowRanking, 3).alignment = { horizontal: 'center' };
+        sheet.getCell(totalRowRanking, 4).alignment = { horizontal: 'center' };
+        sheet.getRow(totalRowRanking).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF5F5F5' } };
+
+        // TABLA 2: KPIs DE AUDITORÍA (DERECHA: F-H)
+        const colOffset = 6; // Empieza en la columna F
+        const startRowKPI = 3;
+        const headersKPI = ['Indicador', 'Valor', 'Metraje'];
+        headersKPI.forEach((h, i) => {
+            const cell = sheet.getCell(startRowKPI, colOffset + i);
+            cell.value = h;
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF00548B' } };
+            cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+            cell.alignment = { horizontal: 'center' };
+        });
+
+        const obsAfectados = stats.observers.length;
+        const dotacionRef = Math.max(dotacionActiva, obsAfectados);
+        const totalMareasGlobal = stats.totalMareas;
+        const cobertura = dotacionRef > 0 ? (totalMareasGlobal / dotacionRef) : 0;
+
+        const kpis = [
+            { label: 'Dotación Activa (Actual)', val: dotacionActiva, met: 'Obs. Activos' },
+            { label: 'Observadores que navegaron', val: obsAfectados, met: 'Personal' },
+            { label: 'Dotación de Referencia', val: dotacionRef, met: 'Mix' },
+            { label: 'Total de Mareas', val: totalMareasGlobal, met: 'Mareas' },
+            { label: '% Cobertura (Mareas/Dot)', val: (cobertura * 100).toFixed(1) + '%', met: 'Ratio' },
+            { label: 'Promedio Mareas/Obs', val: (totalMareasGlobal / (obsAfectados || 1)).toFixed(2), met: 'Productividad' }
+        ];
+
+        kpis.forEach((kpi, index) => {
+            const row = startRowKPI + 1 + index;
+            sheet.getCell(row, colOffset).value = kpi.label;
+            sheet.getCell(row, colOffset + 1).value = kpi.val;
+            sheet.getCell(row, colOffset + 2).value = kpi.met;
+            sheet.getCell(row, colOffset).font = { bold: true };
+            sheet.getCell(row, colOffset + 1).alignment = { horizontal: 'center' };
+            sheet.getCell(row, colOffset + 2).alignment = { horizontal: 'center' };
+        });
+
+        // Ajustar anchos
+        sheet.getColumn(1).width = 5;
+        sheet.getColumn(2).width = 30;
+        sheet.getColumn(3).width = 12;
+        sheet.getColumn(4).width = 15;
+        sheet.getColumn(5).width = 5; // Columna en blanco
+        sheet.getColumn(6).width = 30;
+        sheet.getColumn(7).width = 15;
+        sheet.getColumn(8).width = 15;
+    }
+
+    private buildAuditNavegacionSheet(workbook: ExcelJS.Workbook, mareasDistribucion: any[], detailItems: any[], year: number, mode: 'CALENDAR' | 'TOTAL') {
+        const sheet = workbook.addWorksheet('Navegación');
+
+        // Título
+        sheet.mergeCells('A1', 'I1');
+        const titleCell = sheet.getCell('A1');
+        titleCell.value = `Estadísticas de Navegación - Período ${year}`;
+        titleCell.font = { bold: true, size: 16 };
+        titleCell.alignment = { horizontal: 'center' };
+
+        const headers = ['Marea', 'Tipo', 'Buque', 'Flota', 'Pesquería', 'Inicio', 'Fin', 'Días', 'Etapas'];
+        headers.forEach((h, i) => {
+            const cell = sheet.getCell(3, i + 1);
+            cell.value = h;
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF00548B' } };
+            cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+            cell.alignment = { horizontal: 'center' };
+        });
+
+        // Mapa de etapas (mismo criterio que el frontend)
+        const etapasPorMarea = new Map<string, number>();
+        mareasDistribucion.forEach(item => {
+            const key = item.id_marea;
+            const current = etapasPorMarea.get(key) || 0;
+            etapasPorMarea.set(key, Math.max(current, item.nroEtapa || 0));
+        });
+
+        // Agrupar intervalos de distribución por marea para cálculo de días
+        const intervalosPorMarea = new Map<string, any[]>();
+        mareasDistribucion.forEach(m => {
+            const key = m.id_marea;
+            if (!intervalosPorMarea.has(key)) intervalosPorMarea.set(key, []);
+            intervalosPorMarea.get(key)!.push({
+                start: m.fechaZarpada,
+                end: m.fechaArribo || new Date()
+            });
+        });
+
+        // Usar detailItems como base (paridad total con la tabla de navegación web)
+        const listMareas = detailItems.map(item => ({
+            id: item.id_marea,
+            tipo: item.id_marea.split('-')[0],
+            buque: item.buque,
+            flota: item.flota,
+            pesqueria: item.pesqueria,
+            fechaMin: item.fechaZarpada ? new Date(item.fechaZarpada) : null,
+            fechaMax: item.fechaArribo ? new Date(item.fechaArribo) : new Date(),
+            etapas: etapasPorMarea.get(item.id_marea) || 1, // Fallback a 1 como en el frontend
+            intervalos: intervalosPorMarea.get(item.id_marea) || [],
+            dias: mode === 'CALENDAR' ? item.diasCalendario : item.diasTotales
+        }));
+        
+        // Custom Sorting (Tipo DESC, Año ASC, Nro ASC) - Mismo que en Frontend
+        listMareas.sort((a, b) => {
+            const regex = /^([A-Z]+)-(\d+)-(\d+)$/;
+            const matchA = a.id.match(regex);
+            const matchB = b.id.match(regex);
+
+            if (matchA && matchB) {
+                const [, typeA, numA, yearA] = matchA;
+                const [, typeB, numB, yearB] = matchB;
+
+                if (typeA !== typeB) return typeB.localeCompare(typeA);
+                if (yearA !== yearB) return yearA.localeCompare(yearB);
+                return parseInt(numA) - parseInt(numB);
+            }
+            return a.id.localeCompare(b.id);
+        });
+
+        let currentRow = 4;
+        let totalDias = 0;
+        let totalEtapas = 0;
+
+        const periodRange = mode === 'CALENDAR' ? {
+            start: new Date(Date.UTC(year, 0, 1)),
+            end: new Date(Date.UTC(year, 11, 31, 23, 59, 59))
+        } : undefined;
+        
+        const calculationLimit = new Date(); // now
+
+        listMareas.forEach(m => {
+            // Recalculamos días únicos usando los intervalos de distribución para mayor precisión
+            // Aunque detailItems ya tiene los días, los intervalos permiten re-validar el solapamiento
+            const diasUnicos = m.intervalos.length > 0 ? DateUtils.calculateUniqueDays(m.intervalos, periodRange, calculationLimit) : m.dias;
+            
+            sheet.getCell(currentRow, 1).value = m.id;
+            sheet.getCell(currentRow, 2).value = m.tipo;
+            sheet.getCell(currentRow, 3).value = m.buque;
+            sheet.getCell(currentRow, 4).value = m.flota;
+            sheet.getCell(currentRow, 5).value = m.pesqueria;
+            sheet.getCell(currentRow, 6).value = m.fechaMin;
+            sheet.getCell(currentRow, 7).value = m.fechaMax;
+            sheet.getCell(currentRow, 8).value = diasUnicos;
+            sheet.getCell(currentRow, 9).value = m.etapas;
+
+            sheet.getCell(currentRow, 6).numFmt = 'dd/mm/yyyy';
+            sheet.getCell(currentRow, 7).numFmt = 'dd/mm/yyyy';
+            
+            totalDias += diasUnicos;
+            totalEtapas += m.etapas;
+
+            currentRow++;
+        });
+
+        // Fila de TOTAL para Navegación
+        sheet.getCell(currentRow, 1).value = 'TOTAL';
+        sheet.getCell(currentRow, 1).font = { bold: true };
+        sheet.getCell(currentRow, 8).value = totalDias;
+        sheet.getCell(currentRow, 8).font = { bold: true };
+        sheet.getCell(currentRow, 9).value = totalEtapas;
+        sheet.getCell(currentRow, 9).font = { bold: true };
+        sheet.getRow(currentRow).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF5F5F5' } };
+
+        sheet.columns.forEach((col, i) => {
+            col.width = [15, 8, 30, 20, 25, 12, 12, 10, 10][i];
+        });
+    }
+
+    private buildAuditPesqueriaSheet(workbook: ExcelJS.Workbook, mareasDistribucion: any[], detailItems: any[], year: number, mode: 'CALENDAR' | 'TOTAL') {
+        const sheet = workbook.addWorksheet('Pesquería');
+
+        const periodRange = mode === 'CALENDAR' ? {
+            start: new Date(Date.UTC(year, 0, 1)),
+            end: new Date(Date.UTC(year, 11, 31, 23, 59, 59))
+        } : undefined;
+        
+        const calculationLimit = new Date(); // now
+
+        // 1. Resumen por Pesquería (Suma de días)
+        sheet.mergeCells('A1', 'E1');
+        const titleResumen = sheet.getCell('A1');
+        titleResumen.value = 'Resumen por Pesquería';
+        titleResumen.font = { bold: true, size: 14 };
+
+        const headersResumen = ['Pesquería', 'Cant. Mareas', 'Total Días Navig.'];
+        const startRowResumen = 3;
+        headersResumen.forEach((h, i) => {
+            const cell = sheet.getCell(startRowResumen, i + 1);
+            cell.value = h;
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF008037' } };
+            cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+            cell.alignment = { horizontal: 'center' };
+        });
+
+        const fisheryStats = new Map<string, { mareas: Set<string>, dias: number }>();
+        
+        // Mapa de etapas (mismo criterio que el frontend)
+        const etapasPorMarea = new Map<string, number>();
+        mareasDistribucion.forEach(item => {
+            const key = item.id_marea;
+            const current = etapasPorMarea.get(key) || 0;
+            etapasPorMarea.set(key, Math.max(current, item.nroEtapa || 0));
+        });
+
+        // Agrupar intervalos de distribución por marea para cálculo de días
+        const intervalosPorMarea = new Map<string, any[]>();
+        mareasDistribucion.forEach(m => {
+            const key = m.id_marea;
+            if (!intervalosPorMarea.has(key)) intervalosPorMarea.set(key, []);
+            intervalosPorMarea.get(key)!.push({
+                start: m.fechaZarpada,
+                end: m.fechaArribo || new Date()
+            });
+        });
+
+        // Procesar detailItems para el resumen
+        detailItems.forEach(item => {
+            if (!fisheryStats.has(item.pesqueria)) {
+                fisheryStats.set(item.pesqueria, { mareas: new Set(), dias: 0 });
+            }
+            const stats = fisheryStats.get(item.pesqueria)!;
+            stats.mareas.add(item.id_marea);
+            
+            const intervals = intervalosPorMarea.get(item.id_marea) || [];
+            const diasUnicos = intervals.length > 0 ? DateUtils.calculateUniqueDays(intervals, periodRange, calculationLimit) : (mode === 'CALENDAR' ? item.diasCalendario : item.diasTotales);
+            stats.dias += diasUnicos;
+        });
+
+        let resRow = startRowResumen + 1;
+        let totalDiasPesqueria = 0;
+        Array.from(fisheryStats.entries()).sort((a,b) => b[1].dias - a[1].dias).forEach(([name, data]) => {
+            sheet.getCell(resRow, 1).value = name;
+            sheet.getCell(resRow, 2).value = data.mareas.size;
+            sheet.getCell(resRow, 2).alignment = { horizontal: 'center' };
+            sheet.getCell(resRow, 3).value = data.dias;
+            sheet.getCell(resRow, 3).alignment = { horizontal: 'center' };
+            totalDiasPesqueria += data.dias;
+            resRow++;
+        });
+
+        // TOTAL Pesquería
+        sheet.getCell(resRow, 1).value = 'TOTAL';
+        sheet.getCell(resRow, 1).font = { bold: true };
+        sheet.getCell(resRow, 3).value = totalDiasPesqueria;
+        sheet.getCell(resRow, 3).font = { bold: true };
+        sheet.getCell(resRow, 3).alignment = { horizontal: 'center' };
+        sheet.getRow(resRow).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF5F5F5' } };
+
+        // 2. Detalle de Mareas (Lista consolidada por marea)
+        const startDetalle = resRow + 3;
+        sheet.mergeCells(startDetalle, 1, startDetalle, 8);
+        const titleDetalle = sheet.getCell(startDetalle, 1);
+        titleDetalle.value = 'Listado Detallado de Mareas';
+        titleDetalle.font = { bold: true, size: 14 };
+
+        const headersDetalle = ['Pesquería', 'Marea', 'Buque', 'Flota', 'Inicio', 'Fin', 'Días', 'Etapas'];
+        const headerRow = startDetalle + 2;
+        headersDetalle.forEach((h, i) => {
+            const cell = sheet.getCell(headerRow, i + 1);
+            cell.value = h;
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFAAAAAA' } };
+            cell.font = { bold: true };
+            cell.alignment = { horizontal: 'center' };
+        });
+
+        const listMareasDetalle = detailItems.map(item => ({
+            pesqueria: item.pesqueria,
+            id: item.id_marea,
+            buque: item.buque,
+            flota: item.flota,
+            inicio: item.fechaZarpada ? new Date(item.fechaZarpada) : null,
+            fin: item.fechaArribo ? new Date(item.fechaArribo) : new Date(),
+            etapas: etapasPorMarea.get(item.id_marea) || 1,
+            intervalos: intervalosPorMarea.get(item.id_marea) || [],
+            dias: mode === 'CALENDAR' ? item.diasCalendario : item.diasTotales
+        }));
+
+        let detRow = headerRow + 1;
+        listMareasDetalle
+            .sort((a, b) => {
+                // 1. Pesquería (Ascendente)
+                const pComp = a.pesqueria.localeCompare(b.pesqueria);
+                if (pComp !== 0) return pComp;
+
+                // 2. Marea: Tipo (Desc), Año (Asc), Número (Asc)
+                const regex = /^([A-Z]+)-(\d+)-(\d+)$/;
+                const matchA = a.id.match(regex);
+                const matchB = b.id.match(regex);
+
+                if (matchA && matchB) {
+                    const [, typeA, numA, yearA] = matchA;
+                    const [, typeB, numB, yearB] = matchB;
+
+                    if (typeA !== typeB) return typeB.localeCompare(typeA);
+                    if (yearA !== yearB) return yearA.localeCompare(yearB);
+                    return parseInt(numA) - parseInt(numB);
+                }
+                return a.id.localeCompare(b.id);
+            })
+            .forEach(d => {
+                const diasUnicos = d.intervalos.length > 0 ? DateUtils.calculateUniqueDays(d.intervalos, periodRange, calculationLimit) : d.dias;
+                sheet.getCell(detRow, 1).value = d.pesqueria;
+                sheet.getCell(detRow, 2).value = d.id;
+                sheet.getCell(detRow, 3).value = d.buque;
+                sheet.getCell(detRow, 4).value = d.flota;
+                sheet.getCell(detRow, 5).value = d.inicio;
+                sheet.getCell(detRow, 6).value = d.fin;
+                sheet.getCell(detRow, 7).value = diasUnicos;
+                sheet.getCell(detRow, 8).value = d.etapas;
+
+                sheet.getCell(detRow, 5).numFmt = 'dd/mm/yyyy';
+                sheet.getCell(detRow, 6).numFmt = 'dd/mm/yyyy';
+                sheet.getCell(detRow, 7).alignment = { horizontal: 'center' };
+                sheet.getCell(detRow, 8).alignment = { horizontal: 'center' };
+                detRow++;
+            });
+
+        sheet.columns.forEach((col, i) => {
+            if (i < headersDetalle.length) {
+                col.width = [25, 15, 25, 20, 12, 12, 10, 10][i];
+            }
+        });
+    }
 }
