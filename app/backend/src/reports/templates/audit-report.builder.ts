@@ -509,6 +509,7 @@ export class AuditReportBuilder {
                 totalEtapas,
                 processed.uniqueFisheries,
             )),
+            new Paragraph({ spacing: { before: SPACING.afterTable } }),
             this.chartImage(statusChart, 10, 0.75),
         ];
     }
