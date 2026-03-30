@@ -145,6 +145,16 @@ const router = createRouter({
       },
     },
     {
+      path: '/mareas/protocolizacion',
+      name: 'ProtocolizacionMareas',
+      component: () => import('@/modules/mareas/views/ProtocolizacionView.vue'),
+      meta: {
+        title: 'Gestión de Protocolización',
+        requiresAuth: true,
+        roles: [ValidRoles.admin, ValidRoles.tecnico, ValidRoles.coordinador]
+      },
+    },
+    {
       path: '/mareas/operativa/:id',
       name: 'MareaOperativaDetalle',
       component: MareaOperativaDetalleView,

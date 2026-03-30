@@ -12,6 +12,10 @@ import { ClaimMareaDto } from './dto/claim-marea.dto';
 import { ExportMareaDto } from './dto/export-marea.dto';
 import { AuditEvent } from '../audit/decorators/audit-event.decorator';
 import { AuditCategoria } from '../audit/enums/audit.enums';
+import { EnviarProtocolizacionDto } from './dto/enviar-protocolizacion.dto';
+import { ConfirmarProtocolizacionDto } from './dto/confirmar-protocolizacion.dto';
+import { UseInterceptors, UploadedFiles } from '@nestjs/common';
+import { AnyFilesInterceptor } from '@nestjs/platform-express';
 
 @Controller('mareas')
 @Auth()
@@ -184,15 +188,6 @@ export class MareasController {
         categoria: AuditCategoria.MAREAS,
         descripcion: 'Modificación de la intención de cierre de marea al arribo'
     })
-    setIntencionCierre(
-        @Param('id') id: string,
-        @Param('etapaId') etapaId: string,
-        @Body('activar') activar: boolean,
-        @GetUser() user: User
-    ) {
-        return this.mareasService.setIntencionCierreMarea(id, etapaId, activar, user);
-    }
-
     @Post()
     @Auth(ValidRoles.admin, ValidRoles.tecnico)
     @AuditEvent({
@@ -205,5 +200,36 @@ export class MareasController {
         @GetUser() user: User
     ) {
         return this.mareasService.create(createMareaDto, user);
+    }
+
+    @Post('protocolizacion/enviar')
+    @Auth(ValidRoles.admin, ValidRoles.tecnico)
+    @UseInterceptors(AnyFilesInterceptor())
+    @AuditEvent({
+        tipoEvento: 'ENVIAR_PROTOCOLIZACION',
+        categoria: AuditCategoria.MAREAS,
+        descripcion: 'Envío en lote de mareas a protocolizar'
+    })
+    enviarAProtocolizacion(
+        @Body() dto: EnviarProtocolizacionDto,
+        @UploadedFiles() files: Array<Express.Multer.File>,
+        @GetUser() user: User
+    ) {
+        return this.mareasService.enviarAProtocolizacion(dto, files, user);
+    }
+
+    @Post('protocolizacion/confirmar/:id')
+    @Auth(ValidRoles.admin, ValidRoles.tecnico)
+    @AuditEvent({
+        tipoEvento: 'CONFIRMAR_PROTOCOLIZACION',
+        categoria: AuditCategoria.MAREAS,
+        descripcion: 'Confirmación de datos de protocolización de marea'
+    })
+    confirmarProtocolizacion(
+        @Param('id') id: string,
+        @Body() dto: ConfirmarProtocolizacionDto,
+        @GetUser() user: User
+    ) {
+        return this.mareasService.confirmarProtocolizacion(id, dto, user);
     }
 }

@@ -94,6 +94,16 @@ const mareasService = {
     setIntencionCierre: async (mareaId: string, etapaId: string, activar: boolean): Promise<any> => {
         const { data } = await httpClient.patch(`/mareas/${mareaId}/etapas/${etapaId}/intencion-cierre`, { activar });
         return data;
+    },
+
+    enviarAProtocolizacion: async (formData: FormData): Promise<{ message: string, count: number }> => {
+        const { data } = await httpClient.post<{ message: string, count: number }>('/mareas/protocolizacion/enviar', formData);
+        return data;
+    },
+
+    confirmarProtocolizacion: async (id: string, payload: { nroProtocolizacion: number; anioProtocolizacion: number; fechaProtocolizacion: string }): Promise<any> => {
+        const { data } = await httpClient.post(`/mareas/protocolizacion/confirmar/${id}`, payload);
+        return data;
     }
 };
 

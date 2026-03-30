@@ -10,6 +10,8 @@ import { MailService } from '../mail/mail.service';
 import { ClaimMareaDto } from './dto/claim-marea.dto';
 import { AlertsService } from '../alerts/alerts.service';
 import { MareaEstado, TipoEtapa, TipoMarea } from './mareas.constants';
+import { EnviarProtocolizacionDto } from './dto/enviar-protocolizacion.dto';
+import { ConfirmarProtocolizacionDto } from './dto/confirmar-protocolizacion.dto';
 import { MareaEtapaMetadata } from './interfaces/marea-etapa-metadata.interface';
 import { DateUtils } from '../common/utils/date.utils';
 import { MareaUtils } from '../common/utils/marea.utils';
@@ -2225,7 +2227,7 @@ export class MareasService {
                 if (!payload.nroProtocolizacion || !payload.anioProtocolizacion || !payload.fechaProtocolizacion) {
                     throw new BadRequestException('Los campos de protocolización (número, año y fecha) son obligatorios para finalizar el proceso.');
                 }
-                additionalMareaData.nroProtocolizacion = payload.nroProtocolizacion;
+                additionalMareaData.nroProtocolizacion = payload.nroProtocolizacion ? Number(payload.nroProtocolizacion) : null;
                 additionalMareaData.anioProtocolizacion = payload.anioProtocolizacion;
                 additionalMareaData.fechaProtocolizacion = new Date(payload.fechaProtocolizacion);
             }
@@ -2263,6 +2265,7 @@ export class MareasService {
                     }
                 }
             }
+
 
             const mareaUpdated = await tx.marea.update({
                 where: { id },
@@ -3050,5 +3053,122 @@ export class MareasService {
             diasDetectadosMarea: Array.from(globalDetectedDays).sort(),
             etapas: breakdownEtapas
         };
+    }
+
+    async confirmarProtocolizacion(id: string, dto: ConfirmarProtocolizacionDto, user: User) {
+        const marea = await this.prisma.marea.findUnique({
+            where: { id },
+            include: { estadoActual: true }
+        });
+
+        if (!marea) throw new NotFoundException('Marea no encontrada');
+        if (marea.estadoActual.codigo !== MareaEstado.ESPERANDO_PROTOCOLIZACION) {
+            throw new BadRequestException(`La marea no está en estado ESPERANDO_PROTOCOLIZACION. Estado actual: ${marea.estadoActual.nombre}`);
+        }
+
+        const estadoProtocolizada = await this.prisma.estadoMarea.findUnique({
+            where: { codigo: MareaEstado.PROTOCOLIZADA }
+        });
+
+        if (!estadoProtocolizada) {
+            throw new BadRequestException('No se encontró el estado de destino: PROTOCOLIZADA');
+        }
+
+        return this.prisma.$transaction(async (tx) => {
+            const updatedMarea = await tx.marea.update({
+                where: { id },
+                data: {
+                    nroProtocolizacion: dto.nroProtocolizacion,
+                    anioProtocolizacion: dto.anioProtocolizacion,
+                    fechaProtocolizacion: new Date(dto.fechaProtocolizacion),
+                    estadoActualId: estadoProtocolizada.id
+                },
+                include: { estadoActual: true }
+            });
+
+            await tx.mareaMovimiento.create({
+                data: {
+                    mareaId: id,
+                    fechaHora: new Date(),
+                    usuarioId: user.id,
+                    tipoEvento: 'CONFIRMAR_PROTOCOLIZACION',
+                    estadoDesdeId: marea.estadoActual.id,
+                    estadoHastaId: estadoProtocolizada.id,
+                    detalle: `Datos de protocolización registrados: Nro ${dto.nroProtocolizacion}/${dto.anioProtocolizacion} con fecha ${dto.fechaProtocolizacion}.`
+                }
+            });
+
+            return updatedMarea;
+        });
+    }
+
+    async enviarAProtocolizacion(dto: EnviarProtocolizacionDto, files: Array<Express.Multer.File>, user: User) {
+        const mareas = await this.prisma.marea.findMany({
+            where: { id: { in: dto.mareaIds } },
+            include: {
+                estadoActual: true,
+                buque: true
+            }
+        });
+
+        if (mareas.length !== dto.mareaIds.length) {
+            throw new BadRequestException('Se proporcionaron IDs de mareas inexistentes o inactivos.');
+        }
+
+        const invalidas = mareas.filter(m => m.estadoActual.codigo !== MareaEstado.PARA_PROTOCOLIZAR);
+        if (invalidas.length > 0) {
+            throw new BadRequestException('Algunas mareas seleccionadas no están en estado PARA_PROTOCOLIZAR.');
+        }
+
+        if (!dto.enviadoPorCanalExterno && (!files || files.length !== dto.mareaIds.length)) {
+             throw new BadRequestException('Es necesario adjuntar el documento de protocolización (.docx) para cada marea, salvo que se haya enviado por canal externo.');
+        }
+
+        const estadoEsperando = await this.prisma.estadoMarea.findUnique({
+             where: { codigo: MareaEstado.ESPERANDO_PROTOCOLIZACION }
+        });
+
+        if (!estadoEsperando) {
+            throw new BadRequestException('No se encontró el estado de destino: ESPERANDO_PROTOCOLIZACION');
+        }
+
+        // Send Email
+        if (!dto.enviadoPorCanalExterno) {
+             const adminEmailTo = this.configService.get<string>('PROTOCOLIZACION_EMAIL_TO');
+             if (!adminEmailTo) {
+                 throw new BadRequestException('La dirección de correo destino para protocolización no está configurada en la plataforma.');
+             }
+             const sent = await this.mailService.sendProtocolizacionEmail(adminEmailTo, mareas, files);
+             if (!sent) {
+                 throw new BadRequestException('Ocurrió un error al enviar el correo electrónico mediante el servicio interno.');
+             }
+        }
+
+        return this.prisma.$transaction(async (tx) => {
+             for (const marea of mareas) {
+                 await tx.marea.update({
+                     where: { id: marea.id },
+                     data: {
+                          estadoActualId: estadoEsperando.id,
+                          fechaEnvioProtocolizacion: new Date()
+                     }
+                 });
+
+                 await tx.mareaMovimiento.create({
+                     data: {
+                          mareaId: marea.id,
+                          fechaHora: new Date(),
+                          usuarioId: user.id,
+                          tipoEvento: 'ENVIAR_PROTOCOLIZACION',
+                          estadoDesdeId: marea.estadoActual.id,
+                          estadoHastaId: estadoEsperando.id,
+                          detalle: dto.enviadoPorCanalExterno ? 
+                               'Marea marcada como enviada a protocolizar por canal externo.' :
+                               'El informe fue enviado por email para realizar el trámite de protocolización.'
+                     }
+                 });
+             }
+             return { message: 'Envío procesado exitosamente.', count: mareas.length };
+        });
     }
 }
