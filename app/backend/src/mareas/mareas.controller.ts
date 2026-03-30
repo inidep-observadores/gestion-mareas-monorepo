@@ -7,6 +7,7 @@ import { User } from '@prisma/client';
 import { ValidRoles } from '../auth/interfaces';
 import { CreateMareaDto } from './dto/create-marea.dto';
 import { UpdateMareaDto } from './dto/update-marea.dto';
+import { MareaEstado } from './mareas.constants';
 
 import { ClaimMareaDto } from './dto/claim-marea.dto';
 import { ExportMareaDto } from './dto/export-marea.dto';
@@ -231,5 +232,17 @@ export class MareasController {
         @GetUser() user: User
     ) {
         return this.mareasService.confirmarProtocolizacion(id, dto, user);
+    }
+
+    @Get('protocolizacion/pendientes')
+    @Auth(ValidRoles.admin, ValidRoles.tecnico)
+    getProtocolizacionPendientes() {
+        return this.mareasService.getProtocolizacionPorEstado(MareaEstado.PARA_PROTOCOLIZAR);
+    }
+
+    @Get('protocolizacion/en-espera')
+    @Auth(ValidRoles.admin, ValidRoles.tecnico)
+    getProtocolizacionEnEspera() {
+        return this.mareasService.getProtocolizacionPorEstado(MareaEstado.ESPERANDO_PROTOCOLIZACION);
     }
 }

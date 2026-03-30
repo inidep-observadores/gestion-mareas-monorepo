@@ -18,6 +18,8 @@ import { MareaUtils } from '../common/utils/marea.utils';
 import { ConfigService } from '@nestjs/config';
 import * as ExcelJS from 'exceljs';
 import { DateTime } from 'luxon';
+import * as fs from 'fs';
+import * as path from 'path';
 
 
 
@@ -3144,8 +3146,17 @@ export class MareasService {
              }
         }
 
+        const protocolizacionDir = this.configService.get<string>('MAREA_ARCHIVOS_PROTOCOLIZACION_DIR') || 'uploads/protocolizacion';
+        
+        if (!dto.enviadoPorCanalExterno && !fs.existsSync(protocolizacionDir)) {
+            fs.mkdirSync(protocolizacionDir, { recursive: true });
+        }
+
         return this.prisma.$transaction(async (tx) => {
-             for (const marea of mareas) {
+             for (let i = 0; i < mareas.length; i++) {
+                 const marea = mareas[i];
+                 const file = files && files[i];
+
                  await tx.marea.update({
                      where: { id: marea.id },
                      data: {
@@ -3154,7 +3165,7 @@ export class MareasService {
                      }
                  });
 
-                 await tx.mareaMovimiento.create({
+                 const movimiento = await tx.mareaMovimiento.create({
                      data: {
                           mareaId: marea.id,
                           fechaHora: new Date(),
@@ -3167,8 +3178,46 @@ export class MareasService {
                                'El informe fue enviado por email para realizar el trámite de protocolización.'
                      }
                  });
+
+                 // Si hay archivo, guardarlo físicamente y registrarlo en BD
+                 if (file && !dto.enviadoPorCanalExterno) {
+                    const fileExt = path.extname(file.originalname);
+                    const fileName = `${marea.anioMarea}_${marea.nroMarea}_${marea.tipoMarea}_PROTOCOLIZACION_${Date.now()}${fileExt}`;
+                    const filePath = path.join(protocolizacionDir, fileName);
+                    
+                    fs.writeFileSync(filePath, file.buffer);
+
+                    await tx.mareaArchivo.create({
+                        data: {
+                            mareaId: marea.id,
+                            movimientoOrigenId: movimiento.id,
+                            tipoArchivo: 'INFORME_PROTOCOLIZACION',
+                            formato: fileExt.replace('.', '').toUpperCase(),
+                            rutaArchivo: filePath.replace(/\\/g, '/'),
+                            usuarioSubioId: user.id,
+                            descripcion: 'Informe de marea enviado para protocolización'
+                        }
+                    });
+                 }
              }
              return { message: 'Envío procesado exitosamente.', count: mareas.length };
+        });
+    }
+
+    async getProtocolizacionPorEstado(codigoEstado: string) {
+        return this.prisma.marea.findMany({
+            where: {
+                estadoActual: { codigo: codigoEstado }
+            },
+            include: {
+                buque: true,
+                estadoActual: true,
+                observadorPrincipal: true,
+                pesqueria: true
+            },
+            orderBy: {
+                fechaUltimaActualizacion: 'desc'
+            }
         });
     }
 }

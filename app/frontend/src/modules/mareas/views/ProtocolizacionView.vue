@@ -38,19 +38,19 @@
       </div>
 
       <div v-else>
+        <!-- Tab Pendientes Envío -->
+        <TabPendientesEnvio
+          v-if="activeTab === 'pendientes'"
+          :mareas="mareasPendientes"
+          @refresh="loadMareas"
+        />
+
         <!-- Tab Esperando Confirmación -->
         <TabEsperandoConfirmacion 
           v-if="activeTab === 'esperando'" 
           :mareas="mareasEsperando"
           @refresh="loadMareas"
         />
-
-        <!-- Tab Pendientes Envío (En futuro paso) -->
-        <div v-if="activeTab === 'pendientes'">
-           <div class="py-12 text-center text-text-muted text-sm font-bold border border-dashed border-border rounded-xl">
-              Esta sección será implementada en el próximo paso de desarrollo.
-           </div>
-        </div>
 
         <!-- Tab Completadas (Futuro paso) -->
         <div v-if="activeTab === 'protocolizadas'">
@@ -69,27 +69,21 @@ import { ref, computed, onMounted } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import Badge from '@/components/ui/Badge.vue'
 import TabEsperandoConfirmacion from '../components/protocolizacion/TabEsperandoConfirmacion.vue'
+import TabPendientesEnvio from '../components/protocolizacion/TabPendientesEnvio.vue'
 import mareasService from '../services/mareas.service'
 import { toast } from 'vue-sonner'
 
 const loading = ref(true)
-const allMareas = ref<any[]>([])
+const mareasEsperando = ref<any[]>([])
+const mareasPendientes = ref<any[]>([])
 
-const activeTab = ref('esperando')
+const activeTab = ref('pendientes')
 
 const tabs = [
-  { id: 'esperando', label: 'Esperando Confirmación' },
   { id: 'pendientes', label: 'Pendientes de Envío' },
+  { id: 'esperando', label: 'Esperando Confirmación' },
   { id: 'protocolizadas', label: 'Mareas Protocolizadas' }
 ]
-
-const mareasEsperando = computed(() => {
-  return allMareas.value.filter(m => m.estado_codigo === 'ESPERANDO_PROTOCOLIZACION')
-})
-
-const mareasPendientes = computed(() => {
-  return allMareas.value.filter(m => m.estado_codigo === 'PARA_PROTOCOLIZAR')
-})
 
 const getCount = (tabId: string) => {
   if (tabId === 'esperando') return mareasEsperando.value.length
@@ -100,8 +94,12 @@ const getCount = (tabId: string) => {
 const loadMareas = async () => {
   try {
     loading.value = true
-    const dashboardData = await mareasService.getDashboardOperativo(true)
-    allMareas.value = dashboardData.items || []
+    const [pendientes, enEspera] = await Promise.all([
+      mareasService.getProtocolizacionPendientes(),
+      mareasService.getProtocolizacionEnEspera()
+    ])
+    mareasPendientes.value = pendientes
+    mareasEsperando.value = enEspera
   } catch (error) {
     console.error('Error cargando mareas:', error)
     toast.error('Ocurrió un error al cargar las mareas.')

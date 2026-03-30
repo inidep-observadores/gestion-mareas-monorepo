@@ -104,6 +104,16 @@ const mareasService = {
     confirmarProtocolizacion: async (id: string, payload: { nroProtocolizacion: number; anioProtocolizacion: number; fechaProtocolizacion: string }): Promise<any> => {
         const { data } = await httpClient.post(`/mareas/protocolizacion/confirmar/${id}`, payload);
         return data;
+    },
+
+    getProtocolizacionPendientes: async (): Promise<any[]> => {
+        const { data } = await httpClient.get<any[]>('/mareas/protocolizacion/pendientes');
+        return data;
+    },
+
+    getProtocolizacionEnEspera: async (): Promise<any[]> => {
+        const { data } = await httpClient.get<any[]>('/mareas/protocolizacion/en-espera');
+        return data;
     }
 };
 
