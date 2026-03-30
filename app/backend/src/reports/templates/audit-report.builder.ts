@@ -127,6 +127,10 @@ export class AuditReportBuilder {
         const doc = new Document({
             creator: 'SIGMA - Sistema Integral de Gestión de Mareas',
             title: `Informe de Ejecución de Mareas - ${period.short}`,
+            // Modo compatibilidad Office 2010+ (valor 14). Sin esto, Office 2013 y
+            // anteriores pueden mostrar "el archivo fue creado en una versión más nueva"
+            // o fallar al abrir el documento.
+            compatabilityModeVersion: 14,
             styles: {
                 default: {
                     document: {
