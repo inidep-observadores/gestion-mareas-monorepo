@@ -16,6 +16,14 @@ export enum FilterType {
     FISHERY = 'FISHERY',
     FLEET = 'FLEET',
     OBSERVER = 'OBSERVER',
+    COVERAGE = 'COVERAGE',
+    CHART_TREND = 'CHART_TREND',
+    CHART_FLEET = 'CHART_FLEET',
+    CHART_FISHERY = 'CHART_FISHERY',
+    CHART_OBSERVER = 'CHART_OBSERVER',
+    CHART_FISHERY_DUAL = 'CHART_FISHERY_DUAL',
+    WORKFORCE = 'WORKFORCE',
+    AUDIT = 'AUDIT',
 }
 
 export class GetStatsDto {
@@ -78,4 +86,9 @@ export class GetStatsDto {
     @IsOptional()
     @Transform(({ value }) => value === 'true')
     filterByStart?: boolean = false;
+
+    @IsBoolean()
+    @IsOptional()
+    @Transform(({ value }) => value === 'true')
+    includeSummaries?: boolean = false;
 }

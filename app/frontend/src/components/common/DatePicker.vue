@@ -9,7 +9,8 @@
         @input="handleManualInput"
         @keydown="handleKeyDown"
         :placeholder="showTime ? 'DD/MM/YYYY HH:MM' : 'DD/MM/YYYY'"
-        class="w-full px-4 py-2.5 bg-background border rounded-lg text-sm text-text outline-none focus:border-primary transition-all cursor-text placeholder:text-text-muted caret-primary"
+        :disabled="disabled"
+        class="w-full px-4 py-2.5 bg-background border rounded-lg text-sm text-text outline-none focus:border-primary transition-all cursor-text placeholder:text-text-muted caret-primary disabled:opacity-50 disabled:bg-surface-muted disabled:cursor-not-allowed"
         style="color-scheme: light dark;"
         :class="[
           error ? 'border-error bg-error/5' : 'border-border',
@@ -25,6 +26,7 @@
       </div>
       
       <button 
+        v-if="!disabled"
         type="button" 
         @click="toggleCalendar"
         class="absolute inset-y-0 right-0 flex items-center pr-3 text-text-muted hover:text-primary transition-colors"
@@ -137,6 +139,7 @@ const props = defineProps<{
   icon?: any
   error?: string
   placeholder?: string
+  disabled?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -300,6 +303,7 @@ const calendarDays = computed(() => {
 
 // Methods
 const toggleCalendar = () => {
+  if (props.disabled) return
   if (isOpen.value) closeCalendar()
   else openCalendar()
 }

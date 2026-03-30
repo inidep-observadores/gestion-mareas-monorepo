@@ -38,6 +38,7 @@ export interface MareaDistributionItem {
     mareaId: string;
     id_marea: string;
     buque: string;
+    flota: string;
     pesqueria: string;
     pesqueriaId: string | null;
     nroEtapa: number;
@@ -142,13 +143,14 @@ export const statsService = {
         includeProtocolizedOutOfPeriod: boolean,
         daysCalculationMode: 'SHIP' | 'OBSERVER',
         includeCampaigns: boolean,
-        filterType?: 'FISHERY' | 'FLEET' | 'OBSERVER',
+        filterType?: 'FISHERY' | 'FLEET' | 'OBSERVER' | 'COVERAGE' | 'CHART_TREND' | 'CHART_FLEET' | 'CHART_FISHERY' | 'CHART_OBSERVER' | 'CHART_FISHERY_DUAL' | 'WORKFORCE' | 'AUDIT',
         filterValue?: string,
         filename?: string,
         startDate?: string,
         endDate?: string,
         protocolizationStartDate?: string,
-        protocolizationEndDate?: string
+        protocolizationEndDate?: string,
+        includeSummaries: boolean = false
     ) {
         const params = new URLSearchParams({
             year: year.toString(),
@@ -156,7 +158,8 @@ export const statsService = {
             includeNonProtocolized: String(includeNonProtocolized),
             includeProtocolizedOutOfPeriod: String(includeProtocolizedOutOfPeriod),
             daysCalculationMode,
-            includeCampaigns: String(includeCampaigns)
+            includeCampaigns: String(includeCampaigns),
+            includeSummaries: String(includeSummaries)
         });
 
         if (startDate) params.append('startDate', startDate);
@@ -164,10 +167,8 @@ export const statsService = {
         if (protocolizationStartDate) params.append('protocolizationStartDate', protocolizationStartDate);
         if (protocolizationEndDate) params.append('protocolizationEndDate', protocolizationEndDate);
 
-        if (filterType && filterValue) {
-            params.append('filterType', filterType);
-            params.append('filterValue', filterValue);
-        }
+        if (filterType) params.append('filterType', filterType);
+        if (filterValue) params.append('filterValue', filterValue);
 
         const response = await httpClient.get('/stats/export', {
             params,
@@ -185,6 +186,20 @@ export const statsService = {
         link.click();
         link.remove();
         window.URL.revokeObjectURL(url);
+    },
+
+    async downloadWorkforceExport(year: number, filterValue?: string) {
+        return this.downloadExport(
+            year,
+            'CALENDAR',
+            false,
+            false,
+            'SHIP',
+            true,
+            'WORKFORCE',
+            filterValue,
+            `Dotacion_Personal_Mareas_${year}`
+        );
     },
 
     async getUniqueVesselsCount(
@@ -232,5 +247,50 @@ export const statsService = {
             }[]
         }>(`/stats/vessels-count?${params.toString()}`);
         return response.data;
+    },
+
+    async downloadAuditReport(
+        year: number,
+        mode: 'CALENDAR' | 'TOTAL',
+        includeNonProtocolized: boolean,
+        includeProtocolizedOutOfPeriod: boolean,
+        includeCampaigns: boolean,
+        filename?: string,
+        startDate?: string,
+        endDate?: string,
+        protocolizationStartDate?: string,
+        protocolizationEndDate?: string
+    ) {
+        const params = new URLSearchParams({
+            year: year.toString(),
+            mode,
+            includeNonProtocolized: String(includeNonProtocolized),
+            includeProtocolizedOutOfPeriod: String(includeProtocolizedOutOfPeriod),
+            includeCampaigns: String(includeCampaigns)
+        });
+
+        if (startDate) params.append('startDate', startDate);
+        if (endDate) params.append('endDate', endDate);
+        if (protocolizationStartDate) params.append('protocolizationStartDate', protocolizationStartDate);
+        if (protocolizationEndDate) params.append('protocolizationEndDate', protocolizationEndDate);
+
+        const response = await httpClient.get('/reports/audit-report', {
+            params,
+            responseType: 'blob'
+        });
+
+        const blob = new Blob([response.data], {
+            type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `${filename || 'Informe_Auditoria'}.docx`);
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(url);
     }
 };
+
+export default statsService;

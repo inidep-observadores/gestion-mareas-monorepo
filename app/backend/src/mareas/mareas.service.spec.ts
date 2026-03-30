@@ -118,11 +118,77 @@ describe('MareasService', () => {
         });
     });
 
+    describe('update (Designation fields restriction)', () => {
+        const mareaId = 'marea-uuid';
+        const estadoDesignada = { id: 'est-des', codigo: 'DESIGNADA', nombre: 'Designada' };
+        const estadoEjecucion = { id: 'est-eje', codigo: 'EN_EJECUCION', nombre: 'En Ejecución' };
+
+        it('should allow modifying anioMarea if state is DESIGNADA or A_REASIGNAR', async () => {
+            mockPrismaService.marea.findUnique.mockResolvedValue({
+                id: mareaId,
+                anioMarea: 2024,
+                estadoActual: { codigo: 'A_REASIGNAR' },
+                etapas: []
+            });
+            const dto = { anioMarea: 2025 };
+            await service.update(mareaId, dto as any, { id: 'user-id' } as any);
+            expect(mockPrismaService.marea.update).toHaveBeenCalled();
+        });
+
+        it('should throw BadRequestException if modifying restricted fields (buque, obs, pesq) and state is NOT preparatoria', async () => {
+            mockPrismaService.marea.findUnique.mockResolvedValue({
+                id: mareaId,
+                buqueId: 'vessel-1',
+                estadoActual: estadoEjecucion
+            });
+            const dto = { buqueId: 'vessel-2' };
+            await expect(service.update(mareaId, dto as any, { id: 'user-id' } as any))
+                .rejects.toThrow(/No se pueden modificar los datos de identidad, buque, observador, pesquería o arte de pesca/);
+        });
+
+        it('should throw BadRequestException if modifying anioMarea and state is NOT preparatoria', async () => {
+            mockPrismaService.marea.findUnique.mockResolvedValue({
+                id: mareaId,
+                anioMarea: 2024,
+                estadoActual: estadoEjecucion
+            });
+            const dto = { anioMarea: 2025 };
+            await expect(service.update(mareaId, dto as any, { id: 'user-id' } as any))
+                .rejects.toThrow(/No se pueden modificar los datos de identidad, buque, observador, pesquería o arte de pesca/);
+        });
+
+        it('should throw BadRequestException if modifying nroMarea and state is NOT preparatoria', async () => {
+            mockPrismaService.marea.findUnique.mockResolvedValue({
+                id: mareaId,
+                nroMarea: 100,
+                estadoActual: estadoEjecucion
+            });
+            const dto = { nroMarea: 101 };
+            await expect(service.update(mareaId, dto as any, { id: 'user-id' } as any))
+                .rejects.toThrow(/No se pueden modificar los datos de identidad, buque, observador, pesquería o arte de pesca/);
+        });
+
+        it('should throw BadRequestException if modifying tipoMarea and state is NOT preparatoria', async () => {
+            mockPrismaService.marea.findUnique.mockResolvedValue({
+                id: mareaId,
+                tipoMarea: 'MC',
+                estadoActual: estadoEjecucion
+            });
+            const dto = { tipoMarea: 'CI' };
+            await expect(service.update(mareaId, dto as any, { id: 'user-id' } as any))
+                .rejects.toThrow(/No se pueden modificar los datos de identidad, buque, observador, pesquería o arte de pesca/);
+        });
+    });
+
     describe('update (Impediment check)', () => {
         it('should throw BadRequestException if assigning an observer with impediment', async () => {
             const mareaId = 'marea-uuid';
             const observerId = 'obs-uuid';
-            mockPrismaService.marea.findUnique.mockResolvedValue({ observadorPrincipalId: 'old-obs' });
+            mockPrismaService.marea.findUnique.mockResolvedValue({
+                id: mareaId,
+                observadorPrincipalId: 'old-obs',
+                estadoActual: { codigo: 'DESIGNADA' }
+            });
             mockPrismaService.observador.findUnique.mockResolvedValue({ conImpedimento: true, motivoImpedimento: 'Licencia medica' });
             await expect(service.update(mareaId, { observadorId: observerId } as any, { id: 'user-id' } as any)).rejects.toThrow(/No se puede asignar el observador porque posee un impedimento/);
         });
@@ -186,7 +252,11 @@ describe('MareasService', () => {
 
         it('update should protect existing fuentes in stages', async () => {
             const existingEtapa = { id: etapaId, mareaId: mareaId, fuentesZarpada: { sources: ['PNA'] } };
-            mockPrismaService.marea.findUnique.mockResolvedValue({ id: mareaId, etapas: [] });
+            mockPrismaService.marea.findUnique.mockResolvedValue({
+                id: mareaId,
+                etapas: [],
+                estadoActual: { codigo: 'DESIGNADA' }
+            });
             mockPrismaService.mareaEtapa.findFirst.mockResolvedValue(existingEtapa);
 
             const dto = { etapas: [{ id: etapaId, puertoZarpadaId: 'p2', fechaZarpada: '2025-01-02' }] };
@@ -251,6 +321,59 @@ describe('MareasService', () => {
 
             const result = await (service as any).evaluarCierreAlArribar(mareaId, etapaId);
             expect(result).toBe('FORZADO_POR_DESIGNACION');
+        });
+    });
+
+    describe('executeAction - FINALIZAR_PROTOCOLIZACION', () => {
+        const mareaId = 'marea-protocol-uuid';
+        const user = { id: 'user-id' } as any;
+
+        beforeEach(() => {
+            mockPrismaService.marea.findUnique.mockResolvedValue({
+                id: mareaId,
+                estadoActualId: 'estado-waiting-id',
+                estadoActual: { codigo: 'ESPERANDO_PROTOCOLIZACION', nombre: 'Esperando Protocolización' },
+                etapas: []
+            });
+            mockPrismaService.transicionEstado.findFirst.mockResolvedValue({
+                estadoDestinoId: 'estado-final-id',
+                etiqueta: 'Finalizar Protocolización'
+            });
+            mockPrismaService.estadoMarea.findFirst.mockResolvedValue({ id: 'estado-final-id', codigo: 'PROTOCOLIZADA' });
+        });
+
+        it('should update marea with protocolization data if payload is valid', async () => {
+            const payload = {
+                nroProtocolizacion: 123,
+                anioProtocolizacion: 2024,
+                fechaProtocolizacion: '2024-03-20T10:00:00Z',
+                comentarios: 'Protocolización finalizada con éxito'
+            };
+
+            await service.executeAction(mareaId, 'FINALIZAR_PROTOCOLIZACION', user, payload);
+
+            expect(mockPrismaService.marea.update).toHaveBeenCalledWith(expect.objectContaining({
+                where: { id: mareaId },
+                data: expect.objectContaining({
+                    nroProtocolizacion: 123,
+                    anioProtocolizacion: 2024,
+                    fechaProtocolizacion: expect.any(Date)
+                })
+            }));
+
+            expect(mockPrismaService.mareaMovimiento.create).toHaveBeenCalledWith(expect.objectContaining({
+                data: expect.objectContaining({
+                    mareaId,
+                    comentarios: 'Protocolización finalizada con éxito'
+                })
+            }));
+        });
+
+        it('should throw BadRequestException if protocolization fields are missing', async () => {
+            const payload = { nroProtocolizacion: 123 }; // missing year and date
+
+            await expect(service.executeAction(mareaId, 'FINALIZAR_PROTOCOLIZACION', user, payload))
+                .rejects.toThrow(BadRequestException);
         });
     });
 });

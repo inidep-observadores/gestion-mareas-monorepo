@@ -3,9 +3,15 @@ import { ValidationPipe, Logger } from '@nestjs/common';
 import { AppModule } from './app.module';
 
 import * as cookieParser from 'cookie-parser';
+import { json, urlencoded } from 'express';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  
+  // Aumentar límites de payload para matrices grandes
+  app.use(json({ limit: '10mb' }));
+  app.use(urlencoded({ extended: true, limit: '10mb' }));
+
   const logger = new Logger('Bootstrap');
   console.log('>>> BACKEND STARTING - Build ID: ' + new Date().toISOString());
 

@@ -43,6 +43,14 @@
       :actionData="selectedActionData" :loading="executingAction" @close="showGenericDialog = false"
       @confirm="handleGenericConfirm" />
 
+    <FinalizarProtocolizacionDialog
+      :show="showProtocolizacionDialog"
+      :marea="mareaToManage"
+      :loading="executingAction"
+      @close="showProtocolizacionDialog = false"
+      @confirm="handleProtocolizacionConfirm"
+    />
+
     <AlertManagementDialog :is-open="isAlertDialogOpen" :alert="selectedAlert" @close="isAlertDialogOpen = false"
       @refresh="loadContext" />
   </AdminLayout>
@@ -57,6 +65,7 @@ import GestionEtapasMareaDialog from '../components/GestionEtapasMareaDialog.vue
 import RecibirArchivosDialog from '../components/RecibirArchivosDialog.vue'
 import CancelarMareaDialog from '../components/CancelarMareaDialog.vue'
 import MareaGenericActionDialog from '../components/MareaGenericActionDialog.vue'
+import FinalizarProtocolizacionDialog from '../components/FinalizarProtocolizacionDialog.vue'
 // @ts-ignore
 import AlertManagementDialog from '../../alerts/components/AlertManagementDialog.vue'
 import { useMareas } from '../composables/useMareas'
@@ -88,6 +97,7 @@ const showGestionDialog = ref(false)
 const showRecibirDialog = ref(false)
 const showCancelarDialog = ref(false)
 const showGenericDialog = ref(false)
+const showProtocolizacionDialog = ref(false)
 const selectedActionKey = ref<string | null>(null)
 const selectedActionData = ref<any>(null)
 const executingAction = ref(false)
@@ -160,6 +170,12 @@ const executeActionFromView = async (actionKey: string) => {
   if (actionKey === 'CANCELAR') {
     mareaToManage.value = mareaContext
     showCancelarDialog.value = true
+    return
+  }
+
+  if (actionKey === 'FINALIZAR_PROTOCOLIZACION') {
+    mareaToManage.value = mareaContext
+    showProtocolizacionDialog.value = true
     return
   }
 
@@ -241,6 +257,22 @@ const handleGenericConfirm = async (payload: any) => {
     await loadContext()
   } catch (err) {
     console.error("Error en acción de marea:", err)
+  } finally {
+    executingAction.value = false
+  }
+}
+
+const handleProtocolizacionConfirm = async (payload: any) => {
+  if (!mareaToManage.value) return
+
+  try {
+    executingAction.value = true
+    await executeAction(mareaToManage.value.id, 'FINALIZAR_PROTOCOLIZACION', payload)
+    showProtocolizacionDialog.value = false
+    mareaToManage.value = null
+    await loadContext()
+  } catch (err) {
+    console.error("Error en protocolización de marea:", err)
   } finally {
     executingAction.value = false
   }

@@ -3,10 +3,41 @@
     <div class="h-full w-full relative overflow-hidden bg-background text-text" style="height: calc(100vh - 64px)">
       <!-- MAP AND HUD AREA (Full Width background) -->
       <div class="absolute inset-0 z-0">
-        <!-- THE MAP (Background) -->
+      <!-- THE MAP (Background) -->
+      <template v-if="isHistoricalYear && !isSingleMareaMode">
+        <div class="relative flex flex-col items-center justify-center h-full w-full z-1 px-4 text-center">
+          <div class="max-w-md mx-auto p-8 rounded-3xl bg-surface/50 backdrop-blur-sm border border-border shadow-theme-lg flex flex-col items-center">
+            <div class="w-16 h-16 mb-6 rounded-2xl bg-warning/10 text-warning flex items-center justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <polyline points="12 6 12 12 16 14"/>
+              </svg>
+            </div>
+            <h2 class="text-xl font-bold text-text mb-3 tracking-tight">Vigilancia de Flota</h2>
+            <p class="text-sm text-text-muted leading-relaxed mb-8">
+              El Mapa Interactivo general está destinado al monitoreo de la flota operativa en tiempo real y sólo está disponible para el año en curso. 
+              Ahora está visualizando datos del año operativo <strong class="text-text">{{ configStore.selectedYear }}</strong>.
+              <br><br>
+              Para auditar trayectorias históricas, ingrese a la sección <strong>Mareas</strong> y seleccione una marea anterior para visualizar su recorrido individual.
+            </p>
+            <button 
+              @click="resetToCurrentYear"
+              class="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-primary text-primary-fg text-sm font-bold shadow-theme-md hover:bg-primary/90 hover:shadow-theme-lg hover:-translate-y-0.5 transition-all active:scale-95"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                <polyline points="9 22 9 12 15 12 15 22"/>
+              </svg>
+              Volver al año en curso
+            </button>
+          </div>
+        </div>
+      </template>
+
+      <template v-else>
         <div class="absolute inset-0">
           <MapMonitor ref="mapMonitor" class="w-full h-full" :fleet="fleet" :activeLayers="mapLayers"
-            :isMobile="isMobile"
+            :isMobile="isMobile" :filterPesqueria="selectedPesqueria" :selectedId="selectedVesselId"
             @update:mouse-coords="mouseCoords = $event" @seek-vessel="handleSeekVessel"
             @select-vessel="setSelectedVessel" />
         </div>
@@ -26,9 +57,9 @@
               <Transition name="hud-fade">
                 <VesselInfoCard v-if="activeVessel && (!leftSidebarOpen || isSingleMareaMode || isMobile)"
                   :vesselName="activeVessel.name" :mareaCode="activeVessel.mareaCode || '--'"
-                  :position="{ lat: currentPoint?.lat || 0, lon: currentPoint?.lon || 0 }"
-                  :timestamp="currentPoint?.timestamp?.toString() || ''" :speed="currentPoint?.speed || 0"
-                  :course="currentPoint?.course || 0" :lastUpdate="activeVessel.lastUpdate" :layers="mapLayers"
+                  :position="{ lat: displayPoint?.lat || 0, lon: displayPoint?.lon || 0 }"
+                  :timestamp="displayPoint?.timestamp?.toString() || ''" :speed="displayPoint?.speed || 0"
+                  :course="displayPoint?.course || 0" :lastUpdate="activeVessel.lastUpdate" :layers="mapLayers"
                   :isSingleMode="isSingleMareaMode" :hideLayerControls="isMobile" :isCompact="isMobile"
                   @update:layer="handleLayerToggle" @close-card="selectedVesselId = null" />
               </Transition>
@@ -42,9 +73,9 @@
               <Transition name="hud-fade">
                 <VesselInfoCard v-if="activeVessel && (leftSidebarOpen && !isSingleMareaMode && !isMobile)"
                   :vesselName="activeVessel.name" :mareaCode="activeVessel.mareaCode || '--'"
-                  :position="{ lat: currentPoint?.lat || 0, lon: currentPoint?.lon || 0 }"
-                  :timestamp="currentPoint?.timestamp?.toString() || ''" :speed="currentPoint?.speed || 0"
-                  :course="currentPoint?.course || 0" :lastUpdate="activeVessel.lastUpdate" :layers="mapLayers"
+                  :position="{ lat: displayPoint?.lat || 0, lon: displayPoint?.lon || 0 }"
+                  :timestamp="displayPoint?.timestamp?.toString() || ''" :speed="displayPoint?.speed || 0"
+                  :course="displayPoint?.course || 0" :lastUpdate="activeVessel.lastUpdate" :layers="mapLayers"
                   :isSingleMode="isSingleMareaMode" @update:layer="handleLayerToggle" />
               </Transition>
             </div>
@@ -101,23 +132,24 @@
             </div>
           </div>
         </div>
+      </template>
       </div>
 
       <!-- SIDEBAR IZQUIERDO (FLOTA) -->
-      <VesselListSidebar v-if="!isSingleMareaMode && !isMobile" class="absolute left-0 top-0 h-full z-[2000]"
-        v-model:isOpen="leftSidebarOpen" :vessels="vesselList" :selectedId="selectedVesselId"
+      <VesselListSidebar v-if="!isHistoricalYear && !isSingleMareaMode && !isMobile" class="absolute left-0 top-0 h-full z-[2000]"
+        v-model:isOpen="leftSidebarOpen" v-model:filterPesqueria="selectedPesqueria" :vessels="vesselList" :selectedId="selectedVesselId"
         @select="setSelectedVessel" @refresh="fetchFleet" />
 
       <!-- SIDEBAR DERECHO (CONTROL) -->
-      <MonitorSidebar v-if="!isSingleMareaMode && !isMobile" class="absolute right-0 top-0 h-full z-[2000]"
+      <MonitorSidebar v-if="!isHistoricalYear && !isSingleMareaMode && !isMobile" class="absolute right-0 top-0 h-full z-[2000]"
         v-model:isOpen="rightSidebarOpen" :mapLayers="mapLayers" @update:layer="handleLayerToggle"
         @open-upload="showUploadDialog = true" />
 
       <!-- CONTROLES MÓVILES -->
-      <MobileMonitorControls v-if="isMobile && !isSingleMareaMode"
-        :mapLayers="mapLayers" :vessels="vesselList" :selectedId="selectedVesselId"
-        @update:layer="handleLayerToggle" @select-vessel="setSelectedVessel"
-        @change-base="handleBaseLayerChange" />
+      <MobileMonitorControls v-if="!isHistoricalYear && isMobile && !isSingleMareaMode" :vessels="vesselList" :mapLayers="mapLayers"
+        :selectedId="selectedVesselId" :filterPesqueria="selectedPesqueria"
+        @update:filter-pesqueria="selectedPesqueria = $event" @update:layer="handleLayerToggle"
+        @select-vessel="setSelectedVessel" @change-base="handleBaseLayerChange" />
 
       <UploadTrackingDialog :show="showUploadDialog" @close="showUploadDialog = false" @refresh="fetchFleet" />
 
@@ -148,6 +180,7 @@ import TrajectoryLoadingOverlay from '../components/TrajectoryLoadingOverlay.vue
 import httpClient from '@/config/http/http.client'
 import { useRouter } from 'vue-router'
 import { ArrowLeftIcon } from '@/icons'
+import { useConfigStore } from '@/modules/shared/stores/config.store'
 
 // --- State ---
 const showUploadDialog = ref(false)
@@ -158,6 +191,7 @@ const mouseCoords = ref<LatLng | null>(null)
 const mapMonitor = ref<InstanceType<typeof MapMonitor> | null>(null)
 const leftSidebarOpen = ref(true)
 const rightSidebarOpen = ref(false)
+const selectedPesqueria = ref('')
 const pendingZoomVesselId = ref<string | null>(null)
 const pendingTrajectoriesCount = ref(0)
 const isInitialLoad = ref(true)
@@ -178,7 +212,15 @@ const checkMobile = () => {
 
 const route = useRoute()
 const router = useRouter()
+const configStore = useConfigStore()
+
+const currentYear = new Date().getFullYear()
+const isHistoricalYear = computed(() => configStore.selectedYear < currentYear)
 const isSingleMareaMode = computed(() => route.name === 'MareaTrajectory' || !!route.params.mareaId)
+
+const resetToCurrentYear = () => {
+  configStore.setSelectedYear(currentYear)
+}
 
 import { MAX_DISPLAY_POINTS } from '../constants'
 
@@ -197,6 +239,8 @@ const vesselList = computed<MonitorVessel[]>(() => {
     observer: v.observer || 'Sin asignar',
     color: v.color,
     visible: v.visible,
+    pesquerias_nombres: v.pesquerias_nombres,
+    flota: v.flota,
     voyageStart: v.voyageStart || null,
     voyageEnd: v.voyageEnd || null
   }))
@@ -210,6 +254,15 @@ const activeVessel = computed(() => {
 const currentPoint = computed(() => {
   if (!activeVessel.value) return null
   return activeVessel.value.points[activeVessel.value.currentIndex] || null
+})
+
+const displayPoint = computed(() => {
+  // Priorizamos el punto actual del reproductor (si existe historial)
+  if (currentPoint.value) return currentPoint.value
+  
+  // Fallback: Si el historial está vacío o el índice no es válido,
+  // usamos la última posición conocida reportada por la flota
+  return activeVessel.value?.lastKnownPoint || null
 })
 
 // --- Methods ---
@@ -259,6 +312,8 @@ const fetchFleet = async () => {
           matricula: marea.matricula,
           mareaCode: marea.mareaCode,
           mareaStatus: marea.mareaStatus,
+          pesquerias_nombres: marea.pesquerias_nombres,
+          flota: marea.flota,
           observer: marea.observer,
           voyageStart: marea.voyageStart,
           voyageEnd: marea.voyageEnd,
@@ -280,6 +335,8 @@ const fetchFleet = async () => {
         existing.totalDays = marea.totalDays
         existing.etapas = marea.etapas
         existing.mareaStatus = marea.mareaStatus
+        existing.pesquerias_nombres = marea.pesquerias_nombres
+        existing.flota = marea.flota
         existing.lastKnownPoint = (marea.lat !== null && marea.lon !== null) ? {
           lat: marea.lat,
           lon: marea.lon,
@@ -300,8 +357,8 @@ const fetchFleet = async () => {
         to = new Date(new Date(to).getTime() + 6 * 60 * 60 * 1000).toISOString();
       }
 
-      // Regla para DESIGNADAS sin rango (ventana deslizante 12h)
-      if (!from && marea.mareaStatus === 'DESIGNADA') {
+      // Regla para DESIGNADAS: Ventana deslizante 12h (Aunque tenga fecha estimada, priorizamos actividad reciente)
+      if (marea.mareaStatus === 'DESIGNADA') {
         const now = new Date();
         to = now.toISOString();
         from = new Date(now.getTime() - 12 * 60 * 60 * 1000).toISOString();
@@ -342,12 +399,21 @@ const fetchSingleMarea = async (mareaId: string) => {
       visible: true, // Always visible in single mode
       matricula: marea.matricula,
       mareaCode: marea.mareaCode,
+      pesquerias_nombres: marea.pesquerias_nombres,
+      flota: marea.flota,
       observer: marea.observer,
       voyageStart: marea.voyageStart,
       voyageEnd: marea.voyageEnd,
       lastUpdate: marea.lastUpdate,
       totalDays: marea.totalDays,
-      etapas: marea.etapas
+      etapas: marea.etapas,
+      lastKnownPoint: (marea.lat !== null && marea.lon !== null) ? {
+        lat: marea.lat,
+        lon: marea.lon,
+        timestamp: marea.lastUpdate,
+        speed: marea.speed,
+        course: marea.course
+      } : null
     }
 
     if (marea.lastTrackingUpdate) {
@@ -367,13 +433,14 @@ const fetchSingleMarea = async (mareaId: string) => {
       to = new Date(new Date(to).getTime() + 6 * 60 * 60 * 1000).toISOString();
     }
 
-    // Regla para DESIGNADAS sin rango (ventana deslizante 12h)
-    // En el modo single, si no hay voyageStart usamos el fallback (marea.mareaStatus o marea.estado)
-    if (!from && (marea.mareaStatus === 'DESIGNADA' || marea.estado === 'DESIGNADA')) {
+    // Regla para DESIGNADAS: Ventana deslizante 12h (En modo single también priorizamos actividad reciente)
+    if (marea.mareaStatus === 'DESIGNADA' || marea.estado === 'DESIGNADA') {
       const now = new Date();
       to = now.toISOString();
       from = new Date(now.getTime() - 12 * 60 * 60 * 1000).toISOString();
     }
+
+    console.log(`[Trajectory] Cargando marea ${marea.mareaCode} (${marea.id}). Rango: ${from || 'Inicio'} -> ${to || 'Fin'}`);
 
     fetchVesselHistory(marea.buqueId, marea.id, from, to)
     pendingZoomVesselId.value = marea.id // Ensure zoom to this marea
@@ -416,6 +483,21 @@ const handleBaseLayerChange = (id: string) => {
 }
 
 const setSelectedVessel = (id: string) => {
+  // Si ya estaba seleccionado, activamos modo TOGGLE para la visibilidad
+  if (selectedVesselId.value === id) {
+    if (fleet[id]) {
+      fleet[id].visible = !fleet[id].visible
+      
+      // Si pasa a ser visible y tiene puntos, hacemos zoom (opcional, pero ayuda al usuario)
+      if (fleet[id].visible && fleet[id].points.length > 0) {
+         setTimeout(() => {
+           mapMonitor.value?.fitVesselBounds(id)
+         }, 300)
+      }
+    }
+    return
+  }
+
   selectedVesselId.value = id
   stopPlayback()
 
@@ -575,14 +657,22 @@ const initializeMonitor = () => {
     mapLayers.value.showVesselNames = false
     fetchSingleMarea(mareaId)
   } else {
+    // Restablecer capas por defecto para modo FLOTA
+    mapLayers.value.showAllVessels = true
+    mapLayers.value.showVesselNames = false
     leftSidebarOpen.value = true
     rightSidebarOpen.value = false
+
+    if (isHistoricalYear.value) {
+      return // No inicializamos la flota general si estamos en año histórico
+    }
+
     fetchFleet()
   }
 }
 
 // Watch for route changes (since the component is reused)
-watch(() => route.path, () => {
+watch(() => [route.path, configStore.selectedYear], () => {
   initializeMonitor()
 })
 

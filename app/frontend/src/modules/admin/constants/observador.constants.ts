@@ -19,3 +19,12 @@ export const TIPO_CONTRATO = Object.entries(TIPO_CONTRATO_MAP).map(([id, name]) 
 // Derivados para Labels (compatibilidad)
 export const TIPO_OBSERVADOR_LABELS: Record<string, string> = TIPO_OBSERVADOR_MAP;
 export const TIPO_CONTRATO_LABELS: Record<string, string> = TIPO_CONTRATO_MAP;
+
+// Fuente de verdad para Sexo
+export const SEXO_MAP = {
+    'Masculino': 'Masculino',
+    'Femenino': 'Femenino',
+} as const;
+
+export const SEXO = Object.entries(SEXO_MAP).map(([id, name]) => ({ id, name }));
+export const SEXO_LABELS: Record<string, string> = SEXO_MAP;

@@ -44,10 +44,37 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
                 </label>
+
+                <!-- Remove Photo Button -->
+                <button 
+                  v-if="user?.avatarUrl || previewUrl"
+                  type="button"
+                  @click="removePhoto"
+                  class="absolute -top-1 -right-1 p-1.5 bg-error text-error-fg rounded-full shadow-lg hover:bg-error-hover transition-all active:scale-90 z-10"
+                  title="Eliminar foto de perfil"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
               </div>
               
               <h2 class="text-xl font-bold text-text">{{ user?.fullName || 'Usuario' }}</h2>
-              <p class="text-text-muted text-sm">{{ user?.email }}</p>
+              <p class="text-text-muted text-sm mb-4">{{ user?.email }}</p>
+
+              <!-- Roles Display -->
+              <div v-if="user?.roles && user.roles.length > 0" class="flex flex-col items-center mt-6">
+                <span class="text-[9px] font-black text-text-muted uppercase tracking-[0.2em] mb-3">Roles Asignados</span>
+                <div class="flex flex-wrap justify-center gap-2">
+                  <span 
+                    v-for="role in user.roles" 
+                    :key="role"
+                    class="px-2.5 py-1 text-[10px] font-black uppercase tracking-widest bg-primary/10 text-primary border border-primary/20 rounded-full"
+                  >
+                    {{ formatRole(role) }}
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -185,6 +212,7 @@ import { useRouter } from 'vue-router';
 import AdminLayout from '@/components/layout/AdminLayout.vue';
 import { getFullImageUrl } from '@/helpers/image.helper';
 import { EyeIcon, EyeSlashIcon } from '@/icons';
+import { ValidRoles } from '@/modules/auth/interfaces/roles.enum';
 
 const authStore = useAuthStore();
 const router = useRouter();
@@ -195,6 +223,7 @@ const isChangingPassword = ref(false);
 
 const previewUrl = ref('');
 const selectedFile = ref<File | null>(null);
+const shouldRemovePhoto = ref(false);
 
 const showCurrentPassword = ref(false);
 const showNewPassword = ref(false);
@@ -236,6 +265,10 @@ const isPasswordFormValid = computed(() => {
     return passwordForm.currentPassword && isPasswordValid.value && doPasswordsMatch.value;
 });
 
+const formatRole = (role: string) => {
+    return role.replace(/_/g, ' ');
+};
+
 onMounted(() => {
   if (user.value) {
     profileForm.fullName = user.value.fullName;
@@ -269,8 +302,19 @@ const handleFileChange = (event: Event) => {
         URL.revokeObjectURL(previewUrl.value);
     }
     previewUrl.value = URL.createObjectURL(file);
+    shouldRemovePhoto.value = false;
     toast.info('Imagen seleccionada. Guarde los cambios para aplicar.');
   }
+};
+
+const removePhoto = () => {
+    selectedFile.value = null;
+    if (previewUrl.value) {
+        URL.revokeObjectURL(previewUrl.value);
+        previewUrl.value = '';
+    }
+    shouldRemovePhoto.value = true;
+    toast.info('Imagen marcada para eliminar. Guarde los cambios para aplicar.');
 };
 
 const saveAll = async () => {
@@ -296,7 +340,8 @@ const saveAll = async () => {
         // 2. Update profile
         const res = await authStore.updateProfile({ 
             fullName: profileForm.fullName,
-            ...(avatarUrl && { avatarUrl })
+            ...(avatarUrl && { avatarUrl }),
+            ...(shouldRemovePhoto.value && !avatarUrl && { avatarUrl: '' })
         });
 
         if (res.ok) {

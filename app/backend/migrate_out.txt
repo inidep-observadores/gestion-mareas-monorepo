@@ -1,0 +1,39 @@
+﻿[dotenv@17.2.3] injecting env (44) from .env -- tip: ­ƒøá´©Å  run anywhere with `dotenvx run -- yourcommand`
+node.exe : Loaded Prisma config 
+from prisma.config.js.
+En línea: 1 Carácter: 1
++ & "C:\Program 
+Files\nodejs/node.exe" 
+"C:\Users\danieldt\AppData\Roami 
+...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~
+    + CategoryInfo          : Not 
+   Specified: (Loaded Prisma c..  
+  .isma.config.js.:String) [],    
+ RemoteException
+    + FullyQualifiedErrorId : Nat 
+   iveCommandError
+ 
+
+Prisma schema loaded from 
+prisma\schema.prisma.
+Datasource "db": PostgreSQL database "MareasDB", schemas "audit, public" at "localhost:5435"
+
+Error: P3006
+
+Migration `20260224090000_add_esta
+do_a_reasignar_y_transiciones` 
+failed to apply cleanly to the 
+shadow database. 
+Error:
+insert or update on table 
+"transiciones_estados" violates 
+foreign key constraint "transicion
+es_estados_id_estado_origen_fkey"
+   0: 
+schema_core::state::DevDiagnostic
+             at schema-engine\core
+\src\state.rs:305
+

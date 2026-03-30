@@ -11,6 +11,7 @@ export interface MareaListItem {
     anio_marea: number;
     nro_marea: number;
     buque_nombre: string;
+    flota: string;
     puertoBaseId?: string;
     estado: string;
     estado_codigo: string;

@@ -35,7 +35,7 @@
                     </option>
                   </select>
                 </div>
-                <SearchInput v-model="searchQuery" placeholder="Buscar buque o marea..." />
+                <SearchInput v-model="searchQuery" class="md:w-96" placeholder="Buscar buque o marea..." />
                 <button v-if="!isReadOnly" @click="router.push('/mareas/nueva')"
                   class="flex items-center justify-center gap-2 px-4 py-2 bg-primary text-primary-fg rounded-xl text-sm font-bold hover:bg-primary-hover transition-all shadow-lg shadow-primary/20 active:scale-95">
                   <PlusIcon class="w-4 h-4" />
@@ -94,7 +94,15 @@
                         <ShipIcon class="w-3.5 h-3.5 text-primary" />
                         <h4 class="text-sm font-black text-text">{{ marea.buque_nombre }}</h4>
                       </div>
-                      <p class="text-xs font-bold text-text-muted truncate">{{ marea.observador || 'No asignado' }}</p>
+                      <div class="flex flex-col gap-0.5 ml-5">
+                        <p class="text-[10px] font-black text-text-muted uppercase tracking-tight">
+                          {{ marea.pesquerias_nombres.join(' / ') || 'Sin pesquería' }}
+                        </p>
+                        <p class="text-[9px] font-bold text-text-muted/70 italic leading-none">
+                          {{ marea.flota }}
+                        </p>
+                      </div>
+                      <p class="text-xs font-bold text-text-muted truncate mt-1 ml-5">{{ marea.observador || 'No asignado' }}</p>
                     </div>
 
                     <!-- Info Operativa -->
@@ -141,6 +149,15 @@
                           <div class="flex items-center gap-1">
                             Buque
                             <ChevronDownIcon v-if="sortBy === 'buque_nombre'"
+                              class="w-3 h-3 text-primary transition-transform duration-300"
+                              :class="{ 'rotate-180': sortOrder === 'asc' }" />
+                          </div>
+                        </th>
+                        <th @click="toggleSort('pesquerias_nombres')"
+                          class="px-5 py-2 cursor-pointer hover:text-primary transition-colors group">
+                          <div class="flex items-center gap-1">
+                            Pesquería / Flota
+                            <ChevronDownIcon v-if="sortBy === 'pesquerias_nombres'"
                               class="w-3 h-3 text-primary transition-transform duration-300"
                               :class="{ 'rotate-180': sortOrder === 'asc' }" />
                           </div>
@@ -203,6 +220,16 @@
                               <span class="text-[10px] font-bold text-text-muted leading-tight truncate mt-0.5">{{
                                 marea.observador || 'Sin asignar' }}</span>
                             </div>
+                          </div>
+                        </td>
+                        <td class="px-5 py-1.5">
+                          <div class="flex flex-col">
+                            <span class="text-[11px] font-black text-text-muted uppercase tracking-tight leading-tight">
+                              {{ marea.pesquerias_nombres.join('\n') || 'N/D' }}
+                            </span>
+                            <span class="text-[9px] font-bold text-primary/70 italic leading-none mt-0.5">
+                              {{ marea.flota }}
+                            </span>
                           </div>
                         </td>
                         <td class="px-5 py-1.5">
@@ -301,6 +328,14 @@
       :actionData="selectedActionData" :loading="executingAction" @close="showGenericDialog = false"
       @confirm="handleGenericConfirm" />
 
+    <FinalizarProtocolizacionDialog
+      :show="showProtocolizacionDialog"
+      :marea="mareaToManage"
+      :loading="executingAction"
+      @close="showProtocolizacionDialog = false"
+      @confirm="handleProtocolizacionConfirm"
+    />
+
     <EditMareaDesignadaDialog 
       v-if="selectedMarea"
       :show="showEditDesignadaDialog" 
@@ -325,6 +360,7 @@ import GestionEtapasMareaDialog from '../components/GestionEtapasMareaDialog.vue
 import RecibirArchivosDialog from '../components/RecibirArchivosDialog.vue'
 import CancelarMareaDialog from '../components/CancelarMareaDialog.vue'
 import MareaGenericActionDialog from '../components/MareaGenericActionDialog.vue'
+import FinalizarProtocolizacionDialog from '../components/FinalizarProtocolizacionDialog.vue'
 import EditMareaDesignadaDialog from '../components/EditMareaDesignadaDialog.vue'
 // @ts-ignore
 import AlertManagementDialog from '../../alerts/components/AlertManagementDialog.vue'
@@ -384,6 +420,7 @@ const showGestionDialog = ref(false)
 const showRecibirDialog = ref(false)
 const showCancelarDialog = ref(false)
 const showGenericDialog = ref(false)
+const showProtocolizacionDialog = ref(false)
 const selectedActionKey = ref<string | null>(null)
 const selectedActionData = ref<any>(null)
 const executingAction = ref(false)
@@ -542,6 +579,12 @@ const executeActionFromSidebar = async (actionKey: string) => {
     return
   }
 
+  if (actionKey === 'FINALIZAR_PROTOCOLIZACION') {
+    mareaToManage.value = mareaContext
+    showProtocolizacionDialog.value = true
+    return
+  }
+
   // Si la acción tiene metadatos en el contexto y no es una de las especiales manejadas arriba, usar diálogo genérico
   const actionMetadata = selectedMareaContext.value?.actions[actionKey]
   if (actionMetadata) {
@@ -575,6 +618,23 @@ const handleGenericConfirm = async (payload: any) => {
     await fetchDashboard()
   } catch (err) {
     console.error("Error en acción de marea:", err)
+  } finally {
+    executingAction.value = false
+  }
+}
+
+const handleProtocolizacionConfirm = async (payload: any) => {
+  if (!mareaToManage.value) return
+
+  try {
+    executingAction.value = true
+    await executeAction(mareaToManage.value.id, 'FINALIZAR_PROTOCOLIZACION', payload)
+    showProtocolizacionDialog.value = false
+    mareaToManage.value = null
+    closeSidebar()
+    await fetchDashboard()
+  } catch (err) {
+    console.error("Error en protocolización de marea:", err)
   } finally {
     executingAction.value = false
   }

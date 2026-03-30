@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
 import { PrismaService } from '../prisma/prisma.service';
 import { AlertsService } from '../alerts/alerts.service';
+import { JobQueueService } from '../jobs/job-queue.service';
 import { PnaApiParser } from './pna-api.parser';
 import { PnaReporteCostera } from './pna-api.interfaces';
 import { DateTime } from 'luxon';
@@ -33,14 +34,16 @@ export class PnaApiService {
         private parser: PnaApiParser,
         private correlationService: EventCorrelationService,
         private configService: ConfigService,
+        private jobQueueService: JobQueueService,
     ) { }
 
     /**
     * Main processing method - reads mock file and processes reports
-    * @param fromDate Optional start date. If not provided, uses LAST_PNA_SYNC from system_status
+    * @param fromDate Optional start date.
     * @param toDate Optional end date. Defaults to now.
+    * @param onlyIngest If true, skips alert generation and only persists historical data.
     */
-    async processMovements(fromDate?: Date, toDate?: Date): Promise<ProcessingSummary> {
+    async processMovements(fromDate?: Date, toDate?: Date, onlyIngest = false): Promise<ProcessingSummary> {
         const summary: ProcessingSummary = {
             total: 0,
             processed: 0,
@@ -118,6 +121,11 @@ export class PnaApiService {
                     // 3. Persistencia Histórica (Mapeo 1 a 1 de la API)
                     await this.persistHistoricalData(reporte);
 
+                    if (onlyIngest) {
+                        summary.processed++;
+                        continue;
+                    }
+
                     const result = await this.processSingleReport(reporte);
 
                     if (result.processed) {
@@ -137,6 +145,58 @@ export class PnaApiService {
             return summary;
         } catch (error) {
             this.logger.error('Error in processMovements:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Programa la sincronización manual fragmentando rangos largos si es necesario.
+     */
+    async scheduleManualSynchronization(manualFromDate: Date, manualToDate: Date, onlyIngest = false) {
+        try {
+            const fromDate = DateTime.fromJSDate(manualFromDate).toUTC();
+            const toDate = DateTime.fromJSDate(manualToDate).toUTC();
+
+            if (fromDate >= toDate) {
+                throw new Error('La fecha desde debe ser anterior a la fecha hasta');
+            }
+
+            const safeRangeDays = parseInt(this.configService.get<string>('PNA_API_SYNC_SAFE_RANGE_DAYS') || '20', 10);
+            const rateLimitMs = parseInt(this.configService.get<string>('PNA_API_SYNC_RATE_LIMIT_MS') || '5000', 10);
+
+            let currentFrom = fromDate;
+            let delayCounter = 0;
+            let queuedJobs = 0;
+
+            this.logger.log(`Programando sincronización manual de PNA desde ${fromDate.toISO()} hasta ${toDate.toISO()} (OnlyIngest: ${onlyIngest})`);
+
+            while (currentFrom < toDate) {
+                let nextTo = currentFrom.plus({ days: safeRangeDays });
+                if (nextTo > toDate) nextTo = toDate;
+
+                const payload = {
+                    fromDate: currentFrom.toJSDate().toISOString(),
+                    toDate: nextTo.toJSDate().toISOString(),
+                    onlyIngest
+                };
+
+                const nextRunAt = new Date(Date.now() + (delayCounter * rateLimitMs));
+
+                await this.jobQueueService.addJob(
+                    'PNA_API_SYNC' as any,
+                    payload,
+                    50, // Prioridad media-alta para manuales
+                    nextRunAt
+                );
+
+                currentFrom = nextTo;
+                delayCounter++;
+                queuedJobs++;
+            }
+
+            return { success: true, queuedJobs };
+        } catch (error) {
+            this.logger.error('Error al programar sincronización manual de PNA:', error);
             throw error;
         }
     }
@@ -247,21 +307,21 @@ export class PnaApiService {
                 break;
 
             case EventDecisionAction.CREATE_ALERT:
-                alertResult = await this.handleAlert(buque, reporte.estado, fechaLocal, puerto, reporte, decision.marea);
+                alertResult = await this.handleAlert(buque, reporte.estado, fechaLocal, puerto, reporte, decision.marea, decision.nroEtapa);
                 break;
 
             case EventDecisionAction.DISCREPANCY_PORT:
-                const alertDiscPort = await this.createDiscrepancyAlert(buque, reporte.estado, puerto, fechaLocal, decision.marea, decision.stageMatch, reporte);
+                const alertDiscPort = await this.createDiscrepancyAlert(buque, reporte.estado, puerto, fechaLocal, decision.marea, decision.stageMatch, reporte, decision.nroEtapa);
                 alertResult = { alertId: alertDiscPort.id, created: true, validated: false };
                 break;
 
             case EventDecisionAction.DISCREPANCY_DATE:
-                const alertDiscDate = await this.createDateInconsistencyAlert(buque, reporte.estado, puerto, fechaLocal, decision.marea, decision.stageMatch, reporte);
+                const alertDiscDate = await this.createDateInconsistencyAlert(buque, reporte.estado, puerto, fechaLocal, decision.marea, decision.stageMatch, reporte, decision.nroEtapa);
                 alertResult = { alertId: alertDiscDate.id, created: true, validated: false };
                 break;
 
             case EventDecisionAction.RECOMMEND_FIN_MAREA:
-                const alertRecFin = await this.createRecommendationFinMarea(buque, puerto, fechaLocal, decision.marea, decision.mareaSiguiente, reporte);
+                const alertRecFin = await this.createRecommendationFinMarea(buque, puerto, fechaLocal, decision.marea, decision.mareaSiguiente, reporte, decision.nroEtapa);
                 alertResult = { alertId: alertRecFin.id, created: true, validated: false };
                 break;
 
@@ -382,6 +442,7 @@ export class PnaApiService {
         puerto: any | null,
         reporte: PnaReporteCostera,
         marea: any,
+        nroEtapa?: number,
     ) {
         // Search for existing alert in time window using centralized correlation service
         const existingAlert = await this.correlationService.findExistingAlert(buque.id, estado, fechaLocal.toJSDate(), marea.id);
@@ -428,10 +489,11 @@ export class PnaApiService {
             mareaId: marea.id,
             mareaCode: mareaLabel,
             vesselName: buque.nombreBuque,
-            observerName: marea.observadorPrincipal ? `${marea.observadorPrincipal.nombre} ${marea.observadorPrincipal.apellido} ` : 'Sin Observador',
+            observerName: marea.observadorPrincipal ? `${marea.observadorPrincipal.nombre} ${marea.observadorPrincipal.apellido}` : 'Sin Observador',
             portId: puerto?.id || null,
             portName: portName,
             eventDate: fechaLocal.toJSDate(),
+            nroEtapa,
 
             // Datos específicos de PNA
             externalData: {
@@ -471,7 +533,7 @@ export class PnaApiService {
         return { alertId: newAlert.id, created: true, validated: false };
     }
 
-    private async createDiscrepancyAlert(buque: any, type: 'ZARPADA' | 'ARRIBO', port: any, fechaLocal: DateTime, marea: any, stageMatch: any, reporte: PnaReporteCostera) {
+    private async createDiscrepancyAlert(buque: any, type: 'ZARPADA' | 'ARRIBO', port: any, fechaLocal: DateTime, marea: any, stageMatch: any, reporte: PnaReporteCostera, nroEtapa?: number) {
         const dateStr = fechaLocal.toFormat('dd/MM HH:mm');
         const yearSuffix = String(marea.anioMarea).slice(-2);
         const mareaLabel = marea.tipoMarea === 'CI' ? `CI - ${yearSuffix} ` : `MC - ${marea.nroMarea} -${yearSuffix} `;
@@ -491,13 +553,13 @@ export class PnaApiService {
             mareaId: marea.id,
             mareaCode: mareaLabel,
             vesselName: buque.nombreBuque,
-            observerName: marea.observadorPrincipal ? `${marea.observadorPrincipal.nombre} ${marea.observadorPrincipal.apellido} ` : 'Sin Observador',
+            observerName: marea.observadorPrincipal ? `${marea.observadorPrincipal.nombre} ${marea.observadorPrincipal.apellido}` : 'Sin Observador',
             portId: port?.id || null,
             portName: port?.nombre,
             eventDate: fechaLocal.toJSDate(),
             type,
             subTipo: 'EDITAR_ETAPA',
-            nroEtapa: stageMatch.nroEtapa,
+            nroEtapa: nroEtapa || stageMatch.nroEtapa,
             source: 'API_PNA',
             externalData: {
                 id_costera: reporte.id_costera,
@@ -532,12 +594,13 @@ export class PnaApiService {
         });
     }
 
-    private async createDateInconsistencyAlert(buque: any, type: 'ZARPADA' | 'ARRIBO', port: any, fechaLocal: DateTime, marea: any, stageMatch: any, reporte: PnaReporteCostera) {
+    private async createDateInconsistencyAlert(buque: any, type: 'ZARPADA' | 'ARRIBO', port: any, fechaLocal: DateTime, marea: any, stageMatch: any, reporte: PnaReporteCostera, nroEtapa?: number) {
         const registeredDate = type === 'ZARPADA' ? stageMatch.fechaZarpada : stageMatch.fechaArribo;
         const regStr = DateTime.fromJSDate(registeredDate).setZone(this.TIMEZONE).toFormat('dd/MM HH:mm');
         const detStr = fechaLocal.toFormat('dd/MM HH:mm');
 
         const alertTitle = `${buque.nombreBuque}: Incongruencia de FECHA en ${type.toLowerCase()} (PNA)`;
+
         const yearSuffix = String(marea.anioMarea).slice(-2);
         const mareaLabel = marea.tipoMarea === 'CI' ? `CI - ${yearSuffix} ` : `MC - ${marea.nroMarea} -${yearSuffix} `;
 
@@ -545,12 +608,12 @@ export class PnaApiService {
             mareaId: marea.id,
             mareaCode: mareaLabel,
             vesselName: buque.nombreBuque,
-            observerName: marea.observadorPrincipal ? `${marea.observadorPrincipal.nombre} ${marea.observadorPrincipal.apellido} ` : 'Sin Observador',
+            observerName: marea.observadorPrincipal ? `${marea.observadorPrincipal.nombre} ${marea.observadorPrincipal.apellido}` : 'Sin Observador',
             portId: port?.id || null,
             portName: port?.nombre,
             type,
             subTipo: 'EDITAR_ETAPA',
-            nroEtapa: stageMatch.nroEtapa,
+            nroEtapa: nroEtapa || stageMatch.nroEtapa,
             source: 'API_PNA',
             externalData: { date: fechaLocal.toJSDate(), id_costera: reporte.id_costera },
             localData: { date: registeredDate },
@@ -577,9 +640,9 @@ export class PnaApiService {
         });
     }
 
-    private async createRecommendationFinMarea(buque: any, port: any, fechaLocal: DateTime, mareaActual: any, mareaSiguiente: any, reporte: PnaReporteCostera) {
+    private async createRecommendationFinMarea(buque: any, port: any, fechaLocal: DateTime, mareaActual: any, mareaSiguiente: any, reporte: PnaReporteCostera, nroEtapa?: number) {
         const dateStr = fechaLocal.toFormat('dd/MM HH:mm');
-        const alertTitle = `${buque.nombreBuque}: Recomendación FINALIZAR MAREA.Arribo detectado(PNA) el ${dateStr} `;
+        const alertTitle = `${buque.nombreBuque}: Recomendación FINALIZAR MAREA. Arribo detectado (PNA) el ${dateStr}`;
 
         const yearSuffix = String(mareaActual.anioMarea).slice(-2);
         const mareaLabel = mareaActual.tipoMarea === 'CI' ? `CI - ${yearSuffix} ` : `MC - ${mareaActual.nroMarea} -${yearSuffix} `;
@@ -593,10 +656,10 @@ export class PnaApiService {
             observerName: mareaActual.observadorPrincipal ? `${mareaActual.observadorPrincipal.nombre} ${mareaActual.observadorPrincipal.apellido}` : 'Sin Observador',
             portId: port?.id || null,
             portName: port?.nombre || 'Desconocido',
-            eventDate: fechaLocal.toISO()!,
+            eventDate: fechaLocal.toJSDate(),
             type: 'ARRIBO',
             subTipo: 'FIN_MAREA',
-            nroEtapa: lastStage?.nroEtapa,
+            nroEtapa: nroEtapa || lastStage?.nroEtapa,
             source: 'API_PNA',
             sources: [{
                 name: 'API_PNA',

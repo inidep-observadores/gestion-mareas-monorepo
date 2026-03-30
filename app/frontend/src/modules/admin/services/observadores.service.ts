@@ -17,8 +17,8 @@ export interface CreateObservadorDto {
 export interface UpdateObservadorDto extends Partial<CreateObservadorDto> { }
 
 const observadoresApi = {
-    getObservadores: async (): Promise<Observador[]> => {
-        const { data } = await httpClient.get<Observador[]>('/catalogos/observadores');
+    getObservadores: async (incluirInactivos: boolean = false): Promise<Observador[]> => {
+        const { data } = await httpClient.get<Observador[]>(`/catalogos/observadores?incluirInactivos=${incluirInactivos}`);
         return data;
     },
 

@@ -102,22 +102,40 @@ export class MareasService {
     async update(id: string, updateMareaDto: UpdateMareaDto, user?: User) {
         const { etapas, artePrincipalId, arteId, pesqueriaId, observadorId, observadorPrincipalId, ...data } = updateMareaDto;
 
-        // Validar impedimentos si cambia el observador principal
-        const targetObsId = observadorPrincipalId || observadorId;
-        if (targetObsId) {
-            const currentMarea = await (this.prisma as any).marea.findUnique({
-                where: { id },
-                select: { observadorPrincipalId: true }
-            });
+        // 1. Obtención inicial de marea para validaciones de integridad
+        const mareaActual = await this.prisma.marea.findUnique({
+            where: { id },
+            include: { estadoActual: true }
+        });
 
-            if (currentMarea && targetObsId !== (currentMarea as any).observadorPrincipalId) {
-                const obs = await this.prisma.observador.findUnique({
-                    where: { id: targetObsId },
-                    select: { conImpedimento: true, motivoImpedimento: true }
-                });
-                if (obs?.conImpedimento) {
-                    throw new BadRequestException(`No se puede asignar el observador porque posee un impedimento: ${obs.motivoImpedimento || 'Sin motivo'}.`);
-                }
+        if (!mareaActual) throw new NotFoundException('Marea no encontrada');
+
+        // 2. Restricción de edición de datos básicos según estado (Regla de negocio crítica)
+        const estadoCodigo = mareaActual.estadoActual.codigo;
+        const esPreparatoria = estadoCodigo === MareaEstado.DESIGNADA || estadoCodigo === MareaEstado.A_REASIGNAR;
+
+        const camposProtegidosModificados =
+            (updateMareaDto.anioMarea !== undefined && updateMareaDto.anioMarea !== mareaActual.anioMarea) ||
+            (updateMareaDto.nroMarea !== undefined && updateMareaDto.nroMarea !== mareaActual.nroMarea) ||
+            (updateMareaDto.tipoMarea !== undefined && updateMareaDto.tipoMarea !== mareaActual.tipoMarea) ||
+            (updateMareaDto.buqueId !== undefined && updateMareaDto.buqueId !== mareaActual.buqueId) ||
+            (observadorPrincipalId !== undefined && observadorPrincipalId !== mareaActual.observadorPrincipalId) ||
+            (pesqueriaId !== undefined && pesqueriaId !== mareaActual.pesqueriaId) ||
+            (artePrincipalId !== undefined && artePrincipalId !== mareaActual.artePrincipalId);
+
+        if (!esPreparatoria && camposProtegidosModificados) {
+            throw new BadRequestException(`No se pueden modificar los datos de identidad, buque, observador, pesquería o arte de pesca una vez que la marea ha salido de los estados de planificación (DESIGNADA/A_REASIGNAR).`);
+        }
+
+        // 3. Validar impedimentos si cambia el observador principal
+        const targetObsId = observadorPrincipalId || observadorId;
+        if (targetObsId && targetObsId !== mareaActual.observadorPrincipalId) {
+            const obs = await this.prisma.observador.findUnique({
+                where: { id: targetObsId },
+                select: { conImpedimento: true, motivoImpedimento: true }
+            });
+            if (obs?.conImpedimento) {
+                throw new BadRequestException(`No se puede asignar el observador porque posee un impedimento: ${obs.motivoImpedimento || 'Sin motivo'}.`);
             }
         }
 
@@ -458,7 +476,12 @@ export class MareasService {
                         nombreBuque: true,
                         matricula: true,
                         puertoBaseId: true,
-                        pesqueriaHabitual: true
+                        pesqueriaHabitual: true,
+                        tipoFlota: {
+                            select: {
+                                nombre: true
+                            }
+                        }
                     }
                 },
                 observadorPrincipal: true,
@@ -539,6 +562,7 @@ export class MareasService {
                 anio_marea: m.anioMarea,
                 nro_marea: m.nroMarea,
                 buque_nombre: m.buque.nombreBuque,
+                flota: m.buque.tipoFlota?.nombre || 'Indeterminada',
                 puertoBaseId: m.buque.puertoBaseId,
                 estado: m.estadoActual.nombre,
                 estado_codigo: m.estadoActual.codigo,
@@ -1257,14 +1281,18 @@ export class MareasService {
         return alerts;
     }
 
-    async getWorkforceStatus(year?: number) {
+    async getWorkforceStatus(year?: number, role?: string) {
         const { operationalYear, mareaYearFilter } = this.buildMareaYearFilter(year);
         const periodStart = new Date(operationalYear, 0, 1, 0, 0, 0, 0);
         const now = new Date();
 
-        // Observadores activos
+        // Observadores activos sin impedimento
         const observadores = await this.prisma.observador.findMany({
-            where: { activo: true }
+            where: {
+                activo: true,
+                conImpedimento: false,
+                ...(role ? { tipoObservador: role } : {})
+            }
         });
 
         // Etapas del año operativo y el anterior (para cálculo de días sin navegar)
@@ -1288,6 +1316,21 @@ export class MareasService {
             } as any
         });
 
+        // Obtener mareas en estado DESIGNADA (que no tienen etapas todavía)
+        const mareasDesignadas = await this.prisma.marea.findMany({
+            where: {
+                activo: true,
+                estadoActual: { codigo: 'DESIGNADA' }
+            },
+            include: {
+                buque: true,
+                pesqueria: true,
+                estadoActual: true
+            }
+        });
+
+
+
         // Agrupar etapas por marea para contar el total
         const stageCountByMarea = new Map<string, number>();
         etapas.forEach((e: any) => {
@@ -1297,7 +1340,20 @@ export class MareasService {
 
         const activeNav = new Map<string, { start: Date; vessel: string; mareaCode: string; fishery: string; enTierra: boolean; stageCount: number }>();
         const lastArrivalByObs = new Map<string, { date: Date; mareaCode: string; vessel: string; fishery: string }>();
+        const designadosActivosByObs = new Map<string, { mareaCode: string; vesselName: string; fechaZarpadaEstimada: Date | null; fishery: string }>();
         const obsConMareas = new Set<string>();
+
+        // Poblar designados desde la consulta directa de mareas (estado DESIGNADA)
+        mareasDesignadas.forEach((m: any) => {
+            if (m.observadorPrincipalId) {
+                designadosActivosByObs.set(m.observadorPrincipalId, {
+                    mareaCode: MareaUtils.formatCodigo(m),
+                    vesselName: m.buque.nombreBuque,
+                    fechaZarpadaEstimada: m.fechaZarpadaEstimada,
+                    fishery: m.pesqueria?.nombre || 'Sin Pesquería'
+                });
+            }
+        });
 
         etapas.forEach((etapa: any) => {
             const inicio = etapa.fechaZarpada ? new Date(etapa.fechaZarpada) : null;
@@ -1318,7 +1374,7 @@ export class MareasService {
                         start: inicio,
                         vessel: etapa.marea.buque.nombreBuque,
                         mareaCode: MareaUtils.formatCodigo(etapa.marea),
-                        fishery: etapa.pesqueria?.nombre || etapa.marea.pesqueria?.nombre || 'Desconocida',
+                        fishery: etapa.pesqueria?.nombre || etapa.marea.pesqueria?.nombre || 'Sin Pesquería',
                         enTierra: finRaw !== null,
                         stageCount: stageCountByMarea.get(etapa.mareaId) || 1
                     });
@@ -1331,9 +1387,20 @@ export class MareasService {
                             date: finRaw,
                             mareaCode: MareaUtils.formatCodigo(etapa.marea),
                             vessel: etapa.marea.buque.nombreBuque,
-                            fishery: etapa.pesqueria?.nombre || etapa.marea.pesqueria?.nombre || 'Desconocida'
+                            fishery: etapa.pesqueria?.nombre || etapa.marea.pesqueria?.nombre || 'Sin Pesquería'
                         });
                     }
+                }
+
+                // Las designaciones ahora se manejan mediante la consulta directa a Marea al inicio
+                // No obstante, si una etapa existe y es DESIGNADA, también la marcamos (por seguridad)
+                if (etapa.marea.estadoActual?.codigo === 'DESIGNADA') {
+                    designadosActivosByObs.set(obs.id, {
+                        mareaCode: MareaUtils.formatCodigo(etapa.marea),
+                        vesselName: etapa.marea.buque.nombreBuque,
+                        fechaZarpadaEstimada: etapa.marea.fechaZarpadaEstimada,
+                        fishery: etapa.pesqueria?.nombre || etapa.marea.pesqueria?.nombre || 'Sin Pesquería'
+                    });
                 }
             };
 
@@ -1341,11 +1408,12 @@ export class MareasService {
             if (etapa.marea.observadorPrincipal) processObs(etapa.marea.observadorPrincipal);
         });
 
-        const listDescanso: Array<{ id: string; name: string; days: number; lastArrival: string; mareaCode: string; vesselName: string; fishery: string; tipoObservador: string }> = [];
-        const listImpedidos: Array<{ id: string; name: string; motivo: string; tipoObservador: string }> = [];
-        const listDisponibles: Array<{ id: string; name: string; days: number; lastArrival: string; mareaCode: string; vesselName: string; fishery: string; tipoObservador: string }> = [];
-        const listNavegando: Array<{ id: string; name: string; days: number; vessel: string; mareaCode: string; fishery: string; enTierra: boolean; startDate: string; tipoObservador: string, stageCount: number }> = [];
-        const topDryCandidates: Array<{ id: string; name: string; days: number; lastArrival: string; mareaCode: string; vesselName: string; fishery: string; tipoObservador: string }> = [];
+        const listDescanso: Array<{ id: string; name: string; days: number; lastArrival: string; mareaCode: string; vesselName: string; fishery: string; tipoObservador: string; tipoContrato: string; sexo: string; eventual: boolean; tieneDesignacionActiva: boolean; observaciones?: string }> = [];
+        const listImpedidos: Array<{ id: string; name: string; motivo: string; tipoObservador: string; tipoContrato: string; sexo: string; eventual: boolean; tieneDesignacionActiva: boolean; observaciones?: string }> = [];
+        const listDisponibles: Array<{ id: string; name: string; days: number; lastArrival: string; mareaCode: string; vesselName: string; fishery: string; tipoObservador: string; tipoContrato: string; sexo: string; eventual: boolean; tieneDesignacionActiva: boolean; observaciones?: string }> = [];
+        const listNavegando: Array<{ id: string; name: string; days: number; vessel: string; mareaCode: string; fishery: string; enTierra: boolean; startDate: string; tipoObservador: string; tipoContrato: string, stageCount: number; sexo: string; eventual: boolean; tieneDesignacionActiva: boolean; observaciones?: string }> = [];
+        const listDesignados: Array<{ id: string; name: string; mareaCode: string; vesselName: string; fishery: string; fechaZarpadaEstimada: string; tipoObservador: string; tipoContrato: string; sexo: string; eventual: boolean; tieneDesignacionActiva: boolean; observaciones?: string }> = [];
+        const topDryCandidates: Array<{ id: string; name: string; days: number; lastArrival: string; mareaCode: string; vesselName: string; fishery: string; tipoObservador: string; tipoContrato: string; sexo: string; eventual: boolean; tieneDesignacionActiva: boolean; observaciones?: string }> = [];
 
         observadores.forEach((obs) => {
             if (!obs.activo) return;
@@ -1356,10 +1424,11 @@ export class MareasService {
 
             const daysSince = lastArrival ? DateUtils.calculateInclusiveDays(lastArrival, now) - 1 : null;
 
-            const status = this.getObserverStatus(obs, activeNav.has(obs.id), lastArrival, now);
+            const hasDesignation = designadosActivosByObs.has(obs.id);
+            const status = this.getObserverStatus(obs, activeNav.has(obs.id), hasDesignation, lastArrival, now);
 
-            // Top Dry Check: Solo listar observadores genuinamente DISPONIBLES y de tipo OBSERVADOR
-            if (obsConMareas.has(obs.id) && status === 'DISPONIBLE' && lastArrival && lastArrivalData && daysSince !== null && obs.tipoObservador === 'OBSERVADOR') {
+            // Top Dry Check: Solo listar observadores genuinamente DISPONIBLES y de tipo OBSERVADOR (y sin marea designada)
+            if (obsConMareas.has(obs.id) && status === 'DISPONIBLE' && !hasDesignation && lastArrival && lastArrivalData && daysSince !== null && obs.tipoObservador === 'OBSERVADOR') {
                 topDryCandidates.push({
                     id: obs.id,
                     name,
@@ -1368,7 +1437,12 @@ export class MareasService {
                     mareaCode: lastArrivalData.mareaCode,
                     vesselName: lastArrivalData.vessel,
                     fishery: lastArrivalData.fishery,
-                    tipoObservador: obs.tipoObservador
+                    tipoObservador: obs.tipoObservador,
+                    tipoContrato: obs.tipoContrato,
+                    sexo: obs.sexo,
+                    eventual: obs.eventual,
+                    tieneDesignacionActiva: designadosActivosByObs.has(obs.id),
+                    observaciones: obs.observaciones
                 });
             }
 
@@ -1386,7 +1460,12 @@ export class MareasService {
                         days: daysNav,
                         startDate: navData?.start?.toISOString() || '',
                         tipoObservador: obs.tipoObservador,
-                        stageCount: navData?.stageCount || 1
+                        tipoContrato: obs.tipoContrato,
+                        stageCount: navData?.stageCount || 1,
+                        sexo: obs.sexo,
+                        eventual: obs.eventual,
+                        tieneDesignacionActiva: designadosActivosByObs.has(obs.id),
+                        observaciones: obs.observaciones
                     });
                     break;
                 case 'IMPEDIDO':
@@ -1394,7 +1473,29 @@ export class MareasService {
                         id: obs.id,
                         name,
                         motivo: obs.motivoImpedimento || 'Sin motivo especificado',
-                        tipoObservador: obs.tipoObservador
+                        tipoObservador: obs.tipoObservador,
+                        tipoContrato: obs.tipoContrato,
+                        sexo: obs.sexo,
+                        eventual: obs.eventual,
+                        tieneDesignacionActiva: designadosActivosByObs.has(obs.id),
+                        observaciones: obs.observaciones
+                    });
+                    break;
+                case 'DESIGNADO':
+                    const desigData = designadosActivosByObs.get(obs.id);
+                    listDesignados.push({
+                        id: obs.id,
+                        name,
+                        mareaCode: desigData?.mareaCode || '',
+                        vesselName: desigData?.vesselName || '',
+                        fishery: desigData?.fishery || 'Sin Pesquería',
+                        fechaZarpadaEstimada: desigData?.fechaZarpadaEstimada?.toISOString() || '',
+                        tipoObservador: obs.tipoObservador,
+                        tipoContrato: obs.tipoContrato,
+                        sexo: obs.sexo,
+                        eventual: obs.eventual,
+                        tieneDesignacionActiva: true,
+                        observaciones: obs.observaciones
                     });
                     break;
                 case 'DESCANSO':
@@ -1406,7 +1507,12 @@ export class MareasService {
                         mareaCode: lastArrivalData?.mareaCode || '',
                         vesselName: lastArrivalData?.vessel || '',
                         fishery: lastArrivalData?.fishery || '',
-                        tipoObservador: obs.tipoObservador
+                        tipoObservador: obs.tipoObservador,
+                        tipoContrato: obs.tipoContrato,
+                        sexo: obs.sexo,
+                        eventual: obs.eventual,
+                        tieneDesignacionActiva: designadosActivosByObs.has(obs.id),
+                        observaciones: obs.observaciones
                     });
                     break;
                 case 'DISPONIBLE':
@@ -1418,7 +1524,12 @@ export class MareasService {
                         mareaCode: lastArrivalData?.mareaCode || '',
                         vesselName: lastArrivalData?.vessel || '',
                         fishery: lastArrivalData?.fishery || '',
-                        tipoObservador: obs.tipoObservador
+                        tipoObservador: obs.tipoObservador,
+                        tipoContrato: obs.tipoContrato,
+                        sexo: obs.sexo,
+                        eventual: obs.eventual,
+                        tieneDesignacionActiva: designadosActivosByObs.has(obs.id),
+                        observaciones: obs.observaciones
                     });
                     break;
             }
@@ -1432,6 +1543,7 @@ export class MareasService {
         listNavegando.sort((a, b) => b.days - a.days);
         listDescanso.sort((a, b) => b.days - a.days);
         listDisponibles.sort((a, b) => b.days - a.days);
+        listDesignados.sort((a, b) => a.name.localeCompare(b.name));
 
         // 4: Ordenar por apellido y nombre
         listImpedidos.sort((a, b) => a.name.localeCompare(b.name));
@@ -1445,6 +1557,7 @@ export class MareasService {
             navegando: listNavegando.length,
             descanso: listDescanso.length,
             disponibles: listDisponibles.length,
+            designados: listDesignados.length,
             impedidos: listImpedidos.length,
             licencia: 0,
             topDry,
@@ -1452,6 +1565,7 @@ export class MareasService {
             listNavegando,
             listDescanso,
             listDisponibles,
+            listDesignados,
             listImpedidos
         };
     }
@@ -1463,13 +1577,16 @@ export class MareasService {
     private getObserverStatus(
         obs: any,
         isNavigating: boolean,
+        hasDesignation: boolean,
         lastArrival: Date | undefined,
         now: Date
-    ): 'NAVEGANDO' | 'IMPEDIDO' | 'DESCANSO' | 'DISPONIBLE' | 'OTRO' {
+    ): 'NAVEGANDO' | 'IMPEDIDO' | 'DESIGNADO' | 'DESCANSO' | 'DISPONIBLE' | 'OTRO' {
 
         if (isNavigating) return 'NAVEGANDO';
 
         if (obs.conImpedimento) return 'IMPEDIDO';
+
+        if (hasDesignation) return 'DESIGNADO';
 
         if (lastArrival) {
             const daysSince = DateUtils.calculateInclusiveDays(lastArrival, now) - 1;
@@ -1534,6 +1651,15 @@ export class MareasService {
         const allowedTransitions = transiciones.filter(t => t.estadoOrigenId === marea.estadoActualId);
         const actions: Record<string, any> = {};
 
+        // Acción especial para editar etapas en curso (no cambia estado) - AHORA PRIMERA
+        if (marea.estadoActual.codigo === MareaEstado.EN_EJECUCION) {
+            actions['EDITAR_ETAPAS'] = {
+                enabled: true,
+                label: 'Editar Etapas',
+                claseBoton: 'btn-ghost'
+            };
+        }
+
         allowedTransitions.forEach(t => {
             actions[t.accion] = {
                 enabled: true,
@@ -1545,14 +1671,6 @@ export class MareasService {
             };
         });
 
-        // Acción especial para editar etapas en curso (no cambia estado)
-        if (marea.estadoActual.codigo === MareaEstado.EN_EJECUCION) {
-            actions['EDITAR_ETAPAS'] = {
-                enabled: true,
-                label: 'Editar Etapas',
-                claseBoton: 'btn-ghost'
-            };
-        }
 
         const fechaZarpada = etapaInicial?.fechaZarpada || marea.fechaZarpadaEstimada;
 
@@ -1973,8 +2091,8 @@ export class MareasService {
                         mareaId: id,
                         fechaHora: new Date(),
                         usuarioId: user.id,
-                        tipoEvento: 'EDICION_ESTRUCTURA',
-                        detalle: `Edición manual de etapas y fechas de observador.`
+                        tipoEvento: payload.tipoEvento || 'EDICION_ESTRUCTURA',
+                        detalle: payload.motivoDetalle || `Edición manual de etapas y fechas de observador.`
                     }
                 });
 
@@ -2053,6 +2171,22 @@ export class MareasService {
                 }
             }
 
+            if (actionKey === 'DESHACER_INICIO') {
+                additionalMareaData.fechaInicioObservador = null;
+                const stage1 = await tx.mareaEtapa.findFirst({
+                    where: { mareaId: id, nroEtapa: 1 },
+                    include: { lances: { take: 1 } }
+                });
+
+                if (stage1) {
+                    if (stage1.lances && stage1.lances.length > 0) {
+                        throw new BadRequestException('No se puede deshacer el inicio porque la marea ya tiene datos técnicos registrados (lances).');
+                    }
+                    await tx.mareaEtapaObservador.deleteMany({ where: { etapaId: stage1.id } });
+                    await tx.mareaEtapa.delete({ where: { id: stage1.id } });
+                }
+            }
+
             if (actionKey === 'RECIBIR_DATOS') {
                 const fechaRecepcion = payload.fechaRecepcion;
                 const fechaInicioObs = payload.fechaInicioObservador ? DateUtils.parseToAppZone(payload.fechaInicioObservador) : (marea.fechaInicioObservador ? new Date(marea.fechaInicioObservador) : null);
@@ -2087,6 +2221,15 @@ export class MareasService {
                 additionalMareaData.fechaFinObservador = fechaFinObs;
             }
 
+            if (actionKey === 'FINALIZAR_PROTOCOLIZACION') {
+                if (!payload.nroProtocolizacion || !payload.anioProtocolizacion || !payload.fechaProtocolizacion) {
+                    throw new BadRequestException('Los campos de protocolización (número, año y fecha) son obligatorios para finalizar el proceso.');
+                }
+                additionalMareaData.nroProtocolizacion = payload.nroProtocolizacion;
+                additionalMareaData.anioProtocolizacion = payload.anioProtocolizacion;
+                additionalMareaData.fechaProtocolizacion = new Date(payload.fechaProtocolizacion);
+            }
+
             // Evaluación de fin de Marea por arribo automático a puerto en etapa "Final"
             let destinoEstadoId = transicion.estadoDestinoId;
 
@@ -2107,24 +2250,16 @@ export class MareasService {
                             actionKey = 'FINALIZAR_POR_ARRIBO'; // Sobrescribimos lógicamente la acción para el historial
                         }
                     } else if (motivoCierre === 'RECOMENDADO_POR_INTENCION' && actionKey !== 'FINALIZAR_POR_ARRIBO') {
-                        // Generar alerta de recomendación de cierre pero NO cambiar el estado del flujo
-                        await this.alertsService.create({
-                            codigoUnico: `REC_FIN_${marea.id}_${ultimaEtapaRecibida.id} `,
-                            tipo: 'RECOMENDACION_FIN_MAREA',
-                            titulo: 'Recomendación de Fin de Marea',
-                            descripcion: `El usuario marcó la intención de finalizar la marea al arribo de esta etapa(${ultimaEtapaRecibida.nroEtapa}).`,
-                            estado: AlertaEstado.PENDIENTE,
-                            prioridad: AlertaPrioridad.MEDIA,
-                            referenciaId: marea.id,
-                            referenciaTipo: 'MAREA',
-                            metadata: {
-                                mareaId: marea.id,
-                                etapaId: ultimaEtapaRecibida.id,
-                                trigger: 'INTENCION_MANUAL_ARRIBO'
-                            }
-                        }, user);
-
-                        this.logger.log(`Generada alerta de recomendación de cierre para marea ${marea.id} por intención manual en etapa ${ultimaEtapaRecibida.nroEtapa} `);
+                        // TODO: Si en el futuro se desea restaurar el comportamiento de solo alerta, 
+                        // modificar aquí para usar alertsService.create y no cambiar el estado.
+                        // Actualmente, RECOMENDADO_POR_INTENCION opera igual que FORZADO_POR_DESIGNACION.
+                        const estadoFinalizacion = await tx.estadoMarea.findFirst({
+                            where: { codigo: MareaEstado.ESPERANDO_ENTREGA }
+                        });
+                        if (estadoFinalizacion) {
+                            destinoEstadoId = estadoFinalizacion.id;
+                            actionKey = 'FINALIZAR_POR_ARRIBO'; // Sobrescribimos lógicamente la acción para el historial
+                        }
                     }
                 }
             }
@@ -2150,24 +2285,24 @@ export class MareasService {
                     mareaId: id,
                     fechaHora: fechaMovimiento,
                     usuarioId: user.id,
-                    tipoEvento: 'CAMBIO_ESTADO',
+                    tipoEvento: payload.tipoEvento || 'CAMBIO_ESTADO',
                     estadoDesdeId: marea.estadoActualId,
                     estadoHastaId: destinoEstadoId,
                     cantidadMuestrasOtolitos: actionKey === 'RECIBIR_DATOS' ? (payload.cantidadOtolitos || null) : null,
-                    detalle: actionKey === 'REGISTRAR_INICIO'
-                        ? `Inicio Marea.Obs: ${new Date(additionalMareaData.fechaInicioObservador).toLocaleDateString('es-AR')} `
+                    detalle: payload.motivoDetalle || (actionKey === 'REGISTRAR_INICIO'
+                        ? `Inicio Marea. Obs: ${new Date(additionalMareaData.fechaInicioObservador).toLocaleDateString('es-AR')}`
                         : actionKey === 'REGISTRAR_FINALIZACION'
-                            ? `Fin Marea.Obs: ${additionalMareaData.fechaFinObservador ? new Date(additionalMareaData.fechaFinObservador).toLocaleDateString('es-AR') : 'Sin fecha definida'} `
+                            ? `Fin Marea. Obs: ${additionalMareaData.fechaFinObservador ? new Date(additionalMareaData.fechaFinObservador).toLocaleDateString('es-AR') : 'Sin fecha definida'}`
                             : actionKey === 'FINALIZAR_POR_ARRIBO'
-                                ? `Marea finalizada automáticamente por arribo a puerto(designación activa).`
+                                ? `Marea finalizada automáticamente por arribo a puerto (designación activa).`
                                 : actionKey === 'RECIBIR_DATOS'
-                                    ? `Recepción de datos.Otolitos: ${payload.cantidadOtolitos || 0} `
-                                    : `Acción: ${transicion.etiqueta} `,
+                                    ? `Recepción de datos. Otolitos: ${payload.cantidadOtolitos || 0}`
+                                    : `Acción: ${transicion.etiqueta}`),
                     comentarios: payload.comentarios,
                     archivos: (actionKey === 'RECIBIR_DATOS' && payload.archivosSnapshot) ? {
                         create: payload.archivosSnapshot.map((a: any) => ({
                             tipoArchivo: 'DIGITAL_ORIGINAL',
-                            rutaArchivo: `received / ${id}/${a.name}`,
+                            rutaArchivo: `received/${id}/${a.name}`,
                             descripcion: `Archivo recibido: ${a.name} (${(a.size / 1024).toFixed(2)} KB)`,
                             formato: a.name.split('.').pop()?.toUpperCase(),
                         }))

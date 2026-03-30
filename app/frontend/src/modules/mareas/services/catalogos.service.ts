@@ -29,6 +29,13 @@ export interface ArtePesca {
     nombre: string;
 }
 
+export interface TipoFlota {
+    id: string;
+    nombre: string;
+    codigo: string;
+    codigo_numerico?: number;
+}
+
 const catalogosService = {
     getBuques: async (): Promise<Buque[]> => {
         const { data } = await httpClient.get<Buque[]>('/catalogos/buques');
@@ -52,6 +59,11 @@ const catalogosService = {
 
     getPuertos: async (): Promise<any[]> => {
         const { data } = await httpClient.get<any[]>('/catalogos/puertos');
+        return data;
+    },
+
+    getTiposFlota: async (): Promise<TipoFlota[]> => {
+        const { data } = await httpClient.get<TipoFlota[]>('/catalogos/tipos-flota');
         return data;
     }
 };

@@ -114,6 +114,17 @@
             </div>
           </div>
 
+          <div class="flex items-center gap-3 p-3 bg-surface-muted/20 rounded-lg border border-border/50">
+            <label class="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" v-model="validationsEnabled" class="sr-only peer">
+              <div class="w-10 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary"></div>
+            </label>
+            <div>
+              <span class="text-sm font-bold text-text">Realizar validaciones y alertas</span>
+              <p class="text-[10px] text-text-muted leading-tight">Si está desactivado, solo se cargarán los datos históricos (más rápido).</p>
+            </div>
+          </div>
+
           <div class="grid grid-cols-1 gap-3 pt-4">
             <button 
               @click="runManualSync('API')"
@@ -145,12 +156,35 @@
       </div>
 
     </div>
-  </AdminDashboardLayout>
+    </AdminDashboardLayout>
+
+    <!-- Modal de Confirmación para Rangos Largos -->
+    <ConfirmationDialog
+      :show="showSyncConfirmModal"
+      title="Sincronización de Rango Extendido"
+      confirm-text="Continuar y Encolar"
+      confirm-button-class="bg-primary hover:bg-primary/90 shadow-primary/20"
+      @close="showSyncConfirmModal = false"
+      @confirm="executeManualSync"
+    >
+      <div class="space-y-3">
+        <p class="text-sm text-text">
+          El rango solicitado es de <span class="font-bold">{{ Math.round(pendingSyncDiffDays) }} días</span>.
+        </p>
+        <div class="p-4 rounded-xl bg-primary/5 border border-primary/10 flex items-start gap-3">
+          <InfoCircleIcon class="w-5 h-5 text-primary mt-0.5" />
+          <p class="text-xs text-text-muted leading-relaxed">
+            Al exceder el límite seguro de 20 días, el proceso se fragmentará automáticamente y se ejecutará en segundo plano a través de la cola de tareas para evitar saturar la API de PNA.
+          </p>
+        </div>
+      </div>
+    </ConfirmationDialog>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import AdminDashboardLayout from '../layouts/AdminDashboardLayout.vue'
+import ConfirmationDialog from '@/components/common/ConfirmationDialog.vue';
 import alertsAdminApi from '../services/alerts.service'
 import { toast } from 'vue-sonner'
 import { 
@@ -159,7 +193,8 @@ import {
   CheckIcon, 
   RefreshIcon, 
   BellIcon, 
-  ShipIcon 
+  ShipIcon,
+  InfoCircleIcon
 } from '@/icons'
 
 const config = reactive({
@@ -173,6 +208,12 @@ const manualRange = reactive({
   fromDate: '',
   toDate: ''
 })
+const validationsEnabled = ref(false)
+
+// Estados para confirmación de rango largo
+const showSyncConfirmModal = ref(false)
+const pendingSyncType = ref<'API' | 'TRACKING' | null>(null)
+const pendingSyncDiffDays = ref(0)
 
 const manualSyncResult = ref<{ success: boolean; message: string; details?: any } | null>(null)
 
@@ -209,19 +250,55 @@ const runManualSync = async (type: 'API' | 'TRACKING') => {
   isSyncingManual.value = true
   manualSyncResult.value = null
   
+  const from = new Date(manualRange.fromDate)
+  const to = new Date(manualRange.toDate)
+  const diffDays = (to.getTime() - from.getTime()) / (1000 * 3600 * 24)
+  const SAFE_LIMIT = 20
+
+  if (diffDays > SAFE_LIMIT) {
+    pendingSyncType.value = type
+    pendingSyncDiffDays.value = diffDays
+    showSyncConfirmModal.value = true
+    return
+  }
+
+  executeManualSync(type)
+}
+
+const executeManualSync = async (typeOverride?: 'API' | 'TRACKING') => {
+  const type = typeOverride || pendingSyncType.value
+  if (!type) return
+
+  showSyncConfirmModal.value = false
+  isSyncingManual.value = true
+  manualSyncResult.value = null
+  
+  const from = new Date(manualRange.fromDate)
+  const to = new Date(manualRange.toDate)
+  const diffDays = (to.getTime() - from.getTime()) / (1000 * 3600 * 24)
+  const SAFE_LIMIT = 20
+  
   try {
     const result = await alertsAdminApi.syncManual({
       type,
-      fromDate: new Date(manualRange.fromDate).toISOString(),
-      toDate: new Date(manualRange.toDate).toISOString()
+      fromDate: from.toISOString(),
+      toDate: to.toISOString(),
+      onlyIngest: !validationsEnabled.value
     })
+    
+    const isQueued = diffDays > SAFE_LIMIT || (type === 'TRACKING')
     
     manualSyncResult.value = {
       success: true,
-      message: `Sincronización ${type === 'API' ? 'de eventos' : 'de tracking'} iniciada correctamente.`,
-      details: type === 'API' ? result : { 'Tareas encoladas': result.queuedJobs }
+      message: isQueued 
+        ? `Sincronización ${type === 'API' ? 'de eventos' : 'de tracking'} programada en segundo plano.`
+        : `Sincronización ${type === 'API' ? 'de eventos' : 'de tracking'} finalizada correctamente.`,
+      details: type === 'API' && !isQueued ? result : { 
+        'Tareas encoladas': result.queuedJobs || 'Procesando...',
+        'Modo': validationsEnabled.value ? 'Validación Completa' : 'Solo Ingesta'
+      }
     }
-    toast.success('Sincronización manual iniciada')
+    toast.success(isQueued ? 'Sincronización programada' : 'Sincronización finalizada')
   } catch (error) {
     manualSyncResult.value = {
       success: false,

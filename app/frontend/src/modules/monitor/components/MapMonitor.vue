@@ -34,6 +34,8 @@ export interface VesselTrajectory {
   voyageEnd?: string | null
   lastUpdate?: string | Date | null
   totalDays?: number
+  pesquerias_nombres?: string[]
+  flota?: string
   etapas?: any[] // eslint-disable-line @typescript-eslint/no-explicit-any
 }
 
@@ -48,6 +50,8 @@ const props = defineProps<{
     showVesselNames: boolean;
   }
   isMobile?: boolean
+  filterPesqueria?: string
+  selectedId?: string | null
 }>()
 
 const emit = defineEmits(['update:mouse-coords', 'seek-vessel', 'select-vessel'])
@@ -133,6 +137,11 @@ const updateAll = () => {
   vesselMarkers.clear()
 
   Object.values(props.fleet).forEach(vessel => {
+    // FILTRO DE PESQUERÍA: Solo procesar buques que coincidan con la pesquería seleccionada
+    if (props.filterPesqueria && !vessel.pesquerias_nombres?.includes(props.filterPesqueria)) {
+      return
+    }
+
     const hasHistory = vessel.points.length > 0
 
     // Solo renderizar trayectoria si es visible (seleccionado) y tiene datos
@@ -143,8 +152,11 @@ const updateAll = () => {
       }
     }
 
-    // Renderizar marcador si showAllVessels es true o si es el buque seleccionado
-    if (props.activeLayers.showAllVessels || vessel.visible) {
+    // Renderizar marcador si:
+    // 1. showAllVessels es true (comportamiento estándar de flota)
+    // 2. o si la trayectoria es visible (vessel.visible)
+    // 3. o si es el buque seleccionado explícitamente (props.selectedId)
+    if (props.activeLayers.showAllVessels || vessel.visible || (props.selectedId === vessel.id)) {
       renderMarker(vessel)
     }
   })
@@ -407,6 +419,12 @@ watch(() => props.activeLayers.vieira, () => loadGeoJson('vieira'))
 watch(() => props.activeLayers.centolla, () => loadGeoJson('centolla'))
 watch(() => props.activeLayers.showAllVessels, updateAll)
 watch(() => props.activeLayers.showVesselNames, updateAll)
+watch(() => props.filterPesqueria, () => {
+  updateAll()
+  setTimeout(() => {
+    fitAllVesselsBounds()
+  }, 100)
+})
 
 const fitVesselBounds = (vesselId: string) => {
   if (!map) return
@@ -422,6 +440,11 @@ const fitAllVesselsBounds = () => {
   const currentPoints: L.LatLngExpression[] = []
 
   Object.values(props.fleet).forEach(vessel => {
+    // FILTRO DE PESQUERÍA: Solo incluir buques que coincidan con la pesquería seleccionada
+    if (props.filterPesqueria && !vessel.pesquerias_nombres?.includes(props.filterPesqueria)) {
+      return
+    }
+
     let current: FleetTrackPoint | null = null
     if (vessel.points.length > 0) {
       const pointIndex = vessel.visible ? vessel.currentIndex : (vessel.points.length - 1)

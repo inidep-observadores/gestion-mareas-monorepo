@@ -108,15 +108,15 @@
                 <!-- Nro Marea -->
                 <div class="space-y-1.5">
                   <label class="block text-sm font-medium text-text-muted">Nro. Marea</label>
-                  <input v-model.number="form.nroMarea" type="number"
-                    class="w-full rounded-lg border-border bg-surface-muted text-text py-2.5 px-3 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors outline-hidden" />
+                  <input v-model.number="form.nroMarea" type="number" :disabled="!canEditCriticalFields"
+                    class="w-full rounded-lg border-border bg-surface-muted text-text py-2.5 px-3 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors outline-hidden disabled:opacity-50" />
                 </div>
 
                 <!-- Año -->
                 <div class="space-y-1.5">
                   <label class="block text-sm font-medium text-text-muted">Año</label>
-                  <input v-model.number="form.anioMarea" type="number"
-                    class="w-full rounded-lg border-border bg-surface-muted text-text py-2.5 px-3 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors outline-hidden" />
+                  <input v-model.number="form.anioMarea" type="number" :disabled="!canEditCriticalFields"
+                    class="w-full rounded-lg border-border bg-surface-muted text-text py-2.5 px-3 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors outline-hidden disabled:opacity-50" />
                 </div>
 
                 <!-- Fecha Zarpada Estimada -->
@@ -185,7 +185,7 @@
                 <div class="space-y-1.5">
                   <label class="block text-sm font-medium text-text-muted">Observador Principal</label>
                   <SearchableSelect v-model="form.observadorId" :options="observadorOptions"
-                    placeholder="Seleccione observador..." />
+                    placeholder="Seleccione observador..." :disabled="!canEditCriticalFields" />
                 </div>
               </div>
             </section>
@@ -342,6 +342,11 @@ const tabs = computed(() => [
 ]);
 
 const etapasLength = computed<number>(() => Number(marea.value?.etapas?.length ?? 0));
+
+const canEditCriticalFields = computed(() => {
+  const codigo = marea.value?.estadoActual?.codigo;
+  return codigo === 'DESIGNADA' || codigo === 'A_REASIGNAR';
+});
 
 const currentTab = ref('general');
 

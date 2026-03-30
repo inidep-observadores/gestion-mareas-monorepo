@@ -2,7 +2,13 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { StatsService } from './stats.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { PlanificacionService } from '../planificacion/planificacion.service';
+import { BusinessRulesService } from '../common/business-rules/business-rules.service';
 import { DateUtils } from '../common/utils/date.utils';
+import { FilterType } from './dto/get-stats.dto';
+import { Sexo } from '@prisma/client';
+import * as ExcelJS from 'exceljs';
+import { MareasService } from '../mareas/mareas.service';
 
 describe('StatsService', () => {
     let service: StatsService;
@@ -12,6 +18,26 @@ describe('StatsService', () => {
         marea: {
             findMany: jest.fn(),
         },
+        observador: {
+            findMany: jest.fn(),
+        },
+    };
+
+    const mockPlanificacion = {
+        getRequerimientosPorAnio: jest.fn(),
+    };
+
+    const mockBusinessRules = {
+        getRules: jest.fn().mockReturnValue({ DIAS_DESCANSO_POST_MAREA: 5 }),
+    };
+
+    const mockMareasService = {
+        getWorkforceStatus: jest.fn().mockResolvedValue({
+            listNavegando: [],
+            listDescanso: [],
+            listDisponibles: [],
+            listImpedidos: []
+        }),
     };
 
     beforeEach(async () => {
@@ -19,6 +45,9 @@ describe('StatsService', () => {
             providers: [
                 StatsService,
                 { provide: PrismaService, useValue: mockPrisma },
+                { provide: PlanificacionService, useValue: mockPlanificacion },
+                { provide: BusinessRulesService, useValue: mockBusinessRules },
+                { provide: MareasService, useValue: mockMareasService },
             ],
         }).compile();
 
@@ -52,7 +81,7 @@ describe('StatsService', () => {
                 'TOTAL',
                 false, // includeNonProtocolized
                 false, // includeProtocolizedOutOfPeriod
-                'FLEET', // filterType
+                FilterType.FLEET, // filterType
                 'Test Fleet', // filterValue
                 'SHIP' // daysCalculationMode
             );
@@ -344,6 +373,109 @@ describe('StatsService', () => {
             // Total should still be correct
             expect(result.totalMareas).toBe(1);
             expect(result.totalDaysNavigated).toBe(20);
+        });
+    });
+    describe('getExportWorkbook - WORKFORCE', () => {
+        it('should exclude technical staff and classify by operational status', async () => {
+            mockMareasService.getWorkforceStatus.mockResolvedValue({
+                listNavegando: [
+                    {
+                        id: 'obs-1',
+                        name: 'Juan Perez',
+                        tipoObservador: 'TITULAR',
+                        sexo: Sexo.Masculino,
+                        days: 10,
+                        vessel: 'Vessel A',
+                        mareaCode: '2024-001',
+                        fishery: 'Merluza',
+                    }
+                ],
+                listDescanso: [
+                    {
+                        id: 'obs-2',
+                        name: 'Maria Gomez',
+                        tipoObservador: 'TITULAR',
+                        sexo: Sexo.Femenino,
+                        days: 5,
+                        vessel: null,
+                        mareaCode: '',
+                        fishery: '',
+                        status: 'DESCANSO',
+                        tieneDesignacionActiva: true
+                    }
+                ],
+                listDisponibles: [
+                    {
+                        id: 'obs-3',
+                        name: 'Carlos Lopez',
+                        tipoObservador: 'EVENTUAL',
+                        sexo: Sexo.Masculino,
+                        days: 20,
+                        vessel: null,
+                        mareaCode: '',
+                        fishery: '',
+                    }
+                ],
+                listImpedidos: []
+            });
+
+            const workbook = await service.getExportWorkbook(
+                2024, 'TOTAL', true, true, 'SHIP', true, FilterType.WORKFORCE
+            );
+
+            const sheet = workbook.getWorksheet('Dotación de Personal');
+            expect(sheet).toBeDefined();
+
+            // Verify count (headers + 3 rows)
+            expect(sheet.rowCount).toBe(4);
+
+            // Verify that MareasService was called
+            expect(mockMareasService.getWorkforceStatus).toHaveBeenCalled();
+            // Verify order and values
+            // Rows are 1-indexed (row 1 is header)
+            expect(sheet.getCell(2, 3).value).toBe('Juan Perez');
+            expect(sheet.getCell(2, 1).value).toBe('Navegando');
+            
+            expect(sheet.getCell(3, 3).value).toBe('Maria Gomez');
+            expect(sheet.getCell(3, 1).value).toBe('En Descanso');
+            
+            expect(sheet.getCell(4, 3).value).toBe('Carlos Lopez');
+            expect(sheet.getCell(4, 1).value).toBe('Disponible');
+        });
+
+        it('should correctly identify "Designado" status as a full row highlight', async () => {
+            mockMareasService.getWorkforceStatus.mockResolvedValue({
+                listNavegando: [],
+                listDescanso: [],
+                listDisponibles: [
+                    {
+                        id: 'obs-1',
+                        name: 'Designado Test',
+                        tipoObservador: 'TITULAR',
+                        sexo: Sexo.Masculino,
+                        days: 0,
+                        vessel: 'Vessel X',
+                        mareaCode: '2024-002',
+                        fishery: 'Merluza',
+                        status: 'DISPONIBLE',
+                        tieneDesignacionActiva: true
+                    }
+                ],
+                listImpedidos: []
+            });
+
+            const workbook = await service.getExportWorkbook(
+                2024, 'TOTAL', true, true, 'SHIP', true, FilterType.WORKFORCE
+            );
+
+            const sheet = workbook.getWorksheet('Dotación de Personal');
+            const statusCell = sheet.getCell(2, 1);
+            const nameCell = sheet.getCell(2, 3); // Apellido y Nombre es la columna 3
+
+            // Verify that it is "Disponible" but has the "Designado" highlight (E0F2FE) in all row
+            expect(statusCell.value).toBe('Disponible');
+            expect((nameCell.fill as any).fgColor?.argb).toBe('E0F2FE');
+            expect((statusCell.fill as any).fgColor?.argb).toBe('E0F2FE');
         });
     });
 });

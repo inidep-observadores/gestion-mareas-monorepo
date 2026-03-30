@@ -42,9 +42,33 @@
           </div>
         </div>
 
-        <!-- Search Area -->
-        <div class="px-4 py-3 bg-surface/5 border-b border-border/5">
+        <!-- Search & Filter Area -->
+        <div class="px-4 py-3 bg-surface/5 border-b border-border/5 space-y-3">
+
           <SearchInput v-model="searchQuery" placeholder="Marea, buque u observador..." size="sm" />
+          <!-- Fishery Filter -->
+          <div class="relative flex items-center group">
+            <div class="absolute left-0 pl-3 flex items-center pointer-events-none text-text-muted group-hover:text-primary transition-colors">
+              <!-- Filter Icon -->
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+              </svg>
+            </div>
+            <select v-model="selectedPesqueria"
+              class="w-full pl-10 pr-10 py-2.5 bg-background border border-border rounded-lg text-sm font-semibold text-text outline-none focus:border-primary transition-all appearance-none cursor-pointer">
+              <option value="" class="bg-surface text-text">Todas las pesquerías</option>
+              <option v-for="pesqueria in availablePesquerias" :key="pesqueria" :value="pesqueria" class="bg-surface text-text">
+                {{ pesqueria }}
+              </option>
+            </select>
+            <span class="absolute right-0 pr-3 flex items-center pointer-events-none text-text-muted group-hover:text-primary transition-colors">
+              <svg class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd"
+                  d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                  clip-rule="evenodd" />
+              </svg>
+            </span>
+          </div>
         </div>
 
 
@@ -65,7 +89,13 @@
                   {{ vessel.name }}
                 </span>
               </div>
-              <div class="flex items-center gap-2 mt-1 whitespace-nowrap overflow-hidden">
+              <div class="ml-4 -mt-0.5">
+                <p class="text-[10px] font-bold text-text-muted truncate leading-tight">
+                  {{ vessel.pesquerias_nombres?.[0] || 'Sin pesquería' }}
+                  <span class="italic opacity-60 ml-1">- {{ vessel.flota }}</span>
+                </p>
+              </div>
+              <div class="flex items-center gap-2 mt-0.5 whitespace-nowrap overflow-hidden">
                 <span class="text-xs font-black text-primary/80 uppercase tracking-tighter shrink-0">
                   {{ vessel.mareaCode }}
                 </span>
@@ -139,20 +169,41 @@ export interface MonitorVessel {
   visible: boolean
   voyageStart: string | null
   voyageEnd: string | null
+  pesquerias_nombres?: string[]
+  flota?: string
 }
 
 const props = defineProps<{
   vessels: MonitorVessel[]
   selectedId: string | null
   isOpen: boolean
+  filterPesqueria: string
 }>()
 
-const emit = defineEmits(['select', 'update:isOpen', 'refresh'])
+const emit = defineEmits(['select', 'update:isOpen', 'update:filterPesqueria', 'refresh'])
 
 const searchQuery = ref('')
 
+const selectedPesqueria = computed({
+  get: () => props.filterPesqueria,
+  set: (val) => emit('update:filterPesqueria', val)
+})
+
+const availablePesquerias = computed(() => {
+  const set = new Set<string>()
+  props.vessels.forEach(v => {
+    v.pesquerias_nombres?.forEach(p => set.add(p))
+  })
+  return Array.from(set).sort()
+})
+
 const filteredVessels = computed(() => {
   let list = [...props.vessels]
+
+  // First filter by fishery (This also affects the map markers)
+  if (props.filterPesqueria) {
+    list = list.filter(v => v.pesquerias_nombres?.includes(props.filterPesqueria))
+  }
 
   const q = searchQuery.value.toLowerCase().trim()
   if (q) {

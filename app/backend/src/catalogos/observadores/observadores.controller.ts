@@ -17,8 +17,14 @@ export class ObservadoresController {
     }
 
     @Get()
-    obtenerTodos(@Query('soloDisponibles') soloDisponibles?: string) {
-        return this.observadoresService.obtenerTodos(soloDisponibles === 'true');
+    obtenerTodos(
+        @Query('soloDisponibles') soloDisponibles?: string,
+        @Query('incluirInactivos') incluirInactivos?: string
+    ) {
+        return this.observadoresService.obtenerTodos(
+            soloDisponibles === 'true',
+            incluirInactivos === 'true'
+        );
     }
 
     @Post('export/excel')

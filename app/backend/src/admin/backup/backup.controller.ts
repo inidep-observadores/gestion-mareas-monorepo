@@ -1,7 +1,7 @@
-import { Controller, Post, Get, Body, Param, Delete, Res, UseInterceptors, UploadedFile } from '@nestjs/common';
+import { Controller, Post, Get, Put, Body, Param, Delete, Res, UseInterceptors, UploadedFile } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Response } from 'express';
-import { BackupService } from './backup.service';
+import { BackupService, BackupSchema } from './backup.service';
 import { Auth } from '../../auth/decorators';
 import { ValidRoles } from '../../auth/interfaces';
 
@@ -13,14 +13,29 @@ export class BackupController {
     @Post()
     createBackup(
         @Body('comment') comment?: string,
-        @Body('includeTrajectories') includeTrajectories?: boolean
+        @Body('schemas') schemas?: BackupSchema[],
     ) {
-        return this.backupService.createBackup(comment, includeTrajectories);
+        // Disparar el proceso en background para no bloquear la respuesta HTTP.
+        // El cliente realiza polling de GET /admin/backup para detectar el nuevo archivo.
+        this.backupService.createBackup(comment, schemas).catch(() => {
+            // Silenciar: el error ya fue logeado en el servicio.
+        });
+        return { message: 'Proceso de copia de seguridad iniciado. Actualizando la lista automáticamente...' };
     }
 
     @Get('status')
     getStatus() {
         return this.backupService.getStatus();
+    }
+
+    @Get('auto-config')
+    getAutoConfig() {
+        return this.backupService.getAutoBackupConfig();
+    }
+
+    @Put('auto-config')
+    updateAutoConfig(@Body() config: { enabled: boolean; hour: string }) {
+        return this.backupService.updateAutoBackupConfig(config);
     }
 
     @Get()
@@ -31,7 +46,7 @@ export class BackupController {
     @Get('download/:filename')
     async downloadBackup(
         @Param('filename') filename: string,
-        @Res() res: Response
+        @Res() res: Response,
     ) {
         await this.backupService.createBackupZip(filename, res);
     }
@@ -46,8 +61,9 @@ export class BackupController {
     restoreBackup(
         @Param('filename') filename: string,
         @Body('confirmationPhrase') confirmationPhrase: string,
+        @Body('schemas') schemasToRestore?: BackupSchema[],
     ) {
-        return this.backupService.restoreBackup(filename, confirmationPhrase);
+        return this.backupService.restoreBackup(filename, confirmationPhrase, schemasToRestore);
     }
 
     @Delete(':filename')

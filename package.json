@@ -1,6 +1,6 @@
 {
   "name": "sigma-mareas-monorepo",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "private": true,
   "packageManager": "pnpm@10.26.2",
   "workspaces": [
@@ -13,6 +13,12 @@
     "dev": "pnpm --filter sigma-backend --filter sigma-frontend --parallel run dev",
     "build": "pnpm -r run build",
     "lint": "pnpm -r run lint",
-    "test": "pnpm -r run test"
+    "test": "pnpm -r run test",
+    "prisma:studio": "pnpm --filter sigma-backend exec prisma studio"
+  },
+  "pnpm": {
+    "overrides": {
+      "@types/pg": "8.11.11"
+    }
   }
 }

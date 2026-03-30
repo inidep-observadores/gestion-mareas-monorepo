@@ -1,4 +1,4 @@
-﻿import httpClient from '@/config/http/http.client'
+import httpClient from '@/config/http/http.client'
 import { useConfigStore } from '@/modules/shared/stores/config.store'
 
 export interface FleetDistributionItem {
@@ -52,14 +52,15 @@ export interface WorkforceStatus {
     totalActivos: number
     navegando: number
     descanso: number
-    disponibles: number
+    designados: number
     licencia: number
     impedidos: number
-    topDry: Array<{ id: string; name: string; days: number; lastArrival: string; mareaCode?: string; vesselName?: string; fishery?: string; tipoObservador: string }>
-    listNavegando: Array<{ id: string; name: string; days: number; vessel: string; mareaCode?: string; fishery?: string; enTierra?: boolean; startDate: string; tipoObservador: string, stageCount?: number }>
-    listDescanso: Array<{ id: string; name: string; days: number; lastArrival: string; mareaCode?: string; vesselName?: string; fishery?: string; tipoObservador: string }>
-    listDisponibles: Array<{ id: string; name: string; days: number; lastArrival: string; mareaCode?: string; vesselName?: string; fishery?: string; tipoObservador: string }>
-    listImpedidos: Array<{ id: string; name: string; motivo: string; tipoObservador: string }>
+    topDry: Array<{ id: string; name: string; days: number; lastArrival: string; mareaCode?: string; vesselName?: string; fishery?: string; tipoObservador: string; tipoContrato: string; sexo: string; eventual: boolean; observaciones?: string }>
+    listNavegando: Array<{ id: string; name: string; days: number; vessel: string; mareaCode?: string; fishery?: string; enTierra?: boolean; startDate: string; tipoObservador: string; tipoContrato: string; stageCount?: number; sexo: string; eventual: boolean; observaciones?: string }>
+    listDescanso: Array<{ id: string; name: string; days: number; lastArrival: string; mareaCode?: string; vesselName?: string; fishery?: string; tipoObservador: string; tipoContrato: string; sexo: string; eventual: boolean; observaciones?: string }>
+    listDisponibles: Array<{ id: string; name: string; days: number; lastArrival: string; mareaCode?: string; vesselName?: string; fishery?: string; tipoObservador: string; tipoContrato: string; sexo: string; eventual: boolean; observaciones?: string }>
+    listDesignados: Array<{ id: string; name: string; mareaCode: string; vesselName: string; fishery: string; fechaZarpadaEstimada: string; tipoObservador: string; tipoContrato: string; sexo: string; eventual: boolean; tieneDesignacionActiva: boolean; observaciones?: string }>
+    listImpedidos: Array<{ id: string; name: string; motivo: string; tipoObservador: string; tipoContrato: string; sexo: string; eventual: boolean; observaciones?: string }>
 }
 
 export interface MovementAlert {
@@ -110,9 +111,12 @@ const dashboardService = {
         return data
     },
 
-    async getWorkforceStatus(): Promise<WorkforceStatus> {
+    async getWorkforceStatus(role?: string): Promise<WorkforceStatus> {
         const { selectedYear } = useConfigStore()
-        const { data } = await httpClient.get<WorkforceStatus>(`/mareas/workforce/status?year=${selectedYear}`)
+        const url = role 
+            ? `/mareas/workforce/status?year=${selectedYear}&role=${role}`
+            : `/mareas/workforce/status?year=${selectedYear}`;
+        const { data } = await httpClient.get<WorkforceStatus>(url)
         return data
     },
 

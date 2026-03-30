@@ -31,11 +31,16 @@ export class ObservadoresService {
         });
     }
 
-    async obtenerTodos(soloDisponibles: boolean = false) {
+    async obtenerTodos(soloDisponibles: boolean = false, incluirInactivos: boolean = false) {
         try {
-            const where: any = { activo: true };
+            const where: any = {};
+
+            if (!incluirInactivos) {
+                where.activo = true;
+            }
 
             if (soloDisponibles) {
+                where.activo = true; // Si pide solo disponibles, implícitamente solo activos
                 // 1. Sin impedimento
                 where.conImpedimento = false;
 

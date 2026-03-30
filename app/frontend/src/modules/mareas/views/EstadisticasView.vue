@@ -13,7 +13,7 @@
 
             <div class="mt-4">
                <TimeFilterBar :year="year" :startDate="startDate" :endDate="endDate"
-                  @update:filter="handleTimeFilter" />
+                  @update:filter="handleTimeFilter" @export="handleGeneralExport" />
             </div>
 
             <!-- Collapsible Criteria Explanation -->
@@ -42,7 +42,34 @@
 
          </section>
 
-         <div v-if="stats" class="space-y-8">
+         <!-- TABS HEADER -->
+         <div v-if="stats" class="mb-6">
+            <div class="border-b border-border/50">
+               <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+                  <button @click="activeTab = 'general'"
+                     :class="[
+                        'whitespace-nowrap py-4 px-1 border-b-2 font-black text-xs uppercase tracking-widest transition-colors focus:outline-none',
+                        activeTab === 'general'
+                           ? 'border-primary text-primary'
+                           : 'border-transparent text-text-muted hover:text-text hover:border-border'
+                     ]">
+                     Estadísticas Generales
+                  </button>
+                  <button @click="activeTab = 'audit'"
+                     :class="[
+                        'whitespace-nowrap py-4 px-1 border-b-2 font-black text-xs uppercase tracking-widest transition-colors focus:outline-none',
+                        activeTab === 'audit'
+                           ? 'border-primary text-primary'
+                           : 'border-transparent text-text-muted hover:text-text hover:border-border'
+                     ]">
+                     Análisis para Auditoría
+                  </button>
+               </nav>
+            </div>
+         </div>
+
+         <!-- TAB CONTENT: GENERAL -->
+         <div v-if="stats && activeTab === 'general'" class="space-y-8 animate-in fade-in duration-500">
             <!-- ROW 1: CORE ANALYTICAL KPIs -->
             <section class="grid grid-cols-1 md:grid-cols-3 gap-6">
                <StatKpiCard label="Total Mareas" :value="stats.totalMareas" :icon="ShipIcon" color="primary"
@@ -58,12 +85,14 @@
                <div class="col-span-12 lg:col-span-8">
                   <ChartWidget title="Tendencia Mensual" subtitle="Evolución de Días Navegados por mes" type="area"
                      :series="monthlySeries" :options="monthlyChartOptions" allow-download
-                     @download="handleDownload('Tendencia_Mensual')" />
+                     :export-filename="`Tendencia_Mensual_${year}`"
+                     @download="handleDownload('Tendencia_Mensual', 'CHART_TREND')" />
                </div>
                <div class="col-span-12 lg:col-span-4 space-y-8">
                   <ChartWidget title="Distribución por Flota" type="pie" :series="fleetSeries"
                      :options="fleetChartOptions" allow-download @dataPointClick="handleFleetClick"
-                     @download="handleDownload('Distribucion_Flota', 'FLEET')" />
+                     :export-filename="`Distribucion_Flota_${year}`"
+                     @download="handleDownload('Distribucion_Flota', 'CHART_FLEET')" />
                </div>
             </section>
 
@@ -73,13 +102,15 @@
                   <ChartWidget title="Participación por Pesquería" subtitle="Días navegados por especie objetivo"
                      type="donut" :series="fisherySeries" :options="fisheryChartOptions" allow-download
                      @dataPointClick="handleFisheryClick"
-                     @download="handleDownload('Participacion_Pesqueria', 'FISHERY')" />
+                     :export-filename="`Participacion_Pesqueria_${year}`"
+                     @download="handleDownload('Participacion_Pesqueria', 'CHART_FISHERY')" />
                </div>
                <div class="col-span-12 lg:col-span-7">
                   <ChartWidget title="Ranking de Observadores" subtitle="Top 10 por días navegados" type="bar"
                      :series="observerSeries" :options="observerChartOptions" allow-download
                      @dataPointClick="handleObserverClick"
-                     @download="handleDownload('Ranking_Observadores', 'OBSERVER')">
+                     :export-filename="`Ranking_Observadores_${year}`"
+                     @download="handleDownload('Ranking_Observadores', 'CHART_OBSERVER')">
                      <template #header-action>
                         <button @click="rankingModalOpen = true"
                            class="text-primary hover:text-primary-hover transition-colors p-1"
@@ -97,12 +128,14 @@
                   <ChartWidget title="Detalle de Actividad por Pesquería"
                      subtitle="Comparativa de Mareas y Días Navegados" type="bar" :series="fisheryDualAxisSeries"
                      :options="fisheryDualAxisOptions" allow-download @dataPointClick="handleFisheryClick"
-                     @download="handleDownload('Detalle_Pesqueria_Mareas_Dias', 'FISHERY')" />
+                     :export-filename="`Detalle_Pesqueria_${year}`"
+                     @download="handleDownload('Detalle_Pesqueria_Mareas_Dias', 'CHART_FISHERY_DUAL')" />
                </div>
                <div class="col-span-12 lg:col-span-5">
                   <ChartWidget title="Perfil Operativo" subtitle="Esfuerzo (Días) vs Frecuencia (Mareas)" type="scatter"
                      :series="fisheryProfileSeries" :options="fisheryProfileOptions" allow-download
                      @dataPointClick="handleFisheryClick"
+                     :export-filename="`Perfil_Operativo_Pesqueria_${year}`"
                      @download="handleDownload('Perfil_Operativo_Pesqueria', 'FISHERY')" />
                </div>
             </section>
@@ -112,8 +145,9 @@
                <div class="col-span-12">
                   <ChartWidget title="Cronograma de Distribución de Mareas"
                      subtitle="Distribución temporal de mareas y etapas por buque" type="rangeBar" :series="ganttSeries"
-                     :options="ganttChartOptions" :chart-height="dynamicChartHeight"
+                     :options="ganttChartOptions" :chart-height="ganttDynamicHeight"
                      chart-container-class="max-h-[700px] overflow-y-auto custom-scrollbar" allow-download
+                     :export-filename="`Cronograma_Distribucion_Mareas_${year}`"
                      @dataPointClick="handleGanttClick" @download="handleDownload('Distribucion_Temporal_Gantt')">
                      <template #header-action>
                         <div class="flex items-center gap-2">
@@ -134,7 +168,8 @@
             <section class="grid grid-cols-12 gap-8">
                <div class="col-span-12">
                   <ChartWidget title="Cobertura de Buques" subtitle="Cantidad de buques únicos cubiertos por mes"
-                     type="bar" :series="coverageSeries" :options="coverageChartOptions" allow-download
+                     type="bar" :series="coverageSeries" :options="coverageChartOptions" :chart-height="450"
+                     allow-download :export-filename="`Cobertura_Buques_Mensual_${year}`"
                      @download="handleDownload('Cobertura_Buques_Mensual')">
                      <template #header-action>
                         <div class="flex items-center gap-2">
@@ -151,6 +186,23 @@
                </div>
             </section>
 
+         </div>
+
+         <!-- TAB CONTENT: AUDITORÍA -->
+         <div v-if="stats && activeTab === 'audit'">
+            <AuditAnalysisPanel
+               :stats="stats"
+               :distributionData="distributionData"
+               :year="year"
+               :mode="mode"
+               :loading="loading"
+               :protocolizedOnly="protocolizedOnly"
+               :includeOutOfPeriod="includeOutOfPeriod"
+               :daysCalculationMode="daysCalculationMode"
+               :includeCampaigns="includeCampaigns"
+               :startDate="startDate"
+               :endDate="endDate"
+            />
          </div>
 
          <!-- Loading State -->
@@ -233,7 +285,7 @@
                               <div class="flex items-center gap-2 mb-2">
                                  <span class="font-black text-sm text-text tabular-nums tracking-tighter">{{
                                     marea.id_marea
-                                    }}</span>
+                                 }}</span>
                                  <span
                                     class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest bg-secondary/10 text-secondary border border-secondary/20">{{
                                        marea.estado }}</span>
@@ -266,7 +318,7 @@
                                        class="font-black opacity-40 uppercase tracking-tighter text-[9px] mb-0.5">Inicio</span>
                                     <span class="font-bold text-text">{{ marea.fechaInicio ? new
                                        Date(marea.fechaInicio).toLocaleDateString('es-AR', { timeZone: 'UTC' }) : '-'
-                                    }}</span>
+                                       }}</span>
                                  </div>
                               </div>
                            </div>
@@ -382,7 +434,7 @@
                                  <td class="px-4 py-2 border-r border-border/50">
                                     <div class="flex flex-col">
                                        <span class="font-black text-xs text-text tabular-nums">{{ marea.id_marea
-                                          }}</span>
+                                       }}</span>
                                        <span class="text-[9px] font-bold text-text-muted uppercase tracking-tighter">{{
                                           marea.estado }}</span>
                                     </div>
@@ -395,7 +447,7 @@
                                  </td>
                                  <td class="px-4 py-2 text-xs font-bold text-text border-r border-border/50">{{
                                     marea.pesqueria
-                                    }}</td>
+                                 }}</td>
                                  <td v-if="filterType !== 'OBSERVER'"
                                     class="px-4 py-2 text-xs font-bold text-text border-r border-border/50">{{
                                        marea.observador
@@ -411,7 +463,7 @@
                                  <td v-if="mode === 'CALENDAR' && !dialogPeriodLabel" class="px-4 py-2 text-right">
                                     <span class="font-bold text-xs text-text-muted tabular-nums opacity-80">{{
                                        marea.diasTotales
-                                       }}</span>
+                                    }}</span>
                                  </td>
                               </tr>
                            </tbody>
@@ -621,6 +673,9 @@ import {
    TrendingUpIcon
 } from 'lucide-vue-next'
 import { statsService, type DashboardStats, type StatsDetailItem, type MareaDistributionItem } from '@/modules/stats/services/stats.service'
+import AuditAnalysisPanel from '@/modules/stats/components/AuditAnalysisPanel.vue'
+import { planificacionService } from '@/modules/planificacion/services/planificacion.service'
+import type { RequerimientoCobertura } from '@/modules/planificacion/interfaces/planificacion.interfaces'
 import { TipoMarea } from '@/modules/mareas/types/enums'
 import { toast } from 'vue-sonner'
 
@@ -633,6 +688,8 @@ const detailViewMode = computed({
    get: () => configStore.statsDetailViewMode,
    set: (val) => configStore.setStatsDetailViewMode(val)
 });
+
+const activeTab = ref<'general' | 'audit'>('general');
 
 const mode = ref<'CALENDAR' | 'TOTAL'>('CALENDAR');
 const protocolizedOnly = ref(false);
@@ -650,6 +707,7 @@ const selectedCoverageFishery = ref<string>('ALL');
 const stats = ref<DashboardStats | null>(null);
 const distributionData = ref<MareaDistributionItem[]>([]);
 const coverageData = ref<{ month: number, count: number, days: number, fleets: { name: string, count: number, days: number }[] }[]>([]);
+const requerimientosData = ref<RequerimientoCobertura[]>([]);
 const selectedDistributionFishery = ref<string>('ALL');
 
 const dynamicChartHeight = computed(() => {
@@ -658,7 +716,13 @@ const dynamicChartHeight = computed(() => {
       filtered = filtered.filter(item => item.pesqueria === selectedDistributionFishery.value);
    }
    const uniqueVessels = new Set(filtered.map(item => item.buque)).size;
-   // Base 100px para ejes + 20px por buque. Mínimo 500px.
+const handleTimeFilter = (period: { startDate: string | null; endDate: string | null }) => {
+   startDate.value = period.startDate;
+   endDate.value = period.endDate;
+   fetchData();
+};
+
+// Base 100px para ejes + 20px por buque. Mínimo 500px.
    return Math.max(500, uniqueVessels * 20 + 100);
 });
 
@@ -847,7 +911,7 @@ const criteriaList = computed(() => {
 const fetchData = async () => {
    loading.value = true;
    try {
-      const [newStats, distribution, coverage] = await Promise.all([
+      const [newStats, distribution, coverage, reqs] = await Promise.all([
          statsService.getDashboardStats(
             year.value,
             mode.value,
@@ -882,11 +946,13 @@ const fetchData = async () => {
             selectedCoverageFishery.value === 'ALL' ? undefined : selectedCoverageFishery.value, // fisheryName
             startDate.value || undefined, // protocolizationStartDate
             endDate.value || undefined    // protocolizationEndDate
-         )
+         ),
+         planificacionService.getRequerimientosPorAnio(year.value)
       ]);
       stats.value = newStats;
       distributionData.value = distribution;
       coverageData.value = coverage.monthly;
+      requerimientosData.value = reqs;
    } catch (error) {
       console.error('Error fetching stats:', error);
       toast.error('Error al cargar estadísticas');
@@ -924,6 +990,17 @@ const ganttSeries = computed(() => {
       filtered = filtered.filter(item => item.pesqueria === selectedDistributionFishery.value);
    }
 
+   // Ordenar por Pesquería, luego Flota, luego Buque, luego Fecha Zarpada
+   filtered = [...filtered].sort((a, b) => {
+      const p = a.pesqueria.localeCompare(b.pesqueria);
+      if (p !== 0) return p;
+      const f = (a.flota || '').localeCompare(b.flota || '');
+      if (f !== 0) return f;
+      const bc = a.buque.localeCompare(b.buque);
+      if (bc !== 0) return bc;
+      return new Date(a.fechaZarpada).getTime() - new Date(b.fechaZarpada).getTime();
+   });
+
    const yearStart = new Date(Date.UTC(year.value, 0, 1, 0, 0, 0, 0)).getTime();
    const seriesData: any[] = [];
 
@@ -933,18 +1010,24 @@ const ganttSeries = computed(() => {
       const end = item.fechaArribo ? new Date(item.fechaArribo).getTime() : Date.now();
       const baseColor = getFisheryColor(item.pesqueria);
 
+      const isFisheryFiltered = selectedDistributionFishery.value !== 'ALL';
+      const subLabel = isFisheryFiltered 
+         ? (item.flota || 'Sin Flota') 
+         : `${item.pesqueria} - ${item.flota || 'Sin Flota'}`;
+      const labelFormat = [item.buque, subLabel];
+
       // Si estamos en modo TOTAL y el segmento cruza el inicio del año
       if (mode.value === 'TOTAL' && start < yearStart && end > yearStart) {
          // Segmento Año Anterior (Desaturado)
          seriesData.push({
-            x: item.buque,
+            x: labelFormat,
             y: [start, yearStart],
             fillColor: baseColor + '40', // 25% opacidad para desaturar
             meta: { ...item, isPreviousYear: true }
          });
          // Segmento Año Actual (Normal)
          seriesData.push({
-            x: item.buque,
+            x: labelFormat,
             y: [yearStart, end],
             fillColor: baseColor,
             meta: { ...item, isPreviousYear: false }
@@ -957,7 +1040,7 @@ const ganttSeries = computed(() => {
          }
 
          seriesData.push({
-            x: item.buque,
+            x: labelFormat,
             y: [start, end],
             fillColor: color,
             meta: { ...item, isPreviousYear: end <= yearStart }
@@ -968,10 +1051,17 @@ const ganttSeries = computed(() => {
    return [{ data: seriesData }];
 });
 
-const ganttChartOptions = computed(() => ({
+const ganttDynamicHeight = computed(() => {
+   const uniqueRows = new Set(ganttSeries.value[0].data.map((d: any) => JSON.stringify(d.x))).size;
+   // Incrementar a 100px por fila para asegurar espacio total para las etiquetas de 2 líneas
+   return Math.max(500, uniqueRows * 50);
+});
+
+const ganttChartOptions = computed(() => {
+   return {
    chart: {
       type: 'rangeBar',
-      height: 450,
+      height: ganttDynamicHeight.value,
       fontFamily: 'Inter, sans-serif',
       toolbar: {
          show: true,
@@ -996,7 +1086,7 @@ const ganttChartOptions = computed(() => ({
    plotOptions: {
       bar: {
          horizontal: true,
-         barHeight: '75%',
+         barHeight: '40%',
          rangeBarGroupRows: true,
          borderRadius: 4
       }
@@ -1008,16 +1098,22 @@ const ganttChartOptions = computed(() => ({
          style: {
             fontSize: '10px',
             fontWeight: 600,
-            colors: 'var(--text-muted)'
+            colors: '#64748b' // text-muted
          }
       }
    },
    yaxis: {
       labels: {
+         align: 'left',
+         minWidth: 50,
+         maxWidth: 230,
+         offsetX: 0,
+         offsetY: 6, // Ajuste para centrar verticalmente las dos líneas
          style: {
             fontSize: '11px',
             fontWeight: 700,
-            colors: 'var(--text)'
+            colors: '#0f172a', // text
+            cssClass: 'apexcharts-yaxis-label-multiline'
          }
       }
    },
@@ -1061,7 +1157,7 @@ const ganttChartOptions = computed(() => ({
       }
    },
    grid: {
-      borderColor: 'var(--border)',
+      borderColor: '#e2e8f0', // border
       opacity: 0.1,
       xaxis: {
          lines: {
@@ -1072,12 +1168,12 @@ const ganttChartOptions = computed(() => ({
    noData: {
       text: 'No hay datos de distribución para el periodo',
       style: {
-         color: 'var(--text-muted)',
+         color: '#64748b', // text-muted
          fontSize: '14px',
-         fontFamily: 'Inter'
       }
    }
-}));
+};
+});
 
 // --- Watchers ---
 watch([year, mode, protocolizedOnly, includeOutOfPeriod, daysCalculationMode, includeCampaigns, startDate, endDate, selectedCoverageFishery], () => {
@@ -1214,9 +1310,14 @@ const handleGanttClick = ({ seriesIndex, dataPointIndex, w }: any) => {
 };
 
 // --- Download Handler ---
-const handleDownload = async (titlePrefix: string, fType?: 'FISHERY' | 'FLEET' | 'OBSERVER') => {
-   const fValue = dialogFilterValue.value || undefined;
-   const fTypeParam = fType || dialogFilterType.value || undefined;
+const handleDownload = async (titlePrefix: string, fType?: 'FISHERY' | 'FLEET' | 'OBSERVER' | 'COVERAGE' | 'CHART_TREND' | 'CHART_FLEET' | 'CHART_FISHERY' | 'CHART_OBSERVER' | 'CHART_FISHERY_DUAL') => {
+   let fValue = dialogFilterValue.value || undefined;
+   let fTypeParam = fType || dialogFilterType.value || undefined;
+
+   if (titlePrefix === 'Cobertura_Buques_Mensual') {
+      fTypeParam = 'COVERAGE' as any;
+      fValue = selectedCoverageFishery.value === 'ALL' ? undefined : selectedCoverageFishery.value;
+   }
 
    let finalTitle = titlePrefix;
    if (dialogOpen.value && dialogTitle.value) {
@@ -1253,10 +1354,35 @@ const handleDownload = async (titlePrefix: string, fType?: 'FISHERY' | 'FLEET' |
    }
 }
 
+const handleGeneralExport = async () => {
+   try {
+      await statsService.downloadExport(
+         year.value,
+         mode.value,
+         !protocolizedOnly.value,
+         includeOutOfPeriod.value,
+         daysCalculationMode.value,
+         includeCampaigns.value,
+         undefined,
+         undefined,
+         `Reporte_General_Mareas_${year.value}`,
+         startDate.value || undefined,
+         endDate.value || undefined,
+         startDate.value || undefined,
+         endDate.value || undefined,
+         true
+      );
+      toast.success('Exportación general preparada con éxito');
+   } catch (error) {
+      console.error('Error in handleGeneralExport:', error);
+      toast.error('No se pudo generar la exportación general');
+   }
+}
+
 const getFleetColor = (name: string) => {
-   if (name.toUpperCase().includes('FRESQUERO')) return 'var(--color-info)';
-   if (name.toUpperCase().includes('CONGELADOR')) return 'var(--color-warning)';
-   return 'var(--color-primary)';
+   if (name.toUpperCase().includes('FRESQUERO')) return '#0ea5e9'; // color-info
+   if (name.toUpperCase().includes('CONGELADOR')) return '#f59e0b'; // color-warning
+   return '#2563eb'; // color-primary
 }
 
 onMounted(() => {
@@ -1373,7 +1499,27 @@ const fleetChartOptions = computed(() => ({
 }))
 
 // 3. Fishery Distribution (Pie)
-const fisherySort = computed(() => stats.value?.fisheries.slice(0, 7) || []) // Top 7
+const fisherySort = computed(() => {
+   const all = stats.value?.fisheries || [];
+   // Si son 15 o menos, las mostramos todas.
+   if (all.length <= 15) return all;
+   
+   // Si son más de 15, agrupamos el resto en "Otras" para evitar fragmentación extrema.
+   const top = all.slice(0, 14);
+   const others = all.slice(14);
+   const othersDays = others.reduce((acc, curr) => acc + curr.days, 0);
+   const othersMareas = others.reduce((acc, curr) => acc + curr.mareas, 0);
+   
+   if (othersDays > 0) {
+      top.push({
+         name: 'Otras',
+         days: othersDays,
+         mareas: othersMareas,
+         stats: undefined
+      });
+   }
+   return top;
+})
 const fisherySeries = computed(() => fisherySort.value.map(f => f.days))
 const fisheryChartOptions = computed(() => ({
    labels: fisherySort.value.map(f => f.name),
@@ -1383,7 +1529,7 @@ const fisheryChartOptions = computed(() => ({
          const label = w.globals.labels[seriesIndex];
          const item = fisherySort.value[seriesIndex];
          const colors = w.globals.colors;
-         const accent = colors[seriesIndex] || 'var(--color-primary)';
+         const accent = colors[seriesIndex] || '#2563eb';
 
          return `
             <div class="px-4 py-3 bg-surface/95 backdrop-blur-md text-text border border-border/50 rounded-2xl flex flex-col gap-3 shadow-2xl ring-1 ring-black/5 min-w-[180px]">
@@ -1563,28 +1709,28 @@ const fisheryProfileOptions = computed(() => ({
       fontSize: '10px',
       fontFamily: 'Inter, sans-serif',
       fontWeight: 600,
-      labels: { colors: 'var(--color-text-muted)' },
+      labels: { colors: '#64748b' }, // color-text-muted
       markers: { radius: 12, size: 6 },
       itemMargin: { horizontal: 10, vertical: 5 }
    },
    xaxis: {
       title: {
          text: 'CANTIDAD DE MAREAS (FRECUENCIA)',
-         style: { color: 'var(--color-text-muted)', fontSize: '10px', fontWeight: 800 }
+         style: { color: '#64748b', fontSize: '10px', fontWeight: 800 }
       },
       tickAmount: 5,
       labels: {
-         style: { colors: 'var(--color-text-muted)', fontWeight: 600 },
+         style: { colors: '#64748b', fontWeight: 600 },
          formatter: (val: number) => Math.floor(val)
       }
    },
    yaxis: {
       title: {
          text: 'DÍAS NAVEGADOS (ESFUERZO)',
-         style: { color: 'var(--color-text-muted)', fontSize: '10px', fontWeight: 800 }
+         style: { color: '#64748b', fontSize: '10px', fontWeight: 800 }
       },
       labels: {
-         style: { colors: 'var(--color-text-muted)', fontWeight: 600 },
+         style: { colors: '#64748b', fontWeight: 600 },
          formatter: (val: number) => Math.floor(val)
       }
    },
@@ -1598,7 +1744,7 @@ const fisheryProfileOptions = computed(() => ({
    // Diverse premium color palette
    colors: ['#0ea5e9', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#ec4899', '#6366f1', '#14b8a6', '#f43f5e', '#84cc16', '#22c55e', '#a855f7'],
    grid: {
-      borderColor: 'var(--color-border)',
+      borderColor: '#e2e8f0', // color-border
       opacity: 0.1,
       strokeDashArray: 4,
       xaxis: { lines: { show: true } },
@@ -1621,7 +1767,7 @@ const fisheryProfileOptions = computed(() => ({
                <span class="text-text font-black text-xs tabular-nums">${data.x} Mareas</span>
              </div>
              <div class="flex justify-between items-center gap-4">
-               <span class="text-text-muted text-[10px] font-bold uppercase tracking-tighter">Esfuerzo:</span>
+               <span class="text-text-muted text-[10px] font-bold uppercase tracking-tighter">Esfuerzo</span>
                <span class="text-text font-black text-xs tabular-nums">${data.y} Días</span>
              </div>
              <div class="mt-2 pt-1.5 border-t border-border/50 flex justify-between items-center">
@@ -1634,152 +1780,453 @@ const fisheryProfileOptions = computed(() => ({
    }
 }));
 
-// 7. Monthly Coverage (Unique Vessels & Effort)
-const coverageSeries = computed(() => [
-   {
-      name: 'Buques Únicos',
-      type: 'bar',
-      data: coverageData.value.map(c => c.count)
-   },
-   {
+// 7. Monthly Coverage (Unique Vessels & Effort & Requirements)
+
+const coverageSeriesData = computed(() => {
+   const fisheryFilter = selectedCoverageFishery.value;
+   const isFilteredByFishery = fisheryFilter !== 'ALL';
+
+   // Construir la matriz base
+   // Si NO está filtrado por pesquería, tendremos dos series fijas (como antes)
+   if (!isFilteredByFishery) {
+      const reqs = new Array(12).fill(0);
+      requerimientosData.value.forEach(req => {
+         if (req.cantidad) {
+            reqs[req.mes - 1] += req.cantidad;
+         }
+      });
+
+      return {
+         isSplitByFleet: false,
+         fleets: [],
+         series: [
+            {
+               name: 'Buques Requeridos',
+               type: 'column',
+               data: reqs,
+               metaType: 'REQUIRED',
+               fleetName: null
+            },
+            {
+               name: 'Buques Únicos (Cubiertos)',
+               type: 'column',
+               data: coverageData.value.map(c => c.count),
+               metaType: 'EXECUTED',
+               fleetName: null
+            },
+            {
+               name: 'Días de Marea',
+               type: 'line',
+               data: coverageData.value.map(c => c.days),
+               metaType: 'EFFORT',
+               fleetName: null
+            }
+         ]
+      };
+   }
+
+   // LÓGICA DE DESGLOSE POR FLOTA CUANDO HAY FILTRO DE PESQUERÍA
+   const fleetsSet = new Set<string>();
+
+   // 1. Identificar Flotas en Requerimientos
+   requerimientosData.value.forEach(req => {
+      if (req.pesqueria?.nombre === fisheryFilter && req.tipoFlota?.nombre) {
+         fleetsSet.add(req.tipoFlota.nombre);
+      }
+   });
+
+   // 2. Identificar Flotas en Ejecución (coverageData)
+   coverageData.value.forEach(month => {
+      month.fleets.forEach(fleet => {
+         // Ya coverageData viene filtrada del backend si selectedCoverageFishery !== 'ALL'
+         // Por seguridad, agregamos a fleetsSet
+         fleetsSet.add(fleet.name);
+      });
+   });
+
+   const uniqueFleets = Array.from(fleetsSet).sort();
+   const dynamicSeries: any[] = [];
+
+   // Para cada flota construimos Ejecutado y Requerido
+   uniqueFleets.forEach(fleetName => {
+      // Data Requerida
+      const reqs = new Array(12).fill(0);
+      requerimientosData.value.forEach(req => {
+         if (req.pesqueria?.nombre === fisheryFilter && req.tipoFlota?.nombre === fleetName && req.cantidad) {
+            reqs[req.mes - 1] += req.cantidad;
+         }
+      });
+
+      dynamicSeries.push({
+         name: `${fleetName} (Requerido)`,
+         type: 'column',
+         data: reqs,
+         metaType: 'REQUIRED',
+         fleetName: fleetName
+      });
+
+      // Data Ejecutada
+      const execs = new Array(12).fill(0);
+      coverageData.value.forEach((month, idx) => {
+         const fData = month.fleets.find(f => f.name === fleetName);
+         if (fData) {
+            execs[idx] = fData.count;
+         }
+      });
+
+      dynamicSeries.push({
+         name: `${fleetName} (Cubierto)`,
+         type: 'column',
+         data: execs,
+         metaType: 'EXECUTED',
+         fleetName: fleetName
+      });
+   });
+
+   // Finalmente agregamos el esfuerzo global
+   dynamicSeries.push({
       name: 'Días de Marea',
       type: 'line',
-      data: coverageData.value.map(c => c.days)
+      data: coverageData.value.map(c => c.days),
+      metaType: 'EFFORT',
+      fleetName: null
+   });
+
+   return {
+      isSplitByFleet: true,
+      fleets: uniqueFleets,
+      series: dynamicSeries
+   };
+});
+
+const coverageSeries = computed(() => coverageSeriesData.value.series);
+
+const coverageChartOptions = computed(() => {
+   const baseData = coverageSeriesData.value;
+   const seriesCount = baseData.series.length;
+
+   // Definición dinámica de colores y opacidades
+   const strokes: number[] = [];
+   const colors: string[] = [];
+   const opacities: number[] = [];
+   const dashes: number[] = [];
+   const fillTypes: string[] = [];
+   const fillPatterns: string[] = [];
+
+   // Colores fijos para Días (Azul profundo)
+   const EFFORT_COLOR = '#3b82f6';
+
+   if (!baseData.isSplitByFleet) {
+      // Escenario Aglomerado Clásico (3 series)
+      // OJO: Restaurado orden a Requerido, Ejecutado, Esfuerzo
+      strokes.push(0, 0, 3);
+      colors.push('#a855f7', '#10b981', EFFORT_COLOR); // Púrpura, Verde, Azul
+      opacities.push(0.85, 1, 1);
+      dashes.push(0, 0, 0);
+      fillTypes.push('pattern', 'solid', 'solid');
+      fillPatterns.push('slantedLines', 'none', 'none');
+   } else {
+      // Escenario Desglose por Flota
+      baseData.series.forEach(s => {
+         if (s.metaType === 'EFFORT') {
+            strokes.push(3);
+            colors.push(EFFORT_COLOR);
+            opacities.push(1);
+            dashes.push(0);
+            fillTypes.push('solid');
+            fillPatterns.push('none');
+         } else {
+            strokes.push(0);
+            colors.push(getFleetColor(s.fleetName as string));
+            opacities.push(s.metaType === 'REQUIRED' ? 0.85 : 1);
+            dashes.push(0);
+            fillTypes.push(s.metaType === 'REQUIRED' ? 'pattern' : 'solid');
+            fillPatterns.push(s.metaType === 'REQUIRED' ? 'slantedLines' : 'none');
+         }
+      });
    }
-]);
 
-const coverageChartOptions = computed(() => ({
-   chart: {
-      type: 'line', // Base type for combo
-      stacked: false,
-      toolbar: { show: false },
-      events: {
-         dataPointSelection: handleCoverageClick
+   // El único eje "Opposite" es el último (Esfuerzo). Los demás referencian al izquierdo (Buques)
+   const yaxisNodes = baseData.series.map((s, idx) => {
+      if (s.metaType === 'EFFORT') {
+         return {
+            opposite: true,
+            seriesName: s.name,
+            title: {
+               text: 'Días de Marea',
+               style: { color: EFFORT_COLOR, fontWeight: 900 }
+            },
+            labels: { style: { colors: EFFORT_COLOR } },
+            min: 0,
+            forceNiceScale: true
+         };
       }
-   },
-   stroke: {
-      width: [0, 3], // 0 for bars, 3 for line
-      curve: 'smooth'
-   },
-   colors: ['#10b981', '#3b82f6'], // Emerald (Vessels), Blue (Days)
-   plotOptions: {
-      bar: {
-         borderRadius: 4,
-         columnWidth: '50%',
+
+      // Primera serie de buques dibuja el eje visible
+      if (idx === 0) {
+         return {
+            seriesName: s.name,
+            title: {
+               text: 'Buques',
+               style: { color: colors[0], fontWeight: 900 }
+            },
+            labels: { style: { colors: colors[0] } },
+            min: 0,
+            forceNiceScale: true
+         };
       }
-   },
-   markers: {
-      size: 4,
-      strokeWidth: 2,
-      strokeColors: '#ffffff',
-      hover: { size: 6 }
-   },
-   dataLabels: {
-      enabled: true,
-      enabledOnSeries: [0], // Only on bars
-      formatter: (val: number) => val > 0 ? val : '',
-      offsetY: -10,
-      style: { fontSize: '9px', colors: ['var(--color-text)'] }
-   },
-   xaxis: {
-      categories: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'],
-      position: 'bottom',
-      axisBorder: { show: false },
-      axisTicks: { show: false }
-   },
-   yaxis: [
-      {
-         title: {
-            text: 'Buques Únicos',
-            style: { color: '#10b981', fontWeight: 900 }
+
+      // Las demás series de buques se atan a la serie principal de buques (índice 0) y ocultan su título
+      return {
+         seriesName: baseData.series[0].name,
+         show: false
+      };
+   });
+
+   return {
+      chart: {
+         type: 'line',
+         stacked: false,
+         toolbar: {
+            show: true,
+            offsetX: -10,
+            offsetY: -10
          },
-         labels: { style: { colors: '#10b981' } },
-         min: 0,
-         forceNiceScale: true
+         events: { dataPointSelection: handleCoverageClick }
       },
-      {
-         opposite: true,
-         title: {
-            text: 'Días de Marea',
-            style: { color: '#3b82f6', fontWeight: 900 }
+      stroke: {
+         width: strokes,
+         curve: 'smooth',
+         dashArray: dashes
+      },
+      colors: colors,
+      fill: {
+         type: fillTypes,
+         opacity: opacities,
+         pattern: {
+            style: fillPatterns,
+            width: 5,
+            height: 5,
+            strokeWidth: 2
+         }
+      },
+      plotOptions: {
+         bar: {
+            borderRadius: 3,
+            columnWidth: baseData.isSplitByFleet ? '80%' : '60%', // Más fino si hay más barras
+         }
+      },
+      markers: {
+         size: baseData.series.map(s => s.metaType === 'EFFORT' ? 4 : 0),
+         strokeWidth: 2,
+         strokeColors: '#ffffff',
+         hover: { size: 6 }
+      },
+      dataLabels: {
+         enabled: true,
+         enabledOnSeries: baseData.series.map((s, i) => s.metaType !== 'EFFORT' ? i : -1).filter(i => i !== -1),
+         formatter: (val: number) => val > 0 ? val : '',
+         offsetY: -10,
+         style: { fontSize: '8px', colors: ['#0f172a'] } // color-text
+      },
+      xaxis: {
+         categories: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'],
+         position: 'bottom',
+         axisBorder: { show: false },
+         axisTicks: { show: false }
+      },
+      yaxis: yaxisNodes,
+      legend: {
+         show: true,
+         position: 'right', // Se alínean verticalmente en el lado derecho
+         offsetY: 20, // Bajar un poco para no pegarse al top de las grillas
+         fontSize: '10px',
+         fontFamily: 'inherit',
+         fontWeight: 600,
+         itemMargin: { horizontal: 0, vertical: 8 },
+         markers: {
+            radius: 2,
+            width: 14,
+            height: 14
          },
-         labels: { style: { colors: '#3b82f6' } },
-         min: 0,
-         forceNiceScale: true
-      }
-   ],
-   legend: {
-      show: true,
-      position: 'top',
-      horizontalAlign: 'right',
-      fontSize: '10px',
-      fontFamily: 'inherit',
-      fontWeight: 600,
-      itemMargin: { horizontal: 10, vertical: 0 },
-      markers: { radius: 12 }
-   },
-   tooltip: {
-      shared: true,
-      intersect: false,
-      custom: ({ series, seriesIndex, dataPointIndex, w }: any) => {
-         const label = w.config.xaxis.categories[dataPointIndex];
-         const monthData = coverageData.value[dataPointIndex];
-         const vessels = series[0] ? series[0][dataPointIndex] : undefined;
-         const days = series[1] ? series[1][dataPointIndex] : undefined;
+         onItemClick: { toggleDataSeries: true },
+         onItemHover: { highlightDataSeries: true }
+      },
+      responsive: [
+         {
+            breakpoint: 1024,
+            options: {
+               legend: {
+                  position: 'bottom',
+                  offsetX: 0,
+                  offsetY: 7
+               }
+            }
+         }
+      ],
+      tooltip: {
+         shared: true,
+         intersect: false,
+         custom: ({ series, seriesIndex, dataPointIndex, w }: any) => {
+            const label = w.config.xaxis.categories[dataPointIndex];
+            const monthData = coverageData.value[dataPointIndex];
 
-         const hasVessels = vessels !== undefined && vessels !== null;
-         const hasDays = days !== undefined && days !== null;
+            const baseData = coverageSeriesData.value;
 
-         return `
-            <div class="px-4 py-4 bg-surface/90 backdrop-blur-xl text-text border border-border/50 rounded-2xl flex flex-col gap-3 shadow-2xl ring-1 ring-black/10 min-w-[240px]">
-               <div class="flex items-center justify-between border-b border-border/30 pb-2 mb-1">
-                  <span class="text-[10px] text-text-muted uppercase font-black tracking-widest">${label} ${year.value}</span>
-                  <div class="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[9px] font-black uppercase">Cobertura</div>
-               </div>
-               
-               <div class="grid ${hasVessels && hasDays ? 'grid-cols-2' : 'grid-cols-1'} gap-3 pb-2 border-b border-border/20">
-                  ${hasVessels ? `
-                  <div class="flex flex-col">
-                     <span class="text-[9px] font-black text-emerald-500 uppercase tracking-tighter">Buques Únicos</span>
-                     <span class="text-lg font-black tabular-nums">${vessels}</span>
-                  </div>
-                  ` : ''}
-                  ${hasDays ? `
-                  <div class="flex flex-col ${hasVessels ? 'border-l border-border/20 pl-3' : ''}">
-                     <span class="text-[9px] font-black text-blue-500 uppercase tracking-tighter">Días de Marea</span>
-                     <span class="text-lg font-black tabular-nums">${days}</span>
-                  </div>
-                  ` : ''}
-               </div>
+            // Extraer esfuerzo
+            const effortDataIndex = baseData.series.findIndex(s => s.metaType === 'EFFORT');
+            const totalDays = effortDataIndex >= 0 ? series[effortDataIndex][dataPointIndex] : 0;
+            const hasTotalDays = totalDays !== undefined && totalDays > 0;
 
-               ${monthData?.fleets && monthData.fleets.length > 0 ? `
-                  <div class="flex flex-col gap-1.5 py-1">
-                     <span class="text-[8px] font-black text-text-muted uppercase tracking-widest mb-1 opacity-60">Desglose por Flota</span>
-                     ${monthData.fleets.map(f => `
-                        <div class="flex items-center justify-between gap-4 py-0.5">
-                           <div class="flex items-center gap-2">
-                              <div class="w-1.5 h-1.5 rounded-full shadow-sm" style="background:${getFleetColor(f.name)}"></div>
-                              <span class="text-[9px] font-bold text-text-muted uppercase">${f.name}</span>
+            let tooltipBody = '';
+
+            if (baseData.isSplitByFleet) {
+               // Renderizado con Desglose por Flota
+               let fleetGridContent = '';
+               let totalReqs = 0;
+               let totalExecs = 0;
+
+               baseData.fleets.forEach((fleet, fIdx) => {
+                  const reqIdx = baseData.series.findIndex(s => s.metaType === 'REQUIRED' && s.fleetName === fleet);
+                  const execIdx = baseData.series.findIndex(s => s.metaType === 'EXECUTED' && s.fleetName === fleet);
+
+                  const reqVal = reqIdx >= 0 ? series[reqIdx][dataPointIndex] ?? 0 : 0;
+                  const execVal = execIdx >= 0 ? series[execIdx][dataPointIndex] ?? 0 : 0;
+                  const fleetColor = getFleetColor(fleet as string);
+
+                  // Buscar días por flota
+                  const fData = monthData?.fleets?.find(f => f.name === fleet);
+                  const daysVal = fData ? fData.days : 0;
+
+                  totalReqs += reqVal;
+                  totalExecs += execVal;
+
+                  if (reqVal > 0 || execVal > 0 || daysVal > 0) {
+                     fleetGridContent += `
+                        <div class="flex flex-col gap-1 py-1.5 border-b border-border/10 last:border-0 pl-3">
+                           <div class="flex items-center gap-1.5">
+                              <div class="w-2 h-2 rounded-full shadow-sm" style="background:${fleetColor}"></div>
+                              <span class="text-[9px] font-black uppercase text-text">${fleet}</span>
                            </div>
-                           <div class="flex items-center gap-2">
-                              ${hasVessels ? `<span class="text-[10px] font-black text-text tabular-nums">${f.count} <span class="text-[8px] opacity-40 font-bold">B</span></span>` : ''}
-                              ${hasVessels && hasDays ? `<span class="h-2 w-px bg-border/30"></span>` : ''}
-                              ${hasDays ? `<span class="text-[10px] font-black text-text/80 tabular-nums">${f.days} <span class="text-[8px] opacity-40 font-bold">D</span></span>` : ''}
+                           <div class="flex items-center gap-6 pl-3">
+                              <div class="flex items-baseline gap-1.5">
+                                 <span class="text-[9px] font-bold text-text-muted opacity-60 uppercase w-[56px]">Requerido</span>
+                                 <span class="text-[11px] font-black text-text tabular-nums opacity-60">${reqVal}</span>
+                              </div>
+                              <div class="flex items-baseline gap-1.5">
+                                 <span class="text-[9px] font-bold text-text-muted uppercase w-[56px] text-emerald-500">Cubierto</span>
+                                 <span class="text-[11px] font-black text-text tabular-nums" style="color:${fleetColor}">${execVal}</span>
+                              </div>
+                              <div class="flex items-baseline gap-1.5 ml-auto">
+                                 <span class="text-[9px] font-bold text-text-muted uppercase text-blue-500">Esfuerzo</span>
+                                 <span class="text-[11px] font-black text-text tabular-nums">${daysVal}</span>
+                                 <span class="text-[8px] font-bold opacity-40">D</span>
+                              </div>
                            </div>
                         </div>
-                     `).join('')}
-                  </div>
-               ` : ''}
+                     `;
+                  }
+               });
 
-               <div class="pt-2 border-t border-border/30 flex justify-between items-center opacity-60">
-                   <span class="text-[8px] font-black italic uppercase">Click para ver detalle</span>
-                   <span class="text-[10px]">📊</span>
+               // Mostrar el Resumen y luego el detalle
+               tooltipBody = `
+                  <div class="flex justify-between items-end gap-4 pb-2 border-b border-border/20">
+                     <div class="flex flex-col">
+                        <span class="text-[8px] font-black text-text-muted uppercase tracking-wider mb-0.5">Total Días</span>
+                        <div class="flex items-baseline gap-1">
+                           <span class="text-xl font-black tabular-nums leading-none text-blue-500">${totalDays}</span>
+                           <span class="text-[9px] font-bold text-text-muted">Días</span>
+                        </div>
+                     </div>
+                     <div class="flex gap-4">
+                         <div class="text-right flex flex-col items-end">
+                             <span class="text-[8px] font-black text-text-muted uppercase">Requerido</span>
+                             <span class="text-xs font-black tabular-nums opacity-60">${totalReqs} B</span>
+                         </div>
+                         <div class="text-right flex flex-col items-end pl-4 border-l border-border/20">
+                             <span class="text-[8px] font-black text-emerald-500 uppercase">Cubierto</span>
+                             <span class="text-xs font-black tabular-nums text-emerald-600 dark:text-emerald-400">${totalExecs} B</span>
+                         </div>
+                     </div>
+                  </div>
+                  
+                  <div class="flex flex-col pt-1">
+                     ${fleetGridContent || '<span class="text-[10px] italic opacity-50 py-2">Sin actividad planificada ni ejecutada en este mes</span>'}
+                  </div>
+               `;
+
+            } else {
+               // Renderizado Simple (Aglomerado)
+               const execIdx = baseData.series.findIndex((s: any) => s.metaType === 'EXECUTED');
+               const reqIdx = baseData.series.findIndex((s: any) => s.metaType === 'REQUIRED');
+
+               const required = reqIdx >= 0 && series[reqIdx] ? series[reqIdx][dataPointIndex] ?? 0 : 0;
+               const vessels = execIdx >= 0 && series[execIdx] ? series[execIdx][dataPointIndex] ?? 0 : 0;
+
+               const hasVessels = vessels > 0;
+               const hasRequired = required > 0;
+
+               tooltipBody = `
+                  <div class="flex justify-between items-end gap-4 pb-2 border-b border-border/20">
+                     <div class="flex flex-col">
+                        <span class="text-[8px] font-black text-text-muted uppercase tracking-wider mb-0.5">Total Días</span>
+                        <div class="flex items-baseline gap-1">
+                           <span class="text-xl font-black tabular-nums leading-none text-blue-500">${totalDays}</span>
+                           <span class="text-[9px] font-bold text-text-muted">Días</span>
+                        </div>
+                     </div>
+                     <div class="flex gap-4">
+                         <div class="text-right flex flex-col items-end">
+                             <span class="text-[8px] font-black text-text-muted uppercase">Requerido</span>
+                             <span class="text-xs font-black tabular-nums opacity-60">${required} B</span>
+                         </div>
+                         <div class="text-right flex flex-col items-end pl-4 border-l border-border/20">
+                             <span class="text-[8px] font-black text-emerald-500 uppercase">Cubierto</span>
+                             <span class="text-xs font-black tabular-nums text-emerald-600 dark:text-emerald-400">${vessels} B</span>
+                         </div>
+                     </div>
+                  </div>
+
+                  ${monthData?.fleets && monthData.fleets.length > 0 ? `
+                     <div class="flex flex-col gap-1.5 pt-2">
+                        <span class="text-[8px] font-black text-text-muted uppercase tracking-widest mb-1 opacity-60">Desglose Operativo por Flota</span>
+                        ${monthData.fleets.map(f => `
+                           <div class="flex items-center justify-between gap-4 py-0.5 pl-2">
+                              <div class="flex items-center gap-2">
+                                 <div class="w-1.5 h-1.5 rounded-full shadow-sm" style="background:${getFleetColor(f.name)}"></div>
+                                 <span class="text-[9px] font-bold text-text-muted uppercase">${f.name}</span>
+                              </div>
+                              <div class="flex items-center gap-2">
+                                 ${f.count > 0 ? `<div class="flex items-baseline gap-1"><span class="text-[8px] font-bold text-text-muted uppercase opacity-50">Cub.</span><span class="text-[10px] font-black text-text tabular-nums">${f.count} <span class="text-[8px] opacity-40 font-bold">B</span></span></div>` : ''}
+                                 ${f.count > 0 && f.days > 0 ? `<span class="h-2 w-px bg-border/30"></span>` : ''}
+                                 ${f.days > 0 ? `<div class="flex items-baseline gap-1"><span class="text-[8px] font-bold text-text-muted uppercase opacity-50 text-blue-500">Esf.</span><span class="text-[10px] font-black text-text/80 tabular-nums">${f.days} <span class="text-[8px] opacity-40 font-bold">D</span></span></div>` : ''}
+                              </div>
+                           </div>
+                        `).join('')}
+                     </div>
+                  ` : ''}
+               `;
+            }
+
+            return `
+               <div class="px-4 py-4 bg-surface/90 backdrop-blur-xl text-text border border-border/50 rounded-2xl flex flex-col gap-3 shadow-2xl ring-1 ring-black/10 min-w-[240px]">
+                  <div class="flex items-center justify-between border-b border-border/30 pb-2 mb-1">
+                     <span class="text-[10px] text-text-muted uppercase font-black tracking-widest">${label} ${year.value}</span>
+                     <div class="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[9px] font-black uppercase">Cobertura</div>
+                  </div>
+                  
+                  ${tooltipBody}
+
+                  <div class="pt-2 border-t border-border/30 flex justify-between items-center opacity-60">
+                      <span class="text-[8px] font-black italic uppercase">Click para ver detalle</span>
+                      <span class="text-[10px]">📊</span>
+                  </div>
                </div>
-            </div>
-         `;
+            `;
+         }
       }
-   }
-}));
+   };
+});
 
 </script>
 
@@ -1804,4 +2251,10 @@ const coverageChartOptions = computed(() => ({
       transform: translateY(0);
    }
 }
+
+:deep(.apexcharts-yaxis-label-multiline) {
+   line-height: 1.2;
+   dominant-baseline: central;
+}
 </style>
+

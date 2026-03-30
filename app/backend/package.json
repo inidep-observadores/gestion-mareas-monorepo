@@ -1,6 +1,6 @@
 {
   "name": "sigma-backend",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "",
   "author": "Daniel Di Tullio",
   "private": true,
@@ -26,9 +26,14 @@
     "seed:minimal": "ts-node prisma/seed-minimal.ts",
     "seed:prod": "node prisma/seed-minimal.js",
     "test:smtp": "ts-node src/mail/scripts/test-smtp.ts",
-    "test:smtp:prod": "node dist/src/mail/scripts/test-smtp.js"
+    "test:smtp:prod": "node dist/src/mail/scripts/test-smtp.js",
+    "validate:pna:2024": "ts-node src/pna-api/scripts/validate-pna-2024.ts",
+    "validate:pna:2025": "ts-node src/pna-api/scripts/validate-pna-2025.ts",
+    "validate:pna:2026": "ts-node src/pna-api/scripts/validate-pna-2026.ts",
+    "prisma:studio": "prisma studio"
   },
   "dependencies": {
+    "@napi-rs/canvas": "^0.1.97",
     "@nestjs-modules/mailer": "^2.0.2",
     "@nestjs/bull": "^10.2.1",
     "@nestjs/common": "^11.1.10",
@@ -42,18 +47,23 @@
     "@nestjs/serve-static": "^5.0.4",
     "@prisma/adapter-pg": "^7.2.0",
     "@prisma/client": "^7.2.0",
+    "@types/pg": "8.11.11",
     "adm-zip": "^0.5.16",
     "archiver": "^7.0.1",
     "archiver-zip-encryptable": "^1.0.10",
     "axios": "^1.13.2",
     "bcrypt": "^6.0.0",
     "bull": "^4.16.3",
+    "chart.js": "^4.5.1",
+    "chartjs-node-canvas": "^5.0.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.3",
     "cookie-parser": "^1.4.7",
     "csv-parse": "^6.1.0",
+    "docx": "^9.6.1",
     "dotenv": "^17.2.3",
     "exceljs": "^4.4.0",
+    "express": "^4.21.2",
     "fast-xml-parser": "^5.3.4",
     "geolib": "^3.3.4",
     "handlebars": "^4.7.8",
@@ -86,7 +96,6 @@
     "@types/multer": "^2.0.0",
     "@types/node": "^25.0.3",
     "@types/passport-jwt": "^4.0.1",
-    "@types/pg": "^8.16.0",
     "@types/supertest": "^6.0.3",
     "@types/uuid": "^11.0.0",
     "@typescript-eslint/eslint-plugin": "^8.50.1",
@@ -121,5 +130,10 @@
   },
   "prisma": {
     "seed": "ts-node prisma/seed-static.ts"
+  },
+  "pnpm": {
+    "overrides": {
+      "@types/pg": "8.11.11"
+    }
   }
 }

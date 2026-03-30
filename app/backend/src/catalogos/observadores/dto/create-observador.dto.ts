@@ -20,6 +20,14 @@ export class CreateObservadorDto {
     @IsString()
     tipoContrato: string; // 'LEY MARCO' | '1109' | 'MONOTRIBUTISTA' | 'PLANTA PERMANENTE'
 
+    @IsString()
+    @IsOptional()
+    sexo?: string; // 'Masculino' | 'Femenino'
+
+    @IsBoolean()
+    @IsOptional()
+    eventual?: boolean;
+
     @IsBoolean()
     @IsOptional()
     activo?: boolean;

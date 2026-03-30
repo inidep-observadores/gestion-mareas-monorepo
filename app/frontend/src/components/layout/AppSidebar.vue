@@ -32,14 +32,16 @@
           Año Operativo
         </label>
         <div class="relative flex items-center group">
-          <CalenderIcon class="absolute left-0 w-4 h-4 text-text-muted group-hover:text-primary transition-colors" />
+          <div class="absolute left-0 pl-3 flex items-center pointer-events-none text-text-muted group-hover:text-primary transition-colors">
+            <CalenderIcon class="w-4 h-4" />
+          </div>
           <select v-model="configStore.selectedYear"
-            class="w-full bg-transparent border-none text-sm font-semibold text-text focus:ring-0 pl-6 pr-2 appearance-none cursor-pointer">
-            <option v-for="year in availableYears" :key="year" :value="year" class="bg-surface">
-              {{ year }}
+            class="w-full pl-10 pr-10 py-2.5 bg-background border border-border rounded-lg text-sm font-semibold text-text outline-none focus:border-primary transition-all appearance-none cursor-pointer">
+            <option v-for="option in availableYearsOptions" :key="option.value" :value="option.value" class="bg-surface text-text">
+              {{ option.label }}
             </option>
           </select>
-          <span class="absolute right-0 pointer-events-none text-text-muted">
+          <span class="absolute right-0 pr-3 flex items-center pointer-events-none text-text-muted group-hover:text-primary transition-colors">
             <svg class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
               <path fill-rule="evenodd"
                 d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
@@ -128,6 +130,7 @@ import {
   LayoutDashboardIcon,
   BarChartIcon,
   CalenderIcon,
+  TaskIcon,
   GridIcon,
   MapPinIcon,
   ShieldIcon,
@@ -149,7 +152,16 @@ const authStore = useAuthStore()
 const configStore = useConfigStore()
 
 const currentYear = new Date().getFullYear()
-const availableYears = Array.from({ length: 5 }, (_, i) => currentYear - 2 + i)
+
+// Generar array de años desde el actual regresivamente hasta el 2024
+const minYear = 2024
+const availableYearsOptions = computed(() => {
+  const years = []
+  for (let y = currentYear; y >= minYear; y--) {
+    years.push({ label: y.toString(), value: y })
+  }
+  return years
+})
 
 const { isExpanded, isMobileOpen, isHovered } = useSidebar()
 
@@ -161,6 +173,7 @@ const closeMobileSidebar = () => {
 
 const isAdmin = computed(() => !!authStore.user?.roles.includes(ValidRoles.admin))
 const isCoordinator = computed(() => !!authStore.user?.roles.includes(ValidRoles.coordinador))
+const isPlanificador = computed(() => !!authStore.user?.roles.includes(ValidRoles.planificador))
 
 const navigationGroups = computed(() => {
   const groups = [
@@ -208,12 +221,12 @@ const navigationGroups = computed(() => {
           to: { name: 'MareasCalendar' },
           show: false,  //Lo dejamos desactivado hasta que le encontremos una buena utilidad
         },
-          {
-            icon: BarChartIcon,
-            name: 'Estadísticas',
-            to: { name: 'MareasStats' },
-            show: isAdmin.value || isCoordinator.value || authStore.user?.roles.includes(ValidRoles.desarrollador),
-          },
+        {
+          icon: BarChartIcon,
+          name: 'Estadísticas',
+          to: { name: 'MareasStats' },
+          show: isAdmin.value || isCoordinator.value || authStore.user?.roles.includes(ValidRoles.desarrollador),
+        },
 
       ],
     },
@@ -234,6 +247,12 @@ const navigationGroups = computed(() => {
           name: 'Observadores',
           to: { name: 'AdminObservadores' },
           show: true,
+        },
+        {
+          icon: TaskIcon,
+          name: 'Planificación',
+          to: { name: 'PlanificacionDashboard' },
+          show: isAdmin.value || isPlanificador.value,
         },
         {
           icon: SettingsIcon,

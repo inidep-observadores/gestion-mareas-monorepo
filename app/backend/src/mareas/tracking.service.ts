@@ -31,6 +31,7 @@ export interface VesselTrackingBatch {
         matriculaSiop?: string;
         mmsi?: string;
     };
+    onlyIngest?: boolean;
     points: {
         timestamp: Date;
         lat: number;
@@ -255,7 +256,7 @@ export class TrackingService {
             });
             inserted = dbResult.count;
 
-            if (inserted > 0) {
+            if (inserted > 0 && !batch.onlyIngest) {
                 // 3. Análisis de Eventos (Zarpadas/Arribos)
                 alerts = await this.detectPortEvents(buqueId, pointsToInsert);
 
@@ -381,12 +382,20 @@ export class TrackingService {
         const marea = await this.prisma.marea.findUnique({
             where: { id: mareaId },
             include: {
-                buque: true,
+                buque: {
+                    include: {
+                        tipoFlota: true
+                    }
+                },
                 etapas: {
-                    orderBy: { nroEtapa: 'asc' }
+                    orderBy: { nroEtapa: 'asc' },
+                    include: {
+                        pesqueria: true
+                    }
                 },
                 observadorPrincipal: true,
-                estadoActual: true
+                estadoActual: true,
+                pesqueria: true
             }
         });
 
@@ -431,17 +440,30 @@ export class TrackingService {
             where: { key: 'LAST_TRACKING_UPDATE' }
         });
 
+        const lastPoint = await this.prisma.buqueTrayectoriaPunto.findFirst({
+            where: { buqueId: marea.buqueId },
+            orderBy: { timestamp: 'desc' }
+        });
+
         return {
             id: marea.id,
             buqueId: marea.buqueId,
             name: marea.buque.nombreBuque,
             matricula: marea.buque.matricula,
             mareaCode: `${marea.nroMarea}/${marea.anioMarea}`,
+            pesquerias_nombres: marea.etapas.length > 0
+                ? marea.etapas.map(e => e.pesqueria?.nombre).filter(n => !!n)
+                : (marea.pesqueria?.nombre ? [marea.pesqueria.nombre] : []),
+            flota: marea.buque.tipoFlota?.nombre || 'Indeterminada',
             observer: marea.observadorPrincipal?.apellido ? `${marea.observadorPrincipal.apellido}, ${marea.observadorPrincipal.nombre}` : 'Sin asignar',
             voyageStart: voyageStart?.toISOString(),
             voyageEnd: voyageEnd?.toISOString(),
             lastUpdate: marea.fechaUltimaActualizacion,
             lastTrackingUpdate: lastTrackingStatus?.value || null,
+            lat: lastPoint?.lat || null,
+            lon: lastPoint?.lon || null,
+            speed: lastPoint?.velocidad || 0,
+            course: lastPoint?.rumbo || 0,
             totalDays: MareaUtils.calculateNavigatedDays(marea),
             etapas: marea.etapas.map(e => ({
                 ...e,
@@ -454,13 +476,21 @@ export class TrackingService {
         const activeMareas = await this.prisma.marea.findMany({
             where: { estadoActual: { codigo: { in: ['EN_EJECUCION', 'DESIGNADA'] } } },
             include: {
-                buque: true,
+                buque: {
+                    include: {
+                        tipoFlota: true
+                    }
+                },
                 artePrincipal: true,
                 etapas: {
-                    orderBy: { nroEtapa: 'asc' }
+                    orderBy: { nroEtapa: 'asc' },
+                    include: {
+                        pesqueria: true
+                    }
                 },
                 observadorPrincipal: true,
-                estadoActual: true
+                estadoActual: true,
+                pesqueria: true
             }
         });
 
@@ -532,6 +562,10 @@ export class TrackingService {
                 mareaId: marea.id,
                 mareaStatus: marea.estadoActual?.codigo || 'EN_EJECUCION',
                 mareaCode: `${marea.tipoMarea}-${marea.nroMarea}-${marea.anioMarea.toString().slice(-2)}`,
+                pesquerias_nombres: marea.etapas.length > 0
+                    ? marea.etapas.map(e => e.pesqueria?.nombre).filter(n => !!n)
+                    : (marea.pesqueria?.nombre ? [marea.pesqueria.nombre] : []),
+                flota: marea.buque.tipoFlota?.nombre || 'Indeterminada',
                 observer: marea.observadorPrincipal
                     ? `${marea.observadorPrincipal.apellido} ${marea.observadorPrincipal.nombre}`
                     : 'Sin asignar',

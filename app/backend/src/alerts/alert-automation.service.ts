@@ -135,6 +135,9 @@ export class AlertAutomationService {
         if (tipo === 'ZARPADA' || tipo === 'POSIBLE_ZARPADA') {
             if (marea.estadoActual.codigo === 'DESIGNADA') {
                 actionKey = 'REGISTRAR_INICIO';
+                const portName = metadataValue(sources, 'portName') || (alert.metadata as any)?.portName || 'Puerto Desconocido';
+                const sourcesStr = sources.map((s: any) => s.name).join(' y ');
+
                 payload = {
                     fechaInicioObservador: fechaDetectadaIso,
                     etapas: [{
@@ -144,7 +147,9 @@ export class AlertAutomationService {
                         pesqueriaId: marea.pesqueriaId,
                         fuentesZarpada: { sources, automatizado: true, eventDate: fechaDetectadaIso }
                     }],
-                    comentarios: `Confirmación automática por lógica de negocio (${alert.tipo})`
+                    comentarios: `Confirmación automática por lógica de negocio (${alert.tipo}). Fuentes: ${sourcesStr}`,
+                    tipoEvento: 'SINCRO_AUTOMATICA',
+                    motivoDetalle: `Zarpada automática detectada en ${portName} por ${sourcesStr}.`
                 };
             } else if (marea.estadoActual.codigo === 'EN_EJECUCION') {
                 const stages = marea.etapas || [];
@@ -153,6 +158,9 @@ export class AlertAutomationService {
                 // Si la última etapa ya tiene arribo, esta zarpada corresponde a una NUEVA etapa
                 if (lastStage && lastStage.fechaArribo) {
                     actionKey = 'EDITAR_ETAPAS';
+                    const portName = metadataValue(sources, 'portName') || (alert.metadata as any)?.portName || 'Puerto Desconocido';
+                    const sourcesStr = sources.map((s: any) => s.name).join(' y ');
+
                     payload = {
                         fechaInicioObservador: marea.fechaInicioObservador,
                         etapas: [
@@ -177,15 +185,31 @@ export class AlertAutomationService {
                                 fuentesZarpada: { sources, automatizado: true, eventDate: fechaDetectadaIso }
                             }
                         ],
-                        comentarios: `Nueva etapa detectada automáticamente por lógica de negocio (${alert.tipo})`
+                        comentarios: `Nueva etapa detectada automáticamente por lógica de negocio (${alert.tipo}). Fuentes: ${sourcesStr}`,
+                        tipoEvento: 'SINCRO_AUTOMATICA',
+                        motivoDetalle: `Nueva etapa iniciada automáticamente por zarpada detectada en ${portName} (${sourcesStr}).`
                     };
                 }
             }
         } else if (tipo === 'ARRIBO' || tipo === 'POSIBLE_ARRIBO' || tipo === 'RECOMENDACION_FIN_MAREA') {
             if (marea.estadoActual.codigo === 'EN_EJECUCION') {
                 // REGLA: Si es una RECOMENDACIÓN de fin de marea (hay otra esperando), finalizamos la marea.
-                // Si es un ARRIBO normal, solo cerramos la etapa mediante EDITAR_ETAPAS (mantiene estado EN_EJECUCION).
-                actionKey = tipo === 'RECOMENDACION_FIN_MAREA' ? 'REGISTRAR_FINALIZACION' : 'EDITAR_ETAPAS';
+                // Opcional/Flag: Si la última etapa de la marea tiene la intención de cierre manual activada, también finalizamos.
+                // Si es un ARRIBO normal sin flag, solo cerramos la etapa mediante EDITAR_ETAPAS (mantiene estado EN_EJECUCION).
+
+                let tieneIntencionCierre = false;
+                if (marea.etapas && marea.etapas.length > 0) {
+                    const ultimaEtapa = marea.etapas[marea.etapas.length - 1];
+                    const metadata = ultimaEtapa.metadata as import('../mareas/interfaces/marea-etapa-metadata.interface').MareaEtapaMetadata;
+                    if (metadata?.opcionesCierre?.finalizarMareaAlArribo === true) {
+                        tieneIntencionCierre = true;
+                    }
+                }
+
+                actionKey = (tipo === 'RECOMENDACION_FIN_MAREA' || tieneIntencionCierre) ? 'REGISTRAR_FINALIZACION' : 'EDITAR_ETAPAS';
+
+                const portName = metadataValue(sources, 'portName') || (alert.metadata as any)?.portName || 'Puerto Desconocido';
+                const sourcesStr = sources.map((s: any) => s.name).join(' y ');
 
                 payload = {
                     ...(actionKey === 'REGISTRAR_FINALIZACION'
@@ -202,7 +226,11 @@ export class AlertAutomationService {
                         }
                         return e;
                     }),
-                    comentarios: `Confirmación automática por lógica de negocio (${alert.tipo})`
+                    comentarios: `Confirmación automática por lógica de negocio (${alert.tipo}). Fuentes: ${sourcesStr}`,
+                    tipoEvento: 'SINCRO_AUTOMATICA',
+                    motivoDetalle: actionKey === 'REGISTRAR_FINALIZACION'
+                        ? `Marea finalizada automáticamente por arribo detectado en ${portName} (${sourcesStr}).`
+                        : `Arribo a ${portName} registrado automáticamente por detección de ${sourcesStr}.`
                 };
             }
         }
