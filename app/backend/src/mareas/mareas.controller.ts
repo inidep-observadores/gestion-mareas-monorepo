@@ -204,7 +204,7 @@ export class MareasController {
     }
 
     @Post('protocolizacion/enviar')
-    @Auth(ValidRoles.admin, ValidRoles.tecnico)
+    @Auth(ValidRoles.admin, ValidRoles.coordinador)
     @UseInterceptors(AnyFilesInterceptor())
     @AuditEvent({
         tipoEvento: 'ENVIAR_PROTOCOLIZACION',
@@ -220,7 +220,7 @@ export class MareasController {
     }
 
     @Post('protocolizacion/confirmar/:id')
-    @Auth(ValidRoles.admin, ValidRoles.tecnico)
+    @Auth(ValidRoles.admin, ValidRoles.coordinador)
     @AuditEvent({
         tipoEvento: 'CONFIRMAR_PROTOCOLIZACION',
         categoria: AuditCategoria.MAREAS,
@@ -235,14 +235,20 @@ export class MareasController {
     }
 
     @Get('protocolizacion/pendientes')
-    @Auth(ValidRoles.admin, ValidRoles.tecnico)
+    @Auth(ValidRoles.admin, ValidRoles.coordinador)
     getProtocolizacionPendientes() {
         return this.mareasService.getProtocolizacionPorEstado(MareaEstado.PARA_PROTOCOLIZAR);
     }
 
     @Get('protocolizacion/en-espera')
-    @Auth(ValidRoles.admin, ValidRoles.tecnico)
-    getProtocolizacionEnEspera() {
+    @Auth(ValidRoles.admin, ValidRoles.coordinador)
+    async getProtocolizacionEnEspera() {
         return this.mareasService.getProtocolizacionPorEstado(MareaEstado.ESPERANDO_PROTOCOLIZACION);
+    }
+
+    @Get('protocolizacion/completas')
+    @Auth(ValidRoles.admin, ValidRoles.coordinador)
+    async getProtocolizacionCompletas() {
+        return this.mareasService.getProtocolizacionPorEstado(MareaEstado.PROTOCOLIZADA);
     }
 }

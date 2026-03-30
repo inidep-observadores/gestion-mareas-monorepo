@@ -97,7 +97,11 @@ const mareasService = {
     },
 
     enviarAProtocolizacion: async (formData: FormData): Promise<{ message: string, count: number }> => {
-        const { data } = await httpClient.post<{ message: string, count: number }>('/mareas/protocolizacion/enviar', formData);
+        const { data } = await httpClient.post<{ message: string, count: number }>('/mareas/protocolizacion/enviar', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            }
+        });
         return data;
     },
 
@@ -113,6 +117,11 @@ const mareasService = {
 
     getProtocolizacionEnEspera: async (): Promise<any[]> => {
         const { data } = await httpClient.get<any[]>('/mareas/protocolizacion/en-espera');
+        return data;
+    },
+
+    getProtocolizacionCompletas: async (): Promise<any[]> => {
+        const { data } = await httpClient.get<any[]>('/mareas/protocolizacion/completas');
         return data;
     }
 };

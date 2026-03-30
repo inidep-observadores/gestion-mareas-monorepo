@@ -5,14 +5,14 @@
         <h2 class="text-sm font-black uppercase tracking-widest text-text">Mareas Pendientes de Envío</h2>
         <p class="text-xs text-text-muted">Seleccione las mareas y adjunte el informe (.docx) para enviar a protocolizar.</p>
       </div>
-      
+
       <div v-if="mareas.length > 0" class="flex items-center gap-4">
           <label class="flex items-center gap-2 cursor-pointer group">
               <input type="checkbox" v-model="enviadoPorCanalExterno" class="w-4 h-4 rounded border-border text-primary focus:ring-primary/20">
               <span class="text-[11px] font-bold text-text-muted transition-colors group-hover:text-text uppercase tracking-tight">Envío por canal externo</span>
           </label>
-          
-          <button 
+
+          <button
             @click="enviarSeleccionadas"
             :disabled="sending || selectedMareaIds.length === 0"
             class="flex items-center gap-2 py-2 px-6 bg-primary text-primary-fg rounded-xl text-[11px] font-black uppercase tracking-widest shadow-lg shadow-primary/20 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
@@ -24,61 +24,112 @@
     </div>
 
     <div v-if="mareas.length > 0" class="grid gap-4 lg:grid-cols-2 2xl:grid-cols-3">
-      <div 
-        v-for="marea in mareas" 
+      <div
+        v-for="marea in mareas"
         :key="marea.id"
         class="bg-surface border border-border rounded-2xl p-5 shadow-sm space-y-4 hover:shadow-md transition-shadow relative"
         :class="{'border-primary shadow-primary/5': isSelected(marea.id)}"
       >
-        <div class="flex items-start justify-between">
-          <div class="flex gap-4">
-            <div class="pt-1">
-                <input 
-                    type="checkbox" 
-                    :value="marea.id" 
-                    v-model="selectedMareaIds"
-                    class="w-5 h-5 rounded-lg border-border text-primary focus:ring-primary/20"
-                >
-            </div>
-            <div class="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
-               <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                  <polyline points="14 2 14 8 20 8" />
-               </svg>
-            </div>
-            <div>
-              <p class="text-[10px] font-bold text-text-muted uppercase tracking-widest mb-1">{{ marea.buque_nombre || marea.buque?.nombreBuque }}</p>
-              <h3 class="text-base font-black text-text capitalize leading-tight">Marea: {{ marea.nro_marea || marea.nroMarea }}/{{ marea.anio_marea || marea.anioMarea }}</h3>
-              <p class="text-xs text-text-muted mt-1">{{ marea.tipo_marea || marea.tipoMarea }} | {{ marea.observador || marea.observadorPrincipal?.nombreCompleto }}</p>
+        <div class="flex flex-col h-full">
+          <!-- Top Row -->
+          <div class="flex justify-between items-start mb-3">
+            <span class="text-xs font-mono font-black text-text border border-border bg-surface-muted px-2.5 py-1 rounded-lg tracking-widest shadow-sm">
+              {{ formatMareaCode(marea) }}
+            </span>
+            <div class="flex flex-col items-end gap-1">
+              <input
+                  type="checkbox"
+                  :value="marea.id"
+                  v-model="selectedMareaIds"
+                  class="w-5 h-5 rounded border-border text-primary focus:ring-primary/20 cursor-pointer"
+              >
             </div>
           </div>
-        </div>
-        
-        <!-- File Input (solo si está seleccionada y no es canal externo) -->
-        <div v-if="isSelected(marea.id) && !enviadoPorCanalExterno" class="pt-4 border-t border-border/50 animate-in fade-in slide-in-from-top-2 duration-300">
-            <div class="space-y-2">
-                <label class="text-[10px] font-bold uppercase tracking-widest text-text-muted">Adjuntar Informe (.docx)</label>
-                <div class="relative">
-                    <input 
-                        type="file" 
-                        accept=".docx" 
-                        @change="(e) => handleFileChange(e, marea.id)"
-                        class="block w-full text-xs text-text-muted
-                               file:mr-4 file:py-2 file:px-4
-                               file:rounded-xl file:border-0
-                               file:text-[10px] file:font-extrabold file:uppercase
-                               file:bg-primary/10 file:text-primary
-                               hover:file:bg-primary/20 cursor-pointer"
-                    />
-                </div>
-                <p v-if="files[marea.id]" class="text-[10px] text-success font-bold flex items-center gap-1">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
-                    Archivo seleccionado: {{ files[marea.id].name }}
-                </p>
+
+          <!-- Main Info -->
+          <div class="mb-3 flex-1">
+            <div class="flex items-center gap-2 mb-1">
+              <ShipIcon class="w-3.5 h-3.5 text-primary shrink-0" />
+              <h4 class="text-sm font-black text-text">{{ marea.buque?.nombreBuque || marea.buque_nombre }}</h4>
             </div>
-        </div>
-        <div v-else-if="isSelected(marea.id) && enviadoPorCanalExterno" class="pt-4 border-t border-border/50">
-             <p class="text-[10px] text-warning font-black uppercase tracking-widest">Canal Externo: No requiere adjunto</p>
+            <div class="flex flex-col gap-0.5 ml-5">
+              <p class="text-[10px] font-black text-text-muted uppercase tracking-tight">
+                {{ marea.pesqueria?.nombre || 'General' }}
+              </p>
+              <p class="text-[9px] font-bold text-text-muted/70 italic leading-none">
+                {{ marea.buque?.tipoFlota?.nombre || marea.buque?.tipoBuque || 'Flota desconocida' }}
+              </p>
+            </div>
+            <p class="text-xs font-bold text-text-muted truncate mt-1 ml-5">
+              {{ marea.observadorPrincipal ? (marea.observadorPrincipal.nombre + ' ' + marea.observadorPrincipal.apellido) : (marea.observador || 'Sin Observador') }}
+            </p>
+          </div>
+
+          <!-- Divider -->
+          <div class="my-4 border-t border-border/50"></div>
+
+          <!-- Footer (File Input) -->
+          <div v-if="isSelected(marea.id) && !enviadoPorCanalExterno" class="animate-in fade-in slide-in-from-top-2 duration-300">
+              <div class="space-y-2">
+                  <label class="text-[9px] font-black uppercase tracking-widest text-text-muted/70">Adjuntar Informe (.docx)</label>
+
+                  <div
+                    class="relative border-2 border-dashed rounded-xl p-4 transition-all group/drop"
+                    :class="[
+                      isDragging[marea.id]
+                        ? 'border-primary bg-primary/5 scale-[1.02]'
+                        : 'border-border hover:border-primary/50 bg-surface-muted/30'
+                    ]"
+                    @dragover.prevent="onDragOver(marea.id)"
+                    @dragleave.prevent="onDragLeave(marea.id)"
+                    @drop.prevent="onDrop($event, marea.id)"
+                  >
+                        <input
+                            type="file"
+                            :id="'file-' + marea.id"
+                            accept=".docx"
+                            @change="(e) => handleFileChange(e, marea.id)"
+                            class="hidden"
+                        />
+
+                        <label
+                          :for="'file-' + marea.id"
+                          class="flex flex-col items-center justify-center gap-2 cursor-pointer py-2"
+                        >
+                            <div class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover/drop:scale-110 transition-transform">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                    <polyline points="17 8 12 3 7 8" />
+                                    <line x1="12" y1="3" x2="12" y2="15" />
+                                </svg>
+                            </div>
+                            <div class="text-center">
+                                <p class="text-[10px] font-black text-text uppercase tracking-tight">
+                                    {{ isDragging[marea.id] ? '¡Suelte el archivo!' : 'Suelte el archivo aquí' }}
+                                </p>
+                                <p class="text-[9px] text-text-muted font-bold mt-0.5">O haga clic para buscar</p>
+                            </div>
+                        </label>
+                  </div>
+
+                  <p v-if="files[marea.id]" class="text-[9px] text-success font-black flex items-center gap-1 uppercase tracking-tighter bg-success/10 px-2 py-1 rounded-md border border-success/20 animate-in zoom-in-95">
+                      ✓ {{ files[marea.id].name }}
+                  </p>
+              </div>
+          </div>
+          <div v-else-if="isSelected(marea.id) && enviadoPorCanalExterno" class="animate-in fade-in slide-in-from-top-2 duration-300">
+               <div class="space-y-2">
+                   <label class="text-[9px] font-black uppercase tracking-widest text-text-muted/70">Fecha de Envío Externo</label>
+                   <DatePicker
+                       v-model="fechasEnvio[marea.id]"
+                       :show-time="false"
+                       placeholder="Selec. fecha..."
+                   />
+               </div>
+          </div>
+          <div v-else class="h-10 flex items-center">
+               <p class="text-[9px] text-text-muted uppercase tracking-widest font-bold">Seleccione para adjuntar archivo</p>
+          </div>
         </div>
       </div>
     </div>
@@ -94,6 +145,25 @@
       <h3 class="text-sm font-black text-text uppercase tracking-widest">No hay mareas pendientes de envío</h3>
       <p class="text-xs text-text-muted max-w-sm mx-auto mt-2">Todas las mareas aprobadas ya han sido enviadas a protocolizar o están en proceso.</p>
     </div>
+
+    <!-- Modals -->
+    <ModalConfirmarEnvioEmail
+      :show="showEmailModal"
+      :mareas="mareasToProcess"
+      :files="processingFiles"
+      :sending="sending"
+      @close="showEmailModal = false"
+      @confirm="confirmarEnvioFinal"
+    />
+
+    <ModalConfirmarCanalExterno
+      :show="showExternalModal"
+      :mareas="mareasToProcess"
+      :fechas-envio="fechasEnvio"
+      :sending="sending"
+      @close="showExternalModal = false"
+      @confirm="confirmarEnvioFinal"
+    />
   </div>
 </template>
 
@@ -101,6 +171,11 @@
 import { ref } from 'vue'
 import mareasService from '../../services/mareas.service'
 import { toast } from 'vue-sonner'
+import { ShipIcon } from '@/icons'
+import DatePicker from '@/components/common/DatePicker.vue'
+import ModalConfirmarEnvioEmail from './ModalConfirmarEnvioEmail.vue'
+import ModalConfirmarCanalExterno from './ModalConfirmarCanalExterno.vue'
+import { computed } from 'vue'
 
 const props = defineProps<{
   mareas: any[]
@@ -110,49 +185,135 @@ const emit = defineEmits(['refresh'])
 
 const selectedMareaIds = ref<string[]>([])
 const files = ref<Record<string, File>>({})
+const isDragging = ref<Record<string, boolean>>({})
+const fechasEnvio = ref<Record<string, string>>({})
 const enviadoPorCanalExterno = ref(false)
 const sending = ref(false)
+const showEmailModal = ref(false)
+const showExternalModal = ref(false)
+const idsToProcessFinal = ref<string[]>([])
+
+const formatMareaCode = (marea: any) => {
+  const tipo = marea.tipo_marea || marea.tipoMarea || 'MC'
+  const nro = marea.nro_marea || marea.nroMarea || '0'
+  const anio = (marea.anio_marea || marea.anioMarea || 2026).toString().slice(-2)
+  return `${tipo}-${nro}-${anio}`
+}
 
 const isSelected = (id: string) => selectedMareaIds.value.includes(id)
 
 const handleFileChange = (event: Event, mareaId: string) => {
     const target = event.target as HTMLInputElement
     if (target.files && target.files.length > 0) {
-        files.value[mareaId] = target.files[0]
+        processFile(target.files[0], mareaId)
     }
 }
+
+const onDragOver = (id: string) => {
+    isDragging.value[id] = true
+}
+
+const onDragLeave = (id: string) => {
+    isDragging.value[id] = false
+}
+
+const onDrop = (event: DragEvent, id: string) => {
+    isDragging.value[id] = false
+    const droppedFiles = event.dataTransfer?.files
+    if (droppedFiles && droppedFiles.length > 0) {
+        processFile(droppedFiles[0], id)
+    }
+}
+
+const processFile = (file: File, mareaId: string) => {
+    // Validar extensión
+    const isDocx = file.name.toLowerCase().endsWith('.docx')
+    if (!isDocx) {
+        toast.error('Solo se permiten archivos .docx')
+        return
+    }
+    files.value[mareaId] = file
+}
+
+const mareasToProcess = computed(() => {
+    return props.mareas.filter(m => idsToProcessFinal.value.includes(m.id))
+})
+
+const processingFiles = computed(() => {
+    const subset: Record<string, File> = {}
+    idsToProcessFinal.value.forEach(id => {
+        if (files.value[id]) subset[id] = files.value[id]
+    })
+    return subset
+})
 
 const enviarSeleccionadas = async () => {
     if (selectedMareaIds.value.length === 0) return
 
-    // Validar que todas tengan archivo si no es canal externo
-    if (!enviadoPorCanalExterno.value) {
-        const missingFiles = selectedMareaIds.value.filter(id => !files.value[id])
-        if (missingFiles.length > 0) {
-            toast.error(`Debe adjuntar el informe para las ${missingFiles.length} mareas seleccionadas.`)
+    let ids: string[] = []
+
+    // Solo procesar las que tienen el requisito cumplido
+    if (enviadoPorCanalExterno.value) {
+        ids = selectedMareaIds.value.filter(id => fechasEnvio.value[id])
+        if (ids.length === 0) {
+            toast.error('Seleccione al menos una marea e indique su fecha de envío.')
             return
         }
+
+        // Abrir modal de confirmación canal externo
+        idsToProcessFinal.value = ids
+        showExternalModal.value = true
+    } else {
+        ids = selectedMareaIds.value.filter(id => files.value[id])
+        if (ids.length === 0) {
+            toast.error('Seleccione al menos una marea y adjunte su informe correspondiente.')
+            return
+        }
+
+        // Abrir modal de confirmación email
+        idsToProcessFinal.value = ids
+        showEmailModal.value = true
     }
+}
+
+const confirmarEnvioFinal = async () => {
+    const idsToProcess = idsToProcessFinal.value
+    if (idsToProcess.length === 0) return
 
     try {
         sending.value = true
-        
+
         const formData = new FormData()
-        selectedMareaIds.value.forEach((id) => {
+        idsToProcess.forEach((id) => {
             formData.append('mareaIds', id) // Append multiple times for array
-            if (files.value[id]) {
+            if (!enviadoPorCanalExterno.value && files.value[id]) {
                 formData.append('files', files.value[id])
             }
         })
         formData.append('enviadoPorCanalExterno', enviadoPorCanalExterno.value.toString())
 
+        if (enviadoPorCanalExterno.value) {
+            const fechasFilter: Record<string, string> = {}
+            idsToProcess.forEach(id => {
+                fechasFilter[id] = fechasEnvio.value[id]
+            })
+            formData.append('fechasEnvio', JSON.stringify(fechasFilter))
+        }
+
         const response = await mareasService.enviarAProtocolizacion(formData)
         toast.success(response.message || 'Envío realizado con éxito.')
-        
-        // Limpiar estado
-        selectedMareaIds.value = []
-        files.value = {}
-        
+
+        // Limpiar estado solo de las procesadas
+        selectedMareaIds.value = selectedMareaIds.value.filter(id => !idsToProcess.includes(id))
+        idsToProcess.forEach(id => {
+            delete files.value[id]
+            delete fechasEnvio.value[id]
+            delete isDragging.value[id]
+        })
+
+        showEmailModal.value = false
+        showExternalModal.value = false
+        idsToProcessFinal.value = []
         emit('refresh')
     } catch (error: any) {
         console.error('Error enviando a protocolización:', error)

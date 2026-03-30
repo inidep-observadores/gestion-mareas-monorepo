@@ -3122,8 +3122,15 @@ export class MareasService {
             throw new BadRequestException('Algunas mareas seleccionadas no están en estado PARA_PROTOCOLIZAR.');
         }
 
-        if (!dto.enviadoPorCanalExterno && (!files || files.length !== dto.mareaIds.length)) {
-             throw new BadRequestException('Es necesario adjuntar el documento de protocolización (.docx) para cada marea, salvo que se haya enviado por canal externo.');
+        if (dto.enviadoPorCanalExterno) {
+            const missingDates = dto.mareaIds.filter(id => !dto.fechasEnvio || !dto.fechasEnvio[id]);
+            if (missingDates.length > 0) {
+                 throw new BadRequestException('Es necesario especificar la fecha de envío para cada marea al usar el canal externo.');
+            }
+        } else {
+            if (!files || files.length !== dto.mareaIds.length) {
+                 throw new BadRequestException('Es necesario adjuntar el documento de protocolización (.docx) para cada marea, salvo que se haya enviado por canal externo.');
+            }
         }
 
         const estadoEsperando = await this.prisma.estadoMarea.findUnique({
@@ -3146,7 +3153,8 @@ export class MareasService {
              }
         }
 
-        const protocolizacionDir = this.configService.get<string>('MAREA_ARCHIVOS_PROTOCOLIZACION_DIR') || 'uploads/protocolizacion';
+        const uploadsBase = this.configService.get<string>('UPLOADS_PATH') || './uploads';
+        const protocolizacionDir = this.configService.get<string>('MAREA_INFORMES_DIR') || path.join(uploadsBase, 'informes_marea');
         
         if (!dto.enviadoPorCanalExterno && !fs.existsSync(protocolizacionDir)) {
             fs.mkdirSync(protocolizacionDir, { recursive: true });
@@ -3161,7 +3169,9 @@ export class MareasService {
                      where: { id: marea.id },
                      data: {
                           estadoActualId: estadoEsperando.id,
-                          fechaEnvioProtocolizacion: new Date()
+                          fechaEnvioProtocolizacion: dto.enviadoPorCanalExterno && dto.fechasEnvio && dto.fechasEnvio[marea.id] 
+                              ? new Date(dto.fechasEnvio[marea.id]) 
+                              : new Date()
                      }
                  });
 
@@ -3210,7 +3220,11 @@ export class MareasService {
                 estadoActual: { codigo: codigoEstado }
             },
             include: {
-                buque: true,
+                buque: {
+                    include: {
+                        tipoFlota: true
+                    }
+                },
                 estadoActual: true,
                 observadorPrincipal: true,
                 pesqueria: true

@@ -128,6 +128,7 @@ import {
   HorizontalDots,
   MailBox,
   LayoutDashboardIcon,
+  DocsIcon,
   BarChartIcon,
   CalenderIcon,
   TaskIcon,
@@ -208,6 +209,12 @@ const navigationGroups = computed(() => {
           name: 'Flujo de Trabajo',
           to: { name: 'MareasWorkflow' },
           show: true,
+        },
+        {
+          icon: DocsIcon,
+          name: 'Protocolización',
+          to: { name: 'ProtocolizacionMareas' },
+          show: isAdmin.value || isCoordinator.value,
         },
         {
           icon: MapPinIcon,

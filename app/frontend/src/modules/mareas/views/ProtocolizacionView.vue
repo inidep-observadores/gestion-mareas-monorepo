@@ -52,12 +52,11 @@
           @refresh="loadMareas"
         />
 
-        <!-- Tab Completadas (Futuro paso) -->
-        <div v-if="activeTab === 'protocolizadas'">
-           <div class="py-12 text-center text-text-muted text-sm font-bold border border-dashed border-border rounded-xl">
-              Historial de mareas protocolizadas próximamente.
-           </div>
-        </div>
+        <!-- Tab Mareas Protocolizadas -->
+        <TabMareasProtocolizadas
+          v-if="activeTab === 'protocolizadas'"
+          :mareas="mareasCompletas"
+        />
       </div>
 
     </div>
@@ -70,12 +69,14 @@ import AdminLayout from '@/components/layout/AdminLayout.vue'
 import Badge from '@/components/ui/Badge.vue'
 import TabEsperandoConfirmacion from '../components/protocolizacion/TabEsperandoConfirmacion.vue'
 import TabPendientesEnvio from '../components/protocolizacion/TabPendientesEnvio.vue'
+import TabMareasProtocolizadas from '../components/protocolizacion/TabMareasProtocolizadas.vue'
 import mareasService from '../services/mareas.service'
 import { toast } from 'vue-sonner'
 
 const loading = ref(true)
 const mareasEsperando = ref<any[]>([])
 const mareasPendientes = ref<any[]>([])
+const mareasCompletas = ref<any[]>([])
 
 const activeTab = ref('pendientes')
 
@@ -88,18 +89,45 @@ const tabs = [
 const getCount = (tabId: string) => {
   if (tabId === 'esperando') return mareasEsperando.value.length
   if (tabId === 'pendientes') return mareasPendientes.value.length
+  if (tabId === 'protocolizadas') return mareasCompletas.value.length
   return 0
+}
+
+const sortMareas = (list: any[]) => {
+  return [...list].sort((a, b) => {
+    // 1. Tipo (desc) - MC antes que OB etc
+    const tipoA = (a.tipo_marea || a.tipoMarea || '').toString().toLowerCase()
+    const tipoB = (b.tipo_marea || b.tipoMarea || '').toString().toLowerCase()
+    if (tipoA < tipoB) return 1
+    if (tipoA > tipoB) return -1
+    
+    // 2. Año (desc)
+    const anioA = Number(a.anio_marea || a.anioMarea || 0)
+    const anioB = Number(b.anio_marea || b.anioMarea || 0)
+    if (anioA < anioB) return 1
+    if (anioA > anioB) return -1
+    
+    // 3. Número (desc)
+    const nroA = Number(a.nro_marea || a.nroMarea || 0)
+    const nroB = Number(b.nro_marea || b.nroMarea || 0)
+    if (nroA < nroB) return 1
+    if (nroA > nroB) return -1
+    
+    return 0
+  })
 }
 
 const loadMareas = async () => {
   try {
     loading.value = true
-    const [pendientes, enEspera] = await Promise.all([
+    const [pendientes, enEspera, completas] = await Promise.all([
       mareasService.getProtocolizacionPendientes(),
-      mareasService.getProtocolizacionEnEspera()
+      mareasService.getProtocolizacionEnEspera(),
+      mareasService.getProtocolizacionCompletas()
     ])
-    mareasPendientes.value = pendientes
-    mareasEsperando.value = enEspera
+    mareasPendientes.value = sortMareas(pendientes)
+    mareasEsperando.value = sortMareas(enEspera)
+    mareasCompletas.value = sortMareas(completas)
   } catch (error) {
     console.error('Error cargando mareas:', error)
     toast.error('Ocurrió un error al cargar las mareas.')

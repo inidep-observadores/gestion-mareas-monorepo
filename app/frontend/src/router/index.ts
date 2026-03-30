@@ -151,7 +151,7 @@ const router = createRouter({
       meta: {
         title: 'Gestión de Protocolización',
         requiresAuth: true,
-        roles: [ValidRoles.admin, ValidRoles.tecnico, ValidRoles.coordinador]
+        roles: [ValidRoles.admin, ValidRoles.coordinador]
       },
     },
     {

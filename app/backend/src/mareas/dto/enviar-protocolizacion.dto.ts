@@ -15,4 +15,20 @@ export class EnviarProtocolizacionDto {
   @IsBoolean()
   @IsOptional()
   enviadoPorCanalExterno?: boolean;
+
+  @IsOptional()
+  files?: any;
+
+  @Transform(({ value }) => {
+    if (typeof value === 'string') {
+      try {
+        return JSON.parse(value);
+      } catch {
+        return value;
+      }
+    }
+    return value;
+  })
+  @IsOptional()
+  fechasEnvio?: Record<string, string>;
 }
