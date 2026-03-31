@@ -121,6 +121,17 @@
                         </label>
                         <label class="flex items-center gap-3 cursor-pointer group">
                             <div class="relative">
+                                <input v-model="form.mostrarEnPanel" type="checkbox" class="sr-only peer" />
+                                <div class="w-10 h-5 bg-surface-muted border border-border rounded-full peer-checked:bg-primary transition-colors"></div>
+                                <div class="absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform peer-checked:translate-x-5"></div>
+                            </div>
+                            <div>
+                                <span class="text-sm font-bold text-text group-hover:text-primary transition-colors">Mostrar en panel</span>
+                                <p class="text-[10px] text-text-muted">Aparece como acción en el panel lateral</p>
+                            </div>
+                        </label>
+                        <label class="flex items-center gap-3 cursor-pointer group">
+                            <div class="relative">
                                 <input v-model="form.activo" type="checkbox" class="sr-only peer" />
                                 <div class="w-10 h-5 bg-surface-muted border border-border rounded-full peer-checked:bg-primary transition-colors"></div>
                                 <div class="absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform peer-checked:translate-x-5"></div>
@@ -199,6 +210,7 @@ const initialForm: Partial<TransicionEstado> = {
     etiqueta: '',
     claseBoton: 'primary',
     requiereObs: false,
+    mostrarEnPanel: true,
     activo: true,
 }
 

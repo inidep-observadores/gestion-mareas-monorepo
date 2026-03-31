@@ -56,6 +56,7 @@ export function useTransicionesEstado() {
             etiqueta: '',
             claseBoton: 'primary',
             requiereObs: false,
+            mostrarEnPanel: true,
             activo: true,
         }
         isModalOpen.value = true
@@ -76,7 +77,7 @@ export function useTransicionesEstado() {
         try {
             const allowedFields: (keyof TransicionEstado)[] = [
                 'estadoOrigenId', 'estadoDestinoId', 'accion', 'etiqueta',
-                'claseBoton', 'requiereObs', 'activo',
+                'claseBoton', 'requiereObs', 'mostrarEnPanel', 'activo',
             ]
             const payload: any = {}
             allowedFields.forEach(field => {

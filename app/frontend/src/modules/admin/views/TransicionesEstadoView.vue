@@ -55,6 +55,7 @@
         <th scope="col" class="px-6 py-3">Etiqueta</th>
         <th scope="col" class="px-6 py-3">Estilo</th>
         <th scope="col" class="px-6 py-3 text-center">Req. Obs.</th>
+        <th scope="col" class="px-6 py-3 text-center">En Panel</th>
         <th scope="col" class="px-6 py-3 text-center">Estado</th>
         <th scope="col" class="px-6 py-3 text-right">Acciones</th>
       </template>
@@ -86,6 +87,11 @@
         <td class="px-6 py-4 text-center">
           <span :class="t.requiereObs ? 'text-warning' : 'text-text-muted/40'" class="text-base">
             {{ t.requiereObs ? '●' : '○' }}
+          </span>
+        </td>
+        <td class="px-6 py-4 text-center">
+          <span :class="t.mostrarEnPanel ? 'text-success' : 'text-text-muted/40'" class="text-base">
+            {{ t.mostrarEnPanel ? '●' : '○' }}
           </span>
         </td>
         <td class="px-6 py-4 text-center">
@@ -148,6 +154,9 @@
           </span>
           <span v-if="t.requiereObs" class="text-[10px] text-warning font-bold uppercase tracking-widest">
             Req. Obs.
+          </span>
+          <span v-if="!t.mostrarEnPanel" class="text-[10px] text-text-muted font-bold uppercase tracking-widest border border-border rounded px-1.5 py-0.5">
+            Oculto en panel
           </span>
         </div>
 

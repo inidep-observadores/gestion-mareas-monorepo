@@ -373,6 +373,7 @@ model MareaArchivo {
   fechaSubida        DateTime         @default(now()) @map("fecha_subida") @db.Timestamptz(6)
   usuarioSubioId     String?          @map("id_usuario_subio") @db.Uuid
   descripcion        String?
+  metadata           Json?
   marea              Marea            @relation(fields: [mareaId], references: [id])
   movimientoOrigen   MareaMovimiento? @relation(fields: [movimientoOrigenId], references: [id])
   usuarioSubio       User?            @relation(fields: [usuarioSubioId], references: [id])
@@ -615,6 +616,7 @@ model TransicionEstado {
   etiqueta        String
   claseBoton      String?     @map("clase_boton")
   requiereObs     Boolean     @default(false) @map("requiere_observaciones")
+  mostrarEnPanel  Boolean     @default(true) @map("mostrar_en_panel")
   activo          Boolean     @default(true)
   estadoDestino   EstadoMarea @relation("TransicionEstadoHasta", fields: [estadoDestinoId], references: [id])
   estadoOrigen    EstadoMarea @relation("TransicionEstadoDesde", fields: [estadoOrigenId], references: [id])

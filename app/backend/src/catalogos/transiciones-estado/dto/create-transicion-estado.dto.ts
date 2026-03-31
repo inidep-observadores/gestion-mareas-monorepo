@@ -23,5 +23,9 @@ export class CreateTransicionEstadoDto {
 
     @IsBoolean()
     @IsOptional()
+    mostrarEnPanel?: boolean;
+
+    @IsBoolean()
+    @IsOptional()
     activo?: boolean;
 }

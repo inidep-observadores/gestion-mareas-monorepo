@@ -16,5 +16,6 @@ export interface TransicionEstado {
     etiqueta: string;
     claseBoton?: string | null;
     requiereObs: boolean;
+    mostrarEnPanel: boolean;
     activo: boolean;
 }

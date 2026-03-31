@@ -96,6 +96,16 @@ const mareasService = {
         return data;
     },
 
+    aprobarInforme: async (id: string, file: File, comentarios?: string): Promise<any> => {
+        const formData = new FormData()
+        formData.append('files', file)
+        if (comentarios) formData.append('comentarios', comentarios)
+        const { data } = await httpClient.post(`/mareas/${id}/actions/APROBAR_INFORME`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        })
+        return data
+    },
+
     enviarAProtocolizacion: async (formData: FormData): Promise<{ message: string, count: number }> => {
         const { data } = await httpClient.post<{ message: string, count: number }>('/mareas/protocolizacion/enviar', formData, {
             headers: {

@@ -1652,7 +1652,9 @@ export class MareasService {
         const etapaFinal = marea.etapas[marea.etapas.length - 1] || null;
         const mainObs = marea.observadorPrincipal || null;
 
-        const allowedTransitions = transiciones.filter(t => t.estadoOrigenId === marea.estadoActualId);
+        const allowedTransitions = transiciones.filter(t =>
+            t.estadoOrigenId === marea.estadoActualId && t.mostrarEnPanel !== false
+        );
         const actions: Record<string, any> = {};
 
         // Acción especial para editar etapas en curso (no cambia estado) - AHORA PRIMERA
@@ -2067,7 +2069,7 @@ export class MareasService {
         });
     }
 
-    async executeAction(id: string, actionKey: string, user: User, payload: any = {}) {
+    async executeAction(id: string, actionKey: string, user: User, payload: any = {}, files?: Array<Express.Multer.File>) {
         const marea = await this.prisma.marea.findUnique({
             where: { id },
             include: { estadoActual: true, etapas: { orderBy: { nroEtapa: 'asc' } } }
@@ -2102,6 +2104,18 @@ export class MareasService {
 
                 return this.getMareaContext(id);
             });
+        }
+
+        // APROBAR_INFORME requiere adjuntar un archivo .docx obligatoriamente
+        if (actionKey === 'APROBAR_INFORME') {
+            const file = files && files[0];
+            if (!file) {
+                throw new BadRequestException('Es obligatorio adjuntar el informe (.docx) para aprobar.');
+            }
+            const fileExt = path.extname(file.originalname).toLowerCase();
+            if (fileExt !== '.docx') {
+                throw new BadRequestException('El archivo adjunto debe ser un documento Word (.docx).');
+            }
         }
 
         // Buscar si existe la transición permitida
@@ -2314,6 +2328,37 @@ export class MareasService {
                     } : undefined
                 }
             });
+
+            // Guardar el informe adjunto para APROBAR_INFORME
+            if (actionKey === 'APROBAR_INFORME' && files && files[0]) {
+                const file = files[0];
+                const uploadsBase = this.configService.get<string>('UPLOADS_PATH') || './uploads';
+                const informesDir = this.configService.get<string>('MAREA_INFORMES_DIR') || path.join(uploadsBase, 'informes_marea');
+                if (!fs.existsSync(informesDir)) {
+                    fs.mkdirSync(informesDir, { recursive: true });
+                }
+                const fileExt = path.extname(file.originalname);
+                const fileName = `${marea.anioMarea}_${marea.nroMarea}_${marea.tipoMarea}_APROBACION_${Date.now()}${fileExt}`;
+                const filePath = path.join(informesDir, fileName);
+                fs.writeFileSync(filePath, file.buffer);
+
+                const movimiento = await tx.mareaMovimiento.findFirst({
+                    where: { mareaId: id },
+                    orderBy: { fechaHora: 'desc' }
+                });
+
+                await tx.mareaArchivo.create({
+                    data: {
+                        mareaId: id,
+                        movimientoOrigenId: movimiento?.id,
+                        tipoArchivo: 'INFORME_APROBACION',
+                        formato: fileExt.replace('.', '').toUpperCase(),
+                        rutaArchivo: filePath.replace(/\\/g, '/'),
+                        usuarioSubioId: user.id,
+                        descripcion: 'Informe aprobado para protocolización'
+                    }
+                });
+            }
 
             return mareaUpdated;
         });
@@ -3144,10 +3189,16 @@ export class MareasService {
         // Send Email
         if (!dto.enviadoPorCanalExterno) {
              const adminEmailTo = this.configService.get<string>('PROTOCOLIZACION_EMAIL_TO');
+             const adminEmailCc = this.configService.get<string>('PROTOCOLIZACION_EMAIL_CC');
+             
              if (!adminEmailTo) {
                  throw new BadRequestException('La dirección de correo destino para protocolización no está configurada en la plataforma.');
              }
-             const sent = await this.mailService.sendProtocolizacionEmail(adminEmailTo, mareas, files);
+
+             // Sanitizamos: si es una cadena vacía o espacios, pasamos undefined
+             const sanitizedCc = adminEmailCc?.trim() || undefined;
+
+             const sent = await this.mailService.sendProtocolizacionEmail(adminEmailTo, mareas, files, sanitizedCc);
              if (!sent) {
                  throw new BadRequestException('Ocurrió un error al enviar el correo electrónico mediante el servicio interno.');
              }

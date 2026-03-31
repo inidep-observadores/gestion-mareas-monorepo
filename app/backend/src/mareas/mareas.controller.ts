@@ -168,6 +168,7 @@ export class MareasController {
 
     @Post(':id/actions/:actionKey')
     @Auth(ValidRoles.admin, ValidRoles.tecnico)
+    @UseInterceptors(AnyFilesInterceptor())
     @AuditEvent({
         tipoEvento: 'EJECUTAR_ACCION_FLUJO',
         categoria: AuditCategoria.MAREAS,
@@ -177,9 +178,10 @@ export class MareasController {
         @Param('id') id: string,
         @Param('actionKey') actionKey: string,
         @GetUser() user: User,
-        @Body() payload: any
+        @Body() payload: any,
+        @UploadedFiles() files?: Array<Express.Multer.File>
     ) {
-        return this.mareasService.executeAction(id, actionKey, user, payload);
+        return this.mareasService.executeAction(id, actionKey, user, payload, files);
     }
 
     @Patch(':id/etapas/:etapaId/intencion-cierre')
