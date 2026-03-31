@@ -116,6 +116,7 @@ import {
   LayoutDashboardIcon,
   BackupIcon,
   BellIcon,
+  LayersIcon,
 } from '@/icons'
 import { useSidebar } from '@/composables/useSidebar'
 import { useAuthStore } from '@/modules/auth/stores/auth.store'
@@ -160,6 +161,11 @@ const navigationGroups = [
         icon: ShipIcon,
         name: 'Buques',
         path: '/admin/buques',
+      },
+      {
+        icon: LayersIcon,
+        name: 'Transiciones de Estado',
+        path: '/admin/transiciones-estado',
       },
       {
         icon: BellIcon,

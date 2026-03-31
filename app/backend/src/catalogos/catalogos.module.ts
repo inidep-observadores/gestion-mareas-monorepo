@@ -13,6 +13,8 @@ import { ObservadoresController } from './observadores/observadores.controller';
 import { ObservadoresService } from './observadores/observadores.service';
 import { EstadosMareaController } from './estados-marea/estados-marea.controller';
 import { EstadosMareaService } from './estados-marea/estados-marea.service';
+import { TransicionesEstadoController } from './transiciones-estado/transiciones-estado.controller';
+import { TransicionesEstadoService } from './transiciones-estado/transiciones-estado.service';
 import { BuquesController } from './buques/buques.controller';
 import { BuquesService } from './buques/buques.service';
 import { VesselSyncService } from './buques/vessel-sync.service';
@@ -29,6 +31,7 @@ import { AuthModule } from '../auth/auth.module';
         EspeciesController,
         ObservadoresController,
         EstadosMareaController,
+        TransicionesEstadoController,
         BuquesController,
     ],
     providers: [
@@ -39,6 +42,7 @@ import { AuthModule } from '../auth/auth.module';
         EspeciesService,
         ObservadoresService,
         EstadosMareaService,
+        TransicionesEstadoService,
         BuquesService,
         VesselSyncService,
     ],

@@ -290,6 +290,16 @@ const router = createRouter({
       },
     },
     {
+      path: '/admin/transiciones-estado',
+      name: 'AdminTransicionesEstado',
+      component: () => import('@/modules/admin/views/TransicionesEstadoView.vue'),
+      meta: {
+        title: 'Transiciones de Estado de Mareas',
+        requiresAuth: true,
+        roles: [ValidRoles.admin],
+      },
+    },
+    {
       path: '/admin/error-logs',
       name: 'AdminErrorLogs',
       component: () => import('@/modules/admin/views/ErrorLogsView.vue'),
