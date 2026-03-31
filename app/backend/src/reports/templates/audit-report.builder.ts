@@ -61,6 +61,10 @@ export interface AuditReportData {
         diasTotales: number;
         fechaInicio: Date | string;
         fechaFin: Date | string | null;
+        fechaEnvioProtocolizacion?: Date | string | null;
+        nroProtocolizacion?: number | null;
+        anioProtocolizacion?: number | null;
+        fechaProtocolizacion?: Date | string | null;
     }>;
 
     /** Distribución de mareas (para contar etapas) */
@@ -614,11 +618,19 @@ export class AuditReportBuilder {
             this.heading2('5.1 Mareas finalizadas en el período'),
             this.bodyParagraph(introText),
             createFormattedTable(
-                ['PESQUERÍA', 'BUQUE', 'MAREA', 'ESTADO', 'ETAPAS', 'DÍAS'],
-                sorted.map((m: any) => [m.pesqueria, m.buque, this.formatMareaShort(m.id_marea), 'Finalizada', m.etapas.toString(), m.dias.toString()]),
+                ['PESQUERÍA', 'BUQUE', 'MAREA', 'ETAPAS', 'DÍAS', 'ENV. DNI', 'PROTOCOLIZ.'],
+                sorted.map((m: any) => [
+                    m.pesqueria,
+                    m.buque,
+                    this.formatMareaShort(m.id_marea),
+                    m.etapas.toString(),
+                    m.dias.toString(),
+                    m.fechaEnvioProtocolizacion ? this.formatShortDate(m.fechaEnvioProtocolizacion) : '',
+                    this.formatProtocolizacionCell(m.nroProtocolizacion, m.anioProtocolizacion, m.fechaProtocolizacion),
+                ]),
                 {
-                    columnWidths: [22, 22, 14, 14, 14, 14],
-                    alignments: [AlignmentType.LEFT, AlignmentType.LEFT, AlignmentType.CENTER, AlignmentType.CENTER, AlignmentType.CENTER, AlignmentType.CENTER],
+                    columnWidths: [20, 22, 12, 10, 10, 13, 13],
+                    alignments: [AlignmentType.LEFT, AlignmentType.LEFT, AlignmentType.CENTER, AlignmentType.CENTER, AlignmentType.CENTER, AlignmentType.CENTER, AlignmentType.CENTER],
                 },
             ),
         ];
@@ -644,11 +656,11 @@ export class AuditReportBuilder {
             this.heading1('6. MAREAS EN EJECUCIÓN'),
             this.bodyParagraph(introText),
             createFormattedTable(
-                ['PESQUERÍA', 'BUQUE', 'MAREA', 'ESTADO', 'ETAPAS', 'DÍAS'],
-                sorted.map((m: any) => [m.pesqueria, m.buque, this.formatMareaShort(m.id_marea), 'En ejecución', m.etapas.toString(), m.dias.toString()]),
+                ['PESQUERÍA', 'BUQUE', 'MAREA', 'ETAPAS', 'DÍAS'],
+                sorted.map((m: any) => [m.pesqueria, m.buque, this.formatMareaShort(m.id_marea), m.etapas.toString(), m.dias.toString()]),
                 {
-                    columnWidths: [22, 22, 14, 14, 14, 14],
-                    alignments: [AlignmentType.LEFT, AlignmentType.LEFT, AlignmentType.CENTER, AlignmentType.CENTER, AlignmentType.CENTER, AlignmentType.CENTER],
+                    columnWidths: [28, 28, 16, 14, 14],
+                    alignments: [AlignmentType.LEFT, AlignmentType.LEFT, AlignmentType.CENTER, AlignmentType.CENTER, AlignmentType.CENTER],
                 },
             ),
         ];
@@ -825,5 +837,25 @@ export class AuditReportBuilder {
 
     private formatMareaShort(id: string): string {
         return id.replace(/^MB-/, '');
+    }
+
+    private formatShortDate(date: Date | string): string {
+        const d = date instanceof Date ? date : new Date(date);
+        const day = String(d.getUTCDate()).padStart(2, '0');
+        const month = String(d.getUTCMonth() + 1).padStart(2, '0');
+        const year = d.getUTCFullYear();
+        return `${day}/${month}/${year}`;
+    }
+
+    private formatProtocolizacionCell(
+        nro?: number | null,
+        anio?: number | null,
+        fecha?: Date | string | null,
+    ): string | string[] {
+        const line1 = (nro != null && anio != null) ? `${nro}/${anio}` : '';
+        const line2 = fecha ? this.formatShortDate(fecha) : '';
+        if (!line1 && !line2) return '';
+        if (line1 && line2) return [line1, line2];
+        return line1 || line2;
     }
 }

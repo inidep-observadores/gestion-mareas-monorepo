@@ -695,7 +695,7 @@ const mode = ref<'CALENDAR' | 'TOTAL'>('CALENDAR');
 const protocolizedOnly = ref(false);
 const includeOutOfPeriod = ref(false);
 const daysCalculationMode = ref<'SHIP' | 'OBSERVER'>('SHIP');
-const includeCampaigns = ref(true);
+const includeCampaigns = ref(false);
 
 const startDate = ref<string | null>(null);
 const endDate = ref<string | null>(null);

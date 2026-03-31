@@ -126,7 +126,7 @@ interface Props {
 withDefaults(defineProps<Props>(), {
   icon: () => ActivityIcon,
   daysCalculationMode: 'SHIP',
-  includeCampaigns: true
+  includeCampaigns: false
 });
 
 defineEmits<{

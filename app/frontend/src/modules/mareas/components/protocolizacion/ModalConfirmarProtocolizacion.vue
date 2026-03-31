@@ -181,8 +181,8 @@ const submitForm = async () => {
     
     await mareasService.confirmarProtocolizacion(props.marea.id, {
         nroProtocolizacion: Number(form.nroProtocolizacion),
-        anioProtocolizacion: form.anioProtocolizacion,
-        fechaProtocolizacion: new Date(`${form.fechaProtocolizacion}T12:00:00Z`).toISOString()
+        anioProtocolizacion: Number(form.anioProtocolizacion),
+        fechaProtocolizacion: form.fechaProtocolizacion!
     })
 
     toast.success('Protocolización confirmada exitosamente')
