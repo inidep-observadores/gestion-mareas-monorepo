@@ -651,23 +651,27 @@ const loadInbox = async () => {
       ...t,
       actions: resolveActions(t)
     }))
-
-    // Load historic alerts (resolved or dismissed)
-    const allAlerts = await alertsService.getAll({}) || []
-
-    alertasHistoricas.value = allAlerts
-      .filter(a => a.estado === AlertaEstado.RESUELTA || a.estado === AlertaEstado.DESCARTADA)
-      .sort((a, b) => {
-        const dateA = new Date(a.fechaCierre || a.fechaDetectada || 0).getTime()
-        const dateB = new Date(b.fechaCierre || b.fechaDetectada || 0).getTime()
-        return dateB - dateA
-      })
-
   } catch (error) {
     console.error('Error loading inbox:', error)
     toast.error('Error al actualizar la bandeja de entrada')
   } finally {
     loading.value = false
+  }
+
+  // Load historic alerts independently — does not block the task grid
+  loadHistoricalAlerts()
+}
+
+const loadHistoricalAlerts = async () => {
+  try {
+    const allAlerts = await alertsService.getAll({ status: `${AlertaEstado.RESUELTA},${AlertaEstado.DESCARTADA}` }) || []
+    alertasHistoricas.value = allAlerts.sort((a, b) => {
+      const dateA = new Date(a.fechaCierre || a.fechaDetectada || 0).getTime()
+      const dateB = new Date(b.fechaCierre || b.fechaDetectada || 0).getTime()
+      return dateB - dateA
+    })
+  } catch (error) {
+    console.error('Error loading historical alerts:', error)
   }
 }
 
