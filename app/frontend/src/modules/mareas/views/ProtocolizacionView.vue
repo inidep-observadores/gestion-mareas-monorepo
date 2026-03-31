@@ -57,6 +57,13 @@
           v-if="activeTab === 'protocolizadas'"
           :mareas="mareasCompletas"
         />
+
+        <!-- Tab Historial de Envíos -->
+        <TabHistorialProtocolizacion
+          v-if="activeTab === 'historial'"
+          :lotes="mareasLotes"
+          @refresh="loadMareas"
+        />
       </div>
 
     </div>
@@ -70,26 +77,34 @@ import Badge from '@/components/ui/Badge.vue'
 import TabEsperandoConfirmacion from '../components/protocolizacion/TabEsperandoConfirmacion.vue'
 import TabPendientesEnvio from '../components/protocolizacion/TabPendientesEnvio.vue'
 import TabMareasProtocolizadas from '../components/protocolizacion/TabMareasProtocolizadas.vue'
+import TabHistorialProtocolizacion from '../components/protocolizacion/TabHistorialProtocolizacion.vue'
 import mareasService from '../services/mareas.service'
 import { toast } from 'vue-sonner'
+import { useConfigStore } from '@/modules/shared/stores/config.store'
+import { watch } from 'vue'
+
+const configStore = useConfigStore()
 
 const loading = ref(true)
 const mareasEsperando = ref<any[]>([])
 const mareasPendientes = ref<any[]>([])
 const mareasCompletas = ref<any[]>([])
+const mareasLotes = ref<any[]>([])
 
 const activeTab = ref('pendientes')
 
 const tabs = [
   { id: 'pendientes', label: 'Pendientes de Envío' },
   { id: 'esperando', label: 'Esperando Confirmación' },
-  { id: 'protocolizadas', label: 'Mareas Protocolizadas' }
+  { id: 'protocolizadas', label: 'Mareas Protocolizadas' },
+  { id: 'historial', label: 'Historial de Envíos' }
 ]
 
 const getCount = (tabId: string) => {
   if (tabId === 'esperando') return mareasEsperando.value.length
   if (tabId === 'pendientes') return mareasPendientes.value.length
   if (tabId === 'protocolizadas') return mareasCompletas.value.length
+  if (tabId === 'historial') return mareasLotes.value.length
   return 0
 }
 
@@ -120,14 +135,16 @@ const sortMareas = (list: any[]) => {
 const loadMareas = async () => {
   try {
     loading.value = true
-    const [pendientes, enEspera, completas] = await Promise.all([
+    const [pendientes, enEspera, completas, lotes] = await Promise.all([
       mareasService.getProtocolizacionPendientes(),
       mareasService.getProtocolizacionEnEspera(),
-      mareasService.getProtocolizacionCompletas()
+      mareasService.getProtocolizacionCompletas(),
+      mareasService.getProtocolizacionLotes()
     ])
     mareasPendientes.value = sortMareas(pendientes)
     mareasEsperando.value = sortMareas(enEspera)
     mareasCompletas.value = sortMareas(completas)
+    mareasLotes.value = lotes
   } catch (error) {
     console.error('Error cargando mareas:', error)
     toast.error('Ocurrió un error al cargar las mareas.')
@@ -135,6 +152,11 @@ const loadMareas = async () => {
     loading.value = false
   }
 }
+
+// Observamos cambios en el año para refrescar las pestañas que dependen de él
+watch(() => configStore.selectedYear, () => {
+  loadMareas()
+})
 
 onMounted(() => {
   loadMareas()

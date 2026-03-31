@@ -131,7 +131,19 @@ const mareasService = {
     },
 
     getProtocolizacionCompletas: async (): Promise<any[]> => {
-        const { data } = await httpClient.get<any[]>('/mareas/protocolizacion/completas');
+        const { selectedYear } = useConfigStore();
+        const { data } = await httpClient.get<any[]>(`/mareas/protocolizacion/completas?year=${selectedYear}`);
+        return data;
+    },
+
+    getProtocolizacionLotes: async (): Promise<any[]> => {
+        const { selectedYear } = useConfigStore();
+        const { data } = await httpClient.get<any[]>(`/mareas/protocolizacion/lotes?year=${selectedYear}`);
+        return data;
+    },
+
+    getProtocolizacionLoteDetalle: async (id: string): Promise<any> => {
+        const { data } = await httpClient.get<any>(`/mareas/protocolizacion/lotes/${id}`);
         return data;
     }
 };

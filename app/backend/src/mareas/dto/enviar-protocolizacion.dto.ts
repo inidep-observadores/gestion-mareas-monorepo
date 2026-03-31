@@ -30,5 +30,5 @@ export class EnviarProtocolizacionDto {
     return value;
   })
   @IsOptional()
-  fechasEnvio?: Record<string, string>;
+  fechaEnvio?: string;
 }

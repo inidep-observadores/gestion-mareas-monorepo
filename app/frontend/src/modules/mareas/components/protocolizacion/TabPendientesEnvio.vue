@@ -125,13 +125,9 @@
               </div>
           </div>
           <div v-else-if="isSelected(marea.id) && enviadoPorCanalExterno" class="animate-in fade-in slide-in-from-top-2 duration-300">
-               <div class="space-y-2">
-                   <label class="text-[9px] font-black uppercase tracking-widest text-text-muted/70">Fecha de Envío Externo</label>
-                   <DatePicker
-                       v-model="fechasEnvio[marea.id]"
-                       :show-time="false"
-                       placeholder="Selec. fecha..."
-                   />
+               <div class="p-3 bg-primary/5 border border-primary/20 rounded-xl">
+                    <p class="text-[10px] font-black text-primary uppercase tracking-tight">Canal Externo</p>
+                    <p class="text-[9px] text-text-muted font-bold">Se solicitará la fecha de envío en el diálogo final.</p>
                </div>
           </div>
           <div v-else class="h-10 flex items-center">
@@ -160,16 +156,15 @@
       :files="processingFiles"
       :sending="sending"
       @close="showEmailModal = false"
-      @confirm="confirmarEnvioFinal"
+      @confirm="onConfirmEmail"
     />
 
     <ModalConfirmarCanalExterno
       :show="showExternalModal"
       :mareas="mareasToProcess"
-      :fechas-envio="fechasEnvio"
       :sending="sending"
       @close="showExternalModal = false"
-      @confirm="confirmarEnvioFinal"
+      @confirm="onConfirmExternal"
     />
   </div>
 </template>
@@ -180,7 +175,6 @@ import mareasService from '../../services/mareas.service'
 import { toast } from 'vue-sonner'
 import { ShipIcon } from '@/icons'
 import { FileCheck2 as DocumentCheckIcon } from 'lucide-vue-next'
-import DatePicker from '@/components/common/DatePicker.vue'
 import ModalConfirmarEnvioEmail from './ModalConfirmarEnvioEmail.vue'
 import ModalConfirmarCanalExterno from './ModalConfirmarCanalExterno.vue'
 import { computed } from 'vue'
@@ -194,7 +188,6 @@ const emit = defineEmits(['refresh'])
 const selectedMareaIds = ref<string[]>([])
 const files = ref<Record<string, File>>({})
 const isDragging = ref<Record<string, boolean>>({})
-const fechasEnvio = ref<Record<string, string>>({})
 const enviadoPorCanalExterno = ref(false)
 const sending = ref(false)
 const showEmailModal = ref(false)
@@ -264,18 +257,13 @@ const enviarSeleccionadas = async () => {
 
     let ids: string[] = []
 
-    // Solo procesar las que tienen el requisito cumplido
     if (enviadoPorCanalExterno.value) {
-        ids = selectedMareaIds.value.filter(id => fechasEnvio.value[id])
-        if (ids.length === 0) {
-            toast.error('Seleccione al menos una marea e indique su fecha de envío.')
-            return
-        }
-
-        // Abrir modal de confirmación canal externo
+        // En canal externo, simplemente pasamos las seleccionadas
+        ids = [...selectedMareaIds.value]
         idsToProcessFinal.value = ids
         showExternalModal.value = true
     } else {
+        // En canal email, validamos que tengan informe
         ids = selectedMareaIds.value.filter(id => {
             const marea = props.mareas.find(m => m.id === id)
             return files.value[id] || getInformeAprobado(marea)
@@ -285,13 +273,20 @@ const enviarSeleccionadas = async () => {
             return
         }
 
-        // Abrir modal de confirmación email
         idsToProcessFinal.value = ids
         showEmailModal.value = true
     }
 }
 
-const confirmarEnvioFinal = async () => {
+const onConfirmEmail = () => {
+    confirmarEnvioFinal()
+}
+
+const onConfirmExternal = (fecha: string) => {
+    confirmarEnvioFinal(fecha)
+}
+
+const confirmarEnvioFinal = async (fechaEnvio?: string) => {
     const idsToProcess = idsToProcessFinal.value
     if (idsToProcess.length === 0) return
 
@@ -300,29 +295,24 @@ const confirmarEnvioFinal = async () => {
 
         const formData = new FormData()
         idsToProcess.forEach((id) => {
-            formData.append('mareaIds', id) // Append multiple times for array
+            formData.append('mareaIds', id)
             if (!enviadoPorCanalExterno.value && files.value[id]) {
                 formData.append(`file_${id}`, files.value[id])
             }
         })
         formData.append('enviadoPorCanalExterno', enviadoPorCanalExterno.value.toString())
 
-        if (enviadoPorCanalExterno.value) {
-            const fechasFilter: Record<string, string> = {}
-            idsToProcess.forEach(id => {
-                fechasFilter[id] = fechasEnvio.value[id]
-            })
-            formData.append('fechasEnvio', JSON.stringify(fechasFilter))
+        if (enviadoPorCanalExterno.value && fechaEnvio) {
+            formData.append('fechaEnvio', fechaEnvio)
         }
 
         const response = await mareasService.enviarAProtocolizacion(formData)
         toast.success(response.message || 'Envío realizado con éxito.')
 
-        // Limpiar estado solo de las procesadas
+        // Limpiar estado
         selectedMareaIds.value = selectedMareaIds.value.filter(id => !idsToProcess.includes(id))
         idsToProcess.forEach(id => {
             delete files.value[id]
-            delete fechasEnvio.value[id]
             delete isDragging.value[id]
         })
 

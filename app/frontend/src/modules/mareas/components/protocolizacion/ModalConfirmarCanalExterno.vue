@@ -16,25 +16,38 @@
         </div>
       </div>
 
+      <!-- Selector de Fecha Único -->
+      <div class="p-5 bg-surface-muted border border-border rounded-2xl space-y-3">
+          <label class="text-[10px] font-black uppercase tracking-widest text-text flex items-center gap-2">
+            <CalenderIcon class="w-3.5 h-3.5 text-primary" />
+            Fecha de Envío del Lote
+          </label>
+          <DatePicker 
+            v-model="fechaEnvioSeleccionada"
+            :show-time="false"
+            placeholder="Seleccione la fecha de envío..."
+            class="w-full"
+          />
+          <p class="text-[9px] font-bold text-text-muted italic">
+            * Esta fecha se aplicará a todas las mareas listadas a continuación.
+          </p>
+      </div>
+
       <div class="space-y-4">
         <p class="text-xs text-text font-bold">Resumen de mareas a procesar:</p>
         <div class="max-h-40 overflow-y-auto space-y-2 pr-2">
           <div 
             v-for="marea in mareas" 
             :key="marea.id"
-            class="flex items-center justify-between p-3 bg-surface-muted rounded-xl border border-border"
+            class="flex items-center justify-between p-3 bg-surface rounded-xl border border-border/50"
           >
             <div class="flex items-center gap-3">
-              <span class="text-[10px] font-mono font-black border border-border bg-surface px-2 py-0.5 rounded shadow-sm">
+              <span class="text-[10px] font-mono font-black border border-border bg-surface-muted px-2 py-0.5 rounded shadow-sm">
                 {{ formatMareaCode(marea) }}
               </span>
-              <span class="text-[11px] font-bold text-text truncate max-w-[150px]">
+              <span class="text-[11px] font-bold text-text truncate max-w-[200px]">
                 {{ marea.buque?.nombreBuque || marea.buque_nombre }}
               </span>
-            </div>
-            <div class="flex items-center gap-1.5 text-text-muted">
-              <CalenderIcon class="w-3 h-3" />
-              <span class="text-[10px] font-black">{{ formatDate(fechasEnvio[marea.id]) }}</span>
             </div>
           </div>
         </div>
@@ -46,7 +59,7 @@
           Importante
         </p>
         <p class="text-[11px] text-text-muted mt-1 leading-relaxed">
-          Esta acción cambiará el estado de las mareas a "Esperando Confirmación" y registrará las fechas de envío manual indicadas.
+          Esta acción cambiará el estado de las mareas a "Esperando Confirmación" y registrará la fecha de envío manual indicada para todo el lote.
         </p>
       </div>
 
@@ -60,9 +73,9 @@
           Cancelar
         </button>
         <button 
-          @click="emit('confirm')"
-          class="flex items-center gap-2 px-6 py-2 bg-primary text-primary-fg rounded-xl text-[11px] font-black uppercase tracking-widest shadow-lg shadow-primary/20 hover:opacity-90 transition-all disabled:opacity-50"
-          :disabled="sending"
+          @click="confirmar"
+          class="flex items-center gap-2 px-6 py-2 bg-primary text-primary-fg rounded-xl text-[11px] font-black uppercase tracking-widest shadow-lg shadow-primary/20 hover:opacity-90 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+          :disabled="sending || !fechaEnvioSeleccionada"
         >
           <span v-if="sending" class="w-3 h-3 border-2 border-primary-fg border-t-transparent rounded-full animate-spin"></span>
           {{ sending ? 'Procesando...' : 'Confirmar Registro' }}
@@ -73,30 +86,24 @@
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue'
 import BaseModal from '@/components/common/BaseModal.vue'
+import DatePicker from '@/components/common/DatePicker.vue'
 import { BoxCubeIcon, CalenderIcon, InfoCircleIcon } from '@/icons'
 
 const props = defineProps<{
   show: boolean;
   mareas: any[];
-  fechasEnvio: Record<string, string>;
   sending: boolean;
 }>();
 
 const emit = defineEmits(['close', 'confirm']);
 
-const formatDate = (dateStr: string) => {
-  if (!dateStr) return 'S/D'
-  try {
-    const date = new Date(dateStr)
-    return date.toLocaleDateString('es-AR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    })
-  } catch {
-    return dateStr
-  }
+const fechaEnvioSeleccionada = ref<string>('')
+
+const confirmar = () => {
+    if (!fechaEnvioSeleccionada.value) return
+    emit('confirm', fechaEnvioSeleccionada.value)
 }
 
 const formatMareaCode = (marea: any) => {

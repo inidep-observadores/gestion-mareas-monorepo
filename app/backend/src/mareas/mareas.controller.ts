@@ -250,7 +250,19 @@ export class MareasController {
 
     @Get('protocolizacion/completas')
     @Auth(ValidRoles.admin, ValidRoles.coordinador)
-    async getProtocolizacionCompletas() {
-        return this.mareasService.getProtocolizacionPorEstado(MareaEstado.PROTOCOLIZADA);
+    async getProtocolizacionCompletas(@Query('year') year?: string) {
+        return this.mareasService.getProtocolizacionPorEstado(MareaEstado.PROTOCOLIZADA, year ? Number(year) : undefined);
+    }
+
+    @Get('protocolizacion/lotes')
+    @Auth(ValidRoles.admin, ValidRoles.coordinador)
+    async getProtocolizacionLotes(@Query('year') year?: string) {
+        return this.mareasService.getProtocolizacionLotes(year ? Number(year) : undefined);
+    }
+
+    @Get('protocolizacion/lotes/:id')
+    @Auth(ValidRoles.admin, ValidRoles.coordinador)
+    async getProtocolizacionLoteDetalle(@Param('id') id: string) {
+        return this.mareasService.getProtocolizacionLoteDetalle(id);
     }
 }

@@ -25,6 +25,7 @@ model User {
   movimientos      MareaMovimiento[]
   resetTokens      PasswordResetToken[]
   products         Product[]
+  protocolizacionLotes ProtocolizacionLote[]
 
   @@map("users")
   @@schema("public")
@@ -289,6 +290,7 @@ model Marea {
   etapas                    MareaEtapa[]
   movimientos               MareaMovimiento[]
   producciones              Produccion[]
+  lotesProtocolizacion      ProtocolizacionLoteItem[]
 
   @@unique([anioMarea, nroMarea, tipoMarea], name: "identificadorMarea", map: "identificadorMarea")
   @@unique([anioMarea, nroMarea, tipoMarea])
@@ -803,6 +805,30 @@ model JobQueue {
   @@index([type])
   @@index([updatedAt])
   @@map("job_queue")
+  @@schema("public")
+}
+
+model ProtocolizacionLote {
+  id         String                    @id @default(uuid()) @db.Uuid
+  fechaEnvio DateTime                  @default(now()) @map("fecha_envio") @db.Timestamptz(6)
+  usuarioId  String?                   @map("id_usuario") @db.Uuid
+  canal      String                    @default("EMAIL")
+  usuario    User?                     @relation(fields: [usuarioId], references: [id])
+  items      ProtocolizacionLoteItem[]
+
+  @@map("protocolizacion_lotes")
+  @@schema("public")
+}
+
+model ProtocolizacionLoteItem {
+  id      String              @id @default(uuid()) @db.Uuid
+  loteId  String              @map("id_lote") @db.Uuid
+  mareaId String              @map("id_marea") @db.Uuid
+  lote    ProtocolizacionLote @relation(fields: [loteId], references: [id], onDelete: Cascade)
+  marea   Marea               @relation(fields: [mareaId], references: [id], onDelete: Restrict)
+
+  @@unique([loteId, mareaId])
+  @@map("protocolizacion_lote_items")
   @@schema("public")
 }
 

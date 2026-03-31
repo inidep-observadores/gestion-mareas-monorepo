@@ -3174,11 +3174,8 @@ export class MareasService {
             throw new BadRequestException('Algunas mareas seleccionadas no están en estado PARA_PROTOCOLIZAR.');
         }
 
-        if (dto.enviadoPorCanalExterno) {
-            const missingDates = dto.mareaIds.filter(id => !dto.fechasEnvio || !dto.fechasEnvio[id]);
-            if (missingDates.length > 0) {
-                 throw new BadRequestException('Es necesario especificar la fecha de envío para cada marea al usar el canal externo.');
-            }
+        if (dto.enviadoPorCanalExterno && !dto.fechaEnvio) {
+            throw new BadRequestException('Debe proporcionar la fecha de envío para el registro por canal externo.');
         }
 
         const attachmentsConfig: any[] = [];
@@ -3243,35 +3240,58 @@ export class MareasService {
             fs.mkdirSync(protocolizacionDir, { recursive: true });
         }
 
+        if (dto.enviadoPorCanalExterno && !dto.fechaEnvio) {
+            throw new BadRequestException('Debe proporcionar la fecha de envío para el registro por canal externo.');
+        }
+
         return this.prisma.$transaction(async (tx) => {
-             for (let i = 0; i < mareas.length; i++) {
-                 const marea = mareas[i];
-                 const fileIndex = dto.mareaIds.indexOf(marea.id);
-                 const file = files?.find(f => f.fieldname === `file_${marea.id}`) || (files && files.length === dto.mareaIds.length ? files[fileIndex] : null);
+            // 1. Crear el Lote (Cabecera)
+            const lote = await tx.protocolizacionLote.create({
+                data: {
+                    usuarioId: user.id,
+                    canal: dto.enviadoPorCanalExterno ? 'CANAL EXTERNO' : 'EMAIL',
+                    fechaEnvio: dto.enviadoPorCanalExterno && dto.fechaEnvio 
+                        ? new Date(dto.fechaEnvio) 
+                        : DateUtils.getNow(true),
+                }
+            });
 
-                 await tx.marea.update({
-                     where: { id: marea.id },
-                     data: {
-                          estadoActualId: estadoEsperando.id,
-                          fechaEnvioProtocolizacion: dto.enviadoPorCanalExterno && dto.fechasEnvio && dto.fechasEnvio[marea.id] 
-                              ? new Date(dto.fechasEnvio[marea.id]) 
-                              : new Date()
-                     }
-                 });
+            for (let i = 0; i < mareas.length; i++) {
+                const marea = mareas[i];
+                const fileIndex = dto.mareaIds.indexOf(marea.id);
+                const file = files?.find(f => f.fieldname === `file_${marea.id}`) || (files && files.length === dto.mareaIds.length ? files[fileIndex] : null);
 
-                 const movimiento = await tx.mareaMovimiento.create({
-                     data: {
-                          mareaId: marea.id,
-                          fechaHora: new Date(),
-                          usuarioId: user.id,
-                          tipoEvento: 'ENVIAR_PROTOCOLIZACION',
-                          estadoDesdeId: marea.estadoActual.id,
-                          estadoHastaId: estadoEsperando.id,
-                          detalle: dto.enviadoPorCanalExterno ? 
-                               'Marea marcada como enviada a protocolizar por canal externo.' :
-                               'El informe fue enviado por email para realizar el trámite de protocolización.'
-                     }
-                 });
+                await tx.marea.update({
+                    where: { id: marea.id },
+                    data: {
+                        estadoActualId: estadoEsperando.id,
+                        fechaEnvioProtocolizacion: dto.enviadoPorCanalExterno && dto.fechaEnvio
+                            ? new Date(dto.fechaEnvio)
+                            : DateUtils.getNow(true)
+                    }
+                });
+
+                const movimiento = await tx.mareaMovimiento.create({
+                    data: {
+                        mareaId: marea.id,
+                        fechaHora: DateUtils.getNow(true),
+                        usuarioId: user.id,
+                        tipoEvento: 'ENVIAR_PROTOCOLIZACION',
+                        estadoDesdeId: marea.estadoActual.id,
+                        estadoHastaId: estadoEsperando.id,
+                        detalle: dto.enviadoPorCanalExterno ?
+                            'Marea marcada como enviada a protocolizar por canal externo.' :
+                            'El informe fue enviado por email para realizar el trámite de protocolización.'
+                    }
+                });
+
+                // 2. Vincular al Lote (Detalle)
+                await tx.protocolizacionLoteItem.create({
+                    data: {
+                        loteId: lote.id,
+                        mareaId: marea.id
+                    }
+                });
 
                  // Si hay archivo, guardarlo físicamente y registrarlo en BD
                  if (file && !dto.enviadoPorCanalExterno) {
@@ -3298,11 +3318,17 @@ export class MareasService {
         });
     }
 
-    async getProtocolizacionPorEstado(codigoEstado: string) {
+    async getProtocolizacionPorEstado(codigoEstado: string, anio?: number) {
+        const where: any = {
+            estadoActual: { codigo: codigoEstado }
+        };
+
+        if (anio && codigoEstado === MareaEstado.PROTOCOLIZADA) {
+            where.anioMarea = Number(anio);
+        }
+
         return this.prisma.marea.findMany({
-            where: {
-                estadoActual: { codigo: codigoEstado }
-            },
+            where,
             include: {
                 buque: {
                     include: {
@@ -3320,6 +3346,45 @@ export class MareasService {
             },
             orderBy: {
                 fechaUltimaActualizacion: 'desc'
+            }
+        });
+    }
+
+    async getProtocolizacionLotes(anio?: number) {
+        const where: any = {};
+        if (anio) {
+            const numAnio = Number(anio);
+            where.fechaEnvio = {
+                gte: new Date(`${numAnio}-01-01T00:00:00.000Z`),
+                lte: new Date(`${numAnio}-12-31T23:59:59.999Z`)
+            };
+        }
+
+        return this.prisma.protocolizacionLote.findMany({
+            where,
+            include: {
+                usuario: { select: { fullName: true } },
+                _count: { select: { items: true } }
+            },
+            orderBy: { fechaEnvio: 'desc' }
+        });
+    }
+
+    async getProtocolizacionLoteDetalle(id: string) {
+        return this.prisma.protocolizacionLote.findUnique({
+            where: { id },
+            include: {
+                usuario: { select: { fullName: true } },
+                items: {
+                    include: {
+                        marea: {
+                            include: {
+                                buque: true,
+                                estadoActual: true
+                            }
+                        }
+                    }
+                }
             }
         });
     }
