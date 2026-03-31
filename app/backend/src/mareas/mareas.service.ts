@@ -3156,6 +3156,7 @@ export class MareasService {
             include: {
                 estadoActual: true,
                 buque: true,
+                observadorPrincipal: true,
                 archivos: {
                     where: { tipoArchivo: 'INFORME_APROBACION' },
                     orderBy: { fechaSubida: 'desc' },

@@ -153,16 +153,6 @@ const navigationGroups = [
         path: '/admin/users',
       },
       {
-        icon: UserCircleIcon,
-        name: 'Observadores',
-        path: '/admin/observadores',
-      },
-      {
-        icon: ShipIcon,
-        name: 'Buques',
-        path: '/admin/buques',
-      },
-      {
         icon: LayersIcon,
         name: 'Transiciones de Estado',
         path: '/admin/transiciones-estado',

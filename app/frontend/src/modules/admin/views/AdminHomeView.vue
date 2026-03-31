@@ -13,26 +13,12 @@
           <h2 class="text-xl font-bold text-text">Gestión de Entidades</h2>
         </div>
         
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <AdminHomeCard
             title="Gestión de Usuarios"
             description="Administra los accesos de personal, roles y permisos del sistema."
             :to="{ name: 'AdminUsers' }"
             :icon="UserGroupIcon"
-            color="primary"
-          />
-          <AdminHomeCard
-            title="Gestión de Buques"
-            description="Control de la flota, características técnicas y armadores asociados."
-            :to="{ name: 'AdminBuques' }"
-            :icon="ShipIcon"
-            color="primary"
-          />
-          <AdminHomeCard
-            title="Gestión de Observadores"
-            description="Registro oficial de observadores a bordo y su información técnica."
-            :to="{ name: 'AdminObservadores' }"
-            :icon="BeakerIcon"
             color="primary"
           />
           <AdminHomeCard

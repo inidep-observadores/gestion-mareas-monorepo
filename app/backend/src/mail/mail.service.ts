@@ -44,25 +44,40 @@ export class MailService {
             const subject = 'Notificación de mareas enviadas a protocolizar';
             let tableRows = '';
             for (const marea of marcadasParaProtocolizar) {
+                const buqueCod = marea.buque?.codigoInterno ? ` (${marea.buque.codigoInterno})` : '';
+                const obsInfo = marea.observadorPrincipal 
+                    ? `${marea.observadorPrincipal.apellido}, ${marea.observadorPrincipal.nombre} (${marea.observadorPrincipal.codigoInterno})`
+                    : 'N/D';
+
                 tableRows += `
                 <tr>
-                    <td>${marea.nroMarea}/${marea.anioMarea} (${marea.tipoMarea})</td>
-                    <td>${marea.buque?.nombreBuque || 'N/D'}</td>
+                    <td>${marea.nroMarea}/${marea.anioMarea}</td>
+                    <td>${marea.buque?.nombreBuque || 'N/D'}${buqueCod}</td>
+                    <td>${obsInfo}</td>
                 </tr>`;
             }
 
             const html = `
-            <h2>Notificación de Protocolización</h2>
+            <h3>Notificación de envío de informes de marea</h3>
             <p>Se informa que las siguientes mareas han sido enviadas a protocolizar:</p>
             <table border="1" cellpadding="5" cellspacing="0">
                 <thead>
-                    <tr><th>Marea</th><th>Buque</th></tr>
+                    <tr>
+                        <th>Marea</th>
+                        <th>Buque</th>
+                        <th>Observador</th>
+                    </tr>
                 </thead>
                 <tbody>
                     ${tableRows}
                 </tbody>
             </table>
-            <p>Se adjuntan los documentos correspondientes.</p>
+            <p>Se adjuntan los correspondientes informes de marea.</p>
+            <br/>
+            <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 20px 0;" />
+            <p style="font-size: 10px; color: #64748b; font-style: italic;">
+              Enviado desde <strong>SIGMA</strong> - Sistema Integral de Gestión de Mareas
+            </p>
             `;
 
             await this.mailerService.sendMail({

@@ -48,17 +48,25 @@
                   <tr>
                     <th class="px-3 py-2 text-left font-black uppercase tracking-tighter border border-border">Marea</th>
                     <th class="px-3 py-2 text-left font-black uppercase tracking-tighter border border-border">Buque</th>
+                    <th class="px-3 py-2 text-left font-black uppercase tracking-tighter border border-border">Observador</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr v-for="marea in mareas" :key="marea.id">
                     <td class="px-3 py-2 border border-border font-mono font-bold">{{ formatMareaCode(marea) }}</td>
-                    <td class="px-3 py-2 border border-border">{{ marea.buque?.nombreBuque || marea.buque_nombre }}</td>
+                    <td class="px-3 py-2 border border-border font-bold uppercase tracking-tight">{{ formatBuqueName(marea) }}</td>
+                    <td class="px-3 py-2 border border-border">{{ formatObservadorName(marea) }}</td>
                   </tr>
                 </tbody>
               </table>
 
               <p class="text-xs text-text mt-4">Se adjuntan los documentos correspondientes.</p>
+              
+              <div class="mt-6 pt-4 border-t border-border">
+                <p class="text-[10px] italic text-text-muted">
+                  Enviado desde <strong class="font-black">SIGMA</strong> - Sistema Integral de Gestión de Mareas
+                </p>
+              </div>
             </div>
           </div>
 
@@ -129,9 +137,20 @@ const props = defineProps<{
 const emit = defineEmits(['close', 'confirm']);
 
 const formatMareaCode = (marea: any) => {
-  const tipo = marea.tipo_marea || marea.tipoMarea || 'MC'
   const nro = marea.nro_marea || marea.nroMarea || '0'
-  const anio = (marea.anio_marea || marea.anioMarea || 2026).toString().slice(-2)
-  return `${tipo}-${nro}-${anio}`
+  const anio = marea.anio_marea || marea.anioMarea || 2026
+  return `${nro}/${anio}`
+}
+
+const formatBuqueName = (marea: any) => {
+  const nombre = marea.buque?.nombreBuque || marea.buque_nombre || 'N/D'
+  const codigo = marea.buque?.codigoInterno
+  return codigo ? `${nombre} (${codigo})` : nombre
+}
+
+const formatObservadorName = (marea: any) => {
+  const obs = marea.observadorPrincipal
+  if (!obs) return marea.observador || 'N/D'
+  return `${obs.apellido}, ${obs.nombre} (${obs.codigoInterno})`
 }
 </script>

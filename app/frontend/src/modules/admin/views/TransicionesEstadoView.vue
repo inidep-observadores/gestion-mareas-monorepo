@@ -1,5 +1,5 @@
 <template>
-  <AdminLayout>
+  <AdminDashboardLayout>
     <!-- Toggle vista -->
     <div class="flex items-center justify-between mb-4">
       <div></div>
@@ -339,12 +339,12 @@
         </div>
       </div>
     </div>
-  </AdminLayout>
+  </AdminDashboardLayout>
 </template>
 
 <script setup lang="ts">
 import { onMounted, computed, ref } from 'vue'
-import AdminLayout from '@/components/layout/AdminLayout.vue'
+import AdminDashboardLayout from '../layouts/AdminDashboardLayout.vue'
 import BaseDataList from '@/components/common/BaseDataList.vue'
 import TransicionEstadoDialog from '../components/TransicionEstadoDialog.vue'
 import MermaidDiagram from '../components/MermaidDiagram.vue'

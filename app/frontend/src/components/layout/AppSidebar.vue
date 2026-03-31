@@ -246,13 +246,13 @@ const navigationGroups = computed(() => {
         {
           icon: ShipIcon,
           name: 'Buques',
-          to: { name: 'AdminBuques' },
+          to: { name: 'SistemaBuques' },
           show: true,
         },
         {
           icon: UserCircleIcon,
           name: 'Observadores',
-          to: { name: 'AdminObservadores' },
+          to: { name: 'SistemaObservadores' },
           show: true,
         },
         {

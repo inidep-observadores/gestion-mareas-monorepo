@@ -270,8 +270,8 @@ const router = createRouter({
       },
     },
     {
-      path: '/admin/observadores',
-      name: 'AdminObservadores',
+      path: '/sistema/observadores',
+      name: 'SistemaObservadores',
       component: () => import('@/modules/admin/views/ObservadoresView.vue'),
       meta: {
         title: 'Gestión de Observadores',
@@ -280,8 +280,8 @@ const router = createRouter({
       },
     },
     {
-      path: '/admin/buques',
-      name: 'AdminBuques',
+      path: '/sistema/buques',
+      name: 'SistemaBuques',
       component: () => import('@/modules/admin/views/BuquesView.vue'),
       meta: {
         title: 'Gestión de Buques',
