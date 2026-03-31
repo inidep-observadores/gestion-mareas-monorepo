@@ -112,6 +112,7 @@ export interface Marea {
     tipo_marea?: TipoMarea;
     diasZonaAustral?: number | null;
     tipoCalculoZonaAustral?: TipoCalculoZonaAustral;
+    archivos?: any[];
 }
 
 export interface MareaOpcionesCierre {

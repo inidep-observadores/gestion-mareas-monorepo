@@ -39,7 +39,7 @@ export class MailService {
             return false;
         }
     }
-    async sendProtocolizacionEmail(to: string, marcadasParaProtocolizar: any[], files: Express.Multer.File[]) {
+    async sendProtocolizacionEmail(to: string, marcadasParaProtocolizar: any[], attachmentsConfig: any[], cc?: string) {
         try {
             const subject = 'Notificación de mareas enviadas a protocolizar';
             let tableRows = '';
@@ -65,29 +65,25 @@ export class MailService {
             <p>Se adjuntan los documentos correspondientes.</p>
             `;
 
-            const attachments = files ? files.map(file => ({
-                filename: file.originalname,
-                content: file.buffer,
-                contentType: file.mimetype,
-            })) : [];
-
             await this.mailerService.sendMail({
                 to,
+                cc,
                 subject,
                 html,
-                attachments,
+                attachments: attachmentsConfig,
             });
             return true;
         } catch (error) {
-            this.logger.error(`Error sending email to ${to}: ${error.message}`, error.stack);
+            this.logger.error(`Error sending email to ${to} (CC: ${cc || 'N/D'}): ${error.message}`, error.stack);
             await this.auditService.logEvento({
                 tipoEvento: 'ERROR_ENVIO_EMAIL',
                 categoria: AuditCategoria.SISTEMA,
-                descripcion: `Fallo al enviar correo a ${to}: Notificación de protocolización`,
+                descripcion: `Fallo al enviar correo a ${to} (CC: ${cc || 'N/D'}): Notificación de protocolización`,
                 resultado: AuditResultado.ERROR,
                 metadata: {
                     error: error.message,
                     destinatario: to,
+                    cc: cc || null,
                     asunto: 'Notificación de mareas enviadas a protocolizar'
                 }
             });

@@ -2355,7 +2355,8 @@ export class MareasService {
                         formato: fileExt.replace('.', '').toUpperCase(),
                         rutaArchivo: filePath.replace(/\\/g, '/'),
                         usuarioSubioId: user.id,
-                        descripcion: 'Informe aprobado para protocolización'
+                        descripcion: 'Informe aprobado para protocolización',
+                        metadata: { originalName: file.originalname }
                     }
                 });
             }
@@ -3154,7 +3155,12 @@ export class MareasService {
             where: { id: { in: dto.mareaIds } },
             include: {
                 estadoActual: true,
-                buque: true
+                buque: true,
+                archivos: {
+                    where: { tipoArchivo: 'INFORME_APROBACION' },
+                    orderBy: { fechaSubida: 'desc' },
+                    take: 1
+                }
             }
         });
 
@@ -3172,9 +3178,34 @@ export class MareasService {
             if (missingDates.length > 0) {
                  throw new BadRequestException('Es necesario especificar la fecha de envío para cada marea al usar el canal externo.');
             }
-        } else {
-            if (!files || files.length !== dto.mareaIds.length) {
-                 throw new BadRequestException('Es necesario adjuntar el documento de protocolización (.docx) para cada marea, salvo que se haya enviado por canal externo.');
+        }
+
+        const attachmentsConfig: any[] = [];
+
+        if (!dto.enviadoPorCanalExterno) {
+            for (const marea of mareas) {
+                const fileIndex = dto.mareaIds.indexOf(marea.id);
+                const newFile = files?.find(f => f.fieldname === `file_${marea.id}`) || (files && files.length === dto.mareaIds.length ? files[fileIndex] : null);
+                const existingFile = marea.archivos && marea.archivos.length > 0 ? marea.archivos[0] : null;
+
+                if (!newFile && !existingFile) {
+                    throw new BadRequestException(`Es necesario adjuntar el documento de protocolización (.docx) para la marea ${marea.nroMarea}, salvo que se haya enviado por canal externo o que ya posea un informe aprobado.`);
+                }
+
+                if (newFile) {
+                    attachmentsConfig.push({
+                        filename: newFile.originalname,
+                        content: newFile.buffer,
+                        contentType: newFile.mimetype,
+                    });
+                } else if (existingFile) {
+                    const metadata = existingFile.metadata as any;
+                    const originalName = metadata?.originalName || `INFORME_APROBACION_MAREA_${marea.nroMarea}_${marea.anioMarea}.docx`;
+                    attachmentsConfig.push({
+                        filename: originalName,
+                        path: existingFile.rutaArchivo
+                    });
+                }
             }
         }
 
@@ -3198,7 +3229,7 @@ export class MareasService {
              // Sanitizamos: si es una cadena vacía o espacios, pasamos undefined
              const sanitizedCc = adminEmailCc?.trim() || undefined;
 
-             const sent = await this.mailService.sendProtocolizacionEmail(adminEmailTo, mareas, files, sanitizedCc);
+             const sent = await this.mailService.sendProtocolizacionEmail(adminEmailTo, mareas, attachmentsConfig, sanitizedCc);
              if (!sent) {
                  throw new BadRequestException('Ocurrió un error al enviar el correo electrónico mediante el servicio interno.');
              }
@@ -3214,7 +3245,8 @@ export class MareasService {
         return this.prisma.$transaction(async (tx) => {
              for (let i = 0; i < mareas.length; i++) {
                  const marea = mareas[i];
-                 const file = files && files[i];
+                 const fileIndex = dto.mareaIds.indexOf(marea.id);
+                 const file = files?.find(f => f.fieldname === `file_${marea.id}`) || (files && files.length === dto.mareaIds.length ? files[fileIndex] : null);
 
                  await tx.marea.update({
                      where: { id: marea.id },
@@ -3278,7 +3310,12 @@ export class MareasService {
                 },
                 estadoActual: true,
                 observadorPrincipal: true,
-                pesqueria: true
+                pesqueria: true,
+                archivos: {
+                    where: { tipoArchivo: 'INFORME_APROBACION' },
+                    orderBy: { fechaSubida: 'desc' },
+                    take: 1
+                }
             },
             orderBy: {
                 fechaUltimaActualizacion: 'desc'

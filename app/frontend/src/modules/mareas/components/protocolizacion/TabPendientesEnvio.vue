@@ -70,7 +70,14 @@
 
           <!-- Footer (File Input) -->
           <div v-if="isSelected(marea.id) && !enviadoPorCanalExterno" class="animate-in fade-in slide-in-from-top-2 duration-300">
-              <div class="space-y-2">
+              <div v-if="getInformeAprobado(marea)" class="flex items-center gap-3 p-3 bg-success/10 border border-success/20 rounded-xl">
+                  <DocumentCheckIcon class="w-6 h-6 text-success shrink-0" />
+                  <span class="text-[10px] font-black uppercase text-success tracking-tight overflow-hidden text-ellipsis">
+                      ✓ Informe Aprobado<br/>
+                      <span class="text-[9px] font-bold text-success/80 block w-full truncate" :title="getInformeAprobado(marea).metadata?.originalName">{{ getInformeAprobado(marea).metadata?.originalName || 'Documento .docx' }}</span>
+                  </span>
+              </div>
+              <div v-else class="space-y-2">
                   <label class="text-[9px] font-black uppercase tracking-widest text-text-muted/70">Adjuntar Informe (.docx)</label>
 
                   <div
@@ -172,6 +179,7 @@ import { ref } from 'vue'
 import mareasService from '../../services/mareas.service'
 import { toast } from 'vue-sonner'
 import { ShipIcon } from '@/icons'
+import { FileCheck2 as DocumentCheckIcon } from 'lucide-vue-next'
 import DatePicker from '@/components/common/DatePicker.vue'
 import ModalConfirmarEnvioEmail from './ModalConfirmarEnvioEmail.vue'
 import ModalConfirmarCanalExterno from './ModalConfirmarCanalExterno.vue'
@@ -198,6 +206,10 @@ const formatMareaCode = (marea: any) => {
   const nro = marea.nro_marea || marea.nroMarea || '0'
   const anio = (marea.anio_marea || marea.anioMarea || 2026).toString().slice(-2)
   return `${tipo}-${nro}-${anio}`
+}
+
+const getInformeAprobado = (marea: any) => {
+    return marea.archivos?.find((a: any) => a.tipoArchivo === 'INFORME_APROBACION')
 }
 
 const isSelected = (id: string) => selectedMareaIds.value.includes(id)
@@ -264,9 +276,12 @@ const enviarSeleccionadas = async () => {
         idsToProcessFinal.value = ids
         showExternalModal.value = true
     } else {
-        ids = selectedMareaIds.value.filter(id => files.value[id])
+        ids = selectedMareaIds.value.filter(id => {
+            const marea = props.mareas.find(m => m.id === id)
+            return files.value[id] || getInformeAprobado(marea)
+        })
         if (ids.length === 0) {
-            toast.error('Seleccione al menos una marea y adjunte su informe correspondiente.')
+            toast.error('Seleccione al menos una marea y asegúrese de que cuente con su informe aprobado o de adjuntarlo ahora.')
             return
         }
 
@@ -287,7 +302,7 @@ const confirmarEnvioFinal = async () => {
         idsToProcess.forEach((id) => {
             formData.append('mareaIds', id) // Append multiple times for array
             if (!enviadoPorCanalExterno.value && files.value[id]) {
-                formData.append('files', files.value[id])
+                formData.append(`file_${id}`, files.value[id])
             }
         })
         formData.append('enviadoPorCanalExterno', enviadoPorCanalExterno.value.toString())
