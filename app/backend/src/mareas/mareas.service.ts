@@ -2927,6 +2927,10 @@ export class MareasService {
             }
 
             sheet.columns = columns;
+            sheet.autoFilter = {
+                from: { row: 1, column: 1 },
+                to: { row: 1, column: columns.length }
+            };
             sheet.getRow(1).font = { bold: true };
             sheet.getRow(1).fill = {
                 type: 'pattern',

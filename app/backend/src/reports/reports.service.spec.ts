@@ -20,6 +20,9 @@ describe('ReportsService', () => {
     observador: {
       count: jest.fn(),
     },
+    marea: {
+      findMany: jest.fn(),
+    },
   };
 
   const mockAuditReportBuilder = {
@@ -67,6 +70,7 @@ describe('ReportsService', () => {
 
       mockStatsService.getDashboardStats.mockResolvedValue(mockStats);
       mockPrismaService.observador.count.mockResolvedValue(mockDotacion);
+      mockPrismaService.marea.findMany.mockResolvedValue([]);
       mockStatsService.getMareaDistribution.mockResolvedValue(mockDistribution);
       mockStatsService.getDashboardStatsDetail.mockResolvedValue(mockDetails);
       mockAuditReportBuilder.build.mockResolvedValue(mockBuffer);

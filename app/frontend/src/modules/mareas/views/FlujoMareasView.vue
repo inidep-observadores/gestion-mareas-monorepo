@@ -516,9 +516,12 @@ const handleExport = async () => {
       year: configStore.selectedYear
     }
 
+    // Enviamos los IDs de las mareas visibles actualmente para respetar filtros
+    if (filteredMareas.value.length > 0) {
+      params.ids = filteredMareas.value.map(m => m.id)
+    }
+    
     if (searchQuery.value) {
-      // Enviamos los IDs de las mareas visibles actualmente para respetar filtros
-      params.ids = mareas.value.map(m => m.id)
       params.searchQuery = searchQuery.value
     }
 
@@ -640,7 +643,6 @@ const kpis = computed(() => {
   }))
 })
 
-// Main Data Computation
 const groupedMareas = computed(() => {
   const groups: any[] = []
 
@@ -675,8 +677,25 @@ const groupedMareas = computed(() => {
     });
   }
 
-  // 1. Get filtered list based on search and fishery
-  const filtered = mareas.value.filter(m => {
+  // Iterate over KPIs to guarantee order
+  rawKpis.value.forEach(kpi => {
+    const items = filteredMareas.value.filter(m => m.estado_codigo === kpi.codigo)
+
+    groups.push({
+      code: kpi.codigo,
+      label: kpi.label,
+      items: sortItems(items),
+      expanded: !collapsedGroups.value.has(kpi.codigo),
+      kpiData: getKpiMeta(kpi.codigo)
+    })
+  })
+
+  return groups
+})
+
+// 1. Get filtered list based on search and fishery
+const filteredMareas = computed(() => {
+  return mareas.value.filter(m => {
     // Filtro por pesquería
     const matchesPesqueria = !filterPesqueria.value ||
       (m.pesquerias_nombres && m.pesquerias_nombres.includes(filterPesqueria.value));
@@ -694,22 +713,7 @@ const groupedMareas = computed(() => {
 
     return matchesPesqueria && matchesText;
   });
-
-  // 2. Iterate over KPIs to guarantee order
-  rawKpis.value.forEach(kpi => {
-    const items = filtered.filter(m => m.estado_codigo === kpi.codigo)
-
-    groups.push({
-      code: kpi.codigo,
-      label: kpi.label,
-      items: sortItems(items),
-      expanded: !collapsedGroups.value.has(kpi.codigo),
-      kpiData: getKpiMeta(kpi.codigo)
-    })
-  })
-
-  return groups
-})
+});
 
 const hasMareas = computed(() => groupedMareas.value.some(g => g.items.length > 0))
 

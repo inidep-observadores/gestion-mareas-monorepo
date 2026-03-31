@@ -36,6 +36,12 @@
                   </select>
                 </div>
                 <SearchInput v-model="searchQuery" class="md:w-96" placeholder="Buscar buque o marea..." />
+                <ExportExcelButton 
+                  :loading="exporting"
+                  :label="searchQuery || filterPesqueria || hiddenStates.size > 0 ? 'Filtradas' : 'Excel'"
+                  :title="searchQuery || filterPesqueria || hiddenStates.size > 0 ? 'Exportar mareas filtradas' : 'Exportar todas las mareas activas'"
+                  @click="handleExport"
+                />
                 <button v-if="!isReadOnly" @click="router.push('/mareas/nueva')"
                   class="flex items-center justify-center gap-2 px-4 py-2 bg-primary text-primary-fg rounded-xl text-sm font-bold hover:bg-primary-hover transition-all shadow-lg shadow-primary/20 active:scale-95">
                   <PlusIcon class="w-4 h-4" />
@@ -390,8 +396,11 @@ import {
   ChevronDownIcon,
   WarningIcon,
   EditIcon,
-  SportsScoreIcon
+  SportsScoreIcon,
+  DownloadIcon
 } from '@/icons'
+import ExportExcelButton from '@/modules/shared/components/ExportExcelButton.vue';
+import { useConfigStore } from '@/modules/shared/stores/config.store'
 
 import { ValidRoles } from '@/modules/auth/interfaces/roles.enum'
 
@@ -435,6 +444,40 @@ const showAprobarInformeDialog = ref(false)
 const selectedActionKey = ref<string | null>(null)
 const selectedActionData = ref<any>(null)
 const executingAction = ref(false)
+const exporting = ref(false)
+const configStore = useConfigStore()
+
+const handleExport = async () => {
+  try {
+    exporting.value = true
+    const params: any = {
+      year: configStore.selectedYear
+    }
+
+    // Enviamos los IDs de las mareas visibles actualmente para respetar filtros
+    if (filteredMareas.value.length > 0) {
+      params.ids = filteredMareas.value.map(m => m.id)
+    }
+
+    const blob = await mareasService.exportToExcel(params)
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+
+    const filename = `MAREAS_ACTIVAS_${configStore.selectedYear}.xlsx`
+
+    link.setAttribute('download', filename)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    window.URL.revokeObjectURL(url)
+  } catch (err) {
+    console.error('Error al exportar Excel:', err)
+  } finally {
+    exporting.value = false
+  }
+}
+
 const gestionMode = ref<'INICIAR' | 'EDITAR' | 'FINALIZAR'>('INICIAR')
 const mareaToManage = ref<any>(null)
 
