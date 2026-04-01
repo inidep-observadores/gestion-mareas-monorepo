@@ -7,9 +7,26 @@
         <span class="text-[10px] font-black uppercase tracking-widest text-text-muted mr-2">
           Filtrar por estado:
         </span>
-        <StatusFilterChip v-for="kpi in kpis" :key="kpi.label" :label="kpi.label" :value="kpi.value" :icon="kpi.icon"
-          :active="!hiddenStates.has(kpi.codigo)" :color-class="kpi.color" :bg-class="kpi.bg" :border-class="kpi.border"
-          @click="toggleStateVisibility(kpi.codigo)" />
+        <div class="flex flex-wrap items-center gap-2">
+          <StatusFilterChip v-for="kpi in kpis" :key="kpi.label" :label="kpi.label" :value="kpi.value" :icon="kpi.icon"
+            :active="!hiddenStates.has(kpi.codigo)" :color-class="kpi.color" :bg-class="kpi.bg" :border-class="kpi.border"
+            @click="toggleStateVisibility(kpi.codigo)" />
+        </div>
+
+        <div class="flex items-center gap-2 ml-2 pl-4 border-l border-border/50">
+          <button 
+            @click="selectAllStates"
+            class="text-[10px] font-black uppercase tracking-tight text-primary hover:text-primary-hover transition-all px-2 py-1 rounded-lg hover:bg-primary/5 active:scale-95"
+          >
+            Marcar todo
+          </button>
+          <button 
+            @click="deselectAllStates"
+            class="text-[10px] font-black uppercase tracking-tight text-text-muted hover:text-text transition-all px-2 py-1 rounded-lg hover:bg-surface-muted/50 active:scale-95"
+          >
+            Desmarcar todo
+          </button>
+        </div>
       </div>
 
       <div class="flex flex-col xl:flex-row gap-6 overflow-hidden">
@@ -425,6 +442,14 @@ const {
   setVisibleStates,
   toggleSort
 } = useMareas()
+
+const selectAllStates = () => {
+  setVisibleStates(rawKpis.value.map(k => k.codigo))
+}
+
+const deselectAllStates = () => {
+  setVisibleStates([])
+}
 
 const authStore = useAuthStore()
 const isReadOnly = computed(() => {

@@ -2,15 +2,31 @@
   <AdminLayout title="Flujo Operativo" description="Seguimiento detallado de mareas por estado del proceso.">
     <div class="relative min-h-[calc(100vh-100px)] z-1">
 
-      <!-- Toggle Chips (Control Visibility of Groups) -->
       <div class="flex flex-wrap items-center gap-2 mb-6">
         <span class="text-[10px] font-black uppercase tracking-widest text-text-muted mr-2">
           Mostrar grupos:
         </span>
-        <StatusFilterChip v-for="kpi in kpis" :key="kpi.label" v-show="kpi.value > 0" :label="kpi.label"
-          :value="kpi.value" :icon="kpi.icon" :active="!collapsedGroups.has(kpi.codigo)" :color-class="kpi.color"
-          :bg-class="kpi.bg" :border-class="kpi.border" @click="toggleGroupCollapse(kpi.codigo)"
-          class="scale-90 origin-left" />
+        <div class="flex flex-wrap items-center gap-2">
+          <StatusFilterChip v-for="kpi in kpis" :key="kpi.label" v-show="kpi.value > 0" :label="kpi.label"
+            :value="kpi.value" :icon="kpi.icon" :active="!collapsedGroups.has(kpi.codigo)" :color-class="kpi.color"
+            :bg-class="kpi.bg" :border-class="kpi.border" @click="toggleGroupCollapse(kpi.codigo)"
+            class="scale-90 origin-left" />
+        </div>
+
+        <div class="flex items-center gap-2 ml-2 pl-4 border-l border-border/50">
+          <button 
+            @click="selectAllGroups"
+            class="text-[10px] font-black uppercase tracking-tight text-primary hover:text-primary-hover transition-all px-2 py-1 rounded-lg hover:bg-primary/5 active:scale-95"
+          >
+            Marcar todo
+          </button>
+          <button 
+            @click="deselectAllGroups"
+            class="text-[10px] font-black uppercase tracking-tight text-text-muted hover:text-text transition-all px-2 py-1 rounded-lg hover:bg-surface-muted/50 active:scale-95"
+          >
+            Desmarcar todo
+          </button>
+        </div>
       </div>
 
       <div class="flex flex-col xl:flex-row gap-6 overflow-hidden">
@@ -725,6 +741,14 @@ const toggleGroupCollapse = (codigo: string) => {
   }
 }
 
+const selectAllGroups = () => {
+  collapsedGroups.value = new Set()
+}
+
+const deselectAllGroups = () => {
+  collapsedGroups.value = new Set(rawKpis.value.map(k => k.codigo))
+}
+
 const applyExpandFilter = () => {
   const expandParam = route.query.expand as string | undefined
   if (expandParam) {
@@ -739,6 +763,9 @@ const applyExpandFilter = () => {
       })
       collapsedGroups.value = nextCollapsed
     }
+  } else {
+    // Si no hay parámetro de expansión, desmarcamos todo por defecto
+    deselectAllGroups()
   }
 }
 
