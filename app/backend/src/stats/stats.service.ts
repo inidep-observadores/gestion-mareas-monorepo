@@ -34,7 +34,7 @@ export class StatsService {
             activo: true,
             estadoActual: {
                 codigo: {
-                    notIn: ['A_REASIGNAR', 'CANCELADA']
+                    notIn: ['A_REASIGNAR', 'CANCELADA', 'DESESTIMADA']
                 }
             }
         };
@@ -524,6 +524,14 @@ export class StatsService {
                         pesqueria: true,
                         observadores: { include: { observador: true } }
                     }
+                },
+                movimientos: {
+                    where: {
+                        estadoHasta: { codigo: MareaEstado.DELEGADA_EXTERNA }
+                    },
+                    orderBy: { fechaHora: 'desc' },
+                    take: 1,
+                    include: { estadoHasta: true }
                 }
             },
             orderBy: [
@@ -623,6 +631,9 @@ export class StatsService {
 
             const days = mode === 'CALENDAR' ? calendarDays : totalMareaDays;
 
+            const firstEtapa = m.etapas[0];
+            const lastEtapa = m.etapas[m.etapas.length - 1];
+
             return {
                 id: m.id,
                 id_marea: MareaUtils.formatCodigo(m),
@@ -636,12 +647,16 @@ export class StatsService {
                     : (m.etapas[0]?.pesqueria?.nombre || m.buque?.pesqueriaHabitual?.nombre || '-'),
                 observador: m.observadorPrincipal ? `${m.observadorPrincipal.nombre} ${m.observadorPrincipal.apellido}` : 'Sin asignar',
                 estado: m.estadoActual?.codigo === MareaEstado.EN_EJECUCION ? 'En ejecución' : 'Finalizada',
+                estadoActual: m.estadoActual?.codigo || '',
                 diasContabilizados: days,
                 diasCalendario: calendarDays,
                 diasTotales: totalMareaDays,
                 diasPeriodo: diasPeriodo,
                 fechaInicio: overallStart,
-                fechaFin: overallEnd
+                fechaFin: overallEnd,
+                fechaZarpada: firstEtapa?.fechaZarpada || null,
+                fechaArribo: lastEtapa?.fechaArribo || null,
+                fechaDerivacion: m.movimientos?.[0]?.fechaHora || null,
             };
         });
     }
@@ -2680,5 +2695,293 @@ export class StatsService {
         sheet.getColumn(11).width = 10;
         sheet.getColumn(12).width = 10;
         sheet.getColumn(13).width = 15;
+    }
+
+    // ─── A3: Secondary observer counts per observer ───────────────────────────
+
+    async getSecondaryObserverStats(
+        year: number,
+        startDate?: string,
+        endDate?: string,
+    ): Promise<import('./interfaces/dashboard.interface').ObserverSecondaryStats[]> {
+        const periodStart = startDate ? new Date(startDate) : new Date(Date.UTC(year, 0, 1));
+        const periodEnd = endDate ? new Date(endDate) : new Date(Date.UTC(year, 11, 31, 23, 59, 59, 999));
+        periodStart.setUTCHours(0, 0, 0, 0);
+        periodEnd.setUTCHours(23, 59, 59, 999);
+
+        // Cuenta etapas donde el observador participó como secundario (no como principal de la marea)
+        const rows = await this.prisma.mareaEtapaObservador.groupBy({
+            by: ['observadorId'],
+            where: {
+                etapa: {
+                    fechaZarpada: { gte: periodStart, lte: periodEnd },
+                    marea: {
+                        activo: true,
+                        estadoActual: {
+                            codigo: { notIn: ['A_REASIGNAR', 'CANCELADA', 'DESESTIMADA'] }
+                        }
+                    }
+                },
+                // Excluir las relaciones donde el observador ES el principal de esa etapa por rol
+                rol: { not: 'PRINCIPAL' }
+            },
+            _count: { etapaId: true }
+        });
+
+        return rows.map(r => ({
+            observadorId: r.observadorId,
+            etapasComoSecundario: r._count.etapaId,
+        }));
+    }
+
+    // ─── B1: Audit special cases (canceladas, desestimadas, pendientes, delegadas) ──
+
+    async getAuditSpecialCases(
+        year: number,
+        startDate?: string,
+        endDate?: string,
+        includeCampaigns = true,
+    ): Promise<import('./interfaces/dashboard.interface').AuditSpecialCasesResult> {
+        const periodStart = startDate ? new Date(startDate) : new Date(Date.UTC(year, 0, 1));
+        const periodEnd = endDate ? new Date(endDate) : new Date(Date.UTC(year, 11, 31, 23, 59, 59, 999));
+        periodStart.setUTCHours(0, 0, 0, 0);
+        periodEnd.setUTCHours(23, 59, 59, 999);
+
+        const tipoMareaFilter = includeCampaigns ? {} : { tipoMarea: { not: TipoMarea.CI } };
+
+        const baseInclude = {
+            buque: { include: { tipoFlota: true, pesqueriaHabitual: true } },
+            observadorPrincipal: true,
+            pesqueria: true,
+            etapas: { orderBy: { nroEtapa: 'asc' as const } },
+            movimientos: {
+                orderBy: { fechaHora: 'desc' as const },
+                take: 1,
+            },
+        };
+
+        const [canceladas, desestimadas, pendientes, delegadas] = await Promise.all([
+            // CANCELADAS: nunca ejecutadas, con movimiento dentro del período o designadas en el período
+            this.prisma.marea.findMany({
+                where: {
+                    activo: true,
+                    estadoActual: { codigo: MareaEstado.CANCELADA },
+                    anioMarea: year,
+                    ...tipoMareaFilter,
+                },
+                include: {
+                    ...baseInclude,
+                    movimientos: {
+                        where: { estadoHasta: { codigo: MareaEstado.CANCELADA } },
+                        orderBy: { fechaHora: 'desc' as const },
+                        take: 1,
+                    },
+                },
+            }),
+            // DESESTIMADAS: ejecutadas pero datos descartados
+            this.prisma.marea.findMany({
+                where: {
+                    activo: true,
+                    estadoActual: { codigo: MareaEstado.DESESTIMADA },
+                    anioMarea: year,
+                    ...tipoMareaFilter,
+                },
+                include: {
+                    ...baseInclude,
+                    movimientos: {
+                        where: { estadoHasta: { codigo: MareaEstado.DESESTIMADA } },
+                        orderBy: { fechaHora: 'desc' as const },
+                        take: 1,
+                    },
+                },
+            }),
+            // PENDIENTES DE INFORME: ejecutadas, con etapa en el período, sin informe aún
+            this.prisma.marea.findMany({
+                where: {
+                    activo: true,
+                    estadoActual: { codigo: MareaEstado.PENDIENTE_DE_INFORME },
+                    etapas: {
+                        some: {
+                            fechaZarpada: { lte: periodEnd },
+                            OR: [{ fechaArribo: { gte: periodStart } }, { fechaArribo: null }],
+                        },
+                    },
+                    ...tipoMareaFilter,
+                },
+                include: {
+                    ...baseInclude,
+                    movimientos: {
+                        where: { estadoHasta: { codigo: MareaEstado.PENDIENTE_DE_INFORME } },
+                        orderBy: { fechaHora: 'asc' as const },
+                        take: 1,
+                    },
+                },
+            }),
+            // DELEGADAS EXTERNAS: ejecutadas, derivadas a otro proyecto
+            this.prisma.marea.findMany({
+                where: {
+                    activo: true,
+                    estadoActual: { codigo: MareaEstado.DELEGADA_EXTERNA },
+                    etapas: {
+                        some: {
+                            fechaZarpada: { lte: periodEnd },
+                            OR: [{ fechaArribo: { gte: periodStart } }, { fechaArribo: null }],
+                        },
+                    },
+                    ...tipoMareaFilter,
+                },
+                include: {
+                    ...baseInclude,
+                    movimientos: {
+                        where: { estadoHasta: { codigo: MareaEstado.DELEGADA_EXTERNA } },
+                        orderBy: { fechaHora: 'desc' as const },
+                        take: 1,
+                    },
+                },
+            }),
+        ]);
+
+        const toSpecialMarea = (m: typeof canceladas[0]): import('./interfaces/dashboard.interface').AuditSpecialMarea => {
+            const now = DateUtils.getNow(true);
+            const intervals = m.etapas.map(e => ({
+                start: e.fechaZarpada,
+                end: e.fechaArribo ?? null,
+            })).filter(i => i.start && i.start <= now);
+            const dias = DateUtils.calculateUniqueDays(intervals, undefined, now);
+            const lastMov = m.movimientos?.[0];
+            return {
+                id: m.id,
+                id_marea: MareaUtils.formatCodigo(m),
+                buque: m.buque?.nombreBuque || 'Desconocido',
+                flota: m.buque?.tipoFlota?.nombre || '-',
+                pesqueria: m.pesqueria?.nombre || m.buque?.pesqueriaHabitual?.nombre || '-',
+                observador: m.observadorPrincipal
+                    ? `${m.observadorPrincipal.nombre} ${m.observadorPrincipal.apellido}`
+                    : 'Sin asignar',
+                diasNavegados: dias,
+                fechaEvento: lastMov?.fechaHora || null,
+                motivo: lastMov?.comentarios || null,
+            };
+        };
+
+        return {
+            canceladas: canceladas.map(toSpecialMarea),
+            desestimadas: desestimadas.map(toSpecialMarea),
+            pendientesDeInforme: pendientes.map(toSpecialMarea),
+            delegadasExternas: delegadas.map(toSpecialMarea),
+        };
+    }
+
+    // ─── B2: Protocolization timeline ────────────────────────────────────────────
+
+    async getProtocolizationTimeline(
+        year: number,
+        startDate?: string,
+        endDate?: string,
+    ): Promise<import('./interfaces/dashboard.interface').ProtocolizationTimelineResult> {
+        const periodStart = startDate ? new Date(startDate) : new Date(Date.UTC(year, 0, 1));
+        const periodEnd = endDate ? new Date(endDate) : new Date(Date.UTC(year, 11, 31, 23, 59, 59, 999));
+        periodStart.setUTCHours(0, 0, 0, 0);
+        periodEnd.setUTCHours(23, 59, 59, 999);
+
+        const MONTH_LABELS = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+
+        // Total mareas del período (usando mismos criterios que stats principales)
+        const totalEnPeriodo = await this.prisma.marea.count({
+            where: {
+                activo: true,
+                estadoActual: { codigo: { notIn: ['A_REASIGNAR', 'CANCELADA', 'DESESTIMADA'] } },
+                etapas: {
+                    some: {
+                        fechaZarpada: { lte: periodEnd },
+                        OR: [{ fechaArribo: { gte: periodStart } }, { fechaArribo: null }],
+                    },
+                },
+            },
+        });
+
+        // Mareas protocolizadas dentro del período
+        const [protocolizadas, enviadas] = await Promise.all([
+            this.prisma.marea.findMany({
+                where: {
+                    activo: true,
+                    fechaProtocolizacion: { gte: periodStart, lte: periodEnd },
+                },
+                select: {
+                    fechaProtocolizacion: true,
+                    fechaFinObservador: true,
+                },
+            }),
+            this.prisma.marea.findMany({
+                where: {
+                    activo: true,
+                    fechaEnvioProtocolizacion: { gte: periodStart, lte: periodEnd },
+                },
+                select: { fechaEnvioProtocolizacion: true },
+            }),
+        ]);
+
+        const totalProtocolizadas = protocolizadas.length;
+        const totalEnviadas = enviadas.length;
+        const sinProtocolizar = Math.max(0, totalEnPeriodo - totalProtocolizadas);
+
+        // Latencia: días entre fin del observador y protocolización
+        const latencias = protocolizadas
+            .filter(m => m.fechaProtocolizacion && m.fechaFinObservador)
+            .map(m => {
+                const diff = m.fechaProtocolizacion!.getTime() - m.fechaFinObservador!.getTime();
+                return Math.round(diff / (1000 * 60 * 60 * 24));
+            })
+            .filter(d => d >= 0);
+
+        const promedioDiasLatencia = latencias.length > 0
+            ? Math.round(latencias.reduce((a, b) => a + b, 0) / latencias.length)
+            : null;
+        const maxDiasLatencia = latencias.length > 0 ? Math.max(...latencias) : null;
+
+        // Distribución mensual — sólo los meses que caen dentro del período
+        const countByMonth = new Array(12).fill(0);
+        const enviadasByMonth = new Array(12).fill(0);
+
+        protocolizadas.forEach(m => {
+            if (m.fechaProtocolizacion) {
+                countByMonth[m.fechaProtocolizacion.getUTCMonth()]++;
+            }
+        });
+        enviadas.forEach(m => {
+            if (m.fechaEnvioProtocolizacion) {
+                enviadasByMonth[m.fechaEnvioProtocolizacion.getUTCMonth()]++;
+            }
+        });
+
+        const startMonth = periodStart.getUTCMonth(); // 0-indexed
+        const endMonth = periodEnd.getUTCMonth();
+
+        let acumulado = 0;
+        const distribucionMensual = [];
+        for (let idx = startMonth; idx <= endMonth; idx++) {
+            const cantidad = countByMonth[idx];
+            acumulado += cantidad;
+            distribucionMensual.push({
+                mes: idx + 1,
+                label: MONTH_LABELS[idx],
+                cantidad,
+                enviadas: enviadasByMonth[idx],
+                acumulado,
+                pctDelTotal: totalProtocolizadas > 0
+                    ? Math.round((cantidad / totalProtocolizadas) * 100)
+                    : 0,
+            });
+        }
+
+        return {
+            totalProtocolizadas,
+            totalEnviadas,
+            totalEnPeriodo,
+            sinProtocolizar,
+            promedioDiasLatencia,
+            maxDiasLatencia,
+            distribucionMensual,
+        };
     }
 }

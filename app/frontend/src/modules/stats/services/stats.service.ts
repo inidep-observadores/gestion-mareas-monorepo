@@ -25,13 +25,60 @@ export interface StatsDetailItem {
     pesqueria: string;
     observador: string;
     estado: string;
+    estadoActual: string;
     tipoMarea: string;
     diasContabilizados: number;
     diasCalendario: number;
     diasTotales: number;
-    diasPeriodo: number; // New field
+    diasPeriodo: number;
     fechaInicio: string;
     fechaFin: string | null;
+    fechaZarpada: string | null;
+    fechaArribo: string | null;
+    fechaDerivacion: string | null;
+}
+
+export interface AuditSpecialMarea {
+    id: string;
+    id_marea: string;
+    buque: string;
+    flota: string;
+    pesqueria: string;
+    observador: string;
+    diasNavegados: number;
+    fechaEvento: string | null;
+    motivo: string | null;
+}
+
+export interface AuditSpecialCasesResult {
+    canceladas: AuditSpecialMarea[];
+    desestimadas: AuditSpecialMarea[];
+    pendientesDeInforme: AuditSpecialMarea[];
+    delegadasExternas: AuditSpecialMarea[];
+}
+
+export interface ProtocolizationMonthItem {
+    mes: number;
+    label: string;
+    cantidad: number;
+    enviadas: number;
+    acumulado: number;
+    pctDelTotal: number;
+}
+
+export interface ProtocolizationTimelineResult {
+    totalProtocolizadas: number;
+    totalEnviadas: number;
+    totalEnPeriodo: number;
+    sinProtocolizar: number;
+    promedioDiasLatencia: number | null;
+    maxDiasLatencia: number | null;
+    distribucionMensual: ProtocolizationMonthItem[];
+}
+
+export interface ObserverSecondaryStats {
+    observadorId: string;
+    etapasComoSecundario: number;
 }
 
 export interface MareaDistributionItem {
@@ -186,6 +233,46 @@ export const statsService = {
         link.click();
         link.remove();
         window.URL.revokeObjectURL(url);
+    },
+
+    async getSecondaryObserverStats(
+        year: number,
+        startDate?: string,
+        endDate?: string,
+    ): Promise<ObserverSecondaryStats[]> {
+        const params = new URLSearchParams({ year: year.toString() });
+        if (startDate) params.append('startDate', startDate);
+        if (endDate) params.append('endDate', endDate);
+        const response = await httpClient.get<ObserverSecondaryStats[]>(`/stats/secondary-observers?${params}`);
+        return response.data;
+    },
+
+    async getAuditSpecialCases(
+        year: number,
+        startDate?: string,
+        endDate?: string,
+        includeCampaigns = true,
+    ): Promise<AuditSpecialCasesResult> {
+        const params = new URLSearchParams({
+            year: year.toString(),
+            includeCampaigns: String(includeCampaigns),
+        });
+        if (startDate) params.append('startDate', startDate);
+        if (endDate) params.append('endDate', endDate);
+        const response = await httpClient.get<AuditSpecialCasesResult>(`/stats/audit-special-cases?${params}`);
+        return response.data;
+    },
+
+    async getProtocolizationTimeline(
+        year: number,
+        startDate?: string,
+        endDate?: string,
+    ): Promise<ProtocolizationTimelineResult> {
+        const params = new URLSearchParams({ year: year.toString() });
+        if (startDate) params.append('startDate', startDate);
+        if (endDate) params.append('endDate', endDate);
+        const response = await httpClient.get<ProtocolizationTimelineResult>(`/stats/protocolization-timeline?${params}`);
+        return response.data;
     },
 
     async downloadWorkforceExport(year: number, filterValue?: string) {

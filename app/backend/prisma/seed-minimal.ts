@@ -124,7 +124,8 @@ async function main() {
       { codigo: 'PARA_PROTOCOLIZAR', nombre: 'Para protocolizar', categoria: 'EN_CURSO', orden: 10, esInicial: false, esFinal: false, permiteCargaArchivos: false, permiteCorreccion: false, permiteInforme: true, mostrarEnPanel: false },
       { codigo: 'ESPERANDO_PROTOCOLIZACION', nombre: 'Esperando protocolización', categoria: 'EN_CURSO', orden: 11, esInicial: false, esFinal: false, permiteCargaArchivos: false, permiteCorreccion: false, permiteInforme: true, mostrarEnPanel: false },
       { codigo: 'PROTOCOLIZADA', nombre: 'Protocolizada / Finalizada', categoria: 'COMPLETADO', orden: 12, esInicial: false, esFinal: true, permiteCargaArchivos: false, permiteCorreccion: false, permiteInforme: true, mostrarEnPanel: false },
-      { codigo: 'CANCELADA', nombre: 'Cancelada / Desestimada', categoria: 'CANCELADO', orden: 13, esInicial: false, esFinal: true, permiteCargaArchivos: false, permiteCorreccion: false, permiteInforme: false, mostrarEnPanel: false }
+      { codigo: 'CANCELADA', nombre: 'Cancelada', categoria: 'CANCELADO', orden: 13, esInicial: false, esFinal: true, permiteCargaArchivos: false, permiteCorreccion: false, permiteInforme: false, mostrarEnPanel: false },
+      { codigo: 'DESESTIMADA', nombre: 'Desestimada', categoria: 'CANCELADO', orden: 14, esInicial: false, esFinal: true, permiteCargaArchivos: false, permiteCorreccion: false, permiteInforme: false, mostrarEnPanel: false }
     ];
 
     for (const data of estadosMareaData) {
@@ -152,6 +153,14 @@ async function main() {
       { from: 'ESPERANDO_REVISION', to: 'PENDIENTE_DE_INFORME', action: 'RECHAZAR_INFORME', label: 'Observaciones en Informe', btn: 'secondary' },
       { from: 'PARA_PROTOCOLIZAR', to: 'ESPERANDO_PROTOCOLIZACION', action: 'INICIAR_TRAMITE', label: 'Iniciar Protocolización', btn: 'primary', mostrarEnPanel: false },
       { from: 'ESPERANDO_PROTOCOLIZACION', to: 'PROTOCOLIZADA', action: 'FINALIZAR_PROTOCOLIZACION', label: 'Finalizar Protocolización', btn: 'primary', mostrarEnPanel: false },
+      // Transiciones a DESESTIMADA (mareas ejecutadas cuyos datos no serán incorporados)
+      { from: 'EN_EJECUCION', to: 'DESESTIMADA', action: 'DESESTIMAR', label: 'Desestimar', btn: 'error' },
+      { from: 'ESPERANDO_ENTREGA', to: 'DESESTIMADA', action: 'DESESTIMAR', label: 'Desestimar', btn: 'error' },
+      { from: 'ENTREGADA_RECIBIDA', to: 'DESESTIMADA', action: 'DESESTIMAR', label: 'Desestimar', btn: 'error' },
+      { from: 'VERIFICACION_INICIAL', to: 'DESESTIMADA', action: 'DESESTIMAR', label: 'Desestimar', btn: 'error' },
+      { from: 'EN_CORRECCION', to: 'DESESTIMADA', action: 'DESESTIMAR', label: 'Desestimar', btn: 'error' },
+      { from: 'DELEGADA_EXTERNA', to: 'DESESTIMADA', action: 'DESESTIMAR', label: 'Desestimar', btn: 'error' },
+      { from: 'PENDIENTE_DE_INFORME', to: 'DESESTIMADA', action: 'DESESTIMAR', label: 'Desestimar', btn: 'error' },
     ];
 
     for (const t of transicionesData) {

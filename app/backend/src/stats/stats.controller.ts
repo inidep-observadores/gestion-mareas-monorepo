@@ -74,6 +74,34 @@ export class StatsController {
         );
     }
 
+    @Get('secondary-observers')
+    getSecondaryObserverStats(@Query() query: GetStatsDto) {
+        return this.statsService.getSecondaryObserverStats(
+            query.year,
+            query.startDate,
+            query.endDate,
+        );
+    }
+
+    @Get('audit-special-cases')
+    getAuditSpecialCases(@Query() query: GetStatsDto) {
+        return this.statsService.getAuditSpecialCases(
+            query.year,
+            query.startDate,
+            query.endDate,
+            query.includeCampaigns,
+        );
+    }
+
+    @Get('protocolization-timeline')
+    getProtocolizationTimeline(@Query() query: GetStatsDto) {
+        return this.statsService.getProtocolizationTimeline(
+            query.year,
+            query.startDate,
+            query.endDate,
+        );
+    }
+
     @Get('export')
     async exportStats(
         @Res() res: Response,
