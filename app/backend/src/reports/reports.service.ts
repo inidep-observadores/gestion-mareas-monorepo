@@ -76,6 +76,20 @@ export class ReportsService {
             protocolizationStartDate, protocolizationEndDate,
         );
 
+        // 4b. Obtener campos de protocolización para cada marea
+        const mareaIds = detailItems.map((item: any) => item.id);
+        const protocolizacionData = await this.prisma.marea.findMany({
+            where: { id: { in: mareaIds } },
+            select: {
+                id: true,
+                fechaEnvioProtocolizacion: true,
+                nroProtocolizacion: true,
+                anioProtocolizacion: true,
+                fechaProtocolizacion: true,
+            },
+        });
+        const protMap = new Map(protocolizacionData.map(p => [p.id, p]));
+
         // 5. Construir los datos para el builder
         const reportData: AuditReportData = {
             year,
@@ -109,6 +123,8 @@ export class ReportsService {
                     }
                 }
 
+                const prot = protMap.get(item.id);
+
                 return {
                     id: item.id,
                     id_marea: item.id_marea,
@@ -122,6 +138,10 @@ export class ReportsService {
                     diasTotales: item.diasTotales,
                     fechaInicio: item.fechaInicio,
                     fechaFin: item.fechaFin,
+                    fechaEnvioProtocolizacion: prot?.fechaEnvioProtocolizacion ?? null,
+                    nroProtocolizacion: prot?.nroProtocolizacion ?? null,
+                    anioProtocolizacion: prot?.anioProtocolizacion ?? null,
+                    fechaProtocolizacion: prot?.fechaProtocolizacion ?? null,
                 };
             }),
             distribution: distribution.map((d: any) => ({

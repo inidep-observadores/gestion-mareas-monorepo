@@ -47,9 +47,9 @@ function createHeaderCell(text: string, widthPct?: number, alignment: AlignmentT
     });
 }
 
-/** Crea una celda de datos de tabla */
+/** Crea una celda de datos de tabla. Acepta string[], donde cada elemento se renderiza en un párrafo separado. */
 function createDataCell(
-    text: string | number,
+    text: string | string[] | number,
     options?: {
         widthPct?: number;
         alignment?: AlignmentTypeValue;
@@ -74,17 +74,22 @@ function createDataCell(
             ? INIDEP_COLORS.tableRowAlt
             : undefined;
 
+    const lines = Array.isArray(text) ? text : [String(text)];
+
     return new TableCell({
         width: widthPct ? { size: widthPct, type: WidthType.PERCENTAGE } : undefined,
         shading: bgColor ? { type: ShadingType.SOLID, color: bgColor } : undefined,
         verticalAlign: VerticalAlign.CENTER,
-        children: [
+        children: lines.map((line, idx) =>
             new Paragraph({
                 alignment,
-                spacing: { before: 30, after: 30 },
+                spacing: {
+                    before: idx === 0 ? 30 : 0,
+                    after: idx === lines.length - 1 ? 30 : 0,
+                },
                 children: [
                     new TextRun({
-                        text: String(text),
+                        text: line,
                         font: FONTS.primary,
                         size: FONT_SIZES.tableCell,
                         bold: bold || isTotal,
@@ -92,7 +97,7 @@ function createDataCell(
                     }),
                 ],
             }),
-        ],
+        ),
     });
 }
 
@@ -101,7 +106,7 @@ function createDataCell(
  */
 export function createFormattedTable(
     headers: string[],
-    rows: (string | number)[][],
+    rows: (string | string[] | number)[][],
     options?: TableOptions,
 ): Table {
     const {

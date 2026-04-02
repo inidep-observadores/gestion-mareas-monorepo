@@ -7,11 +7,16 @@ import { User } from '@prisma/client';
 import { ValidRoles } from '../auth/interfaces';
 import { CreateMareaDto } from './dto/create-marea.dto';
 import { UpdateMareaDto } from './dto/update-marea.dto';
+import { MareaEstado } from './mareas.constants';
 
 import { ClaimMareaDto } from './dto/claim-marea.dto';
 import { ExportMareaDto } from './dto/export-marea.dto';
 import { AuditEvent } from '../audit/decorators/audit-event.decorator';
 import { AuditCategoria } from '../audit/enums/audit.enums';
+import { EnviarProtocolizacionDto } from './dto/enviar-protocolizacion.dto';
+import { ConfirmarProtocolizacionDto } from './dto/confirmar-protocolizacion.dto';
+import { UseInterceptors, UploadedFiles } from '@nestjs/common';
+import { AnyFilesInterceptor } from '@nestjs/platform-express';
 
 @Controller('mareas')
 @Auth()
@@ -163,6 +168,7 @@ export class MareasController {
 
     @Post(':id/actions/:actionKey')
     @Auth(ValidRoles.admin, ValidRoles.tecnico)
+    @UseInterceptors(AnyFilesInterceptor())
     @AuditEvent({
         tipoEvento: 'EJECUTAR_ACCION_FLUJO',
         categoria: AuditCategoria.MAREAS,
@@ -172,9 +178,10 @@ export class MareasController {
         @Param('id') id: string,
         @Param('actionKey') actionKey: string,
         @GetUser() user: User,
-        @Body() payload: any
+        @Body() payload: any,
+        @UploadedFiles() files?: Array<Express.Multer.File>
     ) {
-        return this.mareasService.executeAction(id, actionKey, user, payload);
+        return this.mareasService.executeAction(id, actionKey, user, payload, files);
     }
 
     @Patch(':id/etapas/:etapaId/intencion-cierre')
@@ -184,15 +191,6 @@ export class MareasController {
         categoria: AuditCategoria.MAREAS,
         descripcion: 'Modificación de la intención de cierre de marea al arribo'
     })
-    setIntencionCierre(
-        @Param('id') id: string,
-        @Param('etapaId') etapaId: string,
-        @Body('activar') activar: boolean,
-        @GetUser() user: User
-    ) {
-        return this.mareasService.setIntencionCierreMarea(id, etapaId, activar, user);
-    }
-
     @Post()
     @Auth(ValidRoles.admin, ValidRoles.tecnico)
     @AuditEvent({
@@ -205,5 +203,66 @@ export class MareasController {
         @GetUser() user: User
     ) {
         return this.mareasService.create(createMareaDto, user);
+    }
+
+    @Post('protocolizacion/enviar')
+    @Auth(ValidRoles.admin, ValidRoles.coordinador)
+    @UseInterceptors(AnyFilesInterceptor())
+    @AuditEvent({
+        tipoEvento: 'ENVIAR_PROTOCOLIZACION',
+        categoria: AuditCategoria.MAREAS,
+        descripcion: 'Envío en lote de mareas a protocolizar'
+    })
+    enviarAProtocolizacion(
+        @Body() dto: EnviarProtocolizacionDto,
+        @UploadedFiles() files: Array<Express.Multer.File>,
+        @GetUser() user: User
+    ) {
+        return this.mareasService.enviarAProtocolizacion(dto, files, user);
+    }
+
+    @Post('protocolizacion/confirmar/:id')
+    @Auth(ValidRoles.admin, ValidRoles.coordinador)
+    @AuditEvent({
+        tipoEvento: 'CONFIRMAR_PROTOCOLIZACION',
+        categoria: AuditCategoria.MAREAS,
+        descripcion: 'Confirmación de datos de protocolización de marea'
+    })
+    confirmarProtocolizacion(
+        @Param('id') id: string,
+        @Body() dto: ConfirmarProtocolizacionDto,
+        @GetUser() user: User
+    ) {
+        return this.mareasService.confirmarProtocolizacion(id, dto, user);
+    }
+
+    @Get('protocolizacion/pendientes')
+    @Auth(ValidRoles.admin, ValidRoles.coordinador)
+    getProtocolizacionPendientes() {
+        return this.mareasService.getProtocolizacionPorEstado(MareaEstado.PARA_PROTOCOLIZAR);
+    }
+
+    @Get('protocolizacion/en-espera')
+    @Auth(ValidRoles.admin, ValidRoles.coordinador)
+    async getProtocolizacionEnEspera() {
+        return this.mareasService.getProtocolizacionPorEstado(MareaEstado.ESPERANDO_PROTOCOLIZACION);
+    }
+
+    @Get('protocolizacion/completas')
+    @Auth(ValidRoles.admin, ValidRoles.coordinador)
+    async getProtocolizacionCompletas(@Query('year') year?: string) {
+        return this.mareasService.getProtocolizacionPorEstado(MareaEstado.PROTOCOLIZADA, year ? Number(year) : undefined);
+    }
+
+    @Get('protocolizacion/lotes')
+    @Auth(ValidRoles.admin, ValidRoles.coordinador)
+    async getProtocolizacionLotes(@Query('year') year?: string) {
+        return this.mareasService.getProtocolizacionLotes(year ? Number(year) : undefined);
+    }
+
+    @Get('protocolizacion/lotes/:id')
+    @Auth(ValidRoles.admin, ValidRoles.coordinador)
+    async getProtocolizacionLoteDetalle(@Param('id') id: string) {
+        return this.mareasService.getProtocolizacionLoteDetalle(id);
     }
 }

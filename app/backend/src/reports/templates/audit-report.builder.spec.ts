@@ -12,6 +12,7 @@ describe('AuditReportBuilder', () => {
     renderBarChart: jest.fn().mockResolvedValue(Buffer.from('chart')),
     renderHorizontalBarChart: jest.fn().mockResolvedValue(Buffer.from('chart')),
     renderLineChart: jest.fn().mockResolvedValue(Buffer.from('chart')),
+    renderSigmaLogo: jest.fn().mockResolvedValue(Buffer.from('logo')),
   };
 
   beforeEach(async () => {

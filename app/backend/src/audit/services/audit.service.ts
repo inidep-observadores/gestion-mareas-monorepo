@@ -186,7 +186,6 @@ export class AuditService {
             where.OR = [
                 { ruta: { contains: search, mode: 'insensitive' } },
                 { usuarioEmail: { contains: search, mode: 'insensitive' } },
-                { usuario: { fullName: { contains: search, mode: 'insensitive' } } }
             ];
         }
 
@@ -200,7 +199,6 @@ export class AuditService {
                 skip: query.skip,
                 take: query.limit,
                 orderBy: { timestamp: 'desc' },
-                include: { usuario: { select: { id: true, fullName: true, email: true } } }
             })
         ]);
 
@@ -227,7 +225,7 @@ export class AuditService {
             where.OR = [
                 { entidadTipo: { contains: search, mode: 'insensitive' } },
                 { entidadId: { contains: search, mode: 'insensitive' } },
-                { usuario: { fullName: { contains: search, mode: 'insensitive' } } }
+                { usuarioEmail: { contains: search, mode: 'insensitive' } },
             ];
         }
 
@@ -241,7 +239,6 @@ export class AuditService {
                 skip: query.skip,
                 take: query.limit,
                 orderBy: { timestamp: 'desc' },
-                include: { usuario: { select: { id: true, fullName: true, email: true } } }
             })
         ]);
 
@@ -269,7 +266,7 @@ export class AuditService {
             where.OR = [
                 { tipoEvento: { contains: search, mode: 'insensitive' } },
                 { descripcion: { contains: search, mode: 'insensitive' } },
-                { usuario: { fullName: { contains: search, mode: 'insensitive' } } }
+                { usuarioEmail: { contains: search, mode: 'insensitive' } },
             ];
         }
 
@@ -283,7 +280,6 @@ export class AuditService {
                 skip: query.skip,
                 take: query.limit,
                 orderBy: { timestamp: 'desc' },
-                include: { usuario: { select: { id: true, fullName: true, email: true } } }
             })
         ]);
 
@@ -307,7 +303,6 @@ export class AuditService {
             where.OR = [
                 { rutaDestino: { contains: search, mode: 'insensitive' } },
                 { sessionId: { contains: search, mode: 'insensitive' } },
-                { usuario: { fullName: { contains: search, mode: 'insensitive' } } }
             ];
         }
 
@@ -321,7 +316,6 @@ export class AuditService {
                 skip: query.skip,
                 take: query.limit,
                 orderBy: { timestamp: 'desc' },
-                include: { usuario: { select: { id: true, fullName: true, email: true } } }
             })
         ]);
 

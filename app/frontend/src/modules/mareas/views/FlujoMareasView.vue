@@ -2,15 +2,31 @@
   <AdminLayout title="Flujo Operativo" description="Seguimiento detallado de mareas por estado del proceso.">
     <div class="relative min-h-[calc(100vh-100px)] z-1">
 
-      <!-- Toggle Chips (Control Visibility of Groups) -->
       <div class="flex flex-wrap items-center gap-2 mb-6">
         <span class="text-[10px] font-black uppercase tracking-widest text-text-muted mr-2">
           Mostrar grupos:
         </span>
-        <StatusFilterChip v-for="kpi in kpis" :key="kpi.label" v-show="kpi.value > 0" :label="kpi.label"
-          :value="kpi.value" :icon="kpi.icon" :active="!collapsedGroups.has(kpi.codigo)" :color-class="kpi.color"
-          :bg-class="kpi.bg" :border-class="kpi.border" @click="toggleGroupCollapse(kpi.codigo)"
-          class="scale-90 origin-left" />
+        <div class="flex flex-wrap items-center gap-2">
+          <StatusFilterChip v-for="kpi in kpis" :key="kpi.label" v-show="kpi.value > 0" :label="kpi.label"
+            :value="kpi.value" :icon="kpi.icon" :active="!collapsedGroups.has(kpi.codigo)" :color-class="kpi.color"
+            :bg-class="kpi.bg" :border-class="kpi.border" @click="toggleGroupCollapse(kpi.codigo)"
+            class="scale-90 origin-left" />
+        </div>
+
+        <div class="flex items-center gap-2 ml-2 pl-4 border-l border-border/50">
+          <button 
+            @click="selectAllGroups"
+            class="text-[10px] font-black uppercase tracking-tight text-primary hover:text-primary-hover transition-all px-2 py-1 rounded-lg hover:bg-primary/5 active:scale-95"
+          >
+            Marcar todo
+          </button>
+          <button 
+            @click="deselectAllGroups"
+            class="text-[10px] font-black uppercase tracking-tight text-text-muted hover:text-text transition-all px-2 py-1 rounded-lg hover:bg-surface-muted/50 active:scale-95"
+          >
+            Desmarcar todo
+          </button>
+        </div>
       </div>
 
       <div class="flex flex-col xl:flex-row gap-6 overflow-hidden">
@@ -409,6 +425,14 @@
       @close="showProtocolizacionDialog = false"
       @confirm="handleProtocolizacionConfirm"
     />
+
+    <AprobarInformeDialog
+      :show="showAprobarInformeDialog"
+      :marea="mareaToManage"
+      :loading="executingAction"
+      @close="showAprobarInformeDialog = false"
+      @confirm="handleAprobarInformeConfirm"
+    />
       
     <EditMareaDesignadaDialog 
       v-if="selectedMarea"
@@ -435,6 +459,7 @@ import RecibirArchivosDialog from '../components/RecibirArchivosDialog.vue'
 import CancelarMareaDialog from '../components/CancelarMareaDialog.vue'
 import MareaGenericActionDialog from '../components/MareaGenericActionDialog.vue'
 import FinalizarProtocolizacionDialog from '../components/FinalizarProtocolizacionDialog.vue'
+import AprobarInformeDialog from '../components/AprobarInformeDialog.vue'
 import EditMareaDesignadaDialog from '../components/EditMareaDesignadaDialog.vue'
 // @ts-ignore
 import AlertManagementDialog from '../../alerts/components/AlertManagementDialog.vue'
@@ -493,6 +518,7 @@ const showRecibirDialog = ref(false)
 const showCancelarDialog = ref(false)
 const showGenericDialog = ref(false)
 const showProtocolizacionDialog = ref(false)
+const showAprobarInformeDialog = ref(false)
 const selectedActionKey = ref<string | null>(null)
 const selectedActionData = ref<any>(null)
 
@@ -506,9 +532,12 @@ const handleExport = async () => {
       year: configStore.selectedYear
     }
 
+    // Enviamos los IDs de las mareas visibles actualmente para respetar filtros
+    if (filteredMareas.value.length > 0) {
+      params.ids = filteredMareas.value.map(m => m.id)
+    }
+    
     if (searchQuery.value) {
-      // Enviamos los IDs de las mareas visibles actualmente para respetar filtros
-      params.ids = mareas.value.map(m => m.id)
       params.searchQuery = searchQuery.value
     }
 
@@ -630,7 +659,6 @@ const kpis = computed(() => {
   }))
 })
 
-// Main Data Computation
 const groupedMareas = computed(() => {
   const groups: any[] = []
 
@@ -665,8 +693,25 @@ const groupedMareas = computed(() => {
     });
   }
 
-  // 1. Get filtered list based on search and fishery
-  const filtered = mareas.value.filter(m => {
+  // Iterate over KPIs to guarantee order
+  rawKpis.value.forEach(kpi => {
+    const items = filteredMareas.value.filter(m => m.estado_codigo === kpi.codigo)
+
+    groups.push({
+      code: kpi.codigo,
+      label: kpi.label,
+      items: sortItems(items),
+      expanded: !collapsedGroups.value.has(kpi.codigo),
+      kpiData: getKpiMeta(kpi.codigo)
+    })
+  })
+
+  return groups
+})
+
+// 1. Get filtered list based on search and fishery
+const filteredMareas = computed(() => {
+  return mareas.value.filter(m => {
     // Filtro por pesquería
     const matchesPesqueria = !filterPesqueria.value ||
       (m.pesquerias_nombres && m.pesquerias_nombres.includes(filterPesqueria.value));
@@ -684,22 +729,7 @@ const groupedMareas = computed(() => {
 
     return matchesPesqueria && matchesText;
   });
-
-  // 2. Iterate over KPIs to guarantee order
-  rawKpis.value.forEach(kpi => {
-    const items = filtered.filter(m => m.estado_codigo === kpi.codigo)
-
-    groups.push({
-      code: kpi.codigo,
-      label: kpi.label,
-      items: sortItems(items),
-      expanded: !collapsedGroups.value.has(kpi.codigo),
-      kpiData: getKpiMeta(kpi.codigo)
-    })
-  })
-
-  return groups
-})
+});
 
 const hasMareas = computed(() => groupedMareas.value.some(g => g.items.length > 0))
 
@@ -709,6 +739,14 @@ const toggleGroupCollapse = (codigo: string) => {
   } else {
     collapsedGroups.value.add(codigo)
   }
+}
+
+const selectAllGroups = () => {
+  collapsedGroups.value = new Set()
+}
+
+const deselectAllGroups = () => {
+  collapsedGroups.value = new Set(rawKpis.value.map(k => k.codigo))
 }
 
 const applyExpandFilter = () => {
@@ -725,6 +763,9 @@ const applyExpandFilter = () => {
       })
       collapsedGroups.value = nextCollapsed
     }
+  } else {
+    // Si no hay parámetro de expansión, desmarcamos todo por defecto
+    deselectAllGroups()
   }
 }
 
@@ -797,6 +838,12 @@ const executeActionFromSidebar = async (actionKey: string) => {
     return
   }
 
+  if (actionKey === 'APROBAR_INFORME') {
+    mareaToManage.value = mareaContext
+    showAprobarInformeDialog.value = true
+    return
+  }
+
   // Si la acción tiene metadatos en el contexto y no es una de las especiales manejadas arriba, usar diálogo genérico
   const actionMetadata = selectedMareaContext.value?.actions[actionKey]
   if (actionMetadata) {
@@ -813,6 +860,22 @@ const executeActionFromSidebar = async (actionKey: string) => {
     await fetchDashboard()
   } catch (err) {
     console.error('Action failed:', err)
+  }
+}
+
+const handleAprobarInformeConfirm = async (file: File, comentarios: string) => {
+  if (!mareaToManage.value) return
+  try {
+    executingAction.value = true
+    await mareasService.aprobarInforme(mareaToManage.value.id, file, comentarios)
+    showAprobarInformeDialog.value = false
+    mareaToManage.value = null
+    closeSidebar()
+    await fetchDashboard()
+  } catch (err) {
+    console.error('Error aprobando informe:', err)
+  } finally {
+    executingAction.value = false
   }
 }
 

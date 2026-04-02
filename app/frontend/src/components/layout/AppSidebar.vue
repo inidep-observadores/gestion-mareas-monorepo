@@ -128,6 +128,7 @@ import {
   HorizontalDots,
   MailBox,
   LayoutDashboardIcon,
+  DocsIcon,
   BarChartIcon,
   CalenderIcon,
   TaskIcon,
@@ -210,6 +211,12 @@ const navigationGroups = computed(() => {
           show: true,
         },
         {
+          icon: DocsIcon,
+          name: 'Protocolización',
+          to: { name: 'ProtocolizacionMareas' },
+          show: isAdmin.value || isCoordinator.value,
+        },
+        {
           icon: MapPinIcon,
           name: 'Mapa Interactivo',
           to: { name: 'MareasMonitor' }, // Apunta al monitor general de flota
@@ -239,13 +246,13 @@ const navigationGroups = computed(() => {
         {
           icon: ShipIcon,
           name: 'Buques',
-          to: { name: 'AdminBuques' },
+          to: { name: 'SistemaBuques' },
           show: true,
         },
         {
           icon: UserCircleIcon,
           name: 'Observadores',
-          to: { name: 'AdminObservadores' },
+          to: { name: 'SistemaObservadores' },
           show: true,
         },
         {
