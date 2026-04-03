@@ -14,11 +14,15 @@ describe('ReportsService', () => {
     getDashboardStats: jest.fn(),
     getMareaDistribution: jest.fn(),
     getDashboardStatsDetail: jest.fn(),
+    getSecondaryObserverStats: jest.fn(),
+    getAuditSpecialCases: jest.fn(),
+    getProtocolizationTimeline: jest.fn(),
   };
 
   const mockPrismaService = {
     observador: {
       count: jest.fn(),
+      findMany: jest.fn(),
     },
     marea: {
       findMany: jest.fn(),
@@ -70,9 +74,31 @@ describe('ReportsService', () => {
 
       mockStatsService.getDashboardStats.mockResolvedValue(mockStats);
       mockPrismaService.observador.count.mockResolvedValue(mockDotacion);
+      mockPrismaService.observador.findMany.mockResolvedValue([]);
       mockPrismaService.marea.findMany.mockResolvedValue([]);
       mockStatsService.getMareaDistribution.mockResolvedValue(mockDistribution);
       mockStatsService.getDashboardStatsDetail.mockResolvedValue(mockDetails);
+      mockStatsService.getSecondaryObserverStats.mockResolvedValue([]);
+      mockStatsService.getAuditSpecialCases.mockResolvedValue({
+        canceladas: [],
+        desestimadas: [],
+        esperandoEntrega: [],
+        pendientesDeInforme: [],
+        delegadasExternas: [],
+        esperandoProtocolizacion: [],
+      });
+      mockStatsService.getProtocolizationTimeline.mockResolvedValue({
+        totalProtocolizadas: 0,
+        totalEnviadas: 0,
+        totalEnPeriodo: 0,
+        sinProtocolizar: 0,
+        tipo: 'MONTHLY' as const,
+        promedioDiasLatencia: null,
+        maxDiasLatencia: null,
+        promedioDiasLatenciaTramite: null,
+        maxDiasLatenciaTramite: null,
+        distribucionMensual: [],
+      });
       mockAuditReportBuilder.build.mockResolvedValue(mockBuffer);
 
       const params = {

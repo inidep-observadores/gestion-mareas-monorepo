@@ -17,7 +17,7 @@ export class DocxChartService {
     async renderBarChart(
         labels: string[],
         datasets: Array<{ label: string; data: number[] }>,
-        options?: { title?: string; stacked?: boolean; yAxisLabel?: string },
+        options?: { title?: string; stacked?: boolean; yAxisLabel?: string; displayLabels?: boolean },
     ): Promise<Buffer> {
         const config: ChartConfiguration = {
             type: 'bar',
@@ -66,6 +66,109 @@ export class DocxChartService {
                     },
                 },
             },
+            plugins: options?.displayLabels ? [{
+                id: 'datalabels',
+                afterDraw: (chart) => {
+                    const ctx = chart.ctx;
+                    chart.data.datasets.forEach((dataset, i) => {
+                        const meta = chart.getDatasetMeta(i);
+                        meta.data.forEach((bar, index) => {
+                            const data = dataset.data[index] as number;
+                            if (data === 0) return;
+                            ctx.save();
+                            ctx.fillStyle = '#64748B'; // Muted text
+                            ctx.font = `bold 13px ${FONTS.primary}`;
+                            ctx.textAlign = 'center';
+                            ctx.textBaseline = 'bottom';
+                            // Ajustar posición para stacked si fuera necesario, 
+                            // pero para bar normal bar.y - 5 está perfecto
+                            ctx.fillText(data.toString(), (bar as any).x, (bar as any).y - 5);
+                            ctx.restore();
+                        });
+                    });
+                },
+            }] : [],
+        };
+
+        return this.render(config, CHART_DIMENSIONS.width, CHART_DIMENSIONS.height);
+    }
+    /**
+     * Renderiza un gráfico de líneas.
+     */
+    async renderLineChart(
+        labels: string[],
+        datasets: Array<{ label: string; data: number[] }>,
+        options?: { title?: string; yAxisLabel?: string; displayLabels?: boolean },
+    ): Promise<Buffer> {
+        const config: ChartConfiguration = {
+            type: 'line',
+            data: {
+                labels,
+                datasets: datasets.map((ds, i) => ({
+                    label: ds.label,
+                    data: ds.data,
+                    borderColor: CHART_COLORS.paletteSolid[i % CHART_COLORS.paletteSolid.length],
+                    backgroundColor: CHART_COLORS.paletteSolid[i % CHART_COLORS.paletteSolid.length],
+                    borderWidth: 3,
+                    pointRadius: 6,
+                    pointBackgroundColor: '#FFFFFF',
+                    pointBorderWidth: 2,
+                    tension: 0.3,
+                    fill: false,
+                })),
+            },
+            options: {
+                responsive: false,
+                animation: false,
+                plugins: {
+                    legend: {
+                        display: datasets.length > 1,
+                        position: 'top',
+                        labels: { font: { family: FONTS.primary, size: 15 } },
+                    },
+                    title: options?.title ? {
+                        display: true,
+                        text: options.title,
+                        font: { family: FONTS.primary, size: 20, weight: 'bold' },
+                        color: '#1E293B',
+                    } : undefined,
+                },
+                scales: {
+                    x: {
+                        ticks: { font: { family: FONTS.primary, size: 13 } },
+                        grid: { display: false },
+                    },
+                    y: {
+                        beginAtZero: true,
+                        title: options?.yAxisLabel ? {
+                            display: true,
+                            text: options.yAxisLabel,
+                            font: { family: FONTS.primary, size: 14 },
+                        } : undefined,
+                        ticks: { font: { family: FONTS.primary, size: 13 } },
+                    },
+                },
+            },
+            plugins: options?.displayLabels ? [{
+                id: 'datalabels',
+                afterDraw: (chart) => {
+                    const ctx = chart.ctx;
+                    chart.data.datasets.forEach((dataset, i) => {
+                        const meta = chart.getDatasetMeta(i);
+                        meta.data.forEach((point, index) => {
+                            const data = dataset.data[index] as number;
+                            if (data === 0) return;
+                            ctx.save();
+                            ctx.fillStyle = CHART_COLORS.paletteSolid[i % CHART_COLORS.paletteSolid.length];
+                            ctx.font = `bold 13px ${FONTS.primary}`;
+                            ctx.textAlign = 'center';
+                            ctx.textBaseline = 'bottom';
+                            ctx.fillText(data.toString(), (point as any).x, (point as any).y - 10);
+                            ctx.restore();
+                        });
+                    });
+                },
+            }] : [],
         };
 
         return this.render(config, CHART_DIMENSIONS.width, CHART_DIMENSIONS.height);

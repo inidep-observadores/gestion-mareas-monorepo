@@ -53,6 +53,13 @@ describe('AuditReportBuilder', () => {
           observers: [{ id: '1', name: 'Juan Perez', mareas: 2, days: 20, active: true }],
         },
         dotacionActiva: 45,
+        secondaryStats: [],
+        specialCases: { canceladas: [], desestimadas: [], esperandoEntrega: [], pendientesDeInforme: [], delegadasExternas: [], esperandoProtocolizacion: [] },
+        protocolizationTimeline: { totalProtocolizadas: 0, totalEnviadas: 0, totalEnPeriodo: 0, sinProtocolizar: 0, tipo: 'MONTHLY', promedioDiasLatencia: null, maxDiasLatencia: null, promedioDiasLatenciaTramite: null, maxDiasLatenciaTramite: null, distribucionMensual: [] },
+        breakdown: {
+          observadores: { dias: 0, mareasFinalizadas: 0, mareasEnEjecucion: 0, desestimadas: 0, informesDeMarea: 0, informesProtocolizados: 0, informesPendientes: 0 },
+          tecnicos: { dias: 0, mareasFinalizadas: 0, mareasEnEjecucion: 0, desestimadas: 0, informesDeMarea: 0, informesProtocolizados: 0, informesPendientes: 0 },
+        },
         detailItems: [
           {
             id: 'm1',
@@ -92,6 +99,13 @@ describe('AuditReportBuilder', () => {
             observers: [],
           },
           dotacionActiva: 0,
+          secondaryStats: [],
+          specialCases: { canceladas: [], desestimadas: [], esperandoEntrega: [], pendientesDeInforme: [], delegadasExternas: [], esperandoProtocolizacion: [] },
+          protocolizationTimeline: { totalProtocolizadas: 0, totalEnviadas: 0, totalEnPeriodo: 0, sinProtocolizar: 0, tipo: 'MONTHLY', promedioDiasLatencia: null, maxDiasLatencia: null, promedioDiasLatenciaTramite: null, maxDiasLatenciaTramite: null, distribucionMensual: [] },
+          breakdown: {
+            observadores: { dias: 0, mareasFinalizadas: 0, mareasEnEjecucion: 0, desestimadas: 0, informesDeMarea: 0, informesProtocolizados: 0, informesPendientes: 0 },
+            tecnicos: { dias: 0, mareasFinalizadas: 0, mareasEnEjecucion: 0, desestimadas: 0, informesDeMarea: 0, informesProtocolizados: 0, informesPendientes: 0 },
+          },
           detailItems: [],
           distribution: [],
         };

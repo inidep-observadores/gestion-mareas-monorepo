@@ -38,6 +38,18 @@ export interface StatsDetailItem {
     fechaArribo: Date | string | null;
     /** Fecha en que la marea fue derivada a proyecto externo (solo para DELEGADA_EXTERNA) */
     fechaDerivacion: Date | string | null;
+    /** Fecha de envío a la DNI para protocolización */
+    fechaEnvioProtocolizacion: Date | string | null;
+    /** Número de protocolo asignado por la DNI */
+    nroProtocolizacion: number | null;
+    /** Año del número de protocolo */
+    anioProtocolizacion: number | null;
+    /** Fecha de protocolización oficial */
+    fechaProtocolizacion: Date | string | null;
+    /** ID del observador principal (para cruzar con tipoObservador) */
+    observadorId: string | null;
+    /** Orden del estado actual (para calcular "pendientes": orden > 3 y < 11) */
+    estadoOrden: number;
 }
 
 export interface UniqueVesselsResult {
@@ -63,22 +75,26 @@ export interface AuditSpecialMarea {
     fechaEvento: Date | string | null;
     /** Motivo/comentario del movimiento (si existe) */
     motivo: string | null;
+    /** Tipo de observador del principal (OBSERVADOR | TECNICO | etc.) */
+    tipoObservador: string | null;
 }
 
 export interface AuditSpecialCasesResult {
     canceladas: AuditSpecialMarea[];
     desestimadas: AuditSpecialMarea[];
+    esperandoEntrega: AuditSpecialMarea[];
     pendientesDeInforme: AuditSpecialMarea[];
     delegadasExternas: AuditSpecialMarea[];
+    esperandoProtocolizacion: AuditSpecialMarea[];
 }
 
 // ─── Protocolization Timeline ───────────────────────────────────────────────
 
-export interface ProtocolizationMonthItem {
-    mes: number;                // 1-12
-    label: string;              // 'Ene', 'Feb', etc.
-    cantidad: number;           // protocolizadas en el mes
-    enviadas: number;           // enviadas a DNI en el mes
+export interface ProtocolizationTimelineItem {
+    periodo: number;            // 1-12 para meses, o 1-N para semanas
+    label: string;              // 'Ene', 'Feb' o '01/01 - 07/01'
+    cantidad: number;           // protocolizadas en el periodo
+    enviadas: number;           // enviadas a DNI en el periodo
     acumulado: number;
     pctDelTotal: number;
 }
@@ -88,9 +104,29 @@ export interface ProtocolizationTimelineResult {
     totalEnviadas: number;      // total enviadas a DNI en el período
     totalEnPeriodo: number;     // mareas del período (para calcular % pendientes)
     sinProtocolizar: number;
-    promedioDiasLatencia: number | null;
+    tipo: 'WEEKLY' | 'MONTHLY';
+    promedioDiasLatencia: number | null;       // recepción de datos → protocolización
     maxDiasLatencia: number | null;
-    distribucionMensual: ProtocolizationMonthItem[];
+    promedioDiasLatenciaTramite: number | null; // envío a DNI → protocolización
+    maxDiasLatenciaTramite: number | null;
+    distribucionMensual: ProtocolizationTimelineItem[]; // Mantenemos el nombre por compatibilidad o renombramos a timeline
+}
+
+// ─── Personal Breakdown (Observadores vs Técnicos) ───────────────────────────
+
+export interface PersonalTypeBreakdown {
+    dias: number;
+    mareasFinalizadas: number;
+    mareasEnEjecucion: number;
+    desestimadas: number;
+    informesDeMarea: number;      // PARA_PROTOCOLIZAR + ESPERANDO_PROTOCOLIZACION + PROTOCOLIZADA
+    informesProtocolizados: number; // PROTOCOLIZADA
+    informesPendientes: number;   // estado.orden > 3 y < 11
+}
+
+export interface PersonalBreakdown {
+    observadores: PersonalTypeBreakdown;
+    tecnicos: PersonalTypeBreakdown;
 }
 
 // ─── Secondary Observer Stats ───────────────────────────────────────────────

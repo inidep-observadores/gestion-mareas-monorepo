@@ -228,14 +228,16 @@ interface ObserverSecondaryStats {
 
 ## Checklist de Verificación antes de Cerrar la Feature
 
-- [ ] UI aprobada por el usuario (condición para iniciar reportes).
-- [ ] Hoja Excel "Personal" con columna Etapas Secundarias.
-- [ ] Hoja Excel "Navegación" con Zarpada/Arribo y marcado de Derivadas.
-- [ ] Nueva hoja Excel "Casos Especiales" con 4 secciones.
-- [ ] Nueva hoja Excel "Protocolización" con KPIs + tabla mensual.
-- [ ] Word: sección Personal actualizada con párrafo de secundarios.
-- [ ] Word: sección Navegación con tabla y nota de Derivadas.
-- [ ] Word: nueva sección "Mareas con Estado Especial".
-- [ ] Word: nueva sección "Seguimiento de Protocolización".
+- [x] UI aprobada por el usuario (condición para iniciar reportes).
+- [x] Hoja Excel "Personal" con columna Etapas Secundarias + tabla breakdown Obs/Téc.
+- [x] Hoja Excel "Navegación" con Zarpada/Arribo, 3 columnas de protocolización y marcado de Derivadas.
+- [x] Nueva hoja Excel "Casos Especiales" con 5 secciones (incluye Esperando Protocolización).
+- [x] Nueva hoja Excel "Protocolización" con KPIs + tabla mensual.
+- [x] Hoja Excel "Pesquerías" con columna "Cant. Etapas" en tabla de resumen.
+- [x] Word: sección Personal actualizada con tabla breakdown Obs/Téc, párrafo de secundarios y columna Etapas Sec.
+- [x] Word: sección Navegación con tabla y nota de Derivadas (subsección 5.2).
+- [x] Word: nueva sección 7 "Mareas con Estado Especial" (4 subsecciones dinámicas).
+- [x] Word: nueva sección 8 "Seguimiento de Protocolización" con narrativa + tabla mensual.
+- [x] Word: sección 9 "Observaciones Complementarias" renumerada correctamente.
 - [ ] PR a `develop` creado y revisado.
 - [ ] `package.json` versionado (ya en `0.5.0`).
