@@ -30,6 +30,7 @@
 
       <!-- Step Content -->
       <div
+        v-form-nav
         class="bg-surface border border-border shadow-theme-xs min-h-[380px] flex flex-col rounded-2xl overflow-hidden p-6">
 
         <!-- Loading State for Catalogs -->
@@ -260,6 +261,7 @@
               Cancelar
             </button>
             <button @click="nextStep" :disabled="loading"
+              :data-allow-enter="currentStep === 4"
               class="px-8 py-3 bg-primary hover:bg-primary-hover text-primary-fg rounded-lg text-xs font-black uppercase tracking-widest shadow-theme-xs shadow-primary/20 transition-all active:scale-95 flex items-center gap-2 disabled:opacity-50">
               <div v-if="loading" class="flex items-center justify-center">
                 <LoadingSpinner size="xs" class="text-primary-fg" />
