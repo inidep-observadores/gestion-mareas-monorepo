@@ -32,7 +32,9 @@
                     <div>
                         <label class="block text-xs font-black uppercase tracking-widest text-text-muted mb-1.5">Código
                             Interno</label>
-                        <input v-model.number="form.codigoInterno" type="number" required :class="[
+                        <input v-model.number="form.codigoInterno" type="number" required
+                            ref="firstInput"
+                            :class="[
                             'h-11 w-full rounded-lg border bg-surface px-4 py-2.5 text-sm transition-all outline-none',
                             fieldErrors.codigoInterno ? 'border-error bg-error/5' : 'border-border focus:border-primary focus:ring-3 focus:ring-primary/10'
                         ]" />
@@ -238,7 +240,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue'
+import { ref, watch, computed, nextTick } from 'vue'
 import type { Observador } from '../interfaces/observador.interface'
 import { getFullImageUrl } from '@/helpers/image.helper'
 import observadoresApi from '../services/observadores.service'
@@ -285,6 +287,7 @@ const initialForm = {
 }
 
 const form = ref({ ...initialForm })
+const firstInput = ref<HTMLInputElement | null>(null)
 
 watch(
     () => props.observador,
@@ -312,9 +315,23 @@ watch(
         } else {
             form.value = { ...initialForm }
         }
+
+        if (props.show) {
+            nextTick(() => {
+                firstInput.value?.focus()
+            })
+        }
     },
     { immediate: true }
 )
+
+watch(() => props.show, (val) => {
+    if (val) {
+        nextTick(() => {
+            firstInput.value?.focus()
+        })
+    }
+})
 
 // Mutual exclusivity logic
 watch(() => form.value.disponible, (val) => {

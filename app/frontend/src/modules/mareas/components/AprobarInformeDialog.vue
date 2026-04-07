@@ -5,7 +5,7 @@
     @close="handleClose"
     max-width="md"
   >
-    <div class="space-y-6">
+    <div v-form-nav class="space-y-6">
       <!-- Info Contextual -->
       <div class="bg-surface-muted/50 border border-border rounded-2xl p-4 space-y-3">
         <div class="flex items-center gap-3">
@@ -123,6 +123,7 @@
           Observaciones <span class="text-text-muted/50 italic normal-case text-[8px]">(opcional)</span>
         </label>
         <textarea
+          ref="commentInput"
           v-model="comentarios"
           rows="3"
           placeholder="Notas adicionales sobre la aprobación..."
@@ -142,6 +143,7 @@
         <button
           @click="handleConfirm"
           :disabled="loading"
+          data-allow-enter
           class="flex-1 px-6 py-3 bg-primary text-primary-fg rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-primary/20 hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
         >
           <LoadingSpinner v-if="loading" size="xs" />
@@ -153,7 +155,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, nextTick } from 'vue'
 import BaseModal from '@/components/common/BaseModal.vue'
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 import { ShipIcon, WarningIcon } from '@/icons'
@@ -173,6 +175,7 @@ const file = ref<File | null>(null)
 const comentarios = ref('')
 const isDragging = ref(false)
 const showFileError = ref(false)
+const commentInput = ref<HTMLTextAreaElement | null>(null)
 
 watch(() => props.show, (val) => {
   if (val) {
@@ -180,6 +183,9 @@ watch(() => props.show, (val) => {
     comentarios.value = ''
     showFileError.value = false
     isDragging.value = false
+    nextTick(() => {
+      commentInput.value?.focus()
+    })
   }
 })
 

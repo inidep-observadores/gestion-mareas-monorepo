@@ -48,6 +48,7 @@
                 <div class="space-y-1.5">
                   <label class="block text-sm font-medium text-text-muted">Año</label>
                   <input v-model.number="form.anioMarea" type="number" :disabled="!canEditDesignationFields"
+                    ref="firstInput"
                     class="w-full px-4 py-2.5 bg-surface border rounded-lg text-sm text-text outline-none focus:border-primary transition-all shadow-theme-xs disabled:opacity-60 disabled:bg-surface-muted"
                     :class="fieldErrors.anioMarea ? 'border-error bg-error/5' : 'border-border focus:ring-3 focus:ring-primary/10'" />
                 </div>
@@ -146,7 +147,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, computed } from 'vue'
+import { ref, watch, onMounted, computed, nextTick } from 'vue'
 import BaseModal from '@/components/common/BaseModal.vue'
 import SearchableSelect from '@/components/common/SearchableSelect.vue'
 import DatePicker from '@/components/common/DatePicker.vue'
@@ -178,6 +179,7 @@ const loading = ref(false)
 const error = ref<string | null>(null)
 const loadingCatalogs = ref(false)
 const fieldErrors = ref<Record<string, string>>({})
+const firstInput = ref<HTMLInputElement | null>(null)
 
 const canEditDesignationFields = computed(() => {
   return props.initialData.estado_codigo === 'DESIGNADA' || props.initialData.estado_codigo === 'A_REASIGNAR'
@@ -235,6 +237,9 @@ watch(() => props.show, async (newVal) => {
     if (pesquerias.value.length === 0) {
       await loadCatalogs()
     }
+    nextTick(() => {
+      firstInput.value?.focus()
+    })
   }
 })
 

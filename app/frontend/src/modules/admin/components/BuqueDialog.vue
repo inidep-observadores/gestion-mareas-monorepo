@@ -14,6 +14,7 @@
                                 class="block text-xs font-black uppercase tracking-widest text-text-muted mb-1.5">Nombre
                                 del Buque</label>
                             <input v-model="form.nombreBuque" type="text" required
+                                ref="firstInput"
                                 class="h-11 w-full rounded-lg border border-border bg-surface px-4 py-2.5 text-sm text-text shadow-theme-xs placeholder:text-text-muted/40 focus:border-primary focus:outline-hidden focus:ring-3 focus:ring-primary/10 transition-all" />
                         </div>
                         <div>
@@ -190,7 +191,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue'
+import { ref, watch, computed, nextTick } from 'vue'
 import type { Buque, TipoFlota, Puerto, Pesqueria, ArtePesca } from '../interfaces/buque.interface'
 import BaseModal from '@/components/common/BaseModal.vue'
 import SearchableSelect from '@/components/common/SearchableSelect.vue'
@@ -235,6 +236,7 @@ const initialForm: Partial<Buque> = {
 }
 
 const form = ref({ ...initialForm })
+const firstInput = ref<HTMLInputElement | null>(null)
 
 watch(
     () => props.buque,
@@ -244,9 +246,23 @@ watch(
         } else {
             form.value = { ...initialForm }
         }
+        
+        if (props.show) {
+            nextTick(() => {
+                firstInput.value?.focus()
+            })
+        }
     },
     { immediate: true }
 )
+
+watch(() => props.show, (val) => {
+    if (val) {
+        nextTick(() => {
+            firstInput.value?.focus()
+        })
+    }
+})
 
 const handleSubmit = () => {
     emit('save', { ...form.value })

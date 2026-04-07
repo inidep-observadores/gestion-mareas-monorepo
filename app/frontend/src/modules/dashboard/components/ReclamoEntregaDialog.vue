@@ -7,7 +7,7 @@
       variant="glass"
       @close="close"
     >
-      <div class="mt-2">
+      <div v-form-nav class="mt-2">
         <div class="flex items-center gap-4 mb-6">
           <div class="flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-primary/10">
             <MailIcon class="h-6 w-6 text-primary" aria-hidden="true" />
@@ -31,6 +31,7 @@
           <div>
             <label class="block text-xs font-bold text-text-muted mb-2 uppercase tracking-wide">Mensaje</label>
             <textarea
+              ref="messageInput"
               v-model="messageBody"
               rows="6"
               class="w-full rounded-xl border-border bg-surface text-text shadow-sm focus:border-primary focus:ring-primary sm:text-sm p-3 resize-none"
@@ -59,6 +60,7 @@
             v-if="email"
             @click="send"
             :disabled="sending"
+            data-allow-enter
             class="w-full sm:w-auto"
           >
             <LoadingSpinner v-if="sending" size="xs" class="text-white" />
@@ -79,7 +81,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, nextTick } from 'vue'
 import BaseModal from '@/components/common/BaseModal.vue'
 import { MailIcon, WarningIcon, SendIcon } from '@/icons'
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
@@ -102,6 +104,7 @@ const emit = defineEmits(['close', 'confirm'])
 const authStore = useAuthStore()
 const messageBody = ref('')
 const sending = ref(false)
+const messageInput = ref<HTMLTextAreaElement | null>(null)
 
 const generateTemplate = () => {
   const signature = authStore.user?.fullName || 'Gestión de Mareas'
@@ -119,6 +122,9 @@ ${signature}`
 watch(() => props.show, (newVal) => {
   if (newVal && props.email) {
     messageBody.value = generateTemplate()
+    nextTick(() => {
+      messageInput.value?.focus()
+    })
   }
 })
 
