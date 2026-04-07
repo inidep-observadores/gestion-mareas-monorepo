@@ -2,7 +2,7 @@
     <BaseModal :show="show"
         :title="readOnly ? 'Detalle del Observador' : (isEditing ? 'Editar Observador' : 'Nuevo Observador')"
         @close="closeModal" maxWidth="3xl" variant="danger">
-        <form @submit.prevent="handleSubmit" class="space-y-6" novalidate>
+        <form v-form-nav @submit.prevent="handleSubmit" class="space-y-6" novalidate>
             <fieldset :disabled="readOnly" class="space-y-6">
                 <!-- Foto Preview/Upload -->
                 <div class="flex flex-col items-center mb-6">
@@ -225,6 +225,7 @@
                     {{ readOnly ? 'Cerrar' : 'Cancelar' }}
                 </button>
                 <button v-if="!readOnly" type="submit"
+                    data-allow-enter
                     class="flex items-center justify-center w-full px-4 py-3 text-xs font-black uppercase tracking-widest text-primary-fg transition-all rounded-lg bg-primary shadow-lg shadow-primary/20 hover:bg-primary-hover active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed sm:col-start-2"
                     :disabled="isSaving || isUploading">
                     <span v-if="isSaving"

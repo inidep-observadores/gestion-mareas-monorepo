@@ -1,7 +1,7 @@
 <template>
     <BaseModal :show="show" :title="readOnly ? 'Detalle del Buque' : (isEditing ? 'Editar Buque' : 'Nuevo Buque')"
         @close="emit('close')" maxWidth="5xl" variant="danger">
-        <form @submit.prevent="handleSubmit" class="space-y-6">
+        <form v-form-nav @submit.prevent="handleSubmit" class="space-y-6">
             <fieldset :disabled="readOnly" class="space-y-6">
                 <!-- Información Principal -->
                 <div class="space-y-4">
@@ -171,6 +171,7 @@
 
             <div class="mt-5 sm:mt-8 sm:grid sm:grid-flow-row-dense sm:grid-cols-2 sm:gap-3">
                 <button v-if="!readOnly" type="submit"
+                    data-allow-enter
                     class="flex items-center justify-center w-full px-4 py-3 text-xs font-black uppercase tracking-widest text-primary-fg transition-all rounded-lg bg-primary shadow-theme-xs hover:bg-primary-hover active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed sm:col-start-2"
                     :disabled="isSaving">
                     {{ isSaving ? 'Guardando...' : 'Guardar' }}
