@@ -2465,9 +2465,11 @@ export class StatsService {
             sheet.getCell(totalRow, colOffsetRanking + 2).alignment = { horizontal: 'center' };
             sheet.getCell(totalRow, colOffsetRanking + 3).alignment = { horizontal: 'center' };
             sheet.getCell(totalRow, colOffsetRanking + 4).alignment = { horizontal: 'center' };
-            // Aplicar fondo gris solo a las celdas de la tabla
+            // Aplicar fondo gris y borde superior a las celdas de la tabla
             for (let i = 0; i < 5; i++) {
-                sheet.getCell(totalRow, colOffsetRanking + i).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF5F5F5' } };
+                const cell = sheet.getCell(totalRow, colOffsetRanking + i);
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF5F5F5' } };
+                cell.border = { top: { style: 'thin' } };
             }
             
             currentRankingRow += 2; // Espacio entre tablas (o nota aclaratoria al final)
