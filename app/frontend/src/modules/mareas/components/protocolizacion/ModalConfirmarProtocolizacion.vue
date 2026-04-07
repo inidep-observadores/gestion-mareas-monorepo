@@ -5,7 +5,7 @@
     @close="handleClose"
     max-width="md"
   >
-    <div class="space-y-6">
+    <div class="space-y-6" v-form-nav>
       
       <div class="bg-surface-muted/50 border border-border rounded-2xl p-4">
         <p class="text-[10px] font-black uppercase tracking-widest text-text-muted mb-0.5">Marea a Protocolizar</p>
@@ -87,6 +87,7 @@
         <button
           @click="submitForm"
           :disabled="loading || !isFormValid"
+          data-allow-enter
           class="flex-1 px-6 py-3 bg-primary text-primary-fg rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-primary/20 hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:grayscale-[0.5]"
         >
           <div v-if="loading" class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>

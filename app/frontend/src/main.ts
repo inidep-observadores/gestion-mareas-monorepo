@@ -15,12 +15,15 @@ import VueApexCharts from 'vue3-apexcharts'
 import { useAuthStore } from '@/modules/auth/stores/auth.store'
 import { useBusinessRulesStore } from '@/modules/shared/stores/business-rules.store'
 
+import { vFormNav } from '@/directives/enterNext'
+
 const app = createApp(App)
 
 const pinia = createPinia()
 app.use(pinia)
 app.use(router)
 app.use(VueApexCharts as any)
+app.directive('form-nav', vFormNav)
 
 const initApp = async () => {
     const authStore = useAuthStore()
