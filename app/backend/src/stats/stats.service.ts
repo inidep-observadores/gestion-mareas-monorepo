@@ -2698,9 +2698,11 @@ export class StatsService {
         sheet.getCell(currentRow, 11).value = totalEtapas;
         sheet.getCell(currentRow, 11).font = { bold: true };
         sheet.getCell(currentRow, 11).alignment = { horizontal: 'center' };
-        // Aplicar fondo gris solo a las celdas de la tabla (1 a 15)
+        // Aplicar fondo gris y borde superior a las celdas de la tabla (1 a 15)
         for (let i = 1; i <= 15; i++) {
-            sheet.getCell(currentRow, i).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF5F5F5' } };
+            const cell = sheet.getCell(currentRow, i);
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF5F5F5' } };
+            cell.border = { top: { style: 'thin' } };
         }
 
         // Nota al pie si hay mareas DELEGADA_EXTERNA
@@ -2804,9 +2806,11 @@ export class StatsService {
         sheet.getCell(resRow, 4).value = totalDiasPesqueria;
         sheet.getCell(resRow, 4).font = { bold: true };
         sheet.getCell(resRow, 4).alignment = { horizontal: 'center' };
-        // Aplicar fondo gris solo a las celdas de la tabla (1 a 4)
+        // Aplicar fondo gris y borde superior a las celdas de la tabla (1 a 4)
         for (let i = 1; i <= 4; i++) {
-            sheet.getCell(resRow, i).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF5F5F5' } };
+            const cell = sheet.getCell(resRow, i);
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF5F5F5' } };
+            cell.border = { top: { style: 'thin' } };
         }
 
         // 2. Detalle de Mareas (DERECHA: F-N)
@@ -2906,9 +2910,11 @@ export class StatsService {
         sheet.getCell(detRow, colOffsetDetalle + 7).font = { bold: true };
         sheet.getCell(detRow, colOffsetDetalle + 6).alignment = { horizontal: 'center' };
         sheet.getCell(detRow, colOffsetDetalle + 7).alignment = { horizontal: 'center' };
-        // Aplicar fondo gris solo a las celdas de la tabla (6 a 14)
+        // Aplicar fondo gris y borde superior a las celdas de la tabla (6 a 14)
         for (let i = 0; i < 9; i++) {
-            sheet.getCell(detRow, colOffsetDetalle + i).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF5F5F5' } };
+            const cell = sheet.getCell(detRow, colOffsetDetalle + i);
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF5F5F5' } };
+            cell.border = { top: { style: 'thin' } };
         }
 
         // Ajustar anchos
@@ -2941,7 +2947,7 @@ export class StatsService {
         titleCell.font = { bold: true, size: 16 };
         titleCell.alignment = { horizontal: 'center' };
 
-        const colHeaders = ['#', 'Marea', 'Buque', 'Pesquería', 'Flota', 'Observador', 'Días Nav.', 'Fecha Envío', 'Observaciones'];
+        const colHeaders = ['#', 'Marea', 'Buque', 'Pesquería', 'Flota', 'Observador', 'Días Nav.', 'Fecha Estado', 'Observaciones'];
 
         const sections = [
             {
@@ -3043,9 +3049,11 @@ export class StatsService {
                 sheet.getCell(currentRow, 7).value = totalDias;
                 sheet.getCell(currentRow, 7).font = { bold: true };
                 sheet.getCell(currentRow, 7).alignment = { horizontal: 'center' };
-                // Aplicar fondo gris solo a las celdas de la tabla (1 a 9)
+                // Aplicar fondo gris y borde superior a las celdas de la tabla (1 a 9)
                 for (let i = 1; i <= 9; i++) {
-                    sheet.getCell(currentRow, i).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF5F5F5' } };
+                    const cell = sheet.getCell(currentRow, i);
+                    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF5F5F5' } };
+                    cell.border = { top: { style: 'thin' } };
                 }
                 currentRow++;
             }
@@ -3060,7 +3068,7 @@ export class StatsService {
         currentRow += 2;
         sheet.mergeCells(currentRow, 1, currentRow, 9);
         const noteCell = sheet.getCell(currentRow, 1);
-        noteCell.value = 'Nota: Las mareas "Derivadas a Proyectos Externos" fueron ejecutadas pero sus datos son procesados por un proyecto ajeno al Programa Observadores a Bordo. Estas mareas no se contabilizan en las estadísticas de cobertura.';
+        noteCell.value = 'Nota: Las mareas "Derivadas a Proyectos Externos" fueron ejecutadas pero sus datos son procesados por un proyecto ajeno al Programa Observadores a Bordo.';
         noteCell.font = { italic: true, size: 10, color: { argb: 'FF475569' } };
         noteCell.alignment = { horizontal: 'left', wrapText: true };
 
@@ -3176,9 +3184,11 @@ export class StatsService {
             sheet.getCell(tableRow, colOffset + 4).value = timeline.totalProtocolizadas > 0 ? '100%' : 'N/D';
             sheet.getCell(tableRow, colOffset + 4).font = { bold: true };
             sheet.getCell(tableRow, colOffset + 4).alignment = { horizontal: 'center' };
-            // Aplicar fondo gris solo a las celdas de la tabla (5 a 9)
+            // Aplicar fondo gris y borde superior a las celdas de la tabla (5 a 9)
             for (let i = 0; i < 5; i++) {
-                sheet.getCell(tableRow, colOffset + i).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF5F5F5' } };
+                const cell = sheet.getCell(tableRow, colOffset + i);
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF5F5F5' } };
+                cell.border = { top: { style: 'thin' } };
             }
         }
 
