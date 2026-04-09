@@ -100,6 +100,15 @@ export interface AuditReportData {
             periodo: number; label: string; cantidad: number;
             enviadas: number; acumulado: number; pctDelTotal: number;
         }>;
+        protocolizadasDetalle: Array<{
+            id: string;
+            id_marea: string;
+            buque: string;
+            observador: string;
+            nroProtocolizacion: number | null;
+            anioProtocolizacion: number | null;
+            fechaProtocolizacion: Date | string | null;
+        }>;
     };
 
     /** Breakdown de actividad por tipo de observador */
@@ -737,6 +746,8 @@ export class AuditReportBuilder {
             return this.sortMareaId(a.id_marea, b.id_marea);
         });
 
+        const alignments = [AlignmentType.LEFT, AlignmentType.LEFT, AlignmentType.CENTER, AlignmentType.CENTER, AlignmentType.CENTER, AlignmentType.CENTER, AlignmentType.CENTER];
+
         const result: (Paragraph | Table)[] = [
             new Paragraph({ children: [new PageBreak()] }),
             this.heading1('5. DETALLE DE NAVEGACIÓN'),
@@ -744,24 +755,38 @@ export class AuditReportBuilder {
             this.bodyParagraph(introText),
             createFormattedTable(
                 ['PESQUERÍA', 'BUQUE', 'MAREA', 'ETAPAS', 'DÍAS', 'ENV. DNI', 'PROTOCOLIZ.'],
-                sorted.map((m: any) => [
-                    m.pesqueria,
-                    m.buque,
-                    this.formatMareaShort(m.id_marea),
-                    m.etapas.toString(),
-                    m.dias.toString(),
-                    m.fechaEnvioProtocolizacion ? this.formatShortDate(m.fechaEnvioProtocolizacion) : '',
-                    this.formatProtocolizacionCell(m.nroProtocolizacion, m.anioProtocolizacion, m.fechaProtocolizacion),
-                ]),
+                sorted.map((m: any) => ({
+                    data: [
+                        m.pesqueria,
+                        m.buque,
+                        this.formatMareaShort(m.id_marea),
+                        m.etapas.toString(),
+                        m.dias.toString(),
+                        m.fechaEnvioProtocolizacion ? this.formatShortDate(m.fechaEnvioProtocolizacion) : '-',
+                        this.formatProtocolizacionCell(m.nroProtocolizacion, m.anioProtocolizacion, m.fechaProtocolizacion),
+                    ],
+                    highlighted: m.estadoActual === 'DELEGADA_EXTERNA',
+                })),
                 {
                     columnWidths: [20, 22, 12, 10, 10, 13, 13],
-                    alignments: [AlignmentType.LEFT, AlignmentType.LEFT, AlignmentType.CENTER, AlignmentType.CENTER, AlignmentType.CENTER, AlignmentType.CENTER, AlignmentType.CENTER],
+                    alignments,
                 },
             ),
+            new Paragraph({
+                spacing: { before: 120, after: 200 },
+                children: [
+                    new TextRun({
+                        text: '* Nota: Las mareas resaltadas son aquellas que se encuentran en espera de validación de datos por parte de proyectos científicos externos.',
+                        italics: true,
+                        size: FONT_SIZES.small,
+                        color: INIDEP_COLORS.textMuted,
+                    }),
+                ],
+            }),
         ];
 
         // 5.2 Mareas derivadas a proyectos externos
-        const delegadas = data.specialCases.delegadasExternas;
+        const delegadas = [...data.specialCases.delegadasExternas].sort((a, b) => this.sortMareaId(a.id_marea, b.id_marea));
         if (delegadas.length > 0) {
             const n = delegadas.length;
             const delegadasText = `${n} marea${n !== 1 ? 's' : ''} registrada${n !== 1 ? 's' : ''} en el período se encuentra${n !== 1 ? 'n' : ''} derivada${n !== 1 ? 's' : ''} a proyectos externos para validación de sus datos. La eventual demora en la confección del informe correspondiente es ajena al Proyecto Observadores a Bordo.`;
@@ -842,12 +867,13 @@ export class AuditReportBuilder {
 
         if (canceladas.length > 0) {
             const n = canceladas.length;
+            const sortedCanceladas = [...canceladas].sort((a, b) => this.sortMareaId(a.id_marea, b.id_marea));
             result.push(
                 this.heading2('7.1 Mareas canceladas'),
                 this.bodyParagraph(`Se registr${n !== 1 ? 'aron' : 'ó'} ${n} marea${n !== 1 ? 's' : ''} planificada${n !== 1 ? 's' : ''} que no llegó${n !== 1 ? 'ron' : ''} a ejecutarse en el período.`),
                 createFormattedTable(
                     specialTableCols,
-                    canceladas.map(m => [
+                    sortedCanceladas.map(m => [
                         this.formatMareaShort(m.id_marea), m.buque, m.pesqueria,
                         m.diasNavegados.toString(),
                         m.fechaEvento ? this.formatShortDate(m.fechaEvento) : '',
@@ -859,12 +885,13 @@ export class AuditReportBuilder {
 
         if (desestimadas.length > 0) {
             const n = desestimadas.length;
+            const sortedDesestimadas = [...desestimadas].sort((a, b) => this.sortMareaId(a.id_marea, b.id_marea));
             result.push(
                 this.heading2(`7.${canceladas.length > 0 ? 2 : 1} Mareas desestimadas`),
                 this.bodyParagraph(`Se registr${n !== 1 ? 'aron' : 'ó'} ${n} marea${n !== 1 ? 's' : ''} ejecutada${n !== 1 ? 's' : ''} cuyos datos fueron descartados. El campo "Motivo" refleja la causa registrada al momento de la desestimación.`),
                 createFormattedTable(
                     ['MAREA', 'BUQUE', 'PESQUERÍA', 'DÍAS NAV.', 'MOTIVO'],
-                    desestimadas.map(m => [
+                    sortedDesestimadas.map(m => [
                         this.formatMareaShort(m.id_marea), m.buque, m.pesqueria,
                         m.diasNavegados.toString(),
                         m.motivo || '',
@@ -879,13 +906,14 @@ export class AuditReportBuilder {
 
         if (esperandoEntrega.length > 0) {
             const n = esperandoEntrega.length;
+            const sortedEsperando = [...esperandoEntrega].sort((a, b) => this.sortMareaId(a.id_marea, b.id_marea));
             const subsecNum = 1 + (canceladas.length > 0 ? 1 : 0) + (desestimadas.length > 0 ? 1 : 0);
             result.push(
                 this.heading2(`7.${subsecNum} Mareas pendientes de rendición`),
                 this.bodyParagraph(`${n} marea${n !== 1 ? 's' : ''} finalizada${n !== 1 ? 's' : ''} est${n !== 1 ? 'án' : 'á'} en espera de que el observador asignado realice la entrega de los datos recolectados.`),
                 createFormattedTable(
                     ['MAREA', 'BUQUE', 'PESQUERÍA', 'OBSERVADOR', 'DÍAS NAV.', 'FECHA ARRIBO'],
-                    esperandoEntrega.map(m => [
+                    sortedEsperando.map(m => [
                         this.formatMareaShort(m.id_marea), m.buque, m.pesqueria,
                         m.observador,
                         m.diasNavegados.toString(),
@@ -901,13 +929,14 @@ export class AuditReportBuilder {
 
         if (pendientesDeInforme.length > 0) {
             const n = pendientesDeInforme.length;
+            const sortedPendientes = [...pendientesDeInforme].sort((a, b) => this.sortMareaId(a.id_marea, b.id_marea));
             const subsecNum = 1 + (canceladas.length > 0 ? 1 : 0) + (desestimadas.length > 0 ? 1 : 0) + (esperandoEntrega.length > 0 ? 1 : 0);
             result.push(
                 this.heading2(`7.${subsecNum} Mareas pendientes de informe`),
                 this.bodyParagraph(`${n} marea${n !== 1 ? 's' : ''} se encontraba${n !== 1 ? 'n' : ''} en alguna etapa de corrección de datos o confección del informe al cierre del período, sin estar aún listas para protocolizar.`),
                 createFormattedTable(
                     specialTableCols,
-                    pendientesDeInforme.map(m => [
+                    sortedPendientes.map(m => [
                         this.formatMareaShort(m.id_marea), m.buque, m.pesqueria,
                         m.diasNavegados.toString(),
                         m.fechaEvento ? this.formatShortDate(m.fechaEvento) : '',
@@ -919,13 +948,14 @@ export class AuditReportBuilder {
 
         if (esperandoProtocolizacion.length > 0) {
             const n = esperandoProtocolizacion.length;
+            const sortedEsperandoProt = [...esperandoProtocolizacion].sort((a, b) => this.sortMareaId(a.id_marea, b.id_marea));
             const subsecNum = 1 + (canceladas.length > 0 ? 1 : 0) + (desestimadas.length > 0 ? 1 : 0) + (esperandoEntrega.length > 0 ? 1 : 0) + (pendientesDeInforme.length > 0 ? 1 : 0);
             result.push(
                 this.heading2(`7.${subsecNum} Mareas esperando protocolización`),
                 this.bodyParagraph(`${n} marea${n !== 1 ? 's' : ''} fu${n !== 1 ? 'eron enviadas' : 'e enviada'} a la DNI para protocolización y se encuentr${n !== 1 ? 'an' : 'a'} pendiente${n !== 1 ? 's' : ''} de confirmación.`),
                 createFormattedTable(
                     specialTableCols,
-                    esperandoProtocolizacion.map(m => [
+                    sortedEsperandoProt.map(m => [
                         this.formatMareaShort(m.id_marea), m.buque, m.pesqueria,
                         m.diasNavegados.toString(),
                         m.fechaEvento ? this.formatShortDate(m.fechaEvento) : '',
@@ -979,12 +1009,11 @@ export class AuditReportBuilder {
 
         // Tabla mensual
         const activeRows = tl.distribucionMensual.filter(r => r.cantidad > 0 || r.enviadas > 0);
-        if (activeRows.length === 0) {
-            result.push(this.bodyParagraph('Sin actividad de protocolización registrada en el período.'));
-        } else {
+        if (activeRows.length > 0) {
             result.push(
+                this.heading2('8.1 Distribución temporal'),
                 createFormattedTable(
-                    ['MES', 'ENVIADAS A DNI', 'PROTOCOLIZADAS', 'ACUMULADO', '% DEL TOTAL'],
+                    ['MES/SEMANA', 'ENVIADAS A DNI', 'PROTOCOLIZADAS', 'ACUMULADO', '% DEL TOTAL'],
                     activeRows.map(r => [
                         r.label,
                         r.enviadas.toString(),
@@ -1007,6 +1036,39 @@ export class AuditReportBuilder {
                     },
                 ),
             );
+        }
+
+        // Nueva Tabla: Detalle de protocolizaciones
+        if (tl.protocolizadasDetalle && tl.protocolizadasDetalle.length > 0) {
+            result.push(
+                this.heading2('8.2 Protocolizaciones durante el período'),
+                this.bodyParagraph('A continuación se listan las mareas que obtuvieron su número de protocolo oficial dentro del período analizado:'),
+                createFormattedTable(
+                    ['PROTOCOLIZACIÓN', 'FECHA PROTOC.', 'MAREA', 'BUQUE', 'OBSERVADOR'],
+                    tl.protocolizadasDetalle.map(m => [
+                        (m.nroProtocolizacion && m.anioProtocolizacion) ? `${m.nroProtocolizacion}/${m.anioProtocolizacion}` : '-',
+                        m.fechaProtocolizacion ? this.formatShortDate(m.fechaProtocolizacion) : '',
+                        this.formatMareaShort(m.id_marea),
+                        m.buque,
+                        m.observador
+                    ]),
+                    {
+                        columnWidths: [20, 16, 16, 23, 25],
+                        alignments: [AlignmentType.CENTER, AlignmentType.CENTER, AlignmentType.CENTER, AlignmentType.LEFT, AlignmentType.LEFT],
+                        totalsRow: {
+                            label: 'TOTAL',
+                            values: [
+                                tl.protocolizadasDetalle.length.toString(),
+                                '',
+                                '',
+                                '',
+                            ],
+                        },
+                    },
+                ),
+            );
+        } else if (activeRows.length === 0) {
+            result.push(this.bodyParagraph('Sin actividad de protocolización registrada en el período.'));
         }
 
         return result;
@@ -1220,10 +1282,25 @@ export class AuditReportBuilder {
     }
 
     private sortMareaId(a: string, b: string): number {
-        const partsA = a.split('-').map(Number);
-        const partsB = b.split('-').map(Number);
-        if (partsA[0] !== partsB[0]) return partsA[0] - partsB[0];
-        return (partsA[1] || 0) - (partsB[1] || 0);
+        const regex = /^([A-Z]+)-(\d+)-(\d+)$/;
+        const matchA = a.match(regex);
+        const matchB = b.match(regex);
+
+        if (matchA && matchB) {
+            const [, typeA, numA, yearA] = matchA;
+            const [, typeB, numB, yearB] = matchB;
+
+            // 1. Año (Ascendente: 23, 24, 25...)
+            if (yearA !== yearB) return yearA.localeCompare(yearB);
+            // 2. Número (Ascendente: 1, 2, 3...)
+            const nA = parseInt(numA);
+            const nB = parseInt(numB);
+            if (nA !== nB) return nA - nB;
+            // 3. Tipo (Descendente: TAL, OBS, MB) para consistencia SIGMA
+            return typeB.localeCompare(typeA);
+        }
+
+        return a.localeCompare(b);
     }
 
     private formatMareaShort(id: string): string {

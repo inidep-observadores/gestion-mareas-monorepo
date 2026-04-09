@@ -23,6 +23,12 @@ export interface TableOptions {
     totalsRow?: { label: string; values: (string | number)[] };
 }
 
+/** Estructura de datos para una fila que incluye metadatos de estilo */
+export interface TableRowData {
+    data: (string | string[] | number)[];
+    highlighted?: boolean;
+}
+
 /** Crea una celda de encabezado de tabla con estilo INIDEP */
 function createHeaderCell(text: string, widthPct?: number, alignment: AlignmentTypeValue = AlignmentType.CENTER): TableCell {
     return new TableCell({
@@ -55,6 +61,7 @@ function createDataCell(
         alignment?: AlignmentTypeValue;
         bold?: boolean;
         striped?: boolean;
+        highlighted?: boolean;
         isTotal?: boolean;
         color?: string;
     },
@@ -64,15 +71,18 @@ function createDataCell(
         alignment = AlignmentType.LEFT,
         bold = false,
         striped = false,
+        highlighted = false,
         isTotal = false,
         color,
     } = options || {};
 
     const bgColor = isTotal
         ? INIDEP_COLORS.tableTotalBg
-        : striped
-            ? INIDEP_COLORS.tableRowAlt
-            : undefined;
+        : highlighted
+            ? INIDEP_COLORS.tableRowHighlighted || 'F2F2F2'
+            : striped
+                ? INIDEP_COLORS.tableRowAlt
+                : undefined;
 
     const lines = Array.isArray(text) ? text : [String(text)];
 
@@ -106,7 +116,7 @@ function createDataCell(
  */
 export function createFormattedTable(
     headers: string[],
-    rows: (string | string[] | number)[][],
+    rows: ((string | string[] | number)[] | TableRowData)[],
     options?: TableOptions,
 ): Table {
     const {
@@ -134,14 +144,18 @@ export function createFormattedTable(
 
     // Filas de datos
     rows.forEach((row, rowIndex) => {
-        const isStriped = stripedRows && rowIndex % 2 === 1;
+        const rowData = Array.isArray(row) ? row : row.data;
+        const isHighlighted = !Array.isArray(row) && row.highlighted;
+        const isStriped = !isHighlighted && stripedRows && rowIndex % 2 === 1;
+
         tableRows.push(
             new TableRow({
-                children: row.map((cell, colIndex) =>
+                children: rowData.map((cell, colIndex) =>
                     createDataCell(cell, {
                         widthPct: columnWidths?.[colIndex],
                         alignment: alignments?.[colIndex] || AlignmentType.LEFT,
                         striped: isStriped,
+                        highlighted: isHighlighted,
                     }),
                 ),
             }),

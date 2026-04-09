@@ -28,6 +28,8 @@ export const INIDEP_COLORS = {
     tableHeaderText: 'FFFFFF',
     /** Fila alternada de tabla */
     tableRowAlt: 'F8FAFC',
+    /** Fila resaltada de tabla (ej: delegadas) - Ámbar suave para mayor contraste */
+    tableRowHighlighted: 'FEF3C7',
     /** Fila total de tabla */
     tableTotalBg: 'EFF6FF',
     /** Bordes de tabla */

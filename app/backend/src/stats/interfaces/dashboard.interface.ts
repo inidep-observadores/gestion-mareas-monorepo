@@ -99,6 +99,16 @@ export interface ProtocolizationTimelineItem {
     pctDelTotal: number;
 }
 
+export interface ProtocolizedMareaDetail {
+    id: string;
+    id_marea: string;
+    buque: string;
+    observador: string;
+    nroProtocolizacion: number | null;
+    anioProtocolizacion: number | null;
+    fechaProtocolizacion: Date | string | null;
+}
+
 export interface ProtocolizationTimelineResult {
     totalProtocolizadas: number;
     totalEnviadas: number;      // total enviadas a DNI en el período
@@ -110,6 +120,7 @@ export interface ProtocolizationTimelineResult {
     promedioDiasLatenciaTramite: number | null; // envío a DNI → protocolización
     maxDiasLatenciaTramite: number | null;
     distribucionMensual: ProtocolizationTimelineItem[]; // Mantenemos el nombre por compatibilidad o renombramos a timeline
+    protocolizadasDetalle: ProtocolizedMareaDetail[];
 }
 
 // ─── Personal Breakdown (Observadores vs Técnicos) ───────────────────────────

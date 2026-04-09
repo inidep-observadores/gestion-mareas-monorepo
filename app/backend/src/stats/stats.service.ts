@@ -2298,7 +2298,7 @@ export class StatsService {
         detailItems.forEach(item => {
             if (!item.observadorId) return;
             const target = observerTypeMap.get(item.observadorId) === 'OBSERVADOR' ? breakdown.observadores : breakdown.tecnicos;
-            
+
             if (informeStates.has(item.estadoActual as any)) target.informesDeMarea++;
             if (item.estadoActual === MareaEstado.PROTOCOLIZADA) target.informesProtocolizados++;
             if (item.estadoOrden >= 4 && item.estadoOrden < 10) target.informesPendientes++;
@@ -2345,7 +2345,7 @@ export class StatsService {
         // Título
         sheet.mergeCells('A1', 'I1');
         const titleCell = sheet.getCell('A1');
-        titleCell.value = 'Estadísticas de Personal - Auditoría';
+        titleCell.value = 'Estadísticas de Personal';
         titleCell.font = { bold: true, size: 16 };
         titleCell.alignment = { horizontal: 'center' };
 
@@ -2368,11 +2368,11 @@ export class StatsService {
         });
 
         const totalMareasGlobal = stats.totalMareas;
-        
+
         // El KPI científico usa solo los observadores (excluye técnicos)
         // Pero la tabla de ranking (Tabla 2) muestra a todos los que navegaron.
         const dotacionRef = Math.max(dotacionActiva, obsCientificosQueNavegaron);
-        
+
         // Cobertura alineada con Word: % de la dotación que efectivamente navegó
         const cobertura = dotacionRef > 0 ? (obsCientificosQueNavegaron / dotacionRef) : 0;
 
@@ -2457,20 +2457,20 @@ export class StatsService {
             const rankingDataStartRow = totalRow - group.data.length;
             sheet.getCell(totalRow, colOffsetRanking).value = 'TOTAL';
             sheet.getCell(totalRow, colOffsetRanking).font = { bold: true };
-            
+
             const colMareas = colOffsetRanking + 2;
             const colDias = colOffsetRanking + 3;
             const colEtapas = colOffsetRanking + 4;
 
             sheet.getCell(totalRow, colMareas).value = { formula: `SUM(${sheet.getColumn(colMareas).letter}${rankingDataStartRow}:${sheet.getColumn(colMareas).letter}${totalRow - 1})` };
             sheet.getCell(totalRow, colMareas).font = { bold: true };
-            
+
             sheet.getCell(totalRow, colDias).value = { formula: `SUM(${sheet.getColumn(colDias).letter}${rankingDataStartRow}:${sheet.getColumn(colDias).letter}${totalRow - 1})` };
             sheet.getCell(totalRow, colDias).font = { bold: true };
-            
+
             sheet.getCell(totalRow, colEtapas).value = { formula: `SUM(${sheet.getColumn(colEtapas).letter}${rankingDataStartRow}:${sheet.getColumn(colEtapas).letter}${totalRow - 1})` };
             sheet.getCell(totalRow, colEtapas).font = { bold: true };
-            
+
             sheet.getCell(totalRow, colMareas).alignment = { horizontal: 'center' };
             sheet.getCell(totalRow, colDias).alignment = { horizontal: 'center' };
             sheet.getCell(totalRow, colEtapas).alignment = { horizontal: 'center' };
@@ -2480,7 +2480,7 @@ export class StatsService {
                 cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF5F5F5' } };
                 cell.border = { top: { style: 'thin' } };
             }
-            
+
             currentRankingRow += 2; // Espacio entre tablas (o nota aclaratoria al final)
         });
 
@@ -2513,7 +2513,7 @@ export class StatsService {
         // Título de la tabla
         sheet.mergeCells(startRowBreakdown, 1, startRowBreakdown, 4);
         const bTitle = sheet.getCell(startRowBreakdown, 1);
-        bTitle.value = 'Resumen por tipo de observador';
+        bTitle.value = 'Resumen por Tipo de Observador';
         bTitle.font = { bold: true, size: 12 };
         bTitle.alignment = { horizontal: 'left' };
 
@@ -2534,13 +2534,13 @@ export class StatsService {
         bHeaderLabel.font = { bold: true, color: { argb: 'FFFFFFFF' } };
 
         const bRows = [
-            { label: 'Días navegados',            obs: breakdown.observadores.dias,                   tec: breakdown.tecnicos.dias },
-            { label: 'Mareas finalizadas',        obs: breakdown.observadores.mareasFinalizadas,      tec: breakdown.tecnicos.mareasFinalizadas },
-            { label: 'Mareas en ejecución',       obs: breakdown.observadores.mareasEnEjecucion,      tec: breakdown.tecnicos.mareasEnEjecucion },
-            { label: 'Mareas desestimadas',       obs: breakdown.observadores.desestimadas,           tec: breakdown.tecnicos.desestimadas },
-            { label: 'Informes de marea',         obs: breakdown.observadores.informesDeMarea,        tec: breakdown.tecnicos.informesDeMarea },
-            { label: 'Informes protocolizados',   obs: breakdown.observadores.informesProtocolizados,  tec: breakdown.tecnicos.informesProtocolizados },
-            { label: 'Informes pendientes',       obs: breakdown.observadores.informesPendientes,     tec: breakdown.tecnicos.informesPendientes },
+            { label: 'Días navegados', obs: breakdown.observadores.dias, tec: breakdown.tecnicos.dias },
+            { label: 'Mareas finalizadas', obs: breakdown.observadores.mareasFinalizadas, tec: breakdown.tecnicos.mareasFinalizadas },
+            { label: 'Mareas en ejecución', obs: breakdown.observadores.mareasEnEjecucion, tec: breakdown.tecnicos.mareasEnEjecucion },
+            { label: 'Mareas desestimadas', obs: breakdown.observadores.desestimadas, tec: breakdown.tecnicos.desestimadas },
+            { label: 'Informes de marea', obs: breakdown.observadores.informesDeMarea, tec: breakdown.tecnicos.informesDeMarea },
+            { label: 'Informes protocolizados', obs: breakdown.observadores.informesProtocolizados, tec: breakdown.tecnicos.informesProtocolizados },
+            { label: 'Informes pendientes', obs: breakdown.observadores.informesPendientes, tec: breakdown.tecnicos.informesPendientes },
         ];
 
         bRows.forEach((r, idx) => {
@@ -2609,7 +2609,7 @@ export class StatsService {
                 const finStr = item.fechaFin ? new Date(item.fechaFin).toISOString().substring(0, 10) : null;
                 const arriboStr = item.fechaArribo ? new Date(item.fechaArribo).toISOString().substring(0, 10) : null;
                 const limit = limitDateStr.substring(0, 10);
-                
+
                 if (finStr && finStr > limit) fechaMax = null;
                 if (arriboStr && arriboStr > limit) fechaArribo = null;
             }
@@ -2699,10 +2699,10 @@ export class StatsService {
                 sheet.getCell(currentRow, 16).value = obsText;
                 sheet.getCell(currentRow, 16).alignment = { horizontal: 'left', wrapText: false };
 
-                // Resaltar fila completa en ámbar
+                // Resaltar fila completa en ámbar suave para mayor contraste
                 for (let c = 1; c <= 16; c++) {
                     sheet.getCell(currentRow, c).fill = {
-                        type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFF3CD' }
+                        type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEF3C7' }
                     };
                 }
             }
@@ -2734,7 +2734,7 @@ export class StatsService {
             const footerRow = currentRow + 1;
             sheet.mergeCells(footerRow, 1, footerRow, 16);
             const footerCell = sheet.getCell(footerRow, 1);
-            footerCell.value = 'Nota: Las filas resaltadas en amarillo corresponden a mareas derivadas a proyectos externos. La eventual demora en la confección del informe correspondiente es ajena al Proyecto Observadores a Bordo.';
+            footerCell.value = 'Nota: Las filas resaltadas corresponden a mareas que se encuentran en espera de validación de datos por parte de proyectos científicos externos.';
             footerCell.font = { italic: true, size: 10, color: { argb: 'FF475569' } };
             footerCell.alignment = { horizontal: 'left', wrapText: true };
         }
@@ -2753,6 +2753,13 @@ export class StatsService {
         } : undefined;
 
         const calculationLimit = new Date(); // now
+
+        // Título
+        sheet.mergeCells('A1', 'N1');
+        const titleCell = sheet.getCell('A1');
+        titleCell.value = 'Estadísticas por Pesquería';
+        titleCell.font = { bold: true, size: 16 };
+        titleCell.alignment = { horizontal: 'center' };
 
         // 1. Resumen por Pesquería (IZQUIERDA: A-D)
         const startRowResumen = 3;
@@ -2974,7 +2981,7 @@ export class StatsService {
         // Título
         sheet.mergeCells('A1', 'I1');
         const titleCell = sheet.getCell('A1');
-        titleCell.value = 'Mareas con Estado Especial - Auditoría';
+        titleCell.value = 'Mareas con Estado Especial';
         titleCell.font = { bold: true, size: 16 };
         titleCell.alignment = { horizontal: 'center' };
 
@@ -3123,16 +3130,22 @@ export class StatsService {
         const sheet = workbook.addWorksheet('Protocolización');
 
         // Título
-        sheet.mergeCells('A1', 'I1');
+        sheet.mergeCells('A1', 'N1');
         const titleCell = sheet.getCell('A1');
-        titleCell.value = 'Seguimiento de Protocolización - Auditoría';
+        titleCell.value = 'Seguimiento de Protocolización';
         titleCell.font = { bold: true, size: 16 };
         titleCell.alignment = { horizontal: 'center' };
 
-        // ── Bloque KPI izquierdo (cols A–B, desde fila 3) ──
+        // ── Bloque KPI izquierdo (cols A–B) ──
+        sheet.mergeCells(3, 1, 3, 2);
+        const kTitle = sheet.getCell(3, 1);
+        kTitle.value = 'Resumen';
+        kTitle.font = { bold: true, size: 12 };
+        kTitle.alignment = { horizontal: 'left' };
+
         const kpiHeaders = ['Indicador', 'Valor'];
         kpiHeaders.forEach((h, i) => {
-            const cell = sheet.getCell(3, i + 1);
+            const cell = sheet.getCell(4, i + 1);
             cell.value = h;
             cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF00548B' } };
             cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
@@ -3148,19 +3161,25 @@ export class StatsService {
         ];
 
         kpis.forEach((kpi, idx) => {
-            const row = 4 + idx;
+            const row = 5 + idx;
             sheet.getCell(row, 1).value = kpi.label;
             sheet.getCell(row, 1).font = { bold: true };
             sheet.getCell(row, 2).value = kpi.value;
             sheet.getCell(row, 2).alignment = { horizontal: 'center' };
         });
 
-        // ── Tabla temporal (cols E–I, desde fila 3, colOffset = 5) ──
-        const colOffset = 5;
+        // ── Tabla temporal (cols D–H, colOffset = 4) ──
+        const colOffset = 4;
+        sheet.mergeCells(3, colOffset, 3, colOffset + 4);
+        const tTitle = sheet.getCell(3, colOffset);
+        tTitle.value = 'Distribución Temporal';
+        tTitle.font = { bold: true, size: 12 };
+        tTitle.alignment = { horizontal: 'left' };
+
         const temporalLabel = timeline.tipo === 'WEEKLY' ? 'Semana' : 'Mes';
         const tableHeaders = [temporalLabel, 'Enviadas a DNI', 'Protocolizadas', 'Acumulado', '% del Total'];
         tableHeaders.forEach((h, i) => {
-            const cell = sheet.getCell(3, colOffset + i);
+            const cell = sheet.getCell(4, colOffset + i);
             cell.value = h;
             cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF00548B' } };
             cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
@@ -3168,7 +3187,7 @@ export class StatsService {
         });
 
         const activeRows = timeline.distribucionMensual.filter(r => r.cantidad > 0 || r.enviadas > 0);
-        let tableRow = 4;
+        let tableRow = 5;
         let totalEnviadas = 0;
         let totalProtocolizadas = 0;
         let lastAcumulado = 0;
@@ -3204,10 +3223,10 @@ export class StatsService {
             // Fila TOTAL de la tabla mensual
             sheet.getCell(tableRow, colOffset).value = 'TOTAL';
             sheet.getCell(tableRow, colOffset).font = { bold: true };
-            sheet.getCell(tableRow, colOffset + 1).value = { formula: `SUM(F4:F${tableRow - 1})` };
+            sheet.getCell(tableRow, colOffset + 1).value = { formula: `SUM(E5:E${tableRow - 1})` };
             sheet.getCell(tableRow, colOffset + 1).font = { bold: true };
             sheet.getCell(tableRow, colOffset + 1).alignment = { horizontal: 'center' };
-            sheet.getCell(tableRow, colOffset + 2).value = { formula: `SUM(G4:G${tableRow - 1})` };
+            sheet.getCell(tableRow, colOffset + 2).value = { formula: `SUM(F5:F${tableRow - 1})` };
             sheet.getCell(tableRow, colOffset + 2).font = { bold: true };
             sheet.getCell(tableRow, colOffset + 2).alignment = { horizontal: 'center' };
             sheet.getCell(tableRow, colOffset + 3).value = lastAcumulado;
@@ -3216,9 +3235,70 @@ export class StatsService {
             sheet.getCell(tableRow, colOffset + 4).value = timeline.totalProtocolizadas > 0 ? '100%' : 'N/D';
             sheet.getCell(tableRow, colOffset + 4).font = { bold: true };
             sheet.getCell(tableRow, colOffset + 4).alignment = { horizontal: 'center' };
-            // Aplicar fondo gris y borde superior a las celdas de la tabla (5 a 9)
+            // Aplicar fondo gris y borde superior a las celdas de la tabla (offset a offset+4)
             for (let i = 0; i < 5; i++) {
                 const cell = sheet.getCell(tableRow, colOffset + i);
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF5F5F5' } };
+                cell.border = { top: { style: 'thin' } };
+            }
+        }
+
+        // ── Tabla detallada de protocolizaciones (Col J, colOffset = 10) ──
+        const colOffsetDetail = 10;
+        sheet.mergeCells(3, colOffsetDetail, 3, colOffsetDetail + 4);
+        const dTitle = sheet.getCell(3, colOffsetDetail);
+        dTitle.value = 'Protocolizaciones durante el período';
+        dTitle.font = { bold: true, size: 12 };
+        dTitle.alignment = { horizontal: 'left' };
+
+        const detailHeaders = ['Protocolización', 'Fecha Protoc.', 'Marea', 'Buque', 'Observador'];
+        detailHeaders.forEach((h, i) => {
+            const cell = sheet.getCell(4, colOffsetDetail + i);
+            cell.value = h;
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF00548B' } };
+            cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+            cell.alignment = { horizontal: 'center' };
+        });
+
+        let detailRow = 5;
+        if (timeline.protocolizadasDetalle.length === 0) {
+            sheet.mergeCells(detailRow, colOffsetDetail, detailRow, colOffsetDetail + 4);
+            const emptyCell = sheet.getCell(detailRow, colOffsetDetail);
+            emptyCell.value = 'Sin mareas protocolizadas en el período';
+            emptyCell.font = { italic: true, color: { argb: 'FF475569' } };
+            emptyCell.alignment = { horizontal: 'center' };
+            emptyCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF9FAFB' } };
+            detailRow++;
+        } else {
+            timeline.protocolizadasDetalle.forEach(m => {
+                sheet.getCell(detailRow, colOffsetDetail).value = (m.nroProtocolizacion && m.anioProtocolizacion)
+                    ? `${m.nroProtocolizacion}/${m.anioProtocolizacion}`
+                    : '-';
+                sheet.getCell(detailRow, colOffsetDetail + 1).value = m.fechaProtocolizacion ? new Date(m.fechaProtocolizacion) : null;
+                sheet.getCell(detailRow, colOffsetDetail + 2).value = m.id_marea;
+                sheet.getCell(detailRow, colOffsetDetail + 3).value = m.buque;
+                sheet.getCell(detailRow, colOffsetDetail + 4).value = m.observador;
+
+                sheet.getCell(detailRow, colOffsetDetail).alignment = { horizontal: 'center' };
+                sheet.getCell(detailRow, colOffsetDetail + 1).numFmt = 'dd/mm/yyyy';
+                sheet.getCell(detailRow, colOffsetDetail + 1).alignment = { horizontal: 'center' };
+                sheet.getCell(detailRow, colOffsetDetail + 2).alignment = { horizontal: 'center' };
+                detailRow++;
+            });
+
+            // Fila TOTAL del detalle
+            sheet.getCell(detailRow, colOffsetDetail).value = 'TOTAL';
+            sheet.getCell(detailRow, colOffsetDetail).font = { bold: true };
+            const startRange = 5;
+            const endRange = detailRow - 1;
+            const colLetter = sheet.getColumn(colOffsetDetail).letter;
+            sheet.getCell(detailRow, colOffsetDetail + 2).value = { formula: `COUNTA(${colLetter}${startRange}:${colLetter}${endRange})` };
+            sheet.getCell(detailRow, colOffsetDetail + 2).font = { bold: true };
+            sheet.getCell(detailRow, colOffsetDetail + 2).alignment = { horizontal: 'center' };
+
+            // Aplicar fondo gris y borde superior a la fila de total (Cols offset a offset+4)
+            for (let i = 0; i < 5; i++) {
+                const cell = sheet.getCell(detailRow, colOffsetDetail + i);
                 cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF5F5F5' } };
                 cell.border = { top: { style: 'thin' } };
             }
@@ -3228,12 +3308,17 @@ export class StatsService {
         sheet.getColumn(1).width = 32; // Indicador
         sheet.getColumn(2).width = 14; // Valor
         sheet.getColumn(3).width = 5;  // spacer
-        sheet.getColumn(4).width = 3;  // separator
-        sheet.getColumn(5).width = 8;  // Mes
-        sheet.getColumn(6).width = 16; // Enviadas a DNI
-        sheet.getColumn(7).width = 16; // Protocolizadas
-        sheet.getColumn(8).width = 12; // Acumulado
-        sheet.getColumn(9).width = 12; // % del Total
+        sheet.getColumn(4).width = 14; // Mes/Semana
+        sheet.getColumn(5).width = 18; // Enviadas a DNI
+        sheet.getColumn(6).width = 18; // Protocolizadas
+        sheet.getColumn(7).width = 14; // Acumulado
+        sheet.getColumn(8).width = 14; // % del Total
+        sheet.getColumn(9).width = 5;  // Separador
+        sheet.getColumn(10).width = 18; // Protocolización
+        sheet.getColumn(11).width = 16; // Fecha Protoc.
+        sheet.getColumn(12).width = 18; // Marea
+        sheet.getColumn(13).width = 30; // Buque
+        sheet.getColumn(14).width = 35; // Observador
     }
 
     // ─── A3: Secondary observer counts per observer ───────────────────────────
@@ -3476,8 +3561,16 @@ export class StatsService {
                     fechaProtocolizacion: { gte: periodStart, lte: periodEnd },
                 },
                 select: {
+                    id: true,
+                    nroMarea: true,
+                    anioMarea: true,
+                    tipoMarea: true,
                     fechaProtocolizacion: true,
                     fechaEnvioProtocolizacion: true,
+                    nroProtocolizacion: true,
+                    anioProtocolizacion: true,
+                    buque: { select: { nombreBuque: true } },
+                    observadorPrincipal: { select: { nombre: true, apellido: true } },
                     movimientos: {
                         where: { estadoHasta: { codigo: MareaEstado.ENTREGADA_RECIBIDA } },
                         orderBy: { fechaHora: 'asc' as const },
@@ -3625,6 +3718,20 @@ export class StatsService {
             promedioDiasLatenciaTramite,
             maxDiasLatenciaTramite,
             distribucionMensual,
+            protocolizadasDetalle: protocolizadas.map(m => ({
+                id: m.id,
+                id_marea: MareaUtils.formatCodigo(m as any),
+                buque: m.buque?.nombreBuque || 'Desconocido',
+                observador: m.observadorPrincipal ? `${m.observadorPrincipal.nombre} ${m.observadorPrincipal.apellido}` : 'Sin asignar',
+                nroProtocolizacion: m.nroProtocolizacion,
+                anioProtocolizacion: m.anioProtocolizacion,
+                fechaProtocolizacion: m.fechaProtocolizacion,
+            })).sort((a, b) => {
+                if (a.anioProtocolizacion !== b.anioProtocolizacion) {
+                    return (a.anioProtocolizacion || 0) - (b.anioProtocolizacion || 0);
+                }
+                return (a.nroProtocolizacion || 0) - (b.nroProtocolizacion || 0);
+            }),
         };
     }
 }
