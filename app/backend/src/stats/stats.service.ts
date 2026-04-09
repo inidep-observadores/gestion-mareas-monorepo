@@ -2454,17 +2454,26 @@ export class StatsService {
 
             // Fila de TOTAL para este grupo
             const totalRow = currentRankingRow;
+            const rankingDataStartRow = totalRow - group.data.length;
             sheet.getCell(totalRow, colOffsetRanking).value = 'TOTAL';
             sheet.getCell(totalRow, colOffsetRanking).font = { bold: true };
-            sheet.getCell(totalRow, colOffsetRanking + 2).value = gMareas;
-            sheet.getCell(totalRow, colOffsetRanking + 2).font = { bold: true };
-            sheet.getCell(totalRow, colOffsetRanking + 3).value = gDias;
-            sheet.getCell(totalRow, colOffsetRanking + 3).font = { bold: true };
-            sheet.getCell(totalRow, colOffsetRanking + 4).value = gEtapas;
-            sheet.getCell(totalRow, colOffsetRanking + 4).font = { bold: true };
-            sheet.getCell(totalRow, colOffsetRanking + 2).alignment = { horizontal: 'center' };
-            sheet.getCell(totalRow, colOffsetRanking + 3).alignment = { horizontal: 'center' };
-            sheet.getCell(totalRow, colOffsetRanking + 4).alignment = { horizontal: 'center' };
+            
+            const colMareas = colOffsetRanking + 2;
+            const colDias = colOffsetRanking + 3;
+            const colEtapas = colOffsetRanking + 4;
+
+            sheet.getCell(totalRow, colMareas).value = { formula: `SUM(${sheet.getColumn(colMareas).letter}${rankingDataStartRow}:${sheet.getColumn(colMareas).letter}${totalRow - 1})` };
+            sheet.getCell(totalRow, colMareas).font = { bold: true };
+            
+            sheet.getCell(totalRow, colDias).value = { formula: `SUM(${sheet.getColumn(colDias).letter}${rankingDataStartRow}:${sheet.getColumn(colDias).letter}${totalRow - 1})` };
+            sheet.getCell(totalRow, colDias).font = { bold: true };
+            
+            sheet.getCell(totalRow, colEtapas).value = { formula: `SUM(${sheet.getColumn(colEtapas).letter}${rankingDataStartRow}:${sheet.getColumn(colEtapas).letter}${totalRow - 1})` };
+            sheet.getCell(totalRow, colEtapas).font = { bold: true };
+            
+            sheet.getCell(totalRow, colMareas).alignment = { horizontal: 'center' };
+            sheet.getCell(totalRow, colDias).alignment = { horizontal: 'center' };
+            sheet.getCell(totalRow, colEtapas).alignment = { horizontal: 'center' };
             // Aplicar fondo gris y borde superior a las celdas de la tabla
             for (let i = 0; i < 5; i++) {
                 const cell = sheet.getCell(totalRow, colOffsetRanking + i);
@@ -2572,8 +2581,8 @@ export class StatsService {
             etapasPorMarea.set(key, Math.max(current, item.nroEtapa || 0));
         });
 
-
         const limitDateStr = endDate ? endDate : `${year}-12-31`;
+        const limitDate = new Date(limitDateStr + 'T23:59:59.999Z');
 
         // Usar detailItems como base (paridad total con la tabla de navegación web)
         const listMareas = detailItems.map(item => {
@@ -2592,6 +2601,19 @@ export class StatsService {
                 }
             }
 
+            let fechaMax = item.fechaFin ? new Date(item.fechaFin) : null;
+            let fechaArribo = item.fechaArribo ? new Date(item.fechaArribo) : null;
+
+            // Corrección: Si está en ejecución y la fecha fin/arribo escapa al rango, la ocultamos
+            if (estadoAuditoria === 'En ejecución') {
+                const finStr = item.fechaFin ? new Date(item.fechaFin).toISOString().substring(0, 10) : null;
+                const arriboStr = item.fechaArribo ? new Date(item.fechaArribo).toISOString().substring(0, 10) : null;
+                const limit = limitDateStr.substring(0, 10);
+                
+                if (finStr && finStr > limit) fechaMax = null;
+                if (arriboStr && arriboStr > limit) fechaArribo = null;
+            }
+
             return {
                 id: item.id_marea,
                 tipo: item.id_marea.split('-')[0],
@@ -2599,9 +2621,9 @@ export class StatsService {
                 flota: item.flota,
                 pesqueria: item.pesqueria,
                 fechaMin: item.fechaInicio ? new Date(item.fechaInicio) : null,
-                fechaMax: item.fechaFin ? new Date(item.fechaFin) : null,
+                fechaMax: fechaMax,
                 fechaZarpada: item.fechaZarpada ? new Date(item.fechaZarpada) : null,
-                fechaArribo: item.fechaArribo ? new Date(item.fechaArribo) : null,
+                fechaArribo: fechaArribo,
                 esDelegada: item.estadoActual === 'DELEGADA_EXTERNA',
                 fechaDerivacion: item.fechaDerivacion ? new Date(item.fechaDerivacion) : null,
                 fechaEnvioProtocolizacion: item.fechaEnvioProtocolizacion ? new Date(item.fechaEnvioProtocolizacion) : null,
@@ -2694,10 +2716,10 @@ export class StatsService {
         // Fila de TOTAL para Navegación
         sheet.getCell(currentRow, 1).value = 'TOTAL';
         sheet.getCell(currentRow, 1).font = { bold: true };
-        sheet.getCell(currentRow, 10).value = totalDias;
+        sheet.getCell(currentRow, 10).value = { formula: `SUM(J4:J${currentRow - 1})` };
         sheet.getCell(currentRow, 10).font = { bold: true };
         sheet.getCell(currentRow, 10).alignment = { horizontal: 'center' };
-        sheet.getCell(currentRow, 11).value = totalEtapas;
+        sheet.getCell(currentRow, 11).value = { formula: `SUM(K4:K${currentRow - 1})` };
         sheet.getCell(currentRow, 11).font = { bold: true };
         sheet.getCell(currentRow, 11).alignment = { horizontal: 'center' };
         // Aplicar fondo gris y borde superior a las celdas de la tabla (1 a 15)
@@ -2799,13 +2821,13 @@ export class StatsService {
         // TOTAL Resumen (Abajo de la tabla resumen)
         sheet.getCell(resRow, 1).value = 'TOTAL';
         sheet.getCell(resRow, 1).font = { bold: true };
-        sheet.getCell(resRow, 2).value = totalMareasPesqueria;
+        sheet.getCell(resRow, 2).value = { formula: `SUM(B4:B${resRow - 1})` };
         sheet.getCell(resRow, 2).font = { bold: true };
         sheet.getCell(resRow, 2).alignment = { horizontal: 'center' };
-        sheet.getCell(resRow, 3).value = totalEtapasPesqueria;
+        sheet.getCell(resRow, 3).value = { formula: `SUM(C4:C${resRow - 1})` };
         sheet.getCell(resRow, 3).font = { bold: true };
         sheet.getCell(resRow, 3).alignment = { horizontal: 'center' };
-        sheet.getCell(resRow, 4).value = totalDiasPesqueria;
+        sheet.getCell(resRow, 4).value = { formula: `SUM(D4:D${resRow - 1})` };
         sheet.getCell(resRow, 4).font = { bold: true };
         sheet.getCell(resRow, 4).alignment = { horizontal: 'center' };
         // Aplicar fondo gris y borde superior a las celdas de la tabla (1 a 4)
@@ -2845,13 +2867,20 @@ export class StatsService {
                 }
             }
 
+            let fechaFin = item.fechaFin ? new Date(item.fechaFin) : null;
+            if (estadoAuditoria === 'En ejecución') {
+                const finStr = item.fechaFin ? new Date(item.fechaFin).toISOString().substring(0, 10) : null;
+                const limit = limitDateStr.substring(0, 10);
+                if (finStr && finStr > limit) fechaFin = null;
+            }
+
             return {
                 pesqueria: item.pesqueria,
                 id: item.id_marea,
                 buque: item.buque,
                 flota: item.flota,
                 inicio: item.fechaInicio ? new Date(item.fechaInicio) : null,
-                fin: item.fechaFin ? new Date(item.fechaFin) : null,
+                fin: fechaFin,
                 etapas: etapasPorMarea.get(item.id_marea) || 1,
                 dias: mode === 'CALENDAR' ? item.diasCalendario : item.diasTotales,
                 estado: estadoAuditoria
@@ -2906,9 +2935,9 @@ export class StatsService {
         // Fila de TOTAL Detalle
         sheet.getCell(detRow, colOffsetDetalle).value = 'TOTAL';
         sheet.getCell(detRow, colOffsetDetalle).font = { bold: true };
-        sheet.getCell(detRow, colOffsetDetalle + 6).value = totalDiasDetalle;
+        sheet.getCell(detRow, colOffsetDetalle + 6).value = { formula: `SUM(L4:L${detRow - 1})` };
         sheet.getCell(detRow, colOffsetDetalle + 6).font = { bold: true };
-        sheet.getCell(detRow, colOffsetDetalle + 7).value = totalEtapasDetalle;
+        sheet.getCell(detRow, colOffsetDetalle + 7).value = { formula: `SUM(M4:M${detRow - 1})` };
         sheet.getCell(detRow, colOffsetDetalle + 7).font = { bold: true };
         sheet.getCell(detRow, colOffsetDetalle + 6).alignment = { horizontal: 'center' };
         sheet.getCell(detRow, colOffsetDetalle + 7).alignment = { horizontal: 'center' };
@@ -3048,7 +3077,8 @@ export class StatsService {
                 // Fila TOTAL de la sección
                 sheet.getCell(currentRow, 1).value = 'TOTAL';
                 sheet.getCell(currentRow, 1).font = { bold: true };
-                sheet.getCell(currentRow, 7).value = totalDias;
+                const sectionStartRow = currentRow - section.data.length;
+                sheet.getCell(currentRow, 7).value = { formula: `SUM(G${sectionStartRow}:G${currentRow - 1})` };
                 sheet.getCell(currentRow, 7).font = { bold: true };
                 sheet.getCell(currentRow, 7).alignment = { horizontal: 'center' };
                 // Aplicar fondo gris y borde superior a las celdas de la tabla (1 a 9)
@@ -3174,10 +3204,10 @@ export class StatsService {
             // Fila TOTAL de la tabla mensual
             sheet.getCell(tableRow, colOffset).value = 'TOTAL';
             sheet.getCell(tableRow, colOffset).font = { bold: true };
-            sheet.getCell(tableRow, colOffset + 1).value = totalEnviadas;
+            sheet.getCell(tableRow, colOffset + 1).value = { formula: `SUM(F4:F${tableRow - 1})` };
             sheet.getCell(tableRow, colOffset + 1).font = { bold: true };
             sheet.getCell(tableRow, colOffset + 1).alignment = { horizontal: 'center' };
-            sheet.getCell(tableRow, colOffset + 2).value = totalProtocolizadas;
+            sheet.getCell(tableRow, colOffset + 2).value = { formula: `SUM(G4:G${tableRow - 1})` };
             sheet.getCell(tableRow, colOffset + 2).font = { bold: true };
             sheet.getCell(tableRow, colOffset + 2).alignment = { horizontal: 'center' };
             sheet.getCell(tableRow, colOffset + 3).value = lastAcumulado;
