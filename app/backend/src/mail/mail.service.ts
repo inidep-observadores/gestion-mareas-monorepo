@@ -39,7 +39,7 @@ export class MailService {
             return false;
         }
     }
-    getProtocolizacionEmailContent(marcadasParaProtocolizar: any[]) {
+    getProtocolizacionEmailContent(marcadasParaProtocolizar: any[], textoAdicional?: string) {
         const subject = 'NOTIFICACIÓN DE MAREAS ENVIADAS A PROTOCOLIZAR';
         let tableRows = '';
         
@@ -99,6 +99,13 @@ export class MailService {
             <p style="font-size: 14px; color: #475569; margin-top: 24px;">
                 Se adjuntan los archivos digitales correspondientes a cada informe.
             </p>
+
+            ${textoAdicional ? `
+            <div style="margin-top: 32px; padding: 20px; background-color: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px;">
+                <h4 style="margin-top: 0; margin-bottom: 12px; font-size: 12px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em;">Notas o aclaraciones:</h4>
+                <p style="margin: 0; font-size: 14px; color: #334155; white-space: pre-wrap;">${textoAdicional}</p>
+            </div>
+            ` : ''}
             
             <div style="margin-top: 48px; padding-top: 24px; border-top: 1px solid #f1f5f9; text-align: left;">
                 <p style="font-size: 10px; color: #94a3b8; font-style: italic; letter-spacing: 0.02em;">
@@ -112,13 +119,18 @@ export class MailService {
         return { subject, body: html };
     }
 
-    async sendProtocolizacionEmail(to: string, marcadasParaProtocolizar: any[], attachmentsConfig: any[], cc?: string) {
+    async sendProtocolizacionEmail(to: string, marcadasParaProtocolizar: any[], attachmentsConfig: any[], cc?: string, bcc?: string, textoAdicional?: string) {
         try {
-            const { subject, body } = this.getProtocolizacionEmailContent(marcadasParaProtocolizar);
+            const { subject, body } = this.getProtocolizacionEmailContent(marcadasParaProtocolizar, textoAdicional);
             
+            // Normalizar destinatarios (bcc puede venir como cadena con comas y espacios)
+            const bccArray = bcc ? bcc.split(',').map(e => e.trim()).filter(e => !!e) : undefined;
+            const ccArray = cc ? cc.split(',').map(e => e.trim()).filter(e => !!e) : undefined;
+
             await this.mailerService.sendMail({
                 to,
-                cc,
+                cc: ccArray,
+                bcc: bccArray,
                 subject,
                 html: body,
                 attachments: attachmentsConfig,
@@ -126,21 +138,26 @@ export class MailService {
 
             return {
                 to,
-                cc,
+                cc: ccArray?.join(', ') || null,
+                bcc: bccArray?.join(', ') || null,
                 subject,
                 body
             };
         } catch (error) {
-            this.logger.error(`Error sending email to ${to} (CC: ${cc || 'N/D'}): ${error.message}`, error.stack);
+            this.logger.error(`Error crítico en sendProtocolizacionEmail a ${to}: ${error.message}`, error.stack);
+            
+            // Detalle para auditoría
             await this.auditService.logEvento({
                 tipoEvento: 'ERROR_ENVIO_EMAIL',
                 categoria: AuditCategoria.SISTEMA,
-                descripcion: `Fallo al enviar correo a ${to} (CC: ${cc || 'N/D'}): Notificación de protocolización`,
+                descripcion: `Fallo al enviar correo a ${to}: ${error.message}`,
                 resultado: AuditResultado.ERROR,
                 metadata: {
                     error: error.message,
+                    stack: error.stack,
                     destinatario: to,
-                    cc: cc || null,
+                    cc,
+                    bcc,
                     asunto: 'Notificación de mareas enviadas a protocolizar'
                 }
             });

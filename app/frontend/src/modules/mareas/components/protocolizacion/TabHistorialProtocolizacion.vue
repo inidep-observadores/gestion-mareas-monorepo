@@ -125,6 +125,15 @@
                     <div class="text-lg font-black text-text text-center">{{ formatDateGroup(detalles.fechaEnvio) }}</div>
                  </div>
               </div>
+
+              <!-- Sección de Notas o Aclaraciones (Prominente) -->
+              <div v-if="detalles.metadata?.textoAdicional" class="mt-8 p-6 bg-primary/5 border border-primary/10 rounded-2xl animate-in fade-in slide-in-from-top-4">
+                <div class="flex items-center gap-2 mb-3">
+                  <div class="w-1.5 h-6 bg-primary rounded-full"></div>
+                  <h3 class="text-[10px] font-black uppercase tracking-widest text-primary">Notas o aclaraciones</h3>
+                </div>
+                <p class="text-xs text-text font-bold leading-relaxed whitespace-pre-wrap italic">{{ detalles.metadata.textoAdicional }}</p>
+              </div>
             </div>
 
             <!-- Metadata Email - DESKTOP -->
@@ -191,7 +200,7 @@
                       <label class="text-[9px] font-black text-text-muted uppercase tracking-[0.15em]">Cuerpo del Email</label>
                       <span class="px-1.5 py-0.5 rounded bg-primary/5 text-primary text-[8px] font-black uppercase italic">Sólo Lectura</span>
                     </div>
-                    <button @click="copyAsPlainText(detalles.metadata.email.body)" class="flex items-center gap-2 px-3 py-1.5 hover:bg-primary/10 rounded-lg transition-all group" title="Copiar como tabla de texto">
+                    <button @click="copyAsPlainText(detalles.metadata.email.body, detalles.metadata.textoAdicional)" class="flex items-center gap-2 px-3 py-1.5 hover:bg-primary/10 rounded-lg transition-all group" title="Copiar como tabla de texto">
                       <span class="text-[9px] font-black text-primary uppercase">Copiar como Texto</span>
                       <PageIcon class="w-3.5 h-3.5 text-primary group-hover:scale-110 transition-transform" />
                     </button>
@@ -428,7 +437,7 @@ const itemsOrdenados = computed(() => {
   })
 })
 
-const copyAsPlainText = async (html: string) => {
+const copyAsPlainText = async (html: string, notas?: string) => {
   try {
     const parser = new DOMParser()
     const doc = parser.parseFromString(html, 'text/html')
@@ -437,7 +446,11 @@ const copyAsPlainText = async (html: string) => {
     const rows = Array.from(doc.querySelectorAll('tr'))
     if (rows.length === 0) {
       // Si no hay tabla, copiar texto plano básico
-      await navigator.clipboard.writeText(doc.body.innerText)
+      let content = doc.body.innerText
+      if (notas) {
+        content += `\n\nNOTAS O ACLARACIONES:\n${notas}`
+      }
+      await navigator.clipboard.writeText(content)
       toast.success('Contenido copiado como texto')
       return
     }
@@ -451,7 +464,13 @@ const copyAsPlainText = async (html: string) => {
       row.map((cell, i) => cell.padEnd(colWidths[i])).join('')
     ).join('\n')
 
-    const finalResult = `NOTIFICACIÓN DE ENVÍO DE INFORMES DE MAREA\n\n${plainText}\n\nEnviado desde SIGMA - INIDEP`
+    let finalResult = `NOTIFICACIÓN DE ENVÍO DE INFORMES DE MAREA\n\n${plainText}`
+    
+    if (notas) {
+      finalResult += `\n\nNOTAS O ACLARACIONES:\n${notas}`
+    }
+
+    finalResult += `\n\nEnviado desde SIGMA - INIDEP`
     
     await navigator.clipboard.writeText(finalResult)
     toast.success('Tabla copiada como texto alineado')

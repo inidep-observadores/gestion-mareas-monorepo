@@ -3202,6 +3202,9 @@ export class MareasService {
                         contentType: newFile.mimetype,
                     });
                 } else if (existingFile) {
+                    if (!fs.existsSync(existingFile.rutaArchivo)) {
+                        throw new BadRequestException(`El archivo de protocolización para la marea ${marea.nroMarea}/${marea.anioMarea} no se encuentra físicamente en el servidor (${existingFile.rutaArchivo}). Por favor, vuelva a adjuntarlo.`);
+                    }
                     const metadata = existingFile.metadata as any;
                     const originalName = metadata?.originalName || `INFORME_APROBACION_MAREA_${marea.nroMarea}_${marea.anioMarea}.docx`;
                     attachmentsConfig.push({
@@ -3232,8 +3235,9 @@ export class MareasService {
 
              // Sanitizamos: si es una cadena vacía o espacios, pasamos undefined
              const sanitizedCc = adminEmailCc?.trim() || undefined;
+             const sanitizedBcc = dto.cco?.trim() || undefined;
 
-             const emailResult = await this.mailService.sendProtocolizacionEmail(adminEmailTo, mareas, attachmentsConfig, sanitizedCc);
+             const emailResult = await this.mailService.sendProtocolizacionEmail(adminEmailTo, mareas, attachmentsConfig, sanitizedCc, sanitizedBcc, dto.textoAdicional);
              if (!emailResult) {
                  throw new BadRequestException('Ocurrió un error al enviar el correo electrónico mediante el servicio interno.');
              }
@@ -3242,6 +3246,7 @@ export class MareasService {
 
         const metadata: ProtocolizacionLoteMetadata = {
             email: emailMetadata,
+            textoAdicional: dto.textoAdicional,
             enviadoPorCanalExterno: dto.enviadoPorCanalExterno,
             timestamp: DateUtils.getNow(true).toISOString()
         };
