@@ -30,7 +30,8 @@
     "validate:pna:2024": "ts-node src/pna-api/scripts/validate-pna-2024.ts",
     "validate:pna:2025": "ts-node src/pna-api/scripts/validate-pna-2025.ts",
     "validate:pna:2026": "ts-node src/pna-api/scripts/validate-pna-2026.ts",
-    "prisma:studio": "prisma studio"
+    "migrate:metadata": "ts-node -r tsconfig-paths/register src/scripts/backfill-protocolizacion-metadata.ts",
+    "prisma:studio": "pnpm prisma studio"
   },
   "dependencies": {
     "@napi-rs/canvas": "^0.1.97",
