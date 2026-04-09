@@ -13,6 +13,7 @@ import { MareaEstado, TipoEtapa, TipoMarea } from './mareas.constants';
 import { EnviarProtocolizacionDto } from './dto/enviar-protocolizacion.dto';
 import { ConfirmarProtocolizacionDto } from './dto/confirmar-protocolizacion.dto';
 import { MareaEtapaMetadata } from './interfaces/marea-etapa-metadata.interface';
+import { ProtocolizacionLoteMetadata } from './interfaces/protocolizacion-lote-metadata.interface';
 import { DateUtils } from '../common/utils/date.utils';
 import { MareaUtils } from '../common/utils/marea.utils';
 import { ConfigService } from '@nestjs/config';
@@ -3220,6 +3221,7 @@ export class MareasService {
         }
 
         // Send Email
+        let emailMetadata: any = null;
         if (!dto.enviadoPorCanalExterno) {
              const adminEmailTo = this.configService.get<string>('PROTOCOLIZACION_EMAIL_TO');
              const adminEmailCc = this.configService.get<string>('PROTOCOLIZACION_EMAIL_CC');
@@ -3231,11 +3233,18 @@ export class MareasService {
              // Sanitizamos: si es una cadena vacía o espacios, pasamos undefined
              const sanitizedCc = adminEmailCc?.trim() || undefined;
 
-             const sent = await this.mailService.sendProtocolizacionEmail(adminEmailTo, mareas, attachmentsConfig, sanitizedCc);
-             if (!sent) {
+             const emailResult = await this.mailService.sendProtocolizacionEmail(adminEmailTo, mareas, attachmentsConfig, sanitizedCc);
+             if (!emailResult) {
                  throw new BadRequestException('Ocurrió un error al enviar el correo electrónico mediante el servicio interno.');
              }
+             emailMetadata = emailResult;
         }
+
+        const metadata: ProtocolizacionLoteMetadata = {
+            email: emailMetadata,
+            enviadoPorCanalExterno: dto.enviadoPorCanalExterno,
+            timestamp: DateUtils.getNow(true).toISOString()
+        };
 
         const uploadsBase = this.configService.get<string>('UPLOADS_PATH') || './uploads';
         const protocolizacionDir = this.configService.get<string>('MAREA_INFORMES_DIR') || path.join(uploadsBase, 'informes_marea');
@@ -3250,13 +3259,14 @@ export class MareasService {
 
         return this.prisma.$transaction(async (tx) => {
             // 1. Crear el Lote (Cabecera)
-            const lote = await tx.protocolizacionLote.create({
+            const lote = await (tx as any).protocolizacionLote.create({
                 data: {
                     usuarioId: user.id,
                     canal: dto.enviadoPorCanalExterno ? 'CANAL EXTERNO' : 'EMAIL',
                     fechaEnvio: dto.enviadoPorCanalExterno && dto.fechaEnvio 
                         ? new Date(dto.fechaEnvio) 
                         : DateUtils.getNow(true),
+                    metadata: metadata as any
                 }
             });
 
@@ -3375,7 +3385,7 @@ export class MareasService {
     }
 
     async getProtocolizacionLoteDetalle(id: string) {
-        return this.prisma.protocolizacionLote.findUnique({
+        return (this.prisma as any).protocolizacionLote.findUnique({
             where: { id },
             include: {
                 usuario: { select: { fullName: true } },
@@ -3389,7 +3399,8 @@ export class MareasService {
                         }
                     }
                 }
-            }
+            } as any
         });
     }
+
 }
