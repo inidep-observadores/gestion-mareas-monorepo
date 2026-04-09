@@ -931,7 +931,6 @@ export class MareasService {
             MareaEstado.ENTREGADA_RECIBIDA,     // Orden 4
             MareaEstado.VERIFICACION_INICIAL,   // Orden 5
             MareaEstado.EN_CORRECCION,          // Orden 6
-            MareaEstado.DELEGADA_EXTERNA,       // Orden 7
             MareaEstado.PENDIENTE_DE_INFORME    // Orden 8
         ];
 
