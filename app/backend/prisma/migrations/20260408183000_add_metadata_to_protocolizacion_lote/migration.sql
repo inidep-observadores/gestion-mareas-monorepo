@@ -1,2 +1,2 @@
 -- AlterTable
-ALTER TABLE "public"."ProtocolizacionLote" ADD COLUMN "metadata" JSONB;
+ALTER TABLE "public"."protocolizacion_lotes" ADD COLUMN "metadata" JSONB;
