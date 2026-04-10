@@ -812,15 +812,23 @@ export class AuditReportBuilder {
             return this.sortMareaId(a.id_marea, b.id_marea);
         });
 
-        const alignments = [AlignmentType.LEFT, AlignmentType.LEFT, AlignmentType.CENTER, AlignmentType.CENTER, AlignmentType.CENTER, AlignmentType.CENTER, AlignmentType.CENTER];
+        const alignments = [
+            AlignmentType.LEFT,
+            AlignmentType.LEFT,
+            AlignmentType.CENTER,
+            AlignmentType.CENTER,
+            AlignmentType.CENTER,
+            AlignmentType.CENTER,
+            AlignmentType.CENTER, // Nº Prot.
+            AlignmentType.CENTER  // Fecha Prot.
+        ];
 
         const result: (Paragraph | Table)[] = [
-            new Paragraph({ children: [new PageBreak()] }),
             this.heading1('5. DETALLE DE NAVEGACIÓN'),
             this.heading2('5.1 Mareas finalizadas en el período'),
             this.bodyParagraph(introText),
             createFormattedTable(
-                ['PESQUERÍA', 'BUQUE', 'MAREA', 'ETAPAS', 'DÍAS', 'ENV. DNI', 'PROTOCOLIZ.'],
+                ['PESQUERÍA', 'BUQUE', 'MAREA', 'ETAPAS', 'DÍAS', 'ENV. DNI', 'Nº PROT.', 'FECHA PROT.'],
                 sorted.map((m: any) => ({
                     data: [
                         m.pesqueria,
@@ -829,12 +837,13 @@ export class AuditReportBuilder {
                         m.etapas.toString(),
                         m.dias.toString(),
                         m.fechaEnvioProtocolizacion ? this.formatShortDate(m.fechaEnvioProtocolizacion) : '-',
-                        this.formatProtocolizacionCell(m.nroProtocolizacion, m.anioProtocolizacion, m.fechaProtocolizacion),
+                        (m.nroProtocolizacion != null && m.anioProtocolizacion != null) ? `${m.nroProtocolizacion}/${m.anioProtocolizacion}` : '-',
+                        m.fechaProtocolizacion ? this.formatShortDate(m.fechaProtocolizacion) : '-',
                     ],
                     highlighted: m.estadoActual === 'DELEGADA_EXTERNA',
                 })),
                 {
-                    columnWidths: [20, 22, 12, 10, 10, 13, 13],
+                    columnWidths: [18, 20, 11, 8, 9, 11, 11, 12],
                     alignments,
                 },
             ),
@@ -855,7 +864,7 @@ export class AuditReportBuilder {
         const delegadas = [...data.specialCases.delegadasExternas].sort((a, b) => this.sortMareaId(a.id_marea, b.id_marea));
         if (delegadas.length > 0) {
             const n = delegadas.length;
-            const delegadasText = `${n} marea${n !== 1 ? 's' : ''} registrada${n !== 1 ? 's' : ''} en el período se encuentra${n !== 1 ? 'n' : ''} derivada${n !== 1 ? 's' : ''} a programas científicos externos para validación de sus datos. La eventual demora en la confección del informe correspondiente es ajena al Proyecto Observadores a Bordo.`;
+            const delegadasText = `${n} marea${n !== 1 ? 's' : ''} registrada${n !== 1 ? 's' : ''} en el período se encuentra${n !== 1 ? 'n' : ''} derivada${n !== 1 ? 's' : ''} a programas científicos externos para validación de sus datos. La eventual demora en la confección del informe correspondiente es ajena al Programa Observadores a Bordo.`;
             result.push(
                 this.heading2('5.2 Mareas derivadas a programas científicos externos'),
                 this.bodyParagraph(delegadasText),

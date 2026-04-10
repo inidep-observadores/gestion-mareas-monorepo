@@ -3013,7 +3013,7 @@ export class StatsService {
                 getObs: (_: import('./interfaces/dashboard.interface').AuditSpecialMarea) => '',
             },
             {
-                label: 'Derivadas a Proyectos Externos',
+                label: 'Derivadas a Programas Externos',
                 color: 'FFFF9800',
                 data: specialCases.delegadasExternas,
                 getObs: (_: import('./interfaces/dashboard.interface').AuditSpecialMarea) => 'Derivada a programa externo',

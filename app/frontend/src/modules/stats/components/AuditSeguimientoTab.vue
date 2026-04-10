@@ -77,7 +77,7 @@
                   :items="specialCases.delegadasExternas"
                   event-label="Fecha derivación" />
                <p class="text-[9px] font-medium text-amber-700/70 mt-2 px-1 leading-relaxed">
-                  La demora en la confección del informe de estas mareas es ajena al Proyecto Observadores a Bordo.
+                  La demora en la confección del informe de estas mareas es ajena al Programa Observadores a Bordo.
                </p>
             </div>
 

@@ -47,7 +47,7 @@ En esta etapa se trabaja activamente con los DBF/Excel.
 
 ### **7\. DELEGADA\_EXTERNA**
 
-La marea fue enviada al **laboratorio o proyecto correspondiente** para revisión/corrección externa.  
+La marea fue enviada al **programa científico correspondiente** para revisión/corrección externa.  
 Esperando devolución.
 
 ### **8\. PENDIENTE\_DE\_INFORME**
