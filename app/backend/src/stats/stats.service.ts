@@ -43,9 +43,9 @@ export class StatsService {
 
         if (activeStage) return MareaEstado.EN_EJECUCION;
 
-        // 2. Si no está navegando, buscamos el último movimiento administrativo hasta esa fecha
-        const lastMov = marea.movimientos?.[0];
-        if (lastMov) return lastMov.estadoHasta?.codigo || MareaEstado.DESIGNADA;
+        // 2. Si no está navegando, buscamos el último movimiento que efectivamente cambió el estado
+        const lastStateMov = marea.movimientos?.find(mov => mov.estadoHasta?.codigo);
+        if (lastStateMov) return lastStateMov.estadoHasta.codigo;
 
         // 3. Fallback adicional por si no hay historial de movimientos (basado en la primera/última etapa)
         const firstStage = marea.etapas?.[0];
@@ -3496,7 +3496,15 @@ export class StatsService {
                             },
                         },
                     },
-                    { anioMarea: year }, // Para capturar canceladas/desestimadas que quizás ni zarparon
+                    { anioMarea: year }, // Para capturar canceladas/desestimadas que quizás ni zarparon en el año
+                    {
+                        movimientos: {
+                            some: {
+                                fechaHora: { gte: periodStart, lte: snapEnd },
+                                estadoHasta: { codigo: { in: [MareaEstado.CANCELADA, MareaEstado.DESESTIMADA] } }
+                            }
+                        }
+                    }
                 ],
                 ...tipoMareaFilter,
             },
@@ -3572,9 +3580,23 @@ export class StatsService {
             };
 
             // Categorización según estado histórico
-            if (stateCode === MareaEstado.CANCELADA) {
+            const cancellationMov = m.movimientos?.find(mov => mov.estadoHasta?.codigo === MareaEstado.CANCELADA);
+            const desestimacionMov = m.movimientos?.find(mov => mov.estadoHasta?.codigo === MareaEstado.DESESTIMADA);
+
+            const isCancelledInPeriod = cancellationMov && 
+                                       cancellationMov.fechaHora >= periodStart && 
+                                       cancellationMov.fechaHora <= snapEnd;
+            
+            const isDesestimadaInPeriod = desestimacionMov && 
+                                         desestimacionMov.fechaHora >= periodStart && 
+                                         desestimacionMov.fechaHora <= snapEnd;
+
+            // Categorización según estado histórico (Priorizamos eventos terminales detectados en el periodo)
+            if (isCancelledInPeriod) {
+                mareaData.fechaEvento = cancellationMov.fechaHora;
                 results.canceladas.push(mareaData);
-            } else if (stateCode === MareaEstado.DESESTIMADA) {
+            } else if (isDesestimadaInPeriod) {
+                mareaData.fechaEvento = desestimacionMov.fechaHora;
                 results.desestimadas.push(mareaData);
             } else if (stateCode === MareaEstado.ESPERANDO_ENTREGA) {
                 results.esperandoEntrega.push(mareaData);
@@ -3587,6 +3609,9 @@ export class StatsService {
             } else if (stateCode === MareaEstado.EN_EJECUCION) {
                 // Nota: Las en ejecución no suelen ir en esta sección detalle,
                 // ya tienen su propia sección 6 y el resumen ejecutivo.
+            } else if (stateCode === MareaEstado.CANCELADA || stateCode === MareaEstado.DESESTIMADA) {
+                // Casos que están en este estado pero cuyo evento principal fue FUERA del periodo
+                // se ignoran intencionalmente según el criterio de rigor temporal.
             } else {
                 // Estados intermedios entre recepción e informe listo (vía orden)
                 const order = this.getStateOrder(stateCode);
