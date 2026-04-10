@@ -26,6 +26,12 @@
                title="Generar informe narrativo completo en formato Word (.docx)"
                class="px-4 py-2.5 rounded-xl border border-blue-500/20 bg-surface shadow-theme-xs"
                @click="handleExportWord" />
+            <ExportPdfButton
+               :loading="exportingPdf"
+               label="PREVISUALIZAR"
+               title="Previsualizar informe completo en formato PDF en una nueva pestaña"
+               class="px-4 py-2.5 rounded-xl border border-emerald-500/20 bg-surface shadow-theme-xs"
+               @click="handleExportPdf" />
             <ExportExcelButton
                :loading="exporting"
                label="DATOS EXCEL"
@@ -112,6 +118,7 @@ import AuditPesqueriasTab from './AuditPesqueriasTab.vue'
 import AuditSeguimientoTab from './AuditSeguimientoTab.vue'
 import ExportExcelButton from '@/modules/shared/components/ExportExcelButton.vue'
 import ExportWordButton from '@/modules/shared/components/ExportWordButton.vue'
+import ExportPdfButton from '@/modules/shared/components/ExportPdfButton.vue'
 import type {
    DashboardStats, MareaDistributionItem, StatsDetailItem,
    AuditSpecialCasesResult, ProtocolizationTimelineResult, ObserverSecondaryStats
@@ -258,6 +265,7 @@ watch(() => props.stats, () => {
 // ── Exports ───────────────────────────────────────────────
 const exporting = ref(false)
 const exportingWord = ref(false)
+const exportingPdf = ref(false)
 
 const handleExportAudit = async () => {
    if (!props.stats || exporting.value) return
@@ -286,6 +294,20 @@ const handleExportWord = async () => {
       )
    } catch (e) { console.error('Error exporting word audit report:', e) }
    finally { exportingWord.value = false }
+}
+
+const handleExportPdf = async () => {
+   if (!props.stats || exportingPdf.value) return
+   exportingPdf.value = true
+   try {
+      await statsService.openAuditReportPdf(
+         props.year, props.mode, !props.protocolizedOnly, props.includeOutOfPeriod,
+         props.includeCampaigns,
+         props.startDate || undefined, props.endDate || undefined,
+         props.startDate || undefined, props.endDate || undefined
+      )
+   } catch (e) { console.error('Error opening pdf audit report:', e) }
+   finally { exportingPdf.value = false }
 }
 </script>
 

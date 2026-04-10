@@ -229,6 +229,26 @@ export class AuditReportBuilder {
                         },
                     },
                 },
+                paragraphStyles: [
+                    {
+                        id: "Header",
+                        name: "Header",
+                        run: {
+                            font: "Arial",
+                            size: 16,
+                            color: INIDEP_COLORS.text,
+                        },
+                    },
+                    {
+                        id: "Footer",
+                        name: "Footer",
+                        run: {
+                            font: "Arial",
+                            size: 16,
+                            color: INIDEP_COLORS.text,
+                        },
+                    },
+                ],
             },
             sections: [{
                 properties: {
@@ -448,10 +468,12 @@ export class AuditReportBuilder {
                                     children: [
                                         new Paragraph({
                                             alignment: AlignmentType.LEFT,
+                                            style: "Header",
                                             children: [
                                                 new TextRun({
                                                     text: 'Programa Observadores a Bordo - INIDEP',
                                                     bold: false,
+                                                    font: "Arial",
                                                     color: INIDEP_COLORS.text,
                                                     size: 16,
                                                 }),
@@ -469,10 +491,12 @@ export class AuditReportBuilder {
                                     children: [
                                         new Paragraph({
                                             alignment: AlignmentType.RIGHT,
+                                            style: "Header",
                                             children: [
                                                 new TextRun({
                                                     text: `Informe de Ejecución de Mareas - ${period.short}`,
                                                     bold: false,
+                                                    font: "Arial",
                                                     size: 16,
                                                     color: INIDEP_COLORS.text,
                                                 }),
@@ -517,12 +541,14 @@ export class AuditReportBuilder {
                                     children: [
                                         new Paragraph({
                                             alignment: AlignmentType.LEFT,
+                                            style: "Footer",
                                             spacing: { before: 100 },
                                             children: [
                                                 new TextRun({
                                                     text: 'SIGMA - Sistema Integral de Gestión de Mareas',
+                                                    font: "Arial",
                                                     size: 16,
-                                                    color: INIDEP_COLORS.textMuted,
+                                                    color: INIDEP_COLORS.text,
                                                 }),
                                             ],
                                         }),
@@ -539,10 +565,11 @@ export class AuditReportBuilder {
                                     children: [
                                         new Paragraph({
                                             alignment: AlignmentType.RIGHT,
+                                            style: "Footer",
                                             spacing: { before: 100 },
                                             children: [
-                                                new TextRun({ text: 'Página ', size: 16, color: INIDEP_COLORS.textMuted }),
-                                                new TextRun({ children: [PageNumber.CURRENT], size: 16, color: INIDEP_COLORS.textMuted }),
+                                                new TextRun({ text: 'Página ', font: "Arial", size: 16, color: INIDEP_COLORS.text }),
+                                                new TextRun({ children: [PageNumber.CURRENT], font: "Arial", size: 16, color: INIDEP_COLORS.text }),
                                             ],
                                         }),
                                     ],

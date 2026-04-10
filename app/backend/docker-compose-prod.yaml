@@ -56,6 +56,13 @@ services:
     networks:
       - sigma-network
 
+  gotenberg:
+    image: gotenberg/gotenberg:8
+    restart: always
+    container_name: sigma-gotenberg
+    networks:
+      - sigma-network
+
 networks:
   sigma-network:
     driver: bridge

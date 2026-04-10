@@ -27,3 +27,10 @@ services:
     volumes:
       - ./redis_data:/data
     command: redis-server --appendonly yes
+
+  gotenberg:
+    image: gotenberg/gotenberg:8
+    restart: always
+    container_name: sigma-gotenberg-dev
+    ports:
+      - "3003:3000"

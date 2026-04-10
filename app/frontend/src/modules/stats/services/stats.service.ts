@@ -377,6 +377,45 @@ export const statsService = {
         link.click();
         link.remove();
         window.URL.revokeObjectURL(url);
+    },
+
+    async openAuditReportPdf(
+        year: number,
+        mode: 'CALENDAR' | 'TOTAL',
+        includeNonProtocolized: boolean,
+        includeProtocolizedOutOfPeriod: boolean,
+        includeCampaigns: boolean,
+        startDate?: string,
+        endDate?: string,
+        protocolizationStartDate?: string,
+        protocolizationEndDate?: string
+    ) {
+        const params = new URLSearchParams({
+            year: year.toString(),
+            mode,
+            includeNonProtocolized: String(includeNonProtocolized),
+            includeProtocolizedOutOfPeriod: String(includeProtocolizedOutOfPeriod),
+            includeCampaigns: String(includeCampaigns)
+        });
+
+        if (startDate) params.append('startDate', startDate);
+        if (endDate) params.append('endDate', endDate);
+        if (protocolizationStartDate) params.append('protocolizationStartDate', protocolizationStartDate);
+        if (protocolizationEndDate) params.append('protocolizationEndDate', protocolizationEndDate);
+
+        const response = await httpClient.get('/reports/audit-report/pdf', {
+            params,
+            responseType: 'blob'
+        });
+
+        const blob = new Blob([response.data], { type: 'application/pdf' });
+        const url = window.URL.createObjectURL(blob);
+        
+        // Abrir en una pestaña nueva para previsualización
+        window.open(url, '_blank');
+        
+        // Nota: No podemos hacer revokeObjectURL inmediatamente porque la pestaña necesita la URL
+        // El navegador la limpiará al cerrar la pestaña o el documento.
     }
 };
 

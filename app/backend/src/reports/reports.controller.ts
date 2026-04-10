@@ -43,4 +43,37 @@ export class ReportsController {
         res.setHeader('Content-Disposition', `attachment; filename=${filename}`);
         res.send(buffer);
     }
+
+    /**
+     * Endpoint para generar el informe de auditoría en formato .pdf
+     * GET /reports/audit-report/pdf
+     */
+    @Get('audit-report/pdf')
+    async getAuditReportPdf(
+        @Res() res: Response,
+        @Query() query: GetStatsDto,
+    ) {
+        const toBool = (val: any) => val === 'true' || val === true;
+
+        const buffer = await this.reportsService.generateAuditReportPdf({
+            year: Number(query.year),
+            mode: query.mode || 'CALENDAR',
+            includeNonProtocolized: toBool(query.includeNonProtocolized),
+            includeProtocolizedOutOfPeriod: toBool(query.includeProtocolizedOutOfPeriod),
+            includeCampaigns: toBool(query.includeCampaigns),
+            startDate: query.startDate,
+            endDate: query.endDate,
+            protocolizationStartDate: query.protocolizationStartDate,
+            protocolizationEndDate: query.protocolizationEndDate,
+        });
+
+        const filename = query.customFilename
+            ? `${query.customFilename}.pdf`
+            : `Informe_Auditoria_Mareas_${query.year}.pdf`;
+
+        // Usar 'inline' para permitir apertura en el navegador (previsualización)
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `inline; filename=${filename}`);
+        res.send(buffer);
+    }
 }

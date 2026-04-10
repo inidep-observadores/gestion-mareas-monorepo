@@ -22,6 +22,8 @@ export interface AuditReportParams {
     protocolizationEndDate?: string;
 }
 
+import { ConversionService } from './conversion.service';
+
 @Injectable()
 export class ReportsService {
     private readonly logger = new Logger(ReportsService.name);
@@ -30,6 +32,7 @@ export class ReportsService {
         private readonly statsService: StatsService,
         private readonly prisma: PrismaService,
         private readonly auditReportBuilder: AuditReportBuilder,
+        private readonly conversionService: ConversionService,
     ) {}
 
     /**
@@ -198,5 +201,22 @@ export class ReportsService {
         this.logger.log(`Informe generado exitosamente (${(buffer.length / 1024).toFixed(0)} KB)`);
 
         return buffer;
+    }
+
+    /**
+     * Genera el informe de auditoría en formato .pdf
+     * @returns Buffer con el contenido del archivo PDF
+     */
+    async generateAuditReportPdf(params: AuditReportParams): Promise<Buffer> {
+        this.logger.log(`Iniciando generación de PDF para informe de auditoría...`);
+
+        // 1. Generar primero el archivo Word usando la lógica existente
+        const wordBuffer = await this.generateAuditReport(params);
+
+        // 2. Convertir el buffer Word a PDF vía Gotenberg
+        const fileName = `Informe_Auditoria_${params.year}_${params.mode}.docx`;
+        const pdfBuffer = await this.conversionService.convertDocxToPdf(wordBuffer, fileName);
+
+        return pdfBuffer;
     }
 }
