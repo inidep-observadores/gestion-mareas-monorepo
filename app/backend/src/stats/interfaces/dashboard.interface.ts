@@ -36,7 +36,7 @@ export interface StatsDetailItem {
     fechaZarpada: Date | string | null;
     /** Fecha de arribo de la última etapa del buque */
     fechaArribo: Date | string | null;
-    /** Fecha en que la marea fue derivada a proyecto externo (solo para DELEGADA_EXTERNA) */
+    /** Fecha en que la marea fue derivada a programa científico externo (solo para DELEGADA_EXTERNA) */
     fechaDerivacion: Date | string | null;
     /** Fecha de envío a la DNI para protocolización */
     fechaEnvioProtocolizacion: Date | string | null;

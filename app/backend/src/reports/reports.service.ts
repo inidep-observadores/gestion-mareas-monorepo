@@ -70,9 +70,9 @@ export class ReportsService {
         const observerIds = stats.observers.map((o: any) => o.id);
         const observersData = await this.prisma.observador.findMany({
             where: { id: { in: observerIds } },
-            select: { id: true, tipoObservador: true },
+            select: { id: true, tipoObservador: true, tipoContrato: true },
         });
-        const observerTypeMap = new Map(observersData.map(o => [o.id, o.tipoObservador]));
+        const observerDataMap = new Map(observersData.map(o => [o.id, { tipoObservador: o.tipoObservador, tipoContrato: o.tipoContrato }]));
 
         // 4. Obtener distribución de mareas (para etapas)
         const distribution = await this.statsService.getMareaDistribution(
@@ -108,7 +108,7 @@ export class ReportsService {
         const breakdown = { observadores: emptySlice(), tecnicos: emptySlice() };
 
         stats.observers.forEach((obs: any) => {
-            const t = observerTypeMap.get(obs.id) === 'OBSERVADOR' ? breakdown.observadores : breakdown.tecnicos;
+            const t = observerDataMap.get(obs.id)?.tipoObservador === 'OBSERVADOR' ? breakdown.observadores : breakdown.tecnicos;
             t.dias += obs.days;
         });
         specialCases.desestimadas.forEach((m: any) => {
@@ -117,7 +117,7 @@ export class ReportsService {
         });
         detailItems.forEach((item: any) => {
             if (!item.observadorId) return;
-            const t = observerTypeMap.get(item.observadorId) === 'OBSERVADOR' ? breakdown.observadores : breakdown.tecnicos;
+            const t = observerDataMap.get(item.observadorId)?.tipoObservador === 'OBSERVADOR' ? breakdown.observadores : breakdown.tecnicos;
             // El estado se determina más abajo, pero para el breakdown usamos estadoActual
             const isFinalized = item.estadoActual !== MareaEstado.EN_EJECUCION && item.fechaFin;
             if (isFinalized) t.mareasFinalizadas++; else t.mareasEnEjecucion++;
@@ -143,7 +143,11 @@ export class ReportsService {
                 avgDaysPerMarea: stats.totalMareas > 0 ? Math.round(stats.totalDaysNavigated / stats.totalMareas) : 0,
                 fisheries: stats.fisheries,
                 fleets: stats.fleets,
-                observers: stats.observers,
+                observers: stats.observers.map((o: any) => ({
+                    ...o,
+                    tipoContrato: observerDataMap.get(o.id)?.tipoContrato,
+                    tipoObservador: observerDataMap.get(o.id)?.tipoObservador,
+                })),
             },
             dotacionActiva,
             secondaryStats,

@@ -41,7 +41,7 @@
                   :class="counts.delegadas > 0 ? 'text-amber-600' : 'text-text-muted'">Derivadas externas</p>
                <p class="text-2xl font-black tabular-nums"
                   :class="counts.delegadas > 0 ? 'text-amber-500' : 'text-text-muted'">{{ counts.delegadas }}</p>
-               <p class="text-[8px] text-text-muted mt-1">En espera de proyecto ext.</p>
+               <p class="text-[8px] text-text-muted mt-1">En espera de programa ext.</p>
             </div>
          </div>
 
@@ -72,7 +72,7 @@
             <!-- Derivadas externas -->
             <div v-if="specialCases && specialCases.delegadasExternas.length">
                <SpecialCaseTable
-                  title="Derivadas a Proyectos Externos" subtitle="Pendientes de validación por otro proyecto"
+                  title="Derivadas a Programas Científicos Externos" subtitle="Pendientes de validación por otro programa científico externo"
                   badge-class="bg-amber-500/10 text-amber-600 border-amber-500/30"
                   :items="specialCases.delegadasExternas"
                   event-label="Fecha derivación" />

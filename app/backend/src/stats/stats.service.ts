@@ -2694,7 +2694,7 @@ export class StatsService {
 
             // Columna Obs. (col 16) para DELEGADA_EXTERNA
             if (m.esDelegada) {
-                const obsText = 'Derivada a proyecto externo' +
+                const obsText = 'Derivada a programa científico externo' +
                     (m.fechaDerivacion ? ` (${formatUTCDate(m.fechaDerivacion)})` : '');
                 sheet.getCell(currentRow, 16).value = obsText;
                 sheet.getCell(currentRow, 16).alignment = { horizontal: 'left', wrapText: false };
@@ -2734,7 +2734,7 @@ export class StatsService {
             const footerRow = currentRow + 1;
             sheet.mergeCells(footerRow, 1, footerRow, 16);
             const footerCell = sheet.getCell(footerRow, 1);
-            footerCell.value = 'Nota: Las filas resaltadas corresponden a mareas que se encuentran en espera de validación de datos por parte de proyectos científicos externos.';
+            footerCell.value = 'Nota: Las filas resaltadas corresponden a mareas que se encuentran en espera de validación de datos por parte de programas científicos externos.';
             footerCell.font = { italic: true, size: 10, color: { argb: 'FF475569' } };
             footerCell.alignment = { horizontal: 'left', wrapText: true };
         }
@@ -3016,7 +3016,7 @@ export class StatsService {
                 label: 'Derivadas a Proyectos Externos',
                 color: 'FFFF9800',
                 data: specialCases.delegadasExternas,
-                getObs: (_: import('./interfaces/dashboard.interface').AuditSpecialMarea) => 'Derivada a proyecto externo',
+                getObs: (_: import('./interfaces/dashboard.interface').AuditSpecialMarea) => 'Derivada a programa externo',
             },
             {
                 label: 'Informes pendientes de envío a DNI',
@@ -3113,7 +3113,7 @@ export class StatsService {
         currentRow += 2;
         sheet.mergeCells(currentRow, 1, currentRow, 9);
         const noteCell = sheet.getCell(currentRow, 1);
-        noteCell.value = 'Nota: Las mareas "Derivadas a Proyectos Externos" fueron ejecutadas pero sus datos son procesados por un proyecto ajeno al Programa Observadores a Bordo.';
+        noteCell.value = 'Nota: Las mareas "Derivadas a Programas Científicos Externos" fueron ejecutadas pero sus datos son procesados por un programa ajeno al Programa Observadores a Bordo.';
         noteCell.font = { italic: true, size: 10, color: { argb: 'FF475569' } };
         noteCell.alignment = { horizontal: 'left', wrapText: true };
 
@@ -3461,7 +3461,7 @@ export class StatsService {
                     },
                 },
             }),
-            // DELEGADAS EXTERNAS: ejecutadas, derivadas a otro proyecto
+            // DELEGADAS EXTERNAS: ejecutadas, derivadas a otro programa externo
             this.prisma.marea.findMany({
                 where: {
                     activo: true,

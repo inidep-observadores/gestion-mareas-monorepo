@@ -66,7 +66,15 @@ export interface AuditReportData {
             stats?: Record<string, { count: number; nombre: string }>;
         }>;
         fleets: Array<{ name: string; mareas: number; days: number }>;
-        observers: Array<{ id: string; name: string; mareas: number; days: number; active: boolean }>;
+        observers: Array<{ 
+            id: string; 
+            name: string; 
+            mareas: number; 
+            days: number; 
+            active: boolean;
+            tipoContrato?: string;
+            tipoObservador?: string;
+        }>;
     };
 
     /** Dotación activa de observadores */
@@ -727,40 +735,67 @@ export class AuditReportBuilder {
             );
         }
 
-        // Tabla de ranking y distribución
+        // Tabla de ranking y distribución agrupada por contrato
         const secondaryMap = new Map(data.secondaryStats.map(s => [s.observadorId, s.etapasComoSecundario]));
-        const totalSecundario = data.secondaryStats.reduce((s, x) => s + x.etapasComoSecundario, 0);
-
         const rankingNum = data.secondaryStats.length > 0 ? '4.3' : '4.2';
         const distNum = data.secondaryStats.length > 0 ? '4.4' : '4.3';
-
         const hasSecundarios = data.secondaryStats.length > 0;
+
         result.push(
             this.heading2(`${rankingNum} Ranking de observadores por días navegados`),
             this.chartImage(observerChart, 14, 0.5),
             this.heading2(`${distNum} Distribución completa de días navegados`),
-            createFormattedTable(
-                hasSecundarios
-                    ? ['OBSERVADOR', 'MAREAS', 'DÍAS NAVEGADOS', 'ETAPAS SEC.']
-                    : ['OBSERVADOR', 'MAREAS', 'DÍAS NAVEGADOS'],
-                stats.observers.map((o: any) => hasSecundarios
-                    ? [o.name, o.mareas.toString(), o.days.toString(), (secondaryMap.get(o.id) ?? 0).toString()]
-                    : [o.name, o.mareas.toString(), o.days.toString()]
-                ),
-                {
-                    columnWidths: hasSecundarios ? [52, 16, 16, 16] : [60, 20, 20],
-                    alignments: hasSecundarios
-                        ? [AlignmentType.LEFT, AlignmentType.CENTER, AlignmentType.CENTER, AlignmentType.CENTER]
-                        : [AlignmentType.LEFT, AlignmentType.CENTER, AlignmentType.CENTER],
-                    totalsRow: {
-                        label: `TOTAL: ${obsAfectados} observadores`,
-                        values: hasSecundarios
-                            ? ['', formatNumber(stats.totalDaysNavigated), totalSecundario.toString()]
-                            : ['', formatNumber(stats.totalDaysNavigated)],
-                    },
-                },
-            ),
         );
+
+        // Agrupar observadores por tipo de contrato
+        const groups = stats.observers.reduce((acc: Record<string, any[]>, obs) => {
+            const key = obs.tipoContrato || 'Otros / Sin especificar';
+            if (!acc[key]) acc[key] = [];
+            acc[key].push(obs);
+            return acc;
+        }, {});
+
+        // Ordenar los grupos (ej: PLANTA primero, luego CONTRATO)
+        const sortedGroupKeys = Object.keys(groups).sort((a, b) => {
+            if (a.toLowerCase().includes('planta')) return -1;
+            if (b.toLowerCase().includes('planta')) return 1;
+            return a.localeCompare(b);
+        });
+
+        sortedGroupKeys.forEach((groupKey, idx) => {
+            const groupObs = groups[groupKey];
+            const groupTotalMareas = groupObs.reduce((sum, o) => sum + o.mareas, 0);
+            const groupTotalDays = groupObs.reduce((sum, o) => sum + o.days, 0);
+            const groupTotalSecundario = groupObs.reduce((sum, o) => sum + (secondaryMap.get(o.id) ?? 0), 0);
+
+            result.push(
+                this.heading3(`${distNum}.${idx + 1} Personal ${groupKey.toLowerCase()}`),
+                createFormattedTable(
+                    hasSecundarios
+                        ? ['OBSERVADOR', 'MAREAS', 'DÍAS NAVEGADOS', 'ETAPAS SEC.']
+                        : ['OBSERVADOR', 'MAREAS', 'DÍAS NAVEGADOS'],
+                    groupObs.map((o: any) => {
+                        const displayName = o.name + (o.tipoObservador === 'TECNICO' ? ' (Técnico)' : '');
+                        return hasSecundarios
+                            ? [displayName, o.mareas.toString(), o.days.toString(), (secondaryMap.get(o.id) ?? 0).toString()]
+                            : [displayName, o.mareas.toString(), o.days.toString()];
+                    }),
+                    {
+                        columnWidths: hasSecundarios ? [52, 16, 16, 16] : [60, 20, 20],
+                        alignments: hasSecundarios
+                            ? [AlignmentType.LEFT, AlignmentType.CENTER, AlignmentType.CENTER, AlignmentType.CENTER]
+                            : [AlignmentType.LEFT, AlignmentType.CENTER, AlignmentType.CENTER],
+                        totalsRow: {
+                            label: `SUBTOTAL: ${groupObs.length} agentes`,
+                            values: hasSecundarios
+                                ? [groupTotalMareas.toString(), formatNumber(groupTotalDays), groupTotalSecundario.toString()]
+                                : [groupTotalMareas.toString(), formatNumber(groupTotalDays)],
+                        },
+                    },
+                ),
+                new Paragraph({ spacing: { after: idx < sortedGroupKeys.length - 1 ? 200 : 0 } }),
+            );
+        });
 
         return result;
     }
@@ -807,7 +842,7 @@ export class AuditReportBuilder {
                 spacing: { before: 120, after: 200 },
                 children: [
                     new TextRun({
-                        text: '* Nota: Las mareas resaltadas son aquellas que se encuentran en espera de validación de datos por parte de proyectos científicos externos.',
+                        text: '* Nota: Las mareas resaltadas son aquellas que se encuentran en espera de validación de datos por parte de programas científicos externos.',
                         italics: true,
                         size: FONT_SIZES.small,
                         color: INIDEP_COLORS.textMuted,
@@ -816,13 +851,13 @@ export class AuditReportBuilder {
             }),
         ];
 
-        // 5.2 Mareas derivadas a proyectos externos
+        // 5.2 Mareas derivadas a programas científicos externos
         const delegadas = [...data.specialCases.delegadasExternas].sort((a, b) => this.sortMareaId(a.id_marea, b.id_marea));
         if (delegadas.length > 0) {
             const n = delegadas.length;
-            const delegadasText = `${n} marea${n !== 1 ? 's' : ''} registrada${n !== 1 ? 's' : ''} en el período se encuentra${n !== 1 ? 'n' : ''} derivada${n !== 1 ? 's' : ''} a proyectos externos para validación de sus datos. La eventual demora en la confección del informe correspondiente es ajena al Proyecto Observadores a Bordo.`;
+            const delegadasText = `${n} marea${n !== 1 ? 's' : ''} registrada${n !== 1 ? 's' : ''} en el período se encuentra${n !== 1 ? 'n' : ''} derivada${n !== 1 ? 's' : ''} a programas científicos externos para validación de sus datos. La eventual demora en la confección del informe correspondiente es ajena al Proyecto Observadores a Bordo.`;
             result.push(
-                this.heading2('5.2 Mareas derivadas a proyectos externos'),
+                this.heading2('5.2 Mareas derivadas a programas científicos externos'),
                 this.bodyParagraph(delegadasText),
                 createFormattedTable(
                     ['MAREA', 'BUQUE', 'PESQUERÍA', 'FECHA DERIVACIÓN'],
@@ -850,7 +885,7 @@ export class AuditReportBuilder {
             this.bodyParagraph('No se registraron mareas en ejecución al cierre del período.')
         ];
 
-        const closeDateText = p.endDate ? p.endDate : `31 de diciembre de ${p.year}`;
+        const closeDateText = p.endDate ? this.formatShortDate(p.endDate) : `31 de diciembre de ${p.year}`;
         const introText = `Al cierre del período (${closeDateText}), las siguientes ${enEjecucion.length} mareas se encontraban en curso:`;
 
         const sorted = [...enEjecucion].sort((a, b) => {
@@ -1275,6 +1310,20 @@ export class AuditReportBuilder {
                     size: FONT_SIZES.heading2,
                     bold: true,
                     color: INIDEP_COLORS.text
+                })
+            ]
+        });
+    }
+
+    private heading3(text: string): Paragraph {
+        return new Paragraph({
+            spacing: { before: SPACING.beforeHeading / 2, after: SPACING.afterHeading / 2 },
+            children: [
+                new TextRun({
+                    text,
+                    size: 22, // Un poco más pequeño que h2 (24)
+                    bold: true,
+                    color: INIDEP_COLORS.primary
                 })
             ]
         });

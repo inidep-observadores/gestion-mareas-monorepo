@@ -20,7 +20,7 @@
                <p class="text-[9px] font-black text-amber-600 uppercase tracking-widest mb-1">Derivadas Ext.</p>
                <p class="text-2xl font-black text-amber-500 tabular-nums">{{ navData.delegadas }}</p>
                <p class="text-[8px] text-amber-600/70 font-medium mt-1 leading-tight">
-                  Pendientes por proyecto externo
+                  Pendientes por programa científico externo
                </p>
             </div>
             <div class="bg-surface rounded-xl p-4 border border-border/50 shadow-sm">
@@ -63,7 +63,7 @@
                         <td class="px-4 py-2 text-center">
                            <span v-if="marea.esDelegada"
                               class="px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-amber-500/10 text-amber-600 border border-amber-500/20"
-                              :title="marea.fechaDerivacion ? `Derivada el ${formatDate(marea.fechaDerivacion)}` : 'Derivada a proyecto externo'">
+                              :title="marea.fechaDerivacion ? `Derivada el ${formatDate(marea.fechaDerivacion)}` : 'Derivada a programa científico externo'">
                               Derivada
                            </span>
                            <span v-else
@@ -115,8 +115,8 @@
          <span class="text-amber-500 mt-0.5 text-xs">⚠</span>
          <p class="text-[10px] font-medium text-amber-700/80 leading-relaxed">
             <span class="font-black">{{ navData.delegadas }} marea{{ navData.delegadas > 1 ? 's derivadas' : ' derivada' }}</span>
-            a proyecto{{ navData.delegadas > 1 ? 's' : '' }} externo{{ navData.delegadas > 1 ? 's' : '' }} para validación de datos.
-            La demora en la confección del informe correspondiente es ajena al Proyecto Observadores a Bordo.
+            a programa{{ navData.delegadas > 1 ? 's' : '' }} externo{{ navData.delegadas > 1 ? 's' : '' }} para validación de datos.
+            La demora en la confección del informe correspondiente es ajena al Programa Observadores a Bordo.
          </p>
       </div>
    </div>
