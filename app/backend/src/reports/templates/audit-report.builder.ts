@@ -158,6 +158,9 @@ export interface AuditReportData {
         id_marea: string;
         nroEtapa: number;
     }>;
+
+    /** Observadores de la dotación que no tuvieron actividad en el período */
+    observadoresSinActividad: Array<{ id: string; name: string }>;
 }
 
 @Injectable()
@@ -738,6 +741,7 @@ export class AuditReportBuilder {
         const secondaryMap = new Map(data.secondaryStats.map(s => [s.observadorId, s.etapasComoSecundario]));
         const rankingNum = data.secondaryStats.length > 0 ? '4.3' : '4.2';
         const distNum = data.secondaryStats.length > 0 ? '4.4' : '4.3';
+        const inactiveNum = data.secondaryStats.length > 0 ? '4.5' : '4.4';
         const hasSecundarios = data.secondaryStats.length > 0;
 
         result.push(
@@ -795,6 +799,26 @@ export class AuditReportBuilder {
                 new Paragraph({ spacing: { after: idx < sortedGroupKeys.length - 1 ? 200 : 0 } }),
             );
         });
+
+        // 4.X Observadores sin actividad
+        if (data.observadoresSinActividad && data.observadoresSinActividad.length > 0) {
+            const inactive = data.observadoresSinActividad;
+            const n = inactive.length;
+            const inactiveText = `A continuación se listan los ${n} observador${n !== 1 ? 'es' : ''} que, formando parte de la dotación activa en el período analizado, no registraron participación en mareas (ni como observadores principales ni secundarios).`;
+            
+            result.push(
+                this.heading2(`${inactiveNum} Observadores sin actividad`),
+                this.bodyParagraph(inactiveText),
+                createFormattedTable(
+                    ['NOMBRES Y APELLIDOS'],
+                    inactive.map(o => [o.name]),
+                    {
+                        columnWidths: [100],
+                        alignments: [AlignmentType.LEFT],
+                    },
+                ),
+            );
+        }
 
         return result;
     }

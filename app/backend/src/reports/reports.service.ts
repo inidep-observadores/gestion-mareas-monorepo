@@ -66,17 +66,25 @@ export class ReportsService {
         );
 
         // 2. Obtener dotación activa
-        const dotacionActiva = await this.prisma.observador.count({
-            where: { activo: true, conImpedimento: false, tipoObservador: 'OBSERVADOR' },
+        const allActiveObservers = await this.prisma.observador.findMany({
+            where: { activo: true, disponible: true, conImpedimento: false, tipoObservador: 'OBSERVADOR' },
+            select: { id: true, nombre: true, apellido: true },
         });
+        const dotacionActiva = allActiveObservers.length;
 
         // 3. Obtener tipo de observador para cruzar en el breakdown
         const observerIds = stats.observers.map((o: any) => o.id);
+        const observerIdsSet = new Set(observerIds);
         const observersData = await this.prisma.observador.findMany({
             where: { id: { in: observerIds } },
             select: { id: true, tipoObservador: true, tipoContrato: true },
         });
         const observerDataMap = new Map(observersData.map(o => [o.id, { tipoObservador: o.tipoObservador, tipoContrato: o.tipoContrato }]));
+
+        // Computar observadores sin actividad
+        const observadoresSinActividad = allActiveObservers
+            .filter(o => !observerIdsSet.has(o.id))
+            .map(o => ({ id: o.id, name: `${o.nombre} ${o.apellido}` }));
 
         // 4. Obtener distribución de mareas (Snapshot Histórico)
         const distribution = await this.statsService.getMareaDistribution(
@@ -156,6 +164,7 @@ export class ReportsService {
                 })),
             },
             dotacionActiva,
+            observadoresSinActividad,
             secondaryStats,
             specialCases,
             protocolizationTimeline,
