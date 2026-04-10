@@ -1201,7 +1201,11 @@ export class AuditReportBuilder {
         return this.chartService.renderDoughnutChart(
             ['Finalizadas', 'En ejecución'],
             [proc.finalizadas.length, proc.enEjecucion.length],
-            { title: 'Estado de Mareas', colors: [CHART_COLORS.success, CHART_COLORS.sky] }
+            {
+                title: 'Estado de Mareas',
+                colors: [CHART_COLORS.success, CHART_COLORS.sky],
+                displayLabels: true
+            }
         );
     }
 
@@ -1268,7 +1272,8 @@ export class AuditReportBuilder {
         ].filter((l): l is string => l !== null);
 
         return this.chartService.renderDoughnutChart(labels, counts, {
-            title: 'Distribución de Mareas por Estado Especial'
+            title: 'Distribución de Mareas por Estado Especial',
+            displayLabels: true
         });
     }
 

@@ -264,7 +264,7 @@ export class DocxChartService {
     async renderDoughnutChart(
         labels: string[],
         data: number[],
-        options?: { title?: string; colors?: string[] },
+        options?: { title?: string; colors?: string[]; displayLabels?: boolean },
     ): Promise<Buffer> {
         const colors = options?.colors || CHART_COLORS.palette.slice(0, data.length);
 
@@ -295,6 +295,36 @@ export class DocxChartService {
                     } : undefined,
                 },
             },
+            plugins: options?.displayLabels ? [{
+                id: 'donutLabels',
+                afterDraw: (chart) => {
+                    const ctx = chart.ctx;
+                    const meta = chart.getDatasetMeta(0);
+                    meta.data.forEach((element: any, index) => {
+                        const val = chart.data.datasets[0].data[index] as number;
+                        const labelText = chart.data.labels![index] as string;
+                        if (val === 0) return;
+
+                        // TooltipPosition suele ser el centro del arco
+                        const { x, y } = element.tooltipPosition();
+
+                        ctx.save();
+                        // Aura blanca para legibilidad
+                        ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+                        ctx.lineWidth = 4;
+                        ctx.lineJoin = 'round';
+                        ctx.font = `bold 12px ${FONTS.primary}`;
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.strokeText(labelText, x, y);
+
+                        // Texto principal
+                        ctx.fillStyle = '#1E293B'; 
+                        ctx.fillText(labelText, x, y);
+                        ctx.restore();
+                    });
+                }
+            }] : [],
         };
 
         return this.render(config, CHART_DIMENSIONS.pieWidth, CHART_DIMENSIONS.pieHeight);
