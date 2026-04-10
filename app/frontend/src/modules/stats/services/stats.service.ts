@@ -409,13 +409,7 @@ export const statsService = {
         });
 
         const blob = new Blob([response.data], { type: 'application/pdf' });
-        const url = window.URL.createObjectURL(blob);
-        
-        // Abrir en una pestaña nueva para previsualización
-        window.open(url, '_blank');
-        
-        // Nota: No podemos hacer revokeObjectURL inmediatamente porque la pestaña necesita la URL
-        // El navegador la limpiará al cerrar la pestaña o el documento.
+        return window.URL.createObjectURL(blob);
     }
 };
 

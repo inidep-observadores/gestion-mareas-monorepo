@@ -82,6 +82,7 @@ export interface AuditReportData {
         esperandoEntrega: AuditSpecialMareaItem[];
         pendientesDeInforme: AuditSpecialMareaItem[];
         delegadasExternas: AuditSpecialMareaItem[];
+        informesPendientesEnvio: AuditSpecialMareaItem[];
         esperandoProtocolizacion: AuditSpecialMareaItem[];
     };
 
@@ -215,10 +216,13 @@ export class AuditReportBuilder {
         const doc = new Document({
             creator: 'SIGMA - Sistema Integral de Gestión de Mareas',
             title: `Informe de Ejecución de Mareas - ${period.short}`,
-            // Modo compatibilidad Office 2010+ (valor 14). Sin esto, Office 2013 y
-            // anteriores pueden mostrar "el archivo fue creado en una versión más nueva"
-            // o fallar al abrir el documento.
-            compatabilityModeVersion: 14,
+            description: `Informe de auditoría técnica del Programa Observadores a Bordo correspondiente a ${period.article}.`,
+            subject: 'Auditoría de Mareas',
+            lastModifiedBy: 'SIGMA Auto-generated',
+            revision: 1,
+            // Modo compatibilidad Office 2013+ (valor 15). Esto es más robusto para
+            // instalaciones modernas de Office 365, Word 2016 y 2019 que la versión 14.
+            compatabilityModeVersion: 15,
             styles: {
                 default: {
                     document: {
@@ -870,9 +874,10 @@ export class AuditReportBuilder {
     }
 
     private buildSpecialCasesSection(data: AuditReportData, period: PeriodDescription, specialCasesChart?: Buffer): (Paragraph | Table)[] {
-        const { canceladas, desestimadas, esperandoEntrega, pendientesDeInforme, esperandoProtocolizacion } = data.specialCases;
+        const { canceladas, desestimadas, esperandoEntrega, pendientesDeInforme, informesPendientesEnvio, esperandoProtocolizacion } = data.specialCases;
         const allEmpty = canceladas.length === 0 && desestimadas.length === 0 &&
-            esperandoEntrega.length === 0 && pendientesDeInforme.length === 0 && esperandoProtocolizacion.length === 0;
+            esperandoEntrega.length === 0 && pendientesDeInforme.length === 0 &&
+            informesPendientesEnvio.length === 0 && esperandoProtocolizacion.length === 0;
 
         const result: (Paragraph | Table)[] = [
             this.heading1('7. MAREAS CON ESTADO ESPECIAL'),
@@ -973,10 +978,29 @@ export class AuditReportBuilder {
             );
         }
 
+        if (informesPendientesEnvio.length > 0) {
+            const n = informesPendientesEnvio.length;
+            const sortedPendientesEnvio = [...informesPendientesEnvio].sort((a, b) => this.sortMareaId(a.id_marea, b.id_marea));
+            const subsecNum = 1 + (canceladas.length > 0 ? 1 : 0) + (desestimadas.length > 0 ? 1 : 0) + (esperandoEntrega.length > 0 ? 1 : 0) + (pendientesDeInforme.length > 0 ? 1 : 0);
+            result.push(
+                this.heading2(`7.${subsecNum} Informes pendientes de envío a DNI`),
+                this.bodyParagraph(`${n} marea${n !== 1 ? 's' : ''} cuenta${n !== 1 ? 'n' : ''} con su informe técnico finalizado al cierre del período, pendiente${n !== 1 ? 's' : ''} de ser enviada${n !== 1 ? 's' : ''} formalmente a la Dirección Nacional de Investigación para su protocolización.`),
+                createFormattedTable(
+                    specialTableCols,
+                    sortedPendientesEnvio.map(m => [
+                        this.formatMareaShort(m.id_marea), m.buque, m.pesqueria,
+                        m.diasNavegados.toString(),
+                        m.fechaEvento ? this.formatShortDate(m.fechaEvento) : '',
+                    ]),
+                    { columnWidths: specialWidths, alignments: specialAligns },
+                ),
+            );
+        }
+
         if (esperandoProtocolizacion.length > 0) {
             const n = esperandoProtocolizacion.length;
             const sortedEsperandoProt = [...esperandoProtocolizacion].sort((a, b) => this.sortMareaId(a.id_marea, b.id_marea));
-            const subsecNum = 1 + (canceladas.length > 0 ? 1 : 0) + (desestimadas.length > 0 ? 1 : 0) + (esperandoEntrega.length > 0 ? 1 : 0) + (pendientesDeInforme.length > 0 ? 1 : 0);
+            const subsecNum = 1 + (canceladas.length > 0 ? 1 : 0) + (desestimadas.length > 0 ? 1 : 0) + (esperandoEntrega.length > 0 ? 1 : 0) + (pendientesDeInforme.length > 0 ? 1 : 0) + (informesPendientesEnvio.length > 0 ? 1 : 0);
             result.push(
                 this.heading2(`7.${subsecNum} Mareas esperando protocolización`),
                 this.bodyParagraph(`${n} marea${n !== 1 ? 's' : ''} fu${n !== 1 ? 'eron enviadas' : 'e enviada'} a la DNI para protocolización y se encuentr${n !== 1 ? 'an' : 'a'} pendiente${n !== 1 ? 's' : ''} de confirmación.`),

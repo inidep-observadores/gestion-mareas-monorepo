@@ -298,15 +298,32 @@ const handleExportWord = async () => {
 
 const handleExportPdf = async () => {
    if (!props.stats || exportingPdf.value) return
+   
+   // Abrir ventana inmediatamente para evitar bloqueo de popup
+   const reportWindow = window.open('', '_blank')
+   if (reportWindow) {
+      reportWindow.document.write('Generando informe PDF, por favor espere...')
+   }
+
    exportingPdf.value = true
    try {
-      await statsService.openAuditReportPdf(
+      const url = await statsService.openAuditReportPdf(
          props.year, props.mode, !props.protocolizedOnly, props.includeOutOfPeriod,
          props.includeCampaigns,
          props.startDate || undefined, props.endDate || undefined,
          props.startDate || undefined, props.endDate || undefined
       )
-   } catch (e) { console.error('Error opening pdf audit report:', e) }
+      
+      if (reportWindow) {
+         reportWindow.location.href = url
+      } else {
+         // Fallback si por alguna razón falló el window.open inicial
+         window.open(url, '_blank')
+      }
+   } catch (e) { 
+      console.error('Error opening pdf audit report:', e)
+      if (reportWindow) reportWindow.close()
+   }
    finally { exportingPdf.value = false }
 }
 </script>

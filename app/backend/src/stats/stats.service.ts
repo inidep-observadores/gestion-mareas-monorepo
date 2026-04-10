@@ -3019,6 +3019,12 @@ export class StatsService {
                 getObs: (_: import('./interfaces/dashboard.interface').AuditSpecialMarea) => 'Derivada a proyecto externo',
             },
             {
+                label: 'Informes pendientes de envío a DNI',
+                color: 'FF3F51B5',
+                data: specialCases.informesPendientesEnvio,
+                getObs: (_: import('./interfaces/dashboard.interface').AuditSpecialMarea) => 'Reporte listo para enviar',
+            },
+            {
                 label: 'Esperando Protocolización',
                 color: 'FF7C3AED',
                 data: specialCases.esperandoProtocolizacion,
@@ -3384,7 +3390,7 @@ export class StatsService {
             },
         };
 
-        const [canceladas, desestimadas, esperandoEntregaList, pendientes, delegadas, esperando] = await Promise.all([
+        const [canceladas, desestimadas, esperandoEntregaList, pendientes, delegadas, esperando, paraProtocolizar] = await Promise.all([
             // CANCELADAS: nunca ejecutadas, con movimiento dentro del período o designadas en el período
             this.prisma.marea.findMany({
                 where: {
@@ -3499,6 +3505,28 @@ export class StatsService {
                     },
                 },
             }),
+            // PARA PROTOCOLIZAR: informe listo pero aún no enviado a la DNI
+            this.prisma.marea.findMany({
+                where: {
+                    activo: true,
+                    estadoActual: { codigo: MareaEstado.PARA_PROTOCOLIZAR },
+                    etapas: {
+                        some: {
+                            fechaZarpada: { lte: periodEnd },
+                            OR: [{ fechaArribo: { gte: periodStart } }, { fechaArribo: null }],
+                        },
+                    },
+                    ...tipoMareaFilter,
+                },
+                include: {
+                    ...baseInclude,
+                    movimientos: {
+                        where: { estadoHasta: { codigo: MareaEstado.PARA_PROTOCOLIZAR } },
+                        orderBy: { fechaHora: 'desc' as const },
+                        take: 1,
+                    },
+                },
+            }),
         ]);
 
         const toSpecialMarea = (m: typeof canceladas[0]): import('./interfaces/dashboard.interface').AuditSpecialMarea => {
@@ -3525,13 +3553,26 @@ export class StatsService {
             };
         };
 
+        const realEsperando: import('./interfaces/dashboard.interface').AuditSpecialMarea[] = [];
+        const recategorizadasToPara: import('./interfaces/dashboard.interface').AuditSpecialMarea[] = [];
+
+        esperando.forEach(m => {
+            const special = toSpecialMarea(m);
+            if (m.fechaEnvioProtocolizacion && m.fechaEnvioProtocolizacion > periodEnd) {
+                recategorizadasToPara.push(special);
+            } else {
+                realEsperando.push(special);
+            }
+        });
+
         return {
             canceladas: canceladas.map(toSpecialMarea),
             desestimadas: desestimadas.map(toSpecialMarea),
             esperandoEntrega: esperandoEntregaList.map(toSpecialMarea),
             pendientesDeInforme: pendientes.map(toSpecialMarea),
             delegadasExternas: delegadas.map(toSpecialMarea),
-            esperandoProtocolizacion: esperando.map(toSpecialMarea),
+            informesPendientesEnvio: [...paraProtocolizar.map(toSpecialMarea), ...recategorizadasToPara],
+            esperandoProtocolizacion: realEsperando,
         };
     }
 
@@ -3591,7 +3632,10 @@ export class StatsService {
                 where: {
                     activo: true,
                     estadoActual: { codigo: { notIn: ['A_REASIGNAR', 'CANCELADA', 'DESESTIMADA', 'EN_EJECUCION', 'PROTOCOLIZADA'] } },
-                    fechaProtocolizacion: null,
+                    OR: [
+                        { fechaProtocolizacion: null },
+                        { fechaProtocolizacion: { gt: periodEnd } }
+                    ],
                     etapas: {
                         some: {
                             fechaZarpada: { lte: periodEnd },

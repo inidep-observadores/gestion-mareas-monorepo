@@ -85,6 +85,7 @@ export interface AuditSpecialCasesResult {
     esperandoEntrega: AuditSpecialMarea[];
     pendientesDeInforme: AuditSpecialMarea[];
     delegadasExternas: AuditSpecialMarea[];
+    informesPendientesEnvio: AuditSpecialMarea[];
     esperandoProtocolizacion: AuditSpecialMarea[];
 }
 
