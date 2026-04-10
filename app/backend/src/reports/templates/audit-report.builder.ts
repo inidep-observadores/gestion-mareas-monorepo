@@ -678,7 +678,7 @@ export class AuditReportBuilder {
         const minObs = observers.length > 0 ? observers[observers.length - 1] : null;
 
         const indicatorsText = `Durante ${period.article} se afectaron ${obsAfectados} observadores sobre una dotación de ${dotacionRef}, alcanzando una cobertura del ${coberturaPct}%. El promedio de días navegados por observador fue de ${promedioDias} días` +
-            (maxObs && minObs ? `, con un rango que osciló entre ${minObs.days} día${minObs.days !== 1 ? 's' : ''} (mínimo) y ${maxObs.days} días (máximo).` : '.') +
+            (maxObs && minObs ? `, con un rango que osciló entre ${minObs.days} día${minObs.days !== 1 ? 's' : ''} (mínimo) y ${maxObs.days} día${maxObs.days !== 1 ? 's' : ''} (máximo).` : '.') +
             ` La dispersión refleja la diversidad de asignaciones según pesquería, tipo de buque y duración de las campañas.`;
 
         const dotacionNoteText = `Nota: La dotación informada corresponde a todos los observadores que participaron en mareas durante el período analizado. Este listado puede incluir observadores que actualmente ya no forman parte del plantel activo, por razones tales como renuncia, jubilación u otras situaciones de egreso ocurridas con posterioridad al período informado.`;
@@ -778,7 +778,7 @@ export class AuditReportBuilder {
                             ? [AlignmentType.LEFT, AlignmentType.CENTER, AlignmentType.CENTER, AlignmentType.CENTER]
                             : [AlignmentType.LEFT, AlignmentType.CENTER, AlignmentType.CENTER],
                         totalsRow: {
-                            label: `SUBTOTAL: ${groupObs.length} agentes`,
+                            label: `SUBTOTAL: ${groupObs.length} agente${groupObs.length !== 1 ? 's' : ''}`,
                             values: hasSecundarios
                                 ? [groupTotalMareas.toString(), formatNumber(groupTotalDays), groupTotalSecundario.toString()]
                                 : [groupTotalMareas.toString(), formatNumber(groupTotalDays)],
@@ -793,7 +793,9 @@ export class AuditReportBuilder {
         if (data.observadoresSinActividad && data.observadoresSinActividad.length > 0) {
             const inactive = data.observadoresSinActividad;
             const n = inactive.length;
-            const inactiveText = `A continuación se listan los ${n} observador${n !== 1 ? 'es' : ''} que, formando parte de la dotación activa en el período analizado, no registraron participación en mareas (ni como observadores principales ni secundarios).`;
+            const inactiveText = n === 1
+                ? `A continuación se lista el observador que, formando parte de la dotación activa en el período analizado, no registró participación en mareas (ni como observador principal ni secundario).`
+                : `A continuación se listan los ${n} observadores que, formando parte de la dotación activa en el período analizado, no registraron participación en mareas (ni como observadores principales ni secundarios).`;
             
             result.push(
                 this.heading2(`${inactiveNum} Observadores sin actividad`),
