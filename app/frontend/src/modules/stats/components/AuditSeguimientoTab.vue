@@ -7,7 +7,7 @@
 
       <!-- ── CASOS ESPECIALES ─────────────────────────────── -->
       <section class="p-5 space-y-4">
-         <h3 class="text-[10px] font-black text-text-muted uppercase tracking-widest">Mareas con Estado Especial</h3>
+         <h3 class="text-[10px] font-black text-text-muted uppercase tracking-widest">Mareas según su Estado</h3>
 
          <!-- Contadores rápidos -->
          <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">

@@ -372,10 +372,10 @@ export class AuditReportBuilder {
     private buildCoverPage(period: PeriodDescription, sigmaLogo: Buffer): (Paragraph | Table)[] {
         return [
             ...Array(6).fill(null).map(() => new Paragraph({ children: [] })),
-            this.centeredBold('INSTITUTO NACIONAL DE INVESTIGACIÓN', FONT_SIZES.coverSubtitle),
-            this.centeredBold('Y DESARROLLO PESQUERO (INIDEP)', FONT_SIZES.coverSubtitle),
+            this.centeredBold('PROGRAMA DE ADQUISICIÓN DE INFORMACIÓN BIOLÓGICO-PESQUERA', FONT_SIZES.coverSubtitle),
+            // this.centeredBold('Y DESARROLLO PESQUERO (INIDEP)', FONT_SIZES.coverSubtitle),
             new Paragraph({ children: [] }),
-            this.centeredBold('PROGRAMA OBSERVADORES A BORDO', FONT_SIZES.coverSubtitle),
+            this.centeredBold('SUBPROGRAMA OBSERVADORES', FONT_SIZES.coverSubtitle),
 
             ...Array(3).fill(null).map(() => new Paragraph({ children: [] })),
             this.centeredBold('INFORME DE EJECUCIÓN DE MAREAS', FONT_SIZES.coverTitle),
@@ -431,17 +431,6 @@ export class AuditReportBuilder {
                                         children: [
                                             new TextRun({
                                                 text: 'Sistema Integral de Gestión de Mareas',
-                                                size: 14,
-                                                color: INIDEP_COLORS.textMuted,
-                                            }),
-                                        ],
-                                    }),
-                                    new Paragraph({
-                                        alignment: AlignmentType.CENTER,
-                                        children: [
-                                            new TextRun({
-                                                text: '"Rigor científico en cada registro"',
-                                                italics: true,
                                                 size: 14,
                                                 color: INIDEP_COLORS.textMuted,
                                             }),
@@ -947,7 +936,7 @@ export class AuditReportBuilder {
             informesPendientesEnvio.length === 0 && esperandoProtocolizacion.length === 0;
 
         const result: (Paragraph | Table)[] = [
-            this.heading1('7. MAREAS CON ESTADO ESPECIAL'),
+            this.heading1('7. MAREAS SEGÚN SU ESTADO'),
         ];
 
         if (allEmpty) {
@@ -1276,7 +1265,7 @@ export class AuditReportBuilder {
         ].filter((l): l is string => l !== null);
 
         return this.chartService.renderDoughnutChart(labels, counts, {
-            title: 'Distribución de Mareas por Estado Especial',
+            title: 'Distribución de Mareas según su Estado',
             displayLabels: true
         });
     }

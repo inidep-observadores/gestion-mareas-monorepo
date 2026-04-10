@@ -867,7 +867,8 @@ export class StatsService {
                 startDate,
                 endDate,
                 protocolizationStartDate,
-                protocolizationEndDate
+                protocolizationEndDate,
+                snapshotDate
             );
         }
 
@@ -2308,24 +2309,33 @@ export class StatsService {
         startDate?: string,
         endDate?: string,
         protocolizationStartDate?: string,
-        protocolizationEndDate?: string
+        protocolizationEndDate?: string,
+        snapshotDate?: Date
     ): Promise<ExcelJS.Workbook> {
+        const snapEnd = snapshotDate || (endDate ? new Date(endDate) : new Date(Date.UTC(year, 11, 31, 23, 59, 59, 999)));
+        if (!snapshotDate) snapEnd.setUTCHours(23, 59, 59, 999);
+
         // 1. Obtener datos base
         const stats = await this.getDashboardStats(
-            year, mode, includeNonProtocolized, includeProtocolizedOutOfPeriod, 'SHIP', includeCampaigns, startDate, endDate, protocolizationStartDate, protocolizationEndDate
+            year, mode, includeNonProtocolized, includeProtocolizedOutOfPeriod, 'SHIP', includeCampaigns, startDate, endDate, protocolizationStartDate, protocolizationEndDate,
+            snapEnd
         );
 
-        // 2. Obtener dotación activa (observadores no eliminados y activos) - Alineado con informe Word
-        const dotacionActiva = await this.prisma.observador.count({
+        // 2. Obtener dotación activa (observadores no eliminados, activos y disponibles) - Alineado con informe Word
+        const allActiveObservers = await this.prisma.observador.findMany({
             where: {
                 activo: true,
+                disponible: true,
                 conImpedimento: false,
                 tipoObservador: 'OBSERVADOR',
-            }
+            },
+            select: { id: true, nombre: true, apellido: true }
         });
+        const dotacionActiva = allActiveObservers.length;
 
         // 3. Filtrar observadores que navegaron para el KPI científico (excluyendo técnicos)
         const observerIds = stats.observers.map((o: any) => o.id);
+        const observerIdsSet = new Set(observerIds);
         const observersData = await this.prisma.observador.findMany({
             where: { id: { in: observerIds } },
             select: { id: true, tipoObservador: true }
@@ -2333,25 +2343,32 @@ export class StatsService {
         const observerTypeMap = new Map(observersData.map(o => [o.id, o.tipoObservador]));
         const obsCientificosQueNavegaron = stats.observers.filter((o: any) => observerTypeMap.get(o.id) === 'OBSERVADOR').length;
 
+        // Computar observadores sin actividad
+        const observadoresSinActividad = allActiveObservers
+            .filter(o => !observerIdsSet.has(o.id))
+            .map(o => ({ id: o.id, name: `${o.nombre} ${o.apellido}` }));
+
         // Obtener marea distribution (para intervalos y etapas)
         const mareas = await this.getMareaDistribution(
-            year, mode, includeNonProtocolized, includeProtocolizedOutOfPeriod, includeCampaigns, startDate, endDate, protocolizationStartDate, protocolizationEndDate
+            year, mode, includeNonProtocolized, includeProtocolizedOutOfPeriod, includeCampaigns, startDate, endDate, protocolizationStartDate, protocolizationEndDate,
+            snapEnd
         );
 
         // Obtener detalle de mareas para paridad exacta con el dashboard
         const detailItems = await this.getDashboardStatsDetail(
-            year, mode, includeNonProtocolized, includeProtocolizedOutOfPeriod, null, '', 'SHIP', includeCampaigns, startDate, endDate, protocolizationStartDate, protocolizationEndDate
+            year, mode, includeNonProtocolized, includeProtocolizedOutOfPeriod, null, '', 'SHIP', includeCampaigns, startDate, endDate, protocolizationStartDate, protocolizationEndDate,
+            snapEnd
         );
 
         // 5. Obtener datos adicionales para nuevas hojas (en paralelo)
         const [secondaryStats, specialCases, protocolizationTimeline] = await Promise.all([
-            this.getSecondaryObserverStats(year, startDate, endDate),
-            this.getAuditSpecialCases(year, startDate, endDate, includeCampaigns),
-            this.getProtocolizationTimeline(year, startDate, endDate),
+            this.getSecondaryObserverStats(year, startDate, endDate, snapEnd),
+            this.getAuditSpecialCases(year, startDate, endDate, includeCampaigns, snapEnd),
+            this.getProtocolizationTimeline(year, startDate, endDate, snapEnd, includeCampaigns),
         ]);
 
         // Computar breakdown Observadores vs Técnicos para tabla de Personal
-        const emptyBreakdownSlice = () => ({ dias: 0, mareasFinalizadas: 0, mareasEnEjecucion: 0, desestimadas: 0, informesDeMarea: 0, informesProtocolizados: 0, informesPendientes: 0 });
+        const emptyBreakdownSlice = () => ({ dias: 0, mareasFinalizadas: 0, mareaEnEjecucion: 0, desestimadas: 0, informesDeMarea: 0, informesProtocolizados: 0, informesPendientes: 0 });
         const breakdown: import('./interfaces/dashboard.interface').PersonalBreakdown = {
             observadores: emptyBreakdownSlice(),
             tecnicos: emptyBreakdownSlice(),
@@ -2374,6 +2391,7 @@ export class StatsService {
         });
 
         // Informes de marea, protocolizados y pendientes desde detailItems
+        const limitDateStr = endDate ? endDate : `${year}-12-31`;
         detailItems.forEach(item => {
             if (!item.observadorId) return;
             const target = observerTypeMap.get(item.observadorId) === 'OBSERVADOR' ? breakdown.observadores : breakdown.tecnicos;
@@ -2382,9 +2400,17 @@ export class StatsService {
             if (item.estadoActual === MareaEstado.PROTOCOLIZADA) target.informesProtocolizados++;
             if (item.estadoOrden >= 4 && item.estadoOrden < 10) target.informesPendientes++;
 
-            // Conteo de mareas desglosado
-            if (item.estadoActual === MareaEstado.EN_EJECUCION) {
-                target.mareasEnEjecucion++;
+            // Conteo de mareas desglosado (con refinamiento por fecha de arribo igual que Word)
+            let isFinalized = item.estadoActual !== MareaEstado.EN_EJECUCION && item.fechaFin;
+            if (isFinalized && item.fechaFin) {
+                const finDateStr = new Date(item.fechaFin).toISOString().substring(0, 10);
+                if (finDateStr > limitDateStr) {
+                    isFinalized = false;
+                }
+            }
+
+            if (!isFinalized) {
+                target.mareaEnEjecucion++;
             } else {
                 target.mareasFinalizadas++;
             }
@@ -2393,7 +2419,7 @@ export class StatsService {
         const workbook = new ExcelJS.Workbook();
 
         // Hoja 1: Estadísticas de Personal
-        this.buildAuditPersonalSheet(workbook, stats, dotacionActiva, obsCientificosQueNavegaron, secondaryStats, breakdown);
+        this.buildAuditPersonalSheet(workbook, stats, dotacionActiva, obsCientificosQueNavegaron, secondaryStats, breakdown, observadoresSinActividad);
 
         // Hoja 2: Estadísticas de Navegación
         this.buildAuditNavegacionSheet(workbook, mareas, detailItems, year, mode, endDate);
@@ -2401,7 +2427,7 @@ export class StatsService {
         // Hoja 3: Estadísticas por Pesquería
         this.buildAuditPesqueriaSheet(workbook, mareas, detailItems, year, mode, endDate);
 
-        // Hoja 4: Casos Especiales
+        // Hoja 4: Mareas según su Estado
         this.buildAuditCasosEspecialesSheet(workbook, specialCases);
 
         // Hoja 5: Protocolización
@@ -2416,7 +2442,8 @@ export class StatsService {
         dotacionActiva: number,
         obsCientificosQueNavegaron: number,
         secondaryStats: import('./interfaces/dashboard.interface').ObserverSecondaryStats[],
-        breakdown: import('./interfaces/dashboard.interface').PersonalBreakdown
+        breakdown: import('./interfaces/dashboard.interface').PersonalBreakdown,
+        observadoresSinActividad: { id: string, name: string }[]
     ) {
         const sheet = workbook.addWorksheet('Personal');
         const secondaryMap = new Map(secondaryStats.map(s => [s.observadorId, s.etapasComoSecundario]));
@@ -2631,6 +2658,33 @@ export class StatsService {
             sheet.getCell(row, 3).value = r.tec;
             sheet.getCell(row, 3).alignment = { horizontal: 'center' };
         });
+
+        // TABLA 4: OBSERVADORES SIN ACTIVIDAD (debajo de Breakdown)
+        if (observadoresSinActividad.length > 0) {
+            const startRowSinActividad = bHeaderRow + bRows.length + 3;
+            sheet.mergeCells(startRowSinActividad, 1, startRowSinActividad, 2);
+            const saTitle = sheet.getCell(startRowSinActividad, 1);
+            saTitle.value = 'Observadores de la dotación sin actividad';
+            saTitle.font = { bold: true, size: 12 };
+            saTitle.alignment = { horizontal: 'left' };
+
+            const saHeaderRow = startRowSinActividad + 1;
+            ['Nro', 'Apellido y Nombre'].forEach((h, i) => {
+                const cell = sheet.getCell(saHeaderRow, i + 1);
+                cell.value = h;
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF00548B' } };
+                cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+                cell.alignment = { horizontal: 'center' };
+            });
+
+            observadoresSinActividad.forEach((obs, idx) => {
+                const row = saHeaderRow + 1 + idx;
+                sheet.getCell(row, 1).value = idx + 1;
+                sheet.getCell(row, 1).alignment = { horizontal: 'center' };
+                sheet.getCell(row, 2).value = obs.name;
+                sheet.getCell(row, 2).border = { bottom: { style: 'thin', color: { argb: 'FFE2E8F0' } } };
+            });
+        }
     }
 
     private buildAuditNavegacionSheet(workbook: ExcelJS.Workbook, mareasDistribucion: any[], detailItems: any[], year: number, mode: 'CALENDAR' | 'TOTAL', endDate?: string) {
@@ -3053,14 +3107,14 @@ export class StatsService {
 
     private buildAuditCasosEspecialesSheet(
         workbook: ExcelJS.Workbook,
-        specialCases: import('./interfaces/dashboard.interface').AuditSpecialCasesResult
+        specialCases: any
     ) {
-        const sheet = workbook.addWorksheet('Casos Especiales');
+        const sheet = workbook.addWorksheet('Mareas según su Estado');
 
         // Título
         sheet.mergeCells('A1', 'I1');
         const titleCell = sheet.getCell('A1');
-        titleCell.value = 'Mareas con Estado Especial';
+        titleCell.value = 'Mareas según su Estado';
         titleCell.font = { bold: true, size: 16 };
         titleCell.alignment = { horizontal: 'center' };
 
@@ -3071,43 +3125,43 @@ export class StatsService {
                 label: 'Canceladas',
                 color: 'FFFFC107',
                 data: specialCases.canceladas,
-                getObs: (_: import('./interfaces/dashboard.interface').AuditSpecialMarea) => '',
+                getObs: (_: any) => '',
             },
             {
                 label: 'Desestimadas',
                 color: 'FFF44336',
                 data: specialCases.desestimadas,
-                getObs: (m: import('./interfaces/dashboard.interface').AuditSpecialMarea) => m.motivo ?? '',
+                getObs: (m: any) => m.motivo ?? '',
             },
             {
                 label: 'Esperando Entrega de Datos',
                 color: 'FFEF6C00',
                 data: specialCases.esperandoEntrega,
-                getObs: (_: import('./interfaces/dashboard.interface').AuditSpecialMarea) => 'Pendiente de rendición por el observador',
+                getObs: (_: any) => 'Pendiente de rendición por el observador',
             },
             {
                 label: 'Pendientes de Informe',
                 color: 'FF03A9F4',
                 data: specialCases.pendientesDeInforme,
-                getObs: (_: import('./interfaces/dashboard.interface').AuditSpecialMarea) => '',
+                getObs: (_: any) => '',
             },
             {
-                label: 'Derivadas a Programas Externos',
+                label: 'Delegadas a Programas Externos / Agencias Provinciales',
                 color: 'FFFF9800',
                 data: specialCases.delegadasExternas,
-                getObs: (_: import('./interfaces/dashboard.interface').AuditSpecialMarea) => 'Derivada a programa externo',
+                getObs: (_: any) => 'Derivada a programa externo',
             },
             {
-                label: 'Informes pendientes de envío a DNI',
+                label: 'Listas para envío a DNI',
                 color: 'FF3F51B5',
                 data: specialCases.informesPendientesEnvio,
-                getObs: (_: import('./interfaces/dashboard.interface').AuditSpecialMarea) => 'Reporte listo para enviar',
+                getObs: (_: any) => 'Reporte listo para enviar',
             },
             {
-                label: 'Esperando Protocolización',
+                label: 'Enviadas a DNI (esperando protocolización)',
                 color: 'FF7C3AED',
                 data: specialCases.esperandoProtocolizacion,
-                getObs: (_: import('./interfaces/dashboard.interface').AuditSpecialMarea) => 'Enviada a la DNI',
+                getObs: (_: any) => 'Enviada a la DNI',
             },
         ];
 

@@ -121,7 +121,8 @@ export class StatsController {
             query.filterByStart,
             query.protocolizationStartDate,
             query.protocolizationEndDate,
-            query.includeSummaries
+            query.includeSummaries,
+            query.endDate ? new Date(query.endDate) : undefined
         );
 
         const filename = query.customFilename ? `${query.customFilename}.xlsx` : `Estadisticas_Mareas_${query.year}.xlsx`;
