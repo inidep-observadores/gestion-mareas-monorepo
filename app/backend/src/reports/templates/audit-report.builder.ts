@@ -178,13 +178,12 @@ export class AuditReportBuilder {
         const processed = this.preprocessData(data, period);
 
         // Generar gráficos y logo en paralelo
-        const [statusChart, fisheryDaysChart, fisheryCountChart, observerChart, specialCasesChart, protocolizacionChart, sigmaLogo] = await Promise.all([
+        const [statusChart, fisheryDaysChart, fisheryCountChart, observerChart, specialCasesChart, sigmaLogo] = await Promise.all([
             this.generateStatusChart(processed),
             this.generateFisheryDaysChart(processed),
             this.generateFisheryCountChart(processed),
             this.generateObserverChart(processed),
             this.generateSpecialCasesChart(data),
-            this.generateProtocolizacionChart(data),
             this.chartService.renderSigmaLogo(120),
         ]);
 
@@ -215,7 +214,7 @@ export class AuditReportBuilder {
             ...this.buildSpecialCasesSection(data, period, specialCasesChart),
 
             // Sección 8: Seguimiento de Protocolización
-            ...this.buildProtocolizacionSection(data, period, protocolizacionChart),
+            ...this.buildProtocolizacionSection(data, period),
 
             // Sección 9: Observaciones Complementarias
             ...this.buildComplementaryObservations(period, processed, data.includeCampaigns),
@@ -1063,7 +1062,7 @@ export class AuditReportBuilder {
         return result;
     }
 
-    private buildProtocolizacionSection(data: AuditReportData, period: PeriodDescription, protocolizacionChart?: Buffer | null): (Paragraph | Table)[] {
+    private buildProtocolizacionSection(data: AuditReportData, period: PeriodDescription): (Paragraph | Table)[] {
         const tl = data.protocolizationTimeline;
         const result: (Paragraph | Table)[] = [
             this.heading1('8. SEGUIMIENTO DE PROTOCOLIZACIÓN'),
@@ -1082,25 +1081,6 @@ export class AuditReportBuilder {
             }
         }
         result.push(this.bodyParagraph(narrativa));
-
-        if (tl.sinProtocolizar > 0) {
-            result.push(new Paragraph({
-                spacing: { after: SPACING.afterParagraph },
-                alignment: AlignmentType.JUSTIFIED,
-                children: [new TextRun({
-                    text: `Atención: ${tl.sinProtocolizar} marea${tl.sinProtocolizar !== 1 ? 's' : ''} finalizada${tl.sinProtocolizar !== 1 ? 's' : ''} en el período aún no ha${tl.sinProtocolizar !== 1 ? 'n' : ''} sido protocolizada${tl.sinProtocolizar !== 1 ? 's' : ''}.`,
-                    bold: true,
-                    color: INIDEP_COLORS.warning || 'B45309',
-                    size: FONT_SIZES.body,
-                })],
-            }));
-        }
-
-        // Agregar gráfico si existe
-        if (protocolizacionChart) {
-            result.push(this.chartImage(protocolizacionChart, 14, 0.5));
-            result.push(new Paragraph({ spacing: { before: SPACING.afterTable } }));
-        }
 
         // Tabla mensual
         const activeRows = tl.distribucionMensual.filter(r => r.cantidad > 0 || r.enviadas > 0);
@@ -1277,28 +1257,6 @@ export class AuditReportBuilder {
         });
     }
 
-    private async generateProtocolizacionChart(data: AuditReportData): Promise<Buffer | null> {
-        const tl = data.protocolizationTimeline;
-        if (!tl.distribucionMensual || tl.distribucionMensual.length === 0) return null;
-
-        const esSemanal = tl.tipo === 'WEEKLY';
-        const labels = tl.distribucionMensual.map(m => m.label);
-
-        return this.chartService.renderLineChart(
-            labels,
-            [
-                { label: 'Enviadas a DNI', data: tl.distribucionMensual.map(m => m.enviadas) },
-                { label: 'Protocolizadas', data: tl.distribucionMensual.map(m => m.cantidad) }
-            ],
-            {
-                title: esSemanal ? 'Protocolización (Semanal)' : 'Protocolización (Mensual)',
-                displayLabels: true
-            }
-        );
-    }
-
-    // ─────────────────────────────────────────────────────────────
-    // HELPERS DE ESTILO Y FORMATEO
     // ─────────────────────────────────────────────────────────────
 
     private heading1(text: string): Paragraph {
