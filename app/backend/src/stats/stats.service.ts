@@ -2368,7 +2368,7 @@ export class StatsService {
         ]);
 
         // Computar breakdown Observadores vs Técnicos para tabla de Personal
-        const emptyBreakdownSlice = () => ({ dias: 0, mareasFinalizadas: 0, mareaEnEjecucion: 0, desestimadas: 0, informesDeMarea: 0, informesProtocolizados: 0, informesPendientes: 0 });
+        const emptyBreakdownSlice = () => ({ dias: 0, mareasFinalizadas: 0, mareasEnEjecucion: 0, desestimadas: 0, informesDeMarea: 0, informesProtocolizados: 0, informesPendientes: 0 });
         const breakdown: import('./interfaces/dashboard.interface').PersonalBreakdown = {
             observadores: emptyBreakdownSlice(),
             tecnicos: emptyBreakdownSlice(),
@@ -2401,7 +2401,7 @@ export class StatsService {
             if (item.estadoOrden >= 4 && item.estadoOrden < 10) target.informesPendientes++;
 
             // Conteo de mareas desglosado (con refinamiento por fecha de arribo igual que Word)
-            let isFinalized = item.estadoActual !== MareaEstado.EN_EJECUCION && item.fechaFin;
+            let isFinalized = item.estadoActual !== MareaEstado.EN_EJECUCION && !!item.fechaFin;
             if (isFinalized && item.fechaFin) {
                 const finDateStr = new Date(item.fechaFin).toISOString().substring(0, 10);
                 if (finDateStr > limitDateStr) {
@@ -2410,7 +2410,7 @@ export class StatsService {
             }
 
             if (!isFinalized) {
-                target.mareaEnEjecucion++;
+                target.mareasEnEjecucion++;
             } else {
                 target.mareasFinalizadas++;
             }
