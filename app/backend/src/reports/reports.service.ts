@@ -52,13 +52,17 @@ export class ReportsService {
             protocolizationEndDate,
         } = params;
 
-        this.logger.log(`Generando informe de auditoría: año=${year}, modo=${mode}`);
+        const snapDate = endDate ? new Date(endDate) : new Date(Date.UTC(year, 11, 31, 23, 59, 59, 999));
+        snapDate.setUTCHours(23, 59, 59, 999);
 
-        // 1. Obtener estadísticas globales
+        this.logger.log(`Generando informe de auditoría: año=${year}, modo=${mode}, snapshot=${snapDate.toISOString()}`);
+
+        // 1. Obtener estadísticas globales (Snapshot Histórico)
         const stats = await this.statsService.getDashboardStats(
             year, mode, includeNonProtocolized, includeProtocolizedOutOfPeriod,
             'SHIP', includeCampaigns, startDate, endDate,
             protocolizationStartDate, protocolizationEndDate,
+            snapDate
         );
 
         // 2. Obtener dotación activa
@@ -74,25 +78,27 @@ export class ReportsService {
         });
         const observerDataMap = new Map(observersData.map(o => [o.id, { tipoObservador: o.tipoObservador, tipoContrato: o.tipoContrato }]));
 
-        // 4. Obtener distribución de mareas (para etapas)
+        // 4. Obtener distribución de mareas (Snapshot Histórico)
         const distribution = await this.statsService.getMareaDistribution(
             year, mode, includeNonProtocolized, includeProtocolizedOutOfPeriod,
             includeCampaigns, startDate, endDate,
             protocolizationStartDate, protocolizationEndDate,
+            snapDate
         );
 
-        // 5. Obtener detalle de mareas (incluye protocolización y campos de navegación)
+        // 5. Obtener detalle de mareas (Snapshot Histórico)
         const detailItems = await this.statsService.getDashboardStatsDetail(
             year, mode, includeNonProtocolized, includeProtocolizedOutOfPeriod,
             null, '', 'SHIP', includeCampaigns, startDate, endDate,
             protocolizationStartDate, protocolizationEndDate,
+            snapDate
         );
 
-        // 6. Obtener datos adicionales en paralelo
+        // 6. Obtener datos adicionales en paralelo (Snapshot Histórico)
         const [secondaryStats, specialCases, protocolizationTimeline] = await Promise.all([
-            this.statsService.getSecondaryObserverStats(year, startDate, endDate),
-            this.statsService.getAuditSpecialCases(year, startDate, endDate, includeCampaigns),
-            this.statsService.getProtocolizationTimeline(year, startDate, endDate),
+            this.statsService.getSecondaryObserverStats(year, startDate, endDate, snapDate),
+            this.statsService.getAuditSpecialCases(year, startDate, endDate, includeCampaigns, snapDate),
+            this.statsService.getProtocolizationTimeline(year, startDate, endDate, snapDate, includeCampaigns),
         ]);
 
         // 7. Computar breakdown Observadores vs Técnicos
@@ -155,14 +161,15 @@ export class ReportsService {
             protocolizationTimeline,
             breakdown,
             detailItems: detailItems.map((item: any) => {
-                let estadoAuditoria = 'Finalizada';
-                if (isPeriodOpen && item.estado === 'En ejecución') {
-                    estadoAuditoria = 'En ejecución';
-                } else if (!item.fechaFin) {
-                    estadoAuditoria = 'En ejecución';
-                } else {
+                let estadoAuditoria = item.estado; // 'En ejecución' o 'Finalizada' ya resuelto por el snapshot
+
+                // Refinamiento: Si el snapshot dice 'Finalizada' pero la fecha de fin es estrictamente 
+                // mayor al límite del periodo, se considera 'En ejecución' para propósitos de este reporte parcial.
+                if (estadoAuditoria === 'Finalizada' && item.fechaFin) {
                     const finDateStr = new Date(item.fechaFin).toISOString().substring(0, 10);
-                    if (finDateStr > limitDateStr) estadoAuditoria = 'En ejecución';
+                    if (finDateStr > limitDateStr) {
+                        estadoAuditoria = 'En ejecución';
+                    }
                 }
 
                 return {

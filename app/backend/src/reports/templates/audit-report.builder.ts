@@ -948,7 +948,7 @@ export class AuditReportBuilder {
                 this.heading2('7.1 Mareas canceladas'),
                 this.bodyParagraph(`Se registr${n !== 1 ? 'aron' : 'ó'} ${n} marea${n !== 1 ? 's' : ''} planificada${n !== 1 ? 's' : ''} que no llegó${n !== 1 ? 'ron' : ''} a ejecutarse en el período.`),
                 createFormattedTable(
-                    specialTableCols,
+                    ['MAREA', 'BUQUE', 'PESQUERÍA', 'DÍAS NAV.', 'FECHA CANC.'],
                     sortedCanceladas.map(m => [
                         this.formatMareaShort(m.id_marea), m.buque, m.pesqueria,
                         m.diasNavegados.toString(),
@@ -1011,7 +1011,7 @@ export class AuditReportBuilder {
                 this.heading2(`7.${subsecNum} Mareas pendientes de informe`),
                 this.bodyParagraph(`${n} marea${n !== 1 ? 's' : ''} se encontraba${n !== 1 ? 'n' : ''} en alguna etapa de corrección de datos o confección del informe al cierre del período, sin estar aún listas para protocolizar.`),
                 createFormattedTable(
-                    specialTableCols,
+                    ['MAREA', 'BUQUE', 'PESQUERÍA', 'DÍAS NAV.', 'FECHA REC.'],
                     sortedPendientes.map(m => [
                         this.formatMareaShort(m.id_marea), m.buque, m.pesqueria,
                         m.diasNavegados.toString(),
@@ -1030,7 +1030,7 @@ export class AuditReportBuilder {
                 this.heading2(`7.${subsecNum} Informes pendientes de envío a DNI`),
                 this.bodyParagraph(`${n} marea${n !== 1 ? 's' : ''} cuenta${n !== 1 ? 'n' : ''} con su informe técnico finalizado al cierre del período, pendiente${n !== 1 ? 's' : ''} de ser enviada${n !== 1 ? 's' : ''} formalmente a la Dirección Nacional de Investigación para su protocolización.`),
                 createFormattedTable(
-                    specialTableCols,
+                    ['MAREA', 'BUQUE', 'PESQUERÍA', 'DÍAS NAV.', 'FECHA FIN INF.'],
                     sortedPendientesEnvio.map(m => [
                         this.formatMareaShort(m.id_marea), m.buque, m.pesqueria,
                         m.diasNavegados.toString(),
@@ -1049,7 +1049,7 @@ export class AuditReportBuilder {
                 this.heading2(`7.${subsecNum} Mareas esperando protocolización`),
                 this.bodyParagraph(`${n} marea${n !== 1 ? 's' : ''} fu${n !== 1 ? 'eron enviadas' : 'e enviada'} a la DNI para protocolización y se encuentr${n !== 1 ? 'an' : 'a'} pendiente${n !== 1 ? 's' : ''} de confirmación.`),
                 createFormattedTable(
-                    specialTableCols,
+                    ['MAREA', 'BUQUE', 'PESQUERÍA', 'DÍAS NAV.', 'FECHA ENVÍO'],
                     sortedEsperandoProt.map(m => [
                         this.formatMareaShort(m.id_marea), m.buque, m.pesqueria,
                         m.diasNavegados.toString(),
