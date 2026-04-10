@@ -119,6 +119,8 @@ import AuditSeguimientoTab from './AuditSeguimientoTab.vue'
 import ExportExcelButton from '@/modules/shared/components/ExportExcelButton.vue'
 import ExportWordButton from '@/modules/shared/components/ExportWordButton.vue'
 import ExportPdfButton from '@/modules/shared/components/ExportPdfButton.vue'
+import { useThemeStore } from '@/modules/shared/stores/theme.store'
+import { storeToRefs } from 'pinia'
 import type {
    DashboardStats, MareaDistributionItem, StatsDetailItem,
    AuditSpecialCasesResult, ProtocolizationTimelineResult, ObserverSecondaryStats
@@ -139,6 +141,9 @@ const props = defineProps<{
    startDate: string | null
    endDate: string | null
 }>()
+
+const themeStore = useThemeStore()
+const { darkMode } = storeToRefs(themeStore)
 
 // ── Tabs ──────────────────────────────────────────────────
 type TabId = 'personal' | 'navegacion' | 'pesquerias' | 'seguimiento'
@@ -302,7 +307,76 @@ const handleExportPdf = async () => {
    // Abrir ventana inmediatamente para evitar bloqueo de popup
    const reportWindow = window.open('', '_blank')
    if (reportWindow) {
-      reportWindow.document.write('Generando informe PDF, por favor espere...')
+      const isDarkMode = darkMode.value
+      reportWindow.document.write(`
+         <!DOCTYPE html>
+         <html lang="es" ${isDarkMode ? 'class="dark"' : ''}>
+         <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Generando Informe SIGMA</title>
+            <style>
+               body { 
+                  margin: 0; 
+                  display: flex; 
+                  align-items: center; 
+                  justify-content: center; 
+                  height: 100vh; 
+                  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+                  background: #f8fafc;
+                  color: #0f172a;
+                  -webkit-font-smoothing: antialiased;
+               }
+               .container { text-align: center; max-width: 450px; padding: 2rem; }
+               .spinner {
+                  width: 56px;
+                  height: 56px;
+                  border: 5px solid #e2e8f0;
+                  border-bottom-color: #465fff;
+                  border-radius: 50%;
+                  display: inline-block;
+                  box-sizing: border-box;
+                  animation: rotation 1s linear infinite;
+                  margin-bottom: 28px;
+               }
+               @keyframes rotation { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+               h1 { 
+                  font-size: 1.1rem; 
+                  font-weight: 900; 
+                  margin: 0 0 12px 0; 
+                  letter-spacing: 0.05em; 
+                  text-transform: uppercase; 
+                  color: #1e293b;
+               }
+               p { font-size: 0.9rem; color: #64748b; margin: 0; line-height: 1.6; font-weight: 500; }
+               .brand { 
+                  margin-top: 40px; 
+                  font-size: 0.75rem; 
+                  font-weight: 800; 
+                  color: #465fff; 
+                  letter-spacing: 0.1em;
+                  opacity: 0.5;
+               }
+               
+               /* Tema Oscuro (basado en clase .dark) */
+               .dark body { background: #020617; color: #f1f5f9; }
+               .dark .spinner { border-color: #1e293b; border-bottom-color: #3b82f6; }
+               .dark h1 { color: #f1f5f9; }
+               .dark p { color: #94a3b8; }
+               .dark .brand { color: #3b82f6; }
+            </style>
+         </head>
+         <body>
+            <div class="container">
+               <div class="spinner"></div>
+               <h1>Generando Informe</h1>
+               <p>Estamos procesando y validando los datos.<br>Por favor, mantenga esta ventana abierta.</p>
+               <div class="brand">SIGMA • INIDEP</div>
+            </div>
+         </body>
+         </html>
+      `);
+      reportWindow.document.close();
    }
 
    exportingPdf.value = true
