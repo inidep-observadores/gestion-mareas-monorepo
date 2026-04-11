@@ -351,7 +351,7 @@ export class AuditReportBuilder {
             }));
 
         const obsAfectados = stats.observers.length;
-        const dotacionRef = Math.max(data.dotacionActiva, obsAfectados);
+        const dotacionRef = obsAfectados + (data.observadoresSinActividad?.length || 0);
         const coberturaPct = dotacionRef > 0 ? Math.round((obsAfectados / dotacionRef) * 100) : 0;
         const promedioDias = obsAfectados > 0 ? Math.round(stats.totalDaysNavigated / obsAfectados) : 0;
 
