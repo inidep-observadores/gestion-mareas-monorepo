@@ -103,11 +103,19 @@ export class ReportsService {
         );
 
         // 6. Obtener datos adicionales en paralelo (Snapshot Histórico)
-        const [secondaryStats, specialCases, protocolizationTimeline] = await Promise.all([
+        const [secondaryStats, specialCases, protocolizationTimeline, fisheryOrdering] = await Promise.all([
             this.statsService.getSecondaryObserverStats(year, startDate, endDate, snapDate),
             this.statsService.getAuditSpecialCases(year, startDate, endDate, includeCampaigns, snapDate),
             this.statsService.getProtocolizationTimeline(year, startDate, endDate, snapDate, includeCampaigns),
+            this.prisma.pesqueria.findMany({
+                where: { activo: true },
+                select: { nombre: true, orden: true }
+            }),
         ]);
+
+        const fisheryOrderMap = new Map<string, number>(
+            fisheryOrdering.map(f => [f.nombre, f.orden ?? 999])
+        );
 
         // 7. Computar breakdown Observadores vs Técnicos
         const informeStates = new Set<string>([
@@ -169,6 +177,7 @@ export class ReportsService {
             specialCases,
             protocolizationTimeline,
             breakdown,
+            fisheryOrderMap,
             detailItems: detailItems.map((item: any) => {
                 let estadoAuditoria = item.estado; // 'En ejecución' o 'Finalizada' ya resuelto por el snapshot
 

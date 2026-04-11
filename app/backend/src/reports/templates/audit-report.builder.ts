@@ -161,6 +161,9 @@ export interface AuditReportData {
 
     /** Observadores de la dotación que no tuvieron actividad en el período */
     observadoresSinActividad: Array<{ id: string; name: string }>;
+
+    /** Mapa de ordenamiento de pesquerías (nombre -> orden) */
+    fisheryOrderMap?: Map<string, number>;
 }
 
 @Injectable()
@@ -335,6 +338,10 @@ export class AuditReportBuilder {
 
         const fisheryRows = Array.from(fisheryFlotaMap.values())
             .sort((a, b) => {
+                const ordA = data.fisheryOrderMap?.get(a.pesqueria) ?? 999;
+                const ordB = data.fisheryOrderMap?.get(b.pesqueria) ?? 999;
+                if (ordA !== ordB) return ordA - ordB;
+
                 const p = a.pesqueria.localeCompare(b.pesqueria);
                 return p !== 0 ? p : a.flota.localeCompare(b.flota);
             })
@@ -362,6 +369,7 @@ export class AuditReportBuilder {
             coberturaPct,
             promedioDias,
             stats,
+            fisheryOrderMap: data.fisheryOrderMap,
         };
     }
 
@@ -821,6 +829,10 @@ export class AuditReportBuilder {
             (enEjecucionCount > 0 ? ` Las ${enEjecucionCount} mareas restantes se encontraban en estado "En ejecución" al cierre del período.` : '');
 
         const sorted = [...finalizadas].sort((a, b) => {
+            const ordA = data.fisheryOrderMap?.get(a.pesqueria) ?? 999;
+            const ordB = data.fisheryOrderMap?.get(b.pesqueria) ?? 999;
+            if (ordA !== ordB) return ordA - ordB;
+
             const p = a.pesqueria.localeCompare(b.pesqueria);
             if (p !== 0) return p;
             return this.sortMareaId(a.id_marea, b.id_marea);
@@ -912,6 +924,10 @@ export class AuditReportBuilder {
         const introText = `Al cierre del período (${closeDateText}), las siguientes ${enEjecucion.length} mareas se encontraban en curso:`;
 
         const sorted = [...enEjecucion].sort((a, b) => {
+            const ordA = proc.fisheryOrderMap?.get(a.pesqueria) ?? 999;
+            const ordB = proc.fisheryOrderMap?.get(b.pesqueria) ?? 999;
+            if (ordA !== ordB) return ordA - ordB;
+
             const p = a.pesqueria.localeCompare(b.pesqueria);
             if (p !== 0) return p;
             return this.sortMareaId(a.id_marea, b.id_marea);
