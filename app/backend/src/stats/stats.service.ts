@@ -22,7 +22,7 @@ export class StatsService {
         private readonly businessRules: BusinessRulesService,
         private readonly mareasService: MareasService
     ) { }
-    
+
     /**
      * Reconstruye el estado de una marea en una fecha específica.
      * Prioriza la tabla de movimientos, pero tiene fallbacks basados en la navegación
@@ -36,7 +36,7 @@ export class StatsService {
             if (!e.fechaZarpada) return false;
             const zarpada = new Date(e.fechaZarpada);
             const arribo = e.fechaArribo ? new Date(e.fechaArribo) : null;
-            
+
             // Está navegando si: zarpó antes o el día del snapshot Y (no arribó aún O arribó después del snapshot)
             return zarpada <= snapshotDate && (!arribo || arribo > snapshotDate);
         });
@@ -2461,7 +2461,7 @@ export class StatsService {
         const startRowKPITitle = 3;
         sheet.mergeCells(startRowKPITitle, 1, startRowKPITitle, 3);
         const kTitle = sheet.getCell(startRowKPITitle, 1);
-        kTitle.value = 'Resumen General';
+        kTitle.value = 'Resumen general';
         kTitle.font = { bold: true, size: 12 };
         kTitle.alignment = { horizontal: 'left' };
 
@@ -2479,7 +2479,7 @@ export class StatsService {
 
         // El KPI científico usa solo los observadores (excluye técnicos)
         // Pero la tabla de ranking (Tabla 2) muestra a todos los que navegaron.
-        const dotacionRef = Math.max(dotacionActiva, obsCientificosQueNavegaron);
+        const dotacionRef = obsCientificosQueNavegaron + (observadoresSinActividad?.length || 0);
 
         // Cobertura alineada con Word: % de la dotación que efectivamente navegó
         const cobertura = dotacionRef > 0 ? (obsCientificosQueNavegaron / dotacionRef) : 0;
@@ -2610,7 +2610,7 @@ export class StatsService {
         // Título de la tabla
         sheet.mergeCells(startRowBreakdown, 1, startRowBreakdown, 4);
         const bTitle = sheet.getCell(startRowBreakdown, 1);
-        bTitle.value = 'Resumen por Tipo de Observador';
+        bTitle.value = 'Indicadores de estado';
         bTitle.font = { bold: true, size: 12 };
         bTitle.alignment = { horizontal: 'left' };
 
@@ -2655,7 +2655,7 @@ export class StatsService {
             const startRowSinActividad = bHeaderRow + bRows.length + 3;
             sheet.mergeCells(startRowSinActividad, 1, startRowSinActividad, 2);
             const saTitle = sheet.getCell(startRowSinActividad, 1);
-            saTitle.value = 'Observadores de la dotación sin actividad';
+            saTitle.value = 'Observadores sin actividad en el período';
             saTitle.font = { bold: true, size: 12 };
             saTitle.alignment = { horizontal: 'left' };
 
@@ -3619,13 +3619,13 @@ export class StatsService {
             const cancellationMov = m.movimientos?.find(mov => mov.estadoHasta?.codigo === MareaEstado.CANCELADA);
             const desestimacionMov = m.movimientos?.find(mov => mov.estadoHasta?.codigo === MareaEstado.DESESTIMADA);
 
-            const isCancelledInPeriod = cancellationMov && 
-                                       cancellationMov.fechaHora >= periodStart && 
-                                       cancellationMov.fechaHora <= snapEnd;
-            
-            const isDesestimadaInPeriod = desestimacionMov && 
-                                         desestimacionMov.fechaHora >= periodStart && 
-                                         desestimacionMov.fechaHora <= snapEnd;
+            const isCancelledInPeriod = cancellationMov &&
+                cancellationMov.fechaHora >= periodStart &&
+                cancellationMov.fechaHora <= snapEnd;
+
+            const isDesestimadaInPeriod = desestimacionMov &&
+                desestimacionMov.fechaHora >= periodStart &&
+                desestimacionMov.fechaHora <= snapEnd;
 
             // Categorización según estado histórico (Priorizamos eventos terminales detectados en el periodo)
             if (isCancelledInPeriod) {
