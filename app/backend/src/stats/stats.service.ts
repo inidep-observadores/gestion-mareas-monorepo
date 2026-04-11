@@ -376,7 +376,7 @@ export class StatsService {
                     if (obsObj) {
                         byObserver[oId] = {
                             id: oId,
-                            name: `${obsObj.nombre} ${obsObj.apellido}`,
+                            name: `${obsObj.apellido}, ${obsObj.nombre}`,
                             mareas: 0,
                             days: 0,
                             active: obsObj.activo
@@ -1202,7 +1202,7 @@ export class StatsService {
             pesqueria: filterType === FilterType.FISHERY
                 ? filterValue
                 : (m.etapas[0]?.pesqueria?.nombre || m.buque?.pesqueriaHabitual?.nombre || '-'),
-            observador: m.observadorPrincipal ? `${m.observadorPrincipal.nombre} ${m.observadorPrincipal.apellido}` : 'Sin asignar',
+            observador: m.observadorPrincipal ? `${m.observadorPrincipal.apellido}, ${m.observadorPrincipal.nombre}` : 'Sin asignar',
             contrato: m.observadorPrincipal?.tipoContrato || '-',
             tipo_observador: m.observadorPrincipal?.tipoObservador || '-',
             estado: stateCode === MareaEstado.EN_EJECUCION ? 'En ejecución' : 'Finalizada',
@@ -1217,7 +1217,7 @@ export class StatsService {
             e.observadores.forEach(obsRel => {
                 const oid = obsRel.observadorId;
                 if (m.observadorPrincipal && oid === m.observadorPrincipal.id) return;
-                if (obsRel.observador) extraObservers.add(`${obsRel.observador.nombre} ${obsRel.observador.apellido}`);
+                if (obsRel.observador) extraObservers.add(`${obsRel.observador.apellido}, ${obsRel.observador.nombre}`);
             });
         });
         const extrasArray = Array.from(extraObservers);
@@ -1583,7 +1583,7 @@ export class StatsService {
                     nroEtapa: etapa.nroEtapa,
                     fechaZarpada: zarpada,
                     fechaArribo: arribo,
-                    observador: marea.observadorPrincipal ? `${marea.observadorPrincipal.nombre} ${marea.observadorPrincipal.apellido}` : 'Sin asignar',
+                    observador: marea.observadorPrincipal ? `${marea.observadorPrincipal.apellido}, ${marea.observadorPrincipal.nombre}` : 'Sin asignar',
                     tipoMarea: marea.tipoMarea
                 });
             }
@@ -2333,20 +2333,22 @@ export class StatsService {
         });
         const dotacionActiva = allActiveObservers.length;
 
-        // 3. Filtrar observadores que navegaron para el KPI científico (excluyendo técnicos)
+        // 3. Obtener todos los observadores que navegaron en el período (independientemente de su tipo actual para paridad con lo navegado)
         const observerIds = stats.observers.map((o: any) => o.id);
         const observerIdsSet = new Set(observerIds);
+        const obsCientificosQueNavegaron = stats.observers.length; // Usamos el total de los que efectivamente navegaron en el período
+
+        // Obtener mapa de tipos para desgloses posteriores (opcional pero útil)
         const observersData = await this.prisma.observador.findMany({
             where: { id: { in: observerIds } },
             select: { id: true, tipoObservador: true }
         });
         const observerTypeMap = new Map(observersData.map(o => [o.id, o.tipoObservador]));
-        const obsCientificosQueNavegaron = stats.observers.filter((o: any) => observerTypeMap.get(o.id) === 'OBSERVADOR').length;
 
-        // Computar observadores sin actividad
+        // Computar observadores sin actividad (aquellos de la dotación real 44 que no navegaron)
         const observadoresSinActividad = allActiveObservers
             .filter(o => !observerIdsSet.has(o.id))
-            .map(o => ({ id: o.id, name: `${o.nombre} ${o.apellido}` }));
+            .map(o => ({ id: o.id, name: `${o.apellido}, ${o.nombre}` }));
 
         // Obtener marea distribution (para intervalos y etapas)
         const mareas = await this.getMareaDistribution(
@@ -2505,7 +2507,7 @@ export class StatsService {
 
         // TABLA 2: RANKING DE PERSONAL (DERECHA: E-I)
         const colOffsetRanking = 5; // Columna E
-        const headersRanking = ['Pos', 'Observador', 'Mareas', 'Días Navegados'];
+        const headersRanking = ['Pos', 'Apellido y Nombre', 'Mareas', 'Días Navegados'];
         const groupConfigs = [
             { title: 'Ranking Observadores', data: stats.observers.filter((o: any) => o.tipoObservador === 'OBSERVADOR') },
             { title: 'Ranking Técnicos', data: stats.observers.filter((o: any) => o.tipoObservador === 'TECNICO') }
@@ -2653,27 +2655,26 @@ export class StatsService {
         // TABLA 4: OBSERVADORES SIN ACTIVIDAD (debajo de Breakdown)
         if (observadoresSinActividad.length > 0) {
             const startRowSinActividad = bHeaderRow + bRows.length + 3;
-            sheet.mergeCells(startRowSinActividad, 1, startRowSinActividad, 2);
+            sheet.mergeCells(startRowSinActividad, 1, startRowSinActividad, 3);
             const saTitle = sheet.getCell(startRowSinActividad, 1);
             saTitle.value = 'Observadores sin actividad en el período';
             saTitle.font = { bold: true, size: 12 };
             saTitle.alignment = { horizontal: 'left' };
 
             const saHeaderRow = startRowSinActividad + 1;
-            ['Nro', 'Apellido y Nombre'].forEach((h, i) => {
-                const cell = sheet.getCell(saHeaderRow, i + 1);
-                cell.value = h;
-                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF00548B' } };
-                cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
-                cell.alignment = { horizontal: 'center' };
-            });
+            sheet.mergeCells(saHeaderRow, 1, saHeaderRow, 3);
+            const cell = sheet.getCell(saHeaderRow, 1);
+            cell.value = 'Apellido y Nombre';
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF00548B' } };
+            cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+            cell.alignment = { horizontal: 'center' };
 
             observadoresSinActividad.forEach((obs, idx) => {
                 const row = saHeaderRow + 1 + idx;
-                sheet.getCell(row, 1).value = idx + 1;
-                sheet.getCell(row, 1).alignment = { horizontal: 'center' };
-                sheet.getCell(row, 2).value = obs.name;
-                sheet.getCell(row, 2).border = { bottom: { style: 'thin', color: { argb: 'FFE2E8F0' } } };
+                sheet.mergeCells(row, 1, row, 3);
+                const nameCell = sheet.getCell(row, 1);
+                nameCell.value = obs.name;
+                nameCell.border = { bottom: { style: 'thin', color: { argb: 'FFE2E8F0' } } };
             });
         }
     }
@@ -3100,7 +3101,7 @@ export class StatsService {
         titleCell.font = { bold: true, size: 16 };
         titleCell.alignment = { horizontal: 'center' };
 
-        const colHeaders = ['#', 'Marea', 'Buque', 'Pesquería', 'Flota', 'Observador', 'Días Nav.', 'Fecha Estado', 'Observaciones'];
+        const colHeaders = ['#', 'Marea', 'Buque', 'Pesquería', 'Flota', 'Apellido y Nombre', 'Días Nav.', 'Fecha Estado', 'Observaciones'];
 
         const sections = [
             {
@@ -3372,7 +3373,7 @@ export class StatsService {
         dTitle.font = { bold: true, size: 12 };
         dTitle.alignment = { horizontal: 'left' };
 
-        const detailHeaders = ['Protocolización', 'Fecha Protoc.', 'Marea', 'Buque', 'Observador'];
+        const detailHeaders = ['Protocolización', 'Fecha Protoc.', 'Marea', 'Buque', 'Apellido y Nombre'];
         detailHeaders.forEach((h, i) => {
             const cell = sheet.getCell(4, colOffsetDetail + i);
             cell.value = h;
@@ -3607,7 +3608,7 @@ export class StatsService {
                 flota: m.buque?.tipoFlota?.nombre || '-',
                 pesqueria: m.pesqueria?.nombre || m.buque?.pesqueriaHabitual?.nombre || '-',
                 observador: m.observadorPrincipal
-                    ? `${m.observadorPrincipal.nombre} ${m.observadorPrincipal.apellido}`
+                    ? `${m.observadorPrincipal.apellido}, ${m.observadorPrincipal.nombre}`
                     : 'Sin asignar',
                 diasNavegados,
                 fechaEvento: lastMov?.fechaHora || null,
@@ -3849,7 +3850,7 @@ export class StatsService {
                 id: m.id,
                 id_marea: MareaUtils.formatCodigo(m as any),
                 buque: m.buque?.nombreBuque || 'Desconocido',
-                observador: m.observadorPrincipal ? `${m.observadorPrincipal.nombre} ${m.observadorPrincipal.apellido}` : 'Sin asignar',
+                observador: m.observadorPrincipal ? `${m.observadorPrincipal.apellido}, ${m.observadorPrincipal.nombre}` : 'Sin asignar',
                 nroProtocolizacion: m.nroProtocolizacion,
                 anioProtocolizacion: m.anioProtocolizacion,
                 fechaProtocolizacion: m.fechaProtocolizacion,

@@ -772,8 +772,8 @@ export class AuditReportBuilder {
                 this.heading3(`${distNum}.${idx + 1} Personal ${groupKey.toLowerCase()}`),
                 createFormattedTable(
                     hasSecundarios
-                        ? ['OBSERVADOR', 'MAREAS', 'DÍAS NAVEGADOS', 'ETAPAS SEC.']
-                        : ['OBSERVADOR', 'MAREAS', 'DÍAS NAVEGADOS'],
+                        ? ['APELLIDO Y NOMBRE', 'MAREAS', 'DÍAS NAVEGADOS', 'ETAPAS SEC.']
+                        : ['APELLIDO Y NOMBRE', 'MAREAS', 'DÍAS NAVEGADOS'],
                     groupObs.map((o: any) => {
                         const displayName = o.name + (o.tipoObservador === 'TECNICO' ? ' (Técnico)' : '');
                         return hasSecundarios
@@ -809,7 +809,7 @@ export class AuditReportBuilder {
                 this.heading2(`${inactiveNum} Observadores sin actividad`),
                 this.bodyParagraph(inactiveText),
                 createFormattedTable(
-                    ['NOMBRES Y APELLIDOS'],
+                    ['APELLIDO Y NOMBRES'],
                     inactive.map(o => [o.name]),
                     {
                         columnWidths: [100],
