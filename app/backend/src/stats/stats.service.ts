@@ -2503,7 +2503,7 @@ export class StatsService {
 
         // TABLA 2: RANKING DE PERSONAL (DERECHA: E-I)
         const colOffsetRanking = 5; // Columna E
-        const headersRanking = ['Pos', 'Observador', 'Mareas', 'Días Navegados', 'Etapas Sec.'];
+        const headersRanking = ['Pos', 'Observador', 'Mareas', 'Días Navegados'];
         const groupConfigs = [
             { title: 'Ranking Observadores', data: stats.observers.filter((o: any) => o.tipoObservador === 'OBSERVADOR') },
             { title: 'Ranking Técnicos', data: stats.observers.filter((o: any) => o.tipoObservador === 'TECNICO') }
@@ -2515,7 +2515,7 @@ export class StatsService {
             if (group.data.length === 0) return;
 
             // Título de la tabla de ranking
-            sheet.mergeCells(currentRankingRow, colOffsetRanking, currentRankingRow, colOffsetRanking + 4);
+            sheet.mergeCells(currentRankingRow, colOffsetRanking, currentRankingRow, colOffsetRanking + 3);
             const gTitle = sheet.getCell(currentRankingRow, colOffsetRanking);
             gTitle.value = group.title;
             gTitle.font = { bold: true, size: 12 };
@@ -2534,26 +2534,20 @@ export class StatsService {
 
             let gMareas = 0;
             let gDias = 0;
-            let gEtapas = 0;
 
             group.data.forEach((obs: any, index: number) => {
-                const etapasSecundario = secondaryMap.get(obs.id) ?? 0;
-
                 sheet.getCell(currentRankingRow, colOffsetRanking).value = index + 1;
                 sheet.getCell(currentRankingRow, colOffsetRanking + 1).value = obs.name;
                 sheet.getCell(currentRankingRow, colOffsetRanking + 2).value = obs.mareas;
                 sheet.getCell(currentRankingRow, colOffsetRanking + 3).value = obs.days;
-                sheet.getCell(currentRankingRow, colOffsetRanking + 4).value = etapasSecundario;
 
                 gMareas += obs.mareas;
                 gDias += obs.days;
-                gEtapas += etapasSecundario;
 
                 // Formato
                 sheet.getCell(currentRankingRow, colOffsetRanking).alignment = { horizontal: 'center' };
                 sheet.getCell(currentRankingRow, colOffsetRanking + 2).alignment = { horizontal: 'center' };
                 sheet.getCell(currentRankingRow, colOffsetRanking + 3).alignment = { horizontal: 'center' };
-                sheet.getCell(currentRankingRow, colOffsetRanking + 4).alignment = { horizontal: 'center' };
 
                 currentRankingRow++;
             });
@@ -2566,7 +2560,6 @@ export class StatsService {
 
             const colMareas = colOffsetRanking + 2;
             const colDias = colOffsetRanking + 3;
-            const colEtapas = colOffsetRanking + 4;
 
             sheet.getCell(totalRow, colMareas).value = { formula: `SUM(${sheet.getColumn(colMareas).letter}${rankingDataStartRow}:${sheet.getColumn(colMareas).letter}${totalRow - 1})` };
             sheet.getCell(totalRow, colMareas).font = { bold: true };
@@ -2574,14 +2567,10 @@ export class StatsService {
             sheet.getCell(totalRow, colDias).value = { formula: `SUM(${sheet.getColumn(colDias).letter}${rankingDataStartRow}:${sheet.getColumn(colDias).letter}${totalRow - 1})` };
             sheet.getCell(totalRow, colDias).font = { bold: true };
 
-            sheet.getCell(totalRow, colEtapas).value = { formula: `SUM(${sheet.getColumn(colEtapas).letter}${rankingDataStartRow}:${sheet.getColumn(colEtapas).letter}${totalRow - 1})` };
-            sheet.getCell(totalRow, colEtapas).font = { bold: true };
-
             sheet.getCell(totalRow, colMareas).alignment = { horizontal: 'center' };
             sheet.getCell(totalRow, colDias).alignment = { horizontal: 'center' };
-            sheet.getCell(totalRow, colEtapas).alignment = { horizontal: 'center' };
             // Aplicar fondo gris y borde superior a las celdas de la tabla
-            for (let i = 0; i < 5; i++) {
+            for (let i = 0; i < 4; i++) {
                 const cell = sheet.getCell(totalRow, colOffsetRanking + i);
                 cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF5F5F5' } };
                 cell.border = { top: { style: 'thin' } };
