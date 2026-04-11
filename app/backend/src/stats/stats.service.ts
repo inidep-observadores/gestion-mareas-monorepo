@@ -2361,11 +2361,19 @@ export class StatsService {
         );
 
         // 5. Obtener datos adicionales para nuevas hojas (en paralelo)
-        const [secondaryStats, specialCases, protocolizationTimeline] = await Promise.all([
+        const [secondaryStats, specialCases, protocolizationTimeline, fisheryOrdering] = await Promise.all([
             this.getSecondaryObserverStats(year, startDate, endDate, snapEnd),
             this.getAuditSpecialCases(year, startDate, endDate, includeCampaigns, snapEnd),
             this.getProtocolizationTimeline(year, startDate, endDate, snapEnd, includeCampaigns),
+            this.prisma.pesqueria.findMany({
+                where: { activo: true },
+                select: { nombre: true, orden: true }
+            }),
         ]);
+
+        const fisheryOrderMap = new Map<string, number>(
+            fisheryOrdering.map(f => [f.nombre, f.orden ?? 999])
+        );
 
         // Computar breakdown Observadores vs Técnicos para tabla de Personal
         const emptyBreakdownSlice = () => ({ dias: 0, mareasFinalizadas: 0, mareasEnEjecucion: 0, desestimadas: 0, informesDeMarea: 0, informesProtocolizados: 0, informesPendientes: 0 });
@@ -2425,7 +2433,7 @@ export class StatsService {
         this.buildAuditNavegacionSheet(workbook, mareas, detailItems, year, mode, endDate);
 
         // Hoja 3: Estadísticas por Pesquería
-        this.buildAuditPesqueriaSheet(workbook, mareas, detailItems, year, mode, endDate);
+        this.buildAuditPesqueriaSheet(workbook, mareas, detailItems, year, mode, fisheryOrderMap, endDate);
 
         // Hoja 4: Mareas según su Estado
         this.buildAuditCasosEspecialesSheet(workbook, specialCases);
@@ -2866,7 +2874,15 @@ export class StatsService {
         });
     }
 
-    private buildAuditPesqueriaSheet(workbook: ExcelJS.Workbook, mareasDistribucion: any[], detailItems: any[], year: number, mode: 'CALENDAR' | 'TOTAL', endDate?: string) {
+    private buildAuditPesqueriaSheet(
+        workbook: ExcelJS.Workbook,
+        mareasDistribucion: any[],
+        detailItems: any[],
+        year: number,
+        mode: 'CALENDAR' | 'TOTAL',
+        fisheryOrderMap: Map<string, number>,
+        endDate?: string
+    ) {
         const sheet = workbook.addWorksheet('Pesquería');
 
         const periodRange = mode === 'CALENDAR' ? {
@@ -2933,7 +2949,12 @@ export class StatsService {
         let totalDiasPesqueria = 0;
         let totalMareasPesqueria = 0;
         let totalEtapasPesqueria = 0;
-        Array.from(fisheryStats.entries()).sort((a, b) => b[1].dias - a[1].dias).forEach(([name, data]) => {
+        Array.from(fisheryStats.entries()).sort((a, b) => {
+            const ordA = fisheryOrderMap.get(a[0]) ?? 999;
+            const ordB = fisheryOrderMap.get(b[0]) ?? 999;
+            if (ordA !== ordB) return ordA - ordB;
+            return a[0].localeCompare(b[0]);
+        }).forEach(([name, data]) => {
             sheet.getCell(resRow, 1).value = name;
             sheet.getCell(resRow, 2).value = data.mareas.size;
             sheet.getCell(resRow, 2).alignment = { horizontal: 'center' };
@@ -3022,6 +3043,10 @@ export class StatsService {
 
         listMareasDetalle
             .sort((a, b) => {
+                const ordA = fisheryOrderMap.get(a.pesqueria) ?? 999;
+                const ordB = fisheryOrderMap.get(b.pesqueria) ?? 999;
+                if (ordA !== ordB) return ordA - ordB;
+
                 const pComp = a.pesqueria.localeCompare(b.pesqueria);
                 if (pComp !== 0) return pComp;
 
