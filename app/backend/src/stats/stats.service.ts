@@ -2408,14 +2408,8 @@ export class StatsService {
             if (item.estadoActual === MareaEstado.PROTOCOLIZADA) target.informesProtocolizados++;
             if (item.estadoOrden >= 4 && item.estadoOrden < 10) target.informesPendientes++;
 
-            // Conteo de mareas desglosado (con refinamiento por fecha de arribo igual que Word)
-            let isFinalized = item.estadoActual !== MareaEstado.EN_EJECUCION && !!item.fechaFin;
-            if (isFinalized && item.fechaFin) {
-                const finDateStr = new Date(item.fechaFin).toISOString().substring(0, 10);
-                if (finDateStr > limitDateStr) {
-                    isFinalized = false;
-                }
-            }
+            // Conteo de mareas desglosado (Usa el estado ya calculado del snapshot para paridad con Word)
+            const isFinalized = item.estado === 'Finalizada';
 
             if (!isFinalized) {
                 target.mareasEnEjecucion++;
@@ -2716,20 +2710,7 @@ export class StatsService {
 
         // Usar detailItems como base (paridad total con la tabla de navegación web)
         const listMareas = detailItems.map(item => {
-            const todayStr = DateUtils.getNow().toISOString().substring(0, 10);
-            const isPeriodOpen = limitDateStr >= todayStr;
-
-            let estadoAuditoria = 'Finalizada';
-            if (isPeriodOpen && item.estado === 'En ejecución') {
-                estadoAuditoria = 'En ejecución';
-            } else if (!item.fechaFin) {
-                estadoAuditoria = 'En ejecución';
-            } else {
-                const finDateStr = new Date(item.fechaFin).toISOString().substring(0, 10);
-                if (finDateStr > limitDateStr) {
-                    estadoAuditoria = 'En ejecución';
-                }
-            }
+            const estadoAuditoria = item.estado; // 'En ejecución' o 'Finalizada' ya resuelto por el snapshot
 
             let fechaMax = item.fechaFin ? new Date(item.fechaFin) : null;
             let fechaArribo = item.fechaArribo ? new Date(item.fechaArribo) : null;
@@ -3002,20 +2983,7 @@ export class StatsService {
         const limitDateStr = endDate ? endDate : `${year}-12-31`;
 
         const listMareasDetalle = detailItems.map(item => {
-            const todayStr = DateUtils.getNow().toISOString().substring(0, 10);
-            const isPeriodOpen = limitDateStr >= todayStr;
-
-            let estadoAuditoria = 'Finalizada';
-            if (isPeriodOpen && item.estado === 'En ejecución') {
-                estadoAuditoria = 'En ejecución';
-            } else if (!item.fechaFin) {
-                estadoAuditoria = 'En ejecución';
-            } else {
-                const finDateStr = new Date(item.fechaFin).toISOString().substring(0, 10);
-                if (finDateStr > limitDateStr) {
-                    estadoAuditoria = 'En ejecución';
-                }
-            }
+            const estadoAuditoria = item.estado; // 'En ejecución' o 'Finalizada' ya resuelto por el snapshot
 
             let fechaFin = item.fechaFin ? new Date(item.fechaFin) : null;
             if (estadoAuditoria === 'En ejecución') {
