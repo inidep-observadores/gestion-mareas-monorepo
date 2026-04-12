@@ -130,10 +130,15 @@ export interface PersonalTypeBreakdown {
     dias: number;
     mareasFinalizadas: number;
     mareasEnEjecucion: number;
+    canceladas: number;
     desestimadas: number;
+    esperandoEntrega: number;
+    pendientesDeInforme: number;
+    delegadasExternas: number;
+    listasParaEnvio: number;
+    esperandoProtocolizacion: number;
     informesDeMarea: number;      // PARA_PROTOCOLIZAR + ESPERANDO_PROTOCOLIZACION + PROTOCOLIZADA
     informesProtocolizados: number; // PROTOCOLIZADA
-    informesPendientes: number;   // estado.orden > 3 y < 11
 }
 
 export interface PersonalBreakdown {

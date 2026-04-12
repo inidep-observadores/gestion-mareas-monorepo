@@ -2378,7 +2378,21 @@ export class StatsService {
         );
 
         // Computar breakdown Observadores vs Técnicos para tabla de Personal
-        const emptyBreakdownSlice = () => ({ dias: 0, mareasFinalizadas: 0, mareasEnEjecucion: 0, desestimadas: 0, informesDeMarea: 0, informesProtocolizados: 0, informesPendientes: 0 });
+        // Computar breakdown Observadores vs Técnicos para tabla de Personal
+        const emptyBreakdownSlice = () => ({ 
+            dias: 0, 
+            mareasFinalizadas: 0, 
+            mareasEnEjecucion: 0, 
+            canceladas: 0,
+            desestimadas: 0, 
+            esperandoEntrega: 0,
+            pendientesDeInforme: 0,
+            delegadasExternas: 0,
+            listasParaEnvio: 0,
+            esperandoProtocolizacion: 0,
+            informesDeMarea: 0, 
+            informesProtocolizados: 0 
+        });
         const breakdown: import('./interfaces/dashboard.interface').PersonalBreakdown = {
             observadores: emptyBreakdownSlice(),
             tecnicos: emptyBreakdownSlice(),
@@ -2394,10 +2408,31 @@ export class StatsService {
             target.dias += obs.days;
         });
 
-        // Desestimadas con tipo de observador
-        specialCases.desestimadas.forEach(m => {
-            const target = m.tipoObservador === 'OBSERVADOR' ? breakdown.observadores : breakdown.tecnicos;
-            target.desestimadas++;
+        // Procesar estados desde specialCases para paridad total con la hoja de Casos Especiales
+        const processSpecialCaseList = (list: any[], key: keyof import('./interfaces/dashboard.interface').PersonalTypeBreakdown) => {
+            list.forEach(m => {
+                const target = m.tipoObservador === 'OBSERVADOR' ? breakdown.observadores : breakdown.tecnicos;
+                (target[key] as number)++;
+            });
+        };
+
+        processSpecialCaseList(specialCases.canceladas, 'canceladas');
+        processSpecialCaseList(specialCases.desestimadas, 'desestimadas');
+        processSpecialCaseList(specialCases.esperandoEntrega, 'esperandoEntrega');
+        processSpecialCaseList(specialCases.pendientesDeInforme, 'pendientesDeInforme');
+        processSpecialCaseList(specialCases.delegadasExternas, 'delegadasExternas');
+        processSpecialCaseList(specialCases.informesPendientesEnvio, 'listasParaEnvio');
+        processSpecialCaseList(specialCases.esperandoProtocolizacion, 'esperandoProtocolizacion');
+
+        // Procesar protocolizadas desde protocolizationTimeline (ya filtradas por snapshot y periodo)
+        protocolizationTimeline.protocolizadasDetalle.forEach(m => {
+            // Necesitamos el ID del observador de la marea original para mapear al breakdown
+            // Pero como getProtocolizationTimeline no devuelve el ID, lo buscamos en detailItems
+            const detail = detailItems.find(d => d.id === m.id);
+            if (detail?.observadorId) {
+                const target = observerTypeMap.get(detail.observadorId) === 'OBSERVADOR' ? breakdown.observadores : breakdown.tecnicos;
+                target.informesProtocolizados++;
+            }
         });
 
         // Informes de marea, protocolizados y pendientes desde detailItems
@@ -2407,8 +2442,6 @@ export class StatsService {
             const target = observerTypeMap.get(item.observadorId) === 'OBSERVADOR' ? breakdown.observadores : breakdown.tecnicos;
 
             if (informeStates.has(item.estadoActual as any)) target.informesDeMarea++;
-            if (item.estadoActual === MareaEstado.PROTOCOLIZADA) target.informesProtocolizados++;
-            if (item.estadoOrden >= 4 && item.estadoOrden < 10) target.informesPendientes++;
 
             // Conteo de mareas desglosado (Usa el estado ya calculado del snapshot para paridad con Word)
             const isFinalized = item.estado === 'Finalizada';
@@ -2636,10 +2669,14 @@ export class StatsService {
             { label: 'Días navegados', obs: breakdown.observadores.dias, tec: breakdown.tecnicos.dias },
             { label: 'Mareas finalizadas', obs: breakdown.observadores.mareasFinalizadas, tec: breakdown.tecnicos.mareasFinalizadas },
             { label: 'Mareas en ejecución', obs: breakdown.observadores.mareasEnEjecucion, tec: breakdown.tecnicos.mareasEnEjecucion },
+            { label: 'Canceladas', obs: breakdown.observadores.canceladas, tec: breakdown.tecnicos.canceladas },
             { label: 'Mareas desestimadas', obs: breakdown.observadores.desestimadas, tec: breakdown.tecnicos.desestimadas },
-            { label: 'Informes de marea', obs: breakdown.observadores.informesDeMarea, tec: breakdown.tecnicos.informesDeMarea },
+            { label: 'Esperando Entrega de Datos', obs: breakdown.observadores.esperandoEntrega, tec: breakdown.tecnicos.esperandoEntrega },
+            { label: 'Pendientes de Informe', obs: breakdown.observadores.pendientesDeInforme, tec: breakdown.tecnicos.pendientesDeInforme },
+            { label: 'Delegadas a Programas Externos', obs: breakdown.observadores.delegadasExternas, tec: breakdown.tecnicos.delegadasExternas },
+            { label: 'Listas para envío a DNI', obs: breakdown.observadores.listasParaEnvio, tec: breakdown.tecnicos.listasParaEnvio },
+            { label: 'Enviadas a DNI', obs: breakdown.observadores.esperandoProtocolizacion, tec: breakdown.tecnicos.esperandoProtocolizacion },
             { label: 'Informes protocolizados', obs: breakdown.observadores.informesProtocolizados, tec: breakdown.tecnicos.informesProtocolizados },
-            { label: 'Informes pendientes', obs: breakdown.observadores.informesPendientes, tec: breakdown.tecnicos.informesPendientes },
         ];
 
         bRows.forEach((r, idx) => {
