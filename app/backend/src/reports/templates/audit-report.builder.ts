@@ -698,12 +698,12 @@ export class AuditReportBuilder {
             ['', 'OBSERVADORES', 'TÉCNICOS'],
             [
                 ['Días navegados', formatNumber(obs.dias), formatNumber(tec.dias)],
-                ['Mareas finalizadas', obs.mareasFinalizadas.toString(), tec.mareasFinalizadas.toString()],
+                ['Mareas finalizadas (Período)', obs.mareasFinalizadas.toString(), tec.mareasFinalizadas.toString()],
+                ['  ↳ Pendientes d/ informe', obs.desestimadas.toString(), tec.desestimadas.toString()],
+                ['  ↳ Listas para envío a DNI', obs.informesPendientes.toString(), tec.informesPendientes.toString()],
+                ['  ↳ Enviadas a DNI', obs.informesDeMarea.toString(), tec.informesDeMarea.toString()],
+                ['    ↳ Protocolizadas', obs.informesProtocolizados.toString(), tec.informesProtocolizados.toString()],
                 ['Mareas en ejecución', obs.mareasEnEjecucion.toString(), tec.mareasEnEjecucion.toString()],
-                ['Mareas desestimadas', obs.desestimadas.toString(), tec.desestimadas.toString()],
-                ['Informes de marea', obs.informesDeMarea.toString(), tec.informesDeMarea.toString()],
-                ['Informes protocolizados', obs.informesProtocolizados.toString(), tec.informesProtocolizados.toString()],
-                ['Informes pendientes', obs.informesPendientes.toString(), tec.informesPendientes.toString()],
             ],
             {
                 columnWidths: [55, 22, 23],
@@ -1099,12 +1099,42 @@ export class AuditReportBuilder {
             this.heading1('8. SEGUIMIENTO DE PROTOCOLIZACIÓN'),
         ];
 
-        // Párrafo narrativo
-        const envN = tl.totalEnviadas;
-        const protN = tl.totalProtocolizadas;
-        const pctDeEnviadas = envN > 0 ? Math.round((protN / envN) * 100) : 0;
-        const pctDelTotal = tl.totalEnPeriodo > 0 ? Math.round((protN / tl.totalEnPeriodo) * 100) : 0;
-        let narrativa = `De la${tl.totalEnPeriodo !== 1 ? 's' : ''} ${tl.totalEnPeriodo} marea${tl.totalEnPeriodo !== 1 ? 's' : ''} del período, ${envN} fu${envN !== 1 ? 'eron enviadas' : 'e enviada'} a la DNI para protocolización, de la${envN !== 1 ? 's' : ''} cual${envN !== 1 ? 'es' : ''} ${protN} ha${protN !== 1 ? 'n sido efectivamente protocolizadas' : ' sido efectivamente protocolizada'} (${pctDeEnviadas}% de las enviadas, representando el ${pctDelTotal}% del total del período).`;
+        const totalFinalizadas = data.breakdown.observadores.mareasFinalizadas + data.breakdown.tecnicos.mareasFinalizadas;
+        const totalListas = data.breakdown.observadores.informesPendientes + data.breakdown.tecnicos.informesPendientes;
+        const totalEnviadas = data.breakdown.observadores.informesDeMarea + data.breakdown.tecnicos.informesDeMarea;
+        const totalProtocolizadasL = data.breakdown.observadores.informesProtocolizados + data.breakdown.tecnicos.informesProtocolizados;
+
+        const pctDeEnviadas = totalEnviadas > 0 ? Math.round((totalProtocolizadasL / totalEnviadas) * 100) : 0;
+        const pctGestion = totalFinalizadas > 0 ? Math.round((totalEnviadas / totalFinalizadas) * 100) : 0;
+        const pctListas = totalFinalizadas > 0 ? Math.round((totalListas / totalFinalizadas) * 100) : 0;
+
+        let narrativa = '';
+        if (totalFinalizadas === 1) {
+            narrativa = 'De la marea que finalizó su operación en el período, ';
+        } else {
+            narrativa = `De las ${totalFinalizadas} mareas que finalizaron su operación en el período, `;
+        }
+
+        if (totalEnviadas === 1) {
+            narrativa += `1 informe fue elevado a la DNI para su protocolización (${pctGestion}% de gestión)`;
+        } else {
+            narrativa += `${totalEnviadas} informes fueron elevados a la DNI para su protocolización (${pctGestion}% de gestión)`;
+        }
+        
+        if (totalListas > 0) {
+            if (totalListas === 1) {
+                narrativa += `, mientras que 1 adicional se encuentra procesado y pendiente de envío (${pctListas}%)`;
+            } else {
+                narrativa += `, mientras que ${totalListas} adicionales se encuentran procesados y pendientes de envío (${pctListas}%)`;
+            }
+        }
+        
+        narrativa += '. ';
+        if (totalProtocolizadasL === 1) {
+            narrativa += `Del total de informes elevados, 1 ya ha sido efectivamente protocolizado (${pctDeEnviadas}% de efectividad de cierre).`;
+        } else {
+            narrativa += `Del total de informes elevados, ${totalProtocolizadasL} ya han sido efectivamente protocolizados (${pctDeEnviadas}% de efectividad de cierre).`;
+        }
         if (tl.promedioDiasLatencia !== null) {
             narrativa += ` La latencia promedio entre la recepción de datos y la protocolización fue de ${Math.round(tl.promedioDiasLatencia)} días (máximo: ${tl.maxDiasLatencia} días).`;
             if (tl.promedioDiasLatenciaTramite !== null) {

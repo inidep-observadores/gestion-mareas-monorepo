@@ -52,6 +52,9 @@ export class ReportsService {
             protocolizationEndDate,
         } = params;
 
+        const pStart = startDate ? new Date(startDate) : new Date(Date.UTC(year, 0, 1));
+        pStart.setUTCHours(0, 0, 0, 0);
+
         const snapDate = endDate ? new Date(endDate) : new Date(Date.UTC(year, 11, 31, 23, 59, 59, 999));
         snapDate.setUTCHours(23, 59, 59, 999);
 
@@ -102,6 +105,27 @@ export class ReportsService {
             snapDate
         );
 
+        // --- LÓGICA DE MOVIMIENTOS HISTÓRICOS PARA SNAPSHOT (WORD) ---
+        const mareaIdsDelPeriodo = detailItems.filter(item => item.estado === 'Finalizada').map(item => item.id);
+        const movsAlCorte = await this.prisma.mareaMovimiento.findMany({
+            where: {
+                mareaId: { in: mareaIdsDelPeriodo },
+                fechaHora: { lte: snapDate },
+                estadoHastaId: { not: null }
+            },
+            orderBy: [{ mareaId: 'asc' }, { fechaHora: 'desc' }],
+            include: { estadoHasta: true }
+        });
+
+        const lastStateMap = new Map<string, string>();
+        const processedMareas = new Set<string>();
+        for (const mov of movsAlCorte) {
+            if (!processedMareas.has(mov.mareaId)) {
+                lastStateMap.set(mov.mareaId, mov.estadoHasta.codigo);
+                processedMareas.add(mov.mareaId);
+            }
+        }
+
         // 6. Obtener datos adicionales en paralelo (Snapshot Histórico)
         const [secondaryStats, specialCases, protocolizationTimeline, fisheryOrdering] = await Promise.all([
             this.statsService.getSecondaryObserverStats(year, startDate, endDate, snapDate),
@@ -118,11 +142,6 @@ export class ReportsService {
         );
 
         // 7. Computar breakdown Observadores vs Técnicos
-        const informeStates = new Set<string>([
-            MareaEstado.PARA_PROTOCOLIZAR,
-            MareaEstado.ESPERANDO_PROTOCOLIZACION,
-            MareaEstado.PROTOCOLIZADA,
-        ]);
         const emptySlice = () => ({
             dias: 0, mareasFinalizadas: 0, mareasEnEjecucion: 0, desestimadas: 0,
             informesDeMarea: 0, informesProtocolizados: 0, informesPendientes: 0,
@@ -140,12 +159,28 @@ export class ReportsService {
         detailItems.forEach((item: any) => {
             if (!item.observadorId) return;
             const t = observerDataMap.get(item.observadorId)?.tipoObservador === 'OBSERVADOR' ? breakdown.observadores : breakdown.tecnicos;
-            // El estado se determina más abajo, pero para el breakdown usamos estadoActual
-            const isFinalized = item.estadoActual !== MareaEstado.EN_EJECUCION && item.fechaFin;
-            if (isFinalized) t.mareasFinalizadas++; else t.mareasEnEjecucion++;
-            if (informeStates.has(item.estadoActual)) t.informesDeMarea++;
-            if (item.estadoActual === MareaEstado.PROTOCOLIZADA) t.informesProtocolizados++;
-            if (item.estadoOrden > 3 && item.estadoOrden < 11) t.informesPendientes++;
+            
+            if (item.estado === 'Finalizada') {
+                t.mareasFinalizadas++;
+                const fEnvio = item.fechaEnvioProtocolizacion ? new Date(item.fechaEnvioProtocolizacion) : null;
+                const fProt = item.fechaProtocolizacion ? new Date(item.fechaProtocolizacion) : null;
+
+                if (fEnvio && fEnvio >= pStart && fEnvio <= snapDate) {
+                    t.informesDeMarea++;
+                    if (fProt && fProt >= pStart && fProt <= snapDate) {
+                        t.informesProtocolizados++;
+                    }
+                } else {
+                    const stateAtSnapshot = lastStateMap.get(item.id);
+                    if (stateAtSnapshot === MareaEstado.PARA_PROTOCOLIZAR) {
+                        t.informesPendientes++;
+                    } else {
+                        t.desestimadas++;
+                    }
+                }
+            } else {
+                t.mareasEnEjecucion++;
+            }
         });
 
         // 8. Construir los datos para el builder

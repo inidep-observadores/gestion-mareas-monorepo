@@ -2424,8 +2424,48 @@ export class StatsService {
         processSpecialCaseList(specialCases.esperandoEntrega, 'esperandoEntrega');
         processSpecialCaseList(specialCases.pendientesDeInforme, 'pendientesDeInforme');
         processSpecialCaseList(specialCases.delegadasExternas, 'delegadasExternas');
-        processSpecialCaseList(specialCases.informesPendientesEnvio, 'listasParaEnvio');
-        processSpecialCaseList(specialCases.esperandoProtocolizacion, 'esperandoProtocolizacion');
+        
+        // REINICIAR contadores de cascada para que sean puros del período
+        // Estos campos se poblarán exclusivamente en el bucle finalizadasDelPeriodo.forEach
+        breakdown.observadores.mareasFinalizadas = 0;
+        breakdown.observadores.listasParaEnvio = 0;
+        breakdown.observadores.esperandoProtocolizacion = 0;
+        breakdown.observadores.informesProtocolizados = 0;
+        breakdown.observadores.pendientesDeInforme = 0;
+        
+        breakdown.tecnicos.mareasFinalizadas = 0;
+        breakdown.tecnicos.listasParaEnvio = 0;
+        breakdown.tecnicos.esperandoProtocolizacion = 0;
+        breakdown.tecnicos.informesProtocolizados = 0;
+        breakdown.tecnicos.pendientesDeInforme = 0;
+
+        // --- LÓGICA DE MOVIMIENTOS HISTÓRICOS PARA SNAPSHOT ---
+        // Identificar IDs de mareas para consulta de movimientos
+        const mareaIdsDelPeriodo = detailItems.filter(item => item.estado === 'Finalizada').map(item => item.id);
+        
+        // Obtener la última transición de estado para cada marea antes del corte
+        const movsAlCorte = await this.prisma.mareaMovimiento.findMany({
+            where: {
+                mareaId: { in: mareaIdsDelPeriodo },
+                fechaHora: { lte: snapEnd },
+                estadoHastaId: { not: null }
+            },
+            orderBy: [
+                { mareaId: 'asc' },
+                { fechaHora: 'desc' }
+            ],
+            include: { estadoHasta: true }
+        });
+
+        // Crear mapa del último estado al momento del snapshot
+        const lastStateMap = new Map<string, string>();
+        const processedMareas = new Set<string>();
+        for (const mov of movsAlCorte) {
+            if (!processedMareas.has(mov.mareaId)) {
+                lastStateMap.set(mov.mareaId, mov.estadoHasta.codigo);
+                processedMareas.add(mov.mareaId);
+            }
+        }
 
         // Procesar protocolizadas (ESTA LÓGICA SE MUEVE A LA CASCADA ABAJO)
         
@@ -2444,15 +2484,25 @@ export class StatsService {
             const fEnvio = item.fechaEnvioProtocolizacion ? new Date(item.fechaEnvioProtocolizacion) : null;
             const fProt = item.fechaProtocolizacion ? new Date(item.fechaProtocolizacion) : null;
 
-            // 2. Etapa 1: Enviadas a DNI (de las finalizadas en el período)
+            // 2. Etapa 1: Enviadas a DNI (Hito máximo externo)
             if (fEnvio && fEnvio >= periodStart && fEnvio <= snapEnd) {
-                target.listasParaEnvio++; // Usamos este campo para "Enviadas" en la cascada
+                target.listasParaEnvio++; // Usamos este campo para "Enviadas" en la cascada en Excel
 
                 // 3. Etapa 2: Protocolizadas (de las enviadas en el período)
                 if (fProt && fProt >= periodStart && fProt <= snapEnd) {
                     target.informesProtocolizados++;
                 }
+            } else {
+                // Etapa Intermedia: Evaluar estado histórico al snapshot para las NO enviadas
+                const stateAtSnapshot = lastStateMap.get(item.id);
+                if (stateAtSnapshot === MareaEstado.PARA_PROTOCOLIZAR) {
+                    target.esperandoProtocolizacion++; // "Listas para envío"
+                } else {
+                    // Remanente: Pendientes de informe (Finalizadas que no están ni enviadas ni listas)
+                    target.pendientesDeInforme++;
+                }
             }
+
         });
 
         // Informes de marea y otros estados desde detailItems
