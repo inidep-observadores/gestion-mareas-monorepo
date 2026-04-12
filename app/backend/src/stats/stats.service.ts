@@ -2313,7 +2313,7 @@ export class StatsService {
         snapshotDate?: Date
     ): Promise<ExcelJS.Workbook> {
         const snapEnd = snapshotDate || (endDate ? new Date(endDate) : new Date(Date.UTC(year, 11, 31, 23, 59, 59, 999)));
-        if (!snapshotDate) snapEnd.setUTCHours(23, 59, 59, 999);
+        snapEnd.setUTCHours(23, 59, 59, 999);
 
         // 1. Obtener datos base
         const stats = await this.getDashboardStats(
