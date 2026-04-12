@@ -2421,9 +2421,7 @@ export class StatsService {
 
         processSpecialCaseList(specialCases.canceladas, 'canceladas');
         processSpecialCaseList(specialCases.desestimadas, 'desestimadas');
-        processSpecialCaseList(specialCases.esperandoEntrega, 'esperandoEntrega');
-        processSpecialCaseList(specialCases.pendientesDeInforme, 'pendientesDeInforme');
-        processSpecialCaseList(specialCases.delegadasExternas, 'delegadasExternas');
+        // Nota: Entrega, Delegadas y Pendientes se recalculan en la cascada para el período
         
         // REINICIAR contadores de cascada para que sean puros del período
         // Estos campos se poblarán exclusivamente en el bucle finalizadasDelPeriodo.forEach
@@ -2432,12 +2430,16 @@ export class StatsService {
         breakdown.observadores.esperandoProtocolizacion = 0;
         breakdown.observadores.informesProtocolizados = 0;
         breakdown.observadores.pendientesDeInforme = 0;
+        breakdown.observadores.esperandoEntrega = 0;
+        breakdown.observadores.delegadasExternas = 0;
         
         breakdown.tecnicos.mareasFinalizadas = 0;
         breakdown.tecnicos.listasParaEnvio = 0;
         breakdown.tecnicos.esperandoProtocolizacion = 0;
         breakdown.tecnicos.informesProtocolizados = 0;
         breakdown.tecnicos.pendientesDeInforme = 0;
+        breakdown.tecnicos.esperandoEntrega = 0;
+        breakdown.tecnicos.delegadasExternas = 0;
 
         // --- LÓGICA DE MOVIMIENTOS HISTÓRICOS PARA SNAPSHOT ---
         // Identificar IDs de mareas para consulta de movimientos
@@ -2485,25 +2487,76 @@ export class StatsService {
             const fProt = item.fechaProtocolizacion ? new Date(item.fechaProtocolizacion) : null;
 
             // 2. Etapa 1: Enviadas a DNI (Hito máximo externo)
+            // Criterio: Fecha de envío dentro del período auditado
             if (fEnvio && fEnvio >= periodStart && fEnvio <= snapEnd) {
-                target.listasParaEnvio++; // Usamos este campo para "Enviadas" en la cascada en Excel
+                target.listasParaEnvio++; // Balde 1: Enviadas
 
-                // 3. Etapa 2: Protocolizadas (de las enviadas en el período)
+                // Sub-conteo: Protocolizadas (dentro de las enviadas en el período)
                 if (fProt && fProt >= periodStart && fProt <= snapEnd) {
                     target.informesProtocolizados++;
                 }
             } else {
-                // Etapa Intermedia: Evaluar estado histórico al snapshot para las NO enviadas
+                // Etapa Intermedia: Si NO fue enviada, evaluamos su estado al snapshot
                 const stateAtSnapshot = lastStateMap.get(item.id);
+                
                 if (stateAtSnapshot === MareaEstado.PARA_PROTOCOLIZAR) {
-                    target.esperandoProtocolizacion++; // "Listas para envío"
+                    target.esperandoProtocolizacion++; // Balde 2: Listas para envío
+                } else if (stateAtSnapshot === MareaEstado.ESPERANDO_ENTREGA) {
+                    target.esperandoEntrega++; // Bloqueo externo
+                } else if (stateAtSnapshot === MareaEstado.DELEGADA_EXTERNA) {
+                    target.delegadasExternas++; // Bloqueo externo
                 } else {
-                    // Remanente: Pendientes de informe (Finalizadas que no están ni enviadas ni listas)
+                    // Balde 3: Remanente absoluto (Pendiente de informe puro)
                     target.pendientesDeInforme++;
                 }
             }
 
         });
+
+        // --- LÓGICA COMPLEMENTARIA PARA HOJA "CASOS ESPECIALES" (Hoja 4) ---
+        const especial_enviadasADNI = [];
+        const especial_listasParaEnvio = [];
+        const especial_pendientesDeInforme = [];
+        const especial_esperandoEntrega = [];
+        const especial_delegadasExternas = [];
+
+        finalizadasDelPeriodo.forEach(item => {
+            const fEnvio = item.fechaEnvioProtocolizacion ? new Date(item.fechaEnvioProtocolizacion) : null;
+            const stateAtSnapshot = lastStateMap.get(item.id);
+            
+            const mareaRec = {
+                id: item.id,
+                id_marea: item.id_marea,
+                buque: item.buque,
+                pesqueria: item.pesqueria,
+                flota: item.flota,
+                observador: item.observador,
+                diasNavegados: mode === 'CALENDAR' ? item.diasCalendario : item.diasTotales,
+                fechaEvento: fEnvio || item.fechaFin,
+                nroProtocolo: item.nroProtocolizacion ? `${item.nroProtocolizacion}/${item.anioProtocolizacion}` : null,
+                motivo: (item as any).motivo || null,
+                tipoObservador: observerTypeMap.get(item.observadorId)
+            };
+
+            if (fEnvio && fEnvio >= periodStart && fEnvio <= snapEnd) {
+                especial_enviadasADNI.push(mareaRec);
+            } else if (stateAtSnapshot === MareaEstado.PARA_PROTOCOLIZAR) {
+                especial_listasParaEnvio.push(mareaRec);
+            } else if (stateAtSnapshot === MareaEstado.ESPERANDO_ENTREGA) {
+                especial_esperandoEntrega.push(mareaRec);
+            } else if (stateAtSnapshot === MareaEstado.DELEGADA_EXTERNA) {
+                especial_delegadasExternas.push(mareaRec);
+            } else {
+                especial_pendientesDeInforme.push(mareaRec);
+            }
+        });
+
+        (specialCases as any).enviadasADNI = especial_enviadasADNI;
+        specialCases.informesPendientesEnvio = especial_listasParaEnvio;
+        specialCases.pendientesDeInforme = especial_pendientesDeInforme;
+        specialCases.esperandoEntrega = especial_esperandoEntrega;
+        specialCases.delegadasExternas = especial_delegadasExternas;
+
 
         // Informes de marea y otros estados desde detailItems
         detailItems.forEach(item => {
@@ -2599,6 +2652,55 @@ export class StatsService {
             sheet.getCell(row, 2).value = kpi.val;
             sheet.getCell(row, 3).value = kpi.met;
             sheet.getCell(row, 1).font = { bold: true };
+            sheet.getCell(row, 2).alignment = { horizontal: 'center' };
+            sheet.getCell(row, 3).alignment = { horizontal: 'center' };
+        });
+
+        // TABLA 3: INDICADORES DE ESTADO (UNIFICADA)
+        const startRowBreakdown = startRowKPI + kpis.length + 3;
+        sheet.mergeCells(startRowBreakdown, 1, startRowBreakdown, 3);
+        const bTitle = sheet.getCell(startRowBreakdown, 1);
+        bTitle.value = 'Indicadores de estado';
+        bTitle.font = { bold: true, size: 12 };
+        bTitle.alignment = { horizontal: 'left' };
+
+        const headerRowBreakdown = startRowBreakdown + 1;
+        const bHeaders = ['Estado', 'Observadores', 'Técnicos'];
+        bHeaders.forEach((h, i) => {
+            const cell = sheet.getCell(headerRowBreakdown, i + 1);
+            cell.value = h;
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF00548B' } };
+            cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+            cell.alignment = { horizontal: 'center' };
+        });
+
+        const { observadores: obs, tecnicos: tec } = breakdown;
+        const breakdownRows = [
+            ['Días navegados', obs.dias, tec.dias],
+            ['Mareas finalizadas (Período)', obs.mareasFinalizadas, tec.mareasFinalizadas],
+            ['  ↳ Pendientes de informe', obs.pendientesDeInforme, tec.pendientesDeInforme],
+            ['  ↳ Listas para envío a DNI', obs.esperandoProtocolizacion, tec.esperandoProtocolizacion],
+            ['  ↳ Enviadas a DNI', obs.listasParaEnvio, tec.listasParaEnvio],
+            ['    ↳ Protocolizadas', obs.informesProtocolizados, tec.informesProtocolizados],
+            ['Mareas en ejecución', obs.mareasEnEjecucion, tec.mareasEnEjecucion],
+            ['Mareas canceladas', obs.canceladas, tec.canceladas],
+            ['Desestimadas', obs.desestimadas, tec.desestimadas],
+            ['Pendientes entrega datos', obs.esperandoEntrega, tec.esperandoEntrega],
+            ['Delegadas externas', obs.delegadasExternas, tec.delegadasExternas]
+        ];
+
+        breakdownRows.forEach((r, index) => {
+            const row = headerRowBreakdown + 1 + index;
+            sheet.getCell(row, 1).value = r[0];
+            sheet.getCell(row, 2).value = r[1];
+            sheet.getCell(row, 3).value = r[2];
+            
+            // Estilo según jerarquía
+            const label = r[0] as string;
+            sheet.getCell(row, 1).font = { 
+                bold: label === 'Mareas finalizadas (Período)' || label === 'Días navegados' 
+            };
+            
             sheet.getCell(row, 2).alignment = { horizontal: 'center' };
             sheet.getCell(row, 3).alignment = { horizontal: 'center' };
         });
@@ -2703,59 +2805,11 @@ export class StatsService {
         sheet.getColumn(8).width = 15;
         sheet.getColumn(9).width = 14;
 
-        // TABLA 3: BREAKDOWN OBSERVADORES vs TÉCNICOS (debajo de la tabla de KPIs)
-        const lastKpiRow = startRowKPI + kpis.length; // fila del último KPI
-        const startRowBreakdown = lastKpiRow + 2;
 
-        // Título de la tabla
-        sheet.mergeCells(startRowBreakdown, 1, startRowBreakdown, 4);
-        const bTitle = sheet.getCell(startRowBreakdown, 1);
-        bTitle.value = 'Indicadores de estado';
-        bTitle.font = { bold: true, size: 12 };
-        bTitle.alignment = { horizontal: 'left' };
-
-        // Cabecera de columnas
-        const bHeaderRow = startRowBreakdown + 1;
-        [null, 'Observadores', 'Técnicos'].forEach((h, i) => {
-            const cell = sheet.getCell(bHeaderRow, i + 1);
-            cell.value = h;
-            if (h) {
-                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF00548B' } };
-                cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
-            }
-            cell.alignment = { horizontal: 'center' };
-        });
-        // Col A de cabecera con mismo fondo
-        const bHeaderLabel = sheet.getCell(bHeaderRow, 1);
-        bHeaderLabel.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF00548B' } };
-        bHeaderLabel.font = { bold: true, color: { argb: 'FFFFFFFF' } };
-
-        const bRows = [
-            { label: 'Días navegados', obs: breakdown.observadores.dias, tec: breakdown.tecnicos.dias },
-            { label: 'Mareas finalizadas (Período)', obs: breakdown.observadores.mareasFinalizadas, tec: breakdown.tecnicos.mareasFinalizadas },
-            { label: '  ↳ Enviadas a DNI', obs: breakdown.observadores.listasParaEnvio, tec: breakdown.tecnicos.listasParaEnvio },
-            { label: '    ↳ Protocolizadas', obs: breakdown.observadores.informesProtocolizados, tec: breakdown.tecnicos.informesProtocolizados },
-            { label: 'Mareas en ejecución', obs: breakdown.observadores.mareasEnEjecucion, tec: breakdown.tecnicos.mareasEnEjecucion },
-            { label: 'Mareas canceladas', obs: breakdown.observadores.canceladas, tec: breakdown.tecnicos.canceladas },
-            { label: 'Mareas desestimadas', obs: breakdown.observadores.desestimadas, tec: breakdown.tecnicos.desestimadas },
-            { label: 'Pendientes entrega datos', obs: breakdown.observadores.esperandoEntrega, tec: breakdown.tecnicos.esperandoEntrega },
-            { label: 'Pendientes de Informe', obs: breakdown.observadores.pendientesDeInforme, tec: breakdown.tecnicos.pendientesDeInforme },
-            { label: 'Delegadas Externas', obs: breakdown.observadores.delegadasExternas, tec: breakdown.tecnicos.delegadasExternas },
-        ];
-
-        bRows.forEach((r, idx) => {
-            const row = bHeaderRow + 1 + idx;
-            sheet.getCell(row, 1).value = r.label;
-            sheet.getCell(row, 1).font = { bold: true };
-            sheet.getCell(row, 2).value = r.obs;
-            sheet.getCell(row, 2).alignment = { horizontal: 'center' };
-            sheet.getCell(row, 3).value = r.tec;
-            sheet.getCell(row, 3).alignment = { horizontal: 'center' };
-        });
 
         // TABLA 4: OBSERVADORES SIN ACTIVIDAD (debajo de Breakdown)
         if (observadoresSinActividad.length > 0) {
-            const startRowSinActividad = bHeaderRow + bRows.length + 3;
+            const startRowSinActividad = headerRowBreakdown + breakdownRows.length + 3;
             sheet.mergeCells(startRowSinActividad, 1, startRowSinActividad, 3);
             const saTitle = sheet.getCell(startRowSinActividad, 1);
             saTitle.value = 'Observadores sin actividad en el período';
@@ -3236,16 +3290,16 @@ export class StatsService {
                 getObs: (_: any) => 'Derivada a programa externo',
             },
             {
+                label: 'Enviadas a DNI',
+                color: 'FF7C3AED',
+                data: specialCases.enviadasADNI,
+                getObs: (m: any) => m.nroProtocolo ? `Protocolizada (Protocolo: ${m.nroProtocolo})` : 'Enviada (Pendiente de protocolo)',
+            },
+            {
                 label: 'Listas para envío a DNI',
                 color: 'FF3F51B5',
                 data: specialCases.informesPendientesEnvio,
                 getObs: (_: any) => 'Reporte listo para enviar',
-            },
-            {
-                label: 'Enviadas a DNI (esperando protocolización)',
-                color: 'FF7C3AED',
-                data: specialCases.esperandoProtocolizacion,
-                getObs: (_: any) => 'Enviada a la DNI',
             },
         ];
 

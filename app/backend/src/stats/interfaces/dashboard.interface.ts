@@ -77,6 +77,8 @@ export interface AuditSpecialMarea {
     motivo: string | null;
     /** Tipo de observador del principal (OBSERVADOR | TECNICO | etc.) */
     tipoObservador: string | null;
+    /** Número de protocolo si ya lo tiene */
+    nroProtocolo: string | null;
 }
 
 export interface AuditSpecialCasesResult {
@@ -87,6 +89,7 @@ export interface AuditSpecialCasesResult {
     delegadasExternas: AuditSpecialMarea[];
     informesPendientesEnvio: AuditSpecialMarea[];
     esperandoProtocolizacion: AuditSpecialMarea[];
+    enviadasADNI: AuditSpecialMarea[];
 }
 
 // ─── Protocolization Timeline ───────────────────────────────────────────────

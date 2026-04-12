@@ -145,17 +145,12 @@ export class ReportsService {
         const emptySlice = () => ({
             dias: 0, mareasFinalizadas: 0, mareasEnEjecucion: 0, desestimadas: 0,
             informesDeMarea: 0, informesProtocolizados: 0, informesPendientes: 0,
+            esperandoEntrega: 0, delegadasExternas: 0,
         });
         const breakdown = { observadores: emptySlice(), tecnicos: emptySlice() };
 
-        stats.observers.forEach((obs: any) => {
-            const t = observerDataMap.get(obs.id)?.tipoObservador === 'OBSERVADOR' ? breakdown.observadores : breakdown.tecnicos;
-            t.dias += obs.days;
-        });
-        specialCases.desestimadas.forEach((m: any) => {
-            const t = m.tipoObservador === 'OBSERVADOR' ? breakdown.observadores : breakdown.tecnicos;
-            t.desestimadas++;
-        });
+        // Los días ya se procesaron arriba
+
         detailItems.forEach((item: any) => {
             if (!item.observadorId) return;
             const t = observerDataMap.get(item.observadorId)?.tipoObservador === 'OBSERVADOR' ? breakdown.observadores : breakdown.tecnicos;
@@ -166,16 +161,22 @@ export class ReportsService {
                 const fProt = item.fechaProtocolizacion ? new Date(item.fechaProtocolizacion) : null;
 
                 if (fEnvio && fEnvio >= pStart && fEnvio <= snapDate) {
-                    t.informesDeMarea++;
+                    t.informesDeMarea++; // Balde 1: Enviadas a DNI
                     if (fProt && fProt >= pStart && fProt <= snapDate) {
                         t.informesProtocolizados++;
                     }
                 } else {
+                    // Etapa Intermedia: Evaluar estado histórico para las NO enviadas
                     const stateAtSnapshot = lastStateMap.get(item.id);
                     if (stateAtSnapshot === MareaEstado.PARA_PROTOCOLIZAR) {
-                        t.informesPendientes++;
+                        t.informesPendientes++; // Balde 2: Listas para envío
+                    } else if (stateAtSnapshot === MareaEstado.ESPERANDO_ENTREGA) {
+                        t.esperandoEntrega++; 
+                    } else if (stateAtSnapshot === MareaEstado.DELEGADA_EXTERNA) {
+                        t.delegadasExternas++;
                     } else {
-                        t.desestimadas++;
+                        // Balde 3: Remanente absoluto (Pendiente de informe puro)
+                        t.desestimadas++; // Usamos esto como puente hacia el builder
                     }
                 }
             } else {

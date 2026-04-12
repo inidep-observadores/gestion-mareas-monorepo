@@ -44,6 +44,8 @@ interface PersonalTypeBreakdownItem {
     informesDeMarea: number;
     informesProtocolizados: number;
     informesPendientes: number;
+    esperandoEntrega: number;
+    delegadasExternas: number;
 }
 
 /** Datos necesarios para construir el informe de auditoría */
@@ -700,6 +702,8 @@ export class AuditReportBuilder {
                 ['Días navegados', formatNumber(obs.dias), formatNumber(tec.dias)],
                 ['Mareas finalizadas (Período)', obs.mareasFinalizadas.toString(), tec.mareasFinalizadas.toString()],
                 ['  ↳ Pendientes d/ informe', obs.desestimadas.toString(), tec.desestimadas.toString()],
+                ['  ↳ Esperando entrega obs.', obs.esperandoEntrega.toString(), tec.esperandoEntrega.toString()],
+                ['  ↳ Delegadas externas', obs.delegadasExternas.toString(), tec.delegadasExternas.toString()],
                 ['  ↳ Listas para envío a DNI', obs.informesPendientes.toString(), tec.informesPendientes.toString()],
                 ['  ↳ Enviadas a DNI', obs.informesDeMarea.toString(), tec.informesDeMarea.toString()],
                 ['    ↳ Protocolizadas', obs.informesProtocolizados.toString(), tec.informesProtocolizados.toString()],
