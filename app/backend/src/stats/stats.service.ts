@@ -2312,6 +2312,9 @@ export class StatsService {
         protocolizationEndDate?: string,
         snapshotDate?: Date
     ): Promise<ExcelJS.Workbook> {
+        const periodStart = startDate ? new Date(startDate) : new Date(Date.UTC(year, 0, 1));
+        periodStart.setUTCHours(0, 0, 0, 0);
+
         const snapEnd = snapshotDate || (endDate ? new Date(endDate) : new Date(Date.UTC(year, 11, 31, 23, 59, 59, 999)));
         snapEnd.setUTCHours(23, 59, 59, 999);
 
@@ -2424,32 +2427,44 @@ export class StatsService {
         processSpecialCaseList(specialCases.informesPendientesEnvio, 'listasParaEnvio');
         processSpecialCaseList(specialCases.esperandoProtocolizacion, 'esperandoProtocolizacion');
 
-        // Procesar protocolizadas desde protocolizationTimeline (ya filtradas por snapshot y periodo)
-        protocolizationTimeline.protocolizadasDetalle.forEach(m => {
-            // Necesitamos el ID del observador de la marea original para mapear al breakdown
-            // Pero como getProtocolizationTimeline no devuelve el ID, lo buscamos en detailItems
-            const detail = detailItems.find(d => d.id === m.id);
-            if (detail?.observadorId) {
-                const target = observerTypeMap.get(detail.observadorId) === 'OBSERVADOR' ? breakdown.observadores : breakdown.tecnicos;
-                target.informesProtocolizados++;
+        // Procesar protocolizadas (ESTA LÓGICA SE MUEVE A LA CASCADA ABAJO)
+        
+        // --- LÓGICA DE CASCADA DE AUDITORÍA ---
+        // Universo 1: Mareas finalizadas (arribadas) en el período
+        const finalizadasDelPeriodo = detailItems.filter(item => item.estado === 'Finalizada');
+
+        finalizadasDelPeriodo.forEach(item => {
+            if (!item.observadorId) return;
+            const target = observerTypeMap.get(item.observadorId) === 'OBSERVADOR' ? breakdown.observadores : breakdown.tecnicos;
+            
+            // 1. Base: Finalizadas
+            target.mareasFinalizadas++;
+
+            // Normalizar fechas para comparación (usando mismo criterio que getProtocolizationTimeline)
+            const fEnvio = item.fechaEnvioProtocolizacion ? new Date(item.fechaEnvioProtocolizacion) : null;
+            const fProt = item.fechaProtocolizacion ? new Date(item.fechaProtocolizacion) : null;
+
+            // 2. Etapa 1: Enviadas a DNI (de las finalizadas en el período)
+            if (fEnvio && fEnvio >= periodStart && fEnvio <= snapEnd) {
+                target.listasParaEnvio++; // Usamos este campo para "Enviadas" en la cascada
+
+                // 3. Etapa 2: Protocolizadas (de las enviadas en el período)
+                if (fProt && fProt >= periodStart && fProt <= snapEnd) {
+                    target.informesProtocolizados++;
+                }
             }
         });
 
-        // Informes de marea, protocolizados y pendientes desde detailItems
-        const limitDateStr = endDate ? endDate : `${year}-12-31`;
+        // Informes de marea y otros estados desde detailItems
         detailItems.forEach(item => {
             if (!item.observadorId) return;
             const target = observerTypeMap.get(item.observadorId) === 'OBSERVADOR' ? breakdown.observadores : breakdown.tecnicos;
 
             if (informeStates.has(item.estadoActual as any)) target.informesDeMarea++;
 
-            // Conteo de mareas desglosado (Usa el estado ya calculado del snapshot para paridad con Word)
-            const isFinalized = item.estado === 'Finalizada';
-
-            if (!isFinalized) {
+            // Mareas en ejecución (No son parte de la cascada de cierre)
+            if (item.estado !== 'Finalizada') {
                 target.mareasEnEjecucion++;
-            } else {
-                target.mareasFinalizadas++;
             }
         });
 
@@ -2667,16 +2682,15 @@ export class StatsService {
 
         const bRows = [
             { label: 'Días navegados', obs: breakdown.observadores.dias, tec: breakdown.tecnicos.dias },
-            { label: 'Mareas finalizadas', obs: breakdown.observadores.mareasFinalizadas, tec: breakdown.tecnicos.mareasFinalizadas },
+            { label: 'Mareas finalizadas (Período)', obs: breakdown.observadores.mareasFinalizadas, tec: breakdown.tecnicos.mareasFinalizadas },
+            { label: '  ↳ Enviadas a DNI', obs: breakdown.observadores.listasParaEnvio, tec: breakdown.tecnicos.listasParaEnvio },
+            { label: '    ↳ Protocolizadas', obs: breakdown.observadores.informesProtocolizados, tec: breakdown.tecnicos.informesProtocolizados },
             { label: 'Mareas en ejecución', obs: breakdown.observadores.mareasEnEjecucion, tec: breakdown.tecnicos.mareasEnEjecucion },
-            { label: 'Canceladas', obs: breakdown.observadores.canceladas, tec: breakdown.tecnicos.canceladas },
+            { label: 'Mareas canceladas', obs: breakdown.observadores.canceladas, tec: breakdown.tecnicos.canceladas },
             { label: 'Mareas desestimadas', obs: breakdown.observadores.desestimadas, tec: breakdown.tecnicos.desestimadas },
-            { label: 'Esperando Entrega de Datos', obs: breakdown.observadores.esperandoEntrega, tec: breakdown.tecnicos.esperandoEntrega },
+            { label: 'Pendientes entrega datos', obs: breakdown.observadores.esperandoEntrega, tec: breakdown.tecnicos.esperandoEntrega },
             { label: 'Pendientes de Informe', obs: breakdown.observadores.pendientesDeInforme, tec: breakdown.tecnicos.pendientesDeInforme },
-            { label: 'Delegadas a Programas Externos', obs: breakdown.observadores.delegadasExternas, tec: breakdown.tecnicos.delegadasExternas },
-            { label: 'Listas para envío a DNI', obs: breakdown.observadores.listasParaEnvio, tec: breakdown.tecnicos.listasParaEnvio },
-            { label: 'Enviadas a DNI', obs: breakdown.observadores.esperandoProtocolizacion, tec: breakdown.tecnicos.esperandoProtocolizacion },
-            { label: 'Informes protocolizados', obs: breakdown.observadores.informesProtocolizados, tec: breakdown.tecnicos.informesProtocolizados },
+            { label: 'Delegadas Externas', obs: breakdown.observadores.delegadasExternas, tec: breakdown.tecnicos.delegadasExternas },
         ];
 
         bRows.forEach((r, idx) => {
