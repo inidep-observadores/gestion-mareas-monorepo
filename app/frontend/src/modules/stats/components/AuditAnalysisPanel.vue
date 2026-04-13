@@ -321,13 +321,20 @@ const handleExportPdf = async () => {
                   display: flex; 
                   align-items: center; 
                   justify-content: center; 
-                  height: 100vh; 
+                  min-height: 100vh;
+                  min-height: 100dvh;
                   font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
                   background: #f8fafc;
                   color: #0f172a;
                   -webkit-font-smoothing: antialiased;
                }
-               .container { text-align: center; max-width: 450px; padding: 2rem; }
+               .container { 
+                  text-align: center; 
+                  max-width: 450px; 
+                  padding: 2rem; 
+                  width: 100%;
+                  box-sizing: border-box;
+               }
                .spinner {
                   width: 56px;
                   height: 56px;
@@ -356,6 +363,13 @@ const handleExportPdf = async () => {
                   color: #465fff; 
                   letter-spacing: 0.1em;
                   opacity: 0.5;
+               }
+
+               @media (max-width: 480px) {
+                  .container { padding: 1.5rem; }
+                  h1 { font-size: 1rem; }
+                  p { font-size: 0.85rem; }
+                  .brand { margin-top: 32px; }
                }
                
                /* Tema Oscuro (basado en clase .dark) */
