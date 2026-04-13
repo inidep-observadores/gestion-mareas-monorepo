@@ -68,11 +68,11 @@ export interface AuditReportData {
             stats?: Record<string, { count: number; nombre: string }>;
         }>;
         fleets: Array<{ name: string; mareas: number; days: number }>;
-        observers: Array<{ 
-            id: string; 
-            name: string; 
-            mareas: number; 
-            days: number; 
+        observers: Array<{
+            id: string;
+            name: string;
+            mareas: number;
+            days: number;
             active: boolean;
             tipoContrato?: string;
             tipoObservador?: string;
@@ -808,7 +808,7 @@ export class AuditReportBuilder {
             const inactiveText = n === 1
                 ? `A continuación se lista el observador que, formando parte de la dotación activa en el período analizado, no registró participación en mareas (ni como observador principal ni secundario).`
                 : `A continuación se listan los ${n} observadores que, formando parte de la dotación activa en el período analizado, no registraron participación en mareas (ni como observadores principales ni secundarios).`;
-            
+
             result.push(
                 this.heading2(`${inactiveNum} Observadores sin actividad`),
                 this.bodyParagraph(inactiveText),
@@ -958,7 +958,7 @@ export class AuditReportBuilder {
             informesPendientesEnvio.length === 0 && esperandoProtocolizacion.length === 0;
 
         const result: (Paragraph | Table)[] = [
-            this.heading1('7. MAREAS SEGÚN SU ESTADO'),
+            this.heading1('7. MAREAS SEGÚN ESTADO'),
         ];
 
         if (allEmpty) {
@@ -1124,7 +1124,7 @@ export class AuditReportBuilder {
         } else {
             narrativa += `${totalEnviadas} informes fueron elevados a la DNI para su protocolización (${pctGestion}% de gestión)`;
         }
-        
+
         if (totalListas > 0) {
             if (totalListas === 1) {
                 narrativa += `, mientras que 1 adicional se encuentra procesado y pendiente de envío (${pctListas}%)`;
@@ -1132,7 +1132,7 @@ export class AuditReportBuilder {
                 narrativa += `, mientras que ${totalListas} adicionales se encuentran procesados y pendientes de envío (${pctListas}%)`;
             }
         }
-        
+
         narrativa += '. ';
         if (totalProtocolizadasL === 1) {
             narrativa += `Del total de informes elevados, 1 ya ha sido efectivamente protocolizado (${pctDeEnviadas}% de efectividad de cierre).`;
@@ -1317,7 +1317,7 @@ export class AuditReportBuilder {
         ].filter((l): l is string => l !== null);
 
         return this.chartService.renderDoughnutChart(labels, counts, {
-            title: 'Distribución de Mareas según su Estado',
+            title: 'Distribución de Mareas según Estado',
             displayLabels: true
         });
     }

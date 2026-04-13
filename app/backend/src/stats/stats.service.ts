@@ -2382,19 +2382,19 @@ export class StatsService {
 
         // Computar breakdown Observadores vs Técnicos para tabla de Personal
         // Computar breakdown Observadores vs Técnicos para tabla de Personal
-        const emptyBreakdownSlice = () => ({ 
-            dias: 0, 
-            mareasFinalizadas: 0, 
-            mareasEnEjecucion: 0, 
+        const emptyBreakdownSlice = () => ({
+            dias: 0,
+            mareasFinalizadas: 0,
+            mareasEnEjecucion: 0,
             canceladas: 0,
-            desestimadas: 0, 
+            desestimadas: 0,
             esperandoEntrega: 0,
             pendientesDeInforme: 0,
             delegadasExternas: 0,
             listasParaEnvio: 0,
             esperandoProtocolizacion: 0,
-            informesDeMarea: 0, 
-            informesProtocolizados: 0 
+            informesDeMarea: 0,
+            informesProtocolizados: 0
         });
         const breakdown: import('./interfaces/dashboard.interface').PersonalBreakdown = {
             observadores: emptyBreakdownSlice(),
@@ -2422,7 +2422,7 @@ export class StatsService {
         processSpecialCaseList(specialCases.canceladas, 'canceladas');
         processSpecialCaseList(specialCases.desestimadas, 'desestimadas');
         // Nota: Entrega, Delegadas y Pendientes se recalculan en la cascada para el período
-        
+
         // REINICIAR contadores de cascada para que sean puros del período
         // Estos campos se poblarán exclusivamente en el bucle finalizadasDelPeriodo.forEach
         breakdown.observadores.mareasFinalizadas = 0;
@@ -2432,7 +2432,7 @@ export class StatsService {
         breakdown.observadores.pendientesDeInforme = 0;
         breakdown.observadores.esperandoEntrega = 0;
         breakdown.observadores.delegadasExternas = 0;
-        
+
         breakdown.tecnicos.mareasFinalizadas = 0;
         breakdown.tecnicos.listasParaEnvio = 0;
         breakdown.tecnicos.esperandoProtocolizacion = 0;
@@ -2444,7 +2444,7 @@ export class StatsService {
         // --- LÓGICA DE MOVIMIENTOS HISTÓRICOS PARA SNAPSHOT ---
         // Identificar IDs de mareas para consulta de movimientos
         const mareaIdsDelPeriodo = detailItems.filter(item => item.estado === 'Finalizada').map(item => item.id);
-        
+
         // Obtener la última transición de estado para cada marea antes del corte
         const movsAlCorte = await this.prisma.mareaMovimiento.findMany({
             where: {
@@ -2470,7 +2470,7 @@ export class StatsService {
         }
 
         // Procesar protocolizadas (ESTA LÓGICA SE MUEVE A LA CASCADA ABAJO)
-        
+
         // --- LÓGICA DE CASCADA DE AUDITORÍA ---
         // Universo 1: Mareas finalizadas (arribadas) en el período
         const finalizadasDelPeriodo = detailItems.filter(item => item.estado === 'Finalizada');
@@ -2478,7 +2478,7 @@ export class StatsService {
         finalizadasDelPeriodo.forEach(item => {
             if (!item.observadorId) return;
             const target = observerTypeMap.get(item.observadorId) === 'OBSERVADOR' ? breakdown.observadores : breakdown.tecnicos;
-            
+
             // 1. Base: Finalizadas
             target.mareasFinalizadas++;
 
@@ -2498,7 +2498,7 @@ export class StatsService {
             } else {
                 // Etapa Intermedia: Si NO fue enviada, evaluamos su estado al snapshot
                 const stateAtSnapshot = lastStateMap.get(item.id);
-                
+
                 if (stateAtSnapshot === MareaEstado.PARA_PROTOCOLIZAR) {
                     target.esperandoProtocolizacion++; // Balde 2: Listas para envío
                 } else if (stateAtSnapshot === MareaEstado.ESPERANDO_ENTREGA) {
@@ -2523,7 +2523,7 @@ export class StatsService {
         finalizadasDelPeriodo.forEach(item => {
             const fEnvio = item.fechaEnvioProtocolizacion ? new Date(item.fechaEnvioProtocolizacion) : null;
             const stateAtSnapshot = lastStateMap.get(item.id);
-            
+
             const mareaRec = {
                 id: item.id,
                 id_marea: item.id_marea,
@@ -2582,7 +2582,7 @@ export class StatsService {
         // Hoja 3: Estadísticas por Pesquería
         this.buildAuditPesqueriaSheet(workbook, mareas, detailItems, year, mode, fisheryOrderMap, endDate);
 
-        // Hoja 4: Mareas según su Estado
+        // Hoja 4: Mareas según Estado
         this.buildAuditCasosEspecialesSheet(workbook, specialCases);
 
         // Hoja 5: Protocolización
@@ -2694,13 +2694,13 @@ export class StatsService {
             sheet.getCell(row, 1).value = r[0];
             sheet.getCell(row, 2).value = r[1];
             sheet.getCell(row, 3).value = r[2];
-            
+
             // Estilo según jerarquía
             const label = r[0] as string;
-            sheet.getCell(row, 1).font = { 
-                bold: label === 'Mareas finalizadas (Período)' || label === 'Días navegados' 
+            sheet.getCell(row, 1).font = {
+                bold: label === 'Mareas finalizadas (Período)' || label === 'Días navegados'
             };
-            
+
             sheet.getCell(row, 2).alignment = { horizontal: 'center' };
             sheet.getCell(row, 3).alignment = { horizontal: 'center' };
         });
@@ -3247,12 +3247,12 @@ export class StatsService {
         workbook: ExcelJS.Workbook,
         specialCases: any
     ) {
-        const sheet = workbook.addWorksheet('Mareas según su Estado');
+        const sheet = workbook.addWorksheet('Mareas según Estado');
 
         // Título
         sheet.mergeCells('A1', 'I1');
         const titleCell = sheet.getCell('A1');
-        titleCell.value = 'Mareas según su Estado';
+        titleCell.value = 'Mareas según Estado';
         titleCell.font = { bold: true, size: 16 };
         titleCell.alignment = { horizontal: 'center' };
 
@@ -3290,16 +3290,16 @@ export class StatsService {
                 getObs: (_: any) => 'Derivada a programa externo',
             },
             {
-                label: 'Enviadas a DNI',
-                color: 'FF7C3AED',
-                data: specialCases.enviadasADNI,
-                getObs: (m: any) => m.nroProtocolo ? `Protocolizada (Protocolo: ${m.nroProtocolo})` : 'Enviada (Pendiente de protocolo)',
-            },
-            {
                 label: 'Listas para envío a DNI',
                 color: 'FF3F51B5',
                 data: specialCases.informesPendientesEnvio,
                 getObs: (_: any) => 'Reporte listo para enviar',
+            },
+            {
+                label: 'Enviadas a DNI',
+                color: 'FF7C3AED',
+                data: specialCases.enviadasADNI,
+                getObs: (m: any) => m.nroProtocolo ? `Protocolizada (Protocolo: ${m.nroProtocolo})` : 'Enviada (Pendiente de protocolo)',
             },
         ];
 
