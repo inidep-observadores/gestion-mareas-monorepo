@@ -3289,10 +3289,15 @@ export class MareasService {
                     }
                 });
 
+                // Determinar la fecha del movimiento
+                const fechaMovimiento = dto.enviadoPorCanalExterno && dto.fechaEnvio
+                    ? new Date(dto.fechaEnvio)
+                    : DateUtils.getNow(true);
+
                 const movimiento = await tx.mareaMovimiento.create({
                     data: {
                         mareaId: marea.id,
-                        fechaHora: DateUtils.getNow(true),
+                        fechaHora: fechaMovimiento,
                         usuarioId: user.id,
                         tipoEvento: 'ENVIAR_PROTOCOLIZACION',
                         estadoDesdeId: marea.estadoActual.id,
