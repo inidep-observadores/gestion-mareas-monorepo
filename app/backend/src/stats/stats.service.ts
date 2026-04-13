@@ -3769,6 +3769,9 @@ export class StatsService {
                 fechaEvento: lastMov?.fechaHora || null,
                 motivo: lastMov?.comentarios || null,
                 tipoObservador: m.observadorPrincipal?.tipoObservador || null,
+                nroProtocolo: (m.nroProtocolizacion && m.anioProtocolizacion)
+                    ? `${m.nroProtocolizacion}/${m.anioProtocolizacion}`
+                    : null,
             };
 
             // Categorización según estado histórico

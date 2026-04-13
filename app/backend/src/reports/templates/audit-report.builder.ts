@@ -34,6 +34,7 @@ interface AuditSpecialMareaItem {
     fechaEvento: Date | string | null;
     motivo: string | null;
     tipoObservador: string | null;
+    nroProtocolo?: string | null;
 }
 
 interface PersonalTypeBreakdownItem {
@@ -1076,22 +1077,52 @@ export class AuditReportBuilder {
         }
 
         if (esperandoProtocolizacion.length > 0) {
-            const n = esperandoProtocolizacion.length;
-            const sortedEsperandoProt = [...esperandoProtocolizacion].sort((a, b) => this.sortMareaId(a.id_marea, b.id_marea));
-            const subsecNum = 1 + (canceladas.length > 0 ? 1 : 0) + (desestimadas.length > 0 ? 1 : 0) + (esperandoEntrega.length > 0 ? 1 : 0) + (pendientesDeInforme.length > 0 ? 1 : 0) + (informesPendientesEnvio.length > 0 ? 1 : 0);
-            result.push(
-                this.heading2(`7.${subsecNum} Mareas esperando protocolización`),
-                this.bodyParagraph(`${n} marea${n !== 1 ? 's' : ''} fu${n !== 1 ? 'eron enviadas' : 'e enviada'} a la DNI para protocolización y se encuentr${n !== 1 ? 'an' : 'a'} pendiente${n !== 1 ? 's' : ''} de confirmación.`),
-                createFormattedTable(
-                    ['MAREA', 'BUQUE', 'PESQUERÍA', 'DÍAS NAV.', 'FECHA ENVÍO'],
-                    sortedEsperandoProt.map(m => [
-                        this.formatMareaShort(m.id_marea), m.buque, m.pesqueria,
-                        m.diasNavegados.toString(),
-                        m.fechaEvento ? this.formatShortDate(m.fechaEvento) : '',
-                    ]),
-                    { columnWidths: specialWidths, alignments: specialAligns },
-                ),
-            );
+            // Dividir entre las que solo se enviaron y las que ya tienen nro de protocolo
+            const soloEnviadas = esperandoProtocolizacion.filter(m => !m.nroProtocolo);
+            const yaProtocolizadas = esperandoProtocolizacion.filter(m => !!m.nroProtocolo);
+
+            let subsecNum = 1 + (canceladas.length > 0 ? 1 : 0) + (desestimadas.length > 0 ? 1 : 0) +
+                (esperandoEntrega.length > 0 ? 1 : 0) + (pendientesDeInforme.length > 0 ? 1 : 0) +
+                (informesPendientesEnvio.length > 0 ? 1 : 0);
+
+            if (soloEnviadas.length > 0) {
+                const n = soloEnviadas.length;
+                const sortedSoloEnviadas = [...soloEnviadas].sort((a, b) => this.sortMareaId(a.id_marea, b.id_marea));
+
+                result.push(
+                    this.heading2(`7.${subsecNum} Mareas esperando protocolización`),
+                    this.bodyParagraph(`${n} marea${n !== 1 ? 's' : ''} fu${n !== 1 ? 'eron enviadas' : 'e enviada'} a la DNI y se encuentr${n !== 1 ? 'an aguardando' : 'a aguardando'} la asignación de su número de protocolo oficial.`),
+                    createFormattedTable(
+                        ['MAREA', 'BUQUE', 'PESQUERÍA', 'DÍAS NAV.', 'FECHA ENVÍO'],
+                        sortedSoloEnviadas.map(m => [
+                            this.formatMareaShort(m.id_marea), m.buque, m.pesqueria,
+                            m.diasNavegados.toString(),
+                            m.fechaEvento ? this.formatShortDate(m.fechaEvento) : '',
+                        ]),
+                        { columnWidths: specialWidths, alignments: specialAligns },
+                    ),
+                );
+                subsecNum++;
+            }
+
+            if (yaProtocolizadas.length > 0) {
+                const n = yaProtocolizadas.length;
+                const sortedYaProt = [...yaProtocolizadas].sort((a, b) => this.sortMareaId(a.id_marea, b.id_marea));
+
+                result.push(
+                    this.heading2(`7.${subsecNum} Mareas ya protocolizadas`),
+                    this.bodyParagraph(`${n} marea${n !== 1 ? 's' : ''} complet${n !== 1 ? 'aron' : 'ó'} el circuito administrativo, obteniendo su correspondiente número de protocolo dentro del período analizado.`),
+                    createFormattedTable(
+                        ['MAREA', 'BUQUE', 'PESQUERÍA', 'DÍAS NAV.', 'PROTOCOLO'],
+                        sortedYaProt.map(m => [
+                            this.formatMareaShort(m.id_marea), m.buque, m.pesqueria,
+                            m.diasNavegados.toString(),
+                            m.nroProtocolo || '-',
+                        ]),
+                        { columnWidths: specialWidths, alignments: specialAligns },
+                    ),
+                );
+            }
         }
 
         return result;
