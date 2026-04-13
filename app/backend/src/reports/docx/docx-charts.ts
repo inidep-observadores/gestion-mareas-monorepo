@@ -39,7 +39,7 @@ export class DocxChartService {
                     legend: {
                         display: datasets.length > 1,
                         position: 'top',
-                        labels: { font: { family: FONTS.primary, size: 15 } },
+                        labels: { font: { family: FONTS.primary, size: 18 } },
                     },
                     title: options?.title ? {
                         display: true,
@@ -124,7 +124,7 @@ export class DocxChartService {
                     legend: {
                         display: datasets.length > 1,
                         position: 'top',
-                        labels: { font: { family: FONTS.primary, size: 15 } },
+                        labels: { font: { family: FONTS.primary, size: 18 } },
                     },
                     title: options?.title ? {
                         display: true,
@@ -285,7 +285,7 @@ export class DocxChartService {
                 plugins: {
                     legend: {
                         position: 'right',
-                        labels: { font: { family: FONTS.primary, size: 15 }, padding: 16 },
+                        labels: { font: { family: FONTS.primary, size: 18 }, padding: 16 },
                     },
                     title: options?.title ? {
                         display: true,
@@ -313,7 +313,7 @@ export class DocxChartService {
                         ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
                         ctx.lineWidth = 4;
                         ctx.lineJoin = 'round';
-                        ctx.font = `bold 12px ${FONTS.primary}`;
+                        ctx.font = `bold 18px ${FONTS.primary}`;
                         ctx.textAlign = 'center';
                         ctx.textBaseline = 'middle';
                         ctx.strokeText(labelText, x, y);

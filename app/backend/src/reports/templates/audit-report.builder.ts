@@ -1328,14 +1328,29 @@ export class AuditReportBuilder {
     }
 
     private async generateSpecialCasesChart(data: AuditReportData): Promise<Buffer> {
-        const { canceladas, desestimadas, esperandoEntrega, pendientesDeInforme, delegadasExternas, esperandoProtocolizacion } = data.specialCases;
+        const {
+            canceladas,
+            desestimadas,
+            esperandoEntrega,
+            pendientesDeInforme,
+            delegadasExternas,
+            informesPendientesEnvio,
+            esperandoProtocolizacion,
+        } = data.specialCases;
+
+        // Desglosar protocolización entre las que están en trámite y las que ya terminaron
+        const soloEnviadas = esperandoProtocolizacion.filter(m => !m.nroProtocolo);
+        const yaProtocolizadas = esperandoProtocolizacion.filter(m => !!m.nroProtocolo);
+
         const counts = [
             canceladas.length,
             desestimadas.length,
             esperandoEntrega.length,
             pendientesDeInforme.length,
             delegadasExternas.length,
-            esperandoProtocolizacion.length,
+            informesPendientesEnvio.length,
+            soloEnviadas.length,
+            yaProtocolizadas.length,
         ].filter(c => c > 0);
 
         const labels = [
@@ -1344,7 +1359,9 @@ export class AuditReportBuilder {
             esperandoEntrega.length > 0 ? `Esperando Entrega (${esperandoEntrega.length})` : null,
             pendientesDeInforme.length > 0 ? `Pendientes de Informe (${pendientesDeInforme.length})` : null,
             delegadasExternas.length > 0 ? `Delegadas Externas (${delegadasExternas.length})` : null,
-            esperandoProtocolizacion.length > 0 ? `Esperando Protocolización (${esperandoProtocolizacion.length})` : null,
+            informesPendientesEnvio.length > 0 ? `Pendientes de Envío (${informesPendientesEnvio.length})` : null,
+            soloEnviadas.length > 0 ? `Esperando Protocolización (${soloEnviadas.length})` : null,
+            yaProtocolizadas.length > 0 ? `Ya Protocolizadas (${yaProtocolizadas.length})` : null,
         ].filter((l): l is string => l !== null);
 
         return this.chartService.renderDoughnutChart(labels, counts, {
