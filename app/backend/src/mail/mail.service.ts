@@ -76,11 +76,11 @@ export class MailService {
         const html = `
         <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 800px; margin: 0 auto; color: #0f172a; line-height: 1.5;">
             <h3 style="color: #1e3a8a; font-size: 18px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 24px; border-left: 4px solid #3b82f6; padding-left: 16px;">
-                Notificación de envío de informes de marea
+                Envío de informes de marea
             </h3>
             
             <p style="font-size: 14px; margin-bottom: 20px; color: #475569;">
-                Se informa que las siguientes mareas han sido enviadas a protocolizar satisfactoriamente:
+                Se informa que las siguientes mareas han sido enviadas para su protocolización:
             </p>
             
             <table style="width: 100%; border-collapse: collapse; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; font-size: 13px; margin-bottom: 32px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
