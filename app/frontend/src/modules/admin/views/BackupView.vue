@@ -299,6 +299,7 @@
                   <span class="text-sm font-semibold text-text">{{ option.label }}</span>
                   <span v-if="option.key === 'public'" class="text-[10px] font-bold uppercase tracking-wider text-primary/70 bg-primary/10 px-1.5 py-0.5 rounded">Requerido</span>
                   <span v-if="option.key === 'datos_api'" class="text-[10px] font-bold uppercase tracking-wider text-warning bg-warning/10 px-1.5 py-0.5 rounded">Tamaño alto</span>
+                  <span v-if="option.key === 'informes_marea'" class="text-[10px] font-bold uppercase tracking-wider text-brand bg-brand/10 px-1.5 py-0.5 rounded">Archivos</span>
                 </div>
                 <span class="text-xs text-text-muted leading-snug block mt-0.5">{{ option.description }}</span>
               </div>
@@ -346,7 +347,7 @@ const ClockIcon = {
     template: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`
 };
 
-type BackupSchema = 'public' | 'audit' | 'datos_api';
+type BackupSchema = 'public' | 'audit' | 'datos_api' | 'informes_marea';
 
 interface SchemaOption {
     key: BackupSchema;
@@ -395,6 +396,7 @@ const schemaOptions = ref<SchemaOption[]>([
     { key: 'public', label: 'Datos Generales', description: 'Mareas, buques, observadores y toda la información principal del sistema.' },
     { key: 'audit', label: 'Auditoría', description: 'Registro de cambios en la base de datos y eventos de navegación.' },
     { key: 'datos_api', label: 'Datos Históricos de API', description: 'Trayectorias de buques y zarpadas/arribos registradas desde APIs externas. Aumenta significativamente el tamaño del archivo.' },
+    { key: 'informes_marea', label: 'Informes de Marea', description: 'Archivos PDF y documentos cargados de los informes técnicos de marea.' },
 ]);
 
 const restorePhrases = [
@@ -426,6 +428,7 @@ const schemaTagClass = (key: string): string => {
         public: 'bg-primary/10 text-primary dark:bg-primary/20',
         audit: 'bg-info/10 text-info dark:bg-info/20',
         datos_api: 'bg-warning/10 text-warning dark:bg-warning/20',
+        informes_marea: 'bg-success/10 text-success dark:bg-success/20',
     };
     return map[key] ?? 'bg-surface-muted text-text-muted';
 };
