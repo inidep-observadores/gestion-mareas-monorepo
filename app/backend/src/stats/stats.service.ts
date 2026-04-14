@@ -2683,7 +2683,7 @@ export class StatsService {
             ['  ↳ Delegadas externas', obs.delegadasExternas, tec.delegadasExternas],
             ['  ↳ Listas para envío a DNI', obs.esperandoProtocolizacion, tec.esperandoProtocolizacion],
             ['  ↳ Enviadas a DNI', obs.listasParaEnvio, tec.listasParaEnvio],
-            ['    ↳ Protocolizadas', obs.informesProtocolizados, tec.informesProtocolizados],
+            ['Protocolizadas', obs.informesProtocolizados, tec.informesProtocolizados],
             ['Mareas en ejecución', obs.mareasEnEjecucion, tec.mareasEnEjecucion],
             ['Mareas canceladas', obs.canceladas, tec.canceladas],
             ['Desestimadas', obs.desestimadas, tec.desestimadas]
@@ -3315,7 +3315,11 @@ export class StatsService {
             // Cabeceras de columna
             colHeaders.forEach((h, i) => {
                 const cell = sheet.getCell(currentRow, i + 1);
-                cell.value = h;
+                let headerValue = h;
+                if (section.label === 'Enviadas a DNI' && h === 'Observaciones') {
+                    headerValue = 'Protocolizadas en el período';
+                }
+                cell.value = headerValue;
                 cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF00548B' } };
                 cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
                 cell.alignment = { horizontal: 'center' };
@@ -3343,13 +3347,24 @@ export class StatsService {
                     sheet.getCell(currentRow, 6).value = m.observador;
                     sheet.getCell(currentRow, 7).value = m.diasNavegados;
                     sheet.getCell(currentRow, 8).value = fechaEvento;
-                    sheet.getCell(currentRow, 9).value = section.getObs(m);
+                    
+                    const obsCell = sheet.getCell(currentRow, 9);
+                    obsCell.value = section.getObs(m);
 
                     sheet.getCell(currentRow, 1).alignment = { horizontal: 'center' };
                     sheet.getCell(currentRow, 7).alignment = { horizontal: 'center' };
                     sheet.getCell(currentRow, 8).numFmt = 'dd/mm/yyyy';
                     sheet.getCell(currentRow, 8).alignment = { horizontal: 'center' };
-                    sheet.getCell(currentRow, 9).alignment = { horizontal: 'left', wrapText: true };
+                    obsCell.alignment = { horizontal: 'left', wrapText: true };
+
+                    // Resaltado condicional para Enviadas a DNI
+                    if (section.label === 'Enviadas a DNI' && m.nroProtocolo) {
+                        obsCell.fill = {
+                            type: 'pattern',
+                            pattern: 'solid',
+                            fgColor: { argb: 'FFDBEAFE' } // Celeste claro (Blue-100 aprox)
+                        };
+                    }
 
                     totalDias += m.diasNavegados;
                     currentRow++;
