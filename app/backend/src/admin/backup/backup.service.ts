@@ -588,8 +588,7 @@ export class BackupService {
             throw new InternalServerErrorException('Error al procesar el archivo de copia de seguridad subido.');
         } finally {
             if (fs.existsSync(tempDir)) {
-                fs.readdirSync(tempDir).forEach(f => fs.unlinkSync(path.join(tempDir, f)));
-                fs.rmdirSync(tempDir);
+                fs.rmSync(tempDir, { recursive: true, force: true });
             }
         }
     }
