@@ -464,7 +464,7 @@ const copyAsPlainText = async (html: string, notas?: string) => {
       row.map((cell, i) => cell.padEnd(colWidths[i])).join('')
     ).join('\n')
 
-    let finalResult = `NOTIFICACIÓN DE ENVÍO DE INFORMES DE MAREA\n\n${plainText}`
+    let finalResult = `ENVÍO DE INFORMES DE MAREA\n\n${plainText}`
     
     if (notas) {
       finalResult += `\n\nNOTAS O ACLARACIONES:\n${notas}`

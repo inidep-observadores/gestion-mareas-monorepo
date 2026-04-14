@@ -40,7 +40,7 @@ export class MailService {
         }
     }
     getProtocolizacionEmailContent(marcadasParaProtocolizar: any[], textoAdicional?: string) {
-        const subject = 'NOTIFICACIÓN DE MAREAS ENVIADAS A PROTOCOLIZAR';
+        const subject = 'MAREAS ENVIADAS A PROTOCOLIZAR';
         let tableRows = '';
         
         // Ordenar mareas por año y número (ascendente)

@@ -33,7 +33,7 @@
           <div class="flex items-start gap-4">
             <span class="text-[10px] font-black uppercase tracking-widest text-text-muted w-12 pt-1 text-right">Asunto:</span>
             <div class="flex-1">
-              <p class="text-xs font-black text-text">Notificación de mareas enviadas a protocolizar</p>
+              <p class="text-xs font-black text-text">Mareas enviadas a protocolizar</p>
             </div>
           </div>
 
