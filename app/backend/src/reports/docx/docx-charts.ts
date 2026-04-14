@@ -39,12 +39,12 @@ export class DocxChartService {
                     legend: {
                         display: datasets.length > 1,
                         position: 'top',
-                        labels: { font: { family: FONTS.primary, size: 18 } },
+                        labels: { font: { family: FONTS.primary, size: 15 } },
                     },
                     title: options?.title ? {
                         display: true,
                         text: options.title,
-                        font: { family: FONTS.primary, size: 20, weight: 'bold' },
+                        font: { family: FONTS.primary, size: 15, weight: 'bold' },
                         color: '#1E293B',
                     } : undefined,
                 },
@@ -124,12 +124,12 @@ export class DocxChartService {
                     legend: {
                         display: datasets.length > 1,
                         position: 'top',
-                        labels: { font: { family: FONTS.primary, size: 18 } },
+                        labels: { font: { family: FONTS.primary, size: 15 } },
                     },
                     title: options?.title ? {
                         display: true,
                         text: options.title,
-                        font: { family: FONTS.primary, size: 20, weight: 'bold' },
+                        font: { family: FONTS.primary, size: 15, weight: 'bold' },
                         color: '#1E293B',
                     } : undefined,
                 },
@@ -208,7 +208,7 @@ export class DocxChartService {
                     title: options?.title ? {
                         display: true,
                         text: options.title,
-                        font: { family: FONTS.primary, size: 20, weight: 'bold' },
+                        font: { family: FONTS.primary, size: 15, weight: 'bold' },
                         color: '#1E293B',
                     } : undefined,
                 },
@@ -285,12 +285,12 @@ export class DocxChartService {
                 plugins: {
                     legend: {
                         position: 'right',
-                        labels: { font: { family: FONTS.primary, size: 18 }, padding: 16 },
+                        labels: { font: { family: FONTS.primary, size: 15 }, padding: 16 },
                     },
                     title: options?.title ? {
                         display: true,
                         text: options.title,
-                        font: { family: FONTS.primary, size: 20, weight: 'bold' },
+                        font: { family: FONTS.primary, size: 15, weight: 'bold' },
                         color: '#1E293B',
                     } : undefined,
                 },
@@ -313,7 +313,7 @@ export class DocxChartService {
                         ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
                         ctx.lineWidth = 4;
                         ctx.lineJoin = 'round';
-                        ctx.font = `bold 18px ${FONTS.primary}`;
+                        ctx.font = `bold 15px ${FONTS.primary}`;
                         ctx.textAlign = 'center';
                         ctx.textBaseline = 'middle';
                         ctx.strokeText(labelText, x, y);
