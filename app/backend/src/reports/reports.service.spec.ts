@@ -3,12 +3,14 @@ import { ReportsService } from './reports.service';
 import { StatsService } from '../stats/stats.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditReportBuilder } from './templates/audit-report.builder';
+import { ConversionService } from './conversion.service';
 
 describe('ReportsService', () => {
   let service: ReportsService;
   let statsService: StatsService;
   let prismaService: PrismaService;
   let builder: AuditReportBuilder;
+  let conversionService: ConversionService;
 
   const mockStatsService = {
     getDashboardStats: jest.fn(),
@@ -18,7 +20,6 @@ describe('ReportsService', () => {
     getAuditSpecialCases: jest.fn(),
     getProtocolizationTimeline: jest.fn(),
   };
-
   const mockPrismaService = {
     observador: {
       count: jest.fn(),
@@ -27,6 +28,16 @@ describe('ReportsService', () => {
     marea: {
       findMany: jest.fn(),
     },
+    mareaMovimiento: {
+      findMany: jest.fn(),
+    },
+    pesqueria: {
+      findMany: jest.fn(),
+    },
+  };
+
+  const mockConversionService = {
+    convertDocxToPdf: jest.fn(),
   };
 
   const mockAuditReportBuilder = {
@@ -40,6 +51,7 @@ describe('ReportsService', () => {
         { provide: StatsService, useValue: mockStatsService },
         { provide: PrismaService, useValue: mockPrismaService },
         { provide: AuditReportBuilder, useValue: mockAuditReportBuilder },
+        { provide: ConversionService, useValue: mockConversionService },
       ],
     }).compile();
 
@@ -47,6 +59,7 @@ describe('ReportsService', () => {
     statsService = module.get<StatsService>(StatsService);
     prismaService = module.get<PrismaService>(PrismaService);
     builder = module.get<AuditReportBuilder>(AuditReportBuilder);
+    conversionService = module.get<ConversionService>(ConversionService);
   });
 
   afterEach(() => {
@@ -69,13 +82,16 @@ describe('ReportsService', () => {
       };
       const mockDistribution = [{ mareaId: 'm1', id_marea: '2024-001', nroEtapa: 1 }];
       const mockDetails = [{ id: 'm1', id_marea: '2024-001', buque: 'Test', flota: 'Fleet', pesqueria: 'Fish', estado: 'Finalizada', diasCalendario: 10, diasTotales: 10 }];
-      const mockDotacion = 50;
+      const mockDotacion = 1;
       const mockBuffer = Buffer.from('report content');
 
       mockStatsService.getDashboardStats.mockResolvedValue(mockStats);
-      mockPrismaService.observador.count.mockResolvedValue(mockDotacion);
-      mockPrismaService.observador.findMany.mockResolvedValue([]);
+      mockPrismaService.observador.findMany.mockResolvedValue([
+        { id: '1', nombre: 'Juan', apellido: 'Perez' }
+      ]);
       mockPrismaService.marea.findMany.mockResolvedValue([]);
+      mockPrismaService.mareaMovimiento.findMany.mockResolvedValue([]);
+      mockPrismaService.pesqueria.findMany.mockResolvedValue([]);
       mockStatsService.getMareaDistribution.mockResolvedValue(mockDistribution);
       mockStatsService.getDashboardStatsDetail.mockResolvedValue(mockDetails);
       mockStatsService.getSecondaryObserverStats.mockResolvedValue([]);
@@ -85,6 +101,7 @@ describe('ReportsService', () => {
         esperandoEntrega: [],
         pendientesDeInforme: [],
         delegadasExternas: [],
+        informesPendientesEnvio: [],
         esperandoProtocolizacion: [],
       });
       mockStatsService.getProtocolizationTimeline.mockResolvedValue({
@@ -98,6 +115,7 @@ describe('ReportsService', () => {
         promedioDiasLatenciaTramite: null,
         maxDiasLatenciaTramite: null,
         distribucionMensual: [],
+        protocolizadasDetalle: [],
       });
       mockAuditReportBuilder.build.mockResolvedValue(mockBuffer);
 
@@ -111,9 +129,7 @@ describe('ReportsService', () => {
 
       // Verifications
       expect(statsService.getDashboardStats).toHaveBeenCalled();
-      expect(prismaService.observador.count).toHaveBeenCalledWith({
-        where: { activo: true, conImpedimento: false, tipoObservador: 'OBSERVADOR' }
-      });
+      expect(prismaService.observador.findMany).toHaveBeenCalled();
       expect(statsService.getMareaDistribution).toHaveBeenCalled();
       expect(statsService.getDashboardStatsDetail).toHaveBeenCalled();
       

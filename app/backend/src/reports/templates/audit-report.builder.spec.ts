@@ -54,11 +54,31 @@ describe('AuditReportBuilder', () => {
         },
         dotacionActiva: 45,
         secondaryStats: [],
-        specialCases: { canceladas: [], desestimadas: [], esperandoEntrega: [], pendientesDeInforme: [], delegadasExternas: [], esperandoProtocolizacion: [] },
-        protocolizationTimeline: { totalProtocolizadas: 0, totalEnviadas: 0, totalEnPeriodo: 0, sinProtocolizar: 0, tipo: 'MONTHLY', promedioDiasLatencia: null, maxDiasLatencia: null, promedioDiasLatenciaTramite: null, maxDiasLatenciaTramite: null, distribucionMensual: [] },
+        specialCases: { 
+          canceladas: [], 
+          desestimadas: [], 
+          esperandoEntrega: [], 
+          pendientesDeInforme: [], 
+          delegadasExternas: [], 
+          informesPendientesEnvio: [],
+          esperandoProtocolizacion: [],
+        },
+        protocolizationTimeline: { 
+          totalProtocolizadas: 0, 
+          totalEnviadas: 0, 
+          totalEnPeriodo: 0, 
+          sinProtocolizar: 0, 
+          tipo: 'MONTHLY', 
+          promedioDiasLatencia: null, 
+          maxDiasLatencia: null, 
+          promedioDiasLatenciaTramite: null, 
+          maxDiasLatenciaTramite: null, 
+          distribucionMensual: [],
+          protocolizadasDetalle: [],
+        },
         breakdown: {
-          observadores: { dias: 0, mareasFinalizadas: 0, mareasEnEjecucion: 0, desestimadas: 0, informesDeMarea: 0, informesProtocolizados: 0, informesPendientes: 0 },
-          tecnicos: { dias: 0, mareasFinalizadas: 0, mareasEnEjecucion: 0, desestimadas: 0, informesDeMarea: 0, informesProtocolizados: 0, informesPendientes: 0 },
+          observadores: { dias: 0, mareasFinalizadas: 0, mareasEnEjecucion: 0, desestimadas: 0, informesDeMarea: 0, informesProtocolizados: 0, informesPendientes: 0, esperandoEntrega: 0, delegadasExternas: 0 },
+          tecnicos: { dias: 0, mareasFinalizadas: 0, mareasEnEjecucion: 0, desestimadas: 0, informesDeMarea: 0, informesProtocolizados: 0, informesPendientes: 0, esperandoEntrega: 0, delegadasExternas: 0 },
         },
         detailItems: [
           {
@@ -77,6 +97,7 @@ describe('AuditReportBuilder', () => {
           }
         ],
         distribution: [{ mareaId: 'm1', id_marea: '2024-001', nroEtapa: 1 }],
+        observadoresSinActividad: [],
       };
 
       const result = await builder.build(mockData);
@@ -100,14 +121,35 @@ describe('AuditReportBuilder', () => {
           },
           dotacionActiva: 0,
           secondaryStats: [],
-          specialCases: { canceladas: [], desestimadas: [], esperandoEntrega: [], pendientesDeInforme: [], delegadasExternas: [], esperandoProtocolizacion: [] },
-          protocolizationTimeline: { totalProtocolizadas: 0, totalEnviadas: 0, totalEnPeriodo: 0, sinProtocolizar: 0, tipo: 'MONTHLY', promedioDiasLatencia: null, maxDiasLatencia: null, promedioDiasLatenciaTramite: null, maxDiasLatenciaTramite: null, distribucionMensual: [] },
+          specialCases: { 
+            canceladas: [], 
+            desestimadas: [], 
+            esperandoEntrega: [], 
+            pendientesDeInforme: [], 
+            delegadasExternas: [], 
+            informesPendientesEnvio: [],
+            esperandoProtocolizacion: [],
+          },
+          protocolizationTimeline: { 
+            totalProtocolizadas: 0, 
+            totalEnviadas: 0, 
+            totalEnPeriodo: 0, 
+            sinProtocolizar: 0, 
+            tipo: 'MONTHLY', 
+            promedioDiasLatencia: null, 
+            maxDiasLatencia: null, 
+            promedioDiasLatenciaTramite: null, 
+            maxDiasLatenciaTramite: null, 
+            distribucionMensual: [],
+            protocolizadasDetalle: [],
+          },
           breakdown: {
-            observadores: { dias: 0, mareasFinalizadas: 0, mareasEnEjecucion: 0, desestimadas: 0, informesDeMarea: 0, informesProtocolizados: 0, informesPendientes: 0 },
-            tecnicos: { dias: 0, mareasFinalizadas: 0, mareasEnEjecucion: 0, desestimadas: 0, informesDeMarea: 0, informesProtocolizados: 0, informesPendientes: 0 },
+            observadores: { dias: 0, mareasFinalizadas: 0, mareasEnEjecucion: 0, desestimadas: 0, informesDeMarea: 0, informesProtocolizados: 0, informesPendientes: 0, esperandoEntrega: 0, delegadasExternas: 0 },
+            tecnicos: { dias: 0, mareasFinalizadas: 0, mareasEnEjecucion: 0, desestimadas: 0, informesDeMarea: 0, informesProtocolizados: 0, informesPendientes: 0, esperandoEntrega: 0, delegadasExternas: 0 },
           },
           detailItems: [],
           distribution: [],
+          observadoresSinActividad: [],
         };
   
         const result = await builder.build(mockData);
