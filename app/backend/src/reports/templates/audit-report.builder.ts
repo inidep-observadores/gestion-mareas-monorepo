@@ -702,7 +702,7 @@ export class AuditReportBuilder {
             [
                 ['Días navegados', formatNumber(obs.dias), formatNumber(tec.dias)],
                 ['Mareas finalizadas (Período)', obs.mareasFinalizadas.toString(), tec.mareasFinalizadas.toString()],
-                ['  ↳ Pendientes d/ informe', obs.desestimadas.toString(), tec.desestimadas.toString()],
+                ['  ↳ Pendientes de informe', obs.desestimadas.toString(), tec.desestimadas.toString()],
                 ['  ↳ Esperando entrega obs.', obs.esperandoEntrega.toString(), tec.esperandoEntrega.toString()],
                 ['  ↳ Delegadas externas', obs.delegadasExternas.toString(), tec.delegadasExternas.toString()],
                 ['  ↳ Listas para envío a DNI', obs.informesPendientes.toString(), tec.informesPendientes.toString()],

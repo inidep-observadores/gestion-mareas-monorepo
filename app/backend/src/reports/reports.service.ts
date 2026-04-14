@@ -155,6 +155,9 @@ export class ReportsService {
             if (!item.observadorId) return;
             const t = observerDataMap.get(item.observadorId)?.tipoObservador === 'OBSERVADOR' ? breakdown.observadores : breakdown.tecnicos;
             
+            // Acumular días navegados según el modo del reporte
+            t.dias += (mode === 'CALENDAR' ? item.diasCalendario : item.diasTotales);
+            
             if (item.estado === 'Finalizada') {
                 t.mareasFinalizadas++;
                 const fEnvio = item.fechaEnvioProtocolizacion ? new Date(item.fechaEnvioProtocolizacion) : null;
