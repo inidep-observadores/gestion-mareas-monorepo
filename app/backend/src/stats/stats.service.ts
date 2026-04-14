@@ -2679,14 +2679,14 @@ export class StatsService {
             ['Días navegados', obs.dias, tec.dias],
             ['Mareas finalizadas (Período)', obs.mareasFinalizadas, tec.mareasFinalizadas],
             ['  ↳ Pendientes de informe', obs.pendientesDeInforme, tec.pendientesDeInforme],
+            ['  ↳ Esperando entrega obs.', obs.esperandoEntrega, tec.esperandoEntrega],
+            ['  ↳ Delegadas externas', obs.delegadasExternas, tec.delegadasExternas],
             ['  ↳ Listas para envío a DNI', obs.esperandoProtocolizacion, tec.esperandoProtocolizacion],
             ['  ↳ Enviadas a DNI', obs.listasParaEnvio, tec.listasParaEnvio],
             ['    ↳ Protocolizadas', obs.informesProtocolizados, tec.informesProtocolizados],
             ['Mareas en ejecución', obs.mareasEnEjecucion, tec.mareasEnEjecucion],
             ['Mareas canceladas', obs.canceladas, tec.canceladas],
-            ['Desestimadas', obs.desestimadas, tec.desestimadas],
-            ['Pendientes entrega datos', obs.esperandoEntrega, tec.esperandoEntrega],
-            ['Delegadas externas', obs.delegadasExternas, tec.delegadasExternas]
+            ['Desestimadas', obs.desestimadas, tec.desestimadas]
         ];
 
         breakdownRows.forEach((r, index) => {
@@ -2695,11 +2695,8 @@ export class StatsService {
             sheet.getCell(row, 2).value = r[1];
             sheet.getCell(row, 3).value = r[2];
 
-            // Estilo según jerarquía
-            const label = r[0] as string;
-            sheet.getCell(row, 1).font = {
-                bold: label === 'Mareas finalizadas (Período)' || label === 'Días navegados'
-            };
+            // Estilo (Sin negritas según pedido del usuario)
+            sheet.getCell(row, 1).font = { bold: false };
 
             sheet.getCell(row, 2).alignment = { horizontal: 'center' };
             sheet.getCell(row, 3).alignment = { horizontal: 'center' };
