@@ -107,14 +107,24 @@ export class JobQueueService {
      * Dispara una tarea por tipo si no hay una ya activa
      */
     async triggerJobByType(type: JobType, priority = 50) {
+        const staleThresholdHours = parseInt(process.env.JOB_STALE_THRESHOLD_HOURS || '4', 10);
+        const staleTime = new Date(Date.now() - staleThresholdHours * 60 * 60 * 1000);
+
         const activeJob = await this.prisma.jobQueue.findFirst({
             where: {
                 type,
-                status: { in: [JobStatus.PENDING, JobStatus.PROCESSING] }
+                OR: [
+                    { status: JobStatus.PENDING },
+                    {
+                        status: JobStatus.PROCESSING,
+                        lastRunAt: { gte: staleTime }
+                    }
+                ]
             }
         });
 
         if (activeJob) {
+
             return activeJob;
         }
 

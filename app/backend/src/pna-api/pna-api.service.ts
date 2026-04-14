@@ -99,9 +99,16 @@ export class PnaApiService {
             summary.total = apiResponse.reportes.length;
             this.logger.log(`Processing ${summary.total} reportes from PNA API`);
 
+            let counter = 0;
             // Process each report
             for (const reporte of apiResponse.reportes) {
+                counter++;
+                if (counter % 100 === 0 || counter === summary.total) {
+                    this.logger.log(`Progreso PNA: ${counter}/${summary.total} reportes procesados...`);
+                }
+
                 try {
+
                     // Skip deleted reports
                     if (reporte.borrado === 'True') {
                         summary.skipped++;
