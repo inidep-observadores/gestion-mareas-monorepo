@@ -707,7 +707,7 @@ export class AuditReportBuilder {
                 ['  ↳ Delegadas externas', obs.delegadasExternas.toString(), tec.delegadasExternas.toString()],
                 ['  ↳ Listas para envío a DNI', obs.informesPendientes.toString(), tec.informesPendientes.toString()],
                 ['  ↳ Enviadas a DNI', obs.informesDeMarea.toString(), tec.informesDeMarea.toString()],
-                ['    ↳ Protocolizadas', obs.informesProtocolizados.toString(), tec.informesProtocolizados.toString()],
+                ['Protocolizadas', obs.informesProtocolizados.toString(), tec.informesProtocolizados.toString()],
                 ['Mareas en ejecución', obs.mareasEnEjecucion.toString(), tec.mareasEnEjecucion.toString()],
             ],
             {
