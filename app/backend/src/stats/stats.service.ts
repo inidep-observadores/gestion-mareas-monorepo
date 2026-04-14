@@ -2585,8 +2585,9 @@ export class StatsService {
         // Hoja 4: Mareas según Estado
         this.buildAuditCasosEspecialesSheet(workbook, specialCases);
 
-        // Hoja 5: Protocolización
-        this.buildAuditProtocolizacionSheet(workbook, protocolizationTimeline);
+        // TODO: Re-habilitar una vez que la definición de la hoja de Protocolización esté finalizada por el usuario.
+        // Hoja 5: Protocolización (DESHABILITADA PROVISORIAMENTE)
+        // this.buildAuditProtocolizacionSheet(workbook, protocolizationTimeline);
 
         return workbook;
     }

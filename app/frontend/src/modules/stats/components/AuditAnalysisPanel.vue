@@ -35,7 +35,7 @@
             <ExportExcelButton
                :loading="exporting"
                label="DATOS EXCEL"
-               title="Exportar análisis completo para auditoría (3 hojas)"
+               title="Exportar análisis completo para auditoría (4 hojas)"
                class="px-4 py-2.5 rounded-xl border border-primary/20 bg-surface shadow-theme-xs"
                @click="handleExportAudit" />
          </div>
