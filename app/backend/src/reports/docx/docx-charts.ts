@@ -282,6 +282,14 @@ export class DocxChartService {
             options: {
                 responsive: false,
                 animation: false,
+                layout: {
+                    padding: {
+                        left: 80,   // Espacio para evitar que las etiquetas largas se corten a la izquierda
+                        right: 40,  // Margen de seguridad a la derecha
+                        top: 20,
+                        bottom: 20,
+                    },
+                },
                 plugins: {
                     legend: {
                         position: 'right',
