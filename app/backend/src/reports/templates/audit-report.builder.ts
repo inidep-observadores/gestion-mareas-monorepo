@@ -959,7 +959,7 @@ export class AuditReportBuilder {
             informesPendientesEnvio.length === 0 && esperandoProtocolizacion.length === 0;
 
         const result: (Paragraph | Table)[] = [
-            this.heading1('7. MAREAS SEGÚN ESTADO'),
+            this.heading1('7. MAREAS FINALIZADAS SEGÚN ESTADO'),
         ];
 
         if (allEmpty) {
