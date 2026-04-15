@@ -1338,9 +1338,8 @@ export class AuditReportBuilder {
             esperandoProtocolizacion,
         } = data.specialCases;
 
-        // Desglosar protocolización entre las que están en trámite y las que ya terminaron
-        const soloEnviadas = esperandoProtocolizacion.filter(m => !m.nroProtocolo);
-        const yaProtocolizadas = esperandoProtocolizacion.filter(m => !!m.nroProtocolo);
+        // Consolidamos la protocolización (pendientes + ya protocolizadas) en una única serie
+        const enviadasADNI = esperandoProtocolizacion.length;
 
         const counts = [
             canceladas.length,
@@ -1349,8 +1348,7 @@ export class AuditReportBuilder {
             pendientesDeInforme.length,
             delegadasExternas.length,
             informesPendientesEnvio.length,
-            soloEnviadas.length,
-            yaProtocolizadas.length,
+            enviadasADNI,
         ].filter(c => c > 0);
 
         const labels = [
@@ -1360,8 +1358,7 @@ export class AuditReportBuilder {
             pendientesDeInforme.length > 0 ? `Pendientes de Informe (${pendientesDeInforme.length})` : null,
             delegadasExternas.length > 0 ? `Delegadas Externas (${delegadasExternas.length})` : null,
             informesPendientesEnvio.length > 0 ? `Pendientes de Envío (${informesPendientesEnvio.length})` : null,
-            soloEnviadas.length > 0 ? `Esperando Protocolización (${soloEnviadas.length})` : null,
-            yaProtocolizadas.length > 0 ? `Ya Protocolizadas (${yaProtocolizadas.length})` : null,
+            enviadasADNI > 0 ? `Enviadas a DNI (${enviadasADNI})` : null,
         ].filter((l): l is string => l !== null);
 
         return this.chartService.renderDoughnutChart(labels, counts, {
