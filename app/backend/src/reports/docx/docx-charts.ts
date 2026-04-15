@@ -263,29 +263,40 @@ export class DocxChartService {
      */
     async renderDoughnutChart(
         labels: string[],
-        data: number[],
+        dataOrDatasets: number[] | Array<{ data: number[]; backgroundColor?: string[]; label?: string }>,
         options?: { title?: string; colors?: string[]; displayLabels?: boolean },
     ): Promise<Buffer> {
-        const colors = options?.colors || CHART_COLORS.palette.slice(0, data.length);
+        // Normalizar datasets
+        const isAdvanced = Array.isArray(dataOrDatasets) && dataOrDatasets.length > 0 && typeof dataOrDatasets[0] === 'object';
+        
+        const datasets = isAdvanced
+            ? (dataOrDatasets as any[]).map((ds) => ({
+                label: ds.label,
+                data: ds.data,
+                backgroundColor: ds.backgroundColor || options?.colors || CHART_COLORS.palette,
+                borderWidth: 2,
+                borderColor: '#FFFFFF',
+            }))
+            : [{
+                data: dataOrDatasets as number[],
+                backgroundColor: options?.colors || CHART_COLORS.palette.slice(0, (dataOrDatasets as number[]).length),
+                borderWidth: 2,
+                borderColor: '#FFFFFF',
+            }];
 
         const config: ChartConfiguration = {
             type: 'doughnut',
             data: {
                 labels,
-                datasets: [{
-                    data,
-                    backgroundColor: colors,
-                    borderWidth: 2,
-                    borderColor: '#FFFFFF',
-                }],
+                datasets,
             },
             options: {
                 responsive: false,
                 animation: false,
                 layout: {
                     padding: {
-                        left: 80,   // Espacio para evitar que las etiquetas largas se corten a la izquierda
-                        right: 40,  // Margen de seguridad a la derecha
+                        left: 80,
+                        right: 40,
                         top: 20,
                         bottom: 20,
                     },
@@ -307,17 +318,16 @@ export class DocxChartService {
                 id: 'donutLabels',
                 afterDraw: (chart) => {
                     const ctx = chart.ctx;
+                    // Solo dibujamos etiquetas para el primer dataset (el exterior) para evitar superposición
                     const meta = chart.getDatasetMeta(0);
                     meta.data.forEach((element: any, index) => {
                         const val = chart.data.datasets[0].data[index] as number;
                         const labelText = chart.data.labels![index] as string;
-                        if (val === 0) return;
+                        if (!val || val === 0) return;
 
-                        // TooltipPosition suele ser el centro del arco
                         const { x, y } = element.tooltipPosition();
 
                         ctx.save();
-                        // Aura blanca para legibilidad
                         ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
                         ctx.lineWidth = 4;
                         ctx.lineJoin = 'round';
@@ -326,7 +336,6 @@ export class DocxChartService {
                         ctx.textBaseline = 'middle';
                         ctx.strokeText(labelText, x, y);
 
-                        // Texto principal
                         ctx.fillStyle = '#1E293B'; 
                         ctx.fillText(labelText, x, y);
                         ctx.restore();
