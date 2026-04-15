@@ -1338,25 +1338,10 @@ export class AuditReportBuilder {
             esperandoProtocolizacion,
         } = data.specialCases;
 
-        // Desglosar protocolización para el anillo exterior
-        const soloEnviadas = esperandoProtocolizacion.filter(m => !m.nroProtocolo);
-        const yaProtocolizadas = esperandoProtocolizacion.filter(m => !!m.nroProtocolo);
+        // Consolidamos la protocolización (pendientes + ya protocolizadas) en una única serie
         const enviadasADNI = esperandoProtocolizacion.length;
 
-        // --- Dataset Detalle (Anillo Exterior - Nivel 2) ---
-        const detailData = [
-            canceladas.length,
-            desestimadas.length,
-            esperandoEntrega.length,
-            pendientesDeInforme.length,
-            delegadasExternas.length,
-            informesPendientesEnvio.length,
-            soloEnviadas.length,
-            yaProtocolizadas.length,
-        ].filter(c => c > 0);
-
-        // --- Dataset Agregado (Anillo Interior - Nivel 1) ---
-        const aggregateData = [
+        const counts = [
             canceladas.length,
             desestimadas.length,
             esperandoEntrega.length,
@@ -1366,31 +1351,6 @@ export class AuditReportBuilder {
             enviadasADNI,
         ].filter(c => c > 0);
 
-        // Paleta de colores jerárquica
-        // Colores para el detalle (Anillo Exterior)
-        const colorsDetail = [
-            canceladas.length > 0 ? '#94A3B8' : null,         // slate-400
-            desestimadas.length > 0 ? '#F59E0B' : null,       // warning (amber-500)
-            esperandoEntrega.length > 0 ? '#8B5CF6' : null,   // violet-500
-            pendientesDeInforme.length > 0 ? '#EAB308' : null, // yellow-500
-            delegadasExternas.length > 0 ? '#EC4899' : null,   // pink-500
-            informesPendientesEnvio.length > 0 ? '#10B981' : null, // success (emerald-500)
-            soloEnviadas.length > 0 ? '#60A5FA' : null,       // sky-400 (Enviadas en trámite)
-            yaProtocolizadas.length > 0 ? '#1E3A8A' : null,   // blue-900 (Enviadas protocolizadas)
-        ].filter((c): c is string => c !== null);
-
-        // Colores para el resumen (Anillo Interior)
-        const colorsAggregate = [
-            canceladas.length > 0 ? '#94A3B8' : null,
-            desestimadas.length > 0 ? '#F59E0B' : null,
-            esperandoEntrega.length > 0 ? '#8B5CF6' : null,
-            pendientesDeInforme.length > 0 ? '#EAB308' : null,
-            delegadasExternas.length > 0 ? '#EC4899' : null,
-            informesPendientesEnvio.length > 0 ? '#10B981' : null,
-            enviadasADNI > 0 ? '#2563EB' : null,              // blue-600 (Agregado de enviadas)
-        ].filter((c): c is string => c !== null);
-
-        // Etiquetas para la leyenda (basadas en el desglose exterior)
         const labels = [
             canceladas.length > 0 ? `Canceladas (${canceladas.length})` : null,
             desestimadas.length > 0 ? `Desestimadas (${desestimadas.length})` : null,
@@ -1398,15 +1358,10 @@ export class AuditReportBuilder {
             pendientesDeInforme.length > 0 ? `Pendientes de Informe (${pendientesDeInforme.length})` : null,
             delegadasExternas.length > 0 ? `Delegadas Externas (${delegadasExternas.length})` : null,
             informesPendientesEnvio.length > 0 ? `Pendientes de Envío (${informesPendientesEnvio.length})` : null,
-            soloEnviadas.length > 0 ? `Esperando Protocolización (${soloEnviadas.length})` : null,
-            yaProtocolizadas.length > 0 ? `Ya Protocolizadas (${yaProtocolizadas.length})` : null,
+            enviadasADNI > 0 ? `Enviadas a DNI (${enviadasADNI})` : null,
         ].filter((l): l is string => l !== null);
 
-        // Enviamos dos datasets: el primero es el exterior (detalle) y el segundo el interior (resumen)
-        return this.chartService.renderDoughnutChart(labels, [
-            { data: detailData, backgroundColor: colorsDetail, label: 'Detalle' },
-            { data: aggregateData, backgroundColor: colorsAggregate, label: 'Resumen' }
-        ], {
+        return this.chartService.renderDoughnutChart(labels, counts, {
             title: 'Distribución de Mareas según Estado',
             displayLabels: true
         });
