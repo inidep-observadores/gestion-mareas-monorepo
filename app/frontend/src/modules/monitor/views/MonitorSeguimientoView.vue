@@ -593,7 +593,7 @@ const handleExportDbf = async () => {
     
     // Extract filename from Content-Disposition if possible
     const contentDisposition = response.headers['content-disposition']
-    let fileName = `T${activeVessel.value.mareaCode.replace(/[^0-9]/g, '')}.dbf`
+    let fileName = `T${(activeVessel.value.mareaCode || '').replace(/[^0-9]/g, '')}.dbf`
     if (contentDisposition) {
       const fileNameMatch = contentDisposition.match(/filename=(.+)/)
       if (fileNameMatch) fileName = fileNameMatch[1]
