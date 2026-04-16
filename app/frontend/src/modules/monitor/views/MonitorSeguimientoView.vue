@@ -61,6 +61,7 @@
                   :timestamp="displayPoint?.timestamp?.toString() || ''" :speed="displayPoint?.speed || 0"
                   :course="displayPoint?.course || 0" :lastUpdate="activeVessel.lastUpdate" :layers="mapLayers"
                   :isSingleMode="isSingleMareaMode" :hideLayerControls="isMobile" :isCompact="isMobile"
+                  :isExporting="isExporting" @export-dbf="handleExportDbf"
                   @update:layer="handleLayerToggle" @close-card="selectedVesselId = null" />
               </Transition>
             </div>
@@ -76,7 +77,8 @@
                   :position="{ lat: displayPoint?.lat || 0, lon: displayPoint?.lon || 0 }"
                   :timestamp="displayPoint?.timestamp?.toString() || ''" :speed="displayPoint?.speed || 0"
                   :course="displayPoint?.course || 0" :lastUpdate="activeVessel.lastUpdate" :layers="mapLayers"
-                  :isSingleMode="isSingleMareaMode" @update:layer="handleLayerToggle" />
+                  :isSingleMode="isSingleMareaMode" :isExporting="isExporting" @export-dbf="handleExportDbf"
+                  @update:layer="handleLayerToggle" />
               </Transition>
             </div>
           </div>
@@ -179,8 +181,9 @@ import UploadTrackingDialog from '../components/UploadTrackingDialog.vue'
 import TrajectoryLoadingOverlay from '../components/TrajectoryLoadingOverlay.vue'
 import httpClient from '@/config/http/http.client'
 import { useRouter } from 'vue-router'
-import { ArrowLeftIcon } from '@/icons'
+import { ArrowLeftIcon, DownloadIcon } from '@/icons'
 import { useConfigStore } from '@/modules/shared/stores/config.store'
+import { toast } from 'vue-sonner'
 
 // --- State ---
 const showUploadDialog = ref(false)
@@ -195,6 +198,7 @@ const selectedPesqueria = ref('')
 const pendingZoomVesselId = ref<string | null>(null)
 const pendingTrajectoriesCount = ref(0)
 const isInitialLoad = ref(true)
+const isExporting = ref(false)
 const mapLayers = ref({
   veda: true,
   vieira: false,
@@ -579,6 +583,38 @@ const handleDateSelection = (dateStr: string, isEnd: boolean = false) => {
   })
 
   activeVessel.value.currentIndex = nearestIdx
+}
+
+const handleExportDbf = async () => {
+  if (!activeVessel.value) return
+  isExporting.value = true
+  try {
+    const response = await httpClient.get(`/tracking/export/dbf/${activeVessel.value.id}`, { responseType: 'blob' })
+    
+    // Extract filename from Content-Disposition if possible
+    const contentDisposition = response.headers['content-disposition']
+    let fileName = `T${activeVessel.value.mareaCode.replace(/[^0-9]/g, '')}.dbf`
+    if (contentDisposition) {
+      const fileNameMatch = contentDisposition.match(/filename=(.+)/)
+      if (fileNameMatch) fileName = fileNameMatch[1]
+    }
+
+    const url = window.URL.createObjectURL(new Blob([response.data]))
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', fileName)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    window.URL.revokeObjectURL(url)
+    
+    toast.success('Track exportado correctamente')
+  } catch (error) {
+    console.error('Error exportando DBF:', error)
+    toast.error('Error al exportar el track')
+  } finally {
+    isExporting.value = false
+  }
 }
 
 const togglePlay = () => {
