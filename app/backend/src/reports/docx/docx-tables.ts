@@ -32,7 +32,7 @@ export interface TableRowData {
 /** Crea una celda de encabezado de tabla con estilo INIDEP */
 function createHeaderCell(text: string, widthPct?: number, alignment: AlignmentTypeValue = AlignmentType.CENTER): TableCell {
     return new TableCell({
-        width: widthPct ? { size: widthPct, type: WidthType.PERCENTAGE } : undefined,
+        width: { size: widthPct || 10, type: WidthType.PERCENTAGE }, // Aseguramos ancho siempre
         shading: { type: ShadingType.SOLID, color: INIDEP_COLORS.tableHeaderBg },
         verticalAlign: VerticalAlign.CENTER,
         children: [
@@ -41,7 +41,7 @@ function createHeaderCell(text: string, widthPct?: number, alignment: AlignmentT
                 spacing: { before: 40, after: 40 },
                 children: [
                     new TextRun({
-                        text,
+                        text: text || " ",
                         font: FONTS.primary,
                         size: FONT_SIZES.tableHeader,
                         bold: true,
@@ -87,7 +87,7 @@ function createDataCell(
     const lines = Array.isArray(text) ? text : [String(text)];
 
     return new TableCell({
-        width: widthPct ? { size: widthPct, type: WidthType.PERCENTAGE } : undefined,
+        width: { size: widthPct || 10, type: WidthType.PERCENTAGE }, // Aseguramos ancho siempre
         shading: bgColor ? { type: ShadingType.SOLID, color: bgColor } : undefined,
         verticalAlign: VerticalAlign.CENTER,
         children: lines.map((line, idx) =>
@@ -99,7 +99,7 @@ function createDataCell(
                 },
                 children: [
                     new TextRun({
-                        text: line,
+                        text: line || "\u200B", // Aseguramos contenido mínimo
                         font: FONTS.primary,
                         size: FONT_SIZES.tableCell,
                         bold: bold || isTotal,
@@ -263,7 +263,7 @@ export function createKpiTable(
             cells.push(
                 new TableCell({
                     width: { size: Math.floor(100 / columns), type: WidthType.PERCENTAGE },
-                    children: [new Paragraph({})],
+                    children: [new Paragraph({ children: [new TextRun("\u200B")] })],
                 }),
             );
         }

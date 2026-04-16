@@ -236,8 +236,7 @@ export class AuditReportBuilder {
             subject: 'Auditoría de Mareas',
             lastModifiedBy: 'SIGMA Auto-generated',
             revision: 1,
-            // Modo compatibilidad Office 2013+ (valor 15). Esto es más robusto para
-            // instalaciones modernas de Office 365, Word 2016 y 2019 que la versión 14.
+            // Modo compatibilidad Office 2013+ (valor 15).
             compatabilityModeVersion: 15,
             styles: {
                 default: {
@@ -284,9 +283,11 @@ export class AuditReportBuilder {
                 },
                 headers: {
                     default: this.buildDocumentHeader(period),
+                    first: new Header({ children: [new Paragraph({ children: [new TextRun("")] })] }),
                 },
                 footers: {
                     default: this.buildDocumentFooter(),
+                    first: new Footer({ children: [new Paragraph({ children: [new TextRun("")] })] }),
                 },
                 children,
             }],
@@ -382,25 +383,49 @@ export class AuditReportBuilder {
 
     private buildCoverPage(period: PeriodDescription, sigmaLogo: Buffer): (Paragraph | Table)[] {
         return [
-            ...Array(6).fill(null).map(() => new Paragraph({ children: [] })),
+            // Espaciado superior inicial
+            new Paragraph({
+                children: [new TextRun({ text: "\u200B" })],
+                spacing: { before: 1440 }, // ~6 líneas
+            }),
             this.centeredBold('PROGRAMA DE ADQUISICIÓN DE INFORMACIÓN BIOLÓGICO-PESQUERA', FONT_SIZES.coverSubtitle),
-            // this.centeredBold('Y DESARROLLO PESQUERO (INIDEP)', FONT_SIZES.coverSubtitle),
-            new Paragraph({ children: [] }),
+            new Paragraph({
+                children: [new TextRun({ text: "\u200B" })],
+                spacing: { after: 240 },
+            }),
             this.centeredBold('SUBPROGRAMA OBSERVADORES', FONT_SIZES.coverSubtitle),
 
-            ...Array(3).fill(null).map(() => new Paragraph({ children: [] })),
+            new Paragraph({
+                children: [new TextRun({ text: "\u200B" })],
+                spacing: { before: 720 }, // ~3 líneas
+            }),
             this.centeredBold('INFORME DE EJECUCIÓN DE MAREAS', FONT_SIZES.coverTitle),
-            new Paragraph({ children: [] }),
+            new Paragraph({
+                children: [new TextRun({ text: "\u200B" })],
+                spacing: { after: 240 },
+            }),
             this.centered(period.short, FONT_SIZES.coverPeriod),
-            new Paragraph({ children: [] }),
+            new Paragraph({
+                children: [new TextRun({ text: "\u200B" })],
+                spacing: { after: 240 },
+            }),
             this.centered(`(${period.range})`, FONT_SIZES.coverPeriod),
 
-            ...Array(8).fill(null).map(() => new Paragraph({ children: [] })),
+            new Paragraph({
+                children: [new TextRun({ text: "\u200B" })],
+                spacing: { before: 1920 }, // ~8 líneas
+            }),
             this.centeredItalic(`Mar del Plata, ${period.documentDate}`, FONT_SIZES.body),
-            new Paragraph({ children: [] }),
+            new Paragraph({
+                children: [new TextRun({ text: "\u200B" })],
+                spacing: { after: 240 },
+            }),
             this.centeredItalic('Documento de circulación interna', FONT_SIZES.small),
 
-            ...Array(12).fill(null).map(() => new Paragraph({ children: [] })),
+            new Paragraph({
+                children: [new TextRun({ text: "\u200B" })],
+                spacing: { before: 2400 }, // ~10 líneas
+            }),
 
             new Table({
                 width: { size: 100, type: WidthType.PERCENTAGE },
@@ -415,6 +440,7 @@ export class AuditReportBuilder {
                         children: [
                             new TableCell({
                                 verticalAlign: VerticalAlign.BOTTOM,
+                                width: { size: 100, type: WidthType.PERCENTAGE },
                                 children: [
                                     new Paragraph({
                                         alignment: AlignmentType.CENTER,
@@ -523,7 +549,7 @@ export class AuditReportBuilder {
                         }),
                     ],
                 }),
-                new Paragraph({ children: [] }),
+                new Paragraph({ children: [new TextRun("\u200B")] }),
             ],
         });
     }
