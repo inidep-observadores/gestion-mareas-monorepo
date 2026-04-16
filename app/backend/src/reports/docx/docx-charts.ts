@@ -57,6 +57,7 @@ export class DocxChartService {
                     y: {
                         stacked: options?.stacked,
                         beginAtZero: true,
+                        grace: options?.displayLabels ? '8%' : undefined,
                         title: options?.yAxisLabel ? {
                             display: true,
                             text: options.yAxisLabel,
@@ -180,7 +181,7 @@ export class DocxChartService {
     async renderHorizontalBarChart(
         labels: string[],
         data: number[],
-        options?: { title?: string; avgLine?: number; barColor?: string },
+        options?: { title?: string; avgLine?: number; barColor?: string; displayLabels?: boolean },
     ): Promise<Buffer> {
         const height = Math.max(CHART_DIMENSIONS.horizontalBarMinHeight, labels.length * 35);
 
@@ -215,6 +216,7 @@ export class DocxChartService {
                 scales: {
                     x: {
                         beginAtZero: true,
+                        grace: options?.displayLabels ? '12%' : undefined,
                         ticks: { font: { family: FONTS.primary, size: 13 } },
                         title: {
                             display: true,
@@ -228,31 +230,53 @@ export class DocxChartService {
                     },
                 },
             },
-            plugins: options?.avgLine ? [{
-                id: 'avgLine',
-                afterDraw: (chart) => {
-                    const ctx = chart.ctx;
-                    const xScale = chart.scales.x;
-                    const yScale = chart.scales.y;
-                    const x = xScale.getPixelForValue(options.avgLine!);
+            plugins: [
+                ...(options?.avgLine ? [{
+                    id: 'avgLine',
+                    afterDraw: (chart: any) => {
+                        const ctx = chart.ctx;
+                        const xScale = chart.scales.x;
+                        const yScale = chart.scales.y;
+                        const x = xScale.getPixelForValue(options.avgLine!);
 
-                    ctx.save();
-                    ctx.strokeStyle = CHART_COLORS.danger;
-                    ctx.lineWidth = 2;
-                    ctx.setLineDash([6, 4]);
-                    ctx.beginPath();
-                    ctx.moveTo(x, yScale.top);
-                    ctx.lineTo(x, yScale.bottom);
-                    ctx.stroke();
+                        ctx.save();
+                        ctx.strokeStyle = CHART_COLORS.danger;
+                        ctx.lineWidth = 2;
+                        ctx.setLineDash([6, 4]);
+                        ctx.beginPath();
+                        ctx.moveTo(x, yScale.top);
+                        ctx.lineTo(x, yScale.bottom);
+                        ctx.stroke();
 
-                    // Etiqueta
-                    ctx.fillStyle = CHART_COLORS.danger;
-                    ctx.font = `bold 13px ${FONTS.primary}`;
-                    ctx.textAlign = 'center';
-                    ctx.fillText(`Promedio: ${options.avgLine}`, x, yScale.top - 8);
-                    ctx.restore();
-                },
-            }] : [],
+                        // Etiqueta
+                        ctx.fillStyle = CHART_COLORS.danger;
+                        ctx.font = `bold 13px ${FONTS.primary}`;
+                        ctx.textAlign = 'center';
+                        ctx.fillText(`Promedio: ${options.avgLine}`, x, yScale.top - 8);
+                        ctx.restore();
+                    },
+                }] : []),
+                ...(options?.displayLabels ? [{
+                    id: 'datalabels',
+                    afterDraw: (chart: any) => {
+                        const ctx = chart.ctx;
+                        chart.data.datasets.forEach((dataset: any, i: number) => {
+                            const meta = chart.getDatasetMeta(i);
+                            meta.data.forEach((bar: any, index: number) => {
+                                const val = dataset.data[index] as number;
+                                if (val === 0) return;
+                                ctx.save();
+                                ctx.fillStyle = '#64748B'; // Muted text
+                                ctx.font = `bold 13px ${FONTS.primary}`;
+                                ctx.textAlign = 'left';
+                                ctx.textBaseline = 'middle';
+                                ctx.fillText(val.toString(), bar.x + 5, bar.y);
+                                ctx.restore();
+                            });
+                        });
+                    },
+                }] : []),
+            ],
         };
 
         return this.render(config, CHART_DIMENSIONS.width, height);

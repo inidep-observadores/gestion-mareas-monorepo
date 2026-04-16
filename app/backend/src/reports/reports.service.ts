@@ -132,13 +132,12 @@ export class ReportsService {
             this.statsService.getAuditSpecialCases(year, startDate, endDate, includeCampaigns, snapDate),
             this.statsService.getProtocolizationTimeline(year, startDate, endDate, snapDate, includeCampaigns),
             this.prisma.pesqueria.findMany({
-                where: { activo: true },
                 select: { nombre: true, orden: true }
             }),
         ]);
 
         const fisheryOrderMap = new Map<string, number>(
-            fisheryOrdering.map(f => [f.nombre, f.orden ?? 999])
+            fisheryOrdering.map(f => [f.nombre.trim(), f.orden ?? 999])
         );
 
         // 7. Computar breakdown Observadores vs Técnicos

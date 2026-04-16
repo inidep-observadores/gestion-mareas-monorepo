@@ -341,8 +341,8 @@ export class AuditReportBuilder {
 
         const fisheryRows = Array.from(fisheryFlotaMap.values())
             .sort((a, b) => {
-                const ordA = data.fisheryOrderMap?.get(a.pesqueria) ?? 999;
-                const ordB = data.fisheryOrderMap?.get(b.pesqueria) ?? 999;
+                const ordA = data.fisheryOrderMap?.get(a.pesqueria.trim()) ?? 999;
+                const ordB = data.fisheryOrderMap?.get(b.pesqueria.trim()) ?? 999;
                 if (ordA !== ordB) return ordA - ordB;
 
                 const p = a.pesqueria.localeCompare(b.pesqueria);
@@ -834,8 +834,8 @@ export class AuditReportBuilder {
             (enEjecucionCount > 0 ? ` Las ${enEjecucionCount} mareas restantes se encontraban en estado "En ejecución" al cierre del período.` : '');
 
         const sorted = [...finalizadas].sort((a, b) => {
-            const ordA = data.fisheryOrderMap?.get(a.pesqueria) ?? 999;
-            const ordB = data.fisheryOrderMap?.get(b.pesqueria) ?? 999;
+            const ordA = data.fisheryOrderMap?.get(a.pesqueria.trim()) ?? 999;
+            const ordB = data.fisheryOrderMap?.get(b.pesqueria.trim()) ?? 999;
             if (ordA !== ordB) return ordA - ordB;
 
             const p = a.pesqueria.localeCompare(b.pesqueria);
@@ -929,8 +929,8 @@ export class AuditReportBuilder {
         const introText = `Al cierre del período (${closeDateText}), las siguientes ${enEjecucion.length} mareas se encontraban en curso:`;
 
         const sorted = [...enEjecucion].sort((a, b) => {
-            const ordA = proc.fisheryOrderMap?.get(a.pesqueria) ?? 999;
-            const ordB = proc.fisheryOrderMap?.get(b.pesqueria) ?? 999;
+            const ordA = proc.fisheryOrderMap?.get(a.pesqueria.trim()) ?? 999;
+            const ordB = proc.fisheryOrderMap?.get(b.pesqueria.trim()) ?? 999;
             if (ordA !== ordB) return ordA - ordB;
 
             const p = a.pesqueria.localeCompare(b.pesqueria);
@@ -1288,11 +1288,16 @@ export class AuditReportBuilder {
     private async generateFisheryDaysChart(proc: any): Promise<Buffer> {
         const byF = new Map<string, number>();
         proc.fisheryRows.forEach((r: any) => byF.set(r.pesqueria, (byF.get(r.pesqueria) || 0) + r.dias));
-        const sorted = Array.from(byF.entries()).sort((a, b) => b[1] - a[1]);
+        const sorted = Array.from(byF.entries()).sort((a, b) => {
+            const ordA = proc.fisheryOrderMap?.get(a[0].trim()) ?? 999;
+            const ordB = proc.fisheryOrderMap?.get(b[0].trim()) ?? 999;
+            if (ordA !== ordB) return ordA - ordB;
+            return a[0].localeCompare(b[0]);
+        });
         return this.chartService.renderBarChart(
             sorted.map(([n]) => n),
             [{ label: 'Días', data: sorted.map(([, d]) => d) }],
-            { title: 'Esfuerzo (Días) por Pesquería' }
+            { title: 'Esfuerzo (Días) por Pesquería', displayLabels: true }
         );
     }
 
@@ -1303,14 +1308,19 @@ export class AuditReportBuilder {
             e.mareas += r.mareas; e.etapas += r.etapas;
             byF.set(r.pesqueria, e);
         });
-        const s = Array.from(byF.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+        const s = Array.from(byF.entries()).sort((a, b) => {
+            const ordA = proc.fisheryOrderMap?.get(a[0].trim()) ?? 999;
+            const ordB = proc.fisheryOrderMap?.get(b[0].trim()) ?? 999;
+            if (ordA !== ordB) return ordA - ordB;
+            return a[0].localeCompare(b[0]);
+        });
         return this.chartService.renderBarChart(
             s.map(([n]) => n),
             [
                 { label: 'Mareas', data: s.map(([, d]) => d.mareas) },
                 { label: 'Etapas', data: s.map(([, d]) => d.etapas) }
             ],
-            { title: 'Mareas y Etapas por Pesquería' }
+            { title: 'Mareas y Etapas por Pesquería', displayLabels: true }
         );
     }
 
@@ -1322,7 +1332,8 @@ export class AuditReportBuilder {
             {
                 title: 'Top 10 Observadores con Mayor Actividad',
                 avgLine: proc.promedioDias,
-                barColor: CHART_COLORS.violet
+                barColor: CHART_COLORS.violet,
+                displayLabels: true
             }
         );
     }
