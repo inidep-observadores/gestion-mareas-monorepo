@@ -671,9 +671,8 @@ export class TrackingService {
 
         const buffer = dbf.build();
 
-        const nro = info.mareaCode?.split('/')[0] || '0';
-        const anioFull = info.mareaCode?.split('/')[1] || '00';
-        const anio2 = anioFull.slice(-2);
+        const nro = marea.nroMarea;
+        const anio2 = String(marea.anioMarea).slice(-2);
         const filename = `T${nro}${anio2}.dbf`;
 
         return {
