@@ -644,7 +644,7 @@ export class MareasService {
                     activo: true,
                     ...mareaYearFilter,
                     estadoActual: {
-                        codigo: MareaEstado.ESPERANDO_PROTOCOLIZACION
+                        codigo: MareaEstado.PARA_PROTOCOLIZAR
                     }
                 }
             }),
