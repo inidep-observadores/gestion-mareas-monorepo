@@ -126,14 +126,8 @@
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div class="space-y-1.5">
-                <label class="block text-sm font-medium text-text-muted">Pesquería</label>
-                <SearchableSelect v-model="form.pesqueriaId" :options="pesqueriaOptions" :icon="WaveIcon"
-                  :error="fieldErrors.pesqueriaId" placeholder="Seleccione la pesquería..." />
-              </div>
-
-              <div class="space-y-1.5">
                 <label class="block text-sm font-medium text-text-muted">Arte de Pesca</label>
-                <SearchableSelect v-model="form.arteId" :options="arteOptions" :icon="SettingsIcon"
+                <SearchableSelect ref="arteSelect" v-model="form.arteId" :options="arteOptions" :icon="SettingsIcon"
                   placeholder="Seleccione el arte..." :error="fieldErrors.arteId" />
               </div>
 
@@ -141,6 +135,12 @@
                 <label class="block text-sm font-medium text-text-muted">Observador Asignado</label>
                 <SearchableSelect ref="observadorSelect" v-model="form.observadorId" :options="observadorOptions"
                   :icon="BeakerIcon" :error="fieldErrors.observadorId" placeholder="Seleccione el observador..." />
+              </div>
+
+              <div class="space-y-1.5">
+                <label class="block text-sm font-medium text-text-muted">Pesquería</label>
+                <SearchableSelect v-model="form.pesqueriaId" :options="pesqueriaOptions" :icon="WaveIcon"
+                  :error="fieldErrors.pesqueriaId" placeholder="Seleccione la pesquería..." />
               </div>
 
               <div class="space-y-1.5">
@@ -366,6 +366,7 @@ const showYearConfirm = ref(false)
 // Refs for focus
 const buqueSelect = ref<any>(null)
 const nroMareaInput = ref<HTMLInputElement | null>(null)
+const arteSelect = ref<any>(null)
 const observadorSelect = ref<any>(null)
 
 // Catalogs
