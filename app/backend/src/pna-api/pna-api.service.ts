@@ -55,24 +55,27 @@ export class PnaApiService {
 
         try {
             // 1. Determinar rango de fechas
-            // 1. Determinar rango de fechas
-            const now = DateTime.now().toUTC();
-            const effectiveToDate = toDate ? DateTime.fromJSDate(toDate).toUTC() : now;
-
+            const now = DateTime.now().setZone(this.TIMEZONE);
+            
+            // Si es manual (viene fromDate), respetamos los minutos exactos.
+            // Si es automático, buscamos desde la última sincronización.
             let effectiveFromDate: DateTime;
             if (fromDate) {
-                effectiveFromDate = DateTime.fromJSDate(fromDate).toUTC();
+                effectiveFromDate = DateTime.fromJSDate(fromDate).setZone(this.TIMEZONE);
             } else {
                 const lastSync = await this.getLastSuccessfulSyncDate();
                 // Si no hay última sincro, usamos una ventana por defecto de 48hs
                 effectiveFromDate = lastSync
-                    ? DateTime.fromJSDate(lastSync).toUTC()
+                    ? DateTime.fromJSDate(lastSync).setZone(this.TIMEZONE)
                     : now.minus({ days: 2 });
             }
 
-            // REGLA: Iniciamos siempre a las 00:00:00 de la fecha "desde" para solapar datos
-            const startRange = effectiveFromDate.startOf('day');
-            const endRange = effectiveToDate.endOf('day');
+            const effectiveToDate = toDate ? DateTime.fromJSDate(toDate).setZone(this.TIMEZONE) : now;
+
+            // IMPORTANTE: Para sincronización MANUAL, NO forzamos inicio/fin del día.
+            // Esto permite al usuario "esquivar" registros corruptos eligiendo rangos precisos.
+            const startRange = fromDate ? effectiveFromDate : effectiveFromDate.startOf('day');
+            const endRange = toDate ? effectiveToDate : effectiveToDate.endOf('day');
 
             this.logger.log(`Iniciando sincronización PNA: ${startRange.toFormat('yyyy-MM-dd HH:mm:ss')} -> ${endRange.toFormat('yyyy-MM-dd HH:mm:ss')}`);
 
@@ -222,8 +225,10 @@ export class PnaApiService {
         }
 
         // Formato fechas: yyyy-MM-dd HH:mm:ss
-        const desdeStr = DateTime.fromJSDate(desde).toUTC().toFormat('yyyy-MM-dd HH:mm:ss');
-        const hastaStr = DateTime.fromJSDate(hasta).toUTC().toFormat('yyyy-MM-dd HH:mm:ss');
+        // IMPORTANTE: La PNA espera Hora Local de Argentina, no UTC.
+        // Si enviamos UTC, estamos adelantando 3 horas y podemos caer en "fechas futuras" que dan Error 500.
+        const desdeStr = DateTime.fromJSDate(desde).setZone(this.TIMEZONE).toFormat('yyyy-MM-dd HH:mm:ss');
+        const hastaStr = DateTime.fromJSDate(hasta).setZone(this.TIMEZONE).toFormat('yyyy-MM-dd HH:mm:ss');
 
         const envelope = `<?xml version="1.0" encoding="utf-8"?>
 <soap12:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap12="http://www.w3.org/2003/05/soap-envelope">
@@ -740,7 +745,7 @@ export class PnaApiService {
                     nombre: reporte.nombre,
                     latitud: reporte.latitud,
                     longitud: reporte.longitud,
-                    fechaModificacion: DateTime.fromFormat(reporte.fecha_modificacion, 'yyyy-MM-dd HH:mm:ss', { zone: 'utc' }).toJSDate(),
+                    fechaModificacion: DateTime.fromFormat(reporte.fecha_modificacion, 'yyyy-MM-dd HH:mm:ss', { zone: this.TIMEZONE }).toJSDate(),
                     cantidadTripulantes: parseInt(reporte.cantidad_tripulantes, 10) || 0,
                     observaciones: reporte.observaciones || null,
                     borrado: reporte.borrado.toLowerCase() === 'true',
@@ -755,8 +760,10 @@ export class PnaApiService {
                     latitud: reporte.latitud,
                     longitud: reporte.longitud,
                     estado: reporte.estado,
-                    fecha: DateTime.fromFormat(reporte.fecha, 'yyyy-MM-dd HH:mm:ss', { zone: 'utc' }).toJSDate(),
-                    fechaModificacion: DateTime.fromFormat(reporte.fecha_modificacion, 'yyyy-MM-dd HH:mm:ss', { zone: 'utc' }).toJSDate(),
+                    // La PNA devuelve la fecha en Hora Local de Argentina. 
+                    // Debemos parsearla con la zona horaria correcta para evitar el desplazamiento de 3 horas.
+                    fecha: DateTime.fromFormat(reporte.fecha, 'yyyy-MM-dd HH:mm:ss', { zone: this.TIMEZONE }).toJSDate(),
+                    fechaModificacion: DateTime.fromFormat(reporte.fecha_modificacion, 'yyyy-MM-dd HH:mm:ss', { zone: this.TIMEZONE }).toJSDate(),
                     cantidadTripulantes: parseInt(reporte.cantidad_tripulantes, 10) || 0,
                     observaciones: reporte.observaciones || null,
                     borrado: reporte.borrado.toLowerCase() === 'true',
