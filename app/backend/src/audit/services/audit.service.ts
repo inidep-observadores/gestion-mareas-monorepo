@@ -206,7 +206,7 @@ export class AuditService {
             }),
             (this.prisma as any).auditoriaApi.count({ where })
         ]);
-        return { items, total };
+        return { data: items, total };
     }
 
     async findEntityLogs(query: AuditQueryDto) {
@@ -231,7 +231,7 @@ export class AuditService {
             }),
             (this.prisma as any).auditoriaEntidad.count({ where })
         ]);
-        return { items, total };
+        return { data: items, total };
     }
 
     async findEventLogs(query: AuditQueryDto) {
@@ -256,7 +256,7 @@ export class AuditService {
             }),
             (this.prisma as any).auditoriaEvento.count({ where })
         ]);
-        return { items, total };
+        return { data: items, total };
     }
 
     async findNavigationLogs(query: AuditQueryDto) {
@@ -279,6 +279,6 @@ export class AuditService {
             }),
             (this.prisma as any).auditoriaNavegacion.count({ where })
         ]);
-        return { items, total };
+        return { data: items, total };
     }
 }
