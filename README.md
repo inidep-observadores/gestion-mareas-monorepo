@@ -175,3 +175,33 @@ El backend proporciona endpoints para un flujo de recuperación de contraseña. 
 3. **Establecer nueva contraseña**: `POST /api/auth/reset-password`
 
 > **Nota:** El enlace de recuperación enviado por correo se basa en la variable `FRONTEND_URL` del archivo `.env` del backend. Asegúrate de que apunte a la URL correcta de tu frontend.
+
+---
+
+## Despliegue Unificado (VPS INIDEP)
+
+Para el despliegue en el servidor interno de INIDEP (`10.0.64.46`), se utiliza una configuración unificada que gestiona todo el stack desde la raíz del proyecto.
+
+### Archivos clave:
+- `docker-compose-inidep.yaml`: Orquestación de Frontend, Backend, DB y Redis.
+- `.env.inidep.template`: Plantilla para configurar variables de entorno.
+- `traefik_dynamic_conf.example.yaml`: Ejemplo para configurar los certificados SSL manuales en Traefik.
+
+### Pasos para el despliegue:
+
+1. **Preparar el entorno**:
+   - Copie la carpeta del proyecto al VPS.
+   - Cree el archivo `.env.inidep` en la raíz basándose en el template.
+   - Configure sus certificados `.crt` y `.key` en la carpeta que use su servicio de Traefik.
+
+2. **Levantar el sistema**:
+   ```bash
+   docker compose -f docker-compose-inidep.yaml --env-file .env.inidep up -d --build
+   ```
+
+3. **Acceso y Pruebas**:
+   - El sistema utiliza enrutamiento por Path:
+     - Frontend: `https://sigma.inidep.gob.ar/`
+     - API: `https://sigma.inidep.gob.ar/api/`
+   - Para probar antes de que el subdominio sea oficial, puede usar el truco del archivo `hosts` en su PC local:
+     `10.0.64.46  sigma.inidep.gob.ar`
