@@ -56,6 +56,10 @@ export class SchedulerService {
             });
 
             this.isProcessing = true;
+
+            // Antes de procesar, limpiamos tareas que quedaron "colgadas" (ej. reinicio de servidor)
+            await this.cleanupStaleJobs();
+
             await this.processQueue();
         } catch (error) {
             this.logger.error('Error in scheduler cron:', error);
@@ -64,6 +68,33 @@ export class SchedulerService {
             await this.prisma.systemStatus.update({
                 where: { key: lockKey },
                 data: { value: 'UNLOCKED' },
+            });
+        }
+    }
+
+    /**
+     * Busca tareas que quedaron en estado PROCESSING por más de un tiempo razonable
+     * y las marca como fallidas para que el sistema pueda continuar.
+     */
+    private async cleanupStaleJobs() {
+        const staleThresholdHours = parseInt(process.env.JOB_STALE_THRESHOLD_HOURS || '4', 10);
+        const staleTime = new Date(Date.now() - staleThresholdHours * 60 * 60 * 1000);
+
+        const staleJobs = await this.prisma.jobQueue.findMany({
+            where: {
+                status: JobStatus.PROCESSING,
+                lastRunAt: { lte: staleTime },
+            },
+        });
+
+        for (const job of staleJobs) {
+            this.logger.warn(`Detectada tarea atascada (ID: ${job.id}, Tipo: ${job.type}). Marcando como FAILED por inactividad.`);
+            await this.prisma.jobQueue.update({
+                where: { id: job.id },
+                data: {
+                    status: JobStatus.FAILED,
+                    errorMessage: `Tarea marcada como fallida automáticamente tras ${staleThresholdHours} horas en estado PROCESSING (posible hang o reinicio del servidor).`,
+                },
             });
         }
     }
@@ -202,14 +233,23 @@ export class SchedulerService {
      * Asegura que siempre haya una tarea de sincronización de PNA programada (Llamado interno)
      */
     async ensurePnaSyncJob() {
-        const existingJob = await this.prisma.jobQueue.findFirst({
+        const staleThresholdHours = parseInt(process.env.JOB_STALE_THRESHOLD_HOURS || '4', 10);
+        const staleTime = new Date(Date.now() - staleThresholdHours * 60 * 60 * 1000);
+
+        const activeJob = await this.prisma.jobQueue.findFirst({
             where: {
                 type: JobType.PNA_API_SYNC,
-                status: { in: [JobStatus.PENDING, JobStatus.PROCESSING] },
+                OR: [
+                    { status: JobStatus.PENDING },
+                    {
+                        status: JobStatus.PROCESSING,
+                        lastRunAt: { gte: staleTime } // Solo consideramos bloqueante si NO es vieja
+                    }
+                ]
             },
         });
 
-        if (!existingJob) {
+        if (!activeJob) {
             const lastSync = await this.pnaApiService.getLastSuccessfulSyncDate();
             const fromDate = lastSync ? lastSync : DateTime.now().minus({ days: 2 }).toJSDate();
             const toDate = new Date();
@@ -306,6 +346,7 @@ export class SchedulerService {
                 throw new Error(`Unknown job type: ${job.type}`);
         }
     }
+
 
     private calculateNextRun(attempts: number): Date {
         const delayMinutes = Math.pow(2, attempts); // Backoff exponencial simple

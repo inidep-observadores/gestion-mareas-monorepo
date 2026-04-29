@@ -11,6 +11,7 @@ import { DateUtils } from '../common/utils/date.utils';
 import { VesselSyncService } from '../catalogos/buques/vessel-sync.service';
 import { EventCorrelationService, EventDecisionAction } from '../common/services/event-correlation.service';
 import * as crypto from 'crypto';
+import { DbfWriter, DbfFieldType } from '../common/utils/dbf-writer';
 
 interface TrackingPoint {
     lat: number;
@@ -616,6 +617,76 @@ export class TrackingService {
                 course: p.rumbo || 0,
                 isFishing: (p.velocidad || 0) < 4.5 && (p.velocidad || 0) > 1.0
             }));
+    }
+
+    async exportMareaTrackToDbase(mareaId: string) {
+        const info = await this.getMareaTrackingInfo(mareaId);
+        
+        // Re-obtener marea completa para lógica de estados y fechas crudas
+        const marea = await this.prisma.marea.findUnique({
+            where: { id: mareaId },
+            include: { estadoActual: true }
+        });
+
+        if (!marea) throw new Error('Marea no encontrada');
+
+        // REPLICAR LOGICA DE VENTANAS DE TIEMPO DEL FRONTEND
+        let from = info.voyageStart;
+        let to = info.voyageEnd;
+
+        // Comprobación de estado para ventana de 12h
+        const isDesignada = info.mareaCode && info.mareaCode.includes('/') && await this.isMareaDesignada(mareaId);
+
+        if (isDesignada) {
+            const now = new Date();
+            to = now.toISOString();
+            from = new Date(now.getTime() - 12 * 60 * 60 * 1000).toISOString();
+        } else {
+            if (from) from = new Date(new Date(from).getTime() - 6 * 60 * 60 * 1000).toISOString();
+            if (to) to = new Date(new Date(to).getTime() + 6 * 60 * 60 * 1000).toISOString();
+        }
+
+        const history = await this.getVesselHistory(info.buqueId, from, to);
+
+        const dbf = new DbfWriter();
+        dbf.addField({ name: 'Buque', type: DbfFieldType.Character, length: 50 });
+        dbf.addField({ name: 'Matricula', type: DbfFieldType.Character, length: 20 });
+        dbf.addField({ name: 'Fecha', type: DbfFieldType.Character, length: 19 });
+        dbf.addField({ name: 'Latitud', type: DbfFieldType.Numeric, length: 18, decimal: 10 });
+        dbf.addField({ name: 'Longitud', type: DbfFieldType.Numeric, length: 18, decimal: 10 });
+        dbf.addField({ name: 'Velocidad', type: DbfFieldType.Numeric, length: 10, decimal: 2 });
+        dbf.addField({ name: 'Rumbo', type: DbfFieldType.Numeric, length: 5, decimal: 0 });
+
+        for (const point of history) {
+            dbf.addRecord({
+                'Buque': info.name,
+                'Matricula': info.matricula,
+                'Fecha': DateTime.fromJSDate(point.timestamp).toFormat('yyyy-MM-dd HH:mm:ss'),
+                'Latitud': point.lat,
+                'Longitud': point.lon,
+                'Velocidad': point.speed,
+                'Rumbo': point.course
+            });
+        }
+
+        const buffer = dbf.build();
+
+        const nro = marea.nroMarea;
+        const anio2 = String(marea.anioMarea).slice(-2);
+        const filename = `T${nro}${anio2}.dbf`;
+
+        return {
+            buffer,
+            filename
+        };
+    }
+
+    private async isMareaDesignada(mareaId: string): Promise<boolean> {
+        const marea = await this.prisma.marea.findUnique({
+            where: { id: mareaId },
+            include: { estadoActual: true }
+        });
+        return marea?.estadoActual?.codigo === 'DESIGNADA';
     }
 
     // --- Internal Logic ---

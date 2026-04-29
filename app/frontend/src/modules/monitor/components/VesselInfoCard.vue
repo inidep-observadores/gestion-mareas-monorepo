@@ -57,8 +57,19 @@
             </p>
           </div>
         </div>
+      <div class="flex items-center gap-1.5 shrink-0">
+        <!-- Export Button (Discrete) -->
+        <button v-if="isSingleMode" @click.stop="$emit('export-dbf')" 
+          class="tooltip tooltip-left p-2 rounded-lg border border-border/20 text-text-muted hover:text-primary hover:border-primary/40 hover:bg-primary/5 transition-all active:scale-95 group/btn overflow-visible"
+          :class="{ 'pointer-events-none opacity-50': isExporting }"
+          data-tip="Exportar track a DBF">
+          <div v-if="isExporting" class="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin"></div>
+          <DatabaseIcon v-else class="w-4 h-4 transition-transform group-hover/btn:scale-110" />
+        </button>
+
         <div
-          class="shrink-0 p-1.5 bg-primary/10 rounded-lg border border-primary/20 text-primary transition-transform duration-300"
+          @click.stop="isCollapsed = !isCollapsed"
+          class="p-1.5 bg-primary/10 rounded-lg border border-primary/20 text-primary transition-transform duration-300 cursor-pointer"
           :class="{ 'rotate-180': !isCollapsed }">
           <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"
             stroke-width="3">
@@ -66,6 +77,7 @@
           </svg>
         </div>
       </div>
+    </div>
 
       <!-- Collapsible Content -->
       <div v-show="!isCollapsed" class="flex flex-col gap-3 p-3 transition-all duration-300">
@@ -131,6 +143,7 @@
 import { ref } from 'vue'
 import HudCard from './HudCard.vue'
 import BaseSwitch from '@/components/ui/BaseSwitch.vue'
+import { DatabaseIcon } from '@/icons'
 
 const props = defineProps<{
   vesselName: string
@@ -144,9 +157,10 @@ const props = defineProps<{
   isSingleMode?: boolean
   hideLayerControls?: boolean
   isCompact?: boolean
+  isExporting?: boolean
 }>()
 
-defineEmits(['update:layer', 'close-card'])
+defineEmits(['update:layer', 'close-card', 'export-dbf'])
 
 const isCollapsed = ref(false)
 

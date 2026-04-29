@@ -51,7 +51,7 @@
         </div>
       </div>
     </div>
-    <div class="flex flex-col flex-1 overflow-y-auto duration-300 ease-linear no-scrollbar">
+    <div class="flex flex-col flex-1 overflow-y-auto duration-300 ease-linear custom-scrollbar">
       <nav class="mb-6" @click="closeMobileSidebar">
         <div class="flex flex-col gap-4">
           <div v-for="(menuGroup, groupIndex) in navigationGroups" :key="groupIndex">
@@ -128,6 +128,7 @@ import {
   HorizontalDots,
   MailBox,
   LayoutDashboardIcon,
+  DocsIcon,
   BarChartIcon,
   CalenderIcon,
   TaskIcon,
@@ -210,6 +211,12 @@ const navigationGroups = computed(() => {
           show: true,
         },
         {
+          icon: DocsIcon,
+          name: 'Protocolización',
+          to: { name: 'ProtocolizacionMareas' },
+          show: isAdmin.value || isCoordinator.value,
+        },
+        {
           icon: MapPinIcon,
           name: 'Mapa Interactivo',
           to: { name: 'MareasMonitor' }, // Apunta al monitor general de flota
@@ -239,13 +246,13 @@ const navigationGroups = computed(() => {
         {
           icon: ShipIcon,
           name: 'Buques',
-          to: { name: 'AdminBuques' },
+          to: { name: 'SistemaBuques' },
           show: true,
         },
         {
           icon: UserCircleIcon,
           name: 'Observadores',
-          to: { name: 'AdminObservadores' },
+          to: { name: 'SistemaObservadores' },
           show: true,
         },
         {

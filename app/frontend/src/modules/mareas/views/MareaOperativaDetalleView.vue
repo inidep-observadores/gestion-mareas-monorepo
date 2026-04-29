@@ -51,6 +51,14 @@
       @confirm="handleProtocolizacionConfirm"
     />
 
+    <AprobarInformeDialog
+      :show="showAprobarInformeDialog"
+      :marea="mareaToManage"
+      :loading="executingAction"
+      @close="showAprobarInformeDialog = false"
+      @confirm="handleAprobarInformeConfirm"
+    />
+
     <AlertManagementDialog :is-open="isAlertDialogOpen" :alert="selectedAlert" @close="isAlertDialogOpen = false"
       @refresh="loadContext" />
   </AdminLayout>
@@ -66,9 +74,11 @@ import RecibirArchivosDialog from '../components/RecibirArchivosDialog.vue'
 import CancelarMareaDialog from '../components/CancelarMareaDialog.vue'
 import MareaGenericActionDialog from '../components/MareaGenericActionDialog.vue'
 import FinalizarProtocolizacionDialog from '../components/FinalizarProtocolizacionDialog.vue'
+import AprobarInformeDialog from '../components/AprobarInformeDialog.vue'
 // @ts-ignore
 import AlertManagementDialog from '../../alerts/components/AlertManagementDialog.vue'
 import { useMareas } from '../composables/useMareas'
+import mareasService from '../services/mareas.service'
 import { useAuthStore } from '@/modules/auth/stores/auth.store'
 import { ValidRoles } from '@/modules/auth/interfaces/roles.enum'
 import { ArrowLeftIcon } from '@/icons'
@@ -98,6 +108,7 @@ const showRecibirDialog = ref(false)
 const showCancelarDialog = ref(false)
 const showGenericDialog = ref(false)
 const showProtocolizacionDialog = ref(false)
+const showAprobarInformeDialog = ref(false)
 const selectedActionKey = ref<string | null>(null)
 const selectedActionData = ref<any>(null)
 const executingAction = ref(false)
@@ -179,6 +190,12 @@ const executeActionFromView = async (actionKey: string) => {
     return
   }
 
+  if (actionKey === 'APROBAR_INFORME') {
+    mareaToManage.value = mareaContext
+    showAprobarInformeDialog.value = true
+    return
+  }
+
   // Si la acción tiene metadatos en el contexto y no es una de las especiales, usar diálogo genérico
   const actionMetadata = selectedMareaContext.value?.actions[actionKey]
   if (actionMetadata) {
@@ -195,6 +212,21 @@ const executeActionFromView = async (actionKey: string) => {
     await loadContext()
   } catch (err) {
     console.error('Action failed:', err)
+  } finally {
+    executingAction.value = false
+  }
+}
+
+const handleAprobarInformeConfirm = async (file: File, comentarios: string) => {
+  if (!mareaToManage.value) return
+  try {
+    executingAction.value = true
+    await mareasService.aprobarInforme(mareaToManage.value.id, file, comentarios)
+    showAprobarInformeDialog.value = false
+    mareaToManage.value = null
+    await loadContext()
+  } catch (err) {
+    console.error('Error aprobando informe:', err)
   } finally {
     executingAction.value = false
   }

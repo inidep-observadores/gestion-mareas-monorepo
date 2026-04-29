@@ -69,7 +69,13 @@ export class AlertsService {
         }
 
         if (refId) where.referenciaId = refId;
-        if (status) where.estado = status;
+        if (status) {
+            if (status.includes(',')) {
+                where.estado = { in: status.split(',') };
+            } else {
+                where.estado = status;
+            }
+        }
         if (type) {
             if (type.includes(',')) {
                 where.tipo = { in: type.split(',') };

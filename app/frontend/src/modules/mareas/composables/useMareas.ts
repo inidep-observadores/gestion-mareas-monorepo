@@ -16,11 +16,17 @@ export function useMareas() {
     const sortBy = ref<string | null>('id_marea');
     const sortOrder = ref<'asc' | 'desc'>('asc');
 
-    const fetchDashboard = async (showAll: boolean = false) => {
+    const lastShowAll = ref(false);
+
+    const fetchDashboard = async (showAll?: boolean) => {
+        if (showAll !== undefined) {
+            lastShowAll.value = showAll;
+        }
+        
         loading.value = true;
         error.value = null;
         try {
-            const data = await mareasService.getDashboardOperativo(showAll);
+            const data = await mareasService.getDashboardOperativo(lastShowAll.value);
             kpis.value = data.kpis;
             mareas.value = data.items;
         } catch (err: any) {
@@ -29,6 +35,7 @@ export function useMareas() {
             loading.value = false;
         }
     };
+
 
     const fetchMareaContext = async (id: string) => {
         loading.value = true;

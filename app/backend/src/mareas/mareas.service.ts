@@ -10,12 +10,17 @@ import { MailService } from '../mail/mail.service';
 import { ClaimMareaDto } from './dto/claim-marea.dto';
 import { AlertsService } from '../alerts/alerts.service';
 import { MareaEstado, TipoEtapa, TipoMarea } from './mareas.constants';
+import { EnviarProtocolizacionDto } from './dto/enviar-protocolizacion.dto';
+import { ConfirmarProtocolizacionDto } from './dto/confirmar-protocolizacion.dto';
 import { MareaEtapaMetadata } from './interfaces/marea-etapa-metadata.interface';
+import { ProtocolizacionLoteMetadata } from './interfaces/protocolizacion-lote-metadata.interface';
 import { DateUtils } from '../common/utils/date.utils';
 import { MareaUtils } from '../common/utils/marea.utils';
 import { ConfigService } from '@nestjs/config';
 import * as ExcelJS from 'exceljs';
 import { DateTime } from 'luxon';
+import * as fs from 'fs';
+import * as path from 'path';
 
 
 
@@ -639,7 +644,7 @@ export class MareasService {
                     activo: true,
                     ...mareaYearFilter,
                     estadoActual: {
-                        codigo: MareaEstado.ESPERANDO_PROTOCOLIZACION
+                        codigo: MareaEstado.PARA_PROTOCOLIZAR
                     }
                 }
             }),
@@ -926,7 +931,6 @@ export class MareasService {
             MareaEstado.ENTREGADA_RECIBIDA,     // Orden 4
             MareaEstado.VERIFICACION_INICIAL,   // Orden 5
             MareaEstado.EN_CORRECCION,          // Orden 6
-            MareaEstado.DELEGADA_EXTERNA,       // Orden 7
             MareaEstado.PENDIENTE_DE_INFORME    // Orden 8
         ];
 
@@ -1648,7 +1652,9 @@ export class MareasService {
         const etapaFinal = marea.etapas[marea.etapas.length - 1] || null;
         const mainObs = marea.observadorPrincipal || null;
 
-        const allowedTransitions = transiciones.filter(t => t.estadoOrigenId === marea.estadoActualId);
+        const allowedTransitions = transiciones.filter(t =>
+            t.estadoOrigenId === marea.estadoActualId && t.mostrarEnPanel !== false
+        );
         const actions: Record<string, any> = {};
 
         // Acción especial para editar etapas en curso (no cambia estado) - AHORA PRIMERA
@@ -2063,7 +2069,7 @@ export class MareasService {
         });
     }
 
-    async executeAction(id: string, actionKey: string, user: User, payload: any = {}) {
+    async executeAction(id: string, actionKey: string, user: User, payload: any = {}, files?: Array<Express.Multer.File>) {
         const marea = await this.prisma.marea.findUnique({
             where: { id },
             include: { estadoActual: true, etapas: { orderBy: { nroEtapa: 'asc' } } }
@@ -2098,6 +2104,18 @@ export class MareasService {
 
                 return this.getMareaContext(id);
             });
+        }
+
+        // APROBAR_INFORME requiere adjuntar un archivo .docx obligatoriamente
+        if (actionKey === 'APROBAR_INFORME') {
+            const file = files && files[0];
+            if (!file) {
+                throw new BadRequestException('Es obligatorio adjuntar el informe (.docx) para aprobar.');
+            }
+            const fileExt = path.extname(file.originalname).toLowerCase();
+            if (fileExt !== '.docx') {
+                throw new BadRequestException('El archivo adjunto debe ser un documento Word (.docx).');
+            }
         }
 
         // Buscar si existe la transición permitida
@@ -2225,7 +2243,7 @@ export class MareasService {
                 if (!payload.nroProtocolizacion || !payload.anioProtocolizacion || !payload.fechaProtocolizacion) {
                     throw new BadRequestException('Los campos de protocolización (número, año y fecha) son obligatorios para finalizar el proceso.');
                 }
-                additionalMareaData.nroProtocolizacion = payload.nroProtocolizacion;
+                additionalMareaData.nroProtocolizacion = payload.nroProtocolizacion ? Number(payload.nroProtocolizacion) : null;
                 additionalMareaData.anioProtocolizacion = payload.anioProtocolizacion;
                 additionalMareaData.fechaProtocolizacion = new Date(payload.fechaProtocolizacion);
             }
@@ -2264,6 +2282,7 @@ export class MareasService {
                 }
             }
 
+
             const mareaUpdated = await tx.marea.update({
                 where: { id },
                 data: {
@@ -2290,13 +2309,13 @@ export class MareasService {
                     estadoHastaId: destinoEstadoId,
                     cantidadMuestrasOtolitos: actionKey === 'RECIBIR_DATOS' ? (payload.cantidadOtolitos || null) : null,
                     detalle: payload.motivoDetalle || (actionKey === 'REGISTRAR_INICIO'
-                        ? `Inicio Marea. Obs: ${new Date(additionalMareaData.fechaInicioObservador).toLocaleDateString('es-AR')}`
+                        ? `Inicio Marea. Obs: ${DateUtils.formatDate(additionalMareaData.fechaInicioObservador)}`
                         : actionKey === 'REGISTRAR_FINALIZACION'
-                            ? `Fin Marea. Obs: ${additionalMareaData.fechaFinObservador ? new Date(additionalMareaData.fechaFinObservador).toLocaleDateString('es-AR') : 'Sin fecha definida'}`
+                            ? `Fin Marea. Obs: ${additionalMareaData.fechaFinObservador ? DateUtils.formatDate(additionalMareaData.fechaFinObservador) : 'Sin fecha definida'}`
                             : actionKey === 'FINALIZAR_POR_ARRIBO'
                                 ? `Marea finalizada automáticamente por arribo a puerto (designación activa).`
                                 : actionKey === 'RECIBIR_DATOS'
-                                    ? `Recepción de datos. Otolitos: ${payload.cantidadOtolitos || 0}`
+                                    ? `Recepción de datos.`
                                     : `Acción: ${transicion.etiqueta}`),
                     comentarios: payload.comentarios,
                     archivos: (actionKey === 'RECIBIR_DATOS' && payload.archivosSnapshot) ? {
@@ -2309,6 +2328,38 @@ export class MareasService {
                     } : undefined
                 }
             });
+
+            // Guardar el informe adjunto para APROBAR_INFORME
+            if (actionKey === 'APROBAR_INFORME' && files && files[0]) {
+                const file = files[0];
+                const uploadsBase = this.configService.get<string>('UPLOADS_PATH') || './uploads';
+                const informesDir = this.configService.get<string>('MAREA_INFORMES_DIR') || path.join(uploadsBase, 'informes_marea');
+                if (!fs.existsSync(informesDir)) {
+                    fs.mkdirSync(informesDir, { recursive: true });
+                }
+                const fileExt = path.extname(file.originalname);
+                const fileName = `${marea.anioMarea}_${marea.nroMarea}_${marea.tipoMarea}_APROBACION_${Date.now()}${fileExt}`;
+                const filePath = path.join(informesDir, fileName);
+                fs.writeFileSync(filePath, file.buffer);
+
+                const movimiento = await tx.mareaMovimiento.findFirst({
+                    where: { mareaId: id },
+                    orderBy: { fechaHora: 'desc' }
+                });
+
+                await tx.mareaArchivo.create({
+                    data: {
+                        mareaId: id,
+                        movimientoOrigenId: movimiento?.id,
+                        tipoArchivo: 'INFORME_APROBACION',
+                        formato: fileExt.replace('.', '').toUpperCase(),
+                        rutaArchivo: filePath.replace(/\\/g, '/'),
+                        usuarioSubioId: user.id,
+                        descripcion: 'Informe aprobado para protocolización',
+                        metadata: { originalName: file.originalname }
+                    }
+                });
+            }
 
             return mareaUpdated;
         });
@@ -2876,6 +2927,10 @@ export class MareasService {
             }
 
             sheet.columns = columns;
+            sheet.autoFilter = {
+                from: { row: 1, column: 1 },
+                to: { row: 1, column: columns.length }
+            };
             sheet.getRow(1).font = { bold: true };
             sheet.getRow(1).fill = {
                 type: 'pattern',
@@ -3051,4 +3106,310 @@ export class MareasService {
             etapas: breakdownEtapas
         };
     }
+
+    async confirmarProtocolizacion(id: string, dto: ConfirmarProtocolizacionDto, user: User) {
+        const marea = await this.prisma.marea.findUnique({
+            where: { id },
+            include: { estadoActual: true }
+        });
+
+        if (!marea) throw new NotFoundException('Marea no encontrada');
+        if (marea.estadoActual.codigo !== MareaEstado.ESPERANDO_PROTOCOLIZACION) {
+            throw new BadRequestException(`La marea no está en estado ESPERANDO_PROTOCOLIZACION. Estado actual: ${marea.estadoActual.nombre}`);
+        }
+
+        const estadoProtocolizada = await this.prisma.estadoMarea.findUnique({
+            where: { codigo: MareaEstado.PROTOCOLIZADA }
+        });
+
+        if (!estadoProtocolizada) {
+            throw new BadRequestException('No se encontró el estado de destino: PROTOCOLIZADA');
+        }
+
+        return this.prisma.$transaction(async (tx) => {
+            const updatedMarea = await tx.marea.update({
+                where: { id },
+                data: {
+                    nroProtocolizacion: dto.nroProtocolizacion,
+                    anioProtocolizacion: dto.anioProtocolizacion,
+                    fechaProtocolizacion: new Date(dto.fechaProtocolizacion),
+                    estadoActualId: estadoProtocolizada.id
+                },
+                include: { estadoActual: true }
+            });
+
+            await tx.mareaMovimiento.create({
+                data: {
+                    mareaId: id,
+                    fechaHora: new Date(),
+                    usuarioId: user.id,
+                    tipoEvento: 'CONFIRMAR_PROTOCOLIZACION',
+                    estadoDesdeId: marea.estadoActual.id,
+                    estadoHastaId: estadoProtocolizada.id,
+                    detalle: `Datos de protocolización registrados: Nro ${dto.nroProtocolizacion}/${dto.anioProtocolizacion} con fecha ${DateUtils.formatDate(dto.fechaProtocolizacion)}.`
+                }
+            });
+
+            return updatedMarea;
+        });
+    }
+
+    async enviarAProtocolizacion(dto: EnviarProtocolizacionDto, files: Array<Express.Multer.File>, user: User) {
+        const mareas = await this.prisma.marea.findMany({
+            where: { id: { in: dto.mareaIds } },
+            include: {
+                estadoActual: true,
+                buque: true,
+                observadorPrincipal: true,
+                archivos: {
+                    where: { tipoArchivo: 'INFORME_APROBACION' },
+                    orderBy: { fechaSubida: 'desc' },
+                    take: 1
+                }
+            }
+        });
+
+        if (mareas.length !== dto.mareaIds.length) {
+            throw new BadRequestException('Se proporcionaron IDs de mareas inexistentes o inactivos.');
+        }
+
+        const invalidas = mareas.filter(m => m.estadoActual.codigo !== MareaEstado.PARA_PROTOCOLIZAR);
+        if (invalidas.length > 0) {
+            throw new BadRequestException('Algunas mareas seleccionadas no están en estado PARA_PROTOCOLIZAR.');
+        }
+
+        if (dto.enviadoPorCanalExterno && !dto.fechaEnvio) {
+            throw new BadRequestException('Debe proporcionar la fecha de envío para el registro por canal externo.');
+        }
+
+        const attachmentsConfig: any[] = [];
+
+        if (!dto.enviadoPorCanalExterno) {
+            for (const marea of mareas) {
+                const fileIndex = dto.mareaIds.indexOf(marea.id);
+                const newFile = files?.find(f => f.fieldname === `file_${marea.id}`) || (files && files.length === dto.mareaIds.length ? files[fileIndex] : null);
+                const existingFile = marea.archivos && marea.archivos.length > 0 ? marea.archivos[0] : null;
+
+                if (!newFile && !existingFile) {
+                    throw new BadRequestException(`Es necesario adjuntar el documento de protocolización (.docx) para la marea ${marea.nroMarea}, salvo que se haya enviado por canal externo o que ya posea un informe aprobado.`);
+                }
+
+                if (newFile) {
+                    attachmentsConfig.push({
+                        filename: newFile.originalname,
+                        content: newFile.buffer,
+                        contentType: newFile.mimetype,
+                    });
+                } else if (existingFile) {
+                    if (!fs.existsSync(existingFile.rutaArchivo)) {
+                        throw new BadRequestException(`El archivo de protocolización para la marea ${marea.nroMarea}/${marea.anioMarea} no se encuentra físicamente en el servidor (${existingFile.rutaArchivo}). Por favor, vuelva a adjuntarlo.`);
+                    }
+                    const metadata = existingFile.metadata as any;
+                    const originalName = metadata?.originalName || `INFORME_APROBACION_MAREA_${marea.nroMarea}_${marea.anioMarea}.docx`;
+                    attachmentsConfig.push({
+                        filename: originalName,
+                        path: existingFile.rutaArchivo
+                    });
+                }
+            }
+        }
+
+        const estadoEsperando = await this.prisma.estadoMarea.findUnique({
+            where: { codigo: MareaEstado.ESPERANDO_PROTOCOLIZACION }
+        });
+
+        if (!estadoEsperando) {
+            throw new BadRequestException('No se encontró el estado de destino: ESPERANDO_PROTOCOLIZACION');
+        }
+
+        // Send Email
+        let emailMetadata: any = null;
+        if (!dto.enviadoPorCanalExterno) {
+            const adminEmailTo = this.configService.get<string>('PROTOCOLIZACION_EMAIL_TO');
+            const adminEmailCc = this.configService.get<string>('PROTOCOLIZACION_EMAIL_CC');
+
+            if (!adminEmailTo) {
+                throw new BadRequestException('La dirección de correo destino para protocolización no está configurada en la plataforma.');
+            }
+
+            // Sanitizamos: si es una cadena vacía o espacios, pasamos undefined
+            const sanitizedCc = adminEmailCc?.trim() || undefined;
+            const sanitizedBcc = dto.cco?.trim() || undefined;
+
+            const emailResult = await this.mailService.sendProtocolizacionEmail(adminEmailTo, mareas, attachmentsConfig, sanitizedCc, sanitizedBcc, dto.textoAdicional);
+            if (!emailResult) {
+                throw new BadRequestException('Ocurrió un error al enviar el correo electrónico mediante el servicio interno.');
+            }
+            emailMetadata = emailResult;
+        }
+
+        const metadata: ProtocolizacionLoteMetadata = {
+            email: emailMetadata,
+            textoAdicional: dto.textoAdicional,
+            enviadoPorCanalExterno: dto.enviadoPorCanalExterno,
+            timestamp: DateUtils.getNow(true).toISOString()
+        };
+
+        const uploadsBase = this.configService.get<string>('UPLOADS_PATH') || './uploads';
+        const protocolizacionDir = this.configService.get<string>('MAREA_INFORMES_DIR') || path.join(uploadsBase, 'informes_marea');
+
+        if (!dto.enviadoPorCanalExterno && !fs.existsSync(protocolizacionDir)) {
+            fs.mkdirSync(protocolizacionDir, { recursive: true });
+        }
+
+        if (dto.enviadoPorCanalExterno && !dto.fechaEnvio) {
+            throw new BadRequestException('Debe proporcionar la fecha de envío para el registro por canal externo.');
+        }
+
+        return this.prisma.$transaction(async (tx) => {
+            // 1. Crear el Lote (Cabecera)
+            const lote = await (tx as any).protocolizacionLote.create({
+                data: {
+                    usuarioId: user.id,
+                    canal: dto.enviadoPorCanalExterno ? 'CANAL EXTERNO' : 'EMAIL',
+                    fechaEnvio: dto.enviadoPorCanalExterno && dto.fechaEnvio
+                        ? new Date(dto.fechaEnvio)
+                        : DateUtils.getNow(true),
+                    metadata: metadata as any
+                }
+            });
+
+            for (let i = 0; i < mareas.length; i++) {
+                const marea = mareas[i];
+                const fileIndex = dto.mareaIds.indexOf(marea.id);
+                const file = files?.find(f => f.fieldname === `file_${marea.id}`) || (files && files.length === dto.mareaIds.length ? files[fileIndex] : null);
+
+                await tx.marea.update({
+                    where: { id: marea.id },
+                    data: {
+                        estadoActualId: estadoEsperando.id,
+                        fechaEnvioProtocolizacion: dto.enviadoPorCanalExterno && dto.fechaEnvio
+                            ? new Date(dto.fechaEnvio)
+                            : DateUtils.getNow(true)
+                    }
+                });
+
+                // Determinar la fecha del movimiento
+                const fechaMovimiento = dto.enviadoPorCanalExterno && dto.fechaEnvio
+                    ? new Date(dto.fechaEnvio)
+                    : DateUtils.getNow(true);
+
+                const movimiento = await tx.mareaMovimiento.create({
+                    data: {
+                        mareaId: marea.id,
+                        fechaHora: fechaMovimiento,
+                        usuarioId: user.id,
+                        tipoEvento: 'ENVIAR_PROTOCOLIZACION',
+                        estadoDesdeId: marea.estadoActual.id,
+                        estadoHastaId: estadoEsperando.id,
+                        detalle: dto.enviadoPorCanalExterno ?
+                            'Marea marcada como enviada a protocolizar por canal externo.' :
+                            'El informe fue enviado por email para realizar el trámite de protocolización.'
+                    }
+                });
+
+                // 2. Vincular al Lote (Detalle)
+                await tx.protocolizacionLoteItem.create({
+                    data: {
+                        loteId: lote.id,
+                        mareaId: marea.id
+                    }
+                });
+
+                // Si hay archivo, guardarlo físicamente y registrarlo en BD
+                if (file && !dto.enviadoPorCanalExterno) {
+                    const fileExt = path.extname(file.originalname);
+                    const fileName = `${marea.anioMarea}_${marea.nroMarea}_${marea.tipoMarea}_PROTOCOLIZACION_${Date.now()}${fileExt}`;
+                    const filePath = path.join(protocolizacionDir, fileName);
+
+                    fs.writeFileSync(filePath, file.buffer);
+
+                    await tx.mareaArchivo.create({
+                        data: {
+                            mareaId: marea.id,
+                            movimientoOrigenId: movimiento.id,
+                            tipoArchivo: 'INFORME_PROTOCOLIZACION',
+                            formato: fileExt.replace('.', '').toUpperCase(),
+                            rutaArchivo: filePath.replace(/\\/g, '/'),
+                            usuarioSubioId: user.id,
+                            descripcion: 'Informe de marea enviado para protocolización'
+                        }
+                    });
+                }
+            }
+            return { message: 'Envío procesado exitosamente.', count: mareas.length };
+        });
+    }
+
+    async getProtocolizacionPorEstado(codigoEstado: string, anio?: number) {
+        const where: any = {
+            estadoActual: { codigo: codigoEstado }
+        };
+
+        if (anio && codigoEstado === MareaEstado.PROTOCOLIZADA) {
+            where.anioMarea = Number(anio);
+        }
+
+        return this.prisma.marea.findMany({
+            where,
+            include: {
+                buque: {
+                    include: {
+                        tipoFlota: true
+                    }
+                },
+                estadoActual: true,
+                observadorPrincipal: true,
+                pesqueria: true,
+                archivos: {
+                    where: { tipoArchivo: 'INFORME_APROBACION' },
+                    orderBy: { fechaSubida: 'desc' },
+                    take: 1
+                }
+            },
+            orderBy: {
+                fechaUltimaActualizacion: 'desc'
+            }
+        });
+    }
+
+    async getProtocolizacionLotes(anio?: number) {
+        const where: any = {};
+        if (anio) {
+            const numAnio = Number(anio);
+            where.fechaEnvio = {
+                gte: new Date(`${numAnio}-01-01T00:00:00.000Z`),
+                lte: new Date(`${numAnio}-12-31T23:59:59.999Z`)
+            };
+        }
+
+        return this.prisma.protocolizacionLote.findMany({
+            where,
+            include: {
+                usuario: { select: { fullName: true } },
+                _count: { select: { items: true } }
+            },
+            orderBy: { fechaEnvio: 'desc' }
+        });
+    }
+
+    async getProtocolizacionLoteDetalle(id: string) {
+        return (this.prisma as any).protocolizacionLote.findUnique({
+            where: { id },
+            include: {
+                usuario: { select: { fullName: true } },
+                items: {
+                    include: {
+                        marea: {
+                            include: {
+                                buque: true,
+                                estadoActual: true
+                            }
+                        }
+                    }
+                }
+            } as any
+        });
+    }
+
 }

@@ -7,9 +7,26 @@
         <span class="text-[10px] font-black uppercase tracking-widest text-text-muted mr-2">
           Filtrar por estado:
         </span>
-        <StatusFilterChip v-for="kpi in kpis" :key="kpi.label" :label="kpi.label" :value="kpi.value" :icon="kpi.icon"
-          :active="!hiddenStates.has(kpi.codigo)" :color-class="kpi.color" :bg-class="kpi.bg" :border-class="kpi.border"
-          @click="toggleStateVisibility(kpi.codigo)" />
+        <div class="flex flex-wrap items-center gap-2">
+          <StatusFilterChip v-for="kpi in kpis" :key="kpi.label" :label="kpi.label" :value="kpi.value" :icon="kpi.icon"
+            :active="!hiddenStates.has(kpi.codigo)" :color-class="kpi.color" :bg-class="kpi.bg" :border-class="kpi.border"
+            @click="toggleStateVisibility(kpi.codigo)" />
+        </div>
+
+        <div class="flex items-center gap-2 ml-2 pl-4 border-l border-border/50">
+          <button 
+            @click="selectAllStates"
+            class="text-[10px] font-black uppercase tracking-tight text-primary hover:text-primary-hover transition-all px-2 py-1 rounded-lg hover:bg-primary/5 active:scale-95"
+          >
+            Marcar todo
+          </button>
+          <button 
+            @click="deselectAllStates"
+            class="text-[10px] font-black uppercase tracking-tight text-text-muted hover:text-text transition-all px-2 py-1 rounded-lg hover:bg-surface-muted/50 active:scale-95"
+          >
+            Desmarcar todo
+          </button>
+        </div>
       </div>
 
       <div class="flex flex-col xl:flex-row gap-6 overflow-hidden">
@@ -36,6 +53,12 @@
                   </select>
                 </div>
                 <SearchInput v-model="searchQuery" class="md:w-96" placeholder="Buscar buque o marea..." />
+                <ExportExcelButton 
+                  :loading="exporting"
+                  :label="searchQuery || filterPesqueria || hiddenStates.size > 0 ? 'Filtradas' : 'Excel'"
+                  :title="searchQuery || filterPesqueria || hiddenStates.size > 0 ? 'Exportar mareas filtradas' : 'Exportar todas las mareas activas'"
+                  @click="handleExport"
+                />
                 <button v-if="!isReadOnly" @click="router.push('/mareas/nueva')"
                   class="flex items-center justify-center gap-2 px-4 py-2 bg-primary text-primary-fg rounded-xl text-sm font-bold hover:bg-primary-hover transition-all shadow-lg shadow-primary/20 active:scale-95">
                   <PlusIcon class="w-4 h-4" />
@@ -336,6 +359,14 @@
       @confirm="handleProtocolizacionConfirm"
     />
 
+    <AprobarInformeDialog
+      :show="showAprobarInformeDialog"
+      :marea="mareaToManage"
+      :loading="executingAction"
+      @close="showAprobarInformeDialog = false"
+      @confirm="handleAprobarInformeConfirm"
+    />
+
     <EditMareaDesignadaDialog 
       v-if="selectedMarea"
       :show="showEditDesignadaDialog" 
@@ -361,12 +392,14 @@ import RecibirArchivosDialog from '../components/RecibirArchivosDialog.vue'
 import CancelarMareaDialog from '../components/CancelarMareaDialog.vue'
 import MareaGenericActionDialog from '../components/MareaGenericActionDialog.vue'
 import FinalizarProtocolizacionDialog from '../components/FinalizarProtocolizacionDialog.vue'
+import AprobarInformeDialog from '../components/AprobarInformeDialog.vue'
 import EditMareaDesignadaDialog from '../components/EditMareaDesignadaDialog.vue'
 // @ts-ignore
 import AlertManagementDialog from '../../alerts/components/AlertManagementDialog.vue'
 import StatusFilterChip from '../components/StatusFilterChip.vue'
 import { useAuthStore } from '@/modules/auth/stores/auth.store'
 import { useMareas } from '../composables/useMareas'
+import mareasService from '../services/mareas.service'
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 import {
   ShipIcon,
@@ -380,8 +413,11 @@ import {
   ChevronDownIcon,
   WarningIcon,
   EditIcon,
-  SportsScoreIcon
+  SportsScoreIcon,
+  DownloadIcon
 } from '@/icons'
+import ExportExcelButton from '@/modules/shared/components/ExportExcelButton.vue';
+import { useConfigStore } from '@/modules/shared/stores/config.store'
 
 import { ValidRoles } from '@/modules/auth/interfaces/roles.enum'
 
@@ -407,6 +443,14 @@ const {
   toggleSort
 } = useMareas()
 
+const selectAllStates = () => {
+  setVisibleStates(rawKpis.value.map(k => k.codigo))
+}
+
+const deselectAllStates = () => {
+  setVisibleStates([])
+}
+
 const authStore = useAuthStore()
 const isReadOnly = computed(() => {
   const roles = authStore.user?.roles || []
@@ -421,9 +465,44 @@ const showRecibirDialog = ref(false)
 const showCancelarDialog = ref(false)
 const showGenericDialog = ref(false)
 const showProtocolizacionDialog = ref(false)
+const showAprobarInformeDialog = ref(false)
 const selectedActionKey = ref<string | null>(null)
 const selectedActionData = ref<any>(null)
 const executingAction = ref(false)
+const exporting = ref(false)
+const configStore = useConfigStore()
+
+const handleExport = async () => {
+  try {
+    exporting.value = true
+    const params: any = {
+      year: configStore.selectedYear
+    }
+
+    // Enviamos los IDs de las mareas visibles actualmente para respetar filtros
+    if (filteredMareas.value.length > 0) {
+      params.ids = filteredMareas.value.map(m => m.id)
+    }
+
+    const blob = await mareasService.exportToExcel(params)
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+
+    const filename = `MAREAS_ACTIVAS_${configStore.selectedYear}.xlsx`
+
+    link.setAttribute('download', filename)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    window.URL.revokeObjectURL(url)
+  } catch (err) {
+    console.error('Error al exportar Excel:', err)
+  } finally {
+    exporting.value = false
+  }
+}
+
 const gestionMode = ref<'INICIAR' | 'EDITAR' | 'FINALIZAR'>('INICIAR')
 const mareaToManage = ref<any>(null)
 
@@ -509,7 +588,7 @@ const kpis = computed(() => {
 })
 
 const applyFilter = async () => {
-  await fetchDashboard()
+  await fetchDashboard(false)
   const estadoParam = route.query.estado as string | undefined
   if (estadoParam) {
     const allowed = estadoParam.split(',').map(s => s.trim()).filter(Boolean)
@@ -585,6 +664,12 @@ const executeActionFromSidebar = async (actionKey: string) => {
     return
   }
 
+  if (actionKey === 'APROBAR_INFORME') {
+    mareaToManage.value = mareaContext
+    showAprobarInformeDialog.value = true
+    return
+  }
+
   // Si la acción tiene metadatos en el contexto y no es una de las especiales manejadas arriba, usar diálogo genérico
   const actionMetadata = selectedMareaContext.value?.actions[actionKey]
   if (actionMetadata) {
@@ -601,6 +686,22 @@ const executeActionFromSidebar = async (actionKey: string) => {
     await fetchDashboard()
   } catch (err) {
     console.error('Action failed:', err)
+  }
+}
+
+const handleAprobarInformeConfirm = async (file: File, comentarios: string) => {
+  if (!mareaToManage.value) return
+  try {
+    executingAction.value = true
+    await mareasService.aprobarInforme(mareaToManage.value.id, file, comentarios)
+    showAprobarInformeDialog.value = false
+    mareaToManage.value = null
+    closeSidebar()
+    await fetchDashboard()
+  } catch (err) {
+    console.error('Error aprobando informe:', err)
+  } finally {
+    executingAction.value = false
   }
 }
 

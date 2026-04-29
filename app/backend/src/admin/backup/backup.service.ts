@@ -10,7 +10,7 @@ import * as crypto from 'crypto';
 import { Response } from 'express';
 import { DateTime } from 'luxon';
 
-export const VALID_SCHEMAS = ['public', 'audit', 'datos_api'] as const;
+export const VALID_SCHEMAS = ['public', 'audit', 'datos_api', 'informes_marea'] as const;
 export type BackupSchema = typeof VALID_SCHEMAS[number];
 
 export interface BackupSchemaOption {
@@ -23,6 +23,7 @@ export const SCHEMA_OPTIONS: BackupSchemaOption[] = [
     { key: 'public', label: 'Datos Generales', description: 'Mareas, buques, observadores y toda la información principal del sistema.' },
     { key: 'audit', label: 'Auditoría', description: 'Registro de cambios en la base de datos y eventos de navegación.' },
     { key: 'datos_api', label: 'Datos Históricos de API', description: 'Trayectorias de buques y zarpadas/arribos registradas desde APIs externas. Aumenta significativamente el tamaño del archivo.' },
+    { key: 'informes_marea', label: 'Informes de Marea', description: 'Archivos PDF y documentos cargados de los informes técnicos de marea.' },
 ];
 
 @Injectable()
@@ -120,6 +121,9 @@ export class BackupService {
             const sqlFiles: { schema: BackupSchema; filename: string; filePath: string }[] = [];
 
             for (const schema of validSchemas) {
+                // Saltamos si no es un esquema de base de datos (ej: informes_marea son archivos)
+                if (schema as any === 'informes_marea') continue;
+
                 const sqlFilename = `${schema}.sql`;
                 const sqlFilePath = path.join(tempDir, sqlFilename);
 
@@ -158,9 +162,24 @@ export class BackupService {
                 sqlFiles.push({ schema, filename: sqlFilename, filePath: sqlFilePath });
             }
 
-            // --- Paso 2: Empaquetar todos los .sql en un único .zip ---
+            // --- Paso 2: Empaquetar archivos SQL y directorios en un único .zip ---
             const zipPassword = this.configService.get<string>('BACKUP_ZIP_PASSWORD');
-            await this.createZipFromFiles(sqlFiles.map(f => ({ filePath: f.filePath, name: f.filename })), zipPath, zipPassword);
+            const directories: { dirPath: string; name: string }[] = [];
+
+            if (validSchemas.includes('informes_marea' as any)) {
+                const uploadsPath = this.configService.get<string>('UPLOADS_PATH') || './uploads';
+                const informesPath = path.join(uploadsPath, 'informes_marea');
+                if (fs.existsSync(informesPath)) {
+                    directories.push({ dirPath: informesPath, name: 'informes_marea' });
+                }
+            }
+
+            await this.createZipFromFiles(
+                sqlFiles.map(f => ({ filePath: f.filePath, name: f.filename })),
+                zipPath,
+                zipPassword,
+                directories
+            );
 
             // --- Paso 3: Calcular hashes de los archivos SQL para metadatos ---
             const sqlHashes: Record<string, string> = {};
@@ -360,6 +379,8 @@ export class BackupService {
             const catCmd = process.platform === 'win32' ? 'type' : 'cat';
 
             for (const schema of requestedSchemas) {
+                if (schema as any === 'informes_marea') continue;
+
                 const sqlFile = path.join(tempDir, `${schema}.sql`);
                 if (!fs.existsSync(sqlFile)) {
                     this.logger.warn(`Archivo ${schema}.sql no encontrado en el ZIP. Saltando.`);
@@ -391,6 +412,43 @@ export class BackupService {
                 }
 
                 fs.appendFileSync(logFile, `\n[OK] Esquema '${schema}' restaurado.\n`);
+            }
+
+            // --- Restauración de archivos físicos (Informes de Marea) ---
+            if (requestedSchemas.includes('informes_marea' as any)) {
+                const informesTempPath = path.join(tempDir, 'informes_marea');
+                if (fs.existsSync(informesTempPath)) {
+                    const uploadsPath = this.configService.get<string>('UPLOADS_PATH') || './uploads';
+                    const targetPath = path.join(uploadsPath, 'informes_marea');
+
+                    fs.appendFileSync(logFile, `\n--- Restaurando archivos físicos: informes_marea ---\n`);
+                    this.logger.log(`Restaurando archivos de marea en: ${targetPath}`);
+
+                    // Vaciado previo
+                    if (fs.existsSync(targetPath)) {
+                        fs.rmSync(targetPath, { recursive: true, force: true });
+                    }
+                    fs.mkdirSync(targetPath, { recursive: true });
+
+                    // Copiar recursivamente desde temp a target
+                    const copyRecursive = (src: string, dest: string) => {
+                        fs.mkdirSync(dest, { recursive: true });
+                        const entries = fs.readdirSync(src, { withFileTypes: true });
+                        for (const entry of entries) {
+                            const srcPath = path.join(src, entry.name);
+                            const destPath = path.join(dest, entry.name);
+                            if (entry.isDirectory()) {
+                                copyRecursive(srcPath, destPath);
+                            } else {
+                                fs.copyFileSync(srcPath, destPath);
+                            }
+                        }
+                    };
+                    copyRecursive(informesTempPath, targetPath);
+                    fs.appendFileSync(logFile, `\n[OK] Archivos de marea restaurados en ${targetPath}.\n`);
+                } else {
+                    fs.appendFileSync(logFile, `\nWARN: La carpeta 'informes_marea' no fue encontrada en el backup.\n`);
+                }
             }
 
             fs.appendFileSync(logFile, `\n[${new Date().toISOString()}] Restauración finalizada con éxito.\n`);
@@ -530,8 +588,7 @@ export class BackupService {
             throw new InternalServerErrorException('Error al procesar el archivo de copia de seguridad subido.');
         } finally {
             if (fs.existsSync(tempDir)) {
-                fs.readdirSync(tempDir).forEach(f => fs.unlinkSync(path.join(tempDir, f)));
-                fs.rmdirSync(tempDir);
+                fs.rmSync(tempDir, { recursive: true, force: true });
             }
         }
     }
@@ -554,6 +611,7 @@ export class BackupService {
         files: { filePath: string; name: string }[],
         outputPath: string,
         password?: string,
+        directories: { dirPath: string; name: string }[] = [],
     ): Promise<void> {
         return new Promise((resolve, reject) => {
             const writeStream = fs.createWriteStream(outputPath);
@@ -575,6 +633,13 @@ export class BackupService {
             for (const file of files) {
                 // Añadir archivo al ZIP usando stream para no cargarlo en RAM
                 archive.file(file.filePath, { name: file.name });
+            }
+
+            for (const dir of directories) {
+                // Añadir directorio al ZIP
+                if (fs.existsSync(dir.dirPath)) {
+                  archive.directory(dir.dirPath, dir.name);
+                }
             }
 
             archive.finalize();

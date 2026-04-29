@@ -392,7 +392,8 @@ export function generateComplementaryObservations(
 
     observations.push({
         title: 'Rotación de personal',
-        text: `El ${pctMulti}% de los observadores (${obsMultiMarea} de ${obsAfectados}) participó en más de una marea durante ${period.article}, lo que indica una ${pctMulti >= 50 ? 'adecuada' : 'limitada'} rotación y aprovechamiento de la dotación disponible.`,
+        // text: `El ${pctMulti}% de los observadores (${obsMultiMarea} de ${obsAfectados}) participó en más de una marea durante ${period.article}, lo que indica una ${pctMulti >= 50 ? 'adecuada' : 'limitada'} rotación y aprovechamiento de la dotación disponible.`,
+        text: `El ${pctMulti}% de los observadores (${obsMultiMarea} de ${obsAfectados}) participó en más de una marea durante ${period.article}.`,
     });
 
     // 4. Carga de trabajo
@@ -404,7 +405,8 @@ export function generateComplementaryObservations(
 
         observations.push({
             title: 'Carga de trabajo',
-            text: `El observador con mayor cantidad de días embarcado (${maxObs.days} días) ${ratioText} el promedio general (${formatNumber(avgDias, 0)} días). Se recomienda monitorear la distribución de carga para optimizar la equidad en las asignaciones futuras.`,
+            // text: `El observador con mayor cantidad de días embarcado (${maxObs.days} días) ${ratioText} el promedio general (${formatNumber(avgDias, 0)} días). Se recomienda monitorear la distribución de carga para optimizar la equidad en las asignaciones futuras.`,
+            text: `El observador con mayor cantidad de días embarcado (${maxObs.days} días) ${ratioText} el promedio general (${formatNumber(avgDias, 0)} días).`,
         });
     }
 

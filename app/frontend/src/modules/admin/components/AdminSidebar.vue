@@ -24,7 +24,7 @@
         </div>
       </router-link>
     </div>
-    <div class="flex flex-col flex-1 overflow-y-auto duration-300 ease-linear no-scrollbar">
+    <div class="flex flex-col flex-1 overflow-y-auto duration-300 ease-linear custom-scrollbar">
       <nav class="mb-6" @click="closeMobileSidebar">
         <div class="flex flex-col gap-4">
           <div v-for="(menuGroup, groupIndex) in navigationGroups" :key="groupIndex">
@@ -116,6 +116,7 @@ import {
   LayoutDashboardIcon,
   BackupIcon,
   BellIcon,
+  LayersIcon,
 } from '@/icons'
 import { useSidebar } from '@/composables/useSidebar'
 import { useAuthStore } from '@/modules/auth/stores/auth.store'
@@ -152,14 +153,9 @@ const navigationGroups = [
         path: '/admin/users',
       },
       {
-        icon: UserCircleIcon,
-        name: 'Observadores',
-        path: '/admin/observadores',
-      },
-      {
-        icon: ShipIcon,
-        name: 'Buques',
-        path: '/admin/buques',
+        icon: LayersIcon,
+        name: 'Transiciones de Estado',
+        path: '/admin/transiciones-estado',
       },
       {
         icon: BellIcon,

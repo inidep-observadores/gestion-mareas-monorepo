@@ -145,6 +145,16 @@ const router = createRouter({
       },
     },
     {
+      path: '/mareas/protocolizacion',
+      name: 'ProtocolizacionMareas',
+      component: () => import('@/modules/mareas/views/ProtocolizacionView.vue'),
+      meta: {
+        title: 'Gestión de Protocolización',
+        requiresAuth: true,
+        roles: [ValidRoles.admin, ValidRoles.coordinador]
+      },
+    },
+    {
       path: '/mareas/operativa/:id',
       name: 'MareaOperativaDetalle',
       component: MareaOperativaDetalleView,
@@ -260,8 +270,8 @@ const router = createRouter({
       },
     },
     {
-      path: '/admin/observadores',
-      name: 'AdminObservadores',
+      path: '/sistema/observadores',
+      name: 'SistemaObservadores',
       component: () => import('@/modules/admin/views/ObservadoresView.vue'),
       meta: {
         title: 'Gestión de Observadores',
@@ -270,13 +280,23 @@ const router = createRouter({
       },
     },
     {
-      path: '/admin/buques',
-      name: 'AdminBuques',
+      path: '/sistema/buques',
+      name: 'SistemaBuques',
       component: () => import('@/modules/admin/views/BuquesView.vue'),
       meta: {
         title: 'Gestión de Buques',
         requiresAuth: true,
         roles: [ValidRoles.admin, ValidRoles.coordinador, ValidRoles.asistente, ValidRoles.tecnico],
+      },
+    },
+    {
+      path: '/admin/transiciones-estado',
+      name: 'AdminTransicionesEstado',
+      component: () => import('@/modules/admin/views/TransicionesEstadoView.vue'),
+      meta: {
+        title: 'Transiciones de Estado de Mareas',
+        requiresAuth: true,
+        roles: [ValidRoles.admin],
       },
     },
     {

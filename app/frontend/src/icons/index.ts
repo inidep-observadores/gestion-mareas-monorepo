@@ -1,4 +1,5 @@
 import BoxCubeIcon from './BoxCubeIcon.vue'
+import DatabaseIcon from './DatabaseIcon.vue'
 import GridIcon from './GridIcon.vue'
 import CalenderIcon from './CalenderIcon.vue'
 import TaskIcon from './TaskIcon.vue'
@@ -141,4 +142,5 @@ export {
   LayersIcon,
   XIcon,
   ArrowRightIcon,
+  DatabaseIcon,
 }

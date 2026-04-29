@@ -12,6 +12,7 @@ describe('AuditReportBuilder', () => {
     renderBarChart: jest.fn().mockResolvedValue(Buffer.from('chart')),
     renderHorizontalBarChart: jest.fn().mockResolvedValue(Buffer.from('chart')),
     renderLineChart: jest.fn().mockResolvedValue(Buffer.from('chart')),
+    renderSigmaLogo: jest.fn().mockResolvedValue(Buffer.from('logo')),
   };
 
   beforeEach(async () => {
@@ -52,6 +53,33 @@ describe('AuditReportBuilder', () => {
           observers: [{ id: '1', name: 'Juan Perez', mareas: 2, days: 20, active: true }],
         },
         dotacionActiva: 45,
+        secondaryStats: [],
+        specialCases: { 
+          canceladas: [], 
+          desestimadas: [], 
+          esperandoEntrega: [], 
+          pendientesDeInforme: [], 
+          delegadasExternas: [], 
+          informesPendientesEnvio: [],
+          esperandoProtocolizacion: [],
+        },
+        protocolizationTimeline: { 
+          totalProtocolizadas: 0, 
+          totalEnviadas: 0, 
+          totalEnPeriodo: 0, 
+          sinProtocolizar: 0, 
+          tipo: 'MONTHLY', 
+          promedioDiasLatencia: null, 
+          maxDiasLatencia: null, 
+          promedioDiasLatenciaTramite: null, 
+          maxDiasLatenciaTramite: null, 
+          distribucionMensual: [],
+          protocolizadasDetalle: [],
+        },
+        breakdown: {
+          observadores: { dias: 0, mareasFinalizadas: 0, mareasEnEjecucion: 0, desestimadas: 0, informesDeMarea: 0, informesProtocolizados: 0, informesPendientes: 0, esperandoEntrega: 0, delegadasExternas: 0 },
+          tecnicos: { dias: 0, mareasFinalizadas: 0, mareasEnEjecucion: 0, desestimadas: 0, informesDeMarea: 0, informesProtocolizados: 0, informesPendientes: 0, esperandoEntrega: 0, delegadasExternas: 0 },
+        },
         detailItems: [
           {
             id: 'm1',
@@ -69,6 +97,7 @@ describe('AuditReportBuilder', () => {
           }
         ],
         distribution: [{ mareaId: 'm1', id_marea: '2024-001', nroEtapa: 1 }],
+        observadoresSinActividad: [],
       };
 
       const result = await builder.build(mockData);
@@ -91,8 +120,36 @@ describe('AuditReportBuilder', () => {
             observers: [],
           },
           dotacionActiva: 0,
+          secondaryStats: [],
+          specialCases: { 
+            canceladas: [], 
+            desestimadas: [], 
+            esperandoEntrega: [], 
+            pendientesDeInforme: [], 
+            delegadasExternas: [], 
+            informesPendientesEnvio: [],
+            esperandoProtocolizacion: [],
+          },
+          protocolizationTimeline: { 
+            totalProtocolizadas: 0, 
+            totalEnviadas: 0, 
+            totalEnPeriodo: 0, 
+            sinProtocolizar: 0, 
+            tipo: 'MONTHLY', 
+            promedioDiasLatencia: null, 
+            maxDiasLatencia: null, 
+            promedioDiasLatenciaTramite: null, 
+            maxDiasLatenciaTramite: null, 
+            distribucionMensual: [],
+            protocolizadasDetalle: [],
+          },
+          breakdown: {
+            observadores: { dias: 0, mareasFinalizadas: 0, mareasEnEjecucion: 0, desestimadas: 0, informesDeMarea: 0, informesProtocolizados: 0, informesPendientes: 0, esperandoEntrega: 0, delegadasExternas: 0 },
+            tecnicos: { dias: 0, mareasFinalizadas: 0, mareasEnEjecucion: 0, desestimadas: 0, informesDeMarea: 0, informesProtocolizados: 0, informesPendientes: 0, esperandoEntrega: 0, delegadasExternas: 0 },
+          },
           detailItems: [],
           distribution: [],
+          observadoresSinActividad: [],
         };
   
         const result = await builder.build(mockData);

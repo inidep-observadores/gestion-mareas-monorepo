@@ -13,7 +13,7 @@
           <h2 class="text-xl font-bold text-text">Gestión de Entidades</h2>
         </div>
         
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <AdminHomeCard
             title="Gestión de Usuarios"
             description="Administra los accesos de personal, roles y permisos del sistema."
@@ -22,17 +22,10 @@
             color="primary"
           />
           <AdminHomeCard
-            title="Gestión de Buques"
-            description="Control de la flota, características técnicas y armadores asociados."
-            :to="{ name: 'AdminBuques' }"
-            :icon="ShipIcon"
-            color="primary"
-          />
-          <AdminHomeCard
-            title="Gestión de Observadores"
-            description="Registro oficial de observadores a bordo y su información técnica."
-            :to="{ name: 'AdminObservadores' }"
-            :icon="BeakerIcon"
+            title="Transiciones de Estado"
+            description="Configura los flujos y acciones permitidas entre estados de mareas."
+            :to="{ name: 'AdminTransicionesEstado' }"
+            :icon="LayersIcon"
             color="primary"
           />
         </div>
@@ -119,14 +112,14 @@
 <script setup lang="ts">
 import AdminDashboardLayout from '../layouts/AdminDashboardLayout.vue';
 import AdminHomeCard from '../components/AdminHomeCard.vue';
-import { 
-  UserGroupIcon, 
-  ShipIcon, 
-  BeakerIcon, 
-  ErrorHexaIcon, 
-  ShieldIcon, 
-  BackupIcon, 
-  DownloadIcon, 
+import {
+  UserGroupIcon,
+  ShipIcon,
+  BeakerIcon,
+  ErrorHexaIcon,
+  ShieldIcon,
+  BackupIcon,
+  DownloadIcon,
   LayersIcon,
   UserCircleIcon,
   HistoryIcon,

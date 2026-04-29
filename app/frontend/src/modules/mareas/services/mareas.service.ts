@@ -94,6 +94,56 @@ const mareasService = {
     setIntencionCierre: async (mareaId: string, etapaId: string, activar: boolean): Promise<any> => {
         const { data } = await httpClient.patch(`/mareas/${mareaId}/etapas/${etapaId}/intencion-cierre`, { activar });
         return data;
+    },
+
+    aprobarInforme: async (id: string, file: File, comentarios?: string): Promise<any> => {
+        const formData = new FormData()
+        formData.append('files', file)
+        if (comentarios) formData.append('comentarios', comentarios)
+        const { data } = await httpClient.post(`/mareas/${id}/actions/APROBAR_INFORME`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        })
+        return data
+    },
+
+    enviarAProtocolizacion: async (formData: FormData): Promise<{ message: string, count: number }> => {
+        const { data } = await httpClient.post<{ message: string, count: number }>('/mareas/protocolizacion/enviar', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            }
+        });
+        return data;
+    },
+
+    confirmarProtocolizacion: async (id: string, payload: { nroProtocolizacion: number; anioProtocolizacion: number; fechaProtocolizacion: string }): Promise<any> => {
+        const { data } = await httpClient.post(`/mareas/protocolizacion/confirmar/${id}`, payload);
+        return data;
+    },
+
+    getProtocolizacionPendientes: async (): Promise<any[]> => {
+        const { data } = await httpClient.get<any[]>('/mareas/protocolizacion/pendientes');
+        return data;
+    },
+
+    getProtocolizacionEnEspera: async (): Promise<any[]> => {
+        const { data } = await httpClient.get<any[]>('/mareas/protocolizacion/en-espera');
+        return data;
+    },
+
+    getProtocolizacionCompletas: async (): Promise<any[]> => {
+        const { selectedYear } = useConfigStore();
+        const { data } = await httpClient.get<any[]>(`/mareas/protocolizacion/completas?year=${selectedYear}`);
+        return data;
+    },
+
+    getProtocolizacionLotes: async (): Promise<any[]> => {
+        const { data } = await httpClient.get<any[]>('/mareas/protocolizacion/lotes');
+        return data;
+    },
+
+    getProtocolizacionLoteDetalle: async (id: string): Promise<any> => {
+        const { data } = await httpClient.get<any>(`/mareas/protocolizacion/lotes/${id}`);
+        return data;
     }
 };
 

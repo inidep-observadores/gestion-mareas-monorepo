@@ -1,5 +1,6 @@
 
-import { Controller, Post, Get, Param, Query, UseInterceptors, UploadedFile, ParseFilePipeBuilder, HttpStatus, UnprocessableEntityException } from '@nestjs/common';
+import { Controller, Post, Get, Param, Query, UseInterceptors, UploadedFile, ParseFilePipeBuilder, HttpStatus, UnprocessableEntityException, Res } from '@nestjs/common';
+import { Response } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { TrackingService } from './tracking.service';
 
@@ -56,5 +57,17 @@ export class TrackingController {
     @Get('marea/:mareaId')
     async getMareaTrackingInfo(@Param('mareaId') mareaId: string) {
         return this.trackingService.getMareaTrackingInfo(mareaId);
+    }
+
+    @Get('export/dbf/:mareaId')
+    async exportToDbf(
+        @Param('mareaId') mareaId: string,
+        @Res() res: Response
+    ) {
+        const { buffer, filename } = await this.trackingService.exportMareaTrackToDbase(mareaId);
+
+        res.setHeader('Content-Type', 'application/x-dbf');
+        res.setHeader('Content-Disposition', `attachment; filename=${filename}`);
+        res.send(buffer);
     }
 }
