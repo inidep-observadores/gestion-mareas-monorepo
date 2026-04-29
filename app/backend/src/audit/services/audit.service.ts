@@ -187,13 +187,22 @@ export class AuditService {
 
     // Métodos de consulta requeridos por el controlador
     async findApiLogs(query: AuditQueryDto) {
-        const { limit = 50, skip, usuarioId, desde, hasta } = query;
+        const { limit = 50, skip, usuarioId, desde, hasta, busqueda } = query;
         const where: any = {};
         if (usuarioId) where.usuarioId = usuarioId;
         if (desde || hasta) {
             where.timestamp = {};
             if (desde) where.timestamp.gte = new Date(desde);
             if (hasta) where.timestamp.lte = new Date(hasta);
+        }
+
+        if (busqueda) {
+            where.OR = [
+                { ruta: { contains: busqueda, mode: 'insensitive' } },
+                { usuario: { fullName: { contains: busqueda, mode: 'insensitive' } } },
+                { usuario: { email: { contains: busqueda, mode: 'insensitive' } } },
+                { ip: { contains: busqueda, mode: 'insensitive' } }
+            ];
         }
 
         const [items, total] = await Promise.all([
@@ -210,7 +219,7 @@ export class AuditService {
     }
 
     async findEntityLogs(query: AuditQueryDto) {
-        const { limit = 50, skip, usuarioId, desde, hasta, tipo, entidadId } = query;
+        const { limit = 50, skip, usuarioId, desde, hasta, tipo, entidadId, busqueda } = query;
         const where: any = {};
         if (usuarioId) where.usuarioId = usuarioId;
         if (tipo) where.entidadTipo = tipo;
@@ -219,6 +228,15 @@ export class AuditService {
             where.timestamp = {};
             if (desde) where.timestamp.gte = new Date(desde);
             if (hasta) where.timestamp.lte = new Date(hasta);
+        }
+
+        if (busqueda) {
+            where.OR = [
+                { entidadTipo: { contains: busqueda, mode: 'insensitive' } },
+                { entidadId: { contains: busqueda, mode: 'insensitive' } },
+                { usuario: { fullName: { contains: busqueda, mode: 'insensitive' } } },
+                { usuario: { email: { contains: busqueda, mode: 'insensitive' } } }
+            ];
         }
 
         const [items, total] = await Promise.all([
@@ -235,7 +253,7 @@ export class AuditService {
     }
 
     async findEventLogs(query: AuditQueryDto) {
-        const { limit = 50, skip, usuarioId, desde, hasta, tipo, categoria } = query;
+        const { limit = 50, skip, usuarioId, desde, hasta, tipo, categoria, busqueda } = query;
         const where: any = {};
         if (usuarioId) where.usuarioId = usuarioId;
         if (tipo) where.tipoEvento = tipo;
@@ -244,6 +262,16 @@ export class AuditService {
             where.timestamp = {};
             if (desde) where.timestamp.gte = new Date(desde);
             if (hasta) where.timestamp.lte = new Date(hasta);
+        }
+
+        if (busqueda) {
+            where.OR = [
+                { descripcion: { contains: busqueda, mode: 'insensitive' } },
+                { tipoEvento: { contains: busqueda, mode: 'insensitive' } },
+                { categoria: { contains: busqueda, mode: 'insensitive' } },
+                { usuario: { fullName: { contains: busqueda, mode: 'insensitive' } } },
+                { usuario: { email: { contains: busqueda, mode: 'insensitive' } } }
+            ];
         }
 
         const [items, total] = await Promise.all([
@@ -260,13 +288,22 @@ export class AuditService {
     }
 
     async findNavigationLogs(query: AuditQueryDto) {
-        const { limit = 50, skip, usuarioId, desde, hasta } = query;
+        const { limit = 50, skip, usuarioId, desde, hasta, busqueda } = query;
         const where: any = {};
         if (usuarioId) where.usuarioId = usuarioId;
         if (desde || hasta) {
             where.timestamp = {};
             if (desde) where.timestamp.gte = new Date(desde);
             if (hasta) where.timestamp.lte = new Date(hasta);
+        }
+
+        if (busqueda) {
+            where.OR = [
+                { rutaOrigen: { contains: busqueda, mode: 'insensitive' } },
+                { rutaDestino: { contains: busqueda, mode: 'insensitive' } },
+                { usuario: { fullName: { contains: busqueda, mode: 'insensitive' } } },
+                { usuario: { email: { contains: busqueda, mode: 'insensitive' } } }
+            ];
         }
 
         const [items, total] = await Promise.all([
