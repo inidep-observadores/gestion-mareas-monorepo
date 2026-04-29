@@ -251,11 +251,9 @@ export class SchedulerService {
 
         if (!activeJob) {
             const lastSync = await this.pnaApiService.getLastSuccessfulSyncDate();
-            // REGLA: Para automático, forzamos inicio/fin del día para asegurar cobertura de datos
-            const fromDate = lastSync 
-                ? DateTime.fromJSDate(lastSync).startOf('day').toJSDate() 
-                : DateTime.now().minus({ days: 2 }).startOf('day').toJSDate();
-            const toDate = DateTime.now().endOf('day').toJSDate();
+            // REGLA: Para automático usamos sincronización incremental (tramo corto)
+            const fromDate = lastSync ? lastSync : DateTime.now().minus({ days: 2 }).toJSDate();
+            const toDate = new Date();
 
             this.logger.log(`Programando nueva tarea de sincronización de PNA API (${fromDate.toISOString()} -> ${toDate.toISOString()})...`);
             await this.prisma.jobQueue.create({
