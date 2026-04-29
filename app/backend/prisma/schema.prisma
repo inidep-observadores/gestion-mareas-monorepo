@@ -26,6 +26,10 @@ model User {
   resetTokens          PasswordResetToken[]
   products             Product[]
   protocolizacionLotes ProtocolizacionLote[]
+  auditoriaApis        AuditoriaApi[]
+  auditoriaNavegacions AuditoriaNavegacion[]
+  auditoriaEntidads    AuditoriaEntidad[]
+  auditoriaEventos     AuditoriaEvento[]
 
   @@map("users")
   @@schema("public")
@@ -855,6 +859,7 @@ model AuditoriaApi {
   entidadId      String?  @map("entidad_id")
   esError        Boolean  @default(false) @map("es_error")
   esCritico      Boolean  @default(false) @map("es_critico")
+  usuario        User?    @relation(fields: [usuarioId], references: [id])
 
   @@map("auditoria_api")
   @@schema("audit")
@@ -869,6 +874,7 @@ model AuditoriaNavegacion {
   rutaDestino   String   @map("ruta_destino")
   parametros    Json?
   tiempoVistaMs Int?     @map("tiempo_vista_ms")
+  usuario       User?    @relation(fields: [usuarioId], references: [id])
 
   @@map("auditoria_navegacion")
   @@schema("audit")
@@ -886,6 +892,7 @@ model AuditoriaEntidad {
   valoresNuevos     Json?    @map("valores_nuevos")
   camposModificados String[] @map("campos_modificados")
   contexto          Json?
+  usuario           User?    @relation(fields: [usuarioId], references: [id])
 
   @@map("auditoria_entidad")
   @@schema("audit")
@@ -906,6 +913,7 @@ model AuditoriaEvento {
   mensajeError          String?  @map("mensaje_error")
   esCritico             Boolean  @default(false) @map("es_critico")
   ip                    String?
+  usuario               User?    @relation(fields: [usuarioId], references: [id])
 
   @@map("auditoria_eventos")
   @@schema("audit")
