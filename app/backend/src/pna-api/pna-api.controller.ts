@@ -36,8 +36,11 @@ export class PnaApiController {
             throw new BadRequestException('fromDate and toDate are required');
         }
 
-        const desde = new Date(fromDate);
-        const hasta = new Date(toDate);
+        // IMPORTANTE: El usuario introduce fechas en hora local (Argentina).
+        // Las interpretamos correctamente antes de pasarlas al servicio.
+        const timezone = 'America/Argentina/Buenos_Aires';
+        const desde = DateTime.fromISO(fromDate, { zone: timezone }).toJSDate();
+        const hasta = DateTime.fromISO(toDate, { zone: timezone }).toJSDate();
 
         if (type === 'API') {
             const differenceInDays = (hasta.getTime() - desde.getTime()) / (1000 * 3600 * 24);

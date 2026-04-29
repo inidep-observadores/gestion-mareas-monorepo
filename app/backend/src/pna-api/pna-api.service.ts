@@ -70,9 +70,10 @@ export class PnaApiService {
                     : now.minus({ days: 2 });
             }
 
-            // REGLA: Iniciamos siempre a las 00:00:00 de la fecha "desde" para solapar datos
-            const startRange = effectiveFromDate.startOf('day');
-            const endRange = effectiveToDate.endOf('day');
+            // REGLA: Usamos el rango exacto proporcionado. 
+            // La política de "día completo" se maneja en el llamador (Scheduler para automático, Controller para manual).
+            const startRange = effectiveFromDate;
+            const endRange = effectiveToDate;
 
             this.logger.log(`Iniciando sincronización PNA: ${startRange.toFormat('yyyy-MM-dd HH:mm:ss')} -> ${endRange.toFormat('yyyy-MM-dd HH:mm:ss')}`);
 
@@ -119,8 +120,8 @@ export class PnaApiService {
                     const fechaReporteUtc = DateTime.fromFormat(reporte.fecha, 'yyyy-MM-dd HH:mm:ss', { zone: 'utc' });
                     const fechaReporteLocal = fechaReporteUtc.setZone(this.TIMEZONE);
 
-                    if (fechaReporteLocal < startRange || fechaReporteLocal > endRange) {
-                        this.logger.debug(`Saltando reporte fuera de rango: ${reporte.fecha} (Rango: ${startRange.toISODate()} - ${endRange.toISODate()})`);
+                    if (fechaReporteUtc < startRange || fechaReporteUtc > endRange) {
+                        this.logger.debug(`Saltando reporte fuera de rango: ${reporte.fecha} (Rango: ${startRange.toFormat('yyyy-MM-dd HH:mm:ss')} - ${endRange.toFormat('yyyy-MM-dd HH:mm:ss')})`);
                         summary.skipped++;
                         continue;
                     }
