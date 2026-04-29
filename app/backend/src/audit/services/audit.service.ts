@@ -77,7 +77,6 @@ export class AuditService {
     async logEvento(dto: CreateAuditEventoDto) {
         if (!this.isTypeEnabled('events')) return;
 
-        // Sanitización exhaustiva para evitar fallos de serialización en Bull o tipos en Prisma
         const sanitizedDto = {
             ...dto,
             entidadPrincipal: sanitizeObject(dto.entidadPrincipal),
@@ -99,20 +98,23 @@ export class AuditService {
         } catch (error) {
             this.logger.error(`Error logging Event audit (${dto.tipoEvento}): ${error.message}`);
             
-            // Fallback: registrar el error en el log de errores del sistema
             try {
+                // Convertir DTO a un objeto plano compatible con Prisma Json
+                const detail = JSON.parse(JSON.stringify({ originalDto: dto }));
+                
                 await this.prisma.errorLog.create({
                     data: {
+                        level: 'ERROR',
+                        source: 'AUDIT_SERVICE',
                         message: `FALLO AUDITORIA EVENTO: ${dto.tipoEvento}. Error: ${error.message}`,
                         stack: error.stack,
                         path: 'AuditService.logEvento',
                         method: 'LOG',
                         userId: dto.usuarioId,
-                        detail: { originalDto: dto }
+                        detail
                     }
                 });
             } catch (e) {
-                // Si esto también falla, no hay mucho más que podamos hacer sin persistencia
                 console.error('CRITICAL: Failed to log audit failure to ErrorLog', e);
             }
         }
@@ -148,9 +150,8 @@ export class AuditService {
 
         const sanitizedDto = {
             ...dto,
-            params: sanitizeObject(dto.params),
-            query: sanitizeObject(dto.query),
-            metadata: sanitizeObject(dto.metadata)
+            // Nota: El DTO usa 'parametros', no 'params/query' directamente
+            parametros: sanitizeObject(dto.parametros),
         };
 
         try {
@@ -168,6 +169,11 @@ export class AuditService {
         }
     }
 
+    // Alias para compatibilidad con el controlador antiguo
+    async logNavegacion(dto: CreateAuditoriaNavegacionDto) {
+        return this.logNavigation(dto);
+    }
+
     async getStats() {
         const [eventos, entidades, navegacion, api] = await Promise.all([
             (this.prisma as any).auditoriaEvento.count(),
@@ -179,31 +185,100 @@ export class AuditService {
         return { eventos, entidades, navegacion, api };
     }
 
-    async getEventos(query: AuditQueryDto) {
-        const { limit = 50, offset = 0, tipoEvento, categoria, usuarioId, resultado, fechaDesde, fechaHasta } = query;
-
+    // Métodos de consulta requeridos por el controlador
+    async findApiLogs(query: AuditQueryDto) {
+        const { limit = 50, skip, usuarioId, desde, hasta } = query;
         const where: any = {};
-        if (tipoEvento) where.tipoEvento = tipoEvento;
-        if (categoria) where.categoria = categoria;
         if (usuarioId) where.usuarioId = usuarioId;
-        if (resultado) where.resultado = resultado;
-        if (fechaDesde || fechaHasta) {
+        if (desde || hasta) {
             where.timestamp = {};
-            if (fechaDesde) where.timestamp.gte = new Date(fechaDesde);
-            if (fechaHasta) where.timestamp.lte = new Date(fechaHasta);
+            if (desde) where.timestamp.gte = new Date(desde);
+            if (hasta) where.timestamp.lte = new Date(hasta);
+        }
+
+        const [items, total] = await Promise.all([
+            (this.prisma as any).auditoriaApi.findMany({
+                where,
+                take: limit,
+                skip,
+                orderBy: { timestamp: 'desc' },
+                include: { usuario: { select: { id: true, fullName: true, email: true } } }
+            }),
+            (this.prisma as any).auditoriaApi.count({ where })
+        ]);
+        return { items, total };
+    }
+
+    async findEntityLogs(query: AuditQueryDto) {
+        const { limit = 50, skip, usuarioId, desde, hasta, tipo, entidadId } = query;
+        const where: any = {};
+        if (usuarioId) where.usuarioId = usuarioId;
+        if (tipo) where.entidadTipo = tipo;
+        if (entidadId) where.entidadId = entidadId;
+        if (desde || hasta) {
+            where.timestamp = {};
+            if (desde) where.timestamp.gte = new Date(desde);
+            if (hasta) where.timestamp.lte = new Date(hasta);
+        }
+
+        const [items, total] = await Promise.all([
+            (this.prisma as any).auditoriaEntidad.findMany({
+                where,
+                take: limit,
+                skip,
+                orderBy: { timestamp: 'desc' },
+                include: { usuario: { select: { id: true, fullName: true, email: true } } }
+            }),
+            (this.prisma as any).auditoriaEntidad.count({ where })
+        ]);
+        return { items, total };
+    }
+
+    async findEventLogs(query: AuditQueryDto) {
+        const { limit = 50, skip, usuarioId, desde, hasta, tipo, categoria } = query;
+        const where: any = {};
+        if (usuarioId) where.usuarioId = usuarioId;
+        if (tipo) where.tipoEvento = tipo;
+        if (categoria) where.categoria = categoria;
+        if (desde || hasta) {
+            where.timestamp = {};
+            if (desde) where.timestamp.gte = new Date(desde);
+            if (hasta) where.timestamp.lte = new Date(hasta);
         }
 
         const [items, total] = await Promise.all([
             (this.prisma as any).auditoriaEvento.findMany({
                 where,
                 take: limit,
-                skip: offset,
+                skip,
                 orderBy: { timestamp: 'desc' },
                 include: { usuario: { select: { id: true, fullName: true, email: true } } }
             }),
             (this.prisma as any).auditoriaEvento.count({ where })
         ]);
+        return { items, total };
+    }
 
+    async findNavigationLogs(query: AuditQueryDto) {
+        const { limit = 50, skip, usuarioId, desde, hasta } = query;
+        const where: any = {};
+        if (usuarioId) where.usuarioId = usuarioId;
+        if (desde || hasta) {
+            where.timestamp = {};
+            if (desde) where.timestamp.gte = new Date(desde);
+            if (hasta) where.timestamp.lte = new Date(hasta);
+        }
+
+        const [items, total] = await Promise.all([
+            (this.prisma as any).auditoriaNavegacion.findMany({
+                where,
+                take: limit,
+                skip,
+                orderBy: { timestamp: 'desc' },
+                include: { usuario: { select: { id: true, fullName: true, email: true } } }
+            }),
+            (this.prisma as any).auditoriaNavegacion.count({ where })
+        ]);
         return { items, total };
     }
 }
