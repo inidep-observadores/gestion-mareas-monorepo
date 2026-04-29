@@ -201,8 +201,7 @@ export class AuditService {
                 where,
                 take: limit,
                 skip,
-                orderBy: { timestamp: 'desc' },
-                include: { usuario: { select: { id: true, fullName: true, email: true } } }
+                orderBy: { timestamp: 'desc' }
             }),
             (this.prisma as any).auditoriaApi.count({ where })
         ]);
@@ -226,8 +225,7 @@ export class AuditService {
                 where,
                 take: limit,
                 skip,
-                orderBy: { timestamp: 'desc' },
-                include: { usuario: { select: { id: true, fullName: true, email: true } } }
+                orderBy: { timestamp: 'desc' }
             }),
             (this.prisma as any).auditoriaEntidad.count({ where })
         ]);
@@ -251,8 +249,7 @@ export class AuditService {
                 where,
                 take: limit,
                 skip,
-                orderBy: { timestamp: 'desc' },
-                include: { usuario: { select: { id: true, fullName: true, email: true } } }
+                orderBy: { timestamp: 'desc' }
             }),
             (this.prisma as any).auditoriaEvento.count({ where })
         ]);
@@ -274,8 +271,7 @@ export class AuditService {
                 where,
                 take: limit,
                 skip,
-                orderBy: { timestamp: 'desc' },
-                include: { usuario: { select: { id: true, fullName: true, email: true } } }
+                orderBy: { timestamp: 'desc' }
             }),
             (this.prisma as any).auditoriaNavegacion.count({ where })
         ]);
