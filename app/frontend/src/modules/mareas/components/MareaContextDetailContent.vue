@@ -91,6 +91,12 @@
                 Logística de Operación</h4>
               <ChevronRightIcon class="w-3 h-3 text-text-muted transition-transform duration-300"
                 :class="{ 'rotate-90': !isLogisticaCollapsed }" />
+              <button @click.stop="handleExportBundle"
+                class="ml-2 p-1.5 rounded-lg bg-surface-muted/50 text-text-muted hover:bg-primary/10 hover:text-primary transition-all active:scale-95 group/btn"
+                title="Exportar Logística (ZIP)" :disabled="isExporting">
+                <DownloadIcon v-if="!isExporting" class="w-3.5 h-3.5" />
+                <LoadingSpinner v-else size="xs" class="text-primary" />
+              </button>
             </div>
             <span
               class="px-2 py-0.5 bg-surface-muted rounded text-[9px] font-bold text-text-muted uppercase tracking-tighter">
@@ -314,6 +320,8 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
+import httpClient from '@/config/http/http.client'
+import { toast } from 'vue-sonner'
 import {
   ChevronRightIcon,
   LockIcon,
@@ -335,7 +343,8 @@ import {
   ErrorIcon,
   ShieldIcon,
   SportsScoreIcon,
-  ArchiveIcon
+  ArchiveIcon,
+  DownloadIcon
 } from '@/icons'
 import type { MareaContext } from '../types/marea.types'
 import { useAuthStore } from '@/modules/auth/stores/auth.store'
@@ -432,6 +441,57 @@ const puertoZarpada = computed(() => {
 })
 
 const isLogisticaCollapsed = ref(true)
+const isExporting = ref(false)
+
+const handleExportBundle = async () => {
+  if (isExporting.value) return
+  
+  try {
+    isExporting.value = true
+    const mareaId = currentMarea.value?.id
+    if (!mareaId) throw new Error('ID de marea no encontrado')
+
+    const response = await httpClient.get(`/tracking/export/bundle/${mareaId}`, { 
+      responseType: 'blob' 
+    })
+    
+    // Extract filename from Content-Disposition if possible
+    const contentDisposition = response.headers['content-disposition']
+    let fileName = 'Marea_export.zip'
+
+    // Fallback robusto basado en id_marea (ej: "0726-26" -> "Marea_726.zip")
+    const m = currentMarea.value
+    if (m?.id_marea) {
+      const parts = m.id_marea.split('-')
+      if (parts.length === 2) {
+        const nro = parseInt(parts[0], 10)
+        const anio = parts[1]
+        fileName = `Marea_${nro}${anio}.zip`
+      }
+    }
+
+    if (contentDisposition) {
+      const fileNameMatch = contentDisposition.match(/filename=["']?([^"';]+)["']?/)
+      if (fileNameMatch) fileName = fileNameMatch[1]
+    }
+
+    const url = window.URL.createObjectURL(new Blob([response.data]))
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', fileName)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    window.URL.revokeObjectURL(url)
+
+    toast.success('Exportación generada correctamente')
+  } catch (error) {
+    console.error('Export error:', error)
+    toast.error('No se pudo generar la exportación de logística')
+  } finally {
+    isExporting.value = false
+  }
+}
 
 const firstStageZarpada = computed(() => {
   const etapas = props.context?.marea?.etapas

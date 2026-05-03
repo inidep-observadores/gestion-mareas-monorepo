@@ -12,6 +12,7 @@ import { VesselSyncService } from '../catalogos/buques/vessel-sync.service';
 import { EventCorrelationService, EventDecisionAction } from '../common/services/event-correlation.service';
 import * as crypto from 'crypto';
 import { DbfWriter, DbfFieldType } from '../common/utils/dbf-writer';
+import AdmZip = require('adm-zip');
 
 interface TrackingPoint {
     lat: number;
@@ -1082,6 +1083,59 @@ export class TrackingService {
                 */
             }
         }
+    }
+
+    async exportMareaBundle(mareaId: string) {
+        // 1. Obtener el track DBF
+        const { buffer: dbfBuffer, filename: dbfFilename } = await this.exportMareaTrackToDbase(mareaId);
+
+        // 2. Obtener marea y etapas para el JSON
+        const marea = await this.prisma.marea.findUnique({
+            where: { id: mareaId },
+            include: {
+                buque: true,
+                etapas: {
+                    orderBy: { nroEtapa: 'asc' }
+                }
+            }
+        });
+
+        if (!marea) throw new Error('Marea no encontrada');
+
+        // 3. Construir el JSON solicitado
+        const jsonData = {
+            BuqueNombre: marea.buque.nombreBuque,
+            Anio: marea.anioMarea,
+            Numero: marea.nroMarea,
+            Comentarios: marea.observaciones || null,
+            FechaInicio: marea.fechaInicioObservador ? DateTime.fromJSDate(marea.fechaInicioObservador).setZone(this.TIMEZONE).toFormat("yyyy-MM-dd'T'HH:mm:ss") : null,
+            FechaFin: marea.fechaFinObservador ? DateTime.fromJSDate(marea.fechaFinObservador).setZone(this.TIMEZONE).toFormat("yyyy-MM-dd'T'HH:mm:ss") : null,
+            Etapas: marea.etapas.map(etapa => ({
+                FechaZarpada: etapa.fechaZarpada ? DateTime.fromJSDate(etapa.fechaZarpada).setZone(this.TIMEZONE).toFormat("yyyy-MM-dd'T'HH:mm:ss") : null,
+                FechaArribo: etapa.fechaArribo ? DateTime.fromJSDate(etapa.fechaArribo).setZone(this.TIMEZONE).toFormat("yyyy-MM-dd'T'HH:mm:ss") : null,
+                NombreCapitan: null,
+                AnioMareaBuque: null,
+                NumeroMareaBuque: null
+            }))
+        };
+
+        const jsonFilename = dbfFilename.replace(/^T/, 'M').replace(/\.dbf$/, '.json');
+        const jsonBuffer = Buffer.from(JSON.stringify(jsonData, null, 2));
+
+        // 4. Crear el ZIP
+        const zip = new AdmZip();
+        zip.addFile(dbfFilename, dbfBuffer);
+        zip.addFile(jsonFilename, jsonBuffer);
+
+        const nro = marea.nroMarea;
+        const anio2 = String(marea.anioMarea).slice(-2);
+        const zipFilename = `Marea_${nro}${anio2}.zip`;
+        const zipBuffer = zip.toBuffer();
+
+        return {
+            buffer: zipBuffer,
+            filename: zipFilename
+        };
     }
 
     private async createAlert(buqueId: string, type: string, titulo: string, date: Date, meta: any = {}, refId?: string, refTipo?: string, descripcion?: string): Promise<boolean> {

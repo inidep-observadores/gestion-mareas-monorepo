@@ -70,4 +70,16 @@ export class TrackingController {
         res.setHeader('Content-Disposition', `attachment; filename=${filename}`);
         res.send(buffer);
     }
+
+    @Get('export/bundle/:mareaId')
+    async exportBundle(
+        @Param('mareaId') mareaId: string,
+        @Res() res: Response
+    ) {
+        const { buffer, filename } = await this.trackingService.exportMareaBundle(mareaId);
+
+        res.setHeader('Content-Type', 'application/zip');
+        res.setHeader('Content-Disposition', `attachment; filename=${filename}`);
+        res.send(buffer);
+    }
 }
