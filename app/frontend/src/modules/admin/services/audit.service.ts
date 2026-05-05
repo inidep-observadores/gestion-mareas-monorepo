@@ -34,6 +34,7 @@ export interface AuditEntityLog {
     id: string;
     timestamp: string;
     usuarioId?: string;
+    usuarioEmail?: string;
     entidadTipo: string;
     entidadId: string;
     operacion: 'INSERT' | 'UPDATE' | 'DELETE';
@@ -71,6 +72,7 @@ export interface AuditNavigationLog {
     id: string;
     timestamp: string;
     usuarioId?: string;
+    usuarioEmail?: string;
     sessionId: string;
     rutaOrigen?: string;
     rutaDestino: string;
