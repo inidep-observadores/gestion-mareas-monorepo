@@ -4,8 +4,10 @@
       :button-text="canEdit ? 'Nuevo Buque' : undefined" :items="filteredBuques" :is-loading="isLoading"
       v-model:search="searchQuery" search-placeholder="Buscar por nombre o matrícula..." @create="openCreateModal">
       
-      <template #header-actions v-if="isAdmin">
+      <template #header-actions>
+        <!-- Exportar DBF: Solo para Administradores -->
         <button 
+          v-if="isAdmin"
           @click="exportDbf"
           :disabled="isExporting"
           class="flex items-center justify-center gap-2 px-4 py-2 bg-primary/10 border border-primary/20 text-primary rounded-lg hover:bg-primary/20 transition-all font-semibold text-sm disabled:opacity-50 shadow-sm"
@@ -14,7 +16,9 @@
           {{ isExporting ? 'Exportando...' : 'Exportar DBF' }}
         </button>
 
+        <!-- Sincronizar: Disponible para Admin y Técnico -->
         <button 
+          v-if="canEdit"
           @click="triggerVesselSync"
           :disabled="triggeringVessel"
           class="flex items-center justify-center gap-2 px-4 py-2 bg-secondary/10 border border-secondary/20 text-secondary rounded-lg hover:bg-secondary/20 transition-all font-semibold text-sm disabled:opacity-50 shadow-sm"

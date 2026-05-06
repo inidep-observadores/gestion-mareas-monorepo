@@ -15,7 +15,7 @@ export class BuquesController {
     ) { }
 
     @Get('export/dbf')
-    @Auth(ValidRoles.admin, ValidRoles.tecnico)
+    @Auth(ValidRoles.admin)
     async exportarDbf(@Res() res: Response) {
         const buffer = await this.vesselExportService.exportToDbf();
         

@@ -1107,6 +1107,8 @@ export class TrackingService {
         const jsonData = {
             BuqueNombre: marea.buque.nombreBuque,
             BuqueCodigo: marea.buque.codigoInterno,
+            BuqueMmsi: marea.buque.mmsi || null,
+            BuqueMatricula: marea.buque.matricula || null,
             ObservadorNombre: marea.observadorPrincipal?.nombre || null,
             ObservadorApellido: marea.observadorPrincipal?.apellido || null,
             ObservadorCodigo: marea.observadorPrincipal?.codigoInterno || null,
