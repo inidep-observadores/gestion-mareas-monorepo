@@ -1094,6 +1094,7 @@ export class TrackingService {
             where: { id: mareaId },
             include: {
                 buque: true,
+                observadorPrincipal: true,
                 etapas: {
                     orderBy: { nroEtapa: 'asc' }
                 }
@@ -1105,6 +1106,10 @@ export class TrackingService {
         // 3. Construir el JSON solicitado
         const jsonData = {
             BuqueNombre: marea.buque.nombreBuque,
+            BuqueCodigo: marea.buque.codigoInterno,
+            ObservadorNombre: marea.observadorPrincipal?.nombre || null,
+            ObservadorApellido: marea.observadorPrincipal?.apellido || null,
+            ObservadorCodigo: marea.observadorPrincipal?.codigoInterno || null,
             Anio: marea.anioMarea,
             Numero: marea.nroMarea,
             Comentarios: marea.observaciones || null,
