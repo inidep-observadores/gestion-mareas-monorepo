@@ -1098,6 +1098,7 @@ export class TrackingService {
                 },
                 observadorPrincipal: true,
                 pesqueria: true,
+                artePrincipal: true,
                 etapas: {
                     orderBy: { nroEtapa: 'asc' }
                 }
@@ -1130,6 +1131,7 @@ export class TrackingService {
             BuquePotencia: marea.buque.potenciaHp || null,
             TipoBuque: tipoBuque,
             Pesqueria: marea.pesqueria?.nombre || null,
+            ArtePesca: marea.artePrincipal?.nombre || null,
             ObservadorNombre: marea.observadorPrincipal?.nombre || null,
             ObservadorApellido: marea.observadorPrincipal?.apellido || null,
             ObservadorCodigo: marea.observadorPrincipal?.codigoInterno || null,
