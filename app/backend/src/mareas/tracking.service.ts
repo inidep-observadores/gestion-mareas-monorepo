@@ -1093,8 +1093,11 @@ export class TrackingService {
         const marea = await this.prisma.marea.findUnique({
             where: { id: mareaId },
             include: {
-                buque: true,
+                buque: {
+                    include: { tipoFlota: true }
+                },
                 observadorPrincipal: true,
+                pesqueria: true,
                 etapas: {
                     orderBy: { nroEtapa: 'asc' }
                 }
@@ -1104,11 +1107,29 @@ export class TrackingService {
         if (!marea) throw new Error('Marea no encontrada');
 
         // 3. Construir el JSON solicitado
+        let tipoBuque = marea.buque.tipoFlota?.nombre || null;
+        const codigoFlota = marea.buque.tipoFlota?.codigo;
+        const codigoPesqueria = marea.pesqueria?.codigo;
+
+        if (codigoFlota === 'ALTURA_FRESQUERO') {
+            tipoBuque = 'Fresquero';
+        } else if (codigoFlota === 'ALTURA_CONGELADOR') {
+            if (codigoPesqueria === 'MERLUZA_NEGRA' || codigoPesqueria === 'AUSTRALES') {
+                tipoBuque = 'Congelador Austral';
+            } else {
+                tipoBuque = 'Congelador';
+            }
+        }
+
         const jsonData = {
             BuqueNombre: marea.buque.nombreBuque,
             BuqueCodigo: marea.buque.codigoInterno,
             BuqueMmsi: marea.buque.mmsi || null,
             BuqueMatricula: marea.buque.matricula || null,
+            BuqueEslora: marea.buque.esloraM ? Number(marea.buque.esloraM) : null,
+            BuquePotencia: marea.buque.potenciaHp || null,
+            TipoBuque: tipoBuque,
+            Pesqueria: marea.pesqueria?.nombre || null,
             ObservadorNombre: marea.observadorPrincipal?.nombre || null,
             ObservadorApellido: marea.observadorPrincipal?.apellido || null,
             ObservadorCodigo: marea.observadorPrincipal?.codigoInterno || null,
