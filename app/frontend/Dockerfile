@@ -4,7 +4,7 @@ FROM node:22-alpine AS build-stage
 WORKDIR /app
 
 # Instalar pnpm
-RUN npm install -g pnpm
+RUN npm install -g pnpm@9.15.4
 
 # Copiar archivos de definición de dependencias
 # Nota: En un monorepo, a veces es necesario copiar archivos de la raíz

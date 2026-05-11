@@ -1,6 +1,6 @@
 FROM node:22-alpine AS builder
 WORKDIR /app
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
 COPY package.json pnpm-lock.yaml* ./
 RUN pnpm install --no-frozen-lockfile
 COPY . .
@@ -12,7 +12,7 @@ RUN npx tsc prisma/*.ts --lib es2021,dom --skipLibCheck --module commonjs --targ
 FROM node:22-alpine
 WORKDIR /app
 ENV NODE_ENV=production
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
 # postgresql-client: migraciones y healthchecks
 # cairo, pango, libjpeg-turbo, giflib: requeridos por @napi-rs/canvas en runtime
 # fontconfig, ttf-dejavu: gestión de fuentes y fallback sans-serif para Chart.js (Calibri no disponible en Linux)
