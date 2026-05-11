@@ -1,6 +1,7 @@
 FROM node:22-alpine AS builder
 WORKDIR /app
 RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
+RUN apk add --no-cache python3 make g++ cairo-dev pango-dev giflib-dev
 COPY package.json pnpm-lock.yaml* ./
 RUN pnpm install --no-frozen-lockfile
 COPY . .
