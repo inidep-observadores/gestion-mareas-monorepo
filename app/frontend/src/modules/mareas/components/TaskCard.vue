@@ -74,8 +74,10 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useAuthStore } from '@/modules/auth/stores/auth.store'
 import { ValidRoles } from '@/modules/auth/interfaces/roles.enum'
+import { ShipIcon } from '@/icons'
 
 interface Action {
   label: string
