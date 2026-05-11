@@ -701,7 +701,7 @@ const groupedMareas = computed(() => {
       code: kpi.codigo,
       label: kpi.label,
       items: sortItems(items),
-      expanded: !collapsedGroups.value.has(kpi.codigo),
+      expanded: !collapsedGroups.value.has(kpi.codigo) || (searchQuery.value.trim().length > 0 && items.length > 0),
       kpiData: getKpiMeta(kpi.codigo)
     })
   })
