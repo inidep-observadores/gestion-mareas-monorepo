@@ -26,7 +26,10 @@ RUN apk add --no-cache \
     fontconfig \
     ttf-dejavu
 COPY package.json pnpm-lock.yaml* ./
-RUN pnpm install --prod --no-frozen-lockfile
+# Instalamos dependencias de construcción temporalmente para compilar módulos nativos (como canvas)
+RUN apk add --no-cache --virtual .build-deps python3 make g++ cairo-dev pango-dev giflib-dev \
+    && pnpm install --prod --no-frozen-lockfile \
+    && apk del .build-deps
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/prisma.config.js ./prisma.config.js
