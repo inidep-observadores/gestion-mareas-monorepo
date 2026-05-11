@@ -56,7 +56,7 @@
         
         <div class="flex gap-2">
            <button 
-             v-for="action in actions" 
+             v-for="action in visibleActions" 
              :key="action.label"
              @click.stop="$emit('action', action.key)"
              class="px-3 py-1.5 h-8 flex items-center gap-2 rounded-xl text-[10px] font-black uppercase tracking-tight transition-all active:scale-95"
@@ -74,8 +74,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-import { ShipIcon } from '@/icons'
+import { useAuthStore } from '@/modules/auth/stores/auth.store'
+import { ValidRoles } from '@/modules/auth/interfaces/roles.enum'
 
 interface Action {
   label: string
@@ -102,6 +102,19 @@ const props = withDefaults(defineProps<Props>(), {
   compact: false
 })
 defineEmits(['click', 'action'])
+
+const authStore = useAuthStore()
+
+const canManage = computed(() => {
+  const roles = authStore.user?.roles || []
+  return roles.includes(ValidRoles.admin) || roles.includes(ValidRoles.tecnico)
+})
+
+const visibleActions = computed(() => {
+  if (canManage.value) return props.actions
+  // Si no tiene permisos de gestión, solo mostramos acciones de "vista" (como Ver Detalle)
+  return props.actions.filter(action => action.key === 'view')
+})
 
 const priorityLabel = computed(() => {
   if (props.prioridad === 'alta') return 'Urgente'
