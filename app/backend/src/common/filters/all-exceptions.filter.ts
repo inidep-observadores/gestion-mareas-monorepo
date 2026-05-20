@@ -9,6 +9,7 @@ import {
 import { Request, Response } from 'express';
 import { JwtService } from '@nestjs/jwt';
 import { ErrorLogsService } from '../error-logs/error-logs.service';
+import { sanitizeObject } from '../../audit/utils/sanitize.util';
 
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
@@ -64,7 +65,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
             stack,
             detail: {
                 exception: exception.response || exception,
-                body: request.body,
+                body: sanitizeObject(request.body),
                 query: request.query,
                 params: request.params,
             },

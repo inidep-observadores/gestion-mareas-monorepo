@@ -131,18 +131,20 @@ El router Vue implementa un `beforeEach` que verifica antes de cada navegación:
 
 ## 3. Protección de Datos en Tránsito (HTTPS/TLS)
 
-En producción, toda la comunicación se realiza sobre **HTTPS** con certificados TLS gestionados automáticamente por Traefik y Let's Encrypt.
+En el entorno de producción recomendado, la comunicación externa entre el navegador del usuario y el reverse proxy (Traefik) se realiza sobre **HTTPS** con certificados TLS.
 
 ```yaml
-# docker-compose-prod.yaml (extracto)
+# docker-compose-inidep.yaml (extracto)
 labels:
   - "traefik.http.routers.sigma-backend.tls=true"
-  - "traefik.http.routers.sigma-backend.tls.certresolver=mytlschallenge"
+  - "traefik.http.routers.sigma-backend.entrypoints=websecure"
 ```
 
-- El tráfico entre el navegador y el servidor está **cifrado en tránsito**.
-- Un atacante en la red (ataque MITM) no puede leer el contenido de las peticiones ni las respuestas.
-- Las cookies de sesión solo se transmiten sobre HTTPS (`secure: true`).
+- **Cifrado en tránsito externo**: El tráfico entre el navegador del cliente y el proxy Traefik está cifrado con TLS. Esto mitiga de forma robusta el riesgo de espionaje pasivo de datos (como el sniffing en redes Wi-Fi compartidas).
+- **Terminación TLS en el Proxy**: El cifrado TLS finaliza en Traefik. A partir de allí, el tráfico se redirige en texto plano (HTTP) a los contenedores correspondientes (`backend-inidep` y `frontend-inidep`) a través de la red virtual interna de Docker (`sigma-network`).
+- **Consideraciones para Intranets**: Si la aplicación se despliega en servidores locales de INIDEP accesibles directamente por IP (ej: `http://192.168.x.x`) o bajo dominios sin certificados TLS firmados por una Autoridad de Certificación (CA) de confianza (como en el caso de certificados autofirmados que obligan al usuario a omitir las advertencias del navegador), no se garantizará la protección contra ataques Man-in-the-Middle (MITM) y el tráfico podría ser interceptado.
+- **Entorno de Desarrollo**: En desarrollo local (`localhost`), la comunicación se realiza por HTTP en texto plano. No se debe transmitir información real ni sensible en este entorno.
+- **Cookies de Sesión**: Las cookies que contienen el Refresh Token se configuran con la directiva `secure: true` en producción, garantizando que el navegador solo las transmita a través de conexiones HTTPS.
 
 ---
 
@@ -320,7 +322,7 @@ Traefik actúa como punto de entrada único:
 | Exposición de datos por CORS | 🟢 Bajo | Lista blanca de orígenes estricta |
 | Acceso a BD desde internet | 🟢 Bajo | BD en red interna Docker sin puertos públicos |
 | Fuerza bruta de contraseñas | 🟠 Pendiente | No implementado aún (ver sección 10) |
-| Intercepción de tráfico (MITM) | 🟢 Bajo | HTTPS/TLS obligatorio en producción |
+| Intercepción de tráfico (MITM) | 🟡 Medio-Bajo | HTTPS/TLS en proxy; requiere correcta gestión de certificados en Intranets y desarrollo |
 | Escalada de privilegios | 🟢 Bajo | Roles verificados en servidor, no solo en cliente |
 | Exfiltración de logs con datos sensibles | 🟢 Bajo | Sanitización automática de campos sensibles |
 
@@ -373,11 +375,17 @@ app.use(helmet());
 
 **Recomendación:** Proteger el endpoint de registro con `@Auth(ValidRoles.admin)` y deshabilitar el acceso público, o implementar un flujo de "invitación por email" controlado.
 
-### 10.6 Logging de Errores Interno con Datos de Request (Prioridad Baja)
+### 10.6 Logging de Errores Interno con Datos de Request (Resuelta)
 
-**Situación actual:** El `AllExceptionsFilter` registra el `request.body` completo en el `ErrorLog`. Si una solicitud de login falla, el body (que contiene la contraseña) podría quedar en el log de errores, aunque la sanitización del AuditService no aplica aquí.
+**Estado:** Mitigado / Resuelto.
 
-**Recomendación:** Aplicar `sanitizeObject` también al `detail` del `ErrorLog` antes de persistirlo.
+**Detalle:** Se modificó el filtro global de excepciones `AllExceptionsFilter` para importar y aplicar la función `sanitizeObject` sobre el `request.body` antes de registrarlo en la propiedad `detail` del `ErrorLog`. Con esto, cualquier campo sensible como contraseñas, tokens u otros queda ofuscado como `'***REDACTED***'` automáticamente al ocurrir cualquier error o excepción en las solicitudes del backend.
+
+### 10.7 Enumeración de Usuarios en la Recuperación de Contraseñas (Resuelta)
+
+**Estado:** Mitigado / Resuelto.
+
+**Detalle:** Se unificó el comportamiento del endpoint `POST /api/auth/forgot-password` en el `AuthService`. Si el correo electrónico suministrado no se encuentra en la base de datos o pertenece a una cuenta de usuario inactiva, el sistema ahora responde con un código de éxito y el mensaje genérico inespecífico: *"Si el correo existe y está activo, se enviaron instrucciones"*, en lugar de lanzar excepciones que delaten la existencia o estado del usuario. Se han verificado las pruebas unitarias para confirmar que en estos casos de error no se genera token de restablecimiento ni se intenta enviar correo electrónico de forma real.
 
 ---
 
@@ -388,10 +396,10 @@ SIGMA implementa un conjunto sólido de controles de seguridad alineados con las
 **El riesgo de filtración de datos por fuera de la aplicación es BAJO** en el estado actual, dado que:
 - Los datos solo son accesibles autenticándose con credenciales válidas.
 - Todas las operaciones quedan registradas en el sistema de auditoría.
-- El transporte está cifrado.
+- El transporte externo recomendado se cifra mediante HTTPS/TLS en el reverse proxy (con las excepciones identificadas de entornos de desarrollo locales y redes internas sin configurar con certificados válidos).
 - La base de datos no es accesible directamente desde internet.
 
-Las brechas identificadas (Rate Limiting, Refresh Token Blacklist, HTTP Security Headers) son mejoras incrementales que elevarían la postura de seguridad de **Nivel Aceptable** a **Nivel Robusto**, y se recomienda abordarlas antes del despliegue en producción definitivo.
+Las brechas críticas identificadas como resueltas (sanitización de datos en logs de error y remediación de la enumeración de usuarios) fortalecen de forma sustancial la seguridad de la aplicación. Las brechas restantes (Rate Limiting, Refresh Token Blacklist, HTTP Security Headers) son mejoras incrementales que elevarían la postura de seguridad de **Nivel Aceptable** a **Nivel Robusto**, y se recomienda abordarlas en próximas iteraciones antes del despliegue en producción definitivo.
 
 ---
 

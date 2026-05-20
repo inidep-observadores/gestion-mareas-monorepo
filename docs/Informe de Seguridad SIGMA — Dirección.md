@@ -41,7 +41,7 @@ Para acceder a cualquier dato del sistema, un usuario debe:
 
 Las contraseñas son almacenadas de forma que **ni siquiera los administradores del sistema pueden verlas**. El sistema guarda una "huella matemática" de la contraseña (similar a guardar la sombra de algo en lugar de la cosa misma), de modo que si alguien accediera a la base de datos, no podría recuperar las contraseñas originales.
 
-Si un usuario escribe mal su contraseña, el sistema **no da pistas** sobre cuál fue el error (no indica si el correo existe o si la contraseña es incorrecta). Esto impide que un atacante pueda deducir información probando distintas combinaciones.
+Tanto al intentar iniciar sesión como al solicitar la recuperación de contraseña ("olvidé mi contraseña"), si las credenciales son incorrectas o el correo no existe, el sistema **no da pistas** sobre cuál fue el error (indica "Credenciales inválidas" en el login, y muestra un mensaje genérico de instrucciones enviadas en la recuperación). Esto impide que un atacante pueda deducir qué correos electrónicos tienen cuentas activas mediante el uso de estos formularios.
 
 ---
 
@@ -65,11 +65,11 @@ Esta restricción se aplica tanto en la pantalla que ve el usuario **como en el 
 
 ---
 
-### Principio 3: La comunicación entre el usuario y el sistema está protegida
+### Principio 3: La comunicación entre el usuario y el sistema está protegida mediante cifrado (HTTPS)
 
-Toda la información que viaja entre el navegador del usuario y el servidor de SIGMA viaja **cifrada**, de la misma manera que una carta en un sobre sellado que solo el destinatario puede abrir.
+Cuando el sistema está desplegado en producción con sus certificados de seguridad configurados correctamente, la información que viaja entre el navegador del usuario y el proxy de entrada del servidor de SIGMA viaja **cifrada** (utilizando el protocolo HTTPS).
 
-Esto significa que si alguien interceptara el tráfico de red (por ejemplo, en una red Wi-Fi compartida), no vería nada útil: solo vería datos ilegibles. Nadie en el camino entre el usuario y el servidor puede espiar la información que se transmite.
+Esto proporciona una capa muy sólida de protección que evita que personas ajenas en la misma red física o Wi-Fi compartida puedan interceptar o espiar de forma pasiva los datos transmitidos (como contraseñas o datos de capturas). Sin embargo, es importante destacar que en los entornos de desarrollo locales no se utiliza cifrado (se transmite en texto plano) y que, en despliegues sobre redes internas (intranets) sin certificados SSL/TLS oficiales válidos, esta protección podría anularse o requerir excepciones de seguridad manuales por parte del usuario, lo cual debe evitarse en entornos institucionales.
 
 ---
 
@@ -137,9 +137,9 @@ A continuación describimos los escenarios de ataque más comunes y cómo SIGMA 
 
 ### Escenario E: Alguien intercepta la conexión de red
 
-**Qué podría intentar:** Capturar el tráfico de red para robar datos o credenciales.
+**Qué podría intentar:** Capturar el tráfico de red para robar datos o credenciales de los usuarios.
 
-**Cómo lo impide SIGMA:** Todo el tráfico viaja cifrado (equivalente al servicio de correspondencia certificada con sobre inviolable). Incluso capturando el tráfico, el atacante solo obtendría datos ilegibles.
+**Cómo lo dificulta SIGMA:** En producción, todo el tráfico recomendado se cifra mediante HTTPS. Esto hace que un atacante que intercepte la conexión (por ejemplo, en un router de red física intermedio) solo obtenga datos ilegibles, mitigando el riesgo de espionaje pasivo de contraseñas u otros datos. Sin embargo, si el dispositivo del usuario está comprometido (con certificados raíz de atacantes instalados) o si se omiten las advertencias del navegador ante un certificado inválido en un despliegue mal configurado, el tráfico cifrado podría ser interceptado. Por ello, se insiste en mantener un despliegue seguro con certificados válidos.
 
 ---
 
@@ -169,13 +169,14 @@ A continuación se presenta una evaluación simplificada de los principales aspe
 |---|---|---|
 | Control de acceso por usuario y contraseña | ✅ Implementado | Contraseñas con requisitos de complejidad |
 | Perfiles de usuario diferenciados | ✅ Implementado | 7 niveles de acceso distintos |
-| Comunicación cifrada | ✅ Implementado | Activo en el entorno de producción |
-| Registro de auditoría completo | ✅ Implementado | Todas las acciones quedan registradas |
-| Base de datos protegida de acceso externo | ✅ Implementado | No expuesta a internet |
+| Comunicación cifrada | ✅ Parcial | Activo en producción mediante HTTPS; no en desarrollo ni en despliegues de red interna sin certificados configurados |
+| Registro de auditoría completo | ✅ Implementado | Todas las acciones de negocio y navegación quedan registradas |
+| Base de datos protegida de acceso externo | ✅ Implementado | Red virtual aislada, no expuesta a internet |
 | Bloqueo de cuentas comprometidas | ✅ Implementado | Desactivación inmediata por administrador |
-| Almacenamiento seguro de contraseñas | ✅ Implementado | No recuperables, ni por el administrador |
-| Bloqueo automático por intentos fallidos | ⚠️ Pendiente | Se recomienda implementar antes del lanzamiento definitivo |
-| Copias de seguridad en sitio externo | ⚠️ Recomendado | Para mayor resiliencia ante desastres |
+| Almacenamiento seguro de contraseñas | ✅ Implementado | Huellas criptográficas (bcrypt) no recuperables |
+| No enumeración de usuarios en recuperación | ✅ Implementado | Respuestas unificadas inespecíficas en login y forgot-password |
+| Bloqueo automático por intentos fallidos | ⚠️ Pendiente | Se recomienda implementar para mitigar ataques automatizados de fuerza bruta |
+| Copias de seguridad en sitio externo | ⚠️ Recomendado | Replicación externa fuera del servidor principal para resiliencia ante desastres (actualmente se hace de forma manual) |
 
 ---
 
@@ -183,7 +184,7 @@ A continuación se presenta una evaluación simplificada de los principales aspe
 
 El sistema SIGMA fue construido aplicando estándares modernos de seguridad informática. La probabilidad de que un actor externo acceda a los datos del sistema **sin contar con credenciales válidas** es muy baja. La probabilidad de que un usuario interno acceda a información que no le corresponde también es baja, y cualquier intento queda registrado.
 
-Las dos mejoras identificadas como pendientes (bloqueo automático por intentos fallidos y replicación externa de backups) no representan una vulnerabilidad crítica en el estado actual, pero se recomienda incorporarlas antes del despliegue institucional definitivo para elevar la postura de seguridad al nivel más robusto posible.
+Las mejoras críticas de seguridad identificadas en auditorías anteriores (la prevención de la enumeración de usuarios y la sanitización de credenciales en logs de errores) han sido **completamente implementadas y resueltas** en el backend. Las mejoras restantes (bloqueo automático por intentos fallidos de login y replicación externa de backups) no representan una vulnerabilidad crítica inmediata que detenga el uso del sistema, pero se recomienda incorporarlas para elevar la postura de seguridad al nivel más robusto posible antes del lanzamiento institucional definitivo.
 
 El equipo de desarrollo queda a disposición de la Dirección para ampliar cualquier punto de este informe o realizar demostraciones del funcionamiento del sistema.
 

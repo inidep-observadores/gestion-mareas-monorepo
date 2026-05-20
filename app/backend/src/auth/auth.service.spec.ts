@@ -150,16 +150,28 @@ describe('AuthService', () => {
             expect(emailContent).toContain('https://myapp.com/reset-password?token=');
         });
 
-        it('should throw BadRequestException if user is not found', async () => {
+        it('should return success message silently and not create token or send mail if user is not found', async () => {
             mockPrisma.user.findUnique.mockResolvedValue(null);
-            await expect(service.forgotPassword('nonexistent@test.com')).rejects.toThrow(BadRequestException);
-            await expect(service.forgotPassword('nonexistent@test.com')).rejects.toThrow('Correo no registrado');
+            
+            const result = await service.forgotPassword('nonexistent@test.com');
+            
+            expect(result).toEqual({
+                message: 'Si el correo existe y está activo, se enviaron instrucciones',
+            });
+            expect(mockPrisma.passwordResetToken.create).not.toHaveBeenCalled();
+            expect(mockMailService.sendMail).not.toHaveBeenCalled();
         });
 
-        it('should throw BadRequestException if user is inactive', async () => {
+        it('should return success message silently and not create token or send mail if user is inactive', async () => {
             mockPrisma.user.findUnique.mockResolvedValue({ ...mockUser, isActive: false });
-            await expect(service.forgotPassword('inactive@test.com')).rejects.toThrow(BadRequestException);
-            await expect(service.forgotPassword('inactive@test.com')).rejects.toThrow('Cuenta inactiva');
+            
+            const result = await service.forgotPassword('inactive@test.com');
+            
+            expect(result).toEqual({
+                message: 'Si el correo existe y está activo, se enviaron instrucciones',
+            });
+            expect(mockPrisma.passwordResetToken.create).not.toHaveBeenCalled();
+            expect(mockMailService.sendMail).not.toHaveBeenCalled();
         });
 
         it('should handle mail service failure gracefully', async () => {
