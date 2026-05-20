@@ -37,23 +37,30 @@ tipo(alcance): descripción corta en español
 ## 🎯 Alcances (Scopes) del Proyecto
 
 ### Por Aplicación
-- `frontend`: Cambios en `apps/frontend/`
-- `backend`: Cambios en `apps/backend/`
+- `frontend`: Cambios en `app/frontend/`
+- `backend`: Cambios en `app/backend/`
 - `root`: Cambios en la raíz del monorepo
 
 ### Por Capa/Dominio (Backend)
-- `api`: Endpoints y controladores
-- `db`: Prisma schemas, migraciones
-- `auth`: Autenticación y autorización
-- `expenses`: Módulo de gastos
-- `users`: Módulo de usuarios
-- `groups`: Módulo de grupos
+- `auth`: Autenticación, autorización y usuarios (`auth`, `users`)
+- `mareas`: Mapeo de mareas, bitácora, viajes, importación (`mareas`, `access-import`)
+- `planificacion`: Módulo de planificación de mareas (`planificacion`)
+- `pna`: Integración con API de Prefectura Naval Argentina (`pna-api`)
+- `db`: Prisma schemas, migraciones (`prisma`)
+- `jobs`: Procesamientos asíncronos y colas (`jobs`)
+- `common`: Servicios compartidos, utilidades (`common`, `utils`, `files`, `mail`)
+- `admin`: Configuración del sistema, auditoría (`admin`, `audit`, `catalogos`)
+- `reports`: Reportes y estadísticas (`reports`, `stats`)
 
 ### Por Subsistema (Frontend)
-- `ui`: Componentes del sistema de diseño
-- `store`: Pinia stores
-- `router`: Vue Router
-- `styles`: Tailwind, CSS
+- `auth`: Módulo de autenticación (`auth`)
+- `mareas`: Mapeo, bitácora, edición (`mareas`)
+- `planificacion`: Calendarios, asignaciones (`planificacion`)
+- `dashboard`: Panel principal, monitor (`dashboard`, `landing`, `monitor`)
+- `admin`: Panel de administración, catálogos (`admin`)
+- `stats`: Gráficos, alertas, reportes (`stats`, `alerts`)
+- `ui`: Componentes compartidos, layouts, Tailwind (`shared`, `common`, `assets/css`)
+- `router`: Rutas y navegación (`router`)
 
 ### General
 - `deps`: Dependencias
@@ -318,12 +325,13 @@ fix(auth): corregir error de autenticación con tokens expirados
 
 ```
 ¿Dónde está el cambio?
-├─ apps/frontend/ → frontend
-├─ apps/backend/ → backend
-│   ├─ src/auth/ → auth
-│   ├─ src/expenses/ → expenses
-│   ├─ src/users/ → users
-│   └─ prisma/ → db
+├─ app/frontend/ → frontend
+├─ app/backend/ → backend
+│   ├─ src/auth/ o src/users/ → auth
+│   ├─ src/mareas/ o src/access-import/ → mareas
+│   ├─ src/planificacion/ → planificacion
+│   ├─ src/prisma/ o prisma/ → db
+│   └─ src/jobs/ → jobs
 ├─ .agent/ → agent
 └─ raíz, package.json, etc. → root
 ```

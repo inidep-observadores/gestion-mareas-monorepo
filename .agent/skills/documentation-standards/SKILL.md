@@ -6,7 +6,7 @@ allowed-tools: Read, Write, Edit, Glob, Grep
 
 # 📚 Estándares de Documentación
 
-Esta skill define el protocolo para documentar cambios en el proyecto GastosCompartidos. Cada vez que se desarrolle, modifique o refactorice una funcionalidad, se debe actualizar o crear la documentación siguiendo esta estructura.
+Esta skill define el protocolo para documentar cambios en el proyecto SIGMA (Mareas). Cada vez que se desarrolle, modifique o refactorice una funcionalidad, se debe actualizar o crear la documentación siguiendo esta estructura.
 
 ## 🎯 Principios Fundamentales
 
@@ -118,12 +118,12 @@ model Resource {
 
 ### Pruebas Unitarias
 ```bash
-pnpm --filter backend test -- resource.service.spec.ts
+pnpm --filter sigma-backend test -- resource.service.spec.ts
 ```
 
 ### Pruebas E2E
 ```bash
-pnpm --filter backend test:e2e -- resource.e2e-spec.ts
+pnpm --filter sigma-backend test:e2e -- resource.e2e-spec.ts
 ```
 
 ## Consideraciones de Rendimiento

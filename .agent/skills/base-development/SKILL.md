@@ -1,35 +1,33 @@
 ---
 name: base-development
-description: "Proporciona contexto sobre el stack tecnológico del proyecto GastosCompartidos, patrones arquitectónicos y estándares de desarrollo."
+description: "Proporciona contexto sobre el stack tecnológico del proyecto SIGMA (Mareas), patrones arquitectónicos y estándares de desarrollo."
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash
 ---
 
-# Skill: Base Development (GastosCompartidos)
+# Skill: Base Development (SIGMA)
 
 Esta habilidad proporciona el conocimiento fundamental sobre la arquitectura, tecnologías y convenciones utilizadas en este monorepo.
 
 ## 🏗️ Arquitectura del Proyecto
 
 ```
-GastosCompartidos/
-├── apps/
+SIGMA/
+├── app/
 │   ├── backend/          # API NestJS
 │   │   ├── src/
-│   │   │   ├── @core/    # Lógica de dominio (si aplica Aurora)
-│   │   │   ├── modules/  # Módulos de funcionalidad
-│   │   │   ├── common/   # Código compartido
+│   │   │   ├── access-import/  # Módulo de importación de DBFs/PNA
+│   │   │   ├── mareas/         # Lógica de gestión de mareas
+│   │   │   ├── planificacion/  # Planificación de salidas y buques
+│   │   │   ├── auth/           # Módulo de autenticación
 │   │   │   └── main.ts
 │   │   ├── prisma/       # Esquemas y migraciones
-│   │   └── test/         # Pruebas e2e
-│   └── frontend/         # Aplicación Vue 3
+│   │   └── test/         # Pruebas e2e/unitarias
+│   └── frontend/         # Aplicación Vue 3 (FlyonUI)
 │       ├── src/
-│       │   ├── components/  # Componentes Vue
-│       │   │   └── ui/      # Sistema de diseño (AppButton, AppCard, etc.)
-│       │   ├── views/       # Páginas/Vistas
-│       │   ├── stores/      # Pinia stores
+│       │   ├── components/  # Componentes globales reutilizables
+│       │   ├── modules/     # Módulos estructurados (auth, mareas, planificacion, shared)
 │       │   ├── router/      # Vue Router
-│       │   └── style.css    # Estilos globales + config Tailwind v4
-│       └── public/
+│       │   └── assets/      # Estilos CSS y tokens
 └── docs/                 # Documentación del proyecto
 ```
 
@@ -41,18 +39,19 @@ GastosCompartidos/
 | **Vue.js** | 3.5+ | Framework UI reactivo |
 | **Vite** | 6.x | Build tool y dev server |
 | **Tailwind CSS** | 4.x | Framework de utilidades CSS |
+| **FlyonUI** | 1.x | Librería de componentes UI principal |
 | **Pinia** | 3.x | Gestión de estado |
 | **Vue Router** | 4.x | Enrutamiento SPA |
 | **Axios** | 1.x | Cliente HTTP |
-| **Lucide Vue** | - | Iconos |
-| **TypeScript** | 5.9+ | Tipado estático |
+| **Lucide Vue Next** | - | Iconos del sistema |
+| **TypeScript** | 5.7+ | Tipado estático |
 
 ### Backend
 | Tecnología | Versión | Propósito |
 |------------|---------|-----------|
-| **NestJS** | 10.x | Framework Node.js empresarial |
-| **Prisma** | 5.x | ORM type-safe |
-| **PostgreSQL** | 15+ | Base de datos relacional |
+| **NestJS** | 11.x | Framework Node.js empresarial |
+| **Prisma** | 7.x | ORM type-safe |
+| **PostgreSQL** | 16+ | Base de datos relacional |
 | **class-validator** | - | Validación de DTOs |
 | **class-transformer** | - | Transformación de objetos |
 | **Jest** | - | Framework de pruebas |
@@ -303,10 +302,10 @@ pnpm install
 pnpm dev
 
 # Solo backend
-pnpm --filter backend dev
+pnpm --filter sigma-backend dev
 
 # Solo frontend
-pnpm --filter frontend dev
+pnpm --filter sigma-frontend dev
 ```
 
 ### Testing
@@ -315,31 +314,31 @@ pnpm --filter frontend dev
 pnpm test
 
 # Backend: Unitarias
-pnpm --filter backend test
+pnpm --filter sigma-backend test
 
 # Backend: E2E
-pnpm --filter backend test:e2e
+pnpm --filter sigma-backend test:e2e
 
 # Frontend: Unitarias
-pnpm --filter frontend test
+pnpm --filter sigma-frontend test
 ```
 
 ### Base de Datos
 ```bash
 # Generar cliente de Prisma
-pnpm --filter backend prisma generate
+pnpm --filter sigma-backend exec prisma generate
 
 # Crear migración
-pnpm --filter backend prisma migrate dev --name nombre_descripcion
+pnpm --filter sigma-backend exec prisma migrate dev --name nombre_descripcion
 
 # Aplicar migraciones
-pnpm --filter backend prisma migrate deploy
+pnpm --filter sigma-backend exec prisma migrate deploy
 
 # Abrir Prisma Studio
-pnpm --filter backend prisma studio
+pnpm --filter sigma-backend exec prisma studio
 
 # Seed de datos
-pnpm --filter backend prisma db seed
+pnpm --filter sigma-backend exec prisma db seed
 ```
 
 ### Build
@@ -348,10 +347,10 @@ pnpm --filter backend prisma db seed
 pnpm build
 
 # Build solo frontend
-pnpm --filter frontend build
+pnpm --filter sigma-frontend build
 
 # Build solo backend
-pnpm --filter backend build
+pnpm --filter sigma-backend build
 ```
 
 ## 📋 Checklist de Desarrollo
