@@ -278,15 +278,15 @@ const enviarSeleccionadas = async () => {
     }
 }
 
-const onConfirmEmail = () => {
-    confirmarEnvioFinal()
+const onConfirmEmail = (data: { cco?: string, textoAdicional?: string }) => {
+    confirmarEnvioFinal(undefined, data)
 }
 
 const onConfirmExternal = (fecha: string) => {
     confirmarEnvioFinal(fecha)
 }
 
-const confirmarEnvioFinal = async (fechaEnvio?: string) => {
+const confirmarEnvioFinal = async (fechaEnvio?: string, extraData?: { cco?: string, textoAdicional?: string }) => {
     const idsToProcess = idsToProcessFinal.value
     if (idsToProcess.length === 0) return
 
@@ -304,6 +304,13 @@ const confirmarEnvioFinal = async (fechaEnvio?: string) => {
 
         if (enviadoPorCanalExterno.value && fechaEnvio) {
             formData.append('fechaEnvio', fechaEnvio)
+        }
+
+        if (extraData?.cco) {
+            formData.append('cco', extraData.cco)
+        }
+        if (extraData?.textoAdicional) {
+            formData.append('textoAdicional', extraData.textoAdicional)
         }
 
         const response = await mareasService.enviarAProtocolizacion(formData)

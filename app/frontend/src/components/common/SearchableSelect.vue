@@ -7,6 +7,7 @@
         type="text"
         v-model="searchQuery"
         @focus="openDropdown"
+        @blur="onBlur"
         @input="onSearchInput"
         @keydown="onKeyDown"
         :placeholder="selectedLabel ? '' : placeholder"
@@ -19,7 +20,7 @@
         ]"
       />
       <!-- Display selected label when not searching and not focused -->
-      <div v-if="selectedLabel && !searchQuery && !isOpen" 
+      <div v-if="selectedLabel && !searchQuery" 
            class="absolute inset-y-0 left-0 flex items-center px-4 pointer-events-none text-sm text-text"
            :class="{ 'pl-10': icon }">
         {{ selectedLabel }}
@@ -165,6 +166,13 @@ const closeDropdown = () => {
   isOpen.value = false
   searchQuery.value = ''
   highlightedIndex.value = -1
+}
+
+const onBlur = () => {
+  // Delay slightly to allow click events on options to fire first
+  setTimeout(() => {
+    closeDropdown()
+  }, 200)
 }
 
 const updateDropdownPosition = () => {

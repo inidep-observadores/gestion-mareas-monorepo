@@ -28,6 +28,7 @@
       <button 
         v-if="!disabled"
         type="button" 
+        tabindex="-1"
         @click="toggleCalendar"
         class="absolute inset-y-0 right-0 flex items-center pr-3 text-text-muted hover:text-primary transition-colors"
       >

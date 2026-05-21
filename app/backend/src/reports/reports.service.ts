@@ -8,6 +8,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { StatsService } from '../stats/stats.service';
 import { AuditReportBuilder, AuditReportData } from './templates/audit-report.builder';
+import { MareaEstado } from '../mareas/mareas.constants';
 
 export interface AuditReportParams {
     year: number;
@@ -21,6 +22,8 @@ export interface AuditReportParams {
     protocolizationEndDate?: string;
 }
 
+import { ConversionService } from './conversion.service';
+
 @Injectable()
 export class ReportsService {
     private readonly logger = new Logger(ReportsService.name);
@@ -29,6 +32,7 @@ export class ReportsService {
         private readonly statsService: StatsService,
         private readonly prisma: PrismaService,
         private readonly auditReportBuilder: AuditReportBuilder,
+        private readonly conversionService: ConversionService,
     ) {}
 
     /**
@@ -48,49 +52,145 @@ export class ReportsService {
             protocolizationEndDate,
         } = params;
 
-        this.logger.log(`Generando informe de auditoría: año=${year}, modo=${mode}`);
+        const pStart = startDate ? new Date(startDate) : new Date(Date.UTC(year, 0, 1));
+        pStart.setUTCHours(0, 0, 0, 0);
 
-        // 1. Obtener estadísticas globales
+        const snapDate = endDate ? new Date(endDate) : new Date(Date.UTC(year, 11, 31, 23, 59, 59, 999));
+        snapDate.setUTCHours(23, 59, 59, 999);
+
+        this.logger.log(`Generando informe de auditoría: año=${year}, modo=${mode}, snapshot=${snapDate.toISOString()}`);
+
+        // 1. Obtener estadísticas globales (Snapshot Histórico)
         const stats = await this.statsService.getDashboardStats(
             year, mode, includeNonProtocolized, includeProtocolizedOutOfPeriod,
             'SHIP', includeCampaigns, startDate, endDate,
             protocolizationStartDate, protocolizationEndDate,
+            snapDate
         );
 
         // 2. Obtener dotación activa
-        const dotacionActiva = await this.prisma.observador.count({
-            where: { activo: true, conImpedimento: false, tipoObservador: 'OBSERVADOR' },
+        const allActiveObservers = await this.prisma.observador.findMany({
+            where: { activo: true, disponible: true, conImpedimento: false, tipoObservador: 'OBSERVADOR' },
+            select: { id: true, nombre: true, apellido: true },
         });
+        const dotacionActiva = allActiveObservers.length;
 
-        // 3. Obtener distribución de mareas (para etapas)
+        // 3. Obtener tipo de observador para cruzar en el breakdown
+        const observerIds = stats.observers.map((o: any) => o.id);
+        const observerIdsSet = new Set(observerIds);
+        const observersData = await this.prisma.observador.findMany({
+            where: { id: { in: observerIds } },
+            select: { id: true, tipoObservador: true, tipoContrato: true },
+        });
+        const observerDataMap = new Map(observersData.map(o => [o.id, { tipoObservador: o.tipoObservador, tipoContrato: o.tipoContrato }]));
+
+        // Computar observadores sin actividad
+        const observadoresSinActividad = allActiveObservers
+            .filter(o => !observerIdsSet.has(o.id))
+            .map(o => ({ id: o.id, name: `${o.nombre} ${o.apellido}` }));
+
+        // 4. Obtener distribución de mareas (Snapshot Histórico)
         const distribution = await this.statsService.getMareaDistribution(
             year, mode, includeNonProtocolized, includeProtocolizedOutOfPeriod,
             includeCampaigns, startDate, endDate,
             protocolizationStartDate, protocolizationEndDate,
+            snapDate
         );
 
-        // 4. Obtener detalle de mareas
+        // 5. Obtener detalle de mareas (Snapshot Histórico)
         const detailItems = await this.statsService.getDashboardStatsDetail(
             year, mode, includeNonProtocolized, includeProtocolizedOutOfPeriod,
             null, '', 'SHIP', includeCampaigns, startDate, endDate,
             protocolizationStartDate, protocolizationEndDate,
+            snapDate
         );
 
-        // 4b. Obtener campos de protocolización para cada marea
-        const mareaIds = detailItems.map((item: any) => item.id);
-        const protocolizacionData = await this.prisma.marea.findMany({
-            where: { id: { in: mareaIds } },
-            select: {
-                id: true,
-                fechaEnvioProtocolizacion: true,
-                nroProtocolizacion: true,
-                anioProtocolizacion: true,
-                fechaProtocolizacion: true,
+        // --- LÓGICA DE MOVIMIENTOS HISTÓRICOS PARA SNAPSHOT (WORD) ---
+        const mareaIdsDelPeriodo = detailItems.filter(item => item.estado === 'Finalizada').map(item => item.id);
+        const movsAlCorte = await this.prisma.mareaMovimiento.findMany({
+            where: {
+                mareaId: { in: mareaIdsDelPeriodo },
+                fechaHora: { lte: snapDate },
+                estadoHastaId: { not: null }
             },
+            orderBy: [{ mareaId: 'asc' }, { fechaHora: 'desc' }],
+            include: { estadoHasta: true }
         });
-        const protMap = new Map(protocolizacionData.map(p => [p.id, p]));
 
-        // 5. Construir los datos para el builder
+        const lastStateMap = new Map<string, string>();
+        const processedMareas = new Set<string>();
+        for (const mov of movsAlCorte) {
+            if (!processedMareas.has(mov.mareaId)) {
+                lastStateMap.set(mov.mareaId, mov.estadoHasta.codigo);
+                processedMareas.add(mov.mareaId);
+            }
+        }
+
+        // 6. Obtener datos adicionales en paralelo (Snapshot Histórico)
+        const [secondaryStats, specialCases, protocolizationTimeline, fisheryOrdering] = await Promise.all([
+            this.statsService.getSecondaryObserverStats(year, startDate, endDate, snapDate),
+            this.statsService.getAuditSpecialCases(year, startDate, endDate, includeCampaigns, snapDate),
+            this.statsService.getProtocolizationTimeline(year, startDate, endDate, snapDate, includeCampaigns),
+            this.prisma.pesqueria.findMany({
+                select: { nombre: true, orden: true }
+            }),
+        ]);
+
+        const fisheryOrderMap = new Map<string, number>(
+            fisheryOrdering.map(f => [f.nombre.trim(), f.orden ?? 999])
+        );
+
+        // 7. Computar breakdown Observadores vs Técnicos
+        const emptySlice = () => ({
+            dias: 0, mareasFinalizadas: 0, mareasEnEjecucion: 0, desestimadas: 0,
+            informesDeMarea: 0, informesProtocolizados: 0, informesPendientes: 0,
+            esperandoEntrega: 0, delegadasExternas: 0,
+        });
+        const breakdown = { observadores: emptySlice(), tecnicos: emptySlice() };
+
+        // Los días ya se procesaron arriba
+
+        detailItems.forEach((item: any) => {
+            if (!item.observadorId) return;
+            const t = observerDataMap.get(item.observadorId)?.tipoObservador === 'OBSERVADOR' ? breakdown.observadores : breakdown.tecnicos;
+            
+            // Acumular días navegados según el modo del reporte
+            t.dias += (mode === 'CALENDAR' ? item.diasCalendario : item.diasTotales);
+            
+            if (item.estado === 'Finalizada') {
+                t.mareasFinalizadas++;
+                const fEnvio = item.fechaEnvioProtocolizacion ? new Date(item.fechaEnvioProtocolizacion) : null;
+                const fProt = item.fechaProtocolizacion ? new Date(item.fechaProtocolizacion) : null;
+
+                if (fEnvio && fEnvio >= pStart && fEnvio <= snapDate) {
+                    t.informesDeMarea++; // Balde 1: Enviadas a DNI
+                    if (fProt && fProt >= pStart && fProt <= snapDate) {
+                        t.informesProtocolizados++;
+                    }
+                } else {
+                    // Etapa Intermedia: Evaluar estado histórico para las NO enviadas
+                    const stateAtSnapshot = lastStateMap.get(item.id);
+                    if (stateAtSnapshot === MareaEstado.PARA_PROTOCOLIZAR) {
+                        t.informesPendientes++; // Balde 2: Listas para envío
+                    } else if (stateAtSnapshot === MareaEstado.ESPERANDO_ENTREGA) {
+                        t.esperandoEntrega++; 
+                    } else if (stateAtSnapshot === MareaEstado.DELEGADA_EXTERNA) {
+                        t.delegadasExternas++;
+                    } else {
+                        // Balde 3: Remanente absoluto (Pendiente de informe puro)
+                        t.desestimadas++; // Usamos esto como puente hacia el builder
+                    }
+                }
+            } else {
+                t.mareasEnEjecucion++;
+            }
+        });
+
+        // 8. Construir los datos para el builder
+        const limitDateStr = endDate ? endDate : `${year}-12-31`;
+        const todayStr = new Date().toISOString().substring(0, 10);
+        const isPeriodOpen = limitDateStr >= todayStr;
+
         const reportData: AuditReportData = {
             year,
             mode,
@@ -103,27 +203,30 @@ export class ReportsService {
                 avgDaysPerMarea: stats.totalMareas > 0 ? Math.round(stats.totalDaysNavigated / stats.totalMareas) : 0,
                 fisheries: stats.fisheries,
                 fleets: stats.fleets,
-                observers: stats.observers,
+                observers: stats.observers.map((o: any) => ({
+                    ...o,
+                    tipoContrato: observerDataMap.get(o.id)?.tipoContrato,
+                    tipoObservador: observerDataMap.get(o.id)?.tipoObservador,
+                })),
             },
             dotacionActiva,
+            observadoresSinActividad,
+            secondaryStats,
+            specialCases,
+            protocolizationTimeline,
+            breakdown,
+            fisheryOrderMap,
             detailItems: detailItems.map((item: any) => {
-                const limitDateStr = endDate ? endDate : `${year}-12-31`;
-                const todayStr = new Date().toISOString().substring(0, 10);
-                const isPeriodOpen = limitDateStr >= todayStr;
+                let estadoAuditoria = item.estado; // 'En ejecución' o 'Finalizada' ya resuelto por el snapshot
 
-                let estadoAuditoria = 'Finalizada';
-                if (isPeriodOpen && item.estado === 'En ejecución') {
-                    estadoAuditoria = 'En ejecución';
-                } else if (!item.fechaFin) {
-                    estadoAuditoria = 'En ejecución';
-                } else {
+                // Refinamiento: Si el snapshot dice 'Finalizada' pero la fecha de fin es estrictamente 
+                // mayor al límite del periodo, se considera 'En ejecución' para propósitos de este reporte parcial.
+                if (estadoAuditoria === 'Finalizada' && item.fechaFin) {
                     const finDateStr = new Date(item.fechaFin).toISOString().substring(0, 10);
                     if (finDateStr > limitDateStr) {
                         estadoAuditoria = 'En ejecución';
                     }
                 }
-
-                const prot = protMap.get(item.id);
 
                 return {
                     id: item.id,
@@ -134,14 +237,20 @@ export class ReportsService {
                     pesqueria: item.pesqueria,
                     observador: item.observador || '',
                     estado: estadoAuditoria,
+                    estadoActual: item.estadoActual || '',
+                    observadorId: item.observadorId || null,
+                    estadoOrden: item.estadoOrden ?? 0,
                     diasCalendario: item.diasCalendario,
                     diasTotales: item.diasTotales,
                     fechaInicio: item.fechaInicio,
                     fechaFin: item.fechaFin,
-                    fechaEnvioProtocolizacion: prot?.fechaEnvioProtocolizacion ?? null,
-                    nroProtocolizacion: prot?.nroProtocolizacion ?? null,
-                    anioProtocolizacion: prot?.anioProtocolizacion ?? null,
-                    fechaProtocolizacion: prot?.fechaProtocolizacion ?? null,
+                    fechaZarpada: item.fechaZarpada ?? null,
+                    fechaArribo: item.fechaArribo ?? null,
+                    fechaDerivacion: item.fechaDerivacion ?? null,
+                    fechaEnvioProtocolizacion: item.fechaEnvioProtocolizacion ?? null,
+                    nroProtocolizacion: item.nroProtocolizacion ?? null,
+                    anioProtocolizacion: item.anioProtocolizacion ?? null,
+                    fechaProtocolizacion: item.fechaProtocolizacion ?? null,
                 };
             }),
             distribution: distribution.map((d: any) => ({
@@ -153,11 +262,28 @@ export class ReportsService {
 
         this.logger.log(`Datos recopilados: ${reportData.stats.totalMareas} mareas, ${reportData.stats.observers.length} observadores`);
 
-        // 6. Generar el documento
+        // 9. Generar el documento
         const buffer = await this.auditReportBuilder.build(reportData);
 
         this.logger.log(`Informe generado exitosamente (${(buffer.length / 1024).toFixed(0)} KB)`);
 
         return buffer;
+    }
+
+    /**
+     * Genera el informe de auditoría en formato .pdf
+     * @returns Buffer con el contenido del archivo PDF
+     */
+    async generateAuditReportPdf(params: AuditReportParams): Promise<Buffer> {
+        this.logger.log(`Iniciando generación de PDF para informe de auditoría...`);
+
+        // 1. Generar primero el archivo Word usando la lógica existente
+        const wordBuffer = await this.generateAuditReport(params);
+
+        // 2. Convertir el buffer Word a PDF vía Gotenberg
+        const fileName = `Informe_Auditoria_${params.year}_${params.mode}.docx`;
+        const pdfBuffer = await this.conversionService.convertDocxToPdf(wordBuffer, fileName);
+
+        return pdfBuffer;
     }
 }

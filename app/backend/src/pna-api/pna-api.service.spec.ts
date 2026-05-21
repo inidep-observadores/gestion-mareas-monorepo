@@ -133,7 +133,8 @@ describe('PnaApiService - Reglas de Negocio Unificadas', () => {
 
     describe('Sincronización Incremental y system_status', () => {
         it('debe filtrar reportes fuera del rango solicitado', async () => {
-            const lastSync = new Date('2025-01-15T15:00:00Z');
+            // Simulamos que el Scheduler pide desde el inicio del día para cobertura total
+            const lastSync = new Date('2025-01-15T00:00:00Z');
             mockPrismaService.systemStatus.findUnique.mockResolvedValue({ key: 'LAST_PNA_SYNC', value: lastSync.toISOString() });
 
             mockParser.parseXml.mockResolvedValue({
@@ -153,7 +154,9 @@ describe('PnaApiService - Reglas de Negocio Unificadas', () => {
 
     describe('Modo Ingesta Pura (onlyIngest)', () => {
         it('debe persistir datos pero NO llamar a processSingleReport cuando onlyIngest es true', async () => {
-            const reporte = generateReport();
+            // Usamos una fecha reciente para que no sea filtrada por la ventana por defecto de 48hs
+            const fechaReciente = DateTime.now().minus({ hours: 1 }).toFormat('yyyy-MM-dd HH:mm:ss');
+            const reporte = generateReport({ fecha: fechaReciente });
             mockParser.parseXml.mockResolvedValue({
                 reportes: [reporte],
                 error: false

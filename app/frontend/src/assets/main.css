@@ -1,4 +1,4 @@
-﻿@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap') layer(base);
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap') layer(base);
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap') layer(base);
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap') layer(base);
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap') layer(base);
@@ -495,24 +495,28 @@
 
 @utility custom-scrollbar {
   &::-webkit-scrollbar {
-    @apply size-1.5;
+    @apply size-2;
   }
 
   &::-webkit-scrollbar-track {
-    @apply rounded-full;
+    @apply bg-transparent;
   }
 
   &::-webkit-scrollbar-thumb {
-    @apply bg-border rounded-full opacity-50;
+    @apply bg-gray-300 dark:bg-gray-700 rounded-full border-2 border-transparent bg-clip-padding transition-colors;
 
-    &:where(.dark, .dark *) {
-      @apply bg-border;
+    &:hover {
+      @apply bg-primary/50;
     }
   }
-}
 
-.dark .custom-scrollbar::-webkit-scrollbar-thumb {
-  background-color: var(--color-border);
+  /* Firefox support */
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-gray-300) transparent;
+
+  &:where(.dark, .dark *) {
+    scrollbar-color: var(--color-gray-700) transparent;
+  }
 }
 
 @layer utilities {

@@ -628,7 +628,8 @@ const resolveActions = (task: any) => {
   if (task.tab === 'urgentes') {
     return [
       { label: 'Corregir', key: 'edit', icon: markRaw(EditIcon), primary: true },
-      { label: 'Revisar', key: 'review', icon: markRaw(DocsIcon) }
+      { label: 'Revisar', key: 'review', icon: markRaw(DocsIcon) },
+      { label: 'Ver Detalle', key: 'view', icon: markRaw(DocsIcon) }
     ]
   }
   if (task.tab === 'pendientes') {

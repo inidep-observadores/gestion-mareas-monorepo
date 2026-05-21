@@ -28,41 +28,53 @@ export class AuditEventInterceptor implements NestInterceptor {
 
         return next.handle().pipe(
             tap((result) => {
-                this.auditService.logEvento({
-                    tipoEvento: metadata.tipoEvento,
-                    categoria: metadata.categoria,
-                    descripcion: metadata.descripcion || `Ejecución exitosa de ${context.getHandler().name}`,
-                    resultado: AuditResultado.EXITO,
-                    usuarioId: user?.id,
-                    usuarioEmail: user?.email,
-                    ip: ip,
-                    entidadPrincipal: result, // Agregamos el resultado como entidad principal
-                    metadata: {
-                        method: context.getHandler().name,
-                        args: request?.body,
-                        params: request?.params,
-                    },
-                    esCritico: metadata.esCritico
-                }).catch(err => this.logger.error('Error logging audit event (success)', err));
+                try {
+                    this.auditService.logEvento({
+                        tipoEvento: metadata.tipoEvento,
+                        categoria: metadata.categoria,
+                        descripcion: metadata.descripcion,
+                        ip: request?.ip,
+                        usuarioId: user?.id,
+                        usuarioEmail: user?.email,
+                        entidadPrincipal: result, 
+                        metadata: {
+                            handler: context.getHandler().name,
+                            controller: context.getClass().name,
+                            body: request?.body,
+                            params: request?.params,
+                            query: request?.query,
+                        },
+                        resultado: AuditResultado.EXITO,
+                        esCritico: metadata.esCritico
+                    });
+                } catch (auditError) {
+                    this.logger.error(`Silent fail in AuditEventInterceptor (success): ${auditError.message}`);
+                }
             }),
             catchError((err) => {
-                this.auditService.logEvento({
-                    tipoEvento: metadata.tipoEvento,
-                    categoria: metadata.categoria,
-                    descripcion: metadata.descripcion || `Error en ejecución de ${context.getHandler().name}`,
-                    resultado: AuditResultado.ERROR,
-                    usuarioId: user?.id,
-                    usuarioEmail: user?.email,
-                    ip: ip,
-                    entidadPrincipal: request?.params, // En caso de error, guardamos los params para identificar el objetivo
-                    metadata: {
-                        method: context.getHandler().name,
-                        args: request?.body,
-                        params: request?.params,
-                        error: err.message
-                    },
-                    esCritico: metadata.esCritico
-                }).catch(logErr => this.logger.error('Error logging audit event (failure)', logErr));
+                try {
+                    this.auditService.logEvento({
+                        tipoEvento: metadata.tipoEvento,
+                        categoria: metadata.categoria,
+                        descripcion: metadata.descripcion || `Error en ejecución de ${context.getHandler().name}`,
+                        resultado: AuditResultado.ERROR,
+                        usuarioId: user?.id,
+                        usuarioEmail: user?.email,
+                        ip: ip,
+                        entidadPrincipal: request?.params,
+                        metadata: {
+                            handler: context.getHandler().name,
+                            controller: context.getClass().name,
+                            body: request?.body,
+                            params: request?.params,
+                            query: request?.query,
+                            error: err.message
+                        },
+                        esCritico: metadata.esCritico
+                    });
+                } catch (auditError) {
+                    this.logger.error(`Silent fail in AuditEventInterceptor (error): ${auditError.message}`);
+                }
 
                 return throwError(() => err);
             })

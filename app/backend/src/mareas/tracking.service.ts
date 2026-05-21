@@ -11,6 +11,8 @@ import { DateUtils } from '../common/utils/date.utils';
 import { VesselSyncService } from '../catalogos/buques/vessel-sync.service';
 import { EventCorrelationService, EventDecisionAction } from '../common/services/event-correlation.service';
 import * as crypto from 'crypto';
+import { DbfWriter, DbfFieldType } from '../common/utils/dbf-writer';
+import AdmZip = require('adm-zip');
 
 interface TrackingPoint {
     lat: number;
@@ -618,6 +620,76 @@ export class TrackingService {
             }));
     }
 
+    async exportMareaTrackToDbase(mareaId: string) {
+        const info = await this.getMareaTrackingInfo(mareaId);
+        
+        // Re-obtener marea completa para lógica de estados y fechas crudas
+        const marea = await this.prisma.marea.findUnique({
+            where: { id: mareaId },
+            include: { estadoActual: true }
+        });
+
+        if (!marea) throw new Error('Marea no encontrada');
+
+        // REPLICAR LOGICA DE VENTANAS DE TIEMPO DEL FRONTEND
+        let from = info.voyageStart;
+        let to = info.voyageEnd;
+
+        // Comprobación de estado para ventana de 12h
+        const isDesignada = info.mareaCode && info.mareaCode.includes('/') && await this.isMareaDesignada(mareaId);
+
+        if (isDesignada) {
+            const now = new Date();
+            to = now.toISOString();
+            from = new Date(now.getTime() - 12 * 60 * 60 * 1000).toISOString();
+        } else {
+            if (from) from = new Date(new Date(from).getTime() - 6 * 60 * 60 * 1000).toISOString();
+            if (to) to = new Date(new Date(to).getTime() + 6 * 60 * 60 * 1000).toISOString();
+        }
+
+        const history = await this.getVesselHistory(info.buqueId, from, to);
+
+        const dbf = new DbfWriter();
+        dbf.addField({ name: 'Buque', type: DbfFieldType.Character, length: 50 });
+        dbf.addField({ name: 'Matricula', type: DbfFieldType.Character, length: 20 });
+        dbf.addField({ name: 'Fecha', type: DbfFieldType.Character, length: 19 });
+        dbf.addField({ name: 'Latitud', type: DbfFieldType.Numeric, length: 18, decimal: 10 });
+        dbf.addField({ name: 'Longitud', type: DbfFieldType.Numeric, length: 18, decimal: 10 });
+        dbf.addField({ name: 'Velocidad', type: DbfFieldType.Numeric, length: 10, decimal: 2 });
+        dbf.addField({ name: 'Rumbo', type: DbfFieldType.Numeric, length: 5, decimal: 0 });
+
+        for (const point of history) {
+            dbf.addRecord({
+                'Buque': info.name,
+                'Matricula': info.matricula,
+                'Fecha': DateTime.fromJSDate(point.timestamp).toFormat('yyyy-MM-dd HH:mm:ss'),
+                'Latitud': point.lat,
+                'Longitud': point.lon,
+                'Velocidad': point.speed,
+                'Rumbo': point.course
+            });
+        }
+
+        const buffer = dbf.build();
+
+        const nro = marea.nroMarea;
+        const anio2 = String(marea.anioMarea).slice(-2);
+        const filename = `T${nro}${anio2}.dbf`;
+
+        return {
+            buffer,
+            filename
+        };
+    }
+
+    private async isMareaDesignada(mareaId: string): Promise<boolean> {
+        const marea = await this.prisma.marea.findUnique({
+            where: { id: mareaId },
+            include: { estadoActual: true }
+        });
+        return marea?.estadoActual?.codigo === 'DESIGNADA';
+    }
+
     // --- Internal Logic ---
 
     private async detectPortEvents(buqueId: string, points: any[]) {
@@ -1011,6 +1083,89 @@ export class TrackingService {
                 */
             }
         }
+    }
+
+    async exportMareaBundle(mareaId: string) {
+        // 1. Obtener el track DBF
+        const { buffer: dbfBuffer, filename: dbfFilename } = await this.exportMareaTrackToDbase(mareaId);
+
+        // 2. Obtener marea y etapas para el JSON
+        const marea = await this.prisma.marea.findUnique({
+            where: { id: mareaId },
+            include: {
+                buque: {
+                    include: { tipoFlota: true }
+                },
+                observadorPrincipal: true,
+                pesqueria: true,
+                artePrincipal: true,
+                etapas: {
+                    orderBy: { nroEtapa: 'asc' }
+                }
+            }
+        });
+
+        if (!marea) throw new Error('Marea no encontrada');
+
+        // 3. Construir el JSON solicitado
+        let tipoBuque = marea.buque.tipoFlota?.nombre || null;
+        const codigoFlota = marea.buque.tipoFlota?.codigo;
+        const codigoPesqueria = marea.pesqueria?.codigo;
+
+        if (codigoFlota === 'ALTURA_FRESQUERO') {
+            tipoBuque = 'Fresquero';
+        } else if (codigoFlota === 'ALTURA_CONGELADOR') {
+            if (codigoPesqueria === 'MERLUZA_NEGRA' || codigoPesqueria === 'AUSTRALES') {
+                tipoBuque = 'Congelador Austral';
+            } else {
+                tipoBuque = 'Congelador';
+            }
+        }
+
+        const jsonData = {
+            BuqueNombre: marea.buque.nombreBuque,
+            BuqueCodigo: marea.buque.codigoInterno,
+            BuqueMmsi: marea.buque.mmsi || null,
+            BuqueMatricula: marea.buque.matricula || null,
+            BuqueEslora: marea.buque.esloraM ? Number(marea.buque.esloraM) : null,
+            BuquePotencia: marea.buque.potenciaHp || null,
+            TipoBuque: tipoBuque,
+            Pesqueria: marea.pesqueria?.nombre || null,
+            ArtePesca: marea.artePrincipal?.nombre || null,
+            ObservadorNombre: marea.observadorPrincipal?.nombre || null,
+            ObservadorApellido: marea.observadorPrincipal?.apellido || null,
+            ObservadorCodigo: marea.observadorPrincipal?.codigoInterno || null,
+            Anio: marea.anioMarea,
+            Numero: marea.nroMarea,
+            Comentarios: marea.observaciones || null,
+            FechaInicio: marea.fechaInicioObservador ? DateTime.fromJSDate(marea.fechaInicioObservador).setZone(this.TIMEZONE).toFormat("yyyy-MM-dd'T'HH:mm:ss") : null,
+            FechaFin: marea.fechaFinObservador ? DateTime.fromJSDate(marea.fechaFinObservador).setZone(this.TIMEZONE).toFormat("yyyy-MM-dd'T'HH:mm:ss") : null,
+            Etapas: marea.etapas.map(etapa => ({
+                FechaZarpada: etapa.fechaZarpada ? DateTime.fromJSDate(etapa.fechaZarpada).setZone(this.TIMEZONE).toFormat("yyyy-MM-dd'T'HH:mm:ss") : null,
+                FechaArribo: etapa.fechaArribo ? DateTime.fromJSDate(etapa.fechaArribo).setZone(this.TIMEZONE).toFormat("yyyy-MM-dd'T'HH:mm:ss") : null,
+                NombreCapitan: null,
+                AnioMareaBuque: null,
+                NumeroMareaBuque: null
+            }))
+        };
+
+        const jsonFilename = dbfFilename.replace(/^T/, 'M').replace(/\.dbf$/, '.json');
+        const jsonBuffer = Buffer.from(JSON.stringify(jsonData, null, 2));
+
+        // 4. Crear el ZIP
+        const zip = new AdmZip();
+        zip.addFile(dbfFilename, dbfBuffer);
+        zip.addFile(jsonFilename, jsonBuffer);
+
+        const nro = marea.nroMarea;
+        const anio2 = String(marea.anioMarea).slice(-2);
+        const zipFilename = `Marea_${nro}${anio2}.zip`;
+        const zipBuffer = zip.toBuffer();
+
+        return {
+            buffer: zipBuffer,
+            filename: zipFilename
+        };
     }
 
     private async createAlert(buqueId: string, type: string, titulo: string, date: Date, meta: any = {}, refId?: string, refTipo?: string, descripcion?: string): Promise<boolean> {

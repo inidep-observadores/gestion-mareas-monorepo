@@ -588,7 +588,7 @@ const kpis = computed(() => {
 })
 
 const applyFilter = async () => {
-  await fetchDashboard()
+  await fetchDashboard(false)
   const estadoParam = route.query.estado as string | undefined
   if (estadoParam) {
     const allowed = estadoParam.split(',').map(s => s.trim()).filter(Boolean)

@@ -12,6 +12,7 @@ import { ReportsController } from './reports.controller';
 import { StatsModule } from '../stats/stats.module';
 import { PrismaModule } from '../prisma/prisma.module';
 import { AuthModule } from '../auth/auth.module';
+import { ConversionService } from './conversion.service';
 
 @Module({
     imports: [StatsModule, PrismaModule, AuthModule],
@@ -20,6 +21,7 @@ import { AuthModule } from '../auth/auth.module';
         ReportsService,
         DocxChartService,
         AuditReportBuilder,
+        ConversionService,
     ],
     exports: [ReportsService],
 })

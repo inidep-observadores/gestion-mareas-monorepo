@@ -102,12 +102,10 @@ export class AuthService {
   async forgotPassword(email: string) {
     const user = await this.prisma.user.findUnique({ where: { email } });
 
-    if (!user) {
-      throw new BadRequestException('Correo no registrado');
-    }
-
-    if (!user.isActive) {
-      throw new BadRequestException('Cuenta inactiva');
+    if (!user || !user.isActive) {
+      return {
+        message: 'Si el correo existe y está activo, se enviaron instrucciones',
+      };
     }
 
     const token = crypto.randomBytes(32).toString('hex');

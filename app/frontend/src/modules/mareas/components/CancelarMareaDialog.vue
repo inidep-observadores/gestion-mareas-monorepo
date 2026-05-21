@@ -6,7 +6,7 @@
     @close="$emit('close')"
     max-width="md"
   >
-    <div class="space-y-6">
+    <div v-form-nav class="space-y-6">
       <div class="bg-error/10 border border-error/20 p-4 rounded-xl flex items-start gap-3">
         <div class="p-2 bg-error/20 rounded-lg text-error shrink-0">
           <WarningIcon class="w-5 h-5" />
@@ -24,6 +24,7 @@
           Motivo de la Cancelación <span class="text-error">*</span>
         </label>
         <textarea
+          ref="motivoInput"
           v-model="comentarios"
           rows="4"
           placeholder="Describa brevemente el motivo por el cual se cancela la marea..."
@@ -45,6 +46,7 @@
         <button
           @click="handleConfirm"
           :disabled="loading"
+          data-allow-enter
           class="flex-1 px-6 py-3 bg-error text-error-fg rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-error/20 hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-2"
         >
           <LoadingSpinner v-if="loading" size="xs" />
@@ -56,7 +58,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, nextTick } from 'vue'
 import BaseModal from '@/components/common/BaseModal.vue'
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 import { WarningIcon } from '@/icons'
@@ -71,11 +73,15 @@ const emit = defineEmits(['close', 'confirm'])
 
 const comentarios = ref('')
 const error = ref(false)
+const motivoInput = ref<HTMLTextAreaElement | null>(null)
 
 watch(() => props.show, (newVal) => {
   if (newVal) {
     comentarios.value = ''
     error.value = false
+    nextTick(() => {
+      motivoInput.value?.focus()
+    })
   }
 })
 

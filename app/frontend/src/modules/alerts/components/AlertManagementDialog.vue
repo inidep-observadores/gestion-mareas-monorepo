@@ -27,7 +27,7 @@
             </div>
         </template>
 
-        <div class="flex flex-col gap-6 py-2">
+        <div v-form-nav class="flex flex-col gap-6 py-2">
             <!-- Top Section: Details & Timeline -->
             <div class="flex flex-col md:flex-row gap-8">
                 <!-- Main Content (Left) -->
@@ -205,6 +205,7 @@
                                     <Button variant="ghost" size="xs" @click="cancelAssignment"
                                         :disabled="processingAssignment">Cancelar</Button>
                                     <Button variant="primary" size="xs" @click="confirmAssignment"
+                                        data-allow-enter
                                         :disabled="processingAssignment">
                                         {{ processingAssignment ? 'Guardando...' : 'Confirmar' }}
                                     </Button>
@@ -215,6 +216,7 @@
                         <h4 class="font-black text-[10px] uppercase tracking-widest text-text-muted mt-5">Notas de
                             Gestión</h4>
                         <textarea v-model="comment"
+                            ref="commentInput"
                             class="w-full bg-surface-muted/30 border border-border rounded-xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all p-4 text-sm h-16 text-text font-medium placeholder:text-text-muted/40"
                             placeholder="Agregar notas de seguimiento, causas o detalles de la resolución..."></textarea>
 
@@ -298,6 +300,7 @@
             <div class="flex items-center gap-3 justify-end">
                 <Button variant="soft" size="sm" class="font-semibold" @click="closeConfirmation">Cancelar</Button>
                 <Button variant="primary" size="sm" class="font-bold" @click="confirmAction"
+                    data-allow-enter
                     :disabled="processing">Confirmar</Button>
             </div>
         </div>
@@ -320,7 +323,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, markRaw } from 'vue'
+import { ref, computed, watch, onMounted, markRaw, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { toast } from 'vue-sonner'
@@ -504,6 +507,7 @@ const mareaObservers = ref<string[]>([])
 const showNuevaMareaDialog = ref(false)
 const showMareaQuickDetail = ref(false)
 const showObservadorTimeline = ref(false)
+const commentInput = ref<HTMLTextAreaElement | null>(null)
 const businessRulesStore = useBusinessRulesStore()
 const configStore = useConfigStore()
 const { rules } = storeToRefs(businessRulesStore)
@@ -556,6 +560,10 @@ const loadFullAlert = async (id: string) => {
             loadMareaData(full.referenciaId)
         }
         setDefaultFollowUpDate(full?.fechaVencimiento || null)
+        
+        nextTick(() => {
+            commentInput.value?.focus()
+        })
     } catch (e) {
         console.error('Error cargando detalle de alerta:', e)
     }

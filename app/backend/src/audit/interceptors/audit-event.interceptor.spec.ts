@@ -22,6 +22,7 @@ describe('AuditEventInterceptor', () => {
 
     const mockExecutionContext = {
         getHandler: jest.fn().mockReturnValue({ name: 'testMethod' }),
+        getClass: jest.fn().mockReturnValue({ name: 'TestController' }),
         getArgs: jest.fn().mockReturnValue([]),
         getType: jest.fn().mockReturnValue('http'),
         switchToHttp: jest.fn().mockReturnValue({
@@ -71,15 +72,22 @@ describe('AuditEventInterceptor', () => {
 
         interceptor.intercept(mockExecutionContext as unknown as ExecutionContext, mockCallHandler).subscribe({
             next: (val) => {
-                expect(val).toBe('success');
-                expect(auditService.logEvento).toHaveBeenCalledWith(expect.objectContaining({
-                    tipoEvento: 'TEST_EVENT',
-                    categoria: AuditCategoria.SISTEMA,
-                    resultado: AuditResultado.EXITO,
-                    usuarioId: 'u-1',
-                    ip: '127.0.0.1'
-                }));
-                done();
+                try {
+                    expect(val).toBe('success');
+                    expect(auditService.logEvento).toHaveBeenCalledWith(expect.objectContaining({
+                        tipoEvento: 'TEST_EVENT',
+                        categoria: AuditCategoria.SISTEMA,
+                        resultado: AuditResultado.EXITO,
+                        usuarioId: 'u-1',
+                        ip: '127.0.0.1'
+                    }));
+                    done();
+                } catch (e) {
+                    done(e);
+                }
+            },
+            error: (err) => {
+                done(err);
             }
         });
     });
@@ -97,16 +105,23 @@ describe('AuditEventInterceptor', () => {
         };
 
         interceptor.intercept(mockExecutionContext as unknown as ExecutionContext, mockErrorCallHandler).subscribe({
+            next: () => {
+                done(new Error('Should have failed'));
+            },
             error: (err) => {
-                expect(err).toBe(error);
-                expect(auditService.logEvento).toHaveBeenCalledWith(expect.objectContaining({
-                    tipoEvento: 'TEST_EVENT_ERROR',
-                    resultado: AuditResultado.ERROR,
-                    metadata: expect.objectContaining({
-                        error: 'Kaboom'
-                    })
-                }));
-                done();
+                try {
+                    expect(err).toBe(error);
+                    expect(auditService.logEvento).toHaveBeenCalledWith(expect.objectContaining({
+                        tipoEvento: 'TEST_EVENT_ERROR',
+                        resultado: AuditResultado.ERROR,
+                        metadata: expect.objectContaining({
+                            error: 'Kaboom'
+                        })
+                    }));
+                    done();
+                } catch (e) {
+                    done(e);
+                }
             }
         });
     });

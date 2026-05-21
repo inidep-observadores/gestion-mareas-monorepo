@@ -12,6 +12,7 @@ export function useBuques() {
 
     const isLoading = ref(false)
     const isSaving = ref(false)
+    const isExporting = ref(false)
     const searchQuery = ref('')
 
     const isModalOpen = ref(false)
@@ -134,6 +135,27 @@ export function useBuques() {
         }
     }
 
+    const exportDbf = async () => {
+        isExporting.value = true
+        try {
+            const blob = await buquesApi.exportDbf()
+            const url = window.URL.createObjectURL(blob)
+            const link = document.createElement('a')
+            link.href = url
+            link.setAttribute('download', 'BUQUES.DBF')
+            document.body.appendChild(link)
+            link.click()
+            link.remove()
+            window.URL.revokeObjectURL(url)
+            toast.success('Archivo DBF exportado correctamente')
+        } catch (error) {
+            console.error('Error al exportar:', error)
+            toast.error('Error al exportar buques')
+        } finally {
+            isExporting.value = false
+        }
+    }
+
     return {
         // State
         buques,
@@ -143,6 +165,7 @@ export function useBuques() {
         artesPesca,
         isLoading,
         isSaving,
+        isExporting,
         searchQuery,
         isModalOpen,
         currentBuque,
@@ -156,6 +179,7 @@ export function useBuques() {
         openCreateModal,
         openEditModal,
         closeModal,
-        handleSave
+        handleSave,
+        exportDbf
     }
 }

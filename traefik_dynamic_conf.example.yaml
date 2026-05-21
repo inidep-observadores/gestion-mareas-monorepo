@@ -1,0 +1,22 @@
+# Configuración Dinámica de Traefik para Certificados Propios (INIDEP)
+# Este archivo debe cargarse en el servicio de Traefik mediante el provider "file"
+
+tls:
+  certificates:
+    - certFile: /certs/sigma.inidep.gob.ar.crt
+      keyFile: /certs/sigma.inidep.gob.ar.key
+
+  stores:
+    default:
+      defaultCertificate:
+        certFile: /certs/sigma.inidep.gob.ar.crt
+        keyFile: /certs/sigma.inidep.gob.ar.key
+
+# Opcional: Forzar versiones de TLS seguras
+  options:
+    default:
+      minVersion: VersionTLS12
+      cipherSuites:
+        - TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+        - TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+        - TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305

@@ -23,10 +23,16 @@ export interface TableOptions {
     totalsRow?: { label: string; values: (string | number)[] };
 }
 
+/** Estructura de datos para una fila que incluye metadatos de estilo */
+export interface TableRowData {
+    data: (string | string[] | number)[];
+    highlighted?: boolean;
+}
+
 /** Crea una celda de encabezado de tabla con estilo INIDEP */
 function createHeaderCell(text: string, widthPct?: number, alignment: AlignmentTypeValue = AlignmentType.CENTER): TableCell {
     return new TableCell({
-        width: widthPct ? { size: widthPct, type: WidthType.PERCENTAGE } : undefined,
+        width: { size: widthPct || 10, type: WidthType.PERCENTAGE }, // Aseguramos ancho siempre
         shading: { type: ShadingType.SOLID, color: INIDEP_COLORS.tableHeaderBg },
         verticalAlign: VerticalAlign.CENTER,
         children: [
@@ -35,7 +41,7 @@ function createHeaderCell(text: string, widthPct?: number, alignment: AlignmentT
                 spacing: { before: 40, after: 40 },
                 children: [
                     new TextRun({
-                        text,
+                        text: text || " ",
                         font: FONTS.primary,
                         size: FONT_SIZES.tableHeader,
                         bold: true,
@@ -55,6 +61,7 @@ function createDataCell(
         alignment?: AlignmentTypeValue;
         bold?: boolean;
         striped?: boolean;
+        highlighted?: boolean;
         isTotal?: boolean;
         color?: string;
     },
@@ -64,20 +71,23 @@ function createDataCell(
         alignment = AlignmentType.LEFT,
         bold = false,
         striped = false,
+        highlighted = false,
         isTotal = false,
         color,
     } = options || {};
 
     const bgColor = isTotal
         ? INIDEP_COLORS.tableTotalBg
-        : striped
-            ? INIDEP_COLORS.tableRowAlt
-            : undefined;
+        : highlighted
+            ? INIDEP_COLORS.tableRowHighlighted || 'F2F2F2'
+            : striped
+                ? INIDEP_COLORS.tableRowAlt
+                : undefined;
 
     const lines = Array.isArray(text) ? text : [String(text)];
 
     return new TableCell({
-        width: widthPct ? { size: widthPct, type: WidthType.PERCENTAGE } : undefined,
+        width: { size: widthPct || 10, type: WidthType.PERCENTAGE }, // Aseguramos ancho siempre
         shading: bgColor ? { type: ShadingType.SOLID, color: bgColor } : undefined,
         verticalAlign: VerticalAlign.CENTER,
         children: lines.map((line, idx) =>
@@ -89,7 +99,7 @@ function createDataCell(
                 },
                 children: [
                     new TextRun({
-                        text: line,
+                        text: line || "\u200B", // Aseguramos contenido mínimo
                         font: FONTS.primary,
                         size: FONT_SIZES.tableCell,
                         bold: bold || isTotal,
@@ -106,7 +116,7 @@ function createDataCell(
  */
 export function createFormattedTable(
     headers: string[],
-    rows: (string | string[] | number)[][],
+    rows: ((string | string[] | number)[] | TableRowData)[],
     options?: TableOptions,
 ): Table {
     const {
@@ -134,14 +144,18 @@ export function createFormattedTable(
 
     // Filas de datos
     rows.forEach((row, rowIndex) => {
-        const isStriped = stripedRows && rowIndex % 2 === 1;
+        const rowData = Array.isArray(row) ? row : row.data;
+        const isHighlighted = !Array.isArray(row) && row.highlighted;
+        const isStriped = !isHighlighted && stripedRows && rowIndex % 2 === 1;
+
         tableRows.push(
             new TableRow({
-                children: row.map((cell, colIndex) =>
+                children: rowData.map((cell, colIndex) =>
                     createDataCell(cell, {
                         widthPct: columnWidths?.[colIndex],
                         alignment: alignments?.[colIndex] || AlignmentType.LEFT,
                         striped: isStriped,
+                        highlighted: isHighlighted,
                     }),
                 ),
             }),
@@ -249,7 +263,7 @@ export function createKpiTable(
             cells.push(
                 new TableCell({
                     width: { size: Math.floor(100 / columns), type: WidthType.PERCENTAGE },
-                    children: [new Paragraph({})],
+                    children: [new Paragraph({ children: [new TextRun("\u200B")] })],
                 }),
             );
         }

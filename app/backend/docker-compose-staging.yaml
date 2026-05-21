@@ -66,6 +66,13 @@ services:
     networks:
       - sigma-network-staging
 
+  gotenberg-staging:
+    image: gotenberg/gotenberg:8
+    restart: always
+    container_name: sigma-gotenberg-staging
+    networks:
+      - sigma-network-staging
+
 networks:
   sigma-network-staging:
     driver: bridge

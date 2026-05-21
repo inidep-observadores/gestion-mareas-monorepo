@@ -1,8 +1,9 @@
 import { Process, Processor } from '@nestjs/bull';
-import { Logger } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { Job } from 'bull';
 import { PrismaService } from '../../prisma/prisma.service';
 
+@Injectable()
 @Processor('audit')
 export class AuditQueueProcessor {
     private readonly logger = new Logger(AuditQueueProcessor.name);
@@ -13,9 +14,10 @@ export class AuditQueueProcessor {
         const p = this.prisma as any;
         const camel = name.charAt(0).toLowerCase() + name.slice(1);
         const pascal = name.charAt(0).toUpperCase() + name.slice(1);
+
         const model = p[camel] || p[pascal];
         if (!model) {
-            this.logger.error(`Prisma model NOT found in client: ${camel} or ${pascal}. Did you run 'npx prisma generate'?`);
+            this.logger.error(`Prisma model NOT found in client: ${camel} or ${pascal}`);
         }
         return model;
     }
@@ -53,8 +55,8 @@ export class AuditQueueProcessor {
         }
     }
 
-    @Process('log-navegacion')
-    async handleLogNavegacion(job: Job) {
+    @Process('log-navigation')
+    async handleLogNavigation(job: Job) {
         try {
             const model = this.getModel('AuditoriaNavegacion');
             if (model) await model.create({ data: job.data });

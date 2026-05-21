@@ -4,8 +4,21 @@
       :button-text="canEdit ? 'Nuevo Buque' : undefined" :items="filteredBuques" :is-loading="isLoading"
       v-model:search="searchQuery" search-placeholder="Buscar por nombre o matrícula..." @create="openCreateModal">
       
-      <template #header-actions v-if="isAdmin">
+      <template #header-actions>
+        <!-- Exportar DBF: Solo para Administradores -->
         <button 
+          v-if="isAdmin"
+          @click="exportDbf"
+          :disabled="isExporting"
+          class="flex items-center justify-center gap-2 px-4 py-2 bg-primary/10 border border-primary/20 text-primary rounded-lg hover:bg-primary/20 transition-all font-semibold text-sm disabled:opacity-50 shadow-sm"
+        >
+          <DownloadIcon class="w-4 h-4" :class="{ 'animate-bounce': isExporting }" />
+          {{ isExporting ? 'Exportando...' : 'Exportar DBF' }}
+        </button>
+
+        <!-- Sincronizar: Disponible para Admin y Técnico -->
+        <button 
+          v-if="canEdit"
           @click="triggerVesselSync"
           :disabled="triggeringVessel"
           class="flex items-center justify-center gap-2 px-4 py-2 bg-secondary/10 border border-secondary/20 text-secondary rounded-lg hover:bg-secondary/20 transition-all font-semibold text-sm disabled:opacity-50 shadow-sm"
@@ -149,7 +162,7 @@ import AdminLayout from '@/components/layout/AdminLayout.vue'
 import BuqueDialog from '../components/BuqueDialog.vue'
 import BaseDataList from '@/components/common/BaseDataList.vue'
 import { useBuques } from '../composables/useBuques'
-import { EditIcon, SearchIcon, ChevronDownIcon, RefreshIcon } from '@/icons'
+import { EditIcon, SearchIcon, ChevronDownIcon, RefreshIcon, DownloadIcon } from '@/icons'
 import { useAuthStore } from '@/modules/auth/stores/auth.store'
 import { ValidRoles } from '@/modules/auth/interfaces/roles.enum'
 import { jobQueueService } from '../services/JobQueueService'
@@ -172,6 +185,7 @@ const triggeringVessel = ref(false)
 const {
   isLoading,
   isSaving,
+  isExporting,
   searchQuery,
   isModalOpen,
   currentBuque,
@@ -186,6 +200,7 @@ const {
   openEditModal,
   closeModal,
   handleSave,
+  exportDbf
 } = useBuques()
 
 const triggerVesselSync = async () => {

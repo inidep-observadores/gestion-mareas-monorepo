@@ -45,6 +45,13 @@ const buquesApi = {
     getArtesPesca: async (): Promise<ArtePesca[]> => {
         const { data } = await httpClient.get<ArtePesca[]>('/catalogos/artes-pesca');
         return data;
+    },
+
+    exportDbf: async (): Promise<Blob> => {
+        const { data } = await httpClient.get<Blob>('/catalogos/buques/export/dbf', {
+            responseType: 'blob'
+        });
+        return data;
     }
 };
 

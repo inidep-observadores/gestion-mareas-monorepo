@@ -2,7 +2,7 @@
     <BaseModal :show="show"
         :title="readOnly ? 'Detalle del Observador' : (isEditing ? 'Editar Observador' : 'Nuevo Observador')"
         @close="closeModal" maxWidth="3xl" variant="danger">
-        <form @submit.prevent="handleSubmit" class="space-y-6" novalidate>
+        <form v-form-nav @submit.prevent="handleSubmit" class="space-y-6" novalidate>
             <fieldset :disabled="readOnly" class="space-y-6">
                 <!-- Foto Preview/Upload -->
                 <div class="flex flex-col items-center mb-6">
@@ -32,7 +32,9 @@
                     <div>
                         <label class="block text-xs font-black uppercase tracking-widest text-text-muted mb-1.5">Código
                             Interno</label>
-                        <input v-model.number="form.codigoInterno" type="number" required :class="[
+                        <input v-model.number="form.codigoInterno" type="number" required
+                            ref="firstInput"
+                            :class="[
                             'h-11 w-full rounded-lg border bg-surface px-4 py-2.5 text-sm transition-all outline-none',
                             fieldErrors.codigoInterno ? 'border-error bg-error/5' : 'border-border focus:border-primary focus:ring-3 focus:ring-primary/10'
                         ]" />
@@ -225,6 +227,7 @@
                     {{ readOnly ? 'Cerrar' : 'Cancelar' }}
                 </button>
                 <button v-if="!readOnly" type="submit"
+                    data-allow-enter
                     class="flex items-center justify-center w-full px-4 py-3 text-xs font-black uppercase tracking-widest text-primary-fg transition-all rounded-lg bg-primary shadow-lg shadow-primary/20 hover:bg-primary-hover active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed sm:col-start-2"
                     :disabled="isSaving || isUploading">
                     <span v-if="isSaving"
@@ -237,7 +240,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue'
+import { ref, watch, computed, nextTick } from 'vue'
 import type { Observador } from '../interfaces/observador.interface'
 import { getFullImageUrl } from '@/helpers/image.helper'
 import observadoresApi from '../services/observadores.service'
@@ -284,6 +287,7 @@ const initialForm = {
 }
 
 const form = ref({ ...initialForm })
+const firstInput = ref<HTMLInputElement | null>(null)
 
 watch(
     () => props.observador,
@@ -311,9 +315,23 @@ watch(
         } else {
             form.value = { ...initialForm }
         }
+
+        if (props.show) {
+            nextTick(() => {
+                firstInput.value?.focus()
+            })
+        }
     },
     { immediate: true }
 )
+
+watch(() => props.show, (val) => {
+    if (val) {
+        nextTick(() => {
+            firstInput.value?.focus()
+        })
+    }
+})
 
 // Mutual exclusivity logic
 watch(() => form.value.disponible, (val) => {

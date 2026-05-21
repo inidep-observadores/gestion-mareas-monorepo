@@ -1,7 +1,7 @@
 <template>
     <BaseModal :show="show" :title="readOnly ? 'Detalle del Buque' : (isEditing ? 'Editar Buque' : 'Nuevo Buque')"
         @close="emit('close')" maxWidth="5xl" variant="danger">
-        <form @submit.prevent="handleSubmit" class="space-y-6">
+        <form v-form-nav @submit.prevent="handleSubmit" class="space-y-6">
             <fieldset :disabled="readOnly" class="space-y-6">
                 <!-- Información Principal -->
                 <div class="space-y-4">
@@ -14,6 +14,7 @@
                                 class="block text-xs font-black uppercase tracking-widest text-text-muted mb-1.5">Nombre
                                 del Buque</label>
                             <input v-model="form.nombreBuque" type="text" required
+                                ref="firstInput"
                                 class="h-11 w-full rounded-lg border border-border bg-surface px-4 py-2.5 text-sm text-text shadow-theme-xs placeholder:text-text-muted/40 focus:border-primary focus:outline-hidden focus:ring-3 focus:ring-primary/10 transition-all" />
                         </div>
                         <div>
@@ -171,6 +172,7 @@
 
             <div class="mt-5 sm:mt-8 sm:grid sm:grid-flow-row-dense sm:grid-cols-2 sm:gap-3">
                 <button v-if="!readOnly" type="submit"
+                    data-allow-enter
                     class="flex items-center justify-center w-full px-4 py-3 text-xs font-black uppercase tracking-widest text-primary-fg transition-all rounded-lg bg-primary shadow-theme-xs hover:bg-primary-hover active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed sm:col-start-2"
                     :disabled="isSaving">
                     {{ isSaving ? 'Guardando...' : 'Guardar' }}
@@ -189,7 +191,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue'
+import { ref, watch, computed, nextTick } from 'vue'
 import type { Buque, TipoFlota, Puerto, Pesqueria, ArtePesca } from '../interfaces/buque.interface'
 import BaseModal from '@/components/common/BaseModal.vue'
 import SearchableSelect from '@/components/common/SearchableSelect.vue'
@@ -234,6 +236,7 @@ const initialForm: Partial<Buque> = {
 }
 
 const form = ref({ ...initialForm })
+const firstInput = ref<HTMLInputElement | null>(null)
 
 watch(
     () => props.buque,
@@ -243,9 +246,23 @@ watch(
         } else {
             form.value = { ...initialForm }
         }
+        
+        if (props.show) {
+            nextTick(() => {
+                firstInput.value?.focus()
+            })
+        }
     },
     { immediate: true }
 )
+
+watch(() => props.show, (val) => {
+    if (val) {
+        nextTick(() => {
+            firstInput.value?.focus()
+        })
+    }
+})
 
 const handleSubmit = () => {
     emit('save', { ...form.value })

@@ -55,7 +55,7 @@
       </div>
     </div>
     
-    <div class="flex flex-col flex-1 overflow-y-auto duration-300 ease-linear no-scrollbar">
+    <div class="flex flex-col flex-1 overflow-y-auto duration-300 ease-linear custom-scrollbar">
       <nav class="mb-6" @click="closeMobileSidebar">
         <div class="flex flex-col gap-4">
           <div v-for="(menuGroup, groupIndex) in navigationGroups" :key="groupIndex">

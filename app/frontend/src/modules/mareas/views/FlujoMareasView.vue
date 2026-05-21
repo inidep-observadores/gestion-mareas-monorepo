@@ -701,7 +701,7 @@ const groupedMareas = computed(() => {
       code: kpi.codigo,
       label: kpi.label,
       items: sortItems(items),
-      expanded: !collapsedGroups.value.has(kpi.codigo),
+      expanded: !collapsedGroups.value.has(kpi.codigo) || (searchQuery.value.trim().length > 0 && items.length > 0),
       kpiData: getKpiMeta(kpi.codigo)
     })
   })
@@ -890,7 +890,6 @@ const handleGenericConfirm = async (payload: any) => {
     selectedActionKey.value = null
     selectedActionData.value = null
     closeSidebar()
-    await fetchDashboard()
   } catch (err) {
     console.error("Error en acción de marea:", err)
   } finally {
@@ -907,7 +906,6 @@ const handleProtocolizacionConfirm = async (payload: any) => {
     showProtocolizacionDialog.value = false
     mareaToManage.value = null
     closeSidebar()
-    await fetchDashboard()
   } catch (err) {
     console.error("Error en protocolización de marea:", err)
   } finally {
@@ -933,7 +931,6 @@ const handleGestionConfirm = async (payload: any) => {
     showGestionDialog.value = false
     mareaToManage.value = null
     closeSidebar()
-    await fetchDashboard()
   } catch (err) {
     console.error("Error en gestión de marea:", err)
   }
@@ -950,7 +947,6 @@ const handleRecibirConfirm = async (payload: any) => {
     showRecibirDialog.value = false
     mareaToManage.value = null
     closeSidebar()
-    await fetchDashboard()
   } catch (err) {
     console.error("Error en recepción de archivos:", err)
   }
@@ -963,7 +959,6 @@ const handleCancelarConfirm = async (payload: any) => {
     showCancelarDialog.value = false
     mareaToManage.value = null
     closeSidebar()
-    await fetchDashboard()
   } catch (err) {
     console.error("Error al cancelar marea:", err)
   } finally {

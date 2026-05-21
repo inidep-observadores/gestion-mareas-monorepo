@@ -13,6 +13,7 @@ import { MareaEstado, TipoEtapa, TipoMarea } from './mareas.constants';
 import { EnviarProtocolizacionDto } from './dto/enviar-protocolizacion.dto';
 import { ConfirmarProtocolizacionDto } from './dto/confirmar-protocolizacion.dto';
 import { MareaEtapaMetadata } from './interfaces/marea-etapa-metadata.interface';
+import { ProtocolizacionLoteMetadata } from './interfaces/protocolizacion-lote-metadata.interface';
 import { DateUtils } from '../common/utils/date.utils';
 import { MareaUtils } from '../common/utils/marea.utils';
 import { ConfigService } from '@nestjs/config';
@@ -643,7 +644,7 @@ export class MareasService {
                     activo: true,
                     ...mareaYearFilter,
                     estadoActual: {
-                        codigo: MareaEstado.ESPERANDO_PROTOCOLIZACION
+                        codigo: MareaEstado.PARA_PROTOCOLIZAR
                     }
                 }
             }),
@@ -930,7 +931,6 @@ export class MareasService {
             MareaEstado.ENTREGADA_RECIBIDA,     // Orden 4
             MareaEstado.VERIFICACION_INICIAL,   // Orden 5
             MareaEstado.EN_CORRECCION,          // Orden 6
-            MareaEstado.DELEGADA_EXTERNA,       // Orden 7
             MareaEstado.PENDIENTE_DE_INFORME    // Orden 8
         ];
 
@@ -2309,13 +2309,13 @@ export class MareasService {
                     estadoHastaId: destinoEstadoId,
                     cantidadMuestrasOtolitos: actionKey === 'RECIBIR_DATOS' ? (payload.cantidadOtolitos || null) : null,
                     detalle: payload.motivoDetalle || (actionKey === 'REGISTRAR_INICIO'
-                        ? `Inicio Marea. Obs: ${new Date(additionalMareaData.fechaInicioObservador).toLocaleDateString('es-AR')}`
+                        ? `Inicio Marea. Obs: ${DateUtils.formatDate(additionalMareaData.fechaInicioObservador)}`
                         : actionKey === 'REGISTRAR_FINALIZACION'
-                            ? `Fin Marea. Obs: ${additionalMareaData.fechaFinObservador ? new Date(additionalMareaData.fechaFinObservador).toLocaleDateString('es-AR') : 'Sin fecha definida'}`
+                            ? `Fin Marea. Obs: ${additionalMareaData.fechaFinObservador ? DateUtils.formatDate(additionalMareaData.fechaFinObservador) : 'Sin fecha definida'}`
                             : actionKey === 'FINALIZAR_POR_ARRIBO'
                                 ? `Marea finalizada automáticamente por arribo a puerto (designación activa).`
                                 : actionKey === 'RECIBIR_DATOS'
-                                    ? `Recepción de datos. Otolitos: ${payload.cantidadOtolitos || 0}`
+                                    ? `Recepción de datos.`
                                     : `Acción: ${transicion.etiqueta}`),
                     comentarios: payload.comentarios,
                     archivos: (actionKey === 'RECIBIR_DATOS' && payload.archivosSnapshot) ? {
@@ -3146,7 +3146,7 @@ export class MareasService {
                     tipoEvento: 'CONFIRMAR_PROTOCOLIZACION',
                     estadoDesdeId: marea.estadoActual.id,
                     estadoHastaId: estadoProtocolizada.id,
-                    detalle: `Datos de protocolización registrados: Nro ${dto.nroProtocolizacion}/${dto.anioProtocolizacion} con fecha ${dto.fechaProtocolizacion}.`
+                    detalle: `Datos de protocolización registrados: Nro ${dto.nroProtocolizacion}/${dto.anioProtocolizacion} con fecha ${DateUtils.formatDate(dto.fechaProtocolizacion)}.`
                 }
             });
 
@@ -3201,6 +3201,9 @@ export class MareasService {
                         contentType: newFile.mimetype,
                     });
                 } else if (existingFile) {
+                    if (!fs.existsSync(existingFile.rutaArchivo)) {
+                        throw new BadRequestException(`El archivo de protocolización para la marea ${marea.nroMarea}/${marea.anioMarea} no se encuentra físicamente en el servidor (${existingFile.rutaArchivo}). Por favor, vuelva a adjuntarlo.`);
+                    }
                     const metadata = existingFile.metadata as any;
                     const originalName = metadata?.originalName || `INFORME_APROBACION_MAREA_${marea.nroMarea}_${marea.anioMarea}.docx`;
                     attachmentsConfig.push({
@@ -3212,7 +3215,7 @@ export class MareasService {
         }
 
         const estadoEsperando = await this.prisma.estadoMarea.findUnique({
-             where: { codigo: MareaEstado.ESPERANDO_PROTOCOLIZACION }
+            where: { codigo: MareaEstado.ESPERANDO_PROTOCOLIZACION }
         });
 
         if (!estadoEsperando) {
@@ -3220,26 +3223,36 @@ export class MareasService {
         }
 
         // Send Email
+        let emailMetadata: any = null;
         if (!dto.enviadoPorCanalExterno) {
-             const adminEmailTo = this.configService.get<string>('PROTOCOLIZACION_EMAIL_TO');
-             const adminEmailCc = this.configService.get<string>('PROTOCOLIZACION_EMAIL_CC');
-             
-             if (!adminEmailTo) {
-                 throw new BadRequestException('La dirección de correo destino para protocolización no está configurada en la plataforma.');
-             }
+            const adminEmailTo = this.configService.get<string>('PROTOCOLIZACION_EMAIL_TO');
+            const adminEmailCc = this.configService.get<string>('PROTOCOLIZACION_EMAIL_CC');
 
-             // Sanitizamos: si es una cadena vacía o espacios, pasamos undefined
-             const sanitizedCc = adminEmailCc?.trim() || undefined;
+            if (!adminEmailTo) {
+                throw new BadRequestException('La dirección de correo destino para protocolización no está configurada en la plataforma.');
+            }
 
-             const sent = await this.mailService.sendProtocolizacionEmail(adminEmailTo, mareas, attachmentsConfig, sanitizedCc);
-             if (!sent) {
-                 throw new BadRequestException('Ocurrió un error al enviar el correo electrónico mediante el servicio interno.');
-             }
+            // Sanitizamos: si es una cadena vacía o espacios, pasamos undefined
+            const sanitizedCc = adminEmailCc?.trim() || undefined;
+            const sanitizedBcc = dto.cco?.trim() || undefined;
+
+            const emailResult = await this.mailService.sendProtocolizacionEmail(adminEmailTo, mareas, attachmentsConfig, sanitizedCc, sanitizedBcc, dto.textoAdicional);
+            if (!emailResult) {
+                throw new BadRequestException('Ocurrió un error al enviar el correo electrónico mediante el servicio interno.');
+            }
+            emailMetadata = emailResult;
         }
+
+        const metadata: ProtocolizacionLoteMetadata = {
+            email: emailMetadata,
+            textoAdicional: dto.textoAdicional,
+            enviadoPorCanalExterno: dto.enviadoPorCanalExterno,
+            timestamp: DateUtils.getNow(true).toISOString()
+        };
 
         const uploadsBase = this.configService.get<string>('UPLOADS_PATH') || './uploads';
         const protocolizacionDir = this.configService.get<string>('MAREA_INFORMES_DIR') || path.join(uploadsBase, 'informes_marea');
-        
+
         if (!dto.enviadoPorCanalExterno && !fs.existsSync(protocolizacionDir)) {
             fs.mkdirSync(protocolizacionDir, { recursive: true });
         }
@@ -3250,13 +3263,14 @@ export class MareasService {
 
         return this.prisma.$transaction(async (tx) => {
             // 1. Crear el Lote (Cabecera)
-            const lote = await tx.protocolizacionLote.create({
+            const lote = await (tx as any).protocolizacionLote.create({
                 data: {
                     usuarioId: user.id,
                     canal: dto.enviadoPorCanalExterno ? 'CANAL EXTERNO' : 'EMAIL',
-                    fechaEnvio: dto.enviadoPorCanalExterno && dto.fechaEnvio 
-                        ? new Date(dto.fechaEnvio) 
+                    fechaEnvio: dto.enviadoPorCanalExterno && dto.fechaEnvio
+                        ? new Date(dto.fechaEnvio)
                         : DateUtils.getNow(true),
+                    metadata: metadata as any
                 }
             });
 
@@ -3275,10 +3289,15 @@ export class MareasService {
                     }
                 });
 
+                // Determinar la fecha del movimiento
+                const fechaMovimiento = dto.enviadoPorCanalExterno && dto.fechaEnvio
+                    ? new Date(dto.fechaEnvio)
+                    : DateUtils.getNow(true);
+
                 const movimiento = await tx.mareaMovimiento.create({
                     data: {
                         mareaId: marea.id,
-                        fechaHora: DateUtils.getNow(true),
+                        fechaHora: fechaMovimiento,
                         usuarioId: user.id,
                         tipoEvento: 'ENVIAR_PROTOCOLIZACION',
                         estadoDesdeId: marea.estadoActual.id,
@@ -3297,12 +3316,12 @@ export class MareasService {
                     }
                 });
 
-                 // Si hay archivo, guardarlo físicamente y registrarlo en BD
-                 if (file && !dto.enviadoPorCanalExterno) {
+                // Si hay archivo, guardarlo físicamente y registrarlo en BD
+                if (file && !dto.enviadoPorCanalExterno) {
                     const fileExt = path.extname(file.originalname);
                     const fileName = `${marea.anioMarea}_${marea.nroMarea}_${marea.tipoMarea}_PROTOCOLIZACION_${Date.now()}${fileExt}`;
                     const filePath = path.join(protocolizacionDir, fileName);
-                    
+
                     fs.writeFileSync(filePath, file.buffer);
 
                     await tx.mareaArchivo.create({
@@ -3316,9 +3335,9 @@ export class MareasService {
                             descripcion: 'Informe de marea enviado para protocolización'
                         }
                     });
-                 }
-             }
-             return { message: 'Envío procesado exitosamente.', count: mareas.length };
+                }
+            }
+            return { message: 'Envío procesado exitosamente.', count: mareas.length };
         });
     }
 
@@ -3375,7 +3394,7 @@ export class MareasService {
     }
 
     async getProtocolizacionLoteDetalle(id: string) {
-        return this.prisma.protocolizacionLote.findUnique({
+        return (this.prisma as any).protocolizacionLote.findUnique({
             where: { id },
             include: {
                 usuario: { select: { fullName: true } },
@@ -3389,7 +3408,8 @@ export class MareasService {
                         }
                     }
                 }
-            }
+            } as any
         });
     }
+
 }

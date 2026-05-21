@@ -113,7 +113,7 @@ const kpiDefinitions: Array<
       bgClass: 'bg-primary',
       iconContainerClass: 'bg-primary/10',
       iconClass: 'text-primary',
-      link: { name: 'MareasWorkflow', query: { expand: 'ESPERANDO_PROTOCOLIZACION' } },
+      link: { name: 'MareasWorkflow', query: { expand: 'PARA_PROTOCOLIZAR' } },
     },
   ]
 

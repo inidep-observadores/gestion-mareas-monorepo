@@ -1,7 +1,7 @@
 generator client {
   provider        = "prisma-client-js"
   previewFeatures = ["multiSchema"]
-  binaryTargets   = ["native", "linux-musl-openssl-3.0.x"]
+  binaryTargets   = ["native", "windows", "linux-musl-openssl-3.0.x"]
 }
 
 datasource db {
@@ -10,22 +10,26 @@ datasource db {
 }
 
 model User {
-  id               String               @id @default(uuid()) @db.Uuid
-  email            String               @unique
-  password         String
-  fullName         String
-  isActive         Boolean              @default(true)
-  roles            String[]             @default(["invitado"])
-  themePreference  String               @default("system")
-  avatarUrl        String?
-  alertasAsignadas Alerta[]             @relation("AlertaAsignado")
-  alertasCreadas   Alerta[]             @relation("AlertaCreadoPor")
-  eventosAlerta    AlertaEvento[]
-  archivos         MareaArchivo[]
-  movimientos      MareaMovimiento[]
-  resetTokens      PasswordResetToken[]
-  products         Product[]
+  id                   String                @id @default(uuid()) @db.Uuid
+  email                String                @unique
+  password             String
+  fullName             String
+  isActive             Boolean               @default(true)
+  roles                String[]              @default(["invitado"])
+  themePreference      String                @default("system")
+  avatarUrl            String?
+  alertasAsignadas     Alerta[]              @relation("AlertaAsignado")
+  alertasCreadas       Alerta[]              @relation("AlertaCreadoPor")
+  eventosAlerta        AlertaEvento[]
+  archivos             MareaArchivo[]
+  movimientos          MareaMovimiento[]
+  resetTokens          PasswordResetToken[]
+  products             Product[]
   protocolizacionLotes ProtocolizacionLote[]
+  auditoriaApis        AuditoriaApi[]
+  auditoriaNavegacions AuditoriaNavegacion[]
+  auditoriaEntidads    AuditoriaEntidad[]
+  auditoriaEventos     AuditoriaEvento[]
 
   @@map("users")
   @@schema("public")
@@ -258,34 +262,34 @@ model ObservadorPesqueria {
 }
 
 model Marea {
-  id                        String                 @id @default(uuid()) @db.Uuid
-  anioMarea                 Int                    @map("anio_marea")
-  nroMarea                  Int                    @map("nro_marea")
-  buqueId                   String                 @map("id_buque") @db.Uuid
-  artePrincipalId           String?                @map("id_arte_principal") @db.Uuid
-  estadoActualId            String                 @map("id_estado_actual") @db.Uuid
-  fechaZarpadaEstimada      DateTime?              @map("fecha_zarpada_estimada") @db.Timestamptz(6)
-  fechaInicioObservador     DateTime?              @map("fecha_inicio_observador") @db.Timestamptz(6)
-  fechaFinObservador        DateTime?              @map("fecha_fin_observador") @db.Timestamptz(6)
-  diasZonaAustral           Int?                   @map("dias_zona_austral")
-  tipoCalculoZonaAustral    TipoCalculoZonaAustral @default(AUTOMATICO) @map("tipo_calculo_zona_austral")
-  nroProtocolizacion        Int?                   @map("nro_protocolizacion")
-  anioProtocolizacion       Int?                   @map("anio_protocolizacion")
-  fechaProtocolizacion      DateTime?              @map("fecha_protocolizacion") @db.Timestamptz(6)
-  fechaCreacion             DateTime               @default(now()) @map("fecha_creacion") @db.Timestamptz(6)
-  fechaUltimaActualizacion  DateTime               @updatedAt @map("fecha_ultima_actualizacion") @db.Timestamptz(6)
-  activo                    Boolean                @default(true)
+  id                        String                    @id @default(uuid()) @db.Uuid
+  anioMarea                 Int                       @map("anio_marea")
+  nroMarea                  Int                       @map("nro_marea")
+  buqueId                   String                    @map("id_buque") @db.Uuid
+  artePrincipalId           String?                   @map("id_arte_principal") @db.Uuid
+  estadoActualId            String                    @map("id_estado_actual") @db.Uuid
+  fechaZarpadaEstimada      DateTime?                 @map("fecha_zarpada_estimada") @db.Timestamptz(6)
+  fechaInicioObservador     DateTime?                 @map("fecha_inicio_observador") @db.Timestamptz(6)
+  fechaFinObservador        DateTime?                 @map("fecha_fin_observador") @db.Timestamptz(6)
+  diasZonaAustral           Int?                      @map("dias_zona_austral")
+  tipoCalculoZonaAustral    TipoCalculoZonaAustral    @default(AUTOMATICO) @map("tipo_calculo_zona_austral")
+  nroProtocolizacion        Int?                      @map("nro_protocolizacion")
+  anioProtocolizacion       Int?                      @map("anio_protocolizacion")
+  fechaProtocolizacion      DateTime?                 @map("fecha_protocolizacion") @db.Timestamptz(6)
+  fechaCreacion             DateTime                  @default(now()) @map("fecha_creacion") @db.Timestamptz(6)
+  fechaUltimaActualizacion  DateTime                  @updatedAt @map("fecha_ultima_actualizacion") @db.Timestamptz(6)
+  activo                    Boolean                   @default(true)
   observaciones             String?
-  tipoMarea                 TipoMarea              @default(MC) @map("tipo_marea")
-  diasEstimados             Int?                   @map("dias_estimados")
-  observadorPrincipalId     String?                @map("id_observador_principal") @db.Uuid
-  pesqueriaId               String?                @map("id_pesqueria") @db.Uuid
-  fechaEnvioProtocolizacion DateTime?              @map("fecha_envio_protocolizacion") @db.Timestamptz(6)
-  artePrincipal             ArtePesca?             @relation(fields: [artePrincipalId], references: [id])
-  buque                     Buque                  @relation(fields: [buqueId], references: [id])
-  estadoActual              EstadoMarea            @relation(fields: [estadoActualId], references: [id])
-  observadorPrincipal       Observador?            @relation("ObservadorPrincipal", fields: [observadorPrincipalId], references: [id])
-  pesqueria                 Pesqueria?             @relation(fields: [pesqueriaId], references: [id])
+  tipoMarea                 TipoMarea                 @default(MC) @map("tipo_marea")
+  diasEstimados             Int?                      @map("dias_estimados")
+  observadorPrincipalId     String?                   @map("id_observador_principal") @db.Uuid
+  pesqueriaId               String?                   @map("id_pesqueria") @db.Uuid
+  fechaEnvioProtocolizacion DateTime?                 @map("fecha_envio_protocolizacion") @db.Timestamptz(6)
+  artePrincipal             ArtePesca?                @relation(fields: [artePrincipalId], references: [id])
+  buque                     Buque                     @relation(fields: [buqueId], references: [id])
+  estadoActual              EstadoMarea               @relation(fields: [estadoActualId], references: [id])
+  observadorPrincipal       Observador?               @relation("ObservadorPrincipal", fields: [observadorPrincipalId], references: [id])
+  pesqueria                 Pesqueria?                @relation(fields: [pesqueriaId], references: [id])
   archivos                  MareaArchivo[]
   etapas                    MareaEtapa[]
   movimientos               MareaMovimiento[]
@@ -618,8 +622,8 @@ model TransicionEstado {
   etiqueta        String
   claseBoton      String?     @map("clase_boton")
   requiereObs     Boolean     @default(false) @map("requiere_observaciones")
-  mostrarEnPanel  Boolean     @default(true) @map("mostrar_en_panel")
   activo          Boolean     @default(true)
+  mostrarEnPanel  Boolean     @default(true) @map("mostrar_en_panel")
   estadoDestino   EstadoMarea @relation("TransicionEstadoHasta", fields: [estadoDestinoId], references: [id])
   estadoOrigen    EstadoMarea @relation("TransicionEstadoDesde", fields: [estadoOrigenId], references: [id])
 
@@ -813,8 +817,9 @@ model ProtocolizacionLote {
   fechaEnvio DateTime                  @default(now()) @map("fecha_envio") @db.Timestamptz(6)
   usuarioId  String?                   @map("id_usuario") @db.Uuid
   canal      String                    @default("EMAIL")
-  usuario    User?                     @relation(fields: [usuarioId], references: [id])
   items      ProtocolizacionLoteItem[]
+  metadata   Json?
+  usuario    User?                     @relation(fields: [usuarioId], references: [id])
 
   @@map("protocolizacion_lotes")
   @@schema("public")
@@ -825,7 +830,7 @@ model ProtocolizacionLoteItem {
   loteId  String              @map("id_lote") @db.Uuid
   mareaId String              @map("id_marea") @db.Uuid
   lote    ProtocolizacionLote @relation(fields: [loteId], references: [id], onDelete: Cascade)
-  marea   Marea               @relation(fields: [mareaId], references: [id], onDelete: Restrict)
+  marea   Marea               @relation(fields: [mareaId], references: [id])
 
   @@unique([loteId, mareaId])
   @@map("protocolizacion_lote_items")
@@ -854,6 +859,7 @@ model AuditoriaApi {
   entidadId      String?  @map("entidad_id")
   esError        Boolean  @default(false) @map("es_error")
   esCritico      Boolean  @default(false) @map("es_critico")
+  usuario        User?    @relation(fields: [usuarioId], references: [id])
 
   @@map("auditoria_api")
   @@schema("audit")
@@ -868,6 +874,7 @@ model AuditoriaNavegacion {
   rutaDestino   String   @map("ruta_destino")
   parametros    Json?
   tiempoVistaMs Int?     @map("tiempo_vista_ms")
+  usuario       User?    @relation(fields: [usuarioId], references: [id])
 
   @@map("auditoria_navegacion")
   @@schema("audit")
@@ -885,6 +892,7 @@ model AuditoriaEntidad {
   valoresNuevos     Json?    @map("valores_nuevos")
   camposModificados String[] @map("campos_modificados")
   contexto          Json?
+  usuario           User?    @relation(fields: [usuarioId], references: [id])
 
   @@map("auditoria_entidad")
   @@schema("audit")
@@ -905,6 +913,7 @@ model AuditoriaEvento {
   mensajeError          String?  @map("mensaje_error")
   esCritico             Boolean  @default(false) @map("es_critico")
   ip                    String?
+  usuario               User?    @relation(fields: [usuarioId], references: [id])
 
   @@map("auditoria_eventos")
   @@schema("audit")

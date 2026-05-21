@@ -17,7 +17,7 @@ export class DocxChartService {
     async renderBarChart(
         labels: string[],
         datasets: Array<{ label: string; data: number[] }>,
-        options?: { title?: string; stacked?: boolean; yAxisLabel?: string },
+        options?: { title?: string; stacked?: boolean; yAxisLabel?: string; displayLabels?: boolean },
     ): Promise<Buffer> {
         const config: ChartConfiguration = {
             type: 'bar',
@@ -44,7 +44,7 @@ export class DocxChartService {
                     title: options?.title ? {
                         display: true,
                         text: options.title,
-                        font: { family: FONTS.primary, size: 20, weight: 'bold' },
+                        font: { family: FONTS.primary, size: 15, weight: 'bold' },
                         color: '#1E293B',
                     } : undefined,
                 },
@@ -57,6 +57,7 @@ export class DocxChartService {
                     y: {
                         stacked: options?.stacked,
                         beginAtZero: true,
+                        grace: options?.displayLabels ? '8%' : undefined,
                         title: options?.yAxisLabel ? {
                             display: true,
                             text: options.yAxisLabel,
@@ -66,6 +67,109 @@ export class DocxChartService {
                     },
                 },
             },
+            plugins: options?.displayLabels ? [{
+                id: 'datalabels',
+                afterDraw: (chart) => {
+                    const ctx = chart.ctx;
+                    chart.data.datasets.forEach((dataset, i) => {
+                        const meta = chart.getDatasetMeta(i);
+                        meta.data.forEach((bar, index) => {
+                            const data = dataset.data[index] as number;
+                            if (data === 0) return;
+                            ctx.save();
+                            ctx.fillStyle = '#64748B'; // Muted text
+                            ctx.font = `bold 13px ${FONTS.primary}`;
+                            ctx.textAlign = 'center';
+                            ctx.textBaseline = 'bottom';
+                            // Ajustar posición para stacked si fuera necesario, 
+                            // pero para bar normal bar.y - 5 está perfecto
+                            ctx.fillText(data.toString(), (bar as any).x, (bar as any).y - 5);
+                            ctx.restore();
+                        });
+                    });
+                },
+            }] : [],
+        };
+
+        return this.render(config, CHART_DIMENSIONS.width, CHART_DIMENSIONS.height);
+    }
+    /**
+     * Renderiza un gráfico de líneas.
+     */
+    async renderLineChart(
+        labels: string[],
+        datasets: Array<{ label: string; data: number[] }>,
+        options?: { title?: string; yAxisLabel?: string; displayLabels?: boolean },
+    ): Promise<Buffer> {
+        const config: ChartConfiguration = {
+            type: 'line',
+            data: {
+                labels,
+                datasets: datasets.map((ds, i) => ({
+                    label: ds.label,
+                    data: ds.data,
+                    borderColor: CHART_COLORS.paletteSolid[i % CHART_COLORS.paletteSolid.length],
+                    backgroundColor: CHART_COLORS.paletteSolid[i % CHART_COLORS.paletteSolid.length],
+                    borderWidth: 3,
+                    pointRadius: 6,
+                    pointBackgroundColor: '#FFFFFF',
+                    pointBorderWidth: 2,
+                    tension: 0.3,
+                    fill: false,
+                })),
+            },
+            options: {
+                responsive: false,
+                animation: false,
+                plugins: {
+                    legend: {
+                        display: datasets.length > 1,
+                        position: 'top',
+                        labels: { font: { family: FONTS.primary, size: 15 } },
+                    },
+                    title: options?.title ? {
+                        display: true,
+                        text: options.title,
+                        font: { family: FONTS.primary, size: 15, weight: 'bold' },
+                        color: '#1E293B',
+                    } : undefined,
+                },
+                scales: {
+                    x: {
+                        ticks: { font: { family: FONTS.primary, size: 13 } },
+                        grid: { display: false },
+                    },
+                    y: {
+                        beginAtZero: true,
+                        title: options?.yAxisLabel ? {
+                            display: true,
+                            text: options.yAxisLabel,
+                            font: { family: FONTS.primary, size: 14 },
+                        } : undefined,
+                        ticks: { font: { family: FONTS.primary, size: 13 } },
+                    },
+                },
+            },
+            plugins: options?.displayLabels ? [{
+                id: 'datalabels',
+                afterDraw: (chart) => {
+                    const ctx = chart.ctx;
+                    chart.data.datasets.forEach((dataset, i) => {
+                        const meta = chart.getDatasetMeta(i);
+                        meta.data.forEach((point, index) => {
+                            const data = dataset.data[index] as number;
+                            if (data === 0) return;
+                            ctx.save();
+                            ctx.fillStyle = CHART_COLORS.paletteSolid[i % CHART_COLORS.paletteSolid.length];
+                            ctx.font = `bold 13px ${FONTS.primary}`;
+                            ctx.textAlign = 'center';
+                            ctx.textBaseline = 'bottom';
+                            ctx.fillText(data.toString(), (point as any).x, (point as any).y - 10);
+                            ctx.restore();
+                        });
+                    });
+                },
+            }] : [],
         };
 
         return this.render(config, CHART_DIMENSIONS.width, CHART_DIMENSIONS.height);
@@ -77,7 +181,7 @@ export class DocxChartService {
     async renderHorizontalBarChart(
         labels: string[],
         data: number[],
-        options?: { title?: string; avgLine?: number; barColor?: string },
+        options?: { title?: string; avgLine?: number; barColor?: string; displayLabels?: boolean },
     ): Promise<Buffer> {
         const height = Math.max(CHART_DIMENSIONS.horizontalBarMinHeight, labels.length * 35);
 
@@ -105,13 +209,14 @@ export class DocxChartService {
                     title: options?.title ? {
                         display: true,
                         text: options.title,
-                        font: { family: FONTS.primary, size: 20, weight: 'bold' },
+                        font: { family: FONTS.primary, size: 15, weight: 'bold' },
                         color: '#1E293B',
                     } : undefined,
                 },
                 scales: {
                     x: {
                         beginAtZero: true,
+                        grace: options?.displayLabels ? '12%' : undefined,
                         ticks: { font: { family: FONTS.primary, size: 13 } },
                         title: {
                             display: true,
@@ -125,31 +230,53 @@ export class DocxChartService {
                     },
                 },
             },
-            plugins: options?.avgLine ? [{
-                id: 'avgLine',
-                afterDraw: (chart) => {
-                    const ctx = chart.ctx;
-                    const xScale = chart.scales.x;
-                    const yScale = chart.scales.y;
-                    const x = xScale.getPixelForValue(options.avgLine!);
+            plugins: [
+                ...(options?.avgLine ? [{
+                    id: 'avgLine',
+                    afterDraw: (chart: any) => {
+                        const ctx = chart.ctx;
+                        const xScale = chart.scales.x;
+                        const yScale = chart.scales.y;
+                        const x = xScale.getPixelForValue(options.avgLine!);
 
-                    ctx.save();
-                    ctx.strokeStyle = CHART_COLORS.danger;
-                    ctx.lineWidth = 2;
-                    ctx.setLineDash([6, 4]);
-                    ctx.beginPath();
-                    ctx.moveTo(x, yScale.top);
-                    ctx.lineTo(x, yScale.bottom);
-                    ctx.stroke();
+                        ctx.save();
+                        ctx.strokeStyle = CHART_COLORS.danger;
+                        ctx.lineWidth = 2;
+                        ctx.setLineDash([6, 4]);
+                        ctx.beginPath();
+                        ctx.moveTo(x, yScale.top);
+                        ctx.lineTo(x, yScale.bottom);
+                        ctx.stroke();
 
-                    // Etiqueta
-                    ctx.fillStyle = CHART_COLORS.danger;
-                    ctx.font = `bold 13px ${FONTS.primary}`;
-                    ctx.textAlign = 'center';
-                    ctx.fillText(`Promedio: ${options.avgLine}`, x, yScale.top - 8);
-                    ctx.restore();
-                },
-            }] : [],
+                        // Etiqueta
+                        ctx.fillStyle = CHART_COLORS.danger;
+                        ctx.font = `bold 13px ${FONTS.primary}`;
+                        ctx.textAlign = 'center';
+                        ctx.fillText(`Promedio: ${options.avgLine}`, x, yScale.top - 8);
+                        ctx.restore();
+                    },
+                }] : []),
+                ...(options?.displayLabels ? [{
+                    id: 'datalabels',
+                    afterDraw: (chart: any) => {
+                        const ctx = chart.ctx;
+                        chart.data.datasets.forEach((dataset: any, i: number) => {
+                            const meta = chart.getDatasetMeta(i);
+                            meta.data.forEach((bar: any, index: number) => {
+                                const val = dataset.data[index] as number;
+                                if (val === 0) return;
+                                ctx.save();
+                                ctx.fillStyle = '#64748B'; // Muted text
+                                ctx.font = `bold 13px ${FONTS.primary}`;
+                                ctx.textAlign = 'left';
+                                ctx.textBaseline = 'middle';
+                                ctx.fillText(val.toString(), bar.x + 5, bar.y);
+                                ctx.restore();
+                            });
+                        });
+                    },
+                }] : []),
+            ],
         };
 
         return this.render(config, CHART_DIMENSIONS.width, height);
@@ -161,7 +288,7 @@ export class DocxChartService {
     async renderDoughnutChart(
         labels: string[],
         data: number[],
-        options?: { title?: string; colors?: string[] },
+        options?: { title?: string; colors?: string[]; displayLabels?: boolean },
     ): Promise<Buffer> {
         const colors = options?.colors || CHART_COLORS.palette.slice(0, data.length);
 
@@ -179,6 +306,14 @@ export class DocxChartService {
             options: {
                 responsive: false,
                 animation: false,
+                layout: {
+                    padding: {
+                        left: 80,   // Espacio para evitar que las etiquetas largas se corten a la izquierda
+                        right: 40,  // Margen de seguridad a la derecha
+                        top: 20,
+                        bottom: 20,
+                    },
+                },
                 plugins: {
                     legend: {
                         position: 'right',
@@ -187,11 +322,41 @@ export class DocxChartService {
                     title: options?.title ? {
                         display: true,
                         text: options.title,
-                        font: { family: FONTS.primary, size: 20, weight: 'bold' },
+                        font: { family: FONTS.primary, size: 15, weight: 'bold' },
                         color: '#1E293B',
                     } : undefined,
                 },
             },
+            plugins: options?.displayLabels ? [{
+                id: 'donutLabels',
+                afterDraw: (chart) => {
+                    const ctx = chart.ctx;
+                    const meta = chart.getDatasetMeta(0);
+                    meta.data.forEach((element: any, index) => {
+                        const val = chart.data.datasets[0].data[index] as number;
+                        const labelText = chart.data.labels![index] as string;
+                        if (val === 0) return;
+
+                        // TooltipPosition suele ser el centro del arco
+                        const { x, y } = element.tooltipPosition();
+
+                        ctx.save();
+                        // Aura blanca para legibilidad
+                        ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+                        ctx.lineWidth = 4;
+                        ctx.lineJoin = 'round';
+                        ctx.font = `bold 15px ${FONTS.primary}`;
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.strokeText(labelText, x, y);
+
+                        // Texto principal
+                        ctx.fillStyle = '#1E293B'; 
+                        ctx.fillText(labelText, x, y);
+                        ctx.restore();
+                    });
+                }
+            }] : [],
         };
 
         return this.render(config, CHART_DIMENSIONS.pieWidth, CHART_DIMENSIONS.pieHeight);

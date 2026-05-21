@@ -18,6 +18,7 @@ import { TransicionesEstadoService } from './transiciones-estado/transiciones-es
 import { BuquesController } from './buques/buques.controller';
 import { BuquesService } from './buques/buques.service';
 import { VesselSyncService } from './buques/vessel-sync.service';
+import { VesselExportService } from './buques/vessel-export.service';
 import { FisheryClientModule } from '../common/fishery-client/fishery-client.module';
 import { AuthModule } from '../auth/auth.module';
 
@@ -45,6 +46,7 @@ import { AuthModule } from '../auth/auth.module';
         TransicionesEstadoService,
         BuquesService,
         VesselSyncService,
+        VesselExportService,
     ],
     exports: [VesselSyncService],
 })

@@ -94,9 +94,11 @@
               </h4>
 
               <div class="flex items-center gap-2">
-                <div v-if="log.usuario" class="flex items-center gap-1.5 truncate">
+                <div v-if="log.usuario || log.usuarioEmail || log.usuarioId" class="flex items-center gap-1.5 truncate">
                   <UserCircleIcon class="w-3 h-3 text-text-muted" />
-                  <span class="text-[10px] text-text-muted font-bold truncate">{{ log.usuario.fullName }}</span>
+                  <span class="text-[10px] text-text-muted font-bold truncate">
+                    {{ log.usuario?.fullName || log.usuarioEmail || log.usuarioId }}
+                  </span>
                 </div>
                 <div v-else class="flex items-center gap-1.5">
                   <BoxCubeIcon class="w-3 h-3 text-text-muted" />
@@ -174,7 +176,7 @@
                      <UserCircleIcon class="w-3.5 h-3.5 text-primary" /> Actor
                    </div>
                    <div class="text-xs font-bold text-text truncate">
-                      {{ selectedLog.usuario?.fullName || 'Proceso de Sistema' }}
+                      {{ selectedLog.usuario?.fullName || selectedLog.usuarioEmail || selectedLog.usuarioId || 'Proceso de Sistema' }}
                    </div>
                    <div class="text-[10px] text-text-muted truncate mt-1">{{ selectedLog.usuario?.email || 'INTERNAL_TASK' }}</div>
                 </div>

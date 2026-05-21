@@ -31,4 +31,10 @@ export class EnviarProtocolizacionDto {
   })
   @IsOptional()
   fechaEnvio?: string;
+
+  @IsOptional()
+  cco?: string;
+
+  @IsOptional()
+  textoAdicional?: string;
 }

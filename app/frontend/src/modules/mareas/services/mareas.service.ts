@@ -137,8 +137,7 @@ const mareasService = {
     },
 
     getProtocolizacionLotes: async (): Promise<any[]> => {
-        const { selectedYear } = useConfigStore();
-        const { data } = await httpClient.get<any[]>(`/mareas/protocolizacion/lotes?year=${selectedYear}`);
+        const { data } = await httpClient.get<any[]>('/mareas/protocolizacion/lotes');
         return data;
     },
 

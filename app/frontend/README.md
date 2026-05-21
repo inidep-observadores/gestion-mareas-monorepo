@@ -51,6 +51,37 @@ pnpm build
 pnpm preview
 ```
 
+## Despliegue con Docker y Traefik
+
+El proyecto incluye una configuración para ser desplegado en un VPS propio utilizando Docker y Traefik como proxy inverso.
+
+### Requisitos previos
+
+- Tener Docker y Docker Compose instalados en el VPS.
+- Tener Traefik configurado en una red externa llamada `traefik`.
+- Configurar los registros DNS para el subdominio deseado.
+
+### Pasos para el despliegue (Staging)
+
+1. **Configurar variables de entorno**:
+   Asegúrese de que el archivo `.env.staging` tenga los valores correctos:
+   ```env
+   VITE_BACKEND_URL=https://api.tu-servidor.com/api
+   STAGING_FRONTEND_DOMAIN=staging.tu-dominio.com
+   ```
+
+2. **Ejecutar el despliegue**:
+   Desde la carpeta `app/frontend`, ejecute el siguiente comando:
+   ```bash
+   docker compose --env-file .env.staging -f docker-compose-staging.yaml up -d --build
+   ```
+
+### Archivos de configuración de despliegue
+
+- `Dockerfile`: Construcción multietapa (Node + Nginx Alpine).
+- `nginx.conf`: Configuración optimizada para Single Page Applications (SPA).
+- `docker-compose-staging.yaml`: Orquestación y etiquetas para Traefik.
+
 ## Estructura del proyecto
 
 - `src/modules/`: funcionalidades por dominio (auth, mareas, admin, etc.).
@@ -61,6 +92,6 @@ pnpm preview
 
 ## Consideraciones para despliegue
 
-- Configure `VITE_BACKEND_URL` con la URL publica del backend.
-- Asegure CORS y cookies seguras si usa autenticacion con cookies.
+- Configure `VITE_BACKEND_URL` con la URL pública del backend.
+- Asegure CORS y cookies seguras si usa autenticación con cookies.
 - Para entornos con Traefik u otro reverse proxy, utilice dominios coherentes entre frontend y backend.

@@ -1,4 +1,5 @@
 import { Controller, Post, Get, Body, BadRequestException } from '@nestjs/common';
+import { DateTime } from 'luxon';
 import { Auth } from '../auth/decorators/auth.decorator';
 import { ValidRoles } from '../auth/interfaces/valid-roles';
 import { PnaTrackingService } from './pna-tracking.service';
@@ -36,8 +37,11 @@ export class PnaApiController {
             throw new BadRequestException('fromDate and toDate are required');
         }
 
-        const desde = new Date(fromDate);
-        const hasta = new Date(toDate);
+        // IMPORTANTE: El usuario introduce fechas en hora local (Argentina).
+        // Las interpretamos correctamente antes de pasarlas al servicio.
+        const timezone = 'America/Argentina/Buenos_Aires';
+        const desde = DateTime.fromISO(fromDate, { zone: timezone }).toJSDate();
+        const hasta = DateTime.fromISO(toDate, { zone: timezone }).toJSDate();
 
         if (type === 'API') {
             const differenceInDays = (hasta.getTime() - desde.getTime()) / (1000 * 3600 * 24);

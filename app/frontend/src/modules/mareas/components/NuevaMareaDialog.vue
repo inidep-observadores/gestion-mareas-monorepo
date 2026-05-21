@@ -30,6 +30,7 @@
 
       <!-- Step Content -->
       <div
+        v-form-nav
         class="bg-surface border border-border shadow-theme-xs min-h-[380px] flex flex-col rounded-2xl overflow-hidden p-6">
 
         <!-- Loading State for Catalogs -->
@@ -125,14 +126,8 @@
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div class="space-y-1.5">
-                <label class="block text-sm font-medium text-text-muted">Pesquería</label>
-                <SearchableSelect v-model="form.pesqueriaId" :options="pesqueriaOptions" :icon="WaveIcon"
-                  :error="fieldErrors.pesqueriaId" placeholder="Seleccione la pesquería..." />
-              </div>
-
-              <div class="space-y-1.5">
                 <label class="block text-sm font-medium text-text-muted">Arte de Pesca</label>
-                <SearchableSelect v-model="form.arteId" :options="arteOptions" :icon="SettingsIcon"
+                <SearchableSelect ref="arteSelect" v-model="form.arteId" :options="arteOptions" :icon="SettingsIcon"
                   placeholder="Seleccione el arte..." :error="fieldErrors.arteId" />
               </div>
 
@@ -140,6 +135,12 @@
                 <label class="block text-sm font-medium text-text-muted">Observador Asignado</label>
                 <SearchableSelect ref="observadorSelect" v-model="form.observadorId" :options="observadorOptions"
                   :icon="BeakerIcon" :error="fieldErrors.observadorId" placeholder="Seleccione el observador..." />
+              </div>
+
+              <div class="space-y-1.5">
+                <label class="block text-sm font-medium text-text-muted">Pesquería</label>
+                <SearchableSelect v-model="form.pesqueriaId" :options="pesqueriaOptions" :icon="WaveIcon"
+                  :error="fieldErrors.pesqueriaId" placeholder="Seleccione la pesquería..." />
               </div>
 
               <div class="space-y-1.5">
@@ -260,6 +261,7 @@
               Cancelar
             </button>
             <button @click="nextStep" :disabled="loading"
+              :data-allow-enter="currentStep === 4"
               class="px-8 py-3 bg-primary hover:bg-primary-hover text-primary-fg rounded-lg text-xs font-black uppercase tracking-widest shadow-theme-xs shadow-primary/20 transition-all active:scale-95 flex items-center gap-2 disabled:opacity-50">
               <div v-if="loading" class="flex items-center justify-center">
                 <LoadingSpinner size="xs" class="text-primary-fg" />
@@ -364,6 +366,7 @@ const showYearConfirm = ref(false)
 // Refs for focus
 const buqueSelect = ref<any>(null)
 const nroMareaInput = ref<HTMLInputElement | null>(null)
+const arteSelect = ref<any>(null)
 const observadorSelect = ref<any>(null)
 
 // Catalogs
