@@ -895,7 +895,7 @@ const prepareStagesData = async (isNewStageConfig = false) => {
                 fechaArribo: ext.fechaArribo || '',
                 // Heredar configuración
                 pesqueriaId: lastStage?.pesqueriaId || marea.buque?.pesqueriaHabitualId || marea.id_pesqueria,
-                tipoEtapa: lastStage?.tipoEtapa || TipoEtapa.MC,
+                tipoEtapa: lastStage?.tipoEtapa || TipoEtapa.EC,
                 observaciones: `Etapa detectada automáticamente desde ${externalSourceName.value}`,
                 fuentesZarpada: sources.length > 0 ? { sources, manual: true } : null,
                 observadores: []

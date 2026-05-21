@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <AdminLayout :title="displayTitle" :description="displayDescription">
     <div class="max-w-6xl mx-auto pb-12 px-4 sm:px-6 lg:px-8">
       <!-- Header Actions & Meta -->
@@ -142,8 +142,8 @@
                   <label class="text-xs font-bold uppercase tracking-wider text-text-muted">Tipo de Marea</label>
                   <select v-model="marea.tipo_marea" :disabled="!canEditDesignationFields"
                     class="w-full px-4 py-3 bg-surface-muted border-none rounded-2xl focus:ring-2 focus:ring-primary/20 text-text transition-all font-medium outline-none disabled:opacity-60">
-                    <option :value="TipoMarea.MC">Comercial (MC)</option>
-                    <option :value="TipoMarea.CI">Institucional (CI)</option>
+                    <option :value="TipoMarea.MC">{{ TIPO_MAREA_DESC[TipoMarea.MC] }}</option>
+                    <option :value="TipoMarea.CI">{{ TIPO_MAREA_DESC[TipoMarea.CI] }}</option>
                   </select>
                 </div>
                 <div class="space-y-1.5">
@@ -264,6 +264,7 @@
           </div>
 
           <NavigationStagesEditor v-model="etapas" :puertoOptions="puertoOptions" :pesqueriaOptions="pesqueriaOptions"
+            :tipoMarea="marea?.tipo_marea"
             :puertoBaseId="marea.puertoBaseId" :defaultPesqueriaId="marea.id_pesqueria" :readOnly="isReadOnly"
             :mareaId="marea.id" :mareaTieneDesignacion="tieneDesignacion" @action-success="(msg: string) => toast.success(msg)"
             @action-error="(msg: string) => toast.error(msg)" @action-warning="(msg: string) => toast.warning(msg)" />
@@ -573,7 +574,7 @@ import {
   FlagIcon,
   EditIcon
 } from '@/icons'
-import { TipoMarea, TipoEtapa } from '../types/enums';
+import { TipoMarea, TipoEtapa, TIPO_MAREA_DESC } from '../types/enums';
 import { TipoCalculoZonaAustral } from '../types/marea.types';
 import type { ZonaAustralResponse } from '../types/marea.types';
 const router = useRouter()
@@ -939,7 +940,7 @@ const saveChanges = async () => {
       puertoArriboId: etapa.puertoArriboId || undefined,
       fechaZarpada: toIsoStringOrNull(etapa.fechaZarpada),
       fechaArribo: toIsoStringOrNull(etapa.fechaArribo),
-      tipoEtapa: etapa.tipoEtapa || TipoEtapa.MC,
+      tipoEtapa: etapa.tipoEtapa || TipoEtapa.EC,
       observaciones: etapa.observaciones || undefined,
       metadata: etapa.metadata,
       observadores: etapa.observadores?.map((obs: any) => ({

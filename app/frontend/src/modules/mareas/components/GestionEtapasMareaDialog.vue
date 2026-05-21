@@ -107,7 +107,7 @@
             <NavigationStagesEditor v-model="form.stages" :puertoOptions="puertoOptions"
               :pesqueriaOptions="pesqueriaOptions" :puertoBaseId="initialPortId || marea?.puertoBaseId"
               :defaultPesqueriaId="marea?.id_pesqueria || marea?.pesqueriaId" :minStages="mode === 'INICIAR' ? 1 : 0"
-              :mareaId="marea?.id"
+              :mareaId="marea?.id" :tipoMarea="marea?.tipoMarea || marea?.tipo_marea"
               @action-success="(msg: string) => toast.success(msg)"
               @action-error="(msg: string) => toast.error(msg)"
               @action-warning="(msg: string) => toast.warning(msg)" />
@@ -295,7 +295,7 @@ const addInitialStage = () => {
     puertoArriboId: '',
     fechaArribo: '',
     pesqueriaId: props.marea?.id_pesqueria || props.marea?.pesqueriaId || '',
-    tipoEtapa: TipoEtapa.MC,
+    tipoEtapa: (props.marea?.tipoMarea || props.marea?.tipo_marea) === 'CI' ? TipoEtapa.EI : TipoEtapa.EC,
     observaciones: ''
   });
 };
@@ -315,7 +315,7 @@ watch(() => props.show, (val) => {
       ...s,
       fechaZarpada: s.fechaZarpada || '',
       fechaArribo: s.fechaArribo || '',
-      tipoEtapa: s.tipoEtapa || TipoEtapa.MC,
+      tipoEtapa: s.tipoEtapa || TipoEtapa.EC,
       nroEtapa: s.nroEtapa || s.nro_etapa,
       fuentesZarpada: s.fuentesZarpada || null,
       fuentesArribo: s.fuentesArribo || null

@@ -975,8 +975,9 @@ enum TipoMarea {
 }
 
 enum TipoEtapa {
-  MC
-  CI
+  EC
+  EI
+  EP
 
   @@schema("public")
 }

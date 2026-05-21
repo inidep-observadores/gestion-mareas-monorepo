@@ -55,22 +55,30 @@
                 <label class="block text-xs font-black uppercase tracking-widest text-text-muted">Tipo de
                   Designación</label>
                 <div class="inline-flex p-1 bg-surface-muted border-border">
+                <div class="grid grid-cols-2 gap-4 w-full max-w-lg">
                   <button type="button" @click="form.tipoMarea = TipoMarea.MC"
-                    class="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-all"
-                    :class="form.tipoMarea === TipoMarea.MC ? 'bg-surface text-primary shadow-theme-xs ring-1 ring-border' : 'text-text-muted hover:text-text'">
-                    <div class="w-1.5 h-1.5 rounded-full"
-                      :class="form.tipoMarea === TipoMarea.MC ? 'bg-primary' : 'bg-transparent border border-border'">
+                    class="relative flex flex-col p-4 w-full rounded-2xl border-2 transition-all duration-200 text-left overflow-hidden group"
+                    :class="form.tipoMarea === TipoMarea.MC ? 'bg-surface text-primary shadow-theme-xs ring-1 ring-border border-primary' : 'text-text-muted hover:text-text border-transparent bg-surface-muted'">
+                    <div class="flex items-center justify-between mb-1.5">
+                      <span class="w-4 h-4 rounded-full flex items-center justify-center border-2 transition-colors duration-200 shrink-0"
+                      :class="form.tipoMarea === TipoMarea.MC ? 'bg-primary border-primary' : 'bg-transparent border-border'">
+                        <div v-if="form.tipoMarea === TipoMarea.MC" class="w-1.5 h-1.5 bg-surface rounded-full"></div>
+                      </span>
+                      <span class="text-xs font-black uppercase tracking-wider ml-3">{{ TIPO_MAREA_DESC[TipoMarea.MC] }}</span>
                     </div>
-                    Comercial
                   </button>
                   <button type="button" @click="form.tipoMarea = TipoMarea.CI"
-                    class="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-all"
-                    :class="form.tipoMarea === TipoMarea.CI ? 'bg-surface text-primary shadow-theme-xs ring-1 ring-border' : 'text-text-muted hover:text-text'">
-                    <div class="w-1.5 h-1.5 rounded-full"
-                      :class="form.tipoMarea === TipoMarea.CI ? 'bg-primary' : 'bg-transparent border border-border'">
+                    class="relative flex flex-col p-4 w-full rounded-2xl border-2 transition-all duration-200 text-left overflow-hidden group"
+                    :class="form.tipoMarea === TipoMarea.CI ? 'bg-surface text-primary shadow-theme-xs ring-1 ring-border border-primary' : 'text-text-muted hover:text-text border-transparent bg-surface-muted'">
+                    <div class="flex items-center justify-between mb-1.5">
+                      <span class="w-4 h-4 rounded-full flex items-center justify-center border-2 transition-colors duration-200 shrink-0"
+                      :class="form.tipoMarea === TipoMarea.CI ? 'bg-primary border-primary' : 'bg-transparent border-border'">
+                        <div v-if="form.tipoMarea === TipoMarea.CI" class="w-1.5 h-1.5 bg-surface rounded-full"></div>
+                      </span>
+                      <span class="text-xs font-black uppercase tracking-wider ml-3">{{ TIPO_MAREA_DESC[TipoMarea.CI] }}</span>
                     </div>
-                    Institucional
                   </button>
+                </div>
                 </div>
               </div>
 
@@ -182,7 +190,7 @@
 
             <NavigationStagesEditor v-model="form.etapas" :puerto-options="puertoOptions"
               :pesqueria-options="pesqueriaOptions" :default-pesqueria-id="form.pesqueriaId" :errors="fieldErrors"
-              :default-fecha-zarpada="form.fechaZarpadaEstimada" :puerto-base-id="form.puertoBaseId" />
+              :default-fecha-zarpada="form.fechaZarpadaEstimada" :puerto-base-id="form.puertoBaseId" :tipoMarea="form.tipoMarea" />
           </div>
 
           <!-- Step 4: Confirmación -->
@@ -299,7 +307,7 @@ import DatePicker from '@/components/common/DatePicker.vue'
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 import ConfirmationDialog from '@/components/common/ConfirmationDialog.vue'
 import NavigationStagesEditor from './NavigationStagesEditor.vue'
-import { TipoMarea } from '../types/enums';
+import { TipoMarea, TIPO_MAREA_DESC } from '../types/enums';
 import { useMareas } from '../composables/useMareas'
 import { useWorkflowStore } from '../../shared/stores/workflow.store'
 import { useConfigStore } from '../../shared/stores/config.store'

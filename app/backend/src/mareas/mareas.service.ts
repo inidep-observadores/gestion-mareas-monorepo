@@ -1830,6 +1830,12 @@ export class MareasService {
         console.log('--- SYNC STAGES START ---');
         console.log('Incoming Stages in syncStages:', JSON.stringify(incomingStages, null, 2));
 
+        // Fetch marea to validate stage types against marea type
+        const marea = await tx.marea.findUnique({ where: { id: mareaId }, select: { tipoMarea: true } });
+        if (marea) {
+            this.validateStagesTypes(marea.tipoMarea, incomingStages);
+        }
+
         // Validar cronología e integridad antes de sincronizar
         this.validateStagesChronology(incomingStages);
         this.validateStagesIntegrity(incomingStages);
@@ -1854,7 +1860,7 @@ export class MareasService {
                 puertoArriboId: this.sanitizeUuid(stg.puertoArriboId),
                 fechaArribo: stg.fechaArribo ? new Date(stg.fechaArribo) : null,
                 pesqueriaId: this.sanitizeUuid(stg.pesqueriaId),
-                tipoEtapa: stg.tipoEtapa || TipoEtapa.MC,
+                tipoEtapa: stg.tipoEtapa || TipoEtapa.EC,
                 fuentesZarpada: stg.fuentesZarpada || null,
                 fuentesArribo: stg.fuentesArribo || null,
                 observaciones: stg.observaciones || '',
@@ -1879,7 +1885,7 @@ export class MareasService {
                     data: {
                         mareaId: mareaId,
                         ...stageData,
-                        tipoEtapa: TipoEtapa.MC
+                        tipoEtapa: TipoEtapa.EC
                     }
                 });
 
@@ -1930,6 +1936,20 @@ export class MareasService {
 
             if (hasFechaArr !== hasPuertoArr) {
                 throw new BadRequestException(`Error en Etapa #${i + 1}: La fecha y el puerto de arribo deben completarse juntos o dejarse ambos vacíos.`);
+            }
+        }
+    }
+
+    private validateStagesTypes(tipoMarea: string, stages: any[]) {
+        for (let i = 0; i < stages.length; i++) {
+            const current = stages[i];
+            const tipoEtapa = current.tipoEtapa || TipoEtapa.EC;
+            
+            if (tipoMarea === TipoMarea.CI && tipoEtapa !== TipoEtapa.EI) {
+                throw new BadRequestException(`Error en Etapa #${i + 1}: Las mareas institucionales solo pueden tener etapas de tipo EI.`);
+            }
+            if (tipoMarea === TipoMarea.MC && tipoEtapa === TipoEtapa.EI) {
+                throw new BadRequestException(`Error en Etapa #${i + 1}: Las mareas comerciales no pueden tener etapas de tipo EI.`);
             }
         }
     }
@@ -2163,7 +2183,7 @@ export class MareasService {
                             nroEtapa: 1,
                             pesqueriaId: payload.pesqueriaId || (marea as any).pesqueriaId,
                             puertoZarpadaId: payload.puertoId || buque?.puertoBaseId,
-                            tipoEtapa: marea.tipoMarea === TipoMarea.CI ? TipoEtapa.CI : TipoEtapa.MC,
+                            tipoEtapa: marea.tipoMarea === TipoMarea.CI ? TipoEtapa.EI : TipoEtapa.EC,
                             fechaZarpada: new Date(fechaIn),
                             // No observer assignment here (implicit in Marea)
                         }
