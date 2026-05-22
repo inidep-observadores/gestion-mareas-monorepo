@@ -1733,6 +1733,8 @@ export class MareasService {
                     puertoArriboCodigo: e.puertoArribo?.codigoExterno,
                     fechaZarpada: e.fechaZarpada,
                     fechaArribo: e.fechaArribo,
+                    tipoEtapa: e.tipoEtapa,
+                    observaciones: e.observaciones,
                     durationDays: MareaUtils.calculateStageDays(e),
                     metadata: e.metadata
                 }))

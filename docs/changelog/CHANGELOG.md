@@ -3,8 +3,9 @@
 Todos los cambios notables en este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/), y este proyecto adhiere a [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [v0.6.0] - 2026-05-19
+## [v0.6.0] - 2026-05-22
 ### Added
+- **mareas:** soporte para iniciar marea en prospeccion e interfaz tipada (21aca3d)
 - **reportes:** optimizar visualización de informes de auditoría (Word/Excel) y corregir tests de backend (505ff7f)
 - **frontend:** implementar directiva v-form-nav para navegación inteligente por teclado (9112428)
 - **frontend:** aplicar navegación fluida v-form-nav al wizard de nueva marea (4dcc71e)
@@ -52,6 +53,9 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 - **frontend:** expansión automática de grupos al buscar en flujo de mareas (6246229)
 
 ### Fixed
+- **ui:** pasar prop tipoMarea a NavigationStagesEditor y corregir peso de fuente en select (7e349a9)
+- **backend:** mitigar enumeración de usuarios y fuga de datos en logs (6ab0b39)
+- **test:** corregir aserciones asincronas en tests de AuditEventInterceptor (e01fafa)
 - **mareas:** restaurar metodo setIntencionCierre y corregir error 404 en creacion de mareas (2448565)
 - **backend:** corregido formato de totales en tablas de ranking (hoja Personal) (9ca82b9)
 - **protocolizacion:** corregir mapping de observadores y añadir ordenamiento ascendente de mareas. Se rectificó la búsqueda de personal científico en el historial y se implementó la nueva funcionalidad de copiado de tablas en texto plano. Changelog actualizado. (8e3d060)
@@ -96,6 +100,7 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 - **frontend:** restaurar importación de computed en TaskCard (304348c)
 
 ### Changed
+- **changelog:** unificar CHANGELOG.md historico y actualizar skills de versionamiento (1ff7aaf)
 - análisis de requerimientos y tareas pendientes del informe de auditoría (a648aec)
 - corregir ubicación de cambios en changelog de v0.4.0 a v0.5.0 (ad073cd)
 - **reports:** reordenar tablas y estandarizar nombres de hojas en reportes de auditoría (03d0e84)
