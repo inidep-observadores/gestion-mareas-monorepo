@@ -504,6 +504,7 @@ export class MareasService {
                     select: {
                         id: true,
                         nroEtapa: true,
+                        tipoEtapa: true,
                         fechaZarpada: true,
                         fechaArribo: true,
                         observaciones: true,
@@ -579,6 +580,7 @@ export class MareasService {
                 observador: primaryObs ? `${primaryObs.nombre} ${primaryObs.apellido}` : 'Sin asignar',
                 progreso,
                 en_tierra: m.estadoActual.codigo === MareaEstado.EN_EJECUCION && etapaFinal?.fechaArribo !== null,
+                en_prospeccion: m.estadoActual.codigo === MareaEstado.EN_EJECUCION && etapaFinal?.fechaArribo === null && etapaFinal?.tipoEtapa === 'EP',
                 total_etapas: etapaFinal?.nroEtapa || 1,
                 dias_navegados: MareaUtils.calculateNavigatedDays(m),
                 alertas: activeAlerts.filter((a: any) => a.referenciaId === m.id),

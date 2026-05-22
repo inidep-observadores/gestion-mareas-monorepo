@@ -107,7 +107,7 @@
             <NavigationStagesEditor v-model="form.stages" :puertoOptions="puertoOptions"
               :pesqueriaOptions="pesqueriaOptions" :puertoBaseId="initialPortId || marea?.puertoBaseId"
               :defaultPesqueriaId="marea?.id_pesqueria || marea?.pesqueriaId" :minStages="mode === 'INICIAR' ? 1 : 0"
-              :mareaId="marea?.id" :tipoMarea="marea?.tipoMarea || marea?.tipo_marea"
+              :mareaId="marea?.id" :tipoMarea="(marea?.tipoMarea || marea?.tipo_marea) as any"
               @action-success="(msg: string) => toast.success(msg)"
               @action-error="(msg: string) => toast.error(msg)"
               @action-warning="(msg: string) => toast.warning(msg)" />

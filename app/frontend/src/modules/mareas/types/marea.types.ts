@@ -25,6 +25,7 @@ export interface MareaListItem {
     observador?: string;
     fecha_fin_observador?: string;
     en_tierra?: boolean;
+    en_prospeccion?: boolean;
     total_etapas: number;
     pesquerias_nombres: string[];
     alertas: any[];
@@ -98,20 +99,35 @@ export enum TipoCalculoZonaAustral {
 export interface Marea {
     id: string;
     id_marea: string;
-    buque_id: string;
+    buque_id?: string;
+    buqueId?: string;
     buque_nombre?: string;
-    buque?: { nombre: string };
+    buque?: { nombre: string; nombreBuque: string };
     puertoBaseId?: string;
     fecha_zarpada_estimada?: string;
+    fechaZarpadaEstimada?: string;
     fecha_inicio_observador?: string;
+    fechaInicioObservador?: string;
     fecha_fin_observador?: string;
-    fechaInicioObservador?: string; // Legacy/CamelCase support if needed temporarily
-    fechaFinObservador?: string; // Legacy/CamelCase support if needed temporarily
+    fechaFinObservador?: string;
     id_pesqueria?: string;
     pesqueriaId?: string;
     tipo_marea?: TipoMarea;
+    tipoMarea?: TipoMarea;
     inicia_en_prospeccion?: boolean;
     iniciaEnProspeccion?: boolean;
+    anio_marea?: number;
+    anioMarea?: number;
+    nro_marea?: number;
+    nroMarea?: number;
+    observador_principal_id?: string;
+    observadorPrincipalId?: string;
+    arte_principal_id?: string;
+    artePrincipalId?: string;
+    dias_estimados?: number;
+    diasEstimados?: number;
+    estado_actual?: { codigo: string; nombre: string };
+    estadoActual?: { codigo: string; nombre: string };
     diasZonaAustral?: number | null;
     tipoCalculoZonaAustral?: TipoCalculoZonaAustral;
     archivos?: any[];
