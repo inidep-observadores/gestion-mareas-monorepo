@@ -145,6 +145,7 @@ export class AlertAutomationService {
                         puertoZarpadaId: metadataValue(sources, 'portId') || marea.puertoZarpadaId || (alert.metadata as any)?.portId,
                         fechaZarpada: fechaDetectadaIso,
                         pesqueriaId: marea.pesqueriaId,
+                        tipoEtapa: marea.iniciaEnProspeccion ? 'EP' : 'EC',
                         fuentesZarpada: { sources, automatizado: true, eventDate: fechaDetectadaIso }
                     }],
                     comentarios: `Confirmación automática por lógica de negocio (${alert.tipo}). Fuentes: ${sourcesStr}`,
