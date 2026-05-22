@@ -103,13 +103,11 @@
                             A finalizar
                           </span>
                           <span v-if="marea.en_tierra"
-                            class="px-2 py-0.5 bg-success/10 text-success rounded-full text-[8px] font-black uppercase tracking-tighter whitespace-nowrap flex items-center gap-1 border border-success/20">
-                            <div class="w-1 h-1 rounded-full bg-success animate-pulse"></div>
+                            class="px-2 py-0.5 bg-success/10 text-success rounded-full text-[8px] font-black uppercase tracking-tighter whitespace-nowrap border border-success/20">
                             En Tierra
                           </span>
                           <span v-if="marea.en_prospeccion"
-                            class="px-2 py-0.5 bg-purple-500/10 text-purple-600 rounded-full text-[8px] font-black uppercase tracking-tighter whitespace-nowrap flex items-center gap-1 border border-purple-500/20">
-                            <div class="w-1 h-1 rounded-full bg-purple-600 animate-pulse"></div>
+                            class="px-2 py-0.5 bg-purple-500/10 text-purple-600 rounded-full text-[8px] font-black uppercase tracking-tighter whitespace-nowrap border border-purple-500/20">
                             Prospección
                           </span>
                         </div>
@@ -272,13 +270,11 @@
                               Etapa {{ marea.total_etapas }}
                             </span>
                             <span v-if="marea.en_tierra"
-                              class="px-2 py-0.5 bg-success/10 text-success rounded-full text-[10px] font-black uppercase tracking-tighter whitespace-nowrap flex items-center gap-1 border border-success/20">
-                              <div class="w-1 h-1 rounded-full bg-success animate-pulse"></div>
+                              class="px-2 py-0.5 bg-success/10 text-success rounded-full text-[10px] font-black uppercase tracking-tighter whitespace-nowrap border border-success/20">
                               En Tierra
                             </span>
                             <span v-if="marea.en_prospeccion"
-                              class="px-2 py-0.5 bg-purple-500/10 text-purple-600 rounded-full text-[10px] font-black uppercase tracking-tighter whitespace-nowrap flex items-center gap-1 border border-purple-500/20">
-                              <div class="w-1 h-1 rounded-full bg-purple-600 animate-pulse"></div>
+                              class="px-2 py-0.5 bg-purple-500/10 text-purple-600 rounded-full text-[10px] font-black uppercase tracking-tighter whitespace-nowrap border border-purple-500/20">
                               Prospección
                             </span>
                             <span v-if="marea.intencion_cierre"
@@ -308,7 +304,6 @@
                         <td v-if="!selectedMarea" class="px-5 py-1.5">
                           <div v-if="marea.alertas?.length"
                             class="flex items-center gap-1.5 px-2 py-0.5 bg-error/10 rounded-lg w-fit">
-                            <div class="w-1 h-1 rounded-full bg-error animate-pulse"></div>
                             <span class="text-[10px] font-black text-error">{{ marea.alertas.length }}</span>
                           </div>
                           <span v-else class="text-[10px] font-bold text-text-muted/40">Ninguna</span>
