@@ -110,6 +110,8 @@ export interface Marea {
     id_pesqueria?: string;
     pesqueriaId?: string;
     tipo_marea?: TipoMarea;
+    inicia_en_prospeccion?: boolean;
+    iniciaEnProspeccion?: boolean;
     diasZonaAustral?: number | null;
     tipoCalculoZonaAustral?: TipoCalculoZonaAustral;
     archivos?: any[];

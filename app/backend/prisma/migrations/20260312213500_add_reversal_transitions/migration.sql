@@ -17,18 +17,18 @@ BEGIN
     -- Insertar transiciones si no existen
     
     -- EN_EJECUCION -> CANCELADA
-    INSERT INTO public.transiciones_estados (id, id_estado_origen, id_estado_destino, accion, etiqueta, clase_boton, requiere_observaciones, activo)
-    VALUES (gen_random_uuid(), id_en_ejecucion, id_cancelada, 'CANCELAR', 'Cancelar Marea', 'error', true, true)
-    ON CONFLICT (id_estado_origen, id_estado_destino, accion) DO NOTHING;
+    -- INSERT INTO public.transiciones_estados (id, id_estado_origen, id_estado_destino, accion, etiqueta, clase_boton, requiere_observaciones, activo)
+    -- VALUES (gen_random_uuid(), id_en_ejecucion, id_cancelada, 'CANCELAR', 'Cancelar Marea', 'error', true, true)
+    -- ON CONFLICT (id_estado_origen, id_estado_destino, accion) DO NOTHING;
 
     -- EN_EJECUCION -> A_REASIGNAR
-    INSERT INTO public.transiciones_estados (id, id_estado_origen, id_estado_destino, accion, etiqueta, clase_boton, requiere_observaciones, activo)
-    VALUES (gen_random_uuid(), id_en_ejecucion, id_a_reasignar, 'PASAR_A_REASIGNAR', 'Reasignar Observador', 'error', true, true)
-    ON CONFLICT (id_estado_origen, id_estado_destino, accion) DO NOTHING;
+    -- INSERT INTO public.transiciones_estados (id, id_estado_origen, id_estado_destino, accion, etiqueta, clase_boton, requiere_observaciones, activo)
+    -- VALUES (gen_random_uuid(), id_en_ejecucion, id_a_reasignar, 'PASAR_A_REASIGNAR', 'Reasignar Observador', 'error', true, true)
+    -- ON CONFLICT (id_estado_origen, id_estado_destino, accion) DO NOTHING;
 
     -- EN_EJECUCION -> DESIGNADA (Deshacer Inicio)
-    INSERT INTO public.transiciones_estados (id, id_estado_origen, id_estado_destino, accion, etiqueta, clase_boton, requiere_observaciones, activo)
-    VALUES (gen_random_uuid(), id_en_ejecucion, id_designada, 'DESHACER_INICIO', 'Deshacer Inicio', 'error', true, true)
-    ON CONFLICT (id_estado_origen, id_estado_destino, accion) DO NOTHING;
+    -- INSERT INTO public.transiciones_estados (id, id_estado_origen, id_estado_destino, accion, etiqueta, clase_boton, requiere_observaciones, activo)
+    -- VALUES (gen_random_uuid(), id_en_ejecucion, id_designada, 'DESHACER_INICIO', 'Deshacer Inicio', 'error', true, true)
+    -- ON CONFLICT (id_estado_origen, id_estado_destino, accion) DO NOTHING;
 
 END $$;

@@ -1,0 +1,1 @@
+import { PrismaClient } from '@prisma/client'; const prisma = new PrismaClient(); async function main() { const m = await prisma.marea.findFirst({ select: { id: true, iniciaEnProspeccion: true, nroMarea: true } }); console.log(m); } main();

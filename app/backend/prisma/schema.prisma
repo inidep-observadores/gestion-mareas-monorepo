@@ -284,6 +284,7 @@ model Marea {
   diasEstimados             Int?                      @map("dias_estimados")
   observadorPrincipalId     String?                   @map("id_observador_principal") @db.Uuid
   pesqueriaId               String?                   @map("id_pesqueria") @db.Uuid
+  iniciaEnProspeccion       Boolean                   @default(false) @map("inicia_en_prospeccion")
   fechaEnvioProtocolizacion DateTime?                 @map("fecha_envio_protocolizacion") @db.Timestamptz(6)
   artePrincipal             ArtePesca?                @relation(fields: [artePrincipalId], references: [id])
   buque                     Buque                     @relation(fields: [buqueId], references: [id])

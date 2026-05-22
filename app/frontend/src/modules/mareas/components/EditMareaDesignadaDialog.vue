@@ -8,22 +8,22 @@
             <ShipIcon class="w-5 h-5" />
           </div>
           <div>
-            <h3 class="text-sm font-black uppercase text-text">{{ initialData.buque_nombre }}</h3>
-            <p class="text-xs font-semibold text-text-muted">Marea {{ initialData.tipo_marea }}-{{ initialData.nro_marea }}-{{ initialData.anio_marea.toString().slice(-2) }}</p>
+            <h3 class="text-sm font-black uppercase text-text">{{ getBuqueName() }}</h3>
+            <p class="text-xs font-semibold text-text-muted">Marea {{ form.tipoMarea }}-{{ form.nroMarea }}-{{ String(form.anioMarea).slice(-2) }}</p>
           </div>
         </div>
         <div class="px-3 py-1 bg-surface rounded-lg border border-border text-xs font-bold uppercase tracking-wider text-text-muted">
-          {{ initialData.estado_nombre || 'DESIGNADA' }}
+          {{ mareaData?.estadoActual?.nombre || 'CARGANDO...' }}
         </div>
       </div>
 
       <div v-form-nav class="bg-surface border border-border shadow-theme-xs flex flex-col rounded-2xl overflow-hidden p-6">
-        
-        <div v-if="loadingCatalogs" class="flex-1 flex flex-col items-center justify-center py-20">
-          <LoadingSpinner size="xl" class="text-primary" />
-          <p class="mt-4 text-text-muted font-black uppercase tracking-widest text-[10px]">Cargando catálogos oficiales...</p>
-        </div>
-
+        <template v-if="loadingData || loadingCatalogs">
+          <div class="py-12 flex flex-col items-center justify-center">
+            <div class="w-8 h-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+            <p class="text-xs font-bold text-text-muted mt-4 uppercase tracking-widest">Cargando datos...</p>
+          </div>
+        </template>
         <template v-else>
           <div class="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
             
@@ -45,6 +45,7 @@
               </div>
 
               <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Row 1 -->
                 <div class="space-y-1.5">
                   <label class="block text-sm font-medium text-text-muted">Año</label>
                   <input v-model.number="form.anioMarea" type="number" :disabled="!canEditDesignationFields"
@@ -58,6 +59,8 @@
                     class="w-full px-4 py-2.5 bg-surface border rounded-lg text-sm text-text outline-none focus:border-primary transition-all shadow-theme-xs disabled:opacity-60 disabled:bg-surface-muted"
                     :class="fieldErrors.nroMarea ? 'border-error bg-error/5' : 'border-border focus:ring-3 focus:ring-primary/10'" />
                 </div>
+                
+                <!-- Row 2 -->
                 <div class="space-y-1.5">
                   <label class="block text-sm font-medium text-text-muted">Buque</label>
                   <SearchableSelect v-model="form.buqueId" :options="buqueOptions" :icon="ShipIcon"
@@ -69,6 +72,26 @@
                   <SearchableSelect ref="observadorSelect" v-model="form.observadorPrincipalId" :options="observadorOptions"
                     :icon="BeakerIcon" :error="fieldErrors.observadorPrincipalId" placeholder="Seleccione el observador..."
                     :disabled="!canEditDesignationFields" />
+                </div>
+
+                <!-- Row 3 -->
+                <div class="space-y-1.5">
+                  <label class="block text-sm font-medium text-text-muted">Tipo de Marea</label>
+                  <select v-model="form.tipoMarea" :disabled="!canEditDesignationFields" class="w-full bg-surface border border-border rounded-lg px-4 py-2.5 text-sm font-bold text-text outline-none focus:border-primary focus:ring-1 focus:ring-primary disabled:opacity-50 transition-colors shadow-theme-xs">
+                    <option value="MC">Marea comercial</option>
+                    <option value="CI">Marea institucional</option>
+                  </select>
+                </div>
+                
+                <div class="flex items-end">
+                  <div v-if="form.tipoMarea === 'MC'" class="flex items-center gap-2 px-4 py-2.5 h-[42px] bg-primary/5 rounded-xl border border-primary/20 w-fit mb-0.5">
+                    <input type="checkbox" id="iniciaProspeccion" v-model="form.iniciaEnProspeccion" :disabled="!canEditDesignationFields"
+                      class="w-4 h-4 rounded text-primary focus:ring-primary border-border cursor-pointer disabled:opacity-50" />
+                    <label for="iniciaProspeccion" class="text-xs font-bold text-text-muted uppercase tracking-tight cursor-pointer select-none"
+                      :class="{ 'opacity-50': !canEditDesignationFields }">
+                      Inicia en prospección
+                    </label>
+                  </div>
                 </div>
               </div>
             </div>
@@ -147,14 +170,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, computed, nextTick } from 'vue'
+import { ref, computed, watch, nextTick } from 'vue'
+import mareasService from '../services/mareas.service'
+import catalogosService from '../services/catalogos.service'
+import { toast } from 'vue-sonner'
+import type { Marea } from '../types/marea.types'
 import BaseModal from '@/components/common/BaseModal.vue'
 import SearchableSelect from '@/components/common/SearchableSelect.vue'
 import DatePicker from '@/components/common/DatePicker.vue'
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
-import catalogosService from '../services/catalogos.service'
-import mareasService from '../services/mareas.service'
-import { toast } from 'vue-sonner'
 import {
   ShipIcon,
   DocsIcon,
@@ -170,19 +194,23 @@ import {
 const props = defineProps<{
   show: boolean
   mareaId: string
-  initialData: any
 }>()
 
 const emit = defineEmits(['close', 'success'])
 
 const loading = ref(false)
+const loadingData = ref(false)
 const error = ref<string | null>(null)
 const loadingCatalogs = ref(false)
 const fieldErrors = ref<Record<string, string>>({})
 const firstInput = ref<HTMLInputElement | null>(null)
 
+const mareaData = ref<Marea | null>(null)
+
 const canEditDesignationFields = computed(() => {
-  return props.initialData.estado_codigo === 'DESIGNADA' || props.initialData.estado_codigo === 'A_REASIGNAR'
+  if (!mareaData.value || !mareaData.value.estadoActual) return false;
+  const codigo = mareaData.value.estadoActual.codigo;
+  return codigo === 'DESIGNADA' || codigo === 'A_REASIGNAR';
 })
 
 const pesquerias = ref<any[]>([])
@@ -203,16 +231,39 @@ const observadorOptions = computed(() => {
     }))
 })
 
-const getInitialForm = () => ({
-  buqueId: props.initialData.buqueId || '',
-  anioMarea: props.initialData.anio_marea || new Date().getFullYear(),
-  nroMarea: props.initialData.nro_marea || null,
-  observadorPrincipalId: props.initialData.observadorPrincipalId || '',
-  pesqueriaId: props.initialData.pesqueriaId || '',
-  artePrincipalId: props.initialData.artePrincipalId || '',
-  fechaZarpadaEstimada: props.initialData.fecha_zarpada_estimada_cruda || null,
-  diasEstimados: props.initialData.dias_estimados || null,
-})
+const getBuqueName = () => {
+  if (mareaData.value?.buque?.nombreBuque) return mareaData.value.buque.nombreBuque;
+  const buque = buques.value.find(b => b.id === form.value.buqueId);
+  return buque ? buque.nombreBuque : 'Buque no asignado';
+}
+
+const getInitialForm = () => {
+  if (!mareaData.value) return {
+    tipoMarea: 'MC',
+    buqueId: '',
+    anioMarea: new Date().getFullYear(),
+    nroMarea: null,
+    observadorPrincipalId: '',
+    pesqueriaId: '',
+    artePrincipalId: '',
+    fechaZarpadaEstimada: null,
+    diasEstimados: null,
+    iniciaEnProspeccion: false,
+  };
+
+  return {
+    tipoMarea: mareaData.value.tipoMarea || 'MC',
+    buqueId: mareaData.value.buqueId || '',
+    anioMarea: mareaData.value.anioMarea || new Date().getFullYear(),
+    nroMarea: mareaData.value.nroMarea || null,
+    observadorPrincipalId: mareaData.value.observadorPrincipalId || '',
+    pesqueriaId: mareaData.value.pesqueriaId || '',
+    artePrincipalId: mareaData.value.artePrincipalId || '',
+    fechaZarpadaEstimada: mareaData.value.fechaZarpadaEstimada || null,
+    diasEstimados: mareaData.value.diasEstimados || null,
+    iniciaEnProspeccion: mareaData.value.iniciaEnProspeccion ?? false,
+  }
+}
 
 const form = ref(getInitialForm())
 
@@ -230,16 +281,28 @@ const onBuqueChange = (newBuqueId: string | number | null) => {
 }
 
 watch(() => props.show, async (newVal) => {
-  if (newVal) {
-    form.value = getInitialForm()
+  if (newVal && props.mareaId) {
     fieldErrors.value = {}
     error.value = null
-    if (pesquerias.value.length === 0) {
-      await loadCatalogs()
+    
+    // Si no tenemos los catalogos, los cargamos
+    const catalogPromise = pesquerias.value.length === 0 ? loadCatalogs() : Promise.resolve();
+    
+    loadingData.value = true;
+    try {
+      mareaData.value = await mareasService.getById(props.mareaId)
+      form.value = getInitialForm()
+      await catalogPromise;
+      nextTick(() => {
+        firstInput.value?.focus()
+      })
+    } catch (err) {
+      console.error('Error loading marea for edit:', err)
+      toast.error('Error al cargar datos de la marea')
+      error.value = 'No se pudieron cargar los datos de la marea.'
+    } finally {
+      loadingData.value = false;
     }
-    nextTick(() => {
-      firstInput.value?.focus()
-    })
   }
 })
 
@@ -292,6 +355,7 @@ const submit = async () => {
 
   try {
     const updateData = {
+      tipoMarea: form.value.tipoMarea,
       buqueId: form.value.buqueId || null,
       anioMarea: form.value.anioMarea,
       nroMarea: form.value.nroMarea,
@@ -299,7 +363,8 @@ const submit = async () => {
       pesqueriaId: form.value.pesqueriaId || null,
       artePrincipalId: form.value.artePrincipalId || null,
       fechaZarpadaEstimada: form.value.fechaZarpadaEstimada || null,
-      diasEstimados: form.value.diasEstimados || null
+      diasEstimados: form.value.diasEstimados || null,
+      iniciaEnProspeccion: form.value.tipoMarea === 'MC' ? form.value.iniciaEnProspeccion : false
     }
 
     await mareasService.update(props.mareaId, updateData)

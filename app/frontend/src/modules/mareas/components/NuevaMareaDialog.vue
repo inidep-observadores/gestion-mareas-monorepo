@@ -79,8 +79,8 @@
                     </div>
                   </button>
                 </div>
-                </div>
               </div>
+            </div>
 
               <!-- Symmetrical Grid -->
               <div class="grid grid-cols-1 md:grid-cols-12 gap-6 items-end">
@@ -172,10 +172,16 @@
 
           <!-- Step 3: Etapas Iniciales -->
           <div v-if="currentStep === 3" class="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div class="border-b border-border pb-4">
-              <h2 class="text-xl font-black uppercase tracking-tight text-text">Etapas del Viaje</h2>
-              <p class="text-text-muted text-xs font-medium mt-1">Defina las etapas de navegación iniciales si ya son
-                conocidas.</p>
+            <div class="border-b border-border pb-4 flex justify-between items-end">
+              <div>
+                <h2 class="text-xl font-black uppercase tracking-tight text-text">Etapas del Viaje</h2>
+                <p class="text-text-muted text-xs font-medium mt-1">Defina las etapas de navegación iniciales si ya son
+                  conocidas.</p>
+              </div>
+              <div v-if="form.tipoMarea === TipoMarea.MC" class="flex items-center gap-2 px-4 py-2 bg-primary/5 rounded-xl border border-primary/20">
+                <input id="iniciaEnProspeccion" type="checkbox" v-model="form.iniciaEnProspeccion" class="w-4 h-4 text-primary bg-surface border-border rounded focus:ring-primary focus:ring-2 cursor-pointer transition-colors">
+                <label for="iniciaEnProspeccion" class="text-[10px] font-black uppercase tracking-wider text-primary cursor-pointer select-none">Inicia en prospección</label>
+              </div>
             </div>
 
             <div v-if="form.etapas.length > 0" class="p-4 bg-primary/5 border border-primary/20 rounded-xl mb-6">
@@ -294,6 +300,11 @@
     <ConfirmationDialog :show="showCancelConfirm" title="¿Cancelar Registro?"
       message="Si cancela ahora, perderá todos los datos ingresados en el formulario. ¿Está seguro de que desea continuar?"
       confirm-text="Si, Cancelar" cancel-text="Volver" @close="showCancelConfirm = false" @confirm="confirmCancel" />
+    <!-- Confirmation Ports Missing -->
+    <ConfirmationDialog :show="showPortsConfirm" title="Puertos No Especificados" type="warning"
+      message="Ha dejado etapas sin puerto de zarpada o arribo especificado. Esto se registrará como una etapa administrativa en alta mar. ¿Desea continuar?"
+      confirm-text="Sí, continuar" cancel-text="Revisar etapas" @confirm="confirmPortsAndNext" @cancel="showPortsConfirm = false" />
+
   </BaseModal>
 </template>
 
@@ -362,6 +373,7 @@ const getInitialForm = () => ({
   fechaInicioObservador: '',
   diasEstimados: null as number | null,
   puertoBaseId: '',
+  iniciaEnProspeccion: false,
   etapas: [] as any[]
 })
 
@@ -370,6 +382,7 @@ const form = ref(getInitialForm())
 const fieldErrors = ref<Record<string, string>>({})
 const showCancelConfirm = ref(false)
 const showYearConfirm = ref(false)
+const showPortsConfirm = ref(false)
 
 // Refs for focus
 const buqueSelect = ref<any>(null)
@@ -686,9 +699,7 @@ const validateStep = async (step: number) => {
             fieldErrors.value[`etapa_${idx}_fechaZarpada`] = `El año (${stageYear}) debe ser ${mareaYear} o ${mareaYear + 1}`
           }
         }
-        if (!etapa.puertoZarpadaId) {
-          fieldErrors.value[`etapa_${idx}_puertoZarpadaId`] = 'Indique el puerto'
-        }
+        // Removed validation requiring puertoZarpadaId to allow administrative stages
         if (!etapa.pesqueriaId) {
           // Para pesquería no tenemos :error actualmente en el template del editor pero lo agregaremos si es necesario
           // Por ahora nos concentramos en zarpada y puerto que pidió el usuario
@@ -714,6 +725,17 @@ const nextStep = async () => {
 
   if (currentStep.value < 4) {
     if (!(await validateStep(currentStep.value))) return
+    
+    // Check for missing ports in step 3
+    if (currentStep.value === 3) {
+      const hasMissingPorts = form.value.etapas.some((e: any) => !e.puertoZarpadaId || (e.fechaArribo && !e.puertoArriboId));
+      if (hasMissingPorts && !showPortsConfirm.value) {
+        showPortsConfirm.value = true;
+        return;
+      }
+      showPortsConfirm.value = false;
+    }
+
     currentStep.value++
   } else {
     try {
@@ -769,6 +791,11 @@ const prevStep = () => {
 
 const confirmYearAndNext = () => {
   showYearConfirm.value = false
+  currentStep.value++
+}
+
+const confirmPortsAndNext = () => {
+  showPortsConfirm.value = false
   currentStep.value++
 }
 

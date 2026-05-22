@@ -1884,8 +1884,7 @@ export class MareasService {
                 const newStage = await tx.mareaEtapa.create({
                     data: {
                         mareaId: mareaId,
-                        ...stageData,
-                        tipoEtapa: TipoEtapa.EC
+                        ...stageData
                     }
                 });
 
@@ -1925,18 +1924,13 @@ export class MareasService {
         for (let i = 0; i < stages.length; i++) {
             const current = stages[i];
 
-            // 1. Zarpada: Fecha y Puerto Obligatorios
-            if (!current.fechaZarpada || !current.puertoZarpadaId) {
-                throw new BadRequestException(`Error en Etapa #${i + 1}: La fecha y el puerto de zarpada son obligatorios.`);
+            // 1. Zarpada: Fecha es obligatoria al crear, Puerto es opcional (Etapa administrativa)
+            if (!current.fechaZarpada) {
+                throw new BadRequestException(`Error en Etapa #${i + 1}: La fecha de zarpada es obligatoria.`);
             }
 
-            // 2. Arribo: Atómico (Ambos o Ninguno)
-            const hasFechaArr = !!current.fechaArribo;
-            const hasPuertoArr = !!current.puertoArriboId;
-
-            if (hasFechaArr !== hasPuertoArr) {
-                throw new BadRequestException(`Error en Etapa #${i + 1}: La fecha y el puerto de arribo deben completarse juntos o dejarse ambos vacíos.`);
-            }
+            // 2. Arribo: Puerto es opcional, pero si la etapa está cerrada se espera fecha de arribo
+            // El front se encargará de pedir confirmación si faltan puertos.
         }
     }
 
@@ -2183,7 +2177,7 @@ export class MareasService {
                             nroEtapa: 1,
                             pesqueriaId: payload.pesqueriaId || (marea as any).pesqueriaId,
                             puertoZarpadaId: payload.puertoId || buque?.puertoBaseId,
-                            tipoEtapa: marea.tipoMarea === TipoMarea.CI ? TipoEtapa.EI : TipoEtapa.EC,
+                            tipoEtapa: marea.tipoMarea === TipoMarea.CI ? TipoEtapa.EI : (marea.iniciaEnProspeccion ? TipoEtapa.EP : TipoEtapa.EC),
                             fechaZarpada: new Date(fechaIn),
                             // No observer assignment here (implicit in Marea)
                         }
