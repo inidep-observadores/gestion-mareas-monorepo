@@ -28,6 +28,7 @@ El proyecto está dividido en dos directorios principales. **Verifica siempre en
    - **Código:** Preferentemente **INGLÉS** para estructuras estándar (ej: AuthService, TideController), pero **ESPAÑOL** para términos del dominio específico si ayuda a evitar ambigüedades (ej: estadoMarea, tipoBuque, zafra). Mantener consistencia en cada lado.
    - **Interfaz de Usuario (UI):** Todo el texto visible para el usuario (mensajes, etiquetas, notificaciones, etc.), tanto en frontend como en backend (ej: mensajes de error de API), debe estar en **ESPAÑOL FORMAL**, tratando al usuario de **"Usted"**.
 4. **Calidad:** Prioriza Clean Code, SOLID y DRY. La legibilidad supera a la complejidad.
+5. **Análisis y Consenso antes de la Acción:** NUNCA debes aplicar la primera solución que se te ocurra ni modificar código sin antes discutirlo y consensuarlo con el usuario. El sistema es complejo y actuar basado en supuestos incorrectos puede crear "parches sucios" o romper funcionalidades existentes. Analiza primero, propón la solución y espera confirmación explícita antes de ejecutar cambios.
 
 ## **4\. Backend (NestJS) \- Reglas Específicas**
 

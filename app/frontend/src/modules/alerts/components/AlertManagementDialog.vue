@@ -897,7 +897,7 @@ const prepareStagesData = async (isNewStageConfig = false) => {
                 pesqueriaId: lastStage?.pesqueriaId || marea.buque?.pesqueriaHabitualId || marea.id_pesqueria,
                 tipoEtapa: lastStage?.tipoEtapa || TipoEtapa.EC,
                 observaciones: `Etapa detectada automáticamente desde ${externalSourceName.value}`,
-                fuentesZarpada: sources.length > 0 ? { sources, manual: true } : null,
+                fuentesZarpada: sources.length > 0 ? { ...(localAlert.value.metadata || {}), manual: true } : null,
                 observadores: []
             }
             currentStages.push(newStage)
@@ -917,24 +917,24 @@ const prepareStagesData = async (isNewStageConfig = false) => {
             if (stageToUpdate) {
                 if (ext.fechaZarpada) {
                     stageToUpdate.fechaZarpada = ext.fechaZarpada
-                    stageToUpdate.fuentesZarpada = sources.length > 0 ? { sources, manual: true } : null
+                    stageToUpdate.fuentesZarpada = sources.length > 0 ? { ...(localAlert.value.metadata || {}), manual: true } : null
                 }
                 if (ext.puertoZarpadaId) {
                     stageToUpdate.puertoZarpadaId = ext.puertoZarpadaId
-                    stageToUpdate.fuentesZarpada = sources.length > 0 ? { sources, manual: true } : null
+                    stageToUpdate.fuentesZarpada = sources.length > 0 ? { ...(localAlert.value.metadata || {}), manual: true } : null
                 }
                 if (ext.fechaArribo) {
                     stageToUpdate.fechaArribo = ext.fechaArribo
-                    stageToUpdate.fuentesArribo = sources.length > 0 ? { sources, manual: true } : null
+                    stageToUpdate.fuentesArribo = sources.length > 0 ? { ...(localAlert.value.metadata || {}), manual: true } : null
                 }
                 if (ext.puertoArriboId) {
                     stageToUpdate.puertoArriboId = ext.puertoArriboId
-                    stageToUpdate.fuentesArribo = sources.length > 0 ? { sources, manual: true } : null
+                    stageToUpdate.fuentesArribo = sources.length > 0 ? { ...(localAlert.value.metadata || {}), manual: true } : null
                 }
                 // Si la metadata trae un puerto específico de la alerta (fuente PNA simple) y no está en externalData
                 if (!ext.puertoArriboId && localAlert.value.metadata?.portId && (subTipo === 'ARRIBO' || subTipo === 'FIN_MAREA')) {
                     stageToUpdate.puertoArriboId = localAlert.value.metadata.portId
-                    stageToUpdate.fuentesArribo = sources.length > 0 ? { sources, manual: true } : null
+                    stageToUpdate.fuentesArribo = sources.length > 0 ? { ...(localAlert.value.metadata || {}), manual: true } : null
                 }
             }
         }
