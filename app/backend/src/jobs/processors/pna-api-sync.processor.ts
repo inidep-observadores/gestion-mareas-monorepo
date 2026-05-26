@@ -15,12 +15,14 @@ export class PnaApiSyncProcessor implements JobProcessor {
             const fromDate = payload?.fromDate ? new Date(payload.fromDate) : undefined;
             const toDate = payload?.toDate ? new Date(payload.toDate) : undefined;
             const onlyIngest = payload?.onlyIngest === true;
+            const isLongSync = payload?.isLongSync === true;
 
-            const summary = await this.pnaApiService.processMovements(fromDate, toDate, onlyIngest);
+            const summary = await this.pnaApiService.processMovements(fromDate, toDate, onlyIngest, isLongSync);
 
             // Solo si tuvo éxito (no lanzó error), actualizamos la fecha de última sincronización
             if (summary.processed > 0 || !fromDate) {
-                await this.pnaApiService.updateLastSuccessfulSyncDate(new Date());
+                const targetDate = toDate || new Date();
+                await this.pnaApiService.updateLastSuccessfulSyncDate(targetDate, isLongSync);
             }
 
             this.logger.log(`Sincronización finalizada exitosamente: ${JSON.stringify(summary)}`);

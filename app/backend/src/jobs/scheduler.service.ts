@@ -114,9 +114,21 @@ export class SchedulerService {
             const lastRun = lastRunStatus ? DateTime.fromISO(lastRunStatus.value) : DateTime.fromMillis(0);
 
             if (now.diff(lastRun, 'minutes').minutes >= config.pnaApi.intervalMinutes) {
-                this.logger.log(`Disparando Sincronización PNA API automática (Intervalo: ${config.pnaApi.intervalMinutes} min)`);
-                await this.ensurePnaSyncJob();
-                await this.updateStatusDate(lastRunKey, now);
+                this.logger.log(`Disparando Sincronización PNA API automática (Intervalo rápido: ${config.pnaApi.intervalMinutes} min)`);
+                const scheduled = await this.ensurePnaSyncJob(false);
+                if (scheduled) await this.updateStatusDate(lastRunKey, now);
+            }
+
+            if (config.pnaApi.longIntervalMinutes) {
+                const lastRunLongKey = 'LAST_PNA_API_SYNC_LONG_RUN';
+                const lastRunLongStatus = await this.prisma.systemStatus.findUnique({ where: { key: lastRunLongKey } });
+                const lastRunLong = lastRunLongStatus ? DateTime.fromISO(lastRunLongStatus.value) : DateTime.fromMillis(0);
+
+                if (now.diff(lastRunLong, 'minutes').minutes >= config.pnaApi.longIntervalMinutes) {
+                    this.logger.log(`Disparando Sincronización PNA API automática (Intervalo respaldo: ${config.pnaApi.longIntervalMinutes} min)`);
+                    const scheduled = await this.ensurePnaSyncJob(true);
+                    if (scheduled) await this.updateStatusDate(lastRunLongKey, now);
+                }
             }
         }
 
@@ -127,9 +139,21 @@ export class SchedulerService {
             const lastRun = lastRunStatus ? DateTime.fromISO(lastRunStatus.value) : DateTime.fromMillis(0);
 
             if (now.diff(lastRun, 'minutes').minutes >= config.pnaTracking.intervalMinutes) {
-                this.logger.log(`Disparando Sincronización Tracking PNA automática (Intervalo: ${config.pnaTracking.intervalMinutes} min)`);
-                await this.pnaTrackingService.scheduleSynchronization();
-                await this.updateStatusDate(lastRunKey, now);
+                this.logger.log(`Disparando Sincronización Tracking PNA automática (Intervalo rápido: ${config.pnaTracking.intervalMinutes} min)`);
+                const res = await this.pnaTrackingService.scheduleSynchronization(undefined, undefined, false, false);
+                if (res.success) await this.updateStatusDate(lastRunKey, now);
+            }
+
+            if (config.pnaTracking.longIntervalMinutes) {
+                const lastRunLongKey = 'LAST_PNA_TRACKING_SYNC_LONG_RUN';
+                const lastRunLongStatus = await this.prisma.systemStatus.findUnique({ where: { key: lastRunLongKey } });
+                const lastRunLong = lastRunLongStatus ? DateTime.fromISO(lastRunLongStatus.value) : DateTime.fromMillis(0);
+
+                if (now.diff(lastRunLong, 'minutes').minutes >= config.pnaTracking.longIntervalMinutes) {
+                    this.logger.log(`Disparando Sincronización Tracking PNA automática (Intervalo respaldo: ${config.pnaTracking.longIntervalMinutes} min)`);
+                    const res = await this.pnaTrackingService.scheduleSynchronization(undefined, undefined, false, true);
+                    if (res.success) await this.updateStatusDate(lastRunLongKey, now);
+                }
             }
         }
 
@@ -206,8 +230,8 @@ export class SchedulerService {
         const status = await this.prisma.systemStatus.findUnique({ where: { key } });
 
         const defaultConfig = {
-            pnaApi: { enabled: true, intervalMinutes: 60 },
-            pnaTracking: { enabled: true, intervalMinutes: 120 }
+            pnaApi: { enabled: true, intervalMinutes: 20, longIntervalMinutes: 240 },
+            pnaTracking: { enabled: true, intervalMinutes: 20, longIntervalMinutes: 240 }
         };
 
         if (!status?.value) return defaultConfig;
@@ -232,7 +256,7 @@ export class SchedulerService {
     /**
      * Asegura que siempre haya una tarea de sincronización de PNA programada (Llamado interno)
      */
-    async ensurePnaSyncJob() {
+    async ensurePnaSyncJob(isLongSync: boolean = false): Promise<boolean> {
         const staleThresholdHours = parseInt(process.env.JOB_STALE_THRESHOLD_HOURS || '4', 10);
         const staleTime = new Date(Date.now() - staleThresholdHours * 60 * 60 * 1000);
 
@@ -250,25 +274,28 @@ export class SchedulerService {
         });
 
         if (!activeJob) {
-            const lastSync = await this.pnaApiService.getLastSuccessfulSyncDate();
-            // REGLA: Para automático usamos sincronización incremental (tramo corto)
+            const lastSync = await this.pnaApiService.getLastSuccessfulSyncDate(isLongSync);
+            // REGLA: Para automático usamos sincronización incremental
             const fromDate = lastSync ? lastSync : DateTime.now().minus({ days: 2 }).toJSDate();
             const toDate = new Date();
 
-            this.logger.log(`Programando nueva tarea de sincronización de PNA API (${fromDate.toISOString()} -> ${toDate.toISOString()})...`);
+            this.logger.log(`Programando nueva tarea de sincronización de PNA API (${fromDate.toISOString()} -> ${toDate.toISOString()}) [Respaldo: ${isLongSync}]...`);
             await this.prisma.jobQueue.create({
                 data: {
                     type: JobType.PNA_API_SYNC,
                     payload: {
                         fromDate: fromDate.toISOString(),
                         toDate: toDate.toISOString(),
+                        isLongSync,
                     },
                     status: JobStatus.PENDING,
                     nextRunAt: new Date(),
-                    priority: 20,
+                    priority: isLongSync ? 10 : 20,
                 },
             });
+            return true;
         }
+        return false;
     }
 
     private async processQueue() {
@@ -323,6 +350,7 @@ export class SchedulerService {
                     interface PnaSyncPayload {
                         fromDate?: string;
                         toDate?: string;
+                        isLongSync?: boolean;
                     }
 
                     const isPnaSyncPayload = (p: any): p is PnaSyncPayload => {
@@ -332,10 +360,16 @@ export class SchedulerService {
                     if (job.type === JobType.PNA_API_SYNC || job.type === JobType.PNA_TRACKING_SYNC) {
                         if (isPnaSyncPayload(job.payload)) {
                             const toDateStr = job.payload.toDate;
+                            const isLongSync = job.payload.isLongSync === true;
                             if (toDateStr) {
                                 const toDate = DateTime.fromISO(toDateStr);
                                 if (toDate.isValid) {
-                                    const statusKey = job.type === JobType.PNA_API_SYNC ? 'LAST_PNA_SYNC' : 'LAST_PNA_TRACKING_SYNC';
+                                    let statusKey = '';
+                                    if (job.type === JobType.PNA_API_SYNC) {
+                                        statusKey = isLongSync ? 'LAST_PNA_SYNC_LONG' : 'LAST_PNA_SYNC';
+                                    } else {
+                                        statusKey = isLongSync ? 'LAST_PNA_TRACKING_SYNC_LONG' : 'LAST_PNA_TRACKING_SYNC';
+                                    }
                                     const syncName = job.type === JobType.PNA_API_SYNC ? 'API PNA' : 'Tracking PNA';
                                     
                                     await this.updateStatusDate(statusKey, toDate);

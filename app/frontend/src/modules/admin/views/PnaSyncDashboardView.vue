@@ -31,15 +31,28 @@
                 <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
               </label>
             </div>
-            <div class="flex items-center gap-3">
-              <span class="text-xs font-semibold text-text-muted uppercase">Intervalo:</span>
-              <div class="flex items-center gap-2">
-                <input 
-                  type="number" 
-                  v-model.number="config.pnaApi.intervalMinutes"
-                  class="w-20 bg-surface border border-border rounded px-2 py-1 text-sm font-bold text-center outline-none focus:ring-1 focus:ring-primary"
-                />
-                <span class="text-sm text-text-muted">minutos</span>
+            <div class="flex flex-col gap-3">
+              <div class="flex items-center gap-3">
+                <span class="text-xs font-semibold text-text-muted uppercase w-32">Intervalo Rápido:</span>
+                <div class="flex items-center gap-2">
+                  <input 
+                    type="number" 
+                    v-model.number="config.pnaApi.intervalMinutes"
+                    class="w-20 bg-surface border border-border rounded px-2 py-1 text-sm font-bold text-center outline-none focus:ring-1 focus:ring-primary"
+                  />
+                  <span class="text-sm text-text-muted">minutos</span>
+                </div>
+              </div>
+              <div class="flex items-center gap-3">
+                <span class="text-xs font-semibold text-text-muted uppercase w-32">Intervalo Respaldo:</span>
+                <div class="flex items-center gap-2">
+                  <input 
+                    type="number" 
+                    v-model.number="config.pnaApi.longIntervalMinutes"
+                    class="w-20 bg-surface border border-border rounded px-2 py-1 text-sm font-bold text-center outline-none focus:ring-1 focus:ring-primary"
+                  />
+                  <span class="text-sm text-text-muted">minutos</span>
+                </div>
               </div>
             </div>
           </div>
@@ -56,15 +69,28 @@
                 <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
               </label>
             </div>
-            <div class="flex items-center gap-3">
-              <span class="text-xs font-semibold text-text-muted uppercase">Intervalo:</span>
-              <div class="flex items-center gap-2">
-                <input 
-                  type="number" 
-                  v-model.number="config.pnaTracking.intervalMinutes"
-                  class="w-20 bg-surface border border-border rounded px-2 py-1 text-sm font-bold text-center outline-none focus:ring-1 focus:ring-primary"
-                />
-                <span class="text-sm text-text-muted">minutos</span>
+            <div class="flex flex-col gap-3">
+              <div class="flex items-center gap-3">
+                <span class="text-xs font-semibold text-text-muted uppercase w-32">Intervalo Rápido:</span>
+                <div class="flex items-center gap-2">
+                  <input 
+                    type="number" 
+                    v-model.number="config.pnaTracking.intervalMinutes"
+                    class="w-20 bg-surface border border-border rounded px-2 py-1 text-sm font-bold text-center outline-none focus:ring-1 focus:ring-primary"
+                  />
+                  <span class="text-sm text-text-muted">minutos</span>
+                </div>
+              </div>
+              <div class="flex items-center gap-3">
+                <span class="text-xs font-semibold text-text-muted uppercase w-32">Intervalo Respaldo:</span>
+                <div class="flex items-center gap-2">
+                  <input 
+                    type="number" 
+                    v-model.number="config.pnaTracking.longIntervalMinutes"
+                    class="w-20 bg-surface border border-border rounded px-2 py-1 text-sm font-bold text-center outline-none focus:ring-1 focus:ring-primary"
+                  />
+                  <span class="text-sm text-text-muted">minutos</span>
+                </div>
               </div>
             </div>
           </div>
@@ -198,8 +224,8 @@ import {
 } from '@/icons'
 
 const config = reactive({
-  pnaApi: { enabled: true, intervalMinutes: 60 },
-  pnaTracking: { enabled: true, intervalMinutes: 120 }
+  pnaApi: { enabled: true, intervalMinutes: 20, longIntervalMinutes: 240 },
+  pnaTracking: { enabled: true, intervalMinutes: 20, longIntervalMinutes: 240 }
 })
 
 const isSaving = ref(false)
@@ -221,7 +247,18 @@ const manualSyncResult = ref<{ success: boolean; message: string; details?: any 
 const loadConfig = async () => {
   try {
     const remoteConfig = await alertsAdminApi.getConfig()
-    Object.assign(config, remoteConfig)
+    // Aseguramos que existan los valores por defecto si la base de datos devuelve una versión vieja
+    const mergedConfig = {
+      pnaApi: { 
+        ...config.pnaApi,
+        ...(remoteConfig.pnaApi || {})
+      },
+      pnaTracking: {
+        ...config.pnaTracking,
+        ...(remoteConfig.pnaTracking || {})
+      }
+    }
+    Object.assign(config, mergedConfig)
   } catch (error) {
     toast.error('Error al cargar la configuración')
   }
@@ -229,6 +266,16 @@ const loadConfig = async () => {
 
 // Guardar configuración
 const saveConfig = async () => {
+  if (config.pnaApi.intervalMinutes >= config.pnaApi.longIntervalMinutes) {
+    toast.error('Error: El intervalo rápido de PNA API debe ser menor al intervalo de respaldo')
+    return
+  }
+  
+  if (config.pnaTracking.intervalMinutes >= config.pnaTracking.longIntervalMinutes) {
+    toast.error('Error: El intervalo rápido de PNA Tracking debe ser menor al intervalo de respaldo')
+    return
+  }
+
   isSaving.value = true
   try {
     await alertsAdminApi.updateConfig(config)

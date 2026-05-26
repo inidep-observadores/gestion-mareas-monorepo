@@ -43,7 +43,7 @@ export class PnaApiService {
     * @param toDate Optional end date. Defaults to now.
     * @param onlyIngest If true, skips alert generation and only persists historical data.
     */
-    async processMovements(fromDate?: Date, toDate?: Date, onlyIngest = false): Promise<ProcessingSummary> {
+    async processMovements(fromDate?: Date, toDate?: Date, onlyIngest = false, isLongSync = false): Promise<ProcessingSummary> {
         const summary: ProcessingSummary = {
             total: 0,
             processed: 0,
@@ -63,7 +63,7 @@ export class PnaApiService {
             if (fromDate) {
                 effectiveFromDate = DateTime.fromJSDate(fromDate).toUTC();
             } else {
-                const lastSync = await this.getLastSuccessfulSyncDate();
+                const lastSync = await this.getLastSuccessfulSyncDate(isLongSync);
                 // Si no hay última sincro, usamos una ventana por defecto de 48hs
                 effectiveFromDate = lastSync
                     ? DateTime.fromJSDate(lastSync).toUTC()
@@ -699,9 +699,10 @@ export class PnaApiService {
     /**
      * Recupera la fecha de la última sincronización exitosa de system_status
      */
-    async getLastSuccessfulSyncDate(): Promise<Date | null> {
+    async getLastSuccessfulSyncDate(isLongSync: boolean = false): Promise<Date | null> {
+        const key = isLongSync ? 'LAST_PNA_SYNC_LONG' : 'LAST_PNA_SYNC';
         const status = await this.prisma.systemStatus.findUnique({
-            where: { key: 'LAST_PNA_SYNC' }
+            where: { key }
         });
         return status?.value ? new Date(status.value) : null;
     }
@@ -709,18 +710,19 @@ export class PnaApiService {
     /**
      * Actualiza la fecha de la última sincronización exitosa en system_status
      */
-    async updateLastSuccessfulSyncDate(date: Date): Promise<void> {
+    async updateLastSuccessfulSyncDate(date: Date, isLongSync: boolean = false): Promise<void> {
+        const key = isLongSync ? 'LAST_PNA_SYNC_LONG' : 'LAST_PNA_SYNC';
         await this.prisma.systemStatus.upsert({
-            where: { key: 'LAST_PNA_SYNC' },
+            where: { key },
             create: {
-                key: 'LAST_PNA_SYNC',
+                key,
                 value: date.toISOString()
             },
             update: {
                 value: date.toISOString()
             }
         });
-        this.logger.log(`Actualizado LAST_PNA_SYNC en system_status: ${date.toISOString()} `);
+        this.logger.log(`Actualizado ${key} en system_status: ${date.toISOString()} `);
     }
 
     /**
