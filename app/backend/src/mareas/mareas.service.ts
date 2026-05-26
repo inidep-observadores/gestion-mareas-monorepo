@@ -1723,6 +1723,8 @@ export class MareasService {
                 dias_navegados: diasNavegados,
                 progreso: progreso,
                 id_pesqueria: marea.pesqueriaId,
+                tipo_marea: marea.tipoMarea,
+                tipoMarea: marea.tipoMarea,
                 observaciones: marea.observaciones || '',
                 alertas: activeAlerts,
                 etapas: marea.etapas.map((e: any) => ({
