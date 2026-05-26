@@ -46,8 +46,8 @@
                   </span>
                   <select v-model="filterPesqueria"
                     class="bg-transparent border-none outline-none text-sm font-bold text-text-muted focus:text-text transition-colors cursor-pointer min-w-[140px] appearance-none pr-4">
-                    <option value="">Todas las pesquerías</option>
-                    <option v-for="pesqueria in availablePesquerias" :key="pesqueria" :value="pesqueria">
+                    <option value="" class="bg-surface text-text">Todas las pesquerías</option>
+                    <option v-for="pesqueria in availablePesquerias" :key="pesqueria" :value="pesqueria" class="bg-surface text-text">
                       {{ pesqueria }}
                     </option>
                   </select>
