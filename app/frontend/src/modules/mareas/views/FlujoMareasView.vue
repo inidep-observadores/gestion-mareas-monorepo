@@ -152,8 +152,13 @@
                             <span
                               class="text-[8px] font-black text-text-muted uppercase tracking-widest block mb-0.5">Últ.
                               Arribo</span>
-                            <span v-if="marea.fecha_arribo" class="text-[10px] font-bold text-text">{{
-                              formatDate(marea.fecha_arribo) }}</span>
+                            <div v-if="marea.fecha_arribo" class="flex flex-wrap items-center gap-1.5 mt-0.5">
+                              <span class="text-[10px] font-bold text-text">{{ formatDate(marea.fecha_arribo) }}</span>
+                              <span v-if="marea.en_tierra"
+                                class="px-2 py-0.5 bg-warning/10 text-warning rounded-full text-[10px] font-black uppercase tracking-tighter border border-warning/20 whitespace-nowrap">
+                                Esperando zarpada
+                              </span>
+                            </div>
                             <div v-else-if="marea.estado_codigo === 'EN_EJECUCION'" class="flex items-center gap-1.5 flex-wrap">
                               <span class="text-[10px] font-black text-primary italic">Navegando...</span>
                               <span v-if="marea.en_prospeccion"
@@ -343,11 +348,15 @@
                           </div>
                         </td>
                         <td class="px-5 py-1.5">
-                          <div class="flex flex-col" v-if="marea.fecha_arribo">
-                            <span class="text-xs font-bold text-text leading-none">{{ formatDate(marea.fecha_arribo)
-                            }}</span>
-                            <span class="text-[10px] text-text-muted leading-none mt-1">{{ marea.puerto_arribo || 'N/D'
-                            }}</span>
+                          <div class="flex flex-col gap-1" v-if="marea.fecha_arribo">
+                            <div class="flex flex-wrap items-center gap-1.5">
+                              <span class="text-xs font-bold text-text leading-none">{{ formatDate(marea.fecha_arribo) }}</span>
+                              <span v-if="marea.en_tierra"
+                                class="px-2 py-0.5 bg-warning/10 text-warning rounded-full text-[10px] font-black uppercase tracking-tighter border border-warning/20 whitespace-nowrap">
+                                Esperando zarpada
+                              </span>
+                            </div>
+                            <span class="text-[10px] text-text-muted leading-none">{{ marea.puerto_arribo || 'N/D' }}</span>
                           </div>
                           <div v-else-if="marea.estado_codigo === 'EN_EJECUCION'" class="flex items-center gap-1.5 flex-wrap">
                             <div class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></div>
