@@ -318,6 +318,34 @@ export class SchedulerService {
                 errorMessage = error.message || 'Unknown error';
                 stackTrace = error.stack || null;
 
+                if (isFinalFailure) {
+                    // Definimos una interfaz para asegurar el tipo del payload esperado
+                    interface PnaSyncPayload {
+                        fromDate?: string;
+                        toDate?: string;
+                    }
+
+                    const isPnaSyncPayload = (p: any): p is PnaSyncPayload => {
+                        return p !== null && typeof p === 'object' && !Array.isArray(p);
+                    };
+
+                    if (job.type === JobType.PNA_API_SYNC || job.type === JobType.PNA_TRACKING_SYNC) {
+                        if (isPnaSyncPayload(job.payload)) {
+                            const toDateStr = job.payload.toDate;
+                            if (toDateStr) {
+                                const toDate = DateTime.fromISO(toDateStr);
+                                if (toDate.isValid) {
+                                    const statusKey = job.type === JobType.PNA_API_SYNC ? 'LAST_PNA_SYNC' : 'LAST_PNA_TRACKING_SYNC';
+                                    const syncName = job.type === JobType.PNA_API_SYNC ? 'API PNA' : 'Tracking PNA';
+                                    
+                                    await this.updateStatusDate(statusKey, toDate);
+                                    this.logger.warn(`[Hakuna Matata] Job ${job.id} de ${syncName} falló definitivamente. Avanzando ${statusKey} a ${toDateStr} para evitar bucle infinito en rango erróneo.`);
+                                }
+                            }
+                        }
+                    }
+                }
+
                 await this.prisma.jobQueue.update({
                     where: { id: job.id },
                     data: {
