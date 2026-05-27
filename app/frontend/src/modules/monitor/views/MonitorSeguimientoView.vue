@@ -206,6 +206,8 @@ const mapLayers = ref({
   points: false,
   showAllVessels: true,
   showVesselNames: false,
+  noaaWind: false,
+  graticule: false
 })
 
 const isMobile = ref(false)
@@ -529,6 +531,14 @@ const handleSeekVessel = ({ vesselId, index }: { vesselId: string, index: number
 }
 
 const handleLayerToggle = (key: string, val: boolean) => {
+  if (key === 'noaaWind') {
+    if (val !== mapLayers.value.noaaWind) {
+      mapMonitor.value?.toggleOverlay('noaa-wind')
+    }
+  } else if (key === 'graticule') {
+    mapMonitor.value?.setGraticule(val)
+  }
+  
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ; (mapLayers.value as any)[key] = val
 }

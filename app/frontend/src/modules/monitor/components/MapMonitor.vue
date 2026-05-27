@@ -476,7 +476,19 @@ const setBaseLayer = (id: string) => {
   }
 }
 
-defineExpose({ fitVesselBounds, fitAllVesselsBounds, invalidateSize, setBaseLayer })
+const toggleOverlay = (id: string) => {
+  if (nauticalMap.value) {
+    nauticalMap.value.toggleOverlay(id)
+  }
+}
+
+const setGraticule = (val: boolean) => {
+  if (nauticalMap.value) {
+    nauticalMap.value.toggleGraticule(val)
+  }
+}
+
+defineExpose({ fitVesselBounds, fitAllVesselsBounds, invalidateSize, setBaseLayer, toggleOverlay, setGraticule })
 
 onUnmounted(() => {
   trajectoriesLayer.remove()

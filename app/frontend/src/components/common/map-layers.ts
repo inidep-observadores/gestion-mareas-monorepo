@@ -5,6 +5,11 @@ export interface MapLayer {
   attribution: string;
   type: 'base' | 'overlay';
   maxZoom?: number;
+  hasTime?: boolean; // Indicates if layer supports TIME parameter
+  defaultOpacity?: number; // Default opacity for the layer
+  layers?: string; // WMS layers parameter
+  format?: string;
+  transparent?: boolean;
 }
 
 export const BASE_LAYERS: MapLayer[] = [
@@ -51,4 +56,18 @@ export const BASE_LAYERS: MapLayer[] = [
   }
 ];
 
-export const OVERLAY_LAYERS: MapLayer[] = [];
+export const OVERLAY_LAYERS: MapLayer[] = [
+  {
+    id: 'noaa-wind',
+    name: 'Viento (Global GDPS)',
+    url: 'https://geo.weather.gc.ca/geomet',
+    attribution: '&copy; ECCC MSC GeoMet',
+    type: 'overlay',
+    layers: 'GDPS.ETA_WSPD',
+    format: 'image/png',
+    transparent: true,
+    hasTime: true,
+    defaultOpacity: 0.45,
+    maxZoom: 12
+  }
+];
