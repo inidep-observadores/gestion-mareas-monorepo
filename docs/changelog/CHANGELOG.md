@@ -3,6 +3,13 @@
 Todos los cambios notables en este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/), y este proyecto adhiere a [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+- **frontend:** mejoras integrales en el mapa de viento. Se independizaron las capas de velocidad y dirección, corrigiendo la desincronización de intervalos de pronóstico (3h vs 6h) usando `GDPS.ETA_UU`.
+- **frontend:** diseño más compacto y responsivo del panel de pronóstico (`MapTimeSlider.vue`).
+- **frontend:** ajuste de transparencia predeterminada (35%) y renombre de la capa 'graticule' a 'Red de coordenadas' (activada por defecto).
+
 ## [v0.6.0] - 2026-05-22
 ### Added
 - **mareas:** soporte para iniciar marea en prospeccion e interfaz tipada (21aca3d)

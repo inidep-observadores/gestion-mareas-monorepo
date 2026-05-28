@@ -92,20 +92,22 @@ const toggleOverlay = (id: string) => {
     if (layerDef.layers) {
       newLayer = L.tileLayer.wms(layerDef.url, {
         layers: layerDef.layers,
+        styles: layerDef.styles || '',
         format: layerDef.format || 'image/png',
         transparent: layerDef.transparent ?? true,
         attribution: layerDef.attribution,
         maxZoom: layerDef.maxZoom,
         opacity: layerDef.defaultOpacity || 1,
         version: '1.3.0',
-        zIndex: 10
+        zIndex: layerDef.zIndex ?? 10
         // time is intentionally omitted on init to let the server pick the default time
       })
     } else {
       newLayer = L.tileLayer(layerDef.url, {
         attribution: layerDef.attribution,
         maxZoom: layerDef.maxZoom,
-        opacity: layerDef.defaultOpacity || 1
+        opacity: layerDef.defaultOpacity || 1,
+        zIndex: layerDef.zIndex ?? 1
       })
     }
     

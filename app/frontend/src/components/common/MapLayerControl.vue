@@ -85,7 +85,7 @@
           </h3>
           <div class="space-y-2">
             <label class="flex cursor-pointer items-center justify-between rounded-lg bg-text/5 p-3 transition-colors hover:bg-text/10">
-              <span class="text-[12px] font-medium text-text">Retícula (Graticule)</span>
+              <span class="text-[12px] font-medium text-text">Red de coordenadas</span>
               <input
                 type="checkbox"
                 :checked="showGraticule"

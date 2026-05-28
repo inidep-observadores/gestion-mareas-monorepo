@@ -8,8 +8,10 @@ export interface MapLayer {
   hasTime?: boolean; // Indicates if layer supports TIME parameter
   defaultOpacity?: number; // Default opacity for the layer
   layers?: string; // WMS layers parameter
+  styles?: string; // WMS styles parameter
   format?: string;
   transparent?: boolean;
+  zIndex?: number;
 }
 
 export const BASE_LAYERS: MapLayer[] = [
@@ -67,7 +69,23 @@ export const OVERLAY_LAYERS: MapLayer[] = [
     format: 'image/png',
     transparent: true,
     hasTime: true,
-    defaultOpacity: 0.45,
-    maxZoom: 12
+    defaultOpacity: 0.35,
+    maxZoom: 12,
+    zIndex: 10
+  },
+  {
+    id: 'noaa-wind-arrows',
+    name: 'Viento Direccion (Global GDPS)',
+    url: 'https://geo.weather.gc.ca/geomet',
+    attribution: '&copy; ECCC MSC GeoMet',
+    type: 'overlay',
+    layers: 'GDPS.ETA_UU',
+    styles: 'WindBarbs_knots',
+    format: 'image/png',
+    transparent: true,
+    hasTime: true,
+    defaultOpacity: 0.35,
+    maxZoom: 12,
+    zIndex: 20
   }
 ];

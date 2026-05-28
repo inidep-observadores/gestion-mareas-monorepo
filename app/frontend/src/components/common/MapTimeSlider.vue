@@ -1,12 +1,15 @@
 <template>
   <HudCard customClass="map-time-slider flex flex-col pointer-events-auto">
     <!-- Controles de Tiempo -->
-    <div class="p-3 border-b border-border/10 flex flex-col gap-2">
-      <div class="flex justify-between items-center mb-1">
-        <h4 class="font-black uppercase tracking-[0.2em] text-primary/80 mb-0.5 text-[10px]">Pronóstico</h4>
-        <span class="text-[10px] font-black bg-primary/20 text-primary px-2 py-0.5 rounded-full">
-          {{ formatOffset(currentOffset) }}
-        </span>
+    <div class="px-3 py-2 border-b border-border/10 flex flex-col gap-1">
+      <div class="flex justify-between items-center">
+        <h4 class="font-black uppercase tracking-[0.2em] text-primary/80 text-[10px]">Pronóstico</h4>
+        <div class="flex items-center gap-1.5">
+          <span class="text-[9px] font-black tracking-tighter text-text opacity-70">{{ formattedFutureDate }}</span>
+          <span class="text-[10px] font-black bg-primary/20 text-primary px-1.5 py-0.5 rounded-full">
+            {{ formatOffset(currentOffset) }}
+          </span>
+        </div>
       </div>
       
       <input 
@@ -19,21 +22,17 @@
         class="range range-xs range-primary w-full"
       />
       
-      <div class="flex justify-between font-black uppercase tracking-tighter text-[9px] text-text-muted/60 mt-1 px-1">
+      <div class="flex justify-between font-black uppercase tracking-tighter text-[9px] text-text-muted/60 px-1">
         <span>Actual</span>
         <span>+24h</span>
         <span>+48h</span>
         <span>+72h</span>
       </div>
-      
-      <div class="text-center font-black text-text tracking-tighter text-xs mt-1">
-        {{ formattedFutureDate }}
-      </div>
     </div>
 
     <!-- Controles de Opacidad -->
-    <div class="p-3 flex flex-col gap-2 bg-surface/5 rounded-b-2xl">
-      <div class="flex justify-between items-center mb-1">
+    <div class="px-3 py-2 flex flex-col gap-1 bg-surface/5 rounded-b-2xl">
+      <div class="flex justify-between items-center">
         <h4 class="font-black uppercase tracking-[0.2em] text-text-muted/60 text-[10px]">Opacidad de capa</h4>
         <span class="font-black text-text tracking-tighter text-[10px]">{{ Math.round(currentOpacity * 100) }}%</span>
       </div>
@@ -62,7 +61,7 @@ const props = withDefaults(defineProps<{
 }>(), {
   maxHours: 72,
   stepHours: 3,
-  initialOpacity: 0.45
+  initialOpacity: 0.35
 })
 
 const emit = defineEmits<{

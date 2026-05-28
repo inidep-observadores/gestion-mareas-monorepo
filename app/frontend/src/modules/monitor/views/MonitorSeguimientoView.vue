@@ -207,7 +207,7 @@ const mapLayers = ref({
   showAllVessels: true,
   showVesselNames: false,
   noaaWind: false,
-  graticule: false
+  graticule: true
 })
 
 const isMobile = ref(false)
@@ -534,6 +534,7 @@ const handleLayerToggle = (key: string, val: boolean) => {
   if (key === 'noaaWind') {
     if (val !== mapLayers.value.noaaWind) {
       mapMonitor.value?.toggleOverlay('noaa-wind')
+      mapMonitor.value?.toggleOverlay('noaa-wind-arrows')
     }
   } else if (key === 'graticule') {
     mapMonitor.value?.setGraticule(val)
