@@ -171,6 +171,7 @@ const layerLabels: Record<string, string> = {
   points: 'Puntos de reporte',
   showAllVessels: 'Todos los buques',
   showVesselNames: 'Mostrar identificación',
+  noaaWind: 'Mapa de viento',
 }
 
 const shouldShowLayer = (key: string) => {

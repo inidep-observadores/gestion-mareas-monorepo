@@ -301,6 +301,7 @@ const formatKey = (key: string) => {
     points: 'Puntos de Reporte',
     showAllVessels: 'Ver toda la flota',
     showVesselNames: 'Mostrar identificación',
+    noaaWind: 'Mapa de viento',
   }
   return labels[key] || key
 }
