@@ -19,11 +19,10 @@ export class PnaApiSyncProcessor implements JobProcessor {
 
             const summary = await this.pnaApiService.processMovements(fromDate, toDate, onlyIngest, isLongSync);
 
-            // Solo si tuvo éxito (no lanzó error), actualizamos la fecha de última sincronización
-            if (summary.processed > 0 || !fromDate) {
-                const targetDate = toDate || new Date();
-                await this.pnaApiService.updateLastSuccessfulSyncDate(targetDate, isLongSync);
-            }
+            // Si la ejecución llegó hasta acá sin errores (catch), significa que consultó
+            // exitosamente la API. Incluso si no hubo datos, el tiempo debe avanzar para evitar bucles.
+            const targetDate = toDate || new Date();
+            await this.pnaApiService.updateLastSuccessfulSyncDate(targetDate, isLongSync);
 
             this.logger.log(`Sincronización finalizada exitosamente: ${JSON.stringify(summary)}`);
 
