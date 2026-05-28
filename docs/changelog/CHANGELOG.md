@@ -7,6 +7,7 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 
 ### Changed
 - **frontend:** mejoras integrales en el mapa de viento. Se independizaron las capas de velocidad y dirección, corrigiendo la desincronización de intervalos de pronóstico (3h vs 6h) usando `GDPS.ETA_UU`.
+- **frontend:** aplicar estilo continuo `WINDSPEEDKNOTS-LINEAR` a la capa de velocidad del viento para una transición de colores más natural tipo Windy.
 - **frontend:** diseño más compacto y responsivo del panel de pronóstico (`MapTimeSlider.vue`).
 - **frontend:** ajuste de transparencia predeterminada (35%) y renombre de la capa 'graticule' a 'Red de coordenadas' (activada por defecto).
 
