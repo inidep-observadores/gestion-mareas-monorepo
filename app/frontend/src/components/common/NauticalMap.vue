@@ -2,6 +2,14 @@
   <div class="relative h-full w-full overflow-hidden bg-surface-muted" :class="{ 'hide-zoom-controls': !showControls }">
     <div ref="mapContainer" class="h-full w-full"></div>
 
+    <!-- Leyenda de error de clima (Watermark) -->
+    <div v-if="hasOverlayError"
+      class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[1000] pointer-events-none px-6 py-4 rounded-xl bg-gray-900/40 dark:bg-black/50 backdrop-blur-md border border-white/10 text-center shadow-2xl transition-all duration-500 max-w-[80%]">
+      <span class="text-sm font-medium text-white/90 drop-shadow-md">
+        En este momento no hay datos disponibles de clima y pronóstico
+      </span>
+    </div>
+
     <!-- Control de Capas (Posicionado sobre el Zoom) -->
     <div v-if="showControls" class="absolute bottom-[50px] right-[14px] z-[1000] pointer-events-auto">
       <MapLayerControl :base-layers="BASE_LAYERS" :overlay-layers="OVERLAY_LAYERS" :current-base-id="currentBaseId"
@@ -63,6 +71,9 @@ let themeObserver: MutationObserver | null = null
 
 const currentBaseId = ref('argenmap-mapa-base')
 const activeOverlayIds = ref<string[]>([])
+const failingOverlayIds = ref<string[]>([])
+
+const hasOverlayError = computed(() => failingOverlayIds.value.length > 0)
 
 const setBaseLayer = (id: string) => {
   if (!map) return
@@ -116,8 +127,28 @@ const toggleOverlay = (id: string) => {
     newLayer.addTo(map)
     activeOverlayLayers.set(id, newLayer)
 
+    // Manejo de errores de carga de tiles
+    newLayer.on('tileerror', () => {
+      if (!failingOverlayIds.value.includes(id)) {
+        failingOverlayIds.value.push(id)
+      }
+    })
+
+    newLayer.on('tileload', () => {
+      const failIndex = failingOverlayIds.value.indexOf(id)
+      if (failIndex !== -1) {
+        failingOverlayIds.value.splice(failIndex, 1)
+      }
+    })
+
   } else {
     activeOverlayIds.value.splice(index, 1)
+
+    const failIndex = failingOverlayIds.value.indexOf(id)
+    if (failIndex !== -1) {
+      failingOverlayIds.value.splice(failIndex, 1)
+    }
+
     const layerToRemove = activeOverlayLayers.get(id)
     if (layerToRemove) {
       map.removeLayer(layerToRemove)
