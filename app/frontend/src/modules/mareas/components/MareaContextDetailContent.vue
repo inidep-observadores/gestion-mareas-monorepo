@@ -165,9 +165,14 @@
                     <div class="flex items-center gap-3">
                       <span class="text-[10px] font-black text-primary w-5">#{{ etapa.nroEtapa }}</span>
                       <div class="flex flex-col">
-                        <p class="text-[10px] font-bold text-text truncate max-w-[110px]">
-                          {{ etapa.puertoZarpadaCodigo || etapa.puertoZarpadaNombre || '?' }} → {{ etapa.puertoArriboCodigo || etapa.puertoArriboNombre || '?' }}
-                        </p>
+                        <div class="flex items-center gap-1.5">
+                          <p class="text-[10px] font-bold text-text truncate max-w-[110px]">
+                            {{ etapa.puertoZarpadaCodigo || etapa.puertoZarpadaNombre || '?' }} → {{ etapa.puertoArriboCodigo || etapa.puertoArriboNombre || '?' }}
+                          </p>
+                          <span v-if="etapa.tipoEtapa === 'EP'" title="Etapa de Prospección" class="px-1.5 py-0.5 bg-purple-500/10 text-purple-600 rounded-[4px] text-[8px] font-black uppercase tracking-tighter border border-purple-500/20 leading-none shrink-0">
+                            P
+                          </span>
+                        </div>
                       </div>
                     </div>
                     <div class="text-[9px] font-bold text-text-muted tabular-nums whitespace-nowrap">
