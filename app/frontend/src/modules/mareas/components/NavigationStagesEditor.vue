@@ -228,9 +228,7 @@ const canAddStage = computed(() => {
   
   return !!(
     last.fechaZarpada &&
-    last.puertoZarpadaId &&
     last.fechaArribo &&
-    last.puertoArriboId &&
     last.pesqueriaId &&
     last.tipoEtapa
   );
