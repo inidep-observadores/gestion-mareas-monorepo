@@ -806,7 +806,7 @@ export class MareasService {
             const buqueName = marea.buque.nombreBuque;
 
             // Agregar evento ZARPADA si aplica
-            if (etapa.fechaZarpada && new Date(etapa.fechaZarpada) >= limitDate) {
+            if (etapa.fechaZarpada && new Date(etapa.fechaZarpada) >= limitDate && (etapa as any).puertoZarpada) {
                 // Intentar extraer la fecha precisa de la metadata (eventDate es el estándar del sistema, fecha es alternativo)
                 const metadataZarpada = etapa.fuentesZarpada as any;
                 const preciseDateValue = metadataZarpada?.eventDate || metadataZarpada?.fecha;
@@ -829,7 +829,7 @@ export class MareasService {
             }
 
             // Agregar evento ARRIBO si aplica
-            if (etapa.fechaArribo && new Date(etapa.fechaArribo) >= limitDate) {
+            if (etapa.fechaArribo && new Date(etapa.fechaArribo) >= limitDate && (etapa as any).puertoArribo) {
                 // Intentar extraer la fecha precisa de la metadata (eventDate es el estándar del sistema, fecha es alternativo)
                 const metadataArribo = etapa.fuentesArribo as any;
                 const preciseDateValue = metadataArribo?.eventDate || metadataArribo?.fecha;
