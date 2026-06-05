@@ -29,7 +29,7 @@
           <AlertTrafficLight :show-actions="false" />
           <div class="flex flex-col gap-2">
             <WorkforceOverview :data="workforceData" @view-timeline="openTimeline" @refresh="loadWorkforce" />
-            <TopDryTime :topDry="workforceData?.topDry || []" @view-timeline="openTimeline" />
+            <TopDryTime v-show="false" :topDry="workforceData?.topDry || []" @view-timeline="openTimeline" />
           </div>
         </div>
 
