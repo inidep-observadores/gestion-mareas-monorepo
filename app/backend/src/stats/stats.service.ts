@@ -3802,6 +3802,7 @@ export class StatsService {
             // Categorización según estado histórico (Priorizamos eventos terminales detectados en el periodo)
             if (isCancelledInPeriod) {
                 mareaData.fechaEvento = cancellationMov.fechaHora;
+                mareaData.motivo = cancellationMov.comentarios || null;
                 results.canceladas.push(mareaData);
             } else if (isDesestimadaInPeriod) {
                 mareaData.fechaEvento = desestimacionMov.fechaHora;

@@ -199,7 +199,7 @@ export class AuditReportBuilder {
         // Construir secciones del documento
         const children = [
             // Portada
-            ...this.buildCoverPage(period, sigmaLogo),
+            ...this.buildCoverPage(period, sigmaLogo, data),
 
             // Sección 1: Introducción
             ...this.buildIntroduction(period, data.includeCampaigns, processed.hasPreviousYearMareas),
@@ -381,7 +381,7 @@ export class AuditReportBuilder {
     // DISEÑO INSTITUCIONAL (HEADER/FOOTER/COVER)
     // ─────────────────────────────────────────────────────────────
 
-    private buildCoverPage(period: PeriodDescription, sigmaLogo: Buffer): (Paragraph | Table)[] {
+    private buildCoverPage(period: PeriodDescription, sigmaLogo: Buffer, data: AuditReportData): (Paragraph | Table)[] {
         return [
             // Espaciado superior inicial
             new Paragraph({
@@ -410,6 +410,23 @@ export class AuditReportBuilder {
                 spacing: { after: 240 },
             }),
             this.centered(`(${period.range})`, FONT_SIZES.coverPeriod),
+
+            ...(this.isPeriodOpen(data) ? [
+                new Paragraph({
+                    children: [new TextRun({ text: "\u200B" })],
+                    spacing: { before: 240, after: 120 },
+                }),
+                new Paragraph({
+                    alignment: AlignmentType.CENTER,
+                    children: [
+                        new TextRun({ 
+                            text: `(Informe parcial con datos cerrados al ${this.getTodayFormatted()})`, 
+                            size: FONT_SIZES.body,
+                            color: '555555'
+                        })
+                    ]
+                })
+            ] : []),
 
             new Paragraph({
                 children: [new TextRun({ text: "\u200B" })],
@@ -856,8 +873,9 @@ export class AuditReportBuilder {
     private buildNavigationDetail(proc: any, data: AuditReportData): (Paragraph | Table)[] {
         const { finalizadas } = proc;
         const enEjecucionCount = proc.enEjecucion.length;
+        const refText = this.getReferenceTimeText(data);
         const introText = `Se detallan a continuación las ${finalizadas.length} mareas que alcanzaron estado "Finalizada" durante el período, agrupadas por pesquería.` +
-            (enEjecucionCount > 0 ? ` Las ${enEjecucionCount} mareas restantes se encontraban en estado "En ejecución" al cierre del período.` : '');
+            (enEjecucionCount > 0 ? ` Las ${enEjecucionCount} mareas restantes se encontraban en estado "En ejecución" ${refText}.` : '');
 
         const sorted = [...finalizadas].sort((a, b) => {
             const ordA = data.fisheryOrderMap?.get(a.pesqueria.trim()) ?? 999;
@@ -944,15 +962,43 @@ export class AuditReportBuilder {
         return result;
     }
 
+    private getTodayFormatted(): string {
+        const today = new Date();
+        const y = today.getFullYear();
+        const m = String(today.getMonth() + 1).padStart(2, '0');
+        const d = String(today.getDate()).padStart(2, '0');
+        return `${d}/${m}/${y}`;
+    }
+
+    private isPeriodOpen(data: { year: number, endDate?: string }): boolean {
+        const today = new Date();
+        const y = today.getFullYear();
+        const m = String(today.getMonth() + 1).padStart(2, '0');
+        const d = String(today.getDate()).padStart(2, '0');
+        const todayStr = `${y}-${m}-${d}`;
+        const limitDateStr = data.endDate ? data.endDate.substring(0, 10) : `${data.year}-12-31`;
+        return todayStr < limitDateStr;
+    }
+
+    private getReferenceTimeText(data: { year: number, endDate?: string }): string {
+        if (this.isPeriodOpen(data)) {
+            return `al momento de elaborar este informe (${this.getTodayFormatted()})`;
+        } else {
+            const limitDate = data.endDate ? new Date(data.endDate) : new Date(Date.UTC(data.year, 11, 31));
+            return `al cierre del período (${this.formatShortDate(limitDate)})`;
+        }
+    }
+
     private buildOngoingMareas(p: PeriodDescription, proc: any): (Paragraph | Table)[] {
         const { enEjecucion } = proc;
+        const refText = this.getReferenceTimeText({ year: p.year, endDate: p.endDate });
         if (enEjecucion.length === 0) return [
             this.heading1('6. MAREAS EN EJECUCIÓN'),
-            this.bodyParagraph('No se registraron mareas en ejecución al cierre del período.')
+            this.bodyParagraph(`No se registraron mareas en ejecución ${refText}.`)
         ];
 
-        const closeDateText = p.endDate ? this.formatShortDate(p.endDate) : `31 de diciembre de ${p.year}`;
-        const introText = `Al cierre del período (${closeDateText}), las siguientes ${enEjecucion.length} mareas se encontraban en curso:`;
+        const refTextCap = refText.charAt(0).toUpperCase() + refText.slice(1);
+        const introText = `${refTextCap}, las siguientes ${enEjecucion.length} mareas se encontraban en curso:`;
 
         const sorted = [...enEjecucion].sort((a, b) => {
             const ordA = proc.fisheryOrderMap?.get(a.pesqueria.trim()) ?? 999;
@@ -1007,15 +1053,18 @@ export class AuditReportBuilder {
             const sortedCanceladas = [...canceladas].sort((a, b) => this.sortMareaId(a.id_marea, b.id_marea));
             result.push(
                 this.heading2('7.1 Mareas canceladas'),
-                this.bodyParagraph(`Se registr${n !== 1 ? 'aron' : 'ó'} ${n} marea${n !== 1 ? 's' : ''} planificada${n !== 1 ? 's' : ''} que no llegó${n !== 1 ? 'ron' : ''} a ejecutarse en el período.`),
+                this.bodyParagraph(`Se registr${n !== 1 ? 'aron' : 'ó'} ${n} marea${n !== 1 ? 's' : ''} planificada${n !== 1 ? 's' : ''} que no lleg${n !== 1 ? 'aron' : 'ó'} a ejecutarse en el período.`),
                 createFormattedTable(
-                    ['MAREA', 'BUQUE', 'PESQUERÍA', 'DÍAS NAV.', 'FECHA CANC.'],
+                    ['MAREA', 'BUQUE', 'PESQUERÍA', 'FECHA CANC.', 'MOTIVO'],
                     sortedCanceladas.map(m => [
                         this.formatMareaShort(m.id_marea), m.buque, m.pesqueria,
-                        m.diasNavegados.toString(),
                         m.fechaEvento ? this.formatShortDate(m.fechaEvento) : '',
+                        m.motivo || '',
                     ]),
-                    { columnWidths: specialWidths, alignments: specialAligns },
+                    {
+                        columnWidths: [14, 24, 20, 14, 28],
+                        alignments: [AlignmentType.CENTER, AlignmentType.LEFT, AlignmentType.LEFT, AlignmentType.CENTER, AlignmentType.LEFT]
+                    },
                 ),
             );
         }
@@ -1070,7 +1119,7 @@ export class AuditReportBuilder {
             const subsecNum = 1 + (canceladas.length > 0 ? 1 : 0) + (desestimadas.length > 0 ? 1 : 0) + (esperandoEntrega.length > 0 ? 1 : 0);
             result.push(
                 this.heading2(`7.${subsecNum} Mareas pendientes de informe`),
-                this.bodyParagraph(`${n} marea${n !== 1 ? 's' : ''} se encontraba${n !== 1 ? 'n' : ''} en alguna etapa de corrección de datos o confección del informe al cierre del período, sin estar aún listas para protocolizar.`),
+                this.bodyParagraph(`${n} marea${n !== 1 ? 's' : ''} se encontraba${n !== 1 ? 'n' : ''} en alguna etapa de corrección de datos o confección del informe ${this.getReferenceTimeText(data)}, sin estar aún listas para protocolizar.`),
                 createFormattedTable(
                     ['MAREA', 'BUQUE', 'PESQUERÍA', 'DÍAS NAV.', 'FECHA REC.'],
                     sortedPendientes.map(m => [
@@ -1089,7 +1138,7 @@ export class AuditReportBuilder {
             const subsecNum = 1 + (canceladas.length > 0 ? 1 : 0) + (desestimadas.length > 0 ? 1 : 0) + (esperandoEntrega.length > 0 ? 1 : 0) + (pendientesDeInforme.length > 0 ? 1 : 0);
             result.push(
                 this.heading2(`7.${subsecNum} Informes pendientes de envío a DNI`),
-                this.bodyParagraph(`${n} marea${n !== 1 ? 's' : ''} cuenta${n !== 1 ? 'n' : ''} con su informe técnico finalizado al cierre del período, pendiente${n !== 1 ? 's' : ''} de ser enviada${n !== 1 ? 's' : ''} formalmente a la Dirección Nacional de Investigación para su protocolización.`),
+                this.bodyParagraph(`${n} marea${n !== 1 ? 's' : ''} cuenta${n !== 1 ? 'n' : ''} con su informe técnico finalizado ${this.getReferenceTimeText(data)}, pendiente${n !== 1 ? 's' : ''} de ser enviada${n !== 1 ? 's' : ''} formalmente a la Dirección Nacional de Investigación para su protocolización.`),
                 createFormattedTable(
                     ['MAREA', 'BUQUE', 'PESQUERÍA', 'DÍAS NAV.', 'FECHA FIN INF.'],
                     sortedPendientesEnvio.map(m => [
