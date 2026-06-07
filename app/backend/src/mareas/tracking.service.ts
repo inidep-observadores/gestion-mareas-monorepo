@@ -1145,7 +1145,8 @@ export class TrackingService {
                 FechaArribo: etapa.fechaArribo ? DateTime.fromJSDate(etapa.fechaArribo).setZone(this.TIMEZONE).toFormat("yyyy-MM-dd'T'HH:mm:ss") : null,
                 NombreCapitan: null,
                 AnioMareaBuque: null,
-                NumeroMareaBuque: null
+                NumeroMareaBuque: null,
+                TipoEtapa: etapa.tipoEtapa || null
             }))
         };
 

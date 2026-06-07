@@ -6,6 +6,7 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 ## [Unreleased]
 
 ### Changed
+- **backend:** agregar campo TipoEtapa a la exportación JSON de logística de marea.
 - **backend:** filtrar movimientos sin puerto asociado en lista de movimientos recientes (etapas administrativas en altamar).
 - **frontend:** mejoras integrales en el mapa de viento. Se independizaron las capas de velocidad y dirección, corrigiendo la desincronización de intervalos de pronóstico (3h vs 6h) usando `GDPS.ETA_UU`.
 - **frontend:** aplicar estilo continuo `WINDSPEEDKNOTS-LINEAR` a la capa de velocidad del viento para una transición de colores más natural tipo Windy.
