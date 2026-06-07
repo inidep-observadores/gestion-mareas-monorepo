@@ -3261,7 +3261,7 @@ export class StatsService {
                 label: 'Canceladas',
                 color: 'FFFFC107',
                 data: specialCases.canceladas,
-                getObs: (_: any) => '',
+                getObs: (m: any) => m.motivo ?? '',
             },
             {
                 label: 'Desestimadas',
@@ -3319,6 +3319,8 @@ export class StatsService {
                 let headerValue = h;
                 if (section.label === 'Enviadas a DNI' && h === 'Observaciones') {
                     headerValue = 'Protocolizadas en el período';
+                } else if (section.label === 'Canceladas' && h === 'Observaciones') {
+                    headerValue = 'Motivo';
                 }
                 cell.value = headerValue;
                 cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF00548B' } };
@@ -3352,11 +3354,14 @@ export class StatsService {
                     const obsCell = sheet.getCell(currentRow, 9);
                     obsCell.value = section.getObs(m);
 
-                    sheet.getCell(currentRow, 1).alignment = { horizontal: 'center' };
-                    sheet.getCell(currentRow, 7).alignment = { horizontal: 'center' };
+                    for (let i = 1; i <= 9; i++) {
+                        sheet.getCell(currentRow, i).alignment = { vertical: 'top' };
+                    }
+                    sheet.getCell(currentRow, 1).alignment = { horizontal: 'center', vertical: 'top' };
+                    sheet.getCell(currentRow, 7).alignment = { horizontal: 'center', vertical: 'top' };
                     sheet.getCell(currentRow, 8).numFmt = 'dd/mm/yyyy';
-                    sheet.getCell(currentRow, 8).alignment = { horizontal: 'center' };
-                    obsCell.alignment = { horizontal: 'left', wrapText: true };
+                    sheet.getCell(currentRow, 8).alignment = { horizontal: 'center', vertical: 'top' };
+                    obsCell.alignment = { horizontal: 'left', vertical: 'top', wrapText: true };
 
                     // Resaltado condicional para Enviadas a DNI
                     if (section.label === 'Enviadas a DNI' && m.nroProtocolo) {

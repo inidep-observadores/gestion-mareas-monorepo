@@ -5,13 +5,34 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 
 ## [Unreleased]
 
-### Changed
-- **backend:** agregar campo TipoEtapa a la exportación JSON de logística de marea.
-- **backend:** filtrar movimientos sin puerto asociado en lista de movimientos recientes (etapas administrativas en altamar).
-- **frontend:** mejoras integrales en el mapa de viento. Se independizaron las capas de velocidad y dirección, corrigiendo la desincronización de intervalos de pronóstico (3h vs 6h) usando `GDPS.ETA_UU`.
-- **frontend:** aplicar estilo continuo `WINDSPEEDKNOTS-LINEAR` a la capa de velocidad del viento para una transición de colores más natural tipo Windy.
-- **frontend:** diseño más compacto y responsivo del panel de pronóstico (`MapTimeSlider.vue`).
-- **frontend:** ajuste de transparencia predeterminada (35%) y renombre de la capa 'graticule' a 'Red de coordenadas' (activada por defecto).
+## [v0.7.0] - 2026-06-07
+
+### Added
+- **reports:** mejora precision temporal y detalle de mareas canceladas en informe de auditoria
+- **backend:** agregar campo TipoEtapa a la exportación JSON de logística de marea
+- **backend:** filtrar movimientos sin puerto en lista reciente
+- **dashboard:** ocultar temporalmente el componente TopDryTime
+- **mareas:** añadir badge de prospección en logística de etapas
+- **frontend:** agregar leyenda de fallback para capas de clima no disponibles
+- **frontend:** aplicar estilo continuo WINDSPEEDKNOTS-LINEAR a la capa de viento
+- **frontend:** mejoras integrales en el mapa de viento y controles de seguimiento
+- **monitor:** actualizar etiqueta de capa de viento en HUD
+- **mareas:** añadir badge de esperando zarpada en flujo operativo
+- **jobs:** implementar cron largo de respaldo para APIs de PNA
+- **mareas:** mostrar badge de prospeccion en mareas designadas
+- **mareas:** agregar badge de prospeccion en panel operativo
+
+### Fixed
+- **mareas:** permitir agregar etapa sin puertos de zarpada o arribo
+- **frontend:** actualizar nombres de capas de viento gdps geomet
+- **jobs:** corrección de avance temporal en sincronización PNA API
+- **frontend:** corregir renderizado y controles de capa de viento en mapa
+- **ui:** mejorar contraste del dropdown de pesquerías en modo oscuro
+- **backend/jobs:** forzar avance de fecha de sync en PNA tras fallos definitivos para evitar estancamiento
+- **backend:** incluir tipo_marea en respuesta de contexto
+- **frontend:** preservar metadata de alerta en resolución manual
+- **alerts:** asignar tipoEtapa 'EP' al iniciar marea con flag iniciaEnProspeccion
+- **mareas:** incluir tipoEtapa en respuesta de etapas y remover viñetas de indicadores
 
 ## [v0.6.0] - 2026-05-22
 ### Added
