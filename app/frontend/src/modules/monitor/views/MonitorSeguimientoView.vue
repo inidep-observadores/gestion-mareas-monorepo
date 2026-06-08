@@ -199,7 +199,7 @@ const pendingZoomVesselId = ref<string | null>(null)
 const pendingTrajectoriesCount = ref(0)
 const isInitialLoad = ref(true)
 const isExporting = ref(false)
-const mapLayers = ref({
+const DEFAULT_LAYERS = {
   veda: true,
   vieira: false,
   centolla: false,
@@ -209,7 +209,48 @@ const mapLayers = ref({
   showVesselNames: false,
   noaaWind: false,
   graticule: true
-})
+}
+
+const loadLayerPrefs = () => {
+  try {
+    const saved = localStorage.getItem('sigma_map_layer_prefs')
+    if (saved) {
+      const parsed = JSON.parse(saved)
+      return { 
+        ...DEFAULT_LAYERS, 
+        // Only restore specific fishing areas and environmental preferences
+        veda: parsed.veda ?? DEFAULT_LAYERS.veda,
+        vieira: parsed.vieira ?? DEFAULT_LAYERS.vieira,
+        centolla: parsed.centolla ?? DEFAULT_LAYERS.centolla,
+        langostino: parsed.langostino ?? DEFAULT_LAYERS.langostino,
+        noaaWind: parsed.noaaWind ?? DEFAULT_LAYERS.noaaWind,
+        graticule: parsed.graticule ?? DEFAULT_LAYERS.graticule
+      }
+    }
+  } catch (e) {
+    console.error('Error al cargar preferencias de capas', e)
+  }
+  return { ...DEFAULT_LAYERS }
+}
+
+const mapLayers = ref(loadLayerPrefs())
+
+watch(mapLayers, (newVal) => {
+  try {
+    // Save only area and environmental preferences to avoid interfering with context-dependent display modes (like single marea)
+    const prefsToSave = {
+      veda: newVal.veda,
+      vieira: newVal.vieira,
+      centolla: newVal.centolla,
+      langostino: newVal.langostino,
+      noaaWind: newVal.noaaWind,
+      graticule: newVal.graticule
+    }
+    localStorage.setItem('sigma_map_layer_prefs', JSON.stringify(prefsToSave))
+  } catch (e) {
+    console.error('Error al guardar preferencias de capas', e)
+  }
+}, { deep: true })
 
 const isMobile = ref(false)
 
