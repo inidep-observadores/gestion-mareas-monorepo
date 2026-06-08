@@ -1100,7 +1100,11 @@ export class TrackingService {
                 pesqueria: true,
                 artePrincipal: true,
                 etapas: {
-                    orderBy: { nroEtapa: 'asc' }
+                    orderBy: { nroEtapa: 'asc' },
+                    include: {
+                        puertoZarpada: true,
+                        puertoArribo: true
+                    }
                 }
             }
         });
@@ -1143,6 +1147,8 @@ export class TrackingService {
             Etapas: marea.etapas.map(etapa => ({
                 FechaZarpada: etapa.fechaZarpada ? DateTime.fromJSDate(etapa.fechaZarpada).setZone(this.TIMEZONE).toFormat("yyyy-MM-dd'T'HH:mm:ss") : null,
                 FechaArribo: etapa.fechaArribo ? DateTime.fromJSDate(etapa.fechaArribo).setZone(this.TIMEZONE).toFormat("yyyy-MM-dd'T'HH:mm:ss") : null,
+                PuertoZarpada: etapa.puertoZarpada?.nombre || null,
+                PuertoArribo: etapa.puertoArribo?.nombre || null,
                 NombreCapitan: null,
                 AnioMareaBuque: null,
                 NumeroMareaBuque: null,
