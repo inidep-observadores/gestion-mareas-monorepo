@@ -203,6 +203,7 @@ const mapLayers = ref({
   veda: true,
   vieira: false,
   centolla: false,
+  langostino: false,
   points: false,
   showAllVessels: true,
   showVesselNames: false,

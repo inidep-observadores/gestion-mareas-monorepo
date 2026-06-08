@@ -45,6 +45,7 @@ const props = defineProps<{
     veda: boolean;
     vieira: boolean;
     centolla: boolean;
+    langostino: boolean;
     points: boolean;
     showAllVessels: boolean;
     showVesselNames: boolean;
@@ -67,7 +68,8 @@ const geojsonLayers = {
   limite: L.layerGroup(),
   veda: L.layerGroup(),
   vieira: L.layerGroup(),
-  centolla: L.layerGroup()
+  centolla: L.layerGroup(),
+  langostino: L.layerGroup()
 }
 
 const LAYER_FILES = {
@@ -94,6 +96,9 @@ const LAYER_FILES = {
     'areas_centolla/area_centolla_S2.geojson',
     'areas_centolla/area_centolla_S3.geojson',
     'areas_centolla/area_centolla_S4.geojson'
+  ],
+  langostino: [
+    'areas_langostino/subareas_langostino.geojson'
   ]
 }
 
@@ -114,6 +119,7 @@ const onMapReady = (mapInstance: L.Map) => {
   geojsonLayers.veda.addTo(map)
   geojsonLayers.vieira.addTo(map)
   geojsonLayers.centolla.addTo(map)
+  geojsonLayers.langostino.addTo(map)
 
   trajectoriesLayer.addTo(map)
   markersLayer.addTo(map)
@@ -124,6 +130,7 @@ const onMapReady = (mapInstance: L.Map) => {
   if (props.activeLayers.veda) loadGeoJson('veda')
   if (props.activeLayers.vieira) loadGeoJson('vieira')
   if (props.activeLayers.centolla) loadGeoJson('centolla')
+  if (props.activeLayers.langostino) loadGeoJson('langostino')
 
   updateAll()
 }
@@ -343,7 +350,7 @@ const renderPoints = (vessel: VesselTrajectory) => {
   })
 }
 
-const loadGeoJson = async (type: 'veda' | 'vieira' | 'centolla' | 'limite') => {
+const loadGeoJson = async (type: 'veda' | 'vieira' | 'centolla' | 'langostino' | 'limite') => {
   if (!map) return
 
   const group = geojsonLayers[type]
@@ -370,7 +377,7 @@ const loadGeoJson = async (type: 'veda' | 'vieira' | 'centolla' | 'limite') => {
           style = { color: '#10B981', weight: 1.2, opacity: 0.7, fillOpacity: 0 }
         }
       } else {
-        const color = type === 'veda' ? '#F43F5E' : type === 'vieira' ? '#10B981' : '#F59E0B'
+        const color = type === 'veda' ? '#F43F5E' : type === 'vieira' ? '#10B981' : type === 'langostino' ? '#EC4899' : '#F59E0B'
         style = {
           color: color,
           weight: 2,
@@ -383,7 +390,21 @@ const loadGeoJson = async (type: 'veda' | 'vieira' | 'centolla' | 'limite') => {
 
       L.geoJSON(data, {
         pane: 'geojson',
-        style: style
+        style: style,
+        onEachFeature: (feature, layer) => {
+          if (type === 'langostino' && feature.properties && feature.properties.Id_area) {
+            const match = feature.properties.Id_area.match(/\d+/)
+            if (match) {
+              const num = match[0]
+              layer.bindTooltip(`<div class="subarea-label">${num}</div>`, {
+                permanent: true,
+                direction: 'center',
+                className: 'subarea-tooltip',
+                interactive: false
+              })
+            }
+          }
+        }
       }).addTo(group)
     } catch (e) {
       console.error(`Error loading geojson ${file}:`, e)
@@ -417,6 +438,7 @@ watch(() => props.activeLayers.points, (val) => {
 watch(() => props.activeLayers.veda, () => loadGeoJson('veda'))
 watch(() => props.activeLayers.vieira, () => loadGeoJson('vieira'))
 watch(() => props.activeLayers.centolla, () => loadGeoJson('centolla'))
+watch(() => props.activeLayers.langostino, () => loadGeoJson('langostino'))
 watch(() => props.activeLayers.showAllVessels, updateAll)
 watch(() => props.activeLayers.showVesselNames, updateAll)
 watch(() => props.filterPesqueria, () => {
@@ -498,6 +520,7 @@ onUnmounted(() => {
   geojsonLayers.veda.remove()
   geojsonLayers.vieira.remove()
   geojsonLayers.centolla.remove()
+  geojsonLayers.langostino.remove()
 })
 </script>
 
@@ -718,5 +741,22 @@ onUnmounted(() => {
 .leaflet-control-zoom a:hover {
   background-color: var(--color-primary) !important;
   color: white !important;
+}
+
+/* Tooltip transparente para subareas de langostino */
+.leaflet-tooltip.subarea-tooltip {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+.leaflet-tooltip.subarea-tooltip::before {
+  display: none !important;
+}
+.subarea-label {
+  font-size: 28px;
+  font-weight: 900;
+  color: rgba(255, 255, 255, 0.9);
+  text-shadow: 0 0 6px rgba(0,0,0,0.8), 0 0 10px rgba(0,0,0,0.5);
+  pointer-events: none;
 }
 </style>
