@@ -392,17 +392,32 @@ const loadGeoJson = async (type: 'veda' | 'vieira' | 'centolla' | 'langostino' |
         pane: 'geojson',
         style: style,
         onEachFeature: (feature, layer) => {
+          let labelText = null
+
           if (type === 'langostino' && feature.properties && feature.properties.Id_area) {
             const match = feature.properties.Id_area.match(/\d+/)
             if (match) {
-              const num = match[0]
-              layer.bindTooltip(`<div class="subarea-label">${num}</div>`, {
-                permanent: true,
-                direction: 'center',
-                className: 'subarea-tooltip',
-                interactive: false
-              })
+              labelText = match[0]
             }
+          } else if (type === 'vieira' && feature.properties && feature.properties.name) {
+            const parts = feature.properties.name.split('_')
+            if (parts.length > 0) {
+              labelText = parts[parts.length - 1]
+            }
+          } else if (type === 'centolla') {
+            const match = file.match(/area_centolla_([A-Za-z0-9]+)\.geojson/i)
+            if (match) {
+              labelText = match[1]
+            }
+          }
+
+          if (labelText) {
+            layer.bindTooltip(`<div class="subarea-label">${labelText}</div>`, {
+              permanent: true,
+              direction: 'center',
+              className: 'subarea-tooltip',
+              interactive: false
+            })
           }
         }
       }).addTo(group)
@@ -753,8 +768,8 @@ onUnmounted(() => {
   display: none !important;
 }
 .subarea-label {
-  font-size: 28px;
-  font-weight: 900;
+  font-size: 20px;
+  font-weight: 400;
   color: rgba(255, 255, 255, 0.9);
   text-shadow: 0 0 6px rgba(0,0,0,0.8), 0 0 10px rgba(0,0,0,0.5);
   pointer-events: none;
