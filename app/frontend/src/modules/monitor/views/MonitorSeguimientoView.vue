@@ -109,28 +109,25 @@
           </div>
 
           <!-- Bottom Row (Anclado al fondo) -->
-          <div class="absolute bottom-6 left-6 right-6 flex flex-col gap-2">
-            <!-- Mouse Coordinates -->
-            <div v-if="!isMobile" :class="[
-              'flex transition-all duration-500 ease-in-out',
-              leftSidebarOpen ? 'justify-end pr-14' : 'justify-start'
-            ]">
-              <MouseCoordinates :coords="mouseCoords" />
+          <div class="absolute bottom-6 left-6 right-6 pointer-events-none pb-4 flex justify-center">
+
+            <!-- Player Control (Centro) -->
+            <div class="w-full max-w-md pointer-events-auto relative z-0 flex justify-center">
+              <TimelinePlayer v-if="activeVessel && activeVessel.visible && activeVessel.points.length"
+                class="w-full"
+                :currentIndex="activeVessel.currentIndex" :maxIndex="activeVessel.points.length - 1"
+                :currentTime="currentPoint?.timestamp?.toString() || ''" :isPlaying="isPlaying" :speed="playbackSpeed"
+                :startDate="activeVessel.points[0]?.timestamp.toString().split('T')[0] || '--'"
+                :endDate="activeVessel.points[activeVessel.points.length - 1]?.timestamp.toString().split('T')[0] || '--'"
+                @update:index="handlePlayerIndexUpdate" @update:speed="handleSpeedChange" @toggle-play="togglePlay"
+                @prev="handlePlayerPrev" @next="handlePlayerNext" @skip-start="activeVessel.currentIndex = 0"
+                @skip-end="activeVessel.currentIndex = activeVessel.points.length - 1"
+                @select-date="handleDateSelection" />
             </div>
 
-            <!-- Player Control -->
-            <div class="w-full flex justify-center pb-4">
-              <div class="w-full max-w-md">
-                <TimelinePlayer v-if="activeVessel && activeVessel.visible && activeVessel.points.length"
-                  :currentIndex="activeVessel.currentIndex" :maxIndex="activeVessel.points.length - 1"
-                  :currentTime="currentPoint?.timestamp?.toString() || ''" :isPlaying="isPlaying" :speed="playbackSpeed"
-                  :startDate="activeVessel.points[0]?.timestamp.toString().split('T')[0] || '--'"
-                  :endDate="activeVessel.points[activeVessel.points.length - 1]?.timestamp.toString().split('T')[0] || '--'"
-                  @update:index="handlePlayerIndexUpdate" @update:speed="handleSpeedChange" @toggle-play="togglePlay"
-                  @prev="handlePlayerPrev" @next="handlePlayerNext" @skip-start="activeVessel.currentIndex = 0"
-                  @skip-end="activeVessel.currentIndex = activeVessel.points.length - 1"
-                  @select-date="handleDateSelection" />
-              </div>
+            <!-- Mouse Coordinates (Justo a la derecha del slider) -->
+            <div v-if="!isMobile" class="absolute bottom-4 left-1/2 ml-[240px] transition-all duration-500 ease-in-out pointer-events-auto z-10 flex items-end">
+              <MouseCoordinates :coords="mouseCoords" />
             </div>
           </div>
         </div>
