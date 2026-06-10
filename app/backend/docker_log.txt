@@ -1,0 +1,1000 @@
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 8:07:06 PM [32m    LOG[39m [38;5;3m[VesselSyncService] [39m[32mTrabajo encolado para sincronización de buque: HUAFENG 820 (ex INFINITUS PEZ) (MMSI: N/A)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 8:07:06 PM [32m    LOG[39m [38;5;3m[VesselSyncService] [39m[32mTrabajo de sincronización encolado para: HUAFENG 820 (ex INFINITUS PEZ) (MMSI: N/A)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 8:07:11 PM [32m    LOG[39m [38;5;3m[PnaTrackingService] [39m[32mSincronización finalizada: 161 puntos insertados, 0 alertas/eventos detectados.[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 8:08:00 PM [32m    LOG[39m [38;5;3m[VesselSyncProcessor] [39m[32mProcessing vessel sync for ID: 4f936a28-6bf8-4875-866e-318bdbd5cd6f, Nombre: HUAFENG 820 (ex INFINITUS PEZ), MMSI: N/A[39m
+sigma-backend  | [95m[Nest] 1  - [39m06/01/2026, 8:08:15 PM [95m  DEBUG[39m [38;5;3m[VesselSyncService] [39m[95mBuscando buque por nombre: HUAFENG 820 (ex INFINITUS PEZ)[39m
+sigma-backend  | [95m[Nest] 1  - [39m06/01/2026, 8:08:15 PM [95m  DEBUG[39m [38;5;3m[FisheryApiAdapter] [39m[95mNo se encontró buque con nombre: HUAFENG 820 (ex INFINITUS PEZ)[39m
+sigma-backend  | [33m[Nest] 1  - [39m06/01/2026, 8:08:15 PM [33m   WARN[39m [38;5;3m[VesselSyncService] [39m[33mNo se encontraron datos oficiales para: HUAFENG 820 (ex INFINITUS PEZ) (ID: N/A, MMSI: N/A)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 8:21:00 PM [32m    LOG[39m [38;5;3m[SchedulerService] [39m[32mDisparando Sincronización Tracking PNA automática (Intervalo rápido: 15 min)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 8:21:00 PM [32m    LOG[39m [38;5;3m[PnaTrackingService] [39m[32mProgramando sincronización de Tracking PNA desde 2026-06-01T20:05:34.000Z hasta 2026-06-01T20:21:00.025Z[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 8:21:00 PM [32m    LOG[39m [38;5;3m[PnaTrackingService] [39m[32mSe han encolado 1 tareas de sincronización de tracking.[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 8:21:00 PM [32m    LOG[39m [38;5;3m[PnaTrackingSyncProcessor] [39m[32mIniciando fragmento de sincronización de tracking PNA: 2026-06-01T20:05:34.000Z -> 2026-06-01T20:21:00.025Z[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 8:21:00 PM [32m    LOG[39m [38;5;3m[PnaTrackingService] [39m[32mEjecutando fragmento de Tracking PNA: 2026-06-01T20:05:34.000Z -> 2026-06-01T20:21:00.025Z[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 8:21:02 PM [32m    LOG[39m [38;5;3m[PnaTrackingParser] [39m[32mParsed 218 tracking reportes from XML[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 8:21:04 PM [32m    LOG[39m [38;5;3m[VesselSyncService] [39m[32mTrabajo encolado para sincronización de buque: SUEMAR DOS (MMSI: N/A)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 8:21:04 PM [32m    LOG[39m [38;5;3m[VesselSyncService] [39m[32mTrabajo de sincronización encolado para: SUEMAR DOS (MMSI: N/A)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 8:21:04 PM [32m    LOG[39m [38;5;3m[VesselSyncService] [39m[32mTrabajo encolado para sincronización de buque: HUAFENG 820 (ex INFINITUS PEZ) (MMSI: N/A)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 8:21:04 PM [32m    LOG[39m [38;5;3m[VesselSyncService] [39m[32mTrabajo de sincronización encolado para: HUAFENG 820 (ex INFINITUS PEZ) (MMSI: N/A)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 8:21:11 PM [32m    LOG[39m [38;5;3m[PnaTrackingService] [39m[32mSincronización finalizada: 182 puntos insertados, 0 alertas/eventos detectados.[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 8:22:00 PM [32m    LOG[39m [38;5;3m[VesselSyncProcessor] [39m[32mProcessing vessel sync for ID: 077a2e41-1ab0-4a19-93fd-41c01bdad428, Nombre: SUEMAR DOS, MMSI: N/A[39m
+sigma-backend  | [95m[Nest] 1  - [39m06/01/2026, 8:22:15 PM [95m  DEBUG[39m [38;5;3m[VesselSyncService] [39m[95mBuscando buque por nombre: SUEMAR DOS[39m
+sigma-backend  | [95m[Nest] 1  - [39m06/01/2026, 8:22:15 PM [95m  DEBUG[39m [38;5;3m[FisheryApiAdapter] [39m[95mNo se encontró buque con nombre: SUEMAR DOS[39m
+sigma-backend  | [33m[Nest] 1  - [39m06/01/2026, 8:22:15 PM [33m   WARN[39m [38;5;3m[VesselSyncService] [39m[33mNo se encontraron datos oficiales para: SUEMAR DOS (ID: N/A, MMSI: N/A)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 8:22:15 PM [32m    LOG[39m [38;5;3m[VesselSyncProcessor] [39m[32mProcessing vessel sync for ID: 4f936a28-6bf8-4875-866e-318bdbd5cd6f, Nombre: HUAFENG 820 (ex INFINITUS PEZ), MMSI: N/A[39m
+sigma-backend  | [95m[Nest] 1  - [39m06/01/2026, 8:22:30 PM [95m  DEBUG[39m [38;5;3m[VesselSyncService] [39m[95mBuscando buque por nombre: HUAFENG 820 (ex INFINITUS PEZ)[39m
+sigma-backend  | [95m[Nest] 1  - [39m06/01/2026, 8:22:30 PM [95m  DEBUG[39m [38;5;3m[FisheryApiAdapter] [39m[95mNo se encontró buque con nombre: HUAFENG 820 (ex INFINITUS PEZ)[39m
+sigma-backend  | [33m[Nest] 1  - [39m06/01/2026, 8:22:30 PM [33m   WARN[39m [38;5;3m[VesselSyncService] [39m[33mNo se encontraron datos oficiales para: HUAFENG 820 (ex INFINITUS PEZ) (ID: N/A, MMSI: N/A)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 8:26:00 PM [32m    LOG[39m [38;5;3m[SchedulerService] [39m[32mDisparando Sincronización PNA API automática (Intervalo rápido: 30 min)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 8:26:00 PM [32m    LOG[39m [38;5;3m[SchedulerService] [39m[32mProgramando nueva tarea de sincronización de PNA API (2026-06-01T19:55:00.047Z -> 2026-06-01T20:26:00.038Z) [Respaldo: false]...[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 8:27:00 PM [32m    LOG[39m [38;5;3m[PnaApiSyncProcessor] [39m[32mIniciando sincronización de movimientos desde API PNA...[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 8:27:00 PM [32m    LOG[39m [38;5;3m[PnaApiService] [39m[32mIniciando sincronización PNA: 2026-06-01 19:55:00 -> 2026-06-01 20:26:00[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 8:27:00 PM [32m    LOG[39m [38;5;3m[PnaApiService] [39m[32mModo API Real activado: Consultando servicio web PNA[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 8:27:00 PM [32m    LOG[39m [38;5;3m[PnaApiService] [39m[32mCalling PNA API: https://sscpwsexternos.prefecturanaval.gob.ar/WsPescaExternos.asmx (Range: 2026-06-01 19:55:00 - 2026-06-01 20:26:00)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 8:27:00 PM [32m    LOG[39m [38;5;3m[PnaApiParser] [39m[32mParsed 1 reportes from XML[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 8:27:00 PM [32m    LOG[39m [38;5;3m[PnaApiService] [39m[32mProcessing 1 reportes from PNA API[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 8:27:00 PM [32m    LOG[39m [38;5;3m[PnaApiService] [39m[32mProgreso PNA: 1/1 reportes procesados...[39m
+sigma-backend  | [95m[Nest] 1  - [39m06/01/2026, 8:27:00 PM [95m  DEBUG[39m [38;5;3m[PnaApiService] [39m[95mSkipping alert for 7 de Diciembre: Event already registered or no matchable tide[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 8:27:00 PM [32m    LOG[39m [38;5;3m[PnaApiService] [39m[32mProcessing complete: {"total":1,"processed":1,"skipped":0,"alertsCreated":0,"alertsValidated":0,"errors":0}[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 8:27:00 PM [32m    LOG[39m [38;5;3m[PnaApiService] [39m[32mActualizado LAST_PNA_SYNC en system_status: 2026-06-01T20:26:00.038Z [39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 8:27:00 PM [32m    LOG[39m [38;5;3m[PnaApiSyncProcessor] [39m[32mSincronización finalizada exitosamente: {"total":1,"processed":1,"skipped":0,"alertsCreated":0,"alertsValidated":0,"errors":0}[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 8:37:00 PM [32m    LOG[39m [38;5;3m[SchedulerService] [39m[32mDisparando Sincronización Tracking PNA automática (Intervalo rápido: 15 min)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 8:37:00 PM [32m    LOG[39m [38;5;3m[PnaTrackingService] [39m[32mProgramando sincronización de Tracking PNA desde 2026-06-01T20:15:28.000Z hasta 2026-06-01T20:37:00.025Z[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 8:37:00 PM [32m    LOG[39m [38;5;3m[PnaTrackingService] [39m[32mSe han encolado 1 tareas de sincronización de tracking.[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 8:38:00 PM [32m    LOG[39m [38;5;3m[PnaTrackingSyncProcessor] [39m[32mIniciando fragmento de sincronización de tracking PNA: 2026-06-01T20:15:28.000Z -> 2026-06-01T20:37:00.025Z[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 8:38:00 PM [32m    LOG[39m [38;5;3m[PnaTrackingService] [39m[32mEjecutando fragmento de Tracking PNA: 2026-06-01T20:15:28.000Z -> 2026-06-01T20:37:00.025Z[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 8:38:02 PM [32m    LOG[39m [38;5;3m[PnaTrackingParser] [39m[32mParsed 361 tracking reportes from XML[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 8:38:05 PM [32m    LOG[39m [38;5;3m[VesselSyncService] [39m[32mTrabajo encolado para sincronización de buque: LIBERTAD DEL MAR 1° (MMSI: N/A)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 8:38:05 PM [32m    LOG[39m [38;5;3m[VesselSyncService] [39m[32mTrabajo de sincronización encolado para: LIBERTAD DEL MAR 1° (MMSI: N/A)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 8:38:06 PM [32m    LOG[39m [38;5;3m[VesselSyncService] [39m[32mTrabajo encolado para sincronización de buque: SUEMAR DOS (MMSI: N/A)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 8:38:06 PM [32m    LOG[39m [38;5;3m[VesselSyncService] [39m[32mTrabajo de sincronización encolado para: SUEMAR DOS (MMSI: N/A)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 8:38:09 PM [32m    LOG[39m [38;5;3m[VesselSyncService] [39m[32mTrabajo encolado para sincronización de buque: HUAFENG 820 (ex INFINITUS PEZ) (MMSI: N/A)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 8:38:09 PM [32m    LOG[39m [38;5;3m[VesselSyncService] [39m[32mTrabajo de sincronización encolado para: HUAFENG 820 (ex INFINITUS PEZ) (MMSI: N/A)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 8:38:19 PM [32m    LOG[39m [38;5;3m[PnaTrackingService] [39m[32mSincronización finalizada: 300 puntos insertados, 0 alertas/eventos detectados.[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 8:39:00 PM [32m    LOG[39m [38;5;3m[VesselSyncProcessor] [39m[32mProcessing vessel sync for ID: 24c98bdd-72cb-4bd5-914a-6945e668aa49, Nombre: LIBERTAD DEL MAR 1°, MMSI: N/A[39m
+sigma-backend  | [95m[Nest] 1  - [39m06/01/2026, 8:39:15 PM [95m  DEBUG[39m [38;5;3m[VesselSyncService] [39m[95mBuscando buque por nombre: LIBERTAD DEL MAR 1°[39m
+sigma-backend  | [95m[Nest] 1  - [39m06/01/2026, 8:39:15 PM [95m  DEBUG[39m [38;5;3m[FisheryApiAdapter] [39m[95mNo se encontró buque con nombre: LIBERTAD DEL MAR 1°[39m
+sigma-backend  | [33m[Nest] 1  - [39m06/01/2026, 8:39:15 PM [33m   WARN[39m [38;5;3m[VesselSyncService] [39m[33mNo se encontraron datos oficiales para: LIBERTAD DEL MAR 1° (ID: N/A, MMSI: N/A)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 8:39:15 PM [32m    LOG[39m [38;5;3m[VesselSyncProcessor] [39m[32mProcessing vessel sync for ID: 077a2e41-1ab0-4a19-93fd-41c01bdad428, Nombre: SUEMAR DOS, MMSI: N/A[39m
+sigma-backend  | [95m[Nest] 1  - [39m06/01/2026, 8:39:30 PM [95m  DEBUG[39m [38;5;3m[VesselSyncService] [39m[95mBuscando buque por nombre: SUEMAR DOS[39m
+sigma-backend  | [95m[Nest] 1  - [39m06/01/2026, 8:39:30 PM [95m  DEBUG[39m [38;5;3m[FisheryApiAdapter] [39m[95mNo se encontró buque con nombre: SUEMAR DOS[39m
+sigma-backend  | [33m[Nest] 1  - [39m06/01/2026, 8:39:30 PM [33m   WARN[39m [38;5;3m[VesselSyncService] [39m[33mNo se encontraron datos oficiales para: SUEMAR DOS (ID: N/A, MMSI: N/A)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 8:39:30 PM [32m    LOG[39m [38;5;3m[VesselSyncProcessor] [39m[32mProcessing vessel sync for ID: 4f936a28-6bf8-4875-866e-318bdbd5cd6f, Nombre: HUAFENG 820 (ex INFINITUS PEZ), MMSI: N/A[39m
+sigma-backend  | [95m[Nest] 1  - [39m06/01/2026, 8:39:45 PM [95m  DEBUG[39m [38;5;3m[VesselSyncService] [39m[95mBuscando buque por nombre: HUAFENG 820 (ex INFINITUS PEZ)[39m
+sigma-backend  | [95m[Nest] 1  - [39m06/01/2026, 8:39:45 PM [95m  DEBUG[39m [38;5;3m[FisheryApiAdapter] [39m[95mNo se encontró buque con nombre: HUAFENG 820 (ex INFINITUS PEZ)[39m
+sigma-backend  | [33m[Nest] 1  - [39m06/01/2026, 8:39:45 PM [33m   WARN[39m [38;5;3m[VesselSyncService] [39m[33mNo se encontraron datos oficiales para: HUAFENG 820 (ex INFINITUS PEZ) (ID: N/A, MMSI: N/A)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 8:53:00 PM [32m    LOG[39m [38;5;3m[SchedulerService] [39m[32mDisparando Sincronización Tracking PNA automática (Intervalo rápido: 15 min)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 8:53:00 PM [32m    LOG[39m [38;5;3m[PnaTrackingService] [39m[32mProgramando sincronización de Tracking PNA desde 2026-06-01T20:34:12.000Z hasta 2026-06-01T20:53:00.022Z[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 8:53:00 PM [32m    LOG[39m [38;5;3m[PnaTrackingService] [39m[32mSe han encolado 1 tareas de sincronización de tracking.[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 8:53:00 PM [32m    LOG[39m [38;5;3m[PnaTrackingSyncProcessor] [39m[32mIniciando fragmento de sincronización de tracking PNA: 2026-06-01T20:34:12.000Z -> 2026-06-01T20:53:00.022Z[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 8:53:00 PM [32m    LOG[39m [38;5;3m[PnaTrackingService] [39m[32mEjecutando fragmento de Tracking PNA: 2026-06-01T20:34:12.000Z -> 2026-06-01T20:53:00.022Z[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 8:53:02 PM [32m    LOG[39m [38;5;3m[PnaTrackingParser] [39m[32mParsed 286 tracking reportes from XML[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 8:53:05 PM [32m    LOG[39m [38;5;3m[VesselSyncService] [39m[32mTrabajo encolado para sincronización de buque: SUEMAR DOS (MMSI: N/A)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 8:53:05 PM [32m    LOG[39m [38;5;3m[VesselSyncService] [39m[32mTrabajo de sincronización encolado para: SUEMAR DOS (MMSI: N/A)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 8:53:08 PM [32m    LOG[39m [38;5;3m[VesselSyncService] [39m[32mTrabajo encolado para sincronización de buque: HUAFENG 820 (ex INFINITUS PEZ) (MMSI: N/A)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 8:53:08 PM [32m    LOG[39m [38;5;3m[VesselSyncService] [39m[32mTrabajo de sincronización encolado para: HUAFENG 820 (ex INFINITUS PEZ) (MMSI: N/A)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 8:53:11 PM [32m    LOG[39m [38;5;3m[PnaTrackingService] [39m[32mSincronización finalizada: 246 puntos insertados, 0 alertas/eventos detectados.[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 8:54:00 PM [32m    LOG[39m [38;5;3m[VesselSyncProcessor] [39m[32mProcessing vessel sync for ID: 077a2e41-1ab0-4a19-93fd-41c01bdad428, Nombre: SUEMAR DOS, MMSI: N/A[39m
+sigma-backend  | [95m[Nest] 1  - [39m06/01/2026, 8:54:15 PM [95m  DEBUG[39m [38;5;3m[VesselSyncService] [39m[95mBuscando buque por nombre: SUEMAR DOS[39m
+sigma-backend  | [95m[Nest] 1  - [39m06/01/2026, 8:54:15 PM [95m  DEBUG[39m [38;5;3m[FisheryApiAdapter] [39m[95mNo se encontró buque con nombre: SUEMAR DOS[39m
+sigma-backend  | [33m[Nest] 1  - [39m06/01/2026, 8:54:15 PM [33m   WARN[39m [38;5;3m[VesselSyncService] [39m[33mNo se encontraron datos oficiales para: SUEMAR DOS (ID: N/A, MMSI: N/A)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 8:54:15 PM [32m    LOG[39m [38;5;3m[VesselSyncProcessor] [39m[32mProcessing vessel sync for ID: 4f936a28-6bf8-4875-866e-318bdbd5cd6f, Nombre: HUAFENG 820 (ex INFINITUS PEZ), MMSI: N/A[39m
+sigma-backend  | [95m[Nest] 1  - [39m06/01/2026, 8:54:30 PM [95m  DEBUG[39m [38;5;3m[VesselSyncService] [39m[95mBuscando buque por nombre: HUAFENG 820 (ex INFINITUS PEZ)[39m
+sigma-backend  | [95m[Nest] 1  - [39m06/01/2026, 8:54:30 PM [95m  DEBUG[39m [38;5;3m[FisheryApiAdapter] [39m[95mNo se encontró buque con nombre: HUAFENG 820 (ex INFINITUS PEZ)[39m
+sigma-backend  | [33m[Nest] 1  - [39m06/01/2026, 8:54:30 PM [33m   WARN[39m [38;5;3m[VesselSyncService] [39m[33mNo se encontraron datos oficiales para: HUAFENG 820 (ex INFINITUS PEZ) (ID: N/A, MMSI: N/A)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 8:57:00 PM [32m    LOG[39m [38;5;3m[SchedulerService] [39m[32mDisparando Sincronización PNA API automática (Intervalo rápido: 30 min)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 8:57:00 PM [32m    LOG[39m [38;5;3m[SchedulerService] [39m[32mProgramando nueva tarea de sincronización de PNA API (2026-06-01T20:26:00.038Z -> 2026-06-01T20:57:00.037Z) [Respaldo: false]...[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 8:57:00 PM [32m    LOG[39m [38;5;3m[PnaApiSyncProcessor] [39m[32mIniciando sincronización de movimientos desde API PNA...[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 8:57:00 PM [32m    LOG[39m [38;5;3m[PnaApiService] [39m[32mIniciando sincronización PNA: 2026-06-01 20:26:00 -> 2026-06-01 20:57:00[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 8:57:00 PM [32m    LOG[39m [38;5;3m[PnaApiService] [39m[32mModo API Real activado: Consultando servicio web PNA[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 8:57:00 PM [32m    LOG[39m [38;5;3m[PnaApiService] [39m[32mCalling PNA API: https://sscpwsexternos.prefecturanaval.gob.ar/WsPescaExternos.asmx (Range: 2026-06-01 20:26:00 - 2026-06-01 20:57:00)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 8:57:00 PM [32m    LOG[39m [38;5;3m[PnaApiParser] [39m[32mParsed 0 reportes from XML[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 8:57:00 PM [32m    LOG[39m [38;5;3m[PnaApiService] [39m[32mProcessing 0 reportes from PNA API[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 8:57:00 PM [32m    LOG[39m [38;5;3m[PnaApiService] [39m[32mProcessing complete: {"total":0,"processed":0,"skipped":0,"alertsCreated":0,"alertsValidated":0,"errors":0}[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 8:57:00 PM [32m    LOG[39m [38;5;3m[PnaApiService] [39m[32mActualizado LAST_PNA_SYNC en system_status: 2026-06-01T20:57:00.037Z [39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 8:57:00 PM [32m    LOG[39m [38;5;3m[PnaApiSyncProcessor] [39m[32mSincronización finalizada exitosamente: {"total":0,"processed":0,"skipped":0,"alertsCreated":0,"alertsValidated":0,"errors":0}[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:08:00 PM [32m    LOG[39m [38;5;3m[SchedulerService] [39m[32mDisparando Sincronización Tracking PNA automática (Intervalo rápido: 15 min)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:08:00 PM [32m    LOG[39m [38;5;3m[PnaTrackingService] [39m[32mProgramando sincronización de Tracking PNA desde 2026-06-01T20:50:21.000Z hasta 2026-06-01T21:08:00.025Z[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:08:00 PM [32m    LOG[39m [38;5;3m[PnaTrackingService] [39m[32mSe han encolado 1 tareas de sincronización de tracking.[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:08:00 PM [32m    LOG[39m [38;5;3m[PnaTrackingSyncProcessor] [39m[32mIniciando fragmento de sincronización de tracking PNA: 2026-06-01T20:50:21.000Z -> 2026-06-01T21:08:00.025Z[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:08:00 PM [32m    LOG[39m [38;5;3m[PnaTrackingService] [39m[32mEjecutando fragmento de Tracking PNA: 2026-06-01T20:50:21.000Z -> 2026-06-01T21:08:00.025Z[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:08:00 PM [32m    LOG[39m [38;5;3m[PnaTrackingParser] [39m[32mParsed 266 tracking reportes from XML[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:08:03 PM [32m    LOG[39m [38;5;3m[VesselSyncService] [39m[32mTrabajo encolado para sincronización de buque: SUEMAR DOS (MMSI: N/A)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:08:03 PM [32m    LOG[39m [38;5;3m[VesselSyncService] [39m[32mTrabajo de sincronización encolado para: SUEMAR DOS (MMSI: N/A)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:08:05 PM [32m    LOG[39m [38;5;3m[VesselSyncService] [39m[32mTrabajo encolado para sincronización de buque: HUAFENG 820 (ex INFINITUS PEZ) (MMSI: N/A)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:08:05 PM [32m    LOG[39m [38;5;3m[VesselSyncService] [39m[32mTrabajo de sincronización encolado para: HUAFENG 820 (ex INFINITUS PEZ) (MMSI: N/A)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:08:10 PM [32m    LOG[39m [38;5;3m[PnaTrackingService] [39m[32mSincronización finalizada: 219 puntos insertados, 0 alertas/eventos detectados.[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:09:00 PM [32m    LOG[39m [38;5;3m[VesselSyncProcessor] [39m[32mProcessing vessel sync for ID: 077a2e41-1ab0-4a19-93fd-41c01bdad428, Nombre: SUEMAR DOS, MMSI: N/A[39m
+sigma-backend  | [95m[Nest] 1  - [39m06/01/2026, 9:09:15 PM [95m  DEBUG[39m [38;5;3m[VesselSyncService] [39m[95mBuscando buque por nombre: SUEMAR DOS[39m
+sigma-backend  | [95m[Nest] 1  - [39m06/01/2026, 9:09:15 PM [95m  DEBUG[39m [38;5;3m[FisheryApiAdapter] [39m[95mNo se encontró buque con nombre: SUEMAR DOS[39m
+sigma-backend  | [33m[Nest] 1  - [39m06/01/2026, 9:09:15 PM [33m   WARN[39m [38;5;3m[VesselSyncService] [39m[33mNo se encontraron datos oficiales para: SUEMAR DOS (ID: N/A, MMSI: N/A)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:09:15 PM [32m    LOG[39m [38;5;3m[VesselSyncProcessor] [39m[32mProcessing vessel sync for ID: 4f936a28-6bf8-4875-866e-318bdbd5cd6f, Nombre: HUAFENG 820 (ex INFINITUS PEZ), MMSI: N/A[39m
+sigma-backend  | [95m[Nest] 1  - [39m06/01/2026, 9:09:30 PM [95m  DEBUG[39m [38;5;3m[VesselSyncService] [39m[95mBuscando buque por nombre: HUAFENG 820 (ex INFINITUS PEZ)[39m
+sigma-backend  | [95m[Nest] 1  - [39m06/01/2026, 9:09:30 PM [95m  DEBUG[39m [38;5;3m[FisheryApiAdapter] [39m[95mNo se encontró buque con nombre: HUAFENG 820 (ex INFINITUS PEZ)[39m
+sigma-backend  | [33m[Nest] 1  - [39m06/01/2026, 9:09:30 PM [33m   WARN[39m [38;5;3m[VesselSyncService] [39m[33mNo se encontraron datos oficiales para: HUAFENG 820 (ex INFINITUS PEZ) (ID: N/A, MMSI: N/A)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:24:00 PM [32m    LOG[39m [38;5;3m[SchedulerService] [39m[32mDisparando Sincronización Tracking PNA automática (Intervalo rápido: 15 min)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:24:00 PM [32m    LOG[39m [38;5;3m[PnaTrackingService] [39m[32mProgramando sincronización de Tracking PNA desde 2026-06-01T21:05:31.000Z hasta 2026-06-01T21:24:00.018Z[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:24:00 PM [32m    LOG[39m [38;5;3m[PnaTrackingService] [39m[32mSe han encolado 1 tareas de sincronización de tracking.[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:24:14 PM [32m    LOG[39m [38;5;3m[BusinessRulesController] [39m[32mSolicitud recibida: GET /config/reglas[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:24:14 PM [32m    LOG[39m [38;5;3m[BusinessRulesService] [39m[32mEntrega de reglas de negocio (in-memory)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:24:14 PM [32m    LOG[39m [38;5;3m[BusinessRulesController] [39m[32mReglas de negocio entregadas correctamente[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:24:15 PM [32m    LOG[39m [38;5;3m[BusinessRulesService] [39m[32mEntrega de reglas de negocio (in-memory)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:24:15 PM [32m    LOG[39m [38;5;3m[AlertsService] [39m[32mfindAll query: {"visible":true,"estado":"PENDIENTE","tipo":{"in":["ZARPADA","ARRIBO","POSIBLE_ZARPADA","POSIBLE_ARRIBO","RECOMENDACION_FIN_MAREA"]}}[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:24:15 PM [32m    LOG[39m [38;5;3m[BusinessRulesService] [39m[32mEntrega de reglas de negocio (in-memory)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:24:15 PM [32m    LOG[39m [38;5;3m[AlertsService] [39m[32mfindAll results count: 0, total: 0[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:24:15 PM [32m    LOG[39m [38;5;3m[BusinessRulesService] [39m[32mEntrega de reglas de negocio (in-memory)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:24:15 PM [32m    LOG[39m [38;5;3m[BusinessRulesService] [39m[32mEntrega de reglas de negocio (in-memory)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:24:15 PM [32m    LOG[39m [38;5;3m[BusinessRulesService] [39m[32mEntrega de reglas de negocio (in-memory)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:24:15 PM [32m    LOG[39m [38;5;3m[BusinessRulesService] [39m[32mEntrega de reglas de negocio (in-memory)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:24:15 PM [32m    LOG[39m [38;5;3m[BusinessRulesService] [39m[32mEntrega de reglas de negocio (in-memory)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:24:15 PM [32m    LOG[39m [38;5;3m[BusinessRulesService] [39m[32mEntrega de reglas de negocio (in-memory)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:24:15 PM [32m    LOG[39m [38;5;3m[BusinessRulesService] [39m[32mEntrega de reglas de negocio (in-memory)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:24:15 PM [32m    LOG[39m [38;5;3m[BusinessRulesService] [39m[32mEntrega de reglas de negocio (in-memory)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:24:15 PM [32m    LOG[39m [38;5;3m[BusinessRulesService] [39m[32mEntrega de reglas de negocio (in-memory)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:24:15 PM [32m    LOG[39m [38;5;3m[BusinessRulesService] [39m[32mEntrega de reglas de negocio (in-memory)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:24:15 PM [32m    LOG[39m [38;5;3m[BusinessRulesService] [39m[32mEntrega de reglas de negocio (in-memory)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:24:15 PM [32m    LOG[39m [38;5;3m[BusinessRulesService] [39m[32mEntrega de reglas de negocio (in-memory)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:24:15 PM [32m    LOG[39m [38;5;3m[BusinessRulesService] [39m[32mEntrega de reglas de negocio (in-memory)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:24:15 PM [32m    LOG[39m [38;5;3m[BusinessRulesService] [39m[32mEntrega de reglas de negocio (in-memory)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:24:15 PM [32m    LOG[39m [38;5;3m[BusinessRulesService] [39m[32mEntrega de reglas de negocio (in-memory)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:24:15 PM [32m    LOG[39m [38;5;3m[BusinessRulesService] [39m[32mEntrega de reglas de negocio (in-memory)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:24:15 PM [32m    LOG[39m [38;5;3m[BusinessRulesService] [39m[32mEntrega de reglas de negocio (in-memory)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:24:15 PM [32m    LOG[39m [38;5;3m[BusinessRulesService] [39m[32mEntrega de reglas de negocio (in-memory)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:24:15 PM [32m    LOG[39m [38;5;3m[BusinessRulesService] [39m[32mEntrega de reglas de negocio (in-memory)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:24:15 PM [32m    LOG[39m [38;5;3m[BusinessRulesService] [39m[32mEntrega de reglas de negocio (in-memory)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:24:15 PM [32m    LOG[39m [38;5;3m[BusinessRulesService] [39m[32mEntrega de reglas de negocio (in-memory)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:24:15 PM [32m    LOG[39m [38;5;3m[BusinessRulesService] [39m[32mEntrega de reglas de negocio (in-memory)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:24:15 PM [32m    LOG[39m [38;5;3m[BusinessRulesService] [39m[32mEntrega de reglas de negocio (in-memory)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:24:15 PM [32m    LOG[39m [38;5;3m[BusinessRulesService] [39m[32mEntrega de reglas de negocio (in-memory)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:24:15 PM [32m    LOG[39m [38;5;3m[BusinessRulesService] [39m[32mEntrega de reglas de negocio (in-memory)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:24:15 PM [32m    LOG[39m [38;5;3m[BusinessRulesService] [39m[32mEntrega de reglas de negocio (in-memory)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:24:15 PM [32m    LOG[39m [38;5;3m[MareasService] [39m[32mEjecutando chequeo de alertas (intervalo: 15 min)...[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:24:15 PM [32m    LOG[39m [38;5;3m[BusinessRulesService] [39m[32mEntrega de reglas de negocio (in-memory)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:24:15 PM [32m    LOG[39m [38;5;3m[BusinessRulesService] [39m[32mEntrega de reglas de negocio (in-memory)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:24:15 PM [32m    LOG[39m [38;5;3m[BusinessRulesService] [39m[32mEntrega de reglas de negocio (in-memory)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:24:15 PM [32m    LOG[39m [38;5;3m[BusinessRulesService] [39m[32mEntrega de reglas de negocio (in-memory)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:24:15 PM [32m    LOG[39m [38;5;3m[AlertsService] [39m[32mAlerta RETRASO_INFORME-b3c9d428-15dc-4d72-ab16-774281b9e31f ignorada (está RESUELTA)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:25:00 PM [32m    LOG[39m [38;5;3m[PnaTrackingSyncProcessor] [39m[32mIniciando fragmento de sincronización de tracking PNA: 2026-06-01T21:05:31.000Z -> 2026-06-01T21:24:00.018Z[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:25:00 PM [32m    LOG[39m [38;5;3m[PnaTrackingService] [39m[32mEjecutando fragmento de Tracking PNA: 2026-06-01T21:05:31.000Z -> 2026-06-01T21:24:00.018Z[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:25:02 PM [32m    LOG[39m [38;5;3m[PnaTrackingParser] [39m[32mParsed 266 tracking reportes from XML[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:25:05 PM [32m    LOG[39m [38;5;3m[VesselSyncService] [39m[32mTrabajo encolado para sincronización de buque: SUEMAR DOS (MMSI: N/A)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:25:05 PM [32m    LOG[39m [38;5;3m[VesselSyncService] [39m[32mTrabajo de sincronización encolado para: SUEMAR DOS (MMSI: N/A)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:25:07 PM [32m    LOG[39m [38;5;3m[VesselSyncService] [39m[32mTrabajo encolado para sincronización de buque: HUAFENG 820 (ex INFINITUS PEZ) (MMSI: N/A)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:25:07 PM [32m    LOG[39m [38;5;3m[VesselSyncService] [39m[32mTrabajo de sincronización encolado para: HUAFENG 820 (ex INFINITUS PEZ) (MMSI: N/A)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:25:11 PM [32m    LOG[39m [38;5;3m[PnaTrackingService] [39m[32mSincronización finalizada: 224 puntos insertados, 0 alertas/eventos detectados.[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:26:00 PM [32m    LOG[39m [38;5;3m[VesselSyncProcessor] [39m[32mProcessing vessel sync for ID: 077a2e41-1ab0-4a19-93fd-41c01bdad428, Nombre: SUEMAR DOS, MMSI: N/A[39m
+sigma-backend  | [95m[Nest] 1  - [39m06/01/2026, 9:26:15 PM [95m  DEBUG[39m [38;5;3m[VesselSyncService] [39m[95mBuscando buque por nombre: SUEMAR DOS[39m
+sigma-backend  | [95m[Nest] 1  - [39m06/01/2026, 9:26:15 PM [95m  DEBUG[39m [38;5;3m[FisheryApiAdapter] [39m[95mNo se encontró buque con nombre: SUEMAR DOS[39m
+sigma-backend  | [33m[Nest] 1  - [39m06/01/2026, 9:26:15 PM [33m   WARN[39m [38;5;3m[VesselSyncService] [39m[33mNo se encontraron datos oficiales para: SUEMAR DOS (ID: N/A, MMSI: N/A)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:26:15 PM [32m    LOG[39m [38;5;3m[VesselSyncProcessor] [39m[32mProcessing vessel sync for ID: 4f936a28-6bf8-4875-866e-318bdbd5cd6f, Nombre: HUAFENG 820 (ex INFINITUS PEZ), MMSI: N/A[39m
+sigma-backend  | [95m[Nest] 1  - [39m06/01/2026, 9:26:30 PM [95m  DEBUG[39m [38;5;3m[VesselSyncService] [39m[95mBuscando buque por nombre: HUAFENG 820 (ex INFINITUS PEZ)[39m
+sigma-backend  | [95m[Nest] 1  - [39m06/01/2026, 9:26:30 PM [95m  DEBUG[39m [38;5;3m[FisheryApiAdapter] [39m[95mNo se encontró buque con nombre: HUAFENG 820 (ex INFINITUS PEZ)[39m
+sigma-backend  | [33m[Nest] 1  - [39m06/01/2026, 9:26:30 PM [33m   WARN[39m [38;5;3m[VesselSyncService] [39m[33mNo se encontraron datos oficiales para: HUAFENG 820 (ex INFINITUS PEZ) (ID: N/A, MMSI: N/A)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:27:00 PM [32m    LOG[39m [38;5;3m[SchedulerService] [39m[32mDisparando Sincronización PNA API automática (Intervalo rápido: 30 min)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:27:00 PM [32m    LOG[39m [38;5;3m[SchedulerService] [39m[32mProgramando nueva tarea de sincronización de PNA API (2026-06-01T20:57:00.037Z -> 2026-06-01T21:27:00.042Z) [Respaldo: false]...[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:28:00 PM [32m    LOG[39m [38;5;3m[PnaApiSyncProcessor] [39m[32mIniciando sincronización de movimientos desde API PNA...[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:28:00 PM [32m    LOG[39m [38;5;3m[PnaApiService] [39m[32mIniciando sincronización PNA: 2026-06-01 20:57:00 -> 2026-06-01 21:27:00[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:28:00 PM [32m    LOG[39m [38;5;3m[PnaApiService] [39m[32mModo API Real activado: Consultando servicio web PNA[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:28:00 PM [32m    LOG[39m [38;5;3m[PnaApiService] [39m[32mCalling PNA API: https://sscpwsexternos.prefecturanaval.gob.ar/WsPescaExternos.asmx (Range: 2026-06-01 20:57:00 - 2026-06-01 21:27:00)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:28:00 PM [32m    LOG[39m [38;5;3m[PnaApiParser] [39m[32mParsed 1 reportes from XML[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:28:00 PM [32m    LOG[39m [38;5;3m[PnaApiService] [39m[32mProcessing 1 reportes from PNA API[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:28:00 PM [32m    LOG[39m [38;5;3m[PnaApiService] [39m[32mProgreso PNA: 1/1 reportes procesados...[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:28:00 PM [32m    LOG[39m [38;5;3m[PnaApiService] [39m[32mProcessing complete: {"total":1,"processed":0,"skipped":1,"alertsCreated":0,"alertsValidated":0,"errors":0}[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:28:00 PM [32m    LOG[39m [38;5;3m[PnaApiService] [39m[32mActualizado LAST_PNA_SYNC en system_status: 2026-06-01T21:27:00.042Z [39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:28:00 PM [32m    LOG[39m [38;5;3m[PnaApiSyncProcessor] [39m[32mSincronización finalizada exitosamente: {"total":1,"processed":0,"skipped":1,"alertsCreated":0,"alertsValidated":0,"errors":0}[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:39:00 PM [32m    LOG[39m [38;5;3m[SchedulerService] [39m[32mDisparando Sincronización Tracking PNA automática (Intervalo rápido: 15 min)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:39:00 PM [32m    LOG[39m [38;5;3m[PnaTrackingService] [39m[32mProgramando sincronización de Tracking PNA desde 2026-06-01T21:20:46.000Z hasta 2026-06-01T21:39:00.021Z[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:39:00 PM [32m    LOG[39m [38;5;3m[PnaTrackingService] [39m[32mSe han encolado 1 tareas de sincronización de tracking.[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:40:00 PM [32m    LOG[39m [38;5;3m[PnaTrackingSyncProcessor] [39m[32mIniciando fragmento de sincronización de tracking PNA: 2026-06-01T21:20:46.000Z -> 2026-06-01T21:39:00.021Z[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:40:00 PM [32m    LOG[39m [38;5;3m[PnaTrackingService] [39m[32mEjecutando fragmento de Tracking PNA: 2026-06-01T21:20:46.000Z -> 2026-06-01T21:39:00.021Z[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:40:02 PM [32m    LOG[39m [38;5;3m[PnaTrackingParser] [39m[32mParsed 275 tracking reportes from XML[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:40:04 PM [32m    LOG[39m [38;5;3m[VesselSyncService] [39m[32mTrabajo encolado para sincronización de buque: LIBERTAD DEL MAR 1° (MMSI: N/A)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:40:04 PM [32m    LOG[39m [38;5;3m[VesselSyncService] [39m[32mTrabajo de sincronización encolado para: LIBERTAD DEL MAR 1° (MMSI: N/A)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:40:05 PM [32m    LOG[39m [38;5;3m[VesselSyncService] [39m[32mTrabajo encolado para sincronización de buque: SUEMAR DOS (MMSI: N/A)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:40:05 PM [32m    LOG[39m [38;5;3m[VesselSyncService] [39m[32mTrabajo de sincronización encolado para: SUEMAR DOS (MMSI: N/A)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:40:07 PM [32m    LOG[39m [38;5;3m[VesselSyncService] [39m[32mTrabajo encolado para sincronización de buque: HUAFENG 820 (ex INFINITUS PEZ) (MMSI: N/A)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:40:07 PM [32m    LOG[39m [38;5;3m[VesselSyncService] [39m[32mTrabajo de sincronización encolado para: HUAFENG 820 (ex INFINITUS PEZ) (MMSI: N/A)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:40:11 PM [32m    LOG[39m [38;5;3m[PnaTrackingService] [39m[32mSincronización finalizada: 231 puntos insertados, 0 alertas/eventos detectados.[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:41:00 PM [32m    LOG[39m [38;5;3m[VesselSyncProcessor] [39m[32mProcessing vessel sync for ID: 24c98bdd-72cb-4bd5-914a-6945e668aa49, Nombre: LIBERTAD DEL MAR 1°, MMSI: N/A[39m
+sigma-backend  | [95m[Nest] 1  - [39m06/01/2026, 9:41:15 PM [95m  DEBUG[39m [38;5;3m[VesselSyncService] [39m[95mBuscando buque por nombre: LIBERTAD DEL MAR 1°[39m
+sigma-backend  | [95m[Nest] 1  - [39m06/01/2026, 9:41:15 PM [95m  DEBUG[39m [38;5;3m[FisheryApiAdapter] [39m[95mNo se encontró buque con nombre: LIBERTAD DEL MAR 1°[39m
+sigma-backend  | [33m[Nest] 1  - [39m06/01/2026, 9:41:15 PM [33m   WARN[39m [38;5;3m[VesselSyncService] [39m[33mNo se encontraron datos oficiales para: LIBERTAD DEL MAR 1° (ID: N/A, MMSI: N/A)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:41:15 PM [32m    LOG[39m [38;5;3m[VesselSyncProcessor] [39m[32mProcessing vessel sync for ID: 077a2e41-1ab0-4a19-93fd-41c01bdad428, Nombre: SUEMAR DOS, MMSI: N/A[39m
+sigma-backend  | [95m[Nest] 1  - [39m06/01/2026, 9:41:30 PM [95m  DEBUG[39m [38;5;3m[VesselSyncService] [39m[95mBuscando buque por nombre: SUEMAR DOS[39m
+sigma-backend  | [95m[Nest] 1  - [39m06/01/2026, 9:41:30 PM [95m  DEBUG[39m [38;5;3m[FisheryApiAdapter] [39m[95mNo se encontró buque con nombre: SUEMAR DOS[39m
+sigma-backend  | [33m[Nest] 1  - [39m06/01/2026, 9:41:30 PM [33m   WARN[39m [38;5;3m[VesselSyncService] [39m[33mNo se encontraron datos oficiales para: SUEMAR DOS (ID: N/A, MMSI: N/A)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:41:30 PM [32m    LOG[39m [38;5;3m[VesselSyncProcessor] [39m[32mProcessing vessel sync for ID: 4f936a28-6bf8-4875-866e-318bdbd5cd6f, Nombre: HUAFENG 820 (ex INFINITUS PEZ), MMSI: N/A[39m
+sigma-backend  | [95m[Nest] 1  - [39m06/01/2026, 9:41:45 PM [95m  DEBUG[39m [38;5;3m[VesselSyncService] [39m[95mBuscando buque por nombre: HUAFENG 820 (ex INFINITUS PEZ)[39m
+sigma-backend  | [95m[Nest] 1  - [39m06/01/2026, 9:41:45 PM [95m  DEBUG[39m [38;5;3m[FisheryApiAdapter] [39m[95mNo se encontró buque con nombre: HUAFENG 820 (ex INFINITUS PEZ)[39m
+sigma-backend  | [33m[Nest] 1  - [39m06/01/2026, 9:41:45 PM [33m   WARN[39m [38;5;3m[VesselSyncService] [39m[33mNo se encontraron datos oficiales para: HUAFENG 820 (ex INFINITUS PEZ) (ID: N/A, MMSI: N/A)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:55:00 PM [32m    LOG[39m [38;5;3m[SchedulerService] [39m[32mDisparando Sincronización Tracking PNA automática (Intervalo rápido: 15 min)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:55:00 PM [32m    LOG[39m [38;5;3m[PnaTrackingService] [39m[32mProgramando sincronización de Tracking PNA desde 2026-06-01T21:36:04.000Z hasta 2026-06-01T21:55:00.037Z[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:55:00 PM [32m    LOG[39m [38;5;3m[PnaTrackingService] [39m[32mSe han encolado 1 tareas de sincronización de tracking.[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:55:00 PM [32m    LOG[39m [38;5;3m[PnaTrackingSyncProcessor] [39m[32mIniciando fragmento de sincronización de tracking PNA: 2026-06-01T21:36:04.000Z -> 2026-06-01T21:55:00.037Z[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:55:00 PM [32m    LOG[39m [38;5;3m[PnaTrackingService] [39m[32mEjecutando fragmento de Tracking PNA: 2026-06-01T21:36:04.000Z -> 2026-06-01T21:55:00.037Z[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:55:02 PM [32m    LOG[39m [38;5;3m[PnaTrackingParser] [39m[32mParsed 248 tracking reportes from XML[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:55:04 PM [32m    LOG[39m [38;5;3m[VesselSyncService] [39m[32mTrabajo encolado para sincronización de buque: SUEMAR DOS (MMSI: N/A)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:55:04 PM [32m    LOG[39m [38;5;3m[VesselSyncService] [39m[32mTrabajo de sincronización encolado para: SUEMAR DOS (MMSI: N/A)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:55:09 PM [32m    LOG[39m [38;5;3m[PnaTrackingService] [39m[32mSincronización finalizada: 212 puntos insertados, 0 alertas/eventos detectados.[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:56:00 PM [32m    LOG[39m [38;5;3m[VesselSyncProcessor] [39m[32mProcessing vessel sync for ID: 077a2e41-1ab0-4a19-93fd-41c01bdad428, Nombre: SUEMAR DOS, MMSI: N/A[39m
+sigma-backend  | [95m[Nest] 1  - [39m06/01/2026, 9:56:15 PM [95m  DEBUG[39m [38;5;3m[VesselSyncService] [39m[95mBuscando buque por nombre: SUEMAR DOS[39m
+sigma-backend  | [95m[Nest] 1  - [39m06/01/2026, 9:56:15 PM [95m  DEBUG[39m [38;5;3m[FisheryApiAdapter] [39m[95mNo se encontró buque con nombre: SUEMAR DOS[39m
+sigma-backend  | [33m[Nest] 1  - [39m06/01/2026, 9:56:15 PM [33m   WARN[39m [38;5;3m[VesselSyncService] [39m[33mNo se encontraron datos oficiales para: SUEMAR DOS (ID: N/A, MMSI: N/A)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:57:00 PM [32m    LOG[39m [38;5;3m[SchedulerService] [39m[32mDisparando Sincronización PNA API automática (Intervalo rápido: 30 min)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:57:00 PM [32m    LOG[39m [38;5;3m[SchedulerService] [39m[32mProgramando nueva tarea de sincronización de PNA API (2026-06-01T21:27:00.042Z -> 2026-06-01T21:57:00.039Z) [Respaldo: false]...[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:57:00 PM [32m    LOG[39m [38;5;3m[PnaApiSyncProcessor] [39m[32mIniciando sincronización de movimientos desde API PNA...[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:57:00 PM [32m    LOG[39m [38;5;3m[PnaApiService] [39m[32mIniciando sincronización PNA: 2026-06-01 21:27:00 -> 2026-06-01 21:57:00[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:57:00 PM [32m    LOG[39m [38;5;3m[PnaApiService] [39m[32mModo API Real activado: Consultando servicio web PNA[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:57:00 PM [32m    LOG[39m [38;5;3m[PnaApiService] [39m[32mCalling PNA API: https://sscpwsexternos.prefecturanaval.gob.ar/WsPescaExternos.asmx (Range: 2026-06-01 21:27:00 - 2026-06-01 21:57:00)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:57:00 PM [32m    LOG[39m [38;5;3m[PnaApiParser] [39m[32mParsed 0 reportes from XML[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:57:00 PM [32m    LOG[39m [38;5;3m[PnaApiService] [39m[32mProcessing 0 reportes from PNA API[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:57:00 PM [32m    LOG[39m [38;5;3m[PnaApiService] [39m[32mProcessing complete: {"total":0,"processed":0,"skipped":0,"alertsCreated":0,"alertsValidated":0,"errors":0}[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:57:00 PM [32m    LOG[39m [38;5;3m[PnaApiService] [39m[32mActualizado LAST_PNA_SYNC en system_status: 2026-06-01T21:57:00.039Z [39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 9:57:00 PM [32m    LOG[39m [38;5;3m[PnaApiSyncProcessor] [39m[32mSincronización finalizada exitosamente: {"total":0,"processed":0,"skipped":0,"alertsCreated":0,"alertsValidated":0,"errors":0}[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:11:00 PM [32m    LOG[39m [38;5;3m[SchedulerService] [39m[32mDisparando Sincronización Tracking PNA automática (Intervalo rápido: 15 min)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:11:00 PM [32m    LOG[39m [38;5;3m[PnaTrackingService] [39m[32mProgramando sincronización de Tracking PNA desde 2026-06-01T21:53:00.000Z hasta 2026-06-01T22:11:00.021Z[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:11:00 PM [32m    LOG[39m [38;5;3m[PnaTrackingService] [39m[32mSe han encolado 1 tareas de sincronización de tracking.[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:11:00 PM [32m    LOG[39m [38;5;3m[PnaTrackingSyncProcessor] [39m[32mIniciando fragmento de sincronización de tracking PNA: 2026-06-01T21:53:00.000Z -> 2026-06-01T22:11:00.021Z[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:11:00 PM [32m    LOG[39m [38;5;3m[PnaTrackingService] [39m[32mEjecutando fragmento de Tracking PNA: 2026-06-01T21:53:00.000Z -> 2026-06-01T22:11:00.021Z[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:11:02 PM [32m    LOG[39m [38;5;3m[PnaTrackingParser] [39m[32mParsed 315 tracking reportes from XML[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:11:04 PM [32m    LOG[39m [38;5;3m[VesselSyncService] [39m[32mTrabajo encolado para sincronización de buque: SUEMAR DOS (MMSI: N/A)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:11:04 PM [32m    LOG[39m [38;5;3m[VesselSyncService] [39m[32mTrabajo de sincronización encolado para: SUEMAR DOS (MMSI: N/A)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:11:10 PM [32m    LOG[39m [38;5;3m[PnaTrackingService] [39m[32mSincronización finalizada: 257 puntos insertados, 0 alertas/eventos detectados.[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:12:00 PM [32m    LOG[39m [38;5;3m[VesselSyncProcessor] [39m[32mProcessing vessel sync for ID: 077a2e41-1ab0-4a19-93fd-41c01bdad428, Nombre: SUEMAR DOS, MMSI: N/A[39m
+sigma-backend  | [95m[Nest] 1  - [39m06/01/2026, 10:12:15 PM [95m  DEBUG[39m [38;5;3m[VesselSyncService] [39m[95mBuscando buque por nombre: SUEMAR DOS[39m
+sigma-backend  | [95m[Nest] 1  - [39m06/01/2026, 10:12:15 PM [95m  DEBUG[39m [38;5;3m[FisheryApiAdapter] [39m[95mNo se encontró buque con nombre: SUEMAR DOS[39m
+sigma-backend  | [33m[Nest] 1  - [39m06/01/2026, 10:12:15 PM [33m   WARN[39m [38;5;3m[VesselSyncService] [39m[33mNo se encontraron datos oficiales para: SUEMAR DOS (ID: N/A, MMSI: N/A)[39m
+sigma-backend  | ◇ injected env (0) from .env // tip: ◈ secrets for agents [www.dotenvx.com]
+sigma-backend  | Loaded Prisma config from prisma.config.js.
+sigma-backend  | 
+sigma-backend  | Prisma schema loaded from prisma/schema.prisma.
+sigma-backend  | warn Preview feature "multiSchema" is deprecated. The functionality can be used without specifying it as a preview feature.
+sigma-backend  | 
+sigma-backend  | ✔ Generated Prisma Client (v7.8.0) to ./node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.15_react-dom@19.2.6_react@19.2.6__react@1_pmustawdz2pfftopokj2jqvzfq/node_modules/@prisma/client in 1.69s
+sigma-backend  | 
+sigma-backend  | Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
+sigma-backend  | 
+sigma-backend  | 
+sigma-backend  | ◇ injected env (0) from .env // tip: ⌘ suppress logs { quiet: true }
+sigma-backend  | Loaded Prisma config from prisma.config.js.
+sigma-backend  | 
+sigma-backend  | Prisma schema loaded from prisma/schema.prisma.
+sigma-backend  | Datasource "db": PostgreSQL database "mareas_db", schemas "audit, datos_api, public" at "db:5432"
+sigma-backend  | 
+sigma-backend  | Error: P1001: Can't reach database server at `db:5432`
+sigma-backend  | 
+sigma-backend  | Please make sure your database server is running at `db:5432`.
+sigma-backend  | ◇ injected env (0) from .env // tip: ⌘ custom filepath { path: '/custom/path/.env' }
+sigma-backend  | Loaded Prisma config from prisma.config.js.
+sigma-backend  | 
+sigma-backend  | Prisma schema loaded from prisma/schema.prisma.
+sigma-backend  | warn Preview feature "multiSchema" is deprecated. The functionality can be used without specifying it as a preview feature.
+sigma-backend  | 
+sigma-backend  | ✔ Generated Prisma Client (v7.8.0) to ./node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.15_react-dom@19.2.6_react@19.2.6__react@1_pmustawdz2pfftopokj2jqvzfq/node_modules/@prisma/client in 2.84s
+sigma-backend  | 
+sigma-backend  | Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
+sigma-backend  | 
+sigma-backend  | 
+sigma-backend  | ◇ injected env (0) from .env // tip: ⌘ suppress logs { quiet: true }
+sigma-backend  | Loaded Prisma config from prisma.config.js.
+sigma-backend  | 
+sigma-backend  | Prisma schema loaded from prisma/schema.prisma.
+sigma-backend  | Datasource "db": PostgreSQL database "mareas_db", schemas "audit, datos_api, public" at "db:5432"
+sigma-backend  | 
+sigma-backend  | 66 migrations found in prisma/migrations
+sigma-backend  | 
+sigma-backend  | 
+sigma-backend  | No pending migrations to apply.
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[NestFactory] [39m[32mStarting Nest application...[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mPassportModule dependencies initialized[39m[38;5;3m +141ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mMailerModule dependencies initialized[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigHostModule dependencies initialized[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mDiscoveryModule dependencies initialized[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[FisheryApiAdapter] [39m[32mFisheryApiAdapter inicializado (API real de PNA)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mJwtModule dependencies initialized[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[PrismaService] [39m[32mPrismaService initialized with PostgreSQL adapter[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mBusinessRulesModule dependencies initialized[39m[38;5;3m +9ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigModule dependencies initialized[39m[38;5;3m +20ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigModule dependencies initialized[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mServeStaticModule dependencies initialized[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mBullModule dependencies initialized[39m[38;5;3m +5ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mScheduleModule dependencies initialized[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mFisheryClientModule dependencies initialized[39m[38;5;3m +93ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mPrismaModule dependencies initialized[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[AuditService] [39m[32mAuditService Initialized (Async: true, Level: ALL)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mJwtModule dependencies initialized[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mBullModule dependencies initialized[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mCommonModule dependencies initialized[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mMailerCoreModule dependencies initialized[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mFilesModule dependencies initialized[39m[38;5;3m +2ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mMailModule dependencies initialized[39m[38;5;3m +4ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mAppModule dependencies initialized[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mSeedModule dependencies initialized[39m[38;5;3m +2ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mProductsModule dependencies initialized[39m[38;5;3m +3ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mCatalogosModule dependencies initialized[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mErrorLogsModule dependencies initialized[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mPlanificacionModule dependencies initialized[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mBackupModule dependencies initialized[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mDataExportModule dependencies initialized[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mAccessImportModule dependencies initialized[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mAuditModule dependencies initialized[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mUsersModule dependencies initialized[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mMareasModule dependencies initialized[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mAlertsModule dependencies initialized[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mStatsModule dependencies initialized[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mJobsModule dependencies initialized[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mPnaApiModule dependencies initialized[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mAuthModule dependencies initialized[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mReportsModule dependencies initialized[39m[38;5;3m +0ms[39m
+sigma-backend  | >>> BACKEND STARTING - Build ID: 2026-06-01T22:24:08.775Z
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[Bootstrap] [39m[32mCORS enabled for origins: http://localhost:5173, http://127.0.0.1:5173, http://localhost:5174, http://127.0.0.1:5174, https://mareas-obs.netlify.app[39m
+sigma-backend  | [33m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [33m   WARN[39m [38;5;3m[LegacyRouteConverter] [39m[33mUnsupported route path: "/api/*". In previous versions, the symbols ?, *, and + were used to denote optional or repeating path parameters. The latest version of "path-to-regexp" now requires the use of named parameters. For example, instead of using a route like /users/* to capture all routes starting with "/users", you should use /users/*path. For more details, refer to the migration guide. Attempting to auto-convert...[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mProductsController {/api/products}:[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/products, POST} route[39m[38;5;3m +4ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/products, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/products/:term, GET} route[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/products/:id, PATCH} route[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/products/:id, DELETE} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mAuthController {/api/auth}:[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/auth/register, POST} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/auth/login, POST} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/auth/refresh, GET} route[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/auth/logout, POST} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/auth/forgot-password, POST} route[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/auth/reset-password/:token, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/auth/reset-password, POST} route[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/auth/check-status, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/auth/private, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/auth/private2, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/auth/private3, GET} route[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mErrorLogsController {/api/error-logs}:[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/error-logs, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/error-logs/:id, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mBusinessRulesController {/api/config}:[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/config/reglas, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mSeedController {/api/seed}:[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/seed, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mFilesController {/api/files}:[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/files/product/:imageName, GET} route[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/files/users/:imageName, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/files/product, POST} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/files/user, POST} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mUsersController {/api/users}:[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/users/me, GET} route[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/users/me, PATCH} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/users/me/password, PATCH} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/users, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/users, POST} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/users/:id, PATCH} route[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/users/:id/toggle-status, PATCH} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/users/:id, DELETE} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mTiposFlotaController {/api/catalogos/tipos-flota}:[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/tipos-flota, POST} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/tipos-flota, GET} route[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/tipos-flota/:id, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/tipos-flota/:id, PATCH} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/tipos-flota/:id, DELETE} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mArtesPescaController {/api/catalogos/artes-pesca}:[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/artes-pesca, POST} route[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/artes-pesca, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/artes-pesca/:id, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/artes-pesca/:id, PATCH} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/artes-pesca/:id, DELETE} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mPesqueriasController {/api/catalogos/pesquerias}:[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/pesquerias, POST} route[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/pesquerias, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/pesquerias/:id, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/pesquerias/:id, PATCH} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/pesquerias/:id, DELETE} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mPuertosController {/api/catalogos/puertos}:[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/puertos, POST} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/puertos, GET} route[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/puertos/:id, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/puertos/:id, PATCH} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/puertos/:id, DELETE} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mEspeciesController {/api/catalogos/especies}:[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/especies, POST} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/especies, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/especies/:id, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/especies/:id, PATCH} route[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/especies/:id, DELETE} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mObservadoresController {/api/catalogos/observadores}:[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/observadores, POST} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/observadores, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/observadores/export/excel, POST} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/observadores/:id, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/observadores/:id/historial/:year, GET} route[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/observadores/:id, PATCH} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/observadores/:id, DELETE} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mEstadosMareaController {/api/catalogos/estados-marea}:[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/estados-marea, POST} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/estados-marea, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/estados-marea/:id, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/estados-marea/:id, PATCH} route[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/estados-marea/:id, DELETE} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mTransicionesEstadoController {/api/catalogos/transiciones-estado}:[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/transiciones-estado, POST} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/transiciones-estado, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/transiciones-estado/:id, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/transiciones-estado/:id, PATCH} route[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/transiciones-estado/:id, DELETE} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mBuquesController {/api/catalogos/buques}:[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/buques/export/dbf, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/buques, POST} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/buques, GET} route[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/buques/:id, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/buques/:id, PATCH} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/buques/:id, DELETE} route[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mMareasController {/api/mareas}:[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/mareas/claim, POST} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/mareas/operativo, GET} route[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/mareas/kpis, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/mareas/inbox, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/mareas/flota-por-pesqueria, GET} route[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/mareas/workforce/status, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/mareas/alertas/personal-fatiga, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/mareas/alertas/retrasos-criticos, GET} route[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/mareas/alertas/informes-demorados, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/mareas/calendar/events, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/mareas/search, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/mareas/movimientos-recientes, GET} route[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/mareas/export/excel, POST} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/mareas/:id, GET} route[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/mareas/:id, PATCH} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/mareas/:id/context, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/mareas/:id/zona-austral, GET} route[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/mareas/valida/buque/:id, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/mareas/valida/observador/:id, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/mareas/config/proximo-numero, GET} route[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/mareas/:id/actions/:actionKey, POST} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/mareas/:id/etapas/:etapaId/intencion-cierre, PATCH} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/mareas, POST} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/mareas/protocolizacion/enviar, POST} route[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/mareas/protocolizacion/confirmar/:id, POST} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/mareas/protocolizacion/pendientes, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/mareas/protocolizacion/en-espera, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/mareas/protocolizacion/completas, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/mareas/protocolizacion/lotes, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/mareas/protocolizacion/lotes/:id, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mTrackingController {/api/tracking}:[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/tracking/upload, POST} route[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/tracking/heartbeat, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/tracking/fleet, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/tracking/history/:buqueId, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/tracking/marea/:mareaId, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/tracking/export/dbf/:mareaId, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/tracking/export/bundle/:mareaId, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mAlertsController {/api/alerts}:[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/alerts, POST} route[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/alerts, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/alerts/:id, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/alerts/:id, PATCH} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/alerts/automation/batch, POST} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mBackupController {/api/admin/backup}:[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/admin/backup, POST} route[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/admin/backup/status, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/admin/backup/auto-config, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/admin/backup/auto-config, PUT} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/admin/backup, GET} route[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/admin/backup/download/:filename, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/admin/backup/upload, POST} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/admin/backup/restore/:filename, POST} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/admin/backup/:filename, DELETE} route[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mDataExportController {/api/admin/data-export}:[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/admin/data-export, POST} route[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/admin/data-export, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/admin/data-export/:filename, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/admin/data-export/import, POST} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/admin/data-export/:filename, DELETE} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mAccessImportController {/api/access-import}:[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/access-import/upload, POST} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mStatsController {/api/stats}:[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/stats/dashboard, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/stats/detail, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/stats/vessels-count, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/stats/distribution, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/stats/secondary-observers, GET} route[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/stats/audit-special-cases, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/stats/protocolization-timeline, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/stats/export, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mPlanificacionController {/api/planificacion}:[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/planificacion/requerimientos/:anio, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/planificacion/requerimientos, POST} route[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/planificacion/experiencia-observadores, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/planificacion/experiencia-observadores, POST} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mAuditController {/api/audit}:[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/audit/api, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/audit/entidades, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/audit/eventos, GET} route[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/audit/navegacion, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/audit/navigation, POST} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mJobQueueController {/api/jobs}:[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/jobs, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/jobs/stats/summary, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/jobs/stats/performance, GET} route[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/jobs/stats/errors, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/jobs/stats/timeseries, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/jobs/:id, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/jobs/:id/retry, POST} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/jobs/trigger/:type, POST} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/jobs/:id, DELETE} route[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mPnaApiController {/api/pna-api}:[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/pna-api/config, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/pna-api/config, POST} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/pna-api/sync-manual, POST} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/pna-api/sync-tracking, POST} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mReportsController {/api/reports}:[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/reports/audit-report, GET} route[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:08 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/reports/audit-report/pdf, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:09 PM [32m    LOG[39m [38;5;3m[NestApplication] [39m[32mNest application successfully started[39m[38;5;3m +203ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:24:09 PM [32m    LOG[39m [38;5;3m[Bootstrap] [39m[32mApp running on port 3000[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:26:00 PM [32m    LOG[39m [38;5;3m[SchedulerService] [39m[32mDisparando Sincronización Tracking PNA automática (Intervalo rápido: 15 min)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:26:00 PM [32m    LOG[39m [38;5;3m[PnaTrackingService] [39m[32mProgramando sincronización de Tracking PNA desde 2026-06-01T22:06:58.000Z hasta 2026-06-01T22:26:00.028Z[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:26:01 PM [32m    LOG[39m [38;5;3m[PnaTrackingService] [39m[32mSe han encolado 1 tareas de sincronización de tracking.[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:27:00 PM [32m    LOG[39m [38;5;3m[SchedulerService] [39m[32mDisparando Sincronización PNA API automática (Intervalo rápido: 30 min)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:27:00 PM [32m    LOG[39m [38;5;3m[SchedulerService] [39m[32mProgramando nueva tarea de sincronización de PNA API (2026-06-01T21:57:00.039Z -> 2026-06-01T22:27:00.050Z) [Respaldo: false]...[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:27:00 PM [32m    LOG[39m [38;5;3m[PnaTrackingSyncProcessor] [39m[32mIniciando fragmento de sincronización de tracking PNA: 2026-06-01T22:06:58.000Z -> 2026-06-01T22:26:00.028Z[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:27:00 PM [32m    LOG[39m [38;5;3m[PnaTrackingService] [39m[32mEjecutando fragmento de Tracking PNA: 2026-06-01T22:06:58.000Z -> 2026-06-01T22:26:00.028Z[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:27:03 PM [32m    LOG[39m [38;5;3m[PnaTrackingParser] [39m[32mParsed 331 tracking reportes from XML[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:27:12 PM [32m    LOG[39m [38;5;3m[VesselSyncService] [39m[32mTrabajo encolado para sincronización de buque: SUEMAR DOS (MMSI: N/A)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:27:12 PM [32m    LOG[39m [38;5;3m[VesselSyncService] [39m[32mTrabajo de sincronización encolado para: SUEMAR DOS (MMSI: N/A)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:27:32 PM [32m    LOG[39m [38;5;3m[PnaTrackingService] [39m[32mSincronización finalizada: 280 puntos insertados, 0 alertas/eventos detectados.[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:28:00 PM [32m    LOG[39m [38;5;3m[PnaApiSyncProcessor] [39m[32mIniciando sincronización de movimientos desde API PNA...[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:28:00 PM [32m    LOG[39m [38;5;3m[PnaApiService] [39m[32mIniciando sincronización PNA: 2026-06-01 21:57:00 -> 2026-06-01 22:27:00[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:28:00 PM [32m    LOG[39m [38;5;3m[PnaApiService] [39m[32mModo API Real activado: Consultando servicio web PNA[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:28:00 PM [32m    LOG[39m [38;5;3m[PnaApiService] [39m[32mCalling PNA API: https://sscpwsexternos.prefecturanaval.gob.ar/WsPescaExternos.asmx (Range: 2026-06-01 21:57:00 - 2026-06-01 22:27:00)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:28:00 PM [32m    LOG[39m [38;5;3m[PnaApiParser] [39m[32mParsed 0 reportes from XML[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:28:00 PM [32m    LOG[39m [38;5;3m[PnaApiService] [39m[32mProcessing 0 reportes from PNA API[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:28:00 PM [32m    LOG[39m [38;5;3m[PnaApiService] [39m[32mProcessing complete: {"total":0,"processed":0,"skipped":0,"alertsCreated":0,"alertsValidated":0,"errors":0}[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:28:00 PM [32m    LOG[39m [38;5;3m[PnaApiService] [39m[32mActualizado LAST_PNA_SYNC en system_status: 2026-06-01T22:27:00.050Z [39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:28:00 PM [32m    LOG[39m [38;5;3m[PnaApiSyncProcessor] [39m[32mSincronización finalizada exitosamente: {"total":0,"processed":0,"skipped":0,"alertsCreated":0,"alertsValidated":0,"errors":0}[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:28:00 PM [32m    LOG[39m [38;5;3m[VesselSyncProcessor] [39m[32mProcessing vessel sync for ID: 077a2e41-1ab0-4a19-93fd-41c01bdad428, Nombre: SUEMAR DOS, MMSI: N/A[39m
+sigma-backend  | [95m[Nest] 1  - [39m06/01/2026, 10:28:15 PM [95m  DEBUG[39m [38;5;3m[VesselSyncService] [39m[95mBuscando buque por nombre: SUEMAR DOS[39m
+sigma-backend  | [95m[Nest] 1  - [39m06/01/2026, 10:28:15 PM [95m  DEBUG[39m [38;5;3m[FisheryApiAdapter] [39m[95mNo se encontró buque con nombre: SUEMAR DOS[39m
+sigma-backend  | [33m[Nest] 1  - [39m06/01/2026, 10:28:15 PM [33m   WARN[39m [38;5;3m[VesselSyncService] [39m[33mNo se encontraron datos oficiales para: SUEMAR DOS (ID: N/A, MMSI: N/A)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:42:00 PM [32m    LOG[39m [38;5;3m[SchedulerService] [39m[32mDisparando Sincronización Tracking PNA automática (Intervalo rápido: 15 min)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:42:00 PM [32m    LOG[39m [38;5;3m[PnaTrackingService] [39m[32mProgramando sincronización de Tracking PNA desde 2026-06-01T22:23:00.000Z hasta 2026-06-01T22:42:00.026Z[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:42:00 PM [32m    LOG[39m [38;5;3m[PnaTrackingService] [39m[32mSe han encolado 1 tareas de sincronización de tracking.[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:43:00 PM [32m    LOG[39m [38;5;3m[PnaTrackingSyncProcessor] [39m[32mIniciando fragmento de sincronización de tracking PNA: 2026-06-01T22:23:00.000Z -> 2026-06-01T22:42:00.026Z[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:43:00 PM [32m    LOG[39m [38;5;3m[PnaTrackingService] [39m[32mEjecutando fragmento de Tracking PNA: 2026-06-01T22:23:00.000Z -> 2026-06-01T22:42:00.026Z[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:43:02 PM [32m    LOG[39m [38;5;3m[PnaTrackingParser] [39m[32mParsed 327 tracking reportes from XML[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:43:04 PM [32m    LOG[39m [38;5;3m[VesselSyncService] [39m[32mTrabajo encolado para sincronización de buque: LIBERTAD DEL MAR 1° (MMSI: N/A)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:43:04 PM [32m    LOG[39m [38;5;3m[VesselSyncService] [39m[32mTrabajo de sincronización encolado para: LIBERTAD DEL MAR 1° (MMSI: N/A)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:43:06 PM [32m    LOG[39m [38;5;3m[VesselSyncService] [39m[32mTrabajo encolado para sincronización de buque: SUEMAR DOS (MMSI: N/A)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:43:06 PM [32m    LOG[39m [38;5;3m[VesselSyncService] [39m[32mTrabajo de sincronización encolado para: SUEMAR DOS (MMSI: N/A)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:43:13 PM [32m    LOG[39m [38;5;3m[PnaTrackingService] [39m[32mSincronización finalizada: 272 puntos insertados, 0 alertas/eventos detectados.[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:44:00 PM [32m    LOG[39m [38;5;3m[VesselSyncProcessor] [39m[32mProcessing vessel sync for ID: 24c98bdd-72cb-4bd5-914a-6945e668aa49, Nombre: LIBERTAD DEL MAR 1°, MMSI: N/A[39m
+sigma-backend  | [95m[Nest] 1  - [39m06/01/2026, 10:44:15 PM [95m  DEBUG[39m [38;5;3m[VesselSyncService] [39m[95mBuscando buque por nombre: LIBERTAD DEL MAR 1°[39m
+sigma-backend  | [95m[Nest] 1  - [39m06/01/2026, 10:44:15 PM [95m  DEBUG[39m [38;5;3m[FisheryApiAdapter] [39m[95mNo se encontró buque con nombre: LIBERTAD DEL MAR 1°[39m
+sigma-backend  | [33m[Nest] 1  - [39m06/01/2026, 10:44:15 PM [33m   WARN[39m [38;5;3m[VesselSyncService] [39m[33mNo se encontraron datos oficiales para: LIBERTAD DEL MAR 1° (ID: N/A, MMSI: N/A)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:44:15 PM [32m    LOG[39m [38;5;3m[VesselSyncProcessor] [39m[32mProcessing vessel sync for ID: 077a2e41-1ab0-4a19-93fd-41c01bdad428, Nombre: SUEMAR DOS, MMSI: N/A[39m
+sigma-backend  | [95m[Nest] 1  - [39m06/01/2026, 10:44:30 PM [95m  DEBUG[39m [38;5;3m[VesselSyncService] [39m[95mBuscando buque por nombre: SUEMAR DOS[39m
+sigma-backend  | [95m[Nest] 1  - [39m06/01/2026, 10:44:30 PM [95m  DEBUG[39m [38;5;3m[FisheryApiAdapter] [39m[95mNo se encontró buque con nombre: SUEMAR DOS[39m
+sigma-backend  | [33m[Nest] 1  - [39m06/01/2026, 10:44:30 PM [33m   WARN[39m [38;5;3m[VesselSyncService] [39m[33mNo se encontraron datos oficiales para: SUEMAR DOS (ID: N/A, MMSI: N/A)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:58:00 PM [32m    LOG[39m [38;5;3m[SchedulerService] [39m[32mDisparando Sincronización PNA API automática (Intervalo rápido: 30 min)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:58:00 PM [32m    LOG[39m [38;5;3m[SchedulerService] [39m[32mProgramando nueva tarea de sincronización de PNA API (2026-06-01T22:27:00.050Z -> 2026-06-01T22:58:00.035Z) [Respaldo: false]...[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:58:00 PM [32m    LOG[39m [38;5;3m[SchedulerService] [39m[32mDisparando Sincronización Tracking PNA automática (Intervalo rápido: 15 min)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:58:00 PM [32m    LOG[39m [38;5;3m[PnaTrackingService] [39m[32mProgramando sincronización de Tracking PNA desde 2026-06-01T22:39:00.000Z hasta 2026-06-01T22:58:00.085Z[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:58:00 PM [32m    LOG[39m [38;5;3m[PnaTrackingService] [39m[32mSe han encolado 1 tareas de sincronización de tracking.[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:59:00 PM [32m    LOG[39m [38;5;3m[PnaApiSyncProcessor] [39m[32mIniciando sincronización de movimientos desde API PNA...[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:59:00 PM [32m    LOG[39m [38;5;3m[PnaApiService] [39m[32mIniciando sincronización PNA: 2026-06-01 22:27:00 -> 2026-06-01 22:58:00[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:59:00 PM [32m    LOG[39m [38;5;3m[PnaApiService] [39m[32mModo API Real activado: Consultando servicio web PNA[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:59:00 PM [32m    LOG[39m [38;5;3m[PnaApiService] [39m[32mCalling PNA API: https://sscpwsexternos.prefecturanaval.gob.ar/WsPescaExternos.asmx (Range: 2026-06-01 22:27:00 - 2026-06-01 22:58:00)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:59:02 PM [32m    LOG[39m [38;5;3m[PnaApiParser] [39m[32mParsed 1 reportes from XML[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:59:02 PM [32m    LOG[39m [38;5;3m[PnaApiService] [39m[32mProcessing 1 reportes from PNA API[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:59:02 PM [32m    LOG[39m [38;5;3m[PnaApiService] [39m[32mProgreso PNA: 1/1 reportes procesados...[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:59:02 PM [32m    LOG[39m [38;5;3m[PnaApiService] [39m[32mCreating new alert for ZARPADA detected by PNA API[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:59:03 PM [32m    LOG[39m [38;5;3m[PnaApiService] [39m[32mProcessing complete: {"total":1,"processed":1,"skipped":0,"alertsCreated":1,"alertsValidated":0,"errors":0}[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:59:03 PM [32m    LOG[39m [38;5;3m[PnaApiService] [39m[32mActualizado LAST_PNA_SYNC en system_status: 2026-06-01T22:58:00.035Z [39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:59:03 PM [32m    LOG[39m [38;5;3m[PnaApiSyncProcessor] [39m[32mSincronización finalizada exitosamente: {"total":1,"processed":1,"skipped":0,"alertsCreated":1,"alertsValidated":0,"errors":0}[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:59:03 PM [32m    LOG[39m [38;5;3m[PnaTrackingSyncProcessor] [39m[32mIniciando fragmento de sincronización de tracking PNA: 2026-06-01T22:39:00.000Z -> 2026-06-01T22:58:00.085Z[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:59:03 PM [32m    LOG[39m [38;5;3m[PnaTrackingService] [39m[32mEjecutando fragmento de Tracking PNA: 2026-06-01T22:39:00.000Z -> 2026-06-01T22:58:00.085Z[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:59:03 PM [32m    LOG[39m [38;5;3m[PnaTrackingParser] [39m[32mParsed 300 tracking reportes from XML[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:59:07 PM [32m    LOG[39m [38;5;3m[VesselSyncService] [39m[32mTrabajo encolado para sincronización de buque: SUEMAR DOS (MMSI: N/A)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:59:07 PM [32m    LOG[39m [38;5;3m[VesselSyncService] [39m[32mTrabajo de sincronización encolado para: SUEMAR DOS (MMSI: N/A)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 10:59:11 PM [32m    LOG[39m [38;5;3m[PnaTrackingService] [39m[32mSincronización finalizada: 253 puntos insertados, 0 alertas/eventos detectados.[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:00:00 PM [32m    LOG[39m [38;5;3m[VesselSyncProcessor] [39m[32mProcessing vessel sync for ID: 077a2e41-1ab0-4a19-93fd-41c01bdad428, Nombre: SUEMAR DOS, MMSI: N/A[39m
+sigma-backend  | [95m[Nest] 1  - [39m06/01/2026, 11:00:15 PM [95m  DEBUG[39m [38;5;3m[VesselSyncService] [39m[95mBuscando buque por nombre: SUEMAR DOS[39m
+sigma-backend  | [95m[Nest] 1  - [39m06/01/2026, 11:00:15 PM [95m  DEBUG[39m [38;5;3m[FisheryApiAdapter] [39m[95mNo se encontró buque con nombre: SUEMAR DOS[39m
+sigma-backend  | [33m[Nest] 1  - [39m06/01/2026, 11:00:15 PM [33m   WARN[39m [38;5;3m[VesselSyncService] [39m[33mNo se encontraron datos oficiales para: SUEMAR DOS (ID: N/A, MMSI: N/A)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:13:00 PM [32m    LOG[39m [38;5;3m[SchedulerService] [39m[32mDisparando Sincronización Tracking PNA automática (Intervalo rápido: 15 min)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:13:00 PM [32m    LOG[39m [38;5;3m[PnaTrackingService] [39m[32mProgramando sincronización de Tracking PNA desde 2026-06-01T22:53:00.000Z hasta 2026-06-01T23:13:00.027Z[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:13:00 PM [32m    LOG[39m [38;5;3m[PnaTrackingService] [39m[32mSe han encolado 1 tareas de sincronización de tracking.[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:13:00 PM [32m    LOG[39m [38;5;3m[PnaTrackingSyncProcessor] [39m[32mIniciando fragmento de sincronización de tracking PNA: 2026-06-01T22:53:00.000Z -> 2026-06-01T23:13:00.027Z[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:13:00 PM [32m    LOG[39m [38;5;3m[PnaTrackingService] [39m[32mEjecutando fragmento de Tracking PNA: 2026-06-01T22:53:00.000Z -> 2026-06-01T23:13:00.027Z[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:13:02 PM [32m    LOG[39m [38;5;3m[PnaTrackingParser] [39m[32mParsed 324 tracking reportes from XML[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:13:04 PM [32m    LOG[39m [38;5;3m[VesselSyncService] [39m[32mTrabajo encolado para sincronización de buque: SUEMAR DOS (MMSI: N/A)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:13:04 PM [32m    LOG[39m [38;5;3m[VesselSyncService] [39m[32mTrabajo de sincronización encolado para: SUEMAR DOS (MMSI: N/A)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:13:10 PM [32m    LOG[39m [38;5;3m[PnaTrackingService] [39m[32mSincronización finalizada: 266 puntos insertados, 0 alertas/eventos detectados.[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:14:00 PM [32m    LOG[39m [38;5;3m[VesselSyncProcessor] [39m[32mProcessing vessel sync for ID: 077a2e41-1ab0-4a19-93fd-41c01bdad428, Nombre: SUEMAR DOS, MMSI: N/A[39m
+sigma-backend  | [95m[Nest] 1  - [39m06/01/2026, 11:14:15 PM [95m  DEBUG[39m [38;5;3m[VesselSyncService] [39m[95mBuscando buque por nombre: SUEMAR DOS[39m
+sigma-backend  | [95m[Nest] 1  - [39m06/01/2026, 11:14:15 PM [95m  DEBUG[39m [38;5;3m[FisheryApiAdapter] [39m[95mNo se encontró buque con nombre: SUEMAR DOS[39m
+sigma-backend  | [33m[Nest] 1  - [39m06/01/2026, 11:14:15 PM [33m   WARN[39m [38;5;3m[VesselSyncService] [39m[33mNo se encontraron datos oficiales para: SUEMAR DOS (ID: N/A, MMSI: N/A)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:28:00 PM [32m    LOG[39m [38;5;3m[SchedulerService] [39m[32mDisparando Sincronización PNA API automática (Intervalo rápido: 30 min)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:28:00 PM [32m    LOG[39m [38;5;3m[SchedulerService] [39m[32mProgramando nueva tarea de sincronización de PNA API (2026-06-01T22:58:00.035Z -> 2026-06-01T23:28:00.032Z) [Respaldo: false]...[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:29:00 PM [32m    LOG[39m [38;5;3m[SchedulerService] [39m[32mDisparando Sincronización Tracking PNA automática (Intervalo rápido: 15 min)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:29:00 PM [32m    LOG[39m [38;5;3m[PnaTrackingService] [39m[32mProgramando sincronización de Tracking PNA desde 2026-06-01T23:08:00.000Z hasta 2026-06-01T23:29:00.019Z[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:29:00 PM [32m    LOG[39m [38;5;3m[PnaTrackingService] [39m[32mSe han encolado 1 tareas de sincronización de tracking.[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:29:00 PM [32m    LOG[39m [38;5;3m[PnaApiSyncProcessor] [39m[32mIniciando sincronización de movimientos desde API PNA...[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:29:00 PM [32m    LOG[39m [38;5;3m[PnaApiService] [39m[32mIniciando sincronización PNA: 2026-06-01 22:58:00 -> 2026-06-01 23:28:00[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:29:00 PM [32m    LOG[39m [38;5;3m[PnaApiService] [39m[32mModo API Real activado: Consultando servicio web PNA[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:29:00 PM [32m    LOG[39m [38;5;3m[PnaApiService] [39m[32mCalling PNA API: https://sscpwsexternos.prefecturanaval.gob.ar/WsPescaExternos.asmx (Range: 2026-06-01 22:58:00 - 2026-06-01 23:28:00)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:29:02 PM [32m    LOG[39m [38;5;3m[PnaApiParser] [39m[32mParsed 0 reportes from XML[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:29:02 PM [32m    LOG[39m [38;5;3m[PnaApiService] [39m[32mProcessing 0 reportes from PNA API[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:29:02 PM [32m    LOG[39m [38;5;3m[PnaApiService] [39m[32mProcessing complete: {"total":0,"processed":0,"skipped":0,"alertsCreated":0,"alertsValidated":0,"errors":0}[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:29:02 PM [32m    LOG[39m [38;5;3m[PnaApiService] [39m[32mActualizado LAST_PNA_SYNC en system_status: 2026-06-01T23:28:00.032Z [39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:29:02 PM [32m    LOG[39m [38;5;3m[PnaApiSyncProcessor] [39m[32mSincronización finalizada exitosamente: {"total":0,"processed":0,"skipped":0,"alertsCreated":0,"alertsValidated":0,"errors":0}[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:29:02 PM [32m    LOG[39m [38;5;3m[PnaTrackingSyncProcessor] [39m[32mIniciando fragmento de sincronización de tracking PNA: 2026-06-01T23:08:00.000Z -> 2026-06-01T23:29:00.019Z[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:29:02 PM [32m    LOG[39m [38;5;3m[PnaTrackingService] [39m[32mEjecutando fragmento de Tracking PNA: 2026-06-01T23:08:00.000Z -> 2026-06-01T23:29:00.019Z[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:29:03 PM [32m    LOG[39m [38;5;3m[PnaTrackingParser] [39m[32mParsed 250 tracking reportes from XML[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:29:05 PM [32m    LOG[39m [38;5;3m[VesselSyncService] [39m[32mTrabajo encolado para sincronización de buque: SUEMAR DOS (MMSI: N/A)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:29:05 PM [32m    LOG[39m [38;5;3m[VesselSyncService] [39m[32mTrabajo de sincronización encolado para: SUEMAR DOS (MMSI: N/A)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:29:06 PM [32m    LOG[39m [38;5;3m[TrackingService] [39m[32mReforzando alerta existente 4ec99e27-21f2-4942-9ae5-b65c5de0e4e0 con detección de Tracking CSV[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:29:06 PM [32m    LOG[39m [38;5;3m[AlertsService] [39m[32mAdded validation source TRACKING_CSV to alert 4ec99e27-21f2-4942-9ae5-b65c5de0e4e0[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:29:06 PM [32m    LOG[39m [38;5;3m[AlertAutomationService] [39m[32mIniciando auto-confirmación para alerta 4ec99e27-21f2-4942-9ae5-b65c5de0e4e0 (Tipo: ZARPADA)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:29:06 PM [32m    LOG[39m [38;5;3m[AlertAutomationService] [39m[32mEjecutando acción automática EDITAR_ETAPAS para marea 57d916a1-e837-4aac-9805-d7bd0ca0f247[39m
+sigma-backend  | --- SYNC STAGES START ---
+sigma-backend  | Incoming Stages in syncStages: [
+sigma-backend  |   {
+sigma-backend  |     "id": "6d8e1799-e333-49a8-ab67-eb3974a0649a",
+sigma-backend  |     "nroEtapa": 1,
+sigma-backend  |     "puertoZarpadaId": "105b0349-a9ed-49bf-9336-aad8d3867f0b",
+sigma-backend  |     "fechaZarpada": "2026-05-24T03:00:00.000Z",
+sigma-backend  |     "puertoArriboId": "105b0349-a9ed-49bf-9336-aad8d3867f0b",
+sigma-backend  |     "fechaArribo": "2026-05-31T03:00:00.000Z",
+sigma-backend  |     "pesqueriaId": "4167beb8-ce39-4fd3-8314-8b3487879d92",
+sigma-backend  |     "tipoEtapa": "EP",
+sigma-backend  |     "fuentesZarpada": {
+sigma-backend  |       "type": "ZARPADA",
+sigma-backend  |       "manual": true,
+sigma-backend  |       "portId": "105b0349-a9ed-49bf-9336-aad8d3867f0b",
+sigma-backend  |       "source": "TRACKING_CSV",
+sigma-backend  |       "buqueId": "baec3aa4-13af-4331-823a-f97b94a04deb",
+sigma-backend  |       "mareaId": "57d916a1-e837-4aac-9805-d7bd0ca0f247",
+sigma-backend  |       "sources": [
+sigma-backend  |         {
+sigma-backend  |           "data": {
+sigma-backend  |             "puerto": "Puerto Madryn",
+sigma-backend  |             "velocidad": null
+sigma-backend  |           },
+sigma-backend  |           "name": "TRACKING_CSV",
+sigma-backend  |           "detectedAt": "2026-05-24T17:57:00.000Z"
+sigma-backend  |         }
+sigma-backend  |       ],
+sigma-backend  |       "subTipo": "ZARPADA",
+sigma-backend  |       "nroEtapa": 1,
+sigma-backend  |       "portName": "Puerto Madryn",
+sigma-backend  |       "eventDate": "2026-05-24T17:57:00.000Z",
+sigma-backend  |       "mareaCode": "MC-88-26",
+sigma-backend  |       "vesselName": "BORRASCA",
+sigma-backend  |       "externalData": {
+sigma-backend  |         "fechaZarpada": "2026-05-24T17:57:00.000Z",
+sigma-backend  |         "puertoZarpadaId": "105b0349-a9ed-49bf-9336-aad8d3867f0b"
+sigma-backend  |       },
+sigma-backend  |       "observerName": "Diego Gorosito"
+sigma-backend  |     },
+sigma-backend  |     "fuentesArribo": {
+sigma-backend  |       "sources": [
+sigma-backend  |         {
+sigma-backend  |           "data": {
+sigma-backend  |             "puerto": "Puerto Madryn",
+sigma-backend  |             "velocidad": null
+sigma-backend  |           },
+sigma-backend  |           "name": "TRACKING_CSV",
+sigma-backend  |           "detectedAt": "2026-05-31T19:15:00.000Z"
+sigma-backend  |         },
+sigma-backend  |         {
+sigma-backend  |           "data": {
+sigma-backend  |             "fecha": "2026-05-31T16:33:00.000-03:00",
+sigma-backend  |             "source": "API_PNA",
+sigma-backend  |             "id_costera": "MADR",
+sigma-backend  |             "nombre_costera": "PTO. MADRYN"
+sigma-backend  |           },
+sigma-backend  |           "name": "API_PNA",
+sigma-backend  |           "detectedAt": "2026-05-31T19:42:30.810Z"
+sigma-backend  |         }
+sigma-backend  |       ],
+sigma-backend  |       "eventDate": "2026-05-31T19:15:00.000Z",
+sigma-backend  |       "automatizado": true
+sigma-backend  |     },
+sigma-backend  |     "observaciones": "Etapa detectada automáticamente desde Tracking"
+sigma-backend  |   },
+sigma-backend  |   {
+sigma-backend  |     "nroEtapa": 2,
+sigma-backend  |     "puertoZarpadaId": "105b0349-a9ed-49bf-9336-aad8d3867f0b",
+sigma-backend  |     "fechaZarpada": "2026-06-01T22:36:00.000Z",
+sigma-backend  |     "pesqueriaId": "4167beb8-ce39-4fd3-8314-8b3487879d92",
+sigma-backend  |     "fuentesZarpada": {
+sigma-backend  |       "sources": [
+sigma-backend  |         {
+sigma-backend  |           "data": {
+sigma-backend  |             "puerto": "Puerto Madryn",
+sigma-backend  |             "id_costera": "MADR"
+sigma-backend  |           },
+sigma-backend  |           "name": "API_PNA",
+sigma-backend  |           "detectedAt": "2026-06-01T19:36:00.000-03:00"
+sigma-backend  |         },
+sigma-backend  |         {
+sigma-backend  |           "data": {
+sigma-backend  |             "fecha": "2026-06-01T20:00:00.000-03:00",
+sigma-backend  |             "puerto": "Puerto Madryn",
+sigma-backend  |             "source": "TRACKING_CSV"
+sigma-backend  |           },
+sigma-backend  |           "name": "TRACKING_CSV",
+sigma-backend  |           "detectedAt": "2026-06-01T23:29:06.194Z"
+sigma-backend  |         }
+sigma-backend  |       ],
+sigma-backend  |       "automatizado": true,
+sigma-backend  |       "eventDate": "2026-06-01T22:36:00.000Z"
+sigma-backend  |     }
+sigma-backend  |   }
+sigma-backend  | ]
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:29:06 PM [32m    LOG[39m [38;5;3m[AlertAutomationService] [39m[32mAlerta 4ec99e27-21f2-4942-9ae5-b65c5de0e4e0 resuelta automáticamente[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:29:11 PM [32m    LOG[39m [38;5;3m[PnaTrackingService] [39m[32mSincronización finalizada: 213 puntos insertados, 1 alertas/eventos detectados.[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:30:00 PM [32m    LOG[39m [38;5;3m[VesselSyncProcessor] [39m[32mProcessing vessel sync for ID: 077a2e41-1ab0-4a19-93fd-41c01bdad428, Nombre: SUEMAR DOS, MMSI: N/A[39m
+sigma-backend  | [95m[Nest] 1  - [39m06/01/2026, 11:30:15 PM [95m  DEBUG[39m [38;5;3m[VesselSyncService] [39m[95mBuscando buque por nombre: SUEMAR DOS[39m
+sigma-backend  | [95m[Nest] 1  - [39m06/01/2026, 11:30:15 PM [95m  DEBUG[39m [38;5;3m[FisheryApiAdapter] [39m[95mNo se encontró buque con nombre: SUEMAR DOS[39m
+sigma-backend  | [33m[Nest] 1  - [39m06/01/2026, 11:30:15 PM [33m   WARN[39m [38;5;3m[VesselSyncService] [39m[33mNo se encontraron datos oficiales para: SUEMAR DOS (ID: N/A, MMSI: N/A)[39m
+sigma-backend  | ◇ injected env (0) from .env // tip: ⌘ multiple files { path: ['.env.local', '.env'] }
+sigma-backend  | Loaded Prisma config from prisma.config.js.
+sigma-backend  | 
+sigma-backend  | Prisma schema loaded from prisma/schema.prisma.
+sigma-backend  | warn Preview feature "multiSchema" is deprecated. The functionality can be used without specifying it as a preview feature.
+sigma-backend  | 
+sigma-backend  | ✔ Generated Prisma Client (v7.8.0) to ./node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.15_react-dom@19.2.6_react@19.2.6__react@1_pmustawdz2pfftopokj2jqvzfq/node_modules/@prisma/client in 2.47s
+sigma-backend  | 
+sigma-backend  | Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
+sigma-backend  | 
+sigma-backend  | 
+sigma-backend  | ◇ injected env (0) from .env // tip: ⌘ suppress logs { quiet: true }
+sigma-backend  | Loaded Prisma config from prisma.config.js.
+sigma-backend  | 
+sigma-backend  | Prisma schema loaded from prisma/schema.prisma.
+sigma-backend  | Datasource "db": PostgreSQL database "mareas_db", schemas "audit, datos_api, public" at "db:5432"
+sigma-backend  | 
+sigma-backend  | 66 migrations found in prisma/migrations
+sigma-backend  | 
+sigma-backend  | 
+sigma-backend  | No pending migrations to apply.
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[NestFactory] [39m[32mStarting Nest application...[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mPassportModule dependencies initialized[39m[38;5;3m +83ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mMailerModule dependencies initialized[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigHostModule dependencies initialized[39m[38;5;3m +2ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mDiscoveryModule dependencies initialized[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[FisheryApiAdapter] [39m[32mFisheryApiAdapter inicializado (API real de PNA)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mJwtModule dependencies initialized[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[PrismaService] [39m[32mPrismaService initialized with PostgreSQL adapter[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mBusinessRulesModule dependencies initialized[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigModule dependencies initialized[39m[38;5;3m +3ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigModule dependencies initialized[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mServeStaticModule dependencies initialized[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mBullModule dependencies initialized[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mScheduleModule dependencies initialized[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mFisheryClientModule dependencies initialized[39m[38;5;3m +95ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mPrismaModule dependencies initialized[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[AuditService] [39m[32mAuditService Initialized (Async: true, Level: ALL)[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mJwtModule dependencies initialized[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mBullModule dependencies initialized[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mCommonModule dependencies initialized[39m[38;5;3m +2ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mMailerCoreModule dependencies initialized[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mFilesModule dependencies initialized[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mMailModule dependencies initialized[39m[38;5;3m +18ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mAppModule dependencies initialized[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mSeedModule dependencies initialized[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mProductsModule dependencies initialized[39m[38;5;3m +4ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mCatalogosModule dependencies initialized[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mErrorLogsModule dependencies initialized[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mPlanificacionModule dependencies initialized[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mBackupModule dependencies initialized[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mDataExportModule dependencies initialized[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mAccessImportModule dependencies initialized[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mAuditModule dependencies initialized[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mUsersModule dependencies initialized[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mMareasModule dependencies initialized[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mAlertsModule dependencies initialized[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mStatsModule dependencies initialized[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mJobsModule dependencies initialized[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mPnaApiModule dependencies initialized[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mAuthModule dependencies initialized[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mReportsModule dependencies initialized[39m[38;5;3m +0ms[39m
+sigma-backend  | >>> BACKEND STARTING - Build ID: 2026-06-01T23:36:34.774Z
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[Bootstrap] [39m[32mCORS enabled for origins: http://localhost:5173, http://127.0.0.1:5173, http://localhost:5174, http://127.0.0.1:5174, https://mareas-obs.netlify.app[39m
+sigma-backend  | [33m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [33m   WARN[39m [38;5;3m[LegacyRouteConverter] [39m[33mUnsupported route path: "/api/*". In previous versions, the symbols ?, *, and + were used to denote optional or repeating path parameters. The latest version of "path-to-regexp" now requires the use of named parameters. For example, instead of using a route like /users/* to capture all routes starting with "/users", you should use /users/*path. For more details, refer to the migration guide. Attempting to auto-convert...[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mProductsController {/api/products}:[39m[38;5;3m +2ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/products, POST} route[39m[38;5;3m +5ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/products, GET} route[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/products/:term, GET} route[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/products/:id, PATCH} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/products/:id, DELETE} route[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mAuthController {/api/auth}:[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/auth/register, POST} route[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/auth/login, POST} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/auth/refresh, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/auth/logout, POST} route[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/auth/forgot-password, POST} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/auth/reset-password/:token, GET} route[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/auth/reset-password, POST} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/auth/check-status, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/auth/private, GET} route[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/auth/private2, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/auth/private3, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mErrorLogsController {/api/error-logs}:[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/error-logs, GET} route[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/error-logs/:id, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mBusinessRulesController {/api/config}:[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/config/reglas, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mSeedController {/api/seed}:[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/seed, GET} route[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mFilesController {/api/files}:[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/files/product/:imageName, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/files/users/:imageName, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/files/product, POST} route[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/files/user, POST} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mUsersController {/api/users}:[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/users/me, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/users/me, PATCH} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/users/me/password, PATCH} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/users, GET} route[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/users, POST} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/users/:id, PATCH} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/users/:id/toggle-status, PATCH} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/users/:id, DELETE} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mTiposFlotaController {/api/catalogos/tipos-flota}:[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/tipos-flota, POST} route[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/tipos-flota, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/tipos-flota/:id, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/tipos-flota/:id, PATCH} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/tipos-flota/:id, DELETE} route[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mArtesPescaController {/api/catalogos/artes-pesca}:[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/artes-pesca, POST} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/artes-pesca, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/artes-pesca/:id, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/artes-pesca/:id, PATCH} route[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/artes-pesca/:id, DELETE} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mPesqueriasController {/api/catalogos/pesquerias}:[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/pesquerias, POST} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/pesquerias, GET} route[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/pesquerias/:id, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/pesquerias/:id, PATCH} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/pesquerias/:id, DELETE} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mPuertosController {/api/catalogos/puertos}:[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/puertos, POST} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/puertos, GET} route[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/puertos/:id, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/puertos/:id, PATCH} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/puertos/:id, DELETE} route[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mEspeciesController {/api/catalogos/especies}:[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/especies, POST} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/especies, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/especies/:id, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/especies/:id, PATCH} route[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/especies/:id, DELETE} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mObservadoresController {/api/catalogos/observadores}:[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/observadores, POST} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/observadores, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/observadores/export/excel, POST} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/observadores/:id, GET} route[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/observadores/:id/historial/:year, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/observadores/:id, PATCH} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/observadores/:id, DELETE} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mEstadosMareaController {/api/catalogos/estados-marea}:[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/estados-marea, POST} route[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/estados-marea, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/estados-marea/:id, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/estados-marea/:id, PATCH} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/estados-marea/:id, DELETE} route[39m[38;5;3m +6ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mTransicionesEstadoController {/api/catalogos/transiciones-estado}:[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/transiciones-estado, POST} route[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/transiciones-estado, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/transiciones-estado/:id, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/transiciones-estado/:id, PATCH} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/transiciones-estado/:id, DELETE} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mBuquesController {/api/catalogos/buques}:[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/buques/export/dbf, GET} route[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/buques, POST} route[39m[38;5;3m +2ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/buques, GET} route[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/buques/:id, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/buques/:id, PATCH} route[39m[38;5;3m +2ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/catalogos/buques/:id, DELETE} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mMareasController {/api/mareas}:[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/mareas/claim, POST} route[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/mareas/operativo, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/mareas/kpis, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/mareas/inbox, GET} route[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/mareas/flota-por-pesqueria, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/mareas/workforce/status, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/mareas/alertas/personal-fatiga, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/mareas/alertas/retrasos-criticos, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/mareas/alertas/informes-demorados, GET} route[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/mareas/calendar/events, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/mareas/search, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/mareas/movimientos-recientes, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/mareas/export/excel, POST} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/mareas/:id, GET} route[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/mareas/:id, PATCH} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/mareas/:id/context, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/mareas/:id/zona-austral, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/mareas/valida/buque/:id, GET} route[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/mareas/valida/observador/:id, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/mareas/config/proximo-numero, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/mareas/:id/actions/:actionKey, POST} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/mareas/:id/etapas/:etapaId/intencion-cierre, PATCH} route[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/mareas, POST} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/mareas/protocolizacion/enviar, POST} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/mareas/protocolizacion/confirmar/:id, POST} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/mareas/protocolizacion/pendientes, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/mareas/protocolizacion/en-espera, GET} route[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/mareas/protocolizacion/completas, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/mareas/protocolizacion/lotes, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/mareas/protocolizacion/lotes/:id, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mTrackingController {/api/tracking}:[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/tracking/upload, POST} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/tracking/heartbeat, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/tracking/fleet, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/tracking/history/:buqueId, GET} route[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/tracking/marea/:mareaId, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/tracking/export/dbf/:mareaId, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/tracking/export/bundle/:mareaId, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mAlertsController {/api/alerts}:[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/alerts, POST} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/alerts, GET} route[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/alerts/:id, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/alerts/:id, PATCH} route[39m[38;5;3m +2ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/alerts/automation/batch, POST} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mBackupController {/api/admin/backup}:[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/admin/backup, POST} route[39m[38;5;3m +4ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/admin/backup/status, GET} route[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/admin/backup/auto-config, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/admin/backup/auto-config, PUT} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/admin/backup, GET} route[39m[38;5;3m +2ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/admin/backup/download/:filename, GET} route[39m[38;5;3m +6ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/admin/backup/upload, POST} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/admin/backup/restore/:filename, POST} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/admin/backup/:filename, DELETE} route[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mDataExportController {/api/admin/data-export}:[39m[38;5;3m +2ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/admin/data-export, POST} route[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/admin/data-export, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/admin/data-export/:filename, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/admin/data-export/import, POST} route[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/admin/data-export/:filename, DELETE} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mAccessImportController {/api/access-import}:[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/access-import/upload, POST} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mStatsController {/api/stats}:[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/stats/dashboard, GET} route[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/stats/detail, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/stats/vessels-count, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/stats/distribution, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/stats/secondary-observers, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/stats/audit-special-cases, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/stats/protocolization-timeline, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/stats/export, GET} route[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mPlanificacionController {/api/planificacion}:[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/planificacion/requerimientos/:anio, GET} route[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/planificacion/requerimientos, POST} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/planificacion/experiencia-observadores, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/planificacion/experiencia-observadores, POST} route[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mAuditController {/api/audit}:[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/audit/api, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/audit/entidades, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/audit/eventos, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/audit/navegacion, GET} route[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/audit/navigation, POST} route[39m[38;5;3m +3ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mJobQueueController {/api/jobs}:[39m[38;5;3m +6ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/jobs, GET} route[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/jobs/stats/summary, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/jobs/stats/performance, GET} route[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/jobs/stats/errors, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/jobs/stats/timeseries, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/jobs/:id, GET} route[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/jobs/:id/retry, POST} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/jobs/trigger/:type, POST} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/jobs/:id, DELETE} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mPnaApiController {/api/pna-api}:[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/pna-api/config, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/pna-api/config, POST} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/pna-api/sync-manual, POST} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/pna-api/sync-tracking, POST} route[39m[38;5;3m +1ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mReportsController {/api/reports}:[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/reports/audit-report, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/reports/audit-report/pdf, GET} route[39m[38;5;3m +0ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:35 PM [32m    LOG[39m [38;5;3m[NestApplication] [39m[32mNest application successfully started[39m[38;5;3m +327ms[39m
+sigma-backend  | [32m[Nest] 1  - [39m06/01/2026, 11:36:35 PM [32m    LOG[39m [38;5;3m[Bootstrap] [39m[32mApp running on port 3000[39m
