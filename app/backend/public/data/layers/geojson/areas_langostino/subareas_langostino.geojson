@@ -19,7 +19,7 @@
                 "Especie": "Langostino",
                 "Inicio": null,
                 "Fin": null,
-                "Notas": "Se consultara al CFP para definir que norma describe esta area."
+                "Notas": "Se consultara al CFP para definir que norma describe esta area"
             },
             "geometry": {
                 "type": "MultiPolygon",
