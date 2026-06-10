@@ -98,7 +98,7 @@ const LAYER_FILES = {
     'areas_centolla/area_centolla_S4.geojson'
   ],
   langostino: [
-    'areas_langostino/subareas_langostino.geojson'
+    'areas_langostino/areas_langostino.geojson'
   ]
 }
 
