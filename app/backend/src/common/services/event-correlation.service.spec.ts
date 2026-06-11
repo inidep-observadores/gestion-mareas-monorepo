@@ -68,7 +68,7 @@ describe('EventCorrelationService (Hotfix Rules)', () => {
     });
 
     describe('evaluateEventContext - Restricción fecha_zarpada_estimada', () => {
-        it('debería retornar IGNORE_OLD si la zarpada es anterior a la fecha estimada', async () => {
+        it('debería retornar IGNORE_OLD si la zarpada es anterior a la fecha estimada con su tolerancia (> 2 días antes)', async () => {
             mockPrisma.marea.findMany.mockResolvedValue([
                 {
                     id: 'marea-1',
@@ -80,10 +80,28 @@ describe('EventCorrelationService (Hotfix Rules)', () => {
             ]);
             mockPrisma.alerta.findFirst.mockResolvedValue(null);
 
-            // Evento el 13/02/2026 (10:00 ART -> 13:00 UTC)
-            const result = await service.evaluateEventContext('buque-1', 'ZARPADA', new Date('2026-02-13T13:00:00Z'));
+            // Evento el 11/02/2026 (10:00 ART -> 13:00 UTC) -> 3 días antes, fuera de tolerancia
+            const result = await service.evaluateEventContext('buque-1', 'ZARPADA', new Date('2026-02-11T13:00:00Z'));
 
             expect(result.action).toBe(EventDecisionAction.IGNORE_OLD);
+        });
+
+        it('debería retornar CREATE_ALERT si la zarpada entra en la tolerancia de 2 días previos a la fecha estimada', async () => {
+            mockPrisma.marea.findMany.mockResolvedValue([
+                {
+                    id: 'marea-1',
+                    estadoActual: { codigo: 'DESIGNADA' },
+                    fechaZarpadaEstimada: new Date('2026-02-14T03:00:00Z'), // 00:00 ART
+                    etapas: [],
+                    buque: { id: 'buque-1' },
+                },
+            ]);
+            mockPrisma.alerta.findFirst.mockResolvedValue(null);
+
+            // Evento el 12/02/2026 (10:00 ART -> 13:00 UTC) -> 2 días antes, dentro de tolerancia
+            const result = await service.evaluateEventContext('buque-1', 'ZARPADA', new Date('2026-02-12T13:00:00Z'));
+
+            expect(result.action).toBe(EventDecisionAction.CREATE_ALERT);
         });
 
         it('debería retornar CREATE_ALERT si la zarpada es el mismo día que la fecha estimada', async () => {
