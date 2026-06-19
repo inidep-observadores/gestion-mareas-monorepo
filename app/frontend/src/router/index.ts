@@ -271,10 +271,34 @@ const router = createRouter({
     },
     {
       path: '/sistema/observadores',
+      redirect: '/sistema/observadores/dashboard',
+    },
+    {
+      path: '/sistema/observadores/dashboard',
       name: 'SistemaObservadores',
+      component: () => import('@/modules/admin/views/ObservadoresDashboardView.vue'),
+      meta: {
+        title: 'Dashboard de Observadores',
+        requiresAuth: true,
+        roles: [ValidRoles.admin, ValidRoles.coordinador, ValidRoles.asistente, ValidRoles.tecnico],
+      },
+    },
+    {
+      path: '/sistema/observadores/lista',
+      name: 'SistemaObservadoresLista',
       component: () => import('@/modules/admin/views/ObservadoresView.vue'),
       meta: {
-        title: 'Gestión de Observadores',
+        title: 'Lista de Observadores',
+        requiresAuth: true,
+        roles: [ValidRoles.admin, ValidRoles.coordinador, ValidRoles.asistente, ValidRoles.tecnico],
+      },
+    },
+    {
+      path: '/sistema/observadores/presentismo',
+      name: 'SistemaObservadoresPresentismo',
+      component: () => import('@/modules/admin/views/PresentismoMockupView.vue'),
+      meta: {
+        title: 'Presentismo de Observadores',
         requiresAuth: true,
         roles: [ValidRoles.admin, ValidRoles.coordinador, ValidRoles.asistente, ValidRoles.tecnico],
       },
