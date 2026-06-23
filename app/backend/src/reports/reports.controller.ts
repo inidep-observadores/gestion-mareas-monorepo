@@ -30,6 +30,7 @@ export class ReportsController {
             endDate: query.endDate,
             protocolizationStartDate: query.protocolizationStartDate,
             protocolizationEndDate: query.protocolizationEndDate,
+            includeAnnualAnnex: toBool(query.includeAnnualAnnex),
         });
 
         const filename = query.customFilename
@@ -65,6 +66,7 @@ export class ReportsController {
             endDate: query.endDate,
             protocolizationStartDate: query.protocolizationStartDate,
             protocolizationEndDate: query.protocolizationEndDate,
+            includeAnnualAnnex: toBool(query.includeAnnualAnnex),
         });
 
         const filename = query.customFilename

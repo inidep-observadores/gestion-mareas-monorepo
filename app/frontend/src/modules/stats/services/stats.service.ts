@@ -197,7 +197,8 @@ export const statsService = {
         endDate?: string,
         protocolizationStartDate?: string,
         protocolizationEndDate?: string,
-        includeSummaries: boolean = false
+        includeSummaries: boolean = false,
+        includeAnnualAnnex?: boolean
     ) {
         const params = new URLSearchParams({
             year: year.toString(),
@@ -208,6 +209,8 @@ export const statsService = {
             includeCampaigns: String(includeCampaigns),
             includeSummaries: String(includeSummaries)
         });
+
+        if (includeAnnualAnnex) params.append('includeAnnualAnnex', String(includeAnnualAnnex));
 
         if (startDate) params.append('startDate', startDate);
         if (endDate) params.append('endDate', endDate);
@@ -346,7 +349,8 @@ export const statsService = {
         startDate?: string,
         endDate?: string,
         protocolizationStartDate?: string,
-        protocolizationEndDate?: string
+        protocolizationEndDate?: string,
+        includeAnnualAnnex?: boolean
     ) {
         const params = new URLSearchParams({
             year: year.toString(),
@@ -355,6 +359,8 @@ export const statsService = {
             includeProtocolizedOutOfPeriod: String(includeProtocolizedOutOfPeriod),
             includeCampaigns: String(includeCampaigns)
         });
+
+        if (includeAnnualAnnex) params.append('includeAnnualAnnex', String(includeAnnualAnnex));
 
         if (startDate) params.append('startDate', startDate);
         if (endDate) params.append('endDate', endDate);
@@ -388,7 +394,8 @@ export const statsService = {
         startDate?: string,
         endDate?: string,
         protocolizationStartDate?: string,
-        protocolizationEndDate?: string
+        protocolizationEndDate?: string,
+        includeAnnualAnnex?: boolean
     ) {
         const params = new URLSearchParams({
             year: year.toString(),
@@ -397,6 +404,8 @@ export const statsService = {
             includeProtocolizedOutOfPeriod: String(includeProtocolizedOutOfPeriod),
             includeCampaigns: String(includeCampaigns)
         });
+
+        if (includeAnnualAnnex) params.append('includeAnnualAnnex', String(includeAnnualAnnex));
 
         if (startDate) params.append('startDate', startDate);
         if (endDate) params.append('endDate', endDate);

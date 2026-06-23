@@ -745,7 +745,8 @@ export class StatsService {
         protocolizationStartDate?: string,
         protocolizationEndDate?: string,
         includeSummaries = false,
-        snapshotDate?: Date
+        snapshotDate?: Date,
+        includeAnnualAnnex?: boolean
     ): Promise<ExcelJS.Workbook> {
         if (filterType === FilterType.COVERAGE) {
             return this.getCoverageExportWorkbook(year, mode, includeNonProtocolized, includeProtocolizedOutOfPeriod, includeCampaigns, startDate, endDate, filterValue, protocolizationStartDate, protocolizationEndDate);
@@ -868,7 +869,8 @@ export class StatsService {
                 endDate,
                 protocolizationStartDate,
                 protocolizationEndDate,
-                snapshotDate
+                snapshotDate,
+                includeAnnualAnnex
             );
         }
 
@@ -2310,7 +2312,8 @@ export class StatsService {
         endDate?: string,
         protocolizationStartDate?: string,
         protocolizationEndDate?: string,
-        snapshotDate?: Date
+        snapshotDate?: Date,
+        includeAnnualAnnex?: boolean
     ): Promise<ExcelJS.Workbook> {
         const periodStart = startDate ? new Date(startDate) : new Date(Date.UTC(year, 0, 1));
         periodStart.setUTCHours(0, 0, 0, 0);
@@ -2588,6 +2591,10 @@ export class StatsService {
         // TODO: Re-habilitar una vez que la definición de la hoja de Protocolización esté finalizada por el usuario.
         // Hoja 5: Protocolización (DESHABILITADA PROVISORIAMENTE)
         // this.buildAuditProtocolizacionSheet(workbook, protocolizationTimeline);
+
+        if (includeAnnualAnnex && startDate && endDate) {
+            await this.buildAuditAnnexSheet(workbook, year, mode, includeNonProtocolized, includeProtocolizedOutOfPeriod, includeCampaigns, startDate, endDate, protocolizationStartDate, protocolizationEndDate, snapshotDate, fisheryOrderMap);
+        }
 
         return workbook;
     }
@@ -3416,6 +3423,136 @@ export class StatsService {
         sheet.getColumn(7).width = 10;
         sheet.getColumn(8).width = 14;
         sheet.getColumn(9).width = 40;
+    }
+
+    private async buildAuditAnnexSheet(
+        workbook: ExcelJS.Workbook,
+        year: number,
+        mode: 'CALENDAR' | 'TOTAL',
+        includeNonProtocolized: boolean,
+        includeProtocolizedOutOfPeriod: boolean,
+        includeCampaigns: boolean,
+        startDate: string,
+        endDate: string,
+        protocolizationStartDate?: string,
+        protocolizationEndDate?: string,
+        snapshotDate?: Date,
+        fisheryOrderMap?: Map<string, number>
+    ) {
+        const startMonth = parseInt(startDate.split('-')[1], 10);
+        const endMonth = parseInt(endDate.split('-')[1], 10);
+        let selectedQuarter = null;
+        if (startMonth === 1 && endMonth === 3) selectedQuarter = 1;
+        if (startMonth === 4 && endMonth === 6) selectedQuarter = 2;
+        if (startMonth === 7 && endMonth === 9) selectedQuarter = 3;
+        if (startMonth === 10 && endMonth === 12) selectedQuarter = 4;
+
+        if (!selectedQuarter || selectedQuarter < 2) return;
+
+        const sheet = workbook.addWorksheet('Anexo');
+
+        // Titulo
+        const numCols = selectedQuarter + 1;
+        sheet.mergeCells(1, 1, 1, numCols);
+        const titleCell = sheet.getCell(1, 1);
+        titleCell.value = 'ANEXO 1: COMPARATIVA ANUAL DE ESFUERZO POR PESQUERÍA';
+        titleCell.font = { bold: true, size: 14 };
+        titleCell.alignment = { horizontal: 'center' };
+
+        // Subtitulo explicativo
+        sheet.mergeCells(2, 1, 2, numCols);
+        const subtitleCell = sheet.getCell(2, 1);
+        subtitleCell.value = 'Cantidad de días navegados por cada pesquería que registró actividad durante el año en curso, desglosado por trimestre.';
+        subtitleCell.font = { italic: true, size: 10, color: { argb: 'FF475569' } };
+        subtitleCell.alignment = { horizontal: 'left', wrapText: true };
+        sheet.getRow(2).height = 30;
+
+        // Cabeceras
+        const headerRow = sheet.getRow(4);
+        const headers = ['Pesquería'];
+        const numToOrdinal = ['Primer', 'Segundo', 'Tercer', 'Cuarto'];
+        for (let q = 1; q <= selectedQuarter; q++) {
+            headers.push(`${numToOrdinal[q - 1]} trimestre`);
+        }
+
+        headers.forEach((h, i) => {
+            const cell = headerRow.getCell(i + 1);
+            cell.value = h;
+            cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF00548B' } };
+            cell.alignment = { horizontal: 'center' };
+        });
+
+        // Configurar anchos de columna
+        sheet.getColumn(1).width = 40;
+        for (let i = 2; i <= numCols; i++) {
+            sheet.getColumn(i).width = 20;
+        }
+
+        // Obtener la data
+        const yearStats = await this.getDashboardStats(
+            year, mode, includeNonProtocolized, includeProtocolizedOutOfPeriod,
+            'SHIP', includeCampaigns, undefined, undefined,
+            protocolizationStartDate, protocolizationEndDate,
+            snapshotDate
+        );
+        
+        const activeFisheries = Array.from(new Set(yearStats.fisheries.map((f: any) => f.name)));
+        activeFisheries.sort((a, b) => (fisheryOrderMap?.get(a.trim()) || 999) - (fisheryOrderMap?.get(b.trim()) || 999));
+
+        const fisheriesData: Record<string, number[]> = {};
+        for (const name of activeFisheries) {
+            fisheriesData[name] = new Array(selectedQuarter).fill(0);
+        }
+
+        for (let q = 1; q <= selectedQuarter; q++) {
+            const qStartMonth = (q - 1) * 3 + 1;
+            const qEndMonth = qStartMonth + 2;
+            const lastDay = new Date(year, qEndMonth, 0).getDate();
+            
+            const qStartDateStr = `${year}-${String(qStartMonth).padStart(2, '0')}-01`;
+            const qEndDateStr = `${year}-${String(qEndMonth).padStart(2, '0')}-${lastDay}`;
+            
+            const qStats = await this.getDashboardStats(
+                year, mode, includeNonProtocolized, includeProtocolizedOutOfPeriod,
+                'SHIP', includeCampaigns, qStartDateStr, qEndDateStr,
+                protocolizationStartDate, protocolizationEndDate,
+                snapshotDate
+            );
+            
+            for (const f of qStats.fisheries) {
+                if (fisheriesData[f.name]) {
+                    fisheriesData[f.name][q - 1] = f.days;
+                }
+            }
+        }
+
+        let currentRow = 5;
+        activeFisheries.forEach(fishery => {
+            const row = sheet.getRow(currentRow);
+            row.getCell(1).value = fishery.toUpperCase();
+            
+            for (let q = 1; q <= selectedQuarter; q++) {
+                const days = fisheriesData[fishery][q - 1];
+                const cell = row.getCell(q + 1);
+                cell.value = days > 0 ? days : '-';
+                cell.alignment = { horizontal: 'center' };
+            }
+            currentRow++;
+        });
+        
+        // Bordes de tabla
+        for (let r = 4; r < currentRow; r++) {
+            for (let c = 1; c <= numCols; c++) {
+                const cell = sheet.getCell(r, c);
+                cell.border = {
+                    top: { style: 'thin' },
+                    left: { style: 'thin' },
+                    right: { style: 'thin' },
+                    bottom: { style: 'thin' }
+                };
+            }
+        }
     }
 
     private buildAuditProtocolizacionSheet(

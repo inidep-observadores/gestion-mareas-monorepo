@@ -129,6 +129,13 @@ export interface AuditReportData {
         tecnicos: PersonalTypeBreakdownItem;
     };
 
+    /** Datos para el anexo anual comparativo */
+    annexData?: {
+        quarters: number[];
+        fisheries: Record<string, number[]>; // FisheryName -> array of days mapped to quarters index
+        activeFisheries: string[]; // List of all active fisheries in the year
+    };
+
     /** Detalle de cada marea */
     detailItems: Array<{
         id: string;
@@ -228,6 +235,25 @@ export class AuditReportBuilder {
             // Sección 9: Observaciones Complementarias
             ...this.buildComplementaryObservations(period, processed, data.includeCampaigns),
         ];
+
+        if (data.annexData) {
+            children.push(
+                new Paragraph({
+                    pageBreakBefore: true,
+                    spacing: { before: SPACING.beforeHeading, after: SPACING.afterHeading },
+                    children: [
+                        new TextRun({
+                            text: 'ANEXO 1: COMPARATIVA ANUAL DE ESFUERZO POR PESQUERÍA',
+                            bold: true,
+                            size: FONT_SIZES.heading1,
+                            color: INIDEP_COLORS.primary,
+                        })
+                    ]
+                }),
+                this.bodyParagraph('A continuación se detalla la cantidad de días navegados por cada pesquería que registró actividad durante el año en curso, desglosado por trimestre hasta el período seleccionado en este informe.'),
+                ...this.buildAnnexTable(data.annexData)
+            );
+        }
 
         const doc = new Document({
             creator: 'SIGMA - Sistema Integral de Gestión de Mareas',
@@ -1095,7 +1121,7 @@ export class AuditReportBuilder {
             const sortedEsperando = [...esperandoEntrega].sort((a, b) => this.sortMareaId(a.id_marea, b.id_marea));
             const subsecNum = 1 + (canceladas.length > 0 ? 1 : 0) + (desestimadas.length > 0 ? 1 : 0);
             result.push(
-                this.heading2(`7.${subsecNum} Mareas pendientes de rendición`),
+                this.heading2(`7.${subsecNum} Mareas en espera de entrega de datos`),
                 this.bodyParagraph(`${n} marea${n !== 1 ? 's' : ''} finalizada${n !== 1 ? 's' : ''} est${n !== 1 ? 'án' : 'á'} en espera de que el observador asignado realice la entrega de los datos recolectados.`),
                 createFormattedTable(
                     ['MAREA', 'BUQUE', 'PESQUERÍA', 'OBSERVADOR', 'DÍAS NAV.', 'FECHA ARRIBO'],
@@ -1342,6 +1368,42 @@ export class AuditReportBuilder {
             }));
         }
         return children;
+    }
+
+    private buildAnnexTable(annexData: NonNullable<AuditReportData['annexData']>): (Paragraph | Table)[] {
+        const headers = ['PESQUERÍA'];
+        const numToOrdinal = ['Primer', 'Segundo', 'Tercer', 'Cuarto'];
+        
+        for (const q of annexData.quarters) {
+            headers.push(`${numToOrdinal[q - 1]} trimestre`);
+        }
+
+        const rows = annexData.activeFisheries.map(fishery => {
+            const daysArr = annexData.fisheries[fishery];
+            const cols = [fishery.toUpperCase()];
+            for (let i = 0; i < annexData.quarters.length; i++) {
+                const days = daysArr[i];
+                cols.push(days > 0 ? days.toString() : '-');
+            }
+            return cols;
+        });
+
+        const numCols = headers.length;
+        const columnWidths = [40];
+        const remainingWidth = Math.floor(60 / (numCols - 1));
+        const alignments: any[] = [AlignmentType.LEFT];
+        
+        for (let i = 1; i < numCols; i++) {
+            columnWidths.push(remainingWidth);
+            alignments.push(AlignmentType.CENTER);
+        }
+
+        return [
+            createFormattedTable(headers, rows, {
+                columnWidths,
+                alignments
+            })
+        ];
     }
 
     // ─────────────────────────────────────────────────────────────

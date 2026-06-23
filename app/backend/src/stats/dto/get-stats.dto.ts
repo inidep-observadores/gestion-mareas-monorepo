@@ -91,4 +91,9 @@ export class GetStatsDto {
     @IsOptional()
     @Transform(({ value }) => value === 'true')
     includeSummaries?: boolean = false;
+
+    @IsBoolean()
+    @IsOptional()
+    @Transform(({ value }) => value === 'true')
+    includeAnnualAnnex?: boolean = false;
 }

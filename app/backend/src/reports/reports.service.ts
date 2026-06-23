@@ -20,6 +20,7 @@ export interface AuditReportParams {
     endDate?: string;
     protocolizationStartDate?: string;
     protocolizationEndDate?: string;
+    includeAnnualAnnex?: boolean;
 }
 
 import { ConversionService } from './conversion.service';
@@ -140,6 +141,62 @@ export class ReportsService {
             fisheryOrdering.map(f => [f.nombre.trim(), f.orden ?? 999])
         );
 
+        // 6.5. Computar datos del Anexo Anual Comparativo si se requiere
+        let annexData;
+        if (params.includeAnnualAnnex && startDate && endDate) {
+            const startMonth = parseInt(startDate.split('-')[1], 10);
+            const endMonth = parseInt(endDate.split('-')[1], 10);
+            let selectedQuarter = null;
+            if (startMonth === 1 && endMonth === 3) selectedQuarter = 1;
+            if (startMonth === 4 && endMonth === 6) selectedQuarter = 2;
+            if (startMonth === 7 && endMonth === 9) selectedQuarter = 3;
+            if (startMonth === 10 && endMonth === 12) selectedQuarter = 4;
+
+            if (selectedQuarter && selectedQuarter >= 2) {
+                const quarters = Array.from({ length: selectedQuarter }, (_, i) => i + 1);
+                
+                // Get ALL fisheries active in the entire year
+                const yearStats = await this.statsService.getDashboardStats(
+                    year, mode, includeNonProtocolized, includeProtocolizedOutOfPeriod,
+                    'SHIP', includeCampaigns, undefined, undefined,
+                    protocolizationStartDate, protocolizationEndDate,
+                    snapDate
+                );
+                
+                const activeFisheries = Array.from(new Set(yearStats.fisheries.map((f: any) => f.name)));
+                activeFisheries.sort((a, b) => (fisheryOrderMap.get(a.trim()) || 999) - (fisheryOrderMap.get(b.trim()) || 999));
+
+                const fisheriesData: Record<string, number[]> = {};
+                for (const name of activeFisheries) {
+                    fisheriesData[name] = new Array(selectedQuarter).fill(0);
+                }
+
+                for (let q = 1; q <= selectedQuarter; q++) {
+                    const qStartMonth = (q - 1) * 3 + 1;
+                    const qEndMonth = qStartMonth + 2;
+                    const lastDay = new Date(year, qEndMonth, 0).getDate();
+                    
+                    const qStartDateStr = `${year}-${String(qStartMonth).padStart(2, '0')}-01`;
+                    const qEndDateStr = `${year}-${String(qEndMonth).padStart(2, '0')}-${lastDay}`;
+                    
+                    const qStats = await this.statsService.getDashboardStats(
+                        year, mode, includeNonProtocolized, includeProtocolizedOutOfPeriod,
+                        'SHIP', includeCampaigns, qStartDateStr, qEndDateStr,
+                        protocolizationStartDate, protocolizationEndDate,
+                        snapDate
+                    );
+                    
+                    for (const f of qStats.fisheries) {
+                        if (fisheriesData[f.name]) {
+                            fisheriesData[f.name][q - 1] = f.days;
+                        }
+                    }
+                }
+                
+                annexData = { quarters, fisheries: fisheriesData, activeFisheries };
+            }
+        }
+
         // 7. Computar breakdown Observadores vs Técnicos
         const emptySlice = () => ({
             dias: 0, mareasFinalizadas: 0, mareasEnEjecucion: 0, desestimadas: 0,
@@ -258,6 +315,7 @@ export class ReportsService {
                 id_marea: d.id_marea,
                 nroEtapa: d.nroEtapa || 1,
             })),
+            annexData,
         };
 
         this.logger.log(`Datos recopilados: ${reportData.stats.totalMareas} mareas, ${reportData.stats.observers.length} observadores`);
