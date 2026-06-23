@@ -327,23 +327,64 @@ export function generateFisheryAnalysisText(
     const sorted = Array.from(byFishery.entries()).sort((a, b) => b[1].dias - a[1].dias);
     const parts: string[] = [];
 
-    // Top pesquería
-    if (sorted.length > 0) {
-        const [topName, topData] = sorted[0];
-        parts.push(
-            `La pesquería de ${topName.toLowerCase()} concentró la mayor actividad con ` +
-            `${topData.mareas} mareas y ${formatNumber(topData.dias)} días navegados, ` +
-            `representando el ${formatNumber(topData.pctDias, 1)}% del esfuerzo total.`
-        );
+    // Seleccionamos las principales (top 4)
+    let selected = sorted.slice(0, 4);
+
+    const isMN = (name: string) => name.toLowerCase().includes('merluza negra');
+    const isEA = (name: string) => name.toLowerCase().includes('especies australes');
+
+    const mnIndexSelected = selected.findIndex(x => isMN(x[0]));
+    const eaIndexSelected = selected.findIndex(x => isEA(x[0]));
+
+    const mnInSelected = mnIndexSelected !== -1;
+    const eaInSelected = eaIndexSelected !== -1;
+
+    let missingText = '';
+
+    if (mnInSelected !== eaInSelected) {
+        const mnIndexTotal = sorted.findIndex(x => isMN(x[0]));
+        const eaIndexTotal = sorted.findIndex(x => isEA(x[0]));
+
+        if (mnInSelected) {
+            if (eaIndexTotal !== -1) {
+                selected.push(sorted[eaIndexTotal]);
+            } else {
+                missingText = ', no registrándose actividad en la pesquería de especies australes';
+            }
+        } else if (eaInSelected) {
+            if (mnIndexTotal !== -1) {
+                selected.push(sorted[mnIndexTotal]);
+            } else {
+                missingText = ', no registrándose actividad en la pesquería de merluza negra';
+            }
+        }
     }
 
-    // Resto de pesquerías principales (top 2-4)
-    if (sorted.length > 1) {
-        const following = sorted.slice(1, Math.min(4, sorted.length));
+    // Volver a ordenar por si se agregó una pesquería con menor representatividad
+    selected.sort((a, b) => b[1].dias - a[1].dias);
+
+    // Top pesquería
+    if (selected.length > 0) {
+        const [topName, topData] = selected[0];
+        let topSentence = `La pesquería de ${topName.toLowerCase()} concentró la mayor actividad con ` +
+            `${topData.mareas} mareas y ${formatNumber(topData.dias)} días navegados, ` +
+            `representando el ${formatNumber(topData.pctDias, 1)}% del esfuerzo total`;
+            
+        if (selected.length === 1 && missingText !== '') {
+            topSentence += missingText;
+        }
+        
+        parts.push(topSentence + '.');
+    }
+
+    // Resto de pesquerías principales
+    if (selected.length > 1) {
+        const following = selected.slice(1);
         const followingText = following.map(([name, data]) =>
             `${name.toLowerCase()} (${formatNumber(data.pctDias, 1)}%)`
         ).join(', ');
-        parts.push(`Le siguen ${followingText}.`);
+        
+        parts.push(`Le siguen ${followingText}${missingText}.`);
     }
 
     return parts.join(' ');
@@ -355,7 +396,7 @@ export function generateFisheryAnalysisText(
 export function generateComplementaryObservations(
     period: PeriodDescription,
     fisheryCount: number,
-    flotaCount: number,
+    flotas: string[],
     obsAfectados: number,
     observers: Array<{ name: string; mareas: number; days: number }>,
     totalDias: number,
@@ -364,10 +405,18 @@ export function generateComplementaryObservations(
 ): Array<{ title: string; text: string }> {
     const observations: Array<{ title: string; text: string }> = [];
 
+    const flotaCount = flotas.length;
+
     // 1. Diversificación de pesquerías
-    const tipoFlota = flotaCount > 1
-        ? `en ${flotaCount} tipos de flota`
-        : 'en un tipo de flota';
+    let tipoFlota = '';
+    if (flotaCount === 1) {
+        tipoFlota = `en la flota ${flotas[0]}`;
+    } else if (flotaCount > 1) {
+        const flotasList = flotas.slice(0, -1).join(', ') + ' y ' + flotas[flotas.length - 1];
+        tipoFlota = `en ${flotaCount} tipos de flota (${flotasList})`;
+    } else {
+        tipoFlota = 'en un tipo de flota';
+    }
 
     const diversText = includeCampaigns
         ? `El programa mantuvo cobertura en ${fisheryCount === 1 ? 'una pesquería' : `${numberToWord(fisheryCount)} pesquerías`} principales, operando ${tipoFlota}, equilibrando la representación por tipo de operación.`

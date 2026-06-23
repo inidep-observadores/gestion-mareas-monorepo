@@ -367,7 +367,7 @@ export class AuditReportBuilder {
             totalEtapas,
             fisheryRows,
             uniqueFisheries: new Set(fisheryRows.map(r => r.pesqueria)).size,
-            uniqueFlotas: new Set(fisheryRows.map(r => r.flota)).size,
+            uniqueFlotas: Array.from(new Set(fisheryRows.map(r => r.flota))),
             obsAfectados,
             dotacionRef,
             coberturaPct,
@@ -695,7 +695,7 @@ export class AuditReportBuilder {
         const totals = {
             label: 'TOTAL',
             values: [
-                `${processed.uniqueFlotas} flotas`,
+                `${processed.uniqueFlotas.length} flotas`,
                 String(stats.totalMareas),
                 String(processed.totalEtapas),
                 formatNumber(stats.totalDaysNavigated),
