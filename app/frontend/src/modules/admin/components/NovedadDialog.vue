@@ -159,13 +159,13 @@ const loadingCatalogs = ref(true)
 const observadorOptions = computed(() => {
   return observadores.value.map(o => ({
     value: o.id,
-    label: `${o.apellido}, ${o.nombre} (${o.codigoInterno || ''})`
+    label: `${o.apellido}, ${o.nombre} (${o.codigoInterno || ''})${!o.disponible ? ' [No Disponible]' : ''}`
   }))
 })
 
 onMounted(async () => {
   try {
-    observadores.value = await catalogosService.getObservadores(true)
+    observadores.value = await catalogosService.getObservadores()
   } catch (err) {
     console.error('Error cargando observadores', err)
   } finally {
