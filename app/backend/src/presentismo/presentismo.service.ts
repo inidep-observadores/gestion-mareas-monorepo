@@ -394,7 +394,9 @@ export class PresentismoService {
           } else if (dia.estado === 'NOVEDAD') {
             cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFADD8E6' } };
             cell.font = { color: { argb: 'FF000000' }, bold: true };
-            if (dia.detalle) cell.note = dia.detalle;
+            if (dia.detalle && dia.detalle.includes(' - ')) {
+              cell.note = dia.detalle.substring(dia.detalle.indexOf(' - ') + 3);
+            }
           } else if (dia.estado === 'CONFLICTO') {
             cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFDC2626' } };
             cell.font = { color: { argb: 'FFFFFFFF' }, bold: true };
