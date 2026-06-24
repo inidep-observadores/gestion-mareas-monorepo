@@ -110,7 +110,7 @@
                     <span 
                       class="text-[10px] uppercase transition-colors leading-tight"
                       :class="{
-                        'text-error': data.feriados[dia],
+                        'text-error font-black': data.feriados[dia],
                         'font-black text-text': isFinSemana(dia) && !data.feriados[dia],
                         'font-bold text-text-muted': !isFinSemana(dia) && !data.feriados[dia]
                       }">
@@ -119,7 +119,7 @@
                     <span 
                       class="text-xs transition-colors leading-tight mt-0.5"
                       :class="{
-                        'text-error': data.feriados[dia],
+                        'text-error font-black': data.feriados[dia],
                         'font-black text-text': isFinSemana(dia) && !data.feriados[dia],
                         'font-bold text-text': !isFinSemana(dia) && !data.feriados[dia]
                       }">
