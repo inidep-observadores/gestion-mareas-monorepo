@@ -1,4 +1,4 @@
-import type { Observador } from '../../observadores/interfaces/observador.interface';
+import type { Observador } from './observador.interface';
 
 export interface Novedad {
   id: string;
