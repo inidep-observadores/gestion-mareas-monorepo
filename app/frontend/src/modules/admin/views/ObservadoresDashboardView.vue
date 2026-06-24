@@ -28,6 +28,13 @@
             :icon="CalenderIcon"
             color="warning"
           />
+          <ObservadoresDashboardCard
+            title="Feriados Nacionales"
+            description="Administración de feriados y días no laborables usados en la planificación."
+            :to="{ name: 'SistemaObservadoresFeriados' }"
+            :icon="CalenderIcon"
+            color="error"
+          />
         </div>
       </section>
 

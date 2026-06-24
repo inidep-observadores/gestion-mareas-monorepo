@@ -34,6 +34,7 @@ import { AuditEventInterceptor } from './audit/interceptors/audit-event.intercep
 import { auditConfig } from './common/config/audit.config';
 import { PlanificacionModule } from './planificacion/planificacion.module';
 import { ReportsModule } from './reports/reports.module';
+import { PresentismoModule } from './presentismo/presentismo.module';
 
 @Module({
   imports: [
@@ -77,6 +78,7 @@ import { ReportsModule } from './reports/reports.module';
     PnaApiModule,
     PlanificacionModule,
     ReportsModule,
+    PresentismoModule,
   ],
 
   providers: [

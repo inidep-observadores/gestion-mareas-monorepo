@@ -296,9 +296,19 @@ const router = createRouter({
     {
       path: '/sistema/observadores/presentismo',
       name: 'SistemaObservadoresPresentismo',
-      component: () => import('@/modules/admin/views/PresentismoMockupView.vue'),
+      component: () => import('@/modules/admin/views/PresentismoMatrizView.vue'),
       meta: {
         title: 'Presentismo de Observadores',
+        requiresAuth: true,
+        roles: [ValidRoles.admin, ValidRoles.coordinador, ValidRoles.asistente, ValidRoles.tecnico],
+      },
+    },
+    {
+      path: '/sistema/observadores/feriados',
+      name: 'SistemaObservadoresFeriados',
+      component: () => import('@/modules/admin/views/ObservadoresFeriadosView.vue'),
+      meta: {
+        title: 'Feriados Nacionales',
         requiresAuth: true,
         roles: [ValidRoles.admin, ValidRoles.coordinador, ValidRoles.asistente, ValidRoles.tecnico],
       },

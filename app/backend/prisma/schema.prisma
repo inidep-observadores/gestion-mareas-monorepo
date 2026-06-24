@@ -30,6 +30,7 @@ model User {
   resetTokens          PasswordResetToken[]
   products             Product[]
   protocolizacionLotes ProtocolizacionLote[]
+  novedadesCreadas     ObservadorNovedad[]
 
   @@map("users")
   @@schema("public")
@@ -135,6 +136,7 @@ model Buque {
   tipo                     String?
   estadoReg                String?                 @map("estado_reg")
   fechaUltimaActApi        DateTime?               @map("fecha_ultima_actualizacion_api") @db.Timestamptz(6)
+  habitabilidadFemeninaApta Boolean                @default(true) @map("habitabilidad_femenina_apta")
   buque_trayectoria_puntos BuqueTrayectoriaPunto[]
   buque_trayectorias       BuqueTrayectoria?
   arteHabitual             ArtePesca?              @relation(fields: [arteHabitualId], references: [id])
@@ -233,10 +235,13 @@ model Observador {
   motivoImpedimento          String?                 @map("motivo_impedimento")
   eventual                   Boolean                 @default(false)
   sexo                       Sexo                    @default(Masculino)
+  habilitadoFresqueros       Boolean                 @default(true) @map("habilitado_fresqueros")
+  habilitadoCongeladores     Boolean                 @default(true) @map("habilitado_congeladores")
   experiencias               ExperienciaObservador[]
   mareasAsignadas            Marea[]                 @relation("ObservadorPrincipal")
   etapas                     MareaEtapaObservador[]
   pesquerias                 ObservadorPesqueria[]
+  novedades                  ObservadorNovedad[]
 
   @@map("observadores")
   @@schema("public")
@@ -991,5 +996,40 @@ enum TipoCalculoZonaAustral {
   AUTOMATICO
   MANUAL
 
+  @@schema("public")
+}
+
+model ObservadorNovedad {
+  id                   String    @id @default(uuid()) @db.Uuid
+  observadorId         String    @map("id_observador") @db.Uuid
+  estadoDisponibilidad String    @map("estado_disponibilidad") // LICEN, FC, RP, ENFERMEDAD
+  fechaInicio          DateTime  @map("fecha_inicio") @db.Date
+  fechaFin             DateTime? @map("fecha_fin") @db.Date 
+  permiteUrgencia      Boolean   @default(false) @map("permite_urgencia")
+  motivo               String?
+  estadoAprobacion     String    @default("APROBADA") @map("estado_aprobacion") // APROBADA, PENDIENTE, RECHAZADA
+  origen               String    @default("MANUAL") // MANUAL, EMAIL, AUTOMATICO
+  metadata             Json?     // Ej. JSON del email procesado
+  
+  creadoPorId          String?   @map("creado_por_id") @db.Uuid
+  fechaCreacion        DateTime  @default(now()) @map("fecha_creacion") @db.Timestamptz(6)
+  fechaActualizacion   DateTime  @updatedAt @map("fecha_actualizacion") @db.Timestamptz(6)
+
+  observador           Observador @relation(fields: [observadorId], references: [id])
+  creadoPor            User?      @relation(fields: [creadoPorId], references: [id])
+
+  @@index([observadorId])
+  @@index([fechaInicio, fechaFin])
+  @@map("observadores_novedades")
+  @@schema("public")
+}
+
+model Feriado {
+  fecha       DateTime @id @db.Date
+  nombre      String
+  tipo        String
+  origen      String   @default("API") // API, MANUAL
+
+  @@map("feriados")
   @@schema("public")
 }

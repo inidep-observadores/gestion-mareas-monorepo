@@ -48,14 +48,47 @@ BEGIN
   SELECT id INTO id_delegada_externa   FROM public.estados_marea WHERE codigo = 'DELEGADA_EXTERNA';
   SELECT id INTO id_pendiente_informe  FROM public.estados_marea WHERE codigo = 'PENDIENTE_DE_INFORME';
 
-  INSERT INTO public.transiciones_estados (id, id_estado_origen, id_estado_destino, accion, etiqueta, clase_boton, requiere_observaciones, activo, mostrar_en_panel)
-  VALUES
-    (gen_random_uuid(), id_en_ejecucion,       id_desestimada, 'DESESTIMAR', 'Desestimar', 'error', true, true, true),
-    (gen_random_uuid(), id_esperando_entrega,  id_desestimada, 'DESESTIMAR', 'Desestimar', 'error', true, true, true),
-    (gen_random_uuid(), id_entregada_recibida, id_desestimada, 'DESESTIMAR', 'Desestimar', 'error', true, true, true),
-    (gen_random_uuid(), id_verificacion,       id_desestimada, 'DESESTIMAR', 'Desestimar', 'error', true, true, true),
-    (gen_random_uuid(), id_en_correccion,      id_desestimada, 'DESESTIMAR', 'Desestimar', 'error', true, true, true),
-    (gen_random_uuid(), id_delegada_externa,   id_desestimada, 'DESESTIMAR', 'Desestimar', 'error', true, true, true),
-    (gen_random_uuid(), id_pendiente_informe,  id_desestimada, 'DESESTIMAR', 'Desestimar', 'error', true, true, true)
-  ON CONFLICT (id_estado_origen, id_estado_destino, accion) DO NOTHING;
+  IF id_desestimada IS NOT NULL THEN
+    IF id_en_ejecucion IS NOT NULL THEN
+      INSERT INTO public.transiciones_estados (id, id_estado_origen, id_estado_destino, accion, etiqueta, clase_boton, requiere_observaciones, activo, mostrar_en_panel)
+      VALUES (gen_random_uuid(), id_en_ejecucion, id_desestimada, 'DESESTIMAR', 'Desestimar', 'error', true, true, true)
+      ON CONFLICT (id_estado_origen, id_estado_destino, accion) DO NOTHING;
+    END IF;
+
+    IF id_esperando_entrega IS NOT NULL THEN
+      INSERT INTO public.transiciones_estados (id, id_estado_origen, id_estado_destino, accion, etiqueta, clase_boton, requiere_observaciones, activo, mostrar_en_panel)
+      VALUES (gen_random_uuid(), id_esperando_entrega, id_desestimada, 'DESESTIMAR', 'Desestimar', 'error', true, true, true)
+      ON CONFLICT (id_estado_origen, id_estado_destino, accion) DO NOTHING;
+    END IF;
+
+    IF id_entregada_recibida IS NOT NULL THEN
+      INSERT INTO public.transiciones_estados (id, id_estado_origen, id_estado_destino, accion, etiqueta, clase_boton, requiere_observaciones, activo, mostrar_en_panel)
+      VALUES (gen_random_uuid(), id_entregada_recibida, id_desestimada, 'DESESTIMAR', 'Desestimar', 'error', true, true, true)
+      ON CONFLICT (id_estado_origen, id_estado_destino, accion) DO NOTHING;
+    END IF;
+
+    IF id_verificacion IS NOT NULL THEN
+      INSERT INTO public.transiciones_estados (id, id_estado_origen, id_estado_destino, accion, etiqueta, clase_boton, requiere_observaciones, activo, mostrar_en_panel)
+      VALUES (gen_random_uuid(), id_verificacion, id_desestimada, 'DESESTIMAR', 'Desestimar', 'error', true, true, true)
+      ON CONFLICT (id_estado_origen, id_estado_destino, accion) DO NOTHING;
+    END IF;
+
+    IF id_en_correccion IS NOT NULL THEN
+      INSERT INTO public.transiciones_estados (id, id_estado_origen, id_estado_destino, accion, etiqueta, clase_boton, requiere_observaciones, activo, mostrar_en_panel)
+      VALUES (gen_random_uuid(), id_en_correccion, id_desestimada, 'DESESTIMAR', 'Desestimar', 'error', true, true, true)
+      ON CONFLICT (id_estado_origen, id_estado_destino, accion) DO NOTHING;
+    END IF;
+
+    IF id_delegada_externa IS NOT NULL THEN
+      INSERT INTO public.transiciones_estados (id, id_estado_origen, id_estado_destino, accion, etiqueta, clase_boton, requiere_observaciones, activo, mostrar_en_panel)
+      VALUES (gen_random_uuid(), id_delegada_externa, id_desestimada, 'DESESTIMAR', 'Desestimar', 'error', true, true, true)
+      ON CONFLICT (id_estado_origen, id_estado_destino, accion) DO NOTHING;
+    END IF;
+
+    IF id_pendiente_informe IS NOT NULL THEN
+      INSERT INTO public.transiciones_estados (id, id_estado_origen, id_estado_destino, accion, etiqueta, clase_boton, requiere_observaciones, activo, mostrar_en_panel)
+      VALUES (gen_random_uuid(), id_pendiente_informe, id_desestimada, 'DESESTIMAR', 'Desestimar', 'error', true, true, true)
+      ON CONFLICT (id_estado_origen, id_estado_destino, accion) DO NOTHING;
+    END IF;
+  END IF;
 END $$;
