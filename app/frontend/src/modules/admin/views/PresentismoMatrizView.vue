@@ -90,18 +90,18 @@
 
       <!-- Matriz Table -->
       <div v-else-if="data" class="bg-surface rounded-2xl shadow-sm border border-border overflow-hidden">
-        <div class="overflow-x-auto">
+        <div class="overflow-x-auto overflow-y-auto max-h-[70vh]">
           <table class="w-full text-left border-collapse">
             <thead>
               <tr class="bg-surface-muted border-b border-border">
-                <th class="sticky left-0 z-20 bg-surface-muted px-4 py-3 text-xs font-black uppercase tracking-widest text-text min-w-[80px] border-r border-border">
+                <th class="sticky top-0 left-0 z-40 bg-surface-muted px-4 py-3 text-xs font-black uppercase tracking-widest text-text min-w-[80px] border-r border-border shadow-[0_2px_5px_-2px_rgba(0,0,0,0.1)]">
                   Legajo
                 </th>
-                <th class="sticky left-[112px] sm:left-[112px] z-20 bg-surface-muted px-4 py-3 text-xs font-black uppercase tracking-widest text-text min-w-[200px] border-r border-border shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
+                <th class="sticky top-0 left-[112px] sm:left-[112px] z-40 bg-surface-muted px-4 py-3 text-xs font-black uppercase tracking-widest text-text min-w-[200px] border-r border-border shadow-[2px_2px_5px_-2px_rgba(0,0,0,0.1)]">
                   Observador
                 </th>
                 <!-- Días -->
-                <th v-for="dia in data.diasMes" :key="dia" class="px-1 py-3 text-center border-r border-border min-w-[36px]">
+                <th v-for="dia in data.diasMes" :key="dia" class="sticky top-0 z-30 bg-surface-muted px-1 py-3 text-center border-r border-border min-w-[36px] shadow-[0_2px_5px_-2px_rgba(0,0,0,0.1)]">
                   <div class="flex flex-col items-center justify-center">
                     <span class="text-xs font-black text-text">{{ dia }}</span>
                     <span class="text-[9px] font-bold text-text-muted uppercase" v-if="data.feriados[dia]" title="Feriado">F</span>

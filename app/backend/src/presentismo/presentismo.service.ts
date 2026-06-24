@@ -107,6 +107,13 @@ export class PresentismoService {
       for (let dia = 1; dia <= diasMes; dia++) {
         const currentDate = startOfMonth.set({ day: dia }).startOf('day');
 
+        // Omitir cálculo para días futuros
+        if (currentDate > DateTime.now().startOf('day')) {
+          row.dias[dia] = { estado: 'LIBRE' };
+          row.totales.libres++;
+          continue;
+        }
+
         // Banderas de estado
         let isNavegando = false;
         let etapaNavegando: any = null;
