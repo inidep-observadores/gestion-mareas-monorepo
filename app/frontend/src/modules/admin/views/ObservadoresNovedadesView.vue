@@ -147,7 +147,6 @@ import { novedadesService } from '../services/novedades.service';
 import type { Novedad } from '../interfaces/novedad.interface';
 import { toast } from 'vue-sonner';
 import { TrashIcon, ChevronDownIcon, EditIcon } from '@/icons';
-import { DateTime } from 'luxon';
 
 const novedades = ref<Novedad[]>([]);
 const isLoading = ref(true);
@@ -175,7 +174,12 @@ const getSortIcon = () => ChevronDownIcon;
 
 const formatDate = (isoStr: string) => {
   if (!isoStr) return '';
-  return DateTime.fromISO(isoStr).toFormat('dd/MM/yyyy');
+  const date = new Date(isoStr);
+  return date.toLocaleDateString('es-AR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric'
+  });
 };
 
 const formatDisponibilidad = (codigo: string) => {

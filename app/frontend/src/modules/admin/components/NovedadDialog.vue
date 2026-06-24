@@ -12,7 +12,7 @@
           <SearchableSelect 
             v-model="form.observadorId" 
             :options="observadorOptions"
-            :icon="UsersIcon" 
+            :icon="UserGroupIcon" 
             :error="fieldErrors.observadorId" 
             placeholder="Seleccione el observador..." 
             :disabled="isEdit"
@@ -108,7 +108,7 @@ import DatePicker from '@/components/common/DatePicker.vue'
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 import catalogosService from '@/modules/mareas/services/catalogos.service'
 import {
-  UsersIcon,
+  UserGroupIcon,
   CalenderIcon
 } from '@/icons'
 import type { Novedad } from '../interfaces/novedad.interface'
