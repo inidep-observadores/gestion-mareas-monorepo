@@ -27,8 +27,9 @@ export interface ObservadorRow {
 }
 
 export interface DiaEstado {
-  estado: 'NAVEGANDO' | 'PUERTO' | 'NOVEDAD' | 'FERIADO' | 'FIN_SEMANA' | 'LIBRE' | 'CONFLICTO';
+  estado: 'NAVEGANDO' | 'PUERTO' | 'NOVEDAD' | 'FERIADO' | 'FIN_SEMANA' | 'LIBRE' | 'CONFLICTO' | 'VIAJE';
   detalle?: string;
   conflictoDetalle?: string;
   referenciaId?: string;
+  codigoCorto?: string;
 }

@@ -47,27 +47,38 @@ export class PresentismoService {
       },
     });
 
-    // 4. Traer Etapas para determinar Navegando y Puertos
-    const startDateForEtapas = startOfMonth.minus({ days: 60 }).toJSDate();
-    const etapasDb = await this.prisma.mareaEtapaObservador.findMany({
+    // 4. Traer Mareas para el mes actual
+    const mareasDb = await this.prisma.marea.findMany({
       where: {
-        etapa: {
-          fechaZarpada: { not: null, lte: endOfMonth.toJSDate() },
-          fechaArribo: { not: null, gte: startDateForEtapas },
-        },
+        activo: true,
+        OR: [
+          { fechaInicioObservador: { lte: endOfMonth.toJSDate() }, fechaFinObservador: { gte: startOfMonth.toJSDate() } },
+          { fechaInicioObservador: { lte: endOfMonth.toJSDate() }, fechaFinObservador: null },
+          {
+            etapas: {
+              some: {
+                fechaZarpada: { lte: endOfMonth.toJSDate() },
+                OR: [
+                  { fechaArribo: { gte: startOfMonth.toJSDate() } },
+                  { fechaArribo: null }
+                ]
+              }
+            }
+          }
+        ]
       },
       include: {
-        etapa: {
+        estadoActual: true,
+        etapas: {
+          orderBy: { nroEtapa: 'asc' },
           include: {
             puertoArribo: true,
-          },
+            puertoZarpada: true,
+            observadores: true
+          }
         },
-      },
-      orderBy: {
-        etapa: {
-          fechaZarpada: 'asc',
-        },
-      },
+        observadorPrincipal: true
+      }
     });
 
     const matriz: ObservadorRowDto[] = [];
@@ -87,7 +98,11 @@ export class PresentismoService {
       };
 
       const obsNovedades = novedadesDb.filter(n => n.observadorId === obs.id);
-      const obsEtapas = etapasDb.filter(e => e.observadorId === obs.id).map(e => e.etapa);
+      
+      const obsMareas = mareasDb.filter(m => 
+        m.observadorPrincipalId === obs.id || 
+        m.etapas.some(e => e.observadores.some(eo => eo.observadorId === obs.id))
+      );
 
       for (let dia = 1; dia <= diasMes; dia++) {
         const currentDate = startOfMonth.set({ day: dia }).startOf('day');
@@ -95,12 +110,12 @@ export class PresentismoService {
         // Banderas de estado
         let isNavegando = false;
         let etapaNavegando: any = null;
-
+        let isViaje = false;
         let isPuerto = false;
         let puertoDetalle = '';
-
         let isNovedad = false;
         let novedadDetalle = '';
+        let novedadCodigoCorto = '';
 
         // Comprobar Novedad
         const novedad = obsNovedades.find(n => {
@@ -108,70 +123,151 @@ export class PresentismoService {
           const fin = n.fechaFin ? DateTime.fromJSDate(n.fechaFin, { zone: 'utc' }).endOf('day') : endOfMonth;
           return currentDate >= inicio && currentDate <= fin;
         });
+        
         if (novedad) {
           isNovedad = true;
+          novedadCodigoCorto = novedad.estadoDisponibilidad;
           novedadDetalle = novedad.estadoDisponibilidad + (novedad.motivo ? ` - ${novedad.motivo}` : '');
         }
 
-        // Comprobar Navegando
-        const etapa = obsEtapas.find(e => {
-          if (!e.fechaZarpada || !e.fechaArribo) return false;
-          const zarpada = DateTime.fromJSDate(e.fechaZarpada, { zone: 'utc' }).startOf('day');
-          const arribo = DateTime.fromJSDate(e.fechaArribo, { zone: 'utc' }).endOf('day');
-          return currentDate >= zarpada && currentDate <= arribo;
-        });
-        if (etapa) {
-          isNavegando = true;
-          etapaNavegando = etapa;
-        }
+        // Comprobar Mareas
+        for (const marea of obsMareas) {
+          // Evaluar etapas (NAVEGANDO)
+          for (let i = 0; i < marea.etapas.length; i++) {
+            const etapa = marea.etapas[i];
+            const zarpada = etapa.fechaZarpada ? DateTime.fromJSDate(etapa.fechaZarpada, { zone: 'utc' }).startOf('day') : null;
+            const arribo = etapa.fechaArribo ? DateTime.fromJSDate(etapa.fechaArribo, { zone: 'utc' }).endOf('day') : null;
 
-        // Comprobar Puerto
-        if (!isNavegando) {
-          const etapasAnteriores = obsEtapas.filter(e => e.fechaArribo && DateTime.fromJSDate(e.fechaArribo, { zone: 'utc' }).endOf('day') < currentDate);
-          if (etapasAnteriores.length > 0) {
-            const ultimaEtapa = etapasAnteriores[etapasAnteriores.length - 1];
-            if (ultimaEtapa.puertoArribo && !ultimaEtapa.puertoArribo.esLocal) {
-              const proximasEtapas = obsEtapas.filter(e => e.fechaZarpada && DateTime.fromJSDate(e.fechaZarpada, { zone: 'utc' }).startOf('day') > currentDate);
-              // Como la lógica es un puerto entre navegaciones, podríamos requerir que haya una próxima etapa para considerarlo en "Puerto",
-              // pero si la marea aún no empezó su próxima etapa igual se asume en ese puerto.
-              isPuerto = true;
-              puertoDetalle = ultimaEtapa.puertoArribo.nombre;
+            if (zarpada && currentDate >= zarpada) {
+              if (!arribo || currentDate <= arribo) {
+                isNavegando = true;
+                etapaNavegando = etapa;
+                break;
+              }
+            }
+          }
+
+          if (!isNavegando) {
+            // Etapas Administrativas (entre etapas sin puerto)
+            for (let i = 0; i < marea.etapas.length - 1; i++) {
+              const arriboActual = marea.etapas[i].fechaArribo ? DateTime.fromJSDate(marea.etapas[i].fechaArribo, { zone: 'utc' }).endOf('day') : null;
+              const zarpadaSiguiente = marea.etapas[i+1].fechaZarpada ? DateTime.fromJSDate(marea.etapas[i+1].fechaZarpada, { zone: 'utc' }).startOf('day') : null;
+
+              if (arriboActual && zarpadaSiguiente && currentDate > arriboActual && currentDate < zarpadaSiguiente) {
+                if (!marea.etapas[i].puertoArribo && !marea.etapas[i+1].puertoZarpada) {
+                  isNavegando = true;
+                  etapaNavegando = marea.etapas[i];
+                  break;
+                }
+              }
+            }
+
+            // Post última etapa (si llegó pero sin puerto, sigue navegando)
+            if (!isNavegando && marea.etapas.length > 0) {
+              const ultimaEtapa = marea.etapas[marea.etapas.length - 1];
+              if (ultimaEtapa.fechaArribo && !ultimaEtapa.puertoArribo) {
+                const arriboUltima = DateTime.fromJSDate(ultimaEtapa.fechaArribo, { zone: 'utc' }).endOf('day');
+                if (currentDate > arriboUltima) {
+                  if (marea.estadoActual.codigo !== 'FINALIZADA' && marea.estadoActual.codigo !== 'CERRADA' && marea.estadoActual.codigo !== 'CANCELADA') {
+                    isNavegando = true;
+                    etapaNavegando = ultimaEtapa;
+                  }
+                }
+              }
+            }
+          }
+
+          if (isNavegando) break;          // VIAJE O PUERTO
+          const isActivaEnEsteDia = (!marea.fechaFinObservador || DateTime.fromJSDate(marea.fechaFinObservador, { zone: 'utc' }).startOf('day') >= currentDate) && 
+                                    (marea.fechaInicioObservador && DateTime.fromJSDate(marea.fechaInicioObservador, { zone: 'utc' }).startOf('day') <= currentDate);
+          
+          if (!isActivaEnEsteDia && marea.fechaFinObservador) continue;
+
+          // 1. VIAJE INICIAL
+          const primeraEtapa = marea.etapas[0];
+          if (primeraEtapa && primeraEtapa.fechaZarpada && marea.fechaInicioObservador) {
+            const zarpada1 = DateTime.fromJSDate(primeraEtapa.fechaZarpada, { zone: 'utc' }).startOf('day');
+            const inicioObs = DateTime.fromJSDate(marea.fechaInicioObservador, { zone: 'utc' }).startOf('day');
+            if (currentDate >= inicioObs && currentDate < zarpada1) {
+              isViaje = true;
+              break;
+            }
+          }
+
+          // 2. VIAJE FINAL O PUERTO
+          const ultimaEtapa = marea.etapas.length > 0 ? marea.etapas[marea.etapas.length - 1] : null;
+          
+          // Puerto Intermedio entre etapas
+          for (let i = 0; i < marea.etapas.length - 1; i++) {
+            const arriboActual = marea.etapas[i].fechaArribo ? DateTime.fromJSDate(marea.etapas[i].fechaArribo, { zone: 'utc' }).endOf('day') : null;
+            const zarpadaSiguiente = marea.etapas[i+1].fechaZarpada ? DateTime.fromJSDate(marea.etapas[i+1].fechaZarpada, { zone: 'utc' }).startOf('day') : null;
+
+            if (arriboActual && zarpadaSiguiente && currentDate > arriboActual && currentDate < zarpadaSiguiente) {
+              const puerto = marea.etapas[i].puertoArribo;
+              if (puerto && !puerto.esLocal) {
+                isPuerto = true;
+                puertoDetalle = puerto.nombre;
+                break;
+              }
+            }
+          }
+
+          if (isPuerto) break;
+
+          // Post última etapa
+          if (ultimaEtapa && ultimaEtapa.fechaArribo) {
+            const arriboUltima = DateTime.fromJSDate(ultimaEtapa.fechaArribo, { zone: 'utc' }).endOf('day');
+            if (currentDate > arriboUltima) {
+              if (marea.fechaFinObservador && currentDate <= DateTime.fromJSDate(marea.fechaFinObservador, { zone: 'utc' }).startOf('day')) {
+                // Hay fecha_fin_observador seteada -> Es Viaje
+                isViaje = true;
+                break;
+              } else if (!marea.fechaFinObservador) {
+                // No hay fecha fin observador
+                if (marea.estadoActual.codigo === 'FINALIZADA' || marea.estadoActual.codigo === 'CERRADA' || marea.estadoActual.codigo === 'CANCELADA') {
+                  // Marea finalizó, no se consideran más días
+                } else {
+                  // Marea activa, esperando etapa -> Puerto si no es local
+                  const puerto = ultimaEtapa.puertoArribo;
+                  if (puerto && !puerto.esLocal) {
+                    isPuerto = true;
+                    puertoDetalle = puerto.nombre;
+                    break;
+                  }
+                }
+              }
             }
           }
         }
 
         // Determinar Feriado o Fin de Semana
         const isFeriado = !!feriados[dia];
-        const isFinSemana = currentDate.weekday === 6 || currentDate.weekday === 7; // 6 = Sab, 7 = Dom
+        const isFinSemana = currentDate.weekday === 6 || currentDate.weekday === 7;
 
-        // Evaluación de Conflictos
         let countFuertes = 0;
         if (isNavegando) countFuertes++;
         if (isPuerto) countFuertes++;
+        if (isViaje) countFuertes++;
         if (isNovedad) countFuertes++;
 
         let estadoDto: DiaEstadoDto;
 
         if (countFuertes > 1) {
-          // CONFLICTO
-          const causantes = [];
-          if (isNavegando) causantes.push('Navegando');
-          if (isPuerto) causantes.push(`Puerto (${puertoDetalle})`);
-          if (isNovedad) causantes.push(`Novedad (${novedadDetalle})`);
-
           estadoDto = {
             estado: 'CONFLICTO',
-            conflictoDetalle: `Solapamiento detectado: ${causantes.join(' y ')}`,
+            conflictoDetalle: `Solapamiento detectado`,
           };
           row.totales.conflictos++;
         } else if (isNavegando) {
           estadoDto = { estado: 'NAVEGANDO', referenciaId: etapaNavegando.id };
           row.totales.navegando++;
+        } else if (isViaje) {
+          estadoDto = { estado: 'VIAJE' };
         } else if (isPuerto) {
           estadoDto = { estado: 'PUERTO', detalle: puertoDetalle };
           row.totales.puerto++;
         } else if (isNovedad) {
-          estadoDto = { estado: 'NOVEDAD', detalle: novedadDetalle, referenciaId: novedad.id };
+          estadoDto = { estado: 'NOVEDAD', detalle: novedadDetalle, referenciaId: novedad.id, codigoCorto: novedadCodigoCorto };
           row.totales.novedades++;
         } else if (isFeriado) {
           estadoDto = { estado: 'FERIADO', detalle: feriados[dia] };
@@ -246,9 +342,11 @@ export class PresentismoService {
         const dia = row.dias[i];
         let val = '';
         if (dia) {
-          if (dia.estado === 'NAVEGANDO') val = 'NAV';
-          else if (dia.estado === 'PUERTO') val = 'PTO';
-          else if (dia.estado === 'NOVEDAD') val = 'NOV';
+          if (dia.estado === 'NAVEGANDO') val = 'NAVEG';
+          else if (dia.estado === 'PUERTO') val = 'PUERTO';
+          else if (dia.estado === 'VIAJE') val = 'VIAJE';
+          else if (dia.estado === 'FERIADO') val = 'FERIADO';
+          else if (dia.estado === 'NOVEDAD') val = dia.codigoCorto || 'NOV';
           else if (dia.estado === 'CONFLICTO') val = 'ERR';
         }
         rowData[`d${i}`] = val;
@@ -261,18 +359,27 @@ export class PresentismoService {
         const dia = row.dias[i];
         const cell = newRow.getCell(`d${i}`);
         cell.alignment = { horizontal: 'center', vertical: 'middle' };
-        const val = cell.value;
-        if (val === 'NAV') {
-          cell.font = { color: { argb: 'FF0284C7' }, bold: true };
-        } else if (val === 'PTO') {
-          cell.font = { color: { argb: 'FFD97706' }, bold: true };
-        } else if (val === 'NOV') {
-          cell.font = { color: { argb: 'FF059669' }, bold: true };
-        } else if (val === 'ERR') {
-          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFDC2626' } };
-          cell.font = { color: { argb: 'FFFFFFFF' }, bold: true };
-        } else if (dia && (dia.estado === 'FIN_SEMANA' || dia.estado === 'FERIADO')) {
-          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF3F4F6' } };
+        
+        if (dia) {
+          if (dia.estado === 'NAVEGANDO') {
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF00FF00' } };
+            cell.font = { color: { argb: 'FF000000' }, bold: true };
+          } else if (dia.estado === 'PUERTO') {
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFE4C4' } };
+            cell.font = { color: { argb: 'FF000000' }, bold: true };
+          } else if (dia.estado === 'VIAJE') {
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE6E6FA' } };
+            cell.font = { color: { argb: 'FF000000' }, bold: true };
+          } else if (dia.estado === 'FERIADO') {
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFA500' } };
+            cell.font = { color: { argb: 'FF000000' }, bold: true };
+          } else if (dia.estado === 'NOVEDAD') {
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFADD8E6' } };
+            cell.font = { color: { argb: 'FF000000' }, bold: true };
+          } else if (dia.estado === 'CONFLICTO') {
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFDC2626' } };
+            cell.font = { color: { argb: 'FFFFFFFF' }, bold: true };
+          }
         }
       }
     });

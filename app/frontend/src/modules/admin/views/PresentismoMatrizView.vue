@@ -34,24 +34,28 @@
       <!-- Leyenda -->
       <div class="flex flex-wrap gap-4 p-4 rounded-xl border border-border bg-surface shadow-sm">
         <div class="flex items-center gap-2">
-          <div class="w-4 h-4 rounded bg-primary/20 border border-primary/50"></div>
+          <div class="w-8 h-6 rounded bg-[#00FF00] flex items-center justify-center text-[10px] font-black text-black">NAVEG</div>
           <span class="text-[10px] font-black uppercase tracking-widest text-text-muted">Navegando</span>
         </div>
         <div class="flex items-center gap-2">
-          <div class="w-4 h-4 rounded bg-warning/20 border border-warning/50"></div>
-          <span class="text-[10px] font-black uppercase tracking-widest text-text-muted">Puerto</span>
+          <div class="w-8 h-6 rounded bg-[#FFE4C4] flex items-center justify-center text-[10px] font-black text-black">PUERTO</div>
+          <span class="text-[10px] font-black uppercase tracking-widest text-text-muted">En Puerto</span>
         </div>
         <div class="flex items-center gap-2">
-          <div class="w-4 h-4 rounded bg-info/20 border border-info/50"></div>
+          <div class="w-8 h-6 rounded bg-[#E6E6FA] flex items-center justify-center text-[10px] font-black text-black">VIAJE</div>
+          <span class="text-[10px] font-black uppercase tracking-widest text-text-muted">En Viaje</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-6 rounded bg-[#ADD8E6] flex items-center justify-center text-[10px] font-black text-black">LICEN</div>
           <span class="text-[10px] font-black uppercase tracking-widest text-text-muted">Novedad / Licencia</span>
         </div>
         <div class="flex items-center gap-2">
-          <div class="w-4 h-4 rounded bg-error text-white flex items-center justify-center text-[10px] font-black">!</div>
-          <span class="text-[10px] font-black uppercase tracking-widest text-text-muted">Conflicto</span>
+          <div class="w-8 h-6 rounded bg-[#FFA500] flex items-center justify-center text-[10px] font-black text-black">FERIADO</div>
+          <span class="text-[10px] font-black uppercase tracking-widest text-text-muted">Feriado</span>
         </div>
         <div class="flex items-center gap-2">
-          <div class="w-4 h-4 rounded bg-gray-100 dark:bg-gray-800 border border-border"></div>
-          <span class="text-[10px] font-black uppercase tracking-widest text-text-muted">Feriado / Fin de Semana</span>
+          <div class="w-8 h-6 rounded bg-error flex items-center justify-center text-[10px] font-black text-white">ERR</div>
+          <span class="text-[10px] font-black uppercase tracking-widest text-text-muted">Conflicto</span>
         </div>
       </div>
 
@@ -120,10 +124,13 @@
                 
                 <!-- Días -->
                 <td v-for="dia in data.diasMes" :key="dia" class="p-1 border-r border-border relative group/cell">
-                  <div class="w-full h-8 rounded flex items-center justify-center transition-all cursor-default" :class="getCellClass(row.dias[dia])">
-                    <span v-if="row.dias[dia]?.estado === 'CONFLICTO'" class="text-white text-[10px] font-black">!</span>
-                    <span v-else-if="row.dias[dia]?.estado === 'NAVEGANDO'" class="text-primary text-[10px] font-black">N</span>
-                    <span v-else-if="row.dias[dia]?.estado === 'PUERTO'" class="text-warning text-[10px] font-black">P</span>
+                  <div class="w-full min-h-8 rounded flex items-center justify-center transition-all cursor-default" :class="getCellClass(row.dias[dia])">
+                    <span v-if="row.dias[dia]?.estado === 'CONFLICTO'" class="text-[10px] font-black text-white px-1">ERR</span>
+                    <span v-else-if="row.dias[dia]?.estado === 'NAVEGANDO'" class="text-[10px] font-black text-black px-1">NAVEG</span>
+                    <span v-else-if="row.dias[dia]?.estado === 'PUERTO'" class="text-[10px] font-black text-black px-1">PUERTO</span>
+                    <span v-else-if="row.dias[dia]?.estado === 'VIAJE'" class="text-[10px] font-black text-black px-1">VIAJE</span>
+                    <span v-else-if="row.dias[dia]?.estado === 'NOVEDAD'" class="text-[10px] font-black text-black px-1">{{ row.dias[dia].codigoCorto || 'NOV' }}</span>
+                    <span v-else-if="row.dias[dia]?.estado === 'FERIADO'" class="text-[10px] font-black text-black px-1">FERIADO</span>
                   </div>
 
                   <!-- Tooltip -->
@@ -244,14 +251,17 @@ const getCellClass = (dia: DiaEstado) => {
     case 'CONFLICTO':
       return 'bg-error shadow-inner animate-pulse';
     case 'NAVEGANDO':
-      return 'bg-primary/20 border border-primary/50';
+      return 'bg-[#00FF00] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.1)]';
     case 'PUERTO':
-      return 'bg-warning/20 border border-warning/50';
+      return 'bg-[#FFE4C4] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.1)]';
+    case 'VIAJE':
+      return 'bg-[#E6E6FA] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.1)]';
     case 'NOVEDAD':
-      return 'bg-info/20 border border-info/50';
+      return 'bg-[#ADD8E6] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.1)]';
     case 'FERIADO':
+      return 'bg-[#FFA500] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.1)]';
     case 'FIN_SEMANA':
-      return 'bg-gray-100 dark:bg-gray-800 border border-border';
+      return 'bg-transparent';
     case 'LIBRE':
     default:
       return 'bg-transparent';
@@ -262,6 +272,7 @@ const formatTooltipTitle = (estado: string) => {
   const map: Record<string, string> = {
     'NAVEGANDO': 'Navegando',
     'PUERTO': 'En Puerto (No Local)',
+    'VIAJE': 'En Viaje',
     'NOVEDAD': 'Novedad / Licencia',
     'FERIADO': 'Feriado',
     'CONFLICTO': '¡Conflicto!',
