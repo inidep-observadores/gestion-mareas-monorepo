@@ -105,10 +105,26 @@
                   Observador
                 </th>
                 <!-- Días -->
-                <th v-for="dia in data.diasMes" :key="dia" class="sticky top-0 z-30 bg-surface-muted px-1 py-3 text-center border-r border-border min-w-[36px] shadow-[0_2px_5px_-2px_rgba(0,0,0,0.1)]">
+                <th v-for="dia in data.diasMes" :key="dia" class="sticky top-0 z-30 bg-surface-muted px-1 py-1 text-center border-r border-border min-w-[36px] shadow-[0_2px_5px_-2px_rgba(0,0,0,0.1)]">
                   <div class="flex flex-col items-center justify-center">
-                    <span class="text-xs font-black text-text">{{ dia }}</span>
-                    <span class="text-[9px] font-bold text-text-muted uppercase" v-if="data.feriados[dia]" title="Feriado">F</span>
+                    <span 
+                      class="text-[10px] uppercase transition-colors leading-tight"
+                      :class="{
+                        'text-error': data.feriados[dia],
+                        'font-black text-text': isFinSemana(dia) && !data.feriados[dia],
+                        'font-bold text-text-muted': !isFinSemana(dia) && !data.feriados[dia]
+                      }">
+                      {{ getDiaSemana(dia) }}
+                    </span>
+                    <span 
+                      class="text-xs transition-colors leading-tight mt-0.5"
+                      :class="{
+                        'text-error': data.feriados[dia],
+                        'font-black text-text': isFinSemana(dia) && !data.feriados[dia],
+                        'font-bold text-text': !isFinSemana(dia) && !data.feriados[dia]
+                      }">
+                      {{ dia }}
+                    </span>
                   </div>
                 </th>
               </tr>
@@ -246,6 +262,17 @@ const fetchData = async () => {
   } finally {
     isLoading.value = false;
   }
+};
+
+const getDiaSemana = (dia: number) => {
+  const date = new Date(selectedYear.value, selectedMonth.value - 1, dia);
+  const days = ['Do', 'Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sa'];
+  return days[date.getDay()];
+};
+
+const isFinSemana = (dia: number) => {
+  const date = new Date(selectedYear.value, selectedMonth.value - 1, dia);
+  return date.getDay() === 0 || date.getDay() === 6;
 };
 
 const getCellClass = (dia: DiaEstado) => {
