@@ -47,7 +47,7 @@
         <!-- Rango de Fechas -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div class="space-y-1.5">
-            <label class="block text-sm font-medium text-text-muted">Fecha de Inicio</label>
+            <label class="block text-sm font-medium text-text-muted">{{ isViajeNovedad ? 'Fecha' : 'Fecha de Inicio' }}</label>
             <DatePicker 
               v-model="form.fechaInicio" 
               :icon="CalenderIcon" 
