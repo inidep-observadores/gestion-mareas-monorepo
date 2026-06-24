@@ -32,4 +32,5 @@ export class DiaEstadoDto {
   conflictoDetalle?: string;
   referenciaId?: string;
   codigoCorto?: string;
+  computaFranco?: boolean;
 }

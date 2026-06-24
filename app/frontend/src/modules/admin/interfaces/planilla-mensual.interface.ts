@@ -32,4 +32,5 @@ export interface DiaEstado {
   conflictoDetalle?: string;
   referenciaId?: string;
   codigoCorto?: string;
+  computaFranco?: boolean;
 }

@@ -57,6 +57,10 @@
           <div class="w-8 h-6 rounded bg-error flex items-center justify-center text-[10px] font-black text-white">ERR</div>
           <span class="text-[10px] font-black uppercase tracking-widest text-text-muted">Conflicto</span>
         </div>
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-6 rounded border-2 border-red-500 bg-surface flex items-center justify-center text-[10px] font-black text-red-500">FC</div>
+          <span class="text-[10px] font-black uppercase tracking-widest text-text-muted">Computa Franco</span>
+        </div>
       </div>
 
       <!-- Filtros Compactos -->
@@ -124,7 +128,7 @@
                 
                 <!-- Días -->
                 <td v-for="dia in data.diasMes" :key="dia" class="p-1 border-r border-border relative group/cell">
-                  <div class="w-full min-h-8 rounded flex items-center justify-center transition-all cursor-default" :class="getCellClass(row.dias[dia])">
+                  <div class="w-full min-h-8 rounded flex items-center justify-center transition-all cursor-default" :class="[getCellClass(row.dias[dia]), row.dias[dia]?.computaFranco ? 'ring-2 ring-red-500 ring-inset shadow-md font-extrabold' : '']">
                     <span v-if="row.dias[dia]?.estado === 'CONFLICTO'" class="text-[10px] font-black text-white px-1">ERR</span>
                     <span v-else-if="row.dias[dia]?.estado === 'NAVEGANDO'" class="text-[10px] font-black text-black px-1">NAVEG</span>
                     <span v-else-if="row.dias[dia]?.estado === 'PUERTO'" class="text-[10px] font-black text-black px-1">PUERTO</span>

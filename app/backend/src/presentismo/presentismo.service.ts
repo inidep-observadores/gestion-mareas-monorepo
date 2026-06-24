@@ -287,6 +287,10 @@ export class PresentismoService {
           row.totales.libres++;
         }
 
+        if (estadoDto && (estadoDto.estado === 'NAVEGANDO' || estadoDto.estado === 'PUERTO' || estadoDto.estado === 'VIAJE') && (isFeriado || isFinSemana)) {
+          estadoDto.computaFranco = true;
+        }
+
         row.dias[dia] = estadoDto;
       }
 
@@ -386,6 +390,15 @@ export class PresentismoService {
           } else if (dia.estado === 'CONFLICTO') {
             cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFDC2626' } };
             cell.font = { color: { argb: 'FFFFFFFF' }, bold: true };
+          }
+
+          if (dia.computaFranco) {
+            cell.border = {
+              top: { style: 'medium', color: { argb: 'FFFF0000' } },
+              left: { style: 'medium', color: { argb: 'FFFF0000' } },
+              bottom: { style: 'medium', color: { argb: 'FFFF0000' } },
+              right: { style: 'medium', color: { argb: 'FFFF0000' } }
+            };
           }
         }
       }
