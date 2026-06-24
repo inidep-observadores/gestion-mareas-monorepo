@@ -2,7 +2,6 @@ import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateNovedadDto } from './dto/create-novedad.dto';
 import { UpdateNovedadDto } from './dto/update-novedad.dto';
-import { User } from '../../users/entities/user.entity';
 
 @Injectable()
 export class NovedadesService {
@@ -17,7 +16,7 @@ export class NovedadesService {
       include: {
         observador: true,
         creadoPor: {
-          select: { id: true, email: true, name: true }
+          select: { id: true, email: true, fullName: true }
         }
       },
       orderBy: { fechaInicio: 'desc' },
@@ -30,7 +29,7 @@ export class NovedadesService {
       include: {
         observador: true,
         creadoPor: {
-          select: { id: true, email: true, name: true }
+          select: { id: true, email: true, fullName: true }
         }
       },
     });
@@ -39,7 +38,7 @@ export class NovedadesService {
     return novedad;
   }
 
-  async create(createNovedadDto: CreateNovedadDto, user?: User) {
+  async create(createNovedadDto: CreateNovedadDto) {
     return this.prisma.observadorNovedad.create({
       data: {
         observadorId: createNovedadDto.observadorId,
@@ -50,7 +49,6 @@ export class NovedadesService {
         motivo: createNovedadDto.motivo,
         estadoAprobacion: 'APROBADA',
         origen: 'MANUAL',
-        creadoPorId: user?.id,
       },
       include: { observador: true }
     });

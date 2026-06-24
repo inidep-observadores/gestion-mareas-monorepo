@@ -10,6 +10,7 @@
         <div class="space-y-1.5">
           <label class="block text-sm font-medium text-text-muted">Observador</label>
           <SearchableSelect 
+            ref="observadorSelect"
             v-model="form.observadorId" 
             :options="observadorOptions"
             :icon="UserGroupIcon" 
@@ -101,7 +102,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, nextTick } from 'vue'
 import BaseModal from '@/components/common/BaseModal.vue'
 import SearchableSelect from '@/components/common/SearchableSelect.vue'
 import DatePicker from '@/components/common/DatePicker.vue'
@@ -119,6 +120,8 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits(['close', 'save'])
+
+const observadorSelect = ref<any>(null)
 
 const getInitialForm = () => ({
   observadorId: '',
@@ -169,6 +172,10 @@ watch(() => props.show, (newVal) => {
     } else {
       form.value = getInitialForm()
     }
+    
+    nextTick(() => {
+      observadorSelect.value?.focus()
+    })
   }
 })
 
