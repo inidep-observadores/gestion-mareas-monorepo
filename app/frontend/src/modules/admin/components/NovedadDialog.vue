@@ -67,6 +67,15 @@
           </div>
         </div>
 
+        <!-- Flexibilidad -->
+        <div class="flex items-start gap-3 bg-surface border border-border p-4 rounded-lg shadow-theme-xs transition-all" :class="{'opacity-50 pointer-events-none': isViajeNovedad}">
+          <BaseSwitch v-model="form.permiteUrgencia" class="mt-0.5" />
+          <div class="flex-1">
+            <p class="text-sm font-bold text-text">Permitir cancelación anticipada por urgencia</p>
+            <p class="text-[11px] text-text-muted mt-0.5 leading-relaxed">Indica si esta novedad es flexible y el observador puede ser convocado antes de la fecha de fin en caso de necesidad operativa.</p>
+          </div>
+        </div>
+
         <!-- Motivo / Observaciones -->
         <div class="space-y-1.5">
           <label class="block text-sm font-medium text-text-muted">Motivo / Observaciones</label>
@@ -110,6 +119,7 @@ import { ref, computed, watch, onMounted, nextTick } from 'vue'
 import BaseModal from '@/components/common/BaseModal.vue'
 import SearchableSelect from '@/components/common/SearchableSelect.vue'
 import DatePicker from '@/components/common/DatePicker.vue'
+import BaseSwitch from '@/components/ui/BaseSwitch.vue'
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 import catalogosService from '@/modules/mareas/services/catalogos.service'
 import {
@@ -132,7 +142,8 @@ const getInitialForm = () => ({
   estadoDisponibilidad: '',
   fechaInicio: '',
   fechaFin: '',
-  motivo: ''
+  motivo: '',
+  permiteUrgencia: false
 })
 
 const form = ref(getInitialForm())
@@ -172,7 +183,8 @@ watch(() => props.show, (newVal) => {
         estadoDisponibilidad: props.editData.estadoDisponibilidad,
         fechaInicio: props.editData.fechaInicio ? new Date(props.editData.fechaInicio).toISOString().split('T')[0] : '',
         fechaFin: props.editData.fechaFin ? new Date(props.editData.fechaFin).toISOString().split('T')[0] : '',
-        motivo: props.editData.motivo || ''
+        motivo: props.editData.motivo || '',
+        permiteUrgencia: props.editData.permiteUrgencia || false
       }
     } else {
       form.value = getInitialForm()
