@@ -12,6 +12,8 @@ export class ObservadorRowDto {
     nombre: string;
     apellido: string;
     codigoInterno: number;
+    tipoObservador: string;
+    tipoContrato: string;
   };
   dias: Record<number, DiaEstadoDto>;
   totales: {

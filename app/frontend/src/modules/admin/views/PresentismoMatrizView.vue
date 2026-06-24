@@ -55,6 +55,29 @@
         </div>
       </div>
 
+      <!-- Filtros Compactos -->
+      <div v-if="data" class="flex flex-wrap items-center gap-6 p-4 rounded-xl border border-border bg-surface shadow-sm">
+        <SearchInput v-model="searchQuery" placeholder="Buscar observador..." class="w-full md:w-64 shrink-0" />
+        
+        <div class="flex flex-wrap items-center gap-4 flex-1">
+          <div class="flex items-center gap-2">
+            <span class="text-[10px] font-black uppercase tracking-widest text-text-muted mr-1">Observador:</span>
+            <button v-for="t in tiposObservador" :key="t" @click="toggleTipoObservador(t)" class="px-3 py-1 rounded-full text-[10px] font-black tracking-widest uppercase transition-all" :class="activeTipoObservador.has(t) ? 'bg-primary/10 border border-primary text-primary' : 'bg-surface border border-border text-text-muted opacity-50'">
+              {{ t }}
+            </button>
+          </div>
+          
+          <div class="w-px h-6 bg-border mx-2 hidden lg:block"></div>
+
+          <div class="flex items-center gap-2">
+            <span class="text-[10px] font-black uppercase tracking-widest text-text-muted mr-1">Contrato:</span>
+            <button v-for="c in tiposContrato" :key="c" @click="toggleTipoContrato(c)" class="px-3 py-1 rounded-full text-[10px] font-black tracking-widest uppercase transition-all" :class="activeTipoContrato.has(c) ? 'bg-info/10 border border-info text-info' : 'bg-surface border border-border text-text-muted opacity-50'">
+              {{ c }}
+            </button>
+          </div>
+        </div>
+      </div>
+
       <!-- Loading State -->
       <div v-if="isLoading" class="p-12 flex flex-col items-center justify-center bg-surface border border-border rounded-2xl">
         <div class="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4"></div>
@@ -67,14 +90,12 @@
           <table class="w-full text-left border-collapse">
             <thead>
               <tr class="bg-surface-muted border-b border-border">
-                <th class="sticky left-0 z-20 bg-surface-muted px-4 py-3 text-xs font-black uppercase tracking-widest text-text min-w-[200px] border-r border-border shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
+                <th class="sticky left-0 z-20 bg-surface-muted px-4 py-3 text-xs font-black uppercase tracking-widest text-text min-w-[80px] border-r border-border">
+                  Legajo
+                </th>
+                <th class="sticky left-[112px] sm:left-[112px] z-20 bg-surface-muted px-4 py-3 text-xs font-black uppercase tracking-widest text-text min-w-[200px] border-r border-border shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
                   Observador
                 </th>
-                <!-- Totales -->
-                <th class="px-2 py-3 text-[10px] font-black uppercase tracking-widest text-text-muted text-center border-r border-border" title="Navegando">NAV</th>
-                <th class="px-2 py-3 text-[10px] font-black uppercase tracking-widest text-text-muted text-center border-r border-border" title="Puerto">PTO</th>
-                <th class="px-2 py-3 text-[10px] font-black uppercase tracking-widest text-text-muted text-center border-r border-border" title="Novedades">NOV</th>
-                <th class="px-2 py-3 text-[10px] font-black uppercase tracking-widest text-text-muted text-center border-r border-border" title="Conflictos">ERR</th>
                 <!-- Días -->
                 <th v-for="dia in data.diasMes" :key="dia" class="px-1 py-3 text-center border-r border-border min-w-[36px]">
                   <div class="flex flex-col items-center justify-center">
@@ -85,21 +106,18 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="row in data.matriz" :key="row.observador.id" class="border-b border-border hover:bg-surface-muted/50 transition-colors group">
-                <td class="sticky left-0 z-10 bg-surface group-hover:bg-surface-muted/50 px-4 py-2 border-r border-border shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] transition-colors">
+              <tr v-for="row in filteredMatriz" :key="row.observador.id" class="border-b border-border hover:bg-surface-muted/50 transition-colors group">
+                <td class="sticky left-0 z-10 bg-surface group-hover:bg-surface-muted/50 px-4 py-2 border-r border-border transition-colors text-center">
+                  <div class="font-mono font-bold text-xs text-text-muted">
+                    {{ row.observador.codigoInterno }}
+                  </div>
+                </td>
+                <td class="sticky left-[112px] sm:left-[112px] z-10 bg-surface group-hover:bg-surface-muted/50 px-4 py-2 border-r border-border shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] transition-colors">
                   <div class="font-bold text-sm text-text truncate">
                     {{ row.observador.apellido }}, {{ row.observador.nombre }}
                   </div>
                 </td>
                 
-                <!-- Totales -->
-                <td class="px-2 py-2 text-center text-xs font-bold text-text border-r border-border">{{ row.totales.navegando }}</td>
-                <td class="px-2 py-2 text-center text-xs font-bold text-text border-r border-border">{{ row.totales.puerto }}</td>
-                <td class="px-2 py-2 text-center text-xs font-bold text-text border-r border-border">{{ row.totales.novedades }}</td>
-                <td class="px-2 py-2 text-center text-xs font-black border-r border-border" :class="row.totales.conflictos > 0 ? 'text-error' : 'text-text-muted'">
-                  {{ row.totales.conflictos }}
-                </td>
-
                 <!-- Días -->
                 <td v-for="dia in data.diasMes" :key="dia" class="p-1 border-r border-border relative group/cell">
                   <div class="w-full h-8 rounded flex items-center justify-center transition-all cursor-default" :class="getCellClass(row.dias[dia])">
@@ -128,8 +146,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import AdminLayout from '@/components/layout/AdminLayout.vue';
+import SearchInput from '@/components/ui/SearchInput.vue';
 import { ChevronDownIcon, DownloadIcon } from '@/icons';
 import { toast } from 'vue-sonner';
 import presentismoApi from '../services/presentismo.service';
@@ -148,11 +167,68 @@ const months = [
 
 const data = ref<PlanillaMensualResponse | null>(null);
 const isLoading = ref(false);
+const searchQuery = ref('');
+
+// Filtros Set
+const activeTipoObservador = ref(new Set<string>());
+const activeTipoContrato = ref(new Set<string>());
+
+const tiposObservador = computed(() => {
+  if (!data.value) return [];
+  return Array.from(new Set(data.value.matriz.map(r => r.observador.tipoObservador))).sort();
+});
+
+const tiposContrato = computed(() => {
+  if (!data.value) return [];
+  return Array.from(new Set(data.value.matriz.map(r => r.observador.tipoContrato))).sort();
+});
+
+const toggleTipoObservador = (t: string) => {
+  if (activeTipoObservador.value.has(t)) {
+    activeTipoObservador.value.delete(t);
+  } else {
+    activeTipoObservador.value.add(t);
+  }
+};
+
+const toggleTipoContrato = (c: string) => {
+  if (activeTipoContrato.value.has(c)) {
+    activeTipoContrato.value.delete(c);
+  } else {
+    activeTipoContrato.value.add(c);
+  }
+};
+
+const filteredMatriz = computed(() => {
+  if (!data.value) return [];
+  return data.value.matriz.filter(r => {
+    const o = r.observador;
+    const s = searchQuery.value.toLowerCase();
+    const matchSearch = !s || `${o.nombre} ${o.apellido} ${o.codigoInterno}`.toLowerCase().includes(s);
+    const matchTO = activeTipoObservador.value.has(o.tipoObservador);
+    const matchTC = activeTipoContrato.value.has(o.tipoContrato);
+    return matchSearch && matchTO && matchTC;
+  });
+});
 
 const fetchData = async () => {
   isLoading.value = true;
   try {
-    data.value = await presentismoApi.obtenerPlanillaMensual(selectedYear.value, selectedMonth.value);
+    const response = await presentismoApi.obtenerPlanillaMensual(selectedYear.value, selectedMonth.value);
+    
+    // Inicializar filtros por defecto (marcar todos menos TECNICO, MONOTRIBUTISTA y PLANTA PERMANENTE)
+    const newActiveTO = new Set<string>();
+    const newActiveTC = new Set<string>();
+    
+    response.matriz.forEach(r => {
+      if (r.observador.tipoObservador !== 'TECNICO') newActiveTO.add(r.observador.tipoObservador);
+      if (r.observador.tipoContrato !== 'MONOTRIBUTISTA' && r.observador.tipoContrato !== 'PLANTA PERMANENTE') newActiveTC.add(r.observador.tipoContrato);
+    });
+    
+    activeTipoObservador.value = newActiveTO;
+    activeTipoContrato.value = newActiveTC;
+    
+    data.value = response;
   } catch (error) {
     toast.error('Ocurrió un error al cargar la planilla mensual');
     data.value = null;

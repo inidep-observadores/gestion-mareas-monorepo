@@ -12,6 +12,8 @@ export interface ObservadorRow {
     nombre: string;
     apellido: string;
     codigoInterno: number;
+    tipoObservador: string;
+    tipoContrato: string;
   };
   dias: Record<number, DiaEstado>;
   totales: {

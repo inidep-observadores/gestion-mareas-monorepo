@@ -15,7 +15,7 @@ export class PresentismoService {
     // 1. Obtener observadores activos
     const observadores = await this.prisma.observador.findMany({
       where: { activo: true },
-      select: { id: true, nombre: true, apellido: true, codigoInterno: true },
+      select: { id: true, nombre: true, apellido: true, codigoInterno: true, tipoObservador: true, tipoContrato: true },
       orderBy: [{ apellido: 'asc' }, { nombre: 'asc' }],
     });
 
