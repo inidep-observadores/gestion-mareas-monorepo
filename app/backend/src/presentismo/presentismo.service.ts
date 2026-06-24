@@ -255,18 +255,19 @@ export class PresentismoService {
         const isFeriado = !!feriados[dia];
         const isFinSemana = currentDate.weekday === 6 || currentDate.weekday === 7;
 
-        let countFuertes = 0;
-        if (isNavegando) countFuertes++;
-        if (isPuerto) countFuertes++;
-        if (isViaje) countFuertes++;
-        if (isNovedad) countFuertes++;
+        let causasConflicto = [];
+        if (isNavegando) causasConflicto.push('Navegación');
+        if (isPuerto) causasConflicto.push('Puerto');
+        if (isViaje) causasConflicto.push('Viaje');
+        if (isNovedad) causasConflicto.push(`Novedad (${novedadCodigoCorto})`);
 
+        let countFuertes = causasConflicto.length;
         let estadoDto: DiaEstadoDto;
 
         if (countFuertes > 1) {
           estadoDto = {
             estado: 'CONFLICTO',
-            conflictoDetalle: `Solapamiento detectado`,
+            conflictoDetalle: `Solapamiento: ${causasConflicto.join(' + ')}`,
           };
           row.totales.conflictos++;
         } else if (isNavegando) {
