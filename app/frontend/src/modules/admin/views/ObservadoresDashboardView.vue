@@ -29,11 +29,18 @@
             color="warning"
           />
           <ObservadoresDashboardCard
-            title="Feriados Nacionales"
+            title="Feriados nacionales y locales"
             description="Administración de feriados y días no laborables usados en la planificación."
             :to="{ name: 'SistemaObservadoresFeriados' }"
             :icon="CalenderIcon"
             color="error"
+          />
+          <ObservadoresDashboardCard
+            title="Gestión de Novedades"
+            description="Registro y ABM de licencias, francos compensatorios y otras novedades de los observadores."
+            :to="{ name: 'SistemaObservadoresNovedades' }"
+            :icon="DocsIcon"
+            color="success"
           />
         </div>
       </section>
@@ -53,5 +60,5 @@
 <script setup lang="ts">
 import ObservadoresDashboardLayout from '../layouts/ObservadoresDashboardLayout.vue';
 import ObservadoresDashboardCard from '../components/ObservadoresDashboardCard.vue';
-import { CalenderIcon, UserCircleIcon, UserGroupIcon } from '@/icons';
+import { CalenderIcon, UserCircleIcon, UserGroupIcon, DocsIcon } from '@/icons';
 </script>

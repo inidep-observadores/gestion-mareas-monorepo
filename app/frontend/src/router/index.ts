@@ -308,7 +308,17 @@ const router = createRouter({
       name: 'SistemaObservadoresFeriados',
       component: () => import('@/modules/admin/views/ObservadoresFeriadosView.vue'),
       meta: {
-        title: 'Feriados Nacionales',
+        title: 'Feriados nacionales y locales',
+        requiresAuth: true,
+        roles: [ValidRoles.admin, ValidRoles.coordinador, ValidRoles.asistente, ValidRoles.tecnico],
+      },
+    },
+    {
+      path: '/sistema/observadores/novedades',
+      name: 'SistemaObservadoresNovedades',
+      component: () => import('@/modules/admin/views/ObservadoresNovedadesView.vue'),
+      meta: {
+        title: 'Gestión de Novedades',
         requiresAuth: true,
         roles: [ValidRoles.admin, ValidRoles.coordinador, ValidRoles.asistente, ValidRoles.tecnico],
       },

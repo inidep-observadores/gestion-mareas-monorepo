@@ -1,7 +1,7 @@
 <template>
   <AdminLayout>
     <BaseDataList 
-      title="Feriados Nacionales" 
+      title="Feriados nacionales y locales" 
       :description="`Administración de feriados y días no laborables para el año operativo ${configStore.selectedYear}`"
       button-text="Nuevo Feriado" 
       :items="filteredFeriados"
