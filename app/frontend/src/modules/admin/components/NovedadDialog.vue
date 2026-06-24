@@ -38,7 +38,8 @@
             <option value="FALLECIMIENTO">Fallecimiento</option>
             <option value="EXAMEN">Examen</option>
             <option value="DONACION_SANGRE">Donación de Sangre</option>
-            <option value="VIAJE">Aviso de Viaje</option>
+            <option value="VIAJE_INICIO">Aviso de Viaje (Inicio)</option>
+            <option value="VIAJE_FIN">Aviso de Viaje (Fin)</option>
           </select>
           <p v-if="fieldErrors.estadoDisponibilidad" class="text-[10px] text-error font-bold uppercase mt-1">{{ fieldErrors.estadoDisponibilidad }}</p>
         </div>
@@ -54,13 +55,14 @@
               :error="fieldErrors.fechaInicio" 
             />
           </div>
-          <div class="space-y-1.5">
+          <div class="space-y-1.5" :class="{'opacity-50 pointer-events-none': isViajeNovedad}">
             <label class="block text-sm font-medium text-text-muted">Fecha de Fin (Opcional)</label>
             <DatePicker 
               v-model="form.fechaFin" 
               :icon="CalenderIcon" 
               :show-time="false"
               :error="fieldErrors.fechaFin" 
+              :disabled="isViajeNovedad"
             />
           </div>
         </div>
@@ -138,6 +140,7 @@ const fieldErrors = ref<Record<string, string>>({})
 const error = ref('')
 const loading = ref(false)
 const isEdit = computed(() => !!props.editData)
+const isViajeNovedad = computed(() => ['VIAJE_INICIO', 'VIAJE_FIN'].includes(form.value.estadoDisponibilidad))
 
 const observadores = ref<any[]>([])
 const loadingCatalogs = ref(true)
@@ -183,7 +186,13 @@ watch(() => props.show, (newVal) => {
 
 // Auto-clear errors
 watch(() => form.value.observadorId, (val) => { if (val) delete fieldErrors.value.observadorId })
-watch(() => form.value.estadoDisponibilidad, (val) => { if (val) delete fieldErrors.value.estadoDisponibilidad })
+watch(() => form.value.estadoDisponibilidad, (val) => { 
+  if (val) delete fieldErrors.value.estadoDisponibilidad 
+  if (['VIAJE_INICIO', 'VIAJE_FIN'].includes(val)) {
+    form.value.fechaFin = ''
+    delete fieldErrors.value.fechaFin
+  }
+})
 watch(() => form.value.fechaInicio, (val) => { if (val) delete fieldErrors.value.fechaInicio })
 
 const close = () => {

@@ -3,7 +3,7 @@ import type { Observador } from '../../observadores/interfaces/observador.interf
 export interface Novedad {
   id: string;
   observadorId: string;
-  estadoDisponibilidad: string; // LICEN, FC, RP, ENFERMEDAD, MATERNIDAD, NACIMIENTO, FALLECIMIENTO, EXAMEN, DONACION_SANGRE, VIAJE
+  estadoDisponibilidad: string; // LICEN, FC, RP, ENFERMEDAD, MATERNIDAD, NACIMIENTO, FALLECIMIENTO, EXAMEN, DONACION_SANGRE, VIAJE_INICIO, VIAJE_FIN
   fechaInicio: string;
   fechaFin?: string | null;
   permiteUrgencia: boolean;

@@ -132,7 +132,7 @@ export class PresentismoService {
         });
         
         if (novedad) {
-          if (novedad.estadoDisponibilidad === 'VIAJE') {
+          if (novedad.estadoDisponibilidad === 'VIAJE_INICIO' || novedad.estadoDisponibilidad === 'VIAJE_FIN') {
             isViaje = true;
           } else {
             isNovedad = true;
