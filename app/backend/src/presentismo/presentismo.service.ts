@@ -383,18 +383,22 @@ export class PresentismoService {
           } else if (dia.estado === 'PUERTO') {
             cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFE4C4' } };
             cell.font = { color: { argb: 'FF000000' }, bold: true };
+            if (dia.detalle) cell.note = dia.detalle;
           } else if (dia.estado === 'VIAJE') {
             cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE6E6FA' } };
             cell.font = { color: { argb: 'FF000000' }, bold: true };
           } else if (dia.estado === 'FERIADO') {
             cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFA500' } };
             cell.font = { color: { argb: 'FF000000' }, bold: true };
+            if (dia.detalle) cell.note = dia.detalle;
           } else if (dia.estado === 'NOVEDAD') {
             cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFADD8E6' } };
             cell.font = { color: { argb: 'FF000000' }, bold: true };
+            if (dia.detalle) cell.note = dia.detalle;
           } else if (dia.estado === 'CONFLICTO') {
             cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFDC2626' } };
             cell.font = { color: { argb: 'FFFFFFFF' }, bold: true };
+            if (dia.conflictoDetalle) cell.note = dia.conflictoDetalle;
           }
 
           if (dia.computaFranco) {
