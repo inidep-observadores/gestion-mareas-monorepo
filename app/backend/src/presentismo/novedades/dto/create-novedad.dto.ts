@@ -7,7 +7,7 @@ export class CreateNovedadDto {
 
   @IsString()
   @IsNotEmpty()
-  @IsIn(['LICEN', 'FC', 'RP', 'ENFERMEDAD', 'MATERNIDAD', 'NACIMIENTO', 'FALLECIMIENTO', 'EXAMEN', 'DONACION_SANGRE'])
+  @IsIn(['LICEN', 'FC', 'RP', 'ENFERMEDAD', 'MATERNIDAD', 'NACIMIENTO', 'FALLECIMIENTO', 'EXAMEN', 'DONACION_SANGRE', 'VIAJE'])
   estadoDisponibilidad: string;
 
   @IsDateString()

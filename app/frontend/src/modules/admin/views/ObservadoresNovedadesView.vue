@@ -192,7 +192,8 @@ const formatDisponibilidad = (codigo: string) => {
     'NACIMIENTO': 'Nacimiento',
     'FALLECIMIENTO': 'Fallecimiento',
     'EXAMEN': 'Examen',
-    'DONACION_SANGRE': 'Donación de Sangre'
+    'DONACION_SANGRE': 'Donación de Sangre',
+    'VIAJE': 'Aviso de Viaje'
   };
   return map[codigo] || codigo;
 };

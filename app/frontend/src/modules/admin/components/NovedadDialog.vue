@@ -1,6 +1,6 @@
 <template>
   <BaseModal :show="show" @close="close" :title="isEdit ? 'Editar Novedad' : 'Nueva Novedad'" maxWidth="2xl">
-    <div class="space-y-6">
+    <div v-form-nav class="space-y-6">
       <div v-if="error" class="p-4 bg-error/5 border border-error/20 rounded-xl text-error text-[10px] font-black uppercase tracking-widest text-center">
         {{ error }}
       </div>
@@ -38,6 +38,7 @@
             <option value="FALLECIMIENTO">Fallecimiento</option>
             <option value="EXAMEN">Examen</option>
             <option value="DONACION_SANGRE">Donación de Sangre</option>
+            <option value="VIAJE">Aviso de Viaje</option>
           </select>
           <p v-if="fieldErrors.estadoDisponibilidad" class="text-[10px] text-error font-bold uppercase mt-1">{{ fieldErrors.estadoDisponibilidad }}</p>
         </div>
@@ -87,6 +88,7 @@
         <button 
           @click="submit" 
           :disabled="loading"
+          :data-allow-enter="true"
           class="px-8 py-3 bg-primary hover:bg-primary-hover text-primary-fg rounded-lg text-xs font-black uppercase tracking-widest shadow-theme-xs shadow-primary/20 transition-all active:scale-95 flex items-center gap-2 disabled:opacity-50"
         >
           <div v-if="loading" class="flex items-center justify-center">

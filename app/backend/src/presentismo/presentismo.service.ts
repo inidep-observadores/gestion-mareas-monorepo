@@ -132,9 +132,13 @@ export class PresentismoService {
         });
         
         if (novedad) {
-          isNovedad = true;
-          novedadCodigoCorto = novedad.estadoDisponibilidad;
-          novedadDetalle = novedad.estadoDisponibilidad + (novedad.motivo ? ` - ${novedad.motivo}` : '');
+          if (novedad.estadoDisponibilidad === 'VIAJE') {
+            isViaje = true;
+          } else {
+            isNovedad = true;
+            novedadCodigoCorto = novedad.estadoDisponibilidad;
+            novedadDetalle = novedad.estadoDisponibilidad + (novedad.motivo ? ` - ${novedad.motivo}` : '');
+          }
         }
 
         // Comprobar Mareas
