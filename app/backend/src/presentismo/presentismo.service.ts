@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { PlanillaMensualResponseDto, ObservadorRowDto, DiaEstadoDto } from './dto/planilla-mensual-response.dto';
 import { DateTime } from 'luxon';
+import * as ExcelJS from 'exceljs';
 
 @Injectable()
 export class PresentismoService {
@@ -196,5 +197,86 @@ export class PresentismoService {
       feriados,
       matriz,
     };
+  }
+
+  async exportToExcel(year: number, month: number, ids?: string[]) {
+    const planilla = await this.obtenerPlanillaMensual(year, month);
+    
+    // Filtrar observadores si se reciben IDs
+    const matrizFiltrada = ids && ids.length > 0
+      ? planilla.matriz.filter((m) => ids.includes(m.observador.id))
+      : planilla.matriz;
+
+    const workbook = new ExcelJS.Workbook();
+    const sheet = workbook.addWorksheet(`Presentismo ${month.toString().padStart(2, '0')}-${year}`);
+
+    // Configurar columnas: Legajo, Observador, días del mes
+    const columns: Partial<ExcelJS.Column>[] = [
+      { header: 'LEGAJO', key: 'legajo', width: 12 },
+      { header: 'OBSERVADOR', key: 'observador', width: 30 },
+    ];
+    
+    for (let i = 1; i <= planilla.diasMes; i++) {
+      const fechaObj = DateTime.utc(year, month, i).setLocale('es');
+      let nombreDia = fechaObj.toFormat('ccc'); // lun, mar, mié
+      nombreDia = nombreDia.normalize("NFD").replace(/[\u0300-\u036f]/g, ""); // Quitar tildes
+      nombreDia = nombreDia.charAt(0).toUpperCase() + nombreDia.slice(1);
+      
+      columns.push({ header: `${nombreDia} ${i}/${month}`, key: `d${i}`, width: 10 });
+    }
+    
+    sheet.columns = columns;
+
+    // Estilo encabezados
+    sheet.getRow(1).font = { bold: true };
+    sheet.getRow(1).fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFE0E0E0' }
+    };
+    sheet.getRow(1).alignment = { horizontal: 'center', vertical: 'middle' };
+
+    matrizFiltrada.forEach((row) => {
+      const rowData: any = {
+        legajo: row.observador.codigoInterno,
+        observador: `${row.observador.apellido}, ${row.observador.nombre}`
+      };
+
+      for (let i = 1; i <= planilla.diasMes; i++) {
+        const dia = row.dias[i];
+        let val = '';
+        if (dia) {
+          if (dia.estado === 'NAVEGANDO') val = 'NAV';
+          else if (dia.estado === 'PUERTO') val = 'PTO';
+          else if (dia.estado === 'NOVEDAD') val = 'NOV';
+          else if (dia.estado === 'CONFLICTO') val = 'ERR';
+        }
+        rowData[`d${i}`] = val;
+      }
+
+      const newRow = sheet.addRow(rowData);
+      
+      // Aplicar estilos a las celdas de días
+      for (let i = 1; i <= planilla.diasMes; i++) {
+        const dia = row.dias[i];
+        const cell = newRow.getCell(`d${i}`);
+        cell.alignment = { horizontal: 'center', vertical: 'middle' };
+        const val = cell.value;
+        if (val === 'NAV') {
+          cell.font = { color: { argb: 'FF0284C7' }, bold: true };
+        } else if (val === 'PTO') {
+          cell.font = { color: { argb: 'FFD97706' }, bold: true };
+        } else if (val === 'NOV') {
+          cell.font = { color: { argb: 'FF059669' }, bold: true };
+        } else if (val === 'ERR') {
+          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFDC2626' } };
+          cell.font = { color: { argb: 'FFFFFFFF' }, bold: true };
+        } else if (dia && (dia.estado === 'FIN_SEMANA' || dia.estado === 'FERIADO')) {
+          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF3F4F6' } };
+        }
+      }
+    });
+
+    return workbook;
   }
 }

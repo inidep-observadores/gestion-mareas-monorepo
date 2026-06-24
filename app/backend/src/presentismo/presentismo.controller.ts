@@ -1,4 +1,5 @@
-import { Controller, Get, Query, ParseIntPipe, BadRequestException } from '@nestjs/common';
+import { Controller, Get, Query, ParseIntPipe, BadRequestException, Post, Body, Res } from '@nestjs/common';
+import { Response } from 'express';
 import { PresentismoService } from './presentismo.service';
 import { PlanillaMensualResponseDto } from './dto/planilla-mensual-response.dto';
 
@@ -19,5 +20,17 @@ export class PresentismoController {
     }
 
     return this.presentismoService.obtenerPlanillaMensual(year, month);
+  }
+
+  @Post('export/excel')
+  async exportToExcel(@Body() body: { year: number; month: number; ids?: string[] }, @Res() res: Response) {
+    if (!body.year || !body.month) {
+      throw new BadRequestException('Faltan parámetros año y mes');
+    }
+    const workbook = await this.presentismoService.exportToExcel(body.year, body.month, body.ids);
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="PRESENTISMO_${body.year}_${body.month.toString().padStart(2, '0')}.xlsx"`);
+    await workbook.xlsx.write(res);
+    res.end();
   }
 }

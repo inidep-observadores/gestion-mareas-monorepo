@@ -269,10 +269,37 @@ const formatTooltipTitle = (estado: string) => {
   return map[estado] || estado;
 };
 
-const exportToExcel = () => {
-  if (data.value) {
-    presentismoExportService.exportarAExcel(data.value);
+const isExporting = ref(false);
+
+const exportToExcel = async () => {
+  if (!data.value) return;
+  
+  isExporting.value = true;
+  try {
+    const params = {
+      year: selectedYear.value,
+      month: selectedMonth.value,
+      ids: filteredMatriz.value.map(r => r.observador.id)
+    };
+    
+    const blob = await presentismoExportService.exportarAExcel(params);
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    
+    const filename = `PRESENTISMO_OBSERVADORES_${selectedYear.value}_${selectedMonth.value.toString().padStart(2, '0')}.xlsx`;
+    
+    link.setAttribute('download', filename);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+    
     toast.success('Planilla exportada a Excel correctamente');
+  } catch (error) {
+    toast.error('Error al exportar el Excel');
+  } finally {
+    isExporting.value = false;
   }
 };
 
