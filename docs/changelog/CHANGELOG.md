@@ -5,6 +5,12 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 
 ## [Unreleased]
 
+## [v0.9.0] - 2026-06-25
+
+### Added
+- **presentismo:** implementar cron job orquestador e integrar con Drive para novedades
+- **backend:** implementar servicios base para integración con IMAP, Google Drive y Gemini AI
+
 ## [v0.8.0] - 2026-06-24
 
 ### Added
