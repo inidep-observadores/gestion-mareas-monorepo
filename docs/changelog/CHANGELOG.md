@@ -5,6 +5,42 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 
 ## [Unreleased]
 
+## [v0.8.0] - 2026-06-24
+
+### Added
+- **novedades:** incluir observadores inactivos en el select de novedades y agregar marca visual
+- **presentismo:** agregar tooltips (notas) a las celdas en exportacion Excel
+- **presentismo:** mejorar detalle en tooltip para detectar causas de solapamientos
+- **novedades:** agregar selector de flexibilidad permiteUrgencia al formulario
+- **novedades:** desdoblar VIAJE en VIAJE_INICIO y VIAJE_FIN y deshabilitar fecha de fin para los mismos
+- **novedades:** agregar tipo de novedad VIAJE y soportar ENTER as TAB en el modal
+- **novedades:** auto focus en el campo observador al abrir el modal de nueva novedad
+- **novedades:** implementar crud de novedades para observadores
+- **presentismo:** resaltar días que computan franco compensatorio
+- **presentismo:** integrar cruce de mareas reales y estilos visuales del legacy
+- implementar excel en presentismo
+- mejoras y refinamiento en ui de presentismo
+- implementar planilla mensual de presentismo y crud de feriados
+- **reports:** agregar anexo anual comparativo de pesquerías
+- **reports:** mejorar descripciones de pesquerías y tipos de flota
+- **admin:** añadir dashboard de observadores y mockup de presentismo
+- **monitor:** agregar etiquetas y convertir a polígonos capas de vieira y centolla
+- **frontend:** persistir preferencias de capas del mapa en localStorage
+- **frontend:** añadir visualización de subáreas de langostino
+- **mareas:** añadir puerto de zarpada y arribo en exportación JSON
+
+### Fixed
+- **frontend:** corregir ruta de importación de la interfaz Observador
+- **presentismo:** filtrar notas en Excel para que solo apliquen a novedades con comentarios o errores
+- **novedades:** usar httpClient del proyecto en lugar del alias inexistente
+- **novedades:** corregir importacion de icono y remover dependencia de luxon
+- **backend:** agregar tolerancia de 48hs en deteccion de zarpadas para mareas designadas
+- **maps:** corregir poligono erroneo en capa de langostino
+
+### Refactored
+- **frontend:** renombrar archivo geojson de areas de langostino y actualizar referencias
+- **tracking:** reemplazar mmsi por matricula como criterio de busqueda
+
 ## [v0.7.0] - 2026-06-07
 
 ### Added
