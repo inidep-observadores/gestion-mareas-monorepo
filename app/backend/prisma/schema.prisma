@@ -1017,6 +1017,7 @@ model ObservadorNovedad {
 
   observador           Observador @relation(fields: [observadorId], references: [id])
   creadoPor            User?      @relation(fields: [creadoPorId], references: [id])
+  archivos             ObservadorNovedadArchivo[]
 
   @@index([observadorId])
   @@index([fechaInicio, fechaFin])
@@ -1033,3 +1034,20 @@ model Feriado {
   @@map("feriados")
   @@schema("public")
 }
+
+model ObservadorNovedadArchivo {
+  id                 String            @id @default(uuid()) @db.Uuid
+  novedadId          String            @map("id_novedad") @db.Uuid
+  rutaArchivo        String            @map("ruta_archivo")
+  tipoArchivo        String            @map("tipo_archivo")
+  nombreOriginal     String?           @map("nombre_original")
+  driveFileId        String?           @map("drive_file_id")
+  fechaSubida        DateTime          @default(now()) @map("fecha_subida") @db.Timestamptz(6)
+  
+  novedad            ObservadorNovedad @relation(fields: [novedadId], references: [id], onDelete: Cascade)
+
+  @@index([novedadId])
+  @@map("observadores_novedades_archivos")
+  @@schema("public")
+}
+

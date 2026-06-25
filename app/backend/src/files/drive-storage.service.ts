@@ -9,17 +9,18 @@ export class DriveStorageService {
     private driveClient: drive_v3.Drive;
 
     constructor(private readonly configService: ConfigService) {
-        // Inicializar el cliente de Google Drive API
-        const credentialsPath = this.configService.get<string>('GOOGLE_APPLICATION_CREDENTIALS');
+        // Inicializar el cliente de Google Drive API usando OAuth2
+        const clientId = this.configService.get<string>('GOOGLE_CLIENT_ID');
+        const clientSecret = this.configService.get<string>('GOOGLE_CLIENT_SECRET');
+        const refreshToken = this.configService.get<string>('GOOGLE_REFRESH_TOKEN');
         
-        if (credentialsPath) {
-            const auth = new google.auth.GoogleAuth({
-                keyFile: credentialsPath,
-                scopes: ['https://www.googleapis.com/auth/drive.file'],
-            });
-            this.driveClient = google.drive({ version: 'v3', auth });
+        if (clientId && clientSecret && refreshToken) {
+            const oauth2Client = new google.auth.OAuth2(clientId, clientSecret);
+            oauth2Client.setCredentials({ refresh_token: refreshToken });
+            
+            this.driveClient = google.drive({ version: 'v3', auth: oauth2Client });
         } else {
-            // Fallback para pruebas si no hay ruta configurada
+            // Fallback para pruebas si no hay variables configuradas
             this.driveClient = google.drive({ version: 'v3' });
         }
     }

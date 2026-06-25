@@ -2,6 +2,8 @@ import { Global, Module } from '@nestjs/common';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MailService } from './mail.service';
+import { ImapService } from './imap.service';
+import { NovedadesAiService } from './novedades-ai.service';
 
 @Global()
 @Module({
@@ -28,7 +30,7 @@ import { MailService } from './mail.service';
             }),
         }),
     ],
-    providers: [MailService],
-    exports: [MailService, MailerModule],
+    providers: [MailService, ImapService, NovedadesAiService],
+    exports: [MailService, MailerModule, ImapService, NovedadesAiService],
 })
 export class MailModule { }
