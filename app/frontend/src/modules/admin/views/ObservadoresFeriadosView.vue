@@ -1,5 +1,6 @@
 <template>
   <AdminLayout>
+    <BackButton routeName="SistemaObservadores" label="Regresar al Panel" />
     <BaseDataList 
       title="Feriados nacionales y locales" 
       :description="`Administración de feriados y días no laborables para el año operativo ${configStore.selectedYear}`"
@@ -147,6 +148,7 @@
 <script setup lang="ts">
 import { ref, onMounted, watch, computed } from 'vue';
 import AdminLayout from '@/components/layout/AdminLayout.vue';
+import BackButton from '@/components/common/BackButton.vue';
 import BaseDataList from '@/components/common/BaseDataList.vue';
 import FeriadoDialog from '../components/FeriadoDialog.vue';
 import { useConfigStore } from '@/modules/shared/stores/config.store';

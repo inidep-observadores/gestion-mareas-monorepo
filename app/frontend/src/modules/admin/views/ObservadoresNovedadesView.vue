@@ -1,5 +1,6 @@
 <template>
   <AdminLayout>
+    <BackButton routeName="SistemaObservadores" label="Regresar al Panel" />
     <BaseDataList 
       title="Gestión de Novedades" 
       description="Administración de licencias, francos compensatorios y otras novedades de los observadores."
@@ -140,6 +141,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
 import AdminLayout from '@/components/layout/AdminLayout.vue';
+import BackButton from '@/components/common/BackButton.vue';
 import BaseDataList from '@/components/common/BaseDataList.vue';
 import NovedadDialog from '../components/NovedadDialog.vue';
 import ConfirmationDialog from '@/components/common/ConfirmationDialog.vue';

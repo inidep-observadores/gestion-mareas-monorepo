@@ -1,6 +1,7 @@
 <template>
   <AdminLayout>
     <div class="space-y-6">
+      <BackButton routeName="SistemaObservadores" label="Regresar al Panel" containerClass="mb-2" />
       <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 class="text-2xl font-black text-text uppercase tracking-tight">Planilla Mensual de Presentismo</h1>
@@ -175,6 +176,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
 import AdminLayout from '@/components/layout/AdminLayout.vue';
+import BackButton from '@/components/common/BackButton.vue';
 import SearchInput from '@/components/ui/SearchInput.vue';
 import { ChevronDownIcon, DownloadIcon } from '@/icons';
 import { toast } from 'vue-sonner';
