@@ -1,6 +1,8 @@
 <template>
-  <BaseModal :show="show" @close="close" :title="isEdit ? 'Editar Novedad' : 'Nueva Novedad'" maxWidth="2xl">
-    <div v-form-nav class="space-y-6">
+  <BaseModal :show="show" @close="close" :title="isEdit ? 'Editar Novedad' : 'Nueva Novedad'" :maxWidth="hasPreview ? '5xl' : '2xl'">
+    <div class="grid gap-6 items-start" :class="hasPreview ? 'lg:grid-cols-2' : 'grid-cols-1'">
+      <!-- Formulario -->
+      <div v-form-nav class="space-y-6">
       <div v-if="error" class="p-4 bg-error/5 border border-error/20 rounded-xl text-error text-[10px] font-black uppercase tracking-widest text-center">
         {{ error }}
       </div>
@@ -24,24 +26,18 @@
         <div class="space-y-1.5">
           <label class="block text-sm font-medium text-text-muted">Tipo de Novedad</label>
           <select 
-            v-model="form.estadoDisponibilidad"
+            v-model="form.tipoNovedadId"
             class="w-full px-4 py-2.5 bg-surface border rounded-lg text-sm text-text outline-none focus:border-primary transition-all shadow-theme-xs"
-            :class="fieldErrors.estadoDisponibilidad ? 'border-error bg-error/5' : 'border-border focus:ring-3 focus:ring-primary/10'"
+            :class="fieldErrors.tipoNovedadId ? 'border-error bg-error/5' : 'border-border focus:ring-3 focus:ring-primary/10'"
+            :disabled="!form.observadorId"
           >
             <option value="" disabled>Seleccione un tipo...</option>
-            <option value="LICEN">Licencia / Vacaciones</option>
-            <option value="FC">Franco Compensatorio</option>
-            <option value="RP">Razones Particulares</option>
-            <option value="ENFERMEDAD">Enfermedad</option>
-            <option value="MATERNIDAD">Maternidad</option>
-            <option value="NACIMIENTO">Nacimiento</option>
-            <option value="FALLECIMIENTO">Fallecimiento</option>
-            <option value="EXAMEN">Examen</option>
-            <option value="DONACION_SANGRE">Donación de Sangre</option>
-            <option value="VIAJE_INICIO">Aviso de Viaje (Inicio)</option>
-            <option value="VIAJE_FIN">Aviso de Viaje (Fin)</option>
+            <option v-for="tipo in filteredTiposNovedad" :key="tipo.id" :value="tipo.id">
+              {{ tipo.descripcion }}
+            </option>
           </select>
-          <p v-if="fieldErrors.estadoDisponibilidad" class="text-[10px] text-error font-bold uppercase mt-1">{{ fieldErrors.estadoDisponibilidad }}</p>
+          <p v-if="!form.observadorId" class="text-[10px] text-text-muted font-bold uppercase mt-1">Debe seleccionar un observador primero</p>
+          <p v-if="fieldErrors.tipoNovedadId" class="text-[10px] text-error font-bold uppercase mt-1">{{ fieldErrors.tipoNovedadId }}</p>
         </div>
 
         <!-- Rango de Fechas -->
@@ -110,6 +106,37 @@
           </template>
         </button>
       </div>
+      </div>
+      
+      <!-- Previsualización (Emails / Archivos) -->
+      <div v-if="hasPreview" class="bg-surface-muted rounded-xl border border-border p-5 flex flex-col gap-4 max-h-[80vh] overflow-y-auto">
+        <div class="flex items-center gap-2 mb-2 border-b border-border pb-3">
+          <DocsIcon class="w-5 h-5 text-primary" />
+          <h3 class="text-base font-bold text-text">Contenido Original (Origen: {{ editData?.origen }})</h3>
+        </div>
+        
+        <div v-if="editData?.metadata?.body" class="space-y-2">
+          <h4 class="text-[10px] font-black text-text-muted uppercase tracking-wider">Cuerpo del Mensaje</h4>
+          <div class="p-4 bg-white dark:bg-gray-900 border border-border rounded-lg text-xs text-text whitespace-pre-wrap font-mono leading-relaxed shadow-inner overflow-x-auto">
+            {{ editData.metadata.body }}
+          </div>
+        </div>
+        
+        <div v-if="editData?.archivos && editData.archivos.length > 0" class="space-y-3 mt-4">
+          <h4 class="text-[10px] font-black text-text-muted uppercase tracking-wider">Archivos Adjuntos</h4>
+          <div v-for="archivo in editData.archivos" :key="archivo.id" class="border border-border rounded-lg overflow-hidden bg-white dark:bg-gray-900 shadow-sm">
+            <div class="p-2 border-b border-border bg-surface flex items-center justify-between">
+              <span class="text-xs font-bold text-text truncate pr-2">{{ archivo.nombreOriginal }}</span>
+              <a :href="getArchivoUrl(archivo)" target="_blank" class="text-[10px] text-primary font-bold uppercase hover:underline whitespace-nowrap">Abrir</a>
+            </div>
+            <img v-if="isImage(archivo.tipoMime)" :src="getArchivoUrl(archivo)" class="w-full h-auto object-contain max-h-[300px] bg-gray-100" />
+            <iframe v-else-if="archivo.tipoMime === 'application/pdf'" :src="getArchivoUrl(archivo)" class="w-full h-[400px]" frameborder="0"></iframe>
+            <div v-else class="p-6 text-center text-text-muted text-xs">
+              Vista previa no disponible para este tipo de archivo.
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </BaseModal>
 </template>
@@ -122,11 +149,14 @@ import DatePicker from '@/components/common/DatePicker.vue'
 import BaseSwitch from '@/components/ui/BaseSwitch.vue'
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 import catalogosService from '@/modules/mareas/services/catalogos.service'
+import tiposNovedadApi from '../services/tipos-novedad.service'
 import {
   UserGroupIcon,
-  CalenderIcon
+  CalenderIcon,
+  DocsIcon
 } from '@/icons'
 import type { Novedad } from '../interfaces/novedad.interface'
+import type { TipoNovedad } from '../interfaces/tipo-novedad.interface'
 
 const props = defineProps<{
   show: boolean
@@ -139,7 +169,7 @@ const observadorSelect = ref<any>(null)
 
 const getInitialForm = () => ({
   observadorId: '',
-  estadoDisponibilidad: '',
+  tipoNovedadId: '',
   fechaInicio: '',
   fechaFin: '',
   motivo: '',
@@ -151,10 +181,30 @@ const fieldErrors = ref<Record<string, string>>({})
 const error = ref('')
 const loading = ref(false)
 const isEdit = computed(() => !!props.editData)
-const isViajeNovedad = computed(() => ['VIAJE_INICIO', 'VIAJE_FIN'].includes(form.value.estadoDisponibilidad))
+
+const tiposNovedad = ref<TipoNovedad[]>([])
+
+const isViajeNovedad = computed(() => {
+  const tipo = tiposNovedad.value.find(t => t.id === form.value.tipoNovedadId)
+  return tipo && ['VIAJE_INICIO', 'VIAJE_FIN'].includes(tipo.codigo)
+})
 
 const observadores = ref<any[]>([])
 const loadingCatalogs = ref(true)
+
+const selectedObservador = computed(() => {
+  return observadores.value.find(o => o.id === form.value.observadorId) || null
+})
+
+const filteredTiposNovedad = computed(() => {
+  if (!selectedObservador.value) return []
+  const contrato = selectedObservador.value.tipoContrato
+  return tiposNovedad.value.filter(t => {
+    if (!t.tiposContratoPermitidos || t.tiposContratoPermitidos.length === 0) return true
+    if (!contrato) return false
+    return t.tiposContratoPermitidos.includes(contrato)
+  })
+})
 
 const observadorOptions = computed(() => {
   return observadores.value.map(o => ({
@@ -163,11 +213,32 @@ const observadorOptions = computed(() => {
   }))
 })
 
+const hasPreview = computed(() => {
+  if (!props.editData) return false
+  const hasMetadataBody = props.editData.metadata && props.editData.metadata.body
+  const hasArchivos = props.editData.archivos && props.editData.archivos.length > 0
+  return hasMetadataBody || hasArchivos
+})
+
+const isImage = (mimeType: string) => {
+  return mimeType && mimeType.startsWith('image/')
+}
+
+const getArchivoUrl = (archivo: any) => {
+  // Asumimos una ruta estándar para acceder a los archivos de novedades, o si tienen url completa
+  return archivo.url || `/api/presentismo/novedades/archivos/${archivo.id}`
+}
+
 onMounted(async () => {
   try {
-    observadores.value = await catalogosService.getObservadores()
+    const [obsRes, tiposRes] = await Promise.all([
+      catalogosService.getObservadores(),
+      tiposNovedadApi.getActivos()
+    ])
+    observadores.value = obsRes
+    tiposNovedad.value = tiposRes
   } catch (err) {
-    console.error('Error cargando observadores', err)
+    console.error('Error cargando catálogos', err)
   } finally {
     loadingCatalogs.value = false
   }
@@ -180,7 +251,7 @@ watch(() => props.show, (newVal) => {
     if (props.editData) {
       form.value = {
         observadorId: props.editData.observadorId,
-        estadoDisponibilidad: props.editData.estadoDisponibilidad,
+        tipoNovedadId: props.editData.tipoNovedadId,
         fechaInicio: props.editData.fechaInicio ? new Date(props.editData.fechaInicio).toISOString().split('T')[0] : '',
         fechaFin: props.editData.fechaFin ? new Date(props.editData.fechaFin).toISOString().split('T')[0] : '',
         motivo: props.editData.motivo || '',
@@ -197,10 +268,20 @@ watch(() => props.show, (newVal) => {
 })
 
 // Auto-clear errors
-watch(() => form.value.observadorId, (val) => { if (val) delete fieldErrors.value.observadorId })
-watch(() => form.value.estadoDisponibilidad, (val) => { 
-  if (val) delete fieldErrors.value.estadoDisponibilidad 
-  if (['VIAJE_INICIO', 'VIAJE_FIN'].includes(val)) {
+watch(() => form.value.observadorId, (val) => { 
+  if (val) {
+    delete fieldErrors.value.observadorId
+    // Si el tipo de novedad actual ya no es válido para este observador, resetearlo
+    if (form.value.tipoNovedadId) {
+      const isValid = filteredTiposNovedad.value.some(t => t.id === form.value.tipoNovedadId)
+      if (!isValid) form.value.tipoNovedadId = ''
+    }
+  } 
+})
+watch(() => form.value.tipoNovedadId, (val) => { 
+  if (val) delete fieldErrors.value.tipoNovedadId 
+  
+  if (isViajeNovedad.value) {
     form.value.fechaFin = ''
     delete fieldErrors.value.fechaFin
   }
@@ -214,7 +295,7 @@ const close = () => {
 const validate = () => {
   fieldErrors.value = {}
   if (!form.value.observadorId) fieldErrors.value.observadorId = 'El observador es requerido'
-  if (!form.value.estadoDisponibilidad) fieldErrors.value.estadoDisponibilidad = 'Seleccione un tipo de novedad'
+  if (!form.value.tipoNovedadId) fieldErrors.value.tipoNovedadId = 'Seleccione un tipo de novedad'
   if (!form.value.fechaInicio) fieldErrors.value.fechaInicio = 'La fecha de inicio es requerida'
   
   if (form.value.fechaInicio && form.value.fechaFin) {

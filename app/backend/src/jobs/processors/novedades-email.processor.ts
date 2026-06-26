@@ -19,10 +19,11 @@ export class NovedadesEmailProcessor implements JobProcessor {
     async process(payload: any): Promise<any> {
         let processedCount = 0;
         let errorsCount = 0;
+        let ignoredCount = 0;
 
         try {
             await this.imapService.connect();
-            const emails = await this.imapService.fetchUnreadEmails();
+            const emails = await this.imapService.fetchUnprocessedEmails();
             
             for (const email of emails) {
                 try {
@@ -47,15 +48,31 @@ export class NovedadesEmailProcessor implements JobProcessor {
                     }
 
                     if (!observador) {
-                         this.logger.warn(`No se pudo encontrar el observador para el email: ${email.subject}`);
-                         errorsCount++;
+                         this.logger.log(`Email ignorado (no se detectó observador): ${email.subject}`);
+                         ignoredCount++;
+                         await this.imapService.markAsProcessed(email.uid);
                          continue;
+                    }
+
+                    const codigoNovedad = extracted.estadoDisponibilidad || 'LICEN';
+                    let tipoNovedad = await this.prisma.tipoNovedad.findUnique({
+                        where: { codigo: codigoNovedad }
+                    });
+
+                    if (!tipoNovedad) {
+                        tipoNovedad = await this.prisma.tipoNovedad.findFirst();
+                        if (!tipoNovedad) {
+                             this.logger.log(`Email ignorado (sin tipo novedad válido): ${codigoNovedad}`);
+                             ignoredCount++;
+                             await this.imapService.markAsProcessed(email.uid);
+                             continue;
+                        }
                     }
 
                     const novedad = await this.prisma.observadorNovedad.create({
                         data: {
                             observadorId: observador.id,
-                            estadoDisponibilidad: extracted.estadoDisponibilidad || 'PENDIENTE',
+                            tipoNovedadId: tipoNovedad.id,
                             fechaInicio: extracted.fechaInicio ? new Date(extracted.fechaInicio) : new Date(),
                             fechaFin: extracted.fechaFin ? new Date(extracted.fechaFin) : null,
                             estadoAprobacion: 'PENDIENTE',
@@ -100,9 +117,10 @@ export class NovedadesEmailProcessor implements JobProcessor {
             }
 
             return {
+                total: emails.length,
                 processed: processedCount,
-                errors: errorsCount,
-                total: emails.length
+                ignored: ignoredCount,
+                errors: errorsCount
             };
         } catch (error) {
             this.logger.error('Error in NovedadesEmailProcessor:', error);

@@ -6,39 +6,47 @@ import * as mailparser from 'mailparser';
 @Injectable()
 export class ImapService {
     private readonly logger = new Logger(ImapService.name);
-    private client: ImapFlow;
+    private client: ImapFlow | null = null;
 
-    constructor(private readonly configService: ConfigService) {
+    constructor(private readonly configService: ConfigService) {}
+
+    async connect(): Promise<void> {
         this.client = new ImapFlow({
             host: this.configService.get<string>('IMAP_HOST') || 'imap.gmail.com',
             port: this.configService.get<number>('IMAP_PORT') || 993,
             secure: true,
             auth: {
-                user: this.configService.get<string>('SMTP_USER') || '',
-                pass: this.configService.get<string>('SMTP_PASS') || '',
+                user: this.configService.get<string>('IMAP_USER') || this.configService.get<string>('SMTP_USER') || '',
+                pass: this.configService.get<string>('IMAP_PASSWORD') || this.configService.get<string>('IMAP_PASS') || this.configService.get<string>('SMTP_PASS') || '',
             },
             logger: false
         });
-    }
 
-    async connect(): Promise<void> {
         await this.client.connect();
         this.logger.log('Conectado al servidor IMAP exitosamente.');
     }
 
     async disconnect(): Promise<void> {
-        if (this.client) {
-            await this.client.logout();
-            this.logger.log('Desconectado del servidor IMAP.');
+        if (this.client && this.client.usable) {
+            try {
+                await this.client.logout();
+                this.logger.log('Desconectado del servidor IMAP.');
+            } catch (err) {
+                this.logger.error(`Error al desconectar IMAP: ${err.message}`);
+            }
+        } else if (this.client) {
+            this.client.close();
+            this.logger.log('Conexión IMAP cerrada forzosamente (no estaba utilizable).');
         }
     }
 
-    async fetchUnreadEmails(): Promise<any[]> {
+    async fetchUnprocessedEmails(): Promise<any[]> {
+        if (!this.client) throw new Error("Client not initialized");
         const results = [];
         const lock = await this.client.getMailboxLock('INBOX');
         try {
-            // fetch unread emails
-            for await (const message of this.client.fetch({ seen: false }, { source: true, uid: true })) {
+            // Buscamos correos que no tengan la etiqueta custom
+            for await (const message of this.client.fetch({ unKeyword: 'Procesado_SIGMA' }, { source: true, uid: true })) {
                 if (message.source) {
                     const parsed = await mailparser.simpleParser(message.source);
                     results.push({
@@ -57,6 +65,7 @@ export class ImapService {
     }
 
     async markAsProcessed(uid: number): Promise<void> {
+        if (!this.client) throw new Error("Client not initialized");
         await this.client.messageFlagsAdd(uid, ['Procesado_SIGMA'], { uid: true });
         this.logger.log(`Mensaje ${uid} marcado con la etiqueta Procesado_SIGMA.`);
     }

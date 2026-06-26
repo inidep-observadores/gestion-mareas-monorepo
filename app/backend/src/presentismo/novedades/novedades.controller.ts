@@ -2,19 +2,26 @@ import { Controller, Get, Post, Body, Put, Param, Delete, Query } from '@nestjs/
 import { NovedadesService } from './novedades.service';
 import { CreateNovedadDto } from './dto/create-novedad.dto';
 import { UpdateNovedadDto } from './dto/update-novedad.dto';
+import { Auth, GetUser } from '../../auth/decorators';
+import { ValidRoles } from '../../auth/interfaces';
+import { User } from '@prisma/client';
 
 @Controller('presentismo/novedades')
+@Auth(ValidRoles.admin, ValidRoles.tecnico)
 export class NovedadesController {
   constructor(private readonly novedadesService: NovedadesService) {}
 
   @Post()
-  create(@Body() createNovedadDto: CreateNovedadDto) {
-    return this.novedadesService.create(createNovedadDto);
+  create(@Body() createNovedadDto: CreateNovedadDto, @GetUser() user: User) {
+    return this.novedadesService.create(createNovedadDto, user);
   }
 
   @Get()
-  findAll(@Query('observadorId') observadorId?: string) {
-    return this.novedadesService.findAll(observadorId);
+  findAll(
+    @Query('observadorId') observadorId?: string,
+    @Query('estadoAprobacion') estadoAprobacion?: string
+  ) {
+    return this.novedadesService.findAll(observadorId, estadoAprobacion);
   }
 
   @Get(':id')
@@ -23,8 +30,12 @@ export class NovedadesController {
   }
 
   @Put(':id')
-  update(@Param('id') id: string, @Body() updateNovedadDto: UpdateNovedadDto) {
-    return this.novedadesService.update(id, updateNovedadDto);
+  update(
+    @Param('id') id: string, 
+    @Body() updateNovedadDto: UpdateNovedadDto,
+    @GetUser() user: User
+  ) {
+    return this.novedadesService.update(id, updateNovedadDto, user);
   }
 
   @Delete(':id')

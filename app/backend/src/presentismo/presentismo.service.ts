@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { PlanillaMensualResponseDto, ObservadorRowDto, DiaEstadoDto } from './dto/planilla-mensual-response.dto';
 import { DateTime } from 'luxon';
 import * as ExcelJS from 'exceljs';
+import { MareaEstado } from '../mareas/mareas.constants';
 
 @Injectable()
 export class PresentismoService {
@@ -45,6 +46,9 @@ export class PresentismoService {
           { fechaFin: null },
         ],
       },
+      include: {
+        tipoNovedad: true
+      }
     });
 
     // 4. Traer Mareas para el mes actual
@@ -131,13 +135,15 @@ export class PresentismoService {
           return currentDate >= inicio && currentDate <= fin;
         });
         
-        if (novedad) {
-          if (novedad.estadoDisponibilidad === 'VIAJE_INICIO' || novedad.estadoDisponibilidad === 'VIAJE_FIN') {
+        if (novedad && novedad.tipoNovedad) {
+          if (!novedad.tipoNovedad.afectaPresentismo) {
+            // Ignorar para matriz de presentismo
+          } else if (novedad.tipoNovedad.codigo === 'VIAJE_INICIO' || novedad.tipoNovedad.codigo === 'VIAJE_FIN') {
             isViaje = true;
           } else {
             isNovedad = true;
-            novedadCodigoCorto = novedad.estadoDisponibilidad;
-            novedadDetalle = novedad.estadoDisponibilidad + (novedad.motivo ? ` - ${novedad.motivo}` : '');
+            novedadCodigoCorto = novedad.tipoNovedad.codigo;
+            novedadDetalle = novedad.tipoNovedad.descripcion + (novedad.motivo ? ` - ${novedad.motivo}` : '');
           }
         }
 
@@ -179,7 +185,7 @@ export class PresentismoService {
               if (ultimaEtapa.fechaArribo && !ultimaEtapa.puertoArribo) {
                 const arriboUltima = DateTime.fromJSDate(ultimaEtapa.fechaArribo, { zone: 'utc' }).endOf('day');
                 if (currentDate > arriboUltima) {
-                  if (marea.estadoActual.codigo !== 'FINALIZADA' && marea.estadoActual.codigo !== 'CERRADA' && marea.estadoActual.codigo !== 'CANCELADA') {
+                  if (marea.estadoActual.codigo === MareaEstado.EN_EJECUCION) {
                     isNavegando = true;
                     etapaNavegando = ultimaEtapa;
                   }
@@ -235,7 +241,7 @@ export class PresentismoService {
                 break;
               } else if (!marea.fechaFinObservador) {
                 // No hay fecha fin observador
-                if (marea.estadoActual.codigo === 'FINALIZADA' || marea.estadoActual.codigo === 'CERRADA' || marea.estadoActual.codigo === 'CANCELADA') {
+                if (marea.estadoActual.codigo !== MareaEstado.EN_EJECUCION && marea.estadoActual.codigo !== MareaEstado.DESIGNADA && marea.estadoActual.codigo !== MareaEstado.A_REASIGNAR) {
                   // Marea finalizó, no se consideran más días
                 } else {
                   // Marea activa, esperando etapa -> Puerto si no es local

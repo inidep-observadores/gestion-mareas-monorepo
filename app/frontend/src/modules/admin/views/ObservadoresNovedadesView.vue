@@ -1,6 +1,27 @@
 <template>
   <AdminLayout>
     <BackButton routeName="SistemaObservadores" label="Regresar al Panel" />
+    
+    <div class="flex gap-6 border-b border-border mb-6 overflow-x-auto">
+      <button 
+        @click="activeTab = 'historial'" 
+        class="pb-3 px-1 border-b-2 font-bold transition-colors whitespace-nowrap"
+        :class="activeTab === 'historial' ? 'border-primary text-primary' : 'border-transparent text-text-muted hover:text-text'"
+      >
+        Historial Completo
+      </button>
+      <button 
+        @click="activeTab = 'pendientes'" 
+        class="pb-3 px-1 border-b-2 font-bold transition-colors whitespace-nowrap flex items-center gap-2"
+        :class="activeTab === 'pendientes' ? 'border-primary text-primary' : 'border-transparent text-text-muted hover:text-text'"
+      >
+        Bandeja de Pendientes
+        <span v-if="pendientesCount > 0" class="bg-error text-white text-[10px] px-2 py-0.5 rounded-full">
+          {{ pendientesCount }}
+        </span>
+      </button>
+    </div>
+
     <BaseDataList 
       title="Gestión de Novedades" 
       description="Administración de licencias, francos compensatorios y otras novedades de los observadores."
@@ -21,12 +42,12 @@
               ]" />
           </div>
         </th>
-        <th scope="col" class="px-6 py-3 cursor-pointer group" @click="handleSort('estadoDisponibilidad')">
+        <th scope="col" class="px-6 py-3 cursor-pointer group" @click="handleSort('tipoNovedad.descripcion')">
           <div class="flex items-center gap-2">
               Tipo
               <component :is="getSortIcon()" class="w-3.5 h-3.5 transition-all duration-200" :class="[
-                  sortKey === 'estadoDisponibilidad' ? 'opacity-100 text-primary' : 'opacity-0 group-hover:opacity-50',
-                  sortKey === 'estadoDisponibilidad' && sortOrder === 'asc' ? 'rotate-180' : ''
+                  sortKey === 'tipoNovedad.descripcion' ? 'opacity-100 text-primary' : 'opacity-0 group-hover:opacity-50',
+                  sortKey === 'tipoNovedad.descripcion' && sortOrder === 'asc' ? 'rotate-180' : ''
               ]" />
           </div>
         </th>
@@ -57,9 +78,17 @@
           <div class="text-[10px] text-text-muted mt-0.5">{{ novedad.observador?.codigoInterno }}</div>
         </td>
         <td class="px-6 py-4">
-          <span class="bg-info/10 text-info text-[11px] font-bold px-2 py-0.5 rounded-full border border-info/20 uppercase tracking-tighter">
-            {{ formatDisponibilidad(novedad.estadoDisponibilidad) }}
-          </span>
+          <div class="flex flex-col gap-1 items-start">
+            <span class="bg-info/10 text-info text-[11px] font-bold px-2 py-0.5 rounded-full border border-info/20 uppercase tracking-tighter">
+              {{ novedad.tipoNovedad?.descripcion || 'Desconocido' }}
+            </span>
+            <span v-if="novedad.estadoAprobacion === 'PENDIENTE'" class="bg-warning/10 text-warning text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-tighter">
+              Pendiente
+            </span>
+            <span v-else-if="novedad.estadoAprobacion === 'RECHAZADA'" class="bg-error/10 text-error text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-tighter">
+              Rechazada
+            </span>
+          </div>
         </td>
         <td class="px-6 py-4 font-mono font-bold text-text whitespace-nowrap">
           {{ formatDate(novedad.fechaInicio) }}
@@ -69,10 +98,18 @@
         </td>
         <td class="px-6 py-4 text-right">
           <div class="flex items-center justify-end gap-3">
+            <template v-if="novedad.estadoAprobacion === 'PENDIENTE'">
+              <button @click="promptAction(novedad, 'APROBADA')" class="font-bold text-success hover:underline text-xs bg-success/10 px-2 py-1 rounded">
+                  Aprobar
+              </button>
+              <button @click="promptAction(novedad, 'RECHAZADA')" class="font-bold text-error hover:underline text-xs bg-error/10 px-2 py-1 rounded">
+                  Rechazar
+              </button>
+            </template>
             <button @click="openEditModal(novedad)" class="font-bold text-primary hover:underline">
                 Editar
             </button>
-            <button @click="deleteNovedad(novedad)" class="font-bold text-error hover:underline" title="Eliminar">
+            <button v-if="novedad.estadoAprobacion !== 'PENDIENTE'" @click="deleteNovedad(novedad)" class="font-bold text-error hover:underline" title="Eliminar">
               <TrashIcon class="w-4 h-4" />
             </button>
           </div>
@@ -84,7 +121,7 @@
           <div class="flex-1 min-w-0">
             <div class="flex items-center gap-2 mb-1.5">
               <span class="text-[10px] font-black bg-info/10 text-info px-2 py-0.5 rounded-md uppercase">
-                {{ formatDisponibilidad(novedad.estadoDisponibilidad) }}
+                {{ novedad.tipoNovedad?.descripcion || 'Desconocido' }}
               </span>
             </div>
             <div class="font-extrabold text-text text-base truncate">{{ novedad.observador?.apellido }}, {{ novedad.observador?.nombre }}</div>
@@ -135,6 +172,28 @@
       @confirm="confirmDelete"
       @close="showConfirmDelete = false"
     />
+
+    <!-- Action Dialog for Approve/Reject -->
+    <ConfirmationDialog
+      :show="showActionModal"
+      :title="actionType === 'APROBADA' ? 'Aprobar Novedad' : 'Rechazar Novedad'"
+      :confirmText="actionType === 'APROBADA' ? 'Confirmar Aprobación' : 'Rechazar Definitivamente'"
+      :message="actionType === 'APROBADA' ? '¿Estás seguro que deseas aprobar esta novedad y registrarla en el sistema?' : 'Por favor, ingresa el motivo del rechazo. Este campo es obligatorio para rechazar.'"
+      @confirm="confirmAction"
+      @close="closeActionModal"
+    >
+      <template #default>
+        <div class="mt-4">
+          <label class="block text-sm font-bold text-text mb-1">Comentario / Motivo</label>
+          <textarea
+            v-model="actionComment"
+            rows="3"
+            class="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-primary/50"
+            :placeholder="actionType === 'APROBADA' ? 'Opcional: Detalles adicionales...' : 'Obligatorio: Motivo del rechazo...'"
+          ></textarea>
+        </div>
+      </template>
+    </ConfirmationDialog>
   </AdminLayout>
 </template>
 
@@ -160,6 +219,14 @@ const selectedNovedad = ref<Novedad | null>(null);
 const showConfirmDelete = ref(false);
 const novedadToDelete = ref<Novedad | null>(null);
 
+const activeTab = ref<'historial' | 'pendientes'>('historial');
+const pendientesCount = computed(() => novedades.value.filter(n => n.estadoAprobacion === 'PENDIENTE').length);
+
+const showActionModal = ref(false);
+const actionType = ref<'APROBADA' | 'RECHAZADA'>('APROBADA');
+const actionComment = ref('');
+const novedadToAction = ref<Novedad | null>(null);
+
 const sortKey = ref<string>('fechaInicio');
 const sortOrder = ref<'asc' | 'desc'>('desc');
 
@@ -184,32 +251,24 @@ const formatDate = (isoStr: string) => {
   });
 };
 
-const formatDisponibilidad = (codigo: string) => {
-  const map: Record<string, string> = {
-    'LICEN': 'Licencia',
-    'FC': 'Franco Compensatorio',
-    'RP': 'Razones Particulares',
-    'ENFERMEDAD': 'Enfermedad',
-    'MATERNIDAD': 'Maternidad',
-    'NACIMIENTO': 'Nacimiento',
-    'FALLECIMIENTO': 'Fallecimiento',
-    'EXAMEN': 'Examen',
-    'DONACION_SANGRE': 'Donación de Sangre',
-    'VIAJE_INICIO': 'Aviso de Viaje (Inicio)',
-    'VIAJE_FIN': 'Aviso de Viaje (Fin)'
-  };
-  return map[codigo] || codigo;
-};
+
 
 const filteredNovedades = computed(() => {
     let items = [...novedades.value];
+
+    // Filter by Tab
+    if (activeTab.value === 'pendientes') {
+      items = items.filter(n => n.estadoAprobacion === 'PENDIENTE');
+    } else {
+      items = items.filter(n => n.estadoAprobacion !== 'PENDIENTE');
+    }
 
     if (searchQuery.value) {
         const query = searchQuery.value.toLowerCase();
         items = items.filter(n => {
             const obsNombre = `${n.observador?.apellido || ''} ${n.observador?.nombre || ''}`.toLowerCase();
             const motivo = (n.motivo || '').toLowerCase();
-            const tipo = formatDisponibilidad(n.estadoDisponibilidad).toLowerCase();
+            const tipo = (n.tipoNovedad?.descripcion || '').toLowerCase();
             return obsNombre.includes(query) || motivo.includes(query) || tipo.includes(query);
         });
     }
@@ -221,6 +280,9 @@ const filteredNovedades = computed(() => {
         if (sortKey.value === 'observador.apellido') {
           valA = a.observador?.apellido || '';
           valB = b.observador?.apellido || '';
+        } else if (sortKey.value === 'tipoNovedad.descripcion') {
+          valA = a.tipoNovedad?.descripcion || '';
+          valB = b.tipoNovedad?.descripcion || '';
         } else {
           valA = a[sortKey.value];
           valB = b[sortKey.value];
@@ -298,6 +360,39 @@ const confirmDelete = async () => {
     await loadNovedades();
   } catch (error) {
     toast.error('Error al eliminar la novedad');
+  }
+};
+
+const promptAction = (novedad: Novedad, type: 'APROBADA' | 'RECHAZADA') => {
+  novedadToAction.value = novedad;
+  actionType.value = type;
+  actionComment.value = '';
+  showActionModal.value = true;
+};
+
+const closeActionModal = () => {
+  showActionModal.value = false;
+  novedadToAction.value = null;
+};
+
+const confirmAction = async () => {
+  if (!novedadToAction.value) return;
+  
+  if (actionType.value === 'RECHAZADA' && !actionComment.value.trim()) {
+    toast.error('El motivo del rechazo es obligatorio');
+    return;
+  }
+
+  try {
+    await novedadesService.update(novedadToAction.value.id, {
+      estadoAprobacion: actionType.value,
+      comentarioMovimiento: actionComment.value
+    });
+    toast.success(`Novedad ${actionType.value.toLowerCase()} correctamente`);
+    closeActionModal();
+    await loadNovedades();
+  } catch (error) {
+    toast.error('Error al procesar la acción');
   }
 };
 

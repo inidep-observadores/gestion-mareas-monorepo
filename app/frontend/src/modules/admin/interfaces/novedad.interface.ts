@@ -1,9 +1,10 @@
 import type { Observador } from './observador.interface';
+import type { TipoNovedad } from './tipo-novedad.interface';
 
 export interface Novedad {
   id: string;
   observadorId: string;
-  estadoDisponibilidad: string; // LICEN, FC, RP, ENFERMEDAD, MATERNIDAD, NACIMIENTO, FALLECIMIENTO, EXAMEN, DONACION_SANGRE, VIAJE_INICIO, VIAJE_FIN
+  tipoNovedadId: string;
   fechaInicio: string;
   fechaFin?: string | null;
   permiteUrgencia: boolean;
@@ -14,6 +15,10 @@ export interface Novedad {
   fechaCreacion: string;
   fechaActualizacion: string;
   observador?: Observador;
+  tipoNovedad?: TipoNovedad;
+  metadata?: any;
+  archivos?: any[];
+  movimientos?: any[];
   creadoPor?: {
     id: string;
     email: string;
@@ -23,11 +28,14 @@ export interface Novedad {
 
 export interface CreateNovedadDto {
   observadorId: string;
-  estadoDisponibilidad: string;
+  tipoNovedadId: string;
   fechaInicio: string;
   fechaFin?: string | null;
   permiteUrgencia?: boolean;
   motivo?: string | null;
 }
 
-export interface UpdateNovedadDto extends Partial<CreateNovedadDto> {}
+export interface UpdateNovedadDto extends Partial<CreateNovedadDto> {
+  estadoAprobacion?: 'APROBADA' | 'RECHAZADA' | 'PENDIENTE';
+  comentarioMovimiento?: string;
+}
