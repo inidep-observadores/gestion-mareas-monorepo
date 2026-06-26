@@ -4,6 +4,7 @@
     description="Administración mensual de requerimientos por pesquería y tipo de flota."
   >
     <div class="space-y-6 max-w-7xl mx-auto pb-10">
+      <BackButton routeName="PlanificacionDashboard" label="Regresar al Panel" containerClass="pt-4" />
 
       <!-- Header actions and modes -->
       <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 p-4 lg:p-6 bg-surface rounded-2xl border border-border mt-6">
@@ -217,6 +218,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, watch } from 'vue';
 import PlanificacionDashboardLayout from '../layouts/PlanificacionDashboardLayout.vue';
+import BackButton from '@/components/common/BackButton.vue';
 import BaseSwitch from '@/components/ui/BaseSwitch.vue';
 import { useConfigStore } from '@/modules/shared/stores/config.store';
 import catalogosService from '@/modules/mareas/services/catalogos.service';
