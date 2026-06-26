@@ -9,6 +9,7 @@ import { BackupAutoProcessor } from './processors/backup-auto.processor';
 import { BackupService } from '../admin/backup/backup.service';
 import { PnaTrackingService } from '../pna-api/pna-tracking.service';
 import { PnaApiService } from '../pna-api/pna-api.service';
+import { NovedadesEmailProcessor } from './processors/novedades-email.processor';
 import { DateTime } from 'luxon';
 import * as os from 'os';
 
@@ -27,6 +28,7 @@ export class SchedulerService {
         private readonly backupService: BackupService,
         private readonly pnaTrackingService: PnaTrackingService,
         private readonly pnaApiService: PnaApiService,
+        private readonly novedadesEmailProcessor: NovedadesEmailProcessor,
     ) {
         this.workerId = `${os.hostname()}-${process.pid}`;
     }
@@ -159,6 +161,20 @@ export class SchedulerService {
 
         // 3. Backup automático diario
         await this.handleDailyBackupSchedule(now);
+
+        // 4. Novedades Email
+        const novedadesConfig = await this.getNovedadesSyncConfig();
+        if (novedadesConfig.enabled) {
+            const lastRunKey = 'LAST_NOVEDADES_SYNC_RUN';
+            const lastRunStatus = await this.prisma.systemStatus.findUnique({ where: { key: lastRunKey } });
+            const lastRun = lastRunStatus ? DateTime.fromISO(lastRunStatus.value) : DateTime.fromMillis(0);
+
+            if (now.diff(lastRun, 'minutes').minutes >= novedadesConfig.intervalMinutes) {
+                this.logger.log(`Disparando Sincronización Novedades Email automática (Intervalo: ${novedadesConfig.intervalMinutes} min)`);
+                const scheduled = await this.ensureNovedadesSyncJob();
+                if (scheduled) await this.updateStatusDate(lastRunKey, now);
+            }
+        }
     }
 
     /**
@@ -253,6 +269,28 @@ export class SchedulerService {
         this.logger.log('Configuración de sincronización PNA actualizada.');
     }
 
+    async getNovedadesSyncConfig() {
+        const key = 'NOVEDADES_SYNC_CONFIG';
+        const status = await this.prisma.systemStatus.findUnique({ where: { key } });
+        const defaultConfig = { enabled: true, intervalMinutes: 60 };
+        if (!status?.value) return defaultConfig;
+        try {
+            return JSON.parse(status.value);
+        } catch (e) {
+            return defaultConfig;
+        }
+    }
+
+    async updateNovedadesSyncConfig(config: any) {
+        const key = 'NOVEDADES_SYNC_CONFIG';
+        await this.prisma.systemStatus.upsert({
+            where: { key },
+            update: { value: JSON.stringify(config), lastUpdate: new Date() },
+            create: { key, value: JSON.stringify(config), lastUpdate: new Date() }
+        });
+        this.logger.log('Configuración de sincronización Novedades actualizada.');
+    }
+
     /**
      * Asegura que siempre haya una tarea de sincronización de PNA programada (Llamado interno)
      */
@@ -291,6 +329,30 @@ export class SchedulerService {
                     status: JobStatus.PENDING,
                     nextRunAt: new Date(),
                     priority: isLongSync ? 10 : 20,
+                },
+            });
+            return true;
+        }
+        return false;
+    }
+
+    async ensureNovedadesSyncJob(): Promise<boolean> {
+        const activeJob = await this.prisma.jobQueue.findFirst({
+            where: {
+                type: JobType.NOVEDADES_EMAIL_SYNC,
+                status: { in: [JobStatus.PENDING, JobStatus.PROCESSING] }
+            },
+        });
+
+        if (!activeJob) {
+            this.logger.log(`Programando nueva tarea de Novedades Email...`);
+            await this.prisma.jobQueue.create({
+                data: {
+                    type: JobType.NOVEDADES_EMAIL_SYNC,
+                    payload: {},
+                    status: JobStatus.PENDING,
+                    nextRunAt: new Date(),
+                    priority: 10,
                 },
             });
             return true;
@@ -405,6 +467,8 @@ export class SchedulerService {
                 return await this.pnaTrackingSyncProcessor.process(job.payload);
             case JobType.DAILY_BACKUP:
                 return await this.backupAutoProcessor.process(job.payload);
+            case JobType.NOVEDADES_EMAIL_SYNC:
+                return await this.novedadesEmailProcessor.process(job.payload);
             default:
                 throw new Error(`Unknown job type: ${job.type}`);
         }

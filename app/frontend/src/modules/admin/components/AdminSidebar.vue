@@ -167,6 +167,11 @@ const navigationGroups = [
         name: 'Sincronización PNA',
         path: '/admin/pna-sync',
       },
+      {
+        icon: BellIcon, // Use a similar icon for now
+        name: 'Novedades Email',
+        path: '/admin/novedades-sync',
+      },
     ],
   },
   {

@@ -954,6 +954,7 @@ enum JobType {
   PNA_API_SYNC
   PNA_TRACKING_SYNC
   DAILY_BACKUP
+  NOVEDADES_EMAIL_SYNC
 
   @@schema("public")
 }

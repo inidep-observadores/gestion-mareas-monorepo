@@ -12,7 +12,7 @@ import { PnaApiSyncProcessor } from './processors/pna-api-sync.processor';
 import { PnaTrackingSyncProcessor } from './processors/pna-tracking-sync.processor';
 import { BackupAutoProcessor } from './processors/backup-auto.processor';
 import { BackupModule } from '../admin/backup/backup.module';
-import { NovedadesCronService } from './novedades.cron';
+import { NovedadesEmailProcessor } from './processors/novedades-email.processor';
 
 @Global()
 @Module({
@@ -34,7 +34,7 @@ import { NovedadesCronService } from './novedades.cron';
         BackupAutoProcessor,
         JobQueueService,
         JobQueueStatsService,
-        NovedadesCronService,
+        NovedadesEmailProcessor,
     ],
     exports: [
         SchedulerService,

@@ -423,6 +423,16 @@ const router = createRouter({
         roles: [ValidRoles.admin],
       },
     },
+    {
+      path: '/admin/novedades-sync',
+      name: 'AdminNovedadesSync',
+      component: () => import('@/modules/admin/views/NovedadesSyncDashboardView.vue'),
+      meta: {
+        title: 'Sincronización Novedades',
+        requiresAuth: true,
+        roles: [ValidRoles.admin],
+      },
+    },
     // 404 No encontrado
     {
       path: '/error-servidor',

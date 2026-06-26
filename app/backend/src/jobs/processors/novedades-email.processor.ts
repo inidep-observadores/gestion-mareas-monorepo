@@ -1,14 +1,13 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
-import { PrismaService } from '../prisma/prisma.service';
-import { ImapService } from '../mail/imap.service';
-import { NovedadesAiService } from '../mail/novedades-ai.service';
-import { DriveStorageService } from '../files/drive-storage.service';
+import { PrismaService } from '../../prisma/prisma.service';
+import { ImapService } from '../../mail/imap.service';
+import { NovedadesAiService } from '../../mail/novedades-ai.service';
+import { DriveStorageService } from '../../files/drive-storage.service';
+import { JobProcessor } from '../job-types';
 
 @Injectable()
-export class NovedadesCronService {
-    private readonly logger = new Logger(NovedadesCronService.name);
-    private isProcessing = false;
+export class NovedadesEmailProcessor implements JobProcessor {
+    private readonly logger = new Logger(NovedadesEmailProcessor.name);
 
     constructor(
         private readonly prisma: PrismaService,
@@ -17,10 +16,9 @@ export class NovedadesCronService {
         private readonly driveStorageService: DriveStorageService,
     ) {}
 
-    @Cron(CronExpression.EVERY_HOUR)
-    async processNovedadesEmails() {
-        if (this.isProcessing) return;
-        this.isProcessing = true;
+    async process(payload: any): Promise<any> {
+        let processedCount = 0;
+        let errorsCount = 0;
 
         try {
             await this.imapService.connect();
@@ -50,6 +48,7 @@ export class NovedadesCronService {
 
                     if (!observador) {
                          this.logger.warn(`No se pudo encontrar el observador para el email: ${email.subject}`);
+                         errorsCount++;
                          continue;
                     }
 
@@ -93,16 +92,23 @@ export class NovedadesCronService {
                     }
 
                     await this.imapService.markAsProcessed(email.uid);
+                    processedCount++;
                 } catch (error) {
                     this.logger.error(`Error procesando email ${email.uid}: ${error.message}`);
+                    errorsCount++;
                 }
             }
 
+            return {
+                processed: processedCount,
+                errors: errorsCount,
+                total: emails.length
+            };
         } catch (error) {
-            this.logger.error('Error in processNovedadesEmails cron:', error);
+            this.logger.error('Error in NovedadesEmailProcessor:', error);
+            throw error; // Lanzar para que SchedulerService marque el job como FAILED/retries
         } finally {
             await this.imapService.disconnect();
-            this.isProcessing = false;
         }
     }
 }

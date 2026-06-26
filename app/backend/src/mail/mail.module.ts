@@ -4,6 +4,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MailService } from './mail.service';
 import { ImapService } from './imap.service';
 import { NovedadesAiService } from './novedades-ai.service';
+import { MailController } from './mail.controller';
 
 @Global()
 @Module({
@@ -30,6 +31,7 @@ import { NovedadesAiService } from './novedades-ai.service';
             }),
         }),
     ],
+    controllers: [MailController],
     providers: [MailService, ImapService, NovedadesAiService],
     exports: [MailService, MailerModule, ImapService, NovedadesAiService],
 })
