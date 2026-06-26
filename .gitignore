@@ -42,6 +42,8 @@ app/backend/data-exports/
 app/backend/uploads/
 app/backend/outputs/
 app/backend/test-results/
+app/backend/old_data/
+app/backend/google-credentials.json
 
 
 # **Prisma**
