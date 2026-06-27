@@ -66,6 +66,8 @@ const jobTypeLabels: Record<string, string> = {
     'PNA_API_SYNC': 'Sincro PNA (Eventos)',
     'PNA_TRACKING_SYNC': 'Sincro Tracking',
     'TRAJECTORY_SYNC': 'Sincro Trayectorias',
+    'DAILY_BACKUP': 'Resguardo Diario',
+    'NOVEDADES_EMAIL_SYNC': 'Sincro Novedades Email',
 };
 
 const loadData = async () => {
