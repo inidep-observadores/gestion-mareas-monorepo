@@ -201,6 +201,7 @@ watch(() => props.refreshTrigger, loadJobs);
                     <option value="VESSEL_SYNC">Sincro Buques</option>
                     <option value="PNA_API_SYNC">Sincro PNA (Alertas)</option>
                     <option value="PNA_TRACKING_SYNC">Sincro Tracking</option>
+                    <option value="NOVEDADES_EMAIL_SYNC">Sincro Novedades Email</option>
                 </select>
             </div>
 
