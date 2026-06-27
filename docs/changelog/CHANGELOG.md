@@ -5,6 +5,9 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 
 ## [Unreleased]
 
+### Added
+- **backend:** añadir scripts de prueba de IMAP `test-imap-label.js` y `test-imap-list.js` para validación de lectura, límite personalizable, recuento de adjuntos y etiquetado de emails en el servidor de correo.
+
 ## [v0.9.0] - 2026-06-25
 
 ### Added

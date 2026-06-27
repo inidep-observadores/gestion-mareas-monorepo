@@ -35,6 +35,8 @@
     "validate:pna:2025": "ts-node src/pna-api/scripts/validate-pna-2025.ts",
     "validate:pna:2026": "ts-node src/pna-api/scripts/validate-pna-2026.ts",
     "migrate:metadata": "ts-node -r tsconfig-paths/register src/scripts/backfill-protocolizacion-metadata.ts",
+    "test:email-label": "node test-imap-label.js",
+    "test:email-list": "node test-imap-list.js",
     "prisma:studio": "pnpm prisma studio"
   },
   "dependencies": {
