@@ -27,7 +27,18 @@ export class NovedadesEmailProcessor implements JobProcessor {
             
             for (const email of emails) {
                 try {
-                    const extracted = await this.novedadesAiService.procesarNovedad(email.text || email.subject || '');
+                    let mainAttachment;
+                    if (email.attachments && email.attachments.length > 0) {
+                        mainAttachment = {
+                            buffer: email.attachments[0].content,
+                            mimetype: email.attachments[0].contentType || 'application/pdf'
+                        };
+                    }
+                    
+                    const extracted = await this.novedadesAiService.procesarNovedad(
+                        email.text || email.subject || '', 
+                        mainAttachment
+                    );
                     
                     let observador = null;
                     if (extracted.cuil) {
@@ -114,6 +125,9 @@ export class NovedadesEmailProcessor implements JobProcessor {
                     this.logger.error(`Error procesando email ${email.uid}: ${error.message}`);
                     errorsCount++;
                 }
+                
+                // Delay de 15 segundos entre correos para evitar saturar la cuota de la API (Gemini Free Tier Rate Limit)
+                await new Promise(resolve => setTimeout(resolve, 15000));
             }
 
             return {
