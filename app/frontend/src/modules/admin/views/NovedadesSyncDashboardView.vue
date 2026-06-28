@@ -30,9 +30,25 @@
                 <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
               </label>
             </div>
-            <div class="flex flex-col gap-3">
+            <div class="flex flex-col gap-4">
+              <!-- Selector de Modo -->
               <div class="flex items-center gap-3">
-                <span class="text-xs font-semibold text-text-muted uppercase w-32">Intervalo de chequeo:</span>
+                <span class="text-xs font-semibold text-text-muted uppercase w-32">Modo de ejecución:</span>
+                <div class="flex items-center gap-4">
+                  <label class="flex items-center gap-2 text-sm text-text cursor-pointer">
+                    <input type="radio" v-model="config.mode" value="periodic" class="radio radio-primary radio-sm">
+                    Periódico
+                  </label>
+                  <label class="flex items-center gap-2 text-sm text-text cursor-pointer">
+                    <input type="radio" v-model="config.mode" value="daily" class="radio radio-primary radio-sm">
+                    Diario (Hora Fija)
+                  </label>
+                </div>
+              </div>
+
+              <!-- Input condicional para Periódico -->
+              <div v-if="config.mode === 'periodic'" class="flex items-center gap-3">
+                <span class="text-xs font-semibold text-text-muted uppercase w-32">Intervalo:</span>
                 <div class="flex items-center gap-2">
                   <input 
                     type="number" 
@@ -41,6 +57,19 @@
                     min="5"
                   />
                   <span class="text-sm text-text-muted">minutos</span>
+                </div>
+              </div>
+
+              <!-- Input condicional para Diario -->
+              <div v-if="config.mode === 'daily'" class="flex items-center gap-3">
+                <span class="text-xs font-semibold text-text-muted uppercase w-32">Hora de ejecución:</span>
+                <div class="flex items-center gap-2">
+                  <input 
+                    type="time" 
+                    v-model="config.hour"
+                    class="bg-surface border border-border rounded px-3 py-1 text-sm font-bold text-center outline-none focus:ring-1 focus:ring-primary"
+                  />
+                  <span class="text-xs text-text-muted">(Hora local Argentina)</span>
                 </div>
               </div>
             </div>
@@ -108,7 +137,9 @@ import MailIcon from '@/icons/MailIcon.vue' // Asegúrate de que exista o usar u
 
 const config = reactive({
   enabled: true,
-  intervalMinutes: 60
+  mode: 'periodic',
+  intervalMinutes: 60,
+  hour: '14:00'
 })
 
 const isSaving = ref(false)
@@ -127,8 +158,13 @@ const loadConfig = async () => {
 
 // Guardar configuración
 const saveConfig = async () => {
-  if (config.intervalMinutes < 5) {
-    toast.error('Error: El intervalo mínimo es 5 minutos para evitar baneos de IMAP.')
+  if (config.mode === 'periodic' && (!config.intervalMinutes || config.intervalMinutes < 5)) {
+    toast.error('Error: El intervalo mínimo es 5 minutos para evitar bloqueos del servidor IMAP.')
+    return
+  }
+
+  if (config.mode === 'daily' && !config.hour) {
+    toast.error('Error: Debe especificar una hora de ejecución válida.')
     return
   }
 

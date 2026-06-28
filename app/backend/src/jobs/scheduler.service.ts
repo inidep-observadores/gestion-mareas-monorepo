@@ -169,10 +169,34 @@ export class SchedulerService {
             const lastRunStatus = await this.prisma.systemStatus.findUnique({ where: { key: lastRunKey } });
             const lastRun = lastRunStatus ? DateTime.fromISO(lastRunStatus.value) : DateTime.fromMillis(0);
 
-            if (now.diff(lastRun, 'minutes').minutes >= novedadesConfig.intervalMinutes) {
-                this.logger.log(`Disparando Sincronización Novedades Email automática (Intervalo: ${novedadesConfig.intervalMinutes} min)`);
-                const scheduled = await this.ensureNovedadesSyncJob();
-                if (scheduled) await this.updateStatusDate(lastRunKey, now);
+            if (novedadesConfig.mode === 'daily') {
+                // Modo diario (hora local de Argentina)
+                const nowLocal = now.setZone('America/Argentina/Buenos_Aires');
+                const [configHour, configMinute] = (novedadesConfig.hour || '14:00').split(':').map(Number);
+                const scheduledTime = nowLocal.set({ hour: configHour, minute: configMinute, second: 0, millisecond: 0 });
+
+                // Si ya pasó la hora configurada hoy
+                if (nowLocal >= scheduledTime) {
+                    const startOfDay = nowLocal.startOf('day');
+                    // Y no se ha ejecutado hoy
+                    if (lastRun < startOfDay) {
+                        this.logger.log(`Disparando Sincronización Novedades Email diaria automática (Hora local programada: ${novedadesConfig.hour || '14:00'})`);
+                        const scheduled = await this.ensureNovedadesSyncJob();
+                        if (scheduled) {
+                            await this.updateStatusDate(lastRunKey, now);
+                        }
+                    }
+                }
+            } else {
+                // Modo periódico (intervalo por minutos) - default
+                const interval = novedadesConfig.intervalMinutes || 60;
+                if (now.diff(lastRun, 'minutes').minutes >= interval) {
+                    this.logger.log(`Disparando Sincronización Novedades Email automática (Intervalo: ${interval} min)`);
+                    const scheduled = await this.ensureNovedadesSyncJob();
+                    if (scheduled) {
+                        await this.updateStatusDate(lastRunKey, now);
+                    }
+                }
             }
         }
     }
@@ -272,10 +296,22 @@ export class SchedulerService {
     async getNovedadesSyncConfig() {
         const key = 'NOVEDADES_SYNC_CONFIG';
         const status = await this.prisma.systemStatus.findUnique({ where: { key } });
-        const defaultConfig = { enabled: true, intervalMinutes: 60 };
+        const defaultConfig = { 
+            enabled: true, 
+            mode: 'periodic', 
+            intervalMinutes: 60,
+            hour: '14:00'
+        };
         if (!status?.value) return defaultConfig;
         try {
-            return JSON.parse(status.value);
+            const parsed = JSON.parse(status.value);
+            // Asegurar retrocompatibilidad con campos faltantes
+            return {
+                enabled: parsed.enabled ?? defaultConfig.enabled,
+                mode: parsed.mode ?? defaultConfig.mode,
+                intervalMinutes: parsed.intervalMinutes ?? defaultConfig.intervalMinutes,
+                hour: parsed.hour ?? defaultConfig.hour,
+            };
         } catch (e) {
             return defaultConfig;
         }
