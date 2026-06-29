@@ -8,6 +8,25 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 ### Added
 - **backend:** añadir scripts de prueba de IMAP `test-imap-label.js` y `test-imap-list.js` para validación de lectura, límite personalizable, recuento de adjuntos y etiquetado de emails en el servidor de correo.
 
+## [v0.10.0] - 2026-06-29
+
+### Added
+- **protocolizacion:** refactorizar vista a diseño responsivo de lista/tarjetas, remover columna Estado redundante y añadir búsqueda universal por marea, buque, observador y pesquería.
+- **frontend:** agregar NOVEDADES_EMAIL_SYNC a los filtros de JobQueueTable
+- **mail:** implementar enrutamiento local y extraccion estructurada con Gemini 3.1
+- migración y catálogo de novedades, corrección IMAP
+- **ui:** add back button to planificacion sub-views
+- **ui:** add back button to observadores sub-views
+- **presentismo:** integrar novedades email con job queue scheduler y panel de administración
+
+### Fixed
+- **frontend:** mapear DAILY_BACKUP y NOVEDADES_EMAIL_SYNC a etiquetas descriptivas en el grafico de rendimiento
+- **backend:** agregar mailparser a dependencias
+- **backend:** agregar dependencia imapflow faltante
+
+### Refactored
+- **novedades:** actualizar programador de tareas y vista de sincronizacion en dashboard de novedades
+
 ## [v0.9.0] - 2026-06-25
 
 ### Added
