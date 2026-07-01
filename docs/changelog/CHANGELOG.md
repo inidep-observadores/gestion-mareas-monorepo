@@ -6,6 +6,7 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 ## [Unreleased]
 
 ### Added
+- **protocolizacion:** añadir filtros por año de origen (actual, anterior y otros años) en pestaña "Esperando confirmación" y adaptar paleta de colores semánticos
 - **backend:** añadir scripts de prueba de IMAP `test-imap-label.js` y `test-imap-list.js` para validación de lectura, límite personalizable, recuento de adjuntos y etiquetado de emails en el servidor de correo.
 
 ## [v0.10.0] - 2026-06-29

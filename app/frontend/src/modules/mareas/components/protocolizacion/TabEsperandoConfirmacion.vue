@@ -1,12 +1,50 @@
 <template>
   <div class="space-y-6">
     
-    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+    <div class="flex flex-col xl:flex-row xl:items-center justify-between gap-4 mb-4">
       <div>
         <h2 class="text-sm font-black uppercase tracking-widest text-text">Mareas Enviadas a Protocolizar</h2>
         <p class="text-xs text-text-muted">Aguardando la confirmación de fecha, número y año por parte de la autoridad.</p>
       </div>
-      <div class="flex items-center gap-4">
+      <div class="flex flex-col md:flex-row flex-wrap md:items-center gap-4">
+        <!-- Filtros por Año -->
+        <div class="flex flex-wrap items-center gap-3">
+          <span class="text-[10px] font-black uppercase tracking-widest text-text-muted">
+            Filtrar por año de origen:
+          </span>
+          <div class="flex flex-wrap items-center gap-2">
+            <button 
+                @click="showOlderYears = !showOlderYears"
+                class="flex items-center gap-2 px-4 py-2 rounded-full border transition-all duration-300 active:scale-95 group relative overflow-hidden"
+                :class="!showOlderYears ? 'bg-surface-muted/30 border-border text-text-muted/60' : 'bg-surface shadow-sm hover:shadow-md border-primary/30'"
+            >
+                <div class="w-1.5 h-1.5 rounded-full transition-all duration-300" :class="!showOlderYears ? 'bg-border' : 'bg-primary'"></div>
+                <span class="text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-colors" :class="!showOlderYears ? 'text-text-muted/60' : 'text-text'">
+                    Otros años anteriores
+                </span>
+            </button>
+            <button 
+                @click="showPreviousYear = !showPreviousYear"
+                class="flex items-center gap-2 px-4 py-2 rounded-full border transition-all duration-300 active:scale-95 group relative overflow-hidden"
+                :class="!showPreviousYear ? 'bg-surface-muted/30 border-border text-text-muted/60' : 'bg-surface shadow-sm hover:shadow-md border-primary/30'"
+            >
+                <div class="w-1.5 h-1.5 rounded-full transition-all duration-300" :class="!showPreviousYear ? 'bg-border' : 'bg-primary'"></div>
+                <span class="text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-colors" :class="!showPreviousYear ? 'text-text-muted/60' : 'text-text'">
+                    Año anterior
+                </span>
+            </button>
+            <button 
+                @click="showCurrentYear = !showCurrentYear"
+                class="flex items-center gap-2 px-4 py-2 rounded-full border transition-all duration-300 active:scale-95 group relative overflow-hidden"
+                :class="!showCurrentYear ? 'bg-surface-muted/30 border-border text-text-muted/60' : 'bg-surface shadow-sm hover:shadow-md border-primary/30'"
+            >
+                <div class="w-1.5 h-1.5 rounded-full transition-all duration-300" :class="!showCurrentYear ? 'bg-border' : 'bg-primary'"></div>
+                <span class="text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-colors" :class="!showCurrentYear ? 'text-text-muted/60' : 'text-text'">
+                    Año actual
+                </span>
+            </button>
+          </div>
+        </div>
         <SearchInput v-model="searchQuery" class="w-full md:w-64" placeholder="Buscar marea, buque, observador..." />
       </div>
     </div>
@@ -18,7 +56,8 @@
         <div 
           v-for="marea in filteredAndSortedMareas" 
         :key="marea.id"
-        class="bg-surface border border-border rounded-2xl p-5 shadow-sm space-y-4 hover:shadow-md transition-shadow"
+        class="border rounded-2xl p-5 shadow-sm space-y-4 hover:shadow-md transition-all"
+        :class="isOlderYear(marea) ? 'bg-red-50/50 border-red-200/50 dark:bg-red-900/10 dark:border-red-700/30' : isPreviousYear(marea) ? 'bg-amber-50/50 border-amber-200/50 dark:bg-amber-900/10 dark:border-amber-700/30' : 'bg-surface border-border'"
       >
         <div class="flex flex-col h-full">
           <!-- Top Row -->
@@ -101,7 +140,12 @@
             </tr>
           </thead>
           <tbody class="divide-y divide-border">
-            <tr v-for="marea in filteredAndSortedMareas" :key="marea.id" class="group odd:bg-surface-muted/30 hover:bg-primary/5 transition-all">
+            <tr 
+              v-for="marea in filteredAndSortedMareas" 
+              :key="marea.id" 
+              class="group transition-all"
+              :class="isOlderYear(marea) ? 'bg-red-50/50 dark:bg-red-900/10 hover:bg-red-100/50 dark:hover:bg-red-900/20' : isPreviousYear(marea) ? 'bg-amber-50/50 dark:bg-amber-900/10 hover:bg-amber-100/50 dark:hover:bg-amber-900/20' : 'odd:bg-surface-muted/30 hover:bg-primary/5'"
+            >
               <td class="px-5 py-3">
                 <span class="text-[11px] font-mono font-bold text-text-muted uppercase leading-none">{{ formatMareaCode(marea) }}</span>
               </td>
@@ -176,6 +220,12 @@ import mareasService from '../../services/mareas.service'
 import { toast } from 'vue-sonner'
 import { ShipIcon, ChevronDownIcon } from '@/icons'
 import SearchInput from '@/components/ui/SearchInput.vue'
+import { useConfigStore } from '@/modules/shared/stores/config.store'
+
+const configStore = useConfigStore()
+const showOlderYears = ref(false)
+const showPreviousYear = ref(true)
+const showCurrentYear = ref(true)
 
 const props = defineProps<{
   mareas: any[]
@@ -200,8 +250,26 @@ const toggleSort = (key: string) => {
   }
 }
 
+const isPreviousYear = (marea: any) => {
+  const anio = Number(marea.anio_marea || marea.anioMarea || 0)
+  return anio === configStore.selectedYear - 1
+}
+
+const isOlderYear = (marea: any) => {
+  const anio = Number(marea.anio_marea || marea.anioMarea || 0)
+  return anio > 0 && anio < configStore.selectedYear - 1
+}
+
 const filteredAndSortedMareas = computed(() => {
   let list = [...props.mareas]
+
+  list = list.filter(m => {
+    const anio = Number(m.anio_marea || m.anioMarea || 0)
+    if (anio === configStore.selectedYear && !showCurrentYear.value) return false
+    if (anio === configStore.selectedYear - 1 && !showPreviousYear.value) return false
+    if (anio > 0 && anio < configStore.selectedYear - 1 && !showOlderYears.value) return false
+    return true
+  })
 
   if (searchQuery.value) {
     const q = searchQuery.value.toLowerCase()
