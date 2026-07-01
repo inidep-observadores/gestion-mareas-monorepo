@@ -141,6 +141,13 @@
         </div>
       </div>
       </div>
+      
+      <!-- Totales (Mobile) -->
+      <div class="mt-4 p-4 bg-surface-muted border border-border rounded-xl text-center shadow-sm xl:hidden">
+        <span class="text-[11px] font-black uppercase tracking-widest text-text-muted">
+          Total Mareas: <span class="text-text">{{ filteredAndSortedMareas.length }}</span>
+        </span>
+      </div>
 
       <!-- VISTA ESCRITORIO: TABLA -->
       <div class="hidden xl:block overflow-x-auto bg-surface border border-border rounded-2xl shadow-sm mt-4">
@@ -260,6 +267,13 @@
               </td>
             </tr>
           </tbody>
+          <tfoot class="bg-surface-muted/30 border-t border-border">
+            <tr>
+              <td colspan="6" class="px-5 py-3 text-[11px] font-black uppercase tracking-widest text-text-muted text-right">
+                Total Mareas: <span class="text-text">{{ filteredAndSortedMareas.length }}</span>
+              </td>
+            </tr>
+          </tfoot>
         </table>
       </div>
     </div>
@@ -311,7 +325,7 @@ const props = defineProps<{
   mareas: any[]
 }>()
 
-const emit = defineEmits(['refresh'])
+const emit = defineEmits(['refresh', 'update:count'])
 
 const selectedMareaIds = ref<string[]>([])
 const files = ref<Record<string, File>>({})
@@ -324,6 +338,8 @@ const idsToProcessFinal = ref<string[]>([])
 const searchQuery = ref('')
 const sortBy = ref('marea')
 const sortOrder = ref<'asc'|'desc'>('desc')
+
+import { watch } from 'vue'
 
 const formatMareaCode = (marea: any) => {
   const tipo = marea.tipo_marea || marea.tipoMarea || 'MC'
@@ -441,6 +457,10 @@ const processingFiles = computed(() => {
     })
     return subset
 })
+
+watch(() => filteredAndSortedMareas.value.length, (newVal) => {
+  emit('update:count', newVal)
+}, { immediate: true })
 
 const enviarSeleccionadas = async () => {
     if (selectedMareaIds.value.length === 0) return

@@ -3369,7 +3369,24 @@ export class MareasService {
         };
 
         if (anio && codigoEstado === MareaEstado.PROTOCOLIZADA) {
-            where.anioMarea = Number(anio);
+            const operationalYear = Number(anio);
+            const startOfYear = new Date(operationalYear, 0, 1);
+            const startOfNextYear = new Date(operationalYear + 1, 0, 1);
+
+            where.OR = [
+                { anioMarea: operationalYear },
+                {
+                    anioMarea: operationalYear - 1,
+                    etapas: {
+                        some: {
+                            fechaArribo: {
+                                gte: startOfYear,
+                                lt: startOfNextYear
+                            }
+                        }
+                    }
+                }
+            ];
         }
 
         return this.prisma.marea.findMany({

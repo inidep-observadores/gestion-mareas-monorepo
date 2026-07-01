@@ -40,29 +40,33 @@
       <div v-else>
         <!-- Tab Pendientes Envío -->
         <TabPendientesEnvio
-          v-if="activeTab === 'pendientes'"
+          v-show="activeTab === 'pendientes'"
           :mareas="mareasPendientes"
           @refresh="loadMareas"
+          @update:count="counts.pendientes = $event"
         />
 
         <!-- Tab Esperando Confirmación -->
         <TabEsperandoConfirmacion 
-          v-if="activeTab === 'esperando'" 
+          v-show="activeTab === 'esperando'" 
           :mareas="mareasEsperando"
           @refresh="loadMareas"
+          @update:count="counts.esperando = $event"
         />
 
         <!-- Tab Mareas Protocolizadas -->
         <TabMareasProtocolizadas
-          v-if="activeTab === 'protocolizadas'"
+          v-show="activeTab === 'protocolizadas'"
           :mareas="mareasCompletas"
+          @update:count="counts.protocolizadas = $event"
         />
 
         <!-- Tab Historial de Envíos -->
         <TabHistorialProtocolizacion
-          v-if="activeTab === 'historial'"
+          v-show="activeTab === 'historial'"
           :lotes="mareasLotes"
           @refresh="loadMareas"
+          @update:count="counts.historial = $event"
         />
       </div>
 
@@ -93,6 +97,13 @@ const mareasLotes = ref<any[]>([])
 
 const activeTab = ref('pendientes')
 
+const counts = ref<Record<string, number>>({
+  pendientes: 0,
+  esperando: 0,
+  protocolizadas: 0,
+  historial: 0
+})
+
 const tabs = [
   { id: 'pendientes', label: 'Pendientes de Envío' },
   { id: 'esperando', label: 'Esperando Confirmación' },
@@ -101,11 +112,7 @@ const tabs = [
 ]
 
 const getCount = (tabId: string) => {
-  if (tabId === 'esperando') return mareasEsperando.value.length
-  if (tabId === 'pendientes') return mareasPendientes.value.length
-  if (tabId === 'protocolizadas') return mareasCompletas.value.length
-  if (tabId === 'historial') return mareasLotes.value.length
-  return 0
+  return counts.value[tabId] || 0
 }
 
 const sortMareas = (list: any[]) => {
