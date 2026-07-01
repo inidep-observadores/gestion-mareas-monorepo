@@ -1020,8 +1020,8 @@ model ObservadorNovedad {
   id               String    @id @default(uuid()) @db.Uuid
   observadorId     String    @map("id_observador") @db.Uuid
   tipoNovedadId    String    @map("id_tipo_novedad") @db.Uuid
-  fechaInicio      DateTime  @map("fecha_inicio") @db.Date
-  fechaFin         DateTime? @map("fecha_fin") @db.Date
+  fechaInicio      DateTime  @map("fecha_inicio") @db.Timestamptz(6)
+  fechaFin         DateTime? @map("fecha_fin") @db.Timestamptz(6)
   permiteUrgencia  Boolean   @default(false) @map("permite_urgencia")
   motivo           String?
   estadoAprobacion String    @default("APROBADA") @map("estado_aprobacion") // APROBADA, PENDIENTE, RECHAZADA
