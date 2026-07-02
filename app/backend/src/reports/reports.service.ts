@@ -193,7 +193,21 @@ export class ReportsService {
                     }
                 }
                 
-                annexData = { quarters, fisheries: fisheriesData, activeFisheries };
+                const qStats = await this.statsService.getAuditAnnexStats(
+                    year,
+                    selectedQuarter,
+                    includeCampaigns,
+                    snapDate
+                );
+                
+                annexData = {
+                    quarters,
+                    fisheries: fisheriesData,
+                    activeFisheries,
+                    mareaStates: qStats.mareaStates,
+                    protocolizationStates: qStats.protocolizationStates,
+                    finalizedDetails: qStats.finalizedDetails
+                };
             }
         }
 

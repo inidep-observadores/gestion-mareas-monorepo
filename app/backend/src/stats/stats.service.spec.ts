@@ -478,4 +478,59 @@ describe('StatsService', () => {
             expect((statusCell.fill as any).fgColor?.argb).toBe('E0F2FE');
         });
     });
+
+    describe('getAuditAnnexStats', () => {
+        it('should correctly count finalizadas and canceladas across quarters', async () => {
+            const year = 2024;
+
+            mockPrisma.marea.findMany.mockResolvedValue([
+                {
+                    id: 'm1',
+                    anioMarea: year,
+                    nroMarea: 1,
+                    tipoMarea: 'MC',
+                    buque: { nombreBuque: 'Barco Test' },
+                    observadorPrincipal: { nombre: 'Juan', apellido: 'Perez' },
+                    fechaProtocolizacion: new Date('2024-02-20'),
+                    etapas: [
+                        {
+                            nroEtapa: 1,
+                            fechaZarpada: new Date('2024-01-05'),
+                            fechaArribo: new Date('2024-02-15'), // Finalizada en Q1
+                        }
+                    ],
+                    estadoActual: { codigo: 'PROTOCOLIZADA' },
+                    movimientos: []
+                },
+                {
+                    id: 'm2',
+                    anioMarea: year,
+                    nroMarea: 2,
+                    tipoMarea: 'MC',
+                    etapas: [],
+                    estadoActual: { codigo: 'CANCELADA' },
+                    movimientos: [
+                        {
+                            fechaHora: new Date('2024-04-10'), // Cancelada en Q2
+                            estadoHasta: { codigo: 'CANCELADA' }
+                        }
+                    ]
+                }
+            ]);
+
+            const result = await service.getAuditAnnexStats(year, 2, true);
+
+            expect(result.mareaStates.finalizadas).toEqual([1, 0]);
+            expect(result.mareaStates.canceladas).toEqual([0, 1]);
+            
+            // Check finalizedDetails structure
+            expect(result.finalizedDetails).toHaveLength(2);
+            expect(result.finalizedDetails[0]).toHaveLength(1);
+            expect(result.finalizedDetails[0][0].identificacion).toBe('MC-1-24 - Barco Test - Perez J.');
+            expect(result.finalizedDetails[0][0].protocolizada).toBe(true);
+            expect(result.finalizedDetails[0][0].enviada).toBe(false);
+            expect(result.finalizedDetails[0][0].derivada).toBe(false);
+            expect(result.finalizedDetails[1]).toHaveLength(0);
+        });
+    });
 });

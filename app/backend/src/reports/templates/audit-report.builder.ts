@@ -134,6 +134,23 @@ export interface AuditReportData {
         quarters: number[];
         fisheries: Record<string, number[]>; // FisheryName -> array of days mapped to quarters index
         activeFisheries: string[]; // List of all active fisheries in the year
+        mareaStates: {
+            finalizadas: number[];
+            canceladas: number[];
+        };
+        protocolizationStates: {
+            enEspera: number[];
+            enviadas: number[];
+            protocolizadas: number[];
+        };
+        finalizedDetails: Array<Array<{
+            id: string;
+            identificacion: string;
+            derivada: boolean;
+            enviada: boolean;
+            protocolizada: boolean;
+            orderPriority: number;
+        }>>;
     };
 
     /** Detalle de cada marea */
@@ -1371,6 +1388,9 @@ export class AuditReportBuilder {
     }
 
     private buildAnnexTable(annexData: NonNullable<AuditReportData['annexData']>): (Paragraph | Table)[] {
+        const result: (Paragraph | Table)[] = [];
+        
+        // 1. Tabla de Esfuerzo por Pesquería
         const headers = ['PESQUERÍA'];
         const numToOrdinal = ['Primer', 'Segundo', 'Tercer', 'Cuarto'];
         
@@ -1398,12 +1418,114 @@ export class AuditReportBuilder {
             alignments.push(AlignmentType.CENTER);
         }
 
-        return [
+        result.push(
             createFormattedTable(headers, rows, {
                 columnWidths,
                 alignments
             })
-        ];
+        );
+
+        // 2. Tabla de Mareas según Estado
+        if (annexData.mareaStates) {
+            result.push(
+                this.heading2('Recuento de mareas según estado por trimestre'),
+                createFormattedTable(
+                    ['Estado de marea', ...annexData.quarters.map(q => `${numToOrdinal[q - 1]} trimestre`)],
+                    [
+                        [
+                            'FINALIZADAS',
+                            ...annexData.mareaStates.finalizadas.map(val => val.toString())
+                        ],
+                        [
+                            'CANCELADAS',
+                            ...annexData.mareaStates.canceladas.map(val => val.toString())
+                        ]
+                    ],
+                    {
+                        columnWidths: [40, ...new Array(annexData.quarters.length).fill(remainingWidth)],
+                        alignments: [AlignmentType.LEFT, ...new Array(annexData.quarters.length).fill(AlignmentType.CENTER)]
+                    }
+                )
+            );
+        }
+
+        // 3. Tabla de Mareas según Estado de Protocolización
+        if (annexData.protocolizationStates) {
+            result.push(
+                this.heading2('Recuento de mareas según estado de protocolización'),
+                createFormattedTable(
+                    ['Estado de marea', ...annexData.quarters.map(q => `${numToOrdinal[q - 1]} trimestre`)],
+                    [
+                        [
+                            'EN ESPERA (PROGRAMAS EXTERNOS)',
+                            ...annexData.protocolizationStates.enEspera.map(val => val.toString())
+                        ],
+                        [
+                            'ENVIADAS A PROTOCOLIZAR',
+                            ...annexData.protocolizationStates.enviadas.map(val => val.toString())
+                        ],
+                        [
+                            'PROTOCOLIZADAS',
+                            ...annexData.protocolizationStates.protocolizadas.map(val => val.toString())
+                        ]
+                    ],
+                    {
+                        columnWidths: [40, ...new Array(annexData.quarters.length).fill(remainingWidth)],
+                        alignments: [AlignmentType.LEFT, ...new Array(annexData.quarters.length).fill(AlignmentType.CENTER)]
+                    }
+                )
+            );
+        }
+
+        // 4. Tabla de Detalle de Mareas Finalizadas
+        if (annexData.finalizedDetails) {
+            for (let q = 1; q <= annexData.quarters.length; q++) {
+                const mareasTrimestre = annexData.finalizedDetails[q - 1];
+                if (!mareasTrimestre) continue;
+
+                result.push(
+                    this.heading2(`Detalle de mareas finalizadas según estado – ${numToOrdinal[q - 1]} trimestre`)
+                );
+
+                if (mareasTrimestre.length === 0) {
+                    result.push(
+                        new Paragraph({
+                            spacing: { after: SPACING.afterParagraph },
+                            children: [
+                                new TextRun({ text: 'Sin mareas finalizadas en este trimestre', italics: true, color: '666666' })
+                            ],
+                            alignment: AlignmentType.CENTER
+                        })
+                    );
+                } else {
+                    const detailHeaders = ['Marea', 'Derivada', 'Enviada', 'Protocolizada'];
+                    const detailRows = mareasTrimestre.map(m => {
+                        return {
+                            data: [
+                                m.identificacion,
+                                m.derivada ? '✓' : '',
+                                m.enviada ? '✓' : '',
+                                m.protocolizada ? '✓' : ''
+                            ],
+                            highlighted: m.derivada
+                        };
+                    });
+
+                    result.push(
+                        createFormattedTable(
+                            detailHeaders,
+                            detailRows,
+                            {
+                                columnWidths: [55, 15, 15, 15],
+                                alignments: [AlignmentType.LEFT, AlignmentType.CENTER, AlignmentType.CENTER, AlignmentType.CENTER]
+                            }
+                        )
+                    );
+                }
+            }
+        }
+
+        return result;
     }
 
     // ─────────────────────────────────────────────────────────────
