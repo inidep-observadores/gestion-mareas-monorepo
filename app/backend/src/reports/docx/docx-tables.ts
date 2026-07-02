@@ -195,6 +195,7 @@ export function createFormattedTable(
     return new Table({
         width: { size: 100, type: WidthType.PERCENTAGE },
         layout: TableLayoutType.FIXED,
+        columnWidths: columnWidths ? columnWidths.map(pct => Math.round((pct / 100) * 9000)) : undefined,
         rows: tableRows,
         borders: {
             top: borderStyle,
