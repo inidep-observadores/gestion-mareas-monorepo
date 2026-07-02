@@ -3453,7 +3453,7 @@ export class StatsService {
 
         if (!selectedQuarter || selectedQuarter < 2) return;
 
-        const sheet = workbook.addWorksheet('Anexo');
+        const sheet = workbook.addWorksheet('Anexo I');
 
         // Titulo
         const numCols = selectedQuarter + 1;
@@ -3669,19 +3669,33 @@ export class StatsService {
             }
         }
 
-        // ─── TABLA 4: DETALLE DE MAREAS FINALIZADAS ───
+        // ─── ANEXO II: DETALLE DE PROTOCOLIZACIÓN TRIMESTRAL ───
         if (annexStats.finalizedDetails) {
+            const sheet2 = workbook.addWorksheet('Anexo II');
+            
+            // Configurar columnas Anexo II
+            sheet2.getColumn(1).width = 45; // Marea
+            sheet2.getColumn(2).width = 15; // Derivada
+            sheet2.getColumn(3).width = 15; // Enviada
+            sheet2.getColumn(4).width = 15; // Protocolizada
+
+            const titleCell2 = sheet2.getCell(1, 1);
+            sheet2.mergeCells(1, 1, 1, 4);
+            titleCell2.value = 'ANEXO 2: DETALLE DE PROTOCOLIZACIÓN TRIMESTRAL';
+            titleCell2.font = { bold: true, size: 14 };
+            titleCell2.alignment = { horizontal: 'center' };
+
+            let currentSheet2Row = 3;
+
             for (let q = 1; q <= selectedQuarter; q++) {
-                currentRow += 3; // Dejar 3 filas en blanco
-                
-                sheet.mergeCells(currentRow, 1, currentRow, 4);
-                const title4Cell = sheet.getCell(currentRow, 1);
+                sheet2.mergeCells(currentSheet2Row, 1, currentSheet2Row, 4);
+                const title4Cell = sheet2.getCell(currentSheet2Row, 1);
                 title4Cell.value = `Detalle de mareas finalizadas según estado – ${numToOrdinal[q - 1]} trimestre`;
                 title4Cell.font = { bold: true, size: 12 };
                 title4Cell.alignment = { horizontal: 'left' };
-                currentRow++;
+                currentSheet2Row++;
 
-                const header4Row = sheet.getRow(currentRow);
+                const header4Row = sheet2.getRow(currentSheet2Row);
                 const detailHeaders = ['Marea', 'Derivada', 'Enviada', 'Protocolizada'];
                 detailHeaders.forEach((h, i) => {
                     const cell = header4Row.getCell(i + 1);
@@ -3691,20 +3705,20 @@ export class StatsService {
                     cell.alignment = { horizontal: 'center' };
                 });
                 
-                const table4StartRow = currentRow;
-                currentRow++;
+                const table4StartRow = currentSheet2Row;
+                currentSheet2Row++;
 
                 const mareasTrimestre = annexStats.finalizedDetails[q - 1];
                 if (!mareasTrimestre || mareasTrimestre.length === 0) {
-                    sheet.mergeCells(currentRow, 1, currentRow, 4);
-                    const emptyCell = sheet.getCell(currentRow, 1);
+                    sheet2.mergeCells(currentSheet2Row, 1, currentSheet2Row, 4);
+                    const emptyCell = sheet2.getCell(currentSheet2Row, 1);
                     emptyCell.value = 'Sin mareas finalizadas en este trimestre';
                     emptyCell.alignment = { horizontal: 'center' };
                     emptyCell.font = { italic: true, color: { argb: 'FF666666' } };
-                    currentRow++;
+                    currentSheet2Row++;
                 } else {
                     mareasTrimestre.forEach(m => {
-                        const row = sheet.getRow(currentRow);
+                        const row = sheet2.getRow(currentSheet2Row);
                         row.getCell(1).value = m.identificacion;
                         row.getCell(2).value = m.derivada ? '✓' : '';
                         row.getCell(3).value = m.enviada ? '✓' : '';
@@ -3719,14 +3733,14 @@ export class StatsService {
                                 row.getCell(c).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF0F0F0' } };
                             }
                         }
-                        currentRow++;
+                        currentSheet2Row++;
                     });
                 }
 
                 // Aplicar bordes
-                for (let r = table4StartRow; r < currentRow; r++) {
+                for (let r = table4StartRow; r < currentSheet2Row; r++) {
                     for (let c = 1; c <= 4; c++) {
-                        const cell = sheet.getCell(r, c);
+                        const cell = sheet2.getCell(r, c);
                         cell.border = {
                             top: { style: 'thin' },
                             left: { style: 'thin' },
@@ -3734,6 +3748,89 @@ export class StatsService {
                             bottom: { style: 'thin' }
                         };
                     }
+                }
+                
+                currentSheet2Row += 3;
+            }
+        }
+
+        // ─── ANEXO III: DETALLE DE PROTOCOLIZACIÓN ANUAL ───
+        if (annexStats.annualFinalizedDetails) {
+            const sheet3 = workbook.addWorksheet('Anexo III');
+            
+            // Configurar columnas Anexo III
+            sheet3.getColumn(1).width = 45; // Marea
+            sheet3.getColumn(2).width = 15; // Derivada
+            sheet3.getColumn(3).width = 15; // Enviada
+            sheet3.getColumn(4).width = 15; // Protocolizada
+
+            const titleCell3 = sheet3.getCell(1, 1);
+            sheet3.mergeCells(1, 1, 1, 4);
+            titleCell3.value = 'ANEXO 3: DETALLE DE PROTOCOLIZACIÓN ANUAL';
+            titleCell3.font = { bold: true, size: 14 };
+            titleCell3.alignment = { horizontal: 'center' };
+
+            let currentSheet3Row = 3;
+
+            sheet3.mergeCells(currentSheet3Row, 1, currentSheet3Row, 4);
+            const titleAnnualCell = sheet3.getCell(currentSheet3Row, 1);
+            titleAnnualCell.value = `Detalle de mareas finalizadas según estado – Resumen anual`;
+            titleAnnualCell.font = { bold: true, size: 12 };
+            titleAnnualCell.alignment = { horizontal: 'left' };
+            currentSheet3Row++;
+
+            const headerAnnualRow = sheet3.getRow(currentSheet3Row);
+            const detailHeaders = ['Marea', 'Derivada', 'Enviada', 'Protocolizada'];
+            detailHeaders.forEach((h, i) => {
+                const cell = headerAnnualRow.getCell(i + 1);
+                cell.value = h;
+                cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF00548B' } };
+                cell.alignment = { horizontal: 'center' };
+            });
+            
+            const tableAnnualStartRow = currentSheet3Row;
+            currentSheet3Row++;
+
+            const mareasAnuales = annexStats.annualFinalizedDetails;
+            if (!mareasAnuales || mareasAnuales.length === 0) {
+                sheet3.mergeCells(currentSheet3Row, 1, currentSheet3Row, 4);
+                const emptyCell = sheet3.getCell(currentSheet3Row, 1);
+                emptyCell.value = 'Sin mareas finalizadas en el año';
+                emptyCell.alignment = { horizontal: 'center' };
+                emptyCell.font = { italic: true, color: { argb: 'FF666666' } };
+                currentSheet3Row++;
+            } else {
+                mareasAnuales.forEach(m => {
+                    const row = sheet3.getRow(currentSheet3Row);
+                    row.getCell(1).value = m.identificacion;
+                    row.getCell(2).value = m.derivada ? '✓' : '';
+                    row.getCell(3).value = m.enviada ? '✓' : '';
+                    row.getCell(4).value = m.protocolizada ? '✓' : '';
+                    
+                    row.getCell(2).alignment = { horizontal: 'center' };
+                    row.getCell(3).alignment = { horizontal: 'center' };
+                    row.getCell(4).alignment = { horizontal: 'center' };
+
+                    if (m.derivada) {
+                        for (let c = 1; c <= 4; c++) {
+                            row.getCell(c).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF0F0F0' } };
+                        }
+                    }
+                    currentSheet3Row++;
+                });
+            }
+
+            // Aplicar bordes
+            for (let r = tableAnnualStartRow; r < currentSheet3Row; r++) {
+                for (let c = 1; c <= 4; c++) {
+                    const cell = sheet3.getCell(r, c);
+                    cell.border = {
+                        top: { style: 'thin' },
+                        left: { style: 'thin' },
+                        right: { style: 'thin' },
+                        bottom: { style: 'thin' }
+                    };
                 }
             }
         }
@@ -4063,11 +4160,58 @@ export class StatsService {
             orderPriority: number;
         }>);
 
+        const annualFinalizedDetails = [] as Array<{
+            id: string;
+            identificacion: string;
+            derivada: boolean;
+            enviada: boolean;
+            protocolizada: boolean;
+            orderPriority: number;
+        }>;
+
         for (const m of mareas) {
             // 1. FINALIZADAS
             const lastStage = m.etapas?.[m.etapas.length - 1];
             if (lastStage && lastStage.fechaArribo) {
                 const arriboDate = new Date(lastStage.fechaArribo);
+
+                // --- LÓGICA ANUAL ---
+                if (arriboDate >= yearStart && arriboDate <= snapEnd) {
+                    const stateAtSnapEnd = this.reconstructStateAtDate(m, snapEnd);
+                    const preFinalizationStates = [
+                        MareaEstado.DESIGNADA,
+                        MareaEstado.A_REASIGNAR,
+                        MareaEstado.EN_EJECUCION,
+                        MareaEstado.CANCELADA,
+                        MareaEstado.DESESTIMADA
+                    ];
+                    
+                    if (!preFinalizationStates.includes(stateAtSnapEnd as MareaEstado)) {
+                        const obs = m.observadorPrincipal;
+                        const obsStr = obs ? `${obs.apellido} ${obs.nombre.charAt(0)}.` : 'Sin Observador';
+                        const anioStr = m.anioMarea.toString().slice(-2);
+                        const identificacion = `${m.tipoMarea}-${m.nroMarea}-${anioStr} - ${m.buque?.nombreBuque || 'Sin buque'} - ${obsStr}`;
+                        
+                        const isProtocolizada = m.fechaProtocolizacion ? new Date(m.fechaProtocolizacion) <= snapEnd : false;
+                        const isEnviada = m.fechaEnvioProtocolizacion ? new Date(m.fechaEnvioProtocolizacion) <= snapEnd : false;
+                        const isDerivada = stateAtSnapEnd === MareaEstado.DELEGADA_EXTERNA;
+                        
+                        let orderPriority = 3;
+                        if (isProtocolizada) orderPriority = 1;
+                        else if (isEnviada) orderPriority = 2;
+                        else if (isDerivada) orderPriority = 4;
+
+                        annualFinalizedDetails.push({
+                            id: m.id,
+                            identificacion,
+                            derivada: isDerivada,
+                            enviada: isEnviada,
+                            protocolizada: isProtocolizada,
+                            orderPriority
+                        });
+                    }
+                }
+
                 for (let i = 0; i < selectedQuarter; i++) {
                     const { qStart, qEnd } = quartersData[i];
                     if (arriboDate >= qStart && arriboDate <= qEnd) {
@@ -4151,6 +4295,14 @@ export class StatsService {
             });
         }
 
+        // Ordenar annualFinalizedDetails
+        annualFinalizedDetails.sort((a, b) => {
+            if (a.orderPriority !== b.orderPriority) {
+                return a.orderPriority - b.orderPriority;
+            }
+            return a.identificacion.localeCompare(b.identificacion);
+        });
+
         return {
             mareaStates: {
                 finalizadas,
@@ -4162,6 +4314,7 @@ export class StatsService {
                 protocolizadas,
             },
             finalizedDetails,
+            annualFinalizedDetails,
         };
     }
 
