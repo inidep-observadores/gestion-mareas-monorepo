@@ -1489,7 +1489,8 @@ export class AuditReportBuilder {
         if (annexData.finalizedDetails) {
             result.push(
                 new Paragraph({ children: [new PageBreak()] }),
-                this.heading1('ANEXO 2: DETALLE DE PROTOCOLIZACIÓN TRIMESTRAL')
+                this.heading1('ANEXO 2: DETALLE DE PROTOCOLIZACIÓN TRIMESTRAL'),
+                this.bodyParagraph('A continuación se detalla el estado de las mareas finalizadas durante cada trimestre, ordenadas según su avance en el proceso de protocolización y número de marea.')
             );
             
             for (let q = 1; q <= annexData.quarters.length; q++) {
@@ -1543,6 +1544,7 @@ export class AuditReportBuilder {
             result.push(
                 new Paragraph({ children: [new PageBreak()] }),
                 this.heading1('ANEXO 3: DETALLE DE PROTOCOLIZACIÓN ANUAL'),
+                this.bodyParagraph('A continuación se detalla el estado general de todas las mareas finalizadas en el año, ordenadas según su avance en el proceso de protocolización y número de marea.'),
                 this.heading2('Detalle de mareas finalizadas según estado – Resumen anual')
             );
             

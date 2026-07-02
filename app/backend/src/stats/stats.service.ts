@@ -4158,6 +4158,8 @@ export class StatsService {
             enviada: boolean;
             protocolizada: boolean;
             orderPriority: number;
+            nroMarea: number;
+            anioMarea: number;
         }>);
 
         const annualFinalizedDetails = [] as Array<{
@@ -4167,6 +4169,8 @@ export class StatsService {
             enviada: boolean;
             protocolizada: boolean;
             orderPriority: number;
+            nroMarea: number;
+            anioMarea: number;
         }>;
 
         for (const m of mareas) {
@@ -4207,7 +4211,9 @@ export class StatsService {
                             derivada: isDerivada,
                             enviada: isEnviada,
                             protocolizada: isProtocolizada,
-                            orderPriority
+                            orderPriority,
+                            nroMarea: m.nroMarea,
+                            anioMarea: m.anioMarea
                         });
                     }
                 }
@@ -4258,7 +4264,9 @@ export class StatsService {
                                 derivada: isDerivada,
                                 enviada: isEnviada,
                                 protocolizada: isProtocolizada,
-                                orderPriority
+                                orderPriority,
+                                nroMarea: m.nroMarea,
+                                anioMarea: m.anioMarea
                             });
                         }
                         break;
@@ -4290,8 +4298,10 @@ export class StatsService {
                 if (a.orderPriority !== b.orderPriority) {
                     return a.orderPriority - b.orderPriority;
                 }
-                // Si tienen la misma prioridad, ordenar por ID de marea alfabéticamente (por identificacion)
-                return a.identificacion.localeCompare(b.identificacion);
+                if (a.anioMarea !== b.anioMarea) {
+                    return a.anioMarea - b.anioMarea;
+                }
+                return a.nroMarea - b.nroMarea;
             });
         }
 
@@ -4300,7 +4310,10 @@ export class StatsService {
             if (a.orderPriority !== b.orderPriority) {
                 return a.orderPriority - b.orderPriority;
             }
-            return a.identificacion.localeCompare(b.identificacion);
+            if (a.anioMarea !== b.anioMarea) {
+                return a.anioMarea - b.anioMarea;
+            }
+            return a.nroMarea - b.nroMarea;
         });
 
         return {
