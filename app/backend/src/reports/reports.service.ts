@@ -206,7 +206,8 @@ export class ReportsService {
                     activeFisheries,
                     mareaStates: qStats.mareaStates,
                     protocolizationStates: qStats.protocolizationStates,
-                    finalizedDetails: qStats.finalizedDetails
+                    finalizedDetails: qStats.finalizedDetails,
+                    annualFinalizedDetails: qStats.annualFinalizedDetails
                 };
             }
         }

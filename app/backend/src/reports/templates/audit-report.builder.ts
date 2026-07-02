@@ -151,6 +151,14 @@ export interface AuditReportData {
             protocolizada: boolean;
             orderPriority: number;
         }>>;
+        annualFinalizedDetails?: Array<{
+            id: string;
+            identificacion: string;
+            derivada: boolean;
+            enviada: boolean;
+            protocolizada: boolean;
+            orderPriority: number;
+        }>;
     };
 
     /** Detalle de cada marea */
@@ -1477,8 +1485,13 @@ export class AuditReportBuilder {
             );
         }
 
-        // 4. Tabla de Detalle de Mareas Finalizadas
+        // 4. ANEXO 2: DETALLE DE PROTOCOLIZACIÓN TRIMESTRAL
         if (annexData.finalizedDetails) {
+            result.push(
+                new Paragraph({ children: [new PageBreak()] }),
+                this.heading1('ANEXO 2: DETALLE DE PROTOCOLIZACIÓN TRIMESTRAL')
+            );
+            
             for (let q = 1; q <= annexData.quarters.length; q++) {
                 const mareasTrimestre = annexData.finalizedDetails[q - 1];
                 if (!mareasTrimestre) continue;
@@ -1516,12 +1529,59 @@ export class AuditReportBuilder {
                             detailHeaders,
                             detailRows,
                             {
-                                columnWidths: [55, 15, 15, 15],
+                                columnWidths: [70, 10, 10, 10],
                                 alignments: [AlignmentType.LEFT, AlignmentType.CENTER, AlignmentType.CENTER, AlignmentType.CENTER]
                             }
                         )
                     );
                 }
+            }
+        }
+
+        // 5. ANEXO 3: DETALLE DE PROTOCOLIZACIÓN ANUAL
+        if (annexData.annualFinalizedDetails) {
+            result.push(
+                new Paragraph({ children: [new PageBreak()] }),
+                this.heading1('ANEXO 3: DETALLE DE PROTOCOLIZACIÓN ANUAL'),
+                this.heading2('Detalle de mareas finalizadas según estado – Resumen anual')
+            );
+            
+            const mareasAnuales = annexData.annualFinalizedDetails;
+
+            if (mareasAnuales.length === 0) {
+                result.push(
+                    new Paragraph({
+                        spacing: { after: SPACING.afterParagraph },
+                        children: [
+                            new TextRun({ text: 'Sin mareas finalizadas en el año', italics: true, color: '666666' })
+                        ],
+                        alignment: AlignmentType.CENTER
+                    })
+                );
+            } else {
+                const detailHeaders = ['Marea', 'Derivada', 'Enviada', 'Protocolizada'];
+                const detailRows = mareasAnuales.map(m => {
+                    return {
+                        data: [
+                            m.identificacion,
+                            m.derivada ? '✓' : '',
+                            m.enviada ? '✓' : '',
+                            m.protocolizada ? '✓' : ''
+                        ],
+                        highlighted: m.derivada
+                    };
+                });
+
+                result.push(
+                    createFormattedTable(
+                        detailHeaders,
+                        detailRows,
+                        {
+                            columnWidths: [70, 10, 10, 10],
+                            alignments: [AlignmentType.LEFT, AlignmentType.CENTER, AlignmentType.CENTER, AlignmentType.CENTER]
+                        }
+                    )
+                );
             }
         }
 
