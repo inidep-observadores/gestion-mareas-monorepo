@@ -1529,7 +1529,7 @@ export class AuditReportBuilder {
                             detailHeaders,
                             detailRows,
                             {
-                                columnWidths: [70, 10, 10, 10],
+                                columnWidths: [55, 15, 15, 15],
                                 alignments: [AlignmentType.LEFT, AlignmentType.CENTER, AlignmentType.CENTER, AlignmentType.CENTER]
                             }
                         )
@@ -1577,7 +1577,7 @@ export class AuditReportBuilder {
                         detailHeaders,
                         detailRows,
                         {
-                            columnWidths: [70, 10, 10, 10],
+                            columnWidths: [55, 15, 15, 15],
                             alignments: [AlignmentType.LEFT, AlignmentType.CENTER, AlignmentType.CENTER, AlignmentType.CENTER]
                         }
                     )
