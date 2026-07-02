@@ -260,7 +260,7 @@ export class AuditReportBuilder {
                     spacing: { before: SPACING.beforeHeading, after: SPACING.afterHeading },
                     children: [
                         new TextRun({
-                            text: 'ANEXO 1: COMPARATIVA ANUAL DE ESFUERZO POR PESQUERÍA',
+                            text: 'ANEXO 1: COMPARATIVA ANUAL DE ESFUERZO POR PESQUERÍA Y RESUMEN DE ESTADO DE MAREAS',
                             bold: true,
                             size: FONT_SIZES.heading1,
                             color: INIDEP_COLORS.primary,

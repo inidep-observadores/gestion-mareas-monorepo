@@ -3459,7 +3459,7 @@ export class StatsService {
         const numCols = selectedQuarter + 1;
         sheet.mergeCells(1, 1, 1, numCols);
         const titleCell = sheet.getCell(1, 1);
-        titleCell.value = 'ANEXO 1: COMPARATIVA ANUAL DE ESFUERZO POR PESQUERÍA';
+        titleCell.value = 'ANEXO 1: COMPARATIVA ANUAL DE ESFUERZO POR PESQUERÍA Y RESUMEN DE ESTADO DE MAREAS';
         titleCell.font = { bold: true, size: 14 };
         titleCell.alignment = { horizontal: 'center' };
 
