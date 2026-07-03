@@ -224,7 +224,7 @@ export class AuditReportBuilder {
             this.generateFisheryDaysChart(processed),
             this.generateFisheryCountChart(processed),
             this.generateObserverChart(processed),
-            this.generateSpecialCasesChart(data),
+            this.generateSpecialCasesChart(data, processed.enEjecucion.length),
             this.chartService.renderSigmaLogo(120),
         ]);
 
@@ -1089,7 +1089,7 @@ export class AuditReportBuilder {
             informesPendientesEnvio.length === 0 && esperandoProtocolizacion.length === 0;
 
         const result: (Paragraph | Table)[] = [
-            this.heading1('7. MAREAS FINALIZADAS SEGÚN ESTADO'),
+            this.heading1('7. MAREAS SEGÚN ESTADO'),
         ];
 
         if (allEmpty) {
@@ -1666,7 +1666,7 @@ export class AuditReportBuilder {
         );
     }
 
-    private async generateSpecialCasesChart(data: AuditReportData): Promise<Buffer> {
+    private async generateSpecialCasesChart(data: AuditReportData, enEjecucionCount: number): Promise<Buffer> {
         const {
             canceladas,
             desestimadas,
@@ -1675,33 +1675,38 @@ export class AuditReportBuilder {
             delegadasExternas,
             informesPendientesEnvio,
             esperandoProtocolizacion,
+            enviadasADNI,
         } = data.specialCases;
 
-        // Consolidamos la protocolización (pendientes + ya protocolizadas) en una única serie
-        const enviadasADNI = esperandoProtocolizacion.length;
+        const enviadasADNISolo = esperandoProtocolizacion.length;
+        const protocolizadas = (enviadasADNI?.length || 0) - enviadasADNISolo;
 
         const counts = [
+            enEjecucionCount,
             canceladas.length,
             desestimadas.length,
             esperandoEntrega.length,
             pendientesDeInforme.length,
             delegadasExternas.length,
             informesPendientesEnvio.length,
-            enviadasADNI,
+            enviadasADNISolo,
+            protocolizadas > 0 ? protocolizadas : 0,
         ].filter(c => c > 0);
 
         const labels = [
+            enEjecucionCount > 0 ? `En Ejecución (${enEjecucionCount})` : null,
             canceladas.length > 0 ? `Canceladas (${canceladas.length})` : null,
             desestimadas.length > 0 ? `Desestimadas (${desestimadas.length})` : null,
             esperandoEntrega.length > 0 ? `Esperando Entrega (${esperandoEntrega.length})` : null,
             pendientesDeInforme.length > 0 ? `Pendientes de Informe (${pendientesDeInforme.length})` : null,
             delegadasExternas.length > 0 ? `Delegadas Externas (${delegadasExternas.length})` : null,
             informesPendientesEnvio.length > 0 ? `Pendientes de Envío (${informesPendientesEnvio.length})` : null,
-            enviadasADNI > 0 ? `Enviadas a DNI (${enviadasADNI})` : null,
+            enviadasADNISolo > 0 ? `Enviadas a DNI (${enviadasADNISolo})` : null,
+            protocolizadas > 0 ? `Protocolizadas (${protocolizadas})` : null,
         ].filter((l): l is string => l !== null);
 
         return this.chartService.renderDoughnutChart(labels, counts, {
-            title: 'Distribución de Mareas según Estado',
+            title: 'MAREAS SEGÚN ESTADO',
             displayLabels: true
         });
     }
