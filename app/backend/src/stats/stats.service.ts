@@ -2520,49 +2520,8 @@ export class StatsService {
 
         });
 
-        // --- LÓGICA COMPLEMENTARIA PARA HOJA "CASOS ESPECIALES" (Hoja 4) ---
-        const especial_enviadasADNI = [];
-        const especial_listasParaEnvio = [];
-        const especial_pendientesDeInforme = [];
-        const especial_esperandoEntrega = [];
-        const especial_delegadasExternas = [];
-
-        finalizadasDelPeriodo.forEach(item => {
-            const fEnvio = item.fechaEnvioProtocolizacion ? new Date(item.fechaEnvioProtocolizacion) : null;
-            const stateAtSnapshot = lastStateMap.get(item.id);
-
-            const mareaRec = {
-                id: item.id,
-                id_marea: item.id_marea,
-                buque: item.buque,
-                pesqueria: item.pesqueria,
-                flota: item.flota,
-                observador: item.observador,
-                diasNavegados: mode === 'CALENDAR' ? item.diasCalendario : item.diasTotales,
-                fechaEvento: fEnvio || item.fechaFin,
-                nroProtocolo: item.nroProtocolizacion ? `${item.nroProtocolizacion}/${item.anioProtocolizacion}` : null,
-                motivo: (item as any).motivo || null,
-                tipoObservador: observerTypeMap.get(item.observadorId)
-            };
-
-            if (fEnvio && fEnvio >= periodStart && fEnvio <= snapEnd) {
-                especial_enviadasADNI.push(mareaRec);
-            } else if (stateAtSnapshot === MareaEstado.PARA_PROTOCOLIZAR) {
-                especial_listasParaEnvio.push(mareaRec);
-            } else if (stateAtSnapshot === MareaEstado.ESPERANDO_ENTREGA) {
-                especial_esperandoEntrega.push(mareaRec);
-            } else if (stateAtSnapshot === MareaEstado.DELEGADA_EXTERNA) {
-                especial_delegadasExternas.push(mareaRec);
-            } else {
-                especial_pendientesDeInforme.push(mareaRec);
-            }
-        });
-
-        (specialCases as any).enviadasADNI = especial_enviadasADNI;
-        specialCases.informesPendientesEnvio = especial_listasParaEnvio;
-        specialCases.pendientesDeInforme = especial_pendientesDeInforme;
-        specialCases.esperandoEntrega = especial_esperandoEntrega;
-        specialCases.delegadasExternas = especial_delegadasExternas;
+        // La lógica de Cascada ya está implementada centralizadamente en getAuditSpecialCases().
+        // Los objetos specialCases.enviadasADNI, pendientesDeInforme, etc. ya vienen listos con esa lógica unificada.
 
 
         // Informes de marea y otros estados desde detailItems
@@ -2990,7 +2949,7 @@ export class StatsService {
         });
 
         // Fila de TOTAL para Navegación
-        sheet.getCell(currentRow, 1).value = 'TOTAL';
+        sheet.getCell(currentRow, 1).value = `Total: ${listMareas.length} mareas`;
         sheet.getCell(currentRow, 1).font = { bold: true };
         sheet.getCell(currentRow, 10).value = { formula: `SUM(J4:J${currentRow - 1})` };
         sheet.getCell(currentRow, 10).font = { bold: true };
@@ -3388,7 +3347,7 @@ export class StatsService {
                 });
 
                 // Fila TOTAL de la sección
-                sheet.getCell(currentRow, 1).value = 'TOTAL';
+                sheet.getCell(currentRow, 1).value = `Total: ${section.data.length} mareas`;
                 sheet.getCell(currentRow, 1).font = { bold: true };
                 const sectionStartRow = currentRow - section.data.length;
                 sheet.getCell(currentRow, 7).value = { formula: `SUM(G${sectionStartRow}:G${currentRow - 1})` };
@@ -4396,6 +4355,7 @@ export class StatsService {
             delegadasExternas: [] as any[],
             informesPendientesEnvio: [] as any[],
             esperandoProtocolizacion: [] as any[],
+            enviadasADNI: [] as any[],
         };
 
         for (const m of mareas) {
@@ -4403,8 +4363,8 @@ export class StatsService {
             const stateCode = this.reconstructStateAtDate(m, snapshotDate);
             const lastMov = m.movimientos?.[0];
 
-            // No incluimos mareas que al cierre estaban en estados finales o iniciales irrelevantes para auditoría
-            if (stateCode === 'PROTOCOLIZADA' || stateCode === 'PLANIFICADA' || stateCode === 'A_REASIGNAR') {
+            // No incluimos mareas que al cierre estaban en estados iniciales irrelevantes para auditoría
+            if (stateCode === 'PLANIFICADA' || stateCode === 'A_REASIGNAR') {
                 continue;
             }
 
@@ -4475,20 +4435,21 @@ export class StatsService {
                 const finishedInPeriod = lastArribo && lastArribo >= periodStart && lastArribo <= snapEnd;
 
                 if (finishedInPeriod) {
-                    if (stateCode === MareaEstado.ESPERANDO_ENTREGA) {
+                    const fEnvio = m.fechaEnvioProtocolizacion ? new Date(m.fechaEnvioProtocolizacion) : null;
+
+                    if (fEnvio && fEnvio >= periodStart && fEnvio <= snapEnd) {
+                        results.enviadasADNI.push(mareaData);
+                        if (stateCode !== MareaEstado.PROTOCOLIZADA) {
+                            results.esperandoProtocolizacion.push(mareaData);
+                        }
+                    } else if (stateCode === MareaEstado.PARA_PROTOCOLIZAR) {
+                        results.informesPendientesEnvio.push(mareaData);
+                    } else if (stateCode === MareaEstado.ESPERANDO_ENTREGA) {
                         results.esperandoEntrega.push(mareaData);
                     } else if (stateCode === MareaEstado.DELEGADA_EXTERNA) {
                         results.delegadasExternas.push(mareaData);
-                    } else if (stateCode === MareaEstado.PARA_PROTOCOLIZAR) {
-                        results.informesPendientesEnvio.push(mareaData);
-                    } else if (stateCode === MareaEstado.ESPERANDO_PROTOCOLIZACION) {
-                        results.esperandoProtocolizacion.push(mareaData);
                     } else {
-                        // Estados intermedios entre recepción e informe listo (vía orden)
-                        const order = this.getStateOrder(stateCode);
-                        if (order >= 4 && order < 10) {
-                            results.pendientesDeInforme.push(mareaData);
-                        }
+                        results.pendientesDeInforme.push(mareaData);
                     }
                 }
             }
