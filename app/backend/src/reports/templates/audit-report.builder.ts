@@ -95,6 +95,7 @@ export interface AuditReportData {
         delegadasExternas: AuditSpecialMareaItem[];
         informesPendientesEnvio: AuditSpecialMareaItem[];
         esperandoProtocolizacion: AuditSpecialMareaItem[];
+        enviadasADNI?: AuditSpecialMareaItem[];
     };
 
     /** Timeline de protocolización */
