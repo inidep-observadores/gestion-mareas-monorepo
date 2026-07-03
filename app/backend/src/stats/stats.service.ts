@@ -4443,6 +4443,8 @@ export class StatsService {
                         if (stateCode !== MareaEstado.PROTOCOLIZADA) {
                             results.esperandoProtocolizacion.push(mareaData);
                         }
+                    } else if (stateCode === MareaEstado.EN_EJECUCION) {
+                        // Ignorar: Formalmente no ha finalizado pese a haber arribado
                     } else if (stateCode === MareaEstado.PARA_PROTOCOLIZAR) {
                         results.informesPendientesEnvio.push(mareaData);
                     } else if (stateCode === MareaEstado.ESPERANDO_ENTREGA) {
