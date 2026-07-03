@@ -979,6 +979,7 @@ export class AuditReportBuilder {
                 {
                     columnWidths: [18, 20, 11, 8, 9, 11, 11, 12],
                     alignments,
+                    totalsRow: { label: `Total: ${sorted.length} mareas` }
                 },
             ),
             new Paragraph({
@@ -1013,6 +1014,7 @@ export class AuditReportBuilder {
                     {
                         columnWidths: [20, 30, 30, 20],
                         alignments: [AlignmentType.CENTER, AlignmentType.LEFT, AlignmentType.LEFT, AlignmentType.CENTER],
+                        totalsRow: { label: `Total: ${delegadas.length} mareas` }
                     },
                 ),
             );
@@ -1078,6 +1080,7 @@ export class AuditReportBuilder {
                 {
                     columnWidths: [28, 28, 16, 14, 14],
                     alignments: [AlignmentType.LEFT, AlignmentType.LEFT, AlignmentType.CENTER, AlignmentType.CENTER, AlignmentType.CENTER],
+                    totalsRow: { label: `Total: ${sorted.length} mareas` }
                 },
             ),
         ];
@@ -1122,7 +1125,8 @@ export class AuditReportBuilder {
                     ]),
                     {
                         columnWidths: [14, 24, 20, 14, 28],
-                        alignments: [AlignmentType.CENTER, AlignmentType.LEFT, AlignmentType.LEFT, AlignmentType.CENTER, AlignmentType.LEFT]
+                        alignments: [AlignmentType.CENTER, AlignmentType.LEFT, AlignmentType.LEFT, AlignmentType.CENTER, AlignmentType.LEFT],
+                        totalsRow: { label: `Total: ${sortedCanceladas.length} mareas` }
                     },
                 ),
             );
@@ -1144,6 +1148,7 @@ export class AuditReportBuilder {
                     {
                         columnWidths: [14, 24, 20, 12, 30],
                         alignments: [AlignmentType.CENTER, AlignmentType.LEFT, AlignmentType.LEFT, AlignmentType.CENTER, AlignmentType.LEFT],
+                        totalsRow: { label: `Total: ${sortedDesestimadas.length} mareas` }
                     },
                 ),
             );
@@ -1167,6 +1172,7 @@ export class AuditReportBuilder {
                     {
                         columnWidths: [14, 22, 18, 26, 12, 14],
                         alignments: [AlignmentType.CENTER, AlignmentType.LEFT, AlignmentType.LEFT, AlignmentType.LEFT, AlignmentType.CENTER, AlignmentType.CENTER],
+                        totalsRow: { label: `Total: ${sortedEsperando.length} mareas` }
                     },
                 ),
             );
@@ -1186,7 +1192,11 @@ export class AuditReportBuilder {
                         m.diasNavegados.toString(),
                         m.fechaEvento ? this.formatShortDate(m.fechaEvento) : '',
                     ]),
-                    { columnWidths: specialWidths, alignments: specialAligns },
+                    { 
+                        columnWidths: specialWidths, 
+                        alignments: specialAligns,
+                        totalsRow: { label: `Total: ${sortedPendientes.length} mareas` }
+                    },
                 ),
             );
         }
@@ -1205,7 +1215,11 @@ export class AuditReportBuilder {
                         m.diasNavegados.toString(),
                         m.fechaEvento ? this.formatShortDate(m.fechaEvento) : '',
                     ]),
-                    { columnWidths: specialWidths, alignments: specialAligns },
+                    { 
+                        columnWidths: specialWidths, 
+                        alignments: specialAligns,
+                        totalsRow: { label: `Total: ${sortedPendientesEnvio.length} mareas` }
+                    },
                 ),
             );
         }
@@ -1233,7 +1247,11 @@ export class AuditReportBuilder {
                             m.diasNavegados.toString(),
                             m.fechaEvento ? this.formatShortDate(m.fechaEvento) : '',
                         ]),
-                        { columnWidths: specialWidths, alignments: specialAligns },
+                        { 
+                            columnWidths: specialWidths, 
+                            alignments: specialAligns,
+                            totalsRow: { label: `Total: ${sortedSoloEnviadas.length} mareas` }
+                        },
                     ),
                 );
                 subsecNum++;
@@ -1253,7 +1271,11 @@ export class AuditReportBuilder {
                             m.diasNavegados.toString(),
                             m.nroProtocolo || '-',
                         ]),
-                        { columnWidths: specialWidths, alignments: specialAligns },
+                        { 
+                            columnWidths: specialWidths, 
+                            alignments: specialAligns,
+                            totalsRow: { label: `Total: ${sortedYaProt.length} mareas` }
+                        },
                     ),
                 );
             }
@@ -1539,7 +1561,8 @@ export class AuditReportBuilder {
                             detailRows,
                             {
                                 columnWidths: [55, 15, 15, 15],
-                                alignments: [AlignmentType.LEFT, AlignmentType.CENTER, AlignmentType.CENTER, AlignmentType.CENTER]
+                                alignments: [AlignmentType.LEFT, AlignmentType.CENTER, AlignmentType.CENTER, AlignmentType.CENTER],
+                                totalsRow: { label: `Total: ${mareasTrimestre.length} mareas` }
                             }
                         )
                     );
@@ -1588,7 +1611,8 @@ export class AuditReportBuilder {
                         detailRows,
                         {
                             columnWidths: [55, 15, 15, 15],
-                            alignments: [AlignmentType.LEFT, AlignmentType.CENTER, AlignmentType.CENTER, AlignmentType.CENTER]
+                            alignments: [AlignmentType.LEFT, AlignmentType.CENTER, AlignmentType.CENTER, AlignmentType.CENTER],
+                            totalsRow: { label: `Total: ${mareasAnuales.length} mareas` }
                         }
                     )
                 );
