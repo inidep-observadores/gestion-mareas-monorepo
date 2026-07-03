@@ -230,7 +230,7 @@ export class StatsService {
                     }
                 },
                 movimientos: snapshotDate ? {
-                    where: { fechaHora: { lte: snapshotDate } },
+                    where: { fechaHora: { lte: snapshotDate }, estadoHastaId: { not: null } },
                     orderBy: { fechaHora: 'desc' as const },
                     take: 1,
                     include: { estadoHasta: true }
@@ -592,7 +592,7 @@ export class StatsService {
                     }
                 },
                 movimientos: {
-                    where: snapshotDate ? { fechaHora: { lte: snapshotDate } } : {
+                    where: snapshotDate ? { fechaHora: { lte: snapshotDate }, estadoHastaId: { not: null } } : {
                         estadoHasta: { codigo: MareaEstado.DELEGADA_EXTERNA }
                     },
                     orderBy: { fechaHora: 'desc' as const },
@@ -841,7 +841,7 @@ export class StatsService {
                     }
                 },
                 movimientos: snapshotDate ? {
-                    where: { fechaHora: { lte: snapshotDate } },
+                    where: { fechaHora: { lte: snapshotDate }, estadoHastaId: { not: null } },
                     orderBy: { fechaHora: 'desc' as const },
                     take: 1,
                     include: { estadoHasta: true }
@@ -3413,7 +3413,7 @@ export class StatsService {
         currentRow += 2;
         sheet.mergeCells(currentRow, 1, currentRow, 9);
         const noteCell = sheet.getCell(currentRow, 1);
-        noteCell.value = 'Nota: Las mareas "Derivadas a Programas Científicos Externos" fueron ejecutadas pero sus datos son procesados por un programa ajeno al Programa Observadores a Bordo.';
+        noteCell.value = 'Nota: Las mareas "Derivadas a Programas Científicos Externos" fueron ejecutadas pero sus datos son procesados por un programa ajeno al Subprograma Observadores a Bordo.';
         noteCell.font = { italic: true, size: 10, color: { argb: 'FF475569' } };
         noteCell.alignment = { horizontal: 'left', wrapText: true };
 

@@ -2,7 +2,7 @@
  * Builder del informe de auditoría en formato .docx
  * 
  * Genera un documento Word profesional con 7 secciones basadas
- * en los datos de auditoría del Programa Observadores a Bordo (INIDEP).
+ * en los datos de auditoría del Subprograma Observadores a Bordo (INIDEP).
  */
 import {
     Document, Packer, Paragraph, TextRun, AlignmentType, Table,
@@ -283,7 +283,7 @@ export class AuditReportBuilder {
         const doc = new Document({
             creator: 'SIGMA - Sistema Integral de Gestión de Mareas',
             title: `Informe de Ejecución de Mareas - ${period.short}`,
-            description: `Informe de auditoría técnica del Programa Observadores a Bordo correspondiente a ${period.article}.`,
+            description: `Informe de auditoría técnica del Subprograma Observadores a Bordo correspondiente a ${period.article}.`,
             subject: 'Auditoría de Mareas',
             lastModifiedBy: 'SIGMA Auto-generated',
             revision: 1,
@@ -579,7 +579,7 @@ export class AuditReportBuilder {
                                             style: "Header",
                                             children: [
                                                 new TextRun({
-                                                    text: 'Programa Observadores a Bordo - INIDEP',
+                                                    text: 'Subprograma Observadores a Bordo - INIDEP',
                                                     bold: false,
                                                     font: "Arial",
                                                     color: INIDEP_COLORS.text,

@@ -247,7 +247,7 @@ export function generateIntroductionText(
         : 'mareas comerciales';
 
     return (
-        `El presente informe describe la ejecución de ${tipoMarea} del Programa Observadores ` +
+        `El presente informe describe la ejecución de ${tipoMarea} del Subprograma Observadores ` +
         `a Bordo del INIDEP correspondiente al ${period.full}. ` +
         `El documento consolida las estadísticas operativas de personal embarcado, navegación efectiva ` +
         `y distribución por pesquería, con el objetivo de brindar una visión integral de la actividad ` +
@@ -290,7 +290,7 @@ export function generateExecutiveSummaryText(
     const coberturaStr = formatNumber(coberturaPct, 0);
     return (
         `El nivel de afectación del personal alcanzó el ${coberturaStr}% de la dotación ` +
-        `total del INIDEP (${obsAfectados} de ${dotacionRef} observadores), lo que evidencia ` +
+        `total del Subprograma Observadores del INIDEP (${obsAfectados} de ${dotacionRef} observadores), lo que evidencia ` +
         `un ${coberturaPct >= 90 ? 'alto' : coberturaPct >= 70 ? 'adecuado' : 'moderado'} ` +
         `grado de operatividad. Se acumularon ${formatNumber(totalDias)} días de navegación ` +
         `distribuidos en ${totalMareas} mareas y ${totalEtapas} etapas, con cobertura efectiva ` +
