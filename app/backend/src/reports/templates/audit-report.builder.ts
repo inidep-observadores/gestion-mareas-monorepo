@@ -979,7 +979,7 @@ export class AuditReportBuilder {
                 {
                     columnWidths: [18, 20, 11, 8, 9, 11, 11, 12],
                     alignments,
-                    totalsRow: { label: `Total: ${sorted.length} mareas` }
+                    totalsRow: { label: `Total: ${sorted.length} marea${sorted.length !== 1 ? 's' : ''}` }
                 },
             ),
             new Paragraph({
@@ -1014,7 +1014,7 @@ export class AuditReportBuilder {
                     {
                         columnWidths: [20, 30, 30, 20],
                         alignments: [AlignmentType.CENTER, AlignmentType.LEFT, AlignmentType.LEFT, AlignmentType.CENTER],
-                        totalsRow: { label: `Total: ${delegadas.length} mareas` }
+                        totalsRow: { label: `Total: ${delegadas.length} marea${delegadas.length !== 1 ? 's' : ''}` }
                     },
                 ),
             );
@@ -1080,7 +1080,7 @@ export class AuditReportBuilder {
                 {
                     columnWidths: [28, 28, 16, 14, 14],
                     alignments: [AlignmentType.LEFT, AlignmentType.LEFT, AlignmentType.CENTER, AlignmentType.CENTER, AlignmentType.CENTER],
-                    totalsRow: { label: `Total: ${sorted.length} mareas` }
+                    totalsRow: { label: `Total: ${sorted.length} marea${sorted.length !== 1 ? 's' : ''}` }
                 },
             ),
         ];
@@ -1126,7 +1126,7 @@ export class AuditReportBuilder {
                     {
                         columnWidths: [14, 24, 20, 14, 28],
                         alignments: [AlignmentType.CENTER, AlignmentType.LEFT, AlignmentType.LEFT, AlignmentType.CENTER, AlignmentType.LEFT],
-                        totalsRow: { label: `Total: ${sortedCanceladas.length} mareas` }
+                        totalsRow: { label: `Total: ${sortedCanceladas.length} marea${sortedCanceladas.length !== 1 ? 's' : ''}` }
                     },
                 ),
             );
@@ -1148,7 +1148,7 @@ export class AuditReportBuilder {
                     {
                         columnWidths: [14, 24, 20, 12, 30],
                         alignments: [AlignmentType.CENTER, AlignmentType.LEFT, AlignmentType.LEFT, AlignmentType.CENTER, AlignmentType.LEFT],
-                        totalsRow: { label: `Total: ${sortedDesestimadas.length} mareas` }
+                        totalsRow: { label: `Total: ${sortedDesestimadas.length} marea${sortedDesestimadas.length !== 1 ? 's' : ''}` }
                     },
                 ),
             );
@@ -1172,7 +1172,7 @@ export class AuditReportBuilder {
                     {
                         columnWidths: [14, 22, 18, 26, 12, 14],
                         alignments: [AlignmentType.CENTER, AlignmentType.LEFT, AlignmentType.LEFT, AlignmentType.LEFT, AlignmentType.CENTER, AlignmentType.CENTER],
-                        totalsRow: { label: `Total: ${sortedEsperando.length} mareas` }
+                        totalsRow: { label: `Total: ${sortedEsperando.length} marea${sortedEsperando.length !== 1 ? 's' : ''}` }
                     },
                 ),
             );
@@ -1195,7 +1195,7 @@ export class AuditReportBuilder {
                     { 
                         columnWidths: specialWidths, 
                         alignments: specialAligns,
-                        totalsRow: { label: `Total: ${sortedPendientes.length} mareas` }
+                        totalsRow: { label: `Total: ${sortedPendientes.length} marea${sortedPendientes.length !== 1 ? 's' : ''}` }
                     },
                 ),
             );
@@ -1218,7 +1218,7 @@ export class AuditReportBuilder {
                     { 
                         columnWidths: specialWidths, 
                         alignments: specialAligns,
-                        totalsRow: { label: `Total: ${sortedPendientesEnvio.length} mareas` }
+                        totalsRow: { label: `Total: ${sortedPendientesEnvio.length} marea${sortedPendientesEnvio.length !== 1 ? 's' : ''}` }
                     },
                 ),
             );
@@ -1250,7 +1250,7 @@ export class AuditReportBuilder {
                         { 
                             columnWidths: specialWidths, 
                             alignments: specialAligns,
-                            totalsRow: { label: `Total: ${sortedSoloEnviadas.length} mareas` }
+                            totalsRow: { label: `Total: ${sortedSoloEnviadas.length} marea${sortedSoloEnviadas.length !== 1 ? 's' : ''}` }
                         },
                     ),
                 );
@@ -1274,7 +1274,7 @@ export class AuditReportBuilder {
                         { 
                             columnWidths: specialWidths, 
                             alignments: specialAligns,
-                            totalsRow: { label: `Total: ${sortedYaProt.length} mareas` }
+                            totalsRow: { label: `Total: ${sortedYaProt.length} marea${sortedYaProt.length !== 1 ? 's' : ''}` }
                         },
                     ),
                 );
@@ -1562,7 +1562,7 @@ export class AuditReportBuilder {
                             {
                                 columnWidths: [55, 15, 15, 15],
                                 alignments: [AlignmentType.LEFT, AlignmentType.CENTER, AlignmentType.CENTER, AlignmentType.CENTER],
-                                totalsRow: { label: `Total: ${mareasTrimestre.length} mareas` }
+                                totalsRow: { label: `Total: ${mareasTrimestre.length} marea${mareasTrimestre.length !== 1 ? 's' : ''}` }
                             }
                         )
                     );
@@ -1612,7 +1612,7 @@ export class AuditReportBuilder {
                         {
                             columnWidths: [55, 15, 15, 15],
                             alignments: [AlignmentType.LEFT, AlignmentType.CENTER, AlignmentType.CENTER, AlignmentType.CENTER],
-                            totalsRow: { label: `Total: ${mareasAnuales.length} mareas` }
+                            totalsRow: { label: `Total: ${mareasAnuales.length} marea${mareasAnuales.length !== 1 ? 's' : ''}` }
                         }
                     )
                 );
