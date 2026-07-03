@@ -925,8 +925,15 @@ export class AuditReportBuilder {
         const { finalizadas } = proc;
         const enEjecucionCount = proc.enEjecucion.length;
         const refText = this.getReferenceTimeText(data);
+        const canceladasCount = data.specialCases.canceladas.length;
+        let canceladasText = '';
+        if (canceladasCount > 0) {
+            canceladasText = ` No se incluy${canceladasCount === 1 ? 'ó' : 'eron'} en este recuento ${canceladasCount} marea${canceladasCount === 1 ? '' : 's'} cancelada${canceladasCount === 1 ? '' : 's'}, dado que no llegar${canceladasCount === 1 ? 'ó' : 'on'} a ejecutarse.`;
+        }
+
         const introText = `Se detallan a continuación las ${finalizadas.length} mareas que alcanzaron estado "Finalizada" durante el período, agrupadas por pesquería.` +
-            (enEjecucionCount > 0 ? ` Las ${enEjecucionCount} mareas restantes se encontraban en estado "En ejecución" ${refText}.` : '');
+            (enEjecucionCount > 0 ? ` Las ${enEjecucionCount} mareas restantes se encontraban en estado "En ejecución" ${refText}.` : '') +
+            canceladasText;
 
         const sorted = [...finalizadas].sort((a, b) => {
             const ordA = data.fisheryOrderMap?.get(a.pesqueria.trim()) ?? 999;
