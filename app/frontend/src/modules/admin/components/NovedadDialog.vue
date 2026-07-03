@@ -252,8 +252,8 @@ watch(() => props.show, (newVal) => {
       form.value = {
         observadorId: props.editData.observadorId,
         tipoNovedadId: props.editData.tipoNovedadId,
-        fechaInicio: props.editData.fechaInicio ? new Date(props.editData.fechaInicio).toISOString().split('T')[0] : '',
-        fechaFin: props.editData.fechaFin ? new Date(props.editData.fechaFin).toISOString().split('T')[0] : '',
+        fechaInicio: props.editData.fechaInicio ? String(props.editData.fechaInicio) : '',
+        fechaFin: props.editData.fechaFin ? String(props.editData.fechaFin) : '',
         motivo: props.editData.motivo || '',
         permiteUrgencia: props.editData.permiteUrgencia || false
       }
