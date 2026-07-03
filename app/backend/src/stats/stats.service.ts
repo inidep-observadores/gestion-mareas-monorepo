@@ -3420,7 +3420,8 @@ export class StatsService {
         const titleCell = sheet.getCell(1, 1);
         titleCell.value = 'ANEXO 1: COMPARATIVA ANUAL DE ESFUERZO POR PESQUERÍA Y RESUMEN DE ESTADO DE MAREAS';
         titleCell.font = { bold: true, size: 14 };
-        titleCell.alignment = { horizontal: 'center' };
+        titleCell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+        sheet.getRow(1).height = 40;
 
         // Subtitulo explicativo
         sheet.mergeCells(2, 1, 2, numCols);
