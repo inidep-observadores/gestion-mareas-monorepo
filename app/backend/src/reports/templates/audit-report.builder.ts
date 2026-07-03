@@ -1542,11 +1542,13 @@ export class AuditReportBuilder {
                         })
                     );
                 } else {
-                    const detailHeaders = ['Marea', 'Derivada', 'Enviada', 'Protocolizada'];
+                    const detailHeaders = ['Marea', 'En revisión', 'Derivada', 'Enviada', 'Protocolizada'];
                     const detailRows = mareasTrimestre.map(m => {
+                        const enRevision = !m.derivada && !m.enviada && !m.protocolizada;
                         return {
                             data: [
                                 m.identificacion,
+                                enRevision ? '✓' : '',
                                 m.derivada ? '✓' : '',
                                 m.enviada ? '✓' : '',
                                 m.protocolizada ? '✓' : ''
@@ -1560,8 +1562,8 @@ export class AuditReportBuilder {
                             detailHeaders,
                             detailRows,
                             {
-                                columnWidths: [55, 15, 15, 15],
-                                alignments: [AlignmentType.LEFT, AlignmentType.CENTER, AlignmentType.CENTER, AlignmentType.CENTER],
+                                columnWidths: [48, 13, 13, 13, 13],
+                                alignments: [AlignmentType.LEFT, AlignmentType.CENTER, AlignmentType.CENTER, AlignmentType.CENTER, AlignmentType.CENTER],
                                 totalsRow: { label: `Total: ${mareasTrimestre.length} marea${mareasTrimestre.length !== 1 ? 's' : ''}` }
                             }
                         )
@@ -1592,11 +1594,13 @@ export class AuditReportBuilder {
                     })
                 );
             } else {
-                const detailHeaders = ['Marea', 'Derivada', 'Enviada', 'Protocolizada'];
+                const detailHeaders = ['Marea', 'En revisión', 'Derivada', 'Enviada', 'Protocolizada'];
                 const detailRows = mareasAnuales.map(m => {
+                    const enRevision = !m.derivada && !m.enviada && !m.protocolizada;
                     return {
                         data: [
                             m.identificacion,
+                            enRevision ? '✓' : '',
                             m.derivada ? '✓' : '',
                             m.enviada ? '✓' : '',
                             m.protocolizada ? '✓' : ''
@@ -1610,8 +1614,8 @@ export class AuditReportBuilder {
                         detailHeaders,
                         detailRows,
                         {
-                            columnWidths: [55, 15, 15, 15],
-                            alignments: [AlignmentType.LEFT, AlignmentType.CENTER, AlignmentType.CENTER, AlignmentType.CENTER],
+                            columnWidths: [48, 13, 13, 13, 13],
+                            alignments: [AlignmentType.LEFT, AlignmentType.CENTER, AlignmentType.CENTER, AlignmentType.CENTER, AlignmentType.CENTER],
                             totalsRow: { label: `Total: ${mareasAnuales.length} marea${mareasAnuales.length !== 1 ? 's' : ''}` }
                         }
                     )
