@@ -4469,25 +4469,27 @@ export class StatsService {
             } else if (isDesestimadaInPeriod) {
                 mareaData.fechaEvento = desestimacionMov.fechaHora;
                 results.desestimadas.push(mareaData);
-            } else if (stateCode === MareaEstado.ESPERANDO_ENTREGA) {
-                results.esperandoEntrega.push(mareaData);
-            } else if (stateCode === MareaEstado.DELEGADA_EXTERNA) {
-                results.delegadasExternas.push(mareaData);
-            } else if (stateCode === MareaEstado.PARA_PROTOCOLIZAR) {
-                results.informesPendientesEnvio.push(mareaData);
-            } else if (stateCode === MareaEstado.ESPERANDO_PROTOCOLIZACION) {
-                results.esperandoProtocolizacion.push(mareaData);
-            } else if (stateCode === MareaEstado.EN_EJECUCION) {
-                // Nota: Las en ejecución no suelen ir en esta sección detalle,
-                // ya tienen su propia sección 6 y el resumen ejecutivo.
-            } else if (stateCode === MareaEstado.CANCELADA || stateCode === MareaEstado.DESESTIMADA) {
-                // Casos que están en este estado pero cuyo evento principal fue FUERA del periodo
-                // se ignoran intencionalmente según el criterio de rigor temporal.
             } else {
-                // Estados intermedios entre recepción e informe listo (vía orden)
-                const order = this.getStateOrder(stateCode);
-                if (order >= 4 && order < 10) {
-                    results.pendientesDeInforme.push(mareaData);
+                const lastStage = m.etapas?.[m.etapas.length - 1];
+                const lastArribo = lastStage?.fechaArribo ? new Date(lastStage.fechaArribo) : null;
+                const finishedInPeriod = lastArribo && lastArribo >= periodStart && lastArribo <= snapEnd;
+
+                if (finishedInPeriod) {
+                    if (stateCode === MareaEstado.ESPERANDO_ENTREGA) {
+                        results.esperandoEntrega.push(mareaData);
+                    } else if (stateCode === MareaEstado.DELEGADA_EXTERNA) {
+                        results.delegadasExternas.push(mareaData);
+                    } else if (stateCode === MareaEstado.PARA_PROTOCOLIZAR) {
+                        results.informesPendientesEnvio.push(mareaData);
+                    } else if (stateCode === MareaEstado.ESPERANDO_PROTOCOLIZACION) {
+                        results.esperandoProtocolizacion.push(mareaData);
+                    } else {
+                        // Estados intermedios entre recepción e informe listo (vía orden)
+                        const order = this.getStateOrder(stateCode);
+                        if (order >= 4 && order < 10) {
+                            results.pendientesDeInforme.push(mareaData);
+                        }
+                    }
                 }
             }
         }

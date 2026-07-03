@@ -990,7 +990,7 @@ export class AuditReportBuilder {
         const delegadas = [...data.specialCases.delegadasExternas].sort((a, b) => this.sortMareaId(a.id_marea, b.id_marea));
         if (delegadas.length > 0) {
             const n = delegadas.length;
-            const delegadasText = `${n} marea${n !== 1 ? 's' : ''} registrada${n !== 1 ? 's' : ''} en el período se encuentra${n !== 1 ? 'n' : ''} derivada${n !== 1 ? 's' : ''} a programas científicos externos para validación de sus datos. La eventual demora en la confección del informe correspondiente es ajena al Programa Observadores a Bordo.`;
+            const delegadasText = `${n} marea${n !== 1 ? 's' : ''} registrada${n !== 1 ? 's' : ''} en el período se encuentra${n !== 1 ? 'n' : ''} derivada${n !== 1 ? 's' : ''} a programas científicos externos para validación de sus datos. La eventual demora en la confección del informe correspondiente es ajena al Subprograma Observadores a Bordo.`;
             result.push(
                 this.heading2('5.2 Mareas derivadas a programas científicos externos'),
                 this.bodyParagraph(delegadasText),
