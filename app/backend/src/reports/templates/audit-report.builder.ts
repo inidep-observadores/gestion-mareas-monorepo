@@ -1369,7 +1369,7 @@ export class AuditReportBuilder {
         if (tl.protocolizadasDetalle && tl.protocolizadasDetalle.length > 0) {
             result.push(
                 this.heading2('8.2 Protocolizaciones durante el período'),
-                this.bodyParagraph('A continuación se listan las mareas que obtuvieron su número de protocolo oficial dentro del período analizado:'),
+                this.bodyParagraph('A continuación se listan las mareas que obtuvieron su número de protocolo oficial dentro del período analizado (incluye mareas que finalizaron en períodos anteriores):'),
                 createFormattedTable(
                     ['PROTOCOLIZACIÓN', 'FECHA PROTOC.', 'MAREA', 'BUQUE', 'OBSERVADOR'],
                     tl.protocolizadasDetalle.map(m => [
