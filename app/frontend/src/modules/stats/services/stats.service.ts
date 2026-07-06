@@ -13,6 +13,7 @@ export interface DashboardStats {
     fisheries: { name: string; mareas: number; days: number; stats?: Record<string, { count: number, nombre: string }> }[];
     fleets: { name: string; mareas: number; days: number }[];
     observers: { name: string; id: string; mareas: number; days: number; active: boolean }[];
+    estimationDeviations: { buque: string; avgReales: number; avgEstimados: number; desviacionDias: number; desviacionPorcentual: number }[];
 }
 
 export interface StatsDetailItem {
@@ -190,7 +191,7 @@ export const statsService = {
         includeProtocolizedOutOfPeriod: boolean,
         daysCalculationMode: 'SHIP' | 'OBSERVER',
         includeCampaigns: boolean,
-        filterType?: 'FISHERY' | 'FLEET' | 'OBSERVER' | 'COVERAGE' | 'CHART_TREND' | 'CHART_FLEET' | 'CHART_FISHERY' | 'CHART_OBSERVER' | 'CHART_FISHERY_DUAL' | 'WORKFORCE' | 'AUDIT',
+        filterType?: 'FISHERY' | 'FLEET' | 'OBSERVER' | 'COVERAGE' | 'CHART_TREND' | 'CHART_FLEET' | 'CHART_FISHERY' | 'CHART_OBSERVER' | 'CHART_FISHERY_DUAL' | 'WORKFORCE' | 'AUDIT' | 'CHART_ESTIMATION_DEVIATION',
         filterValue?: string,
         filename?: string,
         startDate?: string,

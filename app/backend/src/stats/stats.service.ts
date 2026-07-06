@@ -255,6 +255,13 @@ export class StatsService {
         }> = {};
         const byFleet: Record<string, { name: string; mareas: number; days: number }> = {};
         const byObserver: Record<string, { id: string; name: string; mareas: number; days: number; active: boolean }> = {};
+        const byEstimationDeviation: Record<string, {
+            vesselId: string;
+            buque: string;
+            mareas: number;
+            totalDiasReales: number;
+            totalDiasEstimados: number;
+        }> = {};
 
         for (const marea of mareas) {
             // Source of Truth: Start with the first stage's departure
@@ -394,6 +401,24 @@ export class StatsService {
                 }
             });
 
+            // Calculate Estimation Deviations (Only for completed or ongoing with valid dates)
+            if (marea.diasEstimados && marea.diasEstimados > 0 && marea.fechaInicioObservador && marea.fechaFinObservador) {
+                const bId = marea.buque.id;
+                if (!byEstimationDeviation[bId]) {
+                    byEstimationDeviation[bId] = {
+                        vesselId: bId,
+                        buque: marea.buque.nombreBuque,
+                        mareas: 0,
+                        totalDiasReales: 0,
+                        totalDiasEstimados: 0
+                    };
+                }
+                const diasMarea = DateUtils.calculateInclusiveDays(marea.fechaInicioObservador, marea.fechaFinObservador);
+                byEstimationDeviation[bId].mareas++;
+                byEstimationDeviation[bId].totalDiasReales += diasMarea;
+                byEstimationDeviation[bId].totalDiasEstimados += marea.diasEstimados;
+            }
+
             // Distribute Days in Month
             if (daysCalculationMode === 'SHIP') {
                 if (days > 0) {
@@ -471,6 +496,20 @@ export class StatsService {
                 });
             }
         }
+        
+        const estimationDeviations = Object.values(byEstimationDeviation).map(v => {
+            const avgReales = v.totalDiasReales / v.mareas;
+            const avgEstimados = v.totalDiasEstimados / v.mareas;
+            const desviacionDias = avgReales - avgEstimados;
+            const desviacionPorcentual = (desviacionDias / avgEstimados) * 100;
+            return {
+                buque: v.buque,
+                avgReales: Math.round(avgReales * 10) / 10,
+                avgEstimados: Math.round(avgEstimados * 10) / 10,
+                desviacionDias: Math.round(desviacionDias * 10) / 10,
+                desviacionPorcentual: Math.round(desviacionPorcentual * 10) / 10
+            };
+        }).sort((a, b) => b.desviacionPorcentual - a.desviacionPorcentual); // sort descending
 
         return {
             year,
@@ -478,6 +517,7 @@ export class StatsService {
             totalMareas,
             totalDaysNavigated: totalDaysCalculated,
             avgDaysPerMarea: totalMareas ? Math.round(totalDaysCalculated / totalMareas) : 0,
+            estimationDeviations,
             monthly: {
                 mareas: mareasByMonth,
                 days: daysByMonth,
@@ -876,6 +916,10 @@ export class StatsService {
                 snapshotDate,
                 includeAnnualAnnex
             );
+        }
+
+        if (filterType === 'CHART_ESTIMATION_DEVIATION') {
+            return this.getEstimationDeviationExportWorkbook(mareasFiltradas);
         }
 
         const workbook = new ExcelJS.Workbook();
@@ -4677,5 +4721,95 @@ export class StatsService {
                 return (a.nroProtocolizacion || 0) - (b.nroProtocolizacion || 0);
             }),
         };
+    }
+
+    private async getEstimationDeviationExportWorkbook(mareas: any[]) {
+        const workbook = new ExcelJS.Workbook();
+        const sheet = workbook.addWorksheet('Desviación de Estimaciones');
+
+        const columns: Partial<ExcelJS.Column>[] = [
+            { header: 'Buque', key: 'buque', width: 30 },
+            { header: 'Cantidad Mareas', key: 'mareas', width: 20 },
+            { header: 'Promedio Estimado (días)', key: 'avgEstimados', width: 25 },
+            { header: 'Promedio Real (días)', key: 'avgReales', width: 25 },
+            { header: 'Desviación (días)', key: 'desviacionDias', width: 20 },
+            { header: 'Desviación Porcentual (%)', key: 'desviacionPorcentual', width: 25 },
+        ];
+
+        sheet.columns = columns;
+
+        // Header style
+        const headerRow = sheet.getRow(1);
+        headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+        headerRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF2563EB' } }; // Azul Corporativo
+
+        // Autofiltro
+        sheet.autoFilter = {
+            from: { row: 1, column: 1 },
+            to: { row: 1, column: columns.length }
+        };
+        sheet.views = [
+            { state: 'frozen', xSplit: 0, ySplit: 1, topLeftCell: 'A2', activeCell: 'A2' }
+        ];
+
+        // Process data
+        const byEstimationDeviation: Record<string, { vesselId: string, buque: string, mareas: number, totalDiasReales: number, totalDiasEstimados: number }> = {};
+        
+        mareas.forEach(marea => {
+            if (marea.diasEstimados && marea.diasEstimados > 0 && marea.fechaInicioObservador && marea.fechaFinObservador) {
+                const bId = marea.buque.id;
+                if (!byEstimationDeviation[bId]) {
+                    byEstimationDeviation[bId] = {
+                        vesselId: bId,
+                        buque: marea.buque.nombreBuque,
+                        mareas: 0,
+                        totalDiasReales: 0,
+                        totalDiasEstimados: 0
+                    };
+                }
+                const current = byEstimationDeviation[bId];
+                current.mareas++;
+                current.totalDiasEstimados += marea.diasEstimados;
+                
+                const fInicio = new Date(marea.fechaInicioObservador);
+                const fFin = new Date(marea.fechaFinObservador);
+                // Ignoring time component, just raw UTC date difference to emulate DB difference
+                const diffTime = Math.abs(fFin.getTime() - fInicio.getTime());
+                const diasMarea = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+                
+                current.totalDiasReales += diasMarea;
+            }
+        });
+
+        const deviations = Object.values(byEstimationDeviation).map(d => {
+            const avgEstimados = Math.round(d.totalDiasEstimados / d.mareas);
+            const avgReales = Math.round(d.totalDiasReales / d.mareas);
+            const diff = avgReales - avgEstimados;
+            const deviationPercent = Math.round((diff / avgEstimados) * 100);
+
+            return {
+                buque: d.buque,
+                mareas: d.mareas,
+                avgEstimados,
+                avgReales,
+                desviacionDias: diff,
+                desviacionPorcentual: deviationPercent
+            };
+        });
+
+        deviations.sort((a, b) => b.desviacionPorcentual - a.desviacionPorcentual);
+
+        deviations.forEach(row => {
+            const addedRow = sheet.addRow(row);
+            // Optional: style percentage
+            const cell = addedRow.getCell('desviacionPorcentual');
+            if (row.desviacionPorcentual > 0) {
+                cell.font = { color: { argb: 'FFEF4444' }, bold: true }; // red
+            } else if (row.desviacionPorcentual < 0) {
+                cell.font = { color: { argb: 'FFEAB308' }, bold: true }; // yellow
+            }
+        });
+
+        return workbook;
     }
 }

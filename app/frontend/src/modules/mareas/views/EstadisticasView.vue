@@ -140,7 +140,30 @@
                </div>
             </section>
 
-            <!-- ROW 5: TEMPORAL DISTRIBUTION (GANTT) -->
+            <!-- ROW 5: ESTIMATION DEVIATIONS (Diverging Bar) -->
+            <section class="grid grid-cols-12 gap-8">
+               <div class="col-span-12">
+                  <ChartWidget title="Desviación de Estimaciones"
+                     subtitle="Diferencia porcentual entre duración estimada y real de las mareas por buque" type="bar"
+                     :series="estimationSeries" :options="estimationChartOptions" :chart-height="Math.max(400, estimationFilteredData.length * 30 + 100)"
+                     allow-download :export-filename="`Desviacion_Estimaciones_${year}`"
+                     @download="handleDownload('Desviacion_Estimaciones')">
+                     <template #header-action>
+                        <div class="flex items-center gap-2">
+                           <span class="text-[10px] font-black text-text-muted uppercase tracking-widest">
+                              Ignorar desvíos menores a (%):
+                           </span>
+                           <!-- SpinBox / Number Input for Tolerance -->
+                           <input type="number" v-model="estimationTolerance" min="0" max="100" step="5"
+                              class="w-16 bg-surface border border-border rounded-lg px-2 py-1 text-xs font-bold text-text focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none text-center"
+                              title="Tolerancia en porcentaje" />
+                        </div>
+                     </template>
+                  </ChartWidget>
+               </div>
+            </section>
+
+            <!-- ROW 6: TEMPORAL DISTRIBUTION (GANTT) -->
             <section class="grid grid-cols-12 gap-8">
                <div class="col-span-12">
                   <ChartWidget title="Cronograma de Distribución de Mareas"
@@ -164,7 +187,7 @@
                </div>
             </section>
 
-            <!-- ROW 6: MONTHLY COVERAGE (UNIQUE VESSELS) -->
+            <!-- ROW 7: MONTHLY COVERAGE (UNIQUE VESSELS) -->
             <section class="grid grid-cols-12 gap-8">
                <div class="col-span-12">
                   <ChartWidget title="Cobertura de Buques" subtitle="Cantidad de buques únicos cubiertos por mes"
@@ -724,6 +747,18 @@ const handleTimeFilter = (period: { startDate: string | null; endDate: string | 
 
 // Base 100px para ejes + 20px por buque. Mínimo 500px.
    return Math.max(500, uniqueVessels * 20 + 100);
+});
+// --- Estimation Deviation State ---
+const estimationTolerance = ref<number>(Number(localStorage.getItem('sigma_estimation_tolerance')) || 20);
+
+watch(estimationTolerance, (newVal) => {
+   let validVal = newVal;
+   if (validVal < 0) validVal = 0;
+   if (validVal > 100) validVal = 100;
+   if (validVal !== newVal) {
+       estimationTolerance.value = validVal;
+   }
+   localStorage.setItem('sigma_estimation_tolerance', validVal.toString());
 });
 
 // --- Fetch Data ---
@@ -1320,7 +1355,9 @@ const handleDownload = async (titlePrefix: string, fType?: 'FISHERY' | 'FLEET' |
    }
 
    let finalTitle = titlePrefix;
-   if (dialogOpen.value && dialogTitle.value) {
+   if (titlePrefix === 'Desviacion_Estimaciones') {
+      fTypeParam = 'CHART_ESTIMATION_DEVIATION' as any;
+   } else if (dialogOpen.value && dialogTitle.value) {
       // Sanitize dialog title for filename: remove special characters and replace spaces with underscores
       const sanitizedDataName = dialogTitle.value
          .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // remove accents
@@ -1390,6 +1427,105 @@ onMounted(() => {
 })
 
 // --- CHART COMPUTED PROPS ---
+
+const estimationFilteredData = computed(() => {
+   if (!stats.value?.estimationDeviations) return [];
+   return stats.value.estimationDeviations.filter(
+      item => Math.abs(item.desviacionPorcentual) >= estimationTolerance.value
+   );
+});
+
+const estimationSeries = computed(() => {
+   return [{
+      name: 'Desviación (%)',
+      data: estimationFilteredData.value.map(item => item.desviacionPorcentual)
+   }];
+});
+
+const estimationChartOptions = computed(() => ({
+   chart: {
+      type: 'bar',
+      toolbar: { show: false }
+   },
+   plotOptions: {
+      bar: {
+         horizontal: true,
+         colors: {
+            ranges: [
+               {
+                  from: -1000,
+                  to: -0.01,
+                  color: '#eab308' // text-warning (yellow) for negative (early)
+               },
+               {
+                  from: 0.01,
+                  to: 1000,
+                  color: '#ef4444' // text-error (red) for positive (delay)
+               }
+            ]
+         },
+         borderRadius: 4
+      }
+   },
+   xaxis: {
+      categories: estimationFilteredData.value.map(item => item.buque),
+      labels: {
+         formatter: (val: number) => val + '%'
+      }
+   },
+   dataLabels: {
+      enabled: true,
+      formatter: (val: number) => val + '%',
+      style: {
+         fontSize: '10px',
+         fontWeight: 'bold',
+      }
+   },
+   grid: {
+      xaxis: { lines: { show: true } },
+      yaxis: { lines: { show: false } }
+   },
+   tooltip: {
+      custom: ({ series, seriesIndex, dataPointIndex, w }: any) => {
+         const data = estimationFilteredData.value[dataPointIndex];
+         const val = data.desviacionPorcentual;
+         const isDelay = val > 0;
+         const accent = isDelay ? '#ef4444' : '#eab308'; // Error (red) vs Warning (yellow)
+         
+         return `
+            <div class="px-4 py-4 bg-surface/90 backdrop-blur-xl text-text border border-border/50 rounded-2xl flex flex-col gap-3 shadow-2xl ring-1 ring-black/10 min-w-[220px]">
+               <div class="flex items-center justify-between border-b border-border/30 pb-2 mb-1">
+                  <div class="flex items-center gap-2">
+                     <span class="w-1.5 h-3 rounded-full" style="background:${accent}"></span>
+                     <span class="text-[10px] text-text-muted uppercase font-black tracking-widest">${data.buque}</span>
+                  </div>
+                  <div class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase" style="background:${accent}15; color:${accent}">
+                     ${isDelay ? 'Exceso' : 'Ahorro'}
+                  </div>
+               </div>
+               
+               <div class="flex flex-col gap-1">
+                  <span class="text-[9px] font-black uppercase tracking-tighter" style="color:${accent}">Desviación</span>
+                  <div class="flex items-baseline gap-2">
+                     <span class="text-2xl font-black tabular-nums">${val > 0 ? '+' : ''}${val}%</span>
+                     <span class="text-xs font-bold text-text-muted">(${data.desviacionDias > 0 ? '+' : ''}${data.desviacionDias} d)</span>
+                  </div>
+               </div>
+               <div class="flex items-center justify-between pt-2 border-t border-border/30 mt-1">
+                  <div class="flex flex-col">
+                     <span class="text-[9px] font-bold text-text-muted uppercase tracking-widest">Est</span>
+                     <span class="text-xs font-black text-text tabular-nums">${data.avgEstimados} <span class="text-[9px] text-text-muted font-bold">d</span></span>
+                  </div>
+                  <div class="flex flex-col text-right">
+                     <span class="text-[9px] font-bold text-text-muted uppercase tracking-widest">Real</span>
+                     <span class="text-xs font-black text-text tabular-nums">${data.avgReales} <span class="text-[9px] text-text-muted font-bold">d</span></span>
+                  </div>
+               </div>
+            </div>
+         `;
+      }
+   }
+}));
 
 // 1. Monthly Trends (Area Chart)
 const monthlyChartOptions = computed(() => ({
