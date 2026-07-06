@@ -117,7 +117,10 @@ export interface AuditReportData {
             id: string;
             id_marea: string;
             buque: string;
+            pesqueria: string;
             observador: string;
+            diasNavegados: number;
+            fechaFinalizacion: Date | string | null;
             nroProtocolizacion: number | null;
             anioProtocolizacion: number | null;
             fechaProtocolizacion: Date | string | null;
@@ -1087,10 +1090,23 @@ export class AuditReportBuilder {
     }
 
     private buildSpecialCasesSection(data: AuditReportData, period: PeriodDescription, specialCasesChart?: Buffer): (Paragraph | Table)[] {
-        const { canceladas, desestimadas, esperandoEntrega, pendientesDeInforme, informesPendientesEnvio, esperandoProtocolizacion } = data.specialCases;
+        const { canceladas, desestimadas, esperandoEntrega, pendientesDeInforme, informesPendientesEnvio, esperandoProtocolizacion, delegadasExternas } = data.specialCases;
+        
+        const protocolizadasDelPeriodo = data.protocolizationTimeline?.protocolizadasDetalle || [];
+        const pStart = period.startDate ? new Date(period.startDate) : new Date(Date.UTC(period.year, 0, 1));
+        const pEnd = period.endDate ? new Date(period.endDate) : new Date(Date.UTC(period.year, 11, 31, 23, 59, 59, 999));
+        pStart.setUTCHours(0, 0, 0, 0);
+        pEnd.setUTCHours(23, 59, 59, 999);
+        const protocolizadasFiltradas = protocolizadasDelPeriodo.filter(m => {
+            if (!m.fechaFinalizacion) return false;
+            const f = new Date(m.fechaFinalizacion);
+            return f >= pStart && f <= pEnd;
+        });
+
         const allEmpty = canceladas.length === 0 && desestimadas.length === 0 &&
             esperandoEntrega.length === 0 && pendientesDeInforme.length === 0 &&
-            informesPendientesEnvio.length === 0 && esperandoProtocolizacion.length === 0;
+            informesPendientesEnvio.length === 0 && esperandoProtocolizacion.length === 0 &&
+            delegadasExternas.length === 0 && protocolizadasFiltradas.length === 0;
 
         const result: (Paragraph | Table)[] = [
             this.heading1('7. MAREAS SEGÚN ESTADO'),
@@ -1258,27 +1274,66 @@ export class AuditReportBuilder {
             }
 
             if (yaProtocolizadas.length > 0) {
-                const n = yaProtocolizadas.length;
-                const sortedYaProt = [...yaProtocolizadas].sort((a, b) => this.sortMareaId(a.id_marea, b.id_marea));
-
-                result.push(
-                    this.heading2(`7.${subsecNum} Mareas ya protocolizadas`),
-                    this.bodyParagraph(`${n} marea${n !== 1 ? 's' : ''} complet${n !== 1 ? 'aron' : 'ó'} el circuito administrativo, obteniendo su correspondiente número de protocolo dentro del período analizado.`),
-                    createFormattedTable(
-                        ['MAREA', 'BUQUE', 'PESQUERÍA', 'DÍAS NAV.', 'PROTOCOLO'],
-                        sortedYaProt.map(m => [
-                            this.formatMareaShort(m.id_marea), m.buque, m.pesqueria,
-                            m.diasNavegados.toString(),
-                            m.nroProtocolo || '-',
-                        ]),
-                        { 
-                            columnWidths: specialWidths, 
-                            alignments: specialAligns,
-                            totalsRow: { label: `Total: ${sortedYaProt.length} marea${sortedYaProt.length !== 1 ? 's' : ''}` }
-                        },
-                    ),
-                );
+                // Mantenemos este bloque original vacío o lo eliminamos, 
+                // ya que la lógica vieja esperaba encontrar aquí las protocolizadas.
             }
+        }
+
+        // Nueva tabla 7.x Mareas protocolizadas
+        if (protocolizadasFiltradas.length > 0) {
+            let subsecNum = 1 + (canceladas.length > 0 ? 1 : 0) + (desestimadas.length > 0 ? 1 : 0) +
+                (esperandoEntrega.length > 0 ? 1 : 0) + (pendientesDeInforme.length > 0 ? 1 : 0) +
+                (informesPendientesEnvio.length > 0 ? 1 : 0) + (esperandoProtocolizacion.length > 0 ? 1 : 0);
+
+            const n = protocolizadasFiltradas.length;
+            const sortedProt = [...protocolizadasFiltradas].sort((a, b) => this.sortMareaId(a.id_marea, b.id_marea));
+
+            result.push(
+                this.heading2(`7.${subsecNum} Mareas protocolizadas`),
+                this.bodyParagraph(`${n} marea${n !== 1 ? 's' : ''} complet${n !== 1 ? 'aron' : 'ó'} el circuito administrativo, obteniendo su correspondiente número de protocolo dentro del período analizado.`),
+                createFormattedTable(
+                    ['MAREA', 'BUQUE', 'PESQUERÍA', 'DÍAS NAV.', 'FECHA PROTOCOLIZACIÓN'],
+                    sortedProt.map(m => [
+                        this.formatMareaShort(m.id_marea), m.buque, m.pesqueria,
+                        m.diasNavegados.toString(),
+                        m.fechaProtocolizacion ? this.formatShortDate(m.fechaProtocolizacion) : '-',
+                    ]),
+                    { 
+                        columnWidths: specialWidths, 
+                        alignments: specialAligns,
+                        totalsRow: { label: `Total: ${sortedProt.length} marea${sortedProt.length !== 1 ? 's' : ''}` }
+                    },
+                ),
+            );
+        }
+
+        // Nueva tabla 7.x Mareas delegadas a programas externos
+        if (delegadasExternas && delegadasExternas.length > 0) {
+            let subsecNum = 1 + (canceladas.length > 0 ? 1 : 0) + (desestimadas.length > 0 ? 1 : 0) +
+                (esperandoEntrega.length > 0 ? 1 : 0) + (pendientesDeInforme.length > 0 ? 1 : 0) +
+                (informesPendientesEnvio.length > 0 ? 1 : 0) + (esperandoProtocolizacion.length > 0 ? 1 : 0) +
+                (protocolizadasFiltradas.length > 0 ? 1 : 0);
+
+            const n = delegadasExternas.length;
+            const sortedDelegadas = [...delegadasExternas].sort((a, b) => this.sortMareaId(a.id_marea, b.id_marea));
+
+            result.push(
+                this.heading2(`7.${subsecNum} Mareas delegadas a programas externos`),
+                this.bodyParagraph(`${n} marea${n !== 1 ? 's' : ''} finalizada${n !== 1 ? 's' : ''} en el período se encontraba${n !== 1 ? 'n' : ''} derivada${n !== 1 ? 's' : ''} a programas científicos externos para validación de datos al momento del cierre.`),
+                createFormattedTable(
+                    ['MAREA', 'BUQUE', 'PESQUERÍA', 'DÍAS NAV.', 'FECHA DERIVACIÓN'],
+                    sortedDelegadas.map(m => [
+                        this.formatMareaShort(m.id_marea), m.buque, m.pesqueria,
+                        m.diasNavegados.toString(),
+                        m.fechaEvento ? this.formatShortDate(m.fechaEvento) : '',
+                    ]),
+                    { 
+                        columnWidths: specialWidths, 
+                        alignments: specialAligns,
+                        totalsRow: { label: `Total: ${sortedDelegadas.length} marea${sortedDelegadas.length !== 1 ? 's' : ''}` }
+                    },
+                ),
+            );
         }
 
         return result;
