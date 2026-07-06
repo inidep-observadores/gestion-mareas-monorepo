@@ -5,13 +5,47 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 
 ## [Unreleased]
 
+## [v0.11.0] - 2026-07-06
+
 ### Added
-- **protocolizacion:** añadir filtros por año de origen (actual, anterior y otros años) en pestaña "Esperando confirmación" y adaptar paleta de colores semánticos
+- **stats:** exportacion a excel para grafico de desviacion de estimaciones
+- **dashboard:** implementar ficha de riesgo de nota de crédito
+- **backend:** agregar pesqueria, diasNavegados y fechaFinalizacion al detalle de mareas protocolizadas
+- **backend:** agregar tabla de mareas delegadas a sección 7
+- **reports:** agrega columna 'En revisión' en tablas de Anexos 2 y 3
+- **reports:** agrega fila de totales unificada en tablas del informe Word
+- **reports:** actualizar gráfico de sección 7 para reflejar totalidad de mareas
+- **stats:** incorporar anexos 2 y 3 con lógica de totalización anual
+- **protocolizacion:** añadir filtros por año en Esperando Confirmación
+- **protocolizacion:** filtros interactivos por año y contadores dinámicos
 - **backend:** añadir scripts de prueba de IMAP `test-imap-label.js` y `test-imap-list.js` para validación de lectura, límite personalizable, recuento de adjuntos y etiquetado de emails en el servidor de correo.
 
 ### Fixed
-- **reports:** corregir ordenamiento de tablas en Anexos 2 y 3 (por año y número de marea numérico en lugar de alfabético) y añadir textos explicativos
-- **reports:** forzar anchos absolutos de columnas en tablas de auditoría para evitar distorsión en exportaciones PDF
+- **stats:** corregir exportación a Excel del gráfico de desviación de estimaciones para que respete el filtro de tolerancia y retorne datos.
+- **mareas:** corregir cálculo de progreso y visualización de días en UI
+- **dashboard:** corregir tipado de workforceData en AlertTrafficLight
+- **frontend:** activar filtro de Planta Permanente por defecto en Presentismo
+- **backend:** corregir firma de método en report builder
+- **reports:** aclarar alcance temporal en sección de protocolizaciones
+- **reports:** pluralización correcta de marea en etiqueta de totales
+- **reports:** ignorar mareas en ejecución formal que tienen etapa de arribo finalizada en la cascada especial
+- **reports:** resolver error TS2339 agregando enviadasADNI a la interfaz AuditReportData
+- **reports:** ajustar altura y ajustar texto en el título del Anexo I de Excel
+- **reports:** ajustar redacción sobre mareas canceladas en sección 5.1 del reporte Word
+- **reports:** unificar lógica de cascada y añadir filas de totales en reportes de auditoría
+- **reports:** restringir casos especiales a mareas finalizadas en el periodo y corregir texto de subprograma
+- **stats:** corregir reconstrucción de estado ignorando movimientos sin cambio de estado
+- **frontend:** corregir conversión de zona horaria en selector de fechas
+- **backend:** forzar anchos absolutos de columnas en tablas para correcta visualización en PDF
+- **backend:** corregir orden de mareas en anexos y agregar texto explicativo
+- **reports:** forzar TableLayoutType.FIXED para respetar porcentajes de ancho en anexos
+- **stats:** ajustar recuento independiente de mareas enviadas y protocolizadas
+- **db:** cambiar campos fecha_inicio y fecha_fin a timestamptz
+- **ui:** corregir solapamiento y gap visual en columnas fijas de matriz de presentismo
+- **backend:** increase node max old space size for docker build
+
+### Refactored
+- **backend:** integrar seccion mareas en ejecucion como primera tabla de seccion de estados y renumerar
 
 ## [v0.10.0] - 2026-06-29
 
