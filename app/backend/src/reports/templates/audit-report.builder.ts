@@ -252,16 +252,10 @@ export class AuditReportBuilder {
             // Sección 5: Detalle de Navegación (Finalizadas + Derivadas)
             ...this.buildNavigationDetail(processed, data),
 
-            // Sección 6: Mareas en Ejecución
-            ...this.buildOngoingMareas(period, processed),
+            // Sección 6: Mareas Según Estado (incluye En Ejecución y Casos Especiales)
+            ...this.buildSpecialCasesSection(data, period, processed, specialCasesChart),
 
-            // Sección 7: Mareas con Estado Especial
-            ...this.buildSpecialCasesSection(data, period, specialCasesChart),
-
-            // Sección 8: Seguimiento de Protocolización (Omitida temporalmente)
-            // ...this.buildProtocolizacionSection(data, period),
-
-            // Sección 9: Observaciones Complementarias (ahora 8)
+            // Sección 7: Observaciones Complementarias
             ...this.buildComplementaryObservations(period, processed, data.includeCampaigns),
         ];
 
@@ -1053,11 +1047,11 @@ export class AuditReportBuilder {
         }
     }
 
-    private buildOngoingMareas(p: PeriodDescription, proc: any): (Paragraph | Table)[] {
+    private buildOngoingMareas(p: PeriodDescription, proc: any, subsecNum: number): (Paragraph | Table)[] {
         const { enEjecucion } = proc;
         const refText = this.getReferenceTimeText({ year: p.year, endDate: p.endDate });
         if (enEjecucion.length === 0) return [
-            this.heading1('6. MAREAS EN EJECUCIÓN'),
+            this.heading2(`6.${subsecNum} Mareas en ejecución`),
             this.bodyParagraph(`No se registraron mareas en ejecución ${refText}.`)
         ];
 
@@ -1075,7 +1069,7 @@ export class AuditReportBuilder {
         });
 
         return [
-            this.heading1('6. MAREAS EN EJECUCIÓN'),
+            this.heading2(`6.${subsecNum} Mareas en ejecución`),
             this.bodyParagraph(introText),
             createFormattedTable(
                 ['PESQUERÍA', 'BUQUE', 'MAREA', 'ETAPAS', 'DÍAS'],
@@ -1103,23 +1097,31 @@ export class AuditReportBuilder {
             return f >= pStart && f <= pEnd;
         });
 
-        const allEmpty = canceladas.length === 0 && desestimadas.length === 0 &&
+        const allEmpty = proc.enEjecucion.length === 0 &&
+            canceladas.length === 0 && desestimadas.length === 0 &&
             esperandoEntrega.length === 0 && pendientesDeInforme.length === 0 &&
             informesPendientesEnvio.length === 0 && esperandoProtocolizacion.length === 0 &&
             delegadasExternas.length === 0 && protocolizadasFiltradas.length === 0;
 
         const result: (Paragraph | Table)[] = [
-            this.heading1('7. MAREAS SEGÚN ESTADO'),
+            this.heading1('6. MAREAS SEGÚN ESTADO'),
         ];
 
         if (allEmpty) {
-            result.push(this.bodyParagraph('No se registraron mareas con estados especiales en el período analizado.'));
+            result.push(this.bodyParagraph('No se registraron mareas en ejecución ni con estados especiales en el período analizado.'));
             return result;
         }
 
         // Agregar gráfico de dona si existe
         if (specialCasesChart) {
             result.push(this.chartImage(specialCasesChart, 14, 0.75));
+        }
+
+        let subsecNum = 1;
+
+        if (proc.enEjecucion.length > 0) {
+            result.push(...this.buildOngoingMareas(period, proc, subsecNum));
+            subsecNum++;
         }
 
         const specialTableCols = ['MAREA', 'BUQUE', 'PESQUERÍA', 'DÍAS NAV.', 'FECHA'];
@@ -1130,7 +1132,7 @@ export class AuditReportBuilder {
             const n = canceladas.length;
             const sortedCanceladas = [...canceladas].sort((a, b) => this.sortMareaId(a.id_marea, b.id_marea));
             result.push(
-                this.heading2('7.1 Mareas canceladas'),
+                this.heading2(`6.${subsecNum} Mareas canceladas`),
                 this.bodyParagraph(`Se registr${n !== 1 ? 'aron' : 'ó'} ${n} marea${n !== 1 ? 's' : ''} planificada${n !== 1 ? 's' : ''} que no lleg${n !== 1 ? 'aron' : 'ó'} a ejecutarse en el período.`),
                 createFormattedTable(
                     ['MAREA', 'BUQUE', 'PESQUERÍA', 'FECHA CANC.', 'MOTIVO'],
@@ -1146,13 +1148,14 @@ export class AuditReportBuilder {
                     },
                 ),
             );
+            subsecNum++;
         }
 
         if (desestimadas.length > 0) {
             const n = desestimadas.length;
             const sortedDesestimadas = [...desestimadas].sort((a, b) => this.sortMareaId(a.id_marea, b.id_marea));
             result.push(
-                this.heading2(`7.${canceladas.length > 0 ? 2 : 1} Mareas desestimadas`),
+                this.heading2(`6.${subsecNum} Mareas desestimadas`),
                 this.bodyParagraph(`Se registr${n !== 1 ? 'aron' : 'ó'} ${n} marea${n !== 1 ? 's' : ''} ejecutada${n !== 1 ? 's' : ''} cuyos datos fueron descartados. El campo "Motivo" refleja la causa registrada al momento de la desestimación.`),
                 createFormattedTable(
                     ['MAREA', 'BUQUE', 'PESQUERÍA', 'DÍAS NAV.', 'MOTIVO'],
@@ -1168,14 +1171,14 @@ export class AuditReportBuilder {
                     },
                 ),
             );
+            subsecNum++;
         }
 
         if (esperandoEntrega.length > 0) {
             const n = esperandoEntrega.length;
             const sortedEsperando = [...esperandoEntrega].sort((a, b) => this.sortMareaId(a.id_marea, b.id_marea));
-            const subsecNum = 1 + (canceladas.length > 0 ? 1 : 0) + (desestimadas.length > 0 ? 1 : 0);
             result.push(
-                this.heading2(`7.${subsecNum} Mareas en espera de entrega de datos`),
+                this.heading2(`6.${subsecNum} Mareas en espera de entrega de datos`),
                 this.bodyParagraph(`${n} marea${n !== 1 ? 's' : ''} finalizada${n !== 1 ? 's' : ''} est${n !== 1 ? 'án' : 'á'} en espera de que el observador asignado realice la entrega de los datos recolectados.`),
                 createFormattedTable(
                     ['MAREA', 'BUQUE', 'PESQUERÍA', 'OBSERVADOR', 'DÍAS NAV.', 'FECHA ARRIBO'],
@@ -1192,14 +1195,14 @@ export class AuditReportBuilder {
                     },
                 ),
             );
+            subsecNum++;
         }
 
         if (pendientesDeInforme.length > 0) {
             const n = pendientesDeInforme.length;
             const sortedPendientes = [...pendientesDeInforme].sort((a, b) => this.sortMareaId(a.id_marea, b.id_marea));
-            const subsecNum = 1 + (canceladas.length > 0 ? 1 : 0) + (desestimadas.length > 0 ? 1 : 0) + (esperandoEntrega.length > 0 ? 1 : 0);
             result.push(
-                this.heading2(`7.${subsecNum} Mareas pendientes de informe`),
+                this.heading2(`6.${subsecNum} Mareas pendientes de informe`),
                 this.bodyParagraph(`${n} marea${n !== 1 ? 's' : ''} se encontraba${n !== 1 ? 'n' : ''} en alguna etapa de corrección de datos o confección del informe ${this.getReferenceTimeText(data)}, sin estar aún listas para protocolizar.`),
                 createFormattedTable(
                     ['MAREA', 'BUQUE', 'PESQUERÍA', 'DÍAS NAV.', 'FECHA REC.'],
@@ -1215,14 +1218,14 @@ export class AuditReportBuilder {
                     },
                 ),
             );
+            subsecNum++;
         }
 
         if (informesPendientesEnvio.length > 0) {
             const n = informesPendientesEnvio.length;
             const sortedPendientesEnvio = [...informesPendientesEnvio].sort((a, b) => this.sortMareaId(a.id_marea, b.id_marea));
-            const subsecNum = 1 + (canceladas.length > 0 ? 1 : 0) + (desestimadas.length > 0 ? 1 : 0) + (esperandoEntrega.length > 0 ? 1 : 0) + (pendientesDeInforme.length > 0 ? 1 : 0);
             result.push(
-                this.heading2(`7.${subsecNum} Informes pendientes de envío a DNI`),
+                this.heading2(`6.${subsecNum} Informes pendientes de envío a DNI`),
                 this.bodyParagraph(`${n} marea${n !== 1 ? 's' : ''} cuenta${n !== 1 ? 'n' : ''} con su informe técnico finalizado ${this.getReferenceTimeText(data)}, pendiente${n !== 1 ? 's' : ''} de ser enviada${n !== 1 ? 's' : ''} formalmente a la Dirección Nacional de Investigación para su protocolización.`),
                 createFormattedTable(
                     ['MAREA', 'BUQUE', 'PESQUERÍA', 'DÍAS NAV.', 'FECHA FIN INF.'],
@@ -1238,23 +1241,18 @@ export class AuditReportBuilder {
                     },
                 ),
             );
+            subsecNum++;
         }
 
         if (esperandoProtocolizacion.length > 0) {
-            // Dividir entre las que solo se enviaron y las que ya tienen nro de protocolo
             const soloEnviadas = esperandoProtocolizacion.filter(m => !m.nroProtocolo);
-            const yaProtocolizadas = esperandoProtocolizacion.filter(m => !!m.nroProtocolo);
-
-            let subsecNum = 1 + (canceladas.length > 0 ? 1 : 0) + (desestimadas.length > 0 ? 1 : 0) +
-                (esperandoEntrega.length > 0 ? 1 : 0) + (pendientesDeInforme.length > 0 ? 1 : 0) +
-                (informesPendientesEnvio.length > 0 ? 1 : 0);
 
             if (soloEnviadas.length > 0) {
                 const n = soloEnviadas.length;
                 const sortedSoloEnviadas = [...soloEnviadas].sort((a, b) => this.sortMareaId(a.id_marea, b.id_marea));
 
                 result.push(
-                    this.heading2(`7.${subsecNum} Mareas esperando protocolización`),
+                    this.heading2(`6.${subsecNum} Mareas esperando protocolización`),
                     this.bodyParagraph(`${n} marea${n !== 1 ? 's' : ''} fu${n !== 1 ? 'eron enviadas' : 'e enviada'} a la DNI y se encuentr${n !== 1 ? 'an aguardando' : 'a aguardando'} la asignación de su número de protocolo oficial.`),
                     createFormattedTable(
                         ['MAREA', 'BUQUE', 'PESQUERÍA', 'DÍAS NAV.', 'FECHA ENVÍO'],
@@ -1272,24 +1270,14 @@ export class AuditReportBuilder {
                 );
                 subsecNum++;
             }
-
-            if (yaProtocolizadas.length > 0) {
-                // Mantenemos este bloque original vacío o lo eliminamos, 
-                // ya que la lógica vieja esperaba encontrar aquí las protocolizadas.
-            }
         }
 
-        // Nueva tabla 7.x Mareas protocolizadas
         if (protocolizadasFiltradas.length > 0) {
-            let subsecNum = 1 + (canceladas.length > 0 ? 1 : 0) + (desestimadas.length > 0 ? 1 : 0) +
-                (esperandoEntrega.length > 0 ? 1 : 0) + (pendientesDeInforme.length > 0 ? 1 : 0) +
-                (informesPendientesEnvio.length > 0 ? 1 : 0) + (esperandoProtocolizacion.length > 0 ? 1 : 0);
-
             const n = protocolizadasFiltradas.length;
             const sortedProt = [...protocolizadasFiltradas].sort((a, b) => this.sortMareaId(a.id_marea, b.id_marea));
 
             result.push(
-                this.heading2(`7.${subsecNum} Mareas protocolizadas`),
+                this.heading2(`6.${subsecNum} Mareas protocolizadas`),
                 this.bodyParagraph(`${n} marea${n !== 1 ? 's' : ''} complet${n !== 1 ? 'aron' : 'ó'} el circuito administrativo, obteniendo su correspondiente número de protocolo dentro del período analizado.`),
                 createFormattedTable(
                     ['MAREA', 'BUQUE', 'PESQUERÍA', 'DÍAS NAV.', 'FECHA PROTOCOLIZACIÓN'],
@@ -1305,20 +1293,15 @@ export class AuditReportBuilder {
                     },
                 ),
             );
+            subsecNum++;
         }
 
-        // Nueva tabla 7.x Mareas delegadas a programas externos
         if (delegadasExternas && delegadasExternas.length > 0) {
-            let subsecNum = 1 + (canceladas.length > 0 ? 1 : 0) + (desestimadas.length > 0 ? 1 : 0) +
-                (esperandoEntrega.length > 0 ? 1 : 0) + (pendientesDeInforme.length > 0 ? 1 : 0) +
-                (informesPendientesEnvio.length > 0 ? 1 : 0) + (esperandoProtocolizacion.length > 0 ? 1 : 0) +
-                (protocolizadasFiltradas.length > 0 ? 1 : 0);
-
             const n = delegadasExternas.length;
             const sortedDelegadas = [...delegadasExternas].sort((a, b) => this.sortMareaId(a.id_marea, b.id_marea));
 
             result.push(
-                this.heading2(`7.${subsecNum} Mareas delegadas a programas externos`),
+                this.heading2(`6.${subsecNum} Mareas delegadas a programas externos`),
                 this.bodyParagraph(`${n} marea${n !== 1 ? 's' : ''} finalizada${n !== 1 ? 's' : ''} en el período se encontraba${n !== 1 ? 'n' : ''} derivada${n !== 1 ? 's' : ''} a programas científicos externos para validación de datos al momento del cierre.`),
                 createFormattedTable(
                     ['MAREA', 'BUQUE', 'PESQUERÍA', 'DÍAS NAV.', 'FECHA DERIVACIÓN'],
@@ -1334,6 +1317,7 @@ export class AuditReportBuilder {
                     },
                 ),
             );
+            subsecNum++;
         }
 
         return result;
@@ -1467,7 +1451,7 @@ export class AuditReportBuilder {
             proc.hasPreviousYearMareas,
             camp,
         );
-        const children: (Paragraph | Table)[] = [this.heading1('8. OBSERVACIONES COMPLEMENTARIAS')];
+        const children: (Paragraph | Table)[] = [this.heading1('7. OBSERVACIONES COMPLEMENTARIAS')];
         for (const o of obs) {
             children.push(new Paragraph({
                 spacing: { before: SPACING.beforeHeading / 2, after: SPACING.afterParagraph },
