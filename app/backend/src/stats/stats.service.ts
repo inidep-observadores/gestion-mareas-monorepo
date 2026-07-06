@@ -4500,8 +4500,10 @@ export class StatsService {
                     fechaEnvioProtocolizacion: true,
                     nroProtocolizacion: true,
                     anioProtocolizacion: true,
-                    buque: { select: { nombreBuque: true } },
+                    buque: { select: { nombreBuque: true, pesqueriaHabitual: { select: { nombre: true } } } },
                     observadorPrincipal: { select: { nombre: true, apellido: true } },
+                    pesqueria: { select: { nombre: true } },
+                    etapas: { select: { fechaZarpada: true, fechaArribo: true } },
                     movimientos: {
                         where: { estadoHasta: { codigo: MareaEstado.ENTREGADA_RECIBIDA } },
                         orderBy: { fechaHora: 'asc' as const },
@@ -4646,15 +4648,29 @@ export class StatsService {
             promedioDiasLatenciaTramite,
             maxDiasLatenciaTramite,
             distribucionMensual,
-            protocolizadasDetalle: protocolizadas.map(m => ({
-                id: m.id,
-                id_marea: MareaUtils.formatCodigo(m as any),
-                buque: m.buque?.nombreBuque || 'Desconocido',
-                observador: m.observadorPrincipal ? `${m.observadorPrincipal.apellido}, ${m.observadorPrincipal.nombre}` : 'Sin asignar',
-                nroProtocolizacion: m.nroProtocolizacion,
-                anioProtocolizacion: m.anioProtocolizacion,
-                fechaProtocolizacion: m.fechaProtocolizacion,
-            })).sort((a, b) => {
+            protocolizadasDetalle: protocolizadas.map(m => {
+                const intervals = m.etapas.map(e => ({
+                    start: e.fechaZarpada,
+                    end: e.fechaArribo || snapEnd,
+                })).filter(i => i.start) as Array<{ start: Date, end: Date }>;
+                const diasNavegados = DateUtils.calculateUniqueDays(intervals, { start: new Date(Date.UTC(2000, 0, 1)), end: snapEnd }, snapEnd);
+
+                const lastStage = m.etapas?.[m.etapas.length - 1];
+                const fechaFinalizacion = lastStage?.fechaArribo || null;
+
+                return {
+                    id: m.id,
+                    id_marea: MareaUtils.formatCodigo(m as any),
+                    buque: m.buque?.nombreBuque || 'Desconocido',
+                    pesqueria: m.pesqueria?.nombre || (m.buque as any)?.pesqueriaHabitual?.nombre || '-',
+                    diasNavegados,
+                    fechaFinalizacion,
+                    observador: m.observadorPrincipal ? `${m.observadorPrincipal.apellido}, ${m.observadorPrincipal.nombre}` : 'Sin asignar',
+                    nroProtocolizacion: m.nroProtocolizacion,
+                    anioProtocolizacion: m.anioProtocolizacion,
+                    fechaProtocolizacion: m.fechaProtocolizacion,
+                };
+            }).sort((a, b) => {
                 if (a.anioProtocolizacion !== b.anioProtocolizacion) {
                     return (a.anioProtocolizacion || 0) - (b.anioProtocolizacion || 0);
                 }
