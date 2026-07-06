@@ -534,7 +534,8 @@ const props = withDefaults(defineProps<{
   showDelays: true,
   showReports: true,
   showMovements: true,
-  showFatigue: true
+  showFatigue: true,
+  workforceData: null
 })
 
 const expandedSection = ref<'delays' | 'reports' | 'movements' | 'fatigue' | 'creditRisk' | null>(null)
