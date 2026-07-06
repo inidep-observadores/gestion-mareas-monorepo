@@ -245,13 +245,13 @@ const fetchData = async () => {
   try {
     const response = await presentismoApi.obtenerPlanillaMensual(selectedYear.value, selectedMonth.value);
     
-    // Inicializar filtros por defecto (marcar todos menos TECNICO, MONOTRIBUTISTA y PLANTA PERMANENTE)
+    // Inicializar filtros por defecto (marcar todos menos TECNICO y MONOTRIBUTISTA)
     const newActiveTO = new Set<string>();
     const newActiveTC = new Set<string>();
     
     response.matriz.forEach(r => {
       if (r.observador.tipoObservador !== 'TECNICO') newActiveTO.add(r.observador.tipoObservador);
-      if (r.observador.tipoContrato !== 'MONOTRIBUTISTA' && r.observador.tipoContrato !== 'PLANTA PERMANENTE') newActiveTC.add(r.observador.tipoContrato);
+      if (r.observador.tipoContrato !== 'MONOTRIBUTISTA') newActiveTC.add(r.observador.tipoContrato);
     });
     
     activeTipoObservador.value = newActiveTO;
