@@ -133,8 +133,8 @@
 
                     <!-- Info Operativa -->
                     <div class="flex items-center justify-between gap-4 pt-3 border-t border-border">
-                      <div class="flex-1">
-                        <div class="flex justify-between items-center mb-1">
+                      <div class="flex-1 flex flex-col gap-1">
+                        <div class="flex justify-between items-center">
                           <span class="text-[9px] font-bold text-text-muted uppercase tracking-widest">Progreso</span>
                           <span class="text-[10px] font-black"
                             :class="marea.progreso > 100 ? 'text-error' : 'text-primary'">{{ marea.progreso }}%</span>
@@ -142,7 +142,11 @@
                         <div class="h-1.5 w-full bg-surface-muted rounded-full overflow-hidden">
                           <div class="h-full transition-all duration-1000"
                             :class="marea.progreso > 100 ? 'bg-error' : 'bg-primary'"
-                            :style="{ width: marea.progreso + '%' }"></div>
+                            :style="{ width: Math.min(marea.progreso, 100) + '%' }"></div>
+                        </div>
+                        <div class="flex justify-between items-center">
+                          <span class="text-[8px] font-bold text-text-muted/70 uppercase tracking-tight">Días transcurridos</span>
+                          <span class="text-[9px] font-bold" :class="marea.progreso > 100 ? 'text-error' : 'text-text-muted'">{{ marea.dias_marea || 0 }} / {{ marea.dias_estimados || 30 }}</span>
                         </div>
                       </div>
 
@@ -292,13 +296,18 @@
                           </div>
                         </td>
                         <td v-if="!selectedMarea" class="px-5 py-1.5">
-                          <div class="flex items-center gap-2">
-                            <div class="w-16 h-1 bg-surface-muted rounded-full overflow-hidden">
-                              <div class="h-full transition-all duration-1000"
-                                :class="marea.progreso > 100 ? 'bg-error' : 'bg-success'"
-                                :style="{ width: marea.progreso + '%' }"></div>
+                          <div class="flex flex-col gap-1 w-fit">
+                            <div class="flex items-center gap-2">
+                              <div class="w-16 h-1.5 bg-surface-muted rounded-full overflow-hidden">
+                                <div class="h-full transition-all duration-1000"
+                                  :class="marea.progreso > 100 ? 'bg-error' : 'bg-success'"
+                                  :style="{ width: Math.min(marea.progreso, 100) + '%' }"></div>
+                              </div>
+                              <span class="text-[10px] font-black" :class="marea.progreso > 100 ? 'text-error' : 'text-text-muted'">{{ marea.progreso }}%</span>
                             </div>
-                            <span class="text-[10px] font-black text-text-muted">{{ marea.progreso }}%</span>
+                            <span class="text-[8px] font-bold text-text-muted/70 tracking-tight text-right w-full">
+                              {{ marea.dias_marea || 0 }} / {{ marea.dias_estimados || 30 }} d
+                            </span>
                           </div>
                         </td>
                         <td v-if="!selectedMarea" class="px-5 py-1.5">

@@ -585,6 +585,7 @@ export class MareasService {
                                 (m.estadoActual.codigo === MareaEstado.DESIGNADA && m.iniciaEnProspeccion === true),
                 total_etapas: etapaFinal?.nroEtapa || 1,
                 dias_navegados: MareaUtils.calculateNavigatedDays(m),
+                dias_marea: m.fechaInicioObservador ? DateUtils.calculateInclusiveDays(m.fechaInicioObservador, m.fechaFinObservador) : 0,
                 alertas: activeAlerts.filter((a: any) => a.referenciaId === m.id),
                 intencion_cierre: m.estadoActual.codigo.trim().toUpperCase() === MareaEstado.EN_EJECUCION &&
                     (etapaFinal?.metadata as unknown as MareaEtapaMetadata)?.opcionesCierre?.finalizarMareaAlArribo === true,
@@ -1140,16 +1141,20 @@ export class MareasService {
             return 0;
         }
 
-        const diasTrabajados = MareaUtils.calculateNavigatedDays(m);
+        let diasMarea = 0;
+        if (m.fechaInicioObservador) {
+            diasMarea = DateUtils.calculateInclusiveDays(m.fechaInicioObservador, m.fechaFinObservador);
+        }
+        
         const estimatedDuration = (m.diasEstimados && m.diasEstimados > 0) ? m.diasEstimados : 30;
 
-        let progreso = Math.round((diasTrabajados / estimatedDuration) * 100);
+        let progreso = Math.round((diasMarea / estimatedDuration) * 100);
 
-        if (estadoCodigo !== MareaEstado.EN_EJECUCION && progreso < 100 && diasTrabajados > 0) {
+        if (estadoCodigo !== MareaEstado.EN_EJECUCION && progreso < 100 && diasMarea > 0) {
             progreso = 100;
         }
 
-        return Math.min(progreso, 100);
+        return progreso;
     }
 
     async getFatigueAlerts(year?: number) {

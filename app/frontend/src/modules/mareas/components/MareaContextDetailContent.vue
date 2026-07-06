@@ -53,7 +53,7 @@
             <div class="h-2 w-full bg-surface-muted rounded-full overflow-hidden border border-border">
               <div class="h-full transition-all duration-1000 ease-out"
                 :class="(currentMarea?.progreso || 0) > 100 ? 'bg-error' : 'bg-primary'"
-                :style="{ width: (currentMarea?.progreso || 0) + '%' }"></div>
+                :style="{ width: Math.min(currentMarea?.progreso || 0, 100) + '%' }"></div>
             </div>
           </div>
 
