@@ -504,6 +504,7 @@ export class StatsService {
             const desviacionPorcentual = (desviacionDias / avgEstimados) * 100;
             return {
                 buque: v.buque,
+                mareas: v.mareas,
                 avgReales: Math.round(avgReales * 10) / 10,
                 avgEstimados: Math.round(avgEstimados * 10) / 10,
                 desviacionDias: Math.round(desviacionDias * 10) / 10,
@@ -801,7 +802,7 @@ export class StatsService {
         }
 
         if (filterType?.startsWith('CHART_')) {
-            return this.getChartDataExportWorkbook(year, mode, includeNonProtocolized, includeProtocolizedOutOfPeriod, includeCampaigns, filterType, startDate, endDate, protocolizationStartDate, protocolizationEndDate);
+            return this.getChartDataExportWorkbook(year, mode, includeNonProtocolized, includeProtocolizedOutOfPeriod, includeCampaigns, filterType, startDate, endDate, protocolizationStartDate, protocolizationEndDate, filterValue);
         }
 
         const yearStart = startDate ? new Date(startDate) : new Date(Date.UTC(year, 0, 1, 0, 0, 0, 0));
@@ -919,7 +920,7 @@ export class StatsService {
         }
 
         if (filterType === 'CHART_ESTIMATION_DEVIATION') {
-            return this.getEstimationDeviationExportWorkbook(mareasFiltradas);
+            return this.getEstimationDeviationExportWorkbook(mareasFiltradas, filterValue);
         }
 
         const workbook = new ExcelJS.Workbook();
@@ -1892,6 +1893,7 @@ export class StatsService {
         endDate?: string,
         protocolizationStartDate?: string,
         protocolizationEndDate?: string,
+        filterValue?: string,
     ): Promise<ExcelJS.Workbook> {
         const stats = await this.getDashboardStats(
             year, mode, includeNonProtocolized, includeProtocolizedOutOfPeriod, 'SHIP', includeCampaigns, startDate, endDate, protocolizationStartDate, protocolizationEndDate
@@ -1947,6 +1949,15 @@ export class StatsService {
                 ];
                 rows = stats.observers;
                 break;
+
+            case 'CHART_ESTIMATION_DEVIATION': {
+                // Los datos ya vienen pre-calculados desde getDashboardStats
+                const tolerance = filterValue ? (parseInt(filterValue, 10) || 0) : 0;
+                const deviations = (stats.estimationDeviations ?? []).filter(
+                    (d: any) => Math.abs(d.desviacionPorcentual) >= tolerance
+                );
+                return this.buildEstimationDeviationWorkbook(deviations);
+            }
         }
 
         return this.createGenericWorkbook(sheetName, headers, rows);
@@ -4723,36 +4734,14 @@ export class StatsService {
         };
     }
 
-    private async getEstimationDeviationExportWorkbook(mareas: any[]) {
-        const workbook = new ExcelJS.Workbook();
-        const sheet = workbook.addWorksheet('Desviación de Estimaciones');
+    private async getEstimationDeviationExportWorkbook(mareas: any[], filterValue?: string) {
+        let tolerance = 0;
+        if (filterValue) {
+            tolerance = parseInt(filterValue, 10);
+            if (isNaN(tolerance)) tolerance = 0;
+        }
 
-        const columns: Partial<ExcelJS.Column>[] = [
-            { header: 'Buque', key: 'buque', width: 30 },
-            { header: 'Cantidad Mareas', key: 'mareas', width: 20 },
-            { header: 'Promedio Estimado (días)', key: 'avgEstimados', width: 25 },
-            { header: 'Promedio Real (días)', key: 'avgReales', width: 25 },
-            { header: 'Desviación (días)', key: 'desviacionDias', width: 20 },
-            { header: 'Desviación Porcentual (%)', key: 'desviacionPorcentual', width: 25 },
-        ];
-
-        sheet.columns = columns;
-
-        // Header style
-        const headerRow = sheet.getRow(1);
-        headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
-        headerRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF2563EB' } }; // Azul Corporativo
-
-        // Autofiltro
-        sheet.autoFilter = {
-            from: { row: 1, column: 1 },
-            to: { row: 1, column: columns.length }
-        };
-        sheet.views = [
-            { state: 'frozen', xSplit: 0, ySplit: 1, topLeftCell: 'A2', activeCell: 'A2' }
-        ];
-
-        // Process data
+        // Process raw mareas into deviation summaries per vessel
         const byEstimationDeviation: Record<string, { vesselId: string, buque: string, mareas: number, totalDiasReales: number, totalDiasEstimados: number }> = {};
         
         mareas.forEach(marea => {
@@ -4773,7 +4762,6 @@ export class StatsService {
                 
                 const fInicio = new Date(marea.fechaInicioObservador);
                 const fFin = new Date(marea.fechaFinObservador);
-                // Ignoring time component, just raw UTC date difference to emulate DB difference
                 const diffTime = Math.abs(fFin.getTime() - fInicio.getTime());
                 const diasMarea = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
                 
@@ -4795,18 +4783,49 @@ export class StatsService {
                 desviacionDias: diff,
                 desviacionPorcentual: deviationPercent
             };
-        });
+        }).filter(d => Math.abs(d.desviacionPorcentual) >= tolerance);
 
         deviations.sort((a, b) => b.desviacionPorcentual - a.desviacionPorcentual);
 
+        return this.buildEstimationDeviationWorkbook(deviations);
+    }
+
+    private buildEstimationDeviationWorkbook(deviations: { buque: string; mareas?: number; avgEstimados: number; avgReales: number; desviacionDias: number; desviacionPorcentual: number }[]): ExcelJS.Workbook {
+        const workbook = new ExcelJS.Workbook();
+        const sheet = workbook.addWorksheet('Desviación de Estimaciones');
+
+        const columns: Partial<ExcelJS.Column>[] = [
+            { header: 'Buque', key: 'buque', width: 30 },
+            { header: 'Cantidad Mareas', key: 'mareas', width: 20 },
+            { header: 'Promedio Estimado (días)', key: 'avgEstimados', width: 25 },
+            { header: 'Promedio Real (días)', key: 'avgReales', width: 25 },
+            { header: 'Desviación (días)', key: 'desviacionDias', width: 20 },
+            { header: 'Desviación Porcentual (%)', key: 'desviacionPorcentual', width: 25 },
+        ];
+
+        sheet.columns = columns;
+
+        // Header style
+        const headerRow = sheet.getRow(1);
+        headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+        headerRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF2563EB' } };
+
+        // Autofiltro
+        sheet.autoFilter = {
+            from: { row: 1, column: 1 },
+            to: { row: 1, column: columns.length }
+        };
+        sheet.views = [
+            { state: 'frozen', xSplit: 0, ySplit: 1, topLeftCell: 'A2', activeCell: 'A2' }
+        ];
+
         deviations.forEach(row => {
             const addedRow = sheet.addRow(row);
-            // Optional: style percentage
             const cell = addedRow.getCell('desviacionPorcentual');
             if (row.desviacionPorcentual > 0) {
-                cell.font = { color: { argb: 'FFEF4444' }, bold: true }; // red
+                cell.font = { color: { argb: 'FFEF4444' }, bold: true }; // red: exceso
             } else if (row.desviacionPorcentual < 0) {
-                cell.font = { color: { argb: 'FFEAB308' }, bold: true }; // yellow
+                cell.font = { color: { argb: 'FFEAB308' }, bold: true }; // yellow: ahorro
             }
         });
 

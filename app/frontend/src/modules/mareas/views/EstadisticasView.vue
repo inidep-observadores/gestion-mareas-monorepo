@@ -1357,6 +1357,7 @@ const handleDownload = async (titlePrefix: string, fType?: 'FISHERY' | 'FLEET' |
    let finalTitle = titlePrefix;
    if (titlePrefix === 'Desviacion_Estimaciones') {
       fTypeParam = 'CHART_ESTIMATION_DEVIATION' as any;
+      fValue = estimationTolerance.value.toString();
    } else if (dialogOpen.value && dialogTitle.value) {
       // Sanitize dialog title for filename: remove special characters and replace spaces with underscores
       const sanitizedDataName = dialogTitle.value
