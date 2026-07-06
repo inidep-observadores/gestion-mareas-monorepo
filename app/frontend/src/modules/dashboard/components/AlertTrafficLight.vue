@@ -313,8 +313,8 @@
         </Transition>
       </div>
 
-      <!-- CARD 4: Fatigue (Blue/Brand) -->
-      <div v-if="showFatigue"
+      <!-- CARD 4: Fatigue (Blue/Brand) - HIDDEN BY USER REQUEST -->
+      <div v-if="false"
         class="rounded-3xl border border-border bg-surface shadow-sm relative overflow-hidden group hover:shadow-md transition-all border-l-4"
         :class="[expandedSection === 'fatigue' ? 'border-l-primary' : 'border-l-primary/30']">
         <!-- Header Ficha -->
@@ -427,6 +427,14 @@
           </div>
         </Transition>
       </div>
+
+      <!-- CARD 5: Credit Note Risk (Red) -->
+      <CreditNoteRisk 
+        :data="workforceData" 
+        :is-expanded="expandedSection === 'creditRisk'"
+        @toggle="toggleSection('creditRisk')"
+        @view-timeline="openTimeline"
+      />
     </div>
     <ReclamoEntregaDialog :show="showReclamoDialog" :id="selectedReclamoItem?.id || ''"
       :marea-id="selectedReclamoItem?.mareaId || ''" :vessel-name="selectedReclamoItem?.vesselName || ''"
@@ -454,6 +462,8 @@ import MareaQuickDetailModal from '@/modules/stats/components/MareaQuickDetailMo
 import TrajectorySourceBadge from '@/modules/alerts/components/TrajectorySourceBadge.vue'
 import { TrajectoryRangeUtils } from '@/modules/alerts/utils/trajectory-range.utils'
 import { useConfigStore } from '@/modules/shared/stores/config.store'
+import CreditNoteRisk from './CreditNoteRisk.vue'
+import type { WorkforceStatus } from '../services/dashboard.service'
 
 const showReclamoDialog = ref(false)
 const selectedReclamoItem = ref<any>(null)
@@ -518,6 +528,7 @@ const props = withDefaults(defineProps<{
   showReports?: boolean
   showMovements?: boolean
   showFatigue?: boolean
+  workforceData?: WorkforceStatus | null
 }>(), {
   showActions: true,
   showDelays: true,
@@ -526,10 +537,10 @@ const props = withDefaults(defineProps<{
   showFatigue: true
 })
 
-const expandedSection = ref<'delays' | 'reports' | 'movements' | 'fatigue' | null>(null)
+const expandedSection = ref<'delays' | 'reports' | 'movements' | 'fatigue' | 'creditRisk' | null>(null)
 const expandedIndividualId = ref<string | null>(null)
 
-const toggleSection = (section: 'delays' | 'reports' | 'movements' | 'fatigue') => {
+const toggleSection = (section: 'delays' | 'reports' | 'movements' | 'fatigue' | 'creditRisk') => {
   expandedSection.value = expandedSection.value === section ? null : section
 }
 

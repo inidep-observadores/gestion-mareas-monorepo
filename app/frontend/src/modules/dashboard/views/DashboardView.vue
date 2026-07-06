@@ -26,7 +26,7 @@
       <div class="grid grid-cols-12 gap-8 mb-8 items-start">
         <!-- ALERT CENTER (Left) -->
         <div class="col-span-12 lg:col-span-6 xl:col-span-5 flex flex-col gap-8">
-          <AlertTrafficLight :show-actions="false" />
+          <AlertTrafficLight :show-actions="false" :workforce-data="workforceData" />
           <div class="flex flex-col gap-2">
             <WorkforceOverview :data="workforceData" @view-timeline="openTimeline" @refresh="loadWorkforce" />
             <TopDryTime v-show="false" :topDry="workforceData?.topDry || []" @view-timeline="openTimeline" />

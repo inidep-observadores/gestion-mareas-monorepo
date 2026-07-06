@@ -18,20 +18,16 @@ model User {
   roles                        String[]                      @default(["invitado"])
   themePreference              String                        @default("system")
   avatarUrl                    String?
-  auditoriaApis                AuditoriaApi[]
-  auditoriaEntidads            AuditoriaEntidad[]
-  auditoriaEventos             AuditoriaEvento[]
-  auditoriaNavegacions         AuditoriaNavegacion[]
   alertasAsignadas             Alerta[]                      @relation("AlertaAsignado")
   alertasCreadas               Alerta[]                      @relation("AlertaCreadoPor")
   eventosAlerta                AlertaEvento[]
   archivos                     MareaArchivo[]
   movimientos                  MareaMovimiento[]
+  novedadesCreadas             ObservadorNovedad[]
+  observadorNovedadMovimientos ObservadorNovedadMovimiento[]
   resetTokens                  PasswordResetToken[]
   products                     Product[]
   protocolizacionLotes         ProtocolizacionLote[]
-  novedadesCreadas             ObservadorNovedad[]
-  observadorNovedadMovimientos ObservadorNovedadMovimiento[]
 
   @@map("users")
   @@schema("public")
@@ -96,54 +92,52 @@ model TipoFlota {
 }
 
 model Buque {
-  id                        String                  @id @default(uuid()) @db.Uuid
-  nombreBuque               String                  @unique @map("nombre_buque")
-  matricula                 String                  @unique
-  codigoInterno             Int?                    @map("codigo_interno")
-  tipoFlotaId               String?                 @map("id_tipo_flota") @db.Uuid
-  arteHabitualId            String?                 @map("id_arte_habitual") @db.Uuid
-  pesqueriaHabitualId       String?                 @map("id_pesqueria_habitual") @db.Uuid
-  diasMareaEstimada         Int?                    @map("dias_marea_estimada")
-  esloraM                   Decimal?                @map("eslora_m") @db.Decimal(6, 2)
-  potenciaHp                Int?                    @map("potencia_hp")
-  puertoBaseId              String?                 @map("id_puerto_base") @db.Uuid
-  empresaNombre             String?                 @map("empresa_nombre")
-  empresaLocalidad          String?                 @map("empresa_localidad")
-  empresaTelefono           String?                 @map("empresa_telefono")
-  empresaFax                String?                 @map("empresa_fax")
-  empresaCorreoPrincipal    String?                 @map("empresa_correo_principal")
-  empresaCorreoSecundario   String?                 @map("empresa_correo_secundario")
-  armadorNombre             String?                 @map("armador_nombre")
-  armadorTelefono           String?                 @map("armador_telefono")
-  agenciaMaritimaNombre     String?                 @map("agencia_maritima_nombre")
-  activo                    Boolean                 @default(true)
-  fechaAlta                 DateTime?               @map("fecha_alta") @db.Date
-  fechaBaja                 DateTime?               @map("fecha_baja") @db.Date
+  id                        String     @id @default(uuid()) @db.Uuid
+  nombreBuque               String     @unique @map("nombre_buque")
+  matricula                 String     @unique
+  codigoInterno             Int?       @map("codigo_interno")
+  tipoFlotaId               String?    @map("id_tipo_flota") @db.Uuid
+  arteHabitualId            String?    @map("id_arte_habitual") @db.Uuid
+  pesqueriaHabitualId       String?    @map("id_pesqueria_habitual") @db.Uuid
+  diasMareaEstimada         Int?       @map("dias_marea_estimada")
+  esloraM                   Decimal?   @map("eslora_m") @db.Decimal(6, 2)
+  potenciaHp                Int?       @map("potencia_hp")
+  puertoBaseId              String?    @map("id_puerto_base") @db.Uuid
+  empresaNombre             String?    @map("empresa_nombre")
+  empresaLocalidad          String?    @map("empresa_localidad")
+  empresaTelefono           String?    @map("empresa_telefono")
+  empresaFax                String?    @map("empresa_fax")
+  empresaCorreoPrincipal    String?    @map("empresa_correo_principal")
+  empresaCorreoSecundario   String?    @map("empresa_correo_secundario")
+  armadorNombre             String?    @map("armador_nombre")
+  armadorTelefono           String?    @map("armador_telefono")
+  agenciaMaritimaNombre     String?    @map("agencia_maritima_nombre")
+  activo                    Boolean    @default(true)
+  fechaAlta                 DateTime?  @map("fecha_alta") @db.Date
+  fechaBaja                 DateTime?  @map("fecha_baja") @db.Date
   observaciones             String?
-  matriculaSiop             String?                 @unique @map("matricula_siop")
-  idMbpc                    String?                 @map("id_mbpc")
+  matriculaSiop             String?    @unique @map("matricula_siop")
+  idMbpc                    String?    @map("id_mbpc")
   bandera                   String?
-  anioConstruccion          Int?                    @map("anio_construccion")
+  anioConstruccion          Int?       @map("anio_construccion")
   mmsi                      String?
-  tipoBuque                 String?                 @map("tipo_buque")
-  senalDistintiva           String?                 @map("senal_distintiva")
+  tipoBuque                 String?    @map("tipo_buque")
+  senalDistintiva           String?    @map("senal_distintiva")
   velocidad                 Float?
-  puntal                    Decimal?                @db.Decimal(6, 2)
-  arqueoTotal               Decimal?                @map("arqueo_total") @db.Decimal(10, 2)
-  caladoMax                 Decimal?                @map("calado_max") @db.Decimal(6, 2)
-  puertoAsiento             String?                 @map("puerto_asiento")
-  arqueoNeto                Decimal?                @map("arqueo_neto") @db.Decimal(10, 2)
-  dotacionMinima            Int?                    @map("dotacion_minima")
+  puntal                    Decimal?   @db.Decimal(6, 2)
+  arqueoTotal               Decimal?   @map("arqueo_total") @db.Decimal(10, 2)
+  caladoMax                 Decimal?   @map("calado_max") @db.Decimal(6, 2)
+  puertoAsiento             String?    @map("puerto_asiento")
+  arqueoNeto                Decimal?   @map("arqueo_neto") @db.Decimal(10, 2)
+  dotacionMinima            Int?       @map("dotacion_minima")
   tipo                      String?
-  estadoReg                 String?                 @map("estado_reg")
-  fechaUltimaActApi         DateTime?               @map("fecha_ultima_actualizacion_api") @db.Timestamptz(6)
-  habitabilidadFemeninaApta Boolean                 @default(true) @map("habitabilidad_femenina_apta")
-  buque_trayectoria_puntos  BuqueTrayectoriaPunto[]
-  buque_trayectorias        BuqueTrayectoria?
-  arteHabitual              ArtePesca?              @relation(fields: [arteHabitualId], references: [id])
-  pesqueriaHabitual         Pesqueria?              @relation(fields: [pesqueriaHabitualId], references: [id])
-  puertoBase                Puerto?                 @relation(fields: [puertoBaseId], references: [id])
-  tipoFlota                 TipoFlota?              @relation(fields: [tipoFlotaId], references: [id])
+  estadoReg                 String?    @map("estado_reg")
+  fechaUltimaActApi         DateTime?  @map("fecha_ultima_actualizacion_api") @db.Timestamptz(6)
+  habitabilidadFemeninaApta Boolean    @default(true) @map("habitabilidad_femenina_apta")
+  arteHabitual              ArtePesca? @relation(fields: [arteHabitualId], references: [id])
+  pesqueriaHabitual         Pesqueria? @relation(fields: [pesqueriaHabitualId], references: [id])
+  puertoBase                Puerto?    @relation(fields: [puertoBaseId], references: [id])
+  tipoFlota                 TipoFlota? @relation(fields: [tipoFlotaId], references: [id])
   mareas                    Marea[]
 
   @@map("buques")
@@ -236,8 +230,8 @@ model Observador {
   motivoImpedimento          String?                 @map("motivo_impedimento")
   eventual                   Boolean                 @default(false)
   sexo                       Sexo                    @default(Masculino)
-  habilitadoFresqueros       Boolean                 @default(true) @map("habilitado_fresqueros")
   habilitadoCongeladores     Boolean                 @default(true) @map("habilitado_congeladores")
+  habilitadoFresqueros       Boolean                 @default(true) @map("habilitado_fresqueros")
   experiencias               ExperienciaObservador[]
   mareasAsignadas            Marea[]                 @relation("ObservadorPrincipal")
   etapas                     MareaEtapaObservador[]
@@ -558,7 +552,6 @@ model BuqueTrayectoria {
   origen   String?
   metadata Json?
   puntos   BuqueTrayectoriaPunto[]
-  buques   Buque                   @relation(fields: [buqueId], references: [id])
 
   @@index([buqueId])
   @@map("buque_trayectorias")
@@ -574,7 +567,6 @@ model BuqueTrayectoriaPunto {
   lon           Float
   velocidad     Float?
   rumbo         Int?
-  buques        Buque            @relation(fields: [buqueId], references: [id])
   trayectoria   BuqueTrayectoria @relation(fields: [trayectoriaId], references: [id], onDelete: Cascade)
 
   @@unique([buqueId, timestamp])
@@ -870,7 +862,6 @@ model AuditoriaApi {
   entidadId      String?  @map("entidad_id")
   esError        Boolean  @default(false) @map("es_error")
   esCritico      Boolean  @default(false) @map("es_critico")
-  usuario        User?    @relation(fields: [usuarioId], references: [id])
 
   @@map("auditoria_api")
   @@schema("audit")
@@ -885,7 +876,6 @@ model AuditoriaNavegacion {
   rutaDestino   String   @map("ruta_destino")
   parametros    Json?
   tiempoVistaMs Int?     @map("tiempo_vista_ms")
-  usuario       User?    @relation(fields: [usuarioId], references: [id])
 
   @@map("auditoria_navegacion")
   @@schema("audit")
@@ -903,7 +893,6 @@ model AuditoriaEntidad {
   valoresNuevos     Json?    @map("valores_nuevos")
   camposModificados String[] @map("campos_modificados")
   contexto          Json?
-  usuario           User?    @relation(fields: [usuarioId], references: [id])
 
   @@map("auditoria_entidad")
   @@schema("audit")
@@ -924,10 +913,91 @@ model AuditoriaEvento {
   mensajeError          String?  @map("mensaje_error")
   esCritico             Boolean  @default(false) @map("es_critico")
   ip                    String?
-  usuario               User?    @relation(fields: [usuarioId], references: [id])
 
   @@map("auditoria_eventos")
   @@schema("audit")
+}
+
+model TipoNovedad {
+  id                      String              @id @default(uuid()) @db.Uuid
+  codigo                  String              @unique
+  descripcion             String
+  afectaPresentismo       Boolean             @default(true) @map("afecta_presentismo")
+  tiposContratoPermitidos String[]            @default([]) @map("tipos_contrato_permitidos")
+  activo                  Boolean             @default(true)
+  metadata                Json?
+  novedades               ObservadorNovedad[]
+
+  @@map("tipos_novedad")
+  @@schema("public")
+}
+
+model ObservadorNovedad {
+  id                 String                        @id @default(uuid()) @db.Uuid
+  observadorId       String                        @map("id_observador") @db.Uuid
+  fechaInicio        DateTime                      @map("fecha_inicio") @db.Timestamptz(6)
+  fechaFin           DateTime?                     @map("fecha_fin") @db.Timestamptz(6)
+  permiteUrgencia    Boolean                       @default(false) @map("permite_urgencia")
+  motivo             String?
+  estadoAprobacion   String                        @default("APROBADA") @map("estado_aprobacion")
+  origen             String                        @default("MANUAL")
+  metadata           Json?
+  creadoPorId        String?                       @map("creado_por_id") @db.Uuid
+  fechaCreacion      DateTime                      @default(now()) @map("fecha_creacion") @db.Timestamptz(6)
+  fechaActualizacion DateTime                      @updatedAt @map("fecha_actualizacion") @db.Timestamptz(6)
+  tipoNovedadId      String                        @map("id_tipo_novedad") @db.Uuid
+  creadoPor          User?                         @relation(fields: [creadoPorId], references: [id])
+  observador         Observador                    @relation(fields: [observadorId], references: [id])
+  tipoNovedad        TipoNovedad                   @relation(fields: [tipoNovedadId], references: [id])
+  archivos           ObservadorNovedadArchivo[]
+  movimientos        ObservadorNovedadMovimiento[]
+
+  @@index([observadorId])
+  @@index([fechaInicio, fechaFin])
+  @@map("observadores_novedades")
+  @@schema("public")
+}
+
+model Feriado {
+  fecha  DateTime @id @db.Date
+  nombre String
+  tipo   String
+  origen String   @default("API")
+
+  @@map("feriados")
+  @@schema("public")
+}
+
+model ObservadorNovedadArchivo {
+  id             String            @id @default(uuid()) @db.Uuid
+  novedadId      String            @map("id_novedad") @db.Uuid
+  rutaArchivo    String            @map("ruta_archivo")
+  tipoArchivo    String            @map("tipo_archivo")
+  nombreOriginal String?           @map("nombre_original")
+  driveFileId    String?           @map("drive_file_id")
+  fechaSubida    DateTime          @default(now()) @map("fecha_subida") @db.Timestamptz(6)
+  novedad        ObservadorNovedad @relation(fields: [novedadId], references: [id], onDelete: Cascade)
+
+  @@index([novedadId])
+  @@map("observadores_novedades_archivos")
+  @@schema("public")
+}
+
+model ObservadorNovedadMovimiento {
+  id             String            @id @default(uuid()) @db.Uuid
+  novedadId      String            @map("id_novedad") @db.Uuid
+  fechaHora      DateTime          @default(now()) @map("fecha_hora") @db.Timestamptz(6)
+  usuarioId      String?           @map("id_usuario") @db.Uuid
+  tipoEvento     String            @map("tipo_evento")
+  estadoAnterior String?           @map("estado_anterior")
+  estadoNuevo    String?           @map("estado_nuevo")
+  comentarios    String?
+  novedad        ObservadorNovedad @relation(fields: [novedadId], references: [id], onDelete: Cascade)
+  usuario        User?             @relation(fields: [usuarioId], references: [id])
+
+  @@index([novedadId])
+  @@map("observadores_novedades_movimientos")
+  @@schema("public")
 }
 
 enum Sexo {
@@ -998,92 +1068,5 @@ enum TipoCalculoZonaAustral {
   AUTOMATICO
   MANUAL
 
-  @@schema("public")
-}
-
-model TipoNovedad {
-  id                      String   @id @default(uuid()) @db.Uuid
-  codigo                  String   @unique
-  descripcion             String
-  afectaPresentismo       Boolean  @default(true) @map("afecta_presentismo")
-  tiposContratoPermitidos String[] @default([]) @map("tipos_contrato_permitidos")
-  activo                  Boolean  @default(true)
-  metadata                Json?
-
-  novedades ObservadorNovedad[]
-
-  @@map("tipos_novedad")
-  @@schema("public")
-}
-
-model ObservadorNovedad {
-  id               String    @id @default(uuid()) @db.Uuid
-  observadorId     String    @map("id_observador") @db.Uuid
-  tipoNovedadId    String    @map("id_tipo_novedad") @db.Uuid
-  fechaInicio      DateTime  @map("fecha_inicio") @db.Timestamptz(6)
-  fechaFin         DateTime? @map("fecha_fin") @db.Timestamptz(6)
-  permiteUrgencia  Boolean   @default(false) @map("permite_urgencia")
-  motivo           String?
-  estadoAprobacion String    @default("APROBADA") @map("estado_aprobacion") // APROBADA, PENDIENTE, RECHAZADA
-  origen           String    @default("MANUAL") // MANUAL, EMAIL, AUTOMATICO
-  metadata         Json? // Ej. JSON del email procesado
-
-  creadoPorId        String?  @map("creado_por_id") @db.Uuid
-  fechaCreacion      DateTime @default(now()) @map("fecha_creacion") @db.Timestamptz(6)
-  fechaActualizacion DateTime @updatedAt @map("fecha_actualizacion") @db.Timestamptz(6)
-
-  observador  Observador                    @relation(fields: [observadorId], references: [id])
-  tipoNovedad TipoNovedad                   @relation(fields: [tipoNovedadId], references: [id])
-  creadoPor   User?                         @relation(fields: [creadoPorId], references: [id])
-  archivos    ObservadorNovedadArchivo[]
-  movimientos ObservadorNovedadMovimiento[]
-
-  @@index([observadorId])
-  @@index([fechaInicio, fechaFin])
-  @@map("observadores_novedades")
-  @@schema("public")
-}
-
-model Feriado {
-  fecha  DateTime @id @db.Date
-  nombre String
-  tipo   String
-  origen String   @default("API") // API, MANUAL
-
-  @@map("feriados")
-  @@schema("public")
-}
-
-model ObservadorNovedadArchivo {
-  id             String   @id @default(uuid()) @db.Uuid
-  novedadId      String   @map("id_novedad") @db.Uuid
-  rutaArchivo    String   @map("ruta_archivo")
-  tipoArchivo    String   @map("tipo_archivo")
-  nombreOriginal String?  @map("nombre_original")
-  driveFileId    String?  @map("drive_file_id")
-  fechaSubida    DateTime @default(now()) @map("fecha_subida") @db.Timestamptz(6)
-
-  novedad ObservadorNovedad @relation(fields: [novedadId], references: [id], onDelete: Cascade)
-
-  @@index([novedadId])
-  @@map("observadores_novedades_archivos")
-  @@schema("public")
-}
-
-model ObservadorNovedadMovimiento {
-  id             String   @id @default(uuid()) @db.Uuid
-  novedadId      String   @map("id_novedad") @db.Uuid
-  fechaHora      DateTime @default(now()) @map("fecha_hora") @db.Timestamptz(6)
-  usuarioId      String?  @map("id_usuario") @db.Uuid
-  tipoEvento     String   @map("tipo_evento") // CREACION, APROBACION, RECHAZO, EDICION
-  estadoAnterior String?  @map("estado_anterior")
-  estadoNuevo    String?  @map("estado_nuevo")
-  comentarios    String?
-
-  novedad ObservadorNovedad @relation(fields: [novedadId], references: [id], onDelete: Cascade)
-  usuario User?             @relation(fields: [usuarioId], references: [id])
-
-  @@index([novedadId])
-  @@map("observadores_novedades_movimientos")
   @@schema("public")
 }
