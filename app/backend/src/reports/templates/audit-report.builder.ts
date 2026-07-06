@@ -1083,7 +1083,7 @@ export class AuditReportBuilder {
         ];
     }
 
-    private buildSpecialCasesSection(data: AuditReportData, period: PeriodDescription, specialCasesChart?: Buffer): (Paragraph | Table)[] {
+    private buildSpecialCasesSection(data: AuditReportData, period: PeriodDescription, proc: any, specialCasesChart?: Buffer): (Paragraph | Table)[] {
         const { canceladas, desestimadas, esperandoEntrega, pendientesDeInforme, informesPendientesEnvio, esperandoProtocolizacion, delegadasExternas } = data.specialCases;
         
         const protocolizadasDelPeriodo = data.protocolizationTimeline?.protocolizadasDetalle || [];
