@@ -255,10 +255,10 @@ export class AuditReportBuilder {
             // Sección 7: Mareas con Estado Especial
             ...this.buildSpecialCasesSection(data, period, specialCasesChart),
 
-            // Sección 8: Seguimiento de Protocolización
-            ...this.buildProtocolizacionSection(data, period),
+            // Sección 8: Seguimiento de Protocolización (Omitida temporalmente)
+            // ...this.buildProtocolizacionSection(data, period),
 
-            // Sección 9: Observaciones Complementarias
+            // Sección 9: Observaciones Complementarias (ahora 8)
             ...this.buildComplementaryObservations(period, processed, data.includeCampaigns),
         ];
 
@@ -1412,7 +1412,7 @@ export class AuditReportBuilder {
             proc.hasPreviousYearMareas,
             camp,
         );
-        const children: (Paragraph | Table)[] = [this.heading1('9. OBSERVACIONES COMPLEMENTARIAS')];
+        const children: (Paragraph | Table)[] = [this.heading1('8. OBSERVACIONES COMPLEMENTARIAS')];
         for (const o of obs) {
             children.push(new Paragraph({
                 spacing: { before: SPACING.beforeHeading / 2, after: SPACING.afterParagraph },
