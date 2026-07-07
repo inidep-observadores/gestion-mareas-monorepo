@@ -1351,7 +1351,7 @@ export class MareasService {
             stageCountByMarea.set(mareaId, (stageCountByMarea.get(mareaId) || 0) + 1);
         });
 
-        const activeNav = new Map<string, { start: Date; vessel: string; mareaCode: string; fishery: string; enTierra: boolean; stageCount: number; fleetCode?: string; fleetName?: string }>();
+        const activeNav = new Map<string, { start: Date; vessel: string; mareaCode: string; fishery: string; enTierra: boolean; stageCount: number; fleetCode?: string; fleetName?: string; intervals: Array<{ start: Date; end?: Date | null }> }>();
         const lastArrivalByObs = new Map<string, { date: Date; mareaCode: string; vessel: string; fishery: string }>();
         const designadosActivosByObs = new Map<string, { mareaCode: string; vesselName: string; fechaZarpadaEstimada: Date | null; fishery: string }>();
         const obsConMareas = new Set<string>();
@@ -1383,16 +1383,23 @@ export class MareasService {
 
                 const isNavigating = this.ESTADOS_NAVEGANDO.includes(etapa.marea.estadoActual?.codigo as MareaEstado);
                 if (isNavigating) {
-                    activeNav.set(obs.id, {
-                        start: inicio,
-                        vessel: etapa.marea.buque.nombreBuque,
-                        mareaCode: MareaUtils.formatCodigo(etapa.marea),
-                        fishery: etapa.pesqueria?.nombre || etapa.marea.pesqueria?.nombre || 'Sin Pesquería',
-                        enTierra: finRaw !== null,
-                        stageCount: stageCountByMarea.get(etapa.mareaId) || 1,
-                        fleetCode: etapa.marea.buque.tipoFlota?.codigo,
-                        fleetName: etapa.marea.buque.tipoFlota?.nombre
-                    });
+                    const existing = activeNav.get(obs.id);
+                    if (existing && existing.mareaCode === MareaUtils.formatCodigo(etapa.marea)) {
+                        existing.intervals.push({ start: inicio, end: finRaw });
+                        existing.enTierra = finRaw !== null;
+                    } else {
+                        activeNav.set(obs.id, {
+                            start: inicio,
+                            vessel: etapa.marea.buque.nombreBuque,
+                            mareaCode: MareaUtils.formatCodigo(etapa.marea),
+                            fishery: etapa.pesqueria?.nombre || etapa.marea.pesqueria?.nombre || 'Sin Pesquería',
+                            enTierra: finRaw !== null,
+                            stageCount: stageCountByMarea.get(etapa.mareaId) || 1,
+                            fleetCode: etapa.marea.buque.tipoFlota?.codigo,
+                            fleetName: etapa.marea.buque.tipoFlota?.nombre,
+                            intervals: [{ start: inicio, end: finRaw }]
+                        });
+                    }
                 }
 
                 if (finRaw) {

@@ -5,6 +5,9 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 
 ## [Unreleased]
 
+### Fixed
+- **mareas:** corregir cálculo de días de marea en lista de navegando
+
 ## [v0.11.0] - 2026-07-06
 
 ### Added
