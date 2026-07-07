@@ -151,7 +151,6 @@ const filteredList = computed(() => {
 
   return props.data.listNavegando.filter(item => {
     const isMonotributista = item.tipoContrato?.toUpperCase() === 'MONOTRIBUTISTA';
-    const isNavegando = item.enTierra === false;
     const isLessThan15Days = item.days < 15;
     
     // Pesquería Langostino O (Merluza Y Flota Altura Fresquero)
@@ -165,7 +164,7 @@ const filteredList = computed(() => {
 
     const validFishery = isLangostino || (isMerluza && isFresqueroAltura);
 
-    return isMonotributista && isNavegando && isLessThan15Days && validFishery;
+    return isMonotributista && isLessThan15Days && validFishery;
   });
 })
 
