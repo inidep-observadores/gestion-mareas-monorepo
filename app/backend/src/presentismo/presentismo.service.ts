@@ -129,6 +129,7 @@ export class PresentismoService {
         let isNovedad = false;
         let novedadDetalle = '';
         let novedadCodigoCorto = '';
+        let mareaReferencia: any = null;
 
         // Comprobar Novedad
         const novedad = obsNovedades.find(n => {
@@ -180,6 +181,10 @@ export class PresentismoService {
                 }
               }
             }
+            if (isNavegando) {
+              mareaReferencia = marea;
+              break;
+            }
 
             // Post última etapa (si llegó pero sin puerto, sigue navegando)
             if (!isNavegando && marea.etapas.length > 0) {
@@ -196,7 +201,11 @@ export class PresentismoService {
             }
           }
 
-          if (isNavegando) break;          // VIAJE O PUERTO
+          if (isNavegando) {
+            mareaReferencia = marea;
+            break;
+          }
+          // VIAJE O PUERTO
           const isActivaEnEsteDia = (!marea.fechaFinObservador || DateTime.fromJSDate(marea.fechaFinObservador, { zone: 'utc' }).startOf('day') >= currentDate) && 
                                     (marea.fechaInicioObservador && DateTime.fromJSDate(marea.fechaInicioObservador, { zone: 'utc' }).startOf('day') <= currentDate);
           
@@ -209,6 +218,7 @@ export class PresentismoService {
             const inicioObs = DateTime.fromJSDate(marea.fechaInicioObservador, { zone: 'utc' }).startOf('day');
             if (currentDate >= inicioObs && currentDate < zarpada1) {
               isViaje = true;
+              mareaReferencia = marea;
               break;
             }
           }
@@ -244,6 +254,7 @@ export class PresentismoService {
               if (marea.fechaFinObservador && currentDate <= DateTime.fromJSDate(marea.fechaFinObservador, { zone: 'utc' }).startOf('day')) {
                 // Hay fecha_fin_observador seteada -> Es Viaje
                 isViaje = true;
+                mareaReferencia = marea;
                 break;
               } else if (!marea.fechaFinObservador) {
                 // No hay fecha fin observador
@@ -288,10 +299,12 @@ export class PresentismoService {
           };
           row.totales.conflictos++;
         } else if (isNavegando) {
-          estadoDto = { estado: 'NAVEGANDO', referenciaId: etapaNavegando.id };
+          const mareaStr = mareaReferencia ? `${mareaReferencia.tipoMarea}-${mareaReferencia.nroMarea}-${mareaReferencia.anioMarea.toString().slice(-2)}` : '';
+          estadoDto = { estado: 'NAVEGANDO', referenciaId: etapaNavegando.id, detalle: mareaStr };
           row.totales.navegando++;
         } else if (isViaje) {
-          estadoDto = { estado: 'VIAJE' };
+          const mareaStr = mareaReferencia ? `${mareaReferencia.tipoMarea}-${mareaReferencia.nroMarea}-${mareaReferencia.anioMarea.toString().slice(-2)}` : '';
+          estadoDto = { estado: 'VIAJE', detalle: mareaStr };
         } else if (isPuerto) {
           estadoDto = { estado: 'PUERTO', detalle: puertoDetalle };
           row.totales.puerto++;
