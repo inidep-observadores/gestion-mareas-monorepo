@@ -107,7 +107,21 @@ export class PresentismoService {
       const obsMareas = mareasDb.filter(m => 
         m.observadorPrincipalId === obs.id || 
         m.etapas.some(e => e.observadores.some(eo => eo.observadorId === obs.id))
-      );
+      ).sort((a, b) => {
+        const aStarted = a.fechaInicioObservador !== null;
+        const bStarted = b.fechaInicioObservador !== null;
+        if (aStarted && !bStarted) return -1;
+        if (!aStarted && bStarted) return 1;
+
+        const aFinished = a.fechaFinObservador !== null;
+        const bFinished = b.fechaFinObservador !== null;
+        if (!aFinished && bFinished) return -1;
+        if (aFinished && !bFinished) return 1;
+
+        const aDate = a.fechaInicioObservador ? a.fechaInicioObservador.getTime() : (a.fechaDesignacion ? a.fechaDesignacion.getTime() : 0);
+        const bDate = b.fechaInicioObservador ? b.fechaInicioObservador.getTime() : (b.fechaDesignacion ? b.fechaDesignacion.getTime() : 0);
+        return bDate - aDate;
+      });
 
       for (let dia = 1; dia <= diasMes; dia++) {
         const currentDate = startOfMonth.set({ day: dia }).startOf('day');
@@ -205,11 +219,13 @@ export class PresentismoService {
             mareaReferencia = marea;
             break;
           }
-          // VIAJE O PUERTO
-          const isActivaEnEsteDia = (!marea.fechaFinObservador || DateTime.fromJSDate(marea.fechaFinObservador, { zone: 'utc' }).startOf('day') >= currentDate) && 
-                                    (marea.fechaInicioObservador && DateTime.fromJSDate(marea.fechaInicioObservador, { zone: 'utc' }).startOf('day') <= currentDate);
-          
-          if (!isActivaEnEsteDia && marea.fechaFinObservador) continue;
+          // Descartar si el día es posterior a la fecha de fin o anterior a la designación
+          if (marea.fechaFinObservador && currentDate > DateTime.fromJSDate(marea.fechaFinObservador, { zone: 'utc' }).startOf('day')) {
+            continue;
+          }
+          if (marea.fechaDesignacion && currentDate < DateTime.fromJSDate(marea.fechaDesignacion, { zone: 'utc' }).startOf('day')) {
+            continue;
+          }
 
           // 0. ESPERANDO ZARPADA (DESIGNADA -> INICIO OBS)
           if (marea.fechaDesignacion) {
@@ -350,7 +366,7 @@ export class PresentismoService {
           row.totales.libres++;
         }
 
-        if (estadoDto && (estadoDto.estado === 'NAVEGANDO' || estadoDto.estado === 'PUERTO' || estadoDto.estado === 'ESPERANDO_ZARPADA' || estadoDto.estado === 'VIAJE') && (isFeriado || isFinSemana)) {
+        if (estadoDto && (estadoDto.estado === 'NAVEGANDO' || estadoDto.estado === 'PUERTO' || estadoDto.estado === 'VIAJE') && (isFeriado || isFinSemana)) {
           estadoDto.computaFranco = true;
         }
 
