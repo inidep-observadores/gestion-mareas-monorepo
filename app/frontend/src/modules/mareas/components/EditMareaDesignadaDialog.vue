@@ -120,6 +120,12 @@
                 </div>
 
                 <div class="space-y-1.5">
+                  <label class="block text-sm font-medium text-text-muted">Fecha de Designación</label>
+                  <DatePicker v-model="form.fechaDesignacion" :icon="CalenderIcon" :show-time="false"
+                    :error="fieldErrors.fechaDesignacion" :disabled="!canEditDesignationFields" />
+                </div>
+
+                <div class="space-y-1.5">
                   <label class="block text-sm font-medium text-text-muted">Fecha Zarpada Estimada</label>
                   <DatePicker v-model="form.fechaZarpadaEstimada" :icon="CalenderIcon" :show-time="false"
                     :error="fieldErrors.fechaZarpadaEstimada" />
@@ -246,6 +252,7 @@ const getInitialForm = () => {
     observadorPrincipalId: '',
     pesqueriaId: '',
     artePrincipalId: '',
+    fechaDesignacion: new Date().toISOString().split('T')[0],
     fechaZarpadaEstimada: null,
     diasEstimados: null,
     iniciaEnProspeccion: false,
@@ -259,6 +266,7 @@ const getInitialForm = () => {
     observadorPrincipalId: mareaData.value.observadorPrincipalId || '',
     pesqueriaId: mareaData.value.pesqueriaId || '',
     artePrincipalId: mareaData.value.artePrincipalId || '',
+    fechaDesignacion: mareaData.value.fechaDesignacion ? mareaData.value.fechaDesignacion.split('T')[0] : new Date().toISOString().split('T')[0],
     fechaZarpadaEstimada: mareaData.value.fechaZarpadaEstimada || null,
     diasEstimados: mareaData.value.diasEstimados || null,
     iniciaEnProspeccion: mareaData.value.iniciaEnProspeccion ?? false,
@@ -343,6 +351,17 @@ const validate = () => {
     fieldErrors.value.buqueId = 'Requerido'
     isValid = false
   }
+  if (!form.value.fechaDesignacion) {
+    fieldErrors.value.fechaDesignacion = 'Requerida'
+    isValid = false
+  }
+
+  if (form.value.fechaDesignacion && form.value.fechaZarpadaEstimada) {
+    if (new Date(form.value.fechaZarpadaEstimada) < new Date(form.value.fechaDesignacion)) {
+      fieldErrors.value.fechaZarpadaEstimada = 'Debe ser posterior o igual a la designación'
+      isValid = false
+    }
+  }
 
   return isValid
 }
@@ -362,6 +381,7 @@ const submit = async () => {
       observadorPrincipalId: form.value.observadorPrincipalId || null,
       pesqueriaId: form.value.pesqueriaId || null,
       artePrincipalId: form.value.artePrincipalId || null,
+      fechaDesignacion: form.value.fechaDesignacion,
       fechaZarpadaEstimada: form.value.fechaZarpadaEstimada || null,
       diasEstimados: form.value.diasEstimados || null,
       iniciaEnProspeccion: form.value.tipoMarea === 'MC' ? form.value.iniciaEnProspeccion : false

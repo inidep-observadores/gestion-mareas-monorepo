@@ -103,8 +103,12 @@
                     class="w-full px-4 py-3 bg-surface-muted border-none rounded-2xl focus:ring-2 focus:ring-primary/20 text-text transition-all font-medium outline-none disabled:opacity-60"
                     placeholder="000" />
                 </div>
+                <div class="space-y-1.5">
+                  <label class="text-xs font-bold uppercase tracking-wider text-text-muted">Fecha de Designación</label>
+                  <DatePicker v-model="marea.fecha_designacion" :show-time="false" :disabled="!canEditDesignationFields" />
+                </div>
                 <!-- Observador Principal -->
-                <div class="md:col-span-2 space-y-1.5">
+                <div class="space-y-1.5">
                   <label class="text-xs font-bold uppercase tracking-wider text-text-muted">Observador Designado</label>
                   <SearchableSelect v-model="marea.observador_principal_id" :options="observadorCatalogOptions"
                     placeholder="Seleccione observador principal..." :icon="BeakerIcon" :disabled="!canEditDesignationFields" />
@@ -727,6 +731,7 @@ async function loadMarea() {
       estado_id: data.estadoActual?.codigo || '',
       fecha_creacion: data.fechaCreacion,
       fecha_ultima_actualizacion: data.fechaUltimaActualizacion,
+      fecha_designacion: data.fechaDesignacion ? data.fechaDesignacion.split('T')[0] : null,
       fecha_inicio_observador: data.fechaInicioObservador,
       fecha_fin_observador: data.fechaFinObservador,
       nro_protocolizacion: data.nroProtocolizacion ?? null,
@@ -959,6 +964,7 @@ const saveChanges = async () => {
       pesqueriaId: marea.value.id_pesqueria || undefined,
       artePrincipalId: toNullIfEmpty(marea.value.id_arte_principal),
       fechaZarpadaEstimada: toIsoStringOrNull(marea.value.fecha_zarpada_estimada),
+      fechaDesignacion: toIsoStringOrNull(marea.value.fecha_designacion),
       fechaInicioObservador: toIsoStringOrNull(marea.value.fecha_inicio_observador),
       fechaFinObservador: toIsoStringOrNull(marea.value.fecha_fin_observador),
       diasZonaAustral: toNumberOrUndefined(marea.value.dias_zona_austral) === undefined ? null : toNumberOrUndefined(marea.value.dias_zona_austral),

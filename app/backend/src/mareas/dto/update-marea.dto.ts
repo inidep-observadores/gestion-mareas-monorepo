@@ -16,6 +16,10 @@ export class UpdateMareaDto extends PartialType(CreateMareaDto) {
 
     @IsDateString()
     @IsOptional()
+    fechaDesignacion?: string | null;
+
+    @IsDateString()
+    @IsOptional()
     fechaInicioObservador?: string | null;
 
     @IsDateString()

@@ -270,6 +270,7 @@ model Marea {
   buqueId                   String                    @map("id_buque") @db.Uuid
   artePrincipalId           String?                   @map("id_arte_principal") @db.Uuid
   estadoActualId            String                    @map("id_estado_actual") @db.Uuid
+  fechaDesignacion          DateTime                  @map("fecha_designacion") @db.Timestamptz(6)
   fechaZarpadaEstimada      DateTime?                 @map("fecha_zarpada_estimada") @db.Timestamptz(6)
   fechaInicioObservador     DateTime?                 @map("fecha_inicio_observador") @db.Timestamptz(6)
   fechaFinObservador        DateTime?                 @map("fecha_fin_observador") @db.Timestamptz(6)

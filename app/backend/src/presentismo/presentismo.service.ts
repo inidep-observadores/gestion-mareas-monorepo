@@ -211,6 +211,27 @@ export class PresentismoService {
           
           if (!isActivaEnEsteDia && marea.fechaFinObservador) continue;
 
+          // 0. ESPERANDO ZARPADA (DESIGNADA -> INICIO OBS)
+          if (marea.fechaDesignacion) {
+            const desig = DateTime.fromJSDate(marea.fechaDesignacion, { zone: 'utc' }).startOf('day');
+            
+            let finEspera: any = null;
+            if (marea.fechaInicioObservador) {
+              finEspera = DateTime.fromJSDate(marea.fechaInicioObservador, { zone: 'utc' }).startOf('day').minus({ days: 1 });
+            } else if (marea.fechaZarpadaEstimada) {
+              const zarpadaEst = DateTime.fromJSDate(marea.fechaZarpadaEstimada, { zone: 'utc' }).startOf('day');
+              finEspera = zarpadaEst < currentDate ? zarpadaEst : currentDate;
+            } else {
+              finEspera = currentDate;
+            }
+
+            if (currentDate >= desig && currentDate <= finEspera) {
+              isEsperandoZarpada = true;
+              mareaReferencia = marea;
+              break;
+            }
+          }
+
           // 1. VIAJE INICIAL
           const primeraEtapa = marea.etapas[0];
           if (primeraEtapa && primeraEtapa.fechaZarpada && marea.fechaInicioObservador) {
@@ -240,6 +261,7 @@ export class PresentismoService {
                   isEsperandoZarpada = true;
                 }
                 puertoDetalle = puerto.nombre;
+                mareaReferencia = marea;
                 break;
               }
             }
@@ -270,6 +292,7 @@ export class PresentismoService {
                       isEsperandoZarpada = true;
                     }
                     puertoDetalle = puerto.nombre;
+                    mareaReferencia = marea;
                     break;
                   }
                 }
@@ -309,7 +332,9 @@ export class PresentismoService {
           estadoDto = { estado: 'PUERTO', detalle: puertoDetalle };
           row.totales.puerto++;
         } else if (isEsperandoZarpada) {
-          estadoDto = { estado: 'ESPERANDO_ZARPADA', detalle: puertoDetalle };
+          const mareaStr = mareaReferencia ? `${mareaReferencia.tipoMarea}-${mareaReferencia.nroMarea}-${mareaReferencia.anioMarea.toString().slice(-2)}` : '';
+          const detalleFinal = [puertoDetalle, mareaStr].filter(Boolean).join(' | ');
+          estadoDto = { estado: 'ESPERANDO_ZARPADA', detalle: detalleFinal };
           row.totales.esperandoZarpada++;
         } else if (isNovedad) {
           estadoDto = { estado: 'NOVEDAD', detalle: novedadDetalle, referenciaId: novedad.id, codigoCorto: novedadCodigoCorto };
@@ -421,7 +446,7 @@ export class PresentismoService {
           } else if (dia.estado === 'ESPERANDO_ZARPADA') {
             cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE8E8E8' } }; // Light gray for EZ
             cell.font = { color: { argb: 'FF000000' }, bold: true };
-            if (dia.detalle) cell.note = `Esperando zarpada en: ${dia.detalle}`;
+            if (dia.detalle) cell.note = `Esperando zarpada: ${dia.detalle}`;
           } else if (dia.estado === 'VIAJE') {
             cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE6E6FA' } };
             cell.font = { color: { argb: 'FF000000' }, bold: true };
