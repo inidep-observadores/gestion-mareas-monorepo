@@ -98,6 +98,7 @@ export class PresentismoService {
           libres: 0,
           feriadosFinSemana: 0,
           conflictos: 0,
+          esperandoZarpada: 0,
         },
       };
 
@@ -124,6 +125,7 @@ export class PresentismoService {
         let isViaje = false;
         let isPuerto = false;
         let puertoDetalle = '';
+        let isEsperandoZarpada = false;
         let isNovedad = false;
         let novedadDetalle = '';
         let novedadCodigoCorto = '';
@@ -221,15 +223,19 @@ export class PresentismoService {
 
             if (arriboActual && zarpadaSiguiente && currentDate > arriboActual && currentDate < zarpadaSiguiente) {
               const puerto = marea.etapas[i].puertoArribo;
-              if (puerto && !puerto.esLocal) {
-                isPuerto = true;
+              if (puerto) {
+                if (!puerto.esLocal) {
+                  isPuerto = true;
+                } else {
+                  isEsperandoZarpada = true;
+                }
                 puertoDetalle = puerto.nombre;
                 break;
               }
             }
           }
 
-          if (isPuerto) break;
+          if (isPuerto || isEsperandoZarpada) break;
 
           // Post última etapa
           if (ultimaEtapa && ultimaEtapa.fechaArribo) {
@@ -244,10 +250,14 @@ export class PresentismoService {
                 if (marea.estadoActual.codigo !== MareaEstado.EN_EJECUCION && marea.estadoActual.codigo !== MareaEstado.DESIGNADA && marea.estadoActual.codigo !== MareaEstado.A_REASIGNAR) {
                   // Marea finalizó, no se consideran más días
                 } else {
-                  // Marea activa, esperando etapa -> Puerto si no es local
+                  // Marea activa, esperando etapa -> Puerto si no es local, Esperando Zarpada si es local
                   const puerto = ultimaEtapa.puertoArribo;
-                  if (puerto && !puerto.esLocal) {
-                    isPuerto = true;
+                  if (puerto) {
+                    if (!puerto.esLocal) {
+                      isPuerto = true;
+                    } else {
+                      isEsperandoZarpada = true;
+                    }
                     puertoDetalle = puerto.nombre;
                     break;
                   }
@@ -264,6 +274,7 @@ export class PresentismoService {
         let causasConflicto = [];
         if (isNavegando) causasConflicto.push('Navegación');
         if (isPuerto) causasConflicto.push('Puerto');
+        if (isEsperandoZarpada) causasConflicto.push('Esperando Zarpada');
         if (isViaje) causasConflicto.push('Viaje');
         if (isNovedad) causasConflicto.push(`Novedad (${novedadCodigoCorto})`);
 
@@ -284,6 +295,9 @@ export class PresentismoService {
         } else if (isPuerto) {
           estadoDto = { estado: 'PUERTO', detalle: puertoDetalle };
           row.totales.puerto++;
+        } else if (isEsperandoZarpada) {
+          estadoDto = { estado: 'ESPERANDO_ZARPADA', detalle: puertoDetalle };
+          row.totales.esperandoZarpada++;
         } else if (isNovedad) {
           estadoDto = { estado: 'NOVEDAD', detalle: novedadDetalle, referenciaId: novedad.id, codigoCorto: novedadCodigoCorto };
           row.totales.novedades++;
@@ -298,7 +312,7 @@ export class PresentismoService {
           row.totales.libres++;
         }
 
-        if (estadoDto && (estadoDto.estado === 'NAVEGANDO' || estadoDto.estado === 'PUERTO' || estadoDto.estado === 'VIAJE') && (isFeriado || isFinSemana)) {
+        if (estadoDto && (estadoDto.estado === 'NAVEGANDO' || estadoDto.estado === 'PUERTO' || estadoDto.estado === 'ESPERANDO_ZARPADA' || estadoDto.estado === 'VIAJE') && (isFeriado || isFinSemana)) {
           estadoDto.computaFranco = true;
         }
 
@@ -366,6 +380,7 @@ export class PresentismoService {
         if (dia) {
           if (dia.estado === 'NAVEGANDO') val = 'NAVEG';
           else if (dia.estado === 'PUERTO') val = 'PUERTO';
+          else if (dia.estado === 'ESPERANDO_ZARPADA') val = 'EZ';
           else if (dia.estado === 'VIAJE') val = 'VIAJE';
           else if (dia.estado === 'FERIADO') val = 'FERIADO';
           else if (dia.estado === 'NOVEDAD') val = dia.codigoCorto || 'NOV';
@@ -390,6 +405,10 @@ export class PresentismoService {
             cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFE4C4' } };
             cell.font = { color: { argb: 'FF000000' }, bold: true };
             if (dia.detalle) cell.note = dia.detalle;
+          } else if (dia.estado === 'ESPERANDO_ZARPADA') {
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE8E8E8' } }; // Light gray for EZ
+            cell.font = { color: { argb: 'FF000000' }, bold: true };
+            if (dia.detalle) cell.note = `Esperando zarpada en: ${dia.detalle}`;
           } else if (dia.estado === 'VIAJE') {
             cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE6E6FA' } };
             cell.font = { color: { argb: 'FF000000' }, bold: true };

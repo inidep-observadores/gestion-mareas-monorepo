@@ -23,11 +23,12 @@ export interface ObservadorRow {
     libres: number;
     feriadosFinSemana: number;
     conflictos: number;
+    esperandoZarpada: number;
   };
 }
 
 export interface DiaEstado {
-  estado: 'NAVEGANDO' | 'PUERTO' | 'NOVEDAD' | 'FERIADO' | 'FIN_SEMANA' | 'LIBRE' | 'CONFLICTO' | 'VIAJE';
+  estado: 'NAVEGANDO' | 'PUERTO' | 'NOVEDAD' | 'FERIADO' | 'FIN_SEMANA' | 'LIBRE' | 'CONFLICTO' | 'VIAJE' | 'ESPERANDO_ZARPADA';
   detalle?: string;
   conflictoDetalle?: string;
   referenciaId?: string;

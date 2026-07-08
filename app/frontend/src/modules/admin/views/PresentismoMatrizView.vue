@@ -47,6 +47,10 @@
           <span class="text-[10px] font-black uppercase tracking-widest text-text-muted">En Viaje</span>
         </div>
         <div class="flex items-center gap-2">
+          <div class="w-8 h-6 rounded bg-[#E8E8E8] flex items-center justify-center text-[10px] font-black text-black">EZ</div>
+          <span class="text-[10px] font-black uppercase tracking-widest text-text-muted">Esperando Zarpada</span>
+        </div>
+        <div class="flex items-center gap-2">
           <div class="w-8 h-6 rounded bg-[#ADD8E6] flex items-center justify-center text-[10px] font-black text-black">LICEN</div>
           <span class="text-[10px] font-black uppercase tracking-widest text-text-muted">Novedad / Licencia</span>
         </div>
@@ -149,6 +153,7 @@
                     <span v-if="row.dias[dia]?.estado === 'CONFLICTO'" class="text-[10px] font-black text-white px-1">ERR</span>
                     <span v-else-if="row.dias[dia]?.estado === 'NAVEGANDO'" class="text-[10px] font-black text-black px-1">NAVEG</span>
                     <span v-else-if="row.dias[dia]?.estado === 'PUERTO'" class="text-[10px] font-black text-black px-1">PUERTO</span>
+                    <span v-else-if="row.dias[dia]?.estado === 'ESPERANDO_ZARPADA'" class="text-[10px] font-black text-black px-1">EZ</span>
                     <span v-else-if="row.dias[dia]?.estado === 'VIAJE'" class="text-[10px] font-black text-black px-1">VIAJE</span>
                     <span v-else-if="row.dias[dia]?.estado === 'NOVEDAD'" class="text-[10px] font-black text-black px-1">{{ row.dias[dia].codigoCorto || 'NOV' }}</span>
                     <span v-else-if="row.dias[dia]?.estado === 'FERIADO'" class="text-[10px] font-black text-black px-1">FERIADO</span>
@@ -287,6 +292,8 @@ const getCellClass = (dia: DiaEstado) => {
       return 'bg-[#00FF00] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.1)]';
     case 'PUERTO':
       return 'bg-[#FFE4C4] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.1)]';
+    case 'ESPERANDO_ZARPADA':
+      return 'bg-[#E8E8E8] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.1)]';
     case 'VIAJE':
       return 'bg-[#E6E6FA] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.1)]';
     case 'NOVEDAD':
@@ -305,6 +312,7 @@ const formatTooltipTitle = (estado: string) => {
   const map: Record<string, string> = {
     'NAVEGANDO': 'Navegando',
     'PUERTO': 'En Puerto (No Local)',
+    'ESPERANDO_ZARPADA': 'Esperando Zarpada (Local)',
     'VIAJE': 'En Viaje',
     'NOVEDAD': 'Novedad / Licencia',
     'FERIADO': 'Feriado',
