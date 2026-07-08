@@ -312,7 +312,7 @@ const formatTooltipTitle = (estado: string) => {
   const map: Record<string, string> = {
     'NAVEGANDO': 'Navegando',
     'PUERTO': 'En Puerto (No Local)',
-    'ESPERANDO_ZARPADA': 'Esperando Zarpada (Local)',
+    'ESPERANDO_ZARPADA': 'Esperando Zarpada',
     'VIAJE': 'En Viaje',
     'NOVEDAD': 'Novedad / Licencia',
     'FERIADO': 'Feriado',
