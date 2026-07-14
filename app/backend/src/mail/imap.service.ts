@@ -54,6 +54,8 @@ export class ImapService {
                         messageId: parsed.messageId,
                         subject: parsed.subject,
                         text: parsed.text,
+                        from: parsed.from?.text || parsed.from?.value?.[0]?.address,
+                        date: parsed.date,
                         attachments: parsed.attachments || []
                     });
                 }

@@ -433,6 +433,16 @@ const router = createRouter({
         roles: [ValidRoles.admin],
       },
     },
+    {
+      path: '/admin/novedades-email-logs',
+      name: 'AdminNovedadesEmailLogs',
+      component: () => import('@/modules/admin/views/NovedadesEmailLogsView.vue'),
+      meta: {
+        title: 'Auditoría Procesamiento de Correos',
+        requiresAuth: true,
+        roles: [ValidRoles.admin],
+      },
+    },
     // 404 No encontrado
     {
       path: '/error-servidor',

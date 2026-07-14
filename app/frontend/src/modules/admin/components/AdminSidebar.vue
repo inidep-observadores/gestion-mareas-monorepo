@@ -187,6 +187,11 @@ const navigationGroups = [
         name: 'Centro de Auditoría',
         path: '/admin/audit',
       },
+      {
+        icon: HistoryIcon,
+        name: 'Auditoría de Correos',
+        path: '/admin/novedades-email-logs',
+      },
     ],
   },
   {

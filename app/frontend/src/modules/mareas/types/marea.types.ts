@@ -108,6 +108,8 @@ export interface Marea {
     puertoBaseId?: string;
     fecha_zarpada_estimada?: string;
     fechaZarpadaEstimada?: string;
+    fecha_designacion?: string;
+    fechaDesignacion?: string;
     fecha_inicio_observador?: string;
     fechaInicioObservador?: string;
     fecha_fin_observador?: string;

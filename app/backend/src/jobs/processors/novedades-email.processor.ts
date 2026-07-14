@@ -26,6 +26,17 @@ export class NovedadesEmailProcessor implements JobProcessor {
             const emails = await this.imapService.fetchUnprocessedEmails();
             
             for (const email of emails) {
+                let logData: any = {
+                    messageId: email.messageId,
+                    asunto: email.subject,
+                    remitente: email.from,
+                    fechaRecepcion: email.date ? new Date(email.date) : null,
+                    estado: 'PROCESADO',
+                    extraccionAi: null,
+                    novedadId: null,
+                    errorDetalle: null
+                };
+
                 try {
                     let mainAttachment;
                     if (email.attachments && email.attachments.length > 0) {
@@ -39,6 +50,7 @@ export class NovedadesEmailProcessor implements JobProcessor {
                         email.text || email.subject || '', 
                         mainAttachment
                     );
+                    logData.extraccionAi = extracted;
                     
                     let observador = null;
                     if (extracted.cuil) {
@@ -60,6 +72,7 @@ export class NovedadesEmailProcessor implements JobProcessor {
 
                     if (!observador) {
                          this.logger.log(`Email ignorado (no se detectó observador): ${email.subject}`);
+                         logData.estado = 'IGNORADO_SIN_OBSERVADOR';
                          ignoredCount++;
                          await this.imapService.markAsProcessed(email.uid);
                          continue;
@@ -74,6 +87,7 @@ export class NovedadesEmailProcessor implements JobProcessor {
                         tipoNovedad = await this.prisma.tipoNovedad.findFirst();
                         if (!tipoNovedad) {
                              this.logger.log(`Email ignorado (sin tipo novedad válido): ${codigoNovedad}`);
+                             logData.estado = 'IGNORADO_SIN_TIPO_NOVEDAD';
                              ignoredCount++;
                              await this.imapService.markAsProcessed(email.uid);
                              continue;
@@ -96,6 +110,7 @@ export class NovedadesEmailProcessor implements JobProcessor {
                             }
                         }
                     });
+                    logData.novedadId = novedad.id;
 
                     for (const att of email.attachments) {
                         try {
@@ -123,7 +138,26 @@ export class NovedadesEmailProcessor implements JobProcessor {
                     processedCount++;
                 } catch (error) {
                     this.logger.error(`Error procesando email ${email.uid}: ${error.message}`);
+                    logData.estado = 'ERROR';
+                    logData.errorDetalle = error.message;
                     errorsCount++;
+                } finally {
+                    try {
+                        await this.prisma.novedadesEmailLog.create({
+                            data: {
+                                messageId: logData.messageId,
+                                asunto: logData.asunto,
+                                remitente: logData.remitente,
+                                fechaRecepcion: logData.fechaRecepcion,
+                                estado: logData.estado,
+                                extraccionAi: logData.extraccionAi || undefined,
+                                novedadId: logData.novedadId,
+                                errorDetalle: logData.errorDetalle
+                            }
+                        });
+                    } catch (logErr) {
+                        this.logger.error(`Error guardando log de email: ${logErr.message}`);
+                    }
                 }
                 
                 // Delay de 15 segundos entre correos para evitar saturar la cuota de la API (Gemini Free Tier Rate Limit)

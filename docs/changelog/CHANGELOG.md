@@ -5,6 +5,11 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 
 ## [Unreleased]
 
+### Added
+- **admin:** implementar dashboard y tabla interactiva de auditoría de correos de novedades
+- **backend:** persistencia y API de logs para procesamiento de emails de novedades
+- **frontend:** agregar interfaz de Marea con propiedad fechaDesignacion corregida
+
 ### Fixed
 - **dashboard:** incluir mareas temporalmente en puerto en la lista de riesgo de nota de crédito
 - **mareas:** corregir cálculo de días de marea en lista de navegando

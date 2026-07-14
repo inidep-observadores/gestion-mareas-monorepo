@@ -952,6 +952,7 @@ model ObservadorNovedad {
   tipoNovedad        TipoNovedad                   @relation(fields: [tipoNovedadId], references: [id])
   archivos           ObservadorNovedadArchivo[]
   movimientos        ObservadorNovedadMovimiento[]
+  emailLogs          NovedadesEmailLog[]
 
   @@index([observadorId])
   @@index([fechaInicio, fechaFin])
@@ -1069,5 +1070,25 @@ enum TipoCalculoZonaAustral {
   AUTOMATICO
   MANUAL
 
+  @@schema("public")
+}
+
+model NovedadesEmailLog {
+  id                 String             @id @default(uuid()) @db.Uuid
+  messageId          String?
+  asunto             String?
+  remitente          String?
+  fechaRecepcion     DateTime?          @db.Timestamptz(6)
+  fechaProcesamiento DateTime           @default(now()) @map("fecha_procesamiento") @db.Timestamptz(6)
+  estado             String             // 'PROCESADO', 'IGNORADO_SIN_OBSERVADOR', 'IGNORADO_SIN_TIPO_NOVEDAD', 'ERROR'
+  extraccionAi       Json?              @map("extraccion_ai")
+  novedadId          String?            @map("id_novedad") @db.Uuid
+  errorDetalle       String?            @map("error_detalle")
+  
+  novedad            ObservadorNovedad? @relation(fields: [novedadId], references: [id], onDelete: SetNull)
+
+  @@index([estado])
+  @@index([fechaProcesamiento])
+  @@map("novedades_email_logs")
   @@schema("public")
 }
