@@ -14,13 +14,13 @@ const schemaPasajes = {
     type: 'object',
     properties: {
         observador: { type: 'string', description: 'Nombre completo del pasajero/observador' },
-        dni: { type: 'string', description: 'DNI del pasajero si figura' },
+        dni: { type: 'string', description: 'DNI del pasajero si figura. Si no lo encuentras, devuelve un string vacío ""' },
         origen: { type: 'string', description: 'Ciudad de origen del viaje' },
         destino: { type: 'string', description: 'Ciudad de destino del viaje' },
         fechaViaje: { type: 'string', description: 'Fecha del viaje en formato YYYY-MM-DD' },
         empresa: { type: 'string', description: 'Empresa de transporte (ej: Via Tac, Aerolineas, etc.)' }
     },
-    required: ['observador', 'fechaViaje']
+    required: ['observador', 'fechaViaje', 'dni', 'origen', 'destino']
 };
 
 // 2. Esquema para Novedades Oficiales GDE
@@ -28,8 +28,8 @@ const schemaNovedadesGDE = {
     type: 'object',
     properties: {
         observador: { type: 'string', description: 'Nombre completo del observador' },
-        cuil: { type: 'string', description: 'CUIL o DNI del observador si figura' },
-        numeroGde: { type: 'string', description: 'Número completo de la nota GDE (ej: NO-2026-67719277-APN-DIOYT#INIDEP)' },
+        cuil: { type: 'string', description: 'CUIL o DNI del observador si figura. Si no lo encuentras, devuelve un string vacío ""' },
+        numeroGde: { type: 'string', description: 'Número completo de la nota GDE (ej: NO-2026-67719277-APN-DIOYT#INIDEP). Si no lo encuentras, devuelve un string vacío ""' },
         periodos: {
             type: 'array',
             description: 'Lista de períodos solicitados.',
@@ -49,7 +49,7 @@ const schemaNovedadesGDE = {
             }
         }
     },
-    required: ['observador', 'periodos']
+    required: ['observador', 'periodos', 'cuil', 'numeroGde']
 };
 
 // 3. Esquema para Emails de Disponibilidad / Texto Libre
@@ -154,26 +154,27 @@ export class NovedadesAiService {
         let promptSystem = '';
 
         const fechaActualStr = new Date().toLocaleDateString('es-AR', { day: '2-digit', month: 'long', year: 'numeric' });
-        const contextFecha = `\nLa fecha actual es: ${fechaActualStr}. Si el texto no especifica el año, utiliza o deduce el año basándote en esta fecha actual. Extrae SIEMPRE formato YYYY-MM-DD.`;
+        const contextAdicional = `\nLa fecha actual es: ${fechaActualStr}. Si el texto no especifica el año, utiliza o deduce el año basándote en esta fecha actual. Extrae SIEMPRE formato YYYY-MM-DD.` + 
+            (attachment ? `\n\nDATO CLAVE: El nombre del archivo adjunto es "${attachment.filename}". A menudo, el nombre del archivo contiene el número de GDE exacto (con guiones y letras, ej: NO-2026-67719830-APN-DIOYT...). Úsalo para extraer el "numeroGde" si no se lee bien en el texto.` : '');
 
         if (isScanOrImage && !textContent) {
             docType = 'PASAJES';
             configSchema = schemaPasajes;
-            promptSystem = 'Extrae la información del boleto/pasaje de viaje. Asegúrate de extraer el DNI si figura. Si es otro tipo de documento, intenta mapearlo a este esquema.' + contextFecha;
+            promptSystem = 'Extrae la información del boleto/pasaje de viaje. Asegúrate de extraer el DNI si figura. Si es otro tipo de documento, intenta mapearlo a este esquema.' + contextAdicional;
         } else {
             const cleanText = textContent.toLowerCase();
             if (cleanText.includes('poder ejecutivo nacional') || cleanText.includes('referencia:')) {
                 docType = 'GDE';
                 configSchema = schemaNovedadesGDE;
-                promptSystem = 'Extrae los datos de la nota administrativa oficial de GDE (Licencias, Francos Compensatorios, etc.). Asegúrate de extraer EXPRESAMENTE el "Número de GDE" (ej: NO-2026-...) y el "CUIL" o "DNI" del observador, buscándolos detalladamente en el texto. Mapea los períodos solicitados al array de períodos.' + contextFecha;
+                promptSystem = 'Extrae los datos de la nota administrativa oficial de GDE (Licencias, Francos Compensatorios, etc.). Asegúrate de extraer EXPRESAMENTE el "Número de GDE". El formato típico suele ser similar a "NO-2026-67720716-APN-DIOYT#INIDEP" o "IF-2026-12345678-APN-DIR#INIDEP" (busca prefijos como NO-, IF-, ME- seguidos de año, número y repartición). También extrae el "CUIL" o "DNI" del observador buscándolos detalladamente en el texto. Mapea los períodos solicitados al array de períodos.' + contextAdicional;
             } else if (cleanText.includes('boleto') || cleanText.includes('pasaje') || cleanText.includes('butaca') || cleanText.includes('voucher') || cleanText.includes('origen:')) {
                 docType = 'PASAJES';
                 configSchema = schemaPasajes;
-                promptSystem = 'Extrae los datos del viaje del boleto o e-ticket. Asegúrate de extraer el DNI del pasajero si figura.' + contextFecha;
+                promptSystem = 'Extrae los datos del viaje del boleto o e-ticket. Asegúrate de extraer el DNI del pasajero si figura.' + contextAdicional;
             } else {
                 docType = 'TEXTO_LIBRE';
                 configSchema = schemaDisponibilidadEmail;
-                promptSystem = 'Extrae los datos del mensaje informal de disponibilidad u otras novedades. Mapea todos los rangos o días mencionados al array de periodos.' + contextFecha;
+                promptSystem = 'Extrae los datos del mensaje informal de disponibilidad u otras novedades. Mapea todos los rangos o días mencionados al array de periodos.' + contextAdicional;
             }
         }
 
