@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import OpenAI from 'openai';
+import { GoogleGenAI } from '@google/genai';
 
 let pdfParse: any;
 try {
@@ -9,145 +9,210 @@ try {
     console.warn('Advertencia: pdf-parse no está disponible.');
 }
 
+// 1. Esquema para Pasajes / Traslados
+const schemaPasajes = {
+    type: 'object',
+    properties: {
+        observador: { type: 'string', description: 'Nombre completo del pasajero/observador' },
+        dni: { type: 'string', description: 'DNI del pasajero si figura' },
+        origen: { type: 'string', description: 'Ciudad de origen del viaje' },
+        destino: { type: 'string', description: 'Ciudad de destino del viaje' },
+        fechaViaje: { type: 'string', description: 'Fecha del viaje en formato YYYY-MM-DD' },
+        empresa: { type: 'string', description: 'Empresa de transporte (ej: Via Tac, Aerolineas, etc.)' }
+    },
+    required: ['observador', 'fechaViaje']
+};
+
+// 2. Esquema para Novedades Oficiales GDE
+const schemaNovedadesGDE = {
+    type: 'object',
+    properties: {
+        observador: { type: 'string', description: 'Nombre completo del observador' },
+        cuil: { type: 'string', description: 'CUIL o DNI del observador si figura' },
+        numeroGde: { type: 'string', description: 'Número completo de la nota GDE (ej: NO-2026-67719277-APN-DIOYT#INIDEP)' },
+        periodos: {
+            type: 'array',
+            description: 'Lista de períodos solicitados.',
+            items: {
+                type: 'object',
+                properties: {
+                    tipoNovedad: { 
+                        type: 'string', 
+                        enum: ['LICEN', 'FC', 'RP', 'ENFERMEDAD'],
+                        description: 'Código de novedad. LICEN para licencia o vacaciones, FC para franco compensatorio, RP para razones particulares, ENFERMEDAD para parte de enfermo.'
+                    },
+                    fechaInicio: { type: 'string', description: 'Fecha de inicio del período en formato YYYY-MM-DD' },
+                    fechaFin: { type: 'string', description: 'Fecha de fin del período en formato YYYY-MM-DD' },
+                    motivo: { type: 'string', description: 'Breve motivo o descripción' }
+                },
+                required: ['tipoNovedad', 'fechaInicio', 'fechaFin']
+            }
+        }
+    },
+    required: ['observador', 'periodos']
+};
+
+// 3. Esquema para Emails de Disponibilidad / Texto Libre
+const schemaDisponibilidadEmail = {
+    type: 'object',
+    properties: {
+        observador: { type: 'string', description: 'Nombre completo del observador' },
+        periodos: {
+            type: 'array',
+            description: 'Lista de períodos informados.',
+            items: {
+                type: 'object',
+                properties: {
+                    tipoNovedad: { 
+                        type: 'string', 
+                        enum: ['DISPONIBLE', 'NO_DISPONIBLE', 'LICEN', 'FC', 'ENFERMEDAD'],
+                        description: 'Estado o novedad reportada'
+                    },
+                    fechaInicio: { type: 'string', description: 'Fecha de inicio del período en formato YYYY-MM-DD' },
+                    fechaFin: { type: 'string', description: 'Fecha de fin del período en formato YYYY-MM-DD' },
+                    motivo: { type: 'string', description: 'Breve motivo o descripción' }
+                },
+                required: ['tipoNovedad', 'fechaInicio', 'fechaFin']
+            }
+        }
+    },
+    required: ['observador', 'periodos']
+};
+
 @Injectable()
 export class NovedadesAiService {
     private readonly logger = new Logger(NovedadesAiService.name);
-    private openai: OpenAI;
+    private ai: GoogleGenAI;
+    private readonly modelName: string;
 
     constructor(private readonly configService: ConfigService) {
-        // Soporte universal para cualquier variable de autenticación que tengas configurada
-        const apiKey = this.configService.get<string>('LLM_API_KEY') || 
-                       this.configService.get<string>('OLLAMA_API_KEY') || 
-                       this.configService.get<string>('GEMINI_API_KEY') || 
-                       this.configService.get<string>('OPENROUTER_API_KEY');
-                       
-        const baseURL = this.configService.get<string>('LLM_BASE_URL') || 
-                        this.configService.get<string>('OPENAI_BASE_URL') || 
-                        'https://openrouter.ai/api/v1';
-
-        this.openai = new OpenAI({
-            baseURL: baseURL,
-            apiKey: apiKey || 'dummy-key',
-        });
+        const apiKey = this.configService.get<string>('GEMINI_API_KEY') || 'dummy-key';
+        this.modelName = this.configService.get<string>('LLM_MODEL') || 'gemini-3.1-flash-lite';
+        
+        this.ai = new GoogleGenAI({ apiKey });
     }
 
-    async procesarNovedad(texto: string, attachment?: { buffer: Buffer, mimetype: string }): Promise<any> {
-        const prompt = `
-Eres un sistema experto de extracción de datos para un software de recursos humanos pesquero.
-Tu única tarea es leer un texto y extraer la información en un formato JSON estricto.
+    private async runWithBackoff(fn: () => Promise<any>, maxRetries = 5) {
+        let retries = 0;
+        while (retries < maxRetries) {
+            try {
+                return await fn();
+            } catch (error: any) {
+                const isQuotaError = error.status === 429 || error.status === 503 || 
+                                     (error.message && (error.message.includes('429') || error.message.includes('quota') || error.message.includes('exhausted')));
+                if (isQuotaError) {
+                    retries++;
+                    const waitTime = Math.pow(2, retries) * 1000;
+                    this.logger.warn(`Error temporal de cuota (HTTP 429). Reintentando en ${waitTime / 1000}s... (Intento ${retries}/${maxRetries})`);
+                    await new Promise(resolve => setTimeout(resolve, waitTime));
+                } else {
+                    throw error;
+                }
+            }
+        }
+        throw new Error('Se excedió el número máximo de reintentos tras errores de cuota.');
+    }
 
-REGLAS DE EXTRACCIÓN:
-1. "observador": Extraer el nombre completo.
-2. "estadoDisponibilidad": DEBE ser exactamente uno de estos valores: ["LICEN", "FC", "RP", "ENFERMEDAD", "DISPONIBLE"]. 
-   - Si el texto menciona "Licencia Anual Ordinaria", "vacaciones" o "Licencia", usa "LICEN".
-   - Si menciona "enfermedad", "certificado médico", usa "ENFERMEDAD".
-   - Si menciona "franco compensatorio" o "FC", usa "FC".
-3. "fechaInicio": Extraer la fecha de inicio en formato "YYYY-MM-DD".
-4. "fechaFin": Extraer la fecha de fin en formato "YYYY-MM-DD". Si no hay fecha de fin, omite esta clave.
-5. "motivo": Breve resumen de la justificación, si aplica. (Opcional)
-
-FORMATO DE RESPUESTA:
-Debes responder ÚNICAMENTE con un objeto JSON válido.
-PROHIBIDO incluir comentarios como "//" dentro del JSON.
-PROHIBIDO incluir texto antes o después del JSON.
-
-REGLAS DE FECHAS:
-- Si el texto menciona varios días seguidos (ej: "16, 17 y 18 de junio"), extrae el primero como "fechaInicio" y el último como "fechaFin".
-- PRECAUCIÓN CON EL AÑO: Usa EXACTAMENTE el año indicado en la fecha de inicio/fin (ej. 09/06/2026 -> 2026). NUNCA reemplaces este año con el "Año de la Licencia" (es común que en 2026 se tomen licencias correspondientes al año 2025).
-
-REGLAS PARA PASAJES Y TRASLADOS:
-- Si el documento es un pasaje de transporte o traslado, interesa ÚNICAMENTE la fecha en que el viaje SALE desde "Mar del Plata" o LLEGA a "Mar del Plata". Usa esa fecha como "fechaInicio".
-- Ignora por completo cualquier fecha de otros tramos u otras ciudades que no involucren a Mar del Plata.
-
-Ejemplo de salida esperada:
-{
-  "observador": "Nombre Apellido",
-  "estadoDisponibilidad": "LICEN",
-  "fechaInicio": "2026-07-15",
-  "fechaFin": "2026-07-30"
-}
-`;
-        let useVision = false;
-        let mimeType = 'image/jpeg';
+    async procesarElemento(texto: string, attachment?: { buffer: Buffer, mimetype: string, filename: string }): Promise<any> {
+        let textContent = texto || '';
+        let isScanOrImage = false;
+        let mimeType = 'text/plain';
         let base64Data = '';
-        let contentToAnalyze = texto || '';
 
         if (attachment) {
-            if (attachment.mimetype === 'application/pdf') {
+            const ext = attachment.filename.split('.').pop()?.toLowerCase();
+            const lowerMime = attachment.mimetype.toLowerCase();
+            
+            if (lowerMime.includes('pdf') || ext === 'pdf') {
                 try {
                     const pdfData = await pdfParse(attachment.buffer);
-                    contentToAnalyze += '\n' + pdfData.text;
-                    
-                    if (pdfData.text.trim().length < 50) {
-                        this.logger.warn(`PDF detectado como escaneo. Cambiando a modelo de visión.`);
-                        useVision = true;
-                        mimeType = 'application/pdf';
-                        base64Data = attachment.buffer.toString('base64');
+                    textContent = pdfData.text;
+                    if (textContent.trim().length < 50) {
+                        isScanOrImage = true;
                     }
-                } catch (error) {
-                    this.logger.error(`Error procesando PDF nativo, intentando como imagen/visión: ${error.message}`);
-                    useVision = true;
-                    mimeType = 'application/pdf';
-                    base64Data = attachment.buffer.toString('base64');
+                } catch (e) {
+                    this.logger.warn(`Error al parsear PDF localmente. Tratando como escaneo.`);
+                    isScanOrImage = true;
                 }
-            } else if (attachment.mimetype.startsWith('image/')) {
-                useVision = true;
-                mimeType = attachment.mimetype;
-                base64Data = attachment.buffer.toString('base64');
+                mimeType = 'application/pdf';
+            } else if (lowerMime.startsWith('image/') || ['png','jpg','jpeg'].includes(ext || '')) {
+                isScanOrImage = true;
+                mimeType = lowerMime.startsWith('image/') ? lowerMime : `image/${ext}`;
+            } else if (ext === 'txt' || lowerMime.includes('text/plain')) {
+                textContent += '\n' + attachment.buffer.toString('utf-8');
             } else {
-                contentToAnalyze += '\n' + attachment.buffer.toString('utf-8');
+                throw new Error('Tipo de archivo no soportado para análisis: ' + attachment.mimetype);
+            }
+            
+            if (isScanOrImage || mimeType === 'application/pdf') {
+                base64Data = attachment.buffer.toString('base64');
             }
         }
 
-        let messages: any[] = [];
-        const model = this.configService.get<string>('LLM_MODEL') || 'openrouter/free';
+        let docType: 'PASAJES' | 'GDE' | 'TEXTO_LIBRE' = 'TEXTO_LIBRE';
+        let configSchema: any;
+        let promptSystem = '';
 
-        if (useVision) {
-            messages = [
-                {
-                    role: 'user',
-                    content: [
-                        { type: 'text', text: prompt + '\nPor favor, extrae los datos de esta imagen/documento.' },
-                        { type: 'image_url', image_url: { url: `data:${mimeType};base64,${base64Data}` } }
-                    ]
-                }
-            ];
+        const fechaActualStr = new Date().toLocaleDateString('es-AR', { day: '2-digit', month: 'long', year: 'numeric' });
+        const contextFecha = `\nLa fecha actual es: ${fechaActualStr}. Si el texto no especifica el año, utiliza o deduce el año basándote en esta fecha actual. Extrae SIEMPRE formato YYYY-MM-DD.`;
+
+        if (isScanOrImage && !textContent) {
+            docType = 'PASAJES';
+            configSchema = schemaPasajes;
+            promptSystem = 'Extrae la información del boleto/pasaje de viaje. Asegúrate de extraer el DNI si figura. Si es otro tipo de documento, intenta mapearlo a este esquema.' + contextFecha;
         } else {
-            messages = [{ role: 'user', content: prompt + `\nTexto a analizar:\n"""\n${contentToAnalyze}\n"""\n` }];
+            const cleanText = textContent.toLowerCase();
+            if (cleanText.includes('poder ejecutivo nacional') || cleanText.includes('referencia:')) {
+                docType = 'GDE';
+                configSchema = schemaNovedadesGDE;
+                promptSystem = 'Extrae los datos de la nota administrativa oficial de GDE (Licencias, Francos Compensatorios, etc.). Asegúrate de extraer EXPRESAMENTE el "Número de GDE" (ej: NO-2026-...) y el "CUIL" o "DNI" del observador, buscándolos detalladamente en el texto. Mapea los períodos solicitados al array de períodos.' + contextFecha;
+            } else if (cleanText.includes('boleto') || cleanText.includes('pasaje') || cleanText.includes('butaca') || cleanText.includes('voucher') || cleanText.includes('origen:')) {
+                docType = 'PASAJES';
+                configSchema = schemaPasajes;
+                promptSystem = 'Extrae los datos del viaje del boleto o e-ticket. Asegúrate de extraer el DNI del pasajero si figura.' + contextFecha;
+            } else {
+                docType = 'TEXTO_LIBRE';
+                configSchema = schemaDisponibilidadEmail;
+                promptSystem = 'Extrae los datos del mensaje informal de disponibilidad u otras novedades. Mapea todos los rangos o días mencionados al array de periodos.' + contextFecha;
+            }
         }
 
         try {
-            const response = await this.openai.chat.completions.create({
-                model: model,
-                messages: messages,
-            });
+            const response = await this.runWithBackoff(async () => {
+                return await this.ai.models.generateContent({
+                    model: this.modelName,
+                    contents: isScanOrImage ? [
+                        {
+                            role: 'user',
+                            parts: [
+                                { inlineData: { data: base64Data, mimeType: mimeType } },
+                                { text: promptSystem + (textContent ? `\n\nTexto OCR previo:\n${textContent}` : '') }
+                            ]
+                        }
+                    ] : [
+                        {
+                            role: 'user',
+                            parts: [
+                                { text: `${promptSystem}\n\nTexto a analizar:\n"""\n${textContent}\n"""` }
+                            ]
+                        }
+                    ],
+                    config: {
+                        responseMimeType: 'application/json',
+                        responseSchema: configSchema,
+                    }
+                });
+            }, 5);
 
-            const content = response.choices[0]?.message?.content || '';
-            
-            let cleanContent = content.replace(/```json/gi, '').replace(/```/g, '').trim();
-            cleanContent = cleanContent.replace(/\/\/.*$/gm, '').trim();
-            cleanContent = cleanContent.replace(/,\s*([\}\]])/g, '$1');
+            const parsedJson = JSON.parse(response.text || '{}');
+            parsedJson._metadata = {
+                tipoDocumentoClasificado: docType
+            };
+            return parsedJson;
 
-            const startIdx = cleanContent.indexOf('{');
-            const endIdx = cleanContent.lastIndexOf('}');
-            if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
-                cleanContent = cleanContent.substring(startIdx, endIdx + 1);
-            }
-
-            if (!cleanContent) {
-                throw new Error('El modelo de IA no devolvió contenido.');
-            }
-
-            return JSON.parse(cleanContent);
         } catch (error: any) {
-            let errorMsg = error.message;
-            if (error.response && error.response.data) {
-                errorMsg += ' | Detalles del proveedor: ' + JSON.stringify(error.response.data);
-            } else if (error.error) {
-                errorMsg += ' | Detalles: ' + JSON.stringify(error.error);
-            }
-            this.logger.error(`Error procesando novedad con IA: ${errorMsg}`);
-            throw new Error(`Error de IA: ${errorMsg}`);
+            this.logger.error(`Error procesando novedad con IA: ${error.message}`);
+            throw new Error(`Error de IA: ${error.message}`);
         }
     }
 }

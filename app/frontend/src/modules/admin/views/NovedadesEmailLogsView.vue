@@ -40,8 +40,8 @@
             class="p-5 border-b border-border/50 cursor-pointer hover:bg-surface-muted transition-all relative group"
             :class="{
                 'bg-primary/5 border-l-4': selectedLog?.id === log.id,
-                'border-l-error': selectedLog?.id === log.id && log.estado === 'ERROR',
-                'border-l-warning': selectedLog?.id === log.id && log.estado.startsWith('IGNORADO'),
+                'border-l-error': selectedLog?.id === log.id && log.estado === 'CON_ERRORES',
+                'border-l-warning': selectedLog?.id === log.id && log.estado === 'CON_ADVERTENCIAS',
                 'border-l-success': selectedLog?.id === log.id && log.estado === 'PROCESADO'
             }"
           >
@@ -115,7 +115,7 @@
               </div>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-3 gap-4 min-w-0">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 min-w-0">
               <div class="bg-surface-muted p-4 rounded-2xl border border-border/50 hover:border-primary transition-colors min-w-0">
                 <div class="text-[9px] uppercase tracking-widest text-text-muted font-black mb-2 flex items-center gap-2">
                     <UserCircleIcon class="w-3.5 h-3.5 text-primary" /> Remitente
@@ -130,60 +130,50 @@
                   {{ selectedLog.fechaRecepcion ? formatDateFull(selectedLog.fechaRecepcion) : 'N/D' }}
                 </div>
               </div>
-              <div class="bg-surface-muted p-4 rounded-2xl border border-border/50 hover:border-primary transition-colors min-w-0">
-                <div class="text-[9px] uppercase tracking-widest text-text-muted font-black mb-2 flex items-center gap-2">
-                    <PlugInIcon class="w-3.5 h-3.5 text-primary" /> Novedad Creada
-                </div>
-                <div class="text-xs font-bold text-text truncate">
-                    <template v-if="selectedLog.novedadId">
-                        ID: {{ selectedLog.novedadId.substring(0,8) }}...
-                    </template>
-                    <template v-else>
-                        Ninguna
-                    </template>
-                </div>
-              </div>
             </div>
           </div>
 
             <!-- Contenido Detallado -->
-            <div class="p-6 md:p-8 space-y-10 bg-surface-muted/20 min-w-0">
-            <!-- Detalle Error -->
-            <section v-if="selectedLog.errorDetalle" class="animate-in fade-in slide-in-from-bottom-4 duration-500">
-               <div class="flex justify-between items-center mb-5">
-                  <h4 class="text-[10px] font-black uppercase tracking-widest text-error flex items-center gap-2">
-                    <ChatIcon class="w-4 h-4 text-error" /> Motivo del Fallo
-                  </h4>
-               </div>
-               <div class="p-6 bg-error/5 rounded-3xl border border-error/20 text-sm italic text-error shadow-inner leading-relaxed">
-                {{ selectedLog.errorDetalle }}
-              </div>
-            </section>
+            <div class="p-6 md:p-8 space-y-6 bg-surface-muted/20 min-w-0">
+                <h3 class="text-sm font-black uppercase tracking-widest text-text flex items-center gap-2 mb-6">
+                    <DocsIcon class="w-4 h-4 text-primary" /> 
+                    Extracciones Realizadas ({{ selectedLog.detalles?.length || 0 }})
+                </h3>
 
-            <!-- Contexto de Ejecución (JSON AI) -->
-            <section v-if="selectedLog.extraccionAi" class="animate-in fade-in slide-in-from-bottom-4 duration-700">
-              <div class="flex justify-between items-center mb-5">
-                  <h4 class="text-[10px] font-black uppercase tracking-widest text-text-muted flex items-center gap-2">
-                    <BoxIcon class="w-4 h-4 text-primary" /> Resultado Extracción AI (Gemini)
-                  </h4>
-                  <button
-                    @click="copyToClipboard(JSON.stringify(selectedLog.extraccionAi, null, 2))"
-                    class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-surface-muted text-[10px] font-black uppercase tracking-widest text-text-muted hover:bg-primary hover:text-primary-fg transition-all shadow-xs"
-                  >
-                    <DocsIcon class="w-3.5 h-3.5" /> Copiar JSON
-                  </button>
-              </div>
-              <div class="bg-surface-muted rounded-3xl border border-border shadow-sm overflow-hidden">
-                <div class="flex items-center gap-1.5 px-6 py-3 bg-surface/50 border-b border-border">
-                    <span class="text-[10px] text-text-muted font-bold uppercase tracking-widest font-mono">datos_extraccion.json</span>
+                <div v-for="detalle in selectedLog.detalles" :key="detalle.id" class="bg-surface rounded-2xl p-5 border border-border shadow-sm">
+                    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
+                        <span class="text-xs font-bold uppercase tracking-widest">{{ detalle.fuente }}</span>
+                        <span class="text-[9px] font-black py-1 px-2 rounded-md uppercase tracking-widest w-fit" :class="getLevelClass(detalle.estado)">
+                            {{ detalle.estado }}
+                        </span>
+                    </div>
+                    
+                    <div v-if="detalle.errorDetalle" class="p-4 mb-4 bg-error/5 rounded-xl border border-error/20 text-sm italic text-error shadow-inner">
+                        <div class="flex items-center gap-2 font-bold mb-1"><ChatIcon class="w-4 h-4" /> Motivo del Fallo</div>
+                        {{ detalle.errorDetalle }}
+                    </div>
+                    
+                    <div v-if="detalle.extraccionAi" class="bg-surface-muted rounded-xl border border-border overflow-hidden mt-4">
+                        <div class="flex justify-between items-center px-4 py-2 bg-surface/50 border-b border-border">
+                            <span class="text-[10px] text-text-muted font-bold uppercase tracking-widest font-mono">datos_extraccion.json</span>
+                            <button @click="copyToClipboard(JSON.stringify(detalle.extraccionAi, null, 2))" class="text-[9px] uppercase font-bold text-text-muted hover:text-primary transition-colors">Copiar</button>
+                        </div>
+                        <div class="p-4 overflow-x-auto custom-scrollbar">
+                            <code class="text-[11px] font-mono leading-relaxed text-text whitespace-pre">{{ JSON.stringify(detalle.extraccionAi, null, 2) }}</code>
+                        </div>
+                    </div>
+                    <div v-if="detalle.novedad" class="mt-4 pt-4 border-t border-border flex items-center gap-3 flex-wrap">
+                        <span class="text-[10px] uppercase font-black tracking-widest text-text-muted flex items-center gap-1"><PlugInIcon class="w-3 h-3 text-primary"/> Novedad Vinculada:</span>
+                        <span class="text-xs font-mono font-semibold">{{ detalle.novedad.id.substring(0,8) }}</span>
+                        <span class="bg-primary/10 text-primary px-2.5 py-1 rounded-md text-[10px] font-bold">{{ detalle.novedad.estadoAprobacion }}</span>
+                    </div>
                 </div>
-                <div class="p-6 md:p-8 overflow-x-auto custom-scrollbar">
-                    <code class="text-[11px] font-mono leading-relaxed text-text whitespace-pre">{{ JSON.stringify(selectedLog.extraccionAi, null, 2) }}</code>
+
+                <div v-if="!selectedLog.detalles || selectedLog.detalles.length === 0" class="p-8 text-center text-text-muted bg-surface rounded-2xl border border-border border-dashed">
+                    No hay detalles extraídos de este correo.
                 </div>
-              </div>
-            </section>
+            </div>
           </div>
-        </div>
         </template>
 
         <!-- Empty State -->
@@ -240,7 +230,10 @@ onUnmounted(() => {
 const getLevelClass = (estado: string) => {
   switch (estado) {
     case 'PROCESADO': return 'bg-success/10 text-success border border-success/50';
-    case 'ERROR': return 'bg-error/10 text-error border border-error/50';
+    case 'ERROR': 
+    case 'CON_ERRORES': return 'bg-error/10 text-error border border-error/50';
+    case 'REQUIERE_REVISION':
+    case 'CON_ADVERTENCIAS':
     case 'IGNORADO_SIN_OBSERVADOR':
     case 'IGNORADO_SIN_TIPO_NOVEDAD': 
         return 'bg-warning/10 text-warning border border-warning/50';
@@ -251,6 +244,8 @@ const getLevelClass = (estado: string) => {
 const formatEstadoCorto = (estado: string) => {
     if (estado === 'IGNORADO_SIN_OBSERVADOR') return 'IGN: OBS';
     if (estado === 'IGNORADO_SIN_TIPO_NOVEDAD') return 'IGN: TIPO';
+    if (estado === 'CON_ERRORES') return 'ERRORES';
+    if (estado === 'CON_ADVERTENCIAS') return 'ADVERTENCIA';
     return estado;
 }
 

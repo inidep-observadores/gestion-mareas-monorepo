@@ -26,6 +26,18 @@ export class MailController {
                 skip,
                 take: limitNum,
                 orderBy: { fechaProcesamiento: 'desc' },
+                include: {
+                    detalles: {
+                        include: {
+                            novedad: {
+                                include: {
+                                    observador: true,
+                                    tipoNovedad: true,
+                                }
+                            }
+                        }
+                    }
+                }
             }),
             this.prisma.novedadesEmailLog.count(),
         ]);

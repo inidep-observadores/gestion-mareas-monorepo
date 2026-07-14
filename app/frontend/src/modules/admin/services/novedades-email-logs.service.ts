@@ -1,5 +1,17 @@
 import httpClient from "@/config/http/http.client";
 
+export interface NovedadesEmailLogDetalle {
+    id: string;
+    emailLogId: string;
+    fuente: string;
+    extraccionAi?: any;
+    numeroGde?: string;
+    estado: string;
+    errorDetalle?: string;
+    novedadId?: string;
+    novedad?: any;
+}
+
 export interface NovedadesEmailLog {
     id: string;
     messageId?: string;
@@ -8,9 +20,7 @@ export interface NovedadesEmailLog {
     fechaRecepcion?: string;
     fechaProcesamiento: string;
     estado: string;
-    extraccionAi?: any;
-    novedadId?: string;
-    errorDetalle?: string;
+    detalles?: NovedadesEmailLogDetalle[];
 }
 
 export interface NovedadesEmailLogResponse {
