@@ -82,21 +82,34 @@ export class NovedadesService {
     }
 
     const start = DateUtils.parseToAppZone(createNovedadDto.fechaInicio);
-    const end = createNovedadDto.fechaFin ? DateUtils.parseToAppZone(createNovedadDto.fechaFin) : start;
+    let end: Date | null = createNovedadDto.fechaFin ? DateUtils.parseToAppZone(createNovedadDto.fechaFin) : null;
+    let isInfinite = false;
+
+    // Autocierre para eventos de un solo día conocidos
+    if (['VIAJE_INICIO', 'VIAJE_FIN'].includes(tipoNovedad.codigo)) {
+      if (!end) end = start;
+    } else {
+      if (!end) isInfinite = true;
+    }
+
+    const overlapConditions: any[] = [
+      {
+        OR: [
+          { fechaFin: { gte: start } },
+          { fechaFin: null }
+        ]
+      }
+    ];
+
+    if (!isInfinite) {
+      overlapConditions.push({ fechaInicio: { lte: end } });
+    }
 
     const overlaps = await this.prisma.observadorNovedad.findFirst({
       where: {
         observadorId: createNovedadDto.observadorId,
         estadoAprobacion: { not: 'RECHAZADA' },
-        AND: [
-          { fechaInicio: { lte: end } },
-          {
-            OR: [
-              { fechaFin: { gte: start } },
-              { fechaFin: null, fechaInicio: { gte: start } }
-            ]
-          }
-        ]
+        AND: overlapConditions
       }
     });
 
@@ -108,8 +121,8 @@ export class NovedadesService {
       data: {
         observadorId: createNovedadDto.observadorId,
         tipoNovedadId: createNovedadDto.tipoNovedadId,
-        fechaInicio: DateUtils.parseToAppZone(createNovedadDto.fechaInicio),
-        fechaFin: createNovedadDto.fechaFin ? DateUtils.parseToAppZone(createNovedadDto.fechaFin) : null,
+        fechaInicio: start,
+        fechaFin: end,
         permiteUrgencia: createNovedadDto.permiteUrgencia || false,
         motivo: createNovedadDto.motivo,
         estadoAprobacion: 'APROBADA',
@@ -139,25 +152,40 @@ export class NovedadesService {
     }
 
     const start = data.fechaInicio || existing.fechaInicio;
-    const end = data.fechaFin !== undefined ? data.fechaFin : existing.fechaFin;
-    const endCheck = end || start;
+    let end = data.fechaFin !== undefined ? data.fechaFin : existing.fechaFin;
+    let isInfinite = false;
+
+    // Autocierre para eventos de un solo día en update
+    if (['VIAJE_INICIO', 'VIAJE_FIN'].includes(existing.tipoNovedad.codigo)) {
+      if (!end) {
+        end = start;
+        data.fechaFin = end;
+      }
+    } else {
+      if (!end) isInfinite = true;
+    }
 
     // Si no estamos rechazando la novedad, verificar solapamiento
     if (updateNovedadDto.estadoAprobacion !== 'RECHAZADA') {
+      const overlapConditions: any[] = [
+        {
+          OR: [
+            { fechaFin: { gte: start } },
+            { fechaFin: null }
+          ]
+        }
+      ];
+
+      if (!isInfinite) {
+        overlapConditions.push({ fechaInicio: { lte: end } });
+      }
+
       const overlaps = await this.prisma.observadorNovedad.findFirst({
         where: {
           id: { not: id },
           observadorId: existing.observadorId,
           estadoAprobacion: { not: 'RECHAZADA' },
-          AND: [
-            { fechaInicio: { lte: endCheck } },
-            {
-              OR: [
-                { fechaFin: { gte: start } },
-                { fechaFin: null, fechaInicio: { gte: start } }
-              ]
-            }
-          ]
+          AND: overlapConditions
         }
       });
 
