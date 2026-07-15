@@ -28,27 +28,47 @@ export class NovedadesEmailProcessor implements JobProcessor {
             emailsTotal = emails.length;
             
             for (const email of emails) {
-                // 1. Crear el Log Maestro
-                const emailLog = await this.prisma.novedadesEmailLog.create({
-                    data: {
-                        messageId: email.messageId,
-                        asunto: email.subject,
-                        remitente: email.from,
-                        fechaRecepcion: email.date ? new Date(email.date) : null,
-                        estado: 'PROCESANDO'
-                    }
+                // 1. Verificar si ya existe un log (parcialmente procesado)
+                let emailLog = await this.prisma.novedadesEmailLog.findFirst({
+                    where: { messageId: email.messageId },
+                    include: { detalles: true }
                 });
 
-                let detallesCreados = 0;
-                let detallesConError = 0;
-                let detallesRequierenRevision = 0;
+                if (emailLog && emailLog.estado !== 'ERROR_TEMPORAL') {
+                    // Si ya está completamente procesado o tiene error permanente, lo marcamos leído y saltamos
+                    await this.imapService.markAsProcessed(email.uid);
+                    continue;
+                }
+
+                if (!emailLog) {
+                    emailLog = await this.prisma.novedadesEmailLog.create({
+                        data: {
+                            messageId: email.messageId,
+                            asunto: email.subject,
+                            remitente: email.from,
+                            fechaRecepcion: email.date ? new Date(email.date) : null,
+                            estado: 'PROCESANDO'
+                        },
+                        include: { detalles: true }
+                    });
+                } else {
+                    await this.prisma.novedadesEmailLog.update({
+                        where: { id: emailLog.id },
+                        data: { estado: 'PROCESANDO' }
+                    });
+                }
+
+                const detallesPrevios = emailLog.detalles || [];
+                const yaExitoso = (fuente: string) => detallesPrevios.some(d => d.fuente === fuente && ['PROCESADO', 'REQUIERE_REVISION', 'CON_ADVERTENCIAS'].includes(d.estado));
 
                 // 2. Procesar el Cuerpo del Email
-                if (email.text && email.text.trim().length > 10) {
+                const bodyFuente = 'CUERPO';
+                if (email.text && email.text.trim().length > 10 && !yaExitoso(bodyFuente)) {
+                    await this.prisma.novedadesEmailLogDetalle.deleteMany({ where: { emailLogId: emailLog.id, fuente: bodyFuente } });
                     await this.analizarYGuardarElemento(
                         email.text, 
                         undefined, 
-                        'CUERPO', 
+                        bodyFuente, 
                         emailLog.id, 
                         email
                     );
@@ -58,38 +78,53 @@ export class NovedadesEmailProcessor implements JobProcessor {
                 if (email.attachments && email.attachments.length > 0) {
                     for (let i = 0; i < email.attachments.length; i++) {
                         const att = email.attachments[i];
-                        const attachmentData = {
-                            buffer: att.content,
-                            mimetype: att.contentType || 'application/pdf',
-                            filename: att.filename || `adjunto_${i}.pdf`
-                        };
-                        await this.analizarYGuardarElemento(
-                            '', 
-                            attachmentData, 
-                            `ADJUNTO: ${attachmentData.filename}`, 
-                            emailLog.id, 
-                            email
-                        );
+                        const filename = att.filename || `adjunto_${i}.pdf`;
+                        const attFuente = `ADJUNTO: ${filename}`;
+
+                        if (!yaExitoso(attFuente)) {
+                            const attachmentData = {
+                                buffer: att.content,
+                                mimetype: att.contentType || 'application/pdf',
+                                filename: filename
+                            };
+                            await this.prisma.novedadesEmailLogDetalle.deleteMany({ where: { emailLogId: emailLog.id, fuente: attFuente } });
+                            await this.analizarYGuardarElemento(
+                                '', 
+                                attachmentData, 
+                                attFuente, 
+                                emailLog.id, 
+                                email
+                            );
+                        }
                     }
                 }
 
                 // 4. Actualizar estado del Log Maestro
-                const detalles = await this.prisma.novedadesEmailLogDetalle.findMany({
+                const detallesActualizados = await this.prisma.novedadesEmailLogDetalle.findMany({
                     where: { emailLogId: emailLog.id }
                 });
 
-                const tieneErrores = detalles.some(d => d.estado === 'ERROR');
-                const tieneRevisiones = detalles.some(d => d.estado === 'REQUIERE_REVISION');
-                const nuevoEstado = tieneErrores ? 'CON_ERRORES' : (tieneRevisiones ? 'CON_ADVERTENCIAS' : 'PROCESADO');
+                const tieneErrores = detallesActualizados.some(d => d.estado === 'ERROR');
+                const tieneErroresTemporales = detallesActualizados.some(d => d.estado === 'ERROR_TEMPORAL');
+                const tieneRevisiones = detallesActualizados.some(d => d.estado === 'REQUIERE_REVISION');
+                
+                const nuevoEstado = tieneErroresTemporales ? 'ERROR_TEMPORAL' 
+                                  : (tieneErrores ? 'CON_ERRORES' 
+                                  : (tieneRevisiones ? 'CON_ADVERTENCIAS' : 'PROCESADO'));
 
                 await this.prisma.novedadesEmailLog.update({
                     where: { id: emailLog.id },
                     data: { estado: nuevoEstado }
                 });
 
-                // 5. Marcar como leído en IMAP
-                await this.imapService.markAsProcessed(email.uid);
-                processedCount++;
+                // 5. Marcar como leído en IMAP SOLO si no hay errores temporales
+                if (!tieneErroresTemporales) {
+                    await this.imapService.markAsProcessed(email.uid);
+                    processedCount++;
+                } else {
+                    this.logger.warn(`El email ${email.subject} tiene errores temporales. Se deja como no leído para reintentar.`);
+                    errorsCount++;
+                }
 
                 // Pequeño delay de 10s para cuota de Gemini
                 await new Promise(resolve => setTimeout(resolve, 10000));
@@ -212,7 +247,13 @@ export class NovedadesEmailProcessor implements JobProcessor {
             }
         } catch (error: any) {
             this.logger.error(`Error analizando elemento (${fuente}): ${error.message}`);
-            estadoDetalle = 'ERROR';
+            
+            const msg = (error.message || '').toLowerCase();
+            const isTemporary = error.status === 429 || error.status === 503 || error.status === 504 ||
+                                msg.includes('429') || msg.includes('quota') || msg.includes('exhausted') || 
+                                msg.includes('timeout') || msg.includes('socket') || msg.includes('reintentos');
+
+            estadoDetalle = isTemporary ? 'ERROR_TEMPORAL' : 'ERROR';
             errorDetalle = error.message;
         }
 

@@ -81,6 +81,29 @@ export class NovedadesService {
       }
     }
 
+    const start = DateUtils.parseToAppZone(createNovedadDto.fechaInicio);
+    const end = createNovedadDto.fechaFin ? DateUtils.parseToAppZone(createNovedadDto.fechaFin) : start;
+
+    const overlaps = await this.prisma.observadorNovedad.findFirst({
+      where: {
+        observadorId: createNovedadDto.observadorId,
+        estadoAprobacion: { not: 'RECHAZADA' },
+        AND: [
+          { fechaInicio: { lte: end } },
+          {
+            OR: [
+              { fechaFin: { gte: start } },
+              { fechaFin: null, fechaInicio: { gte: start } }
+            ]
+          }
+        ]
+      }
+    });
+
+    if (overlaps) {
+      throw new BadRequestException('El observador ya tiene una novedad registrada en estas fechas');
+    }
+
     return this.prisma.observadorNovedad.create({
       data: {
         observadorId: createNovedadDto.observadorId,
@@ -113,6 +136,34 @@ export class NovedadesService {
     if (updateNovedadDto.fechaInicio) data.fechaInicio = DateUtils.parseToAppZone(updateNovedadDto.fechaInicio);
     if (updateNovedadDto.fechaFin !== undefined) {
       data.fechaFin = updateNovedadDto.fechaFin ? DateUtils.parseToAppZone(updateNovedadDto.fechaFin) : null;
+    }
+
+    const start = data.fechaInicio || existing.fechaInicio;
+    const end = data.fechaFin !== undefined ? data.fechaFin : existing.fechaFin;
+    const endCheck = end || start;
+
+    // Si no estamos rechazando la novedad, verificar solapamiento
+    if (updateNovedadDto.estadoAprobacion !== 'RECHAZADA') {
+      const overlaps = await this.prisma.observadorNovedad.findFirst({
+        where: {
+          id: { not: id },
+          observadorId: existing.observadorId,
+          estadoAprobacion: { not: 'RECHAZADA' },
+          AND: [
+            { fechaInicio: { lte: endCheck } },
+            {
+              OR: [
+                { fechaFin: { gte: start } },
+                { fechaFin: null, fechaInicio: { gte: start } }
+              ]
+            }
+          ]
+        }
+      });
+
+      if (overlaps) {
+        throw new BadRequestException('Las nuevas fechas se solapan con otra novedad existente del observador');
+      }
     }
 
     let tipoEvento = 'EDICION';
