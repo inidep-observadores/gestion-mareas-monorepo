@@ -169,11 +169,25 @@
               </h3>
               <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="space-y-1.5">
-                  <label class="text-xs font-bold uppercase tracking-wider text-text-muted">Inicio Observador</label>
+                  <div class="flex items-center justify-between mb-1.5">
+                    <label class="text-xs font-bold uppercase tracking-wider text-text-muted">Inicio Observador</label>
+                    <label class="flex items-center gap-1.5 cursor-pointer group" title="Marcar como validada manualmente">
+                      <input type="checkbox" v-model="marea.inicio_validado" @change="confirmManualValidation('inicio', $event)" :disabled="isReadOnly"
+                        class="rounded text-primary border-border focus:ring-primary/20 bg-surface disabled:opacity-50" />
+                      <span class="text-[10px] uppercase font-bold text-text-muted group-hover:text-primary transition-colors">Validada</span>
+                    </label>
+                  </div>
                   <DatePicker v-model="marea.fecha_inicio_observador" :show-time="false" :disabled="isReadOnly" />
                 </div>
                 <div class="space-y-1.5">
-                  <label class="text-xs font-bold uppercase tracking-wider text-text-muted">Fin Observador</label>
+                  <div class="flex items-center justify-between mb-1.5">
+                    <label class="text-xs font-bold uppercase tracking-wider text-text-muted">Fin Observador</label>
+                    <label class="flex items-center gap-1.5 cursor-pointer group" title="Marcar como validada manualmente">
+                      <input type="checkbox" v-model="marea.fin_validado" @change="confirmManualValidation('fin', $event)" :disabled="isReadOnly"
+                        class="rounded text-primary border-border focus:ring-primary/20 bg-surface disabled:opacity-50" />
+                      <span class="text-[10px] uppercase font-bold text-text-muted group-hover:text-primary transition-colors">Validada</span>
+                    </label>
+                  </div>
                   <DatePicker v-model="marea.fecha_fin_observador" :show-time="false" :disabled="isReadOnly" />
                 </div>
                 <div class="space-y-1.5">
@@ -733,7 +747,9 @@ async function loadMarea() {
       fecha_ultima_actualizacion: data.fechaUltimaActualizacion,
       fecha_designacion: data.fechaDesignacion ? data.fechaDesignacion.split('T')[0] : null,
       fecha_inicio_observador: data.fechaInicioObservador,
+      inicio_validado: data.inicioValidado ?? false,
       fecha_fin_observador: data.fechaFinObservador,
+      fin_validado: data.finValidado ?? false,
       nro_protocolizacion: data.nroProtocolizacion ?? null,
       anio_protocolizacion: data.anioProtocolizacion ?? null,
       fecha_protocolizacion: data.fechaProtocolizacion,
@@ -854,6 +870,16 @@ function checkManualMode() {
   }
 }
 
+function confirmManualValidation(tipo: 'inicio' | 'fin', event: Event) {
+  const isChecked = (event.target as HTMLInputElement).checked;
+  if (isChecked) {
+    if (!window.confirm(`¿Está seguro que desea marcar la fecha de ${tipo} como validada de forma manual? Esto suele hacerse automáticamente al cargar los pasajes.`)) {
+      if (tipo === 'inicio') marea.value.inicio_validado = false;
+      if (tipo === 'fin') marea.value.fin_validado = false;
+    }
+  }
+}
+
 const displayTitle = computed(() => {
   const tipo = marea.value.tipo_marea === TipoMarea.CI ? 'CI' : 'MC'
   const nro = marea.value.nro_marea || '000'
@@ -966,7 +992,9 @@ const saveChanges = async () => {
       fechaZarpadaEstimada: toIsoStringOrNull(marea.value.fecha_zarpada_estimada),
       fechaDesignacion: toIsoStringOrNull(marea.value.fecha_designacion),
       fechaInicioObservador: toIsoStringOrNull(marea.value.fecha_inicio_observador),
+      inicioValidado: marea.value.inicio_validado,
       fechaFinObservador: toIsoStringOrNull(marea.value.fecha_fin_observador),
+      finValidado: marea.value.fin_validado,
       diasZonaAustral: toNumberOrUndefined(marea.value.dias_zona_austral) === undefined ? null : toNumberOrUndefined(marea.value.dias_zona_austral),
       tipoCalculoZonaAustral: marea.value.tipo_calculo_zona_austral || null,
       nroProtocolizacion: toNumberOrUndefined(marea.value.nro_protocolizacion) === undefined ? null : toNumberOrUndefined(marea.value.nro_protocolizacion),
