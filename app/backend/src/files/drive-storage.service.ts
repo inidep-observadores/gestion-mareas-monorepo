@@ -31,9 +31,10 @@ export class DriveStorageService {
     async uploadFile(filename: string, mimeType: string, buffer: Buffer): Promise<{ fileId: string; webViewLink: string }> {
         const folderId = this.configService.get<string>('GOOGLE_DRIVE_FOLDER_ID');
         
-        const bufferStream = new Readable();
-        bufferStream.push(buffer);
-        bufferStream.push(null);
+        // Usar PassThrough es mucho más seguro con googleapis para evitar race conditions
+        const { PassThrough } = require('stream');
+        const bufferStream = new PassThrough();
+        bufferStream.end(buffer);
 
         try {
             const response = await this.driveClient.files.create({
