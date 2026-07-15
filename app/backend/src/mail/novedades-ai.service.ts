@@ -209,6 +209,35 @@ export class NovedadesAiService {
             parsedJson._metadata = {
                 tipoDocumentoClasificado: docType
             };
+
+            // Regla de negocio para Pasajes -> VIAJE_INICIO o VIAJE_FIN
+            if (docType === 'PASAJES') {
+                const origen = (parsedJson.origen || '').toLowerCase();
+                const destino = (parsedJson.destino || '').toLowerCase();
+                let tipoViaje = null;
+
+                // Mar del Plata puede estar escrito de varias formas
+                const esMdq = (str: string) => str.includes('mar del plata') || str.includes('mdp') || str.includes('mdq');
+
+                if (esMdq(origen)) {
+                    tipoViaje = 'VIAJE_INICIO';
+                } else if (esMdq(destino)) {
+                    tipoViaje = 'VIAJE_FIN';
+                }
+
+                if (tipoViaje && parsedJson.fechaViaje) {
+                    parsedJson.periodos = [{
+                        tipoNovedad: tipoViaje,
+                        fechaInicio: parsedJson.fechaViaje,
+                        fechaFin: parsedJson.fechaViaje, // Autocierre
+                        motivo: `Viaje: ${parsedJson.origen} -> ${parsedJson.destino} (${parsedJson.empresa || 'Empresa de transporte'})`
+                    }];
+                } else {
+                    // Si no incluye Mar del Plata en origen o destino, o falta la fecha, lo ignoramos dejando periodos vacío
+                    parsedJson.periodos = [];
+                }
+            }
+
             return parsedJson;
 
         } catch (error: any) {

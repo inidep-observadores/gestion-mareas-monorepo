@@ -203,12 +203,48 @@ export class NovedadesEmailProcessor implements JobProcessor {
                         }
 
                         if (tipoNovedad) {
+                            const start = periodo.fechaInicio ? DateUtils.parseToAppZone(periodo.fechaInicio) : DateUtils.getNow(false);
+                            let end: Date | null = periodo.fechaFin ? DateUtils.parseToAppZone(periodo.fechaFin) : null;
+                            let isInfinite = false;
+
+                            if (['VIAJE_INICIO', 'VIAJE_FIN'].includes(tipoNovedad.codigo)) {
+                                if (!end) end = start;
+                            } else {
+                                if (!end) isInfinite = true;
+                            }
+
+                            const overlapConditions: any[] = [
+                                {
+                                    OR: [
+                                        { fechaFin: { gte: start } },
+                                        { fechaFin: null }
+                                    ]
+                                }
+                            ];
+
+                            if (!isInfinite) {
+                                overlapConditions.push({ fechaInicio: { lte: end } });
+                            }
+
+                            const overlaps = await this.prisma.observadorNovedad.findFirst({
+                                where: {
+                                    observadorId: observador.id,
+                                    tipoNovedadId: tipoNovedad.id,
+                                    estadoAprobacion: { not: 'RECHAZADA' },
+                                    AND: overlapConditions
+                                }
+                            });
+
+                            if (overlaps) {
+                                throw new Error('El observador ya tiene una novedad de este tipo registrada en estas fechas');
+                            }
+
                             const novedad = await this.prisma.observadorNovedad.create({
                                 data: {
                                     observadorId: observador.id,
                                     tipoNovedadId: tipoNovedad.id,
-                                    fechaInicio: periodo.fechaInicio ? DateUtils.parseToAppZone(periodo.fechaInicio) : DateUtils.getNow(false),
-                                    fechaFin: periodo.fechaFin ? DateUtils.parseToAppZone(periodo.fechaFin) : null,
+                                    fechaInicio: start,
+                                    fechaFin: end,
                                     estadoAprobacion: 'PENDIENTE',
                                     origen: 'EMAIL',
                                     motivo: periodo.motivo || emailData.subject,

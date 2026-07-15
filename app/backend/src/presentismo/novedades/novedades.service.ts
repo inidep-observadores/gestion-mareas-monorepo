@@ -108,13 +108,14 @@ export class NovedadesService {
     const overlaps = await this.prisma.observadorNovedad.findFirst({
       where: {
         observadorId: createNovedadDto.observadorId,
+        tipoNovedadId: createNovedadDto.tipoNovedadId,
         estadoAprobacion: { not: 'RECHAZADA' },
         AND: overlapConditions
       }
     });
 
     if (overlaps) {
-      throw new BadRequestException('El observador ya tiene una novedad registrada en estas fechas');
+      throw new BadRequestException('El observador ya tiene una novedad de este tipo registrada en estas fechas');
     }
 
     return this.prisma.observadorNovedad.create({
@@ -184,13 +185,14 @@ export class NovedadesService {
         where: {
           id: { not: id },
           observadorId: existing.observadorId,
+          tipoNovedadId: data.tipoNovedadId !== undefined ? data.tipoNovedadId : existing.tipoNovedadId,
           estadoAprobacion: { not: 'RECHAZADA' },
           AND: overlapConditions
         }
       });
 
       if (overlaps) {
-        throw new BadRequestException('Las nuevas fechas se solapan con otra novedad existente del observador');
+        throw new BadRequestException('Las nuevas fechas se solapan con otra novedad del mismo tipo');
       }
     }
 
