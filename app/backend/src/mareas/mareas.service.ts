@@ -2456,7 +2456,7 @@ export class MareasService {
     }
 
     async create(createMareaDto: CreateMareaDto, user: User) {
-        const { buqueId, anioMarea, nroMarea, pesqueriaId, observadorId, arteId, fechaZarpadaEstimada, fechaInicioObservador, tipoMarea = TipoMarea.MC, diasEstimados, fechaDesignacion } = createMareaDto;
+        const { buqueId, anioMarea, nroMarea, pesqueriaId, observadorId, arteId, fechaZarpadaEstimada, fechaInicioObservador, inicioValidado = false, finValidado = false, tipoMarea = TipoMarea.MC, diasEstimados, fechaDesignacion } = createMareaDto;
 
         const existing = await this.prisma.marea.findMany({
             where: {
@@ -2540,6 +2540,8 @@ export class MareasService {
                     fechaDesignacion: fechaDesignacion ? new Date(fechaDesignacion) : new Date(),
                     fechaZarpadaEstimada: fechaZarpadaEstimada ? new Date(fechaZarpadaEstimada) : null,
                     fechaInicioObservador: fechaInicioObservador ? new Date(fechaInicioObservador) : null,
+                    inicioValidado,
+                    finValidado,
                     diasEstimados,
                     observaciones: createMareaDto.observaciones || '',
                 }

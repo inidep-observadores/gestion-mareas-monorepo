@@ -56,6 +56,14 @@ export class CreateMareaDto {
     @IsOptional()
     observaciones?: string;
 
+    @IsBoolean()
+    @IsOptional()
+    inicioValidado?: boolean;
+
+    @IsBoolean()
+    @IsOptional()
+    finValidado?: boolean;
+
     @IsArray()
     @IsOptional()
     @ValidateNested({ each: true })

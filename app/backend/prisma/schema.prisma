@@ -285,6 +285,8 @@ model Marea {
   fechaCreacion             DateTime                  @default(now()) @map("fecha_creacion") @db.Timestamptz(6)
   fechaUltimaActualizacion  DateTime                  @updatedAt @map("fecha_ultima_actualizacion") @db.Timestamptz(6)
   activo                    Boolean                   @default(true)
+  inicioValidado            Boolean                   @default(false) @map("inicio_validado")
+  finValidado               Boolean                   @default(false) @map("fin_validado")
   observaciones             String?
   tipoMarea                 TipoMarea                 @default(MC) @map("tipo_marea")
   diasEstimados             Int?                      @map("dias_estimados")

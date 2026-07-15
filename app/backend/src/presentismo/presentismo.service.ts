@@ -250,7 +250,7 @@ export class PresentismoService {
 
           // 1. VIAJE INICIAL
           const primeraEtapa = marea.etapas[0];
-          if (primeraEtapa && primeraEtapa.fechaZarpada && marea.fechaInicioObservador) {
+          if (marea.inicioValidado && primeraEtapa && primeraEtapa.fechaZarpada && marea.fechaInicioObservador) {
             const zarpada1 = DateTime.fromJSDate(primeraEtapa.fechaZarpada, { zone: 'utc' }).startOf('day');
             const inicioObs = DateTime.fromJSDate(marea.fechaInicioObservador, { zone: 'utc' }).startOf('day');
             if (currentDate >= inicioObs && currentDate < zarpada1) {
@@ -289,8 +289,8 @@ export class PresentismoService {
           if (ultimaEtapa && ultimaEtapa.fechaArribo) {
             const arriboUltima = DateTime.fromJSDate(ultimaEtapa.fechaArribo, { zone: 'utc' }).endOf('day');
             if (currentDate > arriboUltima) {
-              if (marea.fechaFinObservador && currentDate <= DateTime.fromJSDate(marea.fechaFinObservador, { zone: 'utc' }).startOf('day')) {
-                // Hay fecha_fin_observador seteada -> Es Viaje
+              if (marea.finValidado && marea.fechaFinObservador && currentDate <= DateTime.fromJSDate(marea.fechaFinObservador, { zone: 'utc' }).startOf('day')) {
+                // Hay fecha_fin_observador seteada y validada -> Es Viaje
                 isViaje = true;
                 mareaReferencia = marea;
                 break;

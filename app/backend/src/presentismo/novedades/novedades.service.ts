@@ -118,7 +118,7 @@ export class NovedadesService {
       throw new BadRequestException('El observador ya tiene una novedad de este tipo registrada en estas fechas');
     }
 
-    return this.prisma.observadorNovedad.create({
+    const created = await this.prisma.observadorNovedad.create({
       data: {
         observadorId: createNovedadDto.observadorId,
         tipoNovedadId: createNovedadDto.tipoNovedadId,
@@ -139,6 +139,9 @@ export class NovedadesService {
       },
       include: { observador: true, tipoNovedad: true, archivos: true }
     });
+
+    await this.procesarAutoValidacionMarea(created);
+    return created;
   }
 
   async update(id: string, updateNovedadDto: UpdateNovedadDto, user?: User) {
@@ -212,11 +215,68 @@ export class NovedadesService {
       }
     };
 
-    return this.prisma.observadorNovedad.update({
+    const updated = await this.prisma.observadorNovedad.update({
       where: { id },
       data,
       include: { observador: true, tipoNovedad: true, archivos: true }
     });
+
+    await this.procesarAutoValidacionMarea(updated);
+    return updated;
+  }
+
+  private async procesarAutoValidacionMarea(novedad: any) {
+    if (novedad.estadoAprobacion !== 'APROBADA') return;
+    if (!novedad.tipoNovedad || !['VIAJE_INICIO', 'VIAJE_FIN'].includes(novedad.tipoNovedad.codigo)) return;
+
+    const umbralDias = 5;
+    const fechaNov = novedad.fechaInicio.getTime();
+
+    // Buscar todas las mareas del observador (activas o recientes)
+    const mareas = await this.prisma.marea.findMany({
+      where: {
+        observadorPrincipalId: novedad.observadorId,
+        activo: true,
+      },
+      include: { etapas: { orderBy: { nroEtapa: 'asc' } } }
+    });
+
+    for (const marea of mareas) {
+      if (novedad.tipoNovedad.codigo === 'VIAJE_INICIO') {
+        const fechaReferencia = marea.etapas.length > 0 && marea.etapas[0].fechaZarpada
+            ? marea.etapas[0].fechaZarpada.getTime()
+            : marea.fechaZarpadaEstimada?.getTime();
+
+        if (fechaReferencia) {
+          const diffDays = Math.abs(fechaReferencia - fechaNov) / (1000 * 60 * 60 * 24);
+          if (diffDays <= umbralDias) {
+            await this.prisma.marea.update({
+              where: { id: marea.id },
+              data: { 
+                inicioValidado: true,
+                fechaInicioObservador: novedad.fechaInicio
+              }
+            });
+            break; // Marea encontrada y actualizada
+          }
+        }
+      } else if (novedad.tipoNovedad.codigo === 'VIAJE_FIN') {
+        const ultimaEtapa = marea.etapas.length > 0 ? marea.etapas[marea.etapas.length - 1] : null;
+        if (ultimaEtapa?.fechaArribo) {
+          const diffDays = Math.abs(ultimaEtapa.fechaArribo.getTime() - fechaNov) / (1000 * 60 * 60 * 24);
+          if (diffDays <= umbralDias) {
+            await this.prisma.marea.update({
+              where: { id: marea.id },
+              data: { 
+                finValidado: true,
+                fechaFinObservador: novedad.fechaInicio
+              }
+            });
+            break;
+          }
+        }
+      }
+    }
   }
 
   async remove(id: string) {

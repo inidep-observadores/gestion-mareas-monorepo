@@ -46,6 +46,14 @@ export class UpdateMareaDto extends PartialType(CreateMareaDto) {
     @IsOptional()
     activo?: boolean;
 
+    @IsBoolean()
+    @IsOptional()
+    inicioValidado?: boolean;
+
+    @IsBoolean()
+    @IsOptional()
+    finValidado?: boolean;
+
     @IsUUID()
     @IsOptional()
     artePrincipalId?: string | null;
