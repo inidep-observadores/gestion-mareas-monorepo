@@ -22,8 +22,10 @@
       </button>
     </div>
 
-    <BaseDataList 
-      title="Gestión de Novedades" 
+    <div class="flex flex-col xl:flex-row gap-6 items-start">
+      <div class="flex-1 min-w-0 w-full transition-all duration-300">
+        <BaseDataList 
+          title="Gestión de Novedades" 
       description="Administración de licencias, francos compensatorios y otras novedades de los observadores."
       button-text="Nueva Novedad" 
       :items="filteredNovedades"
@@ -51,6 +53,15 @@
               ]" />
           </div>
         </th>
+        <th scope="col" class="px-6 py-3 cursor-pointer group" @click="handleSort('origen')">
+          <div class="flex items-center gap-2">
+              Origen
+              <component :is="getSortIcon()" class="w-3.5 h-3.5 transition-all duration-200" :class="[
+                  sortKey === 'origen' ? 'opacity-100 text-primary' : 'opacity-0 group-hover:opacity-50',
+                  sortKey === 'origen' && sortOrder === 'asc' ? 'rotate-180' : ''
+              ]" />
+          </div>
+        </th>
         <th scope="col" class="px-6 py-3 cursor-pointer group" @click="handleSort('fechaInicio')">
           <div class="flex items-center gap-2">
               Fecha Inicio
@@ -73,11 +84,11 @@
       </template>
 
       <template #table-row="{ item: novedad }">
-        <td class="px-6 py-4 font-medium text-text">
+        <td class="px-6 py-4 font-medium text-text cursor-pointer hover:bg-surface-muted/50 transition-colors" @click="openSidePanel(novedad)">
           {{ novedad.observador?.apellido }}, {{ novedad.observador?.nombre }}
           <div class="text-[10px] text-text-muted mt-0.5">{{ novedad.observador?.codigoInterno }}</div>
         </td>
-        <td class="px-6 py-4">
+        <td class="px-6 py-4 cursor-pointer hover:bg-surface-muted/50 transition-colors" @click="openSidePanel(novedad)">
           <div class="flex flex-col gap-1 items-start">
             <span class="bg-info/10 text-info text-[11px] font-bold px-2 py-0.5 rounded-full border border-info/20 uppercase tracking-tighter">
               {{ novedad.tipoNovedad?.descripcion || 'Desconocido' }}
@@ -90,10 +101,15 @@
             </span>
           </div>
         </td>
-        <td class="px-6 py-4 font-mono font-bold text-text whitespace-nowrap">
+        <td class="px-6 py-4 cursor-pointer hover:bg-surface-muted/50 transition-colors" @click="openSidePanel(novedad)">
+          <span class="bg-surface-muted text-text-muted text-[10px] font-bold px-2 py-0.5 rounded border border-border uppercase tracking-widest">
+            {{ novedad.origen || 'MANUAL' }}
+          </span>
+        </td>
+        <td class="px-6 py-4 font-mono font-bold text-text whitespace-nowrap cursor-pointer hover:bg-surface-muted/50 transition-colors" @click="openSidePanel(novedad)">
           {{ formatDate(novedad.fechaInicio) }}
         </td>
-        <td class="px-6 py-4 font-mono font-bold text-text whitespace-nowrap">
+        <td class="px-6 py-4 font-mono font-bold text-text whitespace-nowrap cursor-pointer hover:bg-surface-muted/50 transition-colors" @click="openSidePanel(novedad)">
           {{ novedad.fechaFin ? formatDate(novedad.fechaFin) : '-' }}
         </td>
         <td class="px-6 py-4 text-right">
@@ -117,28 +133,33 @@
       </template>
 
       <template #card-item="{ item: novedad }">
-        <div class="flex items-start gap-4 mb-4">
-          <div class="flex-1 min-w-0">
-            <div class="flex items-center gap-2 mb-1.5">
-              <span class="text-[10px] font-black bg-info/10 text-info px-2 py-0.5 rounded-md uppercase">
-                {{ novedad.tipoNovedad?.descripcion || 'Desconocido' }}
-              </span>
+        <div class="cursor-pointer hover:bg-surface-muted/30 transition-colors rounded-xl -mx-2 -mt-2 p-2" @click="openSidePanel(novedad)">
+          <div class="flex items-start gap-4 mb-4">
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 mb-1.5">
+                <span class="text-[10px] font-black bg-info/10 text-info px-2 py-0.5 rounded-md uppercase">
+                  {{ novedad.tipoNovedad?.descripcion || 'Desconocido' }}
+                </span>
+                <span class="text-[9px] font-bold text-text-muted border border-border px-1.5 py-0.5 rounded uppercase">
+                  {{ novedad.origen || 'MANUAL' }}
+                </span>
+              </div>
+              <div class="font-extrabold text-text text-base truncate">{{ novedad.observador?.apellido }}, {{ novedad.observador?.nombre }}</div>
             </div>
-            <div class="font-extrabold text-text text-base truncate">{{ novedad.observador?.apellido }}, {{ novedad.observador?.nombre }}</div>
           </div>
-        </div>
 
-        <div class="grid grid-cols-2 gap-3 mb-4 p-3 bg-surface-muted rounded-xl border border-border">
-          <div>
-            <div class="text-[10px] text-text-muted uppercase font-black mb-1">Inicio</div>
-            <div class="text-xs font-bold text-text uppercase tracking-tight">
-                {{ formatDate(novedad.fechaInicio) }}
+          <div class="grid grid-cols-2 gap-3 mb-4 p-3 bg-surface-muted rounded-xl border border-border">
+            <div>
+              <div class="text-[10px] text-text-muted uppercase font-black mb-1">Inicio</div>
+              <div class="text-xs font-bold text-text uppercase tracking-tight">
+                  {{ formatDate(novedad.fechaInicio) }}
+              </div>
             </div>
-          </div>
-          <div>
-            <div class="text-[10px] text-text-muted uppercase font-black mb-1">Fin</div>
-            <div class="text-xs font-bold text-text uppercase tracking-tight">
-                {{ novedad.fechaFin ? formatDate(novedad.fechaFin) : '-' }}
+            <div>
+              <div class="text-[10px] text-text-muted uppercase font-black mb-1">Fin</div>
+              <div class="text-xs font-bold text-text uppercase tracking-tight">
+                  {{ novedad.fechaFin ? formatDate(novedad.fechaFin) : '-' }}
+              </div>
             </div>
           </div>
         </div>
@@ -155,7 +176,49 @@
           </button>
         </div>
       </template>
-    </BaseDataList>
+        </BaseDataList>
+      </div>
+
+      <!-- PANEL DE DETALLE LATERAL PERSISTENTE -->
+      <Transition enter-active-class="transition duration-300 ease-out" enter-from-class="translate-x-4 opacity-0"
+        enter-to-class="translate-x-0 opacity-100" leave-active-class="transition duration-200 ease-in"
+        leave-from-class="translate-x-0 opacity-100" leave-to-class="translate-x-4 opacity-0">
+        <div v-if="showSidePanel && sidePanelNovedad"
+          class="w-full xl:w-[350px] 2xl:w-[450px] shrink-0 sticky top-6 bg-surface border border-border rounded-2xl shadow-sm overflow-hidden self-start z-10 hidden xl:block">
+          <NovedadContextDetailContent
+            :novedad="sidePanelNovedad"
+            @close="showSidePanel = false"
+            @approve="(n) => { showSidePanel = false; promptAction(n, 'APROBADA'); }"
+            @reject="(n) => { showSidePanel = false; promptAction(n, 'RECHAZADA'); }"
+            @edit="(n) => { showSidePanel = false; openEditModal(n); }"
+          />
+        </div>
+      </Transition>
+    </div>
+
+    <!-- NovedadContextDetailContent (Mobile Modal) -->
+    <Transition enter-active-class="transition duration-300 ease-out" enter-from-class="opacity-0" enter-to-class="opacity-100" leave-active-class="transition duration-200 ease-in" leave-from-class="opacity-100" leave-to-class="opacity-0">
+      <div v-if="showSidePanel && sidePanelNovedad !== null" class="fixed inset-0 z-50 xl:hidden">
+        <!-- Backdrop -->
+        <div class="fixed inset-0 bg-black/25 backdrop-blur-sm" @click="showSidePanel = false"></div>
+        <!-- Contenido -->
+        <div class="fixed inset-0 overflow-y-auto pointer-events-none">
+          <div class="flex min-h-full items-center justify-center p-4 text-center">
+            <Transition enter-active-class="transition duration-300 ease-out" enter-from-class="opacity-0 scale-95" enter-to-class="opacity-100 scale-100" leave-active-class="transition duration-200 ease-in" leave-from-class="opacity-100 scale-100" leave-to-class="opacity-0 scale-95">
+              <div v-if="showSidePanel && sidePanelNovedad !== null" class="w-full max-w-md transform overflow-hidden rounded-2xl bg-surface text-left align-middle shadow-xl transition-all pointer-events-auto flex flex-col max-h-[90vh]">
+                <NovedadContextDetailContent
+                  :novedad="sidePanelNovedad"
+                  @close="showSidePanel = false"
+                  @approve="(n) => { showSidePanel = false; promptAction(n, 'APROBADA'); }"
+                  @reject="(n) => { showSidePanel = false; promptAction(n, 'RECHAZADA'); }"
+                  @edit="(n) => { showSidePanel = false; openEditModal(n); }"
+                />
+              </div>
+            </Transition>
+          </div>
+        </div>
+      </div>
+    </Transition>
 
     <NovedadDialog 
       :show="showModal" 
@@ -171,6 +234,15 @@
       confirmText="Eliminar"
       @confirm="confirmDelete"
       @close="showConfirmDelete = false"
+    />
+
+    <NovedadSidePanel
+      :show="showSidePanel"
+      :novedad="sidePanelNovedad"
+      @close="showSidePanel = false"
+      @approve="(n) => { showSidePanel = false; promptAction(n, 'APROBADA'); }"
+      @reject="(n) => { showSidePanel = false; promptAction(n, 'RECHAZADA'); }"
+      @edit="(n) => { showSidePanel = false; openEditModal(n); }"
     />
 
     <!-- Action Dialog for Approve/Reject -->
@@ -203,6 +275,7 @@ import AdminLayout from '@/components/layout/AdminLayout.vue';
 import BackButton from '@/components/common/BackButton.vue';
 import BaseDataList from '@/components/common/BaseDataList.vue';
 import NovedadDialog from '../components/NovedadDialog.vue';
+import NovedadContextDetailContent from '../components/NovedadContextDetailContent.vue';
 import ConfirmationDialog from '@/components/common/ConfirmationDialog.vue';
 import { novedadesService } from '../services/novedades.service';
 import type { Novedad } from '../interfaces/novedad.interface';
@@ -212,6 +285,14 @@ import { TrashIcon, ChevronDownIcon, EditIcon } from '@/icons';
 const novedades = ref<Novedad[]>([]);
 const isLoading = ref(true);
 const searchQuery = ref('');
+
+const showSidePanel = ref(false);
+const sidePanelNovedad = ref<Novedad | null>(null);
+
+const openSidePanel = (novedad: Novedad) => {
+  sidePanelNovedad.value = novedad;
+  showSidePanel.value = true;
+};
 
 const showModal = ref(false);
 const selectedNovedad = ref<Novedad | null>(null);

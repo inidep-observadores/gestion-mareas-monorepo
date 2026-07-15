@@ -53,6 +53,15 @@ export class DriveStorageService {
                 throw new Error('No se recibió el ID o el link desde Google Drive');
             }
 
+            // Dar permisos de vista pública (cualquiera con el enlace puede leer)
+            await this.driveClient.permissions.create({
+                fileId: response.data.id,
+                requestBody: {
+                    role: 'reader',
+                    type: 'anyone',
+                },
+            });
+
             this.logger.log(`Archivo ${filename} subido exitosamente a Google Drive (ID: ${response.data.id})`);
 
             return {
