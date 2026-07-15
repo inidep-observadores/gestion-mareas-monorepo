@@ -143,6 +143,19 @@ export class NovedadesEmailProcessor implements JobProcessor {
 
                     const observador = obsBusqueda.observador;
                     
+                    let uploadedDriveInfo: { fileId: string; webViewLink: string } | null = null;
+                    if (attachment) {
+                        try {
+                            uploadedDriveInfo = await this.driveStorageService.uploadFile(
+                                attachment.filename,
+                                attachment.mimetype,
+                                attachment.buffer
+                            );
+                        } catch (err: any) {
+                            this.logger.error(`Error subiendo adjunto a Drive: ${err.message}`);
+                        }
+                    }
+
                     // Procesar y crear cada período
                     for (const periodo of extracted.periodos) {
                         const codigoNovedad = periodo.tipoNovedad || 'LICEN';
@@ -175,26 +188,19 @@ export class NovedadesEmailProcessor implements JobProcessor {
                             });
                             novedadesIds.push(novedad.id);
 
-                            // Subir archivo a Drive si es adjunto, solo a la primera novedad del grupo
-                            if (attachment && novedadesIds.length === 1) {
+                            if (uploadedDriveInfo && attachment) {
                                 try {
-                                    const { fileId, webViewLink } = await this.driveStorageService.uploadFile(
-                                        attachment.filename,
-                                        attachment.mimetype,
-                                        attachment.buffer
-                                    );
-
                                     await this.prisma.observadorNovedadArchivo.create({
                                         data: {
                                             novedadId: novedad.id,
-                                            rutaArchivo: webViewLink,
+                                            rutaArchivo: uploadedDriveInfo.webViewLink,
                                             tipoArchivo: attachment.mimetype,
                                             nombreOriginal: attachment.filename,
-                                            driveFileId: fileId,
+                                            driveFileId: uploadedDriveInfo.fileId,
                                         }
                                     });
                                 } catch (err: any) {
-                                    this.logger.error(`Error subiendo adjunto a Drive: ${err.message}`);
+                                    this.logger.error(`Error guardando referencia de archivo en base de datos: ${err.message}`);
                                 }
                             }
                         }
