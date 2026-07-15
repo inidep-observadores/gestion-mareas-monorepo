@@ -4,6 +4,7 @@ import { ImapService } from '../../mail/imap.service';
 import { NovedadesAiService } from '../../mail/novedades-ai.service';
 import { DriveStorageService } from '../../files/drive-storage.service';
 import { JobProcessor } from '../job-types';
+import { DateUtils } from '../../common/utils/date.utils';
 
 @Injectable()
 export class NovedadesEmailProcessor implements JobProcessor {
@@ -158,8 +159,8 @@ export class NovedadesEmailProcessor implements JobProcessor {
                                 data: {
                                     observadorId: observador.id,
                                     tipoNovedadId: tipoNovedad.id,
-                                    fechaInicio: periodo.fechaInicio ? new Date(periodo.fechaInicio) : new Date(),
-                                    fechaFin: periodo.fechaFin ? new Date(periodo.fechaFin) : null,
+                                    fechaInicio: periodo.fechaInicio ? DateUtils.parseToAppZone(periodo.fechaInicio) : DateUtils.getNow(false),
+                                    fechaFin: periodo.fechaFin ? DateUtils.parseToAppZone(periodo.fechaFin) : null,
                                     estadoAprobacion: 'PENDIENTE',
                                     origen: 'EMAIL',
                                     motivo: periodo.motivo || emailData.subject,

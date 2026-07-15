@@ -3,6 +3,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { CreateNovedadDto } from './dto/create-novedad.dto';
 import { UpdateNovedadDto } from './dto/update-novedad.dto';
 import { User } from '@prisma/client';
+import { DateUtils } from '../../common/utils/date.utils';
 
 @Injectable()
 export class NovedadesService {
@@ -84,8 +85,8 @@ export class NovedadesService {
       data: {
         observadorId: createNovedadDto.observadorId,
         tipoNovedadId: createNovedadDto.tipoNovedadId,
-        fechaInicio: new Date(createNovedadDto.fechaInicio),
-        fechaFin: createNovedadDto.fechaFin ? new Date(createNovedadDto.fechaFin) : null,
+        fechaInicio: DateUtils.parseToAppZone(createNovedadDto.fechaInicio),
+        fechaFin: createNovedadDto.fechaFin ? DateUtils.parseToAppZone(createNovedadDto.fechaFin) : null,
         permiteUrgencia: createNovedadDto.permiteUrgencia || false,
         motivo: createNovedadDto.motivo,
         estadoAprobacion: 'APROBADA',
@@ -109,9 +110,9 @@ export class NovedadesService {
     const data: any = { ...updateNovedadDto };
     delete data.comentarioMovimiento; // No es parte de la entidad principal
 
-    if (updateNovedadDto.fechaInicio) data.fechaInicio = new Date(updateNovedadDto.fechaInicio);
+    if (updateNovedadDto.fechaInicio) data.fechaInicio = DateUtils.parseToAppZone(updateNovedadDto.fechaInicio);
     if (updateNovedadDto.fechaFin !== undefined) {
-      data.fechaFin = updateNovedadDto.fechaFin ? new Date(updateNovedadDto.fechaFin) : null;
+      data.fechaFin = updateNovedadDto.fechaFin ? DateUtils.parseToAppZone(updateNovedadDto.fechaFin) : null;
     }
 
     let tipoEvento = 'EDICION';
