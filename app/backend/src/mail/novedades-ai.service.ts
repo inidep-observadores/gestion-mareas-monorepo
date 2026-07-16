@@ -65,8 +65,8 @@ const schemaDisponibilidadEmail = {
                 properties: {
                     tipoNovedad: { 
                         type: 'string', 
-                        enum: ['DISPONIBLE', 'NO_DISPONIBLE', 'LICEN', 'FC', 'ENFERMEDAD'],
-                        description: 'Estado o novedad reportada'
+                        enum: ['DISPONIBLE', 'NO_DISPONIBLE', 'LICEN', 'FC', 'ENFERMEDAD', 'VIAJE_INICIO', 'VIAJE_FIN'],
+                        description: 'Estado o novedad reportada. ATENCION: Si se detecta que se trata de un boleto o pasaje de viaje desde Mar del Plata hacia otro destino, usar VIAJE_INICIO. Si es un pasaje desde otro destino hacia Mar del Plata, usar VIAJE_FIN.'
                     },
                     fechaInicio: { type: 'string', description: 'Fecha de inicio del período en formato YYYY-MM-DD' },
                     fechaFin: { type: 'string', description: 'Fecha de fin del período en formato YYYY-MM-DD' },
@@ -174,7 +174,7 @@ export class NovedadesAiService {
             } else {
                 docType = 'TEXTO_LIBRE';
                 configSchema = schemaDisponibilidadEmail;
-                promptSystem = 'Extrae los datos del mensaje informal de disponibilidad u otras novedades. Mapea todos los rangos o días mencionados al array de periodos.' + contextAdicional;
+                promptSystem = 'Extrae los datos del mensaje informal de disponibilidad u otras novedades. IMPORTANTE: Si notas que el mensaje o adjunto contiene datos de un pasaje, ticket o boleto de viaje, extraelo como VIAJE_INICIO o VIAJE_FIN según su origen/destino respecto a Mar del Plata. Mapea todos los rangos o días mencionados al array de periodos.' + contextAdicional;
             }
         }
 

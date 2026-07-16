@@ -540,6 +540,15 @@
     <GestionEtapasMareaDialog :show="showFinalizarDialog" :mode="'FINALIZAR'" :marea="marea" :currentStages="etapas"
       :initialPortId="marea.puertoBaseId" @close="showFinalizarDialog = false" @confirm="handleFinalizeMarea" />
 
+    <ConfirmationDialog
+      :show="showValidationConfirm"
+      title="Confirmar validación manual"
+      :message="validationConfirmMessage"
+      confirmText="Aceptar"
+      cancelText="Cancelar"
+      @confirm="showValidationConfirm = false"
+      @close="handleValidationCancel"
+    />
 
   </AdminLayout>
 </template>
@@ -598,6 +607,10 @@ const route = useRoute()
 
 const authStore = useAuthStore()
 const showEditDesignadaDialog = ref(false)
+
+const showValidationConfirm = ref(false)
+const validationConfirmMessage = ref('')
+const validationTipo = ref<'inicio' | 'fin'>('inicio')
 
 const isReadOnly = computed(() => {
   const roles = authStore.user?.roles || []
@@ -865,11 +878,16 @@ function checkManualMode() {
 function confirmManualValidation(tipo: 'inicio' | 'fin', event: Event) {
   const isChecked = (event.target as HTMLInputElement).checked;
   if (isChecked) {
-    if (!window.confirm(`¿Está seguro que desea marcar la fecha de ${tipo} como validada de forma manual? Esto suele hacerse automáticamente al cargar los pasajes.`)) {
-      if (tipo === 'inicio') marea.value.inicio_validado = false;
-      if (tipo === 'fin') marea.value.fin_validado = false;
-    }
+    validationTipo.value = tipo;
+    validationConfirmMessage.value = `¿Está seguro que desea marcar la fecha de ${tipo} como validada de forma manual? Esto suele hacerse automáticamente al cargar los pasajes.`;
+    showValidationConfirm.value = true;
   }
+}
+
+function handleValidationCancel() {
+  showValidationConfirm.value = false;
+  if (validationTipo.value === 'inicio') marea.value.inicio_validado = false;
+  if (validationTipo.value === 'fin') marea.value.fin_validado = false;
 }
 
 const displayTitle = computed(() => {
