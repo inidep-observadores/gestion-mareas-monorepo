@@ -240,9 +240,9 @@
       :show="showSidePanel"
       :novedad="sidePanelNovedad"
       @close="showSidePanel = false"
-      @approve="(n) => { showSidePanel = false; promptAction(n, 'APROBADA'); }"
-      @reject="(n) => { showSidePanel = false; promptAction(n, 'RECHAZADA'); }"
-      @edit="(n) => { showSidePanel = false; openEditModal(n); }"
+      @approve="(n: any) => { showSidePanel = false; promptAction(n, 'APROBADA'); }"
+      @reject="(n: any) => { showSidePanel = false; promptAction(n, 'RECHAZADA'); }"
+      @edit="(n: any) => { showSidePanel = false; openEditModal(n); }"
     />
 
     <!-- Action Dialog for Approve/Reject -->

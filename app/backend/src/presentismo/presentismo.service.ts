@@ -118,8 +118,8 @@ export class PresentismoService {
         if (!aFinished && bFinished) return -1;
         if (aFinished && !bFinished) return 1;
 
-        const aDate = a.fechaInicioObservador ? a.fechaInicioObservador.getTime() : (a.fechaDesignacion ? a.fechaDesignacion.getTime() : 0);
-        const bDate = b.fechaInicioObservador ? b.fechaInicioObservador.getTime() : (b.fechaDesignacion ? b.fechaDesignacion.getTime() : 0);
+        const aDate = a.fechaInicioObservador ? a.fechaInicioObservador.getTime() : 0;
+        const bDate = b.fechaInicioObservador ? b.fechaInicioObservador.getTime() : 0;
         return bDate - aDate;
       });
 
@@ -139,7 +139,7 @@ export class PresentismoService {
         let isViaje = false;
         let isPuerto = false;
         let puertoDetalle = '';
-        let isEsperandoZarpada = false;
+
         let isNovedad = false;
         let novedadDetalle = '';
         let novedadCodigoCorto = '';
@@ -223,30 +223,6 @@ export class PresentismoService {
           if (marea.fechaFinObservador && currentDate > DateTime.fromJSDate(marea.fechaFinObservador, { zone: 'utc' }).startOf('day')) {
             continue;
           }
-          if (marea.fechaDesignacion && currentDate < DateTime.fromJSDate(marea.fechaDesignacion, { zone: 'utc' }).startOf('day')) {
-            continue;
-          }
-
-          // 0. ESPERANDO ZARPADA (DESIGNADA -> INICIO OBS)
-          if (marea.fechaDesignacion) {
-            const desig = DateTime.fromJSDate(marea.fechaDesignacion, { zone: 'utc' }).startOf('day');
-            
-            let finEspera: any = null;
-            if (marea.fechaInicioObservador) {
-              finEspera = DateTime.fromJSDate(marea.fechaInicioObservador, { zone: 'utc' }).startOf('day').minus({ days: 1 });
-            } else if (marea.fechaZarpadaEstimada) {
-              const zarpadaEst = DateTime.fromJSDate(marea.fechaZarpadaEstimada, { zone: 'utc' }).startOf('day');
-              finEspera = zarpadaEst < currentDate ? zarpadaEst : currentDate;
-            } else {
-              finEspera = currentDate;
-            }
-
-            if (currentDate >= desig && currentDate <= finEspera) {
-              isEsperandoZarpada = true;
-              mareaReferencia = marea;
-              break;
-            }
-          }
 
           // 1. VIAJE INICIAL
           const primeraEtapa = marea.etapas[0];
@@ -273,8 +249,6 @@ export class PresentismoService {
               if (puerto) {
                 if (!puerto.esLocal) {
                   isPuerto = true;
-                } else {
-                  isEsperandoZarpada = true;
                 }
                 puertoDetalle = puerto.nombre;
                 mareaReferencia = marea;
@@ -283,7 +257,7 @@ export class PresentismoService {
             }
           }
 
-          if (isPuerto || isEsperandoZarpada) break;
+          if (isPuerto) break;
 
           // Post última etapa
           if (ultimaEtapa && ultimaEtapa.fechaArribo) {
@@ -304,8 +278,6 @@ export class PresentismoService {
                   if (puerto) {
                     if (!puerto.esLocal) {
                       isPuerto = true;
-                    } else {
-                      isEsperandoZarpada = true;
                     }
                     puertoDetalle = puerto.nombre;
                     mareaReferencia = marea;
@@ -324,7 +296,7 @@ export class PresentismoService {
         let causasConflicto = [];
         if (isNavegando) causasConflicto.push('Navegación');
         if (isPuerto) causasConflicto.push('Puerto');
-        if (isEsperandoZarpada) causasConflicto.push('Esperando Zarpada');
+
         if (isViaje) causasConflicto.push('Viaje');
         if (isNovedad) causasConflicto.push(`Novedad (${novedadCodigoCorto})`);
 
@@ -347,11 +319,7 @@ export class PresentismoService {
         } else if (isPuerto) {
           estadoDto = { estado: 'PUERTO', detalle: puertoDetalle };
           row.totales.puerto++;
-        } else if (isEsperandoZarpada) {
-          const mareaStr = mareaReferencia ? `${mareaReferencia.tipoMarea}-${mareaReferencia.nroMarea}-${mareaReferencia.anioMarea.toString().slice(-2)}` : '';
-          const detalleFinal = [puertoDetalle, mareaStr].filter(Boolean).join(' | ');
-          estadoDto = { estado: 'ESPERANDO_ZARPADA', detalle: detalleFinal };
-          row.totales.esperandoZarpada++;
+
         } else if (isNovedad) {
           estadoDto = { estado: 'NOVEDAD', detalle: novedadDetalle, referenciaId: novedad.id, codigoCorto: novedadCodigoCorto };
           row.totales.novedades++;

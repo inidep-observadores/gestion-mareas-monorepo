@@ -66,8 +66,9 @@ async function main() {
             tipoMarea: TipoMarea.MC,
             buqueId: buque.id,
             estadoActualId: estadoInicial.id,
-            activo: true,
-            fechaDesignacion: new Date()
+            fechaInicioObservador: null,
+            inicioValidado: false,
+            fechaFinObservador: null
         }
     });
 

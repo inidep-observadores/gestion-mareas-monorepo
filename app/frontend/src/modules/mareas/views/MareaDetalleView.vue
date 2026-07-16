@@ -103,10 +103,6 @@
                     class="w-full px-4 py-3 bg-surface-muted border-none rounded-2xl focus:ring-2 focus:ring-primary/20 text-text transition-all font-medium outline-none disabled:opacity-60"
                     placeholder="000" />
                 </div>
-                <div class="space-y-1.5">
-                  <label class="text-xs font-bold uppercase tracking-wider text-text-muted">Fecha de Designación</label>
-                  <DatePicker v-model="marea.fecha_designacion" :show-time="false" :disabled="!canEditDesignationFields" />
-                </div>
                 <!-- Observador Principal -->
                 <div class="space-y-1.5">
                   <label class="text-xs font-bold uppercase tracking-wider text-text-muted">Observador Designado</label>
@@ -284,7 +280,7 @@
           <NavigationStagesEditor v-model="etapas" :puertoOptions="puertoOptions" :pesqueriaOptions="pesqueriaOptions"
             :tipoMarea="marea?.tipo_marea"
             :puertoBaseId="marea.puertoBaseId" :defaultPesqueriaId="marea.id_pesqueria" :readOnly="isReadOnly"
-            :mareaId="marea.id" :mareaTieneDesignacion="tieneDesignacion" @action-success="(msg: string) => toast.success(msg)"
+            :mareaId="marea.id" @action-success="(msg: string) => toast.success(msg)"
             @action-error="(msg: string) => toast.error(msg)" @action-warning="(msg: string) => toast.warning(msg)" />
         </div>
 
@@ -636,10 +632,6 @@ const archivos = ref<any[]>([]);
 const observadorCatalog = ref<any[]>([]);
 const originalObservadorPrincipalId = ref<string | null>(null);
 
-const tieneDesignacion = computed(() => {
-   return marea.value?.estado_codigo === 'DESIGNADA' || observadores.value.some(obs => obs.es_designado);
-});
-
 const buqueOptions = ref<{ value: string; label: string }[]>([])
 const pesqueriaOptions = ref<{ value: string; label: string }[]>([])
 const arteOptions = ref<{ value: string; label: string }[]>([])
@@ -745,7 +737,7 @@ async function loadMarea() {
       estado_id: data.estadoActual?.codigo || '',
       fecha_creacion: data.fechaCreacion,
       fecha_ultima_actualizacion: data.fechaUltimaActualizacion,
-      fecha_designacion: data.fechaDesignacion ? data.fechaDesignacion.split('T')[0] : null,
+
       fecha_inicio_observador: data.fechaInicioObservador,
       inicio_validado: data.inicioValidado ?? false,
       fecha_fin_observador: data.fechaFinObservador,
@@ -990,7 +982,7 @@ const saveChanges = async () => {
       pesqueriaId: marea.value.id_pesqueria || undefined,
       artePrincipalId: toNullIfEmpty(marea.value.id_arte_principal),
       fechaZarpadaEstimada: toIsoStringOrNull(marea.value.fecha_zarpada_estimada),
-      fechaDesignacion: toIsoStringOrNull(marea.value.fecha_designacion),
+
       fechaInicioObservador: toIsoStringOrNull(marea.value.fecha_inicio_observador),
       inicioValidado: marea.value.inicio_validado,
       fechaFinObservador: toIsoStringOrNull(marea.value.fecha_fin_observador),

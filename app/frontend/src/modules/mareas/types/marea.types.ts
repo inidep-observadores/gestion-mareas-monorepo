@@ -114,8 +114,6 @@ export interface Marea {
     puertoBaseId?: string;
     fecha_zarpada_estimada?: string;
     fechaZarpadaEstimada?: string;
-    fecha_designacion?: string;
-    fechaDesignacion?: string | null;
     fecha_inicio_observador?: string;
     fechaInicioObservador?: string | null;
     inicioValidado?: boolean;
@@ -141,7 +139,7 @@ export interface Marea {
     diasEstimados?: number;
     estado_actual?: { codigo: string; nombre: string };
     estadoActual?: { codigo: string; nombre: string };
-    diasZonaAustral?: number | null;
+
     tipoCalculoZonaAustral?: TipoCalculoZonaAustral;
     archivos?: any[];
 }

@@ -32,9 +32,6 @@ export class CreateMareaDto {
     @IsDateString()
     fechaZarpadaEstimada: string;
 
-    @IsDateString()
-    @IsNotEmpty()
-    fechaDesignacion: string;
 
     @IsEnum(TipoMarea)
     @IsOptional()

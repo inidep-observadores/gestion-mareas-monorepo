@@ -14,9 +14,7 @@ export class UpdateMareaDto extends PartialType(CreateMareaDto) {
     @IsOptional()
     tipoCalculoZonaAustral?: TipoCalculoZonaAustral | null;
 
-    @IsDateString()
-    @IsOptional()
-    fechaDesignacion?: string | null;
+
 
     @IsDateString()
     @IsOptional()

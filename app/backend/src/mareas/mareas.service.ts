@@ -234,7 +234,7 @@ export class MareasService {
             if (artePrincipalId === undefined && arteId !== undefined) updateData.artePrincipalId = arteId;
 
             if (updateMareaDto.fechaZarpadaEstimada !== undefined) updateData.fechaZarpadaEstimada = processDate(updateMareaDto.fechaZarpadaEstimada);
-            if (updateMareaDto.fechaDesignacion !== undefined) updateData.fechaDesignacion = processDate(updateMareaDto.fechaDesignacion);
+
             if (updateMareaDto.fechaInicioObservador !== undefined) updateData.fechaInicioObservador = processDate(updateMareaDto.fechaInicioObservador);
             if (updateMareaDto.fechaFinObservador !== undefined) updateData.fechaFinObservador = processDate(updateMareaDto.fechaFinObservador);
             if (updateMareaDto.fechaProtocolizacion !== undefined) updateData.fechaProtocolizacion = processDate(updateMareaDto.fechaProtocolizacion);
@@ -2456,7 +2456,7 @@ export class MareasService {
     }
 
     async create(createMareaDto: CreateMareaDto, user: User) {
-        const { buqueId, anioMarea, nroMarea, pesqueriaId, observadorId, arteId, fechaZarpadaEstimada, fechaInicioObservador, inicioValidado = false, finValidado = false, tipoMarea = TipoMarea.MC, diasEstimados, fechaDesignacion } = createMareaDto;
+        const { buqueId, anioMarea, nroMarea, pesqueriaId, observadorId, arteId, fechaZarpadaEstimada, fechaInicioObservador, inicioValidado = false, finValidado = false, tipoMarea = TipoMarea.MC, diasEstimados } = createMareaDto;
 
         const existing = await this.prisma.marea.findMany({
             where: {
@@ -2537,7 +2537,7 @@ export class MareasService {
                     tipoMarea,
                     artePrincipalId: arteId,
                     observadorPrincipalId: observadorId,
-                    fechaDesignacion: fechaDesignacion ? new Date(fechaDesignacion) : new Date(),
+
                     fechaZarpadaEstimada: fechaZarpadaEstimada ? new Date(fechaZarpadaEstimada) : null,
                     fechaInicioObservador: fechaInicioObservador ? new Date(fechaInicioObservador) : null,
                     inicioValidado,

@@ -150,15 +150,12 @@
               <BaseSwitch
                 v-model="stageIntencionCierre[index]"
                 @update:modelValue="(val: boolean) => onToggleIntencionCierre(index, stage, val)"
-                :disabled="mareaTieneDesignacion"
+                :disabled="readOnly"
               />
             </div>
-            <p v-if="mareaTieneDesignacion" class="text-[9px] text-warning mt-1.5 font-medium ml-1 flex items-center gap-1">
-              <WarningIcon class="w-3 h-3" />
-              Existe una designación pendiente que forzará el cierre de la marea de todos modos.
-            </p>
           </div>
-        </div>
+
+          </div>
 
         <!-- Overlap Warning (Inter-stage) -->
         <div v-if="hasOverlap(index)" class="mt-3 p-1.5 bg-error/10 border border-error/20 rounded-lg text-[9px] text-error font-black flex items-center gap-1.5 animate-in slide-in-from-top-1">
@@ -205,7 +202,7 @@ const props = defineProps<{
   errors?: Record<string, string>;
   defaultFechaZarpada?: string;
   mareaId?: string;
-  mareaTieneDesignacion?: boolean;
+
   tipoMarea?: TipoMarea;
 }>();
 

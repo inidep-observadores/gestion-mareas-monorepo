@@ -139,11 +139,7 @@
                   placeholder="Seleccione el arte..." :error="fieldErrors.arteId" />
               </div>
 
-              <div class="space-y-1.5">
-                <label class="block text-sm font-medium text-text-muted">Fecha de Designación</label>
-                <DatePicker v-model="form.fechaDesignacion" :icon="CalenderIcon" :show-time="false"
-                  :error="fieldErrors.fechaDesignacion" />
-              </div>
+
 
               <div class="space-y-1.5">
                 <label class="block text-sm font-medium text-text-muted">Observador Asignado</label>
@@ -375,7 +371,7 @@ const getInitialForm = () => ({
   pesqueriaId: '',
   observadorId: '',
   arteId: '',
-  fechaDesignacion: new Date().toISOString().split('T')[0],
+
   fechaZarpadaEstimada: '',
   fechaInicioObservador: '',
   diasEstimados: null as number | null,
@@ -508,9 +504,7 @@ watch(() => form.value.pesqueriaId, (val) => {
 watch(() => form.value.arteId, (val) => {
   if (val && fieldErrors.value.arteId) delete fieldErrors.value.arteId
 })
-watch(() => form.value.fechaDesignacion, (val) => {
-  if (val && fieldErrors.value.fechaDesignacion) delete fieldErrors.value.fechaDesignacion
-})
+
 watch(() => form.value.observadorId, (val) => {
   if (val && fieldErrors.value.observadorId) delete fieldErrors.value.observadorId
 })
@@ -561,9 +555,7 @@ const prefillFromAlert = (data: any) => {
   if (meta.nroMarea) form.value.nroMarea = meta.nroMarea
   if (meta.tipoMarea) form.value.tipoMarea = meta.tipoMarea
 
-  if (ext.fechaDesignacion) {
-    form.value.fechaDesignacion = ext.fechaDesignacion
-  }
+
 
   // Try to find Buque by name
   if (ext.buque) {
@@ -659,14 +651,7 @@ const validateStep = async (step: number) => {
     if (!form.value.pesqueriaId) fieldErrors.value.pesqueriaId = 'La pesquería es obligatoria'
     if (!form.value.observadorId) fieldErrors.value.observadorId = 'Debe asignar un observador'
     if (!form.value.arteId) fieldErrors.value.arteId = 'El arte de pesca es obligatorio'
-    if (!form.value.fechaDesignacion) fieldErrors.value.fechaDesignacion = 'La fecha de designación es obligatoria'
     if (!form.value.fechaZarpadaEstimada) fieldErrors.value.fechaZarpadaEstimada = 'La fecha de zarpada es obligatoria'
-
-    if (form.value.fechaDesignacion && form.value.fechaZarpadaEstimada) {
-      if (new Date(form.value.fechaZarpadaEstimada) < new Date(form.value.fechaDesignacion)) {
-        fieldErrors.value.fechaZarpadaEstimada = 'Debe ser posterior o igual a la designación'
-      }
-    }
 
     if (form.value.observadorId && !fieldErrors.value.observadorId) {
       try {
