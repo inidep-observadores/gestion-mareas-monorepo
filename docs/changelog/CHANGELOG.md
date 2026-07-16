@@ -5,18 +5,19 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 
 ## [Unreleased]
 
-### Added
-- **admin:** implementar dashboard y tabla interactiva de auditoría de correos de novedades
-- **backend:** persistencia y API de logs para procesamiento de emails de novedades
-- **frontend:** agregar interfaz de Marea con propiedad fechaDesignacion corregida
-
-### Fixed
-- **dashboard:** incluir mareas temporalmente en puerto en la lista de riesgo de nota de crédito
-- **mareas:** corregir cálculo de días de marea en lista de navegando
-
-## [v0.11.0] - 2026-07-06
+## [v0.11.0] - 2026-07-15
 
 ### Added
+- **frontend:** agregar validacion manual de fechas de inicio y fin en UI
+- **backend:** agregar mapeo de pasajes a viajes y flexibilizar solapamientos
+- **backend:** agregar clasificacion de errores temporales e ignorar parcialmente
+- **novedades:** integrar panel lateral de previsualización y vista pública de adjuntos
+- **root:** mejorar extracción de novedades por email y panel de auditoría
+- **admin:** implementar auditoria de correos de novedades
+- **presentismo:** incluir código de marea en tooltip de esperando zarpada
+- **root:** añadir código de marea en tooltips de navegando y en viaje
+- **root:** añadir estado esperando zarpada en matriz de presentismo
+- **dashboard:** añadir días transcurridos vs estimados en mareas por expirar
 - **stats:** exportacion a excel para grafico de desviacion de estimaciones
 - **dashboard:** implementar ficha de riesgo de nota de crédito
 - **backend:** agregar pesqueria, diasNavegados y fechaFinalizacion al detalle de mareas protocolizadas
@@ -27,10 +28,18 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 - **stats:** incorporar anexos 2 y 3 con lógica de totalización anual
 - **protocolizacion:** añadir filtros por año en Esperando Confirmación
 - **protocolizacion:** filtros interactivos por año y contadores dinámicos
-- **backend:** añadir scripts de prueba de IMAP `test-imap-label.js` y `test-imap-list.js` para validación de lectura, límite personalizable, recuento de adjuntos y etiquetado de emails en el servidor de correo.
 
 ### Fixed
-- **stats:** corregir exportación a Excel del gráfico de desviación de estimaciones para que respete el filtro de tolerancia y retorne datos.
+- **mareas:** reemplazar window.confirm por ConfirmationDialog en validacion manual y mejorar IA de pasajes
+- **backend:** manejar autocierre de novedades de un solo dia y arreglar solapamiento con nulos
+- **backend:** enlazar archivo adjunto a todas las novedades extraidas de un email
+- **backend:** corregir desfase de zona horaria al guardar fechas de novedades
+- **drive:** resolver cuelgue infinito durante la subida de adjuntos
+- **backend:** mejorar extraccion de numero GDE en procesador de emails con IA
+- **presentismo:** EZ no computa francos y ajuste validacion limites de fechas
+- **dashboard:** incluir mareas temporalmente en puerto en riesgo de nota de crédito
+- **mareas:** corregir cálculo de días de marea en lista de navegando
+- **stats:** corregir generacion de excel de desviaciones de estimaciones
 - **mareas:** corregir cálculo de progreso y visualización de días en UI
 - **dashboard:** corregir tipado de workforceData en AlertTrafficLight
 - **frontend:** activar filtro de Planta Permanente por defecto en Presentismo
@@ -54,6 +63,7 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 - **backend:** increase node max old space size for docker build
 
 ### Refactored
+- **mareas:** eliminar fecha de designacion y estado esperando zarpada
 - **backend:** integrar seccion mareas en ejecucion como primera tabla de seccion de estados y renumerar
 
 ## [v0.10.0] - 2026-06-29
