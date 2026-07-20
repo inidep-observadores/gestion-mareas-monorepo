@@ -1,21 +1,27 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ImapService } from '../../mail/imap.service';
-import { NovedadesAiService } from '../../mail/novedades-ai.service';
-import { DriveStorageService } from '../../files/drive-storage.service';
-import { JobProcessor } from '../job-types';
-import { DateUtils } from '../../common/utils/date.utils';
+import { JobQueueService } from '../job-queue.service';
+import { JobProcessor, JobType, JobStatus } from '../job-types';
+import * as path from 'path';
+import * as fs from 'fs/promises';
+import * as os from 'os';
 
 @Injectable()
 export class NovedadesEmailProcessor implements JobProcessor {
     private readonly logger = new Logger(NovedadesEmailProcessor.name);
+    private readonly tempDir = path.join(os.tmpdir(), 'novedades-ai-attachments');
 
     constructor(
         private readonly prisma: PrismaService,
         private readonly imapService: ImapService,
-        private readonly novedadesAiService: NovedadesAiService,
-        private readonly driveStorageService: DriveStorageService,
-    ) {}
+        private readonly jobQueueService: JobQueueService,
+    ) {
+        // Asegurar que el directorio temporal exista
+        fs.mkdir(this.tempDir, { recursive: true }).catch(err => {
+            this.logger.error(`Error creando directorio temporal: ${err.message}`);
+        });
+    }
 
     async process(payload: any): Promise<any> {
         let processedCount = 0;
@@ -34,8 +40,8 @@ export class NovedadesEmailProcessor implements JobProcessor {
                     include: { detalles: true }
                 });
 
-                if (emailLog && emailLog.estado !== 'ERROR_TEMPORAL') {
-                    // Si ya está completamente procesado o tiene error permanente, lo marcamos leído y saltamos
+                if (emailLog && emailLog.estado !== 'ERROR_TEMPORAL' && emailLog.estado !== 'PROCESANDO') {
+                    // Si ya está completamente procesado, en cola o tiene error permanente, lo marcamos leído y saltamos
                     await this.imapService.markAsProcessed(email.uid);
                     continue;
                 }
@@ -58,76 +64,77 @@ export class NovedadesEmailProcessor implements JobProcessor {
                     });
                 }
 
+                let enqueueSuccess = true;
                 const detallesPrevios = emailLog.detalles || [];
-                const yaExitoso = (fuente: string) => detallesPrevios.some(d => d.fuente === fuente && ['PROCESADO', 'REQUIERE_REVISION', 'CON_ADVERTENCIAS'].includes(d.estado));
+                const yaEncolado = (fuente: string) => detallesPrevios.some(d => d.fuente === fuente);
 
-                // 2. Procesar el Cuerpo del Email
+                // 2. Procesar el Cuerpo del Email (Encolar)
                 const bodyFuente = 'CUERPO';
-                if (email.text && email.text.trim().length > 10 && !yaExitoso(bodyFuente)) {
-                    await this.prisma.novedadesEmailLogDetalle.deleteMany({ where: { emailLogId: emailLog.id, fuente: bodyFuente } });
-                    await this.analizarYGuardarElemento(
-                        email.text, 
-                        undefined, 
-                        bodyFuente, 
-                        emailLog.id, 
-                        email
+                if (email.text && email.text.trim().length > 10 && !yaEncolado(bodyFuente)) {
+                    await this.jobQueueService.addJob(
+                        JobType.NOVEDADES_AI_PROCESS,
+                        {
+                            emailLogId: emailLog.id,
+                            fuente: bodyFuente,
+                            texto: email.text,
+                            emailSubject: email.subject,
+                            emailData: { from: email.from, date: email.date }
+                        },
+                        10
                     );
                 }
 
-                // 3. Procesar cada Adjunto por separado
+                // 3. Procesar cada Adjunto por separado (Guardar temp y Encolar)
                 if (email.attachments && email.attachments.length > 0) {
                     for (let i = 0; i < email.attachments.length; i++) {
                         const att = email.attachments[i];
                         const filename = att.filename || `adjunto_${i}.pdf`;
                         const attFuente = `ADJUNTO: ${filename}`;
 
-                        if (!yaExitoso(attFuente)) {
-                            const attachmentData = {
-                                buffer: att.content,
-                                mimetype: att.contentType || 'application/pdf',
-                                filename: filename
-                            };
-                            await this.prisma.novedadesEmailLogDetalle.deleteMany({ where: { emailLogId: emailLog.id, fuente: attFuente } });
-                            await this.analizarYGuardarElemento(
-                                '', 
-                                attachmentData, 
-                                attFuente, 
-                                emailLog.id, 
-                                email
-                            );
+                        if (!yaEncolado(attFuente)) {
+                            try {
+                                const filePath = path.join(this.tempDir, `${emailLog.id}_${i}_${filename}`);
+                                await fs.writeFile(filePath, att.content);
+
+                                await this.jobQueueService.addJob(
+                                    JobType.NOVEDADES_AI_PROCESS,
+                                    {
+                                        emailLogId: emailLog.id,
+                                        fuente: attFuente,
+                                        emailSubject: email.subject,
+                                        attachmentData: {
+                                            filePath,
+                                            mimetype: att.contentType || 'application/pdf',
+                                            filename: filename
+                                        }
+                                    },
+                                    10
+                                );
+                            } catch (err: any) {
+                                this.logger.error(`Error guardando adjunto o encolando IA para ${attFuente}: ${err.message}`);
+                                enqueueSuccess = false;
+                            }
                         }
                     }
                 }
 
-                // 4. Actualizar estado del Log Maestro
-                const detallesActualizados = await this.prisma.novedadesEmailLogDetalle.findMany({
-                    where: { emailLogId: emailLog.id }
-                });
-
-                const tieneErrores = detallesActualizados.some(d => d.estado === 'ERROR');
-                const tieneErroresTemporales = detallesActualizados.some(d => d.estado === 'ERROR_TEMPORAL');
-                const tieneRevisiones = detallesActualizados.some(d => d.estado === 'REQUIERE_REVISION');
-                
-                const nuevoEstado = tieneErroresTemporales ? 'ERROR_TEMPORAL' 
-                                  : (tieneErrores ? 'CON_ERRORES' 
-                                  : (tieneRevisiones ? 'CON_ADVERTENCIAS' : 'PROCESADO'));
+                // 4. Actualizar estado del Log Maestro a PROCESANDO (hasta que el AI processor finalice)
+                // O si hubo error en encolar, lo dejamos en ERROR_TEMPORAL
+                const nuevoEstado = enqueueSuccess ? 'PROCESANDO' : 'ERROR_TEMPORAL';
 
                 await this.prisma.novedadesEmailLog.update({
                     where: { id: emailLog.id },
                     data: { estado: nuevoEstado }
                 });
 
-                // 5. Marcar como leído en IMAP SOLO si no hay errores temporales
-                if (!tieneErroresTemporales) {
+                // 5. Marcar como leído en IMAP SOLO si no hay errores al encolar
+                if (enqueueSuccess) {
                     await this.imapService.markAsProcessed(email.uid);
                     processedCount++;
                 } else {
-                    this.logger.warn(`El email ${email.subject} tiene errores temporales. Se deja como no leído para reintentar.`);
+                    this.logger.warn(`El email ${email.subject} tuvo errores al encolar. Se deja como no leído.`);
                     errorsCount++;
                 }
-
-                // Pequeño delay de 10s para cuota de Gemini
-                await new Promise(resolve => setTimeout(resolve, 10000));
             }
 
             return {
@@ -141,227 +148,5 @@ export class NovedadesEmailProcessor implements JobProcessor {
         } finally {
             await this.imapService.disconnect();
         }
-    }
-
-    private async analizarYGuardarElemento(
-        texto: string, 
-        attachment: any, 
-        fuente: string, 
-        emailLogId: string,
-        emailData: any
-    ) {
-        let extracted: any = null;
-        let estadoDetalle = 'PROCESADO';
-        let errorDetalle = null;
-        let novedadesIds: string[] = [];
-
-        try {
-            // Extraer JSON estructurado con la IA
-            extracted = await this.novedadesAiService.procesarElemento(texto, attachment);
-            
-            if (extracted.periodos && Array.isArray(extracted.periodos) && extracted.periodos.length > 0) {
-                // Buscar al observador
-                const obsBusqueda = await this.buscarObservador(
-                    extracted.observador, 
-                    extracted.cuil, 
-                    extracted.dni
-                );
-
-                if (!obsBusqueda) {
-                    estadoDetalle = 'ERROR';
-                    errorDetalle = 'OBSERVADOR_NO_ENCONTRADO';
-                } else {
-                    if (obsBusqueda.certeza === 'BAJA') {
-                        estadoDetalle = 'REQUIERE_REVISION';
-                        errorDetalle = 'OBSERVADOR_DUDOSO (Múltiples coincidencias parciales)';
-                    }
-
-                    const observador = obsBusqueda.observador;
-                    
-                    let uploadedDriveInfo: { fileId: string; webViewLink: string } | null = null;
-                    if (attachment) {
-                        try {
-                            uploadedDriveInfo = await this.driveStorageService.uploadFile(
-                                attachment.filename,
-                                attachment.mimetype,
-                                attachment.buffer
-                            );
-                        } catch (err: any) {
-                            this.logger.error(`Error subiendo adjunto a Drive: ${err.message}`);
-                        }
-                    }
-
-                    // Procesar y crear cada período
-                    for (const periodo of extracted.periodos) {
-                        const codigoNovedad = periodo.tipoNovedad || 'LICEN';
-                        let tipoNovedad = await this.prisma.tipoNovedad.findUnique({
-                            where: { codigo: codigoNovedad }
-                        });
-
-                        if (!tipoNovedad) {
-                            tipoNovedad = await this.prisma.tipoNovedad.findFirst();
-                        }
-
-                        if (tipoNovedad) {
-                            const start = periodo.fechaInicio ? DateUtils.parseToAppZone(periodo.fechaInicio) : DateUtils.getNow(false);
-                            let end: Date | null = periodo.fechaFin ? DateUtils.parseToAppZone(periodo.fechaFin) : null;
-                            let isInfinite = false;
-
-                            if (['VIAJE_INICIO', 'VIAJE_FIN'].includes(tipoNovedad.codigo)) {
-                                if (!end) end = start;
-                            } else {
-                                if (!end) isInfinite = true;
-                            }
-
-                            const overlapConditions: any[] = [
-                                {
-                                    OR: [
-                                        { fechaFin: { gte: start } },
-                                        { fechaFin: null }
-                                    ]
-                                }
-                            ];
-
-                            if (!isInfinite) {
-                                overlapConditions.push({ fechaInicio: { lte: end } });
-                            }
-
-                            const overlaps = await this.prisma.observadorNovedad.findFirst({
-                                where: {
-                                    observadorId: observador.id,
-                                    tipoNovedadId: tipoNovedad.id,
-                                    estadoAprobacion: { not: 'RECHAZADA' },
-                                    AND: overlapConditions
-                                }
-                            });
-
-                            if (overlaps) {
-                                throw new Error('El observador ya tiene una novedad de este tipo registrada en estas fechas');
-                            }
-
-                            const novedad = await this.prisma.observadorNovedad.create({
-                                data: {
-                                    observadorId: observador.id,
-                                    tipoNovedadId: tipoNovedad.id,
-                                    fechaInicio: start,
-                                    fechaFin: end,
-                                    estadoAprobacion: 'PENDIENTE',
-                                    origen: 'EMAIL',
-                                    motivo: periodo.motivo || emailData.subject,
-                                    metadata: {
-                                        fuente,
-                                        certezaAi: obsBusqueda.certeza,
-                                        requiereRevision: estadoDetalle === 'REQUIERE_REVISION',
-                                        aiExtraction: periodo,
-                                        numeroGde: extracted.numeroGde
-                                    }
-                                }
-                            });
-                            novedadesIds.push(novedad.id);
-
-                            if (uploadedDriveInfo && attachment) {
-                                try {
-                                    await this.prisma.observadorNovedadArchivo.create({
-                                        data: {
-                                            novedadId: novedad.id,
-                                            rutaArchivo: uploadedDriveInfo.webViewLink,
-                                            tipoArchivo: attachment.mimetype,
-                                            nombreOriginal: attachment.filename,
-                                            driveFileId: uploadedDriveInfo.fileId,
-                                        }
-                                    });
-                                } catch (err: any) {
-                                    this.logger.error(`Error guardando referencia de archivo en base de datos: ${err.message}`);
-                                }
-                            }
-                        }
-                    }
-                }
-            } else {
-                estadoDetalle = 'ERROR';
-                errorDetalle = 'SIN_PERIODOS_EXTRAIDOS';
-            }
-        } catch (error: any) {
-            this.logger.error(`Error analizando elemento (${fuente}): ${error.message}`);
-            
-            const msg = (error.message || '').toLowerCase();
-            const isTemporary = error.status === 429 || error.status === 503 || error.status === 504 ||
-                                msg.includes('429') || msg.includes('quota') || msg.includes('exhausted') || 
-                                msg.includes('timeout') || msg.includes('socket') || msg.includes('reintentos');
-
-            estadoDetalle = isTemporary ? 'ERROR_TEMPORAL' : 'ERROR';
-            errorDetalle = error.message;
-        }
-
-        // Crear el registro de Detalle
-        // Si hay varias novedades, creamos un registro de detalle por la primera (o una iteración)
-        // O más bien, creamos un registro de detalle que puede enlazar a una novedad específica o dejar en nulo.
-        // Como tenemos una relación NovedadesEmailLogDetalle -> novedadId, lo haremos para la primera por simplificación del modelo.
-        
-        await this.prisma.novedadesEmailLogDetalle.create({
-            data: {
-                emailLogId,
-                fuente,
-                extraccionAi: extracted,
-                numeroGde: extracted?.numeroGde,
-                estado: estadoDetalle,
-                errorDetalle,
-                novedadId: novedadesIds.length > 0 ? novedadesIds[0] : null
-            }
-        });
-        
-        // Agregar un retraso de 15 segundos para evitar golpear el límite de cuota (Rate Limit) de la IA
-        // Dado que la velocidad no es crítica, 15s es muy seguro para el modelo.
-        await new Promise(resolve => setTimeout(resolve, 15000));
-    }
-
-    private async buscarObservador(nombreStr?: string, cuil?: string, dni?: string) {
-        if (cuil) {
-            const obs = await this.prisma.observador.findFirst({ where: { cuil } });
-            if (obs) return { observador: obs, certeza: 'ALTA' };
-        }
-        if (dni) {
-            const obs = await this.prisma.observador.findFirst({ where: { dni } });
-            if (obs) return { observador: obs, certeza: 'ALTA' };
-        }
-
-        if (!nombreStr) return null;
-
-        const normalize = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-        const cleanName = normalize(nombreStr);
-        const parts = cleanName.split(/[\s,]+/).filter(p => p.length > 2);
-
-        if (parts.length === 0) return null;
-
-        const observadores = await this.prisma.observador.findMany();
-        
-        let mejoresCandidatos: any[] = [];
-        let maxPuntos = 0;
-
-        for (const obs of observadores) {
-            const obsFullName = normalize(`${obs.nombre} ${obs.apellido}`);
-            let puntos = 0;
-            for (const part of parts) {
-                if (obsFullName.includes(part)) {
-                    puntos++;
-                }
-            }
-            if (puntos > 0) {
-                if (puntos > maxPuntos) {
-                    maxPuntos = puntos;
-                    mejoresCandidatos = [obs];
-                } else if (puntos === maxPuntos) {
-                    mejoresCandidatos.push(obs);
-                }
-            }
-        }
-
-        if (mejoresCandidatos.length === 1 && maxPuntos >= 2) {
-            return { observador: mejoresCandidatos[0], certeza: 'MEDIA' }; 
-        } else if (mejoresCandidatos.length > 0) {
-            return { observador: mejoresCandidatos[0], certeza: 'BAJA' }; 
-        }
-
-        return null;
     }
 }

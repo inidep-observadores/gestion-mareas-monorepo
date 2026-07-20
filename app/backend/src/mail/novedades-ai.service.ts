@@ -84,34 +84,17 @@ export class NovedadesAiService {
     private readonly logger = new Logger(NovedadesAiService.name);
     private ai: GoogleGenAI;
     private readonly modelName: string;
+    private readonly fallbackModelName: string;
 
     constructor(private readonly configService: ConfigService) {
         const apiKey = this.configService.get<string>('GEMINI_API_KEY') || 'dummy-key';
         this.modelName = this.configService.get<string>('LLM_MODEL') || 'gemini-3.1-flash-lite';
+        this.fallbackModelName = this.configService.get<string>('LLM_FALLBACK_MODEL') || 'gemma-4-31b';
         
         this.ai = new GoogleGenAI({ apiKey });
     }
 
-    private async runWithBackoff(fn: () => Promise<any>, maxRetries = 5) {
-        let retries = 0;
-        while (retries < maxRetries) {
-            try {
-                return await fn();
-            } catch (error: any) {
-                const isQuotaError = error.status === 429 || error.status === 503 || 
-                                     (error.message && (error.message.includes('429') || error.message.includes('quota') || error.message.includes('exhausted')));
-                if (isQuotaError) {
-                    retries++;
-                    const waitTime = Math.pow(2, retries) * 1000;
-                    this.logger.warn(`Error temporal de cuota (HTTP 429). Reintentando en ${waitTime / 1000}s... (Intento ${retries}/${maxRetries})`);
-                    await new Promise(resolve => setTimeout(resolve, waitTime));
-                } else {
-                    throw error;
-                }
-            }
-        }
-        throw new Error('Se excedió el número máximo de reintentos tras errores de cuota.');
-    }
+
 
     async procesarElemento(texto: string, attachment?: { buffer: Buffer, mimetype: string, filename: string }): Promise<any> {
         let textContent = texto || '';
@@ -166,7 +149,7 @@ export class NovedadesAiService {
             if (cleanText.includes('poder ejecutivo nacional') || cleanText.includes('referencia:')) {
                 docType = 'GDE';
                 configSchema = schemaNovedadesGDE;
-                promptSystem = 'Extrae los datos de la nota administrativa oficial de GDE (Licencias, Francos Compensatorios, etc.). Asegúrate de extraer EXPRESAMENTE el "Número de GDE". El formato típico suele ser similar a "NO-2026-67720716-APN-DIOYT#INIDEP" o "IF-2026-12345678-APN-DIR#INIDEP" (busca prefijos como NO-, IF-, ME- seguidos de año, número y repartición). También extrae el "CUIL" o "DNI" del observador buscándolos detalladamente en el texto. Mapea los períodos solicitados al array de períodos.' + contextAdicional;
+                promptSystem = 'Extrae los datos de la nota administrativa oficial de GDE (Licencias, Francos Compensatorios, etc.). Asegúrate de extraer EXPRESAMENTE el "Número de GDE" (ej: NO-2026-67720716-APN-DIOYT#INIDEP). También extrae el "CUIL" o "DNI" del observador. IMPORTANTE PARA LICENCIAS ANUALES ORDINARIAS (Vacaciones): Presta especial atención a la tabla de fechas. Debido al formato OCR, a veces las columnas aparecen pegadas, por ejemplo: "202420/07/202629/07/202610". Esto significa: Año 2024, Fecha Desde 20/07/2026, Fecha Hasta 29/07/2026, y 10 días. Extrae las fechas de inicio y fin basándote en esta lógica de descompresión de texto pegado. Ignora el "Año" de devengamiento de la licencia (ej. 2024), solo nos importan las fechas reales (F/ DESDE y F/ HASTA) para el período.' + contextAdicional;
             } else if (cleanText.includes('boleto') || cleanText.includes('pasaje') || cleanText.includes('butaca') || cleanText.includes('voucher') || cleanText.includes('origen:')) {
                 docType = 'PASAJES';
                 configSchema = schemaPasajes;
@@ -178,32 +161,47 @@ export class NovedadesAiService {
             }
         }
 
+        const requestPayload = {
+            contents: isScanOrImage ? [
+                {
+                    role: 'user',
+                    parts: [
+                        { inlineData: { data: base64Data, mimeType: mimeType } },
+                        { text: promptSystem + (textContent ? `\n\nTexto OCR previo:\n${textContent}` : '') }
+                    ]
+                }
+            ] : [
+                {
+                    role: 'user',
+                    parts: [
+                        { text: `${promptSystem}\n\nTexto a analizar:\n"""\n${textContent}\n"""` }
+                    ]
+                }
+            ],
+            config: {
+                responseMimeType: 'application/json',
+                responseSchema: configSchema,
+            }
+        };
+
+        let response;
         try {
-            const response = await this.runWithBackoff(async () => {
-                return await this.ai.models.generateContent({
-                    model: this.modelName,
-                    contents: isScanOrImage ? [
-                        {
-                            role: 'user',
-                            parts: [
-                                { inlineData: { data: base64Data, mimeType: mimeType } },
-                                { text: promptSystem + (textContent ? `\n\nTexto OCR previo:\n${textContent}` : '') }
-                            ]
-                        }
-                    ] : [
-                        {
-                            role: 'user',
-                            parts: [
-                                { text: `${promptSystem}\n\nTexto a analizar:\n"""\n${textContent}\n"""` }
-                            ]
-                        }
-                    ],
-                    config: {
-                        responseMimeType: 'application/json',
-                        responseSchema: configSchema,
-                    }
+            response = await this.ai.models.generateContent({
+                model: this.modelName,
+                ...requestPayload
+            });
+        } catch (error: any) {
+            this.logger.warn(`Error con el modelo principal (${this.modelName}): ${error.message}. Intentando con fallback (${this.fallbackModelName})...`);
+            try {
+                response = await this.ai.models.generateContent({
+                    model: this.fallbackModelName,
+                    ...requestPayload
                 });
-            }, 5);
+            } catch (fallbackError: any) {
+                this.logger.error(`Error procesando novedad con IA (incluso con fallback): ${fallbackError.message}`);
+                throw new Error(`Error de IA (Fallback fallido): ${fallbackError.message}`);
+            }
+        }
 
             const parsedJson = JSON.parse(response.text || '{}');
             parsedJson._metadata = {
@@ -239,10 +237,5 @@ export class NovedadesAiService {
             }
 
             return parsedJson;
-
-        } catch (error: any) {
-            this.logger.error(`Error procesando novedad con IA: ${error.message}`);
-            throw new Error(`Error de IA: ${error.message}`);
-        }
     }
 }

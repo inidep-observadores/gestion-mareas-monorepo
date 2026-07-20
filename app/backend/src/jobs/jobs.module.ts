@@ -13,6 +13,7 @@ import { PnaTrackingSyncProcessor } from './processors/pna-tracking-sync.process
 import { BackupAutoProcessor } from './processors/backup-auto.processor';
 import { BackupModule } from '../admin/backup/backup.module';
 import { NovedadesEmailProcessor } from './processors/novedades-email.processor';
+import { NovedadesAiProcessor } from './processors/novedades-ai.processor';
 
 @Global()
 @Module({
@@ -35,6 +36,7 @@ import { NovedadesEmailProcessor } from './processors/novedades-email.processor'
         JobQueueService,
         JobQueueStatsService,
         NovedadesEmailProcessor,
+        NovedadesAiProcessor,
     ],
     exports: [
         SchedulerService,

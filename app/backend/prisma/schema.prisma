@@ -1032,6 +1032,7 @@ enum JobType {
   PNA_TRACKING_SYNC
   DAILY_BACKUP
   NOVEDADES_EMAIL_SYNC
+  NOVEDADES_AI_PROCESS
 
   @@schema("public")
 }

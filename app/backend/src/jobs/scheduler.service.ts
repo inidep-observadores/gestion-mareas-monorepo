@@ -12,6 +12,7 @@ import { PnaApiService } from '../pna-api/pna-api.service';
 import { NovedadesEmailProcessor } from './processors/novedades-email.processor';
 import { DateTime } from 'luxon';
 import * as os from 'os';
+import { NovedadesAiProcessor } from './processors/novedades-ai.processor';
 
 @Injectable()
 export class SchedulerService {
@@ -29,6 +30,7 @@ export class SchedulerService {
         private readonly pnaTrackingService: PnaTrackingService,
         private readonly pnaApiService: PnaApiService,
         private readonly novedadesEmailProcessor: NovedadesEmailProcessor,
+        private readonly novedadesAiProcessor: NovedadesAiProcessor,
     ) {
         this.workerId = `${os.hostname()}-${process.pid}`;
     }
@@ -505,6 +507,8 @@ export class SchedulerService {
                 return await this.backupAutoProcessor.process(job.payload);
             case JobType.NOVEDADES_EMAIL_SYNC:
                 return await this.novedadesEmailProcessor.process(job.payload);
+            case JobType.NOVEDADES_AI_PROCESS:
+                return await this.novedadesAiProcessor.process(job.payload);
             default:
                 throw new Error(`Unknown job type: ${job.type}`);
         }
