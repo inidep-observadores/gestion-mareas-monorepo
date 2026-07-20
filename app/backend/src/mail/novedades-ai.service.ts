@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { GoogleGenAI } from '@google/genai';
+import { PrismaService } from '../prisma/prisma.service';
 
 let pdfParse: any;
 try {
@@ -86,7 +87,10 @@ export class NovedadesAiService {
     private readonly modelName: string;
     private readonly fallbackModelName: string;
 
-    constructor(private readonly configService: ConfigService) {
+    constructor(
+        private readonly configService: ConfigService,
+        private readonly prisma: PrismaService
+    ) {
         const apiKey = this.configService.get<string>('GEMINI_API_KEY') || 'dummy-key';
         this.modelName = this.configService.get<string>('LLM_MODEL') || 'gemini-3.1-flash-lite';
         this.fallbackModelName = this.configService.get<string>('LLM_FALLBACK_MODEL') || 'gemma-4-31b';
@@ -234,6 +238,66 @@ export class NovedadesAiService {
                     // Si no incluye Mar del Plata en origen o destino, o falta la fecha, lo ignoramos dejando periodos vacío
                     parsedJson.periodos = [];
                 }
+            }
+
+            // Regla de negocio para Francos Compensatorios -> Quitar fines de semana
+            if (parsedJson.periodos && Array.isArray(parsedJson.periodos)) {
+                const nuevosPeriodos = [];
+                for (const periodo of parsedJson.periodos) {
+                    if (periodo.tipoNovedad === 'FC' && periodo.fechaInicio && periodo.fechaFin) {
+                        // Forzamos la hora a mediodía UTC para evitar desplazamientos por zona horaria al instanciar Date
+                        const start = new Date(periodo.fechaInicio + 'T12:00:00Z');
+                        const end = new Date(periodo.fechaFin + 'T12:00:00Z');
+
+                        // Obtener feriados en el rango
+                        const feriados = await this.prisma.feriado.findMany({
+                            where: {
+                                fecha: {
+                                    gte: new Date(periodo.fechaInicio + 'T00:00:00Z'),
+                                    lte: new Date(periodo.fechaFin + 'T23:59:59Z')
+                                }
+                            }
+                        });
+                        const feriadosSet = new Set(feriados.map(f => f.fecha.toISOString().split('T')[0]));
+
+                        let currentStart = null;
+                        let currentEnd = null;
+
+                        const d = new Date(start);
+                        while (d <= end) {
+                            const dateStr = d.toISOString().split('T')[0];
+                            const dayOfWeek = d.getUTCDay();
+                            const isWeekend = dayOfWeek === 0 || dayOfWeek === 6; // 0=Domingo, 6=Sábado
+                            const isFeriado = feriadosSet.has(dateStr);
+
+                            if (!isWeekend && !isFeriado) {
+                                if (!currentStart) currentStart = new Date(d);
+                                currentEnd = new Date(d);
+                            } else {
+                                if (currentStart && currentEnd) {
+                                    nuevosPeriodos.push({
+                                        ...periodo,
+                                        fechaInicio: currentStart.toISOString().split('T')[0],
+                                        fechaFin: currentEnd.toISOString().split('T')[0]
+                                    });
+                                    currentStart = null;
+                                    currentEnd = null;
+                                }
+                            }
+                            d.setUTCDate(d.getUTCDate() + 1);
+                        }
+                        if (currentStart && currentEnd) {
+                            nuevosPeriodos.push({
+                                ...periodo,
+                                fechaInicio: currentStart.toISOString().split('T')[0],
+                                fechaFin: currentEnd.toISOString().split('T')[0]
+                            });
+                        }
+                    } else {
+                        nuevosPeriodos.push(periodo);
+                    }
+                }
+                parsedJson.periodos = nuevosPeriodos;
             }
 
             return parsedJson;
