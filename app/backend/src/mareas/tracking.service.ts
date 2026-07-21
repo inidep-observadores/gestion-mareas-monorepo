@@ -655,7 +655,7 @@ export class TrackingService {
             dbf.addRecord({
                 'Buque': info.name,
                 'Matricula': info.matricula,
-                'Fecha': DateTime.fromJSDate(point.timestamp).toFormat('yyyy-MM-dd HH:mm:ss'),
+                'Fecha': DateTime.fromJSDate(point.timestamp).setZone(this.TIMEZONE).toFormat('yyyy-MM-dd HH:mm:ss'),
                 'Latitud': point.lat,
                 'Longitud': point.lon,
                 'Velocidad': point.speed,
