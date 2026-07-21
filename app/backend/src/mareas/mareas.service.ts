@@ -2163,7 +2163,8 @@ export class MareasService {
                 estadoOrigenId: marea.estadoActualId,
                 accion: actionKey,
                 activo: true
-            }
+            },
+            include: { estadoDestino: true }
         });
 
         if (!transicion) {
@@ -2321,6 +2322,16 @@ export class MareasService {
                 }
             }
 
+            // LIMPIEZA AUTOMÁTICA DE FECHA FIN (Solución elegante sin hardcodear acciones)
+            // Si por cualquier transición (como "Anular finalización") la marea regresa a 
+            // un estado de navegación (EN_EJECUCION), forzamos la fecha de fin a null.
+            const destinoFinalCodigo = destinoEstadoId === transicion.estadoDestinoId
+                ? transicion.estadoDestino.codigo
+                : (await tx.estadoMarea.findUnique({ where: { id: destinoEstadoId }, select: { codigo: true } }))?.codigo;
+
+            if (destinoFinalCodigo && this.ESTADOS_NAVEGANDO.includes(destinoFinalCodigo as any)) {
+                additionalMareaData.fechaFinObservador = null;
+            }
 
             const mareaUpdated = await tx.marea.update({
                 where: { id },
