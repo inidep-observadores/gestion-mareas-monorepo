@@ -2326,7 +2326,7 @@ export class MareasService {
             // Si por cualquier transición (como "Anular finalización") la marea regresa a 
             // un estado de navegación (EN_EJECUCION), forzamos la fecha de fin a null.
             const destinoFinalCodigo = destinoEstadoId === transicion.estadoDestinoId
-                ? transicion.estadoDestino.codigo
+                ? transicion.estadoDestino?.codigo
                 : (await tx.estadoMarea.findUnique({ where: { id: destinoEstadoId }, select: { codigo: true } }))?.codigo;
 
             if (destinoFinalCodigo && this.ESTADOS_NAVEGANDO.includes(destinoFinalCodigo as any)) {

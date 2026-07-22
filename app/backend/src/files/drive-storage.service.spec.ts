@@ -15,6 +15,9 @@ jest.mock('googleapis', () => ({
             files: {
                 create: jest.fn(),
             },
+            permissions: {
+                create: jest.fn().mockResolvedValue({}),
+            },
         }),
     },
 }));

@@ -80,6 +80,7 @@ describe('ImapService', () => {
 
     describe('Lectura de Correos', () => {
         it('debería obtener los correos no leídos y parsearlos', async () => {
+            await service.connect();
             // Configurar el mock de ImapFlow
             mockImapClient.getMailboxLock.mockResolvedValue({ release: jest.fn() });
             
@@ -103,10 +104,10 @@ describe('ImapService', () => {
             };
             (mailparser.simpleParser as jest.Mock).mockResolvedValue(parsedEmail);
 
-            const result = await service.fetchUnreadEmails();
+            const result = await service.fetchUnprocessedEmails();
 
             expect(mockImapClient.getMailboxLock).toHaveBeenCalledWith('INBOX');
-            expect(mockImapClient.fetch).toHaveBeenCalledWith({ seen: false }, { source: true, uid: true });
+            expect(mockImapClient.fetch).toHaveBeenCalledWith({ unKeyword: 'Procesado_SIGMA' }, { source: true, uid: true });
             expect(mailparser.simpleParser).toHaveBeenCalledWith(mockMessage.source);
             
             expect(result).toHaveLength(1);
@@ -122,6 +123,7 @@ describe('ImapService', () => {
 
     describe('Etiquetado / Movimiento de Correos', () => {
         it('debería añadir la etiqueta de Procesado_SIGMA al correo', async () => {
+            await service.connect();
             mockImapClient.messageFlagsAdd.mockResolvedValue(true);
             
             // Para ImapFlow, las "etiquetas" personalizadas se añaden como flags o moviendo a carpetas. 
