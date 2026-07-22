@@ -185,7 +185,6 @@ export class AuditService {
         return { eventos, entidades, navegacion, api };
     }
 
-    // Métodos de consulta requeridos por el controlador
     async findApiLogs(query: AuditQueryDto) {
         const { limit = 50, skip, usuarioId, desde, hasta, busqueda } = query;
         const where: any = {};
@@ -197,11 +196,22 @@ export class AuditService {
         }
 
         if (busqueda) {
+            const matchingUsers = await this.prisma.user.findMany({
+                where: {
+                    OR: [
+                        { fullName: { contains: busqueda, mode: 'insensitive' } },
+                        { email: { contains: busqueda, mode: 'insensitive' } }
+                    ]
+                },
+                select: { id: true }
+            });
+            const matchingUserIds = matchingUsers.map((u: any) => u.id);
+
             where.OR = [
                 { ruta: { contains: busqueda, mode: 'insensitive' } },
-                { usuario: { fullName: { contains: busqueda, mode: 'insensitive' } } },
-                { usuario: { email: { contains: busqueda, mode: 'insensitive' } } },
-                { ip: { contains: busqueda, mode: 'insensitive' } }
+                { ip: { contains: busqueda, mode: 'insensitive' } },
+                { usuarioEmail: { contains: busqueda, mode: 'insensitive' } },
+                ...(matchingUserIds.length > 0 ? [{ usuarioId: { in: matchingUserIds } }] : [])
             ];
         }
 
@@ -210,11 +220,12 @@ export class AuditService {
                 where,
                 take: limit,
                 skip,
-                orderBy: { timestamp: 'desc' },
-                include: { usuario: { select: { id: true, fullName: true, email: true } } }
+                orderBy: { timestamp: 'desc' }
             }),
             (this.prisma as any).auditoriaApi.count({ where })
         ]);
+
+        await this.hydrateUsers(items);
         return { data: items, total };
     }
 
@@ -231,11 +242,22 @@ export class AuditService {
         }
 
         if (busqueda) {
+            const matchingUsers = await this.prisma.user.findMany({
+                where: {
+                    OR: [
+                        { fullName: { contains: busqueda, mode: 'insensitive' } },
+                        { email: { contains: busqueda, mode: 'insensitive' } }
+                    ]
+                },
+                select: { id: true }
+            });
+            const matchingUserIds = matchingUsers.map((u: any) => u.id);
+
             where.OR = [
                 { entidadTipo: { contains: busqueda, mode: 'insensitive' } },
                 { entidadId: { contains: busqueda, mode: 'insensitive' } },
-                { usuario: { fullName: { contains: busqueda, mode: 'insensitive' } } },
-                { usuario: { email: { contains: busqueda, mode: 'insensitive' } } }
+                { usuarioEmail: { contains: busqueda, mode: 'insensitive' } },
+                ...(matchingUserIds.length > 0 ? [{ usuarioId: { in: matchingUserIds } }] : [])
             ];
         }
 
@@ -244,11 +266,12 @@ export class AuditService {
                 where,
                 take: limit,
                 skip,
-                orderBy: { timestamp: 'desc' },
-                include: { usuario: { select: { id: true, fullName: true, email: true } } }
+                orderBy: { timestamp: 'desc' }
             }),
             (this.prisma as any).auditoriaEntidad.count({ where })
         ]);
+        
+        await this.hydrateUsers(items);
         return { data: items, total };
     }
 
@@ -265,12 +288,23 @@ export class AuditService {
         }
 
         if (busqueda) {
+            const matchingUsers = await this.prisma.user.findMany({
+                where: {
+                    OR: [
+                        { fullName: { contains: busqueda, mode: 'insensitive' } },
+                        { email: { contains: busqueda, mode: 'insensitive' } }
+                    ]
+                },
+                select: { id: true }
+            });
+            const matchingUserIds = matchingUsers.map((u: any) => u.id);
+
             where.OR = [
                 { descripcion: { contains: busqueda, mode: 'insensitive' } },
                 { tipoEvento: { contains: busqueda, mode: 'insensitive' } },
                 { categoria: { contains: busqueda, mode: 'insensitive' } },
-                { usuario: { fullName: { contains: busqueda, mode: 'insensitive' } } },
-                { usuario: { email: { contains: busqueda, mode: 'insensitive' } } }
+                { usuarioEmail: { contains: busqueda, mode: 'insensitive' } },
+                ...(matchingUserIds.length > 0 ? [{ usuarioId: { in: matchingUserIds } }] : [])
             ];
         }
 
@@ -279,11 +313,12 @@ export class AuditService {
                 where,
                 take: limit,
                 skip,
-                orderBy: { timestamp: 'desc' },
-                include: { usuario: { select: { id: true, fullName: true, email: true } } }
+                orderBy: { timestamp: 'desc' }
             }),
             (this.prisma as any).auditoriaEvento.count({ where })
         ]);
+
+        await this.hydrateUsers(items);
         return { data: items, total };
     }
 
@@ -298,11 +333,21 @@ export class AuditService {
         }
 
         if (busqueda) {
+            const matchingUsers = await this.prisma.user.findMany({
+                where: {
+                    OR: [
+                        { fullName: { contains: busqueda, mode: 'insensitive' } },
+                        { email: { contains: busqueda, mode: 'insensitive' } }
+                    ]
+                },
+                select: { id: true }
+            });
+            const matchingUserIds = matchingUsers.map((u: any) => u.id);
+
             where.OR = [
                 { rutaOrigen: { contains: busqueda, mode: 'insensitive' } },
                 { rutaDestino: { contains: busqueda, mode: 'insensitive' } },
-                { usuario: { fullName: { contains: busqueda, mode: 'insensitive' } } },
-                { usuario: { email: { contains: busqueda, mode: 'insensitive' } } }
+                ...(matchingUserIds.length > 0 ? [{ usuarioId: { in: matchingUserIds } }] : [])
             ];
         }
 
@@ -311,11 +356,34 @@ export class AuditService {
                 where,
                 take: limit,
                 skip,
-                orderBy: { timestamp: 'desc' },
-                include: { usuario: { select: { id: true, fullName: true, email: true } } }
+                orderBy: { timestamp: 'desc' }
             }),
             (this.prisma as any).auditoriaNavegacion.count({ where })
         ]);
+
+        await this.hydrateUsers(items);
         return { data: items, total };
+    }
+
+    private async hydrateUsers(items: any[]) {
+        if (!items || items.length === 0) return items;
+        
+        const userIds = [...new Set(items.map(i => i.usuarioId).filter(id => id))];
+        if (userIds.length === 0) return items;
+
+        const users = await this.prisma.user.findMany({
+            where: { id: { in: userIds as string[] } },
+            select: { id: true, fullName: true, email: true }
+        });
+
+        const userMap = new Map(users.map(u => [u.id, u]));
+
+        items.forEach(item => {
+            if (item.usuarioId && userMap.has(item.usuarioId)) {
+                item.usuario = userMap.get(item.usuarioId);
+            }
+        });
+
+        return items;
     }
 }
