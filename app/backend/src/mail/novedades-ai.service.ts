@@ -33,7 +33,7 @@ const schemaNovedadesGDE = {
         numeroGde: { type: 'string', description: 'Número completo de la nota GDE (ej: NO-2026-67719277-APN-DIOYT#INIDEP). Si no lo encuentras, devuelve un string vacío ""' },
         periodos: {
             type: 'array',
-            description: 'Lista de períodos solicitados.',
+            description: 'Lista de períodos solicitados. IMPORTANTE: Si los días mencionados no son consecutivos (ej. 20, 22, 23 y 24), genera un elemento independiente dentro del array para cada bloque o grupo de días consecutivos (ej. un período para el 20 y otro del 22 al 24).',
             items: {
                 type: 'object',
                 properties: {
@@ -42,8 +42,8 @@ const schemaNovedadesGDE = {
                         enum: ['LICEN', 'FC', 'RP', 'ENFERMEDAD'],
                         description: 'Código de novedad. LICEN para licencia o vacaciones, FC para franco compensatorio, RP para razones particulares, ENFERMEDAD para parte de enfermo.'
                     },
-                    fechaInicio: { type: 'string', description: 'Fecha de inicio del período en formato YYYY-MM-DD' },
-                    fechaFin: { type: 'string', description: 'Fecha de fin del período en formato YYYY-MM-DD' },
+                    fechaInicio: { type: 'string', description: 'Fecha de inicio del período en formato YYYY-MM-DD. Si es un único día aislado, fechaInicio y fechaFin deben ser iguales.' },
+                    fechaFin: { type: 'string', description: 'Fecha de fin del período en formato YYYY-MM-DD. Si es un único día aislado, fechaInicio y fechaFin deben ser iguales.' },
                     motivo: { type: 'string', description: 'Breve motivo o descripción' }
                 },
                 required: ['tipoNovedad', 'fechaInicio', 'fechaFin']
@@ -60,7 +60,7 @@ const schemaDisponibilidadEmail = {
         observador: { type: 'string', description: 'Nombre completo del observador' },
         periodos: {
             type: 'array',
-            description: 'Lista de períodos informados.',
+            description: 'Lista de períodos informados. IMPORTANTE: Si los días mencionados no son consecutivos, genera un elemento independiente en el array para cada bloque o grupo de días consecutivos.',
             items: {
                 type: 'object',
                 properties: {
@@ -69,8 +69,8 @@ const schemaDisponibilidadEmail = {
                         enum: ['DISPONIBLE', 'NO_DISPONIBLE', 'LICEN', 'FC', 'ENFERMEDAD', 'VIAJE_INICIO', 'VIAJE_FIN'],
                         description: 'Estado o novedad reportada. ATENCION: Si se detecta que se trata de un boleto o pasaje de viaje desde Mar del Plata hacia otro destino, usar VIAJE_INICIO. Si es un pasaje desde otro destino hacia Mar del Plata, usar VIAJE_FIN.'
                     },
-                    fechaInicio: { type: 'string', description: 'Fecha de inicio del período en formato YYYY-MM-DD' },
-                    fechaFin: { type: 'string', description: 'Fecha de fin del período en formato YYYY-MM-DD' },
+                    fechaInicio: { type: 'string', description: 'Fecha de inicio del período en formato YYYY-MM-DD. Si es un único día aislado, fechaInicio y fechaFin deben ser iguales.' },
+                    fechaFin: { type: 'string', description: 'Fecha de fin del período en formato YYYY-MM-DD. Si es un único día aislado, fechaInicio y fechaFin deben ser iguales.' },
                     motivo: { type: 'string', description: 'Breve motivo o descripción' }
                 },
                 required: ['tipoNovedad', 'fechaInicio', 'fechaFin']
@@ -153,7 +153,9 @@ export class NovedadesAiService {
             if (cleanText.includes('poder ejecutivo nacional') || cleanText.includes('referencia:')) {
                 docType = 'GDE';
                 configSchema = schemaNovedadesGDE;
-                promptSystem = 'Extrae los datos de la nota administrativa oficial de GDE (Licencias, Francos Compensatorios, etc.). Asegúrate de extraer EXPRESAMENTE el "Número de GDE" (ej: NO-2026-67720716-APN-DIOYT#INIDEP). También extrae el "CUIL" o "DNI" del observador. IMPORTANTE PARA LICENCIAS ANUALES ORDINARIAS (Vacaciones): Presta especial atención a la tabla de fechas. Debido al formato OCR, a veces las columnas aparecen pegadas, por ejemplo: "202420/07/202629/07/202610". Esto significa: Año 2024, Fecha Desde 20/07/2026, Fecha Hasta 29/07/2026, y 10 días. Extrae las fechas de inicio y fin basándote en esta lógica de descompresión de texto pegado. Ignora el "Año" de devengamiento de la licencia (ej. 2024), solo nos importan las fechas reales (F/ DESDE y F/ HASTA) para el período.' + contextAdicional;
+                promptSystem = 'Extrae los datos de la nota administrativa oficial de GDE (Licencias, Francos Compensatorios, etc.). Asegúrate de extraer EXPRESAMENTE el "Número de GDE" (ej: NO-2026-67720716-APN-DIOYT#INIDEP). También extrae el "CUIL" o "DNI" del observador. ' +
+                    'ATENCIÓN A DÍAS DISCONTINUOS O SALTEADOS: Cuando la nota enumere días discontinuos o salteados (ej: "días 20, 22, 23 y 24"), NUNCA crees un único rango continuo que incluya los días intermedios ausentes. Debes dividir la solicitud en múltiples elementos dentro del array "periodos", agrupando solo días consecutivos (ej: Período 1: 2026-07-20 a 2026-07-20; Período 2: 2026-07-22 a 2026-07-24). ' +
+                    'IMPORTANTE PARA LICENCIAS ANUALES ORDINARIAS (Vacaciones): Presta especial atención a la tabla de fechas. Debido al formato OCR, a veces las columnas aparecen pegadas, por ejemplo: "202420/07/202629/07/202610". Esto significa: Año 2024, Fecha Desde 20/07/2026, Fecha Hasta 29/07/2026, y 10 días. Extrae las fechas de inicio y fin basándote en esta lógica de descompresión de texto pegado. Ignora el "Año" de devengamiento de la licencia (ej. 2024), solo nos importan las fechas reales (F/ DESDE y F/ HASTA) para el período.' + contextAdicional;
             } else if (cleanText.includes('boleto') || cleanText.includes('pasaje') || cleanText.includes('butaca') || cleanText.includes('voucher') || cleanText.includes('origen:')) {
                 docType = 'PASAJES';
                 configSchema = schemaPasajes;
@@ -161,7 +163,7 @@ export class NovedadesAiService {
             } else {
                 docType = 'TEXTO_LIBRE';
                 configSchema = schemaDisponibilidadEmail;
-                promptSystem = 'Extrae los datos del mensaje informal de disponibilidad u otras novedades. IMPORTANTE: Si notas que el mensaje o adjunto contiene datos de un pasaje, ticket o boleto de viaje, extraelo como VIAJE_INICIO o VIAJE_FIN según su origen/destino respecto a Mar del Plata. Mapea todos los rangos o días mencionados al array de periodos.' + contextAdicional;
+                promptSystem = 'Extrae los datos del mensaje informal de disponibilidad u otras novedades. ATENCIÓN A DÍAS DISCONTINUOS O SALTEADOS: Cuando se informen días no consecutivos, genera un elemento independiente en el array "periodos" para cada bloque de días consecutivos. IMPORTANTE: Si notas que el mensaje o adjunto contiene datos de un pasaje, ticket o boleto de viaje, extraelo como VIAJE_INICIO o VIAJE_FIN según su origen/destino respecto a Mar del Plata. Mapea todos los rangos o días mencionados al array de periodos.' + contextAdicional;
             }
         }
 
