@@ -2724,7 +2724,7 @@ export class MareasService {
 
         // Filtrar las que NO están resueltas ni descartadas (solo activas)
         const whereAlerts: any = {
-            estado: 'PENDIENTE'
+            estado: { in: ['PENDIENTE', 'SEGUIMIENTO', 'VENCIDA'] }
         };
 
         // Si hay usuario y NO es admin/coordinador, aplicar filtro de visibilidad

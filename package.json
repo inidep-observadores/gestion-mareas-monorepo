@@ -10,6 +10,7 @@
   "scripts": {
     "dev:backend": "pnpm --filter sigma-backend run start:dev",
     "dev:frontend": "pnpm --filter sigma-frontend run dev",
+    "prod:frontend": "pnpm --filter sigma-frontend run build:localprod && pnpm --filter sigma-frontend run preview --port 5173 --strictPort",
     "dev": "pnpm --filter sigma-backend --filter sigma-frontend --parallel run dev",
     "build": "pnpm -r run build",
     "lint": "pnpm -r run lint",

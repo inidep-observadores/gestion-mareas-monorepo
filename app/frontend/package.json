@@ -10,6 +10,8 @@
     "preview": "vite preview",
     "build-only": "vite build",
     "build-only:staging": "vite build --mode staging",
+    "build:localprod": "run-p type-check \"build-only:localprod {@}\" --",
+    "build-only:localprod": "vite build --mode localprod",
     "type-check": "vue-tsc --build",
     "lint": "eslint . --fix",
     "format": "prettier --write src/",

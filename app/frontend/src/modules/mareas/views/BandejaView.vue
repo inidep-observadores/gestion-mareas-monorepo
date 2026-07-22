@@ -27,8 +27,10 @@
             <div v-if="expandedAlerts.urgente" class="space-y-6">
               <!-- Mis Alertas -->
               <div v-if="alertasUrgente.misAlertas.length > 0" class="space-y-3">
-                <label class="text-[9px] font-black uppercase tracking-widest text-text-muted/60 ml-2">Mis
-                  Alertas</label>
+                <div class="flex items-center gap-2 mb-3 mt-1 pb-2 border-b border-border/40">
+                  <UserCircleIcon class="w-4 h-4 text-primary" />
+                  <span class="text-[10px] font-black uppercase tracking-[0.1em] text-primary">Mis Alertas Asignadas</span>
+                </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-4">
                   <InboxAlertCard v-for="alerta in alertasUrgente.misAlertas" :key="alerta.id" v-bind="alerta"
                     :fecha="formatDate(alerta.fechaDetectada)" @action="(type) => handleAlertAction(alerta.id, type)" />
@@ -37,9 +39,12 @@
 
               <!-- Alertas Disponibles -->
               <div v-if="alertasUrgente.disponibles.length > 0" class="space-y-3">
-                <label class="text-[9px] font-black uppercase tracking-widest text-text-muted/60 ml-2">
-                  {{ isAdminOrCoordinator ? 'Alertas Disponibles / De otros' : 'Alertas Disponibles / Sin asignar' }}
-                </label>
+                <div class="flex items-center gap-2 mb-3 mt-1 pb-2 border-b border-border/40">
+                  <MailBox class="w-4 h-4 text-text-muted" />
+                  <span class="text-[10px] font-black uppercase tracking-[0.1em] text-text-muted">
+                    {{ isAdminOrCoordinator ? 'Alertas Disponibles / De otros' : 'Alertas Disponibles / Sin asignar' }}
+                  </span>
+                </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-4">
                   <InboxAlertCard v-for="alerta in alertasUrgente.disponibles" :key="alerta.id" v-bind="alerta"
                     :fecha="formatDate(alerta.fechaDetectada)" @action="(type) => handleAlertAction(alerta.id, type)" />
@@ -68,8 +73,10 @@
             <div v-if="expandedAlerts.alta" class="space-y-6">
               <!-- Mis Alertas -->
               <div v-if="alertasAlta.misAlertas.length > 0" class="space-y-3">
-                <label class="text-[9px] font-black uppercase tracking-widest text-text-muted/60 ml-2">Mis
-                  Alertas</label>
+                <div class="flex items-center gap-2 mb-3 mt-1 pb-2 border-b border-border/40">
+                  <UserCircleIcon class="w-4 h-4 text-primary" />
+                  <span class="text-[10px] font-black uppercase tracking-[0.1em] text-primary">Mis Alertas Asignadas</span>
+                </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-4">
                   <InboxAlertCard v-for="alerta in alertasAlta.misAlertas" :key="alerta.id" v-bind="alerta"
                     :fecha="formatDate(alerta.fechaDetectada)" @action="(type) => handleAlertAction(alerta.id, type)" />
@@ -78,9 +85,12 @@
 
               <!-- Alertas Disponibles -->
               <div v-if="alertasAlta.disponibles.length > 0" class="space-y-3">
-                <label class="text-[9px] font-black uppercase tracking-widest text-text-muted/60 ml-2">
-                  {{ isAdminOrCoordinator ? 'Alertas Disponibles / De otros' : 'Alertas Disponibles / Sin asignar' }}
-                </label>
+                <div class="flex items-center gap-2 mb-3 mt-1 pb-2 border-b border-border/40">
+                  <MailBox class="w-4 h-4 text-text-muted" />
+                  <span class="text-[10px] font-black uppercase tracking-[0.1em] text-text-muted">
+                    {{ isAdminOrCoordinator ? 'Alertas Disponibles / De otros' : 'Alertas Disponibles / Sin asignar' }}
+                  </span>
+                </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-4">
                   <InboxAlertCard v-for="alerta in alertasAlta.disponibles" :key="alerta.id" v-bind="alerta"
                     :fecha="formatDate(alerta.fechaDetectada)" @action="(type) => handleAlertAction(alerta.id, type)" />
@@ -110,8 +120,10 @@
             <div v-if="expandedAlerts.media" class="space-y-6">
               <!-- Mis Alertas -->
               <div v-if="alertasMedia.misAlertas.length > 0" class="space-y-3">
-                <label class="text-[9px] font-black uppercase tracking-widest text-text-muted/60 ml-2">Mis
-                  Alertas</label>
+                <div class="flex items-center gap-2 mb-3 mt-1 pb-2 border-b border-border/40">
+                  <UserCircleIcon class="w-4 h-4 text-primary" />
+                  <span class="text-[10px] font-black uppercase tracking-[0.1em] text-primary">Mis Alertas Asignadas</span>
+                </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-4">
                   <InboxAlertCard v-for="alerta in alertasMedia.misAlertas" :key="alerta.id" v-bind="alerta"
                     :fecha="formatDate(alerta.fechaDetectada)" @action="(type) => handleAlertAction(alerta.id, type)" />
@@ -120,9 +132,12 @@
 
               <!-- Alertas Disponibles -->
               <div v-if="alertasMedia.disponibles.length > 0" class="space-y-3">
-                <label class="text-[9px] font-black uppercase tracking-widest text-text-muted/60 ml-2">
-                  {{ isAdminOrCoordinator ? 'Alertas Disponibles / De otros' : 'Alertas Disponibles / Sin asignar' }}
-                </label>
+                <div class="flex items-center gap-2 mb-3 mt-1 pb-2 border-b border-border/40">
+                  <MailBox class="w-4 h-4 text-text-muted" />
+                  <span class="text-[10px] font-black uppercase tracking-[0.1em] text-text-muted">
+                    {{ isAdminOrCoordinator ? 'Alertas Disponibles / De otros' : 'Alertas Disponibles / Sin asignar' }}
+                  </span>
+                </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-4">
                   <InboxAlertCard v-for="alerta in alertasMedia.disponibles" :key="alerta.id" v-bind="alerta"
                     :fecha="formatDate(alerta.fechaDetectada)" @action="(type) => handleAlertAction(alerta.id, type)" />
@@ -151,8 +166,10 @@
             <div v-if="expandedAlerts.baja" class="space-y-6">
               <!-- Mis Alertas -->
               <div v-if="alertasBaja.misAlertas.length > 0" class="space-y-3">
-                <label class="text-[9px] font-black uppercase tracking-widest text-text-muted/60 ml-2">Mis
-                  Alertas</label>
+                <div class="flex items-center gap-2 mb-3 mt-1 pb-2 border-b border-border/40">
+                  <UserCircleIcon class="w-4 h-4 text-primary" />
+                  <span class="text-[10px] font-black uppercase tracking-[0.1em] text-primary">Mis Alertas Asignadas</span>
+                </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-4">
                   <InboxAlertCard v-for="alerta in alertasBaja.misAlertas" :key="alerta.id" v-bind="alerta"
                     :fecha="formatDate(alerta.fechaDetectada)" @action="(type) => handleAlertAction(alerta.id, type)" />
@@ -161,9 +178,12 @@
 
               <!-- Alertas Disponibles -->
               <div v-if="alertasBaja.disponibles.length > 0" class="space-y-3">
-                <label class="text-[9px] font-black uppercase tracking-widest text-text-muted/60 ml-2">
-                  {{ isAdminOrCoordinator ? 'Alertas Disponibles / De otros' : 'Alertas Disponibles / Sin asignar' }}
-                </label>
+                <div class="flex items-center gap-2 mb-3 mt-1 pb-2 border-b border-border/40">
+                  <MailBox class="w-4 h-4 text-text-muted" />
+                  <span class="text-[10px] font-black uppercase tracking-[0.1em] text-text-muted">
+                    {{ isAdminOrCoordinator ? 'Alertas Disponibles / De otros' : 'Alertas Disponibles / Sin asignar' }}
+                  </span>
+                </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-4">
                   <InboxAlertCard v-for="alerta in alertasBaja.disponibles" :key="alerta.id" v-bind="alerta"
                     :fecha="formatDate(alerta.fechaDetectada)" @action="(type) => handleAlertAction(alerta.id, type)" />
@@ -193,8 +213,10 @@
             <div v-if="expandedAlerts.seguimiento" class="space-y-6">
               <!-- Mis Alertas -->
               <div v-if="alertasSeguimiento.misAlertas.length > 0" class="space-y-3">
-                <label class="text-[9px] font-black uppercase tracking-widest text-text-muted/60 ml-2">Mis
-                  Alertas</label>
+                <div class="flex items-center gap-2 mb-3 mt-1 pb-2 border-b border-border/40">
+                  <UserCircleIcon class="w-4 h-4 text-primary" />
+                  <span class="text-[10px] font-black uppercase tracking-[0.1em] text-primary">Mis Alertas Asignadas</span>
+                </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-4">
                   <InboxAlertCard v-for="alerta in alertasSeguimiento.misAlertas" :key="alerta.id" v-bind="alerta"
                     :fecha="formatDate(alerta.fechaDetectada)" :estado="AlertaEstado.SEGUIMIENTO"
@@ -204,9 +226,12 @@
 
               <!-- Alertas Disponibles -->
               <div v-if="alertasSeguimiento.disponibles.length > 0" class="space-y-3">
-                <label class="text-[9px] font-black uppercase tracking-widest text-text-muted/60 ml-2">
-                  {{ isAdminOrCoordinator ? 'Alertas Disponibles / De otros' : 'Alertas Disponibles / Sin asignar' }}
-                </label>
+                <div class="flex items-center gap-2 mb-3 mt-1 pb-2 border-b border-border/40">
+                  <MailBox class="w-4 h-4 text-text-muted" />
+                  <span class="text-[10px] font-black uppercase tracking-[0.1em] text-text-muted">
+                    {{ isAdminOrCoordinator ? 'Alertas Disponibles / De otros' : 'Alertas Disponibles / Sin asignar' }}
+                  </span>
+                </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-4">
                   <InboxAlertCard v-for="alerta in alertasSeguimiento.disponibles" :key="alerta.id" v-bind="alerta"
                     :fecha="formatDate(alerta.fechaDetectada)" :estado="AlertaEstado.SEGUIMIENTO"
@@ -425,7 +450,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, markRaw } from 'vue'
+import { ref, shallowRef, computed, onMounted, markRaw } from 'vue'
 import { useRouter } from 'vue-router'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import TaskCard from '../components/TaskCard.vue'
@@ -443,7 +468,7 @@ import Badge from '@/components/ui/Badge.vue'
 import AlertManagementDialog from '../../alerts/components/AlertManagementDialog.vue'
 import mareasService from '../services/mareas.service'
 import { alertsService } from '@/modules/alerts/services/alerts.service'
-import { EditIcon, CheckIcon, DocsIcon, BellIcon, ChevronDownIcon } from '@/icons'
+import { EditIcon, CheckIcon, DocsIcon, BellIcon, ChevronDownIcon, UserCircleIcon, MailBox } from '@/icons'
 import { useMareas } from '../composables/useMareas'
 import { toast } from 'vue-sonner'
 import { AlertaEstado, AlertaPrioridad } from '../../alerts/services/alerts.service'
@@ -461,9 +486,9 @@ const isReadOnly = computed(() => {
 
 // Data State
 const loading = ref(true)
-const alertas = ref<any[]>([])
-const alertasHistoricas = ref<any[]>([])
-const tasks = ref<any[]>([])
+const alertas = shallowRef<any[]>([])
+const alertasHistoricas = shallowRef<any[]>([])
+const tasks = shallowRef<any[]>([])
 const activeTab = ref('urgentes')
 const searchQuery = ref('')
 const historySearchQuery = ref('')
@@ -566,7 +591,7 @@ const filteredTasks = computed(() => {
   // Sort
   return result.sort((a, b) => {
     if (sortBy.value === 'buque') {
-      return a.buque.localeCompare(b.buque)
+      return (a.buque || '').localeCompare(b.buque || '')
     } else {
       return (a.observador || '').localeCompare(b.observador || '')
     }
@@ -593,7 +618,7 @@ const filteredHistoryTasks = computed(() => {
     })
   }
 
-  return result.sort((a, b) => a.buque.localeCompare(b.buque))
+  return result.sort((a, b) => (a.buque || '').localeCompare(b.buque || ''))
 })
 
 const filteredHistoryAlerts = computed(() => {
