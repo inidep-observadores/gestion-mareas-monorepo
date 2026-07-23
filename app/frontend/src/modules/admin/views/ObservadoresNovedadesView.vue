@@ -184,7 +184,7 @@
         enter-to-class="translate-x-0 opacity-100" leave-active-class="transition duration-200 ease-in"
         leave-from-class="translate-x-0 opacity-100" leave-to-class="translate-x-4 opacity-0">
         <div v-if="showSidePanel && sidePanelNovedad"
-          class="w-full xl:w-[350px] 2xl:w-[450px] shrink-0 sticky top-6 bg-surface border border-border rounded-2xl shadow-sm overflow-hidden self-start z-10 hidden xl:block">
+          class="w-full xl:w-[350px] 2xl:w-[450px] shrink-0 sticky top-6 h-[calc(100vh-3rem)] flex flex-col bg-surface border border-border rounded-2xl shadow-sm overflow-hidden self-start z-10 hidden xl:block">
           <NovedadContextDetailContent
             :novedad="sidePanelNovedad"
             @close="showSidePanel = false"

@@ -22,6 +22,12 @@ export class NovedadesService {
         observador: true,
         tipoNovedad: true,
         archivos: true,
+        movimientos: {
+          include: {
+            usuario: { select: { id: true, email: true, fullName: true } }
+          },
+          orderBy: { fechaHora: 'desc' }
+        },
         creadoPor: {
           select: { id: true, email: true, fullName: true }
         }

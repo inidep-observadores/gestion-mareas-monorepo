@@ -90,6 +90,37 @@
           </div>
         </div>
 
+        <!-- Historial de Movimientos -->
+        <section v-if="novedad.movimientos && novedad.movimientos.length > 0" class="space-y-4 pb-4 mt-2">
+          <div class="flex items-center justify-between">
+            <h4 class="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted">Actividad Reciente</h4>
+            <HistoryIcon class="w-4 h-4 text-text-muted/40" />
+          </div>
+          <div class="relative pl-6 space-y-6">
+            <div class="absolute left-[7px] top-2 bottom-2 w-[1px] bg-border"></div>
+            <div v-for="mov in sortedMovimientos" :key="mov.id" class="relative group">
+              <div
+                class="absolute -left-[23px] top-1.5 w-2 h-2 rounded-full border-2 border-surface bg-primary z-10 transition-transform group-hover:scale-125">
+              </div>
+              <div>
+                <p class="text-[11px] font-bold text-text">{{ formatTipoEvento(mov.tipoEvento) }}</p>
+                <div class="flex items-center gap-2 mt-0.5">
+                  <span class="text-[10px] text-text-muted font-mono">{{ formatDateEvent(mov.fechaHora) }}</span>
+                  <span class="w-1 h-1 rounded-full bg-border"></span>
+                  <span class="text-[10px] text-primary font-bold uppercase tracking-tighter">
+                    {{ getUsuarioName(mov) }}
+                  </span>
+                </div>
+                <div v-if="mov.comentarios" class="mt-1.5 p-2 bg-surface-muted/30 border-l-2 border-primary/30 rounded-r-lg">
+                  <p class="text-[10px] text-text-muted leading-relaxed italic">
+                    {{ mov.comentarios }}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
       </div>
       <div v-else class="flex flex-col items-center justify-center h-full text-center p-6">
         <div class="w-12 h-12 bg-surface-muted rounded-full flex items-center justify-center mb-3">
@@ -123,7 +154,7 @@
 import { computed } from 'vue';
 import type { Novedad } from '../interfaces/novedad.interface';
 
-import { XIcon, ArrowRightIcon as ExternalLinkIcon, CheckIcon, EditIcon, FileTextIcon } from '@/icons';
+import { XIcon, ArrowRightIcon as ExternalLinkIcon, CheckIcon, EditIcon, FileTextIcon, HistoryIcon } from '@/icons';
 // Si tienes un icono Sparkles, lo importas, si no usamos otro
 import { SettingsIcon as SparklesIcon } from '@/icons';
 
@@ -162,4 +193,34 @@ const fileUrlPreview = computed(() => {
   // Transform Google Drive 'view' link to 'preview' to embed properly in iframes
   return url.replace(/\/view\?usp=.*/, '/preview');
 });
+
+const sortedMovimientos = computed(() => {
+  if (!props.novedad?.movimientos) return [];
+  return [...props.novedad.movimientos].sort((a, b) => new Date(b.fechaHora).getTime() - new Date(a.fechaHora).getTime());
+});
+
+const formatDateEvent = (isoStr: string) => {
+  if (!isoStr) return '';
+  const date = new Date(isoStr);
+  return date.toLocaleDateString('es-AR') + ' ' + date.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+};
+
+const getUsuarioName = (mov: any) => {
+  if (mov.usuario) {
+    return mov.usuario.fullName || mov.usuario.name || mov.usuario.email || 'SISTEMA';
+  }
+  return 'ADMINISTRADOR SISTEMA';
+};
+
+const formatTipoEvento = (tipo: string) => {
+  const map: Record<string, string> = {
+    'CREACION': 'Novedad Creada',
+    'EDICION': 'Novedad Editada',
+    'APROBACION': 'Novedad Aprobada',
+    'RECHAZO': 'Novedad Rechazada',
+    'ELIMINACION': 'Novedad Eliminada',
+    'REVISION_AI': 'Revisión por IA',
+  };
+  return map[tipo] || (tipo || 'MOVIMIENTO DESCONOCIDO').replace(/_/g, ' ');
+};
 </script>
