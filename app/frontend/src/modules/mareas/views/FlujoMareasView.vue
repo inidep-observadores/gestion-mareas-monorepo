@@ -29,7 +29,7 @@
         </div>
       </div>
 
-      <div class="flex flex-col xl:flex-row gap-6 overflow-hidden">
+      <div class="flex flex-col xl:flex-row gap-6 items-start">
         <!-- Main Board -->
         <div class="flex-1 min-w-0 transition-all duration-300">
           <div class="bg-surface border border-border rounded-2xl overflow-hidden shadow-sm">
@@ -420,7 +420,7 @@
           enter-to-class="translate-x-0 opacity-100" leave-active-class="transition duration-200 ease-in"
           leave-from-class="translate-x-0 opacity-100" leave-to-class="translate-x-4 opacity-0">
           <div v-if="selectedMarea"
-            class="w-full xl:w-[320px] 2xl:w-[400px] shrink-0 sticky top-0 bg-surface border border-border rounded-2xl shadow-sm overflow-hidden self-start hidden xl:block z-10">
+            class="w-full xl:w-[320px] 2xl:w-[400px] shrink-0 sticky top-6 h-[calc(100vh-3rem)] flex flex-col bg-surface border border-border rounded-2xl shadow-sm overflow-hidden self-start hidden xl:block z-10">
             <MareaContextDetailContent :marea="selectedMarea" :context="selectedMareaContext" :read-only="isReadOnly"
               @close="closeSidebar" @open-detalle="goToDetalle" @view-trajectory="goToTrajectory"
               @action="executeActionFromSidebar" @manage-alert="handleManageAlert" />

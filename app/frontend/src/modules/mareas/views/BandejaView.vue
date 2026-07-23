@@ -407,7 +407,7 @@
         enter-to-class="translate-x-0 opacity-100" leave-active-class="transition duration-200 ease-in"
         leave-from-class="translate-x-0 opacity-100" leave-to-class="translate-x-4 opacity-0">
         <div v-if="selectedMarea"
-          class="w-full xl:w-[400px] shrink-0 sticky top-6 bg-surface border border-border rounded-[2.5rem] shadow-xl overflow-hidden self-start hidden xl:block">
+          class="w-full xl:w-[400px] shrink-0 sticky top-6 h-[calc(100vh-3rem)] flex flex-col bg-surface border border-border rounded-[2.5rem] shadow-xl overflow-hidden self-start hidden xl:block">
           <MareaContextDetailContent :marea="selectedMarea" :context="selectedMareaContext"
             @close="selectedMarea = null" @open-detalle="goToDetalle" @action="executeSidebarAction" @manage-alert="handleAlertAction" />
         </div>
