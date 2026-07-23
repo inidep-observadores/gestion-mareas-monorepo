@@ -16,7 +16,7 @@ const schemaPasajes = {
     properties: {
         observador: { type: 'string', description: 'Nombre completo del pasajero/observador' },
         dni: { type: 'string', description: 'DNI del pasajero si figura. Si no lo encuentras, devuelve un string vacío ""' },
-        origen: { type: 'string', description: 'Ciudad de origen del viaje' },
+        origen: { type: 'string', description: 'Ciudad de origen del viaje. ATENCIÓN: Busca explícitamente el campo "ORIGEN" o similar. Ignora textos como "SE ANUNCIA A" u otras ciudades mezcladas en el OCR.' },
         destino: { type: 'string', description: 'Ciudad de destino del viaje' },
         fechaViaje: { type: 'string', description: 'Fecha del viaje en formato YYYY-MM-DD' },
         empresa: { type: 'string', description: 'Empresa de transporte (ej: Via Tac, Aerolineas, etc.)' }
@@ -159,7 +159,7 @@ export class NovedadesAiService {
             } else if (cleanText.includes('boleto') || cleanText.includes('pasaje') || cleanText.includes('butaca') || cleanText.includes('voucher') || cleanText.includes('origen:')) {
                 docType = 'PASAJES';
                 configSchema = schemaPasajes;
-                promptSystem = 'Extrae los datos del viaje del boleto o e-ticket. Asegúrate de extraer el DNI del pasajero si figura.' + contextAdicional;
+                promptSystem = 'Extrae los datos del viaje del boleto o e-ticket. Asegúrate de extraer el DNI del pasajero si figura. PRECAUCIÓN CON EL FORMATO: Al extraerse el texto de un PDF con columnas, es posible que los datos se mezclen línea por línea. Busca expresamente la etiqueta "ORIGEN" para determinar la ciudad de origen y la etiqueta "DESTINO" para el destino. No confundas el origen con campos como "SE ANUNCIA A".' + contextAdicional;
             } else {
                 docType = 'TEXTO_LIBRE';
                 configSchema = schemaDisponibilidadEmail;
@@ -168,12 +168,12 @@ export class NovedadesAiService {
         }
 
         const requestPayload = {
-            contents: isScanOrImage ? [
+            contents: (isScanOrImage || mimeType === 'application/pdf') ? [
                 {
                     role: 'user',
                     parts: [
                         { inlineData: { data: base64Data, mimeType: mimeType } },
-                        { text: promptSystem + (textContent ? `\n\nTexto OCR previo:\n${textContent}` : '') }
+                        { text: promptSystem + (textContent ? `\n\nTexto extraído previamente (como referencia):\n${textContent}` : '') }
                     ]
                 }
             ] : [
