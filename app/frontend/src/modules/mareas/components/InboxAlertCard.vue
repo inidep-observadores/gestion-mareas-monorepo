@@ -28,6 +28,11 @@
             <span v-if="metadata && metadata.mareaCode" class="ml-1 opacity-75 font-mono">{{ metadata.mareaCode
             }}</span>
           </Badge>
+          <Badge v-if="metadata?.observerName || metadata?.observador" color="purple" variant="light" size="sm"
+            class="font-bold uppercase tracking-wider py-0.5 px-2 rounded-lg flex items-center gap-1">
+            <UserCircleIcon class="w-3 h-3" />
+            {{ metadata?.observerName || metadata?.observador }}
+          </Badge>
           <!-- Source & Date Group -->
           <div class="flex items-center gap-2 ml-1">
             <span class="text-[10px] text-text-muted/50 font-black uppercase tracking-widest">Fuente:</span>
