@@ -75,7 +75,7 @@
         <!-- Previsualización del Archivo -->
         <AttachmentViewer 
           v-if="hasFile" 
-          :archivos="novedad.archivos" 
+          :archivos="novedad.archivos || []" 
           title="Archivo Adjunto" 
           class="mt-2" 
         />

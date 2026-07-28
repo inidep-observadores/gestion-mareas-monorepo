@@ -73,7 +73,7 @@ interface Archivo {
 }
 
 const props = defineProps<{
-  archivos: Archivo[];
+  archivos?: Archivo[];
   title?: string;
 }>();
 
