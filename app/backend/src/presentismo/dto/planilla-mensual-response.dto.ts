@@ -29,6 +29,7 @@ export class ObservadorRowDto {
 
 export class DiaEstadoDto {
   estado: 'NAVEGANDO' | 'PUERTO' | 'NOVEDAD' | 'FERIADO' | 'FIN_SEMANA' | 'LIBRE' | 'CONFLICTO' | 'VIAJE' | 'ESPERANDO_ZARPADA';
+  estadoSecundario?: 'VIAJE' | 'PUERTO' | 'ESPERANDO_ZARPADA' | 'NOVEDAD';
   detalle?: string;
   conflictoDetalle?: string;
   referenciaId?: string;

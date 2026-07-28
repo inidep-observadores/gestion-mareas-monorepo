@@ -304,14 +304,21 @@ export class PresentismoService {
         let estadoDto: DiaEstadoDto;
 
         if (countFuertes > 1) {
-          estadoDto = {
-            estado: 'CONFLICTO',
-            conflictoDetalle: `Solapamiento: ${causasConflicto.join(' + ')}`,
-          };
-          row.totales.conflictos++;
+          // Excepcion: Navegando y Viaje pueden solaparse
+          if (countFuertes === 2 && isNavegando && isViaje) {
+            const mareaStr = mareaReferencia ? `${mareaReferencia.tipoMarea}-${mareaReferencia.nroMarea}-${mareaReferencia.anioMarea.toString().slice(-2)}` : '';
+            estadoDto = { estado: 'NAVEGANDO', estadoSecundario: 'VIAJE', referenciaId: etapaNavegando?.id, detalle: mareaStr };
+            row.totales.navegando++;
+          } else {
+            estadoDto = {
+              estado: 'CONFLICTO',
+              conflictoDetalle: `Solapamiento: ${causasConflicto.join(' + ')}`,
+            };
+            row.totales.conflictos++;
+          }
         } else if (isNavegando) {
           const mareaStr = mareaReferencia ? `${mareaReferencia.tipoMarea}-${mareaReferencia.nroMarea}-${mareaReferencia.anioMarea.toString().slice(-2)}` : '';
-          estadoDto = { estado: 'NAVEGANDO', referenciaId: etapaNavegando.id, detalle: mareaStr };
+          estadoDto = { estado: 'NAVEGANDO', referenciaId: etapaNavegando?.id, detalle: mareaStr };
           row.totales.navegando++;
         } else if (isViaje) {
           const mareaStr = mareaReferencia ? `${mareaReferencia.tipoMarea}-${mareaReferencia.nroMarea}-${mareaReferencia.anioMarea.toString().slice(-2)}` : '';
@@ -400,12 +407,15 @@ export class PresentismoService {
         const dia = row.dias[i];
         let val = '';
         if (dia) {
-          if (dia.estado === 'NAVEGANDO') val = 'NAVEG';
+          if (dia.estado === 'NAVEGANDO' && dia.estadoSecundario === 'VIAJE') val = 'NAV/VIA';
+          else if (dia.estado === 'NAVEGANDO') val = 'NAVEG';
           else if (dia.estado === 'PUERTO') val = 'PUERTO';
           else if (dia.estado === 'ESPERANDO_ZARPADA') val = 'EZ';
           else if (dia.estado === 'VIAJE') val = 'VIAJE';
           else if (dia.estado === 'FERIADO') val = 'FERIADO';
-          else if (dia.estado === 'NOVEDAD') val = dia.codigoCorto || 'NOV';
+          else if (dia.estado === 'NOVEDAD') {
+            val = dia.codigoCorto === 'ENFERMEDAD' ? 'MÉDICO' : (dia.codigoCorto || 'NOV');
+          }
           else if (dia.estado === 'CONFLICTO') val = 'ERR';
         }
         rowData[`d${i}`] = val;
@@ -421,8 +431,14 @@ export class PresentismoService {
         
         if (dia) {
           if (dia.estado === 'NAVEGANDO') {
-            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF00FF00' } };
-            cell.font = { color: { argb: 'FF000000' }, bold: true };
+            if (dia.estadoSecundario === 'VIAJE') {
+              cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF98FB98' } }; // Pale green
+              cell.font = { color: { argb: 'FF000000' }, bold: true };
+              cell.note = `Navegando y Viaje. ${dia.detalle || ''}`.trim();
+            } else {
+              cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF00FF00' } };
+              cell.font = { color: { argb: 'FF000000' }, bold: true };
+            }
           } else if (dia.estado === 'PUERTO') {
             cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFE4C4' } };
             cell.font = { color: { argb: 'FF000000' }, bold: true };

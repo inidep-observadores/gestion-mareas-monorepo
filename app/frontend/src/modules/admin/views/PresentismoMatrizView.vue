@@ -151,17 +151,18 @@
                 <td v-for="dia in data.diasMes" :key="dia" class="p-1 border-r border-border relative group/cell">
                   <div class="w-full min-h-8 rounded flex items-center justify-center transition-all cursor-default" :class="[getCellClass(row.dias[dia]), row.dias[dia]?.computaFranco ? 'ring-2 ring-red-500 ring-inset shadow-md font-extrabold' : '']">
                     <span v-if="row.dias[dia]?.estado === 'CONFLICTO'" class="text-[10px] font-black text-white px-1">ERR</span>
+                    <span v-else-if="row.dias[dia]?.estado === 'NAVEGANDO' && row.dias[dia]?.estadoSecundario === 'VIAJE'" class="text-[10px] font-black text-black px-1">N/V</span>
                     <span v-else-if="row.dias[dia]?.estado === 'NAVEGANDO'" class="text-[10px] font-black text-black px-1">NAVEG</span>
                     <span v-else-if="row.dias[dia]?.estado === 'PUERTO'" class="text-[10px] font-black text-black px-1">PUERTO</span>
                     <span v-else-if="row.dias[dia]?.estado === 'ESPERANDO_ZARPADA'" class="text-[10px] font-black text-black px-1">EZ</span>
                     <span v-else-if="row.dias[dia]?.estado === 'VIAJE'" class="text-[10px] font-black text-black px-1">VIAJE</span>
-                    <span v-else-if="row.dias[dia]?.estado === 'NOVEDAD'" class="text-[10px] font-black text-black px-1">{{ row.dias[dia].codigoCorto || 'NOV' }}</span>
+                    <span v-else-if="row.dias[dia]?.estado === 'NOVEDAD'" class="text-[10px] font-black text-black px-1">{{ row.dias[dia].codigoCorto === 'ENFERMEDAD' ? 'MÉDICO' : (row.dias[dia].codigoCorto || 'NOV') }}</span>
                     <span v-else-if="row.dias[dia]?.estado === 'FERIADO'" class="text-[10px] font-black text-black px-1">FERIADO</span>
                   </div>
 
                   <!-- Tooltip -->
                   <div v-if="row.dias[dia]?.estado !== 'LIBRE' && row.dias[dia]?.estado !== 'FIN_SEMANA'" class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max max-w-[200px] bg-gray-900 text-white text-xs p-2 rounded shadow-lg opacity-0 pointer-events-none group-hover/cell:opacity-100 transition-opacity z-30">
-                    <div class="font-bold mb-1">{{ formatTooltipTitle(row.dias[dia].estado) }}</div>
+                    <div class="font-bold mb-1">{{ formatTooltipTitle(row.dias[dia]) }}</div>
                     <div class="text-[10px] text-gray-300 leading-tight" v-if="row.dias[dia].detalle || row.dias[dia].conflictoDetalle">
                       {{ row.dias[dia].conflictoDetalle || row.dias[dia].detalle }}
                     </div>
@@ -289,6 +290,7 @@ const getCellClass = (dia: DiaEstado) => {
     case 'CONFLICTO':
       return 'bg-error shadow-inner animate-pulse';
     case 'NAVEGANDO':
+      if (dia.estadoSecundario === 'VIAJE') return 'bg-[linear-gradient(135deg,#00FF00_50%,#E6E6FA_50%)] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.1)]';
       return 'bg-[#00FF00] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.1)]';
     case 'PUERTO':
       return 'bg-[#FFE4C4] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.1)]';
@@ -308,7 +310,8 @@ const getCellClass = (dia: DiaEstado) => {
   }
 };
 
-const formatTooltipTitle = (estado: string) => {
+const formatTooltipTitle = (dia: DiaEstado) => {
+  const estado = dia.estado;
   const map: Record<string, string> = {
     'NAVEGANDO': 'Navegando',
     'PUERTO': 'En Puerto (No Local)',
@@ -318,7 +321,11 @@ const formatTooltipTitle = (estado: string) => {
     'FERIADO': 'Feriado',
     'CONFLICTO': '¡Conflicto!',
   };
-  return map[estado] || estado;
+  let title = map[estado] || estado;
+  if (estado === 'NAVEGANDO' && dia.estadoSecundario === 'VIAJE') {
+    title += ' y En Viaje';
+  }
+  return title;
 };
 
 const isExporting = ref(false);

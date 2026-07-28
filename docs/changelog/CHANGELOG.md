@@ -11,6 +11,10 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 - **backend:** implementar fallback automático a modelo secundario para manejo de límites de cuota en IA
 - **novedades:** incluir exclusión automática de fines de semana y feriados (Prisma) en periodos de Francos Compensatorios (FC)
 
+### Changed
+- **presentismo:** permitir solapamiento válido entre estados navegando y en viaje
+- **presentismo:** optimizar estética de estados duales y acortar etiqueta médica en Excel
+
 ## [v0.11.0] - 2026-07-15
 
 ### Added
