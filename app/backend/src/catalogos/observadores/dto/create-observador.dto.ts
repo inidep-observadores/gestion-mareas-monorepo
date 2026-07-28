@@ -51,10 +51,17 @@ export class CreateObservadorDto {
     @IsOptional()
     email?: string;
 
-    @ValidateIf(o => o.fechaProximaDisponibilidad !== '' && o.fechaProximaDisponibilidad !== null && o.fechaProximaDisponibilidad !== undefined)
-    @IsDateString({}, { message: 'La fecha de próxima disponibilidad debe ser una fecha válida' })
+    @IsString()
     @IsOptional()
-    fechaProximaDisponibilidad?: string;
+    dni?: string;
+
+    @IsString()
+    @IsOptional()
+    cuil?: string;
+
+    @IsString()
+    @IsOptional()
+    telefonoPrincipal?: string;
 
     @IsString()
     @IsOptional()
