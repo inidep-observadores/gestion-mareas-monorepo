@@ -73,22 +73,12 @@
         </div>
 
         <!-- Previsualización del Archivo -->
-        <div v-if="hasFile" class="flex flex-col flex-1 min-h-[300px] mt-2">
-          <div class="flex items-center justify-between mb-2">
-            <p class="text-[10px] font-black text-text-muted uppercase">Archivo Adjunto</p>
-            <a :href="fileUrlOriginal" target="_blank" class="text-[10px] font-bold text-primary hover:underline flex items-center gap-1 bg-primary/10 px-2 py-0.5 rounded-full transition-colors hover:bg-primary/20">
-              Abrir <ExternalLinkIcon class="w-3 h-3" />
-            </a>
-          </div>
-          <div class="flex-1 border border-border rounded-lg overflow-hidden bg-surface-muted relative shadow-inner">
-            <iframe 
-              :src="fileUrlPreview" 
-              class="w-full h-full border-none absolute inset-0"
-              title="Previsualización de documento"
-              allow="autoplay"
-            ></iframe>
-          </div>
-        </div>
+        <AttachmentViewer 
+          v-if="hasFile" 
+          :archivos="novedad.archivos" 
+          title="Archivo Adjunto" 
+          class="mt-2" 
+        />
 
         <!-- Historial de Movimientos -->
         <section v-if="novedad.movimientos && novedad.movimientos.length > 0" class="space-y-4 pb-4 mt-2">
@@ -157,6 +147,7 @@ import type { Novedad } from '../interfaces/novedad.interface';
 import { XIcon, ArrowRightIcon as ExternalLinkIcon, CheckIcon, EditIcon, FileTextIcon, HistoryIcon } from '@/icons';
 // Si tienes un icono Sparkles, lo importas, si no usamos otro
 import { SettingsIcon as SparklesIcon } from '@/icons';
+import AttachmentViewer from '@/components/common/AttachmentViewer.vue';
 
 const props = defineProps<{
   novedad: Novedad | null;
@@ -180,18 +171,6 @@ const formatDate = (isoStr: string) => {
 
 const hasFile = computed(() => {
   return props.novedad?.archivos && props.novedad.archivos.length > 0;
-});
-
-const fileUrlOriginal = computed(() => {
-  if (!hasFile.value) return '';
-  return props.novedad!.archivos![0].rutaArchivo;
-});
-
-const fileUrlPreview = computed(() => {
-  const url = fileUrlOriginal.value;
-  if (!url) return '';
-  // Transform Google Drive 'view' link to 'preview' to embed properly in iframes
-  return url.replace(/\/view\?usp=.*/, '/preview');
 });
 
 const sortedMovimientos = computed(() => {

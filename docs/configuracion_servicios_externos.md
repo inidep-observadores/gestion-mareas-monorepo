@@ -62,12 +62,19 @@ Dado que las cuentas estándar de Gmail no permiten que las "Cuentas de Servicio
    - Sigue los pasos en la consola para iniciar sesión, autorizar la app y pegar el código generado.
    - El script te arrojará el `GOOGLE_REFRESH_TOKEN`.
 
-5. **Variables de entorno (`.env`):**
+6. **Obtener el ID de la Carpeta (GOOGLE_DRIVE_FOLDER_ID):**
+   - Entra a tu [Google Drive](https://drive.google.com/).
+   - Crea una nueva carpeta donde quieres que el sistema guarde los archivos (ej: "Archivos SIGMA").
+   - Entra en esa carpeta haciendo doble clic.
+   - Observa la barra de direcciones (URL) de tu navegador. Tendrá un formato similar a: `https://drive.google.com/drive/folders/1A2b3C4d5E6f7G8h9I0j-kLmNoPqRsTuV`
+   - Copia la serie de caracteres que está después de `folders/` (en el ejemplo: `1A2b3C4d5E6f7G8h9I0j-kLmNoPqRsTuV`). Ese es tu ID de carpeta.
+
+7. **Variables de entorno (`.env`):**
    ```env
    GOOGLE_CLIENT_ID="tu-client-id"
    GOOGLE_CLIENT_SECRET="tu-client-secret"
    GOOGLE_REFRESH_TOKEN="el-token-generado"
-   GOOGLE_DRIVE_FOLDER_ID="opcional-id-de-la-carpeta"
+   GOOGLE_DRIVE_FOLDER_ID="ID-copiado-en-el-paso-anterior"
    ```
 
 ---

@@ -13,6 +13,19 @@ const novedadesAdminApi = {
     syncManual: async (): Promise<any> => {
         const { data } = await httpClient.post('/mail-admin/sync-manual');
         return data;
+    },
+
+    getLogs: async (params?: { 
+        page?: number, 
+        limit?: number,
+        search?: string,
+        startDate?: string,
+        endDate?: string,
+        sortBy?: string,
+        sortOrder?: string
+    }): Promise<{ items: any[], total: number, page: number, limit: number }> => {
+        const { data } = await httpClient.get('/mail-admin/logs', { params });
+        return data;
     }
 };
 

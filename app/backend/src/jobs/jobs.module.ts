@@ -14,6 +14,7 @@ import { BackupAutoProcessor } from './processors/backup-auto.processor';
 import { BackupModule } from '../admin/backup/backup.module';
 import { NovedadesEmailProcessor } from './processors/novedades-email.processor';
 import { NovedadesAiProcessor } from './processors/novedades-ai.processor';
+import { PurgeLogsService } from './purge-logs.service';
 
 @Global()
 @Module({
@@ -37,6 +38,7 @@ import { NovedadesAiProcessor } from './processors/novedades-ai.processor';
         JobQueueStatsService,
         NovedadesEmailProcessor,
         NovedadesAiProcessor,
+        PurgeLogsService,
     ],
     exports: [
         SchedulerService,

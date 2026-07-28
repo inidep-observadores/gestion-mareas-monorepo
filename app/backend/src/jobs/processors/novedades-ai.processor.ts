@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { NovedadesAiService } from '../../mail/novedades-ai.service';
 import { DriveStorageService } from '../../files/drive-storage.service';
+import { GotenbergService } from '../../files/gotenberg.service';
 import { JobProcessor } from '../job-types';
 import { DateUtils } from '../../common/utils/date.utils';
 import * as fs from 'fs/promises';
@@ -14,10 +15,11 @@ export class NovedadesAiProcessor implements JobProcessor {
         private readonly prisma: PrismaService,
         private readonly novedadesAiService: NovedadesAiService,
         private readonly driveStorageService: DriveStorageService,
+        private readonly gotenbergService: GotenbergService,
     ) {}
 
     async process(payload: any): Promise<any> {
-        const { emailLogId, fuente, texto, attachmentData, emailSubject, emailData } = payload;
+        const { emailLogId, fuente, texto, attachmentData, emailSubject, emailData, explicitDocType } = payload;
         this.logger.log(`Procesando IA para Log ID: ${emailLogId} | Fuente: ${fuente}`);
 
         let extracted: any = null;
@@ -43,7 +45,7 @@ export class NovedadesAiProcessor implements JobProcessor {
 
         try {
             // Extraer JSON estructurado con la IA
-            extracted = await this.novedadesAiService.procesarElemento(texto || '', attachment);
+            extracted = await this.novedadesAiService.procesarElemento(texto || '', attachment, explicitDocType);
             
             if (extracted.periodos && Array.isArray(extracted.periodos) && extracted.periodos.length > 0) {
                 // Buscar al observador
@@ -65,15 +67,41 @@ export class NovedadesAiProcessor implements JobProcessor {
                     const observador = obsBusqueda.observador;
                     
                     let uploadedDriveInfo: { fileId: string; webViewLink: string } | null = null;
-                    if (attachment) {
+                    let archivoFinal = attachment;
+
+                    // Si la fuente es el cuerpo del correo, generamos un PDF con Gotenberg
+                    if (fuente === 'CUERPO' && texto) {
+                        try {
+                            const htmlContent = `
+                                <html>
+                                <head><style>body { font-family: sans-serif; padding: 20px; }</style></head>
+                                <body>
+                                    <h2>Asunto: ${emailSubject}</h2>
+                                    <hr/>
+                                    <pre style="white-space: pre-wrap;">${texto}</pre>
+                                </body>
+                                </html>
+                            `;
+                            const pdfBuffer = await this.gotenbergService.convertHtmlToPdf(htmlContent);
+                            archivoFinal = {
+                                buffer: pdfBuffer,
+                                mimetype: 'application/pdf',
+                                filename: 'Cuerpo_Correo.pdf'
+                            };
+                        } catch (err: any) {
+                            this.logger.error(`Error generando PDF del cuerpo con Gotenberg: ${err.message}`);
+                        }
+                    }
+
+                    if (archivoFinal) {
                         try {
                             uploadedDriveInfo = await this.driveStorageService.uploadFile(
-                                attachment.filename,
-                                attachment.mimetype,
-                                attachment.buffer
+                                archivoFinal.filename,
+                                archivoFinal.mimetype,
+                                archivoFinal.buffer
                             );
                         } catch (err: any) {
-                            this.logger.error(`Error subiendo adjunto a Drive: ${err.message}`);
+                            this.logger.error(`Error subiendo archivo a Drive: ${err.message}`);
                         }
                     }
 
@@ -145,14 +173,14 @@ export class NovedadesAiProcessor implements JobProcessor {
                             });
                             novedadesIds.push(novedad.id);
 
-                            if (uploadedDriveInfo && attachment) {
+                            if (uploadedDriveInfo && archivoFinal) {
                                 try {
                                     await this.prisma.observadorNovedadArchivo.create({
                                         data: {
                                             novedadId: novedad.id,
                                             rutaArchivo: uploadedDriveInfo.webViewLink,
-                                            tipoArchivo: attachment.mimetype,
-                                            nombreOriginal: attachment.filename,
+                                            tipoArchivo: archivoFinal.mimetype,
+                                            nombreOriginal: archivoFinal.filename,
                                             driveFileId: uploadedDriveInfo.fileId,
                                         }
                                     });

@@ -1086,7 +1086,8 @@ model NovedadesEmailLog {
   remitente          String?
   fechaRecepcion     DateTime?                  @db.Timestamptz(6)
   fechaProcesamiento DateTime                   @default(now()) @map("fecha_procesamiento") @db.Timestamptz(6)
-  estado             String                     // 'PROCESADO', 'CON_ERRORES', 'CON_ADVERTENCIAS'
+  estado             String                     // 'PROCESADO', 'CON_ERRORES', 'CON_ADVERTENCIAS', 'IGNORADO', 'SIN_NOVEDAD'
+  clasificacionTriage Json?                     @map("clasificacion_triage")
   
   detalles           NovedadesEmailLogDetalle[]
 

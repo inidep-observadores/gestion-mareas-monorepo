@@ -80,6 +80,35 @@ const schemaDisponibilidadEmail = {
     required: ['observador', 'periodos']
 };
 
+// 4. Esquema para Triage (Fase 1)
+const schemaTriage = {
+    type: 'object',
+    properties: {
+        candidatos: {
+            type: 'array',
+            description: 'Lista de posibles novedades encontradas en el correo o sus adjuntos.',
+            items: {
+                type: 'object',
+                properties: {
+                    tipoDocumento: { 
+                        type: 'string', 
+                        enum: ['PASAJES', 'GDE', 'TEXTO_LIBRE', 'IRRELEVANTE'],
+                        description: 'Tipo de documento o novedad. Usar IRRELEVANTE si es spam, firmas de correo, o no contiene novedades.'
+                    },
+                    fuente: { 
+                        type: 'string', 
+                        enum: ['CUERPO_EMAIL', 'ADJUNTO'],
+                        description: 'Indica si la información está en el cuerpo del correo o en un archivo adjunto.'
+                    },
+                    nombreArchivo: { type: 'string', description: 'Obligatorio si la fuente es ADJUNTO. El nombre exacto del archivo adjunto.' }
+                },
+                required: ['tipoDocumento', 'fuente']
+            }
+        }
+    },
+    required: ['candidatos']
+};
+
 @Injectable()
 export class NovedadesAiService {
     private readonly logger = new Logger(NovedadesAiService.name);
@@ -99,8 +128,32 @@ export class NovedadesAiService {
     }
 
 
+    async clasificarEmail(asunto: string, cuerpoTexto: string, nombresAdjuntos: string[]): Promise<any> {
+        const promptSystem = 'Eres un asistente clasificador de correos (Triage). Analiza el Asunto, el Cuerpo y la lista de Archivos Adjuntos para determinar qué partes contienen información sobre "Novedades de Observadores Pesqueros" (Licencias, Francos, Pasajes, Descansos, etc.). Ignora imágenes de firmas o correos que no tengan relevancia devolviendo tipoDocumento IRRELEVANTE. IMPORTANTE: Si la única información relevante se encuentra en un adjunto y el cuerpo del correo solo dice cosas como "Adjunto pasaje" o es una firma, clasifica el CUERPO_EMAIL como IRRELEVANTE para evitar duplicaciones. Solo genera un candidato CUERPO_EMAIL si el cuerpo menciona información útil distinta o complementaria. Si hay un adjunto con un pasaje o nota GDE, devuelve un candidato ADJUNTO con el nombre exacto del archivo. Puede haber múltiples candidatos (ej. un texto sustancial en el cuerpo y un pasaje en un adjunto).';
 
-    async procesarElemento(texto: string, attachment?: { buffer: Buffer, mimetype: string, filename: string }): Promise<any> {
+        const content = `Asunto: ${asunto || ''}\n\nCuerpo:\n${cuerpoTexto || ''}\n\nArchivos Adjuntos:\n${nombresAdjuntos.join(', ')}`;
+
+        const requestPayload = {
+            contents: [{ role: 'user', parts: [{ text: `${promptSystem}\n\nDatos:\n"""\n${content}\n"""` }] }],
+            config: {
+                responseMimeType: 'application/json',
+                responseSchema: schemaTriage,
+            }
+        };
+
+        try {
+            const response = await this.ai.models.generateContent({
+                model: this.modelName,
+                ...requestPayload
+            });
+            return JSON.parse(response.text || '{"candidatos": []}');
+        } catch (error: any) {
+            this.logger.error(`Error en Triage AI: ${error.message}`);
+            throw new Error(`Error clasificando correo: ${error.message}`);
+        }
+    }
+
+    async procesarElemento(texto: string, attachment?: { buffer: Buffer, mimetype: string, filename: string }, explicitDocType?: 'PASAJES' | 'GDE' | 'TEXTO_LIBRE'): Promise<any> {
         let textContent = texto || '';
         let isScanOrImage = false;
         let mimeType = 'text/plain';
@@ -136,7 +189,7 @@ export class NovedadesAiService {
             }
         }
 
-        let docType: 'PASAJES' | 'GDE' | 'TEXTO_LIBRE' = 'TEXTO_LIBRE';
+        let docType: 'PASAJES' | 'GDE' | 'TEXTO_LIBRE' = explicitDocType || 'TEXTO_LIBRE';
         let configSchema: any;
         let promptSystem = '';
 
@@ -144,27 +197,17 @@ export class NovedadesAiService {
         const contextAdicional = `\nLa fecha actual es: ${fechaActualStr}. Si el texto no especifica el año, utiliza o deduce el año basándote en esta fecha actual. Extrae SIEMPRE formato YYYY-MM-DD.` + 
             (attachment ? `\n\nDATO CLAVE: El nombre del archivo adjunto es "${attachment.filename}". A menudo, el nombre del archivo contiene el número de GDE exacto (con guiones y letras, ej: NO-2026-67719830-APN-DIOYT...). Úsalo para extraer el "numeroGde" si no se lee bien en el texto.` : '');
 
-        if (isScanOrImage && !textContent) {
-            docType = 'PASAJES';
+        if (docType === 'GDE') {
+            configSchema = schemaNovedadesGDE;
+            promptSystem = 'Extrae los datos de la nota administrativa oficial de GDE (Licencias, Francos Compensatorios, etc.). Asegúrate de extraer EXPRESAMENTE el "Número de GDE" (ej: NO-2026-67720716-APN-DIOYT#INIDEP). También extrae el "CUIL" o "DNI" del observador. ' +
+                'ATENCIÓN A DÍAS DISCONTINUOS O SALTEADOS: Cuando la nota enumere días discontinuos o salteados (ej: "días 20, 22, 23 y 24"), NUNCA crees un único rango continuo que incluya los días intermedios ausentes. Debes dividir la solicitud en múltiples elementos dentro del array "periodos", agrupando solo días consecutivos (ej: Período 1: 2026-07-20 a 2026-07-20; Período 2: 2026-07-22 a 2026-07-24). ' +
+                'IMPORTANTE PARA LICENCIAS ANUALES ORDINARIAS (Vacaciones): Presta especial atención a la tabla de fechas. Debido al formato OCR, a veces las columnas aparecen pegadas, por ejemplo: "202420/07/202629/07/202610". Esto significa: Año 2024, Fecha Desde 20/07/2026, Fecha Hasta 29/07/2026, y 10 días. Extrae las fechas de inicio y fin basándote en esta lógica de descompresión de texto pegado. Ignora el "Año" de devengamiento de la licencia (ej. 2024), solo nos importan las fechas reales (F/ DESDE y F/ HASTA) para el período.' + contextAdicional;
+        } else if (docType === 'PASAJES') {
             configSchema = schemaPasajes;
-            promptSystem = 'Extrae la información del boleto/pasaje de viaje. Asegúrate de extraer el DNI si figura. Si es otro tipo de documento, intenta mapearlo a este esquema.' + contextAdicional;
+            promptSystem = 'Extrae los datos del viaje del boleto o e-ticket. Asegúrate de extraer el DNI del pasajero si figura. PRECAUCIÓN CON EL FORMATO: Al extraerse el texto de un PDF con columnas, es posible que los datos se mezclen línea por línea. Busca expresamente la etiqueta "ORIGEN" para determinar la ciudad de origen y la etiqueta "DESTINO" para el destino. No confundas el origen con campos como "SE ANUNCIA A".' + contextAdicional;
         } else {
-            const cleanText = textContent.toLowerCase();
-            if (cleanText.includes('poder ejecutivo nacional') || cleanText.includes('referencia:')) {
-                docType = 'GDE';
-                configSchema = schemaNovedadesGDE;
-                promptSystem = 'Extrae los datos de la nota administrativa oficial de GDE (Licencias, Francos Compensatorios, etc.). Asegúrate de extraer EXPRESAMENTE el "Número de GDE" (ej: NO-2026-67720716-APN-DIOYT#INIDEP). También extrae el "CUIL" o "DNI" del observador. ' +
-                    'ATENCIÓN A DÍAS DISCONTINUOS O SALTEADOS: Cuando la nota enumere días discontinuos o salteados (ej: "días 20, 22, 23 y 24"), NUNCA crees un único rango continuo que incluya los días intermedios ausentes. Debes dividir la solicitud en múltiples elementos dentro del array "periodos", agrupando solo días consecutivos (ej: Período 1: 2026-07-20 a 2026-07-20; Período 2: 2026-07-22 a 2026-07-24). ' +
-                    'IMPORTANTE PARA LICENCIAS ANUALES ORDINARIAS (Vacaciones): Presta especial atención a la tabla de fechas. Debido al formato OCR, a veces las columnas aparecen pegadas, por ejemplo: "202420/07/202629/07/202610". Esto significa: Año 2024, Fecha Desde 20/07/2026, Fecha Hasta 29/07/2026, y 10 días. Extrae las fechas de inicio y fin basándote en esta lógica de descompresión de texto pegado. Ignora el "Año" de devengamiento de la licencia (ej. 2024), solo nos importan las fechas reales (F/ DESDE y F/ HASTA) para el período.' + contextAdicional;
-            } else if (cleanText.includes('boleto') || cleanText.includes('pasaje') || cleanText.includes('butaca') || cleanText.includes('voucher') || cleanText.includes('origen:')) {
-                docType = 'PASAJES';
-                configSchema = schemaPasajes;
-                promptSystem = 'Extrae los datos del viaje del boleto o e-ticket. Asegúrate de extraer el DNI del pasajero si figura. PRECAUCIÓN CON EL FORMATO: Al extraerse el texto de un PDF con columnas, es posible que los datos se mezclen línea por línea. Busca expresamente la etiqueta "ORIGEN" para determinar la ciudad de origen y la etiqueta "DESTINO" para el destino. No confundas el origen con campos como "SE ANUNCIA A".' + contextAdicional;
-            } else {
-                docType = 'TEXTO_LIBRE';
-                configSchema = schemaDisponibilidadEmail;
-                promptSystem = 'Extrae los datos del mensaje informal de disponibilidad u otras novedades. ATENCIÓN A DÍAS DISCONTINUOS O SALTEADOS: Cuando se informen días no consecutivos, genera un elemento independiente en el array "periodos" para cada bloque de días consecutivos. IMPORTANTE: Si notas que el mensaje o adjunto contiene datos de un pasaje, ticket o boleto de viaje, extraelo como VIAJE_INICIO o VIAJE_FIN según su origen/destino respecto a Mar del Plata. Mapea todos los rangos o días mencionados al array de periodos.' + contextAdicional;
-            }
+            configSchema = schemaDisponibilidadEmail;
+            promptSystem = 'Extrae los datos del mensaje informal de disponibilidad u otras novedades. ATENCIÓN: Solo extrae datos que estén EXPLÍCITAMENTE ESCRITOS en el texto. NO INVENTES NI DEDUZCAS viajes, ciudades o fechas basándote únicamente en el Asunto del correo. Si el texto es breve y solo dice "Adjunto pasaje" o similar, devuelve un array "periodos" VACÍO para evitar duplicaciones con el archivo adjunto. ATENCIÓN A DÍAS DISCONTINUOS O SALTEADOS: Cuando se informen días no consecutivos, genera un elemento independiente en el array "periodos". Mapea todos los rangos o días mencionados al array de periodos.' + contextAdicional;
         }
 
         const requestPayload = {

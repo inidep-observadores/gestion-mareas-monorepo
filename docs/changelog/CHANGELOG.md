@@ -10,8 +10,11 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 - **backend:** implementar soporte y detección de días discontinuos o salteados en notas GDE y disponibilidades procesadas por IA
 - **backend:** implementar fallback automático a modelo secundario para manejo de límites de cuota en IA
 - **novedades:** incluir exclusión automática de fines de semana y feriados (Prisma) en periodos de Francos Compensatorios (FC)
+- **frontend:** crear componente reutilizable `AttachmentViewer` para alternar entre previsualización y lista de enlaces, con persistencia de preferencia del usuario
+- **admin:** añadir buscador interactivo de texto completo en la vista de auditoría de correos (`AuditoriaEmailsView`)
 
 ### Changed
+- **admin:** sustituir bloques estáticos de adjuntos por `AttachmentViewer` en auditoría de correos y detalle de novedades
 - **novedades:** implementar borrado lógico para auditoría y persistencia histórica
 - **presentismo:** permitir solapamiento válido entre estados navegando y en viaje
 - **presentismo:** optimizar estética de estados duales y acortar etiqueta médica en Excel
