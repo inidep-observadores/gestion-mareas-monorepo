@@ -946,6 +946,7 @@ model ObservadorNovedad {
   motivo             String?
   estadoAprobacion   String                        @default("APROBADA") @map("estado_aprobacion")
   origen             String                        @default("MANUAL")
+  activo             Boolean                       @default(true)
   metadata           Json?
   creadoPorId        String?                       @map("creado_por_id") @db.Uuid
   fechaCreacion      DateTime                      @default(now()) @map("fecha_creacion") @db.Timestamptz(6)

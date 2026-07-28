@@ -39,7 +39,7 @@ export class NovedadesController {
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.novedadesService.remove(id);
+  remove(@Param('id') id: string, @GetUser() user: User) {
+    return this.novedadesService.remove(id, user);
   }
 }

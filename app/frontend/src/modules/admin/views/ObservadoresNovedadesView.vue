@@ -125,7 +125,7 @@
             <button @click="openEditModal(novedad)" class="font-bold text-primary hover:underline">
                 Editar
             </button>
-            <button v-if="novedad.estadoAprobacion !== 'PENDIENTE'" @click="deleteNovedad(novedad)" class="font-bold text-error hover:underline" title="Eliminar">
+            <button @click="deleteNovedad(novedad)" class="font-bold text-error hover:underline" title="Eliminar">
               <TrashIcon class="w-4 h-4" />
             </button>
           </div>

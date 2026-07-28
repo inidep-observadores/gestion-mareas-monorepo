@@ -12,6 +12,7 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 - **novedades:** incluir exclusión automática de fines de semana y feriados (Prisma) en periodos de Francos Compensatorios (FC)
 
 ### Changed
+- **novedades:** implementar borrado lógico para auditoría y persistencia histórica
 - **presentismo:** permitir solapamiento válido entre estados navegando y en viaje
 - **presentismo:** optimizar estética de estados duales y acortar etiqueta médica en Excel
 

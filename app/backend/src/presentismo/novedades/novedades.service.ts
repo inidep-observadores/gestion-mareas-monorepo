@@ -12,7 +12,7 @@ export class NovedadesService {
   constructor(private readonly prisma: PrismaService) {}
 
   async findAll(observadorId?: string, estadoAprobacion?: string) {
-    const where: any = {};
+    const where: any = { activo: true };
     if (observadorId) where.observadorId = observadorId;
     if (estadoAprobacion) where.estadoAprobacion = estadoAprobacion;
 
@@ -55,7 +55,7 @@ export class NovedadesService {
       },
     });
 
-    if (!novedad) throw new NotFoundException(`Novedad con ID ${id} no encontrada`);
+    if (!novedad || !novedad.activo) throw new NotFoundException(`Novedad con ID ${id} no encontrada`);
     return novedad;
   }
 
@@ -116,6 +116,7 @@ export class NovedadesService {
         observadorId: createNovedadDto.observadorId,
         tipoNovedadId: createNovedadDto.tipoNovedadId,
         estadoAprobacion: { not: 'RECHAZADA' },
+        activo: true,
         AND: overlapConditions
       }
     });
@@ -196,6 +197,7 @@ export class NovedadesService {
           observadorId: existing.observadorId,
           tipoNovedadId: data.tipoNovedadId !== undefined ? data.tipoNovedadId : existing.tipoNovedadId,
           estadoAprobacion: { not: 'RECHAZADA' },
+          activo: true,
           AND: overlapConditions
         }
       });
@@ -285,10 +287,21 @@ export class NovedadesService {
     }
   }
 
-  async remove(id: string) {
-    await this.findOne(id);
-    return this.prisma.observadorNovedad.delete({
+  async remove(id: string, user?: User) {
+    const existing = await this.findOne(id);
+    return this.prisma.observadorNovedad.update({
       where: { id },
+      data: {
+        activo: false,
+        movimientos: {
+          create: {
+            tipoEvento: 'BORRADO_LOGICO',
+            estadoAnterior: existing.estadoAprobacion,
+            estadoNuevo: existing.estadoAprobacion,
+            usuarioId: user?.id,
+          }
+        }
+      }
     });
   }
 }
