@@ -122,20 +122,12 @@
           </div>
         </div>
         
-        <div v-if="editData?.archivos && editData.archivos.length > 0" class="space-y-3 mt-4">
-          <h4 class="text-[10px] font-black text-text-muted uppercase tracking-wider">Archivos Adjuntos</h4>
-          <div v-for="archivo in editData.archivos" :key="archivo.id" class="border border-border rounded-lg overflow-hidden bg-white dark:bg-gray-900 shadow-sm">
-            <div class="p-2 border-b border-border bg-surface flex items-center justify-between">
-              <span class="text-xs font-bold text-text truncate pr-2">{{ archivo.nombreOriginal }}</span>
-              <a :href="getArchivoUrl(archivo)" target="_blank" class="text-[10px] text-primary font-bold uppercase hover:underline whitespace-nowrap">Abrir</a>
-            </div>
-            <img v-if="isImage(archivo.tipoMime)" :src="getArchivoUrl(archivo)" class="w-full h-auto object-contain max-h-[300px] bg-gray-100" />
-            <iframe v-else-if="archivo.tipoMime === 'application/pdf'" :src="getArchivoUrl(archivo)" class="w-full h-[400px]" frameborder="0"></iframe>
-            <div v-else class="p-6 text-center text-text-muted text-xs">
-              Vista previa no disponible para este tipo de archivo.
-            </div>
-          </div>
-        </div>
+        <AttachmentViewer 
+          v-if="editData?.archivos && editData.archivos.length > 0" 
+          :archivos="editData.archivos" 
+          title="Archivos Adjuntos" 
+          class="mt-4" 
+        />
       </div>
     </div>
   </BaseModal>
@@ -148,6 +140,7 @@ import SearchableSelect from '@/components/common/SearchableSelect.vue'
 import DatePicker from '@/components/common/DatePicker.vue'
 import BaseSwitch from '@/components/ui/BaseSwitch.vue'
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
+import AttachmentViewer from '@/components/common/AttachmentViewer.vue'
 import catalogosService from '@/modules/mareas/services/catalogos.service'
 import tiposNovedadApi from '../services/tipos-novedad.service'
 import {
@@ -219,15 +212,6 @@ const hasPreview = computed(() => {
   const hasArchivos = props.editData.archivos && props.editData.archivos.length > 0
   return hasMetadataBody || hasArchivos
 })
-
-const isImage = (mimeType: string) => {
-  return mimeType && mimeType.startsWith('image/')
-}
-
-const getArchivoUrl = (archivo: any) => {
-  // Asumimos una ruta estándar para acceder a los archivos de novedades, o si tienen url completa
-  return archivo.url || `/api/presentismo/novedades/archivos/${archivo.id}`
-}
 
 onMounted(async () => {
   try {
