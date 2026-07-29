@@ -27,12 +27,61 @@
         <BaseDataList 
           title="Gestión de Novedades" 
       description="Administración de licencias, francos compensatorios y otras novedades de los observadores."
-      button-text="Nueva Novedad" 
       :items="filteredNovedades"
       :is-loading="isLoading" 
       v-model:search="searchQuery" 
-      search-placeholder="Buscar novedad por observador o motivo..."
-      @create="openCreateModal">
+      search-placeholder="Buscar novedad por observador o motivo...">
+
+      <template #filters>
+        <div class="flex flex-col items-end gap-3 w-full">
+          <button 
+            @click="openCreateModal" 
+            class="flex items-center justify-center gap-2 rounded-lg bg-brand-500 px-4 py-2 text-sm font-semibold text-white shadow-theme-xs hover:bg-brand-600 disabled:opacity-50 transition-colors"
+          >
+            <PlusIcon class="w-4 h-4 stroke-[3]" />
+            Nueva Novedad
+          </button>
+
+          <div class="flex flex-wrap items-center gap-2">
+            <select 
+              v-model="filterContrato"
+              class="px-3 py-2.5 bg-surface border border-border rounded-lg text-sm focus:outline-none focus:border-primary cursor-pointer text-text"
+            >
+              <option value="">Contrato (Todos)</option>
+              <option v-for="c in TIPO_CONTRATO" :key="c.id" :value="c.id">{{ c.name }}</option>
+            </select>
+
+            <select 
+              v-model="filterOrigen"
+              class="px-3 py-2.5 bg-surface border border-border rounded-lg text-sm focus:outline-none focus:border-primary cursor-pointer text-text"
+            >
+              <option value="">Origen (Todos)</option>
+              <option v-for="o in origenesPermitidos" :key="o" :value="o">{{ o }}</option>
+            </select>
+
+            <div class="flex items-center gap-2">
+              <DatePicker 
+                v-model="filterFechaInicio"
+                placeholder="Desde..."
+                class="w-32"
+              />
+              <span class="text-text-muted">-</span>
+              <DatePicker 
+                v-model="filterFechaFin"
+                placeholder="Hasta..."
+                class="w-32"
+              />
+            </div>
+
+            <button @click="clearFilters"
+              class="group flex items-center gap-2 px-4 py-2.5 rounded-xl border border-border text-[10px] font-black uppercase tracking-widest text-text-muted hover:bg-surface-muted hover:text-primary transition-all active:scale-95 bg-surface shadow-theme-xs"
+              title="Limpiar filtros">
+              <RefreshCcwIcon class="w-3.5 h-3.5 group-hover:rotate-180 transition-transform duration-500" />
+              Limpiar
+            </button>
+          </div>
+        </div>
+      </template>
       
       <template #table-header>
         <th scope="col" class="px-6 py-3 cursor-pointer group" @click="handleSort('observador.apellido')">
@@ -280,11 +329,32 @@ import ConfirmationDialog from '@/components/common/ConfirmationDialog.vue';
 import { novedadesService } from '../services/novedades.service';
 import type { Novedad } from '../interfaces/novedad.interface';
 import { toast } from 'vue-sonner';
-import { TrashIcon, ChevronDownIcon, EditIcon } from '@/icons';
+import { TrashIcon, ChevronDownIcon, EditIcon, PlusIcon } from '@/icons';
+import { RefreshCcwIcon } from 'lucide-vue-next';
+import { TIPO_CONTRATO } from '../constants/observador.constants';
+import DatePicker from '@/components/common/DatePicker.vue';
 
 const novedades = ref<Novedad[]>([]);
 const isLoading = ref(true);
 const searchQuery = ref('');
+
+const filterContrato = ref('');
+const filterOrigen = ref('');
+const filterFechaInicio = ref<string | null>(null);
+const filterFechaFin = ref<string | null>(null);
+
+const origenesPermitidos = computed(() => {
+  const set = new Set(novedades.value.map(n => n.origen || 'MANUAL'));
+  return Array.from(set).sort();
+});
+
+const clearFilters = () => {
+  searchQuery.value = '';
+  filterContrato.value = '';
+  filterOrigen.value = '';
+  filterFechaInicio.value = null;
+  filterFechaFin.value = null;
+};
 
 const showSidePanel = ref(false);
 const sidePanelNovedad = ref<Novedad | null>(null);
@@ -352,6 +422,24 @@ const filteredNovedades = computed(() => {
             const tipo = (n.tipoNovedad?.descripcion || '').toLowerCase();
             return obsNombre.includes(query) || motivo.includes(query) || tipo.includes(query);
         });
+    }
+
+    if (filterContrato.value) {
+        items = items.filter(n => n.observador?.tipoContrato === filterContrato.value);
+    }
+    
+    if (filterOrigen.value) {
+        items = items.filter(n => (n.origen || 'MANUAL') === filterOrigen.value);
+    }
+
+    if (filterFechaInicio.value) {
+        const start = new Date(filterFechaInicio.value).setHours(0,0,0,0);
+        items = items.filter(n => new Date(n.fechaInicio).getTime() >= start);
+    }
+
+    if (filterFechaFin.value) {
+        const end = new Date(filterFechaFin.value).setHours(23,59,59,999);
+        items = items.filter(n => new Date(n.fechaInicio).getTime() <= end);
     }
 
     items.sort((a: any, b: any) => {

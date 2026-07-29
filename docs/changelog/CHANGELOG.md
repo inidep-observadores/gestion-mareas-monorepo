@@ -6,6 +6,7 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 ## [Unreleased]
 
 ### Added
+- **admin:** añadir filtros avanzados por contrato, origen y rango de fechas en la vista de novedades
 - **docs:** agregar guía completa para la renovación y configuración del Refresh Token permanente de Google Drive
 - **backend:** implementar soporte y detección de días discontinuos o salteados en notas GDE y disponibilidades procesadas por IA
 - **backend:** implementar fallback automático a modelo secundario para manejo de límites de cuota en IA
