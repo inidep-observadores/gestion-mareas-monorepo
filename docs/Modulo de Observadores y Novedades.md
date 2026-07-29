@@ -66,3 +66,7 @@ El flujo diario y mensual estándar para un usuario interactuando con este módu
    - Realiza un barrido visual en busca de días rojos (`CONFLICTO`). Si los halla, soluciona la inconsistencia subyacente (arreglando una etapa de marea sin cerrar o un error de fechas en una novedad).
    - Una vez la matriz no presenta conflictos, utiliza el botón de **"Exportar a Excel"**.
    - El sistema le provee de una planilla corporativa, con un diseño pulido, totales contables y marcas en colores, lista para entregar al Departamento de Recursos Humanos.
+
+## 5. Documentación de Análisis Relacionada
+
+- [Análisis de Descubrimiento de Novedades por IA: Presentismo vs. Planificación de Embarques](file:///d:/Desarrollo/_INIDEP/OBS/Mareas/gestion-mareas-monorepo/docs/Analisis_Descubrimiento_Novedades_IA_Presentismo_Planificacion.md): Documento detallado con la especificación de dominio para el desacoplamiento de Presentismo y Planificación de Embarques, clasificación de novedades Formales/Informales y resolución de escenarios complejos de solapamiento y fraccionamiento de disponibilidad.
