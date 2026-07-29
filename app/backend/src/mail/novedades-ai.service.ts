@@ -282,6 +282,7 @@ export class NovedadesAiService {
                 } else {
                     // Si no incluye Mar del Plata en origen o destino, o falta la fecha, lo ignoramos dejando periodos vacío
                     parsedJson.periodos = [];
+                    parsedJson._metadata.motivoDescarte = 'VIAJE_SIN_MDQ';
                 }
             }
 

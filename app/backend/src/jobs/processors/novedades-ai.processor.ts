@@ -193,7 +193,11 @@ export class NovedadesAiProcessor implements JobProcessor {
                 }
             } else {
                 estadoDetalle = 'ERROR';
-                errorDetalle = 'SIN_PERIODOS_EXTRAIDOS';
+                if (extracted?._metadata?.motivoDescarte === 'VIAJE_SIN_MDQ') {
+                    errorDetalle = 'VIAJE_SIN_MDQ';
+                } else {
+                    errorDetalle = 'SIN_PERIODOS_EXTRAIDOS';
+                }
             }
         } catch (error: any) {
             this.logger.error(`Error analizando elemento (${fuente}): ${error.message}`);

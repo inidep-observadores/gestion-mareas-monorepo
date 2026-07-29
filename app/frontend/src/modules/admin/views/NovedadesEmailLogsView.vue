@@ -150,7 +150,7 @@
                     
                     <div v-if="detalle.errorDetalle" class="p-4 mb-4 bg-error/5 rounded-xl border border-error/20 text-sm italic text-error shadow-inner">
                         <div class="flex items-center gap-2 font-bold mb-1"><ChatIcon class="w-4 h-4" /> Motivo del Fallo</div>
-                        {{ detalle.errorDetalle }}
+                        {{ formatErrorDetalle(detalle.errorDetalle) }}
                     </div>
                     
                     <div v-if="detalle.extraccionAi" class="bg-surface-muted rounded-xl border border-border overflow-hidden mt-4">
@@ -247,6 +247,21 @@ const formatEstadoCorto = (estado: string) => {
     if (estado === 'CON_ERRORES') return 'ERRORES';
     if (estado === 'CON_ADVERTENCIAS') return 'ADVERTENCIA';
     return estado;
+}
+
+const formatErrorDetalle = (error: string) => {
+    if (!error) return '';
+    switch (error) {
+        case 'SIN_PERIODOS_EXTRAIDOS': return 'No se detectaron períodos o fechas válidas en el documento.';
+        case 'VIAJE_SIN_MDQ': return 'El pasaje fue ignorado porque el origen o destino del viaje no es Mar del Plata.';
+        case 'OBSERVADOR_NO_ENCONTRADO': return 'No se encontró un observador en la base de datos que coincida con los datos extraídos.';
+        case 'OBSERVADOR_DUDOSO (Múltiples coincidencias parciales)': return 'Hay múltiples observadores con nombres similares. Requiere revisión manual.';
+        default: 
+            if (error.includes('El observador ya tiene una novedad de este tipo')) {
+                return 'El observador ya tiene una novedad registrada para estas fechas.';
+            }
+            return error;
+    }
 }
 
 const formatDateShort = (dateStr: string) => {
