@@ -7,7 +7,7 @@
           <h1 class="text-2xl font-black text-text uppercase tracking-tight">Planilla Mensual de Presentismo</h1>
           <p class="text-sm font-medium text-text-muted mt-1">Cruce dinámico de Mareas, Puertos y Novedades</p>
         </div>
-        
+
         <div class="flex flex-wrap items-center gap-3">
           <!-- Selector de Mes -->
           <div class="relative">
@@ -71,7 +71,7 @@
       <!-- Filtros Compactos -->
       <div v-if="data" class="flex flex-wrap items-center gap-6 p-4 rounded-xl border border-border bg-surface shadow-sm">
         <SearchInput v-model="searchQuery" placeholder="Buscar observador..." class="w-full md:w-64 shrink-0" />
-        
+
         <div class="flex flex-wrap items-center gap-4 flex-1">
           <div class="flex items-center gap-2">
             <span class="text-[10px] font-black uppercase tracking-widest text-text-muted mr-1">Observador:</span>
@@ -79,7 +79,7 @@
               {{ t }}
             </button>
           </div>
-          
+
           <div class="w-px h-6 bg-border mx-2 hidden lg:block"></div>
 
           <div class="flex items-center gap-2">
@@ -92,7 +92,7 @@
       </div>
 
       <!-- Loading State -->
-      <div v-if="isLoading" class="p-12 flex flex-col items-center justify-center bg-surface border border-border rounded-2xl">
+      <div v-if="isLoading && !data" class="p-12 flex flex-col items-center justify-center bg-surface border border-border rounded-2xl">
         <div class="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4"></div>
         <p class="text-sm font-bold text-text-muted">Cargando matriz de presentismo...</p>
       </div>
@@ -100,17 +100,17 @@
       <template v-else-if="data">
         <!-- Tabs -->
         <div class="flex items-center gap-4 border-b border-border mb-4 px-2">
-          <button 
-            @click="activeTab = 'grilla'" 
-            :class="['px-4 py-2 font-bold text-sm border-b-2 transition-colors -mb-[1px]', activeTab === 'grilla' ? 'border-primary text-primary' : 'border-transparent text-text-muted hover:text-text hover:border-border']"
-          >
-            Grilla Clásica
-          </button>
-          <button 
-            @click="activeTab = 'timeline'" 
+          <button
+            @click="activeTab = 'timeline'"
             :class="['px-4 py-2 font-bold text-sm border-b-2 transition-colors -mb-[1px]', activeTab === 'timeline' ? 'border-primary text-primary' : 'border-transparent text-text-muted hover:text-text hover:border-border']"
           >
-            Línea de Tiempo (Vis)
+            Línea de Tiempo
+          </button>
+          <button
+            @click="activeTab = 'grilla'"
+            :class="['px-4 py-2 font-bold text-sm border-b-2 transition-colors -mb-[1px]', activeTab === 'grilla' ? 'border-primary text-primary' : 'border-transparent text-text-muted hover:text-text hover:border-border']"
+          >
+            Tabla Clásica
           </button>
         </div>
 
@@ -129,7 +129,7 @@
                 <!-- Días -->
                 <th v-for="dia in data.diasMes" :key="dia" class="sticky top-0 z-30 bg-surface-muted px-1 py-1 text-center border-r border-border min-w-[36px] shadow-[0_2px_5px_-2px_rgba(0,0,0,0.1)]">
                   <div class="flex flex-col items-center justify-center">
-                    <span 
+                    <span
                       class="text-[10px] uppercase transition-colors leading-tight"
                       :class="{
                         'text-error font-black': data.feriados[dia],
@@ -138,7 +138,7 @@
                       }">
                       {{ getDiaSemana(dia) }}
                     </span>
-                    <span 
+                    <span
                       class="text-xs transition-colors leading-tight mt-0.5"
                       :class="{
                         'text-error font-black': data.feriados[dia],
@@ -163,7 +163,7 @@
                     {{ row.observador.apellido }}, {{ row.observador.nombre }}
                   </div>
                 </td>
-                
+
                 <!-- Días -->
                 <td v-for="dia in data.diasMes" :key="dia" class="p-1 border-r border-border relative group/cell">
                   <div class="w-full min-h-8 rounded flex items-center justify-center transition-all cursor-default" :class="[getCellClass(row.dias[dia]), row.dias[dia]?.computaFranco ? 'ring-2 ring-red-500 ring-inset shadow-md font-extrabold' : '']">
@@ -229,14 +229,17 @@ const months = [
 ];
 
 const data = ref<PlanillaMensualResponse | null>(null);
+const prevData = ref<PlanillaMensualResponse | null>(null);
+const nextData = ref<PlanillaMensualResponse | null>(null);
 const isLoading = ref(false);
 const searchQuery = ref('');
 
-const activeTab = ref('grilla');
+const activeTab = ref('timeline');
 
 // Vis-Timeline
 const timelineContainer = ref<HTMLElement | null>(null);
 let timelineInstance: any = null;
+let currentContainer: HTMLElement | null = null;
 
 
 
@@ -286,24 +289,35 @@ const filteredMatriz = computed(() => {
 const fetchData = async () => {
   isLoading.value = true;
   try {
-    const response = await presentismoApi.obtenerPlanillaMensual(selectedYear.value, selectedMonth.value);
-    
+    const prevMonthDate = new Date(selectedYear.value, selectedMonth.value - 2, 1);
+    const nextMonthDate = new Date(selectedYear.value, selectedMonth.value, 1);
+
+    const [prevRes, currentRes, nextRes] = await Promise.all([
+      presentismoApi.obtenerPlanillaMensual(prevMonthDate.getFullYear(), prevMonthDate.getMonth() + 1).catch(() => null),
+      presentismoApi.obtenerPlanillaMensual(selectedYear.value, selectedMonth.value),
+      presentismoApi.obtenerPlanillaMensual(nextMonthDate.getFullYear(), nextMonthDate.getMonth() + 1).catch(() => null)
+    ]);
+
     // Inicializar filtros por defecto (marcar todos menos TECNICO y MONOTRIBUTISTA)
     const newActiveTO = new Set<string>();
     const newActiveTC = new Set<string>();
-    
-    response.matriz.forEach(r => {
+
+    currentRes.matriz.forEach((r: any) => {
       if (r.observador.tipoObservador !== 'TECNICO') newActiveTO.add(r.observador.tipoObservador);
       if (r.observador.tipoContrato !== 'MONOTRIBUTISTA') newActiveTC.add(r.observador.tipoContrato);
     });
-    
+
     activeTipoObservador.value = newActiveTO;
     activeTipoContrato.value = newActiveTC;
-    
-    data.value = response;
+
+    data.value = currentRes;
+    prevData.value = prevRes;
+    nextData.value = nextRes;
   } catch (error) {
     toast.error('Ocurrió un error al cargar la planilla mensual');
     data.value = null;
+    prevData.value = null;
+    nextData.value = null;
   } finally {
     isLoading.value = false;
   }
@@ -311,7 +325,7 @@ const fetchData = async () => {
 
 watch([activeTab, filteredMatriz, selectedMonth, selectedYear], async () => {
   if (!data.value) return;
-  
+
   if (activeTab.value === 'timeline') {
     await nextTick();
     renderTimeline();
@@ -321,17 +335,17 @@ watch([activeTab, filteredMatriz, selectedMonth, selectedYear], async () => {
 const extractContiguousBlocks = (row: any) => {
   const dias = row.dias;
   const diasNumeros = Object.keys(dias).map(Number).sort((a, b) => a - b);
-  
+
   let currentState: string | null = null;
   let currentStart: number | null = null;
   let currentEnd: number | null = null;
   let currentData: DiaEstado | null = null;
   const blocks: any[] = [];
-  
+
   for (let i = 0; i < diasNumeros.length; i++) {
     const dia = diasNumeros[i];
     const diaData = dias[dia];
-    
+
     if (!diaData || diaData.estado === 'LIBRE' || diaData.estado === 'FIN_SEMANA') {
       if (currentState && currentStart !== null && currentData) {
         blocks.push(buildBlockInfo(currentState, currentStart, dia - 1, currentData));
@@ -339,9 +353,9 @@ const extractContiguousBlocks = (row: any) => {
       }
       continue;
     }
-    
+
     const estadoSignature = `${diaData.estado}-${diaData.estadoSecundario || ''}-${diaData.codigoCorto || ''}`;
-    
+
     if (currentState !== estadoSignature) {
       if (currentState && currentStart !== null && currentData) {
         blocks.push(buildBlockInfo(currentState, currentStart, dia - 1, currentData));
@@ -352,7 +366,7 @@ const extractContiguousBlocks = (row: any) => {
     }
     currentEnd = dia;
   }
-  
+
   if (currentState && currentStart !== null && currentEnd !== null && currentData) {
     blocks.push(buildBlockInfo(currentState, currentStart, currentEnd, currentData));
   }
@@ -363,7 +377,7 @@ const buildBlockInfo = (stateSignature: string, startDia: number, endDia: number
   let className = 'bg-gray-200 text-black';
   let visClassName = 'vis-item-default';
   let content = diaData.estado;
-  
+
   if (diaData.estado === 'CONFLICTO') {
     className = 'bg-error text-white animate-pulse border-none';
     visClassName = 'vis-item-conflicto';
@@ -399,7 +413,15 @@ const buildBlockInfo = (stateSignature: string, startDia: number, endDia: number
 
 const renderTimeline = () => {
   if (!timelineContainer.value) return;
-  
+
+  if (timelineInstance && currentContainer !== timelineContainer.value) {
+    timelineInstance.destroy();
+    timelineInstance = null;
+  }
+
+  const start = new Date(selectedYear.value, selectedMonth.value - 1, 1);
+  const end = new Date(selectedYear.value, selectedMonth.value, 0, 23, 59, 59);
+
   if (!timelineInstance) {
     const options = {
       locale: 'es',
@@ -410,12 +432,15 @@ const renderTimeline = () => {
       horizontalScroll: true,
       zoomMin: 1000 * 60 * 60 * 24,
       zoomMax: 1000 * 60 * 60 * 24 * 31 * 3,
-      margin: { item: 2, axis: 5 },
+      margin: { item: 8, axis: 8 },
       orientation: 'top',
       editable: false,
-      timeAxis: { scale: 'day', step: 1 }
+      timeAxis: { scale: 'day', step: 1 },
+      start: start,
+      end: end
     };
     timelineInstance = new Timeline(timelineContainer.value, [], [], options);
+    currentContainer = timelineContainer.value;
   }
 
   const groups = new DataSet(
@@ -427,27 +452,49 @@ const renderTimeline = () => {
   );
 
   const itemsArray: any[] = [];
-  filteredMatriz.value.forEach(row => {
-    const blocks = extractContiguousBlocks(row);
+
+  const pushBlocksToItems = (matrizRow: any, year: number, month: number, isCurrentMonth: boolean) => {
+    if (!matrizRow) return;
+    const blocks = extractContiguousBlocks(matrizRow);
     blocks.forEach(block => {
       itemsArray.push({
-        id: `${row.observador.id}-${block.startDia}`,
-        group: row.observador.id,
-        start: new Date(selectedYear.value, selectedMonth.value - 1, block.startDia),
-        end: new Date(selectedYear.value, selectedMonth.value - 1, block.endDia + 1),
+        id: `${matrizRow.observador.id}-${year}-${month}-${block.startDia}`,
+        group: matrizRow.observador.id,
+        start: new Date(year, month - 1, block.startDia),
+        end: new Date(year, month - 1, block.endDia + 1),
         content: block.content,
-        className: block.visClassName,
+        className: block.visClassName + (isCurrentMonth ? '' : ' vis-item-attenuated'),
         title: block.diaData.detalle || formatTooltipTitle(block.diaData)
       });
     });
+  };
+
+  const prevYear = selectedMonth.value === 1 ? selectedYear.value - 1 : selectedYear.value;
+  const prevMonth = selectedMonth.value === 1 ? 12 : selectedMonth.value - 1;
+  const nextYear = selectedMonth.value === 12 ? selectedYear.value + 1 : selectedYear.value;
+  const nextMonth = selectedMonth.value === 12 ? 1 : selectedMonth.value + 1;
+
+  filteredMatriz.value.forEach(row => {
+    // Current month
+    pushBlocksToItems(row, selectedYear.value, selectedMonth.value, true);
+
+    // Previous month (find same observador)
+    if (prevData.value) {
+      const prevRow = prevData.value.matriz.find(r => r.observador.id === row.observador.id);
+      if (prevRow) pushBlocksToItems(prevRow, prevYear, prevMonth, false);
+    }
+
+    // Next month
+    if (nextData.value) {
+      const nextRow = nextData.value.matriz.find(r => r.observador.id === row.observador.id);
+      if (nextRow) pushBlocksToItems(nextRow, nextYear, nextMonth, false);
+    }
   });
 
   timelineInstance.setGroups(groups);
   timelineInstance.setItems(new DataSet(itemsArray));
-  
-  const start = new Date(selectedYear.value, selectedMonth.value - 1, 1);
-  const end = new Date(selectedYear.value, selectedMonth.value, 0, 23, 59, 59);
-  timelineInstance.setWindow(start, end);
+
+  timelineInstance.setWindow(start, end, { animation: false });
 };
 
 
@@ -464,7 +511,7 @@ const isFinSemana = (dia: number) => {
 
 const getCellClass = (dia: DiaEstado) => {
   if (!dia) return 'bg-transparent';
-  
+
   switch (dia.estado) {
     case 'CONFLICTO':
       return 'bg-error shadow-inner animate-pulse';
@@ -511,7 +558,7 @@ const isExporting = ref(false);
 
 const exportToExcel = async () => {
   if (!data.value) return;
-  
+
   isExporting.value = true;
   try {
     const params = {
@@ -519,20 +566,20 @@ const exportToExcel = async () => {
       month: selectedMonth.value,
       ids: filteredMatriz.value.map(r => r.observador.id)
     };
-    
+
     const blob = await presentismoExportService.exportarAExcel(params);
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    
+
     const filename = `PRESENTISMO_OBSERVADORES_${selectedYear.value}_${selectedMonth.value.toString().padStart(2, '0')}.xlsx`;
-    
+
     link.setAttribute('download', filename);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     window.URL.revokeObjectURL(url);
-    
+
     toast.success('Planilla exportada a Excel correctamente');
   } catch (error) {
     toast.error('Error al exportar el Excel');
@@ -543,6 +590,14 @@ const exportToExcel = async () => {
 
 onMounted(() => {
   fetchData();
+});
+
+import { onBeforeUnmount } from 'vue';
+onBeforeUnmount(() => {
+  if (timelineInstance) {
+    timelineInstance.destroy();
+    timelineInstance = null;
+  }
 });
 </script>
 
@@ -562,6 +617,12 @@ onMounted(() => {
 .dark :deep(.vis-item) {
   border-color: rgba(255,255,255,0.1);
   box-shadow: inset 0 0 0 1px rgba(255,255,255,0.1);
+}
+
+:deep(.vis-item-attenuated) {
+  opacity: 0.4 !important;
+  filter: grayscale(0.6) !important;
+  pointer-events: none;
 }
 
 /* Modificaciones para Modo Oscuro en Paneles y Grillas */
@@ -622,7 +683,7 @@ onMounted(() => {
 }
 
 :deep(.vis-item-content) {
-  padding: 2px 4px !important;
+  padding: 4px 6px !important;
   width: 100% !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
@@ -639,7 +700,7 @@ onMounted(() => {
 }
 
 :deep(.vis-label .vis-inner) {
-  padding: 4px !important;
+  padding: 8px 6px !important;
 }
 
 :deep(.vis-label .vis-inner div) {

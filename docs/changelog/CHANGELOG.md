@@ -38,6 +38,8 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 - **protocolizacion:** filtros interactivos por año y contadores dinámicos
 
 ### Changed
+- **presentismo:** migrar calendario a Vis-Timeline, implementar tema semántico y optimizar carga de contexto intermensual
+- **presentismo:** purgar dependencias experimentales y optimizar visualización de la matriz
 - **admin:** sustituir bloques estáticos de adjuntos por `AttachmentViewer` en auditoría de correos y detalle de novedades
 - **novedades:** implementar borrado lógico para auditoría y persistencia histórica
 - **presentismo:** permitir solapamiento válido entre estados navegando y en viaje
