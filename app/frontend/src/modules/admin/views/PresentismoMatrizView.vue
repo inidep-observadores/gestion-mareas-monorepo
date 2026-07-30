@@ -110,19 +110,7 @@
             @click="activeTab = 'timeline'" 
             :class="['px-4 py-2 font-bold text-sm border-b-2 transition-colors -mb-[1px]', activeTab === 'timeline' ? 'border-primary text-primary' : 'border-transparent text-text-muted hover:text-text hover:border-border']"
           >
-            Vis-Timeline
-          </button>
-          <button 
-            @click="activeTab = 'timeline-chart'" 
-            :class="['px-4 py-2 font-bold text-sm border-b-2 transition-colors -mb-[1px]', activeTab === 'timeline-chart' ? 'border-primary text-primary' : 'border-transparent text-text-muted hover:text-text hover:border-border']"
-          >
-            Vue-Timeline-Chart
-          </button>
-          <button 
-            @click="activeTab = 'ganttastic'" 
-            :class="['px-4 py-2 font-bold text-sm border-b-2 transition-colors -mb-[1px]', activeTab === 'ganttastic' ? 'border-primary text-primary' : 'border-transparent text-text-muted hover:text-text hover:border-border']"
-          >
-            Vue-Ganttastic
+            Línea de Tiempo (Vis)
           </button>
         </div>
 
@@ -220,69 +208,6 @@
         <div ref="timelineContainer" class="w-full h-[65vh] bg-white text-black rounded-lg border border-gray-200 shadow-inner"></div>
       </div>
 
-      <!-- Vue Timeline Chart -->
-      <div v-show="activeTab === 'timeline-chart'" class="bg-surface rounded-2xl shadow-sm border border-border overflow-hidden p-4">
-        <div class="w-full h-[65vh] overflow-y-auto">
-         <TimelineChart 
-            v-if="vtcItems.length > 0"
-            :groups="vtcGroups" 
-            :items="vtcItems" 
-            v-model:viewportMin="viewportMin" 
-            v-model:viewportMax="viewportMax"
-            :minViewportDuration="1000 * 60 * 60 * 24"
-            :maxViewportDuration="1000 * 60 * 60 * 24 * 90"
-            class="min-h-[500px]"
-         >
-           <template #group-label="{ group }">
-             <div class="font-bold text-sm text-text pr-2 truncate">{{ group.label }}</div>
-             <div class="text-xs text-text-muted">{{ group.sublabel }}</div>
-           </template>
-           <template #item="{ item }">
-             <div :class="['absolute inset-0 flex items-center justify-center text-[10px] font-black rounded border border-black/10 overflow-hidden', item.className]">
-               {{ item.title }}
-             </div>
-           </template>
-         </TimelineChart>
-        </div>
-      </div>
-
-      <!-- Vue Ganttastic -->
-      <div v-show="activeTab === 'ganttastic'" class="bg-surface rounded-2xl shadow-sm border border-border overflow-hidden p-4 flex flex-col gap-4">
-        <!-- Toolbar de Precisión/Zoom -->
-        <div class="flex items-center gap-2 px-2">
-          <span class="text-xs font-bold text-text-muted uppercase tracking-wider">Nivel de Zoom:</span>
-          <div class="flex bg-surface-muted rounded overflow-hidden border border-border shadow-sm">
-            <button @click="ganttPrecision = 'hour'" :class="['px-4 py-1.5 text-xs font-bold transition-colors', ganttPrecision === 'hour' ? 'bg-primary text-primary-foreground' : 'hover:bg-gray-200 text-text']">Hora</button>
-            <button @click="ganttPrecision = 'day'" :class="['px-4 py-1.5 text-xs font-bold transition-colors border-l border-border', ganttPrecision === 'day' ? 'bg-primary text-primary-foreground' : 'hover:bg-gray-200 text-text']">Día</button>
-            <button @click="ganttPrecision = 'week'" :class="['px-4 py-1.5 text-xs font-bold transition-colors border-l border-border', ganttPrecision === 'week' ? 'bg-primary text-primary-foreground' : 'hover:bg-gray-200 text-text']">Semana</button>
-            <button @click="ganttPrecision = 'month'" :class="['px-4 py-1.5 text-xs font-bold transition-colors border-l border-border', ganttPrecision === 'month' ? 'bg-primary text-primary-foreground' : 'hover:bg-gray-200 text-text']">Mes</button>
-          </div>
-        </div>
-
-        <div class="w-full h-[65vh] overflow-y-auto">
-          <g-gantt-chart
-            v-if="ganttRows.length > 0"
-            :chart-start="ganttStartDate"
-            :chart-end="ganttEndDate"
-            :precision="ganttPrecision"
-            bar-start="myBeginDate"
-            bar-end="myEndDate"
-            format="YYYY-MM-DD HH:mm"
-            color-scheme="default"
-            grid
-            push-on-overlap
-            font="inherit"
-          >
-            <g-gantt-row 
-              v-for="row in ganttRows" 
-              :key="row.id" 
-              :label="row.label" 
-              :bars="row.bars" 
-              highlight-on-hover
-            />
-          </g-gantt-chart>
-        </div>
-      </div>
       </template>
     </div>
   </AdminLayout>
@@ -301,9 +226,6 @@ import type { PlanillaMensualResponse, DiaEstado } from '../interfaces/planilla-
 import { Timeline } from 'vis-timeline/standalone';
 import { DataSet } from 'vis-data';
 import 'vis-timeline/styles/vis-timeline-graph2d.min.css';
-import { Timeline as TimelineChart } from 'vue-timeline-chart';
-import 'vue-timeline-chart/style.css';
-import { GGanttChart, GGanttRow } from '@infectoone/vue-ganttastic';
 
 const currentDate = new Date();
 const selectedMonth = ref(currentDate.getMonth() + 1);
@@ -337,17 +259,7 @@ const setVisPrecision = (precision: 'auto' | 'day' | 'week' | 'month') => {
   }
 };
 
-// Vue-Timeline-Chart
-const vtcGroups = ref<any[]>([]);
-const vtcItems = ref<any[]>([]);
-const viewportMin = ref(0);
-const viewportMax = ref(0);
 
-// Vue-Ganttastic
-const ganttPrecision = ref<'hour' | 'day' | 'week' | 'month'>('day');
-const ganttRows = ref<any[]>([]);
-const ganttStartDate = ref('');
-const ganttEndDate = ref('');
 
 // Filtros Set
 const activeTipoObservador = ref(new Set<string>());
@@ -423,10 +335,6 @@ watch([activeTab, filteredMatriz, selectedMonth, selectedYear], async () => {
   if (activeTab.value === 'timeline') {
     await nextTick();
     renderTimeline();
-  } else if (activeTab.value === 'timeline-chart') {
-    prepareTimelineChartData();
-  } else if (activeTab.value === 'ganttastic') {
-    prepareGanttasticData();
   }
 }, { immediate: true });
 
@@ -561,91 +469,6 @@ const renderTimeline = () => {
   timelineInstance.setWindow(start, end);
 };
 
-const prepareTimelineChartData = () => {
-  const start = new Date(selectedYear.value, selectedMonth.value - 1, 1).getTime();
-  const end = new Date(selectedYear.value, selectedMonth.value, 0, 23, 59, 59).getTime();
-  viewportMin.value = start;
-  viewportMax.value = end;
-
-  vtcGroups.value = filteredMatriz.value.map(row => ({
-    id: row.observador.id,
-    label: `${row.observador.apellido}, ${row.observador.nombre}`,
-    sublabel: row.observador.codigoInterno
-  }));
-
-  const items: any[] = [];
-  filteredMatriz.value.forEach(row => {
-    const blocks = extractContiguousBlocks(row);
-    blocks.forEach(block => {
-      items.push({
-        id: `${row.observador.id}-${block.startDia}`,
-        groupId: row.observador.id,
-        group: row.observador.id,
-        start: new Date(selectedYear.value, selectedMonth.value - 1, block.startDia, 0, 0, 0).getTime(),
-        end: new Date(selectedYear.value, selectedMonth.value - 1, block.endDia, 23, 59, 59).getTime(),
-        title: block.content,
-        className: block.className
-      });
-    });
-  });
-  vtcItems.value = items;
-};
-
-const formatDateForGantt = (year: number, month: number, day: number, hours = '00:00') => {
-  const d = new Date(year, month - 1, day);
-  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${hours}`;
-};
-
-const prepareGanttasticData = () => {
-  ganttStartDate.value = formatDateForGantt(selectedYear.value, selectedMonth.value, 1, '00:00');
-  const endD = new Date(selectedYear.value, selectedMonth.value, 0);
-  ganttEndDate.value = formatDateForGantt(selectedYear.value, selectedMonth.value, endD.getDate(), '23:59');
-
-  const rows: any[] = [];
-  filteredMatriz.value.forEach(row => {
-    const blocks = extractContiguousBlocks(row);
-    const bars = blocks.map(block => {
-      let bg = '#e5e7eb';
-      if (block.diaData.estado === 'CONFLICTO') bg = '#ef4444';
-      else if (block.diaData.estado === 'NAVEGANDO' && block.diaData.estadoSecundario === 'VIAJE') bg = 'linear-gradient(135deg,#00FF00 50%,#E6E6FA 50%)';
-      else if (block.diaData.estado === 'NAVEGANDO') bg = '#00FF00';
-      else if (block.diaData.estado === 'PUERTO') bg = '#FFE4C4';
-      else if (block.diaData.estado === 'ESPERANDO_ZARPADA') bg = '#E8E8E8';
-      else if (block.diaData.estado === 'VIAJE') bg = '#E6E6FA';
-      else if (block.diaData.estado === 'NOVEDAD') bg = '#ADD8E6';
-      else if (block.diaData.estado === 'FERIADO') bg = '#FFA500';
-
-      return {
-        myBeginDate: formatDateForGantt(selectedYear.value, selectedMonth.value, block.startDia, '00:00'),
-        myEndDate: formatDateForGantt(selectedYear.value, selectedMonth.value, block.endDia, '23:59'),
-        ganttBarConfig: {
-          id: `${row.observador.id}-${block.startDia}`,
-          label: block.content,
-          hasHandles: true,
-          style: {
-            background: bg,
-            color: 'black',
-            borderRadius: '4px',
-            fontSize: '10px',
-            fontWeight: '900',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.1)'
-          }
-        }
-      };
-    });
-    
-    rows.push({
-      id: row.observador.id,
-      label: `${row.observador.apellido}, ${row.observador.nombre}`,
-      bars: bars
-    });
-  });
-  
-  ganttRows.value = rows;
-};
 
 const getDiaSemana = (dia: number) => {
   const date = new Date(selectedYear.value, selectedMonth.value - 1, dia);
