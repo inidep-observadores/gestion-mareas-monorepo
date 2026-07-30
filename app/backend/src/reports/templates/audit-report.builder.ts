@@ -1495,15 +1495,32 @@ export class AuditReportBuilder {
             alignments.push(AlignmentType.CENTER);
         }
 
+        const totalsPesqueria = new Array(annexData.quarters.length).fill(0);
+        for (const fishery of annexData.activeFisheries) {
+            const daysArr = annexData.fisheries[fishery];
+            for (let i = 0; i < annexData.quarters.length; i++) {
+                totalsPesqueria[i] += daysArr[i] || 0;
+            }
+        }
+
         result.push(
             createFormattedTable(headers, rows, {
                 columnWidths,
-                alignments
+                alignments,
+                totalsRow: {
+                    label: 'TOTAL',
+                    values: totalsPesqueria.map(val => val > 0 ? val.toString() : '-')
+                }
             })
         );
 
         // 2. Tabla de Mareas según Estado
         if (annexData.mareaStates) {
+            const totalsEstadoMarea = new Array(annexData.quarters.length).fill(0);
+            for (let i = 0; i < annexData.quarters.length; i++) {
+                 totalsEstadoMarea[i] = annexData.mareaStates.finalizadas[i] + annexData.mareaStates.canceladas[i];
+            }
+
             result.push(
                 this.heading2('Recuento de mareas según estado por trimestre'),
                 createFormattedTable(
@@ -1520,7 +1537,11 @@ export class AuditReportBuilder {
                     ],
                     {
                         columnWidths: [40, ...new Array(annexData.quarters.length).fill(remainingWidth)],
-                        alignments: [AlignmentType.LEFT, ...new Array(annexData.quarters.length).fill(AlignmentType.CENTER)]
+                        alignments: [AlignmentType.LEFT, ...new Array(annexData.quarters.length).fill(AlignmentType.CENTER)],
+                        totalsRow: {
+                            label: 'TOTAL',
+                            values: totalsEstadoMarea.map(val => val.toString())
+                        }
                     }
                 )
             );
@@ -1528,6 +1549,13 @@ export class AuditReportBuilder {
 
         // 3. Tabla de Mareas según Estado de Protocolización
         if (annexData.protocolizationStates) {
+            const totalsEstadoProt = new Array(annexData.quarters.length).fill(0);
+            for (let i = 0; i < annexData.quarters.length; i++) {
+                 totalsEstadoProt[i] = annexData.protocolizationStates.enEspera[i] + 
+                                       annexData.protocolizationStates.enviadas[i] + 
+                                       annexData.protocolizationStates.protocolizadas[i];
+            }
+
             result.push(
                 this.heading2('Recuento de mareas según estado de protocolización'),
                 createFormattedTable(
@@ -1548,7 +1576,11 @@ export class AuditReportBuilder {
                     ],
                     {
                         columnWidths: [40, ...new Array(annexData.quarters.length).fill(remainingWidth)],
-                        alignments: [AlignmentType.LEFT, ...new Array(annexData.quarters.length).fill(AlignmentType.CENTER)]
+                        alignments: [AlignmentType.LEFT, ...new Array(annexData.quarters.length).fill(AlignmentType.CENTER)],
+                        totalsRow: {
+                            label: 'TOTAL',
+                            values: totalsEstadoProt.map(val => val.toString())
+                        }
                     }
                 )
             );
