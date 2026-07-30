@@ -250,6 +250,7 @@ export class StatsService {
         const byFishery: Record<string, {
             name: string;
             mareas: number;
+            etapas: number;
             days: number;
             vessels: Map<string, { code: string; nombre: string }> // VesselID -> FleetInfo
         }> = {};
@@ -349,10 +350,11 @@ export class StatsService {
 
                 if (fisheryNavigatedDays > 0) {
                     if (!byFishery[fisheryName]) {
-                        byFishery[fisheryName] = { name: fisheryName, mareas: 0, days: 0, vessels: new Map() };
+                        byFishery[fisheryName] = { name: fisheryName, mareas: 0, etapas: 0, days: 0, vessels: new Map() };
                     }
                     byFishery[fisheryName].days += fisheryNavigatedDays;
                     byFishery[fisheryName].mareas++;
+                    byFishery[fisheryName].etapas += intervals.length;
 
                     if (marea.buque) {
                         const fleetCode = marea.buque.tipoFlota?.codigo || 'INDETERMINADO';
@@ -532,6 +534,7 @@ export class StatsService {
                 return {
                     name: f.name,
                     mareas: f.mareas,
+                    etapas: f.etapas,
                     days: f.days,
                     stats: Object.keys(stats).length > 0 ? stats : undefined
                 };
@@ -3533,7 +3536,7 @@ export class StatsService {
             const qEndDateStr = `${year}-${String(qEndMonth).padStart(2, '0')}-${lastDay}`;
             
             const qStats = await this.getDashboardStats(
-                year, mode, includeNonProtocolized, includeProtocolizedOutOfPeriod,
+                year, 'CALENDAR', includeNonProtocolized, includeProtocolizedOutOfPeriod,
                 'SHIP', includeCampaigns, qStartDateStr, qEndDateStr,
                 protocolizationStartDate, protocolizationEndDate,
                 snapshotDate

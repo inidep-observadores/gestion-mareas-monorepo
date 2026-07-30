@@ -59,11 +59,22 @@ export class ReportsService {
         const snapDate = endDate ? new Date(endDate) : new Date(Date.UTC(year, 11, 31, 23, 59, 59, 999));
         snapDate.setUTCHours(23, 59, 59, 999);
 
-        this.logger.log(`Generando informe de auditoría: año=${year}, modo=${mode}, snapshot=${snapDate.toISOString()}`);
+        // NUNCA proyectar al futuro: Si el snapDate calculado (ej. fin del trimestre 3) es mayor a la fecha actual,
+        // lo limitamos a "hoy" para no inventar días navegados futuros en mareas en ejecución.
+        const now = new Date();
+        if (snapDate > now) {
+            snapDate.setTime(now.getTime());
+        }
+
+        // Si se proveen fechas de inicio y fin, estamos consultando un período específico (ej. trimestre)
+        // Por ende, forzamos el modo CALENDAR para que las métricas de esfuerzo (días) no se desborden históricamente.
+        const effectiveMode = (startDate && endDate) ? 'CALENDAR' : mode;
+
+        this.logger.log(`Generando informe de auditoría: año=${year}, modo original=${mode}, modo efectivo=${effectiveMode}, snapshot=${snapDate.toISOString()}`);
 
         // 1. Obtener estadísticas globales (Snapshot Histórico)
         const stats = await this.statsService.getDashboardStats(
-            year, mode, includeNonProtocolized, includeProtocolizedOutOfPeriod,
+            year, effectiveMode, includeNonProtocolized, includeProtocolizedOutOfPeriod,
             'SHIP', includeCampaigns, startDate, endDate,
             protocolizationStartDate, protocolizationEndDate,
             snapDate
@@ -92,7 +103,7 @@ export class ReportsService {
 
         // 4. Obtener distribución de mareas (Snapshot Histórico)
         const distribution = await this.statsService.getMareaDistribution(
-            year, mode, includeNonProtocolized, includeProtocolizedOutOfPeriod,
+            year, effectiveMode, includeNonProtocolized, includeProtocolizedOutOfPeriod,
             includeCampaigns, startDate, endDate,
             protocolizationStartDate, protocolizationEndDate,
             snapDate
@@ -100,7 +111,7 @@ export class ReportsService {
 
         // 5. Obtener detalle de mareas (Snapshot Histórico)
         const detailItems = await this.statsService.getDashboardStatsDetail(
-            year, mode, includeNonProtocolized, includeProtocolizedOutOfPeriod,
+            year, effectiveMode, includeNonProtocolized, includeProtocolizedOutOfPeriod,
             null, '', 'SHIP', includeCampaigns, startDate, endDate,
             protocolizationStartDate, protocolizationEndDate,
             snapDate
@@ -180,7 +191,7 @@ export class ReportsService {
                     const qEndDateStr = `${year}-${String(qEndMonth).padStart(2, '0')}-${lastDay}`;
                     
                     const qStats = await this.statsService.getDashboardStats(
-                        year, mode, includeNonProtocolized, includeProtocolizedOutOfPeriod,
+                        year, 'CALENDAR', includeNonProtocolized, includeProtocolizedOutOfPeriod,
                         'SHIP', includeCampaigns, qStartDateStr, qEndDateStr,
                         protocolizationStartDate, protocolizationEndDate,
                         snapDate
@@ -227,7 +238,7 @@ export class ReportsService {
             const t = observerDataMap.get(item.observadorId)?.tipoObservador === 'OBSERVADOR' ? breakdown.observadores : breakdown.tecnicos;
             
             // Acumular días navegados según el modo del reporte
-            t.dias += (mode === 'CALENDAR' ? item.diasCalendario : item.diasTotales);
+            t.dias += (effectiveMode === 'CALENDAR' ? item.diasCalendario : item.diasTotales);
             
             if (item.estado === 'Finalizada') {
                 t.mareasFinalizadas++;
@@ -265,7 +276,7 @@ export class ReportsService {
 
         const reportData: AuditReportData = {
             year,
-            mode,
+            mode: effectiveMode,
             startDate,
             endDate,
             includeCampaigns: includeCampaigns!,
