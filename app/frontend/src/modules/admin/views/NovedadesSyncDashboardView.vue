@@ -294,7 +294,24 @@
 
             <!-- Detalles de Extracción -->
             <div v-if="selectedLog.detalles?.length">
-              <span class="block text-xs font-semibold text-text-muted uppercase mb-2">Resultados de Procesamiento</span>
+              <div class="flex items-center justify-between mb-2">
+                <span class="block text-xs font-semibold text-text-muted uppercase">Resultados de Procesamiento</span>
+                
+                <button 
+                  type="button"
+                  @click="toggleViewMode"
+                  class="flex items-center gap-1.5 px-2 py-1 bg-surface border border-border rounded hover:border-primary transition-colors text-[10px] font-bold text-text-muted hover:text-primary group"
+                >
+                  <span v-if="viewMode === 'inline'" class="flex items-center gap-1">
+                    <ListIcon class="w-3 h-3 group-hover:text-primary transition-colors" />
+                    Ver como Lista
+                  </span>
+                  <span v-else class="flex items-center gap-1">
+                    <EyeIcon class="w-3 h-3 group-hover:text-primary transition-colors" />
+                    Ver Previsualización
+                  </span>
+                </button>
+              </div>
               <div class="space-y-3">
                 <div v-for="det in selectedLog.detalles" :key="det.id" class="p-3 bg-surface-muted rounded border border-border">
                   <div class="flex justify-between items-start mb-2">
@@ -316,6 +333,7 @@
                     :archivos="det.novedad.archivos"
                     title="Archivos Generados/Adjuntos:"
                     class="mt-3"
+                    :hideToggle="true"
                   />
                 </div>
               </div>
@@ -402,7 +420,23 @@
 
                   <!-- Extracción Detallada -->
                   <div v-if="selectedLog.detalles?.length">
-                    <h4 class="font-bold text-lg text-text border-b border-border pb-2 mb-4">Resultados de Extracción de Datos (Fase 2)</h4>
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-border pb-2 mb-4 gap-2">
+                      <h4 class="font-bold text-lg text-text">Resultados de Extracción de Datos (Fase 2)</h4>
+                      <button 
+                        type="button"
+                        @click="toggleViewMode"
+                        class="flex items-center gap-1.5 px-2 py-1 bg-surface border border-border rounded hover:border-primary transition-colors text-[10px] font-bold text-text-muted hover:text-primary group w-fit"
+                      >
+                        <span v-if="viewMode === 'inline'" class="flex items-center gap-1">
+                          <ListIcon class="w-3 h-3 group-hover:text-primary transition-colors" />
+                          Ver como Lista
+                        </span>
+                        <span v-else class="flex items-center gap-1">
+                          <EyeIcon class="w-3 h-3 group-hover:text-primary transition-colors" />
+                          Ver Previsualización
+                        </span>
+                      </button>
+                    </div>
                     <div class="space-y-4">
                       <div v-for="det in selectedLog.detalles" :key="det.id" class="p-4 bg-surface rounded-lg border border-border shadow-sm flex flex-col md:flex-row gap-6">
                         <div class="flex-1">
@@ -424,6 +458,7 @@
                           <AttachmentViewer 
                             :archivos="det.novedad.archivos"
                             title="Documentos Adjuntos"
+                            :hideToggle="true"
                           />
                         </div>
                       </div>
@@ -457,6 +492,11 @@ import DatePicker from '@/components/common/DatePicker.vue'
 import SearchInput from '@/components/ui/SearchInput.vue'
 import AttachmentViewer from '@/components/common/AttachmentViewer.vue'
 import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } from '@headlessui/vue'
+import { useAttachmentViewMode } from '@/composables/useAttachmentViewMode'
+import EyeIcon from '@/icons/EyeIcon.vue'
+import ListIcon from '@/icons/ListIcon.vue'
+
+const { viewMode, toggleViewMode } = useAttachmentViewMode()
 
 const config = reactive({
   enabled: true,

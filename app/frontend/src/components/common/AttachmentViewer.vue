@@ -6,6 +6,7 @@
       
       <!-- Toggle View Mode Button -->
       <button 
+        v-if="!hideToggle"
         type="button"
         @click="toggleViewMode"
         class="flex items-center gap-1.5 px-2 py-1 bg-surface border border-border rounded hover:border-primary transition-colors text-[10px] font-bold text-text-muted hover:text-primary group"
@@ -75,24 +76,12 @@ interface Archivo {
 const props = defineProps<{
   archivos?: Archivo[];
   title?: string;
+  hideToggle?: boolean;
 }>();
 
-const LOCAL_STORAGE_KEY = 'sigma_attachment_view_mode';
+import { useAttachmentViewMode } from '@/composables/useAttachmentViewMode';
 
-// 'list' or 'inline'
-const viewMode = ref<'list' | 'inline'>('list');
-
-onMounted(() => {
-  const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
-  if (saved === 'inline' || saved === 'list') {
-    viewMode.value = saved;
-  }
-});
-
-const toggleViewMode = () => {
-  viewMode.value = viewMode.value === 'inline' ? 'list' : 'inline';
-  localStorage.setItem(LOCAL_STORAGE_KEY, viewMode.value);
-};
+const { viewMode, toggleViewMode } = useAttachmentViewMode();
 
 const getPreviewUrl = (url: string) => {
   if (!url) return '';
