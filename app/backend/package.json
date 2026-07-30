@@ -55,7 +55,7 @@
     "@nestjs/serve-static": "^5.0.4",
     "@prisma/adapter-pg": "^7.2.0",
     "@prisma/client": "^7.2.0",
-    "@types/pg": "8.11.11",
+    "@types/pg": "8.20.0",
     "adm-zip": "^0.5.16",
     "archiver": "^7.0.1",
     "archiver-zip-encryptable": "^1.0.10",
@@ -154,7 +154,7 @@
   },
   "pnpm": {
     "overrides": {
-      "@types/pg": "8.11.11"
+      "@types/pg": "8.20.0"
     }
   }
 }
