@@ -214,7 +214,7 @@ import { toast } from 'vue-sonner';
 import presentismoApi from '../services/presentismo.service';
 import presentismoExportService from '../services/presentismo-export.service';
 import type { PlanillaMensualResponse, DiaEstado } from '../interfaces/planilla-mensual.interface';
-import { Timeline } from 'vis-timeline/standalone';
+import { Timeline, type TimelineOptions } from 'vis-timeline/standalone';
 import { DataSet } from 'vis-data';
 import 'vis-timeline/styles/vis-timeline-graph2d.min.css';
 
@@ -376,7 +376,7 @@ const extractContiguousBlocks = (row: any) => {
 const buildBlockInfo = (stateSignature: string, startDia: number, endDia: number, diaData: DiaEstado) => {
   let className = 'bg-gray-200 text-black';
   let visClassName = 'vis-item-default';
-  let content = diaData.estado;
+  let content: string = diaData.estado;
 
   if (diaData.estado === 'CONFLICTO') {
     className = 'bg-error text-white animate-pulse border-none';
@@ -423,7 +423,7 @@ const renderTimeline = () => {
   const end = new Date(selectedYear.value, selectedMonth.value, 0, 23, 59, 59);
 
   if (!timelineInstance) {
-    const options = {
+    const options: TimelineOptions = {
       locale: 'es',
       stack: false,
       maxHeight: '65vh',
@@ -435,6 +435,7 @@ const renderTimeline = () => {
       margin: { item: 8, axis: 8 },
       orientation: 'top',
       editable: false,
+      showCurrentTime: false,
       timeAxis: { scale: 'day', step: 1 },
       start: start,
       end: end
