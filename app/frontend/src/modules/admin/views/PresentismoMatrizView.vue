@@ -97,10 +97,39 @@
         <p class="text-sm font-bold text-text-muted">Cargando matriz de presentismo...</p>
       </div>
 
-      <!-- Matriz Table -->
-      <div v-else-if="data" class="bg-surface rounded-2xl shadow-sm border border-border overflow-hidden">
-        <div class="overflow-x-auto overflow-y-auto max-h-[70vh]">
-          <table class="w-full text-left border-collapse">
+      <template v-else-if="data">
+        <!-- Tabs -->
+        <div class="flex items-center gap-4 border-b border-border mb-4 px-2">
+          <button 
+            @click="activeTab = 'grilla'" 
+            :class="['px-4 py-2 font-bold text-sm border-b-2 transition-colors -mb-[1px]', activeTab === 'grilla' ? 'border-primary text-primary' : 'border-transparent text-text-muted hover:text-text hover:border-border']"
+          >
+            Grilla Clásica
+          </button>
+          <button 
+            @click="activeTab = 'timeline'" 
+            :class="['px-4 py-2 font-bold text-sm border-b-2 transition-colors -mb-[1px]', activeTab === 'timeline' ? 'border-primary text-primary' : 'border-transparent text-text-muted hover:text-text hover:border-border']"
+          >
+            Vis-Timeline
+          </button>
+          <button 
+            @click="activeTab = 'timeline-chart'" 
+            :class="['px-4 py-2 font-bold text-sm border-b-2 transition-colors -mb-[1px]', activeTab === 'timeline-chart' ? 'border-primary text-primary' : 'border-transparent text-text-muted hover:text-text hover:border-border']"
+          >
+            Vue-Timeline-Chart
+          </button>
+          <button 
+            @click="activeTab = 'ganttastic'" 
+            :class="['px-4 py-2 font-bold text-sm border-b-2 transition-colors -mb-[1px]', activeTab === 'ganttastic' ? 'border-primary text-primary' : 'border-transparent text-text-muted hover:text-text hover:border-border']"
+          >
+            Vue-Ganttastic
+          </button>
+        </div>
+
+        <!-- Matriz Table -->
+        <div v-show="activeTab === 'grilla'" class="bg-surface rounded-2xl shadow-sm border border-border overflow-hidden">
+          <div class="overflow-x-auto overflow-y-auto max-h-[70vh]">
+            <table class="w-full text-left border-collapse">
             <thead>
               <tr class="bg-surface-muted border-b border-border">
                 <th class="sticky top-0 left-0 z-50 bg-surface-muted px-4 py-3 text-xs font-black uppercase tracking-widest text-text min-w-[112px] w-[112px] max-w-[112px] border-r border-border shadow-[0_2px_5px_-2px_rgba(0,0,0,0.1)]">
@@ -175,12 +204,92 @@
           </table>
         </div>
       </div>
+
+      <!-- Timeline -->
+      <div v-show="activeTab === 'timeline'" class="bg-surface rounded-2xl shadow-sm border border-border overflow-hidden p-4 flex flex-col gap-4">
+        <!-- Toolbar de Cuadrícula Vis-Timeline -->
+        <div class="flex items-center gap-2 px-2">
+          <span class="text-xs font-bold text-text-muted uppercase tracking-wider">Escala Cuadrícula:</span>
+          <div class="flex bg-surface-muted rounded overflow-hidden border border-border shadow-sm">
+            <button @click="setVisPrecision('auto')" :class="['px-4 py-1.5 text-xs font-bold transition-colors', visPrecision === 'auto' ? 'bg-primary text-primary-foreground' : 'hover:bg-gray-200 text-text']">Auto (Responsive)</button>
+            <button @click="setVisPrecision('day')" :class="['px-4 py-1.5 text-xs font-bold transition-colors border-l border-border', visPrecision === 'day' ? 'bg-primary text-primary-foreground' : 'hover:bg-gray-200 text-text']">Día</button>
+            <button @click="setVisPrecision('week')" :class="['px-4 py-1.5 text-xs font-bold transition-colors border-l border-border', visPrecision === 'week' ? 'bg-primary text-primary-foreground' : 'hover:bg-gray-200 text-text']">Semana</button>
+            <button @click="setVisPrecision('month')" :class="['px-4 py-1.5 text-xs font-bold transition-colors border-l border-border', visPrecision === 'month' ? 'bg-primary text-primary-foreground' : 'hover:bg-gray-200 text-text']">Mes</button>
+          </div>
+        </div>
+        <div ref="timelineContainer" class="w-full h-[65vh] bg-white text-black rounded-lg border border-gray-200 shadow-inner"></div>
+      </div>
+
+      <!-- Vue Timeline Chart -->
+      <div v-show="activeTab === 'timeline-chart'" class="bg-surface rounded-2xl shadow-sm border border-border overflow-hidden p-4">
+        <div class="w-full h-[65vh] overflow-y-auto">
+         <TimelineChart 
+            v-if="vtcItems.length > 0"
+            :groups="vtcGroups" 
+            :items="vtcItems" 
+            v-model:viewportMin="viewportMin" 
+            v-model:viewportMax="viewportMax"
+            :minViewportDuration="1000 * 60 * 60 * 24"
+            :maxViewportDuration="1000 * 60 * 60 * 24 * 90"
+            class="min-h-[500px]"
+         >
+           <template #group-label="{ group }">
+             <div class="font-bold text-sm text-text pr-2 truncate">{{ group.label }}</div>
+             <div class="text-xs text-text-muted">{{ group.sublabel }}</div>
+           </template>
+           <template #item="{ item }">
+             <div :class="['absolute inset-0 flex items-center justify-center text-[10px] font-black rounded border border-black/10 overflow-hidden', item.className]">
+               {{ item.title }}
+             </div>
+           </template>
+         </TimelineChart>
+        </div>
+      </div>
+
+      <!-- Vue Ganttastic -->
+      <div v-show="activeTab === 'ganttastic'" class="bg-surface rounded-2xl shadow-sm border border-border overflow-hidden p-4 flex flex-col gap-4">
+        <!-- Toolbar de Precisión/Zoom -->
+        <div class="flex items-center gap-2 px-2">
+          <span class="text-xs font-bold text-text-muted uppercase tracking-wider">Nivel de Zoom:</span>
+          <div class="flex bg-surface-muted rounded overflow-hidden border border-border shadow-sm">
+            <button @click="ganttPrecision = 'hour'" :class="['px-4 py-1.5 text-xs font-bold transition-colors', ganttPrecision === 'hour' ? 'bg-primary text-primary-foreground' : 'hover:bg-gray-200 text-text']">Hora</button>
+            <button @click="ganttPrecision = 'day'" :class="['px-4 py-1.5 text-xs font-bold transition-colors border-l border-border', ganttPrecision === 'day' ? 'bg-primary text-primary-foreground' : 'hover:bg-gray-200 text-text']">Día</button>
+            <button @click="ganttPrecision = 'week'" :class="['px-4 py-1.5 text-xs font-bold transition-colors border-l border-border', ganttPrecision === 'week' ? 'bg-primary text-primary-foreground' : 'hover:bg-gray-200 text-text']">Semana</button>
+            <button @click="ganttPrecision = 'month'" :class="['px-4 py-1.5 text-xs font-bold transition-colors border-l border-border', ganttPrecision === 'month' ? 'bg-primary text-primary-foreground' : 'hover:bg-gray-200 text-text']">Mes</button>
+          </div>
+        </div>
+
+        <div class="w-full h-[65vh] overflow-y-auto">
+          <g-gantt-chart
+            v-if="ganttRows.length > 0"
+            :chart-start="ganttStartDate"
+            :chart-end="ganttEndDate"
+            :precision="ganttPrecision"
+            bar-start="myBeginDate"
+            bar-end="myEndDate"
+            format="YYYY-MM-DD HH:mm"
+            color-scheme="default"
+            grid
+            push-on-overlap
+            font="inherit"
+          >
+            <g-gantt-row 
+              v-for="row in ganttRows" 
+              :key="row.id" 
+              :label="row.label" 
+              :bars="row.bars" 
+              highlight-on-hover
+            />
+          </g-gantt-chart>
+        </div>
+      </div>
+      </template>
     </div>
   </AdminLayout>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, watch, nextTick } from 'vue';
 import AdminLayout from '@/components/layout/AdminLayout.vue';
 import BackButton from '@/components/common/BackButton.vue';
 import SearchInput from '@/components/ui/SearchInput.vue';
@@ -189,6 +298,12 @@ import { toast } from 'vue-sonner';
 import presentismoApi from '../services/presentismo.service';
 import presentismoExportService from '../services/presentismo-export.service';
 import type { PlanillaMensualResponse, DiaEstado } from '../interfaces/planilla-mensual.interface';
+import { Timeline } from 'vis-timeline/standalone';
+import { DataSet } from 'vis-data';
+import 'vis-timeline/styles/vis-timeline-graph2d.min.css';
+import { Timeline as TimelineChart } from 'vue-timeline-chart';
+import 'vue-timeline-chart/style.css';
+import { GGanttChart, GGanttRow } from '@infectoone/vue-ganttastic';
 
 const currentDate = new Date();
 const selectedMonth = ref(currentDate.getMonth() + 1);
@@ -203,6 +318,36 @@ const months = [
 const data = ref<PlanillaMensualResponse | null>(null);
 const isLoading = ref(false);
 const searchQuery = ref('');
+
+const activeTab = ref('grilla');
+
+// Vis-Timeline
+const timelineContainer = ref<HTMLElement | null>(null);
+let timelineInstance: any = null;
+const visPrecision = ref<'auto' | 'day' | 'week' | 'month'>('auto');
+
+const setVisPrecision = (precision: 'auto' | 'day' | 'week' | 'month') => {
+  visPrecision.value = precision;
+  if (!timelineInstance) return;
+  
+  if (precision === 'auto') {
+    timelineInstance.setOptions({ timeAxis: { scale: undefined, step: 1 } });
+  } else {
+    timelineInstance.setOptions({ timeAxis: { scale: precision, step: 1 } });
+  }
+};
+
+// Vue-Timeline-Chart
+const vtcGroups = ref<any[]>([]);
+const vtcItems = ref<any[]>([]);
+const viewportMin = ref(0);
+const viewportMax = ref(0);
+
+// Vue-Ganttastic
+const ganttPrecision = ref<'hour' | 'day' | 'week' | 'month'>('day');
+const ganttRows = ref<any[]>([]);
+const ganttStartDate = ref('');
+const ganttEndDate = ref('');
 
 // Filtros Set
 const activeTipoObservador = ref(new Set<string>());
@@ -270,6 +415,236 @@ const fetchData = async () => {
   } finally {
     isLoading.value = false;
   }
+};
+
+watch([activeTab, filteredMatriz, selectedMonth, selectedYear], async () => {
+  if (!data.value) return;
+  
+  if (activeTab.value === 'timeline') {
+    await nextTick();
+    renderTimeline();
+  } else if (activeTab.value === 'timeline-chart') {
+    prepareTimelineChartData();
+  } else if (activeTab.value === 'ganttastic') {
+    prepareGanttasticData();
+  }
+}, { immediate: true });
+
+const extractContiguousBlocks = (row: any) => {
+  const dias = row.dias;
+  const diasNumeros = Object.keys(dias).map(Number).sort((a, b) => a - b);
+  
+  let currentState: string | null = null;
+  let currentStart: number | null = null;
+  let currentEnd: number | null = null;
+  let currentData: DiaEstado | null = null;
+  const blocks: any[] = [];
+  
+  for (let i = 0; i < diasNumeros.length; i++) {
+    const dia = diasNumeros[i];
+    const diaData = dias[dia];
+    
+    if (!diaData || diaData.estado === 'LIBRE' || diaData.estado === 'FIN_SEMANA') {
+      if (currentState && currentStart !== null && currentData) {
+        blocks.push(buildBlockInfo(currentState, currentStart, dia - 1, currentData));
+        currentState = null;
+      }
+      continue;
+    }
+    
+    const estadoSignature = `${diaData.estado}-${diaData.estadoSecundario || ''}-${diaData.codigoCorto || ''}`;
+    
+    if (currentState !== estadoSignature) {
+      if (currentState && currentStart !== null && currentData) {
+        blocks.push(buildBlockInfo(currentState, currentStart, dia - 1, currentData));
+      }
+      currentState = estadoSignature;
+      currentStart = dia;
+      currentData = diaData;
+    }
+    currentEnd = dia;
+  }
+  
+  if (currentState && currentStart !== null && currentEnd !== null && currentData) {
+    blocks.push(buildBlockInfo(currentState, currentStart, currentEnd, currentData));
+  }
+  return blocks;
+};
+
+const buildBlockInfo = (stateSignature: string, startDia: number, endDia: number, diaData: DiaEstado) => {
+  let className = 'bg-gray-200 text-black';
+  let visClassName = 'vis-item-default';
+  let content = diaData.estado;
+  
+  if (diaData.estado === 'CONFLICTO') {
+    className = 'bg-error text-white animate-pulse border-none';
+    visClassName = 'vis-item-conflicto';
+  } else if (diaData.estado === 'NAVEGANDO' && diaData.estadoSecundario === 'VIAJE') {
+    className = 'bg-[linear-gradient(135deg,#00FF00_50%,#E6E6FA_50%)] text-black';
+    visClassName = 'vis-item-naveg-viaje';
+    content = 'N/V';
+  } else if (diaData.estado === 'NAVEGANDO') {
+    className = 'bg-[#00FF00] text-black';
+    visClassName = 'vis-item-navegando';
+    content = 'NAVEG';
+  } else if (diaData.estado === 'PUERTO') {
+    className = 'bg-[#FFE4C4] text-black';
+    visClassName = 'vis-item-puerto';
+  } else if (diaData.estado === 'ESPERANDO_ZARPADA') {
+    className = 'bg-[#E8E8E8] text-black';
+    visClassName = 'vis-item-ez';
+    content = 'EZ';
+  } else if (diaData.estado === 'VIAJE') {
+    className = 'bg-[#E6E6FA] text-black';
+    visClassName = 'vis-item-viaje';
+  } else if (diaData.estado === 'NOVEDAD') {
+    className = 'bg-[#ADD8E6] text-black';
+    visClassName = 'vis-item-novedad';
+    content = diaData.codigoCorto === 'ENFERMEDAD' ? 'MÉDICO' : (diaData.codigoCorto || 'NOV');
+  } else if (diaData.estado === 'FERIADO') {
+    className = 'bg-[#FFA500] text-black';
+    visClassName = 'vis-item-feriado';
+  }
+
+  return { startDia, endDia, content, className, visClassName, diaData };
+};
+
+const renderTimeline = () => {
+  if (!timelineContainer.value) return;
+  
+  if (!timelineInstance) {
+    const options = {
+      locale: 'es',
+      stack: false,
+      maxHeight: '65vh',
+      verticalScroll: true,
+      zoomKey: 'ctrlKey',
+      horizontalScroll: true,
+      zoomMin: 1000 * 60 * 60 * 24,
+      zoomMax: 1000 * 60 * 60 * 24 * 31 * 3,
+      margin: { item: 2, axis: 5 },
+      orientation: 'top',
+      editable: true
+    };
+    timelineInstance = new Timeline(timelineContainer.value, [], [], options);
+  }
+
+  const groups = new DataSet(
+    filteredMatriz.value.map(row => ({
+      id: row.observador.id,
+      content: `<div style="font-weight: bold; font-size: 13px; color: black; line-height: 1.2;">${row.observador.apellido}, ${row.observador.nombre}</div>`,
+      value: row.observador.apellido
+    }))
+  );
+
+  const itemsArray: any[] = [];
+  filteredMatriz.value.forEach(row => {
+    const blocks = extractContiguousBlocks(row);
+    blocks.forEach(block => {
+      itemsArray.push({
+        id: `${row.observador.id}-${block.startDia}`,
+        group: row.observador.id,
+        start: new Date(selectedYear.value, selectedMonth.value - 1, block.startDia),
+        end: new Date(selectedYear.value, selectedMonth.value - 1, block.endDia + 1),
+        content: block.content,
+        className: block.visClassName,
+        title: block.diaData.detalle || formatTooltipTitle(block.diaData)
+      });
+    });
+  });
+
+  timelineInstance.setGroups(groups);
+  timelineInstance.setItems(new DataSet(itemsArray));
+  
+  const start = new Date(selectedYear.value, selectedMonth.value - 1, 1);
+  const end = new Date(selectedYear.value, selectedMonth.value, 0, 23, 59, 59);
+  timelineInstance.setWindow(start, end);
+};
+
+const prepareTimelineChartData = () => {
+  const start = new Date(selectedYear.value, selectedMonth.value - 1, 1).getTime();
+  const end = new Date(selectedYear.value, selectedMonth.value, 0, 23, 59, 59).getTime();
+  viewportMin.value = start;
+  viewportMax.value = end;
+
+  vtcGroups.value = filteredMatriz.value.map(row => ({
+    id: row.observador.id,
+    label: `${row.observador.apellido}, ${row.observador.nombre}`,
+    sublabel: row.observador.codigoInterno
+  }));
+
+  const items: any[] = [];
+  filteredMatriz.value.forEach(row => {
+    const blocks = extractContiguousBlocks(row);
+    blocks.forEach(block => {
+      items.push({
+        id: `${row.observador.id}-${block.startDia}`,
+        groupId: row.observador.id,
+        group: row.observador.id,
+        start: new Date(selectedYear.value, selectedMonth.value - 1, block.startDia, 0, 0, 0).getTime(),
+        end: new Date(selectedYear.value, selectedMonth.value - 1, block.endDia, 23, 59, 59).getTime(),
+        title: block.content,
+        className: block.className
+      });
+    });
+  });
+  vtcItems.value = items;
+};
+
+const formatDateForGantt = (year: number, month: number, day: number, hours = '00:00') => {
+  const d = new Date(year, month - 1, day);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${hours}`;
+};
+
+const prepareGanttasticData = () => {
+  ganttStartDate.value = formatDateForGantt(selectedYear.value, selectedMonth.value, 1, '00:00');
+  const endD = new Date(selectedYear.value, selectedMonth.value, 0);
+  ganttEndDate.value = formatDateForGantt(selectedYear.value, selectedMonth.value, endD.getDate(), '23:59');
+
+  const rows: any[] = [];
+  filteredMatriz.value.forEach(row => {
+    const blocks = extractContiguousBlocks(row);
+    const bars = blocks.map(block => {
+      let bg = '#e5e7eb';
+      if (block.diaData.estado === 'CONFLICTO') bg = '#ef4444';
+      else if (block.diaData.estado === 'NAVEGANDO' && block.diaData.estadoSecundario === 'VIAJE') bg = 'linear-gradient(135deg,#00FF00 50%,#E6E6FA 50%)';
+      else if (block.diaData.estado === 'NAVEGANDO') bg = '#00FF00';
+      else if (block.diaData.estado === 'PUERTO') bg = '#FFE4C4';
+      else if (block.diaData.estado === 'ESPERANDO_ZARPADA') bg = '#E8E8E8';
+      else if (block.diaData.estado === 'VIAJE') bg = '#E6E6FA';
+      else if (block.diaData.estado === 'NOVEDAD') bg = '#ADD8E6';
+      else if (block.diaData.estado === 'FERIADO') bg = '#FFA500';
+
+      return {
+        myBeginDate: formatDateForGantt(selectedYear.value, selectedMonth.value, block.startDia, '00:00'),
+        myEndDate: formatDateForGantt(selectedYear.value, selectedMonth.value, block.endDia, '23:59'),
+        ganttBarConfig: {
+          id: `${row.observador.id}-${block.startDia}`,
+          label: block.content,
+          hasHandles: true,
+          style: {
+            background: bg,
+            color: 'black',
+            borderRadius: '4px',
+            fontSize: '10px',
+            fontWeight: '900',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.1)'
+          }
+        }
+      };
+    });
+    
+    rows.push({
+      id: row.observador.id,
+      label: `${row.observador.apellido}, ${row.observador.nombre}`,
+      bars: bars
+    });
+  });
+  
+  ganttRows.value = rows;
 };
 
 const getDiaSemana = (dia: number) => {
@@ -371,5 +746,82 @@ onMounted(() => {
 /* Optional custom scrollbar for the table if needed */
 .overflow-x-auto {
   scrollbar-width: thin;
+}
+
+:deep(.vis-item) {
+  border-radius: 4px;
+  border-color: rgba(0,0,0,0.1);
+  color: black;
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.1);
+}
+
+:deep(.vis-item-conflicto) {
+  background-color: #ef4444 !important; /* bg-error */
+  color: white !important;
+}
+
+:deep(.vis-item-naveg-viaje) {
+  background: linear-gradient(135deg, #00FF00 50%, #E6E6FA 50%) !important;
+}
+
+:deep(.vis-item-navegando) {
+  background-color: #00FF00 !important;
+}
+
+:deep(.vis-item-puerto) {
+  background-color: #FFE4C4 !important;
+}
+
+:deep(.vis-item-ez) {
+  background-color: #E8E8E8 !important;
+}
+
+:deep(.vis-item-viaje) {
+  background-color: #E6E6FA !important;
+}
+
+:deep(.vis-item-novedad) {
+  background-color: #ADD8E6 !important;
+}
+
+:deep(.vis-item-feriado) {
+  background-color: #FFA500 !important;
+}
+
+:deep(.vis-item-content) {
+  padding: 2px 4px !important;
+  width: 100% !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  box-sizing: border-box !important;
+  line-height: 1.2 !important;
+  display: block !important;
+}
+
+:deep(.vis-label) {
+  font-size: 13px !important;
+}
+
+:deep(.vis-label .vis-inner) {
+  padding: 4px !important;
+}
+
+:deep(.vis-label .vis-inner div) {
+  font-size: 13px !important;
+  line-height: 1.2 !important;
+}
+
+:deep(.vis-time-axis .vis-text) {
+  font-weight: 500;
+  color: #374151; /* gray-700 */
+}
+
+:deep(.vis-time-axis .vis-text.vis-saturday),
+:deep(.vis-time-axis .vis-text.vis-sunday) {
+  color: #ef4444 !important; /* text-red-500 */
+  font-weight: bold !important;
 }
 </style>

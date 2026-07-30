@@ -25,6 +25,9 @@ app.use(router)
 app.use(VueApexCharts as any)
 app.directive('form-nav', vFormNav)
 
+import ganttastic from '@infectoone/vue-ganttastic'
+app.use(ganttastic)
+
 const initApp = async () => {
     const authStore = useAuthStore()
     const businessRulesStore = useBusinessRulesStore()
