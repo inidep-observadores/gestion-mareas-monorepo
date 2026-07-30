@@ -88,5 +88,50 @@ describe('DateUtils', () => {
             const result = DateUtils.calculateUniqueDays(intervals);
             expect(result).toBe(10);
         });
+
+        it('should cap ongoing intervals at limitEnd', () => {
+            const intervals = [
+                { start: new Date('2026-07-01T00:00:00Z'), end: null } // ongoing
+            ];
+            // Cap at July 15
+            const limitEnd = new Date('2026-07-15T00:00:00Z');
+            
+            const result = DateUtils.calculateUniqueDays(intervals, undefined, limitEnd);
+            // July 1 to July 15 = 15 days
+            expect(result).toBe(15);
+        });
+
+        it('should correctly limit counted days within a periodRange', () => {
+            const intervals = [
+                { start: new Date('2026-06-15T00:00:00Z'), end: new Date('2026-07-15T00:00:00Z') }
+            ];
+            // Period is Q3: July 1 to Sept 30
+            const periodRange = {
+                start: new Date('2026-07-01T00:00:00Z'),
+                end: new Date('2026-09-30T00:00:00Z')
+            };
+
+            const result = DateUtils.calculateUniqueDays(intervals, periodRange);
+            // Intersection is July 1 to July 15 = 15 days
+            expect(result).toBe(15);
+        });
+
+        it('should cap at limitEnd AND intersect with periodRange for ongoing intervals', () => {
+            const intervals = [
+                { start: new Date('2026-06-15T00:00:00Z'), end: null } // ongoing
+            ];
+            // Period is Q3: July 1 to Sept 30
+            const periodRange = {
+                start: new Date('2026-07-01T00:00:00Z'),
+                end: new Date('2026-09-30T00:00:00Z')
+            };
+            // limitEnd is July 10 (e.g. today's date)
+            const limitEnd = new Date('2026-07-10T00:00:00Z');
+
+            const result = DateUtils.calculateUniqueDays(intervals, periodRange, limitEnd);
+            // Start capped by periodRange (July 1). End capped by limitEnd (July 10).
+            // July 1 to July 10 = 10 days
+            expect(result).toBe(10);
+        });
     });
 });
