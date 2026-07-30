@@ -195,17 +195,8 @@
 
       <!-- Timeline -->
       <div v-show="activeTab === 'timeline'" class="bg-surface rounded-2xl shadow-sm border border-border overflow-hidden p-4 flex flex-col gap-4">
-        <!-- Toolbar de Cuadrícula Vis-Timeline -->
-        <div class="flex items-center gap-2 px-2">
-          <span class="text-xs font-bold text-text-muted uppercase tracking-wider">Escala Cuadrícula:</span>
-          <div class="flex bg-surface-muted rounded overflow-hidden border border-border shadow-sm">
-            <button @click="setVisPrecision('auto')" :class="['px-4 py-1.5 text-xs font-bold transition-colors', visPrecision === 'auto' ? 'bg-primary text-primary-foreground' : 'hover:bg-gray-200 text-text']">Auto (Responsive)</button>
-            <button @click="setVisPrecision('day')" :class="['px-4 py-1.5 text-xs font-bold transition-colors border-l border-border', visPrecision === 'day' ? 'bg-primary text-primary-foreground' : 'hover:bg-gray-200 text-text']">Día</button>
-            <button @click="setVisPrecision('week')" :class="['px-4 py-1.5 text-xs font-bold transition-colors border-l border-border', visPrecision === 'week' ? 'bg-primary text-primary-foreground' : 'hover:bg-gray-200 text-text']">Semana</button>
-            <button @click="setVisPrecision('month')" :class="['px-4 py-1.5 text-xs font-bold transition-colors border-l border-border', visPrecision === 'month' ? 'bg-primary text-primary-foreground' : 'hover:bg-gray-200 text-text']">Mes</button>
-          </div>
-        </div>
-        <div ref="timelineContainer" class="w-full h-[65vh] bg-white text-black rounded-lg border border-gray-200 shadow-inner"></div>
+
+        <div ref="timelineContainer" class="w-full h-[65vh] bg-surface text-text rounded-lg border border-border shadow-inner"></div>
       </div>
 
       </template>
@@ -246,18 +237,7 @@ const activeTab = ref('grilla');
 // Vis-Timeline
 const timelineContainer = ref<HTMLElement | null>(null);
 let timelineInstance: any = null;
-const visPrecision = ref<'auto' | 'day' | 'week' | 'month'>('auto');
 
-const setVisPrecision = (precision: 'auto' | 'day' | 'week' | 'month') => {
-  visPrecision.value = precision;
-  if (!timelineInstance) return;
-  
-  if (precision === 'auto') {
-    timelineInstance.setOptions({ timeAxis: { scale: undefined, step: 1 } });
-  } else {
-    timelineInstance.setOptions({ timeAxis: { scale: precision, step: 1 } });
-  }
-};
 
 
 
@@ -432,7 +412,8 @@ const renderTimeline = () => {
       zoomMax: 1000 * 60 * 60 * 24 * 31 * 3,
       margin: { item: 2, axis: 5 },
       orientation: 'top',
-      editable: true
+      editable: false,
+      timeAxis: { scale: 'day', step: 1 }
     };
     timelineInstance = new Timeline(timelineContainer.value, [], [], options);
   }
@@ -440,7 +421,7 @@ const renderTimeline = () => {
   const groups = new DataSet(
     filteredMatriz.value.map(row => ({
       id: row.observador.id,
-      content: `<div style="font-weight: bold; font-size: 13px; color: black; line-height: 1.2;">${row.observador.apellido}, ${row.observador.nombre}</div>`,
+      content: `<div class="text-text" style="font-weight: bold; font-size: 13px; line-height: 1.2;">${row.observador.apellido}, ${row.observador.nombre}</div>`,
       value: row.observador.apellido
     }))
   );
@@ -578,6 +559,35 @@ onMounted(() => {
   box-shadow: inset 0 0 0 1px rgba(0,0,0,0.1);
 }
 
+.dark :deep(.vis-item) {
+  border-color: rgba(255,255,255,0.1);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.1);
+}
+
+/* Modificaciones para Modo Oscuro en Paneles y Grillas */
+:deep(.vis-timeline) {
+  border: none !important;
+}
+
+:deep(.vis-panel.vis-background),
+:deep(.vis-panel.vis-bottom),
+:deep(.vis-panel.vis-center),
+:deep(.vis-panel.vis-left),
+:deep(.vis-panel.vis-right),
+:deep(.vis-panel.vis-top) {
+  border-color: var(--color-border, #e5e7eb) !important;
+}
+
+:deep(.vis-time-axis .vis-grid.vis-minor),
+:deep(.vis-time-axis .vis-grid.vis-major) {
+  border-color: var(--color-border, #e5e7eb) !important;
+}
+
+:deep(.vis-labelset .vis-label) {
+  border-color: var(--color-border, #e5e7eb) !important;
+  color: var(--color-text) !important;
+}
+
 :deep(.vis-item-conflicto) {
   background-color: #ef4444 !important; /* bg-error */
   color: white !important;
@@ -639,7 +649,7 @@ onMounted(() => {
 
 :deep(.vis-time-axis .vis-text) {
   font-weight: 500;
-  color: #374151; /* gray-700 */
+  color: var(--color-text-muted, #374151) !important;
 }
 
 :deep(.vis-time-axis .vis-text.vis-saturday),
