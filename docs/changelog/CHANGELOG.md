@@ -5,7 +5,10 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 
 ## [Unreleased]
 
+## [v0.11.0] - 2026-07-30
+
 ### Added
+- **reports:** agregar fila de totales a las tablas del anexo 1
 - **admin:** añadir filtros avanzados por contrato, origen y rango de fechas en la vista de novedades
 - **docs:** agregar guía completa para la renovación y configuración del Refresh Token permanente de Google Drive
 - **backend:** implementar soporte y detección de días discontinuos o salteados en notas GDE y disponibilidades procesadas por IA
@@ -13,16 +16,6 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 - **novedades:** incluir exclusión automática de fines de semana y feriados (Prisma) en periodos de Francos Compensatorios (FC)
 - **frontend:** crear componente reutilizable `AttachmentViewer` para alternar entre previsualización y lista de enlaces, con persistencia de preferencia del usuario
 - **admin:** añadir buscador interactivo de texto completo en la vista de auditoría de correos (`AuditoriaEmailsView`)
-
-### Changed
-- **admin:** sustituir bloques estáticos de adjuntos por `AttachmentViewer` en auditoría de correos y detalle de novedades
-- **novedades:** implementar borrado lógico para auditoría y persistencia histórica
-- **presentismo:** permitir solapamiento válido entre estados navegando y en viaje
-- **presentismo:** optimizar estética de estados duales y acortar etiqueta médica en Excel
-
-## [v0.11.0] - 2026-07-15
-
-### Added
 - **frontend:** agregar validacion manual de fechas de inicio y fin en UI
 - **backend:** agregar mapeo de pasajes a viajes y flexibilizar solapamientos
 - **backend:** agregar clasificacion de errores temporales e ignorar parcialmente
@@ -44,7 +37,14 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 - **protocolizacion:** añadir filtros por año en Esperando Confirmación
 - **protocolizacion:** filtros interactivos por año y contadores dinámicos
 
+### Changed
+- **admin:** sustituir bloques estáticos de adjuntos por `AttachmentViewer` en auditoría de correos y detalle de novedades
+- **novedades:** implementar borrado lógico para auditoría y persistencia histórica
+- **presentismo:** permitir solapamiento válido entre estados navegando y en viaje
+- **presentismo:** optimizar estética de estados duales y acortar etiqueta médica en Excel
+
 ### Fixed
+- **reports:** limitar snapDate a Date.now() en reportes de auditoria para evitar proyeccion futura de dias navegados
 - **mareas:** reemplazar window.confirm por ConfirmationDialog en validacion manual y mejorar IA de pasajes
 - **backend:** manejar autocierre de novedades de un solo dia y arreglar solapamiento con nulos
 - **backend:** enlazar archivo adjunto a todas las novedades extraidas de un email
