@@ -305,7 +305,7 @@
             <label class="block text-xs font-bold text-text-muted">Buque</label>
             <SearchableSelect 
               :modelValue="editingBlockData.buqueId ?? null"
-              @update:modelValue="(v) => (editingBlockData.buqueId = v as string | null)"
+              @update:modelValue="(v) => (editingBlockData!.buqueId = v as string | null)"
               :options="buqueOptions" 
               :icon="ShipIcon" 
               placeholder="Seleccione buque..." 
