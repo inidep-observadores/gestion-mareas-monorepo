@@ -172,7 +172,10 @@ export class PlanificacionService {
    * Genera bloques agrupados por estado continuo.
    */
   async obtenerEventosSimulador(year: number, month: number, horizonMonths: number = 6) {
-    const startOfRange = DateTime.utc(year, month, 1);
+    const startOfRange = DateTime.fromObject(
+      { year, month, day: 1 },
+      { zone: process.env.APP_TIMEZONE || 'America/Argentina/Buenos_Aires' }
+    );
     const endOfRange = startOfRange.plus({ months: horizonMonths }).minus({ seconds: 1 });
 
     const observadores = await this.prisma.observador.findMany({

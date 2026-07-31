@@ -11,7 +11,10 @@ export class PresentismoService {
   constructor(private readonly prisma: PrismaService) {}
 
   async obtenerPlanillaMensual(year: number, month: number): Promise<PlanillaMensualResponseDto> {
-    const startOfMonth = DateTime.utc(year, month, 1);
+    const startOfMonth = DateTime.fromObject(
+      { year, month, day: 1 },
+      { zone: process.env.APP_TIMEZONE || 'America/Argentina/Buenos_Aires' }
+    );
     const endOfMonth = startOfMonth.endOf('month');
     const diasMes = startOfMonth.daysInMonth;
 
