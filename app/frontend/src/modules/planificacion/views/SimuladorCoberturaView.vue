@@ -21,29 +21,7 @@
         </div>
 
         <div class="flex flex-wrap items-center gap-3">
-          <!-- Selector de Mes -->
-          <div class="relative">
-            <select
-              v-model="selectedMonth"
-              @change="fetchData"
-              class="h-10 pl-3 pr-8 rounded-xl border bg-surface text-xs font-bold border-border outline-none focus:border-primary transition-all text-text cursor-pointer"
-            >
-              <option v-for="(m, i) in months" :key="i" :value="i + 1">{{ m }}</option>
-            </select>
-            <ChevronDownIcon class="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted pointer-events-none" />
-          </div>
 
-          <!-- Selector de Año -->
-          <div class="relative">
-            <select
-              v-model="selectedYear"
-              @change="fetchData"
-              class="h-10 pl-3 pr-8 rounded-xl border bg-surface text-xs font-bold border-border outline-none focus:border-primary transition-all text-text cursor-pointer"
-            >
-              <option v-for="y in availableYears" :key="y" :value="y">{{ y }}</option>
-            </select>
-            <ChevronDownIcon class="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted pointer-events-none" />
-          </div>
 
           <!-- Botones de Acción de Escenario -->
           <button
@@ -369,15 +347,8 @@ import { Timeline, type TimelineOptions } from 'vis-timeline/standalone';
 import { DataSet } from 'vis-data';
 import 'vis-timeline/styles/vis-timeline-graph2d.min.css';
 
-const currentDate = new Date();
-const selectedMonth = ref(currentDate.getMonth() + 1);
-const selectedYear = ref(currentDate.getFullYear());
-const availableYears = Array.from({ length: 5 }, (_, i) => currentDate.getFullYear() - 2 + i);
-
-const months = [
-  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
-];
+import { useConfigStore } from '@/modules/shared/stores/config.store';
+const configStore = useConfigStore();
 
 const isLoading = ref(false);
 const searchQuery = ref('');
@@ -387,7 +358,7 @@ const sidebarOpen = ref(true);
 const escenarioActual = ref<EscenarioSimulacionState>({
   id: 'escenario-draft-1',
   nombre: 'Escenario Borrador 1',
-  anioOperativo: selectedYear.value,
+  anioOperativo: configStore.selectedYear,
   estado: 'BORRADOR',
   fechaCreacion: new Date().toISOString(),
   items: []
@@ -528,7 +499,7 @@ const guardarRecurso = () => {
       diasEstimados: resourceForm.value.diasEstimados || 30,
       puertoSugerido: buque?.puertoBase?.nombre || '',
       prioridad: (resourceForm.value.prioridad as 'ALTA' | 'MEDIA' | 'BAJA') || 'MEDIA',
-      mesProyectado: selectedMonth.value
+      mesProyectado: 1
     });
     toast.success('Requerimiento creado exitosamente');
   }
@@ -661,8 +632,8 @@ const conflictosDetectados = computed(() => {
 const fetchData = async () => {
   isLoading.value = true;
   try {
-    // Fetches from January up to selectedMonth + 5 months
-    const data = await planificacionService.obtenerEventosSimulador(selectedYear.value, 1, selectedMonth.value + 5);
+    // Fetches from January of the operative year up to 60 months forward (5 years)
+    const data = await planificacionService.obtenerEventosSimulador(configStore.selectedYear, 1, 60);
     datosSimulacion.value = data;
   } catch (error) {
     toast.error('Ocurrió un error al cargar los datos de planificación');
@@ -672,7 +643,7 @@ const fetchData = async () => {
   }
 };
 
-watch([filteredObservadores, selectedMonth, selectedYear], async () => {
+watch([filteredObservadores, () => configStore.selectedYear], async () => {
   if (!datosSimulacion.value) return;
   await nextTick();
   renderTimeline();
@@ -686,29 +657,27 @@ const renderTimeline = () => {
     timelineInstance = null;
   }
 
-  // Limites totales de los datos para restringir scroll
-  const dataStart = new Date(selectedYear.value, 0, 1);
-  const dataEndMonthRaw = selectedMonth.value + 5;
-  const dataEndYear = selectedYear.value + Math.floor((dataEndMonthRaw - 1) / 12);
-  const dataEndMonth = ((dataEndMonthRaw - 1) % 12) + 1;
-  const dataEnd = new Date(dataEndYear, dataEndMonth, 0, 23, 59, 59);
+  // Limites totales de los datos para restringir scroll (5 años)
+  const dataStart = new Date(configStore.selectedYear, 0, 1);
+  const dataEnd = new Date(configStore.selectedYear + 4, 11, 31, 23, 59, 59);
 
   // Ventana visible inicial (zoom)
   let visibleStart: Date;
   let visibleEnd: Date;
+  const sysCurrentDate = new Date();
   
-  if (selectedYear.value < currentDate.getFullYear()) {
-     // Si es año pasado, zoom en Diciembre del año seleccionado
-     visibleStart = new Date(selectedYear.value, 11, 1);
-     visibleEnd = new Date(selectedYear.value, 11, 31, 23, 59, 59);
-  } else if (selectedYear.value === currentDate.getFullYear()) {
-     // Si es año actual, zoom en el mes actual
-     visibleStart = new Date(selectedYear.value, currentDate.getMonth(), 1);
-     visibleEnd = new Date(selectedYear.value, currentDate.getMonth() + 1, 0, 23, 59, 59);
+  if (configStore.selectedYear < sysCurrentDate.getFullYear()) {
+     // Si es año pasado, zoom en Diciembre del año operativo
+     visibleStart = new Date(configStore.selectedYear, 11, 1);
+     visibleEnd = new Date(configStore.selectedYear, 11, 31, 23, 59, 59);
+  } else if (configStore.selectedYear === sysCurrentDate.getFullYear()) {
+     // Si es año actual, zoom desde mes actual hasta mes siguiente
+     visibleStart = new Date(configStore.selectedYear, sysCurrentDate.getMonth(), 1);
+     visibleEnd = new Date(configStore.selectedYear, sysCurrentDate.getMonth() + 2, 0, 23, 59, 59);
   } else {
-     // Si es año futuro, zoom en el mes seleccionado
-     visibleStart = new Date(selectedYear.value, selectedMonth.value - 1, 1);
-     visibleEnd = new Date(selectedYear.value, selectedMonth.value, 0, 23, 59, 59);
+     // Si es año futuro, zoom en el primer bimestre del año operativo
+     visibleStart = new Date(configStore.selectedYear, 0, 1);
+     visibleEnd = new Date(configStore.selectedYear, 2, 0, 23, 59, 59);
   }
 
   const groups = new DataSet(
