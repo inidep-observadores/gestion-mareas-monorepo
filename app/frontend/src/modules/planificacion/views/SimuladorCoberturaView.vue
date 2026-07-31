@@ -153,10 +153,22 @@
               @dragstart="onDragStartRecurso($event, recurso)"
               class="p-3.5 rounded-xl border border-border bg-surface hover:bg-surface-muted hover:border-primary/50 transition-all cursor-grab active:cursor-grabbing shadow-sm group relative"
             >
-              <div class="flex items-center justify-between mb-1.5">
-                <span class="text-xs font-extrabold text-primary group-hover:text-primary-hover transition-colors">
+              <div class="flex items-center justify-between mb-1.5 pr-14 relative">
+                <span class="text-xs font-extrabold text-primary group-hover:text-primary-hover transition-colors truncate pr-2">
                   {{ recurso.pesqueriaNombre }}
                 </span>
+                
+                <div class="absolute right-0 top-0 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button @click="abrirModalEditarRecurso(recurso)" class="p-1 rounded text-text-muted hover:text-primary hover:bg-primary/10 transition-colors" title="Editar">
+                    <EditIcon class="w-3.5 h-3.5" />
+                  </button>
+                  <button @click="eliminarRecurso(recurso.id)" class="p-1 rounded text-text-muted hover:text-error hover:bg-error/10 transition-colors" title="Eliminar">
+                    <TrashIcon class="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+              
+              <div class="flex items-center justify-between mb-2">
                 <span
                   class="px-1.5 py-0.5 rounded text-[10px] font-black uppercase tracking-wider"
                   :class="recurso.prioridad === 'ALTA' ? 'bg-error/10 text-error' : 'bg-info/10 text-info'"
@@ -215,35 +227,48 @@
       </div>
     </div>
 
-    <!-- Modal Crear Recurso -->
-    <Dialog :open="isCreateResourceModalOpen" @close="cerrarModalCrearRecurso" class="relative z-50">
+    <!-- Modal Crear/Editar Recurso -->
+    <Dialog :open="isResourceModalOpen" @close="cerrarModalRecurso" class="relative z-50">
       <div class="fixed inset-0 bg-black/30 backdrop-blur-sm" aria-hidden="true" />
       <div class="fixed inset-0 flex w-screen items-center justify-center p-4">
         <DialogPanel class="w-full max-w-md rounded-2xl bg-surface border border-border p-6 shadow-xl">
           <div class="flex items-center justify-between mb-4">
-            <DialogTitle class="text-lg font-black text-text">Crear Requerimiento</DialogTitle>
-            <button @click="cerrarModalCrearRecurso" class="p-1 rounded-md text-text-muted hover:bg-surface-muted transition">
+            <DialogTitle class="text-lg font-black text-text">
+              {{ editingRecursoId ? 'Editar Requerimiento' : 'Crear Requerimiento' }}
+            </DialogTitle>
+            <button @click="cerrarModalRecurso" class="p-1 rounded-md text-text-muted hover:bg-surface-muted transition">
               <XIcon class="w-5 h-5" />
             </button>
           </div>
           
-          <div class="space-y-4">
-            <div>
-              <label class="block text-xs font-bold text-text-muted mb-1">Pesquería (obligatorio)</label>
-              <input v-model="newResourceForm.pesqueriaNombre" type="text" class="w-full h-10 px-3 rounded-xl border border-border bg-surface text-sm text-text focus:border-primary outline-none" placeholder="Ej: Merluza Hubbsi" />
+          <div class="space-y-4" v-if="!loadingCatalogs">
+            <div class="space-y-1.5">
+              <label class="block text-xs font-bold text-text-muted">Pesquería (obligatorio)</label>
+              <SearchableSelect 
+                v-model="resourceForm.pesqueriaId" 
+                :options="pesqueriaOptions" 
+                :icon="WaveIcon" 
+                placeholder="Seleccione pesquería..." 
+              />
             </div>
-            <div>
-              <label class="block text-xs font-bold text-text-muted mb-1">Buque (opcional)</label>
-              <input v-model="newResourceForm.buqueNombre" type="text" class="w-full h-10 px-3 rounded-xl border border-border bg-surface text-sm text-text focus:border-primary outline-none" placeholder="Ej: API V" />
+            <div class="space-y-1.5">
+              <label class="block text-xs font-bold text-text-muted">Buque (opcional)</label>
+              <SearchableSelect 
+                v-model="resourceForm.buqueId" 
+                :options="buqueOptions" 
+                :icon="ShipIcon" 
+                placeholder="Seleccione buque..." 
+                @change="handleBuqueChange"
+              />
             </div>
             <div class="grid grid-cols-2 gap-4">
-              <div>
-                <label class="block text-xs font-bold text-text-muted mb-1">Días Estimados</label>
-                <input v-model="newResourceForm.diasEstimados" type="number" class="w-full h-10 px-3 rounded-xl border border-border bg-surface text-sm text-text focus:border-primary outline-none" />
+              <div class="space-y-1.5">
+                <label class="block text-xs font-bold text-text-muted">Días Estimados</label>
+                <input v-model="resourceForm.diasEstimados" type="number" class="w-full h-10 px-3 rounded-xl border border-border bg-surface text-sm text-text focus:border-primary outline-none" />
               </div>
-              <div>
-                <label class="block text-xs font-bold text-text-muted mb-1">Prioridad</label>
-                <select v-model="newResourceForm.prioridad" class="w-full h-10 px-3 rounded-xl border border-border bg-surface text-sm text-text focus:border-primary outline-none">
+              <div class="space-y-1.5">
+                <label class="block text-xs font-bold text-text-muted">Prioridad</label>
+                <select v-model="resourceForm.prioridad" class="w-full h-10 px-3 rounded-xl border border-border bg-surface text-sm text-text focus:border-primary outline-none">
                   <option value="ALTA">Alta</option>
                   <option value="MEDIA">Media</option>
                   <option value="BAJA">Baja</option>
@@ -251,10 +276,13 @@
               </div>
             </div>
           </div>
+          <div v-else class="flex items-center justify-center py-10">
+            <div class="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+          </div>
           
           <div class="mt-6 flex justify-end gap-3">
-            <button @click="cerrarModalCrearRecurso" class="px-4 py-2 text-sm font-bold text-text bg-surface-muted rounded-xl hover:bg-border transition">Cancelar</button>
-            <button @click="guardarNuevoRecurso" class="px-4 py-2 text-sm font-bold text-white bg-primary rounded-xl hover:bg-primary/90 transition">Crear</button>
+            <button @click="cerrarModalRecurso" class="px-4 py-2 text-sm font-bold text-text bg-surface-muted rounded-xl hover:bg-border transition">Cancelar</button>
+            <button @click="guardarRecurso" :disabled="loadingCatalogs" class="px-4 py-2 text-sm font-bold text-white bg-primary rounded-xl hover:bg-primary/90 transition disabled:opacity-50">Guardar</button>
           </div>
         </DialogPanel>
       </div>
@@ -273,13 +301,23 @@
           </div>
           
           <div v-if="editingBlockData" class="space-y-4">
-            <div>
-              <label class="block text-xs font-bold text-text-muted mb-1">Pesquería</label>
-              <input v-model="editingBlockData.pesqueriaNombre" type="text" class="w-full h-10 px-3 rounded-xl border border-border bg-surface text-sm text-text focus:border-primary outline-none" />
+            <div class="space-y-1.5">
+              <label class="block text-xs font-bold text-text-muted">Pesquería</label>
+              <SearchableSelect 
+                v-model="editingBlockData.pesqueriaId" 
+                :options="pesqueriaOptions" 
+                :icon="WaveIcon" 
+                placeholder="Seleccione pesquería..." 
+              />
             </div>
-            <div>
-              <label class="block text-xs font-bold text-text-muted mb-1">Buque</label>
-              <input v-model="editingBlockData.buqueNombre" type="text" class="w-full h-10 px-3 rounded-xl border border-border bg-surface text-sm text-text focus:border-primary outline-none" />
+            <div class="space-y-1.5">
+              <label class="block text-xs font-bold text-text-muted">Buque</label>
+              <SearchableSelect 
+                v-model="editingBlockData.buqueId" 
+                :options="buqueOptions" 
+                :icon="ShipIcon" 
+                placeholder="Seleccione buque..." 
+              />
             </div>
           </div>
           
@@ -298,6 +336,7 @@ import { ref, onMounted, computed, watch, nextTick, onBeforeUnmount } from 'vue'
 import PlanificacionDashboardLayout from '../layouts/PlanificacionDashboardLayout.vue';
 import BackButton from '@/components/common/BackButton.vue';
 import SearchInput from '@/components/ui/SearchInput.vue';
+import SearchableSelect from '@/components/common/SearchableSelect.vue';
 import { Dialog, DialogPanel, DialogTitle } from '@headlessui/vue';
 import {
   ChevronDownIcon,
@@ -307,10 +346,13 @@ import {
   LayersIcon,
   WarningIcon,
   PlusIcon,
-  XIcon
+  XIcon,
+  WaveIcon,
+  EditIcon
 } from '@/icons';
 import { toast } from 'vue-sonner';
 import { planificacionService } from '../services/planificacion.service';
+import catalogosService from '../../mareas/services/catalogos.service';
 import type { MareaSimuladaItem, RecursoMareaPendiente, EscenarioSimulacionState } from '../interfaces/simulador.interface';
 import { Timeline, type TimelineOptions } from 'vis-timeline/standalone';
 import { DataSet } from 'vis-data';
@@ -341,48 +383,26 @@ const escenarioActual = ref<EscenarioSimulacionState>({
 });
 
 // Datos de Recursos Pendientes (Simulados / Requerimientos)
-const recursosPendientes = ref<RecursoMareaPendiente[]>([
-  {
-    id: 'rec-1',
-    pesqueriaId: 'pesq-merluza',
-    pesqueriaNombre: 'Merluza Hubbsi (Sur 41°)',
-    buqueNombre: 'API V (Fresquero)',
-    diasEstimados: 18,
-    puertoSugerido: 'Mar del Plata',
-    prioridad: 'ALTA',
-    mesProyectado: selectedMonth.value
-  },
-  {
-    id: 'rec-2',
-    pesqueriaId: 'pesq-calamar',
-    pesqueriaNombre: 'Calamar Illex (Congelador)',
-    buqueNombre: 'PATAGONIA I',
-    diasEstimados: 30,
-    puertoSugerido: 'Puerto Deseado',
-    prioridad: 'ALTA',
-    mesProyectado: selectedMonth.value
-  },
-  {
-    id: 'rec-3',
-    pesqueriaId: 'pesq-langostino',
-    pesqueriaNombre: 'Langostino (Zafra Nacional)',
-    buqueNombre: 'ALVAREZ ENTRENAS',
-    diasEstimados: 25,
-    puertoSugerido: 'Puerto Madryn',
-    prioridad: 'MEDIA',
-    mesProyectado: selectedMonth.value
-  },
-  {
-    id: 'rec-4',
-    pesqueriaId: 'pesq-centolla',
-    pesqueriaNombre: 'Centolla (Zona Sur)',
-    buqueNombre: 'DUKE I',
-    diasEstimados: 35,
-    puertoSugerido: 'Ushuaia',
-    prioridad: 'MEDIA',
-    mesProyectado: selectedMonth.value
-  }
-]);
+const recursosPendientes = ref<RecursoMareaPendiente[]>([]);
+
+// Catálogos
+const loadingCatalogs = ref(true);
+const buques = ref<any[]>([]);
+const pesquerias = ref<any[]>([]);
+
+const buqueOptions = computed(() => {
+  return buques.value.map(b => ({
+    value: b.id,
+    label: `${b.nombreBuque} (${b.matricula})`
+  }));
+});
+
+const pesqueriaOptions = computed(() => {
+  return pesquerias.value.map(p => ({
+    value: p.id,
+    label: p.nombre
+  }));
+});
 
 // Datos de Simulación
 const datosSimulacion = ref<{ observadores: any[], eventos: any[] } | null>(null);
@@ -394,10 +414,11 @@ const observadoresBase = computed(() => {
 });
 
 // Estado para modales
-const isCreateResourceModalOpen = ref(false);
-const newResourceForm = ref<Partial<RecursoMareaPendiente>>({
-  pesqueriaNombre: '',
-  buqueNombre: '',
+const isResourceModalOpen = ref(false);
+const editingRecursoId = ref<string | null>(null);
+const resourceForm = ref({
+  pesqueriaId: '',
+  buqueId: '',
   diasEstimados: 30,
   prioridad: 'MEDIA'
 });
@@ -406,36 +427,89 @@ const isEditBlockModalOpen = ref(false);
 const editingBlockData = ref<MareaSimuladaItem | null>(null);
 
 const abrirModalCrearRecurso = () => {
-  newResourceForm.value = {
-    pesqueriaNombre: '',
-    buqueNombre: '',
+  editingRecursoId.value = null;
+  resourceForm.value = {
+    pesqueriaId: '',
+    buqueId: '',
     diasEstimados: 30,
     prioridad: 'MEDIA'
   };
-  isCreateResourceModalOpen.value = true;
+  isResourceModalOpen.value = true;
 };
 
-const cerrarModalCrearRecurso = () => {
-  isCreateResourceModalOpen.value = false;
+const abrirModalEditarRecurso = (recurso: RecursoMareaPendiente) => {
+  editingRecursoId.value = recurso.id;
+  resourceForm.value = {
+    pesqueriaId: recurso.pesqueriaId || '',
+    buqueId: recurso.buqueId || '',
+    diasEstimados: recurso.diasEstimados,
+    prioridad: recurso.prioridad || 'MEDIA'
+  };
+  isResourceModalOpen.value = true;
 };
 
-const guardarNuevoRecurso = () => {
-  if (!newResourceForm.value.pesqueriaNombre) {
-    toast.error('El nombre de la pesquería es obligatorio');
+const eliminarRecurso = (id: string) => {
+  const idx = recursosPendientes.value.findIndex(r => r.id === id);
+  if (idx !== -1) {
+    recursosPendientes.value.splice(idx, 1);
+    toast.success('Recurso eliminado');
+  }
+};
+
+const cerrarModalRecurso = () => {
+  isResourceModalOpen.value = false;
+};
+
+const handleBuqueChange = () => {
+  const buque = buques.value.find(b => b.id === resourceForm.value.buqueId);
+  if (buque) {
+    if (buque.pesqueriaHabitualId && !resourceForm.value.pesqueriaId) {
+      resourceForm.value.pesqueriaId = buque.pesqueriaHabitualId;
+    }
+    if (buque.diasMareaEstimada) {
+      resourceForm.value.diasEstimados = buque.diasMareaEstimada;
+    }
+  }
+};
+
+const guardarRecurso = () => {
+  if (!resourceForm.value.pesqueriaId) {
+    toast.error('Debe seleccionar una pesquería');
     return;
   }
-  recursosPendientes.value.push({
-    id: `rec-custom-${Date.now()}`,
-    pesqueriaId: `pesq-custom-${Date.now()}`,
-    pesqueriaNombre: newResourceForm.value.pesqueriaNombre,
-    buqueNombre: newResourceForm.value.buqueNombre || '',
-    diasEstimados: newResourceForm.value.diasEstimados || 30,
-    puertoSugerido: '',
-    prioridad: (newResourceForm.value.prioridad as 'ALTA' | 'MEDIA' | 'BAJA') || 'MEDIA',
-    mesProyectado: selectedMonth.value
-  });
-  toast.success('Requerimiento creado exitosamente');
-  cerrarModalCrearRecurso();
+  
+  const pesqueria = pesquerias.value.find(p => p.id === resourceForm.value.pesqueriaId);
+  const buque = buques.value.find(b => b.id === resourceForm.value.buqueId);
+  
+  if (editingRecursoId.value) {
+    // Editar existente
+    const recurso = recursosPendientes.value.find(r => r.id === editingRecursoId.value);
+    if (recurso) {
+      recurso.pesqueriaId = resourceForm.value.pesqueriaId;
+      recurso.pesqueriaNombre = pesqueria?.nombre || '';
+      recurso.buqueId = resourceForm.value.buqueId;
+      recurso.buqueNombre = buque?.nombreBuque || '';
+      recurso.diasEstimados = resourceForm.value.diasEstimados;
+      recurso.prioridad = resourceForm.value.prioridad as any;
+      toast.success('Requerimiento actualizado exitosamente');
+    }
+  } else {
+    // Crear nuevo
+    recursosPendientes.value.push({
+      id: `rec-custom-${Date.now()}`,
+      pesqueriaId: resourceForm.value.pesqueriaId,
+      pesqueriaNombre: pesqueria?.nombre || '',
+      buqueId: resourceForm.value.buqueId,
+      buqueNombre: buque?.nombreBuque || '',
+      diasEstimados: resourceForm.value.diasEstimados || 30,
+      puertoSugerido: buque?.puertoBase?.nombre || '',
+      prioridad: (resourceForm.value.prioridad as 'ALTA' | 'MEDIA' | 'BAJA') || 'MEDIA',
+      mesProyectado: selectedMonth.value
+    });
+    toast.success('Requerimiento creado exitosamente');
+  }
+  
+  cerrarModalRecurso();
 };
 
 const cerrarModalEditarBloque = () => {
@@ -447,6 +521,16 @@ const guardarEdicionBloque = () => {
   if (!editingBlockData.value) return;
   const idx = escenarioActual.value.items.findIndex(i => i.id === editingBlockData.value?.id);
   if (idx !== -1) {
+    const pesqueria = pesquerias.value.find(p => p.id === editingBlockData.value?.pesqueriaId);
+    const buque = buques.value.find(b => b.id === editingBlockData.value?.buqueId);
+    
+    if (pesqueria) {
+      editingBlockData.value.pesqueriaNombre = pesqueria.nombre;
+    }
+    if (buque) {
+      editingBlockData.value.buqueNombre = buque.nombreBuque;
+    }
+    
     escenarioActual.value.items[idx] = { ...editingBlockData.value };
     toast.success('Marea simulada actualizada');
     renderTimeline(); // Re-render to update the visual label
@@ -838,7 +922,21 @@ const limpiarSimulacion = () => {
   toast.info('Se han limpiado los bloques simulados');
 };
 
-onMounted(() => {
+onMounted(async () => {
+  try {
+    const [b, p] = await Promise.all([
+      catalogosService.getBuques(),
+      catalogosService.getPesquerias()
+    ]);
+    buques.value = b;
+    pesquerias.value = p;
+  } catch (e) {
+    console.error('Error fetching catalogs:', e);
+    toast.error('Ocurrió un error al cargar catálogos.');
+  } finally {
+    loadingCatalogs.value = false;
+  }
+  
   fetchData();
 });
 
