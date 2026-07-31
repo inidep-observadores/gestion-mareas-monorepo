@@ -69,23 +69,23 @@
       <div class="flex flex-wrap items-center justify-between gap-4 p-4 rounded-xl border border-border bg-surface shadow-sm">
         <div class="flex flex-wrap items-center gap-4">
           <div class="flex items-center gap-2">
-            <div class="w-6 h-5 rounded bg-[#22c55e] border-2 border-[#16a34a]"></div>
+            <div class="w-6 h-5 rounded border-2 legend-ejecucion"></div>
             <span class="text-[11px] font-bold uppercase text-text-muted">En Ejecución</span>
           </div>
           <div class="flex items-center gap-2">
-            <div class="w-6 h-5 rounded bg-[#dcfce7] border-2 border-[#86efac]"></div>
+            <div class="w-6 h-5 rounded border-2 legend-finalizada"></div>
             <span class="text-[11px] font-bold uppercase text-text-muted">Finalizada</span>
           </div>
           <div class="flex items-center gap-2">
-            <div class="w-6 h-5 rounded bg-[#e0f2fe] border-2 border-[#0ea5e9]"></div>
+            <div class="w-6 h-5 rounded border-2 legend-designada"></div>
             <span class="text-[11px] font-bold uppercase text-text-muted">Designada</span>
           </div>
           <div class="flex items-center gap-2">
-            <div class="w-6 h-5 rounded bg-surface-muted border-2 border-border"></div>
+            <div class="w-6 h-5 rounded border-2 legend-licencia"></div>
             <span class="text-[11px] font-bold uppercase text-text-muted">Licencia</span>
           </div>
           <div class="flex items-center gap-2">
-            <div class="w-6 h-5 rounded bg-primary/20 border-2 border-primary border-dashed"></div>
+            <div class="w-6 h-5 rounded border-2 legend-proyectada"></div>
             <span class="text-[11px] font-bold uppercase text-text-muted">Proyectada</span>
           </div>
           <div class="flex items-center gap-2">
@@ -581,24 +581,24 @@ const renderTimeline = () => {
         const durStr = `[${durationDays}d]`;
 
         if (ev.mareaEstado === 'DESIGNADA') {
-          visClass = 'vis-item-designada border-2 border-[#0ea5e9] bg-[#e0f2fe] text-[#0369a1] font-bold'; // Celeste
+          visClass = 'vis-item-designada';
           title = `${mareaCode} ${durStr} (Designada)`;
           isEditable = { updateTime: true, updateGroup: false, remove: false };
         } else if (ev.mareaEstado === 'EN_EJECUCION') {
-          visClass = 'vis-item-ejecucion border-2 border-[#16a34a] bg-[#22c55e] text-white font-bold'; // Verde Fuerte
+          visClass = 'vis-item-ejecucion';
           title = `${mareaCode} ${durStr} (Navegando)`;
           isEditable = { updateTime: true, updateGroup: false, remove: false };
         } else {
           // FINALIZADA, PROTOCOLIZADA, A_REASIGNAR, etc.
-          visClass = 'vis-item-navegando bg-[#dcfce7] border-2 border-[#86efac] text-[#15803d] font-bold opacity-80'; // Verde Atenuado
+          visClass = 'vis-item-navegando';
           title = `${mareaCode} ${durStr} (Finalizada)`;
           isEditable = false;
         }
       } else if (ev.estado === 'NOVEDAD') {
-        visClass = 'vis-item-novedad bg-surface-muted border-2 border-border text-text-muted font-bold'; // Gris
+        visClass = 'vis-item-novedad';
         title = ev.codigoCorto || 'Licencia';
       } else if (ev.estado === 'CONFLICTO') {
-        visClass = 'vis-item-conflicto bg-error text-white font-bold animate-pulse';
+        visClass = 'vis-item-conflicto';
         title = 'Conflicto';
       }
 
@@ -814,7 +814,7 @@ const onDropTimeline = (event: DragEvent) => {
       start: nuevoItemSimulado.fechaZarpada,
       end: nuevoItemSimulado.fechaArribo,
       content: `<div class="flex items-center gap-1 font-bold"><span class="text-[10px]">✨</span> ${nuevoItemSimulado.pesqueriaNombre} [${nuevoItemSimulado.diasEstimados}d] (Proyectada)</div>`,
-      className: 'vis-item-simulada border-2 border-dashed border-primary bg-primary/20 text-primary font-bold shadow-sm',
+      className: 'vis-item-simulada',
       editable: { updateTime: true, updateGroup: true, remove: true }
     });
 
@@ -911,6 +911,7 @@ onBeforeUnmount(() => {
 </style>
 
 <style scoped>
+/* LIGHT MODE (Default) */
 :deep(.vis-item) {
   border-radius: 4px;
 }
@@ -919,34 +920,61 @@ onBeforeUnmount(() => {
   border: 2px solid #0ea5e9 !important;
   color: #0369a1 !important;
 }
+.legend-designada { background-color: #e0f2fe; border-color: #0ea5e9; }
+
 :deep(.vis-item-ejecucion) {
   background-color: #22c55e !important;
   border: 2px solid #16a34a !important;
   color: #ffffff !important;
 }
+.legend-ejecucion { background-color: #22c55e; border-color: #16a34a; }
+
 :deep(.vis-item-navegando) {
   background-color: #dcfce7 !important;
   border: 2px solid #86efac !important;
   color: #15803d !important;
   opacity: 0.8 !important;
 }
+.legend-finalizada { background-color: #dcfce7; border-color: #86efac; }
+
 :deep(.vis-item-novedad) {
   background-color: #f3f4f6 !important;
   border: 2px solid #d1d5db !important;
   color: #6b7280 !important;
 }
+.legend-licencia { background-color: #f3f4f6; border-color: #d1d5db; }
+
 :deep(.vis-item-simulada) {
   background-color: rgba(59, 130, 246, 0.2) !important;
   border: 2px dashed #3b82f6 !important;
   color: #1d4ed8 !important;
 }
+.legend-proyectada { background-color: rgba(59, 130, 246, 0.2); border-color: #3b82f6; border-style: dashed; }
+
 :deep(.vis-item-conflicto) {
   background-color: #ef4444 !important;
   border: 2px solid #b91c1c !important;
   color: #ffffff !important;
 }
+
 :deep(.vis-item-content) {
   font-weight: bold !important;
   padding: 4px 8px !important;
 }
+
+/* DARK MODE */
+:global(.dark) :deep(.vis-item-designada) { background-color: rgba(14, 165, 233, 0.2) !important; border-color: #0284c7 !important; color: #bae6fd !important; }
+:global(.dark) .legend-designada { background-color: rgba(14, 165, 233, 0.2); border-color: #0284c7; }
+
+:global(.dark) :deep(.vis-item-ejecucion) { background-color: #15803d !important; border-color: #166534 !important; color: #ffffff !important; }
+:global(.dark) .legend-ejecucion { background-color: #15803d; border-color: #166534; }
+
+:global(.dark) :deep(.vis-item-navegando) { background-color: rgba(22, 163, 74, 0.2) !important; border-color: #15803d !important; color: #86efac !important; }
+:global(.dark) .legend-finalizada { background-color: rgba(22, 163, 74, 0.2); border-color: #15803d; }
+
+:global(.dark) :deep(.vis-item-novedad) { background-color: rgba(107, 114, 128, 0.2) !important; border-color: #4b5563 !important; color: #d1d5db !important; }
+:global(.dark) .legend-licencia { background-color: rgba(107, 114, 128, 0.2); border-color: #4b5563; }
+
+:global(.dark) :deep(.vis-item-simulada) { background-color: rgba(59, 130, 246, 0.15) !important; border-color: #3b82f6 !important; color: #93c5fd !important; }
+:global(.dark) .legend-proyectada { background-color: rgba(59, 130, 246, 0.15); border-color: #3b82f6; }
 </style>
