@@ -287,7 +287,7 @@
     <BaseModal 
       :show="isEditBlockModalOpen" 
       @close="cerrarModalEditarBloque" 
-      maxWidth="md" 
+      maxWidth="lg" 
       title="Editar Marea Simulada"
     >
       <div v-form-nav class="bg-surface border border-border shadow-theme-xs flex flex-col rounded-2xl overflow-hidden p-6">
@@ -329,7 +329,7 @@
         <div class="mt-8 pt-6 flex items-center justify-between border-t border-border gap-3">
           <button @click="devolverRecursoPendiente" class="px-4 py-3 text-xs font-black uppercase tracking-widest text-error hover:bg-error/10 rounded-lg transition-all flex items-center gap-2">
             <TrashIcon class="w-4 h-4" />
-            Quitar del Timeline
+            Quitar de planificación
           </button>
           <div class="flex gap-2">
             <button @click="cerrarModalEditarBloque" class="px-6 py-3 text-xs font-black uppercase tracking-widest text-text-muted hover:text-text transition-all">Cancelar</button>
