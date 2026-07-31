@@ -543,6 +543,14 @@ const guardarEdicionBloque = () => {
     // Recalcular la fecha de arribo basada en los nuevos días estimados
     const fechaZarpada = new Date(editingBlockData.value.fechaZarpada);
     const fechaArribo = new Date(fechaZarpada.getTime() + (editingBlockData.value.diasEstimados * 24 * 60 * 60 * 1000));
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (fechaZarpada < today) {
+      toast.error('No se pueden proyectar mareas en fechas pasadas');
+      return;
+    }
+
     editingBlockData.value.fechaArribo = fechaArribo;
 
     escenarioActual.value.items[idx] = { ...editingBlockData.value };
@@ -819,6 +827,15 @@ const renderTimeline = () => {
         }
       }
 
+      // Evitar colocar en fechas pasadas
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (item.start < today) {
+        const diff = item.end.getTime() - item.start.getTime();
+        item.start = today;
+        item.end = new Date(today.getTime() + diff);
+      }
+
       // Actualizar interactivamente el texto de la duración
       if (item.content && item.start && item.end) {
         const newDuration = Math.round((new Date(item.end).getTime() - new Date(item.start).getTime()) / 86400000);
@@ -952,7 +969,15 @@ const onDropTimeline = (event: DragEvent) => {
   if (props && props.group) {
     const obsId = props.group;
     const rawTime = props.snappedTime || props.time;
-    const fechaInicio = rawTime ? new Date(rawTime) : new Date(selectedYear.value, selectedMonth.value - 1, 1);
+    let fechaInicio = rawTime ? new Date(rawTime) : new Date(selectedYear.value, selectedMonth.value - 1, 1);
+    
+    // Evitar colocar en fechas pasadas
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (fechaInicio < today) {
+      fechaInicio = today;
+    }
+
     const fechaFin = new Date(fechaInicio.getTime() + recursoArrastrado.diasEstimados * 24 * 60 * 60 * 1000);
 
     const nuevoItemSimulado: MareaSimuladaItem = {
