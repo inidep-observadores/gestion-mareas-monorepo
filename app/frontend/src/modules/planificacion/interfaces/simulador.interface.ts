@@ -21,6 +21,7 @@ export interface MareaSimuladaItem {
   color?: string;
   observaciones?: string;
   alertas?: string[];
+  prioridad?: 'ALTA' | 'MEDIA' | 'BAJA';
 }
 
 export interface RecursoMareaPendiente {

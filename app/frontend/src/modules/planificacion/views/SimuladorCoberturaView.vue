@@ -319,11 +319,31 @@
                 placeholder="Seleccione buque..." 
               />
             </div>
+            <div class="grid grid-cols-2 gap-4">
+              <div class="space-y-1.5">
+                <label class="block text-xs font-bold text-text-muted">Días Estimados</label>
+                <input v-model="editingBlockData.diasEstimados" type="number" class="w-full h-10 px-3 rounded-xl border border-border bg-surface text-sm text-text focus:border-primary outline-none" />
+              </div>
+              <div class="space-y-1.5">
+                <label class="block text-xs font-bold text-text-muted">Prioridad</label>
+                <select v-model="editingBlockData.prioridad" class="w-full h-10 px-3 rounded-xl border border-border bg-surface text-sm text-text focus:border-primary outline-none">
+                  <option value="ALTA">Alta</option>
+                  <option value="MEDIA">Media</option>
+                  <option value="BAJA">Baja</option>
+                </select>
+              </div>
+            </div>
           </div>
           
-          <div class="mt-6 flex justify-end gap-3">
-            <button @click="cerrarModalEditarBloque" class="px-4 py-2 text-sm font-bold text-text bg-surface-muted rounded-xl hover:bg-border transition">Cancelar</button>
-            <button @click="guardarEdicionBloque" class="px-4 py-2 text-sm font-bold text-white bg-primary rounded-xl hover:bg-primary/90 transition">Guardar</button>
+          <div class="mt-6 flex justify-between gap-3">
+            <button @click="devolverRecursoPendiente" class="px-4 py-2 text-sm font-bold text-error bg-error/10 rounded-xl hover:bg-error/20 transition flex items-center gap-2">
+              <TrashIcon class="w-4 h-4" />
+              Quitar del Timeline
+            </button>
+            <div class="flex gap-2">
+              <button @click="cerrarModalEditarBloque" class="px-4 py-2 text-sm font-bold text-text bg-surface-muted rounded-xl hover:bg-border transition">Cancelar</button>
+              <button @click="guardarEdicionBloque" class="px-4 py-2 text-sm font-bold text-white bg-primary rounded-xl hover:bg-primary/90 transition">Guardar</button>
+            </div>
           </div>
         </DialogPanel>
       </div>
@@ -531,9 +551,46 @@ const guardarEdicionBloque = () => {
       editingBlockData.value.buqueNombre = buque.nombreBuque;
     }
     
+    // Recalcular la fecha de arribo basada en los nuevos días estimados
+    const fechaZarpada = new Date(editingBlockData.value.fechaZarpada);
+    const fechaArribo = new Date(fechaZarpada.getTime() + (editingBlockData.value.diasEstimados * 24 * 60 * 60 * 1000));
+    editingBlockData.value.fechaArribo = fechaArribo;
+
     escenarioActual.value.items[idx] = { ...editingBlockData.value };
+    
+    // Actualizar DataSet
+    currentItemsDataSet?.update({
+      id: editingBlockData.value.id,
+      start: fechaZarpada,
+      end: fechaArribo,
+      content: `<div class="flex items-center gap-1 font-bold"><span class="text-[10px]">✨</span> ${editingBlockData.value.pesqueriaNombre} [${editingBlockData.value.diasEstimados}d] (Proyectada)</div>`
+    });
+
     toast.success('Marea simulada actualizada');
-    renderTimeline(); // Re-render to update the visual label
+  }
+  cerrarModalEditarBloque();
+};
+
+const devolverRecursoPendiente = () => {
+  if (!editingBlockData.value) return;
+  const idx = escenarioActual.value.items.findIndex(i => i.id === editingBlockData.value?.id);
+  if (idx !== -1) {
+    const removedItem = escenarioActual.value.items[idx];
+    escenarioActual.value.items.splice(idx, 1);
+    currentItemsDataSet?.remove(removedItem.id);
+    
+    recursosPendientes.value.push({
+      id: `rec-returned-${Date.now()}`,
+      pesqueriaId: removedItem.pesqueriaId,
+      pesqueriaNombre: removedItem.pesqueriaNombre,
+      buqueId: removedItem.buqueId,
+      buqueNombre: removedItem.buqueNombre,
+      diasEstimados: removedItem.diasEstimados,
+      prioridad: removedItem.prioridad || 'MEDIA',
+      mesProyectado: selectedMonth.value
+    });
+    
+    toast.success('Marea devuelta a recursos pendientes');
   }
   cerrarModalEditarBloque();
 };
@@ -815,8 +872,21 @@ const renderTimeline = () => {
     onRemove: (item: any, callback: any) => {
       const idx = escenarioActual.value.items.findIndex(i => i.id === item.id);
       if (idx !== -1) {
+        const removedItem = escenarioActual.value.items[idx];
         escenarioActual.value.items.splice(idx, 1);
-        toast.success('Marea simulada eliminada');
+        
+        recursosPendientes.value.push({
+          id: `rec-returned-${Date.now()}`,
+          pesqueriaId: removedItem.pesqueriaId,
+          pesqueriaNombre: removedItem.pesqueriaNombre,
+          buqueId: removedItem.buqueId,
+          buqueNombre: removedItem.buqueNombre,
+          diasEstimados: removedItem.diasEstimados,
+          prioridad: removedItem.prioridad || 'MEDIA',
+          mesProyectado: selectedMonth.value
+        });
+        
+        toast.success('Marea simulada eliminada y devuelta a recursos');
         callback(item);
       } else {
         toast.warning('No se pueden eliminar bloques inamovibles');
@@ -880,7 +950,8 @@ const onDropTimeline = (event: DragEvent) => {
       fechaArribo: fechaFin,
       diasEstimados: recursoArrastrado.diasEstimados,
       estado: 'PENDIENTE',
-      tipoBloque: 'MAREA_SIMULADA'
+      tipoBloque: 'MAREA_SIMULADA',
+      prioridad: recursoArrastrado.prioridad
     };
 
     escenarioActual.value.items.push(nuevoItemSimulado);
