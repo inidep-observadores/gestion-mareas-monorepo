@@ -352,6 +352,16 @@ const configStore = useConfigStore();
 
 const isLoading = ref(false);
 const searchQuery = ref('');
+const debouncedSearchQuery = ref('');
+let searchTimeout: ReturnType<typeof setTimeout>;
+
+watch(searchQuery, (newVal) => {
+  clearTimeout(searchTimeout);
+  searchTimeout = setTimeout(() => {
+    debouncedSearchQuery.value = newVal;
+  }, 300);
+});
+
 const sidebarOpen = ref(true);
 
 // Estado del Escenario Borrador
@@ -572,7 +582,7 @@ const devolverRecursoPendiente = () => {
       buqueNombre: removedItem.buqueNombre,
       diasEstimados: removedItem.diasEstimados,
       prioridad: removedItem.prioridad || 'MEDIA',
-      mesProyectado: selectedMonth.value
+      mesProyectado: 1
     });
     
     toast.success('Marea devuelta a recursos pendientes');
@@ -593,7 +603,7 @@ const toggleSidebar = () => {
 const filteredObservadores = computed(() => {
   if (observadoresBase.value.length === 0) return [];
   return observadoresBase.value.filter(o => {
-    const s = searchQuery.value.toLowerCase();
+    const s = debouncedSearchQuery.value.toLowerCase();
     return !s || `${o.nombre} ${o.apellido} ${o.codigoInterno}`.toLowerCase().includes(s);
   });
 });
@@ -900,7 +910,7 @@ const renderTimeline = () => {
           buqueNombre: removedItem.buqueNombre,
           diasEstimados: removedItem.diasEstimados,
           prioridad: removedItem.prioridad || 'MEDIA',
-          mesProyectado: selectedMonth.value
+          mesProyectado: 1
         });
         
         toast.success('Marea simulada eliminada y devuelta a recursos');
@@ -954,7 +964,7 @@ const onDropTimeline = (event: DragEvent) => {
   if (props && props.group) {
     const obsId = props.group;
     const rawTime = props.snappedTime || props.time;
-    let fechaInicio = rawTime ? new Date(rawTime) : new Date(selectedYear.value, selectedMonth.value - 1, 1);
+    let fechaInicio = rawTime ? new Date(rawTime) : new Date(configStore.selectedYear, 0, 1);
     
     // Evitar colocar en fechas pasadas
     const today = new Date();
