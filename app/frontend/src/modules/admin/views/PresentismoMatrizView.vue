@@ -35,35 +35,35 @@
       <!-- Leyenda -->
       <div class="flex flex-wrap gap-4 p-4 rounded-xl border border-border bg-surface shadow-sm">
         <div class="flex items-center gap-2">
-          <div class="w-8 h-6 rounded bg-[#00FF00] flex items-center justify-center text-[10px] font-black text-black">NAVEG</div>
+          <div class="w-8 h-6 rounded legend-navegando flex items-center justify-center text-[10px] font-black">NAVEG</div>
           <span class="text-[10px] font-black uppercase tracking-widest text-text-muted">Navegando</span>
         </div>
         <div class="flex items-center gap-2">
-          <div class="w-8 h-6 rounded bg-[#FFE4C4] flex items-center justify-center text-[10px] font-black text-black">PUERTO</div>
+          <div class="w-8 h-6 rounded legend-puerto flex items-center justify-center text-[10px] font-black">PUERTO</div>
           <span class="text-[10px] font-black uppercase tracking-widest text-text-muted">En Puerto</span>
         </div>
         <div class="flex items-center gap-2">
-          <div class="w-8 h-6 rounded bg-[#E6E6FA] flex items-center justify-center text-[10px] font-black text-black">VIAJE</div>
+          <div class="w-8 h-6 rounded legend-viaje flex items-center justify-center text-[10px] font-black">VIAJE</div>
           <span class="text-[10px] font-black uppercase tracking-widest text-text-muted">En Viaje</span>
         </div>
         <div class="flex items-center gap-2">
-          <div class="w-8 h-6 rounded bg-[#E8E8E8] flex items-center justify-center text-[10px] font-black text-black">EZ</div>
+          <div class="w-8 h-6 rounded legend-ez flex items-center justify-center text-[10px] font-black">EZ</div>
           <span class="text-[10px] font-black uppercase tracking-widest text-text-muted">Esperando Zarpada</span>
         </div>
         <div class="flex items-center gap-2">
-          <div class="w-8 h-6 rounded bg-[#ADD8E6] flex items-center justify-center text-[10px] font-black text-black">LICEN</div>
+          <div class="w-8 h-6 rounded legend-novedad flex items-center justify-center text-[10px] font-black">LICEN</div>
           <span class="text-[10px] font-black uppercase tracking-widest text-text-muted">Novedad / Licencia</span>
         </div>
         <div class="flex items-center gap-2">
-          <div class="w-8 h-6 rounded bg-[#FFA500] flex items-center justify-center text-[10px] font-black text-black">FERIADO</div>
+          <div class="w-8 h-6 rounded legend-feriado flex items-center justify-center text-[10px] font-black">FERIADO</div>
           <span class="text-[10px] font-black uppercase tracking-widest text-text-muted">Feriado</span>
         </div>
         <div class="flex items-center gap-2">
-          <div class="w-8 h-6 rounded bg-error flex items-center justify-center text-[10px] font-black text-white">ERR</div>
+          <div class="w-8 h-6 rounded legend-conflicto flex items-center justify-center text-[10px] font-black">ERR</div>
           <span class="text-[10px] font-black uppercase tracking-widest text-text-muted">Conflicto</span>
         </div>
         <div class="flex items-center gap-2">
-          <div class="w-8 h-6 rounded border-2 border-red-500 bg-surface flex items-center justify-center text-[10px] font-black text-red-500">FC</div>
+          <div class="w-8 h-6 rounded border-2 legend-fc flex items-center justify-center text-[10px] font-black">FC</div>
           <span class="text-[10px] font-black uppercase tracking-widest text-text-muted">Computa Franco</span>
         </div>
       </div>
@@ -196,7 +196,7 @@
       <!-- Timeline -->
       <div v-show="activeTab === 'timeline'" class="bg-surface rounded-2xl shadow-sm border border-border overflow-hidden p-4 flex flex-col gap-4">
 
-        <div ref="timelineContainer" class="w-full h-[65vh] bg-surface text-text rounded-lg border border-border shadow-inner"></div>
+        <div ref="timelineContainer" class="w-full h-[65vh] bg-surface text-text rounded-lg border border-border shadow-inner presentismo-timeline"></div>
       </div>
 
       </template>
@@ -515,20 +515,20 @@ const getCellClass = (dia: DiaEstado) => {
 
   switch (dia.estado) {
     case 'CONFLICTO':
-      return 'bg-error shadow-inner animate-pulse';
+      return 'legend-conflicto shadow-inner animate-pulse';
     case 'NAVEGANDO':
-      if (dia.estadoSecundario === 'VIAJE') return 'bg-[linear-gradient(135deg,#00FF00_50%,#E6E6FA_50%)] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.1)]';
-      return 'bg-[#00FF00] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.1)]';
+      if (dia.estadoSecundario === 'VIAJE') return 'legend-naveg-viaje shadow-[inset_0_0_0_1px_rgba(0,0,0,0.1)]';
+      return 'legend-navegando shadow-[inset_0_0_0_1px_rgba(0,0,0,0.1)]';
     case 'PUERTO':
-      return 'bg-[#FFE4C4] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.1)]';
+      return 'legend-puerto shadow-[inset_0_0_0_1px_rgba(0,0,0,0.1)]';
     case 'ESPERANDO_ZARPADA':
-      return 'bg-[#E8E8E8] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.1)]';
+      return 'legend-ez shadow-[inset_0_0_0_1px_rgba(0,0,0,0.1)]';
     case 'VIAJE':
-      return 'bg-[#E6E6FA] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.1)]';
+      return 'legend-viaje shadow-[inset_0_0_0_1px_rgba(0,0,0,0.1)]';
     case 'NOVEDAD':
-      return 'bg-[#ADD8E6] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.1)]';
+      return 'legend-novedad shadow-[inset_0_0_0_1px_rgba(0,0,0,0.1)]';
     case 'FERIADO':
-      return 'bg-[#FFA500] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.1)]';
+      return 'legend-feriado shadow-[inset_0_0_0_1px_rgba(0,0,0,0.1)]';
     case 'FIN_SEMANA':
       return 'bg-transparent';
     case 'LIBRE':
@@ -650,40 +650,30 @@ onBeforeUnmount(() => {
   color: var(--color-text) !important;
 }
 
-:deep(.vis-item-conflicto) {
-  background-color: #ef4444 !important; /* bg-error */
-  color: white !important;
-}
+/* ESTILOS SEMÁNTICOS (Legend + Timeline Items) - MODO CLARO */
+.legend-navegando, :global(.presentismo-timeline .vis-item-navegando) { background-color: #22c55e !important; color: white !important; border-color: #16a34a !important; border-width: 2px !important; border-style: solid !important; }
+.legend-naveg-viaje, :global(.presentismo-timeline .vis-item-naveg-viaje) { background: linear-gradient(135deg, #22c55e 50%, #e0e7ff 50%) !important; color: black !important; border-color: #a5b4fc !important; border-width: 2px !important; border-style: solid !important; }
+.legend-puerto, :global(.presentismo-timeline .vis-item-puerto) { background-color: #ffedd5 !important; color: black !important; border-color: #fdba74 !important; border-width: 2px !important; border-style: solid !important; }
+.legend-viaje, :global(.presentismo-timeline .vis-item-viaje) { background-color: #e0e7ff !important; color: black !important; border-color: #a5b4fc !important; border-width: 2px !important; border-style: solid !important; }
+.legend-ez, :global(.presentismo-timeline .vis-item-ez) { background-color: #f3f4f6 !important; color: black !important; border-color: #d1d5db !important; border-width: 2px !important; border-style: solid !important; }
+.legend-novedad, :global(.presentismo-timeline .vis-item-novedad) { background-color: #e0f2fe !important; color: black !important; border-color: #7dd3fc !important; border-width: 2px !important; border-style: solid !important; }
+.legend-feriado, :global(.presentismo-timeline .vis-item-feriado) { background-color: #f97316 !important; color: white !important; border-color: #c2410c !important; border-width: 2px !important; border-style: solid !important; }
+.legend-conflicto, :global(.presentismo-timeline .vis-item-conflicto) { background-color: #ef4444 !important; color: white !important; border-color: #b91c1c !important; border-width: 2px !important; border-style: solid !important; }
+.legend-fc { background-color: transparent !important; color: #ef4444 !important; border-color: #ef4444 !important; }
 
-:deep(.vis-item-naveg-viaje) {
-  background: linear-gradient(135deg, #00FF00 50%, #E6E6FA 50%) !important;
-}
+/* ESTILOS SEMÁNTICOS (Legend + Timeline Items) - MODO OSCURO */
+:global(.dark) .legend-navegando, :global(.dark .presentismo-timeline .vis-item-navegando) { background-color: #15803d !important; color: white !important; border-color: #166534 !important; }
+:global(.dark) .legend-naveg-viaje, :global(.dark .presentismo-timeline .vis-item-naveg-viaje) { background: linear-gradient(135deg, #15803d 50%, rgba(79, 70, 229, 0.4) 50%) !important; color: white !important; border-color: rgba(79, 70, 229, 0.5) !important; }
+:global(.dark) .legend-puerto, :global(.dark .presentismo-timeline .vis-item-puerto) { background-color: rgba(234, 88, 12, 0.3) !important; color: #ffedd5 !important; border-color: rgba(234, 88, 12, 0.5) !important; }
+:global(.dark) .legend-viaje, :global(.dark .presentismo-timeline .vis-item-viaje) { background-color: rgba(79, 70, 229, 0.3) !important; color: #e0e7ff !important; border-color: rgba(79, 70, 229, 0.5) !important; }
+:global(.dark) .legend-ez, :global(.dark .presentismo-timeline .vis-item-ez) { background-color: #374151 !important; color: #e5e7eb !important; border-color: #4b5563 !important; }
+:global(.dark) .legend-novedad, :global(.dark .presentismo-timeline .vis-item-novedad) { background-color: rgba(14, 165, 233, 0.3) !important; color: #bae6fd !important; border-color: rgba(14, 165, 233, 0.5) !important; }
+:global(.dark) .legend-feriado, :global(.dark .presentismo-timeline .vis-item-feriado) { background-color: #9a3412 !important; color: white !important; border-color: #7c2d12 !important; }
+:global(.dark) .legend-conflicto, :global(.dark .presentismo-timeline .vis-item-conflicto) { background-color: #991b1b !important; color: white !important; border-color: #7f1d1d !important; }
+:global(.dark) .legend-fc { background-color: transparent !important; color: #f87171 !important; border-color: #f87171 !important; }
 
-:deep(.vis-item-navegando) {
-  background-color: #00FF00 !important;
-}
 
-:deep(.vis-item-puerto) {
-  background-color: #FFE4C4 !important;
-}
-
-:deep(.vis-item-ez) {
-  background-color: #E8E8E8 !important;
-}
-
-:deep(.vis-item-viaje) {
-  background-color: #E6E6FA !important;
-}
-
-:deep(.vis-item-novedad) {
-  background-color: #ADD8E6 !important;
-}
-
-:deep(.vis-item-feriado) {
-  background-color: #FFA500 !important;
-}
-
-:deep(.vis-item-content) {
+:global(.presentismo-timeline .vis-item-content) {
   padding: 4px 6px !important;
   width: 100% !important;
   overflow: hidden !important;
