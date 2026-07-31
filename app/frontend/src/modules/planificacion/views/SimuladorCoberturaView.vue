@@ -552,7 +552,8 @@ const guardarEdicionBloque = () => {
       id: editingBlockData.value.id,
       start: fechaZarpada,
       end: fechaArribo,
-      content: `<div class="flex items-center gap-1 font-bold"><span class="text-[10px]">✨</span> ${editingBlockData.value.pesqueriaNombre} [${editingBlockData.value.diasEstimados}d] (Proyectada)</div>`
+      content: `<div class="flex items-center gap-1 font-bold"><span class="text-[10px]">✨</span> ${editingBlockData.value.pesqueriaNombre} [${editingBlockData.value.diasEstimados}d] (Proyectada)</div>`,
+      title: `<strong>Inicio:</strong> ${new Date(fechaZarpada).toLocaleDateString('es-AR')}<br><strong>Fin:</strong> ${new Date(fechaArribo).toLocaleDateString('es-AR')}`
     });
 
     toast.success('Marea simulada actualizada');
@@ -742,6 +743,7 @@ const renderTimeline = () => {
         start: new Date(ev.startDate),
         end: endExclusive,
         content: title,
+        title: `<strong>Inicio:</strong> ${new Date(ev.startDate).toLocaleDateString('es-AR')}<br><strong>Fin:</strong> ${new Date(ev.endDate).toLocaleDateString('es-AR')}`,
         className: visClass,
         editable: isEditable
       });
@@ -757,6 +759,7 @@ const renderTimeline = () => {
       start: new Date(sim.fechaZarpada),
       end: new Date(sim.fechaArribo),
       content: `<div class="flex items-center gap-1 font-bold"><span class="text-[10px]">✨</span> ${sim.pesqueriaNombre} [${duracionSim}d] (Proyectada)</div>`,
+      title: `<strong>Inicio:</strong> ${new Date(sim.fechaZarpada).toLocaleDateString('es-AR')}<br><strong>Fin:</strong> ${new Date(sim.fechaArribo).toLocaleDateString('es-AR')}`,
       className: 'vis-item-simulada border-2 border-dashed border-primary bg-primary/20 text-primary font-bold shadow-sm',
       editable: { updateTime: true, updateGroup: true, remove: true }
     });
@@ -784,6 +787,15 @@ const renderTimeline = () => {
     },
     showCurrentTime: false,
     timeAxis: { scale: 'day', step: 1 },
+    snap: function (date: Date, scale: string, step: number) {
+      const clone = new Date(date.valueOf());
+      clone.setHours(0, 0, 0, 0);
+      return clone;
+    },
+    tooltip: {
+      followMouse: true,
+      overflowMethod: 'cap'
+    },
     start: visibleStart,
     end: visibleEnd,
     min: dataStart,
@@ -826,6 +838,7 @@ const renderTimeline = () => {
       if (item.content && item.start && item.end) {
         const newDuration = Math.round((new Date(item.end).getTime() - new Date(item.start).getTime()) / 86400000);
         item.content = item.content.replace(/\[\d+d\]/, `[${newDuration}d]`);
+        item.title = `<strong>Inicio:</strong> ${new Date(item.start).toLocaleDateString('es-AR')}<br><strong>Fin:</strong> ${new Date(item.end).toLocaleDateString('es-AR')}`;
       }
 
       // Actualizar el estado borrador cuando el usuario mueve un bloque simulado
@@ -969,6 +982,7 @@ const onDropTimeline = (event: DragEvent) => {
       start: nuevoItemSimulado.fechaZarpada,
       end: nuevoItemSimulado.fechaArribo,
       content: `<div class="flex items-center gap-1 font-bold"><span class="text-[10px]">✨</span> ${nuevoItemSimulado.pesqueriaNombre} [${nuevoItemSimulado.diasEstimados}d] (Proyectada)</div>`,
+      title: `<strong>Inicio:</strong> ${new Date(nuevoItemSimulado.fechaZarpada).toLocaleDateString('es-AR')}<br><strong>Fin:</strong> ${new Date(nuevoItemSimulado.fechaArribo).toLocaleDateString('es-AR')}`,
       className: 'vis-item-simulada',
       editable: { updateTime: true, updateGroup: true, remove: true }
     });
