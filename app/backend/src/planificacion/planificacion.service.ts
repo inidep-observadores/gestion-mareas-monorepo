@@ -287,7 +287,8 @@ export class PlanificacionService {
           mareasAdaptadas,
           obsNovedades,
           feriadoNombre,
-          isFinSemana
+          isFinSemana,
+          true // Planificación: incluir novedades que no afectan presentismo (ej: licencias)
         );
 
         if (!estadoDto || estadoDto.estado === 'LIBRE' || estadoDto.estado === 'FIN_SEMANA' || estadoDto.estado === 'FERIADO') {

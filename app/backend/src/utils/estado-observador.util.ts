@@ -11,7 +11,8 @@ export function evaluarEstadoDia(
   obsMareas: any[],
   obsNovedades: any[],
   feriadoNombre: string | null,
-  isFinSemana: boolean
+  isFinSemana: boolean,
+  includeNoAfectaPresentismo: boolean = false
 ): DiaEstadoDto {
   let isNavegando = false;
   let etapaNavegando: any = null;
@@ -32,7 +33,7 @@ export function evaluarEstadoDia(
   });
 
   if (novedad && novedad.tipoNovedad) {
-    if (!novedad.tipoNovedad.afectaPresentismo) {
+    if (!novedad.tipoNovedad.afectaPresentismo && !includeNoAfectaPresentismo) {
       // Ignorar para matriz de presentismo
     } else if (novedad.tipoNovedad.codigo === 'VIAJE_INICIO' || novedad.tipoNovedad.codigo === 'VIAJE_FIN') {
       isViaje = true;
