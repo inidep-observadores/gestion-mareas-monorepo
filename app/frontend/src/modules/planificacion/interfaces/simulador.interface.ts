@@ -8,7 +8,7 @@ export interface MareaSimuladaItem {
   observadorNombre?: string;
   pesqueriaId: string;
   pesqueriaNombre: string;
-  buqueId?: string;
+  buqueId: string | null;
   buqueNombre?: string;
   puertoZarpadaId?: string;
   puertoZarpadaNombre?: string;
@@ -28,7 +28,7 @@ export interface RecursoMareaPendiente {
   id: string;
   pesqueriaId: string;
   pesqueriaNombre: string;
-  buqueId?: string;
+  buqueId?: string | null;
   buqueNombre?: string;
   diasEstimados: number;
   puertoSugerido?: string;

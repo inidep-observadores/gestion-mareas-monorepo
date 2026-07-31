@@ -426,9 +426,14 @@ const observadoresBase = computed(() => {
 // Estado para modales
 const isResourceModalOpen = ref(false);
 const editingRecursoId = ref<string | null>(null);
-const resourceForm = ref({
+const resourceForm = ref<{
+  pesqueriaId: string;
+  buqueId: string | null;
+  diasEstimados: number;
+  prioridad: string;
+}>({
   pesqueriaId: '',
-  buqueId: '',
+  buqueId: null,
   diasEstimados: 30,
   prioridad: 'MEDIA'
 });
@@ -442,7 +447,7 @@ const abrirModalCrearRecurso = () => {
   editingRecursoId.value = null;
   resourceForm.value = {
     pesqueriaId: '',
-    buqueId: '',
+    buqueId: null,
     diasEstimados: 30,
     prioridad: 'MEDIA'
   };
@@ -456,7 +461,7 @@ const abrirModalEditarRecurso = (recurso: RecursoMareaPendiente) => {
   editingRecursoId.value = recurso.id;
   resourceForm.value = {
     pesqueriaId: recurso.pesqueriaId || '',
-    buqueId: recurso.buqueId || '',
+    buqueId: recurso.buqueId || null,
     diasEstimados: recurso.diasEstimados,
     prioridad: recurso.prioridad || 'MEDIA'
   };
@@ -1016,7 +1021,7 @@ const onDropTimeline = (event: DragEvent) => {
     }
 
     // Actualizar DataSet directamente
-    const finInclusivo = new Date(nuevoItemSimulado.fechaArribo.getTime() - 86400000);
+    const finInclusivo = new Date((new Date(nuevoItemSimulado.fechaArribo)).getTime() - 86400000);
     currentItemsDataSet?.add({
       id: nuevoItemSimulado.id,
       group: nuevoItemSimulado.observadorId,
