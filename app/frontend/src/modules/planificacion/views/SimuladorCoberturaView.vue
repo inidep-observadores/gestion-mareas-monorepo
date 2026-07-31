@@ -639,8 +639,9 @@ const conflictosDetectados = computed(() => {
           const evEnd = new Date(ev.endDate);
           
           if (inicio <= evEnd && fin >= evStart) {
+            const tipoStr = ev.detalle ? `${ev.estado} - ${ev.detalle}` : ev.estado;
             alertas.push(
-              `Marea simulada "${sim.pesqueriaNombre}" se solapa con [${ev.estado}] del ${evStart.toLocaleDateString('es-AR')} al ${evEnd.toLocaleDateString('es-AR')}.`
+              `Marea simulada "${sim.pesqueriaNombre}" se solapa con [${tipoStr}] del ${evStart.toLocaleDateString('es-AR')} al ${evEnd.toLocaleDateString('es-AR')}.`
             );
           }
         }
