@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <AdminLayout :title="displayTitle" :description="displayDescription">
     <div class="max-w-6xl mx-auto pb-12 px-4 sm:px-6 lg:px-8">
       <!-- Header Actions & Meta -->
@@ -104,7 +104,7 @@
                     placeholder="000" />
                 </div>
                 <!-- Observador Principal -->
-                <div class="md:col-span-2 space-y-1.5">
+                <div class="space-y-1.5">
                   <label class="text-xs font-bold uppercase tracking-wider text-text-muted">Observador Designado</label>
                   <SearchableSelect v-model="marea.observador_principal_id" :options="observadorCatalogOptions"
                     placeholder="Seleccione observador principal..." :icon="BeakerIcon" :disabled="!canEditDesignationFields" />
@@ -142,8 +142,8 @@
                   <label class="text-xs font-bold uppercase tracking-wider text-text-muted">Tipo de Marea</label>
                   <select v-model="marea.tipo_marea" :disabled="!canEditDesignationFields"
                     class="w-full px-4 py-3 bg-surface-muted border-none rounded-2xl focus:ring-2 focus:ring-primary/20 text-text transition-all font-medium outline-none disabled:opacity-60">
-                    <option :value="TipoMarea.MC">Comercial (MC)</option>
-                    <option :value="TipoMarea.CI">Institucional (CI)</option>
+                    <option :value="TipoMarea.MC">{{ TIPO_MAREA_DESC[TipoMarea.MC] }}</option>
+                    <option :value="TipoMarea.CI">{{ TIPO_MAREA_DESC[TipoMarea.CI] }}</option>
                   </select>
                 </div>
                 <div class="space-y-1.5">
@@ -165,11 +165,25 @@
               </h3>
               <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="space-y-1.5">
-                  <label class="text-xs font-bold uppercase tracking-wider text-text-muted">Inicio Observador</label>
+                  <div class="flex items-center justify-between mb-1.5">
+                    <label class="text-xs font-bold uppercase tracking-wider text-text-muted">Inicio Observador</label>
+                    <label class="flex items-center gap-1.5 cursor-pointer group" title="Marcar como validada manualmente">
+                      <input type="checkbox" v-model="marea.inicio_validado" @change="confirmManualValidation('inicio', $event)" :disabled="isReadOnly"
+                        class="rounded text-primary border-border focus:ring-primary/20 bg-surface disabled:opacity-50" />
+                      <span class="text-[10px] uppercase font-bold text-text-muted group-hover:text-primary transition-colors">Validada</span>
+                    </label>
+                  </div>
                   <DatePicker v-model="marea.fecha_inicio_observador" :show-time="false" :disabled="isReadOnly" />
                 </div>
                 <div class="space-y-1.5">
-                  <label class="text-xs font-bold uppercase tracking-wider text-text-muted">Fin Observador</label>
+                  <div class="flex items-center justify-between mb-1.5">
+                    <label class="text-xs font-bold uppercase tracking-wider text-text-muted">Fin Observador</label>
+                    <label class="flex items-center gap-1.5 cursor-pointer group" title="Marcar como validada manualmente">
+                      <input type="checkbox" v-model="marea.fin_validado" @change="confirmManualValidation('fin', $event)" :disabled="isReadOnly"
+                        class="rounded text-primary border-border focus:ring-primary/20 bg-surface disabled:opacity-50" />
+                      <span class="text-[10px] uppercase font-bold text-text-muted group-hover:text-primary transition-colors">Validada</span>
+                    </label>
+                  </div>
                   <DatePicker v-model="marea.fecha_fin_observador" :show-time="false" :disabled="isReadOnly" />
                 </div>
                 <div class="space-y-1.5">
@@ -264,8 +278,9 @@
           </div>
 
           <NavigationStagesEditor v-model="etapas" :puertoOptions="puertoOptions" :pesqueriaOptions="pesqueriaOptions"
+            :tipoMarea="marea?.tipo_marea"
             :puertoBaseId="marea.puertoBaseId" :defaultPesqueriaId="marea.id_pesqueria" :readOnly="isReadOnly"
-            :mareaId="marea.id" :mareaTieneDesignacion="tieneDesignacion" @action-success="(msg: string) => toast.success(msg)"
+            :mareaId="marea.id" @action-success="(msg: string) => toast.success(msg)"
             @action-error="(msg: string) => toast.error(msg)" @action-warning="(msg: string) => toast.warning(msg)" />
         </div>
 
@@ -525,6 +540,15 @@
     <GestionEtapasMareaDialog :show="showFinalizarDialog" :mode="'FINALIZAR'" :marea="marea" :currentStages="etapas"
       :initialPortId="marea.puertoBaseId" @close="showFinalizarDialog = false" @confirm="handleFinalizeMarea" />
 
+    <ConfirmationDialog
+      :show="showValidationConfirm"
+      title="Confirmar validación manual"
+      :message="validationConfirmMessage"
+      confirmText="Aceptar"
+      cancelText="Cancelar"
+      @confirm="showValidationConfirm = false"
+      @close="handleValidationCancel"
+    />
 
   </AdminLayout>
 </template>
@@ -573,7 +597,7 @@ import {
   FlagIcon,
   EditIcon
 } from '@/icons'
-import { TipoMarea, TipoEtapa } from '../types/enums';
+import { TipoMarea, TipoEtapa, TIPO_MAREA_DESC } from '../types/enums';
 import { TipoCalculoZonaAustral } from '../types/marea.types';
 import type { ZonaAustralResponse } from '../types/marea.types';
 const router = useRouter()
@@ -583,6 +607,10 @@ const route = useRoute()
 
 const authStore = useAuthStore()
 const showEditDesignadaDialog = ref(false)
+
+const showValidationConfirm = ref(false)
+const validationConfirmMessage = ref('')
+const validationTipo = ref<'inicio' | 'fin'>('inicio')
 
 const isReadOnly = computed(() => {
   const roles = authStore.user?.roles || []
@@ -616,10 +644,6 @@ const movimientos = ref<any[]>([]);
 const archivos = ref<any[]>([]);
 const observadorCatalog = ref<any[]>([]);
 const originalObservadorPrincipalId = ref<string | null>(null);
-
-const tieneDesignacion = computed(() => {
-   return marea.value?.estado_codigo === 'DESIGNADA' || observadores.value.some(obs => obs.es_designado);
-});
 
 const buqueOptions = ref<{ value: string; label: string }[]>([])
 const pesqueriaOptions = ref<{ value: string; label: string }[]>([])
@@ -726,8 +750,11 @@ async function loadMarea() {
       estado_id: data.estadoActual?.codigo || '',
       fecha_creacion: data.fechaCreacion,
       fecha_ultima_actualizacion: data.fechaUltimaActualizacion,
+
       fecha_inicio_observador: data.fechaInicioObservador,
+      inicio_validado: data.inicioValidado ?? false,
       fecha_fin_observador: data.fechaFinObservador,
+      fin_validado: data.finValidado ?? false,
       nro_protocolizacion: data.nroProtocolizacion ?? null,
       anio_protocolizacion: data.anioProtocolizacion ?? null,
       fecha_protocolizacion: data.fechaProtocolizacion,
@@ -848,6 +875,21 @@ function checkManualMode() {
   }
 }
 
+function confirmManualValidation(tipo: 'inicio' | 'fin', event: Event) {
+  const isChecked = (event.target as HTMLInputElement).checked;
+  if (isChecked) {
+    validationTipo.value = tipo;
+    validationConfirmMessage.value = `¿Está seguro que desea marcar la fecha de ${tipo} como validada de forma manual? Esto suele hacerse automáticamente al cargar los pasajes.`;
+    showValidationConfirm.value = true;
+  }
+}
+
+function handleValidationCancel() {
+  showValidationConfirm.value = false;
+  if (validationTipo.value === 'inicio') marea.value.inicio_validado = false;
+  if (validationTipo.value === 'fin') marea.value.fin_validado = false;
+}
+
 const displayTitle = computed(() => {
   const tipo = marea.value.tipo_marea === TipoMarea.CI ? 'CI' : 'MC'
   const nro = marea.value.nro_marea || '000'
@@ -939,7 +981,7 @@ const saveChanges = async () => {
       puertoArriboId: etapa.puertoArriboId || undefined,
       fechaZarpada: toIsoStringOrNull(etapa.fechaZarpada),
       fechaArribo: toIsoStringOrNull(etapa.fechaArribo),
-      tipoEtapa: etapa.tipoEtapa || TipoEtapa.MC,
+      tipoEtapa: etapa.tipoEtapa || TipoEtapa.EC,
       observaciones: etapa.observaciones || undefined,
       metadata: etapa.metadata,
       observadores: etapa.observadores?.map((obs: any) => ({
@@ -958,8 +1000,11 @@ const saveChanges = async () => {
       pesqueriaId: marea.value.id_pesqueria || undefined,
       artePrincipalId: toNullIfEmpty(marea.value.id_arte_principal),
       fechaZarpadaEstimada: toIsoStringOrNull(marea.value.fecha_zarpada_estimada),
+
       fechaInicioObservador: toIsoStringOrNull(marea.value.fecha_inicio_observador),
+      inicioValidado: marea.value.inicio_validado,
       fechaFinObservador: toIsoStringOrNull(marea.value.fecha_fin_observador),
+      finValidado: marea.value.fin_validado,
       diasZonaAustral: toNumberOrUndefined(marea.value.dias_zona_austral) === undefined ? null : toNumberOrUndefined(marea.value.dias_zona_austral),
       tipoCalculoZonaAustral: marea.value.tipo_calculo_zona_austral || null,
       nroProtocolizacion: toNumberOrUndefined(marea.value.nro_protocolizacion) === undefined ? null : toNumberOrUndefined(marea.value.nro_protocolizacion),

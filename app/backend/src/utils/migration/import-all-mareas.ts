@@ -217,7 +217,7 @@ async function main() {
                                 nroEtapa: r.NroEtapa || 1,
                                 fechaZarpada: r.Fecha_Zarpada ? new Date(r.Fecha_Zarpada) : null,
                                 fechaArribo: r.Fecha_Arribo ? new Date(r.Fecha_Arribo) : null,
-                                tipoEtapa: TipoEtapa.MC,
+                                tipoEtapa: TipoEtapa.EC,
                                 pesqueriaId: buque.pesqueriaHabitualId,
                                 puertoZarpadaId: buque.puertoBaseId,
                                 puertoArriboId: buque.puertoBaseId,

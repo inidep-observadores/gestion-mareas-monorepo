@@ -116,7 +116,7 @@
          <p class="text-[10px] font-medium text-amber-700/80 leading-relaxed">
             <span class="font-black">{{ navData.delegadas }} marea{{ navData.delegadas > 1 ? 's derivadas' : ' derivada' }}</span>
             a programa{{ navData.delegadas > 1 ? 's' : '' }} externo{{ navData.delegadas > 1 ? 's' : '' }} para validación de datos.
-            La demora en la confección del informe correspondiente es ajena al Programa Observadores a Bordo.
+            La demora en la confección del informe correspondiente es ajena al Subprograma Observadores a Bordo.
          </p>
       </div>
    </div>

@@ -122,13 +122,14 @@ export class EventCorrelationService {
                 return { action: EventDecisionAction.IGNORE_OLD, marea: mareaMatch };
             }
 
-            // REGLA: Sólo se considerará un alerta de zarpada si la fecha del evento reportado es >= a la fecha de zarpada estimada en la marea.
+            // REGLA: Sólo se considerará un alerta de zarpada si la fecha del evento reportado es >= a la fecha de zarpada estimada en la marea (con tolerancia de 2 días hacia atrás).
             if (mareaMatch.fechaZarpadaEstimada) {
                 const fZarpadaEstimada = DateTime.fromJSDate(mareaMatch.fechaZarpadaEstimada).setZone(this.TIMEZONE).startOf('day');
+                const fZarpadaEstimadaTolerancia = fZarpadaEstimada.minus({ days: 2 });
                 const fEvento = DateTime.fromJSDate(date).setZone(this.TIMEZONE).startOf('day');
 
-                if (fEvento < fZarpadaEstimada) {
-                    this.logger.log(`Ignorando ZARPADA para buque ${buqueId}: Fecha del evento (${fEvento.toFormat('dd/MM/yyyy')}) es anterior a la fecha estimada de zarpada (${fZarpadaEstimada.toFormat('dd/MM/yyyy')}) en marea ${mareaMatch.id}`);
+                if (fEvento < fZarpadaEstimadaTolerancia) {
+                    this.logger.log(`Ignorando ZARPADA para buque ${buqueId}: Fecha del evento (${fEvento.toFormat('dd/MM/yyyy')}) es anterior a la fecha estimada de zarpada con tolerancia de 2 días (${fZarpadaEstimadaTolerancia.toFormat('dd/MM/yyyy')}) en marea ${mareaMatch.id}`);
                     return { action: EventDecisionAction.IGNORE_OLD, marea: mareaMatch };
                 }
             }

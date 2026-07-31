@@ -2,6 +2,14 @@
   <div class="relative h-full w-full overflow-hidden bg-surface-muted" :class="{ 'hide-zoom-controls': !showControls }">
     <div ref="mapContainer" class="h-full w-full"></div>
 
+    <!-- Leyenda de error de clima (Watermark) -->
+    <div v-if="hasOverlayError"
+      class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[1000] pointer-events-none px-6 py-4 rounded-xl bg-gray-900/40 dark:bg-black/50 backdrop-blur-md border border-white/10 text-center shadow-2xl transition-all duration-500 max-w-[80%]">
+      <span class="text-sm font-medium text-white/90 drop-shadow-md">
+        En este momento no hay datos disponibles de clima y pronóstico
+      </span>
+    </div>
+
     <!-- Control de Capas (Posicionado sobre el Zoom) -->
     <div v-if="showControls" class="absolute bottom-[50px] right-[14px] z-[1000] pointer-events-auto">
       <MapLayerControl :base-layers="BASE_LAYERS" :overlay-layers="OVERLAY_LAYERS" :current-base-id="currentBaseId"
@@ -9,15 +17,22 @@
         @toggle-overlay="toggleOverlay" @update:show-graticule="toggleGraticule" />
     </div>
 
+    <!-- Control de Tiempo (Solo si hay capas con tiempo activo) -->
+    <div v-if="hasTimeEnabledLayer"
+      :class="['absolute left-1/2 -translate-x-1/2 z-[1000] pointer-events-auto w-full max-w-sm px-4', showControls ? 'bottom-[50px]' : 'bottom-[100px]']">
+      <MapTimeSlider @time-change="onTimeChange" @opacity-change="onOpacityChange" />
+    </div>
+
     <slot></slot>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import MapLayerControl from './MapLayerControl.vue'
+import MapTimeSlider from './MapTimeSlider.vue'
 import { BASE_LAYERS, OVERLAY_LAYERS } from './map-layers'
 
 const props = withDefaults(defineProps<{
@@ -56,6 +71,9 @@ let themeObserver: MutationObserver | null = null
 
 const currentBaseId = ref('argenmap-mapa-base')
 const activeOverlayIds = ref<string[]>([])
+const failingOverlayIds = ref<string[]>([])
+
+const hasOverlayError = computed(() => failingOverlayIds.value.length > 0)
 
 const setBaseLayer = (id: string) => {
   if (!map) return
@@ -75,11 +93,100 @@ const setBaseLayer = (id: string) => {
 
 const toggleOverlay = (id: string) => {
   const index = activeOverlayIds.value.indexOf(id)
+  const layerDef = OVERLAY_LAYERS.find(l => l.id === id)
+  if (!layerDef || !map) return
+
   if (index === -1) {
     activeOverlayIds.value.push(id)
+    
+    let newLayer: L.Layer
+    if (layerDef.layers) {
+      newLayer = L.tileLayer.wms(layerDef.url, {
+        layers: layerDef.layers,
+        styles: layerDef.styles || '',
+        format: layerDef.format || 'image/png',
+        transparent: layerDef.transparent ?? true,
+        attribution: layerDef.attribution,
+        maxZoom: layerDef.maxZoom,
+        opacity: layerDef.defaultOpacity || 1,
+        version: '1.3.0',
+        zIndex: layerDef.zIndex ?? 10
+        // time is intentionally omitted on init to let the server pick the default time
+      })
+    } else {
+      newLayer = L.tileLayer(layerDef.url, {
+        attribution: layerDef.attribution,
+        maxZoom: layerDef.maxZoom,
+        opacity: layerDef.defaultOpacity || 1,
+        zIndex: layerDef.zIndex ?? 1
+      })
+    }
+    
+    // Z-index para asegurar que quede por debajo de los tracking y marcadores
+    // Leaflet por defecto pone los tile layers en el tilePane que esta debajo del markerPane
+    newLayer.addTo(map)
+    activeOverlayLayers.set(id, newLayer)
+
+    // Manejo de errores de carga de tiles
+    newLayer.on('tileerror', () => {
+      if (!failingOverlayIds.value.includes(id)) {
+        failingOverlayIds.value.push(id)
+      }
+    })
+
+    newLayer.on('tileload', () => {
+      const failIndex = failingOverlayIds.value.indexOf(id)
+      if (failIndex !== -1) {
+        failingOverlayIds.value.splice(failIndex, 1)
+      }
+    })
+
   } else {
     activeOverlayIds.value.splice(index, 1)
+
+    const failIndex = failingOverlayIds.value.indexOf(id)
+    if (failIndex !== -1) {
+      failingOverlayIds.value.splice(failIndex, 1)
+    }
+
+    const layerToRemove = activeOverlayLayers.get(id)
+    if (layerToRemove) {
+      map.removeLayer(layerToRemove)
+      activeOverlayLayers.delete(id)
+    }
   }
+}
+
+const activeOverlayLayers = new Map<string, L.Layer>()
+
+const hasTimeEnabledLayer = computed(() => {
+  return activeOverlayIds.value.some(id => {
+    const def = OVERLAY_LAYERS.find(l => l.id === id)
+    return def?.hasTime
+  })
+})
+
+const onTimeChange = (isoTime: string, hoursOffset: number) => {
+  activeOverlayLayers.forEach((layer, id) => {
+    const def = OVERLAY_LAYERS.find(l => l.id === id)
+    if (def?.hasTime && layer instanceof L.TileLayer.WMS) {
+      if (!isoTime) {
+        delete (layer as any).wmsParams.time
+        layer.setParams({} as any)
+      } else {
+        layer.setParams({ time: isoTime } as any)
+      }
+    }
+  })
+}
+
+const onOpacityChange = (opacity: number) => {
+  activeOverlayLayers.forEach((layer, id) => {
+    const def = OVERLAY_LAYERS.find(l => l.id === id)
+    if (def?.hasTime && 'setOpacity' in layer) {
+      (layer as L.TileLayer).setOpacity(opacity)
+    }
+  })
 }
 
 const toggleGraticule = (val: boolean) => {
@@ -281,7 +388,9 @@ onUnmounted(() => {
 
 defineExpose({
   getMap: () => map,
-  setBaseLayer
+  setBaseLayer,
+  toggleOverlay,
+  toggleGraticule
 })
 </script>
 

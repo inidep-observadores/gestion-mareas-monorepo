@@ -13,6 +13,8 @@ export interface Observador {
     email?: string;
     conImpedimento: boolean;
     motivoImpedimento?: string;
-    fechaProximaDisponibilidad?: string;
+    dni?: string;
+    cuil?: string;
+    telefonoPrincipal?: string;
     observaciones?: string;
 }

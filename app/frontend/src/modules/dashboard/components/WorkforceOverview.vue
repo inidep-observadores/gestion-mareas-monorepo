@@ -229,8 +229,11 @@
                       </template>
                     </span>
                     <div class="flex items-center gap-1.5">
-                      <span v-if="selectedStatus !== 'Designados'" class="text-[9px] font-bold text-text-muted/60 uppercase tracking-tighter">
+                      <span v-if="selectedStatus !== 'Designados'" class="text-[11px] font-medium text-text-muted uppercase tracking-tighter">
                         {{ (item as any).mareaCode || 'S/M' }}
+                      </span>
+                      <span class="text-[11px] font-medium text-text-muted uppercase tracking-tighter">
+                        {{ selectedStatus !== 'Designados' ? '• ' : '' }}{{ (item as any).vessel || (item as any).vesselName || 'Desconocido' }}
                       </span>
                       <div v-if="(item as any).stageCount > 1" class="relative group/stage">
                         <span
@@ -249,9 +252,6 @@
                           </div>
                         </div>
                       </div>
-                      <span class="text-[9px] font-bold text-text-muted/60 uppercase tracking-tighter">
-                        {{ selectedStatus !== 'Designados' ? '• ' : '' }}{{ (item as any).vessel || (item as any).vesselName || 'Desconocido' }}
-                      </span>
                     </div>
                     <span class="text-[8px] font-medium text-primary uppercase tracking-widest italic">
                       {{ (item as any).fishery || 'Sin Pesquería' }}
@@ -459,7 +459,7 @@
                         {{ formatDate((item as any).lastArrival) }}
                       </template>
                     </span>
-                    <span class="text-[10px] font-bold text-text-muted/60 uppercase tracking-tighter">
+                    <span class="text-[11px] font-medium text-text-muted uppercase tracking-tighter">
                       {{ selectedStatus !== 'Designados' ? ((item as any).mareaCode || 'S/M') + ' • ' : '' }}{{ (item as any).vessel || (item as any).vesselName }}
                     </span>
                     <span class="text-[9px] font-bold text-primary uppercase tracking-widest italic leading-none mt-1">

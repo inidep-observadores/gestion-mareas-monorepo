@@ -55,24 +55,32 @@
                 <label class="block text-xs font-black uppercase tracking-widest text-text-muted">Tipo de
                   Designación</label>
                 <div class="inline-flex p-1 bg-surface-muted border-border">
+                <div class="grid grid-cols-2 gap-4 w-full max-w-lg">
                   <button type="button" @click="form.tipoMarea = TipoMarea.MC"
-                    class="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-all"
-                    :class="form.tipoMarea === TipoMarea.MC ? 'bg-surface text-primary shadow-theme-xs ring-1 ring-border' : 'text-text-muted hover:text-text'">
-                    <div class="w-1.5 h-1.5 rounded-full"
-                      :class="form.tipoMarea === TipoMarea.MC ? 'bg-primary' : 'bg-transparent border border-border'">
+                    class="relative flex flex-col p-4 w-full rounded-2xl border-2 transition-all duration-200 text-left overflow-hidden group"
+                    :class="form.tipoMarea === TipoMarea.MC ? 'bg-surface text-primary shadow-theme-xs ring-1 ring-border border-primary' : 'text-text-muted hover:text-text border-transparent bg-surface-muted'">
+                    <div class="flex items-center justify-between mb-1.5">
+                      <span class="w-4 h-4 rounded-full flex items-center justify-center border-2 transition-colors duration-200 shrink-0"
+                      :class="form.tipoMarea === TipoMarea.MC ? 'bg-primary border-primary' : 'bg-transparent border-border'">
+                        <div v-if="form.tipoMarea === TipoMarea.MC" class="w-1.5 h-1.5 bg-surface rounded-full"></div>
+                      </span>
+                      <span class="text-xs font-black uppercase tracking-wider ml-3">{{ TIPO_MAREA_DESC[TipoMarea.MC] }}</span>
                     </div>
-                    Comercial
                   </button>
                   <button type="button" @click="form.tipoMarea = TipoMarea.CI"
-                    class="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-all"
-                    :class="form.tipoMarea === TipoMarea.CI ? 'bg-surface text-primary shadow-theme-xs ring-1 ring-border' : 'text-text-muted hover:text-text'">
-                    <div class="w-1.5 h-1.5 rounded-full"
-                      :class="form.tipoMarea === TipoMarea.CI ? 'bg-primary' : 'bg-transparent border border-border'">
+                    class="relative flex flex-col p-4 w-full rounded-2xl border-2 transition-all duration-200 text-left overflow-hidden group"
+                    :class="form.tipoMarea === TipoMarea.CI ? 'bg-surface text-primary shadow-theme-xs ring-1 ring-border border-primary' : 'text-text-muted hover:text-text border-transparent bg-surface-muted'">
+                    <div class="flex items-center justify-between mb-1.5">
+                      <span class="w-4 h-4 rounded-full flex items-center justify-center border-2 transition-colors duration-200 shrink-0"
+                      :class="form.tipoMarea === TipoMarea.CI ? 'bg-primary border-primary' : 'bg-transparent border-border'">
+                        <div v-if="form.tipoMarea === TipoMarea.CI" class="w-1.5 h-1.5 bg-surface rounded-full"></div>
+                      </span>
+                      <span class="text-xs font-black uppercase tracking-wider ml-3">{{ TIPO_MAREA_DESC[TipoMarea.CI] }}</span>
                     </div>
-                    Institucional
                   </button>
                 </div>
               </div>
+            </div>
 
               <!-- Symmetrical Grid -->
               <div class="grid grid-cols-1 md:grid-cols-12 gap-6 items-end">
@@ -131,6 +139,8 @@
                   placeholder="Seleccione el arte..." :error="fieldErrors.arteId" />
               </div>
 
+
+
               <div class="space-y-1.5">
                 <label class="block text-sm font-medium text-text-muted">Observador Asignado</label>
                 <SearchableSelect ref="observadorSelect" v-model="form.observadorId" :options="observadorOptions"
@@ -164,10 +174,16 @@
 
           <!-- Step 3: Etapas Iniciales -->
           <div v-if="currentStep === 3" class="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div class="border-b border-border pb-4">
-              <h2 class="text-xl font-black uppercase tracking-tight text-text">Etapas del Viaje</h2>
-              <p class="text-text-muted text-xs font-medium mt-1">Defina las etapas de navegación iniciales si ya son
-                conocidas.</p>
+            <div class="border-b border-border pb-4 flex justify-between items-end">
+              <div>
+                <h2 class="text-xl font-black uppercase tracking-tight text-text">Etapas del Viaje</h2>
+                <p class="text-text-muted text-xs font-medium mt-1">Defina las etapas de navegación iniciales si ya son
+                  conocidas.</p>
+              </div>
+              <div v-if="form.tipoMarea === TipoMarea.MC" class="flex items-center gap-2 px-4 py-2 bg-primary/5 rounded-xl border border-primary/20">
+                <input id="iniciaEnProspeccion" type="checkbox" v-model="form.iniciaEnProspeccion" class="w-4 h-4 text-primary bg-surface border-border rounded focus:ring-primary focus:ring-2 cursor-pointer transition-colors">
+                <label for="iniciaEnProspeccion" class="text-[10px] font-black uppercase tracking-wider text-primary cursor-pointer select-none">Inicia en prospección</label>
+              </div>
             </div>
 
             <div v-if="form.etapas.length > 0" class="p-4 bg-primary/5 border border-primary/20 rounded-xl mb-6">
@@ -182,7 +198,7 @@
 
             <NavigationStagesEditor v-model="form.etapas" :puerto-options="puertoOptions"
               :pesqueria-options="pesqueriaOptions" :default-pesqueria-id="form.pesqueriaId" :errors="fieldErrors"
-              :default-fecha-zarpada="form.fechaZarpadaEstimada" :puerto-base-id="form.puertoBaseId" />
+              :default-fecha-zarpada="form.fechaZarpadaEstimada" :puerto-base-id="form.puertoBaseId" :tipoMarea="form.tipoMarea" />
           </div>
 
           <!-- Step 4: Confirmación -->
@@ -286,6 +302,11 @@
     <ConfirmationDialog :show="showCancelConfirm" title="¿Cancelar Registro?"
       message="Si cancela ahora, perderá todos los datos ingresados en el formulario. ¿Está seguro de que desea continuar?"
       confirm-text="Si, Cancelar" cancel-text="Volver" @close="showCancelConfirm = false" @confirm="confirmCancel" />
+    <!-- Confirmation Ports Missing -->
+    <ConfirmationDialog :show="showPortsConfirm" title="Puertos No Especificados" type="warning"
+      message="Ha dejado etapas sin puerto de zarpada o arribo especificado. Esto se registrará como una etapa administrativa en alta mar. ¿Desea continuar?"
+      confirm-text="Sí, continuar" cancel-text="Revisar etapas" @confirm="confirmPortsAndNext" @cancel="showPortsConfirm = false" />
+
   </BaseModal>
 </template>
 
@@ -299,7 +320,7 @@ import DatePicker from '@/components/common/DatePicker.vue'
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 import ConfirmationDialog from '@/components/common/ConfirmationDialog.vue'
 import NavigationStagesEditor from './NavigationStagesEditor.vue'
-import { TipoMarea } from '../types/enums';
+import { TipoMarea, TIPO_MAREA_DESC } from '../types/enums';
 import { useMareas } from '../composables/useMareas'
 import { useWorkflowStore } from '../../shared/stores/workflow.store'
 import { useConfigStore } from '../../shared/stores/config.store'
@@ -350,10 +371,12 @@ const getInitialForm = () => ({
   pesqueriaId: '',
   observadorId: '',
   arteId: '',
+
   fechaZarpadaEstimada: '',
   fechaInicioObservador: '',
   diasEstimados: null as number | null,
   puertoBaseId: '',
+  iniciaEnProspeccion: false,
   etapas: [] as any[]
 })
 
@@ -362,6 +385,7 @@ const form = ref(getInitialForm())
 const fieldErrors = ref<Record<string, string>>({})
 const showCancelConfirm = ref(false)
 const showYearConfirm = ref(false)
+const showPortsConfirm = ref(false)
 
 // Refs for focus
 const buqueSelect = ref<any>(null)
@@ -480,6 +504,7 @@ watch(() => form.value.pesqueriaId, (val) => {
 watch(() => form.value.arteId, (val) => {
   if (val && fieldErrors.value.arteId) delete fieldErrors.value.arteId
 })
+
 watch(() => form.value.observadorId, (val) => {
   if (val && fieldErrors.value.observadorId) delete fieldErrors.value.observadorId
 })
@@ -529,6 +554,8 @@ const prefillFromAlert = (data: any) => {
   if (meta.anioMarea) form.value.anioMarea = meta.anioMarea
   if (meta.nroMarea) form.value.nroMarea = meta.nroMarea
   if (meta.tipoMarea) form.value.tipoMarea = meta.tipoMarea
+
+
 
   // Try to find Buque by name
   if (ext.buque) {
@@ -678,9 +705,7 @@ const validateStep = async (step: number) => {
             fieldErrors.value[`etapa_${idx}_fechaZarpada`] = `El año (${stageYear}) debe ser ${mareaYear} o ${mareaYear + 1}`
           }
         }
-        if (!etapa.puertoZarpadaId) {
-          fieldErrors.value[`etapa_${idx}_puertoZarpadaId`] = 'Indique el puerto'
-        }
+        // Removed validation requiring puertoZarpadaId to allow administrative stages
         if (!etapa.pesqueriaId) {
           // Para pesquería no tenemos :error actualmente en el template del editor pero lo agregaremos si es necesario
           // Por ahora nos concentramos en zarpada y puerto que pidió el usuario
@@ -706,6 +731,17 @@ const nextStep = async () => {
 
   if (currentStep.value < 4) {
     if (!(await validateStep(currentStep.value))) return
+    
+    // Check for missing ports in step 3
+    if (currentStep.value === 3) {
+      const hasMissingPorts = form.value.etapas.some((e: any) => !e.puertoZarpadaId || (e.fechaArribo && !e.puertoArriboId));
+      if (hasMissingPorts && !showPortsConfirm.value) {
+        showPortsConfirm.value = true;
+        return;
+      }
+      showPortsConfirm.value = false;
+    }
+
     currentStep.value++
   } else {
     try {
@@ -761,6 +797,11 @@ const prevStep = () => {
 
 const confirmYearAndNext = () => {
   showYearConfirm.value = false
+  currentStep.value++
+}
+
+const confirmPortsAndNext = () => {
+  showPortsConfirm.value = false
   currentStep.value++
 }
 

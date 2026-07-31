@@ -408,10 +408,18 @@ const props = defineProps<{
   lotes: any[]
 }>()
 
+const emit = defineEmits(['refresh', 'update:count'])
+
 const selectedLoteId = ref<string | null>(null)
 const loadingDetail = ref(false)
 const detalles = ref<any>(null)
 const showEmailDetails = ref(false)
+
+import { watch } from 'vue'
+
+watch(() => props.lotes.length, (newVal) => {
+  emit('update:count', newVal)
+}, { immediate: true })
 
 const copyToClipboard = async (text: string, label: string) => {
   try {

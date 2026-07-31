@@ -13,6 +13,7 @@ export interface DashboardStats {
     fisheries: { name: string; mareas: number; days: number; stats?: Record<string, { count: number, nombre: string }> }[];
     fleets: { name: string; mareas: number; days: number }[];
     observers: { name: string; id: string; mareas: number; days: number; active: boolean }[];
+    estimationDeviations: { buque: string; avgReales: number; avgEstimados: number; desviacionDias: number; desviacionPorcentual: number }[];
 }
 
 export interface StatsDetailItem {
@@ -190,14 +191,15 @@ export const statsService = {
         includeProtocolizedOutOfPeriod: boolean,
         daysCalculationMode: 'SHIP' | 'OBSERVER',
         includeCampaigns: boolean,
-        filterType?: 'FISHERY' | 'FLEET' | 'OBSERVER' | 'COVERAGE' | 'CHART_TREND' | 'CHART_FLEET' | 'CHART_FISHERY' | 'CHART_OBSERVER' | 'CHART_FISHERY_DUAL' | 'WORKFORCE' | 'AUDIT',
+        filterType?: 'FISHERY' | 'FLEET' | 'OBSERVER' | 'COVERAGE' | 'CHART_TREND' | 'CHART_FLEET' | 'CHART_FISHERY' | 'CHART_OBSERVER' | 'CHART_FISHERY_DUAL' | 'WORKFORCE' | 'AUDIT' | 'CHART_ESTIMATION_DEVIATION',
         filterValue?: string,
         filename?: string,
         startDate?: string,
         endDate?: string,
         protocolizationStartDate?: string,
         protocolizationEndDate?: string,
-        includeSummaries: boolean = false
+        includeSummaries: boolean = false,
+        includeAnnualAnnex?: boolean
     ) {
         const params = new URLSearchParams({
             year: year.toString(),
@@ -208,6 +210,8 @@ export const statsService = {
             includeCampaigns: String(includeCampaigns),
             includeSummaries: String(includeSummaries)
         });
+
+        if (includeAnnualAnnex) params.append('includeAnnualAnnex', String(includeAnnualAnnex));
 
         if (startDate) params.append('startDate', startDate);
         if (endDate) params.append('endDate', endDate);
@@ -346,7 +350,8 @@ export const statsService = {
         startDate?: string,
         endDate?: string,
         protocolizationStartDate?: string,
-        protocolizationEndDate?: string
+        protocolizationEndDate?: string,
+        includeAnnualAnnex?: boolean
     ) {
         const params = new URLSearchParams({
             year: year.toString(),
@@ -355,6 +360,8 @@ export const statsService = {
             includeProtocolizedOutOfPeriod: String(includeProtocolizedOutOfPeriod),
             includeCampaigns: String(includeCampaigns)
         });
+
+        if (includeAnnualAnnex) params.append('includeAnnualAnnex', String(includeAnnualAnnex));
 
         if (startDate) params.append('startDate', startDate);
         if (endDate) params.append('endDate', endDate);
@@ -388,7 +395,8 @@ export const statsService = {
         startDate?: string,
         endDate?: string,
         protocolizationStartDate?: string,
-        protocolizationEndDate?: string
+        protocolizationEndDate?: string,
+        includeAnnualAnnex?: boolean
     ) {
         const params = new URLSearchParams({
             year: year.toString(),
@@ -397,6 +405,8 @@ export const statsService = {
             includeProtocolizedOutOfPeriod: String(includeProtocolizedOutOfPeriod),
             includeCampaigns: String(includeCampaigns)
         });
+
+        if (includeAnnualAnnex) params.append('includeAnnualAnnex', String(includeAnnualAnnex));
 
         if (startDate) params.append('startDate', startDate);
         if (endDate) params.append('endDate', endDate);

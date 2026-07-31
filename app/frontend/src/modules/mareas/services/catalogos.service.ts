@@ -22,6 +22,8 @@ export interface Observador {
     fullName?: string;
     conImpedimento?: boolean;
     codigoInterno?: string;
+    tipoContrato?: string;
+    disponible?: boolean;
 }
 
 export interface ArtePesca {

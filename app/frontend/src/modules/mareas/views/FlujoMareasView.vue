@@ -14,13 +14,13 @@
         </div>
 
         <div class="flex items-center gap-2 ml-2 pl-4 border-l border-border/50">
-          <button 
+          <button
             @click="selectAllGroups"
             class="text-[10px] font-black uppercase tracking-tight text-primary hover:text-primary-hover transition-all px-2 py-1 rounded-lg hover:bg-primary/5 active:scale-95"
           >
             Marcar todo
           </button>
-          <button 
+          <button
             @click="deselectAllGroups"
             class="text-[10px] font-black uppercase tracking-tight text-text-muted hover:text-text transition-all px-2 py-1 rounded-lg hover:bg-surface-muted/50 active:scale-95"
           >
@@ -29,7 +29,7 @@
         </div>
       </div>
 
-      <div class="flex flex-col xl:flex-row gap-6 overflow-hidden">
+      <div class="flex flex-col xl:flex-row gap-6 items-start">
         <!-- Main Board -->
         <div class="flex-1 min-w-0 transition-all duration-300">
           <div class="bg-surface border border-border rounded-2xl overflow-hidden shadow-sm">
@@ -46,14 +46,14 @@
                   </span>
                   <select v-model="filterPesqueria"
                     class="bg-transparent border-none outline-none text-sm font-bold text-text-muted focus:text-text transition-colors cursor-pointer min-w-[140px] appearance-none pr-4">
-                    <option value="">Todas las pesquerías</option>
-                    <option v-for="pesqueria in availablePesquerias" :key="pesqueria" :value="pesqueria">
+                    <option value="" class="bg-surface text-text">Todas las pesquerías</option>
+                    <option v-for="pesqueria in availablePesquerias" :key="pesqueria" :value="pesqueria" class="bg-surface text-text">
                       {{ pesqueria }}
                     </option>
                   </select>
                 </div>
                 <SearchInput v-model="searchQuery" class="md:w-96" placeholder="Buscar buque o marea..." />
-                <ExportExcelButton 
+                <ExportExcelButton
                   :loading="exporting"
                   :label="searchQuery ? 'Filtradas' : 'Excel'"
                   :title="searchQuery ? 'Exportar mareas filtradas' : 'Exportar todas las mareas del año'"
@@ -116,8 +116,7 @@
                               </span>
                             </div>
                             <span v-if="marea.en_tierra"
-                              class="px-2 py-0.5 bg-success/10 text-success rounded-full text-[8px] font-black uppercase tracking-tighter whitespace-nowrap flex items-center gap-1 border border-success/20">
-                              <div class="w-1 h-1 rounded-full bg-success animate-pulse"></div>
+                              class="px-2 py-0.5 bg-success/10 text-success rounded-full text-[8px] font-black uppercase tracking-tighter whitespace-nowrap border border-success/20">
                               En Tierra
                             </span>
                           </div>
@@ -153,18 +152,28 @@
                             <span
                               class="text-[8px] font-black text-text-muted uppercase tracking-widest block mb-0.5">Últ.
                               Arribo</span>
-                            <span v-if="marea.fecha_arribo" class="text-[10px] font-bold text-text">{{
-                              formatDate(marea.fecha_arribo) }}</span>
-                            <span v-else-if="marea.estado_codigo === 'EN_EJECUCION'"
-                              class="text-[10px] font-black text-primary italic">Navegando...</span>
+                            <div v-if="marea.fecha_arribo" class="flex flex-wrap items-center gap-1.5 mt-0.5">
+                              <span class="text-[10px] font-bold text-text">{{ formatDate(marea.fecha_arribo) }}</span>
+                              <span v-if="marea.en_tierra"
+                                class="px-2 py-0.5 bg-warning/10 text-warning rounded-full text-[10px] font-black uppercase tracking-tighter border border-warning/20 whitespace-nowrap">
+                                Esperando zarpada
+                              </span>
+                            </div>
+                            <div v-else-if="marea.estado_codigo === 'EN_EJECUCION'" class="flex items-center gap-1.5 flex-wrap">
+                              <span class="text-[10px] font-black text-primary italic">Navegando...</span>
+                              <span v-if="marea.en_prospeccion"
+                                class="px-2 py-0.5 bg-purple-500/10 text-purple-600 rounded-full text-[8px] font-black uppercase tracking-tighter whitespace-nowrap border border-purple-500/20">
+                                Prospección
+                              </span>
+                            </div>
                             <span v-else class="text-[10px] font-bold text-text-muted/40 italic">N/D</span>
                           </div>
                         </div>
 
                         <!-- Info Operativa -->
                         <div class="flex items-center justify-between gap-4 pt-3 border-t border-border">
-                          <div class="flex-1">
-                            <div class="flex justify-between items-center mb-1">
+                          <div class="flex-1 flex flex-col gap-1">
+                            <div class="flex justify-between items-center">
                               <span
                                 class="text-[9px] font-bold text-text-muted uppercase tracking-widest">Progreso</span>
                               <span class="text-[10px] font-black"
@@ -174,7 +183,11 @@
                             <div class="h-1.5 w-full bg-surface-muted rounded-full overflow-hidden">
                               <div class="h-full transition-all duration-1000"
                                 :class="marea.progreso > 100 ? 'bg-error' : 'bg-primary'"
-                                :style="{ width: marea.progreso + '%' }"></div>
+                                :style="{ width: Math.min(marea.progreso, 100) + '%' }"></div>
+                            </div>
+                            <div class="flex justify-between items-center">
+                              <span class="text-[8px] font-bold text-text-muted/70 uppercase tracking-tight">Días transcurridos</span>
+                              <span class="text-[9px] font-bold" :class="marea.progreso > 100 ? 'text-error' : 'text-text-muted'">{{ marea.dias_marea || 0 }} / {{ marea.dias_estimados || 30 }}</span>
                             </div>
                           </div>
 
@@ -312,8 +325,7 @@
                                   E{{ marea.total_etapas }}
                                 </span>
                                 <span v-if="marea.en_tierra"
-                                  class="px-1.5 py-0 bg-success/10 text-success rounded-md text-[8px] font-black uppercase border border-success/20 flex items-center gap-0.5">
-                                  <div class="w-1 h-1 rounded-full bg-success animate-pulse"></div>
+                                  class="px-1.5 py-0 bg-success/10 text-success rounded-md text-[8px] font-black uppercase border border-success/20">
                                   Tierra
                                 </span>
                               </div>
@@ -340,27 +352,40 @@
                           </div>
                         </td>
                         <td class="px-5 py-1.5">
-                          <div class="flex flex-col" v-if="marea.fecha_arribo">
-                            <span class="text-xs font-bold text-text leading-none">{{ formatDate(marea.fecha_arribo)
-                            }}</span>
-                            <span class="text-[10px] text-text-muted leading-none mt-1">{{ marea.puerto_arribo || 'N/D'
-                            }}</span>
+                          <div class="flex flex-col gap-1" v-if="marea.fecha_arribo">
+                            <div class="flex flex-wrap items-center gap-1.5">
+                              <span class="text-xs font-bold text-text leading-none">{{ formatDate(marea.fecha_arribo) }}</span>
+                              <span v-if="marea.en_tierra"
+                                class="px-2 py-0.5 bg-warning/10 text-warning rounded-full text-[10px] font-black uppercase tracking-tighter border border-warning/20 whitespace-nowrap">
+                                Esperando zarpada
+                              </span>
+                            </div>
+                            <span class="text-[10px] text-text-muted leading-none">{{ marea.puerto_arribo || 'N/D' }}</span>
                           </div>
-                          <div v-else-if="marea.estado_codigo === 'EN_EJECUCION'" class="flex items-center gap-1">
+                          <div v-else-if="marea.estado_codigo === 'EN_EJECUCION'" class="flex items-center gap-1.5 flex-wrap">
                             <div class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></div>
                             <span
                               class="text-[10px] font-black text-primary uppercase tracking-tighter italic">Navegando...</span>
+                            <span v-if="marea.en_prospeccion"
+                              class="px-2 py-0.5 bg-purple-500/10 text-purple-600 rounded-full text-[10px] font-black uppercase tracking-tighter whitespace-nowrap border border-purple-500/20">
+                              Prospección
+                            </span>
                           </div>
                           <span v-else class="text-[10px] font-bold text-text-muted/40 italic">No disponible</span>
                         </td>
                         <td v-if="!selectedMarea" class="px-5 py-1.5">
-                          <div class="flex items-center gap-2">
-                            <div class="w-16 h-1 bg-surface-muted rounded-full overflow-hidden">
-                              <div class="h-full transition-all duration-1000"
-                                :class="marea.progreso > 100 ? 'bg-error' : 'bg-success'"
-                                :style="{ width: marea.progreso + '%' }"></div>
+                          <div class="flex flex-col gap-1 w-fit">
+                            <div class="flex items-center gap-2">
+                              <div class="w-16 h-1.5 bg-surface-muted rounded-full overflow-hidden">
+                                <div class="h-full transition-all duration-1000"
+                                  :class="marea.progreso > 100 ? 'bg-error' : 'bg-success'"
+                                  :style="{ width: Math.min(marea.progreso, 100) + '%' }"></div>
+                              </div>
+                              <span class="text-[10px] font-black" :class="marea.progreso > 100 ? 'text-error' : 'text-text-muted'">{{ marea.progreso }}%</span>
                             </div>
-                            <span class="text-[10px] font-black text-text-muted">{{ marea.progreso }}%</span>
+                            <span class="text-[8px] font-bold text-text-muted/70 tracking-tight text-right w-full">
+                              {{ marea.dias_marea || 0 }} / {{ marea.dias_estimados || 30 }} d
+                            </span>
                           </div>
                         </td>
                         <td v-if="!selectedMarea" class="px-5 py-1.5">
@@ -395,7 +420,7 @@
           enter-to-class="translate-x-0 opacity-100" leave-active-class="transition duration-200 ease-in"
           leave-from-class="translate-x-0 opacity-100" leave-to-class="translate-x-4 opacity-0">
           <div v-if="selectedMarea"
-            class="w-full xl:w-[320px] 2xl:w-[400px] shrink-0 sticky top-0 bg-surface border border-border rounded-2xl shadow-sm overflow-hidden self-start hidden xl:block z-10">
+            class="w-full xl:w-[320px] 2xl:w-[400px] shrink-0 sticky top-6 h-[calc(100vh-3rem)] flex flex-col bg-surface border border-border rounded-2xl shadow-sm overflow-hidden self-start hidden xl:block z-10">
             <MareaContextDetailContent :marea="selectedMarea" :context="selectedMareaContext" :read-only="isReadOnly"
               @close="closeSidebar" @open-detalle="goToDetalle" @view-trajectory="goToTrajectory"
               @action="executeActionFromSidebar" @manage-alert="handleManageAlert" />
@@ -433,14 +458,14 @@
       @close="showAprobarInformeDialog = false"
       @confirm="handleAprobarInformeConfirm"
     />
-      
-    <EditMareaDesignadaDialog 
+
+    <EditMareaDesignadaDialog
       v-if="selectedMarea"
-      :show="showEditDesignadaDialog" 
-      :initial-data="selectedMarea" 
+      :show="showEditDesignadaDialog"
+      :initial-data="selectedMarea"
       :marea-id="selectedMarea.id"
-      @close="showEditDesignadaDialog = false" 
-      @success="handleEditSuccess" 
+      @close="showEditDesignadaDialog = false"
+      @success="handleEditSuccess"
     />
 
     <AlertManagementDialog :is-open="isAlertDialogOpen" :alert="selectedAlert" @close="isAlertDialogOpen = false"
@@ -536,7 +561,7 @@ const handleExport = async () => {
     if (filteredMareas.value.length > 0) {
       params.ids = filteredMareas.value.map(m => m.id)
     }
-    
+
     if (searchQuery.value) {
       params.searchQuery = searchQuery.value
     }

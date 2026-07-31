@@ -168,9 +168,12 @@ const layerLabels: Record<string, string> = {
   veda: 'Zonas de veda',
   vieira: 'Áreas de vieira',
   centolla: 'Áreas de centolla',
+  langostino: 'Subáreas langostino',
   points: 'Puntos de reporte',
   showAllVessels: 'Todos los buques',
   showVesselNames: 'Mostrar identificación',
+  noaaWind: 'Mapa de viento',
+  graticule: 'Red de coordenadas',
 }
 
 const shouldShowLayer = (key: string) => {

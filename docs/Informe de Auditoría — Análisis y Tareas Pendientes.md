@@ -138,7 +138,7 @@ Llamar a `getProtocolizationTimeline(year, startDate, endDate)` y generar:
 - Para las mareas `DELEGADA_EXTERNA`: agregar un **párrafo aclaratorio** después del listado:
   > *"N marea/s de las registradas en el período se encuentran derivadas a proyectos externos
   > para validación de datos. La eventual demora en la confección del informe correspondiente
-  > es ajena al Proyecto Observadores a Bordo."*
+  > es ajena al Subprograma Observadores a Bordo."*
 - Si `delegadas > 0`, incluir una tabla específica con: N° Marea, Buque, Pesquería, Fecha de
   derivación — antes del párrafo aclaratorio.
 

@@ -25,10 +25,13 @@ export interface MareaListItem {
     observador?: string;
     fecha_fin_observador?: string;
     en_tierra?: boolean;
+    en_prospeccion?: boolean;
     total_etapas: number;
     pesquerias_nombres: string[];
     alertas: any[];
     dias_estimados?: number;
+    dias_marea?: number;
+    dias_navegados?: number;
     intencion_cierre?: boolean;
     actionsAvailable: Record<string, { enabled: boolean; label: string; blockedReason?: string; claseBoton?: string }>;
 }
@@ -44,8 +47,14 @@ export interface MareaContext {
         estado: string;
         estado_codigo: string;
         fecha_zarpada_estimada?: string;
+        fechaZarpadaEstimada?: string;
         fecha_inicio_observador?: string;
+        fechaInicioObservador?: string | null;
+        inicioValidado?: boolean;
         fecha_fin_observador?: string;
+        fechaFinObservador?: string | null;
+        finValidado?: boolean;
+        diasZonaAustral?: number;
         dias_marea: number;
         dias_navegados: number;
         progreso: number;
@@ -98,19 +107,39 @@ export enum TipoCalculoZonaAustral {
 export interface Marea {
     id: string;
     id_marea: string;
-    buque_id: string;
+    buque_id?: string;
+    buqueId?: string;
     buque_nombre?: string;
-    buque?: { nombre: string };
+    buque?: { nombre: string; nombreBuque: string };
     puertoBaseId?: string;
     fecha_zarpada_estimada?: string;
+    fechaZarpadaEstimada?: string;
     fecha_inicio_observador?: string;
+    fechaInicioObservador?: string | null;
+    inicioValidado?: boolean;
     fecha_fin_observador?: string;
-    fechaInicioObservador?: string; // Legacy/CamelCase support if needed temporarily
-    fechaFinObservador?: string; // Legacy/CamelCase support if needed temporarily
+    fechaFinObservador?: string | null;
+    finValidado?: boolean;
+    diasZonaAustral?: number | null;
     id_pesqueria?: string;
     pesqueriaId?: string;
     tipo_marea?: TipoMarea;
-    diasZonaAustral?: number | null;
+    tipoMarea?: TipoMarea;
+    inicia_en_prospeccion?: boolean;
+    iniciaEnProspeccion?: boolean;
+    anio_marea?: number;
+    anioMarea?: number;
+    nro_marea?: number;
+    nroMarea?: number;
+    observador_principal_id?: string;
+    observadorPrincipalId?: string;
+    arte_principal_id?: string;
+    artePrincipalId?: string;
+    dias_estimados?: number;
+    diasEstimados?: number;
+    estado_actual?: { codigo: string; nombre: string };
+    estadoActual?: { codigo: string; nombre: string };
+
     tipoCalculoZonaAustral?: TipoCalculoZonaAustral;
     archivos?: any[];
 }

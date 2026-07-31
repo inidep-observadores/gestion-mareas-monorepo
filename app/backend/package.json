@@ -1,6 +1,6 @@
 {
   "name": "sigma-backend",
-  "version": "0.4.0",
+  "version": "0.11.0",
   "description": "",
   "author": "Daniel Di Tullio",
   "private": true,
@@ -27,13 +27,20 @@
     "seed:prod": "node prisma/seed-minimal.js",
     "test:smtp": "ts-node src/mail/scripts/test-smtp.ts",
     "test:smtp:prod": "node dist/src/mail/scripts/test-smtp.js",
+    "test:llm": "ts-node src/mail/scripts/test-llm-models.ts",
+    "test:doc": "ts-node src/mail/scripts/test-llm-document.ts",
+    "test:or-doc": "ts-node src/mail/scripts/test-openrouter-document.ts",
+    "test:gemini-doc": "ts-node src/mail/scripts/test-gemini-pdf.ts",
     "validate:pna:2024": "ts-node src/pna-api/scripts/validate-pna-2024.ts",
     "validate:pna:2025": "ts-node src/pna-api/scripts/validate-pna-2025.ts",
     "validate:pna:2026": "ts-node src/pna-api/scripts/validate-pna-2026.ts",
     "migrate:metadata": "ts-node -r tsconfig-paths/register src/scripts/backfill-protocolizacion-metadata.ts",
+    "test:email-label": "node test-imap-label.js",
+    "test:email-list": "node test-imap-list.js",
     "prisma:studio": "pnpm prisma studio"
   },
   "dependencies": {
+    "@google/genai": "^2.10.0",
     "@napi-rs/canvas": "^0.1.97",
     "@nestjs-modules/mailer": "^2.0.2",
     "@nestjs/bull": "^10.2.1",
@@ -48,7 +55,7 @@
     "@nestjs/serve-static": "^5.0.4",
     "@prisma/adapter-pg": "^7.2.0",
     "@prisma/client": "^7.2.0",
-    "@types/pg": "8.11.11",
+    "@types/pg": "8.20.0",
     "adm-zip": "^0.5.16",
     "archiver": "^7.0.1",
     "archiver-zip-encryptable": "^1.0.10",
@@ -69,14 +76,20 @@
     "fast-xml-parser": "^5.3.4",
     "form-data": "^4.0.5",
     "geolib": "^3.3.4",
+    "googleapis": "^173.0.0",
     "handlebars": "^4.7.8",
+    "imapflow": "^1.4.3",
     "libphonenumber-js": "^1.12.33",
     "luxon": "^3.5.0",
+    "mailparser": "^3.9.12",
     "mdb-reader": "^3.1.0",
     "multer": "^1.4.5-lts.1",
     "nodemailer": "^7.0.12",
+    "openai": "^6.45.0",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
+    "pdf-parse": "^1.1.1",
+    "pdfkit": "^0.19.1",
     "pg": "^8.16.3",
     "prisma": "^7.2.0",
     "reflect-metadata": "^0.2.2",
@@ -97,6 +110,7 @@
     "@types/form-data": "^2.5.2",
     "@types/jest": "30.0.0",
     "@types/luxon": "^3.7.1",
+    "@types/mailparser": "^3.4.6",
     "@types/multer": "^2.0.0",
     "@types/node": "^25.0.3",
     "@types/passport-jwt": "^4.0.1",
@@ -140,7 +154,7 @@
   },
   "pnpm": {
     "overrides": {
-      "@types/pg": "8.11.11"
+      "@types/pg": "8.20.0"
     }
   }
 }

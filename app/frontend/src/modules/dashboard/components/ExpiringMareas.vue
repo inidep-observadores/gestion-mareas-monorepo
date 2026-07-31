@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="rounded-3xl border border-border bg-surface shadow-sm flex flex-col border-l-4 border-l-success overflow-hidden transition-all duration-300">
     <div class="p-6 flex items-center justify-between bg-surface relative">
       <div class="flex items-center gap-3">
@@ -83,6 +83,10 @@
                    <div v-if="marea.isOverdue" class="absolute top-0 bottom-0 w-[2px] bg-white shadow-[0_0_2px_rgba(0,0,0,0.2)]" :style="{ left: marea.splitPoint + '%' }"></div>
                 </div>
              </div>
+             <div class="flex justify-between items-center mt-1">
+                <span class="text-[8px] font-bold text-text-muted/70 uppercase tracking-tight">Días transcurridos</span>
+                <span class="text-[9px] font-bold" :class="marea.isOverdue ? 'text-error' : 'text-text-muted'">{{ marea.dias_marea }} / {{ marea.dias_estimados }} d</span>
+             </div>
           </div>
 
           <div class="mt-3 flex items-center justify-between text-[10px] font-bold uppercase tracking-tighter">
@@ -126,6 +130,8 @@ type ExpiringMarea = {
   eta: string
   isOverdue: boolean
   splitPoint: number
+  dias_marea: number
+  dias_estimados: number
 }
 
 const expiringMareas = ref<ExpiringMarea[]>([])
@@ -181,7 +187,9 @@ const loadExpiringMareas = async () => {
           en_tierra: !!item.en_tierra,
           eta: formatEta(item.fecha_zarpada, item.dias_estimados),
           isOverdue,
-          splitPoint
+          splitPoint,
+          dias_marea: item.dias_marea || 0,
+          dias_estimados: item.dias_estimados || 30
         }
       })
   } catch (error) {

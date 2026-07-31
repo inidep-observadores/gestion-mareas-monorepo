@@ -5,7 +5,7 @@
 import {
     Table, TableRow, TableCell, Paragraph, TextRun, WidthType,
     AlignmentType, BorderStyle, VerticalAlign, ShadingType, HeadingLevel,
-    convertInchesToTwip,
+    convertInchesToTwip, TableLayoutType
 } from 'docx';
 import { INIDEP_COLORS, FONTS, FONT_SIZES } from './docx-styles';
 
@@ -20,7 +20,10 @@ export interface TableOptions {
     /** Mostrar filas alternadas con color de fondo */
     stripedRows?: boolean;
     /** Incluir fila de totales */
-    totalsRow?: { label: string; values: (string | number)[] };
+    totalsRow?: {
+        label: string;
+        values?: (string | number)[];
+    };
 }
 
 /** Estructura de datos para una fila que incluye metadatos de estilo */
@@ -64,6 +67,7 @@ function createDataCell(
         highlighted?: boolean;
         isTotal?: boolean;
         color?: string;
+        colSpan?: number;
     },
 ): TableCell {
     const {
@@ -88,6 +92,7 @@ function createDataCell(
 
     return new TableCell({
         width: { size: widthPct || 10, type: WidthType.PERCENTAGE }, // Aseguramos ancho siempre
+        columnSpan: options?.colSpan,
         shading: bgColor ? { type: ShadingType.SOLID, color: bgColor } : undefined,
         verticalAlign: VerticalAlign.CENTER,
         children: lines.map((line, idx) =>
@@ -167,22 +172,25 @@ export function createFormattedTable(
         const totalCells: TableCell[] = [];
         totalCells.push(
             createDataCell(totalsRow.label, {
-                widthPct: columnWidths?.[0],
+                widthPct: (totalsRow.values && totalsRow.values.length > 0) ? columnWidths?.[0] : 100,
                 alignment: AlignmentType.LEFT,
                 bold: true,
                 isTotal: true,
+                colSpan: (totalsRow.values && totalsRow.values.length > 0) ? undefined : headers.length
             }),
         );
-        totalsRow.values.forEach((val, i) => {
-            totalCells.push(
-                createDataCell(val, {
-                    widthPct: columnWidths?.[i + 1],
-                    alignment: alignments?.[i + 1] || AlignmentType.CENTER,
-                    bold: true,
-                    isTotal: true,
-                }),
-            );
-        });
+        if (totalsRow.values && totalsRow.values.length > 0) {
+            totalsRow.values.forEach((val, i) => {
+                totalCells.push(
+                    createDataCell(val, {
+                        widthPct: columnWidths?.[i + 1],
+                        alignment: alignments?.[i + 1] || AlignmentType.CENTER,
+                        bold: true,
+                        isTotal: true,
+                    }),
+                );
+            });
+        }
         tableRows.push(new TableRow({ children: totalCells }));
     }
 
@@ -194,6 +202,8 @@ export function createFormattedTable(
 
     return new Table({
         width: { size: 100, type: WidthType.PERCENTAGE },
+        layout: TableLayoutType.FIXED,
+        columnWidths: columnWidths ? columnWidths.map(pct => Math.round((pct / 100) * 9000)) : undefined,
         rows: tableRows,
         borders: {
             top: borderStyle,

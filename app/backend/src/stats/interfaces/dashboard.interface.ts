@@ -107,7 +107,10 @@ export interface ProtocolizedMareaDetail {
     id: string;
     id_marea: string;
     buque: string;
+    pesqueria: string;
     observador: string;
+    diasNavegados: number;
+    fechaFinalizacion: Date | null;
     nroProtocolizacion: number | null;
     anioProtocolizacion: number | null;
     fechaProtocolizacion: Date | string | null;

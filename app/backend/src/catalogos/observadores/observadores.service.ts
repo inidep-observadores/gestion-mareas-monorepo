@@ -94,6 +94,8 @@ export class ObservadoresService {
             { header: 'CÓDIGO', key: 'codigoInterno', width: 10 },
             { header: 'APELLIDO', key: 'apellido', width: 20 },
             { header: 'NOMBRE', key: 'nombre', width: 20 },
+            { header: 'DNI', key: 'dni', width: 15 },
+            { header: 'CUIL', key: 'cuil', width: 20 },
             { header: 'TIPO', key: 'tipoObservador', width: 15 },
             { header: 'CONTRATO', key: 'tipoContrato', width: 20 },
             { header: 'ACTIVO', key: 'activo', width: 10 },
@@ -101,7 +103,7 @@ export class ObservadoresService {
             { header: 'IMPEDIMENTO', key: 'conImpedimento', width: 12 },
             { header: 'MOTIVO IMPEDIMENTO', key: 'motivoImpedimento', width: 30 },
             { header: 'EMAIL', key: 'email', width: 25 },
-            { header: 'PRÓXIMA DISPONIBILIDAD', key: 'fechaProximaDisponibilidad', width: 20 },
+            { header: 'TELÉFONO', key: 'telefonoPrincipal', width: 20 },
             { header: 'OBSERVACIONES', key: 'observaciones', width: 40 },
         ];
 
@@ -117,6 +119,8 @@ export class ObservadoresService {
                 codigoInterno: obs.codigoInterno,
                 apellido: obs.apellido,
                 nombre: obs.nombre,
+                dni: obs.dni || '-',
+                cuil: obs.cuil || '-',
                 tipoObservador: obs.tipoObservador,
                 tipoContrato: obs.tipoContrato,
                 activo: obs.activo ? 'SÍ' : 'NO',
@@ -124,7 +128,7 @@ export class ObservadoresService {
                 conImpedimento: obs.conImpedimento ? 'SÍ' : 'NO',
                 motivoImpedimento: obs.motivoImpedimento || '-',
                 email: obs.email || '-',
-                fechaProximaDisponibilidad: obs.fechaProximaDisponibilidad ? DateUtils.formatDate(obs.fechaProximaDisponibilidad) : '-',
+                telefonoPrincipal: obs.telefonoPrincipal || '-',
                 observaciones: obs.observaciones || '-',
             });
         });

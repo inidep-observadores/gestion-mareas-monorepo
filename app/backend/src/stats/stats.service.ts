@@ -43,8 +43,12 @@ export class StatsService {
 
         if (activeStage) return MareaEstado.EN_EJECUCION;
 
-        // 2. Si no está navegando, buscamos el último movimiento que efectivamente cambió el estado
-        const lastStateMov = marea.movimientos?.find(mov => mov.estadoHasta?.codigo);
+        // 2. Si no está navegando, buscamos el último movimiento (hasta la fecha de corte) que efectivamente cambió el estado
+        const lastStateMov = marea.movimientos?.find(mov => {
+            if (!mov.estadoHasta?.codigo) return false;
+            const movDate = new Date(mov.fechaHora);
+            return movDate <= snapshotDate;
+        });
         if (lastStateMov) return lastStateMov.estadoHasta.codigo;
 
         // 3. Fallback adicional por si no hay historial de movimientos (basado en la primera/última etapa)
@@ -226,7 +230,7 @@ export class StatsService {
                     }
                 },
                 movimientos: snapshotDate ? {
-                    where: { fechaHora: { lte: snapshotDate } },
+                    where: { fechaHora: { lte: snapshotDate }, estadoHastaId: { not: null } },
                     orderBy: { fechaHora: 'desc' as const },
                     take: 1,
                     include: { estadoHasta: true }
@@ -246,11 +250,19 @@ export class StatsService {
         const byFishery: Record<string, {
             name: string;
             mareas: number;
+            etapas: number;
             days: number;
             vessels: Map<string, { code: string; nombre: string }> // VesselID -> FleetInfo
         }> = {};
         const byFleet: Record<string, { name: string; mareas: number; days: number }> = {};
         const byObserver: Record<string, { id: string; name: string; mareas: number; days: number; active: boolean }> = {};
+        const byEstimationDeviation: Record<string, {
+            vesselId: string;
+            buque: string;
+            mareas: number;
+            totalDiasReales: number;
+            totalDiasEstimados: number;
+        }> = {};
 
         for (const marea of mareas) {
             // Source of Truth: Start with the first stage's departure
@@ -338,10 +350,11 @@ export class StatsService {
 
                 if (fisheryNavigatedDays > 0) {
                     if (!byFishery[fisheryName]) {
-                        byFishery[fisheryName] = { name: fisheryName, mareas: 0, days: 0, vessels: new Map() };
+                        byFishery[fisheryName] = { name: fisheryName, mareas: 0, etapas: 0, days: 0, vessels: new Map() };
                     }
                     byFishery[fisheryName].days += fisheryNavigatedDays;
                     byFishery[fisheryName].mareas++;
+                    byFishery[fisheryName].etapas += intervals.length;
 
                     if (marea.buque) {
                         const fleetCode = marea.buque.tipoFlota?.codigo || 'INDETERMINADO';
@@ -389,6 +402,24 @@ export class StatsService {
                     byObserver[oId].mareas++;
                 }
             });
+
+            // Calculate Estimation Deviations (Only for completed or ongoing with valid dates)
+            if (marea.diasEstimados && marea.diasEstimados > 0 && marea.fechaInicioObservador && marea.fechaFinObservador) {
+                const bId = marea.buque.id;
+                if (!byEstimationDeviation[bId]) {
+                    byEstimationDeviation[bId] = {
+                        vesselId: bId,
+                        buque: marea.buque.nombreBuque,
+                        mareas: 0,
+                        totalDiasReales: 0,
+                        totalDiasEstimados: 0
+                    };
+                }
+                const diasMarea = DateUtils.calculateInclusiveDays(marea.fechaInicioObservador, marea.fechaFinObservador);
+                byEstimationDeviation[bId].mareas++;
+                byEstimationDeviation[bId].totalDiasReales += diasMarea;
+                byEstimationDeviation[bId].totalDiasEstimados += marea.diasEstimados;
+            }
 
             // Distribute Days in Month
             if (daysCalculationMode === 'SHIP') {
@@ -467,6 +498,21 @@ export class StatsService {
                 });
             }
         }
+        
+        const estimationDeviations = Object.values(byEstimationDeviation).map(v => {
+            const avgReales = v.totalDiasReales / v.mareas;
+            const avgEstimados = v.totalDiasEstimados / v.mareas;
+            const desviacionDias = avgReales - avgEstimados;
+            const desviacionPorcentual = (desviacionDias / avgEstimados) * 100;
+            return {
+                buque: v.buque,
+                mareas: v.mareas,
+                avgReales: Math.round(avgReales * 10) / 10,
+                avgEstimados: Math.round(avgEstimados * 10) / 10,
+                desviacionDias: Math.round(desviacionDias * 10) / 10,
+                desviacionPorcentual: Math.round(desviacionPorcentual * 10) / 10
+            };
+        }).sort((a, b) => b.desviacionPorcentual - a.desviacionPorcentual); // sort descending
 
         return {
             year,
@@ -474,6 +520,7 @@ export class StatsService {
             totalMareas,
             totalDaysNavigated: totalDaysCalculated,
             avgDaysPerMarea: totalMareas ? Math.round(totalDaysCalculated / totalMareas) : 0,
+            estimationDeviations,
             monthly: {
                 mareas: mareasByMonth,
                 days: daysByMonth,
@@ -487,6 +534,7 @@ export class StatsService {
                 return {
                     name: f.name,
                     mareas: f.mareas,
+                    etapas: f.etapas,
                     days: f.days,
                     stats: Object.keys(stats).length > 0 ? stats : undefined
                 };
@@ -588,7 +636,7 @@ export class StatsService {
                     }
                 },
                 movimientos: {
-                    where: snapshotDate ? { fechaHora: { lte: snapshotDate } } : {
+                    where: snapshotDate ? { fechaHora: { lte: snapshotDate }, estadoHastaId: { not: null } } : {
                         estadoHasta: { codigo: MareaEstado.DELEGADA_EXTERNA }
                     },
                     orderBy: { fechaHora: 'desc' as const },
@@ -745,7 +793,8 @@ export class StatsService {
         protocolizationStartDate?: string,
         protocolizationEndDate?: string,
         includeSummaries = false,
-        snapshotDate?: Date
+        snapshotDate?: Date,
+        includeAnnualAnnex?: boolean
     ): Promise<ExcelJS.Workbook> {
         if (filterType === FilterType.COVERAGE) {
             return this.getCoverageExportWorkbook(year, mode, includeNonProtocolized, includeProtocolizedOutOfPeriod, includeCampaigns, startDate, endDate, filterValue, protocolizationStartDate, protocolizationEndDate);
@@ -756,7 +805,7 @@ export class StatsService {
         }
 
         if (filterType?.startsWith('CHART_')) {
-            return this.getChartDataExportWorkbook(year, mode, includeNonProtocolized, includeProtocolizedOutOfPeriod, includeCampaigns, filterType, startDate, endDate, protocolizationStartDate, protocolizationEndDate);
+            return this.getChartDataExportWorkbook(year, mode, includeNonProtocolized, includeProtocolizedOutOfPeriod, includeCampaigns, filterType, startDate, endDate, protocolizationStartDate, protocolizationEndDate, filterValue);
         }
 
         const yearStart = startDate ? new Date(startDate) : new Date(Date.UTC(year, 0, 1, 0, 0, 0, 0));
@@ -836,7 +885,7 @@ export class StatsService {
                     }
                 },
                 movimientos: snapshotDate ? {
-                    where: { fechaHora: { lte: snapshotDate } },
+                    where: { fechaHora: { lte: snapshotDate }, estadoHastaId: { not: null } },
                     orderBy: { fechaHora: 'desc' as const },
                     take: 1,
                     include: { estadoHasta: true }
@@ -868,8 +917,13 @@ export class StatsService {
                 endDate,
                 protocolizationStartDate,
                 protocolizationEndDate,
-                snapshotDate
+                snapshotDate,
+                includeAnnualAnnex
             );
+        }
+
+        if (filterType === 'CHART_ESTIMATION_DEVIATION') {
+            return this.getEstimationDeviationExportWorkbook(mareasFiltradas, filterValue);
         }
 
         const workbook = new ExcelJS.Workbook();
@@ -1842,6 +1896,7 @@ export class StatsService {
         endDate?: string,
         protocolizationStartDate?: string,
         protocolizationEndDate?: string,
+        filterValue?: string,
     ): Promise<ExcelJS.Workbook> {
         const stats = await this.getDashboardStats(
             year, mode, includeNonProtocolized, includeProtocolizedOutOfPeriod, 'SHIP', includeCampaigns, startDate, endDate, protocolizationStartDate, protocolizationEndDate
@@ -1897,6 +1952,15 @@ export class StatsService {
                 ];
                 rows = stats.observers;
                 break;
+
+            case 'CHART_ESTIMATION_DEVIATION': {
+                // Los datos ya vienen pre-calculados desde getDashboardStats
+                const tolerance = filterValue ? (parseInt(filterValue, 10) || 0) : 0;
+                const deviations = (stats.estimationDeviations ?? []).filter(
+                    (d: any) => Math.abs(d.desviacionPorcentual) >= tolerance
+                );
+                return this.buildEstimationDeviationWorkbook(deviations);
+            }
         }
 
         return this.createGenericWorkbook(sheetName, headers, rows);
@@ -2310,7 +2374,8 @@ export class StatsService {
         endDate?: string,
         protocolizationStartDate?: string,
         protocolizationEndDate?: string,
-        snapshotDate?: Date
+        snapshotDate?: Date,
+        includeAnnualAnnex?: boolean
     ): Promise<ExcelJS.Workbook> {
         const periodStart = startDate ? new Date(startDate) : new Date(Date.UTC(year, 0, 1));
         periodStart.setUTCHours(0, 0, 0, 0);
@@ -2513,49 +2578,8 @@ export class StatsService {
 
         });
 
-        // --- LÓGICA COMPLEMENTARIA PARA HOJA "CASOS ESPECIALES" (Hoja 4) ---
-        const especial_enviadasADNI = [];
-        const especial_listasParaEnvio = [];
-        const especial_pendientesDeInforme = [];
-        const especial_esperandoEntrega = [];
-        const especial_delegadasExternas = [];
-
-        finalizadasDelPeriodo.forEach(item => {
-            const fEnvio = item.fechaEnvioProtocolizacion ? new Date(item.fechaEnvioProtocolizacion) : null;
-            const stateAtSnapshot = lastStateMap.get(item.id);
-
-            const mareaRec = {
-                id: item.id,
-                id_marea: item.id_marea,
-                buque: item.buque,
-                pesqueria: item.pesqueria,
-                flota: item.flota,
-                observador: item.observador,
-                diasNavegados: mode === 'CALENDAR' ? item.diasCalendario : item.diasTotales,
-                fechaEvento: fEnvio || item.fechaFin,
-                nroProtocolo: item.nroProtocolizacion ? `${item.nroProtocolizacion}/${item.anioProtocolizacion}` : null,
-                motivo: (item as any).motivo || null,
-                tipoObservador: observerTypeMap.get(item.observadorId)
-            };
-
-            if (fEnvio && fEnvio >= periodStart && fEnvio <= snapEnd) {
-                especial_enviadasADNI.push(mareaRec);
-            } else if (stateAtSnapshot === MareaEstado.PARA_PROTOCOLIZAR) {
-                especial_listasParaEnvio.push(mareaRec);
-            } else if (stateAtSnapshot === MareaEstado.ESPERANDO_ENTREGA) {
-                especial_esperandoEntrega.push(mareaRec);
-            } else if (stateAtSnapshot === MareaEstado.DELEGADA_EXTERNA) {
-                especial_delegadasExternas.push(mareaRec);
-            } else {
-                especial_pendientesDeInforme.push(mareaRec);
-            }
-        });
-
-        (specialCases as any).enviadasADNI = especial_enviadasADNI;
-        specialCases.informesPendientesEnvio = especial_listasParaEnvio;
-        specialCases.pendientesDeInforme = especial_pendientesDeInforme;
-        specialCases.esperandoEntrega = especial_esperandoEntrega;
-        specialCases.delegadasExternas = especial_delegadasExternas;
+        // La lógica de Cascada ya está implementada centralizadamente en getAuditSpecialCases().
+        // Los objetos specialCases.enviadasADNI, pendientesDeInforme, etc. ya vienen listos con esa lógica unificada.
 
 
         // Informes de marea y otros estados desde detailItems
@@ -2588,6 +2612,10 @@ export class StatsService {
         // TODO: Re-habilitar una vez que la definición de la hoja de Protocolización esté finalizada por el usuario.
         // Hoja 5: Protocolización (DESHABILITADA PROVISORIAMENTE)
         // this.buildAuditProtocolizacionSheet(workbook, protocolizationTimeline);
+
+        if (includeAnnualAnnex && startDate && endDate) {
+            await this.buildAuditAnnexSheet(workbook, year, mode, includeNonProtocolized, includeProtocolizedOutOfPeriod, includeCampaigns, startDate, endDate, protocolizationStartDate, protocolizationEndDate, snapshotDate, fisheryOrderMap);
+        }
 
         return workbook;
     }
@@ -2979,7 +3007,7 @@ export class StatsService {
         });
 
         // Fila de TOTAL para Navegación
-        sheet.getCell(currentRow, 1).value = 'TOTAL';
+        sheet.getCell(currentRow, 1).value = `Total: ${listMareas.length} mareas`;
         sheet.getCell(currentRow, 1).font = { bold: true };
         sheet.getCell(currentRow, 10).value = { formula: `SUM(J4:J${currentRow - 1})` };
         sheet.getCell(currentRow, 10).font = { bold: true };
@@ -3261,7 +3289,7 @@ export class StatsService {
                 label: 'Canceladas',
                 color: 'FFFFC107',
                 data: specialCases.canceladas,
-                getObs: (_: any) => '',
+                getObs: (m: any) => m.motivo ?? '',
             },
             {
                 label: 'Desestimadas',
@@ -3319,6 +3347,8 @@ export class StatsService {
                 let headerValue = h;
                 if (section.label === 'Enviadas a DNI' && h === 'Observaciones') {
                     headerValue = 'Protocolizadas en el período';
+                } else if (section.label === 'Canceladas' && h === 'Observaciones') {
+                    headerValue = 'Motivo';
                 }
                 cell.value = headerValue;
                 cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF00548B' } };
@@ -3352,11 +3382,14 @@ export class StatsService {
                     const obsCell = sheet.getCell(currentRow, 9);
                     obsCell.value = section.getObs(m);
 
-                    sheet.getCell(currentRow, 1).alignment = { horizontal: 'center' };
-                    sheet.getCell(currentRow, 7).alignment = { horizontal: 'center' };
+                    for (let i = 1; i <= 9; i++) {
+                        sheet.getCell(currentRow, i).alignment = { vertical: 'top' };
+                    }
+                    sheet.getCell(currentRow, 1).alignment = { horizontal: 'center', vertical: 'top' };
+                    sheet.getCell(currentRow, 7).alignment = { horizontal: 'center', vertical: 'top' };
                     sheet.getCell(currentRow, 8).numFmt = 'dd/mm/yyyy';
-                    sheet.getCell(currentRow, 8).alignment = { horizontal: 'center' };
-                    obsCell.alignment = { horizontal: 'left', wrapText: true };
+                    sheet.getCell(currentRow, 8).alignment = { horizontal: 'center', vertical: 'top' };
+                    obsCell.alignment = { horizontal: 'left', vertical: 'top', wrapText: true };
 
                     // Resaltado condicional para Enviadas a DNI
                     if (section.label === 'Enviadas a DNI' && m.nroProtocolo) {
@@ -3372,7 +3405,7 @@ export class StatsService {
                 });
 
                 // Fila TOTAL de la sección
-                sheet.getCell(currentRow, 1).value = 'TOTAL';
+                sheet.getCell(currentRow, 1).value = `Total: ${section.data.length} mareas`;
                 sheet.getCell(currentRow, 1).font = { bold: true };
                 const sectionStartRow = currentRow - section.data.length;
                 sheet.getCell(currentRow, 7).value = { formula: `SUM(G${sectionStartRow}:G${currentRow - 1})` };
@@ -3397,7 +3430,7 @@ export class StatsService {
         currentRow += 2;
         sheet.mergeCells(currentRow, 1, currentRow, 9);
         const noteCell = sheet.getCell(currentRow, 1);
-        noteCell.value = 'Nota: Las mareas "Derivadas a Programas Científicos Externos" fueron ejecutadas pero sus datos son procesados por un programa ajeno al Programa Observadores a Bordo.';
+        noteCell.value = 'Nota: Las mareas "Derivadas a Programas Científicos Externos" fueron ejecutadas pero sus datos son procesados por un programa ajeno al Subprograma Observadores a Bordo.';
         noteCell.font = { italic: true, size: 10, color: { argb: 'FF475569' } };
         noteCell.alignment = { horizontal: 'left', wrapText: true };
 
@@ -3411,6 +3444,414 @@ export class StatsService {
         sheet.getColumn(7).width = 10;
         sheet.getColumn(8).width = 14;
         sheet.getColumn(9).width = 40;
+    }
+
+    private async buildAuditAnnexSheet(
+        workbook: ExcelJS.Workbook,
+        year: number,
+        mode: 'CALENDAR' | 'TOTAL',
+        includeNonProtocolized: boolean,
+        includeProtocolizedOutOfPeriod: boolean,
+        includeCampaigns: boolean,
+        startDate: string,
+        endDate: string,
+        protocolizationStartDate?: string,
+        protocolizationEndDate?: string,
+        snapshotDate?: Date,
+        fisheryOrderMap?: Map<string, number>
+    ) {
+        const startMonth = parseInt(startDate.split('-')[1], 10);
+        const endMonth = parseInt(endDate.split('-')[1], 10);
+        let selectedQuarter = null;
+        if (startMonth === 1 && endMonth === 3) selectedQuarter = 1;
+        if (startMonth === 4 && endMonth === 6) selectedQuarter = 2;
+        if (startMonth === 7 && endMonth === 9) selectedQuarter = 3;
+        if (startMonth === 10 && endMonth === 12) selectedQuarter = 4;
+
+        if (!selectedQuarter || selectedQuarter < 2) return;
+
+        const sheet = workbook.addWorksheet('Anexo I');
+
+        // Titulo
+        const numCols = selectedQuarter + 1;
+        sheet.mergeCells(1, 1, 1, numCols);
+        const titleCell = sheet.getCell(1, 1);
+        titleCell.value = 'ANEXO 1: COMPARATIVA ANUAL DE ESFUERZO POR PESQUERÍA Y RESUMEN DE ESTADO DE MAREAS';
+        titleCell.font = { bold: true, size: 14 };
+        titleCell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+        sheet.getRow(1).height = 40;
+
+        // Subtitulo explicativo
+        sheet.mergeCells(2, 1, 2, numCols);
+        const subtitleCell = sheet.getCell(2, 1);
+        subtitleCell.value = 'Cantidad de días navegados por cada pesquería que registró actividad durante el año en curso, desglosado por trimestre.';
+        subtitleCell.font = { italic: true, size: 10, color: { argb: 'FF475569' } };
+        subtitleCell.alignment = { horizontal: 'left', wrapText: true };
+        sheet.getRow(2).height = 30;
+
+        // Cabeceras
+        const headerRow = sheet.getRow(4);
+        const headers = ['Pesquería'];
+        const numToOrdinal = ['Primer', 'Segundo', 'Tercer', 'Cuarto'];
+        for (let q = 1; q <= selectedQuarter; q++) {
+            headers.push(`${numToOrdinal[q - 1]} trimestre`);
+        }
+
+        headers.forEach((h, i) => {
+            const cell = headerRow.getCell(i + 1);
+            cell.value = h;
+            cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF00548B' } };
+            cell.alignment = { horizontal: 'center' };
+        });
+
+        // Configurar anchos de columna
+        sheet.getColumn(1).width = 40;
+        for (let i = 2; i <= numCols; i++) {
+            sheet.getColumn(i).width = 20;
+        }
+
+        // Obtener la data
+        const yearStats = await this.getDashboardStats(
+            year, mode, includeNonProtocolized, includeProtocolizedOutOfPeriod,
+            'SHIP', includeCampaigns, undefined, undefined,
+            protocolizationStartDate, protocolizationEndDate,
+            snapshotDate
+        );
+        
+        const activeFisheries = Array.from(new Set(yearStats.fisheries.map((f: any) => f.name)));
+        activeFisheries.sort((a, b) => (fisheryOrderMap?.get(a.trim()) || 999) - (fisheryOrderMap?.get(b.trim()) || 999));
+
+        const fisheriesData: Record<string, number[]> = {};
+        for (const name of activeFisheries) {
+            fisheriesData[name] = new Array(selectedQuarter).fill(0);
+        }
+
+        for (let q = 1; q <= selectedQuarter; q++) {
+            const qStartMonth = (q - 1) * 3 + 1;
+            const qEndMonth = qStartMonth + 2;
+            const lastDay = new Date(year, qEndMonth, 0).getDate();
+            
+            const qStartDateStr = `${year}-${String(qStartMonth).padStart(2, '0')}-01`;
+            const qEndDateStr = `${year}-${String(qEndMonth).padStart(2, '0')}-${lastDay}`;
+            
+            const qStats = await this.getDashboardStats(
+                year, 'CALENDAR', includeNonProtocolized, includeProtocolizedOutOfPeriod,
+                'SHIP', includeCampaigns, qStartDateStr, qEndDateStr,
+                protocolizationStartDate, protocolizationEndDate,
+                snapshotDate
+            );
+            
+            for (const f of qStats.fisheries) {
+                if (fisheriesData[f.name]) {
+                    fisheriesData[f.name][q - 1] = f.days;
+                }
+            }
+        }
+
+        let currentRow = 5;
+        activeFisheries.forEach(fishery => {
+            const row = sheet.getRow(currentRow);
+            row.getCell(1).value = fishery.toUpperCase();
+            
+            for (let q = 1; q <= selectedQuarter; q++) {
+                const days = fisheriesData[fishery][q - 1];
+                const cell = row.getCell(q + 1);
+                cell.value = days > 0 ? days : '-';
+                cell.alignment = { horizontal: 'center' };
+            }
+            currentRow++;
+        });
+        
+        // Bordes de tabla
+        for (let r = 4; r < currentRow; r++) {
+            for (let c = 1; c <= numCols; c++) {
+                const cell = sheet.getCell(r, c);
+                cell.border = {
+                    top: { style: 'thin' },
+                    left: { style: 'thin' },
+                    right: { style: 'thin' },
+                    bottom: { style: 'thin' }
+                };
+            }
+        }
+
+        // Obtener estadísticas trimestrales
+        const annexStats = await this.getAuditAnnexStats(
+            year,
+            selectedQuarter,
+            includeCampaigns,
+            snapshotDate
+        );
+
+        // ─── TABLA 2: RECUENTO DE MAREAS SEGÚN ESTADO ───
+        currentRow += 3; // Dejar 3 filas en blanco
+        
+        sheet.mergeCells(currentRow, 1, currentRow, numCols);
+        const title2Cell = sheet.getCell(currentRow, 1);
+        title2Cell.value = 'Recuento de mareas según estado por trimestre';
+        title2Cell.font = { bold: true, size: 12 };
+        title2Cell.alignment = { horizontal: 'left' };
+        currentRow++;
+
+        const header2Row = sheet.getRow(currentRow);
+        headers.forEach((h, i) => {
+            const cell = header2Row.getCell(i + 1);
+            cell.value = h.replace('Pesquería', 'Estado de marea');
+            cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF00548B' } };
+            cell.alignment = { horizontal: 'center' };
+        });
+        const table2StartRow = currentRow;
+        currentRow++;
+
+        const stateRows = [
+            ['FINALIZADAS', ...annexStats.mareaStates.finalizadas],
+            ['CANCELADAS', ...annexStats.mareaStates.canceladas]
+        ];
+
+        stateRows.forEach(rData => {
+            const row = sheet.getRow(currentRow);
+            row.getCell(1).value = rData[0];
+            for (let q = 1; q <= selectedQuarter; q++) {
+                const val = rData[q];
+                const cell = row.getCell(q + 1);
+                cell.value = val;
+                cell.alignment = { horizontal: 'center' };
+            }
+            currentRow++;
+        });
+
+        // Aplicar bordes a la Tabla 2
+        for (let r = table2StartRow; r < currentRow; r++) {
+            for (let c = 1; c <= numCols; c++) {
+                const cell = sheet.getCell(r, c);
+                cell.border = {
+                    top: { style: 'thin' },
+                    left: { style: 'thin' },
+                    right: { style: 'thin' },
+                    bottom: { style: 'thin' }
+                };
+            }
+        }
+
+        // ─── TABLA 3: RECUENTO DE MAREAS SEGÚN PROTOCOLIZACIÓN ───
+        currentRow += 3; // Dejar 3 filas en blanco
+        
+        sheet.mergeCells(currentRow, 1, currentRow, numCols);
+        const title3Cell = sheet.getCell(currentRow, 1);
+        title3Cell.value = 'Recuento de mareas según estado de protocolización';
+        title3Cell.font = { bold: true, size: 12 };
+        title3Cell.alignment = { horizontal: 'left' };
+        currentRow++;
+
+        const header3Row = sheet.getRow(currentRow);
+        headers.forEach((h, i) => {
+            const cell = header3Row.getCell(i + 1);
+            cell.value = h.replace('Pesquería', 'Estado de marea');
+            cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF00548B' } };
+            cell.alignment = { horizontal: 'center' };
+        });
+        const table3StartRow = currentRow;
+        currentRow++;
+
+        const protocolizationRows = [
+            ['EN ESPERA (PROGRAMAS EXTERNOS)', ...annexStats.protocolizationStates.enEspera],
+            ['ENVIADAS A PROTOCOLIZAR', ...annexStats.protocolizationStates.enviadas],
+            ['PROTOCOLIZADAS', ...annexStats.protocolizationStates.protocolizadas]
+        ];
+
+        protocolizationRows.forEach(rData => {
+            const row = sheet.getRow(currentRow);
+            row.getCell(1).value = rData[0];
+            for (let q = 1; q <= selectedQuarter; q++) {
+                const val = rData[q];
+                const cell = row.getCell(q + 1);
+                cell.value = val;
+                cell.alignment = { horizontal: 'center' };
+            }
+            currentRow++;
+        });
+
+        // Aplicar bordes a la Tabla 3
+        for (let r = table3StartRow; r < currentRow; r++) {
+            for (let c = 1; c <= numCols; c++) {
+                const cell = sheet.getCell(r, c);
+                cell.border = {
+                    top: { style: 'thin' },
+                    left: { style: 'thin' },
+                    right: { style: 'thin' },
+                    bottom: { style: 'thin' }
+                };
+            }
+        }
+
+        // ─── ANEXO II: DETALLE DE PROTOCOLIZACIÓN TRIMESTRAL ───
+        if (annexStats.finalizedDetails) {
+            const sheet2 = workbook.addWorksheet('Anexo II');
+            
+            // Configurar columnas Anexo II
+            sheet2.getColumn(1).width = 45; // Marea
+            sheet2.getColumn(2).width = 15; // Derivada
+            sheet2.getColumn(3).width = 15; // Enviada
+            sheet2.getColumn(4).width = 15; // Protocolizada
+
+            const titleCell2 = sheet2.getCell(1, 1);
+            sheet2.mergeCells(1, 1, 1, 4);
+            titleCell2.value = 'ANEXO 2: DETALLE DE PROTOCOLIZACIÓN TRIMESTRAL';
+            titleCell2.font = { bold: true, size: 14 };
+            titleCell2.alignment = { horizontal: 'center' };
+
+            let currentSheet2Row = 3;
+
+            for (let q = 1; q <= selectedQuarter; q++) {
+                sheet2.mergeCells(currentSheet2Row, 1, currentSheet2Row, 4);
+                const title4Cell = sheet2.getCell(currentSheet2Row, 1);
+                title4Cell.value = `Detalle de mareas finalizadas según estado – ${numToOrdinal[q - 1]} trimestre`;
+                title4Cell.font = { bold: true, size: 12 };
+                title4Cell.alignment = { horizontal: 'left' };
+                currentSheet2Row++;
+
+                const header4Row = sheet2.getRow(currentSheet2Row);
+                const detailHeaders = ['Marea', 'Derivada', 'Enviada', 'Protocolizada'];
+                detailHeaders.forEach((h, i) => {
+                    const cell = header4Row.getCell(i + 1);
+                    cell.value = h;
+                    cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+                    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF00548B' } };
+                    cell.alignment = { horizontal: 'center' };
+                });
+                
+                const table4StartRow = currentSheet2Row;
+                currentSheet2Row++;
+
+                const mareasTrimestre = annexStats.finalizedDetails[q - 1];
+                if (!mareasTrimestre || mareasTrimestre.length === 0) {
+                    sheet2.mergeCells(currentSheet2Row, 1, currentSheet2Row, 4);
+                    const emptyCell = sheet2.getCell(currentSheet2Row, 1);
+                    emptyCell.value = 'Sin mareas finalizadas en este trimestre';
+                    emptyCell.alignment = { horizontal: 'center' };
+                    emptyCell.font = { italic: true, color: { argb: 'FF666666' } };
+                    currentSheet2Row++;
+                } else {
+                    mareasTrimestre.forEach(m => {
+                        const row = sheet2.getRow(currentSheet2Row);
+                        row.getCell(1).value = m.identificacion;
+                        row.getCell(2).value = m.derivada ? '✓' : '';
+                        row.getCell(3).value = m.enviada ? '✓' : '';
+                        row.getCell(4).value = m.protocolizada ? '✓' : '';
+                        
+                        row.getCell(2).alignment = { horizontal: 'center' };
+                        row.getCell(3).alignment = { horizontal: 'center' };
+                        row.getCell(4).alignment = { horizontal: 'center' };
+
+                        if (m.derivada) {
+                            for (let c = 1; c <= 4; c++) {
+                                row.getCell(c).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF0F0F0' } };
+                            }
+                        }
+                        currentSheet2Row++;
+                    });
+                }
+
+                // Aplicar bordes
+                for (let r = table4StartRow; r < currentSheet2Row; r++) {
+                    for (let c = 1; c <= 4; c++) {
+                        const cell = sheet2.getCell(r, c);
+                        cell.border = {
+                            top: { style: 'thin' },
+                            left: { style: 'thin' },
+                            right: { style: 'thin' },
+                            bottom: { style: 'thin' }
+                        };
+                    }
+                }
+                
+                currentSheet2Row += 3;
+            }
+        }
+
+        // ─── ANEXO III: DETALLE DE PROTOCOLIZACIÓN ANUAL ───
+        if (annexStats.annualFinalizedDetails) {
+            const sheet3 = workbook.addWorksheet('Anexo III');
+            
+            // Configurar columnas Anexo III
+            sheet3.getColumn(1).width = 45; // Marea
+            sheet3.getColumn(2).width = 15; // Derivada
+            sheet3.getColumn(3).width = 15; // Enviada
+            sheet3.getColumn(4).width = 15; // Protocolizada
+
+            const titleCell3 = sheet3.getCell(1, 1);
+            sheet3.mergeCells(1, 1, 1, 4);
+            titleCell3.value = 'ANEXO 3: DETALLE DE PROTOCOLIZACIÓN ANUAL';
+            titleCell3.font = { bold: true, size: 14 };
+            titleCell3.alignment = { horizontal: 'center' };
+
+            let currentSheet3Row = 3;
+
+            sheet3.mergeCells(currentSheet3Row, 1, currentSheet3Row, 4);
+            const titleAnnualCell = sheet3.getCell(currentSheet3Row, 1);
+            titleAnnualCell.value = `Detalle de mareas finalizadas según estado – Resumen anual`;
+            titleAnnualCell.font = { bold: true, size: 12 };
+            titleAnnualCell.alignment = { horizontal: 'left' };
+            currentSheet3Row++;
+
+            const headerAnnualRow = sheet3.getRow(currentSheet3Row);
+            const detailHeaders = ['Marea', 'Derivada', 'Enviada', 'Protocolizada'];
+            detailHeaders.forEach((h, i) => {
+                const cell = headerAnnualRow.getCell(i + 1);
+                cell.value = h;
+                cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF00548B' } };
+                cell.alignment = { horizontal: 'center' };
+            });
+            
+            const tableAnnualStartRow = currentSheet3Row;
+            currentSheet3Row++;
+
+            const mareasAnuales = annexStats.annualFinalizedDetails;
+            if (!mareasAnuales || mareasAnuales.length === 0) {
+                sheet3.mergeCells(currentSheet3Row, 1, currentSheet3Row, 4);
+                const emptyCell = sheet3.getCell(currentSheet3Row, 1);
+                emptyCell.value = 'Sin mareas finalizadas en el año';
+                emptyCell.alignment = { horizontal: 'center' };
+                emptyCell.font = { italic: true, color: { argb: 'FF666666' } };
+                currentSheet3Row++;
+            } else {
+                mareasAnuales.forEach(m => {
+                    const row = sheet3.getRow(currentSheet3Row);
+                    row.getCell(1).value = m.identificacion;
+                    row.getCell(2).value = m.derivada ? '✓' : '';
+                    row.getCell(3).value = m.enviada ? '✓' : '';
+                    row.getCell(4).value = m.protocolizada ? '✓' : '';
+                    
+                    row.getCell(2).alignment = { horizontal: 'center' };
+                    row.getCell(3).alignment = { horizontal: 'center' };
+                    row.getCell(4).alignment = { horizontal: 'center' };
+
+                    if (m.derivada) {
+                        for (let c = 1; c <= 4; c++) {
+                            row.getCell(c).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF0F0F0' } };
+                        }
+                    }
+                    currentSheet3Row++;
+                });
+            }
+
+            // Aplicar bordes
+            for (let r = tableAnnualStartRow; r < currentSheet3Row; r++) {
+                for (let c = 1; c <= 4; c++) {
+                    const cell = sheet3.getCell(r, c);
+                    cell.border = {
+                        top: { style: 'thin' },
+                        left: { style: 'thin' },
+                        right: { style: 'thin' },
+                        bottom: { style: 'thin' }
+                    };
+                }
+            }
+        }
     }
 
     private buildAuditProtocolizacionSheet(
@@ -3670,7 +4111,246 @@ export class StatsService {
         return result;
     }
 
+    async getAuditAnnexStats(
+        year: number,
+        selectedQuarter: number,
+        includeCampaigns: boolean = true,
+        snapshotDate?: Date
+    ) {
+        const snapEnd = snapshotDate || new Date(Date.UTC(year, 11, 31, 23, 59, 59, 999));
+        const yearStart = new Date(Date.UTC(year, 0, 1));
+        const tipoMareaFilter = includeCampaigns ? {} : { tipoMarea: { not: TipoMarea.CI } };
+
+        const quartersData = Array.from({ length: selectedQuarter }, (_, i) => {
+            const q = i + 1;
+            const qStartMonth = (q - 1) * 3 + 1;
+            const qEndMonth = qStartMonth + 2;
+            const lastDay = new Date(year, qEndMonth, 0).getDate();
+            
+            const qStart = new Date(Date.UTC(year, qStartMonth - 1, 1, 0, 0, 0, 0));
+            const qEnd = new Date(Date.UTC(year, qEndMonth - 1, lastDay, 23, 59, 59, 999));
+            
+            return { q, qStart, qEnd };
+        });
+
+        const mareas = await this.prisma.marea.findMany({
+            where: {
+                activo: true,
+                OR: [
+                    { anioMarea: year },
+                    { anioMarea: year - 1 },
+                    {
+                        etapas: {
+                            some: {
+                                fechaZarpada: { lte: snapEnd },
+                                OR: [{ fechaArribo: { gte: yearStart } }, { fechaArribo: null }],
+                            },
+                        },
+                    },
+                ],
+                ...tipoMareaFilter,
+            },
+            include: {
+                estadoActual: true,
+                buque: { select: { nombreBuque: true } },
+                observadorPrincipal: { select: { nombre: true, apellido: true } },
+                etapas: { orderBy: { nroEtapa: 'asc' as const } },
+                movimientos: {
+                    where: { fechaHora: { lte: snapEnd } },
+                    orderBy: { fechaHora: 'desc' as const },
+                    include: { estadoHasta: true }
+                },
+            },
+        });
+
+        const finalizadas = new Array(selectedQuarter).fill(0);
+        const canceladas = new Array(selectedQuarter).fill(0);
+        const enEspera = new Array(selectedQuarter).fill(0);
+        const enviadas = new Array(selectedQuarter).fill(0);
+        const protocolizadas = new Array(selectedQuarter).fill(0);
+
+        const finalizedDetails = Array.from({ length: selectedQuarter }, () => [] as Array<{
+            id: string;
+            identificacion: string;
+            derivada: boolean;
+            enviada: boolean;
+            protocolizada: boolean;
+            orderPriority: number;
+            nroMarea: number;
+            anioMarea: number;
+        }>);
+
+        const annualFinalizedDetails = [] as Array<{
+            id: string;
+            identificacion: string;
+            derivada: boolean;
+            enviada: boolean;
+            protocolizada: boolean;
+            orderPriority: number;
+            nroMarea: number;
+            anioMarea: number;
+        }>;
+
+        for (const m of mareas) {
+            // 1. FINALIZADAS
+            const lastStage = m.etapas?.[m.etapas.length - 1];
+            if (lastStage && lastStage.fechaArribo) {
+                const arriboDate = new Date(lastStage.fechaArribo);
+
+                // --- LÓGICA ANUAL ---
+                if (arriboDate >= yearStart && arriboDate <= snapEnd) {
+                    const stateAtSnapEnd = this.reconstructStateAtDate(m, snapEnd);
+                    const preFinalizationStates = [
+                        MareaEstado.DESIGNADA,
+                        MareaEstado.A_REASIGNAR,
+                        MareaEstado.EN_EJECUCION,
+                        MareaEstado.CANCELADA,
+                        MareaEstado.DESESTIMADA
+                    ];
+                    
+                    if (!preFinalizationStates.includes(stateAtSnapEnd as MareaEstado)) {
+                        const obs = m.observadorPrincipal;
+                        const obsStr = obs ? `${obs.apellido} ${obs.nombre.charAt(0)}.` : 'Sin Observador';
+                        const anioStr = m.anioMarea.toString().slice(-2);
+                        const identificacion = `${m.tipoMarea}-${m.nroMarea}-${anioStr} - ${m.buque?.nombreBuque || 'Sin buque'} - ${obsStr}`;
+                        
+                        const isProtocolizada = m.fechaProtocolizacion ? new Date(m.fechaProtocolizacion) <= snapEnd : false;
+                        const isEnviada = m.fechaEnvioProtocolizacion ? new Date(m.fechaEnvioProtocolizacion) <= snapEnd : false;
+                        const isDerivada = stateAtSnapEnd === MareaEstado.DELEGADA_EXTERNA;
+                        
+                        let orderPriority = 3;
+                        if (isProtocolizada) orderPriority = 1;
+                        else if (isEnviada) orderPriority = 2;
+                        else if (isDerivada) orderPriority = 4;
+
+                        annualFinalizedDetails.push({
+                            id: m.id,
+                            identificacion,
+                            derivada: isDerivada,
+                            enviada: isEnviada,
+                            protocolizada: isProtocolizada,
+                            orderPriority,
+                            nroMarea: m.nroMarea,
+                            anioMarea: m.anioMarea
+                        });
+                    }
+                }
+
+                for (let i = 0; i < selectedQuarter; i++) {
+                    const { qStart, qEnd } = quartersData[i];
+                    if (arriboDate >= qStart && arriboDate <= qEnd) {
+                        const stateAtQEnd = this.reconstructStateAtDate(m, qEnd);
+                        const preFinalizationStates = [
+                            MareaEstado.DESIGNADA,
+                            MareaEstado.A_REASIGNAR,
+                            MareaEstado.EN_EJECUCION,
+                            MareaEstado.CANCELADA,
+                            MareaEstado.DESESTIMADA
+                        ];
+                        
+                        if (!preFinalizationStates.includes(stateAtQEnd as MareaEstado)) {
+                            finalizadas[i]++;
+                            
+                            const obs = m.observadorPrincipal;
+                            const obsStr = obs ? `${obs.apellido} ${obs.nombre.charAt(0)}.` : 'Sin Observador';
+                            const anioStr = m.anioMarea.toString().slice(-2);
+                            const identificacion = `${m.tipoMarea}-${m.nroMarea}-${anioStr} - ${m.buque?.nombreBuque || 'Sin buque'} - ${obsStr}`;
+                            
+                            const isProtocolizada = m.fechaProtocolizacion ? new Date(m.fechaProtocolizacion) <= qEnd : false;
+                            const isEnviada = m.fechaEnvioProtocolizacion ? new Date(m.fechaEnvioProtocolizacion) <= qEnd : false;
+                            const isDerivada = stateAtQEnd === MareaEstado.DELEGADA_EXTERNA;
+                            
+                            let orderPriority = 3; // No enviada
+                            if (isProtocolizada) orderPriority = 1;
+                            else if (isEnviada) orderPriority = 2;
+                            else if (isDerivada) orderPriority = 4;
+
+                            if (isDerivada) {
+                                enEspera[i]++;
+                            } else {
+                                if (isEnviada) {
+                                    enviadas[i]++;
+                                }
+                                if (isProtocolizada) {
+                                    protocolizadas[i]++;
+                                }
+                            }
+
+                            finalizedDetails[i].push({
+                                id: m.id,
+                                identificacion,
+                                derivada: isDerivada,
+                                enviada: isEnviada,
+                                protocolizada: isProtocolizada,
+                                orderPriority,
+                                nroMarea: m.nroMarea,
+                                anioMarea: m.anioMarea
+                            });
+                        }
+                        break;
+                    }
+                }
+            }
+
+            // 2. CANCELADAS / DESESTIMADAS
+            const cancellationMov = m.movimientos?.find(mov => 
+                mov.estadoHasta?.codigo === MareaEstado.CANCELADA || 
+                mov.estadoHasta?.codigo === MareaEstado.DESESTIMADA
+            );
+            if (cancellationMov) {
+                const cancelDate = new Date(cancellationMov.fechaHora);
+                for (let i = 0; i < selectedQuarter; i++) {
+                    const { qStart, qEnd } = quartersData[i];
+                    if (cancelDate >= qStart && cancelDate <= qEnd) {
+                        canceladas[i]++;
+                        break;
+                    }
+                }
+            }
+
+        }
+
+        // Ordenar finalizedDetails en cada trimestre
+        for (let i = 0; i < selectedQuarter; i++) {
+            finalizedDetails[i].sort((a, b) => {
+                if (a.orderPriority !== b.orderPriority) {
+                    return a.orderPriority - b.orderPriority;
+                }
+                if (a.anioMarea !== b.anioMarea) {
+                    return a.anioMarea - b.anioMarea;
+                }
+                return a.nroMarea - b.nroMarea;
+            });
+        }
+
+        // Ordenar annualFinalizedDetails
+        annualFinalizedDetails.sort((a, b) => {
+            if (a.orderPriority !== b.orderPriority) {
+                return a.orderPriority - b.orderPriority;
+            }
+            if (a.anioMarea !== b.anioMarea) {
+                return a.anioMarea - b.anioMarea;
+            }
+            return a.nroMarea - b.nroMarea;
+        });
+
+        return {
+            mareaStates: {
+                finalizadas,
+                canceladas,
+            },
+            protocolizationStates: {
+                enEspera,
+                enviadas,
+                protocolizadas,
+            },
+            finalizedDetails,
+            annualFinalizedDetails,
+        };
+    }
+
     // ─── B1: Audit special cases (canceladas, desestimadas, pendientes, delegadas) ──
+
 
     async getAuditSpecialCases(
         year: number,
@@ -3734,6 +4414,7 @@ export class StatsService {
             delegadasExternas: [] as any[],
             informesPendientesEnvio: [] as any[],
             esperandoProtocolizacion: [] as any[],
+            enviadasADNI: [] as any[],
         };
 
         for (const m of mareas) {
@@ -3741,8 +4422,8 @@ export class StatsService {
             const stateCode = this.reconstructStateAtDate(m, snapshotDate);
             const lastMov = m.movimientos?.[0];
 
-            // No incluimos mareas que al cierre estaban en estados finales o iniciales irrelevantes para auditoría
-            if (stateCode === 'PROTOCOLIZADA' || stateCode === 'PLANIFICADA' || stateCode === 'A_REASIGNAR') {
+            // No incluimos mareas que al cierre estaban en estados iniciales irrelevantes para auditoría
+            if (stateCode === 'PLANIFICADA' || stateCode === 'A_REASIGNAR') {
                 continue;
             }
 
@@ -3802,29 +4483,35 @@ export class StatsService {
             // Categorización según estado histórico (Priorizamos eventos terminales detectados en el periodo)
             if (isCancelledInPeriod) {
                 mareaData.fechaEvento = cancellationMov.fechaHora;
+                mareaData.motivo = cancellationMov.comentarios || null;
                 results.canceladas.push(mareaData);
             } else if (isDesestimadaInPeriod) {
                 mareaData.fechaEvento = desestimacionMov.fechaHora;
                 results.desestimadas.push(mareaData);
-            } else if (stateCode === MareaEstado.ESPERANDO_ENTREGA) {
-                results.esperandoEntrega.push(mareaData);
-            } else if (stateCode === MareaEstado.DELEGADA_EXTERNA) {
-                results.delegadasExternas.push(mareaData);
-            } else if (stateCode === MareaEstado.PARA_PROTOCOLIZAR) {
-                results.informesPendientesEnvio.push(mareaData);
-            } else if (stateCode === MareaEstado.ESPERANDO_PROTOCOLIZACION) {
-                results.esperandoProtocolizacion.push(mareaData);
-            } else if (stateCode === MareaEstado.EN_EJECUCION) {
-                // Nota: Las en ejecución no suelen ir en esta sección detalle,
-                // ya tienen su propia sección 6 y el resumen ejecutivo.
-            } else if (stateCode === MareaEstado.CANCELADA || stateCode === MareaEstado.DESESTIMADA) {
-                // Casos que están en este estado pero cuyo evento principal fue FUERA del periodo
-                // se ignoran intencionalmente según el criterio de rigor temporal.
             } else {
-                // Estados intermedios entre recepción e informe listo (vía orden)
-                const order = this.getStateOrder(stateCode);
-                if (order >= 4 && order < 10) {
-                    results.pendientesDeInforme.push(mareaData);
+                const lastStage = m.etapas?.[m.etapas.length - 1];
+                const lastArribo = lastStage?.fechaArribo ? new Date(lastStage.fechaArribo) : null;
+                const finishedInPeriod = lastArribo && lastArribo >= periodStart && lastArribo <= snapEnd;
+
+                if (finishedInPeriod) {
+                    const fEnvio = m.fechaEnvioProtocolizacion ? new Date(m.fechaEnvioProtocolizacion) : null;
+
+                    if (fEnvio && fEnvio >= periodStart && fEnvio <= snapEnd) {
+                        results.enviadasADNI.push(mareaData);
+                        if (stateCode !== MareaEstado.PROTOCOLIZADA) {
+                            results.esperandoProtocolizacion.push(mareaData);
+                        }
+                    } else if (stateCode === MareaEstado.EN_EJECUCION) {
+                        // Ignorar: Formalmente no ha finalizado pese a haber arribado
+                    } else if (stateCode === MareaEstado.PARA_PROTOCOLIZAR) {
+                        results.informesPendientesEnvio.push(mareaData);
+                    } else if (stateCode === MareaEstado.ESPERANDO_ENTREGA) {
+                        results.esperandoEntrega.push(mareaData);
+                    } else if (stateCode === MareaEstado.DELEGADA_EXTERNA) {
+                        results.delegadasExternas.push(mareaData);
+                    } else {
+                        results.pendientesDeInforme.push(mareaData);
+                    }
                 }
             }
         }
@@ -3871,8 +4558,10 @@ export class StatsService {
                     fechaEnvioProtocolizacion: true,
                     nroProtocolizacion: true,
                     anioProtocolizacion: true,
-                    buque: { select: { nombreBuque: true } },
+                    buque: { select: { nombreBuque: true, pesqueriaHabitual: { select: { nombre: true } } } },
                     observadorPrincipal: { select: { nombre: true, apellido: true } },
+                    pesqueria: { select: { nombre: true } },
+                    etapas: { select: { fechaZarpada: true, fechaArribo: true } },
                     movimientos: {
                         where: { estadoHasta: { codigo: MareaEstado.ENTREGADA_RECIBIDA } },
                         orderBy: { fechaHora: 'asc' as const },
@@ -4017,20 +4706,132 @@ export class StatsService {
             promedioDiasLatenciaTramite,
             maxDiasLatenciaTramite,
             distribucionMensual,
-            protocolizadasDetalle: protocolizadas.map(m => ({
-                id: m.id,
-                id_marea: MareaUtils.formatCodigo(m as any),
-                buque: m.buque?.nombreBuque || 'Desconocido',
-                observador: m.observadorPrincipal ? `${m.observadorPrincipal.apellido}, ${m.observadorPrincipal.nombre}` : 'Sin asignar',
-                nroProtocolizacion: m.nroProtocolizacion,
-                anioProtocolizacion: m.anioProtocolizacion,
-                fechaProtocolizacion: m.fechaProtocolizacion,
-            })).sort((a, b) => {
+            protocolizadasDetalle: protocolizadas.map(m => {
+                const intervals = m.etapas.map(e => ({
+                    start: e.fechaZarpada,
+                    end: e.fechaArribo || snapEnd,
+                })).filter(i => i.start) as Array<{ start: Date, end: Date }>;
+                const diasNavegados = DateUtils.calculateUniqueDays(intervals, { start: new Date(Date.UTC(2000, 0, 1)), end: snapEnd }, snapEnd);
+
+                const lastStage = m.etapas?.[m.etapas.length - 1];
+                const fechaFinalizacion = lastStage?.fechaArribo || null;
+
+                return {
+                    id: m.id,
+                    id_marea: MareaUtils.formatCodigo(m as any),
+                    buque: m.buque?.nombreBuque || 'Desconocido',
+                    pesqueria: m.pesqueria?.nombre || (m.buque as any)?.pesqueriaHabitual?.nombre || '-',
+                    diasNavegados,
+                    fechaFinalizacion,
+                    observador: m.observadorPrincipal ? `${m.observadorPrincipal.apellido}, ${m.observadorPrincipal.nombre}` : 'Sin asignar',
+                    nroProtocolizacion: m.nroProtocolizacion,
+                    anioProtocolizacion: m.anioProtocolizacion,
+                    fechaProtocolizacion: m.fechaProtocolizacion,
+                };
+            }).sort((a, b) => {
                 if (a.anioProtocolizacion !== b.anioProtocolizacion) {
                     return (a.anioProtocolizacion || 0) - (b.anioProtocolizacion || 0);
                 }
                 return (a.nroProtocolizacion || 0) - (b.nroProtocolizacion || 0);
             }),
         };
+    }
+
+    private async getEstimationDeviationExportWorkbook(mareas: any[], filterValue?: string) {
+        let tolerance = 0;
+        if (filterValue) {
+            tolerance = parseInt(filterValue, 10);
+            if (isNaN(tolerance)) tolerance = 0;
+        }
+
+        // Process raw mareas into deviation summaries per vessel
+        const byEstimationDeviation: Record<string, { vesselId: string, buque: string, mareas: number, totalDiasReales: number, totalDiasEstimados: number }> = {};
+        
+        mareas.forEach(marea => {
+            if (marea.diasEstimados && marea.diasEstimados > 0 && marea.fechaInicioObservador && marea.fechaFinObservador) {
+                const bId = marea.buque.id;
+                if (!byEstimationDeviation[bId]) {
+                    byEstimationDeviation[bId] = {
+                        vesselId: bId,
+                        buque: marea.buque.nombreBuque,
+                        mareas: 0,
+                        totalDiasReales: 0,
+                        totalDiasEstimados: 0
+                    };
+                }
+                const current = byEstimationDeviation[bId];
+                current.mareas++;
+                current.totalDiasEstimados += marea.diasEstimados;
+                
+                const fInicio = new Date(marea.fechaInicioObservador);
+                const fFin = new Date(marea.fechaFinObservador);
+                const diffTime = Math.abs(fFin.getTime() - fInicio.getTime());
+                const diasMarea = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+                
+                current.totalDiasReales += diasMarea;
+            }
+        });
+
+        const deviations = Object.values(byEstimationDeviation).map(d => {
+            const avgEstimados = Math.round(d.totalDiasEstimados / d.mareas);
+            const avgReales = Math.round(d.totalDiasReales / d.mareas);
+            const diff = avgReales - avgEstimados;
+            const deviationPercent = Math.round((diff / avgEstimados) * 100);
+
+            return {
+                buque: d.buque,
+                mareas: d.mareas,
+                avgEstimados,
+                avgReales,
+                desviacionDias: diff,
+                desviacionPorcentual: deviationPercent
+            };
+        }).filter(d => Math.abs(d.desviacionPorcentual) >= tolerance);
+
+        deviations.sort((a, b) => b.desviacionPorcentual - a.desviacionPorcentual);
+
+        return this.buildEstimationDeviationWorkbook(deviations);
+    }
+
+    private buildEstimationDeviationWorkbook(deviations: { buque: string; mareas?: number; avgEstimados: number; avgReales: number; desviacionDias: number; desviacionPorcentual: number }[]): ExcelJS.Workbook {
+        const workbook = new ExcelJS.Workbook();
+        const sheet = workbook.addWorksheet('Desviación de Estimaciones');
+
+        const columns: Partial<ExcelJS.Column>[] = [
+            { header: 'Buque', key: 'buque', width: 30 },
+            { header: 'Cantidad Mareas', key: 'mareas', width: 20 },
+            { header: 'Promedio Estimado (días)', key: 'avgEstimados', width: 25 },
+            { header: 'Promedio Real (días)', key: 'avgReales', width: 25 },
+            { header: 'Desviación (días)', key: 'desviacionDias', width: 20 },
+            { header: 'Desviación Porcentual (%)', key: 'desviacionPorcentual', width: 25 },
+        ];
+
+        sheet.columns = columns;
+
+        // Header style
+        const headerRow = sheet.getRow(1);
+        headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+        headerRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF2563EB' } };
+
+        // Autofiltro
+        sheet.autoFilter = {
+            from: { row: 1, column: 1 },
+            to: { row: 1, column: columns.length }
+        };
+        sheet.views = [
+            { state: 'frozen', xSplit: 0, ySplit: 1, topLeftCell: 'A2', activeCell: 'A2' }
+        ];
+
+        deviations.forEach(row => {
+            const addedRow = sheet.addRow(row);
+            const cell = addedRow.getCell('desviacionPorcentual');
+            if (row.desviacionPorcentual > 0) {
+                cell.font = { color: { argb: 'FFEF4444' }, bold: true }; // red: exceso
+            } else if (row.desviacionPorcentual < 0) {
+                cell.font = { color: { argb: 'FFEAB308' }, bold: true }; // yellow: ahorro
+            }
+        });
+
+        return workbook;
     }
 }

@@ -21,6 +21,8 @@ import { VesselSyncService } from './buques/vessel-sync.service';
 import { VesselExportService } from './buques/vessel-export.service';
 import { FisheryClientModule } from '../common/fishery-client/fishery-client.module';
 import { AuthModule } from '../auth/auth.module';
+import { TiposNovedadController } from './tipos-novedad/tipos-novedad.controller';
+import { TiposNovedadService } from './tipos-novedad/tipos-novedad.service';
 
 @Module({
     imports: [AuthModule, FisheryClientModule],
@@ -34,6 +36,7 @@ import { AuthModule } from '../auth/auth.module';
         EstadosMareaController,
         TransicionesEstadoController,
         BuquesController,
+        TiposNovedadController,
     ],
     providers: [
         TiposFlotaService,
@@ -47,6 +50,7 @@ import { AuthModule } from '../auth/auth.module';
         BuquesService,
         VesselSyncService,
         VesselExportService,
+        TiposNovedadService,
     ],
     exports: [VesselSyncService],
 })

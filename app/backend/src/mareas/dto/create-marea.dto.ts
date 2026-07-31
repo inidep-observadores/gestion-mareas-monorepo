@@ -1,4 +1,4 @@
-import { IsInt, IsNotEmpty, IsOptional, IsString, IsUUID, IsDateString, Min, Max, IsArray, ValidateNested, IsEnum } from 'class-validator';
+import { IsInt, IsNotEmpty, IsOptional, IsString, IsUUID, IsDateString, Min, Max, IsArray, ValidateNested, IsEnum, IsBoolean } from 'class-validator';
 import { TipoMarea } from '../mareas.constants';
 import { Type } from 'class-transformer';
 import { MareaEtapaDto } from './marea-etapa.dto';
@@ -32,9 +32,14 @@ export class CreateMareaDto {
     @IsDateString()
     fechaZarpadaEstimada: string;
 
+
     @IsEnum(TipoMarea)
     @IsOptional()
     tipoMarea?: TipoMarea;
+
+    @IsBoolean()
+    @IsOptional()
+    iniciaEnProspeccion?: boolean;
 
     @IsInt()
     @IsOptional()
@@ -47,6 +52,14 @@ export class CreateMareaDto {
     @IsString()
     @IsOptional()
     observaciones?: string;
+
+    @IsBoolean()
+    @IsOptional()
+    inicioValidado?: boolean;
+
+    @IsBoolean()
+    @IsOptional()
+    finValidado?: boolean;
 
     @IsArray()
     @IsOptional()

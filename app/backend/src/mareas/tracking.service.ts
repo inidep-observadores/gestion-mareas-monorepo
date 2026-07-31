@@ -232,7 +232,7 @@ export class TrackingService {
             // Sincronizar datos oficiales si es necesario
             await this.vesselSyncService.syncVesselIfNeeded({
                 nombre: vesselInfo.nombre,
-                mmsi: vesselInfo.mmsi
+                matricula: vesselInfo.matricula
             });
 
             // 2. Asegurar Trayectoria y Persistir Puntos
@@ -289,21 +289,14 @@ export class TrackingService {
         const isNumeric = (val?: string) => val && /^\d+$/.test(val.trim());
         const normalizeNum = (val: string) => val.trim().replace(/^0+/, '');
 
-        // Prioridad 1: Matrícula SIOP
-        if (!buqueFound && info.matriculaSiop) {
-            buqueFound = await this.prisma.buque.findUnique({
-                where: { matriculaSiop: info.matriculaSiop }
-            });
-        }
-
-        // Prioridad 2: Nombre (Insensitive)
+        // Prioridad 1: Nombre (Insensitive)
         if (!buqueFound) {
             buqueFound = await this.prisma.buque.findFirst({
                 where: { nombreBuque: { equals: info.nombre.trim(), mode: 'insensitive' } }
             });
         }
 
-        // Prioridad 3: Matrícula Nacional (Con fallback numérico)
+        // Prioridad 2: Matrícula Nacional (Con fallback numérico)
         if (!buqueFound && info.matricula) {
             // Intento búsqueda exacta primero
             buqueFound = await this.prisma.buque.findUnique({
@@ -328,19 +321,19 @@ export class TrackingService {
             }
         }
 
-        // Prioridad 4: MMSI (Internacional, más exacto)
-        if (!buqueFound && info.mmsi) {
-            buqueFound = await this.prisma.buque.findFirst({
-                where: { mmsi: info.mmsi }
+        // Prioridad 3: Matrícula SIOP
+        if (!buqueFound && info.matriculaSiop) {
+            buqueFound = await this.prisma.buque.findUnique({
+                where: { matriculaSiop: info.matriculaSiop }
             });
         }
 
         // Auto-corrección de datos si se encontró el buque
         if (buqueFound) {
             const dataToUpdate: any = {};
-            if (info.mmsi && buqueFound.mmsi !== info.mmsi) {
-                dataToUpdate.mmsi = info.mmsi;
-            }
+            
+            // Nota: Se elimina la actualización del MMSI ya que la fuente externa no es confiable.
+
             if (info.matriculaSiop && buqueFound.matriculaSiop !== info.matriculaSiop) {
                 dataToUpdate.matriculaSiop = info.matriculaSiop;
             }
@@ -662,7 +655,7 @@ export class TrackingService {
             dbf.addRecord({
                 'Buque': info.name,
                 'Matricula': info.matricula,
-                'Fecha': DateTime.fromJSDate(point.timestamp).toFormat('yyyy-MM-dd HH:mm:ss'),
+                'Fecha': DateTime.fromJSDate(point.timestamp).setZone(this.TIMEZONE).toFormat('yyyy-MM-dd HH:mm:ss'),
                 'Latitud': point.lat,
                 'Longitud': point.lon,
                 'Velocidad': point.speed,
@@ -1100,7 +1093,11 @@ export class TrackingService {
                 pesqueria: true,
                 artePrincipal: true,
                 etapas: {
-                    orderBy: { nroEtapa: 'asc' }
+                    orderBy: { nroEtapa: 'asc' },
+                    include: {
+                        puertoZarpada: true,
+                        puertoArribo: true
+                    }
                 }
             }
         });
@@ -1143,9 +1140,12 @@ export class TrackingService {
             Etapas: marea.etapas.map(etapa => ({
                 FechaZarpada: etapa.fechaZarpada ? DateTime.fromJSDate(etapa.fechaZarpada).setZone(this.TIMEZONE).toFormat("yyyy-MM-dd'T'HH:mm:ss") : null,
                 FechaArribo: etapa.fechaArribo ? DateTime.fromJSDate(etapa.fechaArribo).setZone(this.TIMEZONE).toFormat("yyyy-MM-dd'T'HH:mm:ss") : null,
+                PuertoZarpada: etapa.puertoZarpada?.nombre || null,
+                PuertoArribo: etapa.puertoArribo?.nombre || null,
                 NombreCapitan: null,
                 AnioMareaBuque: null,
-                NumeroMareaBuque: null
+                NumeroMareaBuque: null,
+                TipoEtapa: etapa.tipoEtapa || null
             }))
         };
 

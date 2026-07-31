@@ -5,6 +5,13 @@ export interface MapLayer {
   attribution: string;
   type: 'base' | 'overlay';
   maxZoom?: number;
+  hasTime?: boolean; // Indicates if layer supports TIME parameter
+  defaultOpacity?: number; // Default opacity for the layer
+  layers?: string; // WMS layers parameter
+  styles?: string; // WMS styles parameter
+  format?: string;
+  transparent?: boolean;
+  zIndex?: number;
 }
 
 export const BASE_LAYERS: MapLayer[] = [
@@ -51,4 +58,34 @@ export const BASE_LAYERS: MapLayer[] = [
   }
 ];
 
-export const OVERLAY_LAYERS: MapLayer[] = [];
+export const OVERLAY_LAYERS: MapLayer[] = [
+  {
+    id: 'noaa-wind',
+    name: 'Viento (Global GDPS)',
+    url: 'https://geo.weather.gc.ca/geomet',
+    attribution: '&copy; ECCC MSC GeoMet',
+    type: 'overlay',
+    layers: 'GDPS_15km_WindSpeed_10m',
+    format: 'image/png',
+    transparent: true,
+    hasTime: true,
+    defaultOpacity: 0.35,
+    maxZoom: 12,
+    zIndex: 10
+  },
+  {
+    id: 'noaa-wind-arrows',
+    name: 'Viento Direccion (Global GDPS)',
+    url: 'https://geo.weather.gc.ca/geomet',
+    attribution: '&copy; ECCC MSC GeoMet',
+    type: 'overlay',
+    layers: 'GDPS_15km_Winds_10m',
+    styles: 'WindBarbs_knots',
+    format: 'image/png',
+    transparent: true,
+    hasTime: true,
+    defaultOpacity: 0.35,
+    maxZoom: 12,
+    zIndex: 20
+  }
+];

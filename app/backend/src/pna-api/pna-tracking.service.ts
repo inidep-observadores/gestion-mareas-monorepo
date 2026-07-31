@@ -25,7 +25,7 @@ export class PnaTrackingService {
     /**
      * Orquestador que decide el rango y encola las tareas fragmentadas.
      */
-    async scheduleSynchronization(manualFromDate?: Date, manualToDate?: Date, onlyIngest = false) {
+    async scheduleSynchronization(manualFromDate?: Date, manualToDate?: Date, onlyIngest = false, isLongSync = false) {
         try {
             const now = DateTime.now().toUTC();
 
@@ -34,7 +34,7 @@ export class PnaTrackingService {
             if (manualFromDate) {
                 fromDate = DateTime.fromJSDate(manualFromDate).toUTC();
             } else {
-                const lastSync = await this.getLastSuccessfulSyncDate();
+                const lastSync = await this.getLastSuccessfulSyncDate(isLongSync);
                 fromDate = lastSync
                     ? DateTime.fromJSDate(lastSync).toUTC()
                     : now.minus({ hours: 8 });
@@ -65,7 +65,8 @@ export class PnaTrackingService {
                     toDate: nextTo.toJSDate().toISOString(),
                     // El último fragmento marcará la fecha de éxito definitiva
                     isLastBlock: nextTo >= toDate,
-                    onlyIngest
+                    onlyIngest,
+                    isLongSync
                 };
 
                 const nextRunAt = new Date(Date.now() + (delayCounter * rateLimitMs));
@@ -93,7 +94,7 @@ export class PnaTrackingService {
     /**
      * Sincroniza posiciones históricas desde PNA para un rango específico.
      */
-    async syncTrackingData(fromDate: Date, toDate: Date, onlyIngest = false) {
+    async syncTrackingData(fromDate: Date, toDate: Date, onlyIngest = false, isLongSync = false) {
         try {
             const startRange = DateTime.fromJSDate(fromDate).toUTC();
             const endRange = DateTime.fromJSDate(toDate).toUTC();
@@ -161,7 +162,7 @@ export class PnaTrackingService {
                 return dt > max ? dt : max;
             }, startRange);
 
-            await this.updateLastSuccessfulSyncDate(maxTimestamp.toJSDate());
+            await this.updateLastSuccessfulSyncDate(maxTimestamp.toJSDate(), isLongSync);
             await this.trackingService.updateLastTrackingStatus();
 
             this.logger.log(`Sincronización finalizada: ${totalInserted} puntos insertados, ${totalAlerts} alertas/eventos detectados.`);
@@ -220,20 +221,22 @@ export class PnaTrackingService {
         }
     }
 
-    private async getLastSuccessfulSyncDate(): Promise<Date | null> {
+    private async getLastSuccessfulSyncDate(isLongSync = false): Promise<Date | null> {
+        const key = isLongSync ? 'LAST_PNA_TRACKING_SYNC_LONG' : 'LAST_PNA_TRACKING_SYNC';
         const status = await this.prisma.systemStatus.findUnique({
-            where: { key: 'LAST_PNA_TRACKING_SYNC' }
+            where: { key }
         });
         return status?.value ? new Date(status.value) : null;
     }
 
-    private async updateLastSuccessfulSyncDate(date: Date): Promise<void> {
-        const current = await this.getLastSuccessfulSyncDate();
+    private async updateLastSuccessfulSyncDate(date: Date, isLongSync = false): Promise<void> {
+        const key = isLongSync ? 'LAST_PNA_TRACKING_SYNC_LONG' : 'LAST_PNA_TRACKING_SYNC';
+        const current = await this.getLastSuccessfulSyncDate(isLongSync);
         if (current && date <= current) return;
 
         await this.prisma.systemStatus.upsert({
-            where: { key: 'LAST_PNA_TRACKING_SYNC' },
-            create: { key: 'LAST_PNA_TRACKING_SYNC', value: date.toISOString() },
+            where: { key },
+            create: { key, value: date.toISOString() },
             update: { value: date.toISOString() }
         });
     }

@@ -1,0 +1,4 @@
+-- AlterType
+ALTER TYPE "TipoEtapa" RENAME VALUE 'MC' TO 'EC';
+ALTER TYPE "TipoEtapa" RENAME VALUE 'CI' TO 'EI';
+ALTER TYPE "TipoEtapa" ADD VALUE 'EP';

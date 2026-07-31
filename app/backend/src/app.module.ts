@@ -7,7 +7,6 @@ import { ServeStaticModule } from '@nestjs/serve-static';
 
 import { ProductsModule } from './products/products.module';
 import { CommonModule } from './common/common.module';
-import { SeedModule } from './seed/seed.module';
 import { FilesModule } from './files/files.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
@@ -34,6 +33,7 @@ import { AuditEventInterceptor } from './audit/interceptors/audit-event.intercep
 import { auditConfig } from './common/config/audit.config';
 import { PlanificacionModule } from './planificacion/planificacion.module';
 import { ReportsModule } from './reports/reports.module';
+import { PresentismoModule } from './presentismo/presentismo.module';
 
 @Module({
   imports: [
@@ -56,8 +56,6 @@ import { ReportsModule } from './reports/reports.module';
     CommonModule,
     BusinessRulesModule,
 
-    SeedModule,
-
     FilesModule,
 
     AuthModule,
@@ -77,6 +75,7 @@ import { ReportsModule } from './reports/reports.module';
     PnaApiModule,
     PlanificacionModule,
     ReportsModule,
+    PresentismoModule,
   ],
 
   providers: [

@@ -19,18 +19,18 @@ export class VesselSyncService {
 
     /**
      * Sincroniza los datos de un buque si ha pasado suficiente tiempo desde la última actualización.
-     * La búsqueda se realiza por nombre, MMSI o ID MBPC.
+     * La búsqueda se realiza por nombre, matrícula o ID MBPC.
      * IMPORTANTE: Este método encola el trabajo en JobQueue en lugar de ejecutarlo síncronamente.
      */
-    async syncVesselIfNeeded(params: { nombre?: string; mmsi?: string; idMbpc?: string }): Promise<void> {
-        const { nombre, mmsi, idMbpc } = params;
+    async syncVesselIfNeeded(params: { nombre?: string; matricula?: string; idMbpc?: string }): Promise<void> {
+        const { nombre, matricula, idMbpc } = params;
 
         // 1. Buscar buque localmente
         const localVessel = await this.prisma.buque.findFirst({
             where: {
                 OR: [
                     nombre ? { nombreBuque: { contains: nombre, mode: 'insensitive' } } : undefined,
-                    mmsi ? { mmsi } : undefined,
+                    matricula ? { matricula } : undefined,
                     idMbpc ? { idMbpc } : undefined,
                 ].filter(Boolean) as any,
             },
@@ -48,7 +48,7 @@ export class VesselSyncService {
 
         // 4. Encolar trabajo de sincronización (no bloqueante)
         await this.syncVessel(localVessel.id);
-        this.logger.log(`Trabajo de sincronización encolado para: ${localVessel.nombreBuque} (MMSI: ${localVessel.mmsi || 'N/A'})`);
+        this.logger.log(`Trabajo de sincronización encolado para: ${localVessel.nombreBuque} (Matrícula: ${localVessel.matricula || 'N/A'})`);
     }
 
     async syncVessel(id: string): Promise<void> {
@@ -66,18 +66,18 @@ export class VesselSyncService {
                     id: buque.id,
                     nombreBuque: buque.nombreBuque,  // IMPORTANTE: necesario para búsqueda por nombre
                     idMbpc: buque.idMbpc,  // Opcional: para búsqueda por ID si está disponible
-                    mmsi: buque.mmsi  // IMPORTANTE: necesario para búsqueda por MMSI
+                    matricula: buque.matricula  // IMPORTANTE: necesario para búsqueda por Matrícula
                 },
                 priority: 10,
             },
         });
 
-        this.logger.log(`Trabajo encolado para sincronización de buque: ${buque.nombreBuque} (MMSI: ${buque.mmsi || 'N/A'})`);
+        this.logger.log(`Trabajo encolado para sincronización de buque: ${buque.nombreBuque} (Matrícula: ${buque.matricula || 'N/A'})`);
     }
 
     /**
      * Ejecuta la sincronización real (llamado por el JobProcessor)
-     * Orden de búsqueda: ID MBPC → MMSI → Nombre
+     * Orden de búsqueda: ID MBPC → Matrícula → Nombre
      */
     async executeVesselSync(id: string): Promise<void> {
         const localVessel = await this.prisma.buque.findUnique({ where: { id } });
@@ -91,10 +91,10 @@ export class VesselSyncService {
             officialData = await this.fisheryClient.getVesselDetails(localVessel.idMbpc);
         }
 
-        // 2. Fallback: búsqueda por MMSI
-        if (!officialData && localVessel.mmsi) {
-            this.logger.debug(`Buscando buque por MMSI: ${localVessel.mmsi}`);
-            officialData = await this.fisheryClient.getVesselByMmsi(localVessel.mmsi);
+        // 2. Fallback: búsqueda por Matrícula
+        if (!officialData && localVessel.matricula) {
+            this.logger.debug(`Buscando buque por Matrícula: ${localVessel.matricula}`);
+            officialData = await this.fisheryClient.getVesselByMatricula(localVessel.matricula);
         }
 
         // 3. Fallback final: búsqueda por nombre
@@ -108,7 +108,7 @@ export class VesselSyncService {
             await this.updateVessel(localVessel.id, officialData);
             this.logger.log(`✓ Sincronización ejecutada para buque: ${officialData.nombre} (ID MBPC: ${officialData.id_mbpc})`);
         } else {
-            this.logger.warn(`No se encontraron datos oficiales para: ${localVessel.nombreBuque} (ID: ${localVessel.idMbpc || 'N/A'}, MMSI: ${localVessel.mmsi || 'N/A'})`);
+            this.logger.warn(`No se encontraron datos oficiales para: ${localVessel.nombreBuque} (ID: ${localVessel.idMbpc || 'N/A'}, Matrícula: ${localVessel.matricula || 'N/A'})`);
         }
     }
 
@@ -141,7 +141,7 @@ export class VesselSyncService {
                         // matricula: OMITIDA por conflicto
                         bandera: data.bandera,
                         anioConstruccion: data.anio_construccion,
-                        mmsi: data.mmsi,
+                        // mmsi: OMITIDO (no es confiable desde la API externa)
                         tipoBuque: data.tipo_buque,
                         senalDistintiva: data.senal_distintiva,
                         velocidad: data.velocidad,
@@ -170,7 +170,7 @@ export class VesselSyncService {
                 matricula: data.matricula,
                 bandera: data.bandera,
                 anioConstruccion: data.anio_construccion,
-                mmsi: data.mmsi,
+                // mmsi: OMITIDO (no es confiable desde la API externa)
                 tipoBuque: data.tipo_buque,
                 senalDistintiva: data.senal_distintiva,
                 velocidad: data.velocidad,

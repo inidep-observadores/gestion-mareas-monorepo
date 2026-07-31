@@ -107,6 +107,7 @@ const mapLayers = {
     veda: false,
     vieira: false,
     centolla: false,
+    langostino: false,
     points: true, // Always show points for detailed verification
     showAllVessels: true,
     showVesselNames: true

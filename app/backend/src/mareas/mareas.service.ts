@@ -234,6 +234,7 @@ export class MareasService {
             if (artePrincipalId === undefined && arteId !== undefined) updateData.artePrincipalId = arteId;
 
             if (updateMareaDto.fechaZarpadaEstimada !== undefined) updateData.fechaZarpadaEstimada = processDate(updateMareaDto.fechaZarpadaEstimada);
+
             if (updateMareaDto.fechaInicioObservador !== undefined) updateData.fechaInicioObservador = processDate(updateMareaDto.fechaInicioObservador);
             if (updateMareaDto.fechaFinObservador !== undefined) updateData.fechaFinObservador = processDate(updateMareaDto.fechaFinObservador);
             if (updateMareaDto.fechaProtocolizacion !== undefined) updateData.fechaProtocolizacion = processDate(updateMareaDto.fechaProtocolizacion);
@@ -475,6 +476,7 @@ export class MareasService {
                 fechaInicioObservador: true,
                 fechaFinObservador: true,
                 artePrincipalId: true,
+                iniciaEnProspeccion: true,
                 buque: {
                     select: {
                         id: true,
@@ -504,6 +506,7 @@ export class MareasService {
                     select: {
                         id: true,
                         nroEtapa: true,
+                        tipoEtapa: true,
                         fechaZarpada: true,
                         fechaArribo: true,
                         observaciones: true,
@@ -579,8 +582,11 @@ export class MareasService {
                 observador: primaryObs ? `${primaryObs.nombre} ${primaryObs.apellido}` : 'Sin asignar',
                 progreso,
                 en_tierra: m.estadoActual.codigo === MareaEstado.EN_EJECUCION && etapaFinal?.fechaArribo !== null,
+                en_prospeccion: (m.estadoActual.codigo === MareaEstado.EN_EJECUCION && etapaFinal?.fechaArribo === null && etapaFinal?.tipoEtapa === 'EP') ||
+                                (m.estadoActual.codigo === MareaEstado.DESIGNADA && m.iniciaEnProspeccion === true),
                 total_etapas: etapaFinal?.nroEtapa || 1,
                 dias_navegados: MareaUtils.calculateNavigatedDays(m),
+                dias_marea: m.fechaInicioObservador ? DateUtils.calculateInclusiveDays(m.fechaInicioObservador, m.fechaFinObservador) : 0,
                 alertas: activeAlerts.filter((a: any) => a.referenciaId === m.id),
                 intencion_cierre: m.estadoActual.codigo.trim().toUpperCase() === MareaEstado.EN_EJECUCION &&
                     (etapaFinal?.metadata as unknown as MareaEtapaMetadata)?.opcionesCierre?.finalizarMareaAlArribo === true,
@@ -802,7 +808,7 @@ export class MareasService {
             const buqueName = marea.buque.nombreBuque;
 
             // Agregar evento ZARPADA si aplica
-            if (etapa.fechaZarpada && new Date(etapa.fechaZarpada) >= limitDate) {
+            if (etapa.fechaZarpada && new Date(etapa.fechaZarpada) >= limitDate && (etapa as any).puertoZarpada) {
                 // Intentar extraer la fecha precisa de la metadata (eventDate es el estándar del sistema, fecha es alternativo)
                 const metadataZarpada = etapa.fuentesZarpada as any;
                 const preciseDateValue = metadataZarpada?.eventDate || metadataZarpada?.fecha;
@@ -825,7 +831,7 @@ export class MareasService {
             }
 
             // Agregar evento ARRIBO si aplica
-            if (etapa.fechaArribo && new Date(etapa.fechaArribo) >= limitDate) {
+            if (etapa.fechaArribo && new Date(etapa.fechaArribo) >= limitDate && (etapa as any).puertoArribo) {
                 // Intentar extraer la fecha precisa de la metadata (eventDate es el estándar del sistema, fecha es alternativo)
                 const metadataArribo = etapa.fuentesArribo as any;
                 const preciseDateValue = metadataArribo?.eventDate || metadataArribo?.fecha;
@@ -1136,16 +1142,20 @@ export class MareasService {
             return 0;
         }
 
-        const diasTrabajados = MareaUtils.calculateNavigatedDays(m);
+        let diasMarea = 0;
+        if (m.fechaInicioObservador) {
+            diasMarea = DateUtils.calculateInclusiveDays(m.fechaInicioObservador, m.fechaFinObservador);
+        }
+        
         const estimatedDuration = (m.diasEstimados && m.diasEstimados > 0) ? m.diasEstimados : 30;
 
-        let progreso = Math.round((diasTrabajados / estimatedDuration) * 100);
+        let progreso = Math.round((diasMarea / estimatedDuration) * 100);
 
-        if (estadoCodigo !== MareaEstado.EN_EJECUCION && progreso < 100 && diasTrabajados > 0) {
+        if (estadoCodigo !== MareaEstado.EN_EJECUCION && progreso < 100 && diasMarea > 0) {
             progreso = 100;
         }
 
-        return Math.min(progreso, 100);
+        return progreso;
     }
 
     async getFatigueAlerts(year?: number) {
@@ -1311,7 +1321,7 @@ export class MareasService {
             orderBy: { fechaZarpada: 'asc' },
             include: {
                 marea: {
-                    include: { estadoActual: true, buque: true, observadorPrincipal: true, pesqueria: true }
+                    include: { estadoActual: true, buque: { include: { tipoFlota: true } }, observadorPrincipal: true, pesqueria: true }
                 },
                 pesqueria: true,
                 observadores: {
@@ -1342,7 +1352,7 @@ export class MareasService {
             stageCountByMarea.set(mareaId, (stageCountByMarea.get(mareaId) || 0) + 1);
         });
 
-        const activeNav = new Map<string, { start: Date; vessel: string; mareaCode: string; fishery: string; enTierra: boolean; stageCount: number }>();
+        const activeNav = new Map<string, { start: Date; vessel: string; mareaCode: string; fishery: string; enTierra: boolean; stageCount: number; fleetCode?: string; fleetName?: string; intervals: Array<{ start: Date; end?: Date | null }> }>();
         const lastArrivalByObs = new Map<string, { date: Date; mareaCode: string; vessel: string; fishery: string }>();
         const designadosActivosByObs = new Map<string, { mareaCode: string; vesselName: string; fechaZarpadaEstimada: Date | null; fishery: string }>();
         const obsConMareas = new Set<string>();
@@ -1374,14 +1384,23 @@ export class MareasService {
 
                 const isNavigating = this.ESTADOS_NAVEGANDO.includes(etapa.marea.estadoActual?.codigo as MareaEstado);
                 if (isNavigating) {
-                    activeNav.set(obs.id, {
-                        start: inicio,
-                        vessel: etapa.marea.buque.nombreBuque,
-                        mareaCode: MareaUtils.formatCodigo(etapa.marea),
-                        fishery: etapa.pesqueria?.nombre || etapa.marea.pesqueria?.nombre || 'Sin Pesquería',
-                        enTierra: finRaw !== null,
-                        stageCount: stageCountByMarea.get(etapa.mareaId) || 1
-                    });
+                    const existing = activeNav.get(obs.id);
+                    if (existing && existing.mareaCode === MareaUtils.formatCodigo(etapa.marea)) {
+                        existing.intervals.push({ start: inicio, end: finRaw });
+                        existing.enTierra = finRaw !== null;
+                    } else {
+                        activeNav.set(obs.id, {
+                            start: inicio,
+                            vessel: etapa.marea.buque.nombreBuque,
+                            mareaCode: MareaUtils.formatCodigo(etapa.marea),
+                            fishery: etapa.pesqueria?.nombre || etapa.marea.pesqueria?.nombre || 'Sin Pesquería',
+                            enTierra: finRaw !== null,
+                            stageCount: stageCountByMarea.get(etapa.mareaId) || 1,
+                            fleetCode: etapa.marea.buque.tipoFlota?.codigo,
+                            fleetName: etapa.marea.buque.tipoFlota?.nombre,
+                            intervals: [{ start: inicio, end: finRaw }]
+                        });
+                    }
                 }
 
                 if (finRaw) {
@@ -1415,7 +1434,7 @@ export class MareasService {
         const listDescanso: Array<{ id: string; name: string; days: number; lastArrival: string; mareaCode: string; vesselName: string; fishery: string; tipoObservador: string; tipoContrato: string; sexo: string; eventual: boolean; tieneDesignacionActiva: boolean; observaciones?: string }> = [];
         const listImpedidos: Array<{ id: string; name: string; motivo: string; tipoObservador: string; tipoContrato: string; sexo: string; eventual: boolean; tieneDesignacionActiva: boolean; observaciones?: string }> = [];
         const listDisponibles: Array<{ id: string; name: string; days: number; lastArrival: string; mareaCode: string; vesselName: string; fishery: string; tipoObservador: string; tipoContrato: string; sexo: string; eventual: boolean; tieneDesignacionActiva: boolean; observaciones?: string }> = [];
-        const listNavegando: Array<{ id: string; name: string; days: number; vessel: string; mareaCode: string; fishery: string; enTierra: boolean; startDate: string; tipoObservador: string; tipoContrato: string, stageCount: number; sexo: string; eventual: boolean; tieneDesignacionActiva: boolean; observaciones?: string }> = [];
+        const listNavegando: Array<{ id: string; name: string; days: number; vessel: string; mareaCode: string; fishery: string; enTierra: boolean; startDate: string; tipoObservador: string; tipoContrato: string, stageCount: number; sexo: string; eventual: boolean; tieneDesignacionActiva: boolean; observaciones?: string; fleetCode?: string; fleetName?: string }> = [];
         const listDesignados: Array<{ id: string; name: string; mareaCode: string; vesselName: string; fishery: string; fechaZarpadaEstimada: string; tipoObservador: string; tipoContrato: string; sexo: string; eventual: boolean; tieneDesignacionActiva: boolean; observaciones?: string }> = [];
         const topDryCandidates: Array<{ id: string; name: string; days: number; lastArrival: string; mareaCode: string; vesselName: string; fishery: string; tipoObservador: string; tipoContrato: string; sexo: string; eventual: boolean; tieneDesignacionActiva: boolean; observaciones?: string }> = [];
 
@@ -1469,7 +1488,9 @@ export class MareasService {
                         sexo: obs.sexo,
                         eventual: obs.eventual,
                         tieneDesignacionActiva: designadosActivosByObs.has(obs.id),
-                        observaciones: obs.observaciones
+                        observaciones: obs.observaciones,
+                        fleetCode: navData?.fleetCode || '',
+                        fleetName: navData?.fleetName || ''
                     });
                     break;
                 case 'IMPEDIDO':
@@ -1719,6 +1740,8 @@ export class MareasService {
                 dias_navegados: diasNavegados,
                 progreso: progreso,
                 id_pesqueria: marea.pesqueriaId,
+                tipo_marea: marea.tipoMarea,
+                tipoMarea: marea.tipoMarea,
                 observaciones: marea.observaciones || '',
                 alertas: activeAlerts,
                 etapas: marea.etapas.map((e: any) => ({
@@ -1733,6 +1756,8 @@ export class MareasService {
                     puertoArriboCodigo: e.puertoArribo?.codigoExterno,
                     fechaZarpada: e.fechaZarpada,
                     fechaArribo: e.fechaArribo,
+                    tipoEtapa: e.tipoEtapa,
+                    observaciones: e.observaciones,
                     durationDays: MareaUtils.calculateStageDays(e),
                     metadata: e.metadata
                 }))
@@ -1830,6 +1855,12 @@ export class MareasService {
         console.log('--- SYNC STAGES START ---');
         console.log('Incoming Stages in syncStages:', JSON.stringify(incomingStages, null, 2));
 
+        // Fetch marea to validate stage types against marea type
+        const marea = await tx.marea.findUnique({ where: { id: mareaId }, select: { tipoMarea: true } });
+        if (marea) {
+            this.validateStagesTypes(marea.tipoMarea, incomingStages);
+        }
+
         // Validar cronología e integridad antes de sincronizar
         this.validateStagesChronology(incomingStages);
         this.validateStagesIntegrity(incomingStages);
@@ -1854,7 +1885,7 @@ export class MareasService {
                 puertoArriboId: this.sanitizeUuid(stg.puertoArriboId),
                 fechaArribo: stg.fechaArribo ? new Date(stg.fechaArribo) : null,
                 pesqueriaId: this.sanitizeUuid(stg.pesqueriaId),
-                tipoEtapa: stg.tipoEtapa || TipoEtapa.MC,
+                tipoEtapa: stg.tipoEtapa || TipoEtapa.EC,
                 fuentesZarpada: stg.fuentesZarpada || null,
                 fuentesArribo: stg.fuentesArribo || null,
                 observaciones: stg.observaciones || '',
@@ -1878,8 +1909,7 @@ export class MareasService {
                 const newStage = await tx.mareaEtapa.create({
                     data: {
                         mareaId: mareaId,
-                        ...stageData,
-                        tipoEtapa: TipoEtapa.MC
+                        ...stageData
                     }
                 });
 
@@ -1919,17 +1949,26 @@ export class MareasService {
         for (let i = 0; i < stages.length; i++) {
             const current = stages[i];
 
-            // 1. Zarpada: Fecha y Puerto Obligatorios
-            if (!current.fechaZarpada || !current.puertoZarpadaId) {
-                throw new BadRequestException(`Error en Etapa #${i + 1}: La fecha y el puerto de zarpada son obligatorios.`);
+            // 1. Zarpada: Fecha es obligatoria al crear, Puerto es opcional (Etapa administrativa)
+            if (!current.fechaZarpada) {
+                throw new BadRequestException(`Error en Etapa #${i + 1}: La fecha de zarpada es obligatoria.`);
             }
 
-            // 2. Arribo: Atómico (Ambos o Ninguno)
-            const hasFechaArr = !!current.fechaArribo;
-            const hasPuertoArr = !!current.puertoArriboId;
+            // 2. Arribo: Puerto es opcional, pero si la etapa está cerrada se espera fecha de arribo
+            // El front se encargará de pedir confirmación si faltan puertos.
+        }
+    }
 
-            if (hasFechaArr !== hasPuertoArr) {
-                throw new BadRequestException(`Error en Etapa #${i + 1}: La fecha y el puerto de arribo deben completarse juntos o dejarse ambos vacíos.`);
+    private validateStagesTypes(tipoMarea: string, stages: any[]) {
+        for (let i = 0; i < stages.length; i++) {
+            const current = stages[i];
+            const tipoEtapa = current.tipoEtapa || TipoEtapa.EC;
+            
+            if (tipoMarea === TipoMarea.CI && tipoEtapa !== TipoEtapa.EI) {
+                throw new BadRequestException(`Error en Etapa #${i + 1}: Las mareas institucionales solo pueden tener etapas de tipo EI.`);
+            }
+            if (tipoMarea === TipoMarea.MC && tipoEtapa === TipoEtapa.EI) {
+                throw new BadRequestException(`Error en Etapa #${i + 1}: Las mareas comerciales no pueden tener etapas de tipo EI.`);
             }
         }
     }
@@ -2124,7 +2163,8 @@ export class MareasService {
                 estadoOrigenId: marea.estadoActualId,
                 accion: actionKey,
                 activo: true
-            }
+            },
+            include: { estadoDestino: true }
         });
 
         if (!transicion) {
@@ -2163,7 +2203,7 @@ export class MareasService {
                             nroEtapa: 1,
                             pesqueriaId: payload.pesqueriaId || (marea as any).pesqueriaId,
                             puertoZarpadaId: payload.puertoId || buque?.puertoBaseId,
-                            tipoEtapa: marea.tipoMarea === TipoMarea.CI ? TipoEtapa.CI : TipoEtapa.MC,
+                            tipoEtapa: marea.tipoMarea === TipoMarea.CI ? TipoEtapa.EI : (marea.iniciaEnProspeccion ? TipoEtapa.EP : TipoEtapa.EC),
                             fechaZarpada: new Date(fechaIn),
                             // No observer assignment here (implicit in Marea)
                         }
@@ -2282,6 +2322,16 @@ export class MareasService {
                 }
             }
 
+            // LIMPIEZA AUTOMÁTICA DE FECHA FIN (Solución elegante sin hardcodear acciones)
+            // Si por cualquier transición (como "Anular finalización") la marea regresa a 
+            // un estado de navegación (EN_EJECUCION), forzamos la fecha de fin a null.
+            const destinoFinalCodigo = destinoEstadoId === transicion.estadoDestinoId
+                ? transicion.estadoDestino?.codigo
+                : (await tx.estadoMarea.findUnique({ where: { id: destinoEstadoId }, select: { codigo: true } }))?.codigo;
+
+            if (destinoFinalCodigo && this.ESTADOS_NAVEGANDO.includes(destinoFinalCodigo as any)) {
+                additionalMareaData.fechaFinObservador = null;
+            }
 
             const mareaUpdated = await tx.marea.update({
                 where: { id },
@@ -2417,7 +2467,7 @@ export class MareasService {
     }
 
     async create(createMareaDto: CreateMareaDto, user: User) {
-        const { buqueId, anioMarea, nroMarea, pesqueriaId, observadorId, arteId, fechaZarpadaEstimada, fechaInicioObservador, tipoMarea = TipoMarea.MC, diasEstimados } = createMareaDto;
+        const { buqueId, anioMarea, nroMarea, pesqueriaId, observadorId, arteId, fechaZarpadaEstimada, fechaInicioObservador, inicioValidado = false, finValidado = false, tipoMarea = TipoMarea.MC, diasEstimados } = createMareaDto;
 
         const existing = await this.prisma.marea.findMany({
             where: {
@@ -2498,8 +2548,11 @@ export class MareasService {
                     tipoMarea,
                     artePrincipalId: arteId,
                     observadorPrincipalId: observadorId,
+
                     fechaZarpadaEstimada: fechaZarpadaEstimada ? new Date(fechaZarpadaEstimada) : null,
                     fechaInicioObservador: fechaInicioObservador ? new Date(fechaInicioObservador) : null,
+                    inicioValidado,
+                    finValidado,
                     diasEstimados,
                     observaciones: createMareaDto.observaciones || '',
                 }
@@ -2671,7 +2724,7 @@ export class MareasService {
 
         // Filtrar las que NO están resueltas ni descartadas (solo activas)
         const whereAlerts: any = {
-            estado: 'PENDIENTE'
+            estado: { in: ['PENDIENTE', 'SEGUIMIENTO', 'VENCIDA'] }
         };
 
         // Si hay usuario y NO es admin/coordinador, aplicar filtro de visibilidad
@@ -3347,7 +3400,24 @@ export class MareasService {
         };
 
         if (anio && codigoEstado === MareaEstado.PROTOCOLIZADA) {
-            where.anioMarea = Number(anio);
+            const operationalYear = Number(anio);
+            const startOfYear = new Date(operationalYear, 0, 1);
+            const startOfNextYear = new Date(operationalYear + 1, 0, 1);
+
+            where.OR = [
+                { anioMarea: operationalYear },
+                {
+                    anioMarea: operationalYear - 1,
+                    etapas: {
+                        some: {
+                            fechaArribo: {
+                                gte: startOfYear,
+                                lt: startOfNextYear
+                            }
+                        }
+                    }
+                }
+            ];
         }
 
         return this.prisma.marea.findMany({

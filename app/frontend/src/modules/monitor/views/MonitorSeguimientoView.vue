@@ -109,28 +109,25 @@
           </div>
 
           <!-- Bottom Row (Anclado al fondo) -->
-          <div class="absolute bottom-6 left-6 right-6 flex flex-col gap-2">
-            <!-- Mouse Coordinates -->
-            <div v-if="!isMobile" :class="[
-              'flex transition-all duration-500 ease-in-out',
-              leftSidebarOpen ? 'justify-end pr-14' : 'justify-start'
-            ]">
-              <MouseCoordinates :coords="mouseCoords" />
+          <div class="absolute bottom-6 left-6 right-6 pointer-events-none pb-4 flex justify-center">
+
+            <!-- Player Control (Centro) -->
+            <div class="w-full max-w-md pointer-events-auto relative z-0 flex justify-center">
+              <TimelinePlayer v-if="activeVessel && activeVessel.visible && activeVessel.points.length"
+                class="w-full"
+                :currentIndex="activeVessel.currentIndex" :maxIndex="activeVessel.points.length - 1"
+                :currentTime="currentPoint?.timestamp?.toString() || ''" :isPlaying="isPlaying" :speed="playbackSpeed"
+                :startDate="activeVessel.points[0]?.timestamp.toString().split('T')[0] || '--'"
+                :endDate="activeVessel.points[activeVessel.points.length - 1]?.timestamp.toString().split('T')[0] || '--'"
+                @update:index="handlePlayerIndexUpdate" @update:speed="handleSpeedChange" @toggle-play="togglePlay"
+                @prev="handlePlayerPrev" @next="handlePlayerNext" @skip-start="activeVessel.currentIndex = 0"
+                @skip-end="activeVessel.currentIndex = activeVessel.points.length - 1"
+                @select-date="handleDateSelection" />
             </div>
 
-            <!-- Player Control -->
-            <div class="w-full flex justify-center pb-4">
-              <div class="w-full max-w-md">
-                <TimelinePlayer v-if="activeVessel && activeVessel.visible && activeVessel.points.length"
-                  :currentIndex="activeVessel.currentIndex" :maxIndex="activeVessel.points.length - 1"
-                  :currentTime="currentPoint?.timestamp?.toString() || ''" :isPlaying="isPlaying" :speed="playbackSpeed"
-                  :startDate="activeVessel.points[0]?.timestamp.toString().split('T')[0] || '--'"
-                  :endDate="activeVessel.points[activeVessel.points.length - 1]?.timestamp.toString().split('T')[0] || '--'"
-                  @update:index="handlePlayerIndexUpdate" @update:speed="handleSpeedChange" @toggle-play="togglePlay"
-                  @prev="handlePlayerPrev" @next="handlePlayerNext" @skip-start="activeVessel.currentIndex = 0"
-                  @skip-end="activeVessel.currentIndex = activeVessel.points.length - 1"
-                  @select-date="handleDateSelection" />
-              </div>
+            <!-- Mouse Coordinates (Justo a la derecha del slider) -->
+            <div v-if="!isMobile" class="absolute bottom-4 left-1/2 ml-[240px] transition-all duration-500 ease-in-out pointer-events-auto z-10 flex items-end">
+              <MouseCoordinates :coords="mouseCoords" />
             </div>
           </div>
         </div>
@@ -199,14 +196,58 @@ const pendingZoomVesselId = ref<string | null>(null)
 const pendingTrajectoriesCount = ref(0)
 const isInitialLoad = ref(true)
 const isExporting = ref(false)
-const mapLayers = ref({
+const DEFAULT_LAYERS = {
   veda: true,
   vieira: false,
   centolla: false,
+  langostino: false,
   points: false,
   showAllVessels: true,
   showVesselNames: false,
-})
+  noaaWind: false,
+  graticule: true
+}
+
+const loadLayerPrefs = () => {
+  try {
+    const saved = localStorage.getItem('sigma_map_layer_prefs')
+    if (saved) {
+      const parsed = JSON.parse(saved)
+      return { 
+        ...DEFAULT_LAYERS, 
+        // Only restore specific fishing areas and environmental preferences
+        veda: parsed.veda ?? DEFAULT_LAYERS.veda,
+        vieira: parsed.vieira ?? DEFAULT_LAYERS.vieira,
+        centolla: parsed.centolla ?? DEFAULT_LAYERS.centolla,
+        langostino: parsed.langostino ?? DEFAULT_LAYERS.langostino,
+        noaaWind: parsed.noaaWind ?? DEFAULT_LAYERS.noaaWind,
+        graticule: parsed.graticule ?? DEFAULT_LAYERS.graticule
+      }
+    }
+  } catch (e) {
+    console.error('Error al cargar preferencias de capas', e)
+  }
+  return { ...DEFAULT_LAYERS }
+}
+
+const mapLayers = ref(loadLayerPrefs())
+
+watch(mapLayers, (newVal) => {
+  try {
+    // Save only area and environmental preferences to avoid interfering with context-dependent display modes (like single marea)
+    const prefsToSave = {
+      veda: newVal.veda,
+      vieira: newVal.vieira,
+      centolla: newVal.centolla,
+      langostino: newVal.langostino,
+      noaaWind: newVal.noaaWind,
+      graticule: newVal.graticule
+    }
+    localStorage.setItem('sigma_map_layer_prefs', JSON.stringify(prefsToSave))
+  } catch (e) {
+    console.error('Error al guardar preferencias de capas', e)
+  }
+}, { deep: true })
 
 const isMobile = ref(false)
 
@@ -529,6 +570,15 @@ const handleSeekVessel = ({ vesselId, index }: { vesselId: string, index: number
 }
 
 const handleLayerToggle = (key: string, val: boolean) => {
+  if (key === 'noaaWind') {
+    if (val !== mapLayers.value.noaaWind) {
+      mapMonitor.value?.toggleOverlay('noaa-wind')
+      mapMonitor.value?.toggleOverlay('noaa-wind-arrows')
+    }
+  } else if (key === 'graticule') {
+    mapMonitor.value?.setGraticule(val)
+  }
+  
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ; (mapLayers.value as any)[key] = val
 }

@@ -271,10 +271,54 @@ const router = createRouter({
     },
     {
       path: '/sistema/observadores',
+      redirect: '/sistema/observadores/dashboard',
+    },
+    {
+      path: '/sistema/observadores/dashboard',
       name: 'SistemaObservadores',
+      component: () => import('@/modules/admin/views/ObservadoresDashboardView.vue'),
+      meta: {
+        title: 'Dashboard de Observadores',
+        requiresAuth: true,
+        roles: [ValidRoles.admin, ValidRoles.coordinador, ValidRoles.asistente, ValidRoles.tecnico],
+      },
+    },
+    {
+      path: '/sistema/observadores/lista',
+      name: 'SistemaObservadoresLista',
       component: () => import('@/modules/admin/views/ObservadoresView.vue'),
       meta: {
-        title: 'Gestión de Observadores',
+        title: 'Lista de Observadores',
+        requiresAuth: true,
+        roles: [ValidRoles.admin, ValidRoles.coordinador, ValidRoles.asistente, ValidRoles.tecnico],
+      },
+    },
+    {
+      path: '/sistema/observadores/presentismo',
+      name: 'SistemaObservadoresPresentismo',
+      component: () => import('@/modules/admin/views/PresentismoMatrizView.vue'),
+      meta: {
+        title: 'Presentismo de Observadores',
+        requiresAuth: true,
+        roles: [ValidRoles.admin, ValidRoles.coordinador, ValidRoles.asistente, ValidRoles.tecnico],
+      },
+    },
+    {
+      path: '/sistema/observadores/feriados',
+      name: 'SistemaObservadoresFeriados',
+      component: () => import('@/modules/admin/views/ObservadoresFeriadosView.vue'),
+      meta: {
+        title: 'Feriados nacionales y locales',
+        requiresAuth: true,
+        roles: [ValidRoles.admin, ValidRoles.coordinador, ValidRoles.asistente, ValidRoles.tecnico],
+      },
+    },
+    {
+      path: '/sistema/observadores/novedades',
+      name: 'SistemaObservadoresNovedades',
+      component: () => import('@/modules/admin/views/ObservadoresNovedadesView.vue'),
+      meta: {
+        title: 'Gestión de Novedades',
         requiresAuth: true,
         roles: [ValidRoles.admin, ValidRoles.coordinador, ValidRoles.asistente, ValidRoles.tecnico],
       },
@@ -375,6 +419,26 @@ const router = createRouter({
       component: () => import('@/modules/admin/views/PnaSyncDashboardView.vue'),
       meta: {
         title: 'Configuracion de Sincronización PNA',
+        requiresAuth: true,
+        roles: [ValidRoles.admin],
+      },
+    },
+    {
+      path: '/admin/novedades-sync',
+      name: 'AdminNovedadesSync',
+      component: () => import('@/modules/admin/views/NovedadesSyncDashboardView.vue'),
+      meta: {
+        title: 'Sincronización Novedades',
+        requiresAuth: true,
+        roles: [ValidRoles.admin],
+      },
+    },
+    {
+      path: '/admin/novedades-email-logs',
+      name: 'AdminNovedadesEmailLogs',
+      component: () => import('@/modules/admin/views/NovedadesEmailLogsView.vue'),
+      meta: {
+        title: 'Auditoría Procesamiento de Correos',
         requiresAuth: true,
         roles: [ValidRoles.admin],
       },

@@ -1,5 +1,6 @@
 <template>
     <AdminLayout>
+        <BackButton routeName="SistemaObservadores" label="Regresar al Panel" />
         <BaseDataList title="Gestión de Observadores" description="Administra el personal de observación y técnicos"
             :button-text="canEdit ? 'Nuevo Observador' : undefined" :items="filteredObservadores"
             :is-loading="isLoading" v-model:search="searchQuery" search-placeholder="Buscar observadores..."
@@ -156,6 +157,7 @@
 <script setup lang="ts">
 import { onMounted, computed, ref } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
+import BackButton from '@/components/common/BackButton.vue'
 import { EditIcon, SearchIcon, ChevronDownIcon, DownloadIcon } from '@/icons';
 import ExportExcelButton from '@/modules/shared/components/ExportExcelButton.vue';
 import ObservadorDialog from '../components/ObservadorDialog.vue'

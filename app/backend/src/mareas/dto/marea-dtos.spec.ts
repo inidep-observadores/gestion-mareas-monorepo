@@ -50,7 +50,7 @@ describe('Mareas DTOs', () => {
   describe('MareaEtapaDto', () => {
     it('should fail if nroEtapa is missing', async () => {
       const dto = new MareaEtapaDto();
-      dto.tipoEtapa = TipoEtapa.MC;
+      dto.tipoEtapa = TipoEtapa.EC;
       const errors = await validate(dto);
       expect(errors.find(e => e.property === 'nroEtapa')).toBeDefined();
     });
@@ -65,7 +65,7 @@ describe('Mareas DTOs', () => {
     it('should validate correctly with valid data', async () => {
       const dto = new MareaEtapaDto();
       dto.nroEtapa = 1;
-      dto.tipoEtapa = TipoEtapa.MC;
+      dto.tipoEtapa = TipoEtapa.EC;
       dto.fechaZarpada = '2025-01-22T10:00:00Z';
       
       const errors = await validate(dto);

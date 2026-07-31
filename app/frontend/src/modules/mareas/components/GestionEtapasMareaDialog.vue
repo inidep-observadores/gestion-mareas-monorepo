@@ -107,7 +107,7 @@
             <NavigationStagesEditor v-model="form.stages" :puertoOptions="puertoOptions"
               :pesqueriaOptions="pesqueriaOptions" :puertoBaseId="initialPortId || marea?.puertoBaseId"
               :defaultPesqueriaId="marea?.id_pesqueria || marea?.pesqueriaId" :minStages="mode === 'INICIAR' ? 1 : 0"
-              :mareaId="marea?.id"
+              :mareaId="marea?.id" :tipoMarea="(marea?.tipoMarea || marea?.tipo_marea) as any"
               @action-success="(msg: string) => toast.success(msg)"
               @action-error="(msg: string) => toast.error(msg)"
               @action-warning="(msg: string) => toast.warning(msg)" />
@@ -295,7 +295,7 @@ const addInitialStage = () => {
     puertoArriboId: '',
     fechaArribo: '',
     pesqueriaId: props.marea?.id_pesqueria || props.marea?.pesqueriaId || '',
-    tipoEtapa: TipoEtapa.MC,
+    tipoEtapa: (props.marea?.tipoMarea || props.marea?.tipo_marea) === 'CI' ? TipoEtapa.EI : TipoEtapa.EC,
     observaciones: ''
   });
 };
@@ -315,7 +315,7 @@ watch(() => props.show, (val) => {
       ...s,
       fechaZarpada: s.fechaZarpada || '',
       fechaArribo: s.fechaArribo || '',
-      tipoEtapa: s.tipoEtapa || TipoEtapa.MC,
+      tipoEtapa: s.tipoEtapa || TipoEtapa.EC,
       nroEtapa: s.nroEtapa || s.nro_etapa,
       fuentesZarpada: s.fuentesZarpada || null,
       fuentesArribo: s.fuentesArribo || null
@@ -360,12 +360,12 @@ function hasOverlap(index: number): boolean {
 
 function stageErrors(index: number): boolean {
   const s = form.value.stages[index];
-  const basic = !s.fechaZarpada || !s.puertoZarpadaId || !s.pesqueriaId;
+  const basic = !s.fechaZarpada || !s.pesqueriaId;
   if (s.fechaZarpada && s.fechaArribo) {
     if (isDateBefore(s.fechaArribo, s.fechaZarpada)) return true;
   }
   const arrivalRequired = props.mode === 'FINALIZAR' || index < form.value.stages.length - 1;
-  if (arrivalRequired && (!s.fechaArribo || !s.puertoArriboId)) return true;
+  if (arrivalRequired && !s.fechaArribo) return true;
   return basic;
 }
 
@@ -409,9 +409,16 @@ function handleCancel() {
 function handleConfirm() {
   confirmationAction.value = 'SAVE';
   confirmationTitle.value = config.value.title;
-  confirmationMessage.value = props.mode === 'FINALIZAR'
-    ? '¿Está seguro que desea finalizar la marea? Esta acción es irreversible.'
-    : '¿Desea guardar los cambios en las etapas y fechas del observador?';
+  
+  const hasMissingPorts = form.value.stages.some((s: any) => !s.puertoZarpadaId || (s.fechaArribo && !s.puertoArriboId));
+  
+  if (hasMissingPorts) {
+    confirmationMessage.value = 'Ha dejado etapas sin puerto de zarpada o arribo especificado (etapas administrativas). ¿Está seguro que desea continuar?';
+  } else {
+    confirmationMessage.value = props.mode === 'FINALIZAR'
+      ? '¿Está seguro que desea finalizar la marea? Esta acción es irreversible.'
+      : '¿Desea guardar los cambios en las etapas y fechas del observador?';
+  }
   confirmationConfirmText.value = 'Confirmar';
   showConfirmation.value = true;
 }
@@ -422,7 +429,7 @@ function executeConfirmation() {
     const cleanStages = form.value.stages.map((s: any) => ({
       id: s.id,
       nroEtapa: s.nroEtapa,
-      puertoZarpadaId: s.puertoZarpadaId,
+      puertoZarpadaId: s.puertoZarpadaId || null,
       fechaZarpada: s.fechaZarpada,
       puertoArriboId: s.puertoArriboId || null,
       fechaArribo: s.fechaArribo || null,

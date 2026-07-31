@@ -167,6 +167,11 @@ const navigationGroups = [
         name: 'Sincronización PNA',
         path: '/admin/pna-sync',
       },
+      {
+        icon: BellIcon, // Use a similar icon for now
+        name: 'Novedades Email',
+        path: '/admin/novedades-sync',
+      },
     ],
   },
   {
@@ -181,6 +186,11 @@ const navigationGroups = [
         icon: PieChartIcon,
         name: 'Centro de Auditoría',
         path: '/admin/audit',
+      },
+      {
+        icon: HistoryIcon,
+        name: 'Auditoría de Correos',
+        path: '/admin/novedades-email-logs',
       },
     ],
   },

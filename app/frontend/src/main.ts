@@ -25,6 +25,7 @@ app.use(router)
 app.use(VueApexCharts as any)
 app.directive('form-nav', vFormNav)
 
+
 const initApp = async () => {
     const authStore = useAuthStore()
     const businessRulesStore = useBusinessRulesStore()

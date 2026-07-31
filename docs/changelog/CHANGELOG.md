@@ -3,8 +3,179 @@
 Todos los cambios notables en este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/), y este proyecto adhiere a [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [v0.6.0] - 2026-05-19
+## [Unreleased]
+
+## [v0.11.0] - 2026-07-30
+
 ### Added
+- **reports:** agregar fila de totales a las tablas del anexo 1
+- **admin:** añadir filtros avanzados por contrato, origen y rango de fechas en la vista de novedades
+- **docs:** agregar guía completa para la renovación y configuración del Refresh Token permanente de Google Drive
+- **backend:** implementar soporte y detección de días discontinuos o salteados en notas GDE y disponibilidades procesadas por IA
+- **backend:** implementar fallback automático a modelo secundario para manejo de límites de cuota en IA
+- **novedades:** incluir exclusión automática de fines de semana y feriados (Prisma) en periodos de Francos Compensatorios (FC)
+- **frontend:** crear componente reutilizable `AttachmentViewer` para alternar entre previsualización y lista de enlaces, con persistencia de preferencia del usuario
+- **admin:** añadir buscador interactivo de texto completo en la vista de auditoría de correos (`AuditoriaEmailsView`)
+- **frontend:** agregar validacion manual de fechas de inicio y fin en UI
+- **backend:** agregar mapeo de pasajes a viajes y flexibilizar solapamientos
+- **backend:** agregar clasificacion de errores temporales e ignorar parcialmente
+- **novedades:** integrar panel lateral de previsualización y vista pública de adjuntos
+- **root:** mejorar extracción de novedades por email y panel de auditoría
+- **admin:** implementar auditoria de correos de novedades
+- **presentismo:** incluir código de marea en tooltip de esperando zarpada
+- **root:** añadir código de marea en tooltips de navegando y en viaje
+- **root:** añadir estado esperando zarpada en matriz de presentismo
+- **dashboard:** añadir días transcurridos vs estimados en mareas por expirar
+- **stats:** exportacion a excel para grafico de desviacion de estimaciones
+- **dashboard:** implementar ficha de riesgo de nota de crédito
+- **backend:** agregar pesqueria, diasNavegados y fechaFinalizacion al detalle de mareas protocolizadas
+- **backend:** agregar tabla de mareas delegadas a sección 7
+- **reports:** agrega columna 'En revisión' en tablas de Anexos 2 y 3
+- **reports:** agrega fila de totales unificada en tablas del informe Word
+- **reports:** actualizar gráfico de sección 7 para reflejar totalidad de mareas
+- **stats:** incorporar anexos 2 y 3 con lógica de totalización anual
+- **protocolizacion:** añadir filtros por año en Esperando Confirmación
+- **protocolizacion:** filtros interactivos por año y contadores dinámicos
+
+### Changed
+- **presentismo:** migrar calendario a Vis-Timeline, implementar tema semántico y optimizar carga de contexto intermensual
+- **presentismo:** purgar dependencias experimentales y optimizar visualización de la matriz
+- **admin:** sustituir bloques estáticos de adjuntos por `AttachmentViewer` en auditoría de correos y detalle de novedades
+- **novedades:** implementar borrado lógico para auditoría y persistencia histórica
+- **presentismo:** permitir solapamiento válido entre estados navegando y en viaje
+- **presentismo:** optimizar estética de estados duales y acortar etiqueta médica en Excel
+
+### Fixed
+- **reports:** limitar snapDate a Date.now() en reportes de auditoria para evitar proyeccion futura de dias navegados
+- **mareas:** reemplazar window.confirm por ConfirmationDialog en validacion manual y mejorar IA de pasajes
+- **backend:** manejar autocierre de novedades de un solo dia y arreglar solapamiento con nulos
+- **backend:** enlazar archivo adjunto a todas las novedades extraidas de un email
+- **backend:** corregir desfase de zona horaria al guardar fechas de novedades
+- **drive:** resolver cuelgue infinito durante la subida de adjuntos
+- **backend:** mejorar extraccion de numero GDE en procesador de emails con IA
+- **presentismo:** EZ no computa francos y ajuste validacion limites de fechas
+- **dashboard:** incluir mareas temporalmente en puerto en riesgo de nota de crédito
+- **mareas:** corregir cálculo de días de marea en lista de navegando
+- **stats:** corregir generacion de excel de desviaciones de estimaciones
+- **mareas:** corregir cálculo de progreso y visualización de días en UI
+- **dashboard:** corregir tipado de workforceData en AlertTrafficLight
+- **frontend:** activar filtro de Planta Permanente por defecto en Presentismo
+- **backend:** corregir firma de método en report builder
+- **reports:** aclarar alcance temporal en sección de protocolizaciones
+- **reports:** pluralización correcta de marea en etiqueta de totales
+- **reports:** ignorar mareas en ejecución formal que tienen etapa de arribo finalizada en la cascada especial
+- **reports:** resolver error TS2339 agregando enviadasADNI a la interfaz AuditReportData
+- **reports:** ajustar altura y ajustar texto en el título del Anexo I de Excel
+- **reports:** ajustar redacción sobre mareas canceladas en sección 5.1 del reporte Word
+- **reports:** unificar lógica de cascada y añadir filas de totales en reportes de auditoría
+- **reports:** restringir casos especiales a mareas finalizadas en el periodo y corregir texto de subprograma
+- **stats:** corregir reconstrucción de estado ignorando movimientos sin cambio de estado
+- **frontend:** corregir conversión de zona horaria en selector de fechas
+- **backend:** forzar anchos absolutos de columnas en tablas para correcta visualización en PDF
+- **backend:** corregir orden de mareas en anexos y agregar texto explicativo
+- **reports:** forzar TableLayoutType.FIXED para respetar porcentajes de ancho en anexos
+- **stats:** ajustar recuento independiente de mareas enviadas y protocolizadas
+- **db:** cambiar campos fecha_inicio y fecha_fin a timestamptz
+- **ui:** corregir solapamiento y gap visual en columnas fijas de matriz de presentismo
+- **backend:** increase node max old space size for docker build
+
+### Refactored
+- **mareas:** eliminar fecha de designacion y estado esperando zarpada
+- **backend:** integrar seccion mareas en ejecucion como primera tabla de seccion de estados y renumerar
+
+## [v0.10.0] - 2026-06-29
+
+### Added
+- **protocolizacion:** refactorizar vista a diseño responsivo de lista/tarjetas, remover columna Estado redundante y añadir búsqueda universal por marea, buque, observador y pesquería.
+- **frontend:** agregar NOVEDADES_EMAIL_SYNC a los filtros de JobQueueTable
+- **mail:** implementar enrutamiento local y extraccion estructurada con Gemini 3.1
+- migración y catálogo de novedades, corrección IMAP
+- **ui:** add back button to planificacion sub-views
+- **ui:** add back button to observadores sub-views
+- **presentismo:** integrar novedades email con job queue scheduler y panel de administración
+
+### Fixed
+- **frontend:** mapear DAILY_BACKUP y NOVEDADES_EMAIL_SYNC a etiquetas descriptivas en el grafico de rendimiento
+- **backend:** agregar mailparser a dependencias
+- **backend:** agregar dependencia imapflow faltante
+
+### Refactored
+- **novedades:** actualizar programador de tareas y vista de sincronizacion en dashboard de novedades
+
+## [v0.9.0] - 2026-06-25
+
+### Added
+- **presentismo:** implementar cron job orquestador e integrar con Drive para novedades
+- **backend:** implementar servicios base para integración con IMAP, Google Drive y Gemini AI
+
+## [v0.8.0] - 2026-06-24
+
+### Added
+- **novedades:** incluir observadores inactivos en el select de novedades y agregar marca visual
+- **presentismo:** agregar tooltips (notas) a las celdas en exportacion Excel
+- **presentismo:** mejorar detalle en tooltip para detectar causas de solapamientos
+- **novedades:** agregar selector de flexibilidad permiteUrgencia al formulario
+- **novedades:** desdoblar VIAJE en VIAJE_INICIO y VIAJE_FIN y deshabilitar fecha de fin para los mismos
+- **novedades:** agregar tipo de novedad VIAJE y soportar ENTER as TAB en el modal
+- **novedades:** auto focus en el campo observador al abrir el modal de nueva novedad
+- **novedades:** implementar crud de novedades para observadores
+- **presentismo:** resaltar días que computan franco compensatorio
+- **presentismo:** integrar cruce de mareas reales y estilos visuales del legacy
+- implementar excel en presentismo
+- mejoras y refinamiento en ui de presentismo
+- implementar planilla mensual de presentismo y crud de feriados
+- **reports:** agregar anexo anual comparativo de pesquerías
+- **reports:** mejorar descripciones de pesquerías y tipos de flota
+- **admin:** añadir dashboard de observadores y mockup de presentismo
+- **monitor:** agregar etiquetas y convertir a polígonos capas de vieira y centolla
+- **frontend:** persistir preferencias de capas del mapa en localStorage
+- **frontend:** añadir visualización de subáreas de langostino
+- **mareas:** añadir puerto de zarpada y arribo en exportación JSON
+
+### Fixed
+- **frontend:** corregir ruta de importación de la interfaz Observador
+- **presentismo:** filtrar notas en Excel para que solo apliquen a novedades con comentarios o errores
+- **novedades:** usar httpClient del proyecto en lugar del alias inexistente
+- **novedades:** corregir importacion de icono y remover dependencia de luxon
+- **backend:** agregar tolerancia de 48hs en deteccion de zarpadas para mareas designadas
+- **maps:** corregir poligono erroneo en capa de langostino
+
+### Refactored
+- **frontend:** renombrar archivo geojson de areas de langostino y actualizar referencias
+- **tracking:** reemplazar mmsi por matricula como criterio de busqueda
+
+## [v0.7.0] - 2026-06-07
+
+### Added
+- **reports:** mejora precision temporal y detalle de mareas canceladas en informe de auditoria
+- **backend:** agregar campo TipoEtapa a la exportación JSON de logística de marea
+- **backend:** filtrar movimientos sin puerto en lista reciente
+- **dashboard:** ocultar temporalmente el componente TopDryTime
+- **mareas:** añadir badge de prospección en logística de etapas
+- **frontend:** agregar leyenda de fallback para capas de clima no disponibles
+- **frontend:** aplicar estilo continuo WINDSPEEDKNOTS-LINEAR a la capa de viento
+- **frontend:** mejoras integrales en el mapa de viento y controles de seguimiento
+- **monitor:** actualizar etiqueta de capa de viento en HUD
+- **mareas:** añadir badge de esperando zarpada en flujo operativo
+- **jobs:** implementar cron largo de respaldo para APIs de PNA
+- **mareas:** mostrar badge de prospeccion en mareas designadas
+- **mareas:** agregar badge de prospeccion en panel operativo
+
+### Fixed
+- **mareas:** permitir agregar etapa sin puertos de zarpada o arribo
+- **frontend:** actualizar nombres de capas de viento gdps geomet
+- **jobs:** corrección de avance temporal en sincronización PNA API
+- **frontend:** corregir renderizado y controles de capa de viento en mapa
+- **ui:** mejorar contraste del dropdown de pesquerías en modo oscuro
+- **backend/jobs:** forzar avance de fecha de sync en PNA tras fallos definitivos para evitar estancamiento
+- **backend:** incluir tipo_marea en respuesta de contexto
+- **frontend:** preservar metadata de alerta en resolución manual
+- **alerts:** asignar tipoEtapa 'EP' al iniciar marea con flag iniciaEnProspeccion
+- **mareas:** incluir tipoEtapa en respuesta de etapas y remover viñetas de indicadores
+
+## [v0.6.0] - 2026-05-22
+### Added
+- **mareas:** soporte para iniciar marea en prospeccion e interfaz tipada (21aca3d)
 - **reportes:** optimizar visualización de informes de auditoría (Word/Excel) y corregir tests de backend (505ff7f)
 - **frontend:** implementar directiva v-form-nav para navegación inteligente por teclado (9112428)
 - **frontend:** aplicar navegación fluida v-form-nav al wizard de nueva marea (4dcc71e)
@@ -52,6 +223,9 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 - **frontend:** expansión automática de grupos al buscar en flujo de mareas (6246229)
 
 ### Fixed
+- **ui:** pasar prop tipoMarea a NavigationStagesEditor y corregir peso de fuente en select (7e349a9)
+- **backend:** mitigar enumeración de usuarios y fuga de datos en logs (6ab0b39)
+- **test:** corregir aserciones asincronas en tests de AuditEventInterceptor (e01fafa)
 - **mareas:** restaurar metodo setIntencionCierre y corregir error 404 en creacion de mareas (2448565)
 - **backend:** corregido formato de totales en tablas de ranking (hoja Personal) (9ca82b9)
 - **protocolizacion:** corregir mapping de observadores y añadir ordenamiento ascendente de mareas. Se rectificó la búsqueda de personal científico en el historial y se implementó la nueva funcionalidad de copiado de tablas en texto plano. Changelog actualizado. (8e3d060)
@@ -96,6 +270,7 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 - **frontend:** restaurar importación de computed en TaskCard (304348c)
 
 ### Changed
+- **changelog:** unificar CHANGELOG.md historico y actualizar skills de versionamiento (1ff7aaf)
 - análisis de requerimientos y tareas pendientes del informe de auditoría (a648aec)
 - corregir ubicación de cambios en changelog de v0.4.0 a v0.5.0 (ad073cd)
 - **reports:** reordenar tablas y estandarizar nombres de hojas en reportes de auditoría (03d0e84)

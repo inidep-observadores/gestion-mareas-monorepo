@@ -64,6 +64,7 @@ describe('ReportsController', () => {
         endDate: undefined,
         protocolizationStartDate: undefined,
         protocolizationEndDate: undefined,
+        includeAnnualAnnex: false,
       });
 
       expect(mockResponse.setHeader).toHaveBeenCalledWith(

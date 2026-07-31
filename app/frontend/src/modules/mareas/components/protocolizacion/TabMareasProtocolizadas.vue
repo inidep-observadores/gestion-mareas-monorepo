@@ -1,18 +1,52 @@
 <template>
   <div class="space-y-6">
-    <div class="flex items-center justify-between mb-4">
+      <div class="flex flex-col xl:flex-row xl:items-center justify-between gap-4 mb-4">
       <div>
         <h2 class="text-sm font-black uppercase tracking-widest text-text">Historial de Mareas Protocolizadas</h2>
         <p class="text-xs text-text-muted">Mareas que han finalizado correctamente su ciclo de protocolización.</p>
       </div>
+      <div class="flex flex-col md:flex-row flex-wrap md:items-center gap-4">
+        <!-- Filtros por Año -->
+        <div class="flex flex-wrap items-center gap-3">
+          <span class="text-[10px] font-black uppercase tracking-widest text-text-muted">
+            Filtrar por año de origen:
+          </span>
+          <div class="flex flex-wrap items-center gap-2">
+            <button 
+                @click="showPreviousYear = !showPreviousYear"
+                class="flex items-center gap-2 px-4 py-2 rounded-full border transition-all duration-300 active:scale-95 group relative overflow-hidden"
+                :class="!showPreviousYear ? 'bg-surface-muted/30 border-border text-text-muted/60' : 'bg-surface shadow-sm hover:shadow-md border-primary/30'"
+            >
+                <div class="w-1.5 h-1.5 rounded-full transition-all duration-300" :class="!showPreviousYear ? 'bg-border' : 'bg-primary'"></div>
+                <span class="text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-colors" :class="!showPreviousYear ? 'text-text-muted/60' : 'text-text'">
+                    Año anterior
+                </span>
+            </button>
+            <button 
+                @click="showCurrentYear = !showCurrentYear"
+                class="flex items-center gap-2 px-4 py-2 rounded-full border transition-all duration-300 active:scale-95 group relative overflow-hidden"
+                :class="!showCurrentYear ? 'bg-surface-muted/30 border-border text-text-muted/60' : 'bg-surface shadow-sm hover:shadow-md border-primary/30'"
+            >
+                <div class="w-1.5 h-1.5 rounded-full transition-all duration-300" :class="!showCurrentYear ? 'bg-border' : 'bg-primary'"></div>
+                <span class="text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-colors" :class="!showCurrentYear ? 'text-text-muted/60' : 'text-text'">
+                    Año actual
+                </span>
+            </button>
+          </div>
+        </div>
+        <SearchInput v-model="searchQuery" class="w-full md:w-64" placeholder="Buscar marea, buque, observador..." />
+      </div>
     </div>
 
     <!-- Data Grid -->
-    <div v-if="mareas.length > 0" class="grid gap-4 lg:grid-cols-2 2xl:grid-cols-3">
-      <div 
-        v-for="marea in mareas" 
+    <div v-if="filteredAndSortedMareas.length > 0">
+      <!-- VISTA MÓVIL: TARJETAS COMPACTAS -->
+      <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:hidden">
+        <div 
+          v-for="marea in filteredAndSortedMareas" 
         :key="marea.id"
-        class="bg-surface border border-border rounded-2xl p-5 shadow-sm space-y-4 hover:shadow-md transition-shadow"
+        class="border rounded-2xl p-5 shadow-sm space-y-4 hover:shadow-md transition-all"
+        :class="isPreviousYear(marea) ? 'bg-amber-50/50 border-amber-200/50 dark:bg-amber-900/10 dark:border-amber-700/30' : 'bg-surface border-border'"
       >
         <div class="flex flex-col h-full">
           <!-- Top Row -->
@@ -20,12 +54,6 @@
             <span class="text-xs font-mono font-black text-text border border-border bg-surface-muted px-2.5 py-1 rounded-lg tracking-widest shadow-sm">
               {{ formatMareaCode(marea) }}
             </span>
-            <div class="flex flex-col items-end gap-1">
-              <div class="px-2 py-0.5 bg-success/10 border border-success/20 rounded-full text-[9px] font-black text-success uppercase tracking-tighter flex items-center gap-1">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
-                Protocolizada
-              </div>
-            </div>
           </div>
 
           <!-- Main Info -->
@@ -66,6 +94,110 @@
             </div>
           </div>
         </div>
+        </div>
+      </div>
+      
+      <!-- Totales (Mobile) -->
+      <div class="mt-4 p-4 bg-surface-muted border border-border rounded-xl text-center shadow-sm xl:hidden">
+        <span class="text-[11px] font-black uppercase tracking-widest text-text-muted">
+          Total Mareas: <span class="text-text">{{ filteredAndSortedMareas.length }}</span>
+        </span>
+      </div>
+
+      <!-- VISTA ESCRITORIO: TABLA -->
+      <div class="hidden xl:block overflow-x-auto bg-surface border border-border rounded-2xl shadow-sm mt-4">
+        <table class="w-full text-left">
+          <thead class="bg-surface-muted/50 text-[10px] font-black uppercase tracking-widest text-text-muted border-b border-border">
+            <tr>
+              <th @click="toggleSort('marea')" class="px-5 py-3 cursor-pointer hover:text-primary transition-colors group">
+                <div class="flex items-center gap-1">
+                  Marea
+                  <ChevronDownIcon v-if="sortBy === 'marea'" class="w-3 h-3 text-primary transition-transform duration-300" :class="{ 'rotate-180': sortOrder === 'asc' }" />
+                </div>
+              </th>
+              <th @click="toggleSort('buque')" class="px-5 py-3 cursor-pointer hover:text-primary transition-colors group">
+                <div class="flex items-center gap-1">
+                  Buque
+                  <ChevronDownIcon v-if="sortBy === 'buque'" class="w-3 h-3 text-primary transition-transform duration-300" :class="{ 'rotate-180': sortOrder === 'asc' }" />
+                </div>
+              </th>
+              <th @click="toggleSort('pesqueria')" class="px-5 py-3 cursor-pointer hover:text-primary transition-colors group">
+                <div class="flex items-center gap-1">
+                  Pesquería / Flota
+                  <ChevronDownIcon v-if="sortBy === 'pesqueria'" class="w-3 h-3 text-primary transition-transform duration-300" :class="{ 'rotate-180': sortOrder === 'asc' }" />
+                </div>
+              </th>
+              <th @click="toggleSort('observador')" class="px-5 py-3 cursor-pointer hover:text-primary transition-colors group">
+                <div class="flex items-center gap-1">
+                  Observador
+                  <ChevronDownIcon v-if="sortBy === 'observador'" class="w-3 h-3 text-primary transition-transform duration-300" :class="{ 'rotate-180': sortOrder === 'asc' }" />
+                </div>
+              </th>
+              <th @click="toggleSort('protocolo')" class="px-5 py-3 cursor-pointer hover:text-primary transition-colors group">
+                <div class="flex items-center gap-1">
+                  Nro Protocolo
+                  <ChevronDownIcon v-if="sortBy === 'protocolo'" class="w-3 h-3 text-primary transition-transform duration-300" :class="{ 'rotate-180': sortOrder === 'asc' }" />
+                </div>
+              </th>
+              <th @click="toggleSort('fechaProtocolizacion')" class="px-5 py-3 cursor-pointer hover:text-primary transition-colors group">
+                <div class="flex items-center gap-1">
+                  Fecha
+                  <ChevronDownIcon v-if="sortBy === 'fechaProtocolizacion'" class="w-3 h-3 text-primary transition-transform duration-300" :class="{ 'rotate-180': sortOrder === 'asc' }" />
+                </div>
+              </th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-border">
+            <tr 
+              v-for="marea in filteredAndSortedMareas" 
+              :key="marea.id" 
+              class="group transition-all"
+              :class="isPreviousYear(marea) ? 'bg-amber-50/50 dark:bg-amber-900/10 hover:bg-amber-100/50 dark:hover:bg-amber-900/20' : 'odd:bg-surface-muted/30 hover:bg-primary/5'"
+            >
+              <td class="px-5 py-3">
+                <span class="text-[11px] font-mono font-bold text-text-muted uppercase leading-none">{{ formatMareaCode(marea) }}</span>
+              </td>
+              <td class="px-5 py-3">
+                <div class="flex items-center gap-2.5">
+                  <div class="w-7 h-7 rounded-lg bg-surface-muted flex items-center justify-center text-text-muted group-hover:bg-primary/10 group-hover:text-primary transition-colors shrink-0">
+                    <ShipIcon class="w-3.5 h-3.5" />
+                  </div>
+                  <span class="text-sm font-bold text-text leading-tight truncate">{{ marea.buque?.nombreBuque || marea.buque_nombre }}</span>
+                </div>
+              </td>
+              <td class="px-5 py-3">
+                <div class="flex flex-col">
+                  <span class="text-[11px] font-black text-text-muted uppercase tracking-tight leading-tight">
+                    {{ marea.pesqueria?.nombre || 'General' }}
+                  </span>
+                  <span class="text-[9px] font-bold text-primary/70 italic leading-none mt-0.5">
+                    {{ marea.buque?.tipoFlota?.nombre || marea.buque?.tipoBuque || 'Flota desconocida' }}
+                  </span>
+                </div>
+              </td>
+              <td class="px-5 py-3">
+                <span class="text-xs font-bold text-text-muted truncate">{{ marea.observadorPrincipal ? (marea.observadorPrincipal.nombre + ' ' + marea.observadorPrincipal.apellido) : (marea.observador || 'Sin Observador') }}</span>
+              </td>
+              <td class="px-5 py-3">
+                <span class="text-[11px] font-black text-text">
+                  {{ marea.nroProtocolizacion || marea.nro_protocolizacion }}-{{ marea.anioProtocolizacion || marea.anio_protocolizacion }}
+                </span>
+              </td>
+              <td class="px-5 py-3">
+                <span class="text-[10px] font-bold text-primary">
+                  {{ formatDate(marea.fechaProtocolizacion || marea.fecha_protocolizacion) }}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+          <tfoot class="bg-surface-muted/30 border-t border-border">
+            <tr>
+              <td colspan="6" class="px-5 py-3 text-[11px] font-black uppercase tracking-widest text-text-muted text-right">
+                Total Mareas: <span class="text-text">{{ filteredAndSortedMareas.length }}</span>
+              </td>
+            </tr>
+          </tfoot>
+        </table>
       </div>
     </div>
 
@@ -77,18 +209,34 @@
             <polyline points="22 4 12 14.01 9 11.01" />
          </svg>
       </div>
-      <h3 class="text-sm font-black text-text uppercase tracking-widest">No hay historial disponible</h3>
-      <p class="text-xs text-text-muted max-w-sm mx-auto mt-2">Las mareas aparecerán aquí una vez que completen el proceso de protocolización.</p>
+      <h3 class="text-sm font-black text-text uppercase tracking-widest">No hay mareas para mostrar</h3>
+      <p class="text-xs text-text-muted max-w-sm mx-auto mt-2">No se encontraron resultados o las mareas aparecerán aquí una vez que completen el proceso de protocolización.</p>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ShipIcon } from '@/icons'
+import { ref, computed } from 'vue'
+import { ShipIcon, ChevronDownIcon } from '@/icons'
+import SearchInput from '@/components/ui/SearchInput.vue'
+import { useConfigStore } from '@/modules/shared/stores/config.store'
 
 const props = defineProps<{
   mareas: any[]
 }>()
+
+const emit = defineEmits(['update:count'])
+
+const configStore = useConfigStore()
+const showPreviousYear = ref(true)
+const showCurrentYear = ref(true)
+
+import { watch } from 'vue'
+
+const isPreviousYear = (marea: any) => {
+  const anio = Number(marea.anio_marea || marea.anioMarea || 0)
+  return anio === configStore.selectedYear - 1
+}
 
 const formatMareaCode = (marea: any) => {
   const tipo = marea.tipo_marea || marea.tipoMarea || 'MC'
@@ -96,6 +244,83 @@ const formatMareaCode = (marea: any) => {
   const anio = (marea.anio_marea || marea.anioMarea || 2026).toString().slice(-2)
   return `${tipo}-${nro}-${anio}`
 }
+
+const searchQuery = ref('')
+const sortBy = ref('fechaProtocolizacion')
+const sortOrder = ref<'asc'|'desc'>('desc')
+
+const toggleSort = (key: string) => {
+  if (sortBy.value === key) {
+    sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc'
+  } else {
+    sortBy.value = key
+    sortOrder.value = 'asc'
+  }
+}
+
+const filteredAndSortedMareas = computed(() => {
+  let list = [...props.mareas]
+
+  list = list.filter(m => {
+    const anio = Number(m.anio_marea || m.anioMarea || 0)
+    if (anio === configStore.selectedYear && !showCurrentYear.value) return false
+    if (anio === configStore.selectedYear - 1 && !showPreviousYear.value) return false
+    return true
+  })
+
+  if (searchQuery.value) {
+    const q = searchQuery.value.toLowerCase()
+    list = list.filter(m => {
+      const code = formatMareaCode(m).toLowerCase()
+      const buque = (m.buque?.nombreBuque || m.buque_nombre || '').toLowerCase()
+      const obs = (m.observadorPrincipal ? (m.observadorPrincipal.nombre + ' ' + m.observadorPrincipal.apellido) : (m.observador || '')).toLowerCase()
+      const pesqueria = (m.pesqueria?.nombre || '').toLowerCase()
+      const protocolo = `${m.nroProtocolizacion || m.nro_protocolizacion}-${m.anioProtocolizacion || m.anio_protocolizacion}`.toLowerCase()
+      return code.includes(q) || buque.includes(q) || obs.includes(q) || pesqueria.includes(q) || protocolo.includes(q)
+    })
+  }
+
+  return list.sort((a, b) => {
+    let valA: any = ''
+    let valB: any = ''
+
+    if (sortBy.value === 'marea') {
+      const anioA = a.anio_marea || a.anioMarea || 0
+      const anioB = b.anio_marea || b.anioMarea || 0
+      if (anioA !== anioB) return (anioA - anioB) * (sortOrder.value === 'asc' ? 1 : -1)
+      valA = a.nro_marea || a.nroMarea || 0
+      valB = b.nro_marea || b.nroMarea || 0
+    } else if (sortBy.value === 'buque') {
+      valA = (a.buque?.nombreBuque || a.buque_nombre || '').toLowerCase()
+      valB = (b.buque?.nombreBuque || b.buque_nombre || '').toLowerCase()
+    } else if (sortBy.value === 'pesqueria') {
+      valA = (a.pesqueria?.nombre || '').toLowerCase()
+      valB = (b.pesqueria?.nombre || '').toLowerCase()
+    } else if (sortBy.value === 'observador') {
+      valA = (a.observadorPrincipal ? (a.observadorPrincipal.nombre + ' ' + a.observadorPrincipal.apellido) : (a.observador || '')).toLowerCase()
+      valB = (b.observadorPrincipal ? (b.observadorPrincipal.nombre + ' ' + b.observadorPrincipal.apellido) : (b.observador || '')).toLowerCase()
+    } else if (sortBy.value === 'protocolo') {
+      const nroA = Number(a.nroProtocolizacion || a.nro_protocolizacion || 0)
+      const nroB = Number(b.nroProtocolizacion || b.nro_protocolizacion || 0)
+      const anioA = Number(a.anioProtocolizacion || a.anio_protocolizacion || 0)
+      const anioB = Number(b.anioProtocolizacion || b.anio_protocolizacion || 0)
+      if (anioA !== anioB) return (anioA - anioB) * (sortOrder.value === 'asc' ? 1 : -1)
+      valA = nroA
+      valB = nroB
+    } else if (sortBy.value === 'fechaProtocolizacion') {
+      valA = new Date(a.fechaProtocolizacion || a.fecha_protocolizacion || 0).getTime()
+      valB = new Date(b.fechaProtocolizacion || b.fecha_protocolizacion || 0).getTime()
+    }
+
+    if (valA < valB) return sortOrder.value === 'asc' ? -1 : 1
+    if (valA > valB) return sortOrder.value === 'asc' ? 1 : -1
+    return 0
+  })
+})
+
+watch(() => filteredAndSortedMareas.value.length, (newVal) => {
+  emit('update:count', newVal)
+}, { immediate: true })
 
 const formatDate = (dateString: string) => {
   if (!dateString) return '-'

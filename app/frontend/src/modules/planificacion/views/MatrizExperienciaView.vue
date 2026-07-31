@@ -2,6 +2,7 @@
   <PlanificacionDashboardLayout title="Matriz de Experiencia"
     description="Administración de la experiencia de los observadores por pesquería y tipo de flota.">
     <div class="space-y-6 pb-10">
+      <BackButton routeName="PlanificacionDashboard" label="Regresar al Panel" containerClass="pt-4" />
       <!-- Header actions and modes -->
       <div class="flex flex-col gap-3 p-4 lg:p-5 bg-surface rounded-2xl border border-border mt-6">
         <div class="flex flex-col sm:flex-row sm:items-center gap-3">
@@ -314,6 +315,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, watch } from 'vue';
 import PlanificacionDashboardLayout from '../layouts/PlanificacionDashboardLayout.vue';
+import BackButton from '@/components/common/BackButton.vue';
 import BaseSwitch from '@/components/ui/BaseSwitch.vue';
 import SearchInput from '@/components/ui/SearchInput.vue';
 import { planificacionService } from '../services/planificacion.service';

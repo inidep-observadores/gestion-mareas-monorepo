@@ -207,13 +207,6 @@ import {
 
 // Event type filters (Removed 'navegacion' and 'reunion')
 const eventTypes = ref([
-  {
-    id: 'designacion',
-    label: 'Designadas',
-    icon: DocsIcon,
-    enabled: true,
-    keywords: ['Designación'],
-  },
   { id: 'zarpada', label: 'Zarpadas', icon: ShipIcon, enabled: true, keywords: ['Zarpada'] },
   { id: 'arribo', label: 'Arribos', icon: ShipIcon, enabled: true, keywords: ['Arribo'] },
   { id: 'informe', label: 'Informes', icon: FileTextIcon, enabled: true, keywords: ['Informe'] },

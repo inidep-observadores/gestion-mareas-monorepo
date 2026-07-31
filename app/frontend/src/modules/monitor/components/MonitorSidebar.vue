@@ -121,9 +121,12 @@ const formatKey = (key: string) => {
     veda: 'Zonas de Veda',
     vieira: 'Áreas de Vieira',
     centolla: 'Áreas de Centolla',
+    langostino: 'Subáreas langostino',
     points: 'Puntos de Reporte',
     showAllVessels: 'Ver toda la flota',
     showVesselNames: 'Mostrar identificación',
+    noaaWind: 'Mapa de viento',
+    graticule: 'Red de coordenadas',
   }
   return labels[key] || key
 }

@@ -29,7 +29,7 @@
         </div>
       </div>
 
-      <div class="flex flex-col xl:flex-row gap-6 overflow-hidden">
+      <div class="flex flex-col xl:flex-row gap-6 items-start">
         <!-- Main Board -->
         <div class="flex-1 min-w-0 transition-all duration-300">
           <div class="bg-surface border border-border rounded-2xl overflow-hidden shadow-sm">
@@ -46,8 +46,8 @@
                   </span>
                   <select v-model="filterPesqueria"
                     class="bg-transparent border-none outline-none text-sm font-bold text-text-muted focus:text-text transition-colors cursor-pointer min-w-[140px] appearance-none pr-4">
-                    <option value="">Todas las pesquerías</option>
-                    <option v-for="pesqueria in availablePesquerias" :key="pesqueria" :value="pesqueria">
+                    <option value="" class="bg-surface text-text">Todas las pesquerías</option>
+                    <option v-for="pesqueria in availablePesquerias" :key="pesqueria" :value="pesqueria" class="bg-surface text-text">
                       {{ pesqueria }}
                     </option>
                   </select>
@@ -103,9 +103,12 @@
                             A finalizar
                           </span>
                           <span v-if="marea.en_tierra"
-                            class="px-2 py-0.5 bg-success/10 text-success rounded-full text-[8px] font-black uppercase tracking-tighter whitespace-nowrap flex items-center gap-1 border border-success/20">
-                            <div class="w-1 h-1 rounded-full bg-success animate-pulse"></div>
+                            class="px-2 py-0.5 bg-success/10 text-success rounded-full text-[8px] font-black uppercase tracking-tighter whitespace-nowrap border border-success/20">
                             En Tierra
+                          </span>
+                          <span v-if="marea.en_prospeccion"
+                            class="px-2 py-0.5 bg-purple-500/10 text-purple-600 rounded-full text-[8px] font-black uppercase tracking-tighter whitespace-nowrap border border-purple-500/20">
+                            Prospección
                           </span>
                         </div>
                       </div>
@@ -130,8 +133,8 @@
 
                     <!-- Info Operativa -->
                     <div class="flex items-center justify-between gap-4 pt-3 border-t border-border">
-                      <div class="flex-1">
-                        <div class="flex justify-between items-center mb-1">
+                      <div class="flex-1 flex flex-col gap-1">
+                        <div class="flex justify-between items-center">
                           <span class="text-[9px] font-bold text-text-muted uppercase tracking-widest">Progreso</span>
                           <span class="text-[10px] font-black"
                             :class="marea.progreso > 100 ? 'text-error' : 'text-primary'">{{ marea.progreso }}%</span>
@@ -139,7 +142,11 @@
                         <div class="h-1.5 w-full bg-surface-muted rounded-full overflow-hidden">
                           <div class="h-full transition-all duration-1000"
                             :class="marea.progreso > 100 ? 'bg-error' : 'bg-primary'"
-                            :style="{ width: marea.progreso + '%' }"></div>
+                            :style="{ width: Math.min(marea.progreso, 100) + '%' }"></div>
+                        </div>
+                        <div class="flex justify-between items-center">
+                          <span class="text-[8px] font-bold text-text-muted/70 uppercase tracking-tight">Días transcurridos</span>
+                          <span class="text-[9px] font-bold" :class="marea.progreso > 100 ? 'text-error' : 'text-text-muted'">{{ marea.dias_marea || 0 }} / {{ marea.dias_estimados || 30 }}</span>
                         </div>
                       </div>
 
@@ -267,9 +274,12 @@
                               Etapa {{ marea.total_etapas }}
                             </span>
                             <span v-if="marea.en_tierra"
-                              class="px-2 py-0.5 bg-success/10 text-success rounded-full text-[10px] font-black uppercase tracking-tighter whitespace-nowrap flex items-center gap-1 border border-success/20">
-                              <div class="w-1 h-1 rounded-full bg-success animate-pulse"></div>
+                              class="px-2 py-0.5 bg-success/10 text-success rounded-full text-[10px] font-black uppercase tracking-tighter whitespace-nowrap border border-success/20">
                               En Tierra
+                            </span>
+                            <span v-if="marea.en_prospeccion"
+                              class="px-2 py-0.5 bg-purple-500/10 text-purple-600 rounded-full text-[10px] font-black uppercase tracking-tighter whitespace-nowrap border border-purple-500/20">
+                              Prospección
                             </span>
                             <span v-if="marea.intencion_cierre"
                               class="px-2 py-0.5 bg-error/10 text-error rounded-full text-[10px] font-black uppercase tracking-tighter whitespace-nowrap flex items-center gap-1 border border-error/20">
@@ -286,19 +296,23 @@
                           </div>
                         </td>
                         <td v-if="!selectedMarea" class="px-5 py-1.5">
-                          <div class="flex items-center gap-2">
-                            <div class="w-16 h-1 bg-surface-muted rounded-full overflow-hidden">
-                              <div class="h-full transition-all duration-1000"
-                                :class="marea.progreso > 100 ? 'bg-error' : 'bg-success'"
-                                :style="{ width: marea.progreso + '%' }"></div>
+                          <div class="flex flex-col gap-1 w-fit">
+                            <div class="flex items-center gap-2">
+                              <div class="w-16 h-1.5 bg-surface-muted rounded-full overflow-hidden">
+                                <div class="h-full transition-all duration-1000"
+                                  :class="marea.progreso > 100 ? 'bg-error' : 'bg-success'"
+                                  :style="{ width: Math.min(marea.progreso, 100) + '%' }"></div>
+                              </div>
+                              <span class="text-[10px] font-black" :class="marea.progreso > 100 ? 'text-error' : 'text-text-muted'">{{ marea.progreso }}%</span>
                             </div>
-                            <span class="text-[10px] font-black text-text-muted">{{ marea.progreso }}%</span>
+                            <span class="text-[8px] font-bold text-text-muted/70 tracking-tight text-right w-full">
+                              {{ marea.dias_marea || 0 }} / {{ marea.dias_estimados || 30 }} d
+                            </span>
                           </div>
                         </td>
                         <td v-if="!selectedMarea" class="px-5 py-1.5">
                           <div v-if="marea.alertas?.length"
                             class="flex items-center gap-1.5 px-2 py-0.5 bg-error/10 rounded-lg w-fit">
-                            <div class="w-1 h-1 rounded-full bg-error animate-pulse"></div>
                             <span class="text-[10px] font-black text-error">{{ marea.alertas.length }}</span>
                           </div>
                           <span v-else class="text-[10px] font-bold text-text-muted/40">Ninguna</span>
@@ -328,7 +342,7 @@
           enter-to-class="translate-x-0 opacity-100" leave-active-class="transition duration-200 ease-in"
           leave-from-class="translate-x-0 opacity-100" leave-to-class="translate-x-4 opacity-0">
           <div v-if="selectedMarea"
-            class="w-full xl:w-[320px] 2xl:w-[400px] shrink-0 sticky top-0 bg-surface border border-border rounded-2xl shadow-sm overflow-hidden self-start hidden xl:block z-10">
+            class="w-full xl:w-[320px] 2xl:w-[400px] shrink-0 sticky top-6 h-[calc(100vh-3rem)] flex flex-col bg-surface border border-border rounded-2xl shadow-sm overflow-hidden self-start hidden xl:block z-10">
             <MareaContextDetailContent :marea="selectedMarea" :context="selectedMareaContext" :read-only="isReadOnly"
               @close="closeSidebar" @open-detalle="goToDetalle" @view-trajectory="goToTrajectory"
               @action="executeActionFromSidebar" @manage-alert="handleManageAlert" />

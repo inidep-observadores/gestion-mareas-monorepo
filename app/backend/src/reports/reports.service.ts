@@ -20,6 +20,7 @@ export interface AuditReportParams {
     endDate?: string;
     protocolizationStartDate?: string;
     protocolizationEndDate?: string;
+    includeAnnualAnnex?: boolean;
 }
 
 import { ConversionService } from './conversion.service';
@@ -58,11 +59,22 @@ export class ReportsService {
         const snapDate = endDate ? new Date(endDate) : new Date(Date.UTC(year, 11, 31, 23, 59, 59, 999));
         snapDate.setUTCHours(23, 59, 59, 999);
 
-        this.logger.log(`Generando informe de auditoría: año=${year}, modo=${mode}, snapshot=${snapDate.toISOString()}`);
+        // NUNCA proyectar al futuro: Si el snapDate calculado (ej. fin del trimestre 3) es mayor a la fecha actual,
+        // lo limitamos a "hoy" para no inventar días navegados futuros en mareas en ejecución.
+        const now = new Date();
+        if (snapDate > now) {
+            snapDate.setTime(now.getTime());
+        }
+
+        // Si se proveen fechas de inicio y fin, estamos consultando un período específico (ej. trimestre)
+        // Por ende, forzamos el modo CALENDAR para que las métricas de esfuerzo (días) no se desborden históricamente.
+        const effectiveMode = (startDate && endDate) ? 'CALENDAR' : mode;
+
+        this.logger.log(`Generando informe de auditoría: año=${year}, modo original=${mode}, modo efectivo=${effectiveMode}, snapshot=${snapDate.toISOString()}`);
 
         // 1. Obtener estadísticas globales (Snapshot Histórico)
         const stats = await this.statsService.getDashboardStats(
-            year, mode, includeNonProtocolized, includeProtocolizedOutOfPeriod,
+            year, effectiveMode, includeNonProtocolized, includeProtocolizedOutOfPeriod,
             'SHIP', includeCampaigns, startDate, endDate,
             protocolizationStartDate, protocolizationEndDate,
             snapDate
@@ -91,7 +103,7 @@ export class ReportsService {
 
         // 4. Obtener distribución de mareas (Snapshot Histórico)
         const distribution = await this.statsService.getMareaDistribution(
-            year, mode, includeNonProtocolized, includeProtocolizedOutOfPeriod,
+            year, effectiveMode, includeNonProtocolized, includeProtocolizedOutOfPeriod,
             includeCampaigns, startDate, endDate,
             protocolizationStartDate, protocolizationEndDate,
             snapDate
@@ -99,7 +111,7 @@ export class ReportsService {
 
         // 5. Obtener detalle de mareas (Snapshot Histórico)
         const detailItems = await this.statsService.getDashboardStatsDetail(
-            year, mode, includeNonProtocolized, includeProtocolizedOutOfPeriod,
+            year, effectiveMode, includeNonProtocolized, includeProtocolizedOutOfPeriod,
             null, '', 'SHIP', includeCampaigns, startDate, endDate,
             protocolizationStartDate, protocolizationEndDate,
             snapDate
@@ -140,6 +152,77 @@ export class ReportsService {
             fisheryOrdering.map(f => [f.nombre.trim(), f.orden ?? 999])
         );
 
+        // 6.5. Computar datos del Anexo Anual Comparativo si se requiere
+        let annexData;
+        if (params.includeAnnualAnnex && startDate && endDate) {
+            const startMonth = parseInt(startDate.split('-')[1], 10);
+            const endMonth = parseInt(endDate.split('-')[1], 10);
+            let selectedQuarter = null;
+            if (startMonth === 1 && endMonth === 3) selectedQuarter = 1;
+            if (startMonth === 4 && endMonth === 6) selectedQuarter = 2;
+            if (startMonth === 7 && endMonth === 9) selectedQuarter = 3;
+            if (startMonth === 10 && endMonth === 12) selectedQuarter = 4;
+
+            if (selectedQuarter && selectedQuarter >= 2) {
+                const quarters = Array.from({ length: selectedQuarter }, (_, i) => i + 1);
+                
+                // Get ALL fisheries active in the entire year
+                const yearStats = await this.statsService.getDashboardStats(
+                    year, mode, includeNonProtocolized, includeProtocolizedOutOfPeriod,
+                    'SHIP', includeCampaigns, undefined, undefined,
+                    protocolizationStartDate, protocolizationEndDate,
+                    snapDate
+                );
+                
+                const activeFisheries = Array.from(new Set(yearStats.fisheries.map((f: any) => f.name)));
+                activeFisheries.sort((a, b) => (fisheryOrderMap.get(a.trim()) || 999) - (fisheryOrderMap.get(b.trim()) || 999));
+
+                const fisheriesData: Record<string, number[]> = {};
+                for (const name of activeFisheries) {
+                    fisheriesData[name] = new Array(selectedQuarter).fill(0);
+                }
+
+                for (let q = 1; q <= selectedQuarter; q++) {
+                    const qStartMonth = (q - 1) * 3 + 1;
+                    const qEndMonth = qStartMonth + 2;
+                    const lastDay = new Date(year, qEndMonth, 0).getDate();
+                    
+                    const qStartDateStr = `${year}-${String(qStartMonth).padStart(2, '0')}-01`;
+                    const qEndDateStr = `${year}-${String(qEndMonth).padStart(2, '0')}-${lastDay}`;
+                    
+                    const qStats = await this.statsService.getDashboardStats(
+                        year, 'CALENDAR', includeNonProtocolized, includeProtocolizedOutOfPeriod,
+                        'SHIP', includeCampaigns, qStartDateStr, qEndDateStr,
+                        protocolizationStartDate, protocolizationEndDate,
+                        snapDate
+                    );
+                    
+                    for (const f of qStats.fisheries) {
+                        if (fisheriesData[f.name]) {
+                            fisheriesData[f.name][q - 1] = f.days;
+                        }
+                    }
+                }
+                
+                const qStats = await this.statsService.getAuditAnnexStats(
+                    year,
+                    selectedQuarter,
+                    includeCampaigns,
+                    snapDate
+                );
+                
+                annexData = {
+                    quarters,
+                    fisheries: fisheriesData,
+                    activeFisheries,
+                    mareaStates: qStats.mareaStates,
+                    protocolizationStates: qStats.protocolizationStates,
+                    finalizedDetails: qStats.finalizedDetails,
+                    annualFinalizedDetails: qStats.annualFinalizedDetails
+                };
+            }
+        }
+
         // 7. Computar breakdown Observadores vs Técnicos
         const emptySlice = () => ({
             dias: 0, mareasFinalizadas: 0, mareasEnEjecucion: 0, desestimadas: 0,
@@ -155,7 +238,7 @@ export class ReportsService {
             const t = observerDataMap.get(item.observadorId)?.tipoObservador === 'OBSERVADOR' ? breakdown.observadores : breakdown.tecnicos;
             
             // Acumular días navegados según el modo del reporte
-            t.dias += (mode === 'CALENDAR' ? item.diasCalendario : item.diasTotales);
+            t.dias += (effectiveMode === 'CALENDAR' ? item.diasCalendario : item.diasTotales);
             
             if (item.estado === 'Finalizada') {
                 t.mareasFinalizadas++;
@@ -193,7 +276,7 @@ export class ReportsService {
 
         const reportData: AuditReportData = {
             year,
-            mode,
+            mode: effectiveMode,
             startDate,
             endDate,
             includeCampaigns: includeCampaigns!,
@@ -258,6 +341,7 @@ export class ReportsService {
                 id_marea: d.id_marea,
                 nroEtapa: d.nroEtapa || 1,
             })),
+            annexData,
         };
 
         this.logger.log(`Datos recopilados: ${reportData.stats.totalMareas} mareas, ${reportData.stats.observers.length} observadores`);

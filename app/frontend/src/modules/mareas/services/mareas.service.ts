@@ -110,7 +110,8 @@ const mareasService = {
         const { data } = await httpClient.post<{ message: string, count: number }>('/mareas/protocolizacion/enviar', formData, {
             headers: {
                 'Content-Type': 'multipart/form-data'
-            }
+            },
+            timeout: 300000 // 5 minutos (el proceso de adjuntar y enviar emails puede tardar)
         });
         return data;
     },

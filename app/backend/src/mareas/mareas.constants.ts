@@ -22,6 +22,7 @@ export enum TipoMarea {
 }
 
 export enum TipoEtapa {
-    MC = 'MC',
-    CI = 'CI',
+    EC = 'EC',
+    EI = 'EI',
+    EP = 'EP',
 }

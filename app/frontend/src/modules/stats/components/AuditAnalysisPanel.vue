@@ -20,6 +20,10 @@
             </div>
          </div>
          <div class="flex items-center gap-2">
+            <label v-if="[2, 3, 4].includes(selectedQuarter as number)" class="flex items-center gap-2 mr-3 cursor-pointer group">
+               <input type="checkbox" v-model="includeAnnualAnnex" class="w-4 h-4 text-primary bg-surface border-border rounded focus:ring-primary/20 transition-colors cursor-pointer">
+               <span class="text-xs font-bold text-text-muted group-hover:text-text transition-colors">Incluir anexo anual</span>
+            </label>
             <ExportWordButton
                :loading="exportingWord"
                label="GENERAR INFORME"
@@ -252,6 +256,20 @@ const specialCounts = computed(() => {
    return { canceladas: c, desestimadas: d, pendientes: p, delegadas: e, total: c + d + p + e }
 })
 
+const selectedQuarter = computed(() => {
+   if (!props.startDate || !props.endDate) return null;
+   const startMonth = parseInt(props.startDate.split('-')[1], 10);
+   const endMonth = parseInt(props.endDate.split('-')[1], 10);
+   
+   if (startMonth === 1 && endMonth === 3) return 1;
+   if (startMonth === 4 && endMonth === 6) return 2;
+   if (startMonth === 7 && endMonth === 9) return 3;
+   if (startMonth === 10 && endMonth === 12) return 4;
+   return null;
+})
+
+const includeAnnualAnnex = ref(true);
+
 // ── Lifecycle ─────────────────────────────────────────────
 onMounted(() => {
    fetchDotacion()
@@ -276,12 +294,14 @@ const handleExportAudit = async () => {
    if (!props.stats || exporting.value) return
    exporting.value = true
    try {
+      const includeAnnex = [2, 3, 4].includes(selectedQuarter.value as number) ? includeAnnualAnnex.value : false;
       await statsService.downloadExport(
          props.year, props.mode, !props.protocolizedOnly, props.includeOutOfPeriod,
          props.daysCalculationMode, props.includeCampaigns, 'AUDIT', undefined,
          `Anexo_Auditoria_Mareas_${props.year}`,
          props.startDate || undefined, props.endDate || undefined,
-         props.startDate || undefined, props.endDate || undefined, true
+         props.startDate || undefined, props.endDate || undefined, true,
+         includeAnnex
       )
    } catch (e) { console.error('Error exporting audit report:', e) }
    finally { exporting.value = false }
@@ -291,11 +311,13 @@ const handleExportWord = async () => {
    if (!props.stats || exportingWord.value) return
    exportingWord.value = true
    try {
+      const includeAnnex = [2, 3, 4].includes(selectedQuarter.value as number) ? includeAnnualAnnex.value : false;
       await statsService.downloadAuditReport(
          props.year, props.mode, !props.protocolizedOnly, props.includeOutOfPeriod,
          props.includeCampaigns, `Informe_Auditoria_Mareas_${props.year}`,
          props.startDate || undefined, props.endDate || undefined,
-         props.startDate || undefined, props.endDate || undefined
+         props.startDate || undefined, props.endDate || undefined,
+         includeAnnex
       )
    } catch (e) { console.error('Error exporting word audit report:', e) }
    finally { exportingWord.value = false }
@@ -395,11 +417,13 @@ const handleExportPdf = async () => {
 
    exportingPdf.value = true
    try {
+      const includeAnnex = [2, 3, 4].includes(selectedQuarter.value as number) ? includeAnnualAnnex.value : false;
       const url = await statsService.openAuditReportPdf(
          props.year, props.mode, !props.protocolizedOnly, props.includeOutOfPeriod,
          props.includeCampaigns,
          props.startDate || undefined, props.endDate || undefined,
-         props.startDate || undefined, props.endDate || undefined
+         props.startDate || undefined, props.endDate || undefined,
+         includeAnnex
       )
       
       if (reportWindow) {

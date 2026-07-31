@@ -118,9 +118,8 @@
               <label class="text-[8px] font-black uppercase text-text-muted tracking-widest flex items-center gap-1.5">
                 <SettingsIcon class="w-2.5 h-2.5" /> Propósito
               </label>
-              <select v-model="stage.tipoEtapa" :disabled="readOnly" class="w-full bg-surface border border-border rounded-lg py-2 font-bold text-xs h-[38px] focus:ring-1 focus:ring-primary outline-none px-2">
-                <option :value="TipoEtapa.MC">Comercial</option>
-                <option :value="TipoEtapa.CI">Institucional</option>
+              <select v-model="stage.tipoEtapa" :disabled="readOnly" class="w-full bg-surface border border-border rounded-lg py-2 text-xs h-[38px] focus:ring-1 focus:ring-primary outline-none px-3">
+                <option v-for="opt in getEtapaOptions()" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
               </select>
             </div>
             <div class="sm:col-span-5 space-y-1">
@@ -151,15 +150,12 @@
               <BaseSwitch
                 v-model="stageIntencionCierre[index]"
                 @update:modelValue="(val: boolean) => onToggleIntencionCierre(index, stage, val)"
-                :disabled="mareaTieneDesignacion"
+                :disabled="readOnly"
               />
             </div>
-            <p v-if="mareaTieneDesignacion" class="text-[9px] text-warning mt-1.5 font-medium ml-1 flex items-center gap-1">
-              <WarningIcon class="w-3 h-3" />
-              Existe una designación pendiente que forzará el cierre de la marea de todos modos.
-            </p>
           </div>
-        </div>
+
+          </div>
 
         <!-- Overlap Warning (Inter-stage) -->
         <div v-if="hasOverlap(index)" class="mt-3 p-1.5 bg-error/10 border border-error/20 rounded-lg text-[9px] text-error font-black flex items-center gap-1.5 animate-in slide-in-from-top-1">
@@ -191,7 +187,7 @@ import {
   WarningIcon
 } from '@/icons';
 import BaseSwitch from '@/components/ui/BaseSwitch.vue';
-import { TipoEtapa } from '../types/enums';
+import { TipoEtapa, TipoMarea, TIPO_ETAPA_DESC } from '../types/enums';
 import type { MareaEtapaMetadata } from '../types/marea.types';
 import mareasService from '../services/mareas.service';
 
@@ -206,7 +202,8 @@ const props = defineProps<{
   errors?: Record<string, string>;
   defaultFechaZarpada?: string;
   mareaId?: string;
-  mareaTieneDesignacion?: boolean;
+
+  tipoMarea?: TipoMarea;
 }>();
 
 const emit = defineEmits([
@@ -226,16 +223,23 @@ const canAddStage = computed(() => {
   if (props.modelValue.length === 0) return true;
   const last = props.modelValue[props.modelValue.length - 1];
   
-  // Requiere todos los campos obligatorios para permitir una nueva etapa
   return !!(
     last.fechaZarpada &&
-    last.puertoZarpadaId &&
     last.fechaArribo &&
-    last.puertoArriboId &&
     last.pesqueriaId &&
     last.tipoEtapa
   );
 });
+
+function getEtapaOptions() {
+  if (props.tipoMarea === TipoMarea.CI) {
+    return [{ value: TipoEtapa.EI, label: TIPO_ETAPA_DESC[TipoEtapa.EI] }];
+  }
+  return [
+    { value: TipoEtapa.EC, label: TIPO_ETAPA_DESC[TipoEtapa.EC] },
+    { value: TipoEtapa.EP, label: TIPO_ETAPA_DESC[TipoEtapa.EP] }
+  ];
+}
 
 async function addStage() {
   if (!canAddStage.value) return;
@@ -262,7 +266,7 @@ async function addStage() {
     puertoArriboId: '',
     fechaArribo: '',
     pesqueriaId: defaultPesqueria,
-    tipoEtapa: TipoEtapa.MC,
+    tipoEtapa: props.tipoMarea === TipoMarea.CI ? TipoEtapa.EI : TipoEtapa.EC,
     observaciones: ''
   });
 

@@ -40,7 +40,7 @@
           <h2 class="text-xl font-bold text-text">Auditoría e Integridad</h2>
         </div>
         
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <AdminHomeCard
             title="Log de Errores"
             description="Monitoreo en tiempo real de excepciones y fallas críticas del servidor."
@@ -52,6 +52,13 @@
             title="Centro de Auditoría"
             description="Registro histórico de navegación y acciones realizadas por los usuarios."
             :to="{ name: 'AdminAudit' }"
+            :icon="HistoryIcon"
+            color="warning"
+          />
+          <AdminHomeCard
+            title="Auditoría de Correos"
+            description="Historial detallado de lectura y extracción de novedades desde emails."
+            :to="{ name: 'AdminNovedadesEmailLogs' }"
             :icon="HistoryIcon"
             color="warning"
           />

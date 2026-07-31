@@ -74,6 +74,8 @@ async function main() {
     await prisma.marea.deleteMany();
 
     // Personal y Buques
+    await prisma.observadorNovedadArchivo.deleteMany();
+    await prisma.observadorNovedad.deleteMany();
     await prisma.observadorPesqueria.deleteMany();
     await prisma.experienciaObservador.deleteMany();
     await prisma.observador.deleteMany();
@@ -86,6 +88,7 @@ async function main() {
     await prisma.especie.deleteMany();
     await prisma.artePesca.deleteMany();
     await prisma.tipoFlota.deleteMany();
+    await prisma.tipoNovedad.deleteMany();
 
     // CRM y Auth
     await prisma.productImage.deleteMany();
@@ -130,6 +133,28 @@ async function main() {
 
     for (const data of estadosMareaData) {
       await prisma.estadoMarea.create({ data });
+    }
+
+    // 4b. Tipos de Novedades
+    console.log('Cargando Tipos de Novedades...');
+    const tiposNovedadesData = [
+      { codigo: 'LICEN', descripcion: 'Licencia / Vacaciones', afectaPresentismo: true, tiposContratoPermitidos: ['LEY MARCO', 'PLANTA PERMANENTE', '1109'], activo: true },
+      { codigo: 'FC', descripcion: 'Franco Compensatorio', afectaPresentismo: true, tiposContratoPermitidos: ['LEY MARCO', 'PLANTA PERMANENTE', '1109'], activo: true },
+      { codigo: 'RP', descripcion: 'Razones Particulares', afectaPresentismo: true, tiposContratoPermitidos: ['LEY MARCO', 'PLANTA PERMANENTE', '1109'], activo: true },
+      { codigo: 'ENFERMEDAD', descripcion: 'Enfermedad', afectaPresentismo: true, tiposContratoPermitidos: ['LEY MARCO', 'PLANTA PERMANENTE', '1109'], activo: true },
+      { codigo: 'MATERNIDAD', descripcion: 'Maternidad', afectaPresentismo: true, tiposContratoPermitidos: ['LEY MARCO', 'PLANTA PERMANENTE', '1109'], activo: true },
+      { codigo: 'NACIMIENTO', descripcion: 'Nacimiento', afectaPresentismo: true, tiposContratoPermitidos: ['LEY MARCO', 'PLANTA PERMANENTE', '1109'], activo: true },
+      { codigo: 'FALLECIMIENTO', descripcion: 'Fallecimiento', afectaPresentismo: true, tiposContratoPermitidos: ['LEY MARCO', 'PLANTA PERMANENTE', '1109'], activo: true },
+      { codigo: 'EXAMEN', descripcion: 'Examen', afectaPresentismo: true, tiposContratoPermitidos: ['LEY MARCO', 'PLANTA PERMANENTE', '1109'], activo: true },
+      { codigo: 'DONACION_SANGRE', descripcion: 'Donación de Sangre', afectaPresentismo: true, tiposContratoPermitidos: ['LEY MARCO', 'PLANTA PERMANENTE', '1109'], activo: true },
+      { codigo: 'VIAJE_INICIO', descripcion: 'Aviso de Viaje (Inicio)', afectaPresentismo: false, tiposContratoPermitidos: [], activo: true },
+      { codigo: 'VIAJE_FIN', descripcion: 'Aviso de Viaje (Fin)', afectaPresentismo: false, tiposContratoPermitidos: [], activo: true },
+      { codigo: 'DISPONIBLE', descripcion: 'Declaración de Disponibilidad', afectaPresentismo: false, tiposContratoPermitidos: [], activo: true },
+      { codigo: 'NO_DISPONIBLE', descripcion: 'Declaración de No Disponibilidad', afectaPresentismo: false, tiposContratoPermitidos: [], activo: true }
+    ];
+
+    for (const data of tiposNovedadesData) {
+      await prisma.tipoNovedad.create({ data });
     }
 
     // 5. Transiciones de Estado

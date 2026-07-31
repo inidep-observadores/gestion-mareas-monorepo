@@ -9,8 +9,8 @@ export class VesselSyncProcessor implements JobProcessor {
     constructor(private readonly vesselSyncService: VesselSyncService) { }
 
     async process(payload: any): Promise<any> {
-        const { id, nombreBuque, mmsi } = payload;
-        this.logger.log(`Processing vessel sync for ID: ${id}, Nombre: ${nombreBuque}, MMSI: ${mmsi || 'N/A'}`);
+        const { id, nombreBuque, matricula } = payload;
+        this.logger.log(`Processing vessel sync for ID: ${id}, Nombre: ${nombreBuque}, Matrícula: ${matricula || 'N/A'}`);
 
         // Aquí implementaremos el rate limiting si es necesario inyectando el config
         const rateLimit = parseInt(process.env.VESSEL_SYNC_RATE_LIMIT_MS || '1000', 10);
@@ -24,7 +24,7 @@ export class VesselSyncProcessor implements JobProcessor {
         return {
             vesselId: id,
             vesselName: nombreBuque,
-            mmsi: mmsi || null,
+            matricula: matricula || null,
             syncedAt: new Date().toISOString(),
         };
     }

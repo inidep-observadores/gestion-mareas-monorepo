@@ -223,7 +223,11 @@ const isSameDay = (d1: Date | null, d2: Date | null) => {
 // Watchers
 watch(() => props.modelValue, (newVal) => {
   if (newVal) {
-    const date = new Date(newVal)
+    let dateStr = newVal
+    if (/^\d{4}-\d{2}-\d{2}$/.test(newVal)) {
+      dateStr = newVal + 'T00:00:00'
+    }
+    const date = new Date(dateStr)
     if (!isNaN(date.getTime())) {
       selectedDate.value = date
       viewDate.value = new Date(date)

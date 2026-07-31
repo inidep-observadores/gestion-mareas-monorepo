@@ -2,8 +2,7 @@
 // This file provides a centralized color configuration for all calendar event types
 
 export const CALENDAR_EVENT_COLORS = {
-  // Designaciones - Brand color (purple)
-  designacion: 'rgb(70, 95, 255)', // brand-500
+
 
   // Zarpadas - Blue
   // zarpada: 'rgb(59, 130, 246)', // blue-500

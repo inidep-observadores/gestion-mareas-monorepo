@@ -1,12 +1,17 @@
 import { Global, Module } from '@nestjs/common';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { AuthModule } from '../auth/auth.module';
 import { MailService } from './mail.service';
+import { ImapService } from './imap.service';
+import { NovedadesAiService } from './novedades-ai.service';
+import { MailController } from './mail.controller';
 
 @Global()
 @Module({
     imports: [
         ConfigModule,
+        AuthModule,
         MailerModule.forRootAsync({
             imports: [ConfigModule],
             inject: [ConfigService],
@@ -28,7 +33,8 @@ import { MailService } from './mail.service';
             }),
         }),
     ],
-    providers: [MailService],
-    exports: [MailService, MailerModule],
+    controllers: [MailController],
+    providers: [MailService, ImapService, NovedadesAiService],
+    exports: [MailService, MailerModule, ImapService, NovedadesAiService],
 })
 export class MailModule { }

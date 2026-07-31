@@ -1,8 +1,8 @@
 {
   "name": "sigma-mareas-monorepo",
-  "version": "0.5.0",
+  "version": "0.11.0",
   "private": true,
-  "packageManager": "pnpm@10.26.2",
+  "packageManager": "pnpm@11.18.0",
   "workspaces": [
     "app/backend",
     "app/frontend"
@@ -10,6 +10,7 @@
   "scripts": {
     "dev:backend": "pnpm --filter sigma-backend run start:dev",
     "dev:frontend": "pnpm --filter sigma-frontend run dev",
+    "prod:frontend": "pnpm --filter sigma-frontend run build:localprod && pnpm --filter sigma-frontend run preview --port 5173 --strictPort",
     "dev": "pnpm --filter sigma-backend --filter sigma-frontend --parallel run dev",
     "build": "pnpm -r run build",
     "lint": "pnpm -r run lint",
@@ -17,6 +18,12 @@
     "prisma:studio": "pnpm --filter sigma-backend exec prisma studio"
   },
   "pnpm": {
+    "onlyBuiltDependencies": [
+      "canvas",
+      "@google/genai",
+      "protobufjs",
+      "msgpackr-extract"
+    ],
     "overrides": {
       "@types/pg": "8.11.11"
     }

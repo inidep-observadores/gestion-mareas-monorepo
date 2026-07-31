@@ -1,6 +1,6 @@
 {
   "name": "sigma-frontend",
-  "version": "0.4.0",
+  "version": "0.11.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -10,6 +10,8 @@
     "preview": "vite preview",
     "build-only": "vite build",
     "build-only:staging": "vite build --mode staging",
+    "build:localprod": "run-p type-check \"build-only:localprod {@}\" --",
+    "build-only:localprod": "vite build --mode localprod",
     "type-check": "vue-tsc --build",
     "lint": "eslint . --fix",
     "format": "prettier --write src/",
@@ -22,6 +24,8 @@
     "@fullcalendar/list": "^6.1.15",
     "@fullcalendar/timegrid": "^6.1.15",
     "@fullcalendar/vue3": "^6.1.15",
+    "@headlessui/vue": "^1.7.23",
+
     "@mermaid-js/layout-elk": "^0.2.1",
     "@tailwindcss/forms": "^0.5.10",
     "@tailwindcss/typography": "^0.5.16",
@@ -37,13 +41,16 @@
     "mermaid": "^11.13.0",
     "pinia": "^3.0.4",
     "swiper": "^11.2.1",
+    "vis-data": "^8.0.4",
+    "vis-timeline": "^8.5.2",
     "vue": "^3.5.13",
     "vue-draggable-next": "^2.3.0",
     "vue-flatpickr-component": "^11.0.5",
     "vue-router": "^4.5.0",
     "vue-sonner": "^2.0.9",
     "vue3-apexcharts": "^1.8.0",
-    "vuevectormap": "^2.0.1"
+    "vuevectormap": "^2.0.1",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@pinia/testing": "^1.0.3",

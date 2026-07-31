@@ -8,15 +8,16 @@ export class PnaTrackingSyncProcessor implements JobProcessor {
 
     constructor(private readonly pnaTrackingService: PnaTrackingService) { }
 
-    async process(payload: { fromDate: string; toDate: string; isLastBlock?: boolean; onlyIngest?: boolean }): Promise<any> {
+    async process(payload: { fromDate: string; toDate: string; isLastBlock?: boolean; onlyIngest?: boolean; isLongSync?: boolean }): Promise<any> {
         this.logger.log(`Iniciando fragmento de sincronización de tracking PNA: ${payload.fromDate} -> ${payload.toDate}`);
 
         try {
             const fromDate = new Date(payload.fromDate);
             const toDate = new Date(payload.toDate);
             const onlyIngest = payload?.onlyIngest === true;
+            const isLongSync = payload?.isLongSync === true;
 
-            const result = await this.pnaTrackingService.syncTrackingData(fromDate, toDate, onlyIngest);
+            const result = await this.pnaTrackingService.syncTrackingData(fromDate, toDate, onlyIngest, isLongSync);
 
             return {
                 success: true,

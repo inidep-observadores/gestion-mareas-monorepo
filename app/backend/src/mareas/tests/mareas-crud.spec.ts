@@ -64,8 +64,8 @@ describe('MareasService (CRUD)', () => {
     it('should complete full lifecycle (update existing stage and create new one)', async () => {
         const payload = {
             etapas: [
-                { id: 'existing-id', nroEtapa: 1, puertoZarpadaId: 'p1', puertoArriboId: 'p2', fechaZarpada: '2024-01-01T10:00:00Z', fechaArribo: '2024-01-08T10:00:00Z', tipoEtapa: TipoEtapa.MC },
-                { nroEtapa: 2, puertoZarpadaId: 'p2', fechaZarpada: '2024-01-10T10:00:00Z', tipoEtapa: TipoEtapa.MC }
+                { id: 'existing-id', nroEtapa: 1, puertoZarpadaId: 'p1', puertoArriboId: 'p2', fechaZarpada: '2024-01-01T10:00:00Z', fechaArribo: '2024-01-08T10:00:00Z', tipoEtapa: TipoEtapa.EC },
+                { nroEtapa: 2, puertoZarpadaId: 'p2', fechaZarpada: '2024-01-10T10:00:00Z', tipoEtapa: TipoEtapa.EC }
             ]
         };
 
