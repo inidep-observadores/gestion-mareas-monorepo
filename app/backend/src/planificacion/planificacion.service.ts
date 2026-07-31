@@ -210,6 +210,7 @@ export class PlanificacionService {
     const mareasDb = await this.prisma.marea.findMany({
       where: {
         activo: true,
+        estadoActual: { codigo: { not: MareaEstado.CANCELADA } },
         OR: [
           { fechaInicioObservador: { lte: endOfRange.toJSDate() }, fechaFinObservador: { gte: startOfRange.toJSDate() } },
           { fechaInicioObservador: { lte: endOfRange.toJSDate() }, fechaFinObservador: null },

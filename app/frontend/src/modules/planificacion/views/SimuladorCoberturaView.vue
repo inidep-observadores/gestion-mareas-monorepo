@@ -69,16 +69,24 @@
       <div class="flex flex-wrap items-center justify-between gap-4 p-4 rounded-xl border border-border bg-surface shadow-sm">
         <div class="flex flex-wrap items-center gap-4">
           <div class="flex items-center gap-2">
-            <div class="w-6 h-5 rounded bg-[#00FF00] border border-black/10"></div>
-            <span class="text-[11px] font-bold uppercase text-text-muted">Marea Real</span>
+            <div class="w-6 h-5 rounded bg-[#22c55e] border-2 border-[#16a34a]"></div>
+            <span class="text-[11px] font-bold uppercase text-text-muted">En Ejecución</span>
           </div>
           <div class="flex items-center gap-2">
-            <div class="w-6 h-5 rounded bg-[#ADD8E6] border border-black/10"></div>
-            <span class="text-[11px] font-bold uppercase text-text-muted">Licencia / Novedad</span>
+            <div class="w-6 h-5 rounded bg-[#dcfce7] border-2 border-[#86efac]"></div>
+            <span class="text-[11px] font-bold uppercase text-text-muted">Finalizada</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="w-6 h-5 rounded bg-[#e0f2fe] border-2 border-[#0ea5e9]"></div>
+            <span class="text-[11px] font-bold uppercase text-text-muted">Designada</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="w-6 h-5 rounded bg-surface-muted border-2 border-border"></div>
+            <span class="text-[11px] font-bold uppercase text-text-muted">Licencia</span>
           </div>
           <div class="flex items-center gap-2">
             <div class="w-6 h-5 rounded bg-primary/20 border-2 border-primary border-dashed"></div>
-            <span class="text-[11px] font-bold uppercase text-text-muted">Marea Simulada (Borrador)</span>
+            <span class="text-[11px] font-bold uppercase text-text-muted">Proyectada</span>
           </div>
           <div class="flex items-center gap-2">
             <div class="w-6 h-5 rounded bg-error border border-error animate-pulse"></div>
@@ -573,21 +581,21 @@ const renderTimeline = () => {
         const durStr = `[${durationDays}d]`;
 
         if (ev.mareaEstado === 'DESIGNADA') {
-          visClass = 'vis-item-designada border-2 border-[#ea580c] bg-[#ffedd5] text-[#ea580c] font-bold'; // Naranja
+          visClass = 'vis-item-designada border-2 border-[#0ea5e9] bg-[#e0f2fe] text-[#0369a1] font-bold'; // Celeste
           title = `${mareaCode} ${durStr} (Designada)`;
           isEditable = { updateTime: true, updateGroup: false, remove: false };
         } else if (ev.mareaEstado === 'EN_EJECUCION') {
-          visClass = 'vis-item-ejecucion border-2 border-[#16a34a] bg-[#dcfce7] text-[#16a34a] font-bold'; // Verde
+          visClass = 'vis-item-ejecucion border-2 border-[#16a34a] bg-[#22c55e] text-white font-bold'; // Verde Fuerte
           title = `${mareaCode} ${durStr} (Navegando)`;
           isEditable = { updateTime: true, updateGroup: false, remove: false };
         } else {
           // FINALIZADA, PROTOCOLIZADA, A_REASIGNAR, etc.
-          visClass = 'vis-item-navegando bg-surface-muted border border-border text-text-muted font-bold';
+          visClass = 'vis-item-navegando bg-[#dcfce7] border-2 border-[#86efac] text-[#15803d] font-bold opacity-80'; // Verde Atenuado
           title = `${mareaCode} ${durStr} (Finalizada)`;
           isEditable = false;
         }
       } else if (ev.estado === 'NOVEDAD') {
-        visClass = 'vis-item-novedad bg-[#ADD8E6] text-black font-bold';
+        visClass = 'vis-item-novedad bg-surface-muted border-2 border-border text-text-muted font-bold'; // Gris
         title = ev.codigoCorto || 'Licencia';
       } else if (ev.estado === 'CONFLICTO') {
         visClass = 'vis-item-conflicto bg-error text-white font-bold animate-pulse';
@@ -899,5 +907,46 @@ onBeforeUnmount(() => {
 :deep(.vis-time-axis .vis-grid.vis-minor),
 :deep(.vis-time-axis .vis-grid.vis-major) {
   border-color: var(--color-border, #e5e7eb) !important;
+}
+</style>
+
+<style scoped>
+:deep(.vis-item) {
+  border-radius: 4px;
+}
+:deep(.vis-item-designada) {
+  background-color: #e0f2fe !important;
+  border: 2px solid #0ea5e9 !important;
+  color: #0369a1 !important;
+}
+:deep(.vis-item-ejecucion) {
+  background-color: #22c55e !important;
+  border: 2px solid #16a34a !important;
+  color: #ffffff !important;
+}
+:deep(.vis-item-navegando) {
+  background-color: #dcfce7 !important;
+  border: 2px solid #86efac !important;
+  color: #15803d !important;
+  opacity: 0.8 !important;
+}
+:deep(.vis-item-novedad) {
+  background-color: #f3f4f6 !important;
+  border: 2px solid #d1d5db !important;
+  color: #6b7280 !important;
+}
+:deep(.vis-item-simulada) {
+  background-color: rgba(var(--color-primary), 0.2) !important;
+  border: 2px dashed rgb(var(--color-primary)) !important;
+  color: rgb(var(--color-primary)) !important;
+}
+:deep(.vis-item-conflicto) {
+  background-color: #ef4444 !important;
+  border: 2px solid #b91c1c !important;
+  color: #ffffff !important;
+}
+:deep(.vis-item-content) {
+  font-weight: bold !important;
+  padding: 4px 8px !important;
 }
 </style>
