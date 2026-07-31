@@ -198,8 +198,9 @@
           <!-- Timeline Container -->
           <div
             ref="timelineContainer"
-            @dragover.prevent
-            @drop="onDropTimeline"
+            @dragover.capture.prevent
+            @dragenter.capture.prevent
+            @drop.capture="onDropTimeline"
             class="w-full h-[65vh] bg-surface text-text rounded-xl border border-border shadow-inner"
           ></div>
         </div>
@@ -640,7 +641,7 @@ const renderTimeline = () => {
       updateTime: true,
       updateGroup: true,
       remove: true,
-      add: false,
+      add: true,
       overrideItems: false
     },
     showCurrentTime: false,
@@ -649,6 +650,10 @@ const renderTimeline = () => {
     end: visibleEnd,
     min: dataStart,
     max: dataEnd,
+    onAdd: (item: any, callback: any) => {
+      // Cancelamos la creación por doble clic nativa de vis-timeline
+      callback(null);
+    },
     onMoving: (item: any, callback: any) => {
       if (item.id && item.id.toString().startsWith('real-')) {
         const orig = currentItemsDataSet?.get(item.id) as any;
@@ -731,7 +736,6 @@ const renderTimeline = () => {
   timelineInstance = new Timeline(timelineContainer.value, currentItemsDataSet, groups, options);
 };
 
-
 // Drag & Drop HTML5 desde Sidebar a Timeline
 let draggedRecurso: RecursoMareaPendiente | null = null;
 
@@ -739,28 +743,50 @@ const onDragStartRecurso = (event: DragEvent, recurso: RecursoMareaPendiente) =>
   draggedRecurso = recurso;
   if (event.dataTransfer) {
     event.dataTransfer.effectAllowed = 'copy';
+    // Enviamos JSON por si vis-timeline lo intercepta, y también para leerlo directamente en el drop
+    event.dataTransfer.setData('application/json', JSON.stringify(recurso));
     event.dataTransfer.setData('text/plain', recurso.id);
   }
 };
 
 const onDropTimeline = (event: DragEvent) => {
-  if (!draggedRecurso || !timelineInstance) return;
+  event.preventDefault();
+  event.stopPropagation(); // Evitamos que vis-timeline procese el evento y falle
+  
+  // Intentar recuperar el recurso desde dataTransfer si la variable global falló
+  let recursoArrastrado = draggedRecurso;
+  if (!recursoArrastrado && event.dataTransfer) {
+    try {
+      const dataStr = event.dataTransfer.getData('application/json');
+      if (dataStr) {
+        recursoArrastrado = JSON.parse(dataStr);
+      }
+    } catch (e) {
+      console.error('Error parseando dataTransfer', e);
+    }
+  }
+
+  if (!recursoArrastrado || !timelineInstance) {
+    toast.error('No se pudo identificar el recurso arrastrado o el timeline no está listo');
+    return;
+  }
 
   const props = timelineInstance.getEventProperties(event);
   if (props && props.group) {
     const obsId = props.group;
-    const fechaInicio = props.time || new Date(selectedYear.value, selectedMonth.value - 1, 1);
-    const fechaFin = new Date(fechaInicio.getTime() + draggedRecurso.diasEstimados * 24 * 60 * 60 * 1000);
+    const rawTime = props.snappedTime || props.time;
+    const fechaInicio = rawTime ? new Date(rawTime) : new Date(selectedYear.value, selectedMonth.value - 1, 1);
+    const fechaFin = new Date(fechaInicio.getTime() + recursoArrastrado.diasEstimados * 24 * 60 * 60 * 1000);
 
     const nuevoItemSimulado: MareaSimuladaItem = {
       id: `sim-${Date.now()}`,
       observadorId: String(obsId),
-      pesqueriaId: draggedRecurso.pesqueriaId,
-      pesqueriaNombre: draggedRecurso.pesqueriaNombre,
-      buqueNombre: draggedRecurso.buqueNombre,
+      pesqueriaId: recursoArrastrado.pesqueriaId,
+      pesqueriaNombre: recursoArrastrado.pesqueriaNombre,
+      buqueNombre: recursoArrastrado.buqueNombre,
       fechaZarpada: fechaInicio,
       fechaArribo: fechaFin,
-      diasEstimados: draggedRecurso.diasEstimados,
+      diasEstimados: recursoArrastrado.diasEstimados,
       estado: 'PENDIENTE',
       tipoBloque: 'MAREA_SIMULADA'
     };
@@ -768,13 +794,23 @@ const onDropTimeline = (event: DragEvent) => {
     escenarioActual.value.items.push(nuevoItemSimulado);
 
     // Remover del sidebar pendiente
-    const idxRec = recursosPendientes.value.findIndex(r => r.id === draggedRecurso?.id);
+    const idxRec = recursosPendientes.value.findIndex(r => r.id === recursoArrastrado?.id);
     if (idxRec !== -1) {
       recursosPendientes.value.splice(idxRec, 1);
     }
 
-    renderTimeline();
-    toast.success(`Marea simulada "${draggedRecurso.pesqueriaNombre}" asignada en la línea de tiempo`);
+    // Actualizar DataSet directamente
+    currentItemsDataSet?.add({
+      id: nuevoItemSimulado.id,
+      group: nuevoItemSimulado.observadorId,
+      start: nuevoItemSimulado.fechaZarpada,
+      end: nuevoItemSimulado.fechaArribo,
+      content: `<div class="flex items-center gap-1 font-bold"><span class="text-[10px]">✨</span> ${nuevoItemSimulado.pesqueriaNombre} [${nuevoItemSimulado.diasEstimados}d] (Proyectada)</div>`,
+      className: 'vis-item-simulada border-2 border-dashed border-primary bg-primary/20 text-primary font-bold shadow-sm',
+      editable: { updateTime: true, updateGroup: true, remove: true }
+    });
+
+    toast.success(`Marea simulada "${recursoArrastrado.pesqueriaNombre}" asignada`);
   } else {
     toast.warning('Suelte el recurso dentro de la fila de un observador específico');
   }
