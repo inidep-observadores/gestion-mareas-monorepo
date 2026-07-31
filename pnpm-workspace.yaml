@@ -3,16 +3,17 @@ packages:
   - app/frontend
 
 allowBuilds:
-  '@google/genai': set this to true or false
-  '@nestjs/core': set this to true or false
-  '@prisma/engines': set this to true or false
-  bcrypt: set this to true or false
-  canvas: set this to true or false
-  esbuild: set this to true or false
-  msgpackr-extract: set this to true or false
-  prisma: set this to true or false
-  protobufjs: set this to true or false
-  unrs-resolver: set this to true or false
+  '@google/genai': true
+  '@nestjs/core': true
+  '@parcel/watcher': true
+  '@prisma/engines': true
+  bcrypt: true
+  canvas: true
+  esbuild: true
+  msgpackr-extract: true
+  prisma: true
+  protobufjs: true
+  unrs-resolver: true
 
 onlyBuiltDependencies:
   - '@nestjs/core'
