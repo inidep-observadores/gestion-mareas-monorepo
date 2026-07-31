@@ -936,9 +936,9 @@ onBeforeUnmount(() => {
   color: #6b7280 !important;
 }
 :deep(.vis-item-simulada) {
-  background-color: rgba(var(--color-primary), 0.2) !important;
-  border: 2px dashed rgb(var(--color-primary)) !important;
-  color: rgb(var(--color-primary)) !important;
+  background-color: rgba(59, 130, 246, 0.2) !important;
+  border: 2px dashed #3b82f6 !important;
+  color: #1d4ed8 !important;
 }
 :deep(.vis-item-conflicto) {
   background-color: #ef4444 !important;
