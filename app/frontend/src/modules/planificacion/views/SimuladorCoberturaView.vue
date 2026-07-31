@@ -831,11 +831,19 @@ const renderTimeline = () => {
       // Actualizar el estado borrador cuando el usuario mueve un bloque simulado
       const sim = escenarioActual.value.items.find(i => i.id === item.id);
       if (sim) {
-        sim.observadorId = item.group;
+        const obsCambiado = sim.observadorId !== String(item.group);
+        
+        sim.observadorId = String(item.group);
         sim.fechaZarpada = item.start;
         sim.fechaArribo = item.end;
+        
         callback(item);
-        toast.info(`Marea simulada movida a ${item.group ? 'nuevo observador' : 'hueco disponible'}`);
+        
+        if (obsCambiado) {
+          toast.info(`Marea simulada movida a un nuevo observador`);
+        } else {
+          toast.info('Fechas de la marea simulada actualizadas');
+        }
       } else if (item.id && item.id.toString().startsWith('real-')) {
         // Se permite ajustar longitud (y para DESIGNADAS, inicio) de mareas reales proyectadas
         const orig = currentItemsDataSet?.get(item.id) as any;
