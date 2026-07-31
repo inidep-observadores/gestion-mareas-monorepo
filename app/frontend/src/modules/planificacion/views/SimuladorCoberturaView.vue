@@ -240,6 +240,7 @@
           <div class="space-y-1.5">
             <label class="block text-xs font-bold text-text-muted">Pesquería (obligatorio)</label>
             <SearchableSelect 
+              ref="pesqueriaSelectRef"
               v-model="resourceForm.pesqueriaId" 
               :options="pesqueriaOptions" 
               :icon="WaveIcon" 
@@ -435,6 +436,8 @@ const resourceForm = ref({
 const isEditBlockModalOpen = ref(false);
 const editingBlockData = ref<MareaSimuladaItem | null>(null);
 
+const pesqueriaSelectRef = ref<any>(null);
+
 const abrirModalCrearRecurso = () => {
   editingRecursoId.value = null;
   resourceForm.value = {
@@ -444,6 +447,9 @@ const abrirModalCrearRecurso = () => {
     prioridad: 'MEDIA'
   };
   isResourceModalOpen.value = true;
+  nextTick(() => {
+    pesqueriaSelectRef.value?.focus();
+  });
 };
 
 const abrirModalEditarRecurso = (recurso: RecursoMareaPendiente) => {
@@ -455,6 +461,9 @@ const abrirModalEditarRecurso = (recurso: RecursoMareaPendiente) => {
     prioridad: recurso.prioridad || 'MEDIA'
   };
   isResourceModalOpen.value = true;
+  nextTick(() => {
+    pesqueriaSelectRef.value?.focus();
+  });
 };
 
 const eliminarRecurso = (id: string) => {
