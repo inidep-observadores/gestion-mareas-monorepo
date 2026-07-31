@@ -496,7 +496,8 @@ const conflictosDetectados = computed(() => {
 const fetchData = async () => {
   isLoading.value = true;
   try {
-    const data = await planificacionService.obtenerEventosSimulador(selectedYear.value, selectedMonth.value, 6);
+    // Fetches from January up to selectedMonth + 5 months
+    const data = await planificacionService.obtenerEventosSimulador(selectedYear.value, 1, selectedMonth.value + 5);
     datosSimulacion.value = data;
   } catch (error) {
     toast.error('Ocurrió un error al cargar los datos de planificación');
@@ -520,12 +521,30 @@ const renderTimeline = () => {
     timelineInstance = null;
   }
 
-  const start = new Date(selectedYear.value, selectedMonth.value - 1, 1);
-  // Extend timeline view to 6 months
-  const endMonthRaw = selectedMonth.value + 5;
-  const endYear = selectedYear.value + Math.floor((endMonthRaw - 1) / 12);
-  const endMonth = ((endMonthRaw - 1) % 12) + 1;
-  const end = new Date(endYear, endMonth, 0, 23, 59, 59);
+  // Limites totales de los datos para restringir scroll
+  const dataStart = new Date(selectedYear.value, 0, 1);
+  const dataEndMonthRaw = selectedMonth.value + 5;
+  const dataEndYear = selectedYear.value + Math.floor((dataEndMonthRaw - 1) / 12);
+  const dataEndMonth = ((dataEndMonthRaw - 1) % 12) + 1;
+  const dataEnd = new Date(dataEndYear, dataEndMonth, 0, 23, 59, 59);
+
+  // Ventana visible inicial (zoom)
+  let visibleStart: Date;
+  let visibleEnd: Date;
+  
+  if (selectedYear.value < currentDate.getFullYear()) {
+     // Si es año pasado, zoom en Diciembre del año seleccionado
+     visibleStart = new Date(selectedYear.value, 11, 1);
+     visibleEnd = new Date(selectedYear.value, 11, 31, 23, 59, 59);
+  } else if (selectedYear.value === currentDate.getFullYear()) {
+     // Si es año actual, zoom en el mes actual
+     visibleStart = new Date(selectedYear.value, currentDate.getMonth(), 1);
+     visibleEnd = new Date(selectedYear.value, currentDate.getMonth() + 1, 0, 23, 59, 59);
+  } else {
+     // Si es año futuro, zoom en el mes seleccionado
+     visibleStart = new Date(selectedYear.value, selectedMonth.value - 1, 1);
+     visibleEnd = new Date(selectedYear.value, selectedMonth.value, 0, 23, 59, 59);
+  }
 
   const groups = new DataSet(
     filteredObservadores.value.map(obs => ({
@@ -548,17 +567,23 @@ const renderTimeline = () => {
       let isEditable: boolean | { updateTime?: boolean, updateGroup?: boolean, remove?: boolean } = false;
 
       if (ev.estado === 'NAVEGANDO') {
-        if (ev.isProyectada) {
-          if (ev.mareaEstado === 'DESIGNADA') {
-            visClass = 'vis-item-designada border-2 border-[#ea580c] bg-[#ffedd5] text-[#ea580c] font-bold'; // Naranja (brand-600)
-          } else {
-            visClass = 'vis-item-ejecucion border-2 border-[#16a34a] bg-[#dcfce7] text-[#16a34a] font-bold'; // Verde
-          }
-          title = `${ev.detalle || 'Marea'} (Proyectada)`;
+        const mareaCode = ev.detalle || 'Marea';
+        const durationDays = Math.round((new Date(ev.endDate).getTime() - new Date(ev.startDate).getTime()) / 86400000) + 1;
+        const durStr = `[${durationDays}d]`;
+
+        if (ev.mareaEstado === 'DESIGNADA') {
+          visClass = 'vis-item-designada border-2 border-[#ea580c] bg-[#ffedd5] text-[#ea580c] font-bold'; // Naranja
+          title = `${mareaCode} ${durStr} (Designada)`;
+          isEditable = { updateTime: true, updateGroup: false, remove: false };
+        } else if (ev.mareaEstado === 'EN_EJECUCION') {
+          visClass = 'vis-item-ejecucion border-2 border-[#16a34a] bg-[#dcfce7] text-[#16a34a] font-bold'; // Verde
+          title = `${mareaCode} ${durStr} (Navegando)`;
           isEditable = { updateTime: true, updateGroup: false, remove: false };
         } else {
-          visClass = 'vis-item-navegando bg-[#00FF00] text-black font-bold';
-          title = 'Navegando';
+          // FINALIZADA, PROTOCOLIZADA, A_REASIGNAR, etc.
+          visClass = 'vis-item-navegando bg-surface-muted border border-border text-text-muted font-bold';
+          title = `${mareaCode} ${durStr} (Finalizada)`;
+          isEditable = false;
         }
       } else if (ev.estado === 'NOVEDAD') {
         visClass = 'vis-item-novedad bg-[#ADD8E6] text-black font-bold';
@@ -586,12 +611,13 @@ const renderTimeline = () => {
 
   // 2. Cargar items simulados (borradores)
   escenarioActual.value.items.forEach(sim => {
+    const duracionSim = Math.round((new Date(sim.fechaArribo).getTime() - new Date(sim.fechaZarpada).getTime()) / 86400000);
     itemsArray.push({
       id: sim.id,
       group: sim.observadorId ?? '',
       start: new Date(sim.fechaZarpada),
       end: new Date(sim.fechaArribo),
-      content: `<div class="flex items-center gap-1 font-bold"><span class="text-[10px]">✨</span> ${sim.pesqueriaNombre}</div>`,
+      content: `<div class="flex items-center gap-1 font-bold"><span class="text-[10px]">✨</span> ${sim.pesqueriaNombre} [${duracionSim}d] (Proyectada)</div>`,
       className: 'vis-item-simulada border-2 border-dashed border-primary bg-primary/20 text-primary font-bold shadow-sm',
       editable: { updateTime: true, updateGroup: true, remove: true }
     });
@@ -619,8 +645,31 @@ const renderTimeline = () => {
     },
     showCurrentTime: false,
     timeAxis: { scale: 'day', step: 1 },
-    start: start,
-    end: end,
+    start: visibleStart,
+    end: visibleEnd,
+    min: dataStart,
+    max: dataEnd,
+    onMoving: (item: any, callback: any) => {
+      if (item.id && item.id.toString().startsWith('real-')) {
+        const orig = currentItemsDataSet?.get(item.id) as any;
+        if (orig && orig.className && orig.className.includes('vis-item-ejecucion')) {
+          // Bloquear fecha de inicio y grupo para las mareas en ejecución (solo permitir cambiar fin)
+          item.start = orig.start;
+          item.group = orig.group;
+        } else if (orig && orig.className && orig.className.includes('vis-item-designada')) {
+          // Si es designada, impedimos cambio de grupo de items reales
+          item.group = orig.group;
+        }
+      }
+
+      // Actualizar interactivamente el texto de la duración
+      if (item.content && item.start && item.end) {
+        const newDuration = Math.round((new Date(item.end).getTime() - new Date(item.start).getTime()) / 86400000);
+        item.content = item.content.replace(/\[\d+d\]/, `[${newDuration}d]`);
+      }
+
+      callback(item);
+    },
     onUpdate: (item: any, callback: any) => {
       const sim = escenarioActual.value.items.find(i => i.id === item.id);
       if (sim) {
@@ -630,6 +679,12 @@ const renderTimeline = () => {
       callback(null); // we handle it ourselves to not let vis-timeline show default prompt
     },
     onMove: (item: any, callback: any) => {
+      // Nos aseguramos de actualizar también al soltar
+      if (item.content && item.start && item.end) {
+        const newDuration = Math.round((new Date(item.end).getTime() - new Date(item.start).getTime()) / 86400000);
+        item.content = item.content.replace(/\[\d+d\]/, `[${newDuration}d]`);
+      }
+
       // Actualizar el estado borrador cuando el usuario mueve un bloque simulado
       const sim = escenarioActual.value.items.find(i => i.id === item.id);
       if (sim) {
@@ -638,10 +693,22 @@ const renderTimeline = () => {
         sim.fechaArribo = item.end;
         callback(item);
         toast.info(`Marea simulada movida a ${item.group ? 'nuevo observador' : 'hueco disponible'}`);
-      } else if (item.id.startsWith('real-')) {
-        // Se permite ajustar longitud de mareas reales proyectadas (DESIGNADA/EN_EJECUCION)
+      } else if (item.id && item.id.toString().startsWith('real-')) {
+        // Se permite ajustar longitud (y para DESIGNADAS, inicio) de mareas reales proyectadas
+        const orig = currentItemsDataSet?.get(item.id) as any;
+        if (orig) {
+          if (orig.className && orig.className.includes('vis-item-ejecucion')) {
+             if (item.start.getTime() !== orig.start.getTime() || item.group !== orig.group) {
+                // Debería estar prevenido por onMoving, pero por seguridad:
+                item.start = orig.start;
+                item.group = orig.group;
+             }
+             toast.info('Se ajustó la fecha de fin de la marea en ejecución');
+          } else {
+             toast.info('Se ajustó la marea designada en la simulación');
+          }
+        }
         callback(item);
-        toast.info('Se ajustó la duración de la marea proyectada (solo en simulación)');
       } else {
         // Bloque inamovible
         toast.warning('No es posible mover mareas finalizadas ni licencias');

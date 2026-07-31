@@ -289,7 +289,7 @@ export class PlanificacionService {
           isFinSemana
         );
 
-        if (!estadoDto || estadoDto.estado === 'LIBRE' || estadoDto.estado === 'FIN_SEMANA') {
+        if (!estadoDto || estadoDto.estado === 'LIBRE' || estadoDto.estado === 'FIN_SEMANA' || estadoDto.estado === 'FERIADO') {
           if (currentState && currentStartDate !== null && currentData) {
             eventos.push(this.crearEventoTimeline(obs.id, currentState, currentStartDate, startOfRange.plus({ days: i - 1 }).toJSDate(), currentData));
             currentState = null;
@@ -306,11 +306,13 @@ export class PlanificacionService {
           currentStartDate = currentDate.toJSDate();
           currentData = estadoDto;
           
-          // Agregamos metadata extra para el timeline de simulación (si era proyectada)
-          const originalMarea = obsMareas.find(m => m.id === estadoDto.referenciaId || m.etapas.some((e: any) => e.id === estadoDto.referenciaId) || estadoDto.referenciaId?.startsWith('proyectada-'));
-          if (originalMarea && (originalMarea.estadoActual.codigo === MareaEstado.DESIGNADA || originalMarea.estadoActual.codigo === MareaEstado.EN_EJECUCION)) {
-             currentData.isProyectada = true;
+          // Agregamos metadata extra para el timeline de simulación
+          const originalMarea = obsMareas.find(m => m.id === estadoDto.referenciaId || m.etapas.some((e: any) => e.id === estadoDto.referenciaId) || (estadoDto.referenciaId?.startsWith('proyectada-') && estadoDto.referenciaId === `proyectada-${m.id}`));
+          if (originalMarea) {
              currentData.mareaEstado = originalMarea.estadoActual.codigo;
+             if (originalMarea.estadoActual.codigo === MareaEstado.DESIGNADA || originalMarea.estadoActual.codigo === MareaEstado.EN_EJECUCION) {
+                currentData.isProyectada = true;
+             }
           }
         }
       }
