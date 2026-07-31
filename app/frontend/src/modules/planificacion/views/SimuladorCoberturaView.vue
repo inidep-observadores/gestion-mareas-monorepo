@@ -963,18 +963,18 @@ onBeforeUnmount(() => {
 }
 
 /* DARK MODE */
-:global(.dark) :deep(.vis-item-designada) { background-color: rgba(14, 165, 233, 0.2) !important; border-color: #0284c7 !important; color: #bae6fd !important; }
-:global(.dark) .legend-designada { background-color: rgba(14, 165, 233, 0.2); border-color: #0284c7; }
+.dark :deep(.vis-item-designada) { background-color: rgba(14, 165, 233, 0.2) !important; border-color: #0284c7 !important; color: #bae6fd !important; }
+.dark .legend-designada { background-color: rgba(14, 165, 233, 0.2); border-color: #0284c7; }
 
-:global(.dark) :deep(.vis-item-ejecucion) { background-color: #15803d !important; border-color: #166534 !important; color: #ffffff !important; }
-:global(.dark) .legend-ejecucion { background-color: #15803d; border-color: #166534; }
+.dark :deep(.vis-item-ejecucion) { background-color: #15803d !important; border-color: #166534 !important; color: #ffffff !important; }
+.dark .legend-ejecucion { background-color: #15803d; border-color: #166534; }
 
-:global(.dark) :deep(.vis-item-navegando) { background-color: rgba(22, 163, 74, 0.2) !important; border-color: #15803d !important; color: #86efac !important; }
-:global(.dark) .legend-finalizada { background-color: rgba(22, 163, 74, 0.2); border-color: #15803d; }
+.dark :deep(.vis-item-navegando) { background-color: rgba(22, 163, 74, 0.2) !important; border-color: #15803d !important; color: #86efac !important; }
+.dark .legend-finalizada { background-color: rgba(22, 163, 74, 0.2); border-color: #15803d; }
 
-:global(.dark) :deep(.vis-item-novedad) { background-color: rgba(107, 114, 128, 0.2) !important; border-color: #4b5563 !important; color: #d1d5db !important; }
-:global(.dark) .legend-licencia { background-color: rgba(107, 114, 128, 0.2); border-color: #4b5563; }
+.dark :deep(.vis-item-novedad) { background-color: rgba(107, 114, 128, 0.2) !important; border-color: #4b5563 !important; color: #d1d5db !important; }
+.dark .legend-licencia { background-color: rgba(107, 114, 128, 0.2); border-color: #4b5563; }
 
-:global(.dark) :deep(.vis-item-simulada) { background-color: rgba(59, 130, 246, 0.15) !important; border-color: #3b82f6 !important; color: #93c5fd !important; }
-:global(.dark) .legend-proyectada { background-color: rgba(59, 130, 246, 0.15); border-color: #3b82f6; }
+.dark :deep(.vis-item-simulada) { background-color: rgba(59, 130, 246, 0.15) !important; border-color: #3b82f6 !important; color: #93c5fd !important; }
+.dark .legend-proyectada { background-color: rgba(59, 130, 246, 0.15); border-color: #3b82f6; }
 </style>
