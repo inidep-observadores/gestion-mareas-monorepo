@@ -287,7 +287,7 @@
     <BaseModal 
       :show="isEditBlockModalOpen" 
       @close="cerrarModalEditarBloque" 
-      maxWidth="lg" 
+      maxWidth="xl" 
       title="Editar Marea Simulada"
     >
       <div v-form-nav class="bg-surface border border-border shadow-theme-xs flex flex-col rounded-2xl overflow-hidden p-6">
