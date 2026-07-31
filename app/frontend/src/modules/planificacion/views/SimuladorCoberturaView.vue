@@ -548,12 +548,13 @@ const guardarEdicionBloque = () => {
     escenarioActual.value.items[idx] = { ...editingBlockData.value };
     
     // Actualizar DataSet
+    const finInclusivo = new Date(fechaArribo.getTime() - 86400000);
     currentItemsDataSet?.update({
       id: editingBlockData.value.id,
       start: fechaZarpada,
       end: fechaArribo,
       content: `<div class="flex items-center gap-1 font-bold"><span class="text-[10px]">✨</span> ${editingBlockData.value.pesqueriaNombre} [${editingBlockData.value.diasEstimados}d] (Proyectada)</div>`,
-      title: `<strong>Inicio:</strong> ${new Date(fechaZarpada).toLocaleDateString('es-AR')}<br><strong>Fin:</strong> ${new Date(fechaArribo).toLocaleDateString('es-AR')}`
+      title: `<strong>Inicio:</strong> ${new Date(fechaZarpada).toLocaleDateString('es-AR')}<br><strong>Fin:</strong> ${finInclusivo.toLocaleDateString('es-AR')}`
     });
 
     toast.success('Marea simulada actualizada');
@@ -753,13 +754,14 @@ const renderTimeline = () => {
   // 2. Cargar items simulados (borradores)
   escenarioActual.value.items.forEach(sim => {
     const duracionSim = Math.round((new Date(sim.fechaArribo).getTime() - new Date(sim.fechaZarpada).getTime()) / 86400000);
+    const finInclusivo = new Date(new Date(sim.fechaArribo).getTime() - 86400000);
     itemsArray.push({
       id: sim.id,
       group: sim.observadorId ?? '',
       start: new Date(sim.fechaZarpada),
       end: new Date(sim.fechaArribo),
       content: `<div class="flex items-center gap-1 font-bold"><span class="text-[10px]">✨</span> ${sim.pesqueriaNombre} [${duracionSim}d] (Proyectada)</div>`,
-      title: `<strong>Inicio:</strong> ${new Date(sim.fechaZarpada).toLocaleDateString('es-AR')}<br><strong>Fin:</strong> ${new Date(sim.fechaArribo).toLocaleDateString('es-AR')}`,
+      title: `<strong>Inicio:</strong> ${new Date(sim.fechaZarpada).toLocaleDateString('es-AR')}<br><strong>Fin:</strong> ${finInclusivo.toLocaleDateString('es-AR')}`,
       className: 'vis-item-simulada border-2 border-dashed border-primary bg-primary/20 text-primary font-bold shadow-sm',
       editable: { updateTime: true, updateGroup: true, remove: true }
     });
@@ -821,6 +823,8 @@ const renderTimeline = () => {
       if (item.content && item.start && item.end) {
         const newDuration = Math.round((new Date(item.end).getTime() - new Date(item.start).getTime()) / 86400000);
         item.content = item.content.replace(/\[\d+d\]/, `[${newDuration}d]`);
+        const finInclusivo = new Date(new Date(item.end).getTime() - 86400000);
+        item.title = `<strong>Inicio:</strong> ${new Date(item.start).toLocaleDateString('es-AR')}<br><strong>Fin:</strong> ${finInclusivo.toLocaleDateString('es-AR')}`;
       }
 
       callback(item);
@@ -838,7 +842,8 @@ const renderTimeline = () => {
       if (item.content && item.start && item.end) {
         const newDuration = Math.round((new Date(item.end).getTime() - new Date(item.start).getTime()) / 86400000);
         item.content = item.content.replace(/\[\d+d\]/, `[${newDuration}d]`);
-        item.title = `<strong>Inicio:</strong> ${new Date(item.start).toLocaleDateString('es-AR')}<br><strong>Fin:</strong> ${new Date(item.end).toLocaleDateString('es-AR')}`;
+        const finInclusivo = new Date(new Date(item.end).getTime() - 86400000);
+        item.title = `<strong>Inicio:</strong> ${new Date(item.start).toLocaleDateString('es-AR')}<br><strong>Fin:</strong> ${finInclusivo.toLocaleDateString('es-AR')}`;
       }
 
       // Actualizar el estado borrador cuando el usuario mueve un bloque simulado
@@ -976,13 +981,14 @@ const onDropTimeline = (event: DragEvent) => {
     }
 
     // Actualizar DataSet directamente
+    const finInclusivo = new Date(nuevoItemSimulado.fechaArribo.getTime() - 86400000);
     currentItemsDataSet?.add({
       id: nuevoItemSimulado.id,
       group: nuevoItemSimulado.observadorId,
       start: nuevoItemSimulado.fechaZarpada,
       end: nuevoItemSimulado.fechaArribo,
       content: `<div class="flex items-center gap-1 font-bold"><span class="text-[10px]">✨</span> ${nuevoItemSimulado.pesqueriaNombre} [${nuevoItemSimulado.diasEstimados}d] (Proyectada)</div>`,
-      title: `<strong>Inicio:</strong> ${new Date(nuevoItemSimulado.fechaZarpada).toLocaleDateString('es-AR')}<br><strong>Fin:</strong> ${new Date(nuevoItemSimulado.fechaArribo).toLocaleDateString('es-AR')}`,
+      title: `<strong>Inicio:</strong> ${new Date(nuevoItemSimulado.fechaZarpada).toLocaleDateString('es-AR')}<br><strong>Fin:</strong> ${finInclusivo.toLocaleDateString('es-AR')}`,
       className: 'vis-item-simulada',
       editable: { updateTime: true, updateGroup: true, remove: true }
     });
