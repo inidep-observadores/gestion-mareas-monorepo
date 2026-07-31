@@ -8,7 +8,7 @@ export interface MareaSimuladaItem {
   observadorNombre?: string;
   pesqueriaId: string;
   pesqueriaNombre: string;
-  buqueId: string | null;
+  buqueId?: string | null;
   buqueNombre?: string;
   puertoZarpadaId?: string;
   puertoZarpadaNombre?: string;
