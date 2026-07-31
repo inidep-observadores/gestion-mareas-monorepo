@@ -151,6 +151,7 @@
               :key="recurso.id"
               draggable="true"
               @dragstart="onDragStartRecurso($event, recurso)"
+              @dblclick="abrirModalEditarRecurso(recurso)"
               class="p-3.5 rounded-xl border border-border bg-surface hover:bg-surface-muted hover:border-primary/50 transition-all cursor-grab active:cursor-grabbing shadow-sm group relative"
             >
               <div class="flex items-center justify-between mb-1.5 pr-14 relative">
@@ -228,126 +229,114 @@
     </div>
 
     <!-- Modal Crear/Editar Recurso -->
-    <Dialog :open="isResourceModalOpen" @close="cerrarModalRecurso" class="relative z-50">
-      <div class="fixed inset-0 bg-black/30 backdrop-blur-sm" aria-hidden="true" />
-      <div class="fixed inset-0 flex w-screen items-center justify-center p-4">
-        <DialogPanel class="w-full max-w-md rounded-2xl bg-surface border border-border p-6 shadow-xl">
-          <div class="flex items-center justify-between mb-4">
-            <DialogTitle class="text-lg font-black text-text">
-              {{ editingRecursoId ? 'Editar Requerimiento' : 'Crear Requerimiento' }}
-            </DialogTitle>
-            <button @click="cerrarModalRecurso" class="p-1 rounded-md text-text-muted hover:bg-surface-muted transition">
-              <XIcon class="w-5 h-5" />
-            </button>
+    <BaseModal 
+      :show="isResourceModalOpen" 
+      @close="cerrarModalRecurso" 
+      maxWidth="md" 
+      :title="editingRecursoId ? 'Editar Requerimiento' : 'Crear Requerimiento'"
+    >
+      <div v-form-nav class="bg-surface border border-border shadow-theme-xs flex flex-col rounded-2xl overflow-hidden p-6">
+        <div class="space-y-4" v-if="!loadingCatalogs">
+          <div class="space-y-1.5">
+            <label class="block text-xs font-bold text-text-muted">Pesquería (obligatorio)</label>
+            <SearchableSelect 
+              v-model="resourceForm.pesqueriaId" 
+              :options="pesqueriaOptions" 
+              :icon="WaveIcon" 
+              placeholder="Seleccione pesquería..." 
+            />
           </div>
-          
-          <div class="space-y-4" v-if="!loadingCatalogs">
+          <div class="space-y-1.5">
+            <label class="block text-xs font-bold text-text-muted">Buque (opcional)</label>
+            <SearchableSelect 
+              v-model="resourceForm.buqueId" 
+              :options="buqueOptions" 
+              :icon="ShipIcon" 
+              placeholder="Seleccione buque..." 
+              @change="handleBuqueChange"
+            />
+          </div>
+          <div class="grid grid-cols-2 gap-4">
             <div class="space-y-1.5">
-              <label class="block text-xs font-bold text-text-muted">Pesquería (obligatorio)</label>
-              <SearchableSelect 
-                v-model="resourceForm.pesqueriaId" 
-                :options="pesqueriaOptions" 
-                :icon="WaveIcon" 
-                placeholder="Seleccione pesquería..." 
-              />
+              <label class="block text-xs font-bold text-text-muted">Días Estimados</label>
+              <input v-model="resourceForm.diasEstimados" type="number" class="w-full px-4 py-2.5 bg-surface border rounded-lg text-sm text-text outline-none focus:border-primary focus:ring-3 focus:ring-primary/10 transition-all shadow-theme-xs" />
             </div>
             <div class="space-y-1.5">
-              <label class="block text-xs font-bold text-text-muted">Buque (opcional)</label>
-              <SearchableSelect 
-                v-model="resourceForm.buqueId" 
-                :options="buqueOptions" 
-                :icon="ShipIcon" 
-                placeholder="Seleccione buque..." 
-                @change="handleBuqueChange"
-              />
-            </div>
-            <div class="grid grid-cols-2 gap-4">
-              <div class="space-y-1.5">
-                <label class="block text-xs font-bold text-text-muted">Días Estimados</label>
-                <input v-model="resourceForm.diasEstimados" type="number" class="w-full h-10 px-3 rounded-xl border border-border bg-surface text-sm text-text focus:border-primary outline-none" />
-              </div>
-              <div class="space-y-1.5">
-                <label class="block text-xs font-bold text-text-muted">Prioridad</label>
-                <select v-model="resourceForm.prioridad" class="w-full h-10 px-3 rounded-xl border border-border bg-surface text-sm text-text focus:border-primary outline-none">
-                  <option value="ALTA">Alta</option>
-                  <option value="MEDIA">Media</option>
-                  <option value="BAJA">Baja</option>
-                </select>
-              </div>
+              <label class="block text-xs font-bold text-text-muted">Prioridad</label>
+              <select v-model="resourceForm.prioridad" class="w-full bg-surface border border-border rounded-lg px-4 py-2.5 text-sm font-bold text-text outline-none focus:border-primary focus:ring-3 focus:ring-primary/10 transition-colors shadow-theme-xs">
+                <option value="ALTA">Alta</option>
+                <option value="MEDIA">Media</option>
+                <option value="BAJA">Baja</option>
+              </select>
             </div>
           </div>
-          <div v-else class="flex items-center justify-center py-10">
-            <div class="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
-          </div>
-          
-          <div class="mt-6 flex justify-end gap-3">
-            <button @click="cerrarModalRecurso" class="px-4 py-2 text-sm font-bold text-text bg-surface-muted rounded-xl hover:bg-border transition">Cancelar</button>
-            <button @click="guardarRecurso" :disabled="loadingCatalogs" class="px-4 py-2 text-sm font-bold text-white bg-primary rounded-xl hover:bg-primary/90 transition disabled:opacity-50">Guardar</button>
-          </div>
-        </DialogPanel>
+        </div>
+        <div v-else class="flex items-center justify-center py-10">
+          <div class="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+        </div>
+        
+        <div class="mt-8 pt-6 flex items-center justify-end border-t border-border gap-3">
+          <button @click="cerrarModalRecurso" class="px-6 py-3 text-xs font-black uppercase tracking-widest text-text-muted hover:text-error transition-all">Cancelar</button>
+          <button @click="guardarRecurso" :disabled="loadingCatalogs" data-allow-enter class="px-8 py-3 bg-primary hover:bg-primary-hover text-primary-fg rounded-lg text-xs font-black uppercase tracking-widest shadow-theme-xs shadow-primary/20 transition-all active:scale-95 disabled:opacity-50">Guardar</button>
+        </div>
       </div>
-    </Dialog>
+    </BaseModal>
 
     <!-- Modal Editar Bloque Simulado -->
-    <Dialog :open="isEditBlockModalOpen" @close="cerrarModalEditarBloque" class="relative z-50">
-      <div class="fixed inset-0 bg-black/30 backdrop-blur-sm" aria-hidden="true" />
-      <div class="fixed inset-0 flex w-screen items-center justify-center p-4">
-        <DialogPanel class="w-full max-w-md rounded-2xl bg-surface border border-border p-6 shadow-xl">
-          <div class="flex items-center justify-between mb-4">
-            <DialogTitle class="text-lg font-black text-text">Editar Marea Simulada</DialogTitle>
-            <button @click="cerrarModalEditarBloque" class="p-1 rounded-md text-text-muted hover:bg-surface-muted transition">
-              <XIcon class="w-5 h-5" />
-            </button>
+    <BaseModal 
+      :show="isEditBlockModalOpen" 
+      @close="cerrarModalEditarBloque" 
+      maxWidth="md" 
+      title="Editar Marea Simulada"
+    >
+      <div v-form-nav class="bg-surface border border-border shadow-theme-xs flex flex-col rounded-2xl overflow-hidden p-6">
+        <div v-if="editingBlockData" class="space-y-4">
+          <div class="space-y-1.5">
+            <label class="block text-xs font-bold text-text-muted">Pesquería</label>
+            <SearchableSelect 
+              v-model="editingBlockData.pesqueriaId" 
+              :options="pesqueriaOptions" 
+              :icon="WaveIcon" 
+              placeholder="Seleccione pesquería..." 
+            />
           </div>
-          
-          <div v-if="editingBlockData" class="space-y-4">
+          <div class="space-y-1.5">
+            <label class="block text-xs font-bold text-text-muted">Buque</label>
+            <SearchableSelect 
+              v-model="editingBlockData.buqueId" 
+              :options="buqueOptions" 
+              :icon="ShipIcon" 
+              placeholder="Seleccione buque..." 
+            />
+          </div>
+          <div class="grid grid-cols-2 gap-4">
             <div class="space-y-1.5">
-              <label class="block text-xs font-bold text-text-muted">Pesquería</label>
-              <SearchableSelect 
-                v-model="editingBlockData.pesqueriaId" 
-                :options="pesqueriaOptions" 
-                :icon="WaveIcon" 
-                placeholder="Seleccione pesquería..." 
-              />
+              <label class="block text-xs font-bold text-text-muted">Días Estimados</label>
+              <input v-model="editingBlockData.diasEstimados" type="number" class="w-full px-4 py-2.5 bg-surface border rounded-lg text-sm text-text outline-none focus:border-primary focus:ring-3 focus:ring-primary/10 transition-all shadow-theme-xs" />
             </div>
             <div class="space-y-1.5">
-              <label class="block text-xs font-bold text-text-muted">Buque</label>
-              <SearchableSelect 
-                v-model="editingBlockData.buqueId" 
-                :options="buqueOptions" 
-                :icon="ShipIcon" 
-                placeholder="Seleccione buque..." 
-              />
-            </div>
-            <div class="grid grid-cols-2 gap-4">
-              <div class="space-y-1.5">
-                <label class="block text-xs font-bold text-text-muted">Días Estimados</label>
-                <input v-model="editingBlockData.diasEstimados" type="number" class="w-full h-10 px-3 rounded-xl border border-border bg-surface text-sm text-text focus:border-primary outline-none" />
-              </div>
-              <div class="space-y-1.5">
-                <label class="block text-xs font-bold text-text-muted">Prioridad</label>
-                <select v-model="editingBlockData.prioridad" class="w-full h-10 px-3 rounded-xl border border-border bg-surface text-sm text-text focus:border-primary outline-none">
-                  <option value="ALTA">Alta</option>
-                  <option value="MEDIA">Media</option>
-                  <option value="BAJA">Baja</option>
-                </select>
-              </div>
+              <label class="block text-xs font-bold text-text-muted">Prioridad</label>
+              <select v-model="editingBlockData.prioridad" class="w-full bg-surface border border-border rounded-lg px-4 py-2.5 text-sm font-bold text-text outline-none focus:border-primary focus:ring-3 focus:ring-primary/10 transition-colors shadow-theme-xs">
+                <option value="ALTA">Alta</option>
+                <option value="MEDIA">Media</option>
+                <option value="BAJA">Baja</option>
+              </select>
             </div>
           </div>
-          
-          <div class="mt-6 flex justify-between gap-3">
-            <button @click="devolverRecursoPendiente" class="px-4 py-2 text-sm font-bold text-error bg-error/10 rounded-xl hover:bg-error/20 transition flex items-center gap-2">
-              <TrashIcon class="w-4 h-4" />
-              Quitar del Timeline
-            </button>
-            <div class="flex gap-2">
-              <button @click="cerrarModalEditarBloque" class="px-4 py-2 text-sm font-bold text-text bg-surface-muted rounded-xl hover:bg-border transition">Cancelar</button>
-              <button @click="guardarEdicionBloque" class="px-4 py-2 text-sm font-bold text-white bg-primary rounded-xl hover:bg-primary/90 transition">Guardar</button>
-            </div>
+        </div>
+        
+        <div class="mt-8 pt-6 flex items-center justify-between border-t border-border gap-3">
+          <button @click="devolverRecursoPendiente" class="px-4 py-3 text-xs font-black uppercase tracking-widest text-error hover:bg-error/10 rounded-lg transition-all flex items-center gap-2">
+            <TrashIcon class="w-4 h-4" />
+            Quitar del Timeline
+          </button>
+          <div class="flex gap-2">
+            <button @click="cerrarModalEditarBloque" class="px-6 py-3 text-xs font-black uppercase tracking-widest text-text-muted hover:text-text transition-all">Cancelar</button>
+            <button @click="guardarEdicionBloque" data-allow-enter class="px-8 py-3 bg-primary hover:bg-primary-hover text-primary-fg rounded-lg text-xs font-black uppercase tracking-widest shadow-theme-xs shadow-primary/20 transition-all active:scale-95">Guardar</button>
           </div>
-        </DialogPanel>
+        </div>
       </div>
-    </Dialog>
+    </BaseModal>
   </PlanificacionDashboardLayout>
 </template>
 
@@ -357,7 +346,7 @@ import PlanificacionDashboardLayout from '../layouts/PlanificacionDashboardLayou
 import BackButton from '@/components/common/BackButton.vue';
 import SearchInput from '@/components/ui/SearchInput.vue';
 import SearchableSelect from '@/components/common/SearchableSelect.vue';
-import { Dialog, DialogPanel, DialogTitle } from '@headlessui/vue';
+import BaseModal from '@/components/common/BaseModal.vue';
 import {
   ChevronDownIcon,
   ShipIcon,
