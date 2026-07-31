@@ -1,4 +1,4 @@
-import { Controller, Get, Param, ParseIntPipe, Post, Body } from '@nestjs/common';
+import { Controller, Get, Param, ParseIntPipe, Post, Body, Query } from '@nestjs/common';
 import { PlanificacionService } from './planificacion.service';
 import { BatchUpsertRequerimientosDto } from './dto/requerimientos.dto';
 import { BatchUpsertExperienciaDto } from './dto/experiencia.dto';
@@ -32,5 +32,18 @@ export class PlanificacionController {
   @Auth(ValidRoles.admin, ValidRoles.planificador)
   async upsertExperienciaObservadores(@Body() dto: BatchUpsertExperienciaDto) {
     return this.planificacionService.upsertExperienciaObservadoresBatch(dto);
+  }
+
+  @Get('simulador/eventos')
+  @Auth(ValidRoles.admin, ValidRoles.planificador, ValidRoles.coordinador)
+  async obtenerEventosSimulador(
+    @Query('year') yearParam?: string,
+    @Query('month') monthParam?: string,
+    @Query('horizonMonths') horizonParam?: string,
+  ) {
+    const year = yearParam ? parseInt(yearParam, 10) : new Date().getFullYear();
+    const month = monthParam ? parseInt(monthParam, 10) : new Date().getMonth() + 1;
+    const horizon = horizonParam ? parseInt(horizonParam, 10) : 6;
+    return this.planificacionService.obtenerEventosSimulador(year, month, horizon);
   }
 }

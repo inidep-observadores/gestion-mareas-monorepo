@@ -35,5 +35,15 @@ export const planificacionService = {
   async upsertExperienciaObservadoresBatch(dto: BatchUpsertExperienciaDto): Promise<{ count: number }> {
     const response = await httpClient.post<{ count: number }>('/planificacion/experiencia-observadores', dto);
     return response.data;
+  },
+
+  /**
+   * Obtiene la matriz de eventos consolidados para el Simulador de Cobertura
+   */
+  async obtenerEventosSimulador(year: number, month: number, horizonMonths = 6): Promise<any> {
+    const response = await httpClient.get<any>('/planificacion/simulador/eventos', {
+      params: { year, month, horizonMonths }
+    });
+    return response.data;
   }
 };

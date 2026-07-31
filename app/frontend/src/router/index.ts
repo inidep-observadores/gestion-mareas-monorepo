@@ -244,6 +244,16 @@ const router = createRouter({
         roles: [ValidRoles.admin, ValidRoles.planificador],
       },
     },
+    {
+      path: '/planificacion/simulador',
+      name: 'SimuladorCobertura',
+      component: () => import('@/modules/planificacion/views/SimuladorCoberturaView.vue'),
+      meta: {
+        title: 'Simulador de Cobertura',
+        requiresAuth: true,
+        roles: [ValidRoles.admin, ValidRoles.planificador],
+      },
+    },
     // Admin Module
     {
       path: '/admin',

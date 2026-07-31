@@ -28,6 +28,13 @@
             :icon="UserGroupIcon"
             color="primary"
           />
+          <PlanificacionHomeCard
+            title="Simulador de Cobertura"
+            description="Lienzo interactivo para proyectar y simular asignaciones de mareas en la línea de tiempo."
+            to="/planificacion/simulador"
+            :icon="CalenderIcon"
+            color="success"
+          />
         </div>
       </section>
 

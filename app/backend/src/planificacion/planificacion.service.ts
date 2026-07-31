@@ -1,5 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { DateTime } from 'luxon';
+import { MareaEstado } from '../mareas/mareas.constants';
+import { evaluarEstadoDia } from '../utils/estado-observador.util';
 import { BatchUpsertRequerimientosDto } from './dto/requerimientos.dto';
 import { BatchUpsertExperienciaDto } from './dto/experiencia.dto';
 
@@ -161,5 +164,179 @@ export class PlanificacionService {
       this.logger.log(`Actualización de experiencia completada. Modificados: ${upsertedCount}, Eliminados: ${deletedCount}`);
       return { count: upsertedCount };
     });
+  }
+
+  /**
+   * Obtiene y evalúa los eventos (mareas, novedades, feriados) de los observadores
+   * para representarlos en el Simulador de Cobertura (Timeline).
+   * Genera bloques agrupados por estado continuo.
+   */
+  async obtenerEventosSimulador(year: number, month: number, horizonMonths: number = 6) {
+    const startOfRange = DateTime.utc(year, month, 1);
+    const endOfRange = startOfRange.plus({ months: horizonMonths }).minus({ seconds: 1 });
+
+    const observadores = await this.prisma.observador.findMany({
+      where: { activo: true },
+      select: { id: true, nombre: true, apellido: true, codigoInterno: true },
+      orderBy: [{ apellido: 'asc' }, { nombre: 'asc' }],
+    });
+
+    const feriadosDb = await this.prisma.feriado.findMany({
+      where: {
+        fecha: {
+          gte: startOfRange.toJSDate(),
+          lte: endOfRange.toJSDate(),
+        },
+      },
+    });
+    const feriados: Record<string, string> = {};
+    feriadosDb.forEach(f => {
+      const fd = DateTime.fromJSDate(f.fecha, { zone: 'utc' });
+      feriados[`${fd.year}-${fd.month}-${fd.day}`] = f.nombre;
+    });
+
+    const novedadesDb = await this.prisma.observadorNovedad.findMany({
+      where: {
+        estadoAprobacion: 'APROBADA',
+        fechaInicio: { lte: endOfRange.toJSDate() },
+        OR: [
+          { fechaFin: { gte: startOfRange.toJSDate() } },
+          { fechaFin: null },
+        ],
+      },
+      include: { tipoNovedad: true }
+    });
+
+    const mareasDb = await this.prisma.marea.findMany({
+      where: {
+        activo: true,
+        OR: [
+          { fechaInicioObservador: { lte: endOfRange.toJSDate() }, fechaFinObservador: { gte: startOfRange.toJSDate() } },
+          { fechaInicioObservador: { lte: endOfRange.toJSDate() }, fechaFinObservador: null },
+          {
+            etapas: {
+              some: {
+                fechaZarpada: { lte: endOfRange.toJSDate() },
+                OR: [
+                  { fechaArribo: { gte: startOfRange.toJSDate() } },
+                  { fechaArribo: null }
+                ]
+              }
+            }
+          }
+        ]
+      },
+      include: {
+        estadoActual: true,
+        etapas: {
+          orderBy: { nroEtapa: 'asc' },
+          include: { puertoArribo: true, puertoZarpada: true, observadores: true }
+        },
+        observadorPrincipal: true
+      }
+    });
+
+    const eventos: any[] = [];
+    const diasTotal = endOfRange.diff(startOfRange, 'days').days + 1;
+
+    for (const obs of observadores) {
+      const obsNovedades = novedadesDb.filter(n => n.observadorId === obs.id);
+      const obsMareas = mareasDb.filter(m => 
+        m.observadorPrincipalId === obs.id || 
+        m.etapas.some(e => e.observadores.some(eo => eo.observadorId === obs.id))
+      );
+
+      // Preprocesar proyección para planificacion (SRP: El dominio de planificación decide proyectar las mareas)
+      const mareasAdaptadas = obsMareas.map(marea => {
+        const m = { ...marea };
+        if (m.estadoActual.codigo === MareaEstado.DESIGNADA || m.estadoActual.codigo === MareaEstado.EN_EJECUCION) {
+          if (m.fechaInicioObservador && m.diasEstimados) {
+             const inicioObs = DateTime.fromJSDate(m.fechaInicioObservador, { zone: 'utc' }).startOf('day');
+             const finProyectado = inicioObs.plus({ days: m.diasEstimados - 1 }).endOf('day');
+             
+             // Inyectamos una pseudo-etapa que simula la navegación
+             m.etapas = [
+               {
+                 id: `proyectada-${m.id}`,
+                 fechaZarpada: inicioObs.toJSDate(),
+                 fechaArribo: finProyectado.toJSDate(),
+                 puertoZarpada: { id: 'dummy', esLocal: true },
+                 puertoArribo: { id: 'dummy', esLocal: true },
+               } as any
+             ];
+             m.inicioValidado = false;
+             m.finValidado = false;
+             m.fechaFinObservador = finProyectado.toJSDate(); 
+          }
+        }
+        return m;
+      });
+
+      let currentState: string | null = null;
+      let currentStartDate: Date | null = null;
+      let currentData: any = null;
+
+      for (let i = 0; i < Math.floor(diasTotal); i++) {
+        const currentDate = startOfRange.plus({ days: i }).startOf('day');
+        const feriadoNombre = feriados[`${currentDate.year}-${currentDate.month}-${currentDate.day}`] || null;
+        const isFinSemana = currentDate.weekday === 6 || currentDate.weekday === 7;
+
+        const estadoDto = evaluarEstadoDia(
+          currentDate,
+          mareasAdaptadas,
+          obsNovedades,
+          feriadoNombre,
+          isFinSemana
+        );
+
+        if (!estadoDto || estadoDto.estado === 'LIBRE' || estadoDto.estado === 'FIN_SEMANA') {
+          if (currentState && currentStartDate !== null && currentData) {
+            eventos.push(this.crearEventoTimeline(obs.id, currentState, currentStartDate, startOfRange.plus({ days: i - 1 }).toJSDate(), currentData));
+            currentState = null;
+          }
+          continue;
+        }
+
+        const signature = `${estadoDto.estado}-${estadoDto.codigoCorto || ''}-${estadoDto.referenciaId || ''}`;
+        if (currentState !== signature) {
+          if (currentState && currentStartDate !== null && currentData) {
+             eventos.push(this.crearEventoTimeline(obs.id, currentState, currentStartDate, startOfRange.plus({ days: i - 1 }).toJSDate(), currentData));
+          }
+          currentState = signature;
+          currentStartDate = currentDate.toJSDate();
+          currentData = estadoDto;
+          
+          // Agregamos metadata extra para el timeline de simulación (si era proyectada)
+          const originalMarea = obsMareas.find(m => m.id === estadoDto.referenciaId || m.etapas.some((e: any) => e.id === estadoDto.referenciaId) || estadoDto.referenciaId?.startsWith('proyectada-'));
+          if (originalMarea && (originalMarea.estadoActual.codigo === MareaEstado.DESIGNADA || originalMarea.estadoActual.codigo === MareaEstado.EN_EJECUCION)) {
+             currentData.isProyectada = true;
+             currentData.mareaEstado = originalMarea.estadoActual.codigo;
+          }
+        }
+      }
+
+      if (currentState && currentStartDate !== null && currentData) {
+        eventos.push(this.crearEventoTimeline(obs.id, currentState, currentStartDate, startOfRange.plus({ days: Math.floor(diasTotal) - 1 }).toJSDate(), currentData));
+      }
+    }
+
+    return {
+      observadores: observadores,
+      eventos
+    };
+  }
+
+  private crearEventoTimeline(obsId: string, signature: string, startDate: Date, endDate: Date, estadoDto: any) {
+    return {
+      id: `real-${obsId}-${startDate.getTime()}`,
+      observadorId: obsId,
+      startDate: startDate,
+      endDate: endDate,
+      estado: estadoDto.estado,
+      detalle: estadoDto.detalle,
+      codigoCorto: estadoDto.codigoCorto,
+      isProyectada: estadoDto.isProyectada || false,
+      mareaEstado: estadoDto.mareaEstado,
+    };
   }
 }
