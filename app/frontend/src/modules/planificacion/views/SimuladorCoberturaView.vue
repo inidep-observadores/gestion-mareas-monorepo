@@ -949,6 +949,9 @@ const onDropTimeline = (event: DragEvent) => {
     const idxRec = recursosPendientes.value.findIndex(r => r.id === recursoArrastrado?.id);
     if (idxRec !== -1) {
       recursosPendientes.value.splice(idxRec, 1);
+      if (recursosPendientes.value.length === 0) {
+        sidebarOpen.value = false;
+      }
     }
 
     // Actualizar DataSet directamente
