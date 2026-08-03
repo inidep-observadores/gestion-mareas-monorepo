@@ -34,7 +34,9 @@ export interface ExperienciaObservador {
   pesqueriaId: string;
   tipoFlotaId: string;
   valor: number | null;
-  experiencia: number | null;
+  experienciaHistorica: number;
+  mareasVivas: number;
+  experienciaTotal: number;
   fechaActualizacion: string;
   observador?: {
     id: string;
@@ -56,7 +58,6 @@ export interface UpsertExperienciaDto {
   pesqueriaId: string;
   tipoFlotaId: string;
   valor: number | null;
-  experiencia: number | null;
 }
 
 export interface BatchUpsertExperienciaDto {

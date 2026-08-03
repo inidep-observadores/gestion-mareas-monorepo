@@ -156,12 +156,12 @@
                         class="flex flex-col gap-1 p-1.5 py-2 relative group/cell hover:bg-surface-muted/30 h-full min-h-[58px] justify-center">
                         <div class="flex items-center gap-1.5">
                           <span class="text-[10px] font-medium text-text-muted w-8 text-right shrink-0"
-                            title="Mareas (Nro entero de experiencia)">Mar.</span>
-                          <input type="number" min="0" step="1"
-                            v-model.number="matrix[obs.id][pesq.id][flota.id].experiencia"
-                            @input="() => handleInput(obs.id, pesq.id, flota.id)"
-                            class="w-full h-6 px-1 text-center text-[11px] font-semibold bg-surface border border-border rounded focus:ring-1 focus:ring-primary/20 focus:border-primary transition-all outline-none"
-                            placeholder="-" />
+                            title="Mareas totales (Histórico + Vivas)">Mar.</span>
+                          <span class="w-full px-1 text-center text-[11px] font-semibold text-text cursor-pointer hover:bg-primary/20 hover:text-primary transition-colors rounded"
+                            @click.stop="openDetailDialog(obs.id, pesq.id, flota.id)"
+                            :title="`Históricas: ${matrix[obs.id]?.[pesq.id]?.[flota.id].experienciaHistorica || 0} | Nuevas: ${matrix[obs.id]?.[pesq.id]?.[flota.id].mareasVivas || 0}`">
+                            {{ matrix[obs.id]?.[pesq.id]?.[flota.id].experienciaTotal ?? 0 }}
+                          </span>
                         </div>
                         <div class="flex items-center gap-1.5">
                           <span class="text-[10px] font-medium text-text-muted w-8 text-right shrink-0"
@@ -191,10 +191,11 @@
                         <template v-if="!isEmptyCell(obs.id, pesq.id, flota.id)">
                           <!-- Mareas / Experiencia numerica -->
                           <div
-                            class="flex items-center gap-1 text-[11px] font-medium text-text bg-surface-muted px-1.5 rounded"
-                            title="Total Mareas">
-                            <span class="text-text-muted shrink-0">Mareas: </span>
-                            <span>{{ matrix[obs.id]?.[pesq.id]?.[flota.id].experiencia ?? '-' }}</span>
+                            class="flex items-center gap-1 text-[11px] font-medium text-text bg-surface-muted px-1.5 rounded cursor-pointer hover:bg-primary/20 hover:text-primary transition-colors"
+                            title="Total Mareas"
+                            @click.stop="openDetailDialog(obs.id, pesq.id, flota.id)">
+                            <span class="text-text-muted shrink-0 group-hover:text-primary transition-colors">Mareas: </span>
+                            <span>{{ matrix[obs.id]?.[pesq.id]?.[flota.id].experienciaTotal ?? '-' }}</span>
                           </div>
 
                           <!-- Rating / Valor -->
@@ -260,10 +261,11 @@
                         <div class="flex items-center gap-1 flex-1 justify-end">
                           <div class="flex items-center gap-1">
                             <span class="text-[9px] text-text-muted">Mar.</span>
-                            <input type="number" min="0" v-model.number="matrix[obs.id][pesq.id][flota.id].experiencia"
-                              @input="() => handleInput(obs.id, pesq.id, flota.id)"
-                              class="w-[45px] h-7 px-1 text-center text-[10px] bg-surface-muted border border-border rounded outline-none"
-                              placeholder="-" title="Mareas" />
+                            <span class="w-[45px] text-center text-[10px] text-text font-medium cursor-pointer hover:bg-primary/20 hover:text-primary transition-colors rounded"
+                              @click.stop="openDetailDialog(obs.id, pesq.id, flota.id)"
+                              :title="`Hist: ${matrix[obs.id]?.[pesq.id]?.[flota.id].experienciaHistorica || 0} | Nuevas: ${matrix[obs.id]?.[pesq.id]?.[flota.id].mareasVivas || 0}`">
+                              {{ matrix[obs.id]?.[pesq.id]?.[flota.id].experienciaTotal ?? 0 }}
+                            </span>
                           </div>
                           <div class="flex items-center gap-1">
                             <span class="text-[9px] text-text-muted">Cal.</span>
@@ -285,8 +287,9 @@
                       <template v-else>
                         <div class="flex flex-col items-end w-2/3">
                           <template v-if="!isEmptyCell(obs.id, pesq.id, flota.id)">
-                            <div class="text-[10px] text-text-muted bg-surface-muted px-1.5 rounded mb-0.5">Mareas:
-                              <span class="text-text font-medium">{{ matrix[obs.id]?.[pesq.id]?.[flota.id].experiencia
+                            <div class="text-[10px] text-text-muted bg-surface-muted px-1.5 rounded mb-0.5 cursor-pointer hover:bg-primary/20 transition-colors hover:text-primary"
+                              @click.stop="openDetailDialog(obs.id, pesq.id, flota.id)">Mareas:
+                              <span class="text-text font-medium">{{ matrix[obs.id]?.[pesq.id]?.[flota.id].experienciaTotal
                                 ?? '-'
                                 }}</span></div>
                             <div class="flex items-center h-4">
@@ -309,6 +312,179 @@
         </div>
       </template>
     </div>
+
+    <!-- DIÁLOGO DE DETALLE DE MAREAS -->
+    <BaseModal :show="dialogOpen" maxWidth="5xl" @close="closeDialog">
+      <template #title>
+        <div class="flex items-center gap-3">
+          <div class="p-2 bg-primary/10 rounded-lg text-primary">
+            <LayoutListIcon class="w-5 h-5" />
+          </div>
+          <div>
+            <span class="text-sm font-black text-text uppercase tracking-tight leading-none block mb-0.5">
+              {{ dialogTitle }}
+            </span>
+            <p class="text-[10px] font-bold text-text-muted uppercase tracking-widest mt-0.5">
+              {{ dialogPeriodLabel }}
+            </p>
+          </div>
+        </div>
+      </template>
+
+      <!-- Loading State -->
+      <div v-if="loadingDetail" class="flex flex-col items-center justify-center py-20">
+        <Loader2Icon class="w-8 h-8 text-primary animate-spin mb-4" />
+        <p class="text-xs font-bold text-text-muted uppercase tracking-widest">Cargando detalle...</p>
+      </div>
+
+      <!-- Detail Content -->
+      <div v-else class="flex flex-col min-h-0 -mx-6 -mb-6 -mt-6 h-[80vh] max-h-[85vh]">
+        <!-- Toolbar: Búsqueda y Vistas -->
+        <div class="px-6 py-4 border-b border-border bg-surface-muted/20 flex items-center justify-between gap-4 flex-none">
+          <!-- Búsqueda -->
+          <div class="relative max-w-sm w-full group">
+            <SearchIcon class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted group-focus-within:text-primary transition-colors" />
+            <input v-model="searchTerm" type="text" placeholder="Buscar marea, buque, obs..."
+              class="w-full pl-9 pr-10 py-2 bg-surface border border-border rounded-xl text-sm focus:bg-surface focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200 shadow-sm" />
+            <button v-if="searchTerm" @click="searchTerm = ''"
+              class="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full text-text-muted hover:text-error hover:bg-error/10 transition-all duration-200">
+              <XIcon class="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          <!-- View Toggle -->
+          <div class="hidden lg:flex items-center bg-surface border border-border rounded-xl p-1 shadow-sm">
+            <button @click="detailViewMode = 'cards'"
+              :class="['p-1.5 rounded-lg transition-all duration-200', detailViewMode === 'cards' ? 'bg-primary text-primary-fg shadow-sm' : 'text-text-muted hover:text-text hover:bg-surface-muted']"
+              title="Vista en Tarjetas">
+              <LayoutGridIcon class="w-4 h-4" />
+            </button>
+            <button @click="detailViewMode = 'table'"
+              :class="['p-1.5 rounded-lg transition-all duration-200', detailViewMode === 'table' ? 'bg-primary text-primary-fg shadow-sm' : 'text-text-muted hover:text-text hover:bg-surface-muted']"
+              title="Vista en Tabla">
+              <LayoutListIcon class="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+
+        <!-- Scrollable Content -->
+        <div class="flex-1 overflow-y-auto overflow-x-hidden p-6 custom-scrollbar bg-background/50">
+          <div class="max-w-7xl mx-auto">
+            <!-- MOBILE CARDS (Also Desktop if 'cards' mode is selected) -->
+            <div v-if="detailViewMode === 'cards' || false" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 lg:hidden_removeme">
+              <div v-for="marea in filteredDialogItems" :key="marea.id"
+                class="bg-surface rounded-xl border border-border p-4 shadow-theme-xs hover:shadow-theme-sm transition-all duration-300">
+                <div class="flex justify-between items-start mb-4">
+                  <div>
+                    <span class="text-xs text-text tabular-nums block">{{ marea.id_marea }}</span>
+                  </div>
+                  <div class="text-right">
+                    <span class="block text-2xl font-black text-primary leading-tight tabular-nums">{{ marea.diasTotales }}</span>
+                    <span class="text-[10px] font-bold text-text-muted uppercase tracking-widest mt-1">Días Totales</span>
+                  </div>
+                </div>
+                <div class="space-y-2">
+                  <div class="flex justify-between items-center py-1.5 border-b border-border/50">
+                    <span class="text-[10px] font-bold text-text-muted uppercase tracking-widest">Buque</span>
+                    <span class="text-xs font-black text-text">{{ marea.buque }}</span>
+                  </div>
+                  <div class="flex justify-between items-center py-1.5 border-b border-border/50">
+                    <span class="text-[10px] font-bold text-text-muted uppercase tracking-widest">Flota</span>
+                    <span class="text-xs font-black text-text">{{ marea.flota }}</span>
+                  </div>
+                  <div class="flex justify-between items-center py-1.5 border-b border-border/50">
+                    <span class="text-[10px] font-bold text-text-muted uppercase tracking-widest">Pesquería</span>
+                    <span class="text-xs font-black text-text">{{ marea.pesqueria }}</span>
+                  </div>
+                  <div class="flex justify-between items-center py-1.5 border-b border-border/50">
+                    <span class="text-[10px] font-bold text-text-muted uppercase tracking-widest">Fechas</span>
+                    <span class="text-[10px] font-bold text-text">{{ formatDate(marea.fechaZarpada) }} - {{ formatDate(marea.fechaArribo) }}</span>
+                  </div>
+                  <div class="flex justify-between items-center py-1.5">
+                    <span class="text-[10px] font-bold text-text-muted uppercase tracking-widest">Observador</span>
+                    <span class="text-xs font-black text-text">{{ marea.observador }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- TABLE VIEW (Desktop only) -->
+            <div v-if="detailViewMode === 'table'" class="hidden lg:block bg-surface rounded-xl border border-border shadow-theme-xs overflow-hidden">
+              <table class="w-full text-left border-collapse">
+                <thead>
+                  <tr class="bg-surface-muted/50 border-b border-border">
+                    <th class="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-text-muted cursor-pointer hover:bg-surface-muted transition-colors group" @click="handleSort('id_marea')">
+                      Marea
+                    </th>
+                    <th class="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-text-muted cursor-pointer hover:bg-surface-muted transition-colors group" @click="handleSort('buque')">
+                      Buque
+                    </th>
+                    <th class="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-text-muted cursor-pointer hover:bg-surface-muted transition-colors group" @click="handleSort('flota')">
+                      Flota
+                    </th>
+                    <th class="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-text-muted cursor-pointer hover:bg-surface-muted transition-colors group" @click="handleSort('pesqueria')">
+                      Pesquería
+                    </th>
+                    <th class="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-text-muted cursor-pointer hover:bg-surface-muted transition-colors group" @click="handleSort('observador')">
+                      Observador
+                    </th>
+                    <th class="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-text-muted cursor-pointer hover:bg-surface-muted transition-colors group" @click="handleSort('fechaZarpada')">
+                      Fechas (Inicio - Fin)
+                    </th>
+                    <th class="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-text-muted cursor-pointer hover:bg-surface-muted transition-colors group text-right" @click="handleSort('diasTotales')">
+                      Días Totales
+                    </th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-border">
+                  <tr v-for="marea in filteredDialogItems" :key="marea.id" class="hover:bg-primary/5 transition-colors group">
+                    <td class="px-4 py-2 border-r border-border/50">
+                      <div class="flex flex-col">
+                        <span class="text-xs text-text tabular-nums">{{ marea.id_marea }}</span>
+                      </div>
+                    </td>
+                    <td class="px-4 py-2 text-xs font-bold text-text border-r border-border/50">{{ marea.buque }}</td>
+                    <td class="px-4 py-2 text-xs font-bold text-text border-r border-border/50">{{ marea.flota }}</td>
+                    <td class="px-4 py-2 text-xs font-bold text-text border-r border-border/50">{{ marea.pesqueria }}</td>
+                    <td class="px-4 py-2 text-xs font-bold text-text border-r border-border/50">{{ marea.observador }}</td>
+                    <td class="px-4 py-2 text-[10px] font-bold text-text border-r border-border/50 whitespace-nowrap">{{ formatDate(marea.fechaZarpada) }} <span class="text-text-muted font-normal mx-0.5">-</span> {{ formatDate(marea.fechaArribo) }}</td>
+                    <td class="px-4 py-2 text-right">
+                      <span class="font-bold text-xs text-text tabular-nums">{{ marea.diasTotales }}</span>
+                    </td>
+                  </tr>
+                </tbody>
+                <!-- Footer Totales -->
+                <tfoot v-if="filteredDialogItems.length > 0" class="sticky bottom-0 z-10">
+                  <tr class="bg-background/95 backdrop-blur-md border-t-2 border-primary/20 shadow-[0_-4px_12px_rgba(0,0,0,0.1)]">
+                    <td colspan="6" class="px-4 py-3 text-right text-[10px] font-black text-text-muted uppercase tracking-widest">
+                      Total
+                    </td>
+                    <td class="px-4 py-3 text-right bg-primary/5">
+                      <span class="font-black text-sm tabular-nums text-primary">{{ totalDiasTotales }}</span>
+                    </td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+
+            <!-- Empty Filter Result -->
+            <div v-if="filteredDialogItems.length === 0" class="flex flex-col items-center justify-center py-20 px-4 text-center">
+              <SearchIcon class="w-12 h-12 text-text-muted/20 mb-4" />
+              <p class="text-xs font-black text-text-muted uppercase tracking-widest">No hay resultados para "{{ searchTerm }}"</p>
+              <p class="text-[10px] text-text-muted/60 mt-2 font-bold uppercase">Intenta ajustar los criterios de búsqueda</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="flex justify-end gap-3 p-4 border-t border-border bg-surface-muted/20 flex-none bg-surface/50 backdrop-blur-md">
+          <button class="px-6 py-2 rounded-lg bg-primary text-primary-fg text-xs font-black uppercase tracking-widest hover:bg-primary-hover transition-colors shadow-theme-sm active:scale-95 duration-200" @click="closeDialog">
+            Cerrar
+          </button>
+        </div>
+      </div>
+    </BaseModal>
+
   </PlanificacionDashboardLayout>
 </template>
 
@@ -321,8 +497,101 @@ import SearchInput from '@/components/ui/SearchInput.vue';
 import { planificacionService } from '../services/planificacion.service';
 import catalogosService from '@/modules/mareas/services/catalogos.service';
 import { toast } from 'vue-sonner';
+import BaseModal from '@/components/common/BaseModal.vue';
+import { SearchIcon, LayoutListIcon, LayoutGridIcon, Loader2Icon, DownloadIcon } from 'lucide-vue-next';
 import { CheckIcon, XIcon } from '@/icons';
 
+// Estados del Modal de Detalle
+const dialogOpen = ref(false);
+const dialogTitle = ref('');
+const dialogPeriodLabel = ref('');
+const detailViewMode = ref<'cards'|'table'>('table');
+const searchTerm = ref('');
+const loadingDetail = ref(false);
+const dialogItems = ref<any[]>([]);
+const sortKey = ref('fechaZarpada');
+const sortDesc = ref(true);
+
+const formatDate = (dateStr: string | null) => {
+  if (!dateStr) return '-';
+  const date = new Date(dateStr);
+  return date.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+};
+
+const filteredDialogItems = computed(() => {
+  let result = dialogItems.value;
+  
+  if (searchTerm.value) {
+    const term = searchTerm.value.toLowerCase();
+    result = result.filter(item => 
+      (item.id_marea || '').toLowerCase().includes(term) ||
+      (item.buque || '').toLowerCase().includes(term) ||
+      (item.observador || '').toLowerCase().includes(term)
+    );
+  }
+  
+  result = [...result].sort((a, b) => {
+    let valA = a[sortKey.value];
+    let valB = b[sortKey.value];
+    
+    if (typeof valA === 'string') valA = valA.toLowerCase();
+    if (typeof valB === 'string') valB = valB.toLowerCase();
+    
+    if (valA < valB) return sortDesc.value ? 1 : -1;
+    if (valA > valB) return sortDesc.value ? -1 : 1;
+    return 0;
+  });
+  
+  return result;
+});
+
+const handleSort = (key: string) => {
+  if (sortKey.value === key) {
+    sortDesc.value = !sortDesc.value;
+  } else {
+    sortKey.value = key;
+    sortDesc.value = false;
+  }
+};
+
+const getSortIcon = (key: string) => {
+  // dummy implementation to prevent errors if needed, though we can just use simple arrows
+  return null;
+};
+
+const totalDiasTotales = computed(() => {
+  return filteredDialogItems.value.reduce((acc, curr) => acc + (curr.diasTotales || 0), 0);
+});
+
+const openDetailDialog = async (obsId: string, pesqId: string, flotaId: string) => {
+  const obs = observadores.value.find(o => o.id === obsId);
+  const pesq = pesquerias.value.find(p => p.id === pesqId);
+  const flota = flotas.value.find(f => f.id === flotaId);
+  
+  dialogTitle.value = `${obs?.nombre} ${obs?.apellido}`;
+  dialogPeriodLabel.value = `${pesq?.nombre} - ${flota?.nombre}`;
+  dialogOpen.value = true;
+  loadingDetail.value = true;
+  dialogItems.value = [];
+  searchTerm.value = '';
+  
+  try {
+    dialogItems.value = await planificacionService.getDetalleMareasExperiencia(obsId, pesqId, flotaId);
+  } catch (err) {
+    toast.error('Error al cargar detalle de mareas');
+  } finally {
+    loadingDetail.value = false;
+  }
+};
+
+const closeDialog = () => {
+  dialogOpen.value = false;
+};
+
+const openQuickDetail = (id: string) => {
+  // Here we could open a marea detail if we had MareaQuickDetailModal available.
+  // For now we just log it or route to it.
+};
 // Estados de la UI
 const isLoading = ref(true);
 const isSaving = ref(false);
@@ -360,7 +629,9 @@ const activePesquerias = computed(() => {
  */
 interface CellData {
   valor: number | null;
-  experiencia: number | null;
+  experienciaHistorica: number;
+  mareasVivas: number;
+  experienciaTotal: number;
 }
 const matrix = ref<Record<string, Record<string, Record<string, CellData>>>>({});
 
@@ -368,14 +639,12 @@ const matrix = ref<Record<string, Record<string, Record<string, CellData>>>>({})
 const isEmptyCell = (obsId: string, pesqId: string, flotaId: string) => {
   const cell = matrix.value[obsId]?.[pesqId]?.[flotaId];
   if (!cell) return true;
-  return (cell.valor === null || cell.valor === undefined) &&
-    (cell.experiencia === null || cell.experiencia === undefined);
+  return (cell.valor === null || cell.valor === undefined) && cell.experienciaTotal === 0;
 };
 
 const clearCell = (obsId: string, pesqId: string, flotaId: string) => {
   if (matrix.value[obsId] && matrix.value[obsId][pesqId] && matrix.value[obsId][pesqId][flotaId]) {
     matrix.value[obsId][pesqId][flotaId].valor = null;
-    matrix.value[obsId][pesqId][flotaId].experiencia = null;
     isDirty.value = true;
   }
 };
@@ -482,7 +751,7 @@ const initMatrix = () => {
     pesquerias.value.forEach((p: any) => {
       newMatrix[obs.id][p.id] = {};
       flotas.value.forEach((f: any) => {
-        newMatrix[obs.id][p.id][f.id] = { valor: null, experiencia: null };
+        newMatrix[obs.id][p.id][f.id] = { valor: null, experienciaHistorica: 0, mareasVivas: 0, experienciaTotal: 0 };
       });
     });
   });
@@ -520,7 +789,9 @@ const loadData = async () => {
 
         matrix.value[exp.observadorId][exp.pesqueriaId][exp.tipoFlotaId] = {
           valor: exp.valor,
-          experiencia: exp.experiencia
+          experienciaHistorica: exp.experienciaHistorica || 0,
+          mareasVivas: exp.mareasVivas || 0,
+          experienciaTotal: exp.experienciaTotal || 0
         };
       }
     });
@@ -539,18 +810,12 @@ const handleInput = (obsId: string, pesqId: string, flotaId: string) => {
 
   // Limpiar vacíos p.ej. cadenas del type number default handling de Vue
   if (cell.valor === '' as any) cell.valor = null;
-  if (cell.experiencia === '' as any) cell.experiencia = null;
 
   // Validaciones
   if (cell.valor !== null && cell.valor !== undefined) {
     if (cell.valor < 0) cell.valor = 0;
     if (cell.valor > 5) cell.valor = 5;
     cell.valor = Math.floor(cell.valor);
-  }
-
-  if (cell.experiencia !== null && cell.experiencia !== undefined) {
-    if (cell.experiencia < 0) cell.experiencia = 0;
-    cell.experiencia = Math.floor(cell.experiencia);
   }
 };
 
@@ -571,8 +836,7 @@ const saveChanges = async () => {
               observadorId: oId,
               pesqueriaId: pId,
               tipoFlotaId: fId,
-              valor: cell.valor,
-              experiencia: cell.experiencia
+              valor: cell.valor
             });
           }
         }

@@ -38,6 +38,16 @@ export const planificacionService = {
   },
 
   /**
+   * Obtiene el detalle de mareas para una celda de experiencia
+   */
+  async getDetalleMareasExperiencia(observadorId: string, pesqueriaId: string, tipoFlotaId: string): Promise<any[]> {
+    const response = await httpClient.get<any[]>(`/planificacion/experiencia-observadores/${observadorId}/mareas`, {
+      params: { pesqueriaId, tipoFlotaId }
+    });
+    return response.data;
+  },
+
+  /**
    * Obtiene la matriz de eventos consolidados para el Simulador de Cobertura
    */
   async obtenerEventosSimulador(year: number, month: number, horizonMonths = 6): Promise<any> {

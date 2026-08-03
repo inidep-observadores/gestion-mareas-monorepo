@@ -17,9 +17,6 @@ export class UpsertExperienciaDto {
   @Max(5)
   valor?: number;
 
-  @IsOptional()
-  @IsInt()
-  experiencia?: number;
 }
 
 export class BatchUpsertExperienciaDto {

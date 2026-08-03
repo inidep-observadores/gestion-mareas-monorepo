@@ -78,12 +78,9 @@ export class PlanificacionService {
     });
   }
 
-  /**
-   * Obtiene todas las relaciones de experiencia configuradas entre 
-   * observadores y pesquerías.
-   */
   async getExperienciaObservadores() {
-    return this.prisma.experienciaObservador.findMany({
+    // 1. Obtener registros históricos
+    const historico = await this.prisma.experienciaObservador.findMany({
       include: {
         observador: {
           select: { id: true, nombre: true, apellido: true }
@@ -96,6 +93,113 @@ export class PlanificacionService {
         }
       }
     });
+
+    // 2. Obtener mareas "vivas" (finalizadas desde 2026-01-01)
+    const fechaCorte = new Date('2026-01-01T00:00:00Z');
+    
+    // Obtenemos todas las mareas relevantes
+    const mareasVivas = await this.prisma.marea.findMany({
+      where: {
+        fechaInicioObservador: { gte: fechaCorte },
+        estadoActual: {
+          codigo: {
+            notIn: [
+              MareaEstado.DESIGNADA,
+              MareaEstado.A_REASIGNAR,
+              MareaEstado.EN_EJECUCION,
+              MareaEstado.CANCELADA,
+              MareaEstado.DESESTIMADA,
+            ]
+          }
+        }
+      },
+      select: {
+        id: true,
+        pesqueriaId: true,
+        buque: { select: { tipoFlotaId: true } },
+        observadorPrincipalId: true,
+        etapas: {
+          select: {
+            observadores: { select: { observadorId: true } }
+          }
+        }
+      }
+    });
+
+    // Agrupar mareas vivas
+    const agrupadoVivas: Record<string, number> = {};
+    for (const marea of mareasVivas) {
+      if (!marea.pesqueriaId || !marea.buque?.tipoFlotaId) continue;
+      
+      const pesqueriaId = marea.pesqueriaId;
+      const tipoFlotaId = marea.buque.tipoFlotaId;
+      
+      const observadoresIds = new Set<string>();
+      if (marea.observadorPrincipalId) {
+        observadoresIds.add(marea.observadorPrincipalId);
+      }
+      for (const etapa of marea.etapas) {
+        for (const obs of etapa.observadores) {
+          observadoresIds.add(obs.observadorId);
+        }
+      }
+      
+      for (const obsId of observadoresIds) {
+        const key = `${obsId}_${pesqueriaId}_${tipoFlotaId}`;
+        agrupadoVivas[key] = (agrupadoVivas[key] || 0) + 1;
+      }
+    }
+
+    // 3. Fusionar datos
+    const mapaResultado = new Map<string, any>();
+
+    for (const h of historico) {
+      const key = `${h.observadorId}_${h.pesqueriaId}_${h.tipoFlotaId}`;
+      const mareasVivasCount = agrupadoVivas[key] || 0;
+      mapaResultado.set(key, {
+        ...h,
+        experienciaHistorica: h.experiencia || 0,
+        mareasVivas: mareasVivasCount,
+        experienciaTotal: (h.experiencia || 0) + mareasVivasCount,
+      });
+      delete agrupadoVivas[key]; // Ya lo procesamos
+    }
+
+    // Si quedaron mareas vivas para combinaciones que no tienen histórico
+    if (Object.keys(agrupadoVivas).length > 0) {
+      const missingObsIds = [...new Set(Object.keys(agrupadoVivas).map(k => k.split('_')[0]))];
+      const missingPesqIds = [...new Set(Object.keys(agrupadoVivas).map(k => k.split('_')[1]))];
+      const missingFlotaIds = [...new Set(Object.keys(agrupadoVivas).map(k => k.split('_')[2]))];
+      
+      const [obsList, pesqList, flotaList] = await Promise.all([
+        this.prisma.observador.findMany({ where: { id: { in: missingObsIds } }, select: { id: true, nombre: true, apellido: true } }),
+        this.prisma.pesqueria.findMany({ where: { id: { in: missingPesqIds } }, select: { id: true, nombre: true } }),
+        this.prisma.tipoFlota.findMany({ where: { id: { in: missingFlotaIds } }, select: { id: true, nombre: true } })
+      ]);
+      
+      for (const key in agrupadoVivas) {
+        const [obsId, pesqId, tipoFlotaId] = key.split('_');
+        const count = agrupadoVivas[key];
+        
+        mapaResultado.set(key, {
+          id: `virtual_${key}`,
+          observadorId: obsId,
+          pesqueriaId: pesqId,
+          tipoFlotaId: tipoFlotaId,
+          valor: null,
+          experiencia: 0,
+          experienciaHistorica: 0,
+          mareasVivas: count,
+          experienciaTotal: count,
+          fechaActualizacion: new Date(),
+          observador: obsList.find(o => o.id === obsId),
+          pesqueria: pesqList.find(p => p.id === pesqId),
+          tipoFlota: flotaList.find(f => f.id === tipoFlotaId)
+        });
+      }
+    }
+
+    return Array.from(mapaResultado.values());
   }
 
   /**
@@ -106,37 +210,22 @@ export class PlanificacionService {
     this.logger.log(`Iniciando actualización masiva de experiencia. Total items: ${experiencias.length}`);
 
     return this.prisma.$transaction(async (prisma) => {
-      // Para simplificar la operación bulk sin upsert condicional uno por uno:
-      // Eliminamos todas las experiencias actuales para los pares que se nos envíen (o podríamos simplemente limpiar todo)
-      // Pero como la matriz envía TODO cada vez que guardan, limpiaremos y reinsertaremos la experiencia solo si el valor > 0.
-      
-      // Asumiendo que el Frontend manda toda la matriz de lo que ha sido modificado,
-      // Una aproximación limpia: Vaciar toda la tabla e insertar lo nuevo (es pequeña matriz de configuración).
-      // Sin embargo, si queremos preservar fechas, haríamos iteración.
-      // Daremos preferencia a hacer upsert uno por uno con iteración rápida, ya que TypeORM y Prisma manejan transacciones eficientes.
-      
       let upsertedCount = 0;
       let deletedCount = 0;
 
       for (const e of experiencias) {
-        if ((e.valor === null || e.valor === undefined) && (e.experiencia === null || e.experiencia === undefined)) {
-          // Si ambos valores son nulos, eliminamos el registro para evitar basura
-          try {
-             await prisma.experienciaObservador.delete({
-               where: {
-                 observadorId_pesqueriaId_tipoFlotaId: {
-                   observadorId: e.observadorId,
-                   pesqueriaId: e.pesqueriaId,
-                   tipoFlotaId: e.tipoFlotaId
-                 }
-               }
-             });
-             deletedCount++;
-          } catch(err) {
-            // Ignorar el error si no existe el registro al intentar borrar
-          }
+        if (e.valor === null || e.valor === undefined) {
+           // Limpiar valoración sin borrar de inmediato para preservar histórico
+           await prisma.experienciaObservador.updateMany({
+             where: {
+               observadorId: e.observadorId,
+               pesqueriaId: e.pesqueriaId,
+               tipoFlotaId: e.tipoFlotaId
+             },
+             data: { valor: null }
+           });
         } else {
-           // Insertamos / Actualizamos la experiencia (0 a 5) y el entero de experiencias previas
+           // Insertamos / Actualizamos la valoración (0 a 5)
            await prisma.experienciaObservador.upsert({
              where: {
                observadorId_pesqueriaId_tipoFlotaId: {
@@ -146,20 +235,31 @@ export class PlanificacionService {
                }
              },
              update: {
-               valor: e.valor,
-               experiencia: e.experiencia
+               valor: e.valor
              },
              create: {
                observadorId: e.observadorId,
                pesqueriaId: e.pesqueriaId,
                tipoFlotaId: e.tipoFlotaId,
                valor: e.valor,
-               experiencia: e.experiencia
+               experiencia: 0 // Iniciar histórico en 0 para nuevas asignaciones
              }
            });
            upsertedCount++;
         }
       }
+
+      // Cleanup: Eliminar registros sin valor Y sin historia
+      const deleteResult = await prisma.experienciaObservador.deleteMany({
+        where: {
+          valor: null,
+          OR: [
+            { experiencia: null },
+            { experiencia: 0 }
+          ]
+        }
+      });
+      deletedCount = deleteResult.count;
 
       this.logger.log(`Actualización de experiencia completada. Modificados: ${upsertedCount}, Eliminados: ${deletedCount}`);
       return { count: upsertedCount };
@@ -345,5 +445,94 @@ export class PlanificacionService {
       isProyectada: estadoDto.isProyectada || false,
       mareaEstado: estadoDto.mareaEstado,
     };
+  }
+
+  /**
+   * Obtiene el detalle de las mareas de un observador en una pesquería y tipo de flota específicos.
+   * Se incluyen todas las mareas históricas y "vivas" excluyendo estados iniciales/cancelados.
+   */
+  async getDetalleMareasExperiencia(observadorId: string, pesqueriaId: string, tipoFlotaId: string) {
+    const mareas = await this.prisma.marea.findMany({
+      where: {
+        pesqueriaId,
+        buque: { tipoFlotaId },
+        estadoActual: {
+          codigo: {
+            notIn: [
+              MareaEstado.DESIGNADA,
+              MareaEstado.A_REASIGNAR,
+              MareaEstado.EN_EJECUCION,
+              MareaEstado.CANCELADA,
+              MareaEstado.DESESTIMADA,
+            ]
+          }
+        },
+        OR: [
+          { observadorPrincipalId: observadorId },
+          { etapas: { some: { observadores: { some: { observadorId } } } } }
+        ]
+      },
+      include: {
+        estadoActual: true,
+        buque: { include: { tipoFlota: true } },
+        pesqueria: true,
+        observadorPrincipal: true,
+        etapas: {
+          include: {
+            observadores: { include: { observador: true } }
+          }
+        }
+      },
+      orderBy: {
+        fechaInicioObservador: 'desc'
+      }
+    });
+
+    return mareas.map(m => {
+      // Determinar el observador que corresponde a esta fila (el consultado)
+      let nombreObservador = '';
+      if (m.observadorPrincipalId === observadorId) {
+        nombreObservador = `${m.observadorPrincipal?.nombre} ${m.observadorPrincipal?.apellido}`;
+      } else {
+        // Buscarlo en las etapas
+        for (const etapa of m.etapas) {
+          const obsApoyo = etapa.observadores.find(o => o.observadorId === observadorId);
+          if (obsApoyo) {
+            nombreObservador = `${obsApoyo.observador.nombre} ${obsApoyo.observador.apellido}`;
+            break;
+          }
+        }
+      }
+
+      const endDate = m.fechaFinObservador || new Date();
+      let diasTotales = 0;
+      if (m.fechaInicioObservador) {
+        diasTotales = Math.max(1, Math.ceil((endDate.getTime() - m.fechaInicioObservador.getTime()) / (1000 * 3600 * 24)));
+      }
+
+      let fechaZarpada: Date | null = null;
+      let fechaArribo: Date | null = null;
+
+      if (m.etapas && m.etapas.length > 0) {
+        const zarpadas = m.etapas.map((e: any) => e.fechaZarpada).filter((d: any) => d != null).sort((a: any, b: any) => a.getTime() - b.getTime());
+        if (zarpadas.length > 0) fechaZarpada = zarpadas[0];
+
+        const arribos = m.etapas.map((e: any) => e.fechaArribo).filter((d: any) => d != null).sort((a: any, b: any) => b.getTime() - a.getTime());
+        if (arribos.length > 0) fechaArribo = arribos[0];
+      }
+
+      return {
+        id: m.id,
+        id_marea: `${m.tipoMarea}-${m.nroMarea}-${String(m.anioMarea).slice(-2)}`,
+        buque: m.buque?.nombreBuque,
+        flota: m.buque?.tipoFlota?.nombre,
+        pesqueria: m.pesqueria?.nombre,
+        observador: nombreObservador,
+        fechaZarpada,
+        fechaArribo,
+        diasTotales,
+        tipoMarea: m.tipoMarea
+      };
+    });
   }
 }
