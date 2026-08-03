@@ -1,7 +1,8 @@
 import httpClient from '@/config/http/http.client';
 import type { 
   RequerimientoCobertura, BatchUpsertRequerimientosDto,
-  ExperienciaObservador, BatchUpsertExperienciaDto
+  ExperienciaObservador, BatchUpsertExperienciaDto,
+  ExperienciaPorPesqueria
 } from '../interfaces/planificacion.interfaces';
 
 export const planificacionService = {
@@ -30,6 +31,14 @@ export const planificacionService = {
   },
 
   /**
+   * Obtiene la experiencia de todos los observadores para una pesquería específica
+   */
+  async getExperienciaPorPesqueria(pesqueriaId: string): Promise<ExperienciaPorPesqueria[]> {
+    const response = await httpClient.get<ExperienciaPorPesqueria[]>(`/planificacion/experiencia-observadores/pesqueria/${pesqueriaId}`);
+    return response.data;
+  },
+
+  /**
    * Guarda o actualiza un lote completo de experiencias
    */
   async upsertExperienciaObservadoresBatch(dto: BatchUpsertExperienciaDto): Promise<{ count: number }> {
@@ -40,9 +49,9 @@ export const planificacionService = {
   /**
    * Obtiene el detalle de mareas para una celda de experiencia
    */
-  async getDetalleMareasExperiencia(observadorId: string, pesqueriaId: string, tipoFlotaId: string): Promise<any[]> {
+  async getDetalleMareasExperiencia(observadorId: string, pesqueriaId: string): Promise<any[]> {
     const response = await httpClient.get<any[]>(`/planificacion/experiencia-observadores/${observadorId}/mareas`, {
-      params: { pesqueriaId, tipoFlotaId }
+      params: { pesqueriaId }
     });
     return response.data;
   },

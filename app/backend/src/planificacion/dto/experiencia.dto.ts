@@ -8,8 +8,7 @@ export class UpsertExperienciaDto {
   @IsNotEmpty()
   pesqueriaId: string;
 
-  @IsNotEmpty()
-  tipoFlotaId: string;
+
 
   @IsOptional()
   @IsInt()

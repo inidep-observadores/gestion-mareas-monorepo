@@ -87,9 +87,6 @@ export class PlanificacionService {
         },
         pesqueria: {
           select: { id: true, nombre: true }
-        },
-        tipoFlota: {
-          select: { id: true, nombre: true }
         }
       }
     });
@@ -116,7 +113,6 @@ export class PlanificacionService {
       select: {
         id: true,
         pesqueriaId: true,
-        buque: { select: { tipoFlotaId: true } },
         observadorPrincipalId: true,
         etapas: {
           select: {
@@ -129,10 +125,9 @@ export class PlanificacionService {
     // Agrupar mareas vivas
     const agrupadoVivas: Record<string, number> = {};
     for (const marea of mareasVivas) {
-      if (!marea.pesqueriaId || !marea.buque?.tipoFlotaId) continue;
+      if (!marea.pesqueriaId) continue;
       
       const pesqueriaId = marea.pesqueriaId;
-      const tipoFlotaId = marea.buque.tipoFlotaId;
       
       const observadoresIds = new Set<string>();
       if (marea.observadorPrincipalId) {
@@ -145,7 +140,7 @@ export class PlanificacionService {
       }
       
       for (const obsId of observadoresIds) {
-        const key = `${obsId}_${pesqueriaId}_${tipoFlotaId}`;
+        const key = `${obsId}_${pesqueriaId}`;
         agrupadoVivas[key] = (agrupadoVivas[key] || 0) + 1;
       }
     }
@@ -154,7 +149,7 @@ export class PlanificacionService {
     const mapaResultado = new Map<string, any>();
 
     for (const h of historico) {
-      const key = `${h.observadorId}_${h.pesqueriaId}_${h.tipoFlotaId}`;
+      const key = `${h.observadorId}_${h.pesqueriaId}`;
       const mareasVivasCount = agrupadoVivas[key] || 0;
       mapaResultado.set(key, {
         ...h,
@@ -169,23 +164,20 @@ export class PlanificacionService {
     if (Object.keys(agrupadoVivas).length > 0) {
       const missingObsIds = [...new Set(Object.keys(agrupadoVivas).map(k => k.split('_')[0]))];
       const missingPesqIds = [...new Set(Object.keys(agrupadoVivas).map(k => k.split('_')[1]))];
-      const missingFlotaIds = [...new Set(Object.keys(agrupadoVivas).map(k => k.split('_')[2]))];
       
-      const [obsList, pesqList, flotaList] = await Promise.all([
+      const [obsList, pesqList] = await Promise.all([
         this.prisma.observador.findMany({ where: { id: { in: missingObsIds } }, select: { id: true, nombre: true, apellido: true } }),
-        this.prisma.pesqueria.findMany({ where: { id: { in: missingPesqIds } }, select: { id: true, nombre: true } }),
-        this.prisma.tipoFlota.findMany({ where: { id: { in: missingFlotaIds } }, select: { id: true, nombre: true } })
+        this.prisma.pesqueria.findMany({ where: { id: { in: missingPesqIds } }, select: { id: true, nombre: true } })
       ]);
       
       for (const key in agrupadoVivas) {
-        const [obsId, pesqId, tipoFlotaId] = key.split('_');
+        const [obsId, pesqId] = key.split('_');
         const count = agrupadoVivas[key];
         
         mapaResultado.set(key, {
           id: `virtual_${key}`,
           observadorId: obsId,
           pesqueriaId: pesqId,
-          tipoFlotaId: tipoFlotaId,
           valor: null,
           experiencia: 0,
           experienciaHistorica: 0,
@@ -193,13 +185,89 @@ export class PlanificacionService {
           experienciaTotal: count,
           fechaActualizacion: new Date(),
           observador: obsList.find(o => o.id === obsId),
-          pesqueria: pesqList.find(p => p.id === pesqId),
-          tipoFlota: flotaList.find(f => f.id === tipoFlotaId)
+          pesqueria: pesqList.find(p => p.id === pesqId)
         });
       }
     }
 
     return Array.from(mapaResultado.values());
+  }
+
+  /**
+   * Devuelve la experiencia y valoración de TODOS los observadores activos
+   * para una pesquería determinada.
+   */
+  async getExperienciaPorPesqueria(pesqueriaId: string) {
+    // 1. Obtener todos los observadores activos
+    const observadoresActivos = await this.prisma.observador.findMany({
+      where: { activo: true },
+      select: { id: true, nombre: true, apellido: true }
+    });
+
+    // 2. Obtener histórico para esta pesquería
+    const historico = await this.prisma.experienciaObservador.findMany({
+      where: { pesqueriaId },
+      select: { observadorId: true, experiencia: true, valor: true }
+    });
+    const mapaHistorico = new Map(historico.map(h => [h.observadorId, h]));
+
+    // 3. Obtener mareas "vivas" para esta pesquería
+    const fechaCorte = new Date('2026-01-01T00:00:00Z');
+    const mareasVivas = await this.prisma.marea.findMany({
+      where: {
+        pesqueriaId,
+        fechaInicioObservador: { gte: fechaCorte },
+        estadoActual: {
+          codigo: {
+            notIn: [
+              MareaEstado.DESIGNADA,
+              MareaEstado.A_REASIGNAR,
+              MareaEstado.EN_EJECUCION,
+              MareaEstado.CANCELADA,
+              MareaEstado.DESESTIMADA,
+            ]
+          }
+        }
+      },
+      select: {
+        observadorPrincipalId: true,
+        etapas: {
+          select: {
+            observadores: { select: { observadorId: true } }
+          }
+        }
+      }
+    });
+
+    // Agrupar mareas vivas por observador
+    const vivasPorObservador: Record<string, number> = {};
+    for (const marea of mareasVivas) {
+      const observadoresIds = new Set<string>();
+      if (marea.observadorPrincipalId) observadoresIds.add(marea.observadorPrincipalId);
+      for (const etapa of marea.etapas) {
+        for (const obs of etapa.observadores) observadoresIds.add(obs.observadorId);
+      }
+      for (const obsId of observadoresIds) {
+        vivasPorObservador[obsId] = (vivasPorObservador[obsId] || 0) + 1;
+      }
+    }
+
+    // 4. Consolidar resultados para todos los observadores activos
+    return observadoresActivos.map(obs => {
+      const h = mapaHistorico.get(obs.id);
+      const vivas = vivasPorObservador[obs.id] || 0;
+      const hist = h?.experiencia || 0;
+      
+      return {
+        observadorId: obs.id,
+        observadorNombre: `${obs.nombre} ${obs.apellido}`,
+        pesqueriaId,
+        valor: h?.valor ?? null,
+        experienciaHistorica: hist,
+        mareasVivas: vivas,
+        experienciaTotal: hist + vivas
+      };
+    });
   }
 
   /**
@@ -219,8 +287,7 @@ export class PlanificacionService {
            await prisma.experienciaObservador.updateMany({
              where: {
                observadorId: e.observadorId,
-               pesqueriaId: e.pesqueriaId,
-               tipoFlotaId: e.tipoFlotaId
+               pesqueriaId: e.pesqueriaId
              },
              data: { valor: null }
            });
@@ -228,10 +295,9 @@ export class PlanificacionService {
            // Insertamos / Actualizamos la valoración (0 a 5)
            await prisma.experienciaObservador.upsert({
              where: {
-               observadorId_pesqueriaId_tipoFlotaId: {
+               observadorId_pesqueriaId: {
                  observadorId: e.observadorId,
-                 pesqueriaId: e.pesqueriaId,
-                 tipoFlotaId: e.tipoFlotaId
+                 pesqueriaId: e.pesqueriaId
                }
              },
              update: {
@@ -240,7 +306,6 @@ export class PlanificacionService {
              create: {
                observadorId: e.observadorId,
                pesqueriaId: e.pesqueriaId,
-               tipoFlotaId: e.tipoFlotaId,
                valor: e.valor,
                experiencia: 0 // Iniciar histórico en 0 para nuevas asignaciones
              }
@@ -451,11 +516,10 @@ export class PlanificacionService {
    * Obtiene el detalle de las mareas de un observador en una pesquería y tipo de flota específicos.
    * Se incluyen todas las mareas históricas y "vivas" excluyendo estados iniciales/cancelados.
    */
-  async getDetalleMareasExperiencia(observadorId: string, pesqueriaId: string, tipoFlotaId: string) {
+  async getDetalleMareasExperiencia(observadorId: string, pesqueriaId: string) {
     const mareas = await this.prisma.marea.findMany({
       where: {
         pesqueriaId,
-        buque: { tipoFlotaId },
         estadoActual: {
           codigo: {
             notIn: [

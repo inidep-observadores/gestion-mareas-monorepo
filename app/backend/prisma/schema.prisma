@@ -84,7 +84,6 @@ model TipoFlota {
   activo          Boolean                  @default(true)
   codigo_numerico Int                      @unique @map("codigo_numerico")
   buques          Buque[]
-  experiencias    ExperienciaObservador[]
   requerimientos  RequerimientoCobertura[]
 
   @@map("tipos_flota")
@@ -585,15 +584,13 @@ model ExperienciaObservador {
   id                 String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   observadorId       String     @map("observador_id") @db.Uuid
   pesqueriaId        String     @map("pesqueria_id") @db.Uuid
-  tipoFlotaId        String     @map("tipo_flota_id") @db.Uuid
   valor              Int?       @db.SmallInt
   experiencia        Int?
   fechaActualizacion DateTime   @default(now()) @updatedAt @map("fecha_actualizacion") @db.Timestamptz(6)
   observador         Observador @relation(fields: [observadorId], references: [id], onDelete: Cascade)
   pesqueria          Pesqueria  @relation(fields: [pesqueriaId], references: [id], onDelete: Cascade)
-  tipoFlota          TipoFlota  @relation(fields: [tipoFlotaId], references: [id], onDelete: Cascade)
 
-  @@unique([observadorId, pesqueriaId, tipoFlotaId], map: "experiencia_observadores_observador_id_pesqueria_id_tipo_flota_")
+  @@unique([observadorId, pesqueriaId], map: "experiencia_observadores_observador_id_pesqueria_id_unique")
   @@map("experiencia_observadores")
   @@schema("public")
 }

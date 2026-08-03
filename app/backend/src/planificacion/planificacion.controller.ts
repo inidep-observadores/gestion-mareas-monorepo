@@ -28,14 +28,19 @@ export class PlanificacionController {
     return this.planificacionService.getExperienciaObservadores();
   }
 
+  @Get('experiencia-observadores/pesqueria/:pesqueriaId')
+  @Auth(ValidRoles.admin, ValidRoles.planificador, ValidRoles.coordinador)
+  async getExperienciaPorPesqueria(@Param('pesqueriaId') pesqueriaId: string) {
+    return this.planificacionService.getExperienciaPorPesqueria(pesqueriaId);
+  }
+
   @Get('experiencia-observadores/:observadorId/mareas')
   @Auth(ValidRoles.admin, ValidRoles.planificador, ValidRoles.coordinador)
   async getDetalleMareasExperiencia(
     @Param('observadorId') observadorId: string,
     @Query('pesqueriaId') pesqueriaId: string,
-    @Query('tipoFlotaId') tipoFlotaId: string,
   ) {
-    return this.planificacionService.getDetalleMareasExperiencia(observadorId, pesqueriaId, tipoFlotaId);
+    return this.planificacionService.getDetalleMareasExperiencia(observadorId, pesqueriaId);
   }
 
   @Post('experiencia-observadores')
