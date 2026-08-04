@@ -27,5 +27,12 @@ export class FilesService {
         return path;
     }
 
+    getStaticNovedadFile(fileName: string) {
+        const path = join(process.cwd(), 'static/novedades', fileName);
 
+        if (!existsSync(path))
+            throw new BadRequestException(`No file found with name ${fileName}`);
+
+        return path;
+    }
 }

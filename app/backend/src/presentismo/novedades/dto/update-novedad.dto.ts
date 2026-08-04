@@ -11,5 +11,8 @@ export class UpdateNovedadDto extends PartialType(CreateNovedadDto) {
     @IsString()
     @IsOptional()
     comentarioMovimiento?: string;
+
+    @IsOptional()
+    eliminarArchivoViejo?: boolean;
 }
 

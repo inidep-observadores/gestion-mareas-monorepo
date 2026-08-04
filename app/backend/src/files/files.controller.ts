@@ -2,18 +2,20 @@ import { Controller, Get, Post, Param, UploadedFile, UseInterceptors, BadRequest
 import { ConfigService } from '@nestjs/config';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Response } from 'express';
-import { diskStorage } from 'multer';
+import { diskStorage, memoryStorage } from 'multer';
 import { FilesService } from './files.service';
+import { DriveStorageService } from './drive-storage.service';
 
 import { fileFilter, fileNamer } from './helpers';
 
 
 @Controller('files')
 export class FilesController {
-  constructor(
-    private readonly filesService: FilesService,
-    private readonly configService: ConfigService,
-  ) { }
+    constructor(
+        private readonly filesService: FilesService,
+        private readonly configService: ConfigService,
+        private readonly driveStorageService: DriveStorageService,
+    ) { }
 
   @Get('product/:imageName')
   findProductImage(
@@ -58,25 +60,47 @@ export class FilesController {
     return { secureUrl };
   }
 
-  @Post('user')
-  @UseInterceptors(FileInterceptor('file', {
-    fileFilter: fileFilter,
-    storage: diskStorage({
-      destination: './static/users',
-      filename: fileNamer
-    })
-  }))
-  uploadUserImage(
-    @UploadedFile() file: Express.Multer.File,
-  ) {
+    @Post('user')
+    @UseInterceptors(FileInterceptor('file', {
+        fileFilter: fileFilter,
+        storage: diskStorage({
+            destination: './static/users',
+            filename: fileNamer
+        })
+    }))
+    uploadUserImage(
+        @UploadedFile() file: Express.Multer.File,
+    ) {
+        if (!file) {
+            throw new BadRequestException('Make sure that the file is an image');
+        }
 
-    if (!file) {
-      throw new BadRequestException('Make sure that the file is an image');
+        const secureUrl = `/api/files/users/${file.filename}`;
+        return { secureUrl };
     }
 
-    // Return relative path for database storage consistency
-    const secureUrl = `/api/files/users/${file.filename}`;
+    @Post('novedad/drive')
+    @UseInterceptors(FileInterceptor('file', {
+        storage: memoryStorage()
+    }))
+    async uploadNovedadFile(
+        @UploadedFile() file: Express.Multer.File,
+    ) {
+        if (!file) {
+            throw new BadRequestException('El archivo es requerido');
+        }
 
-    return { secureUrl };
-  }
+        const result = await this.driveStorageService.uploadFile(
+            file.originalname,
+            file.mimetype,
+            file.buffer
+        );
+
+        return { 
+            secureUrl: result.webViewLink,
+            driveFileId: result.fileId,
+            originalName: file.originalname,
+            mimetype: file.mimetype
+        };
+    }
 }

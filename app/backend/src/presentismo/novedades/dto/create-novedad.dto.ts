@@ -24,4 +24,12 @@ export class CreateNovedadDto {
   @IsString()
   @IsOptional()
   motivo?: string;
+
+  @IsOptional()
+  archivo?: {
+    nombreOriginal: string;
+    rutaArchivo: string;
+    tipoArchivo: string;
+    driveFileId: string;
+  };
 }

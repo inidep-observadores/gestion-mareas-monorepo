@@ -4,12 +4,16 @@ import { CreateNovedadDto } from './dto/create-novedad.dto';
 import { UpdateNovedadDto } from './dto/update-novedad.dto';
 import { User } from '@prisma/client';
 import { DateUtils } from '../../common/utils/date.utils';
+import { DriveStorageService } from '../../files/drive-storage.service';
 
 @Injectable()
 export class NovedadesService {
-  private readonly logger = new Logger(NovedadesService.name);
+    private readonly logger = new Logger(NovedadesService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+    constructor(
+        private readonly prisma: PrismaService,
+        private readonly driveStorageService: DriveStorageService
+    ) {}
 
   async findAll(observadorId?: string, estadoAprobacion?: string) {
     const where: any = { activo: true };
@@ -142,7 +146,15 @@ export class NovedadesService {
             estadoNuevo: 'APROBADA',
             usuarioId: user?.id,
           }
-        }
+        },
+        archivos: createNovedadDto.archivo ? {
+          create: {
+            rutaArchivo: createNovedadDto.archivo.rutaArchivo,
+            tipoArchivo: createNovedadDto.archivo.tipoArchivo,
+            nombreOriginal: createNovedadDto.archivo.nombreOriginal,
+            driveFileId: createNovedadDto.archivo.driveFileId,
+          }
+        } : undefined
       },
       include: { observador: true, tipoNovedad: true, archivos: true }
     });
@@ -155,7 +167,9 @@ export class NovedadesService {
     const existing = await this.findOne(id);
     
     const data: any = { ...updateNovedadDto };
-    delete data.comentarioMovimiento; // No es parte de la entidad principal
+    delete data.comentarioMovimiento;
+    delete data.archivo;
+    delete data.eliminarArchivoViejo;
 
     if (updateNovedadDto.fechaInicio) data.fechaInicio = DateUtils.parseToAppZone(updateNovedadDto.fechaInicio);
     if (updateNovedadDto.fechaFin !== undefined) {
@@ -222,6 +236,34 @@ export class NovedadesService {
         usuarioId: user?.id,
       }
     };
+
+    // Manejo de archivos
+    const archivoActual = existing.archivos?.[0];
+    const tieneArchivoNuevo = !!updateNovedadDto.archivo;
+    const debeEliminar = updateNovedadDto.eliminarArchivoViejo === true;
+
+    if (tieneArchivoNuevo || debeEliminar) {
+      if (archivoActual) {
+        // Borrar el archivo viejo de la base de datos
+        data.archivos = { deleteMany: { id: archivoActual.id } };
+        // Borrar físicamente de Google Drive
+        if (archivoActual.driveFileId) {
+          await this.driveStorageService.deleteFile(archivoActual.driveFileId);
+        }
+      }
+
+      if (tieneArchivoNuevo && updateNovedadDto.archivo) {
+        data.archivos = {
+          ...data.archivos, // Por si se agregó deleteMany arriba
+          create: {
+            rutaArchivo: updateNovedadDto.archivo.rutaArchivo,
+            tipoArchivo: updateNovedadDto.archivo.tipoArchivo,
+            nombreOriginal: updateNovedadDto.archivo.nombreOriginal,
+            driveFileId: updateNovedadDto.archivo.driveFileId,
+          }
+        };
+      }
+    }
 
     const updated = await this.prisma.observadorNovedad.update({
       where: { id },

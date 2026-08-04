@@ -81,6 +81,27 @@
             class="w-full px-4 py-2.5 bg-surface border border-border rounded-lg text-sm text-text outline-none focus:border-primary focus:ring-3 focus:ring-primary/10 transition-all shadow-theme-xs resize-none"
           ></textarea>
         </div>
+
+        <!-- Archivo Adjunto -->
+        <div class="space-y-1.5">
+          <label class="block text-sm font-medium text-text-muted">Archivo Adjunto</label>
+          <div v-if="isEdit && editData?.archivos?.length && !eliminarArchivoViejo" class="flex items-center gap-3 p-3 bg-surface border border-border rounded-lg shadow-theme-xs">
+             <DocsIcon class="w-5 h-5 text-primary" />
+             <div class="flex-1 overflow-hidden">
+                <p class="text-sm font-medium text-text truncate">{{ editData.archivos[0].nombreOriginal || 'Archivo adjunto' }}</p>
+             </div>
+             <button @click.prevent="eliminarArchivoViejo = true" class="text-xs font-bold text-error hover:underline px-2">Eliminar / Reemplazar</button>
+          </div>
+          <div v-else>
+            <input 
+              type="file" 
+              ref="fileInput"
+              @change="e => selectedFile = (e.target as HTMLInputElement).files?.[0] || null"
+              class="w-full text-sm text-text file:mr-4 file:py-2.5 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-black file:uppercase file:tracking-widest file:bg-primary/10 file:text-primary hover:file:bg-primary/20 transition-all border border-border rounded-lg cursor-pointer bg-surface"
+            />
+            <button v-if="isEdit && eliminarArchivoViejo && editData?.archivos?.length" @click.prevent="restaurarArchivoViejo" class="mt-2 text-[10px] font-bold text-primary uppercase hover:underline">Deshacer (Mantener original)</button>
+          </div>
+        </div>
       </div>
 
       <!-- Actions -->
@@ -142,6 +163,7 @@ import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 import AttachmentViewer from '@/components/common/AttachmentViewer.vue'
 import catalogosService from '@/modules/mareas/services/catalogos.service'
 import tiposNovedadApi from '../services/tipos-novedad.service'
+import { novedadesService } from '../services/novedades.service'
 import {
   UserGroupIcon,
   CalenderIcon,
@@ -173,6 +195,16 @@ const fieldErrors = ref<Record<string, string>>({})
 const error = ref('')
 const loading = ref(false)
 const isEdit = computed(() => !!props.editData)
+
+const selectedFile = ref<File | null>(null)
+const fileInput = ref<HTMLInputElement | null>(null)
+const eliminarArchivoViejo = ref(false)
+
+const restaurarArchivoViejo = () => {
+  eliminarArchivoViejo.value = false
+  selectedFile.value = null
+  if (fileInput.value) fileInput.value.value = ''
+}
 
 const tiposNovedad = ref<TipoNovedad[]>([])
 
@@ -244,6 +276,10 @@ watch(() => props.show, (newVal) => {
       form.value = getInitialForm()
     }
     
+    selectedFile.value = null
+    eliminarArchivoViejo.value = false
+    if (fileInput.value) fileInput.value.value = ''
+
     nextTick(() => {
       observadorSelect.value?.focus()
     })
@@ -285,16 +321,36 @@ const validate = () => {
   return Object.keys(fieldErrors.value).length === 0
 }
 
-const submit = () => {
+const submit = async () => {
   if (!validate()) return
 
   loading.value = true
-  const payload = {
-    ...form.value,
-    fechaFin: form.value.fechaFin || null
+  try {
+    const payload: any = {
+      ...form.value,
+      fechaFin: form.value.fechaFin || null
+    }
+
+    if (eliminarArchivoViejo.value) {
+      payload.eliminarArchivoViejo = true
+    }
+
+    if (selectedFile.value) {
+      const fileInfo = await novedadesService.uploadFile(selectedFile.value)
+      payload.archivo = {
+        nombreOriginal: fileInfo.originalName,
+        rutaArchivo: fileInfo.secureUrl,
+        tipoArchivo: fileInfo.mimetype,
+        driveFileId: fileInfo.driveFileId
+      }
+    }
+    
+    emit('save', payload)
+  } catch (err: any) {
+    error.value = err.response?.data?.message || 'Error al procesar el archivo o guardar la novedad'
+    console.error(err)
+  } finally {
+    loading.value = false
   }
-  
-  emit('save', payload)
-  loading.value = false
 }
 </script>

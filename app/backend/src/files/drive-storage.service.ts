@@ -73,4 +73,18 @@ export class DriveStorageService {
             throw error;
         }
     }
+    /**
+     * Elimina permanentemente un archivo de Google Drive
+     */
+    async deleteFile(fileId: string): Promise<void> {
+        try {
+            await this.driveClient.files.delete({
+                fileId: fileId
+            });
+            this.logger.log(`Archivo eliminado permanentemente de Google Drive (ID: ${fileId})`);
+        } catch (error) {
+            this.logger.error(`Error al eliminar archivo de Google Drive (ID: ${fileId}): ${error.message}`);
+            // No lanzamos el error para no interrumpir el flujo si falla el borrado
+        }
+    }
 }
