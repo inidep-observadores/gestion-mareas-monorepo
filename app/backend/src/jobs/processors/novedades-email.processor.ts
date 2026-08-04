@@ -70,10 +70,20 @@ export class NovedadesEmailProcessor implements JobProcessor {
                 const detallesPrevios = emailLog.detalles || [];
                 const yaEncolado = (fuente: string) => detallesPrevios.some(d => d.fuente === fuente);
 
+                // Asegurar nombres únicos para adjuntos sin nombre
+                const attachmentsData = (email.attachments || []).map((att, i) => {
+                    let fname = att.filename;
+                    if (!fname) {
+                        const ext = (att.contentType || '').split('/')[1] || 'pdf';
+                        fname = `adjunto_${i}.${ext}`;
+                    }
+                    return { ...att, resolvedFilename: fname };
+                });
+
                 // --- FASE 1: Triage ---
                 let triageResult: any = emailLog.clasificacionTriage;
                 if (!triageResult) {
-                    const nombresAdjuntos = (email.attachments || []).map(a => a.filename || 'adjunto.pdf');
+                    const nombresAdjuntos = attachmentsData.map(a => a.resolvedFilename);
                     triageResult = await this.novedadesAiService.clasificarEmail(email.subject, email.text, nombresAdjuntos);
                     
                     await this.prisma.novedadesEmailLog.update({
@@ -116,10 +126,10 @@ export class NovedadesEmailProcessor implements JobProcessor {
                 }
 
                 // 3. Procesar cada Adjunto marcado como relevante
-                if (email.attachments && email.attachments.length > 0) {
-                    for (let i = 0; i < email.attachments.length; i++) {
-                        const att = email.attachments[i];
-                        const filename = att.filename || `adjunto_${i}.pdf`;
+                if (attachmentsData.length > 0) {
+                    for (let i = 0; i < attachmentsData.length; i++) {
+                        const att = attachmentsData[i];
+                        const filename = att.resolvedFilename;
                         
                         const adjuntoCandidato = candidatosRelevantes.find((c: any) => c.fuente === 'ADJUNTO' && c.nombreArchivo === filename);
                         if (adjuntoCandidato) {

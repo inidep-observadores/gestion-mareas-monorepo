@@ -43,7 +43,7 @@
         <!-- Rango de Fechas -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div class="space-y-1.5">
-            <label class="block text-sm font-medium text-text-muted">{{ isViajeNovedad ? 'Fecha' : 'Fecha de Inicio' }}</label>
+            <label class="block text-sm font-medium text-text-muted">Fecha de Inicio</label>
             <DatePicker 
               v-model="form.fechaInicio" 
               :icon="CalenderIcon" 
@@ -51,14 +51,13 @@
               :error="fieldErrors.fechaInicio" 
             />
           </div>
-          <div class="space-y-1.5" :class="{'opacity-50 pointer-events-none': isViajeNovedad}">
+          <div class="space-y-1.5">
             <label class="block text-sm font-medium text-text-muted">Fecha de Fin (Opcional)</label>
             <DatePicker 
               v-model="form.fechaFin" 
               :icon="CalenderIcon" 
               :show-time="false"
               :error="fieldErrors.fechaFin" 
-              :disabled="isViajeNovedad"
             />
           </div>
         </div>
@@ -264,11 +263,6 @@ watch(() => form.value.observadorId, (val) => {
 })
 watch(() => form.value.tipoNovedadId, (val) => { 
   if (val) delete fieldErrors.value.tipoNovedadId 
-  
-  if (isViajeNovedad.value) {
-    form.value.fechaFin = ''
-    delete fieldErrors.value.fechaFin
-  }
 })
 watch(() => form.value.fechaInicio, (val) => { if (val) delete fieldErrors.value.fechaInicio })
 

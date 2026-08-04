@@ -18,10 +18,11 @@ const schemaPasajes = {
         dni: { type: 'string', description: 'DNI del pasajero si figura. Si no lo encuentras, devuelve un string vacío ""' },
         origen: { type: 'string', description: 'Ciudad de origen del viaje. ATENCIÓN: Busca explícitamente el campo "ORIGEN" o similar. Ignora textos como "SE ANUNCIA A" u otras ciudades mezcladas en el OCR.' },
         destino: { type: 'string', description: 'Ciudad de destino del viaje' },
-        fechaViaje: { type: 'string', description: 'Fecha del viaje en formato YYYY-MM-DD' },
+        fechaSalida: { type: 'string', description: 'Fecha de salida o inicio del viaje en formato YYYY-MM-DD' },
+        fechaLlegada: { type: 'string', description: 'Fecha de llegada o arribo al destino en formato YYYY-MM-DD. Si no figura una fecha de llegada explícita o es la misma, usa la misma que la fecha de salida.' },
         empresa: { type: 'string', description: 'Empresa de transporte (ej: Via Tac, Aerolineas, etc.)' }
     },
-    required: ['observador', 'fechaViaje', 'dni', 'origen', 'destino']
+    required: ['observador', 'fechaSalida', 'fechaLlegada', 'dni', 'origen', 'destino']
 };
 
 // 2. Esquema para Novedades Oficiales GDE
@@ -129,7 +130,7 @@ export class NovedadesAiService {
 
 
     async clasificarEmail(asunto: string, cuerpoTexto: string, nombresAdjuntos: string[]): Promise<any> {
-        const promptSystem = 'Eres un asistente clasificador de correos (Triage). Analiza el Asunto, el Cuerpo y la lista de Archivos Adjuntos para determinar qué partes contienen información sobre "Novedades de Observadores Pesqueros" (Licencias, Francos, Pasajes, Descansos, etc.). Ignora imágenes de firmas o correos que no tengan relevancia devolviendo tipoDocumento IRRELEVANTE. IMPORTANTE: Si la única información relevante se encuentra en un adjunto y el cuerpo del correo solo dice cosas como "Adjunto pasaje" o es una firma, clasifica el CUERPO_EMAIL como IRRELEVANTE para evitar duplicaciones. Solo genera un candidato CUERPO_EMAIL si el cuerpo menciona información útil distinta o complementaria. Si hay un adjunto con un pasaje o nota GDE, devuelve un candidato ADJUNTO con el nombre exacto del archivo. Puede haber múltiples candidatos (ej. un texto sustancial en el cuerpo y un pasaje en un adjunto).';
+        const promptSystem = 'Eres un asistente clasificador de correos (Triage). Analiza el Asunto, el Cuerpo y la lista de Archivos Adjuntos para determinar qué partes contienen novedades (Licencias, Francos, Pasajes, etc.). REGLA DE ORO PARA ADJUNTOS: Como no puedes ver el contenido de los archivos, DEBES asumir que TODOS los archivos adjuntos (imágenes, PDFs, etc.) son documentos válidos (PASAJES o GDE) y generar un candidato ADJUNTO por CADA archivo, sin importar su nombre o extensión. La única excepción es si el archivo es un logo de red social corporativa. NUNCA descartes un archivo porque su nombre parezca genérico; el sistema lo descartará en la siguiente fase si resulta ser irrelevante. IMPORTANTE: Si la única información relevante se encuentra en los adjuntos, clasifica el CUERPO_EMAIL como IRRELEVANTE. Solo genera un candidato CUERPO_EMAIL si el cuerpo menciona información útil distinta.';
 
         const content = `Asunto: ${asunto || ''}\n\nCuerpo:\n${cuerpoTexto || ''}\n\nArchivos Adjuntos:\n${nombresAdjuntos.join(', ')}`;
 
@@ -272,12 +273,12 @@ export class NovedadesAiService {
                     tipoViaje = 'VIAJE_FIN';
                 }
 
-                if (tipoViaje && parsedJson.fechaViaje) {
+                if (tipoViaje && parsedJson.fechaSalida) {
                     parsedJson.periodos = [{
                         tipoNovedad: tipoViaje,
-                        fechaInicio: parsedJson.fechaViaje,
-                        fechaFin: parsedJson.fechaViaje, // Autocierre
-                        motivo: `Viaje: ${parsedJson.origen} -> ${parsedJson.destino} (${parsedJson.empresa || 'Empresa de transporte'})`
+                        fechaInicio: parsedJson.fechaSalida,
+                        fechaFin: parsedJson.fechaLlegada || parsedJson.fechaSalida, // Si no tiene llegada, autocierre
+                        motivo: `Viaje: ${parsedJson.origen || '?'} -> ${parsedJson.destino || '?'} (${parsedJson.empresa || 'Empresa de transporte'})`
                     }];
                 } else {
                     // Si no incluye Mar del Plata en origen o destino, o falta la fecha, lo ignoramos dejando periodos vacío
