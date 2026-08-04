@@ -139,8 +139,9 @@
         </td>
         <td class="px-6 py-4 cursor-pointer hover:bg-surface-muted/50 transition-colors" @click="openSidePanel(novedad)">
           <div class="flex flex-col gap-1 items-start">
-            <span class="bg-info/10 text-info text-[11px] font-bold px-2 py-0.5 rounded-full border border-info/20 uppercase tracking-tighter">
+            <span class="inline-flex items-center bg-info/10 text-info text-[11px] font-bold px-2 py-0.5 rounded-full border border-info/20 uppercase tracking-tighter">
               {{ novedad.tipoNovedad?.descripcion || 'Desconocido' }}
+              <PaperclipIcon v-if="novedad.archivos?.length" class="w-3.5 h-3.5 ml-1.5 opacity-70" title="Contiene archivos adjuntos" />
             </span>
             <span v-if="novedad.estadoAprobacion === 'PENDIENTE'" class="bg-warning/10 text-warning text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-tighter">
               Pendiente
@@ -186,8 +187,9 @@
           <div class="flex items-start gap-4 mb-4">
             <div class="flex-1 min-w-0">
               <div class="flex items-center gap-2 mb-1.5">
-                <span class="text-[10px] font-black bg-info/10 text-info px-2 py-0.5 rounded-md uppercase">
+                <span class="inline-flex items-center text-[10px] font-black bg-info/10 text-info px-2 py-0.5 rounded-md uppercase">
                   {{ novedad.tipoNovedad?.descripcion || 'Desconocido' }}
+                  <PaperclipIcon v-if="novedad.archivos?.length" class="w-3 h-3 ml-1 opacity-70" />
                 </span>
                 <span class="text-[9px] font-bold text-text-muted border border-border px-1.5 py-0.5 rounded uppercase">
                   {{ novedad.origen || 'MANUAL' }}
@@ -329,7 +331,7 @@ import ConfirmationDialog from '@/components/common/ConfirmationDialog.vue';
 import { novedadesService } from '../services/novedades.service';
 import type { Novedad } from '../interfaces/novedad.interface';
 import { toast } from 'vue-sonner';
-import { TrashIcon, ChevronDownIcon, EditIcon, PlusIcon } from '@/icons';
+import { TrashIcon, ChevronDownIcon, EditIcon, PlusIcon, PaperclipIcon } from '@/icons';
 import { RefreshCcwIcon } from 'lucide-vue-next';
 import { TIPO_CONTRATO } from '../constants/observador.constants';
 import DatePicker from '@/components/common/DatePicker.vue';
