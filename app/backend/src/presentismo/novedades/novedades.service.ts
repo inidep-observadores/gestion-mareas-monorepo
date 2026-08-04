@@ -243,6 +243,10 @@ export class NovedadesService {
     const debeEliminar = updateNovedadDto.eliminarArchivoViejo === true;
 
     if (tieneArchivoNuevo || debeEliminar) {
+      if (existing.origen !== 'MANUAL') {
+        throw new BadRequestException('No se pueden modificar los archivos adjuntos de novedades autogeneradas');
+      }
+
       if (archivoActual) {
         // Borrar el archivo viejo de la base de datos
         data.archivos = { deleteMany: { id: archivoActual.id } };

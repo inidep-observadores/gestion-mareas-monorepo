@@ -83,7 +83,7 @@
         </div>
 
         <!-- Archivo Adjunto -->
-        <div class="space-y-1.5">
+        <div v-if="!isEdit || editData?.origen === 'MANUAL'" class="space-y-1.5">
           <label class="block text-sm font-medium text-text-muted">Archivo Adjunto</label>
           <div v-if="isEdit && editData?.archivos?.length && !eliminarArchivoViejo" class="flex items-center gap-3 p-3 bg-surface border border-border rounded-lg shadow-theme-xs">
              <DocsIcon class="w-5 h-5 text-primary" />
