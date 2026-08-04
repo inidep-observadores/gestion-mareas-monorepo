@@ -81,7 +81,14 @@ export class FilesController {
 
     @Post('novedad/drive')
     @UseInterceptors(FileInterceptor('file', {
-        storage: memoryStorage()
+        storage: memoryStorage(),
+        fileFilter: (req, file, cb) => {
+            if (file.mimetype.startsWith('image/') || file.mimetype === 'application/pdf') {
+                cb(null, true);
+            } else {
+                cb(new BadRequestException('Solo se permiten imágenes y archivos PDF'), false);
+            }
+        }
     }))
     async uploadNovedadFile(
         @UploadedFile() file: Express.Multer.File,

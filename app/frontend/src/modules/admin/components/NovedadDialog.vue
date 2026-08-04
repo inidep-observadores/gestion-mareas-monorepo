@@ -93,12 +93,43 @@
              <button @click.prevent="eliminarArchivoViejo = true" class="text-xs font-bold text-error hover:underline px-2">Eliminar / Reemplazar</button>
           </div>
           <div v-else>
-            <input 
-              type="file" 
-              ref="fileInput"
-              @change="e => selectedFile = (e.target as HTMLInputElement).files?.[0] || null"
-              class="w-full text-sm text-text file:mr-4 file:py-2.5 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-black file:uppercase file:tracking-widest file:bg-primary/10 file:text-primary hover:file:bg-primary/20 transition-all border border-border rounded-lg cursor-pointer bg-surface"
-            />
+            <div
+              @click="triggerFileInput"
+              @dragover.prevent="isDragging = true"
+              @dragleave.prevent="isDragging = false"
+              @drop.prevent="handleDrop"
+              class="group relative border-2 border-dashed rounded-2xl p-6 transition-all duration-300 text-center cursor-pointer"
+              :class="[
+                isDragging
+                  ? 'border-primary bg-primary/5'
+                  : 'border-border hover:border-primary/30 hover:bg-surface-muted/50'
+              ]"
+            >
+              <input 
+                type="file" 
+                ref="fileInput"
+                accept="image/*,application/pdf"
+                class="hidden"
+                @change="e => selectedFile = (e.target as HTMLInputElement).files?.[0] || null"
+              />
+              
+              <div v-if="!selectedFile" class="flex flex-col items-center">
+                <div class="w-10 h-10 mb-3 bg-surface-muted rounded-full flex items-center justify-center text-text-muted group-hover:text-primary transition-colors">
+                  <PlusIcon class="w-5 h-5" />
+                </div>
+                <p class="text-sm font-bold text-text">Haga clic o arrastre archivos aquí</p>
+                <p class="text-[10px] text-text-muted mt-1 font-medium italic">Formatos permitidos: .pdf, .jpg, .png</p>
+              </div>
+              
+              <div v-else class="flex items-center justify-center gap-3">
+                <DocsIcon class="w-6 h-6 text-primary" />
+                <div class="text-left overflow-hidden">
+                   <p class="text-sm font-bold text-text truncate max-w-[200px]">{{ selectedFile.name }}</p>
+                   <p class="text-[10px] text-text-muted font-medium mt-0.5">Clic o arrastrar para cambiar</p>
+                </div>
+              </div>
+            </div>
+            
             <button v-if="isEdit && eliminarArchivoViejo && editData?.archivos?.length" @click.prevent="restaurarArchivoViejo" class="mt-2 text-[10px] font-bold text-primary uppercase hover:underline">Deshacer (Mantener original)</button>
           </div>
         </div>
@@ -167,7 +198,8 @@ import { novedadesService } from '../services/novedades.service'
 import {
   UserGroupIcon,
   CalenderIcon,
-  DocsIcon
+  DocsIcon,
+  PlusIcon
 } from '@/icons'
 import type { Novedad } from '../interfaces/novedad.interface'
 import type { TipoNovedad } from '../interfaces/tipo-novedad.interface'
@@ -199,6 +231,21 @@ const isEdit = computed(() => !!props.editData)
 const selectedFile = ref<File | null>(null)
 const fileInput = ref<HTMLInputElement | null>(null)
 const eliminarArchivoViejo = ref(false)
+const isDragging = ref(false)
+
+const triggerFileInput = () => {
+  fileInput.value?.click()
+}
+
+const handleDrop = (event: DragEvent) => {
+  isDragging.value = false
+  if (event.dataTransfer?.files?.length) {
+    const file = event.dataTransfer.files[0]
+    if (file.type.startsWith('image/') || file.type === 'application/pdf') {
+      selectedFile.value = file
+    }
+  }
+}
 
 const restaurarArchivoViejo = () => {
   eliminarArchivoViejo.value = false
