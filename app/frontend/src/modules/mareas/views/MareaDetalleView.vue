@@ -378,6 +378,69 @@
 
         <!-- 5. Documentación Tab -->
         <div v-if="activeTab === 'docs'" class="space-y-16">
+          
+          <!-- Sección de Pasajes (IA) -->
+          <div class="space-y-6">
+            <div class="flex items-center justify-between px-2">
+              <h3 class="text-xs font-black uppercase tracking-[0.25em] text-primary flex items-center gap-4">
+                <div class="w-10 h-[2px] bg-gradient-to-r from-primary to-transparent rounded-full"></div>
+                Pasajes y Avisos de Viaje (Proceso IA)
+              </h3>
+              <span class="text-[10px] font-bold bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                {{ getFilesByCategory('PASAJE').length }} archivos
+              </span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <!-- File Cards para Pasajes -->
+              <div v-for="file in getFilesByCategory('PASAJE')" :key="file.id"
+                class="bg-surface border border-border rounded-3xl p-6 shadow-sm hover:shadow-xl hover:scale-[1.02] hover:border-primary/30 transition-all duration-300 group flex items-center gap-5 relative overflow-hidden">
+                
+                <div class="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 shadow-inner group-hover:scale-110 transition-transform duration-300"
+                  :class="getFormatColor(file.formato)">
+                  <FileTextIcon v-if="['PDF', 'DOCX'].includes(file.formato)" class="w-7 h-7" />
+                  <RefreshIcon v-else class="w-7 h-7 rotate-45" />
+                </div>
+
+                <div class="flex-1 min-w-0">
+                  <h4 class="text-sm font-bold text-text truncate group-hover:text-primary transition-colors">
+                    {{ file.nombre }}
+                  </h4>
+                  <div class="flex items-center flex-wrap gap-2 mt-1.5 text-text-muted/60">
+                    <span class="text-[10px] font-black uppercase tracking-tight">{{ file.formato }}</span>
+                    <span class="w-1 h-1 rounded-full bg-border"></span>
+                    <span class="text-[10px] font-medium">{{ file.fecha }}</span>
+                  </div>
+                </div>
+
+                <div class="flex items-center gap-1">
+                  <!-- Botón Eliminar Pasaje -->
+                  <button v-if="!isReadOnly" @click="confirmDeletePasaje(file.id)"
+                    class="p-2.5 text-text-muted hover:text-error hover:bg-error/10 rounded-xl transition-all active:scale-95"
+                    title="Eliminar Pasaje">
+                    <TrashIcon class="w-5 h-5" />
+                  </button>
+                  <button
+                    class="p-2.5 text-text-muted hover:text-primary hover:bg-primary/10 rounded-xl transition-all active:scale-95"
+                    title="Descargar Archivo">
+                    <DownloadIcon class="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+
+              <!-- Upload Placeholder for Pasajes -->
+              <button v-if="!isReadOnly" @click="triggerPasajeUpload" :disabled="isUploadingPasaje"
+                class="border-2 border-dashed border-primary/40 rounded-3xl p-6 flex items-center justify-center gap-4 text-primary hover:bg-primary/5 transition-all duration-300 group shadow-sm active:scale-95 disabled:opacity-50">
+                <div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                  <RefreshIcon v-if="isUploadingPasaje" class="w-5 h-5 animate-spin" />
+                  <CloudUploadIcon v-else class="w-5 h-5 group-hover:scale-110 transition-transform" />
+                </div>
+                <span class="text-xs font-black uppercase tracking-widest">{{ isUploadingPasaje ? 'Subiendo...' : 'Adjuntar Pasaje' }}</span>
+              </button>
+              
+              <input type="file" ref="pasajeFileInput" class="hidden" accept=".pdf,image/*" multiple @change="handlePasajeUpload" />
+            </div>
+          </div>
           <div v-for="cat in docCategories" :key="cat.id" class="space-y-6">
             <div class="flex items-center justify-between px-2">
               <h3 class="text-xs font-black uppercase tracking-[0.25em] text-text-muted/60 flex items-center gap-4">
@@ -420,12 +483,12 @@
 
                 <div class="flex-1 min-w-0">
                   <h4 class="text-sm font-bold text-text truncate group-hover:text-primary transition-colors">
-                    {{ file.nombre }}
+                    {{ file.nombre || (file.file?.name) || 'Archivo' }}
                   </h4>
                   <div class="flex items-center flex-wrap gap-2 mt-1.5 text-text-muted/60">
-                    <span class="text-[10px] font-black uppercase tracking-tight">{{ file.formato }}</span>
+                    <span class="text-[10px] font-black uppercase tracking-tight">{{ file.formato || (file.file?.name.split('.').pop()?.toUpperCase()) || 'N/D' }}</span>
                     <span class="w-1 h-1 rounded-full bg-border"></span>
-                    <span class="text-[10px] font-medium">{{ file.fecha }}</span>
+                    <span class="text-[10px] font-medium">{{ file.fecha || 'Pendiente de guardar' }}</span>
                     <template v-if="file.tipo_archivo">
                       <span class="w-1 h-1 rounded-full bg-border"></span>
                       <span class="text-[10px] font-medium">{{ file.tipo_archivo }}</span>
@@ -438,16 +501,22 @@
                 </div>
 
                 <div class="flex items-center gap-1">
-                  <button
+                  <button v-if="!file.tempId"
                     class="p-2.5 text-text-muted hover:text-primary hover:bg-primary/10 rounded-xl transition-all active:scale-95"
                     title="Descargar Archivo">
                     <DownloadIcon class="w-5 h-5" />
+                  </button>
+                  <button v-if="!isReadOnly"
+                    @click="handleDeleteFile(file.tempId || file.id)"
+                    class="p-2.5 text-text-muted hover:text-error hover:bg-error/10 rounded-xl transition-all active:scale-95"
+                    title="Eliminar Archivo">
+                    <TrashIcon class="w-5 h-5" />
                   </button>
                 </div>
               </div>
 
               <!-- Upload Placeholder for Category -->
-              <button v-if="!isReadOnly"
+              <button v-if="!isReadOnly" @click="triggerFileUpload(cat.id)"
                 class="border-2 border-dashed border-border rounded-3xl p-6 flex items-center justify-center gap-4 text-text-muted/40 hover:border-primary/40 hover:text-primary hover:bg-primary/5 transition-all duration-300 group shadow-sm active:scale-95">
                 <div
                   class="w-10 h-10 rounded-full bg-surface-muted flex items-center justify-center group-hover:bg-primary/10 transition-colors">
@@ -455,6 +524,7 @@
                 </div>
                 <span class="text-xs font-black uppercase tracking-widest">Adjuntar {{ cat.shortLabel }}</span>
               </button>
+              <input :id="'fileUpload_' + cat.id" type="file" class="hidden" @change="handleFileUpload($event, cat.id)" multiple />
             </div>
           </div>
         </div>
@@ -550,6 +620,16 @@
       @close="handleValidationCancel"
     />
 
+    <ConfirmationDialog
+      :show="showDeletePasajeConfirm"
+      title="Confirmar eliminación"
+      message="¿Está seguro que desea eliminar este pasaje permanentemente?"
+      confirmText="Eliminar"
+      cancelText="Cancelar"
+      @confirm="handleDeletePasaje"
+      @close="showDeletePasajeConfirm = false"
+    />
+
   </AdminLayout>
 </template>
 
@@ -612,6 +692,11 @@ const showValidationConfirm = ref(false)
 const validationConfirmMessage = ref('')
 const validationTipo = ref<'inicio' | 'fin'>('inicio')
 
+const isUploadingPasaje = ref(false)
+const pasajeFileInput = ref<HTMLInputElement | null>(null)
+const showDeletePasajeConfirm = ref(false)
+const pasajeToDelete = ref<string | null>(null)
+
 const isReadOnly = computed(() => {
   const roles = authStore.user?.roles || []
   const canManage = roles.includes(ValidRoles.admin) || roles.includes(ValidRoles.tecnico)
@@ -642,6 +727,10 @@ const etapas = ref<any[]>([]);
 const observadores = ref<any[]>([]);
 const movimientos = ref<any[]>([]);
 const archivos = ref<any[]>([]);
+const archivosToUpload = ref<{ file: File, categoryId: string, tempId: string }[]>([]);
+const archivosToDelete = ref<string[]>([]);
+const fileInputRefs = ref<Record<string, HTMLInputElement | null>>({});
+
 const observadorCatalog = ref<any[]>([]);
 const originalObservadorPrincipalId = ref<string | null>(null);
 
@@ -666,6 +755,7 @@ const observadorCatalogOptions = computed(() => {
 })
 
 const docCategories = [
+  { id: 'PASAJE', label: 'Pasajes de Inicio/Fin de Marea', shortLabel: 'Pasaje' },
   { id: 'DATOS', label: 'Datos de a Bordo', shortLabel: 'Datos (DBF/ZIP)' },
   { id: 'INFORME_OBS', label: 'Informe del Observador', shortLabel: 'Informe OBS' },
   { id: 'PLANILLAS', label: 'Planillas Escaneadas', shortLabel: 'Planillas' },
@@ -704,6 +794,7 @@ const getFileExtension = (ruta?: string) => {
 
 const resolveArchivoCategoria = (tipoArchivo?: string) => {
   if (!tipoArchivo) return 'VARIOS'
+  if (tipoArchivo === 'PASAJE') return 'PASAJE'
   if (tipoArchivo.startsWith('DATOS_')) return 'DATOS'
   if (tipoArchivo === 'INFORME_PROTOCOLIZADO') return 'PROTOCOLO'
   if (tipoArchivo === 'CARPETA_ESCANEADA' || tipoArchivo === 'DOCUMENTACION_ADICIONAL') return 'PLANILLAS'
@@ -890,6 +981,47 @@ function handleValidationCancel() {
   if (validationTipo.value === 'fin') marea.value.fin_validado = false;
 }
 
+function triggerPasajeUpload() {
+  pasajeFileInput.value?.click()
+}
+
+async function handlePasajeUpload(event: Event) {
+  const target = event.target as HTMLInputElement
+  const files = target.files
+  if (!files || files.length === 0) return
+
+  isUploadingPasaje.value = true
+  try {
+    await mareasService.uploadPasajes(marea.value.id, Array.from(files))
+    toast.success('Pasajes subidos exitosamente. Se ha iniciado el proceso de extracción por IA.')
+    await loadMarea()
+  } catch (error) {
+    toast.error('Ocurrió un error al subir los pasajes.')
+  } finally {
+    isUploadingPasaje.value = false
+    if (pasajeFileInput.value) pasajeFileInput.value.value = ''
+  }
+}
+
+function confirmDeletePasaje(id: string) {
+  pasajeToDelete.value = id
+  showDeletePasajeConfirm.value = true
+}
+
+async function handleDeletePasaje() {
+  if (!pasajeToDelete.value) return
+  try {
+    await mareasService.deleteArchivo(marea.value.id, pasajeToDelete.value)
+    toast.success('Pasaje eliminado correctamente.')
+    await loadMarea()
+  } catch (error) {
+    toast.error('Ocurrió un error al eliminar el pasaje.')
+  } finally {
+    showDeletePasajeConfirm.value = false
+    pasajeToDelete.value = null
+  }
+}
+
 const displayTitle = computed(() => {
   const tipo = marea.value.tipo_marea === TipoMarea.CI ? 'CI' : 'MC'
   const nro = marea.value.nro_marea || '000'
@@ -906,10 +1038,6 @@ const displayDescription = computed(() => {
 onMounted(() => {
   loadMarea();
 });
-
-const getFilesByCategory = (catId: string) => {
-  return archivos.value.filter((f) => f.categoria === catId)
-}
 
 const showFinalizarDialog = ref(false);
 
@@ -1015,15 +1143,62 @@ const saveChanges = async () => {
       diasEstimados: toNumberOrUndefined(marea.value.dias_estimados) === undefined ? null : toNumberOrUndefined(marea.value.dias_estimados),
       observadorPrincipalId: marea.value.observador_principal_id || null,
       activo: marea.value.activo,
-      etapas: etapasPayload
+      etapas: etapasPayload,
+      archivosToDelete: archivosToDelete.value.length > 0 ? archivosToDelete.value : undefined
     }
 
-    await mareasService.update(marea.value.id, payload)
+    let finalPayload: any = payload;
+    
+    if (archivosToUpload.value.length > 0) {
+      finalPayload = new FormData();
+      finalPayload.append('payload', JSON.stringify(payload));
+      
+      archivosToUpload.value.forEach(item => {
+        finalPayload.append(`file_${item.categoryId}`, item.file);
+      });
+    }
+
+    await mareasService.update(marea.value.id, finalPayload)
     toast.success('Los cambios se guardaron correctamente.')
     router.back()
   } catch (error) {
     console.error(error)
     toast.error('No se pudieron guardar los cambios de la marea.')
+  }
+}
+
+const triggerFileUpload = (categoryId: string) => {
+  const el = document.getElementById(`fileUpload_${categoryId}`) as HTMLInputElement;
+  if (el) el.click();
+}
+
+const handleFileUpload = (event: Event, categoryId: string) => {
+  const target = event.target as HTMLInputElement;
+  if (target.files && target.files.length > 0) {
+    Array.from(target.files).forEach(file => {
+      archivosToUpload.value.push({
+        file,
+        categoryId,
+        tempId: `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+      });
+    });
+    // Limpiamos el input para permitir subir el mismo archivo nuevamente si se borró
+    target.value = '';
+  }
+}
+
+const getFilesByCategory = (categoryId: string) => {
+  // Combinar archivos de BD (que no estén en archivosToDelete) con los archivos pendientes
+  const fromDb = archivos.value.filter(a => a.tipo_archivo === categoryId && !archivosToDelete.value.includes(a.id))
+  const pending = archivosToUpload.value.filter(a => a.categoryId === categoryId)
+  return [...fromDb, ...pending]
+}
+
+const handleDeleteFile = (id: string) => {
+  if (id.startsWith('temp_')) {
+    archivosToUpload.value = archivosToUpload.value.filter(a => a.tempId !== id);
+  } else {
+    archivosToDelete.value.push(id);
   }
 }
 </script>

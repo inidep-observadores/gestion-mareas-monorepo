@@ -13,6 +13,7 @@ import { NovedadesEmailProcessor } from './processors/novedades-email.processor'
 import { DateTime } from 'luxon';
 import * as os from 'os';
 import { NovedadesAiProcessor } from './processors/novedades-ai.processor';
+import { DriveSyncProcessor } from './processors/drive-sync.processor';
 
 @Injectable()
 export class SchedulerService {
@@ -31,6 +32,7 @@ export class SchedulerService {
         private readonly pnaApiService: PnaApiService,
         private readonly novedadesEmailProcessor: NovedadesEmailProcessor,
         private readonly novedadesAiProcessor: NovedadesAiProcessor,
+        private readonly driveSyncProcessor: DriveSyncProcessor,
     ) {
         this.workerId = `${os.hostname()}-${process.pid}`;
     }
@@ -509,6 +511,8 @@ export class SchedulerService {
                 return await this.novedadesEmailProcessor.process(job.payload);
             case JobType.NOVEDADES_AI_PROCESS:
                 return await this.novedadesAiProcessor.process(job.payload);
+            case JobType.DRIVE_SYNC:
+                return await this.driveSyncProcessor.process(job.payload);
             default:
                 throw new Error(`Unknown job type: ${job.type}`);
         }

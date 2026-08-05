@@ -44,7 +44,8 @@ app/backend/outputs/
 app/backend/test-results/
 app/backend/old_data/
 app/backend/google-credentials.json
-app/backend/google-credentials-bkp.json
+app/backend/google-credentials-dev.json
+app/backend/google-credentials-prod.json
 
 
 # **Prisma**

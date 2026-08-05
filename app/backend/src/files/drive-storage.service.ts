@@ -28,8 +28,8 @@ export class DriveStorageService {
     /**
      * Sube un archivo a Google Drive y devuelve su ID y WebViewLink
      */
-    async uploadFile(filename: string, mimeType: string, buffer: Buffer): Promise<{ fileId: string; webViewLink: string }> {
-        const folderId = this.configService.get<string>('GOOGLE_DRIVE_FOLDER_ID');
+    async uploadFile(filename: string, mimeType: string, buffer: Buffer, folderIdParam?: string): Promise<{ fileId: string; webViewLink: string }> {
+        const folderId = folderIdParam || this.configService.get<string>('GOOGLE_DRIVE_NOVEDADES_FOLDER_ID');
         
         // Usar PassThrough es mucho más seguro con googleapis para evitar race conditions
         const { PassThrough } = require('stream');

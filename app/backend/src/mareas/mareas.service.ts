@@ -21,10 +21,10 @@ import * as ExcelJS from 'exceljs';
 import { DateTime } from 'luxon';
 import * as fs from 'fs';
 import * as path from 'path';
-
-
-
-@Injectable()
+import * as os from 'os';
+import { DriveStorageService } from '../files/drive-storage.service';
+import { JobQueueService } from '../jobs/job-queue.service';
+import { JobType } from '@prisma/client';@Injectable()
 export class MareasService {
     private readonly logger = new Logger(MareasService.name);
     // Fuentes únicas de verdad para estados operativos
@@ -43,7 +43,9 @@ export class MareasService {
         private readonly mailService: MailService,
         private readonly alertsService: AlertsService,
         private readonly businessRulesService: BusinessRulesService,
-        private readonly configService: ConfigService
+        private readonly configService: ConfigService,
+        private readonly driveStorageService: DriveStorageService,
+        private readonly jobQueueService: JobQueueService
     ) { }
 
 
@@ -104,8 +106,8 @@ export class MareasService {
         };
     }
 
-    async update(id: string, updateMareaDto: UpdateMareaDto, user?: User) {
-        const { etapas, artePrincipalId, arteId, pesqueriaId, observadorId, observadorPrincipalId, ...data } = updateMareaDto;
+    async update(id: string, updateMareaDto: UpdateMareaDto, files?: Array<Express.Multer.File>, user?: User) {
+        const { etapas, artePrincipalId, arteId, pesqueriaId, observadorId, observadorPrincipalId, archivosToDelete, ...data } = updateMareaDto;
 
         // 1. Obtención inicial de marea para validaciones de integridad
         const mareaActual = await this.prisma.marea.findUnique({
@@ -370,6 +372,46 @@ export class MareasService {
                 }
             }
         });
+
+        // Trigger AI processing for pasajes uploaded during this edit session
+        const unprocessedPasajes = await this.prisma.mareaArchivo.findMany({
+            where: {
+                mareaId: id,
+                tipoArchivo: 'PASAJE'
+            }
+        });
+
+        for (const pasaje of unprocessedPasajes) {
+            const meta = pasaje.metadata as any;
+            if (meta && meta.procesadoAi === false && meta.tempFilePath) {
+                try {
+                    await this.jobQueueService.addJob(
+                        JobType.NOVEDADES_AI_PROCESS,
+                        {
+                            origen: 'UI',
+                            mareaId: id,
+                            mareaArchivoId: pasaje.id,
+                            fuente: `ADJUNTO: ${meta.originalName}`,
+                            emailSubject: `Pasaje UI - Marea ${id}`,
+                            explicitDocType: 'PASAJE',
+                            attachmentData: {
+                                filePath: meta.tempFilePath,
+                                mimetype: meta.mimetype,
+                                filename: meta.originalName
+                            }
+                        }
+                    );
+                    
+                    meta.procesadoAi = true;
+                    await this.prisma.mareaArchivo.update({
+                        where: { id: pasaje.id },
+                        data: { metadata: meta }
+                    });
+                } catch (e) {
+                    this.logger.error(`Error encolando trabajo AI para el pasaje ${pasaje.id}: ${e}`);
+                }
+            }
+        }
 
         return this.findOne(id);
     }
@@ -2712,6 +2754,75 @@ export class MareasService {
                 `Estado: SEGUIMIENTO -> VENCIDA. Notas: Re-check vencido el ${alerta.fechaVencimiento?.toLocaleDateString('es-AR') || 'N/D'}.`
             );
         }
+    }
+
+    async uploadPasajes(mareaId: string, files: Array<Express.Multer.File>, user: User) {
+        const marea = await this.prisma.marea.findUnique({ where: { id: mareaId } });
+        if (!marea) throw new NotFoundException('Marea no encontrada');
+
+        const resultados = [];
+        const folderId = this.configService.get<string>('GOOGLE_DRIVE_MAREAS_FOLDER_ID');
+        const tempDir = path.join(os.tmpdir(), 'novedades-ai-attachments');
+        await fs.promises.mkdir(tempDir, { recursive: true }).catch(() => {});
+
+        for (const file of files) {
+            try {
+                const result = await this.driveStorageService.uploadFile(
+                    file.originalname,
+                    file.mimetype,
+                    file.buffer,
+                    folderId
+                );
+
+                const tempFilePath = path.join(tempDir, `ui_${mareaId}_${Date.now()}_${file.originalname}`);
+                await fs.promises.writeFile(tempFilePath, file.buffer);
+
+                const mareaArchivo = await this.prisma.mareaArchivo.create({
+                    data: {
+                        mareaId: mareaId,
+                        tipoArchivo: 'PASAJE',
+                        formato: file.originalname.split('.').pop()?.toUpperCase() || 'UNKNOWN',
+                        rutaArchivo: result.webViewLink,
+                        usuarioSubioId: user.id,
+                        descripcion: `Pasaje subido manualmente por UI`,
+                        metadata: {
+                            driveFileId: result.fileId,
+                            originalName: file.originalname,
+                            mimetype: file.mimetype,
+                            tempFilePath: tempFilePath,
+                            procesadoAi: false
+                        }
+                    }
+                });
+
+                resultados.push(mareaArchivo);
+            } catch (err) {
+                this.logger.error(`Error subiendo pasaje ${file.originalname}: ${err.message}`);
+                throw new BadRequestException(`Fallo al subir archivo ${file.originalname}`);
+            }
+        }
+
+        return resultados;
+    }
+
+    async deleteArchivo(mareaId: string, archivoId: string, user: User) {
+        const archivo = await this.prisma.mareaArchivo.findUnique({
+            where: { id: archivoId }
+        });
+
+        if (!archivo) throw new NotFoundException('Archivo no encontrado');
+        if (archivo.mareaId !== mareaId) throw new BadRequestException('El archivo no pertenece a la marea indicada');
+
+        const metadata: any = archivo.metadata || {};
+        if (metadata.driveFileId) {
+            await this.driveStorageService.deleteFile(metadata.driveFileId);
+        }
+
+        await this.prisma.mareaArchivo.delete({
+            where: { id: archivoId }
+        });
+
+        return { success: true };
     }
 
     async getInbox(year?: number, user?: User) {

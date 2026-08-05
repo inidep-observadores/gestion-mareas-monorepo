@@ -1031,6 +1031,7 @@ enum JobType {
   DAILY_BACKUP
   NOVEDADES_EMAIL_SYNC
   NOVEDADES_AI_PROCESS
+  DRIVE_SYNC
 
   @@schema("public")
 }

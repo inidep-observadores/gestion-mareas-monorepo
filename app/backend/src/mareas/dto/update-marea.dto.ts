@@ -65,4 +65,9 @@ export class UpdateMareaDto extends PartialType(CreateMareaDto) {
     @ValidateNested({ each: true })
     @Type(() => MareaEtapaDto)
     etapas?: MareaEtapaDto[];
+
+    @IsArray()
+    @IsString({ each: true })
+    @IsOptional()
+    archivosToDelete?: string[];
 }

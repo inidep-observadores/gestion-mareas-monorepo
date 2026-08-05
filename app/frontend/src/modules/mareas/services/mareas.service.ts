@@ -145,6 +145,20 @@ const mareasService = {
     getProtocolizacionLoteDetalle: async (id: string): Promise<any> => {
         const { data } = await httpClient.get<any>(`/mareas/protocolizacion/lotes/${id}`);
         return data;
+    },
+
+    uploadPasajes: async (mareaId: string, files: File[]): Promise<any> => {
+        const formData = new FormData();
+        files.forEach(file => formData.append('files', file));
+        const { data } = await httpClient.post(`/mareas/${mareaId}/archivos/pasajes`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        return data;
+    },
+
+    deleteArchivo: async (mareaId: string, archivoId: string): Promise<any> => {
+        const { data } = await httpClient.delete(`/mareas/${mareaId}/archivos/${archivoId}`);
+        return data;
     }
 };
 

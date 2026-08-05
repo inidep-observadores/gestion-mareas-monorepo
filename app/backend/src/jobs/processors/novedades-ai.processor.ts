@@ -19,8 +19,9 @@ export class NovedadesAiProcessor implements JobProcessor {
     ) {}
 
     async process(payload: any): Promise<any> {
-        const { emailLogId, fuente, texto, attachmentData, emailSubject, emailData, explicitDocType } = payload;
-        this.logger.log(`Procesando IA para Log ID: ${emailLogId} | Fuente: ${fuente}`);
+        const { emailLogId, fuente, texto, attachmentData, emailSubject, emailData, explicitDocType, origen, mareaId, mareaArchivoId } = payload;
+        const isUiOrigen = origen === 'UI';
+        this.logger.log(`Procesando IA | Origen: ${origen || 'EMAIL'} | Log ID: ${emailLogId || 'N/A'} | Fuente: ${fuente}`);
 
         let extracted: any = null;
         let estadoDetalle = 'PROCESADO';
@@ -187,6 +188,39 @@ export class NovedadesAiProcessor implements JobProcessor {
                                 } catch (err: any) {
                                     this.logger.error(`Error guardando referencia de archivo en base de datos: ${err.message}`);
                                 }
+
+                                if (isUiOrigen && mareaArchivoId) {
+                                    // Actualizar metadata del mareaArchivo ya existente
+                                    const ma = await this.prisma.mareaArchivo.findUnique({ where: { id: mareaArchivoId } });
+                                    if (ma) {
+                                        const meta: any = ma.metadata || {};
+                                        meta.novedadId = novedad.id;
+                                        await this.prisma.mareaArchivo.update({
+                                            where: { id: mareaArchivoId },
+                                            data: { metadata: meta }
+                                        });
+                                    }
+                                } else if (!isUiOrigen && ['VIAJE_INICIO', 'VIAJE_FIN'].includes(tipoNovedad.codigo)) {
+                                    // Lógica para emails: vincular a la marea correspondiente
+                                    const mareaIdEncontrada = await this.buscarMareaCercana(observador.id, start, tipoNovedad.codigo);
+                                    if (mareaIdEncontrada) {
+                                        await this.prisma.mareaArchivo.create({
+                                            data: {
+                                                mareaId: mareaIdEncontrada,
+                                                tipoArchivo: 'PASAJE',
+                                                formato: archivoFinal.filename.split('.').pop()?.toUpperCase() || 'UNKNOWN',
+                                                rutaArchivo: uploadedDriveInfo.webViewLink,
+                                                descripcion: `Pasaje detectado por correo electrónico (${emailSubject})`,
+                                                metadata: {
+                                                    driveFileId: uploadedDriveInfo.fileId,
+                                                    originalName: archivoFinal.filename,
+                                                    mimetype: archivoFinal.mimetype,
+                                                    novedadId: novedad.id
+                                                }
+                                            }
+                                        });
+                                    }
+                                }
                             }
                         }
                     }
@@ -224,22 +258,23 @@ export class NovedadesAiProcessor implements JobProcessor {
                 }
             }
         }
+        if (!isUiOrigen && emailLogId) {
+            // Crear el registro de Detalle
+            await this.prisma.novedadesEmailLogDetalle.create({
+                data: {
+                    emailLogId,
+                    fuente,
+                    extraccionAi: extracted,
+                    numeroGde: extracted?.numeroGde,
+                    estado: estadoDetalle,
+                    errorDetalle,
+                    novedadId: novedadesIds.length > 0 ? novedadesIds[0] : null
+                }
+            });
 
-        // Crear el registro de Detalle
-        await this.prisma.novedadesEmailLogDetalle.create({
-            data: {
-                emailLogId,
-                fuente,
-                extraccionAi: extracted,
-                numeroGde: extracted?.numeroGde,
-                estado: estadoDetalle,
-                errorDetalle,
-                novedadId: novedadesIds.length > 0 ? novedadesIds[0] : null
-            }
-        });
-
-        // Actualizar el estado global del EmailLog
-        await this.actualizarEstadoEmailLog(emailLogId);
+            // Actualizar el estado global del EmailLog
+            await this.actualizarEstadoEmailLog(emailLogId);
+        }
 
         return { procesado: true, novedades: novedadesIds.length, estado: estadoDetalle };
     }
@@ -324,6 +359,39 @@ export class NovedadesAiProcessor implements JobProcessor {
             return { observador: mejoresCandidatos[0], certeza: 'BAJA' }; 
         }
 
+        return null;
+    }
+
+    private async buscarMareaCercana(observadorId: string, fechaNovedad: Date, codigoNovedad: string): Promise<string | null> {
+        const umbralDias = 5;
+        const fechaNov = fechaNovedad.getTime();
+        
+        const mareas = await this.prisma.marea.findMany({
+            where: {
+                observadorPrincipalId: observadorId,
+                activo: true,
+            },
+            include: { etapas: { orderBy: { nroEtapa: 'asc' } } }
+        });
+
+        for (const marea of mareas) {
+            if (codigoNovedad === 'VIAJE_INICIO') {
+                const fechaReferencia = marea.etapas.length > 0 && marea.etapas[0].fechaZarpada
+                    ? marea.etapas[0].fechaZarpada.getTime()
+                    : marea.fechaZarpadaEstimada?.getTime();
+                
+                if (fechaReferencia && Math.abs(fechaReferencia - fechaNov) / 86400000 <= umbralDias) {
+                    return marea.id;
+                }
+            } else if (codigoNovedad === 'VIAJE_FIN') {
+                const ultimaEtapa = marea.etapas.length > 0 ? marea.etapas[marea.etapas.length - 1] : null;
+                if (ultimaEtapa?.fechaArribo) {
+                    if (Math.abs(ultimaEtapa.fechaArribo.getTime() - fechaNov) / 86400000 <= umbralDias) {
+                        return marea.id;
+                    }
+                }
+            }
+        }
         return null;
     }
 }

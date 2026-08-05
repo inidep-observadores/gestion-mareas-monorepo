@@ -1,4 +1,5 @@
-import { Controller, Get, Param, Post, Query, Body, Patch, Res } from '@nestjs/common';
+import { Controller, Get, Param, Post, Query, Body, Patch, Res, UseInterceptors, UploadedFiles, Delete } from '@nestjs/common';
+import { AnyFilesInterceptor } from '@nestjs/platform-express';
 import { Response } from 'express';
 import { MareasService } from './mareas.service';
 import { DateUtils } from '../common/utils/date.utils';
@@ -15,9 +16,7 @@ import { AuditEvent } from '../audit/decorators/audit-event.decorator';
 import { AuditCategoria } from '../audit/enums/audit.enums';
 import { EnviarProtocolizacionDto } from './dto/enviar-protocolizacion.dto';
 import { ConfirmarProtocolizacionDto } from './dto/confirmar-protocolizacion.dto';
-import { UseInterceptors, UploadedFiles } from '@nestjs/common';
-import { AnyFilesInterceptor } from '@nestjs/platform-express';
-
+import { ParseJsonPipe } from '../common/pipes/parse-json.pipe';
 @Controller('mareas')
 @Auth()
 export class MareasController {
@@ -130,12 +129,14 @@ export class MareasController {
 
     @Patch(':id')
     @Auth(ValidRoles.admin, ValidRoles.tecnico)
+    @UseInterceptors(AnyFilesInterceptor())
     update(
         @Param('id') id: string,
-        @Body() updateMareaDto: UpdateMareaDto,
+        @Body(ParseJsonPipe) updateMareaDto: UpdateMareaDto,
+        @UploadedFiles() files: Array<Express.Multer.File>,
         @GetUser() user: User
     ) {
-        return this.mareasService.update(id, updateMareaDto, user);
+        return this.mareasService.update(id, updateMareaDto, files, user);
     }
 
     @Get(':id/context')
@@ -273,5 +274,36 @@ export class MareasController {
     @Auth(ValidRoles.admin, ValidRoles.coordinador)
     async getProtocolizacionLoteDetalle(@Param('id') id: string) {
         return this.mareasService.getProtocolizacionLoteDetalle(id);
+    }
+
+    @Post(':id/archivos/pasajes')
+    @Auth(ValidRoles.admin, ValidRoles.tecnico)
+    @UseInterceptors(AnyFilesInterceptor())
+    @AuditEvent({
+        tipoEvento: 'SUBIR_PASAJE',
+        categoria: AuditCategoria.MAREAS,
+        descripcion: 'Subida de pasaje a la marea y proceso de IA'
+    })
+    uploadPasajes(
+        @Param('id') id: string,
+        @UploadedFiles() files: Array<Express.Multer.File>,
+        @GetUser() user: User
+    ) {
+        return this.mareasService.uploadPasajes(id, files, user);
+    }
+
+    @Delete(':id/archivos/:archivoId')
+    @Auth(ValidRoles.admin, ValidRoles.tecnico)
+    @AuditEvent({
+        tipoEvento: 'ELIMINAR_ARCHIVO',
+        categoria: AuditCategoria.MAREAS,
+        descripcion: 'Eliminación de archivo de marea'
+    })
+    deleteArchivo(
+        @Param('id') id: string,
+        @Param('archivoId') archivoId: string,
+        @GetUser() user: User
+    ) {
+        return this.mareasService.deleteArchivo(id, archivoId, user);
     }
 }
