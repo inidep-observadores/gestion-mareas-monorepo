@@ -20,11 +20,19 @@
           {{ pendientesCount }}
         </span>
       </button>
+      <button 
+        @click="activeTab = 'calendario'" 
+        class="pb-3 px-1 border-b-2 font-bold transition-colors whitespace-nowrap"
+        :class="activeTab === 'calendario' ? 'border-primary text-primary' : 'border-transparent text-text-muted hover:text-text'"
+      >
+        Calendario
+      </button>
     </div>
 
     <div class="flex flex-col xl:flex-row gap-6 items-start">
       <div class="flex-1 min-w-0 w-full transition-all duration-300">
         <BaseDataList 
+          v-if="activeTab !== 'calendario'"
           title="Gestión de Novedades" 
       description="Administración de licencias, francos compensatorios y otras novedades de los observadores."
       :items="filteredNovedades"
@@ -232,6 +240,12 @@
         </div>
       </template>
         </BaseDataList>
+        
+        <ObservadorCalendarView 
+          v-else 
+          :novedades="novedades" 
+          @eventClick="openSidePanel" 
+        />
       </div>
 
       <!-- PANEL DE DETALLE LATERAL PERSISTENTE -->
@@ -331,6 +345,7 @@ import BackButton from '@/components/common/BackButton.vue';
 import BaseDataList from '@/components/common/BaseDataList.vue';
 import NovedadDialog from '../components/NovedadDialog.vue';
 import NovedadContextDetailContent from '../components/NovedadContextDetailContent.vue';
+import ObservadorCalendarView from '../components/ObservadorCalendarView.vue';
 import ConfirmationDialog from '@/components/common/ConfirmationDialog.vue';
 import { novedadesService } from '../services/novedades.service';
 import type { Novedad } from '../interfaces/novedad.interface';
@@ -376,7 +391,7 @@ const selectedNovedad = ref<Novedad | null>(null);
 const showConfirmDelete = ref(false);
 const novedadToDelete = ref<Novedad | null>(null);
 
-const activeTab = ref<'historial' | 'pendientes'>('historial');
+const activeTab = ref<'historial' | 'pendientes' | 'calendario'>('historial');
 const pendientesCount = computed(() => novedades.value.filter(n => n.estadoAprobacion === 'PENDIENTE').length);
 
 const showActionModal = ref(false);
