@@ -101,8 +101,12 @@
                                     class="flex flex-col rounded-2xl border border-border bg-surface p-4 shadow-sm group-hover:shadow-md group-hover:border-primary/20 transition-all cursor-pointer active:scale-[0.98]">
                                     <div class="flex justify-between items-start mb-3">
                                         <div>
-                                            <h4 class="text-sm font-black text-text leading-tight">{{ item.vessel }}
-                                            </h4>
+                                            <div class="flex items-center gap-2">
+                                                <h4 class="text-sm font-black text-text leading-tight">{{ item.vessel }}</h4>
+                                                <span v-if="item.fishery" class="text-[9px] font-bold text-primary uppercase tracking-widest italic leading-none">
+                                                   ( {{ item.fishery }} )
+                                                </span>
+                                            </div>
                                             <p
                                                 class="text-[10px] font-bold text-text-muted uppercase tracking-tighter mt-0.5">
                                                 {{ formatDate(item.start) }} — {{ formatDate(item.end) }}

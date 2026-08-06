@@ -214,6 +214,7 @@ export class ObservadoresService {
             include: {
                 buque: true,
                 estadoActual: true,
+                pesqueria: true,
                 etapas: {
                     orderBy: { nroEtapa: 'asc' },
                     include: {
@@ -279,6 +280,7 @@ export class ObservadoresService {
                 id: mRaw.id,
                 mareaCode: MareaUtils.formatCodigo(mRaw),
                 vessel: mRaw.buque.nombreBuque,
+                fishery: mRaw.pesqueria?.nombre,
                 start,
                 end,
                 totalDays,
