@@ -64,7 +64,7 @@
               <div class="text-xs font-bold text-text-muted mb-2 uppercase tracking-wider">Novedades</div>
               <div class="flex flex-col gap-1.5">
                 <button
-                  v-for="attr in attributes"
+                  v-for="attr in attributes.filter((a: any) => a.customData)"
                   :key="attr.key"
                   @click="handleEventClick(attr.customData)"
                   class="w-full text-left p-2.5 rounded-lg border border-primary/20 bg-primary/5 hover:bg-primary/10 transition-colors flex items-center justify-between group"
@@ -166,36 +166,97 @@ const novedadesObservadorSeleccionado = computed(() => {
   return props.novedades.filter(n => n.observador?.id === selectedObservador.value && n.estadoAprobacion !== 'RECHAZADA');
 });
 
+const handleEventClick = (novedad: Novedad) => {
+  emit('eventClick', novedad);
+};
+
 const calendarAttributes = computed(() => {
-  return novedadesObservadorSeleccionado.value.map(novedad => {
+  const novedades = novedadesObservadorSeleccionado.value;
+  const datesCount: Record<string, number> = {};
+  
+  // Paso 1: Contar cuántas novedades caen en cada día individual
+  novedades.forEach(novedad => {
     const startStr = novedad.fechaInicio.split('T')[0];
     let endStr = novedad.fechaFin ? novedad.fechaFin.split('T')[0] : null;
-
-    // Si no hay fecha de fin, usar el 31 de diciembre del año de inicio como fin virtual
     if (!endStr) {
       const year = startStr.split('-')[0];
       endStr = `${year}-12-31`;
+    }
+    
+    let current = new Date(startStr + 'T00:00:00');
+    const end = new Date(endStr + 'T00:00:00');
+    
+    // Iterar día por día para este rango y contarlo
+    while (current <= end) {
+      const dateStr = current.getFullYear() + '-' + String(current.getMonth() + 1).padStart(2, '0') + '-' + String(current.getDate()).padStart(2, '0');
+      datesCount[dateStr] = (datesCount[dateStr] || 0) + 1;
+      current.setDate(current.getDate() + 1);
+    }
+  });
+
+  const overlappingDates = Object.keys(datesCount).filter(date => datesCount[date] > 1);
+
+  // Paso 2: Generar los atributos normales (todas las novedades en celeste)
+  const attrs: any[] = novedades.map((novedad) => {
+    const startStr = novedad.fechaInicio.split('T')[0];
+    let endStr = novedad.fechaFin ? novedad.fechaFin.split('T')[0] : null;
+
+    if (!endStr) {
+      const year = startStr.split('-')[0];
+      endStr = `${year}-12-31`;
+    }
+    
+    const start = new Date(startStr + 'T00:00:00');
+    const end = new Date(endStr + 'T00:00:00');
+
+    const code = novedad.tipoNovedad?.codigo?.toUpperCase() || '';
+    const isFranco = code === 'FC' || code.includes('FRANCO');
+    const isDisponible = code === 'DISPONIBLE';
+    const isNoDisponible = code === 'NO_DISPONIBLE';
+
+    let highlightClass = 'calendar-novedad';
+    let textClass = 'calendar-novedad-text';
+
+    if (isFranco) {
+      highlightClass = 'calendar-franco';
+      textClass = 'calendar-franco-text';
+    } else if (isDisponible) {
+      highlightClass = 'calendar-disponible';
+      textClass = 'calendar-disponible-text';
+    } else if (isNoDisponible) {
+      highlightClass = 'calendar-no-disponible';
+      textClass = 'calendar-no-disponible-text';
     }
 
     return {
       key: novedad.id,
       customData: novedad,
-      dates: { start: new Date(startStr + 'T00:00:00'), end: new Date(endStr + 'T00:00:00') },
+      dates: { start, end },
       highlight: {
-        color: 'sky',
-        fillMode: 'light' as const,
+        class: highlightClass,
+        contentClass: textClass,
       },
       popover: {
-        visibility: 'hover',
-        isInteractive: true, // Permite clickear los elementos del popover
+        visibility: 'hover' as const,
+        isInteractive: true,
       }
     };
   });
-});
 
-const handleEventClick = (novedad: Novedad) => {
-  emit('eventClick', novedad);
-};
+  // Paso 3: Añadir una capa de conflicto SÓLO en los días que tienen superposición
+  if (overlappingDates.length > 0) {
+    attrs.push({
+      key: 'overlaps-layer',
+      dates: overlappingDates.map(d => new Date(d + 'T00:00:00')),
+      highlight: {
+        class: 'calendar-conflicto',
+        contentClass: 'calendar-conflicto-text'
+      }
+    });
+  }
+
+  return attrs;
+});
 </script>
 
 <style>
@@ -218,16 +279,95 @@ const handleEventClick = (novedad: Novedad) => {
   --vc-color-sky-800: #bae6fd;
 }
 
-/* Modificamos los estilos de highlight nativos de v-calendar para que parezcan nuestras novedades */
-.custom-v-calendar .vc-highlight {
-  border-width: 2px !important;
-  border-style: solid !important;
-  border-color: #7dd3fc !important;
-  border-radius: 4px !important;
+/* Novedad genérica (Celeste, idéntico a Presentismo) */
+.custom-v-calendar .calendar-novedad {
+  background-color: #e0f2fe !important;
+  box-shadow: inset 0 0 0 1px #7dd3fc !important;
+}
+.custom-v-calendar .calendar-novedad-text {
+  color: black !important;
+  font-weight: 600 !important;
 }
 
-.dark .custom-v-calendar .vc-highlight {
-  border-color: rgba(14, 165, 233, 0.5) !important;
+/* Novedades de NO_DISPONIBLE (Gris) */
+.custom-v-calendar .calendar-no-disponible {
+  background-color: #f3f4f6 !important; /* gray-100 */
+  box-shadow: inset 0 0 0 1px #d1d5db !important; /* gray-300 */
+}
+.custom-v-calendar .calendar-no-disponible-text {
+  color: black !important;
+  font-weight: 600 !important;
+}
+
+/* Novedades de DISPONIBLE (Verde Suave) */
+.custom-v-calendar .calendar-disponible {
+  background-color: #dcfce7 !important; /* green-100 */
+  box-shadow: inset 0 0 0 1px #86efac !important; /* green-300 */
+}
+.custom-v-calendar .calendar-disponible-text {
+  color: black !important;
+  font-weight: 600 !important;
+}
+
+/* Francos (Fondo celeste con borde rojo de presentismo) */
+.custom-v-calendar .calendar-franco {
+  background-color: #e0f2fe !important;
+  box-shadow: inset 0 0 0 2px #ef4444 !important; /* Borde rojo característico */
+}
+.custom-v-calendar .calendar-franco-text {
+  color: black !important;
+  font-weight: 600 !important;
+}
+
+.custom-v-calendar .calendar-conflicto {
+  background-color: #ef4444 !important;
+  box-shadow: inset 0 0 0 1px #b91c1c !important;
+}
+
+.custom-v-calendar .calendar-conflicto-text {
+  color: white !important;
+  font-weight: 600 !important;
+}
+
+.dark .custom-v-calendar .calendar-novedad {
+  background-color: rgba(14, 165, 233, 0.3) !important;
+  box-shadow: inset 0 0 0 1px rgba(14, 165, 233, 0.5) !important;
+}
+.dark .custom-v-calendar .calendar-novedad-text {
+  color: #bae6fd !important;
+}
+
+.dark .custom-v-calendar .calendar-no-disponible {
+  background-color: rgba(107, 114, 128, 0.3) !important;
+  box-shadow: inset 0 0 0 1px rgba(107, 114, 128, 0.5) !important;
+}
+.dark .custom-v-calendar .calendar-no-disponible-text {
+  color: #d1d5db !important; /* gray-300 */
+}
+
+.dark .custom-v-calendar .calendar-disponible {
+  background-color: rgba(34, 197, 94, 0.2) !important;
+  box-shadow: inset 0 0 0 1px rgba(34, 197, 94, 0.4) !important;
+}
+.dark .custom-v-calendar .calendar-disponible-text {
+  color: #bbf7d0 !important; /* green-200 */
+}
+
+.dark .custom-v-calendar .calendar-franco {
+  background-color: rgba(14, 165, 233, 0.3) !important;
+  box-shadow: inset 0 0 0 2px #f87171 !important;
+}
+.dark .custom-v-calendar .calendar-franco-text {
+  color: #bae6fd !important; /* celeste brillante para leer sobre el fondo */
+}
+
+.dark .custom-v-calendar .calendar-conflicto {
+  background-color: #991b1b !important;
+  box-shadow: inset 0 0 0 1px #7f1d1d !important;
+}
+
+.dark .custom-v-calendar .calendar-conflicto-text {
+  color: white !important;
 }
 
 .custom-v-calendar .vc-weekday {
