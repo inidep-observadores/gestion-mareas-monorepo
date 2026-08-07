@@ -47,7 +47,7 @@
           <span class="text-[10px] font-black uppercase tracking-widest text-text-muted">En Viaje</span>
         </div>
         <div class="flex items-center gap-2">
-          <div class="w-8 h-6 rounded legend-ez flex items-center justify-center text-[10px] font-black">EZ</div>
+          <div class="w-8 h-6 rounded legend-ez flex items-center justify-center text-[10px] font-black">DISP</div>
           <span class="text-[10px] font-black uppercase tracking-widest text-text-muted">Esperando Zarpada</span>
         </div>
         <div class="flex items-center gap-2">
@@ -171,7 +171,7 @@
                     <span v-else-if="row.dias[dia]?.estado === 'NAVEGANDO' && row.dias[dia]?.estadoSecundario === 'VIAJE'" class="text-[10px] font-black text-black px-1">N/V</span>
                     <span v-else-if="row.dias[dia]?.estado === 'NAVEGANDO'" class="text-[10px] font-black text-black px-1">NAVEG</span>
                     <span v-else-if="row.dias[dia]?.estado === 'PUERTO'" class="text-[10px] font-black text-black px-1">PUERTO</span>
-                    <span v-else-if="row.dias[dia]?.estado === 'ESPERANDO_ZARPADA'" class="text-[10px] font-black text-black px-1">EZ</span>
+                    <span v-else-if="row.dias[dia]?.estado === 'ESPERANDO_ZARPADA'" class="text-[10px] font-black text-black px-1">DISP</span>
                     <span v-else-if="row.dias[dia]?.estado === 'VIAJE'" class="text-[10px] font-black text-black px-1">VIAJE</span>
                     <span v-else-if="row.dias[dia]?.estado === 'NOVEDAD'" class="text-[10px] font-black text-black px-1">{{ row.dias[dia].codigoCorto === 'ENFERMEDAD' ? 'MÉDICO' : (row.dias[dia].codigoCorto || 'NOV') }}</span>
                     <span v-else-if="row.dias[dia]?.estado === 'FERIADO'" class="text-[10px] font-black text-black px-1">FERIADO</span>
@@ -180,7 +180,7 @@
                   <!-- Tooltip -->
                   <div v-if="row.dias[dia]?.estado !== 'LIBRE' && row.dias[dia]?.estado !== 'FIN_SEMANA'" class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max max-w-[200px] bg-gray-900 dark:bg-gray-700 text-white text-xs p-2 rounded shadow-lg opacity-0 pointer-events-none group-hover/cell:opacity-100 transition-opacity z-30">
                     <div class="font-bold mb-1">{{ formatTooltipTitle(row.dias[dia]) }}</div>
-                    <div class="text-[10px] text-gray-300 dark:text-gray-200 leading-tight" v-if="row.dias[dia].detalle || row.dias[dia].conflictoDetalle">
+                    <div class="text-[10px] text-gray-300 dark:text-gray-200 leading-tight whitespace-pre-line" v-if="row.dias[dia].detalle || row.dias[dia].conflictoDetalle">
                       {{ row.dias[dia].conflictoDetalle || row.dias[dia].detalle }}
                     </div>
                     <!-- Triangulito -->
@@ -395,7 +395,7 @@ const buildBlockInfo = (stateSignature: string, startDia: number, endDia: number
   } else if (diaData.estado === 'ESPERANDO_ZARPADA') {
     className = 'bg-[#E8E8E8] text-black';
     visClassName = 'vis-item-ez';
-    content = 'EZ';
+    content = 'DISP';
   } else if (diaData.estado === 'VIAJE') {
     className = 'bg-[#E6E6FA] text-black';
     visClassName = 'vis-item-viaje';
@@ -543,7 +543,7 @@ const formatTooltipTitle = (dia: DiaEstado) => {
   const map: Record<string, string> = {
     'NAVEGANDO': 'Navegando',
     'PUERTO': 'En Puerto (No Local)',
-    'ESPERANDO_ZARPADA': 'Esperando Zarpada',
+    'ESPERANDO_ZARPADA': 'A disponibilidad',
     'VIAJE': 'En Viaje',
     'NOVEDAD': 'Novedad / Licencia',
     'FERIADO': 'Feriado',

@@ -18,6 +18,7 @@ export function evaluarEstadoDia(
   let etapaNavegando: any = null;
   let isViaje = false;
   let isPuerto = false;
+  let isEsperandoZarpada = false;
   let puertoDetalle = '';
 
   let isNovedad = false;
@@ -137,6 +138,8 @@ export function evaluarEstadoDia(
         if (puerto) {
           if (!puerto.esLocal) {
             isPuerto = true;
+          } else {
+            isEsperandoZarpada = true;
           }
           puertoDetalle = puerto.nombre;
           mareaReferencia = marea;
@@ -145,7 +148,7 @@ export function evaluarEstadoDia(
       }
     }
 
-    if (isPuerto) break;
+    if (isPuerto || isEsperandoZarpada) break;
 
     // Post última etapa
     if (ultimaEtapa && ultimaEtapa.fechaArribo) {
@@ -166,6 +169,8 @@ export function evaluarEstadoDia(
             if (puerto) {
               if (!puerto.esLocal) {
                 isPuerto = true;
+              } else {
+                isEsperandoZarpada = true;
               }
               puertoDetalle = puerto.nombre;
               mareaReferencia = marea;
@@ -182,6 +187,7 @@ export function evaluarEstadoDia(
   let causasConflicto = [];
   if (isNavegando) causasConflicto.push('Navegación');
   if (isPuerto) causasConflicto.push('Puerto');
+  if (isEsperandoZarpada) causasConflicto.push('Esperando Zarpada');
   if (isViaje) causasConflicto.push('Viaje');
   
   for (const nov of novedadesActivas) {
@@ -209,6 +215,8 @@ export function evaluarEstadoDia(
     estadoDto = { estado: 'VIAJE', referenciaId: mareaReferencia?.id, detalle: mareaStr };
   } else if (isPuerto) {
     estadoDto = { estado: 'PUERTO', detalle: puertoDetalle };
+  } else if (isEsperandoZarpada) {
+    estadoDto = { estado: 'ESPERANDO_ZARPADA', detalle: `Esperando zarpada desde puerto local\n${puertoDetalle}` };
   } else if (isNovedad) {
     estadoDto = { estado: 'NOVEDAD', detalle: novedadDetalle, referenciaId: novedadReferenciaId, codigoCorto: novedadCodigoCorto };
   } else if (isFeriado) {
@@ -219,7 +227,7 @@ export function evaluarEstadoDia(
     estadoDto = { estado: 'LIBRE' };
   }
 
-  if (estadoDto && (estadoDto.estado === 'NAVEGANDO' || estadoDto.estado === 'PUERTO' || estadoDto.estado === 'VIAJE') && (isFeriado || isFinSemana)) {
+  if (estadoDto && (estadoDto.estado === 'NAVEGANDO' || estadoDto.estado === 'PUERTO' || estadoDto.estado === 'VIAJE' || estadoDto.estado === 'ESPERANDO_ZARPADA') && (isFeriado || isFinSemana)) {
     estadoDto.computaFranco = true;
   }
 

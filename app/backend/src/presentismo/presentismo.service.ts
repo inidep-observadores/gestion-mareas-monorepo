@@ -153,6 +153,8 @@ export class PresentismoService {
           row.totales.navegando++;
         } else if (estadoDto.estado === 'PUERTO') {
           row.totales.puerto++;
+        } else if (estadoDto.estado === 'ESPERANDO_ZARPADA') {
+          row.totales.esperandoZarpada++;
         } else if (estadoDto.estado === 'NOVEDAD') {
           row.totales.novedades++;
         } else if (estadoDto.estado === 'FERIADO' || estadoDto.estado === 'FIN_SEMANA') {
@@ -228,7 +230,7 @@ export class PresentismoService {
           if (dia.estado === 'NAVEGANDO' && dia.estadoSecundario === 'VIAJE') val = 'NAV/VIA';
           else if (dia.estado === 'NAVEGANDO') val = 'NAVEG';
           else if (dia.estado === 'PUERTO') val = 'PUERTO';
-          else if (dia.estado === 'ESPERANDO_ZARPADA') val = 'EZ';
+          else if (dia.estado === 'ESPERANDO_ZARPADA') val = 'DISP';
           else if (dia.estado === 'VIAJE') val = 'VIAJE';
           else if (dia.estado === 'FERIADO') val = 'FERIADO';
           else if (dia.estado === 'NOVEDAD') {
@@ -260,11 +262,11 @@ export class PresentismoService {
           } else if (dia.estado === 'PUERTO') {
             cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFE4C4' } };
             cell.font = { color: { argb: 'FF000000' }, bold: true };
-            if (dia.detalle) cell.note = dia.detalle;
+            if (dia.detalle) cell.note = `En Puerto (No Local)\n${dia.detalle}`;
           } else if (dia.estado === 'ESPERANDO_ZARPADA') {
             cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE8E8E8' } }; // Light gray for EZ
             cell.font = { color: { argb: 'FF000000' }, bold: true };
-            if (dia.detalle) cell.note = `Esperando zarpada: ${dia.detalle}`;
+            if (dia.detalle) cell.note = `A disponibilidad\n${dia.detalle}`;
           } else if (dia.estado === 'VIAJE') {
             cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE6E6FA' } };
             cell.font = { color: { argb: 'FF000000' }, bold: true };
