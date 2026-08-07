@@ -129,13 +129,21 @@ export class NovedadesAiService {
     }
 
 
-    async clasificarEmail(asunto: string, cuerpoTexto: string, nombresAdjuntos: string[]): Promise<any> {
-        const promptSystem = 'Eres un asistente clasificador de correos (Triage). Analiza el Asunto, el Cuerpo y la lista de Archivos Adjuntos para determinar qué partes contienen novedades (Licencias, Francos, Pasajes, etc.). REGLA DE ORO PARA ADJUNTOS: Como no puedes ver el contenido de los archivos, DEBES asumir que TODOS los archivos adjuntos (imágenes, PDFs, etc.) son documentos válidos (PASAJES o GDE) y generar un candidato ADJUNTO por CADA archivo, sin importar su nombre o extensión. La única excepción es si el archivo es un logo de red social corporativa. NUNCA descartes un archivo porque su nombre parezca genérico; el sistema lo descartará en la siguiente fase si resulta ser irrelevante. IMPORTANTE: Si la única información relevante se encuentra en los adjuntos, clasifica el CUERPO_EMAIL como IRRELEVANTE. Solo genera un candidato CUERPO_EMAIL si el cuerpo menciona información útil distinta.';
+    async clasificarEmail(asunto: string, cuerpoTexto: string, attachments: { buffer: Buffer, mimetype: string, filename: string }[]): Promise<any> {
+        const promptSystem = 'Eres un asistente clasificador de correos (Triage). Analiza el Asunto, el Cuerpo y el contenido de los Archivos Adjuntos para determinar qué partes contienen novedades (Licencias, Francos, Pasajes, etc.). Ahora puedes ver el contenido extraído de los adjuntos. Clasifícalos basándote en su CONTENIDO real (PASAJES o GDE). Genera un candidato ADJUNTO por CADA archivo que contenga información válida. IMPORTANTE: Si la única información relevante se encuentra en los adjuntos, clasifica el CUERPO_EMAIL como IRRELEVANTE. Solo genera un candidato CUERPO_EMAIL si el cuerpo menciona información útil distinta.';
 
-        const content = `Asunto: ${asunto || ''}\n\nCuerpo:\n${cuerpoTexto || ''}\n\nArchivos Adjuntos:\n${nombresAdjuntos.join(', ')}`;
+        const parts: any[] = [{ text: `${promptSystem}\n\nDatos:\nAsunto: ${asunto || ''}\n\nCuerpo:\n${cuerpoTexto || ''}\n` }];
+
+        if (attachments && attachments.length > 0) {
+            for (const att of attachments) {
+                parts.push({ text: `\n--- Archivo Adjunto: ${att.filename} ---\n` });
+                const attParts = await this.prepareAttachmentParts(att);
+                parts.push(...attParts);
+            }
+        }
 
         const requestPayload = {
-            contents: [{ role: 'user', parts: [{ text: `${promptSystem}\n\nDatos:\n"""\n${content}\n"""` }] }],
+            contents: [{ role: 'user', parts: parts }],
             config: {
                 responseMimeType: 'application/json',
                 responseSchema: schemaTriage,
@@ -154,42 +162,49 @@ export class NovedadesAiService {
         }
     }
 
-    async procesarElemento(texto: string, attachment?: { buffer: Buffer, mimetype: string, filename: string }, explicitDocType?: 'PASAJES' | 'GDE' | 'TEXTO_LIBRE'): Promise<any> {
-        let textContent = texto || '';
+    private async prepareAttachmentParts(attachment: { buffer: Buffer, mimetype: string, filename: string }): Promise<any[]> {
+        let textContent = '';
         let isScanOrImage = false;
         let mimeType = 'text/plain';
         let base64Data = '';
+        const parts: any[] = [];
 
-        if (attachment) {
-            const ext = attachment.filename.split('.').pop()?.toLowerCase();
-            const lowerMime = attachment.mimetype.toLowerCase();
-            
-            if (lowerMime.includes('pdf') || ext === 'pdf') {
-                try {
-                    const pdfData = await pdfParse(attachment.buffer);
-                    textContent = pdfData.text;
-                    if (textContent.trim().length < 50) {
-                        isScanOrImage = true;
-                    }
-                } catch (e) {
-                    this.logger.warn(`Error al parsear PDF localmente. Tratando como escaneo.`);
+        const ext = attachment.filename.split('.').pop()?.toLowerCase();
+        const lowerMime = attachment.mimetype.toLowerCase();
+        
+        if (lowerMime.includes('pdf') || ext === 'pdf') {
+            try {
+                const pdfData = await pdfParse(attachment.buffer);
+                textContent = pdfData.text;
+                if (textContent.trim().length < 50) {
                     isScanOrImage = true;
                 }
-                mimeType = 'application/pdf';
-            } else if (lowerMime.startsWith('image/') || ['png','jpg','jpeg'].includes(ext || '')) {
+            } catch (e) {
+                this.logger.warn(`Error al parsear PDF localmente. Tratando como escaneo.`);
                 isScanOrImage = true;
-                mimeType = lowerMime.startsWith('image/') ? lowerMime : `image/${ext}`;
-            } else if (ext === 'txt' || lowerMime.includes('text/plain')) {
-                textContent += '\n' + attachment.buffer.toString('utf-8');
-            } else {
-                throw new Error('Tipo de archivo no soportado para análisis: ' + attachment.mimetype);
             }
-            
-            if (isScanOrImage || mimeType === 'application/pdf') {
-                base64Data = attachment.buffer.toString('base64');
-            }
+            mimeType = 'application/pdf';
+        } else if (lowerMime.startsWith('image/') || ['png','jpg','jpeg'].includes(ext || '')) {
+            isScanOrImage = true;
+            mimeType = lowerMime.startsWith('image/') ? lowerMime : `image/${ext}`;
+        } else if (ext === 'txt' || lowerMime.includes('text/plain')) {
+            textContent += '\n' + attachment.buffer.toString('utf-8');
+        } else {
+            return [{ text: `(Archivo no soportado para análisis automático: ${attachment.filename})` }];
         }
+        
+        if (isScanOrImage || mimeType === 'application/pdf') {
+            base64Data = attachment.buffer.toString('base64');
+            parts.push({ inlineData: { data: base64Data, mimeType: mimeType } });
+        }
+        if (textContent) {
+            parts.push({ text: `Texto extraído:\n${textContent}` });
+        }
+        
+        return parts;
+    }
 
+    async procesarElemento(texto: string, attachment?: { buffer: Buffer, mimetype: string, filename: string }, explicitDocType?: 'PASAJES' | 'GDE' | 'TEXTO_LIBRE'): Promise<any> {
         let docType: 'PASAJES' | 'GDE' | 'TEXTO_LIBRE' = explicitDocType || 'TEXTO_LIBRE';
         let configSchema: any;
         let promptSystem = '';
@@ -211,23 +226,18 @@ export class NovedadesAiService {
             promptSystem = 'Extrae los datos del mensaje informal de disponibilidad u otras novedades. ATENCIÓN: Solo extrae datos que estén EXPLÍCITAMENTE ESCRITOS en el texto. NO INVENTES NI DEDUZCAS viajes, ciudades o fechas basándote únicamente en el Asunto del correo. Si el texto es breve y solo dice "Adjunto pasaje" o similar, devuelve un array "periodos" VACÍO para evitar duplicaciones con el archivo adjunto. ATENCIÓN A DÍAS DISCONTINUOS O SALTEADOS: Cuando se informen días no consecutivos, genera un elemento independiente en el array "periodos". Mapea todos los rangos o días mencionados al array de periodos.' + contextAdicional;
         }
 
+        const parts: any[] = [{ text: promptSystem }];
+        if (texto) {
+            parts.push({ text: `\n\nTexto a analizar:\n"""\n${texto}\n"""` });
+        }
+        
+        if (attachment) {
+            const attParts = await this.prepareAttachmentParts(attachment);
+            parts.push(...attParts);
+        }
+
         const requestPayload = {
-            contents: (isScanOrImage || mimeType === 'application/pdf') ? [
-                {
-                    role: 'user',
-                    parts: [
-                        { inlineData: { data: base64Data, mimeType: mimeType } },
-                        { text: promptSystem + (textContent ? `\n\nTexto extraído previamente (como referencia):\n${textContent}` : '') }
-                    ]
-                }
-            ] : [
-                {
-                    role: 'user',
-                    parts: [
-                        { text: `${promptSystem}\n\nTexto a analizar:\n"""\n${textContent}\n"""` }
-                    ]
-                }
-            ],
+            contents: [{ role: 'user', parts: parts }],
             config: {
                 responseMimeType: 'application/json',
                 responseSchema: configSchema,

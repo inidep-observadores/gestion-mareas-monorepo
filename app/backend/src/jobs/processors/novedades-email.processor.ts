@@ -83,8 +83,12 @@ export class NovedadesEmailProcessor implements JobProcessor {
                 // --- FASE 1: Triage ---
                 let triageResult: any = emailLog.clasificacionTriage;
                 if (!triageResult) {
-                    const nombresAdjuntos = attachmentsData.map(a => a.resolvedFilename);
-                    triageResult = await this.novedadesAiService.clasificarEmail(email.subject, email.text, nombresAdjuntos);
+                    const attachmentsParaTriage = attachmentsData.map(a => ({
+                        buffer: a.content,
+                        mimetype: a.contentType || 'application/pdf',
+                        filename: a.resolvedFilename
+                    }));
+                    triageResult = await this.novedadesAiService.clasificarEmail(email.subject, email.text, attachmentsParaTriage);
                     
                     await this.prisma.novedadesEmailLog.update({
                         where: { id: emailLog.id },
