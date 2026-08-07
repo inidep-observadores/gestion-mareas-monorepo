@@ -207,7 +207,7 @@ const observador = ref<any>(null)
 
 const authStore = useAuthStore()
 const canManageObservations = computed(() => {
-    return authStore.user?.roles.some(role => 
+    return authStore.user?.roles.some(role =>
         [ValidRoles.admin, ValidRoles.coordinador].includes(role)
     ) ?? false
 })
@@ -228,7 +228,7 @@ const startEditing = () => {
 
 const saveObservaciones = async () => {
     if (!props.observadorId || !observador.value) return
-    
+
     saving.value = true
     try {
         const updated = await observadoresApi.updateObservador(props.observadorId, {

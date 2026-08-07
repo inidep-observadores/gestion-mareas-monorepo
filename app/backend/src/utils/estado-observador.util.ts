@@ -24,23 +24,30 @@ export function evaluarEstadoDia(
   let novedadDetalle = '';
   let novedadCodigoCorto = '';
   let mareaReferencia: any = null;
+  let novedadReferenciaId: string | undefined = undefined;
+  let novedadesActivas: any[] = [];
 
-  // Comprobar Novedad
-  const novedad = obsNovedades.find(n => {
+  // Comprobar Novedades (se permiten superposiciones para detectarlas como conflictos)
+  const novedadesDelDia = obsNovedades.filter(n => {
     const inicio = DateTime.fromJSDate(n.fechaInicio, { zone: 'utc' }).startOf('day');
     const fin = n.fechaFin ? DateTime.fromJSDate(n.fechaFin, { zone: 'utc' }).endOf('day') : DateTime.now().endOf('year').plus({ years: 10 });
     return currentDate >= inicio && currentDate <= fin;
   });
 
-  if (novedad && novedad.tipoNovedad) {
-    if (!novedad.tipoNovedad.afectaPresentismo && !includeNoAfectaPresentismo) {
-      // Ignorar para matriz de presentismo
-    } else if (novedad.tipoNovedad.codigo === 'VIAJE_INICIO' || novedad.tipoNovedad.codigo === 'VIAJE_FIN') {
-      isViaje = true;
-    } else {
-      isNovedad = true;
-      novedadCodigoCorto = novedad.tipoNovedad.codigo;
-      novedadDetalle = novedad.tipoNovedad.descripcion + (novedad.motivo ? ` - ${novedad.motivo}` : '');
+  for (const novedad of novedadesDelDia) {
+    if (novedad && novedad.tipoNovedad) {
+      if (!novedad.tipoNovedad.afectaPresentismo && !includeNoAfectaPresentismo) {
+        // Ignorar para matriz de presentismo
+      } else if (novedad.tipoNovedad.codigo === 'VIAJE_INICIO' || novedad.tipoNovedad.codigo === 'VIAJE_FIN') {
+        isViaje = true;
+      } else {
+        isNovedad = true;
+        novedadesActivas.push(novedad);
+        // Retenemos el detalle para el caso en que haya una sola (sin conflicto)
+        novedadCodigoCorto = novedad.tipoNovedad.codigo;
+        novedadDetalle = novedad.tipoNovedad.descripcion + (novedad.motivo ? ` - ${novedad.motivo}` : '');
+        novedadReferenciaId = novedad.id;
+      }
     }
   }
 
@@ -176,7 +183,10 @@ export function evaluarEstadoDia(
   if (isNavegando) causasConflicto.push('Navegación');
   if (isPuerto) causasConflicto.push('Puerto');
   if (isViaje) causasConflicto.push('Viaje');
-  if (isNovedad) causasConflicto.push(`Novedad (${novedadCodigoCorto})`);
+  
+  for (const nov of novedadesActivas) {
+    causasConflicto.push(`Novedad (${nov.tipoNovedad.codigo})`);
+  }
 
   let countFuertes = causasConflicto.length;
   let estadoDto: DiaEstadoDto;
@@ -200,7 +210,7 @@ export function evaluarEstadoDia(
   } else if (isPuerto) {
     estadoDto = { estado: 'PUERTO', detalle: puertoDetalle };
   } else if (isNovedad) {
-    estadoDto = { estado: 'NOVEDAD', detalle: novedadDetalle, referenciaId: novedad?.id, codigoCorto: novedadCodigoCorto };
+    estadoDto = { estado: 'NOVEDAD', detalle: novedadDetalle, referenciaId: novedadReferenciaId, codigoCorto: novedadCodigoCorto };
   } else if (isFeriado) {
     estadoDto = { estado: 'FERIADO', detalle: feriadoNombre };
   } else if (isFinSemana) {

@@ -245,6 +245,7 @@
           v-else 
           :novedades="novedades" 
           @eventClick="openSidePanel" 
+          @observerChanged="closeSidePanel"
         />
       </div>
 
@@ -383,6 +384,11 @@ const sidePanelNovedad = ref<Novedad | null>(null);
 const openSidePanel = (novedad: Novedad) => {
   sidePanelNovedad.value = novedad;
   showSidePanel.value = true;
+};
+
+const closeSidePanel = () => {
+  showSidePanel.value = false;
+  sidePanelNovedad.value = null;
 };
 
 const showModal = ref(false);

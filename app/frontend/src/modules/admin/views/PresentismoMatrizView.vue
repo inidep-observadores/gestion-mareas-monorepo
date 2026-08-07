@@ -178,13 +178,13 @@
                   </div>
 
                   <!-- Tooltip -->
-                  <div v-if="row.dias[dia]?.estado !== 'LIBRE' && row.dias[dia]?.estado !== 'FIN_SEMANA'" class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max max-w-[200px] bg-gray-900 text-white text-xs p-2 rounded shadow-lg opacity-0 pointer-events-none group-hover/cell:opacity-100 transition-opacity z-30">
+                  <div v-if="row.dias[dia]?.estado !== 'LIBRE' && row.dias[dia]?.estado !== 'FIN_SEMANA'" class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max max-w-[200px] bg-gray-900 dark:bg-gray-700 text-white text-xs p-2 rounded shadow-lg opacity-0 pointer-events-none group-hover/cell:opacity-100 transition-opacity z-30">
                     <div class="font-bold mb-1">{{ formatTooltipTitle(row.dias[dia]) }}</div>
-                    <div class="text-[10px] text-gray-300 leading-tight" v-if="row.dias[dia].detalle || row.dias[dia].conflictoDetalle">
+                    <div class="text-[10px] text-gray-300 dark:text-gray-200 leading-tight" v-if="row.dias[dia].detalle || row.dias[dia].conflictoDetalle">
                       {{ row.dias[dia].conflictoDetalle || row.dias[dia].detalle }}
                     </div>
                     <!-- Triangulito -->
-                    <div class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+                    <div class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900 dark:border-t-gray-700"></div>
                   </div>
                 </td>
               </tr>
@@ -465,7 +465,8 @@ const renderTimeline = () => {
         end: new Date(year, month - 1, block.endDia + 1),
         content: block.content,
         className: block.visClassName + (isCurrentMonth ? '' : ' vis-item-attenuated'),
-        title: block.diaData.detalle || formatTooltipTitle(block.diaData)
+        title: `<div class="font-bold mb-1">${formatTooltipTitle(block.diaData)}</div>` +
+               ((block.diaData.conflictoDetalle || block.diaData.detalle) ? `<div class="text-[10px] leading-tight opacity-90">${block.diaData.conflictoDetalle || block.diaData.detalle}</div>` : '')
       });
     });
   };
@@ -708,5 +709,27 @@ onBeforeUnmount(() => {
 :deep(.vis-time-axis .vis-text.vis-sunday) {
   color: #ef4444 !important; /* text-red-500 */
   font-weight: bold !important;
+}
+
+/* Modificaciones para el Tooltip en Vis-Timeline (Timeline Mode) */
+:global(.vis-tooltip) {
+  background-color: #111827 !important; /* bg-gray-900 */
+  color: #ffffff !important;
+  font-size: 12px !important;
+  font-family: inherit !important;
+  padding: 8px !important;
+  border-radius: 4px !important;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+  border: none !important;
+  z-index: 1000 !important;
+  pointer-events: none !important;
+  white-space: normal !important;
+  max-width: 250px !important;
+}
+
+:global(.dark .vis-tooltip) {
+  background-color: #374151 !important; /* bg-gray-700 */
+  border: 1px solid #4b5563 !important; /* border-gray-600 */
+  color: #f3f4f6 !important; /* text-gray-100 */
 }
 </style>

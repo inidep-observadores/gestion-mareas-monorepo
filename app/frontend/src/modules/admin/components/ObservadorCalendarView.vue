@@ -3,15 +3,10 @@
     <!-- Columna Izquierda: Lista de Observadores -->
     <div class="w-full xl:w-72 shrink-0 flex flex-col bg-surface border border-border rounded-2xl overflow-hidden shadow-sm">
       <div class="p-4 border-b border-border bg-surface-muted/30">
-        <div class="relative">
-          <input
-            v-model="searchQuery"
-            type="text"
-            placeholder="Buscar observador..."
-            class="w-full pl-10 pr-4 py-2.5 bg-surface border border-border rounded-xl text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all text-text"
-          />
-          <SearchIcon class="absolute left-3.5 top-3 w-4 h-4 text-text-muted" />
-        </div>
+        <SearchInput
+          v-model="searchQuery"
+          placeholder="Buscar observador..."
+        />
       </div>
       
       <div class="flex-1 overflow-y-auto p-2">
@@ -51,20 +46,49 @@
         <p class="font-medium text-lg text-text">Sin novedades registradas</p>
         <p class="text-sm mt-1">Este observador no tiene novedades cargadas en el sistema.</p>
       </div>
-      <div v-else class="flex-1 h-full calendar-container">
-        <FullCalendar :options="calendarOptions" />
+      <div v-else class="flex-1 h-full calendar-container overflow-hidden">
+        <VCalendar
+          :key="selectedObservador || 'default'"
+          :attributes="calendarAttributes"
+          expanded
+          transparent
+          borderless
+          locale="es"
+          :first-day-of-week="2"
+          :columns="calendarColumns"
+          :initial-page="initialPage"
+          class="custom-v-calendar h-full w-full"
+        >
+          <template #day-popover="{ attributes }">
+            <div class="p-2 min-w-[200px]">
+              <div class="text-xs font-bold text-text-muted mb-2 uppercase tracking-wider">Novedades</div>
+              <div class="flex flex-col gap-1.5">
+                <button
+                  v-for="attr in attributes"
+                  :key="attr.key"
+                  @click="handleEventClick(attr.customData)"
+                  class="w-full text-left p-2.5 rounded-lg border border-primary/20 bg-primary/5 hover:bg-primary/10 transition-colors flex items-center justify-between group"
+                >
+                  <span class="font-semibold text-sm text-primary group-hover:text-primary-focus transition-colors">
+                    {{ attr.customData.tipoNovedad?.descripcion || 'Novedad' }}
+                  </span>
+                  <span class="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded ml-2">Ver</span>
+                </button>
+              </div>
+            </div>
+          </template>
+        </VCalendar>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue';
-import { SearchIcon, CalendarIcon } from 'lucide-vue-next';
-import FullCalendar from '@fullcalendar/vue3';
-import dayGridPlugin from '@fullcalendar/daygrid';
-import interactionPlugin from '@fullcalendar/interaction';
-import esLocale from '@fullcalendar/core/locales/es';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
+import { CalendarIcon } from 'lucide-vue-next';
+import SearchInput from '@/components/ui/SearchInput.vue';
+import { Calendar as VCalendar } from 'v-calendar';
+import 'v-calendar/style.css';
 import observadoresApi from '../services/observadores.service';
 import type { Observador } from '../interfaces/observador.interface';
 import type { Novedad } from '../interfaces/novedad.interface';
@@ -75,6 +99,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'eventClick', novedad: Novedad): void;
+  (e: 'observerChanged'): void;
 }>();
 
 const observadores = ref<Observador[]>([]);
@@ -82,8 +107,18 @@ const isLoadingObservadores = ref(false);
 const searchQuery = ref('');
 const selectedObservador = ref<string | null>(null);
 
+watch(selectedObservador, () => {
+  emit('observerChanged');
+});
+
+const windowWidth = ref(window.innerWidth);
+const updateWidth = () => {
+  windowWidth.value = window.innerWidth;
+};
+
 // Cargar observadores activos
 onMounted(async () => {
+  window.addEventListener('resize', updateWidth);
   isLoadingObservadores.value = true;
   try {
     observadores.value = await observadoresApi.getObservadores(false);
@@ -95,6 +130,25 @@ onMounted(async () => {
   } finally {
     isLoadingObservadores.value = false;
   }
+});
+
+onUnmounted(() => {
+  window.removeEventListener('resize', updateWidth);
+});
+
+const calendarColumns = computed(() => {
+  if (windowWidth.value >= 1280) return 3; // xl o mayor
+  if (windowWidth.value >= 1024) return 2; // lg
+  return 1;
+});
+
+const initialPage = computed(() => {
+  const date = new Date();
+  if (calendarColumns.value === 3) {
+    // Si hay 3 columnas, centrar el mes actual (por lo tanto, el panel izquierdo es el mes anterior)
+    date.setMonth(date.getMonth() - 1);
+  }
+  return { month: date.getMonth() + 1, year: date.getFullYear() };
 });
 
 const filteredObservadores = computed(() => {
@@ -112,16 +166,7 @@ const novedadesObservadorSeleccionado = computed(() => {
   return props.novedades.filter(n => n.observador?.id === selectedObservador.value && n.estadoAprobacion !== 'RECHAZADA');
 });
 
-// Función auxiliar para sumar 1 día a la fecha final (exclusiva en FullCalendar)
-const addOneDay = (dateStr: string) => {
-  // Asegurarse de usar la fecha local sin problemas de zona horaria
-  const [year, month, day] = dateStr.split('T')[0].split('-').map(Number);
-  const d = new Date(year, month - 1, day);
-  d.setDate(d.getDate() + 1);
-  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-};
-
-const calendarEvents = computed(() => {
+const calendarAttributes = computed(() => {
   return novedadesObservadorSeleccionado.value.map(novedad => {
     const startStr = novedad.fechaInicio.split('T')[0];
     let endStr = novedad.fechaFin ? novedad.fechaFin.split('T')[0] : null;
@@ -133,105 +178,83 @@ const calendarEvents = computed(() => {
     }
 
     return {
-      id: novedad.id,
-      title: novedad.tipoNovedad?.descripcion || 'Novedad',
-      start: startStr,
-      // FullCalendar "end" es exclusivo. Si abarca varios días, sumamos 1 día.
-      end: endStr && endStr !== startStr ? addOneDay(endStr) : undefined,
-      allDay: true,
-      classNames: ['novedad-calendar-event'],
-      extendedProps: {
-        novedad
+      key: novedad.id,
+      customData: novedad,
+      dates: { start: new Date(startStr + 'T00:00:00'), end: new Date(endStr + 'T00:00:00') },
+      highlight: {
+        color: 'sky',
+        fillMode: 'light' as const,
+      },
+      popover: {
+        visibility: 'hover',
+        isInteractive: true, // Permite clickear los elementos del popover
       }
     };
   });
 });
 
-const handleEventClick = (info: any) => {
-  const novedad = info.event.extendedProps.novedad;
+const handleEventClick = (novedad: Novedad) => {
   emit('eventClick', novedad);
 };
-
-const calendarOptions = ref({
-  plugins: [dayGridPlugin, interactionPlugin],
-  initialView: 'dayGridMonth',
-  locale: esLocale,
-  events: calendarEvents.value,
-  eventClick: handleEventClick,
-  dayMaxEvents: 2, // Mostrar hasta 2 eventos antes del "+X más"
-  headerToolbar: {
-    left: 'prev,next today',
-    center: 'title',
-    right: ''
-  },
-  height: '100%',
-  eventClassNames: 'cursor-pointer rounded shadow-sm font-bold text-xs border-none',
-  moreLinkClassNames: 'font-bold text-primary hover:underline bg-primary/10 rounded px-1',
-});
-
-// FullCalendar en Vue 3 sufre de glitches (como eventos que colapsan en hover) 
-// si se usa un computed() para todo el objeto options. Lo correcto es actualizar la propiedad events reactivamente.
-watch(calendarEvents, (newEvents) => {
-  calendarOptions.value.events = newEvents;
-}, { deep: true });
-
 </script>
 
 <style>
-/* Personalización de FullCalendar para adaptarlo al theme de la aplicación */
+/* Personalización de v-calendar para adaptarlo al theme de la aplicación */
 .calendar-container {
-  --fc-border-color: var(--color-border);
-  --fc-button-bg-color: var(--color-surface);
-  --fc-button-border-color: var(--color-border);
-  --fc-button-text-color: var(--color-text);
-  --fc-button-hover-bg-color: var(--color-surface-muted);
-  --fc-button-hover-border-color: var(--color-primary);
-  --fc-button-active-bg-color: var(--color-primary);
-  --fc-button-active-border-color: var(--color-primary);
-  --fc-button-active-text-color: white;
-  --fc-event-bg-color: var(--color-primary);
-  --fc-event-border-color: var(--color-primary);
-  --fc-today-bg-color: rgba(var(--color-primary-rgb), 0.05);
-  --fc-page-bg-color: var(--color-surface);
-  --fc-neutral-bg-color: var(--color-surface);
-  --fc-neutral-text-color: var(--color-text);
-  --fc-theme-standard-border-color: var(--color-border);
+  /* Hacemos que ocupe todo el alto disponible */
+  height: 100%;
 }
 
-.fc-theme-standard .fc-scrollgrid {
-  border-radius: 0.5rem;
-  overflow: hidden;
-  border: 1px solid var(--color-border);
+.custom-v-calendar .vc-container {
+  height: 100%;
+  font-family: inherit;
+  --vc-font-family: inherit;
+  --vc-color-sky-100: #e0f2fe;
+  --vc-color-sky-800: #075985;
 }
 
-.fc .fc-button-primary:not(:disabled).fc-button-active, 
-.fc .fc-button-primary:not(:disabled):active {
-  background-color: var(--fc-button-active-bg-color, #000);
-  border-color: var(--fc-button-active-border-color, #000);
+.dark .custom-v-calendar .vc-container {
+  --vc-color-sky-100: rgba(14, 165, 233, 0.3);
+  --vc-color-sky-800: #bae6fd;
 }
 
-.fc-daygrid-event {
-  border-radius: 4px;
-  padding: 2px 4px;
-}
-
-/* Colores idénticos a los de Presentismo */
-.novedad-calendar-event,
-.novedad-calendar-event:hover {
-  background-color: #e0f2fe !important;
-  color: black !important;
-  border-color: #7dd3fc !important;
+/* Modificamos los estilos de highlight nativos de v-calendar para que parezcan nuestras novedades */
+.custom-v-calendar .vc-highlight {
   border-width: 2px !important;
   border-style: solid !important;
-  display: block !important;
-  width: 100% !important;
-  z-index: 1 !important; /* Previene el cambio de z-index de FullCalendar en hover que causa colapso en layout flex/grid */
+  border-color: #7dd3fc !important;
+  border-radius: 4px !important;
 }
 
-.dark .novedad-calendar-event,
-.dark .novedad-calendar-event:hover {
-  background-color: rgba(14, 165, 233, 0.3) !important;
-  color: #bae6fd !important;
+.dark .custom-v-calendar .vc-highlight {
   border-color: rgba(14, 165, 233, 0.5) !important;
+}
+
+.custom-v-calendar .vc-weekday {
+  color: var(--color-text-muted) !important;
+  font-weight: 600 !important;
+  padding-bottom: 0.5rem !important;
+  border-bottom: 1px solid var(--color-border) !important;
+}
+
+.custom-v-calendar .vc-day {
+  min-height: 80px;
+  border-bottom: 1px solid var(--color-border);
+  border-right: 1px solid var(--color-border);
+  padding: 4px;
+}
+
+.custom-v-calendar .vc-day:nth-child(7n) {
+  border-right: none;
+}
+
+.custom-v-calendar .vc-pane-layout {
+  height: 100%;
+  width: 100%;
+}
+
+.custom-v-calendar .vc-pane {
+  min-width: 0; /* Previene desbordamientos en flex container */
+  width: 100%; /* Forzar estiramiento */
 }
 </style>
