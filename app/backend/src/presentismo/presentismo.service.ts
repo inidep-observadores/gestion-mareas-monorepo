@@ -5,6 +5,7 @@ import { DateTime } from 'luxon';
 import * as ExcelJS from 'exceljs';
 import { MareaEstado } from '../mareas/mareas.constants';
 import { evaluarEstadoDia } from '../utils/estado-observador.util';
+import { DateUtils } from '../common/utils/date.utils';
 
 @Injectable()
 export class PresentismoService {
@@ -178,8 +179,11 @@ export class PresentismoService {
       for (let dia = 1; dia <= diasMes; dia++) {
         const currentDate = startOfMonth.set({ day: dia }).startOf('day');
 
-        // Omitir cálculo para días futuros
-        if (currentDate > DateTime.now().startOf('day')) {
+        // Omitir cálculo para días futuros.
+        // Se usa DateUtils.getNow() para respetar APP_TIMEZONE y evitar que el día actual
+        // sea tratado incorrectamente como "futuro" cuando el servidor corre en UTC.
+        const todayStart = DateTime.fromJSDate(DateUtils.getNow(), { zone: DateUtils.getTimezone() });
+        if (currentDate > todayStart) {
           row.dias[dia] = { estado: 'LIBRE' };
           row.totales.libres++;
           continue;
