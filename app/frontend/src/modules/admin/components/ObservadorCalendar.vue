@@ -3,7 +3,7 @@
     <CalendarIcon class="w-16 h-16 mb-4 opacity-20" />
     <p class="font-medium">Seleccione un observador para ver su calendario de novedades y mareas</p>
   </div>
-  <div v-else class="flex-1 h-full calendar-container overflow-hidden">
+  <div v-else class="flex-1 calendar-container">
     <VCalendar
       :key="observadorId || 'default'"
       :attributes="calendarAttributes"
@@ -12,9 +12,10 @@
       borderless
       locale="es"
       :first-day-of-week="2"
-      :columns="calendarColumns"
-      :initial-page="initialPage"
-      class="custom-v-calendar h-full w-full"
+      :columns="1"
+      :rows="calendarRange.rows"
+      :initial-page="calendarRange.initialPage"
+      class="custom-v-calendar w-full"
     >
       <template #day-popover="{ attributes }">
         <div class="p-2 min-w-[200px]">
@@ -35,9 +36,23 @@
                   :class="attr.customData.tipoEvento === 'NOVEDAD' ? 'text-primary group-hover:text-primary-focus' : 'text-orange-500 group-hover:text-orange-600'">
                   {{ attr.customData.titulo }}
                 </span>
-                <span v-if="attr.customData.subtitulo" class="text-[10px] text-text-muted mt-0.5">
-                  {{ attr.customData.subtitulo }}
-                </span>
+                  <!-- Si es novedad, usamos subtitulo normal -->
+                  <span v-if="attr.customData.tipoEvento === 'NOVEDAD' && attr.customData.subtitulo" class="text-[10px] text-text-muted mt-0.5">
+                    {{ attr.customData.subtitulo }}
+                  </span>
+                  
+                  <!-- Si es marea, mostramos por lineas -->
+                  <template v-else-if="attr.customData.tipoEvento === 'MAREA'">
+                    <span v-if="attr.customData.buque" class="text-[10px] text-text-muted mt-0.5 font-medium">
+                      {{ attr.customData.buque }}
+                    </span>
+                    <span v-if="attr.customData.pesqueriaFlota" class="text-[10px] text-text-muted mt-0.5">
+                      {{ attr.customData.pesqueriaFlota }}
+                    </span>
+                    <span v-if="attr.customData.estadoLabel" class="text-[10px] text-text-muted mt-0.5">
+                      {{ attr.customData.estadoLabel }}
+                    </span>
+                  </template>
               </div>
               <span v-if="attr.customData.tipoEvento === 'NOVEDAD'" class="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded ml-2 shrink-0">Ver</span>
             </button>
@@ -49,7 +64,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue';
 import { CalendarIcon } from 'lucide-vue-next';
 import { Calendar as VCalendar } from 'v-calendar';
 import 'v-calendar/style.css';
@@ -67,33 +82,75 @@ const emit = defineEmits<{
 
 const mareas = ref<any[]>([]);
 
-// Responsiveness for calendar columns
-const windowWidth = ref(window.innerWidth);
-const updateWidth = () => {
-  windowWidth.value = window.innerWidth;
+const calendarRange = computed(() => {
+  let minDate = new Date();
+  let maxDate = new Date();
+  
+  // Por defecto inicializamos con +- 1 mes desde hoy
+  minDate.setMonth(minDate.getMonth() - 1);
+  maxDate.setMonth(maxDate.getMonth() + 1);
+
+  const updateMinMax = (dateStr: string | null | undefined) => {
+    if (!dateStr) return;
+    const date = new Date(dateStr);
+    if (!isNaN(date.getTime())) {
+      if (date < minDate) minDate = new Date(date);
+      if (date > maxDate) maxDate = new Date(date);
+    }
+  };
+
+  const novedadesActivas = (props.novedades || []).filter(n => 
+    n.observador?.id === props.observadorId && n.estadoAprobacion !== 'RECHAZADA'
+  );
+
+  novedadesActivas.forEach(n => {
+    updateMinMax(n.fechaInicio);
+    updateMinMax(n.fechaFin);
+  });
+
+  mareas.value.forEach(m => {
+    updateMinMax(m.fechaZarpada);
+    updateMinMax(m.fechaZarpadaEstimada);
+    updateMinMax(m.fechaArribo);
+    updateMinMax(m.fechaArriboEstimada);
+    if (m.etapas && Array.isArray(m.etapas)) {
+      m.etapas.forEach((e: any) => {
+        updateMinMax(e.fechaZarpada);
+        updateMinMax(e.fechaArribo);
+        updateMinMax(e.fechaZarpadaEstimada);
+      });
+    }
+  });
+
+  const minYear = minDate.getFullYear();
+  const minMonth = minDate.getMonth();
+  const maxYear = maxDate.getFullYear();
+  const maxMonth = maxDate.getMonth();
+
+  let totalMonths = (maxYear - minYear) * 12 + (maxMonth - minMonth) + 1;
+  
+  // Añadir 1 mes de margen arriba y abajo para UX
+  const finalMinDate = new Date(minYear, minMonth - 1, 1);
+  totalMonths += 2;
+  
+  if (totalMonths < 3) totalMonths = 3;
+
+  return {
+    rows: totalMonths,
+    initialPage: { month: finalMinDate.getMonth() + 1, year: finalMinDate.getFullYear() }
+  };
+});
+
+const scrollToToday = () => {
+  nextTick(() => {
+    setTimeout(() => {
+      const todayEl = document.querySelector('.custom-v-calendar .is-today');
+      if (todayEl) {
+        todayEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 150);
+  });
 };
-
-onMounted(() => {
-  window.addEventListener('resize', updateWidth);
-});
-
-onUnmounted(() => {
-  window.removeEventListener('resize', updateWidth);
-});
-
-const calendarColumns = computed(() => {
-  if (windowWidth.value >= 1280) return 3; // xl
-  if (windowWidth.value >= 1024) return 2; // lg
-  return 1;
-});
-
-const initialPage = computed(() => {
-  const date = new Date();
-  if (calendarColumns.value === 3) {
-    date.setMonth(date.getMonth() - 1);
-  }
-  return { month: date.getMonth() + 1, year: date.getFullYear() };
-});
 
 const loadMareas = async () => {
   mareas.value = [];
@@ -105,6 +162,7 @@ const loadMareas = async () => {
     const data = await mareasService.getMareasByObservador(currentId);
     if (props.observadorId === currentId) {
       mareas.value = data;
+      scrollToToday();
     }
   } catch (error) {
     console.error('Error al cargar mareas del observador:', error);
@@ -247,11 +305,18 @@ const calendarAttributes = computed(() => {
       
       // Determinar estado final para el subtitulo
       let estadoLabel = marea.estadoActual?.nombre || '';
-      if (etapa.fechaArribo || ['CERRADA', 'FINALIZADA', 'EVALUACION'].some(c => marea.estadoActual?.codigo?.includes(c))) {
+      const estadoCodigo = marea.estadoActual?.codigo || '';
+      
+      if (estadoCodigo === 'EN_EJECUCION') {
+        estadoLabel = 'En ejecución';
+      } else if (etapa.fechaArribo || ['CERRADA', 'FINALIZADA', 'EVALUACION'].some(c => estadoCodigo.includes(c))) {
         estadoLabel = 'Finalizada';
       }
 
-      const subtitulo = `${marea.buque?.nombreBuque || ''} - ${estadoLabel}`;
+      const pesqueria = etapa.pesqueria?.nombre || marea.pesqueria?.nombre || '';
+      const flota = marea.buque?.tipoFlota?.nombre || '';
+      const pesqueriaFlota = [pesqueria, flota].filter(Boolean).join(' - ');
+      const buque = marea.buque?.nombreBuque || '';
 
       // Determinar clases CSS
       let normalClass = 'calendar-marea';
@@ -279,12 +344,14 @@ const calendarAttributes = computed(() => {
         marea,
         etapa,
         titulo,
-        subtitulo
+        buque,
+        pesqueriaFlota,
+        estadoLabel
       };
 
       const customDataProyectado = {
         ...customData,
-        subtitulo: `${marea.buque?.nombreBuque || ''} - Proyectado`
+        estadoLabel: 'Proyectado'
       };
 
       if (isEstimada && end >= today) {
@@ -350,11 +417,10 @@ const calendarAttributes = computed(() => {
 <style>
 /* Personalización de v-calendar */
 .calendar-container {
-  height: 100%;
+  min-height: 100%;
 }
 
 .custom-v-calendar .vc-container {
-  height: 100%;
   font-family: inherit;
   --vc-font-family: inherit;
   --vc-color-sky-100: #e0f2fe;

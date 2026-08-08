@@ -36,7 +36,7 @@
     </div>
 
     <!-- Columna Derecha: Calendario -->
-    <div class="flex-1 min-w-0 bg-surface border border-border rounded-2xl shadow-sm p-4 xl:p-6 overflow-hidden flex flex-col">
+    <div class="flex-1 min-w-0 bg-surface border border-border rounded-2xl shadow-sm p-4 xl:p-6 overflow-y-auto flex flex-col">
       <ObservadorCalendar
         :observador-id="selectedObservador"
         :novedades="props.novedades"

@@ -1836,11 +1836,15 @@ export class MareasService {
                 ]
             },
             include: {
-                buque: true,
+                pesqueria: true,
+                buque: {
+                    include: { tipoFlota: true }
+                },
                 estadoActual: true,
                 etapas: {
                     orderBy: { nroEtapa: 'asc' },
                     include: {
+                        pesqueria: true,
                         puertoZarpada: true,
                         puertoArribo: true,
                         observadores: {
