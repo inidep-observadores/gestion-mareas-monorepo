@@ -160,19 +160,7 @@ export function evaluarEstadoDia(
           mareaReferencia = marea;
           break;
         } else if (!marea.fechaFinObservador) {
-          // No hay fecha fin observador validada en la marea.
-          // Fallback dinámico: Buscar si existe una novedad VIAJE_FIN en los próximos días (ej: no se enlazó correctamente)
-          const posibleViajeFin = obsNovedades.find(n => 
-            n.tipoNovedad?.codigo === 'VIAJE_FIN' &&
-            DateTime.fromJSDate(n.fechaInicio, { zone: 'utc' }) > arriboUltima &&
-            DateTime.fromJSDate(n.fechaInicio, { zone: 'utc' }).diff(arriboUltima, 'days').days <= 10
-          );
-
-          if (posibleViajeFin && currentDate <= DateTime.fromJSDate(posibleViajeFin.fechaInicio, { zone: 'utc' }).startOf('day')) {
-            isViaje = true;
-            mareaReferencia = marea;
-            break;
-          }
+          // No hay fecha fin observador
 
           if (marea.estadoActual.codigo !== MareaEstado.EN_EJECUCION && marea.estadoActual.codigo !== MareaEstado.DESIGNADA && marea.estadoActual.codigo !== MareaEstado.A_REASIGNAR) {
             // Marea finalizó, no se consideran más días

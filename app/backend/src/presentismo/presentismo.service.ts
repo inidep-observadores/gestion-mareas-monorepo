@@ -56,6 +56,45 @@ export class PresentismoService {
       }
     });
 
+    // 3.5. Pre-procesar novedades VIAJE_FIN: si existe un hueco entre el final de la última marea y el inicio del viaje, estirar la novedad
+    for (const novedad of novedadesDb) {
+      if (novedad.tipoNovedad?.codigo === 'VIAJE_FIN') {
+        const ultimaMarea = await this.prisma.marea.findFirst({
+          where: {
+            activo: true,
+            OR: [
+              { observadorPrincipalId: novedad.observadorId },
+              { etapas: { some: { observadores: { some: { observadorId: novedad.observadorId } } } } }
+            ],
+            etapas: {
+              some: {
+                fechaArribo: { lte: novedad.fechaInicio }
+              }
+            }
+          },
+          include: {
+            etapas: {
+              orderBy: { nroEtapa: 'desc' },
+              take: 1
+            }
+          },
+          orderBy: [
+            { anioMarea: 'desc' },
+            { nroMarea: 'desc' }
+          ]
+        });
+
+        if (ultimaMarea && ultimaMarea.etapas.length > 0 && ultimaMarea.etapas[0].fechaArribo) {
+          const arriboMarea = DateTime.fromJSDate(ultimaMarea.etapas[0].fechaArribo, { zone: 'utc' }).endOf('day');
+          const inicioNovedad = DateTime.fromJSDate(novedad.fechaInicio, { zone: 'utc' }).startOf('day');
+          
+          if (inicioNovedad > arriboMarea && inicioNovedad.diff(arriboMarea, 'days').days <= 10) {
+            novedad.fechaInicio = arriboMarea.plus({ days: 1 }).toJSDate();
+          }
+        }
+      }
+    }
+
     // 4. Traer Mareas para el mes actual
     const mareasDb = await this.prisma.marea.findMany({
       where: {
@@ -79,17 +118,6 @@ export class PresentismoService {
             etapas: {
               some: {
                 fechaZarpada: { lte: endOfMonth.toJSDate() }
-              }
-            }
-          },
-          {
-            // Mareas que terminaron su navegación muy cerca del inicio del mes, por si tienen un VIAJE_FIN no enlazado
-            etapas: {
-              some: {
-                fechaArribo: {
-                  gte: startOfMonth.minus({ days: 10 }).toJSDate(),
-                  lte: startOfMonth.toJSDate()
-                }
               }
             }
           }
