@@ -37,7 +37,8 @@
             
             <div>
               <p class="text-[10px] uppercase font-black text-text-muted mb-1">Estado</p>
-              <span v-if="novedad.estadoAprobacion === 'PENDIENTE'" class="bg-warning/10 text-warning text-xs font-black px-2 py-1 rounded-md uppercase border border-warning/20">PENDIENTE</span>
+              <span v-if="novedad.activo === false" class="bg-error/10 text-error text-xs font-black px-2 py-1 rounded-md uppercase border border-error/20">ELIMINADA</span>
+              <span v-else-if="novedad.estadoAprobacion === 'PENDIENTE'" class="bg-warning/10 text-warning text-xs font-black px-2 py-1 rounded-md uppercase border border-warning/20">PENDIENTE</span>
               <span v-else-if="novedad.estadoAprobacion === 'RECHAZADA'" class="bg-error/10 text-error text-xs font-black px-2 py-1 rounded-md uppercase border border-error/20">RECHAZADA</span>
               <span v-else class="bg-success/10 text-success text-xs font-black px-2 py-1 rounded-md uppercase border border-success/20">APROBADA</span>
             </div>
@@ -122,8 +123,8 @@
     </div>
 
     <!-- Pie / Acciones -->
-    <div class="border-t border-border bg-surface-muted/50 p-4 flex flex-col gap-2">
-      <template v-if="novedad && novedad.estadoAprobacion === 'PENDIENTE'">
+    <div v-if="!readonly && novedad && novedad.activo !== false" class="border-t border-border bg-surface-muted/50 p-4 flex flex-col gap-2">
+      <template v-if="novedad.estadoAprobacion === 'PENDIENTE'">
         <button type="button" @click="$emit('approve', novedad)" class="w-full flex justify-center items-center gap-2 rounded-lg bg-success px-3 py-2 text-sm font-bold text-white shadow-sm hover:bg-success-hover transition-colors active:scale-[0.98]">
           <CheckIcon class="w-4 h-4" /> Aprobar
         </button>
@@ -134,7 +135,25 @@
           <button type="button" @click="$emit('edit', novedad)" class="flex-1 flex justify-center items-center gap-1 rounded-lg bg-surface px-3 py-2 text-sm font-bold text-text shadow-sm ring-1 ring-inset ring-border hover:bg-surface-muted transition-colors active:scale-[0.98]">
             <EditIcon class="w-4 h-4" /> Editar
           </button>
+          <button type="button" @click="$emit('delete', novedad)" class="flex-1 flex justify-center items-center gap-1 rounded-lg bg-surface px-3 py-2 text-sm font-bold text-error shadow-sm ring-1 ring-inset ring-border hover:bg-surface-muted transition-colors active:scale-[0.98]">
+            <TrashIcon class="w-4 h-4" /> Borrar
+          </button>
         </div>
+      </template>
+      <template v-else-if="novedad.estadoAprobacion !== 'RECHAZADA'">
+        <div class="flex gap-2">
+          <button type="button" @click="$emit('edit', novedad)" class="flex-1 flex justify-center items-center gap-1 rounded-lg bg-surface px-3 py-2 text-sm font-bold text-text shadow-sm ring-1 ring-inset ring-border hover:bg-surface-muted transition-colors active:scale-[0.98]">
+            <EditIcon class="w-4 h-4" /> Editar
+          </button>
+          <button type="button" @click="$emit('delete', novedad)" class="flex-1 flex justify-center items-center gap-1 rounded-lg bg-surface px-3 py-2 text-sm font-bold text-error shadow-sm ring-1 ring-inset ring-border hover:bg-surface-muted transition-colors active:scale-[0.98]">
+            <TrashIcon class="w-4 h-4" /> Borrar
+          </button>
+        </div>
+      </template>
+      <template v-else>
+        <button type="button" @click="$emit('delete', novedad)" class="w-full flex justify-center items-center gap-1 rounded-lg bg-surface px-3 py-2 text-sm font-bold text-error shadow-sm ring-1 ring-inset ring-border hover:bg-surface-muted transition-colors active:scale-[0.98]">
+          <TrashIcon class="w-4 h-4" /> Borrar
+        </button>
       </template>
     </div>
   </div>
@@ -144,16 +163,17 @@
 import { computed } from 'vue';
 import type { Novedad } from '../interfaces/novedad.interface';
 
-import { XIcon, ArrowRightIcon as ExternalLinkIcon, CheckIcon, EditIcon, FileTextIcon, HistoryIcon } from '@/icons';
+import { XIcon, ArrowRightIcon as ExternalLinkIcon, CheckIcon, EditIcon, FileTextIcon, HistoryIcon, TrashIcon } from '@/icons';
 // Si tienes un icono Sparkles, lo importas, si no usamos otro
 import { SettingsIcon as SparklesIcon } from '@/icons';
 import AttachmentViewer from '@/components/common/AttachmentViewer.vue';
 
 const props = defineProps<{
   novedad: Novedad | null;
+  readonly?: boolean;
 }>();
 
-const emit = defineEmits(['close', 'approve', 'reject', 'edit']);
+const emit = defineEmits(['close', 'approve', 'reject', 'edit', 'delete']);
 
 const closePanel = () => {
   emit('close');

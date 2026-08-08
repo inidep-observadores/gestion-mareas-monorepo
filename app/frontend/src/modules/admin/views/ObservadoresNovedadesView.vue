@@ -267,6 +267,7 @@
             @approve="(n) => { showSidePanel = false; promptAction(n, 'APROBADA'); }"
             @reject="(n) => { showSidePanel = false; promptAction(n, 'RECHAZADA'); }"
             @edit="(n) => { showSidePanel = false; openEditModal(n); }"
+            @delete="(n) => { showSidePanel = false; deleteNovedad(n); }"
           />
         </div>
       </Transition>
@@ -288,6 +289,7 @@
                   @approve="(n) => { showSidePanel = false; promptAction(n, 'APROBADA'); }"
                   @reject="(n) => { showSidePanel = false; promptAction(n, 'RECHAZADA'); }"
                   @edit="(n) => { showSidePanel = false; openEditModal(n); }"
+                  @delete="(n) => { showSidePanel = false; deleteNovedad(n); }"
                 />
               </div>
             </Transition>
