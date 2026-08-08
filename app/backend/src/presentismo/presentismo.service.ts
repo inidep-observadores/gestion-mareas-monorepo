@@ -81,6 +81,17 @@ export class PresentismoService {
                 fechaZarpada: { lte: endOfMonth.toJSDate() }
               }
             }
+          },
+          {
+            // Mareas que terminaron su navegación muy cerca del inicio del mes, por si tienen un VIAJE_FIN no enlazado
+            etapas: {
+              some: {
+                fechaArribo: {
+                  gte: startOfMonth.minus({ days: 10 }).toJSDate(),
+                  lte: startOfMonth.toJSDate()
+                }
+              }
+            }
           }
         ]
       },
