@@ -6,6 +6,8 @@ import { BusinessRulesService } from '../common/business-rules/business-rules.se
 import { MailService } from '../mail/mail.service';
 import { AlertsService } from '../alerts/alerts.service';
 import { ConfigService } from '@nestjs/config';
+import { DriveStorageService } from '../files/drive-storage.service';
+import { JobQueueService } from '../jobs/job-queue.service';
 
 describe('MareasService - getWorkforceStatus', () => {
     let service: MareasService;
@@ -50,6 +52,8 @@ describe('MareasService - getWorkforceStatus', () => {
                 { provide: MailService, useValue: {} },
                 { provide: AlertsService, useValue: {} },
                 { provide: ConfigService, useValue: { get: jest.fn().mockReturnValue('60') } },
+                { provide: DriveStorageService, useValue: {} },
+                { provide: JobQueueService, useValue: {} },
             ],
         }).compile();
 

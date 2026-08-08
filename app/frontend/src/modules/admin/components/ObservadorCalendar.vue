@@ -55,6 +55,7 @@
                   </template>
               </div>
               <span v-if="attr.customData.tipoEvento === 'NOVEDAD'" class="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded ml-2 shrink-0">Ver</span>
+              <span v-else-if="attr.customData.tipoEvento === 'MAREA'" class="text-[10px] bg-orange-500/10 text-orange-500 px-1.5 py-0.5 rounded ml-2 shrink-0">Ver</span>
             </button>
           </div>
         </div>
@@ -77,6 +78,13 @@
       />
     </div>
   </BaseModal>
+
+  <!-- Modal de detalle de Marea -->
+  <MareaQuickDetailModal
+    :is-open="showMareaModal"
+    :marea-id="selectedMareaId"
+    @close="handleMareaModalClose"
+  />
 </template>
 
 <script setup lang="ts">
@@ -89,6 +97,8 @@ import mareasService from '../../mareas/services/mareas.service';
 import { novedadesService } from '../services/novedades.service';
 import BaseModal from '@/components/common/BaseModal.vue';
 import NovedadContextDetailContent from './NovedadContextDetailContent.vue';
+import { useConfigStore } from '@/modules/shared/stores/config.store';
+import MareaQuickDetailModal from '@/modules/stats/components/MareaQuickDetailModal.vue';
 
 interface Props {
   observadorId: string | null;
@@ -106,6 +116,7 @@ const emit = defineEmits<{
 
 const calendarContainerRef = ref<HTMLElement | null>(null);
 
+const configStore = useConfigStore();
 const mareas = ref<any[]>([]);
 const internalNovedades = ref<Novedad[]>([]);
 
@@ -113,8 +124,9 @@ const calendarRange = computed(() => {
   let minDate = new Date();
   let maxDate = new Date();
   
-  // Por defecto inicializamos con +- 1 mes desde hoy
-  minDate.setMonth(minDate.getMonth() - 1);
+  // Iniciar desde el 1 de enero del año operativo seleccionado
+  const operativeYear = configStore.selectedYear;
+  minDate = new Date(operativeYear, 0, 1);
   maxDate.setMonth(maxDate.getMonth() + 1);
 
   const updateMinMax = (dateStr: string | null | undefined) => {
@@ -216,6 +228,9 @@ watch(() => props.observadorId, () => {
 const showDetailModal = ref(false);
 const selectedNovedadForModal = ref<Novedad | null>(null);
 
+const showMareaModal = ref(false);
+const selectedMareaId = ref<string | null>(null);
+
 const handleEventClick = (customData: any) => {
   if (customData.tipoEvento === 'NOVEDAD') {
     if (props.detailMode === 'emit') {
@@ -224,12 +239,20 @@ const handleEventClick = (customData: any) => {
       selectedNovedadForModal.value = customData.novedad;
       showDetailModal.value = true;
     }
+  } else if (customData.tipoEvento === 'MAREA') {
+    selectedMareaId.value = customData.marea?.id || null;
+    showMareaModal.value = true;
   }
 };
 
 const handleModalClose = () => {
   showDetailModal.value = false;
   selectedNovedadForModal.value = null;
+};
+
+const handleMareaModalClose = () => {
+  showMareaModal.value = false;
+  selectedMareaId.value = null;
 };
 
 const formatMareaCode = (marea: any): string => {
@@ -690,6 +713,11 @@ const calendarAttributes = computed(() => {
 .custom-v-calendar .vc-pane {
   min-width: 0;
   width: 100%;
+}
+
+/* Ocultar flechas de navegación del header (saltan de a muchos años) */
+.custom-v-calendar .vc-arrow {
+  display: none !important;
 }
 
 /* DESIGNADAS */

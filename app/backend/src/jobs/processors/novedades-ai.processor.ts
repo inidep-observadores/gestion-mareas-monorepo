@@ -146,6 +146,7 @@ export class NovedadesAiProcessor implements JobProcessor {
                                     observadorId: observador.id,
                                     tipoNovedadId: tipoNovedad.id,
                                     estadoAprobacion: { not: 'RECHAZADA' },
+                                    activo: true,
                                     AND: overlapConditions
                                 }
                             });

@@ -6,6 +6,8 @@ import { BusinessRulesService } from '../common/business-rules/business-rules.se
 import { MailService } from '../mail/mail.service';
 import { AlertsService } from '../alerts/alerts.service';
 import { ConfigService } from '@nestjs/config';
+import { DriveStorageService } from '../files/drive-storage.service';
+import { JobQueueService } from '../jobs/job-queue.service';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { TipoEtapa } from './mareas.constants';
 
@@ -55,6 +57,9 @@ describe('MareasService', () => {
         alerta: {
             findMany: jest.fn(),
         },
+        mareaArchivo: {
+            findMany: jest.fn().mockResolvedValue([]),
+        },
         $transaction: jest.fn((cb) => cb(mockPrismaService)),
     });
 
@@ -80,6 +85,8 @@ describe('MareasService', () => {
                 { provide: MailService, useValue: mockMailService },
                 { provide: AlertsService, useValue: mockAlertsService },
                 { provide: ConfigService, useValue: { get: jest.fn() } },
+                { provide: DriveStorageService, useValue: {} },
+                { provide: JobQueueService, useValue: {} },
             ],
         }).compile();
 

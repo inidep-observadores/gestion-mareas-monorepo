@@ -1,32 +1,35 @@
 <template>
   <AdminLayout>
-    <BackButton routeName="SistemaObservadores" label="Regresar al Panel" />
-    
-    <div class="flex gap-6 border-b border-border mb-6 overflow-x-auto">
-      <button 
-        @click="activeTab = 'historial'" 
-        class="pb-3 px-1 border-b-2 font-bold transition-colors whitespace-nowrap"
-        :class="activeTab === 'historial' ? 'border-primary text-primary' : 'border-transparent text-text-muted hover:text-text'"
-      >
-        Historial Completo
-      </button>
-      <button 
-        @click="activeTab = 'pendientes'" 
-        class="pb-3 px-1 border-b-2 font-bold transition-colors whitespace-nowrap flex items-center gap-2"
-        :class="activeTab === 'pendientes' ? 'border-primary text-primary' : 'border-transparent text-text-muted hover:text-text'"
-      >
-        Bandeja de Pendientes
-        <span v-if="pendientesCount > 0" class="bg-error text-white text-[10px] px-2 py-0.5 rounded-full">
-          {{ pendientesCount }}
-        </span>
-      </button>
-      <button 
-        @click="activeTab = 'calendario'" 
-        class="pb-3 px-1 border-b-2 font-bold transition-colors whitespace-nowrap"
-        :class="activeTab === 'calendario' ? 'border-primary text-primary' : 'border-transparent text-text-muted hover:text-text'"
-      >
-        Calendario
-      </button>
+    <div class="sticky top-[56px] lg:top-[72px] z-30 bg-surface pt-2 pb-2 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 border-b border-border mb-6">
+      <BackButton routeName="SistemaObservadores" label="Regresar al Panel" class="mb-4" />
+      
+      <div class="flex gap-6 overflow-x-auto">
+        <button 
+          @click="activeTab = 'historial'" 
+          class="pb-3 px-1 border-b-2 font-bold transition-colors whitespace-nowrap"
+          :class="activeTab === 'historial' ? 'border-primary text-primary' : 'border-transparent text-text-muted hover:text-text'"
+        >
+          Historial Completo
+        </button>
+        <button 
+          @click="activeTab = 'pendientes'" 
+          class="pb-3 px-1 border-b-2 font-bold transition-colors whitespace-nowrap flex items-center gap-2"
+          :class="activeTab === 'pendientes' ? 'border-primary text-primary' : 'border-transparent text-text-muted hover:text-text'"
+        >
+          Bandeja de Pendientes
+          <span v-if="pendientesCount > 0" class="bg-error text-white text-[10px] px-2 py-0.5 rounded-full">
+            {{ pendientesCount }}
+          </span>
+        </button>
+        <button 
+          v-show="false"
+          @click="activeTab = 'calendario'" 
+          class="pb-3 px-1 border-b-2 font-bold transition-colors whitespace-nowrap"
+          :class="activeTab === 'calendario' ? 'border-primary text-primary' : 'border-transparent text-text-muted hover:text-text'"
+        >
+          Calendario
+        </button>
+      </div>
     </div>
 
     <div class="flex flex-col xl:flex-row gap-6 items-start">
@@ -257,7 +260,7 @@
         enter-to-class="translate-x-0 opacity-100" leave-active-class="transition duration-200 ease-in"
         leave-from-class="translate-x-0 opacity-100" leave-to-class="translate-x-4 opacity-0">
         <div v-if="showSidePanel && sidePanelNovedad"
-          class="w-full xl:w-[350px] 2xl:w-[450px] shrink-0 sticky top-24 h-[calc(100vh-7rem)] flex flex-col bg-surface border border-border rounded-2xl shadow-sm overflow-hidden self-start z-10 hidden xl:block">
+          class="w-full xl:w-[350px] 2xl:w-[450px] shrink-0 sticky top-24 h-[calc(100vh-14rem)] flex flex-col bg-surface border border-border rounded-2xl shadow-sm overflow-hidden self-start z-10 hidden xl:block">
           <NovedadContextDetailContent
             :novedad="sidePanelNovedad"
             @close="showSidePanel = false"

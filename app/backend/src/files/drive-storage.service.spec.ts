@@ -36,8 +36,10 @@ describe('DriveStorageService', () => {
                     provide: ConfigService,
                     useValue: {
                         get: jest.fn((key: string) => {
-                            if (key === 'GOOGLE_APPLICATION_CREDENTIALS') return './dummy-path.json';
-                            if (key === 'GOOGLE_DRIVE_FOLDER_ID') return 'folder-123';
+                            if (key === 'GOOGLE_CLIENT_ID') return undefined;
+                            if (key === 'GOOGLE_CLIENT_SECRET') return undefined;
+                            if (key === 'GOOGLE_REFRESH_TOKEN') return undefined;
+                            if (key === 'GOOGLE_DRIVE_NOVEDADES_FOLDER_ID') return 'folder-123';
                             return null;
                         }),
                     },

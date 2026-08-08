@@ -71,10 +71,10 @@ const schemaDisponibilidadEmail = {
                         description: 'Estado o novedad reportada. ATENCION: Si se detecta que se trata de un boleto o pasaje de viaje desde Mar del Plata hacia otro destino, usar VIAJE_INICIO. Si es un pasaje desde otro destino hacia Mar del Plata, usar VIAJE_FIN.'
                     },
                     fechaInicio: { type: 'string', description: 'Fecha de inicio del período en formato YYYY-MM-DD. Si es un único día aislado, fechaInicio y fechaFin deben ser iguales.' },
-                    fechaFin: { type: 'string', description: 'Fecha de fin del período en formato YYYY-MM-DD. Si es un único día aislado, fechaInicio y fechaFin deben ser iguales.' },
+                    fechaFin: { type: 'string', description: 'Fecha de fin del período en formato YYYY-MM-DD. Dejar nulo o no incluir si no se especifica explícitamente.' },
                     motivo: { type: 'string', description: 'Breve motivo o descripción' }
                 },
-                required: ['tipoNovedad', 'fechaInicio', 'fechaFin']
+                required: ['tipoNovedad', 'fechaInicio']
             }
         }
     },
@@ -223,7 +223,8 @@ export class NovedadesAiService {
             promptSystem = 'Extrae los datos del viaje del boleto o e-ticket. Asegúrate de extraer el DNI del pasajero si figura. PRECAUCIÓN CON EL FORMATO: Al extraerse el texto de un PDF con columnas, es posible que los datos se mezclen línea por línea. Busca expresamente la etiqueta "ORIGEN" para determinar la ciudad de origen y la etiqueta "DESTINO" para el destino. No confundas el origen con campos como "SE ANUNCIA A". ATENCIÓN A LAS FECHAS: SIEMPRE debes intentar extraer tanto la fechaSalida como la fechaLlegada. Si es un inicio de viaje (salida desde Mar del Plata), asegúrate de que fechaSalida sea exactamente la fecha de partida desde Mar del Plata. Si es un fin de viaje (destino Mar del Plata), asegúrate de buscar la fecha de arribo o llegada a Mar del Plata para usarla como fechaLlegada.' + contextAdicional;
         } else {
             configSchema = schemaDisponibilidadEmail;
-            promptSystem = 'Extrae los datos del mensaje informal de disponibilidad u otras novedades. ATENCIÓN: Solo extrae datos que estén EXPLÍCITAMENTE ESCRITOS en el texto. NO INVENTES NI DEDUZCAS viajes, ciudades o fechas basándote únicamente en el Asunto del correo. Si el texto es breve y solo dice "Adjunto pasaje" o similar, devuelve un array "periodos" VACÍO para evitar duplicaciones con el archivo adjunto. ATENCIÓN A DÍAS DISCONTINUOS O SALTEADOS: Cuando se informen días no consecutivos, genera un elemento independiente en el array "periodos". Mapea todos los rangos o días mencionados al array de periodos.' + contextAdicional;
+            promptSystem = 'Extrae los datos del mensaje informal de disponibilidad u otras novedades. ATENCIÓN: Solo extrae datos que estén EXPLÍCITAMENTE ESCRITOS en el texto. NO INVENTES NI DEDUZCAS viajes, ciudades o fechas basándote únicamente en el Asunto del correo. Si el texto es breve y solo dice "Adjunto pasaje" o similar, devuelve un array "periodos" VACÍO para evitar duplicaciones con el archivo adjunto. ATENCIÓN A DÍAS DISCONTINUOS O SALTEADOS: Cuando se informen días no consecutivos, genera un elemento independiente en el array "periodos". Mapea todos los rangos o días mencionados al array de periodos.' + 
+                ' REGLAS DE FECHAS PARA DISPONIBILIDAD: 1) Si se indica fecha de inicio y fin, registra ambas. 2) Si se indica SÓLO fecha de inicio (ej: "disponible a partir del 10"), registra solo fechaInicio y omite fechaFin. 3) CASO ESPECIAL: Si se informa una "no disponibilidad" HASTA cierta fecha sin indicar fecha de inicio (ej: "no estaré disponible hasta el 6 de octubre"), asume que es un aviso de DISPONIBILIDAD a partir de esa fecha, por lo que debes clasificarlo como "DISPONIBLE" con fechaInicio igual a esa fecha indicada y omitir fechaFin.' + contextAdicional;
         }
 
         const parts: any[] = [{ text: promptSystem }];

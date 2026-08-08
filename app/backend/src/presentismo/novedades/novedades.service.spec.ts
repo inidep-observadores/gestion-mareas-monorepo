@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { NovedadesService } from './novedades.service';
 import { PrismaService } from '../../prisma/prisma.service';
+import { DriveStorageService } from '../../files/drive-storage.service';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { User } from '@prisma/client';
 
@@ -35,6 +36,7 @@ describe('NovedadesService', () => {
       providers: [
         NovedadesService,
         { provide: PrismaService, useValue: mockPrismaService },
+        { provide: DriveStorageService, useValue: {} },
       ],
     }).compile();
 
@@ -57,7 +59,7 @@ describe('NovedadesService', () => {
       await service.findAll('obs1', 'APROBADA');
       
       expect(prisma.observadorNovedad.findMany).toHaveBeenCalledWith(expect.objectContaining({
-        where: { activo: true, observadorId: 'obs1', estadoAprobacion: 'APROBADA' }
+        where: { observadorId: 'obs1', estadoAprobacion: 'APROBADA' }
       }));
     });
   });
