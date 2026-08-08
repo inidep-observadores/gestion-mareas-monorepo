@@ -73,6 +73,14 @@ export class PresentismoService {
                 ]
               }
             }
+          },
+          {
+            fechaFinObservador: { gte: startOfMonth.toJSDate() },
+            etapas: {
+              some: {
+                fechaZarpada: { lte: endOfMonth.toJSDate() }
+              }
+            }
           }
         ]
       },
