@@ -61,6 +61,22 @@
       </template>
     </VCalendar>
   </div>
+
+  <BaseModal
+    v-if="props.detailMode === 'modal'"
+    :show="showDetailModal"
+    title="Detalle de Novedad"
+    @close="handleModalClose"
+    maxWidth="3xl"
+  >
+    <div class="p-0 bg-surface-muted/30 max-h-[80vh] overflow-y-auto">
+      <NovedadContextDetailContent 
+        v-if="selectedNovedadForModal" 
+        :novedad="selectedNovedadForModal" 
+        @close="handleModalClose"
+      />
+    </div>
+  </BaseModal>
 </template>
 
 <script setup lang="ts">
@@ -71,11 +87,18 @@ import 'v-calendar/style.css';
 import type { Novedad } from '../interfaces/novedad.interface';
 import mareasService from '../../mareas/services/mareas.service';
 import { novedadesService } from '../services/novedades.service';
+import BaseModal from '@/components/common/BaseModal.vue';
+import NovedadContextDetailContent from './NovedadContextDetailContent.vue';
 
-const props = defineProps<{
+interface Props {
   observadorId: string | null;
   novedades?: Novedad[];
-}>();
+  detailMode?: 'modal' | 'emit';
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  detailMode: 'modal'
+});
 
 const emit = defineEmits<{
   (e: 'eventClick', eventData: any): void;
@@ -190,10 +213,23 @@ watch(() => props.observadorId, () => {
   loadMareas();
 }, { immediate: true });
 
+const showDetailModal = ref(false);
+const selectedNovedadForModal = ref<Novedad | null>(null);
+
 const handleEventClick = (customData: any) => {
   if (customData.tipoEvento === 'NOVEDAD') {
-    emit('eventClick', customData.novedad);
+    if (props.detailMode === 'emit') {
+      emit('eventClick', customData.novedad);
+    } else {
+      selectedNovedadForModal.value = customData.novedad;
+      showDetailModal.value = true;
+    }
   }
+};
+
+const handleModalClose = () => {
+  showDetailModal.value = false;
+  selectedNovedadForModal.value = null;
 };
 
 const formatMareaCode = (marea: any): string => {

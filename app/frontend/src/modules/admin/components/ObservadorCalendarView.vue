@@ -40,6 +40,7 @@
       <ObservadorCalendar
         :observador-id="selectedObservador"
         :novedades="props.novedades"
+        :detail-mode="'emit'"
         @event-click="handleEventClick"
       />
     </div>
