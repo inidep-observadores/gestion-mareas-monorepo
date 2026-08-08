@@ -484,6 +484,124 @@ const calendarAttributes = computed(() => {
     });
   });
 
+  // 2.5. Rellenar huecos entre novedades de VIAJE y las fechas reales de zarpada/arribo de la marea
+  //
+  // - VIAJE_INICIO: puede existir un gap entre el fin de la novedad y la primera zarpada real.
+  // - VIAJE_FIN   : puede existir un gap entre el último arribo real y el inicio de la novedad.
+  //
+  // En ambos casos, si el hueco es <= MAX_HUECO_VIAJE_DIAS, se agrega un atributo virtual
+  // "En tránsito" que cubre esos días y referencia la misma novedad en el popup.
+  //
+  // Lógica análoga a la del backend en presentismo.service.ts (paso 3.5).
+  const MAX_HUECO_VIAJE_DIAS = 10;
+
+  novedadesActivas.forEach(novedad => {
+    const code = novedad.tipoNovedad?.codigo?.toUpperCase() || '';
+
+    if (code === 'VIAJE_INICIO') {
+      // Hueco: desde el día siguiente al fin de la novedad hasta el día anterior a la primera zarpada
+      const novedadEndStr = novedad.fechaFin
+        ? novedad.fechaFin.split('T')[0]
+        : novedad.fechaInicio.split('T')[0];
+      const novedadEnd = new Date(novedadEndStr + 'T00:00:00');
+
+      // Buscar la zarpada real más próxima y posterior al fin de la novedad
+      let nearestZarpada: Date | null = null;
+
+      mareas.value.forEach((marea: any) => {
+        const etapas: any[] = marea.etapas && marea.etapas.length > 0 ? marea.etapas : [];
+        const sortedEtapas = [...etapas].sort((a, b) => (a.nroEtapa || 0) - (b.nroEtapa || 0));
+        const primeraEtapa = sortedEtapas[0];
+        if (!primeraEtapa?.fechaZarpada) return;
+
+        const zarpadaDate = new Date(primeraEtapa.fechaZarpada.split('T')[0] + 'T00:00:00');
+        if (zarpadaDate <= novedadEnd) return; // Zarpada previa o simultánea → no aplica
+
+        const diffDias = Math.round((zarpadaDate.getTime() - novedadEnd.getTime()) / (1000 * 60 * 60 * 24));
+        if (diffDias > MAX_HUECO_VIAJE_DIAS + 1) return; // Hueco demasiado grande
+
+        if (!nearestZarpada || zarpadaDate < nearestZarpada) {
+          nearestZarpada = zarpadaDate;
+        }
+      });
+
+      if (nearestZarpada) {
+        const gapStart = new Date(novedadEnd);
+        gapStart.setDate(gapStart.getDate() + 1);
+        const gapEnd = new Date(nearestZarpada as Date);
+        gapEnd.setDate(gapEnd.getDate() - 1);
+
+        if (gapStart <= gapEnd) {
+          attrs.push({
+            key: `viaje-inicio-gap-${novedad.id}`,
+            customData: {
+              tipoEvento: 'NOVEDAD',
+              novedad,
+              titulo: 'En tránsito',
+              subtitulo: 'Período entre aviso de inicio y zarpada real',
+            },
+            dates: { start: gapStart, end: gapEnd },
+            highlight: {
+              class: 'calendar-novedad',
+              contentClass: 'calendar-novedad-text',
+            },
+            popover: { visibility: 'hover' as const, isInteractive: true }
+          });
+        }
+      }
+
+    } else if (code === 'VIAJE_FIN') {
+      // Hueco: desde el día siguiente al último arribo real hasta el día anterior al inicio de la novedad
+      const novedadStartStr = novedad.fechaInicio.split('T')[0];
+      const novedadStart = new Date(novedadStartStr + 'T00:00:00');
+
+      // Buscar el arribo real más próximo y anterior al inicio de la novedad
+      let nearestArribo: Date | null = null;
+
+      mareas.value.forEach((marea: any) => {
+        const etapas: any[] = marea.etapas && marea.etapas.length > 0 ? marea.etapas : [];
+        const sortedEtapas = [...etapas].sort((a, b) => (b.nroEtapa || 0) - (a.nroEtapa || 0));
+        const ultimaEtapa = sortedEtapas[0];
+        if (!ultimaEtapa?.fechaArribo) return;
+
+        const arriboDate = new Date(ultimaEtapa.fechaArribo.split('T')[0] + 'T00:00:00');
+        if (arriboDate >= novedadStart) return; // Arribo posterior o simultáneo → no aplica
+
+        const diffDias = Math.round((novedadStart.getTime() - arriboDate.getTime()) / (1000 * 60 * 60 * 24));
+        if (diffDias > MAX_HUECO_VIAJE_DIAS + 1) return; // Hueco demasiado grande
+
+        if (!nearestArribo || arriboDate > nearestArribo) {
+          nearestArribo = arriboDate;
+        }
+      });
+
+      if (nearestArribo) {
+        const gapStart = new Date(nearestArribo as Date);
+        gapStart.setDate(gapStart.getDate() + 1);
+        const gapEnd = new Date(novedadStart);
+        gapEnd.setDate(gapEnd.getDate() - 1);
+
+        if (gapStart <= gapEnd) {
+          attrs.push({
+            key: `viaje-fin-gap-${novedad.id}`,
+            customData: {
+              tipoEvento: 'NOVEDAD',
+              novedad,
+              titulo: 'En tránsito',
+              subtitulo: 'Período entre arribo real y aviso de fin de viaje',
+            },
+            dates: { start: gapStart, end: gapEnd },
+            highlight: {
+              class: 'calendar-novedad',
+              contentClass: 'calendar-novedad-text',
+            },
+            popover: { visibility: 'hover' as const, isInteractive: true }
+          });
+        }
+      }
+    }
+  });
+
   // 3. Procesar Disponibilidades (huecos virtuales)
   disponibilidadEvents.forEach(disp => {
     let maxEnd = new Date(0);
