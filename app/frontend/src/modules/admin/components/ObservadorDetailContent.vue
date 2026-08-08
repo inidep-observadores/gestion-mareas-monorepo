@@ -42,11 +42,8 @@
       <div v-show="activeTab === 'historial'" class="h-full">
         <ObservadorTimeline :observador-id="observador?.id" />
       </div>
-      <div v-show="activeTab === 'calendario'">
-        <div class="text-center text-text-muted py-10">
-          <div class="font-bold text-sm mb-2">Vista de Calendario</div>
-          <div class="text-xs">Mockup: Aquí irá el componente del calendario</div>
-        </div>
+      <div v-if="activeTab === 'calendario'" class="h-full flex flex-col">
+        <ObservadorCalendar :observador-id="observador?.id" />
       </div>
     </div>
     
@@ -58,6 +55,7 @@ import { ref } from 'vue';
 import { getFullImageUrl } from '@/helpers/image.helper';
 import type { Observador } from '../interfaces/observador.interface';
 import ObservadorTimeline from './ObservadorTimeline.vue';
+import ObservadorCalendar from './ObservadorCalendar.vue';
 
 const props = defineProps<{
   observador: Observador;

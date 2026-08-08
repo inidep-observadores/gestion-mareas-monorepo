@@ -3,7 +3,7 @@
     <CalendarIcon class="w-16 h-16 mb-4 opacity-20" />
     <p class="font-medium">Seleccione un observador para ver su calendario de novedades y mareas</p>
   </div>
-  <div v-else class="flex-1 calendar-container">
+  <div v-else class="flex-1 calendar-container overflow-y-auto" ref="calendarContainerRef">
     <VCalendar
       :key="observadorId || 'default'"
       :attributes="calendarAttributes"
@@ -70,6 +70,7 @@ import { Calendar as VCalendar } from 'v-calendar';
 import 'v-calendar/style.css';
 import type { Novedad } from '../interfaces/novedad.interface';
 import mareasService from '../../mareas/services/mareas.service';
+import { novedadesService } from '../services/novedades.service';
 
 const props = defineProps<{
   observadorId: string | null;
@@ -80,7 +81,10 @@ const emit = defineEmits<{
   (e: 'eventClick', eventData: any): void;
 }>();
 
+const calendarContainerRef = ref<HTMLElement | null>(null);
+
 const mareas = ref<any[]>([]);
+const internalNovedades = ref<Novedad[]>([]);
 
 const calendarRange = computed(() => {
   let minDate = new Date();
@@ -99,7 +103,8 @@ const calendarRange = computed(() => {
     }
   };
 
-  const novedadesActivas = (props.novedades || []).filter(n => 
+  const sourceNovedades = props.novedades && props.novedades.length > 0 ? props.novedades : internalNovedades.value;
+  const novedadesActivas = sourceNovedades.filter(n => 
     n.observador?.id === props.observadorId && n.estadoAprobacion !== 'RECHAZADA'
   );
 
@@ -144,30 +149,39 @@ const calendarRange = computed(() => {
 const scrollToToday = () => {
   nextTick(() => {
     setTimeout(() => {
-      const todayEl = document.querySelector('.custom-v-calendar .is-today');
-      if (todayEl) {
-        todayEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      if (calendarContainerRef.value) {
+        const todayEl = calendarContainerRef.value.querySelector('.is-today');
+        if (todayEl) {
+          todayEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
       }
-    }, 150);
+    }, 300); // 300ms to allow rendering large numbers of rows
   });
 };
 
 const loadMareas = async () => {
   mareas.value = [];
+  internalNovedades.value = [];
   if (!props.observadorId) {
     return;
   }
   const currentId = props.observadorId;
   try {
-    const data = await mareasService.getMareasByObservador(currentId);
+    const [dataMareas, dataNovedades] = await Promise.all([
+      mareasService.getMareasByObservador(currentId),
+      (!props.novedades || props.novedades.length === 0) ? novedadesService.getAll(currentId) : Promise.resolve([])
+    ]);
+    
     if (props.observadorId === currentId) {
-      mareas.value = data;
+      mareas.value = dataMareas;
+      internalNovedades.value = dataNovedades;
       scrollToToday();
     }
   } catch (error) {
-    console.error('Error al cargar mareas del observador:', error);
+    console.error('Error al cargar datos del observador:', error);
     if (props.observadorId === currentId) {
       mareas.value = [];
+      internalNovedades.value = [];
     }
   }
 };
@@ -195,8 +209,9 @@ const calendarAttributes = computed(() => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
+  const sourceNovedades = props.novedades && props.novedades.length > 0 ? props.novedades : internalNovedades.value;
   // 1. Mapear Novedades
-  const novedadesActivas = (props.novedades || []).filter(n => 
+  const novedadesActivas = sourceNovedades.filter(n => 
     n.observador?.id === props.observadorId && n.estadoAprobacion !== 'RECHAZADA'
   );
 
