@@ -39,11 +39,8 @@
 
     <!-- Content (Scrollable) -->
     <div class="flex-1 overflow-y-auto p-6 relative bg-surface-muted/30">
-      <div v-show="activeTab === 'historial'">
-        <div class="text-center text-text-muted py-10">
-          <div class="font-bold text-sm mb-2">Historial de Novedades y Mareas</div>
-          <div class="text-xs">Mockup: Aquí irán los componentes de historial</div>
-        </div>
+      <div v-show="activeTab === 'historial'" class="h-full">
+        <ObservadorTimeline :observador-id="observador?.id" />
       </div>
       <div v-show="activeTab === 'calendario'">
         <div class="text-center text-text-muted py-10">
@@ -60,6 +57,7 @@
 import { ref } from 'vue';
 import { getFullImageUrl } from '@/helpers/image.helper';
 import type { Observador } from '../interfaces/observador.interface';
+import ObservadorTimeline from './ObservadorTimeline.vue';
 
 const props = defineProps<{
   observador: Observador;

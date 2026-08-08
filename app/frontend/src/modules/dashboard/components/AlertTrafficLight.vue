@@ -443,7 +443,7 @@
       :arrival-date="selectedReclamoItem?.arrivalDate ? new Date(selectedReclamoItem.arrivalDate).toLocaleDateString() : ''"
       @close="showReclamoDialog = false" @confirm="handleReclamoConfirm" />
     <ObservadorTimelineDialog :show="showTimelineDialog" :observador-id="selectedObserver?.id"
-      :observador-name="selectedObserver?.name" :year="selectedYear" @close="showTimelineDialog = false" />
+        :observador-name="selectedObserver?.name" @close="showTimelineDialog = false" />
 
     <MareaQuickDetailModal :is-open="showMareaModal" :marea-id="selectedMareaId" @close="showMareaModal = false" />
   </div>

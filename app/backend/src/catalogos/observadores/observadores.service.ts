@@ -182,9 +182,24 @@ export class ObservadoresService {
     }
 
     async obtenerHistorial(id: string, operationalYear: number) {
-        const startYear = operationalYear - 1;
-        const periodStart = new Date(startYear, 0, 1, 0, 0, 0, 0);
-        const periodEnd = new Date(operationalYear, 11, 31, 23, 59, 59, 999);
+        const fetchAll = operationalYear === 0;
+        let dateFilter: any[] = [];
+
+        if (!fetchAll) {
+            const startYear = operationalYear - 1;
+            const periodStart = new Date(startYear, 0, 1, 0, 0, 0, 0);
+            const periodEnd = new Date(operationalYear, 11, 31, 23, 59, 59, 999);
+            dateFilter = [
+                {
+                    OR: [
+                        { anioMarea: { in: [operationalYear, startYear] } },
+                        { fechaInicioObservador: { gte: periodStart, lte: periodEnd } },
+                        { fechaFinObservador: { gte: periodStart, lte: periodEnd } },
+                        { fechaFinObservador: null, fechaInicioObservador: { lte: periodEnd } }
+                    ]
+                }
+            ];
+        }
 
         // 1. Buscar todas las mareas donde el observador participa
         const mareasRaw = await this.prisma.marea.findMany({
@@ -200,19 +215,14 @@ export class ObservadoresService {
                         }
                     }
                 ],
-                AND: [
-                    {
-                        OR: [
-                            { anioMarea: { in: [operationalYear, startYear] } },
-                            { fechaInicioObservador: { gte: periodStart, lte: periodEnd } },
-                            { fechaFinObservador: { gte: periodStart, lte: periodEnd } },
-                            { fechaFinObservador: null, fechaInicioObservador: { lte: periodEnd } }
-                        ]
-                    }
-                ]
+                AND: dateFilter
             },
             include: {
-                buque: true,
+                buque: {
+                    include: {
+                        tipoFlota: true
+                    }
+                },
                 estadoActual: true,
                 pesqueria: true,
                 etapas: {
@@ -228,7 +238,6 @@ export class ObservadoresService {
         const now = DateUtils.getNow(true);
         const currentYear = now.getFullYear();
         const timeline: any[] = [];
-        const years = [operationalYear, startYear].sort((a, b) => b - a);
 
         // Procesar viajes
         const trips = mareasRaw.map(m => {
@@ -281,6 +290,7 @@ export class ObservadoresService {
                 mareaCode: MareaUtils.formatCodigo(mRaw),
                 vessel: mRaw.buque.nombreBuque,
                 fishery: mRaw.pesqueria?.nombre,
+                fleet: mRaw.buque.tipoFlota?.nombre,
                 start,
                 end,
                 totalDays,
@@ -293,9 +303,18 @@ export class ObservadoresService {
 
         // Construir Timeline con intercalado de tierra y cortes anuales
         const sortedTrips = trips.sort((a: any, b: any) => b.start.getTime() - a.start.getTime());
-        let tripIdx = 0;
+        
+        let years: number[] = [];
+        if (fetchAll) {
+            const tripYears = new Set(sortedTrips.map((t: any) => t.end.getFullYear()));
+            tripYears.add(currentYear); // Asegurarse de tener el año actual para mostrar el tiempo en tierra
+            years = Array.from(tripYears).sort((a: any, b: any) => b - a);
+        } else {
+            years = [operationalYear, operationalYear - 1].sort((a, b) => b - a);
+        }
 
-        const refDate = operationalYear === currentYear ? now : new Date(operationalYear, 11, 31, 23, 59, 59, 999);
+        let tripIdx = 0;
+        const refDate = (fetchAll || operationalYear === currentYear) ? now : new Date(operationalYear, 11, 31, 23, 59, 59, 999);
 
         for (const y of years) {
             // 1. Agregar el total del año
@@ -305,8 +324,8 @@ export class ObservadoresService {
                 totalDays: this.calculateYearTotal(trips, y)
             });
 
-            // 2. Tierra actual (solo en el año operacional si no está navegando y es el inicio)
-            if (y === operationalYear && tripIdx === 0) {
+            // 2. Tierra actual (solo en el año operacional actual o si traemos todo y es el primer año)
+            if ((fetchAll && y === currentYear && tripIdx === 0) || (!fetchAll && y === operationalYear && tripIdx === 0)) {
                 const firstTrip = sortedTrips[0];
                 if (firstTrip && !firstTrip.isNavegando) {
                     const diffTierraActual = DateUtils.calculateInclusiveDays(firstTrip.end, refDate) - 1;

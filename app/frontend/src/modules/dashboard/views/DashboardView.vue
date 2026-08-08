@@ -75,7 +75,6 @@
       :show="showTimelineDialog"
       :observador-id="selectedObserver?.id"
       :observador-name="selectedObserver?.name"
-      :year="selectedYear"
       @close="showTimelineDialog = false"
       @refresh="loadWorkforce"
     />

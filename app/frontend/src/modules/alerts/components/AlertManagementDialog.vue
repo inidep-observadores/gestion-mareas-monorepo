@@ -318,7 +318,7 @@
         @close="showMareaQuickDetail = false" />
 
     <ObservadorTimelineDialog :show="showObservadorTimeline" :observadorId="localAlert.referenciaId || null"
-        :observadorName="localAlert.metadata?.observerName || 'Observador'" :year="configStore.selectedYear"
+        :observadorName="localAlert.metadata?.observerName || 'Observador'"
         @close="showObservadorTimeline = false" />
 </template>
 

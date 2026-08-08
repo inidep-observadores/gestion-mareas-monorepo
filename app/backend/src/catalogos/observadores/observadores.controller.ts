@@ -53,12 +53,14 @@ export class ObservadoresController {
         return this.observadoresService.obtenerUno(id);
     }
 
+    @Get(':id/historial')
     @Get(':id/historial/:year')
     obtenerHistorial(
         @Param('id', ParseUUIDPipe) id: string,
-        @Param('year') year: string
+        @Param('year') year?: string
     ) {
-        return this.observadoresService.obtenerHistorial(id, parseInt(year));
+        const parsedYear = year ? parseInt(year) : 0;
+        return this.observadoresService.obtenerHistorial(id, parsedYear);
     }
 
     @Patch(':id')

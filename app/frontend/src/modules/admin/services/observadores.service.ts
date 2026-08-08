@@ -52,8 +52,9 @@ const observadoresApi = {
         return data.secureUrl;
     },
 
-    getHistorial: async (id: string, year: number): Promise<any[]> => {
-        const { data } = await httpClient.get<any[]>(`/catalogos/observadores/${id}/historial/${year}`);
+    getHistorial: async (id: string, year?: number): Promise<any[]> => {
+        const url = year ? `/catalogos/observadores/${id}/historial/${year}` : `/catalogos/observadores/${id}/historial`;
+        const { data } = await httpClient.get<any[]>(url);
         return data;
     },
 
