@@ -28,6 +28,11 @@ const mareasService = {
         return data;
     },
 
+    getMareasByObservador: async (id: string): Promise<any[]> => {
+        const { data } = await httpClient.get<any[]>(`/mareas/por-observador/${id}`);
+        return data;
+    },
+
     search: async (q: string): Promise<any[]> => {
         const { data } = await httpClient.get<any[]>(`/mareas/search?q=${q}`);
         return data;

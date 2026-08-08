@@ -1816,6 +1816,45 @@ export class MareasService {
         };
     }
 
+    async getMareasByObservador(observadorId: string) {
+        return (this.prisma as any).marea.findMany({
+            where: {
+                activo: true,
+                OR: [
+                    { observadorPrincipalId: observadorId },
+                    {
+                        etapas: {
+                            some: {
+                                observadores: {
+                                    some: {
+                                        observadorId: observadorId
+                                    }
+                                }
+                            }
+                        }
+                    }
+                ]
+            },
+            include: {
+                buque: true,
+                estadoActual: true,
+                etapas: {
+                    orderBy: { nroEtapa: 'asc' },
+                    include: {
+                        puertoZarpada: true,
+                        puertoArribo: true,
+                        observadores: {
+                            include: { observador: true }
+                        }
+                    }
+                }
+            },
+            orderBy: {
+                fechaCreacion: 'desc'
+            }
+        });
+    }
+
     async search(query: string) {
         if (!query || query.length < 2) return [];
 

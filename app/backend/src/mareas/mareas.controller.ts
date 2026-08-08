@@ -122,6 +122,11 @@ export class MareasController {
         res.end();
     }
 
+    @Get('por-observador/:observadorId')
+    getMareasByObservador(@Param('observadorId') observadorId: string) {
+        return this.mareasService.getMareasByObservador(observadorId);
+    }
+
     @Get(':id')
     findOne(@Param('id') id: string) {
         return this.mareasService.findOne(id);
