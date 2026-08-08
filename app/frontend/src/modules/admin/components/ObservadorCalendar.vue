@@ -141,7 +141,7 @@ const calendarRange = computed(() => {
 
   const sourceNovedades = props.novedades && props.novedades.length > 0 ? props.novedades : internalNovedades.value;
   const novedadesActivas = sourceNovedades.filter(n => 
-    n.observador?.id === props.observadorId && n.estadoAprobacion !== 'RECHAZADA' && n.activo !== false
+    n.observador?.id === props.observadorId && n.estadoAprobacion === 'APROBADA' && n.activo !== false
   );
 
   novedadesActivas.forEach(n => {
@@ -272,7 +272,7 @@ const calendarAttributes = computed(() => {
   const sourceNovedades = props.novedades && props.novedades.length > 0 ? props.novedades : internalNovedades.value;
   // 1. Mapear Novedades
   const novedadesActivas = sourceNovedades.filter(n => 
-    n.observador?.id === props.observadorId && n.estadoAprobacion !== 'RECHAZADA' && n.activo !== false
+    n.observador?.id === props.observadorId && n.estadoAprobacion === 'APROBADA' && n.activo !== false
   );
 
   const disponibilidadEvents: any[] = [];
