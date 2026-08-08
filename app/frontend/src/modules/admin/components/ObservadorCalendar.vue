@@ -215,6 +215,8 @@ const calendarAttributes = computed(() => {
     n.observador?.id === props.observadorId && n.estadoAprobacion !== 'RECHAZADA'
   );
 
+  const disponibilidadEvents: any[] = [];
+
   novedadesActivas.forEach(novedad => {
     const startStr = novedad.fechaInicio.split('T')[0];
     let endStr = novedad.fechaFin ? novedad.fechaFin.split('T')[0] : null;
@@ -225,7 +227,18 @@ const calendarAttributes = computed(() => {
     }
     
     const start = new Date(startStr + 'T00:00:00');
-    const end = new Date(endStr + 'T00:00:00');
+    let end = new Date(endStr + 'T00:00:00');
+
+    const code = novedad.tipoNovedad?.codigo?.toUpperCase() || '';
+    const isDisponible = code === 'DISPONIBLE';
+
+    if (isDisponible && !novedad.fechaFin) {
+      end = new Date(start);
+    }
+
+    if (isDisponible) {
+      disponibilidadEvents.push({ novedad, start, end });
+    }
 
     // Registrar para conflicto
     let current = new Date(start);
@@ -235,9 +248,7 @@ const calendarAttributes = computed(() => {
       current.setDate(current.getDate() + 1);
     }
 
-    const code = novedad.tipoNovedad?.codigo?.toUpperCase() || '';
     const isFranco = code === 'FC' || code.includes('FRANCO');
-    const isDisponible = code === 'DISPONIBLE';
     const isNoDisponible = code === 'NO_DISPONIBLE';
 
     let highlightClass = 'calendar-novedad';
@@ -413,6 +424,46 @@ const calendarAttributes = computed(() => {
     });
   });
 
+  // 3. Procesar Disponibilidades (huecos virtuales)
+  disponibilidadEvents.forEach(disp => {
+    let maxEnd = new Date(0);
+    attrs.forEach(attr => {
+      const attrStart = attr.dates.start;
+      const attrEnd = attr.dates.end;
+      if (attrStart < disp.start) {
+        if (attrEnd > maxEnd) {
+          maxEnd = new Date(attrEnd);
+        }
+      }
+    });
+
+    if (maxEnd.getTime() > 0 && maxEnd < disp.start) {
+      const gapStart = new Date(maxEnd);
+      gapStart.setDate(gapStart.getDate() + 1);
+
+      const gapEnd = new Date(disp.start);
+      gapEnd.setDate(gapEnd.getDate() - 1);
+
+      if (gapStart <= gapEnd) {
+        attrs.push({
+          key: `virtual-no-disp-${disp.novedad.id}`,
+          customData: {
+            tipoEvento: 'NOVEDAD',
+            novedad: { ...disp.novedad, tipoNovedad: { ...disp.novedad.tipoNovedad, descripcion: 'No Disponible' } },
+            titulo: 'No Disponible',
+            subtitulo: 'Asumido automáticamente hasta disponibilidad',
+          },
+          dates: { start: gapStart, end: gapEnd },
+          highlight: {
+            class: 'calendar-no-disponible',
+            contentClass: 'calendar-no-disponible-text',
+          },
+          popover: { visibility: 'hover' as const, isInteractive: true }
+        });
+      }
+    }
+  });
+
   const overlappingDates = Object.keys(datesCount).filter(date => datesCount[date] > 1);
   if (overlappingDates.length > 0) {
     attrs.push({
@@ -458,11 +509,11 @@ const calendarAttributes = computed(() => {
 }
 
 .custom-v-calendar .calendar-no-disponible {
-  background-color: #f3f4f6 !important; 
-  box-shadow: inset 0 0 0 1px #d1d5db !important; 
+  background-color: #fee2e2 !important; 
+  box-shadow: inset 0 0 0 1px #fca5a5 !important; 
 }
 .custom-v-calendar .calendar-no-disponible-text {
-  color: black !important;
+  color: #991b1b !important;
   font-weight: 600 !important;
 }
 
@@ -525,11 +576,11 @@ const calendarAttributes = computed(() => {
 }
 
 .dark .custom-v-calendar .calendar-no-disponible {
-  background-color: rgba(107, 114, 128, 0.3) !important;
-  box-shadow: inset 0 0 0 1px rgba(107, 114, 128, 0.5) !important;
+  background-color: rgba(239, 68, 68, 0.2) !important;
+  box-shadow: inset 0 0 0 1px rgba(239, 68, 68, 0.4) !important;
 }
 .dark .custom-v-calendar .calendar-no-disponible-text {
-  color: #d1d5db !important; 
+  color: #fca5a5 !important; 
 }
 
 .dark .custom-v-calendar .calendar-disponible {
