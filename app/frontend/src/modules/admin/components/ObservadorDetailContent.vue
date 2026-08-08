@@ -37,12 +37,12 @@
       </button>
     </div>
 
-    <!-- Content (Scrollable) -->
-    <div class="flex-1 overflow-y-auto p-6 relative bg-surface-muted/30">
-      <div v-show="activeTab === 'historial'" class="h-full">
+    <!-- Content (Scrollable internally) -->
+    <div class="flex-1 overflow-hidden relative bg-surface-muted/30 flex flex-col">
+      <div v-show="activeTab === 'historial'" class="flex-1 min-h-0 flex flex-col">
         <ObservadorTimeline :observador-id="observador?.id" />
       </div>
-      <div v-if="activeTab === 'calendario'" class="h-full flex flex-col">
+      <div v-if="activeTab === 'calendario'" class="flex-1 min-h-0 flex flex-col p-6">
         <ObservadorCalendar :observador-id="observador?.id" />
       </div>
     </div>

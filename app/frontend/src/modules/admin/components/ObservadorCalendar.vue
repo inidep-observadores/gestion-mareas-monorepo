@@ -605,6 +605,20 @@ const calendarAttributes = computed(() => {
   font-weight: 800 !important;
 }
 
+.custom-v-calendar {
+  font-family: inherit !important;
+  background-color: transparent !important;
+  touch-action: pan-y !important; /* Habilitar scroll en móviles */
+}
+
+/* Habilitar scroll en los contenedores internos de v-calendar */
+.custom-v-calendar .vc-pane-layout,
+.custom-v-calendar .vc-pane,
+.custom-v-calendar .vc-header,
+.custom-v-calendar .vc-weeks {
+  touch-action: pan-y !important;
+}
+
 .custom-v-calendar .calendar-marea-estimada {
   background-color: transparent !important; 
   box-shadow: inset 0 0 0 1px rgba(253, 186, 116, 0.5) !important; 
