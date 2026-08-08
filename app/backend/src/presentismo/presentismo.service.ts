@@ -43,6 +43,7 @@ export class PresentismoService {
     // 3. Traer Novedades que se solapen con el mes
     const novedadesDb = await this.prisma.observadorNovedad.findMany({
       where: {
+        activo: true,
         estadoAprobacion: 'APROBADA',
         fechaInicio: { lte: endOfMonth.toJSDate() },
         OR: [

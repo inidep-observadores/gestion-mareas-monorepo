@@ -153,7 +153,10 @@
               </span>
               <PaperclipIcon v-if="novedad.archivos?.length" class="h-4 w-4 text-primary shrink-0" title="Contiene archivos adjuntos" />
             </div>
-            <span v-if="novedad.estadoAprobacion === 'PENDIENTE'" class="bg-warning/10 text-warning text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-tighter">
+            <span v-if="!novedad.activo" class="bg-error/10 text-error text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-tighter">
+              Eliminada
+            </span>
+            <span v-else-if="novedad.estadoAprobacion === 'PENDIENTE'" class="bg-warning/10 text-warning text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-tighter">
               Pendiente
             </span>
             <span v-else-if="novedad.estadoAprobacion === 'RECHAZADA'" class="bg-error/10 text-error text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-tighter">
@@ -174,7 +177,7 @@
         </td>
         <td class="px-6 py-4 text-right">
           <div class="flex items-center justify-end gap-3">
-            <template v-if="novedad.estadoAprobacion === 'PENDIENTE'">
+            <template v-if="novedad.activo && novedad.estadoAprobacion === 'PENDIENTE'">
               <button @click="promptAction(novedad, 'APROBADA')" class="font-bold text-success hover:underline text-xs bg-success/10 px-2 py-1 rounded">
                   Aprobar
               </button>
@@ -182,10 +185,10 @@
                   Rechazar
               </button>
             </template>
-            <button @click="openEditModal(novedad)" class="font-bold text-primary hover:underline">
+            <button v-if="novedad.activo && novedad.estadoAprobacion !== 'RECHAZADA'" @click="openEditModal(novedad)" class="font-bold text-primary hover:underline">
                 Editar
             </button>
-            <button @click="deleteNovedad(novedad)" class="font-bold text-error hover:underline" title="Eliminar">
+            <button v-if="novedad.activo" @click="deleteNovedad(novedad)" class="font-bold text-error hover:underline" title="Eliminar">
               <TrashIcon class="w-4 h-4" />
             </button>
           </div>
@@ -228,12 +231,12 @@
         </div>
 
         <div class="pt-3 border-t border-border flex gap-2">
-          <button @click="openEditModal(novedad)"
+          <button v-if="novedad.activo && novedad.estadoAprobacion !== 'RECHAZADA'" @click="openEditModal(novedad)"
               class="flex-1 py-2.5 text-sm font-bold text-primary bg-primary/10 rounded-lg hover:bg-primary/20 transition-colors flex items-center justify-center gap-2">
               <EditIcon class="w-4 h-4" />
               Editar
           </button>
-          <button @click="deleteNovedad(novedad)"
+          <button v-if="novedad.activo" @click="deleteNovedad(novedad)"
               class="px-4 py-2.5 text-sm font-bold text-error bg-error/10 rounded-lg hover:bg-error/20 transition-colors flex items-center justify-center">
               <TrashIcon class="w-4 h-4" />
           </button>
@@ -398,7 +401,7 @@ const showConfirmDelete = ref(false);
 const novedadToDelete = ref<Novedad | null>(null);
 
 const activeTab = ref<'historial' | 'pendientes' | 'calendario'>('historial');
-const pendientesCount = computed(() => novedades.value.filter(n => n.estadoAprobacion === 'PENDIENTE').length);
+const pendientesCount = computed(() => novedades.value.filter(n => n.estadoAprobacion === 'PENDIENTE' && n.activo !== false).length);
 
 const showActionModal = ref(false);
 const actionType = ref<'APROBADA' | 'RECHAZADA'>('APROBADA');
@@ -436,9 +439,9 @@ const filteredNovedades = computed(() => {
 
     // Filter by Tab
     if (activeTab.value === 'pendientes') {
-      items = items.filter(n => n.estadoAprobacion === 'PENDIENTE');
+      items = items.filter(n => n.estadoAprobacion === 'PENDIENTE' && n.activo !== false);
     } else {
-      items = items.filter(n => n.estadoAprobacion !== 'PENDIENTE');
+      items = items.filter(n => n.estadoAprobacion !== 'PENDIENTE' || n.activo === false);
     }
 
     if (searchQuery.value) {

@@ -16,7 +16,7 @@ export class NovedadesService {
     ) {}
 
   async findAll(observadorId?: string, estadoAprobacion?: string) {
-    const where: any = { activo: true };
+    const where: any = {};
     if (observadorId) where.observadorId = observadorId;
     if (estadoAprobacion) where.estadoAprobacion = estadoAprobacion;
 

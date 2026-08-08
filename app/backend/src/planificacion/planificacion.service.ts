@@ -365,6 +365,7 @@ export class PlanificacionService {
 
     const novedadesDb = await this.prisma.observadorNovedad.findMany({
       where: {
+        activo: true,
         estadoAprobacion: 'APROBADA',
         fechaInicio: { lte: endOfRange.toJSDate() },
         OR: [

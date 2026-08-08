@@ -181,7 +181,7 @@ const sortedMovimientos = computed(() => {
 const formatDateEvent = (isoStr: string) => {
   if (!isoStr) return '';
   const date = new Date(isoStr);
-  return date.toLocaleDateString('es-AR') + ' ' + date.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+  return date.toLocaleDateString('es-AR') + ' ' + date.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false });
 };
 
 const getUsuarioName = (mov: any) => {
@@ -198,6 +198,7 @@ const formatTipoEvento = (tipo: string) => {
     'APROBACION': 'Novedad Aprobada',
     'RECHAZO': 'Novedad Rechazada',
     'ELIMINACION': 'Novedad Eliminada',
+    'BORRADO_LOGICO': 'Novedad Eliminada',
     'REVISION_AI': 'Revisión por IA',
   };
   return map[tipo] || (tipo || 'MOVIMIENTO DESCONOCIDO').replace(/_/g, ' ');

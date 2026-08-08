@@ -24,6 +24,7 @@ export interface Novedad {
     email: string;
     name: string;
   };
+  activo: boolean;
 }
 
 export interface CreateNovedadDto {
