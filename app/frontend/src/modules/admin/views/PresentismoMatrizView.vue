@@ -98,20 +98,34 @@
       </div>
 
       <template v-else-if="data">
-        <!-- Tabs -->
-        <div class="flex items-center gap-4 border-b border-border mb-4 px-2">
-          <button
-            @click="activeTab = 'timeline'"
-            :class="['px-4 py-2 font-bold text-sm border-b-2 transition-colors -mb-[1px]', activeTab === 'timeline' ? 'border-primary text-primary' : 'border-transparent text-text-muted hover:text-text hover:border-border']"
-          >
-            Línea de Tiempo
-          </button>
-          <button
-            @click="activeTab = 'grilla'"
-            :class="['px-4 py-2 font-bold text-sm border-b-2 transition-colors -mb-[1px]', activeTab === 'grilla' ? 'border-primary text-primary' : 'border-transparent text-text-muted hover:text-text hover:border-border']"
-          >
-            Tabla Clásica
-          </button>
+        <!-- Tabs & Navegación -->
+        <div class="flex items-center justify-between border-b border-border mb-4 px-2">
+          <div class="flex items-center gap-4">
+            <button
+              @click="activeTab = 'timeline'"
+              :class="['px-4 py-2 font-bold text-sm border-b-2 transition-colors -mb-[1px]', activeTab === 'timeline' ? 'border-primary text-primary' : 'border-transparent text-text-muted hover:text-text hover:border-border']"
+            >
+              Línea de Tiempo
+            </button>
+            <button
+              @click="activeTab = 'grilla'"
+              :class="['px-4 py-2 font-bold text-sm border-b-2 transition-colors -mb-[1px]', activeTab === 'grilla' ? 'border-primary text-primary' : 'border-transparent text-text-muted hover:text-text hover:border-border']"
+            >
+              Tabla Clásica
+            </button>
+          </div>
+
+          <div class="flex items-center gap-2 mb-2">
+            <button @click="previousMonth" class="p-2 rounded-lg bg-surface border border-border text-text-muted hover:text-primary hover:border-primary hover:bg-primary/5 transition-all shadow-sm active:scale-95" title="Mes anterior">
+              <ArrowLeftIcon class="w-4 h-4" />
+            </button>
+            <div class="px-4 py-1.5 rounded-lg bg-surface border border-border text-sm font-black text-text uppercase tracking-widest min-w-[140px] text-center shadow-sm">
+              {{ months[selectedMonth - 1] }} {{ selectedYear }}
+            </div>
+            <button @click="nextMonth" class="p-2 rounded-lg bg-surface border border-border text-text-muted hover:text-primary hover:border-primary hover:bg-primary/5 transition-all shadow-sm active:scale-95" title="Mes siguiente">
+              <ArrowRightIcon class="w-4 h-4" />
+            </button>
+          </div>
         </div>
 
         <!-- Matriz Table -->
@@ -209,7 +223,7 @@ import { ref, onMounted, computed, watch, nextTick } from 'vue';
 import AdminLayout from '@/components/layout/AdminLayout.vue';
 import BackButton from '@/components/common/BackButton.vue';
 import SearchInput from '@/components/ui/SearchInput.vue';
-import { ChevronDownIcon, DownloadIcon } from '@/icons';
+import { ChevronDownIcon, DownloadIcon, ArrowLeftIcon, ArrowRightIcon } from '@/icons';
 import { toast } from 'vue-sonner';
 import presentismoApi from '../services/presentismo.service';
 import presentismoExportService from '../services/presentismo-export.service';
@@ -321,6 +335,26 @@ const fetchData = async () => {
   } finally {
     isLoading.value = false;
   }
+};
+
+const previousMonth = () => {
+  if (selectedMonth.value === 1) {
+    selectedMonth.value = 12;
+    selectedYear.value--;
+  } else {
+    selectedMonth.value--;
+  }
+  fetchData();
+};
+
+const nextMonth = () => {
+  if (selectedMonth.value === 12) {
+    selectedMonth.value = 1;
+    selectedYear.value++;
+  } else {
+    selectedMonth.value++;
+  }
+  fetchData();
 };
 
 watch([activeTab, filteredMatriz, selectedMonth, selectedYear], async () => {
