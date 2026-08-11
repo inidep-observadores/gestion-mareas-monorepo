@@ -1,7 +1,9 @@
 <template>
   <AdminLayout>
-    <div class="space-y-6">
-      <BackButton routeName="SistemaObservadores" label="Regresar al Panel" containerClass="mb-2" />
+    <div class="sticky top-[56px] lg:top-[72px] z-30 bg-surface pt-2 pb-3 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 border-b border-border mb-6 flex flex-col gap-4">
+      <BackButton routeName="SistemaObservadores" label="Regresar al Panel" />
+
+      <!-- Encabezado Principal & Acciones -->
       <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 class="text-2xl font-black text-text uppercase tracking-tight">Planilla Mensual de Presentismo</h1>
@@ -32,8 +34,31 @@
         </div>
       </div>
 
+      <!-- Filtros Compactos -->
+      <div v-if="data" class="flex flex-wrap items-center gap-6 p-4 rounded-xl border border-border bg-surface shadow-sm">
+        <SearchInput v-model="searchQuery" placeholder="Buscar observador..." class="w-full md:w-64 shrink-0" />
+
+        <div class="flex flex-wrap items-center gap-4 flex-1">
+          <div class="flex items-center gap-2">
+            <span class="text-[10px] font-black uppercase tracking-widest text-text-muted mr-1">Observador:</span>
+            <button v-for="t in tiposObservador" :key="t" @click="toggleTipoObservador(t)" class="px-3 py-1 rounded-full text-[10px] font-black tracking-widest uppercase transition-all" :class="activeTipoObservador.has(t) ? 'bg-primary/10 border border-primary text-primary' : 'bg-surface border border-border text-text-muted opacity-50'">
+              {{ t }}
+            </button>
+          </div>
+
+          <div class="w-px h-6 bg-border mx-2 hidden lg:block"></div>
+
+          <div class="flex items-center gap-2">
+            <span class="text-[10px] font-black uppercase tracking-widest text-text-muted mr-1">Contrato:</span>
+            <button v-for="c in tiposContrato" :key="c" @click="toggleTipoContrato(c)" class="px-3 py-1 rounded-full text-[10px] font-black tracking-widest uppercase transition-all" :class="activeTipoContrato.has(c) ? 'bg-info/10 border border-info text-info' : 'bg-surface border border-border text-text-muted opacity-50'">
+              {{ c }}
+            </button>
+          </div>
+        </div>
+      </div>
+
       <!-- Leyenda -->
-      <div class="flex flex-wrap gap-4 p-4 rounded-xl border border-border bg-surface shadow-sm">
+      <div v-show="true" class="flex flex-wrap gap-4 p-4 rounded-xl border border-border bg-surface shadow-sm">
         <div class="flex items-center gap-2">
           <div class="w-8 h-6 rounded legend-navegando flex items-center justify-center text-[10px] font-black">NAVEG</div>
           <span class="text-[10px] font-black uppercase tracking-widest text-text-muted">Navegando</span>
@@ -67,29 +92,9 @@
           <span class="text-[10px] font-black uppercase tracking-widest text-text-muted">Computa Franco</span>
         </div>
       </div>
+    </div>
 
-      <!-- Filtros Compactos -->
-      <div v-if="data" class="flex flex-wrap items-center gap-6 p-4 rounded-xl border border-border bg-surface shadow-sm">
-        <SearchInput v-model="searchQuery" placeholder="Buscar observador..." class="w-full md:w-64 shrink-0" />
-
-        <div class="flex flex-wrap items-center gap-4 flex-1">
-          <div class="flex items-center gap-2">
-            <span class="text-[10px] font-black uppercase tracking-widest text-text-muted mr-1">Observador:</span>
-            <button v-for="t in tiposObservador" :key="t" @click="toggleTipoObservador(t)" class="px-3 py-1 rounded-full text-[10px] font-black tracking-widest uppercase transition-all" :class="activeTipoObservador.has(t) ? 'bg-primary/10 border border-primary text-primary' : 'bg-surface border border-border text-text-muted opacity-50'">
-              {{ t }}
-            </button>
-          </div>
-
-          <div class="w-px h-6 bg-border mx-2 hidden lg:block"></div>
-
-          <div class="flex items-center gap-2">
-            <span class="text-[10px] font-black uppercase tracking-widest text-text-muted mr-1">Contrato:</span>
-            <button v-for="c in tiposContrato" :key="c" @click="toggleTipoContrato(c)" class="px-3 py-1 rounded-full text-[10px] font-black tracking-widest uppercase transition-all" :class="activeTipoContrato.has(c) ? 'bg-info/10 border border-info text-info' : 'bg-surface border border-border text-text-muted opacity-50'">
-              {{ c }}
-            </button>
-          </div>
-        </div>
-      </div>
+    <div class="space-y-6">
 
       <!-- Loading State -->
       <div v-if="isLoading && !data" class="p-12 flex flex-col items-center justify-center bg-surface border border-border rounded-2xl">
