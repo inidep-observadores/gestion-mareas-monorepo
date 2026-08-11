@@ -24,3 +24,6 @@ onlyBuiltDependencies:
   - esbuild
   - prisma
   - unrs-resolver
+
+overrides:
+  '@types/pg': '8.11.11'
