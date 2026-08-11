@@ -1,6 +1,14 @@
 <template>
   <AdminLayout>
-    <BackButton routeName="SistemaObservadores" label="Regresar al Panel" />
+    <div class="sticky top-[56px] lg:top-[72px] z-30 bg-surface pt-2 pb-3 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 border-b border-border mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <BackButton routeName="SistemaObservadores" label="Regresar al Panel" />
+      <SearchInput
+        v-model="searchQuery"
+        placeholder="Buscar feriado por nombre o tipo..."
+        class="w-full sm:max-w-xs"
+      />
+    </div>
+
     <BaseDataList 
       title="Feriados nacionales y locales" 
       :description="`Administración de feriados y días no laborables para el año operativo ${configStore.selectedYear}`"
@@ -149,6 +157,7 @@
 import { ref, onMounted, watch, computed } from 'vue';
 import AdminLayout from '@/components/layout/AdminLayout.vue';
 import BackButton from '@/components/common/BackButton.vue';
+import SearchInput from '@/components/ui/SearchInput.vue';
 import BaseDataList from '@/components/common/BaseDataList.vue';
 import FeriadoDialog from '../components/FeriadoDialog.vue';
 import { useConfigStore } from '@/modules/shared/stores/config.store';
