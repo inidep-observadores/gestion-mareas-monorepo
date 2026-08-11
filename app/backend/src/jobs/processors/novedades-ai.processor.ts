@@ -77,7 +77,7 @@ export class NovedadesAiProcessor implements JobProcessor {
                                 <html>
                                 <head><style>body { font-family: sans-serif; padding: 20px; }</style></head>
                                 <body>
-                                    <h2>Asunto: ${emailSubject}</h2>
+                                    <h2>Asunto: ${emailSubject || '(Sin asunto)'}</h2>
                                     <hr/>
                                     <pre style="white-space: pre-wrap;">${texto}</pre>
                                 </body>
