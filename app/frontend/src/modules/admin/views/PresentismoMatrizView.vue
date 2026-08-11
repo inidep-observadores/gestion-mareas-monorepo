@@ -34,31 +34,57 @@
         </div>
       </div>
 
-      <!-- Filtros Compactos -->
-      <div v-if="data" class="flex flex-wrap items-center gap-6 p-4 rounded-xl border border-border bg-surface shadow-sm">
-        <SearchInput v-model="searchQuery" placeholder="Buscar observador..." class="w-full md:w-64 shrink-0" />
+      <!-- Filtros Compactos Expandibles -->
+      <div v-if="data" class="rounded-xl border border-border bg-surface shadow-sm overflow-hidden">
+        <!-- Header de la sección de filtros -->
+        <button
+          @click="isFiltersExpanded = !isFiltersExpanded"
+          class="w-full flex items-center justify-between px-4 py-3 text-left transition-colors hover:bg-surface-muted/50 cursor-pointer"
+        >
+          <span class="text-xs font-black uppercase tracking-widest text-text">
+            Filtros
+          </span>
+          <ChevronDownIcon
+            class="w-4 h-4 text-text-muted transition-transform duration-300"
+            :class="{ 'rotate-180': isFiltersExpanded }"
+          />
+        </button>
 
-        <div class="flex flex-wrap items-center gap-4 flex-1">
-          <div class="flex items-center gap-2">
-            <span class="text-[10px] font-black uppercase tracking-widest text-text-muted mr-1">Observador:</span>
-            <button v-for="t in tiposObservador" :key="t" @click="toggleTipoObservador(t)" class="px-3 py-1 rounded-full text-[10px] font-black tracking-widest uppercase transition-all" :class="activeTipoObservador.has(t) ? 'bg-primary/10 border border-primary text-primary' : 'bg-surface border border-border text-text-muted opacity-50'">
-              {{ t }}
-            </button>
+        <!-- Contenido expandible -->
+        <Transition
+          enter-active-class="transition-all duration-300 ease-out"
+          enter-from-class="max-h-0 opacity-0"
+          enter-to-class="max-h-[500px] opacity-100"
+          leave-active-class="transition-all duration-200 ease-in"
+          leave-from-class="max-h-[500px] opacity-100"
+          leave-to-class="max-h-0 opacity-0"
+        >
+          <div v-if="isFiltersExpanded" class="p-4 pt-0 border-t border-border/50 flex flex-wrap items-center gap-6">
+            <SearchInput v-model="searchQuery" placeholder="Buscar observador..." class="w-full md:w-64 shrink-0" />
+
+            <div class="flex flex-wrap items-center gap-4 flex-1">
+              <div class="flex items-center gap-2">
+                <span class="text-[10px] font-black uppercase tracking-widest text-text-muted mr-1">Observador:</span>
+                <button v-for="t in tiposObservador" :key="t" @click="toggleTipoObservador(t)" class="px-3 py-1 rounded-full text-[10px] font-black tracking-widest uppercase transition-all" :class="activeTipoObservador.has(t) ? 'bg-primary/10 border border-primary text-primary' : 'bg-surface border border-border text-text-muted opacity-50'">
+                  {{ t }}
+                </button>
+              </div>
+
+              <div class="w-px h-6 bg-border mx-2 hidden lg:block"></div>
+
+              <div class="flex items-center gap-2">
+                <span class="text-[10px] font-black uppercase tracking-widest text-text-muted mr-1">Contrato:</span>
+                <button v-for="c in tiposContrato" :key="c" @click="toggleTipoContrato(c)" class="px-3 py-1 rounded-full text-[10px] font-black tracking-widest uppercase transition-all" :class="activeTipoContrato.has(c) ? 'bg-info/10 border border-info text-info' : 'bg-surface border border-border text-text-muted opacity-50'">
+                  {{ c }}
+                </button>
+              </div>
+            </div>
           </div>
-
-          <div class="w-px h-6 bg-border mx-2 hidden lg:block"></div>
-
-          <div class="flex items-center gap-2">
-            <span class="text-[10px] font-black uppercase tracking-widest text-text-muted mr-1">Contrato:</span>
-            <button v-for="c in tiposContrato" :key="c" @click="toggleTipoContrato(c)" class="px-3 py-1 rounded-full text-[10px] font-black tracking-widest uppercase transition-all" :class="activeTipoContrato.has(c) ? 'bg-info/10 border border-info text-info' : 'bg-surface border border-border text-text-muted opacity-50'">
-              {{ c }}
-            </button>
-          </div>
-        </div>
+        </Transition>
       </div>
 
       <!-- Leyenda -->
-      <div v-show="true" class="flex flex-wrap gap-4 p-4 rounded-xl border border-border bg-surface shadow-sm">
+      <div v-show="false" class="flex flex-wrap gap-4 p-4 rounded-xl border border-border bg-surface shadow-sm">
         <div class="flex items-center gap-2">
           <div class="w-8 h-6 rounded legend-navegando flex items-center justify-center text-[10px] font-black">NAVEG</div>
           <span class="text-[10px] font-black uppercase tracking-widest text-text-muted">Navegando</span>
@@ -252,6 +278,7 @@ const prevData = ref<PlanillaMensualResponse | null>(null);
 const nextData = ref<PlanillaMensualResponse | null>(null);
 const isLoading = ref(false);
 const searchQuery = ref('');
+const isFiltersExpanded = ref(true);
 
 const activeTab = ref('timeline');
 
