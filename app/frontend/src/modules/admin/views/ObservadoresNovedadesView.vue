@@ -348,7 +348,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
+import { useRoute } from 'vue-router';
 import AdminLayout from '@/components/layout/AdminLayout.vue';
 import BackButton from '@/components/common/BackButton.vue';
 import BaseDataList from '@/components/common/BaseDataList.vue';
@@ -405,7 +406,21 @@ const selectedNovedad = ref<Novedad | null>(null);
 const showConfirmDelete = ref(false);
 const novedadToDelete = ref<Novedad | null>(null);
 
-const activeTab = ref<'historial' | 'pendientes' | 'calendario'>('historial');
+const route = useRoute();
+const validTabs = ['historial', 'pendientes', 'calendario'] as const;
+type TabType = typeof validTabs[number];
+
+const initialTab = typeof route?.query?.tab === 'string' && validTabs.includes(route.query.tab as TabType)
+  ? (route.query.tab as TabType)
+  : 'historial';
+
+const activeTab = ref<TabType>(initialTab);
+
+watch(() => route?.query?.tab, (newTab) => {
+  if (typeof newTab === 'string' && validTabs.includes(newTab as TabType)) {
+    activeTab.value = newTab as TabType;
+  }
+});
 const pendientesCount = computed(() => novedades.value.filter(n => n.estadoAprobacion === 'PENDIENTE' && n.activo !== false).length);
 
 const showActionModal = ref(false);

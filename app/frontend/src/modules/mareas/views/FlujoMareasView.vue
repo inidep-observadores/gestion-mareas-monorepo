@@ -311,14 +311,8 @@
                         class="group odd:bg-surface-muted/10 hover:bg-primary/5 transition-all cursor-pointer border-l-4 border-l-transparent"
                         :class="{ 'bg-primary/10 !border-l-primary': selectedMarea?.id === marea.id }">
                         <td class="px-4 py-1.5 w-28">
-                          <div class="flex flex-col gap-0.5">
-                            <span class="text-[11px] font-mono font-bold text-text-muted uppercase leading-none">{{
-                              marea.id_marea }}</span>
-                            <span v-if="marea.desestimada"
-                              class="inline-block px-1.5 py-0.5 bg-error/15 text-error rounded text-[8px] font-black uppercase tracking-tighter border border-error/30 w-fit">
-                              Desestimada
-                            </span>
-                          </div>
+                          <span class="text-[11px] font-mono font-bold text-text-muted uppercase leading-none">{{
+                            marea.id_marea }}</span>
                         </td>
                         <td class="px-5 py-1.5">
                           <div class="flex items-center gap-2.5">
@@ -767,7 +761,8 @@ const filteredMareas = computed(() => {
     const matchesText = normalize(m.buque_nombre).includes(queryNorm) ||
       normalize(m.id_marea).includes(queryNorm) ||
       (m.observador && normalize(m.observador).includes(queryNorm)) ||
-      (m.pesquerias_nombres && m.pesquerias_nombres.some(p => normalize(p).includes(queryNorm)));
+      (m.pesquerias_nombres && m.pesquerias_nombres.some(p => normalize(p).includes(queryNorm))) ||
+      (m.desestimada && 'desestimada'.includes(queryNorm));
 
     return matchesPesqueria && matchesText;
   });

@@ -657,7 +657,7 @@ export class MareasService {
     async getDashboardKpis(year?: number) {
         const { mareaYearFilter } = this.buildMareaYearFilter(year);
 
-        const [buquesActivos, observadoresDisponibles, mareasDesignadas, listasParaProtocolizar, mareasEnRevision] = await Promise.all([
+        const [buquesActivos, observadoresDisponibles, mareasDesignadas, listasParaProtocolizar, mareasEnRevision, novedadesPendientes] = await Promise.all([
             this.prisma.marea.groupBy({
                 by: ['buqueId'],
                 where: {
@@ -706,6 +706,12 @@ export class MareasService {
                         codigo: { in: this.ESTADOS_REVISION }
                     }
                 }
+            }),
+            this.prisma.observadorNovedad.count({
+                where: {
+                    activo: true,
+                    estadoAprobacion: 'PENDIENTE'
+                }
             })
         ]);
 
@@ -714,7 +720,8 @@ export class MareasService {
             observadoresDisponibles,
             mareasDesignadas,
             listasParaProtocolizar,
-            enRevision: mareasEnRevision
+            enRevision: mareasEnRevision,
+            novedadesPendientes
         };
     }
 
@@ -3077,6 +3084,10 @@ export class MareasService {
                 { observadorPrincipal: { apellido: { contains: query, mode: 'insensitive' } } },
                 { nroProtocolizacion: !isNaN(Number(query)) ? Number(query) : undefined },
             ].filter(cond => (cond as any).nroProtocolizacion !== undefined || Object.keys(cond).length > 0);
+
+            if (query.includes('desestimad')) {
+                where.OR.push({ desestimada: true });
+            }
 
             if (query.includes('/')) {
                 const [nro] = query.split('/');

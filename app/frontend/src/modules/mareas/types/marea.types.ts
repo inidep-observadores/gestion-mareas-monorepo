@@ -75,6 +75,7 @@ export interface DashboardKpis {
     mareasDesignadas: number;
     listasParaProtocolizar: number;
     enRevision: number;
+    novedadesPendientes?: number;
 }
 
 export interface MovementEvent {

@@ -8,7 +8,7 @@ import { toast } from 'vue-sonner';
 vi.mock('@/modules/admin/services/novedades.service');
 vi.mock('vue-sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 vi.mock('vue-router', () => ({
-  useRoute: () => ({ name: 'ObservadoresNovedades' }),
+  useRoute: () => ({ name: 'ObservadoresNovedades', query: {} }),
   useRouter: () => ({ push: vi.fn() }),
 }));
 
