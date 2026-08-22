@@ -37,10 +37,16 @@
         <section v-if="showOperationalInfo" class="space-y-6">
           <div class="flex items-center justify-between">
             <h4 class="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted">Estado & Progreso</h4>
-            <span class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter shadow-sm"
-              :class="getStatusClasses(context.marea.estado_codigo)">
-              {{ context.marea.estado }}
-            </span>
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <span v-if="context.marea.desestimada"
+                class="px-2.5 py-1 bg-error/15 text-error rounded-full text-[10px] font-black uppercase tracking-tighter border border-error/30 shadow-sm">
+                Desestimada
+              </span>
+              <span class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter shadow-sm"
+                :class="getStatusClasses(context.marea.estado_codigo)">
+                {{ context.marea.estado }}
+              </span>
+            </div>
           </div>
 
           <!-- Progress Bar -->

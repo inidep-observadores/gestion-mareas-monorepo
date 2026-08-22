@@ -100,10 +100,16 @@
                         class="bg-surface border border-border rounded-2xl p-4 shadow-sm active:scale-[0.98] transition-all hover:border-primary/50">
                         <!-- Header Tarjeta -->
                         <div class="flex justify-between items-start mb-3">
-                          <span
-                            class="text-[10px] font-mono font-black text-text-muted/60 uppercase tracking-widest bg-surface-muted px-2 py-0.5 rounded">
-                            {{ marea.id_marea }}
-                          </span>
+                          <div class="flex items-center gap-1.5 flex-wrap">
+                            <span
+                              class="text-[10px] font-mono font-black text-text-muted/60 uppercase tracking-widest bg-surface-muted px-2 py-0.5 rounded">
+                              {{ marea.id_marea }}
+                            </span>
+                            <span v-if="marea.desestimada"
+                              class="px-2 py-0.5 bg-error/15 text-error rounded-full text-[8px] font-black uppercase tracking-tighter border border-error/30">
+                              Desestimada
+                            </span>
+                          </div>
                           <div class="flex flex-col items-end gap-1">
                             <div class="flex items-center gap-1">
                               <span class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-tighter"
@@ -305,8 +311,14 @@
                         class="group odd:bg-surface-muted/10 hover:bg-primary/5 transition-all cursor-pointer border-l-4 border-l-transparent"
                         :class="{ 'bg-primary/10 !border-l-primary': selectedMarea?.id === marea.id }">
                         <td class="px-4 py-1.5 w-28">
-                          <span class="text-[11px] font-mono font-bold text-text-muted uppercase leading-none">{{
-                            marea.id_marea }}</span>
+                          <div class="flex flex-col gap-0.5">
+                            <span class="text-[11px] font-mono font-bold text-text-muted uppercase leading-none">{{
+                              marea.id_marea }}</span>
+                            <span v-if="marea.desestimada"
+                              class="inline-block px-1.5 py-0.5 bg-error/15 text-error rounded text-[8px] font-black uppercase tracking-tighter border border-error/30 w-fit">
+                              Desestimada
+                            </span>
+                          </div>
                         </td>
                         <td class="px-5 py-1.5">
                           <div class="flex items-center gap-2.5">
@@ -318,7 +330,12 @@
                               <div class="flex items-center gap-2">
                                 <span class="text-sm font-bold text-text leading-tight truncate">{{ marea.buque_nombre
                                 }}</span>
-                                <!-- Indicadores movidos aquí -->
+                                <!-- Indicadores -->
+                                <span v-if="marea.desestimada"
+                                  class="px-1.5 py-0.5 bg-error/15 text-error rounded-md text-[8px] font-black uppercase border border-error/30"
+                                  title="Marea desestimada">
+                                  Desestimada
+                                </span>
                                 <span v-if="marea.total_etapas > 1 && marea.estado_codigo === 'EN_EJECUCION'"
                                   class="px-1.5 py-0 bg-surface-muted text-text-muted rounded-md text-[8px] font-black uppercase border border-border"
                                   title="Etapa actual">

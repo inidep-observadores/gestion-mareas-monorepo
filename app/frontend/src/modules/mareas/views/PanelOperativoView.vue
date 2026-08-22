@@ -97,6 +97,10 @@
                           </span>
                         </div>
                         <div class="flex flex-col items-end gap-1">
+                          <span v-if="marea.desestimada"
+                            class="px-2 py-0.5 bg-error/15 text-error rounded-full text-[8px] font-black uppercase tracking-tighter whitespace-nowrap border border-error/30">
+                            Desestimada
+                          </span>
                           <span v-if="marea.intencion_cierre"
                             class="px-2 py-0.5 bg-error/10 text-error rounded-full text-[8px] font-black uppercase tracking-tighter whitespace-nowrap flex items-center gap-1 border border-error/20">
                             <SportsScoreIcon class="w-4 h-4" />

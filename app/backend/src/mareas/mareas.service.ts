@@ -519,6 +519,7 @@ export class MareasService {
                 fechaFinObservador: true,
                 artePrincipalId: true,
                 iniciaEnProspeccion: true,
+                desestimada: true,
                 buque: {
                     select: {
                         id: true,
@@ -630,6 +631,7 @@ export class MareasService {
                 dias_navegados: MareaUtils.calculateNavigatedDays(m),
                 dias_marea: m.fechaInicioObservador ? DateUtils.calculateInclusiveDays(m.fechaInicioObservador, m.fechaFinObservador) : 0,
                 alertas: activeAlerts.filter((a: any) => a.referenciaId === m.id),
+                desestimada: m.desestimada || false,
                 intencion_cierre: m.estadoActual.codigo.trim().toUpperCase() === MareaEstado.EN_EJECUCION &&
                     (etapaFinal?.metadata as unknown as MareaEtapaMetadata)?.opcionesCierre?.finalizarMareaAlArribo === true,
                 actionsAvailable,
