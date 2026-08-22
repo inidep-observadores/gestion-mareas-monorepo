@@ -138,6 +138,33 @@ describe('NovedadesService', () => {
       expect(prisma.observadorNovedad.update).toHaveBeenCalled();
       expect(res.id).toEqual('nov1');
     });
+
+    it('debe desactivar la novedad original al aprobar una rectificacion', async () => {
+      const existing = {
+        id: 'nov-correccion',
+        observadorId: '1',
+        tipoNovedadId: '2',
+        fechaInicio: new Date('2025-01-05'),
+        activo: true,
+        tipoNovedad: { codigo: 'DISPONIBILIDAD' },
+        metadata: { esCorreccion: true, novedadOriginalId: 'nov-original-aprobada' },
+      };
+      jest.spyOn(service, 'findOne').mockResolvedValue(existing as any);
+      mockPrismaService.observadorNovedad.findFirst.mockResolvedValue(null);
+      mockPrismaService.observadorNovedad.update.mockResolvedValue({ id: 'nov-correccion', estadoAprobacion: 'APROBADA' });
+      mockPrismaService.marea.findMany.mockResolvedValue([]);
+
+      await service.update('nov-correccion', { estadoAprobacion: 'APROBADA' }, mockUser);
+
+      // Debe haber llamado update para desactivar la novedad original
+      expect(prisma.observadorNovedad.update).toHaveBeenCalledWith(expect.objectContaining({
+        where: { id: 'nov-original-aprobada' },
+        data: expect.objectContaining({
+          activo: false,
+          estadoAprobacion: 'RECHAZADA',
+        })
+      }));
+    });
   });
 
   describe('remove', () => {

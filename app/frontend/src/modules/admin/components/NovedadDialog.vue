@@ -7,6 +7,52 @@
         {{ error }}
       </div>
 
+      <!-- Alerta y Comparador de Rectificación si es corrección -->
+      <div v-if="editData?.metadata?.esCorreccion" class="rounded-xl border border-amber-500/30 bg-amber-500/5 p-3.5 space-y-3 shadow-theme-xs">
+        <div class="flex items-start gap-2.5">
+          <span class="text-base leading-none">🔄</span>
+          <div>
+            <h3 class="text-xs font-black text-amber-700 dark:text-amber-400 uppercase tracking-wide">
+              Solicitud de Rectificación
+            </h3>
+            <p class="text-[11px] text-text-muted mt-0.5">
+              Esta novedad modifica una novedad previamente aprobada.
+            </p>
+          </div>
+        </div>
+
+        <!-- Comparación Antes / Después -->
+        <div class="grid grid-cols-2 gap-2 text-xs pt-1">
+          <!-- Vigente Aprobada -->
+          <div class="p-2.5 rounded-lg bg-surface border border-border">
+            <div class="flex items-center gap-1 mb-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-success"></span>
+              <span class="text-[10px] font-black uppercase text-text-muted">Aprobada Vigente</span>
+            </div>
+            <p class="font-mono font-bold text-text text-[11px]">
+              {{ formatPeriodo(editData.novedadOriginal?.fechaInicio, editData.novedadOriginal?.fechaFin) }}
+            </p>
+            <p v-if="editData.novedadOriginal?.motivo" class="text-[10px] text-text-muted truncate mt-1" :title="editData.novedadOriginal.motivo">
+              {{ editData.novedadOriginal.motivo }}
+            </p>
+          </div>
+
+          <!-- Nueva Propuesta -->
+          <div class="p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/30">
+            <div class="flex items-center gap-1 mb-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+              <span class="text-[10px] font-black uppercase text-amber-700 dark:text-amber-400">Nueva Propuesta</span>
+            </div>
+            <p class="font-mono font-bold text-text text-[11px]">
+              {{ formatPeriodo(editData.fechaInicio, editData.fechaFin) }}
+            </p>
+            <p v-if="editData.motivo" class="text-[10px] text-text-muted truncate mt-1" :title="editData.motivo">
+              {{ editData.motivo }}
+            </p>
+          </div>
+        </div>
+      </div>
+
       <div class="grid grid-cols-1 gap-6">
         <!-- Observador -->
         <div class="space-y-1.5">
@@ -46,7 +92,6 @@
             <label class="block text-sm font-medium text-text-muted">Fecha de Inicio</label>
             <DatePicker 
               v-model="form.fechaInicio" 
-              :icon="CalenderIcon" 
               :show-time="false"
               :error="fieldErrors.fechaInicio" 
             />
@@ -55,7 +100,6 @@
             <label class="block text-sm font-medium text-text-muted">Fecha de Fin (Opcional)</label>
             <DatePicker 
               v-model="form.fechaFin" 
-              :icon="CalenderIcon" 
               :show-time="false"
               :error="fieldErrors.fechaFin" 
             />
@@ -197,7 +241,6 @@ import tiposNovedadApi from '../services/tipos-novedad.service'
 import { novedadesService } from '../services/novedades.service'
 import {
   UserGroupIcon,
-  CalenderIcon,
   DocsIcon,
   PlusIcon
 } from '@/icons'
@@ -210,6 +253,23 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits(['close', 'save'])
+
+const formatDate = (isoStr: string) => {
+  if (!isoStr) return ''
+  const date = new Date(isoStr)
+  return date.toLocaleDateString('es-AR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric'
+  })
+}
+
+const formatPeriodo = (inicio?: string | Date | null, fin?: string | Date | null) => {
+  if (!inicio) return '-'
+  const startStr = formatDate(inicio as string)
+  if (!fin) return `${startStr} en adelante`
+  return `${startStr} - ${formatDate(fin as string)}`
+}
 
 const observadorSelect = ref<any>(null)
 

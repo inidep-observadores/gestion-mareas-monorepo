@@ -153,8 +153,35 @@ export class NovedadesAiProcessor implements JobProcessor {
                                 }
                             });
 
+                            let esCorreccion = false;
+                            let novedadOriginalId: string | null = null;
+                            let reemplazaNovedadId: string | null = null;
+
                             if (overlaps) {
-                                throw new Error('El observador ya tiene una novedad de este tipo registrada en estas fechas');
+                                if (overlaps.estadoAprobacion === 'PENDIENTE') {
+                                    await this.prisma.observadorNovedad.update({
+                                        where: { id: overlaps.id },
+                                        data: {
+                                            activo: false,
+                                            estadoAprobacion: 'RECHAZADA',
+                                            movimientos: {
+                                                create: {
+                                                    tipoEvento: 'REEMPLAZADA_POR_EMAIL',
+                                                    estadoAnterior: overlaps.estadoAprobacion,
+                                                    estadoNuevo: 'RECHAZADA',
+                                                    comentarios: 'Anulada automáticamente por recepción de un nuevo correo con fechas rectificadas.',
+                                                }
+                                            }
+                                        }
+                                    });
+                                    reemplazaNovedadId = overlaps.id;
+                                } else if (overlaps.estadoAprobacion === 'APROBADA') {
+                                    esCorreccion = true;
+                                    novedadOriginalId = overlaps.id;
+                                    estadoDetalle = 'REQUIERE_REVISION';
+                                } else {
+                                    throw new Error('El observador ya tiene una novedad de este tipo registrada en estas fechas');
+                                }
                             }
 
                             const novedad = await this.prisma.observadorNovedad.create({
@@ -169,9 +196,20 @@ export class NovedadesAiProcessor implements JobProcessor {
                                     metadata: {
                                         fuente,
                                         certezaAi: obsBusqueda.certeza,
-                                        requiereRevision: estadoDetalle === 'REQUIERE_REVISION',
+                                        requiereRevision: estadoDetalle === 'REQUIERE_REVISION' || esCorreccion,
                                         aiExtraction: periodo,
-                                        numeroGde: extracted.numeroGde
+                                        numeroGde: extracted.numeroGde,
+                                        ...(esCorreccion ? { esCorreccion: true, novedadOriginalId } : {}),
+                                        ...(reemplazaNovedadId ? { reemplazaNovedadId } : {})
+                                    },
+                                    movimientos: {
+                                        create: {
+                                            tipoEvento: esCorreccion ? 'CREACION_CORRECCION' : 'CREACION_EMAIL',
+                                            estadoNuevo: 'PENDIENTE',
+                                            comentarios: esCorreccion
+                                                ? `Solicitud de rectificación recibida por correo para el período aprobado del ${DateUtils.formatDate(overlaps?.fechaInicio)} ${overlaps?.fechaFin ? 'al ' + DateUtils.formatDate(overlaps.fechaFin) : 'en adelante'}`
+                                                : 'Novedad ingresada automáticamente por procesamiento de correo'
+                                        }
                                     }
                                 }
                             });

@@ -20,7 +20,7 @@ export class NovedadesService {
     if (observadorId) where.observadorId = observadorId;
     if (estadoAprobacion) where.estadoAprobacion = estadoAprobacion;
 
-    return this.prisma.observadorNovedad.findMany({
+    const novedades = await this.prisma.observadorNovedad.findMany({
       where,
       include: {
         observador: true,
@@ -38,6 +38,8 @@ export class NovedadesService {
       },
       orderBy: { fechaInicio: 'desc' },
     });
+
+    return this.enrichNovedadesConOriginal(novedades);
   }
 
   async findOne(id: string) {
@@ -60,7 +62,38 @@ export class NovedadesService {
     });
 
     if (!novedad || !novedad.activo) throw new NotFoundException(`Novedad con ID ${id} no encontrada`);
-    return novedad;
+    const [enriched] = await this.enrichNovedadesConOriginal([novedad]);
+    return enriched;
+  }
+
+  private async enrichNovedadesConOriginal(novedades: any[]) {
+    const idsOriginales = novedades
+      .map(n => (n.metadata as any)?.novedadOriginalId)
+      .filter((id): id is string => typeof id === 'string' && !!id);
+
+    if (idsOriginales.length === 0) return novedades;
+
+    const originales = await this.prisma.observadorNovedad.findMany({
+      where: { id: { in: idsOriginales } },
+      include: {
+        observador: true,
+        tipoNovedad: true,
+        archivos: true,
+        creadoPor: {
+          select: { id: true, email: true, fullName: true }
+        }
+      }
+    });
+
+    const originalMap = new Map(originales.map(o => [o.id, o]));
+
+    for (const n of novedades) {
+      const origId = (n.metadata as any)?.novedadOriginalId;
+      if (origId) {
+        n.novedadOriginal = originalMap.get(origId) || null;
+      }
+    }
+    return novedades;
   }
 
   async create(createNovedadDto: CreateNovedadDto, user?: User) {
@@ -190,6 +223,9 @@ export class NovedadesService {
       if (!end) isInfinite = true;
     }
 
+    const esCorreccion = !!(existing.metadata as any)?.esCorreccion;
+    const novedadOriginalId = (existing.metadata as any)?.novedadOriginalId;
+
     // Si no estamos rechazando la novedad, verificar solapamiento
     if (updateNovedadDto.estadoAprobacion !== 'RECHAZADA') {
       const overlapConditions: any[] = [
@@ -205,9 +241,14 @@ export class NovedadesService {
         overlapConditions.push({ fechaInicio: { lte: end } });
       }
 
+      const excludeIds = [id];
+      if (esCorreccion && novedadOriginalId && updateNovedadDto.estadoAprobacion === 'APROBADA') {
+        excludeIds.push(novedadOriginalId);
+      }
+
       const overlaps = await this.prisma.observadorNovedad.findFirst({
         where: {
-          id: { not: id },
+          id: { notIn: excludeIds },
           observadorId: existing.observadorId,
           tipoNovedadId: data.tipoNovedadId !== undefined ? data.tipoNovedadId : existing.tipoNovedadId,
           estadoAprobacion: { not: 'RECHAZADA' },
@@ -221,10 +262,29 @@ export class NovedadesService {
       }
     }
 
+    if (updateNovedadDto.estadoAprobacion === 'APROBADA' && esCorreccion && novedadOriginalId) {
+      await this.prisma.observadorNovedad.update({
+        where: { id: novedadOriginalId },
+        data: {
+          activo: false,
+          estadoAprobacion: 'RECHAZADA',
+          movimientos: {
+            create: {
+              tipoEvento: 'REEMPLAZADA_POR_CORRECCION',
+              estadoAnterior: 'APROBADA',
+              estadoNuevo: 'RECHAZADA',
+              comentarios: `Reemplazada por aprobación de rectificación (nuevo período: del ${DateUtils.formatDate(start)} ${end ? 'al ' + DateUtils.formatDate(end) : 'en adelante'})`,
+              usuarioId: user?.id,
+            }
+          }
+        }
+      });
+    }
+
     let tipoEvento = 'EDICION';
     if (updateNovedadDto.estadoAprobacion && updateNovedadDto.estadoAprobacion !== existing.estadoAprobacion) {
-      if (updateNovedadDto.estadoAprobacion === 'APROBADA') tipoEvento = 'APROBACION';
-      if (updateNovedadDto.estadoAprobacion === 'RECHAZADA') tipoEvento = 'RECHAZO';
+      if (updateNovedadDto.estadoAprobacion === 'APROBADA') tipoEvento = esCorreccion ? 'APROBACION_CORRECCION' : 'APROBACION';
+      if (updateNovedadDto.estadoAprobacion === 'RECHAZADA') tipoEvento = esCorreccion ? 'RECHAZO_CORRECCION' : 'RECHAZO';
     }
 
     data.movimientos = {

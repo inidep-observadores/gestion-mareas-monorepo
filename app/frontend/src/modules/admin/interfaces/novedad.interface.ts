@@ -25,6 +25,7 @@ export interface Novedad {
     name: string;
   };
   activo: boolean;
+  novedadOriginal?: Novedad | null;
 }
 
 export interface CreateNovedadDto {

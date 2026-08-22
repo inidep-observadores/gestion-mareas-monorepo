@@ -22,6 +22,52 @@
             <p class="text-sm font-bold text-text">{{ novedad.observador?.apellido }}, {{ novedad.observador?.nombre }}</p>
           </div>
           
+          <!-- Alerta y Comparador de Rectificación -->
+          <div v-if="novedad.metadata?.esCorreccion" class="rounded-xl border border-amber-500/30 bg-amber-500/5 p-3.5 space-y-3">
+            <div class="flex items-start gap-2.5">
+              <span class="text-base leading-none">🔄</span>
+              <div>
+                <h3 class="text-xs font-black text-amber-700 dark:text-amber-400 uppercase tracking-wide">
+                  Solicitud de Rectificación
+                </h3>
+                <p class="text-[11px] text-text-muted mt-0.5">
+                  Esta solicitud modifica una novedad previamente aprobada.
+                </p>
+              </div>
+            </div>
+
+            <!-- Comparación Antes / Después -->
+            <div class="grid grid-cols-2 gap-2 text-xs pt-1">
+              <!-- Vigente Aprobada -->
+              <div class="p-2.5 rounded-lg bg-surface border border-border">
+                <div class="flex items-center gap-1 mb-1">
+                  <span class="w-1.5 h-1.5 rounded-full bg-success"></span>
+                  <span class="text-[10px] font-black uppercase text-text-muted">Aprobada Vigente</span>
+                </div>
+                <p class="font-mono font-bold text-text text-[11px]">
+                  {{ formatPeriodo(novedad.novedadOriginal?.fechaInicio, novedad.novedadOriginal?.fechaFin) }}
+                </p>
+                <p v-if="novedad.novedadOriginal?.motivo" class="text-[10px] text-text-muted truncate mt-1" :title="novedad.novedadOriginal.motivo">
+                  {{ novedad.novedadOriginal.motivo }}
+                </p>
+              </div>
+
+              <!-- Nueva Solicitud -->
+              <div class="p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/30">
+                <div class="flex items-center gap-1 mb-1">
+                  <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                  <span class="text-[10px] font-black uppercase text-amber-700 dark:text-amber-400">Nueva Propuesta</span>
+                </div>
+                <p class="font-mono font-bold text-text text-[11px]">
+                  {{ formatPeriodo(novedad.fechaInicio, novedad.fechaFin) }}
+                </p>
+                <p v-if="novedad.motivo" class="text-[10px] text-text-muted truncate mt-1" :title="novedad.motivo">
+                  {{ novedad.motivo }}
+                </p>
+              </div>
+            </div>
+          </div>
+
           <div class="grid grid-cols-2 gap-4">
             <div>
               <p class="text-[10px] uppercase font-black text-text-muted mb-1">Tipo / Origen</p>
@@ -38,6 +84,7 @@
             <div>
               <p class="text-[10px] uppercase font-black text-text-muted mb-1">Estado</p>
               <span v-if="novedad.activo === false" class="bg-error/10 text-error text-xs font-black px-2 py-1 rounded-md uppercase border border-error/20">ELIMINADA</span>
+              <span v-else-if="novedad.metadata?.esCorreccion" class="bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs font-black px-2 py-1 rounded-md uppercase border border-amber-500/20">RECTIFICACIÓN</span>
               <span v-else-if="novedad.estadoAprobacion === 'PENDIENTE'" class="bg-warning/10 text-warning text-xs font-black px-2 py-1 rounded-md uppercase border border-warning/20">PENDIENTE</span>
               <span v-else-if="novedad.estadoAprobacion === 'RECHAZADA'" class="bg-error/10 text-error text-xs font-black px-2 py-1 rounded-md uppercase border border-error/20">RECHAZADA</span>
               <span v-else class="bg-success/10 text-success text-xs font-black px-2 py-1 rounded-md uppercase border border-success/20">APROBADA</span>
@@ -47,7 +94,7 @@
           <div>
             <p class="text-[10px] uppercase font-black text-text-muted mb-1">Período</p>
             <p class="text-sm font-mono font-bold text-text">
-              {{ formatDate(novedad.fechaInicio) }} - {{ novedad.fechaFin ? formatDate(novedad.fechaFin) : '...' }}
+              {{ formatPeriodo(novedad.fechaInicio, novedad.fechaFin) }}
             </p>
           </div>
           
@@ -126,11 +173,11 @@
     <div v-if="!readonly && novedad && novedad.activo !== false" class="border-t border-border bg-surface-muted/50 p-4 flex flex-col gap-2">
       <template v-if="novedad.estadoAprobacion === 'PENDIENTE'">
         <button type="button" @click="$emit('approve', novedad)" class="w-full flex justify-center items-center gap-2 rounded-lg bg-success px-3 py-2 text-sm font-bold text-white shadow-sm hover:bg-success-hover transition-colors active:scale-[0.98]">
-          <CheckIcon class="w-4 h-4" /> Aprobar
+          <CheckIcon class="w-4 h-4" /> {{ novedad.metadata?.esCorreccion ? 'Aprobar Reemplazo' : 'Aprobar' }}
         </button>
         <div class="flex gap-2">
           <button type="button" @click="$emit('reject', novedad)" class="flex-1 flex justify-center items-center gap-1 rounded-lg bg-error/10 px-3 py-2 text-sm font-bold text-error shadow-sm hover:bg-error/20 transition-colors active:scale-[0.98] border border-error/20">
-            Rechazar
+            {{ novedad.metadata?.esCorreccion ? 'Descartar' : 'Rechazar' }}
           </button>
           <button type="button" @click="$emit('edit', novedad)" class="flex-1 flex justify-center items-center gap-1 rounded-lg bg-surface px-3 py-2 text-sm font-bold text-text shadow-sm ring-1 ring-inset ring-border hover:bg-surface-muted transition-colors active:scale-[0.98]">
             <EditIcon class="w-4 h-4" /> Editar
@@ -189,6 +236,13 @@ const formatDate = (isoStr: string) => {
   });
 };
 
+const formatPeriodo = (inicio?: string | Date | null, fin?: string | Date | null) => {
+  if (!inicio) return '-';
+  const startStr = formatDate(inicio as string);
+  if (!fin) return `${startStr} en adelante`;
+  return `${startStr} - ${formatDate(fin as string)}`;
+};
+
 const hasFile = computed(() => {
   return props.novedad?.archivos && props.novedad.archivos.length > 0;
 });
@@ -214,9 +268,15 @@ const getUsuarioName = (mov: any) => {
 const formatTipoEvento = (tipo: string) => {
   const map: Record<string, string> = {
     'CREACION': 'Novedad Creada',
+    'CREACION_EMAIL': 'Ingresada por Email',
+    'CREACION_CORRECCION': 'Solicitud de Rectificación',
     'EDICION': 'Novedad Editada',
     'APROBACION': 'Novedad Aprobada',
+    'APROBACION_CORRECCION': 'Rectificación Aprobada',
     'RECHAZO': 'Novedad Rechazada',
+    'RECHAZO_CORRECCION': 'Rectificación Rechazada',
+    'REEMPLAZADA_POR_EMAIL': 'Reemplazada por nuevo correo',
+    'REEMPLAZADA_POR_CORRECCION': 'Reemplazada por rectificación',
     'ELIMINACION': 'Novedad Eliminada',
     'BORRADO_LOGICO': 'Novedad Eliminada',
     'REVISION_AI': 'Revisión por IA',

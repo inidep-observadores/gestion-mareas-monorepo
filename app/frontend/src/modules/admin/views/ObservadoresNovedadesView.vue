@@ -159,6 +159,9 @@
             <span v-if="!novedad.activo" class="bg-error/10 text-error text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-tighter">
               Eliminada
             </span>
+            <span v-else-if="novedad.metadata?.esCorreccion" class="bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-tighter border border-amber-500/20 flex items-center gap-1">
+              <span>🔄</span> Rectificación
+            </span>
             <span v-else-if="novedad.estadoAprobacion === 'PENDIENTE'" class="bg-warning/10 text-warning text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-tighter">
               Pendiente
             </span>
@@ -181,11 +184,13 @@
         <td class="px-6 py-4 text-right">
           <div class="flex items-center justify-end gap-3">
             <template v-if="novedad.activo && novedad.estadoAprobacion === 'PENDIENTE'">
-              <button @click="promptAction(novedad, 'APROBADA')" class="font-bold text-success hover:underline text-xs bg-success/10 px-2 py-1 rounded">
-                  Aprobar
+              <button @click="promptAction(novedad, 'APROBADA')" 
+                      class="font-bold text-success hover:underline text-xs bg-success/10 px-2.5 py-1 rounded transition-colors whitespace-nowrap">
+                {{ novedad.metadata?.esCorreccion ? 'Aprobar Reemplazo' : 'Aprobar' }}
               </button>
-              <button @click="promptAction(novedad, 'RECHAZADA')" class="font-bold text-error hover:underline text-xs bg-error/10 px-2 py-1 rounded">
-                  Rechazar
+              <button @click="promptAction(novedad, 'RECHAZADA')" 
+                      class="font-bold text-error hover:underline text-xs bg-error/10 px-2.5 py-1 rounded transition-colors whitespace-nowrap">
+                {{ novedad.metadata?.esCorreccion ? 'Descartar' : 'Rechazar' }}
               </button>
             </template>
             <button v-if="novedad.activo && novedad.estadoAprobacion !== 'RECHAZADA'" @click="openEditModal(novedad)" class="font-bold text-primary hover:underline">
@@ -202,13 +207,16 @@
         <div class="cursor-pointer hover:bg-surface-muted/30 transition-colors rounded-xl -mx-2 -mt-2 p-2" @click="openSidePanel(novedad)">
           <div class="flex items-start gap-4 mb-4">
             <div class="flex-1 min-w-0">
-              <div class="flex items-center gap-2 mb-1.5">
+              <div class="flex items-center gap-2 mb-1.5 flex-wrap">
                 <div class="flex items-center gap-1.5">
                   <span class="inline-flex items-center text-[10px] font-black bg-info/10 text-info px-2 py-0.5 rounded-md uppercase">
                     {{ novedad.tipoNovedad?.descripcion || 'Desconocido' }}
                   </span>
                   <PaperclipIcon v-if="novedad.archivos?.length" class="h-4 w-4 text-primary shrink-0" title="Contiene archivos adjuntos" />
                 </div>
+                <span v-if="novedad.metadata?.esCorreccion" class="inline-flex items-center text-[9px] font-black bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 px-1.5 py-0.5 rounded uppercase">
+                  🔄 Rectificación
+                </span>
                 <span class="text-[9px] font-bold text-text-muted border border-border px-1.5 py-0.5 rounded uppercase">
                   {{ novedad.origen || 'MANUAL' }}
                 </span>
@@ -326,9 +334,9 @@
     <!-- Action Dialog for Approve/Reject -->
     <ConfirmationDialog
       :show="showActionModal"
-      :title="actionType === 'APROBADA' ? 'Aprobar Novedad' : 'Rechazar Novedad'"
-      :confirmText="actionType === 'APROBADA' ? 'Confirmar Aprobación' : 'Rechazar Definitivamente'"
-      :message="actionType === 'APROBADA' ? '¿Estás seguro que deseas aprobar esta novedad y registrarla en el sistema?' : 'Por favor, ingresa el motivo del rechazo. Este campo es obligatorio para rechazar.'"
+      :title="actionModalTitle"
+      :confirmText="actionModalConfirmText"
+      :message="actionModalMessage"
       @confirm="confirmAction"
       @close="closeActionModal"
     >
@@ -427,6 +435,42 @@ const showActionModal = ref(false);
 const actionType = ref<'APROBADA' | 'RECHAZADA'>('APROBADA');
 const actionComment = ref('');
 const novedadToAction = ref<Novedad | null>(null);
+
+const actionModalTitle = computed(() => {
+  if (!novedadToAction.value) return '';
+  const esCorreccion = !!novedadToAction.value.metadata?.esCorreccion;
+  if (actionType.value === 'APROBADA') {
+    return esCorreccion ? 'Aprobar Rectificación de Novedad' : 'Aprobar Novedad';
+  } else {
+    return esCorreccion ? 'Descartar Rectificación' : 'Rechazar Novedad';
+  }
+});
+
+const actionModalConfirmText = computed(() => {
+  if (!novedadToAction.value) return '';
+  const esCorreccion = !!novedadToAction.value.metadata?.esCorreccion;
+  if (actionType.value === 'APROBADA') {
+    return esCorreccion ? 'Confirmar Reemplazo' : 'Confirmar Aprobación';
+  } else {
+    return esCorreccion ? 'Descartar Rectificación' : 'Rechazar Definitivamente';
+  }
+});
+
+const actionModalMessage = computed(() => {
+  if (!novedadToAction.value) return '';
+  const esCorreccion = !!novedadToAction.value.metadata?.esCorreccion;
+  if (actionType.value === 'APROBADA') {
+    if (esCorreccion) {
+      return 'Esta novedad es una solicitud de rectificación de una novedad previamente aprobada. Al confirmarla, la novedad aprobada original pasará a histórico inactivo y esta nueva solicitud se registrará como la vigente.';
+    }
+    return '¿Estás seguro que deseas aprobar esta novedad y registrarla en el sistema?';
+  } else {
+    if (esCorreccion) {
+      return 'Por favor, ingresa el motivo del descarte de esta rectificación. La novedad aprobada original continuará vigente sin modificaciones.';
+    }
+    return 'Por favor, ingresa el motivo del rechazo. Este campo es obligatorio para rechazar.';
+  }
+});
 
 const sortKey = ref<string>('fechaInicio');
 const sortOrder = ref<'asc' | 'desc'>('desc');
