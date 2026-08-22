@@ -4468,7 +4468,7 @@ export class StatsService {
                     : null,
             };
 
-            // Categorización según estado histórico
+            // Categorización según estado histórico o flag booleano
             const cancellationMov = m.movimientos?.find(mov => mov.estadoHasta?.codigo === MareaEstado.CANCELADA);
             const desestimacionMov = m.movimientos?.find(mov => mov.estadoHasta?.codigo === MareaEstado.DESESTIMADA);
 
@@ -4476,9 +4476,10 @@ export class StatsService {
                 cancellationMov.fechaHora >= periodStart &&
                 cancellationMov.fechaHora <= snapEnd;
 
-            const isDesestimadaInPeriod = desestimacionMov &&
+            const isDesestimadaInPeriod = (desestimacionMov &&
                 desestimacionMov.fechaHora >= periodStart &&
-                desestimacionMov.fechaHora <= snapEnd;
+                desestimacionMov.fechaHora <= snapEnd) ||
+                (m.desestimada === true);
 
             // Categorización según estado histórico (Priorizamos eventos terminales detectados en el periodo)
             if (isCancelledInPeriod) {
@@ -4486,7 +4487,7 @@ export class StatsService {
                 mareaData.motivo = cancellationMov.comentarios || null;
                 results.canceladas.push(mareaData);
             } else if (isDesestimadaInPeriod) {
-                mareaData.fechaEvento = desestimacionMov.fechaHora;
+                mareaData.fechaEvento = desestimacionMov?.fechaHora || lastMov?.fechaHora || m.fechaUltimaActualizacion;
                 results.desestimadas.push(mareaData);
             } else {
                 const lastStage = m.etapas?.[m.etapas.length - 1];

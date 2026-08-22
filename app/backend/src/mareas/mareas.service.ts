@@ -1735,6 +1735,7 @@ export class MareasService {
                 label: t.etiqueta,
                 toState: t.estadoDestinoId,
                 toStateName: (t as any).estadoDestino?.nombre || 'Nuevo Estado',
+                toStateCodigo: (t as any).estadoDestino?.codigo || null,
                 requiresNotes: (t as any).requiereObs || false,
                 claseBoton: t.claseBoton
             };
@@ -1784,6 +1785,7 @@ export class MareasService {
                 id_pesqueria: marea.pesqueriaId,
                 tipo_marea: marea.tipoMarea,
                 tipoMarea: marea.tipoMarea,
+                desestimada: marea.desestimada || false,
                 observaciones: marea.observaciones || '',
                 alertas: activeAlerts,
                 etapas: marea.etapas.map((e: any) => ({
@@ -2371,6 +2373,11 @@ export class MareasService {
                 additionalMareaData.nroProtocolizacion = payload.nroProtocolizacion ? Number(payload.nroProtocolizacion) : null;
                 additionalMareaData.anioProtocolizacion = payload.anioProtocolizacion;
                 additionalMareaData.fechaProtocolizacion = new Date(payload.fechaProtocolizacion);
+            }
+
+            // Si el payload contiene la marca de desestimada, actualizarla
+            if (typeof payload.desestimada === 'boolean') {
+                additionalMareaData.desestimada = payload.desestimada;
             }
 
             // Evaluación de fin de Marea por arribo automático a puerto en etapa "Final"

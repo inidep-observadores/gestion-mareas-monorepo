@@ -33,6 +33,7 @@ export interface MareaListItem {
     dias_marea?: number;
     dias_navegados?: number;
     intencion_cierre?: boolean;
+    desestimada?: boolean;
     actionsAvailable: Record<string, { enabled: boolean; label: string; blockedReason?: string; claseBoton?: string }>;
 }
 
@@ -61,9 +62,10 @@ export interface MareaContext {
         observador: string;
         id_pesqueria?: string;
         tipo_marea: TipoMarea;
+        desestimada?: boolean;
         etapas?: any[];
     };
-    actions: Record<string, { enabled: boolean; label: string; blockedReason?: string; claseBoton?: string }>;
+    actions: Record<string, { enabled: boolean; label: string; blockedReason?: string; toStateCodigo?: string; claseBoton?: string }>;
     lastEvents: { id: string; titulo: string; fecha: string; usuario: string; comentarios?: string }[];
 }
 
@@ -127,6 +129,7 @@ export interface Marea {
     tipoMarea?: TipoMarea;
     inicia_en_prospeccion?: boolean;
     iniciaEnProspeccion?: boolean;
+    desestimada?: boolean;
     anio_marea?: number;
     anioMarea?: number;
     nro_marea?: number;

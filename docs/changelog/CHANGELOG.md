@@ -5,6 +5,9 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 
 ## [Unreleased]
 
+### Added
+- **mareas:** incorporar campo booleano `desestimada` y soporte dinámico en diálogo de transiciones a 'Pendiente de informe'
+
 ## [v0.11.0] - 2026-07-30
 
 ### Added
