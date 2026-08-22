@@ -68,13 +68,17 @@
         <textarea
           v-model="comentarios"
           rows="4"
-          placeholder="Es obligatorio ingresar un motivo o nota para esta acción..."
+          :placeholder="desestimada
+            ? 'Es obligatorio ingresar el motivo por el cual se desestima la marea...'
+            : 'Es obligatorio ingresar un motivo o nota para esta acción...'"
           class="w-full bg-surface border border-border rounded-xl p-4 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all resize-none outline-none"
           :class="{ 'border-error ring-1 ring-error/10': showError }"
         ></textarea>
         <p v-if="showError" class="text-[10px] font-bold text-error uppercase tracking-tight flex items-center gap-1">
           <WarningIcon class="w-3 h-3" />
-          Debe completar las notas para confirmar esta acción.
+          {{ desestimada
+            ? 'Debe ingresar el motivo de la desestimación para continuar.'
+            : 'Debe completar las notas para confirmar esta acción.' }}
         </p>
       </div>
 
@@ -216,7 +220,7 @@ const desestimada = ref(false)
 const checkboxRef = ref<HTMLInputElement | null>(null)
 
 // ── Computed ───────────────────────────────────────────────────────────────
-const requiresNotes = computed(() => props.actionData?.requiresNotes || false)
+const requiresNotes = computed(() => Boolean(props.actionData?.requiresNotes) || desestimada.value)
 
 /**
  * La sección de desestimada se activa dinámicamente cuando el estado destino
@@ -232,6 +236,12 @@ watch(() => props.show, (newVal) => {
     comentarios.value = ''
     showError.value = false
     desestimada.value = false
+  }
+})
+
+watch(desestimada, (val) => {
+  if (!val && !props.actionData?.requiresNotes) {
+    showError.value = false
   }
 })
 

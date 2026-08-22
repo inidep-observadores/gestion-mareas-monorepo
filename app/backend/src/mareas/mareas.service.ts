@@ -1948,9 +1948,6 @@ export class MareasService {
     async syncStages(tx: any, mareaId: string, incomingStages: any[]) {
         if (!incomingStages || !Array.isArray(incomingStages)) return;
 
-        console.log('--- SYNC STAGES START ---');
-        console.log('Incoming Stages in syncStages:', JSON.stringify(incomingStages, null, 2));
-
         // Fetch marea to validate stage types against marea type
         const marea = await tx.marea.findUnique({ where: { id: mareaId }, select: { tipoMarea: true } });
         if (marea) {
@@ -2267,11 +2264,18 @@ export class MareasService {
             throw new Error(`Acción ${actionKey} no permitida para el estado ${marea.estadoActual.nombre} `);
         }
 
+        // Validar observaciones requeridas por la matriz de transición
+        if (transicion.requiereObs && (!payload.comentarios || !payload.comentarios.trim())) {
+            throw new BadRequestException('Esta acción requiere ingresar notas u observaciones obligatorias.');
+        }
+
+        // Validar motivo obligatorio al desestimar una marea
+        if (payload.desestimada === true && (!payload.comentarios || !payload.comentarios.trim())) {
+            throw new BadRequestException('Es obligatorio ingresar un motivo u observación al desestimar una marea.');
+        }
+
         // Ejecutar cambio de estado
         return await this.prisma.$transaction(async (tx) => {
-            console.log('--- MAREAS UPDATE START ---');
-            console.log('Payload Update Etapas RAW:', JSON.stringify(payload.etapas, null, 2));
-
             // Validate chronology first
             if (payload.etapas) {
                 this.validateStagesChronology(payload.etapas);

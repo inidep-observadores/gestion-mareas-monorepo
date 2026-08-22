@@ -4481,38 +4481,47 @@ export class StatsService {
                 desestimacionMov.fechaHora <= snapEnd) ||
                 (m.desestimada === true);
 
-            // Categorización según estado histórico (Priorizamos eventos terminales detectados en el periodo)
+            // Categorización según estado histórico (Canceladas es terminal absoluto)
             if (isCancelledInPeriod) {
                 mareaData.fechaEvento = cancellationMov.fechaHora;
                 mareaData.motivo = cancellationMov.comentarios || null;
                 results.canceladas.push(mareaData);
-            } else if (isDesestimadaInPeriod) {
-                mareaData.fechaEvento = desestimacionMov?.fechaHora || lastMov?.fechaHora || m.fechaUltimaActualizacion;
-                results.desestimadas.push(mareaData);
-            } else {
-                const lastStage = m.etapas?.[m.etapas.length - 1];
-                const lastArribo = lastStage?.fechaArribo ? new Date(lastStage.fechaArribo) : null;
-                const finishedInPeriod = lastArribo && lastArribo >= periodStart && lastArribo <= snapEnd;
+                continue;
+            }
 
-                if (finishedInPeriod) {
-                    const fEnvio = m.fechaEnvioProtocolizacion ? new Date(m.fechaEnvioProtocolizacion) : null;
+            // Registrar en sección de desestimadas si corresponde
+            if (isDesestimadaInPeriod) {
+                const desestMareaData = {
+                    ...mareaData,
+                    fechaEvento: desestimacionMov?.fechaHora || lastMov?.fechaHora || m.fechaUltimaActualizacion,
+                    motivo: mareaData.motivo || desestimacionMov?.comentarios || lastMov?.comentarios || null,
+                };
+                results.desestimadas.push(desestMareaData);
+            }
 
-                    if (fEnvio && fEnvio >= periodStart && fEnvio <= snapEnd) {
-                        results.enviadasADNI.push(mareaData);
-                        if (stateCode !== MareaEstado.PROTOCOLIZADA) {
-                            results.esperandoProtocolizacion.push(mareaData);
-                        }
-                    } else if (stateCode === MareaEstado.EN_EJECUCION) {
-                        // Ignorar: Formalmente no ha finalizado pese a haber arribado
-                    } else if (stateCode === MareaEstado.PARA_PROTOCOLIZAR) {
-                        results.informesPendientesEnvio.push(mareaData);
-                    } else if (stateCode === MareaEstado.ESPERANDO_ENTREGA) {
-                        results.esperandoEntrega.push(mareaData);
-                    } else if (stateCode === MareaEstado.DELEGADA_EXTERNA) {
-                        results.delegadasExternas.push(mareaData);
-                    } else {
-                        results.pendientesDeInforme.push(mareaData);
+            // Categorización según estado administrativo y operativo en el período
+            const lastStage = m.etapas?.[m.etapas.length - 1];
+            const lastArribo = lastStage?.fechaArribo ? new Date(lastStage.fechaArribo) : null;
+            const finishedInPeriod = lastArribo && lastArribo >= periodStart && lastArribo <= snapEnd;
+
+            if (finishedInPeriod) {
+                const fEnvio = m.fechaEnvioProtocolizacion ? new Date(m.fechaEnvioProtocolizacion) : null;
+
+                if (fEnvio && fEnvio >= periodStart && fEnvio <= snapEnd) {
+                    results.enviadasADNI.push(mareaData);
+                    if (stateCode !== MareaEstado.PROTOCOLIZADA) {
+                        results.esperandoProtocolizacion.push(mareaData);
                     }
+                } else if (stateCode === MareaEstado.EN_EJECUCION) {
+                    // Ignorar: Formalmente no ha finalizado pese a haber arribado
+                } else if (stateCode === MareaEstado.PARA_PROTOCOLIZAR) {
+                    results.informesPendientesEnvio.push(mareaData);
+                } else if (stateCode === MareaEstado.ESPERANDO_ENTREGA) {
+                    results.esperandoEntrega.push(mareaData);
+                } else if (stateCode === MareaEstado.DELEGADA_EXTERNA) {
+                    results.delegadasExternas.push(mareaData);
+                } else {
+                    results.pendientesDeInforme.push(mareaData);
                 }
             }
         }

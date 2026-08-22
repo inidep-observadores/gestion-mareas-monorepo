@@ -8,6 +8,10 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 ### Added
 - **mareas:** incorporar campo booleano `desestimada` y soporte dinámico en diálogo de transiciones a 'Pendiente de informe'
 - **mareas:** visualizar badge de 'Desestimada' en vista de flujo de mareas, panel operativo y panel lateral de detalle
+- **mareas:** requerir observaciones de forma obligatoria al marcar una marea como desestimada en el diálogo y en la API
+
+### Fixed
+- **reports:** asegurar que las mareas desestimadas continúen clasificándose en su sección de estado administrativo en el informe de auditoría
 
 ## [v0.11.0] - 2026-07-30
 
