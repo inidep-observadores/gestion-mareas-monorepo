@@ -4,6 +4,7 @@ import { ImapService } from '../../mail/imap.service';
 import { NovedadesAiService } from '../../mail/novedades-ai.service';
 import { JobQueueService } from '../job-queue.service';
 import { JobProcessor, JobType, JobStatus } from '../job-types';
+import { ErrorLogsService } from '../../common/error-logs/error-logs.service';
 import * as path from 'path';
 import * as fs from 'fs/promises';
 import * as os from 'os';
@@ -17,7 +18,8 @@ export class NovedadesEmailProcessor implements JobProcessor {
         private readonly prisma: PrismaService,
         private readonly imapService: ImapService,
         private readonly jobQueueService: JobQueueService,
-        private readonly novedadesAiService: NovedadesAiService
+        private readonly novedadesAiService: NovedadesAiService,
+        private readonly errorLogsService: ErrorLogsService,
     ) {
         // Asegurar que el directorio temporal exista
         fs.mkdir(this.tempDir, { recursive: true }).catch(err => {
@@ -160,6 +162,20 @@ export class NovedadesEmailProcessor implements JobProcessor {
                                     );
                                 } catch (err: any) {
                                     this.logger.error(`Error guardando adjunto o encolando IA para ${attFuente}: ${err.message}`);
+                                    await this.errorLogsService.create({
+                                        level: 'ERROR',
+                                        source: 'EMAIL_SYNC',
+                                        context: 'NovedadesEmailProcessor.processAttachment',
+                                        message: `Error guardando adjunto o encolando IA (${attFuente}): ${err.message}`,
+                                        stack: err.stack,
+                                        detail: {
+                                            emailLogId: emailLog.id,
+                                            messageId: email.messageId,
+                                            subject: email.subject,
+                                            filename,
+                                            fuente: attFuente,
+                                        },
+                                    });
                                     enqueueSuccess = false;
                                 }
                             }

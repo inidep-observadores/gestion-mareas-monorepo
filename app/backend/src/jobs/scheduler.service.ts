@@ -14,6 +14,7 @@ import { DateTime } from 'luxon';
 import * as os from 'os';
 import { NovedadesAiProcessor } from './processors/novedades-ai.processor';
 import { DriveSyncProcessor } from './processors/drive-sync.processor';
+import { ErrorLogsService } from '../common/error-logs/error-logs.service';
 
 @Injectable()
 export class SchedulerService {
@@ -33,6 +34,7 @@ export class SchedulerService {
         private readonly novedadesEmailProcessor: NovedadesEmailProcessor,
         private readonly novedadesAiProcessor: NovedadesAiProcessor,
         private readonly driveSyncProcessor: DriveSyncProcessor,
+        private readonly errorLogsService: ErrorLogsService,
     ) {
         this.workerId = `${os.hostname()}-${process.pid}`;
     }
@@ -437,7 +439,7 @@ export class SchedulerService {
                         duration,
                     },
                 });
-            } catch (error) {
+            } catch (error: any) {
                 this.logger.error(`Error processing job ${job.id}:`, error);
 
                 const duration = Date.now() - startTime;
@@ -446,6 +448,25 @@ export class SchedulerService {
 
                 errorMessage = error.message || 'Unknown error';
                 stackTrace = error.stack || null;
+
+                // Registrar en ErrorLog general del sistema
+                await this.errorLogsService.create({
+                    level: isFinalFailure ? 'CRITICAL' : 'ERROR',
+                    source: 'BACKGROUND_JOB',
+                    context: job.type,
+                    message: `Error en tarea ${job.type} (ID: ${job.id}, Intento ${nextAttempts}/${job.maxAttempts}): ${errorMessage}`,
+                    stack: stackTrace,
+                    detail: {
+                        jobId: job.id,
+                        jobType: job.type,
+                        payload: job.payload,
+                        attempts: nextAttempts,
+                        maxAttempts: job.maxAttempts,
+                        isFinalFailure,
+                        duration,
+                        workerId: this.workerId,
+                    },
+                });
 
                 if (isFinalFailure) {
                     // Definimos una interfaz para asegurar el tipo del payload esperado

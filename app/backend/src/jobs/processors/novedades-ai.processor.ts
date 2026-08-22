@@ -5,6 +5,7 @@ import { DriveStorageService } from '../../files/drive-storage.service';
 import { GotenbergService } from '../../files/gotenberg.service';
 import { JobProcessor } from '../job-types';
 import { DateUtils } from '../../common/utils/date.utils';
+import { ErrorLogsService } from '../../common/error-logs/error-logs.service';
 import * as fs from 'fs/promises';
 
 @Injectable()
@@ -16,6 +17,7 @@ export class NovedadesAiProcessor implements JobProcessor {
         private readonly novedadesAiService: NovedadesAiService,
         private readonly driveStorageService: DriveStorageService,
         private readonly gotenbergService: GotenbergService,
+        private readonly errorLogsService: ErrorLogsService,
     ) {}
 
     async process(payload: any): Promise<any> {
@@ -249,6 +251,23 @@ export class NovedadesAiProcessor implements JobProcessor {
 
             estadoDetalle = 'ERROR';
             errorDetalle = error.message;
+
+            await this.errorLogsService.create({
+                level: 'ERROR',
+                source: 'AI_PROCESSING',
+                context: 'NovedadesAiProcessor.process',
+                message: `Error al procesar novedades con IA (${fuente}): ${error.message}`,
+                stack: error.stack,
+                detail: {
+                    emailLogId,
+                    fuente,
+                    emailSubject,
+                    explicitDocType,
+                    origen: origen || 'EMAIL',
+                    mareaId,
+                    mareaArchivoId,
+                },
+            });
         } finally {
             // Eliminar archivo temporal si existía
             if (attachmentData && attachmentData.filePath) {

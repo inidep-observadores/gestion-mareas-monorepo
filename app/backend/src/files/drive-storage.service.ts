@@ -2,13 +2,17 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { google, drive_v3 } from 'googleapis';
 import { Readable } from 'stream';
+import { ErrorLogsService } from '../common/error-logs/error-logs.service';
 
 @Injectable()
 export class DriveStorageService {
     private readonly logger = new Logger(DriveStorageService.name);
     private driveClient: drive_v3.Drive;
 
-    constructor(private readonly configService: ConfigService) {
+    constructor(
+        private readonly configService: ConfigService,
+        private readonly errorLogsService: ErrorLogsService,
+    ) {
         // Inicializar el cliente de Google Drive API usando OAuth2
         const clientId = this.configService.get<string>('GOOGLE_CLIENT_ID');
         const clientSecret = this.configService.get<string>('GOOGLE_CLIENT_SECRET');
@@ -68,8 +72,20 @@ export class DriveStorageService {
                 fileId: response.data.id,
                 webViewLink: response.data.webViewLink,
             };
-        } catch (error) {
+        } catch (error: any) {
             this.logger.error(`Error al subir archivo a Google Drive: ${error.message}`);
+            await this.errorLogsService.create({
+                level: 'ERROR',
+                source: 'GOOGLE_DRIVE',
+                context: 'DriveStorageService.uploadFile',
+                message: `Error al subir archivo a Google Drive (${filename}): ${error.message}`,
+                stack: error.stack,
+                detail: {
+                    filename,
+                    mimeType,
+                    folderId,
+                },
+            });
             throw error;
         }
     }
@@ -82,9 +98,21 @@ export class DriveStorageService {
                 fileId: fileId
             });
             this.logger.log(`Archivo eliminado permanentemente de Google Drive (ID: ${fileId})`);
-        } catch (error) {
-            this.logger.error(`Error al eliminar archivo de Google Drive (ID: ${fileId}): ${error.message}`);
-            // No lanzamos el error para no interrumpir el flujo si falla el borrado
+        } catch (error: any) {
+            const isNotFound = error?.code === 404 || error?.status === 404 || error?.message?.includes('File not found') || error?.message?.includes('404');
+            if (isNotFound) {
+                this.logger.warn(`Archivo no encontrado al intentar eliminar en Google Drive (ID: ${fileId})`);
+            } else {
+                this.logger.error(`Error al eliminar archivo de Google Drive (ID: ${fileId}): ${error.message}`);
+                await this.errorLogsService.create({
+                    level: 'ERROR',
+                    source: 'GOOGLE_DRIVE',
+                    context: 'DriveStorageService.deleteFile',
+                    message: `Error al eliminar archivo de Google Drive (ID: ${fileId}): ${error.message}`,
+                    stack: error.stack,
+                    detail: { fileId },
+                });
+            }
         }
     }
 }
