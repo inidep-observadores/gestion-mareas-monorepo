@@ -66,10 +66,10 @@ const kpiDefinitions: Array<
     title: string
     subtext: string
     icon: any
-    bgClass: string
-    iconContainerClass: string
-    iconClass: string
-    valueClass?: string
+    bgClass: string | ((val: any) => string)
+    iconContainerClass: string | ((val: any) => string)
+    iconClass: string | ((val: any) => string)
+    valueClass?: string | ((val: any) => string)
     link: string | { name: string; query?: Record<string, string> }
     trend?: string
     trendClass?: string
@@ -121,19 +121,33 @@ const kpiDefinitions: Array<
       title: 'Novedades pendientes',
       subtext: 'Comunicaciones de observadores',
       icon: MailBox,
-      bgClass: 'bg-error',
-      iconContainerClass: 'bg-error/10',
-      iconClass: 'text-error',
-      valueClass: 'text-error',
+      bgClass: (val) => (Number(val) > 0 ? 'bg-error' : 'bg-text-muted'),
+      iconContainerClass: (val) => (Number(val) > 0 ? 'bg-error/10' : 'bg-surface-muted'),
+      iconClass: (val) => (Number(val) > 0 ? 'text-error' : 'text-text-muted'),
+      valueClass: (val) => (Number(val) > 0 ? 'text-error' : 'text-text'),
       link: { name: 'SistemaObservadoresNovedades', query: { tab: 'pendientes' } },
     },
   ]
 
 const kpis = computed(() =>
-  kpiDefinitions.map((definition) => ({
-    ...definition,
-    value: stats.value ? stats.value[definition.key] ?? '—' : '—',
-  }))
+  kpiDefinitions.map((definition) => {
+    const rawVal = stats.value ? stats.value[definition.key] : null
+    const value = rawVal ?? '—'
+
+    const resolveClass = (cls?: string | ((val: any) => string), defaultVal = '') => {
+      if (!cls) return defaultVal
+      return typeof cls === 'function' ? cls(rawVal) : cls
+    }
+
+    return {
+      ...definition,
+      value,
+      bgClass: resolveClass(definition.bgClass),
+      iconContainerClass: resolveClass(definition.iconContainerClass),
+      iconClass: resolveClass(definition.iconClass),
+      valueClass: resolveClass(definition.valueClass, 'text-text'),
+    }
+  })
 )
 
 const fetchKpis = async () => {
