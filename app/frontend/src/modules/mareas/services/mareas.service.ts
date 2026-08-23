@@ -184,7 +184,15 @@ const mareasService = {
     removeObservadorEtapa: async (mareaId: string, etapaId: string, observadorId: string): Promise<any> => {
         const { data } = await httpClient.delete(`/mareas/${mareaId}/etapas/${etapaId}/observadores/${observadorId}`);
         return data;
+    },
+
+    updateObservadorEtapa: async (mareaId: string, etapaId: string, observadorId: string, nuevoObservadorId: string): Promise<any> => {
+        const { data } = await httpClient.patch(`/mareas/${mareaId}/etapas/${etapaId}/observadores/${observadorId}`, {
+            nuevoObservadorId
+        });
+        return data;
     }
 };
 
 export default mareasService;
+

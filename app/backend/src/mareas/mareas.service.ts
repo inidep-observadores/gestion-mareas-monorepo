@@ -108,7 +108,19 @@ export class MareasService {
     }
 
     async update(id: string, updateMareaDto: UpdateMareaDto, files?: Array<Express.Multer.File>, user?: User) {
-        const { etapas, artePrincipalId, arteId, pesqueriaId, observadorId, observadorPrincipalId, archivosToDelete, ...data } = updateMareaDto;
+        const {
+            etapas,
+            artePrincipalId,
+            arteId,
+            pesqueriaId,
+            observadorId,
+            observadorPrincipalId,
+            observadoresSecundariosPlanificados,
+            buqueId,
+            archivosToDelete,
+            ...data
+        } = updateMareaDto;
+
 
         // 1. Obtención inicial de marea para validaciones de integridad
         const mareaActual = await this.prisma.marea.findUnique({
@@ -126,7 +138,7 @@ export class MareasService {
             (updateMareaDto.anioMarea !== undefined && updateMareaDto.anioMarea !== mareaActual.anioMarea) ||
             (updateMareaDto.nroMarea !== undefined && updateMareaDto.nroMarea !== mareaActual.nroMarea) ||
             (updateMareaDto.tipoMarea !== undefined && updateMareaDto.tipoMarea !== mareaActual.tipoMarea) ||
-            (updateMareaDto.buqueId !== undefined && updateMareaDto.buqueId !== mareaActual.buqueId) ||
+            (buqueId !== undefined && buqueId !== mareaActual.buqueId) ||
             (observadorPrincipalId !== undefined && observadorPrincipalId !== mareaActual.observadorPrincipalId) ||
             (pesqueriaId !== undefined && pesqueriaId !== mareaActual.pesqueriaId) ||
             (artePrincipalId !== undefined && artePrincipalId !== mareaActual.artePrincipalId);
@@ -233,17 +245,29 @@ export class MareasService {
                 return isNaN(d.getTime()) ? null : d;
             };
 
-            if (artePrincipalId !== undefined) updateData.artePrincipalId = artePrincipalId;
-            if (artePrincipalId === undefined && arteId !== undefined) updateData.artePrincipalId = arteId;
+            // Relaciones foráneas de Prisma
+            if (buqueId !== undefined && buqueId !== null) {
+                updateData.buque = { connect: { id: buqueId } };
+            }
+
+            const finalArteId = artePrincipalId !== undefined ? artePrincipalId : arteId;
+            if (finalArteId !== undefined) {
+                updateData.artePrincipal = finalArteId ? { connect: { id: finalArteId } } : { disconnect: true };
+            }
+
+            const finalObsId = observadorPrincipalId !== undefined ? observadorPrincipalId : observadorId;
+            if (finalObsId !== undefined) {
+                updateData.observadorPrincipal = finalObsId ? { connect: { id: finalObsId } } : { disconnect: true };
+            }
+
+            if (pesqueriaId !== undefined) {
+                updateData.pesqueria = pesqueriaId ? { connect: { id: pesqueriaId } } : { disconnect: true };
+            }
 
             if (updateMareaDto.fechaZarpadaEstimada !== undefined) updateData.fechaZarpadaEstimada = processDate(updateMareaDto.fechaZarpadaEstimada);
-
             if (updateMareaDto.fechaInicioObservador !== undefined) updateData.fechaInicioObservador = processDate(updateMareaDto.fechaInicioObservador);
             if (updateMareaDto.fechaFinObservador !== undefined) updateData.fechaFinObservador = processDate(updateMareaDto.fechaFinObservador);
             if (updateMareaDto.fechaProtocolizacion !== undefined) updateData.fechaProtocolizacion = processDate(updateMareaDto.fechaProtocolizacion);
-
-            if (observadorPrincipalId !== undefined) updateData.observadorPrincipalId = observadorPrincipalId;
-            if (pesqueriaId !== undefined) updateData.pesqueriaId = pesqueriaId;
 
             // Otros campos que pueden ser nulos
             if (updateMareaDto.diasZonaAustral !== undefined) updateData.diasZonaAustral = updateMareaDto.diasZonaAustral;
@@ -253,13 +277,14 @@ export class MareasService {
             if (updateMareaDto.tipoCalculoZonaAustral !== undefined) updateData.tipoCalculoZonaAustral = updateMareaDto.tipoCalculoZonaAustral;
 
             // Actualizar borrador de observadores secundarios en metadata
-            if (updateMareaDto.observadoresSecundariosPlanificados !== undefined) {
-                const metadataActual = (mareaActual as any).metadata as MareaMetadata || {};
+            if (observadoresSecundariosPlanificados !== undefined) {
+                const metadataActual = ((mareaActual as any).metadata as MareaMetadata) || {};
                 updateData.metadata = {
                     ...metadataActual,
-                    observadoresSecundariosPlanificados: updateMareaDto.observadoresSecundariosPlanificados
+                    observadoresSecundariosPlanificados: observadoresSecundariosPlanificados
                 } as MareaMetadata;
             }
+
 
             if (Object.keys(updateData).length > 0) {
                 await tx.marea.update({
@@ -1792,7 +1817,10 @@ export class MareasService {
                 puertoBaseCodigo: marea.buque.puertoBase?.codigoExterno,
                 estado: marea.estadoActual.nombre,
                 estado_codigo: marea.estadoActual.codigo,
-                observador: mainObs ? `${mainObs.nombre} ${mainObs.apellido} ` : 'No asignado',
+                observador: mainObs ? `${mainObs.nombre} ${mainObs.apellido}` : 'No asignado',
+                observadorPrincipalId: marea.observadorPrincipalId,
+                observador_principal_id: marea.observadorPrincipalId,
+                observadorPrincipal: marea.observadorPrincipal,
                 pesqueria: etapaFinal?.pesqueria?.nombre || 'General',
                 fecha_zarpada: fechaZarpada,
                 fecha_zarpada_estimada: marea.fechaZarpadaEstimada,
@@ -1823,7 +1851,8 @@ export class MareasService {
                     tipoEtapa: e.tipoEtapa,
                     observaciones: e.observaciones,
                     durationDays: MareaUtils.calculateStageDays(e),
-                    metadata: e.metadata
+                    metadata: e.metadata,
+                    observadores: e.observadores
                 }))
             },
             actions,
@@ -3854,4 +3883,20 @@ export class MareasService {
         await this.prisma.mareaEtapaObservador.delete({ where: { id: registro.id } });
         return this.findOne(mareaId);
     }
+
+    /** Actualiza/reemplaza un observador secundario de una etapa existente. */
+    async updateObservadorEtapa(mareaId: string, etapaId: string, observadorId: string, nuevoObservadorId: string, user: User) {
+        const registro = await this.prisma.mareaEtapaObservador.findFirst({ where: { etapaId, observadorId } });
+        if (!registro) throw new NotFoundException('El observador no se encuentra asignado a esta etapa.');
+
+        const nuevoObs = await this.prisma.observador.findUnique({ where: { id: nuevoObservadorId } });
+        if (!nuevoObs) throw new NotFoundException('El nuevo observador no existe.');
+
+        await this.prisma.mareaEtapaObservador.update({
+            where: { id: registro.id },
+            data: { observadorId: nuevoObservadorId }
+        });
+        return this.findOne(mareaId);
+    }
 }
+

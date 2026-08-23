@@ -6,6 +6,8 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 ## [Unreleased]
 
 ### Added
+- **mareas:** incorporar pestaña interna de gestión de observadores por etapa en `NavigationStagesEditor` con soporte para alta, edición y baja
+- **mareas:** visualizar observador principal en solo lectura dentro de la nómina de cada etapa y badge de dotación total con color condicional
 - **mareas:** implementar soporte para planificación y asignación de observadores secundarios en etapas de marea vía `metadata` JSONB
 - **mareas:** incorporar componente `ObservadoresSecundariosEditor` en diálogos de nueva marea y edición de designación
 - **mareas:** materializar automáticamente observadores secundarios planificados en `mareas_etapas_observadores` al iniciar marea y crear etapas
@@ -25,6 +27,9 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 - **admin:** unificar panel fijado superior y buscador en vistas de observadores
 
 ### Fixed
+- **mareas:** resolver persistencia de observadores en `getMareaContext` y clonación de etapas en `GestionEtapasMareaDialog`
+- **mareas:** corregir serialización de relaciones de Prisma en `update()` evitando pasar argumentos desconocidos como `buqueId`
+- **mareas:** corregir filtrado de observadores en `EditMareaDesignadaDialog` y resolución de nombres en `ObservadoresSecundariosEditor`
 - **planificacion:** resolver falsos conflictos de disponibilidad sin fecha fin en el simulador de cobertura
 - **planificacion:** unificar cálculo de conflictos en simulador para detectar correctamente no disponibilidades reales/virtuales y mareas reales/proyectadas
 - **planificacion:** garantizar IDs globales únicos por observador en Vis-Timeline para evitar colisiones y bloqueos de renderizado

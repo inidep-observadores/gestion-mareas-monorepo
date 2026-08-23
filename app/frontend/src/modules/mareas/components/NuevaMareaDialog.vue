@@ -207,6 +207,7 @@
 
             <NavigationStagesEditor v-model="form.etapas" :puerto-options="puertoOptions"
               :pesqueria-options="pesqueriaOptions" :default-pesqueria-id="form.pesqueriaId" :errors="fieldErrors"
+              :observador-principal-id="form.observadorId"
               :default-fecha-zarpada="form.fechaZarpadaEstimada" :puerto-base-id="form.puertoBaseId" :tipoMarea="form.tipoMarea" />
           </div>
 

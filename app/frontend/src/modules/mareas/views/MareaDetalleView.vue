@@ -279,54 +279,14 @@
 
           <NavigationStagesEditor v-model="etapas" :puertoOptions="puertoOptions" :pesqueriaOptions="pesqueriaOptions"
             :tipoMarea="marea?.tipo_marea"
+            :observadorPrincipalId="marea.observador_principal_id || marea.observadorPrincipalId || marea.id_observador_principal"
+            :observadorPrincipalNombre="marea.observador"
             :puertoBaseId="marea.puertoBaseId" :defaultPesqueriaId="marea.id_pesqueria" :readOnly="isReadOnly"
             :mareaId="marea.id" @action-success="(msg: string) => toast.success(msg)"
             @action-error="(msg: string) => toast.error(msg)" @action-warning="(msg: string) => toast.warning(msg)" />
         </div>
 
-        <!-- 3. Observadores Tab -->
-        <div v-if="activeTab === 'observadores'" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <div v-for="obs in observadores" :key="obs.id"
-            class="bg-surface border border-border rounded-2xl p-6 shadow-sm flex items-start gap-4">
-            <div
-              class="w-16 h-16 rounded-full bg-gradient-to-br from-primary/10 to-info/10 flex items-center justify-center text-primary font-extrabold text-xl border-2 border-primary/5">
-              {{ obs.iniciales }}
-            </div>
-            <div class="flex-1">
-              <div class="flex justify-between items-start mb-1">
-                <h4 class="font-bold text-text">
-                  {{ obs.nombre }} {{ obs.apellido }}
-                </h4>
-                <div
-                  class="text-[10px] font-black tracking-tighter px-1.5 py-0.5 bg-surface-muted rounded text-text-muted">
-                  ID {{ obs.codigo }}
-                </div>
-              </div>
-              <p class="text-xs text-primary font-bold mb-3">{{ obs.rol }}</p>
-              <div class="space-y-1 text-[11px] text-text-muted">
-                <div class="flex items-center gap-2">
-                  <CalenderIcon class="w-3 h-3" /> Inicio: {{ obs.inicio }}
-                </div>
-                <div class="flex items-center gap-2">
-                  <CalenderIcon class="w-3 h-3" /> Fin: {{ obs.fin || 'Activo' }}
-                </div>
-                <div class="flex items-center gap-2">
-                  <CheckIcon class="w-3 h-3" />
-                  Designado: {{ obs.es_designado ? 'Sí' : 'No' }}
-                </div>
-              </div>
-            </div>
-          </div>
-          <button v-if="!isReadOnly"
-            class="border-2 border-dashed border-border rounded-2xl p-6 flex flex-col items-center justify-center text-text-muted/40 hover:text-primary hover:border-primary/40 transition-all gap-2 group">
-            <div class="p-2 rounded-full group-hover:bg-primary/10 transition-colors">
-              <PlusIcon class="w-6 h-6" />
-            </div>
-            <span class="text-sm font-bold">Asignar Observador</span>
-          </button>
-        </div>
-
-        <!-- 4. Flujo Tab -->
+        <!-- 3. Flujo Tab -->
         <div v-if="activeTab === 'workflow'" class="max-w-3xl mx-auto w-full">
           <div class="relative pl-8 space-y-10 border-l-2 border-border ml-4">
             <div v-for="mov in movimientos" :key="mov.id" class="relative">
@@ -712,7 +672,6 @@ const canEditDesignationFields = computed(() => {
 const tabs = [
   { id: 'general', label: 'Datos Generales', icon: DocsIcon },
   { id: 'etapas', label: 'Etapas y Puertos', icon: MapPinIcon },
-  { id: 'observadores', label: 'Observadores', icon: BeakerIcon },
   { id: 'workflow', label: 'Movimientos', icon: HistoryIcon },
   { id: 'docs', label: 'Documentación', icon: FileTextIcon },
   { id: 'admin', label: 'Administrativo', icon: SettingsIcon },
@@ -858,7 +817,8 @@ async function loadMarea() {
     const p = await catalogosService.getPuertos()
     puertos.value = p
 
-    etapas.value = data.etapas?.map((e: any) => ({
+    const rawEtapas = data.etapas || data.marea?.etapas || []
+    etapas.value = rawEtapas.map((e: any) => ({
       id: e.id,
       nroEtapa: e.nroEtapa,
       puertoZarpadaId: e.puertoZarpadaId,
@@ -870,11 +830,18 @@ async function loadMarea() {
       pesqueriaId: e.pesqueriaId,
       metadata: e.metadata,
       observadores: e.observadores?.map((rel: any) => ({
+        id: rel.id,
+        etapaId: rel.etapaId || e.id,
         observadorId: rel.observadorId || rel.observador?.id,
         rol: rel.rol,
-        esDesignado: rel.esDesignado
+        esDesignado: rel.esDesignado,
+        observador: rel.observador ? {
+          id: rel.observador.id,
+          nombre: rel.observador.nombre,
+          apellido: rel.observador.apellido
+        } : undefined
       })) || []
-    })) || []
+    }))
 
     const observadoresMap = new Map<string, any>()
     data.etapas?.forEach((etapa: any) => {
@@ -1113,7 +1080,7 @@ const saveChanges = async () => {
       observaciones: etapa.observaciones || undefined,
       metadata: etapa.metadata,
       observadores: etapa.observadores?.map((obs: any) => ({
-        observadorId: obs.observadorId,
+        observadorId: obs.observadorId || obs.observador?.id || obs.id,
         rol: obs.rol,
         esDesignado: obs.esDesignado
       })) || []

@@ -236,8 +236,7 @@ const arteOptions = computed(() => artes.value.map(a => ({ value: a.id, label: a
 const buqueOptions = computed(() => buques.value.map(b => ({ value: b.id, label: b.nombreBuque })))
 const observadorOptions = computed(() => {
   return observadores.value
-    .filter(o => o.activo && o.disponible || o.id === form.value.observadorPrincipalId)
-    .sort((a, b) => a.apellido.localeCompare(b.apellido))
+    .sort((a, b) => (a.apellido || '').localeCompare(b.apellido || ''))
     .map(o => ({
       value: o.id,
       label: `${o.apellido}, ${o.nombre}`

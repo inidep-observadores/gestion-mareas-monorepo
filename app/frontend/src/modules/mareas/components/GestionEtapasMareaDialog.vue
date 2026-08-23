@@ -107,6 +107,8 @@
             <NavigationStagesEditor v-model="form.stages" :puertoOptions="puertoOptions"
               :pesqueriaOptions="pesqueriaOptions" :puertoBaseId="initialPortId || marea?.puertoBaseId"
               :defaultPesqueriaId="marea?.id_pesqueria || marea?.pesqueriaId" :minStages="mode === 'INICIAR' ? 1 : 0"
+              :observadorPrincipalId="marea?.observadorPrincipalId || marea?.observador_principal_id || (marea as any)?.observadorPrincipal?.id"
+              :observadorPrincipalNombre="(marea as any)?.observador || (marea as any)?.observadorPrincipal?.nombre"
               :mareaId="marea?.id" :tipoMarea="(marea?.tipoMarea || marea?.tipo_marea) as any"
               @action-success="(msg: string) => toast.success(msg)"
               @action-error="(msg: string) => toast.error(msg)"
@@ -318,7 +320,8 @@ watch(() => props.show, (val) => {
       tipoEtapa: s.tipoEtapa || TipoEtapa.EC,
       nroEtapa: s.nroEtapa || s.nro_etapa,
       fuentesZarpada: s.fuentesZarpada || null,
-      fuentesArribo: s.fuentesArribo || null
+      fuentesArribo: s.fuentesArribo || null,
+      observadores: s.observadores ? JSON.parse(JSON.stringify(s.observadores)) : []
     }));
     form.value.stages = clonedStages.sort((a, b) => (a.nroEtapa || 0) - (b.nroEtapa || 0));
 
@@ -440,7 +443,7 @@ function executeConfirmation() {
       fuentesZarpada: s.fuentesZarpada || null,
       fuentesArribo: s.fuentesArribo || null,
       observadores: s.observadores?.map((o: any) => ({
-        observadorId: o.observadorId,
+        observadorId: o.observadorId || o.observador?.id || o.id,
         rol: o.rol,
         esDesignado: o.esDesignado
       }))

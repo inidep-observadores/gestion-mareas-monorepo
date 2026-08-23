@@ -188,10 +188,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import type { ObservadorSecundarioPlanificado } from '../types/marea-metadata.types';
 import SearchableSelect from '@/components/common/SearchableSelect.vue';
 import { PlusIcon, Trash2Icon, PencilIcon, XIcon, UserIcon } from 'lucide-vue-next';
+import catalogosService, { type Observador } from '../services/catalogos.service';
 
 interface SelectOption {
   value: string;
@@ -202,12 +203,13 @@ interface SelectOption {
 const props = withDefaults(
   defineProps<{
     modelValue?: ObservadorSecundarioPlanificado[];
-    observadorOptions: SelectOption[];
+    observadorOptions?: SelectOption[];
     observadorPrincipalId?: string | null;
     readOnly?: boolean;
   }>(),
   {
     modelValue: () => [],
+    observadorOptions: () => [],
     observadorPrincipalId: null,
     readOnly: false
   }
@@ -216,6 +218,30 @@ const props = withDefaults(
 const emit = defineEmits<{
   (e: 'update:modelValue', value: ObservadorSecundarioPlanificado[]): void;
 }>();
+
+const internalObservadores = ref<Observador[]>([]);
+
+onMounted(async () => {
+  if (!props.observadorOptions || props.observadorOptions.length === 0) {
+    try {
+      internalObservadores.value = await catalogosService.getObservadores();
+    } catch (e) {
+      console.error('Error al cargar observadores para ObservadoresSecundariosEditor:', e);
+    }
+  }
+});
+
+const effectiveObserverOptions = computed(() => {
+  if (props.observadorOptions && props.observadorOptions.length > 0) {
+    return props.observadorOptions;
+  }
+  return internalObservadores.value
+    .sort((a, b) => (a.apellido || '').localeCompare(b.apellido || ''))
+    .map(o => ({
+      value: o.id,
+      label: `${o.apellido}, ${o.nombre}`
+    }));
+});
 
 const showAddForm = ref(false);
 const editingIndex = ref<number | null>(null);
@@ -242,13 +268,14 @@ const availableObserverOptions = computed(() => {
     selectedIds.add(props.observadorPrincipalId);
   }
 
-  return props.observadorOptions.filter(opt => !selectedIds.has(opt.value));
+  return effectiveObserverOptions.value.filter(opt => !selectedIds.has(opt.value));
 });
 
 const getObservadorLabel = (id: string): string => {
-  const found = props.observadorOptions.find(o => o.value === id);
-  return found ? found.label : 'Observador';
+  const found = effectiveObserverOptions.value.find(o => o.value === id);
+  return found ? found.label : (id ? 'Observador' : '');
 };
+
 
 const formatEtapasCoverage = (item: ObservadorSecundarioPlanificado): string => {
   const desde = item.etapaDesde || 1;

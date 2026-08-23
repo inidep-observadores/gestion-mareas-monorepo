@@ -363,5 +363,23 @@ export class MareasController {
     ) {
         return this.mareasService.removeObservadorEtapa(id, etapaId, observadorId, user);
     }
+
+    @Patch(':id/etapas/:etapaId/observadores/:observadorId')
+    @Auth(ValidRoles.admin, ValidRoles.tecnico)
+    @AuditEvent({
+        tipoEvento: 'ACTUALIZAR_OBSERVADOR_ETAPA',
+        categoria: AuditCategoria.MAREAS,
+        descripcion: 'Actualizacion o reemplazo de observador secundario de una etapa'
+    })
+    updateObservadorEtapa(
+        @Param('id') id: string,
+        @Param('etapaId') etapaId: string,
+        @Param('observadorId') observadorId: string,
+        @Body('nuevoObservadorId') nuevoObservadorId: string,
+        @GetUser() user: User
+    ) {
+        return this.mareasService.updateObservadorEtapa(id, etapaId, observadorId, nuevoObservadorId, user);
+    }
 }
+
 
