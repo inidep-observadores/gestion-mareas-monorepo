@@ -288,14 +288,26 @@
           <div v-if="currentTab === 'observadores'" class="space-y-6">
             <h2 class="text-lg font-bold text-text">Tripulación Científica</h2>
 
-            <!-- Placeholder for now -->
-            <div class="bg-surface rounded-xl border border-border p-8 text-center">
-              <UserGroupIcon class="w-12 h-12 text-text-muted/20 mx-auto mb-3" />
-              <h3 class="text-text font-bold uppercase tracking-tight">Gestión de Observadores</h3>
-              <p class="text-xs text-text-muted mt-1 max-w-sm mx-auto">La asignación avanzada de observadores por etapa
-                estará disponible próximamente. Puedes ver los asignados en la vista de detalle.</p>
+            <div class="bg-surface rounded-xl border border-border p-6 shadow-sm space-y-6">
+              <!-- Observador Principal -->
+              <div class="space-y-1.5 max-w-xl">
+                <label class="block text-sm font-medium text-text-muted">Observador Principal</label>
+                <SearchableSelect v-model="form.observadorId" :options="observadorOptions"
+                  placeholder="Seleccione observador principal..." :disabled="!canEditCriticalFields" />
+              </div>
+
+              <!-- Observadores Secundarios Planificados (Borrador) -->
+              <div class="pt-4 border-t border-border">
+                <ObservadoresSecundariosEditor
+                  v-model="form.observadoresSecundariosPlanificados"
+                  :observador-options="observadorOptions"
+                  :observador-principal-id="form.observadorId"
+                  :read-only="!canEditCriticalFields"
+                />
+              </div>
             </div>
           </div>
+
 
         </main>
       </div>
@@ -323,6 +335,8 @@ import SettingsIcon from '@/icons/SettingsIcon.vue';
 import MapPinIcon from '@/icons/MapPinIcon.vue';
 import UserGroupIcon from '@/icons/UserGroupIcon.vue';
 import RefreshIcon from '@/icons/RefreshIcon.vue';
+import ObservadoresSecundariosEditor from '../components/ObservadoresSecundariosEditor.vue';
+import type { ObservadorSecundarioPlanificado } from '../types/marea-metadata.types';
 import ZonaAustralDetalle from '../components/ZonaAustralDetalle.vue';
 import type { ZonaAustralResponse } from '../types/marea.types';
 
@@ -352,8 +366,6 @@ const currentTab = ref('general');
 
 import { TipoCalculoZonaAustral } from '../types/marea.types';
 
-// ... (other imports)
-
 const form = ref({
   nroMarea: null,
   anioMarea: null,
@@ -362,29 +374,24 @@ const form = ref({
   fechaZarpadaEstimada: '',
   observadorId: '',
   descripcion: '',
-  tipoCalculoZonaAustral: TipoCalculoZonaAustral.AUTOMATICO
+  tipoCalculoZonaAustral: TipoCalculoZonaAustral.AUTOMATICO,
+  observadoresSecundariosPlanificados: [] as ObservadorSecundarioPlanificado[]
 });
 
 function checkManualMode() {
   const currentVal = form.value.diasZonaAustral;
-
 
   if (zonaAustralData.value) {
     const val = Number(currentVal);
     const calculated = Number(zonaAustralData.value.totalDiasMarea);
 
     if (val === calculated) {
-
       form.value.tipoCalculoZonaAustral = TipoCalculoZonaAustral.AUTOMATICO;
     } else {
-
       form.value.tipoCalculoZonaAustral = TipoCalculoZonaAustral.MANUAL;
     }
-  } else {
-
   }
 }
-
 
 const modoCalculoTexto = computed(() => {
   return form.value.tipoCalculoZonaAustral === TipoCalculoZonaAustral.AUTOMATICO
@@ -409,7 +416,6 @@ async function loadZonaAustralData() {
     loadingZonaAustral.value = false;
   }
 }
-
 
 const observadores = ref<Observador[]>([]);
 const originalObservadorId = ref<string | null>(null);
@@ -453,10 +459,8 @@ onMounted(async () => {
     marea.value = data;
     observadores.value = obsList;
 
-
-
     const etapaPrincipal = data.etapas?.find((e: any) => e.nroEtapa === 1) || data.etapas?.[0];
-    const currentObsId = etapaPrincipal?.observadores?.find((o: any) => o.rol === 'PRINCIPAL')?.observadorId || '';
+    const currentObsId = data.observadorPrincipalId || etapaPrincipal?.observadores?.find((o: any) => o.rol === 'PRINCIPAL')?.observadorId || '';
     originalObservadorId.value = currentObsId;
 
     // Helper to get local YYYY-MM-DD
@@ -470,6 +474,17 @@ onMounted(async () => {
       return `${year}-${month}-${day}`;
     };
 
+    let planificados: ObservadorSecundarioPlanificado[] = [];
+    const rawMeta = data.metadata;
+    if (rawMeta) {
+      try {
+        const parsed = typeof rawMeta === 'string' ? JSON.parse(rawMeta) : rawMeta;
+        planificados = parsed.observadoresSecundariosPlanificados || [];
+      } catch {
+        planificados = [];
+      }
+    }
+
     // Init form
     form.value = {
       nroMarea: data.nroMarea,
@@ -479,7 +494,8 @@ onMounted(async () => {
       fechaZarpadaEstimada: toLocalISO(data.fechaZarpadaEstimada),
       observadorId: currentObsId,
       descripcion: data.descripcion || '',
-      tipoCalculoZonaAustral: data.tipoCalculoZonaAustral || 'AUTOMATICO'
+      tipoCalculoZonaAustral: data.tipoCalculoZonaAustral || 'AUTOMATICO',
+      observadoresSecundariosPlanificados: planificados
     };
     initialForm.value = JSON.parse(JSON.stringify(form.value));
 
@@ -492,8 +508,6 @@ onMounted(async () => {
   }
 });
 
-
-
 async function handleSave() {
   try {
     saving.value = true;
@@ -501,14 +515,14 @@ async function handleSave() {
     // Prepare payload
     const payload = {
       ...form.value,
-      // Convertir fechas vacías a null si fuera necesario, o dejar string ISO
+      observadorPrincipalId: form.value.observadorId || null,
       fechaZarpadaEstimada: form.value.fechaZarpadaEstimada ? new Date(form.value.fechaZarpadaEstimada).toISOString() : null,
       diasZonaAustral: Number(form.value.diasZonaAustral),
-      tipoCalculoZonaAustral: form.value.tipoCalculoZonaAustral
+      tipoCalculoZonaAustral: form.value.tipoCalculoZonaAustral,
+      observadoresSecundariosPlanificados: form.value.observadoresSecundariosPlanificados
     };
 
     await mareasService.update(marea.value.id, payload);
-    // Reload to refresh data
     const fresh = await mareasService.getById(marea.value.id);
     marea.value = fresh;
 
@@ -517,6 +531,7 @@ async function handleSave() {
     setTimeout(() => {
       router.back();
     }, 800);
+
 
   } catch (e: any) {
     console.error("Error guardando marea", e);

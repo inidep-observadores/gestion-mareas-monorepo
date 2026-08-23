@@ -1807,6 +1807,7 @@ export class MareasService {
                 desestimada: marea.desestimada || false,
                 observaciones: marea.observaciones || '',
                 alertas: activeAlerts,
+                metadata: marea.metadata,
                 etapas: marea.etapas.map((e: any) => ({
                     id: e.id,
                     nroEtapa: e.nroEtapa,

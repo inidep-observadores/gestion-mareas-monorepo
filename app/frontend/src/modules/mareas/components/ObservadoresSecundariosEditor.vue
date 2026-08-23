@@ -30,7 +30,8 @@
       <div
         v-for="(item, index) in modelValue"
         :key="item.observadorId || index"
-        class="flex items-center justify-between p-3 bg-surface border border-border rounded-xl hover:border-primary/30 transition-all text-xs"
+        class="flex items-center justify-between p-3 bg-surface border border-border rounded-xl hover:border-primary/30 transition-all text-xs group"
+        :class="{ 'ring-2 ring-primary/40 border-primary': showAddForm && editingIndex === index }"
       >
         <div class="flex items-center gap-3">
           <div class="w-7 h-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center font-bold text-[11px] shrink-0">
@@ -51,15 +52,24 @@
           </div>
         </div>
 
-        <button
-          v-if="!readOnly"
-          type="button"
-          @click="removeObservador(index)"
-          class="p-1.5 text-text-muted hover:text-error hover:bg-error/10 rounded-lg transition-colors"
-          title="Eliminar observador planificado"
-        >
-          <Trash2Icon class="w-4 h-4" />
-        </button>
+        <div v-if="!readOnly" class="flex items-center gap-1">
+          <button
+            type="button"
+            @click="editObservador(index)"
+            class="p-1.5 text-text-muted hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
+            title="Editar observador planificado"
+          >
+            <PencilIcon class="w-3.5 h-3.5" />
+          </button>
+          <button
+            type="button"
+            @click="removeObservador(index)"
+            class="p-1.5 text-text-muted hover:text-error hover:bg-error/10 rounded-lg transition-colors"
+            title="Eliminar observador planificado"
+          >
+            <Trash2Icon class="w-4 h-4" />
+          </button>
+        </div>
       </div>
     </div>
 
@@ -73,14 +83,14 @@
       </p>
     </div>
 
-    <!-- Formulario Inline para Agregar / Planificar Observador -->
+    <!-- Formulario Inline para Agregar / Editar Observador -->
     <div
       v-if="showAddForm && !readOnly"
       class="p-4 bg-primary/5 border border-primary/20 rounded-xl space-y-3 animate-in fade-in zoom-in-95 duration-200"
     >
       <div class="flex items-center justify-between pb-2 border-b border-primary/10">
         <span class="text-xs font-black uppercase tracking-wider text-primary">
-          Nuevo Observador Secundario
+          {{ editingIndex !== null ? 'Editar Observador Secundario' : 'Nuevo Observador Secundario' }}
         </span>
         <button
           type="button"
@@ -170,7 +180,7 @@
           @click="saveObservador"
           class="px-4 py-1.5 text-xs font-black uppercase tracking-wider bg-primary text-primary-fg hover:bg-primary-hover rounded-lg transition-all active:scale-95 shadow-sm"
         >
-          Confirmar
+          {{ editingIndex !== null ? 'Guardar Cambios' : 'Agregar al Borrador' }}
         </button>
       </div>
     </div>
@@ -181,7 +191,7 @@
 import { ref, computed } from 'vue';
 import type { ObservadorSecundarioPlanificado } from '../types/marea-metadata.types';
 import SearchableSelect from '@/components/common/SearchableSelect.vue';
-import { PlusIcon, Trash2Icon, XIcon, UserIcon } from 'lucide-vue-next';
+import { PlusIcon, Trash2Icon, PencilIcon, XIcon, UserIcon } from 'lucide-vue-next';
 
 interface SelectOption {
   value: string;
@@ -208,6 +218,7 @@ const emit = defineEmits<{
 }>();
 
 const showAddForm = ref(false);
+const editingIndex = ref<number | null>(null);
 const hastaFinDeMarea = ref(true);
 const formError = ref('');
 
@@ -218,12 +229,19 @@ const newEntry = ref<ObservadorSecundarioPlanificado>({
   notas: ''
 });
 
-// Filtrar opciones para no permitir elegir al observador principal ni a los ya agregados
+// Filtrar opciones para no permitir elegir al observador principal ni a los ya agregados (excepto el que se está editando)
 const availableObserverOptions = computed(() => {
-  const selectedIds = new Set((props.modelValue || []).map(o => o.observadorId));
+  const currentItems = props.modelValue || [];
+  const selectedIds = new Set(
+    currentItems
+      .filter((_, idx) => editingIndex.value === null || idx !== editingIndex.value)
+      .map(o => o.observadorId)
+  );
+
   if (props.observadorPrincipalId) {
     selectedIds.add(props.observadorPrincipalId);
   }
+
   return props.observadorOptions.filter(opt => !selectedIds.has(opt.value));
 });
 
@@ -246,6 +264,7 @@ const formatEtapasCoverage = (item: ObservadorSecundarioPlanificado): string => 
 
 const openAddForm = () => {
   formError.value = '';
+  editingIndex.value = null;
   hastaFinDeMarea.value = true;
   newEntry.value = {
     observadorId: '',
@@ -256,8 +275,25 @@ const openAddForm = () => {
   showAddForm.value = true;
 };
 
+const editObservador = (index: number) => {
+  const item = (props.modelValue || [])[index];
+  if (!item) return;
+
+  formError.value = '';
+  editingIndex.value = index;
+  hastaFinDeMarea.value = item.etapaHasta === null || item.etapaHasta === undefined;
+  newEntry.value = {
+    observadorId: item.observadorId,
+    etapaDesde: item.etapaDesde || 1,
+    etapaHasta: item.etapaHasta ?? null,
+    notas: item.notas || ''
+  };
+  showAddForm.value = true;
+};
+
 const closeAddForm = () => {
   showAddForm.value = false;
+  editingIndex.value = null;
   formError.value = '';
 };
 
@@ -277,23 +313,32 @@ const saveObservador = () => {
     return;
   }
 
-  const updated = [
-    ...(props.modelValue || []),
-    {
-      observadorId: newEntry.value.observadorId,
-      etapaDesde: desde,
-      etapaHasta: hasta,
-      notas: newEntry.value.notas?.trim() || undefined
-    }
-  ];
+  const entryData: ObservadorSecundarioPlanificado = {
+    observadorId: newEntry.value.observadorId,
+    etapaDesde: desde,
+    etapaHasta: hasta,
+    notas: newEntry.value.notas?.trim() || undefined
+  };
 
-  emit('update:modelValue', updated);
+  const current = [...(props.modelValue || [])];
+
+  if (editingIndex.value !== null && editingIndex.value >= 0 && editingIndex.value < current.length) {
+    current[editingIndex.value] = entryData;
+  } else {
+    current.push(entryData);
+  }
+
+  emit('update:modelValue', current);
   closeAddForm();
 };
 
 const removeObservador = (index: number) => {
+  if (editingIndex.value === index) {
+    closeAddForm();
+  }
   const current = [...(props.modelValue || [])];
   current.splice(index, 1);
   emit('update:modelValue', current);
 };
 </script>
+

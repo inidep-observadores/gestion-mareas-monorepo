@@ -206,6 +206,7 @@ import {
 const props = defineProps<{
   show: boolean
   mareaId: string
+  initialData?: any
 }>()
 
 const emit = defineEmits(['close', 'success'])
@@ -265,24 +266,33 @@ const getInitialForm = () => {
     observadoresSecundariosPlanificados: [] as ObservadorSecundarioPlanificado[],
   };
 
+  let planificados: ObservadorSecundarioPlanificado[] = [];
   const rawMetadata: any = mareaData.value.metadata;
-  const planificados: ObservadorSecundarioPlanificado[] = rawMetadata?.observadoresSecundariosPlanificados || [];
+  if (rawMetadata) {
+    try {
+      const parsed = typeof rawMetadata === 'string' ? JSON.parse(rawMetadata) : rawMetadata;
+      planificados = parsed.observadoresSecundariosPlanificados || [];
+    } catch {
+      planificados = [];
+    }
+  }
 
   return {
     tipoMarea: mareaData.value.tipoMarea || 'MC',
     buqueId: mareaData.value.buqueId || '',
     anioMarea: mareaData.value.anioMarea || new Date().getFullYear(),
     nroMarea: mareaData.value.nroMarea || null,
-    observadorPrincipalId: mareaData.value.observadorPrincipalId || '',
-    pesqueriaId: mareaData.value.pesqueriaId || '',
-    artePrincipalId: mareaData.value.artePrincipalId || '',
+    observadorPrincipalId: mareaData.value.observadorPrincipalId || (mareaData.value as any).observador_principal_id || '',
+    pesqueriaId: mareaData.value.pesqueriaId || (mareaData.value as any).id_pesqueria || '',
+    artePrincipalId: mareaData.value.artePrincipalId || (mareaData.value as any).id_arte_principal || '',
 
-    fechaZarpadaEstimada: mareaData.value.fechaZarpadaEstimada || null,
-    diasEstimados: mareaData.value.diasEstimados || null,
-    iniciaEnProspeccion: mareaData.value.iniciaEnProspeccion ?? false,
+    fechaZarpadaEstimada: mareaData.value.fechaZarpadaEstimada || (mareaData.value as any).fecha_zarpada_estimada || null,
+    diasEstimados: mareaData.value.diasEstimados || (mareaData.value as any).dias_estimados || null,
+    iniciaEnProspeccion: mareaData.value.iniciaEnProspeccion ?? (mareaData.value as any).inicia_en_prospeccion ?? false,
     observadoresSecundariosPlanificados: [...planificados]
   }
 }
+
 
 const form = ref(getInitialForm())
 
