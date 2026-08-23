@@ -2025,6 +2025,8 @@ export class MareasService {
                 metadata: stg.metadata ?? undefined
             };
 
+            let etapaIdFinal = stg.id;
+
             if (stg.id) {
                 // Para actualizaciones, solo incluimos fuentes si vienen en el payload
                 // de lo contrario Prisma ignorará el campo si es undefined
@@ -2045,8 +2047,41 @@ export class MareasService {
                         ...stageData
                     }
                 });
+                etapaIdFinal = newStage.id;
+            }
 
-                // Materializar observadores secundarios planificados para este número de etapa
+            // Sincronización de observadores de la etapa
+            if (Array.isArray(stg.observadores) && stg.observadores.length > 0) {
+                const incomingObsIds = stg.observadores.map((o: any) => o.observadorId).filter(Boolean);
+                
+                await tx.mareaEtapaObservador.deleteMany({
+                    where: {
+                        etapaId: etapaIdFinal,
+                        observadorId: { notIn: incomingObsIds }
+                    }
+                });
+
+                for (const obs of stg.observadores) {
+                    if (!obs.observadorId) continue;
+                    const yaExiste = await tx.mareaEtapaObservador.findFirst({
+                        where: { etapaId: etapaIdFinal, observadorId: obs.observadorId }
+                    });
+                    if (!yaExiste) {
+                        await tx.mareaEtapaObservador.create({
+                            data: {
+                                etapaId: etapaIdFinal,
+                                observadorId: obs.observadorId,
+                                rol: obs.rol || 'SECUNDARIO',
+                                esDesignado: obs.esDesignado ?? true
+                            }
+                        });
+                    }
+                }
+
+                // Limpiar del borrador los observadores que han sido persistidos en esta etapa
+                await this.limpiarBorradorPlanificadosEtapa(tx, mareaId, stageData.nroEtapa, incomingObsIds);
+            } else if (!stg.id) {
+                // Para etapas nuevas sin observadores explícitos (ej: creadas automáticamente por PNA/Tracking)
                 await this.materializarObservadoresPlanificados(tx, mareaId, stageData.nroEtapa, null);
             }
         }
@@ -3727,6 +3762,55 @@ export class MareasService {
     // ─────────────────────────────────────────────────────────────────────────
 
     /**
+     * Limpia o actualiza las entradas del borrador de observadores planificados
+     * que han sido asignadas o materializadas para una etapa concreta.
+     */
+    async limpiarBorradorPlanificadosEtapa(
+        tx: any,
+        mareaId: string,
+        nroEtapa: number,
+        observadoresIdsAsignados: string[]
+    ): Promise<void> {
+        const mareaData = await (tx.marea as any).findUnique({
+            where: { id: mareaId },
+            select: { metadata: true }
+        });
+        if (!mareaData?.metadata) return;
+
+        const metadata = (mareaData.metadata as MareaMetadata) || {};
+        const borrador = metadata.observadoresSecundariosPlanificados ?? [];
+        if (borrador.length === 0) return;
+
+        const restantes: any[] = [];
+        for (const obs of borrador) {
+            const desde = obs.etapaDesde ?? 1;
+            const hasta = obs.etapaHasta;
+
+            // Si esta entrada cubre la etapa actual y el observador fue asignado
+            if (nroEtapa >= desde && (hasta === null || hasta === undefined || nroEtapa <= hasta)) {
+                if (observadoresIdsAsignados.includes(obs.observadorId)) {
+                    // Si concluía en esta etapa (hasta <= nroEtapa), se consume totalmente y no se añade a restantes
+                    if (hasta && hasta <= nroEtapa) {
+                        continue;
+                    }
+                    // Si continuaba para etapas posteriores (hasta > nroEtapa o null), actualizamos etapaDesde a nroEtapa + 1
+                    restantes.push({
+                        ...obs,
+                        etapaDesde: nroEtapa + 1
+                    });
+                    continue;
+                }
+            }
+            restantes.push(obs);
+        }
+
+        await (tx.marea as any).update({
+            where: { id: mareaId },
+            data: { metadata: { ...metadata, observadoresSecundariosPlanificados: restantes } }
+        });
+    }
+
+    /**
      * Materializa observadores secundarios planificados para un numero de etapa.
      * Puede ser llamado como public para reutilizacion en syncStages y REGISTRAR_INICIO.
      */
@@ -3762,6 +3846,7 @@ export class MareasService {
 
         if (!etapa) return;
 
+        const asignados: string[] = [];
         for (const obs of aplicables) {
             const observador = await tx.observador.findUnique({
                 where: { id: obs.observadorId },
@@ -3785,19 +3870,11 @@ export class MareasService {
                 });
                 this.logger.debug(`Obs. secundario ${observador.nombre} ${observador.apellido} materializado en Etapa #${nroEtapa} de marea ${mareaId}.`);
             }
+            asignados.push(obs.observadorId);
         }
 
-        // Limpiar entradas consumidas del borrador
-        const restantes = borrador.filter((obs: any) => {
-            const hasta = obs.etapaHasta;
-            if (hasta === null || hasta === undefined) return true;
-            return nroEtapa < hasta;
-        });
-
-        await (tx.marea as any).update({
-            where: { id: mareaId },
-            data: { metadata: { ...metadata, observadoresSecundariosPlanificados: restantes } }
-        });
+        // Limpiar o avanzar las entradas consumidas del borrador
+        await this.limpiarBorradorPlanificadosEtapa(tx, mareaId, nroEtapa, asignados);
     }
 
 

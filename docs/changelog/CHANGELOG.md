@@ -6,6 +6,8 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 ## [Unreleased]
 
 ### Added
+- **mareas:** incorporar precarga automática de observadores secundarios planificados al crear o iniciar etapas en `GestionEtapasMareaDialog` y `NavigationStagesEditor`
+- **mareas:** depurar y avanzar progresivamente el borrador de observadores planificados en `metadata` al materializar o asignar etapas
 - **mareas:** incorporar pestaña interna de gestión de observadores por etapa en `NavigationStagesEditor` con soporte para alta, edición y baja
 - **mareas:** visualizar observador principal en solo lectura dentro de la nómina de cada etapa y badge de dotación total con color condicional
 - **mareas:** implementar soporte para planificación y asignación de observadores secundarios en etapas de marea vía `metadata` JSONB

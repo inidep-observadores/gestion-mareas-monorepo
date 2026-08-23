@@ -281,6 +281,7 @@
             :tipoMarea="marea?.tipo_marea"
             :observadorPrincipalId="marea.observador_principal_id || marea.observadorPrincipalId || marea.id_observador_principal"
             :observadorPrincipalNombre="marea.observador"
+            :observadoresPlanificados="(marea as any)?.metadata?.observadoresSecundariosPlanificados || (marea as any)?.observadoresSecundariosPlanificados || []"
             :puertoBaseId="marea.puertoBaseId" :defaultPesqueriaId="marea.id_pesqueria" :readOnly="isReadOnly"
             :mareaId="marea.id" @action-success="(msg: string) => toast.success(msg)"
             @action-error="(msg: string) => toast.error(msg)" @action-warning="(msg: string) => toast.warning(msg)" />

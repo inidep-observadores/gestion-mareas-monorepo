@@ -109,6 +109,7 @@
               :defaultPesqueriaId="marea?.id_pesqueria || marea?.pesqueriaId" :minStages="mode === 'INICIAR' ? 1 : 0"
               :observadorPrincipalId="marea?.observadorPrincipalId || marea?.observador_principal_id || (marea as any)?.observadorPrincipal?.id"
               :observadorPrincipalNombre="(marea as any)?.observador || (marea as any)?.observadorPrincipal?.nombre"
+              :observadoresPlanificados="mareaObservadoresPlanificados"
               :mareaId="marea?.id" :tipoMarea="(marea?.tipoMarea || marea?.tipo_marea) as any"
               @action-success="(msg: string) => toast.success(msg)"
               @action-error="(msg: string) => toast.error(msg)"
@@ -285,9 +286,42 @@ function checkManualMode() {
   }
 }
 
+const mareaObservadoresPlanificados = computed(() => {
+  const rawMeta = (props.marea as any)?.metadata;
+  let planificados: any[] = [];
+  if (rawMeta) {
+    try {
+      const parsed = typeof rawMeta === 'string' ? JSON.parse(rawMeta) : rawMeta;
+      planificados = parsed.observadoresSecundariosPlanificados || [];
+    } catch {
+      planificados = [];
+    }
+  }
+  if (planificados.length === 0 && (props.marea as any)?.observadoresSecundariosPlanificados) {
+    planificados = (props.marea as any).observadoresSecundariosPlanificados;
+  }
+  return planificados;
+});
+
+function getPlanificadosEtapa(nroEtapa: number) {
+  return mareaObservadoresPlanificados.value
+    .filter((p: any) => {
+      const desde = p.etapaDesde ?? 1;
+      const hasta = p.etapaHasta ?? Infinity;
+      return nroEtapa >= desde && nroEtapa <= hasta;
+    })
+    .map((p: any) => ({
+      observadorId: p.observadorId,
+      rol: 'SECUNDARIO',
+      esDesignado: true
+    }));
+}
+
 // Initial stage creation logic
 const addInitialStage = () => {
   if (form.value.stages.length > 0) return;
+
+  const obsEtapa1 = getPlanificadosEtapa(1);
 
   form.value.stages.push({
     id: null,
@@ -298,7 +332,8 @@ const addInitialStage = () => {
     fechaArribo: '',
     pesqueriaId: props.marea?.id_pesqueria || props.marea?.pesqueriaId || '',
     tipoEtapa: (props.marea?.tipoMarea || props.marea?.tipo_marea) === 'CI' ? TipoEtapa.EI : TipoEtapa.EC,
-    observaciones: ''
+    observaciones: '',
+    observadores: obsEtapa1
   });
 };
 
@@ -325,8 +360,12 @@ watch(() => props.show, (val) => {
     }));
     form.value.stages = clonedStages.sort((a, b) => (a.nroEtapa || 0) - (b.nroEtapa || 0));
 
-    if (props.mode === 'INICIAR' && form.value.stages.length === 0) {
-      addInitialStage();
+    if (props.mode === 'INICIAR') {
+      if (form.value.stages.length === 0) {
+        addInitialStage();
+      } else if (!form.value.stages[0].observadores || form.value.stages[0].observadores.length === 0) {
+        form.value.stages[0].observadores = getPlanificadosEtapa(1);
+      }
     }
 
     if (props.mode === 'FINALIZAR' && !form.value.fechaFin && form.value.stages.length > 0) {

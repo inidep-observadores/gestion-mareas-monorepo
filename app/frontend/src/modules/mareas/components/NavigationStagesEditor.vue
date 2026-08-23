@@ -426,6 +426,7 @@ const props = defineProps<{
   observadorOptions?: any[];
   observadorPrincipalId?: string | null;
   observadorPrincipalNombre?: string | null;
+  observadoresPlanificados?: any[];
   puertoBaseId?: string;
   defaultPesqueriaId?: string;
   readOnly?: boolean;
@@ -773,9 +774,25 @@ async function addStage() {
     defaultFechaZarpada = '';
   }
 
+  const newNroEtapa = currentStages.length + 1;
+  let autoObservadores: any[] = [];
+  if (props.observadoresPlanificados && props.observadoresPlanificados.length > 0) {
+    autoObservadores = props.observadoresPlanificados
+      .filter((p: any) => {
+        const desde = p.etapaDesde ?? 1;
+        const hasta = p.etapaHasta ?? Infinity;
+        return newNroEtapa >= desde && newNroEtapa <= hasta;
+      })
+      .map((p: any) => ({
+        observadorId: p.observadorId,
+        rol: 'SECUNDARIO',
+        esDesignado: true
+      }));
+  }
+
   currentStages.push({
     id: null,
-    nroEtapa: currentStages.length + 1,
+    nroEtapa: newNroEtapa,
     puertoZarpadaId: defaultPuertoZarpada,
     fechaZarpada: defaultFechaZarpada,
     puertoArriboId: '',
@@ -783,7 +800,7 @@ async function addStage() {
     pesqueriaId: defaultPesqueria,
     tipoEtapa: props.tipoMarea === TipoMarea.CI ? TipoEtapa.EI : TipoEtapa.EC,
     observaciones: '',
-    observadores: []
+    observadores: autoObservadores
   });
 
   emit('update:modelValue', currentStages);
