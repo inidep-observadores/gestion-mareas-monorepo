@@ -3,32 +3,44 @@
     <div class="sticky top-[56px] lg:top-[72px] z-30 bg-surface pt-2 pb-2 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 border-b border-border mb-6">
       <BackButton routeName="SistemaObservadores" label="Regresar al Panel" class="mb-4" />
       
-      <div class="flex gap-6 overflow-x-auto">
-        <button 
-          @click="activeTab = 'historial'" 
-          class="pb-3 px-1 border-b-2 font-bold transition-colors whitespace-nowrap"
-          :class="activeTab === 'historial' ? 'border-primary text-primary' : 'border-transparent text-text-muted hover:text-text'"
-        >
-          Historial Completo
-        </button>
-        <button 
-          @click="activeTab = 'pendientes'" 
-          class="pb-3 px-1 border-b-2 font-bold transition-colors whitespace-nowrap flex items-center gap-2"
-          :class="activeTab === 'pendientes' ? 'border-primary text-primary' : 'border-transparent text-text-muted hover:text-text'"
-        >
-          Bandeja de Pendientes
-          <span v-if="pendientesCount > 0" class="bg-error text-white text-[10px] px-2 py-0.5 rounded-full">
-            {{ pendientesCount }}
-          </span>
-        </button>
-        <button 
-          v-show="false"
-          @click="activeTab = 'calendario'" 
-          class="pb-3 px-1 border-b-2 font-bold transition-colors whitespace-nowrap"
-          :class="activeTab === 'calendario' ? 'border-primary text-primary' : 'border-transparent text-text-muted hover:text-text'"
-        >
-          Calendario
-        </button>
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <!-- Tabs a la izquierda -->
+        <div class="flex gap-6 overflow-x-auto">
+          <button 
+            @click="activeTab = 'historial'" 
+            class="pb-3 px-1 border-b-2 font-bold transition-colors whitespace-nowrap"
+            :class="activeTab === 'historial' ? 'border-primary text-primary' : 'border-transparent text-text-muted hover:text-text'"
+          >
+            Historial Completo
+          </button>
+          <button 
+            @click="activeTab = 'pendientes'" 
+            class="pb-3 px-1 border-b-2 font-bold transition-colors whitespace-nowrap flex items-center gap-2"
+            :class="activeTab === 'pendientes' ? 'border-primary text-primary' : 'border-transparent text-text-muted hover:text-text'"
+          >
+            Bandeja de Pendientes
+            <span v-if="pendientesCount > 0" class="bg-error text-white text-[10px] px-2 py-0.5 rounded-full">
+              {{ pendientesCount }}
+            </span>
+          </button>
+          <button 
+            v-show="false"
+            @click="activeTab = 'calendario'" 
+            class="pb-3 px-1 border-b-2 font-bold transition-colors whitespace-nowrap"
+            :class="activeTab === 'calendario' ? 'border-primary text-primary' : 'border-transparent text-text-muted hover:text-text'"
+          >
+            Calendario
+          </button>
+        </div>
+
+        <!-- Buscador de texto en el panel superior a la derecha de los tabs -->
+        <div class="pb-2 md:pb-1 w-full md:w-auto">
+          <SearchInput
+            v-model="searchQuery"
+            placeholder="Buscar novedad por observador o motivo..."
+            class="w-full sm:w-72 md:w-80 lg:w-96"
+          />
+        </div>
       </div>
     </div>
 
@@ -37,62 +49,72 @@
         <BaseDataList 
           v-if="activeTab !== 'calendario'"
           title="Gestión de Novedades" 
-      description="Administración de licencias, francos compensatorios y otras novedades de los observadores."
-      :items="filteredNovedades"
-      :is-loading="isLoading" 
-      v-model:search="searchQuery" 
-      search-placeholder="Buscar novedad por observador o motivo...">
+          description="Administración de licencias, francos compensatorios y otras novedades de los observadores."
+          :items="filteredNovedades"
+          :is-loading="isLoading" 
+          :show-search="false"
+        >
+          <template #filters>
+            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 w-full">
+              <!-- Filtros (Contrato, Origen, Fechas, Limpiar) a la izquierda -->
+              <div class="flex flex-wrap items-center gap-2">
+                <select 
+                  v-model="filterContrato"
+                  class="px-3 py-2 bg-surface border border-border rounded-lg text-xs focus:outline-none focus:border-primary cursor-pointer text-text"
+                >
+                  <option value="">Contrato (Todos)</option>
+                  <option v-for="c in TIPO_CONTRATO" :key="c.id" :value="c.id">{{ c.name }}</option>
+                </select>
 
-      <template #filters>
-        <div class="flex flex-col items-end gap-3 w-full">
-          <button 
-            @click="openCreateModal" 
-            class="flex items-center justify-center gap-2 rounded-lg bg-brand-500 px-4 py-2 text-sm font-semibold text-white shadow-theme-xs hover:bg-brand-600 disabled:opacity-50 transition-colors"
-          >
-            <PlusIcon class="w-4 h-4 stroke-[3]" />
-            Nueva Novedad
-          </button>
+                <select 
+                  v-model="filterOrigen"
+                  class="px-3 py-2 bg-surface border border-border rounded-lg text-xs focus:outline-none focus:border-primary cursor-pointer text-text"
+                >
+                  <option value="">Origen (Todos)</option>
+                  <option v-for="o in origenesPermitidos" :key="o" :value="o">{{ o }}</option>
+                </select>
 
-          <div class="flex flex-wrap items-center gap-2">
-            <select 
-              v-model="filterContrato"
-              class="px-3 py-2.5 bg-surface border border-border rounded-lg text-sm focus:outline-none focus:border-primary cursor-pointer text-text"
-            >
-              <option value="">Contrato (Todos)</option>
-              <option v-for="c in TIPO_CONTRATO" :key="c.id" :value="c.id">{{ c.name }}</option>
-            </select>
+                <div class="flex items-center gap-2">
+                  <DatePicker 
+                    v-model="filterFechaInicio"
+                    placeholder="Desde..."
+                    class="w-32"
+                  />
+                  <span class="text-text-muted">-</span>
+                  <DatePicker 
+                    v-model="filterFechaFin"
+                    placeholder="Hasta..."
+                    class="w-32"
+                  />
+                </div>
 
-            <select 
-              v-model="filterOrigen"
-              class="px-3 py-2.5 bg-surface border border-border rounded-lg text-sm focus:outline-none focus:border-primary cursor-pointer text-text"
-            >
-              <option value="">Origen (Todos)</option>
-              <option v-for="o in origenesPermitidos" :key="o" :value="o">{{ o }}</option>
-            </select>
+                <button @click="clearFilters"
+                  class="group flex items-center gap-2 px-3 py-2 rounded-lg border border-border text-[10px] font-black uppercase tracking-widest text-text-muted hover:bg-surface-muted hover:text-primary transition-all active:scale-95 bg-surface shadow-theme-xs"
+                  title="Limpiar filtros">
+                  <RefreshCcwIcon class="w-3.5 h-3.5 group-hover:rotate-180 transition-transform duration-500" />
+                  Limpiar
+                </button>
 
-            <div class="flex items-center gap-2">
-              <DatePicker 
-                v-model="filterFechaInicio"
-                placeholder="Desde..."
-                class="w-32"
-              />
-              <span class="text-text-muted">-</span>
-              <DatePicker 
-                v-model="filterFechaFin"
-                placeholder="Hasta..."
-                class="w-32"
-              />
+                <label v-if="activeTab === 'historial'" class="flex items-center gap-2 text-xs text-text cursor-pointer select-none px-2 py-1.5 rounded-lg hover:bg-surface-muted transition-colors border border-transparent hover:border-border">
+                  <input 
+                    type="checkbox" 
+                    v-model="showRechazadasYEliminadas" 
+                    class="rounded border-border text-primary focus:ring-primary/20 h-4 w-4 cursor-pointer"
+                  />
+                  <span class="text-xs text-text-muted font-medium">Mostrar rechazadas y eliminadas</span>
+                </label>
+              </div>
+
+              <!-- Botón Nueva Novedad a la derecha -->
+              <button 
+                @click="openCreateModal" 
+                class="flex items-center justify-center gap-2 rounded-lg bg-brand-500 px-4 py-2 text-sm font-semibold text-white shadow-theme-xs hover:bg-brand-600 disabled:opacity-50 transition-colors shrink-0"
+              >
+                <PlusIcon class="w-4 h-4 stroke-[3]" />
+                Nueva Novedad
+              </button>
             </div>
-
-            <button @click="clearFilters"
-              class="group flex items-center gap-2 px-4 py-2.5 rounded-xl border border-border text-[10px] font-black uppercase tracking-widest text-text-muted hover:bg-surface-muted hover:text-primary transition-all active:scale-95 bg-surface shadow-theme-xs"
-              title="Limpiar filtros">
-              <RefreshCcwIcon class="w-3.5 h-3.5 group-hover:rotate-180 transition-transform duration-500" />
-              Limpiar
-            </button>
-          </div>
-        </div>
-      </template>
+          </template>
       
       <template #table-header>
         <th scope="col" class="px-6 py-3 cursor-pointer group" @click="handleSort('observador.apellido')">
@@ -378,6 +400,7 @@ import { TrashIcon, ChevronDownIcon, EditIcon, PlusIcon, PaperclipIcon } from '@
 import { RefreshCcwIcon } from 'lucide-vue-next';
 import { TIPO_CONTRATO } from '../constants/observador.constants';
 import DatePicker from '@/components/common/DatePicker.vue';
+import SearchInput from '@/components/ui/SearchInput.vue';
 
 const novedades = ref<Novedad[]>([]);
 const isLoading = ref(true);
@@ -387,6 +410,7 @@ const filterContrato = ref('');
 const filterOrigen = ref('');
 const filterFechaInicio = ref<string | null>(null);
 const filterFechaFin = ref<string | null>(null);
+const showRechazadasYEliminadas = ref(false);
 
 const origenesPermitidos = computed(() => {
   const set = new Set(novedades.value.map(n => n.origen || 'MANUAL'));
@@ -399,6 +423,7 @@ const clearFilters = () => {
   filterOrigen.value = '';
   filterFechaInicio.value = null;
   filterFechaFin.value = null;
+  showRechazadasYEliminadas.value = false;
 };
 
 const showSidePanel = ref(false);
@@ -527,6 +552,9 @@ const filteredNovedades = computed(() => {
       items = items.filter(n => n.estadoAprobacion === 'PENDIENTE' && n.activo !== false);
     } else {
       items = items.filter(n => n.estadoAprobacion !== 'PENDIENTE' || n.activo === false);
+      if (!showRechazadasYEliminadas.value) {
+        items = items.filter(n => n.activo !== false && n.estadoAprobacion !== 'RECHAZADA');
+      }
     }
 
     if (searchQuery.value) {

@@ -11,10 +11,15 @@
 
         <div class="flex flex-col xl:flex-row items-start gap-6 relative">
             <div class="flex-1 min-w-0 w-full">
-                <BaseDataList title="Gestión de Observadores" description="Administra el personal de observación y técnicos"
-                    :button-text="canEdit ? 'Nuevo Observador' : undefined" :items="filteredObservadores"
-                    :is-loading="isLoading" v-model:search="searchQuery" search-placeholder="Buscar observadores..."
-                    @create="openCreateModal">
+                <BaseDataList 
+                    title="Gestión de Observadores" 
+                    description="Administra el personal de observación y técnicos"
+                    :button-text="canEdit ? 'Nuevo Observador' : undefined" 
+                    :items="filteredObservadores"
+                    :is-loading="isLoading" 
+                    :show-search="false"
+                    @create="openCreateModal"
+                >
                     <template #header-actions>
                         <ExportExcelButton 
                             v-if="canEdit"

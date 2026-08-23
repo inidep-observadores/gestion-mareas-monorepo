@@ -15,8 +15,7 @@
       button-text="Nuevo Feriado" 
       :items="filteredFeriados"
       :is-loading="isLoading" 
-      v-model:search="searchQuery" 
-      search-placeholder="Buscar feriado por nombre o tipo..."
+      :show-search="false"
       @create="openCreateModal">
       
       <template #header-actions>
