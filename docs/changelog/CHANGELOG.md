@@ -5,6 +5,9 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 
 ## [Unreleased]
 
+## [v0.13.0] - 2026-08-23
+
+### Added
 - **presentismo:** computar automáticamente como 'En tránsito' los días intermedios entre el viaje inicial y la zarpada, y entre el arribo y el viaje de regreso
 - **presentismo:** preservar las fechas originales de las novedades de viaje sin mutaciones artificiales en la planilla mensual
 - **planificacion:** corregir visualización de etiquetas de eventos de viaje en el timeline del simulador mostrando 'Viaje' en lugar de código truncado
