@@ -146,7 +146,9 @@ export interface Marea {
 
     tipoCalculoZonaAustral?: TipoCalculoZonaAustral;
     archivos?: any[];
+    metadata?: import('./marea-metadata.types').MareaMetadata | Record<string, any> | null;
 }
+
 
 export interface MareaOpcionesCierre {
     finalizarMareaAlArribo: boolean;

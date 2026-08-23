@@ -346,6 +346,7 @@ import type { MareaSimuladaItem, RecursoMareaPendiente, EscenarioSimulacionState
 import { Timeline, type TimelineOptions } from 'vis-timeline/standalone';
 import { DataSet } from 'vis-data';
 import 'vis-timeline/styles/vis-timeline-graph2d.min.css';
+import { buildObservadorEventos, toVisTimelineItems } from '@/modules/shared/utils/observador-events-engine';
 
 import { useConfigStore } from '@/modules/shared/stores/config.store';
 const configStore = useConfigStore();
@@ -397,7 +398,12 @@ const pesqueriaOptions = computed(() => {
 });
 
 // Datos de Simulación
-const datosSimulacion = ref<{ observadores: any[], eventos: any[] } | null>(null);
+const datosSimulacion = ref<{
+  observadores: any[];
+  eventos: any[];
+  novedadesRaw: Record<string, any[]>;
+  mareasRaw: Record<string, any[]>;
+} | null>(null);
 
 // Observadores extraídos de los datos de simulación
 const observadoresBase = computed(() => {
@@ -612,26 +618,46 @@ const filteredObservadores = computed(() => {
 const conflictosDetectados = computed(() => {
   const alertas: string[] = [];
   const simulados = escenarioActual.value.items.filter(i => i.tipoBloque === 'MAREA_SIMULADA');
+  if (simulados.length === 0 || !datosSimulacion.value) return alertas;
 
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  // Evaluamos directamente contra los eventos calculados por el motor unificado
+  // para que haya 100% de coherencia con lo que se renderiza visualmente
   simulados.forEach(sim => {
-    if (sim.observadorId && datosSimulacion.value) {
-      const inicio = new Date(sim.fechaZarpada);
-      const fin = new Date(sim.fechaArribo);
-      
-      const eventosObs = datosSimulacion.value.eventos.filter((e: any) => e.observadorId === sim.observadorId);
-      
-      for (const ev of eventosObs) {
-        if (ev.estado !== 'LIBRE' && ev.estado !== 'FIN_SEMANA') {
-          const evStart = new Date(ev.startDate);
-          const evEnd = new Date(ev.endDate);
-          
-          if (inicio <= evEnd && fin >= evStart) {
-            const tipoStr = ev.detalle ? `${ev.estado} - ${ev.detalle}` : ev.estado;
-            alertas.push(
-              `Marea simulada "${sim.pesqueriaNombre}" se solapa con [${tipoStr}] del ${evStart.toLocaleDateString('es-AR')} al ${evEnd.toLocaleDateString('es-AR')}.`
-            );
-          }
+    if (!sim.observadorId) return;
+
+    const inicio = new Date(sim.fechaZarpada);
+    inicio.setHours(0, 0, 0, 0);
+    const fin = new Date(sim.fechaArribo);
+    fin.setHours(23, 59, 59, 999);
+
+    const novedades = datosSimulacion.value!.novedadesRaw?.[sim.observadorId] || [];
+    const mareas = datosSimulacion.value!.mareasRaw?.[sim.observadorId] || [];
+
+    const eventosObs = buildObservadorEventos(novedades, mareas, today);
+
+    for (const ev of eventosObs) {
+      // Ignorar disponibilidades y marcas internas de conflicto previo
+      if (ev.tipo === 'CONFLICTO') continue;
+      if (ev.tipo === 'NOVEDAD' && ev.codigoNovedad === 'DISPONIBLE') continue;
+
+      const evStart = new Date(ev.start);
+      evStart.setHours(0, 0, 0, 0);
+      const evEnd = new Date(ev.end);
+      evEnd.setHours(23, 59, 59, 999);
+
+      // Comprobar solapamiento de rangos de fechas
+      if (inicio <= evEnd && fin >= evStart) {
+        let detalleEvento = ev.label;
+        if (ev.sublabel && ev.sublabel !== ev.label) {
+          detalleEvento = `${ev.label} (${ev.sublabel})`;
         }
+
+        alertas.push(
+          `Marea simulada "${sim.pesqueriaNombre}" se solapa con [${detalleEvento}] del ${ev.start.toLocaleDateString('es-AR')} al ${ev.end.toLocaleDateString('es-AR')}.`
+        );
       }
     }
   });
@@ -641,23 +667,34 @@ const conflictosDetectados = computed(() => {
 
 const fetchData = async () => {
   isLoading.value = true;
+  let dataLoaded = false;
   try {
     // Fetches from January of the operative year up to 60 months forward (5 years)
     const data = await planificacionService.obtenerEventosSimulador(configStore.selectedYear, 1, 60);
     datosSimulacion.value = data;
+    dataLoaded = true;
   } catch (error) {
+    console.error('[SimuladorCobertura] Error al cargar datos:', error);
     toast.error('Ocurrió un error al cargar los datos de planificación');
     datosSimulacion.value = null;
   } finally {
     isLoading.value = false;
   }
+  // Render DESPUÉS de que isLoading sea false, para que el contenedor tenga su
+  // tamaño final sin el spinner superpuesto (vis-timeline necesita dimensiones reales)
+  if (dataLoaded) {
+    await nextTick();
+    renderTimeline();
+  }
 };
 
+// Re-renderizar cuando cambien los filtros de búsqueda o el año operativo
+// (el render inicial lo hace fetchData() directamente)
 watch([filteredObservadores, () => configStore.selectedYear], async () => {
   if (!datosSimulacion.value) return;
   await nextTick();
   renderTimeline();
-}, { immediate: true });
+});
 
 const renderTimeline = () => {
   if (!timelineContainer.value) return;
@@ -700,57 +737,23 @@ const renderTimeline = () => {
 
   const itemsArray: any[] = [];
 
-  // 1. Cargar items reales/duros combinando los eventos nativos
+  // 1. Cargar items reales/duros usando el motor unificado de eventos
+  // (misma lógica que ObservadorCalendar.vue - garantiza comportamiento idéntico)
   if (datosSimulacion.value) {
-    const obsSet = new Set(filteredObservadores.value.map(o => o.id));
-    const eventosFiltrados = datosSimulacion.value.eventos.filter((e: any) => obsSet.has(e.observadorId));
-    
-    eventosFiltrados.forEach((ev: any) => {
-      let visClass = 'vis-item-puerto bg-[#FFE4C4] text-black';
-      let title = ev.estado;
-      let isEditable: boolean | { updateTime?: boolean, updateGroup?: boolean, remove?: boolean } = false;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
-      if (ev.estado === 'NAVEGANDO') {
-        const mareaCode = ev.detalle || 'Marea';
-        const durationDays = Math.round((new Date(ev.endDate).getTime() - new Date(ev.startDate).getTime()) / 86400000) + 1;
-        const durStr = `[${durationDays}d]`;
+    filteredObservadores.value.forEach(obs => {
+      try {
+        const novedades = datosSimulacion.value!.novedadesRaw?.[obs.id] || [];
+        const mareas = datosSimulacion.value!.mareasRaw?.[obs.id] || [];
 
-        if (ev.mareaEstado === 'DESIGNADA') {
-          visClass = 'vis-item-designada';
-          title = `${mareaCode} ${durStr} (Designada)`;
-          isEditable = { updateTime: true, updateGroup: false, remove: false };
-        } else if (ev.mareaEstado === 'EN_EJECUCION') {
-          visClass = 'vis-item-ejecucion';
-          title = `${mareaCode} ${durStr} (Navegando)`;
-          isEditable = { updateTime: true, updateGroup: false, remove: false };
-        } else {
-          // FINALIZADA, PROTOCOLIZADA, A_REASIGNAR, etc.
-          visClass = 'vis-item-navegando';
-          title = `${mareaCode} ${durStr} (Finalizada)`;
-          isEditable = false;
-        }
-      } else if (ev.estado === 'NOVEDAD') {
-        visClass = 'vis-item-novedad';
-        title = ev.codigoCorto || 'Licencia';
-      } else if (ev.estado === 'CONFLICTO') {
-        visClass = 'vis-item-conflicto';
-        title = 'Conflicto';
+        const eventos = buildObservadorEventos(novedades, mareas, today);
+        const items = toVisTimelineItems(obs.id, eventos);
+        itemsArray.push(...items);
+      } catch (err) {
+        console.error(`[SimuladorTimeline] Error procesando observador ${obs.id}:`, err);
       }
-
-      // Add 1 day to endDate to make it inclusive visually in vis-timeline
-      const endExclusive = new Date(ev.endDate);
-      endExclusive.setDate(endExclusive.getDate() + 1);
-
-      itemsArray.push({
-        id: ev.id,
-        group: ev.observadorId,
-        start: new Date(ev.startDate),
-        end: endExclusive,
-        content: title,
-        title: `<strong>Inicio:</strong> ${new Date(ev.startDate).toLocaleDateString('es-AR')}<br><strong>Fin:</strong> ${new Date(ev.endDate).toLocaleDateString('es-AR')}`,
-        className: visClass,
-        editable: isEditable
-      });
     });
   }
 
@@ -1128,12 +1131,14 @@ onBeforeUnmount(() => {
 .legend-licencia { background-color: #f3f4f6; border-color: #d1d5db; }
 .legend-proyectada { background-color: rgba(59, 130, 246, 0.2); border-color: #3b82f6; border-style: dashed; }
 
-/* Timeline Items */
 :global(.simulador-timeline .vis-item) { border-radius: 4px; }
 :global(.simulador-timeline .vis-item-designada) { background-color: #e0f2fe !important; border: 2px solid #0ea5e9 !important; color: #0369a1 !important; }
 :global(.simulador-timeline .vis-item-ejecucion) { background-color: #22c55e !important; border: 2px solid #16a34a !important; color: #ffffff !important; }
 :global(.simulador-timeline .vis-item-navegando) { background-color: #dcfce7 !important; border: 2px solid #86efac !important; color: #15803d !important; opacity: 0.8 !important; }
 :global(.simulador-timeline .vis-item-novedad) { background-color: #f3f4f6 !important; border: 2px solid #d1d5db !important; color: #6b7280 !important; }
+:global(.simulador-timeline .vis-item-franco) { background-color: #e0f2fe !important; border: 2px solid #ef4444 !important; color: #1e40af !important; }
+:global(.simulador-timeline .vis-item-disponible) { background-color: #dcfce7 !important; border: 2px solid #86efac !important; color: #15803d !important; }
+:global(.simulador-timeline .vis-item-no-disponible) { background-color: #fee2e2 !important; border: 2px solid #fca5a5 !important; color: #991b1b !important; }
 :global(.simulador-timeline .vis-item-simulada) { background-color: rgba(59, 130, 246, 0.2) !important; border: 2px dashed #3b82f6 !important; color: #1d4ed8 !important; }
 :global(.simulador-timeline .vis-item-conflicto) { background-color: #ef4444 !important; border: 2px solid #b91c1c !important; color: #ffffff !important; }
 :global(.simulador-timeline .vis-item-content) { font-weight: bold !important; padding: 4px 8px !important; }
@@ -1151,6 +1156,10 @@ onBeforeUnmount(() => {
 :global(.dark .simulador-timeline .vis-item-ejecucion) { background-color: #15803d !important; border-color: #166534 !important; color: #ffffff !important; }
 :global(.dark .simulador-timeline .vis-item-navegando) { background-color: rgba(22, 163, 74, 0.2) !important; border-color: #15803d !important; color: #86efac !important; opacity: 0.8 !important; }
 :global(.dark .simulador-timeline .vis-item-novedad) { background-color: rgba(107, 114, 128, 0.2) !important; border-color: #4b5563 !important; color: #d1d5db !important; }
+:global(.dark .simulador-timeline .vis-item-franco) { background-color: rgba(14, 165, 233, 0.3) !important; border-color: #f87171 !important; color: #bae6fd !important; }
+:global(.dark .simulador-timeline .vis-item-disponible) { background-color: rgba(34, 197, 94, 0.2) !important; border-color: #4ade80 !important; color: #bbf7d0 !important; }
+:global(.dark .simulador-timeline .vis-item-no-disponible) { background-color: rgba(239, 68, 68, 0.2) !important; border-color: #f87171 !important; color: #fca5a5 !important; }
 :global(.dark .simulador-timeline .vis-item-simulada) { background-color: rgba(59, 130, 246, 0.15) !important; border-color: #3b82f6 !important; color: #93c5fd !important; }
 :global(.dark .simulador-timeline .vis-item-conflicto) { background-color: #991b1b !important; border-color: #7f1d1d !important; color: #ffffff !important; }
+
 </style>

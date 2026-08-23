@@ -14,6 +14,7 @@ import { EnviarProtocolizacionDto } from './dto/enviar-protocolizacion.dto';
 import { ConfirmarProtocolizacionDto } from './dto/confirmar-protocolizacion.dto';
 import { MareaEtapaMetadata } from './interfaces/marea-etapa-metadata.interface';
 import { ProtocolizacionLoteMetadata } from './interfaces/protocolizacion-lote-metadata.interface';
+import { MareaMetadata } from './types/marea-metadata.types';
 import { DateUtils } from '../common/utils/date.utils';
 import { MareaUtils } from '../common/utils/marea.utils';
 import { ConfigService } from '@nestjs/config';
@@ -250,6 +251,15 @@ export class MareasService {
             if (updateMareaDto.anioProtocolizacion !== undefined) updateData.anioProtocolizacion = updateMareaDto.anioProtocolizacion;
             if (updateMareaDto.diasEstimados !== undefined) updateData.diasEstimados = updateMareaDto.diasEstimados;
             if (updateMareaDto.tipoCalculoZonaAustral !== undefined) updateData.tipoCalculoZonaAustral = updateMareaDto.tipoCalculoZonaAustral;
+
+            // Actualizar borrador de observadores secundarios en metadata
+            if (updateMareaDto.observadoresSecundariosPlanificados !== undefined) {
+                const metadataActual = (mareaActual as any).metadata as MareaMetadata || {};
+                updateData.metadata = {
+                    ...metadataActual,
+                    observadoresSecundariosPlanificados: updateMareaDto.observadoresSecundariosPlanificados
+                } as MareaMetadata;
+            }
 
             if (Object.keys(updateData).length > 0) {
                 await tx.marea.update({
@@ -2006,7 +2016,8 @@ export class MareasService {
                     }
                 });
 
-                // Do not copy observers automatically. Principal is at Marea level.
+                // Materializar observadores secundarios planificados para este número de etapa
+                await this.materializarObservadoresPlanificados(tx, mareaId, stageData.nroEtapa, null);
             }
         }
     }
@@ -2313,6 +2324,9 @@ export class MareasService {
                 if (payload.etapas) {
                     await this.syncStages(tx, id, payload.etapas);
                 }
+
+                // Materializar observadores planificados para la Etapa 1 desde el borrador en metadata
+                await this.materializarObservadoresPlanificados(tx, id, 1, user);
             }
 
             if (actionKey === 'REGISTRAR_FINALIZACION') {
@@ -2437,6 +2451,16 @@ export class MareasService {
             if (destinoFinalCodigo && this.ESTADOS_NAVEGANDO.includes(destinoFinalCodigo as any)) {
                 additionalMareaData.fechaFinObservador = null;
             }
+
+            // Si la marea es cancelada o desestimada, limpiar el borrador de observadores secundarios
+            if (destinoFinalCodigo === MareaEstado.CANCELADA || destinoFinalCodigo === MareaEstado.DESESTIMADA) {
+                const currentMeta = ((marea as any)?.metadata as MareaMetadata) || {};
+                additionalMareaData.metadata = {
+                    ...currentMeta,
+                    observadoresSecundariosPlanificados: []
+                };
+            }
+
 
             const mareaUpdated = await tx.marea.update({
                 where: { id },
@@ -2642,6 +2666,12 @@ export class MareasService {
             }
         }
 
+        // Preparar borrador de observadores secundarios en metadata si viene en el DTO
+        const metadataInicial: MareaMetadata = {};
+        if (createMareaDto.observadoresSecundariosPlanificados?.length) {
+            metadataInicial.observadoresSecundariosPlanificados = createMareaDto.observadoresSecundariosPlanificados;
+        }
+
         return this.prisma.$transaction(async (tx) => {
             const marea = await (tx as any).marea.create({
                 data: {
@@ -2660,6 +2690,7 @@ export class MareasService {
                     finValidado,
                     diasEstimados,
                     observaciones: createMareaDto.observaciones || '',
+                    metadata: Object.keys(metadataInicial).length > 0 ? metadataInicial : undefined,
                 }
             });
 
@@ -2673,6 +2704,7 @@ export class MareasService {
                     detalle: `Marea creada por ${user.fullName}`
                 }
             });
+
 
             // NO creamos etapa ficticia. El observador está asignado a la marea.
             // La etapa 1 se creará al Registrar Inicio (Zarpar).
@@ -3660,4 +3692,165 @@ export class MareasService {
         });
     }
 
+    // ─────────────────────────────────────────────────────────────────────────
+    // OBSERVADORES SECUNDARIOS PLANIFICADOS
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Materializa observadores secundarios planificados para un numero de etapa.
+     * Puede ser llamado como public para reutilizacion en syncStages y REGISTRAR_INICIO.
+     */
+    async materializarObservadoresPlanificados(
+        tx: any,
+        mareaId: string,
+        nroEtapa: number,
+        user: User | null
+    ): Promise<void> {
+        const mareaData = await (tx.marea as any).findUnique({
+            where: { id: mareaId },
+            select: { metadata: true }
+        });
+
+        if (!mareaData?.metadata) return;
+
+        const metadata = (mareaData.metadata as MareaMetadata) || {};
+        const borrador = metadata.observadoresSecundariosPlanificados ?? [];
+        if (borrador.length === 0) return;
+
+        const aplicables = borrador.filter((obs: any) => {
+            const desde = obs.etapaDesde ?? 1;
+            const hasta = obs.etapaHasta ?? Infinity;
+            return nroEtapa >= desde && nroEtapa <= hasta;
+        });
+
+        if (aplicables.length === 0) return;
+
+        const etapa = await tx.mareaEtapa.findFirst({
+            where: { mareaId, nroEtapa },
+            select: { id: true }
+        });
+
+        if (!etapa) return;
+
+        for (const obs of aplicables) {
+            const observador = await tx.observador.findUnique({
+                where: { id: obs.observadorId },
+                select: { id: true, activo: true, nombre: true, apellido: true }
+            });
+
+            if (!observador || observador.activo === false) {
+                this.logger.warn(
+                    `Observador planificado ${obs.observadorId} omitido al materializar Etapa #${nroEtapa} de marea ${mareaId}: ${!observador ? 'no encontrado' : 'dado de baja'}.`
+                );
+                continue;
+            }
+
+            const yaExiste = await tx.mareaEtapaObservador.findFirst({
+                where: { etapaId: etapa.id, observadorId: obs.observadorId }
+            });
+
+            if (!yaExiste) {
+                await tx.mareaEtapaObservador.create({
+                    data: { etapaId: etapa.id, observadorId: obs.observadorId, rol: 'SECUNDARIO', esDesignado: true }
+                });
+                this.logger.debug(`Obs. secundario ${observador.nombre} ${observador.apellido} materializado en Etapa #${nroEtapa} de marea ${mareaId}.`);
+            }
+        }
+
+        // Limpiar entradas consumidas del borrador
+        const restantes = borrador.filter((obs: any) => {
+            const hasta = obs.etapaHasta;
+            if (hasta === null || hasta === undefined) return true;
+            return nroEtapa < hasta;
+        });
+
+        await (tx.marea as any).update({
+            where: { id: mareaId },
+            data: { metadata: { ...metadata, observadoresSecundariosPlanificados: restantes } }
+        });
+    }
+
+
+    /** Actualiza el borrador de observadores secundarios en metadata. */
+    async updateObservadoresSecundarios(
+        mareaId: string,
+        observadoresSecundariosPlanificados: Array<{
+            observadorId: string;
+            etapaDesde: number;
+            etapaHasta: number | null;
+            notas?: string;
+        }>,
+        user: User
+    ) {
+        const marea = await this.prisma.marea.findUnique({
+            where: { id: mareaId },
+            include: { estadoActual: true }
+        });
+        if (!marea) throw new NotFoundException('Marea no encontrada.');
+
+        for (const obs of observadoresSecundariosPlanificados) {
+            const observador = await this.prisma.observador.findUnique({
+                where: { id: obs.observadorId },
+                select: { id: true }
+            });
+            if (!observador) throw new BadRequestException(`El observador con ID ${obs.observadorId} no existe en el sistema.`);
+        }
+
+        const metadataActual = ((marea as any)?.metadata as MareaMetadata) ?? {};
+        await (this.prisma.marea as any).update({
+            where: { id: mareaId },
+            data: { metadata: { ...metadataActual, observadoresSecundariosPlanificados } }
+        });
+
+        return this.findOne(mareaId);
+    }
+
+    /** Agrega un observador secundario a una etapa existente. */
+    async addObservadorEtapa(
+        mareaId: string,
+        etapaId: string,
+        observadorId: string,
+        aplicarASiguientesEtapas: boolean,
+        user: User
+    ) {
+        const [etapa, observador] = await Promise.all([
+            this.prisma.mareaEtapa.findFirst({ where: { id: etapaId, mareaId } }),
+            this.prisma.observador.findUnique({ where: { id: observadorId }, select: { id: true, activo: true, nombre: true, apellido: true } })
+        ]);
+
+        if (!etapa) throw new NotFoundException('Etapa no encontrada para esta marea.');
+        if (!observador) throw new NotFoundException('Observador no encontrado.');
+
+        const yaExiste = await this.prisma.mareaEtapaObservador.findFirst({ where: { etapaId, observadorId } });
+        if (yaExiste) throw new BadRequestException('El observador ya se encuentra asignado a esta etapa.');
+
+        await this.prisma.$transaction(async (tx) => {
+            await tx.mareaEtapaObservador.create({
+                data: { etapaId, observadorId, rol: 'SECUNDARIO', esDesignado: false }
+            });
+
+            if (aplicarASiguientesEtapas) {
+                const mareaData = await (tx.marea as any).findUnique({ where: { id: mareaId }, select: { metadata: true } });
+                const metadataActual = ((mareaData as any)?.metadata as MareaMetadata) ?? {};
+                const borradorActual = metadataActual.observadoresSecundariosPlanificados ?? [];
+                const nuevaEntrada = { observadorId, etapaDesde: etapa.nroEtapa + 1, etapaHasta: null, notas: `Agregado manualmente a partir de Etapa #${etapa.nroEtapa}` };
+                await (tx.marea as any).update({
+                    where: { id: mareaId },
+                    data: { metadata: { ...metadataActual, observadoresSecundariosPlanificados: [...borradorActual, nuevaEntrada] } }
+                });
+            }
+        });
+
+        return this.findOne(mareaId);
+    }
+
+
+    /** Quita un observador secundario de una etapa existente. */
+    async removeObservadorEtapa(mareaId: string, etapaId: string, observadorId: string, user: User) {
+        const registro = await this.prisma.mareaEtapaObservador.findFirst({ where: { etapaId, observadorId } });
+        if (!registro) throw new NotFoundException('El observador no se encuentra asignado a esta etapa.');
+
+        await this.prisma.mareaEtapaObservador.delete({ where: { id: registro.id } });
+        return this.findOne(mareaId);
+    }
 }

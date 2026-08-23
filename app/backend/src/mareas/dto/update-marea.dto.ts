@@ -4,6 +4,7 @@ import { IsBoolean, IsDateString, IsInt, IsOptional, IsArray, IsString, IsUUID, 
 import { Type } from 'class-transformer';
 import { MareaEtapaDto } from './marea-etapa.dto';
 import { TipoCalculoZonaAustral } from '@prisma/client';
+import { ObservadorSecundarioPlanificadoDto } from './observador-secundario-planificado.dto';
 
 export class UpdateMareaDto extends PartialType(CreateMareaDto) {
     @IsInt()
@@ -70,4 +71,11 @@ export class UpdateMareaDto extends PartialType(CreateMareaDto) {
     @IsString({ each: true })
     @IsOptional()
     archivosToDelete?: string[];
+
+    /** Actualización del borrador de observadores secundarios planificados. */
+    @IsArray()
+    @IsOptional()
+    @ValidateNested({ each: true })
+    @Type(() => ObservadorSecundarioPlanificadoDto)
+    observadoresSecundariosPlanificados?: ObservadorSecundarioPlanificadoDto[];
 }

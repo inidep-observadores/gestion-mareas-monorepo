@@ -293,6 +293,7 @@ model Marea {
   fechaEnvioProtocolizacion DateTime?                 @map("fecha_envio_protocolizacion") @db.Timestamptz(6)
   iniciaEnProspeccion       Boolean                   @default(false) @map("inicia_en_prospeccion")
   desestimada               Boolean                   @default(false)
+  metadata                  Json?
   artePrincipal             ArtePesca?                @relation(fields: [artePrincipalId], references: [id])
   buque                     Buque                     @relation(fields: [buqueId], references: [id])
   estadoActual              EstadoMarea               @relation(fields: [estadoActualId], references: [id])

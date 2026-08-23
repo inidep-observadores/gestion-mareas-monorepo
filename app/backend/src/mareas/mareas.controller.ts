@@ -311,4 +311,57 @@ export class MareasController {
     ) {
         return this.mareasService.deleteArchivo(id, archivoId, user);
     }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // OBSERVADORES SECUNDARIOS
+    // ─────────────────────────────────────────────────────────────────────────
+
+    @Patch(':id/observadores-secundarios')
+    @Auth(ValidRoles.admin, ValidRoles.tecnico)
+    @AuditEvent({
+        tipoEvento: 'ACTUALIZAR_OBSERVADORES_SECUNDARIOS',
+        categoria: AuditCategoria.MAREAS,
+        descripcion: 'Actualizacion del borrador de observadores secundarios planificados'
+    })
+    updateObservadoresSecundarios(
+        @Param('id') id: string,
+        @Body('observadoresSecundariosPlanificados') observadoresSecundariosPlanificados: any[],
+        @GetUser() user: User
+    ) {
+        return this.mareasService.updateObservadoresSecundarios(id, observadoresSecundariosPlanificados ?? [], user);
+    }
+
+    @Patch(':id/etapas/:etapaId/observadores')
+    @Auth(ValidRoles.admin, ValidRoles.tecnico)
+    @AuditEvent({
+        tipoEvento: 'AGREGAR_OBSERVADOR_ETAPA',
+        categoria: AuditCategoria.MAREAS,
+        descripcion: 'Asignacion de observador secundario a una etapa existente'
+    })
+    addObservadorEtapa(
+        @Param('id') id: string,
+        @Param('etapaId') etapaId: string,
+        @Body('observadorId') observadorId: string,
+        @Body('aplicarASiguientesEtapas') aplicarASiguientesEtapas: boolean,
+        @GetUser() user: User
+    ) {
+        return this.mareasService.addObservadorEtapa(id, etapaId, observadorId, aplicarASiguientesEtapas ?? false, user);
+    }
+
+    @Delete(':id/etapas/:etapaId/observadores/:observadorId')
+    @Auth(ValidRoles.admin, ValidRoles.tecnico)
+    @AuditEvent({
+        tipoEvento: 'QUITAR_OBSERVADOR_ETAPA',
+        categoria: AuditCategoria.MAREAS,
+        descripcion: 'Remocion de observador secundario de una etapa'
+    })
+    removeObservadorEtapa(
+        @Param('id') id: string,
+        @Param('etapaId') etapaId: string,
+        @Param('observadorId') observadorId: string,
+        @GetUser() user: User
+    ) {
+        return this.mareasService.removeObservadorEtapa(id, etapaId, observadorId, user);
+    }
 }
+

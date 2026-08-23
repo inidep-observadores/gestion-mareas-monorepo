@@ -142,9 +142,18 @@
 
 
               <div class="space-y-1.5">
-                <label class="block text-sm font-medium text-text-muted">Observador Asignado</label>
+                <label class="block text-sm font-medium text-text-muted">Observador Principal</label>
                 <SearchableSelect ref="observadorSelect" v-model="form.observadorId" :options="observadorOptions"
-                  :icon="BeakerIcon" :error="fieldErrors.observadorId" placeholder="Seleccione el observador..." />
+                  :icon="BeakerIcon" :error="fieldErrors.observadorId" placeholder="Seleccione el observador principal..." />
+              </div>
+
+              <!-- Observadores Secundarios Planificados (Borrador en metadata) -->
+              <div class="pt-2 border-t border-border/60">
+                <ObservadoresSecundariosEditor
+                  v-model="form.observadoresSecundariosPlanificados"
+                  :observador-options="observadorOptions"
+                  :observador-principal-id="form.observadorId"
+                />
               </div>
 
               <div class="space-y-1.5">
@@ -320,6 +329,8 @@ import DatePicker from '@/components/common/DatePicker.vue'
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 import ConfirmationDialog from '@/components/common/ConfirmationDialog.vue'
 import NavigationStagesEditor from './NavigationStagesEditor.vue'
+import ObservadoresSecundariosEditor from './ObservadoresSecundariosEditor.vue'
+import type { ObservadorSecundarioPlanificado } from '../types/marea-metadata.types';
 import { TipoMarea, TIPO_MAREA_DESC } from '../types/enums';
 import { useMareas } from '../composables/useMareas'
 import { useWorkflowStore } from '../../shared/stores/workflow.store'
@@ -377,8 +388,10 @@ const getInitialForm = () => ({
   diasEstimados: null as number | null,
   puertoBaseId: '',
   iniciaEnProspeccion: false,
-  etapas: [] as any[]
+  etapas: [] as any[],
+  observadoresSecundariosPlanificados: [] as ObservadorSecundarioPlanificado[]
 })
+
 
 const form = ref(getInitialForm())
 

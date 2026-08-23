@@ -68,10 +68,20 @@
                     :disabled="!canEditDesignationFields" />
                 </div>
                 <div class="space-y-1.5">
-                  <label class="block text-sm font-medium text-text-muted">Observador Designado</label>
+                  <label class="block text-sm font-medium text-text-muted">Observador Principal</label>
                   <SearchableSelect ref="observadorSelect" v-model="form.observadorPrincipalId" :options="observadorOptions"
-                    :icon="BeakerIcon" :error="fieldErrors.observadorPrincipalId" placeholder="Seleccione el observador..."
+                    :icon="BeakerIcon" :error="fieldErrors.observadorPrincipalId" placeholder="Seleccione el observador principal..."
                     :disabled="!canEditDesignationFields" />
+                </div>
+
+                <!-- Observadores Secundarios Planificados (Borrador) -->
+                <div class="col-span-1 md:col-span-2 pt-2 border-t border-border/50">
+                  <ObservadoresSecundariosEditor
+                    v-model="form.observadoresSecundariosPlanificados"
+                    :observador-options="observadorOptions"
+                    :observador-principal-id="form.observadorPrincipalId"
+                    :read-only="!canEditDesignationFields"
+                  />
                 </div>
 
                 <!-- Row 3 -->
@@ -179,6 +189,8 @@ import BaseModal from '@/components/common/BaseModal.vue'
 import SearchableSelect from '@/components/common/SearchableSelect.vue'
 import DatePicker from '@/components/common/DatePicker.vue'
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
+import ObservadoresSecundariosEditor from './ObservadoresSecundariosEditor.vue'
+import type { ObservadorSecundarioPlanificado } from '../types/marea-metadata.types';
 import {
   ShipIcon,
   DocsIcon,
@@ -250,7 +262,11 @@ const getInitialForm = () => {
     fechaZarpadaEstimada: null,
     diasEstimados: null,
     iniciaEnProspeccion: false,
+    observadoresSecundariosPlanificados: [] as ObservadorSecundarioPlanificado[],
   };
+
+  const rawMetadata: any = mareaData.value.metadata;
+  const planificados: ObservadorSecundarioPlanificado[] = rawMetadata?.observadoresSecundariosPlanificados || [];
 
   return {
     tipoMarea: mareaData.value.tipoMarea || 'MC',
@@ -264,6 +280,7 @@ const getInitialForm = () => {
     fechaZarpadaEstimada: mareaData.value.fechaZarpadaEstimada || null,
     diasEstimados: mareaData.value.diasEstimados || null,
     iniciaEnProspeccion: mareaData.value.iniciaEnProspeccion ?? false,
+    observadoresSecundariosPlanificados: [...planificados]
   }
 }
 
@@ -368,8 +385,10 @@ const submit = async () => {
 
       fechaZarpadaEstimada: form.value.fechaZarpadaEstimada || null,
       diasEstimados: form.value.diasEstimados || null,
-      iniciaEnProspeccion: form.value.tipoMarea === 'MC' ? form.value.iniciaEnProspeccion : false
+      iniciaEnProspeccion: form.value.tipoMarea === 'MC' ? form.value.iniciaEnProspeccion : false,
+      observadoresSecundariosPlanificados: form.value.observadoresSecundariosPlanificados
     }
+
 
     await mareasService.update(props.mareaId, updateData)
     toast.success('Marea actualizada exitosamente')

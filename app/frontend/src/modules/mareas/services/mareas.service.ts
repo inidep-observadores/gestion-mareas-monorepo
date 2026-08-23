@@ -164,6 +164,26 @@ const mareasService = {
     deleteArchivo: async (mareaId: string, archivoId: string): Promise<any> => {
         const { data } = await httpClient.delete(`/mareas/${mareaId}/archivos/${archivoId}`);
         return data;
+    },
+
+    updateObservadoresSecundarios: async (mareaId: string, observadoresSecundariosPlanificados: any[]): Promise<any> => {
+        const { data } = await httpClient.patch(`/mareas/${mareaId}/observadores-secundarios`, {
+            observadoresSecundariosPlanificados
+        });
+        return data;
+    },
+
+    addObservadorEtapa: async (mareaId: string, etapaId: string, observadorId: string, aplicarASiguientesEtapas: boolean = false): Promise<any> => {
+        const { data } = await httpClient.patch(`/mareas/${mareaId}/etapas/${etapaId}/observadores`, {
+            observadorId,
+            aplicarASiguientesEtapas
+        });
+        return data;
+    },
+
+    removeObservadorEtapa: async (mareaId: string, etapaId: string, observadorId: string): Promise<any> => {
+        const { data } = await httpClient.delete(`/mareas/${mareaId}/etapas/${etapaId}/observadores/${observadorId}`);
+        return data;
     }
 };
 

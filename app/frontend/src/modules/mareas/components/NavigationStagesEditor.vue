@@ -136,6 +136,42 @@
             </div>
           </div>
 
+          <!-- Observadores Asignados a esta Etapa -->
+          <div v-if="stage.observadores && stage.observadores.length > 0" class="pt-2 border-t border-border/50">
+            <div class="flex items-center gap-1.5 mb-1.5">
+              <span class="text-[9px] font-black uppercase tracking-wider text-text-muted">
+                Observadores en esta Etapa:
+              </span>
+            </div>
+            <div class="flex flex-wrap gap-1.5">
+              <div
+                v-for="(obs, obsIdx) in stage.observadores"
+                :key="obs.id || obsIdx"
+                class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs bg-surface-muted border border-border"
+              >
+                <span class="font-bold text-text">
+                  {{ obs.observador?.nombre ? `${obs.observador.apellido}, ${obs.observador.nombre}` : (obs.observadorId || 'Observador') }}
+                </span>
+                <span
+                  class="px-1 py-0.2 text-[9px] font-black uppercase rounded"
+                  :class="obs.rol === 'PRINCIPAL' ? 'bg-primary/10 text-primary' : 'bg-surface text-text-muted border border-border'"
+                >
+                  {{ obs.rol || 'SECUNDARIO' }}
+                </span>
+                <button
+                  v-if="!readOnly && obs.rol !== 'PRINCIPAL' && props.mareaId && stage.id"
+                  type="button"
+                  @click="removeObservadorFromStage(stage, obs)"
+                  class="p-0.5 text-text-muted hover:text-error rounded transition-colors"
+                  title="Quitar de esta etapa"
+                >
+                  <TrashIcon class="w-3 h-3" />
+                </button>
+              </div>
+            </div>
+          </div>
+
+
           <!-- Intención de Cierre (Solo visible en la última etapa si no está readonly) -->
           <div v-if="!readOnly && index === modelValue.length - 1 && isEtapaEnCurso(stage)" class="md:col-span-2 pt-3 border-t border-border mt-1">
             <div class="flex items-center justify-between bg-primary/5 border border-primary/20 rounded-xl p-3">
@@ -372,5 +408,26 @@ async function onToggleIntencionCierre(index: number, stage: any, activar: boole
     throw error; // Let the global error handler show the toast
   }
 }
+
+async function removeObservadorFromStage(stage: any, obs: any) {
+  if (!props.mareaId || !stage.id || !obs.observadorId) return;
+
+  try {
+    await mareasService.removeObservadorEtapa(props.mareaId, stage.id, obs.observadorId);
+    
+    // Actualizar estado local
+    const currentStages = [...props.modelValue];
+    const stageIdx = currentStages.findIndex(s => s.id === stage.id);
+    if (stageIdx !== -1) {
+      const updatedStage = { ...currentStages[stageIdx] };
+      updatedStage.observadores = (updatedStage.observadores || []).filter((o: any) => o.observadorId !== obs.observadorId);
+      currentStages[stageIdx] = updatedStage;
+      emit('update:modelValue', currentStages);
+    }
+  } catch (err) {
+    console.error('Error removing observador from stage:', err);
+  }
+}
+
 
 </script>

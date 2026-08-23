@@ -6,12 +6,105 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 ## [Unreleased]
 
 ### Added
+- **mareas:** implementar soporte para planificación y asignación de observadores secundarios en etapas de marea vía `metadata` JSONB
+- **mareas:** incorporar componente `ObservadoresSecundariosEditor` en diálogos de nueva marea y edición de designación
+- **mareas:** materializar automáticamente observadores secundarios planificados en `mareas_etapas_observadores` al iniciar marea y crear etapas
+- **mareas:** añadir endpoints en la API para actualizar observadores planificados y gestionar observadores asignados por etapa
+- **planificacion:** implementar motor unificado de eventos de observador (`observador-events-engine.ts`) compartido entre el calendario individual y el simulador de cobertura
+- **planificacion:** ocultar bloques de disponibilidad en el timeline del simulador para una vista más limpia y habilitar espacios libres de asignación
+- **admin:** optimizaciones de UX/UI en buscadores y filtros de novedades, observadores y feriados
+- **novedades:** soporte para ajuste automático de periodos opuestos (trimming)
+- **novedades:** implementar rectificación de novedades y comparador antes/después
+- **backend:** registrar errores de Drive, email e IMAP en ErrorLog general
+- **dashboard:** agregar tarjeta de novedades pendientes y navegación directa
 - **mareas:** incorporar campo booleano `desestimada` y soporte dinámico en diálogo de transiciones a 'Pendiente de informe'
 - **mareas:** visualizar badge de 'Desestimada' en vista de flujo de mareas, panel operativo y panel lateral de detalle
 - **mareas:** requerir observaciones de forma obligatoria al marcar una marea como desestimada en el diálogo y en la API
+- **admin:** envolver barra de filtros en sección expandible en planilla de presentismo
+- **admin:** integrar encabezado, filtros y leyenda al panel fijado superior en matriz de presentismo
+- **admin:** unificar panel fijado superior y buscador en vistas de observadores
 
 ### Fixed
+- **planificacion:** resolver falsos conflictos de disponibilidad sin fecha fin en el simulador de cobertura
+- **planificacion:** unificar cálculo de conflictos en simulador para detectar correctamente no disponibilidades reales/virtuales y mareas reales/proyectadas
+- **planificacion:** garantizar IDs globales únicos por observador en Vis-Timeline para evitar colisiones y bloqueos de renderizado
 - **reports:** asegurar que las mareas desestimadas continúen clasificándose en su sección de estado administrativo en el informe de auditoría
+- **jobs:** mostrar '(Sin asunto)' en PDF cuando el email no tiene asunto
+- **admin:** excluir novedades no aprobadas del calendario de observadores
+- **presentismo:** incluir el día de hoy en la planilla mensual
+- **admin:** rellenar huecos entre novedades de viaje y fechas reales de marea en calendario
+- **presentismo:** rellenar huecos entre fin de marea e inicio de viaje
+- **presentismo:** agregar fallback para enlazar dinámicamente novedades de VIAJE_FIN no procesadas previamente al graficar matriz
+- **presentismo:** corregir exclusión de marea en matriz mensual cuando sólo solapa la fecha de fin de viaje
+- **ui:** resolver comportamiento de scroll anidado en componentes de calendario y timeline en versión móvil
+- **novedades:** ocultar eliminadas en calendario y ajustar acciones según estado
+
+### Changed
+- **style:** activar color de alerta en novedades pendientes solo cuando el valor es mayor a cero
+- **config:** migrar configuración pnpm a `pnpm-workspace.yaml` (pnpm v10+)
+
+### Refactored
+- **frontend:** extraer lógica de `calendarAttributes` de `ObservadorCalendar.vue` al motor compartido reutilizable
+
+## [v0.12.0] - 2026-08-08
+
+### Added
+- **observadores:** agregar `detailMode` al calendario para mostrar detalle en modal o vista lateral
+- **observadores:** integrar calendario en panel lateral con autogestión de novedades
+- **observadores:** mostrar historial completo y agregar flota en timeline
+- **mareas:** mejoras UX/UI y carga de datos en calendario de observadores
+- **calendario:** integración de mareas en el calendario del observador
+- **frontend:** añadir navegación mensual premium en matriz de presentismo
+- **frontend:** añadir estilos específicos para DISPONIBLE y NO_DISPONIBLE
+- **admin:** agregar vista de calendario de novedades por observador
+- **admin:** añadir pesquería en historial del observador
+- **mareas:** implementar subida diferida de archivos a Drive
+- **planificacion:** bloquear modificación de adjuntos en novedades autogeneradas
+- **planificacion:** restringir adjuntos de Novedades a imágenes y PDFs
+- **planificacion:** permitir adjuntos en novedades manuales vía Google Drive
+- **planificacion:** simplificar matriz de experiencia aglutinando por pesquería y remover desglose por flota
+- **planificacion:** implementar modal de detalle de mareas en matriz de experiencia
+- **planificacion:** vincular simulador al store de configuración y cargar horizonte de 5 años
+- **planificacion:** mensaje de error de solapamiento más específico
+- **planificacion:** autofocus en modal de recursos
+- **planificacion:** bloquear fechas pasadas para proyecciones de mareas
+- **planificacion:** tooltip con fechas en bloques y snap a días enteros
+- **planificacion:** autocerrar recursos y agregar simulador al sidebar
+- **planificacion:** devolver marea proyectada a requerimientos pendientes y editar parámetros en timeline
+- **planificacion:** usar `SearchableSelect` para catálogos en el simulador y permitir editar/eliminar recursos
+- **planificacion:** mejorar UI/UX de bloques del simulador y corregir estados
+- **presentismo:** implementar y pulir vis-timeline para matriz de presentismo
+
+### Fixed
+- **mareas:** ajustar margen superior del panel lateral para no ocultarse bajo navbar
+- **backend:** mejorar extracción de fechas en pasajes con IA
+- **novedades:** gestión de novedades eliminadas lógicamente
+- **admin:** restaurar lógica de días a disponibilidad en puerto local
+- **mail:** optimizar procesamiento de pasajes por IA y habilitar rango de fechas
+- **planificacion:** agregar debounce al buscador del simulador de cobertura para evitar lag al escribir
+- **backend:** generar iteradores de fechas en zona local en lugar de UTC para evitar desfasaje de 1 día en timeline
+- **planificacion:** operador non-null assertion para editar buqueId en modal
+- **planificacion:** corregir binding de `buqueId` en modal editar marea simulada
+- **planificacion:** restaurar opcionalidad de `buqueId` en `MareaSimuladaItem`
+- **planificacion:** corregir errores de tipos TS en `SimuladorCoberturaView`
+- **planificacion:** aumentar ancho modal editar marea simulada a XL
+- **planificacion:** agrandar modal editar marea simulada y mejorar texto botón
+- **planificacion:** incluir novedades sin `afecta_presentismo` en timeline de simulador
+- **planificacion:** tooltip con fecha de fin inclusiva correcta
+- **planificacion:** corregir mensaje al mover marea simulada en timeline
+- **planificacion:** corregir bugs de scope de Vue CSS con selectores globales para dark mode
+- **planificacion:** corregir selectores CSS para dark mode en simulador
+- **planificacion:** restaurar estilos visuales de bloques proyectados
+- **planificacion:** excluir mareas canceladas del simulador de cobertura
+- **planificacion:** corregir comportamiento de drag and drop en simulador
+- **frontend:** aumentar timeout de envío a protocolización a 5 minutos
+- **presentismo:** ocultar línea de tiempo actual y resolver advertencias de TS en Vis-Timeline
+
+### Refactored
+- **mail:** procesar contenido de adjuntos en triage para mejorar precisión
+- **frontend:** migrar calendario de novedades a `v-calendar` y aplicar rediseño responsive
+- **planificacion:** usar `BaseModal` y `v-form-nav` para diálogos y double click en recursos
+- **planificacion:** desacoplar lógica de presentismo y crear endpoint nativo para simulación
 
 ## [v0.11.0] - 2026-07-30
 

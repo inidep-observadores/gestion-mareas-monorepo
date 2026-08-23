@@ -493,9 +493,70 @@ export class PlanificacionService {
       }
     }
 
+    // Construir índices raw por observador para que el motor de frontend
+    // pueda procesarlos igual que ObservadorCalendar.vue (misma lógica).
+    const novedadesRaw: Record<string, any[]> = {};
+    const mareasRaw: Record<string, any[]> = {};
+
+    for (const obs of observadores) {
+      // Novedades: incluir solo las aprobadas y activas del observador
+      const obsNovedades = novedadesDb.filter(n => n.observadorId === obs.id);
+      novedadesRaw[obs.id] = obsNovedades.map(n => ({
+        id: n.id,
+        fechaInicio: n.fechaInicio.toISOString(),
+        fechaFin: n.fechaFin ? n.fechaFin.toISOString() : null,
+        estadoAprobacion: n.estadoAprobacion,
+        activo: n.activo,
+        motivo: n.motivo,
+        tipoNovedad: {
+          id: n.tipoNovedad.id,
+          codigo: n.tipoNovedad.codigo,
+          descripcion: n.tipoNovedad.descripcion,
+          afectaPresentismo: n.tipoNovedad.afectaPresentismo,
+        },
+        // Espejo de la forma que usa ObservadorCalendar para el filtrado
+        observador: { id: obs.id },
+      }));
+
+      // Mareas: incluir solo las del observador con sus etapas en formato compatible
+      const obsMareas = mareasDb.filter(m =>
+        m.observadorPrincipalId === obs.id ||
+        m.etapas.some(e => e.observadores.some((eo: any) => eo.observadorId === obs.id))
+      );
+      mareasRaw[obs.id] = obsMareas.map(m => ({
+        id: m.id,
+        tipoMarea: (m as any).tipoMarea,
+        nroMarea: (m as any).nroMarea,
+        anioMarea: (m as any).anioMarea,
+        diasEstimados: (m as any).diasEstimados,
+        fechaInicioObservador: m.fechaInicioObservador ? m.fechaInicioObservador.toISOString() : null,
+        fechaFinObservador: m.fechaFinObservador ? m.fechaFinObservador.toISOString() : null,
+        fechaZarpadaEstimada: (m as any).fechaZarpadaEstimada ? (m as any).fechaZarpadaEstimada.toISOString() : null,
+        inicioValidado: (m as any).inicioValidado ?? false,
+        finValidado: (m as any).finValidado ?? false,
+        estadoActual: {
+          codigo: m.estadoActual.codigo,
+          nombre: (m.estadoActual as any).nombre,
+        },
+        buque: m.observadorPrincipal ? null : null, // Relación de buque no incluida en esta query
+        pesqueria: null,
+        etapas: m.etapas.map((e: any) => ({
+          id: e.id,
+          nroEtapa: e.nroEtapa,
+          fechaZarpada: e.fechaZarpada ? e.fechaZarpada.toISOString() : null,
+          fechaArribo: e.fechaArribo ? e.fechaArribo.toISOString() : null,
+          puertoZarpada: e.puertoZarpada,
+          puertoArribo: e.puertoArribo,
+          pesqueria: null,
+        })),
+      }));
+    }
+
     return {
-      observadores: observadores,
-      eventos
+      observadores,
+      eventos,
+      novedadesRaw,
+      mareasRaw,
     };
   }
 
