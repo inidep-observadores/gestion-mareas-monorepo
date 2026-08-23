@@ -463,8 +463,16 @@ const buildBlockInfo = (stateSignature: string, startDia: number, endDia: number
     visClassName = 'vis-item-ez';
     content = 'DISP';
   } else if (diaData.estado === 'VIAJE') {
-    className = 'bg-[#E6E6FA] text-black';
-    visClassName = 'vis-item-viaje';
+    const isTransito = diaData.codigoCorto?.includes('TRANSITO') || diaData.detalle?.includes('En tránsito');
+    if (isTransito) {
+      className = 'bg-[#F3F4F6] text-black';
+      visClassName = 'vis-item-transito';
+      content = 'En tránsito';
+    } else {
+      className = 'bg-[#E6E6FA] text-black';
+      visClassName = 'vis-item-viaje';
+      content = 'Viaje';
+    }
   } else if (diaData.estado === 'NOVEDAD') {
     className = 'bg-[#ADD8E6] text-black';
     visClassName = 'vis-item-novedad';
@@ -606,11 +614,19 @@ const getCellClass = (dia: DiaEstado) => {
 
 const formatTooltipTitle = (dia: DiaEstado) => {
   const estado = dia.estado;
+  if (estado === 'VIAJE') {
+    if (dia.codigoCorto?.includes('FIN') || dia.detalle?.toLowerCase().includes('fin')) {
+      return 'Fin de viaje';
+    }
+    if (dia.codigoCorto?.includes('INICIO') || dia.detalle?.toLowerCase().includes('inicio')) {
+      return 'Inicio de viaje';
+    }
+    return 'En Viaje';
+  }
   const map: Record<string, string> = {
     'NAVEGANDO': 'Navegando',
     'PUERTO': 'En Puerto (No Local)',
     'ESPERANDO_ZARPADA': 'A disponibilidad',
-    'VIAJE': 'En Viaje',
     'NOVEDAD': 'Novedad / Licencia',
     'FERIADO': 'Feriado',
     'CONFLICTO': '¡Conflicto!',
@@ -723,6 +739,7 @@ onBeforeUnmount(() => {
 .legend-puerto, :global(.presentismo-timeline .vis-item-puerto) { background-color: #ffedd5 !important; color: black !important; border-color: #fdba74 !important; border-width: 2px !important; border-style: solid !important; }
 .legend-viaje, :global(.presentismo-timeline .vis-item-viaje) { background-color: #e0e7ff !important; color: black !important; border-color: #a5b4fc !important; border-width: 2px !important; border-style: solid !important; }
 .legend-ez, :global(.presentismo-timeline .vis-item-ez) { background-color: #f3f4f6 !important; color: black !important; border-color: #d1d5db !important; border-width: 2px !important; border-style: solid !important; }
+.legend-transito, :global(.presentismo-timeline .vis-item-transito) { background-color: #f8fafc !important; color: #334155 !important; border-color: #cbd5e1 !important; border-width: 2px !important; border-style: solid !important; }
 .legend-novedad, :global(.presentismo-timeline .vis-item-novedad) { background-color: #e0f2fe !important; color: black !important; border-color: #7dd3fc !important; border-width: 2px !important; border-style: solid !important; }
 .legend-feriado, :global(.presentismo-timeline .vis-item-feriado) { background-color: #f97316 !important; color: white !important; border-color: #c2410c !important; border-width: 2px !important; border-style: solid !important; }
 .legend-conflicto, :global(.presentismo-timeline .vis-item-conflicto) { background-color: #ef4444 !important; color: white !important; border-color: #b91c1c !important; border-width: 2px !important; border-style: solid !important; }
@@ -734,6 +751,7 @@ onBeforeUnmount(() => {
 :global(.dark) .legend-puerto, :global(.dark .presentismo-timeline .vis-item-puerto) { background-color: rgba(234, 88, 12, 0.3) !important; color: #ffedd5 !important; border-color: rgba(234, 88, 12, 0.5) !important; }
 :global(.dark) .legend-viaje, :global(.dark .presentismo-timeline .vis-item-viaje) { background-color: rgba(79, 70, 229, 0.3) !important; color: #e0e7ff !important; border-color: rgba(79, 70, 229, 0.5) !important; }
 :global(.dark) .legend-ez, :global(.dark .presentismo-timeline .vis-item-ez) { background-color: #374151 !important; color: #e5e7eb !important; border-color: #4b5563 !important; }
+:global(.dark) .legend-transito, :global(.dark .presentismo-timeline .vis-item-transito) { background-color: #1e293b !important; color: #cbd5e1 !important; border-color: #475569 !important; }
 :global(.dark) .legend-novedad, :global(.dark .presentismo-timeline .vis-item-novedad) { background-color: rgba(14, 165, 233, 0.3) !important; color: #bae6fd !important; border-color: rgba(14, 165, 233, 0.5) !important; }
 :global(.dark) .legend-feriado, :global(.dark .presentismo-timeline .vis-item-feriado) { background-color: #9a3412 !important; color: white !important; border-color: #7c2d12 !important; }
 :global(.dark) .legend-conflicto, :global(.dark .presentismo-timeline .vis-item-conflicto) { background-color: #991b1b !important; color: white !important; border-color: #7f1d1d !important; }

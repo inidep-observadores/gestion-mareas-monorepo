@@ -57,55 +57,7 @@ export class PresentismoService {
       }
     });
 
-    // 3.5. Pre-procesar novedades VIAJE_FIN: si existe un hueco entre el final de la última marea y el inicio del viaje, estirar la novedad
-    for (const novedad of novedadesDb) {
-      if (novedad.tipoNovedad?.codigo === 'VIAJE_FIN') {
-        const ultimaMarea = await this.prisma.marea.findFirst({
-          where: {
-            activo: true,
-            OR: [
-              { observadorPrincipalId: novedad.observadorId },
-              { etapas: { some: { observadores: { some: { observadorId: novedad.observadorId } } } } }
-            ],
-            etapas: {
-              some: {
-                fechaArribo: { lte: novedad.fechaInicio }
-              }
-            }
-          },
-          include: {
-            etapas: {
-              orderBy: { nroEtapa: 'desc' },
-              include: {
-                observadores: true
-              }
-            }
-          },
-          orderBy: [
-            { anioMarea: 'desc' },
-            { nroMarea: 'desc' }
-          ]
-        });
 
-        if (ultimaMarea && ultimaMarea.etapas.length > 0) {
-          const isPrincipal = ultimaMarea.observadorPrincipalId === novedad.observadorId;
-          const etapasDelObs = isPrincipal
-            ? ultimaMarea.etapas
-            : ultimaMarea.etapas.filter(e => e.observadores.some(eo => eo.observadorId === novedad.observadorId));
-
-          const ultimaEtapa = etapasDelObs.find(e => e.fechaArribo && e.fechaArribo <= novedad.fechaInicio) || etapasDelObs[0];
-
-          if (ultimaEtapa && ultimaEtapa.fechaArribo) {
-            const arriboMarea = DateTime.fromJSDate(ultimaEtapa.fechaArribo, { zone: 'utc' }).endOf('day');
-            const inicioNovedad = DateTime.fromJSDate(novedad.fechaInicio, { zone: 'utc' }).startOf('day');
-            
-            if (inicioNovedad > arriboMarea && inicioNovedad.diff(arriboMarea, 'days').days <= 10) {
-              novedad.fechaInicio = arriboMarea.plus({ days: 1 }).toJSDate();
-            }
-          }
-        }
-      }
-    }
 
     // 4. Traer Mareas para el mes actual
     const mareasDb = await this.prisma.marea.findMany({

@@ -781,6 +781,9 @@ export function toVisTimelineItems(
       } else if (isNoDisponible) {
         className = 'vis-item-no-disponible';
         displayLabel = 'NO_DISP...';
+      } else if (code.includes('VIAJE') || code === 'VIAJE_INICIO' || code === 'VIAJE_FIN') {
+        className = 'vis-item-novedad';
+        displayLabel = 'Viaje';
       } else {
         // Código corto (hasta ~6 chars) para novedades genéricas
         displayLabel = code ? code.substring(0, 6) : (ev.novedad?.tipoNovedad?.descripcion?.substring(0, 8) || 'Novedad');

@@ -17,6 +17,7 @@ export function evaluarEstadoDia(
   let isNavegando = false;
   let etapaNavegando: any = null;
   let isViaje = false;
+  let tipoViajeTramo: 'INICIO' | 'FIN' | null = null;
   let isPuerto = false;
   let isEsperandoZarpada = false;
   let puertoDetalle = '';
@@ -41,6 +42,10 @@ export function evaluarEstadoDia(
         // Ignorar para matriz de presentismo
       } else if (novedad.tipoNovedad.codigo === 'VIAJE_INICIO' || novedad.tipoNovedad.codigo === 'VIAJE_FIN') {
         isViaje = true;
+        novedadCodigoCorto = novedad.tipoNovedad.codigo;
+        tipoViajeTramo = novedad.tipoNovedad.codigo === 'VIAJE_FIN' ? 'FIN' : 'INICIO';
+        novedadDetalle = 'En viaje' + (novedad.motivo ? ` - ${novedad.motivo}` : '');
+        novedadReferenciaId = novedad.id;
       } else {
         isNovedad = true;
         novedadesActivas.push(novedad);
@@ -113,15 +118,39 @@ export function evaluarEstadoDia(
       continue;
     }
 
-    // 1. VIAJE INICIAL
+    // 1. VIAJE INICIAL / EN TRÁNSITO PRE-ZARPADA
     const primeraEtapa = marea.etapas[0];
-    if (marea.inicioValidado && primeraEtapa && primeraEtapa.fechaZarpada && marea.fechaInicioObservador) {
+    if (primeraEtapa && primeraEtapa.fechaZarpada) {
       const zarpada1 = DateTime.fromJSDate(primeraEtapa.fechaZarpada, { zone: 'utc' }).startOf('day');
-      const inicioObs = DateTime.fromJSDate(marea.fechaInicioObservador, { zone: 'utc' }).startOf('day');
-      if (currentDate >= inicioObs && currentDate < zarpada1) {
-        isViaje = true;
-        mareaReferencia = marea;
-        break;
+      
+      // A. Inicio de marea validado con fecha de inicio del observador
+      if (marea.inicioValidado && marea.fechaInicioObservador) {
+        const inicioObs = DateTime.fromJSDate(marea.fechaInicioObservador, { zone: 'utc' }).startOf('day');
+        if (currentDate >= inicioObs && currentDate < zarpada1) {
+          isViaje = true;
+          tipoViajeTramo = 'INICIO';
+          mareaReferencia = marea;
+          if (!puertoDetalle) puertoDetalle = 'En tránsito';
+          break;
+        }
+      }
+
+      // B. Novedad VIAJE_INICIO previa a la zarpada
+      const viajeInicio = obsNovedades.find(n => n.tipoNovedad?.codigo === 'VIAJE_INICIO');
+      if (viajeInicio) {
+        const finViajeInicio = viajeInicio.fechaFin 
+          ? DateTime.fromJSDate(viajeInicio.fechaFin, { zone: 'utc' }).endOf('day')
+          : DateTime.fromJSDate(viajeInicio.fechaInicio, { zone: 'utc' }).endOf('day');
+        
+        if (finViajeInicio < zarpada1 && zarpada1.diff(finViajeInicio, 'days').days <= 10) {
+          if (currentDate > finViajeInicio && currentDate < zarpada1) {
+            isViaje = true;
+            tipoViajeTramo = 'INICIO';
+            mareaReferencia = marea;
+            if (!puertoDetalle) puertoDetalle = 'En tránsito';
+            break;
+          }
+        }
       }
     }
 
@@ -154,10 +183,30 @@ export function evaluarEstadoDia(
     if (ultimaEtapa && ultimaEtapa.fechaArribo) {
       const arriboUltima = DateTime.fromJSDate(ultimaEtapa.fechaArribo, { zone: 'utc' }).endOf('day');
       if (currentDate > arriboUltima) {
+        // A. Novedad VIAJE_FIN posterior al arribo
+        const viajeFin = obsNovedades.find(n => {
+          if (n.tipoNovedad?.codigo !== 'VIAJE_FIN') return false;
+          const ini = DateTime.fromJSDate(n.fechaInicio, { zone: 'utc' }).startOf('day');
+          return ini > arriboUltima && ini.diff(arriboUltima, 'days').days <= 10;
+        });
+
+        if (viajeFin) {
+          const inicioViajeFin = DateTime.fromJSDate(viajeFin.fechaInicio, { zone: 'utc' }).startOf('day');
+          if (currentDate < inicioViajeFin) {
+            isViaje = true;
+            tipoViajeTramo = 'FIN';
+            mareaReferencia = marea;
+            if (!puertoDetalle) puertoDetalle = 'En tránsito';
+            break;
+          }
+        }
+
+        // B. Fecha fin de observador validada
         if (marea.finValidado && marea.fechaFinObservador && currentDate <= DateTime.fromJSDate(marea.fechaFinObservador, { zone: 'utc' }).startOf('day')) {
-          // Hay fecha_fin_observador seteada y validada -> Es Viaje
           isViaje = true;
+          tipoViajeTramo = 'FIN';
           mareaReferencia = marea;
+          if (!puertoDetalle) puertoDetalle = 'En tránsito';
           break;
         } else if (!marea.fechaFinObservador) {
           // No hay fecha fin observador
@@ -214,8 +263,25 @@ export function evaluarEstadoDia(
     const mareaStr = mareaReferencia ? `${mareaReferencia.tipoMarea}-${mareaReferencia.nroMarea}-${mareaReferencia.anioMarea.toString().slice(-2)}` : '';
     estadoDto = { estado: 'NAVEGANDO', referenciaId: etapaNavegando?.id || mareaReferencia?.id, detalle: mareaStr };
   } else if (isViaje) {
-    const mareaStr = mareaReferencia ? `${mareaReferencia.tipoMarea}-${mareaReferencia.nroMarea}-${mareaReferencia.anioMarea.toString().slice(-2)}` : '';
-    estadoDto = { estado: 'VIAJE', referenciaId: mareaReferencia?.id, detalle: mareaStr };
+    const isTransito = puertoDetalle === 'En tránsito' && !novedadDetalle;
+    const isInicio = novedadCodigoCorto === 'VIAJE_INICIO' || tipoViajeTramo === 'INICIO';
+    const isFin = novedadCodigoCorto === 'VIAJE_FIN' || tipoViajeTramo === 'FIN';
+    
+    let codCorto = 'VIAJE';
+    if (isTransito) {
+      codCorto = isFin ? 'TRANSITO_FIN' : 'TRANSITO_INICIO';
+    } else {
+      codCorto = isFin ? 'VIAJE_FIN' : 'VIAJE_INICIO';
+    }
+
+    const detalleFinal = isTransito ? 'En tránsito' : (novedadDetalle || 'En viaje');
+    
+    estadoDto = { 
+      estado: 'VIAJE', 
+      codigoCorto: codCorto,
+      referenciaId: novedadReferenciaId || mareaReferencia?.id, 
+      detalle: detalleFinal 
+    };
   } else if (isPuerto) {
     estadoDto = { estado: 'PUERTO', detalle: puertoDetalle };
   } else if (isEsperandoZarpada) {

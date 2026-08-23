@@ -5,6 +5,9 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 
 ## [Unreleased]
 
+- **presentismo:** computar automáticamente como 'En tránsito' los días intermedios entre el viaje inicial y la zarpada, y entre el arribo y el viaje de regreso
+- **presentismo:** preservar las fechas originales de las novedades de viaje sin mutaciones artificiales en la planilla mensual
+- **planificacion:** corregir visualización de etiquetas de eventos de viaje en el timeline del simulador mostrando 'Viaje' en lugar de código truncado
 - **presentismo:** aislar el cómputo de etapas y períodos de puerto/navegación para observadores secundarios y dar por finalizada su participación tras su última etapa asignada
 - **presentismo:** vincular eventos de viaje (`VIAJE_INICIO` y `VIAJE_FIN`) con las etapas específicas asignadas a cada observador secundario
 - **admin:** reflejar etapas asignadas y designaciones de observadores secundarios en el calendario individual (`ObservadorCalendarView`) y en el simulador
