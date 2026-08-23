@@ -31,7 +31,7 @@ services:
       - ./static-staging:/app/static
       - ./uploads-staging:/app/uploads
     command: >
-      sh -c "npx prisma generate && npx prisma migrate deploy && node dist/src/main"
+      sh -c "npx prisma generate && npx prisma migrate deploy && node dist/main"
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.sigma-backend-staging.rule=Host(`${STAGING_API_DOMAIN}`)"

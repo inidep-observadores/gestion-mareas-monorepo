@@ -36,4 +36,4 @@ COPY --from=builder /app/prisma.config.js ./prisma.config.js
 COPY --from=builder /app/static ./static
 # Generamos el cliente de Prisma en la imagen final para evitar problemas de rutas con pnpm
 RUN npx prisma generate
-CMD ["node", "dist/src/main"]
+CMD ["node", "dist/main"]
