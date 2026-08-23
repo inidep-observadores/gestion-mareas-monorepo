@@ -161,11 +161,13 @@ export function evaluarEstadoDia(
           break;
         } else if (!marea.fechaFinObservador) {
           // No hay fecha fin observador
-
-          if (marea.estadoActual.codigo !== MareaEstado.EN_EJECUCION && marea.estadoActual.codigo !== MareaEstado.DESIGNADA && marea.estadoActual.codigo !== MareaEstado.A_REASIGNAR) {
+          // Si el observador es secundario, su participación concluyó con el arribo de su última etapa asignada
+          if (marea.isSecundario) {
+            // Participación de observador secundario finalizada, no se consideran días posteriores
+          } else if (marea.estadoActual.codigo !== MareaEstado.EN_EJECUCION && marea.estadoActual.codigo !== MareaEstado.DESIGNADA && marea.estadoActual.codigo !== MareaEstado.A_REASIGNAR) {
             // Marea finalizó, no se consideran más días
           } else {
-            // Marea activa, esperando etapa -> Puerto si no es local, Esperando Zarpada si es local
+            // Marea activa de observador principal, esperando etapa -> Puerto si no es local, Esperando Zarpada si es local
             const puerto = ultimaEtapa.puertoArribo;
             if (puerto) {
               if (!puerto.esLocal) {

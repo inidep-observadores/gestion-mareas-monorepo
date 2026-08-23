@@ -636,7 +636,7 @@ const conflictosDetectados = computed(() => {
     const novedades = datosSimulacion.value!.novedadesRaw?.[sim.observadorId] || [];
     const mareas = datosSimulacion.value!.mareasRaw?.[sim.observadorId] || [];
 
-    const eventosObs = buildObservadorEventos(novedades, mareas, today);
+    const eventosObs = buildObservadorEventos(novedades, mareas, today, sim.observadorId);
 
     for (const ev of eventosObs) {
       // Ignorar disponibilidades y marcas internas de conflicto previo
@@ -748,7 +748,7 @@ const renderTimeline = () => {
         const novedades = datosSimulacion.value!.novedadesRaw?.[obs.id] || [];
         const mareas = datosSimulacion.value!.mareasRaw?.[obs.id] || [];
 
-        const eventos = buildObservadorEventos(novedades, mareas, today);
+        const eventos = buildObservadorEventos(novedades, mareas, today, obs.id);
         const items = toVisTimelineItems(obs.id, eventos);
         itemsArray.push(...items);
       } catch (err) {

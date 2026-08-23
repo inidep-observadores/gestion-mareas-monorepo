@@ -273,7 +273,7 @@ const calendarAttributes = computed(() => {
       n.activo !== false
   );
 
-  const eventos = buildObservadorEventos(novedadesActivas, mareas.value, today);
+  const eventos = buildObservadorEventos(novedadesActivas, mareas.value, today, props.observadorId);
   return toVCalendarAttributes(eventos);
 });
 </script>

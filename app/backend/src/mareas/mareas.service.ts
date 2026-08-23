@@ -1883,6 +1883,12 @@ export class MareasService {
                                 }
                             }
                         }
+                    },
+                    {
+                        metadata: {
+                            path: ['observadoresSecundariosPlanificados'],
+                            array_contains: [{ observadorId: observadorId }]
+                        }
                     }
                 ]
             },

@@ -98,7 +98,8 @@ function registrarDiasEnConteo(
 export function buildObservadorEventos(
   novedadesActivas: any[],
   mareas: any[],
-  today: Date = new Date()
+  today: Date = new Date(),
+  observadorId?: string | null
 ): EventoObservador[] {
   const eventos: EventoObservador[] = [];
   const datesCount: Record<string, number> = {};
@@ -164,12 +165,59 @@ export function buildObservadorEventos(
       marea.estadoActual?.codigo === 'DESIGNADA' ||
       marea.estadoActual?.codigo === 'ESPERANDO_ZARPADA';
 
-    let etapasToMap: any[] =
-      marea.etapas && marea.etapas.length > 0 ? marea.etapas : [];
+    const isPrincipal = !observadorId || marea.observadorPrincipalId === observadorId;
 
-    if (etapasToMap.length === 0) {
-      // Fallback para mareas sin etapas (ej: designada sin datos)
-      etapasToMap = [{ id: marea.id, isDummy: true }];
+    let etapasToMap: any[] = [];
+
+    if (isPrincipal) {
+      etapasToMap = marea.etapas && marea.etapas.length > 0 ? marea.etapas : [];
+      if (etapasToMap.length === 0) {
+        etapasToMap = [{ id: marea.id, isDummy: true }];
+      }
+    } else {
+      // Es observador secundario: filtrar etapas correspondientes o planificadas
+      const etapasParticipa = (marea.etapas || []).filter((e: any) =>
+        (e.observadores || []).some((o: any) => (o.observadorId || o.id) === observadorId)
+      );
+
+      const rawMeta = marea.metadata;
+      let planificados: any[] = [];
+      if (rawMeta) {
+        try {
+          const parsed = typeof rawMeta === 'string' ? JSON.parse(rawMeta) : rawMeta;
+          planificados = parsed.observadoresSecundariosPlanificados || [];
+        } catch {
+          planificados = [];
+        }
+      }
+      if (planificados.length === 0 && marea.observadoresSecundariosPlanificados) {
+        planificados = marea.observadoresSecundariosPlanificados;
+      }
+
+      const planificadoParaObs = planificados.filter(
+        (p: any) => p.observadorId === observadorId
+      );
+
+      if (etapasParticipa.length > 0) {
+        etapasToMap = etapasParticipa;
+      } else if (planificadoParaObs.length > 0) {
+        if (marea.etapas && marea.etapas.length > 0) {
+          etapasToMap = marea.etapas.filter((e: any) => {
+            const nro = e.nroEtapa || 1;
+            return planificadoParaObs.some((p: any) => {
+              const desde = p.etapaDesde ?? 1;
+              const hasta = p.etapaHasta ?? Infinity;
+              return nro >= desde && nro <= hasta;
+            });
+          });
+        }
+        if (etapasToMap.length === 0) {
+          etapasToMap = [{ id: `${marea.id}-secundario`, isDummy: true }];
+        }
+      } else {
+        // No participa en esta marea
+        return;
+      }
     }
 
     const hasMultipleEtapas = etapasToMap.length > 1;
@@ -216,12 +264,14 @@ export function buildObservadorEventos(
       const estadoCodigo = marea.estadoActual?.codigo || '';
       let sublabel = marea.estadoActual?.nombre || '';
       if (estadoCodigo === 'EN_EJECUCION') {
-        sublabel = 'En ejecución';
+        sublabel = isPrincipal ? 'En ejecución' : 'En ejecución (Secundario)';
       } else if (
         etapa.fechaArribo ||
         ['CERRADA', 'FINALIZADA', 'EVALUACION'].some(c => estadoCodigo.includes(c))
       ) {
-        sublabel = 'Finalizada';
+        sublabel = isPrincipal ? 'Finalizada' : 'Finalizada (Secundario)';
+      } else if (isDesignada && !isPrincipal) {
+        sublabel = 'Designada (Secundario)';
       }
 
       const pesqueria = etapa.pesqueria?.nombre || marea.pesqueria?.nombre || '';
@@ -326,8 +376,12 @@ export function buildObservadorEventos(
 
       let nearestZarpada: Date | null = null;
       mareas.forEach((marea: any) => {
-        const etapas: any[] =
-          marea.etapas && marea.etapas.length > 0 ? marea.etapas : [];
+        const isPrincipal = !observadorId || marea.observadorPrincipalId === observadorId;
+        const allEtapas: any[] = marea.etapas && marea.etapas.length > 0 ? marea.etapas : [];
+        const etapas: any[] = isPrincipal
+          ? allEtapas
+          : allEtapas.filter((e: any) => (e.observadores || []).some((o: any) => (o.observadorId || o.id) === observadorId));
+
         const sortedEtapas = [...etapas].sort(
           (a, b) => (a.nroEtapa || 0) - (b.nroEtapa || 0)
         );
@@ -371,8 +425,12 @@ export function buildObservadorEventos(
 
       let nearestArribo: Date | null = null;
       mareas.forEach((marea: any) => {
-        const etapas: any[] =
-          marea.etapas && marea.etapas.length > 0 ? marea.etapas : [];
+        const isPrincipal = !observadorId || marea.observadorPrincipalId === observadorId;
+        const allEtapas: any[] = marea.etapas && marea.etapas.length > 0 ? marea.etapas : [];
+        const etapas: any[] = isPrincipal
+          ? allEtapas
+          : allEtapas.filter((e: any) => (e.observadores || []).some((o: any) => (o.observadorId || o.id) === observadorId));
+
         const sortedEtapas = [...etapas].sort(
           (a, b) => (b.nroEtapa || 0) - (a.nroEtapa || 0)
         );

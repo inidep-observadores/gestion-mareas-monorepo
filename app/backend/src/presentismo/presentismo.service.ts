@@ -76,7 +76,9 @@ export class PresentismoService {
           include: {
             etapas: {
               orderBy: { nroEtapa: 'desc' },
-              take: 1
+              include: {
+                observadores: true
+              }
             }
           },
           orderBy: [
@@ -85,12 +87,21 @@ export class PresentismoService {
           ]
         });
 
-        if (ultimaMarea && ultimaMarea.etapas.length > 0 && ultimaMarea.etapas[0].fechaArribo) {
-          const arriboMarea = DateTime.fromJSDate(ultimaMarea.etapas[0].fechaArribo, { zone: 'utc' }).endOf('day');
-          const inicioNovedad = DateTime.fromJSDate(novedad.fechaInicio, { zone: 'utc' }).startOf('day');
-          
-          if (inicioNovedad > arriboMarea && inicioNovedad.diff(arriboMarea, 'days').days <= 10) {
-            novedad.fechaInicio = arriboMarea.plus({ days: 1 }).toJSDate();
+        if (ultimaMarea && ultimaMarea.etapas.length > 0) {
+          const isPrincipal = ultimaMarea.observadorPrincipalId === novedad.observadorId;
+          const etapasDelObs = isPrincipal
+            ? ultimaMarea.etapas
+            : ultimaMarea.etapas.filter(e => e.observadores.some(eo => eo.observadorId === novedad.observadorId));
+
+          const ultimaEtapa = etapasDelObs.find(e => e.fechaArribo && e.fechaArribo <= novedad.fechaInicio) || etapasDelObs[0];
+
+          if (ultimaEtapa && ultimaEtapa.fechaArribo) {
+            const arriboMarea = DateTime.fromJSDate(ultimaEtapa.fechaArribo, { zone: 'utc' }).endOf('day');
+            const inicioNovedad = DateTime.fromJSDate(novedad.fechaInicio, { zone: 'utc' }).startOf('day');
+            
+            if (inicioNovedad > arriboMarea && inicioNovedad.diff(arriboMarea, 'days').days <= 10) {
+              novedad.fechaInicio = arriboMarea.plus({ days: 1 }).toJSDate();
+            }
           }
         }
       }
@@ -157,24 +168,40 @@ export class PresentismoService {
 
       const obsNovedades = novedadesDb.filter(n => n.observadorId === obs.id);
       
-      const obsMareas = mareasDb.filter(m => 
-        m.observadorPrincipalId === obs.id || 
-        m.etapas.some(e => e.observadores.some(eo => eo.observadorId === obs.id))
-      ).sort((a, b) => {
-        const aStarted = a.fechaInicioObservador !== null;
-        const bStarted = b.fechaInicioObservador !== null;
-        if (aStarted && !bStarted) return -1;
-        if (!aStarted && bStarted) return 1;
+      const obsMareas = mareasDb
+        .filter(m => 
+          m.observadorPrincipalId === obs.id || 
+          m.etapas.some(e => e.observadores.some(eo => eo.observadorId === obs.id))
+        )
+        .map(m => {
+          if (m.observadorPrincipalId === obs.id) {
+            return {
+              ...m,
+              isSecundario: false
+            };
+          }
+          // Para observadores secundarios, aislar exclusivamente las etapas donde participó
+          return {
+            ...m,
+            isSecundario: true,
+            etapas: m.etapas.filter(e => e.observadores.some(eo => eo.observadorId === obs.id))
+          };
+        })
+        .sort((a, b) => {
+          const aStarted = a.fechaInicioObservador !== null;
+          const bStarted = b.fechaInicioObservador !== null;
+          if (aStarted && !bStarted) return -1;
+          if (!aStarted && bStarted) return 1;
 
-        const aFinished = a.fechaFinObservador !== null;
-        const bFinished = b.fechaFinObservador !== null;
-        if (!aFinished && bFinished) return -1;
-        if (aFinished && !bFinished) return 1;
+          const aFinished = a.fechaFinObservador !== null;
+          const bFinished = b.fechaFinObservador !== null;
+          if (!aFinished && bFinished) return -1;
+          if (aFinished && !bFinished) return 1;
 
-        const aDate = a.fechaInicioObservador ? a.fechaInicioObservador.getTime() : 0;
-        const bDate = b.fechaInicioObservador ? b.fechaInicioObservador.getTime() : 0;
-        return bDate - aDate;
-      });
+          const aDate = a.fechaInicioObservador ? a.fechaInicioObservador.getTime() : 0;
+          const bDate = b.fechaInicioObservador ? b.fechaInicioObservador.getTime() : 0;
+          return bDate - aDate;
+        });
 
       for (let dia = 1; dia <= diasMes; dia++) {
         const currentDate = startOfMonth.set({ day: dia }).startOf('day');

@@ -518,11 +518,14 @@ export class PlanificacionService {
         observador: { id: obs.id },
       }));
 
-      // Mareas: incluir solo las del observador con sus etapas en formato compatible
-      const obsMareas = mareasDb.filter(m =>
-        m.observadorPrincipalId === obs.id ||
-        m.etapas.some(e => e.observadores.some((eo: any) => eo.observadorId === obs.id))
-      );
+      // Mareas: incluir las del observador (principal, secundario en etapas o planificado en metadata)
+      const obsMareas = mareasDb.filter(m => {
+        if (m.observadorPrincipalId === obs.id) return true;
+        if (m.etapas.some(e => e.observadores.some((eo: any) => eo.observadorId === obs.id))) return true;
+        const meta = (m as any).metadata as any;
+        const planificados = meta?.observadoresSecundariosPlanificados || [];
+        return Array.isArray(planificados) && planificados.some((p: any) => p.observadorId === obs.id);
+      });
       mareasRaw[obs.id] = obsMareas.map(m => ({
         id: m.id,
         tipoMarea: (m as any).tipoMarea,
@@ -534,11 +537,13 @@ export class PlanificacionService {
         fechaZarpadaEstimada: (m as any).fechaZarpadaEstimada ? (m as any).fechaZarpadaEstimada.toISOString() : null,
         inicioValidado: (m as any).inicioValidado ?? false,
         finValidado: (m as any).finValidado ?? false,
+        metadata: (m as any).metadata,
+        observadoresSecundariosPlanificados: ((m as any).metadata as any)?.observadoresSecundariosPlanificados || [],
         estadoActual: {
           codigo: m.estadoActual.codigo,
           nombre: (m.estadoActual as any).nombre,
         },
-        buque: m.observadorPrincipal ? null : null, // Relación de buque no incluida en esta query
+        buque: null,
         pesqueria: null,
         etapas: m.etapas.map((e: any) => ({
           id: e.id,
@@ -547,6 +552,11 @@ export class PlanificacionService {
           fechaArribo: e.fechaArribo ? e.fechaArribo.toISOString() : null,
           puertoZarpada: e.puertoZarpada,
           puertoArribo: e.puertoArribo,
+          observadores: (e.observadores || []).map((eo: any) => ({
+            observadorId: eo.observadorId,
+            rol: eo.rol,
+            esDesignado: eo.esDesignado
+          })),
           pesqueria: null,
         })),
       }));

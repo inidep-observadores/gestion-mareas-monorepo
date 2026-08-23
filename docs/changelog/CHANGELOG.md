@@ -5,7 +5,9 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 
 ## [Unreleased]
 
-### Added
+- **presentismo:** aislar el cómputo de etapas y períodos de puerto/navegación para observadores secundarios y dar por finalizada su participación tras su última etapa asignada
+- **presentismo:** vincular eventos de viaje (`VIAJE_INICIO` y `VIAJE_FIN`) con las etapas específicas asignadas a cada observador secundario
+- **admin:** reflejar etapas asignadas y designaciones de observadores secundarios en el calendario individual (`ObservadorCalendarView`) y en el simulador
 - **mareas:** incorporar precarga automática de observadores secundarios planificados al crear o iniciar etapas en `GestionEtapasMareaDialog` y `NavigationStagesEditor`
 - **mareas:** depurar y avanzar progresivamente el borrador de observadores planificados en `metadata` al materializar o asignar etapas
 - **mareas:** incorporar pestaña interna de gestión de observadores por etapa en `NavigationStagesEditor` con soporte para alta, edición y baja
