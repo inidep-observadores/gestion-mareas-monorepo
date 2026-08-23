@@ -180,7 +180,7 @@
           @click="saveObservador"
           class="px-4 py-1.5 text-xs font-black uppercase tracking-wider bg-primary text-primary-fg hover:bg-primary-hover rounded-lg transition-all active:scale-95 shadow-sm"
         >
-          {{ editingIndex !== null ? 'Guardar Cambios' : 'Agregar al Borrador' }}
+          {{ editingIndex !== null ? 'Guardar Cambios' : 'Agregar' }}
         </button>
       </div>
     </div>
@@ -224,7 +224,7 @@ const internalObservadores = ref<Observador[]>([]);
 onMounted(async () => {
   if (!props.observadorOptions || props.observadorOptions.length === 0) {
     try {
-      internalObservadores.value = await catalogosService.getObservadores();
+      internalObservadores.value = await catalogosService.getObservadores(true);
     } catch (e) {
       console.error('Error al cargar observadores para ObservadoresSecundariosEditor:', e);
     }
@@ -332,6 +332,22 @@ const saveObservador = () => {
     return;
   }
 
+  if (props.observadorPrincipalId && newEntry.value.observadorId === props.observadorPrincipalId) {
+    formError.value = 'El observador secundario no puede ser el mismo que el observador principal.';
+    return;
+  }
+
+  const current = [...(props.modelValue || [])];
+  const isDuplicate = current.some((item, idx) => 
+    item.observadorId === newEntry.value.observadorId && 
+    (editingIndex.value === null || idx !== editingIndex.value)
+  );
+
+  if (isDuplicate) {
+    formError.value = 'El observador ya se encuentra en la lista de secundarios.';
+    return;
+  }
+
   const desde = Number(newEntry.value.etapaDesde) || 1;
   const hasta = hastaFinDeMarea.value ? null : Number(newEntry.value.etapaHasta) || null;
 
@@ -346,8 +362,6 @@ const saveObservador = () => {
     etapaHasta: hasta,
     notas: newEntry.value.notas?.trim() || undefined
   };
-
-  const current = [...(props.modelValue || [])];
 
   if (editingIndex.value !== null && editingIndex.value >= 0 && editingIndex.value < current.length) {
     current[editingIndex.value] = entryData;

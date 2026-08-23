@@ -372,6 +372,15 @@ const validate = () => {
     isValid = false
   }
 
+  if (form.value.observadorPrincipalId && form.value.observadoresSecundariosPlanificados?.length) {
+    const conflict = form.value.observadoresSecundariosPlanificados.find(
+      (sec: any) => sec.observadorId === form.value.observadorPrincipalId
+    )
+    if (conflict) {
+      fieldErrors.value.observadorPrincipalId = 'El observador principal no puede estar asignado simultáneamente como secundario'
+      isValid = false
+    }
+  }
 
   return isValid
 }

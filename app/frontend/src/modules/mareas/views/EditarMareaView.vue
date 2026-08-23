@@ -512,6 +512,17 @@ async function handleSave() {
   try {
     saving.value = true;
 
+    if (form.value.observadorId && form.value.observadoresSecundariosPlanificados?.length) {
+      const conflict = form.value.observadoresSecundariosPlanificados.find(
+        (sec: any) => sec.observadorId === form.value.observadorId
+      );
+      if (conflict) {
+        toast.error("El observador principal no puede estar asignado simultáneamente como secundario");
+        saving.value = false;
+        return;
+      }
+    }
+
     // Prepare payload
     const payload = {
       ...form.value,

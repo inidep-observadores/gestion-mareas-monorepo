@@ -678,6 +678,28 @@ const validateStep = async (step: number) => {
       }
     }
 
+    if (form.value.observadorId && form.value.observadoresSecundariosPlanificados?.length && !fieldErrors.value.observadorId) {
+      const conflict = form.value.observadoresSecundariosPlanificados.find(
+        (sec: any) => sec.observadorId === form.value.observadorId
+      )
+      if (conflict) {
+        fieldErrors.value.observadorId = 'El observador principal no puede estar asignado simultáneamente como secundario'
+      } else {
+        for (const sec of form.value.observadoresSecundariosPlanificados) {
+          try {
+            const { available, marea } = await mareasService.validateObserverAvailability(sec.observadorId)
+            if (!available) {
+              const obsName = getObserverName(sec.observadorId)
+              fieldErrors.value.observadorId = `El observador secundario ${obsName} ya está designado en otra marea (${marea})`
+              break
+            }
+          } catch (e) {
+            console.error('Error validating secondary observer:', e)
+          }
+        }
+      }
+    }
+
     if (form.value.fechaZarpadaEstimada && !fieldErrors.value.fechaZarpadaEstimada) {
       const year = new Date(form.value.fechaZarpadaEstimada).getFullYear()
       const mareaYear = form.value.anioMarea

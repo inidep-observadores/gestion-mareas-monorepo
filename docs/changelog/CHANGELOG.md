@@ -5,7 +5,10 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 
 ## [Unreleased]
 
-## [v0.13.0] - 2026-08-23
+### Added
+- **mareas:** validaciones exhaustivas para observadores secundarios planificados en backend (`MareasService.create` y `MareasService.update`) asegurando que no coincidan con el observador principal, no existan duplicados, no tengan impedimentos activos y no estén asignados como principal a otra marea activa en estado `DESIGNADA`.
+- **mareas:** validación interactiva y reactiva en frontend (`NuevaMareaDialog`, `EditMareaDesignadaDialog`, `EditarMareaView` y `ObservadoresSecundariosEditor`) para evitar selección de secundarios en conflicto con el principal o duplicados.
+
 
 ### Added
 - **presentismo:** computar automáticamente como 'En tránsito' los días intermedios entre el viaje inicial y la zarpada, y entre el arribo y el viaje de regreso

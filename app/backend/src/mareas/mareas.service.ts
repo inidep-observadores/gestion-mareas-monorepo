@@ -278,11 +278,30 @@ export class MareasService {
 
             // Actualizar borrador de observadores secundarios en metadata
             if (observadoresSecundariosPlanificados !== undefined) {
+                const principalId = updateData.observadorPrincipalId !== undefined
+                    ? updateData.observadorPrincipalId
+                    : (mareaActual as any).observadorPrincipalId;
+
+                await this.validateObservadoresSecundariosPlanificados(
+                    observadoresSecundariosPlanificados,
+                    principalId,
+                    id
+                );
+
                 const metadataActual = ((mareaActual as any).metadata as MareaMetadata) || {};
                 updateData.metadata = {
                     ...metadataActual,
                     observadoresSecundariosPlanificados: observadoresSecundariosPlanificados
                 } as MareaMetadata;
+            } else if (updateData.observadorPrincipalId) {
+                const metadataActual = ((mareaActual as any).metadata as MareaMetadata) || {};
+                if (metadataActual.observadoresSecundariosPlanificados?.length) {
+                    await this.validateObservadoresSecundariosPlanificados(
+                        metadataActual.observadoresSecundariosPlanificados,
+                        updateData.observadorPrincipalId,
+                        id
+                    );
+                }
             }
 
 
@@ -2740,6 +2759,10 @@ export class MareasService {
         // Preparar borrador de observadores secundarios en metadata si viene en el DTO
         const metadataInicial: MareaMetadata = {};
         if (createMareaDto.observadoresSecundariosPlanificados?.length) {
+            await this.validateObservadoresSecundariosPlanificados(
+                createMareaDto.observadoresSecundariosPlanificados,
+                observadorId
+            );
             metadataInicial.observadoresSecundariosPlanificados = createMareaDto.observadoresSecundariosPlanificados;
         }
 
@@ -3884,6 +3907,78 @@ export class MareasService {
     }
 
 
+    /**
+     * Valida que la lista de observadores secundarios planificados cumpla las reglas de negocio:
+     * - Ninguno coincide con el observador principal.
+     * - No hay observadores secundarios duplicados en la lista.
+     * - Todos los observadores existen y están activos.
+     * - Ninguno posee impedimento activo (conImpedimento === true).
+     * - Ninguno está designado como observador principal en otra marea activa en estado DESIGNADA.
+     */
+    private async validateObservadoresSecundariosPlanificados(
+        observadoresSecundarios: Array<{ observadorId: string; etapaDesde?: number; etapaHasta?: number | null; notas?: string }>,
+        observadorPrincipalId?: string | null,
+        mareaIdActual?: string
+    ) {
+        if (!observadoresSecundarios || observadoresSecundarios.length === 0) return;
+
+        const seenIds = new Set<string>();
+
+        for (const obs of observadoresSecundarios) {
+            if (!obs.observadorId) {
+                throw new BadRequestException('El ID del observador secundario es obligatorio.');
+            }
+
+            // 1. No puede ser igual al observador principal
+            if (observadorPrincipalId && obs.observadorId === observadorPrincipalId) {
+                throw new BadRequestException('Un observador secundario no puede ser el mismo que el observador principal.');
+            }
+
+            // 2. No pueden existir observadores secundarios duplicados
+            if (seenIds.has(obs.observadorId)) {
+                throw new BadRequestException('No se puede asignar el mismo observador secundario más de una vez.');
+            }
+            seenIds.add(obs.observadorId);
+
+            // 3. Obtener datos del observador y validar existencia/estado
+            const observador = await this.prisma.observador.findUnique({
+                where: { id: obs.observadorId },
+                select: { id: true, nombre: true, apellido: true, activo: true, conImpedimento: true, motivoImpedimento: true }
+            });
+
+            if (!observador) {
+                throw new BadRequestException(`El observador con ID ${obs.observadorId} no existe en el sistema.`);
+            }
+
+            if (!observador.activo) {
+                throw new BadRequestException(`El observador ${observador.apellido}, ${observador.nombre} se encuentra inactivo.`);
+            }
+
+            if (observador.conImpedimento) {
+                throw new BadRequestException(`El observador secundario ${observador.apellido}, ${observador.nombre} posee un impedimento activo: ${observador.motivoImpedimento || 'Sin motivo especificado'}.`);
+            }
+
+            // 4. Validar que no esté asignado como principal a otra marea DESIGNADA
+            const whereMarea: any = {
+                observadorPrincipalId: obs.observadorId,
+                activo: true,
+                estadoActual: { codigo: MareaEstado.DESIGNADA }
+            };
+            if (mareaIdActual) {
+                whereMarea.id = { not: mareaIdActual };
+            }
+
+            const mareaDesignada = await this.prisma.marea.findFirst({
+                where: whereMarea,
+                include: { estadoActual: true }
+            });
+
+            if (mareaDesignada) {
+                throw new BadRequestException(`El observador secundario ${observador.apellido}, ${observador.nombre} ya tiene una marea designada para el futuro (${MareaUtils.formatCodigo(mareaDesignada as any)}).`);
+            }
+        }
+    }
+
     /** Actualiza el borrador de observadores secundarios en metadata. */
     async updateObservadoresSecundarios(
         mareaId: string,
@@ -3901,13 +3996,11 @@ export class MareasService {
         });
         if (!marea) throw new NotFoundException('Marea no encontrada.');
 
-        for (const obs of observadoresSecundariosPlanificados) {
-            const observador = await this.prisma.observador.findUnique({
-                where: { id: obs.observadorId },
-                select: { id: true }
-            });
-            if (!observador) throw new BadRequestException(`El observador con ID ${obs.observadorId} no existe en el sistema.`);
-        }
+        await this.validateObservadoresSecundariosPlanificados(
+            observadoresSecundariosPlanificados,
+            marea.observadorPrincipalId,
+            mareaId
+        );
 
         const metadataActual = ((marea as any)?.metadata as MareaMetadata) ?? {};
         await (this.prisma.marea as any).update({

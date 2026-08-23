@@ -383,4 +383,89 @@ describe('MareasService', () => {
                 .rejects.toThrow(BadRequestException);
         });
     });
+
+    describe('validateObservadoresSecundariosPlanificados', () => {
+        it('should throw BadRequestException if a secondary observer is the same as the principal observer', async () => {
+            const secundarios = [{ observadorId: 'obs-1', etapaDesde: 1, etapaHasta: null }];
+            await expect(
+                (service as any).validateObservadoresSecundariosPlanificados(secundarios, 'obs-1')
+            ).rejects.toThrow(/Un observador secundario no puede ser el mismo que el observador principal/);
+        });
+
+        it('should throw BadRequestException if there are duplicate secondary observers', async () => {
+            mockPrismaService.observador.findUnique.mockResolvedValue({
+                id: 'obs-2',
+                nombre: 'Juan',
+                apellido: 'Perez',
+                activo: true,
+                conImpedimento: false,
+                motivoImpedimento: null
+            });
+            mockPrismaService.marea.findFirst.mockResolvedValue(null);
+
+            const secundarios = [
+                { observadorId: 'obs-2', etapaDesde: 1, etapaHasta: 2 },
+                { observadorId: 'obs-2', etapaDesde: 3, etapaHasta: 4 }
+            ];
+            await expect(
+                (service as any).validateObservadoresSecundariosPlanificados(secundarios, 'obs-1')
+            ).rejects.toThrow(/No se puede asignar el mismo observador secundario más de una vez/);
+        });
+
+        it('should throw BadRequestException if secondary observer has active impediment', async () => {
+            mockPrismaService.observador.findUnique.mockResolvedValue({
+                id: 'obs-2',
+                nombre: 'Juan',
+                apellido: 'Perez',
+                activo: true,
+                conImpedimento: true,
+                motivoImpedimento: 'Licencia médica'
+            });
+
+            const secundarios = [{ observadorId: 'obs-2', etapaDesde: 1, etapaHasta: null }];
+            await expect(
+                (service as any).validateObservadoresSecundariosPlanificados(secundarios, 'obs-1')
+            ).rejects.toThrow(/posee un impedimento activo: Licencia médica/);
+        });
+
+        it('should throw BadRequestException if secondary observer is designated as principal on another active marea', async () => {
+            mockPrismaService.observador.findUnique.mockResolvedValue({
+                id: 'obs-2',
+                nombre: 'Juan',
+                apellido: 'Perez',
+                activo: true,
+                conImpedimento: false,
+                motivoImpedimento: null
+            });
+            mockPrismaService.marea.findFirst.mockResolvedValue({
+                id: 'marea-otra',
+                nroMarea: 45,
+                anioMarea: 2026,
+                tipoMarea: 'MC',
+                estadoActual: { codigo: 'DESIGNADA' }
+            });
+
+            const secundarios = [{ observadorId: 'obs-2', etapaDesde: 1, etapaHasta: null }];
+            await expect(
+                (service as any).validateObservadoresSecundariosPlanificados(secundarios, 'obs-1')
+            ).rejects.toThrow(/ya tiene una marea designada para el futuro/);
+        });
+
+        it('should pass if all secondary observers are valid and available', async () => {
+            mockPrismaService.observador.findUnique.mockResolvedValue({
+                id: 'obs-2',
+                nombre: 'Juan',
+                apellido: 'Perez',
+                activo: true,
+                conImpedimento: false,
+                motivoImpedimento: null
+            });
+            mockPrismaService.marea.findFirst.mockResolvedValue(null);
+
+            const secundarios = [{ observadorId: 'obs-2', etapaDesde: 1, etapaHasta: null }];
+            await expect(
+                (service as any).validateObservadoresSecundariosPlanificados(secundarios, 'obs-1')
+            ).resolves.not.toThrow();
+        });
+    });
 });
