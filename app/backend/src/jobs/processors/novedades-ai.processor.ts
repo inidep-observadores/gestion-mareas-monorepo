@@ -156,6 +156,11 @@ export class NovedadesAiProcessor implements JobProcessor {
                             let esCorreccion = false;
                             let novedadOriginalId: string | null = null;
                             let reemplazaNovedadId: string | null = null;
+                            let esAjustePeriodo = false;
+                            let tipoAjuste: string | null = null;
+                            let novedadAjustarId: string | null = null;
+                            let fechaCortePropuesta: Date | null = null;
+                            let novedadOpuestaEncontrada: any = null;
 
                             if (overlaps) {
                                 if (overlaps.estadoAprobacion === 'PENDIENTE') {
@@ -182,6 +187,41 @@ export class NovedadesAiProcessor implements JobProcessor {
                                 } else {
                                     throw new Error('El observador ya tiene una novedad de este tipo registrada en estas fechas');
                                 }
+                            } else {
+                                const isIncomingDisponible = ['DISPONIBLE', 'DISPONIBILIDAD'].includes(tipoNovedad.codigo);
+                                const isIncomingNoDisponible = ['NO_DISPONIBLE', 'LICEN', 'LICENCIA', 'FC', 'ENFERMEDAD', 'MATERNIDAD', 'NACIMIENTO', 'FALLECIMIENTO', 'EXAMEN', 'DONACION_SANGRE'].includes(tipoNovedad.codigo);
+
+                                if (isIncomingDisponible || isIncomingNoDisponible) {
+                                    const oppositeCodes = isIncomingDisponible
+                                        ? ['NO_DISPONIBLE', 'LICEN', 'LICENCIA', 'FC', 'ENFERMEDAD', 'MATERNIDAD', 'NACIMIENTO', 'FALLECIMIENTO', 'EXAMEN', 'DONACION_SANGRE']
+                                        : ['DISPONIBLE', 'DISPONIBILIDAD'];
+
+                                    const oppositeOverlap = await this.prisma.observadorNovedad.findFirst({
+                                        where: {
+                                            observadorId: observador.id,
+                                            tipoNovedad: { codigo: { in: oppositeCodes } },
+                                            estadoAprobacion: 'APROBADA',
+                                            activo: true,
+                                            AND: overlapConditions
+                                        },
+                                        include: { tipoNovedad: true }
+                                    });
+
+                                    if (oppositeOverlap) {
+                                        esAjustePeriodo = true;
+                                        novedadAjustarId = oppositeOverlap.id;
+                                        novedadOpuestaEncontrada = oppositeOverlap;
+                                        estadoDetalle = 'REQUIERE_REVISION';
+
+                                        const fechaInicioOpuesta = new Date(oppositeOverlap.fechaInicio);
+                                        if (start > fechaInicioOpuesta) {
+                                            tipoAjuste = isIncomingDisponible ? 'ADELANTO_DISPONIBILIDAD' : 'INTERRUPCION_DISPONIBILIDAD';
+                                            fechaCortePropuesta = new Date(start.getTime() - 24 * 60 * 60 * 1000);
+                                        } else {
+                                            tipoAjuste = isIncomingDisponible ? 'REEMPLAZO_TOTAL_DISPONIBILIDAD' : 'REEMPLAZO_TOTAL_NO_DISPONIBILIDAD';
+                                        }
+                                    }
+                                }
                             }
 
                             const novedad = await this.prisma.observadorNovedad.create({
@@ -196,19 +236,31 @@ export class NovedadesAiProcessor implements JobProcessor {
                                     metadata: {
                                         fuente,
                                         certezaAi: obsBusqueda.certeza,
-                                        requiereRevision: estadoDetalle === 'REQUIERE_REVISION' || esCorreccion,
+                                        requiereRevision: estadoDetalle === 'REQUIERE_REVISION' || esCorreccion || esAjustePeriodo,
                                         aiExtraction: periodo,
                                         numeroGde: extracted.numeroGde,
                                         ...(esCorreccion ? { esCorreccion: true, novedadOriginalId } : {}),
-                                        ...(reemplazaNovedadId ? { reemplazaNovedadId } : {})
+                                        ...(reemplazaNovedadId ? { reemplazaNovedadId } : {}),
+                                        ...(esAjustePeriodo ? {
+                                            esAjustePeriodo: true,
+                                            tipoAjuste,
+                                            novedadAjustarId,
+                                            fechaCortePropuesta: fechaCortePropuesta ? DateUtils.formatDate(fechaCortePropuesta) : null
+                                        } : {})
                                     },
                                     movimientos: {
                                         create: {
-                                            tipoEvento: esCorreccion ? 'CREACION_CORRECCION' : 'CREACION_EMAIL',
+                                            tipoEvento: esCorreccion
+                                                ? 'CREACION_CORRECCION'
+                                                : (esAjustePeriodo ? 'CREACION_AJUSTE_PERIODO' : 'CREACION_EMAIL'),
                                             estadoNuevo: 'PENDIENTE',
                                             comentarios: esCorreccion
                                                 ? `Solicitud de rectificación recibida por correo para el período aprobado del ${DateUtils.formatDate(overlaps?.fechaInicio)} ${overlaps?.fechaFin ? 'al ' + DateUtils.formatDate(overlaps.fechaFin) : 'en adelante'}`
-                                                : 'Novedad ingresada automáticamente por procesamiento de correo'
+                                                : (esAjustePeriodo && novedadOpuestaEncontrada
+                                                    ? (tipoAjuste === 'ADELANTO_DISPONIBILIDAD'
+                                                        ? `Adelanto de disponibilidad recibido por correo. Al aprobarse ajustará la fecha de fin de la ${novedadOpuestaEncontrada.tipoNovedad?.descripcion || 'No Disponibilidad'} vigente al ${DateUtils.formatDate(fechaCortePropuesta)}`
+                                                        : `Declaración recibida por correo que intersecta con la ${novedadOpuestaEncontrada.tipoNovedad?.descripcion || 'Disponibilidad'} vigente`)
+                                                    : 'Novedad ingresada automáticamente por procesamiento de correo')
                                         }
                                     }
                                 }

@@ -162,6 +162,9 @@
             <span v-else-if="novedad.metadata?.esCorreccion" class="bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-tighter border border-amber-500/20 flex items-center gap-1">
               <span>🔄</span> Rectificación
             </span>
+            <span v-else-if="novedad.metadata?.esAjustePeriodo" class="bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-tighter border border-indigo-500/20 flex items-center gap-1">
+              <span>⚡</span> {{ novedad.metadata?.tipoAjuste === 'ADELANTO_DISPONIBILIDAD' ? 'Adelanta Disponibilidad' : 'Ajuste de Período' }}
+            </span>
             <span v-else-if="novedad.estadoAprobacion === 'PENDIENTE'" class="bg-warning/10 text-warning text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-tighter">
               Pendiente
             </span>
@@ -186,7 +189,7 @@
             <template v-if="novedad.activo && novedad.estadoAprobacion === 'PENDIENTE'">
               <button @click="promptAction(novedad, 'APROBADA')" 
                       class="font-bold text-success hover:underline text-xs bg-success/10 px-2.5 py-1 rounded transition-colors whitespace-nowrap">
-                {{ novedad.metadata?.esCorreccion ? 'Aprobar Reemplazo' : 'Aprobar' }}
+                {{ novedad.metadata?.esCorreccion ? 'Aprobar Reemplazo' : (novedad.metadata?.esAjustePeriodo ? 'Aprobar Ajuste' : 'Aprobar') }}
               </button>
               <button @click="promptAction(novedad, 'RECHAZADA')" 
                       class="font-bold text-error hover:underline text-xs bg-error/10 px-2.5 py-1 rounded transition-colors whitespace-nowrap">
@@ -216,6 +219,9 @@
                 </div>
                 <span v-if="novedad.metadata?.esCorreccion" class="inline-flex items-center text-[9px] font-black bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 px-1.5 py-0.5 rounded uppercase">
                   🔄 Rectificación
+                </span>
+                <span v-else-if="novedad.metadata?.esAjustePeriodo" class="inline-flex items-center text-[9px] font-black bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 px-1.5 py-0.5 rounded uppercase">
+                  ⚡ {{ novedad.metadata?.tipoAjuste === 'ADELANTO_DISPONIBILIDAD' ? 'Adelanta Disp.' : 'Ajuste' }}
                 </span>
                 <span class="text-[9px] font-bold text-text-muted border border-border px-1.5 py-0.5 rounded uppercase">
                   {{ novedad.origen || 'MANUAL' }}
@@ -439,34 +445,49 @@ const novedadToAction = ref<Novedad | null>(null);
 const actionModalTitle = computed(() => {
   if (!novedadToAction.value) return '';
   const esCorreccion = !!novedadToAction.value.metadata?.esCorreccion;
+  const esAjustePeriodo = !!novedadToAction.value.metadata?.esAjustePeriodo;
   if (actionType.value === 'APROBADA') {
-    return esCorreccion ? 'Aprobar Rectificación de Novedad' : 'Aprobar Novedad';
+    if (esCorreccion) return 'Aprobar Rectificación de Novedad';
+    if (esAjustePeriodo) return 'Aprobar y Ajustar Período de Novedad';
+    return 'Aprobar Novedad';
   } else {
-    return esCorreccion ? 'Descartar Rectificación' : 'Rechazar Novedad';
+    if (esCorreccion) return 'Descartar Rectificación';
+    if (esAjustePeriodo) return 'Descartar Ajuste de Período';
+    return 'Rechazar Novedad';
   }
 });
 
 const actionModalConfirmText = computed(() => {
   if (!novedadToAction.value) return '';
   const esCorreccion = !!novedadToAction.value.metadata?.esCorreccion;
+  const esAjustePeriodo = !!novedadToAction.value.metadata?.esAjustePeriodo;
   if (actionType.value === 'APROBADA') {
-    return esCorreccion ? 'Confirmar Reemplazo' : 'Confirmar Aprobación';
+    if (esCorreccion) return 'Confirmar Reemplazo';
+    if (esAjustePeriodo) return 'Confirmar y Ajustar';
+    return 'Confirmar Aprobación';
   } else {
-    return esCorreccion ? 'Descartar Rectificación' : 'Rechazar Definitivamente';
+    if (esCorreccion) return 'Descartar Rectificación';
+    if (esAjustePeriodo) return 'Descartar';
+    return 'Rechazar Definitivamente';
   }
 });
 
 const actionModalMessage = computed(() => {
   if (!novedadToAction.value) return '';
   const esCorreccion = !!novedadToAction.value.metadata?.esCorreccion;
+  const esAjustePeriodo = !!novedadToAction.value.metadata?.esAjustePeriodo;
   if (actionType.value === 'APROBADA') {
     if (esCorreccion) {
       return 'Esta novedad es una solicitud de rectificación de una novedad previamente aprobada. Al confirmarla, la novedad aprobada original pasará a histórico inactivo y esta nueva solicitud se registrará como la vigente.';
     }
+    if (esAjustePeriodo) {
+      const fechaCorte = novedadToAction.value.metadata?.fechaCortePropuesta;
+      return `Esta novedad intersecta con un período previo. Al confirmarla, la novedad vigente anterior ajustará automáticamente su fecha de finalización al ${fechaCorte || 'día previo'} para dar lugar a este nuevo registro.`;
+    }
     return '¿Estás seguro que deseas aprobar esta novedad y registrarla en el sistema?';
   } else {
-    if (esCorreccion) {
-      return 'Por favor, ingresa el motivo del descarte de esta rectificación. La novedad aprobada original continuará vigente sin modificaciones.';
+    if (esCorreccion || esAjustePeriodo) {
+      return 'Por favor, ingresa el motivo del descarte. La novedad aprobada original continuará vigente sin modificaciones.';
     }
     return 'Por favor, ingresa el motivo del rechazo. Este campo es obligatorio para rechazar.';
   }

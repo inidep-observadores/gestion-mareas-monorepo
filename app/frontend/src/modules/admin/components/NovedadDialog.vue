@@ -53,6 +53,55 @@
         </div>
       </div>
 
+      <!-- Alerta y Comparador de Ajuste de Período si es ajuste -->
+      <div v-if="editData?.metadata?.esAjustePeriodo" class="rounded-xl border border-indigo-500/30 bg-indigo-500/5 p-3.5 space-y-3 shadow-theme-xs">
+        <div class="flex items-start gap-2.5">
+          <span class="text-base leading-none">⚡</span>
+          <div>
+            <h3 class="text-xs font-black text-indigo-700 dark:text-indigo-400 uppercase tracking-wide">
+              {{ editData.metadata?.tipoAjuste === 'ADELANTO_DISPONIBILIDAD' ? 'Adelanto de Disponibilidad' : 'Ajuste de Período Vigente' }}
+            </h3>
+            <p class="text-[11px] text-text-muted mt-0.5">
+              Esta solicitud intersecta con un período previo. Al aprobarla, la novedad vigente se acotará automáticamente.
+            </p>
+          </div>
+        </div>
+
+        <!-- Comparación Período Previo vs Nuevo -->
+        <div class="grid grid-cols-2 gap-2 text-xs pt-1">
+          <!-- Período Afectado -->
+          <div class="p-2.5 rounded-lg bg-surface border border-border">
+            <div class="flex items-center gap-1 mb-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-warning"></span>
+              <span class="text-[10px] font-black uppercase text-text-muted">Período Afectado</span>
+            </div>
+            <p class="text-[10px] font-bold text-text-muted truncate mb-0.5">
+              {{ editData.novedadAjustar?.tipoNovedad?.descripcion || 'Novedad Vigente' }}
+            </p>
+            <p class="font-mono text-text-muted line-through text-[10px]">
+              {{ formatPeriodo(editData.novedadAjustar?.fechaInicio, editData.novedadAjustar?.fechaFin) }}
+            </p>
+            <p class="font-mono font-bold text-indigo-600 dark:text-indigo-400 text-[11px] mt-0.5">
+              ✂️ Hasta {{ editData.metadata?.fechaCortePropuesta || '-' }}
+            </p>
+          </div>
+
+          <!-- Nueva Propuesta -->
+          <div class="p-2.5 rounded-lg bg-indigo-500/10 border border-indigo-500/30">
+            <div class="flex items-center gap-1 mb-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
+              <span class="text-[10px] font-black uppercase text-indigo-700 dark:text-indigo-400">Nueva Propuesta</span>
+            </div>
+            <p class="font-mono font-bold text-text text-[11px]">
+              {{ formatPeriodo(editData.fechaInicio, editData.fechaFin) }}
+            </p>
+            <p v-if="editData.motivo" class="text-[10px] text-text-muted truncate mt-1" :title="editData.motivo">
+              {{ editData.motivo }}
+            </p>
+          </div>
+        </div>
+      </div>
+
       <div class="grid grid-cols-1 gap-6">
         <!-- Observador -->
         <div class="space-y-1.5">

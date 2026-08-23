@@ -165,6 +165,104 @@ describe('NovedadesService', () => {
         })
       }));
     });
+
+    it('debe permitir editar fechas de una rectificacion excluyendo la novedad original', async () => {
+      const existing = {
+        id: 'nov-correccion',
+        observadorId: '1',
+        tipoNovedadId: '2',
+        fechaInicio: new Date('2025-10-01'),
+        fechaFin: new Date('2025-10-15'),
+        estadoAprobacion: 'PENDIENTE',
+        activo: true,
+        tipoNovedad: { codigo: 'NO_DISPONIBLE' },
+        metadata: { esCorreccion: true, novedadOriginalId: 'nov-original-aprobada' },
+      };
+      jest.spyOn(service, 'findOne').mockResolvedValue(existing as any);
+      mockPrismaService.observadorNovedad.findFirst.mockResolvedValue(null);
+      mockPrismaService.observadorNovedad.update.mockResolvedValue({ id: 'nov-correccion', fechaInicio: new Date('2025-09-26') });
+
+      const res = await service.update('nov-correccion', { fechaInicio: '2025-09-26' }, mockUser);
+
+      expect(prisma.observadorNovedad.findFirst).toHaveBeenCalledWith(expect.objectContaining({
+        where: expect.objectContaining({
+          id: { notIn: ['nov-correccion', 'nov-original-aprobada'] }
+        })
+      }));
+      expect(res.id).toEqual('nov-correccion');
+    });
+
+    it('debe auto-convertir a rectificacion si una novedad PENDIENTE se edita y solapa con una APROBADA', async () => {
+      const existing = {
+        id: 'nov-pendiente',
+        observadorId: '1',
+        tipoNovedadId: '2',
+        fechaInicio: new Date('2025-10-05'),
+        estadoAprobacion: 'PENDIENTE',
+        activo: true,
+        tipoNovedad: { codigo: 'NO_DISPONIBLE' },
+        metadata: {},
+      };
+      jest.spyOn(service, 'findOne').mockResolvedValue(existing as any);
+      mockPrismaService.observadorNovedad.findFirst.mockResolvedValue({ id: 'nov-aprobada-existente', estadoAprobacion: 'APROBADA' });
+      mockPrismaService.observadorNovedad.update.mockResolvedValue({ id: 'nov-pendiente', metadata: { esCorreccion: true, novedadOriginalId: 'nov-aprobada-existente' } });
+
+      const res = await service.update('nov-pendiente', { fechaInicio: '2025-10-01' }, mockUser);
+
+      expect(prisma.observadorNovedad.update).toHaveBeenCalledWith(expect.objectContaining({
+        where: { id: 'nov-pendiente' },
+        data: expect.objectContaining({
+          metadata: expect.objectContaining({
+            esCorreccion: true,
+            novedadOriginalId: 'nov-aprobada-existente',
+          })
+        })
+      }));
+      expect(res.id).toEqual('nov-pendiente');
+    });
+
+    it('debe ajustar la fechaFin de la novedad opuesta previa al aprobar una novedad con esAjustePeriodo', async () => {
+      const existing = {
+        id: 'nov-disp',
+        observadorId: '1',
+        tipoNovedadId: '2',
+        fechaInicio: new Date('2026-10-10'),
+        estadoAprobacion: 'PENDIENTE',
+        activo: true,
+        tipoNovedad: { codigo: 'DISPONIBLE' },
+        metadata: { esAjustePeriodo: true, novedadAjustarId: 'nov-no-disp-aprobada' },
+      };
+      const novedadAjustar = {
+        id: 'nov-no-disp-aprobada',
+        fechaInicio: new Date('2026-09-26'),
+        fechaFin: new Date('2026-10-15'),
+        estadoAprobacion: 'APROBADA',
+        activo: true,
+        tipoNovedad: { codigo: 'NO_DISPONIBLE', descripcion: 'Declaración de No Disponibilidad' }
+      };
+
+      jest.spyOn(service, 'findOne').mockResolvedValue(existing as any);
+      mockPrismaService.observadorNovedad.findFirst.mockResolvedValue(null);
+      mockPrismaService.observadorNovedad.findUnique.mockResolvedValue(novedadAjustar as any);
+      mockPrismaService.tipoNovedad.findUnique.mockResolvedValue({ id: '2', descripcion: 'Declaración de Disponibilidad' });
+      mockPrismaService.observadorNovedad.update.mockResolvedValue({ id: 'nov-disp', estadoAprobacion: 'APROBADA' });
+      mockPrismaService.marea.findMany.mockResolvedValue([]);
+
+      await service.update('nov-disp', { estadoAprobacion: 'APROBADA' }, mockUser);
+
+      // Debe haber actualizado novedadAjustar recortando su fechaFin a 2026-10-09
+      expect(prisma.observadorNovedad.update).toHaveBeenCalledWith(expect.objectContaining({
+        where: { id: 'nov-no-disp-aprobada' },
+        data: expect.objectContaining({
+          fechaFin: new Date('2026-10-09'),
+          movimientos: expect.objectContaining({
+            create: expect.objectContaining({
+              tipoEvento: 'AJUSTE_POR_DISPONIBILIDAD'
+            })
+          })
+        })
+      }));
+    });
   });
 
   describe('remove', () => {

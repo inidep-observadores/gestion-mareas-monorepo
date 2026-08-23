@@ -26,6 +26,7 @@ export interface Novedad {
   };
   activo: boolean;
   novedadOriginal?: Novedad | null;
+  novedadAjustar?: Novedad | null;
 }
 
 export interface CreateNovedadDto {

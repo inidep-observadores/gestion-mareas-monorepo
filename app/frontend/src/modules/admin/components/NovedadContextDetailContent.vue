@@ -68,6 +68,58 @@
             </div>
           </div>
 
+          <!-- Alerta de Ajuste / Adelanto de Disponibilidad -->
+          <div v-if="novedad.metadata?.esAjustePeriodo" class="rounded-xl border border-indigo-500/30 bg-indigo-500/5 p-3.5 space-y-3">
+            <div class="flex items-start gap-2.5">
+              <span class="text-base leading-none">⚡</span>
+              <div>
+                <h3 class="text-xs font-black text-indigo-700 dark:text-indigo-400 uppercase tracking-wide">
+                  {{ novedad.metadata?.tipoAjuste === 'ADELANTO_DISPONIBILIDAD' ? 'Adelanto de Disponibilidad' : 'Ajuste de Período Vigente' }}
+                </h3>
+                <p class="text-[11px] text-text-muted mt-0.5">
+                  Esta solicitud intersecta con un período activo previo. Al aprobarla, el período anterior se acotará automáticamente.
+                </p>
+              </div>
+            </div>
+
+            <!-- Comparación Período Previo vs Nuevo -->
+            <div class="grid grid-cols-2 gap-2 text-xs pt-1">
+              <!-- Novedad Vigente Previa -->
+              <div class="p-2.5 rounded-lg bg-surface border border-border">
+                <div class="flex items-center gap-1 mb-1">
+                  <span class="w-1.5 h-1.5 rounded-full bg-warning"></span>
+                  <span class="text-[10px] font-black uppercase text-text-muted">Período Afectado</span>
+                </div>
+                <p class="text-[10px] font-bold text-text-muted truncate mb-0.5">
+                  {{ novedad.novedadAjustar?.tipoNovedad?.descripcion || 'Novedad Vigente' }}
+                </p>
+                <p class="font-mono text-text-muted line-through text-[10px]">
+                  {{ formatPeriodo(novedad.novedadAjustar?.fechaInicio, novedad.novedadAjustar?.fechaFin) }}
+                </p>
+                <p class="font-mono font-bold text-indigo-600 dark:text-indigo-400 text-[11px] mt-0.5">
+                  ✂️ Hasta {{ novedad.metadata?.fechaCortePropuesta || '-' }}
+                </p>
+              </div>
+
+              <!-- Nueva Solicitud -->
+              <div class="p-2.5 rounded-lg bg-indigo-500/10 border border-indigo-500/30">
+                <div class="flex items-center gap-1 mb-1">
+                  <span class="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
+                  <span class="text-[10px] font-black uppercase text-indigo-700 dark:text-indigo-400">Nueva Vigencia</span>
+                </div>
+                <p class="text-[10px] font-bold text-indigo-700 dark:text-indigo-400 truncate mb-0.5">
+                  {{ novedad.tipoNovedad?.descripcion || 'Nueva' }}
+                </p>
+                <p class="font-mono font-bold text-text text-[11px]">
+                  {{ formatPeriodo(novedad.fechaInicio, novedad.fechaFin) }}
+                </p>
+                <p v-if="novedad.motivo" class="text-[10px] text-text-muted truncate mt-1" :title="novedad.motivo">
+                  {{ novedad.motivo }}
+                </p>
+              </div>
+            </div>
+          </div>
+
           <div class="grid grid-cols-2 gap-4">
             <div>
               <p class="text-[10px] uppercase font-black text-text-muted mb-1">Tipo / Origen</p>
@@ -173,11 +225,11 @@
     <div v-if="!readonly && novedad && novedad.activo !== false" class="border-t border-border bg-surface-muted/50 p-4 flex flex-col gap-2">
       <template v-if="novedad.estadoAprobacion === 'PENDIENTE'">
         <button type="button" @click="$emit('approve', novedad)" class="w-full flex justify-center items-center gap-2 rounded-lg bg-success px-3 py-2 text-sm font-bold text-white shadow-sm hover:bg-success-hover transition-colors active:scale-[0.98]">
-          <CheckIcon class="w-4 h-4" /> {{ novedad.metadata?.esCorreccion ? 'Aprobar Reemplazo' : 'Aprobar' }}
+          <CheckIcon class="w-4 h-4" /> {{ novedad.metadata?.esCorreccion ? 'Aprobar Reemplazo' : (novedad.metadata?.esAjustePeriodo ? 'Aprobar Ajuste' : 'Aprobar') }}
         </button>
         <div class="flex gap-2">
           <button type="button" @click="$emit('reject', novedad)" class="flex-1 flex justify-center items-center gap-1 rounded-lg bg-error/10 px-3 py-2 text-sm font-bold text-error shadow-sm hover:bg-error/20 transition-colors active:scale-[0.98] border border-error/20">
-            {{ novedad.metadata?.esCorreccion ? 'Descartar' : 'Rechazar' }}
+            {{ (novedad.metadata?.esCorreccion || novedad.metadata?.esAjustePeriodo) ? 'Descartar' : 'Rechazar' }}
           </button>
           <button type="button" @click="$emit('edit', novedad)" class="flex-1 flex justify-center items-center gap-1 rounded-lg bg-surface px-3 py-2 text-sm font-bold text-text shadow-sm ring-1 ring-inset ring-border hover:bg-surface-muted transition-colors active:scale-[0.98]">
             <EditIcon class="w-4 h-4" /> Editar
@@ -270,13 +322,19 @@ const formatTipoEvento = (tipo: string) => {
     'CREACION': 'Novedad Creada',
     'CREACION_EMAIL': 'Ingresada por Email',
     'CREACION_CORRECCION': 'Solicitud de Rectificación',
+    'CREACION_AJUSTE_PERIODO': 'Solicitud con Ajuste de Período',
     'EDICION': 'Novedad Editada',
     'APROBACION': 'Novedad Aprobada',
     'APROBACION_CORRECCION': 'Rectificación Aprobada',
+    'APROBACION_AJUSTE_PERIODO': 'Aprobación con Ajuste de Período',
     'RECHAZO': 'Novedad Rechazada',
     'RECHAZO_CORRECCION': 'Rectificación Rechazada',
+    'RECHAZO_AJUSTE_PERIODO': 'Ajuste de Período Rechazado',
     'REEMPLAZADA_POR_EMAIL': 'Reemplazada por nuevo correo',
     'REEMPLAZADA_POR_CORRECCION': 'Reemplazada por rectificación',
+    'REEMPLAZADA_POR_DISPONIBILIDAD': 'Reemplazada por nueva disponibilidad',
+    'AJUSTE_POR_DISPONIBILIDAD': 'Período acotado por disponibilidad',
+    'AJUSTE_POR_NO_DISPONIBILIDAD': 'Período acotado por no disponibilidad',
     'ELIMINACION': 'Novedad Eliminada',
     'BORRADO_LOGICO': 'Novedad Eliminada',
     'REVISION_AI': 'Revisión por IA',
