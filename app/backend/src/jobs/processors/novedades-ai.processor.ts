@@ -124,7 +124,8 @@ export class NovedadesAiProcessor implements JobProcessor {
                             let end: Date | null = periodo.fechaFin ? DateUtils.parseToAppZone(periodo.fechaFin) : null;
                             let isInfinite = false;
 
-                            if (['VIAJE_INICIO', 'VIAJE_FIN'].includes(tipoNovedad.codigo)) {
+                            const tiposPuntuales = ['VIAJE_INICIO', 'VIAJE_FIN', 'FC', 'RP', 'DONACION_SANGRE', 'EXAMEN', 'NACIMIENTO', 'FALLECIMIENTO'];
+                            if (tiposPuntuales.includes(tipoNovedad.codigo)) {
                                 if (!end) end = start;
                             } else {
                                 if (!end) isInfinite = true;
@@ -189,11 +190,11 @@ export class NovedadesAiProcessor implements JobProcessor {
                                 }
                             } else {
                                 const isIncomingDisponible = ['DISPONIBLE', 'DISPONIBILIDAD'].includes(tipoNovedad.codigo);
-                                const isIncomingNoDisponible = ['NO_DISPONIBLE', 'LICEN', 'LICENCIA', 'FC', 'ENFERMEDAD', 'MATERNIDAD', 'NACIMIENTO', 'FALLECIMIENTO', 'EXAMEN', 'DONACION_SANGRE'].includes(tipoNovedad.codigo);
+                                const isIncomingNoDisponible = ['NO_DISPONIBLE'].includes(tipoNovedad.codigo);
 
                                 if (isIncomingDisponible || isIncomingNoDisponible) {
                                     const oppositeCodes = isIncomingDisponible
-                                        ? ['NO_DISPONIBLE', 'LICEN', 'LICENCIA', 'FC', 'ENFERMEDAD', 'MATERNIDAD', 'NACIMIENTO', 'FALLECIMIENTO', 'EXAMEN', 'DONACION_SANGRE']
+                                        ? ['NO_DISPONIBLE', 'LICEN', 'LICENCIA']
                                         : ['DISPONIBLE', 'DISPONIBILIDAD'];
 
                                     const oppositeOverlap = await this.prisma.observadorNovedad.findFirst({

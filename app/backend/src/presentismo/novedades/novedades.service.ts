@@ -138,8 +138,9 @@ export class NovedadesService {
     let end: Date | null = createNovedadDto.fechaFin ? DateUtils.parseToAppZone(createNovedadDto.fechaFin) : null;
     let isInfinite = false;
 
-    // Autocierre para eventos de un solo día conocidos
-    if (['VIAJE_INICIO', 'VIAJE_FIN'].includes(tipoNovedad.codigo)) {
+    // Autocierre para eventos de un solo día o tipos puntuales conocidos
+    const tiposPuntuales = ['VIAJE_INICIO', 'VIAJE_FIN', 'FC', 'RP', 'DONACION_SANGRE', 'EXAMEN', 'NACIMIENTO', 'FALLECIMIENTO'];
+    if (tiposPuntuales.includes(tipoNovedad.codigo)) {
       if (!end) end = start;
     } else {
       if (!end) isInfinite = true;
@@ -223,8 +224,9 @@ export class NovedadesService {
     let end = data.fechaFin !== undefined ? data.fechaFin : existing.fechaFin;
     let isInfinite = false;
 
-    // Autocierre para eventos de un solo día en update
-    if (['VIAJE_INICIO', 'VIAJE_FIN'].includes(existing.tipoNovedad.codigo)) {
+    // Autocierre para eventos de un solo día o tipos puntuales en update
+    const tiposPuntuales = ['VIAJE_INICIO', 'VIAJE_FIN', 'FC', 'RP', 'DONACION_SANGRE', 'EXAMEN', 'NACIMIENTO', 'FALLECIMIENTO'];
+    if (tiposPuntuales.includes(existing.tipoNovedad.codigo)) {
       if (!end) {
         end = start;
         data.fechaFin = end;

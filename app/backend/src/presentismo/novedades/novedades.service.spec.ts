@@ -116,6 +116,23 @@ describe('NovedadesService', () => {
       expect(prisma.observadorNovedad.create).toHaveBeenCalled();
       expect(res.id).toEqual('new-nov');
     });
+
+    it('debe auto-cerrar con fechaFin igual a fechaInicio para Franco Compensatorio (FC) sin fechaFin', async () => {
+      mockPrismaService.observador.findUnique.mockResolvedValue({ id: '1' });
+      mockPrismaService.tipoNovedad.findUnique.mockResolvedValue({ id: '2', activo: true, codigo: 'FC' });
+      mockPrismaService.observadorNovedad.findFirst.mockResolvedValue(null);
+      mockPrismaService.observadorNovedad.create.mockResolvedValue({ id: 'fc-nov', estadoAprobacion: 'APROBADA', fechaInicio: new Date('2026-08-18T00:00:00Z'), fechaFin: new Date('2026-08-18T00:00:00Z'), tipoNovedad: { codigo: 'FC' } });
+      mockPrismaService.marea.findMany.mockResolvedValue([]);
+
+      await service.create({ observadorId: '1', tipoNovedadId: '2', fechaInicio: '2026-08-18' }, mockUser);
+
+      expect(prisma.observadorNovedad.create).toHaveBeenCalledWith(expect.objectContaining({
+        data: expect.objectContaining({
+          fechaInicio: expect.any(Date),
+          fechaFin: expect.any(Date),
+        })
+      }));
+    });
   });
 
   describe('update', () => {
