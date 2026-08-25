@@ -75,13 +75,172 @@ export class NovedadesAiProcessor implements JobProcessor {
                     // Si la fuente es el cuerpo del correo, generamos un PDF con Gotenberg
                     if (fuente === 'CUERPO' && texto) {
                         try {
+                            const escapeHtml = (unsafe: string) => {
+                                return (unsafe || '')
+                                    .replace(/&/g, '&amp;')
+                                    .replace(/</g, '&lt;')
+                                    .replace(/>/g, '&gt;')
+                                    .replace(/"/g, '&quot;')
+                                    .replace(/'/g, '&#039;');
+                            };
+
+                            const sanitize = (val: string) =>
+                                (val || '')
+                                    .normalize('NFD')
+                                    .replace(/[\u0300-\u036f]/g, '')
+                                    .replace(/[^a-zA-Z0-9]/g, '_')
+                                    .replace(/_+/g, '_')
+                                    .replace(/^_|_$/g, '');
+
+                            const timestampStr = DateUtils.formatForFilename(emailData?.date);
+                            const ape = sanitize(observador?.apellido);
+                            const nom = sanitize(observador?.nombre);
+                            const obsFilePrefix = [ape, nom].filter(Boolean).join('_');
+                            const filename = obsFilePrefix ? `Email_${obsFilePrefix}_${timestampStr}.pdf` : `Email_${timestampStr}.pdf`;
+
+                            const fromText = emailData?.from || 'No especificado';
+                            const toText = emailData?.to || '';
+                            const fechaHoraText = DateUtils.formatDateTime(emailData?.date || DateUtils.getNow(true));
+                            const obsDocText = observador
+                                ? `${observador.apellido || ''}, ${observador.nombre || ''} (DNI: ${observador.dni || 'S/D'}${observador.cuil ? ' / CUIL: ' + observador.cuil : ''})`
+                                : '';
+
+                            const toRow = toText
+                                ? `<tr><td class="meta-label">Para (Destinatario):</td><td class="meta-value">${escapeHtml(toText)}</td></tr>`
+                                : '';
+
+                            const obsRow = obsDocText
+                                ? `<tr><td class="meta-label">Observador asociado:</td><td class="meta-value"><strong>${escapeHtml(obsDocText)}</strong></td></tr>`
+                                : '';
+
                             const htmlContent = `
-                                <html>
-                                <head><style>body { font-family: sans-serif; padding: 20px; }</style></head>
+                                <!DOCTYPE html>
+                                <html lang="es">
+                                <head>
+                                    <meta charset="UTF-8">
+                                    <style>
+                                        body {
+                                            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+                                            color: #1e293b;
+                                            margin: 0;
+                                            padding: 32px;
+                                            font-size: 13px;
+                                        }
+                                        .header-title {
+                                            font-size: 17px;
+                                            font-weight: 700;
+                                            color: #0f172a;
+                                            margin: 0 0 16px 0;
+                                            padding-bottom: 8px;
+                                            border-bottom: 2px solid #0284c7;
+                                            display: flex;
+                                            justify-content: space-between;
+                                            align-items: center;
+                                        }
+                                        .header-tag {
+                                            font-size: 10px;
+                                            font-weight: 600;
+                                            color: #0284c7;
+                                            background: #e0f2fe;
+                                            padding: 3px 8px;
+                                            border-radius: 4px;
+                                            text-transform: uppercase;
+                                            letter-spacing: 0.5px;
+                                        }
+                                        .meta-table {
+                                            width: 100%;
+                                            border-collapse: collapse;
+                                            margin-bottom: 20px;
+                                            background-color: #f8fafc;
+                                            border: 1px solid #e2e8f0;
+                                            border-radius: 6px;
+                                            overflow: hidden;
+                                        }
+                                        .meta-table td {
+                                            padding: 8px 12px;
+                                            border-bottom: 1px solid #e2e8f0;
+                                            vertical-align: top;
+                                            font-size: 12px;
+                                        }
+                                        .meta-table tr:last-child td {
+                                            border-bottom: none;
+                                        }
+                                        .meta-label {
+                                            font-weight: 600;
+                                            color: #475569;
+                                            width: 160px;
+                                            background-color: #f1f5f9;
+                                        }
+                                        .meta-value {
+                                            color: #0f172a;
+                                        }
+                                        .body-container {
+                                            border: 1px solid #cbd5e1;
+                                            border-radius: 6px;
+                                            padding: 16px;
+                                            background-color: #ffffff;
+                                        }
+                                        .body-title {
+                                            font-size: 11px;
+                                            font-weight: 600;
+                                            color: #64748b;
+                                            text-transform: uppercase;
+                                            letter-spacing: 0.5px;
+                                            margin-bottom: 10px;
+                                            border-bottom: 1px dashed #e2e8f0;
+                                            padding-bottom: 4px;
+                                        }
+                                        .body-content {
+                                            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, monospace, sans-serif;
+                                            white-space: pre-wrap;
+                                            word-wrap: break-word;
+                                            margin: 0;
+                                            line-height: 1.6;
+                                            color: #1e293b;
+                                            font-size: 12px;
+                                        }
+                                        .footer {
+                                            margin-top: 24px;
+                                            padding-top: 12px;
+                                            border-top: 1px solid #e2e8f0;
+                                            font-size: 10px;
+                                            color: #94a3b8;
+                                            display: flex;
+                                            justify-content: space-between;
+                                        }
+                                    </style>
+                                </head>
                                 <body>
-                                    <h2>Asunto: ${emailSubject || '(Sin asunto)'}</h2>
-                                    <hr/>
-                                    <pre style="white-space: pre-wrap;">${texto}</pre>
+                                    <div class="header-title">
+                                        <span>SIGMA - Registro de Comunicación por Correo Electrónico</span>
+                                        <span class="header-tag">Documento de Respaldo</span>
+                                    </div>
+                                    <table class="meta-table">
+                                        <tr>
+                                            <td class="meta-label">De (Remitente):</td>
+                                            <td class="meta-value">${escapeHtml(fromText)}</td>
+                                        </tr>
+                                        ${toRow}
+                                        <tr>
+                                            <td class="meta-label">Fecha y hora:</td>
+                                            <td class="meta-value">${escapeHtml(fechaHoraText)}</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="meta-label">Asunto:</td>
+                                            <td class="meta-value"><strong>${escapeHtml(emailSubject || '(Sin asunto)')}</strong></td>
+                                        </tr>
+                                        ${obsRow}
+                                    </table>
+
+                                    <div class="body-container">
+                                        <div class="body-title">Contenido del Correo</div>
+                                        <pre class="body-content">${escapeHtml(texto)}</pre>
+                                    </div>
+
+                                    <div class="footer">
+                                        <span>Sistema Integral de Gestión de Mareas (SIGMA) - INIDEP</span>
+                                        <span>Log ID: ${escapeHtml(emailLogId || 'N/A')}</span>
+                                    </div>
                                 </body>
                                 </html>
                             `;
@@ -89,7 +248,7 @@ export class NovedadesAiProcessor implements JobProcessor {
                             archivoFinal = {
                                 buffer: pdfBuffer,
                                 mimetype: 'application/pdf',
-                                filename: 'Cuerpo_Correo.pdf'
+                                filename: filename
                             };
                         } catch (err: any) {
                             this.logger.error(`Error generando PDF del cuerpo con Gotenberg: ${err.message}`);

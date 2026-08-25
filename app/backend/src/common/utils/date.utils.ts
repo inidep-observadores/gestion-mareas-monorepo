@@ -31,6 +31,28 @@ export class DateUtils {
     }
 
     /**
+     * Formatea una fecha y hora (DD/MM/YYYY HH:mm) en la zona horaria configurada.
+     */
+    static formatDateTime(date: Date | string | null | undefined): string {
+        if (!date) return '-';
+        const d = new Date(date);
+        if (isNaN(d.getTime())) return '-';
+
+        const dt = DateTime.fromJSDate(d).setZone(this.getTimezone());
+        return dt.toFormat('dd/MM/yyyy HH:mm');
+    }
+
+    /**
+     * Formatea una fecha para ser usada en nombres de archivo (yyyy-MM-dd_HH-mm-ss).
+     */
+    static formatForFilename(date?: Date | string | null): string {
+        const d = date ? new Date(date) : new Date();
+        const validDate = isNaN(d.getTime()) ? new Date() : d;
+        const dt = DateTime.fromJSDate(validDate).setZone(this.getTimezone());
+        return dt.toFormat('yyyy-MM-dd_HH-mm-ss');
+    }
+
+    /**
      * Auxiliar para normalizar cualquier fecha a solo-fecha (YYYY-MM-DD) en UTC.
      * Esto evita que las horas o los desplazamientos de zona horaria alteren el conteo de días.
      */

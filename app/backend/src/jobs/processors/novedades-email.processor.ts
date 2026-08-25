@@ -124,7 +124,7 @@ export class NovedadesEmailProcessor implements JobProcessor {
                             fuente: 'CUERPO',
                             texto: email.text,
                             emailSubject: email.subject,
-                            emailData: { from: email.from, date: email.date },
+                            emailData: { from: email.from, to: email.to, date: email.date },
                             explicitDocType: cuerpoCandidato.tipoDocumento
                         },
                         10

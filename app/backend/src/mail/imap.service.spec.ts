@@ -116,6 +116,9 @@ describe('ImapService', () => {
                 messageId: '12345',
                 subject: 'Novedad de viaje',
                 text: 'Hola, adjunto mi pasaje.',
+                from: '',
+                to: '',
+                date: undefined,
                 attachments: []
             });
         });

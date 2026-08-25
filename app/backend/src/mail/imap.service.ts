@@ -49,12 +49,19 @@ export class ImapService {
             for await (const message of this.client.fetch({ unKeyword: 'Procesado_SIGMA' }, { source: true, uid: true })) {
                 if (message.source) {
                     const parsed = await mailparser.simpleParser(message.source);
+                    const getToField = (to: any) => {
+                        if (!to) return '';
+                        if (Array.isArray(to)) return to.map(t => t.text || t.value?.[0]?.address || '').filter(Boolean).join(', ');
+                        return to.text || to.value?.[0]?.address || '';
+                    };
+
                     results.push({
                         uid: message.uid,
                         messageId: parsed.messageId,
                         subject: parsed.subject,
                         text: parsed.text,
-                        from: parsed.from?.text || parsed.from?.value?.[0]?.address,
+                        from: parsed.from?.text || parsed.from?.value?.[0]?.address || '',
+                        to: getToField(parsed.to),
                         date: parsed.date,
                         attachments: parsed.attachments || []
                     });
