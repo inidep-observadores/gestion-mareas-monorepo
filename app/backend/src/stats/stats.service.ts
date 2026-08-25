@@ -2380,12 +2380,23 @@ export class StatsService {
         const periodStart = startDate ? new Date(startDate) : new Date(Date.UTC(year, 0, 1));
         periodStart.setUTCHours(0, 0, 0, 0);
 
-        const snapEnd = snapshotDate || (endDate ? new Date(endDate) : new Date(Date.UTC(year, 11, 31, 23, 59, 59, 999)));
+        const snapEnd = snapshotDate ? new Date(snapshotDate) : (endDate ? new Date(endDate) : new Date(Date.UTC(year, 11, 31, 23, 59, 59, 999)));
         snapEnd.setUTCHours(23, 59, 59, 999);
+
+        // NUNCA proyectar al futuro: Si el snapEnd calculado es mayor a la fecha actual,
+        // lo limitamos a "hoy" para no inventar días navegados futuros en mareas en ejecución.
+        const now = new Date();
+        if (snapEnd > now) {
+            snapEnd.setTime(now.getTime());
+        }
+
+        // Si se proveen fechas de inicio y fin, estamos consultando un período específico (ej. trimestre)
+        // Por ende, forzamos el modo CALENDAR para que las métricas de esfuerzo (días) no se desborden históricamente.
+        const effectiveMode = (startDate && endDate) ? 'CALENDAR' : mode;
 
         // 1. Obtener datos base
         const stats = await this.getDashboardStats(
-            year, mode, includeNonProtocolized, includeProtocolizedOutOfPeriod, 'SHIP', includeCampaigns, startDate, endDate, protocolizationStartDate, protocolizationEndDate,
+            year, effectiveMode, includeNonProtocolized, includeProtocolizedOutOfPeriod, 'SHIP', includeCampaigns, startDate, endDate, protocolizationStartDate, protocolizationEndDate,
             snapEnd
         );
 
@@ -2420,13 +2431,13 @@ export class StatsService {
 
         // Obtener marea distribution (para intervalos y etapas)
         const mareas = await this.getMareaDistribution(
-            year, mode, includeNonProtocolized, includeProtocolizedOutOfPeriod, includeCampaigns, startDate, endDate, protocolizationStartDate, protocolizationEndDate,
+            year, effectiveMode, includeNonProtocolized, includeProtocolizedOutOfPeriod, includeCampaigns, startDate, endDate, protocolizationStartDate, protocolizationEndDate,
             snapEnd
         );
 
         // Obtener detalle de mareas para paridad exacta con el dashboard
         const detailItems = await this.getDashboardStatsDetail(
-            year, mode, includeNonProtocolized, includeProtocolizedOutOfPeriod, null, '', 'SHIP', includeCampaigns, startDate, endDate, protocolizationStartDate, protocolizationEndDate,
+            year, effectiveMode, includeNonProtocolized, includeProtocolizedOutOfPeriod, null, '', 'SHIP', includeCampaigns, startDate, endDate, protocolizationStartDate, protocolizationEndDate,
             snapEnd
         );
 
@@ -2445,7 +2456,6 @@ export class StatsService {
             fisheryOrdering.map(f => [f.nombre, f.orden ?? 999])
         );
 
-        // Computar breakdown Observadores vs Técnicos para tabla de Personal
         // Computar breakdown Observadores vs Técnicos para tabla de Personal
         const emptyBreakdownSlice = () => ({
             dias: 0,
@@ -2534,8 +2544,6 @@ export class StatsService {
             }
         }
 
-        // Procesar protocolizadas (ESTA LÓGICA SE MUEVE A LA CASCADA ABAJO)
-
         // --- LÓGICA DE CASCADA DE AUDITORÍA ---
         // Universo 1: Mareas finalizadas (arribadas) en el período
         const finalizadasDelPeriodo = detailItems.filter(item => item.estado === 'Finalizada');
@@ -2578,10 +2586,6 @@ export class StatsService {
 
         });
 
-        // La lógica de Cascada ya está implementada centralizadamente en getAuditSpecialCases().
-        // Los objetos specialCases.enviadasADNI, pendientesDeInforme, etc. ya vienen listos con esa lógica unificada.
-
-
         // Informes de marea y otros estados desde detailItems
         detailItems.forEach(item => {
             if (!item.observadorId) return;
@@ -2601,10 +2605,10 @@ export class StatsService {
         this.buildAuditPersonalSheet(workbook, stats, dotacionActiva, obsCientificosQueNavegaron, secondaryStats, breakdown, observadoresSinActividad);
 
         // Hoja 2: Estadísticas de Navegación
-        this.buildAuditNavegacionSheet(workbook, mareas, detailItems, year, mode, endDate);
+        this.buildAuditNavegacionSheet(workbook, mareas, detailItems, year, effectiveMode, endDate);
 
         // Hoja 3: Estadísticas por Pesquería
-        this.buildAuditPesqueriaSheet(workbook, mareas, detailItems, year, mode, fisheryOrderMap, endDate);
+        this.buildAuditPesqueriaSheet(workbook, mareas, detailItems, year, effectiveMode, fisheryOrderMap, endDate);
 
         // Hoja 4: Mareas según Estado
         this.buildAuditCasosEspecialesSheet(workbook, specialCases);
@@ -2614,7 +2618,7 @@ export class StatsService {
         // this.buildAuditProtocolizacionSheet(workbook, protocolizationTimeline);
 
         if (includeAnnualAnnex && startDate && endDate) {
-            await this.buildAuditAnnexSheet(workbook, year, mode, includeNonProtocolized, includeProtocolizedOutOfPeriod, includeCampaigns, startDate, endDate, protocolizationStartDate, protocolizationEndDate, snapshotDate, fisheryOrderMap);
+            await this.buildAuditAnnexSheet(workbook, year, effectiveMode, includeNonProtocolized, includeProtocolizedOutOfPeriod, includeCampaigns, startDate, endDate, protocolizationStartDate, protocolizationEndDate, snapEnd, fisheryOrderMap);
         }
 
         return workbook;
