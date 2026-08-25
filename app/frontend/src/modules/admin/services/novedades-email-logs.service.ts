@@ -36,6 +36,11 @@ const novedadesEmailLogsApi = {
             params: { page, limit }
         });
         return data;
+    },
+
+    reprocessLog: async (id: string): Promise<{ success: boolean; message: string }> => {
+        const { data } = await httpClient.post<{ success: boolean; message: string }>(`/mail-admin/logs/${id}/reprocess`);
+        return data;
     }
 };
 

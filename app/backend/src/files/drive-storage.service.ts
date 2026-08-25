@@ -35,7 +35,6 @@ export class DriveStorageService {
     async uploadFile(filename: string, mimeType: string, buffer: Buffer, folderIdParam?: string): Promise<{ fileId: string; webViewLink: string }> {
         const folderId = folderIdParam || this.configService.get<string>('GOOGLE_DRIVE_NOVEDADES_FOLDER_ID');
         
-        // Usar PassThrough es mucho más seguro con googleapis para evitar race conditions
         const { PassThrough } = require('stream');
         const bufferStream = new PassThrough();
         bufferStream.end(buffer);
@@ -89,6 +88,51 @@ export class DriveStorageService {
             throw error;
         }
     }
+    /**
+     * Actualiza el contenido y metadatos de un archivo existente en Google Drive
+     */
+    async updateFile(fileId: string, filename: string, mimeType: string, buffer: Buffer): Promise<{ fileId: string; webViewLink: string }> {
+        const { PassThrough } = require('stream');
+        const bufferStream = new PassThrough();
+        bufferStream.end(buffer);
+
+        try {
+            const response = await this.driveClient.files.update({
+                fileId: fileId,
+                requestBody: {
+                    name: filename
+                },
+                media: {
+                    mimeType: mimeType,
+                    body: bufferStream
+                },
+                fields: 'id, webViewLink'
+            });
+
+            this.logger.log(`Archivo ${fileId} (${filename}) actualizado exitosamente en Google Drive`);
+
+            return {
+                fileId: response.data.id || fileId,
+                webViewLink: response.data.webViewLink || `https://drive.google.com/file/d/${fileId}/view`
+            };
+        } catch (error: any) {
+            this.logger.error(`Error al actualizar archivo en Google Drive (ID: ${fileId}): ${error.message}`);
+            await this.errorLogsService.create({
+                level: 'ERROR',
+                source: 'GOOGLE_DRIVE',
+                context: 'DriveStorageService.updateFile',
+                message: `Error al actualizar archivo en Google Drive (${filename}, ID: ${fileId}): ${error.message}`,
+                stack: error.stack,
+                detail: {
+                    fileId,
+                    filename,
+                    mimeType,
+                },
+            });
+            throw error;
+        }
+    }
+
     /**
      * Elimina permanentemente un archivo de Google Drive
      */

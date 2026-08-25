@@ -55,7 +55,8 @@ export class NovedadesAiProcessor implements JobProcessor {
                 const obsBusqueda = await this.buscarObservador(
                     extracted.observador, 
                     extracted.cuil, 
-                    extracted.dni
+                    extracted.dni,
+                    emailData?.from
                 );
 
                 if (!obsBusqueda) {
@@ -394,6 +395,7 @@ export class NovedadesAiProcessor implements JobProcessor {
                                     origen: 'EMAIL',
                                     motivo: periodo.motivo || emailSubject,
                                     metadata: {
+                                        emailLogId: emailLogId || null,
                                         fuente,
                                         certezaAi: obsBusqueda.certeza,
                                         requiereRevision: estadoDetalle === 'REQUIERE_REVISION' || esCorreccion || esAjustePeriodo,
@@ -554,12 +556,12 @@ export class NovedadesAiProcessor implements JobProcessor {
             where: { emailLogId }
         });
 
-        // Verificamos si aún quedan jobs encolados para este log (pendientes o procesando)
+        // Verificamos si aún quedan otros jobs pendientes en cola para este log
         const pendingJobs = await this.prisma.jobQueue.count({
             where: {
                 type: 'NOVEDADES_AI_PROCESS',
                 payload: { path: ['emailLogId'], equals: emailLogId },
-                status: { in: ['PENDING', 'PROCESSING'] }
+                status: 'PENDING'
             }
         });
 
@@ -582,51 +584,78 @@ export class NovedadesAiProcessor implements JobProcessor {
         });
     }
 
-    private async buscarObservador(nombreStr?: string, cuil?: string, dni?: string) {
+    private async buscarObservador(nombreStr?: string, cuil?: string, dni?: string, senderEmail?: string) {
+        // 1. CUIL (Certeza ALTA)
         if (cuil) {
             const obs = await this.prisma.observador.findFirst({ where: { cuil } });
             if (obs) return { observador: obs, certeza: 'ALTA' };
         }
+        // 2. DNI (Certeza ALTA)
         if (dni) {
             const obs = await this.prisma.observador.findFirst({ where: { dni } });
             if (obs) return { observador: obs, certeza: 'ALTA' };
         }
 
-        if (!nombreStr) return null;
+        // 3 y 4. Búsqueda por Nombre y Apellido
+        if (nombreStr) {
+            const normalize = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+            const cleanName = normalize(nombreStr);
+            const parts = cleanName.split(/[\s,]+/).filter(p => p.length > 2);
 
-        const normalize = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-        const cleanName = normalize(nombreStr);
-        const parts = cleanName.split(/[\s,]+/).filter(p => p.length > 2);
+            if (parts.length > 0) {
+                const observadores = await this.prisma.observador.findMany();
+                
+                let mejoresCandidatos: any[] = [];
+                let maxPuntos = 0;
 
-        if (parts.length === 0) return null;
-
-        const observadores = await this.prisma.observador.findMany();
-        
-        let mejoresCandidatos: any[] = [];
-        let maxPuntos = 0;
-
-        for (const obs of observadores) {
-            const obsFullName = normalize(`${obs.nombre} ${obs.apellido}`);
-            let puntos = 0;
-            for (const part of parts) {
-                if (obsFullName.includes(part)) {
-                    puntos++;
+                for (const obs of observadores) {
+                    const obsFullName = normalize(`${obs.nombre} ${obs.apellido}`);
+                    let puntos = 0;
+                    for (const part of parts) {
+                        if (obsFullName.includes(part)) {
+                            puntos++;
+                        }
+                    }
+                    if (puntos > 0) {
+                        if (puntos > maxPuntos) {
+                            maxPuntos = puntos;
+                            mejoresCandidatos = [obs];
+                        } else if (puntos === maxPuntos) {
+                            mejoresCandidatos.push(obs);
+                        }
+                    }
                 }
-            }
-            if (puntos > 0) {
-                if (puntos > maxPuntos) {
-                    maxPuntos = puntos;
-                    mejoresCandidatos = [obs];
-                } else if (puntos === maxPuntos) {
-                    mejoresCandidatos.push(obs);
+
+                // 3. Nombre y Apellido sólido (>= 2 palabras coincidentes y único) -> Certeza MEDIA
+                if (mejoresCandidatos.length === 1 && maxPuntos >= 2) {
+                    return { observador: mejoresCandidatos[0], certeza: 'MEDIA' }; 
+                } 
+                // 4. Nombre parcial / dudoso -> Certeza BAJA (Requiere revisión humana)
+                else if (mejoresCandidatos.length > 0) {
+                    return { observador: mejoresCandidatos[0], certeza: 'BAJA' }; 
                 }
             }
         }
 
-        if (mejoresCandidatos.length === 1 && maxPuntos >= 2) {
-            return { observador: mejoresCandidatos[0], certeza: 'MEDIA' }; 
-        } else if (mejoresCandidatos.length > 0) {
-            return { observador: mejoresCandidatos[0], certeza: 'BAJA' }; 
+        // 5. Email de Remitente (Última instancia absoluta)
+        if (senderEmail) {
+            const emailMatch = senderEmail.match(/<([^>]+)>/) || [null, senderEmail.trim()];
+            const cleanEmail = (emailMatch[1] || senderEmail).trim().toLowerCase();
+
+            if (cleanEmail && cleanEmail.includes('@')) {
+                const obs = await this.prisma.observador.findFirst({
+                    where: {
+                        email: {
+                            equals: cleanEmail,
+                            mode: 'insensitive'
+                        }
+                    }
+                });
+
+                if (obs) {
+                    return { observador: obs, certeza: 'BAJA' }; // Certeza BAJA para requerir revisión humana obligatoria
+                }
+            }
         }
 
         return null;

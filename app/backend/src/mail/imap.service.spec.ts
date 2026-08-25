@@ -19,6 +19,8 @@ describe('ImapService', () => {
         getMailboxLock: jest.fn(),
         mailboxOpen: jest.fn(),
         fetch: jest.fn(),
+        fetchOne: jest.fn(),
+        search: jest.fn(),
         messageFlagsAdd: jest.fn(),
         messageMove: jest.fn(),
     };
@@ -134,6 +136,55 @@ describe('ImapService', () => {
             await service.markAsProcessed(1);
             
             expect(mockImapClient.messageFlagsAdd).toHaveBeenCalledWith(1, ['Procesado_SIGMA'], { uid: true });
+        });
+    });
+
+    describe('Búsqueda de Correo por Message-ID', () => {
+        it('debería buscar y devolver un correo específico por su messageId', async () => {
+            await service.connect();
+            mockImapClient.getMailboxLock.mockResolvedValue({ release: jest.fn() });
+            
+            const mockMessage = {
+                uid: 42,
+                source: Buffer.from('Raw email source')
+            };
+            mockImapClient.fetch.mockImplementation(async function* () {
+                yield mockMessage;
+            });
+
+            const parsedEmail = {
+                messageId: '<msg-123@example.com>',
+                subject: 'Asunto de prueba',
+                text: 'Cuerpo de prueba',
+                from: { text: 'remitente@example.com' },
+                attachments: []
+            };
+            (mailparser.simpleParser as jest.Mock).mockResolvedValue(parsedEmail);
+
+            const result = await service.fetchEmailByMessageId('<msg-123@example.com>');
+
+            expect(mockImapClient.getMailboxLock).toHaveBeenCalledWith('INBOX');
+            expect(mockImapClient.fetch).toHaveBeenCalledWith({ all: true }, { source: true, uid: true });
+            expect(result).toEqual({
+                uid: 42,
+                messageId: '<msg-123@example.com>',
+                subject: 'Asunto de prueba',
+                text: 'Cuerpo de prueba',
+                from: 'remitente@example.com',
+                to: '',
+                date: undefined,
+                attachments: []
+            });
+        });
+
+        it('debería retornar null si el correo no se encuentra en IMAP', async () => {
+            await service.connect();
+            mockImapClient.getMailboxLock.mockResolvedValue({ release: jest.fn() });
+            mockImapClient.fetch.mockImplementation(async function* () {});
+
+            const result = await service.fetchEmailByMessageId('<inexistente@example.com>');
+
+            expect(result).toBeNull();
         });
     });
 });

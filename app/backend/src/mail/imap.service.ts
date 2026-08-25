@@ -78,4 +78,51 @@ export class ImapService {
         await this.client.messageFlagsAdd(uid, ['Procesado_SIGMA'], { uid: true });
         this.logger.log(`Mensaje ${uid} marcado con la etiqueta Procesado_SIGMA.`);
     }
+
+    async fetchEmailByMessageId(messageId: string): Promise<any | null> {
+        if (!this.client) throw new Error("Client not initialized");
+        const lock = await this.client.getMailboxLock('INBOX');
+        try {
+            const cleanTargetId = (messageId || '').replace(/[<>\s]/g, '').toLowerCase();
+            this.logger.log(`Buscando correo con Message-ID: "${messageId}" en INBOX...`);
+
+            // Iteramos sobre todos los correos en INBOX (con y sin etiqueta Procesado_SIGMA)
+            for await (const message of this.client.fetch({ all: true }, { source: true, uid: true })) {
+                if (message.source) {
+                    const parsed = await mailparser.simpleParser(message.source);
+                    const cleanParsedId = (parsed.messageId || '').replace(/[<>\s]/g, '').toLowerCase();
+
+                    if (
+                        cleanParsedId === cleanTargetId ||
+                        (cleanTargetId && cleanParsedId.includes(cleanTargetId)) ||
+                        (cleanParsedId && cleanTargetId.includes(cleanParsedId))
+                    ) {
+                        this.logger.log(`Mensaje encontrado en IMAP (UID: ${message.uid}, Asunto: "${parsed.subject || '(Sin Asunto)'}")`);
+                        
+                        const getToField = (to: any) => {
+                            if (!to) return '';
+                            if (Array.isArray(to)) return to.map(t => t.text || t.value?.[0]?.address || '').filter(Boolean).join(', ');
+                            return to.text || to.value?.[0]?.address || '';
+                        };
+
+                        return {
+                            uid: message.uid,
+                            messageId: parsed.messageId,
+                            subject: parsed.subject,
+                            text: parsed.text,
+                            from: parsed.from?.text || parsed.from?.value?.[0]?.address || '',
+                            to: getToField(parsed.to),
+                            date: parsed.date,
+                            attachments: parsed.attachments || []
+                        };
+                    }
+                }
+            }
+
+            this.logger.warn(`No se encontró ningún mensaje coincidente con Message-ID "${messageId}" en INBOX.`);
+            return null;
+        } finally {
+            lock.release();
+        }
+    }
 }

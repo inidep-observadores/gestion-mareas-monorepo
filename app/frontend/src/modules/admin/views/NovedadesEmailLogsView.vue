@@ -89,13 +89,24 @@
 
             <div class="flex flex-col xl:flex-row justify-between items-start gap-6 mb-8">
               <div class="flex-1 min-w-0 w-full">
-                <div class="flex flex-wrap items-center gap-3 mb-4">
-                    <span class="text-[10px] font-black py-1.5 px-3 rounded-lg shadow-xs uppercase tracking-widest" :class="getLevelClass(selectedLog.estado)">
-                        {{ selectedLog.estado }}
-                    </span>
-                    <span class="text-[10px] font-mono text-text-muted bg-surface-muted px-2.5 py-1.5 rounded-lg border border-border truncate max-w-full" v-if="selectedLog.messageId">
-                        Message-ID: {{ selectedLog.messageId }}
-                    </span>
+                <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+                    <div class="flex flex-wrap items-center gap-3">
+                        <span class="text-[10px] font-black py-1.5 px-3 rounded-lg shadow-xs uppercase tracking-widest" :class="getLevelClass(selectedLog.estado)">
+                            {{ selectedLog.estado }}
+                        </span>
+                        <span class="text-[10px] font-mono text-text-muted bg-surface-muted px-2.5 py-1.5 rounded-lg border border-border truncate max-w-full" v-if="selectedLog.messageId">
+                            Message-ID: {{ selectedLog.messageId }}
+                        </span>
+                    </div>
+                    <button
+                        @click="openReprocessModal"
+                        :disabled="selectedLog.estado === 'PROCESANDO' || isReprocessing"
+                        class="btn btn-sm btn-outline btn-primary flex items-center gap-2 rounded-xl text-xs font-bold transition-all disabled:opacity-50"
+                        title="Volver a leer y analizar este correo con IA"
+                    >
+                        <RefreshIcon class="w-3.5 h-3.5" :class="{ 'animate-spin': isReprocessing || selectedLog.estado === 'PROCESANDO' }" />
+                        <span>{{ selectedLog.estado === 'PROCESANDO' ? 'Procesando...' : 'Reprocesar Correo' }}</span>
+                    </button>
                 </div>
                 <!-- Sección con Scroll para el Mensaje -->
                 <div class="bg-surface-muted p-5 rounded-2xl border border-border shadow-sm max-h-40 overflow-y-auto custom-scrollbar group min-w-0">
@@ -188,11 +199,81 @@
         </div>
       </div>
     </div>
+
+    <!-- Modal de Confirmación de Reprocesamiento -->
+    <TransitionRoot appear :show="isConfirmModalOpen" as="template">
+      <Dialog as="div" @close="isConfirmModalOpen = false" class="relative z-50">
+        <TransitionChild
+          as="template"
+          enter="duration-300 ease-out"
+          enter-from="opacity-0"
+          enter-to="opacity-100"
+          leave="duration-200 ease-in"
+          leave-from="opacity-100"
+          leave-to="opacity-0"
+        >
+          <div class="fixed inset-0 bg-black/50 backdrop-blur-sm" />
+        </TransitionChild>
+
+        <div class="fixed inset-0 overflow-y-auto">
+          <div class="flex min-h-full items-center justify-center p-4 text-center">
+            <TransitionChild
+              as="template"
+              enter="duration-300 ease-out"
+              enter-from="opacity-0 scale-95"
+              enter-to="opacity-100 scale-100"
+              leave="duration-200 ease-in"
+              leave-from="opacity-100 scale-100"
+              leave-to="opacity-0 scale-95"
+            >
+              <DialogPanel class="w-full max-w-md transform overflow-hidden rounded-2xl bg-surface p-6 text-left align-middle shadow-xl transition-all border border-border">
+                <div class="flex items-center gap-3 mb-4">
+                  <div class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                    <RefreshIcon class="w-5 h-5" />
+                  </div>
+                  <div>
+                    <DialogTitle as="h3" class="text-base font-bold text-text">
+                      Confirmar Reprocesamiento
+                    </DialogTitle>
+                    <p class="text-xs text-text-muted">Reanálisis de correo electrónico</p>
+                  </div>
+                </div>
+
+                <p class="text-xs text-text-muted leading-relaxed mb-6">
+                  ¿Está seguro de que desea reprocesar este correo? El sistema volverá a leer el mensaje original desde el servidor IMAP y reejecutará la extracción con IA aplicando los criterios vigentes.
+                </p>
+
+                <div class="flex justify-end gap-3">
+                  <button
+                    type="button"
+                    class="btn btn-ghost btn-sm rounded-xl text-xs font-semibold"
+                    @click="isConfirmModalOpen = false"
+                    :disabled="isReprocessing"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-primary btn-sm rounded-xl text-xs font-bold flex items-center gap-2"
+                    @click="confirmReprocess"
+                    :disabled="isReprocessing"
+                  >
+                    <RefreshIcon v-if="isReprocessing" class="w-3.5 h-3.5 animate-spin" />
+                    <span>{{ isReprocessing ? 'Iniciando...' : 'Sí, Reprocesar' }}</span>
+                  </button>
+                </div>
+              </DialogPanel>
+            </TransitionChild>
+          </div>
+        </div>
+      </Dialog>
+    </TransitionRoot>
   </AdminDashboardLayout>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue';
+import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } from '@headlessui/vue';
 import AdminDashboardLayout from '../layouts/AdminDashboardLayout.vue';
 import { useNovedadesEmailLogs } from '../composables/useNovedadesEmailLogs';
 import { toast } from 'vue-sonner';
@@ -210,7 +291,21 @@ import {
     BoxCubeIcon
 } from '@/icons';
 
-const { logs, selectedLog, isLoading, fetchLogs, selectLog } = useNovedadesEmailLogs();
+const { logs, selectedLog, isLoading, isReprocessing, fetchLogs, selectLog, reprocessLog } = useNovedadesEmailLogs();
+
+// Modal de Reprocesamiento
+const isConfirmModalOpen = ref(false);
+const openReprocessModal = () => {
+    isConfirmModalOpen.value = true;
+};
+
+const confirmReprocess = async () => {
+    if (!selectedLog.value) return;
+    const success = await reprocessLog(selectedLog.value.id);
+    if (success) {
+        isConfirmModalOpen.value = false;
+    }
+};
 
 // Responsividad Check
 const isMobileView = ref(false);

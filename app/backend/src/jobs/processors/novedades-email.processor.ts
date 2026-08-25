@@ -151,6 +151,7 @@ export class NovedadesEmailProcessor implements JobProcessor {
                                             emailLogId: emailLog.id,
                                             fuente: attFuente,
                                             emailSubject: email.subject,
+                                            emailData: { from: email.from, to: email.to, date: email.date },
                                             explicitDocType: adjuntoCandidato.tipoDocumento,
                                             attachmentData: {
                                                 filePath,
