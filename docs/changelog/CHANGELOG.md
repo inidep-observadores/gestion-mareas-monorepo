@@ -58,6 +58,7 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 - **novedades:** ocultar eliminadas en calendario y ajustar acciones según estado
 
 ### Changed
+- **jobs:** optimizar tipografía y jerarquía visual en el PDF de respaldo de correo electrónico (metadatos compactos a 10px y cuerpo destacado a 14.5px)
 - **style:** activar color de alerta en novedades pendientes solo cuando el valor es mayor a cero
 - **config:** migrar configuración pnpm a `pnpm-workspace.yaml` (pnpm v10+)
 
