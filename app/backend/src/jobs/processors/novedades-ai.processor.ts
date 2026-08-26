@@ -18,7 +18,7 @@ export class NovedadesAiProcessor implements JobProcessor {
         private readonly driveStorageService: DriveStorageService,
         private readonly gotenbergService: GotenbergService,
         private readonly errorLogsService: ErrorLogsService,
-    ) {}
+    ) { }
 
     async process(payload: any): Promise<any> {
         const { emailLogId, fuente, texto, attachmentData, emailSubject, emailData, explicitDocType, origen, mareaId, mareaArchivoId } = payload;
@@ -49,12 +49,12 @@ export class NovedadesAiProcessor implements JobProcessor {
         try {
             // Extraer JSON estructurado con la IA
             extracted = await this.novedadesAiService.procesarElemento(texto || '', attachment, explicitDocType);
-            
+
             if (extracted.periodos && Array.isArray(extracted.periodos) && extracted.periodos.length > 0) {
                 // Buscar al observador
                 const obsBusqueda = await this.buscarObservador(
-                    extracted.observador, 
-                    extracted.cuil, 
+                    extracted.observador,
+                    extracted.cuil,
                     extracted.dni,
                     emailData?.from
                 );
@@ -69,7 +69,7 @@ export class NovedadesAiProcessor implements JobProcessor {
                     }
 
                     const observador = obsBusqueda.observador;
-                    
+
                     let uploadedDriveInfo: { fileId: string; webViewLink: string } | null = null;
                     let archivoFinal = attachment;
 
@@ -158,10 +158,10 @@ export class NovedadesAiProcessor implements JobProcessor {
                                             overflow: hidden;
                                         }
                                         .meta-table td {
-                                            padding: 8px 12px;
+                                            padding: 5px 10px;
                                             border-bottom: 1px solid #e2e8f0;
                                             vertical-align: top;
-                                            font-size: 12px;
+                                            font-size: 10px;
                                         }
                                         .meta-table tr:last-child td {
                                             border-bottom: none;
@@ -169,7 +169,7 @@ export class NovedadesAiProcessor implements JobProcessor {
                                         .meta-label {
                                             font-weight: 600;
                                             color: #475569;
-                                            width: 160px;
+                                            width: 140px;
                                             background-color: #f1f5f9;
                                         }
                                         .meta-value {
@@ -178,7 +178,7 @@ export class NovedadesAiProcessor implements JobProcessor {
                                         .body-container {
                                             border: 1px solid #cbd5e1;
                                             border-radius: 6px;
-                                            padding: 16px;
+                                            padding: 18px;
                                             background-color: #ffffff;
                                         }
                                         .body-title {
@@ -196,9 +196,9 @@ export class NovedadesAiProcessor implements JobProcessor {
                                             white-space: pre-wrap;
                                             word-wrap: break-word;
                                             margin: 0;
-                                            line-height: 1.6;
+                                            line-height: 1.65;
                                             color: #1e293b;
-                                            font-size: 12px;
+                                            font-size: 14.5px;
                                         }
                                         .footer {
                                             margin-top: 24px;
@@ -490,11 +490,11 @@ export class NovedadesAiProcessor implements JobProcessor {
             }
         } catch (error: any) {
             this.logger.error(`Error analizando elemento (${fuente}): ${error.message}`);
-            
+
             const msg = (error.message || '').toLowerCase();
             const isTemporary = error.status === 429 || error.status === 503 || error.status === 504 ||
-                                msg.includes('429') || msg.includes('quota') || msg.includes('exhausted') || 
-                                msg.includes('timeout') || msg.includes('socket') || msg.includes('reintentos');
+                msg.includes('429') || msg.includes('quota') || msg.includes('exhausted') ||
+                msg.includes('timeout') || msg.includes('socket') || msg.includes('reintentos');
 
             if (isTemporary) {
                 // Si es un error temporal (Rate limit de Gemini), lanzamos error para que JobQueueService haga backoff.
@@ -573,10 +573,10 @@ export class NovedadesAiProcessor implements JobProcessor {
         const tieneErrores = detalles.some(d => d.estado === 'ERROR');
         const tieneErroresTemporales = detalles.some(d => d.estado === 'ERROR_TEMPORAL');
         const tieneRevisiones = detalles.some(d => d.estado === 'REQUIERE_REVISION');
-        
-        const nuevoEstado = tieneErroresTemporales ? 'ERROR_TEMPORAL' 
-                          : (tieneErrores ? 'CON_ERRORES' 
-                          : (tieneRevisiones ? 'CON_ADVERTENCIAS' : 'PROCESADO'));
+
+        const nuevoEstado = tieneErroresTemporales ? 'ERROR_TEMPORAL'
+            : (tieneErrores ? 'CON_ERRORES'
+                : (tieneRevisiones ? 'CON_ADVERTENCIAS' : 'PROCESADO'));
 
         await this.prisma.novedadesEmailLog.update({
             where: { id: emailLogId },
@@ -604,7 +604,7 @@ export class NovedadesAiProcessor implements JobProcessor {
 
             if (parts.length > 0) {
                 const observadores = await this.prisma.observador.findMany();
-                
+
                 let mejoresCandidatos: any[] = [];
                 let maxPuntos = 0;
 
@@ -628,11 +628,11 @@ export class NovedadesAiProcessor implements JobProcessor {
 
                 // 3. Nombre y Apellido sólido (>= 2 palabras coincidentes y único) -> Certeza MEDIA
                 if (mejoresCandidatos.length === 1 && maxPuntos >= 2) {
-                    return { observador: mejoresCandidatos[0], certeza: 'MEDIA' }; 
-                } 
+                    return { observador: mejoresCandidatos[0], certeza: 'MEDIA' };
+                }
                 // 4. Nombre parcial / dudoso -> Certeza BAJA (Requiere revisión humana)
                 else if (mejoresCandidatos.length > 0) {
-                    return { observador: mejoresCandidatos[0], certeza: 'BAJA' }; 
+                    return { observador: mejoresCandidatos[0], certeza: 'BAJA' };
                 }
             }
         }
@@ -664,7 +664,7 @@ export class NovedadesAiProcessor implements JobProcessor {
     private async buscarMareaCercana(observadorId: string, fechaNovedad: Date, codigoNovedad: string): Promise<string | null> {
         const umbralDias = 5;
         const fechaNov = fechaNovedad.getTime();
-        
+
         const mareas = await this.prisma.marea.findMany({
             where: {
                 observadorPrincipalId: observadorId,
@@ -678,7 +678,7 @@ export class NovedadesAiProcessor implements JobProcessor {
                 const fechaReferencia = marea.etapas.length > 0 && marea.etapas[0].fechaZarpada
                     ? marea.etapas[0].fechaZarpada.getTime()
                     : marea.fechaZarpadaEstimada?.getTime();
-                
+
                 if (fechaReferencia && Math.abs(fechaReferencia - fechaNov) / 86400000 <= umbralDias) {
                     return marea.id;
                 }
