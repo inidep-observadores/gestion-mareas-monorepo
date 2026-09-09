@@ -123,11 +123,15 @@ export class NovedadesAiService {
     ) {
         const apiKey = this.configService.get<string>('GEMINI_API_KEY') || 'dummy-key';
         this.modelName = this.configService.get<string>('LLM_MODEL') || 'gemini-3.1-flash-lite';
-        this.fallbackModelName = this.configService.get<string>('LLM_FALLBACK_MODEL') || 'gemma-4-31b';
+        this.fallbackModelName = this.configService.get<string>('LLM_FALLBACK_MODEL') || 'gemma-4-31b-it';
         
         this.ai = new GoogleGenAI({ apiKey });
     }
 
+    private cleanJsonResponse(rawText: string): string {
+        if (!rawText) return '';
+        return rawText.replace(/<thought>[\s\S]*?<\/thought>/g, '').replace(/```json/gi, '').replace(/```/g, '').trim();
+    }
 
     async clasificarEmail(asunto: string, cuerpoTexto: string, attachments: { buffer: Buffer, mimetype: string, filename: string }[]): Promise<any> {
         const promptSystem = 'Eres un asistente clasificador de correos (Triage). Analiza el Asunto, el Cuerpo y el contenido de los Archivos Adjuntos para determinar qué partes contienen novedades (Licencias, Francos, Pasajes, etc.). Ahora puedes ver el contenido extraído de los adjuntos. Clasifícalos basándote en su CONTENIDO real (PASAJES o GDE). Genera un candidato ADJUNTO por CADA archivo que contenga información válida. IMPORTANTE: Si la única información relevante se encuentra en los adjuntos, clasifica el CUERPO_EMAIL como IRRELEVANTE. Solo genera un candidato CUERPO_EMAIL si el cuerpo menciona información útil distinta.';
@@ -155,7 +159,8 @@ export class NovedadesAiService {
                 model: this.modelName,
                 ...requestPayload
             });
-            return JSON.parse(response.text || '{"candidatos": []}');
+            const cleanText = this.cleanJsonResponse(response.text);
+            return JSON.parse(cleanText || '{"candidatos": []}');
         } catch (error: any) {
             this.logger.error(`Error en Triage AI: ${error.message}`);
             throw new Error(`Error clasificando correo: ${error.message}`);
@@ -264,7 +269,8 @@ export class NovedadesAiService {
             }
         }
 
-            const parsedJson = JSON.parse(response.text || '{}');
+            const cleanText = this.cleanJsonResponse(response.text);
+            const parsedJson = JSON.parse(cleanText || '{}');
             parsedJson._metadata = {
                 tipoDocumentoClasificado: docType
             };

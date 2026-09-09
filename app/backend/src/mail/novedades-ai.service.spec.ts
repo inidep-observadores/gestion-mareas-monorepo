@@ -106,5 +106,22 @@ describe('NovedadesAiService', () => {
                 })
             );
         });
+
+        it('debería limpiar etiquetas <thought> del razonamiento del modelo y parsear el JSON correctamente', async () => {
+            const texto = 'Texto de prueba';
+            const mockGeminiResponse = {
+                text: `<thought>Analizando el texto para extraer el observador y los periodos...</thought>\n` + JSON.stringify({
+                    observador: 'JUAN PEREZ',
+                    periodos: []
+                })
+            };
+
+            ((service as any).ai.models.generateContent as jest.Mock).mockResolvedValue(mockGeminiResponse);
+
+            const result = await service.procesarElemento(texto);
+
+            expect(result).toBeDefined();
+            expect(result.observador).toBe('JUAN PEREZ');
+        });
     });
 });
