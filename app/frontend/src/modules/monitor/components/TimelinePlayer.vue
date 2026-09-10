@@ -110,6 +110,7 @@
 </template>
 
 <script setup lang="ts">
+import { formatDateUI, formatDateTimeUI, formatTimeUI } from '@/utils/date.utils';
 import { ref, watch } from 'vue'
 import HudCard from './HudCard.vue'
 import flatPickr from 'vue-flatpickr-component'
@@ -149,11 +150,7 @@ const openDatePicker = () => {
   }
 }
 
-const formatTime = (iso: string) => {
-  if (!iso) return '--/--'
-  const date = new Date(iso)
-  return `${date.getDate()}/${date.getMonth()+1} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`
-}
+const formatTime = (iso: string) => formatTimeUI(iso)
 
 watch(() => props.currentTime, (newVal) => {
   if (newVal) {

@@ -153,6 +153,7 @@
 </template>
 
 <script setup lang="ts">
+import { formatDateUI, formatDateTimeUI, formatTimeUI } from '@/utils/date.utils';
 import { ref, onMounted, watch, computed } from 'vue';
 import AdminLayout from '@/components/layout/AdminLayout.vue';
 import BackButton from '@/components/common/BackButton.vue';
@@ -290,9 +291,7 @@ const deleteFeriado = async (fecha: string) => {
   }
 };
 
-const formatDate = (dateStr: string) => {
-  return new Date(dateStr).toLocaleDateString('es-AR', { timeZone: 'UTC' });
-};
+const formatDate = (dateStr: string) => formatDateUI(dateStr)
 
 watch(() => configStore.selectedYear, () => {
   loadFeriados();

@@ -124,6 +124,7 @@
 </template>
 
 <script setup lang="ts">
+import { formatDateUI, formatDateTimeUI, formatTimeUI } from '@/utils/date.utils';
 import { ref, watch } from 'vue'
 import MareaQuickDetailModal from '@/modules/stats/components/MareaQuickDetailModal.vue'
 import observadoresApi from '../services/observadores.service'
@@ -170,15 +171,7 @@ watch(() => [props.observadorId, props.year], () => {
     }
 }, { immediate: true })
 
-const formatDate = (dateStr: string) => {
-    if (!dateStr) return '-'
-    const date = new Date(dateStr)
-    return date.toLocaleDateString('es-AR', {
-        day: '2-digit',
-        month: 'short',
-        year: '2-digit'
-    }).replace('.', '')
-}
+const formatDate = (dateStr: string) => formatDateUI(dateStr)
 </script>
 
 <style scoped>

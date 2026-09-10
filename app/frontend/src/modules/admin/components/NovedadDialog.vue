@@ -278,6 +278,7 @@
 </template>
 
 <script setup lang="ts">
+import { formatDateUI, formatDateTimeUI, formatTimeUI } from '@/utils/date.utils';
 import { ref, computed, watch, onMounted, nextTick } from 'vue'
 import BaseModal from '@/components/common/BaseModal.vue'
 import SearchableSelect from '@/components/common/SearchableSelect.vue'
@@ -303,15 +304,7 @@ const props = defineProps<{
 
 const emit = defineEmits(['close', 'save'])
 
-const formatDate = (isoStr: string) => {
-  if (!isoStr) return ''
-  const date = new Date(isoStr)
-  return date.toLocaleDateString('es-AR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric'
-  })
-}
+const formatDate = (isoStr: string) => formatDateUI(isoStr)
 
 const formatPeriodo = (inicio?: string | Date | null, fin?: string | Date | null) => {
   if (!inicio) return '-'

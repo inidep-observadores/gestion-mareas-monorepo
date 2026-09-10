@@ -400,6 +400,7 @@
 </template>
 
 <script setup lang="ts">
+import { formatDateUI, formatDateTimeUI, formatTimeUI } from '@/utils/date.utils';
 import { ref, onMounted, computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
@@ -872,10 +873,7 @@ const getStatusClasses = (status?: string) => {
   return 'bg-surface-muted text-text-muted'
 }
 
-const formatDate = (date?: string) => {
-  if (!date) return 'N/D'
-  return new Date(date).toLocaleDateString('es-AR', { day: '2-digit', month: 'short' })
-}
+const formatDate = (date?: string) => formatDateUI(date)
 </script>
 
 <style scoped>

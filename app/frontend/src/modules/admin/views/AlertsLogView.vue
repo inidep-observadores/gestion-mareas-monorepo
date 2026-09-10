@@ -193,6 +193,7 @@
 </template>
 
 <script setup lang="ts">
+import { formatDateUI, formatDateTimeUI, formatTimeUI } from '@/utils/date.utils';
 import { ref, reactive, onMounted } from 'vue'
 import { Activity } from 'lucide-vue-next'
 import AdminDashboardLayout from '../layouts/AdminDashboardLayout.vue'
@@ -298,11 +299,7 @@ const changePage = (page: number) => {
 }
 
 // Helpers
-const formatDate = (date: string) => {
-  return new Date(date).toLocaleString('es-AR', {
-    day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'
-  })
-}
+const formatDate = (date: string) => formatDateUI(date)
 
 const getTimeDifference = (start: string, end: string) => {
   const diff = new Date(end).getTime() - new Date(start).getTime()

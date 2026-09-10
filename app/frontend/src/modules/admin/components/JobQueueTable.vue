@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { formatDateUI, formatDateTimeUI, formatTimeUI } from '@/utils/date.utils';
 import { ref, onMounted, watch } from 'vue';
 import {
     RefreshCw,
@@ -122,16 +123,7 @@ const getStatusConfig = (status: string) => {
     }
 };
 
-const formatDate = (dateStr: string | null) => {
-    if (!dateStr) return '-';
-    return new Date(dateStr).toLocaleString('es-AR', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-    });
-};
+const formatDate = (dateStr: string | null) => formatDateUI(dateStr)
 
 const confirmRetry = (id: string) => {
     selectedJobId.value = id;

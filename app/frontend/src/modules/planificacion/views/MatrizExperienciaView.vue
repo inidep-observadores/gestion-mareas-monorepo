@@ -477,6 +477,7 @@
 </template>
 
 <script setup lang="ts">
+import { formatDateUI, formatDateTimeUI, formatTimeUI } from '@/utils/date.utils';
 import { ref, onMounted, computed, watch } from 'vue';
 import PlanificacionDashboardLayout from '../layouts/PlanificacionDashboardLayout.vue';
 import BackButton from '@/components/common/BackButton.vue';
@@ -500,11 +501,7 @@ const dialogItems = ref<any[]>([]);
 const sortKey = ref('fechaZarpada');
 const sortDesc = ref(true);
 
-const formatDate = (dateStr: string | null) => {
-  if (!dateStr) return '-';
-  const date = new Date(dateStr);
-  return date.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
-};
+const formatDate = (dateStr: string | null) => formatDateUI(dateStr)
 
 const filteredDialogItems = computed(() => {
   let result = dialogItems.value;

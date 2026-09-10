@@ -384,6 +384,7 @@
 </template>
 
 <script setup lang="ts">
+import { formatDateUI, formatDateTimeUI, formatTimeUI } from '@/utils/date.utils';
 import { ref, onMounted, computed, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import AdminLayout from '@/components/layout/AdminLayout.vue';
@@ -532,15 +533,7 @@ const handleSort = (key: string) => {
 
 const getSortIcon = () => ChevronDownIcon;
 
-const formatDate = (isoStr: string) => {
-  if (!isoStr) return '';
-  const date = new Date(isoStr);
-  return date.toLocaleDateString('es-AR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric'
-  });
-};
+const formatDate = (isoStr: string) => formatDateUI(isoStr)
 
 
 

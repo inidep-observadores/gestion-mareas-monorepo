@@ -69,7 +69,7 @@ function registrarDiasEnConteo(
   end: Date,
   datesCount: Record<string, number>
 ) {
-  let current = new Date(start);
+  const current = new Date(start);
   while (current <= end) {
     const dateStr =
       current.getFullYear() +
@@ -143,7 +143,7 @@ export function buildObservadorEventos(
     const isFranco = code === 'FC' || code.includes('FRANCO');
     const isNoDisponible = code === 'NO_DISPONIBLE';
 
-    let tipoEvento: EventoObservador['tipo'] = 'NOVEDAD';
+    const tipoEvento: EventoObservador['tipo'] = 'NOVEDAD';
 
     eventos.push({
       id: `nov-${novedad.id}`,

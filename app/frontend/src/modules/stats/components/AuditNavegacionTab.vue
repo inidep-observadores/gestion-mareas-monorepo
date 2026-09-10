@@ -123,6 +123,7 @@
 </template>
 
 <script setup lang="ts">
+import { formatDateUI, formatDateTimeUI, formatTimeUI } from '@/utils/date.utils';
 import { computed } from 'vue'
 import type { DashboardStats, MareaDistributionItem, StatsDetailItem } from '../services/stats.service'
 
@@ -150,10 +151,7 @@ interface NavMarea {
    fechaDerivacion: string | null
 }
 
-const formatDate = (d: string | null) => {
-   if (!d) return '—'
-   return new Date(d).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: '2-digit' })
-}
+const formatDate = (d: string | null) => formatDateUI(d)
 
 const etapasPorMarea = computed(() => {
    const map = new Map<string, number>()

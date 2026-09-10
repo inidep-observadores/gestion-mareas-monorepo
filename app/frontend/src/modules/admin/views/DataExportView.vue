@@ -180,6 +180,7 @@
 </template>
 
 <script setup lang="ts">
+import { formatDateUI, formatDateTimeUI, formatTimeUI } from '@/utils/date.utils';
 import { ref, onMounted } from 'vue';
 import AdminDashboardLayout from '../layouts/AdminDashboardLayout.vue';
 import ProcessingOverlay from '@/components/common/ProcessingOverlay.vue';
@@ -347,12 +348,7 @@ const handleDelete = async () => {
     }
 };
 
-const formatDate = (dateStr: string) => {
-  return new Date(dateStr).toLocaleString('es-AR', {
-    day: '2-digit', month: '2-digit', year: '2-digit',
-    hour: '2-digit', minute: '2-digit'
-  });
-};
+const formatDate = (dateStr: string) => formatDateUI(dateStr)
 
 const formatSize = (bytes: number) => {
   if (bytes === 0) return '0 B';

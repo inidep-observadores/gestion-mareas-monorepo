@@ -595,6 +595,7 @@
 </template>
 
 <script setup lang="ts">
+import { formatDateUI, formatDateTimeUI, formatTimeUI } from '@/utils/date.utils';
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
@@ -724,19 +725,9 @@ const docCategories = [
   { id: 'VARIOS', label: 'Otros Archivos', shortLabel: 'Archivo' },
 ]
 
-const formatDate = (value?: string | Date | null) => {
-  if (!value) return 'N/D'
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return 'N/D'
-  return date.toLocaleDateString('es-AR')
-}
+const formatDate = (value?: string | Date | null) => formatDateUI(value)
 
-const formatDateTime = (value?: string | Date | null) => {
-  if (!value) return 'N/D'
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return 'N/D'
-  return date.toLocaleString('es-AR')
-}
+const formatDateTime = (value?: string | Date | null) => formatDateTimeUI(value)
 
 
 const getFileName = (ruta?: string) => {

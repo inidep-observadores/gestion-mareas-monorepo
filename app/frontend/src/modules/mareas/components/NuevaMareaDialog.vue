@@ -321,6 +321,7 @@
 </template>
 
 <script setup lang="ts">
+import { formatDateUI, formatDateTimeUI } from '@/utils/date.utils'
 import { ref, computed, onMounted, watch, nextTick, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
@@ -861,13 +862,7 @@ const getObserverName = (id: string) => {
   const o = observadores.value.find(obs => obs.id === id)
   return o ? `${o.apellido}, ${o.nombre}` : '---'
 }
-const formatDate = (dateStr?: string, withTime = false) => {
-  if (!dateStr) return 'N/D'
-  const options: Intl.DateTimeFormatOptions = { day: '2-digit', month: '2-digit', year: 'numeric' }
-  if (withTime) {
-    options.hour = '2-digit'
-    options.minute = '2-digit'
-  }
-  return new Date(dateStr).toLocaleDateString('es-AR', options)
+const formatDate = (date?: string | Date | null, withTime = false) => {
+  return withTime ? formatDateTimeUI(date) : formatDateUI(date)
 }
 </script>

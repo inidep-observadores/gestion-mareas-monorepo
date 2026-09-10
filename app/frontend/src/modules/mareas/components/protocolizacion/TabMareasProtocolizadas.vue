@@ -216,6 +216,7 @@
 </template>
 
 <script setup lang="ts">
+import { formatDateUI, formatDateTimeUI, formatTimeUI } from '@/utils/date.utils';
 import { ref, computed } from 'vue'
 import { ShipIcon, ChevronDownIcon } from '@/icons'
 import SearchInput from '@/components/ui/SearchInput.vue'
@@ -322,12 +323,5 @@ watch(() => filteredAndSortedMareas.value.length, (newVal) => {
   emit('update:count', newVal)
 }, { immediate: true })
 
-const formatDate = (dateString: string) => {
-  if (!dateString) return '-'
-  return new Date(dateString).toLocaleDateString('es-AR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric'
-  })
-}
+const formatDate = (dateString: string) => formatDateUI(dateString)
 </script>

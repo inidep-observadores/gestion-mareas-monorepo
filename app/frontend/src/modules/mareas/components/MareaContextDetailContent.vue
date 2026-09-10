@@ -329,6 +329,7 @@
 </template>
 
 <script setup lang="ts">
+import { formatDateUI, formatDateTimeUI, formatTimeUI } from '@/utils/date.utils';
 import { computed, ref } from 'vue'
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 import httpClient from '@/config/http/http.client'
@@ -564,11 +565,7 @@ const onAction = (key: string | number) => {
   emit('action', key)
 }
 
-const formatDate = (date?: string) => {
-  if (!date) return '---'
-  const d = new Date(date)
-  return d.toLocaleDateString()
-}
+const formatDate = (val?: string) => formatDateUI(val)
 </script>
 
 <style scoped>

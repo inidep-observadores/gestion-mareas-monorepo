@@ -138,6 +138,7 @@
 </template>
 
 <script setup lang="ts">
+import { formatDateUI, formatDateTimeUI, formatTimeUI } from '@/utils/date.utils';
 import { ref, watch, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import BaseModal from '@/components/common/BaseModal.vue'
@@ -187,23 +188,7 @@ watch(() => props.isOpen, (newVal) => {
   else marea.value = null
 })
 
-const formatDate = (date: string | Date | null, withTime = false) => {
-  if (!date) return '-'
-  const d = new Date(date)
-  if (isNaN(d.getTime())) return '-'
-
-  const day = String(d.getDate()).padStart(2, '0')
-  const month = String(d.getMonth() + 1).padStart(2, '0')
-  const year = d.getFullYear()
-
-  if (withTime) {
-    const hours = String(d.getHours()).padStart(2, '0')
-    const minutes = String(d.getMinutes()).padStart(2, '0')
-    return `${day}/${month}/${year} ${hours}:${minutes}`
-  }
-
-  return `${day}/${month}/${year}`
-}
+const formatDate = (date: string | Date | null, withTime = false) => formatDateUI(date)
 
 import { DateUtils } from '@/modules/shared/utils/date.utils'
 

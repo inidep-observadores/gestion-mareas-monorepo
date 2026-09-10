@@ -63,6 +63,7 @@
 </template>
 
 <script setup lang="ts">
+import { formatDateUI, formatDateTimeUI, formatTimeUI } from '@/utils/date.utils';
 import { ref } from 'vue';
 import type { ZonaAustralResponse } from '../types/marea.types';
 import { MapPinIcon, CheckIcon } from '@/icons';
@@ -73,10 +74,7 @@ defineProps<{
 
 const showDates = ref(false);
 
-const formatDate = (dateStr: string) => {
-  const [year, month, day] = dateStr.split('-');
-  return `${day}/${month}/${year}`;
-};
+const formatDate = (dateStr: string) => formatDateUI(dateStr)
 </script>
 
 <style scoped>

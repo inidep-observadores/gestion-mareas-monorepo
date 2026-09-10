@@ -494,6 +494,7 @@
 </template>
 
 <script setup lang="ts">
+import { formatDateUI, formatDateTimeUI, formatTimeUI } from '@/utils/date.utils';
 import { ref, markRaw, computed } from 'vue'
 import { ShipIcon, UserGroupIcon, DocsIcon, HotelIcon, ChevronDownIcon } from '@/icons'
 import type { WorkforceStatus } from '../services/dashboard.service'
@@ -765,15 +766,7 @@ type DistributionItem = {
   color?: string
 }
 
-const formatDate = (dateString: string) => {
-  if (!dateString) return '-'
-  const date = new Date(dateString)
-  return date.toLocaleDateString('es-AR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: '2-digit'
-  })
-}
+const formatDate = (dateString: string) => formatDateUI(dateString)
 
 const getFilteredList = (list: any[]) => {
   if (!list) return [];

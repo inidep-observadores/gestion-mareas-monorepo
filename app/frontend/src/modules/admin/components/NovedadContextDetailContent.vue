@@ -259,6 +259,7 @@
 </template>
 
 <script setup lang="ts">
+import { formatDateUI, formatDateTimeUI, formatTimeUI } from '@/utils/date.utils';
 import { computed } from 'vue';
 import type { Novedad } from '../interfaces/novedad.interface';
 
@@ -278,15 +279,7 @@ const closePanel = () => {
   emit('close');
 };
 
-const formatDate = (isoStr: string) => {
-  if (!isoStr) return '';
-  const date = new Date(isoStr);
-  return date.toLocaleDateString('es-AR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric'
-  });
-};
+const formatDate = (isoStr: string) => formatDateUI(isoStr)
 
 const formatPeriodo = (inicio?: string | Date | null, fin?: string | Date | null) => {
   if (!inicio) return '-';
@@ -304,11 +297,7 @@ const sortedMovimientos = computed(() => {
   return [...props.novedad.movimientos].sort((a, b) => new Date(b.fechaHora).getTime() - new Date(a.fechaHora).getTime());
 });
 
-const formatDateEvent = (isoStr: string) => {
-  if (!isoStr) return '';
-  const date = new Date(isoStr);
-  return date.toLocaleDateString('es-AR') + ' ' + date.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false });
-};
+const formatDateEvent = (isoStr: string) => formatDateTimeUI(isoStr)
 
 const getUsuarioName = (mov: any) => {
   if (mov.usuario) {
