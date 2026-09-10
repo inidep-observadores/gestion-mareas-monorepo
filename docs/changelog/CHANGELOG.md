@@ -2,8 +2,10 @@
 
 Todos los cambios notables en este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/), y este proyecto adhiere a [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-
 ## [Unreleased]
+
+### Fixed
+- **admin:** auto-reconciliar registros de auditoría de correos colgados en 'PROCESANDO' sin tareas activas en cola y habilitar la opción de forzar reprocesamiento en la interfaz.
 
 ### Added
 - **mareas:** validaciones exhaustivas para observadores secundarios planificados en backend (`MareasService.create` y `MareasService.update`) asegurando que no coincidan con el observador principal, no existan duplicados, no tengan impedimentos activos y no estén asignados como principal a otra marea activa en estado `DESIGNADA`.

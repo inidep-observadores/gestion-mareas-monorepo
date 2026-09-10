@@ -90,18 +90,30 @@ export class MailController {
                 }
             });
 
-            if (pendingJobs === 0 && log.detalles && log.detalles.length > 0) {
-                const tieneErrores = log.detalles.some(d => d.estado === 'ERROR');
-                const tieneErroresTemporales = log.detalles.some(d => d.estado === 'ERROR_TEMPORAL');
-                const tieneRevisiones = log.detalles.some(d => d.estado === 'REQUIERE_REVISION');
-                const estadoSaneado = tieneErroresTemporales ? 'ERROR_TEMPORAL'
-                                    : (tieneErrores ? 'CON_ERRORES'
-                                    : (tieneRevisiones ? 'CON_ADVERTENCIAS' : 'PROCESADO'));
+            if (pendingJobs === 0) {
+                if (log.detalles && log.detalles.length > 0) {
+                    const tieneErrores = log.detalles.some(d => d.estado === 'ERROR');
+                    const tieneErroresTemporales = log.detalles.some(d => d.estado === 'ERROR_TEMPORAL');
+                    const tieneRevisiones = log.detalles.some(d => d.estado === 'REQUIERE_REVISION');
+                    const estadoSaneado = tieneErroresTemporales ? 'ERROR_TEMPORAL'
+                                        : (tieneErrores ? 'CON_ERRORES'
+                                        : (tieneRevisiones ? 'CON_ADVERTENCIAS' : 'PROCESADO'));
 
-                await this.prisma.novedadesEmailLog.update({
-                    where: { id: log.id },
-                    data: { estado: estadoSaneado }
-                });
+                    await this.prisma.novedadesEmailLog.update({
+                        where: { id: log.id },
+                        data: { estado: estadoSaneado }
+                    });
+                } else {
+                    // Si no hay tareas pendientes y no tiene detalles generados, verificar si el triage fue irrelevante o si falló
+                    const triage = log.clasificacionTriage as any;
+                    const candidatosRelevantes = (triage?.candidatos || []).filter((c: any) => c.tipoDocumento !== 'IRRELEVANTE');
+                    const nuevoEstado = (triage && candidatosRelevantes.length === 0) ? 'IGNORADO' : 'ERROR';
+
+                    await this.prisma.novedadesEmailLog.update({
+                        where: { id: log.id },
+                        data: { estado: nuevoEstado }
+                    });
+                }
             }
         }
 
@@ -168,8 +180,16 @@ export class MailController {
             throw new NotFoundException('Registro de auditoría de correo no encontrado');
         }
 
-        if (emailLog.estado === 'PROCESANDO') {
-            throw new BadRequestException('El correo ya se encuentra en proceso de análisis');
+        const pendingJobs = await this.prisma.jobQueue.count({
+            where: {
+                type: 'NOVEDADES_AI_PROCESS',
+                payload: { path: ['emailLogId'], equals: emailLog.id },
+                status: { in: ['PENDING', 'PROCESSING'] }
+            }
+        });
+
+        if (pendingJobs > 0) {
+            throw new BadRequestException('El correo se encuentra actualmente siendo procesado en la cola de tareas.');
         }
 
         // 1. Limpiar detalles de análisis previos y resetear estado a PROCESANDO
@@ -202,111 +222,119 @@ export class MailController {
             return;
         }
 
-        await this.imapService.connect();
         try {
-            const email = await this.imapService.fetchEmailByMessageId(messageId);
-            if (!email) {
+            await this.imapService.connect();
+            try {
+                const email = await this.imapService.fetchEmailByMessageId(messageId);
+                if (!email) {
+                    await this.prisma.novedadesEmailLog.update({
+                        where: { id: emailLogId },
+                        data: { estado: 'ERROR' }
+                    });
+                    return;
+                }
+
                 await this.prisma.novedadesEmailLog.update({
                     where: { id: emailLogId },
-                    data: { estado: 'ERROR' }
+                    data: {
+                        asunto: email.subject,
+                        remitente: email.from,
+                        fechaRecepcion: email.date ? new Date(email.date) : undefined
+                    }
                 });
-                return;
-            }
 
-            await this.prisma.novedadesEmailLog.update({
-                where: { id: emailLogId },
-                data: {
-                    asunto: email.subject,
-                    remitente: email.from,
-                    fechaRecepcion: email.date ? new Date(email.date) : undefined
-                }
-            });
+                // Directorio temporal para adjuntos
+                const tempDir = path.join(os.tmpdir(), 'novedades-ai-attachments');
+                await fs.mkdir(tempDir, { recursive: true });
 
-            // Directorio temporal para adjuntos
-            const tempDir = path.join(os.tmpdir(), 'novedades-ai-attachments');
-            await fs.mkdir(tempDir, { recursive: true });
+                const attachmentsData = (email.attachments || []).map((att: any, i: number) => {
+                    let fname = att.filename;
+                    if (!fname) {
+                        const ext = (att.contentType || '').split('/')[1] || 'pdf';
+                        fname = `adjunto_${i}.${ext}`;
+                    }
+                    return { ...att, resolvedFilename: fname };
+                });
 
-            const attachmentsData = (email.attachments || []).map((att: any, i: number) => {
-                let fname = att.filename;
-                if (!fname) {
-                    const ext = (att.contentType || '').split('/')[1] || 'pdf';
-                    fname = `adjunto_${i}.${ext}`;
-                }
-                return { ...att, resolvedFilename: fname };
-            });
+                // Triage con IA
+                const attachmentsParaTriage = attachmentsData.map((a: any) => ({
+                    buffer: a.content,
+                    mimetype: a.contentType || 'application/pdf',
+                    filename: a.resolvedFilename
+                }));
 
-            // Triage con IA
-            const attachmentsParaTriage = attachmentsData.map((a: any) => ({
-                buffer: a.content,
-                mimetype: a.contentType || 'application/pdf',
-                filename: a.resolvedFilename
-            }));
-
-            const triageResult = await this.novedadesAiService.clasificarEmail(email.subject, email.text, attachmentsParaTriage);
-            await this.prisma.novedadesEmailLog.update({
-                where: { id: emailLogId },
-                data: { clasificacionTriage: triageResult }
-            });
-
-            const candidatos = triageResult?.candidatos || [];
-            const candidatosRelevantes = candidatos.filter((c: any) => c.tipoDocumento !== 'IRRELEVANTE');
-
-            if (candidatosRelevantes.length === 0) {
+                const triageResult = await this.novedadesAiService.clasificarEmail(email.subject, email.text, attachmentsParaTriage);
                 await this.prisma.novedadesEmailLog.update({
                     where: { id: emailLogId },
-                    data: { estado: 'IGNORADO' }
+                    data: { clasificacionTriage: triageResult }
                 });
-                return;
-            }
 
-            // Encolar análisis de cuerpo si aplica
-            const cuerpoCandidato = candidatosRelevantes.find((c: any) => c.fuente === 'CUERPO_EMAIL');
-            if (cuerpoCandidato && email.text) {
-                await this.jobQueueService.addJob(
-                    JobType.NOVEDADES_AI_PROCESS,
-                    {
-                        emailLogId: emailLogId,
-                        fuente: 'CUERPO',
-                        texto: email.text,
-                        emailSubject: email.subject,
-                        emailData: { from: email.from, to: email.to, date: email.date },
-                        explicitDocType: cuerpoCandidato.tipoDocumento
-                    },
-                    10
-                );
-            }
+                const candidatos = triageResult?.candidatos || [];
+                const candidatosRelevantes = candidatos.filter((c: any) => c.tipoDocumento !== 'IRRELEVANTE');
 
-            // Encolar análisis de adjuntos relevantes
-            for (let i = 0; i < attachmentsData.length; i++) {
-                const att = attachmentsData[i];
-                const filename = att.resolvedFilename;
-                const adjuntoCandidato = candidatosRelevantes.find((c: any) => c.fuente === 'ADJUNTO' && c.nombreArchivo === filename);
+                if (candidatosRelevantes.length === 0) {
+                    await this.prisma.novedadesEmailLog.update({
+                        where: { id: emailLogId },
+                        data: { estado: 'IGNORADO' }
+                    });
+                    return;
+                }
 
-                if (adjuntoCandidato) {
-                    const attFuente = `ADJUNTO: ${filename}`;
-                    const filePath = path.join(tempDir, `${emailLogId}_${i}_${filename}`);
-                    await fs.writeFile(filePath, att.content);
-
+                // Encolar análisis de cuerpo si aplica
+                const cuerpoCandidato = candidatosRelevantes.find((c: any) => c.fuente === 'CUERPO_EMAIL');
+                if (cuerpoCandidato && email.text) {
                     await this.jobQueueService.addJob(
                         JobType.NOVEDADES_AI_PROCESS,
                         {
                             emailLogId: emailLogId,
-                            fuente: attFuente,
+                            fuente: 'CUERPO',
+                            texto: email.text,
                             emailSubject: email.subject,
                             emailData: { from: email.from, to: email.to, date: email.date },
-                            explicitDocType: adjuntoCandidato.tipoDocumento,
-                            attachmentData: {
-                                filePath,
-                                mimetype: att.contentType || 'application/pdf',
-                                filename
-                            }
+                            explicitDocType: cuerpoCandidato.tipoDocumento
                         },
                         10
                     );
                 }
+
+                // Encolar análisis de adjuntos relevantes
+                for (let i = 0; i < attachmentsData.length; i++) {
+                    const att = attachmentsData[i];
+                    const filename = att.resolvedFilename;
+                    const adjuntoCandidato = candidatosRelevantes.find((c: any) => c.fuente === 'ADJUNTO' && c.nombreArchivo === filename);
+
+                    if (adjuntoCandidato) {
+                        const attFuente = `ADJUNTO: ${filename}`;
+                        const filePath = path.join(tempDir, `${emailLogId}_${i}_${filename}`);
+                        await fs.writeFile(filePath, att.content);
+
+                        await this.jobQueueService.addJob(
+                            JobType.NOVEDADES_AI_PROCESS,
+                            {
+                                emailLogId: emailLogId,
+                                fuente: attFuente,
+                                emailSubject: email.subject,
+                                emailData: { from: email.from, to: email.to, date: email.date },
+                                explicitDocType: adjuntoCandidato.tipoDocumento,
+                                attachmentData: {
+                                    filePath,
+                                    mimetype: att.contentType || 'application/pdf',
+                                    filename
+                                }
+                            },
+                            10
+                        );
+                    }
+                }
+            } finally {
+                await this.imapService.disconnect();
             }
-        } finally {
-            await this.imapService.disconnect();
+        } catch (error: any) {
+            this.logger.error(`Error en background al reprocesar email ${emailLogId}: ${error.message}`);
+            await this.prisma.novedadesEmailLog.update({
+                where: { id: emailLogId },
+                data: { estado: 'ERROR' }
+            });
         }
     }
 }

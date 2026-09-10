@@ -100,12 +100,12 @@
                     </div>
                     <button
                         @click="openReprocessModal"
-                        :disabled="selectedLog.estado === 'PROCESANDO' || isReprocessing"
+                        :disabled="isReprocessing"
                         class="btn btn-sm btn-outline btn-primary flex items-center gap-2 rounded-xl text-xs font-bold transition-all disabled:opacity-50"
-                        title="Volver a leer y analizar este correo con IA"
+                        :title="selectedLog.estado === 'PROCESANDO' ? 'Forzar un nuevo análisis con IA de este correo' : 'Volver a leer y analizar este correo con IA'"
                     >
-                        <RefreshIcon class="w-3.5 h-3.5" :class="{ 'animate-spin': isReprocessing || selectedLog.estado === 'PROCESANDO' }" />
-                        <span>{{ selectedLog.estado === 'PROCESANDO' ? 'Procesando...' : 'Reprocesar Correo' }}</span>
+                        <RefreshIcon class="w-3.5 h-3.5" :class="{ 'animate-spin': isReprocessing }" />
+                        <span>{{ isReprocessing ? 'Iniciando...' : (selectedLog.estado === 'PROCESANDO' ? 'Forzar Reprocesamiento' : 'Reprocesar Correo') }}</span>
                     </button>
                 </div>
                 <!-- Sección con Scroll para el Mensaje -->
