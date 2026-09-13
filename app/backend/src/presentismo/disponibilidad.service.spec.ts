@@ -382,6 +382,80 @@ describe('DisponibilidadService', () => {
     expect(eventoDisponible).toBeDefined();
     expect(eventoDisponible?.codigoCorto).toBe('¿DISPONIBLE?');
   });
+
+  it('debe priorizar NAVEGANDO sobre un aviso previo de DISPONIBLE cuando el observador está en marea en ejecución', async () => {
+    const today = new Date();
+    // Aviso de disponibilidad emitido hace 10 días
+    const avisoInicio = new Date(today.getTime() - 10 * 24 * 60 * 60 * 1000);
+    // Marea que zarpó hace 3 días y continúa navegando
+    const mareaInicio = new Date(today.getTime() - 3 * 24 * 60 * 60 * 1000);
+
+    mockPrismaService.observador.findMany.mockResolvedValue([
+      {
+        id: 'obs-8',
+        nombre: 'Morena',
+        apellido: 'Ledesma',
+        codigoInterno: 108,
+        tipoObservador: 'OBSERVADOR',
+        tipoContrato: 'MONOTRIBUTISTA',
+        conImpedimento: false,
+        motivoImpedimento: null,
+        disponible: true,
+      },
+    ]);
+
+    mockPrismaService.observadorNovedad.findMany.mockResolvedValue([
+      {
+        id: 'nov-disp-previa',
+        observadorId: 'obs-8',
+        fechaInicio: avisoInicio,
+        fechaFin: null,
+        permiteUrgencia: false,
+        motivo: 'Disponibilidad para embarcar',
+        tipoNovedad: {
+          codigo: 'DISPONIBLE',
+          descripcion: 'Declaración de Disponibilidad',
+          afectaPresentismo: false,
+        },
+      },
+    ]);
+
+    mockPrismaService.marea.findMany.mockResolvedValue([
+      {
+        id: 'marea-133',
+        tipoMarea: 'MC',
+        nroMarea: 133,
+        anioMarea: 2026,
+        diasEstimados: 30,
+        fechaInicioObservador: mareaInicio,
+        fechaFinObservador: null,
+        fechaZarpadaEstimada: mareaInicio,
+        observadorPrincipalId: 'obs-8',
+        buque: { nombreBuque: 'ERIN BRUCE II' },
+        pesqueria: { nombre: 'Vieira' },
+        estadoActual: { codigo: 'EN_EJECUCION' },
+        etapas: [
+          {
+            id: 'etapa-3',
+            nroEtapa: 3,
+            fechaZarpada: mareaInicio,
+            fechaArribo: null,
+            puertoZarpada: { id: 'p1', esLocal: true },
+            puertoArribo: null,
+            observadores: [{ observadorId: 'obs-8' }],
+          },
+        ],
+      },
+    ]);
+
+    const result = await service.obtenerDisponibilidad(1);
+    const obs = result.observadores[0];
+
+    // Para la fecha actual (marea en curso), debe haber un bloque NAVEGANDO activo para hoy y días futuros
+    const eventoNavegandoActivo = obs.eventos.find(e => e.estado === 'NAVEGANDO' && !e.isPast);
+    expect(eventoNavegandoActivo).toBeDefined();
+    expect(eventoNavegandoActivo?.isPast).toBe(false);
+  });
 });
 
 

@@ -242,11 +242,14 @@ export class DisponibilidadService {
           return true;
         });
 
+        // Novedades para evaluar estado del día: se excluye DISPONIBLE para no generar falso conflicto con mareas
+        const obsNovedadesSinAvisoDisp = obsNovedades.filter(n => n.tipoNovedad?.codigo !== 'DISPONIBLE');
+
         // Evaluar estado del día (en disponibilidad no evaluamos feriados para cortar disponibilidad)
         const estadoEvaluado = evaluarEstadoDia(
           currentDate,
           obsMareasDelDia,
-          obsNovedades,
+          obsNovedadesSinAvisoDisp,
           null, // Sin feriados
           isFinSemana,
           true  // Incluir todas las novedades
@@ -261,14 +264,31 @@ export class DisponibilidadService {
           return currentDate >= ini && currentDate <= fin;
         });
 
-        // 1. Detectar si el evento del día es un aviso de DISPONIBLE
-        const tieneNovedadDisponible = novedadesDelDia.some(n => n.tipoNovedad?.codigo === 'DISPONIBLE');
-
-        // 2. Detectar si para esta fecha (o posterior) existe un aviso de DISPONIBLE que deba bloquear los días previos
+        // 1. Detectar si para esta fecha (o posterior) existe un aviso de DISPONIBLE que deba bloquear los días previos
         const proximoAvisoDisponible = obsNovedades.find(n => {
           if (n.tipoNovedad?.codigo !== 'DISPONIBLE') return false;
           const fechaDisp = DateTime.fromJSDate(n.fechaInicio, { zone: 'utc' }).startOf('day');
           return currentDate < fechaDisp;
+        });
+
+        // 2. Detectar si para esta fecha existe un aviso de DISPONIBLE vigente que confirme la disponibilidad
+        // (y que no haya sido consumido por una marea posterior que ya zarpó)
+        const tieneAvisoVigente = obsNovedades.some(n => {
+          if (n.tipoNovedad?.codigo !== 'DISPONIBLE') return false;
+          const iniAviso = DateTime.fromJSDate(n.fechaInicio, { zone: 'utc' }).startOf('day');
+          if (currentDate < iniAviso) return false;
+          if (n.fechaFin) {
+            const finAviso = DateTime.fromJSDate(n.fechaFin, { zone: 'utc' }).endOf('day');
+            if (currentDate > finAviso) return false;
+          }
+          // Si el observador zarpó en una marea posterior al aviso, dicho aviso ya fue cumplido
+          const mareaPosterior = obsMareas.some((m: any) => {
+            const inicioMarea = m.fechaInicioObservador || m.fechaZarpadaEstimada || m.etapas[0]?.fechaZarpada;
+            if (!inicioMarea) return false;
+            const zarpada = DateTime.fromJSDate(inicioMarea, { zone: 'utc' }).startOf('day');
+            return zarpada >= iniAviso && zarpada <= currentDate;
+          });
+          return !mareaPosterior;
         });
 
         // 3. Detectar si para esta fecha existe una marea designada para el observador
@@ -284,8 +304,8 @@ export class DisponibilidadService {
           );
         }
 
-        // Si el estado es LIBRE o FIN_SEMANA, o si es la novedad DISPONIBLE propiamente dicha (no la pintamos como bloque positivo)
-        if (estadoEvaluado.estado === 'LIBRE' || estadoEvaluado.estado === 'FIN_SEMANA' || tieneNovedadDisponible) {
+        // Si el día está libre (sin mareas en curso ni licencias activas)
+        if (estadoEvaluado.estado === 'LIBRE' || estadoEvaluado.estado === 'FIN_SEMANA') {
           if (mareaDesignada) {
             // Marea en estado DESIGNADA: bloque previsto de color verde atenuado con borde punteado
             const buque = mareaDesignada.buque?.nombreBuque || 'Buque sin asignar';
@@ -317,7 +337,7 @@ export class DisponibilidadService {
               flexible: false,
               isPast: false,
             });
-          } else if (tieneNovedadDisponible) {
+          } else if (tieneAvisoVigente) {
             // Disponibilidad iniciada a partir de un aviso documentado: DISPONIBLE (Confirmada)
             dailyStates.push({
               date: currentDate,

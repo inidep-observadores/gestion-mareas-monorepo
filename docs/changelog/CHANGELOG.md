@@ -7,6 +7,7 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 ### Fixed
 - **admin:** auto-reconciliar registros de auditoría de correos colgados en 'PROCESANDO' sin tareas activas en cola y habilitar la opción de forzar reprocesamiento en la interfaz.
 
+- **disponibilidad:** corregir falso conflicto y precedencia indebida de novedades de aviso de disponibilidad (`DISPONIBLE`) sobre mareas en ejecución en el timeline de disponibilidad; el aviso previo queda consumido tras la zarpada y la navegación activa (`NAVEGANDO`) prevalece correctamente.
 - **disponibilidad:** bifurcar la disponibilidad en dos niveles diferenciados: disponibilidad confirmada respaldada documentalmente por aviso de disponibilidad (`DISPONIBLE`, amarillo sólido) y disponibilidad no confirmada asumida en períodos libres sin aviso registrado (`DISPONIBLE_NO_CONFIRMADA`, etiqueta `¿DISPONIBLE?`, fondo amarillo atenuado, borde punteado y tooltip descriptivo).
 - **disponibilidad:** reorganizar interfaz de filtros dejando el buscador de texto siempre visible a la izquierda del selector de horizonte y colapsando el panel de filtros secundarios (tipo de observador y contrato) por defecto para maximizar el área de trabajo vertical.
 - **disponibilidad:** incorporar módulo y vista de Disponibilidad de Observadores con línea de tiempo (`vis-timeline`), precarga continua a 6 meses para navegación fluida sin recargas, y selector de enfoque/zoom rápido (15 Días por default, 1 Mes, 3 Meses y 6 Meses).
