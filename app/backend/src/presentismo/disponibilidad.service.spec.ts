@@ -38,7 +38,7 @@ describe('DisponibilidadService', () => {
     expect(service).toBeDefined();
   });
 
-  it('debe retornar disponibilidad con bloque DISPONIBLE para observador sin novedades ni impedimento', async () => {
+  it('debe retornar DISPONIBLE_NO_CONFIRMADA para observador sin aviso documental de disponibilidad', async () => {
     mockPrismaService.observador.findMany.mockResolvedValue([
       {
         id: 'obs-1',
@@ -62,8 +62,52 @@ describe('DisponibilidadService', () => {
     expect(result.observadores.length).toBe(1);
     const obs = result.observadores[0];
     expect(obs.eventos.length).toBeGreaterThan(0);
+    const eventoNoConfirmado = obs.eventos.find(e => e.estado === 'DISPONIBLE_NO_CONFIRMADA');
+    expect(eventoNoConfirmado).toBeDefined();
+    expect(eventoNoConfirmado?.codigoCorto).toBe('¿DISPONIBLE?');
+    expect(eventoNoConfirmado?.detalle).toContain('no confirmó la disponibilidad');
+  });
+
+  it('debe retornar DISPONIBLE confirmado cuando existe una novedad de aviso de disponibilidad activa', async () => {
+    const today = new Date();
+    const inicioAviso = new Date(today.getTime() - 2 * 24 * 60 * 60 * 1000); // Aviso desde hace 2 días
+
+    mockPrismaService.observador.findMany.mockResolvedValue([
+      {
+        id: 'obs-2',
+        nombre: 'Carlos',
+        apellido: 'Gomez',
+        codigoInterno: 102,
+        tipoObservador: 'OBSERVADOR',
+        tipoContrato: 'PLANTA PERMANENTE',
+        conImpedimento: false,
+        motivoImpedimento: null,
+        disponible: true,
+      },
+    ]);
+
+    mockPrismaService.observadorNovedad.findMany.mockResolvedValue([
+      {
+        id: 'nov-disp-activa',
+        observadorId: 'obs-2',
+        fechaInicio: inicioAviso,
+        fechaFin: null,
+        permiteUrgencia: false,
+        motivo: 'Disponible',
+        tipoNovedad: {
+          codigo: 'DISPONIBLE',
+          descripcion: 'Declaración de Disponibilidad',
+          afectaPresentismo: false,
+        },
+      },
+    ]);
+    mockPrismaService.marea.findMany.mockResolvedValue([]);
+
+    const result = await service.obtenerDisponibilidad(3);
+    const obs = result.observadores[0];
     const eventoDisponible = obs.eventos.find(e => e.estado === 'DISPONIBLE');
     expect(eventoDisponible).toBeDefined();
+    expect(eventoDisponible?.codigoCorto).toBe('DISPONIBLE');
     expect(eventoDisponible?.detalle).toBe('Disponible para embarque');
   });
 
@@ -231,9 +275,10 @@ describe('DisponibilidadService', () => {
     const eventoNavegando = obs.eventos.find(e => e.estado === 'NAVEGANDO');
     expect(eventoNavegando).toBeDefined();
 
-    // 2. Debe haber un bloque posterior de DISPONIBLE para los días siguientes
-    const eventoDisponiblePosterior = obs.eventos.find(e => e.estado === 'DISPONIBLE');
+    // 2. Debe haber un bloque posterior de ¿DISPONIBLE? (no confirmada) para los días siguientes
+    const eventoDisponiblePosterior = obs.eventos.find(e => e.estado === 'DISPONIBLE_NO_CONFIRMADA');
     expect(eventoDisponiblePosterior).toBeDefined();
+    expect(eventoDisponiblePosterior?.codigoCorto).toBe('¿DISPONIBLE?');
   });
 
   it('debe generar un bloque de DESIGNADA para observador asignado a marea en estado DESIGNADA', async () => {
@@ -284,9 +329,10 @@ describe('DisponibilidadService', () => {
     expect(eventoDesignada?.codigoCorto).toBe('DESIGNADA');
     expect(eventoDesignada?.detalle).toContain('BUQUE ATLANTICO');
 
-    // 2. Debe haber un bloque inicial de DISPONIBLE antes de la designación (días 0 a 2)
-    const eventosDisponibles = obs.eventos.filter(e => e.estado === 'DISPONIBLE');
+    // 2. Debe haber un bloque inicial de ¿DISPONIBLE? (no confirmada) antes de la designación (días 0 a 2)
+    const eventosDisponibles = obs.eventos.filter(e => e.estado === 'DISPONIBLE_NO_CONFIRMADA');
     expect(eventosDisponibles.length).toBeGreaterThanOrEqual(1);
+    expect(eventosDisponibles[0].codigoCorto).toBe('¿DISPONIBLE?');
   });
 
   it('no debe tener en cuenta mareas en estado A_REASIGNAR', async () => {
@@ -331,9 +377,10 @@ describe('DisponibilidadService', () => {
     const eventoDesignada = obs.eventos.find(e => e.estado === 'DESIGNADA');
     expect(eventoDesignada).toBeUndefined();
 
-    // El observador debe estar DISPONIBLE
-    const eventoDisponible = obs.eventos.find(e => e.estado === 'DISPONIBLE');
+    // El observador debe estar en ¿DISPONIBLE? (no confirmada)
+    const eventoDisponible = obs.eventos.find(e => e.estado === 'DISPONIBLE_NO_CONFIRMADA');
     expect(eventoDisponible).toBeDefined();
+    expect(eventoDisponible?.codigoCorto).toBe('¿DISPONIBLE?');
   });
 });
 

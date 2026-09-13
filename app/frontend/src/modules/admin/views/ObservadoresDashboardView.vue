@@ -10,7 +10,7 @@
           <div class="p-2 rounded-xl bg-primary/10 text-primary">
             <UserCircleIcon class="w-5 h-5" />
           </div>
-          <h2 class="text-xl font-bold text-text">Administración General</h2>
+          <h2 class="text-xl font-bold text-text">Gestión de Observadores</h2>
         </div>
         
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -29,13 +29,6 @@
             color="warning"
           />
           <ObservadoresDashboardCard
-            title="Disponibilidad"
-            description="Consulta la disponibilidad presente y proyectada de los observadores con horizonte dinámico."
-            :to="{ name: 'SistemaObservadoresDisponibilidad' }"
-            :icon="CalenderIcon"
-            color="warning"
-          />
-          <ObservadoresDashboardCard
             title="Feriados nacionales y locales"
             description="Administración de feriados y días no laborables usados en la planificación."
             :to="{ name: 'SistemaObservadoresFeriados' }"
@@ -48,6 +41,13 @@
             :to="{ name: 'SistemaObservadoresNovedades' }"
             :icon="DocsIcon"
             color="success"
+          />
+          <ObservadoresDashboardCard
+            title="Disponibilidad"
+            description="Consulta la disponibilidad presente y proyectada de los observadores con horizonte dinámico."
+            :to="{ name: 'SistemaObservadoresDisponibilidad' }"
+            :icon="ShipIcon"
+            color="info"
           />
         </div>
       </section>
@@ -67,5 +67,5 @@
 <script setup lang="ts">
 import ObservadoresDashboardLayout from '../layouts/ObservadoresDashboardLayout.vue';
 import ObservadoresDashboardCard from '../components/ObservadoresDashboardCard.vue';
-import { CalenderIcon, UserCircleIcon, UserGroupIcon, DocsIcon } from '@/icons';
+import { CalenderIcon, UserCircleIcon, UserGroupIcon, DocsIcon, ShipIcon } from '@/icons';
 </script>

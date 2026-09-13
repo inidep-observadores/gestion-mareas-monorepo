@@ -202,7 +202,7 @@ export class DisponibilidadService {
       // Mapear cada día evaluado
       const dailyStates: Array<{
         date: DateTime;
-        estado: 'DISPONIBLE' | 'NAVEGANDO' | 'PUERTO' | 'NOVEDAD' | 'VIAJE' | 'ESPERANDO_ZARPADA' | 'CONFLICTO' | 'IMPEDIMENTO' | 'DESIGNADA';
+        estado: ObservadorDisponibilidadItemDto['estado'];
         estadoSecundario?: string;
         detalle?: string;
         codigoCorto?: string;
@@ -317,8 +317,8 @@ export class DisponibilidadService {
               flexible: false,
               isPast: false,
             });
-          } else {
-            // Futuro libre sin aviso que lo preceda: ¡DISPONIBLE PARA EMBARQUE! (Bloque amarillo)
+          } else if (tieneNovedadDisponible) {
+            // Disponibilidad iniciada a partir de un aviso documentado: DISPONIBLE (Confirmada)
             dailyStates.push({
               date: currentDate,
               estado: 'DISPONIBLE',
@@ -327,15 +327,30 @@ export class DisponibilidadService {
               flexible: false,
               isPast: false,
             });
+          } else {
+            // Futuro libre sin aviso documentado: DISPONIBILIDAD NO CONFIRMADA
+            dailyStates.push({
+              date: currentDate,
+              estado: 'DISPONIBLE_NO_CONFIRMADA',
+              detalle: 'Disponibilidad no confirmada (el observador no confirmó la disponibilidad)',
+              codigoCorto: '¿DISPONIBLE?',
+              flexible: false,
+              isPast: false,
+            });
           }
         } else {
           // Es un evento activo (Navegando, Puerto, Novedad, Viaje, Conflicto, Esperando Zarpada)
+          let codCorto = estadoEvaluado.codigoCorto;
+          if (codCorto === 'NO_DISPONIBLE' || codCorto === 'NO_DISP') {
+            codCorto = 'NO DISPONIBLE';
+          }
+
           dailyStates.push({
             date: currentDate,
             estado: estadoEvaluado.estado as any,
             estadoSecundario: estadoEvaluado.estadoSecundario,
             detalle: estadoEvaluado.detalle || estadoEvaluado.conflictoDetalle,
-            codigoCorto: estadoEvaluado.codigoCorto,
+            codigoCorto: codCorto,
             flexible: isFlexible,
             isPast,
           });

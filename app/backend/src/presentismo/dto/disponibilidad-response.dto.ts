@@ -2,7 +2,7 @@ export interface ObservadorDisponibilidadItemDto {
   id: string;
   startDate: string; // ISO string
   endDate: string;   // ISO string
-  estado: 'DISPONIBLE' | 'NAVEGANDO' | 'PUERTO' | 'NOVEDAD' | 'VIAJE' | 'ESPERANDO_ZARPADA' | 'CONFLICTO' | 'IMPEDIMENTO' | 'DESIGNADA';
+  estado: 'DISPONIBLE' | 'DISPONIBLE_NO_CONFIRMADA' | 'NAVEGANDO' | 'PUERTO' | 'NOVEDAD' | 'VIAJE' | 'ESPERANDO_ZARPADA' | 'CONFLICTO' | 'IMPEDIMENTO' | 'DESIGNADA';
   estadoSecundario?: string;
   detalle?: string;
   codigoCorto?: string;

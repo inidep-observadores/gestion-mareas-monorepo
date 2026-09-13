@@ -264,6 +264,9 @@ const formatItemTooltip = (item: ObservadorDisponibilidadItem, nombreObs: string
   if (item.estado === 'DISPONIBLE') {
     titulo = 'Disponible para embarque';
     tituloColor = 'text-amber-400';
+  } else if (item.estado === 'DISPONIBLE_NO_CONFIRMADA') {
+    titulo = 'Disponibilidad no confirmada';
+    tituloColor = 'text-amber-300';
   } else if (item.estado === 'DESIGNADA') {
     titulo = 'Marea Designada (Previsto)';
     tituloColor = 'text-emerald-400';
@@ -283,21 +286,31 @@ const formatItemTooltip = (item: ObservadorDisponibilidadItem, nombreObs: string
     titulo = 'En Viaje / Tránsito';
     tituloColor = 'text-indigo-400';
   } else if (item.estado === 'NOVEDAD') {
-    if (item.codigoCorto === 'NO_DISP' || item.codigoCorto === 'NO DISPONIBLE') {
+    const cod = (item.codigoCorto || '').toUpperCase();
+    if (cod === 'NO_DISP' || cod === 'NO DISPONIBLE' || cod === 'NO_DISPONIBLE') {
       titulo = 'No Disponible';
-      tituloColor = 'text-sky-400';
-    } else if (item.codigoCorto === 'FC') {
+      tituloColor = 'text-red-400';
+    } else if (cod === 'FC') {
       titulo = 'Franco Compensatorio';
       tituloColor = 'text-amber-400';
+    } else if (cod === 'LICEN' || cod === 'LICENCIA') {
+      titulo = 'Licencia / Vacaciones';
+      tituloColor = 'text-sky-400';
+    } else if (cod === 'DONACION_SANGRE') {
+      titulo = 'Donación de Sangre';
+      tituloColor = 'text-sky-400';
+    } else if (cod === 'RP') {
+      titulo = 'Razones Particulares';
+      tituloColor = 'text-sky-400';
     } else {
-      titulo = item.codigoCorto || 'Novedad';
+      titulo = item.codigoCorto ? item.codigoCorto.replace(/_/g, ' ') : 'Novedad';
       tituloColor = 'text-sky-400';
     }
   } else if (item.estado === 'CONFLICTO') {
     titulo = 'Conflicto de eventos';
     tituloColor = 'text-red-400';
   } else {
-    titulo = item.estado;
+    titulo = String(item.estado || '').replace(/_/g, ' ');
   }
 
   const rangoStr = formatFechasRango(item.startDate, item.endDate);
@@ -306,12 +319,14 @@ const formatItemTooltip = (item: ObservadorDisponibilidadItem, nombreObs: string
   html += `<div class="text-[11px] text-gray-300 font-mono mb-1">📅 ${rangoStr}</div>`;
 
   // Detalle adicional limpio (solo si aporta información y no repite el título)
-  if (item.estado === 'DESIGNADA') {
+  if (item.estado === 'DISPONIBLE_NO_CONFIRMADA') {
+    html += `<div class="text-xs text-amber-200/95 mt-1 font-medium">El observador no confirmó la disponibilidad</div>`;
+  } else if (item.estado === 'DESIGNADA') {
     if (item.detalle) {
       html += `<div class="text-xs text-gray-100 font-medium mt-1">${item.detalle}</div>`;
     }
     html += `<div class="text-[10px] text-emerald-300/80 mt-0.5 italic">Asignación prevista aún no confirmada</div>`;
-  } else if (item.estado === 'NOVEDAD' && (item.codigoCorto === 'NO_DISP' || item.codigoCorto === 'NO DISPONIBLE')) {
+  } else if (item.estado === 'NOVEDAD' && (item.codigoCorto === 'NO_DISP' || item.codigoCorto === 'NO DISPONIBLE' || item.codigoCorto === 'NO_DISPONIBLE')) {
     if (item.detalle) {
       html += `<div class="text-xs text-gray-100 mt-0.5">${item.detalle}</div>`;
     }
@@ -331,10 +346,51 @@ const formatItemTooltip = (item: ObservadorDisponibilidadItem, nombreObs: string
   return html;
 };
 
+const getNovedadLabel = (codigoCorto?: string): string => {
+  if (!codigoCorto) return 'NOVEDAD';
+  const clean = codigoCorto.trim().toUpperCase();
+
+  switch (clean) {
+    case 'NO_DISP':
+    case 'NO DISP':
+    case 'NO_DISPONIBLE':
+    case 'NO DISPONIBLE':
+      return 'NO DISPONIBLE';
+    case 'FC':
+      return 'FRANCO';
+    case 'LICEN':
+    case 'LICENCIA':
+      return 'LICENCIA';
+    case 'ENFERMEDAD':
+      return 'ENFERMEDAD';
+    case 'RP':
+      return 'RAZONES PART.';
+    case 'MATERNIDAD':
+      return 'MATERNIDAD';
+    case 'NACIMIENTO':
+      return 'NACIMIENTO';
+    case 'FALLECIMIENTO':
+      return 'DUELO';
+    case 'EXAMEN':
+      return 'EXAMEN';
+    case 'DONACION_SANGRE':
+      return 'DONACIÓN SANGRE';
+    case 'VIAJE_INICIO':
+    case 'VIAJE_FIN':
+    case 'TRANSITO_INICIO':
+    case 'TRANSITO_FIN':
+      return 'EN VIAJE';
+    default:
+      return clean.replace(/_/g, ' ');
+  }
+};
+
 const getBloqueLabel = (item: ObservadorDisponibilidadItem): string => {
   switch (item.estado) {
     case 'DISPONIBLE':
       return 'DISPONIBLE';
+    case 'DISPONIBLE_NO_CONFIRMADA':
+      return '¿DISPONIBLE?';
     case 'DESIGNADA':
       return 'DESIGNADA';
     case 'NAVEGANDO':
@@ -350,15 +406,9 @@ const getBloqueLabel = (item: ObservadorDisponibilidadItem): string => {
     case 'CONFLICTO':
       return 'CONFLICTO';
     case 'NOVEDAD':
-      if (item.codigoCorto === 'NO_DISP' || item.codigoCorto === 'NO DISPONIBLE') {
-        return 'NO DISPONIBLE';
-      }
-      if (item.codigoCorto === 'FC') {
-        return 'FRANCO';
-      }
-      return item.codigoCorto || 'NOVEDAD';
+      return getNovedadLabel(item.codigoCorto);
     default:
-      return item.codigoCorto || item.estado;
+      return (item.codigoCorto || String(item.estado || '')).replace(/_/g, ' ');
   }
 };
 
@@ -367,6 +417,8 @@ const getItemVisClass = (item: ObservadorDisponibilidadItem): string => {
 
   if (item.estado === 'DISPONIBLE') {
     baseClass = 'vis-item-disponible';
+  } else if (item.estado === 'DISPONIBLE_NO_CONFIRMADA') {
+    baseClass = 'vis-item-disponible-no-confirmada';
   } else if (item.estado === 'IMPEDIMENTO') {
     baseClass = 'vis-item-impedido';
   } else if (item.estado === 'NAVEGANDO') {
@@ -380,7 +432,12 @@ const getItemVisClass = (item: ObservadorDisponibilidadItem): string => {
   } else if (item.estado === 'VIAJE') {
     baseClass = 'vis-item-viaje';
   } else if (item.estado === 'NOVEDAD') {
-    baseClass = 'vis-item-novedad';
+    const cod = (item.codigoCorto || '').toUpperCase();
+    if (cod === 'NO DISPONIBLE' || cod === 'NO_DISP' || cod === 'NO_DISPONIBLE') {
+      baseClass = 'vis-item-no-disponible';
+    } else {
+      baseClass = 'vis-item-novedad';
+    }
   } else if (item.estado === 'CONFLICTO') {
     baseClass = 'vis-item-conflicto';
   }
@@ -545,6 +602,15 @@ onBeforeUnmount(() => {
   font-weight: 800 !important;
 }
 
+:global(.disponibilidad-timeline .vis-item-disponible-no-confirmada) {
+  background-color: rgba(250, 204, 21, 0.22) !important; /* Mismo color pero atenuado */
+  color: #854d0e !important;
+  border-color: #eab308 !important;
+  border-width: 2px !important;
+  border-style: dashed !important; /* Borde punteado */
+  font-weight: 800 !important;
+}
+
 .legend-navegando, :global(.disponibilidad-timeline .vis-item-navegando) {
   background-color: #22c55e !important;
   color: white !important;
@@ -575,6 +641,15 @@ onBeforeUnmount(() => {
   border-color: #7dd3fc !important;
   border-width: 2px !important;
   border-style: solid !important;
+}
+
+:global(.disponibilidad-timeline .vis-item-no-disponible) {
+  background-color: #fee2e2 !important; /* Rojo suave */
+  color: #991b1b !important;            /* Texto contrastado */
+  border-color: #fca5a5 !important;     /* Borde rojo suave */
+  border-width: 2px !important;
+  border-style: solid !important;
+  font-weight: 800 !important;
 }
 
 .legend-puerto, :global(.disponibilidad-timeline .vis-item-puerto) {
@@ -633,6 +708,15 @@ onBeforeUnmount(() => {
   border-color: #a16207 !important;
 }
 
+:global(.dark .disponibilidad-timeline .vis-item-disponible-no-confirmada) {
+  background-color: rgba(202, 138, 4, 0.22) !important; /* Atenuado */
+  color: #fef08a !important;
+  border-color: #ca8a04 !important;
+  border-width: 2px !important;
+  border-style: dashed !important; /* Borde punteado */
+  font-weight: 800 !important;
+}
+
 :global(.dark) .legend-navegando, :global(.dark .disponibilidad-timeline .vis-item-navegando) {
   background-color: #15803d !important;
   color: white !important;
@@ -657,6 +741,15 @@ onBeforeUnmount(() => {
   background-color: rgba(14, 165, 233, 0.25) !important;
   color: #bae6fd !important;
   border-color: rgba(14, 165, 233, 0.5) !important;
+}
+
+:global(.dark .disponibilidad-timeline .vis-item-no-disponible) {
+  background-color: rgba(239, 68, 68, 0.22) !important; /* Rojo suave en oscuro */
+  color: #fecaca !important;
+  border-color: rgba(239, 68, 68, 0.5) !important;
+  border-width: 2px !important;
+  border-style: solid !important;
+  font-weight: 800 !important;
 }
 
 :global(.dark) .legend-puerto, :global(.dark .disponibilidad-timeline .vis-item-puerto) {
