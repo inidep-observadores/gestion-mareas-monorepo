@@ -17,4 +17,9 @@ export interface Observador {
     cuil?: string;
     telefonoPrincipal?: string;
     observaciones?: string;
+    numeroCedula?: number | null;
+    vencimientoCedula?: string | null;
+    vencimientoAptoMedico?: string | null;
+    fechaActualizacionDocumentacion?: string | null;
 }
+

@@ -16,6 +16,7 @@ const globalStubs = {
     props: ['items']
   },
   ObservadorDialog: true,
+  ObservadorDocumentacionBadge: true,
   ExportExcelButton: true,
   ChevronDownIcon: true,
   EditIcon: true,

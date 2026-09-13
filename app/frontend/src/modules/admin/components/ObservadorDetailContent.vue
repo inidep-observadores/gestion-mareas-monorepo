@@ -8,9 +8,12 @@
           <span class="text-text-muted font-bold">{{ observador?.nombre?.charAt(0) }}{{ observador?.apellido?.charAt(0) }}</span>
         </div>
         <div>
-          <h2 class="text-base font-extrabold text-text leading-tight">
-            {{ observador?.apellido }}, {{ observador?.nombre }}
-          </h2>
+          <div class="flex items-center gap-2">
+            <h2 class="text-base font-extrabold text-text leading-tight">
+              {{ observador?.apellido }}, {{ observador?.nombre }}
+            </h2>
+            <ObservadorDocumentacionBadge :observador="observador" />
+          </div>
           <div class="text-[11px] text-text-muted font-medium mt-0.5 uppercase tracking-wider">
             ID: {{ observador?.codigoInterno }}
           </div>
@@ -54,6 +57,7 @@
 import { ref } from 'vue';
 import { getFullImageUrl } from '@/helpers/image.helper';
 import type { Observador } from '../interfaces/observador.interface';
+import ObservadorDocumentacionBadge from './ObservadorDocumentacionBadge.vue';
 import ObservadorTimeline from './ObservadorTimeline.vue';
 import ObservadorCalendar from './ObservadorCalendar.vue';
 

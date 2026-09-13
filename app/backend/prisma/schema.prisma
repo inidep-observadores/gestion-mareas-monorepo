@@ -234,6 +234,10 @@ model Observador {
   sexo                       Sexo                    @default(Masculino)
   habilitadoCongeladores     Boolean                 @default(true) @map("habilitado_congeladores")
   habilitadoFresqueros       Boolean                 @default(true) @map("habilitado_fresqueros")
+  numeroCedula               Int?                    @unique @map("numero_cedula")
+  vencimientoCedula          DateTime?               @map("vencimiento_cedula") @db.Date
+  vencimientoAptoMedico      DateTime?               @map("vencimiento_apto_medico") @db.Date
+  fechaActualizacionDocumentacion DateTime?          @map("fecha_actualizacion_documentacion") @db.Timestamptz(6)
   experiencias               ExperienciaObservador[]
   mareasAsignadas            Marea[]                 @relation("ObservadorPrincipal")
   etapas                     MareaEtapaObservador[]

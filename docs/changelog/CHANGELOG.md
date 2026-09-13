@@ -27,6 +27,7 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 
 
 ### Added
+- **observadores:** registrar documentación de embarque para observadores (número numérico de cédula único por observador, fecha de vencimiento de cédula, fecha de vencimiento de apto médico y fecha automática de última actualización), visualización en tabla y tarjetas con ícono de advertencia por colores (gris para datos incompletos/sin registrar, amarillo para vencimientos < 2 meses, rojo para vencimientos < 30 días o vencidos, tilde verde para documentación al día) y tooltips informativos detallados.
 - **presentismo:** computar automáticamente como 'En tránsito' los días intermedios entre el viaje inicial y la zarpada, y entre el arribo y el viaje de regreso
 - **presentismo:** preservar las fechas originales de las novedades de viaje sin mutaciones artificiales en la planilla mensual
 - **planificacion:** corregir visualización de etiquetas de eventos de viaje en el timeline del simulador mostrando 'Viaje' en lugar de código truncado

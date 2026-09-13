@@ -64,6 +64,48 @@ describe('ObservadoresService', () => {
 
             await expect(service.crear(dto)).rejects.toThrow(BadRequestException);
         });
+
+        it('debería registrar fechaActualizacionDocumentacion al crear con datos de documentación', async () => {
+            const dto = {
+                codigoInterno: 10,
+                nombre: 'Carlos',
+                apellido: 'Gomez',
+                tipoObservador: 'OBSERVADOR',
+                tipoContrato: 'LEY MARCO',
+                numeroCedula: 12345,
+                vencimientoCedula: '2026-10-15',
+                vencimientoAptoMedico: '2026-11-20'
+            } as any;
+
+            mockPrisma.observador.findUnique.mockResolvedValue(null);
+            mockPrisma.observador.create.mockResolvedValue({ id: 'uuid-10', ...dto });
+
+            await service.crear(dto);
+
+            expect(mockPrisma.observador.create).toHaveBeenCalledWith({
+                data: expect.objectContaining({
+                    numeroCedula: 12345,
+                    vencimientoCedula: expect.any(Date),
+                    vencimientoAptoMedico: expect.any(Date),
+                    fechaActualizacionDocumentacion: expect.any(Date)
+                })
+            });
+        });
+
+        it('debería lanzar BadRequestException al crear si la cédula ya existe', async () => {
+            const dto = {
+                codigoInterno: 10,
+                nombre: 'Carlos',
+                apellido: 'Gomez',
+                tipoObservador: 'OBSERVADOR',
+                tipoContrato: 'LEY MARCO',
+                numeroCedula: 12345,
+            } as any;
+
+            mockPrisma.observador.findUnique.mockResolvedValue({ id: 'uuid-otro', apellido: 'Perez', nombre: 'Juan' });
+
+            await expect(service.crear(dto)).rejects.toThrow(BadRequestException);
+        });
     });
 
     describe('actualizar', () => {
@@ -80,6 +122,65 @@ describe('ObservadoresService', () => {
                 where: { id },
                 data: expect.objectContaining({
                     email: null
+                })
+            });
+        });
+
+        it('debería registrar fechaActualizacionDocumentacion si se actualiza la cédula o vencimientos', async () => {
+            const id = 'uuid-2';
+            const dto = { numeroCedula: 99999 };
+
+            mockPrisma.observador.findUnique
+                .mockResolvedValueOnce({ 
+                    id, 
+                    numeroCedula: 11111,
+                    vencimientoCedula: null,
+                    vencimientoAptoMedico: null 
+                }) // para obtenerUno
+                .mockResolvedValueOnce(null); // para validar unicidad de 99999
+            mockPrisma.observador.update.mockResolvedValue({ id, numeroCedula: 99999 });
+
+            await service.actualizar(id, dto as any);
+
+            expect(mockPrisma.observador.update).toHaveBeenCalledWith({
+                where: { id },
+                data: expect.objectContaining({
+                    numeroCedula: 99999,
+                    fechaActualizacionDocumentacion: expect.any(Date)
+                })
+            });
+        });
+
+        it('debería lanzar BadRequestException si se intenta asignar una cédula ya existente a otro observador', async () => {
+            const id = 'uuid-2';
+            const dto = { numeroCedula: 88888 };
+
+            mockPrisma.observador.findUnique
+                .mockResolvedValueOnce({ id, numeroCedula: 11111 }) // obtenerUno
+                .mockResolvedValueOnce({ id: 'uuid-otro', apellido: 'Gomez', nombre: 'Juan', numeroCedula: 88888 }); // check unicidad
+
+            await expect(service.actualizar(id, dto as any)).rejects.toThrow(BadRequestException);
+        });
+
+        it('NO debería actualizar fechaActualizacionDocumentacion si los datos de documentación no cambiaron', async () => {
+            const id = 'uuid-3';
+            const dto = { telefonoPrincipal: '12345678' };
+
+            mockPrisma.observador.findUnique.mockResolvedValue({ 
+                id, 
+                telefonoPrincipal: '000000',
+                numeroCedula: 11111,
+                vencimientoCedula: null,
+                vencimientoAptoMedico: null 
+            });
+            mockPrisma.observador.update.mockResolvedValue({ id, telefonoPrincipal: '12345678' });
+
+            await service.actualizar(id, dto as any);
+
+            expect(mockPrisma.observador.update).toHaveBeenCalledWith({
+                where: { id },
+                data: expect.not.objectContaining({
+                    fechaActualizacionDocumentacion: expect.anything()
                 })
             });
         });

@@ -26,8 +26,33 @@ export class ObservadoresService {
             createObservadorDto.email = null;
         }
 
+        // Validar unicidad de número de cédula si viene provisto
+        if (createObservadorDto.numeroCedula != null) {
+            const existenteCedula = await this.prisma.observador.findUnique({
+                where: { numeroCedula: createObservadorDto.numeroCedula }
+            });
+            if (existenteCedula) {
+                throw new BadRequestException(`Ya existe un observador registrado con el número de cédula ${createObservadorDto.numeroCedula} (${existenteCedula.apellido}, ${existenteCedula.nombre})`);
+            }
+        }
+
+        const data: any = { ...createObservadorDto };
+
+        // Convertir strings de fecha a Date si vienen definidos
+        if (data.vencimientoCedula) {
+            data.vencimientoCedula = new Date(data.vencimientoCedula);
+        }
+        if (data.vencimientoAptoMedico) {
+            data.vencimientoAptoMedico = new Date(data.vencimientoAptoMedico);
+        }
+
+        // Si se ingresó al menos un dato de documentación de embarque, registrar fecha de actualización
+        if (data.numeroCedula != null || data.vencimientoCedula != null || data.vencimientoAptoMedico != null) {
+            data.fechaActualizacionDocumentacion = DateUtils.getNow(true);
+        }
+
         return await this.prisma.observador.create({
-            data: createObservadorDto as any,
+            data,
         });
     }
 
@@ -79,6 +104,7 @@ export class ObservadoresService {
 
             if (!isNaN(Number(query))) {
                 where.OR.push({ codigoInterno: Number(query) });
+                where.OR.push({ numeroCedula: Number(query) });
             }
         }
 
@@ -104,6 +130,10 @@ export class ObservadoresService {
             { header: 'MOTIVO IMPEDIMENTO', key: 'motivoImpedimento', width: 30 },
             { header: 'EMAIL', key: 'email', width: 25 },
             { header: 'TELÉFONO', key: 'telefonoPrincipal', width: 20 },
+            { header: 'Nº CÉDULA', key: 'numeroCedula', width: 15 },
+            { header: 'VTO. CÉDULA', key: 'vencimientoCedula', width: 15 },
+            { header: 'VTO. APTO MÉDICO', key: 'vencimientoAptoMedico', width: 18 },
+            { header: 'ACT. DOCUMENTACIÓN', key: 'fechaActualizacionDocumentacion', width: 20 },
             { header: 'OBSERVACIONES', key: 'observaciones', width: 40 },
         ];
 
@@ -129,6 +159,10 @@ export class ObservadoresService {
                 motivoImpedimento: obs.motivoImpedimento || '-',
                 email: obs.email || '-',
                 telefonoPrincipal: obs.telefonoPrincipal || '-',
+                numeroCedula: obs.numeroCedula != null ? obs.numeroCedula : '-',
+                vencimientoCedula: obs.vencimientoCedula ? DateUtils.formatDate(obs.vencimientoCedula) : '-',
+                vencimientoAptoMedico: obs.vencimientoAptoMedico ? DateUtils.formatDate(obs.vencimientoAptoMedico) : '-',
+                fechaActualizacionDocumentacion: obs.fechaActualizacionDocumentacion ? DateUtils.formatDateTime(obs.fechaActualizacionDocumentacion) : '-',
                 observaciones: obs.observaciones || '-',
             });
         });
@@ -167,9 +201,54 @@ export class ObservadoresService {
             }
         }
 
+        const data: any = { ...updateObservadorDto };
+
+        // Convertir fechas a Date o null
+        if (data.vencimientoCedula !== undefined) {
+            data.vencimientoCedula = data.vencimientoCedula ? new Date(data.vencimientoCedula) : null;
+        }
+        if (data.vencimientoAptoMedico !== undefined) {
+            data.vencimientoAptoMedico = data.vencimientoAptoMedico ? new Date(data.vencimientoAptoMedico) : null;
+        }
+
+        // Detectar si hubo cambios en los datos de documentación de embarque
+        let docCambiada = false;
+
+        if (data.numeroCedula !== undefined) {
+            const actualNum = observador.numeroCedula;
+            const nuevoNum = data.numeroCedula;
+            if (actualNum !== nuevoNum) {
+                docCambiada = true;
+                if (nuevoNum != null) {
+                    const existenteCedula = await this.prisma.observador.findUnique({
+                        where: { numeroCedula: nuevoNum }
+                    });
+                    if (existenteCedula && existenteCedula.id !== observador.id) {
+                        throw new BadRequestException(`Ya existe otro observador registrado con el número de cédula ${nuevoNum} (${existenteCedula.apellido}, ${existenteCedula.nombre})`);
+                    }
+                }
+            }
+        }
+
+        if (data.vencimientoCedula !== undefined) {
+            const actualDate = observador.vencimientoCedula ? new Date(observador.vencimientoCedula).toISOString().split('T')[0] : null;
+            const nuevaDate = data.vencimientoCedula ? new Date(data.vencimientoCedula).toISOString().split('T')[0] : null;
+            if (actualDate !== nuevaDate) docCambiada = true;
+        }
+
+        if (data.vencimientoAptoMedico !== undefined) {
+            const actualDate = observador.vencimientoAptoMedico ? new Date(observador.vencimientoAptoMedico).toISOString().split('T')[0] : null;
+            const nuevaDate = data.vencimientoAptoMedico ? new Date(data.vencimientoAptoMedico).toISOString().split('T')[0] : null;
+            if (actualDate !== nuevaDate) docCambiada = true;
+        }
+
+        if (docCambiada) {
+            data.fechaActualizacionDocumentacion = DateUtils.getNow(true);
+        }
+
         return await this.prisma.observador.update({
             where: { id: observador.id },
-            data: updateObservadorDto as any,
+            data,
         });
     }
 

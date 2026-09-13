@@ -57,6 +57,9 @@
                                 ]" />
                             </div>
                         </th>
+                        <th scope="col" class="px-6 py-3 text-center">
+                            Doc. Embarque
+                        </th>
                         <th scope="col" class="px-6 py-3 cursor-pointer group" @click="handleSort('activo')">
                             <div class="flex items-center gap-2">
                                 Estado
@@ -90,6 +93,9 @@
                                 {{ TIPO_OBSERVADOR_LABELS[obs.tipoObservador] }}
                             </span>
                         </td>
+                        <td class="px-6 py-4 text-center cursor-pointer hover:bg-surface-muted/50 transition-colors" @click="openSidePanel(obs)">
+                            <ObservadorDocumentacionBadge :observador="obs" />
+                        </td>
                         <td class="px-6 py-4 cursor-pointer hover:bg-surface-muted/50 transition-colors" @click="openSidePanel(obs)">
                             <div class="flex flex-col gap-1">
                                 <span :class="[
@@ -119,7 +125,7 @@
                                 <img :src="getFullImageUrl(obs.fotoUrl)"
                                     class="w-16 h-16 rounded-xl object-cover shadow-sm border border-border" alt="Foto">
                                 <div class="flex-1 min-w-0">
-                                    <div class="flex items-center gap-2 mb-1.5">
+                                    <div class="flex items-center gap-2 mb-1.5 flex-wrap">
                                         <span class="text-[10px] font-black bg-info/10 text-info px-2 py-0.5 rounded-md uppercase">
                                             ID {{ obs.codigoInterno }}
                                         </span>
@@ -129,6 +135,7 @@
                                         ]">
                                             {{ obs.activo ? 'Activo' : 'Inactivo' }}
                                         </span>
+                                        <ObservadorDocumentacionBadge :observador="obs" />
                                     </div>
                                     <div class="font-extrabold text-text text-base truncate">{{ obs.apellido }}, {{ obs.nombre }}
                                     </div>
@@ -221,6 +228,7 @@ import { EditIcon, SearchIcon, ChevronDownIcon, DownloadIcon } from '@/icons';
 import ExportExcelButton from '@/modules/shared/components/ExportExcelButton.vue';
 import ObservadorDialog from '../components/ObservadorDialog.vue'
 import ObservadorDetailContent from '../components/ObservadorDetailContent.vue'
+import ObservadorDocumentacionBadge from '../components/ObservadorDocumentacionBadge.vue'
 import BaseDataList from '@/components/common/BaseDataList.vue'
 import { useObservadores } from '../composables/useObservadores'
 import { TIPO_OBSERVADOR_LABELS, TIPO_CONTRATO_LABELS } from '../constants/observador.constants'
