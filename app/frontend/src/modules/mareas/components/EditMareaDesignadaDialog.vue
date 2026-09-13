@@ -68,10 +68,23 @@
                     :disabled="!canEditDesignationFields" />
                 </div>
                 <div class="space-y-1.5">
-                  <label class="block text-sm font-medium text-text-muted">Observador Principal</label>
+                  <div class="flex items-center justify-between">
+                    <label class="block text-sm font-medium text-text-muted">Observador Principal</label>
+                    <div v-if="selectedObservador" class="flex items-center gap-1.5 text-xs text-text-muted">
+                      <span class="text-[11px] font-semibold text-text-muted">Documentación:</span>
+                      <ObservadorDocumentacionBadge :observador="selectedObservador" />
+                    </div>
+                  </div>
                   <SearchableSelect ref="observadorSelect" v-model="form.observadorPrincipalId" :options="observadorOptions"
                     :icon="BeakerIcon" :error="fieldErrors.observadorPrincipalId" placeholder="Seleccione el observador principal..."
-                    :disabled="!canEditDesignationFields" />
+                    :disabled="!canEditDesignationFields">
+                    <template #option="{ option }">
+                      <div class="flex items-center justify-between w-full gap-2 pr-1">
+                        <span class="text-sm font-semibold truncate">{{ option.label }}</span>
+                        <ObservadorDocumentacionBadge :observador="option.observador" />
+                      </div>
+                    </template>
+                  </SearchableSelect>
                 </div>
 
                 <!-- Observadores Secundarios Planificados (Borrador) -->
@@ -190,6 +203,7 @@ import SearchableSelect from '@/components/common/SearchableSelect.vue'
 import DatePicker from '@/components/common/DatePicker.vue'
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 import ObservadoresSecundariosEditor from './ObservadoresSecundariosEditor.vue'
+import ObservadorDocumentacionBadge from '@/modules/admin/components/ObservadorDocumentacionBadge.vue'
 import type { ObservadorSecundarioPlanificado } from '../types/marea-metadata.types';
 import {
   ShipIcon,
@@ -239,8 +253,14 @@ const observadorOptions = computed(() => {
     .sort((a, b) => (a.apellido || '').localeCompare(b.apellido || ''))
     .map(o => ({
       value: o.id,
-      label: `${o.apellido}, ${o.nombre}`
+      label: `${o.apellido}, ${o.nombre}`,
+      observador: o
     }))
+})
+
+const selectedObservador = computed(() => {
+  if (!form.value.observadorPrincipalId) return null;
+  return observadores.value.find(o => o.id === form.value.observadorPrincipalId) || null;
 })
 
 const getBuqueName = () => {

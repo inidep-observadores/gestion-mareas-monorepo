@@ -38,9 +38,15 @@
             {{ index + 1 }}
           </div>
           <div>
-            <p class="font-bold text-text text-xs">
-              {{ getObservadorLabel(item.observadorId) }}
-            </p>
+            <div class="flex items-center gap-1.5">
+              <p class="font-bold text-text text-xs">
+                {{ getObservadorLabel(item.observadorId) }}
+              </p>
+              <ObservadorDocumentacionBadge
+                v-if="getObservador(item.observadorId)"
+                :observador="getObservador(item.observadorId)"
+              />
+            </div>
             <div class="flex items-center gap-2 mt-0.5">
               <span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-surface-muted text-text-muted border border-border">
                 {{ formatEtapasCoverage(item) }}
@@ -103,13 +109,26 @@
 
       <!-- Selector de Observador -->
       <div class="space-y-1">
-        <label class="block text-xs font-bold text-text-muted">Observador</label>
+        <div class="flex items-center justify-between">
+          <label class="block text-xs font-bold text-text-muted">Observador</label>
+          <div v-if="selectedSecondaryObservador" class="flex items-center gap-1.5 text-xs text-text-muted">
+            <span class="text-[10px] font-semibold text-text-muted">Documentación:</span>
+            <ObservadorDocumentacionBadge :observador="selectedSecondaryObservador" />
+          </div>
+        </div>
         <SearchableSelect
           v-model="newEntry.observadorId"
           :options="availableObserverOptions"
           :icon="UserIcon"
           placeholder="Seleccionar observador secundario..."
-        />
+        >
+          <template #option="{ option }">
+            <div class="flex items-center justify-between w-full gap-2 pr-1">
+              <span class="text-xs font-semibold truncate">{{ option.label }}</span>
+              <ObservadorDocumentacionBadge :observador="option.observador" />
+            </div>
+          </template>
+        </SearchableSelect>
         <p v-if="formError" class="text-[11px] text-error font-medium">{{ formError }}</p>
       </div>
 
@@ -191,6 +210,7 @@
 import { ref, computed, onMounted } from 'vue';
 import type { ObservadorSecundarioPlanificado } from '../types/marea-metadata.types';
 import SearchableSelect from '@/components/common/SearchableSelect.vue';
+import ObservadorDocumentacionBadge from '@/modules/admin/components/ObservadorDocumentacionBadge.vue';
 import { PlusIcon, Trash2Icon, PencilIcon, XIcon, UserIcon } from 'lucide-vue-next';
 import catalogosService, { type Observador } from '../services/catalogos.service';
 
@@ -239,8 +259,20 @@ const effectiveObserverOptions = computed(() => {
     .sort((a, b) => (a.apellido || '').localeCompare(b.apellido || ''))
     .map(o => ({
       value: o.id,
-      label: `${o.apellido}, ${o.nombre}`
+      label: `${o.apellido}, ${o.nombre}`,
+      observador: o
     }));
+});
+
+const getObservador = (id: string) => {
+  const found = effectiveObserverOptions.value.find(o => o.value === id);
+  if (found?.observador) return found.observador;
+  return internalObservadores.value.find(o => o.id === id) || null;
+};
+
+const selectedSecondaryObservador = computed(() => {
+  if (!newEntry.value.observadorId) return null;
+  return getObservador(newEntry.value.observadorId);
 });
 
 const showAddForm = ref(false);

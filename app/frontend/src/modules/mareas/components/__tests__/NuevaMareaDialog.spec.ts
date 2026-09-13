@@ -229,6 +229,31 @@ describe('NuevaMareaDialog.vue', () => {
     expect(vm.currentStep).toBe(2)
   })
 
+  it('muestra el badge de documentación al seleccionar un observador en el Paso 2', async () => {
+    const obsConDoc = {
+      id: 'obs-doc-1',
+      nombre: 'Juan',
+      apellido: 'Perez',
+      conImpedimento: false,
+      numeroCedula: 45678,
+      vencimientoCedula: '2026-12-31',
+      vencimientoAptoMedico: '2026-12-31'
+    }
+    vi.mocked(catalogosService.getObservadores).mockResolvedValue([obsConDoc as any])
+
+    const wrapper = await mountComponent()
+    const vm = wrapper.vm as any
+
+    vm.currentStep = 2
+    vm.form.observadorId = 'obs-doc-1'
+    await flushPromises()
+    await nextTick()
+
+    expect(vm.selectedObservador).toBeTruthy()
+    expect(vm.selectedObservador.id).toBe('obs-doc-1')
+    expect(wrapper.text()).toContain('Documentación:')
+  })
+
   it('navigates through all steps and emits success', async () => {
     const wrapper = await mountComponent()
     const vm = wrapper.vm as any

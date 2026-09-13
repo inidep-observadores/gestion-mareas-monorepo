@@ -142,9 +142,22 @@
 
 
               <div class="space-y-1.5">
-                <label class="block text-sm font-medium text-text-muted">Observador Principal</label>
+                <div class="flex items-center justify-between">
+                  <label class="block text-sm font-medium text-text-muted">Observador Principal</label>
+                  <div v-if="selectedObservador" class="flex items-center gap-1.5 text-xs text-text-muted">
+                    <span class="text-[11px] font-semibold text-text-muted">Documentación:</span>
+                    <ObservadorDocumentacionBadge :observador="selectedObservador" />
+                  </div>
+                </div>
                 <SearchableSelect ref="observadorSelect" v-model="form.observadorId" :options="observadorOptions"
-                  :icon="BeakerIcon" :error="fieldErrors.observadorId" placeholder="Seleccione el observador principal..." />
+                  :icon="BeakerIcon" :error="fieldErrors.observadorId" placeholder="Seleccione el observador principal...">
+                  <template #option="{ option }">
+                    <div class="flex items-center justify-between w-full gap-2 pr-1">
+                      <span class="text-sm font-semibold truncate">{{ option.label }}</span>
+                      <ObservadorDocumentacionBadge :observador="option.observador" />
+                    </div>
+                  </template>
+                </SearchableSelect>
               </div>
 
               <!-- Observadores Secundarios Planificados (Borrador en metadata) -->
@@ -242,7 +255,10 @@
               <div class="p-6 bg-surface-muted rounded-xl border border-border/50">
                 <p class="text-[9px] font-black text-text-muted uppercase tracking-widest mb-2">Operación</p>
                 <p class="text-sm font-black uppercase text-text">{{ getPesqueriaName(form.pesqueriaId) }}</p>
-                <p class="text-xs text-text-muted font-medium mt-0.5">Obs: {{ getObserverName(form.observadorId) }}</p>
+                <div class="flex items-center gap-1.5 mt-0.5">
+                  <p class="text-xs text-text-muted font-medium">Obs: {{ getObserverName(form.observadorId) }}</p>
+                  <ObservadorDocumentacionBadge v-if="selectedObservador" :observador="selectedObservador" />
+                </div>
                 <p v-if="form.diasEstimados" class="text-xs text-text-muted font-medium mt-0.5">Est: {{
                   form.diasEstimados }} días</p>
               </div>
@@ -338,6 +354,7 @@ import { useMareas } from '../composables/useMareas'
 import { useWorkflowStore } from '../../shared/stores/workflow.store'
 import { useConfigStore } from '../../shared/stores/config.store'
 import { alertsService } from '@/modules/alerts/services/alerts.service'
+import ObservadorDocumentacionBadge from '@/modules/admin/components/ObservadorDocumentacionBadge.vue'
 import catalogosService from '../services/catalogos.service'
 import mareasService from '../services/mareas.service'
 import {
@@ -434,8 +451,13 @@ const observadorOptions = computed(() => {
   return observadores.value
     .map(o => ({
       value: o.id,
-      label: `${o.apellido}, ${o.nombre}`
+      label: `${o.apellido}, ${o.nombre}`,
+      observador: o
     }))
+})
+
+const selectedObservador = computed(() => {
+  return observadores.value.find(o => o.id === form.value.observadorId) || null
 })
 
 const arteOptions = computed(() => {

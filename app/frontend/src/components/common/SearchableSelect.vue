@@ -73,11 +73,13 @@
               highlightedIndex === index ? 'bg-primary/20 ring-1 ring-primary/30' : ''
             ]"
           >
-            <span class="text-sm font-semibold" :class="modelValue === option.value ? 'text-primary' : 'text-text'">
-              {{ option.label }}
-            </span>
-            <CheckIcon v-if="modelValue === option.value" class="w-4 h-4 text-primary" />
-            <span v-else-if="highlightedIndex === index" class="text-[9px] text-primary/60 font-black uppercase tracking-widest transition-opacity animate-in fade-in slide-in-from-right-1">Seleccionar</span>
+            <slot name="option" :option="option" :index="index" :is-selected="modelValue === option.value">
+              <span class="text-sm font-semibold" :class="modelValue === option.value ? 'text-primary' : 'text-text'">
+                {{ option.label }}
+              </span>
+            </slot>
+            <CheckIcon v-if="modelValue === option.value" class="w-4 h-4 text-primary shrink-0 ml-2" />
+            <span v-else-if="highlightedIndex === index" class="text-[9px] text-primary/60 font-black uppercase tracking-widest transition-opacity animate-in fade-in slide-in-from-right-1 shrink-0 ml-2">Seleccionar</span>
           </button>
         </div>
       </div>
@@ -95,6 +97,7 @@ import { ChevronDownIcon, CheckIcon, XIcon } from '@/icons'
 interface Option {
   value: string | number
   label: string
+  [key: string]: any
 }
 
 const props = defineProps<{
