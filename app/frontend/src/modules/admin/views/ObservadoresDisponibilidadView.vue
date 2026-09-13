@@ -91,6 +91,68 @@
                 </button>
               </div>
             </div>
+
+            <!-- Divisor y Sección de Filtrado por Rango de Disponibilidad -->
+            <div class="w-full border-t border-border/50 pt-3 flex flex-col gap-3">
+              <div class="flex flex-wrap items-center justify-between gap-3">
+                <label class="inline-flex items-center gap-2 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    v-model="ocultarNoDisponibles"
+                    class="checkbox checkbox-primary checkbox-sm rounded"
+                  />
+                  <span class="text-xs font-black uppercase tracking-wider text-text">
+                    Ocultar no disponibles entre fechas
+                  </span>
+                </label>
+
+                <span v-if="ocultarNoDisponibles" class="text-[11px] font-medium text-text-muted">
+                  Mostrando observadores con disponibilidad continua o novedades flexibles entre el {{ formatDateLabel(filtroFechaInicio) }} y el {{ formatDateLabel(filtroFechaFin) }} ({{ diasRangoSeleccionado }} días)
+                </span>
+              </div>
+
+              <!-- Controles de Rango: DatePickers y Slider Doble -->
+              <div
+                v-if="ocultarNoDisponibles"
+                class="flex flex-col lg:flex-row items-stretch lg:items-center gap-4 bg-surface-muted/30 p-3 rounded-xl border border-border/60"
+              >
+                <!-- Selectores de Fecha -->
+                <div class="flex items-center gap-2 sm:gap-3 shrink-0">
+                  <div class="w-36 sm:w-40">
+                    <span class="text-[9px] font-black uppercase tracking-widest text-text-muted block mb-1">Desde</span>
+                    <DatePicker
+                      v-model="filtroFechaInicio"
+                      :show-time="false"
+                      placeholder="Fecha inicio"
+                    />
+                  </div>
+                  <div class="w-36 sm:w-40">
+                    <span class="text-[9px] font-black uppercase tracking-widest text-text-muted block mb-1">Hasta</span>
+                    <DatePicker
+                      v-model="filtroFechaFin"
+                      :show-time="false"
+                      placeholder="Fecha fin"
+                    />
+                  </div>
+                </div>
+
+                <!-- Slider Doble -->
+                <div class="flex-1 flex flex-col justify-center px-2 sm:px-4 min-w-[200px]">
+                  <div class="flex justify-between items-center text-[10px] font-bold text-text-muted mb-1 uppercase tracking-wider">
+                    <span>Hoy</span>
+                    <span class="text-primary font-black">{{ diasRangoSeleccionado }} días seleccionados</span>
+                    <span>Máx 6m (+180d)</span>
+                  </div>
+                  <DoubleRangeSlider
+                    v-model="sliderRangeDays"
+                    :min="0"
+                    :max="180"
+                    :step="1"
+                    :min-distance="0"
+                  />
+                </div>
+              </div>
+            </div>
           </div>
         </Transition>
       </div>
@@ -115,10 +177,12 @@ import { ref, onMounted, onBeforeUnmount, computed, watch, nextTick } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue';
 import BackButton from '@/components/common/BackButton.vue';
 import SearchInput from '@/components/ui/SearchInput.vue';
+import DatePicker from '@/components/common/DatePicker.vue';
+import DoubleRangeSlider from '@/components/common/DoubleRangeSlider.vue';
 import { ChevronDownIcon } from '@/icons';
 import { toast } from 'vue-sonner';
 import disponibilidadApi from '../services/disponibilidad.service';
-import type { DisponibilidadResponse, ObservadorDisponibilidadItem } from '../interfaces/disponibilidad.interface';
+import type { DisponibilidadResponse, ObservadorDisponibilidadItem, ObservadorDisponibilidadRow } from '../interfaces/disponibilidad.interface';
 import { Timeline, type TimelineOptions } from 'vis-timeline/standalone';
 import { DataSet } from 'vis-data';
 import 'vis-timeline/styles/vis-timeline-graph2d.min.css';
@@ -135,6 +199,12 @@ const data = ref<DisponibilidadResponse | null>(null);
 const isLoading = ref(false);
 const searchQuery = ref('');
 const isFiltersExpanded = ref(false);
+
+// Filtro de Disponibilidad en Rango de Fechas
+const ocultarNoDisponibles = ref(false);
+const filtroFechaInicio = ref<string | null>(null);
+const filtroFechaFin = ref<string | null>(null);
+const sliderRangeDays = ref<[number, number]>([0, 15]);
 
 // Vis-Timeline
 const timelineContainer = ref<HTMLElement | null>(null);
@@ -171,6 +241,116 @@ const toggleTipoContrato = (c: string) => {
   }
 };
 
+const diasRangoSeleccionado = computed(() => {
+  return Math.max(0, sliderRangeDays.value[1] - sliderRangeDays.value[0]);
+});
+
+const formatDateLabel = (dateStr: string | null): string => {
+  if (!dateStr) return '-';
+  const clean = dateStr.includes('T') ? dateStr.split('T')[0] : dateStr;
+  const parts = clean.split('-');
+  if (parts.length === 3) {
+    return `${parts[2]}/${parts[1]}/${parts[0]}`;
+  }
+  return dateStr;
+};
+
+const formatIsoLocal = (d: Date): string => {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const parseIsoDate = (str: string): Date => {
+  const clean = str.includes('T') ? str.split('T')[0] : str;
+  const [y, m, d] = clean.split('-').map(Number);
+  return new Date(y, m - 1, d, 0, 0, 0, 0);
+};
+
+const diffDaysFromHoy = (d: Date, hoy: Date): number => {
+  const timeDiff = d.getTime() - hoy.getTime();
+  return Math.round(timeDiff / (1000 * 60 * 60 * 24));
+};
+
+// Sincronización bidireccional Slider <-> DatePickers
+let isSyncingDates = false;
+
+watch(sliderRangeDays, (newRange) => {
+  if (isSyncingDates || !data.value) return;
+  isSyncingDates = true;
+  const hoy = parseIsoDate(data.value.fechaHoy);
+  const dInicio = new Date(hoy);
+  dInicio.setDate(dInicio.getDate() + newRange[0]);
+
+  const dFin = new Date(hoy);
+  dFin.setDate(dFin.getDate() + newRange[1]);
+
+  filtroFechaInicio.value = formatIsoLocal(dInicio);
+  filtroFechaFin.value = formatIsoLocal(dFin);
+  nextTick(() => {
+    isSyncingDates = false;
+  });
+});
+
+watch([filtroFechaInicio, filtroFechaFin], ([newIni, newFin]) => {
+  if (isSyncingDates || !data.value || !newIni || !newFin) return;
+  isSyncingDates = true;
+  const hoy = parseIsoDate(data.value.fechaHoy);
+  const dIni = parseIsoDate(newIni);
+  const dFin = parseIsoDate(newFin);
+
+  const offsetIni = Math.max(0, Math.min(180, diffDaysFromHoy(dIni, hoy)));
+  const offsetFin = Math.max(offsetIni, Math.min(180, diffDaysFromHoy(dFin, hoy)));
+
+  sliderRangeDays.value = [offsetIni, offsetFin];
+  nextTick(() => {
+    isSyncingDates = false;
+  });
+});
+
+/**
+ * Evalúa si un observador cumple con disponibilidad completa o flexibilidad en todo el rango seleccionado.
+ * Si tiene cualquier "no disponibilidad" (navegación, designación, licencia, impedimento, novedad no flexible),
+ * queda excluido.
+ */
+const cumpleDisponibilidadEnRango = (row: ObservadorDisponibilidadRow, rIniStr: string, rFinStr: string): boolean => {
+  const rangeStart = parseIsoDate(rIniStr).getTime();
+  const rangeEnd = parseIsoDate(rFinStr).getTime();
+
+  // Si tiene impedimento global activo, queda excluido
+  if (row.observador.conImpedimento || !row.observador.disponible) {
+    return false;
+  }
+
+  for (const item of row.eventos) {
+    const itemStart = parseIsoDate(item.startDate).getTime();
+    const itemEnd = parseIsoDate(item.endDate).getTime();
+
+    // Comprobar si el evento intersecta el período evaluado [rangeStart, rangeEnd + 1 día exclusivo]
+    // Nota: item.endDate en los eventos del timeline es exclusivo (+1 día del último día del bloque)
+    const intersecta = itemStart <= rangeEnd && itemEnd > rangeStart;
+    if (!intersecta) continue;
+
+    // Verificar si el evento representa una no disponibilidad
+    if (item.estado === 'DISPONIBLE' || item.estado === 'DISPONIBLE_NO_CONFIRMADA') {
+      // Es disponibilidad válida
+      continue;
+    }
+
+    if (item.estado === 'NOVEDAD' && item.flexible === true) {
+      // Admite cancelación por urgencia (ej: Franco Compensatorio)
+      continue;
+    }
+
+    // Cualquier otro estado (NAVEGANDO, DESIGNADA, PUERTO, VIAJE, IMPEDIMENTO, CONFLICTO, NOVEDAD no flexible)
+    // constituye una "no disponibilidad" que descalifica al observador
+    return false;
+  }
+
+  return true;
+};
+
 const filteredObservadores = computed(() => {
   if (!data.value) return [];
   return data.value.observadores.filter(r => {
@@ -179,7 +359,17 @@ const filteredObservadores = computed(() => {
     const matchSearch = !s || `${o.nombre} ${o.apellido} ${o.codigoInterno}`.toLowerCase().includes(s);
     const matchTO = activeTipoObservador.value.has(o.tipoObservador);
     const matchTC = activeTipoContrato.value.has(o.tipoContrato);
-    return matchSearch && matchTO && matchTC;
+
+    if (!matchSearch || !matchTO || !matchTC) {
+      return false;
+    }
+
+    // Filtro estricto de ocultar no disponibles en rango de fechas
+    if (ocultarNoDisponibles.value && filtroFechaInicio.value && filtroFechaFin.value) {
+      return cumpleDisponibilidadEnRango(r, filtroFechaInicio.value, filtroFechaFin.value);
+    }
+
+    return true;
   });
 });
 
@@ -218,6 +408,15 @@ const fetchData = async () => {
     }
 
     data.value = res;
+
+    // Inicializar rango de fechas por default (hoy - horizonte)
+    const hoy = parseIsoDate(res.fechaHoy);
+    const finHorizonte = calcularFinVentana(hoy, horizonteSeleccionado.value);
+    const diasHorizonte = diffDaysFromHoy(finHorizonte, hoy);
+
+    filtroFechaInicio.value = formatIsoLocal(hoy);
+    filtroFechaFin.value = formatIsoLocal(finHorizonte);
+    sliderRangeDays.value = [0, diasHorizonte];
   } catch (error) {
     toast.error('Ocurrió un error al cargar la disponibilidad');
     data.value = null;
@@ -228,15 +427,24 @@ const fetchData = async () => {
 
 const cambiarHorizonte = (hValor: string) => {
   horizonteSeleccionado.value = hValor;
-  if (!timelineInstance || !data.value) return;
-  const hoy = new Date(data.value.fechaHoy + 'T00:00:00');
+  if (!data.value) return;
+
+  const hoy = parseIsoDate(data.value.fechaHoy);
   const fin = calcularFinVentana(hoy, hValor);
-  timelineInstance.setWindow(hoy, fin, { animation: true });
+
+  // Actualizar automáticamente la fecha de fin y el slider del filtro de disponibilidad
+  filtroFechaFin.value = formatIsoLocal(fin);
+  const offsetFin = Math.max(sliderRangeDays.value[0], Math.min(180, diffDaysFromHoy(fin, hoy)));
+  sliderRangeDays.value = [sliderRangeDays.value[0], offsetFin];
+
+  if (timelineInstance) {
+    timelineInstance.setWindow(hoy, fin, { animation: true });
+  }
 };
 
 const centrarEnHoy = () => {
   if (!timelineInstance || !data.value) return;
-  const hoy = new Date(data.value.fechaHoy + 'T00:00:00');
+  const hoy = parseIsoDate(data.value.fechaHoy);
   const fin = calcularFinVentana(hoy, horizonteSeleccionado.value);
   timelineInstance.setWindow(hoy, fin, { animation: true });
 };
