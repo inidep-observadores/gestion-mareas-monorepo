@@ -7,7 +7,18 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 ### Fixed
 - **admin:** auto-reconciliar registros de auditoría de correos colgados en 'PROCESANDO' sin tareas activas en cola y habilitar la opción de forzar reprocesamiento en la interfaz.
 
-### Added
+- **disponibilidad:** reorganizar interfaz de filtros dejando el buscador de texto siempre visible a la izquierda del selector de horizonte y colapsando el panel de filtros secundarios (tipo de observador y contrato) por defecto para maximizar el área de trabajo vertical.
+- **disponibilidad:** incorporar módulo y vista de Disponibilidad de Observadores con línea de tiempo (`vis-timeline`), precarga continua a 6 meses para navegación fluida sin recargas, y selector de enfoque/zoom rápido (15 Días por default, 1 Mes, 3 Meses y 6 Meses).
+- **disponibilidad:** filtrar de forma fija en backend a los observadores activos con `conImpedimento = false` y `disponible = true`, excluyendo automáticamente observadores no operativos sin requerir filtros adicionales en la interfaz.
+- **disponibilidad:** incorporar mareas en estado 'DESIGNADA' como causa de no disponibilidad, proyectando un bloque de color verde atenuado con borde punteado (`DESIGNADA`) desde la fecha de zarpada estimada hasta la fecha de fin prevista según los días estimados (excluyendo explícitamente mareas en estado 'A_REASIGNAR').
+- **disponibilidad:** mostrar textos descriptivos y amigables en los bloques del timeline ('DESIGNADA', 'NO DISPONIBLE', 'NAVEGANDO', 'FRANCO', etc.) en lugar de códigos abreviados.
+- **disponibilidad:** rediseñar tooltips interactivos eliminando información redundante e incorporando rango de fechas con cálculo de duración en días y detalles estructurados.
+- **disponibilidad:** limitar los eventos y bloques de 'Navegando' a la fecha estimada de arribo (`inicio + diasEstimados - 1`) al igual que en `ObservadorCalendar`, liberando automáticamente la disponibilidad del observador tras cumplir dicho período estimado.
+- **disponibilidad:** alinear comportamiento con `ObservadorCalendar`: omitir bloque positivo de novedad `DISPONIBLE` y pintar el espacio libre previo como 'No Disponible' (`NO_DISP`) hasta alcanzar la fecha del aviso.
+- **disponibilidad:** proyectar en color amarillo/ámbar los bloques de 'Disponible para embarque' para periodos futuros libres sin eventos que corten la disponibilidad.
+- **disponibilidad:** incorporar detección de flexibilidad ante urgencias para Francos Compensatorios (`FC`) y novedades con `permiteUrgencia = true`, con estilos y tooltips diferenciados.
+- **disponibilidad:** proyectar impedimentos de observadores (`conImpedimento` o `disponible = false`) mediante franja continua y tooltip con motivo detallado.
+- **dashboard:** incorporar tarjeta de acceso directo a 'Disponibilidad' en el Dashboard de Observadores.
 - **mareas:** validaciones exhaustivas para observadores secundarios planificados en backend (`MareasService.create` y `MareasService.update`) asegurando que no coincidan con el observador principal, no existan duplicados, no tengan impedimentos activos y no estén asignados como principal a otra marea activa en estado `DESIGNADA`.
 - **mareas:** validación interactiva y reactiva en frontend (`NuevaMareaDialog`, `EditMareaDesignadaDialog`, `EditarMareaView` y `ObservadoresSecundariosEditor`) para evitar selección de secundarios en conflicto con el principal o duplicados.
 

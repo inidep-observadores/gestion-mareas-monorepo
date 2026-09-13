@@ -314,6 +314,16 @@ const router = createRouter({
       },
     },
     {
+      path: '/sistema/observadores/disponibilidad',
+      name: 'SistemaObservadoresDisponibilidad',
+      component: () => import('@/modules/admin/views/ObservadoresDisponibilidadView.vue'),
+      meta: {
+        title: 'Disponibilidad de Observadores',
+        requiresAuth: true,
+        roles: [ValidRoles.admin, ValidRoles.coordinador, ValidRoles.asistente, ValidRoles.tecnico],
+      },
+    },
+    {
       path: '/sistema/observadores/feriados',
       name: 'SistemaObservadoresFeriados',
       component: () => import('@/modules/admin/views/ObservadoresFeriadosView.vue'),

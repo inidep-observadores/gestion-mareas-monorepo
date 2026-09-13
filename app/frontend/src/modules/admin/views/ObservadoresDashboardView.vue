@@ -29,6 +29,13 @@
             color="warning"
           />
           <ObservadoresDashboardCard
+            title="Disponibilidad"
+            description="Consulta la disponibilidad presente y proyectada de los observadores con horizonte dinámico."
+            :to="{ name: 'SistemaObservadoresDisponibilidad' }"
+            :icon="CalenderIcon"
+            color="warning"
+          />
+          <ObservadoresDashboardCard
             title="Feriados nacionales y locales"
             description="Administración de feriados y días no laborables usados en la planificación."
             :to="{ name: 'SistemaObservadoresFeriados' }"
