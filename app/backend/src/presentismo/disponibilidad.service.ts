@@ -42,6 +42,8 @@ export class DisponibilidadService {
         conImpedimento: true,
         motivoImpedimento: true,
         disponible: true,
+        vencimientoCedula: true,
+        vencimientoAptoMedico: true,
       },
       orderBy: [{ apellido: 'asc' }, { nombre: 'asc' }],
     });
@@ -199,6 +201,34 @@ export class DisponibilidadService {
           return m;
         });
 
+      // Calcular fecha de bloqueo por documentación vencida (cédula o apto médico)
+      // Solo bloquea si las fechas existen y están vencidas. El bloqueo rige desde el día siguiente al vencimiento.
+      const dtVtoCedula = obs.vencimientoCedula
+        ? DateTime.fromJSDate(obs.vencimientoCedula, { zone: timezone }).startOf('day')
+        : null;
+      const dtVtoMedico = obs.vencimientoAptoMedico
+        ? DateTime.fromJSDate(obs.vencimientoAptoMedico, { zone: timezone }).startOf('day')
+        : null;
+
+      let primerBloqueoDoc: DateTime | null = null;
+      let detalleBloqueoDoc = '';
+
+      if (dtVtoCedula && dtVtoMedico) {
+        if (dtVtoCedula <= dtVtoMedico) {
+          primerBloqueoDoc = dtVtoCedula.plus({ days: 1 });
+          detalleBloqueoDoc = `Cédula vencida (${dtVtoCedula.toFormat('dd/MM/yyyy')})`;
+        } else {
+          primerBloqueoDoc = dtVtoMedico.plus({ days: 1 });
+          detalleBloqueoDoc = `Apto médico vencido (${dtVtoMedico.toFormat('dd/MM/yyyy')})`;
+        }
+      } else if (dtVtoCedula) {
+        primerBloqueoDoc = dtVtoCedula.plus({ days: 1 });
+        detalleBloqueoDoc = `Cédula vencida (${dtVtoCedula.toFormat('dd/MM/yyyy')})`;
+      } else if (dtVtoMedico) {
+        primerBloqueoDoc = dtVtoMedico.plus({ days: 1 });
+        detalleBloqueoDoc = `Apto médico vencido (${dtVtoMedico.toFormat('dd/MM/yyyy')})`;
+      }
+
       // Mapear cada día evaluado
       const dailyStates: Array<{
         date: DateTime;
@@ -304,9 +334,24 @@ export class DisponibilidadService {
           );
         }
 
+        // 0. Bloqueo por documentación vencida (Cédula o Apto Médico)
+        // Rige a partir del día siguiente al vencimiento y se extiende indefinidamente
+        // a menos que el observador esté actualmente navegando (marea en curso)
+        const docVencida = primerBloqueoDoc && currentDate >= primerBloqueoDoc;
+
         // Si el día está libre (sin mareas en curso ni licencias activas)
         if (estadoEvaluado.estado === 'LIBRE' || estadoEvaluado.estado === 'FIN_SEMANA') {
-          if (mareaDesignada) {
+          if (docVencida) {
+            // Documentación vencida bloquea la disponibilidad indefinidamente
+            dailyStates.push({
+              date: currentDate,
+              estado: 'NOVEDAD',
+              detalle: `Documentación vencida: ${detalleBloqueoDoc}`,
+              codigoCorto: 'NO DISPONIBLE',
+              flexible: false,
+              isPast,
+            });
+          } else if (mareaDesignada) {
             // Marea en estado DESIGNADA: bloque previsto de color verde atenuado con borde punteado
             const buque = mareaDesignada.buque?.nombreBuque || 'Buque sin asignar';
             const pesqueria = mareaDesignada.pesqueria?.nombre ? ` - ${mareaDesignada.pesqueria.nombre}` : '';

@@ -456,6 +456,45 @@ describe('DisponibilidadService', () => {
     expect(eventoNavegandoActivo).toBeDefined();
     expect(eventoNavegandoActivo?.isPast).toBe(false);
   });
+
+  it('debe generar situación de NO DISPONIBLE indefinida a partir del vencimiento de cédula o apto médico', async () => {
+    const today = new Date();
+    // Vencimiento de cédula dentro de 10 días
+    const vtoCedula = new Date(today.getTime() + 10 * 24 * 60 * 60 * 1000);
+    // Vencimiento de médico dentro de 20 días
+    const vtoMedico = new Date(today.getTime() + 20 * 24 * 60 * 60 * 1000);
+
+    mockPrismaService.observador.findMany.mockResolvedValue([
+      {
+        id: 'obs-vto',
+        nombre: 'Pedro',
+        apellido: 'Armesto',
+        codigoInterno: 109,
+        tipoObservador: 'OBSERVADOR',
+        tipoContrato: 'PLANTA PERMANENTE',
+        conImpedimento: false,
+        motivoImpedimento: null,
+        disponible: true,
+        vencimientoCedula: vtoCedula,
+        vencimientoAptoMedico: vtoMedico,
+      },
+    ]);
+
+    mockPrismaService.observadorNovedad.findMany.mockResolvedValue([]);
+    mockPrismaService.marea.findMany.mockResolvedValue([]);
+
+    const result = await service.obtenerDisponibilidad(2); // 2 meses
+    const obs = result.observadores[0];
+
+    // Debe existir un bloque de NO DISPONIBLE por documentación vencida a partir del vencimiento de la cédula (+1 día)
+    const bloqueNoDisponibleDoc = obs.eventos.find(
+      e => e.codigoCorto === 'NO DISPONIBLE' && e.detalle?.includes('Documentación vencida: Cédula vencida')
+    );
+
+    expect(bloqueNoDisponibleDoc).toBeDefined();
+    expect(bloqueNoDisponibleDoc?.estado).toBe('NOVEDAD');
+    expect(bloqueNoDisponibleDoc?.isPast).toBe(false);
+  });
 });
 
 

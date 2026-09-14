@@ -4,7 +4,8 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/), y este proyecto adhiere a [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
-### Fixed
+### Added
+- **disponibilidad:** considerar como bloqueante la fecha de vencimiento de la cédula de embarque o del reconocimiento médico (lo que suceda primero), generando una situación de 'No disponible' indefinida a partir del día siguiente al vencimiento y auto-liberándose cuando la documentación es actualizada.
 - **observadores:** corregir desfase de zona horaria en fechas de vencimiento de cédula y apto médico convirtiendo las columnas a `timestamptz` con preservación de fecha local argentina y estandarizando el guardado de metadata a formato ISO `YYYY-MM-DD`.
 - **admin:** auto-reconciliar registros de auditoría de correos colgados en 'PROCESANDO' sin tareas activas en cola y habilitar la opción de forzar reprocesamiento en la interfaz.
 
