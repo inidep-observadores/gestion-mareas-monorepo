@@ -331,11 +331,22 @@ export class NovedadesAiService {
                     apellido: parsedJson.apellido
                 };
 
+                const formatFechaAR = (fechaStr: string) => {
+                    if (!fechaStr) return 'S/D';
+                    const match = fechaStr.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+                    if (match) return `${match[3]}/${match[2]}/${match[1]}`;
+                    return fechaStr;
+                };
+
+                const vtoCedulaAR = formatFechaAR(vtoCedula);
+                const aptoMedicoAR = formatFechaAR(aptoMedicoEfectivo);
+
+                const hoyISO = new Date().toISOString().split('T')[0];
                 parsedJson.periodos = [{
                     tipoNovedad: 'ACTUALIZACION_CEDULA',
-                    fechaInicio: fechaEmision,
-                    fechaFin: null,
-                    motivo: `Actualización de Cédula de Embarque Nº ${numCedula || 'S/N'} (Vto: ${vtoCedula}, Apto Médico: ${aptoMedicoEfectivo})`
+                    fechaInicio: hoyISO,
+                    fechaFin: hoyISO,
+                    motivo: `Actualización de Cédula de Embarque Nº ${numCedula || 'S/N'} (Vto: ${vtoCedulaAR}, Apto Médico: ${aptoMedicoAR})`
                 }];
             }
 

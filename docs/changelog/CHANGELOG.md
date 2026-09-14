@@ -5,6 +5,7 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 ## [Unreleased]
 
 ### Fixed
+- **observadores:** corregir desfase de zona horaria en fechas de vencimiento de cédula y apto médico convirtiendo las columnas a `timestamptz` con preservación de fecha local argentina y estandarizando el guardado de metadata a formato ISO `YYYY-MM-DD`.
 - **admin:** auto-reconciliar registros de auditoría de correos colgados en 'PROCESANDO' sin tareas activas en cola y habilitar la opción de forzar reprocesamiento en la interfaz.
 
 - **disponibilidad:** incorporar opción de filtro 'Ocultar no disponibles entre fechas' con selectores de fecha (`DatePicker`) y control deslizante doble (`DoubleRangeSlider`), sincronizado automáticamente con el selector de horizonte y filtrando estrictamente observadores con disponibilidad continua o novedades flexibles en todo el período seleccionado.

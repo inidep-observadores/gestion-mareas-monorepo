@@ -31,6 +31,18 @@ export class DateUtils {
     }
 
     /**
+     * Formatea una fecha como string ISO simple (YYYY-MM-DD) respetando la zona de la app.
+     */
+    static toISODate(date: Date | string | null | undefined): string | null {
+        if (!date) return null;
+        const d = new Date(date);
+        if (isNaN(d.getTime())) return null;
+
+        const dt = DateTime.fromJSDate(d).setZone(this.getTimezone());
+        return dt.toISODate();
+    }
+
+    /**
      * Formatea una fecha y hora (DD/MM/YYYY HH:mm) en la zona horaria configurada.
      */
     static formatDateTime(date: Date | string | null | undefined): string {

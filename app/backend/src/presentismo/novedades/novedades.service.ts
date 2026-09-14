@@ -409,7 +409,9 @@ export class NovedadesService {
           }
         });
 
-        comentarioGeneradoCedula = `Actualización de cédula aplicada: N° ${numeroCedula || 'S/N'}, Venc. Cédula: ${datosCedula.vencimientoCedula || 'S/D'}, Venc. Médico: ${datosCedula.vencimientoAptoMedico || 'S/D'}.`;
+        const vtoCedulaStr = datosCedula.vencimientoCedula ? DateUtils.formatDate(vencimientoCedula) : 'S/D';
+        const vtoMedicoStr = datosCedula.vencimientoAptoMedico ? DateUtils.formatDate(vencimientoAptoMedico) : 'S/D';
+        comentarioGeneradoCedula = `Actualización de cédula aplicada: N° ${numeroCedula || 'S/N'}, Venc. Cédula: ${vtoCedulaStr}, Venc. Médico: ${vtoMedicoStr}.`;
       }
     }
 

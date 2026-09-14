@@ -116,6 +116,21 @@ export const formatDateUI = (dateInput?: string | Date | null | { value: string 
     const dateStr = typeof dateInput === 'object' && dateInput !== null && 'value' in dateInput ? String((dateInput as any).value) : dateInput;
     if (!dateStr) return '-';
     
+    // Si es un string, verificar formatos conocidos directamente
+    if (typeof dateStr === 'string') {
+        const trimmed = dateStr.trim();
+        // Si ya está en formato DD/MM/YYYY, devolverlo directamente
+        if (/^\d{2}\/\d{2}\/\d{4}$/.test(trimmed)) {
+            return trimmed;
+        }
+        // Si es formato ISO puro YYYY-MM-DD, convertir directamente sin desfase horario
+        const matchIso = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        if (matchIso) {
+            const [, year, month, day] = matchIso;
+            return `${day}/${month}/${year}`;
+        }
+    }
+
     try {
         const date = new Date(dateStr as string | Date);
         if (isNaN(date.getTime())) return '-';

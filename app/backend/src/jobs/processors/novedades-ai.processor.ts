@@ -280,9 +280,19 @@ export class NovedadesAiProcessor implements JobProcessor {
                         }
 
                         if (tipoNovedad) {
-                            const start = periodo.fechaInicio ? DateUtils.parseToAppZone(periodo.fechaInicio) : DateUtils.getNow(false);
+                            let start = periodo.fechaInicio ? DateUtils.parseToAppZone(periodo.fechaInicio) : DateUtils.getNow(false);
                             let end: Date | null = periodo.fechaFin ? DateUtils.parseToAppZone(periodo.fechaFin) : null;
                             let isInfinite = false;
+
+                            // Para ACTUALIZACION_CEDULA, la fecha de la novedad es cuando se reporta (fecha del email o actual)
+                            if (tipoNovedad.codigo === 'ACTUALIZACION_CEDULA') {
+                                if (emailData?.date) {
+                                    start = DateUtils.parseToAppZone(new Date(emailData.date).toISOString().split('T')[0]);
+                                } else {
+                                    start = DateUtils.getNow(false);
+                                }
+                                end = start;
+                            }
 
                             const tiposPuntuales = ['VIAJE_INICIO', 'VIAJE_FIN', 'FC', 'RP', 'DONACION_SANGRE', 'EXAMEN', 'NACIMIENTO', 'FALLECIMIENTO', 'ACTUALIZACION_CEDULA'];
                             if (tiposPuntuales.includes(tipoNovedad.codigo)) {
@@ -415,8 +425,8 @@ export class NovedadesAiProcessor implements JobProcessor {
                                             datosCedula: extracted.datosCedula,
                                             valoresPrevios: {
                                                 numeroCedula: observador.numeroCedula,
-                                                vencimientoCedula: observador.vencimientoCedula ? DateUtils.formatDate(observador.vencimientoCedula) : null,
-                                                vencimientoAptoMedico: observador.vencimientoAptoMedico ? DateUtils.formatDate(observador.vencimientoAptoMedico) : null,
+                                                vencimientoCedula: observador.vencimientoCedula ? DateUtils.toISODate(observador.vencimientoCedula) : null,
+                                                vencimientoAptoMedico: observador.vencimientoAptoMedico ? DateUtils.toISODate(observador.vencimientoAptoMedico) : null,
                                             }
                                         } : {}),
                                         ...(esCorreccion ? { esCorreccion: true, novedadOriginalId } : {}),

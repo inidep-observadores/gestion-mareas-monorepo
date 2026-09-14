@@ -40,10 +40,10 @@ export class ObservadoresService {
 
         // Convertir strings de fecha a Date si vienen definidos
         if (data.vencimientoCedula) {
-            data.vencimientoCedula = new Date(data.vencimientoCedula);
+            data.vencimientoCedula = DateUtils.parseToAppZone(data.vencimientoCedula);
         }
         if (data.vencimientoAptoMedico) {
-            data.vencimientoAptoMedico = new Date(data.vencimientoAptoMedico);
+            data.vencimientoAptoMedico = DateUtils.parseToAppZone(data.vencimientoAptoMedico);
         }
 
         // Si se ingresó al menos un dato de documentación de embarque, registrar fecha de actualización
@@ -205,10 +205,10 @@ export class ObservadoresService {
 
         // Convertir fechas a Date o null
         if (data.vencimientoCedula !== undefined) {
-            data.vencimientoCedula = data.vencimientoCedula ? new Date(data.vencimientoCedula) : null;
+            data.vencimientoCedula = data.vencimientoCedula ? DateUtils.parseToAppZone(data.vencimientoCedula) : null;
         }
         if (data.vencimientoAptoMedico !== undefined) {
-            data.vencimientoAptoMedico = data.vencimientoAptoMedico ? new Date(data.vencimientoAptoMedico) : null;
+            data.vencimientoAptoMedico = data.vencimientoAptoMedico ? DateUtils.parseToAppZone(data.vencimientoAptoMedico) : null;
         }
 
         // Detectar si hubo cambios en los datos de documentación de embarque
