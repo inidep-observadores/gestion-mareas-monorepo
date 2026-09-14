@@ -14,5 +14,8 @@ export class UpdateNovedadDto extends PartialType(CreateNovedadDto) {
 
     @IsOptional()
     eliminarArchivoViejo?: boolean;
+
+    @IsOptional()
+    metadata?: Record<string, any>;
 }
 

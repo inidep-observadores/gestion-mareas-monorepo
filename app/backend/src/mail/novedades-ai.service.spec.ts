@@ -123,5 +123,38 @@ describe('NovedadesAiService', () => {
             expect(result).toBeDefined();
             expect(result.observador).toBe('JUAN PEREZ');
         });
+
+        it('debería procesar correctamente una CEDULA_EMBARQUE y priorizar la renovación médica si existe', async () => {
+            const mockGeminiResponse = {
+                text: JSON.stringify({
+                    numeroCedula: 500228,
+                    apellido: 'RODRIGUEZ',
+                    nombre: 'CARLOS ALBERTO',
+                    dni: '18054157',
+                    vencimientoCedula: '2028-02-19',
+                    vencimientoAptoMedico: '2026-02-19',
+                    nuevoVencimientoAptoMedico: '2027-02-19',
+                    fechaEmision: '2025-02-19'
+                })
+            };
+
+            ((service as any).ai.models.generateContent as jest.Mock).mockResolvedValue(mockGeminiResponse);
+
+            const result = await service.procesarElemento(
+                '',
+                { buffer: Buffer.from('fake'), mimetype: 'image/jpeg', filename: 'cedula.jpg' },
+                'CEDULA_EMBARQUE'
+            );
+
+            expect(result).toBeDefined();
+            expect(result.tipoDocumentoClasificado).toBe('CEDULA_EMBARQUE');
+            expect(result.dni).toBe('18054157');
+            expect(result.datosCedula.numeroCedula).toBe(500228);
+            expect(result.datosCedula.vencimientoCedula).toBe('2028-02-19');
+            // Como nuevoVencimientoAptoMedico está presente, vencimientoAptoMedico debe ser la renovación
+            expect(result.datosCedula.vencimientoAptoMedico).toBe('2027-02-19');
+            expect(result.datosCedula.vencimientoAptoMedicoOriginal).toBe('2026-02-19');
+            expect(result.periodos[0].tipoNovedad).toBe('ACTUALIZACION_CEDULA');
+        });
     });
 });

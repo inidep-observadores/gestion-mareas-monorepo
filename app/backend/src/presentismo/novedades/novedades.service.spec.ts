@@ -19,6 +19,8 @@ describe('NovedadesService', () => {
     },
     observador: {
       findUnique: jest.fn(),
+      findFirst: jest.fn(),
+      update: jest.fn(),
     },
     tipoNovedad: {
       findUnique: jest.fn(),
@@ -279,6 +281,112 @@ describe('NovedadesService', () => {
           })
         })
       }));
+    });
+
+    it('debe actualizar los datos del observador al aprobar una ACTUALIZACION_CEDULA', async () => {
+      const existing = {
+        id: 'nov-cedula-1',
+        observadorId: 'obs-1',
+        fechaInicio: new Date('2025-02-19'),
+        fechaFin: new Date('2025-02-19'),
+        estadoAprobacion: 'PENDIENTE',
+        activo: true,
+        tipoNovedad: { codigo: 'ACTUALIZACION_CEDULA', descripcion: 'Actualización de Cédula de Embarco' },
+        metadata: {
+          datosCedula: {
+            numeroCedula: '500228',
+            vencimientoCedula: '2028-02-19',
+            vencimientoAptoMedico: '2026-02-19',
+          }
+        }
+      };
+
+      jest.spyOn(service, 'findOne').mockResolvedValue(existing as any);
+      mockPrismaService.observador.findFirst.mockResolvedValue(null);
+      mockPrismaService.observador.update.mockResolvedValue({ id: 'obs-1', numeroCedula: 500228 });
+      mockPrismaService.observadorNovedad.update.mockResolvedValue({ id: 'nov-cedula-1', estadoAprobacion: 'APROBADA' });
+      mockPrismaService.marea.findMany.mockResolvedValue([]);
+
+      await service.update('nov-cedula-1', { estadoAprobacion: 'APROBADA' }, mockUser);
+
+      expect(prisma.observador.update).toHaveBeenCalledWith(expect.objectContaining({
+        where: { id: 'obs-1' },
+        data: expect.objectContaining({
+          numeroCedula: 500228,
+          fechaActualizacionDocumentacion: expect.any(Date),
+        })
+      }));
+
+      expect(prisma.observadorNovedad.update).toHaveBeenCalledWith(expect.objectContaining({
+        where: { id: 'nov-cedula-1' },
+        data: expect.objectContaining({
+          movimientos: expect.objectContaining({
+            create: expect.objectContaining({
+              tipoEvento: 'APROBACION_ACTUALIZACION_CEDULA',
+              estadoNuevo: 'APROBADA'
+            })
+          })
+        })
+      }));
+    });
+
+    it('debe rechazar la aprobacion si la cedula ya pertenece a otro observador', async () => {
+      const existing = {
+        id: 'nov-cedula-1',
+        observadorId: 'obs-1',
+        fechaInicio: new Date('2025-02-19'),
+        fechaFin: new Date('2025-02-19'),
+        estadoAprobacion: 'PENDIENTE',
+        activo: true,
+        tipoNovedad: { codigo: 'ACTUALIZACION_CEDULA', descripcion: 'Actualización de Cédula de Embarco' },
+        metadata: {
+          datosCedula: {
+            numeroCedula: '500228',
+            vencimientoCedula: '2028-02-19',
+            vencimientoAptoMedico: '2026-02-19',
+          }
+        }
+      };
+
+      jest.spyOn(service, 'findOne').mockResolvedValue(existing as any);
+      mockPrismaService.observador.findFirst.mockResolvedValue({
+        id: 'obs-2',
+        nombre: 'Juan',
+        apellido: 'Perez',
+        numeroCedula: 500228
+      });
+
+      await expect(
+        service.update('nov-cedula-1', { estadoAprobacion: 'APROBADA' }, mockUser)
+      ).rejects.toThrow(BadRequestException);
+
+      expect(prisma.observador.update).not.toHaveBeenCalled();
+    });
+
+    it('no debe modificar al observador si la novedad ACTUALIZACION_CEDULA es rechazada', async () => {
+      const existing = {
+        id: 'nov-cedula-1',
+        observadorId: 'obs-1',
+        fechaInicio: new Date('2025-02-19'),
+        fechaFin: new Date('2025-02-19'),
+        estadoAprobacion: 'PENDIENTE',
+        activo: true,
+        tipoNovedad: { codigo: 'ACTUALIZACION_CEDULA', descripcion: 'Actualización de Cédula de Embarco' },
+        metadata: {
+          datosCedula: {
+            numeroCedula: '500228',
+            vencimientoCedula: '2028-02-19',
+            vencimientoAptoMedico: '2026-02-19',
+          }
+        }
+      };
+
+      jest.spyOn(service, 'findOne').mockResolvedValue(existing as any);
+      mockPrismaService.observadorNovedad.update.mockResolvedValue({ id: 'nov-cedula-1', estadoAprobacion: 'RECHAZADA' });
+
+      await service.update('nov-cedula-1', { estadoAprobacion: 'RECHAZADA' }, mockUser);
+
+      expect(prisma.observador.update).not.toHaveBeenCalled();
     });
   });
 

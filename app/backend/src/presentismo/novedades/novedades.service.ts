@@ -139,7 +139,7 @@ export class NovedadesService {
     let isInfinite = false;
 
     // Autocierre para eventos de un solo día o tipos puntuales conocidos
-    const tiposPuntuales = ['VIAJE_INICIO', 'VIAJE_FIN', 'FC', 'RP', 'DONACION_SANGRE', 'EXAMEN', 'NACIMIENTO', 'FALLECIMIENTO'];
+    const tiposPuntuales = ['VIAJE_INICIO', 'VIAJE_FIN', 'FC', 'RP', 'DONACION_SANGRE', 'EXAMEN', 'NACIMIENTO', 'FALLECIMIENTO', 'ACTUALIZACION_CEDULA'];
     if (tiposPuntuales.includes(tipoNovedad.codigo)) {
       if (!end) end = start;
     } else {
@@ -215,6 +215,13 @@ export class NovedadesService {
     delete data.archivo;
     delete data.eliminarArchivoViejo;
 
+    if (updateNovedadDto.metadata) {
+      data.metadata = {
+        ...((existing.metadata as any) || {}),
+        ...updateNovedadDto.metadata,
+      };
+    }
+
     if (updateNovedadDto.fechaInicio) data.fechaInicio = DateUtils.parseToAppZone(updateNovedadDto.fechaInicio);
     if (updateNovedadDto.fechaFin !== undefined) {
       data.fechaFin = updateNovedadDto.fechaFin ? DateUtils.parseToAppZone(updateNovedadDto.fechaFin) : null;
@@ -225,7 +232,7 @@ export class NovedadesService {
     let isInfinite = false;
 
     // Autocierre para eventos de un solo día o tipos puntuales en update
-    const tiposPuntuales = ['VIAJE_INICIO', 'VIAJE_FIN', 'FC', 'RP', 'DONACION_SANGRE', 'EXAMEN', 'NACIMIENTO', 'FALLECIMIENTO'];
+    const tiposPuntuales = ['VIAJE_INICIO', 'VIAJE_FIN', 'FC', 'RP', 'DONACION_SANGRE', 'EXAMEN', 'NACIMIENTO', 'FALLECIMIENTO', 'ACTUALIZACION_CEDULA'];
     if (tiposPuntuales.includes(existing.tipoNovedad.codigo)) {
       if (!end) {
         end = start;
@@ -240,8 +247,8 @@ export class NovedadesService {
     let esAjustePeriodo = !!(existing.metadata as any)?.esAjustePeriodo;
     let novedadAjustarId = (existing.metadata as any)?.novedadAjustarId;
 
-    // Si no estamos rechazando la novedad, verificar solapamiento
-    if (updateNovedadDto.estadoAprobacion !== 'RECHAZADA') {
+    // Si no estamos rechazando la novedad y no es actualización de cédula, verificar solapamiento
+    if (updateNovedadDto.estadoAprobacion !== 'RECHAZADA' && existing.tipoNovedad.codigo !== 'ACTUALIZACION_CEDULA') {
       const overlapConditions: any[] = [
         {
           OR: [
@@ -361,10 +368,57 @@ export class NovedadesService {
       }
     }
 
+    let esActualizacionCedula = existing.tipoNovedad.codigo === 'ACTUALIZACION_CEDULA';
+    let comentarioGeneradoCedula: string | null = null;
+
+    if (updateNovedadDto.estadoAprobacion === 'APROBADA' && esActualizacionCedula) {
+      const metaFinal = data.metadata || existing.metadata || {};
+      const datosCedula = (metaFinal as any)?.datosCedula;
+
+      if (datosCedula) {
+        let numeroCedula: number | null = null;
+        if (datosCedula.numeroCedula !== undefined && datosCedula.numeroCedula !== null && String(datosCedula.numeroCedula).trim() !== '') {
+          const parsed = parseInt(String(datosCedula.numeroCedula), 10);
+          if (!isNaN(parsed)) {
+            numeroCedula = parsed;
+          }
+        }
+
+        const vencimientoCedula = datosCedula.vencimientoCedula ? DateUtils.parseToAppZone(datosCedula.vencimientoCedula) : null;
+        const vencimientoAptoMedico = datosCedula.vencimientoAptoMedico ? DateUtils.parseToAppZone(datosCedula.vencimientoAptoMedico) : null;
+
+        if (numeroCedula !== null) {
+          const cedulaExistente = await this.prisma.observador.findFirst({
+            where: {
+              numeroCedula,
+              id: { not: existing.observadorId },
+            }
+          });
+          if (cedulaExistente) {
+            throw new BadRequestException(`El número de cédula ${numeroCedula} ya se encuentra registrado en otro observador (${cedulaExistente.apellido}, ${cedulaExistente.nombre})`);
+          }
+        }
+
+        await this.prisma.observador.update({
+          where: { id: existing.observadorId },
+          data: {
+            ...(numeroCedula !== null ? { numeroCedula } : {}),
+            ...(vencimientoCedula ? { vencimientoCedula } : {}),
+            ...(vencimientoAptoMedico ? { vencimientoAptoMedico } : {}),
+            fechaActualizacionDocumentacion: new Date(),
+          }
+        });
+
+        comentarioGeneradoCedula = `Actualización de cédula aplicada: N° ${numeroCedula || 'S/N'}, Venc. Cédula: ${datosCedula.vencimientoCedula || 'S/D'}, Venc. Médico: ${datosCedula.vencimientoAptoMedico || 'S/D'}.`;
+      }
+    }
+
     let tipoEvento = 'EDICION';
     if (updateNovedadDto.estadoAprobacion && updateNovedadDto.estadoAprobacion !== existing.estadoAprobacion) {
       if (updateNovedadDto.estadoAprobacion === 'APROBADA') {
-        tipoEvento = esCorreccion ? 'APROBACION_CORRECCION' : (esAjustePeriodo ? 'APROBACION_AJUSTE_PERIODO' : 'APROBACION');
+        tipoEvento = esActualizacionCedula
+          ? 'APROBACION_ACTUALIZACION_CEDULA'
+          : (esCorreccion ? 'APROBACION_CORRECCION' : (esAjustePeriodo ? 'APROBACION_AJUSTE_PERIODO' : 'APROBACION'));
       }
       if (updateNovedadDto.estadoAprobacion === 'RECHAZADA') {
         tipoEvento = esCorreccion ? 'RECHAZO_CORRECCION' : (esAjustePeriodo ? 'RECHAZO_AJUSTE_PERIODO' : 'RECHAZO');
@@ -376,7 +430,7 @@ export class NovedadesService {
         tipoEvento,
         estadoAnterior: existing.estadoAprobacion,
         estadoNuevo: updateNovedadDto.estadoAprobacion || existing.estadoAprobacion,
-        comentarios: updateNovedadDto.comentarioMovimiento || null,
+        comentarios: updateNovedadDto.comentarioMovimiento || comentarioGeneradoCedula || null,
         usuarioId: user?.id,
       }
     };

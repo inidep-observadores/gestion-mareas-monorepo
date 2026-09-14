@@ -284,7 +284,7 @@ export class NovedadesAiProcessor implements JobProcessor {
                             let end: Date | null = periodo.fechaFin ? DateUtils.parseToAppZone(periodo.fechaFin) : null;
                             let isInfinite = false;
 
-                            const tiposPuntuales = ['VIAJE_INICIO', 'VIAJE_FIN', 'FC', 'RP', 'DONACION_SANGRE', 'EXAMEN', 'NACIMIENTO', 'FALLECIMIENTO'];
+                            const tiposPuntuales = ['VIAJE_INICIO', 'VIAJE_FIN', 'FC', 'RP', 'DONACION_SANGRE', 'EXAMEN', 'NACIMIENTO', 'FALLECIMIENTO', 'ACTUALIZACION_CEDULA'];
                             if (tiposPuntuales.includes(tipoNovedad.codigo)) {
                                 if (!end) end = start;
                             } else {
@@ -304,15 +304,24 @@ export class NovedadesAiProcessor implements JobProcessor {
                                 overlapConditions.push({ fechaInicio: { lte: end } });
                             }
 
-                            const overlaps = await this.prisma.observadorNovedad.findFirst({
-                                where: {
-                                    observadorId: observador.id,
-                                    tipoNovedadId: tipoNovedad.id,
-                                    estadoAprobacion: { not: 'RECHAZADA' },
-                                    activo: true,
-                                    AND: overlapConditions
-                                }
-                            });
+                            const overlaps = tipoNovedad.codigo === 'ACTUALIZACION_CEDULA'
+                                ? await this.prisma.observadorNovedad.findFirst({
+                                    where: {
+                                        observadorId: observador.id,
+                                        tipoNovedadId: tipoNovedad.id,
+                                        estadoAprobacion: 'PENDIENTE',
+                                        activo: true,
+                                    }
+                                })
+                                : await this.prisma.observadorNovedad.findFirst({
+                                    where: {
+                                        observadorId: observador.id,
+                                        tipoNovedadId: tipoNovedad.id,
+                                        estadoAprobacion: { not: 'RECHAZADA' },
+                                        activo: true,
+                                        AND: overlapConditions
+                                    }
+                                });
 
                             let esCorreccion = false;
                             let novedadOriginalId: string | null = null;
@@ -401,6 +410,15 @@ export class NovedadesAiProcessor implements JobProcessor {
                                         requiereRevision: estadoDetalle === 'REQUIERE_REVISION' || esCorreccion || esAjustePeriodo,
                                         aiExtraction: periodo,
                                         numeroGde: extracted.numeroGde,
+                                        tipoDocumentoClasificado: extracted.tipoDocumentoClasificado,
+                                        ...(extracted.datosCedula ? {
+                                            datosCedula: extracted.datosCedula,
+                                            valoresPrevios: {
+                                                numeroCedula: observador.numeroCedula,
+                                                vencimientoCedula: observador.vencimientoCedula ? DateUtils.formatDate(observador.vencimientoCedula) : null,
+                                                vencimientoAptoMedico: observador.vencimientoAptoMedico ? DateUtils.formatDate(observador.vencimientoAptoMedico) : null,
+                                            }
+                                        } : {}),
                                         ...(esCorreccion ? { esCorreccion: true, novedadOriginalId } : {}),
                                         ...(reemplazaNovedadId ? { reemplazaNovedadId } : {}),
                                         ...(esAjustePeriodo ? {
@@ -422,7 +440,9 @@ export class NovedadesAiProcessor implements JobProcessor {
                                                     ? (tipoAjuste === 'ADELANTO_DISPONIBILIDAD'
                                                         ? `Adelanto de disponibilidad recibido por correo. Al aprobarse ajustará la fecha de fin de la ${novedadOpuestaEncontrada.tipoNovedad?.descripcion || 'No Disponibilidad'} vigente al ${DateUtils.formatDate(fechaCortePropuesta)}`
                                                         : `Declaración recibida por correo que intersecta con la ${novedadOpuestaEncontrada.tipoNovedad?.descripcion || 'Disponibilidad'} vigente`)
-                                                    : 'Novedad ingresada automáticamente por procesamiento de correo')
+                                                    : (tipoNovedad.codigo === 'ACTUALIZACION_CEDULA'
+                                                        ? `Actualización de documentación (Cédula de Embarco N° ${extracted.datosCedula?.numeroCedula || 'S/N'}) recibida por correo electrónico.`
+                                                        : 'Novedad ingresada automáticamente por procesamiento de correo'))
                                         }
                                     }
                                 }

@@ -120,6 +120,59 @@
             </div>
           </div>
 
+          <!-- Alerta y Cotejador si es Actualización de Cédula de Embarque -->
+          <div v-if="novedad.metadata?.datosCedula" class="rounded-xl border border-sky-500/30 bg-sky-500/5 p-3.5 space-y-3">
+            <div class="flex items-start justify-between gap-2.5">
+              <div class="flex items-start gap-2.5">
+                <span class="text-base leading-none">🪪</span>
+                <div>
+                  <h3 class="text-xs font-black text-sky-700 dark:text-sky-400 uppercase tracking-wide">
+                    Cédula de Embarco NIDO
+                  </h3>
+                  <p class="text-[11px] text-text-muted mt-0.5">
+                    Datos extraídos del documento adjunto para actualizar en la ficha del observador.
+                  </p>
+                </div>
+              </div>
+              <span v-if="novedad.metadata?.datosCedula?.nuevoVencimientoAptoMedico" class="px-2 py-0.5 text-[9px] font-black rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shrink-0 uppercase tracking-wider">
+                Renovación Médica
+              </span>
+            </div>
+
+            <!-- Comparación Antes vs Después -->
+            <div class="grid grid-cols-2 gap-2 text-xs pt-1">
+              <!-- Datos Previos -->
+              <div class="p-2.5 rounded-lg bg-surface border border-border">
+                <div class="flex items-center gap-1 mb-1">
+                  <span class="w-1.5 h-1.5 rounded-full bg-text-muted"></span>
+                  <span class="text-[10px] font-black uppercase text-text-muted">Datos Registrados Previamente</span>
+                </div>
+                <div class="space-y-0.5 text-[11px] font-mono">
+                  <p><span class="text-text-muted font-sans text-[10px]">Cédula:</span> {{ novedad.metadata?.valoresPrevios?.numeroCedula || novedad.observador?.numeroCedula || 'No registrada' }}</p>
+                  <p><span class="text-text-muted font-sans text-[10px]">Vto. Cédula:</span> {{ formatDate(novedad.metadata?.valoresPrevios?.vencimientoCedula || novedad.observador?.vencimientoCedula) }}</p>
+                  <p><span class="text-text-muted font-sans text-[10px]">Vto. Médico:</span> {{ formatDate(novedad.metadata?.valoresPrevios?.vencimientoAptoMedico || novedad.observador?.vencimientoAptoMedico) }}</p>
+                </div>
+              </div>
+
+              <!-- Nuevos Datos -->
+              <div class="p-2.5 rounded-lg bg-sky-500/10 border border-sky-500/30">
+                <div class="flex items-center gap-1 mb-1">
+                  <span class="w-1.5 h-1.5 rounded-full bg-sky-500"></span>
+                  <span class="text-[10px] font-black uppercase text-sky-700 dark:text-sky-400">Nuevos Valores Documento</span>
+                </div>
+                <div class="space-y-0.5 text-[11px] font-mono font-bold text-sky-900 dark:text-sky-200">
+                  <p><span class="text-text-muted font-sans font-normal text-[10px]">Cédula:</span> {{ novedad.metadata?.datosCedula?.numeroCedula || 'Sin especificar' }}</p>
+                  <p><span class="text-text-muted font-sans font-normal text-[10px]">Vto. Cédula:</span> {{ formatDate(novedad.metadata?.datosCedula?.vencimientoCedula) }}</p>
+                  <p><span class="text-text-muted font-sans font-normal text-[10px]">Vto. Médico:</span> {{ formatDate(novedad.metadata?.datosCedula?.vencimientoAptoMedico) }}</p>
+                </div>
+              </div>
+            </div>
+
+            <p v-if="novedad.metadata?.datosCedula?.nuevoVencimientoAptoMedico" class="text-[10px] text-emerald-600 dark:text-emerald-400 italic">
+              ℹ️ Se aplicó la renovación del recuadro inferior de reconocimiento médico ({{ formatDate(novedad.metadata?.datosCedula?.nuevoVencimientoAptoMedico) }}).
+            </p>
+          </div>
+
           <div class="grid grid-cols-2 gap-4">
             <div>
               <p class="text-[10px] uppercase font-black text-text-muted mb-1">Tipo / Origen</p>
@@ -314,6 +367,7 @@ const formatTipoEvento = (tipo: string) => {
     'CREACION_AJUSTE_PERIODO': 'Solicitud con Ajuste de Período',
     'EDICION': 'Novedad Editada',
     'APROBACION': 'Novedad Aprobada',
+    'APROBACION_ACTUALIZACION_CEDULA': 'Actualización de Cédula Aprobada',
     'APROBACION_CORRECCION': 'Rectificación Aprobada',
     'APROBACION_AJUSTE_PERIODO': 'Aprobación con Ajuste de Período',
     'RECHAZO': 'Novedad Rechazada',

@@ -102,6 +102,86 @@
         </div>
       </div>
 
+      <!-- Alerta y Cotejador si es Actualización de Cédula de Embarque -->
+      <div v-if="isActualizacionCedula" class="rounded-xl border border-sky-500/30 bg-sky-500/5 p-3.5 space-y-3 shadow-theme-xs">
+        <div class="flex items-start justify-between gap-2.5">
+          <div class="flex items-start gap-2.5">
+            <span class="text-base leading-none">🪪</span>
+            <div>
+              <h3 class="text-xs font-black text-sky-700 dark:text-sky-400 uppercase tracking-wide">
+                Actualización Documental: Cédula de Embarco NIDO
+              </h3>
+              <p class="text-[11px] text-text-muted mt-0.5">
+                Revise los datos extraídos por la IA y coteje con el documento adjunto antes de aprobar.
+              </p>
+            </div>
+          </div>
+          <span v-if="datosCedulaForm.nuevoVencimientoAptoMedico" class="px-2 py-0.5 text-[9px] font-black rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shrink-0 uppercase tracking-wider">
+            Renovación Médica
+          </span>
+        </div>
+
+        <!-- Campos Editables de la Cédula -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
+          <div class="space-y-1">
+            <label class="block text-[10px] font-black uppercase text-text-muted tracking-wider">N° Registro / Cédula</label>
+            <input 
+              type="number" 
+              v-model.number="datosCedulaForm.numeroCedula" 
+              placeholder="Ej: 500228"
+              class="w-full px-3 py-2 bg-surface border border-border rounded-lg text-xs font-mono font-bold text-text focus:border-primary outline-none shadow-theme-xs"
+            />
+          </div>
+          <div class="space-y-1">
+            <label class="block text-[10px] font-black uppercase text-text-muted tracking-wider">Vto. Cédula</label>
+            <DatePicker 
+              v-model="datosCedulaForm.vencimientoCedula" 
+              :show-time="false"
+              placeholder="YYYY-MM-DD"
+            />
+          </div>
+          <div class="space-y-1">
+            <label class="block text-[10px] font-black uppercase text-text-muted tracking-wider">Vto. Apto Médico</label>
+            <DatePicker 
+              v-model="datosCedulaForm.vencimientoAptoMedico" 
+              :show-time="false"
+              placeholder="YYYY-MM-DD"
+            />
+          </div>
+        </div>
+
+        <p v-if="datosCedulaForm.nuevoVencimientoAptoMedico" class="text-[10px] text-emerald-600 dark:text-emerald-400 italic">
+          ℹ️ Se aplicó la fecha de renovación del recuadro inferior de reconocimiento médico ({{ formatDate(datosCedulaForm.nuevoVencimientoAptoMedico) }}).
+        </p>
+
+        <!-- Comparador Antes vs Después -->
+        <div v-if="valoresPreviosObservador" class="grid grid-cols-2 gap-2 text-xs pt-1 border-t border-sky-500/20">
+          <div class="p-2.5 rounded-lg bg-surface border border-border">
+            <div class="flex items-center gap-1 mb-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-text-muted"></span>
+              <span class="text-[10px] font-black uppercase text-text-muted">Datos Registrados Previamente</span>
+            </div>
+            <div class="space-y-0.5 text-[11px] font-mono">
+              <p><span class="text-text-muted font-sans text-[10px]">Cédula:</span> {{ valoresPreviosObservador.numeroCedula || 'No registrada' }}</p>
+              <p><span class="text-text-muted font-sans text-[10px]">Vto. Cédula:</span> {{ formatDate(valoresPreviosObservador.vencimientoCedula) }}</p>
+              <p><span class="text-text-muted font-sans text-[10px]">Vto. Médico:</span> {{ formatDate(valoresPreviosObservador.vencimientoAptoMedico) }}</p>
+            </div>
+          </div>
+
+          <div class="p-2.5 rounded-lg bg-sky-500/10 border border-sky-500/30">
+            <div class="flex items-center gap-1 mb-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-sky-500"></span>
+              <span class="text-[10px] font-black uppercase text-sky-700 dark:text-sky-400">Nuevos Valores a Impactar</span>
+            </div>
+            <div class="space-y-0.5 text-[11px] font-mono font-bold text-sky-900 dark:text-sky-200">
+              <p><span class="text-text-muted font-sans font-normal text-[10px]">Cédula:</span> {{ datosCedulaForm.numeroCedula || 'Sin especificar' }}</p>
+              <p><span class="text-text-muted font-sans font-normal text-[10px]">Vto. Cédula:</span> {{ formatDate(datosCedulaForm.vencimientoCedula) }}</p>
+              <p><span class="text-text-muted font-sans font-normal text-[10px]">Vto. Médico:</span> {{ formatDate(datosCedulaForm.vencimientoAptoMedico) }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div class="grid grid-cols-1 gap-6">
         <!-- Observador -->
         <div class="space-y-1.5">
@@ -330,6 +410,32 @@ const error = ref('')
 const loading = ref(false)
 const isEdit = computed(() => !!props.editData)
 
+const datosCedulaForm = ref({
+  numeroCedula: null as number | null,
+  vencimientoCedula: '',
+  vencimientoAptoMedico: '',
+  nuevoVencimientoAptoMedico: ''
+})
+
+const isActualizacionCedula = computed(() => {
+  const codigo = props.editData?.tipoNovedad?.codigo || tiposNovedad.value.find(t => t.id === form.value.tipoNovedadId)?.codigo
+  return codigo === 'ACTUALIZACION_CEDULA' || !!props.editData?.metadata?.datosCedula
+})
+
+const valoresPreviosObservador = computed(() => {
+  if (props.editData?.metadata?.valoresPrevios) {
+    return props.editData.metadata.valoresPrevios
+  }
+  if (selectedObservador.value) {
+    return {
+      numeroCedula: selectedObservador.value.numeroCedula,
+      vencimientoCedula: selectedObservador.value.vencimientoCedula,
+      vencimientoAptoMedico: selectedObservador.value.vencimientoAptoMedico
+    }
+  }
+  return null
+})
+
 const selectedFile = ref<File | null>(null)
 const fileInput = ref<HTMLInputElement | null>(null)
 const eliminarArchivoViejo = ref(false)
@@ -421,8 +527,31 @@ watch(() => props.show, (newVal) => {
         motivo: props.editData.motivo || '',
         permiteUrgencia: props.editData.permiteUrgencia || false
       }
+
+      if (props.editData.metadata?.datosCedula) {
+        const dc = props.editData.metadata.datosCedula
+        datosCedulaForm.value = {
+          numeroCedula: dc.numeroCedula !== undefined && dc.numeroCedula !== null ? Number(dc.numeroCedula) : null,
+          vencimientoCedula: dc.vencimientoCedula ? String(dc.vencimientoCedula).split('T')[0] : '',
+          vencimientoAptoMedico: dc.vencimientoAptoMedico ? String(dc.vencimientoAptoMedico).split('T')[0] : '',
+          nuevoVencimientoAptoMedico: dc.nuevoVencimientoAptoMedico ? String(dc.nuevoVencimientoAptoMedico).split('T')[0] : ''
+        }
+      } else {
+        datosCedulaForm.value = {
+          numeroCedula: null,
+          vencimientoCedula: '',
+          vencimientoAptoMedico: '',
+          nuevoVencimientoAptoMedico: ''
+        }
+      }
     } else {
       form.value = getInitialForm()
+      datosCedulaForm.value = {
+        numeroCedula: null,
+        vencimientoCedula: '',
+        vencimientoAptoMedico: '',
+        nuevoVencimientoAptoMedico: ''
+      }
     }
     
     selectedFile.value = null
@@ -478,6 +607,18 @@ const submit = async () => {
     const payload: any = {
       ...form.value,
       fechaFin: form.value.fechaFin || null
+    }
+
+    if (isActualizacionCedula.value) {
+      payload.metadata = {
+        ...(props.editData?.metadata || {}),
+        datosCedula: {
+          ...(props.editData?.metadata?.datosCedula || {}),
+          numeroCedula: datosCedulaForm.value.numeroCedula,
+          vencimientoCedula: datosCedulaForm.value.vencimientoCedula || null,
+          vencimientoAptoMedico: datosCedulaForm.value.vencimientoAptoMedico || null,
+        }
+      }
     }
 
     if (eliminarArchivoViejo.value) {

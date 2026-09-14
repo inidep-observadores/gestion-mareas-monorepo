@@ -173,13 +173,17 @@
         <td class="px-6 py-4 cursor-pointer hover:bg-surface-muted/50 transition-colors" @click="openSidePanel(novedad)">
           <div class="flex flex-col gap-1 items-start">
             <div class="flex items-center gap-2">
-              <span class="inline-flex items-center bg-info/10 text-info text-[11px] font-bold px-2 py-0.5 rounded-full border border-info/20 uppercase tracking-tighter">
+              <span class="inline-flex items-center text-[11px] font-bold px-2 py-0.5 rounded-full border uppercase tracking-tighter"
+                :class="novedad.tipoNovedad?.codigo === 'ACTUALIZACION_CEDULA' ? 'bg-sky-500/10 text-sky-700 dark:text-sky-300 border-sky-500/20' : 'bg-info/10 text-info border-info/20'">
                 {{ novedad.tipoNovedad?.descripcion || 'Desconocido' }}
               </span>
               <PaperclipIcon v-if="novedad.archivos?.length" class="h-4 w-4 text-primary shrink-0" title="Contiene archivos adjuntos" />
             </div>
             <span v-if="!novedad.activo" class="bg-error/10 text-error text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-tighter">
               Eliminada
+            </span>
+            <span v-else-if="novedad.metadata?.datosCedula" class="bg-sky-500/10 text-sky-700 dark:text-sky-300 text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-tighter border border-sky-500/20 flex items-center gap-1">
+              <span>🪪</span> Cédula N° {{ novedad.metadata.datosCedula.numeroCedula || 'S/N' }}
             </span>
             <span v-else-if="novedad.metadata?.esCorreccion" class="bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-tighter border border-amber-500/20 flex items-center gap-1">
               <span>🔄</span> Rectificación
@@ -211,7 +215,7 @@
             <template v-if="novedad.activo && novedad.estadoAprobacion === 'PENDIENTE'">
               <button @click="promptAction(novedad, 'APROBADA')" 
                       class="font-bold text-success hover:underline text-xs bg-success/10 px-2.5 py-1 rounded transition-colors whitespace-nowrap">
-                {{ novedad.metadata?.esCorreccion ? 'Aprobar Reemplazo' : (novedad.metadata?.esAjustePeriodo ? 'Aprobar Ajuste' : 'Aprobar') }}
+                {{ novedad.tipoNovedad?.codigo === 'ACTUALIZACION_CEDULA' ? 'Aprobar Cédula' : (novedad.metadata?.esCorreccion ? 'Aprobar Reemplazo' : (novedad.metadata?.esAjustePeriodo ? 'Aprobar Ajuste' : 'Aprobar')) }}
               </button>
               <button @click="promptAction(novedad, 'RECHAZADA')" 
                       class="font-bold text-error hover:underline text-xs bg-error/10 px-2.5 py-1 rounded transition-colors whitespace-nowrap">
@@ -234,12 +238,16 @@
             <div class="flex-1 min-w-0">
               <div class="flex items-center gap-2 mb-1.5 flex-wrap">
                 <div class="flex items-center gap-1.5">
-                  <span class="inline-flex items-center text-[10px] font-black bg-info/10 text-info px-2 py-0.5 rounded-md uppercase">
+                  <span class="inline-flex items-center text-[10px] font-black px-2 py-0.5 rounded-md uppercase"
+                    :class="novedad.tipoNovedad?.codigo === 'ACTUALIZACION_CEDULA' ? 'bg-sky-500/10 text-sky-700 dark:text-sky-300 border border-sky-500/20' : 'bg-info/10 text-info'">
                     {{ novedad.tipoNovedad?.descripcion || 'Desconocido' }}
                   </span>
                   <PaperclipIcon v-if="novedad.archivos?.length" class="h-4 w-4 text-primary shrink-0" title="Contiene archivos adjuntos" />
                 </div>
-                <span v-if="novedad.metadata?.esCorreccion" class="inline-flex items-center text-[9px] font-black bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 px-1.5 py-0.5 rounded uppercase">
+                <span v-if="novedad.metadata?.datosCedula" class="inline-flex items-center text-[9px] font-black bg-sky-500/10 text-sky-700 dark:text-sky-300 border border-sky-500/20 px-1.5 py-0.5 rounded uppercase">
+                  🪪 Cédula N° {{ novedad.metadata.datosCedula.numeroCedula || 'S/N' }}
+                </span>
+                <span v-else-if="novedad.metadata?.esCorreccion" class="inline-flex items-center text-[9px] font-black bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 px-1.5 py-0.5 rounded uppercase">
                   🔄 Rectificación
                 </span>
                 <span v-else-if="novedad.metadata?.esAjustePeriodo" class="inline-flex items-center text-[9px] font-black bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 px-1.5 py-0.5 rounded uppercase">
@@ -470,13 +478,16 @@ const novedadToAction = ref<Novedad | null>(null);
 
 const actionModalTitle = computed(() => {
   if (!novedadToAction.value) return '';
+  const esActualizacionCedula = novedadToAction.value.tipoNovedad?.codigo === 'ACTUALIZACION_CEDULA' || !!novedadToAction.value.metadata?.datosCedula;
   const esCorreccion = !!novedadToAction.value.metadata?.esCorreccion;
   const esAjustePeriodo = !!novedadToAction.value.metadata?.esAjustePeriodo;
   if (actionType.value === 'APROBADA') {
+    if (esActualizacionCedula) return 'Aprobar Actualización de Cédula de Embarco';
     if (esCorreccion) return 'Aprobar Rectificación de Novedad';
     if (esAjustePeriodo) return 'Aprobar y Ajustar Período de Novedad';
     return 'Aprobar Novedad';
   } else {
+    if (esActualizacionCedula) return 'Rechazar Actualización de Cédula';
     if (esCorreccion) return 'Descartar Rectificación';
     if (esAjustePeriodo) return 'Descartar Ajuste de Período';
     return 'Rechazar Novedad';
@@ -485,13 +496,16 @@ const actionModalTitle = computed(() => {
 
 const actionModalConfirmText = computed(() => {
   if (!novedadToAction.value) return '';
+  const esActualizacionCedula = novedadToAction.value.tipoNovedad?.codigo === 'ACTUALIZACION_CEDULA' || !!novedadToAction.value.metadata?.datosCedula;
   const esCorreccion = !!novedadToAction.value.metadata?.esCorreccion;
   const esAjustePeriodo = !!novedadToAction.value.metadata?.esAjustePeriodo;
   if (actionType.value === 'APROBADA') {
+    if (esActualizacionCedula) return 'Aprobar e Impactar Ficha';
     if (esCorreccion) return 'Confirmar Reemplazo';
     if (esAjustePeriodo) return 'Confirmar y Ajustar';
     return 'Confirmar Aprobación';
   } else {
+    if (esActualizacionCedula) return 'Rechazar Solicitud';
     if (esCorreccion) return 'Descartar Rectificación';
     if (esAjustePeriodo) return 'Descartar';
     return 'Rechazar Definitivamente';
@@ -500,9 +514,17 @@ const actionModalConfirmText = computed(() => {
 
 const actionModalMessage = computed(() => {
   if (!novedadToAction.value) return '';
+  const esActualizacionCedula = novedadToAction.value.tipoNovedad?.codigo === 'ACTUALIZACION_CEDULA' || !!novedadToAction.value.metadata?.datosCedula;
   const esCorreccion = !!novedadToAction.value.metadata?.esCorreccion;
   const esAjustePeriodo = !!novedadToAction.value.metadata?.esAjustePeriodo;
   if (actionType.value === 'APROBADA') {
+    if (esActualizacionCedula) {
+      const dc = novedadToAction.value.metadata?.datosCedula;
+      const numStr = dc?.numeroCedula ? `N° ${dc.numeroCedula}` : 'S/N';
+      const vtoCed = dc?.vencimientoCedula ? formatDate(dc.vencimientoCedula) : 'S/D';
+      const vtoMed = dc?.vencimientoAptoMedico ? formatDate(dc.vencimientoAptoMedico) : 'S/D';
+      return `Al confirmar la aprobación, se actualizarán automáticamente los datos de documentación en la ficha del observador:\n• Cédula: ${numStr}\n• Vencimiento Cédula: ${vtoCed}\n• Vencimiento Reconocimiento Médico: ${vtoMed}`;
+    }
     if (esCorreccion) {
       return 'Esta novedad es una solicitud de rectificación de una novedad previamente aprobada. Al confirmarla, la novedad aprobada original pasará a histórico inactivo y esta nueva solicitud se registrará como la vigente.';
     }
@@ -510,12 +532,15 @@ const actionModalMessage = computed(() => {
       const fechaCorte = novedadToAction.value.metadata?.fechaCortePropuesta;
       return `Esta novedad intersecta con un período previo. Al confirmarla, la novedad vigente anterior ajustará automáticamente su fecha de finalización al ${fechaCorte || 'día previo'} para dar lugar a este nuevo registro.`;
     }
-    return '¿Estás seguro que deseas aprobar esta novedad y registrarla en el sistema?';
+    return '¿Está seguro de que desea aprobar esta novedad y registrarla en el sistema?';
   } else {
-    if (esCorreccion || esAjustePeriodo) {
-      return 'Por favor, ingresa el motivo del descarte. La novedad aprobada original continuará vigente sin modificaciones.';
+    if (esActualizacionCedula) {
+      return 'Por favor, ingrese el motivo del rechazo. La ficha del observador no se modificará.';
     }
-    return 'Por favor, ingresa el motivo del rechazo. Este campo es obligatorio para rechazar.';
+    if (esCorreccion || esAjustePeriodo) {
+      return 'Por favor, ingrese el motivo del descarte. La novedad aprobada original continuará vigente sin modificaciones.';
+    }
+    return 'Por favor, ingrese el motivo del rechazo. Este campo es obligatorio para rechazar.';
   }
 });
 

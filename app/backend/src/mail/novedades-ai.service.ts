@@ -81,7 +81,24 @@ const schemaDisponibilidadEmail = {
     required: ['observador', 'periodos']
 };
 
-// 4. Esquema para Triage (Fase 1)
+// 4. Esquema para Cédula de Embarque (NIDO / Prefectura)
+const schemaCedulaEmbarque = {
+    type: 'object',
+    properties: {
+        observador: { type: 'string', description: 'Nombre y apellido completos del titular de la cédula' },
+        apellido: { type: 'string', description: 'Apellido que figura en la cédula (ej: DI TULLIO)' },
+        nombre: { type: 'string', description: 'Nombres que figuran en la cédula (ej: DANIEL ALEJANDRO)' },
+        dni: { type: 'string', description: 'Número de DNI del observador (solo dígitos numéricos, sin puntos)' },
+        numeroRegistro: { type: 'integer', description: 'Número de registro / cédula que figura como "N° Registro" (ej: 500228). Extraer como entero numérico.' },
+        vencimientoCedula: { type: 'string', description: 'Fecha en el recuadro "VENCIMIENTO CÉDULA DE EMBARCO" en formato YYYY-MM-DD' },
+        vencimientoAptoMedico: { type: 'string', description: 'Fecha en el recuadro "VENCIMIENTO RECONOCIMIENTO MÉDICO" en formato YYYY-MM-DD' },
+        nuevoVencimientoAptoMedico: { type: 'string', description: 'Fecha en el recuadro "NUEVO VENCIMIENTO RECONOCIMIENTO MÉDICO" si está completada con una fecha válida (YYYY-MM-DD). Si está vacía o contiene puntos (".... / .... / ...."), devolver string vacío ""' },
+        fechaEmision: { type: 'string', description: 'Fecha de emisión que figura en "Lugar y Fecha" en formato YYYY-MM-DD' }
+    },
+    required: ['observador', 'dni', 'numeroRegistro', 'vencimientoCedula', 'vencimientoAptoMedico']
+};
+
+// 5. Esquema para Triage (Fase 1)
 const schemaTriage = {
     type: 'object',
     properties: {
@@ -93,8 +110,8 @@ const schemaTriage = {
                 properties: {
                     tipoDocumento: { 
                         type: 'string', 
-                        enum: ['PASAJES', 'GDE', 'TEXTO_LIBRE', 'IRRELEVANTE'],
-                        description: 'Tipo de documento o novedad. Usar IRRELEVANTE si es spam, firmas de correo, o no contiene novedades.'
+                        enum: ['PASAJES', 'GDE', 'CEDULA_EMBARQUE', 'TEXTO_LIBRE', 'IRRELEVANTE'],
+                        description: 'Tipo de documento o novedad. Usar CEDULA_EMBARQUE para cédulas o libretas de embarco (NIDO / Prefectura). Usar IRRELEVANTE si es spam, firmas de correo, o no contiene novedades.'
                     },
                     fuente: { 
                         type: 'string', 
@@ -134,7 +151,7 @@ export class NovedadesAiService {
     }
 
     async clasificarEmail(asunto: string, cuerpoTexto: string, attachments: { buffer: Buffer, mimetype: string, filename: string }[]): Promise<any> {
-        const promptSystem = 'Eres un asistente clasificador de correos (Triage). Analiza el Asunto, el Cuerpo y el contenido de los Archivos Adjuntos para determinar qué partes contienen novedades (Licencias, Francos, Pasajes, etc.). Ahora puedes ver el contenido extraído de los adjuntos. Clasifícalos basándote en su CONTENIDO real (PASAJES o GDE). Genera un candidato ADJUNTO por CADA archivo que contenga información válida. IMPORTANTE: Si la única información relevante se encuentra en los adjuntos, clasifica el CUERPO_EMAIL como IRRELEVANTE. Solo genera un candidato CUERPO_EMAIL si el cuerpo menciona información útil distinta.';
+        const promptSystem = 'Eres un asistente clasificador de correos (Triage). Analiza el Asunto, el Cuerpo y el contenido de los Archivos Adjuntos para determinar qué partes contienen novedades (Licencias, Francos, Pasajes, Cédula de Embarque, etc.). Ahora puedes ver el contenido extraído de los adjuntos. Clasifícalos basándote en su CONTENIDO real: PASAJES para pasajes/boletos de micro o avión; GDE para notas de licencias o francos; CEDULA_EMBARQUE para cédulas o libretas de embarco de Prefectura/INIDEP (con títulos como "CÉDULA DE EMBARCO PERSONAL NO INTEGRANTE DOTACIÓN", "NIDO", "N° Registro", etc.). Genera un candidato ADJUNTO por CADA archivo que contenga información válida. IMPORTANTE: Si la única información relevante se encuentra en los adjuntos, clasifica el CUERPO_EMAIL como IRRELEVANTE. Solo genera un candidato CUERPO_EMAIL si el cuerpo menciona información útil distinta.';
 
         const parts: any[] = [{ text: `${promptSystem}\n\nDatos:\nAsunto: ${asunto || ''}\n\nCuerpo:\n${cuerpoTexto || ''}\n` }];
 
@@ -209,14 +226,14 @@ export class NovedadesAiService {
         return parts;
     }
 
-    async procesarElemento(texto: string, attachment?: { buffer: Buffer, mimetype: string, filename: string }, explicitDocType?: 'PASAJES' | 'GDE' | 'TEXTO_LIBRE'): Promise<any> {
-        let docType: 'PASAJES' | 'GDE' | 'TEXTO_LIBRE' = explicitDocType || 'TEXTO_LIBRE';
+    async procesarElemento(texto: string, attachment?: { buffer: Buffer, mimetype: string, filename: string }, explicitDocType?: 'PASAJES' | 'GDE' | 'CEDULA_EMBARQUE' | 'TEXTO_LIBRE'): Promise<any> {
+        let docType: 'PASAJES' | 'GDE' | 'CEDULA_EMBARQUE' | 'TEXTO_LIBRE' = explicitDocType || 'TEXTO_LIBRE';
         let configSchema: any;
         let promptSystem = '';
 
         const fechaActualStr = new Date().toLocaleDateString('es-AR', { day: '2-digit', month: 'long', year: 'numeric' });
         const contextAdicional = `\nLa fecha actual es: ${fechaActualStr}. Si el texto no especifica el año, utiliza o deduce el año basándote en esta fecha actual. Extrae SIEMPRE formato YYYY-MM-DD.` + 
-            (attachment ? `\n\nDATO CLAVE: El nombre del archivo adjunto es "${attachment.filename}". A menudo, el nombre del archivo contiene el número de GDE exacto (con guiones y letras, ej: NO-2026-67719830-APN-DIOYT...). Úsalo para extraer el "numeroGde" si no se lee bien en el texto.` : '');
+            (attachment ? `\n\nDATO CLAVE: El nombre del archivo adjunto es "${attachment.filename}". A menudo, el nombre del archivo contiene el número de GDE o cédula. Úsalo si es relevante.` : '');
 
         if (docType === 'GDE') {
             configSchema = schemaNovedadesGDE;
@@ -226,6 +243,18 @@ export class NovedadesAiService {
         } else if (docType === 'PASAJES') {
             configSchema = schemaPasajes;
             promptSystem = 'Extrae los datos del viaje del boleto o e-ticket. Asegúrate de extraer el DNI del pasajero si figura. PRECAUCIÓN CON EL FORMATO: Al extraerse el texto de un PDF con columnas, es posible que los datos se mezclen línea por línea. Busca expresamente la etiqueta "ORIGEN" para determinar la ciudad de origen y la etiqueta "DESTINO" para el destino. No confundas el origen con campos como "SE ANUNCIA A". ATENCIÓN A LAS FECHAS: SIEMPRE debes intentar extraer tanto la fechaSalida como la fechaLlegada. Si es un inicio de viaje (salida desde Mar del Plata), asegúrate de que fechaSalida sea exactamente la fecha de partida desde Mar del Plata. Si es un fin de viaje (destino Mar del Plata), asegúrate de buscar la fecha de arribo o llegada a Mar del Plata para usarla como fechaLlegada.' + contextAdicional;
+        } else if (docType === 'CEDULA_EMBARQUE') {
+            configSchema = schemaCedulaEmbarque;
+            promptSystem = 'Extrae con máxima precisión los datos de la Cédula de Embarco de Personal No Integrante Dotación (NIDO) emitida por Prefectura Naval Argentina para el INIDEP. ' +
+                'CAMPOS OBLIGATORIOS Y REGLAS DE EXTRACCIÓN: ' +
+                '1) "numeroRegistro": Extrae el número numérico que figura como "N° Registro" (ej: 500228). Devuélvelo como número entero. ' +
+                '2) "dni": Extrae el número de DNI del observador (ej: 18054157), solo dígitos sin puntos. ' +
+                '3) "apellido" y "nombre": Extrae el apellido (ej: DI TULLIO) y nombres (ej: DANIEL ALEJANDRO) de la sección INFORMACIÓN DE LA PERSONA. ' +
+                '4) "observador": Nombre completo concatenado "APELLIDO, NOMBRE" o como figure en el documento. ' +
+                '5) "vencimientoCedula": Extrae la fecha exacta que figura en el recuadro "VENCIMIENTO CÉDULA DE EMBARCO" en formato YYYY-MM-DD (ej: 19/02/2027 -> 2027-02-19). ' +
+                '6) "vencimientoAptoMedico": Extrae la fecha que figura en el recuadro "VENCIMIENTO RECONOCIMIENTO MÉDICO" en formato YYYY-MM-DD (ej: 19/02/2027 -> 2027-02-19). ' +
+                '7) "nuevoVencimientoAptoMedico": Inspecciona con cuidado el recuadro "NUEVO VENCIMIENTO RECONOCIMIENTO MÉDICO". Si contiene una fecha estampada o escrita (con día, mes y año), extráela en formato YYYY-MM-DD. Si está en blanco o solo contiene líneas/puntos (".... / .... / ...."), devuelve un string vacío "". ' +
+                '8) "fechaEmision": Extrae la fecha que figura en el encabezado "Lugar y Fecha" (ej: 19 de FEBRERO de 2025 -> 2025-02-19).' + contextAdicional;
         } else {
             configSchema = schemaDisponibilidadEmail;
             promptSystem = 'Extrae los datos del mensaje informal de disponibilidad u otras novedades. ATENCIÓN: Solo extrae datos que estén EXPLÍCITAMENTE ESCRITOS en el texto. NO INVENTES NI DEDUZCAS viajes, ciudades o fechas basándote únicamente en el Asunto del correo. Si el texto es breve y solo dice "Adjunto pasaje" o similar, devuelve un array "periodos" VACÍO para evitar duplicaciones con el archivo adjunto. ATENCIÓN A DÍAS DISCONTINUOS O SALTEADOS: Cuando se informen días no consecutivos, genera un elemento independiente en el array "periodos". Mapea todos los rangos o días mencionados al array de periodos.' + 
@@ -271,9 +300,44 @@ export class NovedadesAiService {
 
             const cleanText = this.cleanJsonResponse(response.text);
             const parsedJson = JSON.parse(cleanText || '{}');
+            parsedJson.tipoDocumentoClasificado = docType;
             parsedJson._metadata = {
                 tipoDocumentoClasificado: docType
             };
+
+            // Regla de negocio para Cédula de Embarque -> ACTUALIZACION_CEDULA
+            if (docType === 'CEDULA_EMBARQUE') {
+                const fechaEmision = parsedJson.fechaEmision || new Date().toISOString().split('T')[0];
+                const vtoCedula = parsedJson.vencimientoCedula || fechaEmision;
+
+                // Si nuevoVencimientoAptoMedico es una fecha válida, prevalece sobre vencimientoAptoMedico
+                const tieneNuevoMedico = parsedJson.nuevoVencimientoAptoMedico && 
+                    /^\d{4}-\d{2}-\d{2}$/.test(parsedJson.nuevoVencimientoAptoMedico);
+                const aptoMedicoEfectivo = tieneNuevoMedico 
+                    ? parsedJson.nuevoVencimientoAptoMedico 
+                    : parsedJson.vencimientoAptoMedico;
+
+                const numCedula = parsedJson.numeroRegistro || parsedJson.numeroCedula;
+
+                parsedJson.datosCedula = {
+                    numeroCedula: numCedula ? Number(numCedula) : null,
+                    vencimientoCedula: vtoCedula,
+                    vencimientoAptoMedico: aptoMedicoEfectivo,
+                    vencimientoAptoMedicoOriginal: parsedJson.vencimientoAptoMedico,
+                    nuevoVencimientoAptoMedico: tieneNuevoMedico ? parsedJson.nuevoVencimientoAptoMedico : null,
+                    fechaEmision: fechaEmision,
+                    dni: parsedJson.dni,
+                    nombre: parsedJson.nombre,
+                    apellido: parsedJson.apellido
+                };
+
+                parsedJson.periodos = [{
+                    tipoNovedad: 'ACTUALIZACION_CEDULA',
+                    fechaInicio: fechaEmision,
+                    fechaFin: null,
+                    motivo: `Actualización de Cédula de Embarque Nº ${numCedula || 'S/N'} (Vto: ${vtoCedula}, Apto Médico: ${aptoMedicoEfectivo})`
+                }];
+            }
 
             // Regla de negocio para Pasajes -> VIAJE_INICIO o VIAJE_FIN
             if (docType === 'PASAJES') {
