@@ -20,8 +20,8 @@ export class DisponibilidadService {
     
     // Fecha actual al inicio del día
     const today = DateTime.fromJSDate(DateUtils.getNow(), { zone: timezone }).startOf('day');
-    // Para contexto referencial previo, abarcamos 1 mes hacia atrás
-    const startDate = today.minus({ months: 1 }).startOf('day');
+    // Para contexto referencial previo, abarcamos 120 días hacia atrás (4 meses)
+    const startDate = today.minus({ days: 120 }).startOf('day');
     // Horizonte futuro
     const endDate = today.plus({ months: horizon }).endOf('day');
 
@@ -48,11 +48,14 @@ export class DisponibilidadService {
       orderBy: [{ apellido: 'asc' }, { nombre: 'asc' }],
     });
 
-    // 2. Traer novedades aprobadas y activas que se solapen con el período
+    // 2. Traer novedades aprobadas y activas que se solapen con el período (excluyendo trámites como ACTUALIZACION_CEDULA que no afectan disponibilidad)
     const novedadesDb = await this.prisma.observadorNovedad.findMany({
       where: {
         activo: true,
         estadoAprobacion: 'APROBADA',
+        tipoNovedad: {
+          codigo: { notIn: ['ACTUALIZACION_CEDULA'] },
+        },
         fechaInicio: { lte: endDate.toJSDate() },
         OR: [
           { fechaFin: { gte: startDate.toJSDate() } },
@@ -115,8 +118,10 @@ export class DisponibilidadService {
     const totalDays = Math.ceil(endDate.diff(startDate, 'days').days) + 1;
 
     for (const obs of observadores) {
-      // Filtrar novedades del observador
-      const obsNovedades = novedadesDb.filter(n => n.observadorId === obs.id);
+      // Filtrar novedades del observador (excluyendo trámites que no afectan disponibilidad)
+      const obsNovedades = novedadesDb.filter(
+        n => n.observadorId === obs.id && n.tipoNovedad?.codigo !== 'ACTUALIZACION_CEDULA'
+      );
 
       // Mareas designadas del observador (previsto pero no confirmado)
       const mareasDesignadasObs = mareasDb
@@ -166,39 +171,65 @@ export class DisponibilidadService {
             ? marea.etapas.filter((e: any) => e.observadores.some((eo: any) => eo.observadorId === obs.id))
             : marea.etapas;
 
+          const isEnEjecucion = marea.estadoActual?.codigo === MareaEstado.EN_EJECUCION;
+
+          // Código legible de la marea
+          const anioStr = marea.anioMarea ? String(marea.anioMarea).slice(-2) : '00';
+          const codigoMarea = `${marea.tipoMarea || 'MC'}-${marea.nroMarea || 0}-${anioStr}`;
+
           // Calcular fecha de inicio de referencia para la marea (fechaInicioObservador o zarpada estimada o zarpada primera etapa)
           const primeraEtapaZarpada = etapasFiltradas[0]?.fechaZarpada;
           const inicioMareaDate = marea.fechaInicioObservador || marea.fechaZarpadaEstimada || primeraEtapaZarpada;
-          let limiteFinEstimado: DateTime | null = null;
+          const inicioMarea = inicioMareaDate ? DateTime.fromJSDate(inicioMareaDate, { zone: 'utc' }).startOf('day') : null;
+          const duracion = marea.diasEstimados || 30;
 
-          // Adaptar etapas: si no tienen fechaArribo real, limitar a la fecha estimada de arribo (inicio + diasEstimados - 1)
+          // Referencia de inicio para calcular fin estimado original de la marea completa
+          const finEstimadoOriginal = inicioMarea
+            ? inicioMarea.plus({ days: Math.max(duracion - 1, 0) }).endOf('day')
+            : null;
+
+          // Si la marea está en ejecución y a la fecha de hoy ya superó la estimación original
+          const superoEstimacionHoy = isEnEjecucion && !!finEstimadoOriginal && today > finEstimadoOriginal;
+
+          // Límite de navegación física esperada:
+          // Si está en ejecución, cubre al observador como afectado a marea al menos hasta finEstimadoOriginal (o hasta today si ya lo superó).
+          let limiteFinNavegando: DateTime | null = finEstimadoOriginal;
+          if (isEnEjecucion) {
+            limiteFinNavegando = (finEstimadoOriginal && finEstimadoOriginal > today)
+              ? finEstimadoOriginal
+              : today.endOf('day');
+          }
+
+          // Ventana de proyección máxima:
+          // La ventana móvil de 7 días solo se aplica si la marea actualmente lleva más tiempo del estimado (superoEstimacionHoy).
+          // De lo contrario, la marea concluye en finEstimadoOriginal y NO se proyecta bloque de no disponibilidad.
+          let limiteFinProyeccion: DateTime | null = finEstimadoOriginal;
+          if (superoEstimacionHoy) {
+            limiteFinProyeccion = today.plus({ days: 7 }).endOf('day');
+          }
+
+          // Adaptar etapas para evaluarEstadoDia:
           const etapasAdaptadas = etapasFiltradas.map((etapa: any) => {
             const e = { ...etapa };
-            if (!e.fechaArribo && (e.fechaZarpada || inicioMareaDate)) {
-              const inicioRef = DateTime.fromJSDate(e.fechaZarpada || inicioMareaDate, { zone: 'utc' }).startOf('day');
-              const duracion = marea.diasEstimados || 30;
-              const finEstimado = inicioRef.plus({ days: Math.max(duracion - 1, 0) }).endOf('day');
-              e.fechaArribo = finEstimado.toJSDate();
-              limiteFinEstimado = finEstimado;
+            if (!e.fechaArribo && limiteFinNavegando) {
+              e.fechaArribo = limiteFinNavegando.toJSDate();
             }
             return e;
           });
 
-          // Si fechaFinObservador no existe pero hay límite estimado, proyectar fechaFinObservador
-          let fechaFinObs = marea.fechaFinObservador;
-          if (!fechaFinObs && limiteFinEstimado) {
-            fechaFinObs = (limiteFinEstimado as DateTime).toJSDate();
-          }
-
-          const m = {
+          return {
             ...marea,
+            codigoMarea,
             isSecundario,
+            isEnEjecucion,
+            inicioMarea,
+            inicioMareaDate,
+            superoEstimacionHoy,
             etapas: etapasAdaptadas,
-            fechaFinObservador: fechaFinObs,
-            limiteFinEstimado,
+            finEstimadoOriginal,
+            limiteFinNavegando,
+            limiteFinProyeccion,
           };
-
-          return m;
         });
 
       // Calcular fecha de bloqueo por documentación vencida (cédula o apto médico)
@@ -264,9 +295,9 @@ export class DisponibilidadService {
           continue;
         }
 
-        // Filtrar mareas que aplican a este día: si la marea fue limitada por fecha estimada de arribo y currentDate > limiteFinEstimado, ya no aplica
+        // Filtrar mareas que aplican a este día: si la marea tiene límite de proyección y currentDate supera dicho límite, ya no aplica
         const obsMareasDelDia = obsMareas.filter((m: any) => {
-          if (m.limiteFinEstimado && currentDate > m.limiteFinEstimado) {
+          if (m.limiteFinProyeccion && currentDate > m.limiteFinProyeccion) {
             return false;
           }
           return true;
@@ -284,6 +315,64 @@ export class DisponibilidadService {
           isFinSemana,
           true  // Incluir todas las novedades
         );
+
+        // Marea en ejecución: si el observador está afectado a una marea en curso
+        const mareaEnEjecucion = obsMareasDelDia.find((m: any) => {
+          if (!m.isEnEjecucion || !m.inicioMarea) return false;
+          return currentDate >= m.inicioMarea && currentDate <= m.limiteFinProyeccion;
+        });
+
+        if (mareaEnEjecucion) {
+          // Si está dentro de la duración estimada original
+          if (mareaEnEjecucion.finEstimadoOriginal && currentDate <= mareaEnEjecucion.finEstimadoOriginal) {
+            if (currentDate <= today) {
+              // Navegando confirmado en curso
+              dailyStates.push({
+                date: currentDate,
+                estado: 'NAVEGANDO',
+                detalle: mareaEnEjecucion.codigoMarea,
+                codigoCorto: 'NAVEGANDO',
+                flexible: false,
+                isPast,
+              });
+            } else {
+              // Navegando proyectado por los días previstos de marea (verde atenuado con borde punteado)
+              dailyStates.push({
+                date: currentDate,
+                estado: 'NAVEGANDO',
+                estadoSecundario: 'PROYECTADA',
+                detalle: `${mareaEnEjecucion.codigoMarea} · Previsto por días estimados`,
+                codigoCorto: 'NAVEGANDO',
+                flexible: false,
+                isPast: false,
+              });
+            }
+            continue;
+          } else if (currentDate <= today) {
+            // Marea en curso que superó la estimación original: hasta hoy inclusive sigue navegando
+            dailyStates.push({
+              date: currentDate,
+              estado: 'NAVEGANDO',
+              detalle: mareaEnEjecucion.codigoMarea,
+              codigoCorto: 'NAVEGANDO',
+              flexible: false,
+              isPast,
+            });
+            continue;
+          } else if (mareaEnEjecucion.superoEstimacionHoy && currentDate <= mareaEnEjecucion.limiteFinProyeccion) {
+            // Únicamente si la marea lleva actualmente más tiempo del estimado: ventana móvil de 7 días de no disponibilidad estimada
+            dailyStates.push({
+              date: currentDate,
+              estado: 'NOVEDAD',
+              estadoSecundario: 'PROYECTADA',
+              detalle: `Proyección estimada: marea ${mareaEnEjecucion.codigoMarea} en curso (ventana móvil de 7 días)`,
+              codigoCorto: 'NO DISP. (EST.)',
+              flexible: false,
+              isPast: false,
+            });
+            continue;
+          }
+        }
 
         // Novedades activas del día para comprobar flexibilidad y tipo
         const novedadesDelDia = obsNovedades.filter(n => {
@@ -437,7 +526,7 @@ export class DisponibilidadService {
 
       for (let i = 0; i < dailyStates.length; i++) {
         const item = dailyStates[i];
-        const signature = `${item.estado}-${item.codigoCorto || ''}-${item.flexible ? '1' : '0'}-${item.isPast ? '1' : '0'}-${item.detalle || ''}`;
+        const signature = `${item.estado}-${item.codigoCorto || ''}-${item.estadoSecundario || ''}-${item.flexible ? '1' : '0'}-${item.isPast ? '1' : '0'}-${item.detalle || ''}`;
 
         if (!currentBlock) {
           currentBlock = {
@@ -451,7 +540,7 @@ export class DisponibilidadService {
             isPast: item.isPast,
           };
         } else {
-          const currentSignature = `${currentBlock.estado}-${currentBlock.codigoCorto || ''}-${currentBlock.flexible ? '1' : '0'}-${currentBlock.isPast ? '1' : '0'}-${currentBlock.detalle || ''}`;
+          const currentSignature = `${currentBlock.estado}-${currentBlock.codigoCorto || ''}-${currentBlock.estadoSecundario || ''}-${currentBlock.flexible ? '1' : '0'}-${currentBlock.isPast ? '1' : '0'}-${currentBlock.detalle || ''}`;
           const isConsecutive = item.date.diff(currentBlock.endDate, 'days').days === 1;
 
           if (signature === currentSignature && isConsecutive) {

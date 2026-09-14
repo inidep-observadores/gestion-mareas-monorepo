@@ -495,6 +495,253 @@ describe('DisponibilidadService', () => {
     expect(bloqueNoDisponibleDoc?.estado).toBe('NOVEDAD');
     expect(bloqueNoDisponibleDoc?.isPast).toBe(false);
   });
+
+  it('debe mantener NAVEGANDO hasta hoy y proyectar 7 días de NO DISP. (EST.) si marea en ejecución superó los días estimados', async () => {
+    const today = new Date();
+    // Zarpó hace 40 días con 30 días estimados -> superó los días estimados hace 10 días
+    const zarpada = new Date(today.getTime() - 40 * 24 * 60 * 60 * 1000);
+
+    mockPrismaService.observador.findMany.mockResolvedValue([
+      {
+        id: 'obs-proy',
+        nombre: 'Luis',
+        apellido: 'Martinez',
+        codigoInterno: 110,
+        tipoObservador: 'OBSERVADOR',
+        tipoContrato: 'PLANTA PERMANENTE',
+        conImpedimento: false,
+        motivoImpedimento: null,
+        disponible: true,
+      },
+    ]);
+
+    mockPrismaService.observadorNovedad.findMany.mockResolvedValue([]);
+    mockPrismaService.marea.findMany.mockResolvedValue([
+      {
+        id: 'marea-en-ejec-superada',
+        tipoMarea: 'MC',
+        nroMarea: 129,
+        anioMarea: 2026,
+        diasEstimados: 30,
+        fechaInicioObservador: zarpada,
+        fechaFinObservador: null,
+        fechaZarpadaEstimada: zarpada,
+        observadorPrincipalId: 'obs-proy',
+        buque: { nombreBuque: 'PUENTE CHICO' },
+        pesqueria: { nombre: 'Merluza' },
+        estadoActual: { codigo: 'EN_EJECUCION' },
+        etapas: [
+          {
+            id: 'etapa-1',
+            nroEtapa: 1,
+            fechaZarpada: zarpada,
+            fechaArribo: null,
+            puertoZarpada: { id: 'p1', esLocal: true },
+            puertoArribo: null,
+            observadores: [{ observadorId: 'obs-proy' }],
+          },
+        ],
+      },
+    ]);
+
+    const result = await service.obtenerDisponibilidad(2);
+    const obs = result.observadores[0];
+
+    // 1. Hasta hoy debe estar NAVEGANDO (no se cortó a los 30 días)
+    const bloqueNavegando = obs.eventos.find(e => e.estado === 'NAVEGANDO');
+    expect(bloqueNavegando).toBeDefined();
+
+    // 2. A partir de mañana debe existir un bloque proyectado de NO DISP. (EST.) de ventana móvil de 7 días
+    const bloqueProyectado = obs.eventos.find(
+      e => e.estadoSecundario === 'PROYECTADA' && e.codigoCorto === 'NO DISP. (EST.)'
+    );
+    expect(bloqueProyectado).toBeDefined();
+    expect(bloqueProyectado?.estado).toBe('NOVEDAD');
+    expect(bloqueProyectado?.detalle).toContain('Proyección estimada: marea MC-129-26 en curso (ventana móvil de 7 días)');
+
+    // 3. Más allá de today + 7 días debe quedar disponibilidad no confirmada
+    const bloqueDisponibleFuturo = obs.eventos.find(e => e.estado === 'DISPONIBLE_NO_CONFIRMADA');
+    expect(bloqueDisponibleFuturo).toBeDefined();
+  });
+
+  it('debe mantener NAVEGANDO (sin partir por espera de zarpada) y proyectar NAVEGANDO a futuro mientras esté dentro de los días estimados', async () => {
+    const today = new Date();
+    // Etapa 1 zarpó hace 10 días y arribó ayer a puerto local, marea de 30 días estimados
+    const zarpada = new Date(today.getTime() - 10 * 24 * 60 * 60 * 1000);
+    const arriboAyer = new Date(today.getTime() - 1 * 24 * 60 * 60 * 1000);
+
+    mockPrismaService.observador.findMany.mockResolvedValue([
+      {
+        id: 'obs-arribado',
+        nombre: 'Estanislao',
+        apellido: 'Rodriguez Fulco',
+        codigoInterno: 111,
+        tipoObservador: 'OBSERVADOR',
+        tipoContrato: 'CONTRATADO',
+        conImpedimento: false,
+        motivoImpedimento: null,
+        disponible: true,
+      },
+    ]);
+
+    mockPrismaService.observadorNovedad.findMany.mockResolvedValue([]);
+    mockPrismaService.marea.findMany.mockResolvedValue([
+      {
+        id: 'marea-etapa1-arribada',
+        tipoMarea: 'MC',
+        nroMarea: 138,
+        anioMarea: 2026,
+        diasEstimados: 30,
+        fechaInicioObservador: zarpada,
+        fechaFinObservador: null,
+        fechaZarpadaEstimada: zarpada,
+        observadorPrincipalId: 'obs-arribado',
+        buque: { nombreBuque: 'FLORENCIA' },
+        pesqueria: { nombre: 'Calamar' },
+        estadoActual: { codigo: 'EN_EJECUCION' },
+        etapas: [
+          {
+            id: 'etapa-1',
+            nroEtapa: 1,
+            fechaZarpada: zarpada,
+            fechaArribo: arriboAyer,
+            puertoZarpada: { id: 'p1', esLocal: true },
+            puertoArribo: { id: 'p1', nombre: 'Mar del Plata', esLocal: true },
+            observadores: [{ observadorId: 'obs-arribado' }],
+          },
+        ],
+      },
+    ]);
+
+    const result = await service.obtenerDisponibilidad(2);
+    const obs = result.observadores[0];
+
+    // 1. Hasta hoy debe estar como NAVEGANDO confirmado (no debe cortarse ni mostrar ESP. ZARPADA)
+    const bloqueNavegandoHoy = obs.eventos.find(
+      e => e.estado === 'NAVEGANDO' && !e.estadoSecundario
+    );
+    expect(bloqueNavegandoHoy).toBeDefined();
+
+    // 2. Para los días a futuro (> today) dentro de los 30 días estimados debe ser NAVEGANDO proyectado
+    const bloqueNavegandoProyectado = obs.eventos.find(
+      e => e.estado === 'NAVEGANDO' && e.estadoSecundario === 'PROYECTADA'
+    );
+    expect(bloqueNavegandoProyectado).toBeDefined();
+    expect(bloqueNavegandoProyectado?.codigoCorto).toBe('NAVEGANDO');
+
+    // 3. No debe existir bloque de NO DISP. (EST.) porque está dentro de la estimación de 30 días
+    const bloqueNoDisp = obs.eventos.find(e => e.codigoCorto === 'NO DISP. (EST.)');
+    expect(bloqueNoDisp).toBeUndefined();
+  });
+
+  it('debe proyectar navegación a futuro hasta fin estimado y pasar a disponible sin calcular ventana móvil cuando marea en curso lleva menos días de los estimados (caso Cerrina)', async () => {
+    const today = new Date();
+    // Zarpó hace 28 días de una marea de 30 días estimados -> le quedan 2 días de navegación estimada
+    const zarpada = new Date(today.getTime() - 28 * 24 * 60 * 60 * 1000);
+
+    mockPrismaService.observador.findMany.mockResolvedValue([
+      {
+        id: 'obs-cerrina',
+        nombre: 'Cristian Emmanuel',
+        apellido: 'Cerrina',
+        codigoInterno: 112,
+        tipoObservador: 'OBSERVADOR',
+        tipoContrato: 'PLANTA PERMANENTE',
+        conImpedimento: false,
+        motivoImpedimento: null,
+        disponible: true,
+      },
+    ]);
+
+    mockPrismaService.observadorNovedad.findMany.mockResolvedValue([]);
+    mockPrismaService.marea.findMany.mockResolvedValue([
+      {
+        id: 'marea-cerrina',
+        tipoMarea: 'MC',
+        nroMarea: 132,
+        anioMarea: 2026,
+        diasEstimados: 30,
+        fechaInicioObservador: zarpada,
+        fechaFinObservador: null,
+        fechaZarpadaEstimada: zarpada,
+        observadorPrincipalId: 'obs-cerrina',
+        buque: { nombreBuque: 'DON BOCHA' },
+        pesqueria: { nombre: 'Merluza' },
+        estadoActual: { codigo: 'EN_EJECUCION' },
+        etapas: [
+          {
+            id: 'etapa-1',
+            nroEtapa: 1,
+            fechaZarpada: zarpada,
+            fechaArribo: null,
+            puertoZarpada: { id: 'p1', esLocal: true },
+            puertoArribo: null,
+            observadores: [{ observadorId: 'obs-cerrina' }],
+          },
+        ],
+      },
+    ]);
+
+    const result = await service.obtenerDisponibilidad(2);
+    const obs = result.observadores[0];
+
+    // 1. Debe haber un bloque de NAVEGANDO proyectado a futuro (los 2 días que restan de estimación)
+    const bloqueProyectado = obs.eventos.find(
+      e => e.estado === 'NAVEGANDO' && e.estadoSecundario === 'PROYECTADA'
+    );
+    expect(bloqueProyectado).toBeDefined();
+
+    // 2. NO debe existir ningún bloque de NO DISP. (EST.) (los 5 días indebidos no deben generarse)
+    const bloqueNoDisp = obs.eventos.find(e => e.codigoCorto === 'NO DISP. (EST.)');
+    expect(bloqueNoDisp).toBeUndefined();
+
+    // 3. Tras culminar los 30 días estimados, el observador pasa a estar disponible no confirmado
+    const bloqueDisponibleFuturo = obs.eventos.find(e => e.estado === 'DISPONIBLE_NO_CONFIRMADA');
+    expect(bloqueDisponibleFuturo).toBeDefined();
+  });
+
+  it('no debe mostrar novedades de ACTUALIZACION_CEDULA en el timeline de disponibilidad', async () => {
+    const today = new Date();
+    const fechaTramite = new Date(today.getTime() - 5 * 24 * 60 * 60 * 1000);
+
+    mockPrismaService.observador.findMany.mockResolvedValue([
+      {
+        id: 'obs-ced',
+        nombre: 'Juan',
+        apellido: 'Cedulero',
+        codigoInterno: 113,
+        tipoObservador: 'OBSERVADOR',
+        tipoContrato: 'PLANTA PERMANENTE',
+        conImpedimento: false,
+        motivoImpedimento: null,
+        disponible: true,
+      },
+    ]);
+
+    mockPrismaService.observadorNovedad.findMany.mockResolvedValue([
+      {
+        id: 'nov-cedula-tramite',
+        observadorId: 'obs-ced',
+        fechaInicio: fechaTramite,
+        fechaFin: fechaTramite,
+        permiteUrgencia: false,
+        motivo: 'Carga de cédula',
+        tipoNovedad: {
+          codigo: 'ACTUALIZACION_CEDULA',
+          descripcion: 'Actualización de Cédula de Embarco',
+          afectaPresentismo: false,
+        },
+      },
+    ]);
+    mockPrismaService.marea.findMany.mockResolvedValue([]);
+
+    const result = await service.obtenerDisponibilidad(1);
+    const obs = result.observadores[0];
+
+    // No debe haber ningún evento de ACTUALIZACION_CEDULA
+    const eventoCedula = obs.eventos.find(e => e.codigoCorto === 'ACTUALIZACION_CEDULA' || e.detalle?.includes('Actualización de Cédula'));
+    expect(eventoCedula).toBeUndefined();
+  });
 });
 
 

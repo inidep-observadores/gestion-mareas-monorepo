@@ -194,7 +194,7 @@ const horizontes = [
   { etiqueta: '6 Meses', valor: '6m' },
 ];
 
-const horizonteSeleccionado = ref('15d');
+const horizonteSeleccionado = ref('1m');
 const data = ref<DisponibilidadResponse | null>(null);
 const isLoading = ref(false);
 const searchQuery = ref('');
@@ -204,7 +204,7 @@ const isFiltersExpanded = ref(false);
 const ocultarNoDisponibles = ref(false);
 const filtroFechaInicio = ref<string | null>(null);
 const filtroFechaFin = ref<string | null>(null);
-const sliderRangeDays = ref<[number, number]>([0, 15]);
+const sliderRangeDays = ref<[number, number]>([0, 30]);
 
 // Vis-Timeline
 const timelineContainer = ref<HTMLElement | null>(null);
@@ -469,21 +469,29 @@ const formatItemTooltip = (item: ObservadorDisponibilidadItem, nombreObs: string
   let titulo = '';
   let tituloColor = 'text-white';
 
-  if (item.estado === 'DISPONIBLE') {
-    titulo = 'Disponible para embarque';
+  if (item.codigoCorto === 'NO DISP. (EST.)') {
+    titulo = 'No disponible (Proyección estimada)';
+    tituloColor = 'text-rose-400';
+  } else if (item.estado === 'NAVEGANDO') {
+    if (item.estadoSecundario === 'PROYECTADA') {
+      titulo = 'Navegación (Proyección estimada)';
+      tituloColor = 'text-emerald-400';
+    } else {
+      titulo = 'Navegación';
+      tituloColor = 'text-emerald-400';
+    }
+  } else if (item.estado === 'DISPONIBLE') {
+    titulo = 'Disponible (Confirmada)';
     tituloColor = 'text-amber-400';
   } else if (item.estado === 'DISPONIBLE_NO_CONFIRMADA') {
     titulo = 'Disponibilidad no confirmada';
     tituloColor = 'text-amber-300';
   } else if (item.estado === 'DESIGNADA') {
-    titulo = 'Marea Designada (Previsto)';
+    titulo = 'Marea Designada';
     tituloColor = 'text-emerald-400';
   } else if (item.estado === 'IMPEDIMENTO') {
     titulo = 'Con Impedimento';
     tituloColor = 'text-red-400';
-  } else if (item.estado === 'NAVEGANDO') {
-    titulo = 'Navegación';
-    tituloColor = 'text-emerald-400';
   } else if (item.estado === 'PUERTO') {
     titulo = 'En Puerto (No local)';
     tituloColor = 'text-orange-400';
@@ -527,7 +535,21 @@ const formatItemTooltip = (item: ObservadorDisponibilidadItem, nombreObs: string
   html += `<div class="text-[11px] text-gray-300 font-mono mb-1">📅 ${rangoStr}</div>`;
 
   // Detalle adicional limpio (solo si aporta información y no repite el título)
-  if (item.estado === 'DISPONIBLE_NO_CONFIRMADA') {
+  if (item.codigoCorto === 'NO DISP. (EST.)') {
+    if (item.detalle) {
+      html += `<div class="text-xs text-gray-100 font-medium mt-1">${item.detalle}</div>`;
+    }
+    html += `<div class="text-[10px] text-rose-300 font-semibold mt-1">⚠️ Proyección estimada de marea en curso (ventana móvil de 7 días)</div>`;
+    html += `<div class="text-[10px] text-gray-400 italic mt-0.5">Sujeto a la confirmación de arribo o finalización formal</div>`;
+  } else if (item.estado === 'NAVEGANDO') {
+    if (item.detalle) {
+      html += `<div class="text-xs text-gray-100 font-medium mt-1">${item.detalle}</div>`;
+    }
+    if (item.estadoSecundario === 'PROYECTADA') {
+      html += `<div class="text-[10px] text-emerald-300 font-semibold mt-1">Estimación según días previstos de marea en curso</div>`;
+      html += `<div class="text-[10px] text-gray-400 italic mt-0.5">Sujeto a la fecha real de arribo y cierre de marea</div>`;
+    }
+  } else if (item.estado === 'DISPONIBLE_NO_CONFIRMADA') {
     html += `<div class="text-xs text-amber-200/95 mt-1 font-medium">El observador no confirmó la disponibilidad</div>`;
   } else if (item.estado === 'DESIGNADA') {
     if (item.detalle) {
@@ -594,6 +616,10 @@ const getNovedadLabel = (codigoCorto?: string): string => {
 };
 
 const getBloqueLabel = (item: ObservadorDisponibilidadItem): string => {
+  if (item.codigoCorto === 'NO DISP. (EST.)') {
+    return 'NO DISP. (EST.)';
+  }
+
   switch (item.estado) {
     case 'DISPONIBLE':
       return 'DISPONIBLE';
@@ -610,7 +636,7 @@ const getBloqueLabel = (item: ObservadorDisponibilidadItem): string => {
     case 'VIAJE':
       return 'EN VIAJE';
     case 'ESPERANDO_ZARPADA':
-      return 'DISPONIBLE';
+      return 'ESP. ZARPADA';
     case 'CONFLICTO':
       return 'CONFLICTO';
     case 'NOVEDAD':
@@ -623,14 +649,22 @@ const getBloqueLabel = (item: ObservadorDisponibilidadItem): string => {
 const getItemVisClass = (item: ObservadorDisponibilidadItem): string => {
   let baseClass = 'vis-item-default';
 
-  if (item.estado === 'DISPONIBLE') {
+  if (item.estado === 'NAVEGANDO') {
+    if (item.estadoSecundario === 'PROYECTADA') {
+      baseClass = 'vis-item-navegando-proyectada';
+    } else if (item.estadoSecundario === 'VIAJE') {
+      baseClass = 'vis-item-naveg-viaje';
+    } else {
+      baseClass = 'vis-item-navegando';
+    }
+  } else if (item.codigoCorto === 'NO DISP. (EST.)' || (item.estadoSecundario === 'PROYECTADA' && item.estado === 'NOVEDAD')) {
+    baseClass = 'vis-item-no-disponible-proyectada';
+  } else if (item.estado === 'DISPONIBLE') {
     baseClass = 'vis-item-disponible';
   } else if (item.estado === 'DISPONIBLE_NO_CONFIRMADA') {
     baseClass = 'vis-item-disponible-no-confirmada';
   } else if (item.estado === 'IMPEDIMENTO') {
     baseClass = 'vis-item-impedido';
-  } else if (item.estado === 'NAVEGANDO') {
-    baseClass = item.estadoSecundario === 'VIAJE' ? 'vis-item-naveg-viaje' : 'vis-item-navegando';
   } else if (item.estado === 'DESIGNADA') {
     baseClass = 'vis-item-designada';
   } else if (item.estado === 'PUERTO') {
@@ -827,6 +861,15 @@ onBeforeUnmount(() => {
   border-style: solid !important;
 }
 
+:global(.disponibilidad-timeline .vis-item-navegando-proyectada) {
+  background-color: #dcfce7 !important; /* Verde atenuado */
+  color: #15803d !important;            /* Texto verde */
+  border-color: #22c55e !important;     /* Borde verde */
+  border-width: 2px !important;
+  border-style: dashed !important;     /* Borde punteado para proyectados */
+  font-weight: 800 !important;
+}
+
 .legend-naveg-viaje, :global(.disponibilidad-timeline .vis-item-naveg-viaje) {
   background: linear-gradient(135deg, #16a34a 50%, #4338ca 50%) !important;
   color: white !important;
@@ -858,6 +901,15 @@ onBeforeUnmount(() => {
   border-width: 2px !important;
   border-style: solid !important;
   font-weight: 800 !important;
+}
+
+:global(.disponibilidad-timeline .vis-item-no-disponible-proyectada) {
+  background-color: #fff1f2 !important; /* Rojo más claro/atenuado */
+  color: #9f1239 !important;
+  border-color: #f43f5e !important;
+  border-width: 2px !important;
+  border-style: dashed !important;     /* Borde punteado para proyectados */
+  font-weight: 700 !important;
 }
 
 .legend-puerto, :global(.disponibilidad-timeline .vis-item-puerto) {
@@ -931,6 +983,15 @@ onBeforeUnmount(() => {
   border-color: #166534 !important;
 }
 
+:global(.dark .disponibilidad-timeline .vis-item-navegando-proyectada) {
+  background-color: rgba(34, 197, 94, 0.2) !important; /* Verde atenuado */
+  color: #86efac !important;
+  border-color: #22c55e !important;
+  border-width: 2px !important;
+  border-style: dashed !important;     /* Borde punteado */
+  font-weight: 800 !important;
+}
+
 :global(.dark) .legend-designada, :global(.dark .disponibilidad-timeline .vis-item-designada) {
   background-color: rgba(34, 197, 94, 0.2) !important;
   color: #86efac !important;
@@ -958,6 +1019,15 @@ onBeforeUnmount(() => {
   border-width: 2px !important;
   border-style: solid !important;
   font-weight: 800 !important;
+}
+
+:global(.dark .disponibilidad-timeline .vis-item-no-disponible-proyectada) {
+  background-color: rgba(244, 63, 94, 0.12) !important; /* Atenuado */
+  color: #fecdd3 !important;
+  border-color: rgba(244, 63, 94, 0.6) !important;
+  border-width: 2px !important;
+  border-style: dashed !important;     /* Borde punteado */
+  font-weight: 700 !important;
 }
 
 :global(.dark) .legend-puerto, :global(.dark .disponibilidad-timeline .vis-item-puerto) {
