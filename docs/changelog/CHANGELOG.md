@@ -5,6 +5,8 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 ## [Unreleased]
 
 ### Added
+- **disponibilidad:** predeterminar el filtro de 'Técnico' (`TECNICO`) como desmarcado por defecto en la vista de Disponibilidad de Observadores, mostrando inicialmente solo personal con rol de 'Observador' y habilitando su inclusión mediante la botonera de filtros.
+- **observadores:** incorporar filtros tipo botonera en la Lista de Observadores para filtrar por estado (`INACTIVOS` y `NO DISPONIBLES`, desmarcados por defecto mostrando únicamente personal activo y disponible) y por tipo de contrato (`1109`, `LEY MARCO`, `MONOTRIBUTISTA`, `PLANTA PERMANENTE`, marcados por defecto), incluyendo contador dinámico de registros visibles.
 - **disponibilidad:** excluir eventos de novedad de 'Actualización de cédula' (`ACTUALIZACION_CEDULA`) de la línea de tiempo de disponibilidad, dado que constituyen trámites administrativos de registro documental que no impactan en la disponibilidad operativa para embarque.
 - **disponibilidad:** predeterminar el selector de horizonte temporal en '1 Mes' (en lugar de 15 días) al cargar la vista de Disponibilidad de Observadores, ajustando de forma coherente el rango inicial de filtrado de fechas y el control deslizante.
 - **disponibilidad:** ampliar la ventana histórica de datos hacia el pasado en la línea de tiempo de disponibilidad de 30 días a 120 días anteriores (4 meses), permitiendo una inspección retrospectiva profunda de mareas y eventos previos con renderizado atenuado.

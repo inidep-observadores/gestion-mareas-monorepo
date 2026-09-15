@@ -40,7 +40,9 @@ describe('ObservadoresView.vue', () => {
       selectedObservador: ref(null),
       isSaving: ref(false),
       filteredObservadores: ref([
-        { id: '1', codigoInterno: '123', nombre: 'Juan', apellido: 'Perez', tipoContrato: 'CONTRATADO', tipoObservador: 'TECNICO', activo: true, disponible: true }
+        { id: '1', codigoInterno: '123', nombre: 'Juan', apellido: 'Perez', tipoContrato: 'PLANTA PERMANENTE', tipoObservador: 'TECNICO', activo: true, disponible: true },
+        { id: '2', codigoInterno: '124', nombre: 'Carlos', apellido: 'Inactivo', tipoContrato: 'LEY MARCO', tipoObservador: 'OBSERVADOR', activo: false, disponible: true },
+        { id: '3', codigoInterno: '125', nombre: 'Mario', apellido: 'NoDisponible', tipoContrato: 'MONOTRIBUTISTA', tipoObservador: 'OBSERVADOR', activo: true, disponible: false },
       ]),
       fetchObservadores: mockFetchObservadores,
       openCreateModal: mockOpenCreateModal,
@@ -51,11 +53,36 @@ describe('ObservadoresView.vue', () => {
     });
   });
 
-  it('debe cargar y mostrar los observadores al montar', async () => {
+  it('debe cargar y mostrar los observadores al montar (solo activos y disponibles por defecto)', async () => {
     const wrapper = mount(ObservadoresView, { global: { stubs: globalStubs } });
     await wrapper.vm.$nextTick();
     expect(mockFetchObservadores).toHaveBeenCalledWith(true);
+    // Solo Juan Perez (activo y disponible) se muestra por defecto
     expect(wrapper.text()).toContain('Perez, Juan');
+    expect(wrapper.text()).not.toContain('Inactivo, Carlos');
+    expect(wrapper.text()).not.toContain('NoDisponible, Mario');
+  });
+
+  it('debe mostrar inactivos al activar el boton de Inactivos', async () => {
+    const wrapper = mount(ObservadoresView, { global: { stubs: globalStubs } });
+    await wrapper.vm.$nextTick();
+
+    const botonInactivos = wrapper.findAll('button').find(b => b.text().includes('Inactivos'));
+    expect(botonInactivos).toBeDefined();
+    await botonInactivos!.trigger('click');
+
+    expect(wrapper.text()).toContain('Inactivo, Carlos');
+  });
+
+  it('debe mostrar no disponibles al activar el boton de No Disponibles', async () => {
+    const wrapper = mount(ObservadoresView, { global: { stubs: globalStubs } });
+    await wrapper.vm.$nextTick();
+
+    const botonNoDisp = wrapper.findAll('button').find(b => b.text().includes('No Disponibles'));
+    expect(botonNoDisp).toBeDefined();
+    await botonNoDisp!.trigger('click');
+
+    expect(wrapper.text()).toContain('NoDisponible, Mario');
   });
 
   it('debe mostrar acciones de edicion si es admin', async () => {

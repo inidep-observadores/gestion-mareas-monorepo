@@ -9,6 +9,55 @@
             />
         </div>
 
+        <!-- Barra de Filtros (Estado y Contrato) -->
+        <div class="mb-6 p-4 rounded-xl border border-border bg-surface shadow-sm flex flex-wrap items-center justify-between gap-4">
+            <div class="flex flex-wrap items-center gap-4 sm:gap-6">
+                <!-- Filtro de Estado -->
+                <div class="flex items-center gap-2">
+                    <span class="text-[10px] font-black uppercase tracking-widest text-text-muted mr-1">Estado:</span>
+                    <button
+                        type="button"
+                        @click="mostrarInactivos = !mostrarInactivos"
+                        class="px-3 py-1 rounded-full text-[10px] font-black tracking-widest uppercase transition-all cursor-pointer"
+                        :class="mostrarInactivos ? 'bg-error/10 border border-error text-error' : 'bg-surface border border-border text-text-muted opacity-50 hover:opacity-80'"
+                    >
+                        Inactivos
+                    </button>
+                    <button
+                        type="button"
+                        @click="mostrarNoDisponibles = !mostrarNoDisponibles"
+                        class="px-3 py-1 rounded-full text-[10px] font-black tracking-widest uppercase transition-all cursor-pointer"
+                        :class="mostrarNoDisponibles ? 'bg-warning/10 border border-warning text-warning' : 'bg-surface border border-border text-text-muted opacity-50 hover:opacity-80'"
+                    >
+                        No Disponibles
+                    </button>
+                </div>
+
+                <!-- Divisor -->
+                <div class="w-px h-6 bg-border hidden sm:block"></div>
+
+                <!-- Filtro de Contrato -->
+                <div class="flex flex-wrap items-center gap-2">
+                    <span class="text-[10px] font-black uppercase tracking-widest text-text-muted mr-1">Contrato:</span>
+                    <button
+                        v-for="c in contratosDisponibles"
+                        :key="c.id"
+                        type="button"
+                        @click="toggleContrato(c.id)"
+                        class="px-3 py-1 rounded-full text-[10px] font-black tracking-widest uppercase transition-all cursor-pointer"
+                        :class="activeContratos.has(c.id) ? 'bg-info/10 border border-info text-info' : 'bg-surface border border-border text-text-muted opacity-50 hover:opacity-80'"
+                    >
+                        {{ c.label }}
+                    </button>
+                </div>
+            </div>
+
+            <!-- Contador de resultados -->
+            <div class="text-[11px] font-medium text-text-muted">
+                Mostrando <span class="font-bold text-text">{{ filteredObservadores.length }}</span> observador{{ filteredObservadores.length === 1 ? '' : 'es' }}
+            </div>
+        </div>
+
         <div class="flex flex-col xl:flex-row items-start gap-6 relative">
             <div class="flex-1 min-w-0 w-full">
                 <BaseDataList 
@@ -257,6 +306,29 @@ const {
     exportData
 } = useObservadores()
 
+// Filtros de Estado
+const mostrarInactivos = ref(false)
+const mostrarNoDisponibles = ref(false)
+
+// Filtros por Tipo de Contrato (todas las opciones marcadas por defecto)
+const contratosDisponibles = [
+    { id: '1109', label: '1109' },
+    { id: 'LEY MARCO', label: 'Ley Marco' },
+    { id: 'MONOTRIBUTISTA', label: 'Monotributista' },
+    { id: 'PLANTA PERMANENTE', label: 'Planta Permanente' },
+]
+const activeContratos = ref<Set<string>>(new Set(contratosDisponibles.map(c => c.id)))
+
+const toggleContrato = (id: string) => {
+    const updated = new Set(activeContratos.value)
+    if (updated.has(id)) {
+        updated.delete(id)
+    } else {
+        updated.add(id)
+    }
+    activeContratos.value = updated
+}
+
 // Sorting Logic
 const sortKey = ref<string>('apellido')
 const sortOrder = ref<'asc' | 'desc'>('asc')
@@ -273,7 +345,26 @@ const handleSort = (key: string) => {
 const getSortIcon = () => ChevronDownIcon
 
 const filteredObservadores = computed(() => {
-    const items = [...baseFilteredObservadores.value]
+    const items = baseFilteredObservadores.value.filter(obs => {
+        // Filtro por Estado:
+        // - Si es inactivo: solo se muestra si mostrarInactivos está activo
+        if (!obs.activo && !mostrarInactivos.value) {
+            return false
+        }
+        // - Si es activo pero no disponible: solo se muestra si mostrarNoDisponibles está activo
+        if (obs.activo && !obs.disponible && !mostrarNoDisponibles.value) {
+            return false
+        }
+
+        // Filtro por Tipo de Contrato:
+        // Si el observador tiene un tipo de contrato perteneciente al catálogo, se valida contra activeContratos
+        const esContratoCatalogado = contratosDisponibles.some(c => c.id === obs.tipoContrato)
+        if (esContratoCatalogado && !activeContratos.value.has(obs.tipoContrato)) {
+            return false
+        }
+
+        return true
+    })
 
     items.sort((a: any, b: any) => {
         const valA = a[sortKey.value]

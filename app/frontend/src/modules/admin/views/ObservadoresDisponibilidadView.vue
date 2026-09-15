@@ -214,6 +214,7 @@ let currentContainer: HTMLElement | null = null;
 // Filtros Set
 const activeTipoObservador = ref(new Set<string>());
 const activeTipoContrato = ref(new Set<string>());
+const filtrosInicializados = ref(false);
 
 const tiposObservador = computed(() => {
   if (!data.value) return [];
@@ -395,12 +396,15 @@ const fetchData = async () => {
     // Calculamos siempre al horizonte máximo de 6 meses para navegación fluida
     const res = await disponibilidadApi.obtenerDisponibilidad(6);
 
-    // Inicializar filtros activos si están vacíos (todas las opciones habilitadas por default)
-    if (activeTipoObservador.value.size === 0 && activeTipoContrato.value.size === 0) {
+    // Inicializar filtros activos si no fueron inicializados ('TECNICO' desmarcado por default)
+    if (!filtrosInicializados.value) {
+      filtrosInicializados.value = true;
       const newActiveTO = new Set<string>();
       const newActiveTC = new Set<string>();
       res.observadores.forEach(r => {
-        if (r.observador.tipoObservador) newActiveTO.add(r.observador.tipoObservador);
+        if (r.observador.tipoObservador && r.observador.tipoObservador !== 'TECNICO') {
+          newActiveTO.add(r.observador.tipoObservador);
+        }
         if (r.observador.tipoContrato) newActiveTC.add(r.observador.tipoContrato);
       });
       activeTipoObservador.value = newActiveTO;
