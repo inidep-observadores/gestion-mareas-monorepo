@@ -199,7 +199,7 @@
           @click="saveObservador"
           class="px-4 py-1.5 text-xs font-black uppercase tracking-wider bg-primary text-primary-fg hover:bg-primary-hover rounded-lg transition-all active:scale-95 shadow-sm"
         >
-          {{ editingIndex !== null ? 'Guardar Cambios' : 'Agregar' }}
+          Confirmar
         </button>
       </div>
     </div>
@@ -413,5 +413,8 @@ const removeObservador = (index: number) => {
   current.splice(index, 1);
   emit('update:modelValue', current);
 };
-</script>
 
+defineExpose({
+  hasPendingChanges: computed(() => showAddForm.value)
+});
+</script>

@@ -90,6 +90,7 @@
                 <!-- Observadores Secundarios Planificados (Borrador) -->
                 <div class="col-span-1 md:col-span-2 pt-2 border-t border-border/50">
                   <ObservadoresSecundariosEditor
+                    ref="secundariosEditorRef"
                     v-model="form.observadoresSecundariosPlanificados"
                     :observador-options="observadorOptions"
                     :observador-principal-id="form.observadorPrincipalId"
@@ -231,6 +232,7 @@ const error = ref<string | null>(null)
 const loadingCatalogs = ref(false)
 const fieldErrors = ref<Record<string, string>>({})
 const firstInput = ref<HTMLInputElement | null>(null)
+const secundariosEditorRef = ref<any>(null)
 
 const mareaData = ref<Marea | null>(null)
 
@@ -375,7 +377,12 @@ const loadCatalogs = async () => {
   }
 }
 
-const validate = () => {
+const getObserverName = (id: string | number) => {
+  const obs = observadores.value.find(o => o.id === id)
+  return obs ? `${obs.apellido}, ${obs.nombre}` : 'Desconocido'
+}
+
+const validate = async () => {
   fieldErrors.value = {}
   let isValid = true
 
@@ -392,6 +399,25 @@ const validate = () => {
     isValid = false
   }
 
+  if (secundariosEditorRef.value?.hasPendingChanges) {
+    toast.error('Debe confirmar la edición de los observadores secundarios antes de continuar.')
+    return false
+  }
+
+  const currentMareaCode = mareaData.value?.id_marea || mareaData.value?.id
+
+  if (form.value.observadorPrincipalId && !fieldErrors.value.observadorPrincipalId) {
+    try {
+      const { available, marea } = await mareasService.validateObserverAvailability(form.value.observadorPrincipalId)
+      if (!available && marea !== currentMareaCode) {
+        fieldErrors.value.observadorPrincipalId = `El observador ya está designado en otra marea (${marea})`
+        isValid = false
+      }
+    } catch (e) {
+      console.error('Error validating observer:', e)
+    }
+  }
+
   if (form.value.observadorPrincipalId && form.value.observadoresSecundariosPlanificados?.length) {
     const conflict = form.value.observadoresSecundariosPlanificados.find(
       (sec: any) => sec.observadorId === form.value.observadorPrincipalId
@@ -399,6 +425,20 @@ const validate = () => {
     if (conflict) {
       fieldErrors.value.observadorPrincipalId = 'El observador principal no puede estar asignado simultáneamente como secundario'
       isValid = false
+    } else {
+      for (const sec of form.value.observadoresSecundariosPlanificados) {
+        try {
+          const { available, marea } = await mareasService.validateObserverAvailability(sec.observadorId)
+          if (!available && marea !== currentMareaCode) {
+            const obsName = getObserverName(sec.observadorId)
+            fieldErrors.value.observadorPrincipalId = `El observador secundario ${obsName} ya está designado en otra marea (${marea})`
+            isValid = false
+            break
+          }
+        } catch (e) {
+          console.error('Error validating secondary observer:', e)
+        }
+      }
     }
   }
 
@@ -406,12 +446,20 @@ const validate = () => {
 }
 
 const submit = async () => {
-  if (!validate()) return
+  const isValid = await validate()
+  if (!isValid) return
 
   loading.value = true
   error.value = null
 
   try {
+    const cleanedSecundarios = form.value.observadoresSecundariosPlanificados?.map(sec => ({
+      observadorId: sec.observadorId,
+      etapaDesde: sec.etapaDesde,
+      etapaHasta: sec.etapaHasta,
+      notas: sec.notas
+    })) || []
+
     const updateData = {
       tipoMarea: form.value.tipoMarea,
       buqueId: form.value.buqueId || null,
@@ -424,7 +472,7 @@ const submit = async () => {
       fechaZarpadaEstimada: form.value.fechaZarpadaEstimada || null,
       diasEstimados: form.value.diasEstimados || null,
       iniciaEnProspeccion: form.value.tipoMarea === 'MC' ? form.value.iniciaEnProspeccion : false,
-      observadoresSecundariosPlanificados: form.value.observadoresSecundariosPlanificados
+      observadoresSecundariosPlanificados: cleanedSecundarios
     }
 
 

@@ -305,14 +305,17 @@ export class MareasService {
             }
 
 
+            let huboCambios = false;
             if (Object.keys(updateData).length > 0) {
                 await tx.marea.update({
                     where: { id },
                     data: updateData
                 });
+                huboCambios = true;
             }
 
             if (etapas !== undefined) {
+                huboCambios = true;
                 // Eliminar etapas que no vienen en el payload (etapas borradas en el frontend)
                 const payloadEtapaIds = etapas.map(e => e.id).filter(id => !!id);
                 await tx.mareaEtapa.deleteMany({
@@ -424,6 +427,18 @@ export class MareasService {
                         }
                     }
                 }
+            }
+
+            if (huboCambios) {
+                await tx.mareaMovimiento.create({
+                    data: {
+                        mareaId: id,
+                        fechaHora: new Date(),
+                        usuarioId: user?.id ?? null,
+                        tipoEvento: 'EDICION_ESTRUCTURA',
+                        detalle: 'Edición de datos básicos de la marea.'
+                    }
+                });
             }
         });
 

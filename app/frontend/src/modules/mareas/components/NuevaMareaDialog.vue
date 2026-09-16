@@ -163,6 +163,7 @@
               <!-- Observadores Secundarios Planificados (Borrador en metadata) -->
               <div class="pt-2 border-t border-border/60">
                 <ObservadoresSecundariosEditor
+                  ref="secundariosEditorRef"
                   v-model="form.observadoresSecundariosPlanificados"
                   :observador-options="observadorOptions"
                   :observador-principal-id="form.observadorId"
@@ -424,6 +425,7 @@ const buqueSelect = ref<any>(null)
 const nroMareaInput = ref<HTMLInputElement | null>(null)
 const arteSelect = ref<any>(null)
 const observadorSelect = ref<any>(null)
+const secundariosEditorRef = ref<any>(null)
 
 // Catalogs
 const loadingCatalogs = ref(true)
@@ -685,6 +687,11 @@ const validateStep = async (step: number) => {
   }
 
   if (step === 2) {
+    if (secundariosEditorRef.value?.hasPendingChanges) {
+      toast.error('Debe confirmar la edición de los observadores secundarios antes de continuar.')
+      return false
+    }
+
     if (!form.value.pesqueriaId) fieldErrors.value.pesqueriaId = 'La pesquería es obligatoria'
     if (!form.value.observadorId) fieldErrors.value.observadorId = 'Debe asignar un observador'
     if (!form.value.arteId) fieldErrors.value.arteId = 'El arte de pesca es obligatorio'
