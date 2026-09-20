@@ -1,5 +1,5 @@
 <template>
-  <div class="relative group">
+  <div ref="rootEl" class="relative group">
     <!-- Botón Principal: Estilo mimetizado con Leaflet Control Bar del Monitor -->
     <div class="leaflet-bar !border-none shadow-[0_4px_12px_rgba(0,0,0,0.3)]">
       <button
@@ -25,7 +25,7 @@
     >
       <HudCard
         v-if="isOpen"
-        customClass="absolute bottom-full right-0 mb-3 w-64 !p-0 divide-y divide-text/5 overflow-hidden shadow-2xl"
+        customClass="absolute bottom-full right-0 mb-3 w-72 max-h-[70vh] overflow-y-auto !p-0 divide-y divide-text/5 shadow-2xl"
       >
         <!-- Sección Mapa Base -->
         <div class="p-4">
@@ -95,6 +95,9 @@
             </label>
           </div>
         </div>
+
+        <!-- Capas del usuario (inyectadas por el mapa anfitrión) -->
+        <slot name="extra" />
       </HudCard>
     </Transition>
   </div>
@@ -121,6 +124,7 @@ const emit = defineEmits<{
 }>()
 
 const isOpen = ref(false)
+const rootEl = ref<HTMLElement | null>(null)
 
 const selectBase = (id: string) => {
   emit('change-base', id)
@@ -128,8 +132,8 @@ const selectBase = (id: string) => {
 
 // Cerrar al hacer clic fuera
 const handleClickOutside = (event: MouseEvent) => {
-  const target = event.target as HTMLElement
-  if (isOpen.value && !target.closest('.group')) {
+  // composedPath: el target puede haberse desmontado (ej. al eliminar una capa)
+  if (isOpen.value && rootEl.value && !event.composedPath().includes(rootEl.value)) {
     isOpen.value = false
   }
 }
