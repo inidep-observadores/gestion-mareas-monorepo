@@ -1,5 +1,5 @@
 <template>
-  <div ref="rootEl" class="relative group">
+  <div ref="rootEl" class="relative group z-[2000]">
     <!-- Botón Principal: Estilo mimetizado con Leaflet Control Bar del Monitor -->
     <div class="leaflet-bar !border-none shadow-[0_4px_12px_rgba(0,0,0,0.3)]">
       <button
@@ -25,13 +25,40 @@
     >
       <HudCard
         v-if="isOpen"
-        customClass="absolute bottom-full right-0 mb-3 w-72 max-h-[70vh] overflow-y-auto !p-0 divide-y divide-text/5 shadow-2xl"
+        customClass="absolute bottom-full right-0 mb-3 w-72 max-h-[35vh] overflow-y-auto !p-0 divide-y divide-text/5 shadow-2xl"
       >
-        <!-- Sección Mapa Base -->
-        <div class="p-4">
+        <!-- Sección Proveedor de Mapa -->
+        <div class="p-4 pb-2">
           <h3 class="mb-3 text-[10px] font-black uppercase tracking-widest text-text-muted/60">
-            Mapa Base (Argenmap)
+            Proveedor de Mapa
           </h3>
+          <div class="flex flex-col gap-2">
+            <label class="flex items-center gap-2 text-xs cursor-pointer">
+              <input type="radio" v-model="settings.provider" value="argenmaps" class="text-primary focus:ring-primary" />
+              <span>Argenmaps (IGN)</span>
+            </label>
+            <label class="flex items-center gap-2 text-xs cursor-pointer">
+              <input type="radio" v-model="settings.provider" value="google" class="text-primary focus:ring-primary" />
+              <span>Google Maps</span>
+            </label>
+            <label class="flex items-center gap-2 text-xs cursor-pointer">
+              <input type="radio" v-model="settings.provider" value="osm" class="text-primary focus:ring-primary" />
+              <span>OpenStreetMap / Esri</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Sección Mapa Base -->
+        <div class="px-4 pb-4 pt-2">
+          <div class="mb-3 flex items-center justify-between">
+            <h3 class="text-[10px] font-black uppercase tracking-widest text-text-muted/60">
+              Tipo de Mapa
+            </h3>
+            <label class="flex items-center gap-1.5 cursor-pointer" title="Recordar selección manual e ignorar tema de la aplicación">
+              <span class="text-[9px] text-text-muted/70 uppercase font-bold tracking-wide">Recordar</span>
+              <input type="checkbox" v-model="settings.rememberSelection" class="h-3 w-3 rounded-sm border-text/20 text-primary focus:ring-primary" />
+            </label>
+          </div>
           <div class="grid grid-cols-2 gap-2">
             <button
               v-for="layer in baseLayers"
@@ -108,6 +135,7 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import { LayersIcon } from '@/icons'
 import HudCard from '@/modules/monitor/components/HudCard.vue'
 import type { MapLayer } from './map-layers'
+import { useMapSettings } from '@/composables/useMapSettings'
 
 const props = defineProps<{
   baseLayers: MapLayer[]
@@ -125,6 +153,7 @@ const emit = defineEmits<{
 
 const isOpen = ref(false)
 const rootEl = ref<HTMLElement | null>(null)
+const { settings } = useMapSettings()
 
 const selectBase = (id: string) => {
   emit('change-base', id)

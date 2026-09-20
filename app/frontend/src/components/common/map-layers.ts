@@ -12,51 +12,71 @@ export interface MapLayer {
   format?: string;
   transparent?: boolean;
   zIndex?: number;
+  className?: string;
 }
 
-export const BASE_LAYERS: MapLayer[] = [
-  {
-    id: 'argenmap-mapa-base',
-    name: 'Estándar',
-    url: 'https://wms.ign.gob.ar/geoserver/gwc/service/tms/1.0.0/capabaseargenmap@EPSG%3A3857@png/{z}/{x}/{-y}.png',
-    attribution: '&copy; Instituto Geográfico Nacional',
-    type: 'base',
-    maxZoom: 20
-  },
-  {
-    id: 'argenmap-gris',
-    name: 'Gris',
-    url: 'https://wms.ign.gob.ar/geoserver/gwc/service/tms/1.0.0/mapabase_gris@EPSG%3A3857@png/{z}/{x}/{-y}.png',
-    attribution: '&copy; Instituto Geográfico Nacional',
-    type: 'base',
-    maxZoom: 20
-  },
-  {
-    id: 'argenmap-oscuro',
-    name: 'Oscuro',
-    url: 'https://wms.ign.gob.ar/geoserver/gwc/service/tms/1.0.0/argenmap_oscuro@EPSG%3A3857@png/{z}/{x}/{-y}.png',
-    attribution: '&copy; Instituto Geográfico Nacional',
-    type: 'base',
-    maxZoom: 20
-  },
-  // {
-  //   id: 'argenmap-topo',
-  //   name: 'Topográfico',
-  //   // url: 'https://wms.ign.gob.ar/geoserver/gwc/service/tms/1.0.0/mapabase_hibrido@EPSG%3A3857@png/{z}/{x}/{-y}.png',
-  //   url: 'https://wms.ign.gob.ar/geoserver/gwc/service/tms/1.0.0/mapabase_topo@EPSG%3A3857@png/{z}/{x}/{-y}.png',
-  //   attribution: '&copy; Instituto Geográfico Nacional',
-  //   type: 'base',
-  //   maxZoom: 20
-  // },
-  {
-    id: 'google-satellite',
-    name: 'Satelital',
-    url: 'https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
-    attribution: '&copy; Google Maps',
-    type: 'base',
-    maxZoom: 20
-  }
-];
+export const getBaseLayers = (provider: 'argenmaps' | 'google' | 'osm'): MapLayer[] => {
+  return [
+    {
+      id: 'estandar',
+      name: 'Estándar',
+      url: provider === 'argenmaps' 
+        ? 'https://wms.ign.gob.ar/geoserver/gwc/service/tms/1.0.0/capabaseargenmap@EPSG%3A3857@png/{z}/{x}/{-y}.png'
+        : provider === 'google'
+        ? 'https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}'
+        : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+      attribution: provider === 'argenmaps'
+        ? '&copy; Instituto Geográfico Nacional'
+        : provider === 'google'
+        ? '&copy; Google Maps'
+        : '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      type: 'base',
+      maxZoom: 20
+    },
+    {
+      id: 'gris',
+      name: 'Gris',
+      url: provider === 'argenmaps'
+        ? 'https://wms.ign.gob.ar/geoserver/gwc/service/tms/1.0.0/mapabase_gris@EPSG%3A3857@png/{z}/{x}/{-y}.png'
+        : provider === 'google'
+        ? 'https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}'
+        : 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}',
+      attribution: provider === 'argenmaps'
+        ? '&copy; Instituto Geográfico Nacional'
+        : provider === 'google'
+        ? '&copy; Google Maps'
+        : '&copy; Esri, HERE, Garmin, FAO, NOAA, USGS, EPA',
+      type: 'base',
+      maxZoom: 20,
+      className: provider === 'google' ? 'google-gray-map' : undefined
+    },
+    {
+      id: 'oscuro',
+      name: 'Oscuro',
+      url: provider === 'argenmaps'
+        ? 'https://wms.ign.gob.ar/geoserver/gwc/service/tms/1.0.0/argenmap_oscuro@EPSG%3A3857@png/{z}/{x}/{-y}.png'
+        : provider === 'google'
+        ? 'https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}'
+        : 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
+      attribution: provider === 'argenmaps'
+        ? '&copy; Instituto Geográfico Nacional'
+        : provider === 'google'
+        ? '&copy; Google Maps'
+        : '&copy; Esri, HERE, Garmin, FAO, NOAA, USGS, EPA',
+      type: 'base',
+      maxZoom: 20,
+      className: provider === 'google' ? 'google-dark-map' : undefined
+    },
+    {
+      id: 'satelital',
+      name: 'Satelital',
+      url: 'https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
+      attribution: '&copy; Google Maps',
+      type: 'base',
+      maxZoom: 20
+    }
+  ];
+};
 
 export const OVERLAY_LAYERS: MapLayer[] = [
   {
