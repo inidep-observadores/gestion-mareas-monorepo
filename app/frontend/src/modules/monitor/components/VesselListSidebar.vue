@@ -214,22 +214,8 @@ const filteredVessels = computed(() => {
     )
   }
 
-  // Sort by Year ASC, then Number ASC based on mareaCode (Format: TYPE-NUM-YY)
-  return list.sort((a, b) => {
-    const partsA = a.mareaCode.split('-')
-    const partsB = b.mareaCode.split('-')
-
-    // Format is TYPE-NUM-YY, so Year is at index 2, Number at index 1
-    const yearA = parseInt(partsA[2]) || 0
-    const yearB = parseInt(partsB[2]) || 0
-
-    if (yearA !== yearB) return yearA - yearB
-
-    const numA = parseInt(partsA[1]) || 0
-    const numB = parseInt(partsB[1]) || 0
-
-    return numA - numB
-  })
+  // Ordenar alfabéticamente por nombre del buque
+  return list.sort((a, b) => a.name.localeCompare(b.name))
 })
 
 const toggleSidebar = () => {
