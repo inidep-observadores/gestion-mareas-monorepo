@@ -1155,43 +1155,29 @@ export class TrackingService {
         const jsonBuffer = Buffer.from(JSON.stringify(jsonData, null, 2));
 
         // 4. Construir GeoJSON
-        const lineFeature = {
-            type: "Feature",
-            geometry: {
-                type: "LineString",
-                coordinates: history.map(p => [p.lon, p.lat])
-            },
-            properties: {
-                description: `${marea.buque.nombreBuque} - Marea ${marea.nroMarea}/${marea.anioMarea}`,
-                buque: marea.buque.nombreBuque,
-                matricula: marea.buque.matricula,
-                nroMarea: marea.nroMarea,
-                anioMarea: marea.anioMarea,
-                pesqueria: marea.pesqueria?.nombre || null,
-                tipoFlota: tipoBuque,
-                fechaInicio: marea.fechaInicioObservador ? DateTime.fromJSDate(marea.fechaInicioObservador).setZone(this.TIMEZONE).toFormat("yyyy-MM-dd'T'HH:mm:ss") : null,
-                fechaFin: marea.fechaFinObservador ? DateTime.fromJSDate(marea.fechaFinObservador).setZone(this.TIMEZONE).toFormat("yyyy-MM-dd'T'HH:mm:ss") : null,
-                observador: marea.observadorPrincipal ? `${marea.observadorPrincipal.nombre} ${marea.observadorPrincipal.apellido}` : null
-            }
-        };
-
-        const pointFeatures = history.map(p => ({
-            type: "Feature",
-            geometry: {
-                type: "Point",
-                coordinates: [p.lon, p.lat]
-            },
-            properties: {
-                description: `${marea.buque.nombreBuque} - Marea ${marea.nroMarea}/${marea.anioMarea}`,
-                fechaHora: DateTime.fromJSDate(p.timestamp).setZone(this.TIMEZONE).toFormat("yyyy-MM-dd HH:mm:ss"),
-                velocidad: p.speed,
-                rumbo: p.course
-            }
-        }));
-
         const geoJsonData = {
             type: "FeatureCollection",
-            features: [lineFeature, ...pointFeatures]
+            features: [
+                {
+                    type: "Feature",
+                    geometry: {
+                        type: "LineString",
+                        coordinates: history.map(p => [p.lon, p.lat])
+                    },
+                    properties: {
+                        description: `${marea.buque.nombreBuque} - Marea ${marea.nroMarea}/${marea.anioMarea}`,
+                        buque: marea.buque.nombreBuque,
+                        matricula: marea.buque.matricula,
+                        nroMarea: marea.nroMarea,
+                        anioMarea: marea.anioMarea,
+                        pesqueria: marea.pesqueria?.nombre || null,
+                        tipoFlota: tipoBuque,
+                        fechaInicio: marea.fechaInicioObservador ? DateTime.fromJSDate(marea.fechaInicioObservador).setZone(this.TIMEZONE).toFormat("yyyy-MM-dd'T'HH:mm:ss") : null,
+                        fechaFin: marea.fechaFinObservador ? DateTime.fromJSDate(marea.fechaFinObservador).setZone(this.TIMEZONE).toFormat("yyyy-MM-dd'T'HH:mm:ss") : null,
+                        observador: marea.observadorPrincipal ? `${marea.observadorPrincipal.nombre} ${marea.observadorPrincipal.apellido}` : null
+                    }
+                }
+            ]
         };
 
         const geoJsonFilename = dbfFilename.replace(/\.dbf$/, '.geojson');
