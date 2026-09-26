@@ -671,7 +671,9 @@ export class TrackingService {
 
         return {
             buffer,
-            filename
+            filename,
+            history,
+            info
         };
     }
 
@@ -1079,8 +1081,8 @@ export class TrackingService {
     }
 
     async exportMareaBundle(mareaId: string) {
-        // 1. Obtener el track DBF
-        const { buffer: dbfBuffer, filename: dbfFilename } = await this.exportMareaTrackToDbase(mareaId);
+        // 1. Obtener el track DBF, historia e info para GeoJSON
+        const { buffer: dbfBuffer, filename: dbfFilename, history, info } = await this.exportMareaTrackToDbase(mareaId);
 
         // 2. Obtener marea y etapas para el JSON
         const marea = await this.prisma.marea.findUnique({
@@ -1152,10 +1154,40 @@ export class TrackingService {
         const jsonFilename = dbfFilename.replace(/^T/, 'M').replace(/\.dbf$/, '.json');
         const jsonBuffer = Buffer.from(JSON.stringify(jsonData, null, 2));
 
-        // 4. Crear el ZIP
+        // 4. Construir GeoJSON
+        const geoJsonData = {
+            type: "FeatureCollection",
+            features: [
+                {
+                    type: "Feature",
+                    geometry: {
+                        type: "LineString",
+                        coordinates: history.map(p => [p.lon, p.lat])
+                    },
+                    properties: {
+                        description: `${marea.buque.nombreBuque} - Marea ${marea.nroMarea}/${marea.anioMarea}`,
+                        buque: marea.buque.nombreBuque,
+                        matricula: marea.buque.matricula,
+                        nroMarea: marea.nroMarea,
+                        anioMarea: marea.anioMarea,
+                        pesqueria: marea.pesqueria?.nombre || null,
+                        tipoFlota: tipoBuque,
+                        fechaInicio: marea.fechaInicioObservador ? DateTime.fromJSDate(marea.fechaInicioObservador).setZone(this.TIMEZONE).toFormat("yyyy-MM-dd'T'HH:mm:ss") : null,
+                        fechaFin: marea.fechaFinObservador ? DateTime.fromJSDate(marea.fechaFinObservador).setZone(this.TIMEZONE).toFormat("yyyy-MM-dd'T'HH:mm:ss") : null,
+                        observador: marea.observadorPrincipal ? `${marea.observadorPrincipal.nombre} ${marea.observadorPrincipal.apellido}` : null
+                    }
+                }
+            ]
+        };
+
+        const geoJsonFilename = dbfFilename.replace(/\.dbf$/, '.geojson');
+        const geoJsonBuffer = Buffer.from(JSON.stringify(geoJsonData, null, 2));
+
+        // 5. Crear el ZIP
         const zip = new AdmZip();
         zip.addFile(dbfFilename, dbfBuffer);
         zip.addFile(jsonFilename, jsonBuffer);
+        zip.addFile(geoJsonFilename, geoJsonBuffer);
 
         const nro = marea.nroMarea;
         const anio2 = String(marea.anioMarea).slice(-2);
