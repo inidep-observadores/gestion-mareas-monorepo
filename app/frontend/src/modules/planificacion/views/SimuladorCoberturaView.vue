@@ -44,7 +44,7 @@
       </div>
 
       <!-- Leyenda y Filtros Rápidos -->
-      <div class="flex flex-wrap items-center justify-between gap-4 p-4 rounded-xl border border-border bg-surface shadow-sm">
+        <div class="flex flex-wrap items-center justify-between gap-4 p-4 rounded-xl border border-border bg-surface shadow-sm">
         <div class="flex flex-wrap items-center gap-4">
           <div class="flex items-center gap-2">
             <div class="w-6 h-5 rounded border-2 legend-ejecucion"></div>
@@ -186,8 +186,29 @@
         <!-- Canvas Central (vis-timeline) -->
         <div
           :class="[sidebarOpen ? 'lg:col-span-9' : 'lg:col-span-12']"
-          class="bg-surface rounded-2xl shadow-sm border border-border p-4 transition-all flex flex-col gap-4 relative"
+          class="bg-surface rounded-2xl shadow-sm border border-border p-4 transition-all flex flex-col gap-4 relative overflow-hidden"
         >
+          <!-- Tabs de Vista -->
+          <div class="flex items-center gap-1 border-b border-border bg-surface-muted/30 -mx-4 -mt-4 px-4 pt-2 mb-2">
+            <button 
+              @click="activeTab = 'observador'" 
+              class="px-5 py-3 text-sm font-black uppercase tracking-wider border-b-2 transition-colors -mb-px flex items-center gap-2"
+              :class="activeTab === 'observador' ? 'border-primary text-primary' : 'border-transparent text-text-muted hover:text-text'"
+            >
+              <UserCircleIcon class="w-4 h-4" />
+              Por observador
+            </button>
+            
+            <button 
+              @click="activeTab = 'buque'" 
+              class="px-5 py-3 text-sm font-black uppercase tracking-wider border-b-2 transition-colors -mb-px flex items-center gap-2"
+              :class="activeTab === 'buque' ? 'border-primary text-primary' : 'border-transparent text-text-muted hover:text-text'"
+            >
+              <ShipIcon class="w-4 h-4" />
+              Por buque
+            </button>
+          </div>
+
           <!-- Loading State -->
           <div v-if="isLoading" class="p-12 flex flex-col items-center justify-center bg-surface rounded-2xl">
             <div class="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4"></div>
@@ -196,12 +217,22 @@
 
           <!-- Timeline Container -->
           <div
+            v-show="activeTab === 'observador'"
             ref="timelineContainer"
             @dragover.capture.prevent
             @dragenter.capture.prevent
             @drop.capture="onDropTimeline"
             class="w-full h-[65vh] bg-surface text-text rounded-xl border border-border shadow-inner simulador-timeline"
           ></div>
+
+          <!-- VISTA POR BUQUE (Mockup) -->
+          <div v-show="activeTab === 'buque'" class="p-16 text-center border-2 border-dashed border-border rounded-2xl bg-surface-muted/50 flex flex-col items-center justify-center min-h-[50vh]">
+            <ShipIcon class="w-16 h-16 text-text-muted mb-4 opacity-50" />
+            <h3 class="text-xl font-black text-text mb-2 uppercase">Línea de tiempo por Buque</h3>
+            <p class="text-sm text-text-muted max-w-md">
+              Próximamente podrá visualizar y planificar las mareas directamente sobre los buques, arrastrando observadores o requerimientos al calendario de cada barco.
+            </p>
+          </div>
         </div>
       </div>
     </div>
@@ -337,7 +368,8 @@ import {
   PlusIcon,
   XIcon,
   WaveIcon,
-  EditIcon
+  EditIcon,
+  UserCircleIcon
 } from '@/icons';
 import { toast } from 'vue-sonner';
 import disponibilidadApi from '@/modules/admin/services/disponibilidad.service';
@@ -365,6 +397,7 @@ watch(searchQuery, (newVal) => {
 });
 
 const sidebarOpen = ref(true);
+const activeTab = ref<'observador' | 'buque'>('observador');
 
 // Estado del Escenario Borrador
 const escenarioActual = ref<EscenarioSimulacionState>({
