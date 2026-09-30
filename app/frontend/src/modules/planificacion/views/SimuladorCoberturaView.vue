@@ -340,13 +340,14 @@ import {
   EditIcon
 } from '@/icons';
 import { toast } from 'vue-sonner';
-import { planificacionService } from '../services/planificacion.service';
+import disponibilidadApi from '@/modules/admin/services/disponibilidad.service';
+import type { DisponibilidadResponse, ObservadorDisponibilidadRow } from '@/modules/admin/interfaces/disponibilidad.interface';
+import { getBloqueLabel, getItemVisClass, formatItemTooltip } from '@/modules/shared/utils/timeline-styles';
 import catalogosService from '../../mareas/services/catalogos.service';
 import type { MareaSimuladaItem, RecursoMareaPendiente, EscenarioSimulacionState } from '../interfaces/simulador.interface';
 import { Timeline, type TimelineOptions } from 'vis-timeline/standalone';
 import { DataSet } from 'vis-data';
 import 'vis-timeline/styles/vis-timeline-graph2d.min.css';
-import { buildObservadorEventos, toVisTimelineItems } from '@/modules/shared/utils/observador-events-engine';
 
 import { useConfigStore } from '@/modules/shared/stores/config.store';
 const configStore = useConfigStore();
@@ -398,17 +399,13 @@ const pesqueriaOptions = computed(() => {
 });
 
 // Datos de Simulación
-const datosSimulacion = ref<{
-  observadores: any[];
-  eventos: any[];
-  novedadesRaw: Record<string, any[]>;
-  mareasRaw: Record<string, any[]>;
-} | null>(null);
+// Datos de Simulación
+const datosSimulacion = ref<DisponibilidadResponse | null>(null);
 
 // Observadores extraídos de los datos de simulación
 const observadoresBase = computed(() => {
   if (!datosSimulacion.value) return [];
-  return datosSimulacion.value.observadores;
+  return datosSimulacion.value.observadores.map(r => r.observador);
 });
 
 // Estado para modales
@@ -620,11 +617,6 @@ const conflictosDetectados = computed(() => {
   const simulados = escenarioActual.value.items.filter(i => i.tipoBloque === 'MAREA_SIMULADA');
   if (simulados.length === 0 || !datosSimulacion.value) return alertas;
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  // Evaluamos directamente contra los eventos calculados por el motor unificado
-  // para que haya 100% de coherencia con lo que se renderiza visualmente
   simulados.forEach(sim => {
     if (!sim.observadorId) return;
 
@@ -633,30 +625,19 @@ const conflictosDetectados = computed(() => {
     const fin = new Date(sim.fechaArribo);
     fin.setHours(23, 59, 59, 999);
 
-    const novedades = datosSimulacion.value!.novedadesRaw?.[sim.observadorId] || [];
-    const mareas = datosSimulacion.value!.mareasRaw?.[sim.observadorId] || [];
+    const row = datosSimulacion.value!.observadores.find(r => r.observador.id === sim.observadorId);
+    if (!row) return;
 
-    const eventosObs = buildObservadorEventos(novedades, mareas, today, sim.observadorId);
+    for (const ev of row.eventos) {
+      if (ev.estado === 'DISPONIBLE' || ev.estado === 'DISPONIBLE_NO_CONFIRMADA') continue;
+      if (ev.estado === 'NOVEDAD' && ev.flexible) continue;
 
-    for (const ev of eventosObs) {
-      // Ignorar disponibilidades y marcas internas de conflicto previo
-      if (ev.tipo === 'CONFLICTO') continue;
-      if (ev.tipo === 'NOVEDAD' && ev.codigoNovedad === 'DISPONIBLE') continue;
-
-      const evStart = new Date(ev.start);
-      evStart.setHours(0, 0, 0, 0);
-      const evEnd = new Date(ev.end);
-      evEnd.setHours(23, 59, 59, 999);
-
-      // Comprobar solapamiento de rangos de fechas
+      const evStart = new Date(ev.startDate + 'T00:00:00');
+      const evEnd = new Date(ev.endDate + 'T00:00:00');
+      
       if (inicio <= evEnd && fin >= evStart) {
-        let detalleEvento = ev.label;
-        if (ev.sublabel && ev.sublabel !== ev.label) {
-          detalleEvento = `${ev.label} (${ev.sublabel})`;
-        }
-
         alertas.push(
-          `Marea simulada "${sim.pesqueriaNombre}" se solapa con [${detalleEvento}] del ${ev.start.toLocaleDateString('es-AR')} al ${ev.end.toLocaleDateString('es-AR')}.`
+          `Marea simulada "${sim.pesqueriaNombre}" se solapa con [${getBloqueLabel(ev)}] del ${evStart.toLocaleDateString('es-AR')} al ${evEnd.toLocaleDateString('es-AR')}.`
         );
       }
     }
@@ -669,8 +650,8 @@ const fetchData = async () => {
   isLoading.value = true;
   let dataLoaded = false;
   try {
-    // Fetches from January of the operative year up to 60 months forward (5 years)
-    const data = await planificacionService.obtenerEventosSimulador(configStore.selectedYear, 1, 60);
+    // Pedimos 12 meses de disponibilidad para simulación a mediano plazo
+    const data = await disponibilidadApi.obtenerDisponibilidad(12);
     datosSimulacion.value = data;
     dataLoaded = true;
   } catch (error) {
@@ -737,23 +718,25 @@ const renderTimeline = () => {
 
   const itemsArray: any[] = [];
 
-  // 1. Cargar items reales/duros usando el motor unificado de eventos
-  // (misma lógica que ObservadorCalendar.vue - garantiza comportamiento idéntico)
+  // 1. Cargar items reales/duros usando la API de disponibilidad unificada
   if (datosSimulacion.value) {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
     filteredObservadores.value.forEach(obs => {
-      try {
-        const novedades = datosSimulacion.value!.novedadesRaw?.[obs.id] || [];
-        const mareas = datosSimulacion.value!.mareasRaw?.[obs.id] || [];
+      const row = datosSimulacion.value!.observadores.find(r => r.observador.id === obs.id);
+      if (!row) return;
 
-        const eventos = buildObservadorEventos(novedades, mareas, today, obs.id);
-        const items = toVisTimelineItems(obs.id, eventos);
-        itemsArray.push(...items);
-      } catch (err) {
-        console.error(`[SimuladorTimeline] Error procesando observador ${obs.id}:`, err);
-      }
+      const nombreObs = `${obs.apellido}, ${obs.nombre}`;
+      row.eventos.forEach(item => {
+        itemsArray.push({
+          id: `real-${obs.id}-${item.id}`,
+          group: obs.id,
+          start: new Date(item.startDate + 'T00:00:00'),
+          end: new Date(item.endDate + 'T00:00:00'),
+          content: getBloqueLabel(item),
+          className: getItemVisClass(item),
+          title: formatItemTooltip(item, nombreObs),
+          editable: false // La línea base no es editable
+        });
+      });
     });
   }
 
@@ -815,7 +798,7 @@ const renderTimeline = () => {
     onMoving: (item: any, callback: any) => {
       if (item.id && item.id.toString().startsWith('real-')) {
         const orig = currentItemsDataSet?.get(item.id) as any;
-        if (orig && orig.className && orig.className.includes('vis-item-ejecucion')) {
+        if (orig && orig.className && orig.className.includes('vis-item-navegando')) {
           // Bloquear fecha de inicio y grupo para las mareas en ejecución (solo permitir cambiar fin)
           item.start = orig.start;
           item.group = orig.group;
@@ -881,7 +864,7 @@ const renderTimeline = () => {
         // Se permite ajustar longitud (y para DESIGNADAS, inicio) de mareas reales proyectadas
         const orig = currentItemsDataSet?.get(item.id) as any;
         if (orig) {
-          if (orig.className && orig.className.includes('vis-item-ejecucion')) {
+          if (orig.className && orig.className.includes('vis-item-navegando')) {
              if (item.start.getTime() !== orig.start.getTime() || item.group !== orig.group) {
                 // Debería estar prevenido por onMoving, pero por seguridad:
                 item.start = orig.start;
@@ -1123,43 +1106,330 @@ onBeforeUnmount(() => {
 </style>
 
 <style scoped>
-/* LIGHT MODE */
-/* Legend */
-.legend-designada { background-color: #e0f2fe; border-color: #0ea5e9; }
-.legend-ejecucion { background-color: #22c55e; border-color: #16a34a; }
-.legend-finalizada { background-color: #dcfce7; border-color: #86efac; }
-.legend-licencia { background-color: #f3f4f6; border-color: #d1d5db; }
-.legend-proyectada { background-color: rgba(59, 130, 246, 0.2); border-color: #3b82f6; border-style: dashed; }
 
-:global(.simulador-timeline .vis-item) { border-radius: 4px; }
-:global(.simulador-timeline .vis-item-designada) { background-color: #e0f2fe !important; border: 2px solid #0ea5e9 !important; color: #0369a1 !important; }
-:global(.simulador-timeline .vis-item-ejecucion) { background-color: #22c55e !important; border: 2px solid #16a34a !important; color: #ffffff !important; }
-:global(.simulador-timeline .vis-item-navegando) { background-color: #dcfce7 !important; border: 2px solid #86efac !important; color: #15803d !important; opacity: 0.8 !important; }
-:global(.simulador-timeline .vis-item-novedad) { background-color: #f3f4f6 !important; border: 2px solid #d1d5db !important; color: #6b7280 !important; }
-:global(.simulador-timeline .vis-item-franco) { background-color: #e0f2fe !important; border: 2px solid #ef4444 !important; color: #1e40af !important; }
-:global(.simulador-timeline .vis-item-disponible) { background-color: #dcfce7 !important; border: 2px solid #86efac !important; color: #15803d !important; }
-:global(.simulador-timeline .vis-item-no-disponible) { background-color: #fee2e2 !important; border: 2px solid #fca5a5 !important; color: #991b1b !important; }
-:global(.simulador-timeline .vis-item-simulada) { background-color: rgba(59, 130, 246, 0.2) !important; border: 2px dashed #3b82f6 !important; color: #1d4ed8 !important; }
-:global(.simulador-timeline .vis-item-conflicto) { background-color: #ef4444 !important; border: 2px solid #b91c1c !important; color: #ffffff !important; }
-:global(.simulador-timeline .vis-item-content) { font-weight: bold !important; padding: 4px 8px !important; }
+.simulador-timeline {
+  overflow: hidden;
+}
 
-/* DARK MODE */
-/* Legend */
-:global(.dark) .legend-designada { background-color: rgba(14, 165, 233, 0.2); border-color: #0284c7; }
-:global(.dark) .legend-ejecucion { background-color: #15803d; border-color: #166534; }
-:global(.dark) .legend-finalizada { background-color: rgba(22, 163, 74, 0.2); border-color: #15803d; }
-:global(.dark) .legend-licencia { background-color: rgba(107, 114, 128, 0.2); border-color: #4b5563; }
-:global(.dark) .legend-proyectada { background-color: rgba(59, 130, 246, 0.15); border-color: #3b82f6; }
+:deep(.vis-timeline) {
+  border: none !important;
+  font-family: inherit;
+}
 
-/* Timeline Items */
-:global(.dark .simulador-timeline .vis-item-designada) { background-color: rgba(14, 165, 233, 0.2) !important; border-color: #0284c7 !important; color: #bae6fd !important; }
-:global(.dark .simulador-timeline .vis-item-ejecucion) { background-color: #15803d !important; border-color: #166534 !important; color: #ffffff !important; }
-:global(.dark .simulador-timeline .vis-item-navegando) { background-color: rgba(22, 163, 74, 0.2) !important; border-color: #15803d !important; color: #86efac !important; opacity: 0.8 !important; }
-:global(.dark .simulador-timeline .vis-item-novedad) { background-color: rgba(107, 114, 128, 0.2) !important; border-color: #4b5563 !important; color: #d1d5db !important; }
-:global(.dark .simulador-timeline .vis-item-franco) { background-color: rgba(14, 165, 233, 0.3) !important; border-color: #f87171 !important; color: #bae6fd !important; }
-:global(.dark .simulador-timeline .vis-item-disponible) { background-color: rgba(34, 197, 94, 0.2) !important; border-color: #4ade80 !important; color: #bbf7d0 !important; }
-:global(.dark .simulador-timeline .vis-item-no-disponible) { background-color: rgba(239, 68, 68, 0.2) !important; border-color: #f87171 !important; color: #fca5a5 !important; }
-:global(.dark .simulador-timeline .vis-item-simulada) { background-color: rgba(59, 130, 246, 0.15) !important; border-color: #3b82f6 !important; color: #93c5fd !important; }
-:global(.dark .simulador-timeline .vis-item-conflicto) { background-color: #991b1b !important; border-color: #7f1d1d !important; color: #ffffff !important; }
+:deep(.vis-panel.vis-background),
+:deep(.vis-panel.vis-bottom),
+:deep(.vis-panel.vis-center),
+:deep(.vis-panel.vis-left),
+:deep(.vis-panel.vis-right),
+:deep(.vis-panel.vis-top) {
+  border-color: var(--color-border, #e5e7eb) !important;
+}
+
+:deep(.vis-time-axis .vis-grid.vis-minor),
+:deep(.vis-time-axis .vis-grid.vis-major) {
+  border-color: var(--color-border, #e5e7eb) !important;
+}
+
+:deep(.vis-labelset .vis-label) {
+  border-color: var(--color-border, #e5e7eb) !important;
+  color: var(--color-text) !important;
+  font-size: 13px !important;
+}
+
+:deep(.vis-label .vis-inner) {
+  padding: 8px 6px !important;
+}
+
+:deep(.vis-time-axis .vis-text) {
+  font-weight: 500;
+  color: var(--color-text-muted, #374151) !important;
+}
+
+:deep(.vis-time-axis .vis-text.vis-saturday),
+:deep(.vis-time-axis .vis-text.vis-sunday) {
+  color: #ef4444 !important;
+  font-weight: bold !important;
+}
+
+/* Eventos pasados atenuados */
+:deep(.vis-item-attenuated) {
+  opacity: 0.35 !important;
+  filter: grayscale(0.7) !important;
+}
+
+/* ESTILOS DE BLOQUES EN VIS-TIMELINE - MODO CLARO */
+.legend-disponible, :global(.simulador-timeline .vis-item-disponible) {
+  background-color: #facc15 !important; /* Amarillo vibrante */
+  color: #713f12 !important;
+  border-color: #eab308 !important;
+  border-width: 2px !important;
+  border-style: solid !important;
+  font-weight: 800 !important;
+}
+
+:global(.simulador-timeline .vis-item-disponible-no-confirmada) {
+  background-color: rgba(250, 204, 21, 0.22) !important; /* Mismo color pero atenuado */
+  color: #854d0e !important;
+  border-color: #eab308 !important;
+  border-width: 2px !important;
+  border-style: dashed !important; /* Borde punteado */
+  font-weight: 800 !important;
+}
+
+.legend-navegando, :global(.simulador-timeline .vis-item-navegando) {
+  background-color: #22c55e !important;
+  color: white !important;
+  border-color: #16a34a !important;
+  border-width: 2px !important;
+  border-style: solid !important;
+}
+
+:global(.simulador-timeline .vis-item-navegando-proyectada) {
+  background-color: #dcfce7 !important; /* Verde atenuado */
+  color: #15803d !important;            /* Texto verde */
+  border-color: #22c55e !important;     /* Borde verde */
+  border-width: 2px !important;
+  border-style: dashed !important;     /* Borde punteado para proyectados */
+  font-weight: 800 !important;
+}
+
+.legend-naveg-viaje, :global(.simulador-timeline .vis-item-naveg-viaje) {
+  background: linear-gradient(135deg, #16a34a 50%, #4338ca 50%) !important;
+  color: white !important;
+  border-color: #a5b4fc !important;
+  border-width: 2px !important;
+  border-style: solid !important;
+}
+
+.legend-designada, :global(.simulador-timeline .vis-item-designada) {
+  background-color: #dcfce7 !important;
+  color: #15803d !important;
+  border-color: #22c55e !important;
+  border-width: 2px !important;
+  border-style: dashed !important;
+}
+
+.legend-novedad, :global(.simulador-timeline .vis-item-novedad) {
+  background-color: #e0f2fe !important;
+  color: #0369a1 !important;
+  border-color: #7dd3fc !important;
+  border-width: 2px !important;
+  border-style: solid !important;
+}
+
+:global(.simulador-timeline .vis-item-no-disponible) {
+  background-color: #fee2e2 !important; /* Rojo suave */
+  color: #991b1b !important;            /* Texto contrastado */
+  border-color: #fca5a5 !important;     /* Borde rojo suave */
+  border-width: 2px !important;
+  border-style: solid !important;
+  font-weight: 800 !important;
+}
+
+:global(.simulador-timeline .vis-item-no-disponible-proyectada) {
+  background-color: #fff1f2 !important; /* Rojo más claro/atenuado */
+  color: #9f1239 !important;
+  border-color: #f43f5e !important;
+  border-width: 2px !important;
+  border-style: dashed !important;     /* Borde punteado para proyectados */
+  font-weight: 700 !important;
+}
+
+.legend-puerto, :global(.simulador-timeline .vis-item-puerto) {
+  background-color: #ffedd5 !important;
+  color: #c2410c !important;
+  border-color: #fdba74 !important;
+  border-width: 2px !important;
+  border-style: solid !important;
+}
+
+.legend-viaje, :global(.simulador-timeline .vis-item-viaje) {
+  background-color: #e0e7ff !important;
+  color: #4338ca !important;
+  border-color: #a5b4fc !important;
+  border-width: 2px !important;
+  border-style: solid !important;
+}
+
+.legend-ez, :global(.simulador-timeline .vis-item-ez) {
+  background-color: #f3f4f6 !important;
+  color: #374151 !important;
+  border-color: #d1d5db !important;
+  border-width: 2px !important;
+  border-style: solid !important;
+}
+
+.legend-impedido, :global(.simulador-timeline .vis-item-impedido) {
+  background-color: #ef4444 !important;
+  color: white !important;
+  border-color: #b91c1c !important;
+  border-width: 2px !important;
+  border-style: solid !important;
+}
+
+.legend-conflicto, :global(.simulador-timeline .vis-item-conflicto) {
+  background-color: #ef4444 !important;
+  color: white !important;
+  border-color: #b91c1c !important;
+  border-width: 2px !important;
+  border-style: solid !important;
+}
+
+/* Eventos flexibles (borde punteado y efecto) */
+.legend-flexible, :global(.simulador-timeline .vis-item-flexible) {
+  border-style: dashed !important;
+  border-width: 2px !important;
+  border-color: #f59e0b !important;
+  background-color: #fef3c7 !important;
+  color: #92400e !important;
+}
+
+/* ESTILOS EN MODO OSCURO */
+:global(.dark) .legend-disponible, :global(.dark .simulador-timeline .vis-item-disponible) {
+  background-color: #ca8a04 !important;
+  color: #fef08a !important;
+  border-color: #a16207 !important;
+}
+
+:global(.dark .simulador-timeline .vis-item-disponible-no-confirmada) {
+  background-color: rgba(202, 138, 4, 0.22) !important; /* Atenuado */
+  color: #fef08a !important;
+  border-color: #ca8a04 !important;
+  border-width: 2px !important;
+  border-style: dashed !important; /* Borde punteado */
+  font-weight: 800 !important;
+}
+
+:global(.dark) .legend-navegando, :global(.dark .simulador-timeline .vis-item-navegando) {
+  background-color: #15803d !important;
+  color: white !important;
+  border-color: #166534 !important;
+}
+
+:global(.dark .simulador-timeline .vis-item-navegando-proyectada) {
+  background-color: rgba(34, 197, 94, 0.2) !important; /* Verde atenuado */
+  color: #86efac !important;
+  border-color: #22c55e !important;
+  border-width: 2px !important;
+  border-style: dashed !important;     /* Borde punteado */
+  font-weight: 800 !important;
+}
+
+:global(.dark) .legend-designada, :global(.dark .simulador-timeline .vis-item-designada) {
+  background-color: rgba(34, 197, 94, 0.2) !important;
+  color: #86efac !important;
+  border-color: #22c55e !important;
+  border-width: 2px !important;
+  border-style: dashed !important;
+}
+
+:global(.dark) .legend-naveg-viaje, :global(.dark .simulador-timeline .vis-item-naveg-viaje) {
+  background: linear-gradient(135deg, #15803d 50%, rgba(79, 70, 229, 0.4) 50%) !important;
+  color: white !important;
+  border-color: rgba(79, 70, 229, 0.5) !important;
+}
+
+:global(.dark) .legend-novedad, :global(.dark .simulador-timeline .vis-item-novedad) {
+  background-color: rgba(14, 165, 233, 0.25) !important;
+  color: #bae6fd !important;
+  border-color: rgba(14, 165, 233, 0.5) !important;
+}
+
+:global(.dark .simulador-timeline .vis-item-no-disponible) {
+  background-color: rgba(239, 68, 68, 0.22) !important; /* Rojo suave en oscuro */
+  color: #fecaca !important;
+  border-color: rgba(239, 68, 68, 0.5) !important;
+  border-width: 2px !important;
+  border-style: solid !important;
+  font-weight: 800 !important;
+}
+
+:global(.dark .simulador-timeline .vis-item-no-disponible-proyectada) {
+  background-color: rgba(244, 63, 94, 0.12) !important; /* Atenuado */
+  color: #fecdd3 !important;
+  border-color: rgba(244, 63, 94, 0.6) !important;
+  border-width: 2px !important;
+  border-style: dashed !important;     /* Borde punteado */
+  font-weight: 700 !important;
+}
+
+:global(.dark) .legend-puerto, :global(.dark .simulador-timeline .vis-item-puerto) {
+  background-color: rgba(234, 88, 12, 0.25) !important;
+  color: #ffedd5 !important;
+  border-color: rgba(234, 88, 12, 0.5) !important;
+}
+
+:global(.dark) .legend-viaje, :global(.dark .simulador-timeline .vis-item-viaje) {
+  background-color: rgba(79, 70, 229, 0.25) !important;
+  color: #e0e7ff !important;
+  border-color: rgba(79, 70, 229, 0.5) !important;
+}
+
+:global(.dark) .legend-ez, :global(.dark .simulador-timeline .vis-item-ez) {
+  background-color: #374151 !important;
+  color: #e5e7eb !important;
+  border-color: #4b5563 !important;
+}
+
+:global(.dark) .legend-impedido, :global(.dark .simulador-timeline .vis-item-impedido) {
+  background-color: #991b1b !important;
+  color: white !important;
+  border-color: #7f1d1d !important;
+}
+
+:global(.dark) .legend-flexible, :global(.dark .simulador-timeline .vis-item-flexible) {
+  border-color: #f59e0b !important;
+  background-color: rgba(245, 158, 11, 0.2) !important;
+  color: #fef3c7 !important;
+}
+
+:global(.simulador-timeline .vis-item-content) {
+  padding: 4px 6px !important;
+  width: 100% !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  box-sizing: border-box !important;
+  line-height: 1.2 !important;
+  display: block !important;
+}
+
+:global(.vis-tooltip) {
+  background-color: #111827 !important;
+  color: #ffffff !important;
+  font-size: 12px !important;
+  font-family: inherit !important;
+  padding: 10px !important;
+  border-radius: 6px !important;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2) !important;
+  border: none !important;
+  z-index: 1000 !important;
+  pointer-events: none !important;
+  white-space: normal !important;
+  max-width: 280px !important;
+}
+
+:global(.dark .vis-tooltip) {
+  background-color: #1f2937 !important;
+  border: 1px solid #374151 !important;
+  color: #f3f4f6 !important;
+}
+
+
+:global(.simulador-timeline .vis-item-simulada) {
+  background-color: rgba(59, 130, 246, 0.15) !important;
+  border-color: #3b82f6 !important;
+  color: #1d4ed8 !important;
+  border-width: 2px !important;
+  border-style: dashed !important;
+  font-weight: 800 !important;
+}
+:global(.dark .simulador-timeline .vis-item-simulada) {
+  background-color: rgba(59, 130, 246, 0.15) !important;
+  border-color: #3b82f6 !important;
+  color: #93c5fd !important;
+}
 
 </style>
