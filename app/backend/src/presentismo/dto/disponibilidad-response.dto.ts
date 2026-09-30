@@ -8,6 +8,8 @@ export interface ObservadorDisponibilidadItemDto {
   codigoCorto?: string;
   flexible?: boolean; // Permite cancelación anticipada por urgencia (ej: FC o permiteUrgencia=true)
   isPast?: boolean;   // Evento previo a hoy (se atenúa)
+  buqueId?: string;
+  buqueNombre?: string;
 }
 
 export interface ObservadorDisponibilidadRowDto {

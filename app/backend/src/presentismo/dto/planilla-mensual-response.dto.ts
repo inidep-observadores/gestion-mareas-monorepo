@@ -35,4 +35,6 @@ export class DiaEstadoDto {
   referenciaId?: string;
   codigoCorto?: string;
   computaFranco?: boolean;
+  buqueId?: string;
+  buqueNombre?: string;
 }

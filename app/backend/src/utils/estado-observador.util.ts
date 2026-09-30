@@ -252,7 +252,14 @@ export function evaluarEstadoDia(
   if (countFuertes > 1) {
     if (countFuertes === 2 && isNavegando && isViaje) {
       const mareaStr = mareaReferencia ? `${mareaReferencia.tipoMarea}-${mareaReferencia.nroMarea}-${mareaReferencia.anioMarea.toString().slice(-2)}` : '';
-      estadoDto = { estado: 'NAVEGANDO', estadoSecundario: 'VIAJE', referenciaId: etapaNavegando?.id || mareaReferencia?.id, detalle: mareaStr };
+      estadoDto = { 
+        estado: 'NAVEGANDO', 
+        estadoSecundario: 'VIAJE', 
+        referenciaId: etapaNavegando?.id || mareaReferencia?.id, 
+        detalle: mareaStr,
+        buqueId: mareaReferencia?.buqueId,
+        buqueNombre: mareaReferencia?.buque?.nombreBuque
+      };
     } else {
       estadoDto = {
         estado: 'CONFLICTO',
@@ -261,7 +268,13 @@ export function evaluarEstadoDia(
     }
   } else if (isNavegando) {
     const mareaStr = mareaReferencia ? `${mareaReferencia.tipoMarea}-${mareaReferencia.nroMarea}-${mareaReferencia.anioMarea.toString().slice(-2)}` : '';
-    estadoDto = { estado: 'NAVEGANDO', referenciaId: etapaNavegando?.id || mareaReferencia?.id, detalle: mareaStr };
+    estadoDto = { 
+      estado: 'NAVEGANDO', 
+      referenciaId: etapaNavegando?.id || mareaReferencia?.id, 
+      detalle: mareaStr,
+      buqueId: mareaReferencia?.buqueId,
+      buqueNombre: mareaReferencia?.buque?.nombreBuque
+    };
   } else if (isViaje) {
     const isTransito = puertoDetalle === 'En tránsito' && !novedadDetalle;
     const isInicio = novedadCodigoCorto === 'VIAJE_INICIO' || tipoViajeTramo === 'INICIO';

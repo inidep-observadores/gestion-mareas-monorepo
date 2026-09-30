@@ -215,24 +215,30 @@
             <p class="text-sm font-bold text-text-muted">Cargando disponibilidad de observadores...</p>
           </div>
 
-          <!-- Timeline Container -->
-          <div
-            v-show="activeTab === 'observador'"
-            ref="timelineContainer"
-            @dragover.capture.prevent
-            @dragenter.capture.prevent
-            @drop.capture="onDropTimeline"
-            class="w-full h-[65vh] bg-surface text-text rounded-xl border border-border shadow-inner simulador-timeline"
-          ></div>
+          <!-- Timelines -->
+          <SimuladorTimeline 
+            v-if="!isLoading && activeTab === 'observador'"
+            mode="observador"
+            :groups="timelineObservadorGroups"
+            :items="timelineObservadorItems"
+            @item-moved="handleItemMoved"
+            @item-removed="handleItemRemoved"
+            @drop-recurso="handleDropRecurso"
+            @edit-item="handleEditItem"
+            class="h-[65vh] border-t border-border"
+          />
 
-          <!-- VISTA POR BUQUE (Mockup) -->
-          <div v-show="activeTab === 'buque'" class="p-16 text-center border-2 border-dashed border-border rounded-2xl bg-surface-muted/50 flex flex-col items-center justify-center min-h-[50vh]">
-            <ShipIcon class="w-16 h-16 text-text-muted mb-4 opacity-50" />
-            <h3 class="text-xl font-black text-text mb-2 uppercase">Línea de tiempo por Buque</h3>
-            <p class="text-sm text-text-muted max-w-md">
-              Próximamente podrá visualizar y planificar las mareas directamente sobre los buques, arrastrando observadores o requerimientos al calendario de cada barco.
-            </p>
-          </div>
+          <SimuladorTimeline 
+            v-if="!isLoading && activeTab === 'buque'"
+            mode="buque"
+            :groups="timelineBuqueGroups"
+            :items="timelineBuqueItems"
+            @item-moved="handleItemMoved"
+            @item-removed="handleItemRemoved"
+            @drop-recurso="handleDropRecurso"
+            @edit-item="handleEditItem"
+            class="h-[65vh] border-t border-border"
+          />
         </div>
       </div>
     </div>
@@ -377,9 +383,7 @@ import type { DisponibilidadResponse, ObservadorDisponibilidadRow } from '@/modu
 import { getBloqueLabel, getItemVisClass, formatItemTooltip } from '@/modules/shared/utils/timeline-styles';
 import catalogosService from '../../mareas/services/catalogos.service';
 import type { MareaSimuladaItem, RecursoMareaPendiente, EscenarioSimulacionState } from '../interfaces/simulador.interface';
-import { Timeline, type TimelineOptions } from 'vis-timeline/standalone';
-import { DataSet } from 'vis-data';
-import 'vis-timeline/styles/vis-timeline-graph2d.min.css';
+import SimuladorTimeline from '../components/SimuladorTimeline.vue';
 
 import { useConfigStore } from '@/modules/shared/stores/config.store';
 const configStore = useConfigStore();
@@ -587,15 +591,7 @@ const guardarEdicionBloque = () => {
 
     escenarioActual.value.items[idx] = { ...editingBlockData.value };
     
-    // Actualizar DataSet
-    const finInclusivo = new Date(fechaArribo.getTime() - 86400000);
-    currentItemsDataSet?.update({
-      id: editingBlockData.value.id,
-      start: fechaZarpada,
-      end: fechaArribo,
-      content: `<div class="flex items-center gap-1 font-bold"><span class="text-[10px]">✨</span> ${editingBlockData.value.pesqueriaNombre} [${editingBlockData.value.diasEstimados}d] (Proyectada)</div>`,
-      title: `<strong>Inicio:</strong> ${new Date(fechaZarpada).toLocaleDateString('es-AR')}<br><strong>Fin:</strong> ${finInclusivo.toLocaleDateString('es-AR')}`
-    });
+    // Actualizar escenarioActual (reactivo, SimuladorTimeline lo reflejará)
 
     toast.success('Marea simulada actualizada');
   }
@@ -608,7 +604,6 @@ const devolverRecursoPendiente = () => {
   if (idx !== -1) {
     const removedItem = escenarioActual.value.items[idx];
     escenarioActual.value.items.splice(idx, 1);
-    currentItemsDataSet?.remove(removedItem.id);
     
     recursosPendientes.value.push({
       id: `rec-returned-${Date.now()}`,
@@ -627,10 +622,7 @@ const devolverRecursoPendiente = () => {
 };
 
 
-// vis-timeline
-const timelineContainer = ref<HTMLElement | null>(null);
-let timelineInstance: Timeline | null = null;
-let currentItemsDataSet: DataSet<any> | null = null;
+// Sidebar state
 
 const toggleSidebar = () => {
   sidebarOpen.value = !sidebarOpen.value;
@@ -694,64 +686,25 @@ const fetchData = async () => {
   } finally {
     isLoading.value = false;
   }
-  // Render DESPUÉS de que isLoading sea false, para que el contenedor tenga su
-  // tamaño final sin el spinner superpuesto (vis-timeline necesita dimensiones reales)
-  if (dataLoaded) {
-    await nextTick();
-    renderTimeline();
-  }
 };
 
 // Re-renderizar cuando cambien los filtros de búsqueda o el año operativo
 // (el render inicial lo hace fetchData() directamente)
 watch([filteredObservadores, () => configStore.selectedYear], async () => {
   if (!datosSimulacion.value) return;
-  await nextTick();
-  renderTimeline();
 });
 
-const renderTimeline = () => {
-  if (!timelineContainer.value) return;
+const timelineObservadorGroups = computed(() => {
+  return filteredObservadores.value.map(obs => ({
+    id: obs.id,
+    content: `<div class="text-text font-bold text-xs">${obs.apellido}, ${obs.nombre}</div>`,
+    value: obs.apellido
+  }));
+});
 
-  if (timelineInstance) {
-    timelineInstance.destroy();
-    timelineInstance = null;
-  }
-
-  // Limites totales de los datos para restringir scroll (5 años)
-  const dataStart = new Date(configStore.selectedYear, 0, 1);
-  const dataEnd = new Date(configStore.selectedYear + 4, 11, 31, 23, 59, 59);
-
-  // Ventana visible inicial (zoom)
-  let visibleStart: Date;
-  let visibleEnd: Date;
-  const sysCurrentDate = new Date();
+const timelineObservadorItems = computed(() => {
+  const items: any[] = [];
   
-  if (configStore.selectedYear < sysCurrentDate.getFullYear()) {
-     // Si es año pasado, zoom en Diciembre del año operativo
-     visibleStart = new Date(configStore.selectedYear, 11, 1);
-     visibleEnd = new Date(configStore.selectedYear, 11, 31, 23, 59, 59);
-  } else if (configStore.selectedYear === sysCurrentDate.getFullYear()) {
-     // Si es año actual, zoom desde mes actual hasta mes siguiente
-     visibleStart = new Date(configStore.selectedYear, sysCurrentDate.getMonth(), 1);
-     visibleEnd = new Date(configStore.selectedYear, sysCurrentDate.getMonth() + 2, 0, 23, 59, 59);
-  } else {
-     // Si es año futuro, zoom en el primer bimestre del año operativo
-     visibleStart = new Date(configStore.selectedYear, 0, 1);
-     visibleEnd = new Date(configStore.selectedYear, 2, 0, 23, 59, 59);
-  }
-
-  const groups = new DataSet(
-    filteredObservadores.value.map(obs => ({
-      id: obs.id,
-      content: `<div class="text-text font-bold text-xs">${obs.apellido}, ${obs.nombre}</div>`,
-      value: obs.apellido
-    }))
-  );
-
-  const itemsArray: any[] = [];
-
-  // 1. Cargar items reales/duros usando la API de disponibilidad unificada
   if (datosSimulacion.value) {
     filteredObservadores.value.forEach(obs => {
       const row = datosSimulacion.value!.observadores.find(r => r.observador.id === obs.id);
@@ -759,7 +712,7 @@ const renderTimeline = () => {
 
       const nombreObs = `${obs.apellido}, ${obs.nombre}`;
       row.eventos.forEach(item => {
-        itemsArray.push({
+        items.push({
           id: `real-${obs.id}-${item.id}`,
           group: obs.id,
           start: new Date(item.startDate + 'T00:00:00'),
@@ -767,17 +720,16 @@ const renderTimeline = () => {
           content: getBloqueLabel(item),
           className: getItemVisClass(item),
           title: formatItemTooltip(item, nombreObs),
-          editable: false // La línea base no es editable
+          editable: false
         });
       });
     });
   }
 
-  // 2. Cargar items simulados (borradores)
   escenarioActual.value.items.forEach(sim => {
     const duracionSim = Math.round((new Date(sim.fechaArribo).getTime() - new Date(sim.fechaZarpada).getTime()) / 86400000);
     const finInclusivo = new Date(new Date(sim.fechaArribo).getTime() - 86400000);
-    itemsArray.push({
+    items.push({
       id: sim.id,
       group: sim.observadorId ?? '',
       start: new Date(sim.fechaZarpada),
@@ -789,255 +741,194 @@ const renderTimeline = () => {
     });
   });
 
-  currentItemsDataSet = new DataSet(itemsArray);
+  return items;
+});
 
-  const options: TimelineOptions = {
-    locale: 'es',
-    stack: false,
-    maxHeight: '65vh',
-    verticalScroll: true,
-    horizontalScroll: true,
-    zoomKey: 'ctrlKey',
-    zoomMin: 1000 * 60 * 60 * 24 * 2,
-    zoomMax: 1000 * 60 * 60 * 24 * 31 * 3,
-    margin: { item: 8, axis: 8 },
-    orientation: 'top',
-    editable: {
-      updateTime: true,
-      updateGroup: true,
-      remove: true,
-      add: true,
-      overrideItems: false
-    },
-    showCurrentTime: false,
-    timeAxis: { scale: 'day', step: 1 },
-    snap: function (date: Date, scale: string, step: number) {
-      const clone = new Date(date.valueOf());
-      clone.setHours(0, 0, 0, 0);
-      return clone;
-    },
-    tooltip: {
-      followMouse: true,
-      overflowMethod: 'cap'
-    },
-    start: visibleStart,
-    end: visibleEnd,
-    min: dataStart,
-    max: dataEnd,
-    onAdd: (item: any, callback: any) => {
-      // Cancelamos la creación por doble clic nativa de vis-timeline
-      callback(null);
-    },
-    onMoving: (item: any, callback: any) => {
-      if (item.id && item.id.toString().startsWith('real-')) {
-        const orig = currentItemsDataSet?.get(item.id) as any;
-        if (orig && orig.className && orig.className.includes('vis-item-navegando')) {
-          // Bloquear fecha de inicio y grupo para las mareas en ejecución (solo permitir cambiar fin)
-          item.start = orig.start;
-          item.group = orig.group;
-        } else if (orig && orig.className && orig.className.includes('vis-item-designada')) {
-          // Si es designada, impedimos cambio de grupo de items reales
-          item.group = orig.group;
-        }
+const timelineBuqueGroups = computed(() => {
+  if (!datosSimulacion.value) return [];
+  
+  const buquesMap = new Map<string, string>();
+  
+  // Extraer buques de mareas reales
+  datosSimulacion.value.observadores.forEach(obsRow => {
+    obsRow.eventos.forEach(ev => {
+      if (ev.buqueId && ev.buqueNombre) {
+        buquesMap.set(ev.buqueId, ev.buqueNombre);
       }
-
-      // Evitar colocar en fechas pasadas
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      if (item.start < today) {
-        const diff = item.end.getTime() - item.start.getTime();
-        item.start = today;
-        item.end = new Date(today.getTime() + diff);
-      }
-
-      // Actualizar interactivamente el texto de la duración
-      if (item.content && item.start && item.end) {
-        const newDuration = Math.round((new Date(item.end).getTime() - new Date(item.start).getTime()) / 86400000);
-        item.content = item.content.replace(/\[\d+d\]/, `[${newDuration}d]`);
-        const finInclusivo = new Date(new Date(item.end).getTime() - 86400000);
-        item.title = `<strong>Inicio:</strong> ${new Date(item.start).toLocaleDateString('es-AR')}<br><strong>Fin:</strong> ${finInclusivo.toLocaleDateString('es-AR')}`;
-      }
-
-      callback(item);
-    },
-    onUpdate: (item: any, callback: any) => {
-      const sim = escenarioActual.value.items.find(i => i.id === item.id);
-      if (sim) {
-        editingBlockData.value = { ...sim };
-        isEditBlockModalOpen.value = true;
-      }
-      callback(null); // we handle it ourselves to not let vis-timeline show default prompt
-    },
-    onMove: (item: any, callback: any) => {
-      // Nos aseguramos de actualizar también al soltar
-      if (item.content && item.start && item.end) {
-        const newDuration = Math.round((new Date(item.end).getTime() - new Date(item.start).getTime()) / 86400000);
-        item.content = item.content.replace(/\[\d+d\]/, `[${newDuration}d]`);
-        const finInclusivo = new Date(new Date(item.end).getTime() - 86400000);
-        item.title = `<strong>Inicio:</strong> ${new Date(item.start).toLocaleDateString('es-AR')}<br><strong>Fin:</strong> ${finInclusivo.toLocaleDateString('es-AR')}`;
-      }
-
-      // Actualizar el estado borrador cuando el usuario mueve un bloque simulado
-      const sim = escenarioActual.value.items.find(i => i.id === item.id);
-      if (sim) {
-        const obsCambiado = sim.observadorId !== String(item.group);
-        
-        sim.observadorId = String(item.group);
-        sim.fechaZarpada = item.start;
-        sim.fechaArribo = item.end;
-        
-        callback(item);
-        
-        if (obsCambiado) {
-          toast.info(`Marea simulada movida a un nuevo observador`);
-        } else {
-          toast.info('Fechas de la marea simulada actualizadas');
-        }
-      } else if (item.id && item.id.toString().startsWith('real-')) {
-        // Se permite ajustar longitud (y para DESIGNADAS, inicio) de mareas reales proyectadas
-        const orig = currentItemsDataSet?.get(item.id) as any;
-        if (orig) {
-          if (orig.className && orig.className.includes('vis-item-navegando')) {
-             if (item.start.getTime() !== orig.start.getTime() || item.group !== orig.group) {
-                // Debería estar prevenido por onMoving, pero por seguridad:
-                item.start = orig.start;
-                item.group = orig.group;
-             }
-             toast.info('Se ajustó la fecha de fin de la marea en ejecución');
-          } else {
-             toast.info('Se ajustó la marea designada en la simulación');
-          }
-        }
-        callback(item);
-      } else {
-        // Bloque inamovible
-        toast.warning('No es posible mover mareas finalizadas ni licencias');
-        callback(null);
-      }
-    },
-    onRemove: (item: any, callback: any) => {
-      const idx = escenarioActual.value.items.findIndex(i => i.id === item.id);
-      if (idx !== -1) {
-        const removedItem = escenarioActual.value.items[idx];
-        escenarioActual.value.items.splice(idx, 1);
-        
-        recursosPendientes.value.push({
-          id: `rec-returned-${Date.now()}`,
-          pesqueriaId: removedItem.pesqueriaId,
-          pesqueriaNombre: removedItem.pesqueriaNombre,
-          buqueId: removedItem.buqueId,
-          buqueNombre: removedItem.buqueNombre,
-          diasEstimados: removedItem.diasEstimados,
-          prioridad: removedItem.prioridad || 'MEDIA',
-          mesProyectado: 1
-        });
-        
-        toast.success('Marea simulada eliminada y devuelta a recursos');
-        callback(item);
-      } else {
-        toast.warning('No se pueden eliminar bloques inamovibles');
-        callback(null);
-      }
+    });
+  });
+  
+  // Extraer buques de mareas simuladas
+  escenarioActual.value.items.forEach(sim => {
+    if (sim.buqueId && sim.buqueNombre) {
+      buquesMap.set(sim.buqueId, sim.buqueNombre);
     }
-  };
+  });
 
-  timelineInstance = new Timeline(timelineContainer.value, currentItemsDataSet, groups, options);
+  const groups = Array.from(buquesMap.entries()).map(([id, nombre]) => ({
+    id: id,
+    content: `<div class="text-text font-bold text-xs flex items-center gap-1"><span class="text-sm mr-1">⛴</span> ${nombre}</div>`,
+    value: nombre
+  }));
+  
+  // Ordenar alfabéticamente
+  groups.sort((a, b) => a.value.localeCompare(b.value));
+  return groups;
+});
+
+const timelineBuqueItems = computed(() => {
+  const items: any[] = [];
+  
+  if (datosSimulacion.value) {
+    datosSimulacion.value.observadores.forEach(row => {
+      const nombreObs = `${row.observador.apellido}, ${row.observador.nombre}`;
+      
+      row.eventos.forEach(item => {
+        if (!item.buqueId) return; // Solo ploteamos mareas con buque
+        
+        items.push({
+          id: `real-${row.observador.id}-${item.id}`,
+          group: item.buqueId,
+          start: new Date(item.startDate + 'T00:00:00'),
+          end: new Date(item.endDate + 'T00:00:00'),
+          content: `<div class="text-[10px] truncate max-w-[120px] font-bold flex flex-col"><span>${nombreObs}</span><span class="opacity-75 font-normal">${getBloqueLabel(item)}</span></div>`,
+          className: getItemVisClass(item),
+          title: formatItemTooltip(item, nombreObs),
+          editable: false
+        });
+      });
+    });
+  }
+
+  escenarioActual.value.items.forEach(sim => {
+    if (!sim.buqueId) return;
+    
+    // Buscar nombre de observador para las simuladas
+    let obsNombre = "Sin Asignar";
+    if (sim.observadorId) {
+      const obsInfo = datosSimulacion.value?.observadores.find(o => o.observador.id === sim.observadorId)?.observador;
+      if (obsInfo) obsNombre = `${obsInfo.apellido}, ${obsInfo.nombre}`;
+    }
+
+    const duracionSim = Math.round((new Date(sim.fechaArribo).getTime() - new Date(sim.fechaZarpada).getTime()) / 86400000);
+    const finInclusivo = new Date(new Date(sim.fechaArribo).getTime() - 86400000);
+    items.push({
+      id: sim.id,
+      group: sim.buqueId,
+      start: new Date(sim.fechaZarpada),
+      end: new Date(sim.fechaArribo),
+      content: `<div class="flex flex-col items-start leading-tight"><span class="text-[10px] font-black truncate max-w-[100px]">${obsNombre}</span><span class="text-[9px] opacity-70 truncate max-w-[100px]">✨ ${sim.pesqueriaNombre} [${duracionSim}d]</span></div>`,
+      title: `<strong>Inicio:</strong> ${new Date(sim.fechaZarpada).toLocaleDateString('es-AR')}<br><strong>Fin:</strong> ${finInclusivo.toLocaleDateString('es-AR')}`,
+      className: 'vis-item-simulada border-2 border-dashed border-primary bg-primary/20 text-primary font-bold shadow-sm',
+      editable: { updateTime: true, updateGroup: true, remove: true }
+    });
+  });
+
+  return items;
+});
+
+const handleItemMoved = (payload: { id: string; start: Date; end: Date; group: string; isReal: boolean }) => {
+  if (payload.isReal) {
+     return;
+  }
+  
+  const sim = escenarioActual.value.items.find(i => i.id === payload.id);
+  if (sim) {
+    if (activeTab.value === 'observador') {
+      sim.observadorId = payload.group;
+    } else if (activeTab.value === 'buque') {
+      sim.buqueId = payload.group;
+    }
+    sim.fechaZarpada = payload.start;
+    sim.fechaArribo = payload.end;
+  }
 };
 
-// Drag & Drop HTML5 desde Sidebar a Timeline
+const handleItemRemoved = (id: string) => {
+  const idx = escenarioActual.value.items.findIndex(i => i.id === id);
+  if (idx !== -1) {
+    const removedItem = escenarioActual.value.items[idx];
+    escenarioActual.value.items.splice(idx, 1);
+    
+    recursosPendientes.value.push({
+      id: `rec-returned-${Date.now()}`,
+      pesqueriaId: removedItem.pesqueriaId,
+      pesqueriaNombre: removedItem.pesqueriaNombre,
+      buqueId: removedItem.buqueId,
+      buqueNombre: removedItem.buqueNombre,
+      diasEstimados: removedItem.diasEstimados,
+      prioridad: removedItem.prioridad || 'MEDIA',
+      mesProyectado: 1
+    });
+    
+    toast.success('Marea simulada eliminada y devuelta a recursos');
+  }
+};
+
+const handleDropRecurso = (payload: { recurso: any; group: string; date: Date }) => {
+  const recursoArrastrado = payload.recurso;
+  let fechaInicio = payload.date;
+  
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  if (fechaInicio < today) {
+    fechaInicio = today;
+  }
+
+  const fechaFin = new Date(fechaInicio.getTime() + recursoArrastrado.diasEstimados * 24 * 60 * 60 * 1000);
+
+  const nuevoItemSimulado: MareaSimuladaItem = {
+    id: `sim-${Date.now()}`,
+    observadorId: activeTab.value === 'observador' ? payload.group : null,
+    buqueId: activeTab.value === 'buque' ? payload.group : (recursoArrastrado.buqueId || null),
+    pesqueriaId: recursoArrastrado.pesqueriaId,
+    pesqueriaNombre: recursoArrastrado.pesqueriaNombre,
+    buqueNombre: activeTab.value === 'buque' ? (timelineBuqueGroups.value.find(g => g.id === payload.group)?.value || recursoArrastrado.buqueNombre) : recursoArrastrado.buqueNombre,
+    fechaZarpada: fechaInicio,
+    fechaArribo: fechaFin,
+    diasEstimados: recursoArrastrado.diasEstimados,
+    estado: 'PENDIENTE',
+    tipoBloque: 'MAREA_SIMULADA',
+    prioridad: recursoArrastrado.prioridad
+  };
+
+  escenarioActual.value.items.push(nuevoItemSimulado);
+
+  // Remover del sidebar pendiente
+  const idxRec = recursosPendientes.value.findIndex(r => r.id === recursoArrastrado.id);
+  if (idxRec !== -1) {
+    recursosPendientes.value.splice(idxRec, 1);
+    if (recursosPendientes.value.length === 0) {
+      sidebarOpen.value = false;
+    }
+  }
+
+  toast.success(`Marea simulada "${recursoArrastrado.pesqueriaNombre}" asignada`);
+};
+
+const handleEditItem = (id: string) => {
+  const sim = escenarioActual.value.items.find(i => i.id === id);
+  if (sim) {
+    editingBlockData.value = { ...sim };
+    isEditBlockModalOpen.value = true;
+  }
+};
+
+// Drag & Drop HTML5 desde Sidebar a Timeline (inicio)
 let draggedRecurso: RecursoMareaPendiente | null = null;
 
 const onDragStartRecurso = (event: DragEvent, recurso: RecursoMareaPendiente) => {
   draggedRecurso = recurso;
   if (event.dataTransfer) {
     event.dataTransfer.effectAllowed = 'copy';
-    // Enviamos JSON por si vis-timeline lo intercepta, y también para leerlo directamente en el drop
-    event.dataTransfer.setData('application/json', JSON.stringify(recurso));
+    // Enviamos tipo='buque' u observador no importa, usamos 'buque' genérico
+    const dropData = {
+      type: 'buque', // Para que lo atrape el SimuladorTimeline
+      ...recurso
+    };
+    event.dataTransfer.setData('application/json', JSON.stringify(dropData));
     event.dataTransfer.setData('text/plain', recurso.id);
   }
-};
-
-const onDropTimeline = (event: DragEvent) => {
-  event.preventDefault();
-  event.stopPropagation(); // Evitamos que vis-timeline procese el evento y falle
-  
-  // Intentar recuperar el recurso desde dataTransfer si la variable global falló
-  let recursoArrastrado = draggedRecurso;
-  if (!recursoArrastrado && event.dataTransfer) {
-    try {
-      const dataStr = event.dataTransfer.getData('application/json');
-      if (dataStr) {
-        recursoArrastrado = JSON.parse(dataStr);
-      }
-    } catch (e) {
-      console.error('Error parseando dataTransfer', e);
-    }
-  }
-
-  if (!recursoArrastrado || !timelineInstance) {
-    toast.error('No se pudo identificar el recurso arrastrado o el timeline no está listo');
-    return;
-  }
-
-  const props = timelineInstance.getEventProperties(event);
-  if (props && props.group) {
-    const obsId = props.group;
-    const rawTime = props.snappedTime || props.time;
-    let fechaInicio = rawTime ? new Date(rawTime) : new Date(configStore.selectedYear, 0, 1);
-    
-    // Evitar colocar en fechas pasadas
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    if (fechaInicio < today) {
-      fechaInicio = today;
-    }
-
-    const fechaFin = new Date(fechaInicio.getTime() + recursoArrastrado.diasEstimados * 24 * 60 * 60 * 1000);
-
-    const nuevoItemSimulado: MareaSimuladaItem = {
-      id: `sim-${Date.now()}`,
-      observadorId: String(obsId),
-      pesqueriaId: recursoArrastrado.pesqueriaId,
-      pesqueriaNombre: recursoArrastrado.pesqueriaNombre,
-      buqueNombre: recursoArrastrado.buqueNombre,
-      fechaZarpada: fechaInicio,
-      fechaArribo: fechaFin,
-      diasEstimados: recursoArrastrado.diasEstimados,
-      estado: 'PENDIENTE',
-      tipoBloque: 'MAREA_SIMULADA',
-      prioridad: recursoArrastrado.prioridad
-    };
-
-    escenarioActual.value.items.push(nuevoItemSimulado);
-
-    // Remover del sidebar pendiente
-    const idxRec = recursosPendientes.value.findIndex(r => r.id === recursoArrastrado?.id);
-    if (idxRec !== -1) {
-      recursosPendientes.value.splice(idxRec, 1);
-      if (recursosPendientes.value.length === 0) {
-        sidebarOpen.value = false;
-      }
-    }
-
-    // Actualizar DataSet directamente
-    const finInclusivo = new Date((new Date(nuevoItemSimulado.fechaArribo)).getTime() - 86400000);
-    currentItemsDataSet?.add({
-      id: nuevoItemSimulado.id,
-      group: nuevoItemSimulado.observadorId,
-      start: nuevoItemSimulado.fechaZarpada,
-      end: nuevoItemSimulado.fechaArribo,
-      content: `<div class="flex items-center gap-1 font-bold"><span class="text-[10px]">✨</span> ${nuevoItemSimulado.pesqueriaNombre} [${nuevoItemSimulado.diasEstimados}d] (Proyectada)</div>`,
-      title: `<strong>Inicio:</strong> ${new Date(nuevoItemSimulado.fechaZarpada).toLocaleDateString('es-AR')}<br><strong>Fin:</strong> ${finInclusivo.toLocaleDateString('es-AR')}`,
-      className: 'vis-item-simulada',
-      editable: { updateTime: true, updateGroup: true, remove: true }
-    });
-
-    toast.success(`Marea simulada "${recursoArrastrado.pesqueriaNombre}" asignada`);
-  } else {
-    toast.warning('Suelte el recurso dentro de la fila de un observador específico');
-  }
-
-  draggedRecurso = null;
 };
 
 const guardarBorrador = () => {
@@ -1048,7 +939,6 @@ const guardarBorrador = () => {
 
 const limpiarSimulacion = () => {
   escenarioActual.value.items = [];
-  renderTimeline();
   toast.info('Se han limpiado los bloques simulados');
 };
 
@@ -1070,12 +960,6 @@ onMounted(async () => {
   fetchData();
 });
 
-onBeforeUnmount(() => {
-  if (timelineInstance) {
-    timelineInstance.destroy();
-    timelineInstance = null;
-  }
-});
 </script>
 
 <style scoped>

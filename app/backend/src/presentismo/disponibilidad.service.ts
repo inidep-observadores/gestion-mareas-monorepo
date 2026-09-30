@@ -269,6 +269,8 @@ export class DisponibilidadService {
         codigoCorto?: string;
         flexible?: boolean;
         isPast: boolean;
+        buqueId?: string;
+        buqueNombre?: string;
       }> = [];
 
       for (let i = 0; i < totalDays; i++) {
@@ -334,6 +336,8 @@ export class DisponibilidadService {
                 codigoCorto: 'NAVEGANDO',
                 flexible: false,
                 isPast,
+                buqueId: mareaEnEjecucion.buqueId,
+                buqueNombre: mareaEnEjecucion.buque?.nombreBuque
               });
             } else {
               // Navegando proyectado por los días previstos de marea (verde atenuado con borde punteado)
@@ -345,6 +349,8 @@ export class DisponibilidadService {
                 codigoCorto: 'NAVEGANDO',
                 flexible: false,
                 isPast: false,
+                buqueId: mareaEnEjecucion.buqueId,
+                buqueNombre: mareaEnEjecucion.buque?.nombreBuque
               });
             }
             continue;
@@ -357,6 +363,8 @@ export class DisponibilidadService {
               codigoCorto: 'NAVEGANDO',
               flexible: false,
               isPast,
+              buqueId: mareaEnEjecucion.buqueId,
+              buqueNombre: mareaEnEjecucion.buque?.nombreBuque
             });
             continue;
           } else if (mareaEnEjecucion.superoEstimacionHoy && currentDate <= mareaEnEjecucion.limiteFinProyeccion) {
@@ -456,6 +464,8 @@ export class DisponibilidadService {
               codigoCorto: 'DESIGNADA',
               flexible: false,
               isPast,
+              buqueId: mareaDesignada.buqueId,
+              buqueNombre: mareaDesignada.buque?.nombreBuque
             });
           } else if (isPast) {
             // Pasado libre: se deja como vacío/hueco
@@ -507,6 +517,8 @@ export class DisponibilidadService {
             codigoCorto: codCorto,
             flexible: isFlexible,
             isPast,
+            buqueId: estadoEvaluado.buqueId,
+            buqueNombre: estadoEvaluado.buqueNombre
           });
         }
       }
@@ -522,11 +534,13 @@ export class DisponibilidadService {
         codigoCorto?: string;
         flexible?: boolean;
         isPast: boolean;
+        buqueId?: string;
+        buqueNombre?: string;
       } | null = null;
 
       for (let i = 0; i < dailyStates.length; i++) {
-        const item = dailyStates[i];
-        const signature = `${item.estado}-${item.codigoCorto || ''}-${item.estadoSecundario || ''}-${item.flexible ? '1' : '0'}-${item.isPast ? '1' : '0'}-${item.detalle || ''}`;
+        const item = dailyStates[i] as any; // Cast to any to access buqueId since dailyStates type might not be fully typed in loop if inferred
+        const signature = `${item.estado}-${item.codigoCorto || ''}-${item.estadoSecundario || ''}-${item.flexible ? '1' : '0'}-${item.isPast ? '1' : '0'}-${item.detalle || ''}-${item.buqueId || ''}`;
 
         if (!currentBlock) {
           currentBlock = {
@@ -538,9 +552,11 @@ export class DisponibilidadService {
             codigoCorto: item.codigoCorto,
             flexible: item.flexible,
             isPast: item.isPast,
+            buqueId: item.buqueId,
+            buqueNombre: item.buqueNombre,
           };
         } else {
-          const currentSignature = `${currentBlock.estado}-${currentBlock.codigoCorto || ''}-${currentBlock.estadoSecundario || ''}-${currentBlock.flexible ? '1' : '0'}-${currentBlock.isPast ? '1' : '0'}-${currentBlock.detalle || ''}`;
+          const currentSignature = `${currentBlock.estado}-${currentBlock.codigoCorto || ''}-${currentBlock.estadoSecundario || ''}-${currentBlock.flexible ? '1' : '0'}-${currentBlock.isPast ? '1' : '0'}-${currentBlock.detalle || ''}-${currentBlock.buqueId || ''}`;
           const isConsecutive = item.date.diff(currentBlock.endDate, 'days').days === 1;
 
           if (signature === currentSignature && isConsecutive) {
@@ -557,6 +573,8 @@ export class DisponibilidadService {
               codigoCorto: currentBlock.codigoCorto,
               flexible: currentBlock.flexible,
               isPast: currentBlock.isPast,
+              buqueId: currentBlock.buqueId,
+              buqueNombre: currentBlock.buqueNombre,
             });
 
             currentBlock = {
@@ -568,6 +586,8 @@ export class DisponibilidadService {
               codigoCorto: item.codigoCorto,
               flexible: item.flexible,
               isPast: item.isPast,
+              buqueId: item.buqueId,
+              buqueNombre: item.buqueNombre,
             };
           }
         }
@@ -584,6 +604,8 @@ export class DisponibilidadService {
           codigoCorto: currentBlock.codigoCorto,
           flexible: currentBlock.flexible,
           isPast: currentBlock.isPast,
+          buqueId: currentBlock.buqueId,
+          buqueNombre: currentBlock.buqueNombre,
         });
       }
 

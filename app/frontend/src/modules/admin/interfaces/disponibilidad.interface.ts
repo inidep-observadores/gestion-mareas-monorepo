@@ -8,6 +8,8 @@ export interface ObservadorDisponibilidadItem {
   codigoCorto?: string;
   flexible?: boolean;
   isPast?: boolean;
+  buqueId?: string;
+  buqueNombre?: string;
 }
 
 export interface ObservadorDisponibilidadRow {
