@@ -754,8 +754,12 @@ const conflictosDetectados = computed(() => {
       const evEnd = new Date(ev.endDate + 'T00:00:00');
       
       if (inicio <= evEnd && fin >= evStart) {
+        const obsName = `${row.observador.nombre} ${row.observador.apellido}`;
+        const buqueSimName = sim.buqueNombre ? ` (Buque: ${sim.buqueNombre})` : '';
+        const buqueEvName = ev.buqueNombre ? ` (Buque: ${ev.buqueNombre})` : '';
+        
         alertas.push(
-          `Marea simulada "${sim.pesqueriaNombre}" se solapa con [${getBloqueLabel(ev)}] del ${evStart.toLocaleDateString('es-AR')} al ${evEnd.toLocaleDateString('es-AR')}.`
+          `[${obsName}] Conflicto: La marea simulada "${sim.pesqueriaNombre}"${buqueSimName} se solapa con [${getBloqueLabel(ev)}]${buqueEvName} del ${evStart.toLocaleDateString('es-AR')} al ${evEnd.toLocaleDateString('es-AR')}.`
         );
       }
     }
