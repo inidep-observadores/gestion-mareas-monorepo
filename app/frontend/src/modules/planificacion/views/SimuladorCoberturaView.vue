@@ -73,7 +73,6 @@
         </div>
 
         <div class="flex items-center gap-3">
-          <SearchInput v-model="searchQuery" placeholder="Buscar observador..." class="w-56" />
           <button
             @click="toggleSidebar"
             class="h-9 px-3 inline-flex items-center gap-2 text-xs font-bold rounded-lg border border-border bg-surface text-text hover:bg-surface-muted transition-colors"
@@ -204,10 +203,16 @@
               <ShipIcon class="w-4 h-4" />
               Por buque
             </button>
-            <div class="ml-auto pr-4" v-if="activeTab === 'buque'">
+            <div class="ml-auto pr-4 pb-2 flex items-center gap-3">
+              <SearchInput 
+                v-model="searchQuery" 
+                :placeholder="activeTab === 'observador' ? 'Buscar observador...' : 'Buscar buque...'" 
+                class="w-56" 
+              />
               <button 
+                v-if="activeTab === 'buque'"
                 @click="isAddBuqueModalOpen = true"
-                class="px-3 py-1.5 text-xs font-bold text-primary border border-primary rounded hover:bg-primary hover:text-white transition-colors flex items-center gap-1"
+                class="px-3 py-1.5 h-9 text-xs font-bold text-primary border border-primary rounded hover:bg-primary hover:text-white transition-colors flex items-center gap-1"
               >
                 <PlusIcon class="w-3.5 h-3.5" /> Agregar Buque
               </button>
@@ -874,17 +879,28 @@ const timelineBuqueGroups = computed(() => {
     }
   });
 
+  // 1. Preparar grupos hijos (buques)
+  let buquesList = Array.from(buquesMap.entries()).map(([id, data]) => ({ id, ...data }));
+  
+  if (debouncedSearchQuery.value) {
+    const sq = debouncedSearchQuery.value.toLowerCase();
+    buquesList = buquesList.filter(b => b.nombre.toLowerCase().includes(sq));
+  }
+  
+  buquesList.sort((a, b) => a.nombre.localeCompare(b.nombre));
+
   const pesqueriasUnicas = new Set<string>();
-  buquesMap.forEach(b => pesqueriasUnicas.add(b.pesqueria));
+  buquesList.forEach(b => pesqueriasUnicas.add(b.pesqueria));
 
   const groups: any[] = [];
+  const parentGroups: any[] = [];
   const parentIds: string[] = [];
 
-  // 1. Crear grupos padres (pesquerías)
+  // 2. Preparar grupos padres (pesquerías)
   Array.from(pesqueriasUnicas).sort().forEach(pName => {
     const parentId = `pesqueria-${pName}`;
     parentIds.push(parentId);
-    groups.push({
+    parentGroups.push({
       id: parentId,
       content: `<div class="font-bold text-primary uppercase text-[10px] tracking-wider py-1">${pName}</div>`,
       nestedGroups: [],
@@ -892,13 +908,10 @@ const timelineBuqueGroups = computed(() => {
     });
   });
 
-  // 2. Crear grupos hijos (buques)
-  const buquesList = Array.from(buquesMap.entries()).map(([id, data]) => ({ id, ...data }));
-  buquesList.sort((a, b) => a.nombre.localeCompare(b.nombre));
-
+  // Asignar hijos a padres y agregar hijos al array principal
   buquesList.forEach(b => {
     const parentId = `pesqueria-${b.pesqueria}`;
-    const parent = groups.find(g => g.id === parentId);
+    const parent = parentGroups.find(g => g.id === parentId);
     if (parent) {
       parent.nestedGroups.push(b.id);
     }
@@ -908,6 +921,9 @@ const timelineBuqueGroups = computed(() => {
       value: b.nombre
     });
   });
+
+  // Agregar los padres AL FINAL para que Vis-Timeline encuentre a los hijos ya insertados
+  parentGroups.forEach(pg => groups.push(pg));
 
   return groups;
 });
