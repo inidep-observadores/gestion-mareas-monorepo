@@ -147,45 +147,54 @@ const initTimeline = () => {
 
   timelineInstance = new Timeline(timelineRef.value, currentItemsDataSet, currentGroupsDataSet, options);
 
-  // Drag and Drop
-  timelineRef.value.addEventListener('dragover', (e) => {
-    e.preventDefault();
-  });
+};
 
-  timelineRef.value.addEventListener('drop', (e) => {
-    e.preventDefault();
-    const data = e.dataTransfer?.getData('application/json');
-    if (!data || !timelineInstance) return;
+const onDrop = (e: DragEvent) => {
+  e.preventDefault();
+  e.stopPropagation();
+  const data = e.dataTransfer?.getData('application/json');
+  if (!data || !timelineInstance) {
+    return;
+  }
 
-    try {
-      const recurso = JSON.parse(data);
-      if (recurso.type !== 'buque') return;
-
-      const props = timelineInstance.getEventProperties(e);
-      if (props.group && props.time) {
-        emit('drop-recurso', {
-          recurso,
-          group: String(props.group),
-          date: new Date(props.time)
-        });
-      }
-    } catch (err) {
-      console.error('Error procesando drop', err);
+  try {
+    const recurso = JSON.parse(data);
+    if (recurso.type !== 'buque') {
+      return;
     }
-  });
+
+    const props = timelineInstance.getEventProperties(e);
+    
+    if (props.group && props.time) {
+      emit('drop-recurso', {
+        recurso,
+        group: String(props.group),
+        date: new Date(props.time)
+      });
+    } else {
+    }
+  } catch (err) {
+    console.error('[SimuladorTimeline] Error procesando drop', err);
+  }
 };
 
 watch(() => props.groups, (newGroups) => {
   if (currentGroupsDataSet) {
-    currentGroupsDataSet.clear();
-    currentGroupsDataSet.add(newGroups);
+    const currentIds = currentGroupsDataSet.getIds();
+    const newIds = newGroups.map(g => g.id);
+    const toRemove = currentIds.filter(id => !newIds.includes(id));
+    if (toRemove.length > 0) currentGroupsDataSet.remove(toRemove);
+    currentGroupsDataSet.update(newGroups);
   }
 }, { deep: true });
 
 watch(() => props.items, (newItems) => {
   if (currentItemsDataSet) {
-    currentItemsDataSet.clear();
-    currentItemsDataSet.add(newItems);
+    const currentIds = currentItemsDataSet.getIds();
+    const newIds = newItems.map(i => i.id);
+    const toRemove = currentIds.filter(id => !newIds.includes(id));
+    if (toRemove.length > 0) currentItemsDataSet.remove(toRemove);
+    currentItemsDataSet.update(newItems);
   }
 }, { deep: true });
 
@@ -208,7 +217,13 @@ defineExpose({
 </script>
 
 <template>
-  <div ref="timelineRef" class="w-full h-full bg-white timeline-wrapper simulador-timeline"></div>
+  <div 
+    ref="timelineRef" 
+    class="w-full h-full bg-white timeline-wrapper simulador-timeline"
+    @dragover.capture.prevent
+    @dragenter.capture.prevent
+    @drop.capture="onDrop"
+  ></div>
 </template>
 
 <style scoped>

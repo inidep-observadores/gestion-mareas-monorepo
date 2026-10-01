@@ -125,7 +125,7 @@
 
           <div class="space-y-3">
             <div
-              v-for="recurso in recursosPendientes"
+              v-for="recurso in recursosVisibles"
               :key="recurso.id"
               draggable="true"
               @dragstart="onDragStartRecurso($event, recurso)"
@@ -134,7 +134,7 @@
             >
               <div class="flex items-center justify-between mb-1.5 pr-14 relative">
                 <span class="text-xs font-extrabold text-primary group-hover:text-primary-hover transition-colors truncate pr-2">
-                  {{ recurso.pesqueriaNombre }}
+                  {{ activeTab === 'observador' ? recurso.buqueNombre : recurso.observadorNombre }}
                 </span>
                 
                 <div class="absolute right-0 top-0 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -157,18 +157,15 @@
               </div>
 
               <div class="text-xs text-text-muted space-y-1">
-                <div v-if="recurso.buqueNombre" class="flex items-center gap-1">
-                  <ShipIcon class="w-3.5 h-3.5 shrink-0" />
-                  <span class="font-medium text-text">{{ recurso.buqueNombre }}</span>
+                <div v-if="activeTab === 'observador' && recurso.pesqueriaNombre" class="flex items-center gap-1">
+                  <WaveIcon class="w-3.5 h-3.5 shrink-0" />
+                  <span class="font-medium text-text">{{ recurso.pesqueriaNombre }}</span>
                 </div>
                 <div class="flex items-center justify-between text-[11px]">
                   <span>Duración estimada:</span>
                   <span class="font-bold text-text">{{ recurso.diasEstimados }} días</span>
                 </div>
-                <div v-if="recurso.puertoSugerido" class="flex items-center justify-between text-[11px]">
-                  <span>Puerto base:</span>
-                  <span class="font-bold text-text">{{ recurso.puertoSugerido }}</span>
-                </div>
+
               </div>
 
               <div class="mt-2 text-[10px] text-primary/80 font-bold flex items-center justify-end gap-1 opacity-80 group-hover:opacity-100">
@@ -207,6 +204,14 @@
               <ShipIcon class="w-4 h-4" />
               Por buque
             </button>
+            <div class="ml-auto pr-4" v-if="activeTab === 'buque'">
+              <button 
+                @click="isAddBuqueModalOpen = true"
+                class="px-3 py-1.5 text-xs font-bold text-primary border border-primary rounded hover:bg-primary hover:text-white transition-colors flex items-center gap-1"
+              >
+                <PlusIcon class="w-3.5 h-3.5" /> Agregar Buque
+              </button>
+            </div>
           </div>
 
           <!-- Loading State -->
@@ -252,24 +257,25 @@
     >
       <div v-form-nav class="bg-surface border border-border shadow-theme-xs flex flex-col rounded-2xl overflow-hidden p-6">
         <div class="space-y-4" v-if="!loadingCatalogs">
-          <div class="space-y-1.5">
-            <label class="block text-xs font-bold text-text-muted">Pesquería (obligatorio)</label>
+          <div class="space-y-1.5" v-if="activeTab === 'observador'">
+            <label class="block text-xs font-bold text-text-muted">Buque (obligatorio)</label>
             <SearchableSelect 
-              ref="pesqueriaSelectRef"
-              v-model="resourceForm.pesqueriaId" 
-              :options="pesqueriaOptions" 
-              :icon="WaveIcon" 
-              placeholder="Seleccione pesquería..." 
-            />
-          </div>
-          <div class="space-y-1.5">
-            <label class="block text-xs font-bold text-text-muted">Buque (opcional)</label>
-            <SearchableSelect 
+              ref="buqueSelectRef"
               v-model="resourceForm.buqueId" 
               :options="buqueOptions" 
               :icon="ShipIcon" 
               placeholder="Seleccione buque..." 
-              @change="handleBuqueChange"
+              @change="onBuqueResourceChange"
+            />
+          </div>
+          <div class="space-y-1.5" v-if="activeTab === 'buque'">
+            <label class="block text-xs font-bold text-text-muted">Observador (obligatorio)</label>
+            <SearchableSelect 
+              ref="observadorSelectRef"
+              v-model="resourceForm.observadorId" 
+              :options="observadorOptions" 
+              :icon="UserCircleIcon" 
+              placeholder="Seleccione observador..." 
             />
           </div>
           <div class="grid grid-cols-2 gap-4">
@@ -294,6 +300,32 @@
         <div class="mt-8 pt-6 flex items-center justify-end border-t border-border gap-3">
           <button @click="cerrarModalRecurso" class="px-6 py-3 text-xs font-black uppercase tracking-widest text-text-muted hover:text-error transition-all">Cancelar</button>
           <button @click="guardarRecurso" :disabled="loadingCatalogs" data-allow-enter class="px-8 py-3 bg-primary hover:bg-primary-hover text-primary-fg rounded-lg text-xs font-black uppercase tracking-widest shadow-theme-xs shadow-primary/20 transition-all active:scale-95 disabled:opacity-50">Guardar</button>
+        </div>
+      </div>
+    </BaseModal>
+
+    <!-- Modal Agregar Buque al Timeline -->
+    <BaseModal 
+      :show="isAddBuqueModalOpen" 
+      @close="isAddBuqueModalOpen = false" 
+      maxWidth="md" 
+      title="Agregar Buque al Timeline"
+    >
+      <div v-form-nav class="bg-surface border border-border shadow-theme-xs flex flex-col rounded-2xl overflow-hidden p-6">
+        <div class="space-y-4">
+          <div class="space-y-1.5">
+            <label class="block text-xs font-bold text-text-muted">Buque</label>
+            <SearchableSelect 
+              v-model="selectedBuqueToAdd" 
+              :options="buqueOptions" 
+              :icon="ShipIcon" 
+              placeholder="Seleccione buque..." 
+            />
+          </div>
+        </div>
+        <div class="mt-8 pt-6 flex items-center justify-end border-t border-border gap-3">
+          <button @click="isAddBuqueModalOpen = false" class="px-6 py-3 text-xs font-black uppercase tracking-widest text-text-muted hover:text-error transition-all">Cancelar</button>
+          <button @click="addBuqueToTimeline"  class="px-8 py-3 bg-primary hover:bg-primary-hover text-primary-fg rounded-lg text-xs font-black uppercase tracking-widest shadow-theme-xs shadow-primary/20 transition-all active:scale-95 disabled:opacity-50">Aceptar</button>
         </div>
       </div>
     </BaseModal>
@@ -382,7 +414,7 @@ import disponibilidadApi from '@/modules/admin/services/disponibilidad.service';
 import type { DisponibilidadResponse, ObservadorDisponibilidadRow } from '@/modules/admin/interfaces/disponibilidad.interface';
 import { getBloqueLabel, getItemVisClass, formatItemTooltip } from '@/modules/shared/utils/timeline-styles';
 import catalogosService from '../../mareas/services/catalogos.service';
-import type { MareaSimuladaItem, RecursoMareaPendiente, EscenarioSimulacionState } from '../interfaces/simulador.interface';
+import type { MareaSimuladaItem, EscenarioSimulacionState } from '../interfaces/simulador.interface';
 import SimuladorTimeline from '../components/SimuladorTimeline.vue';
 
 import { useConfigStore } from '@/modules/shared/stores/config.store';
@@ -414,7 +446,24 @@ const escenarioActual = ref<EscenarioSimulacionState>({
 });
 
 // Datos de Recursos Pendientes (Simulados / Requerimientos)
-const recursosPendientes = ref<RecursoMareaPendiente[]>([]);
+export interface RecursoPendiente {
+  id: string;
+  tipo: 'buque' | 'observador';
+  buqueId?: string;
+  buqueNombre?: string;
+  pesqueriaId?: string;
+  pesqueriaNombre?: string;
+  observadorId?: string;
+  observadorNombre?: string;
+  diasEstimados: number;
+  prioridad: string;
+}
+
+const recursosPendientes = ref<RecursoPendiente[]>([]);
+
+const recursosVisibles = computed(() => {
+  return recursosPendientes.value.filter(r => r.tipo === (activeTab.value === 'observador' ? 'buque' : 'observador'));
+});
 
 // Catálogos
 const loadingCatalogs = ref(true);
@@ -436,6 +485,18 @@ const pesqueriaOptions = computed(() => {
 });
 
 // Datos de Simulación
+const isAddBuqueModalOpen = ref(false);
+const selectedBuqueToAdd = ref('');
+const buquesAdicionales = ref<string[]>([]);
+
+const addBuqueToTimeline = () => {
+  if (selectedBuqueToAdd.value && !buquesAdicionales.value.includes(selectedBuqueToAdd.value)) {
+    buquesAdicionales.value.push(selectedBuqueToAdd.value);
+  }
+  isAddBuqueModalOpen.value = false;
+  selectedBuqueToAdd.value = '';
+};
+
 // Datos de Simulación
 const datosSimulacion = ref<DisponibilidadResponse | null>(null);
 
@@ -451,11 +512,13 @@ const editingRecursoId = ref<string | null>(null);
 const resourceForm = ref<{
   pesqueriaId: string;
   buqueId: string | null;
+  observadorId: string | null;
   diasEstimados: number;
   prioridad: string;
 }>({
   pesqueriaId: '',
   buqueId: null,
+  observadorId: null,
   diasEstimados: 30,
   prioridad: 'MEDIA'
 });
@@ -470,6 +533,7 @@ const abrirModalCrearRecurso = () => {
   resourceForm.value = {
     pesqueriaId: '',
     buqueId: null,
+    observadorId: null,
     diasEstimados: 30,
     prioridad: 'MEDIA'
   };
@@ -479,18 +543,16 @@ const abrirModalCrearRecurso = () => {
   });
 };
 
-const abrirModalEditarRecurso = (recurso: RecursoMareaPendiente) => {
-  editingRecursoId.value = recurso.id;
+const abrirModalEditarRecurso = (recurso: RecursoPendiente) => {
+  editingRecursoId.value = recurso.id || null;
   resourceForm.value = {
     pesqueriaId: recurso.pesqueriaId || '',
     buqueId: recurso.buqueId || null,
-    diasEstimados: recurso.diasEstimados,
+    observadorId: recurso.observadorId || null,
+    diasEstimados: recurso.diasEstimados || 30,
     prioridad: recurso.prioridad || 'MEDIA'
   };
   isResourceModalOpen.value = true;
-  nextTick(() => {
-    pesqueriaSelectRef.value?.focus();
-  });
 };
 
 const eliminarRecurso = (id: string) => {
@@ -518,40 +580,70 @@ const handleBuqueChange = () => {
 };
 
 const guardarRecurso = () => {
-  if (!resourceForm.value.pesqueriaId) {
-    toast.error('Debe seleccionar una pesquería');
-    return;
-  }
-  
-  const pesqueria = pesquerias.value.find(p => p.id === resourceForm.value.pesqueriaId);
-  const buque = buques.value.find(b => b.id === resourceForm.value.buqueId);
-  
-  if (editingRecursoId.value) {
-    // Editar existente
-    const recurso = recursosPendientes.value.find(r => r.id === editingRecursoId.value);
-    if (recurso) {
-      recurso.pesqueriaId = resourceForm.value.pesqueriaId;
-      recurso.pesqueriaNombre = pesqueria?.nombre || '';
-      recurso.buqueId = resourceForm.value.buqueId;
-      recurso.buqueNombre = buque?.nombreBuque || '';
-      recurso.diasEstimados = resourceForm.value.diasEstimados;
-      recurso.prioridad = resourceForm.value.prioridad as any;
-      toast.success('Requerimiento actualizado exitosamente');
+  if (activeTab.value === 'observador') {
+    const b = buques.value.find(x => x.id === resourceForm.value.buqueId);
+    if (!b) {
+      toast.error('Debe seleccionar un buque');
+      return;
+    }
+    
+    if (editingRecursoId.value) {
+      const idx = recursosPendientes.value.findIndex(r => r.id === editingRecursoId.value);
+      if (idx !== -1) {
+        recursosPendientes.value[idx] = {
+          ...recursosPendientes.value[idx],
+          buqueId: b.id,
+          buqueNombre: b.nombreBuque,
+          pesqueriaId: b.pesqueriaHabitualId,
+          pesqueriaNombre: b.pesqueriaHabitual?.nombre,
+          diasEstimados: resourceForm.value.diasEstimados,
+          prioridad: resourceForm.value.prioridad
+        };
+        toast.success('Recurso actualizado');
+      }
+    } else {
+      recursosPendientes.value.push({
+        id: `rec-${Date.now()}`,
+        tipo: 'buque',
+        buqueId: b.id,
+        buqueNombre: b.nombreBuque,
+        pesqueriaId: b.pesqueriaHabitualId,
+        pesqueriaNombre: b.pesqueriaHabitual?.nombre,
+        diasEstimados: resourceForm.value.diasEstimados,
+        prioridad: resourceForm.value.prioridad
+      });
+      toast.success('Recurso agregado');
     }
   } else {
-    // Crear nuevo
-    recursosPendientes.value.push({
-      id: `rec-custom-${Date.now()}`,
-      pesqueriaId: resourceForm.value.pesqueriaId,
-      pesqueriaNombre: pesqueria?.nombre || '',
-      buqueId: resourceForm.value.buqueId,
-      buqueNombre: buque?.nombreBuque || '',
-      diasEstimados: resourceForm.value.diasEstimados || 30,
-      puertoSugerido: buque?.puertoBase?.nombre || '',
-      prioridad: (resourceForm.value.prioridad as 'ALTA' | 'MEDIA' | 'BAJA') || 'MEDIA',
-      mesProyectado: 1
-    });
-    toast.success('Requerimiento creado exitosamente');
+    const o = observadoresBase.value.find(x => x.id === resourceForm.value.observadorId);
+    if (!o) {
+      toast.error('Debe seleccionar un observador');
+      return;
+    }
+    
+    if (editingRecursoId.value) {
+      const idx = recursosPendientes.value.findIndex(r => r.id === editingRecursoId.value);
+      if (idx !== -1) {
+        recursosPendientes.value[idx] = {
+          ...recursosPendientes.value[idx],
+          observadorId: o.id,
+          observadorNombre: `${o.apellido}, ${o.nombre}`,
+          diasEstimados: resourceForm.value.diasEstimados,
+          prioridad: resourceForm.value.prioridad
+        };
+        toast.success('Recurso actualizado');
+      }
+    } else {
+      recursosPendientes.value.push({
+        id: `rec-${Date.now()}`,
+        tipo: 'observador',
+        observadorId: o.id,
+        observadorNombre: `${o.apellido}, ${o.nombre}`,
+        diasEstimados: resourceForm.value.diasEstimados,
+        prioridad: resourceForm.value.prioridad
+      });
+      toast.success('Recurso agregado');
+    }
   }
   
   cerrarModalRecurso();
@@ -607,13 +699,14 @@ const devolverRecursoPendiente = () => {
     
     recursosPendientes.value.push({
       id: `rec-returned-${Date.now()}`,
-      pesqueriaId: removedItem.pesqueriaId,
-      pesqueriaNombre: removedItem.pesqueriaNombre,
-      buqueId: removedItem.buqueId,
-      buqueNombre: removedItem.buqueNombre,
+      tipo: activeTab.value === 'observador' ? 'buque' : 'observador',
+      pesqueriaId: removedItem.pesqueriaId || undefined,
+      pesqueriaNombre: removedItem.pesqueriaNombre || undefined,
+      buqueId: removedItem.buqueId || undefined,
+      buqueNombre: removedItem.buqueNombre || undefined,
+      observadorId: removedItem.observadorId || undefined,
       diasEstimados: removedItem.diasEstimados,
-      prioridad: removedItem.prioridad || 'MEDIA',
-      mesProyectado: 1
+      prioridad: removedItem.prioridad || 'MEDIA'
     });
     
     toast.success('Marea devuelta a recursos pendientes');
@@ -852,13 +945,14 @@ const handleItemRemoved = (id: string) => {
     
     recursosPendientes.value.push({
       id: `rec-returned-${Date.now()}`,
-      pesqueriaId: removedItem.pesqueriaId,
-      pesqueriaNombre: removedItem.pesqueriaNombre,
-      buqueId: removedItem.buqueId,
-      buqueNombre: removedItem.buqueNombre,
+      tipo: activeTab.value === 'observador' ? 'buque' : 'observador',
+      pesqueriaId: removedItem.pesqueriaId || undefined,
+      pesqueriaNombre: removedItem.pesqueriaNombre || undefined,
+      buqueId: removedItem.buqueId || undefined,
+      buqueNombre: removedItem.buqueNombre || undefined,
+      observadorId: removedItem.observadorId || undefined,
       diasEstimados: removedItem.diasEstimados,
-      prioridad: removedItem.prioridad || 'MEDIA',
-      mesProyectado: 1
+      prioridad: removedItem.prioridad || 'MEDIA'
     });
     
     toast.success('Marea simulada eliminada y devuelta a recursos');
@@ -877,19 +971,40 @@ const handleDropRecurso = (payload: { recurso: any; group: string; date: Date })
 
   const fechaFin = new Date(fechaInicio.getTime() + recursoArrastrado.diasEstimados * 24 * 60 * 60 * 1000);
 
+  let obsId = undefined;
+  let bId = recursoArrastrado.buqueId;
+  let bNombre = recursoArrastrado.buqueNombre;
+  let pId = recursoArrastrado.pesqueriaId;
+  let pNombre = recursoArrastrado.pesqueriaNombre;
+  
+  if (activeTab.value === 'observador') {
+    obsId = payload.group;
+  } else {
+    // payload.group es el buqueId
+    bId = payload.group;
+    obsId = recursoArrastrado.observadorId!;
+    // Rellenar pesqueria si el buque existe en catalogo
+    const bCatalog = buques.value.find(b => b.id === bId);
+    if (bCatalog) {
+       bNombre = bCatalog.nombreBuque;
+       pId = bCatalog.pesqueriaHabitualId;
+       pNombre = bCatalog.pesqueriaHabitual?.nombre;
+    }
+  }
+
   const nuevoItemSimulado: MareaSimuladaItem = {
     id: `sim-${Date.now()}`,
-    observadorId: activeTab.value === 'observador' ? payload.group : null,
-    buqueId: activeTab.value === 'buque' ? payload.group : (recursoArrastrado.buqueId || null),
-    pesqueriaId: recursoArrastrado.pesqueriaId,
-    pesqueriaNombre: recursoArrastrado.pesqueriaNombre,
-    buqueNombre: activeTab.value === 'buque' ? (timelineBuqueGroups.value.find(g => g.id === payload.group)?.value || recursoArrastrado.buqueNombre) : recursoArrastrado.buqueNombre,
+    tipoBloque: 'MAREA_SIMULADA',
+    pesqueriaId: pId,
+    pesqueriaNombre: pNombre,
+    buqueId: bId,
+    buqueNombre: bNombre,
+    observadorId: obsId,
     fechaZarpada: fechaInicio,
     fechaArribo: fechaFin,
     diasEstimados: recursoArrastrado.diasEstimados,
     estado: 'PENDIENTE',
-    tipoBloque: 'MAREA_SIMULADA',
-    prioridad: recursoArrastrado.prioridad
+    prioridad: recursoArrastrado.prioridad || 'MEDIA'
   };
 
   escenarioActual.value.items.push(nuevoItemSimulado);
@@ -903,7 +1018,7 @@ const handleDropRecurso = (payload: { recurso: any; group: string; date: Date })
     }
   }
 
-  toast.success(`Marea simulada "${recursoArrastrado.pesqueriaNombre}" asignada`);
+  toast.success('Marea simulada asignada');
 };
 
 const handleEditItem = (id: string) => {
@@ -915,9 +1030,9 @@ const handleEditItem = (id: string) => {
 };
 
 // Drag & Drop HTML5 desde Sidebar a Timeline (inicio)
-let draggedRecurso: RecursoMareaPendiente | null = null;
+let draggedRecurso: RecursoPendiente | null = null;
 
-const onDragStartRecurso = (event: DragEvent, recurso: RecursoMareaPendiente) => {
+const onDragStartRecurso = (event: DragEvent, recurso: RecursoPendiente) => {
   draggedRecurso = recurso;
   if (event.dataTransfer) {
     event.dataTransfer.effectAllowed = 'copy';
@@ -959,6 +1074,28 @@ onMounted(async () => {
   
   fetchData();
 });
+
+
+const isResourceFormValid = computed(() => {
+  if (activeTab.value === 'observador') return !!resourceForm.value.buqueId;
+  return !!resourceForm.value.observadorId;
+});
+
+const onBuqueResourceChange = () => {
+  if (resourceForm.value.buqueId) {
+    const b = buques.value.find(x => x.id === resourceForm.value.buqueId);
+    if (b && b.diasMareaEstimada) {
+      resourceForm.value.diasEstimados = b.diasMareaEstimada;
+    }
+  }
+};
+
+const observadorOptions = computed(() => 
+  observadoresBase.value.map(o => ({
+    value: o.id,
+    label: `${o.apellido}, ${o.nombre}`
+  }))
+);
 
 </script>
 
