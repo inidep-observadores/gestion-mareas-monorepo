@@ -840,13 +840,15 @@ const timelineObservadorItems = computed(() => {
 const timelineBuqueGroups = computed(() => {
   if (!datosSimulacion.value) return [];
   
-  const buquesMap = new Map<string, string>();
+  const buquesMap = new Map<string, { nombre: string; pesqueria: string }>();
   
   // Extraer buques de mareas reales
   datosSimulacion.value.observadores.forEach(obsRow => {
     obsRow.eventos.forEach(ev => {
       if (ev.buqueId && ev.buqueNombre) {
-        buquesMap.set(ev.buqueId, ev.buqueNombre);
+        const bCatalog = buques.value.find(b => b.id === ev.buqueId);
+        const pName = (ev as any).pesqueriaNombre || bCatalog?.pesqueriaHabitual?.nombre || 'Sin pesquería';
+        buquesMap.set(ev.buqueId, { nombre: ev.buqueNombre, pesqueria: pName });
       }
     });
   });
@@ -854,18 +856,55 @@ const timelineBuqueGroups = computed(() => {
   // Extraer buques de mareas simuladas
   escenarioActual.value.items.forEach(sim => {
     if (sim.buqueId && sim.buqueNombre) {
-      buquesMap.set(sim.buqueId, sim.buqueNombre);
+      const bCatalog = buques.value.find(b => b.id === sim.buqueId);
+      const pName = sim.pesqueriaNombre || bCatalog?.pesqueriaHabitual?.nombre || 'Sin pesquería';
+      buquesMap.set(sim.buqueId, { nombre: sim.buqueNombre, pesqueria: pName });
     }
   });
 
-  const groups = Array.from(buquesMap.entries()).map(([id, nombre]) => ({
-    id: id,
-    content: `<div class="text-text font-bold text-xs flex items-center gap-1"><span class="text-sm mr-1">⛴</span> ${nombre}</div>`,
-    value: nombre
-  }));
-  
-  // Ordenar alfabéticamente
-  groups.sort((a, b) => a.value.localeCompare(b.value));
+  // Extraer buques agregados manualmente al timeline
+  buquesAdicionales.value.forEach(bId => {
+    const bCatalog = buques.value.find(b => b.id === bId);
+    if (bCatalog && !buquesMap.has(bId)) {
+      buquesMap.set(bId, { nombre: bCatalog.nombreBuque || bCatalog.nombre, pesqueria: bCatalog.pesqueriaHabitual?.nombre || 'Sin pesquería' });
+    }
+  });
+
+  const pesqueriasUnicas = new Set<string>();
+  buquesMap.forEach(b => pesqueriasUnicas.add(b.pesqueria));
+
+  const groups: any[] = [];
+  const parentIds: string[] = [];
+
+  // 1. Crear grupos padres (pesquerías)
+  Array.from(pesqueriasUnicas).sort().forEach(pName => {
+    const parentId = `pesqueria-${pName}`;
+    parentIds.push(parentId);
+    groups.push({
+      id: parentId,
+      content: `<div class="font-bold text-primary uppercase text-[10px] tracking-wider py-1">${pName}</div>`,
+      nestedGroups: [],
+      showNested: true
+    });
+  });
+
+  // 2. Crear grupos hijos (buques)
+  const buquesList = Array.from(buquesMap.entries()).map(([id, data]) => ({ id, ...data }));
+  buquesList.sort((a, b) => a.nombre.localeCompare(b.nombre));
+
+  buquesList.forEach(b => {
+    const parentId = `pesqueria-${b.pesqueria}`;
+    const parent = groups.find(g => g.id === parentId);
+    if (parent) {
+      parent.nestedGroups.push(b.id);
+    }
+    groups.push({
+      id: b.id,
+      content: `<div class="text-text font-bold text-xs flex items-center gap-1 pl-2"><span class="text-sm mr-1">⛴</span> ${b.nombre}</div>`,
+      value: b.nombre
+    });
+  });
+
   return groups;
 });
 
