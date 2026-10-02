@@ -2,6 +2,28 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v0.15.0] - 2026-10-02
+
+### Added
+- **planificacion:** exportación a Excel de cobertura/planificación con reportes estructurados
+- **planificacion:** mejoras de persistencia y UI en el simulador
+- **planificacion:** refactorización UX del simulador, filtros avanzados y detección cruzada de conflictos
+- **planificacion:** refinar UX del simulador de cobertura y persistencia
+- **planificacion:** reubicar buscador y permitir filtrar buques
+- **planificacion:** mejorar mensajes de conflicto de mareas
+- **planificacion:** agrupar timeline de buques por pesquería
+- **planificacion:** refactor de timeline e integracion de modo buques
+- **planificacion:** agregar sistema de solapas (tabs) para vistas por observador y por buque en simulador
+- **backend:** agregar exportación de track en formato geojson al bundle
+
+### Fixed
+- **planificacion:** reordena campos en modales de marea simulada y auto-calcula dias estimados
+- **planificacion:** restaurar y optimizar drag and drop en linea de tiempo
+- **backend:** agregar puntos individuales con fecha, velocidad y rumbo al exportar geojson
+
+### Refactored
+- **planificacion:** unificar logica y UI de linea de tiempo del simulador con vista de disponibilidad
+
 ## [v0.14.0] - 2026-09-20
 
 ### Added
