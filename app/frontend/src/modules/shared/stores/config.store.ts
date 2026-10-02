@@ -15,6 +15,14 @@ export const useConfigStore = defineStore('config', () => {
         localStorage.getItem('lastScenarioId') || ''
     );
 
+    const simuladorSoloPlanificadas = ref<boolean>(
+        localStorage.getItem('simuladorSoloPlanificadas') === 'true'
+    );
+
+    const simuladorSelectedTypes = ref<string[]>(
+        JSON.parse(localStorage.getItem('simuladorSelectedTypes') || '["OBSERVADOR"]')
+    );
+
     // Watch for changes and persist to localStorage
     watch(selectedYear, (newYear) => {
         localStorage.setItem('selectedYear', newYear.toString());
@@ -27,6 +35,14 @@ export const useConfigStore = defineStore('config', () => {
     watch(lastScenarioId, (newId) => {
         localStorage.setItem('lastScenarioId', newId);
     });
+
+    watch(simuladorSoloPlanificadas, (newVal) => {
+        localStorage.setItem('simuladorSoloPlanificadas', newVal.toString());
+    });
+
+    watch(simuladorSelectedTypes, (newVal) => {
+        localStorage.setItem('simuladorSelectedTypes', JSON.stringify(newVal));
+    }, { deep: true });
 
     // Actions
     const setSelectedYear = (year: number) => {
@@ -41,15 +57,27 @@ export const useConfigStore = defineStore('config', () => {
         lastScenarioId.value = id;
     };
 
+    const setSimuladorSoloPlanificadas = (val: boolean) => {
+        simuladorSoloPlanificadas.value = val;
+    };
+
+    const setSimuladorSelectedTypes = (val: string[]) => {
+        simuladorSelectedTypes.value = val;
+    };
+
     return {
         // State
         selectedYear,
         statsDetailViewMode,
         lastScenarioId,
+        simuladorSoloPlanificadas,
+        simuladorSelectedTypes,
 
         // Actions
         setSelectedYear,
         setStatsDetailViewMode,
-        setLastScenarioId
+        setLastScenarioId,
+        setSimuladorSoloPlanificadas,
+        setSimuladorSelectedTypes
     };
 });

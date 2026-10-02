@@ -230,21 +230,21 @@
           <!-- Tabs de Vista -->
           <div class="flex items-center gap-1 border-b border-border bg-surface-muted/30 -mx-4 -mt-4 px-4 pt-2 mb-2">
             <button 
-              @click="activeTab = 'observador'" 
-              class="px-5 py-3 text-sm font-black uppercase tracking-wider border-b-2 transition-colors -mb-px flex items-center gap-2"
-              :class="activeTab === 'observador' ? 'border-primary text-primary' : 'border-transparent text-text-muted hover:text-text'"
-            >
-              <UserCircleIcon class="w-4 h-4" />
-              Por observador
-            </button>
-            
-            <button 
               @click="activeTab = 'buque'" 
               class="px-5 py-3 text-sm font-black uppercase tracking-wider border-b-2 transition-colors -mb-px flex items-center gap-2"
               :class="activeTab === 'buque' ? 'border-primary text-primary' : 'border-transparent text-text-muted hover:text-text'"
             >
               <ShipIcon class="w-4 h-4" />
               Por buque
+            </button>
+
+            <button 
+              @click="activeTab = 'observador'" 
+              class="px-5 py-3 text-sm font-black uppercase tracking-wider border-b-2 transition-colors -mb-px flex items-center gap-2"
+              :class="activeTab === 'observador' ? 'border-primary text-primary' : 'border-transparent text-text-muted hover:text-text'"
+            >
+              <UserCircleIcon class="w-4 h-4" />
+              Por observador
             </button>
             <div class="ml-auto pr-4 pb-2 flex flex-col items-end gap-2">
               <div v-if="activeTab === 'observador'" class="flex gap-2">
@@ -658,7 +658,7 @@ watch(searchQuery, (newVal) => {
 });
 
 const sidebarOpen = ref(false);
-const activeTab = ref<'observador' | 'buque'>('observador');
+const activeTab = ref<'observador' | 'buque'>('buque');
 
 const timelineObservadorRef = ref<any>(null);
 const timelineBuqueRef = ref<any>(null);
@@ -1179,17 +1179,27 @@ const toggleSidebar = () => {
   sidebarOpen.value = !sidebarOpen.value;
 };
 
-const selectedTypes = ref<string[]>(['OBSERVADOR']);
-const soloMareasPlanificadas = ref(false);
+const selectedTypes = computed({
+  get: () => configStore.simuladorSelectedTypes,
+  set: (val) => configStore.setSimuladorSelectedTypes(val)
+});
+
+const soloMareasPlanificadas = computed({
+  get: () => configStore.simuladorSoloPlanificadas,
+  set: (val) => configStore.setSimuladorSoloPlanificadas(val)
+});
 
 const toggleType = (type: string) => {
-  const index = selectedTypes.value.indexOf(type);
+  const current = [...selectedTypes.value];
+  const index = current.indexOf(type);
   if (index > -1) {
-    if (selectedTypes.value.length > 1) {
-      selectedTypes.value.splice(index, 1);
+    if (current.length > 1) {
+      current.splice(index, 1);
+      selectedTypes.value = current;
     }
   } else {
-    selectedTypes.value.push(type);
+    current.push(type);
+    selectedTypes.value = current;
   }
 };
 
@@ -1540,9 +1550,9 @@ const timelineBuqueItems = computed(() => {
 
     let contentHtml = '';
     if (conflicto) {
-      contentHtml = `<div class="flex flex-col items-start leading-tight"><div class="flex items-center gap-1 w-full"><span class="text-error" style="font-size: 11px;">⚠️</span><span class="text-[10px] font-black truncate w-full">${obsNombre}</span></div><span class="text-[9px] opacity-70 truncate max-w-[100px]">[${duracionSim}d]</span></div>`;
+      contentHtml = `<div class="flex items-center gap-1 font-bold"><span class="text-error" style="font-size: 11px;">⚠️</span><span class="text-[10px] truncate max-w-[120px]">${obsNombre}</span><span class="text-[10px] opacity-75 whitespace-nowrap">[${duracionSim}d]</span></div>`;
     } else {
-      contentHtml = `<div class="flex flex-col items-start leading-tight"><span class="text-[10px] font-black truncate max-w-[100px]">${obsNombre}</span><span class="text-[9px] opacity-70 truncate max-w-[100px]">[${duracionSim}d]</span></div>`;
+      contentHtml = `<div class="flex items-center gap-1 font-bold"><span class="text-[10px] truncate max-w-[120px]">${obsNombre}</span><span class="text-[10px] opacity-75 whitespace-nowrap">[${duracionSim}d]</span></div>`;
     }
 
     const conflictosHtml = conflicto ? '<br><br><strong class="text-error">Conflictos:</strong><br><span class="text-error">' + conflictosDelBloque.map(c => c.mensaje).join('<br>') + '</span>' : '';
