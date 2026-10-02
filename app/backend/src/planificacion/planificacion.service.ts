@@ -863,8 +863,102 @@ export class PlanificacionService {
     // Generar Excel
     const wb = new ExcelJS.Workbook();
     
-    // Hoja 1: Por Buque
-    const wsBuque = wb.addWorksheet('Por Buque');
+    // Configurar fechas para Gantt
+    const fechaDesde00 = new Date(fechaDesde);
+    fechaDesde00.setHours(0, 0, 0, 0);
+    const fechaHasta23 = new Date(fechaHasta);
+    fechaHasta23.setHours(23, 59, 59, 999);
+    
+    const diasTotales: Date[] = [];
+    let curDate = new Date(fechaDesde00.getTime());
+    while (curDate <= fechaHasta23) {
+      diasTotales.push(new Date(curDate));
+      curDate.setDate(curDate.getDate() + 1);
+    }
+
+    const fillReal: ExcelJS.Fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFC6E0B4' } }; // Verde
+    const fillSim: ExcelJS.Fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFB4C6E7' } }; // Azul
+
+    const buildGantt = (sheetName: string, agruparPor: 'buque' | 'observador') => {
+      const ws = wb.addWorksheet(sheetName);
+      const cols: any[] = [{ header: agruparPor === 'buque' ? 'Buque' : 'Observador', key: 'recurso', width: 25 }];
+      diasTotales.forEach((d, i) => {
+        cols.push({ header: `${d.getDate()}/${d.getMonth()+1}`, key: `d${i}`, width: 4 });
+      });
+      ws.columns = cols;
+      ws.getRow(1).font = { bold: true, size: 9 };
+      ws.getRow(1).alignment = { horizontal: 'center', vertical: 'middle', textRotation: 90 };
+      ws.getRow(1).height = 40;
+
+      const grupos = new Map<string, any[]>();
+      for (const f of filas) {
+        if (agruparPor === 'buque' && soloPlanificadas && f.buqueId && !buquesConSimuladas.has(f.buqueId)) continue;
+        if (agruparPor === 'observador' && soloPlanificadas && f.observadorId && !obsConSimuladas.has(f.observadorId)) continue;
+
+        const key = agruparPor === 'buque' ? f.buqueNombre : f.observadorNombre;
+        if (!grupos.has(key)) grupos.set(key, []);
+        grupos.get(key)!.push(f);
+      }
+
+      const keysSorted = Array.from(grupos.keys()).sort();
+      for (const k of keysSorted) {
+        const eventos = grupos.get(k)!.sort((a, b) => a.inicio.getTime() - b.inicio.getTime());
+        const tracks: any[][] = [];
+        for (const e of eventos) {
+          let placed = false;
+          for (const t of tracks) {
+            const last = t[t.length - 1];
+            if (last.fin.getTime() < e.inicio.getTime()) {
+              t.push(e); placed = true; break;
+            }
+          }
+          if (!placed) tracks.push([e]);
+        }
+
+        if (tracks.length === 0) {
+          ws.addRow({ recurso: k });
+          continue;
+        }
+
+        for (let i = 0; i < tracks.length; i++) {
+          const rowData: any = {};
+          if (i === 0) rowData.recurso = k;
+          const row = ws.addRow(rowData);
+          
+          for (const e of tracks[i]) {
+            let idxStart = diasTotales.findIndex(d => d.getTime() >= new Date(e.inicio).setHours(0,0,0,0));
+            let idxEnd = diasTotales.findIndex(d => d.getTime() >= new Date(e.fin).setHours(0,0,0,0));
+            
+            if (idxStart === -1 && e.inicio < diasTotales[0]) idxStart = 0;
+            if (idxEnd === -1 && e.fin > diasTotales[diasTotales.length - 1]) idxEnd = diasTotales.length - 1;
+            
+            if (idxStart >= 0 && idxEnd >= 0) {
+              const startCol = 2 + idxStart;
+              const endCol = 2 + idxEnd;
+              if (startCol <= endCol && startCol <= cols.length) {
+                const maxCol = Math.min(endCol, cols.length);
+                try { ws.mergeCells(row.number, startCol, row.number, maxCol); } catch(err) {}
+                const cell = row.getCell(startCol);
+                const label = agruparPor === 'buque' ? e.observadorNombre : e.buqueNombre;
+                const duracion = Math.max(1, Math.floor((e.fin.getTime() - e.inicio.getTime()) / 86400000));
+                cell.value = `${label} [${duracion}d]`;
+                cell.fill = e.esSimulada ? fillSim : fillReal;
+                cell.font = { size: 8 };
+                cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: false };
+                cell.border = { top: {style:'thin'}, bottom:{style:'thin'}, left:{style:'thin'}, right:{style:'thin'} };
+              }
+            }
+          }
+        }
+      }
+    };
+
+    // Crear Hojas Visuales Primero
+    buildGantt('Gantt por Buque', 'buque');
+    buildGantt('Gantt por Observador', 'observador');
+
+    // Hoja 3: Datos Por Buque
+    const wsBuque = wb.addWorksheet('Datos Por Buque');
     wsBuque.columns = [
       { header: 'Buque', key: 'buque', width: 25 },
       { header: 'Observador', key: 'observador', width: 25 },
@@ -894,8 +988,8 @@ export class PlanificacionService {
       }
     }
 
-    // Hoja 2: Por Observador
-    const wsObs = wb.addWorksheet('Por Observador');
+    // Hoja 4: Datos Por Observador
+    const wsObs = wb.addWorksheet('Datos Por Observador');
     wsObs.columns = [
       { header: 'Observador', key: 'observador', width: 25 },
       { header: 'Buque', key: 'buque', width: 25 },

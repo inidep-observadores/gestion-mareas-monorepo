@@ -19,9 +19,6 @@
                   {{ esc.nombre }}
                 </option>
               </select>
-              <span v-if="escenarioActual" class="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-primary/10 border border-primary/30 text-primary">
-                {{ escenarioActual?.estado }}
-              </span>
             </div>
             <p class="text-xs text-text-muted">Arrastre recursos desde el panel lateral para asignar o redistribuir mareas en la línea de tiempo.</p>
           </div>
@@ -473,6 +470,17 @@
       <div v-form-nav class="bg-surface border border-border shadow-theme-xs flex flex-col rounded-2xl overflow-hidden p-6">
         <div v-if="editingBlockData" class="space-y-4">
           <div class="space-y-1.5">
+            <label class="block text-xs font-bold text-text-muted">Buque</label>
+            <SearchableSelect 
+              ref="editBuqueSelectRef"
+              :modelValue="editingBlockData.buqueId ?? null"
+              @update:modelValue="(v) => onEditBlockBuqueChange(v as string | null)"
+              :options="buqueOptions" 
+              :icon="ShipIcon" 
+              placeholder="Seleccione buque..." 
+            />
+          </div>
+          <div class="space-y-1.5">
             <label class="block text-xs font-bold text-text-muted">Observador</label>
             <SearchableSelect 
               :modelValue="editingBlockData.observadorId ?? null"
@@ -480,16 +488,6 @@
               :options="observadorOptions" 
               :icon="UserCircleIcon" 
               placeholder="Seleccione observador..." 
-            />
-          </div>
-          <div class="space-y-1.5">
-            <label class="block text-xs font-bold text-text-muted">Buque</label>
-            <SearchableSelect 
-              :modelValue="editingBlockData.buqueId ?? null"
-              @update:modelValue="(v) => (editingBlockData!.buqueId = v as string | null)"
-              :options="buqueOptions" 
-              :icon="ShipIcon" 
-              placeholder="Seleccione buque..." 
             />
           </div>
           <div class="grid grid-cols-2 gap-4">
@@ -541,6 +539,17 @@
       <div v-form-nav class="bg-surface border border-border shadow-theme-xs flex flex-col rounded-2xl overflow-hidden p-6">
         <div v-if="newBlockData" class="space-y-4">
           <div class="space-y-1.5">
+            <label class="block text-xs font-bold text-text-muted">Buque</label>
+            <SearchableSelect 
+              ref="crearBuqueSelectRef"
+              :modelValue="newBlockData.buqueId ?? null"
+              @update:modelValue="(v) => onNewBlockBuqueChange(v as string | null)"
+              :options="buqueOptions" 
+              :icon="ShipIcon" 
+              placeholder="Seleccione buque..." 
+            />
+          </div>
+          <div class="space-y-1.5">
             <label class="block text-xs font-bold text-text-muted">Observador</label>
             <SearchableSelect 
               :modelValue="newBlockData.observadorId ?? null"
@@ -548,16 +557,6 @@
               :options="observadorOptions" 
               :icon="UserCircleIcon" 
               placeholder="Seleccione observador..." 
-            />
-          </div>
-          <div class="space-y-1.5">
-            <label class="block text-xs font-bold text-text-muted">Buque</label>
-            <SearchableSelect 
-              :modelValue="newBlockData.buqueId ?? null"
-              @update:modelValue="(v) => (newBlockData!.buqueId = v as string | null)"
-              :options="buqueOptions" 
-              :icon="ShipIcon" 
-              placeholder="Seleccione buque..." 
             />
           </div>
           <div class="grid grid-cols-2 gap-4">
@@ -638,9 +637,25 @@
           </div>
         </div>
 
-        <div class="flex items-center gap-2">
-          <input type="checkbox" id="exportSoloPlanificadas" v-model="exportForm.soloPlanificadas" class="w-4 h-4 text-primary rounded border-border focus:ring-primary" />
-          <label for="exportSoloPlanificadas" class="text-sm text-text cursor-pointer">Incluir únicamente recursos con mareas planificadas</label>
+        <div class="flex flex-col sm:flex-row gap-4">
+          <div class="flex-1 space-y-1">
+            <label class="text-xs font-bold text-text">Formato</label>
+            <select v-model="exportForm.formato" class="w-full h-9 px-3 rounded-lg border border-border bg-surface text-sm focus:outline-none focus:border-primary">
+              <option value="EXCEL">Excel (.xlsx)</option>
+              <option value="PDF">PDF (Oficio Apaisado)</option>
+              <option value="PNG">Imagen (.png)</option>
+            </select>
+          </div>
+          <div class="flex-1 space-y-1" v-if="exportForm.formato === 'EXCEL'">
+             <div class="flex items-center gap-2 mt-7">
+               <input type="checkbox" id="exportSoloPlanificadas" v-model="exportForm.soloPlanificadas" class="w-4 h-4 text-primary rounded border-border focus:ring-primary" />
+               <label for="exportSoloPlanificadas" class="text-sm text-text cursor-pointer">Sólo Planificadas</label>
+             </div>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2 p-3 bg-primary/5 border border-primary/20 rounded-lg" v-if="exportForm.formato !== 'EXCEL'">
+          <span class="text-xs text-primary"><strong>Nota:</strong> La exportación a imagen/PDF capturará exactamente lo que se ve en pantalla. El sistema hará zoom automáticamente a las fechas seleccionadas.</span>
         </div>
 
         <div class="flex justify-end gap-3 pt-4 border-t border-border mt-6">
@@ -681,6 +696,8 @@ import {
   DownloadIcon
 } from '@/icons';
 import { toast } from 'vue-sonner';
+import * as htmlToImage from 'html-to-image';
+import { jsPDF } from 'jspdf';
 import ExportExcelButton from '@/modules/shared/components/ExportExcelButton.vue';
 import disponibilidadApi from '@/modules/admin/services/disponibilidad.service';
 import type { DisponibilidadResponse, ObservadorDisponibilidadRow } from '@/modules/admin/interfaces/disponibilidad.interface';
@@ -734,7 +751,8 @@ const isExporting = ref(false);
 const exportForm = ref({
   fechaDesde: '',
   fechaHasta: '',
-  soloPlanificadas: true
+  soloPlanificadas: true,
+  formato: 'EXCEL' as 'EXCEL' | 'PDF' | 'PNG'
 });
 
 const abrirModalExportacion = () => {
@@ -763,22 +781,91 @@ const procesarExportacion = async () => {
 
   try {
     isExporting.value = true;
-    const blob = await planificacionService.exportarEscenarioAExcel(escenarioActual.value.id, exportForm.value);
     
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', `planificacion_${escenarioActual.value.nombre.replace(/\s+/g, '_')}_${exportForm.value.fechaDesde}_${exportForm.value.fechaHasta}.xlsx`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    window.URL.revokeObjectURL(url);
+    if (exportForm.value.formato === 'EXCEL') {
+      const blob = await planificacionService.exportarEscenarioAExcel(escenarioActual.value.id, exportForm.value);
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `planificacion_${escenarioActual.value.nombre.replace(/\s+/g, '_')}_${exportForm.value.fechaDesde}_${exportForm.value.fechaHasta}.xlsx`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      toast.success('Archivo Excel descargado exitosamente');
+    } else {
+      // PDF o PNG (Captura de pantalla del Timeline)
+      const tlComponent = activeTab.value === 'buque' ? timelineBuqueRef.value : timelineObservadorRef.value;
+      if (!tlComponent) throw new Error('Timeline component no encontrado');
+      
+      const tlInstance = (tlComponent as any).getTimelineInstance();
+      const container = (tlComponent as any).$el as HTMLElement;
+      
+      if (!tlInstance || !container) throw new Error('No se pudo acceder al canvas del timeline');
+
+      // Guardar vista actual
+      const currentWindow = tlInstance.getWindow();
+      
+      // Ajustar vista a las fechas requeridas
+      const fDesde = new Date(exportForm.value.fechaDesde);
+      const fHasta = new Date(exportForm.value.fechaHasta);
+      fHasta.setHours(23, 59, 59, 999);
+      
+      tlInstance.setWindow(fDesde, fHasta, { animation: false });
+      
+      // Esperar a que renderice y redibuje el DOM
+      await new Promise(r => setTimeout(r, 600));
+      
+      const imgData = await htmlToImage.toPng(container, {
+        pixelRatio: 2, // Alta resolución
+        backgroundColor: '#ffffff'
+      });
+      
+      // Restaurar vista original
+      tlInstance.setWindow(currentWindow.start, currentWindow.end, { animation: false });
+      
+      const filename = `timeline_${activeTab.value}_${exportForm.value.fechaDesde}`;
+      
+      if (exportForm.value.formato === 'PNG') {
+        const link = document.createElement('a');
+        link.download = `${filename}.png`;
+        link.href = imgData;
+        link.click();
+        toast.success('Imagen PNG descargada exitosamente');
+      } else if (exportForm.value.formato === 'PDF') {
+        const pdf = new jsPDF({
+          orientation: 'landscape',
+          unit: 'mm',
+          format: 'legal' // Oficio (216 x 356 mm)
+        });
+        
+        const pdfWidth = 356;
+        const pdfHeight = 216;
+        const imgProps = pdf.getImageProperties(imgData);
+        const ratio = imgProps.width / imgProps.height;
+        
+        let finalWidth = pdfWidth - 20; // 10mm margenes
+        let finalHeight = finalWidth / ratio;
+        
+        if (finalHeight > (pdfHeight - 20)) {
+          finalHeight = pdfHeight - 20;
+          finalWidth = finalHeight * ratio;
+        }
+        
+        // Centrar vertical y horizontalmente
+        const xOffset = (pdfWidth - finalWidth) / 2;
+        const yOffset = (pdfHeight - finalHeight) / 2;
+        
+        pdf.addImage(imgData, 'PNG', xOffset, yOffset, finalWidth, finalHeight);
+        pdf.save(`${filename}.pdf`);
+        toast.success('PDF descargado exitosamente');
+      }
+    }
     
-    toast.success('Archivo Excel descargado exitosamente');
     isExportModalOpen.value = false;
   } catch (error) {
     console.error('Error al exportar escenario:', error);
-    toast.error('Hubo un error al generar el archivo Excel');
+    toast.error(`Hubo un error al generar la exportación a ${exportForm.value.formato}`);
   } finally {
     isExporting.value = false;
   }
@@ -956,6 +1043,21 @@ const onDiasEstimadosChange = () => {
   }
 };
 
+const onEditBlockBuqueChange = (buqueId: string | null) => {
+  if (!editingBlockData.value) return;
+  editingBlockData.value.buqueId = buqueId;
+  if (buqueId) {
+    const buque = buques.value.find(b => b.id === buqueId);
+    if (buque && buque.diasMareaEstimada) {
+      editingBlockData.value.diasEstimados = buque.diasMareaEstimada;
+      if (editingBlockData.value.fechaZarpada) {
+        const start = new Date(editingBlockData.value.fechaZarpada);
+        editingBlockData.value.fechaArribo = new Date(start.getTime() + (buque.diasMareaEstimada * 86400000));
+      }
+    }
+  }
+};
+
 const isCreateBlockModalOpen = ref(false);
 const newBlockData = ref<MareaSimuladaItem | null>(null);
 
@@ -1001,6 +1103,21 @@ const onNewDiasEstimadosChange = () => {
   }
 };
 
+const onNewBlockBuqueChange = (buqueId: string | null) => {
+  if (!newBlockData.value) return;
+  newBlockData.value.buqueId = buqueId;
+  if (buqueId) {
+    const buque = buques.value.find(b => b.id === buqueId);
+    if (buque && buque.diasMareaEstimada) {
+      newBlockData.value.diasEstimados = buque.diasMareaEstimada;
+      if (newBlockData.value.fechaZarpada) {
+        const start = new Date(newBlockData.value.fechaZarpada);
+        newBlockData.value.fechaArribo = new Date(start.getTime() + (buque.diasMareaEstimada * 86400000));
+      }
+    }
+  }
+};
+
 const abrirModalCrearBloque = () => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -1020,6 +1137,9 @@ const abrirModalCrearBloque = () => {
     prioridad: 'MEDIA'
   };
   isCreateBlockModalOpen.value = true;
+  setTimeout(() => {
+    crearBuqueSelectRef.value?.focus();
+  }, 100);
 };
 
 const cerrarModalCrearBloque = () => {
@@ -1798,11 +1918,17 @@ const handleDropRecurso = (payload: { recurso: any; group: string; date: Date })
   toast.success('Marea simulada asignada');
 };
 
+const editBuqueSelectRef = ref<any>(null);
+const crearBuqueSelectRef = ref<any>(null);
+
 const handleEditItem = (id: string) => {
   const sim = (escenarioActual.value?.items || []).find(i => i.id === id);
   if (sim) {
     editingBlockData.value = { ...sim };
     isEditBlockModalOpen.value = true;
+    setTimeout(() => {
+      editBuqueSelectRef.value?.focus();
+    }, 100);
   }
 };
 
