@@ -279,6 +279,13 @@
                   <PlusIcon class="w-3.5 h-3.5" /> Agregar Buque
                 </button>
                 
+                <ExportExcelButton
+                  label="EXPORTAR"
+                  title="Exportar planificación a Excel"
+                  @click="abrirModalExportacion"
+                  class="px-4 py-1.5 h-9 rounded bg-surface shadow-theme-xs border-border"
+                />
+
                 <button 
                   @click="abrirModalCrearBloque"
                   class="px-4 py-1.5 h-9 text-xs font-black uppercase tracking-wider text-white bg-primary rounded shadow-theme-xs shadow-primary/20 hover:bg-primary-hover active:scale-95 transition-all flex items-center gap-1.5"
@@ -607,6 +614,47 @@
       @confirm="handleConfirmDeleteScenario"
       @close="showConfirmDeleteScenario = false"
     />
+
+    <!-- Modal Exportar Excel -->
+    <BaseModal 
+      :show="isExportModalOpen" 
+      title="Exportar Planificación" 
+      @close="isExportModalOpen = false"
+      maxWidth="md"
+    >
+      <div class="p-6 space-y-6">
+        <p class="text-sm text-text-muted">
+          Seleccione el rango de fechas que desea incluir en el archivo Excel.
+        </p>
+
+        <div class="flex flex-col sm:flex-row gap-4">
+          <div class="flex-1 space-y-1">
+            <label class="text-xs font-bold text-text">Fecha Desde</label>
+            <DatePicker v-model="exportForm.fechaDesde" placeholder="Desde" />
+          </div>
+          <div class="flex-1 space-y-1">
+            <label class="text-xs font-bold text-text">Fecha Hasta</label>
+            <DatePicker v-model="exportForm.fechaHasta" placeholder="Hasta" />
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <input type="checkbox" id="exportSoloPlanificadas" v-model="exportForm.soloPlanificadas" class="w-4 h-4 text-primary rounded border-border focus:ring-primary" />
+          <label for="exportSoloPlanificadas" class="text-sm text-text cursor-pointer">Incluir únicamente recursos con mareas planificadas</label>
+        </div>
+
+        <div class="flex justify-end gap-3 pt-4 border-t border-border mt-6">
+          <button @click="isExportModalOpen = false" class="px-5 py-2 text-sm font-bold text-text-muted hover:text-text transition-colors">
+            Cancelar
+          </button>
+          <button @click="procesarExportacion" :disabled="isExporting" class="px-6 py-2 bg-primary text-white rounded-lg text-sm font-bold shadow-md hover:bg-primary/90 transition-all flex items-center gap-2 disabled:opacity-50">
+            <DownloadIcon v-if="!isExporting" class="w-4 h-4" />
+            <span v-if="isExporting" class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+            Exportar
+          </button>
+        </div>
+      </div>
+    </BaseModal>
   </PlanificacionDashboardLayout>
 </template>
 
@@ -629,9 +677,11 @@ import {
   XIcon,
   WaveIcon,
   EditIcon,
-  UserCircleIcon
+  UserCircleIcon,
+  DownloadIcon
 } from '@/icons';
 import { toast } from 'vue-sonner';
+import ExportExcelButton from '@/modules/shared/components/ExportExcelButton.vue';
 import disponibilidadApi from '@/modules/admin/services/disponibilidad.service';
 import type { DisponibilidadResponse, ObservadorDisponibilidadRow } from '@/modules/admin/interfaces/disponibilidad.interface';
 import { getBloqueLabel, getItemVisClass, formatItemTooltip } from '@/modules/shared/utils/timeline-styles';
@@ -677,6 +727,62 @@ watch(activeTab, (newTab) => {
 const listaEscenarios = ref<EscenarioSimulacionState[]>([]);
 const selectedEscenarioId = ref<string>('');
 const escenarioActual = ref<EscenarioSimulacionState | null>(null);
+
+// Exportación
+const isExportModalOpen = ref(false);
+const isExporting = ref(false);
+const exportForm = ref({
+  fechaDesde: '',
+  fechaHasta: '',
+  soloPlanificadas: true
+});
+
+const abrirModalExportacion = () => {
+  if (!escenarioActual.value || !escenarioActual.value.id) {
+    toast.error('Debe seleccionar un escenario primero');
+    return;
+  }
+  
+  // Por defecto sugerimos los próximos 3 meses
+  const ahora = new Date();
+  const tresMeses = new Date(ahora.getTime() + 90 * 24 * 60 * 60 * 1000);
+  
+  exportForm.value.fechaDesde = ahora.toISOString().split('T')[0];
+  exportForm.value.fechaHasta = tresMeses.toISOString().split('T')[0];
+  exportForm.value.soloPlanificadas = true;
+  
+  isExportModalOpen.value = true;
+};
+
+const procesarExportacion = async () => {
+  if (!escenarioActual.value || !escenarioActual.value.id) return;
+  if (!exportForm.value.fechaDesde || !exportForm.value.fechaHasta) {
+    toast.error('Debe seleccionar el rango de fechas completo');
+    return;
+  }
+
+  try {
+    isExporting.value = true;
+    const blob = await planificacionService.exportarEscenarioAExcel(escenarioActual.value.id, exportForm.value);
+    
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `planificacion_${escenarioActual.value.nombre.replace(/\s+/g, '_')}_${exportForm.value.fechaDesde}_${exportForm.value.fechaHasta}.xlsx`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+    
+    toast.success('Archivo Excel descargado exitosamente');
+    isExportModalOpen.value = false;
+  } catch (error) {
+    console.error('Error al exportar escenario:', error);
+    toast.error('Hubo un error al generar el archivo Excel');
+  } finally {
+    isExporting.value = false;
+  }
+};
 
 
 const showConfirmChangeScenario = ref(false);
@@ -905,6 +1011,8 @@ const abrirModalCrearBloque = () => {
     tipoBloque: 'MAREA_SIMULADA',
     buqueId: null,
     observadorId: null,
+    pesqueriaId: '',
+    pesqueriaNombre: '',
     fechaZarpada: today,
     fechaArribo: in30Days,
     diasEstimados: 30,

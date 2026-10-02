@@ -99,5 +99,15 @@ export const planificacionService = {
 
   async deleteEscenario(id: string): Promise<void> {
     await httpClient.delete(`/planificacion/simulador/escenarios/${id}`);
+  },
+
+  async exportarEscenarioAExcel(id: string, filtros: { fechaDesde: string; fechaHasta: string; soloPlanificadas: boolean }): Promise<Blob> {
+    const response = await httpClient.post<Blob>(
+      `/planificacion/simulador/escenarios/${id}/export/excel`,
+      filtros,
+      { responseType: 'blob' }
+    );
+    return response.data;
   }
 };
+

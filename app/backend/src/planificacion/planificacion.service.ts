@@ -1,4 +1,5 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import * as ExcelJS from 'exceljs';
 import { PrismaService } from '../prisma/prisma.service';
 import { DateTime } from 'luxon';
 import { MareaEstado } from '../mareas/mareas.constants';
@@ -751,5 +752,179 @@ export class PlanificacionService {
     } catch (error) {
       throw new NotFoundException(`Escenario con ID ${id} no encontrado`);
     }
+  }
+
+  async exportarEscenarioExcel(id: string, dto: any): Promise<Buffer> {
+    const escenario = await this.getEscenario(id);
+    const fechaDesde = new Date(dto.fechaDesde);
+    fechaDesde.setHours(0, 0, 0, 0);
+    const fechaHasta = new Date(dto.fechaHasta);
+    fechaHasta.setHours(23, 59, 59, 999);
+    const soloPlanificadas = dto.soloPlanificadas ?? true;
+
+    // 1. Obtener mareas simuladas
+    const simuladasRaw = (escenario.items as any[]) || [];
+    const simuladas = simuladasRaw.filter(sim => {
+      const start = new Date(sim.fechaZarpada);
+      const end = new Date(sim.fechaArribo);
+      return start <= fechaHasta && end >= fechaDesde;
+    });
+
+    // 2. Obtener mareas reales del periodo
+    const mareasReales = await this.prisma.marea.findMany({
+      where: {
+        activo: true,
+        estadoActual: { codigo: { notIn: ['CANCELADA', 'DESESTIMADA'] } },
+        OR: [
+          { fechaInicioObservador: { lte: fechaHasta }, fechaFinObservador: { gte: fechaDesde } },
+          { fechaInicioObservador: { lte: fechaHasta }, fechaFinObservador: null },
+        ]
+      },
+      include: {
+        estadoActual: true,
+        buque: true,
+        pesqueria: true,
+        observadorPrincipal: true,
+        etapas: {
+          include: { observadores: { include: { observador: true } } }
+        }
+      }
+    });
+
+    const allObs = await this.prisma.observador.findMany({ select: { id: true, nombre: true, apellido: true } });
+    const obsMap = new Map(allObs.map(o => [o.id, `${o.apellido}, ${o.nombre}`]));
+
+    // Unificar filas
+    const filas: any[] = [];
+
+    // Agregar simuladas
+    for (const sim of simuladas) {
+      filas.push({
+        buqueId: sim.buqueId,
+        buqueNombre: sim.buqueNombre || 'Sin Buque',
+        observadorId: sim.observadorId,
+        observadorNombre: sim.observadorId ? obsMap.get(sim.observadorId) || 'Desconocido' : 'Sin Asignar',
+        pesqueriaNombre: sim.pesqueriaNombre || '-',
+        codigoMarea: '-', // Simuladas no tienen código
+        inicio: new Date(sim.fechaZarpada),
+        fin: new Date(sim.fechaArribo),
+        tipo: 'Planificada',
+        esSimulada: true
+      });
+    }
+
+    // Agregar reales
+    for (const m of mareasReales) {
+      const inicio = m.fechaInicioObservador || new Date();
+      let fin = m.fechaFinObservador;
+      let esProyectada = false;
+
+      // Calcular fecha de finalización estimada si no tiene fin o está en ejecución
+      if ((!fin || m.estadoActual.codigo === 'EN_EJECUCION' || m.estadoActual.codigo === 'DESIGNADA') && m.fechaInicioObservador && m.diasEstimados) {
+        const startDate = new Date(m.fechaInicioObservador);
+        startDate.setHours(0, 0, 0, 0);
+        fin = new Date(startDate.getTime() + (m.diasEstimados - 1) * 86400000);
+        esProyectada = true;
+      }
+      
+      fin = fin || new Date(); // Fallback
+      
+      const anioStr = m.anioMarea ? String(m.anioMarea).slice(-2) : '--';
+      const nroStr = m.nroMarea ? String(m.nroMarea).padStart(3, '0') : '000';
+      const mareaStr = `${m.tipoMarea || 'MC'}-${nroStr}-${anioStr}`;
+      const tipoStr = `Real${esProyectada ? ' - Proyectada' : ''}`;
+      
+      const observadoresIds = new Set<string>();
+      if (m.observadorPrincipalId) observadoresIds.add(m.observadorPrincipalId);
+      for (const e of m.etapas) {
+        for (const eo of e.observadores) observadoresIds.add(eo.observadorId);
+      }
+
+      for (const obsId of observadoresIds) {
+        filas.push({
+          buqueId: m.buqueId,
+          buqueNombre: m.buque?.nombreBuque || 'Sin Buque',
+          observadorId: obsId,
+          observadorNombre: obsMap.get(obsId) || 'Desconocido',
+          pesqueriaNombre: m.pesqueria?.nombre || '-',
+          codigoMarea: mareaStr,
+          inicio,
+          fin,
+          tipo: tipoStr,
+          esSimulada: false
+        });
+      }
+    }
+
+    // Filtrar recursos según soloPlanificadas
+    const buquesConSimuladas = new Set(simuladas.filter(s => s.buqueId).map(s => s.buqueId));
+    const obsConSimuladas = new Set(simuladas.filter(s => s.observadorId).map(s => s.observadorId));
+
+    // Generar Excel
+    const wb = new ExcelJS.Workbook();
+    
+    // Hoja 1: Por Buque
+    const wsBuque = wb.addWorksheet('Por Buque');
+    wsBuque.columns = [
+      { header: 'Buque', key: 'buque', width: 25 },
+      { header: 'Observador', key: 'observador', width: 25 },
+      { header: 'Pesquería', key: 'pesqueria', width: 20 },
+      { header: 'Marea', key: 'marea', width: 15 },
+      { header: 'Inicio', key: 'inicio', width: 15 },
+      { header: 'Fin', key: 'fin', width: 15 },
+      { header: 'Tipo', key: 'tipo', width: 35 }
+    ];
+    wsBuque.getRow(1).font = { bold: true };
+
+    const filasPorBuque = [...filas].sort((a, b) => a.buqueNombre.localeCompare(b.buqueNombre) || a.inicio.getTime() - b.inicio.getTime());
+    for (const f of filasPorBuque) {
+      if (soloPlanificadas && f.buqueId && !buquesConSimuladas.has(f.buqueId)) continue;
+      
+      const row = wsBuque.addRow({
+        buque: f.buqueNombre,
+        observador: f.observadorNombre,
+        pesqueria: f.pesqueriaNombre,
+        marea: f.codigoMarea,
+        inicio: f.inicio.toLocaleDateString('es-AR'),
+        fin: f.fin.toLocaleDateString('es-AR'),
+        tipo: f.tipo
+      });
+      if (f.esSimulada) {
+        row.eachCell(c => c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD9EAD3' } });
+      }
+    }
+
+    // Hoja 2: Por Observador
+    const wsObs = wb.addWorksheet('Por Observador');
+    wsObs.columns = [
+      { header: 'Observador', key: 'observador', width: 25 },
+      { header: 'Buque', key: 'buque', width: 25 },
+      { header: 'Pesquería', key: 'pesqueria', width: 20 },
+      { header: 'Marea', key: 'marea', width: 15 },
+      { header: 'Inicio', key: 'inicio', width: 15 },
+      { header: 'Fin', key: 'fin', width: 15 },
+      { header: 'Tipo', key: 'tipo', width: 35 }
+    ];
+    wsObs.getRow(1).font = { bold: true };
+
+    const filasPorObs = [...filas].sort((a, b) => a.observadorNombre.localeCompare(b.observadorNombre) || a.inicio.getTime() - b.inicio.getTime());
+    for (const f of filasPorObs) {
+      if (soloPlanificadas && f.observadorId && !obsConSimuladas.has(f.observadorId)) continue;
+      
+      const row = wsObs.addRow({
+        observador: f.observadorNombre,
+        buque: f.buqueNombre,
+        pesqueria: f.pesqueriaNombre,
+        marea: f.codigoMarea,
+        inicio: f.inicio.toLocaleDateString('es-AR'),
+        fin: f.fin.toLocaleDateString('es-AR'),
+        tipo: f.tipo
+      });
+      if (f.esSimulada) {
+        row.eachCell(c => c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD9EAD3' } });
+      }
+    }
+
+    return (await wb.xlsx.writeBuffer()) as unknown as Buffer;
   }
 }

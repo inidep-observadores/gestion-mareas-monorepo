@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsOptional, IsInt, IsArray } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsInt, IsArray, IsBoolean } from 'class-validator';
 
 export class CreateEscenarioDto {
   @IsString()
@@ -45,3 +45,18 @@ export class CloneEscenarioDto {
   @IsOptional()
   descripcion?: string;
 }
+
+export class ExportEscenarioDto {
+  @IsString()
+  @IsNotEmpty()
+  fechaDesde: string;
+
+  @IsString()
+  @IsNotEmpty()
+  fechaHasta: string;
+
+  @IsBoolean()
+  @IsOptional()
+  soloPlanificadas?: boolean;
+}
+

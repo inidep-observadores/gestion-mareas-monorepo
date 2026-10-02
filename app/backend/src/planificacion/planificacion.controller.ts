@@ -1,10 +1,11 @@
-import { Controller, Get, Param, ParseIntPipe, Post, Body, Query, Put, Delete } from '@nestjs/common';
+import { Controller, Get, Param, ParseIntPipe, Post, Body, Query, Put, Delete, Res } from '@nestjs/common';
+import { Response } from 'express';
 import { PlanificacionService } from './planificacion.service';
 import { BatchUpsertRequerimientosDto } from './dto/requerimientos.dto';
 import { BatchUpsertExperienciaDto } from './dto/experiencia.dto';
 import { Auth } from '../auth/decorators';
 import { ValidRoles } from '../auth/interfaces';
-import { CreateEscenarioDto, UpdateEscenarioDto, CloneEscenarioDto } from './dto/escenarios.dto';
+import { CreateEscenarioDto, UpdateEscenarioDto, CloneEscenarioDto, ExportEscenarioDto } from './dto/escenarios.dto';
 
 @Controller('planificacion')
 @Auth()
@@ -97,5 +98,16 @@ export class PlanificacionController {
   @Auth(ValidRoles.admin, ValidRoles.planificador)
   async deleteEscenario(@Param('id') id: string) {
     return this.planificacionService.deleteEscenario(id);
+  }
+
+  @Post('simulador/escenarios/:id/export/excel')
+  @Auth(ValidRoles.admin, ValidRoles.planificador, ValidRoles.coordinador)
+  async exportEscenarioToExcel(@Param('id') id: string, @Body() dto: ExportEscenarioDto, @Res() res: Response) {
+    const buffer = await this.planificacionService.exportarEscenarioExcel(id, dto);
+    
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename=planificacion_${id}.xlsx`);
+    
+    res.end(buffer);
   }
 }
