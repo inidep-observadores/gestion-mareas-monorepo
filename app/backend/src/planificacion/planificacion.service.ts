@@ -1,10 +1,11 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { DateTime } from 'luxon';
 import { MareaEstado } from '../mareas/mareas.constants';
 import { evaluarEstadoDia } from '../utils/estado-observador.util';
 import { BatchUpsertRequerimientosDto } from './dto/requerimientos.dto';
 import { BatchUpsertExperienciaDto } from './dto/experiencia.dto';
+import { CreateEscenarioDto, UpdateEscenarioDto, CloneEscenarioDto } from './dto/escenarios.dto';
 
 @Injectable()
 export class PlanificacionService {
@@ -670,5 +671,85 @@ export class PlanificacionService {
         tipoMarea: m.tipoMarea
       };
     });
+  }
+
+  // --- Escenarios de Simulación ---
+
+  async getEscenariosPorAnio(anioOperativo: number) {
+    return this.prisma.escenarioSimulacion.findMany({
+      where: { anioOperativo },
+      orderBy: { updatedAt: 'desc' },
+      select: {
+        id: true,
+        nombre: true,
+        descripcion: true,
+        estado: true,
+        anioOperativo: true,
+        createdAt: true,
+        updatedAt: true,
+      }
+    });
+  }
+
+  async getEscenario(id: string) {
+    const escenario = await this.prisma.escenarioSimulacion.findUnique({
+      where: { id },
+    });
+    if (!escenario) {
+      throw new NotFoundException(`Escenario con ID ${id} no encontrado`);
+    }
+    return escenario;
+  }
+
+  async createEscenario(dto: CreateEscenarioDto) {
+    return this.prisma.escenarioSimulacion.create({
+      data: {
+        nombre: dto.nombre,
+        descripcion: dto.descripcion,
+        anioOperativo: dto.anioOperativo,
+        items: dto.items || [],
+        estado: 'BORRADOR',
+      },
+    });
+  }
+
+  async updateEscenario(id: string, dto: UpdateEscenarioDto) {
+    const data: any = {};
+    if (dto.nombre !== undefined) data.nombre = dto.nombre;
+    if (dto.descripcion !== undefined) data.descripcion = dto.descripcion;
+    if (dto.estado !== undefined) data.estado = dto.estado;
+    if (dto.items !== undefined) data.items = dto.items;
+
+    try {
+      return await this.prisma.escenarioSimulacion.update({
+        where: { id },
+        data,
+      });
+    } catch (error) {
+      throw new NotFoundException(`Escenario con ID ${id} no encontrado`);
+    }
+  }
+
+  async cloneEscenario(id: string, dto: CloneEscenarioDto) {
+    const source = await this.getEscenario(id);
+    return this.prisma.escenarioSimulacion.create({
+      data: {
+        nombre: dto.nombre,
+        descripcion: dto.descripcion !== undefined ? dto.descripcion : source.descripcion,
+        anioOperativo: source.anioOperativo,
+        items: source.items,
+        estado: 'BORRADOR',
+      },
+    });
+  }
+
+  async deleteEscenario(id: string) {
+    try {
+      return await this.prisma.escenarioSimulacion.delete({
+        where: { id },
+      });
+    } catch (error) {
+      throw new NotFoundException(`Escenario con ID ${id} no encontrado`);
+    }
   }
 }

@@ -4,6 +4,12 @@ import type {
   ExperienciaObservador, BatchUpsertExperienciaDto,
   ExperienciaPorPesqueria
 } from '../interfaces/planificacion.interfaces';
+import type { 
+  EscenarioSimulacionState, 
+  CreateEscenarioDto, 
+  UpdateEscenarioDto, 
+  CloneEscenarioDto 
+} from '../interfaces/simulador.interface';
 
 export const planificacionService = {
   /**
@@ -64,5 +70,34 @@ export const planificacionService = {
       params: { year, month, horizonMonths }
     });
     return response.data;
+  },
+
+  async getEscenariosPorAnio(anio: number): Promise<EscenarioSimulacionState[]> {
+    const response = await httpClient.get<EscenarioSimulacionState[]>(`/planificacion/simulador/escenarios/${anio}`);
+    return response.data;
+  },
+
+  async getEscenario(id: string): Promise<EscenarioSimulacionState> {
+    const response = await httpClient.get<EscenarioSimulacionState>(`/planificacion/simulador/escenario/${id}`);
+    return response.data;
+  },
+
+  async createEscenario(dto: CreateEscenarioDto): Promise<EscenarioSimulacionState> {
+    const response = await httpClient.post<EscenarioSimulacionState>('/planificacion/simulador/escenarios', dto);
+    return response.data;
+  },
+
+  async updateEscenario(id: string, dto: UpdateEscenarioDto): Promise<EscenarioSimulacionState> {
+    const response = await httpClient.put<EscenarioSimulacionState>(`/planificacion/simulador/escenarios/${id}`, dto);
+    return response.data;
+  },
+
+  async cloneEscenario(id: string, dto: CloneEscenarioDto): Promise<EscenarioSimulacionState> {
+    const response = await httpClient.post<EscenarioSimulacionState>(`/planificacion/simulador/escenarios/${id}/clonar`, dto);
+    return response.data;
+  },
+
+  async deleteEscenario(id: string): Promise<void> {
+    await httpClient.delete(`/planificacion/simulador/escenarios/${id}`);
   }
 };

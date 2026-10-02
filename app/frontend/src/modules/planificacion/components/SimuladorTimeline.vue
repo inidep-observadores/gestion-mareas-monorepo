@@ -116,6 +116,12 @@ const initTimeline = () => {
       callback(null);
     },
     onMove: (item: any, callback: any) => {
+      if (String(item.group).startsWith('pesqueria-')) {
+        toast.error('No se puede asignar a un encabezado de pesquería. Debe soltar el bloque sobre un buque.');
+        callback(null);
+        return;
+      }
+
       if (item.content && item.start && item.end) {
         const newDuration = Math.round((new Date(item.end).getTime() - new Date(item.start).getTime()) / 86400000);
         item.content = item.content.replace(/\[\d+d\]/, `[${newDuration}d]`);
@@ -166,6 +172,10 @@ const onDrop = (e: DragEvent) => {
     const props = timelineInstance.getEventProperties(e);
     
     if (props.group && props.time) {
+      if (String(props.group).startsWith('pesqueria-')) {
+        toast.error('No se puede asignar un recurso directamente al encabezado de la pesquería. Debe soltarlo sobre un buque.');
+        return;
+      }
       emit('drop-recurso', {
         recurso,
         group: String(props.group),
@@ -213,6 +223,11 @@ onBeforeUnmount(() => {
 
 defineExpose({
   getTimelineInstance: () => timelineInstance,
+  redraw: () => {
+    if (timelineInstance) {
+      timelineInstance.redraw();
+    }
+  }
 });
 </script>
 

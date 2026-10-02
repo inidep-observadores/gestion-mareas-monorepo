@@ -46,3 +46,22 @@ export interface EscenarioSimulacionState {
   fechaUltimaModificacion?: string;
   items: MareaSimuladaItem[];
 }
+
+export interface CreateEscenarioDto {
+  nombre: string;
+  descripcion?: string;
+  anioOperativo: number;
+  items?: MareaSimuladaItem[];
+}
+
+export interface UpdateEscenarioDto {
+  nombre?: string;
+  descripcion?: string;
+  estado?: string;
+  items?: MareaSimuladaItem[];
+}
+
+export interface CloneEscenarioDto {
+  nombre: string;
+  descripcion?: string;
+}

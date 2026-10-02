@@ -10,10 +10,17 @@
           <BackButton routeName="PlanificacionDashboard" label="Regresar" containerClass="mb-0" />
           <div class="h-6 w-px bg-border hidden sm:block"></div>
           <div>
-            <div class="flex items-center gap-2">
-              <h1 class="text-lg font-black text-text uppercase tracking-tight">Escenario Actual: {{ escenarioActual.nombre }}</h1>
-              <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-primary/10 border border-primary/30 text-primary">
-                {{ escenarioActual.estado }}
+            <div class="flex items-center gap-4">
+              <h1 class="text-lg font-black text-text uppercase tracking-tight">Escenario:</h1>
+              <select v-model="selectedEscenarioId" @change="onEscenarioChange" class="h-9 px-3 text-sm font-bold rounded-lg border border-border bg-surface text-text focus:outline-none focus:border-primary">
+                <option value="new">+ Crear Nuevo Escenario</option>
+                <option disabled>──────────</option>
+                <option v-for="esc in listaEscenarios" :key="esc.id" :value="esc.id">
+                  {{ esc.nombre }}
+                </option>
+              </select>
+              <span v-if="escenarioActual" class="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-primary/10 border border-primary/30 text-primary">
+                {{ escenarioActual?.estado }}
               </span>
             </div>
             <p class="text-xs text-text-muted">Arrastre recursos desde el panel lateral para asignar o redistribuir mareas en la línea de tiempo.</p>
@@ -25,20 +32,40 @@
 
           <!-- Botones de Acción de Escenario -->
           <button
-            @click="guardarBorrador"
-            class="h-10 px-3.5 inline-flex items-center justify-center gap-2 text-xs font-extrabold tracking-wider uppercase transition-all rounded-xl bg-primary text-white hover:bg-primary/90 active:scale-95 shadow-sm"
+            v-if="escenarioActual && escenarioActual.id"
+            @click="abrirModalEditarEscenario"
+            class="h-10 px-3.5 inline-flex items-center justify-center gap-2 text-xs font-extrabold tracking-wider uppercase transition-all rounded-xl bg-surface border border-border text-text hover:bg-surface-muted active:scale-95 shadow-sm"
           >
-            <DraftIcon class="w-4 h-4" />
-            Guardar Borrador
+            <EditIcon class="w-4 h-4" />
+            Editar
+          </button>
+          
+          <button
+            v-if="escenarioActual && escenarioActual.id"
+            @click="clonarEscenario"
+            class="h-10 px-3.5 inline-flex items-center justify-center gap-2 text-xs font-extrabold tracking-wider uppercase transition-all rounded-xl bg-surface border border-border text-text hover:bg-surface-muted active:scale-95 shadow-sm"
+          >
+            <PlusIcon class="w-4 h-4" />
+            Clonar
           </button>
 
           <button
-            @click="limpiarSimulacion"
+            v-if="escenarioActual && escenarioActual.id"
+            @click="guardarEscenario"
+            class="h-10 px-3.5 inline-flex items-center justify-center gap-2 text-xs font-extrabold tracking-wider uppercase transition-all rounded-xl bg-primary text-white hover:bg-primary/90 active:scale-95 shadow-sm"
+          >
+            <DraftIcon class="w-4 h-4" />
+            Guardar Cambios
+          </button>
+
+          <button
+            v-if="escenarioActual && escenarioActual.id"
+            @click="eliminarEscenario"
             class="h-10 px-3 inline-flex items-center justify-center gap-1.5 text-xs font-bold tracking-wider uppercase transition-all rounded-xl bg-surface border border-border text-error hover:bg-error/10 active:scale-95"
-            title="Limpiar bloques simulados del lienzo"
+            title="Eliminar escenario"
           >
             <TrashIcon class="w-4 h-4" />
-            Limpiar
+            Eliminar
           </button>
         </div>
       </div>
@@ -226,29 +253,33 @@
           </div>
 
           <!-- Timelines -->
-          <SimuladorTimeline 
-            v-if="!isLoading && activeTab === 'observador'"
-            mode="observador"
-            :groups="timelineObservadorGroups"
-            :items="timelineObservadorItems"
-            @item-moved="handleItemMoved"
-            @item-removed="handleItemRemoved"
-            @drop-recurso="handleDropRecurso"
-            @edit-item="handleEditItem"
-            class="h-[65vh] border-t border-border"
-          />
+          <div v-if="!isLoading" class="w-full h-full relative">
+            <SimuladorTimeline 
+              v-show="activeTab === 'observador'"
+              ref="timelineObservadorRef"
+              mode="observador"
+              :groups="timelineObservadorGroups"
+              :items="timelineObservadorItems"
+              @item-moved="handleItemMoved"
+              @item-removed="handleItemRemoved"
+              @drop-recurso="handleDropRecurso"
+              @edit-item="handleEditItem"
+              class="h-[65vh] border-t border-border"
+            />
 
-          <SimuladorTimeline 
-            v-if="!isLoading && activeTab === 'buque'"
-            mode="buque"
-            :groups="timelineBuqueGroups"
-            :items="timelineBuqueItems"
-            @item-moved="handleItemMoved"
-            @item-removed="handleItemRemoved"
-            @drop-recurso="handleDropRecurso"
-            @edit-item="handleEditItem"
-            class="h-[65vh] border-t border-border"
-          />
+            <SimuladorTimeline 
+              v-show="activeTab === 'buque'"
+              ref="timelineBuqueRef"
+              mode="buque"
+              :groups="timelineBuqueGroups"
+              :items="timelineBuqueItems"
+              @item-moved="handleItemMoved"
+              @item-removed="handleItemRemoved"
+              @drop-recurso="handleDropRecurso"
+              @edit-item="handleEditItem"
+              class="h-[65vh] border-t border-border"
+            />
+          </div>
         </div>
       </div>
     </div>
@@ -309,6 +340,53 @@
       </div>
     </BaseModal>
 
+    <!-- Modal Escenario -->
+    <BaseModal
+      :show="isEscenarioModalOpen"
+      @close="isEscenarioModalOpen = false"
+      :title="escenarioModalMode === 'edit' ? 'Editar Escenario' : (escenarioModalMode === 'clone' ? 'Clonar Escenario' : 'Nuevo Escenario')"
+    >
+      <div v-form-nav>
+        <div class="space-y-4">
+          <div>
+          <label class="block text-xs font-bold text-text-muted mb-1.5">Nombre <span class="text-error">*</span></label>
+          <input
+            ref="nombreEscenarioInput"
+            v-model="escenarioForm.nombre"
+            type="text"
+            class="w-full h-10 px-3 rounded-lg border border-border bg-surface text-sm focus:outline-none focus:border-primary"
+            placeholder="Ej: Simulacion Base 2026"
+          />
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-text-muted mb-1.5">Descripción</label>
+          <textarea
+            v-model="escenarioForm.descripcion"
+            class="w-full p-3 rounded-lg border border-border bg-surface text-sm focus:outline-none focus:border-primary"
+            placeholder="Opcional"
+            rows="3"
+          ></textarea>
+        </div>
+      </div>
+      <div class="mt-6 flex justify-end gap-3">
+        <button
+          @click="isEscenarioModalOpen = false"
+          class="px-4 py-2 text-sm font-bold text-text hover:bg-surface-muted rounded-lg transition-colors"
+        >
+          Cancelar
+        </button>
+        <button
+          @click="guardarModalEscenario"
+          :disabled="!escenarioForm.nombre"
+          data-allow-enter
+          class="px-4 py-2 text-sm font-bold text-white bg-primary rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50"
+        >
+          Guardar
+        </button>
+        </div>
+      </div>
+    </BaseModal>
+
     <!-- Modal Agregar Buque al Timeline -->
     <BaseModal 
       :show="isAddBuqueModalOpen" 
@@ -345,12 +423,13 @@
       <div v-form-nav class="bg-surface border border-border shadow-theme-xs flex flex-col rounded-2xl overflow-hidden p-6">
         <div v-if="editingBlockData" class="space-y-4">
           <div class="space-y-1.5">
-            <label class="block text-xs font-bold text-text-muted">Pesquería</label>
+            <label class="block text-xs font-bold text-text-muted">Observador</label>
             <SearchableSelect 
-              v-model="editingBlockData.pesqueriaId" 
-              :options="pesqueriaOptions" 
-              :icon="WaveIcon" 
-              placeholder="Seleccione pesquería..." 
+              :modelValue="editingBlockData.observadorId ?? null"
+              @update:modelValue="(v) => (editingBlockData!.observadorId = v as string | null)"
+              :options="observadorOptions" 
+              :icon="UserCircleIcon" 
+              placeholder="Seleccione observador..." 
             />
           </div>
           <div class="space-y-1.5">
@@ -365,8 +444,18 @@
           </div>
           <div class="grid grid-cols-2 gap-4">
             <div class="space-y-1.5">
+              <label class="block text-xs font-bold text-text-muted">Fecha Inicial</label>
+              <DatePicker v-model="blockZarpadaStr" placeholder="Seleccione fecha inicial" />
+            </div>
+            <div class="space-y-1.5">
+              <label class="block text-xs font-bold text-text-muted">Fecha Final</label>
+              <DatePicker v-model="blockArriboStr" placeholder="Seleccione fecha final" />
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div class="space-y-1.5">
               <label class="block text-xs font-bold text-text-muted">Días Estimados</label>
-              <input v-model="editingBlockData.diasEstimados" type="number" class="w-full px-4 py-2.5 bg-surface border rounded-lg text-sm text-text outline-none focus:border-primary focus:ring-3 focus:ring-primary/10 transition-all shadow-theme-xs" />
+              <input v-model="editingBlockData.diasEstimados" @input="onDiasEstimadosChange" type="number" min="1" class="w-full px-4 py-2.5 bg-surface border rounded-lg text-sm text-text outline-none focus:border-primary focus:ring-3 focus:ring-primary/10 transition-all shadow-theme-xs" />
             </div>
             <div class="space-y-1.5">
               <label class="block text-xs font-bold text-text-muted">Prioridad</label>
@@ -391,6 +480,28 @@
         </div>
       </div>
     </BaseModal>
+
+    <ConfirmationDialog
+      :show="showConfirmChangeScenario"
+      title="Cambios sin guardar"
+      message="Tiene cambios sin guardar en el escenario actual. ¿Desea continuar y perder los cambios?"
+      confirmText="Sí, descartar cambios"
+      cancelText="Cancelar"
+      confirmButtonClass="bg-error hover:bg-error-hover shadow-error/20"
+      @confirm="handleConfirmChangeScenario"
+      @close="handleCancelChangeScenario"
+    />
+
+    <ConfirmationDialog
+      :show="showConfirmDeleteScenario"
+      title="Eliminar escenario"
+      message="¿Seguro que desea eliminar el escenario actual? Esta acción no se puede deshacer."
+      confirmText="Sí, eliminar"
+      cancelText="Cancelar"
+      confirmButtonClass="bg-error hover:bg-error-hover shadow-error/20"
+      @confirm="handleConfirmDeleteScenario"
+      @close="showConfirmDeleteScenario = false"
+    />
   </PlanificacionDashboardLayout>
 </template>
 
@@ -401,6 +512,7 @@ import BackButton from '@/components/common/BackButton.vue';
 import SearchInput from '@/components/ui/SearchInput.vue';
 import SearchableSelect from '@/components/common/SearchableSelect.vue';
 import BaseModal from '@/components/common/BaseModal.vue';
+import DatePicker from '@/components/common/DatePicker.vue';
 import {
   ChevronDownIcon,
   ShipIcon,
@@ -419,8 +531,11 @@ import disponibilidadApi from '@/modules/admin/services/disponibilidad.service';
 import type { DisponibilidadResponse, ObservadorDisponibilidadRow } from '@/modules/admin/interfaces/disponibilidad.interface';
 import { getBloqueLabel, getItemVisClass, formatItemTooltip } from '@/modules/shared/utils/timeline-styles';
 import catalogosService from '../../mareas/services/catalogos.service';
+import { planificacionService } from '../services/planificacion.service';
+
 import type { MareaSimuladaItem, EscenarioSimulacionState } from '../interfaces/simulador.interface';
 import SimuladorTimeline from '../components/SimuladorTimeline.vue';
+import ConfirmationDialog from '@/components/common/ConfirmationDialog.vue';
 
 import { useConfigStore } from '@/modules/shared/stores/config.store';
 const configStore = useConfigStore();
@@ -440,15 +555,68 @@ watch(searchQuery, (newVal) => {
 const sidebarOpen = ref(true);
 const activeTab = ref<'observador' | 'buque'>('observador');
 
-// Estado del Escenario Borrador
-const escenarioActual = ref<EscenarioSimulacionState>({
-  id: 'escenario-draft-1',
-  nombre: 'Escenario Borrador 1',
-  anioOperativo: configStore.selectedYear,
-  estado: 'BORRADOR',
-  fechaCreacion: new Date().toISOString(),
-  items: []
+const timelineObservadorRef = ref<any>(null);
+const timelineBuqueRef = ref<any>(null);
+
+watch(activeTab, (newTab) => {
+  nextTick(() => {
+    if (newTab === 'observador') {
+      timelineObservadorRef.value?.redraw();
+    } else {
+      timelineBuqueRef.value?.redraw();
+    }
+  });
 });
+
+// Estado del Escenario
+const listaEscenarios = ref<EscenarioSimulacionState[]>([]);
+const selectedEscenarioId = ref<string>('');
+const escenarioActual = ref<EscenarioSimulacionState | null>(null);
+
+
+const showConfirmChangeScenario = ref(false);
+const showConfirmDeleteScenario = ref(false);
+const pendingEscenarioId = ref('');
+
+const handleConfirmChangeScenario = () => {
+  showConfirmChangeScenario.value = false;
+  selectedEscenarioId.value = pendingEscenarioId.value;
+  performScenarioChange();
+};
+
+const handleCancelChangeScenario = () => {
+  showConfirmChangeScenario.value = false;
+  selectedEscenarioId.value = escenarioActual.value?.id || '';
+};
+
+const handleConfirmDeleteScenario = async () => {
+  showConfirmDeleteScenario.value = false;
+  if (!escenarioActual.value) return;
+  try {
+    await planificacionService.deleteEscenario(escenarioActual.value.id);
+    toast.success('Escenario eliminado');
+    await cargarEscenarios();
+    if (listaEscenarios.value.length > 0) {
+      selectedEscenarioId.value = listaEscenarios.value[0].id;
+      await performScenarioChange();
+    } else {
+      escenarioActual.value = null;
+      selectedEscenarioId.value = '';
+    }
+  } catch (error) {
+    toast.error('Error al eliminar');
+  }
+};
+
+const isEscenarioModalOpen = ref(false);
+const escenarioModalMode = ref<'create' | 'edit' | 'clone'>('create');
+const escenarioForm = ref({
+  id: '',
+  nombre: '',
+  descripcion: '',
+});
+const hasUnsavedChanges = ref(false);
+
 
 // Datos de Recursos Pendientes (Simulados / Requerimientos)
 export interface RecursoPendiente {
@@ -531,7 +699,56 @@ const resourceForm = ref<{
 const isEditBlockModalOpen = ref(false);
 const editingBlockData = ref<MareaSimuladaItem | null>(null);
 
+const blockZarpadaStr = computed({
+  get: () => {
+    if (!editingBlockData.value?.fechaZarpada) return null;
+    return new Date(editingBlockData.value.fechaZarpada).toISOString();
+  },
+  set: (val: string | null) => {
+    if (val && editingBlockData.value) {
+      editingBlockData.value.fechaZarpada = val;
+      const start = new Date(val);
+      
+      // Siempre mantenemos la cantidad de días estimados y desplazamos la fecha final
+      const end = new Date(start.getTime() + (editingBlockData.value.diasEstimados * 86400000));
+      editingBlockData.value.fechaArribo = end;
+    }
+  }
+});
+
+const blockArriboStr = computed({
+  get: () => {
+    if (!editingBlockData.value?.fechaArribo) return null;
+    return new Date(editingBlockData.value.fechaArribo).toISOString();
+  },
+  set: (val: string | null) => {
+    if (val && editingBlockData.value) {
+      const start = new Date(editingBlockData.value.fechaZarpada);
+      const end = new Date(val);
+      
+      if (end <= start) {
+         toast.error('La fecha final debe ser mayor a la inicial');
+         return;
+      }
+      
+      editingBlockData.value.fechaArribo = val;
+      const diff = Math.round((end.getTime() - start.getTime()) / 86400000);
+      editingBlockData.value.diasEstimados = diff;
+    }
+  }
+});
+
+const onDiasEstimadosChange = () => {
+  if (editingBlockData.value && editingBlockData.value.diasEstimados > 0) {
+     const start = new Date(editingBlockData.value.fechaZarpada);
+     editingBlockData.value.fechaArribo = new Date(start.getTime() + (editingBlockData.value.diasEstimados * 86400000));
+  }
+};
+
 const pesqueriaSelectRef = ref<any>(null);
+
+const buqueSelectRef = ref<any>(null);
+const observadorSelectRef = ref<any>(null);
 
 const abrirModalCrearRecurso = () => {
   editingRecursoId.value = null;
@@ -544,7 +761,11 @@ const abrirModalCrearRecurso = () => {
   };
   isResourceModalOpen.value = true;
   nextTick(() => {
-    pesqueriaSelectRef.value?.focus();
+    if (activeTab.value === 'observador') {
+      buqueSelectRef.value?.focus();
+    } else {
+      observadorSelectRef.value?.focus();
+    }
   });
 };
 
@@ -661,16 +882,23 @@ const cerrarModalEditarBloque = () => {
 
 const guardarEdicionBloque = () => {
   if (!editingBlockData.value) return;
-  const idx = escenarioActual.value.items.findIndex(i => i.id === editingBlockData.value?.id);
+  const idx = escenarioActual.value!.items.findIndex(i => i.id === editingBlockData.value?.id);
   if (idx !== -1) {
-    const pesqueria = pesquerias.value.find(p => p.id === editingBlockData.value?.pesqueriaId);
     const buque = buques.value.find(b => b.id === editingBlockData.value?.buqueId);
     
-    if (pesqueria) {
-      editingBlockData.value.pesqueriaNombre = pesqueria.nombre;
-    }
     if (buque) {
       editingBlockData.value.buqueNombre = buque.nombreBuque;
+      editingBlockData.value.pesqueriaId = buque.pesqueriaHabitualId;
+      editingBlockData.value.pesqueriaNombre = buque.pesqueriaHabitual?.nombre || '';
+    }
+
+    if (editingBlockData.value.observadorId) {
+      const obsData = datosSimulacion.value?.observadores.find(o => o.observador.id === editingBlockData.value!.observadorId)?.observador;
+      if (obsData) {
+        editingBlockData.value.observadorNombre = `${obsData.apellido}, ${obsData.nombre}`;
+      }
+    } else {
+      editingBlockData.value.observadorNombre = undefined;
     }
     
     // Recalcular la fecha de arribo basada en los nuevos días estimados
@@ -686,7 +914,8 @@ const guardarEdicionBloque = () => {
 
     editingBlockData.value.fechaArribo = fechaArribo;
 
-    escenarioActual.value.items[idx] = { ...editingBlockData.value };
+    escenarioActual.value!.items[idx] = { ...editingBlockData.value };
+    hasUnsavedChanges.value = true;
     
     // Actualizar escenarioActual (reactivo, SimuladorTimeline lo reflejará)
 
@@ -697,10 +926,11 @@ const guardarEdicionBloque = () => {
 
 const devolverRecursoPendiente = () => {
   if (!editingBlockData.value) return;
-  const idx = escenarioActual.value.items.findIndex(i => i.id === editingBlockData.value?.id);
+  const idx = escenarioActual.value!.items.findIndex(i => i.id === editingBlockData.value?.id);
   if (idx !== -1) {
-    const removedItem = escenarioActual.value.items[idx];
-    escenarioActual.value.items.splice(idx, 1);
+    const removedItem = escenarioActual.value!.items[idx];
+    escenarioActual.value!.items.splice(idx, 1);
+    hasUnsavedChanges.value = true;
     
     recursosPendientes.value.push({
       id: `rec-returned-${Date.now()}`,
@@ -737,7 +967,7 @@ const filteredObservadores = computed(() => {
 // Conflictos detectados en tiempo real
 const conflictosDetectados = computed(() => {
   const alertas: string[] = [];
-  const simulados = escenarioActual.value.items.filter(i => i.tipoBloque === 'MAREA_SIMULADA');
+  const simulados = (escenarioActual.value?.items || []).filter(i => i.tipoBloque === 'MAREA_SIMULADA');
   if (simulados.length === 0 || !datosSimulacion.value) return alertas;
 
   simulados.forEach(sim => {
@@ -828,15 +1058,16 @@ const timelineObservadorItems = computed(() => {
     });
   }
 
-  escenarioActual.value.items.forEach(sim => {
+  (escenarioActual.value?.items || []).forEach(sim => {
     const duracionSim = Math.round((new Date(sim.fechaArribo).getTime() - new Date(sim.fechaZarpada).getTime()) / 86400000);
     const finInclusivo = new Date(new Date(sim.fechaArribo).getTime() - 86400000);
+    const label = sim.buqueNombre || sim.pesqueriaNombre;
     items.push({
       id: sim.id,
       group: sim.observadorId ?? '',
       start: new Date(sim.fechaZarpada),
       end: new Date(sim.fechaArribo),
-      content: `<div class="flex items-center gap-1 font-bold"><span class="text-[10px]">✨</span> ${sim.pesqueriaNombre} [${duracionSim}d] (Proyectada)</div>`,
+      content: `<div class="flex items-center gap-1 font-bold"><span class="text-[10px]">✨</span> ${label} [${duracionSim}d] (Proyectada)</div>`,
       title: `<strong>Inicio:</strong> ${new Date(sim.fechaZarpada).toLocaleDateString('es-AR')}<br><strong>Fin:</strong> ${finInclusivo.toLocaleDateString('es-AR')}`,
       className: 'vis-item-simulada border-2 border-dashed border-primary bg-primary/20 text-primary font-bold shadow-sm',
       editable: { updateTime: true, updateGroup: true, remove: true }
@@ -863,7 +1094,7 @@ const timelineBuqueGroups = computed(() => {
   });
   
   // Extraer buques de mareas simuladas
-  escenarioActual.value.items.forEach(sim => {
+  (escenarioActual.value?.items || []).forEach(sim => {
     if (sim.buqueId && sim.buqueNombre) {
       const bCatalog = buques.value.find(b => b.id === sim.buqueId);
       const pName = sim.pesqueriaNombre || bCatalog?.pesqueriaHabitual?.nombre || 'Sin pesquería';
@@ -952,7 +1183,7 @@ const timelineBuqueItems = computed(() => {
     });
   }
 
-  escenarioActual.value.items.forEach(sim => {
+  (escenarioActual.value?.items || []).forEach(sim => {
     if (!sim.buqueId) return;
     
     // Buscar nombre de observador para las simuladas
@@ -969,7 +1200,7 @@ const timelineBuqueItems = computed(() => {
       group: sim.buqueId,
       start: new Date(sim.fechaZarpada),
       end: new Date(sim.fechaArribo),
-      content: `<div class="flex flex-col items-start leading-tight"><span class="text-[10px] font-black truncate max-w-[100px]">${obsNombre}</span><span class="text-[9px] opacity-70 truncate max-w-[100px]">✨ ${sim.pesqueriaNombre} [${duracionSim}d]</span></div>`,
+      content: `<div class="flex flex-col items-start leading-tight"><span class="text-[10px] font-black truncate max-w-[100px]">${obsNombre}</span><span class="text-[9px] opacity-70 truncate max-w-[100px]">[${duracionSim}d]</span></div>`,
       title: `<strong>Inicio:</strong> ${new Date(sim.fechaZarpada).toLocaleDateString('es-AR')}<br><strong>Fin:</strong> ${finInclusivo.toLocaleDateString('es-AR')}`,
       className: 'vis-item-simulada border-2 border-dashed border-primary bg-primary/20 text-primary font-bold shadow-sm',
       editable: { updateTime: true, updateGroup: true, remove: true }
@@ -984,23 +1215,36 @@ const handleItemMoved = (payload: { id: string; start: Date; end: Date; group: s
      return;
   }
   
-  const sim = escenarioActual.value.items.find(i => i.id === payload.id);
+  const sim = (escenarioActual.value?.items || []).find(i => i.id === payload.id);
   if (sim) {
     if (activeTab.value === 'observador') {
       sim.observadorId = payload.group;
+      const obsData = datosSimulacion.value?.observadores.find(o => o.observador.id === payload.group)?.observador;
+      if (obsData) {
+        sim.observadorNombre = `${obsData.apellido}, ${obsData.nombre}`;
+      }
     } else if (activeTab.value === 'buque') {
       sim.buqueId = payload.group;
+      // Resolvemos el buque desde el store global
+      const bCatalog = buques.value.find(b => b.id === payload.group);
+      if (bCatalog) {
+        sim.buqueNombre = bCatalog.nombreBuque;
+        sim.pesqueriaId = bCatalog.pesqueriaHabitualId;
+        sim.pesqueriaNombre = bCatalog.pesqueriaHabitual?.nombre;
+      }
     }
     sim.fechaZarpada = payload.start;
     sim.fechaArribo = payload.end;
+    hasUnsavedChanges.value = true;
   }
 };
 
 const handleItemRemoved = (id: string) => {
-  const idx = escenarioActual.value.items.findIndex(i => i.id === id);
+  const idx = escenarioActual.value!.items.findIndex(i => i.id === id);
   if (idx !== -1) {
-    const removedItem = escenarioActual.value.items[idx];
-    escenarioActual.value.items.splice(idx, 1);
+    const removedItem = escenarioActual.value!.items[idx];
+    escenarioActual.value!.items.splice(idx, 1);
+    hasUnsavedChanges.value = true;
     
     recursosPendientes.value.push({
       id: `rec-returned-${Date.now()}`,
@@ -1066,7 +1310,8 @@ const handleDropRecurso = (payload: { recurso: any; group: string; date: Date })
     prioridad: recursoArrastrado.prioridad || 'MEDIA'
   };
 
-  escenarioActual.value.items.push(nuevoItemSimulado);
+  escenarioActual.value!.items.push(nuevoItemSimulado);
+  hasUnsavedChanges.value = true;
 
   // Remover del sidebar pendiente
   const idxRec = recursosPendientes.value.findIndex(r => r.id === recursoArrastrado.id);
@@ -1081,7 +1326,7 @@ const handleDropRecurso = (payload: { recurso: any; group: string; date: Date })
 };
 
 const handleEditItem = (id: string) => {
-  const sim = escenarioActual.value.items.find(i => i.id === id);
+  const sim = (escenarioActual.value?.items || []).find(i => i.id === id);
   if (sim) {
     editingBlockData.value = { ...sim };
     isEditBlockModalOpen.value = true;
@@ -1105,15 +1350,145 @@ const onDragStartRecurso = (event: DragEvent, recurso: RecursoPendiente) => {
   }
 };
 
-const guardarBorrador = () => {
-  escenarioActual.value.fechaUltimaModificacion = new Date().toISOString();
-  localStorage.setItem('sigmasimulador_draft', JSON.stringify(escenarioActual.value));
-  toast.success('Borrador de simulación guardado localmente');
+// Lógica de Escenarios
+const cargarEscenarios = async () => {
+  try {
+    listaEscenarios.value = await planificacionService.getEscenariosPorAnio(configStore.selectedYear);
+    if (listaEscenarios.value.length > 0 && !selectedEscenarioId.value) {
+      // Intentar cargar el último usado o el primero si no hay
+      const lastId = configStore.lastScenarioId;
+      if (lastId && listaEscenarios.value.some(e => e.id === lastId)) {
+        selectedEscenarioId.value = lastId;
+      } else {
+        selectedEscenarioId.value = listaEscenarios.value[0].id;
+      }
+      await onEscenarioChange();
+    }
+  } catch (error) {
+    console.error(error);
+    toast.error('Error al cargar escenarios');
+  }
 };
 
-const limpiarSimulacion = () => {
-  escenarioActual.value.items = [];
-  toast.info('Se han limpiado los bloques simulados');
+const nombreEscenarioInput = ref<HTMLInputElement | null>(null);
+
+const onEscenarioChange = async () => {
+  if (hasUnsavedChanges.value && escenarioActual.value) {
+    pendingEscenarioId.value = selectedEscenarioId.value;
+    selectedEscenarioId.value = escenarioActual.value.id;
+    showConfirmChangeScenario.value = true;
+    return;
+  }
+  await performScenarioChange();
+};
+
+const performScenarioChange = async () => {
+  if (selectedEscenarioId.value === 'new') {
+    escenarioModalMode.value = 'create';
+    escenarioForm.value = { 
+      id: '', 
+      nombre: `Escenario ${listaEscenarios.value.length + 1}`, 
+      descripcion: '' 
+    };
+    isEscenarioModalOpen.value = true;
+    selectedEscenarioId.value = escenarioActual.value?.id || '';
+    nextTick(() => {
+      nombreEscenarioInput.value?.focus();
+    });
+    return;
+  }
+  try {
+    isLoading.value = true;
+    const esc = await planificacionService.getEscenario(selectedEscenarioId.value);
+    escenarioActual.value = esc;
+    configStore.setLastScenarioId(selectedEscenarioId.value);
+    hasUnsavedChanges.value = false;
+  } catch (error) {
+    toast.error('Error al cargar escenario');
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+const abrirModalEditarEscenario = () => {
+  if (!escenarioActual.value) return;
+  escenarioModalMode.value = 'edit';
+  escenarioForm.value = {
+    id: escenarioActual.value.id,
+    nombre: escenarioActual.value.nombre,
+    descripcion: escenarioActual.value.descripcion || ''
+  };
+  isEscenarioModalOpen.value = true;
+  nextTick(() => {
+    nombreEscenarioInput.value?.focus();
+  });
+};
+
+const clonarEscenario = async () => {
+  if (!escenarioActual.value) return;
+  escenarioModalMode.value = 'clone';
+  escenarioForm.value = {
+    id: '',
+    nombre: escenarioActual.value.nombre + ' (Copia)',
+    descripcion: escenarioActual.value.descripcion || ''
+  };
+  isEscenarioModalOpen.value = true;
+  nextTick(() => {
+    nombreEscenarioInput.value?.focus();
+  });
+};
+
+const eliminarEscenario = () => {
+  if (!escenarioActual.value) return;
+  showConfirmDeleteScenario.value = true;
+};
+
+const guardarModalEscenario = async () => {
+  try {
+    if (escenarioModalMode.value === 'edit') {
+      await planificacionService.updateEscenario(escenarioForm.value.id, {
+        nombre: escenarioForm.value.nombre,
+        descripcion: escenarioForm.value.descripcion
+      });
+      toast.success('Escenario actualizado');
+    } else if (escenarioModalMode.value === 'clone' && escenarioActual.value) {
+      const clon = await planificacionService.cloneEscenario(escenarioActual.value.id, {
+        nombre: escenarioForm.value.nombre,
+        descripcion: escenarioForm.value.descripcion
+      });
+      toast.success('Escenario clonado');
+      selectedEscenarioId.value = clon.id;
+    } else {
+      const nuevo = await planificacionService.createEscenario({
+        nombre: escenarioForm.value.nombre,
+        descripcion: escenarioForm.value.descripcion,
+        anioOperativo: configStore.selectedYear,
+        items: []
+      });
+      toast.success('Escenario creado');
+      selectedEscenarioId.value = nuevo.id;
+    }
+    isEscenarioModalOpen.value = false;
+    await cargarEscenarios();
+    if (!escenarioForm.value.id && selectedEscenarioId.value) {
+      await onEscenarioChange();
+    }
+  } catch (error) {
+    toast.error('Error al guardar escenario');
+  }
+};
+
+const guardarEscenario = async () => {
+  if (!escenarioActual.value) return;
+  try {
+    await planificacionService.updateEscenario(escenarioActual.value.id, {
+      items: escenarioActual.value.items
+    });
+    toast.success('Cambios guardados en BD');
+    hasUnsavedChanges.value = false;
+  } catch(error) {
+    toast.error('Error al guardar cambios');
+  }
 };
 
 onMounted(async () => {
@@ -1131,6 +1506,7 @@ onMounted(async () => {
     loadingCatalogs.value = false;
   }
   
+  await cargarEscenarios();
   fetchData();
 });
 

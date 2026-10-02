@@ -11,6 +11,10 @@ export const useConfigStore = defineStore('config', () => {
         (localStorage.getItem('statsDetailViewMode') as 'cards' | 'table') || 'cards'
     );
 
+    const lastScenarioId = ref<string>(
+        localStorage.getItem('lastScenarioId') || ''
+    );
+
     // Watch for changes and persist to localStorage
     watch(selectedYear, (newYear) => {
         localStorage.setItem('selectedYear', newYear.toString());
@@ -18,6 +22,10 @@ export const useConfigStore = defineStore('config', () => {
 
     watch(statsDetailViewMode, (newMode) => {
         localStorage.setItem('statsDetailViewMode', newMode);
+    });
+
+    watch(lastScenarioId, (newId) => {
+        localStorage.setItem('lastScenarioId', newId);
     });
 
     // Actions
@@ -29,13 +37,19 @@ export const useConfigStore = defineStore('config', () => {
         statsDetailViewMode.value = mode;
     };
 
+    const setLastScenarioId = (id: string) => {
+        lastScenarioId.value = id;
+    };
+
     return {
         // State
         selectedYear,
         statsDetailViewMode,
+        lastScenarioId,
 
         // Actions
         setSelectedYear,
-        setStatsDetailViewMode
+        setStatsDetailViewMode,
+        setLastScenarioId
     };
 });
