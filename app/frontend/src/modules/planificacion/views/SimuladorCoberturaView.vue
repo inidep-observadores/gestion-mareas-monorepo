@@ -50,6 +50,7 @@
           </button>
 
           <button
+            v-show="false"
             v-if="escenarioActual && escenarioActual.id"
             @click="guardarEscenario"
             class="h-10 px-3.5 inline-flex items-center justify-center gap-2 text-xs font-extrabold tracking-wider uppercase transition-all rounded-xl bg-primary text-white hover:bg-primary/90 active:scale-95 shadow-sm"
@@ -101,6 +102,7 @@
 
         <div class="flex items-center gap-3">
           <button
+            v-show="false"
             @click="toggleSidebar"
             class="h-9 px-3 inline-flex items-center gap-2 text-xs font-bold rounded-lg border border-border bg-surface text-text hover:bg-surface-muted transition-colors"
           >
@@ -118,7 +120,7 @@
         </div>
         <ul class="text-xs space-y-1 pl-7 list-disc">
           <li v-for="(conf, idx) in conflictosDetectados" :key="idx">
-            {{ conf }}
+            {{ conf.mensaje }}
           </li>
         </ul>
       </div>
@@ -127,7 +129,7 @@
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         <!-- Sidebar Izquierdo: Mareas y Pesquerías Requeridas Arrastrables -->
         <div
-          v-show="sidebarOpen"
+          v-show="false"
           class="lg:col-span-3 bg-surface rounded-2xl border border-border shadow-sm p-4 flex flex-col gap-4 max-h-[72vh] overflow-y-auto"
         >
           <div class="flex items-center justify-between border-b border-border pb-3">
@@ -209,8 +211,22 @@
         <!-- Canvas Central (vis-timeline) -->
         <div
           :class="[sidebarOpen ? 'lg:col-span-9' : 'lg:col-span-12']"
-          class="bg-surface rounded-2xl shadow-sm border border-border p-4 transition-all flex flex-col gap-4 relative overflow-hidden"
+          class="bg-surface rounded-2xl shadow-sm border border-border p-4 transition-all flex flex-col gap-4 relative overflow-hidden min-h-[500px]"
         >
+          <!-- Placeholder cuando no hay escenario -->
+          <div v-if="!escenarioActual" class="absolute inset-0 flex flex-col items-center justify-center bg-surface/80 backdrop-blur-sm z-10 p-8 text-center rounded-2xl">
+            <LayersIcon class="w-16 h-16 text-primary/20 mb-4" />
+            <h2 class="text-xl font-black text-text mb-2">No hay un escenario seleccionado</h2>
+            <p class="text-sm text-text-muted max-w-md mb-6">Seleccione un escenario en el panel superior o cree uno nuevo para comenzar a trabajar en la planificación de mareas.</p>
+            <button
+              @click="selectedEscenarioId = 'new'; onEscenarioChange()"
+              class="px-6 py-3 bg-primary text-white rounded-xl text-sm font-bold shadow-md hover:bg-primary/90 transition-colors flex items-center gap-2"
+            >
+              <PlusIcon class="w-5 h-5" />
+              Crear Nuevo Escenario
+            </button>
+          </div>
+
           <!-- Tabs de Vista -->
           <div class="flex items-center gap-1 border-b border-border bg-surface-muted/30 -mx-4 -mt-4 px-4 pt-2 mb-2">
             <button 
@@ -230,19 +246,46 @@
               <ShipIcon class="w-4 h-4" />
               Por buque
             </button>
-            <div class="ml-auto pr-4 pb-2 flex items-center gap-3">
-              <SearchInput 
-                v-model="searchQuery" 
-                :placeholder="activeTab === 'observador' ? 'Buscar observador...' : 'Buscar buque...'" 
-                class="w-56" 
-              />
-              <button 
-                v-if="activeTab === 'buque'"
-                @click="isAddBuqueModalOpen = true"
-                class="px-3 py-1.5 h-9 text-xs font-bold text-primary border border-primary rounded hover:bg-primary hover:text-white transition-colors flex items-center gap-1"
-              >
-                <PlusIcon class="w-3.5 h-3.5" /> Agregar Buque
-              </button>
+            <div class="ml-auto pr-4 pb-2 flex flex-col items-end gap-2">
+              <div v-if="activeTab === 'observador'" class="flex gap-2">
+                <button
+                  v-for="type in [{ key: 'OBSERVADOR', label: 'Observadores' }, { key: 'TECNICO', label: 'Técnicos' }]"
+                  :key="type.key" @click="toggleType(type.key)"
+                  class="px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-tight transition-all duration-200"
+                  :class="[
+                    selectedTypes.includes(type.key)
+                      ? 'bg-primary text-white shadow-sm ring-1 ring-primary'
+                      : 'bg-surface-muted text-text-muted border border-border hover:bg-surface hover:text-text'
+                  ]">
+                  {{ type.label }}
+                </button>
+              </div>
+              <div class="flex items-center gap-3">
+                <label class="flex items-center gap-2 px-3 h-9 bg-surface-muted rounded-lg border border-border cursor-pointer hover:bg-surface transition-colors shadow-sm">
+                  <input type="checkbox" v-model="soloMareasPlanificadas" class="w-3.5 h-3.5 text-primary bg-surface border-border rounded focus:ring-primary focus:ring-2">
+                  <span class="text-[10px] font-black text-text-muted uppercase tracking-widest mt-0.5">SÓLO PLANIFICADAS</span>
+                </label>
+                <SearchInput 
+                  v-model="searchQuery" 
+                  :placeholder="activeTab === 'observador' ? 'Buscar observador...' : 'Buscar buque...'" 
+                  class="w-56 h-9" 
+                />
+                <button 
+                  v-show="false"
+                  v-if="activeTab === 'buque'"
+                  @click="isAddBuqueModalOpen = true"
+                  class="px-3 py-1.5 h-9 text-xs font-bold text-primary border border-primary rounded hover:bg-primary hover:text-white transition-colors flex items-center gap-1"
+                >
+                  <PlusIcon class="w-3.5 h-3.5" /> Agregar Buque
+                </button>
+                
+                <button 
+                  @click="abrirModalCrearBloque"
+                  class="px-4 py-1.5 h-9 text-xs font-black uppercase tracking-wider text-white bg-primary rounded shadow-theme-xs shadow-primary/20 hover:bg-primary-hover active:scale-95 transition-all flex items-center gap-1.5"
+                >
+                  <PlusIcon class="w-4 h-4" /> Nueva Marea
+                </button>
+              </div>
             </div>
           </div>
 
@@ -481,6 +524,68 @@
       </div>
     </BaseModal>
 
+    <!-- Modal Crear Marea Simulada -->
+    <BaseModal 
+      :show="isCreateBlockModalOpen" 
+      @close="cerrarModalCrearBloque" 
+      maxWidth="xl" 
+      title="Crear Marea Planificada"
+    >
+      <div v-form-nav class="bg-surface border border-border shadow-theme-xs flex flex-col rounded-2xl overflow-hidden p-6">
+        <div v-if="newBlockData" class="space-y-4">
+          <div class="space-y-1.5">
+            <label class="block text-xs font-bold text-text-muted">Observador</label>
+            <SearchableSelect 
+              :modelValue="newBlockData.observadorId ?? null"
+              @update:modelValue="(v) => (newBlockData!.observadorId = v as string | null)"
+              :options="observadorOptions" 
+              :icon="UserCircleIcon" 
+              placeholder="Seleccione observador..." 
+            />
+          </div>
+          <div class="space-y-1.5">
+            <label class="block text-xs font-bold text-text-muted">Buque</label>
+            <SearchableSelect 
+              :modelValue="newBlockData.buqueId ?? null"
+              @update:modelValue="(v) => (newBlockData!.buqueId = v as string | null)"
+              :options="buqueOptions" 
+              :icon="ShipIcon" 
+              placeholder="Seleccione buque..." 
+            />
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div class="space-y-1.5">
+              <label class="block text-xs font-bold text-text-muted">Fecha Inicial</label>
+              <DatePicker v-model="newBlockZarpadaStr" placeholder="Seleccione fecha inicial" />
+            </div>
+            <div class="space-y-1.5">
+              <label class="block text-xs font-bold text-text-muted">Fecha Final</label>
+              <DatePicker v-model="newBlockArriboStr" placeholder="Seleccione fecha final" />
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div class="space-y-1.5">
+              <label class="block text-xs font-bold text-text-muted">Días Estimados</label>
+              <input v-model="newBlockData.diasEstimados" @input="onNewDiasEstimadosChange" type="number" min="1" class="w-full px-4 py-2.5 bg-surface border rounded-lg text-sm text-text outline-none focus:border-primary focus:ring-3 focus:ring-primary/10 transition-all shadow-theme-xs" />
+            </div>
+            <div class="space-y-1.5">
+              <label class="block text-xs font-bold text-text-muted">Prioridad</label>
+              <select v-model="newBlockData.prioridad" class="w-full bg-surface border border-border rounded-lg px-4 py-2.5 text-sm font-bold text-text outline-none focus:border-primary focus:ring-3 focus:ring-primary/10 transition-colors shadow-theme-xs">
+                <option value="ALTA">Alta</option>
+                <option value="MEDIA">Media</option>
+                <option value="BAJA">Baja</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        
+        <div class="mt-8 pt-6 flex items-center justify-end border-t border-border gap-3">
+          <button @click="cerrarModalCrearBloque" class="px-6 py-3 text-xs font-black uppercase tracking-widest text-text-muted hover:text-text transition-all">Cancelar</button>
+          <button @click="guardarCreacionBloque" data-allow-enter class="px-8 py-3 bg-primary hover:bg-primary-hover text-primary-fg rounded-lg text-xs font-black uppercase tracking-widest shadow-theme-xs shadow-primary/20 transition-all active:scale-95">Guardar</button>
+        </div>
+      </div>
+    </BaseModal>
+
     <ConfirmationDialog
       :show="showConfirmChangeScenario"
       title="Cambios sin guardar"
@@ -552,7 +657,7 @@ watch(searchQuery, (newVal) => {
   }, 300);
 });
 
-const sidebarOpen = ref(true);
+const sidebarOpen = ref(false);
 const activeTab = ref<'observador' | 'buque'>('observador');
 
 const timelineObservadorRef = ref<any>(null);
@@ -745,6 +850,124 @@ const onDiasEstimadosChange = () => {
   }
 };
 
+const isCreateBlockModalOpen = ref(false);
+const newBlockData = ref<MareaSimuladaItem | null>(null);
+
+const newBlockZarpadaStr = computed({
+  get: () => {
+    if (!newBlockData.value?.fechaZarpada) return null;
+    return new Date(newBlockData.value.fechaZarpada).toISOString();
+  },
+  set: (val: string | null) => {
+    if (val && newBlockData.value) {
+      newBlockData.value.fechaZarpada = val;
+      const start = new Date(val);
+      const end = new Date(start.getTime() + (newBlockData.value.diasEstimados * 86400000));
+      newBlockData.value.fechaArribo = end;
+    }
+  }
+});
+
+const newBlockArriboStr = computed({
+  get: () => {
+    if (!newBlockData.value?.fechaArribo) return null;
+    return new Date(newBlockData.value.fechaArribo).toISOString();
+  },
+  set: (val: string | null) => {
+    if (val && newBlockData.value) {
+      const start = new Date(newBlockData.value.fechaZarpada);
+      const end = new Date(val);
+      if (end <= start) {
+         toast.error('La fecha final debe ser mayor a la inicial');
+         return;
+      }
+      newBlockData.value.fechaArribo = val;
+      const diff = Math.round((end.getTime() - start.getTime()) / 86400000);
+      newBlockData.value.diasEstimados = diff;
+    }
+  }
+});
+
+const onNewDiasEstimadosChange = () => {
+  if (newBlockData.value && newBlockData.value.diasEstimados > 0) {
+     const start = new Date(newBlockData.value.fechaZarpada);
+     newBlockData.value.fechaArribo = new Date(start.getTime() + (newBlockData.value.diasEstimados * 86400000));
+  }
+};
+
+const abrirModalCrearBloque = () => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const in30Days = new Date(today.getTime() + (30 * 86400000));
+  
+  newBlockData.value = {
+    id: `sim-${Date.now()}`,
+    tipoBloque: 'MAREA_SIMULADA',
+    buqueId: null,
+    observadorId: null,
+    fechaZarpada: today,
+    fechaArribo: in30Days,
+    diasEstimados: 30,
+    estado: 'PENDIENTE',
+    prioridad: 'MEDIA'
+  };
+  isCreateBlockModalOpen.value = true;
+};
+
+const cerrarModalCrearBloque = () => {
+  isCreateBlockModalOpen.value = false;
+  newBlockData.value = null;
+};
+
+const guardarCreacionBloque = () => {
+  if (!newBlockData.value) return;
+  
+  if (!newBlockData.value.observadorId) {
+    toast.error('Debe seleccionar un observador');
+    return;
+  }
+  if (!newBlockData.value.buqueId) {
+    toast.error('Debe seleccionar un buque');
+    return;
+  }
+
+  const buque = buques.value.find(b => b.id === newBlockData.value?.buqueId);
+  if (buque) {
+    newBlockData.value.buqueNombre = buque.nombreBuque;
+    newBlockData.value.pesqueriaId = buque.pesqueriaHabitualId;
+    newBlockData.value.pesqueriaNombre = buque.pesqueriaHabitual?.nombre || '';
+    
+    // Agregar el buque al timeline si no estaba
+    if (!buquesAdicionales.value.includes(buque.id)) {
+      buquesAdicionales.value.push(buque.id);
+    }
+  }
+
+  const obsData = datosSimulacion.value?.observadores.find(o => o.observador.id === newBlockData.value!.observadorId)?.observador;
+  if (obsData) {
+    newBlockData.value.observadorNombre = `${obsData.apellido}, ${obsData.nombre}`;
+  }
+
+  const fechaZarpada = new Date(newBlockData.value.fechaZarpada);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  if (fechaZarpada < today) {
+    toast.error('No se pueden proyectar mareas en fechas pasadas');
+    return;
+  }
+
+  if (escenarioActual.value) {
+    escenarioActual.value.items.push({ ...newBlockData.value });
+    hasUnsavedChanges.value = true;
+    guardarEscenario();
+    toast.success('Marea planificada creada correctamente');
+  } else {
+    toast.error('No hay escenario actual seleccionado');
+  }
+  
+  cerrarModalCrearBloque();
+};
+
 const pesqueriaSelectRef = ref<any>(null);
 
 const buqueSelectRef = ref<any>(null);
@@ -916,8 +1139,7 @@ const guardarEdicionBloque = () => {
 
     escenarioActual.value!.items[idx] = { ...editingBlockData.value };
     hasUnsavedChanges.value = true;
-    
-    // Actualizar escenarioActual (reactivo, SimuladorTimeline lo reflejará)
+    guardarEscenario();
 
     toast.success('Marea simulada actualizada');
   }
@@ -931,6 +1153,7 @@ const devolverRecursoPendiente = () => {
     const removedItem = escenarioActual.value!.items[idx];
     escenarioActual.value!.items.splice(idx, 1);
     hasUnsavedChanges.value = true;
+    guardarEscenario();
     
     recursosPendientes.value.push({
       id: `rec-returned-${Date.now()}`,
@@ -956,47 +1179,136 @@ const toggleSidebar = () => {
   sidebarOpen.value = !sidebarOpen.value;
 };
 
+const selectedTypes = ref<string[]>(['OBSERVADOR']);
+const soloMareasPlanificadas = ref(false);
+
+const toggleType = (type: string) => {
+  const index = selectedTypes.value.indexOf(type);
+  if (index > -1) {
+    if (selectedTypes.value.length > 1) {
+      selectedTypes.value.splice(index, 1);
+    }
+  } else {
+    selectedTypes.value.push(type);
+  }
+};
+
 const filteredObservadores = computed(() => {
   if (observadoresBase.value.length === 0) return [];
   return observadoresBase.value.filter(o => {
+    // Filtrar por tipo
+    const rawType = (o.tipoObservador || '').toString().toUpperCase();
+    let itemType = 'OBSERVADOR';
+    if (rawType.includes('TECNIC')) itemType = 'TECNICO';
+    if (!selectedTypes.value.includes(itemType)) return false;
+
+    // Filtrar por texto
     const s = debouncedSearchQuery.value.toLowerCase();
-    return !s || `${o.nombre} ${o.apellido} ${o.codigoInterno}`.toLowerCase().includes(s);
+    if (s && !`${o.nombre} ${o.apellido} ${o.codigoInterno}`.toLowerCase().includes(s)) return false;
+
+    // Filtrar por mareas planificadas si está activo
+    if (soloMareasPlanificadas.value && escenarioActual.value) {
+      const tienePlanificada = escenarioActual.value.items.some(
+        sim => sim.tipoBloque === 'MAREA_SIMULADA' && sim.observadorId === o.id
+      );
+      if (!tienePlanificada) return false;
+    }
+
+    return true;
   });
 });
 
 // Conflictos detectados en tiempo real
 const conflictosDetectados = computed(() => {
-  const alertas: string[] = [];
+  const alertas: { simId: string; mensaje: string }[] = [];
   const simulados = (escenarioActual.value?.items || []).filter(i => i.tipoBloque === 'MAREA_SIMULADA');
   if (simulados.length === 0 || !datosSimulacion.value) return alertas;
 
   simulados.forEach(sim => {
-    if (!sim.observadorId) return;
-
     const inicio = new Date(sim.fechaZarpada);
     inicio.setHours(0, 0, 0, 0);
     const fin = new Date(sim.fechaArribo);
     fin.setHours(23, 59, 59, 999);
 
-    const row = datosSimulacion.value!.observadores.find(r => r.observador.id === sim.observadorId);
-    if (!row) return;
+    // 1. Conflictos de Observador
+    if (sim.observadorId) {
+      // 1.a. Simulada vs Real
+      const row = datosSimulacion.value!.observadores.find(r => r.observador.id === sim.observadorId);
+      if (row) {
+        for (const ev of row.eventos) {
+          if (ev.estado === 'DISPONIBLE' || ev.estado === 'DISPONIBLE_NO_CONFIRMADA') continue;
+          if (ev.estado === 'NOVEDAD' && ev.flexible) continue;
 
-    for (const ev of row.eventos) {
-      if (ev.estado === 'DISPONIBLE' || ev.estado === 'DISPONIBLE_NO_CONFIRMADA') continue;
-      if (ev.estado === 'NOVEDAD' && ev.flexible) continue;
-
-      const evStart = new Date(ev.startDate + 'T00:00:00');
-      const evEnd = new Date(ev.endDate + 'T00:00:00');
-      
-      if (inicio <= evEnd && fin >= evStart) {
-        const obsName = `${row.observador.nombre} ${row.observador.apellido}`;
-        const buqueSimName = sim.buqueNombre ? ` (Buque: ${sim.buqueNombre})` : '';
-        const buqueEvName = ev.buqueNombre ? ` (Buque: ${ev.buqueNombre})` : '';
-        
-        alertas.push(
-          `[${obsName}] Conflicto: La marea simulada "${sim.pesqueriaNombre}"${buqueSimName} se solapa con [${getBloqueLabel(ev)}]${buqueEvName} del ${evStart.toLocaleDateString('es-AR')} al ${evEnd.toLocaleDateString('es-AR')}.`
-        );
+          const evStart = new Date(ev.startDate + 'T00:00:00');
+          const evEnd = new Date(ev.endDate + 'T00:00:00');
+          
+          if (inicio <= evEnd && fin >= evStart) {
+            const obsName = `${row.observador.nombre} ${row.observador.apellido}`;
+            const buqueSimName = sim.buqueNombre ? ` (Buque: ${sim.buqueNombre})` : '';
+            const buqueEvName = ev.buqueNombre ? ` (Buque: ${ev.buqueNombre})` : '';
+            
+            alertas.push({
+              simId: sim.id,
+              mensaje: `[${obsName}] Conflicto: La marea simulada "${sim.pesqueriaNombre}"${buqueSimName} se solapa con [${getBloqueLabel(ev)}]${buqueEvName} del ${evStart.toLocaleDateString('es-AR')} al ${evEnd.toLocaleDateString('es-AR')}.`
+            });
+          }
+        }
       }
+      
+      // 1.b. Simulada vs Simulada (para el mismo observador)
+      for (const otherSim of simulados) {
+        if (otherSim.id === sim.id) continue;
+        if (otherSim.observadorId === sim.observadorId) {
+          const otherStart = new Date(otherSim.fechaZarpada);
+          otherStart.setHours(0, 0, 0, 0);
+          const otherEnd = new Date(otherSim.fechaArribo);
+          otherEnd.setHours(23, 59, 59, 999);
+          
+          if (inicio <= otherEnd && fin >= otherStart) {
+            alertas.push({
+              simId: sim.id,
+              mensaje: `[Observador: ${sim.observadorNombre || sim.observadorId}] Conflicto: Se solapa con otra marea simulada planificada del ${otherStart.toLocaleDateString('es-AR')} al ${otherEnd.toLocaleDateString('es-AR')}.`
+            });
+          }
+        }
+      }
+    }
+
+    // 2. Conflictos de Buque (Marea Simulada vs Marea Simulada)
+    if (sim.buqueId) {
+      for (const otherSim of simulados) {
+        if (otherSim.id === sim.id) continue;
+        if (otherSim.buqueId === sim.buqueId) {
+          const otherStart = new Date(otherSim.fechaZarpada);
+          otherStart.setHours(0, 0, 0, 0);
+          const otherEnd = new Date(otherSim.fechaArribo);
+          otherEnd.setHours(23, 59, 59, 999);
+          
+          if (inicio <= otherEnd && fin >= otherStart) {
+            alertas.push({
+              simId: sim.id,
+              mensaje: `[Buque: ${sim.buqueNombre}] Conflicto: Se solapa con otra marea simulada del ${otherStart.toLocaleDateString('es-AR')} al ${otherEnd.toLocaleDateString('es-AR')}.`
+            });
+          }
+        }
+      }
+      
+      // 3. Conflictos de Buque (Marea Simulada vs Marea Real)
+      datosSimulacion.value!.observadores.forEach(r => {
+        r.eventos.forEach(ev => {
+          if (ev.buqueId === sim.buqueId && ev.estado !== 'DISPONIBLE' && ev.estado !== 'DISPONIBLE_NO_CONFIRMADA') {
+            const evStart = new Date(ev.startDate + 'T00:00:00');
+            const evEnd = new Date(ev.endDate + 'T00:00:00');
+            if (inicio <= evEnd && fin >= evStart) {
+              const obsEvName = `${r.observador.nombre} ${r.observador.apellido}`;
+              alertas.push({
+                simId: sim.id,
+                mensaje: `[Buque: ${sim.buqueNombre}] Conflicto: Se solapa con marea real [${getBloqueLabel(ev)}] de ${obsEvName} del ${evStart.toLocaleDateString('es-AR')} al ${evEnd.toLocaleDateString('es-AR')}.`
+              });
+            }
+          }
+        });
+      });
     }
   });
 
@@ -1044,13 +1356,18 @@ const timelineObservadorItems = computed(() => {
 
       const nombreObs = `${obs.apellido}, ${obs.nombre}`;
       row.eventos.forEach(item => {
+        let baseClass = getItemVisClass(item);
+        if (item.estado === 'DISPONIBLE' || item.estado === 'DISPONIBLE_NO_CONFIRMADA') {
+          baseClass += ' opacity-40 hover:opacity-100 transition-opacity duration-200';
+        }
+
         items.push({
           id: `real-${obs.id}-${item.id}`,
           group: obs.id,
           start: new Date(item.startDate + 'T00:00:00'),
           end: new Date(item.endDate + 'T00:00:00'),
           content: getBloqueLabel(item),
-          className: getItemVisClass(item),
+          className: baseClass,
           title: formatItemTooltip(item, nombreObs),
           editable: false
         });
@@ -1062,14 +1379,26 @@ const timelineObservadorItems = computed(() => {
     const duracionSim = Math.round((new Date(sim.fechaArribo).getTime() - new Date(sim.fechaZarpada).getTime()) / 86400000);
     const finInclusivo = new Date(new Date(sim.fechaArribo).getTime() - 86400000);
     const label = sim.buqueNombre || sim.pesqueriaNombre;
+    const conflictosDelBloque = conflictosDetectados.value.filter((c: any) => c.simId === sim.id);
+    const conflicto = conflictosDelBloque.length > 0;
+    
+    let contentHtml = '';
+    if (conflicto) {
+      contentHtml = `<div class="flex items-center gap-1 font-bold"><span class="text-error" style="font-size: 11px;">⚠️</span> ${label} [${duracionSim}d]</div>`;
+    } else {
+      contentHtml = `<div class="flex items-center gap-1 font-bold"><span class="text-[10px]">✨</span> ${label} [${duracionSim}d]</div>`;
+    }
+
+    const conflictosHtml = conflicto ? '<br><br><strong class="text-error">Conflictos:</strong><br><span class="text-error">' + conflictosDelBloque.map(c => c.mensaje).join('<br>') + '</span>' : '';
+
     items.push({
       id: sim.id,
       group: sim.observadorId ?? '',
       start: new Date(sim.fechaZarpada),
       end: new Date(sim.fechaArribo),
-      content: `<div class="flex items-center gap-1 font-bold"><span class="text-[10px]">✨</span> ${label} [${duracionSim}d] (Proyectada)</div>`,
-      title: `<strong>Inicio:</strong> ${new Date(sim.fechaZarpada).toLocaleDateString('es-AR')}<br><strong>Fin:</strong> ${finInclusivo.toLocaleDateString('es-AR')}`,
-      className: 'vis-item-simulada border-2 border-dashed border-primary bg-primary/20 text-primary font-bold shadow-sm',
+      content: contentHtml,
+      title: `<strong>Inicio:</strong> ${new Date(sim.fechaZarpada).toLocaleDateString('es-AR')}<br><strong>Fin:</strong> ${finInclusivo.toLocaleDateString('es-AR')}${conflictosHtml}`,
+      className: conflicto ? 'vis-item-simulada-conflicto border-2 border-solid border-error bg-error/20 text-error font-bold shadow-sm' : 'vis-item-simulada border-2 border-dashed border-primary bg-primary/20 text-primary font-bold shadow-sm',
       editable: { updateTime: true, updateGroup: true, remove: true }
     });
   });
@@ -1116,6 +1445,12 @@ const timelineBuqueGroups = computed(() => {
   if (debouncedSearchQuery.value) {
     const sq = debouncedSearchQuery.value.toLowerCase();
     buquesList = buquesList.filter(b => b.nombre.toLowerCase().includes(sq));
+  }
+
+  if (soloMareasPlanificadas.value && escenarioActual.value) {
+    buquesList = buquesList.filter(b => 
+      escenarioActual.value!.items.some(sim => sim.tipoBloque === 'MAREA_SIMULADA' && sim.buqueId === b.id)
+    );
   }
   
   buquesList.sort((a, b) => a.nombre.localeCompare(b.nombre));
@@ -1169,13 +1504,18 @@ const timelineBuqueItems = computed(() => {
       row.eventos.forEach(item => {
         if (!item.buqueId) return; // Solo ploteamos mareas con buque
         
+        let baseClass = getItemVisClass(item);
+        if (item.estado === 'DISPONIBLE' || item.estado === 'DISPONIBLE_NO_CONFIRMADA') {
+          baseClass += ' opacity-40 hover:opacity-100 transition-opacity duration-200';
+        }
+
         items.push({
           id: `real-${row.observador.id}-${item.id}`,
           group: item.buqueId,
           start: new Date(item.startDate + 'T00:00:00'),
           end: new Date(item.endDate + 'T00:00:00'),
           content: `<div class="text-[10px] truncate max-w-[120px] font-bold flex flex-col"><span>${nombreObs}</span><span class="opacity-75 font-normal">${getBloqueLabel(item)}</span></div>`,
-          className: getItemVisClass(item),
+          className: baseClass,
           title: formatItemTooltip(item, nombreObs),
           editable: false
         });
@@ -1195,14 +1535,26 @@ const timelineBuqueItems = computed(() => {
 
     const duracionSim = Math.round((new Date(sim.fechaArribo).getTime() - new Date(sim.fechaZarpada).getTime()) / 86400000);
     const finInclusivo = new Date(new Date(sim.fechaArribo).getTime() - 86400000);
+    const conflictosDelBloque = conflictosDetectados.value.filter((c: any) => c.simId === sim.id);
+    const conflicto = conflictosDelBloque.length > 0;
+
+    let contentHtml = '';
+    if (conflicto) {
+      contentHtml = `<div class="flex flex-col items-start leading-tight"><div class="flex items-center gap-1 w-full"><span class="text-error" style="font-size: 11px;">⚠️</span><span class="text-[10px] font-black truncate w-full">${obsNombre}</span></div><span class="text-[9px] opacity-70 truncate max-w-[100px]">[${duracionSim}d]</span></div>`;
+    } else {
+      contentHtml = `<div class="flex flex-col items-start leading-tight"><span class="text-[10px] font-black truncate max-w-[100px]">${obsNombre}</span><span class="text-[9px] opacity-70 truncate max-w-[100px]">[${duracionSim}d]</span></div>`;
+    }
+
+    const conflictosHtml = conflicto ? '<br><br><strong class="text-error">Conflictos:</strong><br><span class="text-error">' + conflictosDelBloque.map(c => c.mensaje).join('<br>') + '</span>' : '';
+
     items.push({
       id: sim.id,
       group: sim.buqueId,
       start: new Date(sim.fechaZarpada),
       end: new Date(sim.fechaArribo),
-      content: `<div class="flex flex-col items-start leading-tight"><span class="text-[10px] font-black truncate max-w-[100px]">${obsNombre}</span><span class="text-[9px] opacity-70 truncate max-w-[100px]">[${duracionSim}d]</span></div>`,
-      title: `<strong>Inicio:</strong> ${new Date(sim.fechaZarpada).toLocaleDateString('es-AR')}<br><strong>Fin:</strong> ${finInclusivo.toLocaleDateString('es-AR')}`,
-      className: 'vis-item-simulada border-2 border-dashed border-primary bg-primary/20 text-primary font-bold shadow-sm',
+      content: contentHtml,
+      title: `<strong>Inicio:</strong> ${new Date(sim.fechaZarpada).toLocaleDateString('es-AR')}<br><strong>Fin:</strong> ${finInclusivo.toLocaleDateString('es-AR')}${conflictosHtml}`,
+      className: conflicto ? 'vis-item-simulada-conflicto border-2 border-solid border-error bg-error/20 text-error font-bold shadow-sm' : 'vis-item-simulada border-2 border-dashed border-primary bg-primary/20 text-primary font-bold shadow-sm',
       editable: { updateTime: true, updateGroup: true, remove: true }
     });
   });
@@ -1236,6 +1588,7 @@ const handleItemMoved = (payload: { id: string; start: Date; end: Date; group: s
     sim.fechaZarpada = payload.start;
     sim.fechaArribo = payload.end;
     hasUnsavedChanges.value = true;
+    guardarEscenario();
   }
 };
 
@@ -1245,6 +1598,7 @@ const handleItemRemoved = (id: string) => {
     const removedItem = escenarioActual.value!.items[idx];
     escenarioActual.value!.items.splice(idx, 1);
     hasUnsavedChanges.value = true;
+    guardarEscenario();
     
     recursosPendientes.value.push({
       id: `rec-returned-${Date.now()}`,
@@ -1312,6 +1666,7 @@ const handleDropRecurso = (payload: { recurso: any; group: string; date: Date })
 
   escenarioActual.value!.items.push(nuevoItemSimulado);
   hasUnsavedChanges.value = true;
+  guardarEscenario();
 
   // Remover del sidebar pendiente
   const idxRec = recursosPendientes.value.findIndex(r => r.id === recursoArrastrado.id);
@@ -1373,12 +1728,6 @@ const cargarEscenarios = async () => {
 const nombreEscenarioInput = ref<HTMLInputElement | null>(null);
 
 const onEscenarioChange = async () => {
-  if (hasUnsavedChanges.value && escenarioActual.value) {
-    pendingEscenarioId.value = selectedEscenarioId.value;
-    selectedEscenarioId.value = escenarioActual.value.id;
-    showConfirmChangeScenario.value = true;
-    return;
-  }
   await performScenarioChange();
 };
 
@@ -1484,10 +1833,10 @@ const guardarEscenario = async () => {
     await planificacionService.updateEscenario(escenarioActual.value.id, {
       items: escenarioActual.value.items
     });
-    toast.success('Cambios guardados en BD');
+    // Autoguardado silencioso para no interferir con la UI, hasUnsavedChanges pasa a false
     hasUnsavedChanges.value = false;
   } catch(error) {
-    toast.error('Error al guardar cambios');
+    toast.error('Error al guardar cambios en el escenario');
   }
 };
 
@@ -1544,6 +1893,13 @@ const observadorOptions = computed(() =>
   border: 2px dashed var(--color-primary, #0284c7) !important;
   background-color: rgba(2, 132, 199, 0.15) !important;
   color: var(--color-primary, #0284c7) !important;
+  font-weight: bold !important;
+}
+
+:deep(.vis-item-simulada-conflicto) {
+  border: 2px solid var(--color-error, #ef4444) !important;
+  background-color: rgba(239, 68, 68, 0.15) !important;
+  color: var(--color-error, #ef4444) !important;
   font-weight: bold !important;
 }
 
