@@ -258,9 +258,9 @@
                 </button>
               </div>
               <div class="flex items-center gap-3">
-                <label class="flex items-center gap-2 px-3 h-9 bg-surface-muted rounded-lg border border-border cursor-pointer hover:bg-surface transition-colors shadow-sm">
+                <label class="flex items-center gap-2 px-3 h-9 bg-surface-muted rounded-lg border border-border cursor-pointer hover:bg-surface transition-colors shadow-sm whitespace-nowrap">
                   <input type="checkbox" v-model="soloMareasPlanificadas" class="w-3.5 h-3.5 text-primary bg-surface border-border rounded focus:ring-primary focus:ring-2">
-                  <span class="text-[10px] font-black text-text-muted uppercase tracking-widest mt-0.5">SÓLO PLANIFICADAS</span>
+                  <span class="text-[10px] font-black text-text-muted uppercase tracking-widest mt-0.5">SÓLO PLANIFICADAS Y ACTIVAS</span>
                 </label>
                 <SearchInput 
                   v-model="searchQuery" 
@@ -1444,12 +1444,23 @@ const filteredObservadores = computed(() => {
     const s = debouncedSearchQuery.value.toLowerCase();
     if (s && !`${o.nombre} ${o.apellido} ${o.codigoInterno}`.toLowerCase().includes(s)) return false;
 
-    // Filtrar por mareas planificadas si está activo
-    if (soloMareasPlanificadas.value && escenarioActual.value) {
-      const tienePlanificada = escenarioActual.value.items.some(
-        sim => sim.tipoBloque === 'MAREA_SIMULADA' && sim.observadorId === o.id
-      );
-      if (!tienePlanificada) return false;
+    // Filtrar por mareas planificadas o activas si está activo
+    if (soloMareasPlanificadas.value) {
+      let tieneActivaOPlanificada = false;
+      if (escenarioActual.value) {
+        tieneActivaOPlanificada = escenarioActual.value.items.some(
+          sim => sim.tipoBloque === 'MAREA_SIMULADA' && sim.observadorId === o.id
+        );
+      }
+      
+      if (!tieneActivaOPlanificada && datosSimulacion.value) {
+        const row = datosSimulacion.value.observadores.find(r => r.observador.id === o.id);
+        if (row && row.eventos.some(ev => (ev.estado === 'NAVEGANDO' && !ev.isPast) || ev.estado === 'DESIGNADA')) {
+          tieneActivaOPlanificada = true;
+        }
+      }
+
+      if (!tieneActivaOPlanificada) return false;
     }
 
     return true;
@@ -1593,7 +1604,17 @@ const timelineObservadorItems = computed(() => {
       if (!row) return;
 
       const nombreObs = `${obs.apellido}, ${obs.nombre}`;
-      row.eventos.forEach(item => {
+      const eventosUnificados = row.eventos.reduce((acc: any[], curr: any) => {
+        const last = acc[acc.length - 1];
+        if (last && last.estado === curr.estado && last.codigoCorto === curr.codigoCorto && last.detalle === curr.detalle && last.buqueId === curr.buqueId && last.endDate === curr.startDate) {
+          last.endDate = curr.endDate;
+        } else {
+          acc.push({ ...curr, isPast: false });
+        }
+        return acc;
+      }, []);
+
+      eventosUnificados.forEach(item => {
         let baseClass = getItemVisClass(item);
         if (item.estado === 'DISPONIBLE' || item.estado === 'DISPONIBLE_NO_CONFIRMADA') {
           baseClass += ' opacity-40 hover:opacity-100 transition-opacity duration-200';
@@ -1685,10 +1706,19 @@ const timelineBuqueGroups = computed(() => {
     buquesList = buquesList.filter(b => b.nombre.toLowerCase().includes(sq));
   }
 
-  if (soloMareasPlanificadas.value && escenarioActual.value) {
-    buquesList = buquesList.filter(b => 
-      escenarioActual.value!.items.some(sim => sim.tipoBloque === 'MAREA_SIMULADA' && sim.buqueId === b.id)
-    );
+  if (soloMareasPlanificadas.value) {
+    buquesList = buquesList.filter(b => {
+      let tiene = false;
+      if (escenarioActual.value) {
+        tiene = escenarioActual.value.items.some(sim => sim.tipoBloque === 'MAREA_SIMULADA' && sim.buqueId === b.id);
+      }
+      if (!tiene && datosSimulacion.value) {
+        tiene = datosSimulacion.value.observadores.some(obsRow => 
+          obsRow.eventos.some(ev => ev.buqueId === b.id && ((ev.estado === 'NAVEGANDO' && !ev.isPast) || ev.estado === 'DESIGNADA'))
+        );
+      }
+      return tiene;
+    });
   }
   
   buquesList.sort((a, b) => a.nombre.localeCompare(b.nombre));
@@ -1739,7 +1769,17 @@ const timelineBuqueItems = computed(() => {
     datosSimulacion.value.observadores.forEach(row => {
       const nombreObs = `${row.observador.apellido}, ${row.observador.nombre}`;
       
-      row.eventos.forEach(item => {
+      const eventosUnificados = row.eventos.reduce((acc: any[], curr: any) => {
+        const last = acc[acc.length - 1];
+        if (last && last.estado === curr.estado && last.codigoCorto === curr.codigoCorto && last.detalle === curr.detalle && last.buqueId === curr.buqueId && last.endDate === curr.startDate) {
+          last.endDate = curr.endDate;
+        } else {
+          acc.push({ ...curr, isPast: false });
+        }
+        return acc;
+      }, []);
+
+      eventosUnificados.forEach(item => {
         if (!item.buqueId) return; // Solo ploteamos mareas con buque
         
         let baseClass = getItemVisClass(item);
@@ -2291,9 +2331,9 @@ const observadorOptions = computed(() =>
 }
 
 .legend-designada, :global(.simulador-timeline .vis-item-designada) {
-  background-color: #dcfce7 !important;
-  color: #15803d !important;
-  border-color: #22c55e !important;
+  background-color: #cffafe !important;
+  color: #0e7490 !important;
+  border-color: #67e8f9 !important;
   border-width: 2px !important;
   border-style: dashed !important;
 }
@@ -2405,9 +2445,9 @@ const observadorOptions = computed(() =>
 }
 
 :global(.dark) .legend-designada, :global(.dark .simulador-timeline .vis-item-designada) {
-  background-color: rgba(34, 197, 94, 0.2) !important;
-  color: #86efac !important;
-  border-color: #22c55e !important;
+  background-color: rgba(6, 182, 212, 0.15) !important;
+  color: #67e8f9 !important;
+  border-color: #06b6d4 !important;
   border-width: 2px !important;
   border-style: dashed !important;
 }

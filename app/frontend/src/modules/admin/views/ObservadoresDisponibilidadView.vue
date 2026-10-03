@@ -640,9 +640,9 @@ onBeforeUnmount(() => {
 }
 
 .legend-designada, :global(.disponibilidad-timeline .vis-item-designada) {
-  background-color: #dcfce7 !important;
-  color: #15803d !important;
-  border-color: #22c55e !important;
+  background-color: #cffafe !important;
+  color: #0e7490 !important;
+  border-color: #67e8f9 !important;
   border-width: 2px !important;
   border-style: dashed !important;
 }
@@ -754,9 +754,9 @@ onBeforeUnmount(() => {
 }
 
 :global(.dark) .legend-designada, :global(.dark .disponibilidad-timeline .vis-item-designada) {
-  background-color: rgba(34, 197, 94, 0.2) !important;
-  color: #86efac !important;
-  border-color: #22c55e !important;
+  background-color: rgba(6, 182, 212, 0.15) !important;
+  color: #67e8f9 !important;
+  border-color: #06b6d4 !important;
   border-width: 2px !important;
   border-style: dashed !important;
 }

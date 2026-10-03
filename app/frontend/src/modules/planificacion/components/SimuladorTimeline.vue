@@ -64,7 +64,7 @@ const initTimeline = () => {
       add: true,
       overrideItems: false
     },
-    showCurrentTime: false,
+    showCurrentTime: true,
     timeAxis: { scale: 'day', step: 1 },
     snap: function (date: Date) {
       const clone = new Date(date.valueOf());
