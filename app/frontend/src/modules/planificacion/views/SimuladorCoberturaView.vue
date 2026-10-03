@@ -364,7 +364,7 @@
           <div class="grid grid-cols-2 gap-4">
             <div class="space-y-1.5">
               <label class="block text-xs font-bold text-text-muted">Días Estimados</label>
-              <input v-model="resourceForm.diasEstimados" type="number" class="w-full px-4 py-2.5 bg-surface border rounded-lg text-sm text-text outline-none focus:border-primary focus:ring-3 focus:ring-primary/10 transition-all shadow-theme-xs" />
+              <input v-model="resourceForm.diasEstimados" type="number" autocomplete="off" class="w-full px-4 py-2.5 bg-surface border rounded-lg text-sm text-text outline-none focus:border-primary focus:ring-3 focus:ring-primary/10 transition-all shadow-theme-xs" />
             </div>
             <div class="space-y-1.5">
               <label class="block text-xs font-bold text-text-muted">Prioridad</label>
@@ -503,7 +503,7 @@
           <div class="grid grid-cols-2 gap-4">
             <div class="space-y-1.5">
               <label class="block text-xs font-bold text-text-muted">Días Estimados</label>
-              <input v-model="editingBlockData.diasEstimados" @input="onDiasEstimadosChange" type="number" min="1" class="w-full px-4 py-2.5 bg-surface border rounded-lg text-sm text-text outline-none focus:border-primary focus:ring-3 focus:ring-primary/10 transition-all shadow-theme-xs" />
+              <input v-model="editingBlockData.diasEstimados" @input="onDiasEstimadosChange" type="number" autocomplete="off" min="1" class="w-full px-4 py-2.5 bg-surface border rounded-lg text-sm text-text outline-none focus:border-primary focus:ring-3 focus:ring-primary/10 transition-all shadow-theme-xs" />
             </div>
             <div class="space-y-1.5">
               <label class="block text-xs font-bold text-text-muted">Prioridad</label>
@@ -572,7 +572,7 @@
           <div class="grid grid-cols-2 gap-4">
             <div class="space-y-1.5">
               <label class="block text-xs font-bold text-text-muted">Días Estimados</label>
-              <input v-model="newBlockData.diasEstimados" @input="onNewDiasEstimadosChange" type="number" min="1" class="w-full px-4 py-2.5 bg-surface border rounded-lg text-sm text-text outline-none focus:border-primary focus:ring-3 focus:ring-primary/10 transition-all shadow-theme-xs" />
+              <input v-model="newBlockData.diasEstimados" @input="onNewDiasEstimadosChange" type="number" autocomplete="off" min="1" class="w-full px-4 py-2.5 bg-surface border rounded-lg text-sm text-text outline-none focus:border-primary focus:ring-3 focus:ring-primary/10 transition-all shadow-theme-xs" />
             </div>
             <div class="space-y-1.5">
               <label class="block text-xs font-bold text-text-muted">Prioridad</label>
@@ -670,6 +670,16 @@
         </div>
       </div>
     </BaseModal>
+
+    <ConfirmationDialog
+      :show="showConfirmNoObserver"
+      title="Planificar sin observador"
+      message="¿Seguro que desea planificar esta marea simulada sin asignarle un observador? Se mostrará en el sistema como 'Sin observador'."
+      confirmText="Sí, planificar"
+      cancelText="Cancelar"
+      @confirm="confirmarSinObservador"
+      @cancel="cancelarSinObservador"
+    />
   </PlanificacionDashboardLayout>
 </template>
 
@@ -873,6 +883,23 @@ const procesarExportacion = async () => {
 
 
 const showConfirmChangeScenario = ref(false);
+
+const showConfirmNoObserver = ref(false);
+let pendingNoObserverAction: (() => void) | null = null;
+
+const confirmarSinObservador = () => {
+  if (pendingNoObserverAction) {
+    pendingNoObserverAction();
+    pendingNoObserverAction = null;
+  }
+  showConfirmNoObserver.value = false;
+};
+
+const cancelarSinObservador = () => {
+  pendingNoObserverAction = null;
+  showConfirmNoObserver.value = false;
+};
+
 const showConfirmDeleteScenario = ref(false);
 const pendingEscenarioId = ref('');
 
@@ -1150,50 +1177,59 @@ const cerrarModalCrearBloque = () => {
 const guardarCreacionBloque = () => {
   if (!newBlockData.value) return;
   
-  if (!newBlockData.value.observadorId) {
-    toast.error('Debe seleccionar un observador');
-    return;
-  }
   if (!newBlockData.value.buqueId) {
     toast.error('Debe seleccionar un buque');
     return;
   }
 
-  const buque = buques.value.find(b => b.id === newBlockData.value?.buqueId);
-  if (buque) {
-    newBlockData.value.buqueNombre = buque.nombreBuque;
-    newBlockData.value.pesqueriaId = buque.pesqueriaHabitualId;
-    newBlockData.value.pesqueriaNombre = buque.pesqueriaHabitual?.nombre || '';
-    
-    // Agregar el buque al timeline si no estaba
-    if (!buquesAdicionales.value.includes(buque.id)) {
-      buquesAdicionales.value.push(buque.id);
+  const processSave = () => {
+    const buque = buques.value.find(b => b.id === newBlockData.value?.buqueId);
+    if (buque) {
+      newBlockData.value!.buqueNombre = buque.nombreBuque;
+      newBlockData.value!.pesqueriaId = buque.pesqueriaHabitualId;
+      newBlockData.value!.pesqueriaNombre = buque.pesqueriaHabitual?.nombre || '';
+      
+      // Agregar el buque al timeline si no estaba
+      if (!buquesAdicionales.value.includes(buque.id)) {
+        buquesAdicionales.value.push(buque.id);
+      }
     }
-  }
 
-  const obsData = datosSimulacion.value?.observadores.find(o => o.observador.id === newBlockData.value!.observadorId)?.observador;
-  if (obsData) {
-    newBlockData.value.observadorNombre = `${obsData.apellido}, ${obsData.nombre}`;
-  }
+    if (newBlockData.value!.observadorId) {
+      const obsData = datosSimulacion.value?.observadores.find(o => o.observador.id === newBlockData.value!.observadorId)?.observador;
+      if (obsData) {
+        newBlockData.value!.observadorNombre = `${obsData.apellido}, ${obsData.nombre}`;
+      }
+    } else {
+      newBlockData.value!.observadorNombre = undefined;
+    }
 
-  const fechaZarpada = new Date(newBlockData.value.fechaZarpada);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  if (fechaZarpada < today) {
-    toast.error('No se pueden proyectar mareas en fechas pasadas');
-    return;
-  }
+    const fechaZarpada = new Date(newBlockData.value!.fechaZarpada);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (fechaZarpada < today) {
+      toast.error('No se pueden proyectar mareas en fechas pasadas');
+      return;
+    }
 
-  if (escenarioActual.value) {
-    escenarioActual.value.items.push({ ...newBlockData.value });
-    hasUnsavedChanges.value = true;
-    guardarEscenario();
-    toast.success('Marea planificada creada correctamente');
+    if (escenarioActual.value) {
+      escenarioActual.value.items.push({ ...newBlockData.value! });
+      hasUnsavedChanges.value = true;
+      guardarEscenario();
+      toast.success('Marea planificada creada correctamente');
+    } else {
+      toast.error('No hay escenario actual seleccionado');
+    }
+    
+    cerrarModalCrearBloque();
+  };
+
+  if (!newBlockData.value.observadorId) {
+    pendingNoObserverAction = processSave;
+    showConfirmNoObserver.value = true;
   } else {
-    toast.error('No hay escenario actual seleccionado');
+    processSave();
   }
-  
-  cerrarModalCrearBloque();
 };
 
 const pesqueriaSelectRef = ref<any>(null);
@@ -1792,7 +1828,7 @@ const timelineBuqueItems = computed(() => {
           group: item.buqueId,
           start: new Date(item.startDate + 'T00:00:00'),
           end: new Date(item.endDate + 'T00:00:00'),
-          content: `<div class="text-[10px] truncate max-w-[120px] font-bold flex flex-col"><span>${nombreObs}</span><span class="opacity-75 font-normal">${getBloqueLabel(item)}</span></div>`,
+          content: `<div class="text-[10px] truncate max-w-[120px] font-bold"><span>${nombreObs}</span> <span class="opacity-75 font-normal">(${getBloqueLabel(item)})</span></div>`,
           className: baseClass,
           title: formatItemTooltip(item, nombreObs),
           editable: false
@@ -1805,7 +1841,7 @@ const timelineBuqueItems = computed(() => {
     if (!sim.buqueId) return;
     
     // Buscar nombre de observador para las simuladas
-    let obsNombre = "Sin Asignar";
+    let obsNombre = "Sin observador";
     if (sim.observadorId) {
       const obsInfo = datosSimulacion.value?.observadores.find(o => o.observador.id === sim.observadorId)?.observador;
       if (obsInfo) obsNombre = `${obsInfo.apellido}, ${obsInfo.nombre}`;
@@ -1917,7 +1953,7 @@ const handleDropRecurso = (payload: { recurso: any; group: string; date: Date })
   } else {
     // payload.group es el buqueId
     bId = payload.group;
-    obsId = recursoArrastrado.observadorId!;
+    obsId = recursoArrastrado.observadorId || undefined;
     // Rellenar pesqueria si el buque existe en catalogo
     const bCatalog = buques.value.find(b => b.id === bId);
     if (bCatalog) {
@@ -1927,35 +1963,44 @@ const handleDropRecurso = (payload: { recurso: any; group: string; date: Date })
     }
   }
 
-  const nuevoItemSimulado: MareaSimuladaItem = {
-    id: `sim-${Date.now()}`,
-    tipoBloque: 'MAREA_SIMULADA',
-    pesqueriaId: pId,
-    pesqueriaNombre: pNombre,
-    buqueId: bId,
-    buqueNombre: bNombre,
-    observadorId: obsId,
-    fechaZarpada: fechaInicio,
-    fechaArribo: fechaFin,
-    diasEstimados: recursoArrastrado.diasEstimados,
-    estado: 'PENDIENTE',
-    prioridad: recursoArrastrado.prioridad || 'MEDIA'
+  const processDrop = () => {
+    const nuevoItemSimulado: MareaSimuladaItem = {
+      id: `sim-${Date.now()}`,
+      tipoBloque: 'MAREA_SIMULADA',
+      pesqueriaId: pId,
+      pesqueriaNombre: pNombre,
+      buqueId: bId,
+      buqueNombre: bNombre,
+      observadorId: obsId,
+      fechaZarpada: fechaInicio,
+      fechaArribo: fechaFin,
+      diasEstimados: recursoArrastrado.diasEstimados,
+      estado: 'PENDIENTE',
+      prioridad: recursoArrastrado.prioridad || 'MEDIA'
+    };
+
+    escenarioActual.value!.items.push(nuevoItemSimulado);
+    hasUnsavedChanges.value = true;
+    guardarEscenario();
+
+    // Remover del sidebar pendiente
+    const idxRec = recursosPendientes.value.findIndex(r => r.id === recursoArrastrado.id);
+    if (idxRec !== -1) {
+      recursosPendientes.value.splice(idxRec, 1);
+      if (recursosPendientes.value.length === 0) {
+        sidebarOpen.value = false;
+      }
+    }
+
+    toast.success('Marea simulada asignada');
   };
 
-  escenarioActual.value!.items.push(nuevoItemSimulado);
-  hasUnsavedChanges.value = true;
-  guardarEscenario();
-
-  // Remover del sidebar pendiente
-  const idxRec = recursosPendientes.value.findIndex(r => r.id === recursoArrastrado.id);
-  if (idxRec !== -1) {
-    recursosPendientes.value.splice(idxRec, 1);
-    if (recursosPendientes.value.length === 0) {
-      sidebarOpen.value = false;
-    }
+  if (!obsId) {
+    pendingNoObserverAction = processDrop;
+    showConfirmNoObserver.value = true;
+  } else {
+    processDrop();
   }
-
-  toast.success('Marea simulada asignada');
 };
 
 const editBuqueSelectRef = ref<any>(null);
@@ -2146,7 +2191,7 @@ onMounted(async () => {
 
 const isResourceFormValid = computed(() => {
   if (activeTab.value === 'observador') return !!resourceForm.value.buqueId;
-  return !!resourceForm.value.observadorId;
+  return true; // Ya no es obligatorio el observador
 });
 
 const onBuqueResourceChange = () => {

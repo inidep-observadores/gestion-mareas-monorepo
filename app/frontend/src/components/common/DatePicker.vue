@@ -10,6 +10,7 @@
         @keydown="handleKeyDown"
         :placeholder="showTime ? 'DD/MM/YYYY HH:MM' : 'DD/MM/YYYY'"
         :disabled="disabled"
+        autocomplete="off"
         class="w-full px-4 py-2.5 bg-background border rounded-lg text-sm text-text outline-none focus:border-primary transition-all cursor-text placeholder:text-text-muted caret-primary disabled:opacity-50 disabled:bg-surface-muted disabled:cursor-not-allowed"
         style="color-scheme: light dark;"
         :class="[
