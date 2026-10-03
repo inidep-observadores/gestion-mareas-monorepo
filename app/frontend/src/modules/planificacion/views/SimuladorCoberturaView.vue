@@ -514,6 +514,10 @@
               </select>
             </div>
           </div>
+          <div class="space-y-1.5 pt-2">
+            <label class="block text-xs font-bold text-text-muted">Comentario</label>
+            <textarea v-model="editingBlockData.comentario" rows="2" placeholder="Comentario opcional..." class="w-full px-4 py-2 bg-surface border rounded-lg text-sm text-text outline-none focus:border-primary focus:ring-3 focus:ring-primary/10 transition-all shadow-theme-xs resize-none"></textarea>
+          </div>
         </div>
         
         <div class="mt-8 pt-6 flex items-center justify-between border-t border-border gap-3">
@@ -582,6 +586,10 @@
                 <option value="BAJA">Baja</option>
               </select>
             </div>
+          </div>
+          <div class="space-y-1.5 pt-2">
+            <label class="block text-xs font-bold text-text-muted">Comentario</label>
+            <textarea v-model="newBlockData.comentario" rows="2" placeholder="Comentario opcional..." class="w-full px-4 py-2 bg-surface border rounded-lg text-sm text-text outline-none focus:border-primary focus:ring-3 focus:ring-primary/10 transition-all shadow-theme-xs resize-none"></textarea>
           </div>
         </div>
         
@@ -1627,7 +1635,7 @@ const timelineObservadorGroups = computed(() => {
   return filteredObservadores.value.map(obs => ({
     id: obs.id,
     content: `<div class="text-text font-bold text-xs">${obs.apellido}, ${obs.nombre}</div>`,
-    value: obs.apellido
+    value: `${obs.apellido}, ${obs.nombre}`
   }));
 });
 
@@ -1678,13 +1686,15 @@ const timelineObservadorItems = computed(() => {
     const conflicto = conflictosDelBloque.length > 0;
     
     let contentHtml = '';
+    const comentarioHtml = sim.comentario ? `<div class="text-[9px] italic font-normal opacity-75 mt-0.5 truncate max-w-full">${sim.comentario}</div>` : '';
     if (conflicto) {
-      contentHtml = `<div class="flex items-center gap-1 font-bold"><span class="text-error" style="font-size: 11px;">⚠️</span> ${label} [${duracionSim}d]</div>`;
+      contentHtml = `<div class="flex flex-col"><div class="flex items-center gap-1 font-bold"><span class="text-error" style="font-size: 11px;">⚠️</span> ${label} [${duracionSim}d]</div>${comentarioHtml}</div>`;
     } else {
-      contentHtml = `<div class="flex items-center gap-1 font-bold"><span class="text-[10px]">✨</span> ${label} [${duracionSim}d]</div>`;
+      contentHtml = `<div class="flex flex-col"><div class="flex items-center gap-1 font-bold"><span class="text-[10px]">✨</span> ${label} [${duracionSim}d]</div>${comentarioHtml}</div>`;
     }
 
     const conflictosHtml = conflicto ? '<br><br><strong class="text-error">Conflictos:</strong><br><span class="text-error">' + conflictosDelBloque.map(c => c.mensaje).join('<br>') + '</span>' : '';
+    const tooltipComentario = sim.comentario ? `<br><br><strong>Comentario:</strong><br><em>${sim.comentario}</em>` : '';
 
     items.push({
       id: sim.id,
@@ -1692,7 +1702,7 @@ const timelineObservadorItems = computed(() => {
       start: new Date(sim.fechaZarpada),
       end: new Date(sim.fechaArribo),
       content: contentHtml,
-      title: `<strong>Inicio:</strong> ${new Date(sim.fechaZarpada).toLocaleDateString('es-AR')}<br><strong>Fin:</strong> ${finInclusivo.toLocaleDateString('es-AR')}${conflictosHtml}`,
+      title: `<strong>Inicio:</strong> ${new Date(sim.fechaZarpada).toLocaleDateString('es-AR')}<br><strong>Fin:</strong> ${finInclusivo.toLocaleDateString('es-AR')}${tooltipComentario}${conflictosHtml}`,
       className: conflicto ? 'vis-item-simulada-conflicto border-2 border-solid border-error bg-error/20 text-error font-bold shadow-sm' : 'vis-item-simulada border-2 border-dashed border-primary bg-primary/20 text-primary font-bold shadow-sm',
       editable: { updateTime: true, updateGroup: true, remove: true }
     });
@@ -1853,13 +1863,15 @@ const timelineBuqueItems = computed(() => {
     const conflicto = conflictosDelBloque.length > 0;
 
     let contentHtml = '';
+    const comentarioHtml = sim.comentario ? `<div class="text-[9px] italic font-normal opacity-75 mt-0.5 truncate max-w-full">${sim.comentario}</div>` : '';
     if (conflicto) {
-      contentHtml = `<div class="flex items-center gap-1 font-bold"><span class="text-error" style="font-size: 11px;">⚠️</span><span class="text-[10px] truncate max-w-[120px]">${obsNombre}</span><span class="text-[10px] opacity-75 whitespace-nowrap">[${duracionSim}d]</span></div>`;
+      contentHtml = `<div class="flex flex-col"><div class="flex items-center gap-1 font-bold"><span class="text-error" style="font-size: 11px;">⚠️</span><span class="text-[10px] truncate max-w-[120px]">${obsNombre}</span><span class="text-[10px] opacity-75 whitespace-nowrap">[${duracionSim}d]</span></div>${comentarioHtml}</div>`;
     } else {
-      contentHtml = `<div class="flex items-center gap-1 font-bold"><span class="text-[10px] truncate max-w-[120px]">${obsNombre}</span><span class="text-[10px] opacity-75 whitespace-nowrap">[${duracionSim}d]</span></div>`;
+      contentHtml = `<div class="flex flex-col"><div class="flex items-center gap-1 font-bold"><span class="text-[10px] truncate max-w-[120px]">${obsNombre}</span><span class="text-[10px] opacity-75 whitespace-nowrap">[${duracionSim}d]</span></div>${comentarioHtml}</div>`;
     }
 
     const conflictosHtml = conflicto ? '<br><br><strong class="text-error">Conflictos:</strong><br><span class="text-error">' + conflictosDelBloque.map(c => c.mensaje).join('<br>') + '</span>' : '';
+    const tooltipComentario = sim.comentario ? `<br><br><strong>Comentario:</strong><br><em>${sim.comentario}</em>` : '';
 
     items.push({
       id: sim.id,
@@ -1867,7 +1879,7 @@ const timelineBuqueItems = computed(() => {
       start: new Date(sim.fechaZarpada),
       end: new Date(sim.fechaArribo),
       content: contentHtml,
-      title: `<strong>Inicio:</strong> ${new Date(sim.fechaZarpada).toLocaleDateString('es-AR')}<br><strong>Fin:</strong> ${finInclusivo.toLocaleDateString('es-AR')}${conflictosHtml}`,
+      title: `<strong>Inicio:</strong> ${new Date(sim.fechaZarpada).toLocaleDateString('es-AR')}<br><strong>Fin:</strong> ${finInclusivo.toLocaleDateString('es-AR')}${tooltipComentario}${conflictosHtml}`,
       className: conflicto ? 'vis-item-simulada-conflicto border-2 border-solid border-error bg-error/20 text-error font-bold shadow-sm' : 'vis-item-simulada border-2 border-dashed border-primary bg-primary/20 text-primary font-bold shadow-sm',
       editable: { updateTime: true, updateGroup: true, remove: true }
     });

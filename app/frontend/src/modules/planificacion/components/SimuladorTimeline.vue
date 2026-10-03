@@ -48,6 +48,7 @@ const initTimeline = () => {
 
   const options: TimelineOptions = {
     locale: 'es',
+    groupOrder: 'value',
     stack: false,
     maxHeight: '65vh',
     verticalScroll: true,
