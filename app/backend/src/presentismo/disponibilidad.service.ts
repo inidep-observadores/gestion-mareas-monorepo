@@ -12,12 +12,12 @@ import {
 
 @Injectable()
 export class DisponibilidadService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   async obtenerDisponibilidad(mesesHorizonte: number = 1): Promise<DisponibilidadResponseDto> {
     const horizon = Math.min(Math.max(mesesHorizonte || 1, 1), 12);
     const timezone = DateUtils.getTimezone();
-    
+
     // Fecha actual al inicio del día
     const today = DateTime.fromJSDate(DateUtils.getNow(), { zone: timezone }).startOf('day');
     // Para contexto referencial previo, abarcamos 120 días hacia atrás (4 meses)
@@ -135,7 +135,7 @@ export class DisponibilidadService {
               const meta = typeof (m as any).metadata === 'string' ? JSON.parse((m as any).metadata) : (m as any).metadata;
               const planificados = meta.observadoresSecundariosPlanificados || [];
               if (planificados.some((p: any) => p.observadorId === obs.id)) return true;
-            } catch {}
+            } catch { }
           }
           return false;
         })
@@ -247,17 +247,17 @@ export class DisponibilidadService {
       if (dtVtoCedula && dtVtoMedico) {
         if (dtVtoCedula <= dtVtoMedico) {
           primerBloqueoDoc = dtVtoCedula.plus({ days: 1 });
-          detalleBloqueoDoc = `Cédula vencida (${dtVtoCedula.toFormat('dd/MM/yyyy')})`;
+          detalleBloqueoDoc = `Cédula vence (${dtVtoCedula.toFormat('dd/MM/yyyy')})`;
         } else {
           primerBloqueoDoc = dtVtoMedico.plus({ days: 1 });
-          detalleBloqueoDoc = `Apto médico vencido (${dtVtoMedico.toFormat('dd/MM/yyyy')})`;
+          detalleBloqueoDoc = `Apto médico vence (${dtVtoMedico.toFormat('dd/MM/yyyy')})`;
         }
       } else if (dtVtoCedula) {
         primerBloqueoDoc = dtVtoCedula.plus({ days: 1 });
-        detalleBloqueoDoc = `Cédula vencida (${dtVtoCedula.toFormat('dd/MM/yyyy')})`;
+        detalleBloqueoDoc = `Cédula vence (${dtVtoCedula.toFormat('dd/MM/yyyy')})`;
       } else if (dtVtoMedico) {
         primerBloqueoDoc = dtVtoMedico.plus({ days: 1 });
-        detalleBloqueoDoc = `Apto médico vencido (${dtVtoMedico.toFormat('dd/MM/yyyy')})`;
+        detalleBloqueoDoc = `Apto médico vence (${dtVtoMedico.toFormat('dd/MM/yyyy')})`;
       }
 
       // Mapear cada día evaluado
@@ -472,7 +472,7 @@ export class DisponibilidadService {
               const rol = mareaDesignada.isSecundario ? ' (Secundario)' : '';
               const anioStr = mareaDesignada.anioMarea ? String(mareaDesignada.anioMarea).slice(-2) : '00';
               const codigoMarea = `${mareaDesignada.tipoMarea || 'MC'}-${mareaDesignada.nroMarea || 0}-${anioStr}`;
-  
+
               dailyStates.push({
                 date: currentDate,
                 estado: 'DESIGNADA',
