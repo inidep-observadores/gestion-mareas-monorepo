@@ -1,5 +1,5 @@
 import { ref, onMounted, onBeforeUnmount } from 'vue';
-import { api } from '@/config/api';
+import httpClient from '@/config/http/http.client';
 
 export function useSimuladorLock(escenarioIdRef: import('vue').Ref<string | null>) {
   const isLockedByMe = ref(true);
@@ -12,7 +12,7 @@ export function useSimuladorLock(escenarioIdRef: import('vue').Ref<string | null
     if (!escenarioIdRef.value) return;
 
     try {
-      const response = await api.post(`/planificacion/simulador/escenarios/${escenarioIdRef.value}/lock`, {
+      const response = await httpClient.post(`/planificacion/simulador/escenarios/${escenarioIdRef.value}/lock`, {
         tabId: lockTabId.value
       });
       if (response.data?.success) {
@@ -42,7 +42,7 @@ export function useSimuladorLock(escenarioIdRef: import('vue').Ref<string | null
       }
       
       try {
-        await api.post(`/planificacion/simulador/escenarios/${escenarioIdRef.value}/lock`, {
+        await httpClient.post(`/planificacion/simulador/escenarios/${escenarioIdRef.value}/lock`, {
           tabId: lockTabId.value
         });
       } catch (error: any) {
@@ -58,19 +58,14 @@ export function useSimuladorLock(escenarioIdRef: import('vue').Ref<string | null
     }, 45000);
   };
 
-  const releaseLock = () => {
+  const releaseLock = (escenarioId?: string) => {
     if (heartbeatInterval) clearInterval(heartbeatInterval);
-    if (!escenarioIdRef.value || !isLockedByMe.value) return;
+    const idToRelease = escenarioId || escenarioIdRef.value;
+    if (!idToRelease || !isLockedByMe.value) return;
 
-    // SendBeacon es la forma mÃ¡s segura de enviar un request durante el beforeunload
     const token = localStorage.getItem('auth-token');
-    const url = `${import.meta.env.VITE_API_URL}/planificacion/simulador/escenarios/${escenarioIdRef.value}/lock?tabId=${lockTabId.value}`;
+    const url = `${import.meta.env.VITE_API_URL}/planificacion/simulador/escenarios/${idToRelease}/lock?tabId=${lockTabId.value}`;
     
-    const headers = {
-      type: 'application/json',
-    };
-    
-    // Usamos fetch con keepalive para el unmount normal o sendBeacon si estÃ¡ cerrando la tab
     try {
       fetch(url, {
         method: 'DELETE',
@@ -103,6 +98,7 @@ export function useSimuladorLock(escenarioIdRef: import('vue').Ref<string | null
 
   return {
     isLockedByMe,
+    releaseLock,
     lockedByOtherUser,
     lockTabId,
     tryAcquireLock

@@ -327,6 +327,7 @@
                 />
 
                 <button 
+                  :disabled="!isLockedByMe"
                   @click="abrirModalCrearBloque()"
                   class="px-4 py-1.5 h-9 text-xs font-black uppercase tracking-wider text-white bg-primary rounded shadow-theme-xs shadow-primary/20 hover:bg-primary-hover active:scale-95 transition-all flex items-center gap-1.5"
                 >
@@ -344,7 +345,8 @@
 
           <!-- Timelines -->
           <div v-if="!isLoading" class="w-full h-full relative">
-            <SimuladorTimeline 
+            <SimuladorTimeline
+            :readonly="!isLockedByMe" 
               v-if="hasOpenedObservador"
               v-show="activeTab === 'observador'"
               ref="timelineObservadorRef"
@@ -360,7 +362,8 @@
               class="h-[65vh] border-t border-border"
             />
 
-            <SimuladorTimeline 
+            <SimuladorTimeline
+            :readonly="!isLockedByMe" 
               v-if="hasOpenedBuque"
               v-show="activeTab === 'buque'"
               ref="timelineBuqueRef"
@@ -738,6 +741,24 @@
       @confirm="confirmarSinObservador"
       @close="cancelarSinObservador"
     />
+
+    <!-- Modal de Bloqueo Pesimista -->
+    <BaseModal :show="showLockedModal" title="Escenario Bloqueado" icon="warning">
+      <div class="space-y-4">
+        <p class="text-sm text-text">
+          La planificación está siendo editada actualmente por <span class="font-bold text-primary">{{ lockedByOtherUser }}</span>.
+        </p>
+        <p class="text-xs text-text-muted">
+          Para evitar conflictos de datos, has ingresado en modo de solo lectura. No podrás modificar ni guardar cambios hasta que el otro usuario termine de trabajar.
+        </p>
+        <div class="flex justify-end pt-4">
+          <button @click="showLockedModal = false" class="px-6 py-2 bg-primary text-white rounded text-xs font-bold uppercase hover:bg-primary-hover">
+            Entendido
+          </button>
+        </div>
+      </div>
+    </BaseModal>
+
   </PlanificacionDashboardLayout>
 </template>
 
@@ -773,7 +794,7 @@ import { getBloqueLabel, getItemVisClass, formatItemTooltip } from '@/modules/sh
 import catalogosService from '../../mareas/services/catalogos.service';
 import { planificacionService } from '../services/planificacion.service';
 import { useSimuladorHistory } from '../composables/useSimuladorHistory';
-
+import { useSimuladorLock } from '../composables/useSimuladorLock';
 
 import type { MareaSimuladaItem, EscenarioSimulacionState } from '../interfaces/simulador.interface';
 import SimuladorTimeline from '../components/SimuladorTimeline.vue';
@@ -965,6 +986,24 @@ const procesarExportacion = async () => {
 
 
 const showConfirmChangeScenario = ref(false);
+
+const showLockedModal = ref(false);
+
+const handleLockFailed = (user: string) => {
+  showLockedModal.value = true;
+};
+
+const { isLockedByMe, lockedByOtherUser, lockTabId, tryAcquireLock, releaseLock } = useSimuladorLock(selectedEscenarioId);
+
+watch(selectedEscenarioId, async (newVal, oldVal) => {
+  if (oldVal && oldVal !== 'new') {
+    releaseLock(oldVal);
+  }
+  if (newVal && newVal !== 'new') {
+    await tryAcquireLock(handleLockFailed);
+  }
+}, { immediate: true });
+
 
 
 const { 
