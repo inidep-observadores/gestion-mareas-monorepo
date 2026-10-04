@@ -20,7 +20,7 @@
                 </option>
               </select>
             </div>
-            <p class="text-xs text-text-muted">Arrastre recursos desde el panel lateral para asignar o redistribuir mareas en la línea de tiempo.</p>
+            <p class="text-xs text-text-muted">Haga doble clic en áreas vacías de la línea de tiempo para crear nuevas mareas simuladas.</p>
           </div>
         </div>
 
