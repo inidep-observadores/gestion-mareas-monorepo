@@ -380,6 +380,16 @@ export class MareasController {
     ) {
         return this.mareasService.updateObservadorEtapa(id, etapaId, observadorId, nuevoObservadorId, user);
     }
-}
 
+    @Post('admin/migrar-informes-drive')
+    @Auth(ValidRoles.admin)
+    @AuditEvent({
+        tipoEvento: 'MIGRAR_INFORMES_DRIVE',
+        categoria: AuditCategoria.MAREAS,
+        descripcion: 'Migración histórica de informes locales a Google Drive'
+    })
+    migrarInformesADrive() {
+        return this.mareasService.migrarInformesADrive();
+    }
+}
 

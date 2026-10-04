@@ -2631,7 +2631,7 @@ export class MareasService {
                     orderBy: { fechaHora: 'desc' }
                 });
 
-                await tx.mareaArchivo.create({
+                const archivoAprobacion = await tx.mareaArchivo.create({
                     data: {
                         mareaId: id,
                         movimientoOrigenId: movimiento?.id,
@@ -2640,7 +2640,26 @@ export class MareasService {
                         rutaArchivo: filePath.replace(/\\/g, '/'),
                         usuarioSubioId: user.id,
                         descripcion: 'Informe aprobado para protocolización',
-                        metadata: { originalName: file.originalname }
+                        metadata: { 
+                            originalName: file.originalname,
+                            mimetype: file.mimetype,
+                            tempFilePath: filePath,
+                            estadoDrive: 'PENDING'
+                        }
+                    }
+                });
+
+                await (tx as any).jobQueue.create({
+                    data: {
+                        type: JobType.DRIVE_SYNC,
+                        payload: {
+                            action: 'UPLOAD',
+                            mareaArchivoId: archivoAprobacion.id,
+                            categoria: 'INFORME_APROBACION'
+                        },
+                        priority: 10,
+                        status: 'PENDING',
+                        nextRunAt: new Date(),
                     }
                 });
             }
@@ -3696,7 +3715,7 @@ export class MareasService {
 
                     fs.writeFileSync(filePath, file.buffer);
 
-                    await tx.mareaArchivo.create({
+                    const archivoProtocolizacion = await tx.mareaArchivo.create({
                         data: {
                             mareaId: marea.id,
                             movimientoOrigenId: movimiento.id,
@@ -3704,7 +3723,27 @@ export class MareasService {
                             formato: fileExt.replace('.', '').toUpperCase(),
                             rutaArchivo: filePath.replace(/\\/g, '/'),
                             usuarioSubioId: user.id,
-                            descripcion: 'Informe de marea enviado para protocolización'
+                            descripcion: 'Informe de marea enviado para protocolización',
+                            metadata: {
+                                originalName: file.originalname,
+                                mimetype: file.mimetype,
+                                tempFilePath: filePath,
+                                estadoDrive: 'PENDING'
+                            }
+                        }
+                    });
+
+                    await (tx as any).jobQueue.create({
+                        data: {
+                            type: JobType.DRIVE_SYNC,
+                            payload: {
+                                action: 'UPLOAD',
+                                mareaArchivoId: archivoProtocolizacion.id,
+                                categoria: 'INFORME_PROTOCOLIZACION'
+                            },
+                            priority: 10,
+                            status: 'PENDING',
+                            nextRunAt: new Date(),
                         }
                     });
                 }
@@ -4088,6 +4127,72 @@ export class MareasService {
             data: { observadorId: nuevoObservadorId }
         });
         return this.findOne(mareaId);
+    }
+
+    /** Realiza la migración en batch de todos los informes locales pendientes a Google Drive */
+    async migrarInformesADrive() {
+        this.logger.log('Iniciando migración de informes locales a Google Drive...');
+        
+        const archivos = await this.prisma.mareaArchivo.findMany({
+            where: {
+                tipoArchivo: {
+                    in: ['INFORME_APROBACION', 'INFORME_PROTOCOLIZACION']
+                },
+                NOT: {
+                    rutaArchivo: { startsWith: 'http' }
+                }
+            }
+        });
+
+        const folderId = this.configService.get<string>('GOOGLE_DRIVE_MAREAS_FOLDER_ID');
+        if (!folderId) {
+            throw new Error('La variable GOOGLE_DRIVE_MAREAS_FOLDER_ID no está configurada.');
+        }
+
+        let procesados = 0;
+        let errores = 0;
+
+        for (const archivo of archivos) {
+            try {
+                if (!fs.existsSync(archivo.rutaArchivo)) {
+                    this.logger.warn(`Archivo local no encontrado para registro ${archivo.id}: ${archivo.rutaArchivo}`);
+                    errores++;
+                    continue;
+                }
+
+                const fileBuffer = await fs.promises.readFile(archivo.rutaArchivo);
+                const metadata: any = archivo.metadata || {};
+                const originalName = metadata.originalName || path.basename(archivo.rutaArchivo);
+                const mimetype = metadata.mimetype || 'application/pdf'; // Default fallback
+
+                const driveResult = await this.driveStorageService.uploadFile(
+                    originalName,
+                    mimetype,
+                    fileBuffer,
+                    folderId
+                );
+
+                metadata.driveFileId = driveResult.fileId;
+                metadata.migradoDrive = true;
+                
+                await this.prisma.mareaArchivo.update({
+                    where: { id: archivo.id },
+                    data: {
+                        rutaArchivo: driveResult.webViewLink,
+                        metadata
+                    }
+                });
+
+                this.logger.log(`Archivo ${archivo.id} migrado exitosamente a Drive.`);
+                procesados++;
+            } catch (error) {
+                this.logger.error(`Error migrando archivo ${archivo.id}: ${error.message}`);
+                errores++;
+            }
+        }
+
+        this.logger.log(`Migración finalizada. Procesados: ${procesados}, Errores: ${errores}`);
+        return { procesados, errores, total: archivos.length };
     }
 }
 
