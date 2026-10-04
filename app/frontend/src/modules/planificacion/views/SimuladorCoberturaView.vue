@@ -299,6 +299,26 @@
                   <PlusIcon class="w-3.5 h-3.5" /> Agregar Buque
                 </button>
                 
+                <!-- History Buttons -->
+                <div class="flex items-center gap-1 bg-surface-muted rounded-lg border border-border p-1 shadow-sm h-9">
+                  <button 
+                    @click="handleUndo" 
+                    :disabled="!canUndo"
+                    class="p-1.5 rounded text-text-muted hover:bg-surface hover:text-text disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    title="Deshacer"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>
+                  </button>
+                  <div class="w-px h-4 bg-border"></div>
+                  <button 
+                    @click="handleRedo" 
+                    :disabled="!canRedo"
+                    class="p-1.5 rounded text-text-muted hover:bg-surface hover:text-text disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    title="Rehacer"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7"/></svg>
+                  </button>
+                </div>
                 <ExportExcelButton
                   label="EXPORTAR"
                   title="Exportar planificación a Excel"
@@ -752,6 +772,8 @@ import type { DisponibilidadResponse, ObservadorDisponibilidadRow } from '@/modu
 import { getBloqueLabel, getItemVisClass, formatItemTooltip } from '@/modules/shared/utils/timeline-styles';
 import catalogosService from '../../mareas/services/catalogos.service';
 import { planificacionService } from '../services/planificacion.service';
+import { useSimuladorHistory } from '../composables/useSimuladorHistory';
+
 
 import type { MareaSimuladaItem, EscenarioSimulacionState } from '../interfaces/simulador.interface';
 import SimuladorTimeline from '../components/SimuladorTimeline.vue';
@@ -943,6 +965,37 @@ const procesarExportacion = async () => {
 
 
 const showConfirmChangeScenario = ref(false);
+
+
+const { 
+  canUndo, 
+  canRedo, 
+  takeSnapshot, 
+  undo, 
+  redo 
+} = useSimuladorHistory(selectedEscenarioId);
+
+const handleUndo = () => {
+  if (!escenarioActual.value) return;
+  const previous = undo(escenarioActual.value.items, recursosPendientes.value);
+  if (previous) {
+    escenarioActual.value.items = previous.items;
+    recursosPendientes.value = previous.recursosPendientes;
+    hasUnsavedChanges.value = true;
+    guardarEscenario();
+  }
+};
+
+const handleRedo = () => {
+  if (!escenarioActual.value) return;
+  const next = redo(escenarioActual.value.items, recursosPendientes.value);
+  if (next) {
+    escenarioActual.value.items = next.items;
+    recursosPendientes.value = next.recursosPendientes;
+    hasUnsavedChanges.value = true;
+    guardarEscenario();
+  }
+};
 
 const showConfirmNoObserver = ref(false);
 let pendingNoObserverAction: (() => void) | null = null;
@@ -1290,6 +1343,7 @@ const guardarCreacionBloque = () => {
     }
 
     if (escenarioActual.value) {
+      takeSnapshot(escenarioActual.value.items, recursosPendientes.value);
       escenarioActual.value.items.push({ ...newBlockData.value! });
       hasUnsavedChanges.value = true;
       guardarEscenario();
@@ -1478,6 +1532,7 @@ const guardarEdicionBloque = () => {
 
     editingBlockData.value.fechaArribo = fechaArribo;
 
+    takeSnapshot(escenarioActual.value!.items, recursosPendientes.value);
     escenarioActual.value!.items[idx] = { ...editingBlockData.value };
     hasUnsavedChanges.value = true;
     guardarEscenario();
@@ -1491,6 +1546,7 @@ const devolverRecursoPendiente = () => {
   if (!editingBlockData.value) return;
   const idx = escenarioActual.value!.items.findIndex(i => i.id === editingBlockData.value?.id);
   if (idx !== -1) {
+    takeSnapshot(escenarioActual.value!.items, recursosPendientes.value);
     const removedItem = escenarioActual.value!.items[idx];
     escenarioActual.value!.items.splice(idx, 1);
     hasUnsavedChanges.value = true;
@@ -1968,6 +2024,8 @@ const handleItemMoved = (payload: { id: string; start: Date; end: Date; group: s
   
   const sim = (escenarioActual.value?.items || []).find(i => i.id === payload.id);
   if (sim) {
+    takeSnapshot(escenarioActual.value!.items, recursosPendientes.value);
+    
     if (activeTab.value === 'observador') {
       sim.observadorId = payload.group;
       const obsData = datosSimulacion.value?.observadores.find(o => o.observador.id === payload.group)?.observador;
@@ -1976,7 +2034,6 @@ const handleItemMoved = (payload: { id: string; start: Date; end: Date; group: s
       }
     } else if (activeTab.value === 'buque') {
       sim.buqueId = payload.group;
-      // Resolvemos el buque desde el store global
       const bCatalog = buques.value.find(b => b.id === payload.group);
       if (bCatalog) {
         sim.buqueNombre = bCatalog.nombreBuque;
@@ -1984,6 +2041,7 @@ const handleItemMoved = (payload: { id: string; start: Date; end: Date; group: s
         sim.pesqueriaNombre = bCatalog.pesqueriaHabitual?.nombre;
       }
     }
+    
     sim.fechaZarpada = payload.start;
     sim.fechaArribo = payload.end;
     hasUnsavedChanges.value = true;
@@ -1994,6 +2052,7 @@ const handleItemMoved = (payload: { id: string; start: Date; end: Date; group: s
 const handleItemRemoved = (id: string) => {
   const idx = escenarioActual.value!.items.findIndex(i => i.id === id);
   if (idx !== -1) {
+    takeSnapshot(escenarioActual.value!.items, recursosPendientes.value);
     const removedItem = escenarioActual.value!.items[idx];
     escenarioActual.value!.items.splice(idx, 1);
     hasUnsavedChanges.value = true;
@@ -2064,6 +2123,7 @@ const handleDropRecurso = (payload: { recurso: any; group: string; date: Date })
       prioridad: recursoArrastrado.prioridad || 'MEDIA'
     };
 
+    takeSnapshot(escenarioActual.value!.items, recursosPendientes.value);
     escenarioActual.value!.items.push(nuevoItemSimulado);
     hasUnsavedChanges.value = true;
     guardarEscenario();
@@ -2284,7 +2344,31 @@ onMounted(async () => {
   
   await cargarEscenarios();
   fetchData();
+  
+  window.addEventListener('keydown', handleGlobalKeydown);
 });
+
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', handleGlobalKeydown);
+});
+
+const handleGlobalKeydown = (e: KeyboardEvent) => {
+  if (['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement).tagName)) return;
+  if (e.ctrlKey || e.metaKey) {
+    if (e.key === 'z') {
+      if (e.shiftKey) {
+        if (canRedo.value) handleRedo();
+      } else {
+        if (canUndo.value) handleUndo();
+      }
+      e.preventDefault();
+    }
+    if (e.key === 'y') {
+      if (canRedo.value) handleRedo();
+      e.preventDefault();
+    }
+  }
+};
 
 
 const isResourceFormValid = computed(() => {
