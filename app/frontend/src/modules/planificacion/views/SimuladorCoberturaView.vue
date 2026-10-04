@@ -2144,7 +2144,7 @@ const handleItemRemoved = (id: string) => {
       prioridad: removedItem.prioridad || 'MEDIA'
     });
     
-    toast.success('Marea simulada eliminada y devuelta a recursos');
+    toast.success('Marea simulada eliminada');
   }
 };
 
