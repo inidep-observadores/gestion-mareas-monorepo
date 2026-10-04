@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v0.17.2] - 2026-10-04
+
+### Fixed
+- **planificacion:** manejar expiración de documentación como conflicto duro si ocurre antes de zarpar, y como advertencia suave si ocurre durante el viaje
+- **planificacion:** limpiar advertencias de solapamiento en timeline para evitar renderizados incorrectos
+
 ## [v0.17.1] - 2026-10-04
 
 ### Fixed

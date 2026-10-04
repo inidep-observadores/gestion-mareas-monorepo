@@ -319,6 +319,11 @@ export class DisponibilidadService {
           true  // Incluir todas las novedades
         );
 
+        // 0. Bloqueo por documentación vencida (Cédula o Apto Médico)
+        // Rige a partir del día siguiente al vencimiento
+        const docVencida = primerBloqueoDoc && currentDate >= primerBloqueoDoc;
+        const warningString = docVencida ? detalleBloqueoDoc : undefined;
+
         // Marea en ejecución: si el observador está afectado a una marea en curso
         const mareaEnEjecucion = obsMareasDelDia.find((m: any) => {
           if (!m.isEnEjecucion || !m.inicioMarea) return false;
@@ -326,6 +331,19 @@ export class DisponibilidadService {
         });
 
         if (mareaEnEjecucion) {
+          const docVencidaAntesEjecucion = primerBloqueoDoc && primerBloqueoDoc <= mareaEnEjecucion.inicioMarea;
+          if (docVencida && docVencidaAntesEjecucion) {
+            dailyStates.push({
+              date: currentDate,
+              estado: 'CONFLICTO',
+              detalle: `Solapamiento: Marea ${mareaEnEjecucion.codigoMarea || 'en curso'} vs Documentación vencida`,
+              codigoCorto: 'CONFLICTO',
+              flexible: false,
+              isPast,
+            });
+            continue;
+          }
+
           // Si está dentro de la duración estimada original
           if (mareaEnEjecucion.finEstimadoOriginal && currentDate <= mareaEnEjecucion.finEstimadoOriginal) {
             if (currentDate <= today) {
@@ -351,7 +369,8 @@ export class DisponibilidadService {
                 flexible: false,
                 isPast: false,
                 buqueId: mareaEnEjecucion.buqueId,
-                buqueNombre: mareaEnEjecucion.buque?.nombreBuque
+                buqueNombre: mareaEnEjecucion.buque?.nombreBuque,
+                warningDocVencida: warningString
               });
             }
             continue;
@@ -432,33 +451,41 @@ export class DisponibilidadService {
           );
         }
 
-        // 0. Bloqueo por documentación vencida (Cédula o Apto Médico)
-        // Rige a partir del día siguiente al vencimiento y se extiende indefinidamente
-        // a menos que el observador esté actualmente navegando (marea en curso)
-        const docVencida = primerBloqueoDoc && currentDate >= primerBloqueoDoc;
-
         // Si el día está libre (sin mareas en curso ni licencias activas)
         if (estadoEvaluado.estado === 'LIBRE' || estadoEvaluado.estado === 'FIN_SEMANA') {
           if (mareaDesignada) {
-            // Marea en estado DESIGNADA: bloque previsto de color verde atenuado con borde punteado
-            const buque = mareaDesignada.buque?.nombreBuque || 'Buque sin asignar';
-            const pesqueria = mareaDesignada.pesqueria?.nombre ? ` - ${mareaDesignada.pesqueria.nombre}` : '';
-            const duracion = `${mareaDesignada.diasEstimados || 30} días est.`;
-            const rol = mareaDesignada.isSecundario ? ' (Secundario)' : '';
-            const anioStr = mareaDesignada.anioMarea ? String(mareaDesignada.anioMarea).slice(-2) : '00';
-            const codigoMarea = `${mareaDesignada.tipoMarea || 'MC'}-${mareaDesignada.nroMarea || 0}-${anioStr}`;
+            const docVencidaAntesDesignacion = primerBloqueoDoc && primerBloqueoDoc <= mareaDesignada.inicioDesignada;
+            if (docVencida && docVencidaAntesDesignacion) {
+              dailyStates.push({
+                date: currentDate,
+                estado: 'CONFLICTO',
+                detalle: `Solapamiento: Marea Designada vs Documentación vencida`,
+                codigoCorto: 'CONFLICTO',
+                flexible: false,
+                isPast,
+              });
+            } else {
+              // Marea en estado DESIGNADA: bloque previsto de color verde atenuado con borde punteado
+              const buque = mareaDesignada.buque?.nombreBuque || 'Buque sin asignar';
+              const pesqueria = mareaDesignada.pesqueria?.nombre ? ` - ${mareaDesignada.pesqueria.nombre}` : '';
+              const duracion = `${mareaDesignada.diasEstimados || 30} días est.`;
+              const rol = mareaDesignada.isSecundario ? ' (Secundario)' : '';
+              const anioStr = mareaDesignada.anioMarea ? String(mareaDesignada.anioMarea).slice(-2) : '00';
+              const codigoMarea = `${mareaDesignada.tipoMarea || 'MC'}-${mareaDesignada.nroMarea || 0}-${anioStr}`;
+  
+              dailyStates.push({
+                date: currentDate,
+                estado: 'DESIGNADA',
+                detalle: `Marea ${codigoMarea}${rol} · ${buque}${pesqueria} (${duracion})`,
+                codigoCorto: 'DESIGNADA',
+                flexible: false,
+                isPast,
+                buqueId: mareaDesignada.buqueId,
+                buqueNombre: mareaDesignada.buque?.nombreBuque,
+                warningDocVencida: warningString
+              });
+            }
 
-            dailyStates.push({
-              date: currentDate,
-              estado: 'DESIGNADA',
-              detalle: `Marea ${codigoMarea}${rol} · ${buque}${pesqueria} (${duracion})`,
-              codigoCorto: 'DESIGNADA',
-              flexible: false,
-              isPast,
-              buqueId: mareaDesignada.buqueId,
-              buqueNombre: mareaDesignada.buque?.nombreBuque,
-              warningDocVencida: docVencida ? detalleBloqueoDoc : undefined
-            });
           } else if (docVencida) {
             // Documentación vencida bloquea la disponibilidad indefinidamente
             dailyStates.push({

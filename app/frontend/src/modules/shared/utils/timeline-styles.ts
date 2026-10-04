@@ -99,6 +99,10 @@ export const formatItemTooltip = (item: ObservadorDisponibilidadItem, nombreObs:
       html += `<div class="text-[10px] text-emerald-300 font-semibold mt-1">Estimación según días previstos de marea en curso</div>`;
       html += `<div class="text-[10px] text-gray-400 italic mt-0.5">Sujeto a la fecha real de arribo y cierre de marea</div>`;
     }
+    if (item.warningDocVencida) {
+      html += `<div class="text-[10px] text-amber-300 mt-2 p-1.5 bg-amber-900/40 border border-amber-500/30 rounded leading-tight">` +
+              `⚠️ Advertencia: ${item.warningDocVencida} durante la ejecución de esta marea. No impide finalizar el viaje.</div>`;
+    }
   } else if (item.estado === 'DISPONIBLE_NO_CONFIRMADA') {
     html += `<div class="text-xs text-amber-200/95 mt-1 font-medium">El observador no confirmó la disponibilidad</div>`;
   } else if (item.estado === 'DESIGNADA') {
@@ -200,7 +204,7 @@ export const getBloqueLabel = (item: ObservadorDisponibilidadItem): string => {
       label = (item.codigoCorto || String(item.estado || '')).replace(/_/g, ' '); break;
   }
 
-  if (item.estado === 'DESIGNADA' && item.warningDocVencida) {
+  if (item.warningDocVencida && ['DESIGNADA', 'NAVEGANDO', 'VIAJE', 'PUERTO', 'ESPERANDO_ZARPADA'].includes(item.estado || '')) {
     return `⚠️ ${label}`;
   }
   return label;
@@ -226,7 +230,7 @@ export const getItemVisClass = (item: ObservadorDisponibilidadItem): string => {
   } else if (item.estado === 'IMPEDIMENTO') {
     baseClass = 'vis-item-impedido';
   } else if (item.estado === 'DESIGNADA') {
-    baseClass = item.warningDocVencida ? 'vis-item-designada vis-item-warning-doc' : 'vis-item-designada';
+    baseClass = 'vis-item-designada';
   } else if (item.estado === 'PUERTO') {
     baseClass = 'vis-item-puerto';
   } else if (item.estado === 'ESPERANDO_ZARPADA') {
@@ -246,6 +250,10 @@ export const getItemVisClass = (item: ObservadorDisponibilidadItem): string => {
 
   if (item.flexible) {
     baseClass += ' vis-item-flexible';
+  }
+
+  if (item.warningDocVencida) {
+    baseClass += ' vis-item-warning-doc';
   }
 
   if (item.isPast) {

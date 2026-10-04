@@ -1696,6 +1696,7 @@ const conflictosDetectados = computed(() => {
   if (simulados.length === 0 || !datosSimulacion.value) return alertas;
 
   simulados.forEach(sim => {
+    sim.warningDocVencida = undefined; // Limpiar estado anterior
     const inicio = new Date(sim.fechaZarpada);
     inicio.setHours(0, 0, 0, 0);
     const fin = new Date(sim.fechaArribo);
@@ -1714,6 +1715,14 @@ const conflictosDetectados = computed(() => {
           const evEnd = new Date(ev.endDate + 'T00:00:00');
           
           if (inicio <= evEnd && fin >= evStart) {
+            if (ev.estado === 'NOVEDAD' && ev.detalle?.includes('Documentación vencida')) {
+              if (evStart > inicio) {
+                sim.warningDocVencida = ev.detalle.replace('Documentación vencida: ', '').trim();
+                continue; // Es una advertencia blanda si el vencimiento es posterior al inicio
+              }
+              // Si evStart <= inicio, cae al flujo de conflicto duro normal
+            }
+
             const obsName = `${row.observador.nombre} ${row.observador.apellido}`;
             const buqueSimName = sim.buqueNombre ? ` (Buque: ${sim.buqueNombre})` : '';
             const buqueEvName = ev.buqueNombre ? ` (Buque: ${ev.buqueNombre})` : '';
@@ -1867,12 +1876,18 @@ const timelineObservadorItems = computed(() => {
     const comentarioHtml = sim.comentario ? `<div class="text-[9px] italic font-normal opacity-75 mt-0.5 truncate max-w-full">${sim.comentario}</div>` : '';
     if (conflicto) {
       contentHtml = `<div class="flex flex-col"><div class="flex items-center gap-1 font-bold"><span class="text-error" style="font-size: 11px;">⚠️</span> ${label} [${duracionSim}d]</div>${comentarioHtml}</div>`;
+    } else if (sim.warningDocVencida) {
+      contentHtml = `<div class="flex flex-col"><div class="flex items-center gap-1 font-bold"><span class="text-amber-500" style="font-size: 11px;">⚠️</span> ${label} [${duracionSim}d]</div>${comentarioHtml}</div>`;
     } else {
       contentHtml = `<div class="flex flex-col"><div class="flex items-center gap-1 font-bold"><span class="text-[10px]">✨</span> ${label} [${duracionSim}d]</div>${comentarioHtml}</div>`;
     }
 
     const conflictosHtml = conflicto ? '<br><br><strong class="text-error">Conflictos:</strong><br><span class="text-error">' + conflictosDelBloque.map(c => c.mensaje).join('<br>') + '</span>' : '';
     const tooltipComentario = sim.comentario ? `<br><br><strong>Comentario:</strong><br><em>${sim.comentario}</em>` : '';
+    const tooltipWarning = (sim.warningDocVencida && !conflicto) ? `<br><br><div class="text-[10px] text-amber-300 mt-2 p-1.5 bg-amber-900/40 border border-amber-500/30 rounded leading-tight">⚠️ Advertencia: ${sim.warningDocVencida} durante la ejecución de esta marea. No impide finalizar el viaje.</div>` : '';
+
+    let clsName = conflicto ? 'vis-item-simulada-conflicto border-2 border-solid border-error bg-error/20 text-error font-bold shadow-sm' : 'vis-item-simulada border-2 border-dashed border-primary bg-primary/20 text-primary font-bold shadow-sm';
+    if (sim.warningDocVencida && !conflicto) clsName += ' vis-item-warning-doc';
 
     items.push({
       id: sim.id,
@@ -1880,8 +1895,8 @@ const timelineObservadorItems = computed(() => {
       start: new Date(sim.fechaZarpada),
       end: new Date(sim.fechaArribo),
       content: contentHtml,
-      title: `<strong>Inicio:</strong> ${new Date(sim.fechaZarpada).toLocaleDateString('es-AR')}<br><strong>Fin:</strong> ${finInclusivo.toLocaleDateString('es-AR')}${tooltipComentario}${conflictosHtml}`,
-      className: conflicto ? 'vis-item-simulada-conflicto border-2 border-solid border-error bg-error/20 text-error font-bold shadow-sm' : 'vis-item-simulada border-2 border-dashed border-primary bg-primary/20 text-primary font-bold shadow-sm',
+      title: `<strong>Inicio:</strong> ${new Date(sim.fechaZarpada).toLocaleDateString('es-AR')}<br><strong>Fin:</strong> ${finInclusivo.toLocaleDateString('es-AR')}${tooltipComentario}${conflictosHtml}${tooltipWarning}`,
+      className: clsName,
       editable: isLockedByMe.value ? { updateTime: true, updateGroup: true, remove: true } : false
     });
   });
@@ -2048,12 +2063,18 @@ const timelineBuqueItems = computed(() => {
     const comentarioHtml = sim.comentario ? `<div class="text-[9px] italic font-normal opacity-75 mt-0.5 truncate max-w-full">${sim.comentario}</div>` : '';
     if (conflicto) {
       contentHtml = `<div class="flex flex-col"><div class="flex items-center gap-1 font-bold"><span class="text-error" style="font-size: 11px;">⚠️</span><span class="text-[10px] truncate max-w-[120px]">${obsNombre}</span><span class="text-[10px] opacity-75 whitespace-nowrap">[${duracionSim}d]</span></div>${comentarioHtml}</div>`;
+    } else if (sim.warningDocVencida) {
+      contentHtml = `<div class="flex flex-col"><div class="flex items-center gap-1 font-bold"><span class="text-amber-500" style="font-size: 11px;">⚠️</span><span class="text-[10px] truncate max-w-[120px]">${obsNombre}</span><span class="text-[10px] opacity-75 whitespace-nowrap">[${duracionSim}d]</span></div>${comentarioHtml}</div>`;
     } else {
       contentHtml = `<div class="flex flex-col"><div class="flex items-center gap-1 font-bold"><span class="text-[10px] truncate max-w-[120px]">${obsNombre}</span><span class="text-[10px] opacity-75 whitespace-nowrap">[${duracionSim}d]</span></div>${comentarioHtml}</div>`;
     }
 
     const conflictosHtml = conflicto ? '<br><br><strong class="text-error">Conflictos:</strong><br><span class="text-error">' + conflictosDelBloque.map(c => c.mensaje).join('<br>') + '</span>' : '';
     const tooltipComentario = sim.comentario ? `<br><br><strong>Comentario:</strong><br><em>${sim.comentario}</em>` : '';
+    const tooltipWarning = (sim.warningDocVencida && !conflicto) ? `<br><br><div class="text-[10px] text-amber-300 mt-2 p-1.5 bg-amber-900/40 border border-amber-500/30 rounded leading-tight">⚠️ Advertencia: ${sim.warningDocVencida} durante la ejecución de esta marea. No impide finalizar el viaje.</div>` : '';
+
+    let clsName = conflicto ? 'vis-item-simulada-conflicto border-2 border-solid border-error bg-error/20 text-error font-bold shadow-sm' : 'vis-item-simulada border-2 border-dashed border-primary bg-primary/20 text-primary font-bold shadow-sm';
+    if (sim.warningDocVencida && !conflicto) clsName += ' vis-item-warning-doc';
 
     items.push({
       id: sim.id,
@@ -2061,8 +2082,8 @@ const timelineBuqueItems = computed(() => {
       start: new Date(sim.fechaZarpada),
       end: new Date(sim.fechaArribo),
       content: contentHtml,
-      title: `<strong>Inicio:</strong> ${new Date(sim.fechaZarpada).toLocaleDateString('es-AR')}<br><strong>Fin:</strong> ${finInclusivo.toLocaleDateString('es-AR')}${tooltipComentario}${conflictosHtml}`,
-      className: conflicto ? 'vis-item-simulada-conflicto border-2 border-solid border-error bg-error/20 text-error font-bold shadow-sm' : 'vis-item-simulada border-2 border-dashed border-primary bg-primary/20 text-primary font-bold shadow-sm',
+      title: `<strong>Inicio:</strong> ${new Date(sim.fechaZarpada).toLocaleDateString('es-AR')}<br><strong>Fin:</strong> ${finInclusivo.toLocaleDateString('es-AR')}${tooltipComentario}${conflictosHtml}${tooltipWarning}`,
+      className: clsName,
       editable: isLockedByMe.value ? { updateTime: true, updateGroup: true, remove: true } : false
     });
   });

@@ -23,6 +23,7 @@ export interface MareaSimuladaItem {
   alertas?: string[];
   prioridad?: 'ALTA' | 'MEDIA' | 'BAJA';
   comentario?: string;
+  warningDocVencida?: string;
 }
 
 export interface RecursoMareaPendiente {
