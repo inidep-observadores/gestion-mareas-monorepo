@@ -13,15 +13,16 @@ export function useSimuladorLock(escenarioIdRef: import('vue').Ref<string | null
 
     try {
       const response = await httpClient.post(`/planificacion/simulador/escenarios/${escenarioIdRef.value}/lock`, {
-        tabId: lockTabId.value
-      });
+        tabId: lockTabId.value,
+        isHeartbeat: false
+      }, { skipToast: true });
       if (response.data?.success) {
         isLockedByMe.value = true;
         startHeartbeat(showModalIfFailed);
       }
     } catch (error: any) {
-      if (error.response?.status === 423 || error.response?.status === 409) {
-        const lockUser = error.response.data?.lockedBy || 'otro usuario';
+      if (error.statusCode === 423 || error.statusCode === 409) {
+        const lockUser = error.data?.lockedBy || 'otro usuario';
         isLockedByMe.value = false;
         lockedByOtherUser.value = lockUser;
         showModalIfFailed(lockUser);
@@ -43,14 +44,15 @@ export function useSimuladorLock(escenarioIdRef: import('vue').Ref<string | null
       
       try {
         await httpClient.post(`/planificacion/simulador/escenarios/${escenarioIdRef.value}/lock`, {
-          tabId: lockTabId.value
-        });
+          tabId: lockTabId.value,
+          isHeartbeat: true
+        }, { skipToast: true });
       } catch (error: any) {
-        if (error.response?.status === 423 || error.response?.status === 409) {
+        if (error.statusCode === 423 || error.statusCode === 409) {
           // Perdimos el lock (ej: suspendimos la pc, venció y lo tomó otro)
           isLockedByMe.value = false;
           if (heartbeatInterval) clearInterval(heartbeatInterval);
-          const lockUser = error.response.data?.lockedBy || 'otro usuario';
+          const lockUser = error.data?.lockedBy || 'otro usuario';
           lockedByOtherUser.value = lockUser;
           showModalIfFailed(lockUser);
         }

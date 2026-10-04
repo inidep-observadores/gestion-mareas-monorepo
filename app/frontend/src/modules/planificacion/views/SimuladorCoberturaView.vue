@@ -30,8 +30,9 @@
           <!-- Botones de Acción de Escenario -->
           <button
             v-if="escenarioActual && escenarioActual.id"
+            :disabled="!isLockedByMe"
             @click="abrirModalEditarEscenario"
-            class="h-10 px-3.5 inline-flex items-center justify-center gap-2 text-xs font-extrabold tracking-wider uppercase transition-all rounded-xl bg-surface border border-border text-text hover:bg-surface-muted active:scale-95 shadow-sm"
+            class="h-10 px-3.5 inline-flex items-center justify-center gap-2 text-xs font-extrabold tracking-wider uppercase transition-all rounded-xl bg-surface border border-border text-text hover:bg-surface-muted active:scale-95 shadow-sm disabled:opacity-50 disabled:pointer-events-none"
           >
             <EditIcon class="w-4 h-4" />
             Editar
@@ -58,13 +59,23 @@
 
           <button
             v-if="escenarioActual && escenarioActual.id"
+            :disabled="!isLockedByMe"
             @click="eliminarEscenario"
-            class="h-10 px-3 inline-flex items-center justify-center gap-1.5 text-xs font-bold tracking-wider uppercase transition-all rounded-xl bg-surface border border-border text-error hover:bg-error/10 active:scale-95"
+            class="h-10 px-3 inline-flex items-center justify-center gap-1.5 text-xs font-bold tracking-wider uppercase transition-all rounded-xl bg-surface border border-border text-error hover:bg-error/10 active:scale-95 disabled:opacity-50 disabled:pointer-events-none"
             title="Eliminar escenario"
           >
             <TrashIcon class="w-4 h-4" />
             Eliminar
           </button>
+        </div>
+      </div>
+
+      <!-- Alerta de Solo Lectura por Bloqueo -->
+      <div v-if="!isLockedByMe && lockedByOtherUser" class="p-4 rounded-xl border border-warning/30 bg-warning/10 text-warning-800 dark:text-warning-100 flex items-center gap-3">
+        <AlertTriangleIcon class="w-5 h-5 shrink-0 text-warning-600 dark:text-warning-500" />
+        <div class="text-sm">
+          <span class="font-bold">Modo Consulta: </span>
+          El escenario está siendo modificado por <span class="font-bold">{{ lockedByOtherUser }}</span>. No es posible realizar cambios.
         </div>
       </div>
 
@@ -329,7 +340,7 @@
                 <button 
                   :disabled="!isLockedByMe"
                   @click="abrirModalCrearBloque()"
-                  class="px-4 py-1.5 h-9 text-xs font-black uppercase tracking-wider text-white bg-primary rounded shadow-theme-xs shadow-primary/20 hover:bg-primary-hover active:scale-95 transition-all flex items-center gap-1.5"
+                  class="px-4 py-1.5 h-9 text-xs font-black uppercase tracking-wider text-white bg-primary rounded shadow-theme-xs shadow-primary/20 hover:bg-primary-hover active:scale-95 transition-all flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none"
                 >
                   <PlusIcon class="w-4 h-4" /> Nueva Marea
                 </button>
@@ -776,6 +787,7 @@ import {
   TrashIcon,
   DraftIcon,
   LayersIcon,
+  AlertTriangleIcon,
   WarningIcon,
   PlusIcon,
   XIcon,
@@ -1868,7 +1880,7 @@ const timelineObservadorItems = computed(() => {
       content: contentHtml,
       title: `<strong>Inicio:</strong> ${new Date(sim.fechaZarpada).toLocaleDateString('es-AR')}<br><strong>Fin:</strong> ${finInclusivo.toLocaleDateString('es-AR')}${tooltipComentario}${conflictosHtml}`,
       className: conflicto ? 'vis-item-simulada-conflicto border-2 border-solid border-error bg-error/20 text-error font-bold shadow-sm' : 'vis-item-simulada border-2 border-dashed border-primary bg-primary/20 text-primary font-bold shadow-sm',
-      editable: { updateTime: true, updateGroup: true, remove: true }
+      editable: isLockedByMe.value ? { updateTime: true, updateGroup: true, remove: true } : false
     });
   });
 
@@ -2049,7 +2061,7 @@ const timelineBuqueItems = computed(() => {
       content: contentHtml,
       title: `<strong>Inicio:</strong> ${new Date(sim.fechaZarpada).toLocaleDateString('es-AR')}<br><strong>Fin:</strong> ${finInclusivo.toLocaleDateString('es-AR')}${tooltipComentario}${conflictosHtml}`,
       className: conflicto ? 'vis-item-simulada-conflicto border-2 border-solid border-error bg-error/20 text-error font-bold shadow-sm' : 'vis-item-simulada border-2 border-dashed border-primary bg-primary/20 text-primary font-bold shadow-sm',
-      editable: { updateTime: true, updateGroup: true, remove: true }
+      editable: isLockedByMe.value ? { updateTime: true, updateGroup: true, remove: true } : false
     });
   });
 

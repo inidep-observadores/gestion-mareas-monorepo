@@ -109,7 +109,7 @@ export class PlanificacionController {
     @Body() dto: AdquirirLockDto,
     @GetUser() user: JwtPayload,
   ) {
-    const result = await this.planificacionService.adquirirLock(id, user.id, user.email, dto.tabId);
+    const result = await this.planificacionService.adquirirLock(id, user.id, user.email, dto.tabId, dto.isHeartbeat);
     if (!result.success) {
       throw new HttpException(
         { message: `El escenario está siendo modificado por ${result.lockedBy}.`, lockedBy: result.lockedBy },

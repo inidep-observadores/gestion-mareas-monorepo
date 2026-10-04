@@ -678,7 +678,10 @@ export class PlanificacionService {
 
   async getEscenariosPorAnio(anioOperativo: number) {
     return this.prisma.escenarioSimulacion.findMany({
-      where: { anioOperativo },
+      where: { 
+        anioOperativo,
+        estado: { not: 'BORRADO' }
+      },
       orderBy: { updatedAt: 'desc' },
       select: {
         id: true,
@@ -693,8 +696,11 @@ export class PlanificacionService {
   }
 
   async getEscenario(id: string) {
-    const escenario = await this.prisma.escenarioSimulacion.findUnique({
-      where: { id },
+    const escenario = await this.prisma.escenarioSimulacion.findFirst({
+      where: { 
+        id,
+        estado: { not: 'BORRADO' }
+      },
     });
     if (!escenario) {
       throw new NotFoundException(`Escenario con ID ${id} no encontrado`);
@@ -746,8 +752,9 @@ export class PlanificacionService {
 
   async deleteEscenario(id: string) {
     try {
-      return await this.prisma.escenarioSimulacion.delete({
+      return await this.prisma.escenarioSimulacion.update({
         where: { id },
+        data: { estado: 'BORRADO' }
       });
     } catch (error) {
       throw new NotFoundException(`Escenario con ID ${id} no encontrado`);
@@ -1030,13 +1037,16 @@ export class PlanificacionService {
     return `simulador_lock_escenario_${escenarioId}`;
   }
 
-  async adquirirLock(escenarioId: string, userId: string, nombreUser: string, tabId: string) {
+  async adquirirLock(escenarioId: string, userId: string, nombreUser: string, tabId: string, isHeartbeat: boolean = false) {
     const lockKey = this.getLockKey(escenarioId);
     const ttlMinutes = 2;
     const now = new Date();
     const threshold = new Date(now.getTime() - ttlMinutes * 60000);
 
     return this.prisma.$transaction(async (tx) => {
+      const dbUser = await tx.user.findUnique({ where: { id: userId }, select: { fullName: true } });
+      const realName = dbUser?.fullName || nombreUser;
+
       const lock = await tx.systemStatus.findUnique({
         where: { key: lockKey },
       });
@@ -1046,12 +1056,12 @@ export class PlanificacionService {
         await tx.systemStatus.upsert({
           where: { key: lockKey },
           update: {
-            value: JSON.stringify({ userId, nombreUser, tabId }),
+            value: JSON.stringify({ userId, nombreUser: realName, tabId }),
             lastUpdate: now,
           },
           create: {
             key: lockKey,
-            value: JSON.stringify({ userId, nombreUser, tabId }),
+            value: JSON.stringify({ userId, nombreUser: realName, tabId }),
             lastUpdate: now,
           },
         });
@@ -1060,16 +1070,23 @@ export class PlanificacionService {
 
       const lockValue = JSON.parse(lock.value || '{}');
 
-      // Si el lock me pertenece (mismo usuario y tab)
-      if (lockValue.userId === userId && lockValue.tabId === tabId) {
+      // Si el lock me pertenece (mismo usuario)
+      if (lockValue.userId === userId) {
+        if (lockValue.tabId !== tabId && isHeartbeat) {
+          // Es un heartbeat de una pestaña vieja que perdió el lock a manos de una nueva
+          return { success: false, lockedBy: lockValue.nombreUser };
+        }
         await tx.systemStatus.update({
           where: { key: lockKey },
-          data: { lastUpdate: now },
+          data: {
+            value: JSON.stringify({ userId, nombreUser: realName, tabId }),
+            lastUpdate: now 
+          },
         });
         return { success: true };
       }
 
-      // Si el lock pertenece a otro usuario (o mismo user distinto tab) y está vigente
+      // Si el lock pertenece a otro usuario y está vigente
       return {
         success: false,
         lockedBy: lockValue.nombreUser || 'Otro usuario',

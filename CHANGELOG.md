@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v0.17.0] - 2026-10-04
+
+### Added
+- **planificacion:** implementar borrado lógico para escenarios de simulación
+- **planificacion:** mostrar nombre real del usuario en lugar de email en bloqueos
+
+### Fixed
+- **planificacion:** corregir error de tipo en JwtPayload en el controlador
+- **planificacion:** corregir activación del heartbeat de lock en frontend
+- **planificacion:** desactivar acciones de modificación (doble clic, drag & drop) cuando un escenario está bloqueado
+- **planificacion:** habilitar clonación de escenarios bloqueados
+
 ## [v0.16.0] - 2026-10-03
 
 ### Added

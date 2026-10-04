@@ -172,13 +172,15 @@ const initTimeline = () => {
 
   timelineInstance = new Timeline(timelineRef.value, currentItemsDataSet, currentGroupsDataSet, options);
 
-  timelineInstance.on('doubleClick', (props: any) => {
-    let isClickableBlankSpace = !props.item && props.group && props.time;
+  timelineInstance.on('doubleClick', (eventProps: any) => {
+    if (props.readonly) return;
+    
+    let isClickableBlankSpace = !eventProps.item && eventProps.group && eventProps.time;
     let isClickableItem = false;
     let itemStartDate = null;
     
-    if (props.item) {
-      const itemData = currentItemsDataSet.get(props.item) as any;
+    if (eventProps.item) {
+      const itemData = currentItemsDataSet.get(eventProps.item) as any;
       if (itemData && itemData.className && (itemData.className.includes('vis-item-disponible') || itemData.className.includes('vis-item-disponible-no-confirmada'))) {
         isClickableItem = true;
         itemStartDate = itemData.start;
@@ -186,14 +188,15 @@ const initTimeline = () => {
     }
 
     if (isClickableBlankSpace || isClickableItem) {
-      const dateToUse = isClickableItem ? itemStartDate : props.time;
-      emit('add-marea', { date: dateToUse, group: String(props.group) });
+      const dateToUse = isClickableItem ? itemStartDate : eventProps.time;
+      emit('add-marea', { date: dateToUse, group: String(eventProps.group) });
     }
   });
 
 };
 
 const onDrop = (e: DragEvent) => {
+  if (props.readonly) return;
   e.preventDefault();
   e.stopPropagation();
   const data = e.dataTransfer?.getData('application/json');

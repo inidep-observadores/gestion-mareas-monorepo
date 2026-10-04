@@ -7,12 +7,16 @@ export interface ApiError {
 export class AppError extends Error {
     public readonly code: string;
     public readonly validationErrors?: Record<string, string>;
+    public readonly statusCode?: number;
+    public readonly data?: any;
 
-    constructor(message: string, code = 'UNKNOWN_ERROR', validationErrors?: Record<string, string>) {
+    constructor(message: string, code = 'UNKNOWN_ERROR', validationErrors?: Record<string, string>, statusCode?: number, data?: any) {
         super(message);
         this.name = 'AppError';
         this.code = code;
         this.validationErrors = validationErrors;
+        this.statusCode = statusCode;
+        this.data = data;
     }
 }
 
@@ -32,11 +36,11 @@ export function normalizeError(error: any): AppError {
             if (Array.isArray(message)) {
                 // Join validation messages into a single readable string
                 const combinedMessage = message.join('. ');
-                return new AppError(combinedMessage, 'VALIDATION_ERROR');
+                return new AppError(combinedMessage, 'VALIDATION_ERROR', undefined, error.response.status, data);
             }
 
             if (typeof message === 'string') {
-                return new AppError(message, errorTitle);
+                return new AppError(message, errorTitle, undefined, error.response.status, data);
             }
         }
     }

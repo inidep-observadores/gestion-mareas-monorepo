@@ -69,4 +69,8 @@ export class AdquirirLockDto {
   @IsString()
   @IsNotEmpty()
   tabId: string;
+
+  @IsBoolean()
+  @IsOptional()
+  isHeartbeat?: boolean;
 }
