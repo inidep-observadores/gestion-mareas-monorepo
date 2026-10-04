@@ -10,6 +10,7 @@ export interface ObservadorDisponibilidadItemDto {
   isPast?: boolean;   // Evento previo a hoy (se atenúa)
   buqueId?: string;
   buqueNombre?: string;
+  warningDocVencida?: string;
 }
 
 export interface ObservadorDisponibilidadRowDto {

@@ -271,6 +271,7 @@ export class DisponibilidadService {
         isPast: boolean;
         buqueId?: string;
         buqueNombre?: string;
+        warningDocVencida?: string;
       }> = [];
 
       for (let i = 0; i < totalDays; i++) {
@@ -438,17 +439,7 @@ export class DisponibilidadService {
 
         // Si el día está libre (sin mareas en curso ni licencias activas)
         if (estadoEvaluado.estado === 'LIBRE' || estadoEvaluado.estado === 'FIN_SEMANA') {
-          if (docVencida) {
-            // Documentación vencida bloquea la disponibilidad indefinidamente
-            dailyStates.push({
-              date: currentDate,
-              estado: 'NOVEDAD',
-              detalle: `Documentación vencida: ${detalleBloqueoDoc}`,
-              codigoCorto: 'NO DISPONIBLE',
-              flexible: false,
-              isPast,
-            });
-          } else if (mareaDesignada) {
+          if (mareaDesignada) {
             // Marea en estado DESIGNADA: bloque previsto de color verde atenuado con borde punteado
             const buque = mareaDesignada.buque?.nombreBuque || 'Buque sin asignar';
             const pesqueria = mareaDesignada.pesqueria?.nombre ? ` - ${mareaDesignada.pesqueria.nombre}` : '';
@@ -465,7 +456,18 @@ export class DisponibilidadService {
               flexible: false,
               isPast,
               buqueId: mareaDesignada.buqueId,
-              buqueNombre: mareaDesignada.buque?.nombreBuque
+              buqueNombre: mareaDesignada.buque?.nombreBuque,
+              warningDocVencida: docVencida ? detalleBloqueoDoc : undefined
+            });
+          } else if (docVencida) {
+            // Documentación vencida bloquea la disponibilidad indefinidamente
+            dailyStates.push({
+              date: currentDate,
+              estado: 'NOVEDAD',
+              detalle: `Documentación vencida: ${detalleBloqueoDoc}`,
+              codigoCorto: 'NO DISPONIBLE',
+              flexible: false,
+              isPast,
             });
           } else if (isPast) {
             // Pasado libre: se deja como vacío/hueco
@@ -536,6 +538,7 @@ export class DisponibilidadService {
         isPast: boolean;
         buqueId?: string;
         buqueNombre?: string;
+        warningDocVencida?: string;
       } | null = null;
 
       for (let i = 0; i < dailyStates.length; i++) {
@@ -554,6 +557,7 @@ export class DisponibilidadService {
             isPast: item.isPast,
             buqueId: item.buqueId,
             buqueNombre: item.buqueNombre,
+            warningDocVencida: item.warningDocVencida,
           };
         } else {
           const currentSignature = `${currentBlock.estado}-${currentBlock.codigoCorto || ''}-${currentBlock.estadoSecundario || ''}-${currentBlock.flexible ? '1' : '0'}-${currentBlock.isPast ? '1' : '0'}-${currentBlock.detalle || ''}-${currentBlock.buqueId || ''}`;
@@ -561,6 +565,9 @@ export class DisponibilidadService {
 
           if (signature === currentSignature && isConsecutive) {
             currentBlock.endDate = item.date;
+            if (item.warningDocVencida) {
+              currentBlock.warningDocVencida = item.warningDocVencida;
+            }
           } else {
             // Guardar bloque anterior
             eventos.push({
@@ -575,6 +582,7 @@ export class DisponibilidadService {
               isPast: currentBlock.isPast,
               buqueId: currentBlock.buqueId,
               buqueNombre: currentBlock.buqueNombre,
+              warningDocVencida: currentBlock.warningDocVencida,
             });
 
             currentBlock = {
@@ -588,6 +596,7 @@ export class DisponibilidadService {
               isPast: item.isPast,
               buqueId: item.buqueId,
               buqueNombre: item.buqueNombre,
+              warningDocVencida: item.warningDocVencida,
             };
           }
         }
@@ -606,6 +615,7 @@ export class DisponibilidadService {
           isPast: currentBlock.isPast,
           buqueId: currentBlock.buqueId,
           buqueNombre: currentBlock.buqueNombre,
+          warningDocVencida: currentBlock.warningDocVencida,
         });
       }
 

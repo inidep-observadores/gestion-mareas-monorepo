@@ -647,6 +647,11 @@ onBeforeUnmount(() => {
   border-style: dashed !important;
 }
 
+:global(.disponibilidad-timeline .vis-item-warning-doc) {
+  background-image: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(245, 158, 11, 0.15) 10px, rgba(245, 158, 11, 0.15) 20px) !important;
+  border-color: #f59e0b !important;
+}
+
 .legend-novedad, :global(.disponibilidad-timeline .vis-item-novedad) {
   background-color: #e0f2fe !important;
   color: #0369a1 !important;
@@ -759,6 +764,11 @@ onBeforeUnmount(() => {
   border-color: #06b6d4 !important;
   border-width: 2px !important;
   border-style: dashed !important;
+}
+
+:global(.dark .disponibilidad-timeline .vis-item-warning-doc) {
+  background-image: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(251, 191, 36, 0.15) 10px, rgba(251, 191, 36, 0.15) 20px) !important;
+  border-color: rgba(251, 191, 36, 0.8) !important;
 }
 
 :global(.dark) .legend-naveg-viaje, :global(.dark .disponibilidad-timeline .vis-item-naveg-viaje) {

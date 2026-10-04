@@ -33,6 +33,7 @@
             :disabled="!isLockedByMe"
             @click="abrirModalEditarEscenario"
             class="h-10 px-3.5 inline-flex items-center justify-center gap-2 text-xs font-extrabold tracking-wider uppercase transition-all rounded-xl bg-surface border border-border text-text hover:bg-surface-muted active:scale-95 shadow-sm disabled:opacity-50 disabled:pointer-events-none"
+            title="Editar nombre y descripción del escenario"
           >
             <EditIcon class="w-4 h-4" />
             Editar
@@ -42,6 +43,7 @@
             v-if="escenarioActual && escenarioActual.id"
             @click="clonarEscenario"
             class="h-10 px-3.5 inline-flex items-center justify-center gap-2 text-xs font-extrabold tracking-wider uppercase transition-all rounded-xl bg-surface border border-border text-text hover:bg-surface-muted active:scale-95 shadow-sm"
+            title="Crear una copia exacta de este escenario para probar alternativas"
           >
             <PlusIcon class="w-4 h-4" />
             Clonar
@@ -339,7 +341,7 @@
 
                 <button 
                   :disabled="!isLockedByMe"
-                  @click="abrirModalCrearBloque()"
+                  @click="abrirModalCrearBloque()" title="Crea una marea simulada para este escenario (no es una marea real)"
                   class="px-4 py-1.5 h-9 text-xs font-black uppercase tracking-wider text-white bg-primary rounded shadow-theme-xs shadow-primary/20 hover:bg-primary-hover active:scale-95 transition-all flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none"
                 >
                   <PlusIcon class="w-4 h-4" /> Nueva Marea
@@ -2616,6 +2618,11 @@ const observadorOptions = computed(() =>
   border-style: dashed !important;
 }
 
+:global(.simulador-timeline .vis-item-warning-doc) {
+  background-image: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(245, 158, 11, 0.15) 10px, rgba(245, 158, 11, 0.15) 20px) !important;
+  border-color: #f59e0b !important;
+}
+
 .legend-novedad, :global(.simulador-timeline .vis-item-novedad) {
   background-color: #e0f2fe !important;
   color: #0369a1 !important;
@@ -2728,6 +2735,11 @@ const observadorOptions = computed(() =>
   border-color: #06b6d4 !important;
   border-width: 2px !important;
   border-style: dashed !important;
+}
+
+:global(.dark .simulador-timeline .vis-item-warning-doc) {
+  background-image: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(251, 191, 36, 0.15) 10px, rgba(251, 191, 36, 0.15) 20px) !important;
+  border-color: rgba(251, 191, 36, 0.8) !important;
 }
 
 :global(.dark) .legend-naveg-viaje, :global(.dark .simulador-timeline .vis-item-naveg-viaje) {

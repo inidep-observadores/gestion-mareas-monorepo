@@ -106,6 +106,10 @@ export const formatItemTooltip = (item: ObservadorDisponibilidadItem, nombreObs:
       html += `<div class="text-xs text-gray-100 font-medium mt-1">${item.detalle}</div>`;
     }
     html += `<div class="text-[10px] text-emerald-300/80 mt-0.5 italic">Asignación prevista aún no confirmada</div>`;
+    if (item.warningDocVencida) {
+      html += `<div class="text-[10px] text-amber-300 mt-2 p-1.5 bg-amber-900/40 border border-amber-500/30 rounded leading-tight">` +
+              `⚠️ Advertencia: ${item.warningDocVencida} durante la ejecución de esta marea. No impide finalizar el viaje.</div>`;
+    }
   } else if (item.estado === 'NOVEDAD' && (item.codigoCorto === 'NO_DISP' || item.codigoCorto === 'NO DISPONIBLE' || item.codigoCorto === 'NO_DISPONIBLE')) {
     if (item.detalle) {
       html += `<div class="text-xs text-gray-100 mt-0.5">${item.detalle}</div>`;
@@ -170,30 +174,36 @@ export const getBloqueLabel = (item: ObservadorDisponibilidadItem): string => {
     return 'NO DISP. (EST.)';
   }
 
+  let label = '';
   switch (item.estado) {
     case 'DISPONIBLE':
-      return 'DISPONIBLE';
+      label = 'DISPONIBLE'; break;
     case 'DISPONIBLE_NO_CONFIRMADA':
-      return '¿DISPONIBLE?';
+      label = '¿DISPONIBLE?'; break;
     case 'DESIGNADA':
-      return 'DESIGNADA';
+      label = 'DESIGNADA'; break;
     case 'NAVEGANDO':
-      return 'NAVEGANDO';
+      label = 'NAVEGANDO'; break;
     case 'IMPEDIMENTO':
-      return 'IMPEDIMENTO';
+      label = 'IMPEDIMENTO'; break;
     case 'PUERTO':
-      return 'EN PUERTO';
+      label = 'EN PUERTO'; break;
     case 'VIAJE':
-      return 'EN VIAJE';
+      label = 'EN VIAJE'; break;
     case 'ESPERANDO_ZARPADA':
-      return 'ESP. ZARPADA';
+      label = 'ESP. ZARPADA'; break;
     case 'CONFLICTO':
-      return 'CONFLICTO';
+      label = 'CONFLICTO'; break;
     case 'NOVEDAD':
-      return getNovedadLabel(item.codigoCorto);
+      label = getNovedadLabel(item.codigoCorto); break;
     default:
-      return (item.codigoCorto || String(item.estado || '')).replace(/_/g, ' ');
+      label = (item.codigoCorto || String(item.estado || '')).replace(/_/g, ' '); break;
   }
+
+  if (item.estado === 'DESIGNADA' && item.warningDocVencida) {
+    return `⚠️ ${label}`;
+  }
+  return label;
 };
 
 export const getItemVisClass = (item: ObservadorDisponibilidadItem): string => {
@@ -216,7 +226,7 @@ export const getItemVisClass = (item: ObservadorDisponibilidadItem): string => {
   } else if (item.estado === 'IMPEDIMENTO') {
     baseClass = 'vis-item-impedido';
   } else if (item.estado === 'DESIGNADA') {
-    baseClass = 'vis-item-designada';
+    baseClass = item.warningDocVencida ? 'vis-item-designada vis-item-warning-doc' : 'vis-item-designada';
   } else if (item.estado === 'PUERTO') {
     baseClass = 'vis-item-puerto';
   } else if (item.estado === 'ESPERANDO_ZARPADA') {

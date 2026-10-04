@@ -10,6 +10,7 @@ export interface ObservadorDisponibilidadItem {
   isPast?: boolean;
   buqueId?: string;
   buqueNombre?: string;
+  warningDocVencida?: string;
 }
 
 export interface ObservadorDisponibilidadRow {
