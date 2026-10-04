@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v0.17.1] - 2026-10-04
+
+### Fixed
+- **planificacion:** evitar que vencimiento de documentación corte mareas designadas y agregar tooltip a nueva marea
+- **planificacion:** actualizar instrucción de arrastrar recursos por doble clic
+
+
 ## [v0.17.0] - 2026-10-04
 
 ### Added
