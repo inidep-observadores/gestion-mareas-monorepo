@@ -60,6 +60,7 @@ export interface UpdateEscenarioDto {
   descripcion?: string;
   estado?: string;
   items?: MareaSimuladaItem[];
+  tabId?: string;
 }
 
 export interface CloneEscenarioDto {

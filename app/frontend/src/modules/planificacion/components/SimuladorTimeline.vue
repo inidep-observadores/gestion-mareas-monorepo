@@ -12,6 +12,7 @@ const props = defineProps<{
   groups: any[];
   items: any[];
   timeScale?: 'day' | 'month';
+  readonly?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -28,6 +29,21 @@ let currentGroupsDataSet = new DataSet<any>();
 let currentItemsDataSet = new DataSet<any>();
 
 const configStore = useConfigStore();
+
+
+watch(() => props.readonly, (newVal) => {
+  if (timelineInstance) {
+    timelineInstance.setOptions({
+      editable: newVal ? false : {
+        updateTime: true,
+        updateGroup: true,
+        remove: true,
+        add: true,
+        overrideItems: false
+      }
+    });
+  }
+});
 
 const initTimeline = () => {
   if (!timelineRef.value) return;
@@ -60,7 +76,7 @@ const initTimeline = () => {
     zoomMax: 1000 * 60 * 60 * 24 * 365 * 5, // 5 años
     margin: { item: 8, axis: 8 },
     orientation: 'top',
-    editable: {
+    editable: props.readonly ? false : {
       updateTime: true,
       updateGroup: true,
       remove: true,

@@ -1,11 +1,11 @@
-import { Controller, Get, Param, ParseIntPipe, Post, Body, Query, Put, Delete, Res } from '@nestjs/common';
+import { Controller, Get, Param, ParseIntPipe, Post, Body, Query, Put, Delete, Res, HttpException, HttpStatus } from '@nestjs/common';
 import { Response } from 'express';
 import { PlanificacionService } from './planificacion.service';
 import { BatchUpsertRequerimientosDto } from './dto/requerimientos.dto';
 import { BatchUpsertExperienciaDto } from './dto/experiencia.dto';
-import { Auth } from '../auth/decorators';
-import { ValidRoles } from '../auth/interfaces';
-import { CreateEscenarioDto, UpdateEscenarioDto, CloneEscenarioDto, ExportEscenarioDto } from './dto/escenarios.dto';
+import { Auth, GetUser } from '../auth/decorators';
+import { ValidRoles, JwtPayload } from '../auth/interfaces';
+import { CreateEscenarioDto, UpdateEscenarioDto, CloneEscenarioDto, ExportEscenarioDto, AdquirirLockDto } from './dto/escenarios.dto';
 
 @Controller('planificacion')
 @Auth()
@@ -82,9 +82,16 @@ export class PlanificacionController {
     return this.planificacionService.createEscenario(dto);
   }
 
-  @Put('simulador/escenarios/:id')
+    @Put('simulador/escenarios/:id')
   @Auth(ValidRoles.admin, ValidRoles.planificador)
-  async updateEscenario(@Param('id') id: string, @Body() dto: UpdateEscenarioDto) {
+  async updateEscenario(
+    @Param('id') id: string, 
+    @Body() dto: UpdateEscenarioDto,
+    @GetUser() user: JwtPayload
+  ) {
+    if (dto.tabId) {
+      await this.planificacionService.validateLockForUpdate(id, user.id, dto.tabId);
+    }
     return this.planificacionService.updateEscenario(id, dto);
   }
 
@@ -92,6 +99,36 @@ export class PlanificacionController {
   @Auth(ValidRoles.admin, ValidRoles.planificador)
   async cloneEscenario(@Param('id') id: string, @Body() dto: CloneEscenarioDto) {
     return this.planificacionService.cloneEscenario(id, dto);
+  }
+
+
+  @Post('simulador/escenarios/:id/lock')
+  @Auth(ValidRoles.admin, ValidRoles.planificador)
+  async adquirirLock(
+    @Param('id') id: string,
+    @Body() dto: AdquirirLockDto,
+    @GetUser() user: JwtPayload,
+  ) {
+    const result = await this.planificacionService.adquirirLock(id, user.id, user.nombre || user.email, dto.tabId);
+    if (!result.success) {
+      throw new HttpException(
+        { message: `El escenario está siendo modificado por ${result.lockedBy}.`, lockedBy: result.lockedBy },
+        HttpStatus.LOCKED,
+      );
+    }
+    return { success: true };
+  }
+
+  @Delete('simulador/escenarios/:id/lock')
+  @Auth(ValidRoles.admin, ValidRoles.planificador)
+  async liberarLock(
+    @Param('id') id: string,
+    @Query('tabId') tabId: string,
+    @GetUser() user: JwtPayload,
+  ) {
+    if (!tabId) return { success: true }; // ignore if no tabId
+    await this.planificacionService.liberarLock(id, user.id, tabId);
+    return { success: true };
   }
 
   @Delete('simulador/escenarios/:id')

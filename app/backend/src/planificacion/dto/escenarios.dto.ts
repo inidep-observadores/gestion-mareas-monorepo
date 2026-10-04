@@ -21,6 +21,10 @@ export class CreateEscenarioDto {
 export class UpdateEscenarioDto {
   @IsString()
   @IsOptional()
+  tabId?: string;
+
+  @IsString()
+  @IsOptional()
   nombre?: string;
 
   @IsString()
@@ -60,3 +64,9 @@ export class ExportEscenarioDto {
   soloPlanificadas?: boolean;
 }
 
+
+export class AdquirirLockDto {
+  @IsString()
+  @IsNotEmpty()
+  tabId: string;
+}
