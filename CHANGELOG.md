@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v0.16.0] - 2026-10-03
+
+### Added
+- **planificacion:** filtro de pesquería en vista por buques del simulador
+- **planificacion:** atajo de doble clic para crear marea simulada desde áreas vacías y disponibles
+
+### Fixed
+- **planificacion:** corrección en el botón cancelar del diálogo de marea sin observador
+- **planificacion:** inicialización de la escala temporal al cargar vistas ocultas (lazy loading)
+
+### Improved
+- **planificacion:** auto-foco inteligente y precarga de datos al crear marea simulada desde doble clic
+
 ## [v0.15.0] - 2026-10-02
 
 ### Added

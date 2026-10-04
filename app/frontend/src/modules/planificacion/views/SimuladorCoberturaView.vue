@@ -98,6 +98,21 @@
         </div>
 
         <div class="flex items-center gap-3">
+          <div class="flex items-center gap-1 bg-surface border border-border p-1 rounded-lg">
+            <button @click="timeScale = 'day'" :class="timeScale === 'day' ? 'bg-primary/10 text-primary' : 'text-text-muted hover:bg-surface-muted'" class="px-3 py-1.5 text-xs font-bold rounded-md transition-colors">Diaria</button>
+            <button @click="timeScale = 'month'" :class="timeScale === 'month' ? 'bg-primary/10 text-primary' : 'text-text-muted hover:bg-surface-muted'" class="px-3 py-1.5 text-xs font-bold rounded-md transition-colors">Mensual</button>
+          </div>
+          <div class="flex items-center gap-1 bg-surface border border-border p-1 rounded-lg">
+            <button @click="zoomOutTimeline" class="px-2.5 py-1.5 text-xs font-black text-text-muted hover:text-text hover:bg-surface-muted rounded-md transition-colors" title="Alejar (Zoom Out)">
+              –
+            </button>
+            <button @click="resetZoomTimeline" class="px-2.5 py-1.5 text-xs font-black text-text-muted hover:text-text hover:bg-surface-muted rounded-md transition-colors" title="Restaurar Vista (Reset Zoom)">
+              ↺
+            </button>
+            <button @click="zoomInTimeline" class="px-2.5 py-1.5 text-xs font-black text-text-muted hover:text-text hover:bg-surface-muted rounded-md transition-colors" title="Acercar (Zoom In)">
+              +
+            </button>
+          </div>
           <button
             v-show="false"
             @click="toggleSidebar"
@@ -265,8 +280,16 @@
                 <SearchInput 
                   v-model="searchQuery" 
                   :placeholder="activeTab === 'observador' ? 'Buscar observador...' : 'Buscar buque...'" 
-                  class="w-56 h-9" 
+                  class="w-40 h-9" 
                 />
+                <select 
+                  v-if="activeTab === 'buque'"
+                  v-model="filtroPesqueria"
+                  class="h-9 px-3 border border-border rounded-lg bg-surface text-xs text-text-muted focus:ring-2 focus:ring-primary focus:border-primary outline-none cursor-pointer shadow-sm"
+                >
+                  <option value="">Todas las pesquerías</option>
+                  <option v-for="p in pesqueriasNombresDisponibles" :key="p" :value="p">{{ p }}</option>
+                </select>
                 <button 
                   v-show="false"
                   v-if="activeTab === 'buque'"
@@ -284,7 +307,7 @@
                 />
 
                 <button 
-                  @click="abrirModalCrearBloque"
+                  @click="abrirModalCrearBloque()"
                   class="px-4 py-1.5 h-9 text-xs font-black uppercase tracking-wider text-white bg-primary rounded shadow-theme-xs shadow-primary/20 hover:bg-primary-hover active:scale-95 transition-all flex items-center gap-1.5"
                 >
                   <PlusIcon class="w-4 h-4" /> Nueva Marea
@@ -302,28 +325,34 @@
           <!-- Timelines -->
           <div v-if="!isLoading" class="w-full h-full relative">
             <SimuladorTimeline 
+              v-if="hasOpenedObservador"
               v-show="activeTab === 'observador'"
               ref="timelineObservadorRef"
               mode="observador"
               :groups="timelineObservadorGroups"
               :items="timelineObservadorItems"
+              :timeScale="timeScale"
               @item-moved="handleItemMoved"
               @item-removed="handleItemRemoved"
               @drop-recurso="handleDropRecurso"
               @edit-item="handleEditItem"
+              @add-marea="(payload) => handleAddMarea(payload, 'observador')"
               class="h-[65vh] border-t border-border"
             />
 
             <SimuladorTimeline 
+              v-if="hasOpenedBuque"
               v-show="activeTab === 'buque'"
               ref="timelineBuqueRef"
               mode="buque"
               :groups="timelineBuqueGroups"
               :items="timelineBuqueItems"
+              :timeScale="timeScale"
               @item-moved="handleItemMoved"
               @item-removed="handleItemRemoved"
               @drop-recurso="handleDropRecurso"
               @edit-item="handleEditItem"
+              @add-marea="(payload) => handleAddMarea(payload, 'buque')"
               class="h-[65vh] border-t border-border"
             />
           </div>
@@ -556,6 +585,7 @@
           <div class="space-y-1.5">
             <label class="block text-xs font-bold text-text-muted">Observador</label>
             <SearchableSelect 
+              ref="crearObservadorSelectRef"
               :modelValue="newBlockData.observadorId ?? null"
               @update:modelValue="(v) => (newBlockData!.observadorId = v as string | null)"
               :options="observadorOptions" 
@@ -686,7 +716,7 @@
       confirmText="Sí, planificar"
       cancelText="Cancelar"
       @confirm="confirmarSinObservador"
-      @cancel="cancelarSinObservador"
+      @close="cancelarSinObservador"
     />
   </PlanificacionDashboardLayout>
 </template>
@@ -747,8 +777,30 @@ const activeTab = ref<'observador' | 'buque'>('buque');
 
 const timelineObservadorRef = ref<any>(null);
 const timelineBuqueRef = ref<any>(null);
+const timeScale = ref<'day' | 'month'>('day');
+
+const hasOpenedObservador = ref(activeTab.value === 'observador');
+const hasOpenedBuque = ref(activeTab.value === 'buque');
+
+const zoomInTimeline = () => {
+  timelineObservadorRef.value?.zoomIn();
+  timelineBuqueRef.value?.zoomIn();
+};
+
+const zoomOutTimeline = () => {
+  timelineObservadorRef.value?.zoomOut();
+  timelineBuqueRef.value?.zoomOut();
+};
+
+const resetZoomTimeline = () => {
+  timelineObservadorRef.value?.resetZoom();
+  timelineBuqueRef.value?.resetZoom();
+};
 
 watch(activeTab, (newTab) => {
+  if (newTab === 'observador') hasOpenedObservador.value = true;
+  if (newTab === 'buque') hasOpenedBuque.value = true;
+
   nextTick(() => {
     if (newTab === 'observador') {
       timelineObservadorRef.value?.redraw();
@@ -976,6 +1028,12 @@ const loadingCatalogs = ref(true);
 const buques = ref<any[]>([]);
 const pesquerias = ref<any[]>([]);
 
+const filtroPesqueria = ref<string>('');
+
+const pesqueriasNombresDisponibles = computed(() => {
+  return [...new Set(pesquerias.value.map(p => p.nombre))].sort();
+});
+
 const buqueOptions = computed(() => {
   return buques.value.map(b => ({
     value: b.id,
@@ -1153,16 +1211,18 @@ const onNewBlockBuqueChange = (buqueId: string | null) => {
   }
 };
 
-const abrirModalCrearBloque = () => {
-  const today = new Date();
+const abrirModalCrearBloque = (prefill?: { date?: Date; buqueId?: string; observadorId?: string }) => {
+  let today = prefill?.date || new Date();
+  today = new Date(today); // create a copy
   today.setHours(0, 0, 0, 0);
+  
   const in30Days = new Date(today.getTime() + (30 * 86400000));
   
   newBlockData.value = {
     id: `sim-${Date.now()}`,
     tipoBloque: 'MAREA_SIMULADA',
-    buqueId: null,
-    observadorId: null,
+    buqueId: prefill?.buqueId || null,
+    observadorId: prefill?.observadorId || null,
     pesqueriaId: '',
     pesqueriaNombre: '',
     fechaZarpada: today,
@@ -1171,9 +1231,18 @@ const abrirModalCrearBloque = () => {
     estado: 'PENDIENTE',
     prioridad: 'MEDIA'
   };
+  
+  if (prefill?.buqueId) {
+    onNewBlockBuqueChange(prefill.buqueId);
+  }
+  
   isCreateBlockModalOpen.value = true;
   setTimeout(() => {
-    crearBuqueSelectRef.value?.focus();
+    if (prefill?.buqueId && crearObservadorSelectRef.value) {
+      crearObservadorSelectRef.value.focus();
+    } else {
+      crearBuqueSelectRef.value?.focus();
+    }
   }, 100);
 };
 
@@ -1751,6 +1820,10 @@ const timelineBuqueGroups = computed(() => {
     const sq = debouncedSearchQuery.value.toLowerCase();
     buquesList = buquesList.filter(b => b.nombre.toLowerCase().includes(sq));
   }
+  
+  if (filtroPesqueria.value) {
+    buquesList = buquesList.filter(b => b.pesqueria === filtroPesqueria.value);
+  }
 
   if (soloMareasPlanificadas.value) {
     buquesList = buquesList.filter(b => {
@@ -2017,6 +2090,7 @@ const handleDropRecurso = (payload: { recurso: any; group: string; date: Date })
 
 const editBuqueSelectRef = ref<any>(null);
 const crearBuqueSelectRef = ref<any>(null);
+const crearObservadorSelectRef = ref<any>(null);
 
 const handleEditItem = (id: string) => {
   const sim = (escenarioActual.value?.items || []).find(i => i.id === id);
@@ -2111,6 +2185,18 @@ const abrirModalEditarEscenario = () => {
   isEscenarioModalOpen.value = true;
   nextTick(() => {
     nombreEscenarioInput.value?.focus();
+  });
+};
+
+const handleAddMarea = (payload: { date: Date, group: string }, mode: 'observador' | 'buque') => {
+  if (String(payload.group).startsWith('pesqueria-')) {
+    return;
+  }
+  
+  abrirModalCrearBloque({
+    date: payload.date,
+    buqueId: mode === 'buque' ? payload.group : undefined,
+    observadorId: mode === 'observador' ? payload.group : undefined
   });
 };
 

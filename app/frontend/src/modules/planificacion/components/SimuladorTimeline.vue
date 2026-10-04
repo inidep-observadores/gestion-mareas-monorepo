@@ -11,6 +11,7 @@ const props = defineProps<{
   mode: 'observador' | 'buque';
   groups: any[];
   items: any[];
+  timeScale?: 'day' | 'month';
 }>();
 
 const emit = defineEmits<{
@@ -18,6 +19,7 @@ const emit = defineEmits<{
   (e: 'item-removed', id: string): void;
   (e: 'drop-recurso', payload: { recurso: any; group: string; date: Date }): void;
   (e: 'edit-item', id: string): void;
+  (e: 'add-marea', payload: { date: Date; group: string }): void;
 }>();
 
 const timelineRef = ref<HTMLElement | null>(null);
@@ -55,7 +57,7 @@ const initTimeline = () => {
     horizontalScroll: true,
     zoomKey: 'ctrlKey',
     zoomMin: 1000 * 60 * 60 * 24 * 2,
-    zoomMax: 1000 * 60 * 60 * 24 * 31 * 3,
+    zoomMax: 1000 * 60 * 60 * 24 * 365 * 5, // 5 años
     margin: { item: 8, axis: 8 },
     orientation: 'top',
     editable: {
@@ -66,7 +68,7 @@ const initTimeline = () => {
       overrideItems: false
     },
     showCurrentTime: true,
-    timeAxis: { scale: 'day', step: 1 },
+    timeAxis: { scale: props.timeScale || 'day', step: 1 },
     snap: function (date: Date) {
       const clone = new Date(date.valueOf());
       clone.setHours(0, 0, 0, 0);
@@ -78,8 +80,8 @@ const initTimeline = () => {
     },
     start: visibleStart,
     end: visibleEnd,
-    min: dataStart,
-    max: dataEnd,
+    min: new Date(today.getFullYear() - 2, 0, 1),
+    max: new Date(today.getFullYear() + 2, 11, 31),
     onAdd: (item: any, callback: any) => {
       // Prevent double click creation
       callback(null);
@@ -154,6 +156,25 @@ const initTimeline = () => {
 
   timelineInstance = new Timeline(timelineRef.value, currentItemsDataSet, currentGroupsDataSet, options);
 
+  timelineInstance.on('doubleClick', (props: any) => {
+    let isClickableBlankSpace = !props.item && props.group && props.time;
+    let isClickableItem = false;
+    let itemStartDate = null;
+    
+    if (props.item) {
+      const itemData = currentItemsDataSet.get(props.item) as any;
+      if (itemData && itemData.className && (itemData.className.includes('vis-item-disponible') || itemData.className.includes('vis-item-disponible-no-confirmada'))) {
+        isClickableItem = true;
+        itemStartDate = itemData.start;
+      }
+    }
+
+    if (isClickableBlankSpace || isClickableItem) {
+      const dateToUse = isClickableItem ? itemStartDate : props.time;
+      emit('add-marea', { date: dateToUse, group: String(props.group) });
+    }
+  });
+
 };
 
 const onDrop = (e: DragEvent) => {
@@ -209,6 +230,12 @@ watch(() => props.items, (newItems) => {
   }
 }, { deep: true });
 
+watch(() => props.timeScale, (newScale) => {
+  if (timelineInstance && newScale) {
+    timelineInstance.setOptions({ timeAxis: { scale: newScale, step: 1 } });
+  }
+});
+
 onMounted(() => {
   nextTick(() => {
     initTimeline();
@@ -227,6 +254,21 @@ defineExpose({
   redraw: () => {
     if (timelineInstance) {
       timelineInstance.redraw();
+    }
+  },
+  zoomIn: () => {
+    if (timelineInstance) timelineInstance.zoomIn(0.4);
+  },
+  zoomOut: () => {
+    if (timelineInstance) timelineInstance.zoomOut(0.4);
+  },
+  resetZoom: () => {
+    if (timelineInstance) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      let visibleStart = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+      let visibleEnd = new Date(today.getFullYear(), today.getMonth() + 3, 0);
+      timelineInstance.setWindow(visibleStart, visibleEnd, { animation: true });
     }
   }
 });
