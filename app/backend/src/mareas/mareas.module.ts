@@ -24,7 +24,7 @@ import { ReportsModule } from '../reports/reports.module';
         BusinessRulesModule,
         ConfigModule,
         CommonModule,
-        ReportsModule
+        forwardRef(() => ReportsModule)
     ],
     exports: [MareasService, TrackingService],
 })

@@ -4,7 +4,7 @@
  * Centraliza la lógica de generación de documentos Word (.docx)
  * para que pueda ser reutilizado por cualquier módulo del sistema.
  */
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { ReportsService } from './reports.service';
 import { DocxChartService } from './docx/docx-charts';
 import { AuditReportBuilder } from './templates/audit-report.builder';
@@ -15,7 +15,7 @@ import { AuthModule } from '../auth/auth.module';
 import { ConversionService } from './conversion.service';
 
 @Module({
-    imports: [StatsModule, PrismaModule, AuthModule],
+    imports: [forwardRef(() => StatsModule), PrismaModule, AuthModule],
     controllers: [ReportsController],
     providers: [
         ReportsService,
