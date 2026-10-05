@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v0.19.0] - 2026-10-04
+
+### Added
+- **observadores:** agregar vista previa de archivos vinculados
+- **frontend:** estandarizar color de fondo en modales de administración (Observadores y Buques)
+
+### Fixed
+- **admin:** refresco automático de archivos vinculados al cambiar de observador
+- **backend:** resolver problema de dependencias circulares (Mareas, Catalogos)
+
 ## [v0.18.0] - 2026-10-04
 
 ### Added
