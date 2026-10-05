@@ -3592,15 +3592,30 @@ export class MareasService {
                         contentType: newFile.mimetype,
                     });
                 } else if (existingFile) {
-                    if (!fs.existsSync(existingFile.rutaArchivo)) {
-                        throw new BadRequestException(`El archivo de protocolización para la marea ${marea.nroMarea}/${marea.anioMarea} no se encuentra físicamente en el servidor (${existingFile.rutaArchivo}). Por favor, vuelva a adjuntarlo.`);
-                    }
+                    const isDriveFile = existingFile.rutaArchivo && existingFile.rutaArchivo.includes('drive.google.com/file/d/');
                     const metadata = existingFile.metadata as any;
                     const originalName = metadata?.originalName || `INFORME_APROBACION_MAREA_${marea.nroMarea}_${marea.anioMarea}.docx`;
-                    attachmentsConfig.push({
-                        filename: originalName,
-                        path: existingFile.rutaArchivo
-                    });
+
+                    if (isDriveFile) {
+                        try {
+                            const driveFileId = await this.getArchivoDriveId(existingFile.id);
+                            const fileBuffer = await this.driveStorageService.downloadFile(driveFileId);
+                            attachmentsConfig.push({
+                                filename: originalName,
+                                content: fileBuffer
+                            });
+                        } catch (error) {
+                            throw new BadRequestException(`No se pudo recuperar el archivo desde Google Drive para la marea ${marea.nroMarea}/${marea.anioMarea}.`);
+                        }
+                    } else {
+                        if (!fs.existsSync(existingFile.rutaArchivo)) {
+                            throw new BadRequestException(`El archivo de protocolización para la marea ${marea.nroMarea}/${marea.anioMarea} no se encuentra físicamente en el servidor (${existingFile.rutaArchivo}). Por favor, vuelva a adjuntarlo.`);
+                        }
+                        attachmentsConfig.push({
+                            filename: originalName,
+                            path: existingFile.rutaArchivo
+                        });
+                    }
                 }
             }
         }
