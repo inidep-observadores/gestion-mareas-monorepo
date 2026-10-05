@@ -21,15 +21,38 @@
       </div>
     </template>
 
-    <div class="space-y-6 py-2">
+    <div class="space-y-4 py-2">
+      <!-- Tabs Header -->
+      <div v-if="marea" class="flex gap-4 border-b border-border/50 px-2">
+        <button
+          @click="activeTab = 'detalle'"
+          class="pb-2 text-xs font-black uppercase tracking-widest transition-colors relative"
+          :class="activeTab === 'detalle' ? 'text-primary' : 'text-text-muted hover:text-text'"
+        >
+          Detalle Operativo
+          <div v-if="activeTab === 'detalle'" class="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-t-full"></div>
+        </button>
+        <button
+          @click="activeTab === 'adjuntos' ? null : activeTab = 'adjuntos'"
+          class="pb-2 text-xs font-black uppercase tracking-widest transition-colors relative flex items-center gap-1.5"
+          :class="activeTab === 'adjuntos' ? 'text-primary' : 'text-text-muted hover:text-text'"
+        >
+          Adjuntos
+          <Badge v-if="marea?.archivos?.length" size="sm" variant="light" :color="activeTab === 'adjuntos' ? 'primary' : 'dark'">
+            {{ marea.archivos.length }}
+          </Badge>
+          <div v-if="activeTab === 'adjuntos'" class="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-t-full"></div>
+        </button>
+      </div>
+
       <!-- Loading State -->
       <div v-if="loading" class="flex flex-col items-center justify-center py-20 gap-4">
         <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
         <p class="text-xs font-bold text-text-muted animate-pulse uppercase tracking-widest">Cargando detalles...</p>
       </div>
 
-      <!-- Content -->
-      <div v-else-if="marea" class="space-y-6">
+      <!-- Content: Detalle Operativo -->
+      <div v-else-if="marea && activeTab === 'detalle'" class="space-y-6">
         <!-- Header Info Grid -->
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div class="p-3 bg-surface-muted/30 rounded-2xl border border-border/50">
@@ -116,9 +139,23 @@
             </table>
           </div>
         </div>
+      </div>
 
-        <!-- Actions -->
-        <div class="flex items-center justify-between pt-4 border-t border-border mt-2">
+      <!-- Content: Documentos Adjuntos -->
+      <div v-else-if="marea && activeTab === 'adjuntos'" class="min-h-[200px]">
+        <div v-if="!marea.archivos || marea.archivos.length === 0" class="flex flex-col items-center justify-center py-10 gap-3 opacity-50">
+          <FileTextIcon class="w-10 h-10 text-text-muted" />
+          <p class="text-xs font-bold text-text-muted uppercase tracking-widest">No hay documentos adjuntos</p>
+        </div>
+        <AttachmentViewer 
+          v-else
+          :archivos="mappedArchivos" 
+          title="Documentos Adjuntos de la Marea" 
+        />
+      </div>
+
+      <!-- Actions (Always visible when loaded) -->
+      <div v-if="marea" class="flex items-center justify-between pt-4 border-t border-border mt-2">
           <p class="text-[9px] font-black text-text-muted uppercase tracking-widest opacity-60">
             Última actualización: {{ formatDate(marea.updatedAt, true) }}
           </p>
@@ -132,7 +169,6 @@
              </Button>
           </div>
         </div>
-      </div>
     </div>
   </BaseModal>
 </template>
@@ -147,6 +183,7 @@ import Badge from '@/components/ui/Badge.vue'
 import { FileTextIcon, ExternalLinkIcon } from 'lucide-vue-next'
 import mareasService from '@/modules/mareas/services/mareas.service'
 import { toast } from 'vue-sonner'
+import AttachmentViewer from '@/components/common/AttachmentViewer.vue'
 
 const props = defineProps<{
   isOpen: boolean
@@ -158,6 +195,16 @@ const router = useRouter()
 
 const loading = ref(false)
 const marea = ref<any>(null)
+const activeTab = ref<'detalle' | 'adjuntos'>('detalle')
+
+const mappedArchivos = computed(() => {
+  if (!marea.value?.archivos) return []
+  return marea.value.archivos.map((a: any) => ({
+    id: a.id,
+    rutaArchivo: a.rutaArchivo,
+    nombreOriginal: a.metadata?.originalName || a.descripcion || `${a.tipoArchivo} Adjunto`,
+  }))
+})
 
 const totalDays = computed(() => {
   if (!marea.value?.etapas) return 0
@@ -184,8 +231,12 @@ const fetchDetail = async () => {
 }
 
 watch(() => props.isOpen, (newVal) => {
-  if (newVal) fetchDetail()
-  else marea.value = null
+  if (newVal) {
+    activeTab.value = 'detalle'
+    fetchDetail()
+  } else {
+    marea.value = null
+  }
 })
 
 const formatDate = (date: string | Date | null, withTime = false) => formatDateUI(date)
