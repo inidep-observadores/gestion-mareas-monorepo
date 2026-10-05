@@ -116,6 +116,7 @@ const props = defineProps<{
   archivos?: Archivo[];
   title?: string;
   hideToggle?: boolean;
+  previewEndpointBase?: string;
 }>();
 
 import { useAttachmentViewMode } from '@/composables/useAttachmentViewMode';
@@ -130,7 +131,8 @@ const loadPdfPreview = async (arch: Archivo) => {
   
   isLoadingPdf.value[arch.id] = true;
   try {
-    const response = await httpClient.get(`/mareas/archivos/${arch.id}/preview-pdf`, {
+    const baseUrl = props.previewEndpointBase || '/mareas/archivos';
+    const response = await httpClient.get(`${baseUrl}/${arch.id}/preview-pdf`, {
       responseType: 'blob'
     });
     const blobUrl = URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));

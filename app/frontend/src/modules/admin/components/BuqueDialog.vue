@@ -1,6 +1,6 @@
 <template>
     <BaseModal :show="show" :title="readOnly ? 'Detalle del Buque' : (isEditing ? 'Editar Buque' : 'Nuevo Buque')"
-        @close="emit('close')" maxWidth="5xl" variant="danger">
+        @close="emit('close')" maxWidth="5xl" variant="default">
         <form v-form-nav @submit.prevent="handleSubmit" class="space-y-6">
             <fieldset :disabled="readOnly" class="space-y-6">
                 <!-- Información Principal -->

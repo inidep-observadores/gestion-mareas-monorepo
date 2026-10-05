@@ -459,4 +459,47 @@ export class ObservadoresService {
             return acc + DateUtils.calculateDaysInYear(trip.start, trip.end, year);
         }, 0);
     }
+
+    async obtenerArchivos(id: string) {
+        const novedades = await this.prisma.observadorNovedad.findMany({
+            where: { observadorId: id },
+            include: {
+                archivos: true,
+                tipoNovedad: true
+            },
+            orderBy: {
+                fechaInicio: 'desc'
+            }
+        });
+
+        const archivos = novedades.flatMap(n => 
+            n.archivos.map(a => ({
+                id: a.id,
+                novedadId: n.id,
+                tipoNovedad: n.tipoNovedad?.descripcion || 'Desconocido',
+                fechaNovedad: n.fechaInicio,
+                rutaArchivo: a.rutaArchivo,
+                tipoArchivo: a.tipoArchivo,
+                nombreOriginal: a.nombreOriginal || 'Archivo adjunto'
+            }))
+        );
+
+        return archivos;
+    }
+
+    async getArchivoDriveId(archivoId: string): Promise<string> {
+        const archivo = await this.prisma.observadorNovedadArchivo.findUnique({
+            where: { id: archivoId }
+        });
+
+        if (!archivo) {
+            throw new Error(`Archivo ${archivoId} no encontrado`);
+        }
+
+        if (!archivo.driveFileId) {
+            throw new Error(`El archivo ${archivoId} no tiene un ID de Google Drive asociado`);
+        }
+
+        return archivo.driveFileId;
+    }
 }

@@ -29,13 +29,13 @@
     <!-- TABS -->
     <div class="flex border-b border-border shrink-0 bg-surface">
       <button 
-        v-for="tab in ['historial', 'calendario']" 
+        v-for="tab in ['historial', 'calendario', 'archivos']" 
         :key="tab"
         @click="activeTab = tab"
         class="flex-1 py-3 text-xs font-bold uppercase tracking-wider transition-colors relative"
         :class="activeTab === tab ? 'text-primary' : 'text-text-muted hover:text-text'"
       >
-        {{ tab === 'historial' ? 'Historial' : 'Calendario' }}
+        {{ tab === 'historial' ? 'Historial' : tab === 'calendario' ? 'Calendario' : 'Archivos' }}
         <div v-if="activeTab === tab" class="absolute bottom-0 left-0 right-0 h-0.5 bg-primary"></div>
       </button>
     </div>
@@ -47,6 +47,9 @@
       </div>
       <div v-if="activeTab === 'calendario'" class="flex-1 min-h-0 flex flex-col p-6">
         <ObservadorCalendar :observador-id="observador?.id" />
+      </div>
+      <div v-if="activeTab === 'archivos'" class="flex-1 min-h-0 flex flex-col">
+        <ObservadorArchivos :observador-id="observador?.id" />
       </div>
     </div>
     
@@ -60,6 +63,7 @@ import type { Observador } from '../interfaces/observador.interface';
 import ObservadorDocumentacionBadge from './ObservadorDocumentacionBadge.vue';
 import ObservadorTimeline from './ObservadorTimeline.vue';
 import ObservadorCalendar from './ObservadorCalendar.vue';
+import ObservadorArchivos from './ObservadorArchivos.vue';
 
 const props = defineProps<{
   observador: Observador;

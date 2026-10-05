@@ -20,7 +20,7 @@ import { ReportsModule } from '../reports/reports.module';
         PrismaModule,
         AuthModule,
         forwardRef(() => AlertsModule),
-        CatalogosModule,
+        forwardRef(() => CatalogosModule),
         BusinessRulesModule,
         ConfigModule,
         CommonModule,

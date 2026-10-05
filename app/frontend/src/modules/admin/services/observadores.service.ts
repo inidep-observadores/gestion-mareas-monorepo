@@ -58,6 +58,11 @@ const observadoresApi = {
         return data;
     },
 
+    getArchivos: async (id: string): Promise<any[]> => {
+        const { data } = await httpClient.get<any[]>(`/catalogos/observadores/${id}/archivos`);
+        return data;
+    },
+
     exportToExcel: async (searchQuery?: string): Promise<void> => {
         const response = await httpClient.post('/catalogos/observadores/export/excel', 
             { searchQuery }, 

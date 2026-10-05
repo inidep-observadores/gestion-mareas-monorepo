@@ -1,7 +1,7 @@
 <template>
     <BaseModal :show="show"
         :title="readOnly ? 'Detalle del Observador' : (isEditing ? 'Editar Observador' : 'Nuevo Observador')"
-        @close="closeModal" maxWidth="3xl" variant="danger">
+        @close="closeModal" maxWidth="3xl" variant="default">
         <form v-form-nav @submit.prevent="handleSubmit" class="space-y-6" novalidate>
             <fieldset :disabled="readOnly" class="space-y-6">
                 <!-- Sección: Datos Personales -->
