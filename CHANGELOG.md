@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v0.18.0] - 2026-10-04
+
+### Added
+- **mareas:** previsualizar archivos de Office al vuelo como PDF usando Gotenberg
+- **mareas:** rediseño de MareaQuickDetailModal para previsualizar adjuntos
+- **mareas:** delegar subida de informes a Drive asíncronamente y agregar endpoint de migración
+- **planificacion:** ajuste de filtros en el simulador de cobertura
+
+### Fixed
+- **mareas:** descargar adjuntos de Drive en envío a protocolización
+- **backend:** resolver dependencia circular entre módulos (Mareas, Reports, Stats)
+- **frontend:** evitar iframe de Google Drive para archivos Office por errores de compatibilidad
+- **planificacion:** corregir tooltip y manejar vencimientos de doc previos a zarpada como conflicto duro
+
 ## [v0.17.2] - 2026-10-04
 
 ### Fixed
