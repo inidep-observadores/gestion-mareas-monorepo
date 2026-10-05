@@ -23,6 +23,6 @@ import { ConversionService } from './conversion.service';
         AuditReportBuilder,
         ConversionService,
     ],
-    exports: [ReportsService],
+    exports: [ReportsService, ConversionService],
 })
 export class ReportsModule {}

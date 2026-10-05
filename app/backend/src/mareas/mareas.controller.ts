@@ -17,10 +17,17 @@ import { AuditCategoria } from '../audit/enums/audit.enums';
 import { EnviarProtocolizacionDto } from './dto/enviar-protocolizacion.dto';
 import { ConfirmarProtocolizacionDto } from './dto/confirmar-protocolizacion.dto';
 import { ParseJsonPipe } from '../common/pipes/parse-json.pipe';
+import { DriveStorageService } from '../files/drive-storage.service';
+import { ConversionService } from '../reports/conversion.service';
+
 @Controller('mareas')
 @Auth()
 export class MareasController {
-    constructor(private readonly mareasService: MareasService) { }
+    constructor(
+        private readonly mareasService: MareasService,
+        private readonly driveStorageService: DriveStorageService,
+        private readonly conversionService: ConversionService,
+    ) { }
 
     @Post('claim')
     @Auth(ValidRoles.admin, ValidRoles.tecnico)
@@ -390,6 +397,25 @@ export class MareasController {
     })
     migrarInformesADrive() {
         return this.mareasService.migrarInformesADrive();
+    }
+
+    @Get('archivos/:archivoId/preview-pdf')
+    @Auth() // Requiere estar logueado
+    async previewPdf(
+        @Param('archivoId') archivoId: string,
+        @Res() res: Response
+    ) {
+        try {
+            const driveFileId = await this.mareasService.getArchivoDriveId(archivoId);
+            const docxBuffer = await this.driveStorageService.downloadFile(driveFileId);
+            const pdfBuffer = await this.conversionService.convertDocxToPdf(docxBuffer, `preview-${archivoId}.pdf`);
+            
+            res.setHeader('Content-Type', 'application/pdf');
+            res.setHeader('Content-Disposition', `inline; filename="preview-${archivoId}.pdf"`);
+            res.send(pdfBuffer);
+        } catch (error) {
+            res.status(500).json({ statusCode: 500, message: 'Error al previsualizar el archivo', error: error.message });
+        }
     }
 }
 

@@ -4194,5 +4194,23 @@ export class MareasService {
         this.logger.log(`Migración finalizada. Procesados: ${procesados}, Errores: ${errores}`);
         return { procesados, errores, total: archivos.length };
     }
+
+    async getArchivoDriveId(archivoId: string): Promise<string> {
+        const archivo = await this.prisma.mareaArchivo.findUnique({
+            where: { id: archivoId }
+        });
+        if (!archivo) throw new NotFoundException('Archivo no encontrado');
+        
+        let driveFileId = '';
+        if (archivo.metadata && typeof archivo.metadata === 'object' && 'driveFileId' in archivo.metadata) {
+            driveFileId = archivo.metadata['driveFileId'] as string;
+        } else if (archivo.rutaArchivo && archivo.rutaArchivo.includes('drive.google.com/file/d/')) {
+            const match = archivo.rutaArchivo.match(/\/d\/([a-zA-Z0-9_-]+)/);
+            if (match && match[1]) driveFileId = match[1];
+        }
+
+        if (!driveFileId) throw new BadRequestException('El archivo no está en Google Drive o no tiene un ID válido');
+        return driveFileId;
+    }
 }
 

@@ -35,14 +35,37 @@
         </div>
         
         
-        <!-- Fallback for Office Files -->
-        <div v-if="isOfficeFile(arch.nombreOriginal)" class="w-full h-[400px] flex flex-col items-center justify-center bg-surface p-6 text-center">
-          <FileTextIcon class="w-12 h-12 text-primary/50 mb-3" />
-          <p class="text-sm font-bold text-text-muted mb-2">Previsualización no disponible</p>
-          <p class="text-[10px] text-text-muted/70 max-w-xs mb-4">Los archivos de Microsoft Office (.docx, .xlsx) pueden generar errores en el visor integrado.</p>
-          <a :href="arch.rutaArchivo" target="_blank" class="px-4 py-2 bg-primary text-white rounded font-bold text-[10px] hover:bg-primary/90 transition-colors uppercase tracking-widest flex items-center gap-2">
-            Abrir externamente <ExternalLinkIcon class="w-3 h-3" />
-          </a>
+        <!-- Fallback for Office Files via Gotenberg -->
+        <div v-if="isOfficeFile(arch.nombreOriginal)" class="w-full h-[400px] flex flex-col bg-surface relative overflow-hidden">
+          <!-- Iframe shown only after generation -->
+          <iframe 
+            v-if="pdfPreviewUrls[arch.id]"
+            :src="pdfPreviewUrls[arch.id]" 
+            class="w-full h-[400px] border-none bg-white absolute inset-0 z-20"
+            title="Previsualización de documento PDF convertido"
+          ></iframe>
+          
+          <!-- State UI (shown when no iframe) -->
+          <div v-else class="flex flex-col items-center justify-center p-6 text-center h-full">
+              <div v-if="isLoadingPdf[arch.id]" class="flex flex-col items-center">
+                 <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-3"></div>
+                 <p class="text-xs font-bold text-text-muted animate-pulse">Convirtiendo a PDF (esto tomará unos segundos)...</p>
+              </div>
+              <div v-else class="flex flex-col items-center">
+                <FileTextIcon class="w-12 h-12 text-primary/50 mb-3" />
+                <p class="text-sm font-bold text-text-muted mb-2">Archivo de Microsoft Office</p>
+                <p class="text-[10px] text-text-muted/70 max-w-xs mb-4">El previsualizador en línea genera errores de renderizado. Puedes abrirlo externamente o generar una previsualización interactiva convirtiéndolo a PDF ahora mismo.</p>
+                
+                <div class="flex gap-3">
+                    <button @click="loadPdfPreview(arch)" class="px-4 py-2 border border-primary text-primary hover:bg-primary hover:text-white rounded font-bold text-[10px] transition-colors uppercase tracking-widest flex items-center gap-2">
+                        Generar Vista PDF
+                    </button>
+                    <a :href="arch.rutaArchivo" target="_blank" class="px-4 py-2 bg-primary text-white rounded font-bold text-[10px] hover:bg-primary/90 transition-colors uppercase tracking-widest flex items-center gap-2">
+                        Abrir Externo <ExternalLinkIcon class="w-3 h-3" />
+                    </a>
+                </div>
+              </div>
+          </div>
         </div>
         
         <!-- Standard Google Drive Iframe Preview -->
@@ -75,7 +98,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
+import httpClient from '@/config/http/http.client';
+import { toast } from 'vue-sonner';
 import { ArrowRightIcon as ExternalLinkIcon } from '@/icons';
 import EyeIcon from '@/icons/EyeIcon.vue';
 import ListIcon from '@/icons/ListIcon.vue';
@@ -96,6 +121,32 @@ const props = defineProps<{
 import { useAttachmentViewMode } from '@/composables/useAttachmentViewMode';
 
 const { viewMode, toggleViewMode } = useAttachmentViewMode();
+
+const pdfPreviewUrls = ref<Record<string, string>>({});
+const isLoadingPdf = ref<Record<string, boolean>>({});
+
+const loadPdfPreview = async (arch: Archivo) => {
+  if (pdfPreviewUrls.value[arch.id]) return;
+  
+  isLoadingPdf.value[arch.id] = true;
+  try {
+    const response = await httpClient.get(`/mareas/archivos/${arch.id}/preview-pdf`, {
+      responseType: 'blob'
+    });
+    const blobUrl = URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));
+    pdfPreviewUrls.value[arch.id] = blobUrl;
+  } catch (error) {
+    console.error('Error al generar PDF:', error);
+    toast.error('Ocurrió un error al intentar generar el PDF para previsualización.');
+  } finally {
+    isLoadingPdf.value[arch.id] = false;
+  }
+};
+
+// Limpieza de Object URLs para evitar memory leaks
+onUnmounted(() => {
+  Object.values(pdfPreviewUrls.value).forEach(url => URL.revokeObjectURL(url));
+});
 
 const getPreviewUrl = (url: string) => {
   if (!url) return '';

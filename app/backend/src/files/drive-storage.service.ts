@@ -159,4 +159,26 @@ export class DriveStorageService {
             }
         }
     }
+
+    /**
+     * Descarga un archivo de Google Drive
+     */
+    async downloadFile(fileId: string): Promise<Buffer> {
+        try {
+            const response = await this.driveClient.files.get(
+                { fileId: fileId, alt: 'media' },
+                { responseType: 'stream' }
+            );
+
+            return new Promise((resolve, reject) => {
+                const chunks: any[] = [];
+                response.data.on('data', (chunk) => chunks.push(Buffer.from(chunk)));
+                response.data.on('error', (err) => reject(err));
+                response.data.on('end', () => resolve(Buffer.concat(chunks)));
+            });
+        } catch (error: any) {
+            this.logger.error(`Error al descargar archivo de Google Drive (ID: ${fileId}): ${error.message}`);
+            throw error;
+        }
+    }
 }
