@@ -384,12 +384,19 @@ export class AuditReportBuilder {
                     pesqueria: item.pesqueria,
                     flota: item.flota,
                     mareas: 0,
+                    mareasEnEjecucion: 0,
+                    mareasFinalizadas: 0,
                     etapas: 0,
                     dias: 0,
                 });
             }
             const row = fisheryFlotaMap.get(key)!;
             row.mareas++;
+            if (item.estado === 'Finalizada') {
+                row.mareasFinalizadas++;
+            } else {
+                row.mareasEnEjecucion++;
+            }
             row.etapas += item.etapas;
             row.dias += item.dias;
         });
@@ -746,11 +753,16 @@ export class AuditReportBuilder {
 
     private buildFisherySection(processed: any, daysChart: Buffer, countChart: Buffer): (Paragraph | Table)[] {
         const { fisheryRows, stats } = processed;
+        
+        const totalEjecucion = processed.enEjecucion.length;
+        const totalFinalizadas = processed.finalizadas.length;
+
         const totals = {
             label: 'TOTAL',
             values: [
                 `${processed.uniqueFlotas.length} flotas`,
-                String(stats.totalMareas),
+                totalEjecucion > 0 ? String(totalEjecucion) : '-',
+                totalFinalizadas > 0 ? String(totalFinalizadas) : '-',
                 String(processed.totalEtapas),
                 formatNumber(stats.totalDaysNavigated),
                 '100%',
@@ -762,13 +774,19 @@ export class AuditReportBuilder {
             this.heading2('3.1 Distribución de mareas, etapas y días navegados'),
             this.bodyParagraph('La siguiente tabla presenta el desglose de la actividad por pesquería y tipo de flota:'),
             createFormattedTable(
-                ['PESQUERÍA', 'FLOTA', 'MAREAS', 'ETAPAS', 'DÍAS', '% DÍAS'],
+                ['PESQUERÍA', 'FLOTA', 'EN EJECUCIÓN', 'FINALIZADAS', 'ETAPAS', 'DÍAS', '% DÍAS'],
                 fisheryRows.map((r: any) => [
-                    r.pesqueria, r.flota, r.mareas.toString(), r.etapas.toString(), r.dias.toString(), formatNumber(r.pctDias, 1) + '%',
+                    r.pesqueria, 
+                    r.flota, 
+                    r.mareasEnEjecucion > 0 ? r.mareasEnEjecucion.toString() : '-', 
+                    r.mareasFinalizadas > 0 ? r.mareasFinalizadas.toString() : '-', 
+                    r.etapas.toString(), 
+                    r.dias.toString(), 
+                    formatNumber(r.pctDias, 1) + '%'
                 ]),
                 {
-                    columnWidths: [25, 25, 12, 12, 13, 13],
-                    alignments: [AlignmentType.LEFT, AlignmentType.LEFT, AlignmentType.CENTER, AlignmentType.CENTER, AlignmentType.CENTER, AlignmentType.CENTER],
+                    columnWidths: [22, 18, 13, 16, 10, 10, 11],
+                    alignments: [AlignmentType.LEFT, AlignmentType.LEFT, AlignmentType.CENTER, AlignmentType.CENTER, AlignmentType.CENTER, AlignmentType.CENTER, AlignmentType.CENTER],
                     totalsRow: totals,
                 },
             ),
@@ -974,12 +992,12 @@ export class AuditReportBuilder {
                                     new TableCell({
                                         width: { size: 50, type: WidthType.PERCENTAGE },
                                         borders: { top: { style: BorderStyle.NONE }, bottom: { style: BorderStyle.NONE }, left: { style: BorderStyle.NONE }, right: { style: BorderStyle.NONE } },
-                                        children: [this.chartImage(chartReal, 8, 0.8)],
+                                        children: [this.chartImage(chartReal, 8, 0.75)],
                                     }),
                                     new TableCell({
                                         width: { size: 50, type: WidthType.PERCENTAGE },
                                         borders: { top: { style: BorderStyle.NONE }, bottom: { style: BorderStyle.NONE }, left: { style: BorderStyle.NONE }, right: { style: BorderStyle.NONE } },
-                                        children: [this.chartImage(chartPost, 8, 0.8)],
+                                        children: [this.chartImage(chartPost, 8, 0.75)],
                                     }),
                                 ]
                             })
@@ -2052,7 +2070,7 @@ export class AuditReportBuilder {
             [proc.finalizadas.length, proc.enEjecucion.length],
             {
                 title: 'Estado de Mareas',
-                colors: [CHART_COLORS.success, CHART_COLORS.sky],
+                colors: [CHART_COLORS.primary, 'rgba(203, 213, 225, 1)'],
                 displayLabels: true
             }
         );
@@ -2286,7 +2304,7 @@ export class AuditReportBuilder {
             [tEnviada, tProtocolizada],
             {
                 title: 'Al cierre del período',
-                colors: [CHART_COLORS.sky, CHART_COLORS.success],
+                colors: ['rgba(203, 213, 225, 1)', CHART_COLORS.primary],
                 displayLabels: true
             }
         );
@@ -2298,7 +2316,7 @@ export class AuditReportBuilder {
                 [tEnviada - tPost, tProtocolizada + tPost],
                 {
                     title: 'Incluyendo pos-cierre',
-                    colors: [CHART_COLORS.sky, CHART_COLORS.success],
+                    colors: ['rgba(203, 213, 225, 1)', CHART_COLORS.primary],
                     displayLabels: true
                 }
             );

@@ -108,24 +108,24 @@ export const CHART_COLORS = {
     skyLight: 'rgba(14, 165, 233, 0.7)',
     /** Paleta ordenada para series múltiples */
     palette: [
-        'rgba(0, 84, 139, 0.85)',
-        'rgba(14, 165, 233, 0.85)',
-        'rgba(16, 185, 129, 0.85)',
-        'rgba(139, 92, 246, 0.85)',
-        'rgba(245, 158, 11, 0.85)',
-        'rgba(239, 68, 68, 0.85)',
-        'rgba(236, 72, 153, 0.85)',
-        'rgba(107, 114, 128, 0.85)',
+        'rgba(0, 84, 139, 0.85)',       // Dark blue
+        'rgba(203, 213, 225, 0.85)',    // Light gray
+        'rgba(71, 85, 105, 0.85)',      // Dark gray
+        'rgba(226, 232, 240, 0.85)',    // Very light gray
+        'rgba(15, 118, 110, 0.85)',     // Dark teal
+        'rgba(241, 245, 249, 0.85)',    // Extra light gray
+        'rgba(185, 28, 28, 0.85)',      // Dark red
+        'rgba(148, 163, 184, 0.85)',    // Medium gray
     ],
     paletteSolid: [
         'rgba(0, 84, 139, 1)',
-        'rgba(14, 165, 233, 1)',
-        'rgba(16, 185, 129, 1)',
-        'rgba(139, 92, 246, 1)',
-        'rgba(245, 158, 11, 1)',
-        'rgba(239, 68, 68, 1)',
-        'rgba(236, 72, 153, 1)',
-        'rgba(107, 114, 128, 1)',
+        'rgba(203, 213, 225, 1)',
+        'rgba(71, 85, 105, 1)',
+        'rgba(226, 232, 240, 1)',
+        'rgba(15, 118, 110, 1)',
+        'rgba(241, 245, 249, 1)',
+        'rgba(185, 28, 28, 1)',
+        'rgba(148, 163, 184, 1)',
     ],
 } as const;
 

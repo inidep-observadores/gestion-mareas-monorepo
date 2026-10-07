@@ -39,19 +39,20 @@ export class DocxChartService {
                     legend: {
                         display: datasets.length > 1,
                         position: 'top',
-                        labels: { font: { family: FONTS.primary, size: 15 } },
+                        labels: { font: { family: FONTS.primary, size: 22 }, padding: 16 },
                     },
                     title: options?.title ? {
                         display: true,
                         text: options.title,
-                        font: { family: FONTS.primary, size: 15, weight: 'bold' },
+                        font: { family: FONTS.primary, size: 26, weight: 'bold' },
                         color: '#1E293B',
+                        padding: { bottom: 20 }
                     } : undefined,
                 },
                 scales: {
                     x: {
                         stacked: options?.stacked,
-                        ticks: { font: { family: FONTS.primary, size: 13 } },
+                        ticks: { font: { family: FONTS.primary, size: 18 } },
                         grid: { display: false },
                     },
                     y: {
@@ -61,9 +62,9 @@ export class DocxChartService {
                         title: options?.yAxisLabel ? {
                             display: true,
                             text: options.yAxisLabel,
-                            font: { family: FONTS.primary, size: 14 },
+                            font: { family: FONTS.primary, size: 18 },
                         } : undefined,
-                        ticks: { font: { family: FONTS.primary, size: 13 } },
+                        ticks: { font: { family: FONTS.primary, size: 18 } },
                     },
                 },
             },
@@ -77,8 +78,8 @@ export class DocxChartService {
                             const data = dataset.data[index] as number;
                             if (data === 0) return;
                             ctx.save();
-                            ctx.fillStyle = '#64748B'; // Muted text
-                            ctx.font = `bold 13px ${FONTS.primary}`;
+                            ctx.fillStyle = '#1E293B'; // Darker text for visibility
+                            ctx.font = `bold 18px ${FONTS.primary}`;
                             ctx.textAlign = 'center';
                             ctx.textBaseline = 'bottom';
                             // Ajustar posición para stacked si fuera necesario, 
@@ -209,23 +210,24 @@ export class DocxChartService {
                     title: options?.title ? {
                         display: true,
                         text: options.title,
-                        font: { family: FONTS.primary, size: 15, weight: 'bold' },
+                        font: { family: FONTS.primary, size: 26, weight: 'bold' },
                         color: '#1E293B',
+                        padding: { bottom: 20 }
                     } : undefined,
                 },
                 scales: {
                     x: {
                         beginAtZero: true,
                         grace: options?.displayLabels ? '12%' : undefined,
-                        ticks: { font: { family: FONTS.primary, size: 13 } },
+                        ticks: { font: { family: FONTS.primary, size: 18 } },
                         title: {
                             display: true,
                             text: 'Días Navegados',
-                            font: { family: FONTS.primary, size: 14 },
+                            font: { family: FONTS.primary, size: 20 },
                         },
                     },
                     y: {
-                        ticks: { font: { family: FONTS.primary, size: 13 } },
+                        ticks: { font: { family: FONTS.primary, size: 18 } },
                         grid: { display: false },
                     },
                 },
@@ -250,7 +252,7 @@ export class DocxChartService {
 
                         // Etiqueta
                         ctx.fillStyle = CHART_COLORS.danger;
-                        ctx.font = `bold 13px ${FONTS.primary}`;
+                        ctx.font = `bold 18px ${FONTS.primary}`;
                         ctx.textAlign = 'center';
                         ctx.fillText(`Promedio: ${options.avgLine}`, x, yScale.top - 8);
                         ctx.restore();
@@ -266,8 +268,8 @@ export class DocxChartService {
                                 const val = dataset.data[index] as number;
                                 if (val === 0) return;
                                 ctx.save();
-                                ctx.fillStyle = '#64748B'; // Muted text
-                                ctx.font = `bold 13px ${FONTS.primary}`;
+                                ctx.fillStyle = '#1E293B'; // Darker text
+                                ctx.font = `bold 18px ${FONTS.primary}`;
                                 ctx.textAlign = 'left';
                                 ctx.textBaseline = 'middle';
                                 ctx.fillText(val.toString(), bar.x + 5, bar.y);
@@ -317,13 +319,14 @@ export class DocxChartService {
                 plugins: {
                     legend: {
                         position: 'right',
-                        labels: { font: { family: FONTS.primary, size: 15 }, padding: 16 },
+                        labels: { font: { family: FONTS.primary, size: 24 }, padding: 20 },
                     },
                     title: options?.title ? {
                         display: true,
                         text: options.title,
-                        font: { family: FONTS.primary, size: 15, weight: 'bold' },
+                        font: { family: FONTS.primary, size: 26, weight: 'bold' },
                         color: '#1E293B',
+                        padding: { bottom: 20 }
                     } : undefined,
                 },
             },
@@ -345,7 +348,7 @@ export class DocxChartService {
                         ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
                         ctx.lineWidth = 4;
                         ctx.lineJoin = 'round';
-                        ctx.font = `bold 15px ${FONTS.primary}`;
+                        ctx.font = `bold 24px ${FONTS.primary}`;
                         ctx.textAlign = 'center';
                         ctx.textBaseline = 'middle';
                         ctx.strokeText(labelText, x, y);
