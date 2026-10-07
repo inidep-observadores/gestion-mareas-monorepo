@@ -223,13 +223,14 @@ export class AuditReportBuilder {
         const processed = this.preprocessData(data, period);
 
         // Generar gráficos y logo en paralelo
-        const [statusChart, fisheryDaysChart, fisheryCountChart, observerChart, specialCasesChart, sigmaLogo] = await Promise.all([
+        const [statusChart, fisheryDaysChart, fisheryCountChart, observerChart, specialCasesChart, sigmaLogo, comparativaChart] = await Promise.all([
             this.generateStatusChart(processed),
             this.generateFisheryDaysChart(processed),
             this.generateFisheryCountChart(processed),
             this.generateObserverChart(processed),
             this.generateSpecialCasesChart(data, processed.enEjecucion.length),
             this.chartService.renderSigmaLogo(120),
+            this.generateComparativaChart(period, processed),
         ]);
 
         // Construir secciones del documento
@@ -246,16 +247,19 @@ export class AuditReportBuilder {
             // Sección 3: Estadísticas por Pesquería
             ...this.buildFisherySection(processed, fisheryDaysChart, fisheryCountChart),
 
-            // Sección 4: Estadísticas de Personal
+            // Sección 4: Comparativa entre mareas finalizadas y protocolizadas en el período
+            ...this.buildComparativaSection(period, processed, data, comparativaChart),
+
+            // Sección 5: Estadísticas de Personal
             ...this.buildPersonnelSection(period, processed, observerChart, data),
 
-            // Sección 5: Detalle de Navegación (Finalizadas + Derivadas)
+            // Sección 6: Detalle de Navegación (Finalizadas + Derivadas)
             ...this.buildNavigationDetail(processed, data),
 
-            // Sección 6: Mareas Según Estado (incluye En Ejecución y Casos Especiales)
+            // Sección 7: Mareas Según Estado (incluye En Ejecución y Casos Especiales)
             ...this.buildSpecialCasesSection(data, period, processed, specialCasesChart),
 
-            // Sección 7: Observaciones Complementarias
+            // Sección 8: Observaciones Complementarias
             ...this.buildComplementaryObservations(period, processed, data.includeCampaigns),
         ];
 
@@ -774,6 +778,221 @@ export class AuditReportBuilder {
         ];
     }
 
+    private buildComparativaSection(period: PeriodDescription, proc: any, data: AuditReportData, comparativaChart?: { chartReal: Buffer; chartPost?: Buffer; tPost: number }): (Paragraph | Table)[] {
+        const pEnd = period.endDate ? new Date(period.endDate) : new Date(Date.UTC(period.year, 11, 31, 23, 59, 59, 999));
+        pEnd.setUTCHours(23, 59, 59, 999);
+
+        const allMareas = [...proc.enEjecucion, ...proc.finalizadas];
+
+        const mappedMareas = allMareas.map(m => {
+            const esEnEjecucion = m.estado !== 'Finalizada';
+            const esDesestimada = data.specialCases.desestimadas.some((d: any) => d.id === m.id);
+            const esDerivada = m.estadoActual === 'DELEGADA_EXTERNA';
+
+            const fEnvio = m.fechaEnvioProtocolizacion ? new Date(m.fechaEnvioProtocolizacion) : null;
+            const isEnviadaPeriodo = fEnvio && fEnvio <= pEnd;
+
+            const fProt = m.fechaProtocolizacion ? new Date(m.fechaProtocolizacion) : null;
+            const isProtocolizadaPeriodo = fProt && fProt <= pEnd;
+
+            let isProtocolizadaPost = false;
+            if (isEnviadaPeriodo && !isProtocolizadaPeriodo && fProt) {
+                const diffDays = (fProt.getTime() - pEnd.getTime()) / (1000 * 60 * 60 * 24);
+                if (diffDays > 0 && diffDays <= 7) {
+                    isProtocolizadaPost = true;
+                }
+            }
+
+            const isEnRevision = !esEnEjecucion && !esDerivada && !isEnviadaPeriodo && !isProtocolizadaPeriodo;
+
+            let orderPriority = 0;
+            if (esEnEjecucion) orderPriority = 1;
+            else if (isProtocolizadaPeriodo) orderPriority = 5;
+            else if (isEnviadaPeriodo) orderPriority = 4;
+            else if (esDerivada) orderPriority = 3;
+            else orderPriority = 2; // En revisión
+
+            const colEnEjecucion = esEnEjecucion ? '✓' : '';
+            const colEnRevision = isEnRevision ? '✓' : '';
+            const colDerivada = esDerivada ? (m.pesqueria || '') : '';
+            
+            let colEnviada = '';
+            if (isEnviadaPeriodo && !isProtocolizadaPeriodo) {
+                colEnviada = esDesestimada ? 'Desestimada' : '✓';
+            }
+
+            let colProtocolizada = '';
+            if (isProtocolizadaPeriodo) {
+                colProtocolizada = '✓';
+            } else if (isProtocolizadaPost && fProt) {
+                colProtocolizada = `(${this.formatShortDate(fProt)})`;
+            }
+
+            return {
+                m,
+                orderPriority,
+                row: [
+                    this.formatMareaShort(m.id_marea),
+                    colEnEjecucion,
+                    colEnRevision,
+                    colDerivada,
+                    colEnviada,
+                    colProtocolizada,
+                    m.dias.toString()
+                ],
+                cols: { colEnEjecucion, colEnRevision, colDerivada, colEnviada, colProtocolizada }
+            };
+        });
+
+        mappedMareas.sort((a, b) => {
+            if (a.orderPriority !== b.orderPriority) return a.orderPriority - b.orderPriority;
+            if (a.m.anioMarea !== b.m.anioMarea) return a.m.anioMarea - b.m.anioMarea;
+            return this.sortMareaId(a.m.id_marea, b.m.id_marea);
+        });
+
+        let tEjecucion = 0;
+        let tRevision = 0;
+        let tDerivada = 0;
+        let tEnviada = 0;
+        let tProtocolizada = 0;
+        let tDias = 0;
+
+        const rows = mappedMareas.map(item => {
+            if (item.cols.colEnEjecucion) tEjecucion++;
+            if (item.cols.colEnRevision) tRevision++;
+            if (item.cols.colDerivada) tDerivada++;
+            if (item.cols.colEnviada) tEnviada++;
+            if (item.cols.colProtocolizada === '✓') tProtocolizada++;
+            tDias += item.m.dias;
+            return item.row;
+        });
+
+        const result: (Paragraph | Table)[] = [
+            this.heading1('4. COMPARATIVA ENTRE MAREAS FINALIZADAS Y PROTOCOLIZADAS EN EL PERÍODO'),
+            this.bodyParagraph('A continuación se detalla el estado de las mareas gestionadas en el período, ordenadas por su estado operativo al cierre del mismo.'),
+            createFormattedTable(
+                ['MAREA', 'EN EJECUCIÓN', 'EN REVISIÓN', 'DERIVADA', 'ENVIADA', 'PROTOCOLIZADA', 'DÍAS'],
+                rows,
+                {
+                    columnWidths: [16, 14, 14, 18, 14, 16, 8],
+                    alignments: [
+                        AlignmentType.CENTER,
+                        AlignmentType.CENTER,
+                        AlignmentType.CENTER,
+                        AlignmentType.CENTER,
+                        AlignmentType.CENTER,
+                        AlignmentType.CENTER,
+                        AlignmentType.CENTER
+                    ],
+                    totalsRow: {
+                        label: 'TOTALES',
+                        values: [
+                            '',
+                            tRevision.toString(),
+                            tDerivada.toString(),
+                            tEnviada.toString(),
+                            tProtocolizada.toString(),
+                            tDias.toString()
+                        ]
+                    }
+                }
+            ),
+            new Paragraph({
+                spacing: { before: 120, after: SPACING.afterTable },
+                children: [
+                    new TextRun({
+                        text: '* Nota aclaratoria: Las mareas catalogadas como "En ejecución" aportan días efectivos de esfuerzo a las estadísticas de navegación del período. Sin embargo, dado que no han concluido su actividad operativa al momento del corte, no se contabilizan en los totales de mareas finalizadas ni integran los índices de revisión y protocolización.',
+                        italics: true,
+                        size: FONT_SIZES.small,
+                        color: INIDEP_COLORS.textMuted,
+                    }),
+                ],
+            }),
+        ];
+
+        if (comparativaChart) {
+            const chartReal = comparativaChart.chartReal;
+            const chartPost = comparativaChart.chartPost;
+            const tPost = comparativaChart.tPost || 0;
+
+            const totalEnviadasGlobal = tEnviada + tProtocolizada;
+            const eficiencia = totalEnviadasGlobal > 0 ? ((tProtocolizada / totalEnviadasGlobal) * 100).toFixed(1) : '0.0';
+
+            const paragraphChildren: TextRun[] = [
+                new TextRun({
+                    text: `Eficiencia de Protocolización: `,
+                    bold: true,
+                    font: "Arial",
+                    size: FONT_SIZES.body,
+                    color: INIDEP_COLORS.primary,
+                }),
+                new TextRun({
+                    text: `Considerando las mareas finalizadas y analizadas, se alcanzó una eficiencia del ${eficiencia}% en la emisión de protocolos, con ${tProtocolizada} mareas efectivamente protocolizadas frente a ${tEnviada} que permanecían aguardando su protocolo al cierre del período.`,
+                    font: "Arial",
+                    size: FONT_SIZES.body,
+                    color: INIDEP_COLORS.text,
+                }),
+            ];
+
+            if (tPost > 0) {
+                const totalProtPost = tProtocolizada + tPost;
+                const eficienciaPost = totalEnviadasGlobal > 0 ? ((totalProtPost / totalEnviadasGlobal) * 100).toFixed(1) : '0.0';
+                paragraphChildren.push(
+                    new TextRun({
+                        text: ` Adicionalmente, cabe destacar que ${tPost} marea${tPost > 1 ? 's' : ''} que se encontraba${tPost > 1 ? 'n' : ''} aguardando protocolo al cierre, ${tPost > 1 ? 'fueron protocolizadas' : 'fue protocolizada'} en los primeros días del período subsiguiente (indicado entre paréntesis en la tabla), elevando la eficiencia efectiva al ${eficienciaPost}%.`,
+                        font: "Arial",
+                        size: FONT_SIZES.body,
+                        color: INIDEP_COLORS.text,
+                    })
+                );
+            }
+
+            result.push(
+                new Paragraph({
+                    spacing: { before: 240, after: 120 },
+                    alignment: AlignmentType.JUSTIFIED,
+                    children: paragraphChildren,
+                })
+            );
+
+            if (chartPost) {
+                result.push(
+                    new Table({
+                        width: { size: 100, type: WidthType.PERCENTAGE },
+                        borders: {
+                            top: { style: BorderStyle.NONE, size: 0 },
+                            bottom: { style: BorderStyle.NONE, size: 0 },
+                            left: { style: BorderStyle.NONE, size: 0 },
+                            right: { style: BorderStyle.NONE, size: 0 },
+                            insideHorizontal: { style: BorderStyle.NONE, size: 0 },
+                            insideVertical: { style: BorderStyle.NONE, size: 0 },
+                        },
+                        rows: [
+                            new TableRow({
+                                children: [
+                                    new TableCell({
+                                        width: { size: 50, type: WidthType.PERCENTAGE },
+                                        borders: { top: { style: BorderStyle.NONE }, bottom: { style: BorderStyle.NONE }, left: { style: BorderStyle.NONE }, right: { style: BorderStyle.NONE } },
+                                        children: [this.chartImage(chartReal, 8, 0.8)],
+                                    }),
+                                    new TableCell({
+                                        width: { size: 50, type: WidthType.PERCENTAGE },
+                                        borders: { top: { style: BorderStyle.NONE }, bottom: { style: BorderStyle.NONE }, left: { style: BorderStyle.NONE }, right: { style: BorderStyle.NONE } },
+                                        children: [this.chartImage(chartPost, 8, 0.8)],
+                                    }),
+                                ]
+                            })
+                        ]
+                    })
+                );
+            } else {
+                result.push(this.chartImage(chartReal, 10, 0.75));
+            }
+        }
+
+        return result;
+    }
+
     private buildPersonnelSection(period: PeriodDescription, processed: any, observerChart: Buffer, data: AuditReportData): (Paragraph | Table)[] {
         const { stats, obsAfectados, dotacionRef, coberturaPct, promedioDias } = processed;
         const observers = stats.observers;
@@ -809,33 +1028,33 @@ export class AuditReportBuilder {
         );
 
         const result: (Paragraph | Table)[] = [
-            this.heading1('4. ESTADÍSTICAS DE PERSONAL'),
-            this.heading2('4.1 Indicadores generales de dotación'),
+            this.heading1('5. ESTADÍSTICAS DE PERSONAL'),
+            this.heading2('5.1 Indicadores generales de dotación'),
             this.bodyParagraph(indicatorsText),
             new Paragraph({
                 spacing: { after: SPACING.afterParagraph },
                 alignment: AlignmentType.JUSTIFIED,
                 children: [new TextRun({ text: dotacionNoteText, size: FONT_SIZES.small, italics: true, color: INIDEP_COLORS.textMuted })],
             }),
-            breakdownTable,
-            new Paragraph({ spacing: { before: SPACING.afterTable } }),
+            // breakdownTable,
+            // new Paragraph({ spacing: { before: SPACING.afterTable } }),
         ];
 
-        // 4.2 Observadores secundarios (solo si hay datos)
+        // 5.2 Observadores secundarios (solo si hay datos)
         if (data.secondaryStats.length > 0) {
             const totalEtapasSecundario = data.secondaryStats.reduce((s, x) => s + x.etapasComoSecundario, 0);
             const secText = `Durante ${period.article} se registr${totalEtapasSecundario !== 1 ? 'aron' : 'ó'} ${totalEtapasSecundario} participación${totalEtapasSecundario !== 1 ? 'es' : ''} de observadores en calidad de secundarios, involucrando a ${data.secondaryStats.length} observador${data.secondaryStats.length !== 1 ? 'es' : ''} distinto${data.secondaryStats.length !== 1 ? 's' : ''}. La columna "Etapas Sec." de la tabla siguiente refleja dichas participaciones.`;
             result.push(
-                this.heading2('4.2 Observadores secundarios'),
+                this.heading2('5.2 Observadores secundarios'),
                 this.bodyParagraph(secText),
             );
         }
 
         // Tabla de ranking y distribución agrupada por contrato
         const secondaryMap = new Map(data.secondaryStats.map(s => [s.observadorId, s.etapasComoSecundario]));
-        const rankingNum = data.secondaryStats.length > 0 ? '4.3' : '4.2';
-        const distNum = data.secondaryStats.length > 0 ? '4.4' : '4.3';
-        const inactiveNum = data.secondaryStats.length > 0 ? '4.5' : '4.4';
+        const rankingNum = data.secondaryStats.length > 0 ? '5.3' : '5.2';
+        const distNum = data.secondaryStats.length > 0 ? '5.4' : '5.3';
+        const inactiveNum = data.secondaryStats.length > 0 ? '5.5' : '5.4';
         const hasSecundarios = data.secondaryStats.length > 0;
 
         result.push(
@@ -943,6 +1162,8 @@ export class AuditReportBuilder {
             return this.sortMareaId(a.id_marea, b.id_marea);
         });
 
+        const totalDias = sorted.reduce((sum, m) => sum + m.dias, 0);
+
         const alignments = [
             AlignmentType.LEFT,
             AlignmentType.LEFT,
@@ -955,8 +1176,8 @@ export class AuditReportBuilder {
         ];
 
         const result: (Paragraph | Table)[] = [
-            this.heading1('5. DETALLE DE NAVEGACIÓN'),
-            this.heading2('5.1 Mareas finalizadas en el período'),
+            this.heading1('6. DETALLE DE NAVEGACIÓN'),
+            this.heading2('6.1 Mareas finalizadas en el período'),
             this.bodyParagraph(introText),
             createFormattedTable(
                 ['PESQUERÍA', 'BUQUE', 'MAREA', 'ETAPAS', 'DÍAS', 'ENV. DNI', 'Nº PROT.', 'FECHA PROT.'],
@@ -976,7 +1197,10 @@ export class AuditReportBuilder {
                 {
                     columnWidths: [18, 20, 11, 8, 9, 11, 11, 12],
                     alignments,
-                    totalsRow: { label: `Total: ${sorted.length} marea${sorted.length !== 1 ? 's' : ''}` }
+                    totalsRow: { 
+                        label: `Total: ${sorted.length} marea${sorted.length !== 1 ? 's' : ''}`,
+                        values: ['', '', '', totalDias.toString(), '', '', '']
+                    }
                 },
             ),
             new Paragraph({
@@ -992,13 +1216,13 @@ export class AuditReportBuilder {
             }),
         ];
 
-        // 5.2 Mareas derivadas a programas científicos externos
+        // 6.2 Mareas derivadas a programas científicos externos
         const delegadas = [...data.specialCases.delegadasExternas].sort((a, b) => this.sortMareaId(a.id_marea, b.id_marea));
         if (delegadas.length > 0) {
             const n = delegadas.length;
             const delegadasText = `${n} marea${n !== 1 ? 's' : ''} registrada${n !== 1 ? 's' : ''} en el período se encuentra${n !== 1 ? 'n' : ''} derivada${n !== 1 ? 's' : ''} a programas científicos externos para validación de sus datos. La eventual demora en la confección del informe correspondiente es ajena al Subprograma Observadores a Bordo.`;
             result.push(
-                this.heading2('5.2 Mareas derivadas a programas científicos externos'),
+                this.heading2('6.2 Mareas derivadas a programas científicos externos'),
                 this.bodyParagraph(delegadasText),
                 createFormattedTable(
                     ['MAREA', 'BUQUE', 'PESQUERÍA', 'FECHA DERIVACIÓN'],
@@ -1051,7 +1275,7 @@ export class AuditReportBuilder {
         const { enEjecucion } = proc;
         const refText = this.getReferenceTimeText({ year: p.year, endDate: p.endDate });
         if (enEjecucion.length === 0) return [
-            this.heading2(`6.${subsecNum} Mareas en ejecución`),
+            this.heading2(`7.${subsecNum} Mareas en ejecución`),
             this.bodyParagraph(`No se registraron mareas en ejecución ${refText}.`)
         ];
 
@@ -1068,8 +1292,10 @@ export class AuditReportBuilder {
             return this.sortMareaId(a.id_marea, b.id_marea);
         });
 
+        const totalDias = sorted.reduce((sum, m) => sum + m.dias, 0);
+
         return [
-            this.heading2(`6.${subsecNum} Mareas en ejecución`),
+            this.heading2(`7.${subsecNum} Mareas en ejecución`),
             this.bodyParagraph(introText),
             createFormattedTable(
                 ['PESQUERÍA', 'BUQUE', 'MAREA', 'ETAPAS', 'DÍAS'],
@@ -1077,7 +1303,10 @@ export class AuditReportBuilder {
                 {
                     columnWidths: [28, 28, 16, 14, 14],
                     alignments: [AlignmentType.LEFT, AlignmentType.LEFT, AlignmentType.CENTER, AlignmentType.CENTER, AlignmentType.CENTER],
-                    totalsRow: { label: `Total: ${sorted.length} marea${sorted.length !== 1 ? 's' : ''}` }
+                    totalsRow: { 
+                        label: `Total: ${sorted.length} marea${sorted.length !== 1 ? 's' : ''}`,
+                        values: ['', '', '', totalDias.toString()]
+                    }
                 },
             ),
         ];
@@ -1104,7 +1333,7 @@ export class AuditReportBuilder {
             delegadasExternas.length === 0 && protocolizadasFiltradas.length === 0;
 
         const result: (Paragraph | Table)[] = [
-            this.heading1('6. MAREAS SEGÚN ESTADO'),
+            this.heading1('7. MAREAS SEGÚN ESTADO'),
         ];
 
         if (allEmpty) {
@@ -1132,7 +1361,7 @@ export class AuditReportBuilder {
             const n = canceladas.length;
             const sortedCanceladas = [...canceladas].sort((a, b) => this.sortMareaId(a.id_marea, b.id_marea));
             result.push(
-                this.heading2(`6.${subsecNum} Mareas canceladas`),
+                this.heading2(`7.${subsecNum} Mareas canceladas`),
                 this.bodyParagraph(`Se registr${n !== 1 ? 'aron' : 'ó'} ${n} marea${n !== 1 ? 's' : ''} planificada${n !== 1 ? 's' : ''} que no lleg${n !== 1 ? 'aron' : 'ó'} a ejecutarse en el período.`),
                 createFormattedTable(
                     ['MAREA', 'BUQUE', 'PESQUERÍA', 'FECHA CANC.', 'MOTIVO'],
@@ -1154,8 +1383,9 @@ export class AuditReportBuilder {
         if (desestimadas.length > 0) {
             const n = desestimadas.length;
             const sortedDesestimadas = [...desestimadas].sort((a, b) => this.sortMareaId(a.id_marea, b.id_marea));
+            const totalDias = sortedDesestimadas.reduce((sum, m) => sum + (m.diasNavegados || 0), 0);
             result.push(
-                this.heading2(`6.${subsecNum} Mareas desestimadas`),
+                this.heading2(`7.${subsecNum} Mareas desestimadas`),
                 this.bodyParagraph(`Se registr${n !== 1 ? 'aron' : 'ó'} ${n} marea${n !== 1 ? 's' : ''} ejecutada${n !== 1 ? 's' : ''} cuyos datos fueron descartados. El campo "Motivo" refleja la causa registrada al momento de la desestimación.`),
                 createFormattedTable(
                     ['MAREA', 'BUQUE', 'PESQUERÍA', 'DÍAS NAV.', 'MOTIVO'],
@@ -1167,7 +1397,10 @@ export class AuditReportBuilder {
                     {
                         columnWidths: [14, 24, 20, 12, 30],
                         alignments: [AlignmentType.CENTER, AlignmentType.LEFT, AlignmentType.LEFT, AlignmentType.CENTER, AlignmentType.LEFT],
-                        totalsRow: { label: `Total: ${sortedDesestimadas.length} marea${sortedDesestimadas.length !== 1 ? 's' : ''}` }
+                        totalsRow: { 
+                            label: `Total: ${sortedDesestimadas.length} marea${sortedDesestimadas.length !== 1 ? 's' : ''}`,
+                            values: ['', '', totalDias.toString(), '']
+                        }
                     },
                 ),
             );
@@ -1177,8 +1410,9 @@ export class AuditReportBuilder {
         if (esperandoEntrega.length > 0) {
             const n = esperandoEntrega.length;
             const sortedEsperando = [...esperandoEntrega].sort((a, b) => this.sortMareaId(a.id_marea, b.id_marea));
+            const totalDias = sortedEsperando.reduce((sum, m) => sum + (m.diasNavegados || 0), 0);
             result.push(
-                this.heading2(`6.${subsecNum} Mareas en espera de entrega de datos`),
+                this.heading2(`7.${subsecNum} Mareas en espera de entrega de datos`),
                 this.bodyParagraph(`${n} marea${n !== 1 ? 's' : ''} finalizada${n !== 1 ? 's' : ''} est${n !== 1 ? 'án' : 'á'} en espera de que el observador asignado realice la entrega de los datos recolectados.`),
                 createFormattedTable(
                     ['MAREA', 'BUQUE', 'PESQUERÍA', 'OBSERVADOR', 'DÍAS NAV.', 'FECHA ARRIBO'],
@@ -1191,7 +1425,10 @@ export class AuditReportBuilder {
                     {
                         columnWidths: [14, 22, 18, 26, 12, 14],
                         alignments: [AlignmentType.CENTER, AlignmentType.LEFT, AlignmentType.LEFT, AlignmentType.LEFT, AlignmentType.CENTER, AlignmentType.CENTER],
-                        totalsRow: { label: `Total: ${sortedEsperando.length} marea${sortedEsperando.length !== 1 ? 's' : ''}` }
+                        totalsRow: { 
+                            label: `Total: ${sortedEsperando.length} marea${sortedEsperando.length !== 1 ? 's' : ''}`,
+                            values: ['', '', '', totalDias.toString(), '']
+                        }
                     },
                 ),
             );
@@ -1201,8 +1438,9 @@ export class AuditReportBuilder {
         if (pendientesDeInforme.length > 0) {
             const n = pendientesDeInforme.length;
             const sortedPendientes = [...pendientesDeInforme].sort((a, b) => this.sortMareaId(a.id_marea, b.id_marea));
+            const totalDias = sortedPendientes.reduce((sum, m) => sum + (m.diasNavegados || 0), 0);
             result.push(
-                this.heading2(`6.${subsecNum} Mareas pendientes de informe`),
+                this.heading2(`7.${subsecNum} Mareas pendientes de informe`),
                 this.bodyParagraph(`${n} marea${n !== 1 ? 's' : ''} se encontraba${n !== 1 ? 'n' : ''} en alguna etapa de corrección de datos o confección del informe ${this.getReferenceTimeText(data)}, sin estar aún listas para protocolizar.`),
                 createFormattedTable(
                     ['MAREA', 'BUQUE', 'PESQUERÍA', 'DÍAS NAV.', 'FECHA REC.'],
@@ -1214,7 +1452,10 @@ export class AuditReportBuilder {
                     { 
                         columnWidths: specialWidths, 
                         alignments: specialAligns,
-                        totalsRow: { label: `Total: ${sortedPendientes.length} marea${sortedPendientes.length !== 1 ? 's' : ''}` }
+                        totalsRow: { 
+                            label: `Total: ${sortedPendientes.length} marea${sortedPendientes.length !== 1 ? 's' : ''}`,
+                            values: ['', '', totalDias.toString(), '']
+                        }
                     },
                 ),
             );
@@ -1224,8 +1465,9 @@ export class AuditReportBuilder {
         if (informesPendientesEnvio.length > 0) {
             const n = informesPendientesEnvio.length;
             const sortedPendientesEnvio = [...informesPendientesEnvio].sort((a, b) => this.sortMareaId(a.id_marea, b.id_marea));
+            const totalDias = sortedPendientesEnvio.reduce((sum, m) => sum + (m.diasNavegados || 0), 0);
             result.push(
-                this.heading2(`6.${subsecNum} Informes pendientes de envío a DNI`),
+                this.heading2(`7.${subsecNum} Informes pendientes de envío a DNI`),
                 this.bodyParagraph(`${n} marea${n !== 1 ? 's' : ''} cuenta${n !== 1 ? 'n' : ''} con su informe técnico finalizado ${this.getReferenceTimeText(data)}, pendiente${n !== 1 ? 's' : ''} de ser enviada${n !== 1 ? 's' : ''} formalmente a la Dirección Nacional de Investigación para su protocolización.`),
                 createFormattedTable(
                     ['MAREA', 'BUQUE', 'PESQUERÍA', 'DÍAS NAV.', 'FECHA FIN INF.'],
@@ -1237,7 +1479,10 @@ export class AuditReportBuilder {
                     { 
                         columnWidths: specialWidths, 
                         alignments: specialAligns,
-                        totalsRow: { label: `Total: ${sortedPendientesEnvio.length} marea${sortedPendientesEnvio.length !== 1 ? 's' : ''}` }
+                        totalsRow: { 
+                            label: `Total: ${sortedPendientesEnvio.length} marea${sortedPendientesEnvio.length !== 1 ? 's' : ''}`,
+                            values: ['', '', totalDias.toString(), '']
+                        }
                     },
                 ),
             );
@@ -1245,39 +1490,40 @@ export class AuditReportBuilder {
         }
 
         if (esperandoProtocolizacion.length > 0) {
-            const soloEnviadas = esperandoProtocolizacion.filter(m => !m.nroProtocolo);
+            const n = esperandoProtocolizacion.length;
+            const sortedSoloEnviadas = [...esperandoProtocolizacion].sort((a, b) => this.sortMareaId(a.id_marea, b.id_marea));
+            const totalDias = sortedSoloEnviadas.reduce((sum, m) => sum + (m.diasNavegados || 0), 0);
 
-            if (soloEnviadas.length > 0) {
-                const n = soloEnviadas.length;
-                const sortedSoloEnviadas = [...soloEnviadas].sort((a, b) => this.sortMareaId(a.id_marea, b.id_marea));
-
-                result.push(
-                    this.heading2(`6.${subsecNum} Mareas esperando protocolización`),
-                    this.bodyParagraph(`${n} marea${n !== 1 ? 's' : ''} fu${n !== 1 ? 'eron enviadas' : 'e enviada'} a la DNI y se encuentr${n !== 1 ? 'an aguardando' : 'a aguardando'} la asignación de su número de protocolo oficial.`),
-                    createFormattedTable(
-                        ['MAREA', 'BUQUE', 'PESQUERÍA', 'DÍAS NAV.', 'FECHA ENVÍO'],
-                        sortedSoloEnviadas.map(m => [
-                            this.formatMareaShort(m.id_marea), m.buque, m.pesqueria,
-                            m.diasNavegados.toString(),
-                            m.fechaEvento ? this.formatShortDate(m.fechaEvento) : '',
-                        ]),
-                        { 
-                            columnWidths: specialWidths, 
-                            alignments: specialAligns,
-                            totalsRow: { label: `Total: ${sortedSoloEnviadas.length} marea${sortedSoloEnviadas.length !== 1 ? 's' : ''}` }
-                        },
-                    ),
-                );
-                subsecNum++;
-            }
+            result.push(
+                this.heading2(`7.${subsecNum} Mareas esperando protocolización`),
+                this.bodyParagraph(`${n} marea${n !== 1 ? 's' : ''} fu${n !== 1 ? 'eron enviadas' : 'e enviada'} a la DNI y se encuentr${n !== 1 ? 'an aguardando' : 'a aguardando'} la asignación de su número de protocolo oficial.`),
+                createFormattedTable(
+                    ['MAREA', 'BUQUE', 'PESQUERÍA', 'DÍAS NAV.', 'FECHA ENVÍO'],
+                    sortedSoloEnviadas.map(m => [
+                        this.formatMareaShort(m.id_marea), m.buque, m.pesqueria,
+                        m.diasNavegados.toString(),
+                        m.fechaEvento ? this.formatShortDate(m.fechaEvento) : '',
+                    ]),
+                    { 
+                        columnWidths: specialWidths, 
+                        alignments: specialAligns,
+                        totalsRow: { 
+                            label: `Total: ${sortedSoloEnviadas.length} marea${sortedSoloEnviadas.length !== 1 ? 's' : ''}`,
+                            values: ['', '', totalDias.toString(), '']
+                        }
+                    },
+                ),
+            );
+            subsecNum++;
         }
 
         if (protocolizadasFiltradas.length > 0) {
             const n = protocolizadasFiltradas.length;
             const sortedProt = [...protocolizadasFiltradas].sort((a, b) => this.sortMareaId(a.id_marea, b.id_marea));
+            const totalDias = sortedProt.reduce((sum, m) => sum + (m.diasNavegados || 0), 0);
 
             result.push(
-                this.heading2(`6.${subsecNum} Mareas protocolizadas`),
+                this.heading2(`7.${subsecNum} Mareas protocolizadas`),
                 this.bodyParagraph(`${n} marea${n !== 1 ? 's' : ''} complet${n !== 1 ? 'aron' : 'ó'} el circuito administrativo, obteniendo su correspondiente número de protocolo dentro del período analizado.`),
                 createFormattedTable(
                     ['MAREA', 'BUQUE', 'PESQUERÍA', 'DÍAS NAV.', 'FECHA PROTOCOLIZACIÓN'],
@@ -1289,7 +1535,10 @@ export class AuditReportBuilder {
                     { 
                         columnWidths: specialWidths, 
                         alignments: specialAligns,
-                        totalsRow: { label: `Total: ${sortedProt.length} marea${sortedProt.length !== 1 ? 's' : ''}` }
+                        totalsRow: { 
+                            label: `Total: ${sortedProt.length} marea${sortedProt.length !== 1 ? 's' : ''}`,
+                            values: ['', '', totalDias.toString(), '']
+                        }
                     },
                 ),
             );
@@ -1299,9 +1548,10 @@ export class AuditReportBuilder {
         if (delegadasExternas && delegadasExternas.length > 0) {
             const n = delegadasExternas.length;
             const sortedDelegadas = [...delegadasExternas].sort((a, b) => this.sortMareaId(a.id_marea, b.id_marea));
+            const totalDias = sortedDelegadas.reduce((sum, m) => sum + (m.diasNavegados || 0), 0);
 
             result.push(
-                this.heading2(`6.${subsecNum} Mareas delegadas a programas externos`),
+                this.heading2(`7.${subsecNum} Mareas delegadas a programas externos`),
                 this.bodyParagraph(`${n} marea${n !== 1 ? 's' : ''} finalizada${n !== 1 ? 's' : ''} en el período se encontraba${n !== 1 ? 'n' : ''} derivada${n !== 1 ? 's' : ''} a programas científicos externos para validación de datos al momento del cierre.`),
                 createFormattedTable(
                     ['MAREA', 'BUQUE', 'PESQUERÍA', 'DÍAS NAV.', 'FECHA DERIVACIÓN'],
@@ -1313,7 +1563,10 @@ export class AuditReportBuilder {
                     { 
                         columnWidths: specialWidths, 
                         alignments: specialAligns,
-                        totalsRow: { label: `Total: ${sortedDelegadas.length} marea${sortedDelegadas.length !== 1 ? 's' : ''}` }
+                        totalsRow: { 
+                            label: `Total: ${sortedDelegadas.length} marea${sortedDelegadas.length !== 1 ? 's' : ''}`,
+                            values: ['', '', totalDias.toString(), '']
+                        }
                     },
                 ),
             );
@@ -1326,7 +1579,7 @@ export class AuditReportBuilder {
     private buildProtocolizacionSection(data: AuditReportData, period: PeriodDescription): (Paragraph | Table)[] {
         const tl = data.protocolizationTimeline;
         const result: (Paragraph | Table)[] = [
-            this.heading1('8. SEGUIMIENTO DE PROTOCOLIZACIÓN'),
+            this.heading1('9. SEGUIMIENTO DE PROTOCOLIZACIÓN'),
         ];
 
         const totalFinalizadas = data.breakdown.observadores.mareasFinalizadas + data.breakdown.tecnicos.mareasFinalizadas;
@@ -1377,7 +1630,7 @@ export class AuditReportBuilder {
         const activeRows = tl.distribucionMensual.filter(r => r.cantidad > 0 || r.enviadas > 0);
         if (activeRows.length > 0) {
             result.push(
-                this.heading2('8.1 Distribución temporal'),
+                this.heading2('9.1 Distribución temporal'),
                 createFormattedTable(
                     ['MES/SEMANA', 'ENVIADAS A DNI', 'PROTOCOLIZADAS', 'ACUMULADO', '% DEL TOTAL'],
                     activeRows.map(r => [
@@ -1407,7 +1660,7 @@ export class AuditReportBuilder {
         // Nueva Tabla: Detalle de protocolizaciones
         if (tl.protocolizadasDetalle && tl.protocolizadasDetalle.length > 0) {
             result.push(
-                this.heading2('8.2 Protocolizaciones durante el período'),
+                this.heading2('9.2 Protocolizaciones durante el período'),
                 this.bodyParagraph('A continuación se listan las mareas que obtuvieron su número de protocolo oficial dentro del período analizado (incluye mareas que finalizaron en períodos anteriores):'),
                 createFormattedTable(
                     ['PROTOCOLIZACIÓN', 'FECHA PROTOC.', 'MAREA', 'BUQUE', 'OBSERVADOR'],
@@ -1451,7 +1704,7 @@ export class AuditReportBuilder {
             proc.hasPreviousYearMareas,
             camp,
         );
-        const children: (Paragraph | Table)[] = [this.heading1('7. OBSERVACIONES COMPLEMENTARIAS')];
+        const children: (Paragraph | Table)[] = [this.heading1('8. OBSERVACIONES COMPLEMENTARIAS')];
         for (const o of obs) {
             children.push(new Paragraph({
                 spacing: { before: SPACING.beforeHeading / 2, after: SPACING.afterParagraph },
@@ -1905,6 +2158,61 @@ export class AuditReportBuilder {
                 })
             ]
         });
+    }
+
+    private async generateComparativaChart(period: PeriodDescription, proc: any): Promise<{ chartReal: Buffer; chartPost?: Buffer; tPost: number }> {
+        const pEnd = period.endDate ? new Date(period.endDate) : new Date(Date.UTC(period.year, 11, 31, 23, 59, 59, 999));
+        pEnd.setUTCHours(23, 59, 59, 999);
+
+        const allMareas = [...proc.enEjecucion, ...proc.finalizadas];
+
+        let tEnviada = 0;
+        let tProtocolizada = 0;
+        let tPost = 0;
+
+        allMareas.forEach(m => {
+            const fEnvio = m.fechaEnvioProtocolizacion ? new Date(m.fechaEnvioProtocolizacion) : null;
+            const isEnviadaPeriodo = fEnvio && fEnvio <= pEnd;
+
+            const fProt = m.fechaProtocolizacion ? new Date(m.fechaProtocolizacion) : null;
+            const isProtocolizadaPeriodo = fProt && fProt <= pEnd;
+
+            if (isEnviadaPeriodo && !isProtocolizadaPeriodo) {
+                tEnviada++;
+                if (fProt) {
+                    const diffDays = (fProt.getTime() - pEnd.getTime()) / (1000 * 60 * 60 * 24);
+                    if (diffDays > 0 && diffDays <= 7) {
+                        tPost++;
+                    }
+                }
+            }
+            if (isProtocolizadaPeriodo) tProtocolizada++;
+        });
+
+        const chartReal = await this.chartService.renderDoughnutChart(
+            ['En espera', 'Protocolizadas'],
+            [tEnviada, tProtocolizada],
+            {
+                title: 'Al cierre del período',
+                colors: [CHART_COLORS.sky, CHART_COLORS.success],
+                displayLabels: true
+            }
+        );
+
+        let chartPost: Buffer | undefined;
+        if (tPost > 0) {
+            chartPost = await this.chartService.renderDoughnutChart(
+                ['En espera', 'Protocolizadas'],
+                [tEnviada - tPost, tProtocolizada + tPost],
+                {
+                    title: 'Incluyendo pos-cierre',
+                    colors: [CHART_COLORS.sky, CHART_COLORS.success],
+                    displayLabels: true
+                }
+            );
+        }
+
+        return { chartReal, chartPost, tPost };
     }
 
     private sortMareaId(a: string, b: string): number {

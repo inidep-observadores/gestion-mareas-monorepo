@@ -4474,16 +4474,27 @@ export class StatsService {
 
             // Categorización según estado histórico o flag booleano
             const cancellationMov = m.movimientos?.find(mov => mov.estadoHasta?.codigo === MareaEstado.CANCELADA);
-            const desestimacionMov = m.movimientos?.find(mov => mov.estadoHasta?.codigo === MareaEstado.DESESTIMADA);
+            let desestimacionMov = m.movimientos?.find(mov => mov.estadoHasta?.codigo === MareaEstado.DESESTIMADA);
+
+            if (m.desestimada && !desestimacionMov) {
+                // Si la marea está marcada como desestimada pero no existe el movimiento específico,
+                // tomamos el movimiento de 'Aprobar Informe' (PARA_PROTOCOLIZAR) como referencia.
+                desestimacionMov = m.movimientos?.find(mov => mov.estadoHasta?.codigo === MareaEstado.PARA_PROTOCOLIZAR);
+            }
 
             const isCancelledInPeriod = cancellationMov &&
                 cancellationMov.fechaHora >= periodStart &&
                 cancellationMov.fechaHora <= snapEnd;
 
-            const isDesestimadaInPeriod = (desestimacionMov &&
+            // Categorización según estado administrativo y operativo en el período
+            const lastStage = m.etapas?.[m.etapas.length - 1];
+            const lastArribo = lastStage?.fechaArribo ? new Date(lastStage.fechaArribo) : null;
+            const finishedInPeriod = lastArribo && lastArribo >= periodStart && lastArribo <= snapEnd;
+
+            const isDesestimadaInPeriod = desestimacionMov &&
                 desestimacionMov.fechaHora >= periodStart &&
-                desestimacionMov.fechaHora <= snapEnd) ||
-                (m.desestimada === true);
+                desestimacionMov.fechaHora <= snapEnd &&
+                finishedInPeriod;
 
             // Categorización según estado histórico (Canceladas es terminal absoluto)
             if (isCancelledInPeriod) {
@@ -4497,16 +4508,11 @@ export class StatsService {
             if (isDesestimadaInPeriod) {
                 const desestMareaData = {
                     ...mareaData,
-                    fechaEvento: desestimacionMov?.fechaHora || lastMov?.fechaHora || m.fechaUltimaActualizacion,
-                    motivo: mareaData.motivo || desestimacionMov?.comentarios || lastMov?.comentarios || null,
+                    fechaEvento: desestimacionMov.fechaHora,
+                    motivo: desestimacionMov.comentarios || mareaData.motivo || lastMov?.comentarios || null,
                 };
                 results.desestimadas.push(desestMareaData);
             }
-
-            // Categorización según estado administrativo y operativo en el período
-            const lastStage = m.etapas?.[m.etapas.length - 1];
-            const lastArribo = lastStage?.fechaArribo ? new Date(lastStage.fechaArribo) : null;
-            const finishedInPeriod = lastArribo && lastArribo >= periodStart && lastArribo <= snapEnd;
 
             if (finishedInPeriod) {
                 const fEnvio = m.fechaEnvioProtocolizacion ? new Date(m.fechaEnvioProtocolizacion) : null;
@@ -4575,7 +4581,7 @@ export class StatsService {
                     buque: { select: { nombreBuque: true, pesqueriaHabitual: { select: { nombre: true } } } },
                     observadorPrincipal: { select: { nombre: true, apellido: true } },
                     pesqueria: { select: { nombre: true } },
-                    etapas: { select: { fechaZarpada: true, fechaArribo: true } },
+                    etapas: { orderBy: { nroEtapa: 'asc' }, select: { fechaZarpada: true, fechaArribo: true } },
                     movimientos: {
                         where: { estadoHasta: { codigo: MareaEstado.ENTREGADA_RECIBIDA } },
                         orderBy: { fechaHora: 'asc' as const },
@@ -4725,7 +4731,7 @@ export class StatsService {
                     start: e.fechaZarpada,
                     end: e.fechaArribo || snapEnd,
                 })).filter(i => i.start) as Array<{ start: Date, end: Date }>;
-                const diasNavegados = DateUtils.calculateUniqueDays(intervals, { start: new Date(Date.UTC(2000, 0, 1)), end: snapEnd }, snapEnd);
+                const diasNavegados = DateUtils.calculateUniqueDays(intervals, { start: periodStart, end: snapEnd }, snapEnd);
 
                 const lastStage = m.etapas?.[m.etapas.length - 1];
                 const fechaFinalizacion = lastStage?.fechaArribo || null;
