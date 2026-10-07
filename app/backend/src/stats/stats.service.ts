@@ -3480,7 +3480,7 @@ export class StatsService {
         const numCols = selectedQuarter + 1;
         sheet.mergeCells(1, 1, 1, numCols);
         const titleCell = sheet.getCell(1, 1);
-        titleCell.value = 'ANEXO 1: COMPARATIVA ANUAL DE ESFUERZO POR PESQUERÍA Y RESUMEN DE ESTADO DE MAREAS';
+        titleCell.value = 'ANEXO 1: COMPARATIVA ANUAL DE ESFUERZO POR PESQUERÍA';
         titleCell.font = { bold: true, size: 14 };
         titleCell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
         sheet.getRow(1).height = 40;
@@ -3692,6 +3692,7 @@ export class StatsService {
         }
 
         // ─── ANEXO II: DETALLE DE PROTOCOLIZACIÓN TRIMESTRAL ───
+        /*
         if (annexStats.finalizedDetails) {
             const sheet2 = workbook.addWorksheet('Anexo II');
             
@@ -3775,12 +3776,13 @@ export class StatsService {
                 currentSheet2Row += 3;
             }
         }
+        */
 
-        // ─── ANEXO III: DETALLE DE PROTOCOLIZACIÓN ANUAL ───
+        // ─── ANEXO II: DETALLE DE PROTOCOLIZACIÓN ANUAL ───
         if (annexStats.annualFinalizedDetails) {
-            const sheet3 = workbook.addWorksheet('Anexo III');
+            const sheet3 = workbook.addWorksheet('Anexo II');
             
-            // Configurar columnas Anexo III
+            // Configurar columnas Anexo II
             sheet3.getColumn(1).width = 45; // Marea
             sheet3.getColumn(2).width = 15; // Derivada
             sheet3.getColumn(3).width = 15; // Enviada
@@ -3788,7 +3790,7 @@ export class StatsService {
 
             const titleCell3 = sheet3.getCell(1, 1);
             sheet3.mergeCells(1, 1, 1, 4);
-            titleCell3.value = 'ANEXO 3: DETALLE DE PROTOCOLIZACIÓN ANUAL';
+            titleCell3.value = 'ANEXO 2: DETALLE DE PROTOCOLIZACIÓN ANUAL';
             titleCell3.font = { bold: true, size: 14 };
             titleCell3.alignment = { horizontal: 'center' };
 

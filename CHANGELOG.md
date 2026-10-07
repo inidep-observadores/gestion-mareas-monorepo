@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v0.19.1] - 2026-10-07
+
+### Added
+- **informes:** nuevo gráfico de esfuerzo trimestral acumulado en Anexo 1
+- **informes:** incluir cuadro resumen de mareas agrupadas por estado administrativo
+- **informes:** mostrar comparativa entre mareas enviadas a protocolizar y las efectivamente protocolizadas
+
+### Changed
+- **informes:** reordenar apartados de estadísticas de personal y detalle de navegación
+
+### Removed
+- **informes:** omitir detalle de protocolización trimestral (antiguo Anexo 2) del reporte
+
 ## [v0.19.0] - 2026-10-04
 
 ### Added
