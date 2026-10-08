@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v0.19.2] - 2026-10-07
+
+### Changed
+- **informes:** ajustar tamaño de fuente y espaciado vertical en diagramas de flujo y Gantt para prevenir desborde de página
+- **informes:** fijar color del bloque "En ejecución" en el árbol para sincronizarlo visualmente con el diagrama de Gantt
+
+### Removed
+- **informes:** eliminar la sección y métricas de "Eficiencia de Protocolización" del reporte principal
+- **informes:** ocultar el gráfico circular de "Mareas según estado", conservando únicamente su tabla de desglose
+
 ## [v0.19.1] - 2026-10-07
 
 ### Added

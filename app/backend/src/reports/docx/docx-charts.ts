@@ -9,6 +9,43 @@ import { CHART_COLORS, CHART_DIMENSIONS, FONTS } from './docx-styles';
 
 Chart.register(...registerables);
 
+export const ESTADO_COLORS: Record<string, string> = {
+    'en revisión': '#1e3a8a', // blue-900
+    'esperando entrega': '#0369a1', // sky-700
+    'entregada recibida': '#0284c7', // sky-600
+    'pendiente de informe': '#b45309', // amber-700
+    'esperando protocolizacion': '#4338ca', // indigo-700
+    'protocolizada': '#166534', // green-800
+    'derivada': '#9a3412', // orange-800
+    'delegada': '#9a3412', // orange-800
+    'desestimada': '#475569', // slate-600
+    'dni': '#0f766e', // teal-700
+
+    'planificada': '#52525b', // zinc-600
+    'asignada': '#ca8a04', // yellow-600
+    'embarcado': '#6d28d9', // violet-700
+    'en curso': '#b91c1c', // red-700
+    'regresando': '#c2410c', // orange-700
+    'en ejecución': '#c2410c', // orange-700 (Fijado para evitar el color verde por hash)
+};
+
+export const getColorByEstado = (estado: string) => {
+    if (!estado) return '#334155';
+    const s = estado.toLowerCase().replace(/_/g, ' ');
+    for (const [key, val] of Object.entries(ESTADO_COLORS)) {
+        if (s.includes(key)) return val;
+    }
+
+    // Generar un tono HSL consistente para estados desconocidos
+    let hash = 0;
+    for (let i = 0; i < s.length; i++) {
+        hash = s.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const hues = [0, 25, 45, 120, 160, 210, 260, 280, 320];
+    const h = hues[Math.abs(hash) % hues.length];
+    return `hsl(${h}, 70%, 40%)`;
+};
+
 @Injectable()
 export class DocxChartService {
     /**
@@ -354,7 +391,7 @@ export class DocxChartService {
                         ctx.strokeText(labelText, x, y);
 
                         // Texto principal
-                        ctx.fillStyle = '#1E293B'; 
+                        ctx.fillStyle = '#1E293B';
                         ctx.fillText(labelText, x, y);
                         ctx.restore();
                     });
@@ -424,6 +461,356 @@ export class DocxChartService {
         ctx.fill();
 
         ctx.restore();
+        return canvas.toBuffer('image/png');
+    }
+
+    /**
+     * Renderiza un diagrama de flujo/árbol para el resumen de mareas.
+     */
+    async renderMareasTreeChart(
+        total: { count: number, days: number },
+        finalizadas: { count: number, days: number },
+        desgloseFinalizadas: {
+            revision: { count: number, days: number };
+            derivadas: { count: number, days: number };
+            desestimadas: { count: number, days: number };
+            esperandoProtocolizacion: { count: number, days: number };
+            protocolizadas: { count: number, days: number };
+            enEjecucion: { count: number, days: number };
+        }
+    ): Promise<Buffer> {
+        const width = 1200;
+        const height = 850;
+        const canvas = createCanvas(width, height);
+        const ctx = canvas.getContext('2d');
+
+        // Fondo blanco
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, width, height);
+
+        // Estilos generales
+        const boxFill = '#F8FAFC'; // slate-50
+        const boxStroke = '#334155'; // slate-700
+        const textFill = '#0F172A'; // slate-900
+        const lineStroke = '#94A3B8'; // slate-400
+        const fontFamily = FONTS.primary;
+
+        // Función auxiliar para dibujar cajas
+        const drawBox = (x: number, y: number, w: number, h: number, text1: string, text2: string, text3?: string, strokeColor?: string) => {
+            ctx.fillStyle = boxFill;
+            ctx.lineWidth = 3;
+            ctx.strokeStyle = strokeColor || boxStroke;
+            ctx.beginPath();
+            ctx.roundRect(x - w / 2, y, w, h, 8);
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.fillStyle = textFill;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            // Permitir múltiples líneas pasadas con saltos de línea \n
+            const lines1 = text1 ? text1.split('\n').filter(l => l.trim().length > 0) : [];
+            const lines2 = text2 ? text2.split('\n') : [];
+            const lines3 = text3 ? text3.split('\n') : [];
+            const totalLines = lines1.length + lines2.length + lines3.length;
+
+            let currentY = y + h / 2 - (totalLines * 14) + 10;
+
+            if (lines1.length > 0) {
+                ctx.font = `bold 36px ${fontFamily}`;
+                lines1.forEach(line => {
+                    ctx.fillText(line, x, currentY);
+                    currentY += 40;
+                });
+            }
+            if (lines2.length > 0) {
+                ctx.font = `normal 22px ${fontFamily}`;
+                currentY += 6; // Gap extra
+                lines2.forEach(line => {
+                    ctx.fillText(line, x, currentY);
+                    currentY += 26;
+                });
+            }
+            if (lines3.length > 0) {
+                ctx.font = `italic 22px ${fontFamily}`;
+                ctx.fillStyle = '#475569'; // gris más sutil
+                lines3.forEach(line => {
+                    ctx.fillText(line, x, currentY);
+                    currentY += 26;
+                });
+            }
+        };
+
+        // Función auxiliar para conectar cajas
+        const drawLine = (startX: number, startY: number, endX: number, endY: number) => {
+            ctx.strokeStyle = lineStroke;
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(startX, startY);
+            ctx.lineTo(endX, endY);
+            ctx.stroke();
+
+            // Dibujar flecha
+            const headlen = 12;
+            const angle = Math.atan2(endY - startY, endX - startX);
+            ctx.beginPath();
+            ctx.moveTo(endX, endY);
+            ctx.lineTo(endX - headlen * Math.cos(angle - Math.PI / 6), endY - headlen * Math.sin(angle - Math.PI / 6));
+            ctx.lineTo(endX - headlen * Math.cos(angle + Math.PI / 6), endY - headlen * Math.sin(angle + Math.PI / 6));
+            ctx.fillStyle = lineStroke;
+            ctx.fill();
+        };
+
+        const boxW = 280;
+        const boxH = 140;
+
+        // Coordenadas
+        const level1Y = 40;
+        const level2Y = 250;
+        const level3Y = 460;
+        const level4Y = 670;
+
+        const rootX = width / 2;
+        const finX = width / 2 - 200;
+        const ejeX = width / 2 + 200;
+
+        // Distribución de hijos de "finalizadas"
+        const childrenW = 260;
+        const childrenH = 150;
+        const gap = 30;
+        const numCajas = 4;
+        const totalW = (childrenW * numCajas) + (gap * (numCajas - 1));
+        const startX = width / 2 - totalW / 2 + childrenW / 2;
+
+        const pts = [
+            { x: startX, t1: `${desgloseFinalizadas.revision.count}`, t2: 'en revisión', t3: `(${desgloseFinalizadas.revision.days} d)`, c: getColorByEstado('en revisión') },
+            { x: startX + (childrenW + gap), t1: `${desgloseFinalizadas.derivadas.count}`, t2: 'derivadas a\nprogramas externos', t3: `(${desgloseFinalizadas.derivadas.days} d)`, c: getColorByEstado('derivada') },
+            { x: startX + (childrenW + gap) * 2, t1: `${desgloseFinalizadas.esperandoProtocolizacion.count}`, t2: 'esperando\nprotocolización', t3: `(${desgloseFinalizadas.esperandoProtocolizacion.days} d)`, c: getColorByEstado('dni') },
+            { x: startX + (childrenW + gap) * 3, t1: `${desgloseFinalizadas.protocolizadas.count}`, t2: 'protocolizadas', t3: `(${desgloseFinalizadas.protocolizadas.days} d)`, c: getColorByEstado('protocolizada') },
+        ];
+
+        // Dibujar Conectores (Nivel 1 -> Nivel 2)
+        drawLine(rootX, level1Y + boxH, finX, level2Y);
+        drawLine(rootX, level1Y + boxH, ejeX, level2Y);
+
+        // Dibujar Conectores (Nivel 2 -> Nivel 4)
+        pts.forEach(p => {
+            drawLine(finX, level2Y + boxH, p.x, level4Y);
+        });
+
+        // Dibujar Conector "En Ejecución" -> "Posteriores" (Diagonal hacia abajo y a la derecha)
+        drawLine(ejeX, level2Y + boxH, ejeX + 150, level3Y);
+
+        // Dibujar Cajas Nivel 1 y 2
+        drawBox(rootX, level1Y, 260, boxH, `${total.count}`, 'mareas informadas', `(${total.days} d)`);
+        drawBox(finX, level2Y, boxW, boxH, `${finalizadas.count}`, 'finalizadas', `(${finalizadas.days} d)`);
+        drawBox(ejeX, level2Y, boxW, boxH, `${desgloseFinalizadas.enEjecucion.count}`, 'en ejecución', `(${desgloseFinalizadas.enEjecucion.days} d)`, getColorByEstado('en ejecución'));
+
+        // Caja "posteriores" (Nivel 3, desplazada a la derecha de "En ejecución")
+        drawBox(ejeX + 150, level3Y, 300, childrenH, '', 'Contabilizadas en\nperíodos posteriores');
+
+        // Dibujar Cajas Nivel 4 (hijas de finalizadas)
+        pts.forEach(p => {
+            drawBox(p.x, level4Y, childrenW, childrenH, p.t1, p.t2, p.t3, p.c);
+        });
+
+        return canvas.toBuffer('image/png');
+    }
+
+    /**
+     * Renderiza un diagrama de Gantt simplificado que muestra la continuidad de las mareas.
+     */
+    async renderMareasGanttChart(
+        periodStart: Date,
+        periodEnd: Date,
+        mareas: Array<{ start: Date; end: Date | null; isFinalizada: boolean; estimatedDays: number; estado: string }>
+    ): Promise<Buffer> {
+        // Ordenar mareas por fecha de inicio
+        const sortedMareas = [...mareas].sort((a, b) => a.start.getTime() - b.start.getTime());
+
+        const width = 1200;
+        // Altura adaptable a la cantidad de mareas (min 300)
+        const rowHeight = 12;
+        const paddingTop = 140; // Aumentado para mayor legibilidad
+        const paddingBottom = 60;
+        const height = Math.max(300, sortedMareas.length * rowHeight + paddingTop + paddingBottom);
+
+        const canvas = createCanvas(width, height);
+        const ctx = canvas.getContext('2d');
+
+        // Escala de tiempo: arranca 15 días antes de la marea MÁS ANTIGUA
+        let minDate = new Date(periodStart);
+        sortedMareas.forEach(m => {
+            if (m.start < minDate) minDate = new Date(m.start);
+        });
+
+        const extStart = new Date(minDate);
+        extStart.setDate(extStart.getDate() - 15);
+
+        const extEnd = new Date(periodEnd);
+        extEnd.setDate(extEnd.getDate() + 90); // 3 meses después del período para mostrar la continuidad
+
+        const totalTime = extEnd.getTime() - extStart.getTime();
+
+        const getX = (date: Date) => {
+            const pct = (date.getTime() - extStart.getTime()) / totalTime;
+            return Math.max(0, Math.min(width, pct * width));
+        };
+
+        const cutX = getX(periodEnd);
+        const startX = getX(periodStart);
+
+        // --- Fondos ---
+        // Período de reporte
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(startX, 0, cutX - startX, height);
+
+        // Período posterior
+        ctx.fillStyle = '#F1F5F9'; // slate-100
+        ctx.fillRect(cutX, 0, width - cutX, height);
+
+        // Sombrear período anterior
+        ctx.fillStyle = '#F1F5F9'; // slate-100 (mismo que posterior)
+        ctx.fillRect(0, 0, startX, height);
+
+        // --- Referencias (Leyenda) ---
+        /*
+        const drawLegend = (xPos: number, yPos: number, color: string, label: string) => {
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.roundRect(xPos, yPos, 20, 10, 2);
+            ctx.fill();
+            ctx.fillStyle = '#334155';
+            ctx.font = `normal 16px ${FONTS.primary}`;
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(label, xPos + 28, yPos + 5);
+            return ctx.measureText(label).width + 50;
+        };
+        
+        let legendX = 30;
+        const legendY = 30;
+        const uniqueEstados = Array.from(new Set(sortedMareas.map(m => m.estado))).filter(e => e);
+        uniqueEstados.forEach(est => {
+            // Convertir constantes como PENDIENTE_DE_INFORME a formato coloquial (ej: Pendiente De Informe)
+            let label = est.replace(/_/g, ' ').toLowerCase();
+            label = label.charAt(0).toUpperCase() + label.slice(1);
+            
+            legendX += drawLegend(legendX, legendY, getColorByEstado(est), label);
+        });
+        */
+
+        // --- Grid vertical de meses ---
+        ctx.fillStyle = '#64748B'; // slate-500
+        ctx.font = `bold 20px ${FONTS.primary}`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = '#E2E8F0'; // slate-200
+
+        // Iterar meses para dibujar lineas verticales
+        const cursorDate = new Date(extStart.getFullYear(), extStart.getMonth(), 1);
+        while (cursorDate <= extEnd) {
+            const x = getX(cursorDate);
+            if (x >= 0 && x <= width) {
+                // linea
+                ctx.beginPath();
+                ctx.moveTo(x, paddingTop - 15);
+                ctx.lineTo(x, height);
+                ctx.stroke();
+
+                // texto mes
+                const monthName = cursorDate.toLocaleString('es-ES', { month: 'short' }).toUpperCase();
+                ctx.fillText(monthName, x, paddingTop - 40);
+            }
+            cursorDate.setMonth(cursorDate.getMonth() + 1);
+        }
+
+        // --- Líneas de Corte ---
+
+        // Línea de inicio del periodo
+        ctx.beginPath();
+        ctx.setLineDash([5, 5]);
+        ctx.strokeStyle = '#EF4444'; // Rojo claro
+        ctx.lineWidth = 2;
+        ctx.moveTo(startX, paddingTop - 110);
+        ctx.lineTo(startX, height);
+        ctx.stroke();
+
+        ctx.setLineDash([]);
+        ctx.fillStyle = '#EF4444';
+        ctx.font = `bold 22px ${FONTS.primary}`;
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'top';
+        ctx.fillText('Previo', startX - 5, paddingTop - 90);
+        ctx.textAlign = 'left';
+        ctx.fillText('Inicio', startX + 5, paddingTop - 90);
+
+        // Línea de fin del periodo
+        ctx.beginPath();
+        ctx.setLineDash([5, 5]);
+        ctx.strokeStyle = '#EF4444'; // Rojo claro
+        ctx.lineWidth = 2;
+        ctx.moveTo(cutX, paddingTop - 110);
+        ctx.lineTo(cutX, height);
+        ctx.stroke();
+
+        ctx.setLineDash([]);
+        ctx.fillStyle = '#EF4444';
+        ctx.font = `bold 22px ${FONTS.primary}`;
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'top';
+        ctx.fillText('Corte del Informe', cutX - 5, paddingTop - 90);
+
+        ctx.fillStyle = '#64748B'; // Gris para continuidad
+        ctx.textAlign = 'left';
+        ctx.fillText('En Ejecución (Continuación)', cutX + 5, paddingTop - 90);
+
+        // --- Barras de Mareas ---
+        let currentY = paddingTop;
+        sortedMareas.forEach(m => {
+            const mStartX = getX(m.start);
+            let mEndX = m.end ? getX(m.end) : width; // Si no tiene fin, va hasta el final
+
+            ctx.beginPath();
+            if (m.isFinalizada) {
+                // Barra normal
+                ctx.fillStyle = getColorByEstado(m.estado);
+                ctx.roundRect(mStartX, currentY, mEndX - mStartX, rowHeight - 4, 3);
+                ctx.fill();
+            } else {
+                // Barra de ejecución continua (choca la linea y sigue difuminada/flecha)
+                const extDate = new Date(m.start);
+                extDate.setDate(extDate.getDate() + (m.estimatedDays || 45));
+
+                // Si el estimado era muy corto y la fecha ya pasó el corte de la auditoría, 
+                // prolongamos visualmente pasando el corte para que la flecha sea consistente.
+                if (extDate.getTime() <= periodEnd.getTime()) {
+                    extDate.setTime(periodEnd.getTime() + 15 * 24 * 60 * 60 * 1000); // 15 días posteriores al corte
+                }
+
+                // Asegurar que la punta de la flecha no se salga del canvas visible
+                let projectedEndX = getX(extDate);
+                if (projectedEndX > width - 10) projectedEndX = width - 10;
+
+                // Color dinámico según estado
+                ctx.fillStyle = getColorByEstado(m.estado);
+
+                // Cuerpo principal hasta el proyecto final
+                ctx.roundRect(mStartX, currentY, projectedEndX - mStartX, rowHeight - 4, 3);
+                ctx.fill();
+
+                // Flecha final
+                ctx.beginPath();
+                ctx.moveTo(projectedEndX, currentY - 2);
+                ctx.lineTo(projectedEndX + 8, currentY + (rowHeight - 4) / 2);
+                ctx.lineTo(projectedEndX, currentY + rowHeight - 2);
+                ctx.fill();
+            }
+            currentY += rowHeight;
+        });
+
         return canvas.toBuffer('image/png');
     }
 }

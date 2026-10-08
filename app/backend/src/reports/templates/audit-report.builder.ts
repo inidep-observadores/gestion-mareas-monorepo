@@ -222,16 +222,70 @@ export class AuditReportBuilder {
         // Pre-procesar datos
         const processed = this.preprocessData(data, period);
 
+        const sumDays = (collection: any[], field: string = 'diasNavegados') => collection.reduce((sum, m) => sum + (m[field] || 0), 0);
+
+        const { esperandoEntrega, pendientesDeInforme, informesPendientesEnvio, esperandoProtocolizacion, delegadasExternas, desestimadas, canceladas } = data.specialCases;
+
+        const protocolizadasDelPeriodo = data.protocolizationTimeline?.protocolizadasDetalle || [];
+        const pStartDate = period.startDate ? new Date(period.startDate) : new Date(Date.UTC(period.year, 0, 1));
+        const pEndDate = period.endDate ? new Date(period.endDate) : new Date(Date.UTC(period.year, 11, 31, 23, 59, 59, 999));
+        pStartDate.setUTCHours(0, 0, 0, 0);
+        pEndDate.setUTCHours(23, 59, 59, 999);
+        const protocolizadasFiltradas = protocolizadasDelPeriodo.filter((m: any) => {
+            if (!m.fechaFinalizacion) return false;
+            const f = new Date(m.fechaFinalizacion);
+            return f >= pStartDate && f <= pEndDate;
+        });
+
+        const revCount = esperandoEntrega.length + pendientesDeInforme.length + informesPendientesEnvio.length;
+        const revDays = sumDays(esperandoEntrega) + sumDays(pendientesDeInforme) + sumDays(informesPendientesEnvio);
+
+        const desgloseFinalizadas = {
+            revision: { count: revCount, days: revDays },
+            derivadas: { count: delegadasExternas.length, days: sumDays(delegadasExternas) },
+            desestimadas: { count: desestimadas.length + canceladas.length, days: sumDays(desestimadas) + sumDays(canceladas) },
+            esperandoProtocolizacion: { count: esperandoProtocolizacion.length, days: sumDays(esperandoProtocolizacion) },
+            protocolizadas: { count: protocolizadasFiltradas.length, days: sumDays(protocolizadasFiltradas) },
+            enEjecucion: { count: processed.enEjecucion.length, days: sumDays(processed.enEjecucion, 'dias') }
+        };
+
+        const mareasGantt = processed.items.map((m: any) => ({
+            start: new Date(m.fechaInicio),
+            end: m.fechaFin ? new Date(m.fechaFin) : null,
+            isFinalizada: m.estado === 'Finalizada',
+            estimatedDays: m.diasEstimados || 45,
+            estado: m.estadoActual || m.estado || 'Desconocido'
+        }));
+
+        const pStart = data.startDate ? new Date(data.startDate) : new Date(Date.UTC(data.year, 0, 1));
+        const pEnd = data.endDate ? new Date(data.endDate) : new Date(Date.UTC(data.year, 11, 31, 23, 59, 59));
+
         // Generar gráficos y logo en paralelo
-        const [statusChart, fisheryDaysChart, fisheryCountChart, observerChart, specialCasesChart, sigmaLogo, comparativaChart, annexEffortChart] = await Promise.all([
+        const [statusChart, fisheryDaysChart, fisheryCountChart, observerChart, specialCasesChart, sigmaLogo, annexEffortChart, treeChart, ganttChart] = await Promise.all([
             this.generateStatusChart(processed),
             this.generateFisheryDaysChart(processed),
             this.generateFisheryCountChart(processed),
             this.generateObserverChart(processed),
             this.generateSpecialCasesChart(data, processed.enEjecucion.length),
             this.chartService.renderSigmaLogo(120),
-            this.generateComparativaChart(period, processed),
+
             data.annexData ? this.generateAnnexEffortChart(data.annexData) : Promise.resolve(undefined),
+            this.chartService.renderMareasTreeChart(
+                {
+                    count: desgloseFinalizadas.enEjecucion.count + desgloseFinalizadas.revision.count + desgloseFinalizadas.derivadas.count + desgloseFinalizadas.esperandoProtocolizacion.count + desgloseFinalizadas.protocolizadas.count,
+                    days: desgloseFinalizadas.enEjecucion.days + desgloseFinalizadas.revision.days + desgloseFinalizadas.derivadas.days + desgloseFinalizadas.esperandoProtocolizacion.days + desgloseFinalizadas.protocolizadas.days
+                },
+                {
+                    count: desgloseFinalizadas.revision.count + desgloseFinalizadas.derivadas.count + desgloseFinalizadas.esperandoProtocolizacion.count + desgloseFinalizadas.protocolizadas.count,
+                    days: desgloseFinalizadas.revision.days + desgloseFinalizadas.derivadas.days + desgloseFinalizadas.esperandoProtocolizacion.days + desgloseFinalizadas.protocolizadas.days
+                },
+                desgloseFinalizadas
+            ),
+            this.chartService.renderMareasGanttChart(
+                pStart,
+                pEnd,
+                mareasGantt
+            ),
         ]);
 
         // Construir secciones del documento
@@ -243,13 +297,13 @@ export class AuditReportBuilder {
             ...this.buildIntroduction(period, data.includeCampaigns, processed.hasPreviousYearMareas),
 
             // Sección 2: Resumen Ejecutivo
-            ...this.buildExecutiveSummary(period, processed, statusChart),
+            ...this.buildExecutiveSummary(period, processed, statusChart, treeChart, ganttChart),
 
             // Sección 3: Estadísticas por Pesquería
             ...this.buildFisherySection(processed, fisheryDaysChart, fisheryCountChart),
 
             // Sección 4: Comparativa entre mareas finalizadas y protocolizadas en el período
-            ...this.buildComparativaSection(period, processed, data, comparativaChart),
+            ...this.buildComparativaSection(period, processed, data),
 
             // Sección 5: Detalle de Navegación (Finalizadas + Derivadas)
             ...this.buildNavigationDetail(processed, data),
@@ -716,10 +770,12 @@ export class AuditReportBuilder {
         return paragraphs;
     }
 
-    private buildExecutiveSummary(period: PeriodDescription, processed: any, statusChart: Buffer): (Paragraph | Table)[] {
+    private buildExecutiveSummary(period: PeriodDescription, processed: any, statusChart: Buffer, treeChart: Buffer, ganttChart: Buffer): (Paragraph | Table)[] {
         const { stats, obsAfectados, dotacionRef, coberturaPct, promedioDias, totalEtapas } = processed;
         const finalizadas = processed.finalizadas.length;
         const enEjecucion = processed.enEjecucion.length;
+
+        const ganttHeight = Math.max(300, processed.items.length * 12 + 120);
 
         return [
             this.heading1('2. RESUMEN EJECUTIVO'),
@@ -736,24 +792,26 @@ export class AuditReportBuilder {
                 { value: processed.uniqueFisheries, label: 'Pesquerías cubiertas' },
             ], 3),
             new Paragraph({ spacing: { before: SPACING.afterTable } }),
-            this.bodyParagraph(generateExecutiveSummaryText(
-                period,
-                obsAfectados,
-                dotacionRef,
-                coberturaPct,
-                stats.totalDaysNavigated,
-                stats.totalMareas,
-                totalEtapas,
-                processed.uniqueFisheries,
-            )),
+
+            this.heading2('2.1 DESGLOSE DE ESTADOS DE MAREAS'),
+            this.bodyParagraph('Relación jerárquica y flujos entre los diferentes estados al cierre del período.'),
+            this.chartImage(treeChart, 16, 850 / 1200),
             new Paragraph({ spacing: { before: SPACING.afterTable } }),
-            this.chartImage(statusChart, 10, 0.75),
+
+            this.heading2('2.2 LÍNEA DE TIEMPO DE EJECUCIÓN DE MAREAS'),
+            this.bodyParagraph('Proyección temporal y continuidad de la actividad de los observadores respecto a la fecha de corte.'),
+            this.chartImage(ganttChart, 16, ganttHeight / 1200),
+
+            new Paragraph({ spacing: { before: SPACING.afterTable } }),
+            this.heading3('Nota aclaratoria sobre plazos de procesamiento'),
+            this.bodyParagraph('Para la correcta interpretación de la información expuesta, debe tenerse en cuenta que el reglamento interno del Programa establece un plazo de quince (15) días corridos para que los observadores realicen la entrega de datos y el informe correspondiente a la marea realizada. Asimismo, el Programa dispone de un plazo adicional de siete (7) días corridos para la evaluación, corrección de los datos y la confección del informe de marea.'),
+            this.bodyParagraph('En consecuencia, aquellas mareas que hayan finalizado dentro de los veintidós (22) días previos a la fecha de corte del período en estudio, podrían encontrarse aún en fase de revisión, en estricto cumplimiento de los plazos reglamentarios mencionados.')
         ];
     }
 
     private buildFisherySection(processed: any, daysChart: Buffer, countChart: Buffer): (Paragraph | Table)[] {
         const { fisheryRows, stats } = processed;
-        
+
         const totalEjecucion = processed.enEjecucion.length;
         const totalFinalizadas = processed.finalizadas.length;
 
@@ -776,12 +834,12 @@ export class AuditReportBuilder {
             createFormattedTable(
                 ['PESQUERÍA', 'FLOTA', 'EN EJECUCIÓN', 'FINALIZADAS', 'ETAPAS', 'DÍAS', '% DÍAS'],
                 fisheryRows.map((r: any) => [
-                    r.pesqueria, 
-                    r.flota, 
-                    r.mareasEnEjecucion > 0 ? r.mareasEnEjecucion.toString() : '-', 
-                    r.mareasFinalizadas > 0 ? r.mareasFinalizadas.toString() : '-', 
-                    r.etapas.toString(), 
-                    r.dias.toString(), 
+                    r.pesqueria,
+                    r.flota,
+                    r.mareasEnEjecucion > 0 ? r.mareasEnEjecucion.toString() : '-',
+                    r.mareasFinalizadas > 0 ? r.mareasFinalizadas.toString() : '-',
+                    r.etapas.toString(),
+                    r.dias.toString(),
                     formatNumber(r.pctDias, 1) + '%'
                 ]),
                 {
@@ -797,7 +855,7 @@ export class AuditReportBuilder {
         ];
     }
 
-    private buildComparativaSection(period: PeriodDescription, proc: any, data: AuditReportData, comparativaChart?: { chartReal: Buffer; chartPost?: Buffer; tPost: number }): (Paragraph | Table)[] {
+    private buildComparativaSection(period: PeriodDescription, proc: any, data: AuditReportData): (Paragraph | Table)[] {
         const pEnd = period.endDate ? new Date(period.endDate) : new Date(Date.UTC(period.year, 11, 31, 23, 59, 59, 999));
         pEnd.setUTCHours(23, 59, 59, 999);
 
@@ -834,7 +892,7 @@ export class AuditReportBuilder {
             const colEnEjecucion = esEnEjecucion ? '✓' : '';
             const colEnRevision = isEnRevision ? '✓' : '';
             const colDerivada = esDerivada ? (m.pesqueria || '') : '';
-            
+
             let colEnviada = '';
             if (isEnviadaPeriodo && !isProtocolizadaPeriodo) {
                 colEnviada = esDesestimada ? 'Desestimada' : '✓';
@@ -929,85 +987,6 @@ export class AuditReportBuilder {
             }),
         ];
 
-        if (comparativaChart) {
-            const chartReal = comparativaChart.chartReal;
-            const chartPost = comparativaChart.chartPost;
-            const tPost = comparativaChart.tPost || 0;
-
-            const totalEnviadasGlobal = tEnviada + tProtocolizada;
-            const eficiencia = totalEnviadasGlobal > 0 ? ((tProtocolizada / totalEnviadasGlobal) * 100).toFixed(1) : '0.0';
-
-            const paragraphChildren: TextRun[] = [
-                new TextRun({
-                    text: `Eficiencia de Protocolización: `,
-                    bold: true,
-                    font: "Arial",
-                    size: FONT_SIZES.body,
-                    color: INIDEP_COLORS.primary,
-                }),
-                new TextRun({
-                    text: `Considerando las mareas finalizadas y analizadas, se alcanzó una eficiencia del ${eficiencia}% en la emisión de protocolos, con ${tProtocolizada} mareas efectivamente protocolizadas frente a ${tEnviada} que permanecían aguardando su protocolo al cierre del período.`,
-                    font: "Arial",
-                    size: FONT_SIZES.body,
-                    color: INIDEP_COLORS.text,
-                }),
-            ];
-
-            if (tPost > 0) {
-                const totalProtPost = tProtocolizada + tPost;
-                const eficienciaPost = totalEnviadasGlobal > 0 ? ((totalProtPost / totalEnviadasGlobal) * 100).toFixed(1) : '0.0';
-                paragraphChildren.push(
-                    new TextRun({
-                        text: ` Adicionalmente, cabe destacar que ${tPost} marea${tPost > 1 ? 's' : ''} que se encontraba${tPost > 1 ? 'n' : ''} aguardando protocolo al cierre, ${tPost > 1 ? 'fueron protocolizadas' : 'fue protocolizada'} en los primeros días del período subsiguiente (indicado entre paréntesis en la tabla), elevando la eficiencia efectiva al ${eficienciaPost}%.`,
-                        font: "Arial",
-                        size: FONT_SIZES.body,
-                        color: INIDEP_COLORS.text,
-                    })
-                );
-            }
-
-            result.push(
-                new Paragraph({
-                    spacing: { before: 240, after: 120 },
-                    alignment: AlignmentType.JUSTIFIED,
-                    children: paragraphChildren,
-                })
-            );
-
-            if (chartPost) {
-                result.push(
-                    new Table({
-                        width: { size: 100, type: WidthType.PERCENTAGE },
-                        borders: {
-                            top: { style: BorderStyle.NONE, size: 0 },
-                            bottom: { style: BorderStyle.NONE, size: 0 },
-                            left: { style: BorderStyle.NONE, size: 0 },
-                            right: { style: BorderStyle.NONE, size: 0 },
-                            insideHorizontal: { style: BorderStyle.NONE, size: 0 },
-                            insideVertical: { style: BorderStyle.NONE, size: 0 },
-                        },
-                        rows: [
-                            new TableRow({
-                                children: [
-                                    new TableCell({
-                                        width: { size: 50, type: WidthType.PERCENTAGE },
-                                        borders: { top: { style: BorderStyle.NONE }, bottom: { style: BorderStyle.NONE }, left: { style: BorderStyle.NONE }, right: { style: BorderStyle.NONE } },
-                                        children: [this.chartImage(chartReal, 8, 0.75)],
-                                    }),
-                                    new TableCell({
-                                        width: { size: 50, type: WidthType.PERCENTAGE },
-                                        borders: { top: { style: BorderStyle.NONE }, bottom: { style: BorderStyle.NONE }, left: { style: BorderStyle.NONE }, right: { style: BorderStyle.NONE } },
-                                        children: [this.chartImage(chartPost, 8, 0.75)],
-                                    }),
-                                ]
-                            })
-                        ]
-                    })
-                );
-            } else {
-                result.push(this.chartImage(chartReal, 10, 0.75));
-            }
-        }
 
         return result;
     }
@@ -1216,7 +1195,7 @@ export class AuditReportBuilder {
                 {
                     columnWidths: [18, 20, 11, 8, 9, 11, 11, 12],
                     alignments,
-                    totalsRow: { 
+                    totalsRow: {
                         label: `Total: ${sorted.length} marea${sorted.length !== 1 ? 's' : ''}`,
                         values: ['', '', '', totalDias.toString(), '', '', '']
                     }
@@ -1322,7 +1301,7 @@ export class AuditReportBuilder {
                 {
                     columnWidths: [28, 28, 16, 14, 14],
                     alignments: [AlignmentType.LEFT, AlignmentType.LEFT, AlignmentType.CENTER, AlignmentType.CENTER, AlignmentType.CENTER],
-                    totalsRow: { 
+                    totalsRow: {
                         label: `Total: ${sorted.length} marea${sorted.length !== 1 ? 's' : ''}`,
                         values: ['', '', '', totalDias.toString()]
                     }
@@ -1333,7 +1312,7 @@ export class AuditReportBuilder {
 
     private buildSpecialCasesSection(data: AuditReportData, period: PeriodDescription, proc: any, specialCasesChart?: Buffer): (Paragraph | Table)[] {
         const { canceladas, desestimadas, esperandoEntrega, pendientesDeInforme, informesPendientesEnvio, esperandoProtocolizacion, delegadasExternas } = data.specialCases;
-        
+
         const protocolizadasDelPeriodo = data.protocolizationTimeline?.protocolizadasDetalle || [];
         const pStart = period.startDate ? new Date(period.startDate) : new Date(Date.UTC(period.year, 0, 1));
         const pEnd = period.endDate ? new Date(period.endDate) : new Date(Date.UTC(period.year, 11, 31, 23, 59, 59, 999));
@@ -1360,9 +1339,9 @@ export class AuditReportBuilder {
             return result;
         }
 
-        // Agregar gráfico de dona si existe
+        // Agregar gráfico de dona si existe (Oculto a petición del usuario)
         if (specialCasesChart) {
-            result.push(this.chartImage(specialCasesChart, 14, 0.75));
+            // result.push(this.chartImage(specialCasesChart, 14, 0.75));
         }
 
         let subsecNum = 1;
@@ -1416,7 +1395,7 @@ export class AuditReportBuilder {
                     {
                         columnWidths: [14, 24, 20, 12, 30],
                         alignments: [AlignmentType.CENTER, AlignmentType.LEFT, AlignmentType.LEFT, AlignmentType.CENTER, AlignmentType.LEFT],
-                        totalsRow: { 
+                        totalsRow: {
                             label: `Total: ${sortedDesestimadas.length} marea${sortedDesestimadas.length !== 1 ? 's' : ''}`,
                             values: ['', '', totalDias.toString(), '']
                         }
@@ -1444,7 +1423,7 @@ export class AuditReportBuilder {
                     {
                         columnWidths: [14, 22, 18, 26, 12, 14],
                         alignments: [AlignmentType.CENTER, AlignmentType.LEFT, AlignmentType.LEFT, AlignmentType.LEFT, AlignmentType.CENTER, AlignmentType.CENTER],
-                        totalsRow: { 
+                        totalsRow: {
                             label: `Total: ${sortedEsperando.length} marea${sortedEsperando.length !== 1 ? 's' : ''}`,
                             values: ['', '', '', totalDias.toString(), '']
                         }
@@ -1468,10 +1447,10 @@ export class AuditReportBuilder {
                         m.diasNavegados.toString(),
                         m.fechaEvento ? this.formatShortDate(m.fechaEvento) : '',
                     ]),
-                    { 
-                        columnWidths: specialWidths, 
+                    {
+                        columnWidths: specialWidths,
                         alignments: specialAligns,
-                        totalsRow: { 
+                        totalsRow: {
                             label: `Total: ${sortedPendientes.length} marea${sortedPendientes.length !== 1 ? 's' : ''}`,
                             values: ['', '', totalDias.toString(), '']
                         }
@@ -1495,10 +1474,10 @@ export class AuditReportBuilder {
                         m.diasNavegados.toString(),
                         m.fechaEvento ? this.formatShortDate(m.fechaEvento) : '',
                     ]),
-                    { 
-                        columnWidths: specialWidths, 
+                    {
+                        columnWidths: specialWidths,
                         alignments: specialAligns,
-                        totalsRow: { 
+                        totalsRow: {
                             label: `Total: ${sortedPendientesEnvio.length} marea${sortedPendientesEnvio.length !== 1 ? 's' : ''}`,
                             values: ['', '', totalDias.toString(), '']
                         }
@@ -1523,10 +1502,10 @@ export class AuditReportBuilder {
                         m.diasNavegados.toString(),
                         m.fechaEvento ? this.formatShortDate(m.fechaEvento) : '',
                     ]),
-                    { 
-                        columnWidths: specialWidths, 
+                    {
+                        columnWidths: specialWidths,
                         alignments: specialAligns,
-                        totalsRow: { 
+                        totalsRow: {
                             label: `Total: ${sortedSoloEnviadas.length} marea${sortedSoloEnviadas.length !== 1 ? 's' : ''}`,
                             values: ['', '', totalDias.toString(), '']
                         }
@@ -1551,10 +1530,10 @@ export class AuditReportBuilder {
                         m.diasNavegados.toString(),
                         m.fechaProtocolizacion ? this.formatShortDate(m.fechaProtocolizacion) : '-',
                     ]),
-                    { 
-                        columnWidths: specialWidths, 
+                    {
+                        columnWidths: specialWidths,
                         alignments: specialAligns,
-                        totalsRow: { 
+                        totalsRow: {
                             label: `Total: ${sortedProt.length} marea${sortedProt.length !== 1 ? 's' : ''}`,
                             values: ['', '', totalDias.toString(), '']
                         }
@@ -1579,10 +1558,10 @@ export class AuditReportBuilder {
                         m.diasNavegados.toString(),
                         m.fechaEvento ? this.formatShortDate(m.fechaEvento) : '',
                     ]),
-                    { 
-                        columnWidths: specialWidths, 
+                    {
+                        columnWidths: specialWidths,
                         alignments: specialAligns,
-                        totalsRow: { 
+                        totalsRow: {
                             label: `Total: ${sortedDelegadas.length} marea${sortedDelegadas.length !== 1 ? 's' : ''}`,
                             values: ['', '', totalDias.toString(), '']
                         }
@@ -2042,7 +2021,7 @@ export class AuditReportBuilder {
                         {
                             columnWidths: [48, 13, 13, 13, 13],
                             alignments: [AlignmentType.LEFT, AlignmentType.CENTER, AlignmentType.CENTER, AlignmentType.CENTER, AlignmentType.CENTER],
-                            totalsRow: { 
+                            totalsRow: {
                                 label: `Total: ${mareasAnuales.length} marea${mareasAnuales.length !== 1 ? 's' : ''}`,
                                 values: [
                                     tRevision > 0 ? tRevision.toString() : '-',
@@ -2190,9 +2169,10 @@ export class AuditReportBuilder {
         });
     }
 
-    private heading2(text: string): Paragraph {
+    private heading2(text: string, pageBreakBefore: boolean = false): Paragraph {
         return new Paragraph({
             spacing: { before: SPACING.beforeHeading / 1.5, after: SPACING.afterHeading },
+            pageBreakBefore,
             children: [
                 new TextRun({
                     text,
