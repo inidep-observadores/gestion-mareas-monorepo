@@ -739,11 +739,14 @@ export class DocxChartService {
         ctx.stroke();
 
         ctx.setLineDash([]);
-        ctx.fillStyle = '#EF4444';
         ctx.font = `bold 22px ${FONTS.primary}`;
-        ctx.textAlign = 'right';
         ctx.textBaseline = 'top';
+
+        ctx.fillStyle = '#64748B'; // Gris para actividad previa fuera del período
+        ctx.textAlign = 'right';
         ctx.fillText('Previo', startX - 5, paddingTop - 90);
+
+        ctx.fillStyle = '#EF4444'; // Rojo para inicio de período
         ctx.textAlign = 'left';
         ctx.fillText('Inicio', startX + 5, paddingTop - 90);
 

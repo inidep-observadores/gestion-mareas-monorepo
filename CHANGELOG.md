@@ -8,6 +8,7 @@ All notable changes to this project will be documented in this file.
 - **informes:** excluir mareas de períodos anteriores protocolizadas en el período actual para reflejar estrictamente la actividad finalizada del período
 - **informes:** evaluar estado administrativo como foto histórica real al cierre según movimientos (`MareaMovimiento`), evitando desfasajes por fechas lógicas posteriores
 - **informes:** unificar universo de mareas y cálculo de días en árbol de flujo, tabla comparativa, detalle de navegación y resumen de estados
+- **informes:** ajustar color de etiqueta "Previo" a gris neutro en diagrama de Gantt para consistencia con zona fuera de período
 
 ## [v0.19.2] - 2026-10-07
 
