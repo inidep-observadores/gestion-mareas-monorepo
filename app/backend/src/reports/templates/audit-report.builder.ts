@@ -189,6 +189,15 @@ export interface AuditReportData {
         nroProtocolizacion?: number | null;
         anioProtocolizacion?: number | null;
         fechaProtocolizacion?: Date | string | null;
+        /**
+         * Categoría administrativa de la marea finalizada según su estado REAL al cierre del período
+         * (reconstruido desde los movimientos hasta la fecha de corte). Null si no está finalizada.
+         */
+        categoriaCierre?: 'PROTOCOLIZADA' | 'ENVIADA' | 'DERIVADA' | 'REVISION' | null;
+        /** Código de estado real al cierre (movimientos hasta la fecha de corte). Null si no está finalizada. */
+        estadoCierre?: string | null;
+        /** Fecha del movimiento que fijó el estado al cierre. */
+        fechaEstadoCierre?: Date | string | null;
     }>;
 
     /** Distribución de mareas (para contar etapas) */
@@ -224,28 +233,22 @@ export class AuditReportBuilder {
 
         const sumDays = (collection: any[], field: string = 'diasNavegados') => collection.reduce((sum, m) => sum + (m[field] || 0), 0);
 
-        const { esperandoEntrega, pendientesDeInforme, informesPendientesEnvio, esperandoProtocolizacion, delegadasExternas, desestimadas, canceladas } = data.specialCases;
+        const { desestimadas, canceladas } = data.specialCases;
 
-        const protocolizadasDelPeriodo = data.protocolizationTimeline?.protocolizadasDetalle || [];
-        const pStartDate = period.startDate ? new Date(period.startDate) : new Date(Date.UTC(period.year, 0, 1));
-        const pEndDate = period.endDate ? new Date(period.endDate) : new Date(Date.UTC(period.year, 11, 31, 23, 59, 59, 999));
-        pStartDate.setUTCHours(0, 0, 0, 0);
-        pEndDate.setUTCHours(23, 59, 59, 999);
-        const protocolizadasFiltradas = protocolizadasDelPeriodo.filter((m: any) => {
-            if (!m.fechaFinalizacion) return false;
-            const f = new Date(m.fechaFinalizacion);
-            return f >= pStartDate && f <= pEndDate;
-        });
-
-        const revCount = esperandoEntrega.length + pendientesDeInforme.length + informesPendientesEnvio.length;
-        const revDays = sumDays(esperandoEntrega) + sumDays(pendientesDeInforme) + sumDays(informesPendientesEnvio);
+        // Fuente única: las mismas mareas (processed.finalizadas) y el mismo estado histórico al cierre
+        // (categoriaCierre) que utiliza la tabla de la sección 4, para garantizar consistencia total.
+        const porCategoria = (cat: string) => processed.finalizadas.filter((m: any) => m.categoriaCierre === cat);
+        const catStats = (cat: string) => {
+            const list = porCategoria(cat);
+            return { count: list.length, days: sumDays(list, 'dias') };
+        };
 
         const desgloseFinalizadas = {
-            revision: { count: revCount, days: revDays },
-            derivadas: { count: delegadasExternas.length, days: sumDays(delegadasExternas) },
+            revision: catStats('REVISION'),
+            derivadas: catStats('DERIVADA'),
             desestimadas: { count: desestimadas.length + canceladas.length, days: sumDays(desestimadas) + sumDays(canceladas) },
-            esperandoProtocolizacion: { count: esperandoProtocolizacion.length, days: sumDays(esperandoProtocolizacion) },
-            protocolizadas: { count: protocolizadasFiltradas.length, days: sumDays(protocolizadasFiltradas) },
+            esperandoProtocolizacion: catStats('ENVIADA'),
+            protocolizadas: catStats('PROTOCOLIZADA'),
             enEjecucion: { count: processed.enEjecucion.length, days: sumDays(processed.enEjecucion, 'dias') }
         };
 
@@ -864,23 +867,24 @@ export class AuditReportBuilder {
         const mappedMareas = allMareas.map(m => {
             const esEnEjecucion = m.estado !== 'Finalizada';
             const esDesestimada = data.specialCases.desestimadas.some((d: any) => d.id === m.id);
-            const esDerivada = m.estadoActual === 'DELEGADA_EXTERNA';
 
-            const fEnvio = m.fechaEnvioProtocolizacion ? new Date(m.fechaEnvioProtocolizacion) : null;
-            const isEnviadaPeriodo = fEnvio && fEnvio <= pEnd;
+            // Estado REAL al cierre del período (snapshot desde movimientos), no fechas lógicas ni estado actual
+            const cat = esEnEjecucion ? null : m.categoriaCierre;
+            const esDerivada = cat === 'DERIVADA';
+            const isProtocolizadaPeriodo = cat === 'PROTOCOLIZADA';
+            const isEnviadaPeriodo = cat === 'ENVIADA' || isProtocolizadaPeriodo;
 
+            // Protocolizada con posterioridad al cierre (hasta 7 días): se informa la fecha como dato adicional
             const fProt = m.fechaProtocolizacion ? new Date(m.fechaProtocolizacion) : null;
-            const isProtocolizadaPeriodo = fProt && fProt <= pEnd;
-
             let isProtocolizadaPost = false;
-            if (isEnviadaPeriodo && !isProtocolizadaPeriodo && fProt) {
+            if (cat === 'ENVIADA' && fProt) {
                 const diffDays = (fProt.getTime() - pEnd.getTime()) / (1000 * 60 * 60 * 24);
                 if (diffDays > 0 && diffDays <= 7) {
                     isProtocolizadaPost = true;
                 }
             }
 
-            const isEnRevision = !esEnEjecucion && !esDerivada && !isEnviadaPeriodo && !isProtocolizadaPeriodo;
+            const isEnRevision = cat === 'REVISION';
 
             let orderPriority = 0;
             if (esEnEjecucion) orderPriority = 1;
@@ -1143,7 +1147,7 @@ export class AuditReportBuilder {
         const canceladasCount = data.specialCases.canceladas.length;
         let canceladasText = '';
         if (canceladasCount > 0) {
-            canceladasText = ` No se incluy${canceladasCount === 1 ? 'ó' : 'eron'} en este recuento ${canceladasCount} marea${canceladasCount === 1 ? '' : 's'} cancelada${canceladasCount === 1 ? '' : 's'}, dado que no llegar${canceladasCount === 1 ? 'ó' : 'on'} a ejecutarse.`;
+            canceladasText = ` No se incluy${canceladasCount === 1 ? 'ó' : 'eron'} en este recuento ${canceladasCount} marea${canceladasCount === 1 ? '' : 's'} cancelada${canceladasCount === 1 ? '' : 's'}, dado que no lleg${canceladasCount === 1 ? 'ó' : 'aron'} a ejecutarse.`;
         }
 
         const introText = `Se detallan a continuación las ${finalizadas.length} mareas que alcanzaron estado "Finalizada" durante el período, agrupadas por pesquería.` +
@@ -1311,18 +1315,28 @@ export class AuditReportBuilder {
     }
 
     private buildSpecialCasesSection(data: AuditReportData, period: PeriodDescription, proc: any, specialCasesChart?: Buffer): (Paragraph | Table)[] {
-        const { canceladas, desestimadas, esperandoEntrega, pendientesDeInforme, informesPendientesEnvio, esperandoProtocolizacion, delegadasExternas } = data.specialCases;
+        const { canceladas, desestimadas } = data.specialCases;
 
-        const protocolizadasDelPeriodo = data.protocolizationTimeline?.protocolizadasDetalle || [];
-        const pStart = period.startDate ? new Date(period.startDate) : new Date(Date.UTC(period.year, 0, 1));
-        const pEnd = period.endDate ? new Date(period.endDate) : new Date(Date.UTC(period.year, 11, 31, 23, 59, 59, 999));
-        pStart.setUTCHours(0, 0, 0, 0);
-        pEnd.setUTCHours(23, 59, 59, 999);
-        const protocolizadasFiltradas = protocolizadasDelPeriodo.filter(m => {
-            if (!m.fechaFinalizacion) return false;
-            const f = new Date(m.fechaFinalizacion);
-            return f >= pStart && f <= pEnd;
+        // Fuente única: mismas mareas finalizadas y mismo estado real al cierre que el resto del informe.
+        // Se adapta cada ítem al formato de las tablas (días = campo 'dias', consistente con las secciones 4 y 5).
+        const toRow = (m: any, fechaEvento: Date | string | null | undefined) => ({
+            ...m,
+            diasNavegados: m.dias || 0,
+            fechaEvento: fechaEvento ?? null,
         });
+        const porEstado = (codigos: string[], fecha: (m: any) => Date | string | null | undefined) =>
+            proc.finalizadas.filter((m: any) => codigos.includes(m.estadoCierre)).map((m: any) => toRow(m, fecha(m)));
+
+        const fechaCierre = (m: any) => m.fechaEstadoCierre;
+        const esperandoEntrega = porEstado(['ESPERANDO_ENTREGA'], fechaCierre);
+        const informesPendientesEnvio = porEstado(['PARA_PROTOCOLIZAR'], fechaCierre);
+        const esperandoProtocolizacion = porEstado(['ESPERANDO_PROTOCOLIZACION'], (m: any) => m.fechaEnvioProtocolizacion ?? m.fechaEstadoCierre);
+        const delegadasExternas = porEstado(['DELEGADA_EXTERNA'], (m: any) => m.fechaDerivacion ?? m.fechaEstadoCierre);
+        const protocolizadasFiltradas = porEstado(['PROTOCOLIZADA'], fechaCierre);
+        const estadosConocidos = ['ESPERANDO_ENTREGA', 'PARA_PROTOCOLIZAR', 'ESPERANDO_PROTOCOLIZACION', 'DELEGADA_EXTERNA', 'PROTOCOLIZADA'];
+        const pendientesDeInforme = proc.finalizadas
+            .filter((m: any) => !estadosConocidos.includes(m.estadoCierre))
+            .map((m: any) => toRow(m, fechaCierre(m)));
 
         const allEmpty = proc.enEjecucion.length === 0 &&
             canceladas.length === 0 && desestimadas.length === 0 &&
@@ -2261,14 +2275,12 @@ export class AuditReportBuilder {
         let tPost = 0;
 
         allMareas.forEach(m => {
-            const fEnvio = m.fechaEnvioProtocolizacion ? new Date(m.fechaEnvioProtocolizacion) : null;
-            const isEnviadaPeriodo = fEnvio && fEnvio <= pEnd;
+            if (m.estado !== 'Finalizada') return;
 
-            const fProt = m.fechaProtocolizacion ? new Date(m.fechaProtocolizacion) : null;
-            const isProtocolizadaPeriodo = fProt && fProt <= pEnd;
-
-            if (isEnviadaPeriodo && !isProtocolizadaPeriodo) {
+            // Estado REAL al cierre (snapshot desde movimientos)
+            if (m.categoriaCierre === 'ENVIADA') {
                 tEnviada++;
+                const fProt = m.fechaProtocolizacion ? new Date(m.fechaProtocolizacion) : null;
                 if (fProt) {
                     const diffDays = (fProt.getTime() - pEnd.getTime()) / (1000 * 60 * 60 * 24);
                     if (diffDays > 0 && diffDays <= 7) {
@@ -2276,7 +2288,7 @@ export class AuditReportBuilder {
                     }
                 }
             }
-            if (isProtocolizadaPeriodo) tProtocolizada++;
+            if (m.categoriaCierre === 'PROTOCOLIZADA') tProtocolizada++;
         });
 
         const chartReal = await this.chartService.renderDoughnutChart(
