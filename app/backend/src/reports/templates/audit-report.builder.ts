@@ -302,11 +302,11 @@ export class AuditReportBuilder {
             // Sección 2: Resumen Ejecutivo
             ...this.buildExecutiveSummary(period, processed, statusChart, treeChart, ganttChart),
 
-            // Sección 3: Estadísticas por Pesquería
-            ...this.buildFisherySection(processed, fisheryDaysChart, fisheryCountChart),
-
-            // Sección 4: Comparativa entre mareas finalizadas y protocolizadas en el período
+            // Sección 3: Comparativa entre mareas finalizadas y protocolizadas en el período
             ...this.buildComparativaSection(period, processed, data),
+
+            // Sección 4: Estadísticas por Pesquería
+            ...this.buildFisherySection(processed, fisheryDaysChart, fisheryCountChart),
 
             // Sección 5: Detalle de Navegación (Finalizadas + Derivadas)
             ...this.buildNavigationDetail(processed, data),
@@ -831,8 +831,8 @@ export class AuditReportBuilder {
         };
 
         return [
-            this.heading1('3. ESTADÍSTICAS POR PESQUERÍA'),
-            this.heading2('3.1 Distribución de mareas, etapas y días navegados'),
+            this.heading1('4. ESTADÍSTICAS POR PESQUERÍA'),
+            this.heading2('4.1 Distribución de mareas, etapas y días navegados'),
             this.bodyParagraph('La siguiente tabla presenta el desglose de la actividad por pesquería y tipo de flota:'),
             createFormattedTable(
                 ['PESQUERÍA', 'FLOTA', 'EN EJECUCIÓN', 'FINALIZADAS', 'ETAPAS', 'DÍAS', '% DÍAS'],
@@ -952,7 +952,7 @@ export class AuditReportBuilder {
         });
 
         const result: (Paragraph | Table)[] = [
-            this.heading1('4. COMPARATIVA ENTRE MAREAS FINALIZADAS Y PROTOCOLIZADAS EN EL PERÍODO'),
+            this.heading1('3. COMPARATIVA ENTRE MAREAS FINALIZADAS Y PROTOCOLIZADAS EN EL PERÍODO'),
             this.bodyParagraph('A continuación se detalla el estado de las mareas gestionadas en el período, ordenadas por su estado operativo al cierre del mismo.'),
             createFormattedTable(
                 ['MAREA', 'EN EJECUCIÓN', 'EN REVISIÓN', 'DERIVADA', 'ENVIADA', 'PROTOCOLIZADA', 'DÍAS'],
@@ -969,7 +969,7 @@ export class AuditReportBuilder {
                         AlignmentType.CENTER
                     ],
                     totalsRow: {
-                        label: 'TOTALES',
+                        label: `TOTALES ${rows.length} marea${rows.length !== 1 ? 's' : ''}`,
                         values: [
                             '',
                             tRevision.toString(),
