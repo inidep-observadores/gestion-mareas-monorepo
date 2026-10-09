@@ -798,7 +798,7 @@ export class AuditReportBuilder {
 
             this.heading2('2.1 DESGLOSE DE ESTADOS DE MAREAS'),
             this.bodyParagraph('Relación jerárquica y flujos entre los diferentes estados al cierre del período.'),
-            this.chartImage(treeChart, 16, 750 / 1200),
+            this.chartImage(treeChart, 16, 820 / 1200),
             new Paragraph({
                 spacing: { before: 120, after: SPACING.afterTable },
                 children: [

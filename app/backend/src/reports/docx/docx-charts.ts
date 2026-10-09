@@ -480,7 +480,7 @@ export class DocxChartService {
         }
     ): Promise<Buffer> {
         const width = 1200;
-        const height = 750;
+        const height = 820;
         const canvas = createCanvas(width, height);
         const ctx = canvas.getContext('2d');
 
@@ -567,9 +567,9 @@ export class DocxChartService {
 
         // Coordenadas
         const level1Y = 40;
-        const level2Y = 210;
-        const level3Y = 380;
-        const level4Y = 550;
+        const level2Y = 240;
+        const level3Y = 440;
+        const level4Y = 640;
 
         const rootX = width / 2;
         const finX = width / 2 - 200;
