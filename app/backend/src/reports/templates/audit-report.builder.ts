@@ -875,11 +875,13 @@ export class AuditReportBuilder {
             const isEnviadaPeriodo = cat === 'ENVIADA' || isProtocolizadaPeriodo;
 
             // Protocolizada con posterioridad al cierre (hasta 7 días): se informa la fecha como dato adicional
+            // Inhabilitado temporalmente (seteado a 0). Restablecer a 7 cuando se requiera reactivar la búsqueda futura.
+            const MAX_POST_CLOSURE_DAYS = 0;
             const fProt = m.fechaProtocolizacion ? new Date(m.fechaProtocolizacion) : null;
             let isProtocolizadaPost = false;
             if (cat === 'ENVIADA' && fProt) {
                 const diffDays = (fProt.getTime() - pEnd.getTime()) / (1000 * 60 * 60 * 24);
-                if (diffDays > 0 && diffDays <= 7) {
+                if (diffDays > 0 && diffDays <= MAX_POST_CLOSURE_DAYS) {
                     isProtocolizadaPost = true;
                 }
             }
@@ -1166,6 +1168,22 @@ export class AuditReportBuilder {
 
         const totalDias = sorted.reduce((sum, m) => sum + m.dias, 0);
 
+        const pEnd = data.endDate ? new Date(data.endDate) : new Date(Date.UTC(data.year, 11, 31, 23, 59, 59, 999));
+        pEnd.setUTCHours(23, 59, 59, 999);
+
+        const sortedMap = sorted.map((m: any) => {
+            let fEnvio = m.fechaEnvioProtocolizacion ? new Date(m.fechaEnvioProtocolizacion) : null;
+            let fProt = m.fechaProtocolizacion ? new Date(m.fechaProtocolizacion) : null;
+            
+            if (fEnvio && fEnvio.getTime() > pEnd.getTime()) fEnvio = null;
+            if (fProt && fProt.getTime() > pEnd.getTime()) fProt = null;
+
+            return { m, fEnvio, fProt };
+        });
+
+        const countEnvDni = sortedMap.filter(item => item.fEnvio != null).length;
+        const countProt = sortedMap.filter(item => item.fProt != null).length;
+
         const alignments = [
             AlignmentType.LEFT,
             AlignmentType.LEFT,
@@ -1183,25 +1201,31 @@ export class AuditReportBuilder {
             this.bodyParagraph(introText),
             createFormattedTable(
                 ['PESQUERÍA', 'BUQUE', 'MAREA', 'ETAPAS', 'DÍAS', 'ENV. DNI', 'Nº PROT.', 'FECHA PROT.'],
-                sorted.map((m: any) => ({
-                    data: [
-                        m.pesqueria,
-                        m.buque,
-                        this.formatMareaShort(m.id_marea),
-                        m.etapas.toString(),
-                        m.dias.toString(),
-                        m.fechaEnvioProtocolizacion ? this.formatShortDate(m.fechaEnvioProtocolizacion) : '-',
-                        (m.nroProtocolizacion != null && m.anioProtocolizacion != null) ? `${m.nroProtocolizacion}/${m.anioProtocolizacion}` : '-',
-                        m.fechaProtocolizacion ? this.formatShortDate(m.fechaProtocolizacion) : '-',
-                    ],
-                    highlighted: m.estadoActual === 'DELEGADA_EXTERNA',
-                })),
+                sortedMap.map(({ m, fEnvio, fProt }) => {
+                    const fEnvioStr = fEnvio ? this.formatShortDate(fEnvio).replace(/\d{4}$/, y => y.slice(-2)) : '-';
+                    const fProtStr = fProt ? this.formatShortDate(fProt).replace(/\d{4}$/, y => y.slice(-2)) : '-';
+                    const protNumStr = (fProt && m.nroProtocolizacion != null && m.anioProtocolizacion != null) ? `${m.nroProtocolizacion}/${String(m.anioProtocolizacion).slice(-2)}` : '-';
+
+                    return {
+                        data: [
+                            m.pesqueria,
+                            m.buque,
+                            this.formatMareaShort(m.id_marea),
+                            m.etapas.toString(),
+                            m.dias.toString(),
+                            fEnvioStr,
+                            protNumStr,
+                            fProtStr,
+                        ],
+                        highlighted: m.estadoActual === 'DELEGADA_EXTERNA',
+                    };
+                }),
                 {
                     columnWidths: [18, 20, 11, 8, 9, 11, 11, 12],
                     alignments,
                     totalsRow: {
-                        label: `Total: ${sorted.length} marea${sorted.length !== 1 ? 's' : ''}`,
-                        values: ['', '', '', totalDias.toString(), '', '', '']
+                        label: 'TOTALES',
+                        values: ['', sorted.length.toString(), '', totalDias.toString(), countEnvDni.toString(), countProt.toString(), '']
                     }
                 },
             ),
