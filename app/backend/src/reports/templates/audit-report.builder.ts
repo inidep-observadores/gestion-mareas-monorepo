@@ -853,8 +853,9 @@ export class AuditReportBuilder {
             ),
             new Paragraph({ spacing: { before: SPACING.afterTable } }),
             this.bodyParagraph(generateFisheryAnalysisText(fisheryRows, stats.totalDaysNavigated)),
-            this.chartImage(daysChart, 14, 0.5),
-            this.chartImage(countChart, 14, 0.5),
+            // Gráficos ocultos temporalmente a pedido del usuario
+            // this.chartImage(daysChart, 14, 0.5),
+            // this.chartImage(countChart, 14, 0.5),
         ];
     }
 
