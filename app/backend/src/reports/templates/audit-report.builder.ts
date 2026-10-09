@@ -336,7 +336,7 @@ export class AuditReportBuilder {
                     ]
                 }),
                 this.bodyParagraph('A continuación se detalla la cantidad de días navegados por cada pesquería que registró actividad durante el año en curso, desglosado por trimestre hasta el período seleccionado en este informe.'),
-                ...this.buildAnnexSection(data.annexData)
+                ...this.buildAnnexSection(data.annexData, data.specialCases.desestimadas.length)
             );
         }
 
@@ -1847,7 +1847,7 @@ export class AuditReportBuilder {
         return children;
     }
 
-    private buildAnnexSection(annexData: NonNullable<AuditReportData['annexData']>): (Paragraph | Table)[] {
+    private buildAnnexSection(annexData: NonNullable<AuditReportData['annexData']>, desestimadasCount: number): (Paragraph | Table)[] {
         const result: (Paragraph | Table)[] = [];
 
         // 1. Tabla de Esfuerzo por Pesquería
@@ -2107,6 +2107,25 @@ export class AuditReportBuilder {
                             }
                         }
                     )
+                );
+
+                const enviadasMenosProt = tEnviada - tProtocolizada;
+                const totalSinProtocolizar = tRevision + tDerivada + enviadasMenosProt;
+                const desestimadasText = desestimadasCount > 0 
+                    ? ` Adicionalmente, cabe mencionar que se registraron ${desestimadasCount} marea${desestimadasCount !== 1 ? 's' : ''} desestimada${desestimadasCount !== 1 ? 's' : ''} en el período.` 
+                    : '';
+
+                result.push(
+                    new Paragraph({
+                        spacing: { before: SPACING.afterTable, after: SPACING.afterParagraph },
+                        alignment: AlignmentType.JUSTIFIED,
+                        children: [
+                            new TextRun({
+                                text: `Del total de mareas finalizadas detalladas, ${totalSinProtocolizar} aún se encuentran sin protocolizar. Este número se compone de: ${enviadasMenosProt} pendiente${enviadasMenosProt !== 1 ? 's' : ''} de asignación de protocolo en DNI (total enviadas menos protocolizadas), ${tDerivada} derivada${tDerivada !== 1 ? 's' : ''} a programas externos, y ${tRevision} en etapa de revisión.${desestimadasText}`,
+                                size: FONT_SIZES.body,
+                            })
+                        ]
+                    })
                 );
             }
         }
