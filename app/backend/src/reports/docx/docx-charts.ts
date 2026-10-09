@@ -480,7 +480,7 @@ export class DocxChartService {
         }
     ): Promise<Buffer> {
         const width = 1200;
-        const height = 850;
+        const height = 750;
         const canvas = createCanvas(width, height);
         const ctx = canvas.getContext('2d');
 
@@ -567,9 +567,9 @@ export class DocxChartService {
 
         // Coordenadas
         const level1Y = 40;
-        const level2Y = 250;
-        const level3Y = 460;
-        const level4Y = 670;
+        const level2Y = 210;
+        const level3Y = 380;
+        const level4Y = 550;
 
         const rootX = width / 2;
         const finX = width / 2 - 200;
@@ -603,12 +603,12 @@ export class DocxChartService {
         drawLine(ejeX, level2Y + boxH, ejeX + 150, level3Y);
 
         // Dibujar Cajas Nivel 1 y 2
-        drawBox(rootX, level1Y, 260, boxH, `${total.count}`, 'mareas informadas', `(${total.days} d)`);
+        drawBox(rootX, level1Y, 260, boxH, `${total.count}`, 'mareas consideradas', `(${total.days} d)`);
         drawBox(finX, level2Y, boxW, boxH, `${finalizadas.count}`, 'finalizadas', `(${finalizadas.days} d)`);
         drawBox(ejeX, level2Y, boxW, boxH, `${desgloseFinalizadas.enEjecucion.count}`, 'en ejecución', `(${desgloseFinalizadas.enEjecucion.days} d)`, getColorByEstado('en ejecución'));
 
         // Caja "posteriores" (Nivel 3, desplazada a la derecha de "En ejecución")
-        drawBox(ejeX + 150, level3Y, 300, childrenH, '', 'Contabilizadas en\nperíodos posteriores');
+        drawBox(ejeX + 150, level3Y, 300, childrenH, '', 'No se consideran en\nrecuento de mareas (*)');
 
         // Dibujar Cajas Nivel 4 (hijas de finalizadas)
         pts.forEach(p => {

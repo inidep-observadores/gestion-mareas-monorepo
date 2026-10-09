@@ -798,8 +798,18 @@ export class AuditReportBuilder {
 
             this.heading2('2.1 DESGLOSE DE ESTADOS DE MAREAS'),
             this.bodyParagraph('Relación jerárquica y flujos entre los diferentes estados al cierre del período.'),
-            this.chartImage(treeChart, 16, 850 / 1200),
-            new Paragraph({ spacing: { before: SPACING.afterTable } }),
+            this.chartImage(treeChart, 16, 750 / 1200),
+            new Paragraph({
+                spacing: { before: 120, after: SPACING.afterTable },
+                children: [
+                    new TextRun({
+                        text: '(*) Las mareas en estado "en ejecución" aportan días efectivos de esfuerzo al período, pero no se contabilizan en el recuento de mareas por no haber concluido su actividad operativa.',
+                        italics: true,
+                        size: FONT_SIZES.small,
+                        color: INIDEP_COLORS.textMuted,
+                    })
+                ]
+            }),
 
             this.heading2('2.2 LÍNEA DE TIEMPO DE EJECUCIÓN DE MAREAS'),
             this.bodyParagraph('Proyección temporal y continuidad de la actividad de los observadores respecto a la fecha de corte.'),
