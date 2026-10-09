@@ -221,17 +221,20 @@ export function createFormattedTable(
  * Cada KPI se muestra como valor + etiqueta en una celda sin bordes visibles.
  */
 export function createKpiTable(
-    kpis: Array<{ value: string | number; label: string }>,
+    kpis: Array<{ value: string | number; label: string; highlighted?: boolean }>,
     columns = 3,
 ): Table {
     const rows: TableRow[] = [];
 
     for (let i = 0; i < kpis.length; i += columns) {
         const chunk = kpis.slice(i, i + columns);
-        const cells = chunk.map(kpi =>
-            new TableCell({
+        const cells = chunk.map(kpi => {
+            const bgColor = kpi.highlighted ? INIDEP_COLORS.primaryLight : INIDEP_COLORS.primaryUltraLight;
+            const valueSize = kpi.highlighted ? FONT_SIZES.kpiValue + 8 : FONT_SIZES.kpiValue;
+
+            return new TableCell({
                 width: { size: Math.floor(100 / columns), type: WidthType.PERCENTAGE },
-                shading: { type: ShadingType.SOLID, color: INIDEP_COLORS.primaryUltraLight },
+                shading: { type: ShadingType.SOLID, color: bgColor },
                 verticalAlign: VerticalAlign.CENTER,
                 margins: {
                     top: convertInchesToTwip(0.08),
@@ -247,7 +250,7 @@ export function createKpiTable(
                             new TextRun({
                                 text: String(kpi.value),
                                 font: FONTS.primary,
-                                size: FONT_SIZES.kpiValue,
+                                size: valueSize,
                                 bold: true,
                                 color: INIDEP_COLORS.primary,
                             }),
@@ -265,8 +268,8 @@ export function createKpiTable(
                         ],
                     }),
                 ],
-            }),
-        );
+            });
+        });
 
         // Rellenar con celdas vacías si la última fila no está completa
         while (cells.length < columns) {

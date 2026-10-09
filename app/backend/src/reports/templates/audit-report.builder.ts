@@ -784,10 +784,10 @@ export class AuditReportBuilder {
             this.heading1('2. RESUMEN EJECUTIVO'),
             this.bodyParagraph('A continuación se presentan los indicadores clave de gestión del período:'),
             createKpiTable([
+                { value: finalizadas, label: 'Mareas finalizadas', highlighted: true },
+                { value: formatNumber(stats.totalDaysNavigated), label: 'Días navegados', highlighted: true },
                 { value: obsAfectados, label: 'Observadores afectados' },
                 { value: stats.totalMareas, label: 'Mareas registradas' },
-                { value: formatNumber(stats.totalDaysNavigated), label: 'Días navegados' },
-                { value: finalizadas, label: 'Mareas finalizadas' },
                 { value: enEjecucion, label: 'Mareas en ejecución' },
                 { value: totalEtapas, label: 'Etapas totales' },
                 { value: `${coberturaPct}%`, label: 'Cobertura dotación' },
