@@ -817,8 +817,8 @@ export class AuditReportBuilder {
 
             new Paragraph({ spacing: { before: SPACING.afterTable } }),
             this.heading3('Nota aclaratoria sobre plazos de procesamiento'),
-            this.bodyParagraph('Para la correcta interpretación de la información expuesta, debe tenerse en cuenta que el reglamento interno del Programa establece un plazo de quince (15) días corridos para que los observadores realicen la entrega de datos y el informe correspondiente a la marea realizada. Asimismo, el Programa dispone de un plazo adicional de siete (7) días corridos para la evaluación, corrección de los datos y la confección del informe de marea.'),
-            this.bodyParagraph('En consecuencia, aquellas mareas que hayan finalizado dentro de los veintidós (22) días previos a la fecha de corte del período en estudio, podrían encontrarse aún en fase de revisión, en estricto cumplimiento de los plazos reglamentarios mencionados.')
+            this.bodyParagraph('Para la correcta interpretación de la información expuesta, debe tenerse en cuenta que el reglamento interno del Programa establece un plazo de diez (10) días corridos para que los observadores realicen la entrega de datos y el informe correspondiente a la marea realizada. Asimismo, el Programa dispone de un plazo adicional de siete (7) días corridos para la evaluación, corrección de los datos y la confección del informe de marea.'),
+            this.bodyParagraph('En consecuencia, aquellas mareas que hayan finalizado dentro de los diecisiete (17) días previos a la fecha de corte del período en estudio, podrían encontrarse aún en fase de revisión, en estricto cumplimiento de los plazos reglamentarios mencionados.')
         ];
     }
 
@@ -1465,7 +1465,7 @@ export class AuditReportBuilder {
                     spacing: { after: SPACING.afterParagraph },
                     children: [
                         new TextRun({
-                            text: '(*) Según el reglamento interno, el observador dispone de un plazo máximo de quince (15) días corridos desde la finalización de la marea para efectuar la entrega de los datos y su informe.',
+                            text: '(*) Según el reglamento interno, el observador dispone de un plazo máximo de diez (10) días corridos desde la finalización de la marea para efectuar la entrega de los datos y su informe.',
                             italics: true,
                             size: FONT_SIZES.small,
                             color: INIDEP_COLORS.textMuted,
@@ -2121,7 +2121,7 @@ export class AuditReportBuilder {
                         alignment: AlignmentType.JUSTIFIED,
                         children: [
                             new TextRun({
-                                text: `Del total de mareas finalizadas detalladas, ${totalSinProtocolizar} aún se encuentran sin protocolizar. Este número se compone de: ${enviadasMenosProt} pendiente${enviadasMenosProt !== 1 ? 's' : ''} de asignación de protocolo en DNI (total enviadas menos protocolizadas), ${tDerivada} derivada${tDerivada !== 1 ? 's' : ''} a programas externos, y ${tRevision} en etapa de revisión.${desestimadasText}`,
+                                text: `Del total de mareas finalizadas detalladas, ${totalSinProtocolizar} aún se encuentran sin protocolizar. Este número se compone de: ${enviadasMenosProt} pendiente${enviadasMenosProt !== 1 ? 's' : ''} de asignación de protocolo en DNI, ${tDerivada} derivada${tDerivada !== 1 ? 's' : ''} a programas externos, y ${tRevision} en etapa de revisión.${desestimadasText}`,
                                 size: FONT_SIZES.body,
                             })
                         ]
