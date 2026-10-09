@@ -1461,6 +1461,17 @@ export class AuditReportBuilder {
             result.push(
                 this.heading2(`6.${subsecNum} Mareas en espera de entrega de datos`),
                 this.bodyParagraph(`${n} marea${n !== 1 ? 's' : ''} finalizada${n !== 1 ? 's' : ''} est${n !== 1 ? 'án' : 'á'} en espera de que el observador asignado realice la entrega de los datos recolectados.`),
+                new Paragraph({
+                    spacing: { after: SPACING.afterParagraph },
+                    children: [
+                        new TextRun({
+                            text: '(*) Según el reglamento interno, el observador dispone de un plazo máximo de quince (15) días corridos desde la finalización de la marea para efectuar la entrega de los datos y su informe.',
+                            italics: true,
+                            size: FONT_SIZES.small,
+                            color: INIDEP_COLORS.textMuted,
+                        })
+                    ]
+                }),
                 createFormattedTable(
                     ['MAREA', 'BUQUE', 'PESQUERÍA', 'OBSERVADOR', 'DÍAS NAV.', 'FECHA ARRIBO'],
                     sortedEsperando.map(m => [
@@ -1489,6 +1500,17 @@ export class AuditReportBuilder {
             result.push(
                 this.heading2(`6.${subsecNum} Mareas pendientes de informe`),
                 this.bodyParagraph(`${n} marea${n !== 1 ? 's' : ''} se encontraba${n !== 1 ? 'n' : ''} en alguna etapa de corrección de datos o confección del informe ${this.getReferenceTimeText(data)}, sin estar aún listas para protocolizar.`),
+                new Paragraph({
+                    spacing: { after: SPACING.afterParagraph },
+                    children: [
+                        new TextRun({
+                            text: '(*) El reglamento interno estipula un plazo adicional de siete (7) días corridos para la evaluación, corrección de los datos y confección final del informe de marea por parte del Programa.',
+                            italics: true,
+                            size: FONT_SIZES.small,
+                            color: INIDEP_COLORS.textMuted,
+                        })
+                    ]
+                }),
                 createFormattedTable(
                     ['MAREA', 'BUQUE', 'PESQUERÍA', 'DÍAS NAV.', 'FECHA REC.'],
                     sortedPendientes.map(m => [
@@ -1516,6 +1538,17 @@ export class AuditReportBuilder {
             result.push(
                 this.heading2(`6.${subsecNum} Informes pendientes de envío a DNI`),
                 this.bodyParagraph(`${n} marea${n !== 1 ? 's' : ''} cuenta${n !== 1 ? 'n' : ''} con su informe técnico finalizado ${this.getReferenceTimeText(data)}, pendiente${n !== 1 ? 's' : ''} de ser enviada${n !== 1 ? 's' : ''} formalmente a la Dirección Nacional de Investigación para su protocolización.`),
+                new Paragraph({
+                    spacing: { after: SPACING.afterParagraph },
+                    children: [
+                        new TextRun({
+                            text: '(*) La gestión de envío y revisión final se encuentra enmarcada dentro del plazo adicional de siete (7) días corridos contemplado en el reglamento interno del Programa.',
+                            italics: true,
+                            size: FONT_SIZES.small,
+                            color: INIDEP_COLORS.textMuted,
+                        })
+                    ]
+                }),
                 createFormattedTable(
                     ['MAREA', 'BUQUE', 'PESQUERÍA', 'DÍAS NAV.', 'FECHA FIN INF.'],
                     sortedPendientesEnvio.map(m => [
