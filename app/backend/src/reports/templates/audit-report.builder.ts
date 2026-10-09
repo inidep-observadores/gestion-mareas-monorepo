@@ -2112,7 +2112,7 @@ export class AuditReportBuilder {
                 const enviadasMenosProt = tEnviada - tProtocolizada;
                 const totalSinProtocolizar = tRevision + tDerivada + enviadasMenosProt;
                 const desestimadasText = desestimadasCount > 0 
-                    ? ` Adicionalmente, cabe mencionar que se registraron ${desestimadasCount} marea${desestimadasCount !== 1 ? 's' : ''} desestimada${desestimadasCount !== 1 ? 's' : ''} en el período.` 
+                    ? ` Adicionalmente, cabe mencionar que se registr${desestimadasCount !== 1 ? 'aron' : 'ó'} ${desestimadasCount} marea${desestimadasCount !== 1 ? 's' : ''} desestimada${desestimadasCount !== 1 ? 's' : ''} en el período.` 
                     : '';
 
                 result.push(
