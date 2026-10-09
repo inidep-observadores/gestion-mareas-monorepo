@@ -264,7 +264,7 @@ export class AuditReportBuilder {
         const pEnd = data.endDate ? new Date(data.endDate) : new Date(Date.UTC(data.year, 11, 31, 23, 59, 59));
 
         // Generar gráficos y logo en paralelo
-        const [statusChart, fisheryDaysChart, fisheryCountChart, observerChart, specialCasesChart, sigmaLogo, annexEffortChart, treeChart, ganttChart] = await Promise.all([
+        const [statusChart, fisheryDaysChart, fisheryCountChart, observerChart, specialCasesChart, sigmaLogo, treeChart, ganttChart] = await Promise.all([
             this.generateStatusChart(processed),
             this.generateFisheryDaysChart(processed),
             this.generateFisheryCountChart(processed),
@@ -272,7 +272,7 @@ export class AuditReportBuilder {
             this.generateSpecialCasesChart(data, processed.enEjecucion.length),
             this.chartService.renderSigmaLogo(120),
 
-            data.annexData ? this.generateAnnexEffortChart(data.annexData) : Promise.resolve(undefined),
+
             this.chartService.renderMareasTreeChart(
                 {
                     count: desgloseFinalizadas.enEjecucion.count + desgloseFinalizadas.revision.count + desgloseFinalizadas.derivadas.count + desgloseFinalizadas.esperandoProtocolizacion.count + desgloseFinalizadas.protocolizadas.count,
@@ -336,7 +336,7 @@ export class AuditReportBuilder {
                     ]
                 }),
                 this.bodyParagraph('A continuación se detalla la cantidad de días navegados por cada pesquería que registró actividad durante el año en curso, desglosado por trimestre hasta el período seleccionado en este informe.'),
-                ...this.buildAnnexSection(data.annexData, annexEffortChart)
+                ...this.buildAnnexSection(data.annexData)
             );
         }
 
@@ -1847,7 +1847,7 @@ export class AuditReportBuilder {
         return children;
     }
 
-    private buildAnnexSection(annexData: NonNullable<AuditReportData['annexData']>, effortChart?: Buffer): (Paragraph | Table)[] {
+    private buildAnnexSection(annexData: NonNullable<AuditReportData['annexData']>): (Paragraph | Table)[] {
         const result: (Paragraph | Table)[] = [];
 
         // 1. Tabla de Esfuerzo por Pesquería
@@ -1896,13 +1896,6 @@ export class AuditReportBuilder {
                 }
             })
         );
-
-        if (effortChart) {
-            result.push(
-                new Paragraph({ spacing: { before: SPACING.afterTable } }),
-                this.chartImage(effortChart, 15, 0.4)
-            );
-        }
 
         // 2. Tabla de Mareas según Estado
         /*
@@ -2385,26 +2378,7 @@ export class AuditReportBuilder {
         return { chartReal, chartPost, tPost };
     }
 
-    private async generateAnnexEffortChart(annexData: NonNullable<AuditReportData['annexData']>): Promise<Buffer> {
-        const numToOrdinal = ['1º Trim.', '2º Trim.', '3º Trim.', '4º Trim.'];
-        const datasets = annexData.quarters.map((q, i) => {
-            const data = annexData.activeFisheries.map(fishery => annexData.fisheries[fishery][i] || 0);
-            return {
-                label: numToOrdinal[q - 1],
-                data
-            };
-        });
 
-        return this.chartService.renderBarChart(
-            annexData.activeFisheries,
-            datasets,
-            {
-                title: 'Esfuerzo Acumulado por Trimestre',
-                stacked: true,
-                displayLabels: false
-            }
-        );
-    }
 
     private sortMareaId(a: string, b: string): number {
         const regex = /^([A-Z]+)-(\d+)-(\d+)$/;
