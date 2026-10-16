@@ -4,6 +4,8 @@ import { google, drive_v3 } from 'googleapis';
 import { Readable } from 'stream';
 import { ErrorLogsService } from '../common/error-logs/error-logs.service';
 
+import axios from 'axios';
+
 @Injectable()
 export class DriveStorageService {
     private readonly logger = new Logger(DriveStorageService.name);
@@ -161,12 +163,63 @@ export class DriveStorageService {
     }
 
     /**
-     * Descarga un archivo de Google Drive
+     * Transforma una URL remota o un fileId a una URL de descarga directa de Google Drive
+     * o retorna la URL tal cual si pertenece a otro servicio.
+     */
+    obtenerUrlDescargaDirecta(urlOrId: string): string {
+        if (!urlOrId) return urlOrId;
+        if (/^https?:\/\//i.test(urlOrId)) {
+            if (/(drive|docs)\.google\.com/i.test(urlOrId)) {
+                const match = urlOrId.match(/\/d\/([a-zA-Z0-9_-]+)/) || urlOrId.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+                if (match?.[1]) {
+                    return `https://drive.usercontent.google.com/download?id=${match[1]}&export=download`;
+                }
+            }
+            return urlOrId;
+        }
+        // Si es directamente un ID de Drive
+        return `https://drive.usercontent.google.com/download?id=${urlOrId}&export=download`;
+    }
+
+    /**
+     * Descarga un archivo directamente desde su URL pública de referencia vía HTTP sin requerir OAuth2.
+     */
+    async downloadFromUrl(url: string): Promise<Buffer> {
+        try {
+            const downloadUrl = this.obtenerUrlDescargaDirecta(url);
+            const response = await axios.get(downloadUrl, {
+                responseType: 'arraybuffer',
+                maxRedirects: 5,
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+                },
+            });
+            return Buffer.from(response.data);
+        } catch (error: any) {
+            this.logger.error(`Error al descargar archivo desde URL (${url}): ${error?.message}`);
+            throw error;
+        }
+    }
+
+    /**
+     * Descarga un archivo de Google Drive.
+     * Prioriza la descarga directa pública por URL sin credenciales,
+     * y utiliza la API con OAuth2 como contingencia si el archivo no fuese público.
      */
     async downloadFile(fileId: string): Promise<Buffer> {
+        // 1. Intentar descarga directa vía URL sin depender de OAuth2
         try {
+            const directUrl = this.obtenerUrlDescargaDirecta(fileId);
+            return await this.downloadFromUrl(directUrl);
+        } catch (directError: any) {
+            this.logger.warn(`Descarga directa por URL no exitosa para ${fileId} (${directError?.message}), intentando con API autenticada de Drive...`);
+        }
+
+        // 2. Fallback al cliente OAuth2 autenticado
+        try {
+            const cleanId = this.extraerFileId(fileId) || fileId;
             const response = await this.driveClient.files.get(
-                { fileId: fileId, alt: 'media' },
+                { fileId: cleanId, alt: 'media' },
                 { responseType: 'stream' }
             );
 
@@ -180,5 +233,12 @@ export class DriveStorageService {
             this.logger.error(`Error al descargar archivo de Google Drive (ID: ${fileId}): ${error.message}`);
             throw error;
         }
+    }
+
+    private extraerFileId(rutaOrId: string): string | null {
+        if (!rutaOrId) return null;
+        if (!/^https?:\/\//i.test(rutaOrId)) return rutaOrId;
+        const match = rutaOrId.match(/\/d\/([a-zA-Z0-9_-]+)/) || rutaOrId.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+        return match?.[1] || null;
     }
 }

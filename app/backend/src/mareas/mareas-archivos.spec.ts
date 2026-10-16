@@ -147,6 +147,16 @@ describe('MareasService - Archivos/Pasajes', () => {
             expect((mockDrive as any).downloadFile).toHaveBeenCalledWith('ABC_123-x');
         });
 
+        it('descarga directamente usando la URL de referencia remota si no hay driveFileId', async () => {
+            (mockDrive as any).downloadFile.mockResolvedValue(Buffer.from('docx-remoto'));
+            const res = await (service as any).resolverAdjuntoArchivo(
+                { id: 'a1', rutaArchivo: 'https://servidor-externo.inidep.edu.ar/archivos/informe.docx', metadata: {} },
+                marea
+            );
+            expect((mockDrive as any).downloadFile).toHaveBeenCalledWith('https://servidor-externo.inidep.edu.ar/archivos/informe.docx');
+            expect(res.content).toEqual(Buffer.from('docx-remoto'));
+        });
+
         it('adjunta por path si el archivo es local y existe', async () => {
             const tmp = path.join(os.tmpdir(), `sigma-test-${Date.now()}.docx`);
             fs.writeFileSync(tmp, 'x');

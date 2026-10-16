@@ -4233,12 +4233,15 @@ export class MareasService {
         const rutaLocalExistente = rutasLocales.find(r => fs.existsSync(r));
 
         const driveFileId = this.extraerDriveFileId(archivo);
-        if (driveFileId) {
+        const urlRemota = (archivo.rutaArchivo && /^https?:\/\//i.test(archivo.rutaArchivo)) ? archivo.rutaArchivo : null;
+        const targetDescarga = driveFileId || urlRemota;
+
+        if (targetDescarga) {
             try {
-                const content = await this.driveStorageService.downloadFile(driveFileId);
+                const content = await this.driveStorageService.downloadFile(targetDescarga);
                 return { filename, content, contentType };
             } catch (error: any) {
-                this.logger.error(`Error al descargar desde Drive el archivo ${archivo.id} (Drive ID: ${driveFileId}) de la marea ${etiqueta}: ${error?.message}`, error?.stack);
+                this.logger.error(`Error al descargar desde Drive o URL remota el archivo ${archivo.id} (${targetDescarga}) de la marea ${etiqueta}: ${error?.message}`, error?.stack);
                 if (!rutaLocalExistente) {
                     throw new BadRequestException(`No se pudo recuperar el archivo desde Google Drive para la marea ${etiqueta}. Por favor, vuelva a adjuntarlo.`);
                 }

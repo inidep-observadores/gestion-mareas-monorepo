@@ -157,4 +157,40 @@ describe('DriveStorageService', () => {
             }));
         });
     });
+
+    describe('obtenerUrlDescargaDirecta', () => {
+        it('debería transformar un enlace de Google Drive /file/d/ a URL directa de descarga', () => {
+            const url = 'https://drive.google.com/file/d/1O0VmqY0N-btTeS920pJpPXAPjxSdo8q1/view?usp=drivesdk';
+            const res = service.obtenerUrlDescargaDirecta(url);
+            expect(res).toBe('https://drive.usercontent.google.com/download?id=1O0VmqY0N-btTeS920pJpPXAPjxSdo8q1&export=download');
+        });
+
+        it('debería transformar un enlace de docs.google.com a URL directa de descarga', () => {
+            const url = 'https://docs.google.com/document/d/DOC_12345/edit';
+            const res = service.obtenerUrlDescargaDirecta(url);
+            expect(res).toBe('https://drive.usercontent.google.com/download?id=DOC_12345&export=download');
+        });
+
+        it('debería generar URL de descarga para un fileId plano', () => {
+            const res = service.obtenerUrlDescargaDirecta('SIMPLE_ID');
+            expect(res).toBe('https://drive.usercontent.google.com/download?id=SIMPLE_ID&export=download');
+        });
+
+        it('debería devolver la misma URL si es de otro servicio HTTP', () => {
+            const url = 'https://ejemplo.com/archivo.docx';
+            const res = service.obtenerUrlDescargaDirecta(url);
+            expect(res).toBe(url);
+        });
+    });
+
+    describe('downloadFromUrl y downloadFile', () => {
+        it('debería descargar el archivo directamente vía HTTP sin credenciales', async () => {
+            const bufferEsperado = Buffer.from('contenido del docx');
+            jest.spyOn(service, 'downloadFromUrl').mockResolvedValue(bufferEsperado);
+
+            const res = await service.downloadFile('https://drive.google.com/file/d/FILE_ID/view');
+            expect(res).toBe(bufferEsperado);
+            expect(service.downloadFromUrl).toHaveBeenCalledWith('https://drive.usercontent.google.com/download?id=FILE_ID&export=download');
+        });
+    });
 });
