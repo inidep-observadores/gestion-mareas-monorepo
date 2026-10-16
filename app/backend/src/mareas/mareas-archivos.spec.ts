@@ -117,4 +117,74 @@ describe('MareasService - Archivos/Pasajes', () => {
             expect(mockPrisma.mareaArchivo.delete).toHaveBeenCalledWith({ where: { id: 'a1' } });
         });
     });
+
+    describe('resolverAdjuntoArchivo (envío a protocolizar)', () => {
+        const marea = { nroMarea: 12, anioMarea: 2026 };
+        const fs = require('fs');
+        const os = require('os');
+        const path = require('path');
+
+        beforeEach(() => {
+            (mockDrive as any).downloadFile = jest.fn();
+        });
+
+        it('descarga desde Drive usando metadata.driveFileId', async () => {
+            (mockDrive as any).downloadFile.mockResolvedValue(Buffer.from('docx'));
+            const res = await (service as any).resolverAdjuntoArchivo(
+                { id: 'a1', rutaArchivo: 'https://docs.google.com/document/d/XYZ/edit', metadata: { driveFileId: 'META1', originalName: 'inf.docx', mimetype: 'application/x' } },
+                marea
+            );
+            expect((mockDrive as any).downloadFile).toHaveBeenCalledWith('META1');
+            expect(res).toEqual({ filename: 'inf.docx', content: expect.any(Buffer), contentType: 'application/x' });
+        });
+
+        it('extrae el ID de una URL docs.google.com si no hay metadata', async () => {
+            (mockDrive as any).downloadFile.mockResolvedValue(Buffer.from('docx'));
+            await (service as any).resolverAdjuntoArchivo(
+                { id: 'a1', rutaArchivo: 'https://docs.google.com/document/d/ABC_123-x/edit?usp=drivesdk', metadata: {} },
+                marea
+            );
+            expect((mockDrive as any).downloadFile).toHaveBeenCalledWith('ABC_123-x');
+        });
+
+        it('adjunta por path si el archivo es local y existe', async () => {
+            const tmp = path.join(os.tmpdir(), `sigma-test-${Date.now()}.docx`);
+            fs.writeFileSync(tmp, 'x');
+            try {
+                const res = await (service as any).resolverAdjuntoArchivo({ id: 'a1', rutaArchivo: tmp, metadata: null }, marea);
+                expect(res.path).toBe(tmp);
+                expect((mockDrive as any).downloadFile).not.toHaveBeenCalled();
+            } finally {
+                fs.unlinkSync(tmp);
+            }
+        });
+
+        it('usa la copia local como respaldo si falla la descarga de Drive', async () => {
+            const tmp = path.join(os.tmpdir(), `sigma-test-fb-${Date.now()}.docx`);
+            fs.writeFileSync(tmp, 'x');
+            (mockDrive as any).downloadFile.mockRejectedValue(new Error('403'));
+            try {
+                const res = await (service as any).resolverAdjuntoArchivo(
+                    { id: 'a1', rutaArchivo: 'https://drive.google.com/file/d/D1/view', metadata: { driveFileId: 'D1', tempFilePath: tmp } },
+                    marea
+                );
+                expect(res.path).toBe(tmp);
+            } finally {
+                fs.unlinkSync(tmp);
+            }
+        });
+
+        it('lanza BadRequest si falla Drive y no hay copia local', async () => {
+            (mockDrive as any).downloadFile.mockRejectedValue(new Error('404'));
+            await expect((service as any).resolverAdjuntoArchivo(
+                { id: 'a1', rutaArchivo: 'https://drive.google.com/file/d/D1/view', metadata: {} }, marea
+            )).rejects.toThrow(BadRequestException);
+        });
+
+        it('lanza BadRequest si el archivo local no existe', async () => {
+            await expect((service as any).resolverAdjuntoArchivo(
+                { id: 'a1', rutaArchivo: './uploads/no-existe.docx', metadata: {} }, marea
+            )).rejects.toThrow(BadRequestException);
+        });
+    });
 });

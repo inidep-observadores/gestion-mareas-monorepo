@@ -3592,30 +3592,7 @@ export class MareasService {
                         contentType: newFile.mimetype,
                     });
                 } else if (existingFile) {
-                    const isDriveFile = existingFile.rutaArchivo && existingFile.rutaArchivo.includes('drive.google.com/file/d/');
-                    const metadata = existingFile.metadata as any;
-                    const originalName = metadata?.originalName || `INFORME_APROBACION_MAREA_${marea.nroMarea}_${marea.anioMarea}.docx`;
-
-                    if (isDriveFile) {
-                        try {
-                            const driveFileId = await this.getArchivoDriveId(existingFile.id);
-                            const fileBuffer = await this.driveStorageService.downloadFile(driveFileId);
-                            attachmentsConfig.push({
-                                filename: originalName,
-                                content: fileBuffer
-                            });
-                        } catch (error) {
-                            throw new BadRequestException(`No se pudo recuperar el archivo desde Google Drive para la marea ${marea.nroMarea}/${marea.anioMarea}.`);
-                        }
-                    } else {
-                        if (!fs.existsSync(existingFile.rutaArchivo)) {
-                            throw new BadRequestException(`El archivo de protocolización para la marea ${marea.nroMarea}/${marea.anioMarea} no se encuentra físicamente en el servidor (${existingFile.rutaArchivo}). Por favor, vuelva a adjuntarlo.`);
-                        }
-                        attachmentsConfig.push({
-                            filename: originalName,
-                            path: existingFile.rutaArchivo
-                        });
-                    }
+                    attachmentsConfig.push(await this.resolverAdjuntoArchivo(existingFile, marea));
                 }
             }
         }
@@ -4216,16 +4193,65 @@ export class MareasService {
         });
         if (!archivo) throw new NotFoundException('Archivo no encontrado');
         
-        let driveFileId = '';
-        if (archivo.metadata && typeof archivo.metadata === 'object' && 'driveFileId' in archivo.metadata) {
-            driveFileId = archivo.metadata['driveFileId'] as string;
-        } else if (archivo.rutaArchivo && archivo.rutaArchivo.includes('drive.google.com/file/d/')) {
-            const match = archivo.rutaArchivo.match(/\/d\/([a-zA-Z0-9_-]+)/);
-            if (match && match[1]) driveFileId = match[1];
-        }
-
+        const driveFileId = this.extraerDriveFileId(archivo);
         if (!driveFileId) throw new BadRequestException('El archivo no está en Google Drive o no tiene un ID válido');
         return driveFileId;
+    }
+
+    /**
+     * Obtiene el ID de Google Drive de un MareaArchivo.
+     * Prioriza metadata.driveFileId; como respaldo lo extrae de la URL remota
+     * (soporta drive.google.com/file/d/ y docs.google.com/{document|spreadsheets|...}/d/).
+     */
+    private extraerDriveFileId(archivo: { rutaArchivo?: string | null; metadata?: any }): string | null {
+        const metadata = archivo.metadata && typeof archivo.metadata === 'object' ? archivo.metadata : null;
+        if (metadata?.driveFileId) return String(metadata.driveFileId);
+
+        const ruta = archivo.rutaArchivo || '';
+        if (/^https?:\/\//i.test(ruta) && /(drive|docs)\.google\.com/i.test(ruta)) {
+            const match = ruta.match(/\/d\/([a-zA-Z0-9_-]+)/) || ruta.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+            if (match?.[1]) return match[1];
+        }
+        return null;
+    }
+
+    /**
+     * Determina si un archivo está en la nube o en disco local y devuelve
+     * la configuración de adjunto para el email en consecuencia.
+     */
+    private async resolverAdjuntoArchivo(
+        archivo: { id: string; rutaArchivo: string | null; metadata: any },
+        marea: { nroMarea: number; anioMarea: number }
+    ): Promise<{ filename: string; content?: Buffer; path?: string; contentType?: string }> {
+        const metadata = (archivo.metadata && typeof archivo.metadata === 'object') ? archivo.metadata : {};
+        const filename = metadata.originalName || `INFORME_APROBACION_MAREA_${marea.nroMarea}_${marea.anioMarea}.docx`;
+        const contentType = metadata.mimetype || undefined;
+        const etiqueta = `${marea.nroMarea}/${marea.anioMarea}`;
+
+        const rutasLocales = [archivo.rutaArchivo, metadata.tempFilePath]
+            .filter((r): r is string => !!r && !/^https?:\/\//i.test(r));
+        const rutaLocalExistente = rutasLocales.find(r => fs.existsSync(r));
+
+        const driveFileId = this.extraerDriveFileId(archivo);
+        if (driveFileId) {
+            try {
+                const content = await this.driveStorageService.downloadFile(driveFileId);
+                return { filename, content, contentType };
+            } catch (error: any) {
+                this.logger.error(`Error al descargar desde Drive el archivo ${archivo.id} (Drive ID: ${driveFileId}) de la marea ${etiqueta}: ${error?.message}`, error?.stack);
+                if (!rutaLocalExistente) {
+                    throw new BadRequestException(`No se pudo recuperar el archivo desde Google Drive para la marea ${etiqueta}. Por favor, vuelva a adjuntarlo.`);
+                }
+                this.logger.warn(`Se utilizará la copia local ${rutaLocalExistente} como respaldo.`);
+            }
+        }
+
+        if (rutaLocalExistente) {
+            return { filename, path: rutaLocalExistente, contentType };
+        }
+
+        this.logger.warn(`Archivo ${archivo.id} de la marea ${etiqueta} no disponible ni en Drive ni en disco (ruta: ${archivo.rutaArchivo}).`);
+        throw new BadRequestException(`El archivo de protocolización para la marea ${etiqueta} no se encuentra disponible. Por favor, vuelva a adjuntarlo.`);
     }
 }
 
