@@ -5,6 +5,8 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 ## [Unreleased]
 
 ### Added
+- **observadores:** carga y optimización de foto de perfil con procesamiento en backend vía `sharp` (redimensionamiento a 400x400 px, rotación EXIF y compresión JPEG) almacenado en `uploads/observadores/`, previsualización local en cliente con revocación segura de memoria y subida diferida al confirmar el guardado del observador sin generar archivos huérfanos.
+- **buques:** calificación de buques con estrellas (escala 0 a 5, default 3) con filtro bidireccional por puntaje límite, detalle obligatorio de observaciones para calificaciones menores a 3, y campo para indicar buque apto para observadoras mujeres (`habitabilidad_femenina_apta`, default false).
 - **disponibilidad:** predeterminar el filtro de 'Técnico' (`TECNICO`) como desmarcado por defecto en la vista de Disponibilidad de Observadores, mostrando inicialmente solo personal con rol de 'Observador' y habilitando su inclusión mediante la botonera de filtros.
 - **observadores:** incorporar filtros tipo botonera en la Lista de Observadores para filtrar por estado (`INACTIVOS` y `NO DISPONIBLES`, desmarcados por defecto mostrando únicamente personal activo y disponible) y por tipo de contrato (`1109`, `LEY MARCO`, `MONOTRIBUTISTA`, `PLANTA PERMANENTE`, marcados por defecto), incluyendo contador dinámico de registros visibles.
 - **disponibilidad:** excluir eventos de novedad de 'Actualización de cédula' (`ACTUALIZACION_CEDULA`) de la línea de tiempo de disponibilidad, dado que constituyen trámites administrativos de registro documental que no impactan en la disponibilidad operativa para embarque.

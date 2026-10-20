@@ -110,4 +110,39 @@ export class FilesController {
             mimetype: file.mimetype
         };
     }
+
+    @Get('observadores/:imageName')
+    findObservadorImage(
+        @Res() res: Response,
+        @Param('imageName') imageName: string,
+    ) {
+        const path = this.filesService.getObservadorImage(imageName);
+        res.sendFile(path);
+    }
+
+    @Post('observador')
+    @UseInterceptors(FileInterceptor('file', {
+        storage: memoryStorage(),
+        fileFilter: (req, file, cb) => {
+            if (!file.mimetype.startsWith('image/')) {
+                return cb(new BadRequestException('Solo se permiten archivos de imagen (JPG, PNG, WebP)'), false);
+            }
+            cb(null, true);
+        },
+        limits: {
+            fileSize: 10 * 1024 * 1024, // 10MB límite máximo de subida antes de comprimir
+        },
+    }))
+    async uploadObservadorImage(
+        @UploadedFile() file: Express.Multer.File,
+    ) {
+        if (!file) {
+            throw new BadRequestException('Debe proporcionar un archivo de imagen');
+        }
+
+        const fileName = await this.filesService.saveAndResizeObservadorImage(file.buffer);
+        const secureUrl = `/api/files/observadores/${fileName}`;
+
+        return { secureUrl };
+    }
 }
