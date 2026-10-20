@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v0.19.4] - 2026-10-20
+
+### Added
+- **buques:** agregar campo y selector de calificación con estrellas (0 a 5) y valor predeterminado 3
+- **buques:** agregar campo y filtro de habitabilidad femenina apta (`habitabilidadFemeninaApta`)
+- **buques:** implementar filtros en listado de buques por umbral de calificación (mayor/igual o menor/igual) y aptitud femenina
+- **buques:** validación obligatoria de detalle en `observaciones` para buques con calificación menor a 3 estrellas en backend y frontend
+
 ## [v0.19.3] - 2026-10-08
 
 ### Fixed

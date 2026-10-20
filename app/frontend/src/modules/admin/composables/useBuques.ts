@@ -59,6 +59,8 @@ export function useBuques() {
         currentBuque.value = {
             nombreBuque: '',
             matricula: '',
+            calificacion: 3,
+            habitabilidadFemeninaApta: false,
             activo: true
         }
         isModalOpen.value = true
@@ -86,11 +88,12 @@ export function useBuques() {
                 'empresaLocalidad', 'empresaTelefono', 'empresaFax',
                 'empresaCorreoPrincipal', 'empresaCorreoSecundario',
                 'armadorNombre', 'armadorTelefono', 'agenciaMaritimaNombre',
-                'activo', 'fechaAlta', 'fechaBaja', 'observaciones'
+                'activo', 'fechaAlta', 'fechaBaja', 'observaciones',
+                'habitabilidadFemeninaApta', 'calificacion'
             ]
 
             const payload: any = {}
-            const numericFields: (keyof Buque)[] = ['codigoInterno', 'diasMareaEstimada', 'esloraM', 'potenciaHp']
+            const numericFields: (keyof Buque)[] = ['codigoInterno', 'diasMareaEstimada', 'esloraM', 'potenciaHp', 'calificacion']
 
             allowedFields.forEach(field => {
                 let value = data[field]

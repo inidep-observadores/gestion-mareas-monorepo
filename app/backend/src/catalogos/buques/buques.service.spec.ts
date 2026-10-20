@@ -35,12 +35,25 @@ describe('BuquesService', () => {
 
     describe('crear', () => {
         it('debe crear un buque', async () => {
-            const dto = { nombreBuque: 'Test', matricula: 'MAT1' };
+            const dto = { nombreBuque: 'Test', matricula: 'MAT1', calificacion: 3 };
             mockPrismaService.buque.create.mockResolvedValue({ id: 'uuid', ...dto });
 
             const result = await service.crear(dto as any);
             expect(result).toEqual({ id: 'uuid', ...dto });
             expect(prisma.buque.create).toHaveBeenCalledWith({ data: dto });
+        });
+
+        it('debe lanzar BadRequestException si la calificacion es menor a 3 y no tiene observaciones', async () => {
+            const dto = { nombreBuque: 'Test', matricula: 'MAT1', calificacion: 2, observaciones: '' };
+            await expect(service.crear(dto as any)).rejects.toThrow('Para buques con calificación menor a 3 estrellas, es obligatorio ingresar un detalle en Observaciones');
+        });
+
+        it('debe permitir crear un buque con calificacion menor a 3 si tiene observaciones', async () => {
+            const dto = { nombreBuque: 'Test', matricula: 'MAT1', calificacion: 1, observaciones: 'Problemas de habitabilidad' };
+            mockPrismaService.buque.create.mockResolvedValue({ id: 'uuid', ...dto });
+
+            const result = await service.crear(dto as any);
+            expect(result).toEqual({ id: 'uuid', ...dto });
         });
     });
 

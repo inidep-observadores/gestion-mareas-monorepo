@@ -132,7 +132,8 @@ model Buque {
   tipo                      String?
   estadoReg                 String?    @map("estado_reg")
   fechaUltimaActApi         DateTime?  @map("fecha_ultima_actualizacion_api") @db.Timestamptz(6)
-  habitabilidadFemeninaApta Boolean    @default(true) @map("habitabilidad_femenina_apta")
+  habitabilidadFemeninaApta Boolean    @default(false) @map("habitabilidad_femenina_apta")
+  calificacion              Int        @default(3) @map("calificacion")
   arteHabitual              ArtePesca? @relation(fields: [arteHabitualId], references: [id])
   pesqueriaHabitual         Pesqueria? @relation(fields: [pesqueriaHabitualId], references: [id])
   puertoBase                Puerto?    @relation(fields: [puertoBaseId], references: [id])

@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, HttpException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateBuqueDto, UpdateBuqueDto } from './dto';
 
@@ -8,6 +8,7 @@ export class BuquesService {
 
     async crear(createBuqueDto: CreateBuqueDto) {
         try {
+            this.validarCalificacionYObservaciones(createBuqueDto.calificacion, createBuqueDto.observaciones);
             return await this.prisma.buque.create({
                 data: createBuqueDto,
             });
@@ -49,12 +50,25 @@ export class BuquesService {
     async actualizar(id: string, updateBuqueDto: UpdateBuqueDto) {
         try {
             const buque = await this.obtenerUno(id);
+            const calificacionFinal = updateBuqueDto.calificacion !== undefined ? updateBuqueDto.calificacion : buque.calificacion;
+            const observacionesFinales = updateBuqueDto.observaciones !== undefined ? updateBuqueDto.observaciones : buque.observaciones;
+
+            this.validarCalificacionYObservaciones(calificacionFinal, observacionesFinales);
+
             return await this.prisma.buque.update({
                 where: { id: buque.id },
                 data: updateBuqueDto,
             });
         } catch (error) {
             this.handleDBErrors(error);
+        }
+    }
+
+    private validarCalificacionYObservaciones(calificacion?: number | null, observaciones?: string | null) {
+        if (calificacion !== undefined && calificacion !== null && calificacion < 3) {
+            if (!observaciones || observaciones.trim() === '') {
+                throw new BadRequestException('Para buques con calificación menor a 3 estrellas, es obligatorio ingresar un detalle en Observaciones');
+            }
         }
     }
 
@@ -67,6 +81,9 @@ export class BuquesService {
     }
 
     private handleDBErrors(error: any): never {
+        if (error instanceof HttpException) {
+            throw error;
+        }
         if (error.code === 'P2002') {
             throw new BadRequestException('Ya existe un buque con esa matrícula');
         }
