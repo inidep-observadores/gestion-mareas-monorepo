@@ -42,7 +42,7 @@
   "dependencies": {
     "@google/genai": "^2.10.0",
     "@napi-rs/canvas": "^0.1.97",
-    "@nestjs-modules/mailer": "^2.0.2",
+    "@nestjs-modules/mailer": "2.3.4",
     "@nestjs/bull": "^10.2.1",
     "@nestjs/common": "^11.1.10",
     "@nestjs/config": "^4.0.2",
@@ -155,7 +155,8 @@
   },
   "pnpm": {
     "overrides": {
-      "@types/pg": "8.20.0"
+      "@types/pg": "8.20.0",
+      "@types/mjml-core": "5.1.0"
     }
   }
 }

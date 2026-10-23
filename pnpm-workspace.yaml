@@ -27,3 +27,4 @@ onlyBuiltDependencies:
 
 overrides:
   '@types/pg': '8.11.11'
+  '@types/mjml-core': '5.1.0'
