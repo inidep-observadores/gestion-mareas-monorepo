@@ -131,10 +131,10 @@
                         <!-- Datos Principales -->
                         <div class="mb-3">
                           <div class="flex items-center gap-2 mb-1">
-                            <ShipIcon class="w-3.5 h-3.5 text-primary" />
+                            <ObservadorAvatar :foto-url="marea.observador_foto_url" :nombre="marea.observador" size="sm" />
                             <h4 class="text-sm font-black text-text">{{ marea.buque_nombre }}</h4>
                           </div>
-                          <div class="flex flex-col gap-0.5 ml-5">
+                          <div class="flex flex-col gap-0.5 ml-8">
                             <p class="text-[10px] font-black text-text-muted uppercase tracking-tight">
                               {{ marea.pesquerias_nombres.join(' / ') || 'Sin pesquería' }}
                             </p>
@@ -142,7 +142,7 @@
                               {{ marea.flota }}
                             </p>
                           </div>
-                          <p class="text-xs font-bold text-text-muted truncate mt-1 ml-5">{{ marea.observador || 'No asignado' }}
+                          <p class="text-xs font-bold text-text-muted truncate mt-1 ml-8">{{ marea.observador || 'No asignado' }}
                           </p>
                         </div>
 
@@ -317,8 +317,8 @@
                         <td class="px-5 py-1.5">
                           <div class="flex items-center gap-2.5">
                             <div
-                              class="w-7 h-7 rounded-lg bg-surface-muted flex items-center justify-center text-text-muted group-hover:bg-primary/10 group-hover:text-primary transition-colors shrink-0">
-                              <ShipIcon class="w-3.5 h-3.5" />
+                              class="shrink-0">
+                              <ObservadorAvatar :foto-url="marea.observador_foto_url" :nombre="marea.observador" />
                             </div>
                             <div class="flex flex-col min-w-0">
                               <div class="flex items-center gap-2">
@@ -504,6 +504,7 @@ import StatusFilterChip from '../components/StatusFilterChip.vue'
 import { useAuthStore } from '@/modules/auth/stores/auth.store'
 import { useMareas } from '../composables/useMareas'
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
+import ObservadorAvatar from '../components/ObservadorAvatar.vue'
 import mareasService from '../services/mareas.service'
 import { useConfigStore } from '@/modules/shared/stores/config.store'
 import {

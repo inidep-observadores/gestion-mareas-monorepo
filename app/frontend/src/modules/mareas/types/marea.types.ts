@@ -23,6 +23,7 @@ export interface MareaListItem {
     fecha_arribo?: string;
     progreso: number;
     observador?: string;
+    observador_foto_url?: string | null;
     fecha_fin_observador?: string;
     en_tierra?: boolean;
     en_prospeccion?: boolean;

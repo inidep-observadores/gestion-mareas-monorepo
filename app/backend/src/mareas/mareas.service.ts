@@ -634,7 +634,8 @@ export class MareasService {
                                     select: {
                                         id: true,
                                         nombre: true,
-                                        apellido: true
+                                        apellido: true,
+                                        fotoUrl: true
                                     }
                                 }
                             }
@@ -692,6 +693,7 @@ export class MareasService {
                 puerto_arribo: etapaFinal?.puertoArribo?.nombre,
                 fecha_arribo: etapaFinal?.fechaArribo,
                 observador: primaryObs ? `${primaryObs.nombre} ${primaryObs.apellido}` : 'Sin asignar',
+                observador_foto_url: primaryObs?.fotoUrl ?? null,
                 progreso,
                 en_tierra: m.estadoActual.codigo === MareaEstado.EN_EJECUCION && etapaFinal?.fechaArribo !== null,
                 en_prospeccion: (m.estadoActual.codigo === MareaEstado.EN_EJECUCION && etapaFinal?.fechaArribo === null && etapaFinal?.tipoEtapa === 'EP') ||
@@ -1551,12 +1553,12 @@ export class MareasService {
             if (etapa.marea.observadorPrincipal) processObs(etapa.marea.observadorPrincipal);
         });
 
-        const listDescanso: Array<{ id: string; name: string; days: number; lastArrival: string; mareaCode: string; vesselName: string; fishery: string; tipoObservador: string; tipoContrato: string; sexo: string; eventual: boolean; tieneDesignacionActiva: boolean; observaciones?: string }> = [];
-        const listImpedidos: Array<{ id: string; name: string; motivo: string; tipoObservador: string; tipoContrato: string; sexo: string; eventual: boolean; tieneDesignacionActiva: boolean; observaciones?: string }> = [];
-        const listDisponibles: Array<{ id: string; name: string; days: number; lastArrival: string; mareaCode: string; vesselName: string; fishery: string; tipoObservador: string; tipoContrato: string; sexo: string; eventual: boolean; tieneDesignacionActiva: boolean; observaciones?: string }> = [];
-        const listNavegando: Array<{ id: string; name: string; days: number; vessel: string; mareaCode: string; fishery: string; enTierra: boolean; startDate: string; tipoObservador: string; tipoContrato: string, stageCount: number; sexo: string; eventual: boolean; tieneDesignacionActiva: boolean; observaciones?: string; fleetCode?: string; fleetName?: string }> = [];
-        const listDesignados: Array<{ id: string; name: string; mareaCode: string; vesselName: string; fishery: string; fechaZarpadaEstimada: string; tipoObservador: string; tipoContrato: string; sexo: string; eventual: boolean; tieneDesignacionActiva: boolean; observaciones?: string }> = [];
-        const topDryCandidates: Array<{ id: string; name: string; days: number; lastArrival: string; mareaCode: string; vesselName: string; fishery: string; tipoObservador: string; tipoContrato: string; sexo: string; eventual: boolean; tieneDesignacionActiva: boolean; observaciones?: string }> = [];
+        const listDescanso: Array<{ id: string; name: string; fotoUrl?: string; days: number; lastArrival: string; mareaCode: string; vesselName: string; fishery: string; tipoObservador: string; tipoContrato: string; sexo: string; eventual: boolean; tieneDesignacionActiva: boolean; observaciones?: string }> = [];
+        const listImpedidos: Array<{ id: string; name: string; fotoUrl?: string; motivo: string; tipoObservador: string; tipoContrato: string; sexo: string; eventual: boolean; tieneDesignacionActiva: boolean; observaciones?: string }> = [];
+        const listDisponibles: Array<{ id: string; name: string; fotoUrl?: string; days: number; lastArrival: string; mareaCode: string; vesselName: string; fishery: string; tipoObservador: string; tipoContrato: string; sexo: string; eventual: boolean; tieneDesignacionActiva: boolean; observaciones?: string }> = [];
+        const listNavegando: Array<{ id: string; name: string; fotoUrl?: string; days: number; vessel: string; mareaCode: string; fishery: string; enTierra: boolean; startDate: string; tipoObservador: string; tipoContrato: string, stageCount: number; sexo: string; eventual: boolean; tieneDesignacionActiva: boolean; observaciones?: string; fleetCode?: string; fleetName?: string }> = [];
+        const listDesignados: Array<{ id: string; name: string; fotoUrl?: string; mareaCode: string; vesselName: string; fishery: string; fechaZarpadaEstimada: string; tipoObservador: string; tipoContrato: string; sexo: string; eventual: boolean; tieneDesignacionActiva: boolean; observaciones?: string }> = [];
+        const topDryCandidates: Array<{ id: string; name: string; fotoUrl?: string; days: number; lastArrival: string; mareaCode: string; vesselName: string; fishery: string; tipoObservador: string; tipoContrato: string; sexo: string; eventual: boolean; tieneDesignacionActiva: boolean; observaciones?: string }> = [];
 
         observadores.forEach((obs) => {
             if (!obs.activo) return;
@@ -1575,6 +1577,7 @@ export class MareasService {
                 topDryCandidates.push({
                     id: obs.id,
                     name,
+                    fotoUrl: obs.fotoUrl,
                     days: daysSince,
                     lastArrival: lastArrival.toISOString(),
                     mareaCode: lastArrivalData.mareaCode,
@@ -1596,6 +1599,7 @@ export class MareasService {
                     listNavegando.push({
                         id: obs.id,
                         name,
+                        fotoUrl: obs.fotoUrl,
                         vessel: navData?.vessel || 'Desconocido',
                         mareaCode: navData?.mareaCode || '',
                         fishery: navData?.fishery || '',
@@ -1617,6 +1621,7 @@ export class MareasService {
                     listImpedidos.push({
                         id: obs.id,
                         name,
+                        fotoUrl: obs.fotoUrl,
                         motivo: obs.motivoImpedimento || 'Sin motivo especificado',
                         tipoObservador: obs.tipoObservador,
                         tipoContrato: obs.tipoContrato,
@@ -1631,6 +1636,7 @@ export class MareasService {
                     listDesignados.push({
                         id: obs.id,
                         name,
+                        fotoUrl: obs.fotoUrl,
                         mareaCode: desigData?.mareaCode || '',
                         vesselName: desigData?.vesselName || '',
                         fishery: desigData?.fishery || 'Sin Pesquería',
@@ -1647,6 +1653,7 @@ export class MareasService {
                     listDescanso.push({
                         id: obs.id,
                         name,
+                        fotoUrl: obs.fotoUrl,
                         days: daysSince || 0,
                         lastArrival: lastArrival?.toISOString() || '',
                         mareaCode: lastArrivalData?.mareaCode || '',
@@ -1664,6 +1671,7 @@ export class MareasService {
                     listDisponibles.push({
                         id: obs.id,
                         name,
+                        fotoUrl: obs.fotoUrl,
                         days: daysSince || 0, // 0 if never arrived (new observer?)
                         lastArrival: lastArrival?.toISOString() || '',
                         mareaCode: lastArrivalData?.mareaCode || '',

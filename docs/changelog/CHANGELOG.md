@@ -5,6 +5,10 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 ## [Unreleased]
 
 ### Added
+- **ui:** reemplazar ícono genérico de buque por la foto del observador principal en Panel Operativo y Flujo de Trabajo (tabla y móvil), con fallback a iniciales o ícono genérico.
+- **ui:** incorporar avatar con foto del observador en las listas de dotación de personal (`WorkforceOverview`) centrado verticalmente y con tamaño incrementado un 30%.
+- **componentes:** nuevo componente reutilizable `ObservadorAvatar` con carga segura de imagen, fallback dinámico y soporte de tamaños (`sm`, `md`, `lg`, `xl`).
+- **backend:** incluir `observador_foto_url` en listado operativo de mareas (`mareas.service.ts`) y en estado de dotación de personal (`WorkforceStatus`).
 - **observadores:** carga y optimización de foto de perfil con procesamiento en backend vía `sharp` (redimensionamiento a 400x400 px, rotación EXIF y compresión JPEG) almacenado en `uploads/observadores/`, previsualización local en cliente con revocación segura de memoria y subida diferida al confirmar el guardado del observador sin generar archivos huérfanos.
 - **buques:** calificación de buques con estrellas (escala 0 a 5, default 3) con filtro bidireccional por puntaje límite, detalle obligatorio de observaciones para calificaciones menores a 3, y campo para indicar buque apto para observadoras mujeres (`habitabilidad_femenina_apta`, default false).
 - **disponibilidad:** predeterminar el filtro de 'Técnico' (`TECNICO`) como desmarcado por defecto en la vista de Disponibilidad de Observadores, mostrando inicialmente solo personal con rol de 'Observador' y habilitando su inclusión mediante la botonera de filtros.

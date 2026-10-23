@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v0.20.0] - 2026-10-23
+
+### Added
+- **ui:** reemplazar ícono genérico de buque por la foto del observador principal en Panel Operativo y Flujo de Trabajo (tabla y móvil)
+- **ui:** incorporar avatar con foto del observador en las listas de dotación de personal (Workforce Overview) centrada verticalmente
+- **componentes:** nuevo componente reutilizable `ObservadorAvatar` con fallback dinámico a iniciales o ícono genérico y soporte de tamaños estándar y aumentados (`sm`, `md`, `lg`, `xl`)
+- **backend:** incluir `observador_foto_url` en listado operativo de mareas y en estado de dotación de personal (`WorkforceStatus`)
+
 ## [v0.19.4] - 2026-10-20
 
 ### Added

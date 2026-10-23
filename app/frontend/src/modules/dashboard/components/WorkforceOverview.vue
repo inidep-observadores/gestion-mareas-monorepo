@@ -152,53 +152,58 @@
                   ? 'hover:brightness-95 dark:hover:brightness-110' : ''
               ]">
                 <td class="px-6 py-3 text-xs font-bold text-text">
-                  <div class="flex items-center gap-2">
-                    <span
-                      class="hover:text-primary transition-colors cursor-pointer hover:underline decoration-primary/30 underline-offset-2"
-                      @click="$emit('view-timeline', item.id, item.name)">
-                      {{ item.name }}
-                    </span>
-                    
-                    <!-- Botón Editar Inline -->
-                    <button v-if="canManageObservations && editingObsId !== item.id" 
-                      @click="startEditing(item.id, (item as any).observaciones)"
-                      class="opacity-0 group-hover:opacity-100 p-1 hover:bg-primary/10 text-primary rounded transition-all"
-                      title="Editar observaciones">
-                      <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 24 24" fill="none"
-                          stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                      </svg>
-                    </button>
-                  </div>
+                  <div class="flex items-center gap-2.5">
+                    <ObservadorAvatar :foto-url="(item as any).fotoUrl" :nombre="item.name" size="lg" />
+                    <div class="flex flex-col min-w-0 flex-1">
+                      <div class="flex items-center gap-2">
+                        <span
+                          class="hover:text-primary transition-colors cursor-pointer hover:underline decoration-primary/30 underline-offset-2"
+                          @click="$emit('view-timeline', item.id, item.name)">
+                          {{ item.name }}
+                        </span>
+                        
+                        <!-- Botón Editar Inline -->
+                        <button v-if="canManageObservations && editingObsId !== item.id" 
+                          @click="startEditing(item.id, (item as any).observaciones)"
+                          class="opacity-0 group-hover:opacity-100 p-1 hover:bg-primary/10 text-primary rounded transition-all"
+                          title="Editar observaciones">
+                          <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 24 24" fill="none"
+                              stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                          </svg>
+                        </button>
+                      </div>
 
-                  <!-- Modo Edición Inline -->
-                  <div v-if="editingObsId === item.id" class="mt-2 flex flex-col gap-1.5 max-w-[180px]">
-                    <textarea v-model="tempObservaciones"
-                      class="w-full bg-surface border border-primary/30 rounded-lg p-2 text-[9px] font-medium text-text focus:outline-none focus:ring-2 focus:ring-primary/10 min-h-[60px]"
-                      placeholder="Observaciones..."></textarea>
-                    <div class="flex justify-end gap-2">
-                      <button @click="cancelEditing" :disabled="savingInline"
-                        class="text-[8px] font-black uppercase text-text-muted hover:text-text">
-                        X
-                      </button>
-                      <button @click="saveInline" :disabled="savingInline"
-                        class="text-[8px] font-black uppercase text-primary hover:text-primary-hover">
-                        {{ savingInline ? '...' : 'OK' }}
-                      </button>
+                      <!-- Modo Edición Inline -->
+                      <div v-if="editingObsId === item.id" class="mt-2 flex flex-col gap-1.5 max-w-[180px]">
+                        <textarea v-model="tempObservaciones"
+                          class="w-full bg-surface border border-primary/30 rounded-lg p-2 text-[9px] font-medium text-text focus:outline-none focus:ring-2 focus:ring-primary/10 min-h-[60px]"
+                          placeholder="Observaciones..."></textarea>
+                        <div class="flex justify-end gap-2">
+                          <button @click="cancelEditing" :disabled="savingInline"
+                            class="text-[8px] font-black uppercase text-text-muted hover:text-text">
+                            X
+                          </button>
+                          <button @click="saveInline" :disabled="savingInline"
+                            class="text-[8px] font-black uppercase text-primary hover:text-primary-hover">
+                            {{ savingInline ? '...' : 'OK' }}
+                          </button>
+                        </div>
+                      </div>
+
+                      <!-- Modo Vista -->
+                      <template v-else>
+                        <div v-if="canManageObservations && (item as any).observaciones" 
+                          class="mt-1 pl-2 border-l-2 border-primary/20 text-[9px] font-medium text-text-muted italic leading-relaxed">
+                          {{ (item as any).observaciones }}
+                        </div>
+                        <span v-else class="block text-[9px] font-normal text-text-muted/40 uppercase tracking-tighter mt-0.5">
+                          {{ item.tipoObservador }}
+                        </span>
+                      </template>
                     </div>
                   </div>
-
-                  <!-- Modo Vista -->
-                  <template v-else>
-                    <div v-if="canManageObservations && (item as any).observaciones" 
-                      class="mt-1 pl-2 border-l-2 border-primary/20 text-[9px] font-medium text-text-muted italic leading-relaxed">
-                      {{ (item as any).observaciones }}
-                    </div>
-                    <span v-else class="block text-[9px] font-normal text-text-muted/40 uppercase tracking-tighter mt-0.5">
-                      {{ item.tipoObservador }}
-                    </span>
-                  </template>
                 </td>
 
                 <!-- Impedidos Columns -->
@@ -412,35 +417,43 @@
                 ]">
                 <td class="px-8 py-4 text-sm font-bold text-text">
                   <div class="flex items-center gap-3">
-                    <span
-                      class="hover:text-primary transition-colors cursor-pointer hover:underline decoration-primary/30 underline-offset-4"
-                      @click="$emit('view-timeline', item.id, item.name)">
-                      {{ item.name }}
-                    </span>
-                    <button v-if="canManageObservations && editingObsId !== item.id" 
-                      @click="startEditing(item.id, (item as any).observaciones)"
-                      class="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-primary/10 text-primary rounded-lg transition-all">
-                      <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                      </svg>
-                    </button>
-                  </div>
+                    <ObservadorAvatar :foto-url="(item as any).fotoUrl" :nombre="item.name" size="xl" />
+                    <div class="flex flex-col min-w-0 flex-1">
+                      <div class="flex items-center gap-3">
+                        <span
+                          class="hover:text-primary transition-colors cursor-pointer hover:underline decoration-primary/30 underline-offset-4"
+                          @click="$emit('view-timeline', item.id, item.name)">
+                          {{ item.name }}
+                        </span>
+                        <button v-if="canManageObservations && editingObsId !== item.id" 
+                          @click="startEditing(item.id, (item as any).observaciones)"
+                          class="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-primary/10 text-primary rounded-lg transition-all">
+                          <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                          </svg>
+                        </button>
+                      </div>
 
-                  <div v-if="editingObsId === item.id" class="mt-3 flex flex-col gap-2 max-w-sm">
-                    <textarea v-model="tempObservaciones"
-                      class="w-full bg-surface border border-primary/30 rounded-xl p-3 text-xs font-medium text-text focus:outline-none focus:ring-4 focus:ring-primary/5 min-h-[80px]"
-                      placeholder="Escriba observaciones..."></textarea>
-                    <div class="flex justify-end gap-3">
-                      <button @click="cancelEditing" class="text-[10px] font-black uppercase text-text-muted hover:text-text">Cancelar</button>
-                      <button @click="saveInline" class="px-4 py-1.5 bg-primary text-white text-[10px] font-black uppercase rounded-lg">Guardar</button>
+                      <div v-if="editingObsId === item.id" class="mt-3 flex flex-col gap-2 max-w-sm">
+                        <textarea v-model="tempObservaciones"
+                          class="w-full bg-surface border border-primary/30 rounded-xl p-3 text-xs font-medium text-text focus:outline-none focus:ring-4 focus:ring-primary/5 min-h-[80px]"
+                          placeholder="Escriba observaciones..."></textarea>
+                        <div class="flex justify-end gap-3">
+                          <button @click="cancelEditing" class="text-[10px] font-black uppercase text-text-muted hover:text-text">Cancelar</button>
+                          <button @click="saveInline" class="px-4 py-1.5 bg-primary text-white text-[10px] font-black uppercase rounded-lg">Guardar</button>
+                        </div>
+                      </div>
+                      <template v-else>
+                        <div v-if="canManageObservations && (item as any).observaciones" 
+                          class="mt-2 pl-3 border-l-2 border-primary/30 text-[11px] font-medium text-text-muted italic leading-relaxed">
+                          {{ (item as any).observaciones }}
+                        </div>
+                        <span v-else class="block text-[10px] font-normal text-text-muted/40 uppercase tracking-tighter mt-1">
+                          {{ item.tipoObservador }}
+                        </span>
+                      </template>
                     </div>
                   </div>
-                  <template v-else>
-                    <div v-if="canManageObservations && (item as any).observaciones" 
-                      class="mt-2 pl-3 border-l-2 border-primary/30 text-[11px] font-medium text-text-muted italic leading-relaxed">
-                      {{ (item as any).observaciones }}
-                    </div>
-                  </template>
                 </td>
                 
                 <td v-if="selectedStatus === 'Impedidos'" class="px-8 py-4 text-xs font-medium text-text-muted">
@@ -503,6 +516,7 @@ import WorkforceStatusCard from './WorkforceStatusCard.vue'
 import BaseModal from '@/components/common/BaseModal.vue'
 import WorkforceDonutChart from './WorkforceDonutChart.vue'
 import observadoresApi from '@/modules/admin/services/observadores.service'
+import ObservadorAvatar from '@/modules/mareas/components/ObservadorAvatar.vue'
 import statsService from '@/modules/stats/services/stats.service'
 import { toast } from 'vue-sonner';
 import ExportExcelButton from '@/modules/shared/components/ExportExcelButton.vue';
