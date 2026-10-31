@@ -28,3 +28,12 @@ onlyBuiltDependencies:
 overrides:
   '@types/pg': '8.11.11'
   '@types/mjml-core': '5.1.0'
+
+peerDependencyRules:
+  ignoreMissing:
+    - chokidar
+    - express
+  allowAny:
+    - '@nestjs/common'
+    - '@nestjs/core'
+    - apexcharts

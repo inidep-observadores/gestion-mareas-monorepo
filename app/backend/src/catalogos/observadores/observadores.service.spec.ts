@@ -18,6 +18,9 @@ describe('ObservadoresService', () => {
         },
         marea: {
             findMany: jest.fn(),
+        },
+        observadorNovedad: {
+            findMany: jest.fn().mockResolvedValue([]),
         }
     };
 
@@ -266,6 +269,53 @@ describe('ObservadoresService', () => {
             const yearTotal = result.find((t: any) => t.type === 'YEAR_TOTAL' && t.year === 2024);
             expect(yearTotal).toBeDefined();
             expect(yearTotal.totalDays).toBe(0); // No debe haber sumado los 5 días teóricos
+
+            getNowSpy.mockRestore();
+        });
+
+        it('debería incluir novedades de DISPONIBLE y NO_DISPONIBLE intercaladas cronológicamente', async () => {
+            const obsId = 'obs1';
+            const year = 2024;
+            const fixedNow = new Date('2024-06-01T12:00:00Z');
+            const getNowSpy = jest.spyOn(DateUtils, 'getNow').mockReturnValue(fixedNow);
+
+            mockPrisma.marea.findMany.mockResolvedValue([
+                {
+                    id: 'm1',
+                    fechaInicioObservador: new Date('2024-05-01T10:00:00Z'),
+                    fechaZarpadaEstimada: new Date('2024-05-01T10:00:00Z'),
+                    fechaFinObservador: new Date('2024-05-10T10:00:00Z'),
+                    estadoActual: { codigo: 'FINALIZADA', nombre: 'Finalizada' },
+                    buque: { nombreBuque: 'Buque 1' },
+                    etapas: []
+                }
+            ]);
+
+            mockPrisma.observadorNovedad.findMany.mockResolvedValue([
+                {
+                    id: 'nov1',
+                    fechaInicio: new Date('2024-05-20T10:00:00Z'),
+                    fechaFin: null,
+                    fechaCreacion: new Date('2024-05-18T10:00:00Z'),
+                    motivo: 'Disponible para campaña',
+                    permiteUrgencia: true,
+                    estadoAprobacion: 'APROBADA',
+                    origen: 'MANUAL',
+                    metadata: null,
+                    tipoNovedad: { id: 'tn1', codigo: 'DISPONIBLE', descripcion: 'Disponible' },
+                    archivos: [],
+                    movimientos: [],
+                    creadoPor: { id: 'u1', fullName: 'Juan Perez', email: 'juan@inidep.edu.ar' }
+                }
+            ]);
+
+            const result = await service.obtenerHistorial(obsId, year);
+
+            const novedadItem = result.find((item: any) => item.type === 'NOVEDAD');
+            expect(novedadItem).toBeDefined();
+            expect(novedadItem.id).toBe('nov1');
+            expect(novedadItem.codigo).toBe('DISPONIBLE');
+            expect(novedadItem.creadoPor.fullName).toBe('Juan Perez');
 
             getNowSpy.mockRestore();
         });

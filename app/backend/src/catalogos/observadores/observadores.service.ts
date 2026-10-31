@@ -380,20 +380,156 @@ export class ObservadoresService {
             };
         }).filter(Boolean);
 
-        // Construir Timeline con intercalado de tierra y cortes anuales
+        // 2. Buscar novedades aprobadas de disponibilidad y no disponibilidad
+        let novedadDateFilter: any = {};
+        if (!fetchAll) {
+            const startYear = operationalYear - 1;
+            const periodStart = new Date(startYear, 0, 1, 0, 0, 0, 0);
+            const periodEnd = new Date(operationalYear, 11, 31, 23, 59, 59, 999);
+            novedadDateFilter = {
+                OR: [
+                    {
+                        fechaInicio: { lte: periodEnd },
+                        OR: [
+                            { fechaFin: { gte: periodStart } },
+                            { fechaFin: null }
+                        ]
+                    },
+                    {
+                        fechaCreacion: { gte: periodStart, lte: periodEnd }
+                    }
+                ]
+            };
+        }
+
+        const novedadesRaw = await this.prisma.observadorNovedad.findMany({
+            where: {
+                observadorId: id,
+                activo: true,
+                estadoAprobacion: 'APROBADA',
+                tipoNovedad: {
+                    codigo: { in: ['DISPONIBLE', 'NO_DISPONIBLE'] }
+                },
+                ...novedadDateFilter
+            },
+            include: {
+                tipoNovedad: true,
+                archivos: true,
+                movimientos: {
+                    include: {
+                        usuario: { select: { id: true, email: true, fullName: true } }
+                    },
+                    orderBy: { fechaHora: 'desc' }
+                },
+                creadoPor: {
+                    select: { id: true, email: true, fullName: true }
+                }
+            },
+            orderBy: { fechaInicio: 'desc' }
+        });
+
+        const novedades = novedadesRaw.map(n => {
+            const start = n.fechaInicio ? new Date(n.fechaInicio) : new Date(n.fechaCreacion);
+            return {
+                id: n.id,
+                type: 'NOVEDAD',
+                codigo: n.tipoNovedad.codigo,
+                tipoNovedad: {
+                    id: n.tipoNovedad.id,
+                    codigo: n.tipoNovedad.codigo,
+                    descripcion: n.tipoNovedad.descripcion
+                },
+                fechaRegistro: n.fechaCreacion,
+                fechaCreacion: n.fechaCreacion,
+                fechaInicio: n.fechaInicio,
+                fechaFin: n.fechaFin,
+                motivo: n.motivo,
+                permiteUrgencia: n.permiteUrgencia,
+                estadoAprobacion: n.estadoAprobacion,
+                origen: n.origen,
+                metadata: n.metadata,
+                archivos: n.archivos || [],
+                movimientos: n.movimientos || [],
+                creadoPor: n.creadoPor ? {
+                    id: n.creadoPor.id,
+                    fullName: n.creadoPor.fullName,
+                    email: n.creadoPor.email
+                } : null,
+                start,
+                orderDate: start.getTime(),
+                year: start.getFullYear()
+            };
+        });
+
+        // Construir Timeline con intercalado de tierra, novedades y cortes anuales
         const sortedTrips = trips.sort((a: any, b: any) => b.start.getTime() - a.start.getTime());
-        
+        const sortedNovedades = novedades.sort((a: any, b: any) => b.start.getTime() - a.start.getTime());
+        const refDate = (fetchAll || operationalYear === currentYear) ? now : new Date(operationalYear, 11, 31, 23, 59, 59, 999);
+
+        // Calcular para cada novedad los días hasta la marea inmediata posterior (más reciente en el tiempo) o hasta hoy
+        sortedNovedades.forEach((nov: any) => {
+            const novTime = nov.start.getTime();
+            // Buscar la marea que zarpó inmediatamente después de esta novedad (es decir, con start > novTime)
+            // sortedTrips está en orden descendente; la zarpada posterior más cercana es la que tiene start >= novTime con menor start
+            const tripsAfterNov = sortedTrips.filter((t: any) => t.start.getTime() >= novTime);
+            const nextTrip = tripsAfterNov.length > 0 ? tripsAfterNov[tripsAfterNov.length - 1] : null;
+
+            if (nov.codigo === 'DISPONIBLE') {
+                if (nextTrip) {
+                    const days = DateUtils.calculateInclusiveDays(nov.start, nextTrip.start) - 1;
+                    nov.diasHastaSiguienteMarea = Math.max(0, days);
+                    nov.tieneMareaPosterior = true;
+                } else {
+                    const days = DateUtils.calculateInclusiveDays(nov.start, refDate);
+                    nov.diasHastaSiguienteMarea = Math.max(0, days);
+                    nov.tieneMareaPosterior = false;
+                }
+            } else if (nov.codigo === 'NO_DISPONIBLE') {
+                if (nov.fechaInicio && nov.fechaFin) {
+                    nov.diasNoDisponible = DateUtils.calculateInclusiveDays(nov.fechaInicio, nov.fechaFin);
+                }
+            }
+        });
+
         let years: number[] = [];
         if (fetchAll) {
-            const tripYears = new Set(sortedTrips.map((t: any) => t.end.getFullYear()));
-            tripYears.add(currentYear); // Asegurarse de tener el año actual para mostrar el tiempo en tierra
-            years = Array.from(tripYears).sort((a: any, b: any) => b - a);
+            const allYears = new Set<number>();
+            sortedTrips.forEach((t: any) => allYears.add(t.end.getFullYear()));
+            sortedNovedades.forEach((n: any) => allYears.add(n.year));
+            allYears.add(currentYear); // Asegurarse de tener el año actual para mostrar el tiempo en tierra
+            years = Array.from(allYears).sort((a, b) => b - a);
         } else {
             years = [operationalYear, operationalYear - 1].sort((a, b) => b - a);
         }
 
         let tripIdx = 0;
-        const refDate = (fetchAll || operationalYear === currentYear) ? now : new Date(operationalYear, 11, 31, 23, 59, 59, 999);
+
+        // Helper para evaluar disponibilidad en un intervalo de descanso en tierra [desde, hasta]
+        const evaluarDisponibilidadEnTierra = (desde: Date, hasta: Date, mareaSiguienteStart: Date | null) => {
+            const desdeTime = desde.getTime();
+            const hastaTime = hasta.getTime();
+
+            // Buscar si hubo alguna novedad DISPONIBLE en el rango [desde, hasta]
+            const dispEnRango = sortedNovedades.find((n: any) => 
+                n.codigo === 'DISPONIBLE' && 
+                n.start.getTime() >= desdeTime && 
+                n.start.getTime() <= hastaTime
+            );
+
+            if (dispEnRango) {
+                const limiteFin = mareaSiguienteStart || hasta;
+                const diasDisp = DateUtils.calculateInclusiveDays(dispEnRango.start, limiteFin) - (mareaSiguienteStart ? 1 : 0);
+                return {
+                    diasDisponible: Math.max(0, diasDisp),
+                    sinAvisoDisponibilidad: false
+                };
+            }
+
+            return {
+                diasDisponible: null,
+                sinAvisoDisponibilidad: true
+            };
+        };
 
         for (const y of years) {
             // 1. Agregar el total del año
@@ -403,50 +539,82 @@ export class ObservadoresService {
                 totalDays: this.calculateYearTotal(trips, y)
             });
 
+            // Novedades para este año
+            const novedadesYear = sortedNovedades.filter((n: any) => n.year === y);
+            let novIdx = 0;
+
             // 2. Tierra actual (solo en el año operacional actual o si traemos todo y es el primer año)
             if ((fetchAll && y === currentYear && tripIdx === 0) || (!fetchAll && y === operationalYear && tripIdx === 0)) {
                 const firstTrip = sortedTrips[0];
+
+                // Insertar novedades que ocurrieron después del inicio del primer viaje (o si no hay viajes)
+                while (novIdx < novedadesYear.length && (!firstTrip || novedadesYear[novIdx].start.getTime() >= firstTrip.start.getTime())) {
+                    timeline.push(novedadesYear[novIdx++]);
+                }
+
                 if (firstTrip && !firstTrip.isNavegando) {
                     const diffTierraActual = DateUtils.calculateInclusiveDays(firstTrip.end, refDate) - 1;
                     if (diffTierraActual > 0) {
+                        const evalDisp = evaluarDisponibilidadEnTierra(firstTrip.end, refDate, null);
                         timeline.push({
                             type: 'LAND',
                             days: diffTierraActual,
                             start: firstTrip.end,
                             end: refDate,
-                            isCurrent: true
+                            isCurrent: true,
+                            diasDisponible: evalDisp.diasDisponible,
+                            sinAvisoDisponibilidad: evalDisp.sinAvisoDisponibilidad
                         });
                     }
                 }
             }
 
-            // 3. Agregar viajes que pertenecen a este año (terminan en y)
+            // 3. Agregar viajes que pertenecen a este año (terminan en y) intercalados con novedades y tierra
             while (tripIdx < sortedTrips.length) {
                 const trip = sortedTrips[tripIdx];
                 const displayYear = trip.end.getFullYear();
 
                 if (displayYear < y) break; // Pertenece a un bloque anual posterior (más viejo)
 
+                // Novedades antes de este viaje (más recientes que trip.start) que aún no se hayan insertado
+                while (novIdx < novedadesYear.length && novedadesYear[novIdx].start.getTime() >= trip.start.getTime()) {
+                    timeline.push(novedadesYear[novIdx++]);
+                }
+
                 timeline.push({
                     type: 'TRIP',
                     ...trip
                 });
 
+                const nextTrip = tripIdx + 1 < sortedTrips.length ? sortedTrips[tripIdx + 1] : null;
+
+                // Novedades que caen entre este viaje y el siguiente (o en adelante)
+                while (novIdx < novedadesYear.length && (!nextTrip || novedadesYear[novIdx].start.getTime() >= nextTrip.start.getTime())) {
+                    timeline.push(novedadesYear[novIdx++]);
+                }
+
                 // Intercalado de tierra con el siguiente viaje (de cara al pasado)
-                if (tripIdx + 1 < sortedTrips.length) {
-                    const nextTrip = sortedTrips[tripIdx + 1];
+                if (nextTrip) {
                     const diffTierra = DateUtils.calculateInclusiveDays(nextTrip.end, trip.start) - 2;
                     if (diffTierra > 0) {
+                        const evalDisp = evaluarDisponibilidadEnTierra(nextTrip.end, trip.start, trip.start);
                         timeline.push({
                             type: 'LAND',
                             days: diffTierra,
                             start: nextTrip.end,
-                            end: trip.start
+                            end: trip.start,
+                            diasDisponible: evalDisp.diasDisponible,
+                            sinAvisoDisponibilidad: evalDisp.sinAvisoDisponibilidad
                         });
                     }
                 }
 
                 tripIdx++;
+            }
+
+            // Si quedan novedades de este año posteriores a todos los viajes del año, agregarlas
+            while (novIdx < novedadesYear.length) {
+                timeline.push(novedadesYear[novIdx++]);
             }
         }
 
