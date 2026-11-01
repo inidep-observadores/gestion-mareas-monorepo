@@ -303,14 +303,17 @@
                     <!-- Indicador de Planificación en Simulador -->
                     <div v-if="selectedStatus === 'Disponibles' && (item as any).planificacionFutura"
                       class="mt-1 flex items-start gap-1.5 px-2 py-1 rounded-lg bg-sky-500/10 border border-sky-500/20 text-sky-700 dark:text-sky-300 text-[8px] font-bold"
-                      :title="`Planificado en escenario ${(item as any).planificacionFutura.escenarioNombre}`">
+                      :title="`Planificado en escenario ${(item as any).planificacionFutura.escenarioNombre}${(item as any).planificacionFutura.observaciones ? ' • Observaciones: ' + (item as any).planificacionFutura.observaciones : ''}`">
                       <span class="w-1.5 h-1.5 rounded-full bg-sky-500 shrink-0 mt-0.5 animate-pulse"></span>
                       <div class="flex flex-col min-w-0 leading-tight">
                         <span class="truncate">
                           Planificado: {{ (item as any).planificacionFutura.escenarioNombre }}
                         </span>
                         <span class="text-[7.5px] font-medium opacity-90 truncate">
-                          {{ (item as any).planificacionFutura.buqueNombre }} • {{ formatDate((item as any).planificacionFutura.fechaZarpada) }}
+                          {{ (item as any).planificacionFutura.buqueNombre || 'Sin buque' }} • {{ formatDate((item as any).planificacionFutura.fechaZarpada) }}
+                        </span>
+                        <span v-if="(item as any).planificacionFutura.observaciones" class="text-[7px] italic font-normal opacity-85 truncate" :title="(item as any).planificacionFutura.observaciones">
+                          {{ formatObservaciones((item as any).planificacionFutura.observaciones) }}
                         </span>
                       </div>
                     </div>
@@ -576,14 +579,17 @@
                     <!-- Indicador de Planificación en Simulador (Modal) -->
                     <div v-if="selectedStatus === 'Disponibles' && (item as any).planificacionFutura"
                       class="mt-1 flex items-start gap-2 px-2.5 py-1.5 rounded-lg bg-sky-500/10 border border-sky-500/20 text-sky-700 dark:text-sky-300 text-[10px] font-bold"
-                      :title="`Planificado en escenario ${(item as any).planificacionFutura.escenarioNombre}`">
+                      :title="`Planificado en escenario ${(item as any).planificacionFutura.escenarioNombre}${(item as any).planificacionFutura.observaciones ? ' • Observaciones: ' + (item as any).planificacionFutura.observaciones : ''}`">
                       <span class="w-2 h-2 rounded-full bg-sky-500 shrink-0 mt-0.5 animate-pulse"></span>
                       <div class="flex flex-col min-w-0 leading-snug">
                         <span class="truncate">
                           Planificado: {{ (item as any).planificacionFutura.escenarioNombre }}
                         </span>
                         <span class="text-[9px] font-medium opacity-90 truncate">
-                          {{ (item as any).planificacionFutura.buqueNombre }} • {{ formatDate((item as any).planificacionFutura.fechaZarpada) }}
+                          {{ (item as any).planificacionFutura.buqueNombre || 'Sin buque' }} • {{ formatDate((item as any).planificacionFutura.fechaZarpada) }}
+                        </span>
+                        <span v-if="(item as any).planificacionFutura.observaciones" class="text-[8.5px] italic font-normal opacity-85 truncate" :title="(item as any).planificacionFutura.observaciones">
+                          {{ formatObservaciones((item as any).planificacionFutura.observaciones) }}
                         </span>
                       </div>
                     </div>
@@ -892,6 +898,15 @@ type DistributionItem = {
 }
 
 const formatDate = (dateString: string) => formatDateUI(dateString)
+
+const formatObservaciones = (obs?: string | null) => {
+  if (!obs) return '';
+  const trimmed = obs.trim();
+  if (trimmed.length > 30) {
+    return trimmed.slice(0, 30) + '...';
+  }
+  return trimmed;
+}
 
 const getFilteredList = (list: any[]) => {
   if (!list) return [];

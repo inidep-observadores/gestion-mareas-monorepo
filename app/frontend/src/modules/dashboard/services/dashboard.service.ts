@@ -80,6 +80,7 @@ export interface WorkforceStatus {
             escenarioNombre: string;
             buqueNombre: string;
             fechaZarpada: string;
+            observaciones?: string | null;
         } | null;
         observaciones?: string;
     }>

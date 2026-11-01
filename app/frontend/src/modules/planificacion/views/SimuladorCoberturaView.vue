@@ -580,8 +580,8 @@
             </div>
           </div>
           <div class="space-y-1.5 pt-2">
-            <label class="block text-xs font-bold text-text-muted">Comentario</label>
-            <textarea v-model="editingBlockData.comentario" rows="2" placeholder="Comentario opcional..." class="w-full px-4 py-2 bg-surface border rounded-lg text-sm text-text outline-none focus:border-primary focus:ring-3 focus:ring-primary/10 transition-all shadow-theme-xs resize-none"></textarea>
+            <label class="block text-xs font-bold text-text-muted">Observaciones</label>
+            <textarea v-model="editingBlockData.comentario" rows="2" placeholder="Observaciones / motivo (obligatorio si no especifica buque u observador)..." class="w-full px-4 py-2 bg-surface border rounded-lg text-sm text-text outline-none focus:border-primary focus:ring-3 focus:ring-primary/10 transition-all shadow-theme-xs resize-none"></textarea>
           </div>
         </div>
         
@@ -654,8 +654,8 @@
             </div>
           </div>
           <div class="space-y-1.5 pt-2">
-            <label class="block text-xs font-bold text-text-muted">Comentario</label>
-            <textarea v-model="newBlockData.comentario" rows="2" placeholder="Comentario opcional..." class="w-full px-4 py-2 bg-surface border rounded-lg text-sm text-text outline-none focus:border-primary focus:ring-3 focus:ring-primary/10 transition-all shadow-theme-xs resize-none"></textarea>
+            <label class="block text-xs font-bold text-text-muted">Observaciones</label>
+            <textarea v-model="newBlockData.comentario" rows="2" placeholder="Observaciones / motivo (obligatorio si no especifica buque u observador)..." class="w-full px-4 py-2 bg-surface border rounded-lg text-sm text-text outline-none focus:border-primary focus:ring-3 focus:ring-primary/10 transition-all shadow-theme-xs resize-none"></textarea>
           </div>
         </div>
         
@@ -753,6 +753,16 @@
       cancelText="Cancelar"
       @confirm="confirmarSinObservador"
       @close="cancelarSinObservador"
+    />
+
+    <ConfirmationDialog
+      :show="showConfirmNoVessel"
+      title="Planificar sin buque"
+      message="¿Seguro que desea reservar este observador sin asignarle un buque? Se mostrará en el sistema como 'Sin buque'."
+      confirmText="Sí, planificar"
+      cancelText="Cancelar"
+      @confirm="confirmarSinBuque"
+      @close="cancelarSinBuque"
     />
 
     <!-- Modal de Bloqueo Pesimista -->
@@ -1066,6 +1076,22 @@ const cancelarSinObservador = () => {
   showConfirmNoObserver.value = false;
 };
 
+const showConfirmNoVessel = ref(false);
+let pendingNoVesselAction: (() => void) | null = null;
+
+const confirmarSinBuque = () => {
+  if (pendingNoVesselAction) {
+    pendingNoVesselAction();
+    pendingNoVesselAction = null;
+  }
+  showConfirmNoVessel.value = false;
+};
+
+const cancelarSinBuque = () => {
+  pendingNoVesselAction = null;
+  showConfirmNoVessel.value = false;
+};
+
 const showConfirmDeleteScenario = ref(false);
 const pendingEscenarioId = ref('');
 
@@ -1360,8 +1386,18 @@ const cerrarModalCrearBloque = () => {
 const guardarCreacionBloque = () => {
   if (!newBlockData.value) return;
   
-  if (!newBlockData.value.buqueId) {
-    toast.error('Debe seleccionar un buque');
+  if (!newBlockData.value.buqueId && !newBlockData.value.observadorId) {
+    toast.error('Debe seleccionar al menos un buque o un observador');
+    return;
+  }
+
+  if (!newBlockData.value.buqueId && !newBlockData.value.comentario?.trim()) {
+    toast.error('Debe ingresar una observación al planificar sin buque asignado');
+    return;
+  }
+
+  if (!newBlockData.value.observadorId && !newBlockData.value.comentario?.trim()) {
+    toast.error('Debe ingresar una observación al planificar sin observador asignado');
     return;
   }
 
@@ -1376,6 +1412,10 @@ const guardarCreacionBloque = () => {
       if (!buquesAdicionales.value.includes(buque.id)) {
         buquesAdicionales.value.push(buque.id);
       }
+    } else {
+      newBlockData.value!.buqueNombre = undefined;
+      newBlockData.value!.pesqueriaId = '';
+      newBlockData.value!.pesqueriaNombre = '';
     }
 
     if (newBlockData.value!.observadorId) {
@@ -1387,6 +1427,7 @@ const guardarCreacionBloque = () => {
       newBlockData.value!.observadorNombre = undefined;
     }
 
+    newBlockData.value!.observaciones = newBlockData.value!.comentario;
     const fechaZarpada = new Date(newBlockData.value!.fechaZarpada);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -1408,7 +1449,10 @@ const guardarCreacionBloque = () => {
     cerrarModalCrearBloque();
   };
 
-  if (!newBlockData.value.observadorId) {
+  if (!newBlockData.value.buqueId) {
+    pendingNoVesselAction = processSave;
+    showConfirmNoVessel.value = true;
+  } else if (!newBlockData.value.observadorId) {
     pendingNoObserverAction = processSave;
     showConfirmNoObserver.value = true;
   } else {
@@ -1554,27 +1598,51 @@ const cerrarModalEditarBloque = () => {
 const guardarEdicionBloque = () => {
   if (!editingBlockData.value) return;
   const idx = escenarioActual.value!.items.findIndex(i => i.id === editingBlockData.value?.id);
-  if (idx !== -1) {
+  if (idx === -1) {
+    cerrarModalEditarBloque();
+    return;
+  }
+
+  if (!editingBlockData.value.buqueId && !editingBlockData.value.observadorId) {
+    toast.error('Debe seleccionar al menos un buque o un observador');
+    return;
+  }
+
+  if (!editingBlockData.value.buqueId && !editingBlockData.value.comentario?.trim()) {
+    toast.error('Debe ingresar una observación al planificar sin buque asignado');
+    return;
+  }
+
+  if (!editingBlockData.value.observadorId && !editingBlockData.value.comentario?.trim()) {
+    toast.error('Debe ingresar una observación al planificar sin observador asignado');
+    return;
+  }
+
+  const processSaveEdit = () => {
     const buque = buques.value.find(b => b.id === editingBlockData.value?.buqueId);
     
     if (buque) {
-      editingBlockData.value.buqueNombre = buque.nombreBuque;
-      editingBlockData.value.pesqueriaId = buque.pesqueriaHabitualId;
-      editingBlockData.value.pesqueriaNombre = buque.pesqueriaHabitual?.nombre || '';
+      editingBlockData.value!.buqueNombre = buque.nombreBuque;
+      editingBlockData.value!.pesqueriaId = buque.pesqueriaHabitualId;
+      editingBlockData.value!.pesqueriaNombre = buque.pesqueriaHabitual?.nombre || '';
+    } else {
+      editingBlockData.value!.buqueNombre = undefined;
+      editingBlockData.value!.pesqueriaId = '';
+      editingBlockData.value!.pesqueriaNombre = '';
     }
 
-    if (editingBlockData.value.observadorId) {
+    if (editingBlockData.value!.observadorId) {
       const obsData = datosSimulacion.value?.observadores.find(o => o.observador.id === editingBlockData.value!.observadorId)?.observador;
       if (obsData) {
-        editingBlockData.value.observadorNombre = `${obsData.apellido}, ${obsData.nombre}`;
+        editingBlockData.value!.observadorNombre = `${obsData.apellido}, ${obsData.nombre}`;
       }
     } else {
-      editingBlockData.value.observadorNombre = undefined;
+      editingBlockData.value!.observadorNombre = undefined;
     }
     
     // Recalcular la fecha de arribo basada en los nuevos días estimados
-    const fechaZarpada = new Date(editingBlockData.value.fechaZarpada);
-    const fechaArribo = new Date(fechaZarpada.getTime() + (editingBlockData.value.diasEstimados * 24 * 60 * 60 * 1000));
+    const fechaZarpada = new Date(editingBlockData.value!.fechaZarpada);
+    const fechaArribo = new Date(fechaZarpada.getTime() + (editingBlockData.value!.diasEstimados * 24 * 60 * 60 * 1000));
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -1583,16 +1651,28 @@ const guardarEdicionBloque = () => {
       return;
     }
 
-    editingBlockData.value.fechaArribo = fechaArribo;
+    editingBlockData.value!.fechaArribo = fechaArribo;
 
+    editingBlockData.value!.observaciones = editingBlockData.value!.comentario;
     takeSnapshot(escenarioActual.value!.items, recursosPendientes.value);
-    escenarioActual.value!.items[idx] = { ...editingBlockData.value };
+    escenarioActual.value!.items[idx] = { ...editingBlockData.value! };
     hasUnsavedChanges.value = true;
     guardarEscenario();
 
     toast.success('Marea simulada actualizada');
+    cerrarModalEditarBloque();
+  };
+
+  const itemAnterior = escenarioActual.value!.items[idx];
+  if (!editingBlockData.value.buqueId && itemAnterior.buqueId) {
+    pendingNoVesselAction = processSaveEdit;
+    showConfirmNoVessel.value = true;
+  } else if (!editingBlockData.value.observadorId && itemAnterior.observadorId) {
+    pendingNoObserverAction = processSaveEdit;
+    showConfirmNoObserver.value = true;
+  } else {
+    processSaveEdit();
   }
-  cerrarModalEditarBloque();
 };
 
 const devolverRecursoPendiente = () => {
@@ -1868,7 +1948,7 @@ const timelineObservadorItems = computed(() => {
   (escenarioActual.value?.items || []).forEach(sim => {
     const duracionSim = Math.round((new Date(sim.fechaArribo).getTime() - new Date(sim.fechaZarpada).getTime()) / 86400000);
     const finInclusivo = new Date(new Date(sim.fechaArribo).getTime() - 86400000);
-    const label = sim.buqueNombre || sim.pesqueriaNombre;
+    const label = sim.buqueNombre || 'Sin buque';
     const conflictosDelBloque = conflictosDetectados.value.filter((c: any) => c.simId === sim.id);
     const conflicto = conflictosDelBloque.length > 0;
     
@@ -2214,7 +2294,10 @@ const handleDropRecurso = (payload: { recurso: any; group: string; date: Date })
     toast.success('Marea simulada asignada');
   };
 
-  if (!obsId) {
+  if (!bId) {
+    pendingNoVesselAction = processDrop;
+    showConfirmNoVessel.value = true;
+  } else if (!obsId) {
     pendingNoObserverAction = processDrop;
     showConfirmNoObserver.value = true;
   } else {
@@ -2229,7 +2312,7 @@ const crearObservadorSelectRef = ref<any>(null);
 const handleEditItem = (id: string) => {
   const sim = (escenarioActual.value?.items || []).find(i => i.id === id);
   if (sim) {
-    editingBlockData.value = { ...sim };
+    editingBlockData.value = { ...sim, comentario: sim.comentario || sim.observaciones || '' };
     isEditBlockModalOpen.value = true;
     setTimeout(() => {
       editBuqueSelectRef.value?.focus();

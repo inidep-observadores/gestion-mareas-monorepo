@@ -173,36 +173,41 @@ describe('MareasService - getWorkforceStatus', () => {
         mockPrismaService.marea.findMany.mockResolvedValue([]);
 
         // Novedad de disponibilidad para obs-1 y obs-3, y licencia con urgencia para obs-4
-        mockPrismaService.observadorNovedad.findMany.mockResolvedValue([
-            {
-                id: 'nov-1',
-                observadorId: 'obs-1',
-                fechaInicio: new Date('2026-10-15T00:00:00Z'),
-                fechaFin: null,
-                activo: true,
-                estadoAprobacion: 'APROBADA',
-                tipoNovedad: { codigo: 'DISPONIBLE', descripcion: 'Disponible para embarque' }
-            },
-            {
-                id: 'nov-3',
-                observadorId: 'obs-3',
-                fechaInicio: new Date('2026-10-20T00:00:00Z'),
-                fechaFin: null,
-                activo: true,
-                estadoAprobacion: 'APROBADA',
-                tipoNovedad: { codigo: 'DISPONIBLE', descripcion: 'Disponible para embarque' }
-            },
-            {
-                id: 'nov-4',
-                observadorId: 'obs-4',
-                fechaInicio: new Date('2026-10-19T00:00:00Z'),
-                fechaFin: new Date('2026-11-02T00:00:00Z'),
-                permiteUrgencia: true,
-                activo: true,
-                estadoAprobacion: 'APROBADA',
-                tipoNovedad: { codigo: 'LICENCIA_VACACIONES', descripcion: 'Licencia / Vacaciones', afectaPresentismo: true }
+        mockPrismaService.observadorNovedad.findMany.mockImplementation((args: any) => {
+            if (args?.where?.fechaInicio?.gt) {
+                return Promise.resolve([]);
             }
-        ]);
+            return Promise.resolve([
+                {
+                    id: 'nov-1',
+                    observadorId: 'obs-1',
+                    fechaInicio: new Date('2026-10-15T00:00:00Z'),
+                    fechaFin: null,
+                    activo: true,
+                    estadoAprobacion: 'APROBADA',
+                    tipoNovedad: { codigo: 'DISPONIBLE', descripcion: 'Disponible para embarque' }
+                },
+                {
+                    id: 'nov-3',
+                    observadorId: 'obs-3',
+                    fechaInicio: new Date('2026-10-20T00:00:00Z'),
+                    fechaFin: null,
+                    activo: true,
+                    estadoAprobacion: 'APROBADA',
+                    tipoNovedad: { codigo: 'DISPONIBLE', descripcion: 'Disponible para embarque' }
+                },
+                {
+                    id: 'nov-4',
+                    observadorId: 'obs-4',
+                    fechaInicio: new Date('2026-10-19T00:00:00Z'),
+                    fechaFin: new Date('2026-11-02T00:00:00Z'),
+                    permiteUrgencia: true,
+                    activo: true,
+                    estadoAprobacion: 'APROBADA',
+                    tipoNovedad: { codigo: 'LICENCIA_VACACIONES', descripcion: 'Licencia / Vacaciones', afectaPresentismo: true }
+                }
+            ]);
+        });
 
         // Escenario de simulación con obs-3 asignado en dos mareas (una el 10/11 y otra el 05/11)
         mockPrismaService.escenarioSimulacion.findMany.mockResolvedValue([
@@ -227,6 +232,12 @@ describe('MareasService - getWorkforceStatus', () => {
                         observadorId: 'obs-3',
                         buqueNombre: 'BUQUE PROXIMO',
                         fechaZarpada: '2026-11-05T00:00:00.000Z'
+                    },
+                    {
+                        tipoBloque: 'MAREA_SIMULADA',
+                        observadorId: 'obs-4',
+                        fechaZarpada: '2026-11-08T00:00:00.000Z',
+                        comentario: 'Reserva para zafra de langostino'
                     }
                 ]
             }
@@ -250,13 +261,21 @@ describe('MareasService - getWorkforceStatus', () => {
             escenarioId: 'esc-2',
             escenarioNombre: 'Escenario B',
             buqueNombre: 'BUQUE PROXIMO',
-            fechaZarpada: new Date('2026-11-05T00:00:00.000Z').toISOString()
+            fechaZarpada: new Date('2026-11-05T00:00:00.000Z').toISOString(),
+            observaciones: null
         });
 
         const item4 = result.listDisponibles.find(o => o.id === 'obs-4');
         expect(item4?.disponibilidadConfirmada).toBe(true);
         expect(item4?.esFlexible).toBe(true);
         expect(item4?.motivoFlexibilidad).toBe('Licencia / Vacaciones');
+        expect(item4?.planificacionFutura).toEqual({
+            escenarioId: 'esc-2',
+            escenarioNombre: 'Escenario B',
+            buqueNombre: 'Sin buque',
+            fechaZarpada: new Date('2026-11-08T00:00:00.000Z').toISOString(),
+            observaciones: 'Reserva para zafra de langostino'
+        });
 
         jest.useRealTimers();
     });

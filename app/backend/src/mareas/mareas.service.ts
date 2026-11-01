@@ -1550,6 +1550,7 @@ export class MareasService {
             escenarioNombre: string;
             buqueNombre: string;
             fechaZarpada: string;
+            observaciones?: string | null;
         }>();
 
         const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
@@ -1565,8 +1566,9 @@ export class MareasService {
                             planificacionesFuturasByObs.set(item.observadorId, {
                                 escenarioId: esc.id,
                                 escenarioNombre: esc.nombre,
-                                buqueNombre: item.buqueNombre || 'Buque sin asignar',
-                                fechaZarpada: zarpadaDate.toISOString()
+                                buqueNombre: item.buqueNombre || 'Sin buque',
+                                fechaZarpada: zarpadaDate.toISOString(),
+                                observaciones: item.comentario || item.observaciones || null
                             });
                         }
                     }
@@ -1677,6 +1679,7 @@ export class MareasService {
                 escenarioNombre: string;
                 buqueNombre: string;
                 fechaZarpada: string;
+                observaciones?: string | null;
             } | null;
             observaciones?: string;
         }> = [];
@@ -1702,7 +1705,7 @@ export class MareasService {
             let tieneAvisoVigente = false;
             let esFlexible = false;
             let motivoFlexibilidad: string | null = null;
-            let planificacion: { escenarioId: string; escenarioNombre: string; buqueNombre: string; fechaZarpada: string } | null = null;
+            let planificacion: { escenarioId: string; escenarioNombre: string; buqueNombre: string; fechaZarpada: string; observaciones?: string | null } | null = null;
 
             if (status === 'DISPONIBLE') {
                 const novedadDisp = novedadesDisponiblesByObs.get(obs.id);

@@ -175,20 +175,20 @@ const initTimeline = () => {
   timelineInstance.on('doubleClick', (eventProps: any) => {
     if (props.readonly) return;
     
-    let isClickableBlankSpace = !eventProps.item && eventProps.group && eventProps.time;
+    const isClickableBlankSpace = !eventProps.item && eventProps.group && eventProps.time;
     let isClickableItem = false;
-    let itemStartDate = null;
     
     if (eventProps.item) {
       const itemData = currentItemsDataSet.get(eventProps.item) as any;
       if (itemData && itemData.className && (itemData.className.includes('vis-item-disponible') || itemData.className.includes('vis-item-disponible-no-confirmada'))) {
         isClickableItem = true;
-        itemStartDate = itemData.start;
       }
     }
 
     if (isClickableBlankSpace || isClickableItem) {
-      const dateToUse = isClickableItem ? itemStartDate : eventProps.time;
+      const rawDate = eventProps.snappedTime || eventProps.time;
+      const dateToUse = new Date(rawDate);
+      dateToUse.setHours(0, 0, 0, 0);
       emit('add-marea', { date: dateToUse, group: String(eventProps.group) });
     }
   });
