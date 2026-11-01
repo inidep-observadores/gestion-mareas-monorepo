@@ -27,6 +27,7 @@ describe('NovedadesService', () => {
     },
     marea: {
       findMany: jest.fn(),
+      findFirst: jest.fn().mockResolvedValue(null),
       update: jest.fn(),
     },
   };
@@ -44,6 +45,7 @@ describe('NovedadesService', () => {
 
     service = module.get<NovedadesService>(NovedadesService);
     prisma = module.get<PrismaService>(PrismaService);
+    mockPrismaService.marea.findFirst.mockResolvedValue(null);
   });
 
   afterEach(() => {
@@ -134,6 +136,19 @@ describe('NovedadesService', () => {
           fechaFin: expect.any(Date),
         })
       }));
+    });
+
+    it('debe permitir crear DISPONIBLE si la novedad previa similar esta separada por una marea intermedia', async () => {
+      mockPrismaService.observador.findUnique.mockResolvedValue({ id: '1' });
+      mockPrismaService.tipoNovedad.findUnique.mockResolvedValue({ id: '2', activo: true, codigo: 'DISPONIBLE' });
+      mockPrismaService.observadorNovedad.findFirst.mockResolvedValue({ id: 'prev-disp', fechaInicio: new Date('2025-01-01T00:00:00Z') });
+      // Simular que hubo marea intermedia
+      mockPrismaService.marea.findFirst.mockResolvedValue({ id: 'marea-intermedia' });
+      mockPrismaService.observadorNovedad.create.mockResolvedValue({ id: 'new-disp', estadoAprobacion: 'APROBADA', fechaInicio: new Date('2025-03-01T00:00:00Z'), tipoNovedad: { codigo: 'DISPONIBLE' } });
+      mockPrismaService.marea.findMany.mockResolvedValue([]);
+
+      const res = await service.create({ observadorId: '1', tipoNovedadId: '2', fechaInicio: '2025-03-01' }, mockUser);
+      expect(res.id).toBe('new-disp');
     });
   });
 

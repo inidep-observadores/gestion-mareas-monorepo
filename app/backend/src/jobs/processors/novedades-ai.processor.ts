@@ -314,16 +314,18 @@ export class NovedadesAiProcessor implements JobProcessor {
                                 overlapConditions.push({ fechaInicio: { lte: end } });
                             }
 
-                            const overlaps = tipoNovedad.codigo === 'ACTUALIZACION_CEDULA'
-                                ? await this.prisma.observadorNovedad.findFirst({
+                            let overlaps: any = null;
+                            if (tipoNovedad.codigo === 'ACTUALIZACION_CEDULA') {
+                                overlaps = await this.prisma.observadorNovedad.findFirst({
                                     where: {
                                         observadorId: observador.id,
                                         tipoNovedadId: tipoNovedad.id,
                                         estadoAprobacion: 'PENDIENTE',
                                         activo: true,
                                     }
-                                })
-                                : await this.prisma.observadorNovedad.findFirst({
+                                });
+                            } else {
+                                const potentialOverlaps = await this.prisma.observadorNovedad.findMany({
                                     where: {
                                         observadorId: observador.id,
                                         tipoNovedadId: tipoNovedad.id,
@@ -332,6 +334,19 @@ export class NovedadesAiProcessor implements JobProcessor {
                                         AND: overlapConditions
                                     }
                                 });
+
+                                const esCicloObservador = ['DISPONIBLE', 'NO_DISPONIBLE'].includes(tipoNovedad.codigo);
+                                for (const cand of potentialOverlaps) {
+                                    if (esCicloObservador) {
+                                        const marea = await this.huboMareaIntermedia(observador.id, cand.fechaInicio, start);
+                                        if (marea) {
+                                            continue; // Marea intermedia: no es solapamiento ni rectificación
+                                        }
+                                    }
+                                    overlaps = cand;
+                                    break;
+                                }
+                            }
 
                             let esCorreccion = false;
                             let novedadOriginalId: string | null = null;
@@ -376,7 +391,7 @@ export class NovedadesAiProcessor implements JobProcessor {
                                         ? ['NO_DISPONIBLE', 'LICEN', 'LICENCIA']
                                         : ['DISPONIBLE', 'DISPONIBILIDAD'];
 
-                                    const oppositeOverlap = await this.prisma.observadorNovedad.findFirst({
+                                    const potentialOpposites = await this.prisma.observadorNovedad.findMany({
                                         where: {
                                             observadorId: observador.id,
                                             tipoNovedad: { codigo: { in: oppositeCodes } },
@@ -386,6 +401,16 @@ export class NovedadesAiProcessor implements JobProcessor {
                                         },
                                         include: { tipoNovedad: true }
                                     });
+
+                                    let oppositeOverlap: any = null;
+                                    for (const cand of potentialOpposites) {
+                                        const marea = await this.huboMareaIntermedia(observador.id, cand.fechaInicio, start);
+                                        if (marea) {
+                                            continue; // Marea intermedia: no debe acotar un período previo a una marea
+                                        }
+                                        oppositeOverlap = cand;
+                                        break;
+                                    }
 
                                     if (oppositeOverlap) {
                                         esAjustePeriodo = true;
@@ -722,5 +747,32 @@ export class NovedadesAiProcessor implements JobProcessor {
             }
         }
         return null;
+    }
+
+    private async huboMareaIntermedia(observadorId: string, fechaA: Date, fechaB: Date): Promise<boolean> {
+        const inicioRango = fechaA < fechaB ? fechaA : fechaB;
+        const finRango = fechaA < fechaB ? fechaB : fechaA;
+
+        const marea = await this.prisma.marea.findFirst({
+            where: {
+                activo: true,
+                OR: [
+                    { observadorPrincipalId: observadorId },
+                    { etapas: { some: { observadores: { some: { observadorId: observadorId } } } } }
+                ],
+                AND: [
+                    {
+                        OR: [
+                            { fechaInicioObservador: { gte: inicioRango, lte: finRango } },
+                            { fechaZarpadaEstimada: { gte: inicioRango, lte: finRango } },
+                            { etapas: { some: { fechaZarpada: { gte: inicioRango, lte: finRango } } } }
+                        ]
+                    }
+                ]
+            },
+            select: { id: true }
+        });
+
+        return !!marea;
     }
 }

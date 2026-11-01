@@ -170,7 +170,19 @@ export class NovedadesService {
     });
 
     if (overlaps) {
-      throw new BadRequestException('El observador ya tiene una novedad de este tipo registrada en estas fechas');
+      let esSolapamientoReal = true;
+      const esCicloDisponibilidad = ['DISPONIBLE', 'NO_DISPONIBLE'].includes(tipoNovedad.codigo);
+
+      if (esCicloDisponibilidad) {
+        const mareaIntermedia = await this.huboMareaIntermedia(createNovedadDto.observadorId, overlaps.fechaInicio, start);
+        if (mareaIntermedia) {
+          esSolapamientoReal = false; // Pertenecen a descansos separados por marea
+        }
+      }
+
+      if (esSolapamientoReal) {
+        throw new BadRequestException('El observador ya tiene una novedad de este tipo registrada en estas fechas');
+      }
     }
 
     const created = await this.prisma.observadorNovedad.create({
@@ -282,40 +294,60 @@ export class NovedadesService {
       });
 
       if (overlaps) {
-        // Auto-detección: Si la novedad que se edita está PENDIENTE y solapa con una APROBADA existente
-        if (existing.estadoAprobacion === 'PENDIENTE' && overlaps.estadoAprobacion === 'APROBADA') {
-          esCorreccion = true;
-          novedadOriginalId = overlaps.id;
-          const currentMeta = (existing.metadata as any) || {};
-          data.metadata = {
-            ...currentMeta,
-            esCorreccion: true,
-            novedadOriginalId: overlaps.id,
-            requiereRevision: true,
-          };
-        } else {
-          throw new BadRequestException('Las nuevas fechas se solapan con otra novedad del mismo tipo');
+        let esSolapamientoReal = true;
+        const tipoCodigo = existing.tipoNovedad?.codigo;
+        const esCicloDisponibilidad = ['DISPONIBLE', 'NO_DISPONIBLE'].includes(tipoCodigo);
+
+        if (esCicloDisponibilidad) {
+          const mareaIntermedia = await this.huboMareaIntermedia(existing.observadorId, overlaps.fechaInicio, start);
+          if (mareaIntermedia) {
+            esSolapamientoReal = false; // Pertenecen a descansos separados por marea
+          }
+        }
+
+        if (esSolapamientoReal) {
+          // Auto-detección: Si la novedad que se edita está PENDIENTE y solapa con una APROBADA existente
+          if (existing.estadoAprobacion === 'PENDIENTE' && overlaps.estadoAprobacion === 'APROBADA') {
+            esCorreccion = true;
+            novedadOriginalId = overlaps.id;
+            const currentMeta = (existing.metadata as any) || {};
+            data.metadata = {
+              ...currentMeta,
+              esCorreccion: true,
+              novedadOriginalId: overlaps.id,
+              requiereRevision: true,
+            };
+          } else {
+            throw new BadRequestException('Las nuevas fechas se solapan con otra novedad del mismo tipo');
+          }
         }
       }
     }
 
     if (updateNovedadDto.estadoAprobacion === 'APROBADA' && esCorreccion && novedadOriginalId) {
-      await this.prisma.observadorNovedad.update({
-        where: { id: novedadOriginalId },
-        data: {
-          activo: false,
-          estadoAprobacion: 'RECHAZADA',
-          movimientos: {
-            create: {
-              tipoEvento: 'REEMPLAZADA_POR_CORRECCION',
-              estadoAnterior: 'APROBADA',
-              estadoNuevo: 'RECHAZADA',
-              comentarios: `Reemplazada por aprobación de rectificación (nuevo período: del ${DateUtils.formatDate(start)} ${end ? 'al ' + DateUtils.formatDate(end) : 'en adelante'})`,
-              usuarioId: user?.id,
+      const original = await this.prisma.observadorNovedad.findUnique({
+        where: { id: novedadOriginalId }
+      });
+      const mareaEntreMedio = original ? await this.huboMareaIntermedia(existing.observadorId, original.fechaInicio, start) : false;
+
+      if (!mareaEntreMedio) {
+        await this.prisma.observadorNovedad.update({
+          where: { id: novedadOriginalId },
+          data: {
+            activo: false,
+            estadoAprobacion: 'RECHAZADA',
+            movimientos: {
+              create: {
+                tipoEvento: 'REEMPLAZADA_POR_CORRECCION',
+                estadoAnterior: 'APROBADA',
+                estadoNuevo: 'RECHAZADA',
+                comentarios: `Reemplazada por aprobación de rectificación (nuevo período: del ${DateUtils.formatDate(start)} ${end ? 'al ' + DateUtils.formatDate(end) : 'en adelante'})`,
+                usuarioId: user?.id,
+              }
             }
           }
-        }
-      });
+        });
+      }
     }
 
     if (updateNovedadDto.estadoAprobacion === 'APROBADA' && esAjustePeriodo && novedadAjustarId) {
@@ -325,45 +357,48 @@ export class NovedadesService {
       });
 
       if (novedadAjustar && novedadAjustar.activo) {
-        const fechaInicioAjustar = new Date(novedadAjustar.fechaInicio);
-        const tipoNovedadActual = await this.prisma.tipoNovedad.findUnique({
-          where: { id: data.tipoNovedadId !== undefined ? data.tipoNovedadId : existing.tipoNovedadId }
-        });
+        const mareaEntreMedio = await this.huboMareaIntermedia(existing.observadorId, novedadAjustar.fechaInicio, start);
+        if (!mareaEntreMedio) {
+          const fechaInicioAjustar = new Date(novedadAjustar.fechaInicio);
+          const tipoNovedadActual = await this.prisma.tipoNovedad.findUnique({
+            where: { id: data.tipoNovedadId !== undefined ? data.tipoNovedadId : existing.tipoNovedadId }
+          });
 
-        if (start > fechaInicioAjustar) {
-          const fechaCorte = new Date(start.getTime() - 24 * 60 * 60 * 1000);
-          await this.prisma.observadorNovedad.update({
-            where: { id: novedadAjustarId },
-            data: {
-              fechaFin: fechaCorte,
-              movimientos: {
-                create: {
-                  tipoEvento: 'AJUSTE_POR_DISPONIBILIDAD',
-                  estadoAnterior: novedadAjustar.estadoAprobacion,
-                  estadoNuevo: novedadAjustar.estadoAprobacion,
-                  comentarios: `Fecha fin ajustada al ${DateUtils.formatDate(fechaCorte)} por inicio de nuevo período (${tipoNovedadActual?.descripcion || 'Novedad'} a partir del ${DateUtils.formatDate(start)})`,
-                  usuarioId: user?.id,
+          if (start > fechaInicioAjustar) {
+            const fechaCorte = new Date(start.getTime() - 24 * 60 * 60 * 1000);
+            await this.prisma.observadorNovedad.update({
+              where: { id: novedadAjustarId },
+              data: {
+                fechaFin: fechaCorte,
+                movimientos: {
+                  create: {
+                    tipoEvento: 'AJUSTE_POR_DISPONIBILIDAD',
+                    estadoAnterior: novedadAjustar.estadoAprobacion,
+                    estadoNuevo: novedadAjustar.estadoAprobacion,
+                    comentarios: `Fecha fin ajustada al ${DateUtils.formatDate(fechaCorte)} por inicio de nuevo período (${tipoNovedadActual?.descripcion || 'Novedad'} a partir del ${DateUtils.formatDate(start)})`,
+                    usuarioId: user?.id,
+                  }
                 }
               }
-            }
-          });
-        } else {
-          await this.prisma.observadorNovedad.update({
-            where: { id: novedadAjustarId },
-            data: {
-              activo: false,
-              estadoAprobacion: 'RECHAZADA',
-              movimientos: {
-                create: {
-                  tipoEvento: 'REEMPLAZADA_POR_DISPONIBILIDAD',
-                  estadoAnterior: novedadAjustar.estadoAprobacion,
-                  estadoNuevo: 'RECHAZADA',
-                  comentarios: `Reemplazada y anulada por inicio de nuevo período de ${tipoNovedadActual?.descripcion || 'Novedad'} a partir del ${DateUtils.formatDate(start)}`,
-                  usuarioId: user?.id,
+            });
+          } else {
+            await this.prisma.observadorNovedad.update({
+              where: { id: novedadAjustarId },
+              data: {
+                activo: false,
+                estadoAprobacion: 'RECHAZADA',
+                movimientos: {
+                  create: {
+                    tipoEvento: 'REEMPLAZADA_POR_DISPONIBILIDAD',
+                    estadoAnterior: novedadAjustar.estadoAprobacion,
+                    estadoNuevo: 'RECHAZADA',
+                    comentarios: `Reemplazada y anulada por inicio de nuevo período de ${tipoNovedadActual?.descripcion || 'Novedad'} a partir del ${DateUtils.formatDate(start)}`,
+                    usuarioId: user?.id,
+                  }
                 }
               }
-            }
-          });
+            });
+          }
         }
       }
     }
@@ -531,6 +566,33 @@ export class NovedadesService {
         }
       }
     }
+  }
+
+  async huboMareaIntermedia(observadorId: string, fechaA: Date, fechaB: Date): Promise<boolean> {
+    const inicioRango = fechaA < fechaB ? fechaA : fechaB;
+    const finRango = fechaA < fechaB ? fechaB : fechaA;
+
+    const marea = await this.prisma.marea.findFirst({
+      where: {
+        activo: true,
+        OR: [
+          { observadorPrincipalId: observadorId },
+          { etapas: { some: { observadores: { some: { observadorId: observadorId } } } } }
+        ],
+        AND: [
+          {
+            OR: [
+              { fechaInicioObservador: { gte: inicioRango, lte: finRango } },
+              { fechaZarpadaEstimada: { gte: inicioRango, lte: finRango } },
+              { etapas: { some: { fechaZarpada: { gte: inicioRango, lte: finRango } } } }
+            ]
+          }
+        ]
+      },
+      select: { id: true }
+    });
+
+    return !!marea;
   }
 
   async remove(id: string, user?: User) {
