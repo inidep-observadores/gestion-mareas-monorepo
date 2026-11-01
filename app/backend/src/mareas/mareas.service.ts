@@ -693,6 +693,7 @@ export class MareasService {
                 puerto_arribo: etapaFinal?.puertoArribo?.nombre,
                 fecha_arribo: etapaFinal?.fechaArribo,
                 observador: primaryObs ? `${primaryObs.nombre} ${primaryObs.apellido}` : 'Sin asignar',
+                observador_id: primaryObs?.id ?? null,
                 observador_foto_url: primaryObs?.fotoUrl ?? null,
                 progreso,
                 en_tierra: m.estadoActual.codigo === MareaEstado.EN_EJECUCION && etapaFinal?.fechaArribo !== null,
@@ -1656,6 +1657,8 @@ export class MareasService {
         });
 
         type DocFields = {
+            codigoInterno?: number | null;
+            dni?: string | null;
             numeroCedula?: number | null;
             vencimientoCedula?: string | null;
             vencimientoAptoMedico?: string | null;
@@ -1699,6 +1702,8 @@ export class MareasService {
             if (!obs.activo) return;
 
             const docData: DocFields = {
+                codigoInterno: obs.codigoInterno ?? null,
+                dni: obs.dni ?? null,
                 numeroCedula: obs.numeroCedula ?? null,
                 vencimientoCedula: obs.vencimientoCedula ? obs.vencimientoCedula.toISOString() : null,
                 vencimientoAptoMedico: obs.vencimientoAptoMedico ? obs.vencimientoAptoMedico.toISOString() : null,

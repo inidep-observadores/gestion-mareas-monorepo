@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Added
+- **observadores:** nuevo modal interactivo de ficha rápida (`ObservadorQuickModal`) accesible al hacer clic sobre el avatar en cualquier vista, que visualiza la foto ampliada (96x96 px), nombre completo, Nº de legajo, DNI, Nº de cédula de embarque y estado de vencimientos de documentación con indicador de alertas.
+- **componentes:** dotar a `ObservadorAvatar` de interactividad (`cursor-pointer`, hover visual y apertura de ficha de observador) y soporte para apertura sin peticiones HTTP redundantes cuando los datos están precargados.
+- **backend:** incluir `codigoInterno` y `dni` en los registros devueltos por `getWorkforceStatus` y `observador_id` en las mareas operativas para vinculación directa de datos.
+
 ## [v0.21.0] - 2026-11-01
 
 ### Added

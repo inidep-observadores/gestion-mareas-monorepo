@@ -121,7 +121,7 @@
                     <!-- Datos Principales -->
                     <div class="mb-3">
                       <div class="flex items-center gap-2 mb-1">
-                        <ObservadorAvatar :foto-url="marea.observador_foto_url" :nombre="marea.observador" size="sm" />
+                        <ObservadorAvatar :foto-url="marea.observador_foto_url" :nombre="marea.observador" :observador-id="marea.observador_id || (marea as any).observadorPrincipalId" size="sm" />
                         <h4 class="text-sm font-black text-text">{{ marea.buque_nombre }}</h4>
                       </div>
                       <div class="flex flex-col gap-0.5 ml-8">
@@ -246,7 +246,7 @@
                           <div class="flex items-center gap-2.5">
                             <div
                               class="shrink-0">
-                              <ObservadorAvatar :foto-url="marea.observador_foto_url" :nombre="marea.observador" />
+                              <ObservadorAvatar :foto-url="marea.observador_foto_url" :nombre="marea.observador" :observador-id="marea.observador_id || (marea as any).observadorPrincipalId" />
                             </div>
                             <div class="flex flex-col min-w-0">
                               <span class="text-sm font-bold text-text leading-tight truncate">{{ marea.buque_nombre

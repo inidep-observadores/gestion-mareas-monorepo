@@ -177,7 +177,7 @@
               ]">
                 <td class="px-6 py-3 text-xs font-bold text-text">
                   <div class="flex items-center gap-2.5">
-                    <ObservadorAvatar :foto-url="(item as any).fotoUrl" :nombre="item.name" size="lg" />
+                    <ObservadorAvatar :foto-url="(item as any).fotoUrl" :nombre="item.name" :observador="item as any" :observador-id="item.id" size="lg" />
                     <div class="flex flex-col min-w-0 flex-1">
                       <div class="flex items-center gap-2">
                         <span
@@ -503,7 +503,7 @@
                 ]">
                 <td class="px-8 py-4 text-sm font-bold text-text">
                   <div class="flex items-center gap-3">
-                    <ObservadorAvatar :foto-url="(item as any).fotoUrl" :nombre="item.name" size="xl" />
+                    <ObservadorAvatar :foto-url="(item as any).fotoUrl" :nombre="item.name" :observador="item as any" :observador-id="item.id" size="xl" />
                     <div class="flex flex-col min-w-0 flex-1">
                       <div class="flex items-center gap-3">
                         <span

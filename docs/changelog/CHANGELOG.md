@@ -5,6 +5,9 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 ## [Unreleased]
 
 ### Added
+- **observadores:** nuevo modal interactivo de ficha rápida (`ObservadorQuickModal`) accesible al hacer clic sobre el avatar en cualquier vista, que visualiza la foto ampliada (96x96 px), nombre completo, Nº de legajo, DNI, Nº de cédula de embarque y estado de vencimientos de documentación con indicador de alertas.
+- **componentes:** dotar a `ObservadorAvatar` de interactividad (`cursor-pointer`, hover visual y apertura de ficha de observador) y soporte para apertura sin peticiones HTTP redundantes cuando los datos están precargados.
+- **backend:** incluir `codigoInterno` y `dni` en los registros devueltos por `getWorkforceStatus` y `observador_id` en las mareas operativas para vinculación directa de datos.
 - **observadores:** visualizar el tipo de novedad en una insignia y la fecha de recepción en el encabezado de cada archivo dentro de la pestaña de archivos del panel lateral de observadores, ordenados cronológicamente de forma descendente (del más reciente al más antiguo).
 - **disponibilidad:** incorporar opción de exportación a planilla Excel en la vista de Disponibilidad de Observadores, capturando dinámicamente el rango de fechas visible en el timeline (`getWindow()`), respetando los filtros aplicados (búsqueda, tipo, contrato, ocultar no disponibles) y replicando fielmente los estilos, bordes y colores del timeline junto a una hoja complementaria de referencias.
 - **admin:** incorporar filtro desplegable por tipo de novedad y columna 'Registrado' con fecha de recepción/creación (`fechaCreacion`) en la gestión de novedades de observadores, optimizando el ancho de los selectores de fecha.

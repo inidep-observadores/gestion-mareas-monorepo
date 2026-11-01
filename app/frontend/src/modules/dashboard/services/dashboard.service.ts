@@ -49,6 +49,8 @@ export interface CriticalDelay {
 }
 
 export interface WorkforceDocFields {
+    codigoInterno?: number | null
+    dni?: string | null
     numeroCedula?: number | null
     vencimientoCedula?: string | null
     vencimientoAptoMedico?: string | null
