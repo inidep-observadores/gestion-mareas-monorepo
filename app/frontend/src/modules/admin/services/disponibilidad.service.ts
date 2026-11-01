@@ -8,6 +8,17 @@ const disponibilidadApi = {
     });
     return data;
   },
+
+  exportarAExcel: async (params: {
+    fechaDesde: string;
+    fechaHasta: string;
+    observadorIds?: string[];
+  }): Promise<Blob> => {
+    const { data } = await httpClient.post('/presentismo/disponibilidad/export/excel', params, {
+      responseType: 'blob',
+    });
+    return data;
+  },
 };
 
 export default disponibilidadApi;

@@ -1,4 +1,5 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
+import * as ExcelJS from 'exceljs';
 import { PrismaService } from '../prisma/prisma.service';
 import { DateTime } from 'luxon';
 import { DateUtils } from '../common/utils/date.utils';
@@ -658,5 +659,340 @@ export class DisponibilidadService {
       fechaHoy: today.toISODate()!,
       observadores: rows,
     };
+  }
+
+  async exportarAExcel(
+    fechaDesde: string,
+    fechaHasta: string,
+    observadorIds?: string[],
+  ): Promise<ExcelJS.Workbook> {
+    const timezone = DateUtils.getTimezone();
+    const today = DateTime.fromJSDate(DateUtils.getNow(), { zone: timezone }).startOf('day');
+
+    const cleanIni = fechaDesde.includes('T') ? fechaDesde.split('T')[0] : fechaDesde;
+    const cleanFin = fechaHasta.includes('T') ? fechaHasta.split('T')[0] : fechaHasta;
+
+    const inicioDate = DateTime.fromISO(cleanIni, { zone: timezone }).startOf('day');
+    const finDate = DateTime.fromISO(cleanFin, { zone: timezone }).startOf('day');
+
+    if (!inicioDate.isValid || !finDate.isValid || finDate < inicioDate) {
+      throw new BadRequestException('El rango de fechas especificado es inválido');
+    }
+
+    // Calcular meses requeridos respecto a hoy para asegurar cobertura de datos
+    const diffMonths = Math.ceil(Math.max(1, finDate.diff(today, 'months').months)) + 1;
+    const horizon = Math.min(12, Math.max(1, diffMonths));
+
+    const dispData = await this.obtenerDisponibilidad(horizon);
+
+    // Filtrar y ordenar observadores según observadorIds si vienen especificados
+    let filas: ObservadorDisponibilidadRowDto[] = [];
+    if (observadorIds && observadorIds.length > 0) {
+      const mapa = new Map(dispData.observadores.map((r) => [r.observador.id, r]));
+      filas = observadorIds.map((id) => mapa.get(id)).filter(Boolean) as ObservadorDisponibilidadRowDto[];
+    } else {
+      filas = dispData.observadores;
+    }
+
+    // Generar array de días del rango
+    const diasRango: DateTime[] = [];
+    let cur = inicioDate;
+    while (cur <= finDate) {
+      diasRango.push(cur);
+      cur = cur.plus({ days: 1 });
+    }
+
+    const workbook = new ExcelJS.Workbook();
+    workbook.creator = 'SIGMA - INIDEP';
+    workbook.created = new Date();
+
+    const sheet = workbook.addWorksheet('Disponibilidad', {
+      views: [{ state: 'frozen', xSplit: 2, ySplit: 4 }]
+    });
+
+    // Fila 1: Título principal
+    sheet.mergeCells(1, 1, 1, 2 + diasRango.length);
+    const cellTitulo = sheet.getCell('A1');
+    cellTitulo.value = 'SIGMA - DISPONIBILIDAD DE OBSERVADORES (INIDEP)';
+    cellTitulo.font = { name: 'Calibri', size: 14, bold: true, color: { argb: 'FF1E3A8A' } };
+    cellTitulo.alignment = { horizontal: 'left', vertical: 'middle' };
+    sheet.getRow(1).height = 28;
+
+    // Fila 2: Subtítulo con período y totales
+    sheet.mergeCells(2, 1, 2, 2 + diasRango.length);
+    const cellSubtitulo = sheet.getCell('A2');
+    cellSubtitulo.value = `Período visualizado: ${inicioDate.toFormat('dd/MM/yyyy')} al ${finDate.toFormat('dd/MM/yyyy')} (${diasRango.length} días) | Observadores listados: ${filas.length}`;
+    cellSubtitulo.font = { name: 'Calibri', size: 10, italic: true, color: { argb: 'FF4B5563' } };
+    cellSubtitulo.alignment = { horizontal: 'left', vertical: 'middle' };
+    sheet.getRow(2).height = 18;
+
+    // Fila 3: Espacio separador
+    sheet.getRow(3).height = 8;
+
+    // Fila 4: Cabecera de Columnas
+    const headers = [
+      'LEGAJO',
+      'OBSERVADOR',
+      ...diasRango.map((d) => {
+        let diaNom = d.setLocale('es').toFormat('ccc');
+        diaNom = diaNom.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase();
+        return `${diaNom}\n${d.toFormat('dd/MM')}`;
+      })
+    ];
+
+    const rowHeader = sheet.getRow(4);
+    rowHeader.values = headers;
+    rowHeader.height = 30;
+
+    // Configuración de anchos de columna
+    sheet.getColumn(1).width = 12; // LEGAJO
+    sheet.getColumn(2).width = 30; // OBSERVADOR
+    for (let i = 0; i < diasRango.length; i++) {
+      sheet.getColumn(3 + i).width = 8;
+    }
+
+    // Estilo encabezados
+    rowHeader.eachCell((cell, colNum) => {
+      cell.font = { name: 'Calibri', size: 9, bold: true, color: { argb: 'FF1F2937' } };
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF3F4F6' } };
+      cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+      cell.border = {
+        top: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+        bottom: { style: 'medium', color: { argb: 'FF9CA3AF' } },
+        left: { style: 'thin', color: { argb: 'FFE5E7EB' } },
+        right: { style: 'thin', color: { argb: 'FFE5E7EB' } },
+      };
+
+      if (colNum > 2) {
+        const dia = diasRango[colNum - 3];
+        if (dia.weekday === 6 || dia.weekday === 7) {
+          cell.font = { name: 'Calibri', size: 9, bold: true, color: { argb: 'FFDC2626' } };
+          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEE2E2' } };
+        }
+      }
+    });
+
+    // Filas de datos
+    filas.forEach((row) => {
+      const rowData = [
+        row.observador.codigoInterno || '-',
+        `${row.observador.apellido}, ${row.observador.nombre}`,
+      ];
+
+      diasRango.forEach((d) => {
+        const isoD = d.toISODate()!;
+        const ev = row.eventos.find((e) => e.startDate <= isoD && e.endDate > isoD);
+
+        let textoCelda = '';
+        if (ev) {
+          if (ev.estado === 'NAVEGANDO') {
+            textoCelda = ev.estadoSecundario === 'PROYECTADA' ? 'NAV. EST' : 'NAVEG';
+          } else if (ev.codigoCorto === 'NO DISP. (EST.)' || (ev.estadoSecundario === 'PROYECTADA' && ev.estado === 'NOVEDAD')) {
+            textoCelda = 'NO DISP (E)';
+          } else if (ev.estado === 'DISPONIBLE') {
+            textoCelda = 'DISP';
+          } else if (ev.estado === 'DISPONIBLE_NO_CONFIRMADA') {
+            textoCelda = '¿DISP?';
+          } else if (ev.estado === 'DESIGNADA') {
+            textoCelda = 'DESIGN';
+          } else if (ev.estado === 'IMPEDIMENTO') {
+            textoCelda = 'IMPED';
+          } else if (ev.estado === 'PUERTO') {
+            textoCelda = 'PUERTO';
+          } else if (ev.estado === 'VIAJE') {
+            textoCelda = 'VIAJE';
+          } else if (ev.estado === 'ESPERANDO_ZARPADA') {
+            textoCelda = 'ESP. ZARP';
+          } else if (ev.estado === 'NOVEDAD') {
+            const cod = (ev.codigoCorto || '').toUpperCase();
+            if (cod === 'NO DISPONIBLE' || cod === 'NO_DISP' || cod === 'NO_DISPONIBLE') {
+              textoCelda = 'NO DISP';
+            } else {
+              textoCelda = ev.codigoCorto || 'NOV';
+            }
+          } else if (ev.estado === 'CONFLICTO') {
+            textoCelda = 'CONFLICTO';
+          } else {
+            textoCelda = ev.codigoCorto || ev.estado || '';
+          }
+        }
+        rowData.push(textoCelda);
+      });
+
+      const excelRow = sheet.addRow(rowData);
+      excelRow.height = 20;
+
+      // Columna Legajo
+      const cellLegajo = excelRow.getCell(1);
+      cellLegajo.alignment = { horizontal: 'center', vertical: 'middle' };
+      cellLegajo.font = { name: 'Calibri', size: 9, bold: true };
+
+      // Columna Observador
+      const cellObs = excelRow.getCell(2);
+      cellObs.alignment = { horizontal: 'left', vertical: 'middle' };
+      cellObs.font = { name: 'Calibri', size: 10, bold: true };
+      if (row.observador.conImpedimento) {
+        cellObs.font = { name: 'Calibri', size: 10, bold: true, color: { argb: 'FFDC2626' } };
+      }
+
+      // Celdas de días con estilos exactos
+      diasRango.forEach((d, dIdx) => {
+        const colNum = 3 + dIdx;
+        const cell = excelRow.getCell(colNum);
+        const isoD = d.toISODate()!;
+        const ev = row.eventos.find((e) => e.startDate <= isoD && e.endDate > isoD);
+
+        cell.alignment = { horizontal: 'center', vertical: 'middle' };
+        cell.font = { name: 'Calibri', size: 8, bold: true };
+
+        cell.border = {
+          top: { style: 'thin', color: { argb: 'FFE5E7EB' } },
+          bottom: { style: 'thin', color: { argb: 'FFE5E7EB' } },
+          left: { style: 'thin', color: { argb: 'FFE5E7EB' } },
+          right: { style: 'thin', color: { argb: 'FFE5E7EB' } },
+        };
+
+        if (ev) {
+          if (ev.estado === 'NAVEGANDO') {
+            if (ev.estadoSecundario === 'PROYECTADA') {
+              cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFDCFCE7' } }; // Verde atenuado
+              cell.font = { name: 'Calibri', size: 8, bold: true, color: { argb: 'FF15803D' } };
+              cell.border = {
+                top: { style: 'dashed', color: { argb: 'FF22C55E' } },
+                bottom: { style: 'dashed', color: { argb: 'FF22C55E' } },
+                left: { style: 'dashed', color: { argb: 'FF22C55E' } },
+                right: { style: 'dashed', color: { argb: 'FF22C55E' } },
+              };
+              cell.note = `Navegación proyectada\n${ev.detalle || (ev.buqueNombre ? `Buque: ${ev.buqueNombre}` : '')}`.trim();
+            } else {
+              cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF22C55E' } }; // Verde sólido
+              cell.font = { name: 'Calibri', size: 8, bold: true, color: { argb: 'FFFFFFFF' } };
+              if (ev.detalle || ev.buqueNombre) {
+                cell.note = `Navegación\n${ev.detalle || (ev.buqueNombre ? `Buque: ${ev.buqueNombre}` : '')}`.trim();
+              }
+            }
+          } else if (ev.codigoCorto === 'NO DISP. (EST.)' || (ev.estadoSecundario === 'PROYECTADA' && ev.estado === 'NOVEDAD')) {
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFE4E6' } }; // Rosa atenuado
+            cell.font = { name: 'Calibri', size: 8, bold: true, color: { argb: 'FFBE123C' } };
+            cell.border = {
+              top: { style: 'dashed', color: { argb: 'FFF43F5E' } },
+              bottom: { style: 'dashed', color: { argb: 'FFF43F5E' } },
+              left: { style: 'dashed', color: { argb: 'FFF43F5E' } },
+              right: { style: 'dashed', color: { argb: 'FFF43F5E' } },
+            };
+            if (ev.detalle) cell.note = ev.detalle;
+          } else if (ev.estado === 'DISPONIBLE') {
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFACC15' } }; // Amarillo
+            cell.font = { name: 'Calibri', size: 8, bold: true, color: { argb: 'FF713F12' } };
+          } else if (ev.estado === 'DISPONIBLE_NO_CONFIRMADA') {
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEF9C3' } }; // Amarillo pastel
+            cell.font = { name: 'Calibri', size: 8, bold: true, color: { argb: 'FF854D0E' } };
+            cell.border = {
+              top: { style: 'dashed', color: { argb: 'FFEAB308' } },
+              bottom: { style: 'dashed', color: { argb: 'FFEAB308' } },
+              left: { style: 'dashed', color: { argb: 'FFEAB308' } },
+              right: { style: 'dashed', color: { argb: 'FFEAB308' } },
+            };
+            cell.note = 'Disponibilidad no confirmada';
+          } else if (ev.estado === 'DESIGNADA') {
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFCFFAFE' } }; // Celeste cian
+            cell.font = { name: 'Calibri', size: 8, bold: true, color: { argb: 'FF0E7490' } };
+            cell.border = {
+              top: { style: 'dashed', color: { argb: 'FF67E8F9' } },
+              bottom: { style: 'dashed', color: { argb: 'FF67E8F9' } },
+              left: { style: 'dashed', color: { argb: 'FF67E8F9' } },
+              right: { style: 'dashed', color: { argb: 'FF67E8F9' } },
+            };
+            if (ev.detalle || ev.buqueNombre) {
+              cell.note = `Marea Designada\n${ev.detalle || (ev.buqueNombre ? `Buque: ${ev.buqueNombre}` : '')}`.trim();
+            }
+          } else if (ev.estado === 'PUERTO') {
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFEDD5' } };
+            cell.font = { name: 'Calibri', size: 8, bold: true, color: { argb: 'FFC2410C' } };
+            if (ev.detalle) cell.note = ev.detalle;
+          } else if (ev.estado === 'VIAJE') {
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE0E7FF' } };
+            cell.font = { name: 'Calibri', size: 8, bold: true, color: { argb: 'FF4338CA' } };
+            if (ev.detalle) cell.note = ev.detalle;
+          } else if (ev.estado === 'ESPERANDO_ZARPADA') {
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF3F4F6' } };
+            cell.font = { name: 'Calibri', size: 8, bold: true, color: { argb: 'FF374151' } };
+            if (ev.detalle) cell.note = ev.detalle;
+          } else if (ev.estado === 'NOVEDAD') {
+            const cod = (ev.codigoCorto || '').toUpperCase();
+            if (cod === 'NO DISPONIBLE' || cod === 'NO_DISP' || cod === 'NO_DISPONIBLE') {
+              cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEE2E2' } };
+              cell.font = { name: 'Calibri', size: 8, bold: true, color: { argb: 'FF991B1B' } };
+            } else {
+              cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE0F2FE' } };
+              cell.font = { name: 'Calibri', size: 8, bold: true, color: { argb: 'FF0369A1' } };
+            }
+            if (ev.flexible) {
+              cell.border = {
+                top: { style: 'medium', color: { argb: 'FFF59E0B' } },
+                bottom: { style: 'medium', color: { argb: 'FFF59E0B' } },
+                left: { style: 'medium', color: { argb: 'FFF59E0B' } },
+                right: { style: 'medium', color: { argb: 'FFF59E0B' } },
+              };
+            }
+            if (ev.detalle) cell.note = `${ev.detalle}${ev.flexible ? '\n(Flexible ante urgencias)' : ''}`;
+          } else if (ev.estado === 'IMPEDIMENTO') {
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF991B1B' } };
+            cell.font = { name: 'Calibri', size: 8, bold: true, color: { argb: 'FFFFFFFF' } };
+            if (ev.detalle) cell.note = ev.detalle;
+          } else if (ev.estado === 'CONFLICTO') {
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFDC2626' } };
+            cell.font = { name: 'Calibri', size: 8, bold: true, color: { argb: 'FFFFFFFF' } };
+            if (ev.detalle) cell.note = ev.detalle;
+          }
+        } else {
+          if (d.weekday === 6 || d.weekday === 7) {
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFAFAFA' } };
+          }
+        }
+      });
+    });
+
+    // Hoja 2: Referencias / Leyenda
+    const refSheet = workbook.addWorksheet('Referencias');
+    refSheet.columns = [
+      { header: 'CÓDIGO', key: 'codigo', width: 16 },
+      { header: 'ESTADO / SIGNIFICADO', key: 'descripcion', width: 45 },
+    ];
+    refSheet.getRow(1).font = { bold: true, size: 10 };
+    refSheet.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE5E7EB' } };
+
+    const referencias = [
+      { codigo: 'DISP', descripcion: 'Disponible para embarque (con aviso confirmado)', fill: 'FFFACC15', font: 'FF713F12' },
+      { codigo: '¿DISP?', descripcion: 'Período libre (disponibilidad no confirmada)', fill: 'FFFEF9C3', font: 'FF854D0E', borderDashed: true },
+      { codigo: 'NAVEG', descripcion: 'Marea en ejecución (navegando)', fill: 'FF22C55E', font: 'FFFFFFFF' },
+      { codigo: 'NAV. EST', descripcion: 'Navegación proyectada según duración estimada', fill: 'FFDCFCE7', font: 'FF15803D', borderDashed: true },
+      { codigo: 'DESIGN', descripcion: 'Marea designada en planificación', fill: 'FFCFFAFE', font: 'FF0E7490', borderDashed: true },
+      { codigo: 'NO DISP', descripcion: 'No disponible para embarque', fill: 'FFFEE2E2', font: 'FF991B1B' },
+      { codigo: 'NO DISP (E)', descripcion: 'No disponible estimada (superó días estimados)', fill: 'FFFFE4E6', font: 'FFBE123C', borderDashed: true },
+      { codigo: 'PUERTO', descripcion: 'En puerto (no local)', fill: 'FFFFEDD5', font: 'FFC2410C' },
+      { codigo: 'VIAJE', descripcion: 'En tránsito / comisión de servicio', fill: 'FFE0E7FF', font: 'FF4338CA' },
+      { codigo: 'ESP. ZARP', descripcion: 'Esperando zarpada en puerto', fill: 'FFF3F4F6', font: 'FF374151' },
+      { codigo: 'FC / LIC / NOV', descripcion: 'Novedades / Licencias (borde dorado: flexible)', fill: 'FFE0F2FE', font: 'FF0369A1' },
+      { codigo: 'IMPED', descripcion: 'Observador con impedimento activo', fill: 'FF991B1B', font: 'FFFFFFFF' },
+    ];
+
+    referencias.forEach((refItem) => {
+      const r = refSheet.addRow({ codigo: refItem.codigo, descripcion: refItem.descripcion });
+      const c1 = r.getCell(1);
+      c1.alignment = { horizontal: 'center', vertical: 'middle' };
+      c1.font = { bold: true, color: { argb: refItem.font } };
+      c1.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: refItem.fill } };
+      if (refItem.borderDashed) {
+        c1.border = {
+          top: { style: 'dashed', color: { argb: 'FF9CA3AF' } },
+          bottom: { style: 'dashed', color: { argb: 'FF9CA3AF' } },
+          left: { style: 'dashed', color: { argb: 'FF9CA3AF' } },
+          right: { style: 'dashed', color: { argb: 'FF9CA3AF' } },
+        };
+      }
+    });
+
+    return workbook;
   }
 }

@@ -35,6 +35,21 @@
           >
             Hoy
           </button>
+
+          <!-- Botón Exportar Excel -->
+          <button
+            @click="exportToExcel"
+            :disabled="isLoading || isExporting || !data"
+            class="h-9 px-3.5 inline-flex items-center justify-center gap-1.5 text-xs font-bold tracking-widest uppercase transition-all rounded-lg bg-surface border border-border text-primary hover:bg-primary/5 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+            title="Exportar rango visible a Excel"
+          >
+            <svg v-if="isExporting" class="animate-spin h-3.5 w-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <DownloadIcon v-else class="w-3.5 h-3.5" />
+            <span>{{ isExporting ? 'Exportando...' : 'Exportar Excel' }}</span>
+          </button>
         </div>
       </div>
 
@@ -179,7 +194,7 @@ import BackButton from '@/components/common/BackButton.vue';
 import SearchInput from '@/components/ui/SearchInput.vue';
 import DatePicker from '@/components/common/DatePicker.vue';
 import DoubleRangeSlider from '@/components/common/DoubleRangeSlider.vue';
-import { ChevronDownIcon } from '@/icons';
+import { ChevronDownIcon, DownloadIcon } from '@/icons';
 import { toast } from 'vue-sonner';
 import disponibilidadApi from '../services/disponibilidad.service';
 import type { DisponibilidadResponse, ObservadorDisponibilidadItem, ObservadorDisponibilidadRow } from '../interfaces/disponibilidad.interface';
@@ -200,6 +215,56 @@ const data = ref<DisponibilidadResponse | null>(null);
 const isLoading = ref(false);
 const searchQuery = ref('');
 const isFiltersExpanded = ref(false);
+const isExporting = ref(false);
+
+const exportToExcel = async () => {
+  if (!data.value) return;
+
+  isExporting.value = true;
+  try {
+    let fechaDesde = filtroFechaInicio.value || data.value.fechaHoy;
+    let fechaHasta = filtroFechaFin.value || data.value.fechaFin;
+
+    // Tomar el rango actualmente visible en el timeline (primer y último día)
+    if (timelineInstance) {
+      const windowRange = timelineInstance.getWindow();
+      if (windowRange && windowRange.start && windowRange.end) {
+        fechaDesde = formatIsoLocal(windowRange.start);
+        fechaHasta = formatIsoLocal(windowRange.end);
+      }
+    }
+
+    const observadorIds = filteredObservadores.value.map(r => r.observador.id);
+
+    if (observadorIds.length === 0) {
+      toast.error('No hay observadores para exportar con los filtros actuales');
+      return;
+    }
+
+    const blob = await disponibilidadApi.exportarAExcel({
+      fechaDesde,
+      fechaHasta,
+      observadorIds,
+    });
+
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    const filename = `DISPONIBILIDAD_OBSERVADORES_${fechaDesde}_a_${fechaHasta}.xlsx`;
+    link.setAttribute('download', filename);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+
+    toast.success('Planilla de disponibilidad exportada a Excel correctamente');
+  } catch (error) {
+    console.error('Error al exportar disponibilidad a Excel:', error);
+    toast.error('Ocurrió un error al exportar el archivo Excel');
+  } finally {
+    isExporting.value = false;
+  }
+};
 
 // Filtro de Disponibilidad en Rango de Fechas
 const ocultarNoDisponibles = ref(false);

@@ -488,7 +488,7 @@ describe('DisponibilidadService', () => {
 
     // Debe existir un bloque de NO DISPONIBLE por documentación vencida a partir del vencimiento de la cédula (+1 día)
     const bloqueNoDisponibleDoc = obs.eventos.find(
-      e => e.codigoCorto === 'NO DISPONIBLE' && e.detalle?.includes('Documentación vencida: Cédula vencida')
+      e => e.codigoCorto === 'NO DISPONIBLE' && e.detalle?.includes('Documentación vencida: Cédula vence')
     );
 
     expect(bloqueNoDisponibleDoc).toBeDefined();
@@ -741,6 +741,30 @@ describe('DisponibilidadService', () => {
     // No debe haber ningún evento de ACTUALIZACION_CEDULA
     const eventoCedula = obs.eventos.find(e => e.codigoCorto === 'ACTUALIZACION_CEDULA' || e.detalle?.includes('Actualización de Cédula'));
     expect(eventoCedula).toBeUndefined();
+  });
+
+  describe('exportarAExcel', () => {
+    it('debe generar un workbook con las hojas Disponibilidad y Referencias', async () => {
+      mockPrismaService.observador.findMany.mockResolvedValue([
+        {
+          id: 'obs-1',
+          nombre: 'Juan',
+          apellido: 'Perez',
+          codigoInterno: 101,
+          tipoObservador: 'OBSERVADOR',
+          tipoContrato: '1109',
+          conImpedimento: false,
+          motivoImpedimento: null,
+          disponible: true,
+        },
+      ]);
+      mockPrismaService.observadorNovedad.findMany.mockResolvedValue([]);
+      mockPrismaService.marea.findMany.mockResolvedValue([]);
+
+      const wb = await service.exportarAExcel('2026-11-01', '2026-11-05', ['obs-1']);
+      expect(wb).toBeDefined();
+      expect(wb.worksheets.map(w => w.name)).toEqual(['Disponibilidad', 'Referencias']);
+    });
   });
 });
 

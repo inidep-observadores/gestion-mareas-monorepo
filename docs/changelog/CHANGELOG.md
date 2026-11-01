@@ -5,6 +5,7 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 ## [Unreleased]
 
 ### Added
+- **disponibilidad:** incorporar opción de exportación a planilla Excel en la vista de Disponibilidad de Observadores, capturando dinámicamente el rango de fechas visible en el timeline (`getWindow()`), respetando los filtros aplicados (búsqueda, tipo, contrato, ocultar no disponibles) y replicando fielmente los estilos, bordes y colores del timeline junto a una hoja complementaria de referencias.
 - **admin:** incorporar filtro desplegable por tipo de novedad y columna 'Registrado' con fecha de recepción/creación (`fechaCreacion`) en la gestión de novedades de observadores, optimizando el ancho de los selectores de fecha.
 - **dashboard:** unificar y corregir conteo de alertas activas en Central de Alertas excluyendo alertas de fatiga ocultas e incluyendo el cálculo de riesgo de nota de crédito para observadores monotributistas vía `credit-note-risk.utils.ts`.
 - **ui:** reemplazar ícono genérico de buque por la foto del observador principal en Panel Operativo y Flujo de Trabajo (tabla y móvil), con fallback a iniciales o ícono genérico.

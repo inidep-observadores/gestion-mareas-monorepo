@@ -1,6 +1,8 @@
-import { Controller, Get, Query, ParseIntPipe, BadRequestException } from '@nestjs/common';
+import { Controller, Get, Post, Body, Res, Query, BadRequestException } from '@nestjs/common';
+import { Response } from 'express';
 import { DisponibilidadService } from './disponibilidad.service';
 import { DisponibilidadResponseDto } from './dto/disponibilidad-response.dto';
+import { ExportarDisponibilidadExcelDto } from './dto/exportar-disponibilidad-excel.dto';
 
 @Controller('presentismo/disponibilidad')
 export class DisponibilidadController {
@@ -20,5 +22,32 @@ export class DisponibilidadController {
     }
 
     return this.disponibilidadService.obtenerDisponibilidad(horizonte);
+  }
+
+  @Post('export/excel')
+  async exportarExcel(
+    @Body() dto: ExportarDisponibilidadExcelDto,
+    @Res() res: Response,
+  ) {
+    if (!dto.fechaDesde || !dto.fechaHasta) {
+      throw new BadRequestException('Faltan parámetros fechaDesde y fechaHasta');
+    }
+
+    const workbook = await this.disponibilidadService.exportarAExcel(
+      dto.fechaDesde,
+      dto.fechaHasta,
+      dto.observadorIds,
+    );
+
+    res.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    );
+    const cleanIni = dto.fechaDesde.includes('T') ? dto.fechaDesde.split('T')[0] : dto.fechaDesde;
+    const cleanFin = dto.fechaHasta.includes('T') ? dto.fechaHasta.split('T')[0] : dto.fechaHasta;
+    const filename = `DISPONIBILIDAD_OBSERVADORES_${cleanIni}_a_${cleanFin}.xlsx`;
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    await workbook.xlsx.write(res);
+    res.end();
   }
 }
