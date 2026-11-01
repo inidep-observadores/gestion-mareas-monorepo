@@ -35,7 +35,7 @@
         :chart-observers="getFilteredList(
           status.label === 'Navegando' ? (props.data?.listNavegando || []) :
           status.label === 'Descanso' ? (props.data?.listDescanso || []) :
-          status.label === 'Disponibles' ? (props.data?.listDisponibles || []) :
+          status.label === 'Disponibles' ? getFilteredDisponibles(props.data?.listDisponibles || []) :
           (props.data?.listDesignados || [])
         )"
         @select-status="selectStatus"
@@ -87,23 +87,47 @@
         </div>
 
         <!-- Filtros y Búsqueda -->
-        <div
-          class="px-6 py-2.5 bg-surface border-b border-border flex flex-col sm:flex-row sm:items-center gap-4 shrink-0 transition-all">
-          <SearchInput v-model="searchQuery" placeholder="Buscar observador, buque o marea..."
-            class="!w-full sm:!w-80" />
+        <div class="px-6 py-2.5 bg-surface border-b border-border flex flex-col gap-2 shrink-0 transition-all">
+          <!-- Línea 1: Búsqueda y Selector de Tipo -->
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <SearchInput v-model="searchQuery" placeholder="Buscar observador, buque o marea..."
+              class="!w-full sm:!w-72" />
 
-          <div class="flex gap-2">
-            <button
-              v-for="type in [{ key: 'OBSERVADOR', label: 'Observadores' }, { key: 'TECNICO', label: 'Técnicos' }]"
-              :key="type.key" @click="toggleType(type.key)"
-              class="px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-tight transition-all duration-200"
-              :class="[
-                selectedTypes.includes(type.key)
-                  ? 'bg-primary text-white shadow-sm ring-1 ring-primary'
-                  : 'bg-surface-muted text-text-muted border border-border hover:bg-surface hover:text-text'
-              ]">
-              {{ type.label }}
-            </button>
+            <div class="flex gap-2 shrink-0">
+              <button
+                v-for="type in [{ key: 'OBSERVADOR', label: 'Observadores' }, { key: 'TECNICO', label: 'Técnicos' }]"
+                :key="type.key" @click="toggleType(type.key)"
+                class="px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-tight transition-all duration-200"
+                :class="[
+                  selectedTypes.includes(type.key)
+                    ? 'bg-primary text-white shadow-sm ring-1 ring-primary'
+                    : 'bg-surface-muted text-text-muted border border-border hover:bg-surface hover:text-text'
+                ]">
+                {{ type.label }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Línea 2: Filtros de Disponibilidad (solo si se visualiza Disponibles) -->
+          <div v-if="selectedStatus === 'Disponibles'"
+            class="pt-2 border-t border-border/50 flex flex-wrap items-center gap-5 text-xs animate-fadeIn">
+            <span class="text-[9px] font-black uppercase tracking-widest text-text-muted">
+              Filtros:
+            </span>
+            <label class="inline-flex items-center gap-1.5 cursor-pointer select-none group">
+              <input type="checkbox" v-model="includeNoConfirmada"
+                class="w-3.5 h-3.5 rounded border-border text-primary focus:ring-primary/20 cursor-pointer" />
+              <span class="text-[10px] font-bold text-text-muted group-hover:text-text transition-colors">
+                Incluir disponibilidad no confirmada
+              </span>
+            </label>
+            <label class="inline-flex items-center gap-1.5 cursor-pointer select-none group">
+              <input type="checkbox" v-model="includePlanificados"
+                class="w-3.5 h-3.5 rounded border-border text-primary focus:ring-primary/20 cursor-pointer" />
+              <span class="text-[10px] font-bold text-text-muted group-hover:text-text transition-colors">
+                Incluir planificados a futuro
+              </span>
+            </label>
           </div>
         </div>
 
@@ -160,6 +184,20 @@
                           class="hover:text-primary transition-colors cursor-pointer hover:underline decoration-primary/30 underline-offset-2"
                           @click="$emit('view-timeline', item.id, item.name)">
                           {{ item.name }}
+                        </span>
+
+                        <!-- Badge ¿Disponible? si no está confirmada -->
+                        <span v-if="selectedStatus === 'Disponibles' && !(item as any).disponibilidadConfirmada"
+                          class="px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-wider bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30"
+                          title="Disponibilidad no confirmada por el observador">
+                          ¿Disponible?
+                        </span>
+
+                        <!-- Badge Flexible por urgencia si aplica -->
+                        <span v-if="selectedStatus === 'Disponibles' && (item as any).esFlexible"
+                          class="px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-wider bg-violet-500/15 text-violet-700 dark:text-violet-300 border border-violet-500/30"
+                          :title="`Convocable por urgencia (${(item as any).motivoFlexibilidad || 'Licencia flexible'})`">
+                          Flexible • {{ (item as any).motivoFlexibilidad || 'Urgencia' }}
                         </span>
                         
                         <!-- Botón Editar Inline -->
@@ -261,6 +299,21 @@
                     <span class="text-[8px] font-medium text-primary uppercase tracking-widest italic">
                       {{ (item as any).fishery || 'Sin Pesquería' }}
                     </span>
+
+                    <!-- Indicador de Planificación en Simulador -->
+                    <div v-if="selectedStatus === 'Disponibles' && (item as any).planificacionFutura"
+                      class="mt-1 flex items-start gap-1.5 px-2 py-1 rounded-lg bg-sky-500/10 border border-sky-500/20 text-sky-700 dark:text-sky-300 text-[8px] font-bold"
+                      :title="`Planificado en escenario ${(item as any).planificacionFutura.escenarioNombre}`">
+                      <span class="w-1.5 h-1.5 rounded-full bg-sky-500 shrink-0 mt-0.5 animate-pulse"></span>
+                      <div class="flex flex-col min-w-0 leading-tight">
+                        <span class="truncate">
+                          Planificado: {{ (item as any).planificacionFutura.escenarioNombre }}
+                        </span>
+                        <span class="text-[7.5px] font-medium opacity-90 truncate">
+                          {{ (item as any).planificacionFutura.buqueNombre }} • {{ formatDate((item as any).planificacionFutura.fechaZarpada) }}
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 </td>
 
@@ -338,33 +391,60 @@
         </div>
 
         <!-- Filtros y Búsqueda (Replicados para el Modal) -->
-        <div class="px-8 py-4 bg-surface border-b border-border flex items-center gap-6 shrink-0">
-          <div class="flex-1 max-w-md">
-            <SearchInput v-model="searchQuery" placeholder="Buscar observador, buque o marea..." class="!w-full" />
+        <div class="px-8 py-3.5 bg-surface border-b border-border flex flex-col gap-3 shrink-0">
+          <div class="flex items-center justify-between gap-6">
+            <div class="flex-1 max-w-md">
+              <SearchInput v-model="searchQuery" placeholder="Buscar observador, buque o marea..." class="!w-full" />
+            </div>
+
+            <div class="flex items-center gap-3">
+              <div class="flex gap-2 p-1 bg-surface-muted rounded-xl border border-border">
+                <button
+                  v-for="type in [{ key: 'OBSERVADOR', label: 'Observadores' }, { key: 'TECNICO', label: 'Técnicos' }]"
+                  :key="type.key" @click="toggleType(type.key)"
+                  class="px-5 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all duration-200"
+                  :class="[
+                    selectedTypes.includes(type.key)
+                      ? 'bg-primary text-white shadow-md'
+                      : 'text-text-muted hover:text-text'
+                  ]">
+                  {{ type.label }}
+                </button>
+              </div>
+
+              <div v-if="selectedCategory" class="animate-fadeIn">
+                <span class="px-3 py-1.5 bg-primary text-white text-[10px] font-black uppercase rounded-lg flex items-center gap-2 shadow-sm ring-2 ring-primary/20">
+                  Filtro: {{ selectedCategory }}
+                  <button @click="selectedCategory = null" class="hover:bg-white/20 p-0.5 rounded transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </span>
+              </div>
+            </div>
           </div>
-          <div class="flex gap-2 p-1 bg-surface-muted rounded-xl border border-border">
-            <button
-              v-for="type in [{ key: 'OBSERVADOR', label: 'Observadores' }, { key: 'TECNICO', label: 'Técnicos' }]"
-              :key="type.key" @click="toggleType(type.key)"
-              class="px-5 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all duration-200"
-              :class="[
-                selectedTypes.includes(type.key)
-                  ? 'bg-primary text-white shadow-md'
-                  : 'text-text-muted hover:text-text'
-              ]">
-              {{ type.label }}
-            </button>
-          </div>
-          
-          <div v-if="selectedCategory" class="animate-fadeIn">
-            <span class="px-3 py-1.5 bg-primary text-white text-[10px] font-black uppercase rounded-lg flex items-center gap-2 shadow-sm ring-2 ring-primary/20">
-              Filtro: {{ selectedCategory }}
-              <button @click="selectedCategory = null" class="hover:bg-white/20 p-0.5 rounded transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
+
+          <!-- Filtros de Disponibilidad (Modal) -->
+          <div v-if="selectedStatus === 'Disponibles'"
+            class="pt-2 border-t border-border/50 flex items-center gap-6 animate-fadeIn">
+            <span class="text-[10px] font-black uppercase tracking-widest text-text-muted">
+              Filtros:
             </span>
+            <label class="inline-flex items-center gap-2 cursor-pointer select-none group">
+              <input type="checkbox" v-model="includeNoConfirmada"
+                class="w-4 h-4 rounded border-border text-primary focus:ring-primary/20 cursor-pointer" />
+              <span class="text-xs font-bold text-text-muted group-hover:text-text transition-colors">
+                Incluir disponibilidad no confirmada
+              </span>
+            </label>
+            <label class="inline-flex items-center gap-2 cursor-pointer select-none group">
+              <input type="checkbox" v-model="includePlanificados"
+                class="w-4 h-4 rounded border-border text-primary focus:ring-primary/20 cursor-pointer" />
+              <span class="text-xs font-bold text-text-muted group-hover:text-text transition-colors">
+                Incluir planificados a futuro
+              </span>
+            </label>
           </div>
         </div>
 
@@ -425,6 +505,20 @@
                           @click="$emit('view-timeline', item.id, item.name)">
                           {{ item.name }}
                         </span>
+
+                        <!-- Badge ¿Disponible? si no está confirmada -->
+                        <span v-if="selectedStatus === 'Disponibles' && !(item as any).disponibilidadConfirmada"
+                          class="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30"
+                          title="Disponibilidad no confirmada por el observador">
+                          ¿Disponible?
+                        </span>
+
+                        <!-- Badge Flexible por urgencia si aplica (Modal) -->
+                        <span v-if="selectedStatus === 'Disponibles' && (item as any).esFlexible"
+                          class="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-violet-500/15 text-violet-700 dark:text-violet-300 border border-violet-500/30"
+                          :title="`Convocable por urgencia (${(item as any).motivoFlexibilidad || 'Licencia flexible'})`">
+                          Flexible • {{ (item as any).motivoFlexibilidad || 'Urgencia' }}
+                        </span>
                         <button v-if="canManageObservations && editingObsId !== item.id" 
                           @click="startEditing(item.id, (item as any).observaciones)"
                           class="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-primary/10 text-primary rounded-lg transition-all">
@@ -478,6 +572,21 @@
                     <span class="text-[9px] font-bold text-primary uppercase tracking-widest italic leading-none mt-1">
                       {{ (item as any).fishery || 'Sin Pesquería' }}
                     </span>
+
+                    <!-- Indicador de Planificación en Simulador (Modal) -->
+                    <div v-if="selectedStatus === 'Disponibles' && (item as any).planificacionFutura"
+                      class="mt-1 flex items-start gap-2 px-2.5 py-1.5 rounded-lg bg-sky-500/10 border border-sky-500/20 text-sky-700 dark:text-sky-300 text-[10px] font-bold"
+                      :title="`Planificado en escenario ${(item as any).planificacionFutura.escenarioNombre}`">
+                      <span class="w-2 h-2 rounded-full bg-sky-500 shrink-0 mt-0.5 animate-pulse"></span>
+                      <div class="flex flex-col min-w-0 leading-snug">
+                        <span class="truncate">
+                          Planificado: {{ (item as any).planificacionFutura.escenarioNombre }}
+                        </span>
+                        <span class="text-[9px] font-medium opacity-90 truncate">
+                          {{ (item as any).planificacionFutura.buqueNombre }} • {{ formatDate((item as any).planificacionFutura.fechaZarpada) }}
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 </td>
                 <td class="px-8 py-4 text-right">
@@ -535,6 +644,8 @@ const searchQuery = ref('')
 const sortBy = ref<'name' | 'days' | null>(null)
 const sortOrder = ref<'asc' | 'desc'>('desc')
 const selectedCategory = ref<string | null>(null)
+const includeNoConfirmada = ref(false)
+const includePlanificados = ref(false)
 
 const authStore = useAuthStore()
 const canManageObservations = computed(() => {
@@ -554,7 +665,7 @@ const currentStatusObservers = computed(() => {
   if (!selectedStatus.value || !props.data) return []
   return selectedStatus.value === 'Navegando' ? props.data.listNavegando :
          selectedStatus.value === 'Descanso' ? props.data.listDescanso :
-         selectedStatus.value === 'Disponibles' ? props.data.listDisponibles :
+         selectedStatus.value === 'Disponibles' ? getFilteredDisponibles(props.data.listDisponibles) :
          selectedStatus.value === 'Designados' ? props.data.listDesignados :
          props.data.listImpedidos
 })
@@ -628,7 +739,7 @@ const availableComposition = computed(() => {
   const list = selectedStatus.value === 'Navegando' ? (props.data?.listNavegando || []) :
                selectedStatus.value === 'Descanso' ? (props.data?.listDescanso || []) :
                selectedStatus.value === 'Designados' ? (props.data?.listDesignados || []) :
-               (props.data?.listDisponibles || [])
+               getFilteredDisponibles(props.data?.listDisponibles || [])
   
   return getListComposition(list)
 })
@@ -792,12 +903,25 @@ const getFilteredList = (list: any[]) => {
   });
 }
 
+const getFilteredDisponibles = (list: any[]) => {
+  if (!list) return [];
+  return list.filter(item => {
+    if (!includeNoConfirmada.value && !item.disponibilidadConfirmada) {
+      return false;
+    }
+    if (!includePlanificados.value && item.planificacionFutura) {
+      return false;
+    }
+    return true;
+  });
+}
+
 const filteredStats = computed(() => {
   if (!props.data) return { navegando: 0, descanso: 0, disponibles: 0, designados: 0, total: 0 }
 
   const navegando = getFilteredList(props.data.listNavegando).length
   const descanso = getFilteredList(props.data.listDescanso).length
-  const disponibles = getFilteredList(props.data.listDisponibles).length
+  const disponibles = getFilteredDisponibles(getFilteredList(props.data.listDisponibles)).length
   const designados = getFilteredList(props.data.listDesignados).length
   const total = navegando + descanso + disponibles + designados
 
@@ -875,7 +999,7 @@ const currentList = computed(() => {
   switch (selectedStatus.value) {
     case 'Navegando': list = props.data.listNavegando; break
     case 'Descanso': list = props.data.listDescanso; break
-    case 'Disponibles': list = props.data.listDisponibles; break
+    case 'Disponibles': list = getFilteredDisponibles(props.data.listDisponibles); break
     case 'Designados': list = props.data.listDesignados; break
     default: list = []
   }

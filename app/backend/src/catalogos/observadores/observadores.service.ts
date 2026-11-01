@@ -406,7 +406,7 @@ export class ObservadoresService {
             where: {
                 observadorId: id,
                 activo: true,
-                estadoAprobacion: 'APROBADA',
+                estadoAprobacion: { in: ['APROBADA', 'RECTIFICADA'] },
                 tipoNovedad: {
                     codigo: { in: ['DISPONIBLE', 'NO_DISPONIBLE'] }
                 },
@@ -512,6 +512,7 @@ export class ObservadoresService {
             // Buscar si hubo alguna novedad DISPONIBLE en el rango [desde, hasta]
             const dispEnRango = sortedNovedades.find((n: any) => 
                 n.codigo === 'DISPONIBLE' && 
+                n.estadoAprobacion === 'APROBADA' &&
                 n.start.getTime() >= desdeTime && 
                 n.start.getTime() <= hastaTime
             );

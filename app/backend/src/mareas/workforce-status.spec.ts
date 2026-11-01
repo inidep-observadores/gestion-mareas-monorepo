@@ -38,6 +38,12 @@ describe('MareasService - getWorkforceStatus', () => {
             alerta: {
                 findMany: jest.fn().mockResolvedValue([]),
             },
+            observadorNovedad: {
+                findMany: jest.fn().mockResolvedValue([]),
+            },
+            escenarioSimulacion: {
+                findMany: jest.fn().mockResolvedValue([]),
+            },
             seguimientoPostMarea: {
                 findMany: jest.fn().mockResolvedValue([]),
                 updateMany: jest.fn(),
@@ -149,6 +155,108 @@ describe('MareasService - getWorkforceStatus', () => {
 
         const obs = result.listDesignados[0];
         expect(obs.fishery).toBe('PESQUERIA ETAPA');
+
+        jest.useRealTimers();
+    });
+
+    it('debe clasificar disponibilidad confirmada y asociar la planificación simulada más próxima', async () => {
+        const now = new Date('2026-10-31T12:00:00Z');
+        jest.useFakeTimers().setSystemTime(now);
+
+        const obsConfirmado = { id: 'obs-1', apellido: 'Gomez', nombre: 'Juan', activo: true, sexo: 'Masculino', eventual: false, tipoObservador: 'OBSERVADOR', tipoContrato: 'TITULAR' };
+        const obsNoConfirmado = { id: 'obs-2', apellido: 'Perez', nombre: 'Carlos', activo: true, sexo: 'Masculino', eventual: false, tipoObservador: 'OBSERVADOR', tipoContrato: 'TITULAR' };
+        const obsPlanificado = { id: 'obs-3', apellido: 'Lopez', nombre: 'Ana', activo: true, sexo: 'Femenino', eventual: false, tipoObservador: 'OBSERVADOR', tipoContrato: 'TITULAR' };
+        const obsFlexible = { id: 'obs-4', apellido: 'Rodriguez', nombre: 'Estanislao', activo: true, sexo: 'Masculino', eventual: false, tipoObservador: 'OBSERVADOR', tipoContrato: 'TITULAR' };
+
+        mockPrismaService.observador.findMany.mockResolvedValue([obsConfirmado, obsNoConfirmado, obsPlanificado, obsFlexible]);
+        mockPrismaService.mareaEtapa.findMany.mockResolvedValue([]);
+        mockPrismaService.marea.findMany.mockResolvedValue([]);
+
+        // Novedad de disponibilidad para obs-1 y obs-3, y licencia con urgencia para obs-4
+        mockPrismaService.observadorNovedad.findMany.mockResolvedValue([
+            {
+                id: 'nov-1',
+                observadorId: 'obs-1',
+                fechaInicio: new Date('2026-10-15T00:00:00Z'),
+                fechaFin: null,
+                activo: true,
+                estadoAprobacion: 'APROBADA',
+                tipoNovedad: { codigo: 'DISPONIBLE', descripcion: 'Disponible para embarque' }
+            },
+            {
+                id: 'nov-3',
+                observadorId: 'obs-3',
+                fechaInicio: new Date('2026-10-20T00:00:00Z'),
+                fechaFin: null,
+                activo: true,
+                estadoAprobacion: 'APROBADA',
+                tipoNovedad: { codigo: 'DISPONIBLE', descripcion: 'Disponible para embarque' }
+            },
+            {
+                id: 'nov-4',
+                observadorId: 'obs-4',
+                fechaInicio: new Date('2026-10-19T00:00:00Z'),
+                fechaFin: new Date('2026-11-02T00:00:00Z'),
+                permiteUrgencia: true,
+                activo: true,
+                estadoAprobacion: 'APROBADA',
+                tipoNovedad: { codigo: 'LICENCIA_VACACIONES', descripcion: 'Licencia / Vacaciones', afectaPresentismo: true }
+            }
+        ]);
+
+        // Escenario de simulación con obs-3 asignado en dos mareas (una el 10/11 y otra el 05/11)
+        mockPrismaService.escenarioSimulacion.findMany.mockResolvedValue([
+            {
+                id: 'esc-1',
+                nombre: 'Escenario A',
+                items: [
+                    {
+                        tipoBloque: 'MAREA_SIMULADA',
+                        observadorId: 'obs-3',
+                        buqueNombre: 'BUQUE LEJANO',
+                        fechaZarpada: '2026-11-10T00:00:00.000Z'
+                    }
+                ]
+            },
+            {
+                id: 'esc-2',
+                nombre: 'Escenario B',
+                items: [
+                    {
+                        tipoBloque: 'MAREA_SIMULADA',
+                        observadorId: 'obs-3',
+                        buqueNombre: 'BUQUE PROXIMO',
+                        fechaZarpada: '2026-11-05T00:00:00.000Z'
+                    }
+                ]
+            }
+        ]);
+
+        const result = await service.getWorkforceStatus(2026);
+
+        expect(result.listDisponibles).toHaveLength(4);
+
+        const item1 = result.listDisponibles.find(o => o.id === 'obs-1');
+        expect(item1?.disponibilidadConfirmada).toBe(true);
+        expect(item1?.planificacionFutura).toBeNull();
+
+        const item2 = result.listDisponibles.find(o => o.id === 'obs-2');
+        expect(item2?.disponibilidadConfirmada).toBe(false);
+        expect(item2?.planificacionFutura).toBeNull();
+
+        const item3 = result.listDisponibles.find(o => o.id === 'obs-3');
+        expect(item3?.disponibilidadConfirmada).toBe(true);
+        expect(item3?.planificacionFutura).toEqual({
+            escenarioId: 'esc-2',
+            escenarioNombre: 'Escenario B',
+            buqueNombre: 'BUQUE PROXIMO',
+            fechaZarpada: new Date('2026-11-05T00:00:00.000Z').toISOString()
+        });
+
+        const item4 = result.listDisponibles.find(o => o.id === 'obs-4');
+        expect(item4?.disponibilidadConfirmada).toBe(true);
+        expect(item4?.esFlexible).toBe(true);
+        expect(item4?.motivoFlexibilidad).toBe('Licencia / Vacaciones');
 
         jest.useRealTimers();
     });

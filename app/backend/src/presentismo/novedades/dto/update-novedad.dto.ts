@@ -5,7 +5,7 @@ import { IsString, IsOptional, IsIn } from 'class-validator';
 export class UpdateNovedadDto extends PartialType(CreateNovedadDto) {
     @IsString()
     @IsOptional()
-    @IsIn(['PENDIENTE', 'APROBADA', 'RECHAZADA'])
+    @IsIn(['PENDIENTE', 'APROBADA', 'RECHAZADA', 'RECTIFICADA'])
     estadoAprobacion?: string;
 
     @IsString()

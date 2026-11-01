@@ -191,6 +191,9 @@
             <span v-else-if="novedad.metadata?.esAjustePeriodo" class="bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-tighter border border-indigo-500/20 flex items-center gap-1">
               <span>⚡</span> {{ novedad.metadata?.tipoAjuste === 'ADELANTO_DISPONIBILIDAD' ? 'Adelanta Disponibilidad' : 'Ajuste de Período' }}
             </span>
+            <span v-else-if="novedad.estadoAprobacion === 'RECTIFICADA'" class="bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-tighter flex items-center gap-1">
+              <span>🔄</span> Rectificada
+            </span>
             <span v-else-if="novedad.estadoAprobacion === 'PENDIENTE'" class="bg-warning/10 text-warning text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-tighter">
               Pendiente
             </span>
@@ -222,10 +225,10 @@
                 {{ novedad.metadata?.esCorreccion ? 'Descartar' : 'Rechazar' }}
               </button>
             </template>
-            <button v-if="novedad.activo && novedad.estadoAprobacion !== 'RECHAZADA'" @click="openEditModal(novedad)" class="font-bold text-primary hover:underline">
+            <button v-if="novedad.activo && novedad.estadoAprobacion !== 'RECHAZADA' && novedad.estadoAprobacion !== 'RECTIFICADA'" @click="openEditModal(novedad)" class="font-bold text-primary hover:underline">
                 Editar
             </button>
-            <button v-if="novedad.activo" @click="deleteNovedad(novedad)" class="font-bold text-error hover:underline" title="Eliminar">
+            <button v-if="novedad.activo && novedad.estadoAprobacion !== 'RECTIFICADA'" @click="deleteNovedad(novedad)" class="font-bold text-error hover:underline" title="Eliminar">
               <TrashIcon class="w-4 h-4" />
             </button>
           </div>
@@ -249,6 +252,9 @@
                 </span>
                 <span v-else-if="novedad.metadata?.esCorreccion" class="inline-flex items-center text-[9px] font-black bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 px-1.5 py-0.5 rounded uppercase">
                   🔄 Rectificación
+                </span>
+                <span v-else-if="novedad.estadoAprobacion === 'RECTIFICADA'" class="inline-flex items-center text-[9px] font-black bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 px-1.5 py-0.5 rounded uppercase">
+                  🔄 Rectificada
                 </span>
                 <span v-else-if="novedad.metadata?.esAjustePeriodo" class="inline-flex items-center text-[9px] font-black bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 px-1.5 py-0.5 rounded uppercase">
                   ⚡ {{ novedad.metadata?.tipoAjuste === 'ADELANTO_DISPONIBILIDAD' ? 'Adelanta Disp.' : 'Ajuste' }}
@@ -278,12 +284,12 @@
         </div>
 
         <div class="pt-3 border-t border-border flex gap-2">
-          <button v-if="novedad.activo && novedad.estadoAprobacion !== 'RECHAZADA'" @click="openEditModal(novedad)"
+          <button v-if="novedad.activo && novedad.estadoAprobacion !== 'RECHAZADA' && novedad.estadoAprobacion !== 'RECTIFICADA'" @click="openEditModal(novedad)"
               class="flex-1 py-2.5 text-sm font-bold text-primary bg-primary/10 rounded-lg hover:bg-primary/20 transition-colors flex items-center justify-center gap-2">
               <EditIcon class="w-4 h-4" />
               Editar
           </button>
-          <button v-if="novedad.activo" @click="deleteNovedad(novedad)"
+          <button v-if="novedad.activo && novedad.estadoAprobacion !== 'RECTIFICADA'" @click="deleteNovedad(novedad)"
               class="px-4 py-2.5 text-sm font-bold text-error bg-error/10 rounded-lg hover:bg-error/20 transition-colors flex items-center justify-center">
               <TrashIcon class="w-4 h-4" />
           </button>

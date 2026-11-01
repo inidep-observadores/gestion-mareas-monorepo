@@ -27,7 +27,7 @@
                     <div class="absolute -left-[41px] top-0 w-5 h-5 rounded-full border-4 border-surface shadow-sm z-10 transition-transform hover:scale-125"
                         :class="[
                             item.type === 'TRIP' ? (item.isNavegando ? 'bg-info' : 'bg-primary') :
-                            item.type === 'NOVEDAD' ? (item.codigo === 'DISPONIBLE' ? 'bg-emerald-500' : 'bg-amber-500') :
+                            item.type === 'NOVEDAD' ? (item.estadoAprobacion === 'RECTIFICADA' ? 'bg-amber-400' : (item.codigo === 'DISPONIBLE' ? 'bg-emerald-500' : 'bg-amber-500')) :
                             item.type === 'LAND' ? 'bg-text-muted/30' : 'bg-surface border-border'
                         ]"></div>
 
@@ -87,17 +87,29 @@
                     <div v-if="item.type === 'NOVEDAD'" class="group">
                         <div @click="openNovedadDetail(item)"
                             class="flex items-center justify-between gap-3 px-4 py-2.5 rounded-xl border border-border bg-surface hover:border-primary/40 hover:shadow-xs transition-all cursor-pointer active:scale-[0.99]"
-                            :class="item.codigo === 'DISPONIBLE' ? 'border-l-4 border-l-emerald-500' : 'border-l-4 border-l-amber-500'"
+                            :class="[
+                                item.estadoAprobacion === 'RECTIFICADA' 
+                                    ? 'border-l-4 border-l-amber-400 opacity-80' 
+                                    : (item.codigo === 'DISPONIBLE' ? 'border-l-4 border-l-emerald-500' : 'border-l-4 border-l-amber-500')
+                            ]"
                         >
                             <div class="flex flex-col min-w-0">
                                 <!-- Período formateado y Chips de Días -->
                                 <div class="flex items-center gap-2 flex-wrap">
-                                    <span class="text-xs font-black text-text leading-tight">
+                                    <span class="text-xs font-black text-text leading-tight"
+                                        :class="item.estadoAprobacion === 'RECTIFICADA' ? 'line-through text-text-muted' : ''">
                                         {{ formatPeriodoNovedad(item) }}
                                     </span>
 
+                                    <!-- Badge Rectificada -->
+                                    <span v-if="item.estadoAprobacion === 'RECTIFICADA'"
+                                        class="px-2 py-0.5 text-[9px] font-black rounded-md tracking-wider uppercase bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 flex items-center gap-1"
+                                    >
+                                        <span>🔄</span> Rectificada
+                                    </span>
+
                                     <!-- Chip de días hasta zarpar o días disponible actual -->
-                                    <span v-if="item.codigo === 'DISPONIBLE' && item.diasHastaSiguienteMarea !== undefined"
+                                    <span v-else-if="item.codigo === 'DISPONIBLE' && item.diasHastaSiguienteMarea !== undefined"
                                         class="px-2 py-0.5 text-[9px] font-black rounded-md tracking-wider uppercase"
                                         :class="item.tieneMareaPosterior 
                                             ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20' 

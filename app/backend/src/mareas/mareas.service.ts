@@ -1474,6 +1474,80 @@ export class MareasService {
             stageCountByMarea.set(mareaId, (stageCountByMarea.get(mareaId) || 0) + 1);
         });
 
+        // Obtener novedades activas y aprobadas que cubren la fecha actual
+        const novedadesHoy = await this.prisma.observadorNovedad.findMany({
+            where: {
+                activo: true,
+                estadoAprobacion: 'APROBADA',
+                fechaInicio: { lte: now },
+                OR: [
+                    { fechaFin: { gte: now } },
+                    { fechaFin: null }
+                ]
+            },
+            include: {
+                tipoNovedad: true
+            }
+        });
+
+        const novedadesDisponiblesByObs = new Map<string, any>();
+        const novedadesBloqueantesByObs = new Map<string, any>();
+        const novedadesFlexiblesByObs = new Map<string, any>();
+
+        novedadesHoy.forEach((n: any) => {
+            if (n.tipoNovedad?.codigo === 'DISPONIBLE') {
+                novedadesDisponiblesByObs.set(n.observadorId, n);
+            } else if (n.tipoNovedad?.codigo === 'NO_DISPONIBLE' || n.tipoNovedad?.afectaPresentismo) {
+                if (n.permiteUrgencia === true || n.tipoNovedad?.codigo === 'FC') {
+                    novedadesFlexiblesByObs.set(n.observadorId, n);
+                } else {
+                    novedadesBloqueantesByObs.set(n.observadorId, n);
+                }
+            }
+        });
+
+        // Obtener escenarios de simulación activos (no borrados) para chequear planificaciones futuras
+        const escenariosActivos = await this.prisma.escenarioSimulacion.findMany({
+            where: {
+                estado: { not: 'BORRADO' }
+            },
+            select: {
+                id: true,
+                nombre: true,
+                items: true
+            }
+        });
+
+        // Mapear la planificación simulada más próxima para cada observador (con fechaZarpada >= now)
+        const planificacionesFuturasByObs = new Map<string, {
+            escenarioId: string;
+            escenarioNombre: string;
+            buqueNombre: string;
+            fechaZarpada: string;
+        }>();
+
+        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+
+        escenariosActivos.forEach((esc: any) => {
+            const items = Array.isArray(esc.items) ? esc.items : [];
+            items.forEach((item: any) => {
+                if (item.tipoBloque === 'MAREA_SIMULADA' && item.observadorId && item.fechaZarpada) {
+                    const zarpadaDate = new Date(item.fechaZarpada);
+                    if (zarpadaDate >= todayStart) {
+                        const existing = planificacionesFuturasByObs.get(item.observadorId);
+                        if (!existing || zarpadaDate < new Date(existing.fechaZarpada)) {
+                            planificacionesFuturasByObs.set(item.observadorId, {
+                                escenarioId: esc.id,
+                                escenarioNombre: esc.nombre,
+                                buqueNombre: item.buqueNombre || 'Buque sin asignar',
+                                fechaZarpada: zarpadaDate.toISOString()
+                            });
+                        }
+                    }
+                }
+            });
+        });
+
         const activeNav = new Map<string, { start: Date; vessel: string; mareaCode: string; fishery: string; enTierra: boolean; stageCount: number; fleetCode?: string; fleetName?: string; intervals: Array<{ start: Date; end?: Date | null }> }>();
         const lastArrivalByObs = new Map<string, { date: Date; mareaCode: string; vessel: string; fishery: string }>();
         const designadosActivosByObs = new Map<string, { mareaCode: string; vesselName: string; fechaZarpadaEstimada: Date | null; fishery: string }>();
@@ -1555,7 +1629,31 @@ export class MareasService {
 
         const listDescanso: Array<{ id: string; name: string; fotoUrl?: string; days: number; lastArrival: string; mareaCode: string; vesselName: string; fishery: string; tipoObservador: string; tipoContrato: string; sexo: string; eventual: boolean; tieneDesignacionActiva: boolean; observaciones?: string }> = [];
         const listImpedidos: Array<{ id: string; name: string; fotoUrl?: string; motivo: string; tipoObservador: string; tipoContrato: string; sexo: string; eventual: boolean; tieneDesignacionActiva: boolean; observaciones?: string }> = [];
-        const listDisponibles: Array<{ id: string; name: string; fotoUrl?: string; days: number; lastArrival: string; mareaCode: string; vesselName: string; fishery: string; tipoObservador: string; tipoContrato: string; sexo: string; eventual: boolean; tieneDesignacionActiva: boolean; observaciones?: string }> = [];
+        const listDisponibles: Array<{
+            id: string;
+            name: string;
+            fotoUrl?: string;
+            days: number;
+            lastArrival: string;
+            mareaCode: string;
+            vesselName: string;
+            fishery: string;
+            tipoObservador: string;
+            tipoContrato: string;
+            sexo: string;
+            eventual: boolean;
+            tieneDesignacionActiva: boolean;
+            disponibilidadConfirmada: boolean;
+            esFlexible?: boolean;
+            motivoFlexibilidad?: string | null;
+            planificacionFutura: {
+                escenarioId: string;
+                escenarioNombre: string;
+                buqueNombre: string;
+                fechaZarpada: string;
+            } | null;
+            observaciones?: string;
+        }> = [];
         const listNavegando: Array<{ id: string; name: string; fotoUrl?: string; days: number; vessel: string; mareaCode: string; fishery: string; enTierra: boolean; startDate: string; tipoObservador: string; tipoContrato: string, stageCount: number; sexo: string; eventual: boolean; tieneDesignacionActiva: boolean; observaciones?: string; fleetCode?: string; fleetName?: string }> = [];
         const listDesignados: Array<{ id: string; name: string; fotoUrl?: string; mareaCode: string; vesselName: string; fishery: string; fechaZarpadaEstimada: string; tipoObservador: string; tipoContrato: string; sexo: string; eventual: boolean; tieneDesignacionActiva: boolean; observaciones?: string }> = [];
         const topDryCandidates: Array<{ id: string; name: string; fotoUrl?: string; days: number; lastArrival: string; mareaCode: string; vesselName: string; fishery: string; tipoObservador: string; tipoContrato: string; sexo: string; eventual: boolean; tieneDesignacionActiva: boolean; observaciones?: string }> = [];
@@ -1570,10 +1668,41 @@ export class MareasService {
             const daysSince = lastArrival ? DateUtils.calculateInclusiveDays(lastArrival, now) - 1 : null;
 
             const hasDesignation = designadosActivosByObs.has(obs.id);
-            const status = this.getObserverStatus(obs, activeNav.has(obs.id), hasDesignation, lastArrival, now);
+            const novedadBloqueante = novedadesBloqueantesByObs.get(obs.id);
+            const status = this.getObserverStatus(obs, activeNav.has(obs.id), hasDesignation, lastArrival, now, novedadBloqueante);
 
-            // Top Dry Check: Solo listar observadores genuinamente DISPONIBLES y de tipo OBSERVADOR (y sin marea designada)
-            if (obsConMareas.has(obs.id) && status === 'DISPONIBLE' && !hasDesignation && lastArrival && lastArrivalData && daysSince !== null && obs.tipoObservador === 'OBSERVADOR') {
+            // Determinar disponibilidad confirmada y planificación simulada futura
+            let tieneAvisoVigente = false;
+            let esFlexible = false;
+            let motivoFlexibilidad: string | null = null;
+            let planificacion: { escenarioId: string; escenarioNombre: string; buqueNombre: string; fechaZarpada: string } | null = null;
+
+            if (status === 'DISPONIBLE') {
+                const novedadDisp = novedadesDisponiblesByObs.get(obs.id);
+                if (novedadDisp) {
+                    const iniAviso = new Date(novedadDisp.fechaInicio);
+                    const mareaPosterior = etapas.some((e: any) => {
+                        const obsEnEtapa = e.observadores?.some((o: any) => o.observador?.id === obs.id) || e.marea?.observadorPrincipalId === obs.id;
+                        if (!obsEnEtapa) return false;
+                        const zarpada = e.fechaZarpada ? new Date(e.fechaZarpada) : null;
+                        return zarpada && zarpada >= iniAviso && zarpada <= now;
+                    });
+                    tieneAvisoVigente = !mareaPosterior;
+                }
+
+                const novedadFlex = novedadesFlexiblesByObs.get(obs.id);
+                if (novedadFlex) {
+                    esFlexible = true;
+                    motivoFlexibilidad = novedadFlex.tipoNovedad?.descripcion || 'Licencia flexible';
+                }
+
+                planificacion = planificacionesFuturasByObs.get(obs.id) || null;
+            }
+
+            const disponibilidadConfirmada = tieneAvisoVigente || esFlexible;
+
+            // Top Dry Check: Solo listar observadores genuinamente DISPONIBLES y de tipo OBSERVADOR (y sin marea designada ni planificación simulada)
+            if (obsConMareas.has(obs.id) && status === 'DISPONIBLE' && !hasDesignation && lastArrival && lastArrivalData && daysSince !== null && obs.tipoObservador === 'OBSERVADOR' && tieneAvisoVigente && !planificacion) {
                 topDryCandidates.push({
                     id: obs.id,
                     name,
@@ -1618,11 +1747,14 @@ export class MareasService {
                     });
                     break;
                 case 'IMPEDIDO':
+                    const motivo = obs.conImpedimento
+                        ? (obs.motivoImpedimento || 'Sin motivo especificado')
+                        : (novedadBloqueante?.tipoNovedad?.descripcion + (novedadBloqueante?.motivo ? ` - ${novedadBloqueante.motivo}` : ''));
                     listImpedidos.push({
                         id: obs.id,
                         name,
                         fotoUrl: obs.fotoUrl,
-                        motivo: obs.motivoImpedimento || 'Sin motivo especificado',
+                        motivo,
                         tipoObservador: obs.tipoObservador,
                         tipoContrato: obs.tipoContrato,
                         sexo: obs.sexo,
@@ -1682,6 +1814,10 @@ export class MareasService {
                         sexo: obs.sexo,
                         eventual: obs.eventual,
                         tieneDesignacionActiva: designadosActivosByObs.has(obs.id),
+                        disponibilidadConfirmada,
+                        esFlexible,
+                        motivoFlexibilidad,
+                        planificacionFutura: planificacion,
                         observaciones: obs.observaciones
                     });
                     break;
@@ -1732,12 +1868,13 @@ export class MareasService {
         isNavigating: boolean,
         hasDesignation: boolean,
         lastArrival: Date | undefined,
-        now: Date
+        now: Date,
+        novedadBloqueante?: any
     ): 'NAVEGANDO' | 'IMPEDIDO' | 'DESIGNADO' | 'DESCANSO' | 'DISPONIBLE' | 'OTRO' {
 
         if (isNavigating) return 'NAVEGANDO';
 
-        if (obs.conImpedimento) return 'IMPEDIDO';
+        if (obs.conImpedimento || novedadBloqueante) return 'IMPEDIDO';
 
         if (hasDesignation) return 'DESIGNADO';
 
@@ -1748,9 +1885,7 @@ export class MareasService {
             }
         }
 
-        if (obs.disponible) return 'DISPONIBLE';
-
-        return 'OTRO';
+        return 'DISPONIBLE';
     }
 
     async getMareaContext(id: string) {

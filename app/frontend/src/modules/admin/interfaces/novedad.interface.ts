@@ -9,7 +9,7 @@ export interface Novedad {
   fechaFin?: string | null;
   permiteUrgencia: boolean;
   motivo?: string | null;
-  estadoAprobacion: string; // APROBADA, PENDIENTE, RECHAZADA
+  estadoAprobacion: string; // APROBADA, PENDIENTE, RECHAZADA, RECTIFICADA
   origen: string; // MANUAL, EMAIL, AUTOMATICO
   creadoPorId?: string | null;
   fechaCreacion: string;
@@ -39,6 +39,6 @@ export interface CreateNovedadDto {
 }
 
 export interface UpdateNovedadDto extends Partial<CreateNovedadDto> {
-  estadoAprobacion?: 'APROBADA' | 'RECHAZADA' | 'PENDIENTE';
+  estadoAprobacion?: 'APROBADA' | 'RECHAZADA' | 'PENDIENTE' | 'RECTIFICADA';
   comentarioMovimiento?: string;
 }

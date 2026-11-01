@@ -334,14 +334,14 @@ export class NovedadesService {
         await this.prisma.observadorNovedad.update({
           where: { id: novedadOriginalId },
           data: {
-            activo: false,
-            estadoAprobacion: 'RECHAZADA',
+            activo: true,
+            estadoAprobacion: 'RECTIFICADA',
             movimientos: {
               create: {
                 tipoEvento: 'REEMPLAZADA_POR_CORRECCION',
-                estadoAnterior: 'APROBADA',
-                estadoNuevo: 'RECHAZADA',
-                comentarios: `Reemplazada por aprobación de rectificación (nuevo período: del ${DateUtils.formatDate(start)} ${end ? 'al ' + DateUtils.formatDate(end) : 'en adelante'})`,
+                estadoAnterior: original?.estadoAprobacion || 'APROBADA',
+                estadoNuevo: 'RECTIFICADA',
+                comentarios: `Rectificada por aprobación de nueva novedad (nuevo período: del ${DateUtils.formatDate(start)} ${end ? 'al ' + DateUtils.formatDate(end) : 'en adelante'})`,
                 usuarioId: user?.id,
               }
             }
@@ -385,14 +385,14 @@ export class NovedadesService {
             await this.prisma.observadorNovedad.update({
               where: { id: novedadAjustarId },
               data: {
-                activo: false,
-                estadoAprobacion: 'RECHAZADA',
+                activo: true,
+                estadoAprobacion: 'RECTIFICADA',
                 movimientos: {
                   create: {
                     tipoEvento: 'REEMPLAZADA_POR_DISPONIBILIDAD',
                     estadoAnterior: novedadAjustar.estadoAprobacion,
-                    estadoNuevo: 'RECHAZADA',
-                    comentarios: `Reemplazada y anulada por inicio de nuevo período de ${tipoNovedadActual?.descripcion || 'Novedad'} a partir del ${DateUtils.formatDate(start)}`,
+                    estadoNuevo: 'RECTIFICADA',
+                    comentarios: `Rectificada y reemplazada por inicio de nuevo período de ${tipoNovedadActual?.descripcion || 'Novedad'} a partir del ${DateUtils.formatDate(start)}`,
                     usuarioId: user?.id,
                   }
                 }

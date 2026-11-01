@@ -58,7 +58,31 @@ export interface WorkforceStatus {
     topDry: Array<{ id: string; name: string; fotoUrl?: string; days: number; lastArrival: string; mareaCode?: string; vesselName?: string; fishery?: string; tipoObservador: string; tipoContrato: string; sexo: string; eventual: boolean; observaciones?: string }>
     listNavegando: Array<{ id: string; name: string; fotoUrl?: string; days: number; vessel: string; mareaCode?: string; fishery?: string; enTierra?: boolean; startDate: string; tipoObservador: string; tipoContrato: string; stageCount?: number; sexo: string; eventual: boolean; observaciones?: string; fleetCode?: string; fleetName?: string }>
     listDescanso: Array<{ id: string; name: string; fotoUrl?: string; days: number; lastArrival: string; mareaCode?: string; vesselName?: string; fishery?: string; tipoObservador: string; tipoContrato: string; sexo: string; eventual: boolean; observaciones?: string }>
-    listDisponibles: Array<{ id: string; name: string; fotoUrl?: string; days: number; lastArrival: string; mareaCode?: string; vesselName?: string; fishery?: string; tipoObservador: string; tipoContrato: string; sexo: string; eventual: boolean; observaciones?: string }>
+    listDisponibles: Array<{
+        id: string;
+        name: string;
+        fotoUrl?: string;
+        days: number;
+        lastArrival: string;
+        mareaCode?: string;
+        vesselName?: string;
+        fishery?: string;
+        tipoObservador: string;
+        tipoContrato: string;
+        sexo: string;
+        eventual: boolean;
+        tieneDesignacionActiva?: boolean;
+        disponibilidadConfirmada: boolean;
+        esFlexible?: boolean;
+        motivoFlexibilidad?: string | null;
+        planificacionFutura?: {
+            escenarioId: string;
+            escenarioNombre: string;
+            buqueNombre: string;
+            fechaZarpada: string;
+        } | null;
+        observaciones?: string;
+    }>
     listDesignados: Array<{ id: string; name: string; fotoUrl?: string; mareaCode: string; vesselName: string; fishery: string; fechaZarpadaEstimada: string; tipoObservador: string; tipoContrato: string; sexo: string; eventual: boolean; tieneDesignacionActiva: boolean; observaciones?: string }>
     listImpedidos: Array<{ id: string; name: string; fotoUrl?: string; motivo: string; tipoObservador: string; tipoContrato: string; sexo: string; eventual: boolean; observaciones?: string }>
 }

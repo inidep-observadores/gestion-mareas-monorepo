@@ -362,14 +362,14 @@ export class NovedadesAiProcessor implements JobProcessor {
                                     await this.prisma.observadorNovedad.update({
                                         where: { id: overlaps.id },
                                         data: {
-                                            activo: false,
-                                            estadoAprobacion: 'RECHAZADA',
+                                            activo: true,
+                                            estadoAprobacion: 'RECTIFICADA',
                                             movimientos: {
                                                 create: {
                                                     tipoEvento: 'REEMPLAZADA_POR_EMAIL',
                                                     estadoAnterior: overlaps.estadoAprobacion,
-                                                    estadoNuevo: 'RECHAZADA',
-                                                    comentarios: 'Anulada automáticamente por recepción de un nuevo correo con fechas rectificadas.',
+                                                    estadoNuevo: 'RECTIFICADA',
+                                                    comentarios: 'Rectificada automáticamente por recepción de un nuevo correo con fechas actualizadas.',
                                                 }
                                             }
                                         }

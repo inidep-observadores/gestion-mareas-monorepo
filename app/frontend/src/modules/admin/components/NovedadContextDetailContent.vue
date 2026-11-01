@@ -21,6 +21,19 @@
             <p class="text-[10px] uppercase font-black text-text-muted mb-1">Observador</p>
             <p class="text-sm font-bold text-text">{{ novedad.observador?.apellido }}, {{ novedad.observador?.nombre }}</p>
           </div>
+
+          <!-- Banner de Novedad Rectificada -->
+          <div v-if="novedad.estadoAprobacion === 'RECTIFICADA'" class="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3.5 flex items-start gap-2.5">
+            <span class="text-base leading-none">🔄</span>
+            <div>
+              <h3 class="text-xs font-black text-amber-700 dark:text-amber-400 uppercase tracking-wide">
+                Novedad Rectificada
+              </h3>
+              <p class="text-[11px] text-text-muted mt-0.5">
+                Esta novedad fue reemplazada por una declaración posterior y se preserva en el historial con fines de trazabilidad.
+              </p>
+            </div>
+          </div>
           
           <!-- Alerta y Comparador de Rectificación -->
           <div v-if="novedad.metadata?.esCorreccion" class="rounded-xl border border-amber-500/30 bg-amber-500/5 p-3.5 space-y-3">
@@ -292,6 +305,16 @@
           </button>
         </div>
       </template>
+      <template v-else-if="novedad.estadoAprobacion === 'RECTIFICADA'">
+        <div class="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-center">
+          <p class="text-xs font-black text-amber-700 dark:text-amber-400 uppercase tracking-wide flex items-center justify-center gap-1.5">
+            <span>🔄</span> Novedad Rectificada
+          </p>
+          <p class="text-[11px] text-text-muted mt-1 leading-relaxed">
+            Esta novedad fue reemplazada por una posterior y se conserva activa con fines históricos y de trazabilidad.
+          </p>
+        </div>
+      </template>
       <template v-else-if="novedad.estadoAprobacion !== 'RECHAZADA'">
         <div class="flex gap-2">
           <button type="button" @click="$emit('edit', novedad)" class="flex-1 flex justify-center items-center gap-1 rounded-lg bg-surface px-3 py-2 text-sm font-bold text-text shadow-sm ring-1 ring-inset ring-border hover:bg-surface-muted transition-colors active:scale-[0.98]">
@@ -370,6 +393,7 @@ const formatTipoEvento = (tipo: string) => {
     'APROBACION_ACTUALIZACION_CEDULA': 'Actualización de Cédula Aprobada',
     'APROBACION_CORRECCION': 'Rectificación Aprobada',
     'APROBACION_AJUSTE_PERIODO': 'Aprobación con Ajuste de Período',
+    'RECTIFICACION': 'Novedad Rectificada',
     'RECHAZO': 'Novedad Rechazada',
     'RECHAZO_CORRECCION': 'Rectificación Rechazada',
     'RECHAZO_AJUSTE_PERIODO': 'Ajuste de Período Rechazado',

@@ -1,22 +1,25 @@
--- Migración para restaurar novedades de disponibilidad y no disponibilidad indebidamente anuladas por rectificación previa
--- cuando existió al menos una marea intermedia entre la novedad original y su supuesto reemplazo.
+-- Migración para restaurar novedades históricas y establecer el estado RECTIFICADA
+-- 1. Restaurar como APROBADA aquellas novedades indebidamente anuladas cuando existió al menos una marea intermedia.
+-- 2. Marcar como RECTIFICADA (con activo = true) aquellas novedades que fueron reemplazadas por rectificación dentro del mismo ciclo.
 
 DO $$
 DECLARE
     r RECORD;
+    r2 RECORD;
     v_usuario_sistema_id UUID;
 BEGIN
     -- Obtener un ID de usuario para auditoría (o NULL si no existe)
     SELECT id INTO v_usuario_sistema_id FROM users WHERE email LIKE '%admin%' OR email LIKE '%sistema%' LIMIT 1;
 
-    -- Cursor de novedades DISPONIBLE o NO_DISPONIBLE anuladas indebidamente
+    -- =========================================================================
+    -- PARTE 1: Novedades con marea intermedia -> Restaurar a APROBADA
+    -- =========================================================================
     FOR r IN
         SELECT DISTINCT n.id, n.id_observador, n.fecha_inicio, n.fecha_fin, n.id_tipo_novedad, tn.codigo as tipo_codigo
         FROM observadores_novedades n
         JOIN tipos_novedad tn ON tn.id = n.id_tipo_novedad
         WHERE tn.codigo IN ('DISPONIBLE', 'NO_DISPONIBLE')
-          AND n.activo = false
-          AND n.estado_aprobacion = 'RECHAZADA'
+          AND (n.activo = false OR n.estado_aprobacion = 'RECHAZADA')
           AND EXISTS (
               SELECT 1 
               FROM observadores_novedades_movimientos m 
@@ -82,5 +85,51 @@ BEGIN
         WHERE metadata->>'novedadOriginalId' = r.id::text;
 
     END LOOP;
-END $$;
 
+    -- =========================================================================
+    -- PARTE 2: Novedades rectificadas genuinas (sin marea intermedia) -> RECTIFICADA
+    -- =========================================================================
+    FOR r2 IN
+        SELECT DISTINCT n.id, n.estado_aprobacion
+        FROM observadores_novedades n
+        JOIN tipos_novedad tn ON tn.id = n.id_tipo_novedad
+        WHERE tn.codigo IN ('DISPONIBLE', 'NO_DISPONIBLE')
+          AND (n.activo = false OR n.estado_aprobacion = 'RECHAZADA')
+          AND EXISTS (
+              SELECT 1 
+              FROM observadores_novedades_movimientos m 
+              WHERE m.id_novedad = n.id 
+                AND m.tipo_evento IN ('REEMPLAZADA_POR_CORRECCION', 'REEMPLAZADA_POR_DISPONIBILIDAD', 'REEMPLAZADA_POR_EMAIL')
+          )
+          -- Excluir las que ya fueron restauradas a APROBADA en Parte 1
+          AND n.estado_aprobacion <> 'APROBADA'
+    LOOP
+        -- 1. Actualizar a RECTIFICADA y mantener activa como registro histórico
+        UPDATE observadores_novedades
+        SET activo = true,
+            estado_aprobacion = 'RECTIFICADA'
+        WHERE id = r2.id;
+
+        -- 2. Registrar el movimiento de auditoría
+        INSERT INTO observadores_novedades_movimientos (
+            id,
+            id_novedad,
+            tipo_evento,
+            estado_anterior,
+            estado_nuevo,
+            comentarios,
+            fecha_hora,
+            id_usuario
+        ) VALUES (
+            gen_random_uuid(),
+            r2.id,
+            'RECTIFICACION',
+            r2.estado_aprobacion,
+            'RECTIFICADA',
+            'Actualizada a estado RECTIFICADA por migración de sistema: novedad histórica reemplazada por rectificación de fechas.',
+            NOW(),
+            v_usuario_sistema_id
+        );
+
+    END LOOP;
+END $$;
