@@ -36,7 +36,12 @@ const loadArchivos = async () => {
   if (!props.observadorId) return;
   loading.value = true;
   try {
-    archivos.value = await observadoresApi.getArchivos(props.observadorId);
+    const data = await observadoresApi.getArchivos(props.observadorId);
+    archivos.value = (data || []).sort((a: any, b: any) => {
+      const timeA = a.fechaRecepcion ? new Date(a.fechaRecepcion).getTime() : 0;
+      const timeB = b.fechaRecepcion ? new Date(b.fechaRecepcion).getTime() : 0;
+      return timeB - timeA;
+    });
   } catch (error) {
     console.error('Error cargando archivos del observador:', error);
     toast.error('No se pudieron cargar los archivos del observador');

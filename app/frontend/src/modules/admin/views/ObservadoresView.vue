@@ -60,17 +60,17 @@
 
         <div class="flex flex-col xl:flex-row items-start gap-6 relative">
             <div class="flex-1 min-w-0 w-full">
-                <BaseDataList 
-                    title="Gestión de Observadores" 
+                <BaseDataList
+                    title="Gestión de Observadores"
                     description="Administra el personal de observación y técnicos"
-                    :button-text="canEdit ? 'Nuevo Observador' : undefined" 
+                    :button-text="canEdit ? 'Nuevo Observador' : undefined"
                     :items="filteredObservadores"
-                    :is-loading="isLoading" 
+                    :is-loading="isLoading"
                     :show-search="false"
                     @create="openCreateModal"
                 >
                     <template #header-actions>
-                        <ExportExcelButton 
+                        <ExportExcelButton
                             v-if="canEdit"
                             :loading="isLoading"
                             title="Exportar a Excel"
@@ -81,7 +81,7 @@
                     <template #table-header>
                         <th scope="col" class="px-6 py-3 cursor-pointer group" @click="handleSort('codigoInterno')">
                             <div class="flex items-center gap-2">
-                                Código
+                                Legajo
                                 <component :is="getSortIcon()" class="w-3.5 h-3.5 transition-all duration-200" :class="[
                                     sortKey === 'codigoInterno' ? 'opacity-100 text-primary' : 'opacity-0 group-hover:opacity-50',
                                     sortKey === 'codigoInterno' && sortOrder === 'asc' ? 'rotate-180' : ''
@@ -238,8 +238,8 @@
         </div>
 
         <!-- ObservadorDetailContent (Mobile Modal) -->
-        <Transition enter-active-class="transition duration-300 ease-out" enter-from-class="opacity-0" 
-            enter-to-class="opacity-100" leave-active-class="transition duration-200 ease-in" leave-from-class="opacity-100" 
+        <Transition enter-active-class="transition duration-300 ease-out" enter-from-class="opacity-0"
+            enter-to-class="opacity-100" leave-active-class="transition duration-200 ease-in" leave-from-class="opacity-100"
             leave-to-class="opacity-0">
             <div v-if="showSidePanel && sidePanelObservador !== null" class="fixed inset-0 z-50 xl:hidden">
                 <!-- Backdrop -->
@@ -247,8 +247,8 @@
                 <!-- Contenido -->
                 <div class="fixed inset-0 overflow-y-auto pointer-events-none">
                     <div class="flex min-h-full items-center justify-center p-4 text-center">
-                        <Transition enter-active-class="transition duration-300 ease-out" enter-from-class="opacity-0 scale-95" 
-                            enter-to-class="opacity-100 scale-100" leave-active-class="transition duration-200 ease-in" 
+                        <Transition enter-active-class="transition duration-300 ease-out" enter-from-class="opacity-0 scale-95"
+                            enter-to-class="opacity-100 scale-100" leave-active-class="transition duration-200 ease-in"
                             leave-from-class="opacity-100 scale-100" leave-to-class="opacity-0 scale-95">
                             <div v-if="showSidePanel && sidePanelObservador !== null" class="w-full max-w-md transform overflow-hidden rounded-2xl bg-surface text-left align-middle shadow-xl transition-all pointer-events-auto flex flex-col h-[90vh] max-h-[90vh]">
                                 <ObservadorDetailContent

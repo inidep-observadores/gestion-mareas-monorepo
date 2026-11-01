@@ -320,4 +320,44 @@ describe('ObservadoresService', () => {
             getNowSpy.mockRestore();
         });
     });
+
+    describe('obtenerArchivos', () => {
+        it('debe retornar los archivos con tipoNovedad, tipoNovedadCodigo y fechaRecepcion ordenados descendente por fechaRecepcion', async () => {
+            const obsId = 'obs1';
+            mockPrisma.observadorNovedad.findMany.mockResolvedValue([
+                {
+                    id: 'nov-old',
+                    fechaInicio: new Date('2026-08-01T10:00:00Z'),
+                    fechaCreacion: new Date('2026-08-01T10:00:00Z'),
+                    tipoNovedad: { id: 'tn1', codigo: 'LICENCIA', descripcion: 'Licencia Médica' },
+                    archivos: [
+                        { id: 'arch1', rutaArchivo: 'https://drive/1', tipoArchivo: 'PDF', nombreOriginal: 'certificado.pdf', fechaSubida: new Date('2026-08-01T10:00:00Z') }
+                    ]
+                },
+                {
+                    id: 'nov-recent',
+                    fechaInicio: new Date('2026-09-15T10:00:00Z'),
+                    fechaCreacion: new Date('2026-09-20T10:00:00Z'),
+                    tipoNovedad: { id: 'tn2', codigo: 'DISPONIBLE', descripcion: 'Declaración de Disponibilidad' },
+                    archivos: [
+                        { id: 'arch2', rutaArchivo: 'https://drive/2', tipoArchivo: 'PDF', nombreOriginal: 'aviso.pdf', fechaSubida: new Date('2026-09-20T10:00:00Z') }
+                    ]
+                }
+            ]);
+
+            const result = await service.obtenerArchivos(obsId);
+
+            expect(result).toHaveLength(2);
+            // El más reciente en fechaRecepcion debe estar primero
+            expect(result[0].id).toBe('arch2');
+            expect(result[0].tipoNovedad).toBe('Declaración de Disponibilidad');
+            expect(result[0].tipoNovedadCodigo).toBe('DISPONIBLE');
+            expect(result[0].fechaRecepcion).toEqual(new Date('2026-09-20T10:00:00Z'));
+
+            expect(result[1].id).toBe('arch1');
+            expect(result[1].tipoNovedad).toBe('Licencia Médica');
+            expect(result[1].tipoNovedadCodigo).toBe('LICENCIA');
+            expect(result[1].fechaRecepcion).toEqual(new Date('2026-08-01T10:00:00Z'));
+        });
+    });
 });

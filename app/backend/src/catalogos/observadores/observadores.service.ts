@@ -671,7 +671,7 @@ export class ObservadoresService {
                 tipoNovedad: true
             },
             orderBy: {
-                fechaInicio: 'desc'
+                fechaCreacion: 'desc'
             }
         });
 
@@ -680,12 +680,21 @@ export class ObservadoresService {
                 id: a.id,
                 novedadId: n.id,
                 tipoNovedad: n.tipoNovedad?.descripcion || 'Desconocido',
+                tipoNovedadCodigo: n.tipoNovedad?.codigo,
                 fechaNovedad: n.fechaInicio,
+                fechaRecepcion: n.fechaCreacion,
+                fechaSubida: a.fechaSubida,
                 rutaArchivo: a.rutaArchivo,
                 tipoArchivo: a.tipoArchivo,
                 nombreOriginal: a.nombreOriginal || 'Archivo adjunto'
             }))
         );
+
+        archivos.sort((a, b) => {
+            const timeA = a.fechaRecepcion ? new Date(a.fechaRecepcion).getTime() : 0;
+            const timeB = b.fechaRecepcion ? new Date(b.fechaRecepcion).getTime() : 0;
+            return timeB - timeA;
+        });
 
         return archivos;
     }

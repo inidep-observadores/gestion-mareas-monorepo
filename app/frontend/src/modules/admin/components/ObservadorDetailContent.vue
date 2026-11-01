@@ -15,7 +15,7 @@
             <ObservadorDocumentacionBadge :observador="observador" />
           </div>
           <div class="text-[11px] text-text-muted font-medium mt-0.5 uppercase tracking-wider">
-            ID: {{ observador?.codigoInterno }}
+            Legajo: {{ observador?.codigoInterno }}
           </div>
         </div>
       </div>
