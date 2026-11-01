@@ -464,6 +464,7 @@ import TrajectorySourceBadge from '@/modules/alerts/components/TrajectorySourceB
 import { TrajectoryRangeUtils } from '@/modules/alerts/utils/trajectory-range.utils'
 import { useConfigStore } from '@/modules/shared/stores/config.store'
 import CreditNoteRisk from './CreditNoteRisk.vue'
+import { getCreditNoteRiskItems } from '../utils/credit-note-risk.utils'
 import type { WorkforceStatus } from '../services/dashboard.service'
 
 const showReclamoDialog = ref(false)
@@ -550,8 +551,10 @@ const toggleExpandIndividual = (id: string) => {
   expandedIndividualId.value = expandedIndividualId.value === id ? null : id
 }
 
+const creditRiskAlertsCount = computed(() => getCreditNoteRiskItems(props.workforceData).length)
+
 const totalAlerts = computed(
-  () => revisionDelays.value.length + reportDelays.value.length + movementAlerts.value.length + fatigueAlerts.value.length
+  () => revisionDelays.value.length + reportDelays.value.length + movementAlerts.value.length + creditRiskAlertsCount.value
 )
 
 const getObserverName = (item: any) => item.metadata?.observerName || 'Sin Observador'
