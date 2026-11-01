@@ -182,7 +182,7 @@
                       <div class="flex items-center gap-2">
                         <span
                           class="hover:text-primary transition-colors cursor-pointer hover:underline decoration-primary/30 underline-offset-2"
-                          @click="$emit('view-timeline', item.id, item.name)">
+                          @click="$emit('view-timeline', item.id, item.name, (item as any).fotoUrl)">
                           {{ item.name }}
                         </span>
 
@@ -508,7 +508,7 @@
                       <div class="flex items-center gap-3">
                         <span
                           class="hover:text-primary transition-colors cursor-pointer hover:underline decoration-primary/30 underline-offset-4"
-                          @click="$emit('view-timeline', item.id, item.name)">
+                          @click="$emit('view-timeline', item.id, item.name, (item as any).fotoUrl)">
                           {{ item.name }}
                         </span>
 

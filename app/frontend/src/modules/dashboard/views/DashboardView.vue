@@ -75,6 +75,7 @@
       :show="showTimelineDialog"
       :observador-id="selectedObserver?.id"
       :observador-name="selectedObserver?.name"
+      :observador-foto-url="selectedObserver?.fotoUrl"
       @close="showTimelineDialog = false"
       @refresh="loadWorkforce"
     />
@@ -99,7 +100,7 @@ import { storeToRefs } from 'pinia'
 
 const workforceData = ref<WorkforceStatus | null>(null)
 const showTimelineDialog = ref(false)
-const selectedObserver = ref<{ id: string, name: string } | null>(null)
+const selectedObserver = ref<{ id: string, name: string, fotoUrl?: string } | null>(null)
 const configStore = useConfigStore()
 const { selectedYear } = storeToRefs(configStore)
 
@@ -110,8 +111,8 @@ const resetToCurrentYear = () => {
   configStore.setSelectedYear(currentYear)
 }
 
-const openTimeline = (id: string, name: string) => {
-  selectedObserver.value = { id, name }
+const openTimeline = (id: string, name: string, fotoUrl?: string) => {
+  selectedObserver.value = { id, name, fotoUrl }
   showTimelineDialog.value = true
 }
 

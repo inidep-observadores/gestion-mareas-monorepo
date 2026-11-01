@@ -43,7 +43,7 @@ import type { Observador } from '@/modules/admin/interfaces/observador.interface
 const props = withDefaults(defineProps<{
   fotoUrl?: string | null
   nombre?: string | null
-  size?: 'sm' | 'md' | 'lg' | 'xl'
+  size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl'
   observadorId?: string | null
   observador?: Partial<Observador> | null
   clickable?: boolean
@@ -88,6 +88,7 @@ const sizeClass = computed(() => {
     case 'md': return 'w-8 h-8'
     case 'lg': return 'w-[31px] h-[31px]'
     case 'xl': return 'w-[42px] h-[42px]'
+    case '2xl': return 'w-12 h-12'
     default: return 'w-8 h-8'
   }
 })
@@ -98,6 +99,7 @@ const textClass = computed(() => {
     case 'md': return 'text-[11px]'
     case 'lg': return 'text-[11px]'
     case 'xl': return 'text-xs'
+    case '2xl': return 'text-sm'
     default: return 'text-[11px]'
   }
 })

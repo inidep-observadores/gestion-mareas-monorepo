@@ -3,10 +3,12 @@
         <div class="flex flex-col h-[70vh]">
             <!-- Header Info -->
             <div class="px-6 py-4 bg-surface-muted/30 border-b border-border flex items-center gap-4 shrink-0">
-                <div
-                    class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20">
-                    <span class="text-sm font-black text-primary">{{ initials }}</span>
-                </div>
+                <ObservadorAvatar
+                    :foto-url="observadorFotoUrl || observador?.fotoUrl"
+                    :nombre="observadorName"
+                    :clickable="false"
+                    size="2xl"
+                />
                 <div class="flex-1 min-w-0">
                     <div class="flex items-start justify-between gap-4">
                         <div>
@@ -70,6 +72,7 @@
 import { ref, watch, computed } from 'vue'
 import BaseModal from '@/components/common/BaseModal.vue'
 import ObservadorTimeline from './ObservadorTimeline.vue'
+import ObservadorAvatar from '@/modules/mareas/components/ObservadorAvatar.vue'
 import observadoresApi from '../services/observadores.service'
 import { toast } from 'vue-sonner'
 import { useAuthStore } from '@/modules/auth/stores/auth.store'
@@ -79,6 +82,7 @@ const props = defineProps<{
     show: boolean
     observadorId?: string | null
     observadorName?: string
+    observadorFotoUrl?: string | null
 }>()
 
 const emit = defineEmits(['close', 'refresh'])
