@@ -929,6 +929,9 @@ const getFilteredList = (list: any[]) => {
 const getFilteredDisponibles = (list: any[]) => {
   if (!list) return [];
   return list.filter(item => {
+    if (item.disponible === false) {
+      return false;
+    }
     if (!includeNoConfirmada.value && !item.disponibilidadConfirmada) {
       return false;
     }

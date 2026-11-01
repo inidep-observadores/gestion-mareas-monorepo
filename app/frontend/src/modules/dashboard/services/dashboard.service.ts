@@ -53,6 +53,7 @@ export interface WorkforceDocFields {
     vencimientoCedula?: string | null
     vencimientoAptoMedico?: string | null
     fechaActualizacionDocumentacion?: string | null
+    disponible?: boolean
 }
 
 export interface WorkforceStatus {

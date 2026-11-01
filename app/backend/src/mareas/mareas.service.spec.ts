@@ -468,4 +468,33 @@ describe('MareasService', () => {
             ).resolves.not.toThrow();
         });
     });
+
+    describe('getObserverStatus - Reglas de Disponibilidad', () => {
+        const now = new Date('2026-11-01T12:00:00Z');
+
+        it('debería retornar IMPEDIDO si obs.disponible es false (prioridad alta sobre novedades)', () => {
+            const obs = { id: 'obs-1', disponible: false, conImpedimento: false };
+            const status = (service as any).getObserverStatus(obs, false, false, undefined, now);
+            expect(status).toBe('IMPEDIDO');
+        });
+
+        it('debería priorizar NAVEGANDO si está en navegación activa aunque obs.disponible sea false', () => {
+            const obs = { id: 'obs-1', disponible: false, conImpedimento: false };
+            const status = (service as any).getObserverStatus(obs, true, false, undefined, now);
+            expect(status).toBe('NAVEGANDO');
+        });
+
+        it('debería prevalecer novedad bloqueante si obs.disponible es true', () => {
+            const obs = { id: 'obs-1', disponible: true, conImpedimento: false };
+            const novedadBloqueante = { tipoNovedad: { descripcion: 'Licencia Médica' } };
+            const status = (service as any).getObserverStatus(obs, false, false, undefined, now, novedadBloqueante);
+            expect(status).toBe('IMPEDIDO');
+        });
+
+        it('debería retornar DISPONIBLE si obs.disponible es true y no tiene novedades bloqueantes ni descansos', () => {
+            const obs = { id: 'obs-1', disponible: true, conImpedimento: false };
+            const status = (service as any).getObserverStatus(obs, false, false, undefined, now);
+            expect(status).toBe('DISPONIBLE');
+        });
+    });
 });

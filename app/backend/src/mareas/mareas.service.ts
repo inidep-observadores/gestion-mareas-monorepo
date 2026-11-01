@@ -1660,6 +1660,7 @@ export class MareasService {
             vencimientoCedula?: string | null;
             vencimientoAptoMedico?: string | null;
             fechaActualizacionDocumentacion?: string | null;
+            disponible?: boolean;
         };
 
         const listDescanso: Array<{ id: string; name: string; fotoUrl?: string; days: number; lastArrival: string; mareaCode: string; vesselName: string; fishery: string; tipoObservador: string; tipoContrato: string; sexo: string; eventual: boolean; tieneDesignacionActiva: boolean; observaciones?: string } & DocFields> = [];
@@ -1702,6 +1703,7 @@ export class MareasService {
                 vencimientoCedula: obs.vencimientoCedula ? obs.vencimientoCedula.toISOString() : null,
                 vencimientoAptoMedico: obs.vencimientoAptoMedico ? obs.vencimientoAptoMedico.toISOString() : null,
                 fechaActualizacionDocumentacion: obs.fechaActualizacionDocumentacion ? obs.fechaActualizacionDocumentacion.toISOString() : null,
+                disponible: obs.disponible,
             };
 
             const name = `${obs.apellido}, ${obs.nombre} `;
@@ -1794,7 +1796,9 @@ export class MareasService {
                     break;
                 case 'IMPEDIDO':
                     let motivo = 'Sin motivo especificado';
-                    if (obs.conImpedimento) {
+                    if (obs.disponible === false) {
+                        motivo = 'No disponible (desactivado en padrón)';
+                    } else if (obs.conImpedimento) {
                         motivo = obs.motivoImpedimento || 'Sin motivo especificado';
                     } else if (novedadBloqueante) {
                         motivo = novedadBloqueante.tipoNovedad?.descripcion + (novedadBloqueante.motivo ? ` - ${novedadBloqueante.motivo}` : '');
@@ -1930,6 +1934,8 @@ export class MareasService {
     ): 'NAVEGANDO' | 'IMPEDIDO' | 'DESIGNADO' | 'DESCANSO' | 'DISPONIBLE' | 'OTRO' {
 
         if (isNavigating) return 'NAVEGANDO';
+
+        if (obs.disponible === false) return 'IMPEDIDO';
 
         if (obs.conImpedimento || novedadBloqueante || avisoFuturoDisp) return 'IMPEDIDO';
 
