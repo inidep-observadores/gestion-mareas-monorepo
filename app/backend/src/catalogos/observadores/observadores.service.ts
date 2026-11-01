@@ -475,7 +475,15 @@ export class ObservadoresService {
             const nextTrip = tripsAfterNov.length > 0 ? tripsAfterNov[tripsAfterNov.length - 1] : null;
 
             if (nov.codigo === 'DISPONIBLE') {
-                if (nextTrip) {
+                const esFutura = nov.start.getTime() > refDate.getTime();
+                nov.esFutura = esFutura;
+
+                if (esFutura) {
+                    const diasParaInicio = DateUtils.calculateInclusiveDays(refDate, nov.start) - 1;
+                    nov.diasParaInicio = Math.max(0, diasParaInicio);
+                    nov.diasHastaSiguienteMarea = undefined;
+                    nov.tieneMareaPosterior = false;
+                } else if (nextTrip) {
                     const days = DateUtils.calculateInclusiveDays(nov.start, nextTrip.start) - 1;
                     nov.diasHastaSiguienteMarea = Math.max(0, days);
                     nov.tieneMareaPosterior = true;
@@ -522,13 +530,35 @@ export class ObservadoresService {
                 const diasDisp = DateUtils.calculateInclusiveDays(dispEnRango.start, limiteFin) - (mareaSiguienteStart ? 1 : 0);
                 return {
                     diasDisponible: Math.max(0, diasDisp),
-                    sinAvisoDisponibilidad: false
+                    sinAvisoDisponibilidad: false,
+                    avisoFuturo: false,
+                    fechaAvisoFuturo: null
+                };
+            }
+
+            // Si no hubo disponibilidad en el rango, verificar si existe un aviso futuro registrado posterior a este intervalo
+            // (pero previo a la siguiente zarpada, si la hubiera)
+            const dispFutura = sortedNovedades.find((n: any) =>
+                n.codigo === 'DISPONIBLE' &&
+                n.estadoAprobacion === 'APROBADA' &&
+                n.start.getTime() > hastaTime &&
+                (!mareaSiguienteStart || n.start.getTime() <= mareaSiguienteStart.getTime())
+            );
+
+            if (dispFutura) {
+                return {
+                    diasDisponible: null,
+                    sinAvisoDisponibilidad: false,
+                    avisoFuturo: true,
+                    fechaAvisoFuturo: dispFutura.start
                 };
             }
 
             return {
                 diasDisponible: null,
-                sinAvisoDisponibilidad: true
+                sinAvisoDisponibilidad: true,
+                avisoFuturo: false,
+                fechaAvisoFuturo: null
             };
         };
 
@@ -564,7 +594,9 @@ export class ObservadoresService {
                             end: refDate,
                             isCurrent: true,
                             diasDisponible: evalDisp.diasDisponible,
-                            sinAvisoDisponibilidad: evalDisp.sinAvisoDisponibilidad
+                            sinAvisoDisponibilidad: evalDisp.sinAvisoDisponibilidad,
+                            avisoFuturo: evalDisp.avisoFuturo,
+                            fechaAvisoFuturo: evalDisp.fechaAvisoFuturo
                         });
                     }
                 }
@@ -605,7 +637,9 @@ export class ObservadoresService {
                             start: nextTrip.end,
                             end: trip.start,
                             diasDisponible: evalDisp.diasDisponible,
-                            sinAvisoDisponibilidad: evalDisp.sinAvisoDisponibilidad
+                            sinAvisoDisponibilidad: evalDisp.sinAvisoDisponibilidad,
+                            avisoFuturo: evalDisp.avisoFuturo,
+                            fechaAvisoFuturo: evalDisp.fechaAvisoFuturo
                         });
                     }
                 }

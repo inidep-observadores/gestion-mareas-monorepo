@@ -108,6 +108,13 @@
                                         <span>🔄</span> Rectificada
                                     </span>
 
+                                    <!-- Chip si es disponibilidad futura -->
+                                    <span v-else-if="item.codigo === 'DISPONIBLE' && item.esFutura"
+                                        class="px-2 py-0.5 text-[9px] font-black rounded-md tracking-wider uppercase bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20"
+                                    >
+                                        {{ (item.diasParaInicio !== undefined && item.diasParaInicio > 0) ? `En ${item.diasParaInicio}d` : 'Aviso futuro' }}
+                                    </span>
+
                                     <!-- Chip de días hasta zarpar o días disponible actual -->
                                     <span v-else-if="item.codigo === 'DISPONIBLE' && item.diasHastaSiguienteMarea !== undefined"
                                         class="px-2 py-0.5 text-[9px] font-black rounded-md tracking-wider uppercase"
@@ -169,8 +176,16 @@
                                     </template>
                                 </span>
 
+                                <!-- Indicador de aviso futuro registrado -->
+                                <span v-if="item.avisoFuturo"
+                                    class="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-bold rounded-md bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20"
+                                    title="El observador cuenta con un aviso de disponibilidad programado a futuro."
+                                >
+                                    <span>🗓️</span> Disp. desde {{ formatDate(item.fechaAvisoFuturo) }}
+                                </span>
+
                                 <!-- Alerta sutil si no declaró disponibilidad -->
-                                <span v-if="item.sinAvisoDisponibilidad"
+                                <span v-else-if="item.sinAvisoDisponibilidad"
                                     class="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-bold rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20"
                                     title="No se registró aviso formal de disponibilidad previo al embarque."
                                 >

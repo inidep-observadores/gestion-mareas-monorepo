@@ -1506,6 +1506,32 @@ export class MareasService {
             }
         });
 
+        // Obtener avisos futuros de disponibilidad (fechaInicio > now)
+        // Regla: Si el observador declaró disponibilidad a futuro, los días previos se consideran No Disponible / Impedido
+        const avisosFuturosDisponibilidad = await this.prisma.observadorNovedad.findMany({
+            where: {
+                activo: true,
+                estadoAprobacion: 'APROBADA',
+                fechaInicio: { gt: now },
+                tipoNovedad: {
+                    codigo: 'DISPONIBLE'
+                }
+            },
+            include: {
+                tipoNovedad: true
+            },
+            orderBy: {
+                fechaInicio: 'asc'
+            }
+        });
+
+        const avisosFuturosDispByObs = new Map<string, any>();
+        avisosFuturosDisponibilidad.forEach((n: any) => {
+            if (!avisosFuturosDispByObs.has(n.observadorId)) {
+                avisosFuturosDispByObs.set(n.observadorId, n);
+            }
+        });
+
         // Obtener escenarios de simulación activos (no borrados) para chequear planificaciones futuras
         const escenariosActivos = await this.prisma.escenarioSimulacion.findMany({
             where: {
@@ -1669,7 +1695,8 @@ export class MareasService {
 
             const hasDesignation = designadosActivosByObs.has(obs.id);
             const novedadBloqueante = novedadesBloqueantesByObs.get(obs.id);
-            const status = this.getObserverStatus(obs, activeNav.has(obs.id), hasDesignation, lastArrival, now, novedadBloqueante);
+            const avisoFuturoDisp = avisosFuturosDispByObs.get(obs.id);
+            const status = this.getObserverStatus(obs, activeNav.has(obs.id), hasDesignation, lastArrival, now, novedadBloqueante, avisoFuturoDisp);
 
             // Determinar disponibilidad confirmada y planificación simulada futura
             let tieneAvisoVigente = false;
@@ -1747,9 +1774,15 @@ export class MareasService {
                     });
                     break;
                 case 'IMPEDIDO':
-                    const motivo = obs.conImpedimento
-                        ? (obs.motivoImpedimento || 'Sin motivo especificado')
-                        : (novedadBloqueante?.tipoNovedad?.descripcion + (novedadBloqueante?.motivo ? ` - ${novedadBloqueante.motivo}` : ''));
+                    let motivo = 'Sin motivo especificado';
+                    if (obs.conImpedimento) {
+                        motivo = obs.motivoImpedimento || 'Sin motivo especificado';
+                    } else if (novedadBloqueante) {
+                        motivo = novedadBloqueante.tipoNovedad?.descripcion + (novedadBloqueante.motivo ? ` - ${novedadBloqueante.motivo}` : '');
+                    } else if (avisoFuturoDisp) {
+                        const fechaDispStr = DateUtils.formatDate(avisoFuturoDisp.fechaInicio);
+                        motivo = `Disponible a partir del ${fechaDispStr} (aviso registrado)`;
+                    }
                     listImpedidos.push({
                         id: obs.id,
                         name,
@@ -1869,12 +1902,13 @@ export class MareasService {
         hasDesignation: boolean,
         lastArrival: Date | undefined,
         now: Date,
-        novedadBloqueante?: any
+        novedadBloqueante?: any,
+        avisoFuturoDisp?: any
     ): 'NAVEGANDO' | 'IMPEDIDO' | 'DESIGNADO' | 'DESCANSO' | 'DISPONIBLE' | 'OTRO' {
 
         if (isNavigating) return 'NAVEGANDO';
 
-        if (obs.conImpedimento || novedadBloqueante) return 'IMPEDIDO';
+        if (obs.conImpedimento || novedadBloqueante || avisoFuturoDisp) return 'IMPEDIDO';
 
         if (hasDesignation) return 'DESIGNADO';
 
