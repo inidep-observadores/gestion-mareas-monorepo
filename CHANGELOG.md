@@ -2,6 +2,27 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v0.21.0] - 2026-11-01
+
+### Added
+- **estadísticas:** agregar opción de agrupación por buque (sin pesquería) en el Cronograma de Distribución de Mareas (Gantt) con selección condicionada a "Todas las Pesquerías", filas consolidadas por buque y colores diferenciados por pesquería
+- **planificación:** soporte para creación y gestión de mareas simuladas sin buque asignado, optimizando la vista de timeline y dotación
+- **disponibilidad:** exportación completa de disponibilidad y estado de observadores a Excel (.xlsx) con períodos y detalles operativos
+- **observadores:** integración de novedades de disponibilidad en el timeline interactivo con modal detallado de consulta
+- **novedades:** incorporar filtro por tipo de novedad y columna con fecha de registro en el listado de novedades
+- **novedades:** filtros de dotación, licencias flexibles y estado `RECTIFICADA` en el ciclo de vida de novedades de observadores
+- **archivos:** visualizar tipo de novedad y fecha de recepción en la lista de archivos adjuntos vinculados
+
+### Changed
+- **ui:** estandarizar componente y comportamiento de botón de exportación a Excel en vistas de presentismo y disponibilidad
+
+### Fixed
+- **dashboard:** corregir conteo de alertas activas e incorporar métrica de riesgo por nota de crédito
+- **disponibilidad:** clasificar correctamente avisos futuros como no disponibles y corregir badges en timeline de observadores
+- **presentismo:** desacoplar estados de disponibilidad entre mareas consecutivas y restaurar disponibilidades históricas
+- **backend:** resolver tipado en compilación por declaraciones de MJML
+- **tests:** actualizar y corregir mocks en suites de pruebas unitarias de backend (`mareas-crud`, `date-normalization`, `planificacion.service`, `novedades.service` y suite de integridad de base de datos)
+
 ## [v0.20.0] - 2026-10-23
 
 ### Added

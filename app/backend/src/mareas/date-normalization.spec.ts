@@ -25,11 +25,16 @@ describe('Mareas - Normalización de Fechas', () => {
             findFirst: jest.fn(),
         },
         mareaEtapa: {
-            create: jest.fn(),
-            update: jest.fn(),
-            deleteMany: jest.fn(),
-            count: jest.fn(),
-            findFirst: jest.fn(),
+            create: jest.fn().mockResolvedValue({ id: 'e-1' }),
+            update: jest.fn().mockResolvedValue({ id: 'e-1' }),
+            deleteMany: jest.fn().mockResolvedValue({ count: 0 }),
+            count: jest.fn().mockResolvedValue(0),
+            findFirst: jest.fn().mockResolvedValue(null),
+            findMany: jest.fn().mockResolvedValue([]),
+        },
+        mareaEtapaObservador: {
+            deleteMany: jest.fn().mockResolvedValue({ count: 0 }),
+            create: jest.fn().mockResolvedValue({}),
         },
         mareaMovimiento: {
             create: jest.fn(),

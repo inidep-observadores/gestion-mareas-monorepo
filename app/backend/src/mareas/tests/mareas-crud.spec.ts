@@ -48,6 +48,9 @@ describe('MareasService (CRUD)', () => {
         mareaArchivo: {
             findMany: jest.fn().mockResolvedValue([]),
         },
+        mareaMovimiento: {
+            create: jest.fn().mockResolvedValue({ id: 'mov-id' }),
+        },
         $transaction: jest.fn((cb) => cb(mockPrisma)),
     };
 

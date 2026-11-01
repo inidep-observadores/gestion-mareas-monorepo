@@ -190,12 +190,12 @@ describe('NovedadesService', () => {
 
       await service.update('nov-correccion', { estadoAprobacion: 'APROBADA' }, mockUser);
 
-      // Debe haber llamado update para desactivar la novedad original
+      // Debe haber llamado update para rectificar la novedad original
       expect(prisma.observadorNovedad.update).toHaveBeenCalledWith(expect.objectContaining({
         where: { id: 'nov-original-aprobada' },
         data: expect.objectContaining({
-          activo: false,
-          estadoAprobacion: 'RECHAZADA',
+          activo: true,
+          estadoAprobacion: 'RECTIFICADA',
         })
       }));
     });

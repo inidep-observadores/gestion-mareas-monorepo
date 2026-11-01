@@ -20,6 +20,9 @@ describe('PlanificacionService', () => {
       delete: jest.fn(),
     },
 
+    user: {
+      findUnique: jest.fn().mockResolvedValue({ id: 'u1', fullName: 'Test User' }),
+    },
     $transaction: jest.fn((cb) => cb(mockPrisma)),
   };
 
