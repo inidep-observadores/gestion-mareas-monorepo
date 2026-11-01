@@ -1,5 +1,6 @@
 <template>
   <div 
+    v-if="!onlyWarnings || docStatus.color === 'yellow' || docStatus.color === 'red'"
     ref="triggerRef"
     class="relative inline-flex items-center group"
     @mouseenter="showTooltip"
@@ -125,9 +126,11 @@ const props = withDefaults(defineProps<{
   observador?: Partial<Observador> | null;
   placement?: 'auto' | 'top' | 'bottom';
   align?: 'center' | 'left' | 'right';
+  onlyWarnings?: boolean;
 }>(), {
   placement: 'auto',
-  align: 'center'
+  align: 'center',
+  onlyWarnings: false
 });
 
 const triggerRef = ref<HTMLElement | null>(null);

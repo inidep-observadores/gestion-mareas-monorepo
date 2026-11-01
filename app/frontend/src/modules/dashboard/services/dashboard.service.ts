@@ -48,6 +48,13 @@ export interface CriticalDelay {
     days: number
 }
 
+export interface WorkforceDocFields {
+    numeroCedula?: number | null
+    vencimientoCedula?: string | null
+    vencimientoAptoMedico?: string | null
+    fechaActualizacionDocumentacion?: string | null
+}
+
 export interface WorkforceStatus {
     totalActivos: number
     navegando: number
@@ -55,9 +62,9 @@ export interface WorkforceStatus {
     designados: number
     licencia: number
     impedidos: number
-    topDry: Array<{ id: string; name: string; fotoUrl?: string; days: number; lastArrival: string; mareaCode?: string; vesselName?: string; fishery?: string; tipoObservador: string; tipoContrato: string; sexo: string; eventual: boolean; observaciones?: string }>
-    listNavegando: Array<{ id: string; name: string; fotoUrl?: string; days: number; vessel: string; mareaCode?: string; fishery?: string; enTierra?: boolean; startDate: string; tipoObservador: string; tipoContrato: string; stageCount?: number; sexo: string; eventual: boolean; observaciones?: string; fleetCode?: string; fleetName?: string }>
-    listDescanso: Array<{ id: string; name: string; fotoUrl?: string; days: number; lastArrival: string; mareaCode?: string; vesselName?: string; fishery?: string; tipoObservador: string; tipoContrato: string; sexo: string; eventual: boolean; observaciones?: string }>
+    topDry: Array<{ id: string; name: string; fotoUrl?: string; days: number; lastArrival: string; mareaCode?: string; vesselName?: string; fishery?: string; tipoObservador: string; tipoContrato: string; sexo: string; eventual: boolean; observaciones?: string } & WorkforceDocFields>
+    listNavegando: Array<{ id: string; name: string; fotoUrl?: string; days: number; vessel: string; mareaCode?: string; fishery?: string; enTierra?: boolean; startDate: string; tipoObservador: string; tipoContrato: string; stageCount?: number; sexo: string; eventual: boolean; observaciones?: string; fleetCode?: string; fleetName?: string } & WorkforceDocFields>
+    listDescanso: Array<{ id: string; name: string; fotoUrl?: string; days: number; lastArrival: string; mareaCode?: string; vesselName?: string; fishery?: string; tipoObservador: string; tipoContrato: string; sexo: string; eventual: boolean; observaciones?: string } & WorkforceDocFields>
     listDisponibles: Array<{
         id: string;
         name: string;
@@ -83,9 +90,9 @@ export interface WorkforceStatus {
             observaciones?: string | null;
         } | null;
         observaciones?: string;
-    }>
-    listDesignados: Array<{ id: string; name: string; fotoUrl?: string; mareaCode: string; vesselName: string; fishery: string; fechaZarpadaEstimada: string; tipoObservador: string; tipoContrato: string; sexo: string; eventual: boolean; tieneDesignacionActiva: boolean; observaciones?: string }>
-    listImpedidos: Array<{ id: string; name: string; fotoUrl?: string; motivo: string; tipoObservador: string; tipoContrato: string; sexo: string; eventual: boolean; observaciones?: string }>
+    } & WorkforceDocFields>
+    listDesignados: Array<{ id: string; name: string; fotoUrl?: string; mareaCode: string; vesselName: string; fishery: string; fechaZarpadaEstimada: string; tipoObservador: string; tipoContrato: string; sexo: string; eventual: boolean; tieneDesignacionActiva: boolean; observaciones?: string } & WorkforceDocFields>
+    listImpedidos: Array<{ id: string; name: string; fotoUrl?: string; motivo: string; tipoObservador: string; tipoContrato: string; sexo: string; eventual: boolean; observaciones?: string } & WorkforceDocFields>
 }
 
 export interface MovementAlert {

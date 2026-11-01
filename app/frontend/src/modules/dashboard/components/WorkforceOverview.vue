@@ -199,6 +199,9 @@
                           :title="`Convocable por urgencia (${(item as any).motivoFlexibilidad || 'Licencia flexible'})`">
                           Flexible • {{ (item as any).motivoFlexibilidad || 'Urgencia' }}
                         </span>
+
+                        <!-- Estado Documentación (sólo advertencias) -->
+                        <ObservadorDocumentacionBadge :observador="item" only-warnings />
                         
                         <!-- Botón Editar Inline -->
                         <button v-if="canManageObservations && editingObsId !== item.id" 
@@ -522,6 +525,10 @@
                           :title="`Convocable por urgencia (${(item as any).motivoFlexibilidad || 'Licencia flexible'})`">
                           Flexible • {{ (item as any).motivoFlexibilidad || 'Urgencia' }}
                         </span>
+
+                        <!-- Estado Documentación (sólo advertencias) -->
+                        <ObservadorDocumentacionBadge :observador="item" only-warnings />
+
                         <button v-if="canManageObservations && editingObsId !== item.id" 
                           @click="startEditing(item.id, (item as any).observaciones)"
                           class="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-primary/10 text-primary rounded-lg transition-all">
@@ -632,6 +639,7 @@ import BaseModal from '@/components/common/BaseModal.vue'
 import WorkforceDonutChart from './WorkforceDonutChart.vue'
 import observadoresApi from '@/modules/admin/services/observadores.service'
 import ObservadorAvatar from '@/modules/mareas/components/ObservadorAvatar.vue'
+import ObservadorDocumentacionBadge from '@/modules/admin/components/ObservadorDocumentacionBadge.vue'
 import statsService from '@/modules/stats/services/stats.service'
 import { toast } from 'vue-sonner';
 import ExportExcelButton from '@/modules/shared/components/ExportExcelButton.vue';
