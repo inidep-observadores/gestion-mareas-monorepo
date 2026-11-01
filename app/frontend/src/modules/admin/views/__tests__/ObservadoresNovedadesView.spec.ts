@@ -2,10 +2,17 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { mount } from '@vue/test-utils';
 import ObservadoresNovedadesView from '../ObservadoresNovedadesView.vue';
 import { novedadesService } from '@/modules/admin/services/novedades.service';
+import tiposNovedadApi from '@/modules/admin/services/tipos-novedad.service';
 import { toast } from 'vue-sonner';
 
 // Mocks
 vi.mock('@/modules/admin/services/novedades.service');
+vi.mock('@/modules/admin/services/tipos-novedad.service', () => ({
+  default: {
+    getAll: vi.fn(),
+    getActivos: vi.fn()
+  }
+}));
 vi.mock('vue-sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 vi.mock('vue-router', () => ({
   useRoute: () => ({ name: 'ObservadoresNovedades', query: {} }),
@@ -26,31 +33,43 @@ const globalStubs = {
   TrashIcon: true,
   EditIcon: true,
   ChevronDownIcon: true,
+  DatePicker: true,
+  SearchInput: true
 };
 
 describe('ObservadoresNovedadesView.vue', () => {
   const mockNovedades = [
     {
       id: '1',
+      tipoNovedadId: 't1',
       observador: { nombre: 'Juan', apellido: 'Perez', codigoInterno: '123' },
-      tipoNovedad: { descripcion: 'LICENCIA' },
+      tipoNovedad: { id: 't1', descripcion: 'LICENCIA' },
       estadoAprobacion: 'APROBADA',
       origen: 'MANUAL',
+      fechaCreacion: '2025-01-01T08:00:00Z',
       fechaInicio: '2025-01-01T00:00:00Z'
     },
     {
       id: '2',
+      tipoNovedadId: 't2',
       observador: { nombre: 'Ana', apellido: 'Gomez', codigoInterno: '456' },
-      tipoNovedad: { descripcion: 'FRANCO' },
+      tipoNovedad: { id: 't2', descripcion: 'FRANCO' },
       estadoAprobacion: 'PENDIENTE',
       origen: 'MANUAL',
+      fechaCreacion: '2025-02-01T08:00:00Z',
       fechaInicio: '2025-02-01T00:00:00Z'
     }
+  ];
+
+  const mockTiposNovedad = [
+    { id: 't1', codigo: 'LICENCIA', descripcion: 'LICENCIA' },
+    { id: 't2', codigo: 'FRANCO', descripcion: 'FRANCO' }
   ];
 
   beforeEach(() => {
     vi.clearAllMocks();
     (novedadesService.getAll as any).mockResolvedValue(mockNovedades);
+    (tiposNovedadApi.getAll as any).mockResolvedValue(mockTiposNovedad);
   });
 
   it('debe cargar y mostrar las novedades al montar', async () => {
@@ -62,6 +81,7 @@ describe('ObservadoresNovedadesView.vue', () => {
     await wrapper.vm.$nextTick();
 
     expect(novedadesService.getAll).toHaveBeenCalled();
+    expect(tiposNovedadApi.getAll).toHaveBeenCalled();
     expect(wrapper.text()).toContain('Perez, Juan');
   });
 
@@ -80,6 +100,47 @@ describe('ObservadoresNovedadesView.vue', () => {
     expect((wrapper.vm as any).activeTab).toBe('pendientes');
     expect((wrapper.vm as any).filteredNovedades.length).toBe(1);
     expect((wrapper.vm as any).filteredNovedades[0].estadoAprobacion).toBe('PENDIENTE');
+  });
+
+  it('debe filtrar novedades por tipo de novedad', async () => {
+    const wrapper = mount(ObservadoresNovedadesView, {
+      global: { stubs: globalStubs }
+    });
+    
+    await new Promise(r => setTimeout(r, 0));
+    await wrapper.vm.$nextTick();
+
+    // En historial solo se ve 'APROBADA' (id: 1) por defecto
+    expect((wrapper.vm as any).filteredNovedades.length).toBe(1);
+
+    // Filtramos por tipo t1 (LICENCIA)
+    (wrapper.vm as any).filterTipoNovedad = 't1';
+    expect((wrapper.vm as any).filteredNovedades.length).toBe(1);
+    expect((wrapper.vm as any).filteredNovedades[0].id).toBe('1');
+
+    // Filtramos por tipo inexistente o t2 (que es PENDIENTE y está en otra pestaña)
+    (wrapper.vm as any).filterTipoNovedad = 't2';
+    expect((wrapper.vm as any).filteredNovedades.length).toBe(0);
+
+    // Limpiar filtro
+    (wrapper.vm as any).clearFilters();
+    expect((wrapper.vm as any).filterTipoNovedad).toBe('');
+    expect((wrapper.vm as any).filteredNovedades.length).toBe(1);
+  });
+
+  it('debe ordenar por fechaCreacion al activar el sort de Registrado', async () => {
+    const wrapper = mount(ObservadoresNovedadesView, {
+      global: { stubs: globalStubs }
+    });
+    await new Promise(r => setTimeout(r, 0));
+    await wrapper.vm.$nextTick();
+
+    (wrapper.vm as any).handleSort('fechaCreacion');
+    expect((wrapper.vm as any).sortKey).toBe('fechaCreacion');
+    expect((wrapper.vm as any).sortOrder).toBe('asc');
+
+    (wrapper.vm as any).handleSort('fechaCreacion');
+    expect((wrapper.vm as any).sortOrder).toBe('desc');
   });
 
   it('debe llamar a create cuando se guarda una nueva novedad', async () => {

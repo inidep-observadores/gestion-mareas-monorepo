@@ -5,6 +5,8 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 ## [Unreleased]
 
 ### Added
+- **admin:** incorporar filtro desplegable por tipo de novedad y columna 'Registrado' con fecha de recepción/creación (`fechaCreacion`) en la gestión de novedades de observadores, optimizando el ancho de los selectores de fecha.
+- **dashboard:** unificar y corregir conteo de alertas activas en Central de Alertas excluyendo alertas de fatiga ocultas e incluyendo el cálculo de riesgo de nota de crédito para observadores monotributistas vía `credit-note-risk.utils.ts`.
 - **ui:** reemplazar ícono genérico de buque por la foto del observador principal en Panel Operativo y Flujo de Trabajo (tabla y móvil), con fallback a iniciales o ícono genérico.
 - **ui:** incorporar avatar con foto del observador en las listas de dotación de personal (`WorkforceOverview`) centrado verticalmente y con tamaño incrementado un 30%.
 - **componentes:** nuevo componente reutilizable `ObservadorAvatar` con carga segura de imagen, fallback dinámico y soporte de tamaños (`sm`, `md`, `lg`, `xl`).

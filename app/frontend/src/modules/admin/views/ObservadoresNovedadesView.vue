@@ -67,6 +67,14 @@
                 </select>
 
                 <select 
+                  v-model="filterTipoNovedad"
+                  class="px-3 py-2 bg-surface border border-border rounded-lg text-xs focus:outline-none focus:border-primary cursor-pointer text-text max-w-[180px] truncate"
+                >
+                  <option value="">Tipo (Todos)</option>
+                  <option v-for="t in tiposNovedadOptions" :key="t.id" :value="t.id">{{ t.descripcion }}</option>
+                </select>
+
+                <select 
                   v-model="filterOrigen"
                   class="px-3 py-2 bg-surface border border-border rounded-lg text-xs focus:outline-none focus:border-primary cursor-pointer text-text"
                 >
@@ -78,13 +86,13 @@
                   <DatePicker 
                     v-model="filterFechaInicio"
                     placeholder="Desde..."
-                    class="w-32"
+                    class="w-28"
                   />
                   <span class="text-text-muted">-</span>
                   <DatePicker 
                     v-model="filterFechaFin"
                     placeholder="Hasta..."
-                    class="w-32"
+                    class="w-28"
                   />
                 </div>
 
@@ -141,6 +149,15 @@
               <component :is="getSortIcon()" class="w-3.5 h-3.5 transition-all duration-200" :class="[
                   sortKey === 'origen' ? 'opacity-100 text-primary' : 'opacity-0 group-hover:opacity-50',
                   sortKey === 'origen' && sortOrder === 'asc' ? 'rotate-180' : ''
+              ]" />
+          </div>
+        </th>
+        <th scope="col" class="px-6 py-3 cursor-pointer group" @click="handleSort('fechaCreacion')">
+          <div class="flex items-center gap-2">
+              Registrado
+              <component :is="getSortIcon()" class="w-3.5 h-3.5 transition-all duration-200" :class="[
+                  sortKey === 'fechaCreacion' ? 'opacity-100 text-primary' : 'opacity-0 group-hover:opacity-50',
+                  sortKey === 'fechaCreacion' && sortOrder === 'asc' ? 'rotate-180' : ''
               ]" />
           </div>
         </th>
@@ -206,6 +223,9 @@
           <span class="bg-surface-muted text-text-muted text-[10px] font-bold px-2 py-0.5 rounded border border-border uppercase tracking-widest">
             {{ novedad.origen || 'MANUAL' }}
           </span>
+        </td>
+        <td class="px-6 py-4 font-mono font-bold text-text whitespace-nowrap cursor-pointer hover:bg-surface-muted/50 transition-colors" @click="openSidePanel(novedad)">
+          {{ formatDate(novedad.fechaCreacion) }}
         </td>
         <td class="px-6 py-4 font-mono font-bold text-text whitespace-nowrap cursor-pointer hover:bg-surface-muted/50 transition-colors" @click="openSidePanel(novedad)">
           {{ formatDate(novedad.fechaInicio) }}
@@ -410,6 +430,8 @@ import ObservadorCalendarView from '../components/ObservadorCalendarView.vue';
 import ConfirmationDialog from '@/components/common/ConfirmationDialog.vue';
 import { novedadesService } from '../services/novedades.service';
 import type { Novedad } from '../interfaces/novedad.interface';
+import type { TipoNovedad } from '../interfaces/tipo-novedad.interface';
+import tiposNovedadApi from '../services/tipos-novedad.service';
 import { toast } from 'vue-sonner';
 import { TrashIcon, ChevronDownIcon, EditIcon, PlusIcon, PaperclipIcon } from '@/icons';
 import { RefreshCcwIcon } from 'lucide-vue-next';
@@ -422,10 +444,29 @@ const isLoading = ref(true);
 const searchQuery = ref('');
 
 const filterContrato = ref('');
+const filterTipoNovedad = ref('');
+const catalogoTipos = ref<TipoNovedad[]>([]);
 const filterOrigen = ref('');
 const filterFechaInicio = ref<string | null>(null);
 const filterFechaFin = ref<string | null>(null);
 const showRechazadasYEliminadas = ref(false);
+
+const tiposNovedadOptions = computed(() => {
+  const map = new Map<string, { id: string; descripcion: string }>();
+  catalogoTipos.value.forEach(t => {
+    if (t.id && t.descripcion) {
+      map.set(t.id, { id: t.id, descripcion: t.descripcion });
+    }
+  });
+  novedades.value.forEach(n => {
+    const tId = n.tipoNovedadId || n.tipoNovedad?.id;
+    const desc = n.tipoNovedad?.descripcion;
+    if (tId && desc && !map.has(tId)) {
+      map.set(tId, { id: tId, descripcion: desc });
+    }
+  });
+  return Array.from(map.values()).sort((a, b) => a.descripcion.localeCompare(b.descripcion));
+});
 
 const origenesPermitidos = computed(() => {
   const set = new Set(novedades.value.map(n => n.origen || 'MANUAL'));
@@ -435,6 +476,7 @@ const origenesPermitidos = computed(() => {
 const clearFilters = () => {
   searchQuery.value = '';
   filterContrato.value = '';
+  filterTipoNovedad.value = '';
   filterOrigen.value = '';
   filterFechaInicio.value = null;
   filterFechaFin.value = null;
@@ -594,6 +636,10 @@ const filteredNovedades = computed(() => {
     if (filterContrato.value) {
         items = items.filter(n => n.observador?.tipoContrato === filterContrato.value);
     }
+
+    if (filterTipoNovedad.value) {
+        items = items.filter(n => n.tipoNovedadId === filterTipoNovedad.value || n.tipoNovedad?.id === filterTipoNovedad.value);
+    }
     
     if (filterOrigen.value) {
         items = items.filter(n => (n.origen || 'MANUAL') === filterOrigen.value);
@@ -732,7 +778,16 @@ const confirmAction = async () => {
   }
 };
 
+const loadCatalogos = async () => {
+  try {
+    catalogoTipos.value = await tiposNovedadApi.getAll();
+  } catch (err) {
+    console.error('Error al cargar catálogo de tipos de novedad:', err);
+  }
+};
+
 onMounted(() => {
   loadNovedades();
+  loadCatalogos();
 });
 </script>
